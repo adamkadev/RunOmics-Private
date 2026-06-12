@@ -9,7 +9,7 @@ interface Props {
   className?: string
 }
 
-const MAPTILER_STYLE_LIGHT = 'topo-v4'
+const MAPTILER_STYLE_LIGHT = 'streets-v2'
 const MAPTILER_STYLE_DARK  = 'backdrop-v4-dark'
 
 export default function ActivityMap({ route, className }: Props) {
