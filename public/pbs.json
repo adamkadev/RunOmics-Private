@@ -1,0 +1,14 @@
+[
+  {
+    "year": 2025,
+    "entries": [
+      { "distance": "5K",           "activityId": "20526043740" }
+    ]
+  },
+  {
+    "year": 2026,
+    "entries": [
+      { "distance": "Half-Marathon","activityId": "22904920506" }
+    ]
+  }
+]

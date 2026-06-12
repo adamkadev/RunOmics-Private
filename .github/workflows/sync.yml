@@ -1,0 +1,83 @@
+name: Sync Garmin Activities
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Max new activities to sync (leave empty for all)"
+        required: false
+        default: ""
+      dry_run:
+        description: "Dry run (fetch but don't write)"
+        type: boolean
+        default: false
+      force:
+        description: "Re-sync all activities (rebuilds every record)"
+        type: boolean
+        default: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Restore FIT cache
+        uses: actions/cache@v4
+        with:
+          path: public/fit
+          key: fit-${{ hashFiles('public/data/activities.json') }}
+          restore-keys: |
+            fit-
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: scripts/requirements.txt
+
+      - name: Install Python dependencies
+        run: pip install -r scripts/requirements.txt
+
+      - name: Run sync
+        env:
+          GARMIN_SECRET: ${{ secrets.GARMIN_SECRET }}
+        run: |
+          ARGS=""
+          if [ -n "${{ github.event.inputs.limit }}" ]; then
+            ARGS="$ARGS --limit ${{ github.event.inputs.limit }}"
+          fi
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            ARGS="$ARGS --dry-run"
+          fi
+          if [ "${{ github.event.inputs.force }}" = "true" ]; then
+            ARGS="$ARGS --force"
+          fi
+          python scripts/sync.py $ARGS
+
+      - name: Commit updated activities.json
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add public/data/activities.json
+
+          if git diff --cached --quiet; then
+            echo "Nothing to commit - no new activities."
+          else
+            ACTIVITY_COUNT=$(python - <<'EOF'
+          import json, pathlib
+          data = json.loads(pathlib.Path("public/data/activities.json").read_text())
+          print(len(data.get("activities", [])))
+          EOF
+          )
+            git commit -m "sync: update activities (${ACTIVITY_COUNT} total) [skip ci]"
+            git push
+          fi
