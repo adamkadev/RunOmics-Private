@@ -87,7 +87,6 @@ def parse_fit(content: bytes) -> ParsedFit:
 
     if sessions:
         session = sessions[0]
-        print(session)
 
         duration = session.get("total_timer_time") or session.get("total_elapsed_time")
         if duration:
