@@ -5,7 +5,7 @@
       "week": 202624,
       "date": "2026-06-12",
       "dayOfWeek": "Friday",
-      "type": "Anaerobic",
+      "type": "Tempo",
       "description": "Metz - 10 x 200m (R=100m)",
       "durationSeconds": 3042,
       "distanceKm": 8.95,
@@ -1559,7 +1559,13 @@
         168.8,
         168.0,
         168.2
-      ]
+      ],
+      "calories": 610,
+      "cadenceSpm": 162.2,
+      "groundContactMs": 250.6,
+      "verticalOscillationMm": 85.3,
+      "verticalRatioPct": 8.29,
+      "strideLengthM": 1.07
     },
     {
       "id": "23215120005",
@@ -3120,7 +3126,13 @@
         169.4,
         169.6,
         169.4
-      ]
+      ],
+      "calories": 511,
+      "cadenceSpm": 164.6,
+      "groundContactMs": 263.7,
+      "verticalOscillationMm": 88.2,
+      "verticalRatioPct": 8.87,
+      "strideLengthM": 1.0
     },
     {
       "id": "23203675478",
@@ -4681,7 +4693,13 @@
         172.8,
         174.4,
         174.6
-      ]
+      ],
+      "calories": 766,
+      "cadenceSpm": 171.9,
+      "groundContactMs": 248.7,
+      "verticalOscillationMm": 91.3,
+      "verticalRatioPct": 8.19,
+      "strideLengthM": 1.13
     },
     {
       "id": "23191590657",
@@ -6242,7 +6260,13 @@
         170.8,
         170.8,
         170.8
-      ]
+      ],
+      "calories": 520,
+      "cadenceSpm": 166.5,
+      "groundContactMs": 267.5,
+      "verticalOscillationMm": 90.5,
+      "verticalRatioPct": 9.01,
+      "strideLengthM": 1.0
     },
     {
       "id": "23168729667",
@@ -7803,14 +7827,20 @@
         172.4,
         172.6,
         172.8
-      ]
+      ],
+      "calories": 579,
+      "cadenceSpm": 167.0,
+      "groundContactMs": 264.4,
+      "verticalOscillationMm": 90.1,
+      "verticalRatioPct": 8.87,
+      "strideLengthM": 1.02
     },
     {
       "id": "23155682803",
       "week": 202623,
       "date": "2026-06-06",
       "dayOfWeek": "Saturday",
-      "type": "Base",
+      "type": "Tempo",
       "description": "Metz - 50' dont 20' actives",
       "durationSeconds": 3154,
       "distanceKm": 10.01,
@@ -9364,14 +9394,20 @@
         169.0,
         168.8,
         169.0
-      ]
+      ],
+      "calories": 634,
+      "cadenceSpm": 171.9,
+      "groundContactMs": 250.0,
+      "verticalOscillationMm": 90.1,
+      "verticalRatioPct": 8.24,
+      "strideLengthM": 1.11
     },
     {
       "id": "23143195113",
       "week": 202623,
       "date": "2026-06-05",
       "dayOfWeek": "Friday",
-      "type": "VO2Max",
+      "type": "Threshold",
       "description": "Metz - 2 x 2500m allure de course",
       "durationSeconds": 3405,
       "distanceKm": 11.01,
@@ -10925,7 +10961,13 @@
         168.6,
         168.6,
         168.8
-      ]
+      ],
+      "calories": 702,
+      "cadenceSpm": 171.0,
+      "groundContactMs": 244.4,
+      "verticalOscillationMm": 88.8,
+      "verticalRatioPct": 8.03,
+      "strideLengthM": 1.12
     },
     {
       "id": "23119548073",
@@ -12486,14 +12528,20 @@
         169.0,
         168.6,
         168.4
-      ]
+      ],
+      "calories": 449,
+      "cadenceSpm": 171.0,
+      "groundContactMs": 262.7,
+      "verticalOscillationMm": 87.5,
+      "verticalRatioPct": 8.86,
+      "strideLengthM": 0.99
     },
     {
       "id": "23107687704",
       "week": 202623,
       "date": "2026-06-02",
       "dayOfWeek": "Tuesday",
-      "type": "Anaerobic",
+      "type": "VO2Max",
       "description": "Metz - 6 x 600m (R=200m)",
       "durationSeconds": 3441,
       "distanceKm": 10.81,
@@ -14047,7 +14095,13 @@
         168.0,
         167.2,
         167.2
-      ]
+      ],
+      "calories": 699,
+      "cadenceSpm": 166.4,
+      "groundContactMs": 250.0,
+      "verticalOscillationMm": 89.6,
+      "verticalRatioPct": 8.28,
+      "strideLengthM": 1.11
     },
     {
       "id": "23084922930",
@@ -15608,7 +15662,13 @@
         170.0,
         170.0,
         170.0
-      ]
+      ],
+      "calories": 502,
+      "cadenceSpm": 174.2,
+      "groundContactMs": 251.6,
+      "verticalOscillationMm": 88.6,
+      "verticalRatioPct": 8.32,
+      "strideLengthM": 1.07
     },
     {
       "id": "23072084376",
@@ -17169,7 +17229,13 @@
         139.6,
         139.8,
         139.8
-      ]
+      ],
+      "calories": 622,
+      "cadenceSpm": 169.7,
+      "groundContactMs": 263.5,
+      "verticalOscillationMm": 90.7,
+      "verticalRatioPct": 8.82,
+      "strideLengthM": 1.03
     },
     {
       "id": "23049565135",
@@ -18730,7 +18796,13 @@
         144.0,
         144.0,
         143.8
-      ]
+      ],
+      "calories": 500,
+      "cadenceSpm": 174.3,
+      "groundContactMs": 251.4,
+      "verticalOscillationMm": 88.7,
+      "verticalRatioPct": 8.31,
+      "strideLengthM": 1.07
     },
     {
       "id": "23036118383",
@@ -20291,14 +20363,20 @@
         141.8,
         142.0,
         142.0
-      ]
+      ],
+      "calories": 647,
+      "cadenceSpm": 170.6,
+      "groundContactMs": 262.4,
+      "verticalOscillationMm": 89.0,
+      "verticalRatioPct": 8.81,
+      "strideLengthM": 1.01
     },
     {
       "id": "23024859719",
       "week": 202622,
       "date": "2026-05-26",
       "dayOfWeek": "Tuesday",
-      "type": "Threshold",
+      "type": "VO2Max",
       "description": "Strasbourg - Seuil",
       "durationSeconds": 3050,
       "distanceKm": 9.52,
@@ -21852,7 +21930,13 @@
         141.8,
         141.4,
         142.0
-      ]
+      ],
+      "calories": 618,
+      "cadenceSpm": 165.6,
+      "groundContactMs": 252.0,
+      "verticalOscillationMm": 91.3,
+      "verticalRatioPct": 8.33,
+      "strideLengthM": 1.13
     },
     {
       "id": "23000715359",
@@ -23413,7 +23497,13 @@
         143.8,
         143.6,
         143.8
-      ]
+      ],
+      "calories": 836,
+      "cadenceSpm": 169.5,
+      "groundContactMs": 264.4,
+      "verticalOscillationMm": 88.0,
+      "verticalRatioPct": 8.92,
+      "strideLengthM": 0.99
     },
     {
       "id": "22988463438",
@@ -24974,7 +25064,13 @@
         142.4,
         142.2,
         142.4
-      ]
+      ],
+      "calories": 687,
+      "cadenceSpm": 168.0,
+      "groundContactMs": 266.0,
+      "verticalOscillationMm": 90.8,
+      "verticalRatioPct": 8.93,
+      "strideLengthM": 1.02
     },
     {
       "id": "22963895659",
@@ -26535,7 +26631,13 @@
         170.6,
         170.6,
         171.0
-      ]
+      ],
+      "calories": 589,
+      "cadenceSpm": 161.0,
+      "groundContactMs": 275.9,
+      "verticalOscillationMm": 92.7,
+      "verticalRatioPct": 9.3,
+      "strideLengthM": 1.0
     },
     {
       "id": "22953436238",
@@ -28096,7 +28198,13 @@
         169.8,
         167.4,
         167.2
-      ]
+      ],
+      "calories": 506,
+      "cadenceSpm": 163.1,
+      "groundContactMs": 274.8,
+      "verticalOscillationMm": 91.3,
+      "verticalRatioPct": 9.31,
+      "strideLengthM": 0.98
     },
     {
       "id": "22939946456",
@@ -29657,7 +29765,13 @@
         165.4,
         166.0,
         165.2
-      ]
+      ],
+      "calories": 462,
+      "cadenceSpm": 161.8,
+      "groundContactMs": 277.5,
+      "verticalOscillationMm": 92.4,
+      "verticalRatioPct": 9.39,
+      "strideLengthM": 0.99
     },
     {
       "id": "22904920506",
@@ -31218,14 +31332,20 @@
         351.4,
         350.8,
         354.0
-      ]
+      ],
+      "calories": 1380,
+      "cadenceSpm": 172.4,
+      "groundContactMs": 243.0,
+      "verticalOscillationMm": 97.4,
+      "verticalRatioPct": 7.84,
+      "strideLengthM": 1.24
     },
     {
       "id": "22904913255",
       "week": 202620,
       "date": "2026-05-16",
       "dayOfWeek": "Saturday",
-      "type": "Recover",
+      "type": "Base",
       "description": "Luxembourg Running",
       "durationSeconds": 870,
       "distanceKm": 2.0,
@@ -32779,7 +32899,13 @@
         356.8,
         356.6,
         356.4
-      ]
+      ],
+      "calories": 132,
+      "cadenceSpm": 160.0,
+      "groundContactMs": 283.1,
+      "verticalOscillationMm": 85.2,
+      "verticalRatioPct": 9.8,
+      "strideLengthM": 0.87
     },
     {
       "id": "22893557691",
@@ -34340,7 +34466,13 @@
         167.0,
         167.6,
         167.6
-      ]
+      ],
+      "calories": 320,
+      "cadenceSpm": 165.6,
+      "groundContactMs": 273.5,
+      "verticalOscillationMm": 90.6,
+      "verticalRatioPct": 9.27,
+      "strideLengthM": 0.98
     },
     {
       "id": "22870868840",
@@ -35901,7 +36033,13 @@
         173.4,
         174.2,
         174.2
-      ]
+      ],
+      "calories": 518,
+      "cadenceSpm": 167.1,
+      "groundContactMs": 269.8,
+      "verticalOscillationMm": 90.9,
+      "verticalRatioPct": 9.1,
+      "strideLengthM": 1.0
     },
     {
       "id": "22859285746",
@@ -37462,7 +37600,13 @@
         173.6,
         170.8,
         169.4
-      ]
+      ],
+      "calories": 649,
+      "cadenceSpm": 168.6,
+      "groundContactMs": 260.5,
+      "verticalOscillationMm": 94.0,
+      "verticalRatioPct": 8.63,
+      "strideLengthM": 1.09
     },
     {
       "id": "22836486909",
@@ -39023,7 +39167,13 @@
         168.4,
         168.4,
         168.0
-      ]
+      ],
+      "calories": 631,
+      "cadenceSpm": 168.7,
+      "groundContactMs": 258.4,
+      "verticalOscillationMm": 94.7,
+      "verticalRatioPct": 8.52,
+      "strideLengthM": 1.11
     },
     {
       "id": "22824294761",
@@ -40584,7 +40734,13 @@
         173.4,
         171.2,
         168.4
-      ]
+      ],
+      "calories": 648,
+      "cadenceSpm": 167.8,
+      "groundContactMs": 258.5,
+      "verticalOscillationMm": 94.0,
+      "verticalRatioPct": 8.54,
+      "strideLengthM": 1.1
     },
     {
       "id": "22813774480",
@@ -42145,7 +42301,13 @@
         167.0,
         164.0,
         163.4
-      ]
+      ],
+      "calories": 636,
+      "cadenceSpm": 168.7,
+      "groundContactMs": 258.2,
+      "verticalOscillationMm": 94.8,
+      "verticalRatioPct": 8.51,
+      "strideLengthM": 1.12
     },
     {
       "id": "22800640808",
@@ -43706,7 +43868,13 @@
         167.4,
         167.0,
         166.6
-      ]
+      ],
+      "calories": 657,
+      "cadenceSpm": 163.8,
+      "groundContactMs": 262.7,
+      "verticalOscillationMm": 94.7,
+      "verticalRatioPct": 8.71,
+      "strideLengthM": 1.09
     },
     {
       "id": "22788609489",
@@ -45267,7 +45435,13 @@
         168.4,
         169.0,
         168.8
-      ]
+      ],
+      "calories": 674,
+      "cadenceSpm": 169.5,
+      "groundContactMs": 240.0,
+      "verticalOscillationMm": 91.9,
+      "verticalRatioPct": 7.79,
+      "strideLengthM": 1.2
     },
     {
       "id": "22755065993",
@@ -46828,7 +47002,13 @@
         168.4,
         168.4,
         168.6
-      ]
+      ],
+      "calories": 407,
+      "cadenceSpm": 170.3,
+      "groundContactMs": 260.0,
+      "verticalOscillationMm": 91.4,
+      "verticalRatioPct": 8.65,
+      "strideLengthM": 1.06
     },
     {
       "id": "22748076343",
@@ -48389,7 +48569,13 @@
         144.4,
         144.8,
         145.6
-      ]
+      ],
+      "calories": 533,
+      "cadenceSpm": 164.7,
+      "groundContactMs": 273.2,
+      "verticalOscillationMm": 88.5,
+      "verticalRatioPct": 9.32,
+      "strideLengthM": 0.95
     },
     {
       "id": "22742942391",
@@ -49950,14 +50136,20 @@
         152.8,
         151.6,
         151.6
-      ]
+      ],
+      "calories": 705,
+      "cadenceSpm": 168.8,
+      "groundContactMs": 259.3,
+      "verticalOscillationMm": 93.9,
+      "verticalRatioPct": 8.58,
+      "strideLengthM": 1.1
     },
     {
       "id": "22729531167",
       "week": 202618,
       "date": "2026-05-01",
       "dayOfWeek": "Friday",
-      "type": "Anaerobic",
+      "type": "Sprint",
       "description": "Strasbourg - Sprint",
       "durationSeconds": 3422,
       "distanceKm": 8.41,
@@ -51511,7 +51703,13 @@
         135.2,
         135.6,
         136.2
-      ]
+      ],
+      "calories": 584,
+      "cadenceSpm": 150.6,
+      "groundContactMs": 267.2,
+      "verticalOscillationMm": 79.3,
+      "verticalRatioPct": 8.88,
+      "strideLengthM": 0.94
     },
     {
       "id": "22706106021",
@@ -53072,14 +53270,20 @@
         135.4,
         135.2,
         135.4
-      ]
+      ],
+      "calories": 479,
+      "cadenceSpm": 166.8,
+      "groundContactMs": 265.3,
+      "verticalOscillationMm": 89.0,
+      "verticalRatioPct": 8.95,
+      "strideLengthM": 1.0
     },
     {
       "id": "22693140053",
       "week": 202618,
       "date": "2026-04-28",
       "dayOfWeek": "Tuesday",
-      "type": "Tempo",
+      "type": "Threshold",
       "description": "Strasbourg - Tempo",
       "durationSeconds": 4621,
       "distanceKm": 15.45,
@@ -54633,7 +54837,13 @@
         135.0,
         135.4,
         135.6
-      ]
+      ],
+      "calories": 975,
+      "cadenceSpm": 167.8,
+      "groundContactMs": 242.9,
+      "verticalOscillationMm": 92.3,
+      "verticalRatioPct": 7.9,
+      "strideLengthM": 1.18
     },
     {
       "id": "22670152506",
@@ -56194,7 +56404,13 @@
         135.0,
         134.6,
         135.2
-      ]
+      ],
+      "calories": 1101,
+      "cadenceSpm": 169.3,
+      "groundContactMs": 263.6,
+      "verticalOscillationMm": 90.7,
+      "verticalRatioPct": 8.82,
+      "strideLengthM": 1.03
     },
     {
       "id": "22657654852",
@@ -57755,7 +57971,13 @@
         135.4,
         135.4,
         135.0
-      ]
+      ],
+      "calories": 665,
+      "cadenceSpm": 164.2,
+      "groundContactMs": 272.0,
+      "verticalOscillationMm": 91.5,
+      "verticalRatioPct": 9.17,
+      "strideLengthM": 1.0
     },
     {
       "id": "22645248397",
@@ -59316,7 +59538,13 @@
         138.6,
         138.6,
         138.4
-      ]
+      ],
+      "calories": 700,
+      "cadenceSpm": 132.7,
+      "groundContactMs": 253.1,
+      "verticalOscillationMm": 81.6,
+      "verticalRatioPct": 8.38,
+      "strideLengthM": 1.09
     },
     {
       "id": "22620834361",
@@ -60877,14 +61105,20 @@
         137.4,
         136.4,
         137.2
-      ]
+      ],
+      "calories": 642,
+      "cadenceSpm": 164.5,
+      "groundContactMs": 270.3,
+      "verticalOscillationMm": 94.2,
+      "verticalRatioPct": 9.03,
+      "strideLengthM": 1.04
     },
     {
       "id": "22608283596",
       "week": 202617,
       "date": "2026-04-21",
       "dayOfWeek": "Tuesday",
-      "type": "Tempo",
+      "type": "Threshold",
       "description": "Strasbourg - Tempo",
       "durationSeconds": 3181,
       "distanceKm": 11.04,
@@ -62438,7 +62672,13 @@
         138.2,
         139.4,
         138.0
-      ]
+      ],
+      "calories": 668,
+      "cadenceSpm": 170.6,
+      "groundContactMs": 242.7,
+      "verticalOscillationMm": 94.4,
+      "verticalRatioPct": 7.88,
+      "strideLengthM": 1.21
     },
     {
       "id": "22587304750",
@@ -63999,7 +64239,13 @@
         148.4,
         150.0,
         149.0
-      ]
+      ],
+      "calories": 1047,
+      "cadenceSpm": 161.8,
+      "groundContactMs": 274.1,
+      "verticalOscillationMm": 92.7,
+      "verticalRatioPct": 9.23,
+      "strideLengthM": 1.01
     },
     {
       "id": "22573934838",
@@ -65560,7 +65806,13 @@
         138.2,
         138.4,
         138.4
-      ]
+      ],
+      "calories": 739,
+      "cadenceSpm": 163.5,
+      "groundContactMs": 273.7,
+      "verticalOscillationMm": 95.1,
+      "verticalRatioPct": 9.15,
+      "strideLengthM": 1.04
     },
     {
       "id": "22557206036",
@@ -67121,7 +67373,13 @@
         171.2,
         171.6,
         172.0
-      ]
+      ],
+      "calories": 671,
+      "cadenceSpm": 140.0,
+      "groundContactMs": 265.5,
+      "verticalOscillationMm": 83.0,
+      "verticalRatioPct": 8.65,
+      "strideLengthM": 1.0
     },
     {
       "id": "22538630398",
@@ -68682,7 +68940,13 @@
         168.2,
         167.2,
         167.0
-      ]
+      ],
+      "calories": 577,
+      "cadenceSpm": 163.7,
+      "groundContactMs": 272.5,
+      "verticalOscillationMm": 94.3,
+      "verticalRatioPct": 9.11,
+      "strideLengthM": 1.04
     },
     {
       "id": "22526732548",
@@ -70243,7 +70507,13 @@
         165.8,
         166.0,
         166.0
-      ]
+      ],
+      "calories": 816,
+      "cadenceSpm": 166.5,
+      "groundContactMs": 243.9,
+      "verticalOscillationMm": 98.1,
+      "verticalRatioPct": 7.9,
+      "strideLengthM": 1.26
     },
     {
       "id": "22503754869",
@@ -71804,7 +72074,13 @@
         171.6,
         173.0,
         177.0
-      ]
+      ],
+      "calories": 949,
+      "cadenceSpm": 164.6,
+      "groundContactMs": 269.0,
+      "verticalOscillationMm": 94.2,
+      "verticalRatioPct": 8.99,
+      "strideLengthM": 1.05
     },
     {
       "id": "22492666126",
@@ -73365,14 +73641,20 @@
         165.8,
         165.8,
         165.6
-      ]
+      ],
+      "calories": 581,
+      "cadenceSpm": 164.8,
+      "groundContactMs": 268.2,
+      "verticalOscillationMm": 96.2,
+      "verticalRatioPct": 8.9,
+      "strideLengthM": 1.08
     },
     {
       "id": "22479618239",
       "week": 202615,
       "date": "2026-04-10",
       "dayOfWeek": "Friday",
-      "type": "Anaerobic",
+      "type": "Sprint",
       "description": "Metz - Sprint",
       "durationSeconds": 3772,
       "distanceKm": 9.01,
@@ -74926,7 +75208,13 @@
         171.2,
         171.4,
         171.0
-      ]
+      ],
+      "calories": 651,
+      "cadenceSpm": 140.0,
+      "groundContactMs": 271.9,
+      "verticalOscillationMm": 84.6,
+      "verticalRatioPct": 8.95,
+      "strideLengthM": 1.0
     },
     {
       "id": "22456073353",
@@ -76487,14 +76775,20 @@
         169.8,
         170.0,
         169.4
-      ]
+      ],
+      "calories": 531,
+      "cadenceSpm": 161.3,
+      "groundContactMs": 278.1,
+      "verticalOscillationMm": 94.9,
+      "verticalRatioPct": 9.33,
+      "strideLengthM": 1.02
     },
     {
       "id": "22442728120",
       "week": 202615,
       "date": "2026-04-07",
       "dayOfWeek": "Tuesday",
-      "type": "Tempo",
+      "type": "VO2Max",
       "description": "Metz - Tempo",
       "durationSeconds": 3901,
       "distanceKm": 13.46,
@@ -78048,7 +78342,13 @@
         168.2,
         168.2,
         167.6
-      ]
+      ],
+      "calories": 849,
+      "cadenceSpm": 163.5,
+      "groundContactMs": 245.2,
+      "verticalOscillationMm": 99.7,
+      "verticalRatioPct": 7.92,
+      "strideLengthM": 1.27
     },
     {
       "id": "22420446758",
@@ -79609,7 +79909,13 @@
         18.6,
         19.0,
         19.4
-      ]
+      ],
+      "calories": 809,
+      "cadenceSpm": 163.0,
+      "groundContactMs": 267.5,
+      "verticalOscillationMm": 97.3,
+      "verticalRatioPct": 8.84,
+      "strideLengthM": 1.1
     },
     {
       "id": "22409575005",
@@ -81170,14 +81476,20 @@
         24.8,
         25.0,
         24.0
-      ]
+      ],
+      "calories": 624,
+      "cadenceSpm": 164.5,
+      "groundContactMs": 261.5,
+      "verticalOscillationMm": 97.7,
+      "verticalRatioPct": 8.6,
+      "strideLengthM": 1.14
     },
     {
       "id": "22397036798",
       "week": 202614,
       "date": "2026-04-03",
       "dayOfWeek": "Friday",
-      "type": "Threshold",
+      "type": "Sprint",
       "description": "Metz - Sprint",
       "durationSeconds": 2984,
       "distanceKm": 8.01,
@@ -82731,7 +83043,13 @@
         164.4,
         163.6,
         164.0
-      ]
+      ],
+      "calories": 546,
+      "cadenceSpm": 146.0,
+      "groundContactMs": 266.8,
+      "verticalOscillationMm": 92.4,
+      "verticalRatioPct": 8.85,
+      "strideLengthM": 1.07
     },
     {
       "id": "22375012450",
@@ -84292,14 +84610,20 @@
         168.6,
         167.4,
         166.2
-      ]
+      ],
+      "calories": 611,
+      "cadenceSpm": 163.5,
+      "groundContactMs": 267.5,
+      "verticalOscillationMm": 98.4,
+      "verticalRatioPct": 8.82,
+      "strideLengthM": 1.12
     },
     {
       "id": "22361720746",
       "week": 202614,
       "date": "2026-03-31",
       "dayOfWeek": "Tuesday",
-      "type": "Tempo",
+      "type": "Threshold",
       "description": "Metz - Tempo",
       "durationSeconds": 3902,
       "distanceKm": 13.03,
@@ -85853,7 +86177,13 @@
         164.4,
         163.4,
         163.8
-      ]
+      ],
+      "calories": 798,
+      "cadenceSpm": 163.4,
+      "groundContactMs": 251.7,
+      "verticalOscillationMm": 98.6,
+      "verticalRatioPct": 8.19,
+      "strideLengthM": 1.22
     },
     {
       "id": "22341813217",
@@ -87414,7 +87744,13 @@
         171.0,
         168.8,
         169.6
-      ]
+      ],
+      "calories": 1133,
+      "cadenceSpm": 162.9,
+      "groundContactMs": 265.7,
+      "verticalOscillationMm": 97.5,
+      "verticalRatioPct": 8.76,
+      "strideLengthM": 1.11
     },
     {
       "id": "22331217733",
@@ -88975,7 +89311,13 @@
         166.8,
         167.0,
         167.0
-      ]
+      ],
+      "calories": 463,
+      "cadenceSpm": 165.4,
+      "groundContactMs": 263.8,
+      "verticalOscillationMm": 98.7,
+      "verticalRatioPct": 8.66,
+      "strideLengthM": 1.14
     },
     {
       "id": "22319883522",
@@ -90536,7 +90878,13 @@
         166.8,
         166.8,
         166.8
-      ]
+      ],
+      "calories": 583,
+      "cadenceSpm": 141.8,
+      "groundContactMs": 265.7,
+      "verticalOscillationMm": 85.1,
+      "verticalRatioPct": 8.81,
+      "strideLengthM": 1.04
     },
     {
       "id": "22297641084",
@@ -92097,7 +92445,13 @@
         166.8,
         166.6,
         167.0
-      ]
+      ],
+      "calories": 432,
+      "cadenceSpm": 167.0,
+      "groundContactMs": 265.3,
+      "verticalOscillationMm": 93.5,
+      "verticalRatioPct": 8.85,
+      "strideLengthM": 1.06
     },
     {
       "id": "22288370797",
@@ -93658,7 +94012,13 @@
         169.4,
         169.6,
         169.8
-      ]
+      ],
+      "calories": 608,
+      "cadenceSpm": 158.1,
+      "groundContactMs": 249.3,
+      "verticalOscillationMm": 96.2,
+      "verticalRatioPct": 8.14,
+      "strideLengthM": 1.22
     },
     {
       "id": "22262377365",
@@ -95219,7 +95579,13 @@
         144.8,
         145.2,
         145.4
-      ]
+      ],
+      "calories": 969,
+      "cadenceSpm": 164.5,
+      "groundContactMs": 269.2,
+      "verticalOscillationMm": 93.6,
+      "verticalRatioPct": 8.99,
+      "strideLengthM": 1.04
     },
     {
       "id": "22252821140",
@@ -96780,14 +97146,20 @@
         138.8,
         139.0,
         140.2
-      ]
+      ],
+      "calories": 329,
+      "cadenceSpm": 160.0,
+      "groundContactMs": 282.8,
+      "verticalOscillationMm": 95.5,
+      "verticalRatioPct": 9.47,
+      "strideLengthM": 1.01
     },
     {
       "id": "22238670744",
       "week": 202612,
       "date": "2026-03-20",
       "dayOfWeek": "Friday",
-      "type": "Anaerobic",
+      "type": "Base",
       "description": "Strasbourg - Anaérobique",
       "durationSeconds": 3695,
       "distanceKm": 10.13,
@@ -98341,7 +98713,13 @@
         143.4,
         142.8,
         141.0
-      ]
+      ],
+      "calories": 671,
+      "cadenceSpm": 153.5,
+      "groundContactMs": 261.1,
+      "verticalOscillationMm": 86.4,
+      "verticalRatioPct": 8.62,
+      "strideLengthM": 1.06
     },
     {
       "id": "22215424468",
@@ -99902,14 +100280,20 @@
         133.6,
         133.6,
         133.8
-      ]
+      ],
+      "calories": 324,
+      "cadenceSpm": 163.4,
+      "groundContactMs": 279.7,
+      "verticalOscillationMm": 90.4,
+      "verticalRatioPct": 9.53,
+      "strideLengthM": 0.95
     },
     {
       "id": "22205516653",
       "week": 202612,
       "date": "2026-03-17",
       "dayOfWeek": "Tuesday",
-      "type": "Tempo",
+      "type": "Threshold",
       "description": "Strasbourg - Tempo",
       "durationSeconds": 4498,
       "distanceKm": 15.03,
@@ -101463,7 +101847,13 @@
         133.2,
         133.0,
         133.0
-      ]
+      ],
+      "calories": 938,
+      "cadenceSpm": 165.9,
+      "groundContactMs": 250.1,
+      "verticalOscillationMm": 96.8,
+      "verticalRatioPct": 8.15,
+      "strideLengthM": 1.2
     },
     {
       "id": "22182908217",
@@ -103024,7 +103414,13 @@
         163.4,
         163.4,
         163.2
-      ]
+      ],
+      "calories": 858,
+      "cadenceSpm": 169.0,
+      "groundContactMs": 261.5,
+      "verticalOscillationMm": 93.3,
+      "verticalRatioPct": 8.68,
+      "strideLengthM": 1.08
     },
     {
       "id": "22173128251",
@@ -104585,14 +104981,20 @@
         162.6,
         162.4,
         162.2
-      ]
+      ],
+      "calories": 577,
+      "cadenceSpm": 166.2,
+      "groundContactMs": 260.9,
+      "verticalOscillationMm": 93.8,
+      "verticalRatioPct": 8.62,
+      "strideLengthM": 1.09
     },
     {
       "id": "22161923747",
       "week": 202611,
       "date": "2026-03-13",
       "dayOfWeek": "Friday",
-      "type": "Anaerobic",
+      "type": "Tempo",
       "description": "Metz - Anaérobique",
       "durationSeconds": 3415,
       "distanceKm": 10.02,
@@ -106146,7 +106548,13 @@
         170.6,
         170.8,
         171.0
-      ]
+      ],
+      "calories": 656,
+      "cadenceSpm": 157.9,
+      "groundContactMs": 259.3,
+      "verticalOscillationMm": 90.1,
+      "verticalRatioPct": 8.52,
+      "strideLengthM": 1.1
     },
     {
       "id": "22140588891",
@@ -107707,14 +108115,20 @@
         163.6,
         163.4,
         163.4
-      ]
+      ],
+      "calories": 529,
+      "cadenceSpm": 166.3,
+      "groundContactMs": 264.5,
+      "verticalOscillationMm": 94.5,
+      "verticalRatioPct": 8.74,
+      "strideLengthM": 1.08
     },
     {
       "id": "22127046218",
       "week": 202611,
       "date": "2026-03-10",
       "dayOfWeek": "Tuesday",
-      "type": "Tempo",
+      "type": "Threshold",
       "description": "Metz - Tempo",
       "durationSeconds": 3001,
       "distanceKm": 10.19,
@@ -109268,7 +109682,13 @@
         169.8,
         169.4,
         169.6
-      ]
+      ],
+      "calories": 631,
+      "cadenceSpm": 168.2,
+      "groundContactMs": 249.4,
+      "verticalOscillationMm": 96.9,
+      "verticalRatioPct": 8.08,
+      "strideLengthM": 1.21
     },
     {
       "id": "22106972038",
@@ -110829,7 +111249,13 @@
         165.8,
         165.2,
         165.4
-      ]
+      ],
+      "calories": 908,
+      "cadenceSpm": 166.0,
+      "groundContactMs": 261.8,
+      "verticalOscillationMm": 94.3,
+      "verticalRatioPct": 8.65,
+      "strideLengthM": 1.09
     },
     {
       "id": "22094875400",
@@ -112390,14 +112816,20 @@
         165.8,
         165.2,
         165.0
-      ]
+      ],
+      "calories": 516,
+      "cadenceSpm": 165.2,
+      "groundContactMs": 266.2,
+      "verticalOscillationMm": 94.5,
+      "verticalRatioPct": 8.84,
+      "strideLengthM": 1.07
     },
     {
       "id": "22083452454",
       "week": 202610,
       "date": "2026-03-06",
       "dayOfWeek": "Friday",
-      "type": "Anaerobic",
+      "type": "Sprint",
       "description": "Metz - Sprint",
       "durationSeconds": 2902,
       "distanceKm": 8.53,
@@ -113951,7 +114383,13 @@
         165.2,
         165.2,
         165.4
-      ]
+      ],
+      "calories": 553,
+      "cadenceSpm": 158.6,
+      "groundContactMs": 262.8,
+      "verticalOscillationMm": 91.5,
+      "verticalRatioPct": 8.61,
+      "strideLengthM": 1.09
     },
     {
       "id": "22060889784",
@@ -115512,7 +115950,13 @@
         161.2,
         161.2,
         160.8
-      ]
+      ],
+      "calories": 500,
+      "cadenceSpm": 162.2,
+      "groundContactMs": 268.4,
+      "verticalOscillationMm": 93.5,
+      "verticalRatioPct": 8.95,
+      "strideLengthM": 1.05
     },
     {
       "id": "22049020167",
@@ -117073,7 +117517,13 @@
         165.4,
         165.2,
         164.8
-      ]
+      ],
+      "calories": 678,
+      "cadenceSpm": 167.2,
+      "groundContactMs": 246.1,
+      "verticalOscillationMm": 96.1,
+      "verticalRatioPct": 8.01,
+      "strideLengthM": 1.22
     },
     {
       "id": "22025451726",
@@ -118634,7 +119084,13 @@
         142.6,
         143.4,
         144.8
-      ]
+      ],
+      "calories": 822,
+      "cadenceSpm": 166.3,
+      "groundContactMs": 264.5,
+      "verticalOscillationMm": 94.3,
+      "verticalRatioPct": 8.8,
+      "strideLengthM": 1.07
     },
     {
       "id": "22013695774",
@@ -120195,7 +120651,13 @@
         137.8,
         138.0,
         138.2
-      ]
+      ],
+      "calories": 553,
+      "cadenceSpm": 166.1,
+      "groundContactMs": 265.5,
+      "verticalOscillationMm": 96.2,
+      "verticalRatioPct": 8.79,
+      "strideLengthM": 1.09
     },
     {
       "id": "22001607601",
@@ -121756,7 +122218,13 @@
         145.4,
         145.2,
         145.4
-      ]
+      ],
+      "calories": 628,
+      "cadenceSpm": 165.0,
+      "groundContactMs": 269.2,
+      "verticalOscillationMm": 95.2,
+      "verticalRatioPct": 8.97,
+      "strideLengthM": 1.06
     },
     {
       "id": "21982745115",
@@ -123317,14 +123785,20 @@
         136.6,
         136.2,
         136.2
-      ]
+      ],
+      "calories": 631,
+      "cadenceSpm": 165.3,
+      "groundContactMs": 269.4,
+      "verticalOscillationMm": 94.6,
+      "verticalRatioPct": 8.99,
+      "strideLengthM": 1.05
     },
     {
       "id": "21971084089",
       "week": 202609,
       "date": "2026-02-24",
       "dayOfWeek": "Tuesday",
-      "type": "Anaerobic",
+      "type": "VO2Max",
       "description": "Strasbourg - VO2 max",
       "durationSeconds": 2676,
       "distanceKm": 8.17,
@@ -124878,7 +125352,13 @@
         137.0,
         136.8,
         137.0
-      ]
+      ],
+      "calories": 539,
+      "cadenceSpm": 153.6,
+      "groundContactMs": 251.7,
+      "verticalOscillationMm": 93.2,
+      "verticalRatioPct": 8.22,
+      "strideLengthM": 1.17
     },
     {
       "id": "21953391517",
@@ -126439,7 +126919,13 @@
         138.2,
         138.2,
         138.6
-      ]
+      ],
+      "calories": 660,
+      "cadenceSpm": 163.8,
+      "groundContactMs": 272.0,
+      "verticalOscillationMm": 96.0,
+      "verticalRatioPct": 9.05,
+      "strideLengthM": 1.06
     },
     {
       "id": "21942588496",
@@ -128000,7 +128486,13 @@
         139.0,
         137.6,
         137.2
-      ]
+      ],
+      "calories": 622,
+      "cadenceSpm": 163.2,
+      "groundContactMs": 274.4,
+      "verticalOscillationMm": 95.3,
+      "verticalRatioPct": 9.18,
+      "strideLengthM": 1.04
     },
     {
       "id": "21932027297",
@@ -129561,14 +130053,20 @@
         167.0,
         166.0,
         166.4
-      ]
+      ],
+      "calories": 647,
+      "cadenceSpm": 161.6,
+      "groundContactMs": 276.1,
+      "verticalOscillationMm": 94.7,
+      "verticalRatioPct": 9.25,
+      "strideLengthM": 1.03
     },
     {
       "id": "21896043386",
       "week": 202608,
       "date": "2026-02-17",
       "dayOfWeek": "Tuesday",
-      "type": "VO2Max",
+      "type": "Threshold",
       "description": "Metz - Seuil",
       "durationSeconds": 2701,
       "distanceKm": 8.4,
@@ -131122,14 +131620,20 @@
         165.4,
         165.4,
         166.2
-      ]
+      ],
+      "calories": 536,
+      "cadenceSpm": 161.3,
+      "groundContactMs": 258.4,
+      "verticalOscillationMm": 96.4,
+      "verticalRatioPct": 8.51,
+      "strideLengthM": 1.15
     },
     {
       "id": "21875415133",
       "week": 202607,
       "date": "2026-02-15",
       "dayOfWeek": "Sunday",
-      "type": "Threshold",
+      "type": "Base",
       "description": "Lampertheim Running",
       "durationSeconds": 3608,
       "distanceKm": 10.05,
@@ -132683,7 +133187,13 @@
         150.8,
         149.8,
         149.8
-      ]
+      ],
+      "calories": 649,
+      "cadenceSpm": 161.7,
+      "groundContactMs": 272.1,
+      "verticalOscillationMm": 93.5,
+      "verticalRatioPct": 9.1,
+      "strideLengthM": 1.03
     },
     {
       "id": "21864277884",
@@ -134244,14 +134754,20 @@
         139.8,
         139.6,
         139.0
-      ]
+      ],
+      "calories": 475,
+      "cadenceSpm": 158.6,
+      "groundContactMs": 276.2,
+      "verticalOscillationMm": 93.0,
+      "verticalRatioPct": 9.31,
+      "strideLengthM": 1.0
     },
     {
       "id": "21847093915",
       "week": 202607,
       "date": "2026-02-12",
       "dayOfWeek": "Thursday",
-      "type": "Anaerobic",
+      "type": "VO2Max",
       "description": "Strasbourg - VO2 max",
       "durationSeconds": 2402,
       "distanceKm": 7.08,
@@ -135805,7 +136321,13 @@
         131.2,
         131.4,
         130.2
-      ]
+      ],
+      "calories": 479,
+      "cadenceSpm": 149.6,
+      "groundContactMs": 257.2,
+      "verticalOscillationMm": 95.0,
+      "verticalRatioPct": 8.36,
+      "strideLengthM": 1.18
     },
     {
       "id": "21832394566",
@@ -137366,14 +137888,20 @@
         136.6,
         137.6,
         137.6
-      ]
+      ],
+      "calories": 544,
+      "cadenceSpm": 158.9,
+      "groundContactMs": 281.7,
+      "verticalOscillationMm": 95.2,
+      "verticalRatioPct": 9.42,
+      "strideLengthM": 1.01
     },
     {
       "id": "21784633440",
       "week": 202606,
       "date": "2026-02-06",
       "dayOfWeek": "Friday",
-      "type": "VO2Max",
+      "type": "Threshold",
       "description": "Strasbourg - Seuil",
       "durationSeconds": 2102,
       "distanceKm": 6.54,
@@ -138927,7 +139455,13 @@
         131.2,
         131.0,
         130.8
-      ]
+      ],
+      "calories": 418,
+      "cadenceSpm": 157.3,
+      "groundContactMs": 259.2,
+      "verticalOscillationMm": 97.9,
+      "verticalRatioPct": 8.47,
+      "strideLengthM": 1.18
     },
     {
       "id": "21774049069",
@@ -140488,7 +141022,13 @@
         133.0,
         132.6,
         132.6
-      ]
+      ],
+      "calories": 395,
+      "cadenceSpm": 149.6,
+      "groundContactMs": 290.7,
+      "verticalOscillationMm": 81.9,
+      "verticalRatioPct": 10.27,
+      "strideLengthM": 0.81
     },
     {
       "id": "21764429656",
@@ -142049,7 +142589,13 @@
         134.8,
         134.2,
         133.4
-      ]
+      ],
+      "calories": 486,
+      "cadenceSpm": 156.0,
+      "groundContactMs": 272.6,
+      "verticalOscillationMm": 94.3,
+      "verticalRatioPct": 8.83,
+      "strideLengthM": 1.07
     },
     {
       "id": "21752856184",
@@ -143610,7 +144156,13 @@
         161.4,
         161.0,
         161.2
-      ]
+      ],
+      "calories": 357,
+      "cadenceSpm": 159.6,
+      "groundContactMs": 290.8,
+      "verticalOscillationMm": 86.4,
+      "verticalRatioPct": 10.13,
+      "strideLengthM": 0.86
     },
     {
       "id": "21732836032",
@@ -145171,14 +145723,20 @@
         164.6,
         164.6,
         165.2
-      ]
+      ],
+      "calories": 333,
+      "cadenceSpm": 140.4,
+      "groundContactMs": 289.8,
+      "verticalOscillationMm": 78.6,
+      "verticalRatioPct": 10.02,
+      "strideLengthM": 0.84
     },
     {
       "id": "21723102671",
       "week": 202605,
       "date": "2026-01-31",
       "dayOfWeek": "Saturday",
-      "type": "Anaerobic",
+      "type": "Tempo",
       "description": "Metz - VO2 max",
       "durationSeconds": 2587,
       "distanceKm": 7.53,
@@ -146732,7 +147290,13 @@
         162.2,
         162.4,
         162.4
-      ]
+      ],
+      "calories": 514,
+      "cadenceSpm": 151.0,
+      "groundContactMs": 258.3,
+      "verticalOscillationMm": 93.9,
+      "verticalRatioPct": 8.39,
+      "strideLengthM": 1.16
     },
     {
       "id": "21692179683",
@@ -148293,7 +148857,13 @@
         163.4,
         163.6,
         163.2
-      ]
+      ],
+      "calories": 301,
+      "cadenceSpm": 156.0,
+      "groundContactMs": 294.6,
+      "verticalOscillationMm": 85.7,
+      "verticalRatioPct": 10.32,
+      "strideLengthM": 0.83
     },
     {
       "id": "21670951787",
@@ -149854,7 +150424,13 @@
         163.2,
         163.6,
         163.2
-      ]
+      ],
+      "calories": 475,
+      "cadenceSpm": 150.9,
+      "groundContactMs": 291.3,
+      "verticalOscillationMm": 85.6,
+      "verticalRatioPct": 10.03,
+      "strideLengthM": 0.88
     },
     {
       "id": "21643223856",
@@ -151415,14 +151991,20 @@
         164.2,
         164.0,
         164.0
-      ]
+      ],
+      "calories": 311,
+      "cadenceSpm": 152.2,
+      "groundContactMs": 257.1,
+      "verticalOscillationMm": 91.0,
+      "verticalRatioPct": 8.21,
+      "strideLengthM": 1.14
     },
     {
       "id": "21643222834",
       "week": 202604,
       "date": "2026-01-23",
       "dayOfWeek": "Friday",
-      "type": "Recover",
+      "type": "Base",
       "description": "Metz Running",
       "durationSeconds": 1553,
       "distanceKm": 3.03,
@@ -152976,7 +153558,13 @@
         160.2,
         160.2,
         160.4
-      ]
+      ],
+      "calories": 191,
+      "cadenceSpm": 137.5,
+      "groundContactMs": 293.1,
+      "verticalOscillationMm": 84.1,
+      "verticalRatioPct": 10.19,
+      "strideLengthM": 0.84
     },
     {
       "id": "21620911339",
@@ -154537,14 +155125,20 @@
         158.2,
         158.4,
         158.6
-      ]
+      ],
+      "calories": 543,
+      "cadenceSpm": 159.4,
+      "groundContactMs": 284.7,
+      "verticalOscillationMm": 91.7,
+      "verticalRatioPct": 9.63,
+      "strideLengthM": 0.96
     },
     {
       "id": "21609641877",
       "week": 202604,
       "date": "2026-01-20",
       "dayOfWeek": "Tuesday",
-      "type": "Base",
+      "type": "Threshold",
       "description": "Metz Running",
       "durationSeconds": 3470,
       "distanceKm": 8.01,
@@ -156098,7 +156692,13 @@
         164.2,
         164.0,
         164.2
-      ]
+      ],
+      "calories": 503,
+      "cadenceSpm": 152.9,
+      "groundContactMs": 286.9,
+      "verticalOscillationMm": 86.8,
+      "verticalRatioPct": 9.96,
+      "strideLengthM": 0.91
     },
     {
       "id": "21589179092",
@@ -157659,7 +158259,13 @@
         158.4,
         158.2,
         158.2
-      ]
+      ],
+      "calories": 275,
+      "cadenceSpm": 153.4,
+      "groundContactMs": 294.0,
+      "verticalOscillationMm": 79.6,
+      "verticalRatioPct": 10.46,
+      "strideLengthM": 0.79
     },
     {
       "id": "21567281576",
@@ -159220,14 +159826,20 @@
         166.4,
         167.6,
         168.0
-      ]
+      ],
+      "calories": 308,
+      "cadenceSpm": 154.5,
+      "groundContactMs": 303.8,
+      "verticalOscillationMm": 78.1,
+      "verticalRatioPct": 10.89,
+      "strideLengthM": 0.73
     },
     {
       "id": "21333932725",
       "week": 202552,
       "date": "2025-12-23",
       "dayOfWeek": "Tuesday",
-      "type": "Base",
+      "type": "Tempo",
       "description": "Metz Running",
       "durationSeconds": 2099,
       "distanceKm": 6.14,
@@ -160781,14 +161393,20 @@
         162.6,
         162.4,
         161.8
-      ]
+      ],
+      "calories": 413,
+      "cadenceSpm": 158.4,
+      "groundContactMs": 273.3,
+      "verticalOscillationMm": 99.3,
+      "verticalRatioPct": 8.97,
+      "strideLengthM": 1.11
     },
     {
       "id": "21236750535",
       "week": 202550,
       "date": "2025-12-12",
       "dayOfWeek": "Friday",
-      "type": "Threshold",
+      "type": "Tempo",
       "description": "Strasbourg - 1000m / 2000m / 3000m / 2000m /",
       "durationSeconds": 3478,
       "distanceKm": 10.05,
@@ -162342,7 +162960,13 @@
         136.4,
         136.4,
         136.0
-      ]
+      ],
+      "calories": 668,
+      "cadenceSpm": 158.1,
+      "groundContactMs": 260.2,
+      "verticalOscillationMm": 91.4,
+      "verticalRatioPct": 8.53,
+      "strideLengthM": 1.1
     },
     {
       "id": "21231222972",
@@ -163903,14 +164527,20 @@
         131.2,
         130.6,
         131.0
-      ]
+      ],
+      "calories": 699,
+      "cadenceSpm": 162.7,
+      "groundContactMs": 266.1,
+      "verticalOscillationMm": 98.7,
+      "verticalRatioPct": 8.75,
+      "strideLengthM": 1.13
     },
     {
       "id": "21190299655",
       "week": 202549,
       "date": "2025-12-07",
       "dayOfWeek": "Sunday",
-      "type": "VO2Max",
+      "type": "Tempo",
       "description": "10km endurance",
       "durationSeconds": 3526,
       "distanceKm": 10.0,
@@ -164112,14 +164742,20 @@
         172,
         173
       ],
-      "elevationProfile": null
+      "elevationProfile": null,
+      "calories": 720,
+      "cadenceSpm": 161.7,
+      "groundContactMs": 267.5,
+      "verticalOscillationMm": 99.5,
+      "verticalRatioPct": 8.8,
+      "strideLengthM": 1.14
     },
     {
       "id": "21181170574",
       "week": 202549,
       "date": "2025-12-06",
       "dayOfWeek": "Saturday",
-      "type": "VO2Max",
+      "type": "Tempo",
       "description": "15' progressives",
       "durationSeconds": 3303,
       "distanceKm": 10.43,
@@ -164321,14 +164957,20 @@
         171,
         172
       ],
-      "elevationProfile": null
+      "elevationProfile": null,
+      "calories": 668,
+      "cadenceSpm": 158.7,
+      "groundContactMs": 257.0,
+      "verticalOscillationMm": 99.8,
+      "verticalRatioPct": 8.41,
+      "strideLengthM": 1.21
     },
     {
       "id": "21172072598",
       "week": 202549,
       "date": "2025-12-05",
       "dayOfWeek": "Friday",
-      "type": "Threshold",
+      "type": "Tempo",
       "description": "Georgetown - 3 x 2000m allure 10k",
       "durationSeconds": 3210,
       "distanceKm": 9.18,
@@ -165882,7 +166524,13 @@
         -6.0,
         -5.8,
         -6.0
-      ]
+      ],
+      "calories": 616,
+      "cadenceSpm": 152.9,
+      "groundContactMs": 261.8,
+      "verticalOscillationMm": 92.5,
+      "verticalRatioPct": 8.58,
+      "strideLengthM": 1.11
     },
     {
       "id": "21154080854",
@@ -166091,14 +166739,20 @@
         162,
         162
       ],
-      "elevationProfile": null
+      "elevationProfile": null,
+      "calories": 383,
+      "cadenceSpm": 165.2,
+      "groundContactMs": 275.3,
+      "verticalOscillationMm": 88.1,
+      "verticalRatioPct": 9.43,
+      "strideLengthM": 0.94
     },
     {
       "id": "21144557384",
       "week": 202549,
       "date": "2025-12-02",
       "dayOfWeek": "Tuesday",
-      "type": "Anaerobic",
+      "type": "Tempo",
       "description": "Kuala Lumpur - 12 x 300m (R=1 min)",
       "durationSeconds": 3321,
       "distanceKm": 9.23,
@@ -167652,7 +168306,13 @@
         28.8,
         29.4,
         29.6
-      ]
+      ],
+      "calories": 655,
+      "cadenceSpm": 142.0,
+      "groundContactMs": 254.0,
+      "verticalOscillationMm": 91.0,
+      "verticalRatioPct": 8.25,
+      "strideLengthM": 1.17
     },
     {
       "id": "21121440091",
@@ -169213,7 +169873,13 @@
         142.2,
         142.0,
         141.8
-      ]
+      ],
+      "calories": 715,
+      "cadenceSpm": 163.1,
+      "groundContactMs": 270.0,
+      "verticalOscillationMm": 92.2,
+      "verticalRatioPct": 9.07,
+      "strideLengthM": 1.02
     },
     {
       "id": "21107439847",
@@ -170774,7 +171440,13 @@
         134.4,
         134.2,
         134.4
-      ]
+      ],
+      "calories": 704,
+      "cadenceSpm": 157.5,
+      "groundContactMs": 256.2,
+      "verticalOscillationMm": 94.9,
+      "verticalRatioPct": 8.37,
+      "strideLengthM": 1.16
     },
     {
       "id": "21099540019",
@@ -172335,7 +173007,13 @@
         133.2,
         133.0,
         132.6
-      ]
+      ],
+      "calories": 593,
+      "cadenceSpm": 161.8,
+      "groundContactMs": 272.6,
+      "verticalOscillationMm": 95.2,
+      "verticalRatioPct": 9.1,
+      "strideLengthM": 1.05
     },
     {
       "id": "21070970414",
@@ -173896,7 +174574,13 @@
         176.4,
         173.4,
         171.2
-      ]
+      ],
+      "calories": 696,
+      "cadenceSpm": 166.5,
+      "groundContactMs": 260.0,
+      "verticalOscillationMm": 96.3,
+      "verticalRatioPct": 8.53,
+      "strideLengthM": 1.13
     },
     {
       "id": "21061745274",
@@ -175457,7 +176141,13 @@
         167.0,
         166.8,
         166.8
-      ]
+      ],
+      "calories": 468,
+      "cadenceSpm": 163.6,
+      "groundContactMs": 271.7,
+      "verticalOscillationMm": 94.2,
+      "verticalRatioPct": 9.09,
+      "strideLengthM": 1.04
     },
     {
       "id": "21053451942",
@@ -177018,14 +177708,20 @@
         163.6,
         163.4,
         163.6
-      ]
+      ],
+      "calories": 830,
+      "cadenceSpm": 164.5,
+      "groundContactMs": 252.3,
+      "verticalOscillationMm": 96.1,
+      "verticalRatioPct": 8.28,
+      "strideLengthM": 1.2
     },
     {
       "id": "21034682276",
       "week": 202547,
       "date": "2025-11-19",
       "dayOfWeek": "Wednesday",
-      "type": "Base",
+      "type": "Tempo",
       "description": "Metz - 15' progressives",
       "durationSeconds": 3408,
       "distanceKm": 10.22,
@@ -178579,7 +179275,13 @@
         172.8,
         172.6,
         174.0
-      ]
+      ],
+      "calories": 661,
+      "cadenceSpm": 162.5,
+      "groundContactMs": 259.9,
+      "verticalOscillationMm": 94.0,
+      "verticalRatioPct": 8.56,
+      "strideLengthM": 1.11
     },
     {
       "id": "21025756348",
@@ -180140,7 +180842,13 @@
         165.0,
         164.4,
         171.4
-      ]
+      ],
+      "calories": 883,
+      "cadenceSpm": 163.1,
+      "groundContactMs": 253.6,
+      "verticalOscillationMm": 96.9,
+      "verticalRatioPct": 8.3,
+      "strideLengthM": 1.2
     },
     {
       "id": "21007394121",
@@ -181701,7 +182409,13 @@
         165.8,
         165.8,
         165.4
-      ]
+      ],
+      "calories": 748,
+      "cadenceSpm": 167.2,
+      "groundContactMs": 261.7,
+      "verticalOscillationMm": 95.4,
+      "verticalRatioPct": 8.66,
+      "strideLengthM": 1.1
     },
     {
       "id": "20995917267",
@@ -183262,7 +183976,13 @@
         174.8,
         173.8,
         171.2
-      ]
+      ],
+      "calories": 592,
+      "cadenceSpm": 163.7,
+      "groundContactMs": 264.6,
+      "verticalOscillationMm": 93.7,
+      "verticalRatioPct": 8.76,
+      "strideLengthM": 1.07
     },
     {
       "id": "20988577169",
@@ -184823,7 +185543,13 @@
         159.4,
         159.6,
         159.6
-      ]
+      ],
+      "calories": 658,
+      "cadenceSpm": 159.7,
+      "groundContactMs": 258.0,
+      "verticalOscillationMm": 99.0,
+      "verticalRatioPct": 8.44,
+      "strideLengthM": 1.19
     },
     {
       "id": "20968438949",
@@ -186384,14 +187110,20 @@
         123.0,
         122.6,
         122.8
-      ]
+      ],
+      "calories": 694,
+      "cadenceSpm": 163.5,
+      "groundContactMs": 266.5,
+      "verticalOscillationMm": 95.7,
+      "verticalRatioPct": 8.81,
+      "strideLengthM": 1.09
     },
     {
       "id": "20961633142",
       "week": 202546,
       "date": "2025-11-11",
       "dayOfWeek": "Tuesday",
-      "type": "Anaerobic",
+      "type": "Tempo",
       "description": "Strasbourg - Test VMA",
       "durationSeconds": 3325,
       "distanceKm": 9.77,
@@ -187945,7 +188677,13 @@
         126.6,
         126.4,
         126.2
-      ]
+      ],
+      "calories": 632,
+      "cadenceSpm": 154.1,
+      "groundContactMs": 265.2,
+      "verticalOscillationMm": 97.0,
+      "verticalRatioPct": 8.75,
+      "strideLengthM": 1.13
     },
     {
       "id": "20941346854",
@@ -189506,7 +190244,13 @@
         128.4,
         128.2,
         127.8
-      ]
+      ],
+      "calories": 624,
+      "cadenceSpm": 165.6,
+      "groundContactMs": 266.3,
+      "verticalOscillationMm": 96.6,
+      "verticalRatioPct": 8.83,
+      "strideLengthM": 1.09
     },
     {
       "id": "20931595012",
@@ -191067,14 +191811,20 @@
         50.8,
         53.8,
         54.2
-      ]
+      ],
+      "calories": 651,
+      "cadenceSpm": 157.9,
+      "groundContactMs": 265.7,
+      "verticalOscillationMm": 95.5,
+      "verticalRatioPct": 8.78,
+      "strideLengthM": 1.09
     },
     {
       "id": "20921957014",
       "week": 202545,
       "date": "2025-11-07",
       "dayOfWeek": "Friday",
-      "type": "Anaerobic",
+      "type": "Tempo",
       "description": "Strasbourg - 6 x 300m (R=1 min)",
       "durationSeconds": 3081,
       "distanceKm": 9.09,
@@ -192628,14 +193378,20 @@
         127.6,
         128.0,
         127.6
-      ]
+      ],
+      "calories": 593,
+      "cadenceSpm": 157.5,
+      "groundContactMs": 262.0,
+      "verticalOscillationMm": 94.2,
+      "verticalRatioPct": 8.61,
+      "strideLengthM": 1.12
     },
     {
       "id": "20901896865",
       "week": 202545,
       "date": "2025-11-05",
       "dayOfWeek": "Wednesday",
-      "type": "VO2Max",
+      "type": "Threshold",
       "description": "Metz - 50' dont 20' actives",
       "durationSeconds": 3088,
       "distanceKm": 9.64,
@@ -194189,7 +194945,13 @@
         159.2,
         159.4,
         159.4
-      ]
+      ],
+      "calories": 617,
+      "cadenceSpm": 165.7,
+      "groundContactMs": 260.5,
+      "verticalOscillationMm": 95.9,
+      "verticalRatioPct": 8.57,
+      "strideLengthM": 1.13
     },
     {
       "id": "20888642633",
@@ -195750,7 +196512,13 @@
         164.2,
         164.2,
         163.6
-      ]
+      ],
+      "calories": 512,
+      "cadenceSpm": 161.5,
+      "groundContactMs": 267.6,
+      "verticalOscillationMm": 91.5,
+      "verticalRatioPct": 8.88,
+      "strideLengthM": 1.03
     },
     {
       "id": "20872430844",
@@ -197311,7 +198079,13 @@
         167.6,
         165.4,
         163.2
-      ]
+      ],
+      "calories": 736,
+      "cadenceSpm": 167.1,
+      "groundContactMs": 267.4,
+      "verticalOscillationMm": 90.8,
+      "verticalRatioPct": 8.95,
+      "strideLengthM": 1.02
     },
     {
       "id": "20861758010",
@@ -198872,14 +199646,20 @@
         162.2,
         162.4,
         162.6
-      ]
+      ],
+      "calories": 616,
+      "cadenceSpm": 162.6,
+      "groundContactMs": 262.6,
+      "verticalOscillationMm": 91.1,
+      "verticalRatioPct": 8.63,
+      "strideLengthM": 1.06
     },
     {
       "id": "20841192714",
       "week": 202544,
       "date": "2025-10-30",
       "dayOfWeek": "Thursday",
-      "type": "Anaerobic",
+      "type": "VO2Max",
       "description": "Metz - 3000m / 2000m / 1000m",
       "durationSeconds": 3712,
       "distanceKm": 11.82,
@@ -200433,7 +201213,13 @@
         174.6,
         174.4,
         174.4
-      ]
+      ],
+      "calories": 754,
+      "cadenceSpm": 165.1,
+      "groundContactMs": 250.6,
+      "verticalOscillationMm": 92.8,
+      "verticalRatioPct": 8.23,
+      "strideLengthM": 1.15
     },
     {
       "id": "20823831796",
@@ -201994,7 +202780,13 @@
         166.2,
         166.2,
         166.2
-      ]
+      ],
+      "calories": 512,
+      "cadenceSpm": 161.0,
+      "groundContactMs": 270.9,
+      "verticalOscillationMm": 96.0,
+      "verticalRatioPct": 8.94,
+      "strideLengthM": 1.07
     },
     {
       "id": "20813746409",
@@ -203555,14 +204347,20 @@
         161.4,
         161.4,
         160.8
-      ]
+      ],
+      "calories": 539,
+      "cadenceSpm": 155.2,
+      "groundContactMs": 256.0,
+      "verticalOscillationMm": 92.0,
+      "verticalRatioPct": 8.41,
+      "strideLengthM": 1.14
     },
     {
       "id": "20782690421",
       "week": 202543,
       "date": "2025-10-24",
       "dayOfWeek": "Friday",
-      "type": "VO2Max",
+      "type": "Threshold",
       "description": "Metz - 15' progressives",
       "durationSeconds": 3320,
       "distanceKm": 9.82,
@@ -205116,7 +205914,13 @@
         171.2,
         173.8,
         173.0
-      ]
+      ],
+      "calories": 658,
+      "cadenceSpm": 161.9,
+      "groundContactMs": 264.5,
+      "verticalOscillationMm": 94.5,
+      "verticalRatioPct": 8.7,
+      "strideLengthM": 1.1
     },
     {
       "id": "20766258361",
@@ -206677,14 +207481,20 @@
         139.8,
         139.2,
         139.2
-      ]
+      ],
+      "calories": 442,
+      "cadenceSpm": 162.0,
+      "groundContactMs": 279.2,
+      "verticalOscillationMm": 93.7,
+      "verticalRatioPct": 9.37,
+      "strideLengthM": 1.0
     },
     {
       "id": "20758314431",
       "week": 202543,
       "date": "2025-10-21",
       "dayOfWeek": "Tuesday",
-      "type": "Anaerobic",
+      "type": "Tempo",
       "description": "Strasbourg - 2 x (6x 40\"/30\") R3'",
       "durationSeconds": 3697,
       "distanceKm": 10.52,
@@ -208238,7 +209048,13 @@
         135.4,
         135.2,
         135.4
-      ]
+      ],
+      "calories": 714,
+      "cadenceSpm": 156.2,
+      "groundContactMs": 268.2,
+      "verticalOscillationMm": 92.7,
+      "verticalRatioPct": 8.85,
+      "strideLengthM": 1.08
     },
     {
       "id": "20747788238",
@@ -209799,7 +210615,13 @@
         133.0,
         133.8,
         133.6
-      ]
+      ],
+      "calories": 364,
+      "cadenceSpm": 160.4,
+      "groundContactMs": 281.9,
+      "verticalOscillationMm": 95.7,
+      "verticalRatioPct": 9.4,
+      "strideLengthM": 1.02
     },
     {
       "id": "20740318213",
@@ -211360,7 +212182,13 @@
         137.2,
         137.4,
         137.4
-      ]
+      ],
+      "calories": 704,
+      "cadenceSpm": 162.9,
+      "groundContactMs": 277.2,
+      "verticalOscillationMm": 93.3,
+      "verticalRatioPct": 9.31,
+      "strideLengthM": 1.0
     },
     {
       "id": "20728694711",
@@ -212921,7 +213749,13 @@
         134.4,
         134.4,
         134.4
-      ]
+      ],
+      "calories": 394,
+      "cadenceSpm": 163.2,
+      "groundContactMs": 278.1,
+      "verticalOscillationMm": 90.2,
+      "verticalRatioPct": 9.45,
+      "strideLengthM": 0.95
     },
     {
       "id": "20719358056",
@@ -214482,7 +215316,13 @@
         135.2,
         134.8,
         134.6
-      ]
+      ],
+      "calories": 558,
+      "cadenceSpm": 135.6,
+      "groundContactMs": 269.6,
+      "verticalOscillationMm": 82.3,
+      "verticalRatioPct": 8.77,
+      "strideLengthM": 1.02
     },
     {
       "id": "20687456581",
@@ -216043,7 +216883,13 @@
         136.6,
         137.4,
         136.8
-      ]
+      ],
+      "calories": 533,
+      "cadenceSpm": 163.1,
+      "groundContactMs": 276.7,
+      "verticalOscillationMm": 89.7,
+      "verticalRatioPct": 9.39,
+      "strideLengthM": 0.96
     },
     {
       "id": "20669730595",
@@ -217604,7 +218450,13 @@
         135.0,
         135.2,
         135.2
-      ]
+      ],
+      "calories": 150,
+      "cadenceSpm": 153.5,
+      "groundContactMs": 286.4,
+      "verticalOscillationMm": 92.2,
+      "verticalRatioPct": 9.68,
+      "strideLengthM": 0.95
     },
     {
       "id": "20669729317",
@@ -219165,7 +220017,13 @@
         141.8,
         141.8,
         141.8
-      ]
+      ],
+      "calories": 85,
+      "cadenceSpm": 179.9,
+      "groundContactMs": 203.7,
+      "verticalOscillationMm": 97.1,
+      "verticalRatioPct": 6.39,
+      "strideLengthM": 1.52
     },
     {
       "id": "20669728672",
@@ -220726,7 +221584,13 @@
         134.8,
         134.8,
         134.8
-      ]
+      ],
+      "calories": 138,
+      "cadenceSpm": 162.5,
+      "groundContactMs": 275.2,
+      "verticalOscillationMm": 93.3,
+      "verticalRatioPct": 9.24,
+      "strideLengthM": 1.01
     },
     {
       "id": "20658899412",
@@ -222287,7 +223151,13 @@
         144.6,
         144.6,
         144.6
-      ]
+      ],
+      "calories": 567,
+      "cadenceSpm": 138.2,
+      "groundContactMs": 259.7,
+      "verticalOscillationMm": 83.6,
+      "verticalRatioPct": 8.56,
+      "strideLengthM": 1.06
     },
     {
       "id": "20649407211",
@@ -223848,14 +224718,20 @@
         135.4,
         135.2,
         135.2
-      ]
+      ],
+      "calories": 226,
+      "cadenceSpm": 161.2,
+      "groundContactMs": 279.9,
+      "verticalOscillationMm": 90.0,
+      "verticalRatioPct": 9.52,
+      "strideLengthM": 0.95
     },
     {
       "id": "20638341126",
       "week": 202541,
       "date": "2025-10-09",
       "dayOfWeek": "Thursday",
-      "type": "Base",
+      "type": "Tempo",
       "description": "Metz - Seuil",
       "durationSeconds": 2257,
       "distanceKm": 7.11,
@@ -225409,7 +226285,13 @@
         166.4,
         166.4,
         166.2
-      ]
+      ],
+      "calories": 442,
+      "cadenceSpm": 164.4,
+      "groundContactMs": 256.7,
+      "verticalOscillationMm": 94.6,
+      "verticalRatioPct": 8.44,
+      "strideLengthM": 1.14
     },
     {
       "id": "20628346721",
@@ -226970,7 +227852,13 @@
         166.2,
         166.2,
         166.4
-      ]
+      ],
+      "calories": 396,
+      "cadenceSpm": 162.1,
+      "groundContactMs": 277.5,
+      "verticalOscillationMm": 90.5,
+      "verticalRatioPct": 9.32,
+      "strideLengthM": 0.97
     },
     {
       "id": "20618696567",
@@ -228531,14 +229419,20 @@
         167.2,
         165.8,
         165.4
-      ]
+      ],
+      "calories": 486,
+      "cadenceSpm": 164.4,
+      "groundContactMs": 270.0,
+      "verticalOscillationMm": 95.2,
+      "verticalRatioPct": 8.97,
+      "strideLengthM": 1.06
     },
     {
       "id": "20607445935",
       "week": 202541,
       "date": "2025-10-06",
       "dayOfWeek": "Monday",
-      "type": "Anaerobic",
+      "type": "Base",
       "description": "Metz - Footing 50min - 3' rapide",
       "durationSeconds": 3283,
       "distanceKm": 9.06,
@@ -230092,14 +230986,20 @@
         165.4,
         163.2,
         163.2
-      ]
+      ],
+      "calories": 576,
+      "cadenceSpm": 160.3,
+      "groundContactMs": 270.9,
+      "verticalOscillationMm": 92.0,
+      "verticalRatioPct": 9.08,
+      "strideLengthM": 1.03
     },
     {
       "id": "20599425182",
       "week": 202540,
       "date": "2025-10-05",
       "dayOfWeek": "Sunday",
-      "type": "Threshold",
+      "type": "Base",
       "description": "Metz - Footing 50min - 3' rapide",
       "durationSeconds": 3472,
       "distanceKm": 9.52,
@@ -231653,7 +232553,13 @@
         157.8,
         157.8,
         157.8
-      ]
+      ],
+      "calories": 636,
+      "cadenceSpm": 159.1,
+      "groundContactMs": 274.2,
+      "verticalOscillationMm": 93.3,
+      "verticalRatioPct": 9.16,
+      "strideLengthM": 1.03
     },
     {
       "id": "20588921301",
@@ -233214,7 +234120,13 @@
         160.6,
         160.4,
         160.4
-      ]
+      ],
+      "calories": 434,
+      "cadenceSpm": 163.8,
+      "groundContactMs": 273.5,
+      "verticalOscillationMm": 93.2,
+      "verticalRatioPct": 9.17,
+      "strideLengthM": 1.02
     },
     {
       "id": "20579688877",
@@ -234775,7 +235687,13 @@
         159.6,
         160.0,
         160.2
-      ]
+      ],
+      "calories": 707,
+      "cadenceSpm": 161.0,
+      "groundContactMs": 270.6,
+      "verticalOscillationMm": 94.2,
+      "verticalRatioPct": 9.01,
+      "strideLengthM": 1.05
     },
     {
       "id": "20569083179",
@@ -236336,7 +237254,13 @@
         158.0,
         157.6,
         158.2
-      ]
+      ],
+      "calories": 530,
+      "cadenceSpm": 157.7,
+      "groundContactMs": 283.4,
+      "verticalOscillationMm": 85.1,
+      "verticalRatioPct": 9.8,
+      "strideLengthM": 0.88
     },
     {
       "id": "20558662692",
@@ -237897,7 +238821,13 @@
         162.6,
         163.2,
         162.8
-      ]
+      ],
+      "calories": 613,
+      "cadenceSpm": 150.5,
+      "groundContactMs": 264.2,
+      "verticalOscillationMm": 84.6,
+      "verticalRatioPct": 8.61,
+      "strideLengthM": 1.01
     },
     {
       "id": "20547855806",
@@ -239458,7 +240388,13 @@
         168.2,
         167.2,
         165.4
-      ]
+      ],
+      "calories": 357,
+      "cadenceSpm": 150.1,
+      "groundContactMs": 287.3,
+      "verticalOscillationMm": 78.4,
+      "verticalRatioPct": 9.88,
+      "strideLengthM": 0.82
     },
     {
       "id": "20526043740",
@@ -241019,14 +241955,20 @@
         147.2,
         147.4,
         147.6
-      ]
+      ],
+      "calories": 301,
+      "cadenceSpm": 171.9,
+      "groundContactMs": 230.2,
+      "verticalOscillationMm": 100.5,
+      "verticalRatioPct": 7.28,
+      "strideLengthM": 1.38
     },
     {
       "id": "20489947975",
       "week": 202539,
       "date": "2025-09-24",
       "dayOfWeek": "Wednesday",
-      "type": "Tempo",
+      "type": "Threshold",
       "description": "Strasbourg - Tempo",
       "durationSeconds": 2797,
       "distanceKm": 8.55,
@@ -242580,7 +243522,13 @@
         137.4,
         137.4,
         137.0
-      ]
+      ],
+      "calories": 557,
+      "cadenceSpm": 162.4,
+      "groundContactMs": 262.7,
+      "verticalOscillationMm": 96.6,
+      "verticalRatioPct": 8.65,
+      "strideLengthM": 1.13
     },
     {
       "id": "20480515526",
@@ -244141,7 +245089,13 @@
         141.4,
         140.4,
         140.2
-      ]
+      ],
+      "calories": 586,
+      "cadenceSpm": 159.0,
+      "groundContactMs": 286.1,
+      "verticalOscillationMm": 93.9,
+      "verticalRatioPct": 9.58,
+      "strideLengthM": 0.98
     },
     {
       "id": "20469668061",
@@ -245702,7 +246656,13 @@
         143.0,
         143.8,
         143.8
-      ]
+      ],
+      "calories": 382,
+      "cadenceSpm": 155.5,
+      "groundContactMs": 299.7,
+      "verticalOscillationMm": 88.7,
+      "verticalRatioPct": 10.25,
+      "strideLengthM": 0.87
     },
     {
       "id": "20457539097",
@@ -247263,14 +248223,20 @@
         142.6,
         141.4,
         141.4
-      ]
+      ],
+      "calories": 693,
+      "cadenceSpm": 158.8,
+      "groundContactMs": 286.8,
+      "verticalOscillationMm": 90.7,
+      "verticalRatioPct": 9.76,
+      "strideLengthM": 0.93
     },
     {
       "id": "20448898804",
       "week": 202538,
       "date": "2025-09-20",
       "dayOfWeek": "Saturday",
-      "type": "Anaerobic",
+      "type": "Tempo",
       "description": "Strasbourg - Anaérobique",
       "durationSeconds": 3409,
       "distanceKm": 10.03,
@@ -248824,14 +249790,20 @@
         139.2,
         139.0,
         139.0
-      ]
+      ],
+      "calories": 667,
+      "cadenceSpm": 159.1,
+      "groundContactMs": 271.0,
+      "verticalOscillationMm": 96.4,
+      "verticalRatioPct": 8.91,
+      "strideLengthM": 1.1
     },
     {
       "id": "20433398446",
       "week": 202538,
       "date": "2025-09-19",
       "dayOfWeek": "Friday",
-      "type": "Recover",
+      "type": "Base",
       "description": "Strasbourg Course à pied",
       "durationSeconds": 1933,
       "distanceKm": 3.8,
@@ -250385,14 +251357,20 @@
         140.6,
         140.4,
         140.2
-      ]
+      ],
+      "calories": 245,
+      "cadenceSpm": 150.0,
+      "groundContactMs": 293.7,
+      "verticalOscillationMm": 78.8,
+      "verticalRatioPct": 10.37,
+      "strideLengthM": 0.77
     },
     {
       "id": "20423514733",
       "week": 202538,
       "date": "2025-09-18",
       "dayOfWeek": "Thursday",
-      "type": "Anaerobic",
+      "type": "VO2Max",
       "description": "Schiltigheim - VO2 max",
       "durationSeconds": 2739,
       "distanceKm": 8.05,
@@ -251946,7 +252924,13 @@
         139.2,
         139.2,
         139.4
-      ]
+      ],
+      "calories": 564,
+      "cadenceSpm": 157.5,
+      "groundContactMs": 260.5,
+      "verticalOscillationMm": 92.0,
+      "verticalRatioPct": 8.54,
+      "strideLengthM": 1.11
     },
     {
       "id": "20423512330",
@@ -253507,7 +254491,13 @@
         140.6,
         140.6,
         140.8
-      ]
+      ],
+      "calories": 144,
+      "cadenceSpm": 153.8,
+      "groundContactMs": 280.0,
+      "verticalOscillationMm": 91.5,
+      "verticalRatioPct": 9.39,
+      "strideLengthM": 0.98
     },
     {
       "id": "20405617415",
@@ -255068,14 +256058,20 @@
         167.8,
         166.4,
         165.0
-      ]
+      ],
+      "calories": 384,
+      "cadenceSpm": 157.8,
+      "groundContactMs": 270.0,
+      "verticalOscillationMm": 96.1,
+      "verticalRatioPct": 8.87,
+      "strideLengthM": 1.09
     },
     {
       "id": "20395241949",
       "week": 202538,
       "date": "2025-09-15",
       "dayOfWeek": "Monday",
-      "type": "Base",
+      "type": "Threshold",
       "description": "Metz - Seuil",
       "durationSeconds": 2163,
       "distanceKm": 6.9,
@@ -256629,7 +257625,13 @@
         166.4,
         165.6,
         165.8
-      ]
+      ],
+      "calories": 429,
+      "cadenceSpm": 163.6,
+      "groundContactMs": 260.6,
+      "verticalOscillationMm": 97.6,
+      "verticalRatioPct": 8.48,
+      "strideLengthM": 1.16
     },
     {
       "id": "20386501292",
@@ -258190,14 +259192,20 @@
         171.4,
         171.8,
         172.2
-      ]
+      ],
+      "calories": 561,
+      "cadenceSpm": 162.9,
+      "groundContactMs": 279.6,
+      "verticalOscillationMm": 90.6,
+      "verticalRatioPct": 9.45,
+      "strideLengthM": 0.96
     },
     {
       "id": "20371494545",
       "week": 202537,
       "date": "2025-09-13",
       "dayOfWeek": "Saturday",
-      "type": "Anaerobic",
+      "type": "Tempo",
       "description": "Metz - Anaérobique",
       "durationSeconds": 3263,
       "distanceKm": 9.61,
@@ -259751,7 +260759,13 @@
         169.2,
         169.4,
         169.2
-      ]
+      ],
+      "calories": 629,
+      "cadenceSpm": 163.7,
+      "groundContactMs": 264.3,
+      "verticalOscillationMm": 91.0,
+      "verticalRatioPct": 8.68,
+      "strideLengthM": 1.07
     },
     {
       "id": "20364575614",
@@ -261312,14 +262326,20 @@
         169.8,
         170.0,
         169.8
-      ]
+      ],
+      "calories": 279,
+      "cadenceSpm": 159.8,
+      "groundContactMs": 287.5,
+      "verticalOscillationMm": 89.8,
+      "verticalRatioPct": 9.73,
+      "strideLengthM": 0.92
     },
     {
       "id": "20354792853",
       "week": 202537,
       "date": "2025-09-11",
       "dayOfWeek": "Thursday",
-      "type": "Tempo",
+      "type": "Threshold",
       "description": "Metz - Tempo",
       "durationSeconds": 3903,
       "distanceKm": 12.43,
@@ -262873,7 +263893,13 @@
         167.8,
         167.8,
         168.0
-      ]
+      ],
+      "calories": 791,
+      "cadenceSpm": 164.0,
+      "groundContactMs": 257.6,
+      "verticalOscillationMm": 96.9,
+      "verticalRatioPct": 8.37,
+      "strideLengthM": 1.16
     },
     {
       "id": "20344802225",
@@ -264434,14 +265460,20 @@
         167.2,
         167.2,
         166.8
-      ]
+      ],
+      "calories": 430,
+      "cadenceSpm": 160.0,
+      "groundContactMs": 275.9,
+      "verticalOscillationMm": 92.9,
+      "verticalRatioPct": 9.19,
+      "strideLengthM": 1.01
     },
     {
       "id": "20332054212",
       "week": 202537,
       "date": "2025-09-09",
       "dayOfWeek": "Tuesday",
-      "type": "Base",
+      "type": "Threshold",
       "description": "Metz - Seuil",
       "durationSeconds": 2163,
       "distanceKm": 7.01,
@@ -265995,7 +267027,13 @@
         166.2,
         166.0,
         166.0
-      ]
+      ],
+      "calories": 437,
+      "cadenceSpm": 164.0,
+      "groundContactMs": 259.2,
+      "verticalOscillationMm": 98.2,
+      "verticalRatioPct": 8.42,
+      "strideLengthM": 1.18
     },
     {
       "id": "20312842126",
@@ -267556,7 +268594,13 @@
         167.4,
         166.6,
         166.6
-      ]
+      ],
+      "calories": 542,
+      "cadenceSpm": 160.3,
+      "groundContactMs": 277.1,
+      "verticalOscillationMm": 89.0,
+      "verticalRatioPct": 9.26,
+      "strideLengthM": 0.96
     },
     {
       "id": "20297814537",
@@ -269117,14 +270161,20 @@
         167.0,
         166.4,
         166.2
-      ]
+      ],
+      "calories": 598,
+      "cadenceSpm": 160.8,
+      "groundContactMs": 258.0,
+      "verticalOscillationMm": 93.5,
+      "verticalRatioPct": 8.41,
+      "strideLengthM": 1.13
     },
     {
       "id": "20291626640",
       "week": 202536,
       "date": "2025-09-05",
       "dayOfWeek": "Friday",
-      "type": "Anaerobic",
+      "type": "Sprint",
       "description": "Metz Course à pied",
       "durationSeconds": 1954,
       "distanceKm": 4.7,
@@ -270678,7 +271728,13 @@
         164.0,
         164.4,
         164.0
-      ]
+      ],
+      "calories": 317,
+      "cadenceSpm": 141.2,
+      "groundContactMs": 282.1,
+      "verticalOscillationMm": 87.8,
+      "verticalRatioPct": 9.51,
+      "strideLengthM": 0.98
     },
     {
       "id": "20280379677",
@@ -272239,14 +273295,20 @@
         165.0,
         165.0,
         165.4
-      ]
+      ],
+      "calories": 342,
+      "cadenceSpm": 159.3,
+      "groundContactMs": 281.5,
+      "verticalOscillationMm": 95.0,
+      "verticalRatioPct": 9.25,
+      "strideLengthM": 1.03
     },
     {
       "id": "20269543105",
       "week": 202536,
       "date": "2025-09-03",
       "dayOfWeek": "Wednesday",
-      "type": "Recover",
+      "type": "Base",
       "description": "Metz Course à pied",
       "durationSeconds": 2100,
       "distanceKm": 4.05,
@@ -273800,14 +274862,20 @@
         163.0,
         162.6,
         162.4
-      ]
+      ],
+      "calories": 249,
+      "cadenceSpm": 146.0,
+      "groundContactMs": 299.5,
+      "verticalOscillationMm": 79.6,
+      "verticalRatioPct": 10.4,
+      "strideLengthM": 0.78
     },
     {
       "id": "20258876780",
       "week": 202536,
       "date": "2025-09-02",
       "dayOfWeek": "Tuesday",
-      "type": "Anaerobic",
+      "type": "Sprint",
       "description": "Metz - Sprint",
       "durationSeconds": 3241,
       "distanceKm": 9.14,
@@ -275361,7 +276429,13 @@
         169.8,
         170.0,
         170.0
-      ]
+      ],
+      "calories": 601,
+      "cadenceSpm": 160.3,
+      "groundContactMs": 271.8,
+      "verticalOscillationMm": 90.9,
+      "verticalRatioPct": 8.91,
+      "strideLengthM": 1.04
     },
     {
       "id": "20237923157",
@@ -276922,7 +277996,13 @@
         170.6,
         169.8,
         170.6
-      ]
+      ],
+      "calories": 877,
+      "cadenceSpm": 163.5,
+      "groundContactMs": 269.5,
+      "verticalOscillationMm": 90.8,
+      "verticalRatioPct": 9.0,
+      "strideLengthM": 1.01
     },
     {
       "id": "20224409694",
@@ -278483,14 +279563,20 @@
         165.6,
         165.0,
         165.4
-      ]
+      ],
+      "calories": 347,
+      "cadenceSpm": 163.7,
+      "groundContactMs": 272.4,
+      "verticalOscillationMm": 91.8,
+      "verticalRatioPct": 9.1,
+      "strideLengthM": 1.01
     },
     {
       "id": "20217964983",
       "week": 202535,
       "date": "2025-08-29",
       "dayOfWeek": "Friday",
-      "type": "Base",
+      "type": "VO2Max",
       "description": "Metz - Seuil",
       "durationSeconds": 2102,
       "distanceKm": 6.84,
@@ -280044,7 +281130,13 @@
         169.0,
         167.6,
         166.2
-      ]
+      ],
+      "calories": 417,
+      "cadenceSpm": 166.3,
+      "groundContactMs": 258.6,
+      "verticalOscillationMm": 97.6,
+      "verticalRatioPct": 8.42,
+      "strideLengthM": 1.17
     },
     {
       "id": "20208053559",
@@ -281605,14 +282697,20 @@
         170.6,
         169.8,
         168.6
-      ]
+      ],
+      "calories": 366,
+      "cadenceSpm": 162.9,
+      "groundContactMs": 273.1,
+      "verticalOscillationMm": 93.7,
+      "verticalRatioPct": 9.08,
+      "strideLengthM": 1.03
     },
     {
       "id": "20197408341",
       "week": 202535,
       "date": "2025-08-27",
       "dayOfWeek": "Wednesday",
-      "type": "VO2Max",
+      "type": "Threshold",
       "description": "Metz - Seuil",
       "durationSeconds": 2524,
       "distanceKm": 7.95,
@@ -283166,14 +284264,20 @@
         169.0,
         168.6,
         169.2
-      ]
+      ],
+      "calories": 502,
+      "cadenceSpm": 165.0,
+      "groundContactMs": 261.6,
+      "verticalOscillationMm": 96.8,
+      "verticalRatioPct": 8.55,
+      "strideLengthM": 1.14
     },
     {
       "id": "20175905562",
       "week": 202535,
       "date": "2025-08-25",
       "dayOfWeek": "Monday",
-      "type": "Base",
+      "type": "Threshold",
       "description": "Metz - Seuil",
       "durationSeconds": 2246,
       "distanceKm": 7.29,
@@ -284727,7 +285831,13 @@
         170.2,
         170.2,
         170.6
-      ]
+      ],
+      "calories": 443,
+      "cadenceSpm": 167.7,
+      "groundContactMs": 256.2,
+      "verticalOscillationMm": 95.5,
+      "verticalRatioPct": 8.36,
+      "strideLengthM": 1.15
     },
     {
       "id": "20161540006",
@@ -286288,7 +287398,13 @@
         136.8,
         136.6,
         136.6
-      ]
+      ],
+      "calories": 413,
+      "cadenceSpm": 163.3,
+      "groundContactMs": 273.7,
+      "verticalOscillationMm": 90.6,
+      "verticalRatioPct": 9.2,
+      "strideLengthM": 0.99
     },
     {
       "id": "20155066126",
@@ -287849,7 +288965,13 @@
         136.2,
         136.8,
         136.2
-      ]
+      ],
+      "calories": 438,
+      "cadenceSpm": 169.1,
+      "groundContactMs": 255.8,
+      "verticalOscillationMm": 94.9,
+      "verticalRatioPct": 8.36,
+      "strideLengthM": 1.14
     },
     {
       "id": "20144137890",
@@ -289410,14 +290532,20 @@
         136.2,
         136.2,
         136.0
-      ]
+      ],
+      "calories": 260,
+      "cadenceSpm": 161.8,
+      "groundContactMs": 283.3,
+      "verticalOscillationMm": 86.2,
+      "verticalRatioPct": 9.75,
+      "strideLengthM": 0.88
     },
     {
       "id": "20132413084",
       "week": 202534,
       "date": "2025-08-21",
       "dayOfWeek": "Thursday",
-      "type": "Base",
+      "type": "Tempo",
       "description": "Strasbourg - Base",
       "durationSeconds": 2479,
       "distanceKm": 7.06,
@@ -290971,7 +292099,13 @@
         137.6,
         136.6,
         136.6
-      ]
+      ],
+      "calories": 461,
+      "cadenceSpm": 167.7,
+      "groundContactMs": 267.5,
+      "verticalOscillationMm": 90.7,
+      "verticalRatioPct": 8.93,
+      "strideLengthM": 1.02
     },
     {
       "id": "20123484206",
@@ -292532,7 +293666,13 @@
         142.8,
         142.8,
         142.4
-      ]
+      ],
+      "calories": 636,
+      "cadenceSpm": 163.5,
+      "groundContactMs": 264.1,
+      "verticalOscillationMm": 94.5,
+      "verticalRatioPct": 8.65,
+      "strideLengthM": 1.1
     },
     {
       "id": "20101082018",
@@ -294093,14 +295233,20 @@
         139.4,
         140.0,
         139.8
-      ]
+      ],
+      "calories": 411,
+      "cadenceSpm": 164.4,
+      "groundContactMs": 269.9,
+      "verticalOscillationMm": 92.4,
+      "verticalRatioPct": 8.95,
+      "strideLengthM": 1.03
     },
     {
       "id": "20091890559",
       "week": 202533,
       "date": "2025-08-17",
       "dayOfWeek": "Sunday",
-      "type": "VO2Max",
+      "type": "Base",
       "description": "Strasbourg - Base",
       "durationSeconds": 4249,
       "distanceKm": 12.03,
@@ -295654,14 +296800,20 @@
         139.6,
         139.6,
         139.8
-      ]
+      ],
+      "calories": 770,
+      "cadenceSpm": 166.3,
+      "groundContactMs": 269.6,
+      "verticalOscillationMm": 91.4,
+      "verticalRatioPct": 8.95,
+      "strideLengthM": 1.02
     },
     {
       "id": "20080525816",
       "week": 202533,
       "date": "2025-08-16",
       "dayOfWeek": "Saturday",
-      "type": "Anaerobic",
+      "type": "Threshold",
       "description": "Strasbourg - Sprint",
       "durationSeconds": 2867,
       "distanceKm": 8.53,
@@ -297215,14 +298367,20 @@
         138.0,
         138.0,
         138.0
-      ]
+      ],
+      "calories": 578,
+      "cadenceSpm": 166.4,
+      "groundContactMs": 266.0,
+      "verticalOscillationMm": 92.0,
+      "verticalRatioPct": 8.77,
+      "strideLengthM": 1.06
     },
     {
       "id": "20060499787",
       "week": 202533,
       "date": "2025-08-14",
       "dayOfWeek": "Thursday",
-      "type": "Base",
+      "type": "Tempo",
       "description": "l'Escala - Base",
       "durationSeconds": 1843,
       "distanceKm": 5.03,
@@ -298776,14 +299934,20 @@
         13.6,
         12.0,
         11.4
-      ]
+      ],
+      "calories": 351,
+      "cadenceSpm": 160.7,
+      "groundContactMs": 274.4,
+      "verticalOscillationMm": 91.5,
+      "verticalRatioPct": 9.05,
+      "strideLengthM": 1.01
     },
     {
       "id": "20049816121",
       "week": 202533,
       "date": "2025-08-13",
       "dayOfWeek": "Wednesday",
-      "type": "Base",
+      "type": "Tempo",
       "description": "Granada - Base",
       "durationSeconds": 1809,
       "distanceKm": 5.1,
@@ -300337,14 +301501,20 @@
         693.6,
         694.6,
         695.8
-      ]
+      ],
+      "calories": 351,
+      "cadenceSpm": 160.0,
+      "groundContactMs": 273.6,
+      "verticalOscillationMm": 93.2,
+      "verticalRatioPct": 9.03,
+      "strideLengthM": 1.03
     },
     {
       "id": "20015026099",
       "week": 202532,
       "date": "2025-08-10",
       "dayOfWeek": "Sunday",
-      "type": "VO2Max",
+      "type": "Tempo",
       "description": "Agadir - Longue course",
       "durationSeconds": 4361,
       "distanceKm": 12.03,
@@ -301898,14 +303068,20 @@
         8.4,
         8.6,
         8.6
-      ]
+      ],
+      "calories": 858,
+      "cadenceSpm": 167.0,
+      "groundContactMs": 268.4,
+      "verticalOscillationMm": 88.5,
+      "verticalRatioPct": 8.97,
+      "strideLengthM": 0.99
     },
     {
       "id": "20005578456",
       "week": 202532,
       "date": "2025-08-09",
       "dayOfWeek": "Saturday",
-      "type": "Base",
+      "type": "Threshold",
       "description": "Agadir - Base",
       "durationSeconds": 2345,
       "distanceKm": 6.43,
@@ -303459,14 +304635,20 @@
         41.0,
         41.8,
         42.2
-      ]
+      ],
+      "calories": 457,
+      "cadenceSpm": 159.4,
+      "groundContactMs": 278.0,
+      "verticalOscillationMm": 93.7,
+      "verticalRatioPct": 9.17,
+      "strideLengthM": 1.02
     },
     {
       "id": "19991005855",
       "week": 202532,
       "date": "2025-08-08",
       "dayOfWeek": "Friday",
-      "type": "Threshold",
+      "type": "VO2Max",
       "description": "Agadir - VO2 max",
       "durationSeconds": 2661,
       "distanceKm": 8.06,
@@ -305020,7 +306202,13 @@
         36.2,
         37.0,
         36.4
-      ]
+      ],
+      "calories": 509,
+      "cadenceSpm": 163.7,
+      "groundContactMs": 264.9,
+      "verticalOscillationMm": 93.2,
+      "verticalRatioPct": 8.69,
+      "strideLengthM": 1.09
     },
     {
       "id": "19973995959",
@@ -306581,7 +307769,13 @@
         40.4,
         39.8,
         39.8
-      ]
+      ],
+      "calories": 542,
+      "cadenceSpm": 159.9,
+      "groundContactMs": 275.0,
+      "verticalOscillationMm": 91.8,
+      "verticalRatioPct": 9.1,
+      "strideLengthM": 1.01
     },
     {
       "id": "19952386003",
@@ -308142,7 +309336,13 @@
         45.8,
         45.2,
         44.4
-      ]
+      ],
+      "calories": 367,
+      "cadenceSpm": 160.6,
+      "groundContactMs": 279.5,
+      "verticalOscillationMm": 88.4,
+      "verticalRatioPct": 9.35,
+      "strideLengthM": 0.95
     },
     {
       "id": "19940888807",
@@ -309703,14 +310903,20 @@
         40.0,
         39.8,
         41.4
-      ]
+      ],
+      "calories": 680,
+      "cadenceSpm": 160.2,
+      "groundContactMs": 276.3,
+      "verticalOscillationMm": 91.9,
+      "verticalRatioPct": 9.19,
+      "strideLengthM": 1.0
     },
     {
       "id": "19915136803",
       "week": 202531,
       "date": "2025-08-01",
       "dayOfWeek": "Friday",
-      "type": "VO2Max",
+      "type": "Threshold",
       "description": "Agadir - Course tranquille",
       "durationSeconds": 2516,
       "distanceKm": 7.53,
@@ -311264,14 +312470,20 @@
         41.8,
         42.4,
         43.4
-      ]
+      ],
+      "calories": 498,
+      "cadenceSpm": 166.2,
+      "groundContactMs": 264.2,
+      "verticalOscillationMm": 93.2,
+      "verticalRatioPct": 8.68,
+      "strideLengthM": 1.08
     },
     {
       "id": "19894650323",
       "week": 202531,
       "date": "2025-07-30",
       "dayOfWeek": "Wednesday",
-      "type": "Threshold",
+      "type": "Tempo",
       "description": "Agadir - Répétitions pente",
       "durationSeconds": 2758,
       "distanceKm": 7.51,
@@ -312825,14 +314037,20 @@
         35.6,
         36.2,
         37.0
-      ]
+      ],
+      "calories": 510,
+      "cadenceSpm": 152.2,
+      "groundContactMs": 267.7,
+      "verticalOscillationMm": 91.1,
+      "verticalRatioPct": 8.77,
+      "strideLengthM": 1.05
     },
     {
       "id": "19882381271",
       "week": 202531,
       "date": "2025-07-29",
       "dayOfWeek": "Tuesday",
-      "type": "VO2Max",
+      "type": "Threshold",
       "description": "Agadir - Course tranquille",
       "durationSeconds": 2454,
       "distanceKm": 7.23,
@@ -314386,14 +315604,20 @@
         38.2,
         39.2,
         39.8
-      ]
+      ],
+      "calories": 492,
+      "cadenceSpm": 166.6,
+      "groundContactMs": 265.5,
+      "verticalOscillationMm": 92.8,
+      "verticalRatioPct": 8.74,
+      "strideLengthM": 1.06
     },
     {
       "id": "19876413811",
       "week": 202530,
       "date": "2025-07-27",
       "dayOfWeek": "Sunday",
-      "type": "VO2Max",
+      "type": "Threshold",
       "description": "Casablanca - Course tranquille",
       "durationSeconds": 2423,
       "distanceKm": 7.01,
@@ -315947,14 +317171,20 @@
         144.2,
         143.8,
         143.8
-      ]
+      ],
+      "calories": 489,
+      "cadenceSpm": 162.3,
+      "groundContactMs": 270.8,
+      "verticalOscillationMm": 94.6,
+      "verticalRatioPct": 8.87,
+      "strideLengthM": 1.07
     },
     {
       "id": "19825531744",
       "week": 202530,
       "date": "2025-07-23",
       "dayOfWeek": "Wednesday",
-      "type": "Threshold",
+      "type": "Tempo",
       "description": "Strasbourg - Répétitions course très rapid",
       "durationSeconds": 2655,
       "distanceKm": 7.51,
@@ -317508,14 +318738,20 @@
         138.4,
         138.2,
         137.8
-      ]
+      ],
+      "calories": 510,
+      "cadenceSpm": 162.5,
+      "groundContactMs": 271.5,
+      "verticalOscillationMm": 91.5,
+      "verticalRatioPct": 8.93,
+      "strideLengthM": 1.04
     },
     {
       "id": "19812504308",
       "week": 202530,
       "date": "2025-07-22",
       "dayOfWeek": "Tuesday",
-      "type": "Base",
+      "type": "Tempo",
       "description": "Strasbourg - Course tranquille",
       "durationSeconds": 2503,
       "distanceKm": 7.21,
@@ -319069,14 +320305,20 @@
         138.2,
         137.2,
         138.0
-      ]
+      ],
+      "calories": 488,
+      "cadenceSpm": 164.4,
+      "groundContactMs": 268.2,
+      "verticalOscillationMm": 92.9,
+      "verticalRatioPct": 8.8,
+      "strideLengthM": 1.06
     },
     {
       "id": "19793958355",
       "week": 202529,
       "date": "2025-07-20",
       "dayOfWeek": "Sunday",
-      "type": "Threshold",
+      "type": "Tempo",
       "description": "Metz - Contre la montre",
       "durationSeconds": 2707,
       "distanceKm": 7.54,
@@ -320630,14 +321872,20 @@
         172.2,
         172.0,
         172.0
-      ]
+      ],
+      "calories": 492,
+      "cadenceSpm": 163.8,
+      "groundContactMs": 268.3,
+      "verticalOscillationMm": 88.8,
+      "verticalRatioPct": 8.94,
+      "strideLengthM": 1.01
     },
     {
       "id": "19781647952",
       "week": 202529,
       "date": "2025-07-19",
       "dayOfWeek": "Saturday",
-      "type": "Base",
+      "type": "Tempo",
       "description": "Metz - Course tranquille",
       "durationSeconds": 2542,
       "distanceKm": 7.51,
@@ -322191,14 +323439,20 @@
         163.4,
         162.8,
         163.4
-      ]
+      ],
+      "calories": 494,
+      "cadenceSpm": 168.1,
+      "groundContactMs": 264.7,
+      "verticalOscillationMm": 92.2,
+      "verticalRatioPct": 8.72,
+      "strideLengthM": 1.06
     },
     {
       "id": "19760560539",
       "week": 202529,
       "date": "2025-07-17",
       "dayOfWeek": "Thursday",
-      "type": "Threshold",
+      "type": "Tempo",
       "description": "Metz - Répétitions allure d'objectif",
       "durationSeconds": 2419,
       "distanceKm": 7.52,
@@ -323752,14 +325006,20 @@
         168.2,
         168.8,
         168.6
-      ]
+      ],
+      "calories": 476,
+      "cadenceSpm": 166.9,
+      "groundContactMs": 262.2,
+      "verticalOscillationMm": 94.6,
+      "verticalRatioPct": 8.58,
+      "strideLengthM": 1.11
     },
     {
       "id": "19742816659",
       "week": 202529,
       "date": "2025-07-15",
       "dayOfWeek": "Tuesday",
-      "type": "VO2Max",
+      "type": "Threshold",
       "description": "Strasbourg - Course tranquille",
       "durationSeconds": 2551,
       "distanceKm": 7.57,
@@ -325313,14 +326573,20 @@
         136.6,
         137.2,
         136.8
-      ]
+      ],
+      "calories": 505,
+      "cadenceSpm": 165.2,
+      "groundContactMs": 268.1,
+      "verticalOscillationMm": 94.5,
+      "verticalRatioPct": 8.79,
+      "strideLengthM": 1.08
     },
     {
       "id": "19718284335",
       "week": 202528,
       "date": "2025-07-13",
       "dayOfWeek": "Sunday",
-      "type": "VO2Max",
+      "type": "Threshold",
       "description": "Strasbourg - Course tranquille",
       "durationSeconds": 3588,
       "distanceKm": 10.02,
@@ -326874,7 +328140,13 @@
         139.8,
         140.0,
         139.6
-      ]
+      ],
+      "calories": 698,
+      "cadenceSpm": 166.0,
+      "groundContactMs": 269.4,
+      "verticalOscillationMm": 90.6,
+      "verticalRatioPct": 8.94,
+      "strideLengthM": 1.02
     },
     {
       "id": "19702595560",
@@ -328435,14 +329707,20 @@
         141.2,
         141.0,
         141.4
-      ]
+      ],
+      "calories": 552,
+      "cadenceSpm": 161.1,
+      "groundContactMs": 267.8,
+      "verticalOscillationMm": 93.4,
+      "verticalRatioPct": 8.72,
+      "strideLengthM": 1.08
     },
     {
       "id": "19681783109",
       "week": 202528,
       "date": "2025-07-09",
       "dayOfWeek": "Wednesday",
-      "type": "Base",
+      "type": "Threshold",
       "description": "Strasbourg - Course allure régulière",
       "durationSeconds": 2108,
       "distanceKm": 6.45,
@@ -329996,14 +331274,20 @@
         137.8,
         138.0,
         137.8
-      ]
+      ],
+      "calories": 424,
+      "cadenceSpm": 163.2,
+      "groundContactMs": 263.3,
+      "verticalOscillationMm": 95.4,
+      "verticalRatioPct": 8.54,
+      "strideLengthM": 1.12
     },
     {
       "id": "19673754146",
       "week": 202528,
       "date": "2025-07-08",
       "dayOfWeek": "Tuesday",
-      "type": "VO2Max",
+      "type": "Tempo",
       "description": "Strasbourg - Course de référence",
       "durationSeconds": 3157,
       "distanceKm": 9.01,
@@ -331557,14 +332841,20 @@
         139.6,
         140.0,
         139.8
-      ]
+      ],
+      "calories": 595,
+      "cadenceSpm": 163.8,
+      "groundContactMs": 271.4,
+      "verticalOscillationMm": 92.4,
+      "verticalRatioPct": 8.89,
+      "strideLengthM": 1.05
     },
     {
       "id": "19653968417",
       "week": 202527,
       "date": "2025-07-06",
       "dayOfWeek": "Sunday",
-      "type": "VO2Max",
+      "type": "Base",
       "description": "Strasbourg - W1 Sun Long Run - 10km Long Run",
       "durationSeconds": 3455,
       "distanceKm": 10.01,
@@ -333118,14 +334408,20 @@
         145.4,
         144.2,
         143.8
-      ]
+      ],
+      "calories": 638,
+      "cadenceSpm": 166.6,
+      "groundContactMs": 268.1,
+      "verticalOscillationMm": 92.2,
+      "verticalRatioPct": 8.86,
+      "strideLengthM": 1.04
     },
     {
       "id": "19643009253",
       "week": 202527,
       "date": "2025-07-05",
       "dayOfWeek": "Saturday",
-      "type": "Base",
+      "type": "Threshold",
       "description": "Metz - W1 Sat Intervals - 400m Repeats",
       "durationSeconds": 2612,
       "distanceKm": 7.51,
@@ -334679,14 +335975,20 @@
         169.6,
         169.2,
         168.8
-      ]
+      ],
+      "calories": 492,
+      "cadenceSpm": 164.8,
+      "groundContactMs": 267.3,
+      "verticalOscillationMm": 91.1,
+      "verticalRatioPct": 8.83,
+      "strideLengthM": 1.04
     },
     {
       "id": "19621356527",
       "week": 202527,
       "date": "2025-07-03",
       "dayOfWeek": "Thursday",
-      "type": "Tempo",
+      "type": "Threshold",
       "description": "Strasbourg - W1 Thu Tempo - Rolling 300s (7.2",
       "durationSeconds": 2619,
       "distanceKm": 7.5,
@@ -336240,7 +337542,13 @@
         141.4,
         141.4,
         141.6
-      ]
+      ],
+      "calories": 507,
+      "cadenceSpm": 165.8,
+      "groundContactMs": 269.3,
+      "verticalOscillationMm": 92.2,
+      "verticalRatioPct": 8.92,
+      "strideLengthM": 1.04
     },
     {
       "id": "19604348486",
@@ -337801,14 +339109,20 @@
         141.6,
         141.4,
         141.0
-      ]
+      ],
+      "calories": 482,
+      "cadenceSpm": 163.9,
+      "groundContactMs": 283.1,
+      "verticalOscillationMm": 85.6,
+      "verticalRatioPct": 9.72,
+      "strideLengthM": 0.88
     },
     {
       "id": "19571324004",
       "week": 202526,
       "date": "2025-06-28",
       "dayOfWeek": "Saturday",
-      "type": "Base",
+      "type": "Tempo",
       "description": "Strasbourg Course à pied",
       "durationSeconds": 653,
       "distanceKm": 2.0,
@@ -339362,7 +340676,13 @@
         139.8,
         139.8,
         140.0
-      ]
+      ],
+      "calories": 130,
+      "cadenceSpm": 165.3,
+      "groundContactMs": 263.3,
+      "verticalOscillationMm": 95.3,
+      "verticalRatioPct": 8.59,
+      "strideLengthM": 1.11
     },
     {
       "id": "19571323031",
@@ -340923,7 +342243,13 @@
         140.0,
         140.0,
         140.0
-      ]
+      ],
+      "calories": 77,
+      "cadenceSpm": 170.7,
+      "groundContactMs": 221.8,
+      "verticalOscillationMm": 99.1,
+      "verticalRatioPct": 6.95,
+      "strideLengthM": 1.43
     },
     {
       "id": "19571313534",
@@ -342484,14 +343810,20 @@
         136.8,
         137.0,
         137.0
-      ]
+      ],
+      "calories": 160,
+      "cadenceSpm": 160.6,
+      "groundContactMs": 286.2,
+      "verticalOscillationMm": 86.9,
+      "verticalRatioPct": 9.74,
+      "strideLengthM": 0.89
     },
     {
       "id": "19554098743",
       "week": 202526,
       "date": "2025-06-26",
       "dayOfWeek": "Thursday",
-      "type": "Tempo",
+      "type": "VO2Max",
       "description": "Strasbourg - Tempo léger",
       "durationSeconds": 3354,
       "distanceKm": 10.01,
@@ -344045,14 +345377,20 @@
         139.0,
         138.6,
         139.0
-      ]
+      ],
+      "calories": 669,
+      "cadenceSpm": 162.3,
+      "groundContactMs": 266.4,
+      "verticalOscillationMm": 94.9,
+      "verticalRatioPct": 8.65,
+      "strideLengthM": 1.1
     },
     {
       "id": "19528816066",
       "week": 202526,
       "date": "2025-06-24",
       "dayOfWeek": "Tuesday",
-      "type": "Anaerobic",
+      "type": "Threshold",
       "description": "Strasbourg - 10× 400m 4:10",
       "durationSeconds": 2892,
       "distanceKm": 8.5,
@@ -345606,14 +346944,20 @@
         139.4,
         140.2,
         140.0
-      ]
+      ],
+      "calories": 564,
+      "cadenceSpm": 159.1,
+      "groundContactMs": 257.8,
+      "verticalOscillationMm": 89.0,
+      "verticalRatioPct": 8.38,
+      "strideLengthM": 1.09
     },
     {
       "id": "19515187935",
       "week": 202525,
       "date": "2025-06-22",
       "dayOfWeek": "Sunday",
-      "type": "VO2Max",
+      "type": "Threshold",
       "description": "Strasbourg - Base",
       "durationSeconds": 3725,
       "distanceKm": 10.08,
@@ -347167,14 +348511,20 @@
         143.0,
         141.6,
         141.4
-      ]
+      ],
+      "calories": 708,
+      "cadenceSpm": 163.8,
+      "groundContactMs": 276.2,
+      "verticalOscillationMm": 91.1,
+      "verticalRatioPct": 9.21,
+      "strideLengthM": 0.99
     },
     {
       "id": "19493917949",
       "week": 202525,
       "date": "2025-06-20",
       "dayOfWeek": "Friday",
-      "type": "Tempo",
+      "type": "VO2Max",
       "description": "Strasbourg - Tempo long",
       "durationSeconds": 2884,
       "distanceKm": 8.4,
@@ -348728,14 +350078,20 @@
         138.4,
         138.8,
         138.4
-      ]
+      ],
+      "calories": 565,
+      "cadenceSpm": 166.1,
+      "groundContactMs": 267.3,
+      "verticalOscillationMm": 92.3,
+      "verticalRatioPct": 8.83,
+      "strideLengthM": 1.05
     },
     {
       "id": "19462610134",
       "week": 202525,
       "date": "2025-06-17",
       "dayOfWeek": "Tuesday",
-      "type": "Anaerobic",
+      "type": "VO2Max",
       "description": "Strasbourg - 12× 300m 4:10",
       "durationSeconds": 3095,
       "distanceKm": 8.45,
@@ -350289,7 +351645,13 @@
         140.2,
         140.2,
         140.2
-      ]
+      ],
+      "calories": 577,
+      "cadenceSpm": 156.9,
+      "groundContactMs": 260.2,
+      "verticalOscillationMm": 84.8,
+      "verticalRatioPct": 8.56,
+      "strideLengthM": 1.04
     },
     {
       "id": "19462606833",
@@ -351850,14 +353212,20 @@
         144.6,
         144.8,
         144.8
-      ]
+      ],
+      "calories": 147,
+      "cadenceSpm": 160.9,
+      "groundContactMs": 274.0,
+      "verticalOscillationMm": 86.5,
+      "verticalRatioPct": 9.28,
+      "strideLengthM": 0.93
     },
     {
       "id": "19431804147",
       "week": 202524,
       "date": "2025-06-14",
       "dayOfWeek": "Saturday",
-      "type": "Base",
+      "type": "VO2Max",
       "description": "Strasbourg Course à pied",
       "durationSeconds": 2355,
       "distanceKm": 6.26,
@@ -353411,14 +354779,20 @@
         137.8,
         137.8,
         137.6
-      ]
+      ],
+      "calories": 452,
+      "cadenceSpm": 165.3,
+      "groundContactMs": 274.5,
+      "verticalOscillationMm": 88.7,
+      "verticalRatioPct": 9.24,
+      "strideLengthM": 0.96
     },
     {
       "id": "19402393058",
       "week": 202524,
       "date": "2025-06-11",
       "dayOfWeek": "Wednesday",
-      "type": "Anaerobic",
+      "type": "Threshold",
       "description": "Strasbourg - 6x 400m 4:05",
       "durationSeconds": 2615,
       "distanceKm": 7.52,
@@ -354972,14 +356346,20 @@
         142.2,
         142.6,
         143.2
-      ]
+      ],
+      "calories": 519,
+      "cadenceSpm": 159.8,
+      "groundContactMs": 257.0,
+      "verticalOscillationMm": 88.1,
+      "verticalRatioPct": 8.41,
+      "strideLengthM": 1.08
     },
     {
       "id": "19382480927",
       "week": 202524,
       "date": "2025-06-09",
       "dayOfWeek": "Monday",
-      "type": "VO2Max",
+      "type": "Threshold",
       "description": "Strasbourg Course à pied",
       "durationSeconds": 4668,
       "distanceKm": 13.06,
@@ -356533,14 +357913,20 @@
         135.2,
         135.4,
         135.6
-      ]
+      ],
+      "calories": 849,
+      "cadenceSpm": 169.0,
+      "groundContactMs": 266.2,
+      "verticalOscillationMm": 88.7,
+      "verticalRatioPct": 8.97,
+      "strideLengthM": 0.99
     },
     {
       "id": "19358972098",
       "week": 202523,
       "date": "2025-06-07",
       "dayOfWeek": "Saturday",
-      "type": "VO2Max",
+      "type": "Threshold",
       "description": "Strasbourg Course à pied",
       "durationSeconds": 2723,
       "distanceKm": 8.17,
@@ -358094,7 +359480,13 @@
         140.2,
         140.2,
         140.4
-      ]
+      ],
+      "calories": 510,
+      "cadenceSpm": 169.8,
+      "groundContactMs": 260.3,
+      "verticalOscillationMm": 91.5,
+      "verticalRatioPct": 8.65,
+      "strideLengthM": 1.06
     },
     {
       "id": "19333027526",
@@ -359655,14 +361047,20 @@
         143.4,
         142.4,
         142.8
-      ]
+      ],
+      "calories": 503,
+      "cadenceSpm": 149.4,
+      "groundContactMs": 249.1,
+      "verticalOscillationMm": 84.4,
+      "verticalRatioPct": 8.21,
+      "strideLengthM": 1.09
     },
     {
       "id": "19301603006",
       "week": 202522,
       "date": "2025-06-01",
       "dayOfWeek": "Sunday",
-      "type": "VO2Max",
+      "type": "Tempo",
       "description": "Metz - Base",
       "durationSeconds": 3843,
       "distanceKm": 10.65,
@@ -361216,14 +362614,20 @@
         168.0,
         168.2,
         168.8
-      ]
+      ],
+      "calories": 652,
+      "cadenceSpm": 165.4,
+      "groundContactMs": 265.2,
+      "verticalOscillationMm": 88.2,
+      "verticalRatioPct": 8.91,
+      "strideLengthM": 1.0
     },
     {
       "id": "19278171777",
       "week": 202522,
       "date": "2025-05-30",
       "dayOfWeek": "Friday",
-      "type": "VO2Max",
+      "type": "Tempo",
       "description": "Metz - Base",
       "durationSeconds": 2705,
       "distanceKm": 7.41,
@@ -362777,14 +364181,20 @@
         169.2,
         169.2,
         169.4
-      ]
+      ],
+      "calories": 480,
+      "cadenceSpm": 166.4,
+      "groundContactMs": 271.7,
+      "verticalOscillationMm": 90.3,
+      "verticalRatioPct": 9.17,
+      "strideLengthM": 0.98
     },
     {
       "id": "19262934669",
       "week": 202522,
       "date": "2025-05-28",
       "dayOfWeek": "Wednesday",
-      "type": "Threshold",
+      "type": "Tempo",
       "description": "Metz - 30/30",
       "durationSeconds": 2572,
       "distanceKm": 6.77,
@@ -364338,14 +365748,20 @@
         166.8,
         166.6,
         166.4
-      ]
+      ],
+      "calories": 424,
+      "cadenceSpm": 162.5,
+      "groundContactMs": 273.8,
+      "verticalOscillationMm": 87.7,
+      "verticalRatioPct": 9.27,
+      "strideLengthM": 0.97
     },
     {
       "id": "19229069659",
       "week": 202521,
       "date": "2025-05-25",
       "dayOfWeek": "Sunday",
-      "type": "VO2Max",
+      "type": "Threshold",
       "description": "Strasbourg Course à pied",
       "durationSeconds": 3875,
       "distanceKm": 10.14,
@@ -365899,14 +367315,20 @@
         140.0,
         140.8,
         140.8
-      ]
+      ],
+      "calories": 670,
+      "cadenceSpm": 167.9,
+      "groundContactMs": 272.4,
+      "verticalOscillationMm": 86.9,
+      "verticalRatioPct": 9.31,
+      "strideLengthM": 0.94
     },
     {
       "id": "19213407244",
       "week": 202521,
       "date": "2025-05-23",
       "dayOfWeek": "Friday",
-      "type": "Threshold",
+      "type": "Base",
       "description": "Strasbourg Marche à pied",
       "durationSeconds": 1308,
       "distanceKm": 2.5,
@@ -367272,7 +368694,13 @@
         139.6,
         139.8,
         139.8
-      ]
+      ],
+      "calories": 149,
+      "cadenceSpm": 120.4,
+      "groundContactMs": null,
+      "verticalOscillationMm": null,
+      "verticalRatioPct": null,
+      "strideLengthM": null
     },
     {
       "id": "19213406421",
@@ -368833,7 +370261,13 @@
         139.6,
         139.6,
         139.6
-      ]
+      ],
+      "calories": 62,
+      "cadenceSpm": 168.0,
+      "groundContactMs": 238.7,
+      "verticalOscillationMm": 101.0,
+      "verticalRatioPct": 7.62,
+      "strideLengthM": 1.33
     },
     {
       "id": "19213405781",
@@ -370394,7 +371828,13 @@
         140.4,
         140.2,
         140.4
-      ]
+      ],
+      "calories": 115,
+      "cadenceSpm": 155.0,
+      "groundContactMs": 279.7,
+      "verticalOscillationMm": 87.5,
+      "verticalRatioPct": 9.61,
+      "strideLengthM": 0.91
     },
     {
       "id": "19183916868",
@@ -371955,7 +373395,13 @@
         140.4,
         140.4,
         140.2
-      ]
+      ],
+      "calories": 486,
+      "cadenceSpm": 161.4,
+      "groundContactMs": 293.3,
+      "verticalOscillationMm": 79.1,
+      "verticalRatioPct": 10.57,
+      "strideLengthM": 0.75
     },
     {
       "id": "19166353291",
@@ -373516,14 +374962,20 @@
         140.4,
         140.2,
         140.6
-      ]
+      ],
+      "calories": null,
+      "cadenceSpm": null,
+      "groundContactMs": null,
+      "verticalOscillationMm": null,
+      "verticalRatioPct": null,
+      "strideLengthM": null
     },
     {
       "id": "19135038247",
       "week": 202520,
       "date": "2025-05-15",
       "dayOfWeek": "Thursday",
-      "type": "Anaerobic",
+      "type": "VO2Max",
       "description": "On suit le boss @Hugo aujourd’hui ",
       "durationSeconds": 3923,
       "distanceKm": 10.15,
@@ -375077,14 +376529,20 @@
         134.6,
         135.0,
         134.4
-      ]
+      ],
+      "calories": 712,
+      "cadenceSpm": 159.0,
+      "groundContactMs": 273.1,
+      "verticalOscillationMm": 87.6,
+      "verticalRatioPct": 9.26,
+      "strideLengthM": 0.97
     },
     {
       "id": "19135037716",
       "week": 202520,
       "date": "2025-05-15",
       "dayOfWeek": "Thursday",
-      "type": "Base",
+      "type": "Tempo",
       "description": "Petit échauffement pour rejoindre le fraté",
       "durationSeconds": 1386,
       "distanceKm": 3.39,
@@ -376638,7 +378096,13 @@
         142.2,
         142.4,
         142.6
-      ]
+      ],
+      "calories": 225,
+      "cadenceSpm": 159.8,
+      "groundContactMs": 285.3,
+      "verticalOscillationMm": 89.1,
+      "verticalRatioPct": 9.74,
+      "strideLengthM": 0.92
     },
     {
       "id": "19114393871",
@@ -378199,7 +379663,13 @@
         139.6,
         139.6,
         139.4
-      ]
+      ],
+      "calories": 76,
+      "cadenceSpm": 145.9,
+      "groundContactMs": 241.5,
+      "verticalOscillationMm": 85.2,
+      "verticalRatioPct": 7.72,
+      "strideLengthM": 1.13
     },
     {
       "id": "19114392761",
@@ -379760,7 +381230,13 @@
         137.4,
         137.6,
         137.4
-      ]
+      ],
+      "calories": 445,
+      "cadenceSpm": 158.5,
+      "groundContactMs": 284.2,
+      "verticalOscillationMm": 95.4,
+      "verticalRatioPct": 9.45,
+      "strideLengthM": 1.01
     }
   ]
 }
