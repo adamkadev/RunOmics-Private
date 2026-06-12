@@ -5,7 +5,6 @@ export type ActivityType =
   | 'Threshold'
   | 'Tempo'
   | 'Base'
-  | 'Recover'
   | 'Race'
 
 export interface HrZone {
@@ -37,6 +36,12 @@ export interface Activity {
   anaTrainingEffect: number | null
   hrSamples: number[] | null
   elevationProfile: number[] | null
+  calories: number | null
+  cadenceSpm: number | null
+  groundContactMs: number | null
+  verticalOscillationMm: number | null
+  verticalRatioPct: number | null
+  strideLengthM: number | null
 }
 
 export interface WeeklyVolume {
@@ -112,12 +117,6 @@ export const ACTIVITY_TYPE_CONFIG: Record<
     chartColor: '#4CAF50',
   },
 
-  Recover: {
-    label: 'Recover',
-    badgeClass: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
-    chartColor: '#14b8a6',
-  },
-
   Race: {
     label: 'Race',
     badgeClass: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
@@ -126,14 +125,14 @@ export const ACTIVITY_TYPE_CONFIG: Record<
 }
 
 export const RPE_LABELS: Record<number, string> = {
-  1: 'Very Easy',
-  2: 'Easy',
-  3: 'Moderate',
-  4: 'Somewhat Hard',
-  5: 'Hard',
-  6: 'Vigorous',
-  7: 'Very Hard',
-  8: 'Intense',
-  9: 'Maximal',
-  10: 'Exhausting',
+  1: 'Very Light',
+  2: 'Very Easy',
+  3: 'Easy',
+  4: 'Comfortable',
+  5: 'Moderate',
+  6: 'Steady',
+  7: 'Hard',
+  8: 'Very Hard',
+  9: 'Near Maximal',
+  10: 'Maximal',
 }

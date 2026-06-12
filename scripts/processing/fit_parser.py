@@ -24,6 +24,13 @@ class ParsedFit:
     aer_training_effect: float | None = None
     ana_training_effect: float | None = None
     is_race: bool = False
+    primary_benefit: int | None = None
+    calories: int | None = None
+    cadence_spm: float | None = None
+    ground_contact_ms: float | None = None
+    vertical_oscillation_mm: float | None = None
+    vertical_ratio_pct: float | None = None
+    stride_length_m: float | None = None
 
     @property
     def has_data(self) -> bool:
@@ -80,6 +87,7 @@ def parse_fit(content: bytes) -> ParsedFit:
 
     if sessions:
         session = sessions[0]
+        print(session)
 
         duration = session.get("total_timer_time") or session.get("total_elapsed_time")
         if duration:
@@ -111,6 +119,35 @@ def parse_fit(content: bytes) -> ParsedFit:
         if rpe is not None:
             rpe = int(rpe)
             result.rpe = max(1, min(10, rpe // 10))
+
+        benefit = session.get(188)
+        if benefit is not None:
+            result.primary_benefit = int(benefit)
+
+        calories = session.get("total_calories")
+        if calories:
+            result.calories = int(calories)
+
+        cadence = session.get("avg_running_cadence") or session.get("avg_cadence")
+        if cadence:
+            frac = session.get("avg_fractional_cadence") or 0
+            result.cadence_spm = round((float(cadence) + float(frac)) * 2, 1)
+
+        stance = session.get("avg_stance_time")
+        if stance:
+            result.ground_contact_ms = round(float(stance), 1)
+
+        osc = session.get("avg_vertical_oscillation")
+        if osc:
+            result.vertical_oscillation_mm = round(float(osc), 1)
+
+        ratio = session.get("avg_vertical_ratio")
+        if ratio:
+            result.vertical_ratio_pct = round(float(ratio), 2)
+
+        step = session.get("avg_step_length")
+        if step:
+            result.stride_length_m = round(float(step) / 1000, 2)
 
         result.start_time_local = _local_start_time(session, activities)
 

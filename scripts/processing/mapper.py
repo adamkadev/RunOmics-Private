@@ -50,6 +50,12 @@ class ActivityData:
     ana_training_effect: float | None
     hr_samples: list[int] | None
     elevation_profile: list[float] | None
+    calories: int | None
+    cadence_spm: float | None
+    ground_contact_ms: float | None
+    vertical_oscillation_mm: float | None
+    vertical_ratio_pct: float | None
+    stride_length_m: float | None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -73,6 +79,12 @@ class ActivityData:
             "anaTrainingEffect": self.ana_training_effect,
             "hrSamples": self.hr_samples,
             "elevationProfile": self.elevation_profile,
+            "calories": self.calories,
+            "cadenceSpm": self.cadence_spm,
+            "groundContactMs": self.ground_contact_ms,
+            "verticalOscillationMm": self.vertical_oscillation_mm,
+            "verticalRatioPct": self.vertical_ratio_pct,
+            "strideLengthM": self.stride_length_m,
         }
 
 
@@ -195,6 +207,12 @@ def map_activity(
         ana_training_effect=round(parsed.ana_training_effect, 1) if parsed and parsed.ana_training_effect is not None else None,
         hr_samples=hr_samples,
         elevation_profile=elevation_profile,
+        calories=parsed.calories if parsed else None,
+        cadence_spm=parsed.cadence_spm if parsed else None,
+        ground_contact_ms=parsed.ground_contact_ms if parsed else None,
+        vertical_oscillation_mm=parsed.vertical_oscillation_mm if parsed else None,
+        vertical_ratio_pct=parsed.vertical_ratio_pct if parsed else None,
+        stride_length_m=parsed.stride_length_m if parsed else None,
     )
 
 

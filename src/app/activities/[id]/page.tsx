@@ -1,10 +1,11 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, Timer, Footprints, Heart, TrendingUp, Mountain, Zap, MessageSquare } from 'lucide-react'
+import { ArrowLeft, Timer, Footprints, Heart, TrendingUp, Mountain, Zap, Flame, MessageSquare } from 'lucide-react'
 import { getActivities } from '@/application/usecases/GetActivities'
 import { ActivityTypeTag } from '@/components/activities/ActivityTypeTag'
 import { ZoneBar } from '@/components/activity/ZoneBar'
 import { TrainingEffect } from '@/components/activity/TrainingEffect'
+import { RunningDynamics } from '@/components/activity/RunningDynamics'
 import { HrChart } from '@/components/activity/HrChart'
 import { ElevationChart } from '@/components/activity/ElevationChart'
 import { NoRouteMap } from '@/components/activity/ActivityMap'
@@ -70,7 +71,7 @@ export default async function ActivityDetailPage({
         )}
       </div>
 
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-7">
         <StatItem
           icon={<Footprints size={16} className="text-emerald-500" />}
           label="Distance"
@@ -100,6 +101,13 @@ export default async function ActivityDetailPage({
             icon={<Mountain size={16} className="text-stone-500" />}
             label="Elevation"
             value={`+${activity.elevationGain}m`}
+          />
+        )}
+        {activity.calories != null && (
+          <StatItem
+            icon={<Flame size={16} className="text-orange-500" />}
+            label="Calories"
+            value={`${activity.calories} kcal`}
           />
         )}
         <StatItem
@@ -144,6 +152,8 @@ export default async function ActivityDetailPage({
           )}
         </div>
       )}
+
+      <RunningDynamics activity={activity} />
     </div>
   )
 }
