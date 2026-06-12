@@ -18,7 +18,12 @@ interface Props {
 
 interface TooltipProps {
   active?: boolean
-  payload?: Array<{ value: number; payload: { xLabel: string; week: number } }>
+  payload?: Array<{ value: number; payload: ChartEntry }>
+}
+
+interface ChartEntry extends WeeklyVolume {
+  idx: number
+  monthLabel: string
 }
 
 function weekToMonthAbbr(weekNum: number): string {
@@ -36,28 +41,23 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   const { value, payload: entry } = payload[0]
   return (
     <div className="rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-      <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{entry.xLabel || weekToMonthAbbr(entry.week)}</p>
-      <p className="text-sm font-semibold text-gray-900 dark:text-white">
-        {value.toFixed(1)} km
+      <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
+        W{entry.week % 100} · {weekToMonthAbbr(entry.week)}
       </p>
+      <p className="text-sm font-semibold text-gray-900 dark:text-white">{value.toFixed(1)} km</p>
     </div>
   )
 }
 
 export function WeeklyVolumeChart({ data, currentWeek }: Props) {
-  const monthLabels = data.map((entry, i) => {
+  const chartData: ChartEntry[] = data.map((entry, i) => {
     const month = weekToMonthAbbr(entry.week)
     const prev = i > 0 ? weekToMonthAbbr(data[i - 1].week) : null
-    return month !== prev ? month : ''
+    return { ...entry, idx: i, monthLabel: month !== prev ? month : '' }
   })
 
-  const chartData = data.map((entry, i) => ({
-    ...entry,
-    xLabel: monthLabels[i],
-  }))
-
-  const currentWeekLabel = chartData.find((d) => d.week === currentWeek)?.xLabel
-    ?? weekToMonthAbbr(currentWeek)
+  const monthTicks = chartData.filter((d) => d.monthLabel !== '').map((d) => d.idx)
+  const currentWeekIdx = chartData.findIndex((d) => d.week === currentWeek)
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
@@ -73,7 +73,11 @@ export function WeeklyVolumeChart({ data, currentWeek }: Props) {
             </linearGradient>
           </defs>
           <XAxis
-            dataKey="xLabel"
+            dataKey="idx"
+            type="number"
+            domain={[0, data.length - 1]}
+            ticks={monthTicks}
+            tickFormatter={(i: number) => chartData[i]?.monthLabel ?? ''}
             tick={{ fontSize: 11, fill: '#9ca3af' }}
             axisLine={false}
             tickLine={false}
@@ -84,12 +88,14 @@ export function WeeklyVolumeChart({ data, currentWeek }: Props) {
             tickLine={false}
           />
           <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#10b981', strokeWidth: 1, strokeDasharray: '4 3' }} />
-          <ReferenceLine
-            x={currentWeekLabel}
-            stroke="#10b981"
-            strokeWidth={1.5}
-            strokeDasharray="4 3"
-          />
+          {currentWeekIdx >= 0 && (
+            <ReferenceLine
+              x={currentWeekIdx}
+              stroke="#10b981"
+              strokeWidth={1.5}
+              strokeDasharray="4 3"
+            />
+          )}
           <Area
             type="monotone"
             dataKey="distanceKm"
