@@ -8,14 +8,6 @@ import type {
   WeekSummary,
 } from '@/domain/activity/types'
 
-function getISOWeek(date: Date): number {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
-  const dayNum = d.getUTCDay() || 7
-  d.setUTCDate(d.getUTCDate() + 4 - dayNum)
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
-  const week = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7)
-  return d.getUTCFullYear() * 100 + week
-}
 
 function buildWeekSummary(weekNumber: number, activities: Activity[]): WeekSummary {
   const totalDistanceKm = activities.reduce((s, a) => s + a.distanceKm, 0)
@@ -55,8 +47,6 @@ function buildTypeDistribution(activities: Activity[]): TypeDistribution[] {
 
 export function getDashboardData(): DashboardData {
   const all = getAllActivities()
-  const today = new Date()
-  const currentWeekNum = getISOWeek(today)
 
   const byWeek = new Map<number, Activity[]>()
   for (const a of all) {
