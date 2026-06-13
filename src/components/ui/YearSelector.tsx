@@ -17,7 +17,7 @@ export function YearSelector({ years, selected, onSelect }: Props) {
       <button
         onClick={() => onSelect(years[currentIndex + 1])}
         disabled={currentIndex >= years.length - 1}
-        className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+        className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-all duration-150 hover:bg-muted active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
       >
         <ChevronLeft size={14} />
       </button>
@@ -39,7 +39,7 @@ export function YearSelector({ years, selected, onSelect }: Props) {
       <button
         onClick={() => onSelect(years[currentIndex - 1])}
         disabled={currentIndex <= 0}
-        className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+        className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-all duration-150 hover:bg-muted active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
       >
         <ChevronRight size={14} />
       </button>

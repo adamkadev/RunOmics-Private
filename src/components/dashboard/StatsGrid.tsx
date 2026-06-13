@@ -68,10 +68,11 @@ export function StatsGrid({ currentWeek, lastWeek, currentStreak, longestStreak,
 
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-      {stats.map(({ label, value, sub, trend, icon }) => (
+      {stats.map(({ label, value, sub, trend, icon }, i) => (
         <div
           key={label}
-          className="rounded-xl border border-border bg-card p-4 shadow-card"
+          className="animate-fade-up rounded-xl border border-border bg-card p-4 shadow-card"
+          style={{ animationDelay: `${i * 40}ms` }}
         >
           <div className="mb-3 flex items-center justify-between">
             <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
