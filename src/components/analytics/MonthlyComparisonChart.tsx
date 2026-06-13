@@ -27,8 +27,8 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
   return (
     <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-sm dark:bg-muted">
       <p className="mb-1 text-xs font-medium text-muted-foreground">{label}</p>
-      {payload.map((p) => (
-        <p key={p.name} className="flex items-center gap-1.5 text-xs">
+      {payload.map((p, i) => (
+        <p key={`${p.name}-${i}`} className="flex items-center gap-1.5 text-xs">
           <span className="h-2 w-2 rounded-full" style={{ backgroundColor: p.stroke }} />
           <span className="text-muted-foreground">{p.name}:</span>
           <span className="font-semibold text-foreground">{p.value.toFixed(1)} km</span>
