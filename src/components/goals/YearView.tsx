@@ -58,7 +58,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {goals.targets.map((t) => {
               const pb = pbs.find((p) => p.entry.distance === t.distance)
-              const pbSeconds = pb?.activity.durationSeconds ?? null
+              const pbSeconds = pb?.entry.seconds ?? null
               const delta = pbSeconds !== null && t.targetSeconds ? pbSeconds - t.targetSeconds : null
               const achieved = delta !== null && delta <= 0
               return (
@@ -125,7 +125,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <p className="text-xl font-bold text-gray-900 dark:text-white">
-                        {formatDuration(activity.durationSeconds)}
+                        {formatDuration(entry.seconds)}
                       </p>
                       {activity.paceSecPerKm && (
                         <p className="text-sm text-gray-500 dark:text-gray-400">

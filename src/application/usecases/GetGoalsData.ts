@@ -5,6 +5,7 @@ import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepo
 
 export interface PbEntry {
   distance: string
+  seconds: number
   activityId: string
 }
 

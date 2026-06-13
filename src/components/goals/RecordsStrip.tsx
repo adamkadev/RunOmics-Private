@@ -28,6 +28,9 @@ export function RecordsStrip({ records }: Props) {
                   </p>
                   <p className="text-xs text-gray-400 dark:text-gray-500">
                     {r.paceSecPerKm !== null && formatPace(r.paceSecPerKm)}
+                    {r.official && (
+                      <span className="ml-1 font-semibold text-violet-400">★</span>
+                    )}
                   </p>
                 </>
               ) : (
@@ -55,7 +58,7 @@ export function RecordsStrip({ records }: Props) {
         })}
       </div>
       <p className="text-xs text-gray-400 dark:text-gray-500">
-        Best rolling efforts detected automatically inside all activities.
+        ★ official race time · others auto-detected from activity data
       </p>
     </section>
   )

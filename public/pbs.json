@@ -2,13 +2,13 @@
   {
     "year": 2025,
     "entries": [
-      { "distance": "5K",           "activityId": "20526043740" }
+      { "distance": "5K", "seconds": 1238, "activityId": "20526043740" }
     ]
   },
   {
     "year": 2026,
     "entries": [
-      { "distance": "Half-Marathon","activityId": "22904920506" }
+      { "distance": "Half-Marathon", "seconds": 5859, "activityId": "22904920506" }
     ]
   }
 ]
