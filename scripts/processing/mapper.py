@@ -56,6 +56,7 @@ class ActivityData:
     vertical_oscillation_mm: float | None
     vertical_ratio_pct: float | None
     stride_length_m: float | None
+    best_efforts: dict[str, float] | None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -85,6 +86,7 @@ class ActivityData:
             "verticalOscillationMm": self.vertical_oscillation_mm,
             "verticalRatioPct": self.vertical_ratio_pct,
             "strideLengthM": self.stride_length_m,
+            "bestEfforts": self.best_efforts,
         }
 
 
@@ -213,6 +215,7 @@ def map_activity(
         vertical_oscillation_mm=parsed.vertical_oscillation_mm if parsed else None,
         vertical_ratio_pct=parsed.vertical_ratio_pct if parsed else None,
         stride_length_m=parsed.stride_length_m if parsed else None,
+        best_efforts=(parsed.best_efforts or None) if parsed else None,
     )
 
 

@@ -2,19 +2,23 @@
 
 import { useEffect, useRef } from 'react'
 import { MapPin } from 'lucide-react'
+import type { Map as MapLibreMap, Marker } from 'maplibre-gl'
 import { cn } from '@/lib/utils'
 
 interface Props {
   route: [number, number][]
+  hoverFraction?: number | null
   className?: string
 }
 
 const MAPTILER_STYLE_LIGHT = 'streets-v2'
 const MAPTILER_STYLE_DARK  = 'backdrop-v4-dark'
 
-export default function ActivityMap({ route, className }: Props) {
+export default function ActivityMap({ route, hoverFraction, className }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const mapRef = useRef<{ remove: () => void } | null>(null)
+  const mapRef = useRef<MapLibreMap | null>(null)
+  const mglRef = useRef<typeof import('maplibre-gl') | null>(null)
+  const hoverMarkerRef = useRef<Marker | null>(null)
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -33,6 +37,8 @@ export default function ActivityMap({ route, className }: Props) {
 
       mapRef.current?.remove()
       mapRef.current = null
+      hoverMarkerRef.current = null
+      mglRef.current = mgl
 
       const styleName = isDark ? MAPTILER_STYLE_DARK : MAPTILER_STYLE_LIGHT
       const styleUrl = `https://api.maptiler.com/maps/${styleName}/style.json?key=${token}`
@@ -109,8 +115,32 @@ export default function ActivityMap({ route, className }: Props) {
       observer.disconnect()
       mapRef.current?.remove()
       mapRef.current = null
+      hoverMarkerRef.current = null
     }
   }, [route])
+
+  useEffect(() => {
+    const map = mapRef.current
+    const mgl = mglRef.current
+    if (!map || !mgl) return
+
+    if (hoverFraction == null) {
+      hoverMarkerRef.current?.remove()
+      hoverMarkerRef.current = null
+      return
+    }
+
+    const coord = route[Math.round(hoverFraction * (route.length - 1))]
+    if (!coord) return
+
+    if (!hoverMarkerRef.current) {
+      const el = document.createElement('div')
+      el.className = 'w-3.5 h-3.5 rounded-full bg-white border-[3px] border-emerald-600 shadow-md'
+      hoverMarkerRef.current = new mgl.Marker({ element: el }).setLngLat(coord).addTo(map)
+    } else {
+      hoverMarkerRef.current.setLngLat(coord)
+    }
+  }, [hoverFraction, route])
 
   return (
     <div

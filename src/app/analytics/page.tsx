@@ -3,5 +3,10 @@ import { AnalyticsClient } from '@/components/analytics/AnalyticsClient'
 
 export default function AnalyticsPage() {
   const data = getAnalyticsData()
-  return <AnalyticsClient data={data} />
+
+  return (
+    <div className="space-y-6">
+      <AnalyticsClient data={data} />
+    </div>
+  )
 }

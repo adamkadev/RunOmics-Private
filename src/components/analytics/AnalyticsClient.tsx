@@ -8,6 +8,9 @@ import { PaceTrendChart } from './PaceTrendChart'
 import { EfficiencyChart } from './EfficiencyChart'
 import { ZoneDistributionChart } from './ZoneDistributionChart'
 import { HrTrendChart } from './HrTrendChart'
+import { CadenceTrendChart } from './CadenceTrendChart'
+import { LongRunsChart } from './LongRunsChart'
+import { EasyHardChart } from './EasyHardChart'
 import { YearSelector } from '@/components/ui/YearSelector'
 import { formatDuration } from '@/lib/formatters'
 
@@ -94,6 +97,9 @@ export function AnalyticsClient({ data }: { data: AnalyticsPageData }) {
         <EfficiencyChart data={yearData.efficiencyTrend} />
         <HrTrendChart data={yearData.hrTrend} />
         <ZoneDistributionChart data={yearData.zoneDistribution} />
+        <EasyHardChart data={yearData.easyHardSplit} />
+        <CadenceTrendChart data={yearData.cadenceTrend} />
+        <LongRunsChart data={yearData.longRuns} />
       </div>
     </div>
   )

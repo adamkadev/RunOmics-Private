@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
   Activity,
+  CalendarDays,
   BarChart2,
   Trophy,
   Mountain,
@@ -15,6 +16,7 @@ import { ThemeToggle } from './ThemeToggle'
 const NAV_ITEMS = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/activities', label: 'Activities', icon: Activity },
+  { href: '/calendar', label: 'Calendar', icon: CalendarDays },
   { href: '/analytics', label: 'Analytics', icon: BarChart2 },
   { href: '/goals', label: 'Goals & PBs', icon: Trophy },
 ]

@@ -42,6 +42,7 @@ export interface Activity {
   verticalOscillationMm: number | null
   verticalRatioPct: number | null
   strideLengthM: number | null
+  bestEfforts: Record<string, number> | null
 }
 
 export interface WeeklyVolume {

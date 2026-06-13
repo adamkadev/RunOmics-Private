@@ -13,13 +13,21 @@ interface Props {
   samples: number[]
   durationSeconds?: number
   elevationGain?: number | null
+  onHoverFraction?: (fraction: number | null) => void
 }
 
-export function ElevationChart({ samples, durationSeconds, elevationGain }: Props) {
+export function ElevationChart({ samples, durationSeconds, elevationGain, onHoverFraction }: Props) {
   const data = samples.map((alt, i) => {
     const pct = durationSeconds ? (i / (samples.length - 1)) * durationSeconds : i
     return { t: pct, alt: Math.round(alt) }
   })
+
+  function handleMove(state: Record<string, unknown> | null) {
+    const idx = state?.activeTooltipIndex
+    if (typeof idx === 'number' && samples.length > 1) {
+      onHoverFraction?.(idx / (samples.length - 1))
+    }
+  }
 
   const minVal = Math.max(0, Math.min(...samples) - 10)
   const maxVal = Math.max(...samples) + 10
@@ -45,7 +53,12 @@ export function ElevationChart({ samples, durationSeconds, elevationGain }: Prop
         )}
       </div>
       <ResponsiveContainer width="100%" height={120}>
-        <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>
+        <AreaChart
+          data={data}
+          margin={{ top: 4, right: 4, bottom: 0, left: -8 }}
+          onMouseMove={handleMove}
+          onMouseLeave={() => onHoverFraction?.(null)}
+        >
           <defs>
             <linearGradient id="elevGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#78716c" stopOpacity={0.3} />

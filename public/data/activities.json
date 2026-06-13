@@ -1565,7 +1565,11 @@
       "groundContactMs": 250.6,
       "verticalOscillationMm": 85.3,
       "verticalRatioPct": 8.29,
-      "strideLengthM": 1.07
+      "strideLengthM": 1.07,
+      "bestEfforts": {
+        "1k": 262.9,
+        "5k": 1609.6
+      }
     },
     {
       "id": "23215120005",
@@ -3132,7 +3136,11 @@
       "groundContactMs": 263.7,
       "verticalOscillationMm": 88.2,
       "verticalRatioPct": 8.87,
-      "strideLengthM": 1.0
+      "strideLengthM": 1.0,
+      "bestEfforts": {
+        "1k": 339.2,
+        "5k": 1825.0
+      }
     },
     {
       "id": "23203675478",
@@ -4699,7 +4707,12 @@
       "groundContactMs": 248.7,
       "verticalOscillationMm": 91.3,
       "verticalRatioPct": 8.19,
-      "strideLengthM": 1.13
+      "strideLengthM": 1.13,
+      "bestEfforts": {
+        "1k": 245.1,
+        "5k": 1300.7,
+        "10k": 2960.8
+      }
     },
     {
       "id": "23191590657",
@@ -6266,7 +6279,11 @@
       "groundContactMs": 267.5,
       "verticalOscillationMm": 90.5,
       "verticalRatioPct": 9.01,
-      "strideLengthM": 1.0
+      "strideLengthM": 1.0,
+      "bestEfforts": {
+        "1k": 338.8,
+        "5k": 1779.8
+      }
     },
     {
       "id": "23168729667",
@@ -7833,7 +7850,11 @@
       "groundContactMs": 264.4,
       "verticalOscillationMm": 90.1,
       "verticalRatioPct": 8.87,
-      "strideLengthM": 1.02
+      "strideLengthM": 1.02,
+      "bestEfforts": {
+        "1k": 328.6,
+        "5k": 1742.4
+      }
     },
     {
       "id": "23155682803",
@@ -9400,7 +9421,12 @@
       "groundContactMs": 250.0,
       "verticalOscillationMm": 90.1,
       "verticalRatioPct": 8.24,
-      "strideLengthM": 1.11
+      "strideLengthM": 1.11,
+      "bestEfforts": {
+        "1k": 259.5,
+        "5k": 1389.9,
+        "10k": 3156.7
+      }
     },
     {
       "id": "23143195113",
@@ -10967,7 +10993,12 @@
       "groundContactMs": 244.4,
       "verticalOscillationMm": 88.8,
       "verticalRatioPct": 8.03,
-      "strideLengthM": 1.12
+      "strideLengthM": 1.12,
+      "bestEfforts": {
+        "1k": 246.4,
+        "5k": 1290.1,
+        "10k": 3037.2
+      }
     },
     {
       "id": "23119548073",
@@ -12534,7 +12565,11 @@
       "groundContactMs": 262.7,
       "verticalOscillationMm": 87.5,
       "verticalRatioPct": 8.86,
-      "strideLengthM": 0.99
+      "strideLengthM": 0.99,
+      "bestEfforts": {
+        "1k": 350.4,
+        "5k": 1772.0
+      }
     },
     {
       "id": "23107687704",
@@ -14101,7 +14136,12 @@
       "groundContactMs": 250.0,
       "verticalOscillationMm": 89.6,
       "verticalRatioPct": 8.28,
-      "strideLengthM": 1.11
+      "strideLengthM": 1.11,
+      "bestEfforts": {
+        "1k": 254.9,
+        "5k": 1386.8,
+        "10k": 3129.7
+      }
     },
     {
       "id": "23084922930",
@@ -15668,7 +15708,11 @@
       "groundContactMs": 251.6,
       "verticalOscillationMm": 88.6,
       "verticalRatioPct": 8.32,
-      "strideLengthM": 1.07
+      "strideLengthM": 1.07,
+      "bestEfforts": {
+        "1k": 289.0,
+        "5k": 1566.5
+      }
     },
     {
       "id": "23072084376",
@@ -17235,7 +17279,11 @@
       "groundContactMs": 263.5,
       "verticalOscillationMm": 90.7,
       "verticalRatioPct": 8.82,
-      "strideLengthM": 1.03
+      "strideLengthM": 1.03,
+      "bestEfforts": {
+        "1k": 329.5,
+        "5k": 1702.6
+      }
     },
     {
       "id": "23049565135",
@@ -18802,7 +18850,11 @@
       "groundContactMs": 251.4,
       "verticalOscillationMm": 88.7,
       "verticalRatioPct": 8.31,
-      "strideLengthM": 1.07
+      "strideLengthM": 1.07,
+      "bestEfforts": {
+        "1k": 310.3,
+        "5k": 1584.6
+      }
     },
     {
       "id": "23036118383",
@@ -20369,7 +20421,12 @@
       "groundContactMs": 262.4,
       "verticalOscillationMm": 89.0,
       "verticalRatioPct": 8.81,
-      "strideLengthM": 1.01
+      "strideLengthM": 1.01,
+      "bestEfforts": {
+        "1k": 319.8,
+        "5k": 1674.9,
+        "10k": 3476.9
+      }
     },
     {
       "id": "23024859719",
@@ -21936,7 +21993,11 @@
       "groundContactMs": 252.0,
       "verticalOscillationMm": 91.3,
       "verticalRatioPct": 8.33,
-      "strideLengthM": 1.13
+      "strideLengthM": 1.13,
+      "bestEfforts": {
+        "1k": 251.2,
+        "5k": 1463.8
+      }
     },
     {
       "id": "23000715359",
@@ -23503,7 +23564,12 @@
       "groundContactMs": 264.4,
       "verticalOscillationMm": 88.0,
       "verticalRatioPct": 8.92,
-      "strideLengthM": 0.99
+      "strideLengthM": 0.99,
+      "bestEfforts": {
+        "1k": 305.6,
+        "5k": 1664.8,
+        "10k": 3516.5
+      }
     },
     {
       "id": "22988463438",
@@ -25070,7 +25136,12 @@
       "groundContactMs": 266.0,
       "verticalOscillationMm": 90.8,
       "verticalRatioPct": 8.93,
-      "strideLengthM": 1.02
+      "strideLengthM": 1.02,
+      "bestEfforts": {
+        "1k": 282.7,
+        "5k": 1615.2,
+        "10k": 3454.4
+      }
     },
     {
       "id": "22963895659",
@@ -26637,7 +26708,11 @@
       "groundContactMs": 275.9,
       "verticalOscillationMm": 92.7,
       "verticalRatioPct": 9.3,
-      "strideLengthM": 1.0
+      "strideLengthM": 1.0,
+      "bestEfforts": {
+        "1k": 285.2,
+        "5k": 1778.5
+      }
     },
     {
       "id": "22953436238",
@@ -28204,7 +28279,11 @@
       "groundContactMs": 274.8,
       "verticalOscillationMm": 91.3,
       "verticalRatioPct": 9.31,
-      "strideLengthM": 0.98
+      "strideLengthM": 0.98,
+      "bestEfforts": {
+        "1k": 313.7,
+        "5k": 1822.3
+      }
     },
     {
       "id": "22939946456",
@@ -29771,7 +29850,11 @@
       "groundContactMs": 277.5,
       "verticalOscillationMm": 92.4,
       "verticalRatioPct": 9.39,
-      "strideLengthM": 0.99
+      "strideLengthM": 0.99,
+      "bestEfforts": {
+        "1k": 331.7,
+        "5k": 1859.5
+      }
     },
     {
       "id": "22904920506",
@@ -31338,7 +31421,13 @@
       "groundContactMs": 243.0,
       "verticalOscillationMm": 97.4,
       "verticalRatioPct": 7.84,
-      "strideLengthM": 1.24
+      "strideLengthM": 1.24,
+      "bestEfforts": {
+        "1k": 240.7,
+        "5k": 1325.8,
+        "10k": 2677.9,
+        "half": 5858.8
+      }
     },
     {
       "id": "22904913255",
@@ -32905,7 +32994,10 @@
       "groundContactMs": 283.1,
       "verticalOscillationMm": 85.2,
       "verticalRatioPct": 9.8,
-      "strideLengthM": 0.87
+      "strideLengthM": 0.87,
+      "bestEfforts": {
+        "1k": 415.3
+      }
     },
     {
       "id": "22893557691",
@@ -34472,7 +34564,11 @@
       "groundContactMs": 273.5,
       "verticalOscillationMm": 90.6,
       "verticalRatioPct": 9.27,
-      "strideLengthM": 0.98
+      "strideLengthM": 0.98,
+      "bestEfforts": {
+        "1k": 360.6,
+        "5k": 1850.1
+      }
     },
     {
       "id": "22870868840",
@@ -36039,7 +36135,11 @@
       "groundContactMs": 269.8,
       "verticalOscillationMm": 90.9,
       "verticalRatioPct": 9.1,
-      "strideLengthM": 1.0
+      "strideLengthM": 1.0,
+      "bestEfforts": {
+        "1k": 349.1,
+        "5k": 1789.6
+      }
     },
     {
       "id": "22859285746",
@@ -37606,7 +37706,12 @@
       "groundContactMs": 260.5,
       "verticalOscillationMm": 94.0,
       "verticalRatioPct": 8.63,
-      "strideLengthM": 1.09
+      "strideLengthM": 1.09,
+      "bestEfforts": {
+        "1k": 289.9,
+        "5k": 1612.7,
+        "10k": 3250.4
+      }
     },
     {
       "id": "22836486909",
@@ -39173,7 +39278,12 @@
       "groundContactMs": 258.4,
       "verticalOscillationMm": 94.7,
       "verticalRatioPct": 8.52,
-      "strideLengthM": 1.11
+      "strideLengthM": 1.11,
+      "bestEfforts": {
+        "1k": 284.4,
+        "5k": 1557.6,
+        "10k": 3192.8
+      }
     },
     {
       "id": "22824294761",
@@ -40740,7 +40850,12 @@
       "groundContactMs": 258.5,
       "verticalOscillationMm": 94.0,
       "verticalRatioPct": 8.54,
-      "strideLengthM": 1.1
+      "strideLengthM": 1.1,
+      "bestEfforts": {
+        "1k": 280.6,
+        "5k": 1586.0,
+        "10k": 3232.9
+      }
     },
     {
       "id": "22813774480",
@@ -42307,7 +42422,12 @@
       "groundContactMs": 258.2,
       "verticalOscillationMm": 94.8,
       "verticalRatioPct": 8.51,
-      "strideLengthM": 1.12
+      "strideLengthM": 1.12,
+      "bestEfforts": {
+        "1k": 275.4,
+        "5k": 1548.5,
+        "10k": 3183.1
+      }
     },
     {
       "id": "22800640808",
@@ -43874,7 +43994,12 @@
       "groundContactMs": 262.7,
       "verticalOscillationMm": 94.7,
       "verticalRatioPct": 8.71,
-      "strideLengthM": 1.09
+      "strideLengthM": 1.09,
+      "bestEfforts": {
+        "1k": 288.6,
+        "5k": 1664.8,
+        "10k": 3345.2
+      }
     },
     {
       "id": "22788609489",
@@ -45441,7 +45566,12 @@
       "groundContactMs": 240.0,
       "verticalOscillationMm": 91.9,
       "verticalRatioPct": 7.79,
-      "strideLengthM": 1.2
+      "strideLengthM": 1.2,
+      "bestEfforts": {
+        "1k": 242.6,
+        "5k": 1241.3,
+        "10k": 3129.3
+      }
     },
     {
       "id": "22755065993",
@@ -47008,7 +47138,11 @@
       "groundContactMs": 260.0,
       "verticalOscillationMm": 91.4,
       "verticalRatioPct": 8.65,
-      "strideLengthM": 1.06
+      "strideLengthM": 1.06,
+      "bestEfforts": {
+        "1k": 327.4,
+        "5k": 1665.8
+      }
     },
     {
       "id": "22748076343",
@@ -48575,7 +48709,11 @@
       "groundContactMs": 273.2,
       "verticalOscillationMm": 88.5,
       "verticalRatioPct": 9.32,
-      "strideLengthM": 0.95
+      "strideLengthM": 0.95,
+      "bestEfforts": {
+        "1k": 346.9,
+        "5k": 1871.8
+      }
     },
     {
       "id": "22742942391",
@@ -50142,7 +50280,12 @@
       "groundContactMs": 259.3,
       "verticalOscillationMm": 93.9,
       "verticalRatioPct": 8.58,
-      "strideLengthM": 1.1
+      "strideLengthM": 1.1,
+      "bestEfforts": {
+        "1k": 287.5,
+        "5k": 1588.0,
+        "10k": 3231.9
+      }
     },
     {
       "id": "22729531167",
@@ -51709,7 +51852,11 @@
       "groundContactMs": 267.2,
       "verticalOscillationMm": 79.3,
       "verticalRatioPct": 8.88,
-      "strideLengthM": 0.94
+      "strideLengthM": 0.94,
+      "bestEfforts": {
+        "1k": 331.7,
+        "5k": 1981.6
+      }
     },
     {
       "id": "22706106021",
@@ -53276,7 +53423,11 @@
       "groundContactMs": 265.3,
       "verticalOscillationMm": 89.0,
       "verticalRatioPct": 8.95,
-      "strideLengthM": 1.0
+      "strideLengthM": 1.0,
+      "bestEfforts": {
+        "1k": 337.4,
+        "5k": 1794.9
+      }
     },
     {
       "id": "22693140053",
@@ -54843,7 +54994,12 @@
       "groundContactMs": 242.9,
       "verticalOscillationMm": 92.3,
       "verticalRatioPct": 7.9,
-      "strideLengthM": 1.18
+      "strideLengthM": 1.18,
+      "bestEfforts": {
+        "1k": 253.9,
+        "5k": 1420.4,
+        "10k": 2879.7
+      }
     },
     {
       "id": "22670152506",
@@ -56410,7 +56566,12 @@
       "groundContactMs": 263.6,
       "verticalOscillationMm": 90.7,
       "verticalRatioPct": 8.82,
-      "strideLengthM": 1.03
+      "strideLengthM": 1.03,
+      "bestEfforts": {
+        "1k": 298.4,
+        "5k": 1608.5,
+        "10k": 3348.5
+      }
     },
     {
       "id": "22657654852",
@@ -57977,7 +58138,12 @@
       "groundContactMs": 272.0,
       "verticalOscillationMm": 91.5,
       "verticalRatioPct": 9.17,
-      "strideLengthM": 1.0
+      "strideLengthM": 1.0,
+      "bestEfforts": {
+        "1k": 312.2,
+        "5k": 1759.4,
+        "10k": 3641.9
+      }
     },
     {
       "id": "22645248397",
@@ -59544,7 +59710,11 @@
       "groundContactMs": 253.1,
       "verticalOscillationMm": 81.6,
       "verticalRatioPct": 8.38,
-      "strideLengthM": 1.09
+      "strideLengthM": 1.09,
+      "bestEfforts": {
+        "1k": 355.7,
+        "5k": 2018.6
+      }
     },
     {
       "id": "22620834361",
@@ -61111,7 +61281,12 @@
       "groundContactMs": 270.3,
       "verticalOscillationMm": 94.2,
       "verticalRatioPct": 9.03,
-      "strideLengthM": 1.04
+      "strideLengthM": 1.04,
+      "bestEfforts": {
+        "1k": 327.1,
+        "5k": 1712.7,
+        "10k": 3485.8
+      }
     },
     {
       "id": "22608283596",
@@ -62678,7 +62853,12 @@
       "groundContactMs": 242.7,
       "verticalOscillationMm": 94.4,
       "verticalRatioPct": 7.88,
-      "strideLengthM": 1.21
+      "strideLengthM": 1.21,
+      "bestEfforts": {
+        "1k": 256.7,
+        "5k": 1325.5,
+        "10k": 2959.6
+      }
     },
     {
       "id": "22587304750",
@@ -64245,7 +64425,12 @@
       "groundContactMs": 274.1,
       "verticalOscillationMm": 92.7,
       "verticalRatioPct": 9.23,
-      "strideLengthM": 1.01
+      "strideLengthM": 1.01,
+      "bestEfforts": {
+        "1k": 331.9,
+        "5k": 1798.2,
+        "10k": 3690.8
+      }
     },
     {
       "id": "22573934838",
@@ -65812,7 +65997,12 @@
       "groundContactMs": 273.7,
       "verticalOscillationMm": 95.1,
       "verticalRatioPct": 9.15,
-      "strideLengthM": 1.04
+      "strideLengthM": 1.04,
+      "bestEfforts": {
+        "1k": 334.1,
+        "5k": 1708.8,
+        "10k": 3499.6
+      }
     },
     {
       "id": "22557206036",
@@ -67379,7 +67569,11 @@
       "groundContactMs": 265.5,
       "verticalOscillationMm": 83.0,
       "verticalRatioPct": 8.65,
-      "strideLengthM": 1.0
+      "strideLengthM": 1.0,
+      "bestEfforts": {
+        "1k": 333.9,
+        "5k": 1958.7
+      }
     },
     {
       "id": "22538630398",
@@ -68946,7 +69140,11 @@
       "groundContactMs": 272.5,
       "verticalOscillationMm": 94.3,
       "verticalRatioPct": 9.11,
-      "strideLengthM": 1.04
+      "strideLengthM": 1.04,
+      "bestEfforts": {
+        "1k": 325.9,
+        "5k": 1766.0
+      }
     },
     {
       "id": "22526732548",
@@ -70513,7 +70711,12 @@
       "groundContactMs": 243.9,
       "verticalOscillationMm": 98.1,
       "verticalRatioPct": 7.9,
-      "strideLengthM": 1.26
+      "strideLengthM": 1.26,
+      "bestEfforts": {
+        "1k": 246.4,
+        "5k": 1281.1,
+        "10k": 2659.4
+      }
     },
     {
       "id": "22503754869",
@@ -72080,7 +72283,12 @@
       "groundContactMs": 269.0,
       "verticalOscillationMm": 94.2,
       "verticalRatioPct": 8.99,
-      "strideLengthM": 1.05
+      "strideLengthM": 1.05,
+      "bestEfforts": {
+        "1k": 319.6,
+        "5k": 1680.9,
+        "10k": 3442.7
+      }
     },
     {
       "id": "22492666126",
@@ -73647,7 +73855,11 @@
       "groundContactMs": 268.2,
       "verticalOscillationMm": 96.2,
       "verticalRatioPct": 8.9,
-      "strideLengthM": 1.08
+      "strideLengthM": 1.08,
+      "bestEfforts": {
+        "1k": 317.0,
+        "5k": 1666.2
+      }
     },
     {
       "id": "22479618239",
@@ -75214,7 +75426,11 @@
       "groundContactMs": 271.9,
       "verticalOscillationMm": 84.6,
       "verticalRatioPct": 8.95,
-      "strideLengthM": 1.0
+      "strideLengthM": 1.0,
+      "bestEfforts": {
+        "1k": 319.3,
+        "5k": 2013.0
+      }
     },
     {
       "id": "22456073353",
@@ -76781,7 +76997,11 @@
       "groundContactMs": 278.1,
       "verticalOscillationMm": 94.9,
       "verticalRatioPct": 9.33,
-      "strideLengthM": 1.02
+      "strideLengthM": 1.02,
+      "bestEfforts": {
+        "1k": 337.0,
+        "5k": 1813.7
+      }
     },
     {
       "id": "22442728120",
@@ -78348,7 +78568,12 @@
       "groundContactMs": 245.2,
       "verticalOscillationMm": 99.7,
       "verticalRatioPct": 7.92,
-      "strideLengthM": 1.27
+      "strideLengthM": 1.27,
+      "bestEfforts": {
+        "1k": 260.0,
+        "5k": 1314.2,
+        "10k": 2649.9
+      }
     },
     {
       "id": "22420446758",
@@ -79915,7 +80140,12 @@
       "groundContactMs": 267.5,
       "verticalOscillationMm": 97.3,
       "verticalRatioPct": 8.84,
-      "strideLengthM": 1.1
+      "strideLengthM": 1.1,
+      "bestEfforts": {
+        "1k": 300.8,
+        "5k": 1594.4,
+        "10k": 3316.7
+      }
     },
     {
       "id": "22409575005",
@@ -81482,7 +81712,12 @@
       "groundContactMs": 261.5,
       "verticalOscillationMm": 97.7,
       "verticalRatioPct": 8.6,
-      "strideLengthM": 1.14
+      "strideLengthM": 1.14,
+      "bestEfforts": {
+        "1k": 290.3,
+        "5k": 1596.5,
+        "10k": 3213.9
+      }
     },
     {
       "id": "22397036798",
@@ -83049,7 +83284,11 @@
       "groundContactMs": 266.8,
       "verticalOscillationMm": 92.4,
       "verticalRatioPct": 8.85,
-      "strideLengthM": 1.07
+      "strideLengthM": 1.07,
+      "bestEfforts": {
+        "1k": 310.5,
+        "5k": 1846.7
+      }
     },
     {
       "id": "22375012450",
@@ -84616,7 +84855,11 @@
       "groundContactMs": 267.5,
       "verticalOscillationMm": 98.4,
       "verticalRatioPct": 8.82,
-      "strideLengthM": 1.12
+      "strideLengthM": 1.12,
+      "bestEfforts": {
+        "1k": 309.7,
+        "5k": 1621.0
+      }
     },
     {
       "id": "22361720746",
@@ -86183,7 +86426,12 @@
       "groundContactMs": 251.7,
       "verticalOscillationMm": 98.6,
       "verticalRatioPct": 8.19,
-      "strideLengthM": 1.22
+      "strideLengthM": 1.22,
+      "bestEfforts": {
+        "1k": 256.9,
+        "5k": 1379.6,
+        "10k": 2887.4
+      }
     },
     {
       "id": "22341813217",
@@ -87750,7 +87998,12 @@
       "groundContactMs": 265.7,
       "verticalOscillationMm": 97.5,
       "verticalRatioPct": 8.76,
-      "strideLengthM": 1.11
+      "strideLengthM": 1.11,
+      "bestEfforts": {
+        "1k": 306.7,
+        "5k": 1589.0,
+        "10k": 3248.1
+      }
     },
     {
       "id": "22331217733",
@@ -89317,7 +89570,11 @@
       "groundContactMs": 263.8,
       "verticalOscillationMm": 98.7,
       "verticalRatioPct": 8.66,
-      "strideLengthM": 1.14
+      "strideLengthM": 1.14,
+      "bestEfforts": {
+        "1k": 308.4,
+        "5k": 1579.4
+      }
     },
     {
       "id": "22319883522",
@@ -90884,7 +91141,11 @@
       "groundContactMs": 265.7,
       "verticalOscillationMm": 85.1,
       "verticalRatioPct": 8.81,
-      "strideLengthM": 1.04
+      "strideLengthM": 1.04,
+      "bestEfforts": {
+        "1k": 319.7,
+        "5k": 1950.0
+      }
     },
     {
       "id": "22297641084",
@@ -92451,7 +92712,11 @@
       "groundContactMs": 265.3,
       "verticalOscillationMm": 93.5,
       "verticalRatioPct": 8.85,
-      "strideLengthM": 1.06
+      "strideLengthM": 1.06,
+      "bestEfforts": {
+        "1k": 328.1,
+        "5k": 1685.0
+      }
     },
     {
       "id": "22288370797",
@@ -94018,7 +94283,11 @@
       "groundContactMs": 249.3,
       "verticalOscillationMm": 96.2,
       "verticalRatioPct": 8.14,
-      "strideLengthM": 1.22
+      "strideLengthM": 1.22,
+      "bestEfforts": {
+        "1k": 234.7,
+        "5k": 1393.9
+      }
     },
     {
       "id": "22262377365",
@@ -95585,7 +95854,12 @@
       "groundContactMs": 269.2,
       "verticalOscillationMm": 93.6,
       "verticalRatioPct": 8.99,
-      "strideLengthM": 1.04
+      "strideLengthM": 1.04,
+      "bestEfforts": {
+        "1k": 305.9,
+        "5k": 1706.0,
+        "10k": 3509.9
+      }
     },
     {
       "id": "22252821140",
@@ -97152,7 +97426,11 @@
       "groundContactMs": 282.8,
       "verticalOscillationMm": 95.5,
       "verticalRatioPct": 9.47,
-      "strideLengthM": 1.01
+      "strideLengthM": 1.01,
+      "bestEfforts": {
+        "1k": 335.7,
+        "5k": 1848.9
+      }
     },
     {
       "id": "22238670744",
@@ -98719,7 +98997,12 @@
       "groundContactMs": 261.1,
       "verticalOscillationMm": 86.4,
       "verticalRatioPct": 8.62,
-      "strideLengthM": 1.06
+      "strideLengthM": 1.06,
+      "bestEfforts": {
+        "1k": 321.2,
+        "5k": 1763.5,
+        "10k": 3650.1
+      }
     },
     {
       "id": "22215424468",
@@ -100286,7 +100569,11 @@
       "groundContactMs": 279.7,
       "verticalOscillationMm": 90.4,
       "verticalRatioPct": 9.53,
-      "strideLengthM": 0.95
+      "strideLengthM": 0.95,
+      "bestEfforts": {
+        "1k": 371.8,
+        "5k": 1930.1
+      }
     },
     {
       "id": "22205516653",
@@ -101853,7 +102140,12 @@
       "groundContactMs": 250.1,
       "verticalOscillationMm": 96.8,
       "verticalRatioPct": 8.15,
-      "strideLengthM": 1.2
+      "strideLengthM": 1.2,
+      "bestEfforts": {
+        "1k": 257.5,
+        "5k": 1434.3,
+        "10k": 2898.1
+      }
     },
     {
       "id": "22182908217",
@@ -103420,7 +103712,12 @@
       "groundContactMs": 261.5,
       "verticalOscillationMm": 93.3,
       "verticalRatioPct": 8.68,
-      "strideLengthM": 1.08
+      "strideLengthM": 1.08,
+      "bestEfforts": {
+        "1k": 318.1,
+        "5k": 1636.1,
+        "10k": 3286.4
+      }
     },
     {
       "id": "22173128251",
@@ -104987,7 +105284,11 @@
       "groundContactMs": 260.9,
       "verticalOscillationMm": 93.8,
       "verticalRatioPct": 8.62,
-      "strideLengthM": 1.09
+      "strideLengthM": 1.09,
+      "bestEfforts": {
+        "1k": 319.1,
+        "5k": 1631.4
+      }
     },
     {
       "id": "22161923747",
@@ -106554,7 +106855,12 @@
       "groundContactMs": 259.3,
       "verticalOscillationMm": 90.1,
       "verticalRatioPct": 8.52,
-      "strideLengthM": 1.1
+      "strideLengthM": 1.1,
+      "bestEfforts": {
+        "1k": 286.1,
+        "5k": 1643.9,
+        "10k": 3415.5
+      }
     },
     {
       "id": "22140588891",
@@ -108121,7 +108427,11 @@
       "groundContactMs": 264.5,
       "verticalOscillationMm": 94.5,
       "verticalRatioPct": 8.74,
-      "strideLengthM": 1.08
+      "strideLengthM": 1.08,
+      "bestEfforts": {
+        "1k": 324.7,
+        "5k": 1671.1
+      }
     },
     {
       "id": "22127046218",
@@ -109688,7 +109998,12 @@
       "groundContactMs": 249.4,
       "verticalOscillationMm": 96.9,
       "verticalRatioPct": 8.08,
-      "strideLengthM": 1.21
+      "strideLengthM": 1.21,
+      "bestEfforts": {
+        "1k": 260.7,
+        "5k": 1341.3,
+        "10k": 2933.9
+      }
     },
     {
       "id": "22106972038",
@@ -111255,7 +111570,12 @@
       "groundContactMs": 261.8,
       "verticalOscillationMm": 94.3,
       "verticalRatioPct": 8.65,
-      "strideLengthM": 1.09
+      "strideLengthM": 1.09,
+      "bestEfforts": {
+        "1k": 318.6,
+        "5k": 1627.0,
+        "10k": 3275.2
+      }
     },
     {
       "id": "22094875400",
@@ -112822,7 +113142,11 @@
       "groundContactMs": 266.2,
       "verticalOscillationMm": 94.5,
       "verticalRatioPct": 8.84,
-      "strideLengthM": 1.07
+      "strideLengthM": 1.07,
+      "bestEfforts": {
+        "1k": 327.3,
+        "5k": 1670.7
+      }
     },
     {
       "id": "22083452454",
@@ -114389,7 +114713,11 @@
       "groundContactMs": 262.8,
       "verticalOscillationMm": 91.5,
       "verticalRatioPct": 8.61,
-      "strideLengthM": 1.09
+      "strideLengthM": 1.09,
+      "bestEfforts": {
+        "1k": 296.6,
+        "5k": 1633.2
+      }
     },
     {
       "id": "22060889784",
@@ -115956,7 +116284,11 @@
       "groundContactMs": 268.4,
       "verticalOscillationMm": 93.5,
       "verticalRatioPct": 8.95,
-      "strideLengthM": 1.05
+      "strideLengthM": 1.05,
+      "bestEfforts": {
+        "1k": 319.7,
+        "5k": 1696.6
+      }
     },
     {
       "id": "22049020167",
@@ -117523,7 +117855,12 @@
       "groundContactMs": 246.1,
       "verticalOscillationMm": 96.1,
       "verticalRatioPct": 8.01,
-      "strideLengthM": 1.22
+      "strideLengthM": 1.22,
+      "bestEfforts": {
+        "1k": 249.0,
+        "5k": 1376.7,
+        "10k": 2816.7
+      }
     },
     {
       "id": "22025451726",
@@ -119090,7 +119427,12 @@
       "groundContactMs": 264.5,
       "verticalOscillationMm": 94.3,
       "verticalRatioPct": 8.8,
-      "strideLengthM": 1.07
+      "strideLengthM": 1.07,
+      "bestEfforts": {
+        "1k": 323.2,
+        "5k": 1666.7,
+        "10k": 3360.2
+      }
     },
     {
       "id": "22013695774",
@@ -120657,7 +120999,11 @@
       "groundContactMs": 265.5,
       "verticalOscillationMm": 96.2,
       "verticalRatioPct": 8.79,
-      "strideLengthM": 1.09
+      "strideLengthM": 1.09,
+      "bestEfforts": {
+        "1k": 318.9,
+        "5k": 1633.3
+      }
     },
     {
       "id": "22001607601",
@@ -122224,7 +122570,12 @@
       "groundContactMs": 269.2,
       "verticalOscillationMm": 95.2,
       "verticalRatioPct": 8.97,
-      "strideLengthM": 1.06
+      "strideLengthM": 1.06,
+      "bestEfforts": {
+        "1k": 323.6,
+        "5k": 1679.2,
+        "10k": 3420.0
+      }
     },
     {
       "id": "21982745115",
@@ -123791,7 +124142,12 @@
       "groundContactMs": 269.4,
       "verticalOscillationMm": 94.6,
       "verticalRatioPct": 8.99,
-      "strideLengthM": 1.05
+      "strideLengthM": 1.05,
+      "bestEfforts": {
+        "1k": 327.8,
+        "5k": 1681.4,
+        "10k": 3445.7
+      }
     },
     {
       "id": "21971084089",
@@ -125358,7 +125714,11 @@
       "groundContactMs": 251.7,
       "verticalOscillationMm": 93.2,
       "verticalRatioPct": 8.22,
-      "strideLengthM": 1.17
+      "strideLengthM": 1.17,
+      "bestEfforts": {
+        "1k": 255.2,
+        "5k": 1463.2
+      }
     },
     {
       "id": "21953391517",
@@ -126925,7 +127285,12 @@
       "groundContactMs": 272.0,
       "verticalOscillationMm": 96.0,
       "verticalRatioPct": 9.05,
-      "strideLengthM": 1.06
+      "strideLengthM": 1.06,
+      "bestEfforts": {
+        "1k": 329.4,
+        "5k": 1721.7,
+        "10k": 3449.2
+      }
     },
     {
       "id": "21942588496",
@@ -128492,7 +128857,11 @@
       "groundContactMs": 274.4,
       "verticalOscillationMm": 95.3,
       "verticalRatioPct": 9.18,
-      "strideLengthM": 1.04
+      "strideLengthM": 1.04,
+      "bestEfforts": {
+        "1k": 334.7,
+        "5k": 1750.6
+      }
     },
     {
       "id": "21932027297",
@@ -130059,7 +130428,12 @@
       "groundContactMs": 276.1,
       "verticalOscillationMm": 94.7,
       "verticalRatioPct": 9.25,
-      "strideLengthM": 1.03
+      "strideLengthM": 1.03,
+      "bestEfforts": {
+        "1k": 301.3,
+        "5k": 1741.1,
+        "10k": 3604.9
+      }
     },
     {
       "id": "21896043386",
@@ -131626,7 +132000,11 @@
       "groundContactMs": 258.4,
       "verticalOscillationMm": 96.4,
       "verticalRatioPct": 8.51,
-      "strideLengthM": 1.15
+      "strideLengthM": 1.15,
+      "bestEfforts": {
+        "1k": 256.9,
+        "5k": 1367.7
+      }
     },
     {
       "id": "21875415133",
@@ -133193,7 +133571,12 @@
       "groundContactMs": 272.1,
       "verticalOscillationMm": 93.5,
       "verticalRatioPct": 9.1,
-      "strideLengthM": 1.03
+      "strideLengthM": 1.03,
+      "bestEfforts": {
+        "1k": 331.0,
+        "5k": 1773.9,
+        "10k": 3588.0
+      }
     },
     {
       "id": "21864277884",
@@ -134760,7 +135143,11 @@
       "groundContactMs": 276.2,
       "verticalOscillationMm": 93.0,
       "verticalRatioPct": 9.31,
-      "strideLengthM": 1.0
+      "strideLengthM": 1.0,
+      "bestEfforts": {
+        "1k": 352.6,
+        "5k": 1870.9
+      }
     },
     {
       "id": "21847093915",
@@ -136327,7 +136714,11 @@
       "groundContactMs": 257.2,
       "verticalOscillationMm": 95.0,
       "verticalRatioPct": 8.36,
-      "strideLengthM": 1.18
+      "strideLengthM": 1.18,
+      "bestEfforts": {
+        "1k": 276.5,
+        "5k": 1583.9
+      }
     },
     {
       "id": "21832394566",
@@ -137894,7 +138285,11 @@
       "groundContactMs": 281.7,
       "verticalOscillationMm": 95.2,
       "verticalRatioPct": 9.42,
-      "strideLengthM": 1.01
+      "strideLengthM": 1.01,
+      "bestEfforts": {
+        "1k": 345.7,
+        "5k": 1859.2
+      }
     },
     {
       "id": "21784633440",
@@ -139461,7 +139856,11 @@
       "groundContactMs": 259.2,
       "verticalOscillationMm": 97.9,
       "verticalRatioPct": 8.47,
-      "strideLengthM": 1.18
+      "strideLengthM": 1.18,
+      "bestEfforts": {
+        "1k": 257.0,
+        "5k": 1534.8
+      }
     },
     {
       "id": "21774049069",
@@ -141028,7 +141427,11 @@
       "groundContactMs": 290.7,
       "verticalOscillationMm": 81.9,
       "verticalRatioPct": 10.27,
-      "strideLengthM": 0.81
+      "strideLengthM": 0.81,
+      "bestEfforts": {
+        "1k": 435.6,
+        "5k": 2468.0
+      }
     },
     {
       "id": "21764429656",
@@ -142595,7 +142998,11 @@
       "groundContactMs": 272.6,
       "verticalOscillationMm": 94.3,
       "verticalRatioPct": 8.83,
-      "strideLengthM": 1.07
+      "strideLengthM": 1.07,
+      "bestEfforts": {
+        "1k": 330.7,
+        "5k": 1752.4
+      }
     },
     {
       "id": "21752856184",
@@ -144162,7 +144569,11 @@
       "groundContactMs": 290.8,
       "verticalOscillationMm": 86.4,
       "verticalRatioPct": 10.13,
-      "strideLengthM": 0.86
+      "strideLengthM": 0.86,
+      "bestEfforts": {
+        "1k": 419.7,
+        "5k": 2181.1
+      }
     },
     {
       "id": "21732836032",
@@ -145729,7 +146140,11 @@
       "groundContactMs": 289.8,
       "verticalOscillationMm": 78.6,
       "verticalRatioPct": 10.02,
-      "strideLengthM": 0.84
+      "strideLengthM": 0.84,
+      "bestEfforts": {
+        "1k": 453.3,
+        "5k": 2532.8
+      }
     },
     {
       "id": "21723102671",
@@ -147296,7 +147711,11 @@
       "groundContactMs": 258.3,
       "verticalOscillationMm": 93.9,
       "verticalRatioPct": 8.39,
-      "strideLengthM": 1.16
+      "strideLengthM": 1.16,
+      "bestEfforts": {
+        "1k": 242.8,
+        "5k": 1617.4
+      }
     },
     {
       "id": "21692179683",
@@ -148863,7 +149282,11 @@
       "groundContactMs": 294.6,
       "verticalOscillationMm": 85.7,
       "verticalRatioPct": 10.32,
-      "strideLengthM": 0.83
+      "strideLengthM": 0.83,
+      "bestEfforts": {
+        "1k": 428.1,
+        "5k": 2443.8
+      }
     },
     {
       "id": "21670951787",
@@ -150430,7 +150853,11 @@
       "groundContactMs": 291.3,
       "verticalOscillationMm": 85.6,
       "verticalRatioPct": 10.03,
-      "strideLengthM": 0.88
+      "strideLengthM": 0.88,
+      "bestEfforts": {
+        "1k": 363.5,
+        "5k": 2218.9
+      }
     },
     {
       "id": "21643223856",
@@ -151997,7 +152424,10 @@
       "groundContactMs": 257.1,
       "verticalOscillationMm": 91.0,
       "verticalRatioPct": 8.21,
-      "strideLengthM": 1.14
+      "strideLengthM": 1.14,
+      "bestEfforts": {
+        "1k": 291.9
+      }
     },
     {
       "id": "21643222834",
@@ -153564,7 +153994,10 @@
       "groundContactMs": 293.1,
       "verticalOscillationMm": 84.1,
       "verticalRatioPct": 10.19,
-      "strideLengthM": 0.84
+      "strideLengthM": 0.84,
+      "bestEfforts": {
+        "1k": 455.4
+      }
     },
     {
       "id": "21620911339",
@@ -155131,7 +155564,11 @@
       "groundContactMs": 284.7,
       "verticalOscillationMm": 91.7,
       "verticalRatioPct": 9.63,
-      "strideLengthM": 0.96
+      "strideLengthM": 0.96,
+      "bestEfforts": {
+        "1k": 373.4,
+        "5k": 1952.4
+      }
     },
     {
       "id": "21609641877",
@@ -156698,7 +157135,11 @@
       "groundContactMs": 286.9,
       "verticalOscillationMm": 86.8,
       "verticalRatioPct": 9.96,
-      "strideLengthM": 0.91
+      "strideLengthM": 0.91,
+      "bestEfforts": {
+        "1k": 299.4,
+        "5k": 1938.4
+      }
     },
     {
       "id": "21589179092",
@@ -158265,7 +158706,10 @@
       "groundContactMs": 294.0,
       "verticalOscillationMm": 79.6,
       "verticalRatioPct": 10.46,
-      "strideLengthM": 0.79
+      "strideLengthM": 0.79,
+      "bestEfforts": {
+        "1k": 475.1
+      }
     },
     {
       "id": "21567281576",
@@ -159832,7 +160276,10 @@
       "groundContactMs": 303.8,
       "verticalOscillationMm": 78.1,
       "verticalRatioPct": 10.89,
-      "strideLengthM": 0.73
+      "strideLengthM": 0.73,
+      "bestEfforts": {
+        "1k": 498.8
+      }
     },
     {
       "id": "21333932725",
@@ -161399,7 +161846,11 @@
       "groundContactMs": 273.3,
       "verticalOscillationMm": 99.3,
       "verticalRatioPct": 8.97,
-      "strideLengthM": 1.11
+      "strideLengthM": 1.11,
+      "bestEfforts": {
+        "1k": 329.4,
+        "5k": 1700.8
+      }
     },
     {
       "id": "21236750535",
@@ -162966,7 +163417,12 @@
       "groundContactMs": 260.2,
       "verticalOscillationMm": 91.4,
       "verticalRatioPct": 8.53,
-      "strideLengthM": 1.1
+      "strideLengthM": 1.1,
+      "bestEfforts": {
+        "1k": 234.8,
+        "5k": 1596.1,
+        "10k": 3454.4
+      }
     },
     {
       "id": "21231222972",
@@ -164533,7 +164989,12 @@
       "groundContactMs": 266.1,
       "verticalOscillationMm": 98.7,
       "verticalRatioPct": 8.75,
-      "strideLengthM": 1.13
+      "strideLengthM": 1.13,
+      "bestEfforts": {
+        "1k": 313.7,
+        "5k": 1619.6,
+        "10k": 3263.4
+      }
     },
     {
       "id": "21190299655",
@@ -164748,7 +165209,12 @@
       "groundContactMs": 267.5,
       "verticalOscillationMm": 99.5,
       "verticalRatioPct": 8.8,
-      "strideLengthM": 1.14
+      "strideLengthM": 1.14,
+      "bestEfforts": {
+        "1k": 297.0,
+        "5k": 1642.3,
+        "10k": 3360.3
+      }
     },
     {
       "id": "21181170574",
@@ -164963,7 +165429,12 @@
       "groundContactMs": 257.0,
       "verticalOscillationMm": 99.8,
       "verticalRatioPct": 8.41,
-      "strideLengthM": 1.21
+      "strideLengthM": 1.21,
+      "bestEfforts": {
+        "1k": 215.2,
+        "5k": 1378.4,
+        "10k": 3198.8
+      }
     },
     {
       "id": "21172072598",
@@ -166530,7 +167001,11 @@
       "groundContactMs": 261.8,
       "verticalOscillationMm": 92.5,
       "verticalRatioPct": 8.58,
-      "strideLengthM": 1.11
+      "strideLengthM": 1.11,
+      "bestEfforts": {
+        "1k": 248.7,
+        "5k": 1562.4
+      }
     },
     {
       "id": "21154080854",
@@ -166745,7 +167220,11 @@
       "groundContactMs": 275.3,
       "verticalOscillationMm": 88.1,
       "verticalRatioPct": 9.43,
-      "strideLengthM": 0.94
+      "strideLengthM": 0.94,
+      "bestEfforts": {
+        "1k": 340.7,
+        "5k": 2073.2
+      }
     },
     {
       "id": "21144557384",
@@ -168312,7 +168791,11 @@
       "groundContactMs": 254.0,
       "verticalOscillationMm": 91.0,
       "verticalRatioPct": 8.25,
-      "strideLengthM": 1.17
+      "strideLengthM": 1.17,
+      "bestEfforts": {
+        "1k": 281.6,
+        "5k": 1637.5
+      }
     },
     {
       "id": "21121440091",
@@ -169879,7 +170362,12 @@
       "groundContactMs": 270.0,
       "verticalOscillationMm": 92.2,
       "verticalRatioPct": 9.07,
-      "strideLengthM": 1.02
+      "strideLengthM": 1.02,
+      "bestEfforts": {
+        "1k": 327.9,
+        "5k": 1752.3,
+        "10k": 3571.6
+      }
     },
     {
       "id": "21107439847",
@@ -171446,7 +171934,12 @@
       "groundContactMs": 256.2,
       "verticalOscillationMm": 94.9,
       "verticalRatioPct": 8.37,
-      "strideLengthM": 1.16
+      "strideLengthM": 1.16,
+      "bestEfforts": {
+        "1k": 238.2,
+        "5k": 1417.6,
+        "10k": 3257.5
+      }
     },
     {
       "id": "21099540019",
@@ -173013,7 +173506,11 @@
       "groundContactMs": 272.6,
       "verticalOscillationMm": 95.2,
       "verticalRatioPct": 9.1,
-      "strideLengthM": 1.05
+      "strideLengthM": 1.05,
+      "bestEfforts": {
+        "1k": 342.0,
+        "5k": 1753.1
+      }
     },
     {
       "id": "21070970414",
@@ -174580,7 +175077,12 @@
       "groundContactMs": 260.0,
       "verticalOscillationMm": 96.3,
       "verticalRatioPct": 8.53,
-      "strideLengthM": 1.13
+      "strideLengthM": 1.13,
+      "bestEfforts": {
+        "1k": 308.6,
+        "5k": 1575.0,
+        "10k": 3208.2
+      }
     },
     {
       "id": "21061745274",
@@ -176147,7 +176649,11 @@
       "groundContactMs": 271.7,
       "verticalOscillationMm": 94.2,
       "verticalRatioPct": 9.09,
-      "strideLengthM": 1.04
+      "strideLengthM": 1.04,
+      "bestEfforts": {
+        "1k": 344.5,
+        "5k": 1764.9
+      }
     },
     {
       "id": "21053451942",
@@ -177714,7 +178220,12 @@
       "groundContactMs": 252.3,
       "verticalOscillationMm": 96.1,
       "verticalRatioPct": 8.28,
-      "strideLengthM": 1.2
+      "strideLengthM": 1.2,
+      "bestEfforts": {
+        "1k": 229.2,
+        "5k": 1314.2,
+        "10k": 2811.6
+      }
     },
     {
       "id": "21034682276",
@@ -179281,7 +179792,12 @@
       "groundContactMs": 259.9,
       "verticalOscillationMm": 94.0,
       "verticalRatioPct": 8.56,
-      "strideLengthM": 1.11
+      "strideLengthM": 1.11,
+      "bestEfforts": {
+        "1k": 264.0,
+        "5k": 1596.6,
+        "10k": 3420.2
+      }
     },
     {
       "id": "21025756348",
@@ -180848,7 +181364,12 @@
       "groundContactMs": 253.6,
       "verticalOscillationMm": 96.9,
       "verticalRatioPct": 8.3,
-      "strideLengthM": 1.2
+      "strideLengthM": 1.2,
+      "bestEfforts": {
+        "1k": 245.5,
+        "5k": 1364.8,
+        "10k": 2878.9
+      }
     },
     {
       "id": "21007394121",
@@ -182415,7 +182936,12 @@
       "groundContactMs": 261.7,
       "verticalOscillationMm": 95.4,
       "verticalRatioPct": 8.66,
-      "strideLengthM": 1.1
+      "strideLengthM": 1.1,
+      "bestEfforts": {
+        "1k": 316.9,
+        "5k": 1616.8,
+        "10k": 3270.6
+      }
     },
     {
       "id": "20995917267",
@@ -183982,7 +184508,11 @@
       "groundContactMs": 264.6,
       "verticalOscillationMm": 93.7,
       "verticalRatioPct": 8.76,
-      "strideLengthM": 1.07
+      "strideLengthM": 1.07,
+      "bestEfforts": {
+        "1k": 324.1,
+        "5k": 1698.6
+      }
     },
     {
       "id": "20988577169",
@@ -185549,7 +186079,12 @@
       "groundContactMs": 258.0,
       "verticalOscillationMm": 99.0,
       "verticalRatioPct": 8.44,
-      "strideLengthM": 1.19
+      "strideLengthM": 1.19,
+      "bestEfforts": {
+        "1k": 246.2,
+        "5k": 1366.6,
+        "10k": 3116.8
+      }
     },
     {
       "id": "20968438949",
@@ -187116,7 +187651,12 @@
       "groundContactMs": 266.5,
       "verticalOscillationMm": 95.7,
       "verticalRatioPct": 8.81,
-      "strideLengthM": 1.09
+      "strideLengthM": 1.09,
+      "bestEfforts": {
+        "1k": 325.0,
+        "5k": 1679.6,
+        "10k": 3400.3
+      }
     },
     {
       "id": "20961633142",
@@ -188683,7 +189223,11 @@
       "groundContactMs": 265.2,
       "verticalOscillationMm": 97.0,
       "verticalRatioPct": 8.75,
-      "strideLengthM": 1.13
+      "strideLengthM": 1.13,
+      "bestEfforts": {
+        "1k": 213.8,
+        "5k": 1531.4
+      }
     },
     {
       "id": "20941346854",
@@ -190250,7 +190794,12 @@
       "groundContactMs": 266.3,
       "verticalOscillationMm": 96.6,
       "verticalRatioPct": 8.83,
-      "strideLengthM": 1.09
+      "strideLengthM": 1.09,
+      "bestEfforts": {
+        "1k": 322.1,
+        "5k": 1640.3,
+        "10k": 3310.5
+      }
     },
     {
       "id": "20931595012",
@@ -191817,7 +192366,12 @@
       "groundContactMs": 265.7,
       "verticalOscillationMm": 95.5,
       "verticalRatioPct": 8.78,
-      "strideLengthM": 1.09
+      "strideLengthM": 1.09,
+      "bestEfforts": {
+        "1k": 314.8,
+        "5k": 1670.0,
+        "10k": 3484.9
+      }
     },
     {
       "id": "20921957014",
@@ -193384,7 +193938,11 @@
       "groundContactMs": 262.0,
       "verticalOscillationMm": 94.2,
       "verticalRatioPct": 8.61,
-      "strideLengthM": 1.12
+      "strideLengthM": 1.12,
+      "bestEfforts": {
+        "1k": 268.2,
+        "5k": 1594.2
+      }
     },
     {
       "id": "20901896865",
@@ -194951,7 +195509,11 @@
       "groundContactMs": 260.5,
       "verticalOscillationMm": 95.9,
       "verticalRatioPct": 8.57,
-      "strideLengthM": 1.13
+      "strideLengthM": 1.13,
+      "bestEfforts": {
+        "1k": 266.0,
+        "5k": 1443.4
+      }
     },
     {
       "id": "20888642633",
@@ -196518,7 +197080,11 @@
       "groundContactMs": 267.6,
       "verticalOscillationMm": 91.5,
       "verticalRatioPct": 8.88,
-      "strideLengthM": 1.03
+      "strideLengthM": 1.03,
+      "bestEfforts": {
+        "1k": 330.1,
+        "5k": 1773.4
+      }
     },
     {
       "id": "20872430844",
@@ -198085,7 +198651,12 @@
       "groundContactMs": 267.4,
       "verticalOscillationMm": 90.8,
       "verticalRatioPct": 8.95,
-      "strideLengthM": 1.02
+      "strideLengthM": 1.02,
+      "bestEfforts": {
+        "1k": 334.1,
+        "5k": 1754.1,
+        "10k": 3539.2
+      }
     },
     {
       "id": "20861758010",
@@ -199652,7 +200223,11 @@
       "groundContactMs": 262.6,
       "verticalOscillationMm": 91.1,
       "verticalRatioPct": 8.63,
-      "strideLengthM": 1.06
+      "strideLengthM": 1.06,
+      "bestEfforts": {
+        "1k": 331.3,
+        "5k": 1739.5
+      }
     },
     {
       "id": "20841192714",
@@ -201219,7 +201794,12 @@
       "groundContactMs": 250.6,
       "verticalOscillationMm": 92.8,
       "verticalRatioPct": 8.23,
-      "strideLengthM": 1.15
+      "strideLengthM": 1.15,
+      "bestEfforts": {
+        "1k": 238.8,
+        "5k": 1346.6,
+        "10k": 3037.3
+      }
     },
     {
       "id": "20823831796",
@@ -202786,7 +203366,11 @@
       "groundContactMs": 270.9,
       "verticalOscillationMm": 96.0,
       "verticalRatioPct": 8.94,
-      "strideLengthM": 1.07
+      "strideLengthM": 1.07,
+      "bestEfforts": {
+        "1k": 326.5,
+        "5k": 1696.4
+      }
     },
     {
       "id": "20813746409",
@@ -204353,7 +204937,11 @@
       "groundContactMs": 256.0,
       "verticalOscillationMm": 92.0,
       "verticalRatioPct": 8.41,
-      "strideLengthM": 1.14
+      "strideLengthM": 1.14,
+      "bestEfforts": {
+        "1k": 279.0,
+        "5k": 1606.3
+      }
     },
     {
       "id": "20782690421",
@@ -205920,7 +206508,11 @@
       "groundContactMs": 264.5,
       "verticalOscillationMm": 94.5,
       "verticalRatioPct": 8.7,
-      "strideLengthM": 1.1
+      "strideLengthM": 1.1,
+      "bestEfforts": {
+        "1k": 266.3,
+        "5k": 1590.6
+      }
     },
     {
       "id": "20766258361",
@@ -207487,7 +208079,11 @@
       "groundContactMs": 279.2,
       "verticalOscillationMm": 93.7,
       "verticalRatioPct": 9.37,
-      "strideLengthM": 1.0
+      "strideLengthM": 1.0,
+      "bestEfforts": {
+        "1k": 357.3,
+        "5k": 1838.3
+      }
     },
     {
       "id": "20758314431",
@@ -209054,7 +209650,12 @@
       "groundContactMs": 268.2,
       "verticalOscillationMm": 92.7,
       "verticalRatioPct": 8.85,
-      "strideLengthM": 1.08
+      "strideLengthM": 1.08,
+      "bestEfforts": {
+        "1k": 245.4,
+        "5k": 1615.4,
+        "10k": 3514.9
+      }
     },
     {
       "id": "20747788238",
@@ -210621,7 +211222,11 @@
       "groundContactMs": 281.9,
       "verticalOscillationMm": 95.7,
       "verticalRatioPct": 9.4,
-      "strideLengthM": 1.02
+      "strideLengthM": 1.02,
+      "bestEfforts": {
+        "1k": 349.7,
+        "5k": 1834.9
+      }
     },
     {
       "id": "20740318213",
@@ -212188,7 +212793,12 @@
       "groundContactMs": 277.2,
       "verticalOscillationMm": 93.3,
       "verticalRatioPct": 9.31,
-      "strideLengthM": 1.0
+      "strideLengthM": 1.0,
+      "bestEfforts": {
+        "1k": 342.7,
+        "5k": 1816.9,
+        "10k": 3663.2
+      }
     },
     {
       "id": "20728694711",
@@ -213755,7 +214365,11 @@
       "groundContactMs": 278.1,
       "verticalOscillationMm": 90.2,
       "verticalRatioPct": 9.45,
-      "strideLengthM": 0.95
+      "strideLengthM": 0.95,
+      "bestEfforts": {
+        "1k": 353.6,
+        "5k": 1908.0
+      }
     },
     {
       "id": "20719358056",
@@ -215322,7 +215936,11 @@
       "groundContactMs": 269.6,
       "verticalOscillationMm": 82.3,
       "verticalRatioPct": 8.77,
-      "strideLengthM": 1.02
+      "strideLengthM": 1.02,
+      "bestEfforts": {
+        "1k": 312.5,
+        "5k": 2020.4
+      }
     },
     {
       "id": "20687456581",
@@ -216889,7 +217507,11 @@
       "groundContactMs": 276.7,
       "verticalOscillationMm": 89.7,
       "verticalRatioPct": 9.39,
-      "strideLengthM": 0.96
+      "strideLengthM": 0.96,
+      "bestEfforts": {
+        "1k": 355.7,
+        "5k": 1895.2
+      }
     },
     {
       "id": "20669730595",
@@ -218456,7 +219078,10 @@
       "groundContactMs": 286.4,
       "verticalOscillationMm": 92.2,
       "verticalRatioPct": 9.68,
-      "strideLengthM": 0.95
+      "strideLengthM": 0.95,
+      "bestEfforts": {
+        "1k": 384.0
+      }
     },
     {
       "id": "20669729317",
@@ -220023,7 +220648,10 @@
       "groundContactMs": 203.7,
       "verticalOscillationMm": 97.1,
       "verticalRatioPct": 6.39,
-      "strideLengthM": 1.52
+      "strideLengthM": 1.52,
+      "bestEfforts": {
+        "1k": 213.7
+      }
     },
     {
       "id": "20669728672",
@@ -221590,7 +222218,10 @@
       "groundContactMs": 275.2,
       "verticalOscillationMm": 93.3,
       "verticalRatioPct": 9.24,
-      "strideLengthM": 1.01
+      "strideLengthM": 1.01,
+      "bestEfforts": {
+        "1k": 356.3
+      }
     },
     {
       "id": "20658899412",
@@ -223157,7 +223788,11 @@
       "groundContactMs": 259.7,
       "verticalOscillationMm": 83.6,
       "verticalRatioPct": 8.56,
-      "strideLengthM": 1.06
+      "strideLengthM": 1.06,
+      "bestEfforts": {
+        "1k": 294.3,
+        "5k": 1873.4
+      }
     },
     {
       "id": "20649407211",
@@ -224724,7 +225359,10 @@
       "groundContactMs": 279.9,
       "verticalOscillationMm": 90.0,
       "verticalRatioPct": 9.52,
-      "strideLengthM": 0.95
+      "strideLengthM": 0.95,
+      "bestEfforts": {
+        "1k": 362.6
+      }
     },
     {
       "id": "20638341126",
@@ -226291,7 +226929,11 @@
       "groundContactMs": 256.7,
       "verticalOscillationMm": 94.6,
       "verticalRatioPct": 8.44,
-      "strideLengthM": 1.14
+      "strideLengthM": 1.14,
+      "bestEfforts": {
+        "1k": 242.3,
+        "5k": 1423.1
+      }
     },
     {
       "id": "20628346721",
@@ -227858,7 +228500,11 @@
       "groundContactMs": 277.5,
       "verticalOscillationMm": 90.5,
       "verticalRatioPct": 9.32,
-      "strideLengthM": 0.97
+      "strideLengthM": 0.97,
+      "bestEfforts": {
+        "1k": 348.3,
+        "5k": 1889.8
+      }
     },
     {
       "id": "20618696567",
@@ -229425,7 +230071,11 @@
       "groundContactMs": 270.0,
       "verticalOscillationMm": 95.2,
       "verticalRatioPct": 8.97,
-      "strideLengthM": 1.06
+      "strideLengthM": 1.06,
+      "bestEfforts": {
+        "1k": 317.4,
+        "5k": 1678.1
+      }
     },
     {
       "id": "20607445935",
@@ -230992,7 +231642,11 @@
       "groundContactMs": 270.9,
       "verticalOscillationMm": 92.0,
       "verticalRatioPct": 9.08,
-      "strideLengthM": 1.03
+      "strideLengthM": 1.03,
+      "bestEfforts": {
+        "1k": 243.7,
+        "5k": 1730.3
+      }
     },
     {
       "id": "20599425182",
@@ -232559,7 +233213,11 @@
       "groundContactMs": 274.2,
       "verticalOscillationMm": 93.3,
       "verticalRatioPct": 9.16,
-      "strideLengthM": 1.03
+      "strideLengthM": 1.03,
+      "bestEfforts": {
+        "1k": 262.4,
+        "5k": 1785.8
+      }
     },
     {
       "id": "20588921301",
@@ -234126,7 +234784,11 @@
       "groundContactMs": 273.5,
       "verticalOscillationMm": 93.2,
       "verticalRatioPct": 9.17,
-      "strideLengthM": 1.02
+      "strideLengthM": 1.02,
+      "bestEfforts": {
+        "1k": 352.0,
+        "5k": 1794.9
+      }
     },
     {
       "id": "20579688877",
@@ -235693,7 +236355,12 @@
       "groundContactMs": 270.6,
       "verticalOscillationMm": 94.2,
       "verticalRatioPct": 9.01,
-      "strideLengthM": 1.05
+      "strideLengthM": 1.05,
+      "bestEfforts": {
+        "1k": 331.9,
+        "5k": 1731.8,
+        "10k": 3518.2
+      }
     },
     {
       "id": "20569083179",
@@ -237260,7 +237927,11 @@
       "groundContactMs": 283.4,
       "verticalOscillationMm": 85.1,
       "verticalRatioPct": 9.8,
-      "strideLengthM": 0.88
+      "strideLengthM": 0.88,
+      "bestEfforts": {
+        "1k": 345.4,
+        "5k": 2205.8
+      }
     },
     {
       "id": "20558662692",
@@ -238827,7 +239498,11 @@
       "groundContactMs": 264.2,
       "verticalOscillationMm": 84.6,
       "verticalRatioPct": 8.61,
-      "strideLengthM": 1.01
+      "strideLengthM": 1.01,
+      "bestEfforts": {
+        "1k": 339.5,
+        "5k": 1851.2
+      }
     },
     {
       "id": "20547855806",
@@ -240394,7 +241069,11 @@
       "groundContactMs": 287.3,
       "verticalOscillationMm": 78.4,
       "verticalRatioPct": 9.88,
-      "strideLengthM": 0.82
+      "strideLengthM": 0.82,
+      "bestEfforts": {
+        "1k": 411.6,
+        "5k": 2409.2
+      }
     },
     {
       "id": "20526043740",
@@ -241961,7 +242640,11 @@
       "groundContactMs": 230.2,
       "verticalOscillationMm": 100.5,
       "verticalRatioPct": 7.28,
-      "strideLengthM": 1.38
+      "strideLengthM": 1.38,
+      "bestEfforts": {
+        "1k": 239.6,
+        "5k": 1238.1
+      }
     },
     {
       "id": "20489947975",
@@ -243528,7 +244211,11 @@
       "groundContactMs": 262.7,
       "verticalOscillationMm": 96.6,
       "verticalRatioPct": 8.65,
-      "strideLengthM": 1.13
+      "strideLengthM": 1.13,
+      "bestEfforts": {
+        "1k": 280.6,
+        "5k": 1545.2
+      }
     },
     {
       "id": "20480515526",
@@ -245095,7 +245782,11 @@
       "groundContactMs": 286.1,
       "verticalOscillationMm": 93.9,
       "verticalRatioPct": 9.58,
-      "strideLengthM": 0.98
+      "strideLengthM": 0.98,
+      "bestEfforts": {
+        "1k": 349.7,
+        "5k": 1888.0
+      }
     },
     {
       "id": "20469668061",
@@ -246662,7 +247353,11 @@
       "groundContactMs": 299.7,
       "verticalOscillationMm": 88.7,
       "verticalRatioPct": 10.25,
-      "strideLengthM": 0.87
+      "strideLengthM": 0.87,
+      "bestEfforts": {
+        "1k": 411.9,
+        "5k": 2220.1
+      }
     },
     {
       "id": "20457539097",
@@ -248229,7 +248924,12 @@
       "groundContactMs": 286.8,
       "verticalOscillationMm": 90.7,
       "verticalRatioPct": 9.76,
-      "strideLengthM": 0.93
+      "strideLengthM": 0.93,
+      "bestEfforts": {
+        "1k": 370.9,
+        "5k": 1998.7,
+        "10k": 4055.4
+      }
     },
     {
       "id": "20448898804",
@@ -249796,7 +250496,12 @@
       "groundContactMs": 271.0,
       "verticalOscillationMm": 96.4,
       "verticalRatioPct": 8.91,
-      "strideLengthM": 1.1
+      "strideLengthM": 1.1,
+      "bestEfforts": {
+        "1k": 293.4,
+        "5k": 1602.0,
+        "10k": 3395.4
+      }
     },
     {
       "id": "20433398446",
@@ -251363,7 +252068,10 @@
       "groundContactMs": 293.7,
       "verticalOscillationMm": 78.8,
       "verticalRatioPct": 10.37,
-      "strideLengthM": 0.77
+      "strideLengthM": 0.77,
+      "bestEfforts": {
+        "1k": 471.7
+      }
     },
     {
       "id": "20423514733",
@@ -252930,7 +253638,11 @@
       "groundContactMs": 260.5,
       "verticalOscillationMm": 92.0,
       "verticalRatioPct": 8.54,
-      "strideLengthM": 1.11
+      "strideLengthM": 1.11,
+      "bestEfforts": {
+        "1k": 253.7,
+        "5k": 1496.1
+      }
     },
     {
       "id": "20423512330",
@@ -254497,7 +255209,10 @@
       "groundContactMs": 280.0,
       "verticalOscillationMm": 91.5,
       "verticalRatioPct": 9.39,
-      "strideLengthM": 0.98
+      "strideLengthM": 0.98,
+      "bestEfforts": {
+        "1k": 371.1
+      }
     },
     {
       "id": "20405617415",
@@ -256064,7 +256779,11 @@
       "groundContactMs": 270.0,
       "verticalOscillationMm": 96.1,
       "verticalRatioPct": 8.87,
-      "strideLengthM": 1.09
+      "strideLengthM": 1.09,
+      "bestEfforts": {
+        "1k": 324.8,
+        "5k": 1706.3
+      }
     },
     {
       "id": "20395241949",
@@ -257631,7 +258350,11 @@
       "groundContactMs": 260.6,
       "verticalOscillationMm": 97.6,
       "verticalRatioPct": 8.48,
-      "strideLengthM": 1.16
+      "strideLengthM": 1.16,
+      "bestEfforts": {
+        "1k": 267.8,
+        "5k": 1472.9
+      }
     },
     {
       "id": "20386501292",
@@ -259198,7 +259921,11 @@
       "groundContactMs": 279.6,
       "verticalOscillationMm": 90.6,
       "verticalRatioPct": 9.45,
-      "strideLengthM": 0.96
+      "strideLengthM": 0.96,
+      "bestEfforts": {
+        "1k": 351.3,
+        "5k": 1881.2
+      }
     },
     {
       "id": "20371494545",
@@ -260765,7 +261492,11 @@
       "groundContactMs": 264.3,
       "verticalOscillationMm": 91.0,
       "verticalRatioPct": 8.68,
-      "strideLengthM": 1.07
+      "strideLengthM": 1.07,
+      "bestEfforts": {
+        "1k": 298.5,
+        "5k": 1627.7
+      }
     },
     {
       "id": "20364575614",
@@ -262332,7 +263063,10 @@
       "groundContactMs": 287.5,
       "verticalOscillationMm": 89.8,
       "verticalRatioPct": 9.73,
-      "strideLengthM": 0.92
+      "strideLengthM": 0.92,
+      "bestEfforts": {
+        "1k": 394.5
+      }
     },
     {
       "id": "20354792853",
@@ -263899,7 +264633,12 @@
       "groundContactMs": 257.6,
       "verticalOscillationMm": 96.9,
       "verticalRatioPct": 8.37,
-      "strideLengthM": 1.16
+      "strideLengthM": 1.16,
+      "bestEfforts": {
+        "1k": 282.2,
+        "5k": 1508.4,
+        "10k": 3043.9
+      }
     },
     {
       "id": "20344802225",
@@ -265466,7 +266205,11 @@
       "groundContactMs": 275.9,
       "verticalOscillationMm": 92.9,
       "verticalRatioPct": 9.19,
-      "strideLengthM": 1.01
+      "strideLengthM": 1.01,
+      "bestEfforts": {
+        "1k": 357.4,
+        "5k": 1860.6
+      }
     },
     {
       "id": "20332054212",
@@ -267033,7 +267776,11 @@
       "groundContactMs": 259.2,
       "verticalOscillationMm": 98.2,
       "verticalRatioPct": 8.42,
-      "strideLengthM": 1.18
+      "strideLengthM": 1.18,
+      "bestEfforts": {
+        "1k": 265.9,
+        "5k": 1445.3
+      }
     },
     {
       "id": "20312842126",
@@ -268600,7 +269347,11 @@
       "groundContactMs": 277.1,
       "verticalOscillationMm": 89.0,
       "verticalRatioPct": 9.26,
-      "strideLengthM": 0.96
+      "strideLengthM": 0.96,
+      "bestEfforts": {
+        "1k": 352.8,
+        "5k": 8661.8
+      }
     },
     {
       "id": "20297814537",
@@ -270167,7 +270918,11 @@
       "groundContactMs": 258.0,
       "verticalOscillationMm": 93.5,
       "verticalRatioPct": 8.41,
-      "strideLengthM": 1.13
+      "strideLengthM": 1.13,
+      "bestEfforts": {
+        "1k": 271.3,
+        "5k": 1479.8
+      }
     },
     {
       "id": "20291626640",
@@ -271734,7 +272489,10 @@
       "groundContactMs": 282.1,
       "verticalOscillationMm": 87.8,
       "verticalRatioPct": 9.51,
-      "strideLengthM": 0.98
+      "strideLengthM": 0.98,
+      "bestEfforts": {
+        "1k": 344.0
+      }
     },
     {
       "id": "20280379677",
@@ -273301,7 +274059,11 @@
       "groundContactMs": 281.5,
       "verticalOscillationMm": 95.0,
       "verticalRatioPct": 9.25,
-      "strideLengthM": 1.03
+      "strideLengthM": 1.03,
+      "bestEfforts": {
+        "1k": 352.0,
+        "5k": 1837.2
+      }
     },
     {
       "id": "20269543105",
@@ -274868,7 +275630,10 @@
       "groundContactMs": 299.5,
       "verticalOscillationMm": 79.6,
       "verticalRatioPct": 10.4,
-      "strideLengthM": 0.78
+      "strideLengthM": 0.78,
+      "bestEfforts": {
+        "1k": 463.5
+      }
     },
     {
       "id": "20258876780",
@@ -276435,7 +277200,11 @@
       "groundContactMs": 271.8,
       "verticalOscillationMm": 90.9,
       "verticalRatioPct": 8.91,
-      "strideLengthM": 1.04
+      "strideLengthM": 1.04,
+      "bestEfforts": {
+        "1k": 313.6,
+        "5k": 1703.5
+      }
     },
     {
       "id": "20237923157",
@@ -278002,7 +278771,12 @@
       "groundContactMs": 269.5,
       "verticalOscillationMm": 90.8,
       "verticalRatioPct": 9.0,
-      "strideLengthM": 1.01
+      "strideLengthM": 1.01,
+      "bestEfforts": {
+        "1k": 351.1,
+        "5k": 1827.8,
+        "10k": 3943.4
+      }
     },
     {
       "id": "20224409694",
@@ -279569,7 +280343,11 @@
       "groundContactMs": 272.4,
       "verticalOscillationMm": 91.8,
       "verticalRatioPct": 9.1,
-      "strideLengthM": 1.01
+      "strideLengthM": 1.01,
+      "bestEfforts": {
+        "1k": 359.3,
+        "5k": 1898.9
+      }
     },
     {
       "id": "20217964983",
@@ -281136,7 +281914,11 @@
       "groundContactMs": 258.6,
       "verticalOscillationMm": 97.6,
       "verticalRatioPct": 8.42,
-      "strideLengthM": 1.17
+      "strideLengthM": 1.17,
+      "bestEfforts": {
+        "1k": 263.1,
+        "5k": 1462.7
+      }
     },
     {
       "id": "20208053559",
@@ -282703,7 +283485,11 @@
       "groundContactMs": 273.1,
       "verticalOscillationMm": 93.7,
       "verticalRatioPct": 9.08,
-      "strideLengthM": 1.03
+      "strideLengthM": 1.03,
+      "bestEfforts": {
+        "1k": 347.0,
+        "5k": 1807.4
+      }
     },
     {
       "id": "20197408341",
@@ -284270,7 +285056,11 @@
       "groundContactMs": 261.6,
       "verticalOscillationMm": 96.8,
       "verticalRatioPct": 8.55,
-      "strideLengthM": 1.14
+      "strideLengthM": 1.14,
+      "bestEfforts": {
+        "1k": 268.2,
+        "5k": 1533.5
+      }
     },
     {
       "id": "20175905562",
@@ -285837,7 +286627,11 @@
       "groundContactMs": 256.2,
       "verticalOscillationMm": 95.5,
       "verticalRatioPct": 8.36,
-      "strideLengthM": 1.15
+      "strideLengthM": 1.15,
+      "bestEfforts": {
+        "1k": 270.4,
+        "5k": 1494.6
+      }
     },
     {
       "id": "20161540006",
@@ -287404,7 +288198,11 @@
       "groundContactMs": 273.7,
       "verticalOscillationMm": 90.6,
       "verticalRatioPct": 9.2,
-      "strideLengthM": 0.99
+      "strideLengthM": 0.99,
+      "bestEfforts": {
+        "1k": 361.4,
+        "5k": 2081.3
+      }
     },
     {
       "id": "20155066126",
@@ -288971,7 +289769,11 @@
       "groundContactMs": 255.8,
       "verticalOscillationMm": 94.9,
       "verticalRatioPct": 8.36,
-      "strideLengthM": 1.14
+      "strideLengthM": 1.14,
+      "bestEfforts": {
+        "1k": 272.6,
+        "5k": 1470.8
+      }
     },
     {
       "id": "20144137890",
@@ -290538,7 +291340,10 @@
       "groundContactMs": 283.3,
       "verticalOscillationMm": 86.2,
       "verticalRatioPct": 9.75,
-      "strideLengthM": 0.88
+      "strideLengthM": 0.88,
+      "bestEfforts": {
+        "1k": 407.0
+      }
     },
     {
       "id": "20132413084",
@@ -292105,7 +292910,11 @@
       "groundContactMs": 267.5,
       "verticalOscillationMm": 90.7,
       "verticalRatioPct": 8.93,
-      "strideLengthM": 1.02
+      "strideLengthM": 1.02,
+      "bestEfforts": {
+        "1k": 344.9,
+        "5k": 1758.0
+      }
     },
     {
       "id": "20123484206",
@@ -293672,7 +294481,12 @@
       "groundContactMs": 264.1,
       "verticalOscillationMm": 94.5,
       "verticalRatioPct": 8.65,
-      "strideLengthM": 1.1
+      "strideLengthM": 1.1,
+      "bestEfforts": {
+        "1k": 294.4,
+        "5k": 1695.0,
+        "10k": 3783.0
+      }
     },
     {
       "id": "20101082018",
@@ -295239,7 +296053,11 @@
       "groundContactMs": 269.9,
       "verticalOscillationMm": 92.4,
       "verticalRatioPct": 8.95,
-      "strideLengthM": 1.03
+      "strideLengthM": 1.03,
+      "bestEfforts": {
+        "1k": 342.3,
+        "5k": 1873.8
+      }
     },
     {
       "id": "20091890559",
@@ -296806,7 +297624,12 @@
       "groundContactMs": 269.6,
       "verticalOscillationMm": 91.4,
       "verticalRatioPct": 8.95,
-      "strideLengthM": 1.02
+      "strideLengthM": 1.02,
+      "bestEfforts": {
+        "1k": 343.3,
+        "5k": 1752.9,
+        "10k": 3531.9
+      }
     },
     {
       "id": "20080525816",
@@ -298373,7 +299196,11 @@
       "groundContactMs": 266.0,
       "verticalOscillationMm": 92.0,
       "verticalRatioPct": 8.77,
-      "strideLengthM": 1.06
+      "strideLengthM": 1.06,
+      "bestEfforts": {
+        "1k": 309.3,
+        "5k": 1648.9
+      }
     },
     {
       "id": "20060499787",
@@ -299940,7 +300767,11 @@
       "groundContactMs": 274.4,
       "verticalOscillationMm": 91.5,
       "verticalRatioPct": 9.05,
-      "strideLengthM": 1.01
+      "strideLengthM": 1.01,
+      "bestEfforts": {
+        "1k": 348.6,
+        "5k": 1867.8
+      }
     },
     {
       "id": "20049816121",
@@ -301507,7 +302338,11 @@
       "groundContactMs": 273.6,
       "verticalOscillationMm": 93.2,
       "verticalRatioPct": 9.03,
-      "strideLengthM": 1.03
+      "strideLengthM": 1.03,
+      "bestEfforts": {
+        "1k": 335.3,
+        "5k": 1886.5
+      }
     },
     {
       "id": "20015026099",
@@ -303074,7 +303909,12 @@
       "groundContactMs": 268.4,
       "verticalOscillationMm": 88.5,
       "verticalRatioPct": 8.97,
-      "strideLengthM": 0.99
+      "strideLengthM": 0.99,
+      "bestEfforts": {
+        "1k": 347.5,
+        "5k": 2011.7,
+        "10k": 4393.6
+      }
     },
     {
       "id": "20005578456",
@@ -304641,7 +305481,11 @@
       "groundContactMs": 278.0,
       "verticalOscillationMm": 93.7,
       "verticalRatioPct": 9.17,
-      "strideLengthM": 1.02
+      "strideLengthM": 1.02,
+      "bestEfforts": {
+        "1k": 352.2,
+        "5k": 1946.3
+      }
     },
     {
       "id": "19991005855",
@@ -306208,7 +307052,11 @@
       "groundContactMs": 264.9,
       "verticalOscillationMm": 93.2,
       "verticalRatioPct": 8.69,
-      "strideLengthM": 1.09
+      "strideLengthM": 1.09,
+      "bestEfforts": {
+        "1k": 289.3,
+        "5k": 1559.7
+      }
     },
     {
       "id": "19973995959",
@@ -307775,7 +308623,11 @@
       "groundContactMs": 275.0,
       "verticalOscillationMm": 91.8,
       "verticalRatioPct": 9.1,
-      "strideLengthM": 1.01
+      "strideLengthM": 1.01,
+      "bestEfforts": {
+        "1k": 358.7,
+        "5k": 1890.8
+      }
     },
     {
       "id": "19952386003",
@@ -309342,7 +310194,11 @@
       "groundContactMs": 279.5,
       "verticalOscillationMm": 88.4,
       "verticalRatioPct": 9.35,
-      "strideLengthM": 0.95
+      "strideLengthM": 0.95,
+      "bestEfforts": {
+        "1k": 374.5,
+        "5k": 1976.9
+      }
     },
     {
       "id": "19940888807",
@@ -310909,7 +311765,12 @@
       "groundContactMs": 276.3,
       "verticalOscillationMm": 91.9,
       "verticalRatioPct": 9.19,
-      "strideLengthM": 1.0
+      "strideLengthM": 1.0,
+      "bestEfforts": {
+        "1k": 354.9,
+        "5k": 1923.1,
+        "10k": 3896.4
+      }
     },
     {
       "id": "19915136803",
@@ -312476,7 +313337,11 @@
       "groundContactMs": 264.2,
       "verticalOscillationMm": 93.2,
       "verticalRatioPct": 8.68,
-      "strideLengthM": 1.08
+      "strideLengthM": 1.08,
+      "bestEfforts": {
+        "1k": 310.7,
+        "5k": 1637.3
+      }
     },
     {
       "id": "19894650323",
@@ -314043,7 +314908,11 @@
       "groundContactMs": 267.7,
       "verticalOscillationMm": 91.1,
       "verticalRatioPct": 8.77,
-      "strideLengthM": 1.05
+      "strideLengthM": 1.05,
+      "bestEfforts": {
+        "1k": 337.3,
+        "5k": 2131.5
+      }
     },
     {
       "id": "19882381271",
@@ -315610,7 +316479,11 @@
       "groundContactMs": 265.5,
       "verticalOscillationMm": 92.8,
       "verticalRatioPct": 8.74,
-      "strideLengthM": 1.06
+      "strideLengthM": 1.06,
+      "bestEfforts": {
+        "1k": 323.4,
+        "5k": 1646.4
+      }
     },
     {
       "id": "19876413811",
@@ -317177,7 +318050,11 @@
       "groundContactMs": 270.8,
       "verticalOscillationMm": 94.6,
       "verticalRatioPct": 8.87,
-      "strideLengthM": 1.07
+      "strideLengthM": 1.07,
+      "bestEfforts": {
+        "1k": 326.7,
+        "5k": 1777.7
+      }
     },
     {
       "id": "19825531744",
@@ -318744,7 +319621,11 @@
       "groundContactMs": 271.5,
       "verticalOscillationMm": 91.5,
       "verticalRatioPct": 8.93,
-      "strideLengthM": 1.04
+      "strideLengthM": 1.04,
+      "bestEfforts": {
+        "1k": 274.8,
+        "5k": 1741.5
+      }
     },
     {
       "id": "19812504308",
@@ -320311,7 +321192,11 @@
       "groundContactMs": 268.2,
       "verticalOscillationMm": 92.9,
       "verticalRatioPct": 8.8,
-      "strideLengthM": 1.06
+      "strideLengthM": 1.06,
+      "bestEfforts": {
+        "1k": 332.6,
+        "5k": 1713.5
+      }
     },
     {
       "id": "19793958355",
@@ -321878,7 +322763,11 @@
       "groundContactMs": 268.3,
       "verticalOscillationMm": 88.8,
       "verticalRatioPct": 8.94,
-      "strideLengthM": 1.01
+      "strideLengthM": 1.01,
+      "bestEfforts": {
+        "1k": 225.4,
+        "5k": 1730.8
+      }
     },
     {
       "id": "19781647952",
@@ -323445,7 +324334,11 @@
       "groundContactMs": 264.7,
       "verticalOscillationMm": 92.2,
       "verticalRatioPct": 8.72,
-      "strideLengthM": 1.06
+      "strideLengthM": 1.06,
+      "bestEfforts": {
+        "1k": 325.1,
+        "5k": 1665.9
+      }
     },
     {
       "id": "19760560539",
@@ -325012,7 +325905,11 @@
       "groundContactMs": 262.2,
       "verticalOscillationMm": 94.6,
       "verticalRatioPct": 8.58,
-      "strideLengthM": 1.11
+      "strideLengthM": 1.11,
+      "bestEfforts": {
+        "1k": 288.0,
+        "5k": 1530.4
+      }
     },
     {
       "id": "19742816659",
@@ -326579,7 +327476,11 @@
       "groundContactMs": 268.1,
       "verticalOscillationMm": 94.5,
       "verticalRatioPct": 8.79,
-      "strideLengthM": 1.08
+      "strideLengthM": 1.08,
+      "bestEfforts": {
+        "1k": 324.9,
+        "5k": 1672.1
+      }
     },
     {
       "id": "19718284335",
@@ -328146,7 +329047,12 @@
       "groundContactMs": 269.4,
       "verticalOscillationMm": 90.6,
       "verticalRatioPct": 8.94,
-      "strideLengthM": 1.02
+      "strideLengthM": 1.02,
+      "bestEfforts": {
+        "1k": 337.4,
+        "5k": 1771.7,
+        "10k": 3655.0
+      }
     },
     {
       "id": "19702595560",
@@ -329713,7 +330619,11 @@
       "groundContactMs": 267.8,
       "verticalOscillationMm": 93.4,
       "verticalRatioPct": 8.72,
-      "strideLengthM": 1.08
+      "strideLengthM": 1.08,
+      "bestEfforts": {
+        "1k": 319.5,
+        "5k": 1634.0
+      }
     },
     {
       "id": "19681783109",
@@ -331280,7 +332190,11 @@
       "groundContactMs": 263.3,
       "verticalOscillationMm": 95.4,
       "verticalRatioPct": 8.54,
-      "strideLengthM": 1.12
+      "strideLengthM": 1.12,
+      "bestEfforts": {
+        "1k": 284.2,
+        "5k": 1601.9
+      }
     },
     {
       "id": "19673754146",
@@ -332847,7 +333761,11 @@
       "groundContactMs": 271.4,
       "verticalOscillationMm": 92.4,
       "verticalRatioPct": 8.89,
-      "strideLengthM": 1.05
+      "strideLengthM": 1.05,
+      "bestEfforts": {
+        "1k": 269.7,
+        "5k": 1714.9
+      }
     },
     {
       "id": "19653968417",
@@ -334414,7 +335332,12 @@
       "groundContactMs": 268.1,
       "verticalOscillationMm": 92.2,
       "verticalRatioPct": 8.86,
-      "strideLengthM": 1.04
+      "strideLengthM": 1.04,
+      "bestEfforts": {
+        "1k": 329.6,
+        "5k": 1699.8,
+        "10k": 3452.5
+      }
     },
     {
       "id": "19643009253",
@@ -335981,7 +336904,11 @@
       "groundContactMs": 267.3,
       "verticalOscillationMm": 91.1,
       "verticalRatioPct": 8.83,
-      "strideLengthM": 1.04
+      "strideLengthM": 1.04,
+      "bestEfforts": {
+        "1k": 298.3,
+        "5k": 1636.9
+      }
     },
     {
       "id": "19621356527",
@@ -337548,7 +338475,11 @@
       "groundContactMs": 269.3,
       "verticalOscillationMm": 92.2,
       "verticalRatioPct": 8.92,
-      "strideLengthM": 1.04
+      "strideLengthM": 1.04,
+      "bestEfforts": {
+        "1k": 322.9,
+        "5k": 1701.4
+      }
     },
     {
       "id": "19604348486",
@@ -339115,7 +340046,11 @@
       "groundContactMs": 283.1,
       "verticalOscillationMm": 85.6,
       "verticalRatioPct": 9.72,
-      "strideLengthM": 0.88
+      "strideLengthM": 0.88,
+      "bestEfforts": {
+        "1k": 404.4,
+        "5k": 2068.1
+      }
     },
     {
       "id": "19571324004",
@@ -340682,7 +341617,10 @@
       "groundContactMs": 263.3,
       "verticalOscillationMm": 95.3,
       "verticalRatioPct": 8.59,
-      "strideLengthM": 1.11
+      "strideLengthM": 1.11,
+      "bestEfforts": {
+        "1k": 310.8
+      }
     },
     {
       "id": "19571323031",
@@ -342249,7 +343187,10 @@
       "groundContactMs": 221.8,
       "verticalOscillationMm": 99.1,
       "verticalRatioPct": 6.95,
-      "strideLengthM": 1.43
+      "strideLengthM": 1.43,
+      "bestEfforts": {
+        "1k": 231.0
+      }
     },
     {
       "id": "19571313534",
@@ -343816,7 +344757,10 @@
       "groundContactMs": 286.2,
       "verticalOscillationMm": 86.9,
       "verticalRatioPct": 9.74,
-      "strideLengthM": 0.89
+      "strideLengthM": 0.89,
+      "bestEfforts": {
+        "1k": 409.9
+      }
     },
     {
       "id": "19554098743",
@@ -345383,7 +346327,12 @@
       "groundContactMs": 266.4,
       "verticalOscillationMm": 94.9,
       "verticalRatioPct": 8.65,
-      "strideLengthM": 1.1
+      "strideLengthM": 1.1,
+      "bestEfforts": {
+        "1k": 295.6,
+        "5k": 1594.2,
+        "10k": 3389.0
+      }
     },
     {
       "id": "19528816066",
@@ -346950,7 +347899,11 @@
       "groundContactMs": 257.8,
       "verticalOscillationMm": 89.0,
       "verticalRatioPct": 8.38,
-      "strideLengthM": 1.09
+      "strideLengthM": 1.09,
+      "bestEfforts": {
+        "1k": 271.2,
+        "5k": 1624.4
+      }
     },
     {
       "id": "19515187935",
@@ -348517,7 +349470,12 @@
       "groundContactMs": 276.2,
       "verticalOscillationMm": 91.1,
       "verticalRatioPct": 9.21,
-      "strideLengthM": 0.99
+      "strideLengthM": 0.99,
+      "bestEfforts": {
+        "1k": 350.0,
+        "5k": 1857.0,
+        "10k": 3735.7
+      }
     },
     {
       "id": "19493917949",
@@ -350084,7 +351042,11 @@
       "groundContactMs": 267.3,
       "verticalOscillationMm": 92.3,
       "verticalRatioPct": 8.83,
-      "strideLengthM": 1.05
+      "strideLengthM": 1.05,
+      "bestEfforts": {
+        "1k": 305.1,
+        "5k": 1621.0
+      }
     },
     {
       "id": "19462610134",
@@ -351651,7 +352613,11 @@
       "groundContactMs": 260.2,
       "verticalOscillationMm": 84.8,
       "verticalRatioPct": 8.56,
-      "strideLengthM": 1.04
+      "strideLengthM": 1.04,
+      "bestEfforts": {
+        "1k": 287.3,
+        "5k": 1669.4
+      }
     },
     {
       "id": "19462606833",
@@ -353218,7 +354184,10 @@
       "groundContactMs": 274.0,
       "verticalOscillationMm": 86.5,
       "verticalRatioPct": 9.28,
-      "strideLengthM": 0.93
+      "strideLengthM": 0.93,
+      "bestEfforts": {
+        "1k": 382.6
+      }
     },
     {
       "id": "19431804147",
@@ -354785,7 +355754,11 @@
       "groundContactMs": 274.5,
       "verticalOscillationMm": 88.7,
       "verticalRatioPct": 9.24,
-      "strideLengthM": 0.96
+      "strideLengthM": 0.96,
+      "bestEfforts": {
+        "1k": 361.8,
+        "5k": 1868.3
+      }
     },
     {
       "id": "19402393058",
@@ -356352,7 +357325,11 @@
       "groundContactMs": 257.0,
       "verticalOscillationMm": 88.1,
       "verticalRatioPct": 8.41,
-      "strideLengthM": 1.08
+      "strideLengthM": 1.08,
+      "bestEfforts": {
+        "1k": 283.2,
+        "5k": 1678.3
+      }
     },
     {
       "id": "19382480927",
@@ -357919,7 +358896,12 @@
       "groundContactMs": 266.2,
       "verticalOscillationMm": 88.7,
       "verticalRatioPct": 8.97,
-      "strideLengthM": 0.99
+      "strideLengthM": 0.99,
+      "bestEfforts": {
+        "1k": 349.0,
+        "5k": 1773.8,
+        "10k": 3609.6
+      }
     },
     {
       "id": "19358972098",
@@ -359486,7 +360468,11 @@
       "groundContactMs": 260.3,
       "verticalOscillationMm": 91.5,
       "verticalRatioPct": 8.65,
-      "strideLengthM": 1.06
+      "strideLengthM": 1.06,
+      "bestEfforts": {
+        "1k": 323.9,
+        "5k": 1643.7
+      }
     },
     {
       "id": "19333027526",
@@ -361053,7 +362039,11 @@
       "groundContactMs": 249.1,
       "verticalOscillationMm": 84.4,
       "verticalRatioPct": 8.21,
-      "strideLengthM": 1.09
+      "strideLengthM": 1.09,
+      "bestEfforts": {
+        "1k": 289.3,
+        "5k": 1722.8
+      }
     },
     {
       "id": "19301603006",
@@ -362620,7 +363610,12 @@
       "groundContactMs": 265.2,
       "verticalOscillationMm": 88.2,
       "verticalRatioPct": 8.91,
-      "strideLengthM": 1.0
+      "strideLengthM": 1.0,
+      "bestEfforts": {
+        "1k": 300.8,
+        "5k": 1725.0,
+        "10k": 3693.0
+      }
     },
     {
       "id": "19278171777",
@@ -364187,7 +365182,11 @@
       "groundContactMs": 271.7,
       "verticalOscillationMm": 90.3,
       "verticalRatioPct": 9.17,
-      "strideLengthM": 0.98
+      "strideLengthM": 0.98,
+      "bestEfforts": {
+        "1k": 354.1,
+        "5k": 1818.9
+      }
     },
     {
       "id": "19262934669",
@@ -365754,7 +366753,11 @@
       "groundContactMs": 273.8,
       "verticalOscillationMm": 87.7,
       "verticalRatioPct": 9.27,
-      "strideLengthM": 0.97
+      "strideLengthM": 0.97,
+      "bestEfforts": {
+        "1k": 303.2,
+        "5k": 1816.2
+      }
     },
     {
       "id": "19229069659",
@@ -367321,7 +368324,12 @@
       "groundContactMs": 272.4,
       "verticalOscillationMm": 86.9,
       "verticalRatioPct": 9.31,
-      "strideLengthM": 0.94
+      "strideLengthM": 0.94,
+      "bestEfforts": {
+        "1k": 356.4,
+        "5k": 1883.6,
+        "10k": 3831.2
+      }
     },
     {
       "id": "19213407244",
@@ -368700,7 +369708,10 @@
       "groundContactMs": null,
       "verticalOscillationMm": null,
       "verticalRatioPct": null,
-      "strideLengthM": null
+      "strideLengthM": null,
+      "bestEfforts": {
+        "1k": 340.8
+      }
     },
     {
       "id": "19213406421",
@@ -370267,7 +371278,10 @@
       "groundContactMs": 238.7,
       "verticalOscillationMm": 101.0,
       "verticalRatioPct": 7.62,
-      "strideLengthM": 1.33
+      "strideLengthM": 1.33,
+      "bestEfforts": {
+        "1k": 259.5
+      }
     },
     {
       "id": "19213405781",
@@ -371834,7 +372848,10 @@
       "groundContactMs": 279.7,
       "verticalOscillationMm": 87.5,
       "verticalRatioPct": 9.61,
-      "strideLengthM": 0.91
+      "strideLengthM": 0.91,
+      "bestEfforts": {
+        "1k": 402.9
+      }
     },
     {
       "id": "19183916868",
@@ -373401,7 +374418,11 @@
       "groundContactMs": 293.3,
       "verticalOscillationMm": 79.1,
       "verticalRatioPct": 10.57,
-      "strideLengthM": 0.75
+      "strideLengthM": 0.75,
+      "bestEfforts": {
+        "1k": 471.4,
+        "5k": 2509.6
+      }
     },
     {
       "id": "19166353291",
@@ -374968,7 +375989,11 @@
       "groundContactMs": null,
       "verticalOscillationMm": null,
       "verticalRatioPct": null,
-      "strideLengthM": null
+      "strideLengthM": null,
+      "bestEfforts": {
+        "1k": 370.9,
+        "5k": 1901.5
+      }
     },
     {
       "id": "19135038247",
@@ -376535,7 +377560,12 @@
       "groundContactMs": 273.1,
       "verticalOscillationMm": 87.6,
       "verticalRatioPct": 9.26,
-      "strideLengthM": 0.97
+      "strideLengthM": 0.97,
+      "bestEfforts": {
+        "1k": 329.7,
+        "5k": 1904.7,
+        "10k": 3860.5
+      }
     },
     {
       "id": "19135037716",
@@ -378102,7 +379132,10 @@
       "groundContactMs": 285.3,
       "verticalOscillationMm": 89.1,
       "verticalRatioPct": 9.74,
-      "strideLengthM": 0.92
+      "strideLengthM": 0.92,
+      "bestEfforts": {
+        "1k": 403.0
+      }
     },
     {
       "id": "19114393871",
@@ -379669,7 +380702,10 @@
       "groundContactMs": 241.5,
       "verticalOscillationMm": 85.2,
       "verticalRatioPct": 7.72,
-      "strideLengthM": 1.13
+      "strideLengthM": 1.13,
+      "bestEfforts": {
+        "1k": 368.5
+      }
     },
     {
       "id": "19114392761",
@@ -381236,7 +382272,11 @@
       "groundContactMs": 284.2,
       "verticalOscillationMm": 95.4,
       "verticalRatioPct": 9.45,
-      "strideLengthM": 1.01
+      "strideLengthM": 1.01,
+      "bestEfforts": {
+        "1k": 352.1,
+        "5k": 1857.5
+      }
     }
   ]
 }

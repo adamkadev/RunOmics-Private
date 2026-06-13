@@ -1,11 +1,14 @@
 import { getDashboardData } from '@/application/usecases/GetDashboardData'
+import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
 import { StatsGrid } from '@/components/dashboard/StatsGrid'
 import { WeeklyVolumeChart } from '@/components/dashboard/WeeklyVolumeChart'
 import { IntensityChart } from '@/components/dashboard/IntensityChart'
+import { TrainingLoadChart } from '@/components/dashboard/TrainingLoadChart'
 import { RecentActivities } from '@/components/dashboard/RecentActivities'
 
 export default function DashboardPage() {
   const data = getDashboardData()
+  const trainingLoad = getTrainingLoad()
 
   return (
     <div className="space-y-6">
@@ -22,6 +25,8 @@ export default function DashboardPage() {
         <WeeklyVolumeChart data={data.weeklyVolume} currentWeek={data.currentWeek.weekNumber} />
         <IntensityChart data={data.typeDistribution} />
       </div>
+
+      {trainingLoad && <TrainingLoadChart data={trainingLoad} />}
 
       <RecentActivities activities={data.recentActivities} />
     </div>

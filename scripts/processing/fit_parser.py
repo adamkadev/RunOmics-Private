@@ -7,6 +7,13 @@ from garmin_fit_sdk import Decoder, Stream
 
 _SEMICIRCLE_TO_DEG = 180.0 / 2**31
 _MAX_ROUTE_POINTS = 300
+_EFFORT_TARGETS_M = {
+    "1k": 1000.0,
+    "5k": 5000.0,
+    "10k": 10000.0,
+    "half": 21097.5,
+    "marathon": 42195.0,
+}
 
 
 @dataclass
@@ -31,6 +38,7 @@ class ParsedFit:
     vertical_oscillation_mm: float | None = None
     vertical_ratio_pct: float | None = None
     stride_length_m: float | None = None
+    best_efforts: dict[str, float] = field(default_factory=dict)
 
     @property
     def has_data(self) -> bool:
@@ -53,6 +61,8 @@ def parse_fit(content: bytes) -> ParsedFit:
     raw_coords: list[list[float]] = []
     heart_rates: list[int] = []
     elevation_samples: list[float] = []
+    dist_samples: list[float] = []
+    time_samples: list[float] = []
     prev_alt: float | None = None
     record_ascent = 0.0
 
@@ -77,12 +87,19 @@ def parse_fit(content: bytes) -> ParsedFit:
                 record_ascent += alt - prev_alt
             prev_alt = alt
 
+        dist = rec.get("distance")
+        ts = rec.get("timestamp")
+        if dist is not None and isinstance(ts, datetime):
+            dist_samples.append(float(dist))
+            time_samples.append(ts.timestamp())
+
     result = ParsedFit(
         route=_decimate(raw_coords, max_points=_MAX_ROUTE_POINTS),
         heart_rates=heart_rates,
         elevation_samples=elevation_samples,
         elevation_gain_m=round(record_ascent, 1),
         is_race=bool(messages.get("310")),
+        best_efforts=_best_efforts(dist_samples, time_samples),
     )
 
     if sessions:
@@ -167,6 +184,42 @@ def _local_start_time(session: dict, activities: list[dict]) -> datetime | None:
                 return start.replace(tzinfo=None) + offset
 
     return None
+
+
+def _best_efforts(dists: list[float], times: list[float]) -> dict[str, float]:
+    out: dict[str, float] = {}
+    n = len(dists)
+    if n < 2:
+        return out
+
+    for key, target in _EFFORT_TARGETS_M.items():
+        if dists[-1] - dists[0] < target:
+            continue
+        best: float | None = None
+        j = 1
+        for i in range(n):
+            need = dists[i] + target
+            if need > dists[-1]:
+                break
+            if j <= i:
+                j = i + 1
+            while j < n and dists[j] < need:
+                j += 1
+            if j >= n:
+                break
+            d0, d1 = dists[j - 1], dists[j]
+            t_cross = (
+                times[j - 1] + (times[j] - times[j - 1]) * (need - d0) / (d1 - d0)
+                if d1 > d0
+                else times[j]
+            )
+            elapsed = t_cross - times[i]
+            if elapsed > 0 and (best is None or elapsed < best):
+                best = elapsed
+        if best is not None:
+            out[key] = round(best, 1)
+
+    return out
 
 
 def _decimate(coords: list[list[float]], max_points: int) -> list[list[float]]:

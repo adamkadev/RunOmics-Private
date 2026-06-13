@@ -30,6 +30,26 @@ export interface MonthlyHr {
   avgHr: number | null
 }
 
+export interface MonthlyCadence {
+  month: string
+  label: string
+  cadence: number | null
+}
+
+export interface MonthlyLongRuns {
+  month: string
+  label: string
+  km10: number
+  km15: number
+}
+
+export interface MonthlyEasyHard {
+  month: string
+  label: string
+  easyPct: number | null
+  hardPct: number | null
+}
+
 export interface ZoneShare {
   zone: number
   seconds: number
@@ -53,6 +73,9 @@ export interface YearAnalytics {
   paceTrend: MonthlyPace[]
   efficiencyTrend: MonthlyEfficiency[]
   hrTrend: MonthlyHr[]
+  cadenceTrend: MonthlyCadence[]
+  longRuns: MonthlyLongRuns[]
+  easyHardSplit: MonthlyEasyHard[]
   zoneDistribution: ZoneShare[]
   typesPresent: ActivityType[]
 }
@@ -97,6 +120,31 @@ function zoneDistribution(activities: Activity[]): ZoneShare[] {
       seconds: secs,
       percent: Math.round((secs / total) * 1000) / 10,
     }))
+}
+
+function weightedCadence(activities: Activity[]): number | null {
+  const valid = activities.filter((a) => a.cadenceSpm !== null && a.durationSeconds > 0)
+  if (!valid.length) return null
+  const totalSec = valid.reduce((s, a) => s + a.durationSeconds, 0)
+  return (
+    Math.round(
+      (valid.reduce((s, a) => s + a.cadenceSpm! * a.durationSeconds, 0) / totalSec) * 10
+    ) / 10
+  )
+}
+
+function easyHardShare(activities: Activity[]): { easyPct: number | null; hardPct: number | null } {
+  let easy = 0
+  let total = 0
+  for (const a of activities) {
+    for (const z of a.hrZones) {
+      total += z.seconds
+      if (z.zone <= 2) easy += z.seconds
+    }
+  }
+  if (total === 0) return { easyPct: null, hardPct: null }
+  const easyPct = Math.round((easy / total) * 1000) / 10
+  return { easyPct, hardPct: Math.round((100 - easyPct) * 10) / 10 }
 }
 
 function efficiencyFactor(activities: Activity[]): number | null {
@@ -164,6 +212,32 @@ function buildYearAnalytics(year: number, activities: Activity[], now: Date): Ye
     avgHr: weightedHr(byMonth.get(m) ?? []),
   }))
 
+  const cadenceTrend: MonthlyCadence[] = months.map((m) => ({
+    month: `${year}-${String(m).padStart(2, '0')}`,
+    label: monthLabel(m),
+    cadence: weightedCadence(byMonth.get(m) ?? []),
+  }))
+
+  const longRuns: MonthlyLongRuns[] = months.map((m) => {
+    const acts = byMonth.get(m) ?? []
+    return {
+      month: `${year}-${String(m).padStart(2, '0')}`,
+      label: monthLabel(m),
+      km10: acts.filter((a) => a.distanceKm >= 10 && a.distanceKm < 15).length,
+      km15: acts.filter((a) => a.distanceKm >= 15).length,
+    }
+  })
+
+  const easyHardSplit: MonthlyEasyHard[] = months.map((m) => {
+    const { easyPct, hardPct } = easyHardShare(byMonth.get(m) ?? [])
+    return {
+      month: `${year}-${String(m).padStart(2, '0')}`,
+      label: monthLabel(m),
+      easyPct,
+      hardPct,
+    }
+  })
+
   const distanceKm = Math.round(activities.reduce((s, a) => s + a.distanceKm, 0) * 10) / 10
   const calories = activities.reduce((s, a) => s + (a.calories ?? 0), 0)
   const elapsedDays = isCurrentYear
@@ -185,6 +259,9 @@ function buildYearAnalytics(year: number, activities: Activity[], now: Date): Ye
     paceTrend,
     efficiencyTrend,
     hrTrend,
+    cadenceTrend,
+    longRuns,
+    easyHardSplit,
     zoneDistribution: zoneDistribution(activities),
     typesPresent: Array.from(typesPresent),
   }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Search, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { ActivityRow } from './ActivityRow'
 import { ActivityTypeTag } from './ActivityTypeTag'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
@@ -17,11 +17,21 @@ interface Props {
 export function ActivityListClient({ activities }: Props) {
   const [search, setSearch] = useState('')
   const [selectedType, setSelectedType] = useState<ActivityType | null>(null)
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [minKm, setMinKm] = useState('')
+  const [maxKm, setMaxKm] = useState('')
   const [page, setPage] = useState(1)
 
   const filtered = useMemo(() => {
+    const min = parseFloat(minKm)
+    const max = parseFloat(maxKm)
     return activities
       .filter((a) => !selectedType || a.type === selectedType)
+      .filter((a) => !dateFrom || a.date >= dateFrom)
+      .filter((a) => !dateTo || a.date <= dateTo)
+      .filter((a) => Number.isNaN(min) || a.distanceKm >= min)
+      .filter((a) => Number.isNaN(max) || a.distanceKm <= max)
       .filter((a) => {
         if (!search.trim()) return true
         const q = search.toLowerCase()
@@ -32,7 +42,16 @@ export function ActivityListClient({ activities }: Props) {
           a.date.includes(q)
         )
       })
-  }, [activities, selectedType, search])
+  }, [activities, selectedType, search, dateFrom, dateTo, minKm, maxKm])
+
+  const hasExtraFilters = dateFrom || dateTo || minKm || maxKm
+
+  function clearFilters() {
+    setDateFrom('')
+    setDateTo('')
+    setMinKm('')
+    setMaxKm('')
+  }
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
   const clampedPage = Math.min(page, Math.max(1, totalPages))
@@ -73,6 +92,52 @@ export function ActivityListClient({ activities }: Props) {
             </button>
           ))}
         </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <input
+          type="date"
+          value={dateFrom}
+          onChange={(e) => setDateFrom(e.target.value)}
+          className="h-8 rounded-md border border-gray-200 bg-white px-2 text-xs text-gray-700 focus:border-emerald-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:[color-scheme:dark]"
+        />
+        <span className="text-xs text-gray-400">→</span>
+        <input
+          type="date"
+          value={dateTo}
+          onChange={(e) => setDateTo(e.target.value)}
+          className="h-8 rounded-md border border-gray-200 bg-white px-2 text-xs text-gray-700 focus:border-emerald-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:[color-scheme:dark]"
+        />
+        <span className="ml-2 text-xs text-gray-400">Distance</span>
+        <input
+          type="number"
+          min="0"
+          step="1"
+          placeholder="min"
+          value={minKm}
+          onChange={(e) => setMinKm(e.target.value)}
+          className="h-8 w-16 rounded-md border border-gray-200 bg-white px-2 text-xs text-gray-700 placeholder-gray-400 focus:border-emerald-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:placeholder-gray-600"
+        />
+        <span className="text-xs text-gray-400">–</span>
+        <input
+          type="number"
+          min="0"
+          step="1"
+          placeholder="max"
+          value={maxKm}
+          onChange={(e) => setMaxKm(e.target.value)}
+          className="h-8 w-16 rounded-md border border-gray-200 bg-white px-2 text-xs text-gray-700 placeholder-gray-400 focus:border-emerald-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:placeholder-gray-600"
+        />
+        <span className="text-xs text-gray-400">km</span>
+        {hasExtraFilters && (
+          <button
+            onClick={clearFilters}
+            className="ml-1 flex items-center gap-1 rounded px-2 py-1 text-xs text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+          >
+            <X size={12} />
+            Clear
+          </button>
+        )}
       </div>
 
       <div className="flex items-center justify-between">

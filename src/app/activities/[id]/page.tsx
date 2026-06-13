@@ -6,10 +6,7 @@ import { ActivityTypeTag } from '@/components/activities/ActivityTypeTag'
 import { ZoneBar } from '@/components/activity/ZoneBar'
 import { TrainingEffect } from '@/components/activity/TrainingEffect'
 import { RunningDynamics } from '@/components/activity/RunningDynamics'
-import { HrChart } from '@/components/activity/HrChart'
-import { ElevationChart } from '@/components/activity/ElevationChart'
-import { NoRouteMap } from '@/components/activity/ActivityMap'
-import { ActivityMapClient } from '@/components/activity/ActivityMapClient'
+import { ActivityDetailClient } from '@/components/activity/ActivityDetailClient'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
 import { RPE_LABELS } from '@/domain/activity/types'
 
@@ -117,41 +114,18 @@ export default async function ActivityDetailPage({
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-        <div className="lg:col-span-3">
-          {activity.route ? (
-            <ActivityMapClient route={activity.route} className="h-full min-h-[300px]" />
-          ) : (
-            <NoRouteMap className="h-full min-h-[300px]" />
-          )}
-        </div>
-        <div className="space-y-4 lg:col-span-2">
-          <ZoneBar hrZones={activity.hrZones} />
-          <TrainingEffect
-            aer={activity.aerTrainingEffect}
-            ana={activity.anaTrainingEffect}
-          />
-        </div>
-      </div>
-
-      {(activity.hrSamples || activity.elevationProfile) && (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          {activity.hrSamples && (
-            <HrChart
-              samples={activity.hrSamples}
-              avgHr={activity.avgHeartRate}
-              durationSeconds={activity.durationSeconds}
+      <ActivityDetailClient
+        activity={activity}
+        sidePanel={
+          <>
+            <ZoneBar hrZones={activity.hrZones} />
+            <TrainingEffect
+              aer={activity.aerTrainingEffect}
+              ana={activity.anaTrainingEffect}
             />
-          )}
-          {activity.elevationProfile && (
-            <ElevationChart
-              samples={activity.elevationProfile}
-              durationSeconds={activity.durationSeconds}
-              elevationGain={activity.elevationGain}
-            />
-          )}
-        </div>
-      )}
+          </>
+        }
+      />
 
       <RunningDynamics activity={activity} />
     </div>
