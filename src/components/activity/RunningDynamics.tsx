@@ -36,7 +36,7 @@ export function RunningDynamics({ activity: a }: { activity: Activity }) {
         {metrics.map((m) => (
           <div key={m.label}>
             <p className="text-sm font-semibold text-foreground">
-              {m.value} <span className="text-xs font-normal text-gray-400">{m.unit}</span>
+              {m.value} <span className="text-xs font-normal text-subtle">{m.unit}</span>
             </p>
             <p className="text-xs text-subtle">{m.label}</p>
           </div>

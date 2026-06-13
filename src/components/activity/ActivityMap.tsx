@@ -154,13 +154,13 @@ export function NoRouteMap({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'flex min-h-[280px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-gray-50 dark:bg-gray-900/50',
+        'flex min-h-[280px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-muted',
         className
       )}
     >
-      <MapPin size={24} className="text-gray-300 dark:text-gray-600" />
+      <MapPin size={24} className="text-subtle" />
       <p className="text-sm text-subtle">GPS trace unavailable</p>
-      <p className="text-xs text-gray-300 dark:text-gray-600">Available after Garmin sync</p>
+      <p className="text-xs text-subtle">Available after Garmin sync</p>
     </div>
   )
 }

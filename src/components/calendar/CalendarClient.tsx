@@ -72,7 +72,7 @@ export function CalendarClient({ activities }: Props) {
         <div className="flex items-center gap-2">
           <button
             onClick={() => shift(-1)}
-            className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-gray-500 transition-colors hover:bg-gray-50 dark:hover:bg-muted"
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-colors hover:bg-muted"
           >
             <ChevronLeft size={14} />
           </button>
@@ -82,7 +82,7 @@ export function CalendarClient({ activities }: Props) {
           <button
             onClick={() => shift(1)}
             disabled={isCurrentMonth}
-            className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-gray-500 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-muted"
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
           >
             <ChevronRight size={14} />
           </button>
@@ -119,8 +119,8 @@ export function CalendarClient({ activities }: Props) {
           {cells.map((cell, i) => (
             <div
               key={i}
-              className={`min-h-16 border-b border-r border-gray-50 p-1 sm:min-h-24 sm:p-1.5 [&:nth-child(7n)]:border-r-0/60 ${
-                cell ? '' : 'bg-gray-50/50 dark:bg-gray-950/30'
+              className={`min-h-16 border-b border-r border-border/30 p-1 sm:min-h-24 sm:p-1.5 [&:nth-child(7n)]:border-r-0/60 ${
+                cell ? '' : 'bg-muted/30'
               }`}
             >
               {cell && (

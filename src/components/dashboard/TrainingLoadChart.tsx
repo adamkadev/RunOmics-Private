@@ -48,7 +48,7 @@ export function TrainingLoadChart({ data }: Props) {
     <div className="rounded-xl border border-border bg-card p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-foreground/80">
-          Training Load <span className="font-normal text-gray-400">· last 90 days</span>
+          Training Load <span className="font-normal text-subtle">· last 90 days</span>
         </h3>
         <div className="flex items-center gap-4 text-xs">
           <span className="text-blue-500">

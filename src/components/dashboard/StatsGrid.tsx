@@ -12,7 +12,7 @@ interface Props {
 
 function Trend({ current, previous }: { current: number; previous: number }) {
   const diff = current - previous
-  if (Math.abs(diff) < 0.5) return <Minus size={12} className="text-gray-400" />
+  if (Math.abs(diff) < 0.5) return <Minus size={12} className="text-subtle" />
   return diff > 0 ? (
     <TrendingUp size={12} className="text-emerald-500" />
   ) : (

@@ -34,7 +34,7 @@ export function RecordsStrip({ records }: Props) {
                   </p>
                 </>
               ) : (
-                <p className="mt-1 text-sm text-gray-300 dark:text-gray-600">-</p>
+                <p className="mt-1 text-sm text-subtle">-</p>
               )}
             </>
           )
@@ -43,7 +43,7 @@ export function RecordsStrip({ records }: Props) {
             <Link
               key={r.key}
               href={`/activities/${r.activityId}`}
-              className="rounded-xl border border-border bg-card p-4 transition-shadow hover:shadow-sm dark:hover:border-gray-700"
+              className="rounded-xl border border-border bg-card p-4 transition-shadow hover:shadow-sm"
             >
               {inner}
             </Link>

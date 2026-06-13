@@ -78,7 +78,7 @@ export function RacePredictions({ records }: Props) {
                 <p className="text-xs text-subtle">
                   {formatPace(Math.round(predicted / km))}
                 </p>
-                <p className="mt-1 text-xs text-gray-300 dark:text-gray-600">
+                <p className="mt-1 text-xs text-subtle">
                   from {sourceLabel}
                 </p>
                 {actual?.seconds != null && (
@@ -90,7 +90,7 @@ export function RacePredictions({ records }: Props) {
                 )}
               </>
             ) : (
-              <p className="mt-1 text-sm text-gray-300 dark:text-gray-600">-</p>
+              <p className="mt-1 text-sm text-subtle">-</p>
             )}
           </div>
         ))}

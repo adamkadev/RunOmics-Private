@@ -18,7 +18,7 @@ interface StatItemProps {
 
 function StatItem({ icon, label, value }: StatItemProps) {
   return (
-    <div className="flex flex-col items-center gap-1 rounded-xl border border-border bg-gray-50 px-4 py-3">
+    <div className="flex flex-col items-center gap-1 rounded-xl border border-border bg-card px-4 py-3">
       <div className="text-subtle">{icon}</div>
       <span className="text-sm font-semibold text-foreground">{value}</span>
       <span className="text-xs text-subtle">{label}</span>
@@ -44,7 +44,7 @@ export default async function ActivityDetailPage({
     <div className="space-y-6">
       <Link
         href="/activities"
-        className="inline-flex items-center gap-1.5 text-sm text-gray-500 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft size={14} />
         Activities

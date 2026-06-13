@@ -61,13 +61,13 @@ export function ActivityListClient({ activities }: Props) {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-subtle" />
           <input
             type="text"
             placeholder="Search..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-8 rounded-md border border-border bg-card pl-8 pr-3 text-sm text-gray-700 placeholder-gray-400 focus:border-emerald-500 focus:outline-none dark:text-gray-300 dark:placeholder-gray-600"
+            className="h-8 rounded-md border border-border bg-card pl-8 pr-3 text-sm text-foreground placeholder-subtle focus:border-emerald-500 focus:outline-none"
           />
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -76,7 +76,7 @@ export function ActivityListClient({ activities }: Props) {
             className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
               selectedType === null
                 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
+                : 'bg-muted text-muted-foreground hover:bg-muted/70'
             }`}
           >
             All
@@ -99,16 +99,16 @@ export function ActivityListClient({ activities }: Props) {
           type="date"
           value={dateFrom}
           onChange={(e) => setDateFrom(e.target.value)}
-          className="h-8 rounded-md border border-border bg-card px-2 text-xs text-gray-700 focus:border-emerald-500 focus:outline-none dark:text-gray-300 dark:[color-scheme:dark]"
+          className="h-8 rounded-md border border-border bg-card px-2 text-xs text-foreground focus:border-emerald-500 focus:outline-none dark:[color-scheme:dark]"
         />
-        <span className="text-xs text-gray-400">→</span>
+        <span className="text-xs text-subtle">→</span>
         <input
           type="date"
           value={dateTo}
           onChange={(e) => setDateTo(e.target.value)}
-          className="h-8 rounded-md border border-border bg-card px-2 text-xs text-gray-700 focus:border-emerald-500 focus:outline-none dark:text-gray-300 dark:[color-scheme:dark]"
+          className="h-8 rounded-md border border-border bg-card px-2 text-xs text-foreground focus:border-emerald-500 focus:outline-none dark:[color-scheme:dark]"
         />
-        <span className="ml-2 text-xs text-gray-400">Distance</span>
+        <span className="ml-2 text-xs text-subtle">Distance</span>
         <input
           type="number"
           min="0"
@@ -116,9 +116,9 @@ export function ActivityListClient({ activities }: Props) {
           placeholder="min"
           value={minKm}
           onChange={(e) => setMinKm(e.target.value)}
-          className="h-8 w-16 rounded-md border border-border bg-card px-2 text-xs text-gray-700 placeholder-gray-400 focus:border-emerald-500 focus:outline-none dark:text-gray-300 dark:placeholder-gray-600"
+          className="h-8 w-16 rounded-md border border-border bg-card px-2 text-xs text-foreground placeholder-subtle focus:border-emerald-500 focus:outline-none"
         />
-        <span className="text-xs text-gray-400">–</span>
+        <span className="text-xs text-subtle">–</span>
         <input
           type="number"
           min="0"
@@ -126,13 +126,13 @@ export function ActivityListClient({ activities }: Props) {
           placeholder="max"
           value={maxKm}
           onChange={(e) => setMaxKm(e.target.value)}
-          className="h-8 w-16 rounded-md border border-border bg-card px-2 text-xs text-gray-700 placeholder-gray-400 focus:border-emerald-500 focus:outline-none dark:text-gray-300 dark:placeholder-gray-600"
+          className="h-8 w-16 rounded-md border border-border bg-card px-2 text-xs text-foreground placeholder-subtle focus:border-emerald-500 focus:outline-none"
         />
-        <span className="text-xs text-gray-400">km</span>
+        <span className="text-xs text-subtle">km</span>
         {hasExtraFilters && (
           <button
             onClick={clearFilters}
-            className="ml-1 flex items-center gap-1 rounded px-2 py-1 text-xs text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-muted dark:hover:text-gray-200"
+            className="ml-1 flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <X size={12} />
             Clear
@@ -162,7 +162,7 @@ export function ActivityListClient({ activities }: Props) {
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={clampedPage === 1}
-            className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-gray-500 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-muted"
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
           >
             <ChevronLeft size={14} />
           </button>
@@ -176,7 +176,7 @@ export function ActivityListClient({ activities }: Props) {
             }, [])
             .map((p, i) =>
               p === '…' ? (
-                <span key={`ellipsis-${i}`} className="px-1 text-xs text-gray-400">…</span>
+                <span key={`ellipsis-${i}`} className="px-1 text-xs text-subtle">…</span>
               ) : (
                 <button
                   key={p}
@@ -184,7 +184,7 @@ export function ActivityListClient({ activities }: Props) {
                   className={`h-8 min-w-[2rem] rounded-md px-2 text-sm font-medium transition-colors ${
                     clampedPage === p
                       ? 'bg-emerald-500 text-white'
-                      : 'border border-border bg-card text-gray-600 hover:bg-gray-50 dark:hover:bg-muted'
+                      : 'border border-border bg-card text-muted-foreground hover:bg-muted'
                   }`}
                 >
                   {p}
@@ -195,7 +195,7 @@ export function ActivityListClient({ activities }: Props) {
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={clampedPage === totalPages}
-            className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-gray-500 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-muted"
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
           >
             <ChevronRight size={14} />
           </button>

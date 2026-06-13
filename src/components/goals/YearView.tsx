@@ -28,7 +28,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
                 <span className="text-3xl font-bold text-foreground">
                   {totalDistanceKm.toFixed(0)}
                 </span>
-                <span className="ml-1 text-sm text-gray-400">/ {goals.annualDistanceKm} km</span>
+                <span className="ml-1 text-sm text-subtle">/ {goals.annualDistanceKm} km</span>
               </div>
               <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                 {annualProgress.toFixed(0)}%
@@ -133,7 +133,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
                         </p>
                       )}
                     </div>
-                    <ArrowRight size={16} className="mt-1 shrink-0 text-gray-300 transition-colors group-hover:text-gray-500 dark:text-gray-600 dark:group-hover:text-gray-400" />
+                    <ArrowRight size={16} className="mt-1 shrink-0 text-subtle transition-colors group-hover:text-muted-foreground" />
                   </div>
                   <div className="mt-3 flex flex-wrap items-center gap-2">
                     <ActivityTypeTag type={activity.type} />
@@ -154,10 +154,10 @@ export function YearView({ yearData }: { yearData: YearData }) {
         </section>
       ) : (
         <div className="rounded-xl border border-dashed border-border p-10 text-center">
-          <Trophy size={32} className="mx-auto mb-3 text-gray-300 dark:text-gray-700" />
+          <Trophy size={32} className="mx-auto mb-3 text-subtle" />
           <p className="text-sm text-subtle">
             Add PBs for {yearData.year} to{' '}
-            <code className="rounded bg-gray-100 px-1 py-0.5 text-xs dark:bg-gray-800">
+            <code className="rounded bg-muted px-1 py-0.5 text-xs">
               public/pbs.json
             </code>
           </p>

@@ -17,7 +17,7 @@ function DeltaBadge({ pct, lowerIsBetter = false }: { pct: number; lowerIsBetter
   const improved = lowerIsBetter ? pct < 0 : pct > 0
   const neutral = pct === 0
 
-  if (neutral) return <Minus size={12} className="text-gray-400" />
+  if (neutral) return <Minus size={12} className="text-subtle" />
 
   return (
     <span

@@ -23,11 +23,11 @@ export function RecentActivities({ activities }: Props) {
         </Link>
       </div>
 
-      <div className="divide-y divide-gray-50 dark:divide-gray-800">
+      <div className="divide-y divide-border">
         {activities.map((a) => (
           <div
             key={a.id}
-            className="flex items-center gap-4 px-5 py-3 transition-colors hover:bg-gray-50 dark:hover:bg-muted/50"
+            className="flex items-center gap-4 px-5 py-3 transition-colors hover:bg-muted/50"
           >
             <div className="w-24 shrink-0">
               <p className="text-xs font-medium text-muted-foreground">
@@ -49,16 +49,16 @@ export function RecentActivities({ activities }: Props) {
               <span className="font-medium text-foreground">
                 {formatDistance(a.distanceKm)}
               </span>
-              <span className="hidden text-gray-400 sm:block">
+              <span className="hidden text-subtle sm:block">
                 {formatDuration(a.durationSeconds)}
               </span>
               {a.paceSecPerKm && (
-                <span className="hidden text-gray-400 lg:block">
+                <span className="hidden text-subtle lg:block">
                   {formatPace(a.paceSecPerKm)}
                 </span>
               )}
               {a.avgHeartRate && (
-                <span className="hidden text-gray-400 xl:block">
+                <span className="hidden text-subtle xl:block">
                   {a.avgHeartRate} bpm
                 </span>
               )}

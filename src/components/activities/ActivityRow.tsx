@@ -13,18 +13,18 @@ export function ActivityRow({ activity: a }: Props) {
   return (
     <Link
       href={`/activities/${a.id}`}
-      className="grid grid-cols-[1fr_auto] items-center gap-x-4 rounded-lg border border-border bg-card p-4 transition-shadow hover:shadow-sm dark:hover:border-gray-700"
+      className="grid grid-cols-[1fr_auto] items-center gap-x-4 rounded-lg border border-border bg-card p-4 transition-shadow hover:shadow-sm"
     >
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <ActivityTypeTag type={a.type} />
           <span className="text-xs text-subtle">{formatDate(a.date)}</span>
           {a.comment && (
-            <MessageSquare size={12} className="text-gray-300 dark:text-gray-600" />
+            <MessageSquare size={12} className="text-subtle" />
           )}
         </div>
         {a.description && (
-          <p className="mt-1 text-sm font-medium text-gray-800 dark:text-gray-200">
+          <p className="mt-1 text-sm font-medium text-foreground">
             {a.description}
           </p>
         )}

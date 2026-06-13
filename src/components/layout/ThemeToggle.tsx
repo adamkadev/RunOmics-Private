@@ -22,7 +22,7 @@ export function ThemeToggle({ className }: { className?: string }) {
     <button
       onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
       className={cn(
-        'flex h-8 w-8 items-center justify-center rounded-md text-gray-500 transition-colors',
+        'flex h-8 w-8 items-center justify-center rounded-md transition-colors',
         'text-muted-foreground hover:bg-muted hover:text-foreground',
         className
       )}
