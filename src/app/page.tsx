@@ -1,16 +1,19 @@
 import { getDashboardData } from '@/application/usecases/GetDashboardData'
 import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
 import { getVO2max } from '@/application/usecases/GetRecords'
+import { getHeatmapData } from '@/application/usecases/GetHeatmapData'
 import { StatsGrid } from '@/components/dashboard/StatsGrid'
 import { WeeklyVolumeChart } from '@/components/dashboard/WeeklyVolumeChart'
 import { IntensityChart } from '@/components/dashboard/IntensityChart'
 import { TrainingLoadChart } from '@/components/dashboard/TrainingLoadChart'
 import { RecentActivities } from '@/components/dashboard/RecentActivities'
+import { ActivityHeatmap } from '@/components/dashboard/ActivityHeatmap'
 
 export default function DashboardPage() {
   const data = getDashboardData()
   const trainingLoad = getTrainingLoad()
   const vo2max = getVO2max()
+  const heatmapDays = getHeatmapData()
 
   return (
     <div className="space-y-6">
@@ -35,6 +38,8 @@ export default function DashboardPage() {
       </div>
 
       {trainingLoad && <TrainingLoadChart data={trainingLoad} />}
+
+      <ActivityHeatmap days={heatmapDays} />
 
       <RecentActivities activities={data.recentActivities} />
     </div>
