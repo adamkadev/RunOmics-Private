@@ -1,0 +1,24 @@
+import Link from 'next/link'
+import { HeartPulse, ArrowLeft } from 'lucide-react'
+
+export default function NotFound() {
+  return (
+    <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
+      <HeartPulse size={48} className="mb-4 text-emerald-500 opacity-60" />
+      <h1 className="text-6xl font-black text-gray-900 dark:text-white">404</h1>
+      <p className="mt-2 text-lg font-medium text-gray-500 dark:text-gray-400">
+        This page went on a run and didn't come back.
+      </p>
+      <p className="mt-1 text-sm text-gray-400 dark:text-gray-500">
+        The route you're looking for doesn't exist.
+      </p>
+      <Link
+        href="/"
+        className="mt-8 inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-600"
+      >
+        <ArrowLeft size={16} />
+        Back to Dashboard
+      </Link>
+    </div>
+  )
+}
