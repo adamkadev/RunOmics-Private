@@ -142,7 +142,6 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, classNa
 
         new mgl.Marker({ element: mkMarker('#10b981') }).setLngLat(route[0]).addTo(map)
 
-        // Animate route drawing — ease-out cubic over 1.8s
         const total = segments.length
         const duration = 1800
         const startTime = performance.now()

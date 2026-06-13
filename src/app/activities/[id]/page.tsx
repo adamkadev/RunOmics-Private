@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft, Timer, Footprints, Heart, TrendingUp, Mountain, Zap, Flame, MessageSquare } from 'lucide-react'
@@ -9,6 +10,35 @@ import { RunningDynamics } from '@/components/activity/RunningDynamics'
 import { ActivityDetailClient } from '@/components/activity/ActivityDetailClient'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
 import { RPE_LABELS } from '@/domain/activity/types'
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params
+  const activity = getActivities().find((a) => a.id === id)
+  if (!activity) return { title: 'Activity' }
+
+  const name = activity.description || `${activity.dayOfWeek} Run`
+  const stats = [
+    formatDistance(activity.distanceKm),
+    formatDuration(activity.durationSeconds),
+    activity.paceSecPerKm ? `${formatPace(activity.paceSecPerKm)}/km` : null,
+    formatDate(activity.date),
+  ].filter(Boolean).join(' · ')
+
+  return {
+    title: name,
+    description: stats,
+    openGraph: {
+      title: name,
+      description: stats,
+      type: 'article',
+    },
+    twitter: {
+      card: 'summary',
+      title: name,
+      description: stats,
+    },
+  }
+}
 
 interface StatItemProps {
   icon: React.ReactNode

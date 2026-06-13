@@ -8,8 +8,22 @@ const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Runomics',
-  description: 'Your running training dashboard',
+  title: {
+    default: 'Runomics',
+    template: '%s - Runomics',
+  },
+  description: 'Your personal running training dashboard - stats, maps, trends.',
+  openGraph: {
+    type: 'website',
+    siteName: 'Runomics',
+    title: 'Runomics',
+    description: 'Your personal running training dashboard - stats, maps, trends.',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Runomics',
+    description: 'Your personal running training dashboard - stats, maps, trends.',
+  },
 }
 
 export const viewport: Viewport = {
