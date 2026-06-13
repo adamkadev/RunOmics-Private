@@ -8,6 +8,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
+import { CHART_COLORS } from '@/lib/colors'
 
 interface Props {
   samples: number[]
@@ -61,8 +62,8 @@ export function PaceChart({ samples, durationSeconds, onHoverFraction }: Props) 
         >
           <defs>
             <linearGradient id="paceGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.25} />
-              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.02} />
+              <stop offset="5%" stopColor={CHART_COLORS.pace} stopOpacity={0.25} />
+              <stop offset="95%" stopColor={CHART_COLORS.pace} stopOpacity={0.02} />
             </linearGradient>
           </defs>
           <XAxis
@@ -71,14 +72,14 @@ export function PaceChart({ samples, durationSeconds, onHoverFraction }: Props) 
             domain={['dataMin', 'dataMax']}
             tickCount={5}
             tickFormatter={formatX}
-            tick={{ fontSize: 10, fill: '#9ca3af' }}
+            tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
             domain={[maxVal, minVal]}
             reversed
-            tick={{ fontSize: 10, fill: '#9ca3af' }}
+            tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
             width={36}
@@ -97,7 +98,7 @@ export function PaceChart({ samples, durationSeconds, onHoverFraction }: Props) 
           <Area
             type="monotone"
             dataKey="pace"
-            stroke="#3b82f6"
+            stroke={CHART_COLORS.pace}
             strokeWidth={1.5}
             fill="url(#paceGradient)"
             dot={false}

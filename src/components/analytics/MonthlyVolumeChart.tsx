@@ -4,6 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recha
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import type { ActivityType } from '@/domain/activity/types'
 import type { MonthlyVolume } from '@/application/usecases/GetAnalyticsData'
+import { CHART_COLORS } from '@/lib/colors'
 
 interface Props {
   data: MonthlyVolume[]
@@ -54,12 +55,12 @@ export function MonthlyVolumeChart({ data, typesPresent }: Props) {
         <BarChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
           <XAxis
             dataKey="label"
-            tick={{ fontSize: 11, fill: '#9ca3af' }}
+            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
-            tick={{ fontSize: 11, fill: '#9ca3af' }}
+            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
           />

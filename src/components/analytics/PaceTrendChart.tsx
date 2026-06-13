@@ -2,6 +2,7 @@
 
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import type { MonthlyPace } from '@/application/usecases/GetAnalyticsData'
+import { CHART_COLORS } from '@/lib/colors'
 
 interface Props {
   data: MonthlyPace[]
@@ -61,7 +62,7 @@ export function PaceTrendChart({ data }: Props) {
         <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -10 }}>
           <XAxis
             dataKey="label"
-            tick={{ fontSize: 11, fill: '#9ca3af' }}
+            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
           />
@@ -69,7 +70,7 @@ export function PaceTrendChart({ data }: Props) {
             domain={[minPace, maxPace]}
             reversed
             tickFormatter={formatPaceTick}
-            tick={{ fontSize: 11, fill: '#9ca3af' }}
+            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
             width={42}
@@ -78,18 +79,18 @@ export function PaceTrendChart({ data }: Props) {
           <Line
             type="monotone"
             dataKey="easyPace"
-            stroke="#10b981"
+            stroke={CHART_COLORS.brand}
             strokeWidth={2}
-            dot={{ r: 3, fill: '#10b981', strokeWidth: 0 }}
+            dot={{ r: 3, fill: CHART_COLORS.brand, strokeWidth: 0 }}
             connectNulls
             isAnimationActive={false}
           />
           <Line
             type="monotone"
             dataKey="hardPace"
-            stroke="#f97316"
+            stroke={CHART_COLORS.atl}
             strokeWidth={2}
-            dot={{ r: 3, fill: '#f97316', strokeWidth: 0 }}
+            dot={{ r: 3, fill: CHART_COLORS.atl, strokeWidth: 0 }}
             connectNulls
             isAnimationActive={false}
           />

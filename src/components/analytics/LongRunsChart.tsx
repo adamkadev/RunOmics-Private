@@ -2,6 +2,7 @@
 
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import type { MonthlyLongRuns } from '@/application/usecases/GetAnalyticsData'
+import { CHART_COLORS } from '@/lib/colors'
 
 interface Props {
   data: MonthlyLongRuns[]
@@ -35,19 +36,19 @@ export function LongRunsChart({ data }: Props) {
         <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
           <XAxis
             dataKey="label"
-            tick={{ fontSize: 11, fill: '#9ca3af' }}
+            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
             allowDecimals={false}
-            tick={{ fontSize: 11, fill: '#9ca3af' }}
+            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
           />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(156,163,175,0.1)' }} />
-          <Bar dataKey="km10" stackId="lr" fill="#6ee7b7" radius={[0, 0, 0, 0]} />
-          <Bar dataKey="km15" stackId="lr" fill="#059669" radius={[3, 3, 0, 0]} />
+          <Bar dataKey="km10" stackId="lr" fill={CHART_COLORS.longRun10} radius={[0, 0, 0, 0]} />
+          <Bar dataKey="km15" stackId="lr" fill={CHART_COLORS.longRun15} radius={[3, 3, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
       <div className="mt-2 flex items-center gap-4 text-xs text-gray-400 dark:text-gray-500">

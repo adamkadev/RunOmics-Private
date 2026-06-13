@@ -10,6 +10,7 @@ import {
   ReferenceLine,
 } from 'recharts'
 import type { MonthlyEasyHard } from '@/application/usecases/GetAnalyticsData'
+import { CHART_COLORS } from '@/lib/colors'
 
 interface Props {
   data: MonthlyEasyHard[]
@@ -45,21 +46,21 @@ export function EasyHardChart({ data }: Props) {
         <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
           <XAxis
             dataKey="label"
-            tick={{ fontSize: 11, fill: '#9ca3af' }}
+            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
             domain={[0, 100]}
             tickFormatter={(v: number) => `${v}%`}
-            tick={{ fontSize: 11, fill: '#9ca3af' }}
+            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
           />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(156,163,175,0.1)' }} />
-          <Bar dataKey="easyPct" stackId="eh" fill="#34d399" />
-          <Bar dataKey="hardPct" stackId="eh" fill="#fb923c" radius={[3, 3, 0, 0]} />
-          <ReferenceLine y={80} stroke="#6b7280" strokeDasharray="4 3" strokeWidth={1} />
+          <Bar dataKey="easyPct" stackId="eh" fill={CHART_COLORS.easy} />
+          <Bar dataKey="hardPct" stackId="eh" fill={CHART_COLORS.hard} radius={[3, 3, 0, 0]} />
+          <ReferenceLine y={80} stroke={CHART_COLORS.referenceTarget} strokeDasharray="4 3" strokeWidth={1} />
         </BarChart>
       </ResponsiveContainer>
       <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">

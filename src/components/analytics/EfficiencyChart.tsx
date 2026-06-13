@@ -2,6 +2,7 @@
 
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import type { MonthlyEfficiency } from '@/application/usecases/GetAnalyticsData'
+import { CHART_COLORS } from '@/lib/colors'
 
 interface Props {
   data: MonthlyEfficiency[]
@@ -39,20 +40,20 @@ export function EfficiencyChart({ data }: Props) {
         <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -10 }}>
           <defs>
             <linearGradient id="efGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.25} />
-              <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.02} />
+              <stop offset="5%" stopColor={CHART_COLORS.efficiency} stopOpacity={0.25} />
+              <stop offset="95%" stopColor={CHART_COLORS.efficiency} stopOpacity={0.02} />
             </linearGradient>
           </defs>
           <XAxis
             dataKey="label"
-            tick={{ fontSize: 11, fill: '#9ca3af' }}
+            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
             domain={[min, max]}
             tickFormatter={(v: number) => v.toFixed(1)}
-            tick={{ fontSize: 11, fill: '#9ca3af' }}
+            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
             width={36}
@@ -61,10 +62,10 @@ export function EfficiencyChart({ data }: Props) {
           <Area
             type="monotone"
             dataKey="ef"
-            stroke="#8b5cf6"
+            stroke={CHART_COLORS.efficiency}
             strokeWidth={2}
             fill="url(#efGradient)"
-            dot={{ r: 3, fill: '#8b5cf6', strokeWidth: 0 }}
+            dot={{ r: 3, fill: CHART_COLORS.efficiency, strokeWidth: 0 }}
             connectNulls
             isAnimationActive={false}
           />

@@ -2,6 +2,7 @@
 
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import type { MonthlyHr } from '@/application/usecases/GetAnalyticsData'
+import { CHART_COLORS } from '@/lib/colors'
 
 interface Props {
   data: MonthlyHr[]
@@ -40,13 +41,13 @@ export function HrTrendChart({ data }: Props) {
         <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -10 }}>
           <XAxis
             dataKey="label"
-            tick={{ fontSize: 11, fill: '#9ca3af' }}
+            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
             domain={[min, max]}
-            tick={{ fontSize: 11, fill: '#9ca3af' }}
+            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
             width={36}
@@ -55,9 +56,9 @@ export function HrTrendChart({ data }: Props) {
           <Line
             type="monotone"
             dataKey="avgHr"
-            stroke="#ef4444"
+            stroke={CHART_COLORS.hr}
             strokeWidth={2}
-            dot={{ r: 3, fill: '#ef4444', strokeWidth: 0 }}
+            dot={{ r: 3, fill: CHART_COLORS.hr, strokeWidth: 0 }}
             connectNulls
             isAnimationActive={false}
           />

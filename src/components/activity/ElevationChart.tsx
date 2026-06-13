@@ -8,6 +8,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
+import { CHART_COLORS } from '@/lib/colors'
 
 interface Props {
   samples: number[]
@@ -61,8 +62,8 @@ export function ElevationChart({ samples, durationSeconds, elevationGain, onHove
         >
           <defs>
             <linearGradient id="elevGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#78716c" stopOpacity={0.3} />
-              <stop offset="95%" stopColor="#78716c" stopOpacity={0.04} />
+              <stop offset="5%" stopColor={CHART_COLORS.elevation} stopOpacity={0.3} />
+              <stop offset="95%" stopColor={CHART_COLORS.elevation} stopOpacity={0.04} />
             </linearGradient>
           </defs>
           <XAxis
@@ -71,13 +72,13 @@ export function ElevationChart({ samples, durationSeconds, elevationGain, onHove
             domain={['dataMin', 'dataMax']}
             tickCount={tickCount}
             tickFormatter={formatX}
-            tick={{ fontSize: 10, fill: '#9ca3af' }}
+            tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
             domain={[minVal, maxVal]}
-            tick={{ fontSize: 10, fill: '#9ca3af' }}
+            tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
             width={36}
@@ -96,7 +97,7 @@ export function ElevationChart({ samples, durationSeconds, elevationGain, onHove
           <Area
             type="monotone"
             dataKey="alt"
-            stroke="#78716c"
+            stroke={CHART_COLORS.elevation}
             strokeWidth={1.5}
             fill="url(#elevGradient)"
             dot={false}

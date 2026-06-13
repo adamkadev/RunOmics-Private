@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from 'recharts'
+import { CHART_COLORS } from '@/lib/colors'
 
 interface Props {
   samples: number[]
@@ -67,8 +68,8 @@ export function HrChart({ samples, avgHr, maxHr, durationSeconds, onHoverFractio
         >
           <defs>
             <linearGradient id="hrGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#ef4444" stopOpacity={0.25} />
-              <stop offset="95%" stopColor="#ef4444" stopOpacity={0.02} />
+              <stop offset="5%" stopColor={CHART_COLORS.hr} stopOpacity={0.25} />
+              <stop offset="95%" stopColor={CHART_COLORS.hr} stopOpacity={0.02} />
             </linearGradient>
           </defs>
           <XAxis
@@ -77,13 +78,13 @@ export function HrChart({ samples, avgHr, maxHr, durationSeconds, onHoverFractio
             domain={['dataMin', 'dataMax']}
             tickCount={tickCount}
             tickFormatter={formatX}
-            tick={{ fontSize: 10, fill: '#9ca3af' }}
+            tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
             domain={[minVal, maxVal]}
-            tick={{ fontSize: 10, fill: '#9ca3af' }}
+            tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
             width={32}
@@ -101,7 +102,7 @@ export function HrChart({ samples, avgHr, maxHr, durationSeconds, onHoverFractio
           {avgHr && (
             <ReferenceLine
               y={avgHr}
-              stroke="#ef4444"
+              stroke={CHART_COLORS.hr}
               strokeDasharray="4 3"
               strokeOpacity={0.5}
               strokeWidth={1}
@@ -110,7 +111,7 @@ export function HrChart({ samples, avgHr, maxHr, durationSeconds, onHoverFractio
           <Area
             type="monotone"
             dataKey="bpm"
-            stroke="#ef4444"
+            stroke={CHART_COLORS.hr}
             strokeWidth={1.5}
             fill="url(#hrGradient)"
             dot={false}

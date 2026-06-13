@@ -10,6 +10,7 @@ import {
   ReferenceLine,
 } from 'recharts'
 import type { WeeklyVolume } from '@/domain/activity/types'
+import { CHART_COLORS } from '@/lib/colors'
 
 interface Props {
   data: WeeklyVolume[]
@@ -68,8 +69,8 @@ export function WeeklyVolumeChart({ data, currentWeek }: Props) {
         <AreaChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
           <defs>
             <linearGradient id="volumeGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-              <stop offset="95%" stopColor="#10b981" stopOpacity={0.02} />
+              <stop offset="5%" stopColor={CHART_COLORS.brand} stopOpacity={0.3} />
+              <stop offset="95%" stopColor={CHART_COLORS.brand} stopOpacity={0.02} />
             </linearGradient>
           </defs>
           <XAxis
@@ -78,20 +79,20 @@ export function WeeklyVolumeChart({ data, currentWeek }: Props) {
             domain={[0, data.length - 1]}
             ticks={monthTicks}
             tickFormatter={(i: number) => chartData[i]?.monthLabel ?? ''}
-            tick={{ fontSize: 11, fill: '#9ca3af' }}
+            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
-            tick={{ fontSize: 11, fill: '#9ca3af' }}
+            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
           />
-          <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#10b981', strokeWidth: 1, strokeDasharray: '4 3' }} />
+          <Tooltip content={<CustomTooltip />} cursor={{ stroke: CHART_COLORS.brand, strokeWidth: 1, strokeDasharray: '4 3' }} />
           {currentWeekIdx >= 0 && (
             <ReferenceLine
               x={currentWeekIdx}
-              stroke="#10b981"
+              stroke={CHART_COLORS.brand}
               strokeWidth={1.5}
               strokeDasharray="4 3"
             />
@@ -99,11 +100,11 @@ export function WeeklyVolumeChart({ data, currentWeek }: Props) {
           <Area
             type="monotone"
             dataKey="distanceKm"
-            stroke="#10b981"
+            stroke={CHART_COLORS.brand}
             strokeWidth={2}
             fill="url(#volumeGradient)"
             dot={false}
-            activeDot={{ r: 4, fill: '#10b981', strokeWidth: 0 }}
+            activeDot={{ r: 4, fill: CHART_COLORS.brand, strokeWidth: 0 }}
           />
         </AreaChart>
       </ResponsiveContainer>

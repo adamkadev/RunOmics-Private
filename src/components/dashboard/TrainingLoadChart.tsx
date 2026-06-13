@@ -10,6 +10,7 @@ import {
   ReferenceLine,
 } from 'recharts'
 import type { TrainingLoadData, TrainingLoadPoint } from '@/application/usecases/GetTrainingLoad'
+import { CHART_COLORS } from '@/lib/colors'
 
 interface Props {
   data: TrainingLoadData
@@ -65,21 +66,21 @@ export function TrainingLoadChart({ data }: Props) {
         <LineChart data={data.points} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
           <XAxis
             dataKey="label"
-            tick={{ fontSize: 11, fill: '#9ca3af' }}
+            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
             minTickGap={40}
           />
           <YAxis
-            tick={{ fontSize: 11, fill: '#9ca3af' }}
+            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
           />
           <Tooltip content={<CustomTooltip />} />
-          <ReferenceLine y={0} stroke="#e5e7eb" strokeWidth={1} />
-          <Line type="monotone" dataKey="ctl" stroke="#3b82f6" strokeWidth={2} dot={false} isAnimationActive={false} />
-          <Line type="monotone" dataKey="atl" stroke="#f97316" strokeWidth={1.5} dot={false} isAnimationActive={false} />
-          <Line type="monotone" dataKey="tsb" stroke="#10b981" strokeWidth={1.5} dot={false} isAnimationActive={false} />
+          <ReferenceLine y={0} stroke={CHART_COLORS.referenceLine} strokeWidth={1} />
+          <Line type="monotone" dataKey="ctl" stroke={CHART_COLORS.ctl} strokeWidth={2} dot={false} isAnimationActive={false} />
+          <Line type="monotone" dataKey="atl" stroke={CHART_COLORS.atl} strokeWidth={1.5} dot={false} isAnimationActive={false} />
+          <Line type="monotone" dataKey="tsb" stroke={CHART_COLORS.tsb} strokeWidth={1.5} dot={false} isAnimationActive={false} />
         </LineChart>
       </ResponsiveContainer>
       <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
