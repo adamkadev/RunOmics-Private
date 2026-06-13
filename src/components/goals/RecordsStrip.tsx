@@ -23,7 +23,7 @@ export function RecordsStrip({ records }: Props) {
               <p className="text-xs font-semibold text-subtle">{r.label}</p>
               {r.seconds !== null ? (
                 <>
-                  <p className="mt-1 text-lg font-bold text-foreground">
+                  <p className="mt-1 text-lg font-bold tracking-tight text-foreground">
                     {formatDuration(r.seconds)}
                   </p>
                   <p className="text-xs text-subtle">

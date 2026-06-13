@@ -72,7 +72,7 @@ export function RacePredictions({ records }: Props) {
             <p className="text-xs font-semibold text-subtle">{label}</p>
             {predicted !== null ? (
               <>
-                <p className="mt-1 text-lg font-bold text-foreground">
+                <p className="mt-1 text-lg font-bold tracking-tight text-foreground">
                   ~{formatDuration(predicted)}
                 </p>
                 <p className="text-xs text-subtle">

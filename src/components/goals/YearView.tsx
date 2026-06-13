@@ -25,7 +25,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
           <div className="rounded-xl border border-border bg-card p-5">
             <div className="mb-3 flex items-end justify-between">
               <div>
-                <span className="text-3xl font-bold text-foreground">
+                <span className="text-3xl font-bold tracking-tight text-foreground">
                   {totalDistanceKm.toFixed(0)}
                 </span>
                 <span className="ml-1 text-sm text-subtle">/ {goals.annualDistanceKm} km</span>
@@ -124,7 +124,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
                 <div className="p-4">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className="text-xl font-bold text-foreground">
+                      <p className="text-xl font-bold tracking-tight text-foreground">
                         {formatDuration(entry.seconds)}
                       </p>
                       {activity.paceSecPerKm && (

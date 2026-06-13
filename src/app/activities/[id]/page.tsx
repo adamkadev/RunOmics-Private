@@ -53,7 +53,7 @@ export default async function ActivityDetailPage({
       <div>
         <div className="flex flex-wrap items-center gap-3">
           <ActivityTypeTag type={activity.type} />
-          <h1 className="text-xl font-bold text-foreground">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
             {activity.description || activity.dayOfWeek + ' Run'}
           </h1>
           <span className="text-sm text-subtle">

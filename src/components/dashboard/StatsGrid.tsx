@@ -79,7 +79,7 @@ export function StatsGrid({ currentWeek, lastWeek, currentStreak, longestStreak,
             </span>
             {icon}
           </div>
-          <p className="text-2xl font-bold text-foreground">{value}</p>
+          <p className="text-2xl font-bold tracking-tight text-foreground">{value}</p>
           <div className="mt-1 flex items-center gap-1">
             {trend}
             <span className="text-xs text-subtle">{sub}</span>
