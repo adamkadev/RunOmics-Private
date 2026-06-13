@@ -8,7 +8,7 @@ import {
   CalendarDays,
   BarChart2,
   Trophy,
-  Mountain,
+  HeartPulse,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ThemeToggle } from './ThemeToggle'
@@ -29,7 +29,7 @@ export function Sidebar() {
       {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-60 flex-col border-r border-gray-200 bg-white lg:flex dark:border-gray-800 dark:bg-gray-900">
         <div className="flex h-16 items-center gap-2 border-b border-gray-200 px-5 dark:border-gray-800">
-          <Mountain size={20} className="text-emerald-600 dark:text-emerald-400" />
+          <HeartPulse size={20} className="text-emerald-600 dark:text-emerald-400" />
           <span className="text-lg font-bold tracking-tight text-gray-900 dark:text-white">
             Runomics
           </span>
@@ -65,7 +65,7 @@ export function Sidebar() {
       {/* Mobile top bar */}
       <header className="fixed inset-x-0 top-0 z-20 flex h-14 items-center justify-between border-b border-gray-200 bg-white/90 px-4 backdrop-blur lg:hidden dark:border-gray-800 dark:bg-gray-900/90">
         <div className="flex items-center gap-2">
-          <Mountain size={18} className="text-emerald-600 dark:text-emerald-400" />
+          <HeartPulse size={18} className="text-emerald-600 dark:text-emerald-400" />
           <span className="text-base font-bold tracking-tight text-gray-900 dark:text-white">
             Runomics
           </span>
