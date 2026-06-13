@@ -11,10 +11,11 @@ const ActivityMapDynamic = dynamic(() => import('./ActivityMap'), {
 
 interface Props {
   route: [number, number][]
+  paceSamples?: number[] | null
   hoverFraction?: number | null
   className?: string
 }
 
-export function ActivityMapClient({ route, hoverFraction, className }: Props) {
-  return <ActivityMapDynamic route={route} hoverFraction={hoverFraction} className={className} />
+export function ActivityMapClient({ route, paceSamples, hoverFraction, className }: Props) {
+  return <ActivityMapDynamic route={route} paceSamples={paceSamples} hoverFraction={hoverFraction} className={className} />
 }

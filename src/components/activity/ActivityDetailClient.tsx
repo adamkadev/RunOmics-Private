@@ -23,6 +23,7 @@ export function ActivityDetailClient({ activity, sidePanel }: Props) {
           {activity.route ? (
             <ActivityMapClient
               route={activity.route}
+              paceSamples={activity.paceSamples}
               hoverFraction={hoverFraction}
               className="h-full min-h-[300px]"
             />
@@ -46,6 +47,7 @@ export function ActivityDetailClient({ activity, sidePanel }: Props) {
           {activity.paceSamples && (
             <PaceChart
               samples={activity.paceSamples}
+              avgPaceSecPerKm={activity.paceSecPerKm}
               durationSeconds={activity.durationSeconds}
               onHoverFraction={activity.route ? setHoverFraction : undefined}
             />

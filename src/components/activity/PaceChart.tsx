@@ -12,6 +12,7 @@ import { CHART_COLORS } from '@/lib/colors'
 
 interface Props {
   samples: number[]
+  avgPaceSecPerKm?: number | null
   durationSeconds?: number
   onHoverFraction?: (fraction: number | null) => void
 }
@@ -22,7 +23,7 @@ function formatPaceSec(sec: number) {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
-export function PaceChart({ samples, durationSeconds, onHoverFraction }: Props) {
+export function PaceChart({ samples, avgPaceSecPerKm, durationSeconds, onHoverFraction }: Props) {
   const data = samples.map((pace, i) => {
     const t = durationSeconds ? (i / (samples.length - 1)) * durationSeconds : i
     return { t, pace }
@@ -38,6 +39,7 @@ export function PaceChart({ samples, durationSeconds, onHoverFraction }: Props) 
   const validSamples = samples.filter((v) => v > 0)
   const minVal = validSamples.length ? Math.max(60, Math.min(...validSamples) - 10) : 200
   const maxVal = validSamples.length ? Math.min(900, Math.max(...validSamples) + 20) : 600
+  const avgPace = avgPaceSecPerKm ?? null
 
   function formatX(val: number) {
     if (!durationSeconds) return String(val)
@@ -51,7 +53,10 @@ export function PaceChart({ samples, durationSeconds, onHoverFraction }: Props) 
     <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">Pace</h3>
-        <span className="text-xs text-subtle">min/km</span>
+        <span className="text-xs text-subtle">
+          {avgPace && <span className="font-semibold text-foreground">{formatPaceSec(avgPace)} </span>}
+          min/km
+        </span>
       </div>
       <ResponsiveContainer width="100%" height={120}>
         <AreaChart

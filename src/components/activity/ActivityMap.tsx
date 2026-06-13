@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
-import { MapPin } from 'lucide-react'
+import { useEffect, useRef, useState, useCallback } from 'react'
+import { MapPin, Maximize2, Minimize2 } from 'lucide-react'
 import type { Map as MapLibreMap, Marker } from 'maplibre-gl'
 import { cn } from '@/lib/utils'
 
 interface Props {
   route: [number, number][]
+  paceSamples?: number[] | null
   hoverFraction?: number | null
   className?: string
 }
@@ -14,11 +15,61 @@ interface Props {
 const MAPTILER_STYLE_LIGHT = 'streets-v2'
 const MAPTILER_STYLE_DARK  = 'backdrop-v4-dark'
 
-export default function ActivityMap({ route, hoverFraction, className }: Props) {
+function buildSegmentFeatures(route: [number, number][], paceSamples: number[] | null | undefined) {
+  return route.slice(0, -1).map((coord, i) => {
+    let pace = 300
+    if (paceSamples && paceSamples.length > 1) {
+      const ratio = i / Math.max(route.length - 2, 1)
+      const sampleIdx = ratio * (paceSamples.length - 1)
+      const low = Math.floor(sampleIdx)
+      const high = Math.min(Math.ceil(sampleIdx), paceSamples.length - 1)
+      const t = sampleIdx - low
+      pace = paceSamples[low] * (1 - t) + paceSamples[high] * t
+    }
+    return {
+      type: 'Feature' as const,
+      properties: { pace },
+      geometry: { type: 'LineString' as const, coordinates: [coord, route[i + 1]] },
+    }
+  })
+}
+
+function mkMarker(bg: string, border = 'white', size = 13) {
+  const el = document.createElement('div')
+  Object.assign(el.style, {
+    width: `${size}px`, height: `${size}px`,
+    borderRadius: '50%',
+    backgroundColor: bg,
+    border: `2px solid ${border}`,
+    boxShadow: '0 1px 4px rgba(0,0,0,0.35)',
+    pointerEvents: 'none',
+  })
+  return el
+}
+
+export default function ActivityMap({ route, paceSamples, hoverFraction, className }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<MapLibreMap | null>(null)
   const mglRef = useRef<typeof import('maplibre-gl') | null>(null)
   const hoverMarkerRef = useRef<Marker | null>(null)
+  const animFrameRef = useRef<number | null>(null)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+
+  const toggleFullscreen = useCallback(() => setIsFullscreen(v => !v), [])
+
+  // Resize map after fullscreen DOM reflow
+  useEffect(() => {
+    const id = requestAnimationFrame(() => { mapRef.current?.resize() })
+    return () => cancelAnimationFrame(id)
+  }, [isFullscreen])
+
+  // Escape to exit fullscreen
+  useEffect(() => {
+    if (!isFullscreen) return
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setIsFullscreen(false) }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [isFullscreen])
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -30,21 +81,17 @@ export default function ActivityMap({ route, hoverFraction, className }: Props) 
       if (cancelled) return
 
       const token = process.env.NEXT_PUBLIC_MAPTILER_TOKEN
-      if (!token) {
-        console.warn('NEXT_PUBLIC_MAPTILER_TOKEN not set')
-        return
-      }
+      if (!token) { console.warn('NEXT_PUBLIC_MAPTILER_TOKEN not set'); return }
 
+      if (animFrameRef.current) { cancelAnimationFrame(animFrameRef.current); animFrameRef.current = null }
       mapRef.current?.remove()
       mapRef.current = null
       hoverMarkerRef.current = null
       mglRef.current = mgl
 
-      const styleName = isDark ? MAPTILER_STYLE_DARK : MAPTILER_STYLE_LIGHT
-      const styleUrl = `https://api.maptiler.com/maps/${styleName}/style.json?key=${token}`
-
+      const styleUrl = `https://api.maptiler.com/maps/${isDark ? MAPTILER_STYLE_DARK : MAPTILER_STYLE_LIGHT}/style.json?key=${token}`
       const bounds = route.reduce(
-        (b, coord) => b.extend(coord as [number, number]),
+        (b, c) => b.extend(c as [number, number]),
         new mgl.LngLatBounds(route[0], route[0])
       )
 
@@ -55,27 +102,34 @@ export default function ActivityMap({ route, hoverFraction, className }: Props) 
         fitBoundsOptions: { padding: 40, maxZoom: 15 },
         attributionControl: false,
       })
-
       map.addControl(new mgl.AttributionControl({ compact: true }))
+
+      const segments = buildSegmentFeatures(route, paceSamples)
+      const hasPace = !!(paceSamples && paceSamples.length > 1)
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const lineColor: any = hasPace
+        ? ['interpolate', ['linear'], ['get', 'pace'],
+            240, '#ef4444',  // ≤4:00/km → red
+            300, '#f59e0b',  //  5:00/km → amber
+            360, '#84cc16',  //  6:00/km → lime
+            420, '#10b981']  // ≥7:00/km → green
+        : '#10b981'
 
       map.on('load', () => {
         if (cancelled) return
 
         map.addSource('route', {
           type: 'geojson',
-          data: {
-            type: 'Feature',
-            properties: {},
-            geometry: { type: 'LineString', coordinates: route },
-          },
+          data: { type: 'FeatureCollection', features: [] },
         })
 
         map.addLayer({
-          id: 'route-shadow',
+          id: 'route-bg',
           type: 'line',
           source: 'route',
           layout: { 'line-join': 'round', 'line-cap': 'round' },
-          paint: { 'line-color': '#000000', 'line-width': 5, 'line-opacity': 0.15 },
+          paint: { 'line-color': isDark ? '#1f2937' : '#ffffff', 'line-width': 7, 'line-opacity': 0.85 },
         })
 
         map.addLayer({
@@ -83,19 +137,37 @@ export default function ActivityMap({ route, hoverFraction, className }: Props) 
           type: 'line',
           source: 'route',
           layout: { 'line-join': 'round', 'line-cap': 'round' },
-          paint: { 'line-color': '#10b981', 'line-width': 3 },
+          paint: { 'line-color': lineColor, 'line-width': 4 },
         })
 
-        const startEl = document.createElement('div')
-        startEl.className = 'w-3 h-3 rounded-full bg-emerald-500 border-2 border-white shadow-md'
-        new mgl.Marker({ element: startEl }).setLngLat(route[0]).addTo(map)
+        new mgl.Marker({ element: mkMarker('#10b981') }).setLngLat(route[0]).addTo(map)
 
-        const last = route[route.length - 1]
-        if (Math.abs(last[0] - route[0][0]) > 0.0005 || Math.abs(last[1] - route[0][1]) > 0.0005) {
-          const endEl = document.createElement('div')
-          endEl.className = 'w-3 h-3 rounded-full bg-red-500 border-2 border-white shadow-md'
-          new mgl.Marker({ element: endEl }).setLngLat(last).addTo(map)
+        // Animate route drawing — ease-out cubic over 1.8s
+        const total = segments.length
+        const duration = 1800
+        const startTime = performance.now()
+
+        function animate() {
+          if (cancelled) return
+          const progress = Math.min((performance.now() - startTime) / duration, 1)
+          const eased = 1 - Math.pow(1 - progress, 3)
+          const count = Math.floor(eased * total)
+
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ;(map.getSource('route') as any)?.setData({ type: 'FeatureCollection', features: segments.slice(0, count) })
+
+          if (progress < 1) {
+            animFrameRef.current = requestAnimationFrame(animate)
+          } else {
+            animFrameRef.current = null
+            const last = route[route.length - 1]
+            if (Math.abs(last[0] - route[0][0]) > 0.0005 || Math.abs(last[1] - route[0][1]) > 0.0005) {
+              new mgl.Marker({ element: mkMarker('#ef4444') }).setLngLat(last).addTo(map)
+            }
+          }
         }
+
+        animFrameRef.current = requestAnimationFrame(animate)
       })
 
       mapRef.current = map
@@ -104,21 +176,21 @@ export default function ActivityMap({ route, hoverFraction, className }: Props) 
     initMap(document.documentElement.classList.contains('dark'))
 
     const observer = new MutationObserver(() => {
-      if (!cancelled) {
-        initMap(document.documentElement.classList.contains('dark'))
-      }
+      if (!cancelled) initMap(document.documentElement.classList.contains('dark'))
     })
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
 
     return () => {
       cancelled = true
       observer.disconnect()
+      if (animFrameRef.current) { cancelAnimationFrame(animFrameRef.current); animFrameRef.current = null }
       mapRef.current?.remove()
       mapRef.current = null
       hoverMarkerRef.current = null
     }
-  }, [route])
+  }, [route, paceSamples])
 
+  // Sync hover marker with chart scrubbing
   useEffect(() => {
     const map = mapRef.current
     const mgl = mglRef.current
@@ -134,8 +206,8 @@ export default function ActivityMap({ route, hoverFraction, className }: Props) 
     if (!coord) return
 
     if (!hoverMarkerRef.current) {
-      const el = document.createElement('div')
-      el.className = 'w-3.5 h-3.5 rounded-full bg-card border-[3px] border-emerald-600 shadow-md'
+      const el = mkMarker('white', '#10b981', 14)
+      el.style.border = '3px solid #10b981'
       hoverMarkerRef.current = new mgl.Marker({ element: el }).setLngLat(coord).addTo(map)
     } else {
       hoverMarkerRef.current.setLngLat(coord)
@@ -144,9 +216,28 @@ export default function ActivityMap({ route, hoverFraction, className }: Props) 
 
   return (
     <div
-      ref={containerRef}
-      className={cn('h-full min-h-[280px] w-full overflow-hidden rounded-xl', className)}
-    />
+      className={cn(
+        'relative overflow-hidden rounded-xl',
+        isFullscreen && 'fixed inset-0 z-[9999] rounded-none',
+        className
+      )}
+    >
+      <div ref={containerRef} className="h-full w-full" />
+
+      <button
+        onClick={toggleFullscreen}
+        className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-card"
+        aria-label={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+      >
+        {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+      </button>
+
+      {isFullscreen && (
+        <p className="pointer-events-none absolute bottom-8 left-3 z-10 text-[11px] text-white/60">
+          Esc to exit
+        </p>
+      )}
+    </div>
   )
 }
 
