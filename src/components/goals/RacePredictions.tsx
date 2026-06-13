@@ -38,7 +38,7 @@ interface Props {
 }
 
 const EFFORTS = [
-  { key: '1k', label: '1K', km: 1 },
+  //{ key: '1k', label: '1K', km: 1 },
   { key: '5k', label: '5K', km: 5 },
   { key: '10k', label: '10K', km: 10 },
   { key: 'half', label: 'Half', km: 21.0975 },
