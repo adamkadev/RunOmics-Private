@@ -18,10 +18,10 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
   if (!active || !payload?.length) return null
   const entry = payload[0].payload
   return (
-    <div className="rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-      <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{label}</p>
-      <p className="text-sm text-gray-700 dark:text-gray-300">10–15 km: {entry.km10}</p>
-      <p className="text-sm text-gray-700 dark:text-gray-300">15+ km: {entry.km15}</p>
+    <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-sm dark:bg-muted">
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      <p className="text-sm text-foreground/80">10–15 km: {entry.km10}</p>
+      <p className="text-sm text-foreground/80">15+ km: {entry.km15}</p>
     </div>
   )
 }
@@ -30,8 +30,8 @@ export function LongRunsChart({ data }: Props) {
   if (!data.some((d) => d.km10 > 0 || d.km15 > 0)) return null
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
-      <h3 className="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Long Runs</h3>
+    <div className="rounded-xl border border-border bg-card p-5">
+      <h3 className="mb-4 text-sm font-semibold text-foreground/80">Long Runs</h3>
       <ResponsiveContainer width="100%" height={200}>
         <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
           <XAxis
@@ -51,7 +51,7 @@ export function LongRunsChart({ data }: Props) {
           <Bar dataKey="km15" stackId="lr" fill={CHART_COLORS.longRun15} radius={[3, 3, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
-      <div className="mt-2 flex items-center gap-4 text-xs text-gray-400 dark:text-gray-500">
+      <div className="mt-2 flex items-center gap-4 text-xs text-subtle">
         <span className="flex items-center gap-1.5">
           <span className="h-2 w-2 rounded-sm" style={{ background: '#6ee7b7' }} />
           10-15 km

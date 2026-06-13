@@ -23,15 +23,15 @@ function TEBar({ value, label }: { value: number; label: string }) {
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between text-xs">
-        <span className="font-medium text-gray-600 dark:text-gray-400">{label}</span>
+        <span className="font-medium text-muted-foreground">{label}</span>
         <div className="flex items-center gap-2">
-          <span className="text-gray-400 dark:text-gray-500">{level.label}</span>
-          <span className="w-6 text-right font-bold text-gray-900 dark:text-white tabular-nums">
+          <span className="text-subtle">{level.label}</span>
+          <span className="w-6 text-right font-bold text-foreground tabular-nums">
             {value.toFixed(1)}
           </span>
         </div>
       </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+      <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
         <div
           className={`h-full rounded-full transition-all ${level.color}`}
           style={{ width: `${pct}%` }}
@@ -45,8 +45,8 @@ export function TrainingEffect({ aer, ana }: Props) {
   if (aer == null && ana == null) return null
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
-      <h3 className="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-300">
+    <div className="rounded-xl border border-border bg-card p-5">
+      <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         Training Effect
       </h3>
       <div className="space-y-3">

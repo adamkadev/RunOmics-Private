@@ -18,10 +18,10 @@ interface StatItemProps {
 
 function StatItem({ icon, label, value }: StatItemProps) {
   return (
-    <div className="flex flex-col items-center gap-1 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-900">
-      <div className="text-gray-400 dark:text-gray-500">{icon}</div>
-      <span className="text-sm font-semibold text-gray-900 dark:text-white">{value}</span>
-      <span className="text-xs text-gray-400 dark:text-gray-500">{label}</span>
+    <div className="flex flex-col items-center gap-1 rounded-xl border border-border bg-gray-50 px-4 py-3">
+      <div className="text-subtle">{icon}</div>
+      <span className="text-sm font-semibold text-foreground">{value}</span>
+      <span className="text-xs text-subtle">{label}</span>
     </div>
   )
 }
@@ -53,15 +53,15 @@ export default async function ActivityDetailPage({
       <div>
         <div className="flex flex-wrap items-center gap-3">
           <ActivityTypeTag type={activity.type} />
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-xl font-bold text-foreground">
             {activity.description || activity.dayOfWeek + ' Run'}
           </h1>
-          <span className="text-sm text-gray-400 dark:text-gray-500">
+          <span className="text-sm text-subtle">
             {formatDate(activity.date)}
           </span>
         </div>
         {activity.comment && (
-          <div className="mt-2 flex items-start gap-2 text-sm text-gray-500 dark:text-gray-400">
+          <div className="mt-2 flex items-start gap-2 text-sm text-muted-foreground">
             <MessageSquare size={14} className="mt-0.5 shrink-0" />
             {activity.comment}
           </div>

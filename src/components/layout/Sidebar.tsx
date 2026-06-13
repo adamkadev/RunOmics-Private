@@ -27,10 +27,10 @@ export function Sidebar() {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-20 hidden w-60 flex-col border-r border-gray-200 bg-white lg:flex dark:border-gray-800 dark:bg-gray-900">
-        <div className="flex h-16 items-center gap-2 border-b border-gray-200 px-5 dark:border-gray-800">
+      <aside className="fixed inset-y-0 left-0 z-20 hidden w-60 flex-col border-r border-border bg-card lg:flex">
+        <div className="flex h-16 items-center gap-2 border-b border-border px-5">
           <HeartPulse size={20} className="text-emerald-600 dark:text-emerald-400" />
-          <span className="text-lg font-bold tracking-tight text-gray-900 dark:text-white">
+          <span className="text-lg font-bold tracking-tight text-foreground">
             Runomics
           </span>
         </div>
@@ -46,7 +46,7 @@ export function Sidebar() {
                   'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                   active
                     ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-50'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 )}
               >
                 <Icon size={16} />
@@ -56,17 +56,17 @@ export function Sidebar() {
           })}
         </nav>
 
-        <div className="flex items-center justify-between border-t border-gray-200 px-4 py-3 dark:border-gray-800">
-          <span className="text-xs text-gray-400 dark:text-gray-500">Runomics v1.0</span>
+        <div className="flex items-center justify-between border-t border-border px-4 py-3">
+          <span className="text-xs text-subtle">Runomics v1.0</span>
           <ThemeToggle />
         </div>
       </aside>
 
       {/* Mobile top bar */}
-      <header className="fixed inset-x-0 top-0 z-20 flex h-14 items-center justify-between border-b border-gray-200 bg-white/90 px-4 backdrop-blur lg:hidden dark:border-gray-800 dark:bg-gray-900/90">
+      <header className="fixed inset-x-0 top-0 z-20 flex h-14 items-center justify-between border-b border-border bg-card/90 px-4 backdrop-blur lg:hidden">
         <div className="flex items-center gap-2">
           <HeartPulse size={18} className="text-emerald-600 dark:text-emerald-400" />
-          <span className="text-base font-bold tracking-tight text-gray-900 dark:text-white">
+          <span className="text-base font-bold tracking-tight text-foreground">
             Runomics
           </span>
         </div>
@@ -74,7 +74,7 @@ export function Sidebar() {
       </header>
 
       {/* Mobile bottom nav */}
-      <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-gray-200 bg-white/90 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden dark:border-gray-800 dark:bg-gray-900/90">
+      <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card/90 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
         <div className="grid grid-cols-5">
           {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
             const active = pathname === href
@@ -86,7 +86,7 @@ export function Sidebar() {
                   'flex flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors',
                   active
                     ? 'text-emerald-600 dark:text-emerald-400'
-                    : 'text-gray-500 dark:text-gray-400'
+                    : 'text-muted-foreground'
                 )}
               >
                 <Icon size={18} />

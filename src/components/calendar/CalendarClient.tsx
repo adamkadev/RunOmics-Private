@@ -72,17 +72,17 @@ export function CalendarClient({ activities }: Props) {
         <div className="flex items-center gap-2">
           <button
             onClick={() => shift(-1)}
-            className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800"
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-gray-500 transition-colors hover:bg-gray-50 dark:hover:bg-muted"
           >
             <ChevronLeft size={14} />
           </button>
-          <span className="min-w-40 text-center text-sm font-semibold text-gray-900 dark:text-white">
+          <span className="min-w-40 text-center text-sm font-semibold text-foreground">
             {monthLabel}
           </span>
           <button
             onClick={() => shift(1)}
             disabled={isCurrentMonth}
-            className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-500 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800"
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-gray-500 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-muted"
           >
             <ChevronRight size={14} />
           </button>
@@ -98,17 +98,17 @@ export function CalendarClient({ activities }: Props) {
             </button>
           )}
         </div>
-        <p className="text-xs text-gray-400 dark:text-gray-500">
+        <p className="text-xs text-subtle">
           {sessionCount} session{sessionCount !== 1 ? 's' : ''} · {totalKm} km
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-        <div className="grid grid-cols-7 border-b border-gray-100 dark:border-gray-800">
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
+        <div className="grid grid-cols-7 border-b border-border">
           {WEEKDAYS.map((d) => (
             <div
               key={d}
-              className="px-1 py-2 text-center text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500"
+              className="px-1 py-2 text-center text-xs font-medium uppercase tracking-wide text-subtle"
             >
               <span className="hidden sm:inline">{d}</span>
               <span className="sm:hidden">{d[0]}</span>
@@ -119,7 +119,7 @@ export function CalendarClient({ activities }: Props) {
           {cells.map((cell, i) => (
             <div
               key={i}
-              className={`min-h-16 border-b border-r border-gray-50 p-1 sm:min-h-24 sm:p-1.5 [&:nth-child(7n)]:border-r-0 dark:border-gray-800/60 ${
+              className={`min-h-16 border-b border-r border-gray-50 p-1 sm:min-h-24 sm:p-1.5 [&:nth-child(7n)]:border-r-0/60 ${
                 cell ? '' : 'bg-gray-50/50 dark:bg-gray-950/30'
               }`}
             >
@@ -129,7 +129,7 @@ export function CalendarClient({ activities }: Props) {
                     className={`mb-1 text-right text-xs ${
                       cell.date === todayIso
                         ? 'font-bold text-emerald-600 dark:text-emerald-400'
-                        : 'text-gray-400 dark:text-gray-500'
+                        : 'text-subtle'
                     }`}
                   >
                     {cell.day}
@@ -157,7 +157,7 @@ export function CalendarClient({ activities }: Props) {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400 dark:text-gray-500">
+      <div className="flex flex-wrap items-center gap-3 text-xs text-subtle">
         {Object.entries(ACTIVITY_TYPE_CONFIG).map(([type, cfg]) => (
           <span key={type} className="flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-sm" style={{ background: cfg.chartColor }} />

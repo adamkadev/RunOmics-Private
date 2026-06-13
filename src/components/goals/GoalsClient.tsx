@@ -17,8 +17,8 @@ export function GoalsClient({ data }: Props) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Goals & PBs</h1>
-          <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{selectedYear} season</p>
+          <h1 className="text-2xl font-bold text-foreground">Goals & PBs</h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">{selectedYear} season</p>
         </div>
         <YearSelector years={years} selected={selectedYear} onSelect={setSelectedYear} />
       </div>

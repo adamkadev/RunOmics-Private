@@ -10,9 +10,9 @@ interface Props {
 
 export function RecentActivities({ activities }: Props) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-      <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-gray-800">
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+    <div className="rounded-xl border border-border bg-card">
+      <div className="flex items-center justify-between border-b border-border px-5 py-4">
+        <h3 className="text-sm font-semibold text-foreground/80">
           Recent Activities
         </h3>
         <Link
@@ -27,10 +27,10 @@ export function RecentActivities({ activities }: Props) {
         {activities.map((a) => (
           <div
             key={a.id}
-            className="flex items-center gap-4 px-5 py-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50"
+            className="flex items-center gap-4 px-5 py-3 transition-colors hover:bg-gray-50 dark:hover:bg-muted/50"
           >
             <div className="w-24 shrink-0">
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
+              <p className="text-xs font-medium text-muted-foreground">
                 {formatDate(a.date)}
               </p>
             </div>
@@ -38,15 +38,15 @@ export function RecentActivities({ activities }: Props) {
               <ActivityTypeTag type={a.type} />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm text-gray-700 dark:text-gray-300">
+              <p className="truncate text-sm text-foreground/80">
                 {a.description || a.dayOfWeek}
               </p>
               {a.comment && (
-                <p className="truncate text-xs text-gray-400 dark:text-gray-500">{a.comment}</p>
+                <p className="truncate text-xs text-subtle">{a.comment}</p>
               )}
             </div>
             <div className="flex shrink-0 items-center gap-4 text-sm">
-              <span className="font-medium text-gray-900 dark:text-white">
+              <span className="font-medium text-foreground">
                 {formatDistance(a.distanceKm)}
               </span>
               <span className="hidden text-gray-400 sm:block">

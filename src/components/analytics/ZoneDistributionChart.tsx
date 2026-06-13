@@ -33,11 +33,11 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   if (!active || !payload?.length) return null
   const z = payload[0].payload
   return (
-    <div className="rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-      <p className="text-xs font-medium text-gray-900 dark:text-white">
+    <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-sm dark:bg-muted">
+      <p className="text-xs font-medium text-foreground">
         Z{z.zone} · {ZONE_LABELS[z.zone]}
       </p>
-      <p className="text-xs text-gray-500 dark:text-gray-400">
+      <p className="text-xs text-muted-foreground">
         {formatDuration(z.seconds)} · {z.percent}%
       </p>
     </div>
@@ -48,8 +48,8 @@ export function ZoneDistributionChart({ data }: Props) {
   if (!data.length) return null
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
-      <h3 className="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-300">
+    <div className="rounded-xl border border-border bg-card p-5">
+      <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         Time in Zones
       </h3>
       <div className="flex items-center gap-4">
@@ -80,11 +80,11 @@ export function ZoneDistributionChart({ data }: Props) {
                   className="h-2 w-2 rounded-full"
                   style={{ backgroundColor: ZONE_COLORS[z.zone] }}
                 />
-                <span className="text-gray-600 dark:text-gray-400">
+                <span className="text-muted-foreground">
                   Z{z.zone} {ZONE_LABELS[z.zone]}
                 </span>
               </div>
-              <span className="font-medium text-gray-900 dark:text-white">{z.percent}%</span>
+              <span className="font-medium text-foreground">{z.percent}%</span>
             </li>
           ))}
         </ul>

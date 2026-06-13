@@ -18,9 +18,9 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   const d = payload[0].payload
   const config = ACTIVITY_TYPE_CONFIG[d.type]
   return (
-    <div className="rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-      <p className="text-xs font-medium text-gray-900 dark:text-white">{config.label}</p>
-      <p className="text-xs text-gray-500 dark:text-gray-400">
+    <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-sm dark:bg-muted">
+      <p className="text-xs font-medium text-foreground">{config.label}</p>
+      <p className="text-xs text-muted-foreground">
         {d.distanceKm.toFixed(1)} km · {d.percent}%
       </p>
     </div>
@@ -29,8 +29,8 @@ function CustomTooltip({ active, payload }: TooltipProps) {
 
 export function IntensityChart({ data }: Props) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
-      <h3 className="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-300">
+    <div className="rounded-xl border border-border bg-card p-5">
+      <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         Training Mix
       </h3>
       <div className="flex items-center gap-4">
@@ -66,9 +66,9 @@ export function IntensityChart({ data }: Props) {
                     className="h-2 w-2 rounded-full"
                     style={{ backgroundColor: config.chartColor }}
                   />
-                  <span className="text-gray-600 dark:text-gray-400">{config.label}</span>
+                  <span className="text-muted-foreground">{config.label}</span>
                 </div>
-                <span className="font-medium text-gray-900 dark:text-white">
+                <span className="font-medium text-foreground">
                   {entry.percent}%
                 </span>
               </li>

@@ -2,7 +2,7 @@ import { Skeleton } from '@/components/ui/Skeleton'
 
 function CardSkeleton() {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+    <div className="rounded-xl border border-border bg-card p-4">
       <Skeleton className="mb-2 h-3 w-12" />
       <Skeleton className="h-7 w-24" />
       <Skeleton className="mt-1 h-3 w-16" />
@@ -25,7 +25,7 @@ export default function GoalsLoading() {
       {/* Annual goal */}
       <div className="space-y-3">
         <Skeleton className="h-4 w-32" />
-        <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+        <div className="rounded-xl border border-border bg-card p-5">
           <div className="mb-3 flex items-end justify-between">
             <Skeleton className="h-9 w-32" />
             <Skeleton className="h-4 w-10" />

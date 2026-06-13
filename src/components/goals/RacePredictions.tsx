@@ -59,7 +59,7 @@ export function RacePredictions({ records }: Props) {
 
   return (
     <section className="space-y-3">
-      <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+      <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
         <TrendingUp size={14} className="text-emerald-500" />
         Race Predictions
       </h2>
@@ -67,15 +67,15 @@ export function RacePredictions({ records }: Props) {
         {predictions.map(({ key, label, km, actual, predicted, sourceLabel }) => (
           <div
             key={key}
-            className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
+            className="rounded-xl border border-border bg-card p-4"
           >
-            <p className="text-xs font-semibold text-gray-400 dark:text-gray-500">{label}</p>
+            <p className="text-xs font-semibold text-subtle">{label}</p>
             {predicted !== null ? (
               <>
-                <p className="mt-1 text-lg font-bold text-gray-900 dark:text-white">
+                <p className="mt-1 text-lg font-bold text-foreground">
                   ~{formatDuration(predicted)}
                 </p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">
+                <p className="text-xs text-subtle">
                   {formatPace(Math.round(predicted / km))}
                 </p>
                 <p className="mt-1 text-xs text-gray-300 dark:text-gray-600">
@@ -95,7 +95,7 @@ export function RacePredictions({ records }: Props) {
           </div>
         ))}
       </div>
-      <p className="text-xs text-gray-400 dark:text-gray-500">
+      <p className="text-xs text-subtle">
         Riegel formula · t₂ = t₁ × (d₂/d₁)^1.06
       </p>
     </section>

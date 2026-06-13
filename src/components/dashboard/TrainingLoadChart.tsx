@@ -25,8 +25,8 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   if (!active || !payload?.length) return null
   const p = payload[0].payload
   return (
-    <div className="rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-      <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{p.label}</p>
+    <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-sm dark:bg-muted">
+      <p className="text-xs font-medium text-muted-foreground">{p.label}</p>
       <p className="text-sm text-blue-500">Fitness {p.ctl}</p>
       <p className="text-sm text-orange-500">Fatigue {p.atl}</p>
       <p className="text-sm text-emerald-600 dark:text-emerald-400">Form {p.tsb}</p>
@@ -36,7 +36,7 @@ function CustomTooltip({ active, payload }: TooltipProps) {
 
 function formStatus(tsb: number): { label: string; className: string } {
   if (tsb > 5) return { label: 'Fresh', className: 'text-emerald-600 dark:text-emerald-400' }
-  if (tsb >= -10) return { label: 'Neutral', className: 'text-gray-500 dark:text-gray-400' }
+  if (tsb >= -10) return { label: 'Neutral', className: 'text-muted-foreground' }
   if (tsb >= -30) return { label: 'Building', className: 'text-orange-500 dark:text-orange-400' }
   return { label: 'Overreaching', className: 'text-red-500 dark:text-red-400' }
 }
@@ -45,9 +45,9 @@ export function TrainingLoadChart({ data }: Props) {
   const status = formStatus(data.tsb)
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+    <div className="rounded-xl border border-border bg-card p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+        <h3 className="text-sm font-semibold text-foreground/80">
           Training Load <span className="font-normal text-gray-400">· last 90 days</span>
         </h3>
         <div className="flex items-center gap-4 text-xs">
@@ -83,7 +83,7 @@ export function TrainingLoadChart({ data }: Props) {
           <Line type="monotone" dataKey="tsb" stroke={CHART_COLORS.tsb} strokeWidth={1.5} dot={false} isAnimationActive={false} />
         </LineChart>
       </ResponsiveContainer>
-      <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
+      <p className="mt-2 text-xs text-subtle">
         Fitness = 42-day load average (CTL) · Fatigue = 7-day (ATL) · Form = Fitness − Fatigue (TSB).
       </p>
     </div>

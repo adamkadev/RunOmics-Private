@@ -17,7 +17,7 @@ export function YearSelector({ years, selected, onSelect }: Props) {
       <button
         onClick={() => onSelect(years[currentIndex + 1])}
         disabled={currentIndex >= years.length - 1}
-        className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-500 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800"
+        className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-gray-500 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-muted"
       >
         <ChevronLeft size={14} />
       </button>
@@ -29,7 +29,7 @@ export function YearSelector({ years, selected, onSelect }: Props) {
             className={`h-8 rounded-md px-3 text-sm font-medium transition-colors ${
               y === selected
                 ? 'bg-emerald-500 text-white'
-                : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800'
+                : 'border border-border bg-card text-gray-600 hover:bg-gray-50 dark:hover:bg-muted'
             }`}
           >
             {y}
@@ -39,7 +39,7 @@ export function YearSelector({ years, selected, onSelect }: Props) {
       <button
         onClick={() => onSelect(years[currentIndex - 1])}
         disabled={currentIndex <= 0}
-        className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-500 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800"
+        className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-gray-500 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-muted"
       >
         <ChevronRight size={14} />
       </button>

@@ -24,10 +24,10 @@ interface StatCardProps {
 
 function StatCard({ icon, label, value }: StatCardProps) {
   return (
-    <div className="flex flex-col items-center gap-1 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-900">
-      <div className="text-gray-400 dark:text-gray-500">{icon}</div>
-      <span className="text-sm font-semibold text-gray-900 dark:text-white">{value}</span>
-      <span className="text-xs text-gray-400 dark:text-gray-500">{label}</span>
+    <div className="flex flex-col items-center gap-1 rounded-xl border border-border bg-gray-50 px-4 py-3">
+      <div className="text-subtle">{icon}</div>
+      <span className="text-sm font-semibold text-foreground">{value}</span>
+      <span className="text-xs text-subtle">{label}</span>
     </div>
   )
 }
@@ -42,8 +42,8 @@ export function AnalyticsClient({ data, comparison }: { data: AnalyticsPageData;
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Analytics</h1>
-          <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+          <h1 className="text-2xl font-bold text-foreground">Analytics</h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">
             {selectedYear} season
           </p>
         </div>

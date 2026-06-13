@@ -71,18 +71,18 @@ export function StatsGrid({ currentWeek, lastWeek, currentStreak, longestStreak,
       {stats.map(({ label, value, sub, trend, icon }) => (
         <div
           key={label}
-          className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
+          className="rounded-xl border border-border bg-card p-4"
         >
           <div className="mb-3 flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               {label}
             </span>
             {icon}
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
+          <p className="text-2xl font-bold text-foreground">{value}</p>
           <div className="mt-1 flex items-center gap-1">
             {trend}
-            <span className="text-xs text-gray-400 dark:text-gray-500">{sub}</span>
+            <span className="text-xs text-subtle">{sub}</span>
           </div>
         </div>
       ))}

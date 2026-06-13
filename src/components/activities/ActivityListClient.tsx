@@ -67,7 +67,7 @@ export function ActivityListClient({ activities }: Props) {
             placeholder="Search..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-8 rounded-md border border-gray-200 bg-white pl-8 pr-3 text-sm text-gray-700 placeholder-gray-400 focus:border-emerald-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:placeholder-gray-600"
+            className="h-8 rounded-md border border-border bg-card pl-8 pr-3 text-sm text-gray-700 placeholder-gray-400 focus:border-emerald-500 focus:outline-none dark:text-gray-300 dark:placeholder-gray-600"
           />
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -99,14 +99,14 @@ export function ActivityListClient({ activities }: Props) {
           type="date"
           value={dateFrom}
           onChange={(e) => setDateFrom(e.target.value)}
-          className="h-8 rounded-md border border-gray-200 bg-white px-2 text-xs text-gray-700 focus:border-emerald-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:[color-scheme:dark]"
+          className="h-8 rounded-md border border-border bg-card px-2 text-xs text-gray-700 focus:border-emerald-500 focus:outline-none dark:text-gray-300 dark:[color-scheme:dark]"
         />
         <span className="text-xs text-gray-400">→</span>
         <input
           type="date"
           value={dateTo}
           onChange={(e) => setDateTo(e.target.value)}
-          className="h-8 rounded-md border border-gray-200 bg-white px-2 text-xs text-gray-700 focus:border-emerald-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:[color-scheme:dark]"
+          className="h-8 rounded-md border border-border bg-card px-2 text-xs text-gray-700 focus:border-emerald-500 focus:outline-none dark:text-gray-300 dark:[color-scheme:dark]"
         />
         <span className="ml-2 text-xs text-gray-400">Distance</span>
         <input
@@ -116,7 +116,7 @@ export function ActivityListClient({ activities }: Props) {
           placeholder="min"
           value={minKm}
           onChange={(e) => setMinKm(e.target.value)}
-          className="h-8 w-16 rounded-md border border-gray-200 bg-white px-2 text-xs text-gray-700 placeholder-gray-400 focus:border-emerald-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:placeholder-gray-600"
+          className="h-8 w-16 rounded-md border border-border bg-card px-2 text-xs text-gray-700 placeholder-gray-400 focus:border-emerald-500 focus:outline-none dark:text-gray-300 dark:placeholder-gray-600"
         />
         <span className="text-xs text-gray-400">–</span>
         <input
@@ -126,13 +126,13 @@ export function ActivityListClient({ activities }: Props) {
           placeholder="max"
           value={maxKm}
           onChange={(e) => setMaxKm(e.target.value)}
-          className="h-8 w-16 rounded-md border border-gray-200 bg-white px-2 text-xs text-gray-700 placeholder-gray-400 focus:border-emerald-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:placeholder-gray-600"
+          className="h-8 w-16 rounded-md border border-border bg-card px-2 text-xs text-gray-700 placeholder-gray-400 focus:border-emerald-500 focus:outline-none dark:text-gray-300 dark:placeholder-gray-600"
         />
         <span className="text-xs text-gray-400">km</span>
         {hasExtraFilters && (
           <button
             onClick={clearFilters}
-            className="ml-1 flex items-center gap-1 rounded px-2 py-1 text-xs text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+            className="ml-1 flex items-center gap-1 rounded px-2 py-1 text-xs text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-muted dark:hover:text-gray-200"
           >
             <X size={12} />
             Clear
@@ -141,7 +141,7 @@ export function ActivityListClient({ activities }: Props) {
       </div>
 
       <div className="flex items-center justify-between">
-        <p className="text-xs text-gray-400 dark:text-gray-500">
+        <p className="text-xs text-subtle">
           {filtered.length} activit{filtered.length !== 1 ? 'ies' : 'y'}
           {totalPages > 1 && ` · page ${clampedPage}/${totalPages}`}
         </p>
@@ -149,8 +149,8 @@ export function ActivityListClient({ activities }: Props) {
 
       <div className="space-y-2">
         {paginated.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-gray-200 py-12 text-center dark:border-gray-800">
-            <p className="text-sm text-gray-400 dark:text-gray-500">No activities found</p>
+          <div className="rounded-xl border border-dashed border-border py-12 text-center">
+            <p className="text-sm text-subtle">No activities found</p>
           </div>
         ) : (
           paginated.map((a) => <ActivityRow key={a.id} activity={a} />)
@@ -162,7 +162,7 @@ export function ActivityListClient({ activities }: Props) {
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={clampedPage === 1}
-            className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-500 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800"
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-gray-500 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-muted"
           >
             <ChevronLeft size={14} />
           </button>
@@ -184,7 +184,7 @@ export function ActivityListClient({ activities }: Props) {
                   className={`h-8 min-w-[2rem] rounded-md px-2 text-sm font-medium transition-colors ${
                     clampedPage === p
                       ? 'bg-emerald-500 text-white'
-                      : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800'
+                      : 'border border-border bg-card text-gray-600 hover:bg-gray-50 dark:hover:bg-muted'
                   }`}
                 >
                   {p}
@@ -195,7 +195,7 @@ export function ActivityListClient({ activities }: Props) {
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={clampedPage === totalPages}
-            className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-500 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800"
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-gray-500 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-muted"
           >
             <ChevronRight size={14} />
           </button>

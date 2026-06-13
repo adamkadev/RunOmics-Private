@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic'
 const ActivityMapDynamic = dynamic(() => import('./ActivityMap'), {
   ssr: false,
   loading: () => (
-    <div className="min-h-[280px] w-full animate-pulse rounded-xl bg-gray-100 dark:bg-gray-800" />
+    <div className="min-h-[280px] w-full animate-pulse rounded-xl bg-muted" />
   ),
 })
 

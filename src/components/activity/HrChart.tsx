@@ -46,11 +46,11 @@ export function HrChart({ samples, avgHr, maxHr, durationSeconds, onHoverFractio
   const tickCount = 5
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+    <div className="rounded-xl border border-border bg-card p-5">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Heart Rate</h3>
+        <h3 className="text-sm font-semibold text-foreground/80">Heart Rate</h3>
         {avgHr && (
-          <span className="text-xs text-gray-400 dark:text-gray-500">
+          <span className="text-xs text-subtle">
             avg <span className="font-semibold text-red-500">{avgHr}</span>
             {maxHr && (
               <> · max <span className="font-semibold text-red-600">{maxHr}</span></>

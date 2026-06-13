@@ -26,8 +26,8 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
   if (!active || !payload?.length) return null
   const entry = payload[0].payload
   return (
-    <div className="rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-      <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{label}</p>
+    <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-sm dark:bg-muted">
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
       <p className="text-sm text-emerald-600 dark:text-emerald-400">Easy (Z1–Z2): {entry.easyPct}%</p>
       <p className="text-sm text-orange-500 dark:text-orange-400">Hard (Z3+): {entry.hardPct}%</p>
     </div>
@@ -38,8 +38,8 @@ export function EasyHardChart({ data }: Props) {
   if (!data.some((d) => d.easyPct !== null)) return null
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
-      <h3 className="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-300">
+    <div className="rounded-xl border border-border bg-card p-5">
+      <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         Easy / Hard Split
       </h3>
       <ResponsiveContainer width="100%" height={200}>
@@ -63,7 +63,7 @@ export function EasyHardChart({ data }: Props) {
           <ReferenceLine y={80} stroke={CHART_COLORS.referenceTarget} strokeDasharray="4 3" strokeWidth={1} />
         </BarChart>
       </ResponsiveContainer>
-      <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
+      <p className="mt-2 text-xs text-subtle">
         Share of time in Z1–Z2 vs Z3+ per month. Dashed line = 80/20 target.
       </p>
     </div>

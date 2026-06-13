@@ -48,10 +48,10 @@ export function PaceChart({ samples, durationSeconds, onHoverFraction }: Props) 
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+    <div className="rounded-xl border border-border bg-card p-5">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Pace</h3>
-        <span className="text-xs text-gray-400 dark:text-gray-500">min/km</span>
+        <h3 className="text-sm font-semibold text-foreground/80">Pace</h3>
+        <span className="text-xs text-subtle">min/km</span>
       </div>
       <ResponsiveContainer width="100%" height={120}>
         <AreaChart

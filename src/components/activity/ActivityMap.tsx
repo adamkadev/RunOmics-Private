@@ -135,7 +135,7 @@ export default function ActivityMap({ route, hoverFraction, className }: Props) 
 
     if (!hoverMarkerRef.current) {
       const el = document.createElement('div')
-      el.className = 'w-3.5 h-3.5 rounded-full bg-white border-[3px] border-emerald-600 shadow-md'
+      el.className = 'w-3.5 h-3.5 rounded-full bg-card border-[3px] border-emerald-600 shadow-md'
       hoverMarkerRef.current = new mgl.Marker({ element: el }).setLngLat(coord).addTo(map)
     } else {
       hoverMarkerRef.current.setLngLat(coord)
@@ -154,12 +154,12 @@ export function NoRouteMap({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'flex min-h-[280px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900/50',
+        'flex min-h-[280px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-gray-50 dark:bg-gray-900/50',
         className
       )}
     >
       <MapPin size={24} className="text-gray-300 dark:text-gray-600" />
-      <p className="text-sm text-gray-400 dark:text-gray-500">GPS trace unavailable</p>
+      <p className="text-sm text-subtle">GPS trace unavailable</p>
       <p className="text-xs text-gray-300 dark:text-gray-600">Available after Garmin sync</p>
     </div>
   )

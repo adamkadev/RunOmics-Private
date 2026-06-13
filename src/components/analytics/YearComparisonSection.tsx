@@ -41,13 +41,13 @@ interface MetricRowProps {
 
 function MetricRow({ label, newer, older, pct, lowerIsBetter }: MetricRowProps) {
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-gray-100 py-3 last:border-0 dark:border-gray-800">
-      <span className="w-32 text-sm text-gray-500 dark:text-gray-400">{label}</span>
-      <span className="flex-1 text-right text-sm font-semibold text-gray-900 dark:text-white">
+    <div className="flex items-center justify-between gap-4 border-b border-border py-3 last:border-0">
+      <span className="w-32 text-sm text-muted-foreground">{label}</span>
+      <span className="flex-1 text-right text-sm font-semibold text-foreground">
         {newer}
       </span>
       <DeltaBadge pct={pct} lowerIsBetter={lowerIsBetter} />
-      <span className="w-24 text-right text-sm text-gray-400 dark:text-gray-500">{older}</span>
+      <span className="w-24 text-right text-sm text-subtle">{older}</span>
     </div>
   )
 }
@@ -112,11 +112,11 @@ export function YearComparisonSection({ data }: Props) {
   ]
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+    <div className="rounded-xl border border-border bg-card p-5">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-base font-semibold text-gray-900 dark:text-white">Year over Year</h2>
-        <div className="flex items-center gap-4 text-xs text-gray-400 dark:text-gray-500">
-          <span className="font-semibold text-gray-900 dark:text-white">{y1}</span>
+        <h2 className="text-base font-semibold text-foreground">Year over Year</h2>
+        <div className="flex items-center gap-4 text-xs text-subtle">
+          <span className="font-semibold text-foreground">{y1}</span>
           <span>vs</span>
           <span>{y2}</span>
         </div>

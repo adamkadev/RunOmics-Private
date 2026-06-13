@@ -23,15 +23,15 @@ function formatPaceTick(sec: number): string {
 function CustomTooltip({ active, payload, label }: TooltipProps) {
   if (!active || !payload?.length) return null
   return (
-    <div className="rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-      <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{label}</p>
+    <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-sm dark:bg-muted">
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
       {payload.map((p) => (
         <p key={p.dataKey} className="flex items-center gap-1.5 text-xs">
           <span className="h-2 w-2 rounded-full" style={{ backgroundColor: p.stroke }} />
-          <span className="text-gray-500 dark:text-gray-400">
+          <span className="text-muted-foreground">
             {p.dataKey === 'easyPace' ? 'Easy' : 'Workout'}:
           </span>
-          <span className="font-semibold text-gray-900 dark:text-white">
+          <span className="font-semibold text-foreground">
             {formatPaceTick(p.value)} /km
           </span>
         </p>
@@ -46,14 +46,14 @@ export function PaceTrendChart({ data }: Props) {
   const maxPace = Math.max(...paces) + 10
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+    <div className="rounded-xl border border-border bg-card p-5">
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Pace Trend</h3>
+        <h3 className="text-sm font-semibold text-foreground/80">Pace Trend</h3>
         <div className="flex gap-3">
-          <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+          <span className="flex items-center gap-1 text-xs text-subtle">
             <span className="h-2 w-2 rounded-full bg-emerald-500" /> Easy
           </span>
-          <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+          <span className="flex items-center gap-1 text-xs text-subtle">
             <span className="h-2 w-2 rounded-full bg-orange-500" /> Workout
           </span>
         </div>
@@ -96,7 +96,7 @@ export function PaceTrendChart({ data }: Props) {
           />
         </LineChart>
       </ResponsiveContainer>
-      <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
+      <p className="mt-2 text-xs text-subtle">
         Distance-weighted average pace per month. Lower is faster.
       </p>
     </div>
