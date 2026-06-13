@@ -43,6 +43,7 @@ export interface Activity {
   verticalRatioPct: number | null
   strideLengthM: number | null
   bestEfforts: Record<string, number> | null
+  paceSamples: number[] | null
 }
 
 export interface WeeklyVolume {
@@ -76,6 +77,8 @@ export interface DashboardData {
   weeklyVolume: WeeklyVolume[]
   typeDistribution: TypeDistribution[]
   recentActivities: Activity[]
+  currentStreak: number
+  longestStreak: number
 }
 
 export const ACTIVITY_TYPE_CONFIG: Record<

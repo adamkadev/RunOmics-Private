@@ -42,6 +42,7 @@ def main() -> int:
         a["verticalRatioPct"] = parsed.vertical_ratio_pct
         a["strideLengthM"] = parsed.stride_length_m
         a["bestEfforts"] = parsed.best_efforts or None
+        a["paceSamples"] = _decimate_list(parsed.pace_samples, _MAX_CHART_POINTS) if parsed.pace_samples else None
         if parsed.elevation_gain_m > 0:
             a["elevationGain"] = parsed.elevation_gain_m
         updated += 1

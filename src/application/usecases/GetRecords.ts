@@ -50,6 +50,46 @@ export interface RecordEntry {
   official: boolean
 }
 
+// Jack Daniels VDOT formula
+function jackDanielsVO2max(seconds: number, distanceM: number): number {
+  const v = (distanceM / seconds) * 60 // m/min
+  const vo2 = -4.60 + 0.182258 * v + 0.000104 * v * v
+  const t = seconds / 60
+  const pct =
+    0.8 +
+    0.1894393 * Math.exp(-0.012778 * t) +
+    0.2989558 * Math.exp(-0.1932605 * t)
+  return Math.round((vo2 / pct) * 10) / 10
+}
+
+export function getVO2max(): number | null {
+  const officialPbs = loadOfficialPbs()
+  const activities = getAllActivities()
+
+  // Prefer 5K, then 10K, then half - official time takes precedence over auto-detected
+  const candidates: { seconds: number; distanceM: number }[] = []
+
+  for (const [key, distM] of [['5k', 5000], ['10k', 10000], ['half', 21097.5]] as [string, number][]) {
+    const official = officialPbs.get(key)
+    if (official) {
+      candidates.push({ seconds: official.seconds, distanceM: distM })
+      break
+    }
+    let best: number | null = null
+    for (const a of activities) {
+      const sec = a.bestEfforts?.[key]
+      if (sec != null && (best === null || sec < best)) best = sec
+    }
+    if (best !== null) {
+      candidates.push({ seconds: best, distanceM: distM })
+      break
+    }
+  }
+
+  if (candidates.length === 0) return null
+  return jackDanielsVO2max(candidates[0].seconds, candidates[0].distanceM)
+}
+
 export function getRecords(): RecordEntry[] {
   const activities = getAllActivities()
   const officialPbs = loadOfficialPbs()

@@ -45,6 +45,52 @@ function buildTypeDistribution(activities: Activity[]): TypeDistribution[] {
     .sort((a, b) => b.distanceKm - a.distanceKm)
 }
 
+function computeStreaks(activities: Activity[]): { current: number; longest: number } {
+  const dateSet = new Set(activities.map((a) => a.date.slice(0, 10)))
+
+  function fmt(d: Date) {
+    return d.toISOString().slice(0, 10)
+  }
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  // Current streak - count back from today, or from yesterday if today is rest
+  let current = 0
+  const cursor = new Date(today)
+  while (dateSet.has(fmt(cursor))) {
+    current++
+    cursor.setDate(cursor.getDate() - 1)
+  }
+  if (current === 0) {
+    cursor.setDate(cursor.getDate() - 1) // cursor is already today-1 after while loop miss
+    while (dateSet.has(fmt(cursor))) {
+      current++
+      cursor.setDate(cursor.getDate() - 1)
+    }
+  }
+
+  // Longest streak over all history
+  const sortedDays = Array.from(dateSet).sort()
+  let longest = 0
+  let run = 0
+  let prev: string | null = null
+  for (const day of sortedDays) {
+    if (prev) {
+      const diff = Math.round(
+        (new Date(day).getTime() - new Date(prev).getTime()) / 86400000
+      )
+      run = diff === 1 ? run + 1 : 1
+    } else {
+      run = 1
+    }
+    if (run > longest) longest = run
+    prev = day
+  }
+
+  return { current, longest }
+}
+
 export function getDashboardData(): DashboardData {
   const all = getAllActivities()
 
@@ -78,6 +124,7 @@ export function getDashboardData(): DashboardData {
   })
 
   const typeDistribution = buildTypeDistribution(all)
+  const streaks = computeStreaks(all)
 
   return {
     currentWeek,
@@ -88,5 +135,7 @@ export function getDashboardData(): DashboardData {
     weeklyVolume,
     typeDistribution,
     recentActivities: all.slice(0, 8),
+    currentStreak: streaks.current,
+    longestStreak: streaks.longest,
   }
 }

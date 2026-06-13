@@ -39,6 +39,7 @@ class ParsedFit:
     vertical_ratio_pct: float | None = None
     stride_length_m: float | None = None
     best_efforts: dict[str, float] = field(default_factory=dict)
+    pace_samples: list[float] = field(default_factory=list)
 
     @property
     def has_data(self) -> bool:
@@ -100,6 +101,7 @@ def parse_fit(content: bytes) -> ParsedFit:
         elevation_gain_m=round(record_ascent, 1),
         is_race=bool(messages.get("310")),
         best_efforts=_best_efforts(dist_samples, time_samples),
+        pace_samples=_pace_samples(dist_samples, time_samples),
     )
 
     if sessions:
@@ -184,6 +186,41 @@ def _local_start_time(session: dict, activities: list[dict]) -> datetime | None:
                 return start.replace(tzinfo=None) + offset
 
     return None
+
+
+def _pace_samples(dists: list[float], times: list[float]) -> list[float]:
+    """Smoothed pace in sec/km using a 30-second backward rolling window."""
+    n = len(dists)
+    if n < 2:
+        return []
+    raw: list[float | None] = [None] * n
+    window_s = 30.0
+    for i in range(n):
+        j = i
+        while j > 0 and times[i] - times[j - 1] <= window_s:
+            j -= 1
+        dd = dists[i] - dists[j]
+        dt = times[i] - times[j]
+        if dd > 1.0 and dt > 0.0:
+            pace = dt / dd * 1000.0  # sec/km
+            if 90.0 <= pace <= 1200.0:  # 1:30–20:00 /km
+                raw[i] = round(pace, 1)
+    # Forward-fill
+    last: float | None = None
+    out: list[float] = []
+    for v in raw:
+        if v is not None:
+            last = v
+        out.append(last if last is not None else 0.0)
+    # Backward-fill leading zeros with first valid value
+    first_valid = next((v for v in out if v > 0.0), None)
+    if first_valid is not None:
+        for i in range(len(out)):
+            if out[i] == 0.0:
+                out[i] = first_valid
+            else:
+                break
+    return out
 
 
 def _best_efforts(dists: list[float], times: list[float]) -> dict[str, float]:

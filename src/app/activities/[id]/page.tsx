@@ -110,7 +110,7 @@ export default async function ActivityDetailPage({
         <StatItem
           icon={<Zap size={16} className="text-amber-500" />}
           label={activity.rpe !== null ? `RPE ${activity.rpe}` : 'RPE'}
-          value={activity.rpe !== null ? (RPE_LABELS[activity.rpe] ?? '—') : 'N/A'}
+          value={activity.rpe !== null ? (RPE_LABELS[activity.rpe] ?? '-') : 'N/A'}
         />
       </div>
 

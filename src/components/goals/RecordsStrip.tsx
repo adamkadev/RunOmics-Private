@@ -34,7 +34,7 @@ export function RecordsStrip({ records }: Props) {
                   </p>
                 </>
               ) : (
-                <p className="mt-1 text-sm text-gray-300 dark:text-gray-600">—</p>
+                <p className="mt-1 text-sm text-gray-300 dark:text-gray-600">-</p>
               )}
             </>
           )

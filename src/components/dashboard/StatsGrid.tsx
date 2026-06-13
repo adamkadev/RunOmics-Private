@@ -1,10 +1,13 @@
-import { Timer, Footprints, Heart, TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { Timer, Footprints, Heart, TrendingUp, TrendingDown, Minus, Flame, Activity } from 'lucide-react'
 import { formatDistance, formatDuration, formatPace } from '@/lib/formatters'
 import type { DashboardData } from '@/domain/activity/types'
 
 interface Props {
   currentWeek: DashboardData['currentWeek']
   lastWeek: DashboardData['lastWeek']
+  currentStreak: number
+  longestStreak: number
+  vo2max: number | null
 }
 
 function Trend({ current, previous }: { current: number; previous: number }) {
@@ -17,7 +20,7 @@ function Trend({ current, previous }: { current: number; previous: number }) {
   )
 }
 
-export function StatsGrid({ currentWeek, lastWeek }: Props) {
+export function StatsGrid({ currentWeek, lastWeek, currentStreak, longestStreak, vo2max }: Props) {
   const stats = [
     {
       label: 'Distance',
@@ -47,10 +50,24 @@ export function StatsGrid({ currentWeek, lastWeek }: Props) {
       trend: null,
       icon: <TrendingUp size={18} className="text-amber-500 dark:text-amber-400" />,
     },
+    {
+      label: 'Streak',
+      value: `${currentStreak}d`,
+      sub: `best ${longestStreak}d`,
+      trend: null,
+      icon: <Flame size={18} className="text-orange-500 dark:text-orange-400" />,
+    },
+    {
+      label: 'VO₂max est.',
+      value: vo2max !== null ? String(vo2max) : '-',
+      sub: 'ml/kg/min',
+      trend: null,
+      icon: <Activity size={18} className="text-violet-500 dark:text-violet-400" />,
+    },
   ]
 
   return (
-    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
       {stats.map(({ label, value, sub, trend, icon }) => (
         <div
           key={label}

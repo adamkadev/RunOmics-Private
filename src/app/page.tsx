@@ -1,5 +1,6 @@
 import { getDashboardData } from '@/application/usecases/GetDashboardData'
 import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
+import { getVO2max } from '@/application/usecases/GetRecords'
 import { StatsGrid } from '@/components/dashboard/StatsGrid'
 import { WeeklyVolumeChart } from '@/components/dashboard/WeeklyVolumeChart'
 import { IntensityChart } from '@/components/dashboard/IntensityChart'
@@ -9,6 +10,7 @@ import { RecentActivities } from '@/components/dashboard/RecentActivities'
 export default function DashboardPage() {
   const data = getDashboardData()
   const trainingLoad = getTrainingLoad()
+  const vo2max = getVO2max()
 
   return (
     <div className="space-y-6">
@@ -19,7 +21,13 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      <StatsGrid currentWeek={data.currentWeek} lastWeek={data.lastWeek} />
+      <StatsGrid
+        currentWeek={data.currentWeek}
+        lastWeek={data.lastWeek}
+        currentStreak={data.currentStreak}
+        longestStreak={data.longestStreak}
+        vo2max={vo2max}
+      />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <WeeklyVolumeChart data={data.weeklyVolume} currentWeek={data.currentWeek.weekNumber} />

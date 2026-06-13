@@ -57,6 +57,7 @@ class ActivityData:
     vertical_ratio_pct: float | None
     stride_length_m: float | None
     best_efforts: dict[str, float] | None
+    pace_samples: list[float] | None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -87,6 +88,7 @@ class ActivityData:
             "verticalRatioPct": self.vertical_ratio_pct,
             "strideLengthM": self.stride_length_m,
             "bestEfforts": self.best_efforts,
+            "paceSamples": self.pace_samples,
         }
 
 
@@ -182,11 +184,14 @@ def map_activity(
 
     hr_samples: list[int] | None = None
     elevation_profile: list[float] | None = None
+    pace_samples: list[float] | None = None
     if parsed:
         if parsed.heart_rates:
             hr_samples = _decimate_list(parsed.heart_rates, _MAX_CHART_POINTS)
         if parsed.elevation_samples:
             elevation_profile = _decimate_list(parsed.elevation_samples, _MAX_CHART_POINTS)
+        if parsed.pace_samples:
+            pace_samples = _decimate_list(parsed.pace_samples, _MAX_CHART_POINTS)
 
     return ActivityData(
         id=activity_id,
@@ -216,6 +221,7 @@ def map_activity(
         vertical_ratio_pct=parsed.vertical_ratio_pct if parsed else None,
         stride_length_m=parsed.stride_length_m if parsed else None,
         best_efforts=(parsed.best_efforts or None) if parsed else None,
+        pace_samples=pace_samples,
     )
 
 
