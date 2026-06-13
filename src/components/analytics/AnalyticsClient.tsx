@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Footprints, Timer, Hash, Mountain, Gauge, Flame } from 'lucide-react'
 import type { AnalyticsPageData } from '@/application/usecases/GetAnalyticsData'
+import type { YearComparisonData } from '@/application/usecases/GetYearComparison'
 import { MonthlyVolumeChart } from './MonthlyVolumeChart'
 import { PaceTrendChart } from './PaceTrendChart'
 import { EfficiencyChart } from './EfficiencyChart'
@@ -11,6 +12,7 @@ import { HrTrendChart } from './HrTrendChart'
 import { CadenceTrendChart } from './CadenceTrendChart'
 import { LongRunsChart } from './LongRunsChart'
 import { EasyHardChart } from './EasyHardChart'
+import { YearComparisonSection } from './YearComparisonSection'
 import { YearSelector } from '@/components/ui/YearSelector'
 import { formatDuration } from '@/lib/formatters'
 
@@ -30,7 +32,7 @@ function StatCard({ icon, label, value }: StatCardProps) {
   )
 }
 
-export function AnalyticsClient({ data }: { data: AnalyticsPageData }) {
+export function AnalyticsClient({ data, comparison }: { data: AnalyticsPageData; comparison: YearComparisonData | null }) {
   const { years, byYear } = data
   const [selectedYear, setSelectedYear] = useState(years[0])
   const yearData = byYear[selectedYear]
@@ -100,6 +102,7 @@ export function AnalyticsClient({ data }: { data: AnalyticsPageData }) {
         <EasyHardChart data={yearData.easyHardSplit} />
         <CadenceTrendChart data={yearData.cadenceTrend} />
         <LongRunsChart data={yearData.longRuns} />
+        {comparison && <YearComparisonSection data={comparison} />}
       </div>
     </div>
   )
