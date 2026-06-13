@@ -52,39 +52,39 @@ export function AnalyticsClient({ data, comparison }: { data: AnalyticsPageData;
 
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-7">
         <StatCard
-          icon={<Footprints size={16} className="text-emerald-500" />}
+          icon={<Footprints size={16} className="text-emerald-500 dark:text-emerald-400" />}
           label="Distance"
           value={`${t.distanceKm.toFixed(0)} km`}
         />
         <StatCard
-          icon={<Timer size={16} className="text-blue-500" />}
+          icon={<Timer size={16} className="text-blue-500 dark:text-blue-400" />}
           label="Time"
           value={formatDuration(t.durationSeconds)}
         />
         <StatCard
-          icon={<Hash size={16} className="text-violet-500" />}
+          icon={<Hash size={16} className="text-violet-500 dark:text-violet-400" />}
           label="Sessions"
           value={String(t.sessionCount)}
         />
         <StatCard
-          icon={<Mountain size={16} className="text-stone-500" />}
+          icon={<Mountain size={16} className="text-stone-500 dark:text-stone-400" />}
           label="Elevation"
           value={`+${t.elevationM} m`}
         />
         <StatCard
-          icon={<Gauge size={16} className="text-amber-500" />}
+          icon={<Gauge size={16} className="text-amber-500 dark:text-amber-400" />}
           label="Avg / week"
           value={`${t.avgKmPerWeek} km`}
         />
         {t.calories > 0 && (
           <>
             <StatCard
-              icon={<Flame size={16} className="text-orange-500" />}
+              icon={<Flame size={16} className="text-orange-500 dark:text-orange-400" />}
               label="Calories"
               value={`${(t.calories / 1000).toFixed(1)}k kcal`}
             />
             <StatCard
-              icon={<Flame size={16} className="text-red-500" />}
+              icon={<Flame size={16} className="text-red-500 dark:text-red-400" />}
               label="Kcal / week"
               value={String(t.caloriesPerWeek)}
             />

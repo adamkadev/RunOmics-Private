@@ -19,7 +19,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
       {goals && (
         <section className="space-y-3">
           <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            <Target size={14} className="text-emerald-500" />
+            <Target size={14} className="text-emerald-500 dark:text-emerald-400" />
             Annual Goal
           </h2>
           <div className="rounded-xl border border-border bg-card p-5 shadow-card">
@@ -52,7 +52,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
       {goals && goals.targets.length > 0 && (
         <section className="space-y-3">
           <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            <TrendingUp size={14} className="text-orange-500" />
+            <TrendingUp size={14} className="text-orange-500 dark:text-orange-400" />
             Race Targets
           </h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -91,7 +91,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
       {pbs.length > 0 ? (
         <section className="space-y-3">
           <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            <Trophy size={14} className="text-amber-500" />
+            <Trophy size={14} className="text-amber-500 dark:text-amber-400" />
             Personal Bests
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

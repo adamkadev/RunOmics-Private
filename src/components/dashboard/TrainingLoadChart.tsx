@@ -27,8 +27,8 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   return (
     <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-sm dark:bg-muted">
       <p className="text-xs font-medium text-muted-foreground">{p.label}</p>
-      <p className="text-sm text-blue-500">Fitness {p.ctl}</p>
-      <p className="text-sm text-orange-500">Fatigue {p.atl}</p>
+      <p className="text-sm text-blue-500 dark:text-blue-400">Fitness {p.ctl}</p>
+      <p className="text-sm text-orange-500 dark:text-orange-400">Fatigue {p.atl}</p>
       <p className="text-sm text-emerald-600 dark:text-emerald-400">Form {p.tsb}</p>
     </div>
   )
@@ -51,10 +51,10 @@ export function TrainingLoadChart({ data }: Props) {
           Training Load <span className="font-normal text-subtle">· last 90 days</span>
         </h3>
         <div className="flex items-center gap-4 text-xs">
-          <span className="text-blue-500">
+          <span className="text-blue-500 dark:text-blue-400">
             Fitness <span className="font-semibold">{data.ctl}</span>
           </span>
-          <span className="text-orange-500">
+          <span className="text-orange-500 dark:text-orange-400">
             Fatigue <span className="font-semibold">{data.atl}</span>
           </span>
           <span className={status.className}>

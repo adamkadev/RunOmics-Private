@@ -70,45 +70,45 @@ export default async function ActivityDetailPage({
 
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-7">
         <StatItem
-          icon={<Footprints size={16} className="text-emerald-500" />}
+          icon={<Footprints size={16} className="text-emerald-500 dark:text-emerald-400" />}
           label="Distance"
           value={formatDistance(activity.distanceKm)}
         />
         <StatItem
-          icon={<Timer size={16} className="text-blue-500" />}
+          icon={<Timer size={16} className="text-blue-500 dark:text-blue-400" />}
           label="Duration"
           value={formatDuration(activity.durationSeconds)}
         />
         {activity.paceSecPerKm && (
           <StatItem
-            icon={<TrendingUp size={16} className="text-violet-500" />}
+            icon={<TrendingUp size={16} className="text-violet-500 dark:text-violet-400" />}
             label="Avg Pace"
             value={formatPace(activity.paceSecPerKm)}
           />
         )}
         {activity.avgHeartRate && (
           <StatItem
-            icon={<Heart size={16} className="text-red-500" />}
+            icon={<Heart size={16} className="text-red-500 dark:text-red-400" />}
             label="Avg HR"
             value={`${activity.avgHeartRate} bpm`}
           />
         )}
         {activity.elevationGain && (
           <StatItem
-            icon={<Mountain size={16} className="text-stone-500" />}
+            icon={<Mountain size={16} className="text-stone-500 dark:text-stone-400" />}
             label="Elevation"
             value={`+${activity.elevationGain}m`}
           />
         )}
         {activity.calories != null && (
           <StatItem
-            icon={<Flame size={16} className="text-orange-500" />}
+            icon={<Flame size={16} className="text-orange-500 dark:text-orange-400" />}
             label="Calories"
             value={`${activity.calories} kcal`}
           />
         )}
         <StatItem
-          icon={<Zap size={16} className="text-amber-500" />}
+          icon={<Zap size={16} className="text-amber-500 dark:text-amber-400" />}
           label={activity.rpe !== null ? `RPE ${activity.rpe}` : 'RPE'}
           value={activity.rpe !== null ? (RPE_LABELS[activity.rpe] ?? '-') : 'N/A'}
         />

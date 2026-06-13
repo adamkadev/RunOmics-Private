@@ -49,7 +49,7 @@ export function ElevationChart({ samples, durationSeconds, elevationGain, onHove
         <h3 className="text-sm font-semibold text-foreground/80">Elevation</h3>
         {elevationGain != null && (
           <span className="text-xs text-subtle">
-            +<span className="font-semibold text-stone-500">{elevationGain}</span> m gain
+            +<span className="font-semibold text-stone-500 dark:text-stone-400">{elevationGain}</span> m gain
           </span>
         )}
       </div>

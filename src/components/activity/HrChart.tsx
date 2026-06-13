@@ -51,9 +51,9 @@ export function HrChart({ samples, avgHr, maxHr, durationSeconds, onHoverFractio
         <h3 className="text-sm font-semibold text-foreground/80">Heart Rate</h3>
         {avgHr && (
           <span className="text-xs text-subtle">
-            avg <span className="font-semibold text-red-500">{avgHr}</span>
+            avg <span className="font-semibold text-red-500 dark:text-red-400">{avgHr}</span>
             {maxHr && (
-              <> · max <span className="font-semibold text-red-600">{maxHr}</span></>
+              <> · max <span className="font-semibold text-red-600 dark:text-red-400">{maxHr}</span></>
             )}
             {' '}bpm
           </span>

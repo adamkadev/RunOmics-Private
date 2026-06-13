@@ -13,7 +13,7 @@ export function RecordsStrip({ records }: Props) {
   return (
     <section className="space-y-3">
       <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-        <Medal size={14} className="text-violet-500" />
+        <Medal size={14} className="text-violet-500 dark:text-violet-400" />
         All-Time Records
       </h2>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
