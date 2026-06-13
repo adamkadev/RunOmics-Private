@@ -108,9 +108,10 @@ export function CalendarClient({ activities }: Props) {
           {WEEKDAYS.map((d) => (
             <div
               key={d}
-              className="px-2 py-2 text-center text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500"
+              className="px-1 py-2 text-center text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500"
             >
-              {d}
+              <span className="hidden sm:inline">{d}</span>
+              <span className="sm:hidden">{d[0]}</span>
             </div>
           ))}
         </div>
@@ -118,7 +119,7 @@ export function CalendarClient({ activities }: Props) {
           {cells.map((cell, i) => (
             <div
               key={i}
-              className={`min-h-24 border-b border-r border-gray-50 p-1.5 [&:nth-child(7n)]:border-r-0 dark:border-gray-800/60 ${
+              className={`min-h-16 border-b border-r border-gray-50 p-1 sm:min-h-24 sm:p-1.5 [&:nth-child(7n)]:border-r-0 dark:border-gray-800/60 ${
                 cell ? '' : 'bg-gray-50/50 dark:bg-gray-950/30'
               }`}
             >
