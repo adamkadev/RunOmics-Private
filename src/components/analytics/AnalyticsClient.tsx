@@ -13,6 +13,8 @@ import { CadenceTrendChart } from './CadenceTrendChart'
 import { LongRunsChart } from './LongRunsChart'
 import { EasyHardChart } from './EasyHardChart'
 import { YearComparisonSection } from './YearComparisonSection'
+import { DistanceDistributionChart } from './DistanceDistributionChart'
+import { MonthlyComparisonChart } from './MonthlyComparisonChart'
 import { YearSelector } from '@/components/ui/YearSelector'
 import { formatDuration } from '@/lib/formatters'
 
@@ -102,6 +104,15 @@ export function AnalyticsClient({ data, comparison }: { data: AnalyticsPageData;
         <EasyHardChart data={yearData.easyHardSplit} />
         <CadenceTrendChart data={yearData.cadenceTrend} />
         <LongRunsChart data={yearData.longRuns} />
+        <DistanceDistributionChart data={yearData.distanceDistribution} />
+        {years[1] !== undefined && (
+          <MonthlyComparisonChart
+            currentYear={selectedYear}
+            currentData={yearData.monthlyVolume}
+            prevYear={years.find((y) => y !== selectedYear) ?? years[1]}
+            prevData={byYear[years.find((y) => y !== selectedYear) ?? years[1]]?.monthlyVolume ?? []}
+          />
+        )}
         {comparison && <YearComparisonSection data={comparison} />}
       </div>
     </div>

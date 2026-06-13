@@ -56,6 +56,12 @@ export interface ZoneShare {
   percent: number
 }
 
+export interface DistanceBracket {
+  label: string
+  count: number
+  km: number
+}
+
 export interface YearTotals {
   distanceKm: number
   durationSeconds: number
@@ -77,6 +83,7 @@ export interface YearAnalytics {
   longRuns: MonthlyLongRuns[]
   easyHardSplit: MonthlyEasyHard[]
   zoneDistribution: ZoneShare[]
+  distanceDistribution: DistanceBracket[]
   typesPresent: ActivityType[]
 }
 
@@ -154,6 +161,28 @@ function efficiencyFactor(activities: Activity[]): number | null {
   if (!valid.length) return null
   const efs = valid.map((a) => (1000 / a.paceSecPerKm!) * 60 / a.avgHeartRate!)
   return Math.round((efs.reduce((s, v) => s + v, 0) / efs.length) * 100) / 100
+}
+
+const DISTANCE_BRACKETS = [
+  { label: '< 5 km',   min: 0,  max: 5  },
+  { label: '5–10 km',  min: 5,  max: 10 },
+  { label: '10–15 km', min: 10, max: 15 },
+  { label: '15–21 km', min: 15, max: 21 },
+  { label: '21–42 km', min: 21, max: 42 },
+  { label: '42+ km',   min: 42, max: Infinity },
+]
+
+function distanceDistribution(activities: Activity[]): DistanceBracket[] {
+  return DISTANCE_BRACKETS
+    .map(({ label, min, max }) => {
+      const matching = activities.filter((a) => a.distanceKm >= min && a.distanceKm < max)
+      return {
+        label,
+        count: matching.length,
+        km: Math.round(matching.reduce((s, a) => s + a.distanceKm, 0) * 10) / 10,
+      }
+    })
+    .filter((b) => b.count > 0)
 }
 
 function buildYearAnalytics(year: number, activities: Activity[], now: Date): YearAnalytics {
@@ -263,6 +292,7 @@ function buildYearAnalytics(year: number, activities: Activity[], now: Date): Ye
     longRuns,
     easyHardSplit,
     zoneDistribution: zoneDistribution(activities),
+    distanceDistribution: distanceDistribution(activities),
     typesPresent: Array.from(typesPresent),
   }
 }
