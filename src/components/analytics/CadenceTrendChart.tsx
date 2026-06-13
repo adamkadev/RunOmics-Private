@@ -33,7 +33,7 @@ export function CadenceTrendChart({ data }: Props) {
   const max = Math.ceil(Math.max(...values)) + 2
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
+    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">Cadence</h3>
       <ResponsiveContainer width="100%" height={200}>
         <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -10 }}>

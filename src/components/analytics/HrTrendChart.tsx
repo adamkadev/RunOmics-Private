@@ -33,7 +33,7 @@ export function HrTrendChart({ data }: Props) {
   const max = Math.max(...values) + 5
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
+    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         Avg Heart Rate
       </h3>

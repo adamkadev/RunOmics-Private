@@ -48,7 +48,7 @@ export function ZoneDistributionChart({ data }: Props) {
   if (!data.length) return null
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
+    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         Time in Zones
       </h3>

@@ -112,7 +112,7 @@ export function YearComparisonSection({ data }: Props) {
   ]
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
+    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-base font-semibold text-foreground">Year over Year</h2>
         <div className="flex items-center gap-4 text-xs text-subtle">

@@ -14,11 +14,14 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-accent-subtle:    var(--accent-subtle);
   --color-accent-text:      var(--accent-text);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans:              var(--font-geist-sans);
+  --font-mono:              var(--font-geist-mono);
+  --shadow-card:            var(--shadow-card);
 }
 
 :root {
+  --shadow-card:      0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+
   --background:       #f8fafc;  /* slate-50  */
   --card:             #ffffff;
   --muted:            #f1f5f9;  /* slate-100 */
@@ -33,6 +36,8 @@
 }
 
 .dark {
+  --shadow-card:      none;
+
   --background:       #030712;  /* gray-950   */
   --card:             #111827;  /* gray-900   */
   --muted:            #1f2937;  /* gray-800   */

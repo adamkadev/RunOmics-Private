@@ -28,7 +28,7 @@ export function RunningDynamics({ activity: a }: { activity: Activity }) {
   if (!metrics.length) return null
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
+    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         Running Dynamics
       </h3>

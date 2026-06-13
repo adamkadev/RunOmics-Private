@@ -67,7 +67,7 @@ export function RacePredictions({ records }: Props) {
         {predictions.map(({ key, label, km, actual, predicted, sourceLabel }) => (
           <div
             key={key}
-            className="rounded-xl border border-border bg-card p-4"
+            className="rounded-xl border border-border bg-card p-4 shadow-card"
           >
             <p className="text-xs font-semibold text-subtle">{label}</p>
             {predicted !== null ? (

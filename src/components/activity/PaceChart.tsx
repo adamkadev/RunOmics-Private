@@ -48,7 +48,7 @@ export function PaceChart({ samples, durationSeconds, onHoverFraction }: Props) 
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
+    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">Pace</h3>
         <span className="text-xs text-subtle">min/km</span>

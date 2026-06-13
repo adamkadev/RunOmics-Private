@@ -46,7 +46,7 @@ export function PaceTrendChart({ data }: Props) {
   const maxPace = Math.max(...paces) + 10
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
+    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">Pace Trend</h3>
         <div className="flex gap-3">

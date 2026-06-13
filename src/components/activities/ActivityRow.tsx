@@ -13,7 +13,7 @@ export function ActivityRow({ activity: a }: Props) {
   return (
     <Link
       href={`/activities/${a.id}`}
-      className="grid grid-cols-[1fr_auto] items-center gap-x-4 rounded-lg border border-border bg-card p-4 transition-shadow hover:shadow-sm"
+      className="grid grid-cols-[1fr_auto] items-center gap-x-4 rounded-xl border border-border bg-card p-4 shadow-card transition-shadow hover:shadow-md"
     >
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">

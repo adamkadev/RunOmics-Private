@@ -61,7 +61,7 @@ export function WeeklyVolumeChart({ data, currentWeek }: Props) {
   const currentWeekIdx = chartData.findIndex((d) => d.week === currentWeek)
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
+    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         Weekly Volume
       </h3>

@@ -15,14 +15,14 @@ export function YearView({ yearData }: { yearData: YearData }) {
   const remaining = Math.max(annualDistanceKm - totalDistanceKm, 0)
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       {goals && (
         <section className="space-y-3">
           <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             <Target size={14} className="text-emerald-500" />
             Annual Goal
           </h2>
-          <div className="rounded-xl border border-border bg-card p-5">
+          <div className="rounded-xl border border-border bg-card p-5 shadow-card">
             <div className="mb-3 flex items-end justify-between">
               <div>
                 <span className="text-3xl font-bold tracking-tight text-foreground">
@@ -64,7 +64,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
               return (
                 <div
                   key={t.distance}
-                  className="rounded-xl border border-border bg-card p-4"
+                  className="rounded-xl border border-border bg-card p-4 shadow-card"
                 >
                   <p className="text-xs font-semibold text-subtle">{t.distance}</p>
                   <p className="mt-1 text-lg font-bold text-foreground">
@@ -99,7 +99,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
               <Link
                 key={entry.activityId}
                 href={`/activities/${entry.activityId}`}
-                className="group relative overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:shadow-md"
+                className="group relative overflow-hidden rounded-xl border border-border bg-card shadow-card transition-shadow hover:shadow-lg"
               >
                 {photoPath ? (
                   <div className="relative h-40 w-full overflow-hidden bg-muted">

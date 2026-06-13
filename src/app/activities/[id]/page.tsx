@@ -18,7 +18,7 @@ interface StatItemProps {
 
 function StatItem({ icon, label, value }: StatItemProps) {
   return (
-    <div className="flex flex-col items-center gap-1 rounded-xl border border-border bg-card px-4 py-3">
+    <div className="flex flex-col items-center gap-1 rounded-xl border border-border bg-card px-4 py-3 shadow-card">
       <div className="text-subtle">{icon}</div>
       <span className="text-sm font-semibold text-foreground">{value}</span>
       <span className="text-xs text-subtle">{label}</span>

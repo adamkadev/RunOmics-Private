@@ -38,7 +38,7 @@ export function EasyHardChart({ data }: Props) {
   if (!data.some((d) => d.easyPct !== null)) return null
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
+    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         Easy / Hard Split
       </h3>

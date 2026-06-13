@@ -13,7 +13,7 @@ export function Skeleton({ className }: { className?: string }) {
 
 export function ChartCardSkeleton({ className }: { className?: string }) {
   return (
-    <div className={cn('rounded-xl border border-border bg-card p-5', className)}>
+    <div className={cn('rounded-xl border border-border bg-card p-5 shadow-card', className)}>
       <Skeleton className="mb-4 h-4 w-32" />
       <Skeleton className="h-[200px] w-full" />
     </div>

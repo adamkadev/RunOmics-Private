@@ -30,7 +30,7 @@ export function LongRunsChart({ data }: Props) {
   if (!data.some((d) => d.km10 > 0 || d.km15 > 0)) return null
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
+    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">Long Runs</h3>
       <ResponsiveContainer width="100%" height={200}>
         <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>

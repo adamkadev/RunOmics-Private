@@ -45,7 +45,7 @@ export function TrainingLoadChart({ data }: Props) {
   const status = formStatus(data.tsb)
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
+    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-foreground/80">
           Training Load <span className="font-normal text-subtle">· last 90 days</span>

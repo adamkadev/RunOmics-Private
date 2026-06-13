@@ -10,7 +10,7 @@ interface Props {
 
 export function RecentActivities({ activities }: Props) {
   return (
-    <div className="rounded-xl border border-border bg-card">
+    <div className="rounded-xl border border-border bg-card shadow-card">
       <div className="flex items-center justify-between border-b border-border px-5 py-4">
         <h3 className="text-sm font-semibold text-foreground/80">
           Recent Activities

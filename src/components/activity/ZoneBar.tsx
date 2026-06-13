@@ -61,7 +61,7 @@ interface Props {
 export function ZoneBar({ hrZones }: Props) {
   if (!hrZones || hrZones.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center rounded-xl border border-border bg-card p-5">
+      <div className="flex h-full items-center justify-center rounded-xl border border-border bg-card p-5 shadow-card">
         <p className="text-sm text-subtle">No HR zone data</p>
       </div>
     )
@@ -70,7 +70,7 @@ export function ZoneBar({ hrZones }: Props) {
   const sorted = [...hrZones].sort((a, b) => b.zone - a.zone)
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
+    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         Heart Rate Zones
       </h3>
