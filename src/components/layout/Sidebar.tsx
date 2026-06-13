@@ -9,6 +9,7 @@ import {
   BarChart2,
   Trophy,
   HeartPulse,
+  Map,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ThemeToggle } from './ThemeToggle'
@@ -19,6 +20,7 @@ const NAV_ITEMS = [
   { href: '/calendar', label: 'Calendar', short: 'Calendar', icon: CalendarDays },
   { href: '/analytics', label: 'Analytics', short: 'Stats', icon: BarChart2 },
   { href: '/goals', label: 'Goals & PBs', short: 'Goals', icon: Trophy },
+  { href: '/map', label: 'Heatmap', short: 'Map', icon: Map },
 ]
 
 export function Sidebar() {
@@ -78,7 +80,7 @@ export function Sidebar() {
         className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card/95 backdrop-blur-sm lg:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
-        <div className="grid grid-cols-5">
+        <div className="grid grid-cols-6">
           {NAV_ITEMS.map(({ href, short, icon: Icon }) => {
             const active = pathname === href
             return (
