@@ -14,6 +14,20 @@ export function YearView({ yearData }: { yearData: YearData }) {
     : 0
   const remaining = Math.max(annualDistanceKm - totalDistanceKm, 0)
 
+  const now = new Date()
+  const isCurrentYear = yearData.year === now.getFullYear()
+  const paceInfo = (() => {
+    if (!isCurrentYear || annualDistanceKm <= 0) return null
+    const start = new Date(yearData.year, 0, 1)
+    const end = new Date(yearData.year + 1, 0, 1)
+    const totalDays = (end.getTime() - start.getTime()) / 86400000
+    const elapsedDays = Math.max((now.getTime() - start.getTime()) / 86400000, 1)
+    const expectedKm = annualDistanceKm * (elapsedDays / totalDays)
+    const delta = Math.round((totalDistanceKm - expectedKm) * 10) / 10
+    const projected = Math.round((totalDistanceKm / elapsedDays) * totalDays)
+    return { ahead: delta >= 0, deltaKm: Math.abs(delta), projected }
+  })()
+
   return (
     <div className="space-y-8">
       {goals && (
@@ -40,11 +54,23 @@ export function YearView({ yearData }: { yearData: YearData }) {
                 style={{ width: `${annualProgress}%` }}
               />
             </div>
-            {remaining > 0 && (
-              <p className="mt-2 text-xs text-subtle">
-                {remaining.toFixed(0)} km remaining
-              </p>
-            )}
+            <div className="mt-2 flex items-center justify-between text-xs">
+              {remaining > 0 ? (
+                <span className="text-subtle">{remaining.toFixed(0)} km remaining</span>
+              ) : (
+                <span className="font-medium text-emerald-600 dark:text-emerald-400">Goal reached!</span>
+              )}
+              {paceInfo && (
+                <span className={paceInfo.ahead
+                  ? 'font-medium text-emerald-600 dark:text-emerald-400'
+                  : 'font-medium text-orange-500 dark:text-orange-400'
+                }>
+                  {paceInfo.ahead
+                    ? `+${paceInfo.deltaKm} km ahead · on track for ${paceInfo.projected} km`
+                    : `-${paceInfo.deltaKm} km behind pace`}
+                </span>
+              )}
+            </div>
           </div>
         </section>
       )}
