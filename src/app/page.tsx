@@ -3,9 +3,7 @@ import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
 import { getVO2max } from '@/application/usecases/GetRecords'
 import { getHeatmapData } from '@/application/usecases/GetHeatmapData'
 import { StatsGrid } from '@/components/dashboard/StatsGrid'
-import { WeeklyVolumeChart } from '@/components/dashboard/WeeklyVolumeChart'
-import { IntensityChart } from '@/components/dashboard/IntensityChart'
-import { TrainingLoadChart } from '@/components/dashboard/TrainingLoadChart'
+import { DashboardCharts } from '@/components/dashboard/DashboardCharts'
 import { RecentActivities } from '@/components/dashboard/RecentActivities'
 import { ActivityHeatmap } from '@/components/dashboard/ActivityHeatmap'
 
@@ -32,12 +30,12 @@ export default function DashboardPage() {
         vo2max={vo2max}
       />
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <WeeklyVolumeChart data={data.weeklyVolume} currentWeek={data.currentWeek.weekNumber} />
-        <IntensityChart data={data.typeDistribution} />
-      </div>
-
-      {trainingLoad && <TrainingLoadChart data={trainingLoad} />}
+      <DashboardCharts
+        weeklyVolume={data.weeklyVolume}
+        currentWeek={data.currentWeek.weekNumber}
+        typeDistribution={data.typeDistribution}
+        trainingLoad={trainingLoad}
+      />
 
       <ActivityHeatmap days={heatmapDays} />
 
