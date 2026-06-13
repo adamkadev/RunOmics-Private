@@ -14,11 +14,11 @@ import { cn } from '@/lib/utils'
 import { ThemeToggle } from './ThemeToggle'
 
 const NAV_ITEMS = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/activities', label: 'Activities', icon: Activity },
-  { href: '/calendar', label: 'Calendar', icon: CalendarDays },
-  { href: '/analytics', label: 'Analytics', icon: BarChart2 },
-  { href: '/goals', label: 'Goals & PBs', icon: Trophy },
+  { href: '/', label: 'Dashboard', short: 'Home', icon: LayoutDashboard },
+  { href: '/activities', label: 'Activities', short: 'Runs', icon: Activity },
+  { href: '/calendar', label: 'Calendar', short: 'Calendar', icon: CalendarDays },
+  { href: '/analytics', label: 'Analytics', short: 'Stats', icon: BarChart2 },
+  { href: '/goals', label: 'Goals & PBs', short: 'Goals', icon: Trophy },
 ]
 
 export function Sidebar() {
@@ -63,7 +63,7 @@ export function Sidebar() {
       </aside>
 
       {/* Mobile top bar */}
-      <header className="fixed inset-x-0 top-0 z-20 flex h-14 items-center justify-between border-b border-border bg-card/90 px-4 backdrop-blur lg:hidden">
+      <header className="fixed inset-x-0 top-0 z-20 flex h-14 items-center justify-between border-b border-border bg-card/95 px-4 backdrop-blur-sm lg:hidden">
         <div className="flex items-center gap-2">
           <HeartPulse size={18} className="text-emerald-600 dark:text-emerald-400" />
           <span className="text-base font-bold tracking-tight text-foreground">
@@ -74,23 +74,31 @@ export function Sidebar() {
       </header>
 
       {/* Mobile bottom nav */}
-      <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card/90 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
+      <nav
+        className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card/95 backdrop-blur-sm lg:hidden"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      >
         <div className="grid grid-cols-5">
-          {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+          {NAV_ITEMS.map(({ href, short, icon: Icon }) => {
             const active = pathname === href
             return (
               <Link
                 key={href}
                 href={href}
                 className={cn(
-                  'flex flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors',
-                  active
-                    ? 'text-emerald-600 dark:text-emerald-400'
-                    : 'text-muted-foreground'
+                  'flex flex-col items-center gap-0.5 pb-2 pt-2 text-[11px] font-medium transition-all duration-200',
+                  active ? 'text-accent-text' : 'text-muted-foreground'
                 )}
               >
-                <Icon size={18} />
-                {label.split(' ')[0]}
+                <span
+                  className={cn(
+                    'mb-0.5 flex items-center justify-center rounded-full px-4 py-1 transition-all duration-200',
+                    active ? 'bg-accent-subtle' : ''
+                  )}
+                >
+                  <Icon size={20} />
+                </span>
+                {short}
               </Link>
             )
           })}
