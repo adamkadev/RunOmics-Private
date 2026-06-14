@@ -103,7 +103,7 @@ export function GlobalMapClient({ data }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [clusters]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [clusters]);
 
   useEffect(() => {
     if (!containerRef.current || !clusters.length) return;

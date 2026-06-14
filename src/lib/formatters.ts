@@ -8,11 +8,16 @@ export function formatDuration(seconds: number): string {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
-export function formatPace(secPerKm: number): string {
-  const total = Math.round(secPerKm)
+/** Formats a number of seconds as `m:ss` (rounds to the nearest second). */
+export function formatClock(seconds: number): string {
+  const total = Math.round(seconds)
   const m = Math.floor(total / 60)
   const s = total % 60
-  return `${m}:${String(s).padStart(2, '0')} /km`
+  return `${m}:${String(s).padStart(2, '0')}`
+}
+
+export function formatPace(secPerKm: number): string {
+  return `${formatClock(secPerKm)} /km`
 }
 
 export function formatDistance(km: number): string {
@@ -25,4 +30,17 @@ export function formatDate(isoDate: string): string {
     month: 'short',
     day: 'numeric',
   })
+}
+
+/** Three-letter uppercase month label from a 1-based month number (1 = JAN). */
+export function monthLabel(month: number): string {
+  return new Date(2000, month - 1, 1).toLocaleString('en', { month: 'short' }).toUpperCase()
+}
+
+/** Compact elapsed time for chart axes: `1h05` past an hour, otherwise `12m`. */
+export function formatElapsed(seconds: number): string {
+  const total = Math.round(seconds)
+  const h = Math.floor(total / 3600)
+  const m = Math.floor((total % 3600) / 60)
+  return h > 0 ? `${h}h${String(m).padStart(2, '0')}` : `${m}m`
 }

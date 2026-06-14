@@ -3,6 +3,7 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import type { MonthlyLongRuns } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
+import { TooltipCard } from '@/components/ui/ChartTooltip'
 
 interface Props {
   data: MonthlyLongRuns[]
@@ -18,11 +19,10 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
   if (!active || !payload?.length) return null
   const entry = payload[0].payload
   return (
-    <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-sm dark:bg-muted">
-      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+    <TooltipCard label={label}>
       <p className="text-sm text-foreground/80">10–15 km: {entry.km10}</p>
       <p className="text-sm text-foreground/80">15+ km: {entry.km15}</p>
-    </div>
+    </TooltipCard>
   )
 }
 

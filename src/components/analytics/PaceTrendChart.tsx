@@ -3,6 +3,8 @@
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import type { MonthlyPace } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
+import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
+import { formatClock } from '@/lib/formatters'
 
 interface Props {
   data: MonthlyPace[]
@@ -14,29 +16,19 @@ interface TooltipProps {
   label?: string
 }
 
-function formatPaceTick(sec: number): string {
-  const m = Math.floor(sec / 60)
-  const s = Math.round(sec % 60)
-  return `${m}:${String(s).padStart(2, '0')}`
-}
-
 function CustomTooltip({ active, payload, label }: TooltipProps) {
   if (!active || !payload?.length) return null
   return (
-    <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-sm dark:bg-muted">
-      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+    <TooltipCard label={label}>
       {payload.map((p) => (
-        <p key={p.dataKey} className="flex items-center gap-1.5 text-xs">
-          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: p.stroke }} />
-          <span className="text-muted-foreground">
-            {p.dataKey === 'easyPace' ? 'Easy' : 'Workout'}:
-          </span>
-          <span className="font-semibold text-foreground">
-            {formatPaceTick(p.value)} /km
-          </span>
-        </p>
+        <TooltipRow
+          key={p.dataKey}
+          color={p.stroke}
+          name={p.dataKey === 'easyPace' ? 'Easy' : 'Workout'}
+          value={`${formatClock(p.value)} /km`}
+        />
       ))}
-    </div>
+    </TooltipCard>
   )
 }
 
@@ -69,7 +61,7 @@ export function PaceTrendChart({ data }: Props) {
           <YAxis
             domain={[minPace, maxPace]}
             reversed
-            tickFormatter={formatPaceTick}
+            tickFormatter={formatClock}
             tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}

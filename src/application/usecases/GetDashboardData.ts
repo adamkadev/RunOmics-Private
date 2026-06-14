@@ -1,4 +1,5 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { round } from '@/lib/math'
 import type {
   Activity,
   ActivityType,
@@ -17,7 +18,7 @@ function buildWeekSummary(weekNumber: number, activities: Activity[]): WeekSumma
 
   return {
     weekNumber,
-    totalDistanceKm: Math.round(totalDistanceKm * 10) / 10,
+    totalDistanceKm: round(totalDistanceKm),
     totalDurationSeconds,
     sessionCount: activities.length,
     avgHeartRate: hrs.length ? Math.round(hrs.reduce((s, v) => s + v, 0) / hrs.length) : null,
@@ -39,7 +40,7 @@ function buildTypeDistribution(activities: Activity[]): TypeDistribution[] {
     .map(([type, { count, distanceKm }]) => ({
       type,
       count,
-      distanceKm: Math.round(distanceKm * 10) / 10,
+      distanceKm: round(distanceKm),
       percent: total > 0 ? Math.round((distanceKm / total) * 100) : 0,
     }))
     .sort((a, b) => b.distanceKm - a.distanceKm)
@@ -118,7 +119,7 @@ export function getDashboardData(): DashboardData {
       week: w,
       year: Math.floor(w / 100),
       label: `W${w % 100}`,
-      distanceKm: Math.round(acts.reduce((s, a) => s + a.distanceKm, 0) * 10) / 10,
+      distanceKm: round(acts.reduce((s, a) => s + a.distanceKm, 0)),
       sessionCount: acts.length,
     }
   })

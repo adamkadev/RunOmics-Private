@@ -3,6 +3,7 @@
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import type { MonthlyTrainingEffect } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
+import { TooltipCard } from '@/components/ui/ChartTooltip'
 
 interface Props {
   data: MonthlyTrainingEffect[]
@@ -17,14 +18,13 @@ interface TooltipProps {
 function CustomTooltip({ active, payload, label }: TooltipProps) {
   if (!active || !payload?.length) return null
   return (
-    <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-sm dark:bg-muted">
-      <p className="mb-1 text-xs font-medium text-muted-foreground">{label}</p>
+    <TooltipCard label={label}>
       {payload.map((p) => (
         <p key={p.name} className="text-xs font-semibold" style={{ color: p.color }}>
           {p.name} {p.value.toFixed(1)}
         </p>
       ))}
-    </div>
+    </TooltipCard>
   )
 }
 

@@ -9,18 +9,13 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { CHART_COLORS } from '@/lib/colors'
+import { formatClock, formatElapsed } from '@/lib/formatters'
 
 interface Props {
   samples: number[]
   avgPaceSecPerKm?: number | null
   durationSeconds?: number
   onHoverFraction?: (fraction: number | null) => void
-}
-
-function formatPaceSec(sec: number) {
-  const m = Math.floor(sec / 60)
-  const s = Math.round(sec % 60)
-  return `${m}:${String(s).padStart(2, '0')}`
 }
 
 export function PaceChart({ samples, avgPaceSecPerKm, durationSeconds, onHoverFraction }: Props) {
@@ -43,10 +38,7 @@ export function PaceChart({ samples, avgPaceSecPerKm, durationSeconds, onHoverFr
 
   function formatX(val: number) {
     if (!durationSeconds) return String(val)
-    const secs = Math.round(val)
-    const h = Math.floor(secs / 3600)
-    const m = Math.floor((secs % 3600) / 60)
-    return h > 0 ? `${h}h${String(m).padStart(2, '0')}` : `${m}m`
+    return formatElapsed(val)
   }
 
   return (
@@ -54,7 +46,7 @@ export function PaceChart({ samples, avgPaceSecPerKm, durationSeconds, onHoverFr
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">Pace</h3>
         <span className="text-xs text-subtle">
-          {avgPace && <span className="font-semibold text-foreground">{formatPaceSec(avgPace)} </span>}
+          {avgPace && <span className="font-semibold text-foreground">{formatClock(avgPace)} </span>}
           min/km
         </span>
       </div>
@@ -88,7 +80,7 @@ export function PaceChart({ samples, avgPaceSecPerKm, durationSeconds, onHoverFr
             axisLine={false}
             tickLine={false}
             width={36}
-            tickFormatter={formatPaceSec}
+            tickFormatter={formatClock}
           />
           <Tooltip
             contentStyle={{
@@ -97,7 +89,7 @@ export function PaceChart({ samples, avgPaceSecPerKm, durationSeconds, onHoverFr
               borderRadius: 8,
               fontSize: 12,
             }}
-            formatter={(v) => [`${formatPaceSec(Number(v))}/km`, 'Pace']}
+            formatter={(v) => [`${formatClock(Number(v))}/km`, 'Pace']}
             labelFormatter={(v) => formatX(Number(v))}
           />
           <Area

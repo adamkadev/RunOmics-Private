@@ -3,6 +3,7 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ResponsiveContainer } from 'recharts'
 import type { DistanceBracket } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
+import { TooltipCard } from '@/components/ui/ChartTooltip'
 
 interface Props {
   data: DistanceBracket[]
@@ -17,11 +18,10 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   if (!active || !payload?.length) return null
   const d = payload[0].payload
   return (
-    <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-sm dark:bg-muted">
-      <p className="text-xs font-medium text-muted-foreground">{d.label}</p>
+    <TooltipCard label={d.label}>
       <p className="text-sm font-semibold text-foreground">{d.count} run{d.count !== 1 ? 's' : ''}</p>
       <p className="text-xs text-subtle">{d.km} km total</p>
-    </div>
+    </TooltipCard>
   )
 }
 

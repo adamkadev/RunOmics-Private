@@ -11,6 +11,7 @@ import {
 } from 'recharts'
 import type { TrainingLoadData, TrainingLoadPoint } from '@/application/usecases/GetTrainingLoad'
 import { CHART_COLORS } from '@/lib/colors'
+import { TooltipCard } from '@/components/ui/ChartTooltip'
 
 interface Props {
   data: TrainingLoadData
@@ -25,12 +26,11 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   if (!active || !payload?.length) return null
   const p = payload[0].payload
   return (
-    <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-sm dark:bg-muted">
-      <p className="text-xs font-medium text-muted-foreground">{p.label}</p>
+    <TooltipCard label={p.label}>
       <p className="text-sm text-blue-500 dark:text-blue-400">Fitness {p.ctl}</p>
       <p className="text-sm text-orange-500 dark:text-orange-400">Fatigue {p.atl}</p>
       <p className="text-sm text-emerald-600 dark:text-emerald-400">Form {p.tsb}</p>
-    </div>
+    </TooltipCard>
   )
 }
 

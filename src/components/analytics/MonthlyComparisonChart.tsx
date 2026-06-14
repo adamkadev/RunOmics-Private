@@ -2,10 +2,11 @@
 
 import {
   LineChart, Line, XAxis, YAxis, Tooltip,
-  ResponsiveContainer, Legend,
+  ResponsiveContainer,
 } from 'recharts'
 import type { MonthlyVolume } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
+import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 
 const MONTH_LABELS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
 
@@ -25,16 +26,16 @@ interface TooltipProps {
 function CustomTooltip({ active, payload, label }: TooltipProps) {
   if (!active || !payload?.length) return null
   return (
-    <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-sm dark:bg-muted">
-      <p className="mb-1 text-xs font-medium text-muted-foreground">{label}</p>
+    <TooltipCard label={label}>
       {payload.map((p, i) => (
-        <p key={`${p.name}-${i}`} className="flex items-center gap-1.5 text-xs">
-          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: p.stroke }} />
-          <span className="text-muted-foreground">{p.name}:</span>
-          <span className="font-semibold text-foreground">{p.value.toFixed(1)} km</span>
-        </p>
+        <TooltipRow
+          key={`${p.name}-${i}`}
+          color={p.stroke}
+          name={p.name}
+          value={`${p.value.toFixed(1)} km`}
+        />
       ))}
-    </div>
+    </TooltipCard>
   )
 }
 

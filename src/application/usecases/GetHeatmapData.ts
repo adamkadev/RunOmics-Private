@@ -1,4 +1,5 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { round } from '@/lib/math'
 
 export type HeatmapDay = {
   date: string       // YYYY-MM-DD, empty string = padding
@@ -36,7 +37,7 @@ export function getHeatmapData(): HeatmapDay[] {
     const data = map.get(date)
     days.push({
       date,
-      distanceKm: Math.round((data?.distanceKm ?? 0) * 10) / 10,
+      distanceKm: round(data?.distanceKm ?? 0),
       sessionCount: data?.sessionCount ?? 0,
     })
     cursor.setDate(cursor.getDate() + 1)

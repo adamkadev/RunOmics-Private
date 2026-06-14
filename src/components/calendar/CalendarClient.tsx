@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import type { Activity } from '@/domain/activity/types'
+import { round } from '@/lib/math'
 
 interface Props {
   activities: Activity[]
@@ -50,7 +51,7 @@ export function CalendarClient({ activities }: Props) {
     }
     while (cells.length % 7 !== 0) cells.push(null)
 
-    return { cells, totalKm: Math.round(totalKm * 10) / 10, sessionCount }
+    return { cells, totalKm: round(totalKm), sessionCount }
   }, [year, month, byDate])
 
   const isCurrentMonth = year === now.getFullYear() && month === now.getMonth()

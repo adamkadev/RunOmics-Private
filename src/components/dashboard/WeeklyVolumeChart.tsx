@@ -11,6 +11,7 @@ import {
 } from 'recharts'
 import type { WeeklyVolume } from '@/domain/activity/types'
 import { CHART_COLORS } from '@/lib/colors'
+import { TooltipCard } from '@/components/ui/ChartTooltip'
 
 interface Props {
   data: WeeklyVolume[]
@@ -41,12 +42,9 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   if (!active || !payload?.length) return null
   const { value, payload: entry } = payload[0]
   return (
-    <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-sm dark:bg-muted">
-      <p className="text-xs font-medium text-muted-foreground">
-        W{entry.week % 100} · {weekToMonthAbbr(entry.week)}
-      </p>
+    <TooltipCard label={`W${entry.week % 100} · ${weekToMonthAbbr(entry.week)}`}>
       <p className="text-sm font-semibold text-foreground">{value.toFixed(1)} km</p>
-    </div>
+    </TooltipCard>
   )
 }
 

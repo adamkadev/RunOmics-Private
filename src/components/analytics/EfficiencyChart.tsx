@@ -3,6 +3,7 @@
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import type { MonthlyEfficiency } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
+import { TooltipCard } from '@/components/ui/ChartTooltip'
 
 interface Props {
   data: MonthlyEfficiency[]
@@ -17,12 +18,9 @@ interface TooltipProps {
 function CustomTooltip({ active, payload, label }: TooltipProps) {
   if (!active || !payload?.length) return null
   return (
-    <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-sm dark:bg-muted">
-      <p className="text-xs font-medium text-muted-foreground">{label}</p>
-      <p className="text-sm font-semibold text-foreground">
-        {payload[0].value.toFixed(2)} m/min·bpm
-      </p>
-    </div>
+    <TooltipCard label={label}>
+      <p className="text-sm font-semibold text-foreground">{payload[0].value.toFixed(2)} m/min·bpm</p>
+    </TooltipCard>
   )
 }
 

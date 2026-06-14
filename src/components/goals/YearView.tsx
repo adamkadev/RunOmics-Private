@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { Trophy, Target, TrendingUp, ArrowRight, Calendar } from 'lucide-react'
 import type { YearData } from '@/application/usecases/GetGoalsData'
 import { formatDuration, formatDate, formatPace } from '@/lib/formatters'
+import { round } from '@/lib/math'
 import { ActivityTypeTag } from '@/components/activities/ActivityTypeTag'
 
 export function YearView({ yearData }: { yearData: YearData }) {
@@ -23,7 +24,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
     const totalDays = (end.getTime() - start.getTime()) / 86400000
     const elapsedDays = Math.max((now.getTime() - start.getTime()) / 86400000, 1)
     const expectedKm = annualDistanceKm * (elapsedDays / totalDays)
-    const delta = Math.round((totalDistanceKm - expectedKm) * 10) / 10
+    const delta = round(totalDistanceKm - expectedKm)
     const projected = Math.round((totalDistanceKm / elapsedDays) * totalDays)
     return { ahead: delta >= 0, deltaKm: Math.abs(delta), projected }
   })()

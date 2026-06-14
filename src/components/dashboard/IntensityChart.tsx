@@ -3,6 +3,7 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import type { TypeDistribution } from '@/domain/activity/types'
+import { TooltipCard } from '@/components/ui/ChartTooltip'
 
 interface Props {
   data: TypeDistribution[]
@@ -18,12 +19,12 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   const d = payload[0].payload
   const config = ACTIVITY_TYPE_CONFIG[d.type]
   return (
-    <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-sm dark:bg-muted">
+    <TooltipCard>
       <p className="text-xs font-medium text-foreground">{config.label}</p>
       <p className="text-xs text-muted-foreground">
         {d.distanceKm.toFixed(1)} km · {d.percent}%
       </p>
-    </div>
+    </TooltipCard>
   )
 }
 

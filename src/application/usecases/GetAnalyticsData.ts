@@ -1,5 +1,7 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import type { Activity, ActivityType } from '@/domain/activity/types'
+import { monthLabel } from '@/lib/formatters'
+import { round } from '@/lib/math'
 
 const EASY_TYPES: ActivityType[] = ['Base']
 
@@ -107,24 +109,34 @@ export interface AnalyticsPageData {
   byYear: Record<number, YearAnalytics>
 }
 
-function monthLabel(month: number): string {
-  return new Date(2000, month - 1, 1).toLocaleString('en', { month: 'short' }).toUpperCase()
+// A value (possibly null) paired with a weight, averaged across activities.
+function weightedAvg(
+  activities: Activity[],
+  value: (a: Activity) => number | null,
+  weight: (a: Activity) => number,
+  decimals = 1,
+): number | null {
+  let totalWeight = 0
+  let weightedSum = 0
+  for (const a of activities) {
+    const v = value(a)
+    const w = weight(a)
+    if (v === null || w <= 0) continue
+    totalWeight += w
+    weightedSum += v * w
+  }
+  return totalWeight === 0 ? null : round(weightedSum / totalWeight, decimals)
 }
 
-function weightedPace(activities: Activity[]): number | null {
-  const valid = activities.filter((a) => a.paceSecPerKm !== null && a.distanceKm > 0)
-  if (!valid.length) return null
-  const totalKm = valid.reduce((s, a) => s + a.distanceKm, 0)
-  const totalSec = valid.reduce((s, a) => s + a.paceSecPerKm! * a.distanceKm, 0)
-  return Math.round(totalSec / totalKm)
+// Simple mean of a (possibly null) field across activities; null when none present.
+function avgField(activities: Activity[], pick: (a: Activity) => number | null): number | null {
+  const vals = activities.map(pick).filter((v): v is number => v !== null)
+  return vals.length ? round(vals.reduce((s, v) => s + v, 0) / vals.length) : null
 }
 
-function weightedHr(activities: Activity[]): number | null {
-  const valid = activities.filter((a) => a.avgHeartRate !== null && a.durationSeconds > 0)
-  if (!valid.length) return null
-  const totalSec = valid.reduce((s, a) => s + a.durationSeconds, 0)
-  return Math.round(valid.reduce((s, a) => s + a.avgHeartRate! * a.durationSeconds, 0) / totalSec)
-}
+const weightedPace = (acts: Activity[]) => weightedAvg(acts, (a) => a.paceSecPerKm, (a) => a.distanceKm, 0)
+const weightedHr = (acts: Activity[]) => weightedAvg(acts, (a) => a.avgHeartRate, (a) => a.durationSeconds, 0)
+const weightedCadence = (acts: Activity[]) => weightedAvg(acts, (a) => a.cadenceSpm, (a) => a.durationSeconds)
 
 function zoneDistribution(activities: Activity[]): ZoneShare[] {
   const seconds = new Map<number, number>()
@@ -140,19 +152,8 @@ function zoneDistribution(activities: Activity[]): ZoneShare[] {
     .map(([zone, secs]) => ({
       zone,
       seconds: secs,
-      percent: Math.round((secs / total) * 1000) / 10,
+      percent: round((secs / total) * 100, 1),
     }))
-}
-
-function weightedCadence(activities: Activity[]): number | null {
-  const valid = activities.filter((a) => a.cadenceSpm !== null && a.durationSeconds > 0)
-  if (!valid.length) return null
-  const totalSec = valid.reduce((s, a) => s + a.durationSeconds, 0)
-  return (
-    Math.round(
-      (valid.reduce((s, a) => s + a.cadenceSpm! * a.durationSeconds, 0) / totalSec) * 10
-    ) / 10
-  )
 }
 
 function easyHardShare(activities: Activity[]): { easyPct: number | null; hardPct: number | null } {
@@ -165,8 +166,8 @@ function easyHardShare(activities: Activity[]): { easyPct: number | null; hardPc
     }
   }
   if (total === 0) return { easyPct: null, hardPct: null }
-  const easyPct = Math.round((easy / total) * 1000) / 10
-  return { easyPct, hardPct: Math.round((100 - easyPct) * 10) / 10 }
+  const easyPct = round((easy / total) * 100, 1)
+  return { easyPct, hardPct: round(100 - easyPct) }
 }
 
 function efficiencyFactor(activities: Activity[]): number | null {
@@ -175,7 +176,7 @@ function efficiencyFactor(activities: Activity[]): number | null {
   )
   if (!valid.length) return null
   const efs = valid.map((a) => (1000 / a.paceSecPerKm!) * 60 / a.avgHeartRate!)
-  return Math.round((efs.reduce((s, v) => s + v, 0) / efs.length) * 100) / 100
+  return round((efs.reduce((s, v) => s + v, 0) / efs.length), 2)
 }
 
 const DISTANCE_BRACKETS = [
@@ -194,7 +195,7 @@ function distanceDistribution(activities: Activity[]): DistanceBracket[] {
       return {
         label,
         count: matching.length,
-        km: Math.round(matching.reduce((s, a) => s + a.distanceKm, 0) * 10) / 10,
+        km: round(matching.reduce((s, a) => s + a.distanceKm, 0)),
       }
     })
     .filter((b) => b.count > 0)
@@ -215,83 +216,51 @@ function buildYearAnalytics(year: number, activities: Activity[], now: Date): Ye
 
   const typesPresent = new Set<ActivityType>()
 
-  const monthlyVolume: MonthlyVolume[] = months.map((m) => {
+  // Per-month series, all built in a single pass over the months.
+  const monthlyVolume: MonthlyVolume[] = []
+  const paceTrend: MonthlyPace[] = []
+  const efficiencyTrend: MonthlyEfficiency[] = []
+  const hrTrend: MonthlyHr[] = []
+  const cadenceTrend: MonthlyCadence[] = []
+  const longRuns: MonthlyLongRuns[] = []
+  const easyHardSplit: MonthlyEasyHard[] = []
+  const rpeTrend: MonthlyRpe[] = []
+  const trainingEffectTrend: MonthlyTrainingEffect[] = []
+
+  for (const m of months) {
     const acts = byMonth.get(m) ?? []
+    const base = { month: `${year}-${String(m).padStart(2, '0')}`, label: monthLabel(m) }
+    const easy = acts.filter((a) => EASY_TYPES.includes(a.type))
+    const hard = acts.filter((a) => !EASY_TYPES.includes(a.type))
+
     const byType: Partial<Record<ActivityType, number>> = {}
     for (const a of acts) {
-      byType[a.type] = Math.round(((byType[a.type] ?? 0) + a.distanceKm) * 10) / 10
+      byType[a.type] = round((byType[a.type] ?? 0) + a.distanceKm)
       typesPresent.add(a.type)
     }
-    return {
-      month: `${year}-${String(m).padStart(2, '0')}`,
-      label: monthLabel(m),
-      sessionCount: acts.length,
-      totalKm: Math.round(acts.reduce((s, a) => s + a.distanceKm, 0) * 10) / 10,
-      byType,
-    }
-  })
 
-  const paceTrend: MonthlyPace[] = months.map((m) => {
-    const acts = byMonth.get(m) ?? []
-    return {
-      month: `${year}-${String(m).padStart(2, '0')}`,
-      label: monthLabel(m),
-      easyPace: weightedPace(acts.filter((a) => EASY_TYPES.includes(a.type))),
-      hardPace: weightedPace(acts.filter((a) => !EASY_TYPES.includes(a.type))),
-    }
-  })
+    const { easyPct, hardPct } = easyHardShare(acts)
 
-  const efficiencyTrend: MonthlyEfficiency[] = months.map((m) => {
-    const acts = byMonth.get(m) ?? []
-    return {
-      month: `${year}-${String(m).padStart(2, '0')}`,
-      label: monthLabel(m),
-      ef: efficiencyFactor(acts.filter((a) => EASY_TYPES.includes(a.type))),
-    }
-  })
-
-  const hrTrend: MonthlyHr[] = months.map((m) => ({
-    month: `${year}-${String(m).padStart(2, '0')}`,
-    label: monthLabel(m),
-    avgHr: weightedHr(byMonth.get(m) ?? []),
-  }))
-
-  const cadenceTrend: MonthlyCadence[] = months.map((m) => ({
-    month: `${year}-${String(m).padStart(2, '0')}`,
-    label: monthLabel(m),
-    cadence: weightedCadence(byMonth.get(m) ?? []),
-  }))
-
-  const longRuns: MonthlyLongRuns[] = months.map((m) => {
-    const acts = byMonth.get(m) ?? []
-    return {
-      month: `${year}-${String(m).padStart(2, '0')}`,
-      label: monthLabel(m),
+    monthlyVolume.push({ ...base, sessionCount: acts.length, totalKm: round(acts.reduce((s, a) => s + a.distanceKm, 0)), byType })
+    paceTrend.push({ ...base, easyPace: weightedPace(easy), hardPace: weightedPace(hard) })
+    efficiencyTrend.push({ ...base, ef: efficiencyFactor(easy) })
+    hrTrend.push({ ...base, avgHr: weightedHr(acts) })
+    cadenceTrend.push({ ...base, cadence: weightedCadence(acts) })
+    longRuns.push({
+      ...base,
       km10: acts.filter((a) => a.distanceKm >= 10 && a.distanceKm < 15).length,
       km15: acts.filter((a) => a.distanceKm >= 15).length,
-    }
-  })
+    })
+    easyHardSplit.push({ ...base, easyPct, hardPct })
+    rpeTrend.push({ ...base, avgRpe: avgField(acts, (a) => a.rpe) })
+    trainingEffectTrend.push({
+      ...base,
+      aer: avgField(acts, (a) => a.aerTrainingEffect),
+      ana: avgField(acts, (a) => a.anaTrainingEffect),
+    })
+  }
 
-  const easyHardSplit: MonthlyEasyHard[] = months.map((m) => {
-    const { easyPct, hardPct } = easyHardShare(byMonth.get(m) ?? [])
-    return {
-      month: `${year}-${String(m).padStart(2, '0')}`,
-      label: monthLabel(m),
-      easyPct,
-      hardPct,
-    }
-  })
-
-  const rpeTrend: MonthlyRpe[] = months.map((m) => {
-    const acts = (byMonth.get(m) ?? []).filter((a) => a.rpe !== null)
-    return {
-      month: `${year}-${String(m).padStart(2, '0')}`,
-      label: monthLabel(m),
-      avgRpe: acts.length ? Math.round((acts.reduce((s, a) => s + a.rpe!, 0) / acts.length) * 10) / 10 : null,
-    }
-  })
-
-  const distanceKm = Math.round(activities.reduce((s, a) => s + a.distanceKm, 0) * 10) / 10
+  const distanceKm = round(activities.reduce((s, a) => s + a.distanceKm, 0))
   const calories = activities.reduce((s, a) => s + (a.calories ?? 0), 0)
   const elapsedDays = isCurrentYear
     ? Math.floor((now.getTime() - new Date(year, 0, 1).getTime()) / 86400000) + 1
@@ -304,7 +273,7 @@ function buildYearAnalytics(year: number, activities: Activity[], now: Date): Ye
       durationSeconds: activities.reduce((s, a) => s + a.durationSeconds, 0),
       sessionCount: activities.length,
       elevationM: Math.round(activities.reduce((s, a) => s + (a.elevationGain ?? 0), 0)),
-      avgKmPerWeek: Math.round((distanceKm / elapsedDays) * 7 * 10) / 10,
+      avgKmPerWeek: round((distanceKm / elapsedDays) * 7),
       calories,
       caloriesPerWeek: Math.round((calories / elapsedDays) * 7),
     },
@@ -318,17 +287,7 @@ function buildYearAnalytics(year: number, activities: Activity[], now: Date): Ye
     zoneDistribution: zoneDistribution(activities),
     distanceDistribution: distanceDistribution(activities),
     rpeTrend,
-    trainingEffectTrend: months.map((m) => {
-      const acts = byMonth.get(m) ?? []
-      const aerActs = acts.filter((a) => a.aerTrainingEffect !== null)
-      const anaActs = acts.filter((a) => a.anaTrainingEffect !== null)
-      return {
-        month: `${year}-${String(m).padStart(2, '0')}`,
-        label: monthLabel(m),
-        aer: aerActs.length ? Math.round((aerActs.reduce((s, a) => s + a.aerTrainingEffect!, 0) / aerActs.length) * 10) / 10 : null,
-        ana: anaActs.length ? Math.round((anaActs.reduce((s, a) => s + a.anaTrainingEffect!, 0) / anaActs.length) * 10) / 10 : null,
-      }
-    }),
+    trainingEffectTrend,
     typesPresent: Array.from(typesPresent),
   }
 }

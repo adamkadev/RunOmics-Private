@@ -1,6 +1,7 @@
 import { readFileSync } from 'fs'
 import { join } from 'path'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { round } from '@/lib/math'
 
 const EFFORTS = [
   //{ key: '1k', label: '1K', km: 1 },
@@ -59,7 +60,7 @@ function jackDanielsVO2max(seconds: number, distanceM: number): number {
     0.8 +
     0.1894393 * Math.exp(-0.012778 * t) +
     0.2989558 * Math.exp(-0.1932605 * t)
-  return Math.round((vo2 / pct) * 10) / 10
+  return round(vo2 / pct)
 }
 
 export function getVO2max(): number | null {

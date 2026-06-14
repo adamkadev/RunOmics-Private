@@ -11,6 +11,7 @@ import {
 } from 'recharts'
 import type { MonthlyEasyHard } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
+import { TooltipCard } from '@/components/ui/ChartTooltip'
 
 interface Props {
   data: MonthlyEasyHard[]
@@ -26,11 +27,10 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
   if (!active || !payload?.length) return null
   const entry = payload[0].payload
   return (
-    <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-sm dark:bg-muted">
-      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+    <TooltipCard label={label}>
       <p className="text-sm text-emerald-600 dark:text-emerald-400">Easy (Z1–Z2): {entry.easyPct}%</p>
       <p className="text-sm text-orange-500 dark:text-orange-400">Hard (Z3+): {entry.hardPct}%</p>
-    </div>
+    </TooltipCard>
   )
 }
 

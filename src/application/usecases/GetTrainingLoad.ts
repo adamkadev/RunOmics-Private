@@ -1,4 +1,5 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { round } from '@/lib/math'
 import type { Activity } from '@/domain/activity/types'
 
 const MAX_HR = 195
@@ -61,9 +62,9 @@ export function getTrainingLoad(): TrainingLoadData | null {
     points.push({
       date,
       label: d.toLocaleDateString('en', { day: 'numeric', month: 'short' }),
-      ctl: Math.round(ctl * 10) / 10,
-      atl: Math.round(atl * 10) / 10,
-      tsb: Math.round(tsb * 10) / 10,
+      ctl: round(ctl),
+      atl: round(atl),
+      tsb: round(tsb),
     })
   }
 

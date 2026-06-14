@@ -1,11 +1,6 @@
 import { Gauge } from 'lucide-react'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
-
-function fmt(secs: number): string {
-  const m = Math.floor(secs / 60)
-  const s = secs % 60
-  return `${m}:${String(s).padStart(2, '0')}`
-}
+import { formatClock as fmt } from '@/lib/formatters'
 
 const ZONE_STYLE: Record<string, { dot: string; text: string; bg: string; bar: string }> = {
   easy:      { dot: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/8',  bar: 'bg-emerald-500' },

@@ -1,4 +1,5 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { round } from '@/lib/math'
 
 export interface YearMetrics {
   year: number
@@ -40,11 +41,11 @@ function buildMetrics(year: number, activities: ReturnType<typeof getAllActiviti
 
   // Weeks with at least one activity
   const weeks = new Set(activities.map((a) => a.week)).size
-  const avgKmPerWeek = weeks > 0 ? Math.round((distanceKm / weeks) * 10) / 10 : 0
+  const avgKmPerWeek = weeks > 0 ? round(distanceKm / weeks) : 0
 
   return {
     year,
-    distanceKm: Math.round(distanceKm * 10) / 10,
+    distanceKm: round(distanceKm),
     sessionCount: activities.length,
     durationSeconds: Math.round(durationSeconds),
     avgKmPerWeek,

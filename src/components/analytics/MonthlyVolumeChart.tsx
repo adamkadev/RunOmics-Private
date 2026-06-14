@@ -5,6 +5,7 @@ import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import type { ActivityType } from '@/domain/activity/types'
 import type { MonthlyVolume } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
+import { TooltipCard } from '@/components/ui/ChartTooltip'
 
 interface Props {
   data: MonthlyVolume[]
@@ -21,8 +22,7 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
   if (!active || !payload?.length) return null
   const total = payload.reduce((s, p) => s + p.value, 0)
   return (
-    <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-sm dark:bg-muted">
-      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+    <TooltipCard label={label}>
       <p className="mb-1 text-sm font-semibold text-foreground">
         {total.toFixed(1)} km
       </p>
@@ -32,7 +32,7 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
           {p.dataKey}: {p.value.toFixed(1)} km
         </p>
       ))}
-    </div>
+    </TooltipCard>
   )
 }
 

@@ -7,10 +7,10 @@ export default function NotFound() {
       <HeartPulse size={48} className="mb-4 text-emerald-500 opacity-60" />
       <h1 className="text-6xl font-black text-foreground">404</h1>
       <p className="mt-2 text-lg font-medium text-muted-foreground">
-        This page went on a run and didn't come back.
+        This page went on a run and didn&apos;t come back.
       </p>
       <p className="mt-1 text-sm text-subtle">
-        The route you're looking for doesn't exist.
+        The route you&apos;re looking for doesn&apos;t exist.
       </p>
       <Link
         href="/"

@@ -10,6 +10,7 @@ import {
   ReferenceLine,
 } from 'recharts'
 import { CHART_COLORS } from '@/lib/colors'
+import { formatElapsed } from '@/lib/formatters'
 
 interface Props {
   samples: number[]
@@ -37,10 +38,7 @@ export function HrChart({ samples, avgHr, maxHr, durationSeconds, onHoverFractio
 
   function formatX(val: number) {
     if (!durationSeconds) return String(val)
-    const secs = Math.round(val)
-    const h = Math.floor(secs / 3600)
-    const m = Math.floor((secs % 3600) / 60)
-    return h > 0 ? `${h}h${String(m).padStart(2, '0')}` : `${m}m`
+    return formatElapsed(val)
   }
 
   const tickCount = 5

@@ -3,6 +3,7 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { formatDuration } from '@/lib/formatters'
 import type { ZoneShare } from '@/application/usecases/GetAnalyticsData'
+import { TooltipCard } from '@/components/ui/ChartTooltip'
 
 const ZONE_COLORS: Record<number, string> = {
   1: '#9ca3af',
@@ -33,14 +34,14 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   if (!active || !payload?.length) return null
   const z = payload[0].payload
   return (
-    <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-sm dark:bg-muted">
+    <TooltipCard>
       <p className="text-xs font-medium text-foreground">
         Z{z.zone} · {ZONE_LABELS[z.zone]}
       </p>
       <p className="text-xs text-muted-foreground">
         {formatDuration(z.seconds)} · {z.percent}%
       </p>
-    </div>
+    </TooltipCard>
   )
 }
 
