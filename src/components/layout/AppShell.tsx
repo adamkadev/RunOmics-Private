@@ -21,11 +21,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         />
       </main>
 
-      {/* Fixed strip that covers the home indicator area with bg-background */}
-      <div
-        className="fixed inset-x-0 bottom-0 z-10 bg-background lg:hidden"
-        style={{ height: 'env(safe-area-inset-bottom, 0px)' }}
-      />
     </div>
   )
 }

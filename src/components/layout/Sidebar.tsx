@@ -30,7 +30,10 @@ function Brand() {
   return (
     <div className="flex items-center gap-2.5">
       <HeartPulse size={24} className="text-emerald-600 dark:text-emerald-400" />
-      <span className="text-2xl font-bold tracking-tight text-foreground">Runomics</span>
+      <span className="text-2xl tracking-tight text-foreground">
+        <span className="font-bold">Run</span>
+        <span className="font-normal">Omics</span>
+      </span>
     </div>
   )
 }
@@ -51,7 +54,10 @@ export function Sidebar() {
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-60 flex-col border-r border-border bg-card lg:flex">
         <div className="flex h-16 items-center gap-2 border-b border-border px-5">
           <HeartPulse size={20} className="text-emerald-600 dark:text-emerald-400" />
-          <span className="text-lg font-bold tracking-tight text-foreground">Runomics</span>
+          <span className="text-lg tracking-tight text-foreground">
+            <span className="font-bold">Run</span>
+            <span className="font-normal">Omics</span>
+          </span>
         </div>
 
         <nav className="flex-1 space-y-0.5 p-3">
