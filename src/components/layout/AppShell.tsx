@@ -5,7 +5,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
-      <main className="min-h-screen lg:ml-60">
+      <main className="min-h-screen bg-background lg:ml-60">
         {/* Mobile spacer: top bar height + notch safe area */}
         <div
           className="lg:hidden"
@@ -16,7 +16,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
         {/* Mobile spacer: home indicator safe area */}
         <div
-          className="lg:hidden"
+          className="bg-background lg:hidden"
           style={{ height: 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' }}
         />
       </main>
