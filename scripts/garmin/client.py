@@ -12,7 +12,7 @@ os.environ.setdefault("GARTH_TELEMETRY_ENABLED", "false")
 
 _CONNECT_API = "https://connectapi.garmin.com"
 _TIMEOUT = httpx.Timeout(120.0, connect=30.0)
-_USER_AGENT = "Mozilla/5.0 (Runomics/1.0)"
+_USER_AGENT = "Mozilla/5.0 (RunOmics/1.0)"
 
 
 class GarminAuthError(Exception):

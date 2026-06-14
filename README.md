@@ -1,4 +1,4 @@
-# Runomics
+# RunOmics
 
 A personal running dashboard that pulls your data from Garmin Connect and turns it into a self-hosted analytics app. Built with Next.js 16, TypeScript, and a Python sync pipeline.
 
@@ -43,8 +43,8 @@ All data is stored in `public/data/activities.json` and read at build time - no 
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/adamkadev/Runomics
-cd Runomics
+git clone https://github.com/adamkadev/RunOmics
+cd RunOmics
 
 # Frontend dependencies
 npm install

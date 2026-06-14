@@ -140,7 +140,7 @@ def _fetch_track_file(
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Sync Garmin Connect activities into Runomics"
+        description="Sync Garmin Connect activities into RunOmics"
     )
     parser.add_argument("--all-types", action="store_true")
     parser.add_argument("--limit", type=int, default=None, metavar="N")

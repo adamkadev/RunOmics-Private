@@ -9,19 +9,19 @@ const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin']
 
 export const metadata: Metadata = {
   title: {
-    default: 'Runomics',
-    template: '%s - Runomics',
+    default: 'RunOmics',
+    template: '%s - RunOmics',
   },
   description: 'Your personal running training dashboard - stats, maps, trends.',
   openGraph: {
     type: 'website',
-    siteName: 'Runomics',
-    title: 'Runomics',
+    siteName: 'RunOmics',
+    title: 'RunOmics',
     description: 'Your personal running training dashboard - stats, maps, trends.',
   },
   twitter: {
     card: 'summary',
-    title: 'Runomics',
+    title: 'RunOmics',
     description: 'Your personal running training dashboard - stats, maps, trends.',
   },
 }

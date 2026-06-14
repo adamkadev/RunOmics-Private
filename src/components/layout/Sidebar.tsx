@@ -82,7 +82,7 @@ export function Sidebar() {
         </nav>
 
         <div className="flex items-center justify-between border-t border-border px-4 py-3">
-          <span className="text-xs text-subtle">Runomics v1.0</span>
+          <span className="text-xs text-subtle">RunOmics v1.0</span>
           <ThemeToggle />
         </div>
       </aside>
@@ -157,7 +157,7 @@ export function Sidebar() {
           </nav>
 
           <div className="flex items-center justify-between border-t border-border px-4 py-3">
-            <span className="text-xs text-subtle">Runomics v1.0</span>
+            <span className="text-xs text-subtle">RunOmics v1.0</span>
             <ThemeToggle />
           </div>
         </div>
