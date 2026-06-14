@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
-import type { Activity } from '@/domain/activity/types'
+import type { Activity, ActivityType } from '@/domain/activity/types'
 import { round } from '@/lib/math'
 import { t } from '@/i18n'
 
@@ -163,7 +163,7 @@ export function CalendarClient({ activities }: Props) {
         {Object.entries(ACTIVITY_TYPE_CONFIG).map(([type, cfg]) => (
           <span key={type} className="flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-sm" style={{ background: cfg.chartColor }} />
-            {cfg.label}
+            {t.activityTypes[type as ActivityType]}
           </span>
         ))}
       </div>

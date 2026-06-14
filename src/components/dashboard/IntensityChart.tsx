@@ -18,10 +18,9 @@ interface TooltipProps {
 function CustomTooltip({ active, payload }: TooltipProps) {
   if (!active || !payload?.length) return null
   const d = payload[0].payload
-  const config = ACTIVITY_TYPE_CONFIG[d.type]
   return (
     <TooltipCard>
-      <p className="text-xs font-medium text-foreground">{config.label}</p>
+      <p className="text-xs font-medium text-foreground">{t.activityTypes[d.type]}</p>
       <p className="text-xs text-muted-foreground">
         {d.distanceKm.toFixed(1)} km · {d.percent}%
       </p>
@@ -68,7 +67,7 @@ export function IntensityChart({ data }: Props) {
                     className="h-2 w-2 rounded-full"
                     style={{ backgroundColor: config.chartColor }}
                   />
-                  <span className="text-muted-foreground">{config.label}</span>
+                  <span className="text-muted-foreground">{t.activityTypes[entry.type]}</span>
                 </div>
                 <span className="font-medium text-foreground">
                   {entry.percent}%

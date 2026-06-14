@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
+import { APP_VERSION } from '@/lib/version'
 import { ThemeToggle } from './ThemeToggle'
 
 const NAV_ITEMS = [
@@ -77,7 +78,7 @@ export function Sidebar() {
         </nav>
 
         <div className="flex items-center justify-between border-t border-border px-4 py-3">
-          <span className="text-xs text-subtle">{t.brand.version}</span>
+          <span className="text-xs text-subtle">{t.brand.version(APP_VERSION)}</span>
           <ThemeToggle />
         </div>
       </aside>
@@ -148,7 +149,7 @@ export function Sidebar() {
         </nav>
 
         <div className="shrink-0 border-t border-border px-6 py-4">
-          <span className="text-sm text-subtle">{t.brand.version}</span>
+          <span className="text-sm text-subtle">{t.brand.version(APP_VERSION)}</span>
         </div>
       </div>
     </>

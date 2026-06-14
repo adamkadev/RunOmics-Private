@@ -1,6 +1,7 @@
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import type { ActivityType } from '@/domain/activity/types'
 import { cn } from '@/lib/utils'
+import { t } from '@/i18n'
 
 interface Props {
   type: ActivityType
@@ -17,7 +18,7 @@ export function ActivityTypeTag({ type, className }: Props) {
         className
       )}
     >
-      {config.label}
+      {t.activityTypes[type]}
     </span>
   )
 }

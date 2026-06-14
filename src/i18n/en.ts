@@ -7,6 +7,8 @@
 // - Pure number/date formatting stays in `@/lib/formatters`; only human-readable
 //   words and units live here.
 
+import type { ActivityType } from '@/domain/activity/types'
+
 export const en = {
   // Locale tag used by Intl-based formatters (dates, numbers).
   locale: 'en-US',
@@ -14,7 +16,9 @@ export const en = {
   brand: {
     namePrefix: 'Run',
     nameSuffix: 'Omics',
-    version: 'RunOmics v1.0',
+    // Version number is injected from package.json (see @/lib/version); only the
+    // display format lives here so it isn't duplicated across translation files.
+    version: (v: string) => `RunOmics v${v}`,
   },
 
   nav: {
@@ -370,4 +374,29 @@ export const en = {
       `${sessions} session${sessions !== 1 ? 's' : ''} · ${km} km`,
     weekdays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
   },
+
+  // Display labels for domain enums. Styling (colors, badge classes) stays in
+  // the domain config; only the human-readable text lives here.
+  activityTypes: {
+    Sprint: 'Sprint',
+    Anaerobic: 'Anaerobic',
+    VO2Max: 'VO₂ Max',
+    Threshold: 'Threshold',
+    Tempo: 'Tempo',
+    Base: 'Base',
+    Race: 'Race',
+  } as Record<ActivityType, string>,
+
+  rpeLabels: {
+    1: 'Very Light',
+    2: 'Very Easy',
+    3: 'Easy',
+    4: 'Comfortable',
+    5: 'Moderate',
+    6: 'Steady',
+    7: 'Hard',
+    8: 'Very Hard',
+    9: 'Near Maximal',
+    10: 'Maximal',
+  } as Record<number, string>,
 } as const

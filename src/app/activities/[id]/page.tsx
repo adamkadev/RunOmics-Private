@@ -9,7 +9,6 @@ import { TrainingEffect } from '@/components/activity/TrainingEffect'
 import { RunningDynamics } from '@/components/activity/RunningDynamics'
 import { ActivityDetailClient } from '@/components/activity/ActivityDetailClient'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
-import { RPE_LABELS } from '@/domain/activity/types'
 import { t } from '@/i18n'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -141,7 +140,7 @@ export default async function ActivityDetailPage({
         <StatItem
           icon={<Zap size={16} className="text-amber-500 dark:text-amber-400" />}
           label={activity.rpe !== null ? t.activity.stats.rpeValue(activity.rpe) : t.activity.stats.rpe}
-          value={activity.rpe !== null ? (RPE_LABELS[activity.rpe] ?? '-') : t.activity.stats.na}
+          value={activity.rpe !== null ? (t.rpeLabels[activity.rpe] ?? '-') : t.activity.stats.na}
         />
       </div>
 

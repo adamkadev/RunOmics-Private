@@ -2,7 +2,6 @@ import Link from 'next/link'
 import { MessageSquare } from 'lucide-react'
 import { ActivityTypeTag } from './ActivityTypeTag'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
-import { RPE_LABELS } from '@/domain/activity/types'
 import type { Activity } from '@/domain/activity/types'
 import { t } from '@/i18n'
 
@@ -65,7 +64,7 @@ export function ActivityRow({ activity: a }: Props) {
         )}
         <div className="hidden w-24 xl:block">
           <p className="truncate font-medium text-foreground/80">
-            {a.rpe !== null ? (RPE_LABELS[a.rpe] ?? '-') : t.activities.row.na}
+            {a.rpe !== null ? (t.rpeLabels[a.rpe] ?? '-') : t.activities.row.na}
           </p>
           <p className="text-xs text-subtle">
             {a.rpe !== null ? t.activities.row.rpeValue(a.rpe) : t.activities.row.rpe}

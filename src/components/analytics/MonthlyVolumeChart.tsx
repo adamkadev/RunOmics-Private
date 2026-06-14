@@ -85,7 +85,7 @@ export function MonthlyVolumeChart({ data, typesPresent }: Props) {
               className="h-2 w-2 rounded-full"
               style={{ backgroundColor: ACTIVITY_TYPE_CONFIG[type].chartColor }}
             />
-            {ACTIVITY_TYPE_CONFIG[type].label}
+            {t.activityTypes[type]}
           </span>
         ))}
       </div>

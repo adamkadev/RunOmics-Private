@@ -1,6 +1,6 @@
 {
-  "name": "run_atlas",
-  "version": "0.1.0",
+  "name": "runomics",
+  "version": "1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
