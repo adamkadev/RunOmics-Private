@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { MapPin, Maximize2, Minimize2 } from 'lucide-react'
 import type { Map as MapLibreMap, Marker } from 'maplibre-gl'
 import { cn } from '@/lib/utils'
+import { maptilerStyleUrl } from '@/lib/maptiler'
 import { t } from '@/i18n'
 
 interface Props {
@@ -12,9 +13,6 @@ interface Props {
   hoverFraction?: number | null
   className?: string
 }
-
-const MAPTILER_STYLE_LIGHT = 'streets-v2'
-const MAPTILER_STYLE_DARK  = 'backdrop-v4-dark'
 
 function buildSegmentFeatures(route: [number, number][], paceSamples: number[] | null | undefined) {
   return route.slice(0, -1).map((coord, i) => {
@@ -90,7 +88,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, classNa
       hoverMarkerRef.current = null
       mglRef.current = mgl
 
-      const styleUrl = `https://api.maptiler.com/maps/${isDark ? MAPTILER_STYLE_DARK : MAPTILER_STYLE_LIGHT}/style.json?key=${token}`
+      const styleUrl = maptilerStyleUrl(isDark, token)
       const bounds = route.reduce(
         (b, c) => b.extend(c as [number, number]),
         new mgl.LngLatBounds(route[0], route[0])

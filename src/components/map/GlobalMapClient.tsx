@@ -7,10 +7,8 @@ import type {
   AllRoutesData,
   RouteCluster,
 } from "@/application/usecases/GetAllRoutes";
+import { maptilerStyleUrl } from "@/lib/maptiler";
 import { t } from "@/i18n";
-
-const STYLE_LIGHT = "streets-v2";
-const STYLE_DARK = "backdrop-v4-dark";
 
 function coordLabel(c: RouteCluster): string {
   const lat =
@@ -126,7 +124,7 @@ export function GlobalMapClient({ data }: Props) {
       setMapReady(false);
 
       const first = clusters[data.defaultClusterIdx];
-      const styleUrl = `https://api.maptiler.com/maps/${isDark ? STYLE_DARK : STYLE_LIGHT}/style.json?key=${token}`;
+      const styleUrl = maptilerStyleUrl(isDark, token);
 
       const map = new mgl.Map({
         container: containerRef.current!,
