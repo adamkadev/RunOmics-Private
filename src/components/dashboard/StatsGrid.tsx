@@ -74,14 +74,14 @@ export function StatsGrid({ currentWeek, lastWeek, currentStreak, longestStreak,
           className="animate-fade-up rounded-xl border border-border bg-card p-4 shadow-card"
           style={{ animationDelay: `${i * 40}ms` }}
         >
-          <div className="mb-3 flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <div className="mb-3 flex min-h-8 items-start justify-between gap-2">
+            <span className="text-xs font-medium uppercase leading-tight tracking-wide text-muted-foreground">
               {label}
             </span>
-            {icon}
+            <span className="shrink-0">{icon}</span>
           </div>
           <p className="text-2xl font-bold tracking-tight text-foreground">{value}</p>
-          <div className="mt-1 flex items-center gap-1">
+          <div className="mt-1 flex min-h-4 items-center gap-1">
             {trend}
             <span className="text-xs text-subtle">{sub}</span>
           </div>
