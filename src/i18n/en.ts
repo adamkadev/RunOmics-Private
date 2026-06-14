@@ -28,7 +28,7 @@ export const en = {
       calendar: 'Calendar',
       analytics: 'Analytics',
       goals: 'Goals & PBs',
-      heatmap: 'Heatmap',
+      heatmap: 'HeatMap',
     },
     openMenu: 'Open menu',
     closeMenu: 'Close menu',
@@ -76,7 +76,7 @@ export const en = {
       subtitle: 'Monthly training overview',
     },
     map: {
-      title: 'Running Heatmap',
+      title: 'Running HeatMap',
       routes: (n: number) => `${n} routes`,
       zones: 'Zones',
     },
