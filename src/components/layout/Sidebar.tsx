@@ -92,6 +92,9 @@ export function Sidebar() {
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
         <div className="relative flex h-14 items-center justify-center border-b border-border px-4">
+          <div className="absolute left-4">
+            <ThemeToggle />
+          </div>
           <Brand />
           <button
             onClick={() => setOpen(true)}
@@ -105,62 +108,52 @@ export function Sidebar() {
 
       <div
         className={cn(
-          'fixed inset-0 z-40 lg:hidden transition-opacity duration-300',
-          open ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
+          'fixed inset-0 z-50 flex flex-col bg-card lg:hidden transition-transform duration-300',
+          open ? 'translate-x-0 pointer-events-auto' : 'translate-x-full pointer-events-none'
         )}
+        style={{
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        }}
       >
-        <div
-          className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
-          onClick={() => setOpen(false)}
-        />
+        <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-5">
+          <Brand />
+          <button
+            onClick={() => setOpen(false)}
+            className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+            aria-label="Close menu"
+          >
+            <X size={22} />
+          </button>
+        </div>
 
-        <div
-          className={cn(
-            'absolute right-0 top-0 bottom-0 flex w-72 flex-col bg-card shadow-xl transition-transform duration-300',
-            open ? 'translate-x-0' : 'translate-x-full'
-          )}
-          style={{
-            paddingTop: 'env(safe-area-inset-top, 0px)',
-            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-          }}
-        >
-          <div className="flex h-14 items-center justify-between border-b border-border px-5">
-            <Brand />
-            <button
-              onClick={() => setOpen(false)}
-              className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-              aria-label="Close menu"
-            >
-              <X size={18} />
-            </button>
-          </div>
+        <nav className="flex flex-1 flex-col gap-1 px-6 pt-4">
+          {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+            const active = pathname === href
+            return (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setOpen(false)}
+                className={cn(
+                  'flex items-center gap-5 rounded-2xl px-4 py-4 transition-colors',
+                  active
+                    ? 'text-emerald-600 dark:text-emerald-400'
+                    : 'text-foreground/70 hover:text-foreground'
+                )}
+              >
+                <Icon
+                  size={26}
+                  className={active ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}
+                />
+                <span className="text-3xl font-bold tracking-tight">{label}</span>
+              </Link>
+            )
+          })}
+        </nav>
 
-          <nav className="flex-1 space-y-0.5 overflow-y-auto p-3">
-            {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-              const active = pathname === href
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  onClick={() => setOpen(false)}
-                  className={cn(
-                    'flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors',
-                    active
-                      ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                  )}
-                >
-                  <Icon size={16} />
-                  {label}
-                </Link>
-              )
-            })}
-          </nav>
-
-          <div className="flex items-center justify-between border-t border-border px-4 py-3">
-            <span className="text-xs text-subtle">RunOmics v1.0</span>
-            <ThemeToggle />
-          </div>
+        <div className="shrink-0 border-t border-border px-6 py-4">
+          <span className="text-sm text-subtle">RunOmics v1.0</span>
         </div>
       </div>
     </>
