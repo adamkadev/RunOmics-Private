@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { ChevronDown, X } from "lucide-react";
 import type { Map as MapLibreMap, StyleSpecification } from "maplibre-gl";
 import type {
   AllRoutesData,
@@ -82,6 +83,7 @@ export function GlobalMapClient({ data }: Props) {
   const [names, setNames] = useState<string[]>(() =>
     data.clusters.map(coordLabel),
   );
+  const [panelOpen, setPanelOpen] = useState(false);
 
   const { routes, clusters } = data;
   const selected = clusters[selectedIdx];
@@ -225,40 +227,64 @@ export function GlobalMapClient({ data }: Props) {
     <div className="relative h-full w-full">
       <div ref={containerRef} className="h-full w-full" />
 
-      {/* Zone panel */}
-      <div className="absolute left-3 top-3 z-10 w-52 overflow-hidden rounded-xl border border-border bg-card/90 shadow-card backdrop-blur-sm">
-        <div className="border-b border-border px-3 py-2">
-          <p className="text-xs font-semibold text-foreground/80">Zones</p>
-        </div>
-        <ul className="max-h-64 overflow-y-auto py-1">
-          {clusters.map((c, i) => (
-            <li key={c.id}>
-              <button
-                onClick={() => setSelectedIdx(i)}
-                className={[
-                  "flex w-full flex-col gap-0.5 px-3 py-2 text-left transition-colors hover:bg-muted",
-                  i === selectedIdx ? "bg-emerald-500/10" : "",
-                ].join(" ")}
-              >
-                <span
+      {/* Badge — always visible */}
+      <button
+        onClick={() => setPanelOpen((o) => !o)}
+        className="absolute left-3 top-3 z-10 flex items-center gap-2 rounded-xl border border-border bg-card/90 px-3 py-2 shadow-card backdrop-blur-sm transition-colors hover:bg-muted"
+      >
+        <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+          {names[selectedIdx]}
+        </span>
+        <span className="text-[11px] text-subtle">
+          {selected?.routeCount} run{selected?.routeCount !== 1 ? "s" : ""}
+        </span>
+        <ChevronDown
+          size={12}
+          className={[
+            "text-muted-foreground transition-transform",
+            panelOpen ? "rotate-180" : "",
+          ].join(" ")}
+        />
+      </button>
+
+      {/* Full panel */}
+      {panelOpen && (
+        <div className="absolute left-3 top-12 z-10 w-52 overflow-hidden rounded-xl border border-border bg-card/90 shadow-card backdrop-blur-sm">
+          <div className="flex items-center justify-between border-b border-border px-3 py-2">
+            <p className="text-xs font-semibold text-foreground/80">Zones</p>
+            <button onClick={() => setPanelOpen(false)} className="text-muted-foreground hover:text-foreground">
+              <X size={12} />
+            </button>
+          </div>
+          <ul className="max-h-64 overflow-y-auto py-1">
+            {clusters.map((c, i) => (
+              <li key={c.id}>
+                <button
+                  onClick={() => { setSelectedIdx(i); setPanelOpen(false); }}
                   className={[
-                    "text-xs font-medium",
-                    i === selectedIdx
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : "text-foreground",
+                    "flex w-full flex-col gap-0.5 px-3 py-2 text-left transition-colors hover:bg-muted",
+                    i === selectedIdx ? "bg-emerald-500/10" : "",
                   ].join(" ")}
                 >
-                  {names[i]}
-                </span>
-                <span className="text-[11px] text-subtle">
-                  {c.routeCount} run{c.routeCount !== 1 ? "s" : ""} ·{" "}
-                  {c.totalKm} km
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
+                  <span
+                    className={[
+                      "text-xs font-medium",
+                      i === selectedIdx
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : "text-foreground",
+                    ].join(" ")}
+                  >
+                    {names[i]}
+                  </span>
+                  <span className="text-[11px] text-subtle">
+                    {c.routeCount} run{c.routeCount !== 1 ? "s" : ""} · {c.totalKm} km
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
