@@ -28,9 +28,9 @@ const NAV_ITEMS = [
 
 function Brand() {
   return (
-    <div className="flex items-center gap-2">
-      <HeartPulse size={18} className="text-emerald-600 dark:text-emerald-400" />
-      <span className="text-base font-bold tracking-tight text-foreground">Runomics</span>
+    <div className="flex items-center gap-2.5">
+      <HeartPulse size={24} className="text-emerald-600 dark:text-emerald-400" />
+      <span className="text-2xl font-bold tracking-tight text-foreground">Runomics</span>
     </div>
   )
 }
@@ -82,7 +82,7 @@ export function Sidebar() {
       </aside>
 
       <header
-        className="fixed inset-x-0 top-0 z-30 bg-card/95 backdrop-blur-sm lg:hidden"
+        className="fixed inset-x-0 top-0 z-30 bg-card lg:hidden"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
         <div className="relative flex h-14 items-center justify-center border-b border-border px-4">
