@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useTheme } from 'next-themes'
 import { Sun, Moon } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { t } from '@/i18n'
 
 export function ThemeToggle({ className }: { className?: string }) {
   const { theme, setTheme } = useTheme()
@@ -26,7 +27,7 @@ export function ThemeToggle({ className }: { className?: string }) {
         'text-muted-foreground hover:bg-muted hover:text-foreground active:scale-90',
         className
       )}
-      aria-label="Toggle theme"
+      aria-label={t.theme.toggle}
     >
       {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
     </button>

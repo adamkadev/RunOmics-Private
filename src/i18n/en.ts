@@ -30,6 +30,14 @@ export const en = {
     closeMenu: 'Close menu',
   },
 
+  meta: {
+    description: 'Your personal running training dashboard - stats, maps, trends.',
+  },
+
+  theme: {
+    toggle: 'Toggle theme',
+  },
+
   units: {
     km: 'km',
     bpm: 'bpm',

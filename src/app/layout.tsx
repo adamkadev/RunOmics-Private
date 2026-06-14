@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import { Providers } from './providers'
 import { AppShell } from '@/components/layout/AppShell'
+import { t } from '@/i18n'
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] })
@@ -12,17 +13,17 @@ export const metadata: Metadata = {
     default: 'RunOmics',
     template: '%s - RunOmics',
   },
-  description: 'Your personal running training dashboard - stats, maps, trends.',
+  description: t.meta.description,
   openGraph: {
     type: 'website',
     siteName: 'RunOmics',
     title: 'RunOmics',
-    description: 'Your personal running training dashboard - stats, maps, trends.',
+    description: t.meta.description,
   },
   twitter: {
     card: 'summary',
     title: 'RunOmics',
-    description: 'Your personal running training dashboard - stats, maps, trends.',
+    description: t.meta.description,
   },
 }
 
