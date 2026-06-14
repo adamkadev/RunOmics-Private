@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -43,6 +43,42 @@ function Brand({ onClick }: { onClick?: () => void }) {
 export function Sidebar() {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
+  const headerRef = useRef<HTMLElement>(null)
+  const [headerOffset, setHeaderOffset] = useState(0)
+
+  // Slide the mobile top bar up gradually as the page scrolls down. Reveal it
+  // again only on a deliberate upward scroll (a small threshold ignores the
+  // bounce/toolbar shift that fires when scrolling stops), never on stop alone.
+  useEffect(() => {
+    const REVEAL_THRESHOLD = 8
+    let lastY = window.scrollY
+    let upAccum = 0
+    function onScroll() {
+      const y = window.scrollY
+      const h = headerRef.current?.offsetHeight ?? 56
+      const delta = y - lastY
+      lastY = y
+
+      if (y <= 0) {
+        upAccum = 0
+        setHeaderOffset(0)
+        return
+      }
+      if (delta > 0) {
+        // Scrolling down → hide progressively.
+        upAccum = 0
+        setHeaderOffset((prev) => Math.min(h, prev + delta))
+      } else if (delta < 0) {
+        // Scrolling up → only reveal past the threshold of real upward intent.
+        upAccum -= delta
+        if (upAccum > REVEAL_THRESHOLD) {
+          setHeaderOffset((prev) => Math.max(0, prev + delta))
+        }
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   // Lock background scroll while the mobile menu is open.
   useEffect(() => {
@@ -98,8 +134,12 @@ export function Sidebar() {
       </aside>
 
       <header
+        ref={headerRef}
         className="fixed inset-x-0 top-0 z-30 bg-card lg:hidden"
-        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+        style={{
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+          transform: `translateY(-${headerOffset}px)`,
+        }}
       >
         <div className="relative flex h-14 items-center justify-center border-b border-border px-4">
           <div className="absolute left-4">
