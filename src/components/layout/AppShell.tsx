@@ -1,9 +1,11 @@
 import { Sidebar } from './Sidebar'
 import { PageTransition } from './PageTransition'
+import { ThemeSync } from './ThemeSync'
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background">
+      <ThemeSync />
       <Sidebar />
       <main className="min-h-screen bg-background lg:ml-60">
         {/* Mobile spacer: top bar height + notch safe area */}
