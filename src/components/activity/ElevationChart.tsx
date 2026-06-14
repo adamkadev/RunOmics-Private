@@ -10,6 +10,7 @@ import {
 } from 'recharts'
 import { CHART_COLORS } from '@/lib/colors'
 import { formatElapsed } from '@/lib/formatters'
+import { t } from '@/i18n'
 
 interface Props {
   samples: number[]
@@ -44,10 +45,10 @@ export function ElevationChart({ samples, durationSeconds, elevationGain, onHove
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground/80">Elevation</h3>
+        <h3 className="text-sm font-semibold text-foreground/80">{t.activity.charts.elevation}</h3>
         {elevationGain != null && (
           <span className="text-xs text-subtle">
-            +<span className="font-semibold text-stone-500 dark:text-stone-400">{elevationGain}</span> m gain
+            +<span className="font-semibold text-stone-500 dark:text-stone-400">{elevationGain}</span> {t.units.m} gain
           </span>
         )}
       </div>
@@ -80,7 +81,7 @@ export function ElevationChart({ samples, durationSeconds, elevationGain, onHove
             axisLine={false}
             tickLine={false}
             width={36}
-            tickFormatter={(v: number) => `${v}m`}
+            tickFormatter={(v: number) => `${v}${t.units.m}`}
           />
           <Tooltip
             contentStyle={{
@@ -89,7 +90,7 @@ export function ElevationChart({ samples, durationSeconds, elevationGain, onHove
               borderRadius: 8,
               fontSize: 12,
             }}
-            formatter={(v) => [`${v} m`, 'Altitude']}
+            formatter={(v) => [`${v} ${t.units.m}`, t.activity.charts.altitude]}
             labelFormatter={(v) => formatX(Number(v))}
           />
           <Area

@@ -7,6 +7,7 @@ import type {
   AllRoutesData,
   RouteCluster,
 } from "@/application/usecases/GetAllRoutes";
+import { t } from "@/i18n";
 
 const STYLE_LIGHT = "streets-v2";
 const STYLE_DARK = "backdrop-v4-dark";
@@ -236,7 +237,7 @@ export function GlobalMapClient({ data }: Props) {
           {names[selectedIdx]}
         </span>
         <span className="text-[11px] text-subtle">
-          {selected?.routeCount} run{selected?.routeCount !== 1 ? "s" : ""}
+          {t.common.runs(selected?.routeCount ?? 0)}
         </span>
         <ChevronDown
           size={12}
@@ -251,7 +252,7 @@ export function GlobalMapClient({ data }: Props) {
       {panelOpen && (
         <div className="absolute left-3 top-12 z-10 w-52 overflow-hidden rounded-xl border border-border bg-card/90 shadow-card backdrop-blur-sm">
           <div className="flex items-center justify-between border-b border-border px-3 py-2">
-            <p className="text-xs font-semibold text-foreground/80">Zones</p>
+            <p className="text-xs font-semibold text-foreground/80">{t.pages.map.zones}</p>
             <button onClick={() => setPanelOpen(false)} className="text-muted-foreground hover:text-foreground">
               <X size={12} />
             </button>
@@ -277,7 +278,7 @@ export function GlobalMapClient({ data }: Props) {
                     {names[i]}
                   </span>
                   <span className="text-[11px] text-subtle">
-                    {c.routeCount} run{c.routeCount !== 1 ? "s" : ""} · {c.totalKm} km
+                    {t.common.runs(c.routeCount)} · {c.totalKm} {t.units.km}
                   </span>
                 </button>
               </li>

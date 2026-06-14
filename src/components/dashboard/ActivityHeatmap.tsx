@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import type { HeatmapDay } from '@/application/usecases/GetHeatmapData'
+import { t } from '@/i18n'
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+const MONTHS = t.dashboard.heatmap.months
 
 // Must be statically present for Tailwind to include these classes
 const LEVEL_CLASSES = [
@@ -25,7 +26,7 @@ function getLevel(km: number): number {
 }
 
 function formatTooltipDate(dateStr: string) {
-  return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', {
+  return new Date(dateStr + 'T12:00:00').toLocaleDateString(t.locale, {
     weekday: 'short', month: 'short', day: 'numeric',
   })
 }
@@ -69,11 +70,11 @@ export function ActivityHeatmap({ days }: Props) {
     <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">
-          Activity <span className="font-normal text-subtle">· 12 months</span>
+          {t.dashboard.heatmap.title} <span className="font-normal text-subtle">{t.dashboard.heatmap.window}</span>
         </h3>
         <span className="text-xs text-subtle">
-          <span className="font-semibold text-foreground">{activeDays}</span> days ·{' '}
-          <span className="font-semibold text-foreground">{Math.round(totalKm)}</span> km
+          <span className="font-semibold text-foreground">{activeDays}</span> {t.dashboard.heatmap.days} ·{' '}
+          <span className="font-semibold text-foreground">{Math.round(totalKm)}</span> {t.units.km}
         </span>
       </div>
 
@@ -96,7 +97,7 @@ export function ActivityHeatmap({ days }: Props) {
           <div className="flex" style={{ gap: GAP }}>
             {/* Mon / Wed / Fri labels */}
             <div className="flex flex-col" style={{ gap: GAP, marginRight: 2 }}>
-              {['Mon', '', 'Wed', '', 'Fri', '', ''].map((label, i) => (
+              {t.dashboard.heatmap.weekdays.map((label, i) => (
                 <div
                   key={i}
                   className="text-right text-[9px] leading-none text-subtle"
@@ -134,11 +135,11 @@ export function ActivityHeatmap({ days }: Props) {
 
       {/* Legend */}
       <div className="mt-3 flex items-center justify-end gap-1.5">
-        <span className="text-[10px] text-subtle">Less</span>
+        <span className="text-[10px] text-subtle">{t.dashboard.heatmap.less}</span>
         {LEVEL_CLASSES.map((cls, i) => (
           <div key={i} className={`rounded-[2px] ${cls}`} style={{ width: 10, height: 10 }} />
         ))}
-        <span className="text-[10px] text-subtle">More</span>
+        <span className="text-[10px] text-subtle">{t.dashboard.heatmap.more}</span>
       </div>
 
       {/* Floating tooltip */}
@@ -150,8 +151,8 @@ export function ActivityHeatmap({ days }: Props) {
           <p className="text-xs font-medium text-foreground">{formatTooltipDate(tooltip.day.date)}</p>
           <p className="text-[11px] text-subtle">
             {tooltip.day.distanceKm > 0
-              ? `${tooltip.day.distanceKm} km · ${tooltip.day.sessionCount} run${tooltip.day.sessionCount > 1 ? 's' : ''}`
-              : 'Rest day'}
+              ? t.dashboard.heatmap.day(tooltip.day.distanceKm, tooltip.day.sessionCount)
+              : t.dashboard.heatmap.restDay}
           </p>
         </div>
       )}

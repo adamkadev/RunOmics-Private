@@ -6,6 +6,7 @@ import type { ActivityType } from '@/domain/activity/types'
 import type { MonthlyVolume } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
+import { t } from '@/i18n'
 
 interface Props {
   data: MonthlyVolume[]
@@ -24,12 +25,12 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
   return (
     <TooltipCard label={label}>
       <p className="mb-1 text-sm font-semibold text-foreground">
-        {total.toFixed(1)} km
+        {total.toFixed(1)} {t.units.km}
       </p>
       {[...payload].reverse().map((p) => (
         <p key={p.dataKey} className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <span className="h-2 w-2 rounded-full" style={{ backgroundColor: p.fill }} />
-          {p.dataKey}: {p.value.toFixed(1)} km
+          {p.dataKey}: {p.value.toFixed(1)} {t.units.km}
         </p>
       ))}
     </TooltipCard>
@@ -37,8 +38,8 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
 }
 
 export function MonthlyVolumeChart({ data, typesPresent }: Props) {
-  const orderedTypes = (Object.keys(ACTIVITY_TYPE_CONFIG) as ActivityType[]).filter((t) =>
-    typesPresent.includes(t)
+  const orderedTypes = (Object.keys(ACTIVITY_TYPE_CONFIG) as ActivityType[]).filter((type) =>
+    typesPresent.includes(type)
   )
 
   const chartData = data.map((m) => ({
@@ -49,7 +50,7 @@ export function MonthlyVolumeChart({ data, typesPresent }: Props) {
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
-        Monthly Volume
+        {t.analytics.charts.monthlyVolume.title}
       </h3>
       <ResponsiveContainer width="100%" height={220}>
         <BarChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>

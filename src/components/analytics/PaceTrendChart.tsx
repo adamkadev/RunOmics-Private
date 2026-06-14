@@ -5,6 +5,7 @@ import type { MonthlyPace } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { formatClock } from '@/lib/formatters'
+import { t } from '@/i18n'
 
 interface Props {
   data: MonthlyPace[]
@@ -24,8 +25,8 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
         <TooltipRow
           key={p.dataKey}
           color={p.stroke}
-          name={p.dataKey === 'easyPace' ? 'Easy' : 'Workout'}
-          value={`${formatClock(p.value)} /km`}
+          name={p.dataKey === 'easyPace' ? t.analytics.charts.paceTrend.easy : t.analytics.charts.paceTrend.workout}
+          value={`${formatClock(p.value)} /${t.units.km}`}
         />
       ))}
     </TooltipCard>
@@ -40,13 +41,13 @@ export function PaceTrendChart({ data }: Props) {
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground/80">Pace Trend</h3>
+        <h3 className="text-sm font-semibold text-foreground/80">{t.analytics.charts.paceTrend.title}</h3>
         <div className="flex gap-3">
           <span className="flex items-center gap-1 text-xs text-subtle">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" /> Easy
+            <span className="h-2 w-2 rounded-full bg-emerald-500" /> {t.analytics.charts.paceTrend.easy}
           </span>
           <span className="flex items-center gap-1 text-xs text-subtle">
-            <span className="h-2 w-2 rounded-full bg-orange-500" /> Workout
+            <span className="h-2 w-2 rounded-full bg-orange-500" /> {t.analytics.charts.paceTrend.workout}
           </span>
         </div>
       </div>
@@ -89,7 +90,7 @@ export function PaceTrendChart({ data }: Props) {
         </LineChart>
       </ResponsiveContainer>
       <p className="mt-2 text-xs text-subtle">
-        Distance-weighted average pace per month. Lower is faster.
+        {t.analytics.charts.paceTrend.footnote}
       </p>
     </div>
   )

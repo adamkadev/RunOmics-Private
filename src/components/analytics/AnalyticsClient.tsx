@@ -19,12 +19,13 @@ import { RpeTrendChart } from './RpeTrendChart'
 import { TrainingEffectChart } from './TrainingEffectChart'
 import { YearSelector } from '@/components/ui/YearSelector'
 import { formatDuration } from '@/lib/formatters'
+import { t } from '@/i18n'
 
 const TABS = [
-  { id: 'volume',      label: 'Volume'      },
-  { id: 'performance', label: 'Performance' },
-  { id: 'physiology',  label: 'Physiology'  },
-  { id: 'seasons',     label: 'Seasons'     },
+  { id: 'volume',      label: t.analytics.tabs.volume      },
+  { id: 'performance', label: t.analytics.tabs.performance },
+  { id: 'physiology',  label: t.analytics.tabs.physiology  },
+  { id: 'seasons',     label: t.analytics.tabs.seasons     },
 ] as const
 
 type TabId = (typeof TABS)[number]['id']
@@ -52,7 +53,7 @@ export function AnalyticsClient({ data, comparison }: { data: AnalyticsPageData;
   const [showScrollTop, setShowScrollTop] = useState(false)
 
   const yearData = byYear[selectedYear]
-  const t = yearData.totals
+  const totals = yearData.totals
 
   useEffect(() => {
     function onScroll() {
@@ -69,8 +70,8 @@ export function AnalyticsClient({ data, comparison }: { data: AnalyticsPageData;
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Analytics</h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">{selectedYear} season</p>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.analytics.title}</h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">{t.analytics.season(selectedYear)}</p>
         </div>
         <YearSelector years={years} selected={selectedYear} onSelect={setSelectedYear} />
       </div>
@@ -79,40 +80,40 @@ export function AnalyticsClient({ data, comparison }: { data: AnalyticsPageData;
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-7">
         <StatCard
           icon={<Footprints size={16} className="text-emerald-500 dark:text-emerald-400" />}
-          label="Distance"
-          value={`${t.distanceKm.toFixed(0)} km`}
+          label={t.analytics.stats.distance}
+          value={`${totals.distanceKm.toFixed(0)} ${t.units.km}`}
         />
         <StatCard
           icon={<Timer size={16} className="text-blue-500 dark:text-blue-400" />}
-          label="Time"
-          value={formatDuration(t.durationSeconds)}
+          label={t.analytics.stats.time}
+          value={formatDuration(totals.durationSeconds)}
         />
         <StatCard
           icon={<Hash size={16} className="text-violet-500 dark:text-violet-400" />}
-          label="Sessions"
-          value={String(t.sessionCount)}
+          label={t.analytics.stats.sessions}
+          value={String(totals.sessionCount)}
         />
         <StatCard
           icon={<Mountain size={16} className="text-stone-500 dark:text-stone-400" />}
-          label="Elevation"
-          value={`+${t.elevationM} m`}
+          label={t.analytics.stats.elevation}
+          value={t.analytics.stats.elevationValue(totals.elevationM)}
         />
         <StatCard
           icon={<Gauge size={16} className="text-amber-500 dark:text-amber-400" />}
-          label="Avg / week"
-          value={`${t.avgKmPerWeek} km`}
+          label={t.analytics.stats.avgPerWeek}
+          value={`${totals.avgKmPerWeek} ${t.units.km}`}
         />
-        {t.calories > 0 && (
+        {totals.calories > 0 && (
           <>
             <StatCard
               icon={<Flame size={16} className="text-orange-500 dark:text-orange-400" />}
-              label="Calories"
-              value={`${(t.calories / 1000).toFixed(1)}k kcal`}
+              label={t.analytics.stats.calories}
+              value={t.analytics.stats.caloriesValue(Number((totals.calories / 1000).toFixed(1)))}
             />
             <StatCard
               icon={<Flame size={16} className="text-red-500 dark:text-red-400" />}
-              label="Kcal / week"
-              value={String(t.caloriesPerWeek)}
+              label={t.analytics.stats.kcalPerWeek}
+              value={String(totals.caloriesPerWeek)}
             />
           </>
         )}
@@ -120,18 +121,18 @@ export function AnalyticsClient({ data, comparison }: { data: AnalyticsPageData;
 
       {/* Tabs */}
       <div className="flex gap-1 rounded-xl border border-border bg-muted/40 p-1">
-        {TABS.map((t) => (
+        {TABS.map((item) => (
           <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
+            key={item.id}
+            onClick={() => setTab(item.id)}
             className={[
               'flex-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
-              tab === t.id
+              tab === item.id
                 ? 'bg-card text-foreground shadow-sm'
                 : 'text-muted-foreground hover:text-foreground',
             ].join(' ')}
           >
-            {t.label}
+            {item.label}
           </button>
         ))}
       </div>
@@ -187,7 +188,7 @@ export function AnalyticsClient({ data, comparison }: { data: AnalyticsPageData;
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           className="fixed bottom-6 right-6 z-50 flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card shadow-lg transition-all hover:bg-muted active:scale-95"
-          aria-label="Scroll to top"
+          aria-label={t.analytics.scrollTop}
         >
           <ChevronUp size={18} className="text-foreground" />
         </button>

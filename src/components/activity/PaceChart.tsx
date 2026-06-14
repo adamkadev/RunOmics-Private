@@ -10,6 +10,7 @@ import {
 } from 'recharts'
 import { CHART_COLORS } from '@/lib/colors'
 import { formatClock, formatElapsed } from '@/lib/formatters'
+import { t } from '@/i18n'
 
 interface Props {
   samples: number[]
@@ -44,10 +45,10 @@ export function PaceChart({ samples, avgPaceSecPerKm, durationSeconds, onHoverFr
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground/80">Pace</h3>
+        <h3 className="text-sm font-semibold text-foreground/80">{t.activity.charts.pace}</h3>
         <span className="text-xs text-subtle">
           {avgPace && <span className="font-semibold text-foreground">{formatClock(avgPace)} </span>}
-          min/km
+          {t.units.minPerKm}
         </span>
       </div>
       <ResponsiveContainer width="100%" height={120}>
@@ -89,7 +90,7 @@ export function PaceChart({ samples, avgPaceSecPerKm, durationSeconds, onHoverFr
               borderRadius: 8,
               fontSize: 12,
             }}
-            formatter={(v) => [`${formatClock(Number(v))}/km`, 'Pace']}
+            formatter={(v) => [`${formatClock(Number(v))}/${t.units.km}`, t.activity.charts.pace]}
             labelFormatter={(v) => formatX(Number(v))}
           />
           <Area

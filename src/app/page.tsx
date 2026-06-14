@@ -6,6 +6,7 @@ import { StatsGrid } from '@/components/dashboard/StatsGrid'
 import { DashboardCharts } from '@/components/dashboard/DashboardCharts'
 import { RecentActivities } from '@/components/dashboard/RecentActivities'
 import { ActivityHeatmap } from '@/components/dashboard/ActivityHeatmap'
+import { t } from '@/i18n'
 
 export default function DashboardPage() {
   const data = getDashboardData()
@@ -16,9 +17,9 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Dashboard</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.pages.dashboard.title}</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          Week {data.currentWeek.weekNumber % 100} · {data.currentWeek.sessionCount} sessions
+          {t.pages.dashboard.subtitle(data.currentWeek.weekNumber % 100, data.currentWeek.sessionCount)}
         </p>
       </div>
 

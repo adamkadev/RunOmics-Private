@@ -5,6 +5,7 @@ import type { YearData } from '@/application/usecases/GetGoalsData'
 import { formatDuration, formatDate, formatPace } from '@/lib/formatters'
 import { round } from '@/lib/math'
 import { ActivityTypeTag } from '@/components/activities/ActivityTypeTag'
+import { t } from '@/i18n'
 
 export function YearView({ yearData }: { yearData: YearData }) {
   const { goals, pbs, totalDistanceKm } = yearData
@@ -35,7 +36,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
         <section className="space-y-3">
           <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             <Target size={14} className="text-emerald-500 dark:text-emerald-400" />
-            Annual Goal
+            {t.goals.annualGoal}
           </h2>
           <div className="rounded-xl border border-border bg-card p-5 shadow-card">
             <div className="mb-3 flex items-end justify-between">
@@ -43,7 +44,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
                 <span className="text-3xl font-bold tracking-tight text-foreground">
                   {totalDistanceKm.toFixed(0)}
                 </span>
-                <span className="ml-1 text-sm text-subtle">/ {goals.annualDistanceKm} km</span>
+                <span className="ml-1 text-sm text-subtle">/ {goals.annualDistanceKm} {t.units.km}</span>
               </div>
               <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                 {annualProgress.toFixed(0)}%
@@ -57,9 +58,9 @@ export function YearView({ yearData }: { yearData: YearData }) {
             </div>
             <div className="mt-2 flex items-center justify-between text-xs">
               {remaining > 0 ? (
-                <span className="text-subtle">{remaining.toFixed(0)} km remaining</span>
+                <span className="text-subtle">{t.goals.kmRemaining(Number(remaining.toFixed(0)))}</span>
               ) : (
-                <span className="font-medium text-emerald-600 dark:text-emerald-400">Goal reached!</span>
+                <span className="font-medium text-emerald-600 dark:text-emerald-400">{t.goals.goalReached}</span>
               )}
               {paceInfo && (
                 <span className={paceInfo.ahead
@@ -67,8 +68,8 @@ export function YearView({ yearData }: { yearData: YearData }) {
                   : 'font-medium text-orange-500 dark:text-orange-400'
                 }>
                   {paceInfo.ahead
-                    ? `+${paceInfo.deltaKm} km ahead · on track for ${paceInfo.projected} km`
-                    : `-${paceInfo.deltaKm} km behind pace`}
+                    ? t.goals.ahead(paceInfo.deltaKm, paceInfo.projected)
+                    : t.goals.behind(paceInfo.deltaKm)}
                 </span>
               )}
             </div>
@@ -80,32 +81,32 @@ export function YearView({ yearData }: { yearData: YearData }) {
         <section className="space-y-3">
           <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             <TrendingUp size={14} className="text-orange-500 dark:text-orange-400" />
-            Race Targets
+            {t.goals.raceTargets}
           </h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {goals.targets.map((t) => {
-              const pb = pbs.find((p) => p.entry.distance === t.distance)
+            {goals.targets.map((target) => {
+              const pb = pbs.find((p) => p.entry.distance === target.distance)
               const pbSeconds = pb?.entry.seconds ?? null
-              const delta = pbSeconds !== null && t.targetSeconds ? pbSeconds - t.targetSeconds : null
+              const delta = pbSeconds !== null && target.targetSeconds ? pbSeconds - target.targetSeconds : null
               const achieved = delta !== null && delta <= 0
               return (
                 <div
-                  key={t.distance}
+                  key={target.distance}
                   className="rounded-xl border border-border bg-card p-4 shadow-card"
                 >
-                  <p className="text-xs font-semibold text-subtle">{t.distance}</p>
+                  <p className="text-xs font-semibold text-subtle">{target.distance}</p>
                   <p className="mt-1 text-lg font-bold text-foreground">
-                    {t.targetSeconds === null ? (
-                      <span className="text-sm font-normal text-subtle">No target</span>
+                    {target.targetSeconds === null ? (
+                      <span className="text-sm font-normal text-subtle">{t.goals.noTarget}</span>
                     ) : (
-                      formatDuration(t.targetSeconds)
+                      formatDuration(target.targetSeconds)
                     )}
                   </p>
                   {pbSeconds !== null && delta !== null && (
                     <p className={`mt-0.5 text-xs font-medium ${achieved ? 'text-emerald-600 dark:text-emerald-400' : 'text-orange-500 dark:text-orange-400'}`}>
                       {achieved
-                        ? `✓ Done (${formatDuration(Math.abs(delta))} ahead)`
-                        : `${formatDuration(delta)} to go`}
+                        ? t.goals.targetDone(formatDuration(Math.abs(delta)))
+                        : t.goals.targetToGo(formatDuration(delta))}
                     </p>
                   )}
                 </div>
@@ -119,7 +120,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
         <section className="space-y-3">
           <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             <Trophy size={14} className="text-amber-500 dark:text-amber-400" />
-            Personal Bests
+            {t.goals.personalBests}
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {pbs.map(({ entry, activity, photoPath }) => (
@@ -132,7 +133,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
                   <div className="relative h-40 w-full overflow-hidden bg-muted">
                     <Image
                       src={photoPath}
-                      alt={`${entry.distance} race`}
+                      alt={t.goals.raceAlt(entry.distance)}
                       fill
                       loading="eager"
                       className="object-cover transition-transform duration-300 group-hover:scale-105"
@@ -184,7 +185,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
         <div className="rounded-xl border border-dashed border-border p-10 text-center">
           <Trophy size={32} className="mx-auto mb-3 text-subtle" />
           <p className="text-sm text-subtle">
-            Add PBs for {yearData.year} to{' '}
+            {t.goals.emptyPbsPrefix(yearData.year)}{' '}
             <code className="rounded bg-muted px-1 py-0.5 text-xs">
               public/pbs.json
             </code>

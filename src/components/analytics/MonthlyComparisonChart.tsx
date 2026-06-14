@@ -7,8 +7,9 @@ import {
 import type { MonthlyVolume } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
+import { t } from '@/i18n'
 
-const MONTH_LABELS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
+const MONTH_LABELS = t.dashboard.heatmap.months.map((m) => m.toUpperCase())
 
 interface Props {
   currentYear: number
@@ -32,7 +33,7 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
           key={`${p.name}-${i}`}
           color={p.stroke}
           name={p.name}
-          value={`${p.value.toFixed(1)} km`}
+          value={`${p.value.toFixed(1)} ${t.units.km}`}
         />
       ))}
     </TooltipCard>
@@ -55,7 +56,7 @@ export function MonthlyComparisonChart({ currentYear, currentData, prevYear, pre
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground/80">Month by Month</h3>
+        <h3 className="text-sm font-semibold text-foreground/80">{t.analytics.charts.monthlyComparison.title}</h3>
         <div className="flex items-center gap-4 text-xs text-subtle">
           <span className="flex items-center gap-1">
             <span className="inline-block h-2 w-3 rounded-sm" style={{ background: CHART_COLORS.brand }} />

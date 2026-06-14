@@ -4,6 +4,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 import type { MonthlyCadence } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
+import { t } from '@/i18n'
 
 interface Props {
   data: MonthlyCadence[]
@@ -19,7 +20,7 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
   if (!active || !payload?.length) return null
   return (
     <TooltipCard label={label}>
-      <p className="text-sm font-semibold text-foreground">{payload[0].value} spm</p>
+      <p className="text-sm font-semibold text-foreground">{payload[0].value} {t.analytics.charts.cadence.unit}</p>
     </TooltipCard>
   )
 }
@@ -32,7 +33,7 @@ export function CadenceTrendChart({ data }: Props) {
 
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-card">
-      <h3 className="mb-4 text-sm font-semibold text-foreground/80">Cadence</h3>
+      <h3 className="mb-4 text-sm font-semibold text-foreground/80">{t.analytics.charts.cadence.title}</h3>
       <ResponsiveContainer width="100%" height={200}>
         <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -10 }}>
           <XAxis
@@ -61,7 +62,7 @@ export function CadenceTrendChart({ data }: Props) {
         </LineChart>
       </ResponsiveContainer>
       <p className="mt-2 text-xs text-subtle">
-        Duration-weighted average cadence per month (steps/min).
+        {t.analytics.charts.cadence.footnote}
       </p>
     </div>
   )

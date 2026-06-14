@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { MapPin, Maximize2, Minimize2 } from 'lucide-react'
 import type { Map as MapLibreMap, Marker } from 'maplibre-gl'
 import { cn } from '@/lib/utils'
+import { t } from '@/i18n'
 
 interface Props {
   route: [number, number][]
@@ -226,14 +227,14 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, classNa
       <button
         onClick={toggleFullscreen}
         className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-lg bg-card/90 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-card"
-        aria-label={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+        aria-label={isFullscreen ? t.activity.map.exitFullscreen : t.activity.map.fullscreen}
       >
         {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
       </button>
 
       {isFullscreen && (
         <p className="pointer-events-none absolute bottom-8 left-3 z-10 text-[11px] text-white/60">
-          Esc to exit
+          {t.activity.map.escToExit}
         </p>
       )}
     </div>
@@ -249,8 +250,8 @@ export function NoRouteMap({ className }: { className?: string }) {
       )}
     >
       <MapPin size={24} className="text-subtle" />
-      <p className="text-sm text-subtle">GPS trace unavailable</p>
-      <p className="text-xs text-subtle">Available after Garmin sync</p>
+      <p className="text-sm text-subtle">{t.activity.map.noTrace}</p>
+      <p className="text-xs text-subtle">{t.activity.map.noTraceHint}</p>
     </div>
   )
 }

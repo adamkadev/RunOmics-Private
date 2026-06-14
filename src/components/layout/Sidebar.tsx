@@ -15,15 +15,16 @@ import {
   X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { t } from '@/i18n'
 import { ThemeToggle } from './ThemeToggle'
 
 const NAV_ITEMS = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/activities', label: 'Activities', icon: Activity },
-  { href: '/calendar', label: 'Calendar', icon: CalendarDays },
-  { href: '/analytics', label: 'Analytics', icon: BarChart2 },
-  { href: '/goals', label: 'Goals & PBs', icon: Trophy },
-  { href: '/map', label: 'Heatmap', icon: Map },
+  { href: '/', label: t.nav.items.dashboard, icon: LayoutDashboard },
+  { href: '/activities', label: t.nav.items.activities, icon: Activity },
+  { href: '/calendar', label: t.nav.items.calendar, icon: CalendarDays },
+  { href: '/analytics', label: t.nav.items.analytics, icon: BarChart2 },
+  { href: '/goals', label: t.nav.items.goals, icon: Trophy },
+  { href: '/map', label: t.nav.items.heatmap, icon: Map },
 ]
 
 function Brand({ onClick }: { onClick?: () => void }) {
@@ -31,8 +32,8 @@ function Brand({ onClick }: { onClick?: () => void }) {
     <Link href="/" onClick={onClick} className="flex items-center gap-2.5">
       <HeartPulse size={24} className="text-emerald-600 dark:text-emerald-400" />
       <span className="text-2xl tracking-tight text-foreground">
-        <span className="font-bold">Run</span>
-        <span className="font-normal">Omics</span>
+        <span className="font-bold">{t.brand.namePrefix}</span>
+        <span className="font-normal">{t.brand.nameSuffix}</span>
       </span>
     </Link>
   )
@@ -49,8 +50,8 @@ export function Sidebar() {
         <Link href="/" className="flex h-16 items-center gap-2 border-b border-border px-5">
           <HeartPulse size={20} className="text-emerald-600 dark:text-emerald-400" />
           <span className="text-lg tracking-tight text-foreground">
-            <span className="font-bold">Run</span>
-            <span className="font-normal">Omics</span>
+            <span className="font-bold">{t.brand.namePrefix}</span>
+            <span className="font-normal">{t.brand.nameSuffix}</span>
           </span>
         </Link>
 
@@ -76,7 +77,7 @@ export function Sidebar() {
         </nav>
 
         <div className="flex items-center justify-between border-t border-border px-4 py-3">
-          <span className="text-xs text-subtle">RunOmics v1.0</span>
+          <span className="text-xs text-subtle">{t.brand.version}</span>
           <ThemeToggle />
         </div>
       </aside>
@@ -93,7 +94,7 @@ export function Sidebar() {
           <button
             onClick={() => setOpen(true)}
             className="absolute right-4 rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-            aria-label="Open menu"
+            aria-label={t.nav.openMenu}
           >
             <Menu size={20} />
           </button>
@@ -115,7 +116,7 @@ export function Sidebar() {
           <button
             onClick={() => setOpen(false)}
             className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-            aria-label="Close menu"
+            aria-label={t.nav.closeMenu}
           >
             <X size={22} />
           </button>
@@ -147,7 +148,7 @@ export function Sidebar() {
         </nav>
 
         <div className="shrink-0 border-t border-border px-6 py-4">
-          <span className="text-sm text-subtle">RunOmics v1.0</span>
+          <span className="text-sm text-subtle">{t.brand.version}</span>
         </div>
       </div>
     </>

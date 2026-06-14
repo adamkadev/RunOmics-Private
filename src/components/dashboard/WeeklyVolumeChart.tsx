@@ -12,6 +12,7 @@ import {
 import type { WeeklyVolume } from '@/domain/activity/types'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
+import { t } from '@/i18n'
 
 interface Props {
   data: WeeklyVolume[]
@@ -35,7 +36,7 @@ function weekToMonthAbbr(weekNum: number): string {
   const dow = jan4.getDay() || 7
   const monday = new Date(jan4)
   monday.setDate(jan4.getDate() - (dow - 1) + (week - 1) * 7)
-  return monday.toLocaleString('en', { month: 'short' }).toUpperCase().slice(0, 3)
+  return monday.toLocaleString(t.locale, { month: 'short' }).toUpperCase().slice(0, 3)
 }
 
 function CustomTooltip({ active, payload }: TooltipProps) {
@@ -61,7 +62,7 @@ export function WeeklyVolumeChart({ data, currentWeek }: Props) {
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
-        Weekly Volume
+        {t.dashboard.weeklyVolume.title}
       </h3>
       <ResponsiveContainer width="100%" height={180}>
         <AreaChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>

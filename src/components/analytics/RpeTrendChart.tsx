@@ -12,6 +12,7 @@ import {
 import type { MonthlyRpe } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
+import { t } from '@/i18n'
 
 interface Props {
   data: MonthlyRpe[]
@@ -29,7 +30,7 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
   return (
     <TooltipCard label={label}>
       <p className="text-sm font-semibold text-foreground">
-        RPE {payload[0].value.toFixed(1)}
+        {t.analytics.charts.rpe.prefix} {payload[0].value.toFixed(1)}
       </p>
     </TooltipCard>
   )
@@ -45,7 +46,7 @@ export function RpeTrendChart({ data }: Props) {
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
-        RPE Trend
+        {t.analytics.charts.rpe.title}
       </h3>
 
       <ResponsiveContainer width="100%" height={200}>
@@ -90,7 +91,7 @@ export function RpeTrendChart({ data }: Props) {
       </ResponsiveContainer>
 
       <p className="mt-2 text-xs text-subtle">
-        Monthly average perceived effort (1–10).
+        {t.analytics.charts.rpe.footnote}
       </p>
     </div>
   )

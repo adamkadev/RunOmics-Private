@@ -1,6 +1,7 @@
 import { Gauge } from 'lucide-react'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { formatClock as fmt } from '@/lib/formatters'
+import { t } from '@/i18n'
 
 const ZONE_STYLE: Record<string, { dot: string; text: string; bg: string; bar: string }> = {
   easy:      { dot: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/8',  bar: 'bg-emerald-500' },
@@ -22,9 +23,9 @@ export function TrainingZones({ data }: { data: TrainingZonesData }) {
       <div className="flex items-center justify-between">
         <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           <Gauge size={14} className="text-violet-500 dark:text-violet-400" />
-          Training Zones
+          {t.trainingZones.title}
         </h2>
-        <span className="text-xs text-subtle">VDOT {vo2max} · Jack Daniels</span>
+        <span className="text-xs text-subtle">{t.trainingZones.vdot(vo2max)}</span>
       </div>
 
       <div className="space-y-2">
@@ -60,8 +61,8 @@ export function TrainingZones({ data }: { data: TrainingZonesData }) {
                     />
                   </div>
                   <div className="flex justify-between text-[10px] text-subtle">
-                    <span>{fmt(allMin)} /km</span>
-                    <span>{fmt(allMax)} /km</span>
+                    <span>{fmt(allMin)} {t.trainingZones.perKm}</span>
+                    <span>{fmt(allMax)} {t.trainingZones.perKm}</span>
                   </div>
                 </div>
 
@@ -70,7 +71,7 @@ export function TrainingZones({ data }: { data: TrainingZonesData }) {
                   <p className="font-mono text-base font-bold tabular-nums text-foreground">
                     {fmt(zone.paceMinSecPerKm)}–{fmt(zone.paceMaxSecPerKm)}
                   </p>
-                  <p className="text-[11px] text-subtle">/km</p>
+                  <p className="text-[11px] text-subtle">{t.trainingZones.perKm}</p>
                 </div>
               </div>
 

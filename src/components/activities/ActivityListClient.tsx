@@ -6,6 +6,7 @@ import { ActivityRow } from './ActivityRow'
 import { ActivityTypeTag } from './ActivityTypeTag'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import type { Activity, ActivityType } from '@/domain/activity/types'
+import { t } from '@/i18n'
 
 const ALL_TYPES = Object.keys(ACTIVITY_TYPE_CONFIG) as ActivityType[]
 const PAGE_SIZE = 20
@@ -64,7 +65,7 @@ export function ActivityListClient({ activities }: Props) {
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-subtle" />
           <input
             type="text"
-            placeholder="Search..."
+            placeholder={t.activities.searchPlaceholder}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-8 rounded-md border border-border bg-card pl-8 pr-3 text-sm text-foreground placeholder-subtle focus:border-emerald-500 focus:outline-none"
@@ -79,7 +80,7 @@ export function ActivityListClient({ activities }: Props) {
                 : 'bg-muted text-muted-foreground hover:bg-muted/70'
             }`}
           >
-            All
+            {t.activities.all}
           </button>
           {ALL_TYPES.map((type) => (
             <button
@@ -108,12 +109,12 @@ export function ActivityListClient({ activities }: Props) {
           onChange={(e) => setDateTo(e.target.value)}
           className="h-8 rounded-md border border-border bg-card px-2 text-xs text-foreground focus:border-emerald-500 focus:outline-none dark:[color-scheme:dark]"
         />
-        <span className="ml-2 text-xs text-subtle">Distance</span>
+        <span className="ml-2 text-xs text-subtle">{t.activities.distance}</span>
         <input
           type="number"
           min="0"
           step="1"
-          placeholder="min"
+          placeholder={t.activities.min}
           value={minKm}
           onChange={(e) => setMinKm(e.target.value)}
           className="h-8 w-16 rounded-md border border-border bg-card px-2 text-xs text-foreground placeholder-subtle focus:border-emerald-500 focus:outline-none"
@@ -123,34 +124,34 @@ export function ActivityListClient({ activities }: Props) {
           type="number"
           min="0"
           step="1"
-          placeholder="max"
+          placeholder={t.activities.max}
           value={maxKm}
           onChange={(e) => setMaxKm(e.target.value)}
           className="h-8 w-16 rounded-md border border-border bg-card px-2 text-xs text-foreground placeholder-subtle focus:border-emerald-500 focus:outline-none"
         />
-        <span className="text-xs text-subtle">km</span>
+        <span className="text-xs text-subtle">{t.units.km}</span>
         {hasExtraFilters && (
           <button
             onClick={clearFilters}
             className="ml-1 flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <X size={12} />
-            Clear
+            {t.activities.clear}
           </button>
         )}
       </div>
 
       <div className="flex items-center justify-between">
         <p className="text-xs text-subtle">
-          {filtered.length} activit{filtered.length !== 1 ? 'ies' : 'y'}
-          {totalPages > 1 && ` · page ${clampedPage}/${totalPages}`}
+          {t.activities.count(filtered.length)}
+          {totalPages > 1 && t.activities.page(clampedPage, totalPages)}
         </p>
       </div>
 
       <div className="space-y-2">
         {paginated.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border py-12 text-center">
-            <p className="text-sm text-subtle">No activities found</p>
+            <p className="text-sm text-subtle">{t.activities.empty}</p>
           </div>
         ) : (
           paginated.map((a) => <ActivityRow key={a.id} activity={a} />)

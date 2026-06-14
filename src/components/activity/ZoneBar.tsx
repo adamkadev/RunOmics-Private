@@ -1,5 +1,6 @@
 import type { HrZone } from '@/domain/activity/types'
 import { formatDuration } from '@/lib/formatters'
+import { t } from '@/i18n'
 
 const ZONE_CONFIG: Record<number, {
   label: string
@@ -7,11 +8,11 @@ const ZONE_CONFIG: Record<number, {
   textClass: string
   trackClass: string
 }> = {
-  1: { label: 'Z1 · Warmup',    barClass: 'bg-gray-400',    textClass: 'text-muted-foreground',       trackClass: 'bg-muted' },
-  2: { label: 'Z2 · Easy',      barClass: 'bg-blue-400',    textClass: 'text-blue-600 dark:text-blue-400',       trackClass: 'bg-blue-50 dark:bg-blue-900/20' },
-  3: { label: 'Z3 · Aerobic',   barClass: 'bg-emerald-400', textClass: 'text-emerald-600 dark:text-emerald-400', trackClass: 'bg-emerald-50 dark:bg-emerald-900/20' },
-  4: { label: 'Z4 · Threshold', barClass: 'bg-orange-500',  textClass: 'text-orange-600 dark:text-orange-400',   trackClass: 'bg-orange-50 dark:bg-orange-900/20' },
-  5: { label: 'Z5 · Max',       barClass: 'bg-red-500',     textClass: 'text-red-600 dark:text-red-400',         trackClass: 'bg-red-50 dark:bg-red-900/20' },
+  1: { label: t.activity.zones.labels[1], barClass: 'bg-gray-400',    textClass: 'text-muted-foreground',       trackClass: 'bg-muted' },
+  2: { label: t.activity.zones.labels[2], barClass: 'bg-blue-400',    textClass: 'text-blue-600 dark:text-blue-400',       trackClass: 'bg-blue-50 dark:bg-blue-900/20' },
+  3: { label: t.activity.zones.labels[3], barClass: 'bg-emerald-400', textClass: 'text-emerald-600 dark:text-emerald-400', trackClass: 'bg-emerald-50 dark:bg-emerald-900/20' },
+  4: { label: t.activity.zones.labels[4], barClass: 'bg-orange-500',  textClass: 'text-orange-600 dark:text-orange-400',   trackClass: 'bg-orange-50 dark:bg-orange-900/20' },
+  5: { label: t.activity.zones.labels[5], barClass: 'bg-red-500',     textClass: 'text-red-600 dark:text-red-400',         trackClass: 'bg-red-50 dark:bg-red-900/20' },
 }
 
 const STACKED_BAR_COLORS = [
@@ -30,8 +31,8 @@ function ZoneRow({ zone }: ZoneRowProps) {
   const cfg = ZONE_CONFIG[zone.zone]
   if (!cfg) return null
   const bpmLabel = zone.maxBpm
-    ? `${zone.minBpm}–${zone.maxBpm} bpm`
-    : `>${zone.minBpm} bpm`
+    ? t.activity.zones.range(zone.minBpm, zone.maxBpm)
+    : t.activity.zones.rangeOpen(zone.minBpm)
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between text-xs">
@@ -62,7 +63,7 @@ export function ZoneBar({ hrZones }: Props) {
   if (!hrZones || hrZones.length === 0) {
     return (
       <div className="flex h-full items-center justify-center rounded-xl border border-border bg-card p-5 shadow-card">
-        <p className="text-sm text-subtle">No HR zone data</p>
+        <p className="text-sm text-subtle">{t.activity.zones.noData}</p>
       </div>
     )
   }
@@ -72,7 +73,7 @@ export function ZoneBar({ hrZones }: Props) {
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
-        Heart Rate Zones
+        {t.activity.zones.title}
       </h3>
 
       <div className="mb-5 flex h-4 overflow-hidden rounded-full bg-muted">

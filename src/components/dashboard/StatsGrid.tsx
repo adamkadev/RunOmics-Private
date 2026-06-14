@@ -1,5 +1,6 @@
 import { Timer, Footprints, Heart, TrendingUp, TrendingDown, Minus, Flame, Activity } from 'lucide-react'
 import { formatDistance, formatDuration, formatPace } from '@/lib/formatters'
+import { t } from '@/i18n'
 import type { DashboardData } from '@/domain/activity/types'
 
 interface Props {
@@ -21,46 +22,47 @@ function Trend({ current, previous }: { current: number; previous: number }) {
 }
 
 export function StatsGrid({ currentWeek, lastWeek, currentStreak, longestStreak, vo2max }: Props) {
+  const s = t.dashboard.stats
   const stats = [
     {
-      label: 'Distance',
+      label: s.distance,
       value: formatDistance(currentWeek.totalDistanceKm),
-      sub: `vs ${formatDistance(lastWeek.totalDistanceKm)} last week`,
+      sub: s.distanceSub(formatDistance(lastWeek.totalDistanceKm)),
       trend: <Trend current={currentWeek.totalDistanceKm} previous={lastWeek.totalDistanceKm} />,
       icon: <Footprints size={18} className="text-emerald-600 dark:text-emerald-400" />,
     },
     {
-      label: 'Time',
+      label: s.time,
       value: formatDuration(currentWeek.totalDurationSeconds),
-      sub: `${currentWeek.sessionCount} session${currentWeek.sessionCount !== 1 ? 's' : ''}`,
+      sub: t.common.sessions(currentWeek.sessionCount),
       trend: null,
       icon: <Timer size={18} className="text-blue-500 dark:text-blue-400" />,
     },
     {
-      label: 'Avg HR',
-      value: currentWeek.avgHeartRate ? `${currentWeek.avgHeartRate} bpm` : '-',
-      sub: 'this week',
+      label: s.avgHr,
+      value: currentWeek.avgHeartRate ? `${currentWeek.avgHeartRate} ${t.units.bpm}` : s.empty,
+      sub: s.thisWeek,
       trend: null,
       icon: <Heart size={18} className="text-red-500 dark:text-red-400" />,
     },
     {
-      label: 'Avg Pace',
-      value: currentWeek.avgPaceSecPerKm ? formatPace(currentWeek.avgPaceSecPerKm) : '-',
-      sub: 'this week',
+      label: s.avgPace,
+      value: currentWeek.avgPaceSecPerKm ? formatPace(currentWeek.avgPaceSecPerKm) : s.empty,
+      sub: s.thisWeek,
       trend: null,
       icon: <TrendingUp size={18} className="text-amber-500 dark:text-amber-400" />,
     },
     {
-      label: 'Streak',
+      label: s.streak,
       value: `${currentStreak}d`,
-      sub: `best ${longestStreak}d`,
+      sub: s.streakSub(longestStreak),
       trend: null,
       icon: <Flame size={18} className="text-orange-500 dark:text-orange-400" />,
     },
     {
-      label: 'VO₂max est.',
-      value: vo2max !== null ? String(vo2max) : '-',
-      sub: 'ml/kg/min',
+      label: s.vo2max,
+      value: vo2max !== null ? String(vo2max) : s.empty,
+      sub: t.units.vo2max,
       trend: null,
       icon: <Activity size={18} className="text-violet-500 dark:text-violet-400" />,
     },

@@ -10,13 +10,14 @@ import { RunningDynamics } from '@/components/activity/RunningDynamics'
 import { ActivityDetailClient } from '@/components/activity/ActivityDetailClient'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
 import { RPE_LABELS } from '@/domain/activity/types'
+import { t } from '@/i18n'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params
   const activity = getActivities().find((a) => a.id === id)
-  if (!activity) return { title: 'Activity' }
+  if (!activity) return { title: t.activity.metaFallbackTitle }
 
-  const name = activity.description || `${activity.dayOfWeek} Run`
+  const name = activity.description || t.activity.runTitle(activity.dayOfWeek)
   const stats = [
     formatDistance(activity.distanceKm),
     formatDuration(activity.durationSeconds),
@@ -77,14 +78,14 @@ export default async function ActivityDetailPage({
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft size={14} />
-        Activities
+        {t.activity.back}
       </Link>
 
       <div>
         <div className="flex flex-wrap items-center gap-3">
           <ActivityTypeTag type={activity.type} />
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            {activity.description || activity.dayOfWeek + ' Run'}
+            {activity.description || t.activity.runTitle(activity.dayOfWeek)}
           </h1>
           <span className="text-sm text-subtle">
             {formatDate(activity.date)}
@@ -101,46 +102,46 @@ export default async function ActivityDetailPage({
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-7">
         <StatItem
           icon={<Footprints size={16} className="text-emerald-500 dark:text-emerald-400" />}
-          label="Distance"
+          label={t.activity.stats.distance}
           value={formatDistance(activity.distanceKm)}
         />
         <StatItem
           icon={<Timer size={16} className="text-blue-500 dark:text-blue-400" />}
-          label="Duration"
+          label={t.activity.stats.duration}
           value={formatDuration(activity.durationSeconds)}
         />
         {activity.paceSecPerKm && (
           <StatItem
             icon={<TrendingUp size={16} className="text-violet-500 dark:text-violet-400" />}
-            label="Avg Pace"
+            label={t.activity.stats.avgPace}
             value={formatPace(activity.paceSecPerKm)}
           />
         )}
         {activity.avgHeartRate && (
           <StatItem
             icon={<Heart size={16} className="text-red-500 dark:text-red-400" />}
-            label="Avg HR"
-            value={`${activity.avgHeartRate} bpm`}
+            label={t.activity.stats.avgHr}
+            value={`${activity.avgHeartRate} ${t.units.bpm}`}
           />
         )}
         {activity.elevationGain && (
           <StatItem
             icon={<Mountain size={16} className="text-stone-500 dark:text-stone-400" />}
-            label="Elevation"
-            value={`+${activity.elevationGain}m`}
+            label={t.activity.stats.elevation}
+            value={t.activity.stats.elevationValue(activity.elevationGain)}
           />
         )}
         {activity.calories != null && (
           <StatItem
             icon={<Flame size={16} className="text-orange-500 dark:text-orange-400" />}
-            label="Calories"
-            value={`${activity.calories} kcal`}
+            label={t.activity.stats.calories}
+            value={t.activity.stats.caloriesValue(activity.calories)}
           />
         )}
         <StatItem
           icon={<Zap size={16} className="text-amber-500 dark:text-amber-400" />}
-          label={activity.rpe !== null ? `RPE ${activity.rpe}` : 'RPE'}
-          value={activity.rpe !== null ? (RPE_LABELS[activity.rpe] ?? '-') : 'N/A'}
+          label={activity.rpe !== null ? t.activity.stats.rpeValue(activity.rpe) : t.activity.stats.rpe}
+          value={activity.rpe !== null ? (RPE_LABELS[activity.rpe] ?? '-') : t.activity.stats.na}
         />
       </div>
 

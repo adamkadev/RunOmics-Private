@@ -12,6 +12,7 @@ import {
 import type { TrainingLoadData, TrainingLoadPoint } from '@/application/usecases/GetTrainingLoad'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
+import { t } from '@/i18n'
 
 interface Props {
   data: TrainingLoadData
@@ -27,18 +28,19 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   const p = payload[0].payload
   return (
     <TooltipCard label={p.label}>
-      <p className="text-sm text-blue-500 dark:text-blue-400">Fitness {p.ctl}</p>
-      <p className="text-sm text-orange-500 dark:text-orange-400">Fatigue {p.atl}</p>
-      <p className="text-sm text-emerald-600 dark:text-emerald-400">Form {p.tsb}</p>
+      <p className="text-sm text-blue-500 dark:text-blue-400">{t.dashboard.trainingLoad.fitness} {p.ctl}</p>
+      <p className="text-sm text-orange-500 dark:text-orange-400">{t.dashboard.trainingLoad.fatigue} {p.atl}</p>
+      <p className="text-sm text-emerald-600 dark:text-emerald-400">{t.dashboard.trainingLoad.form} {p.tsb}</p>
     </TooltipCard>
   )
 }
 
 function formStatus(tsb: number): { label: string; className: string } {
-  if (tsb > 5) return { label: 'Fresh', className: 'text-emerald-600 dark:text-emerald-400' }
-  if (tsb >= -10) return { label: 'Neutral', className: 'text-muted-foreground' }
-  if (tsb >= -30) return { label: 'Building', className: 'text-orange-500 dark:text-orange-400' }
-  return { label: 'Overreaching', className: 'text-red-500 dark:text-red-400' }
+  const s = t.dashboard.trainingLoad.status
+  if (tsb > 5) return { label: s.fresh, className: 'text-emerald-600 dark:text-emerald-400' }
+  if (tsb >= -10) return { label: s.neutral, className: 'text-muted-foreground' }
+  if (tsb >= -30) return { label: s.building, className: 'text-orange-500 dark:text-orange-400' }
+  return { label: s.overreaching, className: 'text-red-500 dark:text-red-400' }
 }
 
 export function TrainingLoadChart({ data }: Props) {
@@ -48,17 +50,17 @@ export function TrainingLoadChart({ data }: Props) {
     <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-foreground/80">
-          Training Load <span className="font-normal text-subtle">· last 90 days</span>
+          {t.dashboard.trainingLoad.title} <span className="font-normal text-subtle">{t.dashboard.trainingLoad.window}</span>
         </h3>
         <div className="flex items-center gap-4 text-xs">
           <span className="text-blue-500 dark:text-blue-400">
-            Fitness <span className="font-semibold">{data.ctl}</span>
+            {t.dashboard.trainingLoad.fitness} <span className="font-semibold">{data.ctl}</span>
           </span>
           <span className="text-orange-500 dark:text-orange-400">
-            Fatigue <span className="font-semibold">{data.atl}</span>
+            {t.dashboard.trainingLoad.fatigue} <span className="font-semibold">{data.atl}</span>
           </span>
           <span className={status.className}>
-            Form <span className="font-semibold">{data.tsb}</span> · {status.label}
+            {t.dashboard.trainingLoad.form} <span className="font-semibold">{data.tsb}</span> · {status.label}
           </span>
         </div>
       </div>
@@ -84,7 +86,7 @@ export function TrainingLoadChart({ data }: Props) {
         </LineChart>
       </ResponsiveContainer>
       <p className="mt-2 text-xs text-subtle">
-        Fitness = 42-day load average (CTL) · Fatigue = 7-day (ATL) · Form = Fitness − Fatigue (TSB).
+        {t.dashboard.trainingLoad.footnote}
       </p>
     </div>
   )

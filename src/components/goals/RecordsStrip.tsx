@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Medal } from 'lucide-react'
 import type { RecordEntry } from '@/application/usecases/GetRecords'
 import { formatDuration, formatPace } from '@/lib/formatters'
+import { t } from '@/i18n'
 
 interface Props {
   records: RecordEntry[]
@@ -14,7 +15,7 @@ export function RecordsStrip({ records }: Props) {
     <section className="space-y-3">
       <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
         <Medal size={14} className="text-violet-500 dark:text-violet-400" />
-        All-Time Records
+        {t.records.title}
       </h2>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {records.map((r) => {
@@ -58,7 +59,7 @@ export function RecordsStrip({ records }: Props) {
         })}
       </div>
       <p className="text-xs text-subtle">
-        ★ official race time · others auto-detected from activity data
+        {t.records.footnote}
       </p>
     </section>
   )

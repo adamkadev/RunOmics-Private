@@ -4,6 +4,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } f
 import type { MonthlyTrainingEffect } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
+import { t } from '@/i18n'
 
 interface Props {
   data: MonthlyTrainingEffect[]
@@ -35,7 +36,7 @@ export function TrainingEffectChart({ data }: Props) {
 
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-card">
-      <h3 className="mb-4 text-sm font-semibold text-foreground/80">Training Effect</h3>
+      <h3 className="mb-4 text-sm font-semibold text-foreground/80">{t.analytics.charts.trainingEffect.title}</h3>
       <ResponsiveContainer width="100%" height={200}>
         <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -10 }}>
           <XAxis
@@ -61,7 +62,7 @@ export function TrainingEffectChart({ data }: Props) {
             <Line
               type="monotone"
               dataKey="aer"
-              name="Aerobic"
+              name={t.analytics.charts.trainingEffect.aerobic}
               stroke={CHART_COLORS.easy}
               strokeWidth={2}
               dot={{ r: 3, fill: CHART_COLORS.easy, strokeWidth: 0 }}
@@ -73,7 +74,7 @@ export function TrainingEffectChart({ data }: Props) {
             <Line
               type="monotone"
               dataKey="ana"
-              name="Anaerobic"
+              name={t.analytics.charts.trainingEffect.anaerobic}
               stroke={CHART_COLORS.hard}
               strokeWidth={2}
               dot={{ r: 3, fill: CHART_COLORS.hard, strokeWidth: 0 }}
@@ -83,7 +84,7 @@ export function TrainingEffectChart({ data }: Props) {
           )}
         </LineChart>
       </ResponsiveContainer>
-      <p className="mt-2 text-xs text-subtle">Monthly avg aerobic & anaerobic training effect (1–5).</p>
+      <p className="mt-2 text-xs text-subtle">{t.analytics.charts.trainingEffect.footnote}</p>
     </div>
   )
 }

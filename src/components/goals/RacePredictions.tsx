@@ -1,6 +1,7 @@
 import { TrendingUp } from 'lucide-react'
 import type { RecordEntry } from '@/application/usecases/GetRecords'
 import { formatDuration, formatPace } from '@/lib/formatters'
+import { t } from '@/i18n'
 
 const DIST_KM: Record<string, number> = {
   '1k': 1,
@@ -38,11 +39,11 @@ interface Props {
 }
 
 const EFFORTS = [
-  //{ key: '1k', label: '1K', km: 1 },
-  { key: '5k', label: '5K', km: 5 },
-  { key: '10k', label: '10K', km: 10 },
-  { key: 'half', label: 'Half', km: 21.0975 },
-  { key: 'marathon', label: 'Marathon', km: 42.195 },
+  //{ key: '1k', label: t.racePredictions.efforts['1k'], km: 1 },
+  { key: '5k', label: t.racePredictions.efforts['5k'], km: 5 },
+  { key: '10k', label: t.racePredictions.efforts['10k'], km: 10 },
+  { key: 'half', label: t.racePredictions.efforts.half, km: 21.0975 },
+  { key: 'marathon', label: t.racePredictions.efforts.marathon, km: 42.195 },
 ]
 
 export function RacePredictions({ records }: Props) {
@@ -61,7 +62,7 @@ export function RacePredictions({ records }: Props) {
     <section className="space-y-3">
       <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
         <TrendingUp size={14} className="text-emerald-500 dark:text-emerald-400" />
-        Race Predictions
+        {t.racePredictions.title}
       </h2>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {predictions.map(({ key, label, km, actual, predicted, sourceLabel }) => (
@@ -79,13 +80,13 @@ export function RacePredictions({ records }: Props) {
                   {formatPace(Math.round(predicted / km))}
                 </p>
                 <p className="mt-1 text-xs text-subtle">
-                  from {sourceLabel}
+                  {t.racePredictions.from(sourceLabel ?? '')}
                 </p>
                 {actual?.seconds != null && (
                   <p className={`mt-0.5 text-xs font-medium ${actual.seconds <= predicted ? 'text-emerald-500 dark:text-emerald-400' : 'text-orange-500 dark:text-orange-400'}`}>
                     {actual.seconds <= predicted
-                      ? `✓ Beat by ${formatDuration(predicted - actual.seconds)}`
-                      : `PB ${formatDuration(actual.seconds - predicted)} off`}
+                      ? t.racePredictions.beatBy(formatDuration(predicted - actual.seconds))
+                      : t.racePredictions.pbOff(formatDuration(actual.seconds - predicted))}
                   </p>
                 )}
               </>
@@ -96,7 +97,7 @@ export function RacePredictions({ records }: Props) {
         ))}
       </div>
       <p className="text-xs text-subtle">
-        Riegel formula · t₂ = t₁ × (d₂/d₁)^1.06
+        {t.racePredictions.footnote}
       </p>
     </section>
   )

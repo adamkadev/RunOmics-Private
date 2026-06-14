@@ -4,6 +4,7 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 import type { MonthlyEfficiency } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
+import { t } from '@/i18n'
 
 interface Props {
   data: MonthlyEfficiency[]
@@ -19,7 +20,7 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
   if (!active || !payload?.length) return null
   return (
     <TooltipCard label={label}>
-      <p className="text-sm font-semibold text-foreground">{payload[0].value.toFixed(2)} m/min·bpm</p>
+      <p className="text-sm font-semibold text-foreground">{payload[0].value.toFixed(2)} {t.analytics.charts.efficiency.unit}</p>
     </TooltipCard>
   )
 }
@@ -32,7 +33,7 @@ export function EfficiencyChart({ data }: Props) {
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
-        Aerobic Efficiency
+        {t.analytics.charts.efficiency.title}
       </h3>
       <ResponsiveContainer width="100%" height={200}>
         <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -10 }}>
@@ -70,7 +71,7 @@ export function EfficiencyChart({ data }: Props) {
         </AreaChart>
       </ResponsiveContainer>
       <p className="mt-2 text-xs text-subtle">
-        Speed per heartbeat on easy runs (m/min ÷ avg HR). Higher means better aerobic fitness.
+        {t.analytics.charts.efficiency.footnote}
       </p>
     </div>
   )

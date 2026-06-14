@@ -4,6 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recha
 import type { MonthlyLongRuns } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
+import { t } from '@/i18n'
 
 interface Props {
   data: MonthlyLongRuns[]
@@ -20,8 +21,8 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
   const entry = payload[0].payload
   return (
     <TooltipCard label={label}>
-      <p className="text-sm text-foreground/80">10–15 km: {entry.km10}</p>
-      <p className="text-sm text-foreground/80">15+ km: {entry.km15}</p>
+      <p className="text-sm text-foreground/80">{t.analytics.charts.longRuns.range1015}: {entry.km10}</p>
+      <p className="text-sm text-foreground/80">{t.analytics.charts.longRuns.range15}: {entry.km15}</p>
     </TooltipCard>
   )
 }
@@ -31,7 +32,7 @@ export function LongRunsChart({ data }: Props) {
 
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-card">
-      <h3 className="mb-4 text-sm font-semibold text-foreground/80">Long Runs</h3>
+      <h3 className="mb-4 text-sm font-semibold text-foreground/80">{t.analytics.charts.longRuns.title}</h3>
       <ResponsiveContainer width="100%" height={200}>
         <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
           <XAxis
@@ -54,11 +55,11 @@ export function LongRunsChart({ data }: Props) {
       <div className="mt-2 flex items-center gap-4 text-xs text-subtle">
         <span className="flex items-center gap-1.5">
           <span className="h-2 w-2 rounded-sm" style={{ background: '#6ee7b7' }} />
-          10-15 km
+          {t.analytics.charts.longRuns.range1015}
         </span>
         <span className="flex items-center gap-1.5">
           <span className="h-2 w-2 rounded-sm" style={{ background: '#059669' }} />
-          15+ km
+          {t.analytics.charts.longRuns.range15}
         </span>
       </div>
     </div>

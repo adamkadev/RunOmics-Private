@@ -4,6 +4,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 import type { MonthlyHr } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
+import { t } from '@/i18n'
 
 interface Props {
   data: MonthlyHr[]
@@ -19,7 +20,7 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
   if (!active || !payload?.length) return null
   return (
     <TooltipCard label={label}>
-      <p className="text-sm font-semibold text-foreground">{payload[0].value} bpm</p>
+      <p className="text-sm font-semibold text-foreground">{payload[0].value} {t.units.bpm}</p>
     </TooltipCard>
   )
 }
@@ -33,7 +34,7 @@ export function HrTrendChart({ data }: Props) {
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
-        Avg Heart Rate
+        {t.analytics.charts.hrTrend.title}
       </h3>
       <ResponsiveContainer width="100%" height={200}>
         <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -10 }}>
@@ -63,7 +64,7 @@ export function HrTrendChart({ data }: Props) {
         </LineChart>
       </ResponsiveContainer>
       <p className="mt-2 text-xs text-subtle">
-        Duration-weighted average HR per month, all runs.
+        {t.analytics.charts.hrTrend.footnote}
       </p>
     </div>
   )

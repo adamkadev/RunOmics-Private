@@ -6,12 +6,13 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import type { Activity } from '@/domain/activity/types'
 import { round } from '@/lib/math'
+import { t } from '@/i18n'
 
 interface Props {
   activities: Activity[]
 }
 
-const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const WEEKDAYS = t.calendar.weekdays
 
 function monthKey(year: number, month: number): string {
   return `${year}-${String(month + 1).padStart(2, '0')}`
@@ -56,7 +57,7 @@ export function CalendarClient({ activities }: Props) {
 
   const isCurrentMonth = year === now.getFullYear() && month === now.getMonth()
   const todayIso = `${monthKey(now.getFullYear(), now.getMonth())}-${String(now.getDate()).padStart(2, '0')}`
-  const monthLabel = new Date(year, month, 1).toLocaleString('en', {
+  const monthLabel = new Date(year, month, 1).toLocaleString(t.locale, {
     month: 'long',
     year: 'numeric',
   })
@@ -95,12 +96,12 @@ export function CalendarClient({ activities }: Props) {
               }}
               className="rounded-md px-2 py-1 text-xs font-medium text-emerald-600 transition-colors hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
             >
-              Today
+              {t.calendar.today}
             </button>
           )}
         </div>
         <p className="text-xs text-subtle">
-          {sessionCount} session{sessionCount !== 1 ? 's' : ''} · {totalKm} km
+          {t.calendar.summary(sessionCount, totalKm)}
         </p>
       </div>
 
@@ -145,9 +146,9 @@ export function CalendarClient({ activities }: Props) {
                           backgroundColor: `${ACTIVITY_TYPE_CONFIG[a.type].chartColor}22`,
                           color: ACTIVITY_TYPE_CONFIG[a.type].chartColor,
                         }}
-                        title={`${a.description || a.type} · ${a.distanceKm} km`}
+                        title={`${a.description || a.type} · ${a.distanceKm} ${t.units.km}`}
                       >
-                        {a.distanceKm.toFixed(1)} km
+                        {a.distanceKm.toFixed(1)} {t.units.km}
                       </Link>
                     ))}
                   </div>

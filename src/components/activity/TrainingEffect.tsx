@@ -1,15 +1,17 @@
+import { t } from '@/i18n'
+
 interface Props {
   aer: number | null
   ana: number | null
 }
 
 const LEVELS = [
-  { max: 1.0, label: 'No benefit',        color: 'bg-gray-300 dark:bg-gray-600' },
-  { max: 2.0, label: 'Minor',             color: 'bg-sky-400' },
-  { max: 3.0, label: 'Maintaining',       color: 'bg-emerald-400' },
-  { max: 4.0, label: 'Improving',         color: 'bg-amber-400' },
-  { max: 4.8, label: 'Highly Improving',  color: 'bg-orange-500' },
-  { max: 5.1, label: 'Overreaching',      color: 'bg-red-500' },
+  { max: 1.0, label: t.activity.trainingEffect.levels.noBenefit,       color: 'bg-gray-300 dark:bg-gray-600' },
+  { max: 2.0, label: t.activity.trainingEffect.levels.minor,           color: 'bg-sky-400' },
+  { max: 3.0, label: t.activity.trainingEffect.levels.maintaining,     color: 'bg-emerald-400' },
+  { max: 4.0, label: t.activity.trainingEffect.levels.improving,       color: 'bg-amber-400' },
+  { max: 4.8, label: t.activity.trainingEffect.levels.highlyImproving, color: 'bg-orange-500' },
+  { max: 5.1, label: t.activity.trainingEffect.levels.overreaching,    color: 'bg-red-500' },
 ]
 
 function getLevel(value: number) {
@@ -47,11 +49,11 @@ export function TrainingEffect({ aer, ana }: Props) {
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
-        Training Effect
+        {t.activity.trainingEffect.title}
       </h3>
       <div className="space-y-3">
-        {aer != null && <TEBar value={aer} label="Aerobic" />}
-        {ana != null && <TEBar value={ana} label="Anaerobic" />}
+        {aer != null && <TEBar value={aer} label={t.activity.trainingEffect.aerobic} />}
+        {ana != null && <TEBar value={ana} label={t.activity.trainingEffect.anaerobic} />}
       </div>
     </div>
   )

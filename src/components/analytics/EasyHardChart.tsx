@@ -12,6 +12,7 @@ import {
 import type { MonthlyEasyHard } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
+import { t } from '@/i18n'
 
 interface Props {
   data: MonthlyEasyHard[]
@@ -28,8 +29,8 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
   const entry = payload[0].payload
   return (
     <TooltipCard label={label}>
-      <p className="text-sm text-emerald-600 dark:text-emerald-400">Easy (Z1–Z2): {entry.easyPct}%</p>
-      <p className="text-sm text-orange-500 dark:text-orange-400">Hard (Z3+): {entry.hardPct}%</p>
+      <p className="text-sm text-emerald-600 dark:text-emerald-400">{t.analytics.charts.easyHard.easy(entry.easyPct ?? 0)}</p>
+      <p className="text-sm text-orange-500 dark:text-orange-400">{t.analytics.charts.easyHard.hard(entry.hardPct ?? 0)}</p>
     </TooltipCard>
   )
 }
@@ -40,7 +41,7 @@ export function EasyHardChart({ data }: Props) {
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
-        Easy / Hard Split
+        {t.analytics.charts.easyHard.title}
       </h3>
       <ResponsiveContainer width="100%" height={200}>
         <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
@@ -64,7 +65,7 @@ export function EasyHardChart({ data }: Props) {
         </BarChart>
       </ResponsiveContainer>
       <p className="mt-2 text-xs text-subtle">
-        Share of time in Z1–Z2 vs Z3+ per month. Dashed line = 80/20 target.
+        {t.analytics.charts.easyHard.footnote}
       </p>
     </div>
   )

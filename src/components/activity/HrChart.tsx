@@ -11,6 +11,7 @@ import {
 } from 'recharts'
 import { CHART_COLORS } from '@/lib/colors'
 import { formatElapsed } from '@/lib/formatters'
+import { t } from '@/i18n'
 
 interface Props {
   samples: number[]
@@ -46,14 +47,14 @@ export function HrChart({ samples, avgHr, maxHr, durationSeconds, onHoverFractio
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground/80">Heart Rate</h3>
+        <h3 className="text-sm font-semibold text-foreground/80">{t.activity.charts.heartRate}</h3>
         {avgHr && (
           <span className="text-xs text-subtle">
-            avg <span className="font-semibold text-red-500 dark:text-red-400">{avgHr}</span>
+            {t.activity.charts.avg} <span className="font-semibold text-red-500 dark:text-red-400">{avgHr}</span>
             {maxHr && (
-              <> · max <span className="font-semibold text-red-600 dark:text-red-400">{maxHr}</span></>
+              <> · {t.activity.charts.max} <span className="font-semibold text-red-600 dark:text-red-400">{maxHr}</span></>
             )}
-            {' '}bpm
+            {' '}{t.units.bpm}
           </span>
         )}
       </div>
@@ -94,7 +95,7 @@ export function HrChart({ samples, avgHr, maxHr, durationSeconds, onHoverFractio
               borderRadius: 8,
               fontSize: 12,
             }}
-            formatter={(v) => [`${v} bpm`, 'HR']}
+            formatter={(v) => [`${v} ${t.units.bpm}`, t.activity.charts.hr]}
             labelFormatter={(v) => formatX(Number(v))}
           />
           {avgHr && (

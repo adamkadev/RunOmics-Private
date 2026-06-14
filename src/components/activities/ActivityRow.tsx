@@ -4,6 +4,7 @@ import { ActivityTypeTag } from './ActivityTypeTag'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
 import { RPE_LABELS } from '@/domain/activity/types'
 import type { Activity } from '@/domain/activity/types'
+import { t } from '@/i18n'
 
 interface Props {
   activity: Activity
@@ -38,36 +39,36 @@ export function ActivityRow({ activity: a }: Props) {
           <p className="font-semibold text-foreground">
             {formatDistance(a.distanceKm)}
           </p>
-          <p className="text-xs text-subtle">distance</p>
+          <p className="text-xs text-subtle">{t.activities.row.distance}</p>
         </div>
         <div className="hidden sm:block">
           <p className="font-medium text-foreground/80">
             {formatDuration(a.durationSeconds)}
           </p>
-          <p className="text-xs text-subtle">duration</p>
+          <p className="text-xs text-subtle">{t.activities.row.duration}</p>
         </div>
         {a.paceSecPerKm && (
           <div className="hidden md:block">
             <p className="font-medium text-foreground/80">
               {formatPace(a.paceSecPerKm)}
             </p>
-            <p className="text-xs text-subtle">pace</p>
+            <p className="text-xs text-subtle">{t.activities.row.pace}</p>
           </div>
         )}
         {a.avgHeartRate && (
           <div className="hidden lg:block">
             <p className="font-medium text-foreground/80">
-              {a.avgHeartRate} <span className="text-xs font-normal">bpm</span>
+              {a.avgHeartRate} <span className="text-xs font-normal">{t.units.bpm}</span>
             </p>
-            <p className="text-xs text-subtle">avg HR</p>
+            <p className="text-xs text-subtle">{t.activities.row.avgHr}</p>
           </div>
         )}
         <div className="hidden w-24 xl:block">
           <p className="truncate font-medium text-foreground/80">
-            {a.rpe !== null ? (RPE_LABELS[a.rpe] ?? '-') : 'N/A'}
+            {a.rpe !== null ? (RPE_LABELS[a.rpe] ?? '-') : t.activities.row.na}
           </p>
           <p className="text-xs text-subtle">
-            {a.rpe !== null ? `RPE ${a.rpe}` : 'RPE'}
+            {a.rpe !== null ? t.activities.row.rpeValue(a.rpe) : t.activities.row.rpe}
           </p>
         </div>
       </div>

@@ -3,6 +3,7 @@
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import type { YearComparisonData } from '@/application/usecases/GetYearComparison'
 import { formatDuration, formatPace } from '@/lib/formatters'
+import { t } from '@/i18n'
 
 interface Props {
   data: YearComparisonData
@@ -56,35 +57,36 @@ export function YearComparisonSection({ data }: Props) {
   const { newer, older } = data
   const [y1, y2] = data.years
 
+  const rowLabels = t.analytics.yearOverYear.rows
   const rows = [
     {
-      label: 'Distance',
-      newer: `${newer.distanceKm.toFixed(0)} km`,
-      older: `${older.distanceKm.toFixed(0)} km`,
+      label: rowLabels.distance,
+      newer: `${newer.distanceKm.toFixed(0)} ${t.units.km}`,
+      older: `${older.distanceKm.toFixed(0)} ${t.units.km}`,
       pct: delta(newer.distanceKm, older.distanceKm),
     },
     {
-      label: 'Sessions',
+      label: rowLabels.sessions,
       newer: String(newer.sessionCount),
       older: String(older.sessionCount),
       pct: delta(newer.sessionCount, older.sessionCount),
     },
     {
-      label: 'Time',
+      label: rowLabels.time,
       newer: formatDuration(newer.durationSeconds),
       older: formatDuration(older.durationSeconds),
       pct: delta(newer.durationSeconds, older.durationSeconds),
     },
     {
-      label: 'Avg / week',
-      newer: `${newer.avgKmPerWeek} km`,
-      older: `${older.avgKmPerWeek} km`,
+      label: rowLabels.avgPerWeek,
+      newer: `${newer.avgKmPerWeek} ${t.units.km}`,
+      older: `${older.avgKmPerWeek} ${t.units.km}`,
       pct: delta(newer.avgKmPerWeek, older.avgKmPerWeek),
     },
     ...(newer.avgPaceSecPerKm && older.avgPaceSecPerKm
       ? [
           {
-            label: 'Avg pace',
+            label: rowLabels.avgPace,
             newer: formatPace(newer.avgPaceSecPerKm),
             older: formatPace(older.avgPaceSecPerKm),
             pct: delta(newer.avgPaceSecPerKm, older.avgPaceSecPerKm),
@@ -95,18 +97,18 @@ export function YearComparisonSection({ data }: Props) {
     ...(newer.avgHeartRate && older.avgHeartRate
       ? [
           {
-            label: 'Avg HR',
-            newer: `${newer.avgHeartRate} bpm`,
-            older: `${older.avgHeartRate} bpm`,
+            label: rowLabels.avgHr,
+            newer: `${newer.avgHeartRate} ${t.units.bpm}`,
+            older: `${older.avgHeartRate} ${t.units.bpm}`,
             pct: delta(newer.avgHeartRate, older.avgHeartRate),
             lowerIsBetter: true,
           },
         ]
       : []),
     {
-      label: 'Elevation',
-      newer: `+${newer.elevationM} m`,
-      older: `+${older.elevationM} m`,
+      label: rowLabels.elevation,
+      newer: t.analytics.stats.elevationValue(newer.elevationM),
+      older: t.analytics.stats.elevationValue(older.elevationM),
       pct: delta(newer.elevationM, older.elevationM),
     },
   ]
@@ -114,10 +116,10 @@ export function YearComparisonSection({ data }: Props) {
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-base font-semibold text-foreground">Year over Year</h2>
+        <h2 className="text-base font-semibold text-foreground">{t.analytics.yearOverYear.title}</h2>
         <div className="flex items-center gap-4 text-xs text-subtle">
           <span className="font-semibold text-foreground">{y1}</span>
-          <span>vs</span>
+          <span>{t.analytics.yearOverYear.vs}</span>
           <span>{y2}</span>
         </div>
       </div>

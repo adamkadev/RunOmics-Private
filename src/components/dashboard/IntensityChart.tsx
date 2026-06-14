@@ -4,6 +4,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import type { TypeDistribution } from '@/domain/activity/types'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
+import { t } from '@/i18n'
 
 interface Props {
   data: TypeDistribution[]
@@ -32,7 +33,7 @@ export function IntensityChart({ data }: Props) {
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
-        Training Mix
+        {t.dashboard.trainingMix.title}
       </h3>
       <div className="flex items-center gap-4">
         <ResponsiveContainer width={140} height={140}>

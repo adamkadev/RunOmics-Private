@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { ActivityTypeTag } from '@/components/activities/ActivityTypeTag'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
+import { t } from '@/i18n'
 import type { Activity } from '@/domain/activity/types'
 
 interface Props {
@@ -13,13 +14,13 @@ export function RecentActivities({ activities }: Props) {
     <div className="rounded-xl border border-border bg-card shadow-card">
       <div className="flex items-center justify-between border-b border-border px-5 py-4">
         <h3 className="text-sm font-semibold text-foreground/80">
-          Recent Activities
+          {t.dashboard.recentActivities.title}
         </h3>
         <Link
           href="/activities"
           className="flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
         >
-          View all <ArrowRight size={12} />
+          {t.common.viewAll} <ArrowRight size={12} />
         </Link>
       </div>
 
@@ -59,7 +60,7 @@ export function RecentActivities({ activities }: Props) {
               )}
               {a.avgHeartRate && (
                 <span className="hidden text-subtle xl:block">
-                  {a.avgHeartRate} bpm
+                  {a.avgHeartRate} {t.units.bpm}
                 </span>
               )}
             </div>

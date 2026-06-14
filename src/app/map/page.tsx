@@ -1,9 +1,10 @@
 import { MapPin } from 'lucide-react'
 import { getAllRoutes } from '@/application/usecases/GetAllRoutes'
 import { GlobalMapWrapper } from '@/components/map/GlobalMapWrapper'
+import { t } from '@/i18n'
 import type { Metadata } from 'next'
 
-export const metadata: Metadata = { title: 'Heatmap' }
+export const metadata: Metadata = { title: t.nav.items.heatmap }
 
 export default function MapPage() {
   const data = getAllRoutes()
@@ -17,12 +18,12 @@ export default function MapPage() {
       <div className="flex flex-wrap items-center gap-4 px-1">
         <div className="flex items-center gap-2">
           <MapPin size={15} className="text-emerald-500" />
-          <h1 className="text-sm font-semibold text-foreground">Running Heatmap</h1>
+          <h1 className="text-sm font-semibold text-foreground">{t.pages.map.title}</h1>
         </div>
         <div className="flex items-center gap-3 text-xs text-subtle">
-          <span>{data.totalCount} routes</span>
+          <span>{t.pages.map.routes(data.totalCount)}</span>
           <span className="h-3 w-px bg-border" />
-          <span>{data.totalKm.toLocaleString()} km</span>
+          <span>{data.totalKm.toLocaleString()} {t.units.km}</span>
           <span className="h-3 w-px bg-border" />
           <span>{yearLabel}</span>
         </div>
