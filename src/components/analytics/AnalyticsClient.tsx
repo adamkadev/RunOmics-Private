@@ -15,6 +15,7 @@ import { EasyHardChart } from './EasyHardChart'
 import { YearComparisonSection } from './YearComparisonSection'
 import { DistanceDistributionChart } from './DistanceDistributionChart'
 import { MonthlyComparisonChart } from './MonthlyComparisonChart'
+import { RpeTrendChart } from './RpeTrendChart'
 import { YearSelector } from '@/components/ui/YearSelector'
 import { formatDuration } from '@/lib/formatters'
 
@@ -151,6 +152,7 @@ export function AnalyticsClient({ data, comparison }: { data: AnalyticsPageData;
           <PaceTrendChart data={yearData.paceTrend} />
           <EfficiencyChart data={yearData.efficiencyTrend} />
           <EasyHardChart data={yearData.easyHardSplit} />
+          <RpeTrendChart data={yearData.rpeTrend} />
         </div>
       )}
 

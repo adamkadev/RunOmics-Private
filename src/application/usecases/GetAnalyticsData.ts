@@ -72,6 +72,12 @@ export interface YearTotals {
   caloriesPerWeek: number
 }
 
+export interface MonthlyRpe {
+  month: string
+  label: string
+  avgRpe: number | null
+}
+
 export interface YearAnalytics {
   year: number
   totals: YearTotals
@@ -84,6 +90,7 @@ export interface YearAnalytics {
   easyHardSplit: MonthlyEasyHard[]
   zoneDistribution: ZoneShare[]
   distanceDistribution: DistanceBracket[]
+  rpeTrend: MonthlyRpe[]
   typesPresent: ActivityType[]
 }
 
@@ -267,6 +274,15 @@ function buildYearAnalytics(year: number, activities: Activity[], now: Date): Ye
     }
   })
 
+  const rpeTrend: MonthlyRpe[] = months.map((m) => {
+    const acts = (byMonth.get(m) ?? []).filter((a) => a.rpe !== null)
+    return {
+      month: `${year}-${String(m).padStart(2, '0')}`,
+      label: monthLabel(m),
+      avgRpe: acts.length ? Math.round((acts.reduce((s, a) => s + a.rpe!, 0) / acts.length) * 10) / 10 : null,
+    }
+  })
+
   const distanceKm = Math.round(activities.reduce((s, a) => s + a.distanceKm, 0) * 10) / 10
   const calories = activities.reduce((s, a) => s + (a.calories ?? 0), 0)
   const elapsedDays = isCurrentYear
@@ -293,6 +309,7 @@ function buildYearAnalytics(year: number, activities: Activity[], now: Date): Ye
     easyHardSplit,
     zoneDistribution: zoneDistribution(activities),
     distanceDistribution: distanceDistribution(activities),
+    rpeTrend,
     typesPresent: Array.from(typesPresent),
   }
 }

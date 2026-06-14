@@ -1,0 +1,66 @@
+'use client'
+
+import { LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine, ResponsiveContainer } from 'recharts'
+import type { MonthlyRpe } from '@/application/usecases/GetAnalyticsData'
+import { CHART_COLORS } from '@/lib/colors'
+
+interface Props {
+  data: MonthlyRpe[]
+}
+
+interface TooltipProps {
+  active?: boolean
+  payload?: Array<{ value: number }>
+  label?: string
+}
+
+function CustomTooltip({ active, payload, label }: TooltipProps) {
+  if (!active || !payload?.length) return null
+  return (
+    <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-sm dark:bg-muted">
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      <p className="text-sm font-semibold text-foreground">RPE {payload[0].value}</p>
+    </div>
+  )
+}
+
+export function RpeTrendChart({ data }: Props) {
+  const values = data.map((d) => d.avgRpe).filter((v): v is number => v !== null)
+  if (!values.length) return null
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+      <h3 className="mb-4 text-sm font-semibold text-foreground/80">RPE Trend</h3>
+      <ResponsiveContainer width="100%" height={200}>
+        <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -10 }}>
+          <XAxis
+            dataKey="label"
+            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <YAxis
+            domain={[1, 10]}
+            ticks={[2, 4, 6, 8, 10]}
+            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+            axisLine={false}
+            tickLine={false}
+            width={24}
+          />
+          <ReferenceLine y={5} stroke={CHART_COLORS.referenceLine} strokeDasharray="3 3" />
+          <Tooltip content={<CustomTooltip />} />
+          <Line
+            type="monotone"
+            dataKey="avgRpe"
+            stroke={CHART_COLORS.hr}
+            strokeWidth={2}
+            dot={{ r: 3, fill: CHART_COLORS.hr, strokeWidth: 0 }}
+            connectNulls
+            isAnimationActive={false}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+      <p className="mt-2 text-xs text-subtle">Monthly average perceived effort (1–10).</p>
+    </div>
+  )
+}
