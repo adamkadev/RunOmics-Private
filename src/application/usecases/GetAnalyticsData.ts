@@ -78,6 +78,13 @@ export interface MonthlyRpe {
   avgRpe: number | null
 }
 
+export interface MonthlyTrainingEffect {
+  month: string
+  label: string
+  aer: number | null
+  ana: number | null
+}
+
 export interface YearAnalytics {
   year: number
   totals: YearTotals
@@ -91,6 +98,7 @@ export interface YearAnalytics {
   zoneDistribution: ZoneShare[]
   distanceDistribution: DistanceBracket[]
   rpeTrend: MonthlyRpe[]
+  trainingEffectTrend: MonthlyTrainingEffect[]
   typesPresent: ActivityType[]
 }
 
@@ -310,6 +318,17 @@ function buildYearAnalytics(year: number, activities: Activity[], now: Date): Ye
     zoneDistribution: zoneDistribution(activities),
     distanceDistribution: distanceDistribution(activities),
     rpeTrend,
+    trainingEffectTrend: months.map((m) => {
+      const acts = byMonth.get(m) ?? []
+      const aerActs = acts.filter((a) => a.aerTrainingEffect !== null)
+      const anaActs = acts.filter((a) => a.anaTrainingEffect !== null)
+      return {
+        month: `${year}-${String(m).padStart(2, '0')}`,
+        label: monthLabel(m),
+        aer: aerActs.length ? Math.round((aerActs.reduce((s, a) => s + a.aerTrainingEffect!, 0) / aerActs.length) * 10) / 10 : null,
+        ana: anaActs.length ? Math.round((anaActs.reduce((s, a) => s + a.anaTrainingEffect!, 0) / anaActs.length) * 10) / 10 : null,
+      }
+    }),
     typesPresent: Array.from(typesPresent),
   }
 }

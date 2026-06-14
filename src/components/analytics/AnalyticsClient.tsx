@@ -16,6 +16,7 @@ import { YearComparisonSection } from './YearComparisonSection'
 import { DistanceDistributionChart } from './DistanceDistributionChart'
 import { MonthlyComparisonChart } from './MonthlyComparisonChart'
 import { RpeTrendChart } from './RpeTrendChart'
+import { TrainingEffectChart } from './TrainingEffectChart'
 import { YearSelector } from '@/components/ui/YearSelector'
 import { formatDuration } from '@/lib/formatters'
 
@@ -162,6 +163,7 @@ export function AnalyticsClient({ data, comparison }: { data: AnalyticsPageData;
           <HrTrendChart data={yearData.hrTrend} />
           <ZoneDistributionChart data={yearData.zoneDistribution} />
           <CadenceTrendChart data={yearData.cadenceTrend} />
+          <TrainingEffectChart data={yearData.trainingEffectTrend} />
         </div>
       )}
 

@@ -1,0 +1,89 @@
+'use client'
+
+import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import type { MonthlyTrainingEffect } from '@/application/usecases/GetAnalyticsData'
+import { CHART_COLORS } from '@/lib/colors'
+
+interface Props {
+  data: MonthlyTrainingEffect[]
+}
+
+interface TooltipProps {
+  active?: boolean
+  payload?: Array<{ name: string; value: number; color: string }>
+  label?: string
+}
+
+function CustomTooltip({ active, payload, label }: TooltipProps) {
+  if (!active || !payload?.length) return null
+  return (
+    <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-sm dark:bg-muted">
+      <p className="mb-1 text-xs font-medium text-muted-foreground">{label}</p>
+      {payload.map((p) => (
+        <p key={p.name} className="text-xs font-semibold" style={{ color: p.color }}>
+          {p.name} {p.value.toFixed(1)}
+        </p>
+      ))}
+    </div>
+  )
+}
+
+export function TrainingEffectChart({ data }: Props) {
+  const hasAer = data.some((d) => d.aer !== null)
+  const hasAna = data.some((d) => d.ana !== null)
+  if (!hasAer && !hasAna) return null
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+      <h3 className="mb-4 text-sm font-semibold text-foreground/80">Training Effect</h3>
+      <ResponsiveContainer width="100%" height={200}>
+        <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -10 }}>
+          <XAxis
+            dataKey="label"
+            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <YAxis
+            domain={[0, 5]}
+            ticks={[1, 2, 3, 4, 5]}
+            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+            axisLine={false}
+            tickLine={false}
+            width={24}
+          />
+          <Tooltip content={<CustomTooltip />} />
+          <Legend
+            wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
+            formatter={(value) => <span className="text-muted-foreground">{value}</span>}
+          />
+          {hasAer && (
+            <Line
+              type="monotone"
+              dataKey="aer"
+              name="Aerobic"
+              stroke={CHART_COLORS.easy}
+              strokeWidth={2}
+              dot={{ r: 3, fill: CHART_COLORS.easy, strokeWidth: 0 }}
+              connectNulls
+              isAnimationActive={false}
+            />
+          )}
+          {hasAna && (
+            <Line
+              type="monotone"
+              dataKey="ana"
+              name="Anaerobic"
+              stroke={CHART_COLORS.hard}
+              strokeWidth={2}
+              dot={{ r: 3, fill: CHART_COLORS.hard, strokeWidth: 0 }}
+              connectNulls
+              isAnimationActive={false}
+            />
+          )}
+        </LineChart>
+      </ResponsiveContainer>
+      <p className="mt-2 text-xs text-subtle">Monthly avg aerobic & anaerobic training effect (1–5).</p>
+    </div>
+  )
+}
