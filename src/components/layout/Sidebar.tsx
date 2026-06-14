@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -44,6 +44,20 @@ export function Sidebar() {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
 
+  // Lock background scroll while the mobile menu is open.
+  useEffect(() => {
+    if (!open) return
+    const { style: htmlStyle } = document.documentElement
+    const { style: bodyStyle } = document.body
+    const prevHtml = htmlStyle.overflow
+    const prevBody = bodyStyle.overflow
+    htmlStyle.overflow = 'hidden'
+    bodyStyle.overflow = 'hidden'
+    return () => {
+      htmlStyle.overflow = prevHtml
+      bodyStyle.overflow = prevBody
+    }
+  }, [open])
 
   return (
     <>
