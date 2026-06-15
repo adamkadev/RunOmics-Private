@@ -140,6 +140,41 @@ export const en = {
     },
   },
 
+  trainingStatus: {
+    title: 'Training Status',
+    status: {
+      productive: 'Productive',
+      fresh: 'Fresh',
+      overreaching: 'Overreaching',
+      recovery: 'Recovery',
+      detraining: 'Detraining',
+    },
+    description: {
+      productive: 'Fitness building steadily.',
+      fresh: 'Fresh and ready to perform.',
+      overreaching: 'Fatigue is high - consider easing off.',
+      recovery: 'Load reduced, form recovering.',
+      detraining: 'Training volume too low to maintain fitness.',
+    },
+    risk: {
+      low: 'Low risk',
+      moderate: 'Moderate risk',
+      high: 'High risk',
+    },
+    loadTrend: {
+      building: 'Building',
+      maintaining: 'Maintaining',
+      tapering: 'Tapering',
+      detraining: 'Declining',
+    },
+    metrics: {
+      fitness: 'Fitness',
+      fatigue: 'Fatigue',
+      form: 'Form',
+      fitnessDelta: (d: number) => `${d >= 0 ? '+' : ''}${d} over 2 wk`,
+    },
+  },
+
   insights: {
     title: 'Insights',
     formFresh: "You're fresh - a good window for a hard session or a race.",

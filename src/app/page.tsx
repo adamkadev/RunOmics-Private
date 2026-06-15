@@ -1,5 +1,6 @@
 import { getDashboardData } from '@/application/usecases/GetDashboardData'
 import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
+import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { getVO2max } from '@/application/usecases/GetRecords'
 import { getHeatmapData } from '@/application/usecases/GetHeatmapData'
 import { getInsights } from '@/application/usecases/GetInsights'
@@ -8,11 +9,13 @@ import { DashboardCharts } from '@/components/dashboard/DashboardCharts'
 import { RecentActivities } from '@/components/dashboard/RecentActivities'
 import { ActivityHeatmap } from '@/components/dashboard/ActivityHeatmap'
 import { InsightsCard } from '@/components/dashboard/InsightsCard'
+import { TrainingStatusBanner } from '@/components/dashboard/TrainingStatusBanner'
 import { t } from '@/i18n'
 
 export default function DashboardPage() {
   const data = getDashboardData()
   const trainingLoad = getTrainingLoad()
+  const trainingStatus = getTrainingStatus()
   const vo2max = getVO2max()
   const heatmapDays = getHeatmapData()
   const insights = getInsights()
@@ -33,6 +36,8 @@ export default function DashboardPage() {
         longestStreak={data.longestStreak}
         vo2max={vo2max}
       />
+
+      {trainingStatus && <TrainingStatusBanner status={trainingStatus} />}
 
       <InsightsCard insights={insights} />
 
