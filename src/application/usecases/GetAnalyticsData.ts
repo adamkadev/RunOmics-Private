@@ -122,11 +122,19 @@ export interface PeriodAnalytics extends AnalyticsSeries {
   delta: PeriodDelta | null
 }
 
+export interface DailyEfficiency {
+  date: string
+  label: string
+  ef7: number | null    // 7-day rolling average
+  ef30: number | null   // 30-day rolling average
+}
+
 export interface AnalyticsPageData {
   years: number[]
   byYear: Record<number, YearAnalytics>
   periodWeeks: number[]
   byPeriod: Record<number, PeriodAnalytics>
+  efficiencyDaily: DailyEfficiency[]
 }
 
 // A value (possibly null) paired with a weight, averaged across activities.
@@ -376,6 +384,33 @@ function buildPeriodAnalytics(all: Activity[], weeks: number, now: Date): Period
   return { weeks, totals: computeTotals(windowActs, weeks * 7), delta, ...buildSeries(buckets, windowActs) }
 }
 
+function buildEfficiencyDaily(activities: Activity[], now: Date): DailyEfficiency[] {
+  const EASY_TYPES_SET = new Set(EASY_TYPES)
+  const DAY_MS = 86_400_000
+  const easy = activities.filter((a) => EASY_TYPES_SET.has(a.type))
+  const nowMs = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+
+  // Pre-compute timestamps once
+  const stamped = easy.map((a) => ({ a, ms: new Date(a.date + 'T00:00:00').getTime() }))
+
+  return Array.from({ length: 90 }, (_, i) => {
+    const dayMs = nowMs - (89 - i) * DAY_MS
+    const day = new Date(dayMs)
+    const label = day.toLocaleDateString('en', { day: 'numeric', month: 'short' })
+    const date = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`
+
+    const in7  = stamped.filter((x) => x.ms >= dayMs - 6 * DAY_MS && x.ms <= dayMs).map((x) => x.a)
+    const in30 = stamped.filter((x) => x.ms >= dayMs - 29 * DAY_MS && x.ms <= dayMs).map((x) => x.a)
+
+    return {
+      date,
+      label,
+      ef7:  in7.length  >= 2 ? efficiencyFactor(in7)  : null,
+      ef30: in30.length >= 5 ? efficiencyFactor(in30) : null,
+    }
+  })
+}
+
 export function getAnalyticsData(): AnalyticsPageData {
   const all = getAllActivities()
   const now = new Date()
@@ -396,5 +431,6 @@ export function getAnalyticsData(): AnalyticsPageData {
     byYear: Object.fromEntries(years.map((y) => [y, buildYearAnalytics(y, byYearMap.get(y)!, now)])),
     periodWeeks,
     byPeriod: Object.fromEntries(periodWeeks.map((w) => [w, buildPeriodAnalytics(all, w, now)])),
+    efficiencyDaily: buildEfficiencyDaily(all, now),
   }
 }

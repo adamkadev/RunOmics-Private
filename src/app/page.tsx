@@ -1,6 +1,7 @@
 import { getDashboardData } from '@/application/usecases/GetDashboardData'
 import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
 import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
+import { getConsistencyScore } from '@/application/usecases/GetConsistencyScore'
 import { getVO2max } from '@/application/usecases/GetRecords'
 import { getHeatmapData } from '@/application/usecases/GetHeatmapData'
 import { getInsights } from '@/application/usecases/GetInsights'
@@ -10,12 +11,14 @@ import { RecentActivities } from '@/components/dashboard/RecentActivities'
 import { ActivityHeatmap } from '@/components/dashboard/ActivityHeatmap'
 import { InsightsCard } from '@/components/dashboard/InsightsCard'
 import { TrainingStatusBanner } from '@/components/dashboard/TrainingStatusBanner'
+import { ConsistencyCard } from '@/components/dashboard/ConsistencyCard'
 import { t } from '@/i18n'
 
 export default function DashboardPage() {
   const data = getDashboardData()
   const trainingLoad = getTrainingLoad()
   const trainingStatus = getTrainingStatus()
+  const consistencyScore = getConsistencyScore()
   const vo2max = getVO2max()
   const heatmapDays = getHeatmapData()
   const insights = getInsights()
@@ -38,6 +41,8 @@ export default function DashboardPage() {
       />
 
       {trainingStatus && <TrainingStatusBanner status={trainingStatus} />}
+
+      {consistencyScore && <ConsistencyCard data={consistencyScore} />}
 
       <InsightsCard insights={insights} />
 

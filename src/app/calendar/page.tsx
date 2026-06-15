@@ -1,9 +1,14 @@
 import { getActivities } from '@/application/usecases/GetActivities'
+import { getFullLoadHistory } from '@/application/usecases/GetTrainingLoad'
 import { CalendarClient } from '@/components/calendar/CalendarClient'
 import { t } from '@/i18n'
 
 export default function CalendarPage() {
   const activities = getActivities()
+  const loadHistory = getFullLoadHistory()
+  const readiness = Object.fromEntries(
+    Array.from(loadHistory.entries()).map(([date, snap]) => [date, snap.tsb])
+  )
 
   return (
     <div className="space-y-6">
@@ -13,7 +18,7 @@ export default function CalendarPage() {
           {t.pages.calendar.subtitle}
         </p>
       </div>
-      <CalendarClient activities={activities} />
+      <CalendarClient activities={activities} readiness={readiness} />
     </div>
   )
 }

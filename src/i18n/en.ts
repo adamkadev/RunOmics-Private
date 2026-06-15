@@ -293,6 +293,13 @@ export const en = {
         footnote: 'Avg aerobic & anaerobic training effect (1–5).',
       },
       monthlyComparison: { title: 'Month by Month' },
+      efficiencyRolling: {
+        title: 'Aerobic Efficiency - Rolling Trend',
+        ef7: '7-day',
+        ef30: '30-day',
+        unit: 'm/min·bpm',
+        footnote: 'Rolling aerobic efficiency over the last 90 days. 7-day captures recent form, 30-day shows the underlying trend.',
+      },
     },
     yearOverYear: {
       title: 'Year over Year',
@@ -470,11 +477,23 @@ export const en = {
     perKm: '/km',
   },
 
+  consistencyScore: {
+    title: 'Consistency',
+    rating: {
+      excellent: 'Excellent',
+      good: 'Good',
+      fair: 'Fair',
+      low: 'Low',
+    },
+    detail: (weeks: number, adherence: number) => `${weeks} wk window · ${adherence}% weeks active`,
+  },
+
   calendar: {
     today: 'Today',
     summary: (sessions: number, km: number) =>
       `${sessions} session${sessions !== 1 ? 's' : ''} · ${km} km`,
     weekdays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    readiness: (tsb: number) => `Form ${tsb >= 0 ? '+' : ''}${tsb}`,
   },
 
   // Display labels for domain enums. Styling (colors, badge classes) stays in

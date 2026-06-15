@@ -17,6 +17,7 @@ import { DistanceDistributionChart } from './DistanceDistributionChart'
 import { MonthlyComparisonChart } from './MonthlyComparisonChart'
 import { RpeTrendChart } from './RpeTrendChart'
 import { TrainingEffectChart } from './TrainingEffectChart'
+import { DailyEfficiencyChart } from './DailyEfficiencyChart'
 import { TrainingZones } from '@/components/goals/TrainingZones'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { formatDuration } from '@/lib/formatters'
@@ -271,6 +272,7 @@ export function AnalyticsClient({ data, comparison, zones }: { data: AnalyticsPa
             <CadenceTrendChart data={active.cadenceTrend} />
             <TrainingEffectChart data={active.trainingEffectTrend} />
           </div>
+          <DailyEfficiencyChart data={data.efficiencyDaily} />
           {zones && <TrainingZones data={zones} />}
         </div>
       )}
