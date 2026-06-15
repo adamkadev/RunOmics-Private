@@ -44,27 +44,75 @@ async function reverseGeocode(
   lat: number,
   token: string,
 ): Promise<string | null> {
+  const key = `reverse_geocode:${lon.toFixed(4)},${lat.toFixed(4)}`;
+  const TTL_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
+
   try {
+    // Try localStorage cache first
+    if (typeof window !== "undefined" && window.localStorage) {
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw) as { ts: number; value: string | null };
+          if (Date.now() - parsed.ts < TTL_MS) return parsed.value;
+        } catch {
+          // ignore parse errors and continue to fetch
+        }
+      }
+    }
+
     const res = await fetch(
       `https://api.maptiler.com/geocoding/${lon.toFixed(4)},${lat.toFixed(4)}.json?key=${token}`,
     );
-    if (!res.ok) return null;
-    const json = await res.json();
-    const features: GeoFeature[] = json.features ?? [];
-    if (!features.length) return null;
-
-    for (const type of ["municipality", "locality"]) {
-      const match = features.find((f) => f.place_type?.includes(type));
-      if (match) return match.text;
+    if (!res.ok) {
+      // Cache negative result briefly to avoid repeated failing requests
+      if (typeof window !== "undefined" && window.localStorage) {
+        try {
+          localStorage.setItem(key, JSON.stringify({ ts: Date.now(), value: null }));
+        } catch {}
+      }
+      return null;
     }
 
-    const ctx = features[0].context ?? [];
-    return (
-      ctx.find((c) => c.id.startsWith("region."))?.text ??
-      ctx.find((c) => c.id.startsWith("county."))?.text ??
-      features[0].text ??
-      null
-    );
+    const json = await res.json();
+    const features: GeoFeature[] = json.features ?? [];
+    if (!features.length) {
+      if (typeof window !== "undefined" && window.localStorage) {
+        try {
+          localStorage.setItem(key, JSON.stringify({ ts: Date.now(), value: null }));
+        } catch {}
+      }
+      return null;
+    }
+
+    let result: string | null = null;
+    for (const type of ["municipality", "locality"]) {
+      const match = features.find((f) => f.place_type?.includes(type));
+      if (match) {
+        result = match.text;
+        break;
+      }
+    }
+
+    if (result === null) {
+      const ctx = features[0].context ?? [];
+      result =
+        ctx.find((c) => c.id.startsWith("region."))?.text ??
+        ctx.find((c) => c.id.startsWith("county."))?.text ??
+        features[0].text ??
+        null;
+    }
+
+    // Store in cache
+    if (typeof window !== "undefined" && window.localStorage) {
+      try {
+        localStorage.setItem(key, JSON.stringify({ ts: Date.now(), value: result }));
+      } catch {
+        // ignore quota errors
+      }
+    }
+
+    return result;
   } catch {
     return null;
   }
