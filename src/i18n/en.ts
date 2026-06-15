@@ -27,7 +27,7 @@ export const en = {
       activities: 'Activities',
       calendar: 'Calendar',
       analytics: 'Analytics',
-      goals: 'Goals & PBs',
+      goals: 'Goals',
       records: 'Records',
       heatmap: 'HeatMap',
     },
@@ -343,7 +343,7 @@ export const en = {
   },
 
   goals: {
-    title: 'Goals & PBs',
+    title: 'Goals',
     annualGoal: 'Annual Goal',
     kmRemaining: (km: number) => `${km} km remaining`,
     goalReached: 'Goal reached!',
