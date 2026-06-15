@@ -120,7 +120,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
         <section className="space-y-3">
           <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             <Trophy size={14} className="text-amber-500 dark:text-amber-400" />
-            {t.goals.personalBests}
+            {t.goals.seasonRaces}
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {pbs.map(({ entry, activity, photoPath }) => (

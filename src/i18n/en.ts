@@ -353,7 +353,7 @@ export const en = {
     noTarget: 'No target',
     targetDone: (ahead: string) => `✓ Done (${ahead} ahead)`,
     targetToGo: (time: string) => `${time} to go`,
-    personalBests: 'Personal Bests',
+    seasonRaces: 'Season Races',
     raceAlt: (distance: string) => `${distance} race`,
     emptyPbsPrefix: (year: number) => `Add PBs for ${year} to`,
   },
