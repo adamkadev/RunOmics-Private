@@ -5,6 +5,7 @@ import { getConsistencyScore } from '@/application/usecases/GetConsistencyScore'
 import { getVO2max } from '@/application/usecases/GetRecords'
 import { getHeatmapData } from '@/application/usecases/GetHeatmapData'
 import { getInsights } from '@/application/usecases/GetInsights'
+import { getVO2maxHistory } from '@/application/usecases/GetVO2maxHistory'
 import { StatsGrid } from '@/components/dashboard/StatsGrid'
 import { DashboardCharts } from '@/components/dashboard/DashboardCharts'
 import { RecentActivities } from '@/components/dashboard/RecentActivities'
@@ -12,6 +13,7 @@ import { ActivityHeatmap } from '@/components/dashboard/ActivityHeatmap'
 import { InsightsCard } from '@/components/dashboard/InsightsCard'
 import { TrainingStatusBanner } from '@/components/dashboard/TrainingStatusBanner'
 import { ConsistencyCard } from '@/components/dashboard/ConsistencyCard'
+import { VO2maxChart } from '@/components/dashboard/VO2maxChart'
 import { t } from '@/i18n'
 
 export default function DashboardPage() {
@@ -22,6 +24,7 @@ export default function DashboardPage() {
   const vo2max = getVO2max()
   const heatmapDays = getHeatmapData()
   const insights = getInsights()
+  const vo2maxHistory = getVO2maxHistory()
 
   return (
     <div className="space-y-6">
@@ -47,7 +50,10 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <InsightsCard insights={insights} />
+      <div className={vo2maxHistory.length >= 2 ? 'grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]' : undefined}>
+        <InsightsCard insights={insights} />
+        {vo2maxHistory.length >= 2 && <VO2maxChart data={vo2maxHistory} />}
+      </div>
 
       <DashboardCharts
         weeklyVolume={data.weeklyVolume}

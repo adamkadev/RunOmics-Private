@@ -58,6 +58,7 @@ class ActivityData:
     stride_length_m: float | None
     best_efforts: dict[str, float] | None
     pace_samples: list[float] | None
+    vo2max_garmin: float | None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -89,6 +90,7 @@ class ActivityData:
             "strideLengthM": self.stride_length_m,
             "bestEfforts": self.best_efforts,
             "paceSamples": self.pace_samples,
+            "vo2maxGarmin": self.vo2max_garmin,
         }
 
 
@@ -222,6 +224,7 @@ def map_activity(
         stride_length_m=parsed.stride_length_m if parsed else None,
         best_efforts=(parsed.best_efforts or None) if parsed else None,
         pace_samples=pace_samples,
+        vo2max_garmin=parsed.vo2max_garmin if parsed else None,
     )
 
 

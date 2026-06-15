@@ -44,6 +44,7 @@ export interface Activity {
   strideLengthM: number | null
   bestEfforts: Record<string, number> | null
   paceSamples: number[] | null
+  vo2maxGarmin: number | null
 }
 
 export interface WeeklyVolume {

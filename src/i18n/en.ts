@@ -138,6 +138,12 @@ export const en = {
       footnote:
         'Fitness = 42-day load average (CTL) · Fatigue = 7-day (ATL) · Form = Fitness - Fatigue (TSB).',
     },
+    vo2maxChart: {
+      title: 'VO₂max',
+      subtitle: (n: number) => `${n} measures from Garmin`,
+      unit: 'ml/kg/min',
+      footnote: 'Garmin VO₂max estimate · extracted from FIT message 140',
+    },
   },
 
   trainingStatus: {
