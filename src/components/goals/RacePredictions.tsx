@@ -64,7 +64,7 @@ export function RacePredictions({ records }: Props) {
         <TrendingUp size={14} className="text-emerald-500 dark:text-emerald-400" />
         {t.racePredictions.title}
       </h2>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {predictions.map(({ key, label, km, actual, predicted, sourceLabel }) => (
           <div
             key={key}
@@ -73,7 +73,7 @@ export function RacePredictions({ records }: Props) {
             <p className="text-xs font-semibold text-subtle">{label}</p>
             {predicted !== null ? (
               <>
-                <p className="mt-1 text-lg font-bold tracking-tight text-foreground">
+                <p className="mt-1 text-2xl font-bold tracking-tight text-foreground">
                   ~{formatDuration(predicted)}
                 </p>
                 <p className="text-xs text-subtle">

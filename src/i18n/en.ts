@@ -28,6 +28,7 @@ export const en = {
       calendar: 'Calendar',
       analytics: 'Analytics',
       goals: 'Goals & PBs',
+      records: 'Records',
       heatmap: 'HeatMap',
     },
     openMenu: 'Open menu',
@@ -360,6 +361,8 @@ export const en = {
   records: {
     title: 'All-Time Records',
     footnote: '★ official race time · others auto-detected from activity data',
+    pageTitle: 'Records',
+    pageSubtitle: 'Your personal bests by distance',
   },
 
   racePredictions: {

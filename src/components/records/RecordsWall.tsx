@@ -4,11 +4,11 @@ import type { RecordEntry } from '@/application/usecases/GetRecords'
 import { formatDuration, formatPace } from '@/lib/formatters'
 import { t } from '@/i18n'
 
-interface Props {
-  records: RecordEntry[]
+function shortDate(iso: string): string {
+  return new Date(iso + 'T00:00:00').toLocaleDateString(t.locale, { month: 'short', year: '2-digit' })
 }
 
-export function RecordsStrip({ records }: Props) {
+export function RecordsWall({ records }: { records: RecordEntry[] }) {
   if (!records.some((r) => r.seconds !== null)) return null
 
   return (
@@ -17,21 +17,23 @@ export function RecordsStrip({ records }: Props) {
         <Medal size={14} className="text-violet-500 dark:text-violet-400" />
         {t.records.title}
       </h2>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {records.map((r) => {
-          const inner = (
+          const card = (
             <>
-              <p className="text-xs font-semibold text-subtle">{r.label}</p>
+              <div className="flex items-baseline justify-between">
+                <p className="text-xs font-semibold text-subtle">{r.label}</p>
+                {r.official && <span className="text-xs font-semibold text-violet-400">★</span>}
+              </div>
               {r.seconds !== null ? (
                 <>
-                  <p className="mt-1 text-lg font-bold tracking-tight text-foreground">
+                  <p className="mt-1 text-2xl font-bold tracking-tight text-foreground">
                     {formatDuration(r.seconds)}
                   </p>
                   <p className="text-xs text-subtle">
                     {r.paceSecPerKm !== null && formatPace(r.paceSecPerKm)}
-                    {r.official && (
-                      <span className="ml-1 font-semibold text-violet-400">★</span>
-                    )}
+                    {r.date && <span> · {shortDate(r.date)}</span>}
                   </p>
                 </>
               ) : (
@@ -46,21 +48,17 @@ export function RecordsStrip({ records }: Props) {
               href={`/activities/${r.activityId}`}
               className="rounded-xl border border-border bg-card p-4 shadow-card transition-shadow hover:shadow-md"
             >
-              {inner}
+              {card}
             </Link>
           ) : (
-            <div
-              key={r.key}
-              className="rounded-xl border border-dashed border-border bg-card p-4"
-            >
-              {inner}
+            <div key={r.key} className="rounded-xl border border-dashed border-border bg-card p-4">
+              {card}
             </div>
           )
         })}
       </div>
-      <p className="text-xs text-subtle">
-        {t.records.footnote}
-      </p>
+
+      <p className="text-xs text-subtle">{t.records.footnote}</p>
     </section>
   )
 }
