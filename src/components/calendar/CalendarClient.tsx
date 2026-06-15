@@ -8,17 +8,8 @@ import type { Activity, ActivityType } from '@/domain/activity/types'
 import { round } from '@/lib/math'
 import { t } from '@/i18n'
 
-function readinessDotClass(tsb: number): string {
-  if (tsb > 10)  return 'bg-emerald-400 dark:bg-emerald-400'
-  if (tsb > 3)   return 'bg-emerald-200 dark:bg-emerald-600'
-  if (tsb > -5)  return 'bg-slate-300 dark:bg-slate-500'
-  if (tsb > -15) return 'bg-amber-400 dark:bg-amber-400'
-  return 'bg-orange-500 dark:bg-orange-500'
-}
-
 interface Props {
   activities: Activity[]
-  readiness: Record<string, number>
 }
 
 const WEEKDAYS = t.calendar.weekdays
@@ -27,7 +18,7 @@ function monthKey(year: number, month: number): string {
   return `${year}-${String(month + 1).padStart(2, '0')}`
 }
 
-export function CalendarClient({ activities, readiness }: Props) {
+export function CalendarClient({ activities }: Props) {
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth())
@@ -136,23 +127,15 @@ export function CalendarClient({ activities, readiness }: Props) {
             >
               {cell && (
                 <>
-                  <div className="mb-1 flex items-center justify-between">
-                    {readiness[cell.date] !== undefined ? (
-                      <span
-                        className={`h-1.5 w-1.5 shrink-0 rounded-full ${readinessDotClass(readiness[cell.date])}`}
-                        title={t.calendar.readiness(readiness[cell.date])}
-                      />
-                    ) : <span />}
-                    <span
-                      className={`text-xs ${
-                        cell.date === todayIso
-                          ? 'font-bold text-emerald-600 dark:text-emerald-400'
-                          : 'text-subtle'
-                      }`}
-                    >
-                      {cell.day}
-                    </span>
-                  </div>
+                  <p
+                    className={`mb-1 text-xs ${
+                      cell.date === todayIso
+                        ? 'font-bold text-emerald-600 dark:text-emerald-400'
+                        : 'text-subtle'
+                    }`}
+                  >
+                    {cell.day}
+                  </p>
                   <div className="space-y-1">
                     {cell.acts.map((a) => (
                       <Link
