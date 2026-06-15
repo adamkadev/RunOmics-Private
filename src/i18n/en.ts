@@ -139,6 +139,20 @@ export const en = {
     },
   },
 
+  insights: {
+    title: 'Insights',
+    formFresh: "You're fresh - a good window for a hard session or a race.",
+    formFatigued: 'Fatigue is high - an easy day or some rest would help.',
+    acwrHigh: (ratio: number) => `Load ramping fast (${ratio}× your usual) - ease off to stay injury-free.`,
+    acwrOptimal: 'Your training load is right in the sweet spot.',
+    tooHard: (pct: number) => `Only ${pct}% of your time is easy this month - aim for ~80%.`,
+    balanced: (pct: number) => `Great balance - ${pct}% easy, close to the 80/20 ideal.`,
+    easyPaceImproved: (sec: number) => `Your easy pace improved ${sec}s/km this month.`,
+    monthlyRecord: (km: number) => `Biggest month yet - ${km} km.`,
+    volumeStreak: (weeks: number, km: number) => `${weeks} straight weeks over ${km} km.`,
+    recentPr: (label: string) => `New ${label} personal best in the last month.`,
+  },
+
   analytics: {
     title: 'Analytics',
     season: (year: number) => `${year} season`,

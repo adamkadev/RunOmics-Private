@@ -48,7 +48,7 @@ const ZONE_DEFS = [
   {
     key: 'threshold',
     label: 'Threshold',
-    shortDesc: 'Comfortably hard — T pace',
+    shortDesc: 'Comfortably hard - T pace',
     example: 'Cruise intervals, tempo runs 20–40 min',
     pctMin: 0.85,
     pctMax: 0.88,
@@ -56,7 +56,7 @@ const ZONE_DEFS = [
   {
     key: 'vo2max',
     label: 'VO2max',
-    shortDesc: '5K race effort — I pace',
+    shortDesc: '5K race effort - I pace',
     example: '3–5 min intervals, track workouts',
     pctMin: 0.95,
     pctMax: 1.00,
