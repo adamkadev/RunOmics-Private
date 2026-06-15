@@ -418,8 +418,6 @@ export const en = {
     annualGoal: 'Annual Goal',
     kmRemaining: (km: number) => `${km} km remaining`,
     goalReached: 'Goal reached!',
-    ahead: (km: number, projected: number) => `+${km} km ahead · on track for ${projected} km`,
-    behind: (km: number) => `-${km} km behind pace`,
     raceTargets: 'Race Targets',
     noTarget: 'No target',
     targetDone: (ahead: string) => `✓ Done (${ahead} ahead)`,
@@ -427,6 +425,17 @@ export const en = {
     seasonRaces: 'Season Races',
     raceAlt: (distance: string) => `${distance} race`,
     emptyPbsPrefix: (year: number) => `Add PBs for ${year} to`,
+    projection: {
+      status: {
+        ahead: 'Ahead',
+        on_track: 'On track',
+        behind: 'Behind',
+      },
+      projected: (km: number) => `Projected ${km} km`,
+      aheadBy: (km: number) => `+${km} km vs goal`,
+      behindBy: (km: number) => `-${km} km vs goal`,
+      rate: (current: number, needed: number) => `${current} km/wk pace · ${needed} km/wk needed`,
+    },
   },
 
   records: {
@@ -434,6 +443,10 @@ export const en = {
     footnote: '★ official race time · others auto-detected from activity data',
     pageTitle: 'Records',
     pageSubtitle: 'Your personal bests by distance',
+    formAtPb: {
+      fitness: 'Fitness',
+      form: 'Form',
+    },
   },
 
   racePredictions: {

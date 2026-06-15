@@ -35,6 +35,15 @@ export function RecordsWall({ records }: { records: RecordEntry[] }) {
                     {r.paceSecPerKm !== null && formatPace(r.paceSecPerKm)}
                     {r.date && <span> · {shortDate(r.date)}</span>}
                   </p>
+                  {r.formAtPb && (
+                    <p className="mt-1.5 text-xs text-subtle">
+                      {t.records.formAtPb.fitness} {r.formAtPb.ctl}
+                      {' · '}
+                      <span className={r.formAtPb.tsb >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}>
+                        {t.records.formAtPb.form} {r.formAtPb.tsb >= 0 ? '+' : ''}{r.formAtPb.tsb}
+                      </span>
+                    </p>
+                  )}
                 </>
               ) : (
                 <p className="mt-1 text-sm text-subtle">-</p>

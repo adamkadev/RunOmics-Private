@@ -1,6 +1,8 @@
 import { readFileSync } from 'fs'
 import { join } from 'path'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { getFullLoadHistory } from './GetTrainingLoad'
+import type { LoadSnapshot } from './GetTrainingLoad'
 import { round } from '@/lib/math'
 
 const EFFORTS = [
@@ -49,6 +51,7 @@ export interface RecordEntry {
   activityId: string | null
   date: string | null
   official: boolean
+  formAtPb: LoadSnapshot | null
 }
 
 // Jack Daniels VDOT formula
@@ -94,18 +97,23 @@ export function getVO2max(): number | null {
 export function getRecords(): RecordEntry[] {
   const activities = getAllActivities()
   const officialPbs = loadOfficialPbs()
+  const activityMap = new Map(activities.map((a) => [a.id, a]))
+  const loadHistory = getFullLoadHistory()
 
   return EFFORTS.map(({ key, label, km }) => {
     const official = officialPbs.get(key)
     if (official) {
+      const activity = official.activityId ? activityMap.get(official.activityId) : undefined
+      const date = activity?.date ?? null
       return {
         key,
         label,
         seconds: official.seconds,
         paceSecPerKm: Math.round(official.seconds / km),
         activityId: official.activityId,
-        date: null,
+        date,
         official: true,
+        formAtPb: date ? (loadHistory.get(date) ?? null) : null,
       }
     }
 
@@ -124,6 +132,7 @@ export function getRecords(): RecordEntry[] {
       activityId: best?.activityId ?? null,
       date: best?.date ?? null,
       official: false,
+      formAtPb: best?.date ? (loadHistory.get(best.date) ?? null) : null,
     }
   })
 }
