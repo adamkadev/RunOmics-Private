@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Footprints, Timer, Hash, Mountain, Gauge, Flame, ChevronUp } from 'lucide-react'
-import type { AnalyticsPageData } from '@/application/usecases/GetAnalyticsData'
+import type { AnalyticsPageData, PeriodDelta } from '@/application/usecases/GetAnalyticsData'
 import type { YearComparisonData } from '@/application/usecases/GetYearComparison'
 import { MonthlyVolumeChart } from './MonthlyVolumeChart'
 import { PaceTrendChart } from './PaceTrendChart'
@@ -19,7 +19,6 @@ import { RpeTrendChart } from './RpeTrendChart'
 import { TrainingEffectChart } from './TrainingEffectChart'
 import { TrainingZones } from '@/components/goals/TrainingZones'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
-import { YearSelector } from '@/components/ui/YearSelector'
 import { formatDuration } from '@/lib/formatters'
 import { t } from '@/i18n'
 
@@ -31,6 +30,8 @@ const TABS = [
 ] as const
 
 type TabId = (typeof TABS)[number]['id']
+
+type View = { kind: 'year'; year: number } | { kind: 'period'; weeks: number }
 
 interface StatCardProps {
   icon: React.ReactNode
@@ -49,14 +50,46 @@ function StatCard({ icon, label, value, className }: StatCardProps) {
   )
 }
 
+function chipClass(active: boolean): string {
+  return [
+    'shrink-0 rounded-lg px-2.5 py-1 text-xs font-medium transition-colors',
+    active ? 'bg-emerald-500 text-white' : 'border border-border bg-card text-muted-foreground hover:bg-muted',
+  ].join(' ')
+}
+
+function DeltaStrip({ delta, weeks }: { delta: PeriodDelta; weeks: number }) {
+  const items: { text: string; good: boolean }[] = []
+  if (delta.distancePct != null) items.push({ text: t.analytics.period.distancePct(delta.distancePct), good: delta.distancePct >= 0 })
+  if (delta.sessionsPct != null) items.push({ text: t.analytics.period.sessionsPct(delta.sessionsPct), good: delta.sessionsPct >= 0 })
+  if (delta.easyPaceSec != null && delta.easyPaceSec !== 0) {
+    const faster = delta.easyPaceSec < 0
+    items.push({
+      text: faster ? t.analytics.period.paceFaster(Math.abs(delta.easyPaceSec)) : t.analytics.period.paceSlower(delta.easyPaceSec),
+      good: faster,
+    })
+  }
+  if (!items.length) return null
+  return (
+    <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs">
+      {items.map((it, i) => (
+        <span key={i} className={it.good ? 'text-emerald-600 dark:text-emerald-400' : 'text-orange-500 dark:text-orange-400'}>
+          {it.text}
+        </span>
+      ))}
+      <span className="text-subtle">{t.analytics.period.vsPrevious(weeks)}</span>
+    </div>
+  )
+}
+
 export function AnalyticsClient({ data, comparison, zones }: { data: AnalyticsPageData; comparison: YearComparisonData | null; zones: TrainingZonesData | null }) {
-  const { years, byYear } = data
-  const [selectedYear, setSelectedYear] = useState(years[0])
+  const { years, byYear, periodWeeks, byPeriod } = data
+  const [view, setView] = useState<View>({ kind: 'year', year: years[0] })
   const [tab, setTab] = useState<TabId>('volume')
   const [showScrollTop, setShowScrollTop] = useState(false)
 
-  const yearData = byYear[selectedYear]
-  const totals = yearData.totals
+  const active = view.kind === 'year' ? byYear[view.year] : byPeriod[view.weeks]
+  const totals = active.totals
+  const isPeriod = view.kind === 'period'
 
   useEffect(() => {
     function onScroll() {
@@ -66,7 +99,16 @@ export function AnalyticsClient({ data, comparison, zones }: { data: AnalyticsPa
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  const prevYear = years.find((y) => y !== selectedYear) ?? years[1]
+  function selectPeriod(weeks: number) {
+    setView({ kind: 'period', weeks })
+    if (tab === 'seasons') setTab('volume') // year-only tab
+  }
+
+  const visibleTabs = isPeriod ? TABS.filter((tb) => tb.id !== 'seasons') : TABS
+
+  // Rolling periods are anchored to today, so only offer them on the most recent
+  // year (or while a period is active). Past years just show their calendar view.
+  const showPeriods = view.kind === 'period' || view.year === years[0]
 
   const statCards = [
     {
@@ -113,12 +155,31 @@ export function AnalyticsClient({ data, comparison, zones }: { data: AnalyticsPa
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
+      <div>
+        <div className="flex items-start justify-between gap-3">
           <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.analytics.title}</h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">{t.analytics.season(selectedYear)}</p>
+          <div className="flex items-center gap-1 overflow-x-auto">
+            {showPeriods && (
+              <>
+                {periodWeeks.map((w) => (
+                  <button key={`p${w}`} onClick={() => selectPeriod(w)} className={chipClass(view.kind === 'period' && view.weeks === w)}>
+                    {t.analytics.period.chip(w)}
+                  </button>
+                ))}
+                <span className="mx-1 h-4 w-px shrink-0 bg-border" />
+              </>
+            )}
+            {years.map((y) => (
+              <button key={y} onClick={() => setView({ kind: 'year', year: y })} className={chipClass(view.kind === 'year' && view.year === y)}>
+                {y}
+              </button>
+            ))}
+          </div>
         </div>
-        <YearSelector years={years} selected={selectedYear} onSelect={setSelectedYear} />
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          {isPeriod ? t.analytics.period.title(view.weeks) : t.analytics.season(view.year)}
+        </p>
+        {view.kind === 'period' && 'delta' in active && active.delta && <DeltaStrip delta={active.delta} weeks={view.weeks} />}
       </div>
 
       {/* Stats - odd count, so the last card spans full width on mobile to avoid a lonely orphan */}
@@ -129,14 +190,14 @@ export function AnalyticsClient({ data, comparison, zones }: { data: AnalyticsPa
             icon={card.icon}
             label={card.label}
             value={card.value}
-            className={idx === statCards.length - 1 ? 'col-span-2 sm:col-span-1' : ''}
+            className={statCards.length % 2 === 1 && idx === statCards.length - 1 ? 'col-span-2 sm:col-span-1' : ''}
           />
         ))}
       </div>
 
       {/* Tabs */}
       <div className="flex gap-1 rounded-xl border border-border bg-muted/40 p-1">
-        {TABS.map((item) => (
+        {visibleTabs.map((item) => (
           <button
             key={item.id}
             onClick={() => setTab(item.id)}
@@ -155,10 +216,10 @@ export function AnalyticsClient({ data, comparison, zones }: { data: AnalyticsPa
       {/* Tab: Volume */}
       {tab === 'volume' && (
         <div className="space-y-4">
-          <MonthlyVolumeChart data={yearData.monthlyVolume} typesPresent={yearData.typesPresent} />
+          <MonthlyVolumeChart data={active.monthlyVolume} typesPresent={active.typesPresent} />
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <LongRunsChart data={yearData.longRuns} />
-            <DistanceDistributionChart data={yearData.distanceDistribution} />
+            <LongRunsChart data={active.longRuns} />
+            <DistanceDistributionChart data={active.distanceDistribution} />
           </div>
         </div>
       )}
@@ -166,37 +227,40 @@ export function AnalyticsClient({ data, comparison, zones }: { data: AnalyticsPa
       {/* Tab: Performance */}
       {tab === 'performance' && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <PaceTrendChart data={yearData.paceTrend} />
-          <EfficiencyChart data={yearData.efficiencyTrend} />
-          <EasyHardChart data={yearData.easyHardSplit} />
-          <RpeTrendChart data={yearData.rpeTrend} />
+          <PaceTrendChart data={active.paceTrend} />
+          <EfficiencyChart data={active.efficiencyTrend} />
+          <EasyHardChart data={active.easyHardSplit} />
+          <RpeTrendChart data={active.rpeTrend} />
         </div>
       )}
 
-      {/* Tab: Physiologie */}
+      {/* Tab: Physiology */}
       {tab === 'physiology' && (
         <div className="space-y-4">
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <HrTrendChart data={yearData.hrTrend} />
-            <ZoneDistributionChart data={yearData.zoneDistribution} />
-            <CadenceTrendChart data={yearData.cadenceTrend} />
-            <TrainingEffectChart data={yearData.trainingEffectTrend} />
+            <HrTrendChart data={active.hrTrend} />
+            <ZoneDistributionChart data={active.zoneDistribution} />
+            <CadenceTrendChart data={active.cadenceTrend} />
+            <TrainingEffectChart data={active.trainingEffectTrend} />
           </div>
           {zones && <TrainingZones data={zones} />}
         </div>
       )}
 
-      {/* Tab: Saisons */}
-      {tab === 'seasons' && (
+      {/* Tab: Seasons (year view only) */}
+      {tab === 'seasons' && view.kind === 'year' && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          {prevYear !== undefined && (
-            <MonthlyComparisonChart
-              currentYear={selectedYear}
-              currentData={yearData.monthlyVolume}
-              prevYear={prevYear}
-              prevData={byYear[prevYear]?.monthlyVolume ?? []}
-            />
-          )}
+          {(() => {
+            const prevYear = years.find((y) => y < view.year) ?? years.find((y) => y !== view.year)
+            return prevYear !== undefined ? (
+              <MonthlyComparisonChart
+                currentYear={view.year}
+                currentData={active.monthlyVolume}
+                prevYear={prevYear}
+                prevData={byYear[prevYear]?.monthlyVolume ?? []}
+              />
+            ) : null
+          })()}
           {comparison && <YearComparisonSection data={comparison} />}
         </div>
       )}

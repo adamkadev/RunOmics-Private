@@ -87,9 +87,9 @@ export interface MonthlyTrainingEffect {
   ana: number | null
 }
 
-export interface YearAnalytics {
-  year: number
-  totals: YearTotals
+// Per-bucket trend series shared by both the yearly (monthly buckets) and the
+// rolling-period (weekly buckets) views, so the same charts render either one.
+export interface AnalyticsSeries {
   monthlyVolume: MonthlyVolume[]
   paceTrend: MonthlyPace[]
   efficiencyTrend: MonthlyEfficiency[]
@@ -104,9 +104,29 @@ export interface YearAnalytics {
   typesPresent: ActivityType[]
 }
 
+export interface YearAnalytics extends AnalyticsSeries {
+  year: number
+  totals: YearTotals
+}
+
+// Progression vs the previous equally long window.
+export interface PeriodDelta {
+  distancePct: number | null
+  sessionsPct: number | null
+  easyPaceSec: number | null // negative = faster
+}
+
+export interface PeriodAnalytics extends AnalyticsSeries {
+  weeks: number
+  totals: YearTotals
+  delta: PeriodDelta | null
+}
+
 export interface AnalyticsPageData {
   years: number[]
   byYear: Record<number, YearAnalytics>
+  periodWeeks: number[]
+  byPeriod: Record<number, PeriodAnalytics>
 }
 
 // A value (possibly null) paired with a weight, averaged across activities.
@@ -201,22 +221,16 @@ function distanceDistribution(activities: Activity[]): DistanceBracket[] {
     .filter((b) => b.count > 0)
 }
 
-function buildYearAnalytics(year: number, activities: Activity[], now: Date): YearAnalytics {
-  const isCurrentYear = year === now.getFullYear()
-  const lastMonth = isCurrentYear ? now.getMonth() + 1 : 12
-  const months = Array.from({ length: lastMonth }, (_, i) => i + 1)
+interface Bucket {
+  id: string
+  label: string
+  acts: Activity[]
+}
 
-  const byMonth = new Map<number, Activity[]>()
-  for (const a of activities) {
-    const m = Number(a.date.slice(5, 7))
-    const list = byMonth.get(m) ?? []
-    list.push(a)
-    byMonth.set(m, list)
-  }
-
+// Build every per-bucket trend series in a single pass. `scoped` is the full set
+// of activities the buckets cover (used for the distribution charts).
+function buildSeries(buckets: Bucket[], scoped: Activity[]): AnalyticsSeries {
   const typesPresent = new Set<ActivityType>()
-
-  // Per-month series, all built in a single pass over the months.
   const monthlyVolume: MonthlyVolume[] = []
   const paceTrend: MonthlyPace[] = []
   const efficiencyTrend: MonthlyEfficiency[] = []
@@ -227,9 +241,8 @@ function buildYearAnalytics(year: number, activities: Activity[], now: Date): Ye
   const rpeTrend: MonthlyRpe[] = []
   const trainingEffectTrend: MonthlyTrainingEffect[] = []
 
-  for (const m of months) {
-    const acts = byMonth.get(m) ?? []
-    const base = { month: `${year}-${String(m).padStart(2, '0')}`, label: monthLabel(m) }
+  for (const { id, label, acts } of buckets) {
+    const base = { month: id, label }
     const easy = acts.filter((a) => EASY_TYPES.includes(a.type))
     const hard = acts.filter((a) => !EASY_TYPES.includes(a.type))
 
@@ -260,23 +273,7 @@ function buildYearAnalytics(year: number, activities: Activity[], now: Date): Ye
     })
   }
 
-  const distanceKm = round(activities.reduce((s, a) => s + a.distanceKm, 0))
-  const calories = activities.reduce((s, a) => s + (a.calories ?? 0), 0)
-  const elapsedDays = isCurrentYear
-    ? Math.floor((now.getTime() - new Date(year, 0, 1).getTime()) / 86400000) + 1
-    : Math.floor((new Date(year + 1, 0, 1).getTime() - new Date(year, 0, 1).getTime()) / 86400000)
-
   return {
-    year,
-    totals: {
-      distanceKm,
-      durationSeconds: activities.reduce((s, a) => s + a.durationSeconds, 0),
-      sessionCount: activities.length,
-      elevationM: Math.round(activities.reduce((s, a) => s + (a.elevationGain ?? 0), 0)),
-      avgKmPerWeek: round((distanceKm / elapsedDays) * 7),
-      calories,
-      caloriesPerWeek: Math.round((calories / elapsedDays) * 7),
-    },
     monthlyVolume,
     paceTrend,
     efficiencyTrend,
@@ -284,32 +281,120 @@ function buildYearAnalytics(year: number, activities: Activity[], now: Date): Ye
     cadenceTrend,
     longRuns,
     easyHardSplit,
-    zoneDistribution: zoneDistribution(activities),
-    distanceDistribution: distanceDistribution(activities),
+    zoneDistribution: zoneDistribution(scoped),
+    distanceDistribution: distanceDistribution(scoped),
     rpeTrend,
     trainingEffectTrend,
     typesPresent: Array.from(typesPresent),
   }
 }
 
+function computeTotals(activities: Activity[], elapsedDays: number): YearTotals {
+  const distanceKm = round(activities.reduce((s, a) => s + a.distanceKm, 0))
+  const calories = activities.reduce((s, a) => s + (a.calories ?? 0), 0)
+  const days = Math.max(elapsedDays, 1)
+  return {
+    distanceKm,
+    durationSeconds: activities.reduce((s, a) => s + a.durationSeconds, 0),
+    sessionCount: activities.length,
+    elevationM: Math.round(activities.reduce((s, a) => s + (a.elevationGain ?? 0), 0)),
+    avgKmPerWeek: round((distanceKm / days) * 7),
+    calories,
+    caloriesPerWeek: Math.round((calories / days) * 7),
+  }
+}
+
+function buildYearAnalytics(year: number, activities: Activity[], now: Date): YearAnalytics {
+  const isCurrentYear = year === now.getFullYear()
+  const lastMonth = isCurrentYear ? now.getMonth() + 1 : 12
+
+  const byMonth = new Map<number, Activity[]>()
+  for (const a of activities) {
+    const m = Number(a.date.slice(5, 7))
+    const list = byMonth.get(m) ?? []
+    list.push(a)
+    byMonth.set(m, list)
+  }
+
+  const buckets: Bucket[] = Array.from({ length: lastMonth }, (_, i) => i + 1).map((m) => ({
+    id: `${year}-${String(m).padStart(2, '0')}`,
+    label: monthLabel(m),
+    acts: byMonth.get(m) ?? [],
+  }))
+
+  const elapsedDays = isCurrentYear
+    ? Math.floor((now.getTime() - new Date(year, 0, 1).getTime()) / 86400000) + 1
+    : Math.floor((new Date(year + 1, 0, 1).getTime() - new Date(year, 0, 1).getTime()) / 86400000)
+
+  return { year, totals: computeTotals(activities, elapsedDays), ...buildSeries(buckets, activities) }
+}
+
+function startOfWeek(d: Date): Date {
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+  x.setDate(x.getDate() - ((x.getDay() + 6) % 7)) // back to Monday
+  return x
+}
+
+function isoDate(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+// Rolling window of the last `weeks` ISO weeks, bucketed by week, with a delta
+// vs the previous equally long window.
+function buildPeriodAnalytics(all: Activity[], weeks: number, now: Date): PeriodAnalytics {
+  const thisMonday = startOfWeek(now)
+  const buckets: Bucket[] = []
+  for (let i = weeks - 1; i >= 0; i--) {
+    const mon = new Date(thisMonday)
+    mon.setDate(thisMonday.getDate() - i * 7)
+    buckets.push({ id: isoDate(mon), label: mon.toLocaleDateString('en', { day: 'numeric', month: 'short' }), acts: [] })
+  }
+
+  const windowActs: Activity[] = []
+  const prevActs: Activity[] = []
+  for (const a of all) {
+    const aMonday = startOfWeek(new Date(a.date + 'T12:00:00'))
+    const weeksAgo = Math.round((thisMonday.getTime() - aMonday.getTime()) / (7 * 86400000))
+    if (weeksAgo >= 0 && weeksAgo < weeks) {
+      buckets[weeks - 1 - weeksAgo].acts.push(a)
+      windowActs.push(a)
+    } else if (weeksAgo >= weeks && weeksAgo < weeks * 2) {
+      prevActs.push(a)
+    }
+  }
+
+  const pct = (cur: number, old: number) => (old > 0 ? Math.round(((cur - old) / old) * 100) : null)
+  const easyOf = (acts: Activity[]) => acts.filter((a) => EASY_TYPES.includes(a.type))
+  const easyPaceNow = weightedPace(easyOf(windowActs))
+  const easyPacePrev = weightedPace(easyOf(prevActs))
+  const delta: PeriodDelta | null = prevActs.length === 0 ? null : {
+    distancePct: pct(windowActs.reduce((s, a) => s + a.distanceKm, 0), prevActs.reduce((s, a) => s + a.distanceKm, 0)),
+    sessionsPct: pct(windowActs.length, prevActs.length),
+    easyPaceSec: easyPaceNow != null && easyPacePrev != null ? Math.round(easyPaceNow - easyPacePrev) : null,
+  }
+
+  return { weeks, totals: computeTotals(windowActs, weeks * 7), delta, ...buildSeries(buckets, windowActs) }
+}
+
 export function getAnalyticsData(): AnalyticsPageData {
   const all = getAllActivities()
   const now = new Date()
 
-  const byYear = new Map<number, Activity[]>()
+  const byYearMap = new Map<number, Activity[]>()
   for (const a of all) {
     const y = Number(a.date.slice(0, 4))
-    const list = byYear.get(y) ?? []
+    const list = byYearMap.get(y) ?? []
     list.push(a)
-    byYear.set(y, list)
+    byYearMap.set(y, list)
   }
 
-  const years = Array.from(byYear.keys()).sort((a, b) => b - a)
+  const years = Array.from(byYearMap.keys()).sort((a, b) => b - a)
+  const periodWeeks = [8, 12, 16]
 
   return {
     years,
-    byYear: Object.fromEntries(
-      years.map((y) => [y, buildYearAnalytics(y, byYear.get(y)!, now)])
-    ),
+    byYear: Object.fromEntries(years.map((y) => [y, buildYearAnalytics(y, byYearMap.get(y)!, now)])),
+    periodWeeks,
+    byPeriod: Object.fromEntries(periodWeeks.map((w) => [w, buildPeriodAnalytics(all, w, now)])),
   }
 }

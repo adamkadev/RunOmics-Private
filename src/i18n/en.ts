@@ -158,6 +158,15 @@ export const en = {
     title: 'Analytics',
     season: (year: number) => `${year} season`,
     scrollTop: 'Scroll to top',
+    period: {
+      chip: (n: number) => `${n} wk`,
+      title: (n: number) => `Last ${n} weeks`,
+      vsPrevious: (n: number) => `vs previous ${n} weeks`,
+      distancePct: (p: number) => `${p >= 0 ? '+' : ''}${p}% km`,
+      sessionsPct: (p: number) => `${p >= 0 ? '+' : ''}${p}% runs`,
+      paceFaster: (s: number) => `easy pace -${s}s/km`,
+      paceSlower: (s: number) => `easy pace +${s}s/km`,
+    },
     tabs: {
       volume: 'Volume',
       performance: 'Performance',
@@ -176,12 +185,12 @@ export const en = {
       caloriesValue: (k: number) => `${k}k kcal`,
     },
     charts: {
-      monthlyVolume: { title: 'Monthly Volume' },
+      monthlyVolume: { title: 'Volume' },
       paceTrend: {
         title: 'Pace Trend',
         easy: 'Easy',
         workout: 'Workout',
-        footnote: 'Distance-weighted average pace per month. Lower is faster.',
+        footnote: 'Distance-weighted average pace. Lower is faster.',
       },
       efficiency: {
         title: 'Aerobic Efficiency',
@@ -200,12 +209,12 @@ export const en = {
       },
       hrTrend: {
         title: 'Avg Heart Rate',
-        footnote: 'Duration-weighted average HR per month, all runs.',
+        footnote: 'Duration-weighted average HR, all runs.',
       },
       cadence: {
         title: 'Cadence',
         unit: 'spm',
-        footnote: 'Duration-weighted average cadence per month (steps/min).',
+        footnote: 'Duration-weighted average cadence (steps/min).',
       },
       longRuns: {
         title: 'Long Runs',
@@ -216,7 +225,7 @@ export const en = {
         title: 'Easy / Hard Split',
         easy: (pct: number) => `Easy (Z1–Z2): ${pct}%`,
         hard: (pct: number) => `Hard (Z3+): ${pct}%`,
-        footnote: 'Share of time in Z1–Z2 vs Z3+ per month. Dashed line = 80/20 target.',
+        footnote: 'Share of time in Z1–Z2 vs Z3+. Dashed line = 80/20 target.',
       },
       distance: {
         title: 'Distance Distribution',
@@ -226,13 +235,13 @@ export const en = {
       rpe: {
         title: 'RPE Trend',
         prefix: 'RPE',
-        footnote: 'Monthly average perceived effort (1–10).',
+        footnote: 'Average perceived effort (1–10).',
       },
       trainingEffect: {
         title: 'Training Effect',
         aerobic: 'Aerobic',
         anaerobic: 'Anaerobic',
-        footnote: 'Monthly avg aerobic & anaerobic training effect (1–5).',
+        footnote: 'Avg aerobic & anaerobic training effect (1–5).',
       },
       monthlyComparison: { title: 'Month by Month' },
     },
