@@ -34,11 +34,12 @@ interface StatCardProps {
   icon: React.ReactNode
   label: string
   value: string
+  className?: string
 }
 
-function StatCard({ icon, label, value }: StatCardProps) {
+function StatCard({ icon, label, value, className }: StatCardProps) {
   return (
-    <div className="flex flex-col items-center gap-1 rounded-xl border border-border bg-card px-4 py-3 shadow-card">
+    <div className={`flex flex-col items-center gap-1 rounded-xl border border-border bg-card px-4 py-3 shadow-card ${className ?? ''}`}>
       <div className="text-subtle">{icon}</div>
       <span className="text-sm font-semibold text-foreground">{value}</span>
       <span className="text-xs text-subtle">{label}</span>
@@ -65,6 +66,48 @@ export function AnalyticsClient({ data, comparison }: { data: AnalyticsPageData;
 
   const prevYear = years.find((y) => y !== selectedYear) ?? years[1]
 
+  const statCards = [
+    {
+      icon: <Footprints size={16} className="text-emerald-500 dark:text-emerald-400" />,
+      label: t.analytics.stats.distance,
+      value: `${totals.distanceKm.toFixed(0)} ${t.units.km}`,
+    },
+    {
+      icon: <Timer size={16} className="text-blue-500 dark:text-blue-400" />,
+      label: t.analytics.stats.time,
+      value: formatDuration(totals.durationSeconds),
+    },
+    {
+      icon: <Hash size={16} className="text-violet-500 dark:text-violet-400" />,
+      label: t.analytics.stats.sessions,
+      value: String(totals.sessionCount),
+    },
+    {
+      icon: <Mountain size={16} className="text-stone-500 dark:text-stone-400" />,
+      label: t.analytics.stats.elevation,
+      value: t.analytics.stats.elevationValue(totals.elevationM),
+    },
+    {
+      icon: <Gauge size={16} className="text-amber-500 dark:text-amber-400" />,
+      label: t.analytics.stats.avgPerWeek,
+      value: `${totals.avgKmPerWeek} ${t.units.km}`,
+    },
+    ...(totals.calories > 0
+      ? [
+          {
+            icon: <Flame size={16} className="text-orange-500 dark:text-orange-400" />,
+            label: t.analytics.stats.calories,
+            value: t.analytics.stats.caloriesValue(Number((totals.calories / 1000).toFixed(1))),
+          },
+          {
+            icon: <Flame size={16} className="text-red-500 dark:text-red-400" />,
+            label: t.analytics.stats.kcalPerWeek,
+            value: String(totals.caloriesPerWeek),
+          },
+        ]
+      : []),
+  ]
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -76,47 +119,17 @@ export function AnalyticsClient({ data, comparison }: { data: AnalyticsPageData;
         <YearSelector years={years} selected={selectedYear} onSelect={setSelectedYear} />
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-7">
-        <StatCard
-          icon={<Footprints size={16} className="text-emerald-500 dark:text-emerald-400" />}
-          label={t.analytics.stats.distance}
-          value={`${totals.distanceKm.toFixed(0)} ${t.units.km}`}
-        />
-        <StatCard
-          icon={<Timer size={16} className="text-blue-500 dark:text-blue-400" />}
-          label={t.analytics.stats.time}
-          value={formatDuration(totals.durationSeconds)}
-        />
-        <StatCard
-          icon={<Hash size={16} className="text-violet-500 dark:text-violet-400" />}
-          label={t.analytics.stats.sessions}
-          value={String(totals.sessionCount)}
-        />
-        <StatCard
-          icon={<Mountain size={16} className="text-stone-500 dark:text-stone-400" />}
-          label={t.analytics.stats.elevation}
-          value={t.analytics.stats.elevationValue(totals.elevationM)}
-        />
-        <StatCard
-          icon={<Gauge size={16} className="text-amber-500 dark:text-amber-400" />}
-          label={t.analytics.stats.avgPerWeek}
-          value={`${totals.avgKmPerWeek} ${t.units.km}`}
-        />
-        {totals.calories > 0 && (
-          <>
-            <StatCard
-              icon={<Flame size={16} className="text-orange-500 dark:text-orange-400" />}
-              label={t.analytics.stats.calories}
-              value={t.analytics.stats.caloriesValue(Number((totals.calories / 1000).toFixed(1)))}
-            />
-            <StatCard
-              icon={<Flame size={16} className="text-red-500 dark:text-red-400" />}
-              label={t.analytics.stats.kcalPerWeek}
-              value={String(totals.caloriesPerWeek)}
-            />
-          </>
-        )}
+      {/* Stats - odd count, so the last card spans full width on mobile to avoid a lonely orphan */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+        {statCards.map((card, idx) => (
+          <StatCard
+            key={card.label}
+            icon={card.icon}
+            label={card.label}
+            value={card.value}
+            className={idx === statCards.length - 1 ? 'col-span-2 sm:col-span-1' : ''}
+          />
+        ))}
       </div>
 
       {/* Tabs */}
