@@ -49,7 +49,7 @@ export function EfficiencyChart({ data }: Props) {
         {t.analytics.charts.efficiency.title}
       </h3>
       <ResponsiveContainer width="100%" height={200}>
-        <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -10 }}>
+        <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
           <defs>
             <linearGradient id="efGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor={CHART_COLORS.efficiency} stopOpacity={0.25} />
@@ -68,7 +68,7 @@ export function EfficiencyChart({ data }: Props) {
             tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
-            width={36}
+            width={42}
           />
           <Tooltip content={<CustomTooltip />} />
           <Area

@@ -36,7 +36,7 @@ export function DistanceDistributionChart({ data }: Props) {
         <span className="text-xs text-subtle">{t.analytics.charts.distance.runs(data.reduce((s, d) => s + d.count, 0))}</span>
       </div>
       <ResponsiveContainer width="100%" height={200}>
-        <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+        <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>
           <XAxis
             dataKey="label"
             tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}

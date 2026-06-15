@@ -69,7 +69,7 @@ export function MonthlyComparisonChart({ currentYear, currentData, prevYear, pre
         </div>
       </div>
       <ResponsiveContainer width="100%" height={200}>
-        <LineChart data={merged} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+        <LineChart data={merged} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>
           <XAxis
             dataKey="label"
             tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}

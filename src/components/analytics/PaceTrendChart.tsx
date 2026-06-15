@@ -66,7 +66,7 @@ export function PaceTrendChart({ data }: Props) {
         </div>
       </div>
       <ResponsiveContainer width="100%" height={200}>
-        <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -10 }}>
+        <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
           <XAxis
             dataKey="label"
             tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
@@ -80,7 +80,7 @@ export function PaceTrendChart({ data }: Props) {
             tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
-            width={42}
+            width={46}
           />
           <Tooltip content={<CustomTooltip />} />
           <Line

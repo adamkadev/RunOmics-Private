@@ -53,7 +53,7 @@ export function MonthlyVolumeChart({ data, typesPresent }: Props) {
         {t.analytics.charts.monthlyVolume.title}
       </h3>
       <ResponsiveContainer width="100%" height={220}>
-        <BarChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+        <BarChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>
           <XAxis
             dataKey="label"
             tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
