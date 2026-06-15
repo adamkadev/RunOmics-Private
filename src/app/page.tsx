@@ -12,7 +12,6 @@ import { ActivityHeatmap } from '@/components/dashboard/ActivityHeatmap'
 import { InsightsCard } from '@/components/dashboard/InsightsCard'
 import { TrainingStatusBanner } from '@/components/dashboard/TrainingStatusBanner'
 import { ConsistencyCard } from '@/components/dashboard/ConsistencyCard'
-import { VO2maxChart } from '@/components/dashboard/VO2maxChart'
 import { t } from '@/i18n'
 
 export default function DashboardPage() {
@@ -48,10 +47,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className={vo2maxHistory.length >= 2 ? 'grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]' : undefined}>
-        <InsightsCard insights={insights} />
-        {vo2maxHistory.length >= 2 && <VO2maxChart data={vo2maxHistory} />}
-      </div>
+      <InsightsCard insights={insights} />
 
       <DashboardCharts
         weeklyVolume={data.weeklyVolume}

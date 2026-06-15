@@ -23,8 +23,6 @@ import { TrainingZones } from '@/components/goals/TrainingZones'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { formatDuration } from '@/lib/formatters'
 import { t } from '@/i18n'
-import { getVO2maxHistory } from '@/application/usecases/GetVO2maxHistory'
-import { VO2maxChart } from './VO2maxChart'
 
 const TABS = [
   { id: 'performance', label: t.analytics.tabs.performance },
@@ -96,7 +94,6 @@ export function AnalyticsClient({ data, comparison, zones }: { data: AnalyticsPa
   const active = view.kind === 'year' ? byYear[view.year] : byPeriod[view.weeks]
   const totals = active.totals
   const isPeriod = view.kind === 'period'
-  const vo2maxHistory = getVO2maxHistory()
 
   useEffect(() => {
     const active = activeChipRef.current
@@ -276,7 +273,6 @@ export function AnalyticsClient({ data, comparison, zones }: { data: AnalyticsPa
             <CadenceTrendChart data={active.cadenceTrend} />
             <TrainingEffectChart data={active.trainingEffectTrend} />
           </div>
-          {vo2maxHistory.length >= 2 && <VO2maxChart data={active.efficiencyTrend} />}
           <DailyEfficiencyChart data={data.efficiencyDaily} />
           {zones && <TrainingZones data={zones} />}
         </div>
