@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { Footprints, Timer, Hash, Mountain, Gauge, Flame, ChevronUp } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Footprints, Timer, Hash, Mountain, Gauge, Flame } from 'lucide-react'
 import type { AnalyticsPageData, PeriodDelta } from '@/application/usecases/GetAnalyticsData'
 import type { YearComparisonData } from '@/application/usecases/GetYearComparison'
 import { MonthlyVolumeChart } from './MonthlyVolumeChart'
@@ -85,19 +85,31 @@ export function AnalyticsClient({ data, comparison, zones }: { data: AnalyticsPa
   const { years, byYear, periodWeeks, byPeriod } = data
   const [view, setView] = useState<View>({ kind: 'year', year: years[0] })
   const [tab, setTab] = useState<TabId>('volume')
-  const [showScrollTop, setShowScrollTop] = useState(false)
+  const yearsRef = useRef<HTMLDivElement | null>(null)
+  const periodsRef = useRef<HTMLDivElement | null>(null)
+  const activeChipRef = useRef<HTMLButtonElement | null>(null)
 
   const active = view.kind === 'year' ? byYear[view.year] : byPeriod[view.weeks]
   const totals = active.totals
   const isPeriod = view.kind === 'period'
 
   useEffect(() => {
-    function onScroll() {
-      setShowScrollTop(window.scrollY > 300)
+    const active = activeChipRef.current
+    if (!active) return
+
+    // choose the container depending on which kind is active
+    const container = view.kind === 'year' ? yearsRef.current : periodsRef.current
+    if (!container) return
+
+    try {
+      const containerRect = container.getBoundingClientRect()
+      const activeRect = active.getBoundingClientRect()
+      const offset = (activeRect.left + activeRect.right) / 2 - (containerRect.left + containerRect.right) / 2
+      container.scrollBy({ left: offset, behavior: 'smooth' })
+    } catch {
+      active.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
     }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+  }, [view, years, periodWeeks])
 
   function selectPeriod(weeks: number) {
     setView({ kind: 'period', weeks })
@@ -156,29 +168,45 @@ export function AnalyticsClient({ data, comparison, zones }: { data: AnalyticsPa
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <div className="flex items-start justify-between gap-3">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.analytics.title}</h1>
-          <div className="flex items-center gap-1 overflow-x-auto">
-            {showPeriods && (
-              <>
-                {periodWeeks.map((w) => (
-                  <button key={`p${w}`} onClick={() => selectPeriod(w)} className={chipClass(view.kind === 'period' && view.weeks === w)}>
-                    {t.analytics.period.chip(w)}
-                  </button>
-                ))}
-                <span className="mx-1 h-4 w-px shrink-0 bg-border" />
-              </>
-            )}
-            {years.map((y) => (
-              <button key={y} onClick={() => setView({ kind: 'year', year: y })} className={chipClass(view.kind === 'year' && view.year === y)}>
-                {y}
-              </button>
-            ))}
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center justify-between gap-3">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.analytics.title}</h1>
+            <div ref={yearsRef} className="flex items-center gap-1 overflow-x-auto">
+              {years.map((y) => (
+                <button
+                  ref={view.kind === 'year' && view.year === y ? activeChipRef : undefined}
+                  key={y}
+                  onClick={() => setView({ kind: 'year', year: y })}
+                  className={chipClass(view.kind === 'year' && view.year === y)}
+                >
+                  {y}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-3">
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              {isPeriod ? t.analytics.period.title(view.weeks) : t.analytics.season(view.year)}
+            </p>
+            <div ref={periodsRef} className="flex items-center gap-1 overflow-x-auto">
+              {showPeriods && (
+                <>
+                  {periodWeeks.map((w) => (
+                    <button
+                      ref={view.kind === 'period' && view.weeks === w ? activeChipRef : undefined}
+                      key={`p${w}`}
+                      onClick={() => selectPeriod(w)}
+                      className={chipClass(view.kind === 'period' && view.weeks === w)}
+                    >
+                      {t.analytics.period.chip(w)}
+                    </button>
+                  ))}
+                </>
+              )}
+            </div>
           </div>
         </div>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          {isPeriod ? t.analytics.period.title(view.weeks) : t.analytics.season(view.year)}
-        </p>
         {view.kind === 'period' && 'delta' in active && active.delta && <DeltaStrip delta={active.delta} weeks={view.weeks} />}
       </div>
 
@@ -263,17 +291,6 @@ export function AnalyticsClient({ data, comparison, zones }: { data: AnalyticsPa
           })()}
           {comparison && <YearComparisonSection data={comparison} />}
         </div>
-      )}
-
-      {/* Scroll to top */}
-      {showScrollTop && (
-        <button
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-6 right-6 z-50 flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card shadow-lg transition-all hover:bg-muted active:scale-95"
-          aria-label={t.analytics.scrollTop}
-        >
-          <ChevronUp size={18} className="text-foreground" />
-        </button>
       )}
     </div>
   )

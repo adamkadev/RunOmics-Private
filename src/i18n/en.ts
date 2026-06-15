@@ -155,9 +155,8 @@ export const en = {
   },
 
   analytics: {
-    title: 'Analytics',
-    season: (year: number) => `${year} season`,
-    scrollTop: 'Scroll to top',
+  title: 'Analytics',
+  season: (year: number) => `${year} season`,
     period: {
       chip: (n: number) => `${n} wk`,
       title: (n: number) => `Last ${n} weeks`,
