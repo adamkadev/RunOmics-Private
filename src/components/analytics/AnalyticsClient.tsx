@@ -17,6 +17,8 @@ import { DistanceDistributionChart } from './DistanceDistributionChart'
 import { MonthlyComparisonChart } from './MonthlyComparisonChart'
 import { RpeTrendChart } from './RpeTrendChart'
 import { TrainingEffectChart } from './TrainingEffectChart'
+import { TrainingZones } from '@/components/goals/TrainingZones'
+import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { YearSelector } from '@/components/ui/YearSelector'
 import { formatDuration } from '@/lib/formatters'
 import { t } from '@/i18n'
@@ -47,7 +49,7 @@ function StatCard({ icon, label, value, className }: StatCardProps) {
   )
 }
 
-export function AnalyticsClient({ data, comparison }: { data: AnalyticsPageData; comparison: YearComparisonData | null }) {
+export function AnalyticsClient({ data, comparison, zones }: { data: AnalyticsPageData; comparison: YearComparisonData | null; zones: TrainingZonesData | null }) {
   const { years, byYear } = data
   const [selectedYear, setSelectedYear] = useState(years[0])
   const [tab, setTab] = useState<TabId>('volume')
@@ -173,11 +175,14 @@ export function AnalyticsClient({ data, comparison }: { data: AnalyticsPageData;
 
       {/* Tab: Physiologie */}
       {tab === 'physiology' && (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <HrTrendChart data={yearData.hrTrend} />
-          <ZoneDistributionChart data={yearData.zoneDistribution} />
-          <CadenceTrendChart data={yearData.cadenceTrend} />
-          <TrainingEffectChart data={yearData.trainingEffectTrend} />
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <HrTrendChart data={yearData.hrTrend} />
+            <ZoneDistributionChart data={yearData.zoneDistribution} />
+            <CadenceTrendChart data={yearData.cadenceTrend} />
+            <TrainingEffectChart data={yearData.trainingEffectTrend} />
+          </div>
+          {zones && <TrainingZones data={zones} />}
         </div>
       )}
 
