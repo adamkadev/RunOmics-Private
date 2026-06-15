@@ -40,9 +40,12 @@ export default function DashboardPage() {
         vo2max={vo2max}
       />
 
-      {trainingStatus && <TrainingStatusBanner status={trainingStatus} />}
-
-      {consistencyScore && <ConsistencyCard data={consistencyScore} />}
+      {(trainingStatus || consistencyScore) && (
+        <div className={trainingStatus && consistencyScore ? 'grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]' : undefined}>
+          {trainingStatus && <TrainingStatusBanner status={trainingStatus} />}
+          {consistencyScore && <ConsistencyCard data={consistencyScore} />}
+        </div>
+      )}
 
       <InsightsCard insights={insights} />
 

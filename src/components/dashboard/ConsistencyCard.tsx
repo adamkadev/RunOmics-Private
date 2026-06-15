@@ -15,7 +15,7 @@ export function ConsistencyCard({ data }: { data: ConsistencyScore }) {
   const style = RATING_STYLE[data.rating]
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+    <div className="flex h-full flex-col rounded-xl border border-border bg-card p-5 shadow-card">
       <div className="mb-3 flex items-center gap-2">
         <RefreshCw size={14} className="text-blue-500 dark:text-blue-400" />
         <h3 className="text-sm font-semibold text-foreground/80">{s.title}</h3>
