@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Footprints, Timer, Hash, Mountain, Gauge, Flame } from 'lucide-react'
+import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import type { AnalyticsPageData, PeriodDelta } from '@/application/usecases/GetAnalyticsData'
 import type { YearComparisonData } from '@/application/usecases/GetYearComparison'
 import { MonthlyVolumeChart } from './MonthlyVolumeChart'
@@ -37,7 +38,7 @@ type View = { kind: 'year'; year: number } | { kind: 'period'; weeks: number }
 interface StatCardProps {
   icon: React.ReactNode
   label: string
-  value: string
+  value: React.ReactNode
   className?: string
 }
 
@@ -123,11 +124,11 @@ export function AnalyticsClient({ data, comparison, zones }: { data: AnalyticsPa
   // year (or while a period is active). Past years just show their calendar view.
   const showPeriods = view.kind === 'period' || view.year === years[0]
 
-  const statCards = [
+  const statCards: { icon: React.ReactNode; label: string; value: React.ReactNode }[] = [
     {
       icon: <Footprints size={16} className="text-emerald-500 dark:text-emerald-400" />,
       label: t.analytics.stats.distance,
-      value: `${totals.distanceKm.toFixed(0)} ${t.units.km}`,
+      value: <><AnimatedValue value={totals.distanceKm} /> {t.units.km}</>,
     },
     {
       icon: <Timer size={16} className="text-blue-500 dark:text-blue-400" />,
@@ -137,29 +138,29 @@ export function AnalyticsClient({ data, comparison, zones }: { data: AnalyticsPa
     {
       icon: <Hash size={16} className="text-violet-500 dark:text-violet-400" />,
       label: t.analytics.stats.sessions,
-      value: String(totals.sessionCount),
+      value: <AnimatedValue value={totals.sessionCount} />,
     },
     {
       icon: <Mountain size={16} className="text-stone-500 dark:text-stone-400" />,
       label: t.analytics.stats.elevation,
-      value: t.analytics.stats.elevationValue(totals.elevationM),
+      value: <>+<AnimatedValue value={totals.elevationM} /> m</>,
     },
     {
       icon: <Gauge size={16} className="text-amber-500 dark:text-amber-400" />,
       label: t.analytics.stats.avgPerWeek,
-      value: `${totals.avgKmPerWeek} ${t.units.km}`,
+      value: <><AnimatedValue value={totals.avgKmPerWeek} decimals={1} /> {t.units.km}</>,
     },
     ...(totals.calories > 0
       ? [
           {
             icon: <Flame size={16} className="text-orange-500 dark:text-orange-400" />,
             label: t.analytics.stats.calories,
-            value: t.analytics.stats.caloriesValue(Number((totals.calories / 1000).toFixed(1))),
+            value: <><AnimatedValue value={totals.calories / 1000} decimals={1} />k kcal</>,
           },
           {
             icon: <Flame size={16} className="text-red-500 dark:text-red-400" />,
             label: t.analytics.stats.kcalPerWeek,
-            value: String(totals.caloriesPerWeek),
+            value: <AnimatedValue value={totals.caloriesPerWeek} />,
           },
         ]
       : []),
