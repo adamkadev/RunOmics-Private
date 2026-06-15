@@ -4,6 +4,9 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 import type { MonthlyEfficiency } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
+import { ChartExplain } from '@/components/ui/ChartExplain'
+import type { ExplainTone } from '@/components/ui/ChartExplain'
+import { trendFromSeries } from '@/lib/chartTrend'
 import { t } from '@/i18n'
 
 interface Props {
@@ -29,6 +32,16 @@ export function EfficiencyChart({ data }: Props) {
   const values = data.map((d) => d.ef).filter((v): v is number => v !== null)
   const min = Math.floor(Math.min(...values) * 10) / 10 - 0.05
   const max = Math.ceil(Math.max(...values) * 10) / 10 + 0.05
+
+  const ex = t.analytics.charts.efficiency.explains
+  const trend = trendFromSeries(data.map((d) => d.ef), 0.03)
+  const explain: { text: string; tone: ExplainTone } | null = trend
+    ? trend.direction === 'up'
+      ? { text: ex.improving(Math.abs(trend.delta).toFixed(2)), tone: 'positive' }
+      : trend.direction === 'down'
+        ? { text: ex.declining, tone: 'caution' }
+        : { text: ex.stable, tone: 'neutral' }
+    : null
 
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-card">
@@ -70,7 +83,8 @@ export function EfficiencyChart({ data }: Props) {
           />
         </AreaChart>
       </ResponsiveContainer>
-      <p className="mt-2 text-xs text-subtle">
+      {explain && <ChartExplain text={explain.text} tone={explain.tone} />}
+      <p className="mt-1 text-xs text-subtle">
         {t.analytics.charts.efficiency.footnote}
       </p>
     </div>

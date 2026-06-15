@@ -225,11 +225,21 @@ export const en = {
         easy: 'Easy',
         workout: 'Workout',
         footnote: 'Distance-weighted average pace. Lower is faster.',
+        explains: {
+          improving: (sec: number) => `Easy pace improving - ${sec}s/km faster than earlier in the period`,
+          stable: 'Easy pace stable throughout the period',
+          slowing: (sec: number) => `Easy pace slowing by ${sec}s/km - may reflect fatigue or high volume`,
+        },
       },
       efficiency: {
         title: 'Aerobic Efficiency',
         unit: 'm/min·bpm',
         footnote: 'Speed per heartbeat on easy runs (m/min ÷ avg HR). Higher means better aerobic fitness.',
+        explains: {
+          improving: (d: string) => `Improving +${d} - you're generating more speed per heartbeat`,
+          stable: 'Aerobic efficiency stable',
+          declining: 'Declining - consider more easy running or check for accumulated fatigue',
+        },
       },
       zones: {
         title: 'Time in Zones',
@@ -260,6 +270,11 @@ export const en = {
         easy: (pct: number) => `Easy (Z1–Z2): ${pct}%`,
         hard: (pct: number) => `Hard (Z3+): ${pct}%`,
         footnote: 'Share of time in Z1–Z2 vs Z3+. Dashed line = 80/20 target.',
+        explains: {
+          balanced: (pct: number) => `Good 80/20 balance - ${pct}% easy on average`,
+          tooHard: (pct: number) => `Intensity too high - ${pct}% easy this period (aim for ~80%)`,
+          tooEasy: (pct: number) => `Very conservative - ${pct}% easy, room to add quality sessions`,
+        },
       },
       distance: {
         title: 'Distance Distribution',
