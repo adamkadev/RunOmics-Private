@@ -446,6 +446,7 @@ export const en = {
     formAtPb: {
       fitness: 'Fitness',
       form: 'Form',
+      formTooltip: 'Fitness minus Fatigue on race day. Positive = you were fresh, ideal for performance. Negative = you ran this while under training load.',
     },
   },
 

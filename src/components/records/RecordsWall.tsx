@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Medal } from 'lucide-react'
 import type { RecordEntry } from '@/application/usecases/GetRecords'
 import { formatDuration, formatPace } from '@/lib/formatters'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { t } from '@/i18n'
 
 function shortDate(iso: string): string {
@@ -39,9 +40,11 @@ export function RecordsWall({ records }: { records: RecordEntry[] }) {
                     <p className="mt-1.5 text-xs text-subtle">
                       {t.records.formAtPb.fitness} {r.formAtPb.ctl}
                       {' · '}
-                      <span className={r.formAtPb.tsb >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}>
-                        {t.records.formAtPb.form} {r.formAtPb.tsb >= 0 ? '+' : ''}{r.formAtPb.tsb}
-                      </span>
+                      <Tooltip content={t.records.formAtPb.formTooltip}>
+                        <span className={r.formAtPb.tsb >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}>
+                          {t.records.formAtPb.form} {r.formAtPb.tsb >= 0 ? '+' : ''}{r.formAtPb.tsb}
+                        </span>
+                      </Tooltip>
                     </p>
                   )}
                 </>
