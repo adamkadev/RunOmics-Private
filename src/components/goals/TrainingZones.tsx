@@ -26,7 +26,7 @@ export function TrainingZones({ data }: { data: TrainingZonesData }) {
           <Gauge size={14} className="text-violet-500 dark:text-violet-400" />
           {t.trainingZones.title}
         </h2>
-        <span className="text-xs text-subtle">{t.trainingZones.vdot(vo2max)}</span>
+        <span className="text-xs text-subtle">{t.trainingZones.vo2maxLabel(vo2max)}</span>
       </div>
 
       <div className="space-y-2">

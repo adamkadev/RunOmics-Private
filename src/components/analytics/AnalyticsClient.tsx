@@ -23,11 +23,13 @@ import { TrainingZones } from '@/components/goals/TrainingZones'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { formatDuration } from '@/lib/formatters'
 import { t } from '@/i18n'
+import { getVO2maxHistory } from '@/application/usecases/GetVO2maxHistory'
+import { VO2maxChart } from './VO2maxChart'
 
 const TABS = [
-  { id: 'volume',      label: t.analytics.tabs.volume      },
   { id: 'performance', label: t.analytics.tabs.performance },
   { id: 'physiology',  label: t.analytics.tabs.physiology  },
+  { id: 'volume',      label: t.analytics.tabs.volume      },
   { id: 'seasons',     label: t.analytics.tabs.seasons     },
 ] as const
 
@@ -86,7 +88,7 @@ function DeltaStrip({ delta, weeks }: { delta: PeriodDelta; weeks: number }) {
 export function AnalyticsClient({ data, comparison, zones }: { data: AnalyticsPageData; comparison: YearComparisonData | null; zones: TrainingZonesData | null }) {
   const { years, byYear, periodWeeks, byPeriod } = data
   const [view, setView] = useState<View>({ kind: 'year', year: years[0] })
-  const [tab, setTab] = useState<TabId>('volume')
+  const [tab, setTab] = useState<TabId>('performance')
   const yearsRef = useRef<HTMLDivElement | null>(null)
   const periodsRef = useRef<HTMLDivElement | null>(null)
   const activeChipRef = useRef<HTMLButtonElement | null>(null)
@@ -94,6 +96,7 @@ export function AnalyticsClient({ data, comparison, zones }: { data: AnalyticsPa
   const active = view.kind === 'year' ? byYear[view.year] : byPeriod[view.weeks]
   const totals = active.totals
   const isPeriod = view.kind === 'period'
+  const vo2maxHistory = getVO2maxHistory()
 
   useEffect(() => {
     const active = activeChipRef.current
@@ -273,6 +276,7 @@ export function AnalyticsClient({ data, comparison, zones }: { data: AnalyticsPa
             <CadenceTrendChart data={active.cadenceTrend} />
             <TrainingEffectChart data={active.trainingEffectTrend} />
           </div>
+          {vo2maxHistory.length >= 2 && <VO2maxChart data={active.efficiencyTrend} />}
           <DailyEfficiencyChart data={data.efficiencyDaily} />
           {zones && <TrainingZones data={zones} />}
         </div>

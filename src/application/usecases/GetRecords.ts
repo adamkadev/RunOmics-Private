@@ -3,6 +3,7 @@ import { join } from 'path'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getFullLoadHistory } from './GetTrainingLoad'
 import type { LoadSnapshot } from './GetTrainingLoad'
+import { getLatestVO2max } from './GetVO2maxHistory'
 import { round } from '@/lib/math'
 
 const EFFORTS = [
@@ -52,25 +53,12 @@ export interface RecordEntry {
   date: string | null
   official: boolean
   formAtPb: LoadSnapshot | null
-  vdotPrediction: number | null  // predicted seconds based on current VO2max
+  prediction: number | null  // predicted seconds based on current VO2max
 }
 
-function predictFromVdot(vo2max: number, distanceM: number): number {
-  // Binary search: jackDanielsVO2max is decreasing in T (more time = slower = lower VO2max)
-  // Find T where jackDanielsVO2max(T, distanceM) === vo2max
-  let lo = distanceM / 10   // ~10 m/s, absurdly fast
-  let hi = distanceM / 1.5  // ~1.5 m/s, very slow
-  for (let i = 0; i < 60; i++) {
-    const mid = (lo + hi) / 2
-    if (jackDanielsVO2max(mid, distanceM) > vo2max) lo = mid
-    else hi = mid
-  }
-  return Math.round((lo + hi) / 2)
-}
-
-// Jack Daniels VDOT formula
-function jackDanielsVO2max(seconds: number, distanceM: number): number {
-  const v = (distanceM / seconds) * 60 // m/min
+// Jack Daniels VO2 demand at velocity v (m/min) - used for pace prediction only
+function jackDanielsVO2(seconds: number, distanceM: number): number {
+  const v = (distanceM / seconds) * 60
   const vo2 = -4.60 + 0.182258 * v + 0.000104 * v * v
   const t = seconds / 60
   const pct =
@@ -80,32 +68,16 @@ function jackDanielsVO2max(seconds: number, distanceM: number): number {
   return round(vo2 / pct)
 }
 
-export function getVO2max(): number | null {
-  const officialPbs = loadOfficialPbs()
-  const activities = getAllActivities()
-
-  // Prefer 5K, then 10K, then half - official time takes precedence over auto-detected
-  const candidates: { seconds: number; distanceM: number }[] = []
-
-  for (const [key, distM] of [['5k', 5000], ['10k', 10000], ['half', 21097.5]] as [string, number][]) {
-    const official = officialPbs.get(key)
-    if (official) {
-      candidates.push({ seconds: official.seconds, distanceM: distM })
-      break
-    }
-    let best: number | null = null
-    for (const a of activities) {
-      const sec = a.bestEfforts?.[key]
-      if (sec != null && (best === null || sec < best)) best = sec
-    }
-    if (best !== null) {
-      candidates.push({ seconds: best, distanceM: distM })
-      break
-    }
+function predictRaceTime(vo2max: number, distanceM: number): number {
+  // Binary search: jackDanielsVO2 is decreasing in T - find T where it equals vo2max
+  let lo = distanceM / 10   // ~10 m/s, absurdly fast
+  let hi = distanceM / 1.5  // ~1.5 m/s, very slow
+  for (let i = 0; i < 60; i++) {
+    const mid = (lo + hi) / 2
+    if (jackDanielsVO2(mid, distanceM) > vo2max) lo = mid
+    else hi = mid
   }
-
-  if (candidates.length === 0) return null
-  return jackDanielsVO2max(candidates[0].seconds, candidates[0].distanceM)
+  return Math.round((lo + hi) / 2)
 }
 
 export function getRecords(): RecordEntry[] {
@@ -113,10 +85,10 @@ export function getRecords(): RecordEntry[] {
   const officialPbs = loadOfficialPbs()
   const activityMap = new Map(activities.map((a) => [a.id, a]))
   const loadHistory = getFullLoadHistory()
-  const vo2max = getVO2max()
+  const vo2max = getLatestVO2max()
 
   return EFFORTS.map(({ key, label, km }) => {
-    const vdotPrediction = vo2max !== null ? predictFromVdot(vo2max, km * 1000) : null
+    const prediction = vo2max !== null ? predictRaceTime(vo2max, km * 1000) : null
 
     const official = officialPbs.get(key)
     if (official) {
@@ -131,7 +103,7 @@ export function getRecords(): RecordEntry[] {
         date,
         official: true,
         formAtPb: date ? (loadHistory.get(date) ?? null) : null,
-        vdotPrediction,
+        prediction,
       }
     }
 
@@ -151,7 +123,7 @@ export function getRecords(): RecordEntry[] {
       date: best?.date ?? null,
       official: false,
       formAtPb: best?.date ? (loadHistory.get(best.date) ?? null) : null,
-      vdotPrediction,
+      prediction,
     }
   })
 }

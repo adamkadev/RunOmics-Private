@@ -1,4 +1,4 @@
-import { getVO2max } from './GetRecords'
+import { getLatestVO2max } from './GetVO2maxHistory'
 
 export interface TrainingZone {
   key: string
@@ -64,7 +64,7 @@ const ZONE_DEFS = [
 ] as const
 
 export function getTrainingZones(): TrainingZonesData | null {
-  const vo2max = getVO2max()
+  const vo2max = getLatestVO2max()
   if (!vo2max) return null
 
   const zones: TrainingZone[] = ZONE_DEFS.map(({ key, label, shortDesc, example, pctMin, pctMax }) => ({

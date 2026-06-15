@@ -99,7 +99,7 @@ export const en = {
       thisWeek: 'this week',
       streak: 'Streak',
       streakSub: (best: number) => `best ${best}d`,
-      vo2max: 'VO₂max est.',
+      vo2max: 'VO₂max',
       empty: '-',
     },
     recentActivities: {
@@ -140,9 +140,8 @@ export const en = {
     },
     vo2maxChart: {
       title: 'VO₂max',
-      subtitle: (n: number) => `${n} measures from Garmin`,
       unit: 'ml/kg/min',
-      footnote: 'Garmin VO₂max estimate · extracted from FIT message 140',
+      footnote: 'Garmin VO₂max estimate',
     },
   },
 
@@ -459,7 +458,7 @@ export const en = {
     footnote: '★ official race time · others auto-detected from activity data',
     pageTitle: 'Records',
     pageSubtitle: 'Your personal bests by distance',
-    vdotPrediction: 'VDOT target',
+    prediction: 'Target',
     formAtPb: {
       fitness: 'Fitness',
       form: 'Form',
@@ -484,7 +483,7 @@ export const en = {
 
   trainingZones: {
     title: 'Training Zones',
-    vdot: (vo2max: number) => `VDOT ${vo2max} · Jack Daniels`,
+    vo2maxLabel: (vo2max: number) => `VO₂max ${vo2max} ml/kg/min`,
     perKm: '/km',
   },
 

@@ -43,7 +43,6 @@ export function VO2maxChart({ data }: { data: VO2maxPoint[] }) {
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h3 className="text-sm font-semibold text-foreground/80">{s.title}</h3>
-          <p className="mt-0.5 text-xs text-subtle">{s.subtitle(data.length)}</p>
         </div>
         <span className="text-2xl font-bold tabular-nums text-violet-600 dark:text-violet-400">
           {values[values.length - 1].toFixed(1)}
