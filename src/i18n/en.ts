@@ -276,6 +276,19 @@ export const en = {
     back: 'Activities',
     runTitle: (day: string) => `${day} Run`,
     metaFallbackTitle: 'Activity',
+    share: 'Share',
+    shareMenu: {
+      share: 'Share to apps',
+      download: 'Download',
+      copy: 'Copy image',
+      copied: 'Copied!',
+    },
+    shareCard: {
+      distance: 'DISTANCE',
+      time: 'TIME',
+      pace: 'PACE',
+      avgHr: 'AVG HR',
+    },
     stats: {
       distance: 'Distance',
       duration: 'Duration',
