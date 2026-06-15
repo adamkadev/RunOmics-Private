@@ -1,6 +1,6 @@
 'use client'
 
-import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import type { MonthlyTrainingEffect } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
@@ -36,7 +36,23 @@ export function TrainingEffectChart({ data }: Props) {
 
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-card">
-      <h3 className="mb-4 text-sm font-semibold text-foreground/80">{t.analytics.charts.trainingEffect.title}</h3>
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-foreground/80">{t.analytics.charts.trainingEffect.title}</h3>
+        <div className="flex gap-3">
+          {hasAer && (
+            <span className="flex items-center gap-1 text-xs text-subtle">
+              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: CHART_COLORS.easy }} />
+              {t.analytics.charts.trainingEffect.aerobic}
+            </span>
+          )}
+          {hasAna && (
+            <span className="flex items-center gap-1 text-xs text-subtle">
+              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: CHART_COLORS.hard }} />
+              {t.analytics.charts.trainingEffect.anaerobic}
+            </span>
+          )}
+        </div>
+      </div>
       <ResponsiveContainer width="100%" height={200}>
         <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
           <XAxis
@@ -54,10 +70,6 @@ export function TrainingEffectChart({ data }: Props) {
             width={30}
           />
           <Tooltip content={<CustomTooltip />} />
-          <Legend
-            wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
-            formatter={(value) => <span className="text-muted-foreground">{value}</span>}
-          />
           {hasAer && (
             <Line
               type="monotone"

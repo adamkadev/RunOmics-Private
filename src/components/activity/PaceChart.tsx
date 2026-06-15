@@ -51,7 +51,7 @@ export function PaceChart({ samples, avgPaceSecPerKm, durationSeconds, onHoverFr
           {t.units.minPerKm}
         </span>
       </div>
-      <ResponsiveContainer width="100%" height={120}>
+      <ResponsiveContainer width="100%" height={140}>
         <AreaChart
           data={data}
           margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
