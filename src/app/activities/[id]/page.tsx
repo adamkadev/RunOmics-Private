@@ -44,11 +44,12 @@ interface StatItemProps {
   icon: React.ReactNode
   label: string
   value: string
+  className?: string
 }
 
-function StatItem({ icon, label, value }: StatItemProps) {
+function StatItem({ icon, label, value, className }: StatItemProps) {
   return (
-    <div className="flex flex-col items-center gap-1 rounded-xl border border-border bg-card px-4 py-3 shadow-card">
+    <div className={`flex flex-col items-center gap-1 rounded-xl border border-border bg-card px-4 py-3 shadow-card ${className ?? ''}`}>
       <div className="text-subtle">{icon}</div>
       <span className="text-sm font-semibold text-foreground">{value}</span>
       <span className="text-xs text-subtle">{label}</span>
@@ -70,6 +71,52 @@ export default async function ActivityDetailPage({
   const activity = getActivities().find((a) => a.id === id)
   if (!activity) notFound()
 
+  const statItems = [
+    {
+      icon: <Footprints size={16} className="text-emerald-500 dark:text-emerald-400" />,
+      label: t.activity.stats.distance,
+      value: formatDistance(activity.distanceKm),
+    },
+    {
+      icon: <Timer size={16} className="text-blue-500 dark:text-blue-400" />,
+      label: t.activity.stats.duration,
+      value: formatDuration(activity.durationSeconds),
+    },
+    ...(activity.paceSecPerKm
+      ? [{
+          icon: <TrendingUp size={16} className="text-violet-500 dark:text-violet-400" />,
+          label: t.activity.stats.avgPace,
+          value: formatPace(activity.paceSecPerKm),
+        }]
+      : []),
+    ...(activity.avgHeartRate
+      ? [{
+          icon: <Heart size={16} className="text-red-500 dark:text-red-400" />,
+          label: t.activity.stats.avgHr,
+          value: `${activity.avgHeartRate} ${t.units.bpm}`,
+        }]
+      : []),
+    ...(activity.elevationGain
+      ? [{
+          icon: <Mountain size={16} className="text-stone-500 dark:text-stone-400" />,
+          label: t.activity.stats.elevation,
+          value: t.activity.stats.elevationValue(activity.elevationGain),
+        }]
+      : []),
+    ...(activity.calories != null
+      ? [{
+          icon: <Flame size={16} className="text-orange-500 dark:text-orange-400" />,
+          label: t.activity.stats.calories,
+          value: t.activity.stats.caloriesValue(activity.calories),
+        }]
+      : []),
+    {
+      icon: <Zap size={16} className="text-amber-500 dark:text-amber-400" />,
+      label: activity.rpe !== null ? t.activity.stats.rpeValue(activity.rpe) : t.activity.stats.rpe,
+      value: activity.rpe !== null ? (t.rpeLabels[activity.rpe] ?? '-') : t.activity.stats.na,
+    },
+  ]
+
   return (
     <div className="space-y-6">
       <Link
@@ -80,68 +127,38 @@ export default async function ActivityDetailPage({
         {t.activity.back}
       </Link>
 
-      <div>
-        <div className="flex flex-wrap items-center gap-3">
-          <ActivityTypeTag type={activity.type} />
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            {activity.description || t.activity.runTitle(activity.dayOfWeek)}
-          </h1>
-          <span className="text-sm text-subtle">
-            {formatDate(activity.date)}
-          </span>
-        </div>
-        {activity.comment && (
-          <div className="mt-2 flex items-start gap-2 text-sm text-muted-foreground">
-            <MessageSquare size={14} className="mt-0.5 shrink-0" />
-            {activity.comment}
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="flex flex-wrap items-center gap-3">
+            <ActivityTypeTag type={activity.type} />
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+              {activity.description || t.activity.runTitle(activity.dayOfWeek)}
+            </h1>
+            <span className="text-sm text-subtle">
+              {formatDate(activity.date)}
+            </span>
           </div>
-        )}
+          {activity.comment && (
+            <div className="mt-2 flex items-start gap-2 text-sm text-muted-foreground">
+              <MessageSquare size={14} className="mt-0.5 shrink-0" />
+              {activity.comment}
+            </div>
+          )}
+        </div>
+
       </div>
 
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-7">
-        <StatItem
-          icon={<Footprints size={16} className="text-emerald-500 dark:text-emerald-400" />}
-          label={t.activity.stats.distance}
-          value={formatDistance(activity.distanceKm)}
-        />
-        <StatItem
-          icon={<Timer size={16} className="text-blue-500 dark:text-blue-400" />}
-          label={t.activity.stats.duration}
-          value={formatDuration(activity.durationSeconds)}
-        />
-        {activity.paceSecPerKm && (
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+        {statItems.map((item, idx) => (
           <StatItem
-            icon={<TrendingUp size={16} className="text-violet-500 dark:text-violet-400" />}
-            label={t.activity.stats.avgPace}
-            value={formatPace(activity.paceSecPerKm)}
+            key={item.label}
+            icon={item.icon}
+            label={item.label}
+            value={item.value}
+            // Odd count leaves a lonely card on the 2-col mobile grid: let the last one fill the row.
+            className={statItems.length % 2 === 1 && idx === statItems.length - 1 ? 'col-span-2 sm:col-span-1' : ''}
           />
-        )}
-        {activity.avgHeartRate && (
-          <StatItem
-            icon={<Heart size={16} className="text-red-500 dark:text-red-400" />}
-            label={t.activity.stats.avgHr}
-            value={`${activity.avgHeartRate} ${t.units.bpm}`}
-          />
-        )}
-        {activity.elevationGain && (
-          <StatItem
-            icon={<Mountain size={16} className="text-stone-500 dark:text-stone-400" />}
-            label={t.activity.stats.elevation}
-            value={t.activity.stats.elevationValue(activity.elevationGain)}
-          />
-        )}
-        {activity.calories != null && (
-          <StatItem
-            icon={<Flame size={16} className="text-orange-500 dark:text-orange-400" />}
-            label={t.activity.stats.calories}
-            value={t.activity.stats.caloriesValue(activity.calories)}
-          />
-        )}
-        <StatItem
-          icon={<Zap size={16} className="text-amber-500 dark:text-amber-400" />}
-          label={activity.rpe !== null ? t.activity.stats.rpeValue(activity.rpe) : t.activity.stats.rpe}
-          value={activity.rpe !== null ? (t.rpeLabels[activity.rpe] ?? '-') : t.activity.stats.na}
-        />
+        ))}
       </div>
 
       <ActivityDetailClient
