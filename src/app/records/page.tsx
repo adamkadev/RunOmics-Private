@@ -1,10 +1,12 @@
 import { getRecords } from '@/application/usecases/GetRecords'
+import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
 import { RecordsWall } from '@/components/records/RecordsWall'
 import { RacePredictions } from '@/components/goals/RacePredictions'
 import { t } from '@/i18n'
 
 export default function RecordsPage() {
   const records = getRecords()
+  const load = getTrainingLoad()
 
   return (
     <div className="space-y-10">
@@ -13,7 +15,7 @@ export default function RecordsPage() {
         <p className="mt-0.5 text-sm text-muted-foreground">{t.records.pageSubtitle}</p>
       </div>
 
-      <RecordsWall records={records} />
+      <RecordsWall records={records} currentTsb={load?.tsb ?? null} />
       <RacePredictions records={records} />
     </div>
   )

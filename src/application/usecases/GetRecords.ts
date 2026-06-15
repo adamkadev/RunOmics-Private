@@ -52,6 +52,20 @@ export interface RecordEntry {
   date: string | null
   official: boolean
   formAtPb: LoadSnapshot | null
+  vdotPrediction: number | null  // predicted seconds based on current VO2max
+}
+
+function predictFromVdot(vo2max: number, distanceM: number): number {
+  // Binary search: jackDanielsVO2max is decreasing in T (more time = slower = lower VO2max)
+  // Find T where jackDanielsVO2max(T, distanceM) === vo2max
+  let lo = distanceM / 10   // ~10 m/s, absurdly fast
+  let hi = distanceM / 1.5  // ~1.5 m/s, very slow
+  for (let i = 0; i < 60; i++) {
+    const mid = (lo + hi) / 2
+    if (jackDanielsVO2max(mid, distanceM) > vo2max) lo = mid
+    else hi = mid
+  }
+  return Math.round((lo + hi) / 2)
 }
 
 // Jack Daniels VDOT formula
@@ -99,8 +113,11 @@ export function getRecords(): RecordEntry[] {
   const officialPbs = loadOfficialPbs()
   const activityMap = new Map(activities.map((a) => [a.id, a]))
   const loadHistory = getFullLoadHistory()
+  const vo2max = getVO2max()
 
   return EFFORTS.map(({ key, label, km }) => {
+    const vdotPrediction = vo2max !== null ? predictFromVdot(vo2max, km * 1000) : null
+
     const official = officialPbs.get(key)
     if (official) {
       const activity = official.activityId ? activityMap.get(official.activityId) : undefined
@@ -114,6 +131,7 @@ export function getRecords(): RecordEntry[] {
         date,
         official: true,
         formAtPb: date ? (loadHistory.get(date) ?? null) : null,
+        vdotPrediction,
       }
     }
 
@@ -133,6 +151,7 @@ export function getRecords(): RecordEntry[] {
       date: best?.date ?? null,
       official: false,
       formAtPb: best?.date ? (loadHistory.get(best.date) ?? null) : null,
+      vdotPrediction,
     }
   })
 }

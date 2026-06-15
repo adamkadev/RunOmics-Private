@@ -9,7 +9,7 @@ function shortDate(iso: string): string {
   return new Date(iso + 'T00:00:00').toLocaleDateString(t.locale, { month: 'short', year: '2-digit' })
 }
 
-export function RecordsWall({ records }: { records: RecordEntry[] }) {
+export function RecordsWall({ records, currentTsb }: { records: RecordEntry[]; currentTsb: number | null }) {
   if (!records.some((r) => r.seconds !== null)) return null
 
   return (
@@ -36,8 +36,20 @@ export function RecordsWall({ records }: { records: RecordEntry[] }) {
                     {r.paceSecPerKm !== null && formatPace(r.paceSecPerKm)}
                     {r.date && <span> · {shortDate(r.date)}</span>}
                   </p>
+                  {r.vdotPrediction !== null && (
+                    <p className="mt-1.5 text-xs text-muted-foreground">
+                      {t.records.vdotPrediction} <span className="font-medium text-foreground/80">{formatDuration(r.vdotPrediction)}</span>
+                      {r.seconds !== null && (
+                        <span className={r.seconds <= r.vdotPrediction ? 'ml-1 text-emerald-600 dark:text-emerald-400' : 'ml-1 text-orange-500 dark:text-orange-400'}>
+                          {r.seconds <= r.vdotPrediction
+                            ? `+${formatDuration(r.vdotPrediction - r.seconds)}`
+                            : `-${formatDuration(r.seconds - r.vdotPrediction)}`}
+                        </span>
+                      )}
+                    </p>
+                  )}
                   {r.formAtPb && (
-                    <p className="mt-1.5 text-xs text-subtle">
+                    <p className="mt-1 text-xs text-subtle">
                       {t.records.formAtPb.fitness} {r.formAtPb.ctl}
                       {' · '}
                       <Tooltip content={t.records.formAtPb.formTooltip}>
@@ -45,6 +57,15 @@ export function RecordsWall({ records }: { records: RecordEntry[] }) {
                           {t.records.formAtPb.form} {r.formAtPb.tsb >= 0 ? '+' : ''}{r.formAtPb.tsb}
                         </span>
                       </Tooltip>
+                      {currentTsb !== null && (
+                        <span className="text-subtle">
+                          {' → '}
+                          <span className={currentTsb >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}>
+                            {currentTsb >= 0 ? '+' : ''}{currentTsb}
+                          </span>
+                          {' '}{t.records.formAtPb.now}
+                        </span>
+                      )}
                     </p>
                   )}
                 </>

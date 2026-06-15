@@ -186,7 +186,7 @@ export const en = {
     easyPaceImproved: (sec: number) => `Your easy pace improved ${sec}s/km this month.`,
     monthlyRecord: (km: number) => `Biggest month yet - ${km} km.`,
     volumeStreak: (weeks: number, km: number) => `${weeks} straight weeks over ${km} km.`,
-    recentPr: (label: string) => `New ${label} personal best in the last month.`,
+    recentPr: (label: string) => `New ${label} personal best in the last month.`
   },
 
   analytics: {
@@ -367,6 +367,9 @@ export const en = {
       elevationValue: (m: number) => `+${m}m`,
       caloriesValue: (kcal: number) => `${kcal} kcal`,
     },
+    bestEfforts: {
+      title: 'Best Efforts',
+    },
     zones: {
       title: 'Heart Rate Zones',
       noData: 'No HR zone data',
@@ -450,9 +453,11 @@ export const en = {
     footnote: '★ official race time · others auto-detected from activity data',
     pageTitle: 'Records',
     pageSubtitle: 'Your personal bests by distance',
+    vdotPrediction: 'VDOT target',
     formAtPb: {
       fitness: 'Fitness',
       form: 'Form',
+      now: 'now',
       formTooltip: 'Fitness minus Fatigue on race day. Positive = you were fresh, ideal for performance. Negative = you ran this while under training load.',
     },
   },
