@@ -160,8 +160,14 @@ export function GlobalMapClient({ data }: Props) {
             layout: { "line-join": "round", "line-cap": "round" },
             paint: {
               "line-color": "#10b981",
-              "line-width": 10,
-              "line-opacity": 0.05,
+              // Thinner halo, scaling a touch with zoom, so popular overlapping
+              // routes do not stack into a fat bright band.
+              "line-width": [
+                "interpolate", ["linear"], ["zoom"],
+                9, 2.5,
+                14, 5,
+              ],
+              "line-opacity": 0.04,
             },
           },
           firstSymbolId,
@@ -175,8 +181,12 @@ export function GlobalMapClient({ data }: Props) {
             layout: { "line-join": "round", "line-cap": "round" },
             paint: {
               "line-color": "#10b981",
-              "line-width": 2,
-              "line-opacity": 0.25,
+              "line-width": [
+                "interpolate", ["linear"], ["zoom"],
+                9, 1,
+                14, 1.6,
+              ],
+              "line-opacity": 0.22,
             },
           },
           firstSymbolId,
