@@ -313,7 +313,7 @@ export const en = {
       },
       hrTrend: {
         title: 'Avg Heart Rate',
-        footnote: 'Duration-weighted average HR, all runs.',
+        footnote: 'Duration-weighted average HR, easy vs workout runs.',
       },
       cadence: {
         title: 'Cadence',

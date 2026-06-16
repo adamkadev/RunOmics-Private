@@ -10,6 +10,7 @@ export const CHART_COLORS = {
 
   // Activity metrics
   hr:         '#ef4444', // red-500
+  hrEasy:     '#fca5a5', // red-300
   pace:       '#3b82f6', // blue-500
   elevation:  '#78716c', // stone-500
   cadence:    '#0ea5e9', // sky-500

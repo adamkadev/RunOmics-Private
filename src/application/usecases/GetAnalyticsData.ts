@@ -29,7 +29,8 @@ export interface MonthlyEfficiency {
 export interface MonthlyHr {
   month: string
   label: string
-  avgHr: number | null
+  easyAvgHr: number | null
+  hardAvgHr: number | null
 }
 
 export interface MonthlyCadence {
@@ -283,7 +284,7 @@ function buildSeries(buckets: Bucket[], scoped: Activity[]): AnalyticsSeries {
     monthlyVolume.push({ ...base, sessionCount: acts.length, totalKm: round(acts.reduce((s, a) => s + a.distanceKm, 0)), byType })
     paceTrend.push({ ...base, easyPace: weightedPace(easy), hardPace: weightedPace(hard) })
     efficiencyTrend.push({ ...base, ef: efficiencyFactor(easy) })
-    hrTrend.push({ ...base, avgHr: weightedHr(acts) })
+    hrTrend.push({ ...base, easyAvgHr: weightedHr(easy), hardAvgHr: weightedHr(hard) })
     cadenceTrend.push({ ...base, cadence: weightedCadence(acts) })
     runningFormTrend.push({
       ...base,
