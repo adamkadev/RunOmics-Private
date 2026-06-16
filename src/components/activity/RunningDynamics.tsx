@@ -11,9 +11,6 @@ export function RunningDynamics({ activity: a }: { activity: Activity }) {
   const metrics: Metric[] = []
   const d = t.activity.dynamics
 
-  if (a.cadenceSpm != null) {
-    metrics.push({ label: d.cadence, value: a.cadenceSpm.toFixed(0), unit: t.units.spm })
-  }
   if (a.strideLengthM != null) {
     metrics.push({ label: d.strideLength, value: a.strideLengthM.toFixed(2), unit: t.units.m })
   }
