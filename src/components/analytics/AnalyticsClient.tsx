@@ -253,16 +253,18 @@ export function AnalyticsClient({ data, comparison, zones, vo2maxHistory }: { da
             <LongRunsChart data={active.longRuns} />
             <DistanceDistributionChart data={active.distanceDistribution} />
           </div>
+          <EasyHardChart data={active.easyHardSplit} />
         </div>
       )}
 
       {/* Tab: Performance */}
       {tab === 'performance' && (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="space-y-4">
           <PaceTrendChart data={active.paceTrend} />
-          <EfficiencyChart data={active.efficiencyTrend} />
-          <EasyHardChart data={active.easyHardSplit} />
-          <RpeTrendChart data={active.rpeTrend} />
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <EfficiencyChart data={active.efficiencyTrend} />
+            <RpeTrendChart data={active.rpeTrend} />
+          </div>
         </div>
       )}
 
