@@ -32,9 +32,8 @@ export function getVO2maxHistory(): VO2maxPoint[] {
   }
 
   const weeks = [...byWeek.values()].sort((a, b) => a.date.localeCompare(b.date))
-  const last12 = weeks.slice(-12)
 
-  return last12.map(({ date, value }) => ({
+  return weeks.map(({ date, value }) => ({
     date,
     label: new Date(date + 'T00:00:00').toLocaleDateString('en', { month: 'short', day: 'numeric' }),
     value,

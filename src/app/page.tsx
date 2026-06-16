@@ -4,7 +4,7 @@ import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { getConsistencyScore } from '@/application/usecases/GetConsistencyScore'
 import { getHeatmapData } from '@/application/usecases/GetHeatmapData'
 import { getInsights } from '@/application/usecases/GetInsights'
-import { getVO2maxHistory } from '@/application/usecases/GetVO2maxHistory'
+import { getLatestVO2max } from '@/application/usecases/GetVO2maxHistory'
 import { StatsGrid } from '@/components/dashboard/StatsGrid'
 import { DashboardCharts } from '@/components/dashboard/DashboardCharts'
 import { RecentActivities } from '@/components/dashboard/RecentActivities'
@@ -21,7 +21,7 @@ export default function DashboardPage() {
   const consistencyScore = getConsistencyScore()
   const heatmapDays = getHeatmapData()
   const insights = getInsights()
-  const vo2maxHistory = getVO2maxHistory()
+  const vo2max = getLatestVO2max()
 
   return (
     <div className="space-y-6">
@@ -37,7 +37,7 @@ export default function DashboardPage() {
         lastWeek={data.lastWeek}
         currentStreak={data.currentStreak}
         longestStreak={data.longestStreak}
-        vo2max={vo2maxHistory.length > 0 ? vo2maxHistory[vo2maxHistory.length - 1].value : null}
+        vo2max={vo2max}
       />
 
       {(trainingStatus || consistencyScore) && (

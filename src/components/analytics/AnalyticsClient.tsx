@@ -19,8 +19,10 @@ import { MonthlyComparisonChart } from './MonthlyComparisonChart'
 import { RpeTrendChart } from './RpeTrendChart'
 import { TrainingEffectChart } from './TrainingEffectChart'
 import { DailyEfficiencyChart } from './DailyEfficiencyChart'
+import { VO2maxChart } from './VO2maxChart'
 import { TrainingZones } from '@/components/goals/TrainingZones'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
+import type { VO2maxPoint } from '@/application/usecases/GetVO2maxHistory'
 import { formatDuration } from '@/lib/formatters'
 import { t } from '@/i18n'
 
@@ -83,7 +85,7 @@ function DeltaStrip({ delta, weeks }: { delta: PeriodDelta; weeks: number }) {
   )
 }
 
-export function AnalyticsClient({ data, comparison, zones }: { data: AnalyticsPageData; comparison: YearComparisonData | null; zones: TrainingZonesData | null }) {
+export function AnalyticsClient({ data, comparison, zones, vo2maxHistory }: { data: AnalyticsPageData; comparison: YearComparisonData | null; zones: TrainingZonesData | null; vo2maxHistory: VO2maxPoint[] }) {
   const { years, byYear, periodWeeks, byPeriod } = data
   const [view, setView] = useState<View>({ kind: 'year', year: years[0] })
   const [tab, setTab] = useState<TabId>('performance')
@@ -268,11 +270,12 @@ export function AnalyticsClient({ data, comparison, zones }: { data: AnalyticsPa
       {tab === 'physiology' && (
         <div className="space-y-4">
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            {vo2maxHistory.length >= 2 && <VO2maxChart data={vo2maxHistory} />}
             <HrTrendChart data={active.hrTrend} />
             <ZoneDistributionChart data={active.zoneDistribution} />
             <CadenceTrendChart data={active.cadenceTrend} />
-            <TrainingEffectChart data={active.trainingEffectTrend} />
           </div>
+          <TrainingEffectChart data={active.trainingEffectTrend} />
           <DailyEfficiencyChart data={data.efficiencyDaily} />
           {zones && <TrainingZones data={zones} />}
         </div>
