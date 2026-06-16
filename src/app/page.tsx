@@ -50,9 +50,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <InsightsCard insights={insights} />
-
-      {insightsSnapshot && <AiInsightsCard snapshot={insightsSnapshot} />}
+      {insightsSnapshot ? <AiInsightsCard snapshot={insightsSnapshot} /> : <InsightsCard insights={insights} />}
 
       <DashboardCharts
         weeklyVolume={data.weeklyVolume}

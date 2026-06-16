@@ -1,6 +1,5 @@
-import type { InsightsInput, InsightsOutput, LLMProvider } from '../types'
-import { JSON_SCHEMA, SYSTEM_PROMPT, buildUserPrompt } from '../prompt'
-import { parseInsightsOutput, parseJsonLoose } from '../schema'
+import type { LLMCompletionRequest, LLMProvider } from '../provider'
+import { parseJsonLoose } from '../json'
 
 const ENDPOINT = 'https://api.openai.com/v1/chat/completions'
 const DEFAULT_MODEL = 'gpt-4o-mini'
@@ -27,7 +26,7 @@ export class OpenAIProvider implements LLMProvider {
     this.model = model ?? DEFAULT_MODEL
   }
 
-  async generateInsights(input: InsightsInput): Promise<InsightsOutput> {
+  async complete({ systemPrompt, userPrompt, schema, temperature = 0.4 }: LLMCompletionRequest): Promise<unknown> {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
 
@@ -41,14 +40,14 @@ export class OpenAIProvider implements LLMProvider {
         signal: controller.signal,
         body: JSON.stringify({
           model: this.model,
-          temperature: 0.4,
+          temperature,
           messages: [
-            { role: 'system', content: SYSTEM_PROMPT },
-            { role: 'user', content: buildUserPrompt(input) },
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt },
           ],
           response_format: {
             type: 'json_schema',
-            json_schema: { name: 'insights', strict: false, schema: JSON_SCHEMA },
+            json_schema: { name: 'structured_output', strict: false, schema },
           },
         }),
       })
@@ -58,10 +57,7 @@ export class OpenAIProvider implements LLMProvider {
       }
 
       const data = (await res.json()) as OpenAIResponse
-      const text = data.choices?.[0]?.message?.content ?? ''
-      const parsed = parseInsightsOutput(parseJsonLoose(text))
-      if (!parsed) throw new Error('OpenAI returned no valid insights')
-      return parsed
+      return parseJsonLoose(data.choices?.[0]?.message?.content ?? '')
     } finally {
       clearTimeout(timer)
     }

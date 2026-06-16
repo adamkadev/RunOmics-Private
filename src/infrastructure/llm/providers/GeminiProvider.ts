@@ -1,6 +1,5 @@
-import type { InsightsInput, InsightsOutput, LLMProvider } from '../types'
-import { JSON_SCHEMA, SYSTEM_PROMPT, buildUserPrompt } from '../prompt'
-import { parseInsightsOutput, parseJsonLoose } from '../schema'
+import type { LLMCompletionRequest, LLMProvider } from '../provider'
+import { parseJsonLoose } from '../json'
 
 const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models'
 const DEFAULT_MODEL = 'gemini-2.0-flash'
@@ -28,7 +27,7 @@ export class GeminiProvider implements LLMProvider {
     this.model = model ?? DEFAULT_MODEL
   }
 
-  async generateInsights(input: InsightsInput): Promise<InsightsOutput> {
+  async complete({ systemPrompt, userPrompt, schema, temperature = 0.4 }: LLMCompletionRequest): Promise<unknown> {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
 
@@ -40,12 +39,12 @@ export class GeminiProvider implements LLMProvider {
           headers: { 'Content-Type': 'application/json' },
           signal: controller.signal,
           body: JSON.stringify({
-            systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-            contents: [{ role: 'user', parts: [{ text: buildUserPrompt(input) }] }],
+            systemInstruction: { parts: [{ text: systemPrompt }] },
+            contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
             generationConfig: {
-              temperature: 0.4,
+              temperature,
               responseMimeType: 'application/json',
-              responseSchema: JSON_SCHEMA,
+              responseSchema: schema,
             },
           }),
         },
@@ -57,9 +56,7 @@ export class GeminiProvider implements LLMProvider {
 
       const data = (await res.json()) as GeminiResponse
       const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('') ?? ''
-      const parsed = parseInsightsOutput(parseJsonLoose(text))
-      if (!parsed) throw new Error('Gemini returned no valid insights')
-      return parsed
+      return parseJsonLoose(text)
     } finally {
       clearTimeout(timer)
     }

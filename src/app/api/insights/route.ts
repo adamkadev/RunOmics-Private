@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
-import { InsightsService, type InsightsResult } from '@/infrastructure/llm/InsightsService'
+import { InsightsService, type InsightsResult } from '@/infrastructure/llm/insights/InsightsService'
 import { createProvider } from '@/infrastructure/llm/providers'
-import type { InsightsInput } from '@/infrastructure/llm/types'
+import type { InsightsInput } from '@/infrastructure/llm/insights/types'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'

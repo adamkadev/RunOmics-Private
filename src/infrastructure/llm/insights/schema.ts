@@ -1,4 +1,4 @@
-import type { Insight, InsightSeverity, InsightType, InsightsOutput } from './types'
+import type { Insight, InsightConfidence, InsightSeverity, InsightType, InsightsOutput } from './types'
 
 // Hand-rolled strict validation (the project ships no validation library).
 // Anything that does not match the contract is dropped; a fully invalid payload
@@ -14,6 +14,8 @@ const INSIGHT_TYPES: readonly InsightType[] = [
 ]
 
 const SEVERITIES: readonly InsightSeverity[] = ['low', 'medium', 'high']
+const CONFIDENCES: readonly InsightConfidence[] = ['low', 'medium', 'high']
+const DEFAULT_CONFIDENCE: InsightConfidence = 'medium'
 
 const MAX_INSIGHTS = 6
 const MAX_TITLE = 80
@@ -51,11 +53,18 @@ function parseInsight(value: unknown): Insight | null {
   const message = cleanString(value.message, MAX_MESSAGE)
   if (!title || !message) return null
 
+  // Lenient on purpose: a provider that omits confidence despite the schema
+  // shouldn't lose an otherwise valid insight. Default to a neutral middle.
+  const confidence = CONFIDENCES.includes(value.confidence as InsightConfidence)
+    ? (value.confidence as InsightConfidence)
+    : DEFAULT_CONFIDENCE
+
   const metrics = cleanMetrics(value.metrics)
 
   return {
     type: type as InsightType,
     severity: severity as InsightSeverity,
+    confidence,
     title,
     message,
     ...(metrics ? { metrics } : {}),
@@ -74,22 +83,4 @@ export function parseInsightsOutput(raw: unknown): InsightsOutput | null {
     .slice(0, MAX_INSIGHTS)
 
   return insights.length ? { insights } : null
-}
-
-// Tolerant JSON extraction: providers occasionally wrap JSON in prose or code
-// fences despite instructions. Pull the outermost object/array and parse it.
-export function parseJsonLoose(text: string): unknown {
-  const trimmed = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()
-  try {
-    return JSON.parse(trimmed)
-  } catch {
-    const start = trimmed.search(/[[{]/)
-    const end = Math.max(trimmed.lastIndexOf(']'), trimmed.lastIndexOf('}'))
-    if (start === -1 || end <= start) return null
-    try {
-      return JSON.parse(trimmed.slice(start, end + 1))
-    } catch {
-      return null
-    }
-  }
 }

@@ -5,7 +5,7 @@ import { getConsistencyScore } from './GetConsistencyScore'
 import { getLatestVO2max } from './GetVO2maxHistory'
 import { getAnalyticsData } from './GetAnalyticsData'
 import { round } from '@/lib/math'
-import type { InsightsInput } from '@/infrastructure/llm/types'
+import type { InsightsInput } from '@/infrastructure/llm/insights/types'
 
 const DAY_MS = 86_400_000
 const PERIOD_WEEKS = 8

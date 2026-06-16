@@ -1,6 +1,5 @@
-import type { InsightsInput, InsightsOutput, LLMProvider } from '../types'
-import { SYSTEM_PROMPT, buildUserPrompt } from '../prompt'
-import { parseInsightsOutput, parseJsonLoose } from '../schema'
+import type { LLMCompletionRequest, LLMProvider } from '../provider'
+import { parseJsonLoose } from '../json'
 
 const ENDPOINT = 'https://api.anthropic.com/v1/messages'
 const API_VERSION = '2023-06-01'
@@ -16,8 +15,8 @@ export interface ClaudeOptions {
   model?: string
 }
 
-// Future fallback target. Anthropic has no JSON response_format, so we rely on
-// the JSON-only system prompt plus tolerant parsing (parseJsonLoose).
+// Future fallback target. Anthropic has no JSON response_format, so we inline
+// the JSON schema into the system prompt and rely on tolerant parsing.
 export class ClaudeProvider implements LLMProvider {
   readonly name = 'claude'
   private readonly apiKey: string
@@ -29,9 +28,11 @@ export class ClaudeProvider implements LLMProvider {
     this.model = model ?? DEFAULT_MODEL
   }
 
-  async generateInsights(input: InsightsInput): Promise<InsightsOutput> {
+  async complete({ systemPrompt, userPrompt, schema, temperature = 0.4 }: LLMCompletionRequest): Promise<unknown> {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
+
+    const system = `${systemPrompt}\n\nThe JSON object MUST conform to this JSON Schema:\n${JSON.stringify(schema)}`
 
     try {
       const res = await fetch(ENDPOINT, {
@@ -45,8 +46,9 @@ export class ClaudeProvider implements LLMProvider {
         body: JSON.stringify({
           model: this.model,
           max_tokens: 1024,
-          system: SYSTEM_PROMPT,
-          messages: [{ role: 'user', content: buildUserPrompt(input) }],
+          temperature,
+          system,
+          messages: [{ role: 'user', content: userPrompt }],
         }),
       })
 
@@ -56,9 +58,7 @@ export class ClaudeProvider implements LLMProvider {
 
       const data = (await res.json()) as ClaudeResponse
       const text = data.content?.filter((b) => b.type === 'text').map((b) => b.text ?? '').join('') ?? ''
-      const parsed = parseInsightsOutput(parseJsonLoose(text))
-      if (!parsed) throw new Error('Claude returned no valid insights')
-      return parsed
+      return parseJsonLoose(text)
     } finally {
       clearTimeout(timer)
     }

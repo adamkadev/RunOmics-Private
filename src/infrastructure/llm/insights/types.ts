@@ -11,11 +11,18 @@ export type InsightType =
 
 export type InsightSeverity = 'low' | 'medium' | 'high'
 
+// How well-grounded the insight is in the data, not a fabricated probability.
+// "high" = directly supported by a clear threshold or enough history; "low" =
+// a speculative read (short window, noisy signal). Qualitative on purpose -
+// this project avoids fake numeric precision (see CLAUDE.md).
+export type InsightConfidence = 'low' | 'medium' | 'high'
+
 export interface Insight {
   type: InsightType
   title: string
   message: string
   severity: InsightSeverity
+  confidence: InsightConfidence
   metrics?: Record<string, number>
 }
 
@@ -68,9 +75,4 @@ export interface InsightsInput {
     distancePct: number | null
     sessionsPct: number | null
   }
-}
-
-export interface LLMProvider {
-  readonly name: string
-  generateInsights(input: InsightsInput): Promise<InsightsOutput>
 }

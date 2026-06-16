@@ -14,11 +14,12 @@ import {
 } from 'lucide-react'
 import type {
   Insight,
+  InsightConfidence,
   InsightSeverity,
   InsightType,
   InsightsInput,
   InsightsOutput,
-} from '@/infrastructure/llm/types'
+} from '@/infrastructure/llm/insights/types'
 import { t } from '@/i18n'
 
 const TYPE_ICON: Record<InsightType, LucideIcon> = {
@@ -36,13 +37,20 @@ const SEVERITY: Record<InsightSeverity, { badge: string; icon: string }> = {
   high: { badge: 'bg-red-50 dark:bg-red-900/20', icon: 'text-red-600 dark:text-red-400' },
 }
 
+// Deliberately subtle (opacity, not color) so confidence reads as a caveat,
+// not another severity-style alert.
+const CONFIDENCE_OPACITY: Record<InsightConfidence, string> = {
+  low: 'opacity-50',
+  medium: 'opacity-75',
+  high: 'opacity-100',
+}
+
 interface Props {
   snapshot: InsightsInput
 }
 
 export function AiInsightsCard({ snapshot }: Props) {
   const [insights, setInsights] = useState<Insight[] | null>(null)
-  const [source, setSource] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -57,7 +65,6 @@ export function AiInsightsCard({ snapshot }: Props) {
       .then(async (res) => {
         const data = (await res.json()) as InsightsOutput
         setInsights(data.insights ?? [])
-        setSource(res.headers.get('x-insights-source'))
       })
       .catch(() => setInsights([]))
       .finally(() => setLoading(false))
@@ -72,9 +79,6 @@ export function AiInsightsCard({ snapshot }: Props) {
       <div className="mb-4 flex items-center gap-2">
         <Sparkles size={16} className="text-violet-600 dark:text-violet-400" />
         <h3 className="text-sm font-semibold text-foreground/80">{t.aiInsights.title}</h3>
-        {!loading && source === 'fallback' && (
-          <span className="ml-auto text-[11px] text-muted-foreground">{t.aiInsights.fallbackNote}</span>
-        )}
       </div>
 
       {loading ? (
@@ -95,6 +99,9 @@ export function AiInsightsCard({ snapshot }: Props) {
                 <div>
                   <p className="text-sm font-medium text-foreground">{insight.title}</p>
                   <p className="text-sm leading-relaxed text-foreground/80">{insight.message}</p>
+                  <p className={`mt-0.5 text-[11px] text-muted-foreground ${CONFIDENCE_OPACITY[insight.confidence]}`}>
+                    {t.aiInsights.confidence[insight.confidence]}
+                  </p>
                 </div>
               </li>
             )
