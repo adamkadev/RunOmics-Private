@@ -24,6 +24,7 @@ export const en = {
   nav: {
     items: {
       dashboard: 'Dashboard',
+      coach: 'Coach',
       activities: 'Activities',
       calendar: 'Calendar',
       analytics: 'Analytics',
@@ -178,6 +179,53 @@ export const en = {
       form: 'Form',
       fitnessDelta: (d: number) => `${d >= 0 ? '+' : ''}${d} over 2 wk`,
     },
+  },
+
+  coach: {
+    title: 'Coach',
+    subtitle: 'Weekly training analysis',
+    thisWeek: 'Last 7 days',
+    vsLastWeek: 'vs previous 7 days',
+    loadChanges: 'Load changes (7d)',
+    suggestions: 'Recommendations',
+    recentRuns: 'Recent runs',
+    noRecentRuns: 'No runs in the last 7 days.',
+    noData: 'Not enough data yet.',
+    fitness: 'Fitness',
+    fatigue: 'Fatigue',
+    form: 'Form',
+    sessions: (n: number) => `${n} run${n !== 1 ? 's' : ''}`,
+    suggestion: {
+      reduce_load: {
+        title: 'Reduce load',
+        detail: (acwr: number) =>
+          `ACWR at ${acwr}x - injury risk elevated. Prioritise easy sessions or rest until acute load comes down.`,
+      },
+      fatigue_high: {
+        title: 'Prioritise recovery',
+        detail: 'Form is strongly negative. An easy run or rest day will help you bounce back faster.',
+      },
+      easy_session: {
+        title: 'Keep it easy',
+        detail: 'Moderate fatigue accumulating. Stick to easy effort for the next couple of sessions.',
+      },
+      quality_window: {
+        title: 'Good window for intensity',
+        detail: 'Form is positive and fitness solid - ideal timing for a quality session or a race.',
+      },
+      add_sessions: {
+        title: 'Add a session',
+        detail: 'Fitness is trending down. Even a short easy run will slow the decline.',
+      },
+      increase_volume: {
+        title: 'Safe to build volume',
+        detail: 'Acute load is low relative to your base. A gradual volume increase is well within safe range.',
+      },
+      maintain: {
+        title: 'Stay the course',
+        detail: 'Training load is well balanced. Continue with your current plan.',
+      },
+    } as Record<string, { title: string; detail: string | ((acwr: number) => string) }>,
   },
 
   insights: {
