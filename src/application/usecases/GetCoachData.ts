@@ -44,9 +44,22 @@ export interface CoachRecentActivity {
   paceSecPerKm: number | null
 }
 
+export interface CoachYearOverYear {
+  deltaDistancePct: number | null
+  deltaSessions: number | null
+}
+
+export interface CoachTypeBreakdown {
+  type: ActivityType
+  sessions: number
+  distanceKm: number
+}
+
 export interface CoachData {
   week: CoachWeek
   loadDelta: CoachLoadDelta
+  yearOverYear: CoachYearOverYear | null
+  sessionTypeBreakdown: CoachTypeBreakdown[]
   suggestions: CoachSuggestion[]
   recentActivities: CoachRecentActivity[]
 }
@@ -83,6 +96,39 @@ export function getCoachData(): CoachData | null {
 
   const currentKm = round(actsLast7.reduce((s, a) => s + a.distanceKm, 0), 1)
   const prevKm = round(actsPrev7.reduce((s, a) => s + a.distanceKm, 0), 1)
+
+  // Same 7-day window 52 weeks ago (weekday-aligned), only if history reaches back that far
+  const lastYearRefTime = refTime - 364 * DAY_MS
+  const earliestDate = activities.reduce((min, a) => (a.date < min ? a.date : min), activities[0].date)
+  const earliestTime = new Date(earliestDate + 'T00:00:00').getTime()
+  const hasYearHistory = earliestTime <= lastYearRefTime - 6 * DAY_MS
+
+  const actsLastYear = hasYearHistory
+    ? activities.filter((a) => {
+        const diff = lastYearRefTime - new Date(a.date + 'T00:00:00').getTime()
+        return diff >= 0 && diff <= 6 * DAY_MS
+      })
+    : []
+  const lastYearKm = round(actsLastYear.reduce((s, a) => s + a.distanceKm, 0), 1)
+
+  const yearOverYear: CoachYearOverYear | null = hasYearHistory
+    ? {
+        deltaDistancePct: lastYearKm > 0 ? round(((currentKm - lastYearKm) / lastYearKm) * 100) : null,
+        deltaSessions: actsLastYear.length > 0 ? actsLast7.length - actsLastYear.length : null,
+      }
+    : null
+
+  // Distance/sessions per activity type for the current week
+  const typeTotals = new Map<ActivityType, { sessions: number; distanceKm: number }>()
+  for (const a of actsLast7) {
+    const entry = typeTotals.get(a.type) ?? { sessions: 0, distanceKm: 0 }
+    entry.sessions += 1
+    entry.distanceKm += a.distanceKm
+    typeTotals.set(a.type, entry)
+  }
+  const sessionTypeBreakdown: CoachTypeBreakdown[] = [...typeTotals.entries()]
+    .map(([type, v]) => ({ type, sessions: v.sessions, distanceKm: round(v.distanceKm, 1) }))
+    .sort((a, b) => b.distanceKm - a.distanceKm)
 
   // Current load snapshot (today)
   const todaySnap = history.get(isoDate(refDate)) ?? history.get([...history.keys()].at(-1)!)!
@@ -136,6 +182,8 @@ export function getCoachData(): CoachData | null {
       atlDelta7d: round(atl - snap7.atl, 1),
       tsbDelta7d: round(tsb - snap7.tsb, 1),
     },
+    yearOverYear,
+    sessionTypeBreakdown,
     suggestions: suggestions.slice(0, 3),
     recentActivities: actsLast7
       .sort((a, b) => b.date.localeCompare(a.date))

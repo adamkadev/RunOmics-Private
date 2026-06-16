@@ -6,7 +6,7 @@ import { TrainingStatusBanner } from '@/components/dashboard/TrainingStatusBanne
 import { formatDuration, formatPace } from '@/lib/formatters'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import { t } from '@/i18n'
-import type { CoachSuggestion } from '@/application/usecases/GetCoachData'
+import type { CoachSuggestion, CoachTypeBreakdown } from '@/application/usecases/GetCoachData'
 
 const SUGGESTION_STYLE: Record<string, { border: string; icon: string; badge: string }> = {
   reduce_load:      { border: 'border-red-200 dark:border-red-800',    icon: 'text-red-500',    badge: 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
@@ -22,6 +22,85 @@ function DeltaChip({ value }: { value: number }) {
   if (value > 0) return <span className="flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400"><TrendingUp size={12} />+{value}</span>
   if (value < 0) return <span className="flex items-center gap-0.5 text-orange-500 dark:text-orange-400"><TrendingDown size={12} />{value}</span>
   return <span className="flex items-center gap-0.5 text-subtle"><Minus size={12} />0</span>
+}
+
+function WeekStatsCard({
+  title,
+  distanceKm,
+  sessions,
+  deltaDistancePct,
+  deltaSessions,
+  deltaLabel,
+}: {
+  title: string
+  distanceKm: number
+  sessions: number
+  deltaDistancePct: number | null
+  deltaSessions: number | null
+  deltaLabel: string
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+      <h2 className="mb-4 text-sm font-semibold text-foreground/80">{title}</h2>
+      <div className="space-y-3">
+        <div className="flex items-baseline justify-between">
+          <span className="text-xs text-subtle">Distance</span>
+          <span className="text-lg font-bold tabular-nums text-foreground">
+            {distanceKm} <span className="text-sm font-normal text-muted-foreground">km</span>
+          </span>
+        </div>
+        <div className="flex items-baseline justify-between">
+          <span className="text-xs text-subtle">{t.units.km}</span>
+          {deltaDistancePct !== null && (
+            <span className={`text-xs font-medium ${deltaDistancePct >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-orange-500 dark:text-orange-400'}`}>
+              {deltaDistancePct >= 0 ? '+' : ''}{deltaDistancePct}% {deltaLabel}
+            </span>
+          )}
+        </div>
+        <div className="flex items-baseline justify-between border-t border-border pt-3">
+          <span className="text-xs text-subtle">Sessions</span>
+          <span className="text-lg font-bold tabular-nums text-foreground">
+            {sessions}
+            {deltaSessions !== null && (
+              <span className={`ml-2 text-xs font-normal ${deltaSessions >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-orange-500 dark:text-orange-400'}`}>
+                {deltaSessions >= 0 ? '+' : ''}{deltaSessions} {deltaLabel}
+              </span>
+            )}
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function SessionTypeBreakdownCard({ breakdown, totalKm }: { breakdown: CoachTypeBreakdown[]; totalKm: number }) {
+  return (
+    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+      <h2 className="mb-4 text-sm font-semibold text-foreground/80">{t.coach.sessionTypes}</h2>
+      <div className="space-y-3">
+        {breakdown.map((b) => {
+          const typeConfig = ACTIVITY_TYPE_CONFIG[b.type]
+          const pct = totalKm > 0 ? Math.round((b.distanceKm / totalKm) * 100) : 0
+          return (
+            <div key={b.type} className="space-y-1.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className={`rounded-md px-2 py-0.5 font-semibold ${typeConfig.badgeClass}`}>
+                  {t.activityTypes[b.type]}
+                </span>
+                <span className="text-subtle">{t.coach.sessions(b.sessions)} &middot; {b.distanceKm} km</span>
+              </div>
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full"
+                  style={{ width: `${pct}%`, backgroundColor: typeConfig.chartColor }}
+                />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
 }
 
 function SuggestionCard({ s }: { s: CoachSuggestion }) {
@@ -65,37 +144,14 @@ export default function CoachPage() {
         <>
           {/* Week summary + load deltas */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {/* This week */}
-            <div className="rounded-xl border border-border bg-card p-5 shadow-card">
-              <h2 className="mb-4 text-sm font-semibold text-foreground/80">{c.thisWeek}</h2>
-              <div className="space-y-3">
-                <div className="flex items-baseline justify-between">
-                  <span className="text-xs text-subtle">Distance</span>
-                  <span className="text-lg font-bold tabular-nums text-foreground">
-                    {coach.week.distanceKm} <span className="text-sm font-normal text-muted-foreground">km</span>
-                  </span>
-                </div>
-                <div className="flex items-baseline justify-between">
-                  <span className="text-xs text-subtle">{t.units.km}</span>
-                  {coach.week.deltaDistancePct !== null && (
-                    <span className={`text-xs font-medium ${coach.week.deltaDistancePct >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-orange-500 dark:text-orange-400'}`}>
-                      {coach.week.deltaDistancePct >= 0 ? '+' : ''}{coach.week.deltaDistancePct}% {c.vsLastWeek}
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-baseline justify-between border-t border-border pt-3">
-                  <span className="text-xs text-subtle">Sessions</span>
-                  <span className="text-lg font-bold tabular-nums text-foreground">
-                    {coach.week.sessions}
-                    {coach.week.deltaSessions !== null && (
-                      <span className={`ml-2 text-xs font-normal ${coach.week.deltaSessions >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-orange-500 dark:text-orange-400'}`}>
-                        {coach.week.deltaSessions >= 0 ? '+' : ''}{coach.week.deltaSessions} {c.vsLastWeek}
-                      </span>
-                    )}
-                  </span>
-                </div>
-              </div>
-            </div>
+            <WeekStatsCard
+              title={c.thisWeek}
+              distanceKm={coach.week.distanceKm}
+              sessions={coach.week.sessions}
+              deltaDistancePct={coach.week.deltaDistancePct}
+              deltaSessions={coach.week.deltaSessions}
+              deltaLabel={c.vsLastWeek}
+            />
 
             {/* Load deltas */}
             <div className="rounded-xl border border-border bg-card p-5 shadow-card">
@@ -121,6 +177,25 @@ export default function CoachPage() {
               </div>
             </div>
           </div>
+
+          {/* Year-over-year + session type breakdown */}
+          {(coach.yearOverYear || coach.sessionTypeBreakdown.length > 0) && (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {coach.yearOverYear && (
+                <WeekStatsCard
+                  title={c.vsLastYear}
+                  distanceKm={coach.week.distanceKm}
+                  sessions={coach.week.sessions}
+                  deltaDistancePct={coach.yearOverYear.deltaDistancePct}
+                  deltaSessions={coach.yearOverYear.deltaSessions}
+                  deltaLabel={c.vsLastYearLabel}
+                />
+              )}
+              {coach.sessionTypeBreakdown.length > 0 && (
+                <SessionTypeBreakdownCard breakdown={coach.sessionTypeBreakdown} totalKm={coach.week.distanceKm} />
+              )}
+            </div>
+          )}
 
           {/* Suggestions */}
           <section className="space-y-3">
