@@ -13,6 +13,7 @@ import {
   Medal,
   HeartPulse,
   Map,
+  IdCard,
   Menu,
   X,
 } from 'lucide-react'
@@ -29,6 +30,7 @@ const NAV_ITEMS = [
   { href: '/analytics', label: t.nav.items.analytics, icon: BarChart2 },
   { href: '/goals', label: t.nav.items.goals, icon: Trophy },
   { href: '/records', label: t.nav.items.records, icon: Medal },
+  { href: '/profile', label: t.nav.items.profile, icon: IdCard },
   { href: '/map', label: t.nav.items.heatmap, icon: Map },
 ]
 

@@ -31,6 +31,7 @@ export const en = {
       goals: 'Goals',
       records: 'Records',
       heatmap: 'HeatMap',
+      profile: 'Profile',
     },
     openMenu: 'Open menu',
     closeMenu: 'Close menu',
@@ -536,6 +537,23 @@ export const en = {
     },
   },
 
+  profile: {
+    pageTitle: 'Profile',
+    pageSubtitle: 'Your runner identity card',
+    yearsTracked: 'Years tracked',
+    totalDistance: 'Lifetime distance',
+    totalActivities: 'Activities logged',
+    experienceLevel: 'Experience level',
+    since: (date: string) => `Since ${date}`,
+    levelCaveat: 'Based on activity history tracked in RunOmics, not your full running history.',
+    level: {
+      beginner: 'Beginner',
+      intermediate: 'Intermediate',
+      experienced: 'Experienced',
+      veteran: 'Veteran',
+    } as Record<string, string>,
+  },
+
   racePredictions: {
     title: 'Race Predictions',
     efforts: {
@@ -552,7 +570,7 @@ export const en = {
 
   trainingZones: {
     title: 'Training Zones',
-    vo2maxLabel: (vo2max: number) => `VO₂max ${vo2max} ml/kg/min`,
+    thresholdLabel: (pace: string) => `Threshold ${pace}`,
     perKm: '/km',
   },
 
