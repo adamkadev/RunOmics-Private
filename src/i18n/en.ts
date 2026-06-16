@@ -196,6 +196,10 @@ export const en = {
     fitness: 'Fitness',
     fatigue: 'Fatigue',
     form: 'Form',
+    stats: {
+      distance: 'Distance',
+      sessions: 'Sessions',
+    },
     sessions: (n: number) => `${n} run${n !== 1 ? 's' : ''}`,
     suggestion: {
       reduce_load: {

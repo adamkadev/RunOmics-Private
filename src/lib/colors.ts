@@ -30,6 +30,15 @@ export const CHART_COLORS = {
   tooltipCursor:   'rgba(156,163,175,0.1)',
 } as const
 
+// HR zone colors (Z1-Z5), keyed by zone number
+export const ZONE_COLORS: Record<number, string> = {
+  1: '#9ca3af', // gray-400
+  2: '#60a5fa', // blue-400
+  3: '#34d399', // emerald-400
+  4: '#f97316', // orange-500
+  5: '#ef4444', // red-500
+}
+
 // Tailwind class pairs [light, dark] for UI components
 export const STAT_COLORS = {
   distance:  { icon: 'text-emerald-600 dark:text-emerald-400' },

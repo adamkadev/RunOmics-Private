@@ -54,11 +54,11 @@ export function LongRunsChart({ data }: Props) {
       </ResponsiveContainer>
       <div className="mt-2 flex items-center gap-4 text-xs text-subtle">
         <span className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-sm" style={{ background: '#6ee7b7' }} />
+          <span className="h-2 w-2 rounded-sm" style={{ background: CHART_COLORS.longRun10 }} />
           {t.analytics.charts.longRuns.range1015}
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-sm" style={{ background: '#059669' }} />
+          <span className="h-2 w-2 rounded-sm" style={{ background: CHART_COLORS.longRun15 }} />
           {t.analytics.charts.longRuns.range15}
         </span>
       </div>

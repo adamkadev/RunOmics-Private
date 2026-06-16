@@ -4,15 +4,8 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { formatDuration } from '@/lib/formatters'
 import type { ZoneShare } from '@/application/usecases/GetAnalyticsData'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
+import { ZONE_COLORS } from '@/lib/colors'
 import { t } from '@/i18n'
-
-const ZONE_COLORS: Record<number, string> = {
-  1: '#9ca3af',
-  2: '#60a5fa',
-  3: '#34d399',
-  4: '#f97316',
-  5: '#ef4444',
-}
 
 const ZONE_LABELS = t.analytics.charts.zones.labels
 
@@ -60,6 +53,7 @@ export function ZoneDistributionChart({ data }: Props) {
               innerRadius={42}
               outerRadius={64}
               paddingAngle={2}
+              isAnimationActive={false}
             >
               {data.map((z) => (
                 <Cell key={z.zone} fill={ZONE_COLORS[z.zone] ?? '#9ca3af'} />
