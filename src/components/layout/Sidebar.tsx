@@ -198,7 +198,7 @@ export function Sidebar() {
                   size={26}
                   className={active ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}
                 />
-                <span className="text-lg font-bold tracking-tight">{label}</span>
+                <span className="text-3xl font-bold tracking-tight">{label}</span>
               </Link>
             )
           })}
