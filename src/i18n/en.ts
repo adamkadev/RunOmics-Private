@@ -319,6 +319,24 @@ export const en = {
         unit: 'spm',
         footnote: 'Duration-weighted average cadence (steps/min).',
       },
+      runningForm: {
+        title: 'Running Form',
+        metrics: {
+          groundContact: 'Ground Contact',
+          verticalOscillation: 'Vertical Osc.',
+          strideLength: 'Stride Length',
+        } as Record<string, string>,
+        unit: {
+          groundContact: 'ms',
+          verticalOscillation: 'mm',
+          strideLength: 'm',
+        } as Record<string, string>,
+        footnote: {
+          groundContact: 'Duration-weighted average ground contact time. Lower generally means a more efficient stride.',
+          verticalOscillation: 'Duration-weighted average vertical oscillation. Lower means less bounce per stride.',
+          strideLength: 'Duration-weighted average stride length.',
+        } as Record<string, string>,
+      },
       longRuns: {
         title: 'Long Runs',
         range1015: '10–15 km',

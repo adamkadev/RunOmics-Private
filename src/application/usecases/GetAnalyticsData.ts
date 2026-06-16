@@ -38,6 +38,14 @@ export interface MonthlyCadence {
   cadence: number | null
 }
 
+export interface MonthlyRunningForm {
+  month: string
+  label: string
+  groundContactMs: number | null
+  verticalOscillationMm: number | null
+  strideLengthM: number | null
+}
+
 export interface MonthlyLongRuns {
   month: string
   label: string
@@ -95,6 +103,7 @@ export interface AnalyticsSeries {
   efficiencyTrend: MonthlyEfficiency[]
   hrTrend: MonthlyHr[]
   cadenceTrend: MonthlyCadence[]
+  runningFormTrend: MonthlyRunningForm[]
   longRuns: MonthlyLongRuns[]
   easyHardSplit: MonthlyEasyHard[]
   zoneDistribution: ZoneShare[]
@@ -165,6 +174,9 @@ function avgField(activities: Activity[], pick: (a: Activity) => number | null):
 const weightedPace = (acts: Activity[]) => weightedAvg(acts, (a) => a.paceSecPerKm, (a) => a.distanceKm, 0)
 const weightedHr = (acts: Activity[]) => weightedAvg(acts, (a) => a.avgHeartRate, (a) => a.durationSeconds, 0)
 const weightedCadence = (acts: Activity[]) => weightedAvg(acts, (a) => a.cadenceSpm, (a) => a.durationSeconds)
+const weightedGroundContact = (acts: Activity[]) => weightedAvg(acts, (a) => a.groundContactMs, (a) => a.durationSeconds, 0)
+const weightedVerticalOscillation = (acts: Activity[]) => weightedAvg(acts, (a) => a.verticalOscillationMm, (a) => a.durationSeconds)
+const weightedStrideLength = (acts: Activity[]) => weightedAvg(acts, (a) => a.strideLengthM, (a) => a.durationSeconds, 2)
 
 function zoneDistribution(activities: Activity[]): ZoneShare[] {
   const seconds = new Map<number, number>()
@@ -244,6 +256,7 @@ function buildSeries(buckets: Bucket[], scoped: Activity[]): AnalyticsSeries {
   const efficiencyTrend: MonthlyEfficiency[] = []
   const hrTrend: MonthlyHr[] = []
   const cadenceTrend: MonthlyCadence[] = []
+  const runningFormTrend: MonthlyRunningForm[] = []
   const longRuns: MonthlyLongRuns[] = []
   const easyHardSplit: MonthlyEasyHard[] = []
   const rpeTrend: MonthlyRpe[] = []
@@ -267,6 +280,12 @@ function buildSeries(buckets: Bucket[], scoped: Activity[]): AnalyticsSeries {
     efficiencyTrend.push({ ...base, ef: efficiencyFactor(easy) })
     hrTrend.push({ ...base, avgHr: weightedHr(acts) })
     cadenceTrend.push({ ...base, cadence: weightedCadence(acts) })
+    runningFormTrend.push({
+      ...base,
+      groundContactMs: weightedGroundContact(acts),
+      verticalOscillationMm: weightedVerticalOscillation(acts),
+      strideLengthM: weightedStrideLength(acts),
+    })
     longRuns.push({
       ...base,
       km10: acts.filter((a) => a.distanceKm >= 10 && a.distanceKm < 15).length,
@@ -287,6 +306,7 @@ function buildSeries(buckets: Bucket[], scoped: Activity[]): AnalyticsSeries {
     efficiencyTrend,
     hrTrend,
     cadenceTrend,
+    runningFormTrend,
     longRuns,
     easyHardSplit,
     zoneDistribution: zoneDistribution(scoped),

@@ -15,6 +15,11 @@ export const CHART_COLORS = {
   cadence:    '#0ea5e9', // sky-500
   efficiency: '#8b5cf6', // violet-500
 
+  // Running form
+  groundContact:        '#f59e0b', // amber-500
+  verticalOscillation:  '#f43f5e', // rose-500
+  strideLength:         '#14b8a6', // teal-500
+
   // Easy / Hard split
   easy:       '#34d399', // emerald-400
   hard:       '#fb923c', // orange-400

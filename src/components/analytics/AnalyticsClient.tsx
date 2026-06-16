@@ -11,6 +11,7 @@ import { EfficiencyChart } from './EfficiencyChart'
 import { ZoneDistributionChart } from './ZoneDistributionChart'
 import { HrTrendChart } from './HrTrendChart'
 import { CadenceTrendChart } from './CadenceTrendChart'
+import { RunningFormChart } from './RunningFormChart'
 import { LongRunsChart } from './LongRunsChart'
 import { EasyHardChart } from './EasyHardChart'
 import { YearComparisonSection } from './YearComparisonSection'
@@ -274,6 +275,7 @@ export function AnalyticsClient({ data, comparison, vo2maxHistory }: { data: Ana
             <HrTrendChart data={active.hrTrend} />
             <ZoneDistributionChart data={active.zoneDistribution} />
             <CadenceTrendChart data={active.cadenceTrend} />
+            <RunningFormChart data={active.runningFormTrend} />
           </div>
           <TrainingEffectChart data={active.trainingEffectTrend} />
           <DailyEfficiencyChart data={data.efficiencyDaily} />
