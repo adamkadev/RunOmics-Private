@@ -6,9 +6,16 @@ import { getCoachData } from './GetCoachData'
 import { getTrainingZones } from './GetTrainingZones'
 import { getGoalsPageData } from './GetGoalsData'
 import { round } from '@/lib/math'
+import { formatClock } from '@/lib/formatters'
 import type { PlanInput } from '@/infrastructure/llm/plan/types'
 
 const DAY_MS = 86_400_000
+
+function startOfWeek(d: Date): Date {
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+  x.setDate(x.getDate() - ((x.getDay() + 6) % 7)) // back to Monday
+  return x
+}
 
 // Read-only aggregation of existing usecases into the snapshot the plan is
 // grounded in. Build-time pure; touches no analytics computation.
@@ -44,7 +51,16 @@ export function getPlanSnapshot(): PlanInput | null {
   const easyPct = totalSec ? round((easySec / totalSec) * 100) : null
   const hardPct = easyPct === null ? null : round(100 - easyPct)
 
+  // Sessions already logged this calendar week (Monday up to today), so the
+  // plan reflects what actually happened instead of re-prescribing those days.
+  const monday = startOfWeek(now)
+  const completedThisWeek = activities
+    .filter((a) => new Date(a.date + 'T00:00:00').getTime() >= monday.getTime())
+    .map((a) => ({ day: a.dayOfWeek, type: a.type, distanceKm: a.distanceKm }))
+
   return {
+    today: now.toLocaleDateString('en-US', { weekday: 'long' }),
+    completedThisWeek,
     trainingStatus: status
       ? {
           status: status.status,
@@ -71,11 +87,12 @@ export function getPlanSnapshot(): PlanInput | null {
       ? coach.sessionTypeBreakdown.map((b) => ({ type: b.type, sessions: b.sessions, distanceKm: b.distanceKm }))
       : [],
     easyHardSplit: { easyPct, hardPct },
+    // Pre-formatted so the model copies a real, already-rounded pace string
+    // instead of computing/inventing one itself.
     paceZones: zones
       ? zones.zones.map((z) => ({
           key: z.key,
-          paceMinSecPerKm: z.paceMinSecPerKm,
-          paceMaxSecPerKm: z.paceMaxSecPerKm,
+          label: `${formatClock(z.paceMinSecPerKm)} - ${formatClock(z.paceMaxSecPerKm)} /km`,
         }))
       : [],
     goal:

@@ -1,17 +1,12 @@
+import type { ActivityType } from '@/domain/activity/types'
+
 // Contract for the AI training-plan layer. A grounded, single representative
 // training week derived from the athlete's current data and this year's goals -
 // not a multi-month periodised program (that would require inventing data).
 
-export type SessionKind =
-  | 'rest'
-  | 'recovery'
-  | 'easy'
-  | 'long'
-  | 'tempo'
-  | 'threshold'
-  | 'intervals'
-  | 'race_pace'
-  | 'cross_training'
+// Reuses the same activity types as the rest of the app (styling, i18n labels)
+// plus two kinds that aren't loggable activities.
+export type SessionKind = ActivityType | 'rest' | 'cross_training'
 
 export type PlanConfidence = 'low' | 'medium' | 'high'
 
@@ -21,7 +16,10 @@ export interface PlanSession {
   title: string
   description: string
   distanceKm: number | null   // null for rest / cross-training
-  targetPace: string | null   // e.g. '5:20 /km', null when not pace-specific
+  targetPace: string | null   // must be one of PlanInput.paceZones[].label, or null
+  // True when this day already happened this calendar week and reflects a
+  // real logged activity rather than a prescription.
+  completed?: boolean
 }
 
 export interface TrainingPlan {
@@ -29,7 +27,7 @@ export interface TrainingPlan {
   rationale: string           // why this plan, given the data + goal
   targetWeeklyKm: number
   keyWorkout: string | null   // the one priority session this week
-  sessions: PlanSession[]     // one representative week (incl. rest days)
+  sessions: PlanSession[]     // full Monday..Sunday week (past days = completed)
   confidence: PlanConfidence
 }
 
@@ -37,9 +35,17 @@ export interface PlanOutput {
   plan: TrainingPlan | null
 }
 
+// Pre-formatted pace zone, ready to use as-is in a session's targetPace - the
+// model must pick from these labels, never compute its own pace string.
+export interface PlanPaceZone {
+  key: string
+  label: string // e.g. "5:18 - 6:36 /km"
+}
+
 // Compact, serializable snapshot used to ground the plan. Assembled at build
 // time by GetPlanSnapshot from existing usecases (read-only).
 export interface PlanInput {
+  today: string // 'Monday' .. 'Sunday' - the current day of this week
   trainingStatus: {
     status: string
     risk: string
@@ -63,6 +69,13 @@ export interface PlanInput {
     distanceKm: number
     sessions: number
   }
+  // Sessions already logged this calendar week (Monday up to today). The plan
+  // must reflect these as completed, not prescribe them again.
+  completedThisWeek: {
+    day: string
+    type: ActivityType
+    distanceKm: number
+  }[]
   sessionMix: {
     type: string
     sessions: number
@@ -72,13 +85,8 @@ export interface PlanInput {
     easyPct: number | null
     hardPct: number | null
   }
-  // Pace zones (sec/km) so the plan can prescribe concrete paces. Empty when
-  // no athlete threshold pace is configured.
-  paceZones: {
-    key: string
-    paceMinSecPerKm: number
-    paceMaxSecPerKm: number
-  }[]
+  // Empty when no athlete threshold pace is configured.
+  paceZones: PlanPaceZone[]
   goal: {
     year: number
     annualDistanceKm: number

@@ -1,21 +1,24 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { CalendarRange, Loader2, Target, Sparkles } from 'lucide-react'
-import type { PlanInput } from '@/infrastructure/llm/plan/types'
-import type { PlanConfidence, SessionKind, TrainingPlan } from '@/infrastructure/llm/plan/types'
+import { CalendarRange, Check, Loader2, Target, Sparkles } from 'lucide-react'
+import { ACTIVITY_TYPE_CONFIG, type ActivityType } from '@/domain/activity/types'
+import type { PlanConfidence, PlanInput, SessionKind, TrainingPlan } from '@/infrastructure/llm/plan/types'
 import { t } from '@/i18n'
 
-const KIND_STYLE: Record<SessionKind, string> = {
+const NON_ACTIVITY_KIND_STYLE: Record<'rest' | 'cross_training', string> = {
   rest: 'bg-muted text-muted-foreground',
-  recovery: 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300',
-  easy: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
-  long: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-  tempo: 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-  threshold: 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-  intervals: 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-  race_pace: 'bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400',
   cross_training: 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300',
+}
+
+function kindBadgeClass(kind: SessionKind): string {
+  return kind === 'rest' || kind === 'cross_training'
+    ? NON_ACTIVITY_KIND_STYLE[kind]
+    : ACTIVITY_TYPE_CONFIG[kind as ActivityType].badgeClass
+}
+
+function kindLabel(kind: SessionKind): string {
+  return kind === 'rest' ? t.coachPlan.restDay : kind === 'cross_training' ? t.coachPlan.crossTraining : t.activityTypes[kind as ActivityType]
 }
 
 const CONFIDENCE_OPACITY: Record<PlanConfidence, string> = {
@@ -93,27 +96,32 @@ export function CoachPlanCard({ snapshot }: Props) {
             </p>
           )}
 
-          <ul className="mt-4 divide-y divide-border">
+          <div className="mt-4 divide-y divide-border">
             {plan!.sessions.map((s, idx) => (
-              <li key={`${s.day}-${idx}`} className="flex items-start gap-3 py-2.5">
-                <span className="w-9 shrink-0 pt-0.5 text-xs font-medium text-subtle">{s.day.slice(0, 3)}</span>
-                <span className={`shrink-0 rounded-md px-2 py-0.5 text-xs font-semibold ${KIND_STYLE[s.kind]}`}>
-                  {t.coachPlan.kind[s.kind]}
+              <div
+                key={`${s.day}-${idx}`}
+                className="grid grid-cols-[2.5rem_5.5rem_1fr_auto] items-start gap-3 py-2.5 sm:grid-cols-[3rem_6.5rem_1fr_auto]"
+              >
+                <span className="pt-0.5 text-xs font-medium text-subtle">{s.day.slice(0, 3)}</span>
+
+                <span className={`flex w-fit items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold ${kindBadgeClass(s.kind)} ${s.completed ? 'opacity-60' : ''}`}>
+                  {s.completed && <Check size={11} />}
+                  {kindLabel(s.kind)}
                 </span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-sm font-medium text-foreground">{s.title}</span>
-                    <span className="shrink-0 text-xs tabular-nums text-subtle">
-                      {s.distanceKm ? `${s.distanceKm} km` : ''}
-                      {s.distanceKm && s.targetPace ? ' · ' : ''}
-                      {s.targetPace ?? ''}
-                    </span>
-                  </div>
+
+                <div className="min-w-0">
+                  <p className={`text-sm font-medium text-foreground ${s.completed ? 'opacity-60' : ''}`}>{s.title}</p>
                   <p className="text-xs leading-relaxed text-muted-foreground">{s.description}</p>
                 </div>
-              </li>
+
+                <span className="whitespace-nowrap pt-0.5 text-right text-xs tabular-nums text-subtle">
+                  {s.distanceKm ? `${s.distanceKm} km` : ''}
+                  {s.distanceKm && s.targetPace ? ' · ' : ''}
+                  {s.targetPace ?? ''}
+                </span>
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
       )}
     </section>

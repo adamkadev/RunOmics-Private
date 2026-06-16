@@ -2,10 +2,11 @@ import type { LLMProvider } from '../provider'
 import { GeminiProvider } from './GeminiProvider'
 import { OpenAIProvider } from './OpenAIProvider'
 import { ClaudeProvider } from './ClaudeProvider'
+import { OpenRouterProvider } from './OpenRouterProvider'
 
-export { GeminiProvider, OpenAIProvider, ClaudeProvider }
+export { GeminiProvider, OpenAIProvider, ClaudeProvider, OpenRouterProvider }
 
-type ProviderName = 'gemini' | 'openai' | 'claude'
+type ProviderName = 'gemini' | 'openai' | 'claude' | 'openrouter'
 
 // Single place that wires env to a concrete provider. Swap providers here (or
 // via INSIGHTS_PROVIDER) without touching any other code. Returns null when no
@@ -25,6 +26,10 @@ export function createProvider(): LLMProvider | null {
     claude: () =>
       process.env.ANTHROPIC_API_KEY
         ? new ClaudeProvider({ apiKey: process.env.ANTHROPIC_API_KEY, model: process.env.ANTHROPIC_MODEL })
+        : null,
+    openrouter: () =>
+      process.env.OPENROUTER_API_KEY
+        ? new OpenRouterProvider({ apiKey: process.env.OPENROUTER_API_KEY, model: process.env.OPENROUTER_MODEL })
         : null,
   }
 

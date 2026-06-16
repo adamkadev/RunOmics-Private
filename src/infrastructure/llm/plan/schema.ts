@@ -10,14 +10,14 @@ import type {
 // invalid payload returns null so the caller falls back to a deterministic plan.
 
 const SESSION_KINDS: readonly SessionKind[] = [
+  'Sprint',
+  'Anaerobic',
+  'VO2Max',
+  'Threshold',
+  'Tempo',
+  'Base',
+  'Race',
   'rest',
-  'recovery',
-  'easy',
-  'long',
-  'tempo',
-  'threshold',
-  'intervals',
-  'race_pace',
   'cross_training',
 ]
 
@@ -60,6 +60,7 @@ function parseSession(value: unknown): PlanSession | null {
     description,
     distanceKm: cleanNumber(value.distanceKm),
     targetPace: cleanString(value.targetPace, MAX_SHORT),
+    ...(value.completed === true ? { completed: true } : {}),
   }
 }
 

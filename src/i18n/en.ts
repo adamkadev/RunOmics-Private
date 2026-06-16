@@ -239,22 +239,12 @@ export const en = {
     targetWeekly: 'Target',
     keyWorkout: 'Key workout',
     restDay: 'Rest',
+    crossTraining: 'Cross-training',
     confidence: {
       low: 'Low confidence',
       medium: 'Medium confidence',
       high: 'High confidence',
     },
-    kind: {
-      rest: 'Rest',
-      recovery: 'Recovery',
-      easy: 'Easy',
-      long: 'Long',
-      tempo: 'Tempo',
-      threshold: 'Threshold',
-      intervals: 'Intervals',
-      race_pace: 'Race pace',
-      cross_training: 'Cross-training',
-    } as Record<string, string>,
   },
 
   insights: {
