@@ -229,6 +229,24 @@ export const en = {
         detail: 'Training load is well balanced. Continue with your current plan.',
       },
     } as Record<string, { title: string; detail: string | ((acwr: number) => string) }>,
+    planTitle: '4-week plan',
+    planSubtitle: (weeklyNeeded: number | null) =>
+      weeklyNeeded !== null
+        ? `Progressive weekly volume - your annual goal pace is about ${weeklyNeeded} km/week. Run count scales with your usual distance per run.`
+        : 'Progressive weekly volume based on your current training load. Run count scales with your usual distance per run.',
+    planWeek: (n: number) => `Week ${n}`,
+    planFocus: {
+      recovery: 'Recovery',
+      maintain: 'Maintain',
+      build: 'Build',
+      quality: 'Add quality',
+    } as Record<string, string>,
+    planFocusDetail: {
+      recovery: 'Lighter week - absorb recent training and keep injury risk low.',
+      maintain: 'Hold steady at your current volume this week.',
+      build: 'Progressive volume increase to keep building fitness.',
+      quality: 'Volume steady - good window to add a quality or intense session.',
+    } as Record<string, string>,
   },
 
   insights: {
