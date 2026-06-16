@@ -3,22 +3,17 @@
 import { useState } from 'react'
 import type { GoalsPageData } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
-import type { RecordEntry } from '@/application/usecases/GetRecords'
 import { YearSelector } from '@/components/ui/YearSelector'
-import { RecordsWall } from '@/components/records/RecordsWall'
 import { YearView } from './YearView'
 import { TrainingZones } from './TrainingZones'
-import { RacePredictions } from './RacePredictions'
 import { t } from '@/i18n'
 
 interface Props {
   data: GoalsPageData
   zones: TrainingZonesData | null
-  records: RecordEntry[]
-  currentTsb: number | null
 }
 
-export function GoalsClient({ data, zones, records, currentTsb }: Props) {
+export function GoalsClient({ data, zones }: Props) {
   const { years, byYear } = data
   const [selectedYear, setSelectedYear] = useState(years[0])
 
@@ -37,8 +32,6 @@ export function GoalsClient({ data, zones, records, currentTsb }: Props) {
       </div>
 
       {zones && <TrainingZones data={zones} />}
-      <RecordsWall records={records} currentTsb={currentTsb} />
-      <RacePredictions records={records} />
     </>
   )
 }
