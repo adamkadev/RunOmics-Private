@@ -528,7 +528,6 @@ export const en = {
     footnote: '★ official race time · others auto-detected from activity data',
     pageTitle: 'Records',
     pageSubtitle: 'Your personal bests by distance',
-    prediction: 'Target',
     formAtPb: {
       fitness: 'Fitness',
       form: 'Form',

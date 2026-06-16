@@ -3,8 +3,6 @@ import { join } from 'path'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getFullLoadHistory } from './GetTrainingLoad'
 import type { LoadSnapshot } from './GetTrainingLoad'
-import { getLatestVO2max } from './GetVO2maxHistory'
-import { round } from '@/lib/math'
 
 const EFFORTS = [
   //{ key: '1k', label: '1K', km: 1 },
@@ -53,31 +51,6 @@ export interface RecordEntry {
   date: string | null
   official: boolean
   formAtPb: LoadSnapshot | null
-  prediction: number | null  // predicted seconds based on current VO2max
-}
-
-// Jack Daniels VO2 demand at velocity v (m/min) - used for pace prediction only
-function jackDanielsVO2(seconds: number, distanceM: number): number {
-  const v = (distanceM / seconds) * 60
-  const vo2 = -4.60 + 0.182258 * v + 0.000104 * v * v
-  const t = seconds / 60
-  const pct =
-    0.8 +
-    0.1894393 * Math.exp(-0.012778 * t) +
-    0.2989558 * Math.exp(-0.1932605 * t)
-  return round(vo2 / pct)
-}
-
-function predictRaceTime(vo2max: number, distanceM: number): number {
-  // Binary search: jackDanielsVO2 is decreasing in T - find T where it equals vo2max
-  let lo = distanceM / 10   // ~10 m/s, absurdly fast
-  let hi = distanceM / 1.5  // ~1.5 m/s, very slow
-  for (let i = 0; i < 60; i++) {
-    const mid = (lo + hi) / 2
-    if (jackDanielsVO2(mid, distanceM) > vo2max) lo = mid
-    else hi = mid
-  }
-  return Math.round((lo + hi) / 2)
 }
 
 export function getRecords(): RecordEntry[] {
@@ -85,11 +58,8 @@ export function getRecords(): RecordEntry[] {
   const officialPbs = loadOfficialPbs()
   const activityMap = new Map(activities.map((a) => [a.id, a]))
   const loadHistory = getFullLoadHistory()
-  const vo2max = getLatestVO2max()
 
   return EFFORTS.map(({ key, label, km }) => {
-    const prediction = vo2max !== null ? predictRaceTime(vo2max, km * 1000) : null
-
     const official = officialPbs.get(key)
     if (official) {
       const activity = official.activityId ? activityMap.get(official.activityId) : undefined
@@ -103,7 +73,6 @@ export function getRecords(): RecordEntry[] {
         date,
         official: true,
         formAtPb: date ? (loadHistory.get(date) ?? null) : null,
-        prediction,
       }
     }
 
@@ -123,7 +92,6 @@ export function getRecords(): RecordEntry[] {
       date: best?.date ?? null,
       official: false,
       formAtPb: best?.date ? (loadHistory.get(best.date) ?? null) : null,
-      prediction,
     }
   })
 }

@@ -36,18 +36,6 @@ export function RecordsWall({ records, currentTsb }: { records: RecordEntry[]; c
                     {r.paceSecPerKm !== null && formatPace(r.paceSecPerKm)}
                     {r.date && <span> · {shortDate(r.date)}</span>}
                   </p>
-                  {r.prediction !== null && (
-                    <p className="mt-1.5 text-xs text-muted-foreground">
-                      {t.records.prediction} <span className="font-medium text-foreground/80">{formatDuration(r.prediction)}</span>
-                      {r.seconds !== null && (
-                        <span className={r.seconds <= r.prediction ? 'ml-1 text-emerald-600 dark:text-emerald-400' : 'ml-1 text-orange-500 dark:text-orange-400'}>
-                          {r.seconds <= r.prediction
-                            ? `+${formatDuration(r.prediction - r.seconds)}`
-                            : `-${formatDuration(r.seconds - r.prediction)}`}
-                        </span>
-                      )}
-                    </p>
-                  )}
                   {r.formAtPb && (
                     <p className="mt-1 text-xs text-subtle">
                       {t.records.formAtPb.fitness} {r.formAtPb.ctl}
