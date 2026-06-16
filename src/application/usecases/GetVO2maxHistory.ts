@@ -8,11 +8,8 @@ export interface VO2maxPoint {
 
 export function getLatestVO2max(): number | null {
   const activities = getAllActivities()
-  for (let i = activities.length - 1; i >= 0; i--) {
-    const v = activities[i].vo2maxGarmin
-    if (v !== null && v !== undefined) return v
-  }
-  return null
+  const latest = activities.find((a) => a.vo2maxGarmin !== null && a.vo2maxGarmin !== undefined)
+  return latest?.vo2maxGarmin ?? null
 }
 
 // Returns one data point per week (last activity of the week) for the last 12 weeks.
