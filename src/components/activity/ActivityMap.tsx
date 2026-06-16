@@ -103,7 +103,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
         fitBoundsOptions: { padding: 40, maxZoom: 15 },
         attributionControl: false,
       })
-      map.addControl(new mgl.AttributionControl({ compact: true }))
+      map.addControl(new mgl.AttributionControl({ compact: true }), 'bottom-right')
 
       const segments = buildSegmentFeatures(route, paceSamples)
       const hasPace = !!(paceSamples && paceSamples.length > 1)

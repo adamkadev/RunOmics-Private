@@ -84,6 +84,21 @@ h1 {
   line-height: 1.2;
 }
 
+/* MapLibre attribution - compact opaque chip, bottom-right */
+.maplibregl-ctrl-attrib.maplibregl-compact {
+  background: rgba(0 0 0 / 0.5) !important;
+  border-radius: 6px !important;
+}
+.maplibregl-ctrl-attrib.maplibregl-compact .maplibregl-ctrl-attrib-button {
+  background-color: transparent !important;
+  filter: invert(1) brightness(0.8);
+}
+.maplibregl-ctrl-attrib-inner,
+.maplibregl-ctrl-attrib-inner a {
+  color: rgba(255 255 255 / 0.75) !important;
+  font-size: 10px !important;
+}
+
 @layer base {
   button {
     -webkit-tap-highlight-color: transparent;

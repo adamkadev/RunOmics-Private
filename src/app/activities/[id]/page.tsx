@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, Timer, Footprints, Heart, TrendingUp, Mountain, Zap, Flame, MessageSquare, Gauge } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { getActivities } from '@/application/usecases/GetActivities'
 import { ActivityTypeTag } from '@/components/activities/ActivityTypeTag'
 import { ZoneBar } from '@/components/activity/ZoneBar'
@@ -28,34 +28,9 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return {
     title: name,
     description: stats,
-    openGraph: {
-      title: name,
-      description: stats,
-      type: 'article',
-    },
-    twitter: {
-      card: 'summary',
-      title: name,
-      description: stats,
-    },
+    openGraph: { title: name, description: stats, type: 'article' },
+    twitter: { card: 'summary', title: name, description: stats },
   }
-}
-
-interface StatItemProps {
-  icon: React.ReactNode
-  label: string
-  value: string
-  className?: string
-}
-
-function StatItem({ icon, label, value, className }: StatItemProps) {
-  return (
-    <div className={`flex flex-col items-center gap-0.5 rounded-xl border border-border bg-card px-2 py-2 shadow-card sm:gap-1 sm:px-4 sm:py-3 ${className ?? ''}`}>
-      <div className="text-subtle">{icon}</div>
-      <span className="text-sm font-semibold text-foreground">{value}</span>
-      <span className="text-[10px] text-subtle sm:text-xs">{label}</span>
-    </div>
-  )
 }
 
 export async function generateStaticParams() {
@@ -72,117 +47,43 @@ export default async function ActivityDetailPage({
   const activity = getActivities().find((a) => a.id === id)
   if (!activity) notFound()
 
-  const statItems = [
-    {
-      icon: <Footprints size={16} className="text-emerald-500 dark:text-emerald-400" />,
-      label: t.activity.stats.distance,
-      value: formatDistance(activity.distanceKm),
-    },
-    {
-      icon: <Timer size={16} className="text-blue-500 dark:text-blue-400" />,
-      label: t.activity.stats.duration,
-      value: formatDuration(activity.durationSeconds),
-    },
-    ...(activity.paceSecPerKm
-      ? [{
-          icon: <TrendingUp size={16} className="text-violet-500 dark:text-violet-400" />,
-          label: t.activity.stats.avgPace,
-          value: formatPace(activity.paceSecPerKm),
-        }]
-      : []),
-    ...(activity.avgHeartRate
-      ? [{
-          icon: <Heart size={16} className="text-red-500 dark:text-red-400" />,
-          label: t.activity.stats.avgHr,
-          value: `${activity.avgHeartRate} ${t.units.bpm}`,
-        }]
-      : []),
-    ...(activity.calories != null
-      ? [{
-          icon: <Flame size={16} className="text-orange-500 dark:text-orange-400" />,
-          label: t.activity.stats.calories,
-          value: t.activity.stats.caloriesValue(activity.calories),
-        }]
-      : []),
-    ...(activity.elevationGain
-      ? [{
-          icon: <Mountain size={16} className="text-stone-500 dark:text-stone-400" />,
-          label: t.activity.stats.elevation,
-          value: t.activity.stats.elevationValue(activity.elevationGain),
-        }]
-      : []),
-    ...(activity.cadenceSpm != null
-      ? [{
-          icon: <Gauge size={16} className="text-sky-500 dark:text-sky-400" />,
-          label: t.activity.stats.cadence,
-          value: `${Math.round(activity.cadenceSpm)} ${t.units.spm}`,
-        }]
-      : []),
-    {
-      icon: <Zap size={16} className="text-amber-500 dark:text-amber-400" />,
-      label: activity.rpe !== null ? t.activity.stats.rpeValue(activity.rpe) : t.activity.stats.rpe,
-      value: activity.rpe !== null ? (t.rpeLabels[activity.rpe] ?? '-') : t.activity.stats.na,
-    },
-  ]
-
   return (
-    <div className="space-y-6">
+    <div>
       <Link
         href="/activities"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft size={14} />
         {t.activity.back}
       </Link>
 
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="flex flex-wrap items-center gap-3">
-            <ActivityTypeTag type={activity.type} />
+      <ActivityDetailClient
+        activity={activity}
+        header={
+          <div>
+            <ActivityTypeTag type={activity.type} className="mb-2" />
             <h1 className="text-2xl font-bold tracking-tight text-foreground">
               {activity.description || t.activity.runTitle(activity.dayOfWeek)}
             </h1>
-            <span className="text-sm text-subtle">
-              {formatDate(activity.date)}
-            </span>
+            <p className="mt-1 text-sm text-muted-foreground">{formatDate(activity.date)}</p>
+            {activity.comment && (
+              <p className="mt-1 text-sm text-muted-foreground">{activity.comment}</p>
+            )}
           </div>
-          {activity.comment && (
-            <div className="mt-2 flex items-start gap-2 text-sm text-muted-foreground">
-              <MessageSquare size={14} className="mt-0.5 shrink-0" />
-              {activity.comment}
-            </div>
-          )}
-        </div>
-
-      </div>
-
-      <div className="grid grid-cols-4 gap-2 lg:grid-cols-8">
-        {statItems.map((item) => (
-          <StatItem
-            key={item.label}
-            icon={item.icon}
-            label={item.label}
-            value={item.value}
-          />
-        ))}
-      </div>
-
-      <ActivityDetailClient
-        activity={activity}
-        sidePanel={
+        }
+        footer={
           <>
-            <ZoneBar hrZones={activity.hrZones} />
+            <ZoneBar key="zones" hrZones={activity.hrZones} />
             <TrainingEffect
+              key="training-effect"
               aer={activity.aerTrainingEffect}
               ana={activity.anaTrainingEffect}
             />
+            {activity.bestEfforts && <BestEfforts key="best-efforts" bestEfforts={activity.bestEfforts} />}
+            <RunningDynamics key="dynamics" activity={activity} />
           </>
         }
       />
-
-      {activity.bestEfforts && <BestEfforts bestEfforts={activity.bestEfforts} />}
-
-      <RunningDynamics activity={activity} />
     </div>
   )
 }

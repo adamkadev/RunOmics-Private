@@ -184,7 +184,7 @@ export function GlobalMapClient({ data }: Props) {
         fitBoundsOptions: { padding: 60, maxZoom: 14 },
         attributionControl: false,
       });
-      map.addControl(new mgl.AttributionControl({ compact: true }));
+      map.addControl(new mgl.AttributionControl({ compact: true }), 'bottom-right');
       mapRef.current = map;
 
       map.on("load", () => {
