@@ -95,7 +95,7 @@ export function AnalyticsClient({ data, comparison, vo2maxHistory, lifetime }: {
 
   const isPeriod = view.kind === 'period'
   const isAll = view.kind === 'all'
-  const active = view.kind === 'year' ? byYear[view.year] : view.kind === 'period' ? byPeriod[view.weeks] : null
+  const active = view.kind === 'year' ? byYear[view.year] : view.kind === 'period' ? byPeriod[view.weeks] : data.allTime
   const totals = active?.totals ?? null
 
   useEffect(() => {
@@ -121,7 +121,12 @@ export function AnalyticsClient({ data, comparison, vo2maxHistory, lifetime }: {
     if (tab === 'seasons') setTab('volume') // year-only tab
   }
 
-  const visibleTabs = isPeriod ? TABS.filter((tb) => tb.id !== 'seasons') : TABS
+  function selectAllTime() {
+    setView({ kind: 'all' })
+    if (tab === 'seasons') setTab('volume') // year-only tab
+  }
+
+  const visibleTabs = isPeriod || isAll ? TABS.filter((tb) => tb.id !== 'seasons') : TABS
 
   // Rolling periods are anchored to today, so only offer them on the most recent
   // year (or while a period is active). Past years just show their calendar view.
@@ -210,7 +215,7 @@ export function AnalyticsClient({ data, comparison, vo2maxHistory, lifetime }: {
               ))}
               <button
                 ref={isAll ? activeChipRef : undefined}
-                onClick={() => setView({ kind: 'all' })}
+                onClick={selectAllTime}
                 className={chipClass(isAll)}
               >
                 {t.analytics.allTimeChip}
@@ -240,7 +245,10 @@ export function AnalyticsClient({ data, comparison, vo2maxHistory, lifetime }: {
             </div>
           </div>
         </div>
-        {view.kind === 'period' && active && 'delta' in active && active.delta && <DeltaStrip delta={active.delta} weeks={view.weeks} />}
+        {view.kind === 'period' && (() => {
+          const delta = byPeriod[view.weeks].delta
+          return delta && <DeltaStrip delta={delta} weeks={view.weeks} />
+        })()}
       </div>
 
       {/* Stats - odd count, so the last card spans full width on mobile to avoid a lonely orphan */}
@@ -256,7 +264,7 @@ export function AnalyticsClient({ data, comparison, vo2maxHistory, lifetime }: {
         ))}
       </div>
 
-      {!isAll && active && (
+      {active && (
         <>
           {/* Tabs */}
           <div className="flex gap-1 rounded-xl border border-border bg-muted/40 p-1">

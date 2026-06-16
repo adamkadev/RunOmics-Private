@@ -131,6 +131,10 @@ export interface PeriodAnalytics extends AnalyticsSeries {
   delta: PeriodDelta | null
 }
 
+export interface AllTimeAnalytics extends AnalyticsSeries {
+  totals: YearTotals
+}
+
 export interface DailyEfficiency {
   date: string
   label: string
@@ -144,6 +148,7 @@ export interface AnalyticsPageData {
   periodWeeks: number[]
   byPeriod: Record<number, PeriodAnalytics>
   efficiencyDaily: DailyEfficiency[]
+  allTime: AllTimeAnalytics
 }
 
 // A value (possibly null) paired with a weight, averaged across activities.
@@ -404,6 +409,18 @@ function buildPeriodAnalytics(all: Activity[], weeks: number, now: Date): Period
   return { weeks, totals: computeTotals(windowActs, weeks * 7), delta, ...buildSeries(buckets, windowActs) }
 }
 
+// One bucket per calendar year across the whole history.
+function buildAllTimeAnalytics(byYearMap: Map<number, Activity[]>, all: Activity[], now: Date): AllTimeAnalytics {
+  const buckets: Bucket[] = Array.from(byYearMap.keys())
+    .sort((a, b) => a - b)
+    .map((year) => ({ id: String(year), label: String(year), acts: byYearMap.get(year)! }))
+
+  const firstYear = buckets[0] ? Number(buckets[0].id) : now.getFullYear()
+  const elapsedDays = Math.floor((now.getTime() - new Date(firstYear, 0, 1).getTime()) / 86400000) + 1
+
+  return { totals: computeTotals(all, elapsedDays), ...buildSeries(buckets, all) }
+}
+
 function buildEfficiencyDaily(activities: Activity[], now: Date): DailyEfficiency[] {
   const EASY_TYPES_SET = new Set(EASY_TYPES)
   const DAY_MS = 86_400_000
@@ -452,5 +469,6 @@ export function getAnalyticsData(): AnalyticsPageData {
     periodWeeks,
     byPeriod: Object.fromEntries(periodWeeks.map((w) => [w, buildPeriodAnalytics(all, w, now)])),
     efficiencyDaily: buildEfficiencyDaily(all, now),
+    allTime: buildAllTimeAnalytics(byYearMap, all, now),
   }
 }
