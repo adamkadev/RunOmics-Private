@@ -27,9 +27,9 @@ import { formatDuration } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 const TABS = [
+  { id: 'volume',      label: t.analytics.tabs.volume      },
   { id: 'performance', label: t.analytics.tabs.performance },
   { id: 'physiology',  label: t.analytics.tabs.physiology  },
-  { id: 'volume',      label: t.analytics.tabs.volume      },
   { id: 'seasons',     label: t.analytics.tabs.seasons     },
 ] as const
 
@@ -88,7 +88,7 @@ function DeltaStrip({ delta, weeks }: { delta: PeriodDelta; weeks: number }) {
 export function AnalyticsClient({ data, comparison, zones, vo2maxHistory }: { data: AnalyticsPageData; comparison: YearComparisonData | null; zones: TrainingZonesData | null; vo2maxHistory: VO2maxPoint[] }) {
   const { years, byYear, periodWeeks, byPeriod } = data
   const [view, setView] = useState<View>({ kind: 'year', year: years[0] })
-  const [tab, setTab] = useState<TabId>('performance')
+  const [tab, setTab] = useState<TabId>('volume')
   const yearsRef = useRef<HTMLDivElement | null>(null)
   const periodsRef = useRef<HTMLDivElement | null>(null)
   const activeChipRef = useRef<HTMLButtonElement | null>(null)
