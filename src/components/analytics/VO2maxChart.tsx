@@ -40,17 +40,15 @@ export function VO2maxChart({ data }: { data: VO2maxPoint[] }) {
 
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-card">
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <h3 className="text-sm font-semibold text-foreground/80">{s.title}</h3>
-        </div>
-        <span className="text-2xl font-bold tabular-nums text-violet-600 dark:text-violet-400">
+      <h3 className="mb-4 text-sm font-semibold text-foreground/80">
+        {s.title}
+        <span className="ml-2 font-bold tabular-nums text-violet-600 dark:text-violet-400">
           {values[values.length - 1].toFixed(1)}
-          <span className="ml-1 text-sm font-normal text-muted-foreground">{s.unit}</span>
+          <span className="ml-1 font-normal text-muted-foreground">{s.unit}</span>
         </span>
-      </div>
+      </h3>
 
-      <ResponsiveContainer width="100%" height={160}>
+      <ResponsiveContainer width="100%" height={200}>
         <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
           <XAxis
             dataKey="date"
