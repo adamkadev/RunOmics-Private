@@ -4,12 +4,14 @@ import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { getConsistencyScore } from '@/application/usecases/GetConsistencyScore'
 import { getHeatmapData } from '@/application/usecases/GetHeatmapData'
 import { getInsights } from '@/application/usecases/GetInsights'
+import { getInsightsSnapshot } from '@/application/usecases/GetInsightsSnapshot'
 import { getLatestVO2max } from '@/application/usecases/GetVO2maxHistory'
 import { StatsGrid } from '@/components/dashboard/StatsGrid'
 import { DashboardCharts } from '@/components/dashboard/DashboardCharts'
 import { RecentActivities } from '@/components/dashboard/RecentActivities'
 import { ActivityHeatmap } from '@/components/dashboard/ActivityHeatmap'
 import { InsightsCard } from '@/components/dashboard/InsightsCard'
+import { AiInsightsCard } from '@/components/dashboard/AiInsightsCard'
 import { TrainingStatusBanner } from '@/components/dashboard/TrainingStatusBanner'
 import { ConsistencyCard } from '@/components/dashboard/ConsistencyCard'
 import { t } from '@/i18n'
@@ -21,6 +23,7 @@ export default function DashboardPage() {
   const consistencyScore = getConsistencyScore()
   const heatmapDays = getHeatmapData()
   const insights = getInsights()
+  const insightsSnapshot = getInsightsSnapshot()
   const vo2max = getLatestVO2max()
 
   return (
@@ -48,6 +51,8 @@ export default function DashboardPage() {
       )}
 
       <InsightsCard insights={insights} />
+
+      {insightsSnapshot && <AiInsightsCard snapshot={insightsSnapshot} />}
 
       <DashboardCharts
         weeklyVolume={data.weeklyVolume}
