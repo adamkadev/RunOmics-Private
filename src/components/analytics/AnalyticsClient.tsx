@@ -275,10 +275,14 @@ export function AnalyticsClient({ data, comparison, vo2maxHistory }: { data: Ana
             <HrTrendChart data={active.hrTrend} />
             <ZoneDistributionChart data={active.zoneDistribution} />
             <CadenceTrendChart data={active.cadenceTrend} />
-            <RunningFormChart data={active.runningFormTrend} />
+            <div className="lg:col-span-2">
+              <RunningFormChart data={active.runningFormTrend} />
+            </div>
           </div>
-          <TrainingEffectChart data={active.trainingEffectTrend} />
-          <DailyEfficiencyChart data={data.efficiencyDaily} />
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <TrainingEffectChart data={active.trainingEffectTrend} />
+            <DailyEfficiencyChart data={data.efficiencyDaily} />
+          </div>
         </div>
       )}
 

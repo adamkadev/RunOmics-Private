@@ -35,6 +35,12 @@ const UNIT_BY_KEY: Record<string, string> = {
   strideLengthM: t.analytics.charts.runningForm.unit.strideLength,
 }
 
+const TICK_DECIMALS: Record<Metric, number> = {
+  groundContact: 0,
+  verticalOscillation: 1,
+  strideLength: 2,
+}
+
 interface Props {
   data: MonthlyRunningForm[]
 }
@@ -63,8 +69,8 @@ export function RunningFormChart({ data }: Props) {
   const key = DATA_KEY[metric]
   const color = COLOR[metric]
   const values = data.map((d) => d[key]).filter((v): v is number => v !== null)
-  const min = Math.floor(Math.min(...values) * 0.97)
-  const max = Math.ceil(Math.max(...values) * 1.03)
+  const min = Math.min(...values) * 0.97
+  const max = Math.max(...values) * 1.03
 
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-card">
@@ -94,6 +100,7 @@ export function RunningFormChart({ data }: Props) {
           />
           <YAxis
             domain={[min, max]}
+            tickFormatter={(v: number) => v.toFixed(TICK_DECIMALS[metric])}
             tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
