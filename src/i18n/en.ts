@@ -24,11 +24,11 @@ export const en = {
   nav: {
     items: {
       dashboard: 'Dashboard',
-      coach: 'Coach',
       activities: 'Activities',
       calendar: 'Calendar',
       analytics: 'Analytics',
       goals: 'Goals',
+      records: 'Records',
       heatmap: 'Heatmap',
     },
     openMenu: 'Open menu',
@@ -75,6 +75,10 @@ export const en = {
     calendar: {
       title: 'Calendar',
       subtitle: 'Monthly training overview',
+    },
+    records: {
+      title: 'Records',
+      subtitle: 'Personal bests and race predictions',
     },
     map: {
       title: 'Running Heatmap',
@@ -177,97 +181,6 @@ export const en = {
       fatigue: 'Fatigue',
       form: 'Form',
       fitnessDelta: (d: number) => `${d >= 0 ? '+' : ''}${d} over 2 wk`,
-    },
-  },
-
-  coach: {
-    title: 'Coach',
-    subtitle: 'Weekly training analysis',
-    thisWeek: 'Last 7 days',
-    vsLastWeek: 'vs previous 7 days',
-    vsLastYear: 'Same week, last year',
-    vsLastYearLabel: 'vs last year',
-    sessionTypes: 'Session types',
-    loadChanges: 'Load changes (7d)',
-    suggestions: 'Recommendations',
-    noData: 'Not enough data yet.',
-    fitness: 'Fitness',
-    fatigue: 'Fatigue',
-    form: 'Form',
-    stats: {
-      distance: 'Distance',
-      sessions: 'Sessions',
-    },
-    sessions: (n: number) => `${n} run${n !== 1 ? 's' : ''}`,
-    suggestion: {
-      reduce_load: {
-        title: 'Reduce load',
-        detail: (acwr: number) =>
-          `ACWR at ${acwr}x - injury risk elevated. Prioritise easy sessions or rest until acute load comes down.`,
-      },
-      fatigue_high: {
-        title: 'Prioritise recovery',
-        detail: 'Form is strongly negative. An easy run or rest day will help you bounce back faster.',
-      },
-      easy_session: {
-        title: 'Keep it easy',
-        detail: 'Moderate fatigue accumulating. Stick to easy effort for the next couple of sessions.',
-      },
-      quality_window: {
-        title: 'Good window for intensity',
-        detail: 'Form is positive and fitness solid - ideal timing for a quality session or a race.',
-      },
-      add_sessions: {
-        title: 'Add a session',
-        detail: 'Fitness is trending down. Even a short easy run will slow the decline.',
-      },
-      increase_volume: {
-        title: 'Safe to build volume',
-        detail: 'Acute load is low relative to your base. A gradual volume increase is well within safe range.',
-      },
-      maintain: {
-        title: 'Stay the course',
-        detail: 'Training load is well balanced. Continue with your current plan.',
-      },
-    } as Record<string, { title: string; detail: string | ((acwr: number) => string) }>,
-  },
-
-  coachPlan: {
-    title: 'AI Training Plan',
-    loading: 'Building your week...',
-    weekFocus: 'Focus',
-    targetWeekly: 'Target',
-    keyWorkout: 'Key workout',
-    restDay: 'Rest',
-    crossTraining: 'Cross-training',
-    confidence: {
-      low: 'Low confidence',
-      medium: 'Medium confidence',
-      high: 'High confidence',
-    },
-  },
-
-  insights: {
-    title: 'Insights',
-    formFresh: "You're fresh - a good window for a hard session or a race.",
-    formFatigued: 'Fatigue is high - an easy day or some rest would help.',
-    acwrHigh: (ratio: number) => `Load ramping fast (${ratio}× your usual) - ease off to stay injury-free.`,
-    acwrOptimal: 'Your training load is right in the sweet spot.',
-    tooHard: (pct: number) => `Only ${pct}% of your time is easy this month - aim for ~80%.`,
-    balanced: (pct: number) => `Great balance - ${pct}% easy, close to the 80/20 ideal.`,
-    easyPaceImproved: (sec: number) => `Your easy pace improved ${sec}s/km this month.`,
-    monthlyRecord: (km: number) => `Biggest month yet - ${km} km.`,
-    volumeStreak: (weeks: number, km: number) => `${weeks} straight weeks over ${km} km.`,
-    recentPr: (label: string) => `New ${label} personal best in the last month.`
-  },
-
-  aiInsights: {
-    title: 'AI Insights',
-    loading: 'Analyzing your training...',
-    confidence: {
-      low: 'Low confidence',
-      medium: 'Medium confidence',
-      high: 'High confidence',
     },
   },
 
