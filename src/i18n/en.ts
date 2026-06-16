@@ -18,7 +18,7 @@ export const en = {
     nameSuffix: 'Omics',
     // Version number is injected from package.json (see @/lib/version); only the
     // display format lives here so it isn't duplicated across translation files.
-    version: (v: string) => `RunOmics v${v}`,
+    version: (v: string) => `v${v}`,
   },
 
   nav: {
