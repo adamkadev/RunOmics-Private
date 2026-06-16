@@ -383,6 +383,7 @@ export const en = {
       na: 'N/A',
       elevationValue: (m: number) => `+${m}m`,
       caloriesValue: (kcal: number) => `${kcal} kcal`,
+      cadence: 'Cadence',
     },
     bestEfforts: {
       title: 'Best Efforts',
@@ -420,7 +421,6 @@ export const en = {
       groundContact: 'Ground Contact',
       vertOscillation: 'Vert. Oscillation',
       vertRatio: 'Vert. Ratio',
-      temperature: 'Temperature',
     },
     charts: {
       heartRate: 'Heart Rate',

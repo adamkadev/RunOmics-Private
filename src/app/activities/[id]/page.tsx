@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, Timer, Footprints, Heart, TrendingUp, Mountain, Zap, Flame, MessageSquare } from 'lucide-react'
+import { ArrowLeft, Timer, Footprints, Heart, TrendingUp, Mountain, Zap, Flame, MessageSquare, Gauge } from 'lucide-react'
 import { getActivities } from '@/application/usecases/GetActivities'
 import { ActivityTypeTag } from '@/components/activities/ActivityTypeTag'
 import { ZoneBar } from '@/components/activity/ZoneBar'
@@ -97,6 +97,13 @@ export default async function ActivityDetailPage({
           value: `${activity.avgHeartRate} ${t.units.bpm}`,
         }]
       : []),
+    ...(activity.calories != null
+      ? [{
+          icon: <Flame size={16} className="text-orange-500 dark:text-orange-400" />,
+          label: t.activity.stats.calories,
+          value: t.activity.stats.caloriesValue(activity.calories),
+        }]
+      : []),
     ...(activity.elevationGain
       ? [{
           icon: <Mountain size={16} className="text-stone-500 dark:text-stone-400" />,
@@ -104,11 +111,11 @@ export default async function ActivityDetailPage({
           value: t.activity.stats.elevationValue(activity.elevationGain),
         }]
       : []),
-    ...(activity.calories != null
+    ...(activity.cadenceSpm != null
       ? [{
-          icon: <Flame size={16} className="text-orange-500 dark:text-orange-400" />,
-          label: t.activity.stats.calories,
-          value: t.activity.stats.caloriesValue(activity.calories),
+          icon: <Gauge size={16} className="text-sky-500 dark:text-sky-400" />,
+          label: t.activity.stats.cadence,
+          value: `${Math.round(activity.cadenceSpm)} ${t.units.spm}`,
         }]
       : []),
     {
@@ -149,7 +156,7 @@ export default async function ActivityDetailPage({
 
       </div>
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
         {statItems.map((item, idx) => (
           <StatItem
             key={item.label}

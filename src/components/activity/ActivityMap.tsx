@@ -1,16 +1,18 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { MapPin, Maximize2, Minimize2 } from 'lucide-react'
+import { MapPin, Maximize2, Minimize2, Thermometer } from 'lucide-react'
 import type { Map as MapLibreMap, Marker } from 'maplibre-gl'
 import { cn } from '@/lib/utils'
 import { maptilerStyleUrl } from '@/lib/maptiler'
+import { temperatureIconColor } from '@/lib/colors'
 import { t } from '@/i18n'
 
 interface Props {
   route: [number, number][]
   paceSamples?: number[] | null
   hoverFraction?: number | null
+  avgTemperature?: number | null
   className?: string
 }
 
@@ -46,7 +48,7 @@ function mkMarker(bg: string, border = 'white', size = 13) {
   return el
 }
 
-export default function ActivityMap({ route, paceSamples, hoverFraction, className }: Props) {
+export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemperature, className }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<MapLibreMap | null>(null)
   const mglRef = useRef<typeof import('maplibre-gl') | null>(null)
@@ -221,6 +223,13 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, classNa
       )}
     >
       <div ref={containerRef} className="h-full w-full" />
+
+      {avgTemperature != null && (
+        <div className="absolute left-2 top-2 z-10 flex items-center gap-1 rounded-lg bg-card/90 px-2 py-1 text-xs font-semibold text-foreground shadow-sm backdrop-blur-sm">
+          <Thermometer size={12} className={temperatureIconColor(avgTemperature)} />
+          {avgTemperature}{t.units.celsius}
+        </div>
+      )}
 
       <button
         onClick={toggleFullscreen}

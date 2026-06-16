@@ -26,6 +26,7 @@ export function ActivityDetailClient({ activity, sidePanel }: Props) {
               route={activity.route}
               paceSamples={activity.paceSamples}
               hoverFraction={hoverFraction}
+              avgTemperature={activity.avgTemperature}
               className="h-full min-h-[300px]"
             />
           ) : (
@@ -36,7 +37,7 @@ export function ActivityDetailClient({ activity, sidePanel }: Props) {
       </div>
 
       {(activity.hrSamples || activity.elevationProfile || activity.paceSamples || activity.cadenceSamples) && (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {activity.hrSamples && (
             <HrChart
               samples={activity.hrSamples}
@@ -53,19 +54,19 @@ export function ActivityDetailClient({ activity, sidePanel }: Props) {
               onHoverFraction={activity.route ? setHoverFraction : undefined}
             />
           )}
-          {activity.elevationProfile && (
-            <ElevationChart
-              samples={activity.elevationProfile}
-              durationSeconds={activity.durationSeconds}
-              elevationGain={activity.elevationGain}
-              onHoverFraction={activity.route ? setHoverFraction : undefined}
-            />
-          )}
           {activity.cadenceSamples && (
             <CadenceChart
               samples={activity.cadenceSamples}
               avgCadence={activity.cadenceSpm}
               durationSeconds={activity.durationSeconds}
+              onHoverFraction={activity.route ? setHoverFraction : undefined}
+            />
+          )}
+          {activity.elevationProfile && (
+            <ElevationChart
+              samples={activity.elevationProfile}
+              durationSeconds={activity.durationSeconds}
+              elevationGain={activity.elevationGain}
               onHoverFraction={activity.route ? setHoverFraction : undefined}
             />
           )}

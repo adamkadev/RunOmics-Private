@@ -13,9 +13,18 @@ interface Props {
   route: [number, number][]
   paceSamples?: number[] | null
   hoverFraction?: number | null
+  avgTemperature?: number | null
   className?: string
 }
 
-export function ActivityMapClient({ route, paceSamples, hoverFraction, className }: Props) {
-  return <ActivityMapDynamic route={route} paceSamples={paceSamples} hoverFraction={hoverFraction} className={className} />
+export function ActivityMapClient({ route, paceSamples, hoverFraction, avgTemperature, className }: Props) {
+  return (
+    <ActivityMapDynamic
+      route={route}
+      paceSamples={paceSamples}
+      hoverFraction={hoverFraction}
+      avgTemperature={avgTemperature}
+      className={className}
+    />
+  )
 }
