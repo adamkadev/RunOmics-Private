@@ -30,7 +30,7 @@ export const en = {
       analytics: 'Analytics',
       goals: 'Goals',
       records: 'Records',
-      heatmap: 'HeatMap',
+      heatmap: 'Heatmap',
       profile: 'Profile',
     },
     openMenu: 'Open menu',
@@ -79,7 +79,7 @@ export const en = {
       subtitle: 'Monthly training overview',
     },
     map: {
-      title: 'Running HeatMap',
+      title: 'Running Heatmap',
       routes: (n: number) => `${n} routes`,
       zones: 'Zones',
     },
