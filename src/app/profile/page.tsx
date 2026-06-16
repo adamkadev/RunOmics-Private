@@ -2,9 +2,8 @@ import { IdCard, CalendarRange, Footprints, Activity } from 'lucide-react'
 import { getRunnerProfile } from '@/application/usecases/GetRunnerProfile'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
 import { getRecords } from '@/application/usecases/GetRecords'
-import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
 import { TrainingZones } from '@/components/goals/TrainingZones'
-import { RecordsWall } from '@/components/records/RecordsWall'
+import { RecordsSummary } from '@/components/records/RecordsSummary'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { t } from '@/i18n'
 
@@ -19,7 +18,6 @@ export default function ProfilePage() {
   const profile = getRunnerProfile()
   const zones = getTrainingZones()
   const records = getRecords()
-  const load = getTrainingLoad()
   const p = t.profile
 
   return (
@@ -87,7 +85,7 @@ export default function ProfilePage() {
 
           {zones && <TrainingZones data={zones} />}
 
-          <RecordsWall records={records} currentTsb={load?.tsb ?? null} />
+          <RecordsSummary records={records} />
         </>
       )}
     </div>
