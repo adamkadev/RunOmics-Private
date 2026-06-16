@@ -29,13 +29,22 @@ export interface MonthlyEfficiency {
 export interface MonthlyHr {
   month: string
   label: string
-  avgHr: number | null
+  easyAvgHr: number | null
+  hardAvgHr: number | null
 }
 
 export interface MonthlyCadence {
   month: string
   label: string
   cadence: number | null
+}
+
+export interface MonthlyRunningForm {
+  month: string
+  label: string
+  groundContactMs: number | null
+  verticalOscillationMm: number | null
+  strideLengthM: number | null
 }
 
 export interface MonthlyLongRuns {
@@ -95,6 +104,7 @@ export interface AnalyticsSeries {
   efficiencyTrend: MonthlyEfficiency[]
   hrTrend: MonthlyHr[]
   cadenceTrend: MonthlyCadence[]
+  runningFormTrend: MonthlyRunningForm[]
   longRuns: MonthlyLongRuns[]
   easyHardSplit: MonthlyEasyHard[]
   zoneDistribution: ZoneShare[]
@@ -122,11 +132,24 @@ export interface PeriodAnalytics extends AnalyticsSeries {
   delta: PeriodDelta | null
 }
 
+export interface AllTimeAnalytics extends AnalyticsSeries {
+  totals: YearTotals
+}
+
+export interface DailyEfficiency {
+  date: string
+  label: string
+  ef7: number | null    // 7-day rolling average
+  ef30: number | null   // 30-day rolling average
+}
+
 export interface AnalyticsPageData {
   years: number[]
   byYear: Record<number, YearAnalytics>
   periodWeeks: number[]
   byPeriod: Record<number, PeriodAnalytics>
+  efficiencyDaily: DailyEfficiency[]
+  allTime: AllTimeAnalytics
 }
 
 // A value (possibly null) paired with a weight, averaged across activities.
@@ -157,6 +180,9 @@ function avgField(activities: Activity[], pick: (a: Activity) => number | null):
 const weightedPace = (acts: Activity[]) => weightedAvg(acts, (a) => a.paceSecPerKm, (a) => a.distanceKm, 0)
 const weightedHr = (acts: Activity[]) => weightedAvg(acts, (a) => a.avgHeartRate, (a) => a.durationSeconds, 0)
 const weightedCadence = (acts: Activity[]) => weightedAvg(acts, (a) => a.cadenceSpm, (a) => a.durationSeconds)
+const weightedGroundContact = (acts: Activity[]) => weightedAvg(acts, (a) => a.groundContactMs, (a) => a.durationSeconds, 0)
+const weightedVerticalOscillation = (acts: Activity[]) => weightedAvg(acts, (a) => a.verticalOscillationMm, (a) => a.durationSeconds)
+const weightedStrideLength = (acts: Activity[]) => weightedAvg(acts, (a) => a.strideLengthM, (a) => a.durationSeconds, 2)
 
 function zoneDistribution(activities: Activity[]): ZoneShare[] {
   const seconds = new Map<number, number>()
@@ -236,6 +262,7 @@ function buildSeries(buckets: Bucket[], scoped: Activity[]): AnalyticsSeries {
   const efficiencyTrend: MonthlyEfficiency[] = []
   const hrTrend: MonthlyHr[] = []
   const cadenceTrend: MonthlyCadence[] = []
+  const runningFormTrend: MonthlyRunningForm[] = []
   const longRuns: MonthlyLongRuns[] = []
   const easyHardSplit: MonthlyEasyHard[] = []
   const rpeTrend: MonthlyRpe[] = []
@@ -257,8 +284,14 @@ function buildSeries(buckets: Bucket[], scoped: Activity[]): AnalyticsSeries {
     monthlyVolume.push({ ...base, sessionCount: acts.length, totalKm: round(acts.reduce((s, a) => s + a.distanceKm, 0)), byType })
     paceTrend.push({ ...base, easyPace: weightedPace(easy), hardPace: weightedPace(hard) })
     efficiencyTrend.push({ ...base, ef: efficiencyFactor(easy) })
-    hrTrend.push({ ...base, avgHr: weightedHr(acts) })
+    hrTrend.push({ ...base, easyAvgHr: weightedHr(easy), hardAvgHr: weightedHr(hard) })
     cadenceTrend.push({ ...base, cadence: weightedCadence(acts) })
+    runningFormTrend.push({
+      ...base,
+      groundContactMs: weightedGroundContact(acts),
+      verticalOscillationMm: weightedVerticalOscillation(acts),
+      strideLengthM: weightedStrideLength(acts),
+    })
     longRuns.push({
       ...base,
       km10: acts.filter((a) => a.distanceKm >= 10 && a.distanceKm < 15).length,
@@ -279,6 +312,7 @@ function buildSeries(buckets: Bucket[], scoped: Activity[]): AnalyticsSeries {
     efficiencyTrend,
     hrTrend,
     cadenceTrend,
+    runningFormTrend,
     longRuns,
     easyHardSplit,
     zoneDistribution: zoneDistribution(scoped),
@@ -376,6 +410,45 @@ function buildPeriodAnalytics(all: Activity[], weeks: number, now: Date): Period
   return { weeks, totals: computeTotals(windowActs, weeks * 7), delta, ...buildSeries(buckets, windowActs) }
 }
 
+// One bucket per calendar year across the whole history.
+function buildAllTimeAnalytics(byYearMap: Map<number, Activity[]>, all: Activity[], now: Date): AllTimeAnalytics {
+  const buckets: Bucket[] = Array.from(byYearMap.keys())
+    .sort((a, b) => a - b)
+    .map((year) => ({ id: String(year), label: String(year), acts: byYearMap.get(year)! }))
+
+  const firstYear = buckets[0] ? Number(buckets[0].id) : now.getFullYear()
+  const elapsedDays = Math.floor((now.getTime() - new Date(firstYear, 0, 1).getTime()) / 86400000) + 1
+
+  return { totals: computeTotals(all, elapsedDays), ...buildSeries(buckets, all) }
+}
+
+function buildEfficiencyDaily(activities: Activity[], now: Date): DailyEfficiency[] {
+  const EASY_TYPES_SET = new Set(EASY_TYPES)
+  const DAY_MS = 86_400_000
+  const easy = activities.filter((a) => EASY_TYPES_SET.has(a.type))
+  const nowMs = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+
+  // Pre-compute timestamps once
+  const stamped = easy.map((a) => ({ a, ms: new Date(a.date + 'T00:00:00').getTime() }))
+
+  return Array.from({ length: 90 }, (_, i) => {
+    const dayMs = nowMs - (89 - i) * DAY_MS
+    const day = new Date(dayMs)
+    const label = day.toLocaleDateString('en', { day: 'numeric', month: 'short' })
+    const date = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`
+
+    const in7  = stamped.filter((x) => x.ms >= dayMs - 6 * DAY_MS && x.ms <= dayMs).map((x) => x.a)
+    const in30 = stamped.filter((x) => x.ms >= dayMs - 29 * DAY_MS && x.ms <= dayMs).map((x) => x.a)
+
+    return {
+      date,
+      label,
+      ef7:  in7.length  >= 2 ? efficiencyFactor(in7)  : null,
+      ef30: in30.length >= 5 ? efficiencyFactor(in30) : null,
+    }
+  })
+}
+
 export function getAnalyticsData(): AnalyticsPageData {
   const all = getAllActivities()
   const now = new Date()
@@ -396,5 +469,7 @@ export function getAnalyticsData(): AnalyticsPageData {
     byYear: Object.fromEntries(years.map((y) => [y, buildYearAnalytics(y, byYearMap.get(y)!, now)])),
     periodWeeks,
     byPeriod: Object.fromEntries(periodWeeks.map((w) => [w, buildPeriodAnalytics(all, w, now)])),
+    efficiencyDaily: buildEfficiencyDaily(all, now),
+    allTime: buildAllTimeAnalytics(byYearMap, all, now),
   }
 }

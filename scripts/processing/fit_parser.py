@@ -40,6 +40,7 @@ class ParsedFit:
     stride_length_m: float | None = None
     best_efforts: dict[str, float] = field(default_factory=dict)
     pace_samples: list[float] = field(default_factory=list)
+    vo2max_garmin: float | None = None
 
     @property
     def has_data(self) -> bool:
@@ -102,6 +103,7 @@ def parse_fit(content: bytes) -> ParsedFit:
         is_race=bool(messages.get("310")),
         best_efforts=_best_efforts(dist_samples, time_samples),
         pace_samples=_pace_samples(dist_samples, time_samples),
+        vo2max_garmin=_extract_vo2max(messages),
     )
 
     if sessions:
@@ -185,6 +187,23 @@ def _local_start_time(session: dict, activities: list[dict]) -> datetime | None:
             if abs(offset) <= timedelta(hours=14):
                 return start.replace(tzinfo=None) + offset
 
+    return None
+
+
+def _extract_vo2max(messages: dict) -> float | None:
+    """Extract Garmin VO2max from FIT message 140, field 7. Formula: raw * 3.5 / 65536."""
+    entries = (
+        messages.get("max_met_data_mesgs")
+        or messages.get(140)
+        or messages.get("140")
+        or []
+    )
+    for entry in entries:
+        raw = entry.get(7) or entry.get("7") or entry.get("vo2_max_setting") or entry.get("calibrated_data")
+        if raw:
+            value = round(int(raw) * 3.5 / 65536, 1)
+            if 20.0 <= value <= 90.0:  # sanity check: plausible VO2max range
+                return value
     return None
 
 

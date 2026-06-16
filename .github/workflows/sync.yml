@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Restore FIT cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: public/fit
           key: fit-${{ hashFiles('public/data/activities.json') }}

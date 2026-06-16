@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import type { Activity } from '@/domain/activity/types'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { round } from '@/lib/math'
 
 export interface PbEntry {
   distance: string
@@ -31,11 +32,20 @@ export interface PbData {
   photoPath: string | null
 }
 
+export interface GoalProjection {
+  weeklyRate: number
+  weeklyNeeded: number
+  projectedYearKm: number
+  status: 'ahead' | 'on_track' | 'behind'
+  deltaKm: number
+}
+
 export interface YearData {
   year: number
   totalDistanceKm: number
   goals: GoalYear | null
   pbs: PbData[]
+  projection: GoalProjection | null
 }
 
 export interface GoalsPageData {
@@ -57,6 +67,43 @@ function eventPhotoPath(activityId: string): string | null {
   return null
 }
 
+// Uses last 8 calendar weeks (cross-year safe) for a stable rate.
+// Requires >= 4 weeks elapsed in the current year before projecting.
+function computeProjection(
+  activities: Activity[],
+  year: number,
+  totalDistanceKm: number,
+  goals: GoalYear,
+): GoalProjection | null {
+  const goal = goals.annualDistanceKm
+  if (goal <= 0 || totalDistanceKm >= goal) return null
+
+  const now = new Date()
+  const yearStart = new Date(year, 0, 1)
+  const yearEnd = new Date(year + 1, 0, 1)
+  const weeksElapsed = (now.getTime() - yearStart.getTime()) / (7 * 86_400_000)
+  const remainingWeeks = (yearEnd.getTime() - now.getTime()) / (7 * 86_400_000)
+
+  if (weeksElapsed < 4 || remainingWeeks <= 0) return null
+
+  // Rolling 8-week rate: uses all activities (not filtered by year) for cross-year accuracy
+  const cutoff = new Date(now.getTime() - 56 * 86_400_000)
+  const recentKm = activities
+    .filter((a) => new Date(a.date + 'T00:00:00') >= cutoff)
+    .reduce((s, a) => s + a.distanceKm, 0)
+  const weeklyRate = round(recentKm / 8, 1)
+
+  const weeklyNeeded = round((goal - totalDistanceKm) / remainingWeeks, 1)
+  const projectedYearKm = Math.round(totalDistanceKm + weeklyRate * remainingWeeks)
+  const deltaKm = Math.abs(projectedYearKm - goal)
+
+  const status: GoalProjection['status'] =
+    weeklyRate > weeklyNeeded * 1.1 ? 'ahead' :
+    weeklyRate < weeklyNeeded * 0.9 ? 'behind' : 'on_track'
+
+  return { weeklyRate, weeklyNeeded, projectedYearKm, status, deltaKm }
+}
+
 export function getGoalsPageData(): GoalsPageData {
   const activities = getAllActivities()
   const goalYears = readJson<GoalYear[]>('goals.json')
@@ -68,6 +115,7 @@ export function getGoalsPageData(): GoalsPageData {
     new Set([...goalYears.map((g) => g.year), ...pbYears.map((p) => p.year)])
   ).sort((a, b) => b - a)
 
+  const currentYear = new Date().getFullYear()
   const byYear: Record<number, YearData> = {}
 
   for (const year of allYears) {
@@ -86,7 +134,12 @@ export function getGoalsPageData(): GoalsPageData {
       .filter((a) => a.date.startsWith(String(year)))
       .reduce((sum, a) => sum + a.distanceKm, 0)
 
-    byYear[year] = { year, totalDistanceKm, goals, pbs }
+    const projection =
+      year === currentYear && goals
+        ? computeProjection(activities, year, totalDistanceKm, goals)
+        : null
+
+    byYear[year] = { year, totalDistanceKm, goals, pbs, projection }
   }
 
   return { years: allYears, byYear }

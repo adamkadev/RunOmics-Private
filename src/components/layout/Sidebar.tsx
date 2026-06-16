@@ -5,11 +5,11 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
+  Brain,
   Activity,
   CalendarDays,
   BarChart2,
   Trophy,
-  Medal,
   HeartPulse,
   Map,
   Menu,
@@ -22,11 +22,11 @@ import { ThemeToggle } from './ThemeToggle'
 
 const NAV_ITEMS = [
   { href: '/', label: t.nav.items.dashboard, icon: LayoutDashboard },
+  { href: '/coach', label: t.nav.items.coach, icon: Brain },
   { href: '/activities', label: t.nav.items.activities, icon: Activity },
   { href: '/calendar', label: t.nav.items.calendar, icon: CalendarDays },
   { href: '/analytics', label: t.nav.items.analytics, icon: BarChart2 },
   { href: '/goals', label: t.nav.items.goals, icon: Trophy },
-  { href: '/records', label: t.nav.items.records, icon: Medal },
   { href: '/map', label: t.nav.items.heatmap, icon: Map },
 ]
 
@@ -198,7 +198,7 @@ export function Sidebar() {
                   size={26}
                   className={active ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}
                 />
-                <span className="text-3xl font-bold tracking-tight">{label}</span>
+                <span className="text-lg font-bold tracking-tight">{label}</span>
               </Link>
             )
           })}

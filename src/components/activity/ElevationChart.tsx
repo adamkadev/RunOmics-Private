@@ -52,10 +52,10 @@ export function ElevationChart({ samples, durationSeconds, elevationGain, onHove
           </span>
         )}
       </div>
-      <ResponsiveContainer width="100%" height={120}>
+      <ResponsiveContainer width="100%" height={140}>
         <AreaChart
           data={data}
-          margin={{ top: 4, right: 4, bottom: 0, left: -8 }}
+          margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
           onMouseMove={handleMove}
           onMouseLeave={() => onHoverFraction?.(null)}
         >
@@ -80,7 +80,7 @@ export function ElevationChart({ samples, durationSeconds, elevationGain, onHove
             tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
-            width={36}
+            width={46}
             tickFormatter={(v: number) => `${v}${t.units.m}`}
           />
           <Tooltip

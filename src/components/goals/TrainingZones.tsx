@@ -1,6 +1,6 @@
 import { Gauge } from 'lucide-react'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
-import { formatClock as fmt } from '@/lib/formatters'
+import { formatClock as fmt, formatPace } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 const ZONE_STYLE: Record<string, { dot: string; text: string; bar: string }> = {
@@ -11,7 +11,7 @@ const ZONE_STYLE: Record<string, { dot: string; text: string; bar: string }> = {
 }
 
 export function TrainingZones({ data }: { data: TrainingZonesData }) {
-  const { vo2max, zones } = data
+  const { thresholdPaceSecPerKm, zones } = data
 
   // True fastest / slowest across every zone (data order is not guaranteed).
   const paces = zones.flatMap((z) => [z.paceMinSecPerKm, z.paceMaxSecPerKm])
@@ -26,7 +26,7 @@ export function TrainingZones({ data }: { data: TrainingZonesData }) {
           <Gauge size={14} className="text-violet-500 dark:text-violet-400" />
           {t.trainingZones.title}
         </h2>
-        <span className="text-xs text-subtle">{t.trainingZones.vdot(vo2max)}</span>
+        <span className="text-xs text-subtle">{t.trainingZones.thresholdLabel(formatPace(thresholdPaceSecPerKm))}</span>
       </div>
 
       <div className="space-y-2">

@@ -1,21 +1,30 @@
 import { getDashboardData } from '@/application/usecases/GetDashboardData'
 import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
-import { getVO2max } from '@/application/usecases/GetRecords'
+import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
+import { getConsistencyScore } from '@/application/usecases/GetConsistencyScore'
 import { getHeatmapData } from '@/application/usecases/GetHeatmapData'
 import { getInsights } from '@/application/usecases/GetInsights'
+import { getInsightsSnapshot } from '@/application/usecases/GetInsightsSnapshot'
+import { getLatestVO2max } from '@/application/usecases/GetVO2maxHistory'
 import { StatsGrid } from '@/components/dashboard/StatsGrid'
 import { DashboardCharts } from '@/components/dashboard/DashboardCharts'
 import { RecentActivities } from '@/components/dashboard/RecentActivities'
 import { ActivityHeatmap } from '@/components/dashboard/ActivityHeatmap'
 import { InsightsCard } from '@/components/dashboard/InsightsCard'
+import { AiInsightsCard } from '@/components/dashboard/AiInsightsCard'
+import { TrainingStatusBanner } from '@/components/dashboard/TrainingStatusBanner'
+import { ConsistencyCard } from '@/components/dashboard/ConsistencyCard'
 import { t } from '@/i18n'
 
 export default function DashboardPage() {
   const data = getDashboardData()
   const trainingLoad = getTrainingLoad()
-  const vo2max = getVO2max()
+  const trainingStatus = getTrainingStatus()
+  const consistencyScore = getConsistencyScore()
   const heatmapDays = getHeatmapData()
   const insights = getInsights()
+  const insightsSnapshot = getInsightsSnapshot()
+  const vo2max = getLatestVO2max()
 
   return (
     <div className="space-y-6">
@@ -34,7 +43,14 @@ export default function DashboardPage() {
         vo2max={vo2max}
       />
 
-      <InsightsCard insights={insights} />
+      {(trainingStatus || consistencyScore) && (
+        <div className={trainingStatus && consistencyScore ? 'grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]' : undefined}>
+          {trainingStatus && <TrainingStatusBanner status={trainingStatus} />}
+          {consistencyScore && <ConsistencyCard data={consistencyScore} />}
+        </div>
+      )}
+
+      {insightsSnapshot ? <AiInsightsCard snapshot={insightsSnapshot} /> : <InsightsCard insights={insights} />}
 
       <DashboardCharts
         weeklyVolume={data.weeklyVolume}

@@ -1,7 +1,8 @@
 import { readFileSync } from 'fs'
 import { join } from 'path'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
-import { round } from '@/lib/math'
+import { getFullLoadHistory } from './GetTrainingLoad'
+import type { LoadSnapshot } from './GetTrainingLoad'
 
 const EFFORTS = [
   //{ key: '1k', label: '1K', km: 1 },
@@ -49,63 +50,29 @@ export interface RecordEntry {
   activityId: string | null
   date: string | null
   official: boolean
-}
-
-// Jack Daniels VDOT formula
-function jackDanielsVO2max(seconds: number, distanceM: number): number {
-  const v = (distanceM / seconds) * 60 // m/min
-  const vo2 = -4.60 + 0.182258 * v + 0.000104 * v * v
-  const t = seconds / 60
-  const pct =
-    0.8 +
-    0.1894393 * Math.exp(-0.012778 * t) +
-    0.2989558 * Math.exp(-0.1932605 * t)
-  return round(vo2 / pct)
-}
-
-export function getVO2max(): number | null {
-  const officialPbs = loadOfficialPbs()
-  const activities = getAllActivities()
-
-  // Prefer 5K, then 10K, then half - official time takes precedence over auto-detected
-  const candidates: { seconds: number; distanceM: number }[] = []
-
-  for (const [key, distM] of [['5k', 5000], ['10k', 10000], ['half', 21097.5]] as [string, number][]) {
-    const official = officialPbs.get(key)
-    if (official) {
-      candidates.push({ seconds: official.seconds, distanceM: distM })
-      break
-    }
-    let best: number | null = null
-    for (const a of activities) {
-      const sec = a.bestEfforts?.[key]
-      if (sec != null && (best === null || sec < best)) best = sec
-    }
-    if (best !== null) {
-      candidates.push({ seconds: best, distanceM: distM })
-      break
-    }
-  }
-
-  if (candidates.length === 0) return null
-  return jackDanielsVO2max(candidates[0].seconds, candidates[0].distanceM)
+  formAtPb: LoadSnapshot | null
 }
 
 export function getRecords(): RecordEntry[] {
   const activities = getAllActivities()
   const officialPbs = loadOfficialPbs()
+  const activityMap = new Map(activities.map((a) => [a.id, a]))
+  const loadHistory = getFullLoadHistory()
 
   return EFFORTS.map(({ key, label, km }) => {
     const official = officialPbs.get(key)
     if (official) {
+      const activity = official.activityId ? activityMap.get(official.activityId) : undefined
+      const date = activity?.date ?? null
       return {
         key,
         label,
         seconds: official.seconds,
         paceSecPerKm: Math.round(official.seconds / km),
         activityId: official.activityId,
-        date: null,
+        date,
         official: true,
+        formAtPb: date ? (loadHistory.get(date) ?? null) : null,
       }
     }
 
@@ -124,6 +91,7 @@ export function getRecords(): RecordEntry[] {
       activityId: best?.activityId ?? null,
       date: best?.date ?? null,
       official: false,
+      formAtPb: best?.date ? (loadHistory.get(best.date) ?? null) : null,
     }
   })
 }

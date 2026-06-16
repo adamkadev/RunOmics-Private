@@ -4,6 +4,9 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 import type { MonthlyPace } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
+import { ChartExplain } from '@/components/ui/ChartExplain'
+import type { ExplainTone } from '@/components/ui/ChartExplain'
+import { trendFromSeries } from '@/lib/chartTrend'
 import { formatClock } from '@/lib/formatters'
 import { t } from '@/i18n'
 
@@ -38,6 +41,17 @@ export function PaceTrendChart({ data }: Props) {
   const minPace = Math.min(...paces) - 10
   const maxPace = Math.max(...paces) + 10
 
+  // Pace in sec/km: lower = faster = better, so "down" is positive
+  const ex = t.analytics.charts.paceTrend.explains
+  const trend = trendFromSeries(data.map((d) => d.easyPace), 8)
+  const explain: { text: string; tone: ExplainTone } | null = trend
+    ? trend.direction === 'down'
+      ? { text: ex.improving(Math.abs(Math.round(trend.delta))), tone: 'positive' }
+      : trend.direction === 'up'
+        ? { text: ex.slowing(Math.round(trend.delta)), tone: 'caution' }
+        : { text: ex.stable, tone: 'neutral' }
+    : null
+
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <div className="mb-4 flex items-center justify-between">
@@ -52,7 +66,7 @@ export function PaceTrendChart({ data }: Props) {
         </div>
       </div>
       <ResponsiveContainer width="100%" height={200}>
-        <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -10 }}>
+        <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
           <XAxis
             dataKey="label"
             tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
@@ -66,7 +80,7 @@ export function PaceTrendChart({ data }: Props) {
             tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
-            width={42}
+            width={46}
           />
           <Tooltip content={<CustomTooltip />} />
           <Line
@@ -89,7 +103,8 @@ export function PaceTrendChart({ data }: Props) {
           />
         </LineChart>
       </ResponsiveContainer>
-      <p className="mt-2 text-xs text-subtle">
+      {explain && <ChartExplain text={explain.text} tone={explain.tone} />}
+      <p className="mt-1 text-xs text-subtle">
         {t.analytics.charts.paceTrend.footnote}
       </p>
     </div>

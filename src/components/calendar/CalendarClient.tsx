@@ -128,7 +128,7 @@ export function CalendarClient({ activities }: Props) {
               {cell && (
                 <>
                   <p
-                    className={`mb-1 text-right text-xs ${
+                    className={`mb-1 text-xs ${
                       cell.date === todayIso
                         ? 'font-bold text-emerald-600 dark:text-emerald-400'
                         : 'text-subtle'

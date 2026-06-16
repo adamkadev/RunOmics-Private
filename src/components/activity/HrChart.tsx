@@ -61,7 +61,7 @@ export function HrChart({ samples, avgHr, maxHr, durationSeconds, onHoverFractio
       <ResponsiveContainer width="100%" height={140}>
         <AreaChart
           data={data}
-          margin={{ top: 4, right: 4, bottom: 0, left: -8 }}
+          margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
           onMouseMove={handleMove}
           onMouseLeave={() => onHoverFraction?.(null)}
         >
@@ -86,7 +86,7 @@ export function HrChart({ samples, avgHr, maxHr, durationSeconds, onHoverFractio
             tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
-            width={32}
+            width={40}
           />
           <Tooltip
             contentStyle={{

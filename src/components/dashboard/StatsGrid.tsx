@@ -1,5 +1,6 @@
 import { Timer, Footprints, Heart, TrendingUp, TrendingDown, Minus, Flame, Activity } from 'lucide-react'
-import { formatDistance, formatDuration, formatPace } from '@/lib/formatters'
+import { formatDuration, formatPace } from '@/lib/formatters'
+import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { t } from '@/i18n'
 import type { DashboardData } from '@/domain/activity/types'
 
@@ -23,11 +24,11 @@ function Trend({ current, previous }: { current: number; previous: number }) {
 
 export function StatsGrid({ currentWeek, lastWeek, currentStreak, longestStreak, vo2max }: Props) {
   const s = t.dashboard.stats
-  const stats = [
+  const stats: { label: string; value: React.ReactNode; sub: string; trend: React.ReactNode; icon: React.ReactNode }[] = [
     {
       label: s.distance,
-      value: formatDistance(currentWeek.totalDistanceKm),
-      sub: s.distanceSub(formatDistance(lastWeek.totalDistanceKm)),
+      value: <><AnimatedValue value={currentWeek.totalDistanceKm} decimals={currentWeek.totalDistanceKm >= 10 ? 1 : 2} /> {t.units.km}</>,
+      sub: s.distanceSub(`${lastWeek.totalDistanceKm.toFixed(lastWeek.totalDistanceKm >= 10 ? 1 : 2)} ${t.units.km}`),
       trend: <Trend current={currentWeek.totalDistanceKm} previous={lastWeek.totalDistanceKm} />,
       icon: <Footprints size={18} className="text-emerald-600 dark:text-emerald-400" />,
     },
@@ -40,7 +41,9 @@ export function StatsGrid({ currentWeek, lastWeek, currentStreak, longestStreak,
     },
     {
       label: s.avgHr,
-      value: currentWeek.avgHeartRate ? `${currentWeek.avgHeartRate} ${t.units.bpm}` : s.empty,
+      value: currentWeek.avgHeartRate
+        ? <><AnimatedValue value={currentWeek.avgHeartRate} /> {t.units.bpm}</>
+        : s.empty,
       sub: s.thisWeek,
       trend: null,
       icon: <Heart size={18} className="text-red-500 dark:text-red-400" />,
@@ -54,14 +57,14 @@ export function StatsGrid({ currentWeek, lastWeek, currentStreak, longestStreak,
     },
     {
       label: s.streak,
-      value: `${currentStreak}d`,
+      value: <><AnimatedValue value={currentStreak} />d</>,
       sub: s.streakSub(longestStreak),
       trend: null,
       icon: <Flame size={18} className="text-orange-500 dark:text-orange-400" />,
     },
     {
       label: s.vo2max,
-      value: vo2max !== null ? String(vo2max) : s.empty,
+      value: vo2max !== null ? <AnimatedValue value={vo2max} /> : s.empty,
       sub: t.units.vo2max,
       trend: null,
       icon: <Activity size={18} className="text-violet-500 dark:text-violet-400" />,

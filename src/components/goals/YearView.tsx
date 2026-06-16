@@ -1,34 +1,25 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Trophy, Target, TrendingUp, ArrowRight, Calendar } from 'lucide-react'
-import type { YearData } from '@/application/usecases/GetGoalsData'
+import type { YearData, GoalProjection } from '@/application/usecases/GetGoalsData'
 import { formatDuration, formatDate, formatPace } from '@/lib/formatters'
-import { round } from '@/lib/math'
 import { ActivityTypeTag } from '@/components/activities/ActivityTypeTag'
 import { t } from '@/i18n'
 
+const STATUS_CHIP: Record<GoalProjection['status'], string> = {
+  ahead:    'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+  on_track: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+  behind:   'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+}
+
 export function YearView({ yearData }: { yearData: YearData }) {
-  const { goals, pbs, totalDistanceKm } = yearData
+  const { goals, pbs, totalDistanceKm, projection } = yearData
 
   const annualDistanceKm = goals?.annualDistanceKm ?? 0
   const annualProgress = annualDistanceKm > 0
     ? Math.min((totalDistanceKm / annualDistanceKm) * 100, 100)
     : 0
   const remaining = Math.max(annualDistanceKm - totalDistanceKm, 0)
-
-  const now = new Date()
-  const isCurrentYear = yearData.year === now.getFullYear()
-  const paceInfo = (() => {
-    if (!isCurrentYear || annualDistanceKm <= 0) return null
-    const start = new Date(yearData.year, 0, 1)
-    const end = new Date(yearData.year + 1, 0, 1)
-    const totalDays = (end.getTime() - start.getTime()) / 86400000
-    const elapsedDays = Math.max((now.getTime() - start.getTime()) / 86400000, 1)
-    const expectedKm = annualDistanceKm * (elapsedDays / totalDays)
-    const delta = round(totalDistanceKm - expectedKm)
-    const projected = Math.round((totalDistanceKm / elapsedDays) * totalDays)
-    return { ahead: delta >= 0, deltaKm: Math.abs(delta), projected }
-  })()
 
   return (
     <div className="space-y-8">
@@ -62,17 +53,27 @@ export function YearView({ yearData }: { yearData: YearData }) {
               ) : (
                 <span className="font-medium text-emerald-600 dark:text-emerald-400">{t.goals.goalReached}</span>
               )}
-              {paceInfo && (
-                <span className={paceInfo.ahead
-                  ? 'font-medium text-emerald-600 dark:text-emerald-400'
-                  : 'font-medium text-orange-500 dark:text-orange-400'
-                }>
-                  {paceInfo.ahead
-                    ? t.goals.ahead(paceInfo.deltaKm, paceInfo.projected)
-                    : t.goals.behind(paceInfo.deltaKm)}
-                </span>
-              )}
             </div>
+            {projection && (
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+                <span className={`rounded-full px-2.5 py-0.5 font-medium ${STATUS_CHIP[projection.status]}`}>
+                  {t.goals.projection.status[projection.status]}
+                </span>
+                <span className="text-foreground/80 font-medium">
+                  {t.goals.projection.projected(projection.projectedYearKm)}
+                </span>
+                <span className="text-subtle">
+                  {projection.status === 'ahead'
+                    ? t.goals.projection.aheadBy(projection.deltaKm)
+                    : projection.status === 'behind'
+                      ? t.goals.projection.behindBy(projection.deltaKm)
+                      : null}
+                </span>
+                <span className="w-full text-subtle">
+                  {t.goals.projection.rate(projection.weeklyRate, projection.weeklyNeeded)}
+                </span>
+              </div>
+            )}
           </div>
         </section>
       )}

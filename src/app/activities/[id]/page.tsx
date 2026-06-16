@@ -8,6 +8,7 @@ import { ZoneBar } from '@/components/activity/ZoneBar'
 import { TrainingEffect } from '@/components/activity/TrainingEffect'
 import { RunningDynamics } from '@/components/activity/RunningDynamics'
 import { ActivityDetailClient } from '@/components/activity/ActivityDetailClient'
+import { BestEfforts } from '@/components/activity/BestEfforts'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
 import { t } from '@/i18n'
 
@@ -173,6 +174,8 @@ export default async function ActivityDetailPage({
           </>
         }
       />
+
+      {activity.bestEfforts && <BestEfforts bestEfforts={activity.bestEfforts} />}
 
       <RunningDynamics activity={activity} />
     </div>

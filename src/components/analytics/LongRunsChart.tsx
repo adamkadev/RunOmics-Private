@@ -34,7 +34,7 @@ export function LongRunsChart({ data }: Props) {
     <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">{t.analytics.charts.longRuns.title}</h3>
       <ResponsiveContainer width="100%" height={200}>
-        <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+        <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>
           <XAxis
             dataKey="label"
             tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
@@ -54,11 +54,11 @@ export function LongRunsChart({ data }: Props) {
       </ResponsiveContainer>
       <div className="mt-2 flex items-center gap-4 text-xs text-subtle">
         <span className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-sm" style={{ background: '#6ee7b7' }} />
+          <span className="h-2 w-2 rounded-sm" style={{ background: CHART_COLORS.longRun10 }} />
           {t.analytics.charts.longRuns.range1015}
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-sm" style={{ background: '#059669' }} />
+          <span className="h-2 w-2 rounded-sm" style={{ background: CHART_COLORS.longRun15 }} />
           {t.analytics.charts.longRuns.range15}
         </span>
       </div>

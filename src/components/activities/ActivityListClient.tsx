@@ -109,27 +109,29 @@ export function ActivityListClient({ activities }: Props) {
           onChange={(e) => setDateTo(e.target.value)}
           className="h-8 rounded-md border border-border bg-card px-2 text-xs text-foreground focus:border-emerald-500 focus:outline-none dark:[color-scheme:dark]"
         />
-        <span className="ml-2 text-xs text-subtle">{t.activities.distance}</span>
-        <input
-          type="number"
-          min="0"
-          step="1"
-          placeholder={t.activities.min}
-          value={minKm}
-          onChange={(e) => setMinKm(e.target.value)}
-          className="h-8 w-16 rounded-md border border-border bg-card px-2 text-xs text-foreground placeholder-subtle focus:border-emerald-500 focus:outline-none"
-        />
-        <span className="text-xs text-subtle">–</span>
-        <input
-          type="number"
-          min="0"
-          step="1"
-          placeholder={t.activities.max}
-          value={maxKm}
-          onChange={(e) => setMaxKm(e.target.value)}
-          className="h-8 w-16 rounded-md border border-border bg-card px-2 text-xs text-foreground placeholder-subtle focus:border-emerald-500 focus:outline-none"
-        />
-        <span className="text-xs text-subtle">{t.units.km}</span>
+        <span className="flex items-center gap-2">
+          <span className="text-xs text-subtle">{t.activities.distance}</span>
+          <input
+            type="number"
+            min="0"
+            step="1"
+            placeholder={t.activities.min}
+            value={minKm}
+            onChange={(e) => setMinKm(e.target.value)}
+            className="h-8 w-16 rounded-md border border-border bg-card px-2 text-xs text-foreground placeholder-subtle focus:border-emerald-500 focus:outline-none"
+          />
+          <span className="text-xs text-subtle">–</span>
+          <input
+            type="number"
+            min="0"
+            step="1"
+            placeholder={t.activities.max}
+            value={maxKm}
+            onChange={(e) => setMaxKm(e.target.value)}
+            className="h-8 w-16 rounded-md border border-border bg-card px-2 text-xs text-foreground placeholder-subtle focus:border-emerald-500 focus:outline-none"
+          />
+          <span className="text-xs text-subtle">{t.units.km}</span>
+        </span>
         {hasExtraFilters && (
           <button
             onClick={clearFilters}

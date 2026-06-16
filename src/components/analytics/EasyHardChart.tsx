@@ -12,6 +12,8 @@ import {
 import type { MonthlyEasyHard } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
+import { ChartExplain } from '@/components/ui/ChartExplain'
+import type { ExplainTone } from '@/components/ui/ChartExplain'
 import { t } from '@/i18n'
 
 interface Props {
@@ -38,13 +40,23 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
 export function EasyHardChart({ data }: Props) {
   if (!data.some((d) => d.easyPct !== null)) return null
 
+  const ex = t.analytics.charts.easyHard.explains
+  const easyValues = data.map((d) => d.easyPct).filter((v): v is number => v !== null)
+  const avgEasy = Math.round(easyValues.reduce((s, v) => s + v, 0) / easyValues.length)
+  const explain: { text: string; tone: ExplainTone } =
+    avgEasy >= 78 && avgEasy <= 88
+      ? { text: ex.balanced(avgEasy), tone: 'positive' }
+      : avgEasy < 78
+        ? { text: ex.tooHard(avgEasy), tone: 'caution' }
+        : { text: ex.tooEasy(avgEasy), tone: 'neutral' }
+
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.analytics.charts.easyHard.title}
       </h3>
       <ResponsiveContainer width="100%" height={200}>
-        <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+        <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>
           <XAxis
             dataKey="label"
             tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
@@ -64,7 +76,8 @@ export function EasyHardChart({ data }: Props) {
           <ReferenceLine y={80} stroke={CHART_COLORS.referenceTarget} strokeDasharray="4 3" strokeWidth={1} />
         </BarChart>
       </ResponsiveContainer>
-      <p className="mt-2 text-xs text-subtle">
+      <ChartExplain text={explain.text} tone={explain.tone} />
+      <p className="mt-1 text-xs text-subtle">
         {t.analytics.charts.easyHard.footnote}
       </p>
     </div>
