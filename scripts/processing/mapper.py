@@ -59,6 +59,8 @@ class ActivityData:
     best_efforts: dict[str, float] | None
     pace_samples: list[float] | None
     vo2max_garmin: float | None
+    avg_temperature: int | None
+    cadence_samples: list[float] | None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -91,6 +93,8 @@ class ActivityData:
             "bestEfforts": self.best_efforts,
             "paceSamples": self.pace_samples,
             "vo2maxGarmin": self.vo2max_garmin,
+            "avgTemperature": self.avg_temperature,
+            "cadenceSamples": self.cadence_samples,
         }
 
 
@@ -187,6 +191,7 @@ def map_activity(
     hr_samples: list[int] | None = None
     elevation_profile: list[float] | None = None
     pace_samples: list[float] | None = None
+    cadence_samples: list[float] | None = None
     if parsed:
         if parsed.heart_rates:
             hr_samples = _decimate_list(parsed.heart_rates, _MAX_CHART_POINTS)
@@ -194,6 +199,8 @@ def map_activity(
             elevation_profile = _decimate_list(parsed.elevation_samples, _MAX_CHART_POINTS)
         if parsed.pace_samples:
             pace_samples = _decimate_list(parsed.pace_samples, _MAX_CHART_POINTS)
+        if parsed.cadence_samples:
+            cadence_samples = _decimate_list(parsed.cadence_samples, _MAX_CHART_POINTS)
 
     return ActivityData(
         id=activity_id,
@@ -225,6 +232,8 @@ def map_activity(
         best_efforts=(parsed.best_efforts or None) if parsed else None,
         pace_samples=pace_samples,
         vo2max_garmin=parsed.vo2max_garmin if parsed else None,
+        avg_temperature=parsed.avg_temperature if parsed else None,
+        cadence_samples=cadence_samples,
     )
 
 

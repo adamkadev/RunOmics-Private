@@ -26,6 +26,9 @@ export function RunningDynamics({ activity: a }: { activity: Activity }) {
   if (a.verticalRatioPct != null) {
     metrics.push({ label: d.vertRatio, value: a.verticalRatioPct.toFixed(1), unit: t.units.percent })
   }
+  if (a.avgTemperature != null) {
+    metrics.push({ label: d.temperature, value: a.avgTemperature.toFixed(0), unit: t.units.celsius })
+  }
 
   if (!metrics.length) return null
 

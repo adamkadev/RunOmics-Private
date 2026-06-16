@@ -7,6 +7,7 @@ import { NoRouteMap } from './ActivityMap'
 import { HrChart } from './HrChart'
 import { ElevationChart } from './ElevationChart'
 import { PaceChart } from './PaceChart'
+import { CadenceChart } from './CadenceChart'
 
 interface Props {
   activity: Activity
@@ -34,7 +35,7 @@ export function ActivityDetailClient({ activity, sidePanel }: Props) {
         <div className="space-y-4 lg:col-span-2">{sidePanel}</div>
       </div>
 
-      {(activity.hrSamples || activity.elevationProfile || activity.paceSamples) && (
+      {(activity.hrSamples || activity.elevationProfile || activity.paceSamples || activity.cadenceSamples) && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
           {activity.hrSamples && (
             <HrChart
@@ -57,6 +58,14 @@ export function ActivityDetailClient({ activity, sidePanel }: Props) {
               samples={activity.elevationProfile}
               durationSeconds={activity.durationSeconds}
               elevationGain={activity.elevationGain}
+              onHoverFraction={activity.route ? setHoverFraction : undefined}
+            />
+          )}
+          {activity.cadenceSamples && (
+            <CadenceChart
+              samples={activity.cadenceSamples}
+              avgCadence={activity.cadenceSpm}
+              durationSeconds={activity.durationSeconds}
               onHoverFraction={activity.route ? setHoverFraction : undefined}
             />
           )}

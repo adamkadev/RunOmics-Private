@@ -54,6 +54,7 @@ export const en = {
     percent: '%',
     kcal: 'kcal',
     minPerKm: 'min/km',
+    celsius: '°C',
   },
 
   common: {
@@ -419,6 +420,7 @@ export const en = {
       groundContact: 'Ground Contact',
       vertOscillation: 'Vert. Oscillation',
       vertRatio: 'Vert. Ratio',
+      temperature: 'Temperature',
     },
     charts: {
       heartRate: 'Heart Rate',
@@ -429,6 +431,7 @@ export const en = {
       altitude: 'Altitude',
       elevation: 'Elevation',
       gain: (m: number) => `+${m} m gain`,
+      cadence: 'Cadence',
     },
     map: {
       fullscreen: 'Fullscreen',

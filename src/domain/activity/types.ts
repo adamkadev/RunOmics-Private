@@ -45,6 +45,8 @@ export interface Activity {
   bestEfforts: Record<string, number> | null
   paceSamples: number[] | null
   vo2maxGarmin: number | null
+  avgTemperature: number | null
+  cadenceSamples: number[] | null
 }
 
 export interface WeeklyVolume {

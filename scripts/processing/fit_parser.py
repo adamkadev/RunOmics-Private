@@ -41,6 +41,8 @@ class ParsedFit:
     best_efforts: dict[str, float] = field(default_factory=dict)
     pace_samples: list[float] = field(default_factory=list)
     vo2max_garmin: float | None = None
+    avg_temperature: int | None = None
+    cadence_samples: list[float] = field(default_factory=list)
 
     @property
     def has_data(self) -> bool:
@@ -65,6 +67,7 @@ def parse_fit(content: bytes) -> ParsedFit:
     elevation_samples: list[float] = []
     dist_samples: list[float] = []
     time_samples: list[float] = []
+    cadence_samples: list[float] = []
     prev_alt: float | None = None
     record_ascent = 0.0
 
@@ -95,6 +98,11 @@ def parse_fit(content: bytes) -> ParsedFit:
             dist_samples.append(float(dist))
             time_samples.append(ts.timestamp())
 
+        cad = rec.get("cadence")
+        if cad is not None:
+            frac = rec.get("fractional_cadence") or 0
+            cadence_samples.append(round((float(cad) + float(frac)) * 2, 1))
+
     result = ParsedFit(
         route=_decimate(raw_coords, max_points=_MAX_ROUTE_POINTS),
         heart_rates=heart_rates,
@@ -104,6 +112,7 @@ def parse_fit(content: bytes) -> ParsedFit:
         best_efforts=_best_efforts(dist_samples, time_samples),
         pace_samples=_pace_samples(dist_samples, time_samples),
         vo2max_garmin=_extract_vo2max(messages),
+        cadence_samples=cadence_samples,
     )
 
     if sessions:
@@ -168,6 +177,10 @@ def parse_fit(content: bytes) -> ParsedFit:
         step = session.get("avg_step_length")
         if step:
             result.stride_length_m = round(float(step) / 1000, 2)
+
+        avg_temp = session.get("avg_temperature")
+        if avg_temp is not None:
+            result.avg_temperature = round(float(avg_temp))
 
         result.start_time_local = _local_start_time(session, activities)
 
