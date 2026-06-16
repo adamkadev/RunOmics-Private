@@ -1,4 +1,4 @@
-import { Brain, TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { Brain } from 'lucide-react'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import { t } from '@/i18n'
 import type { CoachData, CoachSuggestion, CoachTypeBreakdown } from '@/application/usecases/GetCoachData'
@@ -11,12 +11,6 @@ const SUGGESTION_STYLE: Record<string, { border: string; icon: string; badge: st
   add_sessions:     { border: 'border-blue-200 dark:border-blue-800',   icon: 'text-blue-500',   badge: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
   increase_volume:  { border: 'border-blue-200 dark:border-blue-800',   icon: 'text-blue-500',   badge: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
   maintain:         { border: 'border-border',                           icon: 'text-muted-foreground', badge: 'bg-muted text-muted-foreground' },
-}
-
-function DeltaChip({ value }: { value: number }) {
-  if (value > 0) return <span className="flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400"><TrendingUp size={12} />+{value}</span>
-  if (value < 0) return <span className="flex items-center gap-0.5 text-orange-500 dark:text-orange-400"><TrendingDown size={12} />{value}</span>
-  return <span className="flex items-center gap-0.5 text-subtle"><Minus size={12} />0</span>
 }
 
 function WeekStatsCard({
@@ -119,14 +113,16 @@ function SuggestionCard({ s }: { s: CoachSuggestion }) {
 
 interface Props {
   coach: CoachData
+  // Hidden when the AI training plan takes over the recommendations slot.
+  showSuggestions?: boolean
 }
 
-export function CoachOverview({ coach }: Props) {
+export function CoachOverview({ coach, showSuggestions = true }: Props) {
   const c = t.coach
 
   return (
     <>
-      {/* Week summary + load deltas */}
+      {/* Week summary + session type breakdown */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <WeekStatsCard
           title={c.thisWeek}
@@ -136,62 +132,24 @@ export function CoachOverview({ coach }: Props) {
           deltaSessions={coach.week.deltaSessions}
           deltaLabel={c.vsLastWeek}
         />
-
-        {/* Load deltas */}
-        <div className="rounded-xl border border-border bg-card p-5 shadow-card">
-          <h2 className="mb-4 text-sm font-semibold text-foreground/80">{c.loadChanges}</h2>
-          <div className="space-y-3">
-            {(
-              [
-                { label: c.fitness, value: coach.loadDelta.ctl,    delta: coach.loadDelta.ctlDelta7d },
-                { label: c.fatigue, value: coach.loadDelta.atl,    delta: coach.loadDelta.atlDelta7d },
-                { label: c.form,    value: coach.loadDelta.tsb,    delta: coach.loadDelta.tsbDelta7d },
-              ] as const
-            ).map(({ label, value, delta }) => (
-              <div key={label} className="flex items-center justify-between">
-                <span className="text-xs text-subtle">{label}</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold tabular-nums text-foreground">
-                    {value}
-                  </span>
-                  <DeltaChip value={delta} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        {coach.sessionTypeBreakdown.length > 0 && (
+          <SessionTypeBreakdownCard breakdown={coach.sessionTypeBreakdown} totalKm={coach.week.distanceKm} />
+        )}
       </div>
 
-      {/* Year-over-year + session type breakdown */}
-      {(coach.yearOverYear || coach.sessionTypeBreakdown.length > 0) && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {coach.yearOverYear && (
-            <WeekStatsCard
-              title={c.vsLastYear}
-              distanceKm={coach.week.distanceKm}
-              sessions={coach.week.sessions}
-              deltaDistancePct={coach.yearOverYear.deltaDistancePct}
-              deltaSessions={coach.yearOverYear.deltaSessions}
-              deltaLabel={c.vsLastYearLabel}
-            />
-          )}
-          {coach.sessionTypeBreakdown.length > 0 && (
-            <SessionTypeBreakdownCard breakdown={coach.sessionTypeBreakdown} totalKm={coach.week.distanceKm} />
-          )}
-        </div>
+      {/* Suggestions (hidden when the AI training plan is shown instead) */}
+      {showSuggestions && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            {c.suggestions}
+          </h2>
+          <div className="space-y-2">
+            {coach.suggestions.map((s) => (
+              <SuggestionCard key={s.key} s={s} />
+            ))}
+          </div>
+        </section>
       )}
-
-      {/* Suggestions */}
-      <section className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          {c.suggestions}
-        </h2>
-        <div className="space-y-2">
-          {coach.suggestions.map((s) => (
-            <SuggestionCard key={s.key} s={s} />
-          ))}
-        </div>
-      </section>
     </>
   )
 }

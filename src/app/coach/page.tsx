@@ -1,12 +1,12 @@
-import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { getCoachData } from '@/application/usecases/GetCoachData'
-import { TrainingStatusBanner } from '@/components/dashboard/TrainingStatusBanner'
+import { getPlanSnapshot } from '@/application/usecases/GetPlanSnapshot'
 import { CoachOverview } from '@/components/coach/CoachOverview'
+import { CoachPlanCard } from '@/components/coach/CoachPlanCard'
 import { t } from '@/i18n'
 
 export default function CoachPage() {
-  const status = getTrainingStatus()
   const coach = getCoachData()
+  const planSnapshot = getPlanSnapshot()
   const c = t.coach
 
   return (
@@ -16,13 +16,13 @@ export default function CoachPage() {
         <p className="mt-0.5 text-sm text-muted-foreground">{c.subtitle}</p>
       </div>
 
-      {status && <TrainingStatusBanner status={status} />}
+      {planSnapshot && <CoachPlanCard snapshot={planSnapshot} />}
 
       {!coach && (
         <p className="text-sm text-subtle">{c.noData}</p>
       )}
 
-      {coach && <CoachOverview coach={coach} />}
+      {coach && <CoachOverview coach={coach} showSuggestions={!planSnapshot} />}
     </div>
   )
 }

@@ -232,6 +232,31 @@ export const en = {
     } as Record<string, { title: string; detail: string | ((acwr: number) => string) }>,
   },
 
+  coachPlan: {
+    title: 'AI Training Plan',
+    loading: 'Building your week...',
+    weekFocus: 'Focus',
+    targetWeekly: 'Target',
+    keyWorkout: 'Key workout',
+    restDay: 'Rest',
+    confidence: {
+      low: 'Low confidence',
+      medium: 'Medium confidence',
+      high: 'High confidence',
+    },
+    kind: {
+      rest: 'Rest',
+      recovery: 'Recovery',
+      easy: 'Easy',
+      long: 'Long',
+      tempo: 'Tempo',
+      threshold: 'Threshold',
+      intervals: 'Intervals',
+      race_pace: 'Race pace',
+      cross_training: 'Cross-training',
+    } as Record<string, string>,
+  },
+
   insights: {
     title: 'Insights',
     formFresh: "You're fresh - a good window for a hard session or a race.",
