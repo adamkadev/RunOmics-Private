@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Footprints, Timer, Hash, Mountain, Gauge, Flame } from 'lucide-react'
+import { Footprints, Timer, Hash, Mountain, Gauge, Flame, CalendarRange } from 'lucide-react'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import type { AnalyticsPageData, PeriodDelta } from '@/application/usecases/GetAnalyticsData'
 import type { YearComparisonData } from '@/application/usecases/GetYearComparison'
+import type { LifetimeStats } from '@/application/usecases/GetLifetimeStats'
 import { MonthlyVolumeChart } from './MonthlyVolumeChart'
 import { PaceTrendChart } from './PaceTrendChart'
 import { EfficiencyChart } from './EfficiencyChart'
@@ -34,7 +35,7 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]['id']
 
-type View = { kind: 'year'; year: number } | { kind: 'period'; weeks: number }
+type View = { kind: 'year'; year: number } | { kind: 'period'; weeks: number } | { kind: 'all' }
 
 interface StatCardProps {
   icon: React.ReactNode
@@ -84,7 +85,7 @@ function DeltaStrip({ delta, weeks }: { delta: PeriodDelta; weeks: number }) {
   )
 }
 
-export function AnalyticsClient({ data, comparison, vo2maxHistory }: { data: AnalyticsPageData; comparison: YearComparisonData | null; vo2maxHistory: VO2maxPoint[] }) {
+export function AnalyticsClient({ data, comparison, vo2maxHistory, lifetime }: { data: AnalyticsPageData; comparison: YearComparisonData | null; vo2maxHistory: VO2maxPoint[]; lifetime: LifetimeStats | null }) {
   const { years, byYear, periodWeeks, byPeriod } = data
   const [view, setView] = useState<View>({ kind: 'year', year: years[0] })
   const [tab, setTab] = useState<TabId>('volume')
@@ -92,9 +93,10 @@ export function AnalyticsClient({ data, comparison, vo2maxHistory }: { data: Ana
   const periodsRef = useRef<HTMLDivElement | null>(null)
   const activeChipRef = useRef<HTMLButtonElement | null>(null)
 
-  const active = view.kind === 'year' ? byYear[view.year] : byPeriod[view.weeks]
-  const totals = active.totals
   const isPeriod = view.kind === 'period'
+  const isAll = view.kind === 'all'
+  const active = view.kind === 'year' ? byYear[view.year] : view.kind === 'period' ? byPeriod[view.weeks] : null
+  const totals = active?.totals ?? null
 
   useEffect(() => {
     const active = activeChipRef.current
@@ -123,49 +125,70 @@ export function AnalyticsClient({ data, comparison, vo2maxHistory }: { data: Ana
 
   // Rolling periods are anchored to today, so only offer them on the most recent
   // year (or while a period is active). Past years just show their calendar view.
-  const showPeriods = view.kind === 'period' || view.year === years[0]
+  const showPeriods = view.kind === 'period' || (view.kind === 'year' && view.year === years[0])
 
-  const statCards: { icon: React.ReactNode; label: string; value: React.ReactNode }[] = [
-    {
-      icon: <Footprints size={16} className="text-emerald-500 dark:text-emerald-400" />,
-      label: t.analytics.stats.distance,
-      value: <><AnimatedValue value={totals.distanceKm} /> {t.units.km}</>,
-    },
-    {
-      icon: <Timer size={16} className="text-blue-500 dark:text-blue-400" />,
-      label: t.analytics.stats.time,
-      value: formatDuration(totals.durationSeconds),
-    },
-    {
-      icon: <Hash size={16} className="text-violet-500 dark:text-violet-400" />,
-      label: t.analytics.stats.sessions,
-      value: <AnimatedValue value={totals.sessionCount} />,
-    },
-    {
-      icon: <Mountain size={16} className="text-stone-500 dark:text-stone-400" />,
-      label: t.analytics.stats.elevation,
-      value: <>+<AnimatedValue value={totals.elevationM} /> m</>,
-    },
-    {
-      icon: <Gauge size={16} className="text-amber-500 dark:text-amber-400" />,
-      label: t.analytics.stats.avgPerWeek,
-      value: <><AnimatedValue value={totals.avgKmPerWeek} decimals={1} /> {t.units.km}</>,
-    },
-    ...(totals.calories > 0
+  const statCards: { icon: React.ReactNode; label: string; value: React.ReactNode }[] =
+    isAll && lifetime
       ? [
           {
-            icon: <Flame size={16} className="text-orange-500 dark:text-orange-400" />,
-            label: t.analytics.stats.calories,
-            value: <><AnimatedValue value={totals.calories / 1000} decimals={1} />k kcal</>,
+            icon: <Footprints size={16} className="text-emerald-500 dark:text-emerald-400" />,
+            label: t.analytics.stats.distance,
+            value: <><AnimatedValue value={lifetime.totalDistanceKm} /> {t.units.km}</>,
           },
           {
-            icon: <Flame size={16} className="text-red-500 dark:text-red-400" />,
-            label: t.analytics.stats.kcalPerWeek,
-            value: <AnimatedValue value={totals.caloriesPerWeek} />,
+            icon: <Hash size={16} className="text-violet-500 dark:text-violet-400" />,
+            label: t.analytics.stats.sessions,
+            value: <AnimatedValue value={lifetime.totalActivities} />,
+          },
+          {
+            icon: <CalendarRange size={16} className="text-blue-500 dark:text-blue-400" />,
+            label: t.analytics.stats.yearsTracked,
+            value: <AnimatedValue value={lifetime.yearsTracked} decimals={1} />,
           },
         ]
-      : []),
-  ]
+      : totals
+        ? [
+            {
+              icon: <Footprints size={16} className="text-emerald-500 dark:text-emerald-400" />,
+              label: t.analytics.stats.distance,
+              value: <><AnimatedValue value={totals.distanceKm} /> {t.units.km}</>,
+            },
+            {
+              icon: <Timer size={16} className="text-blue-500 dark:text-blue-400" />,
+              label: t.analytics.stats.time,
+              value: formatDuration(totals.durationSeconds),
+            },
+            {
+              icon: <Hash size={16} className="text-violet-500 dark:text-violet-400" />,
+              label: t.analytics.stats.sessions,
+              value: <AnimatedValue value={totals.sessionCount} />,
+            },
+            {
+              icon: <Mountain size={16} className="text-stone-500 dark:text-stone-400" />,
+              label: t.analytics.stats.elevation,
+              value: <>+<AnimatedValue value={totals.elevationM} /> m</>,
+            },
+            {
+              icon: <Gauge size={16} className="text-amber-500 dark:text-amber-400" />,
+              label: t.analytics.stats.avgPerWeek,
+              value: <><AnimatedValue value={totals.avgKmPerWeek} decimals={1} /> {t.units.km}</>,
+            },
+            ...(totals.calories > 0
+              ? [
+                  {
+                    icon: <Flame size={16} className="text-orange-500 dark:text-orange-400" />,
+                    label: t.analytics.stats.calories,
+                    value: <><AnimatedValue value={totals.calories / 1000} decimals={1} />k kcal</>,
+                  },
+                  {
+                    icon: <Flame size={16} className="text-red-500 dark:text-red-400" />,
+                    label: t.analytics.stats.kcalPerWeek,
+                    value: <AnimatedValue value={totals.caloriesPerWeek} />,
+                  },
+                ]
+              : []),
+          ]
+        : []
 
   return (
     <div className="space-y-6">
@@ -185,12 +208,19 @@ export function AnalyticsClient({ data, comparison, vo2maxHistory }: { data: Ana
                   {y}
                 </button>
               ))}
+              <button
+                ref={isAll ? activeChipRef : undefined}
+                onClick={() => setView({ kind: 'all' })}
+                className={chipClass(isAll)}
+              >
+                {t.analytics.allTimeChip}
+              </button>
             </div>
           </div>
 
           <div className="flex items-center justify-between gap-3">
             <p className="mt-0.5 text-sm text-muted-foreground">
-              {isPeriod ? t.analytics.period.title(view.weeks) : t.analytics.season(view.year)}
+              {isAll ? t.analytics.allTimeTitle : isPeriod ? t.analytics.period.title(view.weeks) : t.analytics.season(view.year)}
             </p>
             <div ref={periodsRef} className="flex items-center gap-1 overflow-x-auto">
               {showPeriods && (
@@ -210,7 +240,7 @@ export function AnalyticsClient({ data, comparison, vo2maxHistory }: { data: Ana
             </div>
           </div>
         </div>
-        {view.kind === 'period' && 'delta' in active && active.delta && <DeltaStrip delta={active.delta} weeks={view.weeks} />}
+        {view.kind === 'period' && active && 'delta' in active && active.delta && <DeltaStrip delta={active.delta} weeks={view.weeks} />}
       </div>
 
       {/* Stats - odd count, so the last card spans full width on mobile to avoid a lonely orphan */}
@@ -226,82 +256,86 @@ export function AnalyticsClient({ data, comparison, vo2maxHistory }: { data: Ana
         ))}
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 rounded-xl border border-border bg-muted/40 p-1">
-        {visibleTabs.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => setTab(item.id)}
-            className={[
-              'flex-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
-              tab === item.id
-                ? 'bg-card text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground',
-            ].join(' ')}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Tab: Volume */}
-      {tab === 'volume' && (
-        <div className="space-y-4">
-          <MonthlyVolumeChart data={active.monthlyVolume} typesPresent={active.typesPresent} />
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <LongRunsChart data={active.longRuns} />
-            <DistanceDistributionChart data={active.distanceDistribution} />
+      {!isAll && active && (
+        <>
+          {/* Tabs */}
+          <div className="flex gap-1 rounded-xl border border-border bg-muted/40 p-1">
+            {visibleTabs.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setTab(item.id)}
+                className={[
+                  'flex-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
+                  tab === item.id
+                    ? 'bg-card text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground',
+                ].join(' ')}
+              >
+                {item.label}
+              </button>
+            ))}
           </div>
-          <EasyHardChart data={active.easyHardSplit} />
-        </div>
-      )}
 
-      {/* Tab: Performance */}
-      {tab === 'performance' && (
-        <div className="space-y-4">
-          <PaceTrendChart data={active.paceTrend} />
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <EfficiencyChart data={active.efficiencyTrend} />
-            <RpeTrendChart data={active.rpeTrend} />
-          </div>
-        </div>
-      )}
-
-      {/* Tab: Physiology */}
-      {tab === 'physiology' && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            {vo2maxHistory.length >= 2 && <VO2maxChart data={vo2maxHistory} />}
-            <HrTrendChart data={active.hrTrend} />
-            <ZoneDistributionChart data={active.zoneDistribution} />
-            <CadenceTrendChart data={active.cadenceTrend} />
-            <div className="lg:col-span-2">
-              <RunningFormChart data={active.runningFormTrend} />
+          {/* Tab: Volume */}
+          {tab === 'volume' && (
+            <div className="space-y-4">
+              <MonthlyVolumeChart data={active.monthlyVolume} typesPresent={active.typesPresent} />
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <LongRunsChart data={active.longRuns} />
+                <DistanceDistributionChart data={active.distanceDistribution} />
+              </div>
+              <EasyHardChart data={active.easyHardSplit} />
             </div>
-          </div>
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <TrainingEffectChart data={active.trainingEffectTrend} />
-            <DailyEfficiencyChart data={data.efficiencyDaily} />
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* Tab: Seasons (year view only) */}
-      {tab === 'seasons' && view.kind === 'year' && (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          {(() => {
-            const prevYear = years.find((y) => y < view.year) ?? years.find((y) => y !== view.year)
-            return prevYear !== undefined ? (
-              <MonthlyComparisonChart
-                currentYear={view.year}
-                currentData={active.monthlyVolume}
-                prevYear={prevYear}
-                prevData={byYear[prevYear]?.monthlyVolume ?? []}
-              />
-            ) : null
-          })()}
-          {comparison && <YearComparisonSection data={comparison} />}
-        </div>
+          {/* Tab: Performance */}
+          {tab === 'performance' && (
+            <div className="space-y-4">
+              <PaceTrendChart data={active.paceTrend} />
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <EfficiencyChart data={active.efficiencyTrend} />
+                <RpeTrendChart data={active.rpeTrend} />
+              </div>
+            </div>
+          )}
+
+          {/* Tab: Physiology */}
+          {tab === 'physiology' && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                {vo2maxHistory.length >= 2 && <VO2maxChart data={vo2maxHistory} />}
+                <HrTrendChart data={active.hrTrend} />
+                <ZoneDistributionChart data={active.zoneDistribution} />
+                <CadenceTrendChart data={active.cadenceTrend} />
+                <div className="lg:col-span-2">
+                  <RunningFormChart data={active.runningFormTrend} />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <TrainingEffectChart data={active.trainingEffectTrend} />
+                <DailyEfficiencyChart data={data.efficiencyDaily} />
+              </div>
+            </div>
+          )}
+
+          {/* Tab: Seasons (year view only) */}
+          {tab === 'seasons' && view.kind === 'year' && (
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              {(() => {
+                const prevYear = years.find((y) => y < view.year) ?? years.find((y) => y !== view.year)
+                return prevYear !== undefined ? (
+                  <MonthlyComparisonChart
+                    currentYear={view.year}
+                    currentData={active.monthlyVolume}
+                    prevYear={prevYear}
+                    prevData={byYear[prevYear]?.monthlyVolume ?? []}
+                  />
+                ) : null
+              })()}
+              {comparison && <YearComparisonSection data={comparison} />}
+            </div>
+          )}
+        </>
       )}
     </div>
   )

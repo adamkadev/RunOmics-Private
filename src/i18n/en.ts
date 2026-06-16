@@ -29,9 +29,7 @@ export const en = {
       calendar: 'Calendar',
       analytics: 'Analytics',
       goals: 'Goals',
-      records: 'Records',
       heatmap: 'Heatmap',
-      profile: 'Profile',
     },
     openMenu: 'Open menu',
     closeMenu: 'Close menu',
@@ -251,6 +249,8 @@ export const en = {
   analytics: {
   title: 'Analytics',
   season: (year: number) => `${year} season`,
+  allTimeChip: 'All',
+  allTimeTitle: 'All-time',
     period: {
       chip: (n: number) => `${n} wk`,
       title: (n: number) => `Last ${n} weeks`,
@@ -272,6 +272,7 @@ export const en = {
       sessions: 'Sessions',
       elevation: 'Elevation',
       avgPerWeek: 'Avg / week',
+      yearsTracked: 'Years tracked',
       calories: 'Calories',
       kcalPerWeek: 'Kcal / week',
       elevationValue: (m: number) => `+${m} m`,
@@ -528,31 +529,12 @@ export const en = {
   records: {
     title: 'All-Time Records',
     footnote: '★ official race time · others auto-detected from activity data',
-    pageTitle: 'Records',
-    pageSubtitle: 'Your personal bests by distance',
     formAtPb: {
       fitness: 'Fitness',
       form: 'Form',
       now: 'now',
       formTooltip: 'Fitness minus Fatigue on race day. Positive = you were fresh, ideal for performance. Negative = you ran this while under training load.',
     },
-  },
-
-  profile: {
-    pageTitle: 'Profile',
-    pageSubtitle: 'Your runner identity card',
-    yearsTracked: 'Years tracked',
-    totalDistance: 'Lifetime distance',
-    totalActivities: 'Activities logged',
-    experienceLevel: 'Experience level',
-    since: (date: string) => `Since ${date}`,
-    levelCaveat: 'Based on activity history tracked in RunOmics, not your full running history.',
-    level: {
-      beginner: 'Beginner',
-      intermediate: 'Intermediate',
-      experienced: 'Experienced',
-      veteran: 'Veteran',
-    } as Record<string, string>,
   },
 
   racePredictions: {

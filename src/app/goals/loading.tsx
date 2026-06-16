@@ -42,10 +42,24 @@ export default function GoalsLoading() {
         </div>
       </div>
 
+      {/* Training zones */}
+      <div className="space-y-3">
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-40 w-full rounded-xl" />
+      </div>
+
       {/* Records */}
       <div className="space-y-3">
         <Skeleton className="h-4 w-36" />
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          {Array.from({ length: 4 }).map((_, i) => <CardSkeleton key={i} />)}
+        </div>
+      </div>
+
+      {/* Race predictions */}
+      <div className="space-y-3">
+        <Skeleton className="h-4 w-36" />
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => <CardSkeleton key={i} />)}
         </div>
       </div>
