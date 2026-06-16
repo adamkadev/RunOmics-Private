@@ -50,10 +50,10 @@ interface StatItemProps {
 
 function StatItem({ icon, label, value, className }: StatItemProps) {
   return (
-    <div className={`flex flex-col items-center gap-1 rounded-xl border border-border bg-card px-4 py-3 shadow-card ${className ?? ''}`}>
+    <div className={`flex flex-col items-center gap-0.5 rounded-xl border border-border bg-card px-2 py-2 shadow-card sm:gap-1 sm:px-4 sm:py-3 ${className ?? ''}`}>
       <div className="text-subtle">{icon}</div>
       <span className="text-sm font-semibold text-foreground">{value}</span>
-      <span className="text-xs text-subtle">{label}</span>
+      <span className="text-[10px] text-subtle sm:text-xs">{label}</span>
     </div>
   )
 }
@@ -156,15 +156,13 @@ export default async function ActivityDetailPage({
 
       </div>
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
-        {statItems.map((item, idx) => (
+      <div className="grid grid-cols-4 gap-2 lg:grid-cols-8">
+        {statItems.map((item) => (
           <StatItem
             key={item.label}
             icon={item.icon}
             label={item.label}
             value={item.value}
-            // Odd count leaves a lonely card on the 2-col mobile grid: let the last one fill the row.
-            className={statItems.length % 2 === 1 && idx === statItems.length - 1 ? 'col-span-2 sm:col-span-1' : ''}
           />
         ))}
       </div>
