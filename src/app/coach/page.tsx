@@ -1,10 +1,8 @@
-import Link from 'next/link'
-import { Brain, TrendingUp, TrendingDown, Minus, ArrowRight } from 'lucide-react'
+import { Brain, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { getCoachData } from '@/application/usecases/GetCoachData'
 import { getTrainingPlan } from '@/application/usecases/GetTrainingPlan'
 import { TrainingStatusBanner } from '@/components/dashboard/TrainingStatusBanner'
-import { formatDuration, formatPace } from '@/lib/formatters'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import { t } from '@/i18n'
 import type { CoachSuggestion, CoachTypeBreakdown } from '@/application/usecases/GetCoachData'
@@ -260,43 +258,6 @@ export default function CoachPage() {
               </div>
             </section>
           )}
-
-          {/* Recent runs */}
-          <section className="space-y-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              {c.recentRuns}
-            </h2>
-            {coach.recentActivities.length === 0 ? (
-              <p className="text-sm text-subtle">{c.noRecentRuns}</p>
-            ) : (
-              <div className="space-y-2">
-                {coach.recentActivities.map((a) => {
-                  const typeConfig = ACTIVITY_TYPE_CONFIG[a.type]
-                  const date = new Date(a.date + 'T00:00:00').toLocaleDateString(t.locale, { weekday: 'short', month: 'short', day: 'numeric' })
-                  return (
-                    <Link
-                      key={a.id}
-                      href={`/activities/${a.id}`}
-                      className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3 shadow-card transition-shadow hover:shadow-md"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className={`rounded-md px-2 py-0.5 text-xs font-semibold ${typeConfig.badgeClass}`}>
-                          {t.activityTypes[a.type]}
-                        </span>
-                        <span className="text-xs text-subtle">{date}</span>
-                      </div>
-                      <div className="flex items-center gap-4 text-sm">
-                        <span className="font-semibold tabular-nums text-foreground">{a.distanceKm.toFixed(1)} km</span>
-                        {a.paceSecPerKm && <span className="text-xs text-subtle">{formatPace(a.paceSecPerKm)}</span>}
-                        <span className="text-xs text-subtle">{formatDuration(a.durationSeconds)}</span>
-                        <ArrowRight size={14} className="text-muted-foreground" />
-                      </div>
-                    </Link>
-                  )
-                })}
-              </div>
-            )}
-          </section>
         </>
       )}
     </div>

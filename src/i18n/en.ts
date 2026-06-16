@@ -192,8 +192,6 @@ export const en = {
     sessionTypes: 'Session types',
     loadChanges: 'Load changes (7d)',
     suggestions: 'Recommendations',
-    recentRuns: 'Recent runs',
-    noRecentRuns: 'No runs in the last 7 days.',
     noData: 'Not enough data yet.',
     fitness: 'Fitness',
     fatigue: 'Fatigue',

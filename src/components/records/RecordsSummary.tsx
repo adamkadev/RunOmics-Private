@@ -36,6 +36,8 @@ export function RecordsSummary({ records }: { records: RecordEntry[] }) {
           </div>
         ))}
       </div>
+
+      <p className="text-xs text-subtle">{t.records.footnote}</p>
     </section>
   )
 }
