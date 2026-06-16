@@ -1,6 +1,5 @@
 import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { getCoachData } from '@/application/usecases/GetCoachData'
-import { getTrainingPlan } from '@/application/usecases/GetTrainingPlan'
 import { TrainingStatusBanner } from '@/components/dashboard/TrainingStatusBanner'
 import { CoachOverview } from '@/components/coach/CoachOverview'
 import { t } from '@/i18n'
@@ -8,7 +7,6 @@ import { t } from '@/i18n'
 export default function CoachPage() {
   const status = getTrainingStatus()
   const coach = getCoachData()
-  const plan = getTrainingPlan()
   const c = t.coach
 
   return (
@@ -24,7 +22,7 @@ export default function CoachPage() {
         <p className="text-sm text-subtle">{c.noData}</p>
       )}
 
-      {coach && <CoachOverview coach={coach} plan={plan} />}
+      {coach && <CoachOverview coach={coach} />}
     </div>
   )
 }

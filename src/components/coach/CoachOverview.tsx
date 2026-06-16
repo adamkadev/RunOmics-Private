@@ -2,14 +2,6 @@ import { Brain, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import { t } from '@/i18n'
 import type { CoachData, CoachSuggestion, CoachTypeBreakdown } from '@/application/usecases/GetCoachData'
-import type { TrainingPlanData, TrainingPlanWeek } from '@/application/usecases/GetTrainingPlan'
-
-const PLAN_FOCUS_STYLE: Record<string, string> = {
-  recovery: 'bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-  maintain: 'bg-muted text-muted-foreground',
-  build:    'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-  quality:  'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
-}
 
 const SUGGESTION_STYLE: Record<string, { border: string; icon: string; badge: string }> = {
   reduce_load:      { border: 'border-red-200 dark:border-red-800',    icon: 'text-red-500',    badge: 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
@@ -106,31 +98,6 @@ function SessionTypeBreakdownCard({ breakdown, totalKm }: { breakdown: CoachType
   )
 }
 
-function PlanWeekRow({ week }: { week: TrainingPlanWeek }) {
-  const start = new Date(week.startDate + 'T00:00:00')
-  const end = new Date(start.getTime() + 6 * 86_400_000)
-  const range = `${start.toLocaleDateString(t.locale, { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString(t.locale, { month: 'short', day: 'numeric' })}`
-
-  return (
-    <div className="space-y-1.5 rounded-xl border border-border bg-card px-4 py-3 shadow-card">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-semibold text-foreground">{t.coach.planWeek(week.weekIndex)}</span>
-          <span className="text-xs text-subtle">{range}</span>
-        </div>
-        <div className="flex items-center gap-3 text-sm">
-          <span className="font-semibold tabular-nums text-foreground">{week.targetDistanceKm} km</span>
-          <span className="text-xs text-subtle">{t.coach.sessions(week.targetSessions)}</span>
-          <span className={`rounded-md px-2 py-0.5 text-xs font-semibold ${PLAN_FOCUS_STYLE[week.focus]}`}>
-            {t.coach.planFocus[week.focus]}
-          </span>
-        </div>
-      </div>
-      <p className="text-xs text-muted-foreground">{t.coach.planFocusDetail[week.focus]}</p>
-    </div>
-  )
-}
-
 function SuggestionCard({ s }: { s: CoachSuggestion }) {
   const style = SUGGESTION_STYLE[s.key] ?? SUGGESTION_STYLE.maintain
   const entry = t.coach.suggestion[s.key]
@@ -152,10 +119,9 @@ function SuggestionCard({ s }: { s: CoachSuggestion }) {
 
 interface Props {
   coach: CoachData
-  plan: TrainingPlanData | null
 }
 
-export function CoachOverview({ coach, plan }: Props) {
+export function CoachOverview({ coach }: Props) {
   const c = t.coach
 
   return (
@@ -226,23 +192,6 @@ export function CoachOverview({ coach, plan }: Props) {
           ))}
         </div>
       </section>
-
-      {/* 4-week training plan */}
-      {plan && (
-        <section className="space-y-3">
-          <div>
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              {c.planTitle}
-            </h2>
-            <p className="mt-0.5 text-xs text-subtle">{c.planSubtitle(plan.goalWeeklyNeeded)}</p>
-          </div>
-          <div className="space-y-2">
-            {plan.weeks.map((w) => (
-              <PlanWeekRow key={w.weekIndex} week={w} />
-            ))}
-          </div>
-        </section>
-      )}
     </>
   )
 }

@@ -41,14 +41,6 @@ export default function CoachLoading() {
           {Array.from({ length: 3 }).map((_, i) => <RowSkeleton key={i} />)}
         </div>
       </div>
-
-      {/* 4-week training plan */}
-      <div className="space-y-3">
-        <Skeleton className="h-4 w-28" />
-        <div className="space-y-2">
-          {Array.from({ length: 4 }).map((_, i) => <RowSkeleton key={i} />)}
-        </div>
-      </div>
     </div>
   )
 }
