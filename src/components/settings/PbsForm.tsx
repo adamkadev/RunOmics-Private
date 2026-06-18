@@ -115,46 +115,40 @@ export function PbsForm() {
             <div className="space-y-2">
               {pbYear.entries.map((entry, idx) => (
                 <div key={idx} className="rounded-lg border border-border p-3 space-y-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-1">
-                      <label className="text-xs text-muted-foreground">{t.settings.pbs.distance}</label>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex flex-1 items-center gap-2">
                       <select
                         value={entry.distance}
                         onChange={(e) => updateEntry(pbYear.year, idx, 'distance', e.target.value)}
-                        className={inputCls}
+                        className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500"
                       >
                         {DISTANCES.map((d) => <option key={d} value={d}>{d}</option>)}
                       </select>
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs text-muted-foreground">{t.settings.pbs.time}</label>
                       <input
                         type="text"
                         placeholder={t.settings.pbs.placeholders.time}
                         defaultValue={secsToInput(entry.seconds)}
                         onBlur={(e) => updateEntry(pbYear.year, idx, 'seconds', e.target.value)}
-                        className={inputCls}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex items-end gap-2">
-                    <div className="flex-1 space-y-1">
-                      <label className="text-xs text-muted-foreground">{t.settings.pbs.activityId}</label>
-                      <input
-                        type="text"
-                        value={entry.activityId}
-                        onChange={(e) => updateEntry(pbYear.year, idx, 'activityId', e.target.value)}
-                        className={inputCls}
-                        placeholder={t.settings.pbs.placeholders.activityId}
+                        className="w-20 shrink-0 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500"
                       />
                     </div>
                     <button
                       type="button"
                       onClick={() => removeEntry(pbYear.year, idx)}
-                      className="mb-0.5 text-xs text-muted-foreground transition-colors hover:text-destructive"
+                      className="shrink-0 text-xs text-muted-foreground transition-colors hover:text-destructive"
                     >
                       {t.settings.pbs.removeEntry}
                     </button>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">{t.settings.pbs.activityId}</label>
+                    <input
+                      type="text"
+                      value={entry.activityId}
+                      onChange={(e) => updateEntry(pbYear.year, idx, 'activityId', e.target.value)}
+                      className={inputCls}
+                      placeholder={t.settings.pbs.placeholders.activityId}
+                    />
                   </div>
                 </div>
               ))}
