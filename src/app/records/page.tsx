@@ -1,16 +1,13 @@
-import { getRecords } from '@/application/usecases/GetRecords'
-import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
-import { RecordsWall } from '@/components/records/RecordsWall'
+import { getRecords, getTopEfforts } from '@/application/usecases/GetRecords'
 import { RacePredictions } from '@/components/records/RacePredictions'
+import { RecordsLeaderboard } from '@/components/records/RecordsLeaderboard'
 import { t } from '@/i18n'
 
 export const revalidate = 60
 
 export default async function RecordsPage() {
-  const [records, load] = await Promise.all([
-    getRecords(),
-    Promise.resolve(getTrainingLoad()),
-  ])
+  const records = await getRecords()
+  const topEfforts = getTopEfforts()
 
   return (
     <div className="space-y-10">
@@ -19,7 +16,7 @@ export default async function RecordsPage() {
         <p className="mt-0.5 text-sm text-muted-foreground">{t.pages.records.subtitle}</p>
       </div>
 
-      <RecordsWall records={records} currentTsb={load?.tsb ?? null} />
+      <RecordsLeaderboard records={records} topEfforts={topEfforts} />
       <RacePredictions records={records} />
     </div>
   )

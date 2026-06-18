@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { Trophy } from 'lucide-react'
 import type { RecordEntry } from '@/application/usecases/GetRecords'
-import { formatDuration, formatPace } from '@/lib/formatters'
+import { formatDuration, formatDistance, formatPace } from '@/lib/formatters'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { t } from '@/i18n'
 
@@ -30,9 +30,10 @@ export function RecordsWall({ records, currentTsb }: { records: RecordEntry[]; c
               {r.seconds !== null ? (
                 <>
                   <p className="mt-1 text-2xl font-bold tracking-tight text-foreground">
-                    {formatDuration(r.seconds)}
+                    {r.distanceKm != null ? formatDistance(r.distanceKm) : formatDuration(r.seconds)}
                   </p>
                   <p className="text-xs text-subtle">
+                    {r.distanceKm != null && <span>{formatDuration(r.seconds)} · </span>}
                     {r.paceSecPerKm !== null && formatPace(r.paceSecPerKm)}
                     {r.date && <span> · {shortDate(r.date)}</span>}
                   </p>

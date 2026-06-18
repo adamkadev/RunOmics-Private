@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, Trophy } from 'lucide-react'
+import { Trophy } from 'lucide-react'
+import { BackButton } from '@/components/ui/BackButton'
 import { getActivities } from '@/application/usecases/GetActivities'
 import { getRecords } from '@/application/usecases/GetRecords'
 import { ActivityTypeTag } from '@/components/activities/ActivityTypeTag'
@@ -55,13 +55,7 @@ export default async function ActivityDetailPage({
 
   return (
     <div>
-      <Link
-        href="/activities"
-        className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ArrowLeft size={14} />
-        {t.activity.back}
-      </Link>
+      <BackButton label={t.activity.back} fallbackHref="/activities" />
 
       <ActivityDetailClient
         activity={activity}

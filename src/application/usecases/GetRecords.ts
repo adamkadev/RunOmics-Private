@@ -4,11 +4,12 @@ import { getFullLoadHistory } from './GetTrainingLoad'
 import type { LoadSnapshot } from './GetTrainingLoad'
 
 const EFFORTS = [
-  //{ key: '1k', label: '1K', km: 1 },
-  { key: '5k', label: '5K', km: 5 },
-  { key: '10k', label: '10K', km: 10 },
-  { key: 'half', label: 'Half', km: 21.0975 },
-  { key: 'marathon', label: 'Marathon', km: 42.195 },
+  { key: '1k',       label: '1K',       km: 1        },
+  { key: '1mile',    label: '1 Mile',   km: 1.60934  },
+  { key: '5k',       label: '5K',       km: 5        },
+  { key: '10k',      label: '10K',      km: 10       },
+  { key: 'half',     label: 'Half',     km: 21.0975  },
+  { key: 'marathon', label: 'Marathon', km: 42.195   },
 ]
 
 const DISTANCE_KEY: Record<string, string> = {
@@ -24,11 +25,23 @@ export interface RecordEntry {
   label: string
   seconds: number | null
   paceSecPerKm: number | null
+  distanceKm?: number
   activityId: string | null
   date: string | null
   official: boolean
   formAtPb: LoadSnapshot | null
+  eventName?: string
 }
+
+export interface TopEffortEntry {
+  seconds: number
+  distanceKm: number
+  activityId: string
+  date: string
+  eventName?: string
+}
+
+export type TopEfforts = Record<string, TopEffortEntry[]>
 
 export async function getRecords(): Promise<RecordEntry[]> {
   const activities = getAllActivities()
@@ -48,7 +61,7 @@ export async function getRecords(): Promise<RecordEntry[]> {
     }
   }
 
-  return EFFORTS.map(({ key, label, km }) => {
+  const effortRecords: RecordEntry[] = EFFORTS.map(({ key, label, km }) => {
     const official = officialPbs.get(key)
     if (official) {
       const activity = official.activityId ? activityMap.get(official.activityId) : undefined
@@ -62,14 +75,15 @@ export async function getRecords(): Promise<RecordEntry[]> {
         date,
         official: true,
         formAtPb: date ? (loadHistory.get(date) ?? null) : null,
+        eventName: activity?.description || undefined,
       }
     }
 
-    let best: { seconds: number; activityId: string; date: string } | null = null
+    let best: { seconds: number; activityId: string; date: string; description: string } | null = null
     for (const a of activities) {
       const sec = a.bestEfforts?.[key]
       if (sec != null && (best === null || sec < best.seconds)) {
-        best = { seconds: sec, activityId: a.id, date: a.date }
+        best = { seconds: sec, activityId: a.id, date: a.date, description: a.description }
       }
     }
     return {
@@ -81,6 +95,75 @@ export async function getRecords(): Promise<RecordEntry[]> {
       date: best?.date ?? null,
       official: false,
       formAtPb: best?.date ? (loadHistory.get(best.date) ?? null) : null,
+      eventName: best?.description || undefined,
     }
   })
+
+  const longestActivity = activities
+    .filter((a) => a.distanceKm > 0)
+    .reduce<(typeof activities)[0] | null>(
+      (best, a) => (best === null || a.distanceKm > best.distanceKm ? a : best),
+      null
+    )
+
+  const longestRecord: RecordEntry = longestActivity
+    ? {
+        key: 'longest',
+        label: 'Longest Run',
+        seconds: longestActivity.durationSeconds,
+        paceSecPerKm: longestActivity.paceSecPerKm ?? Math.round(longestActivity.durationSeconds / longestActivity.distanceKm),
+        distanceKm: longestActivity.distanceKm,
+        activityId: longestActivity.id,
+        date: longestActivity.date,
+        official: false,
+        formAtPb: loadHistory.get(longestActivity.date) ?? null,
+        eventName: longestActivity.description || undefined,
+      }
+    : {
+        key: 'longest',
+        label: 'Longest Run',
+        seconds: null,
+        paceSecPerKm: null,
+        activityId: null,
+        date: null,
+        official: false,
+        formAtPb: null,
+      }
+
+  return [...effortRecords, longestRecord]
+}
+
+export function getTopEfforts(n = 5): TopEfforts {
+  const activities = getAllActivities()
+  const result: TopEfforts = {}
+
+  for (const { key, km } of EFFORTS) {
+    const entries = activities
+      .filter((a) => a.bestEfforts?.[key] != null)
+      .map((a) => ({
+        seconds: Math.round(a.bestEfforts![key]),
+        distanceKm: km,
+        activityId: a.id,
+        date: a.date,
+        eventName: a.description || undefined,
+      }))
+      .sort((a, b) => a.seconds - b.seconds)
+      .slice(0, n)
+    if (entries.length) result[key] = entries
+  }
+
+  const longest = activities
+    .filter((a) => a.distanceKm > 0)
+    .sort((a, b) => b.distanceKm - a.distanceKm)
+    .slice(0, n)
+    .map((a) => ({
+      seconds: a.durationSeconds,
+      distanceKm: a.distanceKm,
+      activityId: a.id,
+      date: a.date,
+      eventName: a.description || undefined,
+    }))
+  if (longest.length) result['longest'] = longest
+
+  return result
 }

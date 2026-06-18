@@ -9,6 +9,7 @@ _SEMICIRCLE_TO_DEG = 180.0 / 2**31
 _MAX_ROUTE_POINTS = 300
 _EFFORT_TARGETS_M = {
     "1k": 1000.0,
+    "1mile": 1609.34,
     "5k": 5000.0,
     "10k": 10000.0,
     "half": 21097.5,

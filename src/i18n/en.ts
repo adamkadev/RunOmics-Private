@@ -547,8 +547,18 @@ export const en = {
   },
 
   records: {
-    title: 'All-Time Records',
+    title: 'Top Times',
+    all: 'All',
+    longest: 'Longest Run',
     footnote: '★ official race time · others auto-detected from activity data',
+    leaderboard: {
+      title: 'Top Times',
+      rank: '#',
+      time: 'Time',
+      dist: 'Distance',
+      pace: 'Pace',
+      date: 'Date',
+    },
     formAtPb: {
       fitness: 'Fitness',
       form: 'Form',
@@ -560,6 +570,8 @@ export const en = {
   racePredictions: {
     title: 'Race Predictions',
     efforts: {
+      '1k': '1K',
+      '1mile': '1 Mile',
       '5k': '5K',
       '10k': '10K',
       half: 'Half',
