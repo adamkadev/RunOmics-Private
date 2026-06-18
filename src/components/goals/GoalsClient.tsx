@@ -25,7 +25,7 @@ export function GoalsClient({ data, zones }: Props) {
             <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.goals.title}</h1>
             <p className="mt-0.5 text-sm text-muted-foreground">{t.analytics.season(selectedYear)}</p>
           </div>
-          <YearSelector years={years} selected={selectedYear} onSelect={setSelectedYear} />
+          <YearSelector years={years} selected={selectedYear} onSelect={(y) => y !== null && setSelectedYear(y)} />
         </div>
 
         <YearView yearData={byYear[selectedYear]} />

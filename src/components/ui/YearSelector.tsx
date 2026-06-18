@@ -1,48 +1,82 @@
 'use client'
 
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { ChevronDown } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface Props {
   years: number[]
-  selected: number
-  onSelect: (year: number) => void
+  selected: number | null  // null = all-time selected
+  onSelect: (year: number | null) => void
+  allTimeLabel?: string    // if provided, shows an all-time option at the bottom
+  active?: boolean         // controls chip appearance (default: true)
 }
 
-export function YearSelector({ years, selected, onSelect }: Props) {
-  if (years.length <= 1) return null
-  const currentIndex = years.indexOf(selected)
+export function YearSelector({ years, selected, onSelect, allTimeLabel, active = true }: Props) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function onOutside(e: MouseEvent) {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onOutside)
+    return () => document.removeEventListener('mousedown', onOutside)
+  }, [open])
+
+  if (years.length <= 1 && !allTimeLabel) return null
+
+  const label = selected === null ? allTimeLabel : selected
 
   return (
-    <div className="flex items-center gap-1">
+    <div ref={ref} className="relative">
       <button
-        onClick={() => onSelect(years[currentIndex + 1])}
-        disabled={currentIndex >= years.length - 1}
-        className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-all duration-150 hover:bg-muted active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+        onClick={() => setOpen((o) => !o)}
+        className={cn(
+          'flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-colors',
+          active
+            ? 'bg-accent text-white'
+            : 'border border-border bg-card text-muted-foreground hover:bg-muted',
+        )}
       >
-        <ChevronLeft size={14} />
+        {label}
+        <ChevronDown size={11} className={cn('transition-transform', open && 'rotate-180')} />
       </button>
-      <div className="flex gap-1">
-        {years.map((y) => (
-          <button
-            key={y}
-            onClick={() => onSelect(y)}
-            className={`h-8 rounded-md px-3 text-sm font-medium transition-colors ${
-              y === selected
-                ? 'bg-emerald-500 text-white'
-                : 'border border-border bg-card text-muted-foreground hover:bg-muted'
-            }`}
-          >
-            {y}
-          </button>
-        ))}
-      </div>
-      <button
-        onClick={() => onSelect(years[currentIndex - 1])}
-        disabled={currentIndex <= 0}
-        className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-all duration-150 hover:bg-muted active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        <ChevronRight size={14} />
-      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full z-20 mt-1 min-w-[4.5rem] overflow-hidden rounded-xl border border-border bg-card py-1 shadow-lg">
+          {years.map((y) => (
+            <button
+              key={y}
+              onClick={() => { onSelect(y); setOpen(false) }}
+              className={cn(
+                'flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs font-medium transition-colors hover:bg-muted',
+                y === selected ? 'text-accent-text' : 'text-foreground',
+              )}
+            >
+              {y}
+              {y === selected && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-accent" />}
+            </button>
+          ))}
+
+          {allTimeLabel && (
+            <>
+              <div className="mx-2 my-1 border-t border-border" />
+              <button
+                onClick={() => { onSelect(null); setOpen(false) }}
+                className={cn(
+                  'flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs font-medium transition-colors hover:bg-muted',
+                  selected === null ? 'text-accent-text' : 'text-foreground',
+                )}
+              >
+                {allTimeLabel}
+                {selected === null && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-accent" />}
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </div>
   )
 }

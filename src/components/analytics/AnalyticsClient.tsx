@@ -1,13 +1,14 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { type LucideIcon, Footprints, Timer, Hash, Mountain, Gauge, Flame, CalendarRange, TrendingUp, TrendingDown, ChevronDown } from 'lucide-react'
+import { useState } from 'react'
+import { type LucideIcon, Footprints, Timer, Hash, Mountain, Gauge, Flame, CalendarRange, TrendingUp, TrendingDown } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import type { AnalyticsPageData, PeriodDelta } from '@/application/usecases/GetAnalyticsData'
 import type { YearComparisonData } from '@/application/usecases/GetYearComparison'
 import type { LifetimeStats } from '@/application/usecases/GetLifetimeStats'
+import { YearSelector } from '@/components/ui/YearSelector'
 import { MonthlyVolumeChart } from './MonthlyVolumeChart'
 import { PaceTrendChart } from './PaceTrendChart'
 import { EfficiencyChart } from './EfficiencyChart'
@@ -100,8 +101,6 @@ export function AnalyticsClient({
   const { years, byYear, periodWeeks, byPeriod } = data
   const [view, setView] = useState<View>({ kind: 'year', year: years[0] })
   const [tab, setTab] = useState<TabId>('volume')
-  const [yearOpen, setYearOpen] = useState(false)
-  const yearDropdownRef = useRef<HTMLDivElement | null>(null)
 
   const isPeriod = view.kind === 'period'
   const isAll = view.kind === 'all'
@@ -113,15 +112,6 @@ export function AnalyticsClient({
     : isPeriod
     ? t.analytics.period.title(view.weeks)
     : t.analytics.season(view.year)
-
-  useEffect(() => {
-    if (!yearOpen) return
-    function onOutsideClick(e: MouseEvent) {
-      if (!yearDropdownRef.current?.contains(e.target as Node)) setYearOpen(false)
-    }
-    document.addEventListener('mousedown', onOutsideClick)
-    return () => document.removeEventListener('mousedown', onOutsideClick)
-  }, [yearOpen])
 
   function selectPeriod(weeks: number) {
     setView({ kind: 'period', weeks })
@@ -135,7 +125,6 @@ export function AnalyticsClient({
 
   function selectYear(y: number) {
     setView({ kind: 'year', year: y })
-    setYearOpen(false)
   }
 
   const visibleTabs = isPeriod || isAll ? TABS.filter((tb) => tb.id !== 'seasons') : TABS
@@ -221,46 +210,13 @@ export function AnalyticsClient({
         <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.analytics.title}</h1>
 
         <div className="flex items-center gap-1">
-          {/* Year dropdown - scales to any number of years, includes All-time */}
-          <div ref={yearDropdownRef} className="relative">
-            <button
-              onClick={() => setYearOpen((o) => !o)}
-              className={cn(chipClass(view.kind === 'year' || isAll), 'flex items-center gap-1')}
-            >
-              {isAll ? t.analytics.allTimeChip : displayYear}
-              <ChevronDown size={11} className={cn('transition-transform', yearOpen && 'rotate-180')} />
-            </button>
-            {yearOpen && (
-              <div className="absolute right-0 top-full z-20 mt-1 min-w-[4.5rem] overflow-hidden rounded-xl border border-border bg-card py-1 shadow-lg">
-                {years.map((y) => (
-                  <button
-                    key={y}
-                    onClick={() => selectYear(y)}
-                    className={cn(
-                      'flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs font-medium transition-colors hover:bg-muted',
-                      view.kind === 'year' && view.year === y ? 'text-accent-text' : 'text-foreground',
-                    )}
-                  >
-                    {y}
-                    {view.kind === 'year' && view.year === y && (
-                      <span className="ml-auto h-1.5 w-1.5 rounded-full bg-accent" />
-                    )}
-                  </button>
-                ))}
-                <div className="mx-2 my-1 border-t border-border" />
-                <button
-                  onClick={() => { selectAllTime(); setYearOpen(false) }}
-                  className={cn(
-                    'flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs font-medium transition-colors hover:bg-muted',
-                    isAll ? 'text-accent-text' : 'text-foreground',
-                  )}
-                >
-                  {t.analytics.allTimeChip}
-                  {isAll && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-accent" />}
-                </button>
-              </div>
-            )}
-          </div>
+          <YearSelector
+            years={years}
+            selected={isAll ? null : displayYear}
+            onSelect={(y) => y === null ? selectAllTime() : selectYear(y)}
+            allTimeLabel={t.analytics.allTimeChip}
+            active={view.kind === 'year' || isAll}
+          />
 
           {/* Rolling period chips - only relevant for the current year */}
           {showPeriods && periodWeeks.map((w) => (
