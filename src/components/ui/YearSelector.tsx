@@ -14,7 +14,6 @@ interface Props {
   selected: number | null       // year shown in button (null = all-time)
   onSelect: (year: number | null) => void
   allTimeLabel?: string
-  active?: boolean
   periods?: PeriodOption[]
   activePeriod?: number | null
   onSelectPeriod?: (weeks: number) => void
@@ -25,7 +24,6 @@ export function YearSelector({
   selected,
   onSelect,
   allTimeLabel,
-  active = true,
   periods,
   activePeriod,
   onSelectPeriod,
@@ -51,12 +49,7 @@ export function YearSelector({
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className={cn(
-          'flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-colors',
-          active
-            ? 'bg-accent text-white'
-            : 'border border-border bg-card text-muted-foreground hover:bg-muted',
-        )}
+        className="flex items-center gap-1 rounded-lg bg-accent px-2.5 py-1 text-xs font-medium text-white transition-colors"
       >
         {buttonLabel}
         <ChevronDown size={11} className={cn('transition-transform', open && 'rotate-180')} />

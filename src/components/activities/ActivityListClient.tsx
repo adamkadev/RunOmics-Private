@@ -60,7 +60,7 @@ export function ActivityListClient({ activities }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
         <div className="relative">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-subtle" />
           <input
@@ -68,7 +68,7 @@ export function ActivityListClient({ activities }: Props) {
             placeholder={t.activities.searchPlaceholder}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-8 rounded-md border border-border bg-card pl-8 pr-3 text-sm text-foreground placeholder-subtle focus:border-emerald-500 focus:outline-none"
+            className="h-8 w-full rounded-md border border-border bg-card pl-8 pr-3 text-sm text-foreground placeholder-subtle focus:border-emerald-500 focus:outline-none sm:w-auto"
           />
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -100,14 +100,14 @@ export function ActivityListClient({ activities }: Props) {
           type="date"
           value={dateFrom}
           onChange={(e) => setDateFrom(e.target.value)}
-          className="h-8 rounded-md border border-border bg-card px-2 text-xs text-foreground focus:border-emerald-500 focus:outline-none dark:[color-scheme:dark]"
+          className="h-8 w-28 rounded-md border border-border bg-card px-2 text-xs text-foreground focus:border-emerald-500 focus:outline-none dark:[color-scheme:dark]"
         />
         <span className="text-xs text-subtle">→</span>
         <input
           type="date"
           value={dateTo}
           onChange={(e) => setDateTo(e.target.value)}
-          className="h-8 rounded-md border border-border bg-card px-2 text-xs text-foreground focus:border-emerald-500 focus:outline-none dark:[color-scheme:dark]"
+          className="h-8 w-28 rounded-md border border-border bg-card px-2 text-xs text-foreground focus:border-emerald-500 focus:outline-none dark:[color-scheme:dark]"
         />
         <span className="flex items-center gap-2">
           <span className="text-xs text-subtle">{t.activities.distance}</span>

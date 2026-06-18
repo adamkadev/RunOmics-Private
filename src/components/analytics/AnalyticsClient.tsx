@@ -9,6 +9,7 @@ import type { AnalyticsPageData, PeriodDelta } from '@/application/usecases/GetA
 import type { YearComparisonData } from '@/application/usecases/GetYearComparison'
 import type { LifetimeStats } from '@/application/usecases/GetLifetimeStats'
 import { YearSelector } from '@/components/ui/YearSelector'
+import { TrainingZones } from './TrainingZones'
 import { MonthlyVolumeChart } from './MonthlyVolumeChart'
 import { PaceTrendChart } from './PaceTrendChart'
 import { EfficiencyChart } from './EfficiencyChart'
@@ -26,6 +27,7 @@ import { TrainingEffectChart } from './TrainingEffectChart'
 import { DailyEfficiencyChart } from './DailyEfficiencyChart'
 import { VO2maxChart } from './VO2maxChart'
 import type { VO2maxPoint } from '@/application/usecases/GetVO2maxHistory'
+import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { formatDuration } from '@/lib/formatters'
 import { t } from '@/i18n'
 
@@ -86,11 +88,13 @@ export function AnalyticsClient({
   comparison,
   vo2maxHistory,
   lifetime,
+  zones,
 }: {
   data: AnalyticsPageData
   comparison: YearComparisonData | null
   vo2maxHistory: VO2maxPoint[]
   lifetime: LifetimeStats | null
+  zones: TrainingZonesData | null
 }) {
   const { years, byYear, periodWeeks, byPeriod } = data
   const [view, setView] = useState<View>({ kind: 'year', year: years[0] })
@@ -297,6 +301,7 @@ export function AnalyticsClient({
                 <TrainingEffectChart data={active.trainingEffectTrend} />
                 <DailyEfficiencyChart data={data.efficiencyDaily} />
               </div>
+              {zones && <TrainingZones data={zones} />}
             </div>
           )}
 
