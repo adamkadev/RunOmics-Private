@@ -15,14 +15,11 @@ export function AthleteForm() {
   const [saveState, setSaveState] = useState<SaveState>('idle')
 
   useEffect(() => {
-    const db = getClientFirestore()
-    getDoc(doc(db, 'athlete', 'profile')).then((snap) => {
+    getDoc(doc(getClientFirestore(), 'athlete', 'profile')).then((snap) => {
       if (!snap.exists()) return
       const data = snap.data() as AthleteProfile
       setValues(data)
-      if (data.thresholdPaceSecPerKm) {
-        setPaceInput(formatDuration(data.thresholdPaceSecPerKm))
-      }
+      if (data.thresholdPaceSecPerKm) setPaceInput(formatDuration(data.thresholdPaceSecPerKm))
     })
   }, [])
 
@@ -32,7 +29,7 @@ export function AthleteForm() {
     setSaveState('idle')
   }
 
-  async function handleSave(e: React.FormEvent) {
+  async function handleSave(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const parsedPace = parseTimeInput(paceInput)
     const final: AthleteProfile = {
@@ -49,6 +46,8 @@ export function AthleteForm() {
     }
   }
 
+  const p = t.settings.athlete.placeholders
+
   return (
     <section className="rounded-xl border border-border bg-card">
       <div className="border-b border-border px-4 py-3 sm:px-5">
@@ -62,7 +61,7 @@ export function AthleteForm() {
               value={values.lthrBpm ?? ''}
               onChange={(e) => setNum('lthrBpm', e.target.value)}
               className={inputCls}
-              placeholder="177"
+              placeholder={p.lthr}
             />
           </Field>
 
@@ -72,7 +71,7 @@ export function AthleteForm() {
               value={paceInput}
               onChange={(e) => { setPaceInput(e.target.value); setSaveState('idle') }}
               className={inputCls}
-              placeholder="4:14"
+              placeholder={p.thresholdPace}
             />
           </Field>
 
@@ -82,7 +81,7 @@ export function AthleteForm() {
               value={values.thresholdPowerWatts ?? ''}
               onChange={(e) => setNum('thresholdPowerWatts', e.target.value)}
               className={inputCls}
-              placeholder="339"
+              placeholder={p.thresholdPower}
             />
           </Field>
 
@@ -92,7 +91,7 @@ export function AthleteForm() {
               value={values.weightKg ?? ''}
               onChange={(e) => setNum('weightKg', e.target.value)}
               className={inputCls}
-              placeholder="63"
+              placeholder={p.weightKg}
             />
           </Field>
         </div>

@@ -107,19 +107,19 @@ export function GoalsForm() {
                 value={goal.annualDistanceKm || ''}
                 onChange={(e) => updateKm(goal.year, e.target.value)}
                 className={inputCls}
-                placeholder="1500"
+                placeholder={t.settings.goals.placeholders.annualKm}
               />
             </div>
 
             <div className="space-y-2">
-              <p className="text-sm font-medium text-foreground">{t.settings.goals.raceTargets}</p>
+              <p className="text-sm font-medium text-foreground">{t.settings.goals.raceTargets} <span className="text-xs font-normal text-muted-foreground">({t.settings.goals.targetTime})</span></p>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {DISTANCES.map((d) => (
                   <div key={d} className="space-y-1">
                     <label className="text-xs text-muted-foreground">{d}</label>
                     <input
                       type="text"
-                      placeholder="mm:ss"
+                      placeholder={t.settings.goals.placeholders.targetTime}
                       value={targetToInput(goal.targets.find((tt) => tt.distance === d))}
                       onChange={(e) => updateTarget(goal.year, d, e.target.value)}
                       className={inputCls}

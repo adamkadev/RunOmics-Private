@@ -127,10 +127,10 @@ export function PbsForm() {
                       </select>
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs text-muted-foreground">{t.settings.pbs.seconds}</label>
+                      <label className="text-xs text-muted-foreground">{t.settings.pbs.time}</label>
                       <input
                         type="text"
-                        placeholder="mm:ss"
+                        placeholder={t.settings.pbs.placeholders.time}
                         defaultValue={secsToInput(entry.seconds)}
                         onBlur={(e) => updateEntry(pbYear.year, idx, 'seconds', e.target.value)}
                         className={inputCls}
@@ -145,7 +145,7 @@ export function PbsForm() {
                         value={entry.activityId}
                         onChange={(e) => updateEntry(pbYear.year, idx, 'activityId', e.target.value)}
                         className={inputCls}
-                        placeholder="12345678901"
+                        placeholder={t.settings.pbs.placeholders.activityId}
                       />
                     </div>
                     <button

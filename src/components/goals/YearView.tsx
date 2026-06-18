@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { Trophy, Target, TrendingUp, ArrowRight, Calendar } from 'lucide-react'
+import { Trophy, Target, TrendingUp, ArrowRight, Calendar, ImageOff } from 'lucide-react'
 import type { YearData, GoalProjection } from '@/application/usecases/GetGoalsData'
 import { formatDuration, formatDate, formatPace } from '@/lib/formatters'
 import { ActivityTypeTag } from '@/components/activities/ActivityTypeTag'
@@ -145,10 +145,14 @@ export function YearView({ yearData }: { yearData: YearData }) {
                     </span>
                   </div>
                 ) : (
-                  <div className="flex h-24 items-center bg-gradient-to-br from-emerald-50 to-emerald-100 px-5 dark:from-emerald-900/20 dark:to-emerald-800/10">
+                  <div className="flex h-24 items-center justify-between bg-gradient-to-br from-emerald-50 to-emerald-100 px-5 dark:from-emerald-900/20 dark:to-emerald-800/10">
                     <span className="text-3xl font-black text-emerald-600 dark:text-emerald-400">
                       {entry.distance}
                     </span>
+                    <div className="flex items-center gap-1.5 text-emerald-400/60 dark:text-emerald-600/60">
+                      <ImageOff size={14} />
+                      <span className="text-xs">{t.goals.noPhoto}</span>
+                    </div>
                   </div>
                 )}
                 <div className="p-4">
@@ -187,7 +191,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
           <Trophy size={32} className="mx-auto mb-3 text-subtle" />
           <p className="text-sm text-subtle">{t.goals.emptyPbs(yearData.year)}</p>
           <Link href="/settings" className="mt-2 inline-block text-xs text-emerald-600 hover:underline dark:text-emerald-400">
-            Settings
+            {t.nav.items.settings}
           </Link>
         </div>
       )}
