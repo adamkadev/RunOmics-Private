@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { Trophy, Target, TrendingUp, ArrowRight, Calendar, ImageOff } from 'lucide-react'
+import { Trophy, Target, Medal, TrendingUp, ArrowRight, Calendar, ImageOff} from 'lucide-react'
 import type { YearData, GoalProjection } from '@/application/usecases/GetGoalsData'
 import { formatDuration, formatDate, formatPace } from '@/lib/formatters'
 import { ActivityTypeTag } from '@/components/activities/ActivityTypeTag'
@@ -120,7 +120,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
       {pbs.length > 0 ? (
         <section className="space-y-3">
           <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            <Trophy size={14} className="text-amber-500 dark:text-amber-400" />
+            <Medal size={14} className="text-amber-500 dark:text-amber-400" />
             {t.goals.seasonRaces}
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

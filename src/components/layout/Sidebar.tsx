@@ -9,7 +9,7 @@ import {
   CalendarDays,
   BarChart2,
   Trophy,
-  Medal,
+  Target,
   HeartPulse,
   Map,
   Menu,
@@ -26,8 +26,8 @@ const NAV_ITEMS = [
   { href: '/activities', label: t.nav.items.activities, icon: Activity },
   { href: '/calendar', label: t.nav.items.calendar, icon: CalendarDays },
   { href: '/analytics', label: t.nav.items.analytics, icon: BarChart2 },
-  { href: '/goals', label: t.nav.items.goals, icon: Trophy },
-  { href: '/records', label: t.nav.items.records, icon: Medal },
+  { href: '/goals', label: t.nav.items.goals, icon: Target },
+  { href: '/records', label: t.nav.items.records, icon: Trophy },
   { href: '/map', label: t.nav.items.heatmap, icon: Map },
 ]
 

@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Medal } from 'lucide-react'
+import { Trophy } from 'lucide-react'
 import type { RecordEntry } from '@/application/usecases/GetRecords'
 import { formatDuration, formatPace } from '@/lib/formatters'
 import { Tooltip } from '@/components/ui/Tooltip'
@@ -15,7 +15,7 @@ export function RecordsWall({ records, currentTsb }: { records: RecordEntry[]; c
   return (
     <section className="space-y-3">
       <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-        <Medal size={14} className="text-violet-500 dark:text-violet-400" />
+        <Trophy size={14} className="text-violet-500 dark:text-violet-400" />
         {t.records.title}
       </h2>
 
