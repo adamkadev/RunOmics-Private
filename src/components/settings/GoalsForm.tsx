@@ -21,6 +21,7 @@ export function GoalsForm() {
   const [goals, setGoals] = useState<GoalYear[]>([])
   const [saveStates, setSaveStates] = useState<Record<number, SaveState>>({})
   const [toast, setToast] = useState<Toast>(null)
+  const [confirmYear, setConfirmYear] = useState<number | null>(null)
 
   function showToast(msg: string, ok: boolean) {
     setToast({ msg, ok })
@@ -101,13 +102,25 @@ export function GoalsForm() {
           <div key={goal.year} className="p-4 sm:p-5 space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-base font-bold text-foreground">{goal.year}</span>
-              <button
-                type="button"
-                onClick={() => removeYear(goal.year)}
-                className="text-xs text-muted-foreground transition-colors hover:text-destructive"
-              >
-                {t.settings.goals.removeYear}
-              </button>
+              {confirmYear === goal.year ? (
+                <span className="flex items-center gap-2 text-xs">
+                  <span className="text-muted-foreground">{t.settings.actions.confirmQuestion}</span>
+                  <button type="button" onClick={() => { removeYear(goal.year); setConfirmYear(null) }} className="font-medium text-destructive hover:text-destructive/70">
+                    {t.settings.actions.confirmYes}
+                  </button>
+                  <button type="button" onClick={() => setConfirmYear(null)} className="text-muted-foreground hover:text-foreground">
+                    {t.settings.actions.confirmCancel}
+                  </button>
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setConfirmYear(goal.year)}
+                  className="text-xs text-destructive transition-colors hover:text-destructive/70"
+                >
+                  {t.settings.goals.removeYear}
+                </button>
+              )}
             </div>
 
             <div className="space-y-1.5">

@@ -156,6 +156,9 @@ export const en = {
       saving: 'Saving...',
       saved: 'Saved',
       error: 'Error saving, please retry.',
+      confirmQuestion: 'Sure?',
+      confirmYes: 'Yes',
+      confirmCancel: 'Cancel',
     },
   },
 

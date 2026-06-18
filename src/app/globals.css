@@ -14,6 +14,7 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-accent-subtle:    var(--accent-subtle);
   --color-accent-text:      var(--accent-text);
+  --color-destructive:      var(--destructive);
   --font-sans:              var(--font-geist-sans);
   --font-mono:              var(--font-geist-mono);
   --shadow-card:            var(--shadow-card);
@@ -45,6 +46,7 @@
   --accent-foreground: #ffffff;
   --accent-subtle:    #ecfdf5;  /* emerald-50  */
   --accent-text:      #059669;  /* emerald-600 */
+  --destructive:      #ef4444;  /* red-500 */
 }
 
 .dark {
@@ -61,6 +63,7 @@
   --accent-foreground: #ffffff;
   --accent-subtle:    rgba(16, 185, 129, 0.1);
   --accent-text:      #34d399;  /* emerald-400 */
+  --destructive:      #f87171;  /* red-400 - plus doux sur fond sombre */
 }
 
 * {

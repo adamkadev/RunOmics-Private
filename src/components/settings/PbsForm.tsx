@@ -21,6 +21,8 @@ export function PbsForm() {
   const [pbYears, setPbYears] = useState<PbYear[]>([])
   const [saveStates, setSaveStates] = useState<Record<number, SaveState>>({})
   const [toast, setToast] = useState<Toast>(null)
+  const [confirmYear, setConfirmYear] = useState<number | null>(null)
+  const [confirmEntry, setConfirmEntry] = useState<{ year: number; idx: number } | null>(null)
 
   function showToast(msg: string, ok: boolean) {
     setToast({ msg, ok })
@@ -113,13 +115,25 @@ export function PbsForm() {
           <div key={pbYear.year} className="p-4 sm:p-5 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-base font-bold text-foreground">{pbYear.year}</span>
-              <button
-                type="button"
-                onClick={() => removeYear(pbYear.year)}
-                className="text-xs text-muted-foreground transition-colors hover:text-destructive"
-              >
-                {t.settings.pbs.removeYear}
-              </button>
+              {confirmYear === pbYear.year ? (
+                <span className="flex items-center gap-2 text-xs">
+                  <span className="text-muted-foreground">{t.settings.actions.confirmQuestion}</span>
+                  <button type="button" onClick={() => { removeYear(pbYear.year); setConfirmYear(null) }} className="font-medium text-destructive hover:text-destructive/70">
+                    {t.settings.actions.confirmYes}
+                  </button>
+                  <button type="button" onClick={() => setConfirmYear(null)} className="text-muted-foreground hover:text-foreground">
+                    {t.settings.actions.confirmCancel}
+                  </button>
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setConfirmYear(pbYear.year)}
+                  className="text-xs text-destructive transition-colors hover:text-destructive/70"
+                >
+                  {t.settings.pbs.removeYear}
+                </button>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -142,13 +156,25 @@ export function PbsForm() {
                         className="w-20 shrink-0 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500"
                       />
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => removeEntry(pbYear.year, idx)}
-                      className="shrink-0 text-xs text-muted-foreground transition-colors hover:text-destructive"
-                    >
-                      {t.settings.pbs.removeEntry}
-                    </button>
+                    {confirmEntry?.year === pbYear.year && confirmEntry?.idx === idx ? (
+                      <span className="flex shrink-0 items-center gap-2 text-xs">
+                        <span className="text-muted-foreground">{t.settings.actions.confirmQuestion}</span>
+                        <button type="button" onClick={() => { removeEntry(pbYear.year, idx); setConfirmEntry(null) }} className="font-medium text-destructive hover:text-destructive/70">
+                          {t.settings.actions.confirmYes}
+                        </button>
+                        <button type="button" onClick={() => setConfirmEntry(null)} className="text-muted-foreground hover:text-foreground">
+                          {t.settings.actions.confirmCancel}
+                        </button>
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setConfirmEntry({ year: pbYear.year, idx })}
+                        className="shrink-0 text-xs text-destructive transition-colors hover:text-destructive/70"
+                      >
+                        {t.settings.pbs.removeEntry}
+                      </button>
+                    )}
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs text-muted-foreground">{t.settings.pbs.activityId}</label>
