@@ -4,6 +4,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 import type { MonthlyHr } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
+import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 interface Props {
@@ -39,7 +40,7 @@ export function HrTrendChart({ data }: Props) {
   const max = Math.max(...values) + 5
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+    <Card accent="red" padding="lg">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">{t.analytics.charts.hrTrend.title}</h3>
         <div className="flex gap-3">
@@ -90,6 +91,6 @@ export function HrTrendChart({ data }: Props) {
       <p className="mt-2 text-xs text-subtle">
         {t.analytics.charts.hrTrend.footnote}
       </p>
-    </div>
+    </Card>
   )
 }

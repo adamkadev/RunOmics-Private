@@ -11,6 +11,7 @@ import {
 } from 'recharts'
 import { CHART_COLORS } from '@/lib/colors'
 import { formatElapsed } from '@/lib/formatters'
+import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 interface Props {
@@ -42,7 +43,7 @@ export function CadenceChart({ samples, avgCadence, durationSeconds, onHoverFrac
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+    <Card accent="blue" padding="lg">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">{t.activity.charts.cadence}</h3>
         {avgCadence && (
@@ -112,6 +113,6 @@ export function CadenceChart({ samples, avgCadence, durationSeconds, onHoverFrac
           />
         </AreaChart>
       </ResponsiveContainer>
-    </div>
+    </Card>
   )
 }

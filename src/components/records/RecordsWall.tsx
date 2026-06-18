@@ -3,6 +3,7 @@ import { Trophy } from 'lucide-react'
 import type { RecordEntry } from '@/application/usecases/GetRecords'
 import { formatDuration, formatDistance, formatPace } from '@/lib/formatters'
 import { Tooltip } from '@/components/ui/Tooltip'
+import { cardClass } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 function shortDate(iso: string): string {
@@ -68,12 +69,12 @@ export function RecordsWall({ records, currentTsb }: { records: RecordEntry[]; c
             <Link
               key={r.key}
               href={`/activities/${r.activityId}`}
-              className="rounded-xl border border-border bg-card p-4 shadow-card transition-shadow hover:shadow-md"
+              className={cardClass({ clickable: true })}
             >
               {card}
             </Link>
           ) : (
-            <div key={r.key} className="rounded-xl border border-dashed border-border bg-card p-4">
+            <div key={r.key} className={cardClass({ dashed: true })}>
               {card}
             </div>
           )

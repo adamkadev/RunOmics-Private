@@ -6,6 +6,7 @@ import type { ActivityType } from '@/domain/activity/types'
 import type { MonthlyVolume } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
+import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 interface Props {
@@ -48,7 +49,7 @@ export function MonthlyVolumeChart({ data, typesPresent }: Props) {
   }))
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+    <Card accent="emerald" padding="lg">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.analytics.charts.monthlyVolume.title}
       </h3>
@@ -89,6 +90,6 @@ export function MonthlyVolumeChart({ data, typesPresent }: Props) {
           </span>
         ))}
       </div>
-    </div>
+    </Card>
   )
 }

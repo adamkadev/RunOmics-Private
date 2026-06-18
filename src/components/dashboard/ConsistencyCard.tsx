@@ -1,6 +1,7 @@
 import { RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { ConsistencyScore, ConsistencyRating } from '@/application/usecases/GetConsistencyScore'
+import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 const RATING_STYLE: Record<ConsistencyRating, { badge: string; text: string }> = {
@@ -15,7 +16,7 @@ export function ConsistencyCard({ data }: { data: ConsistencyScore }) {
   const style = RATING_STYLE[data.rating]
 
   return (
-    <div className="flex h-full flex-col rounded-xl border border-border bg-card p-5 shadow-card">
+    <Card padding="lg" accent="blue" className="flex h-full flex-col">
       <div className="mb-3 flex items-center gap-2">
         <RefreshCw size={14} className="text-blue-500 dark:text-blue-400" />
         <h3 className="text-sm font-semibold text-foreground/80">{s.title}</h3>
@@ -34,6 +35,6 @@ export function ConsistencyCard({ data }: { data: ConsistencyScore }) {
       <p className="mt-2 text-xs text-muted-foreground">
         {s.detail(data.window, data.adherence)}
       </p>
-    </div>
+    </Card>
   )
 }

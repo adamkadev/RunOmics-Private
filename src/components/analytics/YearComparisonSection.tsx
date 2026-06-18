@@ -3,6 +3,7 @@
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import type { YearComparisonData } from '@/application/usecases/GetYearComparison'
 import { formatDuration, formatPace } from '@/lib/formatters'
+import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 interface Props {
@@ -114,7 +115,7 @@ export function YearComparisonSection({ data }: Props) {
   ]
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+    <Card accent="emerald" padding="lg">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-base font-semibold text-foreground">{t.analytics.yearOverYear.title}</h2>
         <div className="flex items-center gap-4 text-xs text-subtle">
@@ -129,6 +130,6 @@ export function YearComparisonSection({ data }: Props) {
           <MetricRow key={row.label} {...row} />
         ))}
       </div>
-    </div>
+    </Card>
   )
 }

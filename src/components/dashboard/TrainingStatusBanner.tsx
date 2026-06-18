@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { TrainingStatus, TrainingStatusType, RiskLevel, LoadTrend } from '@/application/usecases/GetTrainingStatus'
+import { Card } from '@/components/ui/Card'
 
 const STATUS_STYLE: Record<TrainingStatusType, { dot: string; badge: string; text: string }> = {
   productive: {
@@ -78,7 +79,7 @@ export function TrainingStatusBanner({ status }: { status: TrainingStatus }) {
           : 'text-foreground'
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+    <Card padding="lg">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         {/* Left - status + description */}
         <div className="flex items-start gap-3">
@@ -114,6 +115,6 @@ export function TrainingStatusBanner({ status }: { status: TrainingStatus }) {
       <p className="mt-3 text-xs text-muted-foreground/70">
         {s.metrics.fitnessDelta(status.ctlDelta)}
       </p>
-    </div>
+    </Card>
   )
 }

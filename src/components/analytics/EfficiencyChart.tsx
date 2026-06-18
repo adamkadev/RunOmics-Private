@@ -7,6 +7,7 @@ import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { ChartExplain } from '@/components/ui/ChartExplain'
 import type { ExplainTone } from '@/components/ui/ChartExplain'
 import { trendFromSeries } from '@/lib/chartTrend'
+import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 interface Props {
@@ -44,7 +45,7 @@ export function EfficiencyChart({ data }: Props) {
     : null
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+    <Card accent="blue" padding="lg">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.analytics.charts.efficiency.title}
       </h3>
@@ -87,6 +88,6 @@ export function EfficiencyChart({ data }: Props) {
       <p className="mt-1 text-xs text-subtle">
         {t.analytics.charts.efficiency.footnote}
       </p>
-    </div>
+    </Card>
   )
 }

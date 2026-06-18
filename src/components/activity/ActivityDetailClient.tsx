@@ -10,6 +10,7 @@ import { ElevationChart } from './ElevationChart'
 import { PaceChart } from './PaceChart'
 import { CadenceChart } from './CadenceChart'
 import { formatDistance, formatDuration, formatPace } from '@/lib/formatters'
+import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 interface Props {
@@ -101,7 +102,7 @@ export function ActivityDetailClient({ activity }: Props) {
 
   return (
     <>
-      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-card">
+      <Card padding="none" overflow>
         <div className="h-[260px] overflow-hidden rounded-t-xl sm:h-[360px]">
           {activity.route ? (
             <ActivityMapClient
@@ -125,7 +126,7 @@ export function ActivityDetailClient({ activity }: Props) {
             </div>
           ))}
         </div>
-      </div>
+      </Card>
 
       {hasCharts && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

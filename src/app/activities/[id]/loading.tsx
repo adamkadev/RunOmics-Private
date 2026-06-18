@@ -1,4 +1,5 @@
 import { Skeleton, ChartCardSkeleton, StatCardSkeleton } from '@/components/ui/Skeleton'
+import { cardClass } from '@/components/ui/Card'
 
 export default function ActivityDetailLoading() {
   return (
@@ -25,7 +26,7 @@ export default function ActivityDetailLoading() {
           <Skeleton className="h-[300px] w-full rounded-xl" />
         </div>
         <div className="space-y-4 lg:col-span-2">
-          <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+          <div className={cardClass({ padding: 'lg' })}>
             <Skeleton className="mb-4 h-4 w-24" />
             <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, i) => (
@@ -36,7 +37,7 @@ export default function ActivityDetailLoading() {
               ))}
             </div>
           </div>
-          <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+          <div className={cardClass({ padding: 'lg' })}>
             <Skeleton className="mb-4 h-4 w-28" />
             <Skeleton className="h-3 w-full rounded-full" />
           </div>

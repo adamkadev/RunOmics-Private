@@ -4,6 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recha
 import type { MonthlyLongRuns } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
+import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 interface Props {
@@ -31,7 +32,7 @@ export function LongRunsChart({ data }: Props) {
   if (!data.some((d) => d.km10 > 0 || d.km15 > 0)) return null
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+    <Card accent="emerald" padding="lg">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">{t.analytics.charts.longRuns.title}</h3>
       <ResponsiveContainer width="100%" height={200}>
         <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>
@@ -62,6 +63,6 @@ export function LongRunsChart({ data }: Props) {
           {t.analytics.charts.longRuns.range15}
         </span>
       </div>
-    </div>
+    </Card>
   )
 }

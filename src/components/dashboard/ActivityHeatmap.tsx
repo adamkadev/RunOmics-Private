@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import type { HeatmapDay } from '@/application/usecases/GetHeatmapData'
+import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 const MONTHS = t.dashboard.heatmap.months
@@ -67,7 +68,7 @@ export function ActivityHeatmap({ days }: Props) {
   const GAP  = 3   // px gap
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+    <Card accent="emerald" padding="lg">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">
           {t.dashboard.heatmap.title} <span className="font-normal text-subtle">{t.dashboard.heatmap.window}</span>
@@ -156,6 +157,6 @@ export function ActivityHeatmap({ days }: Props) {
           </p>
         </div>
       )}
-    </div>
+    </Card>
   )
 }

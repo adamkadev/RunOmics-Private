@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import type { Activity, ActivityType } from '@/domain/activity/types'
 import { round } from '@/lib/math'
+import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 interface Props {
@@ -105,7 +106,7 @@ export function CalendarClient({ activities }: Props) {
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-card">
+      <Card padding="none" overflow>
         <div className="grid grid-cols-7 border-b border-border">
           {WEEKDAYS.map((d) => (
             <div
@@ -157,7 +158,7 @@ export function CalendarClient({ activities }: Props) {
             </div>
           ))}
         </div>
-      </div>
+      </Card>
 
       <div className="flex flex-wrap items-center gap-3 text-xs text-subtle">
         {Object.entries(ACTIVITY_TYPE_CONFIG).map(([type, cfg]) => (

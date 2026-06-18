@@ -1,8 +1,9 @@
 import { Skeleton } from '@/components/ui/Skeleton'
+import { cardClass } from '@/components/ui/Card'
 
 function ActivityRowSkeleton() {
   return (
-    <div className="flex items-center gap-4 rounded-xl border border-border bg-card p-4">
+    <div className={cardClass({ className: 'flex items-center gap-4' })}>
       <Skeleton className="h-10 w-10 rounded-lg" />
       <div className="flex-1 space-y-2">
         <Skeleton className="h-4 w-48" />

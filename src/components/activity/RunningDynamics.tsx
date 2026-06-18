@@ -1,4 +1,5 @@
 import type { Activity } from '@/domain/activity/types'
+import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 interface Metric {
@@ -27,7 +28,7 @@ export function RunningDynamics({ activity: a }: { activity: Activity }) {
   if (!metrics.length) return null
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+    <Card accent="cyan" padding="lg">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.activity.dynamics.title}
       </h3>
@@ -41,6 +42,6 @@ export function RunningDynamics({ activity: a }: { activity: Activity }) {
           </div>
         ))}
       </div>
-    </div>
+    </Card>
   )
 }

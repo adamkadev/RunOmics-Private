@@ -4,6 +4,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 import type { DailyEfficiency } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
+import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 const COLOR_7  = CHART_COLORS.efficiency        // violet-500
@@ -46,7 +47,7 @@ export function DailyEfficiencyChart({ data }: { data: DailyEfficiency[] }) {
   )
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+    <Card accent="blue" padding="lg">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">{s.title}</h3>
         <div className="flex gap-3">
@@ -103,6 +104,6 @@ export function DailyEfficiencyChart({ data }: { data: DailyEfficiency[] }) {
         </LineChart>
       </ResponsiveContainer>
       <p className="mt-2 text-xs text-subtle">{s.footnote}</p>
-    </div>
+    </Card>
   )
 }

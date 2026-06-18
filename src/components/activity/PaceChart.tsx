@@ -10,6 +10,7 @@ import {
 } from 'recharts'
 import { CHART_COLORS } from '@/lib/colors'
 import { formatClock, formatElapsed } from '@/lib/formatters'
+import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 interface Props {
@@ -43,7 +44,7 @@ export function PaceChart({ samples, avgPaceSecPerKm, durationSeconds, onHoverFr
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+    <Card accent="amber" padding="lg">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">{t.activity.charts.pace}</h3>
         <span className="text-xs text-subtle">
@@ -104,6 +105,6 @@ export function PaceChart({ samples, avgPaceSecPerKm, durationSeconds, onHoverFr
           />
         </AreaChart>
       </ResponsiveContainer>
-    </div>
+    </Card>
   )
 }

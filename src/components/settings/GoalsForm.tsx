@@ -7,6 +7,7 @@ import type { GoalYear, GoalTarget } from '@/application/usecases/GetGoalsData'
 import { formatDuration, parseTimeInput } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { cn } from '@/lib/utils'
+import { cardClass } from '@/components/ui/Card'
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error'
 type Toast = { msg: string; ok: boolean } | null
@@ -85,7 +86,7 @@ export function GoalsForm() {
   }
 
   return (
-    <section className="rounded-xl border border-border bg-card">
+    <section className={cardClass({ padding: 'none' })}>
       <div className="flex items-center justify-between border-b border-border px-4 py-3 sm:px-5">
         <h2 className="text-sm font-semibold text-foreground">{t.settings.goals.title}</h2>
         <button

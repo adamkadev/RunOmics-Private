@@ -1,6 +1,7 @@
 import { TrendingUp } from 'lucide-react'
 import type { RecordEntry } from '@/application/usecases/GetRecords'
 import { formatDuration, formatPace } from '@/lib/formatters'
+import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 const DIST_KM: Record<string, number> = {
@@ -72,7 +73,7 @@ export function RacePredictions({ records }: Props) {
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {predictions.map(({ key, label, km, actual, predicted }) => {
           return (
-            <div key={key} className="rounded-xl border border-border bg-card p-3 shadow-card">
+            <Card key={key} padding="sm">
               <p className="text-xs font-semibold text-subtle">{label}</p>
               <p className="mt-0.5 text-lg font-bold leading-tight tracking-tight text-foreground">
                 ~{formatDuration(predicted!)}
@@ -91,7 +92,7 @@ export function RacePredictions({ records }: Props) {
                     : t.racePredictions.pbOff(formatDuration(actual.seconds - predicted!))}
                 </p>
               )}
-            </div>
+            </Card>
           )
         })}
       </div>

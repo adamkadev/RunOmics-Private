@@ -1,8 +1,9 @@
 import { Skeleton } from '@/components/ui/Skeleton'
+import { cardClass } from '@/components/ui/Card'
 
 function CardSkeleton() {
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
+    <div className={cardClass()}>
       <Skeleton className="mb-2 h-3 w-12" />
       <Skeleton className="h-7 w-24" />
       <Skeleton className="mt-1 h-3 w-16" />

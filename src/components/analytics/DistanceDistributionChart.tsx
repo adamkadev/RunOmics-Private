@@ -4,6 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ResponsiveContainer } from 
 import type { DistanceBracket } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
+import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 interface Props {
@@ -30,7 +31,7 @@ export function DistanceDistributionChart({ data }: Props) {
   const max = Math.max(...data.map((d) => d.count))
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+    <Card accent="emerald" padding="lg">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">{t.analytics.charts.distance.title}</h3>
         <span className="text-xs text-subtle">{t.analytics.charts.distance.runs(data.reduce((s, d) => s + d.count, 0))}</span>
@@ -61,6 +62,6 @@ export function DistanceDistributionChart({ data }: Props) {
           </Bar>
         </BarChart>
       </ResponsiveContainer>
-    </div>
+    </Card>
   )
 }

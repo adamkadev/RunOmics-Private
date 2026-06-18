@@ -1,5 +1,6 @@
 import type { HrZone } from '@/domain/activity/types'
 import { formatDuration } from '@/lib/formatters'
+import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 const ZONE_CONFIG: Record<number, {
@@ -62,16 +63,16 @@ interface Props {
 export function ZoneBar({ hrZones }: Props) {
   if (!hrZones || hrZones.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center rounded-xl border border-border bg-card p-5 shadow-card">
+      <Card accent="violet" padding="lg" className="flex h-full items-center justify-center">
         <p className="text-sm text-subtle">{t.activity.zones.noData}</p>
-      </div>
+      </Card>
     )
   }
 
   const sorted = [...hrZones].sort((a, b) => b.zone - a.zone)
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+    <Card accent="violet" padding="lg">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.activity.zones.title}
       </h3>
@@ -92,6 +93,6 @@ export function ZoneBar({ hrZones }: Props) {
           <ZoneRow key={z.zone} zone={z} />
         ))}
       </div>
-    </div>
+    </Card>
   )
 }

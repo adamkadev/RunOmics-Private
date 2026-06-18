@@ -14,6 +14,7 @@ import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { ChartExplain } from '@/components/ui/ChartExplain'
 import type { ExplainTone } from '@/components/ui/ChartExplain'
+import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 interface Props {
@@ -51,7 +52,7 @@ export function EasyHardChart({ data }: Props) {
         : { text: ex.tooEasy(avgEasy), tone: 'neutral' }
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+    <Card accent="emerald" padding="lg">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.analytics.charts.easyHard.title}
       </h3>
@@ -80,6 +81,6 @@ export function EasyHardChart({ data }: Props) {
       <p className="mt-1 text-xs text-subtle">
         {t.analytics.charts.easyHard.footnote}
       </p>
-    </div>
+    </Card>
   )
 }

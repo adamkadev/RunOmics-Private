@@ -4,6 +4,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 import type { MonthlyCadence } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
+import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 interface Props {
@@ -32,7 +33,7 @@ export function CadenceTrendChart({ data }: Props) {
   const max = Math.ceil(Math.max(...values)) + 2
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+    <Card accent="blue" padding="lg">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">{t.analytics.charts.cadence.title}</h3>
       <ResponsiveContainer width="100%" height={200}>
         <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
@@ -64,6 +65,6 @@ export function CadenceTrendChart({ data }: Props) {
       <p className="mt-2 text-xs text-subtle">
         {t.analytics.charts.cadence.footnote}
       </p>
-    </div>
+    </Card>
   )
 }

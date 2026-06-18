@@ -5,6 +5,7 @@ import { formatDuration } from '@/lib/formatters'
 import type { ZoneShare } from '@/application/usecases/GetAnalyticsData'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { ZONE_COLORS } from '@/lib/colors'
+import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 const ZONE_LABELS = t.analytics.charts.zones.labels
@@ -37,7 +38,7 @@ export function ZoneDistributionChart({ data }: Props) {
   if (!data.length) return null
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+    <Card accent="violet" padding="lg">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.analytics.charts.zones.title}
       </h3>
@@ -79,6 +80,6 @@ export function ZoneDistributionChart({ data }: Props) {
           ))}
         </ul>
       </div>
-    </div>
+    </Card>
   )
 }

@@ -3,17 +3,17 @@ import { MessageSquare } from 'lucide-react'
 import { ActivityTypeTag } from './ActivityTypeTag'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
 import type { Activity, ActivityType } from '@/domain/activity/types'
-import { cn } from '@/lib/utils'
+import { cardClass } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
-const TYPE_BORDER: Record<ActivityType, string> = {
-  Sprint:    'border-l-fuchsia-400 dark:border-l-fuchsia-500',
-  Anaerobic: 'border-l-purple-400 dark:border-l-purple-500',
-  VO2Max:    'border-l-red-400 dark:border-l-red-500',
-  Threshold: 'border-l-orange-400 dark:border-l-orange-500',
-  Tempo:     'border-l-yellow-400 dark:border-l-yellow-500',
-  Base:      'border-l-green-400 dark:border-l-green-500',
-  Race:      'border-l-amber-400 dark:border-l-amber-500',
+const TYPE_ACCENT: Record<ActivityType, string> = {
+  Sprint:    'fuchsia',
+  Anaerobic: 'purple',
+  VO2Max:    'red',
+  Threshold: 'orange',
+  Tempo:     'yellow',
+  Base:      'green',
+  Race:      'amber',
 }
 
 interface Props {
@@ -24,10 +24,11 @@ export function ActivityRow({ activity: a }: Props) {
   return (
     <Link
       href={`/activities/${a.id}`}
-      className={cn(
-        'grid grid-cols-[1fr_auto] items-center gap-x-4 rounded-xl border border-border border-l-4 bg-card p-4 shadow-card transition-shadow hover:shadow-md',
-        TYPE_BORDER[a.type] ?? 'border-l-border'
-      )}
+      className={cardClass({
+        accent: TYPE_ACCENT[a.type],
+        clickable: true,
+        className: 'grid grid-cols-[1fr_auto] items-center gap-x-4',
+      })}
     >
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">

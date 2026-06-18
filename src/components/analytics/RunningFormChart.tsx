@@ -5,6 +5,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 import type { MonthlyRunningForm } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
+import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 type Metric = 'groundContact' | 'verticalOscillation' | 'strideLength'
@@ -73,7 +74,7 @@ export function RunningFormChart({ data }: Props) {
   const max = Math.max(...values) * 1.03
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+    <Card accent="cyan" padding="lg">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-foreground/80">{t.analytics.charts.runningForm.title}</h3>
         <div className="flex gap-1">
@@ -121,6 +122,6 @@ export function RunningFormChart({ data }: Props) {
       <p className="mt-2 text-xs text-subtle">
         {t.analytics.charts.runningForm.footnote[metric]}
       </p>
-    </div>
+    </Card>
   )
 }

@@ -1,5 +1,6 @@
 import { Zap } from 'lucide-react'
 import { formatDuration, formatPace } from '@/lib/formatters'
+import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 const EFFORTS = [
@@ -19,7 +20,7 @@ export function BestEfforts({ bestEfforts }: Props) {
   if (!entries.length) return null
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+    <Card accent="amber" padding="lg">
       <div className="mb-3 flex items-center gap-2">
         <Zap size={14} className="text-amber-500 dark:text-amber-400" />
         <h3 className="text-sm font-semibold text-foreground/80">{t.activity.bestEfforts.title}</h3>
@@ -36,6 +37,6 @@ export function BestEfforts({ bestEfforts }: Props) {
           )
         })}
       </div>
-    </div>
+    </Card>
   )
 }

@@ -7,6 +7,7 @@ import { Trophy } from 'lucide-react'
 import type { RecordEntry, TopEfforts } from '@/application/usecases/GetRecords'
 import { formatDuration, formatDistance, formatPace } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
+import { Card, cardClass, CARD_ACCENT_LABEL } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 const PILL_ORDER = ['1k', '1mile', '5k', '10k', 'half', 'marathon', 'longest']
@@ -21,14 +22,9 @@ const LABELS: Record<string, string> = {
   longest: 'Longest',
 }
 
-const ACCENT: Record<string, { border: string; label: string }> = {
-  '1k':     { border: 'border-l-blue-400 dark:border-l-blue-500',       label: 'text-blue-600 dark:text-blue-400'       },
-  '1mile':  { border: 'border-l-cyan-400 dark:border-l-cyan-500',        label: 'text-cyan-600 dark:text-cyan-400'        },
-  '5k':     { border: 'border-l-emerald-400 dark:border-l-emerald-500',  label: 'text-emerald-600 dark:text-emerald-400'  },
-  '10k':    { border: 'border-l-amber-400 dark:border-l-amber-500',      label: 'text-amber-600 dark:text-amber-400'      },
-  half:     { border: 'border-l-violet-400 dark:border-l-violet-500',    label: 'text-violet-600 dark:text-violet-400'    },
-  marathon: { border: 'border-l-rose-400 dark:border-l-rose-500',        label: 'text-rose-600 dark:text-rose-400'        },
-  longest:  { border: 'border-l-orange-400 dark:border-l-orange-500',    label: 'text-orange-600 dark:text-orange-400'    },
+const DIST_COLOR: Record<string, string> = {
+  '1k': 'blue', '1mile': 'cyan', '5k': 'emerald', '10k': 'amber',
+  half: 'violet', marathon: 'rose', longest: 'orange',
 }
 
 function shortDate(iso: string): string {
@@ -89,13 +85,13 @@ export function RecordsLeaderboard({ records, topEfforts }: Props) {
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             {allRecords.map((r, i, arr) => {
               const spanFull = i === arr.length - 1 && arr.length % 2 !== 0
-              const accent = ACCENT[r.key]
+              const distColor = DIST_COLOR[r.key]
               const mainStat = r.distanceKm != null ? formatDistance(r.distanceKm) : formatDuration(r.seconds!)
 
               const card = (
                 <>
                   <div className="mb-3 flex items-center justify-between gap-1">
-                    <p className={cn('text-xs font-bold uppercase tracking-wide', accent?.label ?? 'text-subtle')}>
+                    <p className={cn('text-xs font-bold uppercase tracking-wide', CARD_ACCENT_LABEL[distColor] ?? 'text-subtle')}>
                       {r.label}
                     </p>
                     {r.official && <span className="text-xs text-violet-400">★</span>}
@@ -111,22 +107,16 @@ export function RecordsLeaderboard({ records, topEfforts }: Props) {
                 </>
               )
 
-              const cardClass = cn(
-                'rounded-xl border border-border border-l-4 bg-card p-4 shadow-card',
-                accent?.border ?? 'border-l-border',
-                spanFull && 'col-span-full'
-              )
-
               return r.activityId ? (
                 <Link
                   key={r.key}
                   href={`/activities/${r.activityId}`}
-                  className={cn(cardClass, 'transition-shadow hover:shadow-md')}
+                  className={cardClass({ accent: distColor, clickable: true, className: spanFull ? 'col-span-full' : undefined })}
                 >
                   {card}
                 </Link>
               ) : (
-                <div key={r.key} className={cn(cardClass, 'border-dashed')}>
+                <div key={r.key} className={cardClass({ accent: distColor, dashed: true, className: spanFull ? 'col-span-full' : undefined })}>
                   {card}
                 </div>
               )
@@ -135,7 +125,7 @@ export function RecordsLeaderboard({ records, topEfforts }: Props) {
           <p className="text-xs text-subtle">{t.records.footnote}</p>
         </>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-border bg-card">
+        <Card padding="none" overflow>
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/60 bg-muted/30">
@@ -181,7 +171,7 @@ export function RecordsLeaderboard({ records, topEfforts }: Props) {
               ))}
             </tbody>
           </table>
-        </div>
+        </Card>
       )}
     </section>
   )

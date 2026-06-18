@@ -4,6 +4,7 @@ import { Trophy, Target, Medal, TrendingUp, ArrowRight, Calendar, ImageOff} from
 import type { YearData, GoalProjection } from '@/application/usecases/GetGoalsData'
 import { formatDuration, formatDate, formatPace } from '@/lib/formatters'
 import { ActivityTypeTag } from '@/components/activities/ActivityTypeTag'
+import { Card, cardClass } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 const STATUS_CHIP: Record<GoalProjection['status'], string> = {
@@ -29,7 +30,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
             <Target size={14} className="text-emerald-500 dark:text-emerald-400" />
             {t.goals.annualGoal}
           </h2>
-          <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+          <Card accent="emerald" padding="lg">
             <div className="mb-3 flex items-end justify-between">
               <div>
                 <span className="text-3xl font-bold tracking-tight text-foreground">
@@ -74,7 +75,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
                 </span>
               </div>
             )}
-          </div>
+          </Card>
         </section>
       )}
 
@@ -91,10 +92,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
               const delta = pbSeconds !== null && target.targetSeconds ? pbSeconds - target.targetSeconds : null
               const achieved = delta !== null && delta <= 0
               return (
-                <div
-                  key={target.distance}
-                  className="rounded-xl border border-border bg-card p-4 shadow-card"
-                >
+                <Card key={target.distance}>
                   <p className="text-xs font-semibold text-subtle">{target.distance}</p>
                   <p className="mt-1 text-lg font-bold text-foreground">
                     {target.targetSeconds === null ? (
@@ -110,7 +108,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
                         : t.goals.targetToGo(formatDuration(delta))}
                     </p>
                   )}
-                </div>
+                </Card>
               )
             })}
           </div>
@@ -128,7 +126,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
               <Link
                 key={entry.activityId}
                 href={`/activities/${entry.activityId}`}
-                className="group relative overflow-hidden rounded-xl border border-border bg-card shadow-card transition-shadow hover:shadow-lg"
+                className={cardClass({ padding: 'none', overflow: true, className: 'group relative transition-shadow hover:shadow-lg' })}
               >
                 {photoPath ? (
                   <div className="relative h-40 w-full overflow-hidden bg-muted">

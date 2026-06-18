@@ -4,6 +4,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 import type { MonthlyTrainingEffect } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
+import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 interface Props {
@@ -35,7 +36,7 @@ export function TrainingEffectChart({ data }: Props) {
   if (!hasAer && !hasAna) return null
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+    <Card accent="orange" padding="lg">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">{t.analytics.charts.trainingEffect.title}</h3>
         <div className="flex gap-3">
@@ -97,6 +98,6 @@ export function TrainingEffectChart({ data }: Props) {
         </LineChart>
       </ResponsiveContainer>
       <p className="mt-2 text-xs text-subtle">{t.analytics.charts.trainingEffect.footnote}</p>
-    </div>
+    </Card>
   )
 }

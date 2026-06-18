@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { ActivityTypeTag } from '@/components/activities/ActivityTypeTag'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
+import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 import type { Activity } from '@/domain/activity/types'
 
@@ -11,7 +12,7 @@ interface Props {
 
 export function RecentActivities({ activities }: Props) {
   return (
-    <div className="rounded-xl border border-border bg-card shadow-card">
+    <Card padding="none">
       <div className="flex items-center justify-between border-b border-border px-5 py-4">
         <h3 className="text-sm font-semibold text-foreground/80">
           {t.dashboard.recentActivities.title}
@@ -68,6 +69,6 @@ export function RecentActivities({ activities }: Props) {
           </Link>
         ))}
       </div>
-    </div>
+    </Card>
   )
 }

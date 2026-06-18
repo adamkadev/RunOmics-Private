@@ -1,6 +1,7 @@
 import { Gauge } from 'lucide-react'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { formatClock as fmt, formatPace } from '@/lib/formatters'
+import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 const ZONE_STYLE: Record<string, { dot: string; text: string; bar: string }> = {
@@ -37,7 +38,7 @@ export function TrainingZones({ data }: { data: TrainingZonesData }) {
           const width = ((zone.paceMaxSecPerKm - zone.paceMinSecPerKm) / range) * 100
 
           return (
-            <div key={zone.key} className="rounded-xl border border-border bg-card p-4 shadow-card">
+            <Card key={zone.key}>
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-1.5">
                   <span className={`h-2 w-2 shrink-0 rounded-full ${style.dot}`} />
@@ -60,7 +61,7 @@ export function TrainingZones({ data }: { data: TrainingZonesData }) {
                 {zone.shortDesc}
                 <span className="text-subtle"> · {zone.example}</span>
               </p>
-            </div>
+            </Card>
           )
         })}
       </div>

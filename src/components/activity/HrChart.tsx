@@ -11,6 +11,7 @@ import {
 } from 'recharts'
 import { CHART_COLORS } from '@/lib/colors'
 import { formatElapsed } from '@/lib/formatters'
+import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 interface Props {
@@ -45,7 +46,7 @@ export function HrChart({ samples, avgHr, maxHr, durationSeconds, onHoverFractio
   const tickCount = 5
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+    <Card accent="red" padding="lg">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">{t.activity.charts.heartRate}</h3>
         {avgHr && (
@@ -118,6 +119,6 @@ export function HrChart({ samples, avgHr, maxHr, durationSeconds, onHoverFractio
           />
         </AreaChart>
       </ResponsiveContainer>
-    </div>
+    </Card>
   )
 }

@@ -12,6 +12,7 @@ import {
 import type { MonthlyRpe } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
+import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 interface Props {
@@ -44,7 +45,7 @@ export function RpeTrendChart({ data }: Props) {
   if (!values.length) return null
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+    <Card accent="orange" padding="lg">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.analytics.charts.rpe.title}
       </h3>
@@ -93,6 +94,6 @@ export function RpeTrendChart({ data }: Props) {
       <p className="mt-2 text-xs text-subtle">
         {t.analytics.charts.rpe.footnote}
       </p>
-    </div>
+    </Card>
   )
 }

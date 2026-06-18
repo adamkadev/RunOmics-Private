@@ -1,4 +1,5 @@
 import { ChartCardSkeleton, Skeleton } from '@/components/ui/Skeleton'
+import { cardClass } from '@/components/ui/Card'
 
 export default function DashboardLoading() {
   return (
@@ -8,7 +9,7 @@ export default function DashboardLoading() {
       {/* Stat cards */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="rounded-xl border border-border bg-card p-4">
+          <div key={i} className={cardClass()}>
             <div className="mb-3 flex items-center justify-between">
               <Skeleton className="h-3 w-16" />
               <Skeleton className="h-4 w-4 rounded-full" />

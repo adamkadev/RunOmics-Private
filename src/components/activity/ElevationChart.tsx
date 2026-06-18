@@ -10,6 +10,7 @@ import {
 } from 'recharts'
 import { CHART_COLORS } from '@/lib/colors'
 import { formatElapsed } from '@/lib/formatters'
+import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 interface Props {
@@ -43,7 +44,7 @@ export function ElevationChart({ samples, durationSeconds, elevationGain, onHove
   const tickCount = 5
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+    <Card accent="emerald" padding="lg">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">{t.activity.charts.elevation}</h3>
         {elevationGain != null && (
@@ -104,6 +105,6 @@ export function ElevationChart({ samples, durationSeconds, elevationGain, onHove
           />
         </AreaChart>
       </ResponsiveContainer>
-    </div>
+    </Card>
   )
 }
