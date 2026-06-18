@@ -4,9 +4,13 @@ import { RecordsWall } from '@/components/records/RecordsWall'
 import { RacePredictions } from '@/components/records/RacePredictions'
 import { t } from '@/i18n'
 
-export default function RecordsPage() {
-  const records = getRecords()
-  const load = getTrainingLoad()
+export const revalidate = 60
+
+export default async function RecordsPage() {
+  const [records, load] = await Promise.all([
+    getRecords(),
+    Promise.resolve(getTrainingLoad()),
+  ])
 
   return (
     <div className="space-y-10">

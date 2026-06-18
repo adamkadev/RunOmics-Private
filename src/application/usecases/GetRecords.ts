@@ -1,6 +1,5 @@
-import { readFileSync } from 'fs'
-import { join } from 'path'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { getPbsFromFirestore } from '@/infrastructure/repositories/FirestoreConfigRepository'
 import { getFullLoadHistory } from './GetTrainingLoad'
 import type { LoadSnapshot } from './GetTrainingLoad'
 
@@ -20,28 +19,6 @@ const DISTANCE_KEY: Record<string, string> = {
   'Marathon': 'marathon',
 }
 
-function loadOfficialPbs(): Map<string, { seconds: number; activityId: string | null }> {
-  const map = new Map<string, { seconds: number; activityId: string | null }>()
-  try {
-    const raw = readFileSync(join(process.cwd(), 'public/pbs.json'), 'utf-8')
-    const data: { year: number; entries: { distance: string; seconds: number; activityId?: string }[] }[] =
-      JSON.parse(raw)
-    for (const year of data) {
-      for (const entry of year.entries) {
-        const key = DISTANCE_KEY[entry.distance]
-        if (!key) continue
-        const existing = map.get(key)
-        if (!existing || entry.seconds < existing.seconds) {
-          map.set(key, { seconds: entry.seconds, activityId: entry.activityId ?? null })
-        }
-      }
-    }
-  } catch {
-    // pbs.json missing or invalid
-  }
-  return map
-}
-
 export interface RecordEntry {
   key: string
   label: string
@@ -53,11 +30,23 @@ export interface RecordEntry {
   formAtPb: LoadSnapshot | null
 }
 
-export function getRecords(): RecordEntry[] {
+export async function getRecords(): Promise<RecordEntry[]> {
   const activities = getAllActivities()
-  const officialPbs = loadOfficialPbs()
+  const pbYears = await getPbsFromFirestore()
   const activityMap = new Map(activities.map((a) => [a.id, a]))
   const loadHistory = getFullLoadHistory()
+
+  const officialPbs = new Map<string, { seconds: number; activityId: string | null }>()
+  for (const year of pbYears) {
+    for (const entry of year.entries) {
+      const key = DISTANCE_KEY[entry.distance]
+      if (!key) continue
+      const existing = officialPbs.get(key)
+      if (!existing || entry.seconds < existing.seconds) {
+        officialPbs.set(key, { seconds: entry.seconds, activityId: entry.activityId ?? null })
+      }
+    }
+  }
 
   return EFFORTS.map(({ key, label, km }) => {
     const official = officialPbs.get(key)

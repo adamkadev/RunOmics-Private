@@ -1,17 +1,4 @@
-import fs from 'fs'
-import path from 'path'
-
-interface AthleteProfile {
-  lthrBpm?: number
-  thresholdPaceSecPerKm?: number
-  thresholdPowerWatts?: number
-  weightKg?: number
-}
-
-function readAthleteProfile(): AthleteProfile {
-  const filePath = path.join(process.cwd(), 'public', 'athlete.json')
-  return JSON.parse(fs.readFileSync(filePath, 'utf-8')) as AthleteProfile
-}
+import { getAthleteFromFirestore } from '@/infrastructure/repositories/FirestoreConfigRepository'
 
 export interface TrainingZone {
   key: string
@@ -49,7 +36,7 @@ const ZONE_DEFS = [
     key: 'threshold',
     label: 'Threshold',
     shortDesc: 'Comfortably hard - T pace',
-    example: 'Cruise intervals, tempo runs 20–40 min',
+    example: 'Cruise intervals, tempo runs 20-40 min',
     paceMultMin: 0.98,
     paceMultMax: 1.02,
   },
@@ -57,14 +44,14 @@ const ZONE_DEFS = [
     key: 'vo2max',
     label: 'VO2max',
     shortDesc: '5K race effort - I pace',
-    example: '3–5 min intervals, track workouts',
+    example: '3-5 min intervals, track workouts',
     paceMultMin: 0.86,
     paceMultMax: 0.91,
   },
 ] as const
 
-export function getTrainingZones(): TrainingZonesData | null {
-  const { thresholdPaceSecPerKm } = readAthleteProfile()
+export async function getTrainingZones(): Promise<TrainingZonesData | null> {
+  const { thresholdPaceSecPerKm } = await getAthleteFromFirestore()
   if (!thresholdPaceSecPerKm) return null
 
   const zones: TrainingZone[] = ZONE_DEFS.map(({ key, label, shortDesc, example, paceMultMin, paceMultMax }) => ({

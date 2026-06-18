@@ -14,6 +14,7 @@ import {
   Map,
   Menu,
   X,
+  Settings,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -130,7 +131,21 @@ export function Sidebar() {
         </nav>
 
         <div className="flex items-center justify-between border-t border-border px-4 py-3">
-          <span className="text-xs text-subtle">{t.brand.version(APP_VERSION)}</span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-subtle">{t.brand.version(APP_VERSION)}</span>
+            <Link
+              href="/settings"
+              className={cn(
+                'rounded-md p-1 transition-colors',
+                pathname === '/settings'
+                  ? 'text-emerald-600 dark:text-emerald-400'
+                  : 'text-subtle hover:text-muted-foreground'
+              )}
+              title={t.nav.items.settings}
+            >
+              <Settings size={14} />
+            </Link>
+          </div>
           <ThemeToggle />
         </div>
       </aside>
@@ -204,8 +219,21 @@ export function Sidebar() {
           })}
         </nav>
 
-        <div className="shrink-0 border-t border-border px-6 py-4">
+        <div className="shrink-0 border-t border-border px-6 py-4 flex items-center justify-between">
           <span className="text-sm text-subtle">{t.brand.version(APP_VERSION)}</span>
+          <Link
+            href="/settings"
+            onClick={() => setOpen(false)}
+            className={cn(
+              'flex items-center gap-2 text-sm transition-colors',
+              pathname === '/settings'
+                ? 'text-emerald-600 dark:text-emerald-400'
+                : 'text-subtle hover:text-muted-foreground'
+            )}
+          >
+            <Settings size={16} />
+            {t.nav.items.settings}
+          </Link>
         </div>
       </div>
     </>

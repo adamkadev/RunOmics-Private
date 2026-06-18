@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import type { Activity } from '@/domain/activity/types'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { getGoalsFromFirestore, getPbsFromFirestore } from '@/infrastructure/repositories/FirestoreConfigRepository'
 import { round } from '@/lib/math'
 
 export interface PbEntry {
@@ -53,10 +54,6 @@ export interface GoalsPageData {
   byYear: Record<number, YearData>
 }
 
-function readJson<T>(file: string): T {
-  return JSON.parse(fs.readFileSync(path.join(process.cwd(), 'public', file), 'utf-8')) as T
-}
-
 function eventPhotoPath(activityId: string): string | null {
   const publicDir = path.join(process.cwd(), 'public', 'events')
   for (const ext of ['jpg', 'jpeg', 'png', 'webp', 'avif']) {
@@ -104,10 +101,12 @@ function computeProjection(
   return { weeklyRate, weeklyNeeded, projectedYearKm, status, deltaKm }
 }
 
-export function getGoalsPageData(): GoalsPageData {
+export async function getGoalsPageData(): Promise<GoalsPageData> {
   const activities = getAllActivities()
-  const goalYears = readJson<GoalYear[]>('goals.json')
-  const pbYears = readJson<PbYear[]>('pbs.json')
+  const [goalYears, pbYears] = await Promise.all([
+    getGoalsFromFirestore(),
+    getPbsFromFirestore(),
+  ])
 
   const activityMap = new Map(activities.map((a) => [a.id, a]))
 

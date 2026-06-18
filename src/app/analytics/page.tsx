@@ -5,12 +5,16 @@ import { getLifetimeStats } from '@/application/usecases/GetLifetimeStats'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
 import { AnalyticsClient } from '@/components/analytics/AnalyticsClient'
 
-export default function AnalyticsPage() {
-  const data = getAnalyticsData()
-  const comparison = getYearComparison()
-  const vo2maxHistory = getVO2maxHistory()
-  const lifetime = getLifetimeStats()
-  const zones = getTrainingZones()
+export const revalidate = 60
+
+export default async function AnalyticsPage() {
+  const [data, comparison, vo2maxHistory, lifetime, zones] = await Promise.all([
+    Promise.resolve(getAnalyticsData()),
+    Promise.resolve(getYearComparison()),
+    Promise.resolve(getVO2maxHistory()),
+    Promise.resolve(getLifetimeStats()),
+    getTrainingZones(),
+  ])
 
   return (
     <div className="space-y-6">
