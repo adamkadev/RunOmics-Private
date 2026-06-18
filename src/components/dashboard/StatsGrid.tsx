@@ -1,4 +1,5 @@
-import { Timer, Footprints, Heart, TrendingUp, TrendingDown, Minus, Flame, Activity } from 'lucide-react'
+import { CalendarDays, Timer, Footprints, Heart, TrendingUp, Flame, Activity, type LucideIcon } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { formatDuration, formatPace } from '@/lib/formatters'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { t } from '@/i18n'
@@ -6,92 +7,79 @@ import type { DashboardData } from '@/domain/activity/types'
 
 interface Props {
   currentWeek: DashboardData['currentWeek']
-  lastWeek: DashboardData['lastWeek']
   currentStreak: number
-  longestStreak: number
   vo2max: number | null
 }
 
-function Trend({ current, previous }: { current: number; previous: number }) {
-  const diff = current - previous
-  if (Math.abs(diff) < 0.5) return <Minus size={12} className="text-subtle" />
-  return diff > 0 ? (
-    <TrendingUp size={12} className="text-emerald-500 dark:text-emerald-400" />
-  ) : (
-    <TrendingDown size={12} className="text-red-500 dark:text-red-400" />
-  )
+interface StatCell {
+  Icon: LucideIcon
+  color: string
+  value: ReactNode
+  label: string
 }
 
-export function StatsGrid({ currentWeek, lastWeek, currentStreak, longestStreak, vo2max }: Props) {
+export function StatsGrid({ currentWeek, currentStreak, vo2max }: Props) {
   const s = t.dashboard.stats
-  const stats: { label: string; value: React.ReactNode; sub: string; trend: React.ReactNode; icon: React.ReactNode }[] = [
+
+  const cells: StatCell[] = [
     {
-      label: s.distance,
+      Icon: Footprints,
+      color: 'text-emerald-500 dark:text-emerald-400',
       value: <><AnimatedValue value={currentWeek.totalDistanceKm} decimals={currentWeek.totalDistanceKm >= 10 ? 1 : 2} /> {t.units.km}</>,
-      sub: s.distanceSub(`${lastWeek.totalDistanceKm.toFixed(lastWeek.totalDistanceKm >= 10 ? 1 : 2)} ${t.units.km}`),
-      trend: <Trend current={currentWeek.totalDistanceKm} previous={lastWeek.totalDistanceKm} />,
-      icon: <Footprints size={18} className="text-emerald-600 dark:text-emerald-400" />,
+      label: s.distance,
     },
     {
-      label: s.time,
+      Icon: Timer,
+      color: 'text-blue-500 dark:text-blue-400',
       value: formatDuration(currentWeek.totalDurationSeconds),
-      sub: t.common.sessions(currentWeek.sessionCount),
-      trend: null,
-      icon: <Timer size={18} className="text-blue-500 dark:text-blue-400" />,
+      label: s.time,
     },
     {
-      label: s.avgHr,
+      Icon: TrendingUp,
+      color: 'text-amber-500 dark:text-amber-400',
+      value: currentWeek.avgPaceSecPerKm ? formatPace(currentWeek.avgPaceSecPerKm) : s.empty,
+      label: s.avgPace,
+    },
+    {
+      Icon: Heart,
+      color: 'text-red-500 dark:text-red-400',
       value: currentWeek.avgHeartRate
         ? <><AnimatedValue value={currentWeek.avgHeartRate} /> {t.units.bpm}</>
         : s.empty,
-      sub: s.thisWeek,
-      trend: null,
-      icon: <Heart size={18} className="text-red-500 dark:text-red-400" />,
+      label: s.avgHr,
     },
     {
-      label: s.avgPace,
-      value: currentWeek.avgPaceSecPerKm ? formatPace(currentWeek.avgPaceSecPerKm) : s.empty,
-      sub: s.thisWeek,
-      trend: null,
-      icon: <TrendingUp size={18} className="text-amber-500 dark:text-amber-400" />,
-    },
-    {
-      label: s.streak,
+      Icon: Flame,
+      color: 'text-orange-500 dark:text-orange-400',
       value: <><AnimatedValue value={currentStreak} />d</>,
-      sub: s.streakSub(longestStreak),
-      trend: null,
-      icon: <Flame size={18} className="text-orange-500 dark:text-orange-400" />,
+      label: s.streak,
     },
     {
-      label: s.vo2max,
+      Icon: Activity,
+      color: 'text-violet-500 dark:text-violet-400',
       value: vo2max !== null ? <AnimatedValue value={vo2max} /> : s.empty,
-      sub: t.units.vo2max,
-      trend: null,
-      icon: <Activity size={18} className="text-violet-500 dark:text-violet-400" />,
+      label: s.vo2max,
     },
   ]
 
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-      {stats.map(({ label, value, sub, trend, icon }, i) => (
-        <div
-          key={label}
-          className="animate-fade-up rounded-xl border border-border bg-card p-4 shadow-card"
-          style={{ animationDelay: `${i * 40}ms` }}
-        >
-          <div className="mb-3 flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {label}
-            </span>
-            {icon}
+    <div className="overflow-hidden rounded-xl border border-border shadow-card">
+      <div className="flex items-center gap-2 border-b border-border bg-card px-4 py-3.5">
+        <CalendarDays size={14} className="shrink-0 text-muted-foreground" />
+        <span className="text-sm font-semibold text-foreground">
+          {t.pages.dashboard.subtitle(currentWeek.weekNumber % 100, currentWeek.sessionCount)}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-3 gap-px bg-border lg:grid-cols-6">
+        {cells.map(({ Icon, color, value, label }) => (
+          <div key={label} className="flex flex-col items-center gap-0.5 bg-card px-3 py-3 text-center">
+            <Icon size={14} className={color} />
+            <div className="whitespace-nowrap text-sm font-bold leading-tight text-foreground">{value}</div>
+            <div className="text-[10px] leading-tight text-muted-foreground">{label}</div>
           </div>
-          <p className="text-2xl font-bold tracking-tight text-foreground">{value}</p>
-          <div className="mt-1 flex items-center gap-1">
-            {trend}
-            <span className="text-xs text-subtle">{sub}</span>
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   )
 }

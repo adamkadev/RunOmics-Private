@@ -10,7 +10,6 @@ import { RecentActivities } from '@/components/dashboard/RecentActivities'
 import { ActivityHeatmap } from '@/components/dashboard/ActivityHeatmap'
 import { TrainingStatusBanner } from '@/components/dashboard/TrainingStatusBanner'
 import { ConsistencyCard } from '@/components/dashboard/ConsistencyCard'
-import { t } from '@/i18n'
 
 export default function DashboardPage() {
   const data = getDashboardData()
@@ -22,18 +21,9 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.pages.dashboard.title}</h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          {t.pages.dashboard.subtitle(data.currentWeek.weekNumber % 100, data.currentWeek.sessionCount)}
-        </p>
-      </div>
-
       <StatsGrid
         currentWeek={data.currentWeek}
-        lastWeek={data.lastWeek}
         currentStreak={data.currentStreak}
-        longestStreak={data.longestStreak}
         vo2max={vo2max}
       />
 
