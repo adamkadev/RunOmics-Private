@@ -6,10 +6,12 @@ import { getClientFirestore } from '@/lib/firebase'
 import type { GoalYear, GoalTarget } from '@/application/usecases/GetGoalsData'
 import { formatDuration, parseTimeInput } from '@/lib/formatters'
 import { t } from '@/i18n'
+import { cn } from '@/lib/utils'
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error'
+type Toast = { msg: string; ok: boolean } | null
 
-const DISTANCES = ['5K', '10K', 'Half-Marathon', 'Marathon'] as const
+const DISTANCES = t.settings.pbs.distanceOptions as readonly string[]
 
 function targetToInput(tgt: GoalTarget | undefined): string {
   return tgt?.targetSeconds != null ? formatDuration(tgt.targetSeconds) : ''
@@ -18,6 +20,12 @@ function targetToInput(tgt: GoalTarget | undefined): string {
 export function GoalsForm() {
   const [goals, setGoals] = useState<GoalYear[]>([])
   const [saveStates, setSaveStates] = useState<Record<number, SaveState>>({})
+  const [toast, setToast] = useState<Toast>(null)
+
+  function showToast(msg: string, ok: boolean) {
+    setToast({ msg, ok })
+    setTimeout(() => setToast(null), ok ? 2000 : 3500)
+  }
 
   useEffect(() => {
     getDocs(collection(getClientFirestore(), 'goals')).then((snap) => {
@@ -68,8 +76,10 @@ export function GoalsForm() {
     try {
       await setDoc(doc(getClientFirestore(), 'goals', String(year)), goal)
       setSaveStates((s) => ({ ...s, [year]: 'saved' }))
+      showToast(t.settings.actions.saved, true)
     } catch {
       setSaveStates((s) => ({ ...s, [year]: 'error' }))
+      showToast(t.settings.actions.error, false)
     }
   }
 
@@ -133,6 +143,15 @@ export function GoalsForm() {
           </div>
         ))}
       </div>
+
+      {toast && (
+        <div className={cn(
+          'fixed bottom-4 right-4 z-50 rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-lg',
+          toast.ok ? 'bg-emerald-600' : 'bg-red-500'
+        )}>
+          {toast.msg}
+        </div>
+      )}
     </section>
   )
 }
@@ -152,7 +171,12 @@ function SaveButton({ state, onClick }: { state: SaveState; onClick: () => void 
       type="button"
       onClick={onClick}
       disabled={state === 'saving'}
-      className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+      className={cn(
+        'rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors disabled:opacity-50',
+        state === 'saved'  ? 'bg-green-500 hover:bg-green-600' :
+        state === 'error'  ? 'bg-red-500 hover:bg-red-600'    :
+        'bg-emerald-600 hover:bg-emerald-700'
+      )}
     >
       {label}
     </button>

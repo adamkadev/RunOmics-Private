@@ -6,13 +6,21 @@ import { getClientFirestore } from '@/lib/firebase'
 import type { AthleteProfile } from '@/infrastructure/repositories/FirestoreConfigRepository'
 import { formatDuration, parseTimeInput } from '@/lib/formatters'
 import { t } from '@/i18n'
+import { cn } from '@/lib/utils'
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error'
+type Toast = { msg: string; ok: boolean } | null
 
 export function AthleteForm() {
   const [values, setValues] = useState<AthleteProfile>({})
   const [paceInput, setPaceInput] = useState('')
   const [saveState, setSaveState] = useState<SaveState>('idle')
+  const [toast, setToast] = useState<Toast>(null)
+
+  function showToast(msg: string, ok: boolean) {
+    setToast({ msg, ok })
+    setTimeout(() => setToast(null), ok ? 2000 : 3500)
+  }
 
   useEffect(() => {
     getDoc(doc(getClientFirestore(), 'athlete', 'profile')).then((snap) => {
@@ -41,8 +49,10 @@ export function AthleteForm() {
       await setDoc(doc(getClientFirestore(), 'athlete', 'profile'), final)
       setValues(final)
       setSaveState('saved')
+      showToast(t.settings.actions.saved, true)
     } catch {
       setSaveState('error')
+      showToast(t.settings.actions.error, false)
     }
   }
 
@@ -100,6 +110,15 @@ export function AthleteForm() {
           <SaveButton state={saveState} />
         </div>
       </form>
+
+      {toast && (
+        <div className={cn(
+          'fixed bottom-4 right-4 z-50 rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-lg',
+          toast.ok ? 'bg-emerald-600' : 'bg-red-500'
+        )}>
+          {toast.msg}
+        </div>
+      )}
     </section>
   )
 }
@@ -128,7 +147,12 @@ function SaveButton({ state }: { state: SaveState }) {
     <button
       type="submit"
       disabled={state === 'saving'}
-      className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+      className={cn(
+        'rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors disabled:opacity-50',
+        state === 'saved'  ? 'bg-green-500 hover:bg-green-600' :
+        state === 'error'  ? 'bg-red-500 hover:bg-red-600'    :
+        'bg-emerald-600 hover:bg-emerald-700'
+      )}
     >
       {label}
     </button>
