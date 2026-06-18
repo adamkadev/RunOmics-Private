@@ -19,7 +19,7 @@ export default function GoalsLoading() {
           <Skeleton className="h-8 w-40" />
           <Skeleton className="h-4 w-24" />
         </div>
-        <Skeleton className="h-9 w-24 rounded-lg" />
+        <Skeleton className="h-7 w-14 rounded-lg" />
       </div>
 
       {/* Annual goal */}
@@ -42,11 +42,7 @@ export default function GoalsLoading() {
         </div>
       </div>
 
-      {/* Training zones */}
-      <div className="space-y-3">
-        <Skeleton className="h-4 w-32" />
-        <Skeleton className="h-40 w-full rounded-xl" />
-      </div>
+
     </div>
   )
 }
