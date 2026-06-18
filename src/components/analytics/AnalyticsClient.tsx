@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Footprints, Timer, Hash, Mountain, Gauge, Flame, CalendarRange } from 'lucide-react'
+import { type LucideIcon, Footprints, Timer, Hash, Mountain, Gauge, Flame, CalendarRange, TrendingUp, TrendingDown, ChevronDown } from 'lucide-react'
+import type { ReactNode } from 'react'
+import { cn } from '@/lib/utils'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import type { AnalyticsPageData, PeriodDelta } from '@/application/usecases/GetAnalyticsData'
 import type { YearComparisonData } from '@/application/usecases/GetYearComparison'
@@ -34,252 +36,286 @@ const TABS = [
 ] as const
 
 type TabId = (typeof TABS)[number]['id']
-
 type View = { kind: 'year'; year: number } | { kind: 'period'; weeks: number } | { kind: 'all' }
 
-interface StatCardProps {
-  icon: React.ReactNode
+interface StatCell {
+  Icon: LucideIcon
+  color: string
+  value: ReactNode
   label: string
-  value: React.ReactNode
-  className?: string
-}
-
-function StatCard({ icon, label, value, className }: StatCardProps) {
-  return (
-    <div className={`flex flex-col items-center gap-1 rounded-xl border border-border bg-card px-4 py-3 shadow-card ${className ?? ''}`}>
-      <div className="text-subtle">{icon}</div>
-      <span className="text-sm font-semibold text-foreground">{value}</span>
-      <span className="text-xs text-subtle">{label}</span>
-    </div>
-  )
 }
 
 function chipClass(active: boolean): string {
-  return [
+  return cn(
     'shrink-0 rounded-lg px-2.5 py-1 text-xs font-medium transition-colors',
-    active ? 'bg-emerald-500 text-white' : 'border border-border bg-card text-muted-foreground hover:bg-muted',
-  ].join(' ')
-}
-
-function DeltaStrip({ delta, weeks }: { delta: PeriodDelta; weeks: number }) {
-  const items: { text: string; good: boolean }[] = []
-  if (delta.distancePct != null) items.push({ text: t.analytics.period.distancePct(delta.distancePct), good: delta.distancePct >= 0 })
-  if (delta.sessionsPct != null) items.push({ text: t.analytics.period.sessionsPct(delta.sessionsPct), good: delta.sessionsPct >= 0 })
-  if (delta.easyPaceSec != null && delta.easyPaceSec !== 0) {
-    const faster = delta.easyPaceSec < 0
-    items.push({
-      text: faster ? t.analytics.period.paceFaster(Math.abs(delta.easyPaceSec)) : t.analytics.period.paceSlower(delta.easyPaceSec),
-      good: faster,
-    })
-  }
-  if (!items.length) return null
-  return (
-    <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs">
-      {items.map((it, i) => (
-        <span key={i} className={it.good ? 'text-emerald-600 dark:text-emerald-400' : 'text-orange-500 dark:text-orange-400'}>
-          {it.text}
-        </span>
-      ))}
-      <span className="text-subtle">{t.analytics.period.vsPrevious(weeks)}</span>
-    </div>
+    active ? 'bg-accent text-white' : 'border border-border bg-card text-muted-foreground hover:bg-muted',
   )
 }
 
-export function AnalyticsClient({ data, comparison, vo2maxHistory, lifetime }: { data: AnalyticsPageData; comparison: YearComparisonData | null; vo2maxHistory: VO2maxPoint[]; lifetime: LifetimeStats | null }) {
+function DeltaBadge({ text, good }: { text: string; good: boolean }) {
+  const Icon = good ? TrendingUp : TrendingDown
+  return (
+    <span className={cn(
+      'inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-medium',
+      good
+        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+        : 'bg-orange-500/15 text-orange-500 dark:text-orange-400',
+    )}>
+      <Icon size={10} strokeWidth={2.5} />
+      {text}
+    </span>
+  )
+}
+
+function buildDeltaBadges(delta: PeriodDelta): ReactNode[] {
+  const badges: ReactNode[] = []
+  if (delta.distancePct != null)
+    badges.push(<DeltaBadge key="dist" text={t.analytics.period.distancePct(delta.distancePct)} good={delta.distancePct >= 0} />)
+  if (delta.sessionsPct != null)
+    badges.push(<DeltaBadge key="sess" text={t.analytics.period.sessionsPct(delta.sessionsPct)} good={delta.sessionsPct >= 0} />)
+  if (delta.easyPaceSec != null && delta.easyPaceSec !== 0) {
+    const faster = delta.easyPaceSec < 0
+    badges.push(
+      <DeltaBadge
+        key="pace"
+        text={faster ? t.analytics.period.paceFaster(Math.abs(delta.easyPaceSec)) : t.analytics.period.paceSlower(delta.easyPaceSec)}
+        good={faster}
+      />,
+    )
+  }
+  return badges
+}
+
+export function AnalyticsClient({
+  data,
+  comparison,
+  vo2maxHistory,
+  lifetime,
+}: {
+  data: AnalyticsPageData
+  comparison: YearComparisonData | null
+  vo2maxHistory: VO2maxPoint[]
+  lifetime: LifetimeStats | null
+}) {
   const { years, byYear, periodWeeks, byPeriod } = data
   const [view, setView] = useState<View>({ kind: 'year', year: years[0] })
   const [tab, setTab] = useState<TabId>('volume')
-  const yearsRef = useRef<HTMLDivElement | null>(null)
-  const periodsRef = useRef<HTMLDivElement | null>(null)
-  const activeChipRef = useRef<HTMLButtonElement | null>(null)
+  const [yearOpen, setYearOpen] = useState(false)
+  const yearDropdownRef = useRef<HTMLDivElement | null>(null)
 
   const isPeriod = view.kind === 'period'
   const isAll = view.kind === 'all'
   const active = view.kind === 'year' ? byYear[view.year] : view.kind === 'period' ? byPeriod[view.weeks] : data.allTime
   const totals = active?.totals ?? null
 
+  const periodLabel = isAll
+    ? t.analytics.allTimeTitle
+    : isPeriod
+    ? t.analytics.period.title(view.weeks)
+    : t.analytics.season(view.year)
+
   useEffect(() => {
-    const active = activeChipRef.current
-    if (!active) return
-
-    // choose the container depending on which kind is active
-    const container = view.kind === 'year' ? yearsRef.current : periodsRef.current
-    if (!container) return
-
-    try {
-      const containerRect = container.getBoundingClientRect()
-      const activeRect = active.getBoundingClientRect()
-      const offset = (activeRect.left + activeRect.right) / 2 - (containerRect.left + containerRect.right) / 2
-      container.scrollBy({ left: offset, behavior: 'smooth' })
-    } catch {
-      active.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+    if (!yearOpen) return
+    function onOutsideClick(e: MouseEvent) {
+      if (!yearDropdownRef.current?.contains(e.target as Node)) setYearOpen(false)
     }
-  }, [view, years, periodWeeks])
+    document.addEventListener('mousedown', onOutsideClick)
+    return () => document.removeEventListener('mousedown', onOutsideClick)
+  }, [yearOpen])
 
   function selectPeriod(weeks: number) {
     setView({ kind: 'period', weeks })
-    if (tab === 'seasons') setTab('volume') // year-only tab
+    if (tab === 'seasons') setTab('volume')
   }
 
   function selectAllTime() {
     setView({ kind: 'all' })
-    if (tab === 'seasons') setTab('volume') // year-only tab
+    if (tab === 'seasons') setTab('volume')
+  }
+
+  function selectYear(y: number) {
+    setView({ kind: 'year', year: y })
+    setYearOpen(false)
   }
 
   const visibleTabs = isPeriod || isAll ? TABS.filter((tb) => tb.id !== 'seasons') : TABS
-
-  // Rolling periods are anchored to today, so only offer them on the most recent
-  // year (or while a period is active). Past years just show their calendar view.
   const showPeriods = view.kind === 'period' || (view.kind === 'year' && view.year === years[0])
+  const displayYear = view.kind === 'year' ? view.year : years[0]
 
-  const statCards: { icon: React.ReactNode; label: string; value: React.ReactNode }[] =
-    isAll && lifetime
-      ? [
-          {
-            icon: <Footprints size={16} className="text-emerald-500 dark:text-emerald-400" />,
-            label: t.analytics.stats.distance,
-            value: <><AnimatedValue value={lifetime.totalDistanceKm} /> {t.units.km}</>,
-          },
-          {
-            icon: <Hash size={16} className="text-violet-500 dark:text-violet-400" />,
-            label: t.analytics.stats.sessions,
-            value: <AnimatedValue value={lifetime.totalActivities} />,
-          },
-          {
-            icon: <CalendarRange size={16} className="text-blue-500 dark:text-blue-400" />,
-            label: t.analytics.stats.yearsTracked,
-            value: <AnimatedValue value={lifetime.yearsTracked} decimals={1} />,
-          },
-        ]
-      : totals
-        ? [
-            {
-              icon: <Footprints size={16} className="text-emerald-500 dark:text-emerald-400" />,
-              label: t.analytics.stats.distance,
-              value: <><AnimatedValue value={totals.distanceKm} /> {t.units.km}</>,
-            },
-            {
-              icon: <Timer size={16} className="text-blue-500 dark:text-blue-400" />,
-              label: t.analytics.stats.time,
-              value: formatDuration(totals.durationSeconds),
-            },
-            {
-              icon: <Hash size={16} className="text-violet-500 dark:text-violet-400" />,
-              label: t.analytics.stats.sessions,
-              value: <AnimatedValue value={totals.sessionCount} />,
-            },
-            {
-              icon: <Mountain size={16} className="text-stone-500 dark:text-stone-400" />,
-              label: t.analytics.stats.elevation,
-              value: <>+<AnimatedValue value={totals.elevationM} /> m</>,
-            },
-            {
-              icon: <Gauge size={16} className="text-amber-500 dark:text-amber-400" />,
-              label: t.analytics.stats.avgPerWeek,
-              value: <><AnimatedValue value={totals.avgKmPerWeek} decimals={1} /> {t.units.km}</>,
-            },
-            ...(totals.calories > 0
-              ? [
-                  {
-                    icon: <Flame size={16} className="text-orange-500 dark:text-orange-400" />,
-                    label: t.analytics.stats.calories,
-                    value: <><AnimatedValue value={totals.calories / 1000} decimals={1} />k kcal</>,
-                  },
-                  {
-                    icon: <Flame size={16} className="text-red-500 dark:text-red-400" />,
-                    label: t.analytics.stats.kcalPerWeek,
-                    value: <AnimatedValue value={totals.caloriesPerWeek} />,
-                  },
-                ]
-              : []),
-          ]
-        : []
+  const statCells: StatCell[] = isAll && lifetime
+    ? [
+        {
+          Icon: Footprints,
+          color: 'text-emerald-500 dark:text-emerald-400',
+          value: <><AnimatedValue value={lifetime.totalDistanceKm} /> {t.units.km}</>,
+          label: t.analytics.stats.distance,
+        },
+        {
+          Icon: Hash,
+          color: 'text-violet-500 dark:text-violet-400',
+          value: <AnimatedValue value={lifetime.totalActivities} />,
+          label: t.analytics.stats.sessions,
+        },
+        {
+          Icon: CalendarRange,
+          color: 'text-blue-500 dark:text-blue-400',
+          value: <AnimatedValue value={lifetime.yearsTracked} decimals={1} />,
+          label: t.analytics.stats.yearsTracked,
+        },
+      ]
+    : totals
+    ? [
+        {
+          Icon: Footprints,
+          color: 'text-emerald-500 dark:text-emerald-400',
+          value: <><AnimatedValue value={totals.distanceKm} /> {t.units.km}</>,
+          label: t.analytics.stats.distance,
+        },
+        {
+          Icon: Timer,
+          color: 'text-blue-500 dark:text-blue-400',
+          value: formatDuration(totals.durationSeconds),
+          label: t.analytics.stats.time,
+        },
+        {
+          Icon: Hash,
+          color: 'text-violet-500 dark:text-violet-400',
+          value: <AnimatedValue value={totals.sessionCount} />,
+          label: t.analytics.stats.sessions,
+        },
+        {
+          Icon: Mountain,
+          color: 'text-stone-500 dark:text-stone-400',
+          value: <>+<AnimatedValue value={totals.elevationM} /> m</>,
+          label: t.analytics.stats.elevation,
+        },
+        {
+          Icon: Gauge,
+          color: 'text-amber-500 dark:text-amber-400',
+          value: <><AnimatedValue value={totals.avgKmPerWeek} decimals={1} /> {t.units.km}</>,
+          label: t.analytics.stats.avgPerWeek,
+        },
+        ...(totals.calories > 0
+          ? [{
+              Icon: Flame,
+              color: 'text-orange-500 dark:text-orange-400',
+              value: <><AnimatedValue value={totals.calories / 1000} decimals={1} />k kcal</>,
+              label: t.analytics.stats.calories,
+            }]
+          : []),
+      ]
+    : []
+
+  // Pad to next multiple of 3 so gap-px bg-border grid never shows orphaned rows
+  const mobileFill = statCells.length % 3 !== 0 ? 3 - (statCells.length % 3) : 0
+  const lgColsClass = statCells.length >= 6 ? 'lg:grid-cols-6' : statCells.length >= 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-3'
+
+  const deltaBadges: ReactNode[] = view.kind === 'period'
+    ? (() => { const d = byPeriod[view.weeks].delta; return d ? buildDeltaBadges(d) : [] })()
+    : []
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center justify-between gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.analytics.title}</h1>
-            <div ref={yearsRef} className="flex items-center gap-1 overflow-x-auto">
-              {years.map((y) => (
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.analytics.title}</h1>
+
+        <div className="flex items-center gap-1">
+          {/* Year dropdown - scales to any number of years, includes All-time */}
+          <div ref={yearDropdownRef} className="relative">
+            <button
+              onClick={() => setYearOpen((o) => !o)}
+              className={cn(chipClass(view.kind === 'year' || isAll), 'flex items-center gap-1')}
+            >
+              {isAll ? t.analytics.allTimeChip : displayYear}
+              <ChevronDown size={11} className={cn('transition-transform', yearOpen && 'rotate-180')} />
+            </button>
+            {yearOpen && (
+              <div className="absolute right-0 top-full z-20 mt-1 min-w-[4.5rem] overflow-hidden rounded-xl border border-border bg-card py-1 shadow-lg">
+                {years.map((y) => (
+                  <button
+                    key={y}
+                    onClick={() => selectYear(y)}
+                    className={cn(
+                      'flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs font-medium transition-colors hover:bg-muted',
+                      view.kind === 'year' && view.year === y ? 'text-accent-text' : 'text-foreground',
+                    )}
+                  >
+                    {y}
+                    {view.kind === 'year' && view.year === y && (
+                      <span className="ml-auto h-1.5 w-1.5 rounded-full bg-accent" />
+                    )}
+                  </button>
+                ))}
+                <div className="mx-2 my-1 border-t border-border" />
                 <button
-                  ref={view.kind === 'year' && view.year === y ? activeChipRef : undefined}
-                  key={y}
-                  onClick={() => setView({ kind: 'year', year: y })}
-                  className={chipClass(view.kind === 'year' && view.year === y)}
+                  onClick={() => { selectAllTime(); setYearOpen(false) }}
+                  className={cn(
+                    'flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs font-medium transition-colors hover:bg-muted',
+                    isAll ? 'text-accent-text' : 'text-foreground',
+                  )}
                 >
-                  {y}
+                  {t.analytics.allTimeChip}
+                  {isAll && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-accent" />}
                 </button>
-              ))}
-              <button
-                ref={isAll ? activeChipRef : undefined}
-                onClick={selectAllTime}
-                className={chipClass(isAll)}
-              >
-                {t.analytics.allTimeChip}
-              </button>
-            </div>
+              </div>
+            )}
           </div>
 
-          <div className="flex items-center justify-between gap-3">
-            <p className="mt-0.5 text-sm text-muted-foreground">
-              {isAll ? t.analytics.allTimeTitle : isPeriod ? t.analytics.period.title(view.weeks) : t.analytics.season(view.year)}
-            </p>
-            <div ref={periodsRef} className="flex items-center gap-1 overflow-x-auto">
-              {showPeriods && (
-                <>
-                  {periodWeeks.map((w) => (
-                    <button
-                      ref={view.kind === 'period' && view.weeks === w ? activeChipRef : undefined}
-                      key={`p${w}`}
-                      onClick={() => selectPeriod(w)}
-                      className={chipClass(view.kind === 'period' && view.weeks === w)}
-                    >
-                      {t.analytics.period.chip(w)}
-                    </button>
-                  ))}
-                </>
-              )}
-            </div>
+          {/* Rolling period chips - only relevant for the current year */}
+          {showPeriods && periodWeeks.map((w) => (
+            <button
+              key={`p${w}`}
+              onClick={() => selectPeriod(w)}
+              className={chipClass(view.kind === 'period' && view.weeks === w)}
+            >
+              {t.analytics.period.chip(w)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Stats card */}
+      {statCells.length > 0 && (
+        <div className="overflow-hidden rounded-xl border border-border shadow-card">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-b border-border bg-card px-4 py-3">
+            <span className="text-sm font-semibold text-foreground">{periodLabel}</span>
+            {deltaBadges.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">{deltaBadges}</div>
+            )}
+          </div>
+          <div className={cn('grid gap-px bg-border grid-cols-3', lgColsClass)}>
+            {statCells.map(({ Icon, color, value, label }) => (
+              <div key={label} className="flex flex-col items-center gap-0.5 bg-card px-3 py-3 text-center">
+                <Icon size={14} className={color} />
+                <div className="whitespace-nowrap text-sm font-bold leading-tight text-foreground">{value}</div>
+                <div className="text-[10px] leading-tight text-muted-foreground">{label}</div>
+              </div>
+            ))}
+            {Array.from({ length: mobileFill }).map((_, i) => (
+              <div key={`fill-${i}`} className="bg-card lg:hidden" />
+            ))}
           </div>
         </div>
-        {view.kind === 'period' && (() => {
-          const delta = byPeriod[view.weeks].delta
-          return delta && <DeltaStrip delta={delta} weeks={view.weeks} />
-        })()}
-      </div>
-
-      {/* Stats - odd count, so the last card spans full width on mobile to avoid a lonely orphan */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
-        {statCards.map((card, idx) => (
-          <StatCard
-            key={card.label}
-            icon={card.icon}
-            label={card.label}
-            value={card.value}
-            className={statCards.length % 2 === 1 && idx === statCards.length - 1 ? 'col-span-2 sm:col-span-1' : ''}
-          />
-        ))}
-      </div>
+      )}
 
       {active && (
         <>
-          {/* Tabs */}
-          <div className="flex gap-1 rounded-xl border border-border bg-muted/40 p-1">
+          {/* Tabs - underline indicator */}
+          <div className="flex border-b border-border">
             {visibleTabs.map((item) => (
               <button
                 key={item.id}
                 onClick={() => setTab(item.id)}
-                className={[
-                  'flex-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
-                  tab === item.id
-                    ? 'bg-card text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground',
-                ].join(' ')}
+                className={cn(
+                  'relative flex-1 py-2.5 text-sm font-medium transition-colors',
+                  tab === item.id ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
+                )}
               >
                 {item.label}
+                {tab === item.id && (
+                  <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-t-full bg-accent" />
+                )}
               </button>
             ))}
           </div>
