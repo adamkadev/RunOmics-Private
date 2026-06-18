@@ -54,44 +54,36 @@ export default async function ActivityDetailPage({
     .map((r) => r.label)
 
   return (
-    <div>
+    <div className="space-y-5">
       <BackButton label={t.activity.back} fallbackHref="/activities" />
 
-      <ActivityDetailClient
-        activity={activity}
-        header={
-          <div>
-            <div className="mb-2 flex flex-wrap items-center gap-2">
-              <ActivityTypeTag type={activity.type} />
-              {prLabels.length > 0 && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
-                  <Trophy size={11} />
-                  {t.activity.bestEfforts.prBadge} - {prLabels.join(' - ')}
-                </span>
-              )}
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              {activity.description || t.activity.runTitle(activity.dayOfWeek)}
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">{formatDate(activity.date)}</p>
-            {activity.comment && (
-              <p className="mt-1 text-sm text-muted-foreground">{activity.comment}</p>
-            )}
-          </div>
-        }
-        footer={
-          <>
-            <ZoneBar key="zones" hrZones={activity.hrZones} />
-            <TrainingEffect
-              key="training-effect"
-              aer={activity.aerTrainingEffect}
-              ana={activity.anaTrainingEffect}
-            />
-            {activity.bestEfforts && <BestEfforts key="best-efforts" bestEfforts={activity.bestEfforts} />}
-            <RunningDynamics key="dynamics" activity={activity} />
-          </>
-        }
-      />
+      <div>
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          <ActivityTypeTag type={activity.type} />
+          {prLabels.length > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+              <Trophy size={11} />
+              {t.activity.bestEfforts.prBadge} - {prLabels.join(' - ')}
+            </span>
+          )}
+        </div>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          {activity.description || t.activity.runTitle(activity.dayOfWeek)}
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">{formatDate(activity.date)}</p>
+        {activity.comment && (
+          <p className="mt-1 text-sm text-muted-foreground">{activity.comment}</p>
+        )}
+      </div>
+
+      <ActivityDetailClient activity={activity} />
+
+      <div className="space-y-4">
+        <ZoneBar hrZones={activity.hrZones} />
+        <TrainingEffect aer={activity.aerTrainingEffect} ana={activity.anaTrainingEffect} />
+        {activity.bestEfforts && <BestEfforts bestEfforts={activity.bestEfforts} />}
+        <RunningDynamics activity={activity} />
+      </div>
     </div>
   )
 }

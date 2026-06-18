@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import { Footprints, Timer, TrendingUp, Heart, Mountain, Flame, Gauge, Zap, type LucideIcon } from 'lucide-react'
 import type { Activity } from '@/domain/activity/types'
 import { ActivityMapClient } from './ActivityMapClient'
@@ -14,8 +14,6 @@ import { t } from '@/i18n'
 
 interface Props {
   activity: Activity
-  header: ReactNode
-  footer: ReactNode
 }
 
 interface StatDef {
@@ -96,19 +94,14 @@ function buildStats(activity: Activity): StatDef[] {
   return stats
 }
 
-export function ActivityDetailClient({ activity, header, footer }: Props) {
+export function ActivityDetailClient({ activity }: Props) {
   const [hoverFraction, setHoverFraction] = useState<number | null>(null)
   const stats = buildStats(activity)
   const hasCharts = !!(activity.hrSamples || activity.elevationProfile || activity.paceSamples || activity.cadenceSamples)
 
   return (
-    <div className="space-y-5">
-      {/* Title / type tag / date - rendered by server */}
-      {header}
-
-      {/* Card: map + metrics */}
+    <>
       <div className="overflow-hidden rounded-xl border border-border bg-card shadow-card">
-        {/* Map - inner wrapper clips the map's own rounded-xl to top corners only */}
         <div className="h-[260px] overflow-hidden rounded-t-xl sm:h-[360px]">
           {activity.route ? (
             <ActivityMapClient
@@ -123,7 +116,6 @@ export function ActivityDetailClient({ activity, header, footer }: Props) {
           )}
         </div>
 
-        {/* Metrics grid - compact, colored icons, no internal borders */}
         <div className="grid grid-cols-4 px-2 py-2">
           {stats.map(({ Icon, color, value, label }) => (
             <div key={label} className="flex flex-col items-center gap-0.5 px-2 py-2 text-center">
@@ -135,7 +127,6 @@ export function ActivityDetailClient({ activity, header, footer }: Props) {
         </div>
       </div>
 
-      {/* Interactive charts */}
       {hasCharts && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {activity.hrSamples && (
@@ -172,9 +163,6 @@ export function ActivityDetailClient({ activity, header, footer }: Props) {
           )}
         </div>
       )}
-
-      {/* Server-rendered sections: zones, training effect, dynamics, etc. */}
-      <div className="space-y-4">{footer}</div>
-    </div>
+    </>
   )
 }
