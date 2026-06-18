@@ -42,13 +42,13 @@ interface MetricRowProps {
 
 function MetricRow({ label, newer, older, pct, lowerIsBetter }: MetricRowProps) {
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-border py-3 last:border-0">
-      <span className="w-32 text-sm text-muted-foreground">{label}</span>
-      <span className="flex-1 text-right text-sm font-semibold text-foreground">
+    <div className="flex items-center justify-between gap-2 sm:gap-4 border-b border-border py-3 last:border-0">
+      <span className="w-24 shrink-0 sm:w-32 text-sm text-muted-foreground">{label}</span>
+      <span className="flex-1 text-right text-sm font-semibold text-foreground whitespace-nowrap">
         {newer}
       </span>
-      <DeltaBadge pct={pct} lowerIsBetter={lowerIsBetter} />
-      <span className="w-24 text-right text-sm text-subtle">{older}</span>
+      <span className="shrink-0"><DeltaBadge pct={pct} lowerIsBetter={lowerIsBetter} /></span>
+      <span className="w-20 shrink-0 sm:w-24 text-right text-sm text-subtle whitespace-nowrap">{older}</span>
     </div>
   )
 }
