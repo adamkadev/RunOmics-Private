@@ -16,6 +16,13 @@ const TYPE_ACCENT: Record<ActivityType, string> = {
   Race:      'amber',
 }
 
+function rpeChipClass(rpe: number): string {
+  if (rpe <= 3) return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+  if (rpe <= 5) return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+  if (rpe <= 7) return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+  return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+}
+
 interface Props {
   activity: Activity
 }
@@ -33,6 +40,11 @@ export function ActivityRow({ activity: a }: Props) {
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <ActivityTypeTag type={a.type} />
+          {a.rpe !== null && (
+            <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${rpeChipClass(a.rpe)}`}>
+              RPE {a.rpe}
+            </span>
+          )}
           <span className="text-xs text-subtle">{formatDate(a.date)}</span>
           {a.comment && (
             <MessageSquare size={12} className="text-subtle" />
@@ -77,14 +89,6 @@ export function ActivityRow({ activity: a }: Props) {
             <p className="text-xs text-subtle">{t.activities.row.avgHr}</p>
           </div>
         )}
-        <div className="hidden w-24 xl:block">
-          <p className="truncate font-medium text-foreground/80">
-            {a.rpe !== null ? (t.rpeLabels[a.rpe] ?? '-') : t.activities.row.na}
-          </p>
-          <p className="text-xs text-subtle">
-            {a.rpe !== null ? t.activities.row.rpeValue(a.rpe) : t.activities.row.rpe}
-          </p>
-        </div>
       </div>
     </Link>
   )
