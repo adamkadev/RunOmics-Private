@@ -4,44 +4,45 @@ import { useEffect, useState } from 'react'
 import { collection, getDocs, doc, setDoc } from 'firebase/firestore'
 import { getClientFirestore } from '@/lib/firebase'
 import type { GoalYear, GoalTarget } from '@/application/usecases/GetGoalsData'
+import { formatDuration, parseTimeInput } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error'
 
 const DISTANCES = ['5K', '10K', 'Half-Marathon', 'Marathon'] as const
 
+function targetToInput(tgt: GoalTarget | undefined): string {
+  return tgt?.targetSeconds != null ? formatDuration(tgt.targetSeconds) : ''
+}
+
 export function GoalsForm() {
   const [goals, setGoals] = useState<GoalYear[]>([])
   const [saveStates, setSaveStates] = useState<Record<number, SaveState>>({})
 
   useEffect(() => {
-    const db = getClientFirestore()
-    getDocs(collection(db, 'goals')).then((snap) => {
-      const data = snap.docs
-        .map((d) => d.data() as GoalYear)
-        .sort((a, b) => b.year - a.year)
-      setGoals(data)
+    getDocs(collection(getClientFirestore(), 'goals')).then((snap) => {
+      setGoals(
+        snap.docs.map((d) => d.data() as GoalYear).sort((a, b) => b.year - a.year)
+      )
     })
   }, [])
 
-  function updateGoal(year: number, field: 'annualDistanceKm', value: number) {
+  function updateKm(year: number, value: string) {
     setGoals((prev) =>
-      prev.map((g) => (g.year === year ? { ...g, [field]: value } : g))
+      prev.map((g) => (g.year === year ? { ...g, annualDistanceKm: Number(value) } : g))
     )
     setSaveStates((s) => ({ ...s, [year]: 'idle' }))
   }
 
   function updateTarget(year: number, distance: string, raw: string) {
-    const seconds = raw === '' ? null : Number(raw)
+    const seconds = raw === '' ? null : (parseTimeInput(raw) ?? null)
     setGoals((prev) =>
       prev.map((g) => {
         if (g.year !== year) return g
-        const targets = g.targets.map((tgt) =>
-          tgt.distance === distance ? { ...tgt, targetSeconds: seconds } : tgt
-        )
-        if (!targets.find((t) => t.distance === distance)) {
-          targets.push({ distance, targetSeconds: seconds })
-        }
+        const existing = g.targets.find((t) => t.distance === distance)
+        const targets = existing
+          ? g.targets.map((t) => (t.distance === distance ? { ...t, targetSeconds: seconds } : t))
+          : [...g.targets, { distance, targetSeconds: seconds }]
         return { ...g, targets }
       })
     )
@@ -49,13 +50,11 @@ export function GoalsForm() {
   }
 
   function addYear() {
-    const nextYear = (goals[0]?.year ?? new Date().getFullYear()) + 1
-    const newGoal: GoalYear = {
-      year: nextYear,
-      annualDistanceKm: 0,
-      targets: DISTANCES.map((d) => ({ distance: d, targetSeconds: null })),
-    }
-    setGoals((prev) => [newGoal, ...prev])
+    const next = (goals[0]?.year ?? new Date().getFullYear()) + 1
+    setGoals((prev) => [
+      { year: next, annualDistanceKm: 0, targets: DISTANCES.map((d) => ({ distance: d, targetSeconds: null })) },
+      ...prev,
+    ])
   }
 
   function removeYear(year: number) {
@@ -67,8 +66,7 @@ export function GoalsForm() {
     if (!goal) return
     setSaveStates((s) => ({ ...s, [year]: 'saving' }))
     try {
-      const db = getClientFirestore()
-      await setDoc(doc(db, 'goals', String(year)), goal)
+      await setDoc(doc(getClientFirestore(), 'goals', String(year)), goal)
       setSaveStates((s) => ({ ...s, [year]: 'saved' }))
     } catch {
       setSaveStates((s) => ({ ...s, [year]: 'error' }))
@@ -76,104 +74,77 @@ export function GoalsForm() {
   }
 
   return (
-    <section className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-foreground">{t.settings.goals.title}</h2>
+    <section className="rounded-xl border border-border bg-card">
+      <div className="flex items-center justify-between border-b border-border px-4 py-3 sm:px-5">
+        <h2 className="text-sm font-semibold text-foreground">{t.settings.goals.title}</h2>
         <button
           type="button"
           onClick={addYear}
-          className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+          className="text-xs font-medium text-emerald-600 transition-colors hover:text-emerald-700 dark:text-emerald-400"
         >
           + {t.settings.goals.addYear}
         </button>
       </div>
 
-      {goals.map((goal) => (
-        <GoalYearCard
-          key={goal.year}
-          goal={goal}
-          saveState={saveStates[goal.year] ?? 'idle'}
-          onUpdateKm={(km) => updateGoal(goal.year, 'annualDistanceKm', km)}
-          onUpdateTarget={(d, v) => updateTarget(goal.year, d, v)}
-          onSave={() => saveYear(goal.year)}
-          onRemove={() => removeYear(goal.year)}
-        />
-      ))}
+      <div className="divide-y divide-border">
+        {goals.map((goal) => (
+          <div key={goal.year} className="p-4 sm:p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-base font-bold text-foreground">{goal.year}</span>
+              <button
+                type="button"
+                onClick={() => removeYear(goal.year)}
+                className="text-xs text-muted-foreground transition-colors hover:text-destructive"
+              >
+                {t.settings.goals.removeYear}
+              </button>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-foreground">{t.settings.goals.annualKm}</label>
+              <input
+                type="number"
+                value={goal.annualDistanceKm || ''}
+                onChange={(e) => updateKm(goal.year, e.target.value)}
+                className={inputCls}
+                placeholder="1500"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-foreground">{t.settings.goals.raceTargets}</p>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {DISTANCES.map((d) => (
+                  <div key={d} className="space-y-1">
+                    <label className="text-xs text-muted-foreground">{d}</label>
+                    <input
+                      type="text"
+                      placeholder="mm:ss"
+                      value={targetToInput(goal.targets.find((tt) => tt.distance === d))}
+                      onChange={(e) => updateTarget(goal.year, d, e.target.value)}
+                      className={inputCls}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <SaveButton state={saveStates[goal.year] ?? 'idle'} onClick={() => saveYear(goal.year)} />
+          </div>
+        ))}
+      </div>
     </section>
   )
 }
 
-function GoalYearCard({
-  goal,
-  saveState,
-  onUpdateKm,
-  onUpdateTarget,
-  onSave,
-  onRemove,
-}: {
-  goal: GoalYear
-  saveState: SaveState
-  onUpdateKm: (km: number) => void
-  onUpdateTarget: (distance: string, value: string) => void
-  onSave: () => void
-  onRemove: () => void
-}) {
-  function targetValue(distance: string): string {
-    const tgt = goal.targets.find((t: GoalTarget) => t.distance === distance)
-    return tgt?.targetSeconds != null ? String(tgt.targetSeconds) : ''
-  }
-
-  return (
-    <div className="rounded-lg border border-border p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold text-foreground">{goal.year}</span>
-        <button
-          type="button"
-          onClick={onRemove}
-          className="text-xs text-muted-foreground transition-colors hover:text-destructive"
-        >
-          {t.settings.goals.removeYear}
-        </button>
-      </div>
-
-      <div className="space-y-1">
-        <label className="text-sm font-medium text-foreground">{t.settings.goals.annualKm}</label>
-        <input
-          type="number"
-          value={goal.annualDistanceKm || ''}
-          onChange={(e) => onUpdateKm(Number(e.target.value))}
-          className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <p className="text-sm font-medium text-foreground">{t.settings.goals.raceTargets}</p>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {DISTANCES.map((d) => (
-            <div key={d} className="space-y-1">
-              <label className="text-xs text-muted-foreground">{d} ({t.settings.goals.optional})</label>
-              <input
-                type="number"
-                placeholder={t.settings.goals.targetSeconds}
-                value={targetValue(d)}
-                onChange={(e) => onUpdateTarget(d, e.target.value)}
-                className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <SaveButton state={saveState} onClick={onSave} />
-    </div>
-  )
-}
+const inputCls =
+  'w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500'
 
 function SaveButton({ state, onClick }: { state: SaveState; onClick: () => void }) {
   const label =
     state === 'saving' ? t.settings.actions.saving :
-    state === 'saved' ? t.settings.actions.saved :
-    state === 'error' ? t.settings.actions.error :
+    state === 'saved'  ? t.settings.actions.saved  :
+    state === 'error'  ? t.settings.actions.error  :
     t.settings.actions.save
 
   return (
@@ -181,7 +152,7 @@ function SaveButton({ state, onClick }: { state: SaveState; onClick: () => void 
       type="button"
       onClick={onClick}
       disabled={state === 'saving'}
-      className="rounded-md bg-foreground px-4 py-1.5 text-sm font-medium text-background transition-opacity hover:opacity-80 disabled:opacity-50"
+      className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
     >
       {label}
     </button>

@@ -504,7 +504,7 @@ export const en = {
     targetToGo: (time: string) => `${time} to go`,
     seasonRaces: 'Season Races',
     raceAlt: (distance: string) => `${distance} race`,
-    emptyPbsPrefix: (year: number) => `Add PBs for ${year} to`,
+    emptyPbs: (year: number) => `No PBs for ${year} yet - add them in Settings.`,
     projection: {
       status: {
         ahead: 'Ahead',

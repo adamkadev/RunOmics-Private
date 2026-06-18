@@ -44,3 +44,11 @@ export function formatElapsed(seconds: number): string {
   const m = Math.floor((total % 3600) / 60)
   return h > 0 ? `${h}h${String(m).padStart(2, '0')}` : `${m}m`
 }
+
+/** Parse a `m:ss` or `h:mm:ss` string into seconds. Returns null if invalid. */
+export function parseTimeInput(str: string): number | null {
+  const parts = str.trim().split(':').map(Number)
+  if (parts.length === 2 && !parts.some(isNaN)) return parts[0] * 60 + parts[1]
+  if (parts.length === 3 && !parts.some(isNaN)) return parts[0] * 3600 + parts[1] * 60 + parts[2]
+  return null
+}

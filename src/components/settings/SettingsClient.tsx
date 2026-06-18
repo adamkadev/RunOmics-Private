@@ -3,13 +3,14 @@
 import { useEffect, useState } from 'react'
 import { onAuthStateChanged, signInWithPopup, signOut, GoogleAuthProvider } from 'firebase/auth'
 import type { User } from 'firebase/auth'
+import { LogOut } from 'lucide-react'
 import { getClientAuth } from '@/lib/firebase'
 import { t } from '@/i18n'
 import { AthleteForm } from './AthleteForm'
 import { GoalsForm } from './GoalsForm'
 import { PbsForm } from './PbsForm'
 
-const OWNER_EMAIL = 'adam.elkadaoui@gmail.com'
+const OWNER_EMAIL = process.env.NEXT_PUBLIC_OWNER_EMAIL ?? ''
 
 export function SettingsClient() {
   const [user, setUser] = useState<User | null | 'loading'>('loading')
@@ -20,8 +21,7 @@ export function SettingsClient() {
   }, [])
 
   async function handleSignIn() {
-    const auth = getClientAuth()
-    await signInWithPopup(auth, new GoogleAuthProvider())
+    await signInWithPopup(getClientAuth(), new GoogleAuthProvider())
   }
 
   async function handleSignOut() {
@@ -31,21 +31,21 @@ export function SettingsClient() {
   if (user === 'loading') {
     return (
       <div className="flex min-h-64 items-center justify-center">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground border-t-foreground" />
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground border-t-emerald-600" />
       </div>
     )
   }
 
   if (!user) {
     return (
-      <div className="flex min-h-64 flex-col items-center justify-center gap-6">
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-8 px-4">
         <div className="text-center">
           <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.pages.settings.title}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{t.pages.settings.subtitle}</p>
+          <p className="mt-1.5 text-sm text-muted-foreground">{t.pages.settings.subtitle}</p>
         </div>
         <button
           onClick={handleSignIn}
-          className="flex items-center gap-2 rounded-lg bg-foreground px-5 py-2.5 text-sm font-medium text-background transition-opacity hover:opacity-80"
+          className="flex items-center gap-2.5 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 active:bg-emerald-800"
         >
           {t.settings.auth.signIn}
         </button>
@@ -55,23 +55,24 @@ export function SettingsClient() {
 
   if (user.email !== OWNER_EMAIL) {
     return (
-      <div className="flex min-h-64 items-center justify-center">
-        <p className="text-sm text-muted-foreground">{t.settings.auth.accessDenied}</p>
+      <div className="flex min-h-64 items-center justify-center px-4">
+        <p className="text-center text-sm text-muted-foreground">{t.settings.auth.accessDenied}</p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-10">
-      <div className="flex items-start justify-between">
+    <div className="space-y-8">
+      <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.pages.settings.title}</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">{t.pages.settings.subtitle}</p>
         </div>
         <button
           onClick={handleSignOut}
-          className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-red-400 hover:text-red-500 dark:hover:border-red-500 dark:hover:text-red-400"
         >
+          <LogOut size={13} />
           {t.settings.auth.signOut}
         </button>
       </div>
