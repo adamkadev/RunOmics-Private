@@ -464,6 +464,7 @@ export const en = {
     },
     bestEfforts: {
       title: 'Best Efforts',
+      prBadge: 'PR',
     },
     zones: {
       title: 'Heart Rate Zones',

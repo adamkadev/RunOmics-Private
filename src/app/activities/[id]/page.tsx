@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Trophy } from 'lucide-react'
 import { getActivities } from '@/application/usecases/GetActivities'
+import { getRecords } from '@/application/usecases/GetRecords'
 import { ActivityTypeTag } from '@/components/activities/ActivityTypeTag'
 import { ZoneBar } from '@/components/activity/ZoneBar'
 import { TrainingEffect } from '@/components/activity/TrainingEffect'
@@ -47,6 +48,11 @@ export default async function ActivityDetailPage({
   const activity = getActivities().find((a) => a.id === id)
   if (!activity) notFound()
 
+  const records = await getRecords()
+  const prLabels = records
+    .filter((r) => r.activityId === id)
+    .map((r) => r.label)
+
   return (
     <div>
       <Link
@@ -61,7 +67,15 @@ export default async function ActivityDetailPage({
         activity={activity}
         header={
           <div>
-            <ActivityTypeTag type={activity.type} className="mb-2" />
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <ActivityTypeTag type={activity.type} />
+              {prLabels.length > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+                  <Trophy size={11} />
+                  {t.activity.bestEfforts.prBadge} - {prLabels.join(' - ')}
+                </span>
+              )}
+            </div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">
               {activity.description || t.activity.runTitle(activity.dayOfWeek)}
             </h1>
