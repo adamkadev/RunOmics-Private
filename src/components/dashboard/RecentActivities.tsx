@@ -26,8 +26,9 @@ export function RecentActivities({ activities }: Props) {
 
       <div className="divide-y divide-border">
         {activities.map((a) => (
-          <div
+          <Link
             key={a.id}
+            href={`/activities/${a.id}`}
             className="flex items-center gap-4 px-5 py-3 transition-colors hover:bg-muted/50"
           >
             <div className="w-24 shrink-0">
@@ -64,7 +65,7 @@ export function RecentActivities({ activities }: Props) {
                 </span>
               )}
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>
