@@ -9,7 +9,7 @@ import type { Activity, ActivityType } from '@/domain/activity/types'
 import { t } from '@/i18n'
 
 const ALL_TYPES = Object.keys(ACTIVITY_TYPE_CONFIG) as ActivityType[]
-const PAGE_SIZE = 20
+const PAGE_SIZE = 10
 
 interface Props {
   activities: Activity[]
