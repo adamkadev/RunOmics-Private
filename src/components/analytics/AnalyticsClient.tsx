@@ -46,12 +46,6 @@ interface StatCell {
   label: string
 }
 
-function chipClass(active: boolean): string {
-  return cn(
-    'shrink-0 rounded-lg px-2.5 py-1 text-xs font-medium transition-colors',
-    active ? 'bg-accent text-white' : 'border border-border bg-card text-muted-foreground hover:bg-muted',
-  )
-}
 
 function DeltaBadge({ text, good }: { text: string; good: boolean }) {
   const Icon = good ? TrendingUp : TrendingDown
@@ -128,7 +122,6 @@ export function AnalyticsClient({
   }
 
   const visibleTabs = isPeriod || isAll ? TABS.filter((tb) => tb.id !== 'seasons') : TABS
-  const showPeriods = view.kind === 'period' || (view.kind === 'year' && view.year === years[0])
   const displayYear = view.kind === 'year' ? view.year : years[0]
 
   const statCells: StatCell[] = isAll && lifetime
@@ -209,26 +202,15 @@ export function AnalyticsClient({
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.analytics.title}</h1>
 
-        <div className="flex items-center gap-1">
-          <YearSelector
+        <YearSelector
             years={years}
             selected={isAll ? null : displayYear}
             onSelect={(y) => y === null ? selectAllTime() : selectYear(y)}
             allTimeLabel={t.analytics.allTimeChip}
-            active={view.kind === 'year' || isAll}
+            periods={periodWeeks.map((w) => ({ weeks: w, label: t.analytics.period.chip(w) }))}
+            activePeriod={isPeriod ? view.weeks : null}
+            onSelectPeriod={selectPeriod}
           />
-
-          {/* Rolling period chips - only relevant for the current year */}
-          {showPeriods && periodWeeks.map((w) => (
-            <button
-              key={`p${w}`}
-              onClick={() => selectPeriod(w)}
-              className={chipClass(view.kind === 'period' && view.weeks === w)}
-            >
-              {t.analytics.period.chip(w)}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* Stats card */}
