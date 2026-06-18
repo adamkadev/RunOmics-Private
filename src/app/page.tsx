@@ -10,6 +10,7 @@ import { RecentActivities } from '@/components/dashboard/RecentActivities'
 import { ActivityHeatmap } from '@/components/dashboard/ActivityHeatmap'
 import { TrainingStatusBanner } from '@/components/dashboard/TrainingStatusBanner'
 import { ConsistencyCard } from '@/components/dashboard/ConsistencyCard'
+import { t } from '@/i18n'
 
 export default function DashboardPage() {
   const data = getDashboardData()
@@ -21,6 +22,10 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.pages.dashboard.title}</h1>
+      </div>
+
       <StatsGrid
         currentWeek={data.currentWeek}
         currentStreak={data.currentStreak}
