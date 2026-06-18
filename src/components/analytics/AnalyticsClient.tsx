@@ -128,23 +128,41 @@ export function AnalyticsClient({
   const visibleTabs = isPeriod || isAll ? TABS.filter((tb) => tb.id !== 'seasons') : TABS
   const displayYear = view.kind === 'year' ? view.year : years[0]
 
-  const statCells: StatCell[] = isAll && lifetime
+  const statCells: StatCell[] = isAll && lifetime && totals
     ? [
         {
           Icon: Footprints,
           color: 'text-emerald-500 dark:text-emerald-400',
-          value: <><AnimatedValue value={lifetime.totalDistanceKm} /> {t.units.km}</>,
+          value: <><AnimatedValue value={totals.distanceKm} /> {t.units.km}</>,
           label: t.analytics.stats.distance,
+        },
+        {
+          Icon: Timer,
+          color: 'text-blue-500 dark:text-blue-400',
+          value: formatDuration(totals.durationSeconds),
+          label: t.analytics.stats.time,
         },
         {
           Icon: Hash,
           color: 'text-violet-500 dark:text-violet-400',
-          value: <AnimatedValue value={lifetime.totalActivities} />,
+          value: <AnimatedValue value={totals.sessionCount} />,
           label: t.analytics.stats.sessions,
         },
         {
+          Icon: Mountain,
+          color: 'text-stone-500 dark:text-stone-400',
+          value: <>+<AnimatedValue value={totals.elevationM} /> m</>,
+          label: t.analytics.stats.elevation,
+        },
+        {
+          Icon: Gauge,
+          color: 'text-amber-500 dark:text-amber-400',
+          value: <><AnimatedValue value={totals.avgKmPerWeek} decimals={1} /> {t.units.km}</>,
+          label: t.analytics.stats.avgPerWeek,
+        },
+        {
           Icon: CalendarRange,
-          color: 'text-blue-500 dark:text-blue-400',
+          color: 'text-indigo-500 dark:text-indigo-400',
           value: <AnimatedValue value={lifetime.yearsTracked} decimals={1} />,
           label: t.analytics.stats.yearsTracked,
         },
@@ -297,9 +315,9 @@ export function AnalyticsClient({
                   <RunningFormChart data={active.runningFormTrend} />
                 </div>
               </div>
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <div className={cn('grid grid-cols-1 gap-4', !isAll && 'lg:grid-cols-2')}>
                 <TrainingEffectChart data={active.trainingEffectTrend} />
-                <DailyEfficiencyChart data={data.efficiencyDaily} />
+                {!isAll && <DailyEfficiencyChart data={data.efficiencyDaily} />}
               </div>
               {zones && <TrainingZones data={zones} />}
             </div>
