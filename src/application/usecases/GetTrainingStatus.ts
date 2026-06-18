@@ -20,7 +20,7 @@ export interface TrainingStatus {
 
 const DAY_MS = 86_400_000
 
-function acwr(activities: Activity[], refDate: Date): number | null {
+export function acwr(activities: Activity[], refDate: Date): number | null {
   const ref = refDate.getTime()
   const kmInWindow = (days: number) =>
     activities
@@ -31,13 +31,13 @@ function acwr(activities: Activity[], refDate: Date): number | null {
   return chronic > 5 ? round(kmInWindow(7) / chronic, 2) : null
 }
 
-function loadTrend(ctlDelta: number, tsb: number): LoadTrend {
+export function loadTrend(ctlDelta: number, tsb: number): LoadTrend {
   if (ctlDelta > 1.5) return 'building'
   if (ctlDelta < -1.5) return tsb > 0 ? 'tapering' : 'detraining'
   return 'maintaining'
 }
 
-function classify(
+export function classify(
   tsb: number,
   ctlDelta: number,
   ratio: number | null,

@@ -29,7 +29,7 @@ export interface LoadSnapshot {
   tsb: number
 }
 
-function trimp(activity: Activity): number {
+export function trimp(activity: Activity): number {
   if (!activity.avgHeartRate || !activity.durationSeconds) return 0
   const hrr = Math.min(
     1,

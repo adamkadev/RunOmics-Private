@@ -14,13 +14,13 @@ export interface ConsistencyScore {
 const WINDOW_WEEKS = 12
 const DAY_MS = 86_400_000
 
-function stdDev(values: number[]): number {
+export function stdDev(values: number[]): number {
   if (values.length < 2) return 0
   const mean = values.reduce((s, v) => s + v, 0) / values.length
   return Math.sqrt(values.reduce((s, v) => s + (v - mean) ** 2, 0) / values.length)
 }
 
-function rating(score: number): ConsistencyRating {
+export function rating(score: number): ConsistencyRating {
   if (score >= 85) return 'excellent'
   if (score >= 70) return 'good'
   if (score >= 55) return 'fair'
