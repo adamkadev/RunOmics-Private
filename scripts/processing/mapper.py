@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Any
 
 from processing.activity_type import infer_type
-from processing.fit_parser import ParsedFit
+from processing.fit_parser import ActivitySplit, ParsedFit, SplitLap  # noqa: F401
 
 _MAX_CHART_POINTS = 150
 
@@ -61,6 +61,7 @@ class ActivityData:
     vo2max_garmin: float | None
     avg_temperature: int | None
     cadence_samples: list[float] | None
+    splits: list[ActivitySplit] | None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -95,6 +96,7 @@ class ActivityData:
             "vo2maxGarmin": self.vo2max_garmin,
             "avgTemperature": self.avg_temperature,
             "cadenceSamples": self.cadence_samples,
+            "splits": [s.to_dict() for s in self.splits] if self.splits else None,
         }
 
 
@@ -234,6 +236,7 @@ def map_activity(
         vo2max_garmin=parsed.vo2max_garmin if parsed else None,
         avg_temperature=parsed.avg_temperature if parsed else None,
         cadence_samples=cadence_samples,
+        splits=parsed.splits if parsed and parsed.splits else None,
     )
 
 

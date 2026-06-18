@@ -7,6 +7,22 @@ export type ActivityType =
   | 'Base'
   | 'Race'
 
+export interface SplitLap {
+  durationSec: number
+  distanceM: number
+  avgSpeedMs: number
+  avgHr: number | null
+}
+
+export interface ActivitySplit {
+  type: 'interval_warmup' | 'interval_active' | 'interval_rest' | 'interval_recovery' | 'interval_cooldown'
+  durationSec: number
+  distanceM: number
+  avgSpeedMs: number
+  avgHr: number | null
+  laps: SplitLap[]
+}
+
 export interface HrZone {
   zone: number
   seconds: number
@@ -43,6 +59,7 @@ export interface Activity {
   verticalRatioPct: number | null
   strideLengthM: number | null
   bestEfforts: Record<string, number> | null
+  splits: ActivitySplit[] | null
   paceSamples: number[] | null
   vo2maxGarmin: number | null
   avgTemperature: number | null

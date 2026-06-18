@@ -518,6 +518,25 @@ export const en = {
       noTrace: 'GPS trace unavailable',
       noTraceHint: 'Available after Garmin sync',
     },
+    splits: {
+      title: 'Intervals',
+      cols: {
+        step: '#',
+        type: 'Type',
+        duration: 'Duration',
+        dist: 'Distance',
+        pace: 'Pace',
+        hr: 'HR',
+        total: 'Total',
+      },
+      intervalTypes: {
+        interval_warmup:   'Warmup',
+        interval_active:   'Interval',
+        interval_rest:     'Rest',
+        interval_recovery: 'Recovery',
+        interval_cooldown: 'Cooldown',
+      } as Record<string, string>,
+    },
   },
 
   goals: {

@@ -17,6 +17,51 @@ _EFFORT_TARGETS_M = {
 }
 
 
+_INTERVAL_SPLIT_TYPES = {
+    "interval_warmup",
+    "interval_active",
+    "interval_rest",
+    "interval_recovery",
+    "interval_cooldown",
+}
+
+
+@dataclass
+class SplitLap:
+    duration_sec: int
+    distance_m: float
+    avg_speed_ms: float
+    avg_hr: int | None
+
+    def to_dict(self) -> dict:
+        return {
+            "durationSec": self.duration_sec,
+            "distanceM": round(self.distance_m, 1),
+            "avgSpeedMs": round(self.avg_speed_ms, 4),
+            "avgHr": self.avg_hr,
+        }
+
+
+@dataclass
+class ActivitySplit:
+    type: str
+    duration_sec: int
+    distance_m: float
+    avg_speed_ms: float
+    avg_hr: int | None
+    laps: list[SplitLap] = field(default_factory=list)
+
+    def to_dict(self) -> dict:
+        return {
+            "type": self.type,
+            "durationSec": self.duration_sec,
+            "distanceM": round(self.distance_m, 1),
+            "avgSpeedMs": round(self.avg_speed_ms, 4),
+            "avgHr": self.avg_hr,
+            "laps": [l.to_dict() for l in self.laps],
+        }
+
+
 @dataclass
 class ParsedFit:
     route: list[list[float]] = field(default_factory=list)
@@ -44,6 +89,7 @@ class ParsedFit:
     vo2max_garmin: float | None = None
     avg_temperature: int | None = None
     cadence_samples: list[float] = field(default_factory=list)
+    splits: list[ActivitySplit] = field(default_factory=list)
 
     @property
     def has_data(self) -> bool:
@@ -185,6 +231,80 @@ def parse_fit(content: bytes) -> ParsedFit:
 
         result.start_time_local = _local_start_time(session, activities)
 
+    result.splits = _extract_splits(messages)
+
+    return result
+
+
+def _extract_splits(messages: dict) -> list[ActivitySplit]:
+    """Extract interval splits and their sub-laps (warmup/active/rest/recovery/cooldown)."""
+    raw_splits = messages.get("split_mesgs", [])
+    raw_laps = messages.get("lap_mesgs", [])
+
+    # Filter only interval splits and collect their time windows
+    interval_splits = []
+    for s in raw_splits:
+        split_type = s.get("split_type", "")
+        if split_type not in _INTERVAL_SPLIT_TYPES:
+            continue
+        duration = s.get("total_timer_time") or s.get("total_elapsed_time")
+        if not duration:
+            continue
+        interval_splits.append((split_type, s, float(duration)))
+
+    if not interval_splits:
+        return []
+
+    # Pre-parse laps: keep only those with a valid start_time
+    parsed_laps = []
+    for lap in raw_laps:
+        start = lap.get("start_time")
+        if not isinstance(start, datetime):
+            continue
+        dist = float(lap.get("total_distance") or 0)
+        timer = float(lap.get("total_timer_time") or lap.get("total_elapsed_time") or 0)
+        if timer <= 0:
+            continue
+        speed = dist / timer
+        raw_hr = lap.get("avg_heart_rate")
+        parsed_laps.append({
+            "start": start,
+            "duration_sec": int(round(timer)),
+            "distance_m": dist,
+            "avg_speed_ms": speed,
+            "avg_hr": int(raw_hr) if raw_hr else None,
+        })
+
+    result = []
+    for split_type, s, duration in interval_splits:
+        distance = float(s.get("total_distance") or 0)
+        speed = float(s.get("avg_speed") or 0)
+        # field 15 = avg_heart_rate (undocumented in garmin_fit_sdk for split_mesgs)
+        raw_hr = s.get(15) or s.get("avg_heart_rate")
+        avg_hr = int(raw_hr) if raw_hr else None
+
+        split_start = s.get("start_time")
+        split_end = s.get("end_time")
+
+        laps: list[SplitLap] = []
+        if isinstance(split_start, datetime) and isinstance(split_end, datetime):
+            for lap in parsed_laps:
+                if split_start <= lap["start"] <= split_end:
+                    laps.append(SplitLap(
+                        duration_sec=lap["duration_sec"],
+                        distance_m=lap["distance_m"],
+                        avg_speed_ms=lap["avg_speed_ms"],
+                        avg_hr=lap["avg_hr"],
+                    ))
+
+        result.append(ActivitySplit(
+            type=split_type,
+            duration_sec=int(round(duration)),
+            distance_m=distance,
+            avg_speed_ms=speed,
+            avg_hr=avg_hr,
+            laps=laps,
+        ))
     return result
 
 

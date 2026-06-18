@@ -10,6 +10,7 @@ import { TrainingEffect } from '@/components/activity/TrainingEffect'
 import { RunningDynamics } from '@/components/activity/RunningDynamics'
 import { ActivityDetailClient } from '@/components/activity/ActivityDetailClient'
 import { BestEfforts } from '@/components/activity/BestEfforts'
+import { KmSplits } from '@/components/activity/KmSplits'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
 import { t } from '@/i18n'
 
@@ -79,6 +80,7 @@ export default async function ActivityDetailPage({
       <ActivityDetailClient activity={activity} />
 
       <div className="space-y-4">
+        <KmSplits activity={activity} />
         <ZoneBar hrZones={activity.hrZones} />
         <TrainingEffect aer={activity.aerTrainingEffect} ana={activity.anaTrainingEffect} />
         {activity.bestEfforts && <BestEfforts bestEfforts={activity.bestEfforts} />}
