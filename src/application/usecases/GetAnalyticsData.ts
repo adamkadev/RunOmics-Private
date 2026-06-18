@@ -143,6 +143,13 @@ export interface DailyEfficiency {
   ef30: number | null   // 30-day rolling average
 }
 
+export interface TemperaturePoint {
+  temp: number
+  pace: number   // sec/km
+  km: number
+  date: string
+}
+
 export interface AnalyticsPageData {
   years: number[]
   byYear: Record<number, YearAnalytics>
@@ -150,6 +157,7 @@ export interface AnalyticsPageData {
   byPeriod: Record<number, PeriodAnalytics>
   efficiencyDaily: DailyEfficiency[]
   allTime: AllTimeAnalytics
+  temperatureScatter: TemperaturePoint[]
 }
 
 // A value (possibly null) paired with a weight, averaged across activities.
@@ -464,6 +472,15 @@ export function getAnalyticsData(): AnalyticsPageData {
   const years = Array.from(byYearMap.keys()).sort((a, b) => b - a)
   const periodWeeks = [8, 12, 16]
 
+  const temperatureScatter: TemperaturePoint[] = all
+    .filter((a) => a.avgTemperature !== null && a.paceSecPerKm !== null && a.distanceKm >= 3)
+    .map((a) => ({
+      temp: a.avgTemperature!,
+      pace: a.paceSecPerKm!,
+      km: round(a.distanceKm, 1),
+      date: a.date,
+    }))
+
   return {
     years,
     byYear: Object.fromEntries(years.map((y) => [y, buildYearAnalytics(y, byYearMap.get(y)!, now)])),
@@ -471,5 +488,6 @@ export function getAnalyticsData(): AnalyticsPageData {
     byPeriod: Object.fromEntries(periodWeeks.map((w) => [w, buildPeriodAnalytics(all, w, now)])),
     efficiencyDaily: buildEfficiencyDaily(all, now),
     allTime: buildAllTimeAnalytics(byYearMap, all, now),
+    temperatureScatter,
   }
 }

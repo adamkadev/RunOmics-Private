@@ -377,6 +377,15 @@ export const en = {
         anaerobic: 'Anaerobic',
         footnote: 'Avg aerobic & anaerobic training effect (1–5).',
       },
+      temperatureCorrelation: {
+        title: 'Temperature vs Pace',
+        footnote: 'Each dot is one run (>= 3 km). Dashed line shows the overall trend.',
+        tooltip: { temp: 'Temp', pace: 'Pace', distance: 'Distance' },
+        explains: {
+          slowing: (sec: number) => `Pace slows ~${sec}s/km per 10°C - heat has a clear impact`,
+          stable: 'Temperature has little impact on your pace',
+        },
+      },
       monthlyComparison: { title: 'Month by Month' },
       efficiencyRolling: {
         title: 'Aerobic Efficiency - Rolling Trend',

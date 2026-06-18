@@ -26,6 +26,7 @@ import { RpeTrendChart } from './RpeTrendChart'
 import { TrainingEffectChart } from './TrainingEffectChart'
 import { DailyEfficiencyChart } from './DailyEfficiencyChart'
 import { VO2maxChart } from './VO2maxChart'
+import { TemperatureCorrelationChart } from './TemperatureCorrelationChart'
 import type { VO2maxPoint } from '@/application/usecases/GetVO2maxHistory'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { formatDuration } from '@/lib/formatters'
@@ -300,6 +301,9 @@ export function AnalyticsClient({
                 <EfficiencyChart data={active.efficiencyTrend} />
                 <RpeTrendChart data={active.rpeTrend} />
               </div>
+              {data.temperatureScatter.length >= 10 && (
+                <TemperatureCorrelationChart data={data.temperatureScatter} />
+              )}
             </div>
           )}
 
