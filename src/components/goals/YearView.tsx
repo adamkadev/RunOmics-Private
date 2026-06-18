@@ -185,12 +185,10 @@ export function YearView({ yearData }: { yearData: YearData }) {
       ) : (
         <div className="rounded-xl border border-dashed border-border p-10 text-center">
           <Trophy size={32} className="mx-auto mb-3 text-subtle" />
-          <p className="text-sm text-subtle">
-            {t.goals.emptyPbsPrefix(yearData.year)}{' '}
-            <code className="rounded bg-muted px-1 py-0.5 text-xs">
-              public/pbs.json
-            </code>
-          </p>
+          <p className="text-sm text-subtle">{t.goals.emptyPbs(yearData.year)}</p>
+          <Link href="/settings" className="mt-2 inline-block text-xs text-emerald-600 hover:underline dark:text-emerald-400">
+            Settings
+          </Link>
         </div>
       )}
     </div>
