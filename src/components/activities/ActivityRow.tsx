@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { MessageSquare } from 'lucide-react'
 import { ActivityTypeTag } from './ActivityTypeTag'
+import { PrBadge } from './PrBadge'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
 import type { Activity } from '@/domain/activity/types'
 import { cardClass } from '@/components/ui/Card'
@@ -15,9 +16,10 @@ function rpeChipClass(rpe: number): string {
 
 interface Props {
   activity: Activity
+  prLabels?: string[]
 }
 
-export function ActivityRow({ activity: a }: Props) {
+export function ActivityRow({ activity: a, prLabels = [] }: Props) {
   return (
     <Link
       href={`/activities/${a.id}`}
@@ -29,6 +31,7 @@ export function ActivityRow({ activity: a }: Props) {
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <ActivityTypeTag type={a.type} />
+          <PrBadge labels={prLabels} />
           {a.rpe !== null && (
             <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${rpeChipClass(a.rpe)}`}>
               RPE {a.rpe}

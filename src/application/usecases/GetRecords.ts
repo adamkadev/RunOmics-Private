@@ -133,6 +133,15 @@ export async function getRecords(): Promise<RecordEntry[]> {
   return [...effortRecords, longestRecord]
 }
 
+export function getPrLabelsByActivityId(records: RecordEntry[]): Record<string, string[]> {
+  const result: Record<string, string[]> = {}
+  for (const r of records) {
+    if (!r.activityId) continue
+    result[r.activityId] = [...(result[r.activityId] ?? []), r.label]
+  }
+  return result
+}
+
 export function getTopEfforts(n = 5): TopEfforts {
   const activities = getAllActivities()
   const result: TopEfforts = {}

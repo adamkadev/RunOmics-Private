@@ -1,10 +1,10 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { Trophy } from 'lucide-react'
 import { BackButton } from '@/components/ui/BackButton'
 import { getActivities } from '@/application/usecases/GetActivities'
-import { getRecords } from '@/application/usecases/GetRecords'
+import { getRecords, getPrLabelsByActivityId } from '@/application/usecases/GetRecords'
 import { ActivityTypeTag } from '@/components/activities/ActivityTypeTag'
+import { PrBadge } from '@/components/activities/PrBadge'
 import { ZoneBar } from '@/components/activity/ZoneBar'
 import { TrainingEffect } from '@/components/activity/TrainingEffect'
 import { RunningDynamics } from '@/components/activity/RunningDynamics'
@@ -50,9 +50,7 @@ export default async function ActivityDetailPage({
   if (!activity) notFound()
 
   const records = await getRecords()
-  const prLabels = records
-    .filter((r) => r.activityId === id)
-    .map((r) => r.label)
+  const prLabels = getPrLabelsByActivityId(records)[id] ?? []
 
   return (
     <div className="space-y-5">
@@ -61,12 +59,7 @@ export default async function ActivityDetailPage({
       <div>
         <div className="mb-2 flex flex-wrap items-center gap-2">
           <ActivityTypeTag type={activity.type} />
-          {prLabels.length > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
-              <Trophy size={11} />
-              {t.activity.bestEfforts.prBadge} - {prLabels.join(' - ')}
-            </span>
-          )}
+          <PrBadge labels={prLabels} />
         </div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
           {activity.description || t.activity.runTitle(activity.dayOfWeek)}

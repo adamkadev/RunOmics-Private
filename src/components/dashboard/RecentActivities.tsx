@@ -7,9 +7,10 @@ import type { Activity } from '@/domain/activity/types'
 
 interface Props {
   activities: Activity[]
+  prLabelsByActivityId?: Record<string, string[]>
 }
 
-export function RecentActivities({ activities }: Props) {
+export function RecentActivities({ activities, prLabelsByActivityId = {} }: Props) {
   return (
     <Card padding="none">
       <div className="flex items-center justify-between border-b border-border px-5 py-4">
@@ -26,7 +27,7 @@ export function RecentActivities({ activities }: Props) {
 
       <div className="flex flex-col gap-3 p-3">
         {activities.map((a) => (
-          <ActivityRow key={a.id} activity={a} />
+          <ActivityRow key={a.id} activity={a} prLabels={prLabelsByActivityId[a.id]} />
         ))}
       </div>
     </Card>

@@ -4,6 +4,7 @@ import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { getConsistencyScore } from '@/application/usecases/GetConsistencyScore'
 import { getHeatmapData } from '@/application/usecases/GetHeatmapData'
 import { getLatestVO2max } from '@/application/usecases/GetVO2maxHistory'
+import { getRecords, getPrLabelsByActivityId } from '@/application/usecases/GetRecords'
 import { StatsGrid } from '@/components/dashboard/StatsGrid'
 import { DashboardCharts } from '@/components/dashboard/DashboardCharts'
 import { RecentActivities } from '@/components/dashboard/RecentActivities'
@@ -12,13 +13,15 @@ import { TrainingStatusBanner } from '@/components/dashboard/TrainingStatusBanne
 import { ConsistencyCard } from '@/components/dashboard/ConsistencyCard'
 import { t } from '@/i18n'
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
   const data = getDashboardData()
   const trainingLoad = getTrainingLoad()
   const trainingStatus = getTrainingStatus()
   const consistencyScore = getConsistencyScore()
   const heatmapDays = getHeatmapData()
   const vo2max = getLatestVO2max()
+  const records = await getRecords()
+  const prLabelsByActivityId = getPrLabelsByActivityId(records)
 
   return (
     <div className="space-y-6">
@@ -48,7 +51,7 @@ export default function DashboardPage() {
 
       <ActivityHeatmap days={heatmapDays} />
 
-      <RecentActivities activities={data.recentActivities} />
+      <RecentActivities activities={data.recentActivities} prLabelsByActivityId={prLabelsByActivityId} />
     </div>
   )
 }

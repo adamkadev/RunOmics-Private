@@ -1,9 +1,12 @@
 import { getActivities } from '@/application/usecases/GetActivities'
+import { getRecords, getPrLabelsByActivityId } from '@/application/usecases/GetRecords'
 import { ActivityListClient } from '@/components/activities/ActivityListClient'
 import { t } from '@/i18n'
 
-export default function ActivitiesPage() {
+export default async function ActivitiesPage() {
   const activities = getActivities()
+  const records = await getRecords()
+  const prLabelsByActivityId = getPrLabelsByActivityId(records)
 
   return (
     <div className="space-y-6">
@@ -13,7 +16,7 @@ export default function ActivitiesPage() {
           {t.pages.activities.subtitle(activities.length)}
         </p>
       </div>
-      <ActivityListClient activities={activities} />
+      <ActivityListClient activities={activities} prLabelsByActivityId={prLabelsByActivityId} />
     </div>
   )
 }

@@ -41,9 +41,10 @@ function sortValue(activity: Activity, key: SortKey): number {
 
 interface Props {
   activities: Activity[]
+  prLabelsByActivityId?: Record<string, string[]>
 }
 
-export function ActivityListClient({ activities }: Props) {
+export function ActivityListClient({ activities, prLabelsByActivityId = {} }: Props) {
   const [search, setSearch] = useState('')
   const [selectedType, setSelectedType] = useState<ActivityType | null>(null)
   const [sortBy, setSortBy] = useState<SortKey>('date')
@@ -135,7 +136,9 @@ export function ActivityListClient({ activities }: Props) {
             <p className="text-sm text-subtle">{t.activities.empty}</p>
           </Card>
         ) : (
-          paginated.map((a) => <ActivityRow key={a.id} activity={a} />)
+          paginated.map((a) => (
+            <ActivityRow key={a.id} activity={a} prLabels={prLabelsByActivityId[a.id]} />
+          ))
         )}
       </div>
 

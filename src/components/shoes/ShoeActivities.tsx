@@ -10,7 +10,12 @@ import type { Activity } from '@/domain/activity/types'
 
 const PAGE_SIZE = 5
 
-export function ShoeActivities({ activities }: { activities: Activity[] }) {
+interface Props {
+  activities: Activity[]
+  prLabelsByActivityId?: Record<string, string[]>
+}
+
+export function ShoeActivities({ activities, prLabelsByActivityId = {} }: Props) {
   const [page, setPage] = useState(1)
 
   if (activities.length === 0) {
@@ -35,7 +40,7 @@ export function ShoeActivities({ activities }: { activities: Activity[] }) {
 
       <div className="flex flex-col gap-3 p-3">
         {paginated.map((a) => (
-          <ActivityRow key={a.id} activity={a} />
+          <ActivityRow key={a.id} activity={a} prLabels={prLabelsByActivityId[a.id]} />
         ))}
       </div>
 
