@@ -187,7 +187,7 @@ export function ActivityListClient({ activities }: Props) {
                   onClick={() => setPage(p as number)}
                   className={`h-8 min-w-[2rem] rounded-md px-2 text-sm font-medium transition-colors ${
                     clampedPage === p
-                      ? 'bg-accent text-white'
+                      ? 'bg-accent text-accent-foreground'
                       : 'border border-border bg-card text-muted-foreground hover:bg-muted'
                   }`}
                 >

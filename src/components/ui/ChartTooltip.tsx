@@ -1,9 +1,11 @@
 import type { ReactNode } from 'react'
+import { cn } from '@/lib/utils'
+import { tooltipSurfaceClass } from '@/components/ui/Card'
 
 /** Shared card shell for Recharts tooltips: bordered surface + optional muted label. */
 export function TooltipCard({ label, children }: { label?: ReactNode; children: ReactNode }) {
   return (
-    <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-sm dark:bg-muted">
+    <div className={cn(tooltipSurfaceClass, 'dark:bg-muted')}>
       {label != null && label !== '' && (
         <p className="mb-1 text-xs font-medium text-muted-foreground">{label}</p>
       )}

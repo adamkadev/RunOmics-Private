@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react'
 import type { HeatmapDay } from '@/application/usecases/GetHeatmapData'
-import { Card } from '@/components/ui/Card'
+import { Card, tooltipSurfaceClass } from '@/components/ui/Card'
+import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 const MONTHS = t.dashboard.heatmap.months
@@ -167,7 +168,7 @@ export function ActivityHeatmap({ days }: Props) {
       {/* Floating tooltip */}
       {tooltip && (
         <div
-          className="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-full rounded-lg border border-border bg-card px-2.5 py-1.5 shadow-md"
+          className={cn(tooltipSurfaceClass, 'pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-full')}
           style={{ left: tooltip.x, top: tooltip.y - 6 }}
         >
           <p className="text-xs font-medium text-foreground">{formatTooltipDate(tooltip.day.date)}</p>
