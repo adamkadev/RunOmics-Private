@@ -201,6 +201,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
                       src={photoPath}
                       alt={t.goals.raceAlt(entry.distance)}
                       fill
+                      sizes="(min-width: 640px) 50vw, 100vw"
                       loading="eager"
                       className="object-cover transition-transform duration-300 group-hover:scale-105"
                     />
