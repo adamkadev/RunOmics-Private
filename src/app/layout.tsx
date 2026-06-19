@@ -14,6 +14,19 @@ export const metadata: Metadata = {
     template: '%s - RunOmics',
   },
   description: t.meta.description,
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'RunOmics',
+  },
+  icons: {
+    icon: [
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: '/apple-touch-icon.png',
+  },
   openGraph: {
     type: 'website',
     siteName: 'RunOmics',
