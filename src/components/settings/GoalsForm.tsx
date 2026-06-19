@@ -8,8 +8,8 @@ import { formatDuration, parseTimeInput } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { cn } from '@/lib/utils'
 import { cardClass } from '@/components/ui/Card'
+import { SaveButton, type SaveState } from '@/components/ui/SaveButton'
 
-type SaveState = 'idle' | 'saving' | 'saved' | 'error'
 type Toast = { msg: string; ok: boolean } | null
 
 const DISTANCES = t.settings.pbs.distanceOptions as readonly string[]
@@ -172,27 +172,3 @@ export function GoalsForm() {
 
 const inputCls =
   'w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent'
-
-function SaveButton({ state, onClick }: { state: SaveState; onClick: () => void }) {
-  const label =
-    state === 'saving' ? t.settings.actions.saving :
-    state === 'saved'  ? t.settings.actions.saved  :
-    state === 'error'  ? t.settings.actions.error  :
-    t.settings.actions.save
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={state === 'saving'}
-      className={cn(
-        'rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors disabled:opacity-50',
-        state === 'saved'  ? 'bg-green-500 hover:bg-green-600' :
-        state === 'error'  ? 'bg-red-500 hover:bg-red-600'    :
-        'bg-accent hover:bg-accent/90'
-      )}
-    >
-      {label}
-    </button>
-  )
-}
