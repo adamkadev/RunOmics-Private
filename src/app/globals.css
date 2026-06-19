@@ -35,8 +35,8 @@
 
 /* ─── Light tokens ─────────────────────────────────── */
 :root {
-  --shadow-card:       0 1px 3px 0 rgb(0 0 0 / 0.06),
-                       0 4px 16px -4px rgb(0 0 0 / 0.09);
+  --shadow-card:       0 2px 4px 0 rgb(0 0 0 / 0.08),
+                       0 8px 28px -4px rgb(0 0 0 / 0.16);
 
   --background:        #f8fafc;  /* slate-50  */
   --card:              #ffffff;
@@ -55,9 +55,9 @@
 
 /* ─── Dark tokens ──────────────────────────────────── */
 .dark {
-  --shadow-card:       0 1px 2px 0 rgb(0 0 0 / 0.35),
-                       0 4px 16px -4px rgb(0 0 0 / 0.5),
-                       inset 0 1px 0 0 rgb(255 255 255 / 0.06);
+  --shadow-card:       0 2px 4px 0 rgb(0 0 0 / 0.45),
+                       0 8px 28px -4px rgb(0 0 0 / 0.70),
+                       inset 0 1px 0 0 rgb(255 255 255 / 0.07);
 
   --background:        #030712;  /* gray-950  */
   --card:              #111827;  /* gray-900  */
