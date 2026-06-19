@@ -30,7 +30,7 @@ export default async function DashboardPage() {
       </div>
 
       <StatsGrid
-        currentWeek={data.currentWeek}
+        weeks={data.weeks}
         currentStreak={data.currentStreak}
         vo2max={vo2max}
       />

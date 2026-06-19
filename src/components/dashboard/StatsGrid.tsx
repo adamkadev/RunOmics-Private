@@ -1,14 +1,28 @@
-import { CalendarDays, Timer, Footprints, Heart, TrendingUp, Flame, Activity, type LucideIcon } from 'lucide-react'
+'use client'
+
+import { useState } from 'react'
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Timer,
+  Footprints,
+  Heart,
+  TrendingUp,
+  Flame,
+  Activity,
+  type LucideIcon,
+} from 'lucide-react'
 import type { ReactNode } from 'react'
 import { formatDuration, formatPace } from '@/lib/formatters'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { cardClass } from '@/components/ui/Card'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
-import type { DashboardData } from '@/domain/activity/types'
+import type { WeekSummary } from '@/domain/activity/types'
 
 interface Props {
-  currentWeek: DashboardData['currentWeek']
+  weeks: WeekSummary[]
   currentStreak: number
   vo2max: number | null
 }
@@ -21,8 +35,14 @@ interface StatCell {
   label: string
 }
 
-export function StatsGrid({ currentWeek, currentStreak, vo2max }: Props) {
+export function StatsGrid({ weeks, currentStreak, vo2max }: Props) {
   const s = t.dashboard.stats
+  const lastIndex = weeks.length - 1
+  const [index, setIndex] = useState(lastIndex)
+  const currentWeek = weeks[index]
+  const isCurrent = index === lastIndex
+  const weekYear = Math.floor(currentWeek.weekNumber / 100)
+  const showYear = weekYear !== new Date().getFullYear()
 
   const cells: StatCell[] = [
     {
@@ -76,8 +96,34 @@ export function StatsGrid({ currentWeek, currentStreak, vo2max }: Props) {
       <div className="flex items-center gap-2 border-b border-border bg-card px-4 py-3.5">
         <CalendarDays size={14} className="shrink-0 text-accent-text" />
         <span className="text-sm font-semibold text-foreground">
-          {t.pages.dashboard.subtitle(currentWeek.weekNumber % 100, currentWeek.sessionCount)}
+          {t.pages.dashboard.subtitle(currentWeek.weekNumber % 100, currentWeek.sessionCount, showYear ? weekYear : undefined)}
         </span>
+        <div className="ml-auto flex items-center gap-1">
+          {!isCurrent && (
+            <button
+              onClick={() => setIndex(lastIndex)}
+              className="rounded-md px-2 py-1 text-xs font-medium text-accent-text transition-colors hover:bg-accent-subtle"
+            >
+              {s.jumpToCurrent}
+            </button>
+          )}
+          <button
+            aria-label={s.prevWeek}
+            onClick={() => setIndex((i) => Math.max(0, i - 1))}
+            disabled={index === 0}
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-all duration-150 hover:bg-muted active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <ChevronLeft size={14} />
+          </button>
+          <button
+            aria-label={s.nextWeek}
+            onClick={() => setIndex((i) => Math.min(lastIndex, i + 1))}
+            disabled={isCurrent}
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-all duration-150 hover:bg-muted active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <ChevronRight size={14} />
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-px bg-border lg:grid-cols-6">

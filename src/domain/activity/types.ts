@@ -89,12 +89,12 @@ export interface WeekSummary {
   sessionCount: number
   avgHeartRate: number | null
   avgPaceSecPerKm: number | null
-  activities: Activity[]
 }
 
 export interface DashboardData {
   currentWeek: WeekSummary
   lastWeek: Pick<WeekSummary, 'totalDistanceKm' | 'sessionCount'>
+  weeks: WeekSummary[]
   weeklyVolume: WeeklyVolume[]
   typeDistribution: TypeDistribution[]
   recentActivities: Activity[]

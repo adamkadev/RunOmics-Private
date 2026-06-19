@@ -68,8 +68,8 @@ export const en = {
   pages: {
     dashboard: {
       title: 'Dashboard',
-      subtitle: (week: number, sessions: number) =>
-        `Week ${week} · ${sessions} session${sessions !== 1 ? 's' : ''}`,
+      subtitle: (week: number, sessions: number, year?: number) =>
+        `Week ${week}${year !== undefined ? ` ${year}` : ''} · ${sessions} session${sessions !== 1 ? 's' : ''}`,
     },
     activities: {
       title: 'Activities',
@@ -179,6 +179,9 @@ export const en = {
       streakSub: (best: number) => `best ${best}d`,
       vo2max: 'VO₂max',
       empty: '-',
+      prevWeek: 'Previous week',
+      nextWeek: 'Next week',
+      jumpToCurrent: 'Current week',
     },
     recentActivities: {
       title: 'Recent Activities',

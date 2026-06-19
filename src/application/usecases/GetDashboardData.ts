@@ -23,7 +23,6 @@ function buildWeekSummary(weekNumber: number, activities: Activity[]): WeekSumma
     sessionCount: activities.length,
     avgHeartRate: hrs.length ? Math.round(hrs.reduce((s, v) => s + v, 0) / hrs.length) : null,
     avgPaceSecPerKm: paces.length ? Math.round(paces.reduce((s, v) => s + v, 0) / paces.length) : null,
-    activities: activities,
   }
 }
 
@@ -104,14 +103,10 @@ export function getDashboardData(): DashboardData {
   }
 
   const sortedWeeks = Array.from(byWeek.keys()).sort((a, b) => a - b)
-  const latestWeek = sortedWeeks[sortedWeeks.length - 1]
-  const prevWeek = sortedWeeks[sortedWeeks.length - 2]
+  const weeks = sortedWeeks.map((w) => buildWeekSummary(w, byWeek.get(w)!))
 
-  const currentWeekActivities = byWeek.get(latestWeek) ?? []
-  const lastWeekActivities = byWeek.get(prevWeek) ?? []
-
-  const currentWeek = buildWeekSummary(latestWeek, currentWeekActivities)
-  const lastWeekSummary = buildWeekSummary(prevWeek ?? latestWeek, lastWeekActivities)
+  const currentWeek = weeks[weeks.length - 1]
+  const lastWeekSummary = weeks[weeks.length - 2] ?? currentWeek
 
   const weeklyVolume: WeeklyVolume[] = sortedWeeks.slice(-12).map((w) => {
     const acts = byWeek.get(w)!
@@ -133,6 +128,7 @@ export function getDashboardData(): DashboardData {
       totalDistanceKm: lastWeekSummary.totalDistanceKm,
       sessionCount: lastWeekSummary.sessionCount,
     },
+    weeks,
     weeklyVolume,
     typeDistribution,
     recentActivities: all.slice(0, 8),
