@@ -422,13 +422,17 @@ export const en = {
   activities: {
     searchPlaceholder: 'Search...',
     all: 'All',
-    distance: 'Distance',
-    min: 'min',
-    max: 'max',
-    clear: 'Clear',
     count: (n: number) => `${n} activit${n !== 1 ? 'ies' : 'y'}`,
     page: (current: number, total: number) => ` · page ${current}/${total}`,
     empty: 'No activities found',
+    sort: {
+      label: 'Sort',
+      date: 'Date',
+      distance: 'Distance',
+      duration: 'Duration',
+      pace: 'Pace',
+      avgHr: 'Avg HR',
+    },
     row: {
       distance: 'distance',
       duration: 'duration',

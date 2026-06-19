@@ -1,17 +1,43 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Search, X } from 'lucide-react'
+import { Search } from 'lucide-react'
 import { ActivityRow } from './ActivityRow'
 import { ActivityTypeTag } from './ActivityTypeTag'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import type { Activity, ActivityType } from '@/domain/activity/types'
 import { Card } from '@/components/ui/Card'
 import { Pagination } from '@/components/ui/Pagination'
+import { SortDropdown, type SortOrder } from '@/components/ui/SortDropdown'
 import { t } from '@/i18n'
 
 const ALL_TYPES = Object.keys(ACTIVITY_TYPE_CONFIG) as ActivityType[]
 const PAGE_SIZE = 10
+
+type SortKey = 'date' | 'distance' | 'duration' | 'pace' | 'avgHr'
+
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: 'date', label: t.activities.sort.date },
+  { value: 'distance', label: t.activities.sort.distance },
+  { value: 'duration', label: t.activities.sort.duration },
+  { value: 'pace', label: t.activities.sort.pace },
+  { value: 'avgHr', label: t.activities.sort.avgHr },
+]
+
+function sortValue(activity: Activity, key: SortKey): number {
+  switch (key) {
+    case 'date':
+      return new Date(activity.date).getTime()
+    case 'distance':
+      return activity.distanceKm
+    case 'duration':
+      return activity.durationSeconds
+    case 'pace':
+      return activity.paceSecPerKm ?? Infinity
+    case 'avgHr':
+      return activity.avgHeartRate ?? -Infinity
+  }
+}
 
 interface Props {
   activities: Activity[]
@@ -20,21 +46,13 @@ interface Props {
 export function ActivityListClient({ activities }: Props) {
   const [search, setSearch] = useState('')
   const [selectedType, setSelectedType] = useState<ActivityType | null>(null)
-  const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState('')
-  const [minKm, setMinKm] = useState('')
-  const [maxKm, setMaxKm] = useState('')
+  const [sortBy, setSortBy] = useState<SortKey>('date')
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
   const [page, setPage] = useState(1)
 
   const filtered = useMemo(() => {
-    const min = parseFloat(minKm)
-    const max = parseFloat(maxKm)
     return activities
       .filter((a) => !selectedType || a.type === selectedType)
-      .filter((a) => !dateFrom || a.date >= dateFrom)
-      .filter((a) => !dateTo || a.date <= dateTo)
-      .filter((a) => Number.isNaN(min) || a.distanceKm >= min)
-      .filter((a) => Number.isNaN(max) || a.distanceKm <= max)
       .filter((a) => {
         if (!search.trim()) return true
         const q = search.toLowerCase()
@@ -45,20 +63,16 @@ export function ActivityListClient({ activities }: Props) {
           a.date.includes(q)
         )
       })
-  }, [activities, selectedType, search, dateFrom, dateTo, minKm, maxKm])
+  }, [activities, selectedType, search])
 
-  const hasExtraFilters = dateFrom || dateTo || minKm || maxKm
+  const sorted = useMemo(() => {
+    const direction = sortOrder === 'asc' ? 1 : -1
+    return [...filtered].sort((a, b) => direction * (sortValue(a, sortBy) - sortValue(b, sortBy)))
+  }, [filtered, sortBy, sortOrder])
 
-  function clearFilters() {
-    setDateFrom('')
-    setDateTo('')
-    setMinKm('')
-    setMaxKm('')
-  }
-
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
+  const totalPages = Math.ceil(sorted.length / PAGE_SIZE)
   const clampedPage = Math.min(page, Math.max(1, totalPages))
-  const paginated = filtered.slice((clampedPage - 1) * PAGE_SIZE, clampedPage * PAGE_SIZE)
+  const paginated = sorted.slice((clampedPage - 1) * PAGE_SIZE, clampedPage * PAGE_SIZE)
 
   return (
     <div className="space-y-4">
@@ -97,59 +111,22 @@ export function ActivityListClient({ activities }: Props) {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <input
-          type="date"
-          value={dateFrom}
-          onChange={(e) => setDateFrom(e.target.value)}
-          className="h-8 w-28 rounded-md border border-border bg-card px-2 text-xs text-foreground focus:border-accent focus:outline-none dark:[color-scheme:dark]"
-        />
-        <span className="text-xs text-subtle">→</span>
-        <input
-          type="date"
-          value={dateTo}
-          onChange={(e) => setDateTo(e.target.value)}
-          className="h-8 w-28 rounded-md border border-border bg-card px-2 text-xs text-foreground focus:border-accent focus:outline-none dark:[color-scheme:dark]"
-        />
-        <span className="flex items-center gap-2">
-          <span className="text-xs text-subtle">{t.activities.distance}</span>
-          <input
-            type="number"
-            min="0"
-            step="1"
-            placeholder={t.activities.min}
-            value={minKm}
-            onChange={(e) => setMinKm(e.target.value)}
-            className="h-8 w-16 rounded-md border border-border bg-card px-2 text-xs text-foreground placeholder-subtle focus:border-accent focus:outline-none"
-          />
-          <span className="text-xs text-subtle">–</span>
-          <input
-            type="number"
-            min="0"
-            step="1"
-            placeholder={t.activities.max}
-            value={maxKm}
-            onChange={(e) => setMaxKm(e.target.value)}
-            className="h-8 w-16 rounded-md border border-border bg-card px-2 text-xs text-foreground placeholder-subtle focus:border-accent focus:outline-none"
-          />
-          <span className="text-xs text-subtle">{t.units.km}</span>
-        </span>
-        {hasExtraFilters && (
-          <button
-            onClick={clearFilters}
-            className="ml-1 flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            <X size={12} />
-            {t.activities.clear}
-          </button>
-        )}
-      </div>
-
       <div className="flex items-center justify-between">
         <p className="text-xs text-subtle">
-          {t.activities.count(filtered.length)}
+          {t.activities.count(sorted.length)}
           {totalPages > 1 && t.activities.page(clampedPage, totalPages)}
         </p>
+        <SortDropdown
+          options={SORT_OPTIONS}
+          sortBy={sortBy}
+          order={sortOrder}
+          onChange={(value, order) => {
+            setSortBy(value)
+            setSortOrder(order)
+            setPage(1)
+          }}
+          label={t.activities.sort.label}
+        />
       </div>
 
       <div className="space-y-2">
