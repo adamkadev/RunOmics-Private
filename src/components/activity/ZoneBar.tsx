@@ -16,14 +16,6 @@ const ZONE_CONFIG: Record<number, {
   5: { label: t.activity.zones.labels[5], barClass: 'bg-red-500',     textClass: 'text-red-600 dark:text-red-400',         trackClass: 'bg-red-50 dark:bg-red-900/20' },
 }
 
-const STACKED_BAR_COLORS = [
-  'bg-gray-400',
-  'bg-blue-400',
-  'bg-emerald-400',
-  'bg-orange-500',
-  'bg-red-500',
-]
-
 interface ZoneRowProps {
   zone: HrZone
 }
@@ -76,17 +68,6 @@ export function ZoneBar({ hrZones }: Props) {
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.activity.zones.title}
       </h3>
-
-      <div className="mb-5 flex h-4 overflow-hidden rounded-full bg-muted">
-        {sorted.map((z) => (
-          <div
-            key={z.zone}
-            className={`h-full ${STACKED_BAR_COLORS[z.zone - 1] ?? 'bg-gray-300'}`}
-            style={{ width: `${z.percent}%` }}
-            title={`Z${z.zone}: ${z.percent}%`}
-          />
-        ))}
-      </div>
 
       <div className="space-y-3">
         {sorted.map((z) => (

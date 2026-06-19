@@ -117,9 +117,9 @@ export function ActivityDetailClient({ activity }: Props) {
           )}
         </div>
 
-        <div className="grid grid-cols-4 px-2 py-2">
+        <div className="flex flex-wrap px-2 py-2">
           {stats.map(({ Icon, color, value, label }) => (
-            <div key={label} className="flex flex-col items-center gap-0.5 px-2 py-2 text-center">
+            <div key={label} className="flex min-w-[5rem] flex-1 flex-col items-center gap-0.5 px-2 py-2 text-center">
               <Icon size={13} className={color} />
               <div className="whitespace-nowrap text-sm font-bold leading-tight text-foreground">{value}</div>
               <div className="text-[10px] leading-tight text-muted-foreground">{label}</div>

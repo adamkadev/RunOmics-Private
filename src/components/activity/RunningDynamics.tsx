@@ -32,7 +32,7 @@ export function RunningDynamics({ activity: a }: { activity: Activity }) {
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.activity.dynamics.title}
       </h3>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-5">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
         {metrics.map((m) => (
           <div key={m.label}>
             <p className="text-sm font-semibold text-foreground">
