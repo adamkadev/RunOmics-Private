@@ -1,7 +1,5 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getPbsFromFirestore } from '@/infrastructure/repositories/FirestoreConfigRepository'
-import { getFullLoadHistory } from './GetTrainingLoad'
-import type { LoadSnapshot } from './GetTrainingLoad'
 
 const EFFORTS = [
   { key: '1k',       label: '1K',       km: 1        },
@@ -29,7 +27,6 @@ export interface RecordEntry {
   activityId: string | null
   date: string | null
   official: boolean
-  formAtPb: LoadSnapshot | null
   eventName?: string
 }
 
@@ -47,7 +44,6 @@ export async function getRecords(): Promise<RecordEntry[]> {
   const activities = getAllActivities()
   const pbYears = await getPbsFromFirestore()
   const activityMap = new Map(activities.map((a) => [a.id, a]))
-  const loadHistory = getFullLoadHistory()
 
   const officialPbs = new Map<string, { seconds: number; activityId: string | null }>()
   for (const year of pbYears) {
@@ -74,7 +70,6 @@ export async function getRecords(): Promise<RecordEntry[]> {
         activityId: official.activityId,
         date,
         official: true,
-        formAtPb: date ? (loadHistory.get(date) ?? null) : null,
         eventName: activity?.description || undefined,
       }
     }
@@ -94,7 +89,6 @@ export async function getRecords(): Promise<RecordEntry[]> {
       activityId: best?.activityId ?? null,
       date: best?.date ?? null,
       official: false,
-      formAtPb: best?.date ? (loadHistory.get(best.date) ?? null) : null,
       eventName: best?.description || undefined,
     }
   })
@@ -116,7 +110,6 @@ export async function getRecords(): Promise<RecordEntry[]> {
         activityId: longestActivity.id,
         date: longestActivity.date,
         official: false,
-        formAtPb: loadHistory.get(longestActivity.date) ?? null,
         eventName: longestActivity.description || undefined,
       }
     : {
@@ -127,7 +120,6 @@ export async function getRecords(): Promise<RecordEntry[]> {
         activityId: null,
         date: null,
         official: false,
-        formAtPb: null,
       }
 
   return [...effortRecords, longestRecord]

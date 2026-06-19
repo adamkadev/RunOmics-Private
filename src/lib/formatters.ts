@@ -46,14 +46,6 @@ export function monthLabel(month: number): string {
   return new Date(2000, month - 1, 1).toLocaleString('en', { month: 'short' }).toUpperCase()
 }
 
-/** Compact elapsed time for chart axes: `1h05` past an hour, otherwise `12m`. */
-export function formatElapsed(seconds: number): string {
-  const total = Math.round(seconds)
-  const h = Math.floor(total / 3600)
-  const m = Math.floor((total % 3600) / 60)
-  return h > 0 ? `${h}h${String(m).padStart(2, '0')}` : `${m}m`
-}
-
 /** Parse a `m:ss` or `h:mm:ss` string into seconds. Returns null if invalid. */
 export function parseTimeInput(str: string): number | null {
   const parts = str.trim().split(':').map(Number)

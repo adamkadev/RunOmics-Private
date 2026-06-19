@@ -23,7 +23,7 @@ export interface TrainingLoadData {
   tsb: number
 }
 
-export interface LoadSnapshot {
+interface LoadSnapshot {
   ctl: number
   atl: number
   tsb: number
@@ -68,12 +68,6 @@ function buildTimeSeries(activities: Activity[]): Map<string, LoadSnapshot> {
   }
 
   return series
-}
-
-export function getFullLoadHistory(): Map<string, LoadSnapshot> {
-  const activities = getAllActivities()
-  if (!activities.length) return new Map()
-  return buildTimeSeries(activities)
 }
 
 export function getTrainingLoad(): TrainingLoadData | null {

@@ -118,12 +118,10 @@ export const en = {
       thresholdPace: 'Threshold pace',
       thresholdPaceHint: 'min:ss per km, e.g. 4:14',
       thresholdPower: 'Threshold power (W)',
-      weightKg: 'Weight (kg)',
       placeholders: {
         lthr: '177',
         thresholdPace: '4:14',
         thresholdPower: '339',
-        weightKg: '63',
       },
     },
     goals: {
@@ -641,12 +639,6 @@ export const en = {
       dist: 'Distance',
       pace: 'Pace',
       date: 'Date',
-    },
-    formAtPb: {
-      fitness: 'Fitness',
-      form: 'Form',
-      now: 'now',
-      formTooltip: 'Fitness minus Fatigue on race day. Positive = you were fresh, ideal for performance. Negative = you ran this while under training load.',
     },
   },
 

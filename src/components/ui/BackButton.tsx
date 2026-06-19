@@ -12,7 +12,10 @@ export function BackButton({ label, fallbackHref = '/' }: Props) {
   const router = useRouter()
   return (
     <button
-      onClick={() => router.back()}
+      onClick={() => {
+        if (window.history.length > 1) router.back()
+        else router.push(fallbackHref)
+      }}
       className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
     >
       <ArrowLeft size={14} />

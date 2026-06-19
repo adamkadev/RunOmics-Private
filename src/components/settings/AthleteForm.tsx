@@ -95,16 +95,6 @@ export function AthleteForm() {
               placeholder={p.thresholdPower}
             />
           </Field>
-
-          <Field label={t.settings.athlete.weightKg} hint="">
-            <input
-              type="number"
-              value={values.weightKg ?? ''}
-              onChange={(e) => setNum('weightKg', e.target.value)}
-              className={inputCls}
-              placeholder={p.weightKg}
-            />
-          </Field>
         </div>
 
         <div className="mt-5">
