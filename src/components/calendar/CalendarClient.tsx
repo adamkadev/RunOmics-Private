@@ -106,7 +106,7 @@ export function CalendarClient({ activities }: Props) {
         </p>
       </div>
 
-      <Card padding="none" overflow>
+      <Card accent="emerald" padding="none" overflow>
         <div className="grid grid-cols-7 border-b border-border">
           {WEEKDAYS.map((d) => (
             <div

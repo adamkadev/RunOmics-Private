@@ -99,7 +99,7 @@ export function PbsForm() {
   }
 
   return (
-    <section className={cardClass({ padding: 'none' })}>
+    <section className={cardClass({ accent: 'violet', padding: 'none' })}>
       <div className="flex items-center justify-between border-b border-border px-4 py-3 sm:px-5">
         <h2 className="text-sm font-semibold text-foreground">{t.settings.pbs.title}</h2>
         <button

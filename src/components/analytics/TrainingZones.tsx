@@ -11,6 +11,10 @@ const ZONE_STYLE: Record<string, { dot: string; text: string; bar: string }> = {
   vo2max:    { dot: 'bg-red-500',     text: 'text-red-600 dark:text-red-400',         bar: 'bg-red-500'     },
 }
 
+const ZONE_ACCENT: Record<string, string> = {
+  easy: 'emerald', marathon: 'blue', threshold: 'amber', vo2max: 'red',
+}
+
 export function TrainingZones({ data }: { data: TrainingZonesData }) {
   const { thresholdPaceSecPerKm, zones } = data
 
@@ -38,7 +42,7 @@ export function TrainingZones({ data }: { data: TrainingZonesData }) {
           const width = ((zone.paceMaxSecPerKm - zone.paceMinSecPerKm) / range) * 100
 
           return (
-            <Card key={zone.key}>
+            <Card key={zone.key} accent={ZONE_ACCENT[zone.key] ?? 'emerald'}>
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-1.5">
                   <span className={`h-2 w-2 shrink-0 rounded-full ${style.dot}`} />

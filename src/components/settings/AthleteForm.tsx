@@ -60,7 +60,7 @@ export function AthleteForm() {
   const p = t.settings.athlete.placeholders
 
   return (
-    <section className={cardClass({ padding: 'none' })}>
+    <section className={cardClass({ accent: 'blue', padding: 'none' })}>
       <div className="border-b border-border px-4 py-3 sm:px-5">
         <h2 className="text-sm font-semibold text-foreground">{t.settings.athlete.title}</h2>
       </div>

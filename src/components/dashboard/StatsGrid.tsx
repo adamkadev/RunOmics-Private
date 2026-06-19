@@ -2,6 +2,7 @@ import { CalendarDays, Timer, Footprints, Heart, TrendingUp, Flame, Activity, ty
 import type { ReactNode } from 'react'
 import { formatDuration, formatPace } from '@/lib/formatters'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
+import { cardClass } from '@/components/ui/Card'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { DashboardData } from '@/domain/activity/types'
@@ -71,7 +72,7 @@ export function StatsGrid({ currentWeek, currentStreak, vo2max }: Props) {
   ]
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border shadow-card">
+    <div className={cardClass({ accent: 'emerald', overflow: true, padding: 'none' })}>
       <div className="flex items-center gap-2 border-b border-border bg-card px-4 py-3.5">
         <CalendarDays size={14} className="shrink-0 text-emerald-500 dark:text-emerald-400" />
         <span className="text-sm font-semibold text-foreground">

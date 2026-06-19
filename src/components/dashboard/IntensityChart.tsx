@@ -31,7 +31,7 @@ function CustomTooltip({ active, payload }: TooltipProps) {
 
 export function IntensityChart({ data }: Props) {
   return (
-    <Card padding="lg">
+    <Card accent="violet" padding="lg">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.dashboard.trainingMix.title}
       </h3>

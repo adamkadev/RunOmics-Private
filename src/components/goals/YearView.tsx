@@ -92,7 +92,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
               const delta = pbSeconds !== null && target.targetSeconds ? pbSeconds - target.targetSeconds : null
               const achieved = delta !== null && delta <= 0
               return (
-                <Card key={target.distance}>
+                <Card key={target.distance} accent="orange">
                   <p className="text-xs font-semibold text-subtle">{target.distance}</p>
                   <p className="mt-1 text-lg font-bold text-foreground">
                     {target.targetSeconds === null ? (
@@ -126,7 +126,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
               <Link
                 key={entry.activityId}
                 href={`/activities/${entry.activityId}`}
-                className={cardClass({ padding: 'none', overflow: true, className: 'group relative transition-shadow hover:shadow-lg' })}
+                className={cardClass({ accent: 'violet', padding: 'none', overflow: true, className: 'group relative transition-shadow hover:shadow-lg' })}
               >
                 {photoPath ? (
                   <div className="relative h-40 w-full overflow-hidden bg-muted">
@@ -185,13 +185,13 @@ export function YearView({ yearData }: { yearData: YearData }) {
           </div>
         </section>
       ) : (
-        <div className="rounded-xl border border-dashed border-border p-10 text-center">
+        <Card dashed accent="violet" padding="none" className="p-10 text-center">
           <Trophy size={32} className="mx-auto mb-3 text-subtle" />
           <p className="text-sm text-subtle">{t.goals.emptyPbs(yearData.year)}</p>
           <Link href="/settings" className="mt-2 inline-block text-xs text-emerald-600 hover:underline dark:text-emerald-400">
             {t.nav.items.settings}
           </Link>
-        </div>
+        </Card>
       )}
     </div>
   )

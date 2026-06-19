@@ -6,6 +6,11 @@ import { Tooltip } from '@/components/ui/Tooltip'
 import { cardClass } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
+const DIST_COLOR: Record<string, string> = {
+  '1k': 'blue', '1mile': 'cyan', '5k': 'emerald', '10k': 'amber',
+  half: 'violet', marathon: 'rose', longest: 'orange',
+}
+
 function shortDate(iso: string): string {
   return new Date(iso + 'T00:00:00').toLocaleDateString(t.locale, { month: 'short', year: '2-digit' })
 }
@@ -69,12 +74,12 @@ export function RecordsWall({ records, currentTsb }: { records: RecordEntry[]; c
             <Link
               key={r.key}
               href={`/activities/${r.activityId}`}
-              className={cardClass({ clickable: true })}
+              className={cardClass({ accent: DIST_COLOR[r.key], clickable: true })}
             >
               {card}
             </Link>
           ) : (
-            <div key={r.key} className={cardClass({ dashed: true })}>
+            <div key={r.key} className={cardClass({ accent: DIST_COLOR[r.key], dashed: true })}>
               {card}
             </div>
           )

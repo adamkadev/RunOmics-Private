@@ -30,6 +30,7 @@ import { TemperatureCorrelationChart } from './TemperatureCorrelationChart'
 import type { VO2maxPoint } from '@/application/usecases/GetVO2maxHistory'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { formatDuration } from '@/lib/formatters'
+import { cardClass } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 const TABS = [
@@ -238,7 +239,7 @@ export function AnalyticsClient({
 
       {/* Stats card */}
       {statCells.length > 0 && (
-        <div className="overflow-hidden rounded-xl border border-border shadow-card">
+        <div className={cardClass({ accent: 'blue', overflow: true, padding: 'none' })}>
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-b border-border bg-card px-4 py-3">
             <span className="text-sm font-semibold text-foreground">{periodLabel}</span>
             {deltaBadges.length > 0 && (

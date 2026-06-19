@@ -46,6 +46,10 @@ const EFFORTS = [
   { key: 'marathon', label: t.racePredictions.efforts.marathon, km: 42.195   },
 ]
 
+const DIST_ACCENT: Record<string, string> = {
+  '5k': 'emerald', '10k': 'amber', half: 'violet', marathon: 'rose',
+}
+
 interface Props {
   records: RecordEntry[]
 }
@@ -73,7 +77,7 @@ export function RacePredictions({ records }: Props) {
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {predictions.map(({ key, label, km, actual, predicted }) => {
           return (
-            <Card key={key} padding="sm">
+            <Card key={key} padding="sm" accent={DIST_ACCENT[key]}>
               <p className="text-xs font-semibold text-subtle">{label}</p>
               <p className="mt-0.5 text-lg font-bold leading-tight tracking-tight text-foreground">
                 ~{formatDuration(predicted!)}

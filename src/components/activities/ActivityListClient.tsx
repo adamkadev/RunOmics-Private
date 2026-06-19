@@ -6,6 +6,7 @@ import { ActivityRow } from './ActivityRow'
 import { ActivityTypeTag } from './ActivityTypeTag'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import type { Activity, ActivityType } from '@/domain/activity/types'
+import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 const ALL_TYPES = Object.keys(ACTIVITY_TYPE_CONFIG) as ActivityType[]
@@ -152,9 +153,9 @@ export function ActivityListClient({ activities }: Props) {
 
       <div className="space-y-2">
         {paginated.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border py-12 text-center">
+          <Card dashed accent="emerald" padding="none" className="py-12 text-center">
             <p className="text-sm text-subtle">{t.activities.empty}</p>
-          </div>
+          </Card>
         ) : (
           paginated.map((a) => <ActivityRow key={a.id} activity={a} />)
         )}

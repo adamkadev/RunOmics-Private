@@ -31,6 +31,14 @@ const STATUS_STYLE: Record<TrainingStatusType, { dot: string; badge: string; tex
   },
 }
 
+const STATUS_ACCENT: Record<TrainingStatusType, string> = {
+  productive: 'emerald',
+  fresh:      'blue',
+  overreaching: 'red',
+  recovery:   'amber',
+  detraining: 'violet',
+}
+
 const RISK_STYLE: Record<RiskLevel, string> = {
   low: 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400',
   moderate: 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
@@ -79,7 +87,7 @@ export function TrainingStatusBanner({ status }: { status: TrainingStatus }) {
           : 'text-foreground'
 
   return (
-    <Card padding="lg">
+    <Card accent={STATUS_ACCENT[status.status]} padding="lg">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         {/* Left - status + description */}
         <div className="flex items-start gap-3">
