@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { collection, getDocs, doc, setDoc } from 'firebase/firestore'
+import { useEffect, useMemo, useState } from 'react'
+import { collection, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore'
 import { getClientFirestore } from '@/lib/firebase'
 import type { UpcomingRaceYear, UpcomingRace } from '@/application/usecases/GetGoalsData'
 import { formatDuration, parseTimeInput } from '@/lib/formatters'
@@ -22,13 +22,18 @@ function secsToInput(s: number | null | undefined): string {
   return s ? formatDuration(s) : ''
 }
 
+function yearOf(race: UpcomingRace, fallback: number): number {
+  const year = race.date ? new Date(race.date).getFullYear() : NaN
+  return Number.isFinite(year) ? year : fallback
+}
+
 export function UpcomingRacesForm() {
   const currentYear = new Date().getFullYear()
-  const [raceYears, setRaceYears] = useState<UpcomingRaceYear[]>([])
-  const [saveStates, setSaveStates] = useState<Record<number, SaveState>>({})
+  const [races, setRaces] = useState<UpcomingRace[]>([])
+  const [loadedYears, setLoadedYears] = useState<number[]>([])
+  const [saveState, setSaveState] = useState<SaveState>('idle')
   const [toast, setToast] = useState<Toast>(null)
-  const [confirmYear, setConfirmYear] = useState<number | null>(null)
-  const [confirmRace, setConfirmRace] = useState<{ year: number; idx: number } | null>(null)
+  const [confirmRace, setConfirmRace] = useState<number | null>(null)
 
   function showToast(msg: string, ok: boolean) {
     setToast({ msg, ok })
@@ -37,79 +42,70 @@ export function UpcomingRacesForm() {
 
   useEffect(() => {
     getDocs(collection(getClientFirestore(), 'upcomingRaces')).then((snap) => {
-      setRaceYears(
-        snap.docs.map((d) => d.data() as UpcomingRaceYear).sort((a, b) => b.year - a.year)
-      )
+      const raceYears = snap.docs.map((d) => d.data() as UpcomingRaceYear)
+      setLoadedYears(raceYears.map((ry) => ry.year))
+      setRaces(raceYears.flatMap((ry) => ry.races))
     })
   }, [])
 
-  function updateRace(year: number, idx: number, field: keyof UpcomingRace, value: string) {
-    setRaceYears((prev) =>
-      prev.map((ry) => {
-        if (ry.year !== year) return ry
-        const races = ry.races.map((r, i) => (i !== idx ? r : { ...r, [field]: value }))
-        return { ...ry, races }
-      })
-    )
-    setSaveStates((s) => ({ ...s, [year]: 'idle' }))
-  }
-
-  function updateTargetSeconds(year: number, idx: number, value: string) {
-    const targetSeconds = value.trim() === '' ? null : parseTimeInput(value)
-    setRaceYears((prev) =>
-      prev.map((ry) => {
-        if (ry.year !== year) return ry
-        const races = ry.races.map((r, i) => (i !== idx ? r : { ...r, targetSeconds }))
-        return { ...ry, races }
-      })
-    )
-    setSaveStates((s) => ({ ...s, [year]: 'idle' }))
-  }
-
-  function addRace(year: number) {
-    setRaceYears((prev) =>
-      prev.map((ry) => (ry.year !== year ? ry : { ...ry, races: [...ry.races, emptyRace()] }))
-    )
-  }
-
-  function addCurrentYearRace() {
-    setRaceYears((prev) => {
-      if (prev.some((ry) => ry.year === currentYear)) {
-        return prev.map((ry) =>
-          ry.year !== currentYear ? ry : { ...ry, races: [...ry.races, emptyRace()] }
-        )
-      }
-      return [...prev, { year: currentYear, races: [emptyRace()] }].sort((a, b) => b.year - a.year)
+  const groups = useMemo(() => {
+    const byYear = new Map<number, { race: UpcomingRace; idx: number }[]>()
+    races.forEach((race, idx) => {
+      const year = yearOf(race, currentYear)
+      const entries = byYear.get(year) ?? []
+      entries.push({ race, idx })
+      byYear.set(year, entries)
     })
-    setSaveStates((s) => ({ ...s, [currentYear]: 'idle' }))
+    return Array.from(byYear.entries())
+      .map(([year, entries]) => ({
+        year,
+        entries: entries.slice().sort((a, b) => a.race.date.localeCompare(b.race.date)),
+      }))
+      .sort((a, b) => b.year - a.year)
+  }, [races, currentYear])
+
+  function updateRace(idx: number, field: keyof UpcomingRace, value: string) {
+    setRaces((prev) => prev.map((r, i) => (i !== idx ? r : { ...r, [field]: value })))
+    setSaveState('idle')
   }
 
-  function removeRace(year: number, idx: number) {
-    setRaceYears((prev) =>
-      prev.map((ry) => (ry.year !== year ? ry : { ...ry, races: ry.races.filter((_, i) => i !== idx) }))
-    )
-    setSaveStates((s) => ({ ...s, [year]: 'idle' }))
+  function updateTargetSeconds(idx: number, value: string) {
+    const targetSeconds = value.trim() === '' ? null : parseTimeInput(value)
+    setRaces((prev) => prev.map((r, i) => (i !== idx ? r : { ...r, targetSeconds })))
+    setSaveState('idle')
   }
 
-  function addYear() {
-    const next = (raceYears[0]?.year ?? new Date().getFullYear()) + 1
-    setRaceYears((prev) => [{ year: next, races: [] }, ...prev])
+  function addRace() {
+    setRaces((prev) => [...prev, emptyRace()])
   }
 
-  function removeYear(year: number) {
-    setRaceYears((prev) => prev.filter((ry) => ry.year !== year))
+  function removeRace(idx: number) {
+    setRaces((prev) => prev.filter((_, i) => i !== idx))
+    setConfirmRace(null)
+    setSaveState('idle')
   }
 
-  async function saveYear(year: number) {
-    const raceYear = raceYears.find((ry) => ry.year === year)
-    if (!raceYear) return
-    setSaveStates((s) => ({ ...s, [year]: 'saving' }))
+  async function saveAll() {
+    setSaveState('saving')
     try {
-      await setDoc(doc(getClientFirestore(), 'upcomingRaces', String(year)), raceYear)
-      setSaveStates((s) => ({ ...s, [year]: 'saved' }))
+      const currentYears = new Set(groups.map((g) => g.year))
+      const db = getClientFirestore()
+      await Promise.all([
+        ...groups.map((g) =>
+          setDoc(doc(db, 'upcomingRaces', String(g.year)), {
+            year: g.year,
+            races: g.entries.map((e) => e.race),
+          })
+        ),
+        ...loadedYears
+          .filter((year) => !currentYears.has(year))
+          .map((year) => deleteDoc(doc(db, 'upcomingRaces', String(year)))),
+      ])
+      setLoadedYears(groups.map((g) => g.year))
+      setSaveState('saved')
       showToast(t.settings.actions.saved, true)
     } catch {
-      setSaveStates((s) => ({ ...s, [year]: 'error' }))
+      setSaveState('error')
       showToast(t.settings.actions.error, false)
     }
   }
@@ -118,63 +114,33 @@ export function UpcomingRacesForm() {
     <section className={cardClass({ padding: 'none' })}>
       <div className="flex items-center justify-between border-b border-border px-4 py-3 sm:px-5">
         <h2 className="text-sm font-semibold text-foreground">{t.settings.upcomingRaces.title}</h2>
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={addCurrentYearRace}
-            className="text-xs font-medium text-accent-text transition-colors hover:text-accent-text/70"
-          >
-            + {t.settings.upcomingRaces.addCurrentYearRace(currentYear)}
-          </button>
-          <button
-            type="button"
-            onClick={addYear}
-            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-          >
-            + {t.settings.upcomingRaces.addYear}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={addRace}
+          className="text-xs font-medium text-accent-text transition-colors hover:text-accent-text/70"
+        >
+          + {t.settings.upcomingRaces.addRace}
+        </button>
       </div>
 
       <div className="divide-y divide-border">
-        {raceYears.map((raceYear) => (
-          <div key={raceYear.year} className="p-4 sm:p-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-base font-bold text-foreground">{raceYear.year}</span>
-              {confirmYear === raceYear.year ? (
-                <span className="flex items-center gap-2 text-xs">
-                  <span className="text-muted-foreground">{t.settings.actions.confirmQuestion}</span>
-                  <button type="button" onClick={() => { removeYear(raceYear.year); setConfirmYear(null) }} className="font-medium text-destructive hover:text-destructive/70">
-                    {t.settings.actions.confirmYes}
-                  </button>
-                  <button type="button" onClick={() => setConfirmYear(null)} className="text-muted-foreground hover:text-foreground">
-                    {t.settings.actions.confirmCancel}
-                  </button>
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setConfirmYear(raceYear.year)}
-                  className="text-xs text-destructive transition-colors hover:text-destructive/70"
-                >
-                  {t.settings.upcomingRaces.removeYear}
-                </button>
-              )}
-            </div>
+        {groups.map((group) => (
+          <div key={group.year} className="p-4 sm:p-5 space-y-3">
+            <span className="text-base font-bold text-foreground">{group.year}</span>
 
             <div className="space-y-2">
-              {raceYear.races.map((race, idx) => (
+              {group.entries.map(({ race, idx }) => (
                 <div key={idx} className="rounded-lg border border-border p-3 space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <input
                       type="date"
                       value={race.date}
-                      onChange={(e) => updateRace(raceYear.year, idx, 'date', e.target.value)}
+                      onChange={(e) => updateRace(idx, 'date', e.target.value)}
                       className="w-36 shrink-0 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent"
                     />
                     <select
                       value={race.distance}
-                      onChange={(e) => updateRace(raceYear.year, idx, 'distance', e.target.value)}
+                      onChange={(e) => updateRace(idx, 'distance', e.target.value)}
                       className="w-32 shrink-0 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent"
                     >
                       {DISTANCES.map((d) => <option key={d} value={d}>{d}</option>)}
@@ -183,13 +149,13 @@ export function UpcomingRacesForm() {
                       type="text"
                       placeholder={t.settings.upcomingRaces.placeholders.targetTime}
                       defaultValue={secsToInput(race.targetSeconds)}
-                      onBlur={(e) => updateTargetSeconds(raceYear.year, idx, e.target.value)}
+                      onBlur={(e) => updateTargetSeconds(idx, e.target.value)}
                       className="w-20 shrink-0 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent"
                     />
-                    {confirmRace?.year === raceYear.year && confirmRace?.idx === idx ? (
+                    {confirmRace === idx ? (
                       <span className="flex shrink-0 items-center gap-2 text-xs">
                         <span className="text-muted-foreground">{t.settings.actions.confirmQuestion}</span>
-                        <button type="button" onClick={() => { removeRace(raceYear.year, idx); setConfirmRace(null) }} className="font-medium text-destructive hover:text-destructive/70">
+                        <button type="button" onClick={() => removeRace(idx)} className="font-medium text-destructive hover:text-destructive/70">
                           {t.settings.actions.confirmYes}
                         </button>
                         <button type="button" onClick={() => setConfirmRace(null)} className="text-muted-foreground hover:text-foreground">
@@ -199,7 +165,7 @@ export function UpcomingRacesForm() {
                     ) : (
                       <button
                         type="button"
-                        onClick={() => setConfirmRace({ year: raceYear.year, idx })}
+                        onClick={() => setConfirmRace(idx)}
                         className="ml-auto shrink-0 text-xs text-destructive transition-colors hover:text-destructive/70"
                       >
                         {t.settings.upcomingRaces.removeRace}
@@ -210,7 +176,7 @@ export function UpcomingRacesForm() {
                     type="text"
                     placeholder={t.settings.upcomingRaces.placeholders.name}
                     value={race.name}
-                    onChange={(e) => updateRace(raceYear.year, idx, 'name', e.target.value)}
+                    onChange={(e) => updateRace(idx, 'name', e.target.value)}
                     className={inputCls}
                   />
                   <div className="flex items-center gap-2">
@@ -218,33 +184,26 @@ export function UpcomingRacesForm() {
                       type="text"
                       placeholder={t.settings.upcomingRaces.placeholders.location}
                       value={race.location ?? ''}
-                      onChange={(e) => updateRace(raceYear.year, idx, 'location', e.target.value)}
+                      onChange={(e) => updateRace(idx, 'location', e.target.value)}
                       className={inputCls}
                     />
                     <input
                       type="text"
                       placeholder={t.settings.upcomingRaces.placeholders.url}
                       value={race.url ?? ''}
-                      onChange={(e) => updateRace(raceYear.year, idx, 'url', e.target.value)}
+                      onChange={(e) => updateRace(idx, 'url', e.target.value)}
                       className={inputCls}
                     />
                   </div>
                 </div>
               ))}
             </div>
-
-            <div className="flex items-center gap-3 pt-1">
-              <button
-                type="button"
-                onClick={() => addRace(raceYear.year)}
-                className="text-xs font-medium text-accent-text transition-colors hover:text-accent-text/70"
-              >
-                + {t.settings.upcomingRaces.addRace}
-              </button>
-              <SaveButton state={saveStates[raceYear.year] ?? 'idle'} onClick={() => saveYear(raceYear.year)} />
-            </div>
           </div>
         ))}
+      </div>
+
+      <div className="flex items-center gap-3 border-t border-border px-4 py-3 sm:px-5">
+        <SaveButton state={saveState} onClick={saveAll} />
       </div>
 
       {toast && (

@@ -65,7 +65,7 @@ export function AthleteForm() {
         <h2 className="text-sm font-semibold text-foreground">{t.settings.athlete.title}</h2>
       </div>
       <form onSubmit={handleSave} className="p-4 sm:p-5">
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-3">
           <Field label={t.settings.athlete.lthr} hint={t.settings.athlete.lthrHint}>
             <input
               type="number"
@@ -86,7 +86,7 @@ export function AthleteForm() {
             />
           </Field>
 
-          <Field label={t.settings.athlete.thresholdPower} hint="">
+          <Field label={t.settings.athlete.thresholdPower} hint={t.settings.athlete.thresholdPowerHint}>
             <input
               type="number"
               value={values.thresholdPowerWatts ?? ''}

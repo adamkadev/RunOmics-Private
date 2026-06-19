@@ -118,6 +118,7 @@ export const en = {
       thresholdPace: 'Threshold pace',
       thresholdPaceHint: 'min:ss per km, e.g. 4:14',
       thresholdPower: 'Threshold power (W)',
+      thresholdPowerHint: 'Functional threshold power',
       placeholders: {
         lthr: '177',
         thresholdPace: '4:14',
@@ -165,9 +166,6 @@ export const en = {
       targetTime: 'Target (mm:ss)',
       addRace: 'Add race',
       removeRace: 'Remove',
-      addYear: 'Add year',
-      removeYear: 'Remove year',
-      addCurrentYearRace: (year: number) => `Add race for ${year}`,
       placeholders: {
         name: 'Marathon de Paris',
         location: 'Paris, France',
