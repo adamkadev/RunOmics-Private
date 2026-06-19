@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -10,7 +11,6 @@ import {
   BarChart2,
   Trophy,
   Target,
-  HeartPulse,
   Map,
   Footprints,
   Menu,
@@ -36,7 +36,7 @@ const NAV_ITEMS = [
 function Brand({ onClick }: { onClick?: () => void }) {
   return (
     <Link href="/" onClick={onClick} className="flex items-center gap-2.5">
-      <HeartPulse size={24} className="text-accent-text" />
+      <Image src="/icon-192.png" alt="" width={24} height={24} unoptimized priority className="rounded-md" />
       <span className="text-2xl tracking-tight text-foreground">
         <span className="font-bold">{t.brand.namePrefix}</span>
         <span className="font-normal">{t.brand.nameSuffix}</span>
@@ -103,7 +103,7 @@ export function Sidebar() {
       {/* ─── Desktop sidebar ─── */}
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-60 flex-col border-r border-border bg-card lg:flex">
         <Link href="/" className="flex h-16 items-center gap-2 border-b border-border px-5">
-          <HeartPulse size={20} className="text-accent-text" />
+          <Image src="/icon-192.png" alt="" width={20} height={20} priority className="rounded-md" />
           <span className="text-lg tracking-tight text-foreground">
             <span className="font-bold">{t.brand.namePrefix}</span>
             <span className="font-normal">{t.brand.nameSuffix}</span>
