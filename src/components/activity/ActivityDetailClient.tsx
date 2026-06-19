@@ -134,7 +134,7 @@ export function ActivityDetailClient({ activity }: Props) {
             <HrChart
               samples={activity.hrSamples}
               avgHr={activity.avgHeartRate}
-              durationSeconds={activity.durationSeconds}
+              distanceKm={activity.distanceKm}
               onHoverFraction={activity.route ? setHoverFraction : undefined}
             />
           )}
@@ -142,7 +142,7 @@ export function ActivityDetailClient({ activity }: Props) {
             <PaceChart
               samples={activity.paceSamples}
               avgPaceSecPerKm={activity.paceSecPerKm}
-              durationSeconds={activity.durationSeconds}
+              distanceKm={activity.distanceKm}
               onHoverFraction={activity.route ? setHoverFraction : undefined}
             />
           )}
@@ -150,14 +150,14 @@ export function ActivityDetailClient({ activity }: Props) {
             <CadenceChart
               samples={activity.cadenceSamples}
               avgCadence={activity.cadenceSpm}
-              durationSeconds={activity.durationSeconds}
+              distanceKm={activity.distanceKm}
               onHoverFraction={activity.route ? setHoverFraction : undefined}
             />
           )}
           {activity.elevationProfile && (
             <ElevationChart
               samples={activity.elevationProfile}
-              durationSeconds={activity.durationSeconds}
+              distanceKm={activity.distanceKm}
               elevationGain={activity.elevationGain}
               onHoverFraction={activity.route ? setHoverFraction : undefined}
             />

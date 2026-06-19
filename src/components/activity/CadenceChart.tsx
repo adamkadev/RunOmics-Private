@@ -7,24 +7,35 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  ReferenceLine,
 } from 'recharts'
 import { CHART_COLORS } from '@/lib/colors'
-import { formatElapsed } from '@/lib/formatters'
 import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 interface Props {
   samples: number[]
   avgCadence?: number | null
-  durationSeconds?: number
+  distanceKm?: number
   onHoverFraction?: (fraction: number | null) => void
 }
 
-export function CadenceChart({ samples, avgCadence, durationSeconds, onHoverFraction }: Props) {
+function kmTicks(distanceKm: number): number[] {
+  const step = distanceKm <= 3 ? 1 : distanceKm <= 20 ? 2 : distanceKm <= 50 ? 5 : 10
+  return Array.from({ length: Math.floor(distanceKm / step) + 1 }, (_, i) => i * step)
+}
+
+const CADENCE_CAP = 100
+const CADENCE_TICKS = [CADENCE_CAP, 120, 140, 160, 180]
+const CADENCE_DOMAIN: [number, number] = [90, 200]
+
+function formatCadenceTick(v: number): string {
+  return v === CADENCE_CAP ? '<100' : String(v)
+}
+
+export function CadenceChart({ samples, avgCadence, distanceKm, onHoverFraction }: Props) {
   const data = samples.map((spm, i) => {
-    const pct = durationSeconds ? (i / (samples.length - 1)) * durationSeconds : i
-    return { t: pct, spm }
+    const d = distanceKm != null ? (i / (samples.length - 1)) * distanceKm : i
+    return { d, spm: Math.max(spm, CADENCE_CAP) }
   })
 
   function handleMove(state: Record<string, unknown> | null) {
@@ -34,24 +45,17 @@ export function CadenceChart({ samples, avgCadence, durationSeconds, onHoverFrac
     }
   }
 
-  const minVal = Math.max(0, Math.min(...samples) - 10)
-  const maxVal = Math.max(...samples) + 10
-
-  function formatX(val: number) {
-    if (!durationSeconds) return String(val)
-    return formatElapsed(val)
-  }
+  const maxSpm = Math.max(...samples)
 
   return (
     <Card accent="blue" padding="lg">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">{t.activity.charts.cadence}</h3>
-        {avgCadence && (
-          <span className="text-xs text-subtle">
-            {t.activity.charts.avg} <span className="font-semibold text-foreground">{avgCadence.toFixed(0)}</span>
-            {' '}{t.units.spm}
-          </span>
-        )}
+        <span className="text-xs text-subtle">
+          {avgCadence && <>{t.activity.charts.avg} <span className="font-semibold text-foreground">{avgCadence.toFixed(0)}</span></>}
+          {' · '}{t.activity.charts.max} <span className="font-semibold text-foreground">{maxSpm}</span>
+          {' '}{t.units.spm}
+        </span>
       </div>
       <ResponsiveContainer width="100%" height={140}>
         <AreaChart
@@ -67,21 +71,24 @@ export function CadenceChart({ samples, avgCadence, durationSeconds, onHoverFrac
             </linearGradient>
           </defs>
           <XAxis
-            dataKey="t"
+            dataKey="d"
             type="number"
-            domain={['dataMin', 'dataMax']}
-            tickCount={5}
-            tickFormatter={formatX}
+            domain={[0, distanceKm ?? 'dataMax']}
+            ticks={distanceKm != null ? kmTicks(distanceKm) : undefined}
+            tickFormatter={(v) => (v === 0 ? '' : `${v} km`)}
             tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
-            domain={[minVal, maxVal]}
+            domain={CADENCE_DOMAIN}
+            ticks={CADENCE_TICKS}
+            interval={0}
             tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
             width={40}
+            tickFormatter={formatCadenceTick}
           />
           <Tooltip
             contentStyle={{
@@ -90,18 +97,13 @@ export function CadenceChart({ samples, avgCadence, durationSeconds, onHoverFrac
               borderRadius: 8,
               fontSize: 12,
             }}
-            formatter={(v) => [`${v} ${t.units.spm}`, t.activity.charts.cadence]}
-            labelFormatter={(v) => formatX(Number(v))}
+            formatter={(v) => {
+              const spm = Number(v)
+              const label = spm <= CADENCE_CAP ? `<100 ${t.units.spm}` : `${spm} ${t.units.spm}`
+              return [label, t.activity.charts.cadence]
+            }}
+            labelFormatter={(v) => `${Number(v).toFixed(1)} km`}
           />
-          {avgCadence && (
-            <ReferenceLine
-              y={avgCadence}
-              stroke={CHART_COLORS.cadence}
-              strokeDasharray="4 3"
-              strokeOpacity={0.5}
-              strokeWidth={1}
-            />
-          )}
           <Area
             type="monotone"
             dataKey="spm"

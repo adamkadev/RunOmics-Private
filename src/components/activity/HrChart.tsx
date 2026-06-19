@@ -7,25 +7,31 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  ReferenceLine,
 } from 'recharts'
 import { CHART_COLORS } from '@/lib/colors'
-import { formatElapsed } from '@/lib/formatters'
 import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 interface Props {
   samples: number[]
   avgHr?: number | null
-  maxHr?: number | null
-  durationSeconds?: number
+  distanceKm?: number
   onHoverFraction?: (fraction: number | null) => void
 }
 
-export function HrChart({ samples, avgHr, maxHr, durationSeconds, onHoverFraction }: Props) {
+function kmTicks(distanceKm: number): number[] {
+  const step = distanceKm <= 3 ? 1 : distanceKm <= 20 ? 2 : distanceKm <= 50 ? 5 : 10
+  return Array.from({ length: Math.floor(distanceKm / step) + 1 }, (_, i) => i * step)
+}
+
+const HR_TICKS = [100, 120, 140, 160, 180]
+const HR_DOMAIN: [number, number] = [80, 200]
+
+export function HrChart({ samples, avgHr, distanceKm, onHoverFraction }: Props) {
+  const maxHr = Math.max(...samples)
   const data = samples.map((bpm, i) => {
-    const pct = durationSeconds ? (i / (samples.length - 1)) * durationSeconds : i
-    return { t: pct, bpm }
+    const d = distanceKm != null ? (i / (samples.length - 1)) * distanceKm : i
+    return { d, bpm }
   })
 
   function handleMove(state: Record<string, unknown> | null) {
@@ -35,16 +41,6 @@ export function HrChart({ samples, avgHr, maxHr, durationSeconds, onHoverFractio
     }
   }
 
-  const minVal = Math.max(0, Math.min(...samples) - 10)
-  const maxVal = Math.min(220, Math.max(...samples) + 10)
-
-  function formatX(val: number) {
-    if (!durationSeconds) return String(val)
-    return formatElapsed(val)
-  }
-
-  const tickCount = 5
-
   return (
     <Card accent="red" padding="lg">
       <div className="mb-3 flex items-center justify-between">
@@ -52,9 +48,7 @@ export function HrChart({ samples, avgHr, maxHr, durationSeconds, onHoverFractio
         {avgHr && (
           <span className="text-xs text-subtle">
             {t.activity.charts.avg} <span className="font-semibold text-red-500 dark:text-red-400">{avgHr}</span>
-            {maxHr && (
-              <> · {t.activity.charts.max} <span className="font-semibold text-red-600 dark:text-red-400">{maxHr}</span></>
-            )}
+            {' · '}{t.activity.charts.max} <span className="font-semibold text-red-600 dark:text-red-400">{maxHr}</span>
             {' '}{t.units.bpm}
           </span>
         )}
@@ -73,17 +67,19 @@ export function HrChart({ samples, avgHr, maxHr, durationSeconds, onHoverFractio
             </linearGradient>
           </defs>
           <XAxis
-            dataKey="t"
+            dataKey="d"
             type="number"
-            domain={['dataMin', 'dataMax']}
-            tickCount={tickCount}
-            tickFormatter={formatX}
+            domain={[0, distanceKm ?? 'dataMax']}
+            ticks={distanceKm != null ? kmTicks(distanceKm) : undefined}
+            tickFormatter={(v) => (v === 0 ? '' : `${v} km`)}
             tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
-            domain={[minVal, maxVal]}
+            domain={HR_DOMAIN}
+            ticks={HR_TICKS}
+            interval={0}
             tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
@@ -97,17 +93,8 @@ export function HrChart({ samples, avgHr, maxHr, durationSeconds, onHoverFractio
               fontSize: 12,
             }}
             formatter={(v) => [`${v} ${t.units.bpm}`, t.activity.charts.hr]}
-            labelFormatter={(v) => formatX(Number(v))}
+            labelFormatter={(v) => `${Number(v).toFixed(1)} km`}
           />
-          {avgHr && (
-            <ReferenceLine
-              y={avgHr}
-              stroke={CHART_COLORS.hr}
-              strokeDasharray="4 3"
-              strokeOpacity={0.5}
-              strokeWidth={1}
-            />
-          )}
           <Area
             type="monotone"
             dataKey="bpm"

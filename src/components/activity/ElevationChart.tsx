@@ -9,21 +9,38 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { CHART_COLORS } from '@/lib/colors'
-import { formatElapsed } from '@/lib/formatters'
-import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 interface Props {
   samples: number[]
-  durationSeconds?: number
+  distanceKm?: number
   elevationGain?: number | null
   onHoverFraction?: (fraction: number | null) => void
 }
 
-export function ElevationChart({ samples, durationSeconds, elevationGain, onHoverFraction }: Props) {
+function kmTicks(distanceKm: number): number[] {
+  const step = distanceKm <= 3 ? 1 : distanceKm <= 20 ? 2 : distanceKm <= 50 ? 5 : 10
+  return Array.from({ length: Math.floor(distanceKm / step) + 1 }, (_, i) => i * step)
+}
+
+const ELEV_STEPS = [5, 10, 15, 20, 25, 50, 100]
+
+function elevationTicks(samples: number[]): { ticks: number[]; domain: [number, number] } {
+  const rawMin = Math.min(...samples)
+  const rawMax = Math.max(...samples)
+  const range = rawMax - rawMin
+  const step = ELEV_STEPS.find((s) => range / s <= 8) ?? 100
+  const firstTick = Math.floor(rawMin / 5) * 5
+  const lastTick = Math.ceil(rawMax / step) * step
+  const ticks: number[] = []
+  for (let v = firstTick; v <= lastTick; v += step) ticks.push(v)
+  return { ticks, domain: [firstTick - step * 0.5, lastTick + step * 0.5] }
+}
+
+export function ElevationChart({ samples, distanceKm, elevationGain, onHoverFraction }: Props) {
   const data = samples.map((alt, i) => {
-    const pct = durationSeconds ? (i / (samples.length - 1)) * durationSeconds : i
-    return { t: pct, alt: Math.round(alt) }
+    const d = distanceKm != null ? (i / (samples.length - 1)) * distanceKm : i
+    return { d, alt: Math.round(alt) }
   })
 
   function handleMove(state: Record<string, unknown> | null) {
@@ -33,18 +50,10 @@ export function ElevationChart({ samples, durationSeconds, elevationGain, onHove
     }
   }
 
-  const minVal = Math.max(0, Math.min(...samples) - 10)
-  const maxVal = Math.max(...samples) + 10
-
-  function formatX(val: number) {
-    if (!durationSeconds) return String(val)
-    return formatElapsed(val)
-  }
-
-  const tickCount = 5
+  const { ticks: elevTicks, domain: elevDomain } = elevationTicks(samples)
 
   return (
-    <Card accent="emerald" padding="lg">
+    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">{t.activity.charts.elevation}</h3>
         {elevationGain != null && (
@@ -67,22 +76,24 @@ export function ElevationChart({ samples, durationSeconds, elevationGain, onHove
             </linearGradient>
           </defs>
           <XAxis
-            dataKey="t"
+            dataKey="d"
             type="number"
-            domain={['dataMin', 'dataMax']}
-            tickCount={tickCount}
-            tickFormatter={formatX}
+            domain={[0, distanceKm ?? 'dataMax']}
+            ticks={distanceKm != null ? kmTicks(distanceKm) : undefined}
+            tickFormatter={(v) => (v === 0 ? '' : `${v} km`)}
             tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
-            domain={[minVal, maxVal]}
+            domain={elevDomain}
+            ticks={elevTicks}
+            interval={0}
             tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
             width={46}
-            tickFormatter={(v: number) => `${v}${t.units.m}`}
+            tickFormatter={(v: number) => `${v}m`}
           />
           <Tooltip
             contentStyle={{
@@ -92,7 +103,7 @@ export function ElevationChart({ samples, durationSeconds, elevationGain, onHove
               fontSize: 12,
             }}
             formatter={(v) => [`${v} ${t.units.m}`, t.activity.charts.altitude]}
-            labelFormatter={(v) => formatX(Number(v))}
+            labelFormatter={(v) => `${Number(v).toFixed(1)} km`}
           />
           <Area
             type="monotone"
@@ -105,6 +116,6 @@ export function ElevationChart({ samples, durationSeconds, elevationGain, onHove
           />
         </AreaChart>
       </ResponsiveContainer>
-    </Card>
+    </div>
   )
 }

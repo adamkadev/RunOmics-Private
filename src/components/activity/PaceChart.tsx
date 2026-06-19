@@ -9,21 +9,34 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { CHART_COLORS } from '@/lib/colors'
-import { formatClock, formatElapsed } from '@/lib/formatters'
+import { formatClock } from '@/lib/formatters'
 import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 interface Props {
   samples: number[]
   avgPaceSecPerKm?: number | null
-  durationSeconds?: number
+  distanceKm?: number
   onHoverFraction?: (fraction: number | null) => void
 }
 
-export function PaceChart({ samples, avgPaceSecPerKm, durationSeconds, onHoverFraction }: Props) {
+const PACE_CAP = 8 * 60 + 15 // 8:15/km
+const PACE_TICKS = [480, 420, 360, 300, 240] // 8:00, 7:00, 6:00, 5:00, 4:00
+
+function formatPaceTick(v: number): string {
+  return v === PACE_CAP ? '>8:15' : formatClock(v)
+}
+
+function kmTicks(distanceKm: number): number[] {
+  const step = distanceKm <= 3 ? 1 : distanceKm <= 20 ? 2 : distanceKm <= 50 ? 5 : 10
+  return Array.from({ length: Math.floor(distanceKm / step) + 1 }, (_, i) => i * step)
+}
+
+export function PaceChart({ samples, avgPaceSecPerKm, distanceKm, onHoverFraction }: Props) {
   const data = samples.map((pace, i) => {
-    const t = durationSeconds ? (i / (samples.length - 1)) * durationSeconds : i
-    return { t, pace }
+    const d = distanceKm != null ? (i / (samples.length - 1)) * distanceKm : i
+    const clampedPace = pace > 0 ? Math.min(pace, PACE_CAP) : undefined
+    return { d, pace: clampedPace }
   })
 
   function handleMove(state: Record<string, unknown> | null) {
@@ -34,22 +47,17 @@ export function PaceChart({ samples, avgPaceSecPerKm, durationSeconds, onHoverFr
   }
 
   const validSamples = samples.filter((v) => v > 0)
-  const minVal = validSamples.length ? Math.max(60, Math.min(...validSamples) - 10) : 200
-  const maxVal = validSamples.length ? Math.min(900, Math.max(...validSamples) + 20) : 600
   const avgPace = avgPaceSecPerKm ?? null
-
-  function formatX(val: number) {
-    if (!durationSeconds) return String(val)
-    return formatElapsed(val)
-  }
+  const bestPace = validSamples.length ? Math.min(...validSamples) : null
 
   return (
     <Card accent="amber" padding="lg">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">{t.activity.charts.pace}</h3>
         <span className="text-xs text-subtle">
-          {avgPace && <span className="font-semibold text-foreground">{formatClock(avgPace)} </span>}
-          {t.units.minPerKm}
+          {avgPace && <>{t.activity.charts.avg} <span className="font-semibold text-foreground">{formatClock(avgPace)}</span></>}
+          {bestPace && <> · {t.activity.charts.max} <span className="font-semibold text-foreground">{formatClock(bestPace)}</span></>}
+          {' '}{t.trainingZones.perKm}
         </span>
       </div>
       <ResponsiveContainer width="100%" height={140}>
@@ -66,23 +74,25 @@ export function PaceChart({ samples, avgPaceSecPerKm, durationSeconds, onHoverFr
             </linearGradient>
           </defs>
           <XAxis
-            dataKey="t"
+            dataKey="d"
             type="number"
-            domain={['dataMin', 'dataMax']}
-            tickCount={5}
-            tickFormatter={formatX}
+            domain={[0, distanceKm ?? 'dataMax']}
+            ticks={distanceKm != null ? kmTicks(distanceKm) : undefined}
+            tickFormatter={(v) => (v === 0 ? '' : `${v} km`)}
             tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
-            domain={[maxVal, minVal]}
+            domain={[PACE_CAP + 15, 175]}
+            ticks={PACE_TICKS}
+            interval={0}
             reversed
             tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
-            width={40}
-            tickFormatter={formatClock}
+            width={44}
+            tickFormatter={formatPaceTick}
           />
           <Tooltip
             contentStyle={{
@@ -91,8 +101,12 @@ export function PaceChart({ samples, avgPaceSecPerKm, durationSeconds, onHoverFr
               borderRadius: 8,
               fontSize: 12,
             }}
-            formatter={(v) => [`${formatClock(Number(v))}/${t.units.km}`, t.activity.charts.pace]}
-            labelFormatter={(v) => formatX(Number(v))}
+            formatter={(v) => {
+              const sec = Number(v)
+              const label = sec >= PACE_CAP ? `>8:15 /${t.units.km}` : `${formatClock(sec)}/${t.units.km}`
+              return [label, t.activity.charts.pace]
+            }}
+            labelFormatter={(v) => `${Number(v).toFixed(1)} km`}
           />
           <Area
             type="monotone"
@@ -101,6 +115,8 @@ export function PaceChart({ samples, avgPaceSecPerKm, durationSeconds, onHoverFr
             strokeWidth={1.5}
             fill="url(#paceGradient)"
             dot={false}
+            baseValue={PACE_CAP + 15}
+            connectNulls={false}
             isAnimationActive={false}
           />
         </AreaChart>
