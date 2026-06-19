@@ -1,11 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { HeatmapDay } from '@/application/usecases/GetHeatmapData'
 import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 const MONTHS = t.dashboard.heatmap.months
+const GAP = 3
+const LABEL_W = 26 // matches paddingLeft of month labels row
 
 // Must be statically present for Tailwind to include these classes
 const LEVEL_CLASSES = [
@@ -38,15 +40,30 @@ interface Props {
 
 export function ActivityHeatmap({ days }: Props) {
   const [tooltip, setTooltip] = useState<{ day: HeatmapDay; x: number; y: number } | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [cellSize, setCellSize] = useState(11)
 
-  // Group into weeks (Mon–Sun columns)
+  // Group into weeks (Mon-Sun columns)
   const weeks: HeatmapDay[][] = []
   for (let i = 0; i < days.length; i += 7) {
     const week = days.slice(i, i + 7)
-    // Pad last week to 7 days
     while (week.length < 7) week.push({ date: '', distanceKm: 0, sessionCount: 0 })
     weeks.push(week)
   }
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const compute = () => {
+      const w = el.clientWidth
+      const size = Math.floor((w - LABEL_W - (weeks.length - 1) * GAP) / weeks.length)
+      setCellSize(Math.max(8, Math.min(16, size)))
+    }
+    compute()
+    const obs = new ResizeObserver(compute)
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [weeks.length])
 
   // Month labels: show label at the first week where a new month starts
   const monthLabels: { label: string; col: number }[] = []
@@ -64,9 +81,6 @@ export function ActivityHeatmap({ days }: Props) {
   const totalKm = days.reduce((s, d) => s + d.distanceKm, 0)
   const activeDays = days.filter(d => d.distanceKm > 0).length
 
-  const CELL = 11  // px per cell
-  const GAP  = 3   // px gap
-
   return (
     <Card accent="emerald" padding="lg">
       <div className="mb-4 flex items-center justify-between">
@@ -79,58 +93,56 @@ export function ActivityHeatmap({ days }: Props) {
         </span>
       </div>
 
-      <div className="overflow-x-auto">
-        <div className="relative inline-block min-w-full">
-          {/* Month labels */}
-          <div className="relative mb-1 h-3" style={{ paddingLeft: 26 }}>
-            {monthLabels.map(({ label, col }) => (
-              <span
-                key={`${label}-${col}`}
-                className="absolute text-[10px] text-subtle"
-                style={{ left: 26 + col * (CELL + GAP) }}
+      <div ref={containerRef} className="w-full overflow-hidden">
+        {/* Month labels */}
+        <div className="relative mb-1 h-3" style={{ paddingLeft: LABEL_W }}>
+          {monthLabels.map(({ label, col }) => (
+            <span
+              key={`${label}-${col}`}
+              className="absolute text-[10px] text-subtle"
+              style={{ left: LABEL_W + col * (cellSize + GAP) }}
+            >
+              {label}
+            </span>
+          ))}
+        </div>
+
+        {/* Day labels + grid */}
+        <div className="flex" style={{ gap: GAP }}>
+          {/* Mon / Wed / Fri labels */}
+          <div className="flex flex-col" style={{ gap: GAP, marginRight: 2 }}>
+            {t.dashboard.heatmap.weekdays.map((label, i) => (
+              <div
+                key={i}
+                className="text-right text-[9px] leading-none text-subtle"
+                style={{ height: cellSize, lineHeight: `${cellSize}px`, width: 20 }}
               >
                 {label}
-              </span>
-            ))}
-          </div>
-
-          {/* Day labels + grid */}
-          <div className="flex" style={{ gap: GAP }}>
-            {/* Mon / Wed / Fri labels */}
-            <div className="flex flex-col" style={{ gap: GAP, marginRight: 2 }}>
-              {t.dashboard.heatmap.weekdays.map((label, i) => (
-                <div
-                  key={i}
-                  className="text-right text-[9px] leading-none text-subtle"
-                  style={{ height: CELL, lineHeight: `${CELL}px`, width: 20 }}
-                >
-                  {label}
-                </div>
-              ))}
-            </div>
-
-            {/* Week columns */}
-            {weeks.map((wk, col) => (
-              <div key={col} className="flex flex-col" style={{ gap: GAP }}>
-                {wk.map((day, row) =>
-                  !day.date ? (
-                    <div key={row} style={{ width: CELL, height: CELL }} />
-                  ) : (
-                    <div
-                      key={row}
-                      className={`rounded-[2px] transition-opacity hover:opacity-70 ${LEVEL_CLASSES[getLevel(day.distanceKm)]}`}
-                      style={{ width: CELL, height: CELL, cursor: 'default' }}
-                      onMouseEnter={(e) => {
-                        const rect = e.currentTarget.getBoundingClientRect()
-                        setTooltip({ day, x: rect.left + rect.width / 2, y: rect.top })
-                      }}
-                      onMouseLeave={() => setTooltip(null)}
-                    />
-                  )
-                )}
               </div>
             ))}
           </div>
+
+          {/* Week columns */}
+          {weeks.map((wk, col) => (
+            <div key={col} className="flex flex-col" style={{ gap: GAP }}>
+              {wk.map((day, row) =>
+                !day.date ? (
+                  <div key={row} style={{ width: cellSize, height: cellSize }} />
+                ) : (
+                  <div
+                    key={row}
+                    className={`rounded-[2px] transition-opacity hover:opacity-70 ${LEVEL_CLASSES[getLevel(day.distanceKm)]}`}
+                    style={{ width: cellSize, height: cellSize, cursor: 'default' }}
+                    onMouseEnter={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect()
+                      setTooltip({ day, x: rect.left + rect.width / 2, y: rect.top })
+                    }}
+                    onMouseLeave={() => setTooltip(null)}
+                  />
+                )
+              )}
+            </div>
+          ))}
         </div>
       </div>
 
