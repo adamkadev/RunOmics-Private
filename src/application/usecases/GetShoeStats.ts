@@ -1,0 +1,47 @@
+import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { SHOE_REGISTRY } from '@/domain/shoe/types'
+import { round } from '@/lib/math'
+
+export interface ShoeStats {
+  gearId: string
+  name: string
+  brand: string
+  maxKm: number
+  retired: boolean
+  totalKm: number
+  sessionCount: number
+  lastUsedDate: string | null
+  wearPercent: number
+}
+
+export function getShoeStats(): ShoeStats[] {
+  const activities = getAllActivities()
+
+  const byGear = new Map<string, number>()
+  const sessionsByGear = new Map<string, number>()
+  const lastUsedByGear = new Map<string, string>()
+
+  for (const a of activities) {
+    if (!a.gearId) continue
+    byGear.set(a.gearId, (byGear.get(a.gearId) ?? 0) + a.distanceKm)
+    sessionsByGear.set(a.gearId, (sessionsByGear.get(a.gearId) ?? 0) + 1)
+    if (!lastUsedByGear.has(a.gearId)) lastUsedByGear.set(a.gearId, a.date)
+  }
+
+  return Object.entries(SHOE_REGISTRY)
+    .map(([gearId, info]) => {
+      const totalKm = round(byGear.get(gearId) ?? 0, 1)
+      return {
+        gearId,
+        name: info.name,
+        brand: info.brand,
+        maxKm: info.maxKm,
+        retired: info.retired,
+        totalKm,
+        sessionCount: sessionsByGear.get(gearId) ?? 0,
+        lastUsedDate: lastUsedByGear.get(gearId) ?? null,
+        wearPercent: info.retired ? 100 : Math.min(100, round((totalKm / info.maxKm) * 100, 0)),
+      }
+    })
+    .sort((a, b) => Number(a.retired) - Number(b.retired) || b.totalKm - a.totalKm)
+}

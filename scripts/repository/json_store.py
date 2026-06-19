@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +17,22 @@ class JsonActivityStore:
 
     def get_existing_ids(self) -> set[str]:
         return {a["id"] for a in self._data.get("activities", [])}
+
+    def get_ids_since(self, days: int) -> list[str]:
+        cutoff = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+        return [
+            a["id"] for a in self._data.get("activities", [])
+            if a.get("date", "") >= cutoff
+        ]
+
+    def update_gear(self, activity_id: str, gear_id: str | None) -> bool:
+        for a in self._data.get("activities", []):
+            if a["id"] == activity_id:
+                if a.get("gearId") == gear_id:
+                    return False
+                a["gearId"] = gear_id
+                return True
+        return False
 
     def upsert(self, activity: ActivityData, *, replace: bool = False) -> bool:
         activities: list[dict[str, Any]] = self._data.setdefault("activities", [])

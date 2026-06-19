@@ -12,6 +12,7 @@ import {
   Target,
   HeartPulse,
   Map,
+  Footprints,
   Menu,
   X,
   Settings,
@@ -29,6 +30,7 @@ const NAV_ITEMS = [
   { href: '/goals', label: t.nav.items.goals, icon: Target },
   { href: '/records', label: t.nav.items.records, icon: Trophy },
   { href: '/map', label: t.nav.items.heatmap, icon: Map },
+  { href: '/shoes', label: t.nav.items.shoes, icon: Footprints },
 ]
 
 function Brand({ onClick }: { onClick?: () => void }) {

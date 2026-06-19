@@ -64,6 +64,7 @@ export interface Activity {
   vo2maxGarmin: number | null
   avgTemperature: number | null
   cadenceSamples: number[] | null
+  gearId: string | null
 }
 
 export interface WeeklyVolume {

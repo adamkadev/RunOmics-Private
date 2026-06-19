@@ -30,6 +30,7 @@ export const en = {
       goals: 'Goals',
       records: 'Records',
       heatmap: 'Heatmap',
+      shoes: 'Shoes',
       settings: 'Settings',
     },
     openMenu: 'Open menu',
@@ -86,6 +87,10 @@ export const en = {
       title: 'Running Heatmap',
       routes: (n: number) => `${n} routes`,
       zones: 'Zones',
+    },
+    shoes: {
+      title: 'Shoes',
+      subtitle: 'Mileage and wear per pair',
     },
     notFound: {
       code: '404',
@@ -566,6 +571,19 @@ export const en = {
       aheadBy: (km: number) => `+${km} km vs goal`,
       behindBy: (km: number) => `-${km} km vs goal`,
       rate: (current: number, needed: number) => `${current} km/wk pace · ${needed} km/wk needed`,
+    },
+  },
+
+  shoes: {
+    sessions: (n: number) => `${n} session${n !== 1 ? 's' : ''}`,
+    lastRun: (date: string) => `Last run ${date}`,
+    neverUsed: 'Never used',
+    kmOf: (total: number, max: number) => `${total} / ${max} km`,
+    retired: 'Retired',
+    summary: {
+      totalDistance: 'Total distance',
+      activePairs: 'Active pairs',
+      sessions: 'Sessions logged',
     },
   },
 

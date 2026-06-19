@@ -12,12 +12,16 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from garmin.client import GarminAuthError, GarminAPIError, GarminClient
 from processing.fit_parser import ParsedFit, parse_fit
-from processing.mapper import HrZone, map_activity, parse_hr_zones
+from processing.mapper import HrZone, extract_gear_id, map_activity, parse_hr_zones
 from repository.json_store import JsonActivityStore
 
 _FIT_DIR = Path(__file__).parent.parent / "public" / "fit"
 _RATE_LIMIT_PAUSE = 1.0
 _RETRY_PAUSE = 60.0
+# Garmin gear assignment is often corrected a few days after upload, after the
+# activity has already been synced - re-check gear (only) for recent activities
+# on every run so those corrections aren't missed without a full --force resync.
+_REGEAR_WINDOW_DAYS = 10
 
 
 def main() -> int:
@@ -45,57 +49,79 @@ def main() -> int:
         if args.limit:
             new_ids = new_ids[: args.limit]
 
-        if not new_ids:
-            print("No new activities to sync.")
-            return 0
-
-        print(f"Syncing {len(new_ids)} new activit{'y' if len(new_ids) == 1 else 'ies'}…")
         added = updated = failed = 0
 
-        for i, activity_id in enumerate(new_ids, 1):
-            print(f"  [{i}/{len(new_ids)}] Activity {activity_id} …", end=" ", flush=True)
+        if not new_ids:
+            print("No new activities to sync.")
+        else:
+            print(f"Syncing {len(new_ids)} new activit{'y' if len(new_ids) == 1 else 'ies'}…")
 
-            try:
-                detail = _retry_on_429(lambda: client.get_activity_detail(activity_id))
-            except GarminAPIError as exc:
-                print(f"failed ({exc})")
-                failed += 1
-                continue
+            for i, activity_id in enumerate(new_ids, 1):
+                print(f"  [{i}/{len(new_ids)}] Activity {activity_id} …", end=" ", flush=True)
 
-            parsed, file_name = _fetch_track_file(client, activity_id, dry_run=args.dry_run)
+                try:
+                    detail = _retry_on_429(lambda: client.get_activity_detail(activity_id))
+                except GarminAPIError as exc:
+                    print(f"failed ({exc})")
+                    failed += 1
+                    continue
 
-            try:
-                raw_zones = _retry_on_429(lambda: client.get_hr_zones(activity_id))
-                hr_zones = parse_hr_zones(raw_zones)
-            except GarminAPIError:
-                hr_zones = []
+                parsed, file_name = _fetch_track_file(client, activity_id, dry_run=args.dry_run)
 
-            time.sleep(_RATE_LIMIT_PAUSE)
+                try:
+                    raw_zones = _retry_on_429(lambda: client.get_hr_zones(activity_id))
+                    hr_zones = parse_hr_zones(raw_zones)
+                except GarminAPIError:
+                    hr_zones = []
 
-            activity_data = map_activity(
-                detail, parsed, hr_zones=hr_zones, file_name=file_name
-            )
+                try:
+                    gear = _retry_on_429(lambda: client.get_activity_gear(activity_id))
+                except GarminAPIError:
+                    gear = []
 
-            route_info = f"{len(activity_data.route)} pts" if activity_data.route else "no GPS"
-            hr_info = f"avg HR {activity_data.avg_heart_rate}" if activity_data.avg_heart_rate else "no HR"
-            status = f"{activity_data.type}, {activity_data.distance_km} km, {hr_info}, {route_info}"
+                time.sleep(_RATE_LIMIT_PAUSE)
 
-            if args.dry_run:
-                print(f"DRY RUN → {status}")
-                added += 1
-                continue
+                activity_data = map_activity(
+                    detail, parsed, hr_zones=hr_zones, file_name=file_name, gear=gear
+                )
 
-            is_new = store.upsert(activity_data, replace=args.force)
-            if is_new:
-                added += 1
-                print(f"added   → {status}")
-            else:
-                updated += 1
-                print(f"updated → {status}")
+                route_info = f"{len(activity_data.route)} pts" if activity_data.route else "no GPS"
+                hr_info = f"avg HR {activity_data.avg_heart_rate}" if activity_data.avg_heart_rate else "no HR"
+                status = f"{activity_data.type}, {activity_data.distance_km} km, {hr_info}, {route_info}"
+
+                if args.dry_run:
+                    print(f"DRY RUN → {status}")
+                    added += 1
+                    continue
+
+                is_new = store.upsert(activity_data, replace=args.force)
+                if is_new:
+                    added += 1
+                    print(f"added   → {status}")
+                else:
+                    updated += 1
+                    print(f"updated → {status}")
+
+        regeared = 0
+        if not args.force:
+            recent_ids = [aid for aid in store.get_ids_since(_REGEAR_WINDOW_DAYS) if aid not in new_ids]
+            if recent_ids:
+                print(
+                    f"Refreshing gear for {len(recent_ids)} recent activit"
+                    f"{'y' if len(recent_ids) == 1 else 'ies'}"
+                )
+                for activity_id in recent_ids:
+                    try:
+                        raw_gear = _retry_on_429(lambda: client.get_activity_gear(activity_id))
+                    except GarminAPIError:
+                        continue
+                    if store.update_gear(activity_id, extract_gear_id(raw_gear)):
+                        regeared += 1
+                    time.sleep(_RATE_LIMIT_PAUSE)
 
         if not args.dry_run:
             store.save()
-            print(f"\nDone: {added} added, {updated} updated, {failed} failed.")
+            print(f"\nDone: {added} added, {updated} updated, {regeared} gear refreshed, {failed} failed.")
             print(f"activities.json now has {store.count()} activities.")
         else:
             print(f"\nDry run: {added} would be added, {failed} would fail.")

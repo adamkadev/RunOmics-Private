@@ -105,6 +105,17 @@ class GarminClient:
                 raise
             return []
 
+    def get_activity_gear(self, activity_id: str) -> list[dict[str, Any]]:
+        try:
+            return self._get(
+                f"{self._base}/gear-service/gear/filterGear",
+                params={"activityId": activity_id},
+            ).json()
+        except GarminAPIError as exc:
+            if exc.status_code == 429:
+                raise
+            return []
+
     def download_fit(self, activity_id: str) -> bytes | None:
         try:
             content = self._get(
