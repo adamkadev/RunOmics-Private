@@ -2,7 +2,11 @@ import fs from 'fs'
 import path from 'path'
 import type { Activity } from '@/domain/activity/types'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
-import { getGoalsFromFirestore, getPbsFromFirestore } from '@/infrastructure/repositories/FirestoreConfigRepository'
+import {
+  getGoalsFromFirestore,
+  getPbsFromFirestore,
+  getUpcomingRacesFromFirestore,
+} from '@/infrastructure/repositories/FirestoreConfigRepository'
 import { round } from '@/lib/math'
 
 export interface PbEntry {
@@ -27,6 +31,20 @@ export interface GoalYear {
   targets: GoalTarget[]
 }
 
+export interface UpcomingRace {
+  date: string
+  name: string
+  distance: string
+  location?: string
+  url?: string
+  targetSeconds?: number | null
+}
+
+export interface UpcomingRaceYear {
+  year: number
+  races: UpcomingRace[]
+}
+
 export interface PbData {
   entry: PbEntry
   activity: Activity
@@ -46,6 +64,7 @@ export interface YearData {
   totalDistanceKm: number
   goals: GoalYear | null
   pbs: PbData[]
+  upcomingRaces: UpcomingRace[]
   projection: GoalProjection | null
 }
 
@@ -103,15 +122,20 @@ function computeProjection(
 
 export async function getGoalsPageData(): Promise<GoalsPageData> {
   const activities = getAllActivities()
-  const [goalYears, pbYears] = await Promise.all([
+  const [goalYears, pbYears, upcomingRaceYears] = await Promise.all([
     getGoalsFromFirestore(),
     getPbsFromFirestore(),
+    getUpcomingRacesFromFirestore(),
   ])
 
   const activityMap = new Map(activities.map((a) => [a.id, a]))
 
   const allYears = Array.from(
-    new Set([...goalYears.map((g) => g.year), ...pbYears.map((p) => p.year)])
+    new Set([
+      ...goalYears.map((g) => g.year),
+      ...pbYears.map((p) => p.year),
+      ...upcomingRaceYears.map((u) => u.year),
+    ])
   ).sort((a, b) => b - a)
 
   const currentYear = new Date().getFullYear()
@@ -120,6 +144,9 @@ export async function getGoalsPageData(): Promise<GoalsPageData> {
   for (const year of allYears) {
     const goals = goalYears.find((g) => g.year === year) ?? null
     const pbYear = pbYears.find((p) => p.year === year)
+    const upcomingRaces = (upcomingRaceYears.find((u) => u.year === year)?.races ?? [])
+      .slice()
+      .sort((a, b) => a.date.localeCompare(b.date))
 
     const pbs: PbData[] = (pbYear?.entries ?? [])
       .map((entry) => {
@@ -138,7 +165,7 @@ export async function getGoalsPageData(): Promise<GoalsPageData> {
         ? computeProjection(activities, year, totalDistanceKm, goals)
         : null
 
-    byYear[year] = { year, totalDistanceKm, goals, pbs, projection }
+    byYear[year] = { year, totalDistanceKm, goals, pbs, upcomingRaces, projection }
   }
 
   return { years: allYears, byYear }

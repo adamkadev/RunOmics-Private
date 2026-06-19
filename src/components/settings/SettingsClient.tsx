@@ -9,6 +9,7 @@ import { t } from '@/i18n'
 import { AthleteForm } from './AthleteForm'
 import { GoalsForm } from './GoalsForm'
 import { PbsForm } from './PbsForm'
+import { UpcomingRacesForm } from './UpcomingRacesForm'
 
 const OWNER_EMAIL = process.env.NEXT_PUBLIC_OWNER_EMAIL ?? ''
 
@@ -79,6 +80,7 @@ export function SettingsClient() {
 
       <AthleteForm />
       <GoalsForm />
+      <UpcomingRacesForm />
       <PbsForm />
     </div>
   )

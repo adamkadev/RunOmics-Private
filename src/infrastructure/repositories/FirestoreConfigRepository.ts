@@ -1,6 +1,5 @@
 import { getAdminFirestore } from '@/lib/firebase-admin'
-import type { GoalYear } from '@/application/usecases/GetGoalsData'
-import type { PbYear } from '@/application/usecases/GetGoalsData'
+import type { GoalYear, PbYear, UpcomingRaceYear } from '@/application/usecases/GetGoalsData'
 
 export interface AthleteProfile {
   lthrBpm?: number
@@ -19,6 +18,12 @@ export async function getPbsFromFirestore(): Promise<PbYear[]> {
   const db = getAdminFirestore()
   const snapshot = await db.collection('pbs').get()
   return snapshot.docs.map((doc) => doc.data() as PbYear)
+}
+
+export async function getUpcomingRacesFromFirestore(): Promise<UpcomingRaceYear[]> {
+  const db = getAdminFirestore()
+  const snapshot = await db.collection('upcomingRaces').get()
+  return snapshot.docs.map((doc) => doc.data() as UpcomingRaceYear)
 }
 
 export async function getAthleteFromFirestore(): Promise<AthleteProfile> {

@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { Trophy, Target, Medal, TrendingUp, ArrowRight, Calendar, ImageOff} from 'lucide-react'
+import { Trophy, Target, Medal, TrendingUp, ArrowRight, Calendar, ImageOff, Flag, MapPin, ExternalLink } from 'lucide-react'
 import type { YearData, GoalProjection } from '@/application/usecases/GetGoalsData'
 import { formatDuration, formatDate, formatPace } from '@/lib/formatters'
 import { ActivityTypeTag } from '@/components/activities/ActivityTypeTag'
@@ -14,7 +14,8 @@ const STATUS_CHIP: Record<GoalProjection['status'], string> = {
 }
 
 export function YearView({ yearData }: { yearData: YearData }) {
-  const { goals, pbs, totalDistanceKm, projection } = yearData
+  const { goals, pbs, upcomingRaces, totalDistanceKm, projection } = yearData
+  const today = new Date().toISOString().slice(0, 10)
 
   const annualDistanceKm = goals?.annualDistanceKm ?? 0
   const annualProgress = annualDistanceKm > 0
@@ -107,6 +108,72 @@ export function YearView({ yearData }: { yearData: YearData }) {
                         ? t.goals.targetDone(formatDuration(Math.abs(delta)))
                         : t.goals.targetToGo(formatDuration(delta))}
                     </p>
+                  )}
+                </Card>
+              )
+            })}
+          </div>
+        </section>
+      )}
+
+      {upcomingRaces.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            <Flag size={14} className="text-blue-500 dark:text-blue-400" />
+            {t.goals.upcomingRaces}
+          </h2>
+          <div className="space-y-2">
+            {upcomingRaces.map((race, idx) => {
+              const daysUntil = Math.round(
+                (new Date(race.date + 'T00:00:00').getTime() - new Date(today + 'T00:00:00').getTime()) / 86_400_000
+              )
+              const isPast = race.date < today
+              return (
+                <Card key={idx} className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-semibold text-foreground">{race.name}</span>
+                      <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                        {race.distance}
+                      </span>
+                      {race.targetSeconds && (
+                        <span className="flex items-center gap-1 text-xs font-medium text-accent-text">
+                          <Target size={11} />
+                          {formatDuration(race.targetSeconds)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-subtle">
+                      <span className="flex items-center gap-1">
+                        <Calendar size={11} />
+                        {formatDate(race.date)}
+                      </span>
+                      {race.location && (
+                        <span className="flex items-center gap-1">
+                          <MapPin size={11} />
+                          {race.location}
+                        </span>
+                      )}
+                      {race.url && (
+                        <a
+                          href={race.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-accent-text hover:underline"
+                        >
+                          <ExternalLink size={11} />
+                          {t.goals.registrationLink}
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                  {!isPast && (
+                    <span className="shrink-0 text-xs font-medium text-blue-600 dark:text-blue-400">
+                      {t.goals.daysUntil(daysUntil)}
+                    </span>
+                  )}
+                  {isPast && (
+                    <span className="shrink-0 text-xs text-subtle">{t.goals.pastRace}</span>
                   )}
                 </Card>
               )

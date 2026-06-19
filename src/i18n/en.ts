@@ -156,6 +156,27 @@ export const en = {
         activityId: '12345678901',
       },
     },
+    upcomingRaces: {
+      title: 'Upcoming Races',
+      year: 'Year',
+      date: 'Date',
+      name: 'Race name',
+      distance: 'Distance',
+      location: 'Location',
+      url: 'Registration link',
+      targetTime: 'Target (mm:ss)',
+      addRace: 'Add race',
+      removeRace: 'Remove',
+      addYear: 'Add year',
+      removeYear: 'Remove year',
+      addCurrentYearRace: (year: number) => `Add race for ${year}`,
+      placeholders: {
+        name: 'Marathon de Paris',
+        location: 'Paris, France',
+        url: 'https://...',
+        targetTime: 'mm:ss',
+      },
+    },
     actions: {
       save: 'Save',
       saving: 'Saving...',
@@ -568,6 +589,10 @@ export const en = {
     raceAlt: (distance: string) => `${distance} race`,
     emptyPbs: (year: number) => `No PBs for ${year} yet - add them in Settings.`,
     noPhoto: 'No photo',
+    upcomingRaces: 'Upcoming Races',
+    daysUntil: (n: number) => n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : `In ${n} days`,
+    pastRace: 'Past',
+    registrationLink: 'Registration',
     projection: {
       status: {
         ahead: 'Ahead',
