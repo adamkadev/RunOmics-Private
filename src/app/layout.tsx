@@ -25,6 +25,10 @@ export const metadata: Metadata = {
     title: 'RunOmics',
     description: t.meta.description,
   },
+  robots: {
+    index: false,
+    follow: false,
+  },
 }
 
 export const viewport: Viewport = {
