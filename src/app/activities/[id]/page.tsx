@@ -5,6 +5,7 @@ import { getActivities } from '@/application/usecases/GetActivities'
 import { getRecords, getPrLabelsByActivityId } from '@/application/usecases/GetRecords'
 import { ActivityTypeTag } from '@/components/activities/ActivityTypeTag'
 import { PrBadge } from '@/components/activities/PrBadge'
+import { ShoePairTag } from '@/components/activities/ShoePairTag'
 import { ZoneBar } from '@/components/activity/ZoneBar'
 import { TrainingEffect } from '@/components/activity/TrainingEffect'
 import { RunningDynamics } from '@/components/activity/RunningDynamics'
@@ -60,6 +61,7 @@ export default async function ActivityDetailPage({
         <div className="mb-2 flex flex-wrap items-center gap-2">
           <ActivityTypeTag type={activity.type} />
           <PrBadge labels={prLabels} />
+          <ShoePairTag gearId={activity.gearId} />
         </div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
           {activity.description || t.activity.runTitle(activity.dayOfWeek)}
