@@ -32,6 +32,15 @@ export function formatDate(isoDate: string): string {
   })
 }
 
+/** Date with year, for contexts spanning multiple years (e.g. `Mar 28, 2025`). */
+export function formatDateWithYear(isoDate: string): string {
+  return new Date(isoDate + 'T00:00:00').toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
 /** Three-letter uppercase month label from a 1-based month number (1 = JAN). */
 export function monthLabel(month: number): string {
   return new Date(2000, month - 1, 1).toLocaleString('en', { month: 'short' }).toUpperCase()

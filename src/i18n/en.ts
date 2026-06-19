@@ -585,6 +585,16 @@ export const en = {
       activePairs: 'Active pairs',
       sessions: 'Sessions logged',
     },
+    detail: {
+      back: 'Shoes',
+      stats: {
+        distance: 'Distance',
+        activities: 'Activities',
+        firstUsed: 'First worn',
+      },
+      activitiesTitle: 'Tracked Activities',
+      empty: 'No activities recorded with this pair yet.',
+    },
   },
 
   records: {

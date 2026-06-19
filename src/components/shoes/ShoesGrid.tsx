@@ -1,7 +1,9 @@
+import Link from 'next/link'
 import { Footprints } from 'lucide-react'
 import type { ShoeStats } from '@/application/usecases/GetShoeStats'
 import { formatDate } from '@/lib/formatters'
-import { Card, Badge } from '@/components/ui/Card'
+import { cardClass, Badge, Card } from '@/components/ui/Card'
+import { BrandIcon } from '@/components/shoes/BrandIcon'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -19,10 +21,14 @@ function wearTextClass(pct: number): string {
 
 function ShoeCard({ shoe }: { shoe: ShoeStats }) {
   return (
-    <Card padding="lg" className={cn(shoe.retired && 'opacity-60')}>
+    <Link
+      href={`/shoes/${shoe.gearId}`}
+      className={cardClass({ padding: 'lg', clickable: true, className: cn(shoe.retired && 'opacity-60') })}
+    >
       <div className="mb-3 flex items-start justify-between gap-2">
         <div>
           <div className="flex items-center gap-2">
+            <BrandIcon brand={shoe.brand} size={14} />
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{shoe.brand}</p>
             {shoe.retired && (
               <Badge className="bg-muted text-muted-foreground">{t.shoes.retired}</Badge>
@@ -50,7 +56,7 @@ function ShoeCard({ shoe }: { shoe: ShoeStats }) {
       <p className="mt-3 text-xs text-muted-foreground">
         {shoe.lastUsedDate ? t.shoes.lastRun(formatDate(shoe.lastUsedDate)) : t.shoes.neverUsed}
       </p>
-    </Card>
+    </Link>
   )
 }
 
