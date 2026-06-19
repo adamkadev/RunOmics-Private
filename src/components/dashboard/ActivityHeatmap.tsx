@@ -57,7 +57,7 @@ export function ActivityHeatmap({ days }: Props) {
     const compute = () => {
       const w = el.clientWidth
       const size = Math.floor((w - LABEL_W - (weeks.length - 1) * GAP) / weeks.length)
-      setCellSize(Math.max(8, Math.min(16, size)))
+      setCellSize(Math.max(11, Math.min(16, size)))
     }
     compute()
     const obs = new ResizeObserver(compute)
@@ -93,56 +93,58 @@ export function ActivityHeatmap({ days }: Props) {
         </span>
       </div>
 
-      <div ref={containerRef} className="w-full overflow-hidden">
-        {/* Month labels */}
-        <div className="relative mb-1 h-3" style={{ paddingLeft: LABEL_W }}>
-          {monthLabels.map(({ label, col }) => (
-            <span
-              key={`${label}-${col}`}
-              className="absolute text-[10px] text-subtle"
-              style={{ left: LABEL_W + col * (cellSize + GAP) }}
-            >
-              {label}
-            </span>
-          ))}
-        </div>
-
-        {/* Day labels + grid */}
-        <div className="flex" style={{ gap: GAP }}>
-          {/* Mon / Wed / Fri labels */}
-          <div className="flex flex-col" style={{ gap: GAP, marginRight: 2 }}>
-            {t.dashboard.heatmap.weekdays.map((label, i) => (
-              <div
-                key={i}
-                className="text-right text-[9px] leading-none text-subtle"
-                style={{ height: cellSize, lineHeight: `${cellSize}px`, width: 20 }}
+      <div ref={containerRef} className="w-full overflow-x-auto">
+        <div style={{ minWidth: 'max-content' }}>
+          {/* Month labels */}
+          <div className="relative mb-1 h-3" style={{ paddingLeft: LABEL_W }}>
+            {monthLabels.map(({ label, col }) => (
+              <span
+                key={`${label}-${col}`}
+                className="absolute text-[10px] text-subtle"
+                style={{ left: LABEL_W + col * (cellSize + GAP) }}
               >
                 {label}
-              </div>
+              </span>
             ))}
           </div>
 
-          {/* Week columns */}
-          {weeks.map((wk, col) => (
-            <div key={col} className="flex flex-col" style={{ gap: GAP }}>
-              {wk.map((day, row) =>
-                !day.date ? (
-                  <div key={row} style={{ width: cellSize, height: cellSize }} />
-                ) : (
-                  <div
-                    key={row}
-                    className={`rounded-[2px] transition-opacity hover:opacity-70 ${LEVEL_CLASSES[getLevel(day.distanceKm)]}`}
-                    style={{ width: cellSize, height: cellSize, cursor: 'default' }}
-                    onMouseEnter={(e) => {
-                      const rect = e.currentTarget.getBoundingClientRect()
-                      setTooltip({ day, x: rect.left + rect.width / 2, y: rect.top })
-                    }}
-                    onMouseLeave={() => setTooltip(null)}
-                  />
-                )
-              )}
+          {/* Day labels + grid */}
+          <div className="flex" style={{ gap: GAP }}>
+            {/* Mon / Wed / Fri labels */}
+            <div className="flex flex-col" style={{ gap: GAP, marginRight: 2 }}>
+              {t.dashboard.heatmap.weekdays.map((label, i) => (
+                <div
+                  key={i}
+                  className="text-right text-[9px] leading-none text-subtle"
+                  style={{ height: cellSize, lineHeight: `${cellSize}px`, width: 20 }}
+                >
+                  {label}
+                </div>
+              ))}
             </div>
-          ))}
+
+            {/* Week columns */}
+            {weeks.map((wk, col) => (
+              <div key={col} className="flex flex-col" style={{ gap: GAP }}>
+                {wk.map((day, row) =>
+                  !day.date ? (
+                    <div key={row} style={{ width: cellSize, height: cellSize }} />
+                  ) : (
+                    <div
+                      key={row}
+                      className={`rounded-[2px] transition-opacity hover:opacity-70 ${LEVEL_CLASSES[getLevel(day.distanceKm)]}`}
+                      style={{ width: cellSize, height: cellSize, cursor: 'default' }}
+                      onMouseEnter={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect()
+                        setTooltip({ day, x: rect.left + rect.width / 2, y: rect.top })
+                      }}
+                      onMouseLeave={() => setTooltip(null)}
+                    />
+                  )
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
