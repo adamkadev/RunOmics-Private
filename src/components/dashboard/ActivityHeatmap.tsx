@@ -82,7 +82,7 @@ export function ActivityHeatmap({ days }: Props) {
   const activeDays = days.filter(d => d.distanceKm > 0).length
 
   return (
-    <Card accent="emerald" padding="lg">
+    <Card padding="lg">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">
           {t.dashboard.heatmap.title} <span className="font-normal text-subtle">{t.dashboard.heatmap.window}</span>
