@@ -59,7 +59,7 @@ export function KmSplits({ activity }: Props) {
   return (
     <Card padding="lg">
       <div className="mb-4 flex items-center gap-2">
-        <Timer size={14} className="text-emerald-500 dark:text-emerald-400" />
+        <Timer size={14} className="text-accent-text" />
         <h3 className="text-sm font-semibold text-foreground/80">{t.activity.splits.title}</h3>
       </div>
 

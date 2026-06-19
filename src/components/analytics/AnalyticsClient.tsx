@@ -57,7 +57,7 @@ function DeltaBadge({ text, good }: { text: string; good: boolean }) {
     <span className={cn(
       'inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-medium',
       good
-        ? 'bg-emerald-500/15 text-accent-text'
+        ? 'bg-accent/15 text-accent-text'
         : 'bg-orange-500/15 text-orange-500 dark:text-orange-400',
     )}>
       <Icon size={10} strokeWidth={2.5} />
@@ -134,7 +134,7 @@ export function AnalyticsClient({
     ? [
         {
           Icon: Footprints,
-          color: 'text-emerald-500 dark:text-emerald-400',
+          color: 'text-accent-text',
           value: <><AnimatedValue value={totals.distanceKm} /> {t.units.km}</>,
           label: t.analytics.stats.distance,
         },
@@ -173,7 +173,7 @@ export function AnalyticsClient({
     ? [
         {
           Icon: Footprints,
-          color: 'text-emerald-500 dark:text-emerald-400',
+          color: 'text-accent-text',
           value: <><AnimatedValue value={totals.distanceKm} /> {t.units.km}</>,
           label: t.analytics.stats.distance,
         },

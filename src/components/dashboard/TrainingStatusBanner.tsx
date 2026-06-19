@@ -6,8 +6,8 @@ import { Card, Badge } from '@/components/ui/Card'
 const STATUS_STYLE: Record<TrainingStatusType, { dot: string; badge: string; text: string }> = {
   productive: {
     dot:   'bg-emerald-500',
-    badge: 'bg-emerald-50 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
-    text:  'text-emerald-700 dark:text-emerald-400',
+    badge: 'bg-accent-subtle text-accent-text',
+    text:  'text-accent-text',
   },
   fresh: {
     dot:   'bg-blue-500',
@@ -38,7 +38,7 @@ const RISK_STYLE: Record<RiskLevel, string> = {
 }
 
 const TREND_STYLE: Record<LoadTrend, string> = {
-  building:    'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+  building:    'bg-accent-subtle text-accent-text',
   maintaining: 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400',
   tapering:    'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
   detraining:  'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-500',

@@ -7,7 +7,7 @@ import { cardClass } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 function rpeChipClass(rpe: number): string {
-  if (rpe <= 3) return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+  if (rpe <= 3) return 'bg-accent-subtle text-accent-text'
   if (rpe <= 5) return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
   if (rpe <= 7) return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
   return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'

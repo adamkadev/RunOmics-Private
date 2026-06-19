@@ -105,7 +105,7 @@ export function PbsForm() {
         <button
           type="button"
           onClick={addYear}
-          className="text-xs font-medium text-accent-text transition-colors hover:text-emerald-700"
+          className="text-xs font-medium text-accent-text transition-colors hover:text-accent-text/70"
         >
           + {t.settings.pbs.addYear}
         </button>
@@ -145,7 +145,7 @@ export function PbsForm() {
                       <select
                         value={entry.distance}
                         onChange={(e) => updateEntry(pbYear.year, idx, 'distance', e.target.value)}
-                        className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500"
+                        className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent"
                       >
                         {DISTANCES.map((d) => <option key={d} value={d}>{d}</option>)}
                       </select>
@@ -154,7 +154,7 @@ export function PbsForm() {
                         placeholder={t.settings.pbs.placeholders.time}
                         defaultValue={secsToInput(entry.seconds)}
                         onBlur={(e) => updateEntry(pbYear.year, idx, 'seconds', e.target.value)}
-                        className="w-20 shrink-0 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500"
+                        className="w-20 shrink-0 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent"
                       />
                     </div>
                     {confirmEntry?.year === pbYear.year && confirmEntry?.idx === idx ? (
@@ -195,7 +195,7 @@ export function PbsForm() {
               <button
                 type="button"
                 onClick={() => addEntry(pbYear.year)}
-                className="text-xs font-medium text-accent-text transition-colors hover:text-emerald-700"
+                className="text-xs font-medium text-accent-text transition-colors hover:text-accent-text/70"
               >
                 + {t.settings.pbs.addEntry}
               </button>
@@ -218,7 +218,7 @@ export function PbsForm() {
 }
 
 const inputCls =
-  'w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500'
+  'w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent'
 
 function SaveButton({ state, onClick }: { state: SaveState; onClick: () => void }) {
   const label =

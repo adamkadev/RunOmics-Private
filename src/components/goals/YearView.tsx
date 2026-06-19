@@ -8,7 +8,7 @@ import { Card, cardClass } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 const STATUS_CHIP: Record<GoalProjection['status'], string> = {
-  ahead:    'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+  ahead:    'bg-accent-subtle text-accent-text',
   on_track: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
   behind:   'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
 }
@@ -27,7 +27,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
       {goals && (
         <section className="space-y-3">
           <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            <Target size={14} className="text-emerald-500 dark:text-emerald-400" />
+            <Target size={14} className="text-accent-text" />
             {t.goals.annualGoal}
           </h2>
           <Card padding="lg">
@@ -147,7 +147,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
                     <span className="text-3xl font-black text-accent-text">
                       {entry.distance}
                     </span>
-                    <div className="flex items-center gap-1.5 text-emerald-400/60 dark:text-emerald-600/60">
+                    <div className="flex items-center gap-1.5 text-accent-text/40">
                       <ImageOff size={14} />
                       <span className="text-xs">{t.goals.noPhoto}</span>
                     </div>

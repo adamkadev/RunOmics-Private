@@ -18,7 +18,7 @@ export function RecentActivities({ activities }: Props) {
         </h3>
         <Link
           href="/activities"
-          className="flex items-center gap-1 text-xs text-accent-text hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
+          className="flex items-center gap-1 text-xs text-accent-text hover:text-accent-text/70 transition-colors"
         >
           {t.common.viewAll} <ArrowRight size={12} />
         </Link>

@@ -135,7 +135,7 @@ function Field({ label, hint, children }: { label: string; hint: string; childre
 }
 
 const inputCls =
-  'w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500'
+  'w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent'
 
 function SaveButton({ state }: { state: SaveState }) {
   const label =

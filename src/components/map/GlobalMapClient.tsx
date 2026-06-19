@@ -320,7 +320,7 @@ export function GlobalMapClient({ data }: Props) {
                   onClick={() => { setSelectedIdx(i); setPanelOpen(false); }}
                   className={[
                     "flex w-full flex-col gap-0.5 px-3 py-2 text-left transition-colors hover:bg-muted",
-                    i === selectedIdx ? "bg-emerald-500/10" : "",
+                    i === selectedIdx ? "bg-accent/10" : "",
                   ].join(" ")}
                 >
                   <span

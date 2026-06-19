@@ -95,7 +95,7 @@ export function CalendarClient({ activities }: Props) {
                 setYear(now.getFullYear())
                 setMonth(now.getMonth())
               }}
-              className="rounded-md px-2 py-1 text-xs font-medium text-emerald-600 transition-colors hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
+              className="rounded-md px-2 py-1 text-xs font-medium text-accent-text transition-colors hover:bg-accent-subtle"
             >
               {t.calendar.today}
             </button>

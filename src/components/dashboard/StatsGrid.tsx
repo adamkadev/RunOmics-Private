@@ -27,7 +27,7 @@ export function StatsGrid({ currentWeek, currentStreak, vo2max }: Props) {
   const cells: StatCell[] = [
     {
       Icon: Footprints,
-      color: 'text-emerald-500 dark:text-emerald-400',
+      color: 'text-accent-text',
       borderTop: 'border-t-emerald-400 dark:border-t-emerald-500',
       value: <><AnimatedValue value={currentWeek.totalDistanceKm} decimals={currentWeek.totalDistanceKm >= 10 ? 1 : 2} /> {t.units.km}</>,
       label: s.distance,
@@ -74,7 +74,7 @@ export function StatsGrid({ currentWeek, currentStreak, vo2max }: Props) {
   return (
     <div className={cardClass({ overflow: true, padding: 'none' })}>
       <div className="flex items-center gap-2 border-b border-border bg-card px-4 py-3.5">
-        <CalendarDays size={14} className="shrink-0 text-emerald-500 dark:text-emerald-400" />
+        <CalendarDays size={14} className="shrink-0 text-accent-text" />
         <span className="text-sm font-semibold text-foreground">
           {t.pages.dashboard.subtitle(currentWeek.weekNumber % 100, currentWeek.sessionCount)}
         </span>

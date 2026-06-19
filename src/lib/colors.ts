@@ -48,7 +48,7 @@ export const ZONE_COLORS: Record<number, string> = {
 export function temperatureIconColor(celsius: number): string {
   if (celsius < 5)  return 'text-blue-500 dark:text-blue-400'
   if (celsius < 12) return 'text-cyan-500 dark:text-cyan-400'
-  if (celsius < 18) return 'text-emerald-500 dark:text-emerald-400'
+  if (celsius < 18) return 'text-accent-text'
   if (celsius < 24) return 'text-amber-500 dark:text-amber-400'
   if (celsius < 30) return 'text-orange-500 dark:text-orange-400'
   return 'text-red-500 dark:text-red-400'

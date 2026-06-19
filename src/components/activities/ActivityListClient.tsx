@@ -69,7 +69,7 @@ export function ActivityListClient({ activities }: Props) {
             placeholder={t.activities.searchPlaceholder}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-8 w-full rounded-md border border-border bg-card pl-8 pr-3 text-sm text-foreground placeholder-subtle focus:border-emerald-500 focus:outline-none sm:w-auto"
+            className="h-8 w-full rounded-md border border-border bg-card pl-8 pr-3 text-sm text-foreground placeholder-subtle focus:border-accent focus:outline-none sm:w-auto"
           />
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -77,7 +77,7 @@ export function ActivityListClient({ activities }: Props) {
             onClick={() => setSelectedType(null)}
             className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
               selectedType === null
-                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                ? 'bg-accent-subtle text-accent-text'
                 : 'bg-muted text-muted-foreground hover:bg-muted/70'
             }`}
           >
@@ -101,14 +101,14 @@ export function ActivityListClient({ activities }: Props) {
           type="date"
           value={dateFrom}
           onChange={(e) => setDateFrom(e.target.value)}
-          className="h-8 w-28 rounded-md border border-border bg-card px-2 text-xs text-foreground focus:border-emerald-500 focus:outline-none dark:[color-scheme:dark]"
+          className="h-8 w-28 rounded-md border border-border bg-card px-2 text-xs text-foreground focus:border-accent focus:outline-none dark:[color-scheme:dark]"
         />
         <span className="text-xs text-subtle">→</span>
         <input
           type="date"
           value={dateTo}
           onChange={(e) => setDateTo(e.target.value)}
-          className="h-8 w-28 rounded-md border border-border bg-card px-2 text-xs text-foreground focus:border-emerald-500 focus:outline-none dark:[color-scheme:dark]"
+          className="h-8 w-28 rounded-md border border-border bg-card px-2 text-xs text-foreground focus:border-accent focus:outline-none dark:[color-scheme:dark]"
         />
         <span className="flex items-center gap-2">
           <span className="text-xs text-subtle">{t.activities.distance}</span>
@@ -119,7 +119,7 @@ export function ActivityListClient({ activities }: Props) {
             placeholder={t.activities.min}
             value={minKm}
             onChange={(e) => setMinKm(e.target.value)}
-            className="h-8 w-16 rounded-md border border-border bg-card px-2 text-xs text-foreground placeholder-subtle focus:border-emerald-500 focus:outline-none"
+            className="h-8 w-16 rounded-md border border-border bg-card px-2 text-xs text-foreground placeholder-subtle focus:border-accent focus:outline-none"
           />
           <span className="text-xs text-subtle">–</span>
           <input
@@ -129,7 +129,7 @@ export function ActivityListClient({ activities }: Props) {
             placeholder={t.activities.max}
             value={maxKm}
             onChange={(e) => setMaxKm(e.target.value)}
-            className="h-8 w-16 rounded-md border border-border bg-card px-2 text-xs text-foreground placeholder-subtle focus:border-emerald-500 focus:outline-none"
+            className="h-8 w-16 rounded-md border border-border bg-card px-2 text-xs text-foreground placeholder-subtle focus:border-accent focus:outline-none"
           />
           <span className="text-xs text-subtle">{t.units.km}</span>
         </span>
@@ -187,7 +187,7 @@ export function ActivityListClient({ activities }: Props) {
                   onClick={() => setPage(p as number)}
                   className={`h-8 min-w-[2rem] rounded-md px-2 text-sm font-medium transition-colors ${
                     clampedPage === p
-                      ? 'bg-emerald-500 text-white'
+                      ? 'bg-accent text-white'
                       : 'border border-border bg-card text-muted-foreground hover:bg-muted'
                   }`}
                 >

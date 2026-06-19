@@ -5,7 +5,7 @@ import { Card, Badge } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 const RATING_STYLE: Record<ConsistencyRating, { badge: string; text: string }> = {
-  excellent: { badge: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300', text: 'text-accent-text' },
+  excellent: { badge: 'bg-accent-subtle text-accent-text', text: 'text-accent-text' },
   good:      { badge: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',             text: 'text-blue-600 dark:text-blue-400' },
   fair:      { badge: 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',         text: 'text-amber-600 dark:text-amber-400' },
   low:       { badge: 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400',               text: 'text-zinc-500' },
