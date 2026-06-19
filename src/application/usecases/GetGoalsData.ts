@@ -73,7 +73,7 @@ export interface GoalsPageData {
   byYear: Record<number, YearData>
 }
 
-function eventPhotoPath(activityId: string): string | null {
+export function eventPhotoPath(activityId: string): string | null {
   const publicDir = path.join(process.cwd(), 'public', 'events')
   for (const ext of ['jpg', 'jpeg', 'png', 'webp', 'avif']) {
     if (fs.existsSync(path.join(publicDir, `${activityId}.${ext}`))) {
@@ -85,7 +85,7 @@ function eventPhotoPath(activityId: string): string | null {
 
 // Uses last 8 calendar weeks (cross-year safe) for a stable rate.
 // Requires >= 4 weeks elapsed in the current year before projecting.
-function computeProjection(
+export function computeProjection(
   activities: Activity[],
   year: number,
   totalDistanceKm: number,

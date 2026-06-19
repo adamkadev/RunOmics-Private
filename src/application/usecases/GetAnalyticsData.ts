@@ -160,7 +160,7 @@ export interface AnalyticsPageData {
 }
 
 // A value (possibly null) paired with a weight, averaged across activities.
-function weightedAvg(
+export function weightedAvg(
   activities: Activity[],
   value: (a: Activity) => number | null,
   weight: (a: Activity) => number,
@@ -179,7 +179,7 @@ function weightedAvg(
 }
 
 // Simple mean of a (possibly null) field across activities; null when none present.
-function avgField(activities: Activity[], pick: (a: Activity) => number | null): number | null {
+export function avgField(activities: Activity[], pick: (a: Activity) => number | null): number | null {
   const vals = activities.map(pick).filter((v): v is number => v !== null)
   return vals.length ? round(vals.reduce((s, v) => s + v, 0) / vals.length) : null
 }
@@ -191,7 +191,7 @@ const weightedGroundContact = (acts: Activity[]) => weightedAvg(acts, (a) => a.g
 const weightedVerticalOscillation = (acts: Activity[]) => weightedAvg(acts, (a) => a.verticalOscillationMm, (a) => a.durationSeconds)
 const weightedStrideLength = (acts: Activity[]) => weightedAvg(acts, (a) => a.strideLengthM, (a) => a.durationSeconds, 2)
 
-function zoneDistribution(activities: Activity[]): ZoneShare[] {
+export function zoneDistribution(activities: Activity[]): ZoneShare[] {
   const seconds = new Map<number, number>()
   for (const a of activities) {
     for (const z of a.hrZones) {
@@ -209,7 +209,7 @@ function zoneDistribution(activities: Activity[]): ZoneShare[] {
     }))
 }
 
-function easyHardShare(activities: Activity[]): { easyPct: number | null; hardPct: number | null } {
+export function easyHardShare(activities: Activity[]): { easyPct: number | null; hardPct: number | null } {
   let easy = 0
   let total = 0
   for (const a of activities) {
@@ -223,7 +223,7 @@ function easyHardShare(activities: Activity[]): { easyPct: number | null; hardPc
   return { easyPct, hardPct: round(100 - easyPct) }
 }
 
-function efficiencyFactor(activities: Activity[]): number | null {
+export function efficiencyFactor(activities: Activity[]): number | null {
   const valid = activities.filter(
     (a) => a.paceSecPerKm !== null && a.avgHeartRate !== null && a.distanceKm >= 3
   )
@@ -241,7 +241,7 @@ const DISTANCE_BRACKETS = [
   { label: '42+ km',   min: 42, max: Infinity },
 ]
 
-function distanceDistribution(activities: Activity[]): DistanceBracket[] {
+export function distanceDistribution(activities: Activity[]): DistanceBracket[] {
   return DISTANCE_BRACKETS
     .map(({ label, min, max }) => {
       const matching = activities.filter((a) => a.distanceKm >= min && a.distanceKm < max)
@@ -329,7 +329,7 @@ function buildSeries(buckets: Bucket[], scoped: Activity[]): AnalyticsSeries {
   }
 }
 
-function computeTotals(activities: Activity[], elapsedDays: number): YearTotals {
+export function computeTotals(activities: Activity[], elapsedDays: number): YearTotals {
   const distanceKm = round(activities.reduce((s, a) => s + a.distanceKm, 0))
   const calories = activities.reduce((s, a) => s + (a.calories ?? 0), 0)
   const days = Math.max(elapsedDays, 1)

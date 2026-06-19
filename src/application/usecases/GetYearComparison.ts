@@ -18,7 +18,7 @@ export interface YearComparisonData {
   older: YearMetrics
 }
 
-function avgWeightedPace(activities: ReturnType<typeof getAllActivities>): number | null {
+export function avgWeightedPace(activities: ReturnType<typeof getAllActivities>): number | null {
   const valid = activities.filter((a) => a.paceSecPerKm != null && a.distanceKm > 0)
   if (!valid.length) return null
   const totalKm = valid.reduce((s, a) => s + a.distanceKm, 0)
@@ -26,7 +26,7 @@ function avgWeightedPace(activities: ReturnType<typeof getAllActivities>): numbe
   return Math.round(totalSec / totalKm)
 }
 
-function avgWeightedHR(activities: ReturnType<typeof getAllActivities>): number | null {
+export function avgWeightedHR(activities: ReturnType<typeof getAllActivities>): number | null {
   const valid = activities.filter((a) => a.avgHeartRate != null && a.durationSeconds > 0)
   if (!valid.length) return null
   const totalDur = valid.reduce((s, a) => s + a.durationSeconds, 0)
@@ -34,7 +34,7 @@ function avgWeightedHR(activities: ReturnType<typeof getAllActivities>): number 
   return Math.round(totalHR / totalDur)
 }
 
-function buildMetrics(year: number, activities: ReturnType<typeof getAllActivities>): YearMetrics {
+export function buildMetrics(year: number, activities: ReturnType<typeof getAllActivities>): YearMetrics {
   const distanceKm = activities.reduce((s, a) => s + a.distanceKm, 0)
   const durationSeconds = activities.reduce((s, a) => s + a.durationSeconds, 0)
   const elevationM = activities.reduce((s, a) => s + (a.elevationGain ?? 0), 0)
