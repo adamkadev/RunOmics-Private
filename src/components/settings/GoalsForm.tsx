@@ -5,12 +5,13 @@ import { collection, getDocs, doc, setDoc } from 'firebase/firestore'
 import { getClientFirestore } from '@/lib/firebase'
 import type { GoalYear, GoalTarget } from '@/application/usecases/GetGoalsData'
 import { formatDuration, parseTimeInput } from '@/lib/formatters'
+import { inputCls } from '@/lib/formStyles'
 import { t } from '@/i18n'
-import { cn } from '@/lib/utils'
 import { cardClass } from '@/components/ui/Card'
 import { SaveButton, type SaveState } from '@/components/ui/SaveButton'
-
-type Toast = { msg: string; ok: boolean } | null
+import { Toast, useToast } from '@/components/ui/Toast'
+import { ConfirmDelete } from '@/components/ui/ConfirmDelete'
+import { AddButton } from '@/components/ui/AddButton'
 
 const DISTANCES = t.settings.pbs.distanceOptions as readonly string[]
 
@@ -21,13 +22,8 @@ function targetToInput(tgt: GoalTarget | undefined): string {
 export function GoalsForm() {
   const [goals, setGoals] = useState<GoalYear[]>([])
   const [saveStates, setSaveStates] = useState<Record<number, SaveState>>({})
-  const [toast, setToast] = useState<Toast>(null)
+  const { toast, showToast } = useToast()
   const [confirmYear, setConfirmYear] = useState<number | null>(null)
-
-  function showToast(msg: string, ok: boolean) {
-    setToast({ msg, ok })
-    setTimeout(() => setToast(null), ok ? 2000 : 3500)
-  }
 
   useEffect(() => {
     getDocs(collection(getClientFirestore(), 'goals')).then((snap) => {
@@ -89,13 +85,7 @@ export function GoalsForm() {
     <section className={cardClass({ padding: 'none' })}>
       <div className="flex items-center justify-between border-b border-border px-4 py-3 sm:px-5">
         <h2 className="text-sm font-semibold text-foreground">{t.settings.goals.title}</h2>
-        <button
-          type="button"
-          onClick={addYear}
-          className="text-xs font-medium text-accent-text transition-colors hover:text-accent-text/70"
-        >
-          + {t.settings.goals.addYear}
-        </button>
+        <AddButton label={t.settings.goals.addYear} onClick={addYear} />
       </div>
 
       <div className="divide-y divide-border">
@@ -103,25 +93,13 @@ export function GoalsForm() {
           <div key={goal.year} className="p-4 sm:p-5 space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-base font-bold text-foreground">{goal.year}</span>
-              {confirmYear === goal.year ? (
-                <span className="flex items-center gap-2 text-xs">
-                  <span className="text-muted-foreground">{t.settings.actions.confirmQuestion}</span>
-                  <button type="button" onClick={() => { removeYear(goal.year); setConfirmYear(null) }} className="font-medium text-destructive hover:text-destructive/70">
-                    {t.settings.actions.confirmYes}
-                  </button>
-                  <button type="button" onClick={() => setConfirmYear(null)} className="text-muted-foreground hover:text-foreground">
-                    {t.settings.actions.confirmCancel}
-                  </button>
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setConfirmYear(goal.year)}
-                  className="text-xs text-destructive transition-colors hover:text-destructive/70"
-                >
-                  {t.settings.goals.removeYear}
-                </button>
-              )}
+              <ConfirmDelete
+                confirming={confirmYear === goal.year}
+                onRequestConfirm={() => setConfirmYear(goal.year)}
+                onConfirm={() => { removeYear(goal.year); setConfirmYear(null) }}
+                onCancel={() => setConfirmYear(null)}
+                label={t.settings.goals.removeYear}
+              />
             </div>
 
             <div className="space-y-1.5">
@@ -158,17 +136,7 @@ export function GoalsForm() {
         ))}
       </div>
 
-      {toast && (
-        <div className={cn(
-          'fixed bottom-4 right-4 z-50 rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-lg',
-          toast.ok ? 'bg-accent' : 'bg-destructive'
-        )}>
-          {toast.msg}
-        </div>
-      )}
+      <Toast toast={toast} />
     </section>
   )
 }
-
-const inputCls =
-  'w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent'

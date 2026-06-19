@@ -5,12 +5,13 @@ import { collection, getDocs, doc, setDoc } from 'firebase/firestore'
 import { getClientFirestore } from '@/lib/firebase'
 import type { PbYear, PbEntry } from '@/application/usecases/GetGoalsData'
 import { formatDuration, parseTimeInput } from '@/lib/formatters'
+import { inputCls } from '@/lib/formStyles'
 import { t } from '@/i18n'
-import { cn } from '@/lib/utils'
 import { cardClass } from '@/components/ui/Card'
 import { SaveButton, type SaveState } from '@/components/ui/SaveButton'
-
-type Toast = { msg: string; ok: boolean } | null
+import { Toast, useToast } from '@/components/ui/Toast'
+import { ConfirmDelete } from '@/components/ui/ConfirmDelete'
+import { AddButton } from '@/components/ui/AddButton'
 
 const DISTANCES = t.settings.pbs.distanceOptions as readonly string[]
 
@@ -21,14 +22,9 @@ function secsToInput(s: number): string {
 export function PbsForm() {
   const [pbYears, setPbYears] = useState<PbYear[]>([])
   const [saveStates, setSaveStates] = useState<Record<number, SaveState>>({})
-  const [toast, setToast] = useState<Toast>(null)
+  const { toast, showToast } = useToast()
   const [confirmYear, setConfirmYear] = useState<number | null>(null)
   const [confirmEntry, setConfirmEntry] = useState<{ year: number; idx: number } | null>(null)
-
-  function showToast(msg: string, ok: boolean) {
-    setToast({ msg, ok })
-    setTimeout(() => setToast(null), ok ? 2000 : 3500)
-  }
 
   useEffect(() => {
     getDocs(collection(getClientFirestore(), 'pbs')).then((snap) => {
@@ -102,13 +98,7 @@ export function PbsForm() {
     <section className={cardClass({ padding: 'none' })}>
       <div className="flex items-center justify-between border-b border-border px-4 py-3 sm:px-5">
         <h2 className="text-sm font-semibold text-foreground">{t.settings.pbs.title}</h2>
-        <button
-          type="button"
-          onClick={addYear}
-          className="text-xs font-medium text-accent-text transition-colors hover:text-accent-text/70"
-        >
-          + {t.settings.pbs.addYear}
-        </button>
+        <AddButton label={t.settings.pbs.addYear} onClick={addYear} />
       </div>
 
       <div className="divide-y divide-border">
@@ -116,25 +106,13 @@ export function PbsForm() {
           <div key={pbYear.year} className="p-4 sm:p-5 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-base font-bold text-foreground">{pbYear.year}</span>
-              {confirmYear === pbYear.year ? (
-                <span className="flex items-center gap-2 text-xs">
-                  <span className="text-muted-foreground">{t.settings.actions.confirmQuestion}</span>
-                  <button type="button" onClick={() => { removeYear(pbYear.year); setConfirmYear(null) }} className="font-medium text-destructive hover:text-destructive/70">
-                    {t.settings.actions.confirmYes}
-                  </button>
-                  <button type="button" onClick={() => setConfirmYear(null)} className="text-muted-foreground hover:text-foreground">
-                    {t.settings.actions.confirmCancel}
-                  </button>
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setConfirmYear(pbYear.year)}
-                  className="text-xs text-destructive transition-colors hover:text-destructive/70"
-                >
-                  {t.settings.pbs.removeYear}
-                </button>
-              )}
+              <ConfirmDelete
+                confirming={confirmYear === pbYear.year}
+                onRequestConfirm={() => setConfirmYear(pbYear.year)}
+                onConfirm={() => { removeYear(pbYear.year); setConfirmYear(null) }}
+                onCancel={() => setConfirmYear(null)}
+                label={t.settings.pbs.removeYear}
+              />
             </div>
 
             <div className="space-y-2">
@@ -157,25 +135,13 @@ export function PbsForm() {
                         className="w-20 shrink-0 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent"
                       />
                     </div>
-                    {confirmEntry?.year === pbYear.year && confirmEntry?.idx === idx ? (
-                      <span className="flex shrink-0 items-center gap-2 text-xs">
-                        <span className="text-muted-foreground">{t.settings.actions.confirmQuestion}</span>
-                        <button type="button" onClick={() => { removeEntry(pbYear.year, idx); setConfirmEntry(null) }} className="font-medium text-destructive hover:text-destructive/70">
-                          {t.settings.actions.confirmYes}
-                        </button>
-                        <button type="button" onClick={() => setConfirmEntry(null)} className="text-muted-foreground hover:text-foreground">
-                          {t.settings.actions.confirmCancel}
-                        </button>
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setConfirmEntry({ year: pbYear.year, idx })}
-                        className="shrink-0 text-xs text-destructive transition-colors hover:text-destructive/70"
-                      >
-                        {t.settings.pbs.removeEntry}
-                      </button>
-                    )}
+                    <ConfirmDelete
+                      confirming={confirmEntry?.year === pbYear.year && confirmEntry?.idx === idx}
+                      onRequestConfirm={() => setConfirmEntry({ year: pbYear.year, idx })}
+                      onConfirm={() => { removeEntry(pbYear.year, idx); setConfirmEntry(null) }}
+                      onCancel={() => setConfirmEntry(null)}
+                      label={t.settings.pbs.removeEntry}
+                    />
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs text-muted-foreground">{t.settings.pbs.activityId}</label>
@@ -192,30 +158,14 @@ export function PbsForm() {
             </div>
 
             <div className="flex items-center gap-3 pt-1">
-              <button
-                type="button"
-                onClick={() => addEntry(pbYear.year)}
-                className="text-xs font-medium text-accent-text transition-colors hover:text-accent-text/70"
-              >
-                + {t.settings.pbs.addEntry}
-              </button>
+              <AddButton label={t.settings.pbs.addEntry} onClick={() => addEntry(pbYear.year)} />
               <SaveButton state={saveStates[pbYear.year] ?? 'idle'} onClick={() => saveYear(pbYear.year)} />
             </div>
           </div>
         ))}
       </div>
 
-      {toast && (
-        <div className={cn(
-          'fixed bottom-4 right-4 z-50 rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-lg',
-          toast.ok ? 'bg-accent' : 'bg-destructive'
-        )}>
-          {toast.msg}
-        </div>
-      )}
+      <Toast toast={toast} />
     </section>
   )
 }
-
-const inputCls =
-  'w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent'

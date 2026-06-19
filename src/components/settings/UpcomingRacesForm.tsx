@@ -5,12 +5,14 @@ import { collection, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore'
 import { getClientFirestore } from '@/lib/firebase'
 import type { UpcomingRaceYear, UpcomingRace } from '@/application/usecases/GetGoalsData'
 import { formatDuration, parseTimeInput } from '@/lib/formatters'
+import { inputCls } from '@/lib/formStyles'
 import { t } from '@/i18n'
 import { cn } from '@/lib/utils'
 import { cardClass } from '@/components/ui/Card'
 import { SaveButton, type SaveState } from '@/components/ui/SaveButton'
-
-type Toast = { msg: string; ok: boolean } | null
+import { Toast, useToast } from '@/components/ui/Toast'
+import { ConfirmDelete } from '@/components/ui/ConfirmDelete'
+import { AddButton } from '@/components/ui/AddButton'
 
 const DISTANCES = t.settings.pbs.distanceOptions as readonly string[]
 
@@ -32,13 +34,8 @@ export function UpcomingRacesForm() {
   const [races, setRaces] = useState<UpcomingRace[]>([])
   const [loadedYears, setLoadedYears] = useState<number[]>([])
   const [saveState, setSaveState] = useState<SaveState>('idle')
-  const [toast, setToast] = useState<Toast>(null)
+  const { toast, showToast } = useToast()
   const [confirmRace, setConfirmRace] = useState<number | null>(null)
-
-  function showToast(msg: string, ok: boolean) {
-    setToast({ msg, ok })
-    setTimeout(() => setToast(null), ok ? 2000 : 3500)
-  }
 
   useEffect(() => {
     getDocs(collection(getClientFirestore(), 'upcomingRaces')).then((snap) => {
@@ -114,13 +111,7 @@ export function UpcomingRacesForm() {
     <section className={cardClass({ padding: 'none' })}>
       <div className="flex items-center justify-between border-b border-border px-4 py-3 sm:px-5">
         <h2 className="text-sm font-semibold text-foreground">{t.settings.upcomingRaces.title}</h2>
-        <button
-          type="button"
-          onClick={addRace}
-          className="text-xs font-medium text-accent-text transition-colors hover:text-accent-text/70"
-        >
-          + {t.settings.upcomingRaces.addRace}
-        </button>
+        <AddButton label={t.settings.upcomingRaces.addRace} onClick={addRace} />
       </div>
 
       <div className="divide-y divide-border">
@@ -131,17 +122,26 @@ export function UpcomingRacesForm() {
             <div className="space-y-2">
               {group.entries.map(({ race, idx }) => (
                 <div key={idx} className="rounded-lg border border-border p-3 space-y-2">
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center justify-end">
+                    <ConfirmDelete
+                      confirming={confirmRace === idx}
+                      onRequestConfirm={() => setConfirmRace(idx)}
+                      onConfirm={() => removeRace(idx)}
+                      onCancel={() => setConfirmRace(null)}
+                      label={t.settings.upcomingRaces.removeRace}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                     <input
                       type="date"
                       value={race.date}
                       onChange={(e) => updateRace(idx, 'date', e.target.value)}
-                      className="w-36 shrink-0 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent"
+                      className={inputCls}
                     />
                     <select
                       value={race.distance}
                       onChange={(e) => updateRace(idx, 'distance', e.target.value)}
-                      className="w-32 shrink-0 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent"
+                      className={inputCls}
                     >
                       {DISTANCES.map((d) => <option key={d} value={d}>{d}</option>)}
                     </select>
@@ -150,27 +150,8 @@ export function UpcomingRacesForm() {
                       placeholder={t.settings.upcomingRaces.placeholders.targetTime}
                       defaultValue={secsToInput(race.targetSeconds)}
                       onBlur={(e) => updateTargetSeconds(idx, e.target.value)}
-                      className="w-20 shrink-0 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent"
+                      className={cn(inputCls, 'col-span-2 sm:col-span-1')}
                     />
-                    {confirmRace === idx ? (
-                      <span className="flex shrink-0 items-center gap-2 text-xs">
-                        <span className="text-muted-foreground">{t.settings.actions.confirmQuestion}</span>
-                        <button type="button" onClick={() => removeRace(idx)} className="font-medium text-destructive hover:text-destructive/70">
-                          {t.settings.actions.confirmYes}
-                        </button>
-                        <button type="button" onClick={() => setConfirmRace(null)} className="text-muted-foreground hover:text-foreground">
-                          {t.settings.actions.confirmCancel}
-                        </button>
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setConfirmRace(idx)}
-                        className="ml-auto shrink-0 text-xs text-destructive transition-colors hover:text-destructive/70"
-                      >
-                        {t.settings.upcomingRaces.removeRace}
-                      </button>
-                    )}
                   </div>
                   <input
                     type="text"
@@ -179,7 +160,7 @@ export function UpcomingRacesForm() {
                     onChange={(e) => updateRace(idx, 'name', e.target.value)}
                     className={inputCls}
                   />
-                  <div className="flex items-center gap-2">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     <input
                       type="text"
                       placeholder={t.settings.upcomingRaces.placeholders.location}
@@ -206,17 +187,7 @@ export function UpcomingRacesForm() {
         <SaveButton state={saveState} onClick={saveAll} />
       </div>
 
-      {toast && (
-        <div className={cn(
-          'fixed bottom-4 right-4 z-50 rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-lg',
-          toast.ok ? 'bg-accent' : 'bg-destructive'
-        )}>
-          {toast.msg}
-        </div>
-      )}
+      <Toast toast={toast} />
     </section>
   )
 }
-
-const inputCls =
-  'w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent'

@@ -5,23 +5,17 @@ import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { getClientFirestore } from '@/lib/firebase'
 import type { AthleteProfile } from '@/infrastructure/repositories/FirestoreConfigRepository'
 import { formatDuration, parseTimeInput } from '@/lib/formatters'
+import { inputCls } from '@/lib/formStyles'
 import { t } from '@/i18n'
-import { cn } from '@/lib/utils'
 import { cardClass } from '@/components/ui/Card'
 import { SaveButton, type SaveState } from '@/components/ui/SaveButton'
-
-type Toast = { msg: string; ok: boolean } | null
+import { Toast, useToast } from '@/components/ui/Toast'
 
 export function AthleteForm() {
   const [values, setValues] = useState<AthleteProfile>({})
   const [paceInput, setPaceInput] = useState('')
   const [saveState, setSaveState] = useState<SaveState>('idle')
-  const [toast, setToast] = useState<Toast>(null)
-
-  function showToast(msg: string, ok: boolean) {
-    setToast({ msg, ok })
-    setTimeout(() => setToast(null), ok ? 2000 : 3500)
-  }
+  const { toast, showToast } = useToast()
 
   useEffect(() => {
     getDoc(doc(getClientFirestore(), 'athlete', 'profile')).then((snap) => {
@@ -102,14 +96,7 @@ export function AthleteForm() {
         </div>
       </form>
 
-      {toast && (
-        <div className={cn(
-          'fixed bottom-4 right-4 z-50 rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-lg',
-          toast.ok ? 'bg-accent' : 'bg-destructive'
-        )}>
-          {toast.msg}
-        </div>
-      )}
+      <Toast toast={toast} />
     </section>
   )
 }
@@ -123,6 +110,3 @@ function Field({ label, hint, children }: { label: string; hint: string; childre
     </div>
   )
 }
-
-const inputCls =
-  'w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-accent'
