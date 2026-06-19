@@ -49,8 +49,8 @@ export function MonthlyComparisonChart({ currentYear, currentData, prevYear, pre
     const prev = prevData.find((d) => d.month.endsWith(`-${monthStr}`))
     return {
       label,
-      [currentYear]: curr?.totalKm ?? 0,
-      [prevYear]: prev?.totalKm ?? 0,
+      [currentYear]: curr?.totalKm ?? null,
+      [prevYear]: prev?.totalKm ?? null,
     }
   })
 
