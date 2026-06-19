@@ -289,7 +289,7 @@ export function GlobalMapClient({ data }: Props) {
         onClick={() => setPanelOpen((o) => !o)}
         className="absolute left-3 top-3 z-10 flex items-center gap-2 rounded-xl border border-border bg-card/90 px-3 py-2 shadow-card backdrop-blur-sm transition-colors hover:bg-muted"
       >
-        <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+        <span className="text-xs font-semibold text-accent-text">
           {names[selectedIdx]}
         </span>
         <span className="text-[11px] text-subtle">
@@ -327,7 +327,7 @@ export function GlobalMapClient({ data }: Props) {
                     className={[
                       "text-xs font-medium",
                       i === selectedIdx
-                        ? "text-emerald-600 dark:text-emerald-400"
+                        ? "text-accent-text"
                         : "text-foreground",
                     ].join(" ")}
                   >

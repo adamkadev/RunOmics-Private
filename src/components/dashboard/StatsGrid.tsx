@@ -72,7 +72,7 @@ export function StatsGrid({ currentWeek, currentStreak, vo2max }: Props) {
   ]
 
   return (
-    <div className={cardClass({ accent: 'emerald', overflow: true, padding: 'none' })}>
+    <div className={cardClass({ overflow: true, padding: 'none' })}>
       <div className="flex items-center gap-2 border-b border-border bg-card px-4 py-3.5">
         <CalendarDays size={14} className="shrink-0 text-emerald-500 dark:text-emerald-400" />
         <span className="text-sm font-semibold text-foreground">

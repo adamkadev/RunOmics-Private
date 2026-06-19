@@ -34,7 +34,7 @@ const NAV_ITEMS = [
 function Brand({ onClick }: { onClick?: () => void }) {
   return (
     <Link href="/" onClick={onClick} className="flex items-center gap-2.5">
-      <HeartPulse size={24} className="text-emerald-600 dark:text-emerald-400" />
+      <HeartPulse size={24} className="text-accent-text" />
       <span className="text-2xl tracking-tight text-foreground">
         <span className="font-bold">{t.brand.namePrefix}</span>
         <span className="font-normal">{t.brand.nameSuffix}</span>
@@ -68,11 +68,9 @@ export function Sidebar() {
         return
       }
       if (delta > 0) {
-        // Scrolling down → hide progressively.
         upAccum = 0
         setHeaderOffset((prev) => Math.min(h, prev + delta))
       } else if (delta < 0) {
-        // Scrolling up → only reveal past the threshold of real upward intent.
         upAccum -= delta
         if (upAccum > REVEAL_THRESHOLD) {
           setHeaderOffset((prev) => Math.max(0, prev + delta))
@@ -100,9 +98,10 @@ export function Sidebar() {
 
   return (
     <>
+      {/* ─── Desktop sidebar ─── */}
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-60 flex-col border-r border-border bg-card lg:flex">
         <Link href="/" className="flex h-16 items-center gap-2 border-b border-border px-5">
-          <HeartPulse size={20} className="text-emerald-600 dark:text-emerald-400" />
+          <HeartPulse size={20} className="text-accent-text" />
           <span className="text-lg tracking-tight text-foreground">
             <span className="font-bold">{t.brand.namePrefix}</span>
             <span className="font-normal">{t.brand.nameSuffix}</span>
@@ -119,7 +118,7 @@ export function Sidebar() {
                 className={cn(
                   'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                   active
-                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400'
+                    ? 'bg-accent-subtle text-accent-text'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 )}
               >
@@ -138,7 +137,7 @@ export function Sidebar() {
               className={cn(
                 'rounded-md p-1 transition-colors',
                 pathname === '/settings'
-                  ? 'text-emerald-600 dark:text-emerald-400'
+                  ? 'text-accent-text'
                   : 'text-subtle hover:text-muted-foreground'
               )}
               title={t.nav.items.settings}
@@ -150,6 +149,7 @@ export function Sidebar() {
         </div>
       </aside>
 
+      {/* ─── Mobile top bar ─── */}
       <header
         ref={headerRef}
         className="fixed inset-x-0 top-0 z-30 bg-card lg:hidden"
@@ -173,6 +173,7 @@ export function Sidebar() {
         </div>
       </header>
 
+      {/* ─── Mobile full-screen menu ─── */}
       <div
         className={cn(
           'fixed inset-0 z-50 flex flex-col bg-card lg:hidden transition-transform duration-300',
@@ -204,15 +205,10 @@ export function Sidebar() {
                 onClick={() => setOpen(false)}
                 className={cn(
                   'flex items-center gap-5 rounded-2xl px-4 py-4 transition-colors',
-                  active
-                    ? 'text-emerald-600 dark:text-emerald-400'
-                    : 'text-foreground/70 hover:text-foreground'
+                  active ? 'text-accent-text' : 'text-muted-foreground hover:text-foreground'
                 )}
               >
-                <Icon
-                  size={26}
-                  className={active ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}
-                />
+                <Icon size={26} />
                 <span className="text-3xl font-bold tracking-tight">{label}</span>
               </Link>
             )
@@ -227,7 +223,7 @@ export function Sidebar() {
             className={cn(
               'flex items-center gap-2 text-sm transition-colors',
               pathname === '/settings'
-                ? 'text-emerald-600 dark:text-emerald-400'
+                ? 'text-accent-text'
                 : 'text-subtle hover:text-muted-foreground'
             )}
           >

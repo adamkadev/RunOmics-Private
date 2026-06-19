@@ -13,11 +13,6 @@ import { formatDistance, formatDuration, formatPace } from '@/lib/formatters'
 import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
-const TYPE_ACCENT: Record<string, string> = {
-  Sprint: 'fuchsia', Anaerobic: 'purple', VO2Max: 'red',
-  Threshold: 'orange', Tempo: 'yellow', Base: 'green', Race: 'amber',
-}
-
 interface Props {
   activity: Activity
 }
@@ -107,7 +102,7 @@ export function ActivityDetailClient({ activity }: Props) {
 
   return (
     <>
-      <Card accent={TYPE_ACCENT[activity.type]} padding="none" overflow>
+      <Card padding="none" overflow>
         <div className="h-[260px] overflow-hidden rounded-t-xl sm:h-[360px]">
           {activity.route ? (
             <ActivityMapClient

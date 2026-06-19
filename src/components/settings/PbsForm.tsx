@@ -99,13 +99,13 @@ export function PbsForm() {
   }
 
   return (
-    <section className={cardClass({ accent: 'violet', padding: 'none' })}>
+    <section className={cardClass({ padding: 'none' })}>
       <div className="flex items-center justify-between border-b border-border px-4 py-3 sm:px-5">
         <h2 className="text-sm font-semibold text-foreground">{t.settings.pbs.title}</h2>
         <button
           type="button"
           onClick={addYear}
-          className="text-xs font-medium text-emerald-600 transition-colors hover:text-emerald-700 dark:text-emerald-400"
+          className="text-xs font-medium text-accent-text transition-colors hover:text-emerald-700"
         >
           + {t.settings.pbs.addYear}
         </button>
@@ -195,7 +195,7 @@ export function PbsForm() {
               <button
                 type="button"
                 onClick={() => addEntry(pbYear.year)}
-                className="text-xs font-medium text-emerald-600 transition-colors hover:text-emerald-700 dark:text-emerald-400"
+                className="text-xs font-medium text-accent-text transition-colors hover:text-emerald-700"
               >
                 + {t.settings.pbs.addEntry}
               </button>

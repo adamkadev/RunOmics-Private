@@ -9,7 +9,7 @@ import type { Activity, ActivitySplit, SplitLap } from '@/domain/activity/types'
 
 const TYPE_COLORS: Record<string, string> = {
   interval_warmup:   'text-blue-500 dark:text-blue-400',
-  interval_active:   'text-emerald-600 dark:text-emerald-400',
+  interval_active:   'text-accent-text',
   interval_rest:     'text-slate-400 dark:text-slate-500',
   interval_recovery: 'text-slate-400 dark:text-slate-500',
   interval_cooldown: 'text-violet-500 dark:text-violet-400',
@@ -57,7 +57,7 @@ export function KmSplits({ activity }: Props) {
     : null
 
   return (
-    <Card accent="emerald" padding="lg">
+    <Card padding="lg">
       <div className="mb-4 flex items-center gap-2">
         <Timer size={14} className="text-emerald-500 dark:text-emerald-400" />
         <h3 className="text-sm font-semibold text-foreground/80">{t.activity.splits.title}</h3>

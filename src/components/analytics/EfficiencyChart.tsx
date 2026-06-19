@@ -45,7 +45,7 @@ export function EfficiencyChart({ data }: Props) {
     : null
 
   return (
-    <Card accent="blue" padding="lg">
+    <Card padding="lg">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.analytics.charts.efficiency.title}
       </h3>

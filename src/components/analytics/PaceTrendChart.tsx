@@ -54,7 +54,7 @@ export function PaceTrendChart({ data }: Props) {
     : null
 
   return (
-    <Card accent="amber" padding="lg">
+    <Card padding="lg">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">{t.analytics.charts.paceTrend.title}</h3>
         <div className="flex gap-3">

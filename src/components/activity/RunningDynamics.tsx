@@ -28,7 +28,7 @@ export function RunningDynamics({ activity: a }: { activity: Activity }) {
   if (!metrics.length) return null
 
   return (
-    <Card accent="cyan" padding="lg">
+    <Card padding="lg">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.activity.dynamics.title}
       </h3>

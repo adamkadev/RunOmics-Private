@@ -61,7 +61,7 @@ export function WeeklyVolumeChart({ data, currentWeek }: Props) {
   const currentWeekIdx = chartData.findIndex((d) => d.week === currentWeek)
 
   return (
-    <Card accent="emerald" padding="lg">
+    <Card padding="lg">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.dashboard.weeklyVolume.title}
       </h3>

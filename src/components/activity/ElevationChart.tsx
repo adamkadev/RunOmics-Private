@@ -54,7 +54,7 @@ export function ElevationChart({ samples, distanceKm, elevationGain, onHoverFrac
   const { ticks: elevTicks, domain: elevDomain } = elevationTicks(samples)
 
   return (
-    <Card accent="amber" padding="lg">
+    <Card padding="lg">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">{t.activity.charts.elevation}</h3>
         {elevationGain != null && (

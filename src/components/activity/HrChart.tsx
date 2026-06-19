@@ -42,7 +42,7 @@ export function HrChart({ samples, avgHr, distanceKm, onHoverFraction }: Props) 
   }
 
   return (
-    <Card accent="red" padding="lg">
+    <Card padding="lg">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">{t.activity.charts.heartRate}</h3>
         {avgHr && (

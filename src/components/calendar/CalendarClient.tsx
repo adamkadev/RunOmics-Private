@@ -106,7 +106,7 @@ export function CalendarClient({ activities }: Props) {
         </p>
       </div>
 
-      <Card accent="emerald" padding="none" overflow>
+      <Card padding="none" overflow>
         <div className="grid grid-cols-7 border-b border-border">
           {WEEKDAYS.map((d) => (
             <div
@@ -131,7 +131,7 @@ export function CalendarClient({ activities }: Props) {
                   <p
                     className={`mb-1 text-xs ${
                       cell.date === todayIso
-                        ? 'font-bold text-emerald-600 dark:text-emerald-400'
+                        ? 'font-bold text-accent-text'
                         : 'text-subtle'
                     }`}
                   >

@@ -30,7 +30,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
             <Target size={14} className="text-emerald-500 dark:text-emerald-400" />
             {t.goals.annualGoal}
           </h2>
-          <Card accent="emerald" padding="lg">
+          <Card padding="lg">
             <div className="mb-3 flex items-end justify-between">
               <div>
                 <span className="text-3xl font-bold tracking-tight text-foreground">
@@ -38,7 +38,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
                 </span>
                 <span className="ml-1 text-sm text-subtle">/ {goals.annualDistanceKm} {t.units.km}</span>
               </div>
-              <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+              <span className="text-sm font-semibold text-accent-text">
                 {annualProgress.toFixed(0)}%
               </span>
             </div>
@@ -52,7 +52,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
               {remaining > 0 ? (
                 <span className="text-subtle">{t.goals.kmRemaining(Number(remaining.toFixed(0)))}</span>
               ) : (
-                <span className="font-medium text-emerald-600 dark:text-emerald-400">{t.goals.goalReached}</span>
+                <span className="font-medium text-accent-text">{t.goals.goalReached}</span>
               )}
             </div>
             {projection && (
@@ -92,7 +92,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
               const delta = pbSeconds !== null && target.targetSeconds ? pbSeconds - target.targetSeconds : null
               const achieved = delta !== null && delta <= 0
               return (
-                <Card key={target.distance} accent="orange">
+                <Card key={target.distance}>
                   <p className="text-xs font-semibold text-subtle">{target.distance}</p>
                   <p className="mt-1 text-lg font-bold text-foreground">
                     {target.targetSeconds === null ? (
@@ -102,7 +102,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
                     )}
                   </p>
                   {pbSeconds !== null && delta !== null && (
-                    <p className={`mt-0.5 text-xs font-medium ${achieved ? 'text-emerald-600 dark:text-emerald-400' : 'text-orange-500 dark:text-orange-400'}`}>
+                    <p className={`mt-0.5 text-xs font-medium ${achieved ? 'text-accent-text' : 'text-orange-500 dark:text-orange-400'}`}>
                       {achieved
                         ? t.goals.targetDone(formatDuration(Math.abs(delta)))
                         : t.goals.targetToGo(formatDuration(delta))}
@@ -126,7 +126,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
               <Link
                 key={entry.activityId}
                 href={`/activities/${entry.activityId}`}
-                className={cardClass({ accent: 'violet', padding: 'none', overflow: true, className: 'group relative transition-shadow hover:shadow-lg' })}
+                className={cardClass({ padding: 'none', overflow: true, className: 'group relative transition-shadow hover:shadow-lg' })}
               >
                 {photoPath ? (
                   <div className="relative h-40 w-full overflow-hidden bg-muted">
@@ -144,7 +144,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
                   </div>
                 ) : (
                   <div className="flex h-24 items-center justify-between bg-gradient-to-br from-emerald-50 to-emerald-100 px-5 dark:from-emerald-900/20 dark:to-emerald-800/10">
-                    <span className="text-3xl font-black text-emerald-600 dark:text-emerald-400">
+                    <span className="text-3xl font-black text-accent-text">
                       {entry.distance}
                     </span>
                     <div className="flex items-center gap-1.5 text-emerald-400/60 dark:text-emerald-600/60">
@@ -185,10 +185,10 @@ export function YearView({ yearData }: { yearData: YearData }) {
           </div>
         </section>
       ) : (
-        <Card dashed accent="violet" padding="none" className="p-10 text-center">
+        <Card dashed padding="none" className="p-10 text-center">
           <Trophy size={32} className="mx-auto mb-3 text-subtle" />
           <p className="text-sm text-subtle">{t.goals.emptyPbs(yearData.year)}</p>
-          <Link href="/settings" className="mt-2 inline-block text-xs text-emerald-600 hover:underline dark:text-emerald-400">
+          <Link href="/settings" className="mt-2 inline-block text-xs text-accent-text hover:underline">
             {t.nav.items.settings}
           </Link>
         </Card>

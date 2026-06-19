@@ -48,7 +48,7 @@ export function TrainingEffect({ aer, ana }: Props) {
   if (aer == null && ana == null) return null
 
   return (
-    <Card accent="orange" padding="lg">
+    <Card padding="lg">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.activity.trainingEffect.title}
       </h3>

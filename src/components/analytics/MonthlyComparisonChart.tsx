@@ -55,7 +55,7 @@ export function MonthlyComparisonChart({ currentYear, currentData, prevYear, pre
   })
 
   return (
-    <Card accent="amber" padding="lg">
+    <Card padding="lg">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">{t.analytics.charts.monthlyComparison.title}</h3>
         <div className="flex items-center gap-4 text-xs text-subtle">

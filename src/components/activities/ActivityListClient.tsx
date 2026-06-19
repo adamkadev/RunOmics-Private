@@ -153,7 +153,7 @@ export function ActivityListClient({ activities }: Props) {
 
       <div className="space-y-2">
         {paginated.length === 0 ? (
-          <Card dashed accent="emerald" padding="none" className="py-12 text-center">
+          <Card dashed padding="none" className="py-12 text-center">
             <p className="text-sm text-subtle">{t.activities.empty}</p>
           </Card>
         ) : (

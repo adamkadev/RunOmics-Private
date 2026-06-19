@@ -2,19 +2,9 @@ import Link from 'next/link'
 import { MessageSquare } from 'lucide-react'
 import { ActivityTypeTag } from './ActivityTypeTag'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
-import type { Activity, ActivityType } from '@/domain/activity/types'
+import type { Activity } from '@/domain/activity/types'
 import { cardClass } from '@/components/ui/Card'
 import { t } from '@/i18n'
-
-const TYPE_ACCENT: Record<ActivityType, string> = {
-  Sprint:    'fuchsia',
-  Anaerobic: 'purple',
-  VO2Max:    'red',
-  Threshold: 'orange',
-  Tempo:     'yellow',
-  Base:      'green',
-  Race:      'amber',
-}
 
 function rpeChipClass(rpe: number): string {
   if (rpe <= 3) return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
@@ -32,7 +22,6 @@ export function ActivityRow({ activity: a }: Props) {
     <Link
       href={`/activities/${a.id}`}
       className={cardClass({
-        accent: TYPE_ACCENT[a.type],
         clickable: true,
         className: 'grid grid-cols-[1fr_auto] items-center gap-x-4',
       })}

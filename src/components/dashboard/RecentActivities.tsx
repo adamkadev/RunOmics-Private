@@ -11,7 +11,7 @@ interface Props {
 
 export function RecentActivities({ activities }: Props) {
   return (
-    <Card accent="emerald" padding="none">
+    <Card padding="none">
       <div className="flex items-center justify-between border-b border-border px-5 py-4">
         <h3 className="text-sm font-semibold text-foreground/80">
           {t.dashboard.recentActivities.title}

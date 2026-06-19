@@ -24,7 +24,7 @@ function DeltaBadge({ pct, lowerIsBetter = false }: { pct: number; lowerIsBetter
   return (
     <span
       className={`inline-flex items-center gap-0.5 text-xs font-medium ${
-        improved ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'
+        improved ? 'text-accent-text' : 'text-red-500 dark:text-red-400'
       }`}
     >
       {improved ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
@@ -115,7 +115,7 @@ export function YearComparisonSection({ data }: Props) {
   ]
 
   return (
-    <Card accent="emerald" padding="lg">
+    <Card padding="lg">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-base font-semibold text-foreground">{t.analytics.yearOverYear.title}</h2>
         <div className="flex items-center gap-4 text-xs text-subtle">

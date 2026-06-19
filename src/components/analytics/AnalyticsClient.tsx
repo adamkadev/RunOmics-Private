@@ -57,7 +57,7 @@ function DeltaBadge({ text, good }: { text: string; good: boolean }) {
     <span className={cn(
       'inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-medium',
       good
-        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+        ? 'bg-emerald-500/15 text-accent-text'
         : 'bg-orange-500/15 text-orange-500 dark:text-orange-400',
     )}>
       <Icon size={10} strokeWidth={2.5} />
@@ -239,7 +239,7 @@ export function AnalyticsClient({
 
       {/* Stats card */}
       {statCells.length > 0 && (
-        <div className={cardClass({ accent: 'blue', overflow: true, padding: 'none' })}>
+        <div className={cardClass({ overflow: true, padding: 'none' })}>
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-b border-border bg-card px-4 py-3">
             <span className="text-sm font-semibold text-foreground">{periodLabel}</span>
             {deltaBadges.length > 0 && (

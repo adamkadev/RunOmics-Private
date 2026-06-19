@@ -40,7 +40,7 @@ export function VO2maxChart({ data }: { data: VO2maxPoint[] }) {
   const avg = Math.round(values.reduce((s, v) => s + v, 0) / values.length * 10) / 10
 
   return (
-    <Card accent="violet" padding="lg">
+    <Card padding="lg">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {s.title}
         <span className="ml-2 font-bold tabular-nums text-violet-600 dark:text-violet-400">

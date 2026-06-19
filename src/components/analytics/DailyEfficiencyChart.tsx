@@ -47,7 +47,7 @@ export function DailyEfficiencyChart({ data }: { data: DailyEfficiency[] }) {
   )
 
   return (
-    <Card accent="blue" padding="lg">
+    <Card padding="lg">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">{s.title}</h3>
         <div className="flex gap-3">

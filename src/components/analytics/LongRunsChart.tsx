@@ -32,7 +32,7 @@ export function LongRunsChart({ data }: Props) {
   if (!data.some((d) => d.km10 > 0 || d.km15 > 0)) return null
 
   return (
-    <Card accent="emerald" padding="lg">
+    <Card padding="lg">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">{t.analytics.charts.longRuns.title}</h3>
       <ResponsiveContainer width="100%" height={200}>
         <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>

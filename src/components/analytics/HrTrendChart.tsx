@@ -40,7 +40,7 @@ export function HrTrendChart({ data }: Props) {
   const max = Math.max(...values) + 5
 
   return (
-    <Card accent="red" padding="lg">
+    <Card padding="lg">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">{t.analytics.charts.hrTrend.title}</h3>
         <div className="flex gap-3">

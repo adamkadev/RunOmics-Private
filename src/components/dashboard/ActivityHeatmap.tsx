@@ -54,6 +54,13 @@ export function ActivityHeatmap({ days }: Props) {
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
+    const raf = requestAnimationFrame(() => { el.scrollLeft = el.scrollWidth })
+    return () => cancelAnimationFrame(raf)
+  }, [])
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
     const compute = () => {
       const w = el.clientWidth
       const size = Math.floor((w - LABEL_W - (weeks.length - 1) * GAP) / weeks.length)

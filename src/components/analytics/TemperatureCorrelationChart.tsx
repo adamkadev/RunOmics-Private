@@ -74,7 +74,7 @@ export function TemperatureCorrelationChart({ data }: Props) {
   const ex = t.analytics.charts.temperatureCorrelation.explains
 
   return (
-    <Card accent="orange" padding="lg">
+    <Card padding="lg">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.analytics.charts.temperatureCorrelation.title}
       </h3>

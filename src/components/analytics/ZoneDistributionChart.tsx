@@ -38,7 +38,7 @@ export function ZoneDistributionChart({ data }: Props) {
   if (!data.length) return null
 
   return (
-    <Card accent="violet" padding="lg">
+    <Card padding="lg">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.analytics.charts.zones.title}
       </h3>

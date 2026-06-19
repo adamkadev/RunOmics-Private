@@ -74,7 +74,7 @@ export function RunningFormChart({ data }: Props) {
   const max = Math.max(...values) * 1.03
 
   return (
-    <Card accent="cyan" padding="lg">
+    <Card padding="lg">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-foreground/80">{t.analytics.charts.runningForm.title}</h3>
         <div className="flex gap-1">

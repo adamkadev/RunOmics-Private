@@ -7,10 +7,20 @@ import { Trophy } from 'lucide-react'
 import type { RecordEntry, TopEfforts } from '@/application/usecases/GetRecords'
 import { formatDuration, formatDistance, formatPace } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
-import { Card, cardClass, CARD_ACCENT_LABEL } from '@/components/ui/Card'
+import { Card, cardClass } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 const PILL_ORDER = ['1k', '1mile', '5k', '10k', 'half', 'marathon', 'longest']
+
+const LABEL_COLOR: Record<string, string> = {
+  '1k':     'text-blue-600 dark:text-blue-400',
+  '1mile':  'text-cyan-600 dark:text-cyan-400',
+  '5k':     'text-accent-text',
+  '10k':    'text-amber-600 dark:text-amber-400',
+  half:     'text-violet-600 dark:text-violet-400',
+  marathon: 'text-rose-600 dark:text-rose-400',
+  longest:  'text-orange-600 dark:text-orange-400',
+}
 
 const LABELS: Record<string, string> = {
   '1k': '1K',
@@ -20,11 +30,6 @@ const LABELS: Record<string, string> = {
   half: 'Half',
   marathon: 'Marathon',
   longest: 'Longest',
-}
-
-const DIST_COLOR: Record<string, string> = {
-  '1k': 'blue', '1mile': 'cyan', '5k': 'emerald', '10k': 'amber',
-  half: 'violet', marathon: 'rose', longest: 'orange',
 }
 
 function shortDate(iso: string): string {
@@ -85,13 +90,12 @@ export function RecordsLeaderboard({ records, topEfforts }: Props) {
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             {allRecords.map((r, i, arr) => {
               const spanFull = i === arr.length - 1 && arr.length % 2 !== 0
-              const distColor = DIST_COLOR[r.key]
               const mainStat = r.distanceKm != null ? formatDistance(r.distanceKm) : formatDuration(r.seconds!)
 
               const card = (
                 <>
                   <div className="mb-3 flex items-center justify-between gap-1">
-                    <p className={cn('text-xs font-bold uppercase tracking-wide', CARD_ACCENT_LABEL[distColor] ?? 'text-subtle')}>
+                    <p className={cn('text-xs font-bold uppercase tracking-wide', LABEL_COLOR[r.key] ?? 'text-subtle')}>
                       {r.label}
                     </p>
                     {r.official && <span className="text-xs text-violet-400">★</span>}
@@ -111,12 +115,12 @@ export function RecordsLeaderboard({ records, topEfforts }: Props) {
                 <Link
                   key={r.key}
                   href={`/activities/${r.activityId}`}
-                  className={cardClass({ accent: distColor, clickable: true, className: spanFull ? 'col-span-full' : undefined })}
+                  className={cardClass({ clickable: true, className: spanFull ? 'col-span-full' : undefined })}
                 >
                   {card}
                 </Link>
               ) : (
-                <div key={r.key} className={cardClass({ accent: distColor, dashed: true, className: spanFull ? 'col-span-full' : undefined })}>
+                <div key={r.key} className={cardClass({ dashed: true, className: spanFull ? 'col-span-full' : undefined })}>
                   {card}
                 </div>
               )

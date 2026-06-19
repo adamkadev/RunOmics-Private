@@ -5,14 +5,10 @@ import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 const ZONE_STYLE: Record<string, { dot: string; text: string; bar: string }> = {
-  easy:      { dot: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', bar: 'bg-emerald-500' },
+  easy:      { dot: 'bg-emerald-500', text: 'text-accent-text', bar: 'bg-emerald-500' },
   marathon:  { dot: 'bg-blue-500',    text: 'text-blue-600 dark:text-blue-400',       bar: 'bg-blue-500'    },
   threshold: { dot: 'bg-amber-500',   text: 'text-amber-600 dark:text-amber-400',     bar: 'bg-amber-500'   },
   vo2max:    { dot: 'bg-red-500',     text: 'text-red-600 dark:text-red-400',         bar: 'bg-red-500'     },
-}
-
-const ZONE_ACCENT: Record<string, string> = {
-  easy: 'emerald', marathon: 'blue', threshold: 'amber', vo2max: 'red',
 }
 
 export function TrainingZones({ data }: { data: TrainingZonesData }) {
@@ -42,7 +38,7 @@ export function TrainingZones({ data }: { data: TrainingZonesData }) {
           const width = ((zone.paceMaxSecPerKm - zone.paceMinSecPerKm) / range) * 100
 
           return (
-            <Card key={zone.key} accent={ZONE_ACCENT[zone.key] ?? 'emerald'}>
+            <Card key={zone.key}>
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-1.5">
                   <span className={`h-2 w-2 shrink-0 rounded-full ${style.dot}`} />

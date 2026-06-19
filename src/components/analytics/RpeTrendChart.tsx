@@ -45,7 +45,7 @@ export function RpeTrendChart({ data }: Props) {
   if (!values.length) return null
 
   return (
-    <Card accent="orange" padding="lg">
+    <Card padding="lg">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.analytics.charts.rpe.title}
       </h3>
