@@ -10,8 +10,8 @@ import type { Activity, ActivitySplit, SplitLap } from '@/domain/activity/types'
 const TYPE_COLORS: Record<string, string> = {
   interval_warmup:   'text-blue-500 dark:text-blue-400',
   interval_active:   'text-accent-text',
-  interval_rest:     'text-slate-400 dark:text-slate-500',
-  interval_recovery: 'text-slate-400 dark:text-slate-500',
+  interval_rest:     'text-muted-foreground',
+  interval_recovery: 'text-muted-foreground',
   interval_cooldown: 'text-violet-500 dark:text-violet-400',
 }
 

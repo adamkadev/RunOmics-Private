@@ -45,7 +45,7 @@ export function SettingsClient() {
         </div>
         <button
           onClick={handleSignIn}
-          className="flex items-center gap-2.5 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 active:bg-emerald-800"
+          className="flex items-center gap-2.5 rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90 active:bg-accent/80"
         >
           {t.settings.auth.signIn}
         </button>

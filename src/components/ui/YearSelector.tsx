@@ -49,7 +49,7 @@ export function YearSelector({
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1 rounded-lg bg-accent px-2.5 py-1 text-xs font-medium text-white transition-colors"
+        className="flex items-center gap-1 rounded-lg bg-accent px-2.5 py-1 text-xs font-medium text-accent-foreground transition-colors"
       >
         {buttonLabel}
         <ChevronDown size={11} className={cn('transition-transform', open && 'rotate-180')} />
