@@ -1,9 +1,10 @@
 'use client'
 
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import type { MonthlyLongRuns } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
+import { ChartExplain } from '@/components/ui/ChartExplain'
 import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
@@ -13,23 +14,30 @@ interface Props {
 
 interface TooltipProps {
   active?: boolean
-  payload?: Array<{ value: number; dataKey: string; payload: MonthlyLongRuns }>
+  payload?: Array<{ value: number }>
   label?: string
 }
 
 function CustomTooltip({ active, payload, label }: TooltipProps) {
   if (!active || !payload?.length) return null
-  const entry = payload[0].payload
   return (
     <TooltipCard label={label}>
-      <p className="text-sm text-foreground/80">{t.analytics.charts.longRuns.range1015}: {entry.km10}</p>
-      <p className="text-sm text-foreground/80">{t.analytics.charts.longRuns.range15}: {entry.km15}</p>
+      <p className="text-sm font-semibold text-foreground">
+        {t.analytics.charts.longRuns.kmLabel(payload[0].value)}
+      </p>
     </TooltipCard>
   )
 }
 
 export function LongRunsChart({ data }: Props) {
-  if (!data.some((d) => d.km10 > 0 || d.km15 > 0)) return null
+  const nonZero = data.filter((d) => d.longestKm > 0)
+  if (nonZero.length === 0) return null
+
+  const avg = Math.round(nonZero.reduce((s, d) => s + d.longestKm, 0) / nonZero.length)
+  const explain =
+    avg >= 15
+      ? { text: t.analytics.charts.longRuns.explains.good(avg), tone: 'positive' as const }
+      : { text: t.analytics.charts.longRuns.explains.low(avg), tone: 'caution' as const }
 
   return (
     <Card padding="lg">
@@ -43,26 +51,28 @@ export function LongRunsChart({ data }: Props) {
             tickLine={false}
           />
           <YAxis
-            allowDecimals={false}
             tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
+            unit=" km"
           />
-          <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(156,163,175,0.1)' }} />
-          <Bar dataKey="km10" stackId="lr" fill={CHART_COLORS.longRun10} radius={[0, 0, 0, 0]} />
-          <Bar dataKey="km15" stackId="lr" fill={CHART_COLORS.longRun15} radius={[3, 3, 0, 0]} />
+          <Tooltip content={<CustomTooltip />} cursor={{ fill: CHART_COLORS.tooltipCursor }} />
+          <ReferenceLine
+            y={15}
+            stroke={CHART_COLORS.referenceTarget}
+            strokeDasharray="4 3"
+            strokeWidth={1}
+            label={{ value: t.analytics.charts.longRuns.refLine, position: 'insideTopRight', fontSize: 10, fill: CHART_COLORS.referenceTarget }}
+          />
+          <Bar
+            dataKey="longestKm"
+            fill={CHART_COLORS.longRun}
+            radius={[3, 3, 0, 0]}
+            isAnimationActive={false}
+          />
         </BarChart>
       </ResponsiveContainer>
-      <div className="mt-2 flex items-center gap-4 text-xs text-subtle">
-        <span className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-sm" style={{ background: CHART_COLORS.longRun10 }} />
-          {t.analytics.charts.longRuns.range1015}
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-sm" style={{ background: CHART_COLORS.longRun15 }} />
-          {t.analytics.charts.longRuns.range15}
-        </span>
-      </div>
+      <ChartExplain text={explain.text} tone={explain.tone} />
     </Card>
   )
 }

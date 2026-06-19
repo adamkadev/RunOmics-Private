@@ -25,9 +25,8 @@ export const CHART_COLORS = {
   easy:      '#34d399', // emerald-400
   hard:      '#fb923c', // orange-400
 
-  // Long run tiers
-  longRun10: '#6ee7b7', // emerald-200
-  longRun15: '#059669', // emerald-600
+  // Long run bar
+  longRun: '#10b981', // emerald-500
 
   // Chart decoration
   axisTick:        '#9ca3af', // gray-400

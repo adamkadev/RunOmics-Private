@@ -9,6 +9,9 @@ import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
+// Base at the bottom (training pyramid), high-intensity and races at the top
+const VOLUME_STACK_ORDER: ActivityType[] = ['Base', 'Tempo', 'Threshold', 'VO2Max', 'Anaerobic', 'Sprint', 'Race']
+
 interface Props {
   data: MonthlyVolume[]
   typesPresent: ActivityType[]
@@ -39,9 +42,7 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
 }
 
 export function MonthlyVolumeChart({ data, typesPresent }: Props) {
-  const orderedTypes = (Object.keys(ACTIVITY_TYPE_CONFIG) as ActivityType[]).filter((type) =>
-    typesPresent.includes(type)
-  )
+  const orderedTypes = VOLUME_STACK_ORDER.filter((type) => typesPresent.includes(type))
 
   const chartData = data.map((m) => ({
     label: m.label,

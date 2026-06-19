@@ -50,8 +50,7 @@ export interface MonthlyRunningForm {
 export interface MonthlyLongRuns {
   month: string
   label: string
-  km10: number
-  km15: number
+  longestKm: number
 }
 
 export interface MonthlyEasyHard {
@@ -302,8 +301,7 @@ function buildSeries(buckets: Bucket[], scoped: Activity[]): AnalyticsSeries {
     })
     longRuns.push({
       ...base,
-      km10: acts.filter((a) => a.distanceKm >= 10 && a.distanceKm < 15).length,
-      km15: acts.filter((a) => a.distanceKm >= 15).length,
+      longestKm: acts.length > 0 ? round(Math.max(...acts.map((a) => a.distanceKm))) : 0,
     })
     easyHardSplit.push({ ...base, easyPct, hardPct })
     rpeTrend.push({ ...base, avgRpe: avgField(acts, (a) => a.rpe) })

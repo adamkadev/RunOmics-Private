@@ -346,9 +346,13 @@ export const en = {
         } as Record<string, string>,
       },
       longRuns: {
-        title: 'Long Runs',
-        range1015: '10–15 km',
-        range15: '15+ km',
+        title: 'Longest Run per Month',
+        kmLabel: (km: number) => `${km} km`,
+        refLine: '15 km',
+        explains: {
+          good: (km: number) => `Longest run avg. ${km} km - solid long run habit`,
+          low: (km: number) => `Longest run avg. ${km} km - aim for 15+ km monthly`,
+        },
       },
       easyHard: {
         title: 'Easy / Hard Split',

@@ -56,12 +56,13 @@ export function DistanceDistributionChart({ data }: Props) {
               <Cell
                 key={entry.label}
                 fill={CHART_COLORS.brand}
-                fillOpacity={0.3 + 0.7 * (entry.count / max)}
+                fillOpacity={0.45 + 0.55 * (entry.count / max)}
               />
             ))}
           </Bar>
         </BarChart>
       </ResponsiveContainer>
+      <p className="mt-2 text-xs text-subtle">Color intensity reflects relative frequency.</p>
     </Card>
   )
 }

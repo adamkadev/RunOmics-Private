@@ -18,7 +18,7 @@ export function cardClass({
 }: CardOptions = {}): string {
   return cn(
     'rounded-xl border border-border bg-card shadow-card',
-    'border-l-4 border-l-accent-text/30',
+    'border-l-4 border-l-accent-text/70',
     padding === 'sm'   && 'p-3',
     padding === 'base' && 'p-4',
     padding === 'lg'   && 'p-5',

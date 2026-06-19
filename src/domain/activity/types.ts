@@ -109,36 +109,36 @@ export const ACTIVITY_TYPE_CONFIG: Record<
 > = {
   Sprint: {
     badgeClass: 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/30 dark:text-fuchsia-400',
-    chartColor: '#d946ef',
+    chartColor: '#d946ef', // fuchsia-500
   },
 
   Anaerobic: {
     badgeClass: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
-    chartColor: '#8E24AA',
+    chartColor: '#7c3aed', // violet-600
   },
 
   VO2Max: {
     badgeClass: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-    chartColor: '#E53935',
+    chartColor: '#ef4444', // red-500
   },
 
   Threshold: {
     badgeClass: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-    chartColor: '#FB8C00',
+    chartColor: '#f97316', // orange-500
   },
 
   Tempo: {
     badgeClass: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-    chartColor: '#FDD835',
+    chartColor: '#eab308', // yellow-500
   },
 
   Base: {
     badgeClass: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-    chartColor: '#4CAF50',
+    chartColor: '#22c55e', // green-500
   },
 
   Race: {
     badgeClass: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-    chartColor: '#f59e0b',
+    chartColor: '#f59e0b', // amber-500
   },
 }
