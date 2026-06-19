@@ -74,10 +74,6 @@
   --ring:              rgb(52 211 153 / 0.4);
 }
 
-* {
-  border-color: var(--muted);
-}
-
 html {
   scroll-behavior: smooth;
 }

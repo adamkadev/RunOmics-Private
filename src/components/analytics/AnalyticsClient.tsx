@@ -46,6 +46,7 @@ type View = { kind: 'year'; year: number } | { kind: 'period'; weeks: number } |
 interface StatCell {
   Icon: LucideIcon
   color: string
+  borderTop: string
   value: ReactNode
   label: string
 }
@@ -135,36 +136,42 @@ export function AnalyticsClient({
         {
           Icon: Footprints,
           color: 'text-accent-text',
+          borderTop: 'border-t-emerald-400 dark:border-t-emerald-500',
           value: <><AnimatedValue value={totals.distanceKm} /> {t.units.km}</>,
           label: t.analytics.stats.distance,
         },
         {
           Icon: Timer,
           color: 'text-blue-500 dark:text-blue-400',
+          borderTop: 'border-t-blue-400 dark:border-t-blue-500',
           value: formatDuration(totals.durationSeconds),
           label: t.analytics.stats.time,
         },
         {
           Icon: Hash,
           color: 'text-violet-500 dark:text-violet-400',
+          borderTop: 'border-t-violet-400 dark:border-t-violet-500',
           value: <AnimatedValue value={totals.sessionCount} />,
           label: t.analytics.stats.sessions,
         },
         {
           Icon: Mountain,
           color: 'text-stone-500 dark:text-stone-400',
+          borderTop: 'border-t-stone-400 dark:border-t-stone-500',
           value: <>+<AnimatedValue value={totals.elevationM} /> m</>,
           label: t.analytics.stats.elevation,
         },
         {
           Icon: Gauge,
           color: 'text-amber-500 dark:text-amber-400',
+          borderTop: 'border-t-amber-400 dark:border-t-amber-500',
           value: <><AnimatedValue value={totals.avgKmPerWeek} decimals={1} /> {t.units.km}</>,
           label: t.analytics.stats.avgPerWeek,
         },
         {
           Icon: CalendarRange,
           color: 'text-indigo-500 dark:text-indigo-400',
+          borderTop: 'border-t-indigo-400 dark:border-t-indigo-500',
           value: <AnimatedValue value={lifetime.yearsTracked} decimals={1} />,
           label: t.analytics.stats.yearsTracked,
         },
@@ -174,30 +181,35 @@ export function AnalyticsClient({
         {
           Icon: Footprints,
           color: 'text-accent-text',
+          borderTop: 'border-t-emerald-400 dark:border-t-emerald-500',
           value: <><AnimatedValue value={totals.distanceKm} /> {t.units.km}</>,
           label: t.analytics.stats.distance,
         },
         {
           Icon: Timer,
           color: 'text-blue-500 dark:text-blue-400',
+          borderTop: 'border-t-blue-400 dark:border-t-blue-500',
           value: formatDuration(totals.durationSeconds),
           label: t.analytics.stats.time,
         },
         {
           Icon: Hash,
           color: 'text-violet-500 dark:text-violet-400',
+          borderTop: 'border-t-violet-400 dark:border-t-violet-500',
           value: <AnimatedValue value={totals.sessionCount} />,
           label: t.analytics.stats.sessions,
         },
         {
           Icon: Mountain,
           color: 'text-stone-500 dark:text-stone-400',
+          borderTop: 'border-t-stone-400 dark:border-t-stone-500',
           value: <>+<AnimatedValue value={totals.elevationM} /> m</>,
           label: t.analytics.stats.elevation,
         },
         {
           Icon: Gauge,
           color: 'text-amber-500 dark:text-amber-400',
+          borderTop: 'border-t-amber-400 dark:border-t-amber-500',
           value: <><AnimatedValue value={totals.avgKmPerWeek} decimals={1} /> {t.units.km}</>,
           label: t.analytics.stats.avgPerWeek,
         },
@@ -205,6 +217,7 @@ export function AnalyticsClient({
           ? [{
               Icon: Flame,
               color: 'text-orange-500 dark:text-orange-400',
+              borderTop: 'border-t-orange-400 dark:border-t-orange-500',
               value: <><AnimatedValue value={totals.calories / 1000} decimals={1} />k kcal</>,
               label: t.analytics.stats.calories,
             }]
@@ -247,8 +260,8 @@ export function AnalyticsClient({
             )}
           </div>
           <div className={cn('grid gap-px bg-border grid-cols-3', lgColsClass)}>
-            {statCells.map(({ Icon, color, value, label }) => (
-              <div key={label} className="flex flex-col items-center gap-0.5 bg-card px-3 py-3 text-center">
+            {statCells.map(({ Icon, color, borderTop, value, label }) => (
+              <div key={label} className={cn('flex flex-col items-center gap-0.5 border-t-2 bg-card px-3 py-3 text-center', borderTop)}>
                 <Icon size={14} className={color} />
                 <div className="whitespace-nowrap text-sm font-bold leading-tight text-foreground">{value}</div>
                 <div className="text-[10px] leading-tight text-muted-foreground">{label}</div>
