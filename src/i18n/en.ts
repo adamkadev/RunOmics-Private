@@ -242,6 +242,22 @@ export const en = {
       unit: 'ml/kg/min',
       footnote: 'Garmin VO₂max estimate',
     },
+    focus: {
+      customize: 'Customize',
+      done: 'Done',
+      reset: 'Reset layout',
+      hide: 'Hide',
+      show: 'Show',
+      moveUp: 'Move up',
+      moveDown: 'Move down',
+      widgets: {
+        stats: 'Stats',
+        trainingOverview: 'Training status',
+        charts: 'Charts',
+        heatmap: 'Activity heatmap',
+        recentActivities: 'Recent activities',
+      },
+    },
   },
 
   trainingStatus: {

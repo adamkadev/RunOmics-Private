@@ -13,6 +13,9 @@ import { ActivityHeatmap } from '@/components/dashboard/ActivityHeatmap'
 import { TrainingStatusBanner } from '@/components/dashboard/TrainingStatusBanner'
 import { ConsistencyCard } from '@/components/dashboard/ConsistencyCard'
 import { PbAlertLine } from '@/components/ui/PbAlertLine'
+import { DashboardFocusProvider } from '@/components/dashboard/DashboardFocusContext'
+import { DashboardFocusBar } from '@/components/dashboard/DashboardFocusBar'
+import { DashboardWidgets, type DashboardWidget } from '@/components/dashboard/DashboardWidgets'
 import { t } from '@/i18n'
 
 export default async function DashboardPage() {
@@ -26,37 +29,52 @@ export default async function DashboardPage() {
   const prLabelsByActivityId = getPrLabelsByActivityId(records)
   const pbAlerts = await getPbAlerts()
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.pages.dashboard.title}</h1>
+  const trainingOverviewWidget: DashboardWidget = {
+    id: 'trainingOverview',
+    element: (
+      <div className={trainingStatus && consistencyScore ? 'grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]' : undefined}>
+        {trainingStatus && <TrainingStatusBanner status={trainingStatus} />}
+        {consistencyScore && <ConsistencyCard data={consistencyScore} />}
       </div>
+    ),
+  }
 
-      <PbAlertLine alerts={pbAlerts} />
+  const widgets: DashboardWidget[] = [
+    {
+      id: 'stats',
+      element: <StatsGrid weeks={data.weeks} currentStreak={data.currentStreak} vo2max={vo2max} />,
+    },
+    ...(trainingStatus || consistencyScore ? [trainingOverviewWidget] : []),
+    {
+      id: 'charts',
+      element: (
+        <DashboardCharts
+          weeklyVolume={data.weeklyVolume}
+          currentWeek={data.currentWeek.weekNumber}
+          typeDistribution={data.typeDistribution}
+          trainingLoad={trainingLoad}
+        />
+      ),
+    },
+    { id: 'heatmap', element: <ActivityHeatmap days={heatmapDays} /> },
+    {
+      id: 'recentActivities',
+      element: <RecentActivities activities={data.recentActivities} prLabelsByActivityId={prLabelsByActivityId} />,
+    },
+  ]
 
-      <StatsGrid
-        weeks={data.weeks}
-        currentStreak={data.currentStreak}
-        vo2max={vo2max}
-      />
-
-      {(trainingStatus || consistencyScore) && (
-        <div className={trainingStatus && consistencyScore ? 'grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]' : undefined}>
-          {trainingStatus && <TrainingStatusBanner status={trainingStatus} />}
-          {consistencyScore && <ConsistencyCard data={consistencyScore} />}
+  return (
+    <DashboardFocusProvider>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.pages.dashboard.title}</h1>
+          <DashboardFocusBar />
         </div>
-      )}
 
-      <DashboardCharts
-        weeklyVolume={data.weeklyVolume}
-        currentWeek={data.currentWeek.weekNumber}
-        typeDistribution={data.typeDistribution}
-        trainingLoad={trainingLoad}
-      />
+        <PbAlertLine alerts={pbAlerts} />
 
-      <ActivityHeatmap days={heatmapDays} />
-
-      <RecentActivities activities={data.recentActivities} prLabelsByActivityId={prLabelsByActivityId} />
-    </div>
+        <DashboardWidgets widgets={widgets} />
+      </div>
+    </DashboardFocusProvider>
   )
 }
