@@ -10,6 +10,8 @@ import { ZoneBar } from '@/components/activity/ZoneBar'
 import { TrainingEffect } from '@/components/activity/TrainingEffect'
 import { RunningDynamics } from '@/components/activity/RunningDynamics'
 import { ActivityDetailClient } from '@/components/activity/ActivityDetailClient'
+import { ShareButton } from '@/components/activity/ShareButton'
+import { ActivityNotes } from '@/components/activity/ActivityNotes'
 import { BestEfforts } from '@/components/activity/BestEfforts'
 import { KmSplits } from '@/components/activity/KmSplits'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
@@ -63,14 +65,21 @@ export default async function ActivityDetailPage({
           <PrBadge labels={prLabels} />
           <ShoePairTag gearId={activity.gearId} />
         </div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          {activity.description || t.activity.runTitle(activity.dayOfWeek)}
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">{formatDate(activity.date)}</p>
-        {activity.comment && (
-          <p className="mt-1 text-sm text-muted-foreground">{activity.comment}</p>
-        )}
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+              {activity.description || t.activity.runTitle(activity.dayOfWeek)}
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">{formatDate(activity.date)}</p>
+            {activity.comment && (
+              <p className="mt-1 text-sm text-muted-foreground">{activity.comment}</p>
+            )}
+          </div>
+          <ShareButton activity={activity} />
+        </div>
       </div>
+
+      <ActivityNotes activityId={activity.id} />
 
       <ActivityDetailClient activity={activity} />
 

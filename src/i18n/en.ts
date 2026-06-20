@@ -500,6 +500,11 @@ export const en = {
       title: 'Best Efforts',
       prBadge: 'PR',
     },
+    notes: {
+      title: 'Notes',
+      notePlaceholder: 'How did it feel? Weather, terrain, sensations...',
+      tagPlaceholder: 'Add a tag (e.g. rain, trail, tired)... press Enter',
+    },
     zones: {
       title: 'Heart Rate Zones',
       noData: 'No HR zone data',
@@ -639,6 +644,12 @@ export const en = {
       pace: 'Pace',
       date: 'Date',
     },
+  },
+
+  pbAlerts: {
+    title: 'PR Watch',
+    subtitle: 'Recent efforts closing in on your records',
+    off: (diff: string) => `${diff} off your PR`,
   },
 
   racePredictions: {
