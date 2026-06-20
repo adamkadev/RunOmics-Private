@@ -3,6 +3,8 @@ import { getRecords, getPrLabelsByActivityId } from '@/application/usecases/GetR
 import { ActivityListClient } from '@/components/activities/ActivityListClient'
 import { t } from '@/i18n'
 
+export const revalidate = 60
+
 export default async function ActivitiesPage() {
   const activities = getActivities()
   const records = await getRecords()

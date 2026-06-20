@@ -18,6 +18,8 @@ import { DashboardFocusBar } from '@/components/dashboard/DashboardFocusBar'
 import { DashboardWidgets, type DashboardWidget } from '@/components/dashboard/DashboardWidgets'
 import { t } from '@/i18n'
 
+export const revalidate = 60
+
 export default async function DashboardPage() {
   const data = getDashboardData()
   const trainingLoad = getTrainingLoad()
