@@ -67,7 +67,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <body className="h-full">
         <Script id="accent-init" strategy="beforeInteractive">
-          {`try{var a=localStorage.getItem('${ACCENT_STORAGE_KEY}');if(a)document.documentElement.setAttribute('data-accent',a)}catch(e){}`}
+          {`try{
+            var a=localStorage.getItem('${ACCENT_STORAGE_KEY}');
+            if(a&&a!=='nature'){
+              document.documentElement.setAttribute('data-accent',a);
+              var i192=document.querySelector('link[rel="icon"][sizes="192x192"]');
+              var i512=document.querySelector('link[rel="icon"][sizes="512x512"]');
+              if(i192)i192.href='/icon-192-'+a+'.png';
+              if(i512)i512.href='/icon-512-'+a+'.png';
+            }
+          }catch(e){}`}
         </Script>
         <Providers>
           <AppShell>{children}</AppShell>

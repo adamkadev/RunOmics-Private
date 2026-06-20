@@ -24,7 +24,7 @@ export function isAccentId(value: string | null): value is AccentId {
 // event only fires in other tabs.
 export const ACCENT_CHANGE_EVENT = 'runomics:accent-change'
 
-// "nature" reuses the original icon-192.png; other palettes have a hue-rotated variant.
-export function accentLogoSrc(accent: AccentId): string {
-  return accent === DEFAULT_ACCENT ? '/icon-192.png' : `/icon-192-${accent}.png`
+// "nature" reuses the original icon-{size}.png; other palettes have a hue-rotated variant.
+export function accentIconSrc(accent: AccentId, size: 192 | 512): string {
+  return accent === DEFAULT_ACCENT ? `/icon-${size}.png` : `/icon-${size}-${accent}.png`
 }

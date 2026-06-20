@@ -20,7 +20,7 @@ import {
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { APP_VERSION } from '@/lib/version'
-import { accentLogoSrc } from '@/lib/accent'
+import { accentIconSrc } from '@/lib/accent'
 import { useAccent } from '@/lib/useAccent'
 import { ThemeToggle } from './ThemeToggle'
 
@@ -50,7 +50,7 @@ function Brand({ onClick, logoSrc }: { onClick?: () => void; logoSrc: string }) 
 export function Sidebar() {
   const pathname = usePathname()
   const accent = useAccent()
-  const logoSrc = accentLogoSrc(accent)
+  const logoSrc = accentIconSrc(accent, 192)
   const [open, setOpen] = useState(false)
   const headerRef = useRef<HTMLElement>(null)
   const [headerOffset, setHeaderOffset] = useState(0)
