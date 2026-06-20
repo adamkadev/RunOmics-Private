@@ -1,13 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { onAuthStateChanged } from 'firebase/auth'
 import type { User } from 'firebase/auth'
-import { X } from 'lucide-react'
+import { NotebookPen, X } from 'lucide-react'
 import { getClientFirestore, getClientAuth } from '@/lib/firebase'
 import { inputCls } from '@/lib/formStyles'
-import { cardClass, Badge } from '@/components/ui/Card'
+import { Badge } from '@/components/ui/Card'
 import { SaveButton, type SaveState } from '@/components/ui/SaveButton'
 import { Toast, useToast } from '@/components/ui/Toast'
 import { t } from '@/i18n'
@@ -27,7 +27,9 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
   const [draft, setDraft] = useState<ActivityNote>(EMPTY)
   const [tagInput, setTagInput] = useState('')
   const [saveState, setSaveState] = useState<SaveState>('idle')
+  const [open, setOpen] = useState(false)
   const { toast, showToast } = useToast()
+  const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => onAuthStateChanged(getClientAuth(), setUser), [])
 
@@ -40,7 +42,17 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
     })
   }, [activityId])
 
+  useEffect(() => {
+    if (!open) return
+    function onClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [open])
+
   const isOwner = user !== 'loading' && user?.email === OWNER_EMAIL
+  const hasNote = saved.note !== '' || saved.tags.length > 0
 
   function addTag() {
     const tag = tagInput.trim()
@@ -68,65 +80,73 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
     }
   }
 
-  if (!isOwner) {
-    if (!saved.note && saved.tags.length === 0) return null
-    return (
-      <section className={cardClass({ padding: 'base' })}>
-        {saved.note && <p className="text-sm text-foreground">{saved.note}</p>}
-        {saved.tags.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {saved.tags.map((tag) => (
-              <Badge key={tag} className="bg-accent/10 text-accent-text">{tag}</Badge>
-            ))}
-          </div>
-        )}
-      </section>
-    )
-  }
+  if (!isOwner && !hasNote) return null
 
   return (
-    <section className={cardClass({ padding: 'none' })}>
-      <div className="border-b border-border px-4 py-3 sm:px-5">
-        <h2 className="text-sm font-semibold text-foreground">{t.activity.notes.title}</h2>
-      </div>
-      <div className="space-y-3 p-4 sm:p-5">
-        <textarea
-          value={draft.note}
-          onChange={(e) => { setDraft((d) => ({ ...d, note: e.target.value })); setSaveState('idle') }}
-          placeholder={t.activity.notes.notePlaceholder}
-          rows={3}
-          className={inputCls}
-        />
+    <div ref={containerRef} className="relative shrink-0">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+      >
+        <NotebookPen size={13} />
+        {t.activity.notes.title}
+      </button>
 
-        {draft.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {draft.tags.map((tag) => (
-              <span
-                key={tag}
-                className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-medium text-accent-text"
-              >
-                {tag}
-                <button type="button" onClick={() => removeTag(tag)} className="hover:text-destructive">
-                  <X size={12} />
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
+      {open && (
+        <div className="absolute right-0 top-full z-20 mt-1 w-72 rounded-xl border border-border bg-card p-3 shadow-lg">
+          {isOwner ? (
+            <div className="space-y-3">
+              <textarea
+                value={draft.note}
+                onChange={(e) => { setDraft((d) => ({ ...d, note: e.target.value })); setSaveState('idle') }}
+                placeholder={t.activity.notes.notePlaceholder}
+                rows={3}
+                className={inputCls}
+              />
 
-        <input
-          type="text"
-          value={tagInput}
-          onChange={(e) => setTagInput(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag() } }}
-          placeholder={t.activity.notes.tagPlaceholder}
-          className={inputCls}
-        />
+              {draft.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {draft.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-medium text-accent-text"
+                    >
+                      {tag}
+                      <button type="button" onClick={() => removeTag(tag)} className="hover:text-destructive">
+                        <X size={12} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
 
-        <SaveButton state={saveState} onClick={handleSave} />
-      </div>
+              <input
+                type="text"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag() } }}
+                placeholder={t.activity.notes.tagPlaceholder}
+                className={inputCls}
+              />
+
+              <SaveButton state={saveState} onClick={handleSave} />
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {saved.note && <p className="text-sm text-foreground">{saved.note}</p>}
+              {saved.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {saved.tags.map((tag) => (
+                    <Badge key={tag} className="bg-accent/10 text-accent-text">{tag}</Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       <Toast toast={toast} />
-    </section>
+    </div>
   )
 }
