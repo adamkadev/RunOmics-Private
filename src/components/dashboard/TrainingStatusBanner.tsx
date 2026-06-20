@@ -5,7 +5,7 @@ import { Card, Badge } from '@/components/ui/Card'
 
 const STATUS_STYLE: Record<TrainingStatusType, { dot: string; badge: string; text: string }> = {
   productive: {
-    dot:   'bg-emerald-500',
+    dot:   'bg-accent',
     badge: 'bg-accent-subtle text-accent-text',
     text:  'text-accent-text',
   },

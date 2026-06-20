@@ -32,7 +32,7 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
   const entry = payload[0].payload
   return (
     <TooltipCard label={label}>
-      <p className="text-sm text-accent-text">{t.analytics.charts.easyHard.easy(entry.easyPct ?? 0)}</p>
+      <p className="text-sm text-emerald-600 dark:text-emerald-400">{t.analytics.charts.easyHard.easy(entry.easyPct ?? 0)}</p>
       <p className="text-sm text-orange-500 dark:text-orange-400">{t.analytics.charts.easyHard.hard(entry.hardPct ?? 0)}</p>
     </TooltipCard>
   )

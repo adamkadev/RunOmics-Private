@@ -11,7 +11,7 @@ const ZONE_CONFIG: Record<number, {
 }> = {
   1: { label: t.activity.zones.labels[1], barClass: 'bg-gray-400',    textClass: 'text-muted-foreground',       trackClass: 'bg-muted' },
   2: { label: t.activity.zones.labels[2], barClass: 'bg-blue-400',    textClass: 'text-blue-600 dark:text-blue-400',       trackClass: 'bg-blue-50 dark:bg-blue-900/20' },
-  3: { label: t.activity.zones.labels[3], barClass: 'bg-emerald-400', textClass: 'text-accent-text',                       trackClass: 'bg-emerald-50 dark:bg-emerald-900/20' },
+  3: { label: t.activity.zones.labels[3], barClass: 'bg-emerald-400', textClass: 'text-emerald-600 dark:text-emerald-400', trackClass: 'bg-emerald-50 dark:bg-emerald-900/20' },
   4: { label: t.activity.zones.labels[4], barClass: 'bg-orange-500',  textClass: 'text-orange-600 dark:text-orange-400',   trackClass: 'bg-orange-50 dark:bg-orange-900/20' },
   5: { label: t.activity.zones.labels[5], barClass: 'bg-red-500',     textClass: 'text-red-600 dark:text-red-400',         trackClass: 'bg-red-50 dark:bg-red-900/20' },
 }

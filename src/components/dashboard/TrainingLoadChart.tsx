@@ -31,14 +31,14 @@ function CustomTooltip({ active, payload }: TooltipProps) {
     <TooltipCard label={p.label}>
       <p className="text-sm text-blue-500 dark:text-blue-400">{t.dashboard.trainingLoad.fitness} {p.ctl}</p>
       <p className="text-sm text-orange-500 dark:text-orange-400">{t.dashboard.trainingLoad.fatigue} {p.atl}</p>
-      <p className="text-sm text-accent-text">{t.dashboard.trainingLoad.form} {p.tsb}</p>
+      <p className="text-sm text-emerald-600 dark:text-emerald-400">{t.dashboard.trainingLoad.form} {p.tsb}</p>
     </TooltipCard>
   )
 }
 
 function formStatus(tsb: number): { label: string; className: string } {
   const s = t.dashboard.trainingLoad.status
-  if (tsb > 5) return { label: s.fresh, className: 'text-accent-text' }
+  if (tsb > 5) return { label: s.fresh, className: 'text-emerald-600 dark:text-emerald-400' }
   if (tsb >= -10) return { label: s.neutral, className: 'text-muted-foreground' }
   if (tsb >= -30) return { label: s.building, className: 'text-orange-500 dark:text-orange-400' }
   return { label: s.overreaching, className: 'text-red-500 dark:text-red-400' }

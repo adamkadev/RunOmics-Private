@@ -10,15 +10,14 @@ const MONTHS = t.dashboard.heatmap.months
 const GAP = 3
 const LABEL_W = 26 // matches paddingLeft of month labels row
 
-// Must be statically present for Tailwind to include these classes
-const LEVEL_CLASSES = [
-  'bg-muted',
-  'bg-emerald-100 dark:bg-emerald-950',
-  'bg-emerald-200 dark:bg-emerald-800',
-  'bg-emerald-300 dark:bg-emerald-600',
-  'bg-emerald-400 dark:bg-emerald-500',
-  'bg-emerald-500 dark:bg-emerald-400',
-] as const
+// Intensity scale mixed from the active accent, so it follows the chosen palette.
+// Mixing toward --card (rather than fixed light/dark stops) adapts to dark mode for free.
+const LEVEL_MIX_PCT = [0, 20, 40, 60, 80, 100] as const
+
+function levelStyle(level: number) {
+  if (level === 0) return { backgroundColor: 'var(--muted)' }
+  return { backgroundColor: `color-mix(in oklab, var(--accent) ${LEVEL_MIX_PCT[level]}%, var(--card))` }
+}
 
 function getLevel(km: number): number {
   if (km === 0) return 0
@@ -140,8 +139,8 @@ export function ActivityHeatmap({ days }: Props) {
                   ) : (
                     <div
                       key={row}
-                      className={`rounded-[2px] transition-opacity hover:opacity-70 ${LEVEL_CLASSES[getLevel(day.distanceKm)]}`}
-                      style={{ width: cellSize, height: cellSize, cursor: 'default' }}
+                      className="rounded-[2px] transition-opacity hover:opacity-70"
+                      style={{ width: cellSize, height: cellSize, cursor: 'default', ...levelStyle(getLevel(day.distanceKm)) }}
                       onMouseEnter={(e) => {
                         const rect = e.currentTarget.getBoundingClientRect()
                         setTooltip({ day, x: rect.left + rect.width / 2, y: rect.top })
@@ -159,8 +158,8 @@ export function ActivityHeatmap({ days }: Props) {
       {/* Legend */}
       <div className="mt-3 flex items-center justify-end gap-1.5">
         <span className="text-[10px] text-subtle">{t.dashboard.heatmap.less}</span>
-        {LEVEL_CLASSES.map((cls, i) => (
-          <div key={i} className={`rounded-[2px] ${cls}`} style={{ width: 10, height: 10 }} />
+        {LEVEL_MIX_PCT.map((_, i) => (
+          <div key={i} className="rounded-[2px]" style={{ width: 10, height: 10, ...levelStyle(i) }} />
         ))}
         <span className="text-[10px] text-subtle">{t.dashboard.heatmap.more}</span>
       </div>

@@ -28,7 +28,7 @@ function buildStats(activity: Activity): StatDef[] {
   const stats: StatDef[] = [
     {
       Icon: Footprints,
-      color: 'text-accent-text',
+      color: 'text-emerald-500 dark:text-emerald-400',
       value: formatDistance(activity.distanceKm),
       label: t.activity.stats.distance,
     },

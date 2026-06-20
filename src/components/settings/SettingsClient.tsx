@@ -35,7 +35,7 @@ export function SettingsClient() {
   if (user === 'loading') {
     return (
       <div className="flex min-h-64 items-center justify-center">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground border-t-emerald-600" />
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground border-t-accent" />
       </div>
     )
   }

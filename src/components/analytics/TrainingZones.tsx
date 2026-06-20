@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 const ZONE_STYLE: Record<string, { dot: string; text: string; bar: string }> = {
-  easy:      { dot: 'bg-emerald-500', text: 'text-accent-text', bar: 'bg-emerald-500' },
+  easy:      { dot: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', bar: 'bg-emerald-500' },
   marathon:  { dot: 'bg-blue-500',    text: 'text-blue-600 dark:text-blue-400',       bar: 'bg-blue-500'    },
   threshold: { dot: 'bg-amber-500',   text: 'text-amber-600 dark:text-amber-400',     bar: 'bg-amber-500'   },
   vo2max:    { dot: 'bg-red-500',     text: 'text-red-600 dark:text-red-400',         bar: 'bg-red-500'     },

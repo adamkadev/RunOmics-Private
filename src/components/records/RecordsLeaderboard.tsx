@@ -15,7 +15,7 @@ const PILL_ORDER = ['1k', '1mile', '5k', '10k', 'half', 'marathon', 'longest']
 const LABEL_COLOR: Record<string, string> = {
   '1k':     'text-blue-600 dark:text-blue-400',
   '1mile':  'text-cyan-600 dark:text-cyan-400',
-  '5k':     'text-accent-text',
+  '5k':     'text-emerald-600 dark:text-emerald-400',
   '10k':    'text-amber-600 dark:text-amber-400',
   half:     'text-violet-600 dark:text-violet-400',
   marathon: 'text-rose-600 dark:text-rose-400',

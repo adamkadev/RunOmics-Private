@@ -3,6 +3,7 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import type { MonthlyLongRuns } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
+import { useAccentColor } from '@/lib/useAccent'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { ChartExplain } from '@/components/ui/ChartExplain'
 import { Card } from '@/components/ui/Card'
@@ -30,6 +31,7 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
 }
 
 export function LongRunsChart({ data }: Props) {
+  const accentColor = useAccentColor()
   const nonZero = data.filter((d) => d.longestKm > 0)
   if (nonZero.length === 0) return null
 
@@ -66,7 +68,7 @@ export function LongRunsChart({ data }: Props) {
           />
           <Bar
             dataKey="longestKm"
-            fill={CHART_COLORS.longRun}
+            fill={accentColor}
             radius={[3, 3, 0, 0]}
             isAnimationActive={false}
           />

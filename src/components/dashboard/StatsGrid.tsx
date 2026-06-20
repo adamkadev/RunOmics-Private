@@ -47,7 +47,7 @@ export function StatsGrid({ weeks, currentStreak, vo2max }: Props) {
   const cells: StatCell[] = [
     {
       Icon: Footprints,
-      color: 'text-accent-text',
+      color: 'text-emerald-500 dark:text-emerald-400',
       borderTop: 'border-t-emerald-400 dark:border-t-emerald-500',
       value: <><AnimatedValue value={currentWeek.totalDistanceKm} decimals={currentWeek.totalDistanceKm >= 10 ? 1 : 2} /> {t.units.km}</>,
       label: s.distance,

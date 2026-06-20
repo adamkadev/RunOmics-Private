@@ -6,6 +6,7 @@ import {
 } from 'recharts'
 import type { MonthlyVolume } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
+import { useAccentColor } from '@/lib/useAccent'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
@@ -42,6 +43,7 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
 }
 
 export function MonthlyComparisonChart({ currentYear, currentData, prevYear, prevData }: Props) {
+  const accentColor = useAccentColor()
   // Merge into a unified 12-month array by month index
   const merged = MONTH_LABELS.map((label, i) => {
     const monthStr = String(i + 1).padStart(2, '0')
@@ -60,7 +62,7 @@ export function MonthlyComparisonChart({ currentYear, currentData, prevYear, pre
         <h3 className="text-sm font-semibold text-foreground/80">{t.analytics.charts.monthlyComparison.title}</h3>
         <div className="flex items-center gap-4 text-xs text-subtle">
           <span className="flex items-center gap-1">
-            <span className="inline-block h-2 w-3 rounded-sm" style={{ background: CHART_COLORS.brand }} />
+            <span className="inline-block h-2 w-3 rounded-sm" style={{ background: accentColor }} />
             {currentYear}
           </span>
           <span className="flex items-center gap-1">
@@ -87,7 +89,7 @@ export function MonthlyComparisonChart({ currentYear, currentData, prevYear, pre
           <Line
             type="monotone"
             dataKey={currentYear}
-            stroke={CHART_COLORS.brand}
+            stroke={accentColor}
             strokeWidth={2}
             dot={false}
             isAnimationActive={false}

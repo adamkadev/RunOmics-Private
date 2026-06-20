@@ -211,7 +211,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
                     </span>
                   </div>
                 ) : (
-                  <div className="flex h-24 items-center justify-between bg-gradient-to-br from-emerald-50 to-emerald-100 px-5 dark:from-emerald-900/20 dark:to-emerald-800/10">
+                  <div className="flex h-24 items-center justify-between bg-accent-subtle px-5">
                     <span className="text-3xl font-black text-accent-text">
                       {entry.distance}
                     </span>

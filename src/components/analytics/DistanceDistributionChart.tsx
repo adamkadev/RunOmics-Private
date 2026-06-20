@@ -3,6 +3,7 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ResponsiveContainer } from 'recharts'
 import type { DistanceBracket } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
+import { useAccentColor } from '@/lib/useAccent'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
@@ -28,6 +29,7 @@ function CustomTooltip({ active, payload }: TooltipProps) {
 }
 
 export function DistanceDistributionChart({ data }: Props) {
+  const accentColor = useAccentColor()
   const max = Math.max(...data.map((d) => d.count))
 
   return (
@@ -55,7 +57,7 @@ export function DistanceDistributionChart({ data }: Props) {
             {data.map((entry) => (
               <Cell
                 key={entry.label}
-                fill={CHART_COLORS.brand}
+                fill={accentColor}
                 fillOpacity={0.45 + 0.55 * (entry.count / max)}
               />
             ))}

@@ -24,7 +24,7 @@ function DeltaBadge({ pct, lowerIsBetter = false }: { pct: number; lowerIsBetter
   return (
     <span
       className={`inline-flex items-center gap-0.5 text-xs font-medium ${
-        improved ? 'text-accent-text' : 'text-red-500 dark:text-red-400'
+        improved ? 'text-emerald-500 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'
       }`}
     >
       {improved ? <TrendingUp size={11} /> : <TrendingDown size={11} />}

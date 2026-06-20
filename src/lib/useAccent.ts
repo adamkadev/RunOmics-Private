@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { ACCENT_CHANGE_EVENT, ACCENT_STORAGE_KEY, DEFAULT_ACCENT, isAccentId, type AccentId } from '@/lib/accent'
+import { ACCENT_CHANGE_EVENT, ACCENT_STORAGE_KEY, ACCENT_SWATCHES, DEFAULT_ACCENT, isAccentId, type AccentId } from '@/lib/accent'
 
 function readAccent(): AccentId {
   const stored = localStorage.getItem(ACCENT_STORAGE_KEY)
@@ -28,4 +28,9 @@ export function useAccent(): AccentId {
   }, [])
 
   return accent
+}
+
+// Resolved hex for the active accent - for Recharts/SVG props that can't take a CSS var.
+export function useAccentColor(): string {
+  return ACCENT_SWATCHES[useAccent()]
 }

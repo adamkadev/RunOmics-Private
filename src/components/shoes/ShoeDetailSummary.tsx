@@ -21,7 +21,7 @@ export function ShoeDetailSummary({ shoe }: { shoe: ShoeDetail }) {
   const cells: StatCell[] = [
     {
       Icon: Footprints,
-      color: 'text-accent-text',
+      color: 'text-emerald-500 dark:text-emerald-400',
       borderTop: 'border-t-emerald-400 dark:border-t-emerald-500',
       value: <><AnimatedValue value={shoe.totalKm} decimals={1} /> {t.units.km}</>,
       label: s.distance,
