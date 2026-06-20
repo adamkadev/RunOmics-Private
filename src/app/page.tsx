@@ -12,7 +12,7 @@ import { RecentActivities } from '@/components/dashboard/RecentActivities'
 import { ActivityHeatmap } from '@/components/dashboard/ActivityHeatmap'
 import { TrainingStatusBanner } from '@/components/dashboard/TrainingStatusBanner'
 import { ConsistencyCard } from '@/components/dashboard/ConsistencyCard'
-import { PbAlertCard } from '@/components/ui/PbAlertCard'
+import { PbAlertLine } from '@/components/ui/PbAlertLine'
 import { t } from '@/i18n'
 
 export default async function DashboardPage() {
@@ -32,7 +32,7 @@ export default async function DashboardPage() {
         <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.pages.dashboard.title}</h1>
       </div>
 
-      <PbAlertCard alerts={pbAlerts} />
+      <PbAlertLine alerts={pbAlerts} />
 
       <StatsGrid
         weeks={data.weeks}

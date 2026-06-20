@@ -647,8 +647,6 @@ export const en = {
   },
 
   pbAlerts: {
-    title: 'PR Watch',
-    subtitle: 'Recent efforts closing in on your records',
     off: (diff: string) => `${diff} off your PR`,
   },
 

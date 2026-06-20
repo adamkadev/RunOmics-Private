@@ -2,7 +2,7 @@ import { getRecords, getTopEfforts } from '@/application/usecases/GetRecords'
 import { getPbAlerts } from '@/application/usecases/GetPbAlerts'
 import { RacePredictions } from '@/components/records/RacePredictions'
 import { RecordsLeaderboard } from '@/components/records/RecordsLeaderboard'
-import { PbAlertCard } from '@/components/ui/PbAlertCard'
+import { PbAlertLine } from '@/components/ui/PbAlertLine'
 import { t } from '@/i18n'
 
 export const revalidate = 60
@@ -19,7 +19,7 @@ export default async function RecordsPage() {
         <p className="mt-0.5 text-sm text-muted-foreground">{t.pages.records.subtitle}</p>
       </div>
 
-      <PbAlertCard alerts={pbAlerts} />
+      <PbAlertLine alerts={pbAlerts} />
 
       <RecordsLeaderboard records={records} topEfforts={topEfforts} />
       <RacePredictions records={records} />
