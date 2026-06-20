@@ -5,12 +5,14 @@ import { getConsistencyScore } from '@/application/usecases/GetConsistencyScore'
 import { getHeatmapData } from '@/application/usecases/GetHeatmapData'
 import { getLatestVO2max } from '@/application/usecases/GetVO2maxHistory'
 import { getRecords, getPrLabelsByActivityId } from '@/application/usecases/GetRecords'
+import { getPbAlerts } from '@/application/usecases/GetPbAlerts'
 import { StatsGrid } from '@/components/dashboard/StatsGrid'
 import { DashboardCharts } from '@/components/dashboard/DashboardCharts'
 import { RecentActivities } from '@/components/dashboard/RecentActivities'
 import { ActivityHeatmap } from '@/components/dashboard/ActivityHeatmap'
 import { TrainingStatusBanner } from '@/components/dashboard/TrainingStatusBanner'
 import { ConsistencyCard } from '@/components/dashboard/ConsistencyCard'
+import { PbAlertCard } from '@/components/ui/PbAlertCard'
 import { t } from '@/i18n'
 
 export default async function DashboardPage() {
@@ -22,12 +24,15 @@ export default async function DashboardPage() {
   const vo2max = getLatestVO2max()
   const records = await getRecords()
   const prLabelsByActivityId = getPrLabelsByActivityId(records)
+  const pbAlerts = await getPbAlerts()
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.pages.dashboard.title}</h1>
       </div>
+
+      <PbAlertCard alerts={pbAlerts} />
 
       <StatsGrid
         weeks={data.weeks}
