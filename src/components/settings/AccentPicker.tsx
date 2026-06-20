@@ -4,23 +4,22 @@ import { useEffect, useState } from 'react'
 import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
-import { ACCENT_IDS, ACCENT_STORAGE_KEY, ACCENT_SWATCHES, DEFAULT_ACCENT, isAccentId, type AccentId } from '@/lib/accent'
+import { ACCENT_CHANGE_EVENT, ACCENT_IDS, ACCENT_STORAGE_KEY, ACCENT_SWATCHES, type AccentId } from '@/lib/accent'
+import { useAccent } from '@/lib/useAccent'
 
 export function AccentPicker() {
-  const [accent, setAccent] = useState<AccentId>(DEFAULT_ACCENT)
+  const accent = useAccent()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    const stored = localStorage.getItem(ACCENT_STORAGE_KEY)
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setAccent(isAccentId(stored) ? stored : DEFAULT_ACCENT)
     setMounted(true)
   }, [])
 
   function selectAccent(id: AccentId) {
-    setAccent(id)
     localStorage.setItem(ACCENT_STORAGE_KEY, id)
     document.documentElement.setAttribute('data-accent', id)
+    window.dispatchEvent(new Event(ACCENT_CHANGE_EVENT))
   }
 
   return (

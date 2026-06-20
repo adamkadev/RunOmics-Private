@@ -113,7 +113,7 @@ export const en = {
         performance: { label: 'Performance', description: 'Electric race blue' },
         impact:      { label: 'Impact', description: 'Bold finish-line red' },
         motivation:  { label: 'Motivation', description: 'Energetic orange' },
-        trail:       { label: 'Trail', description: 'Earthy ultra amber' },
+        endurance:   { label: 'Endurance', description: 'Deep ultra violet' },
       },
     },
     auth: {

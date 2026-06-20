@@ -20,6 +20,8 @@ import {
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { APP_VERSION } from '@/lib/version'
+import { accentLogoSrc } from '@/lib/accent'
+import { useAccent } from '@/lib/useAccent'
 import { ThemeToggle } from './ThemeToggle'
 
 const NAV_ITEMS = [
@@ -33,10 +35,10 @@ const NAV_ITEMS = [
   { href: '/shoes', label: t.nav.items.shoes, icon: Footprints },
 ]
 
-function Brand({ onClick }: { onClick?: () => void }) {
+function Brand({ onClick, logoSrc }: { onClick?: () => void; logoSrc: string }) {
   return (
     <Link href="/" onClick={onClick} className="flex items-center gap-2.5">
-      <Image src="/icon-192.png" alt="" width={24} height={24} unoptimized priority className="rounded-md" />
+      <Image src={logoSrc} alt="" width={24} height={24} unoptimized priority className="rounded-md" />
       <span className="text-2xl tracking-tight text-foreground">
         <span className="font-bold">{t.brand.namePrefix}</span>
         <span className="font-normal">{t.brand.nameSuffix}</span>
@@ -47,6 +49,8 @@ function Brand({ onClick }: { onClick?: () => void }) {
 
 export function Sidebar() {
   const pathname = usePathname()
+  const accent = useAccent()
+  const logoSrc = accentLogoSrc(accent)
   const [open, setOpen] = useState(false)
   const headerRef = useRef<HTMLElement>(null)
   const [headerOffset, setHeaderOffset] = useState(0)
@@ -103,7 +107,7 @@ export function Sidebar() {
       {/* ─── Desktop sidebar ─── */}
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-60 flex-col border-r border-border bg-card lg:flex">
         <Link href="/" className="flex h-16 items-center gap-2 border-b border-border px-5">
-          <Image src="/icon-192.png" alt="" width={20} height={20} priority className="rounded-md" />
+          <Image src={logoSrc} alt="" width={20} height={20} priority className="rounded-md" />
           <span className="text-lg tracking-tight text-foreground">
             <span className="font-bold">{t.brand.namePrefix}</span>
             <span className="font-normal">{t.brand.nameSuffix}</span>
@@ -164,7 +168,7 @@ export function Sidebar() {
           <div className="absolute left-4">
             <ThemeToggle />
           </div>
-          <Brand />
+          <Brand logoSrc={logoSrc} />
           <button
             onClick={() => setOpen(true)}
             className="absolute right-4 rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -187,7 +191,7 @@ export function Sidebar() {
         }}
       >
         <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-5">
-          <Brand onClick={() => setOpen(false)} />
+          <Brand onClick={() => setOpen(false)} logoSrc={logoSrc} />
           <button
             onClick={() => setOpen(false)}
             className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
