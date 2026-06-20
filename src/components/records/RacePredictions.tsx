@@ -66,7 +66,7 @@ export function RacePredictions({ records }: Props) {
   return (
     <section className="space-y-3">
       <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-        <TrendingUp size={14} className="text-accent-text" />
+        <TrendingUp size={14} className="text-emerald-500 dark:text-emerald-400" />
         {t.racePredictions.title}
       </h2>
 

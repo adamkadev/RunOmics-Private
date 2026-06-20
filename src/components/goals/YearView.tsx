@@ -83,7 +83,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
       {goals && goals.targets.length > 0 && (
         <section className="space-y-3">
           <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            <TrendingUp size={14} className="text-orange-500 dark:text-orange-400" />
+            <TrendingUp size={14} className="text-emerald-500 dark:text-emerald-400" />
             {t.goals.raceTargets}
           </h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
