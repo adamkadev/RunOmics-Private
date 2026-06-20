@@ -108,6 +108,7 @@ export const en = {
     auth: {
       signIn: 'Sign in with Google',
       signOut: 'Sign out',
+      switchAccount: 'Sign out and try another account',
       accessDenied: 'Access denied - this page is restricted to the site owner.',
       signingIn: 'Signing in...',
     },

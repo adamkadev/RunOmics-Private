@@ -22,7 +22,9 @@ export function SettingsClient() {
   }, [])
 
   async function handleSignIn() {
-    await signInWithPopup(getClientAuth(), new GoogleAuthProvider())
+    const provider = new GoogleAuthProvider()
+    provider.setCustomParameters({ prompt: 'select_account' })
+    await signInWithPopup(getClientAuth(), provider)
   }
 
   async function handleSignOut() {
@@ -56,8 +58,15 @@ export function SettingsClient() {
 
   if (user.email !== OWNER_EMAIL) {
     return (
-      <div className="flex min-h-64 items-center justify-center px-4">
+      <div className="flex min-h-64 flex-col items-center justify-center gap-4 px-4">
         <p className="text-center text-sm text-muted-foreground">{t.settings.auth.accessDenied}</p>
+        <button
+          onClick={handleSignOut}
+          className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-red-400 hover:text-red-500 dark:hover:border-red-500 dark:hover:text-red-400"
+        >
+          <LogOut size={13} />
+          {t.settings.auth.switchAccount}
+        </button>
       </div>
     )
   }
