@@ -105,6 +105,17 @@ export const en = {
   },
 
   settings: {
+    accent: {
+      title: 'Accent color',
+      subtitle: 'Pick the vibe - this applies instantly, no account needed.',
+      options: {
+        nature:      { label: 'Nature', description: 'Calm trail green' },
+        performance: { label: 'Performance', description: 'Electric race blue' },
+        impact:      { label: 'Impact', description: 'Bold finish-line red' },
+        motivation:  { label: 'Motivation', description: 'Energetic orange' },
+        trail:       { label: 'Trail', description: 'Earthy ultra amber' },
+      },
+    },
     auth: {
       signIn: 'Sign in with Google',
       signOut: 'Sign out',

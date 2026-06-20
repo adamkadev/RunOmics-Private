@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
+import Script from 'next/script'
 import './globals.css'
 import { Providers } from './providers'
 import { AppShell } from '@/components/layout/AppShell'
 import { t } from '@/i18n'
+import { ACCENT_STORAGE_KEY } from '@/lib/accent'
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] })
@@ -64,6 +66,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="h-full">
+        <Script id="accent-init" strategy="beforeInteractive">
+          {`try{var a=localStorage.getItem('${ACCENT_STORAGE_KEY}');if(a)document.documentElement.setAttribute('data-accent',a)}catch(e){}`}
+        </Script>
         <Providers>
           <AppShell>{children}</AppShell>
         </Providers>
