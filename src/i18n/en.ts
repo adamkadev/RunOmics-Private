@@ -87,6 +87,10 @@ export const en = {
       title: 'Running Heatmap',
       routes: (n: number) => `${n} routes`,
       zones: 'Zones',
+      filters: 'Filters',
+      type: 'Type',
+      year: 'Year',
+      allYears: 'All years',
     },
     shoes: {
       title: 'Shoes',
@@ -193,6 +197,13 @@ export const en = {
       confirmQuestion: 'Sure?',
       confirmYes: 'Yes',
       confirmCancel: 'Cancel',
+    },
+    dataExport: {
+      title: 'Export data',
+      subtitle: 'Download your training data for use in other tools.',
+      csv: 'Export activities (CSV)',
+      json: 'Export full data (JSON)',
+      exporting: 'Exporting...',
     },
   },
 

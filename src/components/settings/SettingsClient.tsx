@@ -8,6 +8,7 @@ import { getClientAuth } from '@/lib/firebase'
 import { t } from '@/i18n'
 import { AccentPicker } from './AccentPicker'
 import { AthleteForm } from './AthleteForm'
+import { DataExportForm } from './DataExportForm'
 import { GoalsForm } from './GoalsForm'
 import { PbsForm } from './PbsForm'
 import { UpcomingRacesForm } from './UpcomingRacesForm'
@@ -99,6 +100,7 @@ export function SettingsClient() {
       <GoalsForm />
       <UpcomingRacesForm />
       <PbsForm />
+      <DataExportForm />
     </div>
   )
 }
