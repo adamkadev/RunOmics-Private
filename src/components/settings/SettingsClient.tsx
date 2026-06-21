@@ -10,6 +10,7 @@ import { AccentPicker } from './AccentPicker'
 import { AthleteForm } from './AthleteForm'
 import { DataExportForm } from './DataExportForm'
 import { GoalsForm } from './GoalsForm'
+import { NotificationsForm } from './NotificationsForm'
 import { PbsForm } from './PbsForm'
 import { UpcomingRacesForm } from './UpcomingRacesForm'
 
@@ -95,6 +96,7 @@ export function SettingsClient() {
       </div>
 
       <AccentPicker />
+      <NotificationsForm />
 
       <AthleteForm />
       <GoalsForm />
