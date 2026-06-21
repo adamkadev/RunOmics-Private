@@ -7,7 +7,7 @@ import { Trophy } from 'lucide-react'
 import type { RecordEntry, TopEfforts } from '@/application/usecases/GetRecords'
 import { formatDuration, formatDistance, formatPace } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
-import { Card, cardClass } from '@/components/ui/Card'
+import { Card, cardClass, Badge } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 const PILL_ORDER = ['1k', '1mile', '5k', '10k', 'half', 'marathon', 'longest']
@@ -46,9 +46,10 @@ function rankClass(i: number): string {
 interface Props {
   records: RecordEntry[]
   topEfforts: TopEfforts
+  mostRecentKey?: string | null
 }
 
-export function RecordsLeaderboard({ records, topEfforts }: Props) {
+export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null }: Props) {
   const router = useRouter()
   const pills = ['all', ...PILL_ORDER.filter((k) => topEfforts[k])]
   const [selected, setSelected] = useState('all')
@@ -98,7 +99,14 @@ export function RecordsLeaderboard({ records, topEfforts }: Props) {
                     <p className={cn('text-xs font-bold uppercase tracking-wide', LABEL_COLOR[r.key] ?? 'text-subtle')}>
                       {r.label}
                     </p>
-                    {r.official && <span className="text-xs text-violet-400">★</span>}
+                    <div className="flex items-center">
+                      {r.key === mostRecentKey && (
+                        <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+                          {t.records.mostRecent}
+                        </Badge>
+                      )}
+                      {r.official && <span className="text-xs text-violet-400">★</span>}
+                    </div>
                   </div>
                   <p className="text-2xl font-bold tracking-tight text-foreground">
                     {mainStat}

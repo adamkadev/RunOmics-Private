@@ -143,6 +143,12 @@ export async function getRecords(): Promise<RecordEntry[]> {
   return [...effortRecords, longestRecord]
 }
 
+export function getMostRecentRecord(records: RecordEntry[]): RecordEntry | null {
+  const withDate = records.filter((r) => r.date !== null)
+  if (withDate.length === 0) return null
+  return withDate.reduce((latest, r) => (r.date! > latest.date! ? r : latest))
+}
+
 export function getPrLabelsByActivityId(records: RecordEntry[]): Record<string, string[]> {
   const result: Record<string, string[]> = {}
   for (const r of records) {

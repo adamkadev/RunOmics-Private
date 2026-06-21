@@ -695,6 +695,7 @@ export const en = {
     title: 'Top Times',
     all: 'All',
     longest: 'Longest Run',
+    mostRecent: 'Most recent',
     footnote: '★ official race time · others auto-detected from activity data',
     leaderboard: {
       title: 'Top Times',

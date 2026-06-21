@@ -4,7 +4,7 @@ import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { getConsistencyScore } from '@/application/usecases/GetConsistencyScore'
 import { getHeatmapData } from '@/application/usecases/GetHeatmapData'
 import { getLatestVO2max } from '@/application/usecases/GetVO2maxHistory'
-import { getRecords, getPrLabelsByActivityId } from '@/application/usecases/GetRecords'
+import { getRecords, getPrLabelsByActivityId, getMostRecentRecord } from '@/application/usecases/GetRecords'
 import { getPbAlerts } from '@/application/usecases/GetPbAlerts'
 import { getShoeStats } from '@/application/usecases/GetShoeStats'
 import { getNextRace } from '@/application/usecases/GetNextRace'
@@ -17,6 +17,7 @@ import { ConsistencyCard } from '@/components/dashboard/ConsistencyCard'
 import { PbAlertLine } from '@/components/ui/PbAlertLine'
 import { ShoeWearAlertLine } from '@/components/shoes/ShoeWearAlertLine'
 import { NextRaceLine } from '@/components/goals/NextRaceLine'
+import { LatestRecordBadge } from '@/components/records/LatestRecordBadge'
 import { DashboardFocusProvider } from '@/components/dashboard/DashboardFocusContext'
 import { DashboardFocusBar } from '@/components/dashboard/DashboardFocusBar'
 import { DashboardWidgets, type DashboardWidget } from '@/components/dashboard/DashboardWidgets'
@@ -33,6 +34,7 @@ export default async function DashboardPage() {
   const vo2max = getLatestVO2max()
   const records = await getRecords()
   const prLabelsByActivityId = getPrLabelsByActivityId(records)
+  const mostRecentRecord = getMostRecentRecord(records)
   const pbAlerts = await getPbAlerts()
   const shoes = getShoeStats()
   const nextRace = await getNextRace()
@@ -74,14 +76,20 @@ export default async function DashboardPage() {
   return (
     <DashboardFocusProvider>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.pages.dashboard.title}</h1>
-          <DashboardFocusBar />
+          <LatestRecordBadge record={mostRecentRecord} />
         </div>
 
-        <PbAlertLine alerts={pbAlerts} />
-        <ShoeWearAlertLine shoes={shoes} />
-        <NextRaceLine race={nextRace} />
+        <div className="space-y-1.5">
+          <PbAlertLine alerts={pbAlerts} />
+          <ShoeWearAlertLine shoes={shoes} />
+          <NextRaceLine race={nextRace} />
+        </div>
+
+        <div className="flex justify-end">
+          <DashboardFocusBar />
+        </div>
 
         <DashboardWidgets widgets={widgets} />
       </div>
