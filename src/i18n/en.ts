@@ -710,6 +710,10 @@ export const en = {
     off: (diff: string) => `${diff} off your PR`,
   },
 
+  nextRace: {
+    line: (name: string, distance: string, daysUntil: string) => `${name} (${distance}) - ${daysUntil}`,
+  },
+
   racePredictions: {
     title: 'Race Predictions',
     efforts: {

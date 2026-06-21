@@ -7,6 +7,7 @@ import { getLatestVO2max } from '@/application/usecases/GetVO2maxHistory'
 import { getRecords, getPrLabelsByActivityId } from '@/application/usecases/GetRecords'
 import { getPbAlerts } from '@/application/usecases/GetPbAlerts'
 import { getShoeStats } from '@/application/usecases/GetShoeStats'
+import { getNextRace } from '@/application/usecases/GetNextRace'
 import { StatsGrid } from '@/components/dashboard/StatsGrid'
 import { DashboardCharts } from '@/components/dashboard/DashboardCharts'
 import { RecentActivities } from '@/components/dashboard/RecentActivities'
@@ -15,6 +16,7 @@ import { TrainingStatusBanner } from '@/components/dashboard/TrainingStatusBanne
 import { ConsistencyCard } from '@/components/dashboard/ConsistencyCard'
 import { PbAlertLine } from '@/components/ui/PbAlertLine'
 import { ShoeWearAlertLine } from '@/components/shoes/ShoeWearAlertLine'
+import { NextRaceLine } from '@/components/goals/NextRaceLine'
 import { DashboardFocusProvider } from '@/components/dashboard/DashboardFocusContext'
 import { DashboardFocusBar } from '@/components/dashboard/DashboardFocusBar'
 import { DashboardWidgets, type DashboardWidget } from '@/components/dashboard/DashboardWidgets'
@@ -33,6 +35,7 @@ export default async function DashboardPage() {
   const prLabelsByActivityId = getPrLabelsByActivityId(records)
   const pbAlerts = await getPbAlerts()
   const shoes = getShoeStats()
+  const nextRace = await getNextRace()
 
   const trainingOverviewWidget: DashboardWidget = {
     id: 'trainingOverview',
@@ -78,6 +81,7 @@ export default async function DashboardPage() {
 
         <PbAlertLine alerts={pbAlerts} />
         <ShoeWearAlertLine shoes={shoes} />
+        <NextRaceLine race={nextRace} />
 
         <DashboardWidgets widgets={widgets} />
       </div>
