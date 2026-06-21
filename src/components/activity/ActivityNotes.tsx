@@ -68,10 +68,16 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
   }
 
   async function handleSave() {
+    const pendingTag = tagInput.trim()
+    const tags = pendingTag && !draft.tags.includes(pendingTag) ? [...draft.tags, pendingTag] : draft.tags
+    const toSave: ActivityNote = { ...draft, tags }
+
     setSaveState('saving')
     try {
-      await setDoc(doc(getClientFirestore(), 'activityNotes', activityId), draft)
-      setSaved(draft)
+      await setDoc(doc(getClientFirestore(), 'activityNotes', activityId), toSave)
+      setDraft(toSave)
+      setSaved(toSave)
+      setTagInput('')
       setSaveState('saved')
       showToast(t.settings.actions.saved, true)
     } catch {
