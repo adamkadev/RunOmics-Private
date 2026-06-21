@@ -473,6 +473,15 @@ export const en = {
           stable: 'Temperature has little impact on your pace',
         },
       },
+      rpeLoadCorrelation: {
+        title: 'Form vs Relative Effort',
+        footnote: 'Each dot is one run (>= 3 km), compared to your usual RPE for that session type so a sprint and an easy run are judged fairly. Color shows temperature when known. Dashed line shows the overall trend.',
+        tooltip: { form: 'Form (TSB)', rpe: 'RPE', delta: 'vs usual', temp: 'Temp' },
+        explains: {
+          harder: (delta: number) => `Runs feel ~${delta} RPE harder than usual per 10-point drop in form - fatigue clearly affects perceived effort`,
+          stable: 'Your form has little impact on how hard runs feel relative to usual',
+        },
+      },
       monthlyComparison: { title: 'Month by Month' },
       efficiencyRolling: {
         title: 'Aerobic Efficiency - Rolling Trend',
@@ -693,6 +702,16 @@ export const en = {
       aheadBy: (km: number) => `+${km} km vs goal`,
       behindBy: (km: number) => `-${km} km vs goal`,
       rate: (current: number, needed: number) => `${current} km/wk pace · ${needed} km/wk needed`,
+    },
+    monthlyGoal: {
+      title: 'Monthly Goals',
+      status: {
+        ahead: 'Ahead',
+        on_track: 'On track',
+        behind: 'Behind',
+        pending: 'Upcoming',
+      },
+      km: (actual: number, target: number) => `${actual} / ${target} km`,
     },
   },
 

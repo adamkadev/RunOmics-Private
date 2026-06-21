@@ -59,6 +59,13 @@ export interface GoalProjection {
   deltaKm: number
 }
 
+export interface MonthGoal {
+  month: number
+  targetKm: number
+  actualKm: number
+  status: 'ahead' | 'on_track' | 'behind' | 'pending'
+}
+
 export interface YearData {
   year: number
   totalDistanceKm: number
@@ -66,6 +73,7 @@ export interface YearData {
   pbs: PbData[]
   upcomingRaces: UpcomingRace[]
   projection: GoalProjection | null
+  monthlyGoals: MonthGoal[]
 }
 
 export interface GoalsPageData {
@@ -120,6 +128,47 @@ export function computeProjection(
   return { weeklyRate, weeklyNeeded, projectedYearKm, status, deltaKm }
 }
 
+// Each month's target is the annual goal pro-rated by its share of days in the year.
+// Months are independent: a missed month does not raise the target for the next one.
+export function computeMonthlyGoals(activities: Activity[], year: number, goals: GoalYear): MonthGoal[] {
+  const annualKm = goals.annualDistanceKm
+  const now = new Date()
+  const daysInYear = (new Date(year + 1, 0, 1).getTime() - new Date(year, 0, 1).getTime()) / 86_400_000
+
+  return Array.from({ length: 12 }, (_, i) => {
+    const month = i + 1
+    const monthStart = new Date(year, month - 1, 1)
+    const monthEnd = new Date(year, month, 1)
+    const daysInMonth = (monthEnd.getTime() - monthStart.getTime()) / 86_400_000
+    const targetKm = round((annualKm * daysInMonth) / daysInYear, 1)
+
+    const actualKm = round(
+      activities
+        .filter((a) => {
+          const d = new Date(a.date + 'T00:00:00')
+          return d >= monthStart && d < monthEnd
+        })
+        .reduce((s, a) => s + a.distanceKm, 0),
+      1
+    )
+
+    let status: MonthGoal['status']
+    if (monthStart > now) {
+      status = 'pending'
+    } else if (monthEnd <= now) {
+      status = actualKm >= targetKm ? 'ahead' : 'behind'
+    } else {
+      const expectedFraction = (now.getTime() - monthStart.getTime()) / 86_400_000 / daysInMonth
+      const actualFraction = targetKm > 0 ? actualKm / targetKm : 0
+      status =
+        actualFraction > expectedFraction * 1.1 ? 'ahead' :
+        actualFraction < expectedFraction * 0.9 ? 'behind' : 'on_track'
+    }
+
+    return { month, targetKm, actualKm, status }
+  })
+}
+
 export async function getGoalsPageData(): Promise<GoalsPageData> {
   const activities = getAllActivities()
   const [goalYears, pbYears, upcomingRaceYears] = await Promise.all([
@@ -165,7 +214,9 @@ export async function getGoalsPageData(): Promise<GoalsPageData> {
         ? computeProjection(activities, year, totalDistanceKm, goals)
         : null
 
-    byYear[year] = { year, totalDistanceKm, goals, pbs, upcomingRaces, projection }
+    const monthlyGoals = goals ? computeMonthlyGoals(activities, year, goals) : []
+
+    byYear[year] = { year, totalDistanceKm, goals, pbs, upcomingRaces, projection, monthlyGoals }
   }
 
   return { years: allYears, byYear }

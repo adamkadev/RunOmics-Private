@@ -1,8 +1,8 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Trophy, Target, Medal, TrendingUp, ArrowRight, Calendar, ImageOff, Flag, MapPin, ExternalLink } from 'lucide-react'
-import type { YearData, GoalProjection } from '@/application/usecases/GetGoalsData'
-import { formatDuration, formatDate, formatPace } from '@/lib/formatters'
+import type { YearData, GoalProjection, MonthGoal } from '@/application/usecases/GetGoalsData'
+import { formatDuration, formatDate, formatPace, monthLabel } from '@/lib/formatters'
 import { ActivityTypeTag } from '@/components/activities/ActivityTypeTag'
 import { Card, cardClass } from '@/components/ui/Card'
 import { t } from '@/i18n'
@@ -13,8 +13,13 @@ const STATUS_CHIP: Record<GoalProjection['status'], string> = {
   behind:   'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
 }
 
+const MONTH_STATUS_CHIP: Record<MonthGoal['status'], string> = {
+  ...STATUS_CHIP,
+  pending: 'bg-muted text-subtle',
+}
+
 export function YearView({ yearData }: { yearData: YearData }) {
-  const { goals, pbs, upcomingRaces, totalDistanceKm, projection } = yearData
+  const { goals, pbs, upcomingRaces, totalDistanceKm, projection, monthlyGoals } = yearData
   const today = new Date().toISOString().slice(0, 10)
 
   const annualDistanceKm = goals?.annualDistanceKm ?? 0
@@ -77,6 +82,39 @@ export function YearView({ yearData }: { yearData: YearData }) {
               </div>
             )}
           </Card>
+        </section>
+      )}
+
+      {goals && monthlyGoals.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            <Calendar size={14} className="text-accent-text" />
+            {t.goals.monthlyGoal.title}
+          </h2>
+          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+            {monthlyGoals.map((mg) => {
+              const progress = mg.targetKm > 0 ? Math.min((mg.actualKm / mg.targetKm) * 100, 100) : 0
+              return (
+                <Card key={mg.month}>
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-xs font-semibold text-subtle">{monthLabel(mg.month)}</span>
+                    <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${MONTH_STATUS_CHIP[mg.status]}`}>
+                      {t.goals.monthlyGoal.status[mg.status]}
+                    </span>
+                  </div>
+                  <p className="mt-1.5 text-xs text-subtle">
+                    {t.goals.monthlyGoal.km(Math.round(mg.actualKm), Math.round(mg.targetKm))}
+                  </p>
+                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-accent transition-all"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                </Card>
+              )
+            })}
+          </div>
         </section>
       )}
 
