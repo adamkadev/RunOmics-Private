@@ -46,6 +46,20 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r scripts/requirements.txt
 
+      - name: Install Cloudflare WARP
+        run: |
+          curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --dearmor -o /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
+          sudo apt-get update && sudo apt-get install -y cloudflare-warp
+
+      - name: Connect Cloudflare WARP
+        run: |
+          warp-cli --accept-tos registration new
+          warp-cli --accept-tos mode warp
+          warp-cli --accept-tos connect
+          sleep 3
+          warp-cli --accept-tos status
+
       - name: Run sync
         env:
           GARMIN_SECRET: ${{ secrets.GARMIN_SECRET }}
@@ -61,6 +75,10 @@ jobs:
             ARGS="$ARGS --force"
           fi
           python scripts/sync.py $ARGS
+
+      - name: Disconnect Cloudflare WARP
+        if: always()
+        run: warp-cli --accept-tos disconnect || true
 
       - name: Commit updated activities.json
         id: commit
