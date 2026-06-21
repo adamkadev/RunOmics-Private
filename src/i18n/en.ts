@@ -579,15 +579,18 @@ export const en = {
       pace: 'PACE',
       avgHr: 'AVG HR',
       close: 'Close',
+      choosePhoto: 'Choose a photo',
       styleLabels: {
         topographic: 'Topographic',
         facets: 'Facets',
         grain: 'Grain',
+        photo: 'Photo',
       },
       mapMode: {
         label: 'Route',
         run: 'Run',
         map: 'Map',
+        none: 'Nothing',
       },
     },
     stats: {

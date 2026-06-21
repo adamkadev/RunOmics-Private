@@ -3,13 +3,16 @@ import { formatDateWithYear, formatDistance, formatDuration, formatPace } from '
 import { ACCENT_SWATCHES, type AccentId } from '@/lib/accent'
 import { t } from '@/i18n'
 
-export type ShareStyle = 'topographic' | 'facets' | 'grain'
-// The card always shows the route, either as a vector silhouette ('run') or a real map tile ('map').
-export type MapMode = 'run' | 'map'
+export type ShareStyle = 'topographic' | 'facets' | 'grain' | 'photo'
+// The route as a vector silhouette ('run'), a real map tile ('map'), or hidden entirely ('none').
+export type MapMode = 'run' | 'map' | 'none'
 
-export const SHARE_STYLES: ShareStyle[] = ['topographic', 'facets', 'grain']
+export const SHARE_STYLES: ShareStyle[] = ['topographic', 'facets', 'grain', 'photo']
 // Styles with a light background need dark text; the rest are dark and need light text.
 const LIGHT_STYLES = new Set<ShareStyle>(['topographic', 'facets'])
+
+// 'photo' lets the user supply their own background; this is shown until they pick one.
+export const PHOTO_PLACEHOLDER = '/backgrounds/_demo-photo.png'
 
 const WIDTH = 1080
 const HEIGHT = 1920
@@ -210,6 +213,20 @@ function drawRouteShape(ctx: CanvasRenderingContext2D, route: [number, number][]
   ctx.stroke()
 }
 
+function drawPhotoScrims(ctx: CanvasRenderingContext2D) {
+  const top = ctx.createLinearGradient(0, 0, 0, HEIGHT * 0.35)
+  top.addColorStop(0, 'rgba(2, 6, 23, 0.7)')
+  top.addColorStop(1, 'rgba(2, 6, 23, 0)')
+  ctx.fillStyle = top
+  ctx.fillRect(0, 0, WIDTH, HEIGHT * 0.35)
+
+  const bottom = ctx.createLinearGradient(0, HEIGHT * 0.6, 0, HEIGHT)
+  bottom.addColorStop(0, 'rgba(2, 6, 23, 0)')
+  bottom.addColorStop(1, 'rgba(2, 6, 23, 0.85)')
+  ctx.fillStyle = bottom
+  ctx.fillRect(0, HEIGHT * 0.6, WIDTH, HEIGHT * 0.4)
+}
+
 function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x: number, y: number, w: number, h: number) {
   const imgRatio = img.width / img.height
   const boxRatio = w / h
@@ -264,12 +281,16 @@ export function renderShareCard(canvas: HTMLCanvasElement, options: RenderOption
     ctx.fillRect(0, 0, WIDTH, HEIGHT)
   }
 
+  // A user photo can be bright anywhere; darken top and bottom so white text stays legible.
+  if (style === 'photo') drawPhotoScrims(ctx)
+
   drawVerticalBrand(ctx, palette.brand)
   drawTitleAndDate(ctx, activity, 320, palette)
 
   if (mapMode === 'map' && mapImage) {
     drawMapTile(ctx, mapImage, palette.label)
-  } else if (activity.route && activity.route.length > 1) {
+  } else if (mapMode !== 'none' && activity.route && activity.route.length > 1) {
+    // Falls back to the vector silhouette while the 'map' tile is still loading.
     drawRouteShape(ctx, activity.route, accentHex)
   }
 

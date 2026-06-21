@@ -1,9 +1,11 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Check, Copy, Download, Map, Route, Share2, X } from 'lucide-react'
+import { createPortal } from 'react-dom'
+import { Ban, Check, Copy, Download, ImagePlus, Map, Route, Share2, X } from 'lucide-react'
 import type { Activity } from '@/domain/activity/types'
 import {
+  PHOTO_PLACEHOLDER,
   SHARE_STYLES,
   backgroundSrc,
   loadImage,
@@ -43,9 +45,12 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   const [mapMode, setMapMode] = useState<MapMode>('run')
   const [bgImages, setBgImages] = useState<(HTMLImageElement | null)[]>(() => SHARE_STYLES.map(() => null))
   const [mapImage, setMapImage] = useState<HTMLImageElement | null>(null)
+  const [photoImage, setPhotoImage] = useState<HTMLImageElement | null>(null)
   const [copyState, setCopyState] = useState<CopyState>('idle')
   const scrollRef = useRef<HTMLDivElement>(null)
   const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const photoObjectUrlRef = useRef<string | null>(null)
 
   const hasRoute = !!activity.route && activity.route.length > 1
   const mapToken = process.env.NEXT_PUBLIC_MAPTILER_TOKEN
@@ -55,7 +60,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     let cancelled = false
     Promise.all(
       SHARE_STYLES.map((style) =>
-        loadImage(backgroundSrc(accent, style)).catch((err) => {
+        loadImage(style === 'photo' ? PHOTO_PLACEHOLDER : backgroundSrc(accent, style)).catch((err) => {
           console.error(err)
           return null
         })
@@ -67,6 +72,12 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
       cancelled = true
     }
   }, [accent])
+
+  useEffect(() => {
+    return () => {
+      if (photoObjectUrlRef.current) URL.revokeObjectURL(photoObjectUrlRef.current)
+    }
+  }, [])
 
   useEffect(() => {
     if (mapMode !== 'map' || mapImage || !canUseMap) return
@@ -86,9 +97,10 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   useEffect(() => {
     SHARE_STYLES.forEach((style, i) => {
       const canvas = canvasRefs.current[i]
-      if (canvas) renderShareCard(canvas, { activity, style, accent, mapMode, bgImage: bgImages[i], mapImage })
+      const bgImage = style === 'photo' ? photoImage ?? bgImages[i] : bgImages[i]
+      if (canvas) renderShareCard(canvas, { activity, style, accent, mapMode, bgImage, mapImage })
     })
-  }, [activity, accent, mapMode, bgImages, mapImage])
+  }, [activity, accent, mapMode, bgImages, mapImage, photoImage])
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -97,6 +109,16 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [onClose])
+
+  // Lock background scroll while the modal is open.
+  useEffect(() => {
+    const { style: htmlStyle } = document.documentElement
+    const prevOverflow = htmlStyle.overflow
+    htmlStyle.overflow = 'hidden'
+    return () => {
+      htmlStyle.overflow = prevOverflow
+    }
+  }, [])
 
   function handleScroll() {
     const el = scrollRef.current
@@ -107,6 +129,23 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
 
   function scrollToIndex(index: number) {
     scrollRef.current?.scrollTo({ left: index * scrollRef.current.clientWidth, behavior: 'smooth' })
+  }
+
+  function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    const url = URL.createObjectURL(file)
+    loadImage(url)
+      .then((img) => {
+        if (photoObjectUrlRef.current) URL.revokeObjectURL(photoObjectUrlRef.current)
+        photoObjectUrlRef.current = url
+        setPhotoImage(img)
+      })
+      .catch((err) => {
+        console.error(err)
+        URL.revokeObjectURL(url)
+      })
   }
 
   async function handleShare() {
@@ -152,7 +191,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
       })
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={onClose}>
       <div
         className="relative flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-card"
@@ -179,6 +218,15 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
                   }}
                   className="block h-full w-full object-contain"
                 />
+                {style === 'photo' && (
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="absolute inset-x-0 bottom-3 mx-auto flex w-fit items-center gap-1.5 rounded-full bg-black/55 px-4 py-2 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-black/70"
+                  >
+                    <ImagePlus size={14} />
+                    {t.activity.shareCard.choosePhoto}
+                  </button>
+                )}
               </div>
             </div>
           ))}
@@ -218,6 +266,16 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             <Map size={13} />
             {t.activity.shareCard.mapMode.map}
           </button>
+          <button
+            onClick={() => setMapMode('none')}
+            className={cn(
+              'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
+              mapMode === 'none' ? 'border-accent bg-accent text-accent-foreground' : 'border-border bg-card text-foreground hover:bg-muted'
+            )}
+          >
+            <Ban size={13} />
+            {t.activity.shareCard.mapMode.none}
+          </button>
         </div>
 
         <div className="flex gap-2 border-t border-border p-3">
@@ -250,7 +308,10 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             </button>
           )}
         </div>
+
+        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
