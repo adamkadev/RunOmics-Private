@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Share2, Download, Copy, Check } from 'lucide-react'
+import { Share2, Copy, Check } from 'lucide-react'
 import type { Activity } from '@/domain/activity/types'
 import { generateShareCardBlob, shareCardFileName } from '@/lib/shareCard'
 import { cn } from '@/lib/utils'
@@ -44,17 +44,6 @@ export function ShareButton({ activity }: Props) {
     }
   }
 
-  async function handleDownload() {
-    setMenu('closed')
-    const blob = await generateShareCardBlob(activity)
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = shareCardFileName(activity)
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
   async function handleCopy() {
     const blob = await generateShareCardBlob(activity)
     await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
@@ -83,13 +72,6 @@ export function ShareButton({ activity }: Props) {
               {t.activity.shareMenu.share}
             </button>
           )}
-          <button
-            onClick={handleDownload}
-            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs font-medium text-foreground transition-colors hover:bg-muted"
-          >
-            <Download size={13} />
-            {t.activity.shareMenu.download}
-          </button>
           {canCopyImage && (
             <button
               onClick={handleCopy}
