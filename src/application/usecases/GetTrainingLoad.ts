@@ -23,7 +23,7 @@ export interface TrainingLoadData {
   tsb: number
 }
 
-interface LoadSnapshot {
+export interface LoadSnapshot {
   ctl: number
   atl: number
   tsb: number
@@ -44,7 +44,7 @@ function isoDate(d: Date): string {
 
 // Full TRIMP time series from first activity to today.
 // TSB is the form at the START of each day (before that day's load).
-function buildTimeSeries(activities: Activity[]): Map<string, LoadSnapshot> {
+export function buildTimeSeries(activities: Activity[]): Map<string, LoadSnapshot> {
   const dailyLoad = new Map<string, number>()
   for (const a of activities) {
     dailyLoad.set(a.date, (dailyLoad.get(a.date) ?? 0) + trimp(a))

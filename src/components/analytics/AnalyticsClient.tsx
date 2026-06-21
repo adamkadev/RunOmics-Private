@@ -28,6 +28,7 @@ import { DailyEfficiencyChart } from './DailyEfficiencyChart'
 import { RunningDynamicsTrendChart } from './RunningDynamicsTrendChart'
 import { VO2maxChart } from './VO2maxChart'
 import { TemperatureCorrelationChart } from './TemperatureCorrelationChart'
+import { RpeLoadCorrelationChart } from './RpeLoadCorrelationChart'
 import type { VO2maxPoint } from '@/application/usecases/GetVO2maxHistory'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { formatDuration } from '@/lib/formatters'
@@ -318,6 +319,9 @@ export function AnalyticsClient({
               </div>
               {data.temperatureScatter.length >= 10 && (
                 <TemperatureCorrelationChart data={data.temperatureScatter} />
+              )}
+              {data.rpeLoadCorrelation.length >= 10 && (
+                <RpeLoadCorrelationChart data={data.rpeLoadCorrelation} />
               )}
             </div>
           )}

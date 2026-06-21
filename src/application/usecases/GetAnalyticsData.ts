@@ -1,4 +1,5 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { buildTimeSeries } from '@/application/usecases/GetTrainingLoad'
 import type { Activity, ActivityType } from '@/domain/activity/types'
 import { monthLabel } from '@/lib/formatters'
 import { round } from '@/lib/math'
@@ -160,6 +161,15 @@ export interface TemperaturePoint {
   date: string
 }
 
+export interface RpeLoadPoint {
+  tsb: number          // form at the start of the day, before that day's load
+  rpe: number
+  rpeDelta: number     // rpe minus this session type's usual rpe, so types are comparable
+  type: ActivityType
+  temp: number | null
+  date: string
+}
+
 export interface AnalyticsPageData {
   years: number[]
   byYear: Record<number, YearAnalytics>
@@ -169,6 +179,7 @@ export interface AnalyticsPageData {
   runningDynamicsDaily: DailyRunningDynamics[]
   allTime: AllTimeAnalytics
   temperatureScatter: TemperaturePoint[]
+  rpeLoadCorrelation: RpeLoadPoint[]
 }
 
 // A value (possibly null) paired with a weight, averaged across activities.
@@ -518,6 +529,34 @@ export function getAnalyticsData(): AnalyticsPageData {
       date: a.date,
     }))
 
+  // RPE is driven far more by session type (a sprint workout always reads
+  // higher than an easy run) than by form, so we compare each run against the
+  // usual RPE for its own type rather than the raw value. Types with too few
+  // rated sessions don't get a reliable baseline and are left out.
+  const rpeByType = new Map<ActivityType, number[]>()
+  for (const a of all) {
+    if (a.rpe === null) continue
+    const list = rpeByType.get(a.type) ?? []
+    list.push(a.rpe)
+    rpeByType.set(a.type, list)
+  }
+  const avgRpeByType = new Map<ActivityType, number>()
+  for (const [type, vals] of rpeByType) {
+    if (vals.length >= 3) avgRpeByType.set(type, vals.reduce((s, v) => s + v, 0) / vals.length)
+  }
+
+  const loadSeries = buildTimeSeries(all)
+  const rpeLoadCorrelation: RpeLoadPoint[] = all
+    .filter((a) => a.rpe !== null && a.distanceKm >= 3 && loadSeries.has(a.date) && avgRpeByType.has(a.type))
+    .map((a) => ({
+      tsb: loadSeries.get(a.date)!.tsb,
+      rpe: a.rpe!,
+      rpeDelta: round(a.rpe! - avgRpeByType.get(a.type)!, 1),
+      type: a.type,
+      temp: a.avgTemperature,
+      date: a.date,
+    }))
+
   return {
     years,
     byYear: Object.fromEntries(years.map((y) => [y, buildYearAnalytics(y, byYearMap.get(y)!, now)])),
@@ -527,5 +566,6 @@ export function getAnalyticsData(): AnalyticsPageData {
     runningDynamicsDaily: buildRunningDynamicsDaily(all, now),
     allTime: buildAllTimeAnalytics(byYearMap, all, now),
     temperatureScatter,
+    rpeLoadCorrelation,
   }
 }
