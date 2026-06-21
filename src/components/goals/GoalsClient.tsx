@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { GoalsPageData } from '@/application/usecases/GetGoalsData'
 import { YearSelector } from '@/components/ui/YearSelector'
 import { YearView } from './YearView'
+import { GoalsHistory } from './GoalsHistory'
 import { t } from '@/i18n'
 
 interface Props {
@@ -11,7 +12,7 @@ interface Props {
 }
 
 export function GoalsClient({ data }: Props) {
-  const { years, byYear } = data
+  const { years, byYear, history } = data
   const [selectedYear, setSelectedYear] = useState(years[0])
 
   return (
@@ -25,6 +26,8 @@ export function GoalsClient({ data }: Props) {
       </div>
 
       <YearView yearData={byYear[selectedYear]} />
+
+      <GoalsHistory history={history} />
     </div>
   )
 }

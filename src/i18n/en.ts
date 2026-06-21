@@ -713,6 +713,13 @@ export const en = {
       },
       km: (actual: number, target: number) => `${actual} / ${target} km`,
     },
+    history: {
+      title: 'Past Years',
+      achieved: 'Achieved',
+      missed: 'Missed',
+      annualKm: (actual: number, target: number) => `${actual} / ${target} km`,
+      targetsCount: (achieved: number, total: number) => `${achieved}/${total} race targets`,
+    },
   },
 
   shoes: {

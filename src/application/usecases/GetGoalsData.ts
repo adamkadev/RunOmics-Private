@@ -76,9 +76,23 @@ export interface YearData {
   monthlyGoals: MonthGoal[]
 }
 
+export interface GoalTargetOutcome {
+  distance: string
+  targetSeconds: number | null
+  pbSeconds: number | null
+  achieved: boolean | null
+}
+
+export interface YearOutcome {
+  year: number
+  annualGoal: { targetKm: number; actualKm: number; achieved: boolean } | null
+  targets: GoalTargetOutcome[]
+}
+
 export interface GoalsPageData {
   years: number[]
   byYear: Record<number, YearData>
+  history: YearOutcome[]
 }
 
 export function eventPhotoPath(activityId: string): string | null {
@@ -169,6 +183,31 @@ export function computeMonthlyGoals(activities: Activity[], year: number, goals:
   })
 }
 
+// A year is only included in the history if it has goals set.
+// Annual distance is achieved when total km reaches the target; race targets
+// are achieved when a PB exists at or under the target time.
+export function computeYearOutcome(yearData: YearData): YearOutcome | null {
+  const { year, goals, totalDistanceKm, pbs } = yearData
+  if (!goals) return null
+
+  const annualGoal = goals.annualDistanceKm > 0
+    ? {
+        targetKm: goals.annualDistanceKm,
+        actualKm: totalDistanceKm,
+        achieved: totalDistanceKm >= goals.annualDistanceKm,
+      }
+    : null
+
+  const targets: GoalTargetOutcome[] = goals.targets.map((target) => {
+    const pbSeconds = pbs.find((p) => p.entry.distance === target.distance)?.entry.seconds ?? null
+    const achieved =
+      target.targetSeconds !== null && pbSeconds !== null ? pbSeconds <= target.targetSeconds : null
+    return { distance: target.distance, targetSeconds: target.targetSeconds, pbSeconds, achieved }
+  })
+
+  return { year, annualGoal, targets }
+}
+
 export async function getGoalsPageData(): Promise<GoalsPageData> {
   const activities = getAllActivities()
   const [goalYears, pbYears, upcomingRaceYears] = await Promise.all([
@@ -219,5 +258,10 @@ export async function getGoalsPageData(): Promise<GoalsPageData> {
     byYear[year] = { year, totalDistanceKm, goals, pbs, upcomingRaces, projection, monthlyGoals }
   }
 
-  return { years: allYears, byYear }
+  const history = allYears
+    .filter((year) => year < currentYear)
+    .map((year) => computeYearOutcome(byYear[year]))
+    .filter((outcome): outcome is YearOutcome => outcome !== null)
+
+  return { years: allYears, byYear, history }
 }

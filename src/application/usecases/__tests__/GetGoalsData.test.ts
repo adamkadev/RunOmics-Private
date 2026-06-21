@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import fs from 'fs'
-import { computeProjection, eventPhotoPath } from '../GetGoalsData'
+import { computeProjection, computeYearOutcome, eventPhotoPath } from '../GetGoalsData'
 import type { Activity } from '@/domain/activity/types'
-import type { GoalYear } from '../GetGoalsData'
+import type { GoalYear, YearData } from '../GetGoalsData'
 
 const act = (date: string, km: number): Activity => ({ date, distanceKm: km }) as Activity
 
@@ -90,5 +90,76 @@ describe('computeProjection', () => {
     const old = act('2023-01-01', 1000) // way outside the 56-day cutoff
     const result = computeProjection([old], 2024, 100, goal(2000))
     expect(result?.weeklyRate).toBe(0)
+  })
+})
+
+// ---------- computeYearOutcome ----------
+
+const yearData = (overrides: Partial<YearData> = {}): YearData => ({
+  year: 2024,
+  totalDistanceKm: 0,
+  goals: null,
+  pbs: [],
+  upcomingRaces: [],
+  projection: null,
+  monthlyGoals: [],
+  ...overrides,
+})
+
+describe('computeYearOutcome', () => {
+  it('returns null when the year has no goals set', () => {
+    expect(computeYearOutcome(yearData({ goals: null }))).toBeNull()
+  })
+
+  it('marks the annual goal as achieved when total km meets or exceeds the target', () => {
+    const outcome = computeYearOutcome(
+      yearData({ totalDistanceKm: 1200, goals: { year: 2024, annualDistanceKm: 1000, targets: [] } })
+    )
+    expect(outcome?.annualGoal).toEqual({ targetKm: 1000, actualKm: 1200, achieved: true })
+  })
+
+  it('marks the annual goal as missed when total km falls short of the target', () => {
+    const outcome = computeYearOutcome(
+      yearData({ totalDistanceKm: 800, goals: { year: 2024, annualDistanceKm: 1000, targets: [] } })
+    )
+    expect(outcome?.annualGoal?.achieved).toBe(false)
+  })
+
+  it('returns a null annualGoal when no annual distance is set', () => {
+    const outcome = computeYearOutcome(
+      yearData({ goals: { year: 2024, annualDistanceKm: 0, targets: [] } })
+    )
+    expect(outcome?.annualGoal).toBeNull()
+  })
+
+  it('marks a race target as achieved when a PB beats the target time', () => {
+    const outcome = computeYearOutcome(
+      yearData({
+        goals: { year: 2024, annualDistanceKm: 0, targets: [{ distance: '10K', targetSeconds: 2400 }] },
+        pbs: [{ entry: { distance: '10K', seconds: 2300, activityId: 'a1' }, activity: {} as Activity, photoPath: null }],
+      })
+    )
+    expect(outcome?.targets).toEqual([
+      { distance: '10K', targetSeconds: 2400, pbSeconds: 2300, achieved: true },
+    ])
+  })
+
+  it('marks a race target as missed when the PB is slower than the target', () => {
+    const outcome = computeYearOutcome(
+      yearData({
+        goals: { year: 2024, annualDistanceKm: 0, targets: [{ distance: '10K', targetSeconds: 2400 }] },
+        pbs: [{ entry: { distance: '10K', seconds: 2500, activityId: 'a1' }, activity: {} as Activity, photoPath: null }],
+      })
+    )
+    expect(outcome?.targets[0].achieved).toBe(false)
+  })
+
+  it('leaves a race target unresolved when there is no PB for it', () => {
+    const outcome = computeYearOutcome(
+      yearData({
+        goals: { year: 2024, annualDistanceKm: 0, targets: [{ distance: '10K', targetSeconds: 2400 }] },
+      })
+    )
+    expect(outcome?.targets[0]).toEqual({ distance: '10K', targetSeconds: 2400, pbSeconds: null, achieved: null })
   })
 })
