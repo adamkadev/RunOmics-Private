@@ -25,7 +25,7 @@ export function AccentPicker() {
       <h2 className="text-sm font-semibold text-foreground">{t.settings.accent.title}</h2>
       <p className="mt-0.5 text-xs text-muted-foreground">{t.settings.accent.subtitle}</p>
 
-      <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-5">
+      <div className="mt-4 grid grid-cols-5 gap-1.5 sm:gap-2.5">
         {ACCENT_IDS.map((id) => {
           const { label, description } = t.settings.accent.options[id]
           const active = mounted && accent === id
@@ -33,19 +33,20 @@ export function AccentPicker() {
             <button
               key={id}
               onClick={() => selectAccent(id)}
+              aria-label={label}
               className={cn(
-                'flex flex-col items-center gap-1.5 rounded-lg border px-3 py-3 text-center transition-colors',
+                'flex flex-col items-center gap-1 rounded-lg border px-1 py-2 text-center transition-colors sm:gap-1.5 sm:px-3 sm:py-3',
                 active ? 'border-accent bg-accent-subtle' : 'border-border hover:bg-muted'
               )}
             >
               <span
-                className="flex h-7 w-7 items-center justify-center rounded-full"
+                className="flex h-6 w-6 items-center justify-center rounded-full sm:h-7 sm:w-7"
                 style={{ backgroundColor: ACCENT_SWATCHES[id] }}
               >
-                {active && <Check size={14} className="text-white" />}
+                {active && <Check size={12} className="text-white sm:size-3.5" />}
               </span>
-              <span className="text-xs font-medium text-foreground">{label}</span>
-              <span className="text-[11px] text-muted-foreground">{description}</span>
+              <span className="hidden text-xs font-medium text-foreground sm:block">{label}</span>
+              <span className="hidden text-[11px] text-muted-foreground sm:block">{description}</span>
             </button>
           )
         })}
