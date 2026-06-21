@@ -1,0 +1,11 @@
+import '@testing-library/jest-dom/vitest'
+
+// Node's built-in `localStorage` global (stable since Node 22) shadows jsdom's
+// implementation: vitest only overrides globals it doesn't find already present on
+// `global`, so `window.localStorage` resolves back to Node's broken stub too. Pull the
+// real Storage instance off the underlying JSDOM instance vitest exposes as `jsdom`.
+Object.defineProperty(globalThis, 'localStorage', {
+  value: (globalThis as unknown as { jsdom: { window: { localStorage: Storage } } }).jsdom.window
+    .localStorage,
+  configurable: true,
+})
