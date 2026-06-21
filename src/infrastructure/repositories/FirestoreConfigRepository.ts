@@ -44,3 +44,16 @@ export async function saveLastPrState(state: PrState): Promise<void> {
   const db = getAdminFirestore()
   await db.collection('notifications').doc('lastPrs').set(state)
 }
+
+export type ShoeWearState = Record<string, { alerted: boolean }>
+
+export async function getLastShoeWearState(): Promise<ShoeWearState | null> {
+  const db = getAdminFirestore()
+  const doc = await db.collection('notifications').doc('lastShoeWear').get()
+  return doc.exists ? (doc.data() as ShoeWearState) : null
+}
+
+export async function saveLastShoeWearState(state: ShoeWearState): Promise<void> {
+  const db = getAdminFirestore()
+  await db.collection('notifications').doc('lastShoeWear').set(state)
+}

@@ -103,10 +103,12 @@ jobs:
             echo "committed=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Trigger PR check
+      - name: Trigger PR and shoe wear checks
         if: steps.commit.outputs.committed == 'true'
         run: |
           # Wait for Vercel to redeploy with the new activities.json before checking for new PRs.
           sleep 60
           curl -fsS -X POST "${{ secrets.APP_URL }}/api/internal/pr-check" \
+            -H "x-internal-secret: ${{ secrets.INTERNAL_NOTIFY_SECRET }}"
+          curl -fsS -X POST "${{ secrets.APP_URL }}/api/internal/shoe-wear-check" \
             -H "x-internal-secret: ${{ secrets.INTERNAL_NOTIFY_SECRET }}"

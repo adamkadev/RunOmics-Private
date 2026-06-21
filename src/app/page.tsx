@@ -6,6 +6,7 @@ import { getHeatmapData } from '@/application/usecases/GetHeatmapData'
 import { getLatestVO2max } from '@/application/usecases/GetVO2maxHistory'
 import { getRecords, getPrLabelsByActivityId } from '@/application/usecases/GetRecords'
 import { getPbAlerts } from '@/application/usecases/GetPbAlerts'
+import { getShoeStats } from '@/application/usecases/GetShoeStats'
 import { StatsGrid } from '@/components/dashboard/StatsGrid'
 import { DashboardCharts } from '@/components/dashboard/DashboardCharts'
 import { RecentActivities } from '@/components/dashboard/RecentActivities'
@@ -13,6 +14,7 @@ import { ActivityHeatmap } from '@/components/dashboard/ActivityHeatmap'
 import { TrainingStatusBanner } from '@/components/dashboard/TrainingStatusBanner'
 import { ConsistencyCard } from '@/components/dashboard/ConsistencyCard'
 import { PbAlertLine } from '@/components/ui/PbAlertLine'
+import { ShoeWearAlertLine } from '@/components/shoes/ShoeWearAlertLine'
 import { DashboardFocusProvider } from '@/components/dashboard/DashboardFocusContext'
 import { DashboardFocusBar } from '@/components/dashboard/DashboardFocusBar'
 import { DashboardWidgets, type DashboardWidget } from '@/components/dashboard/DashboardWidgets'
@@ -30,6 +32,7 @@ export default async function DashboardPage() {
   const records = await getRecords()
   const prLabelsByActivityId = getPrLabelsByActivityId(records)
   const pbAlerts = await getPbAlerts()
+  const shoes = getShoeStats()
 
   const trainingOverviewWidget: DashboardWidget = {
     id: 'trainingOverview',
@@ -74,6 +77,7 @@ export default async function DashboardPage() {
         </div>
 
         <PbAlertLine alerts={pbAlerts} />
+        <ShoeWearAlertLine shoes={shoes} />
 
         <DashboardWidgets widgets={widgets} />
       </div>
