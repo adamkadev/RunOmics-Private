@@ -12,9 +12,6 @@ export type ShareTheme = 'light' | 'dark'
 
 export const SHARE_STYLES: ShareStyle[] = ['topographic', 'facets', 'grain', 'photo']
 
-// 'photo' lets the user supply their own background; this is shown until they pick one.
-export const PHOTO_PLACEHOLDER = '/backgrounds/_demo-photo.png'
-
 const WIDTH = 1080
 const HEIGHT = 1920
 const MARGIN = 72
@@ -122,17 +119,6 @@ function wrapTitle(ctx: CanvasRenderingContext2D, text: string, maxWidth: number
   return lines
 }
 
-/** "RunOmics" rotated along the right edge, anchored to the top-right corner with a margin. */
-function drawVerticalBrand(ctx: CanvasRenderingContext2D, color: string) {
-  ctx.save()
-  ctx.translate(WIDTH - MARGIN, MARGIN + 40)
-  ctx.rotate(Math.PI / 2)
-  ctx.textBaseline = 'hanging'
-  ctx.font = '600 30px system-ui, sans-serif'
-  ctx.fillStyle = color
-  ctx.fillText(`${t.brand.namePrefix}${t.brand.nameSuffix}`, 0, 0)
-  ctx.restore()
-}
 
 /** Title (2 lines max) + date, leaving room on the right for the vertical brand strip. */
 function drawTitleAndDate(ctx: CanvasRenderingContext2D, activity: Activity, startY: number, palette: Palette) {
@@ -278,20 +264,22 @@ export function renderShareCard(canvas: HTMLCanvasElement, options: RenderOption
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('Canvas 2D context unavailable')
 
-  const palette = paletteFor(theme)
-  const accentHex = ACCENT_SWATCHES[accent]
+  // A user photo's lighting is unpredictable, so the 'photo' style always renders text/map/values in
+  // white over a dark scrim, ignoring the theme/accent pickers (which only apply to the other styles).
+  const isPhoto = style === 'photo'
+  const palette = paletteFor(isPhoto ? 'dark' : theme)
+  const accentHex = isPhoto ? '#ffffff' : ACCENT_SWATCHES[accent]
 
   ctx.clearRect(0, 0, WIDTH, HEIGHT)
   if (bgImage) drawCover(ctx, bgImage, 0, 0, WIDTH, HEIGHT)
-  else {
+  else if (!isPhoto) {
+    // 'photo' with no image yet stays fully transparent so the empty state is obvious.
     ctx.fillStyle = theme === 'dark' ? '#0f172a' : '#e2e8f0'
     ctx.fillRect(0, 0, WIDTH, HEIGHT)
   }
 
-  // A user photo can be bright anywhere; darken/lighten top and bottom so the chosen text color stays legible.
-  if (style === 'photo') drawPhotoScrims(ctx, theme)
+  if (isPhoto && bgImage) drawPhotoScrims(ctx, 'dark')
 
-  drawVerticalBrand(ctx, palette.brand)
   drawTitleAndDate(ctx, activity, 320, palette)
 
   if (mapMode === 'map' && mapImage) {

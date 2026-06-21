@@ -5,7 +5,6 @@ import { createPortal } from 'react-dom'
 import { Ban, Check, Copy, Download, ImagePlus, Map, Moon, Route, Share2, Sun, X } from 'lucide-react'
 import type { Activity } from '@/domain/activity/types'
 import {
-  PHOTO_PLACEHOLDER,
   SHARE_STYLES,
   backgroundSrc,
   loadImage,
@@ -69,10 +68,13 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     let cancelled = false
     Promise.all(
       SHARE_STYLES.map((style) =>
-        loadImage(style === 'photo' ? PHOTO_PLACEHOLDER : backgroundSrc(accent, style, theme)).catch((err) => {
-          console.error(err)
-          return null
-        })
+        // 'photo' has no built-in background; the canvas stays transparent until the user picks one.
+        style === 'photo'
+          ? Promise.resolve(null)
+          : loadImage(backgroundSrc(accent, style, theme)).catch((err) => {
+              console.error(err)
+              return null
+            })
       )
     ).then((images) => {
       if (!cancelled) setBgImages(images)
@@ -222,7 +224,19 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
           <div ref={scrollRef} onScroll={handleScroll} className="flex snap-x snap-mandatory overflow-x-auto">
             {SHARE_STYLES.map((style, i) => (
               <div key={style} className="flex w-full shrink-0 snap-center items-center justify-center p-4">
-                <div className="relative aspect-[9/16] max-h-[60vh] w-full overflow-hidden rounded-xl bg-muted">
+                <div
+                  className={cn('relative aspect-[9/16] max-h-[60vh] w-full overflow-hidden rounded-xl', style === 'photo' ? 'bg-card' : 'bg-muted')}
+                  style={
+                    style === 'photo'
+                      ? {
+                          backgroundImage:
+                            'linear-gradient(45deg, rgba(148, 163, 184, 0.25) 25%, transparent 25%, transparent 75%, rgba(148, 163, 184, 0.25) 75%), linear-gradient(45deg, rgba(148, 163, 184, 0.25) 25%, transparent 25%, transparent 75%, rgba(148, 163, 184, 0.25) 75%)',
+                          backgroundSize: '24px 24px',
+                          backgroundPosition: '0 0, 12px 12px',
+                        }
+                      : undefined
+                  }
+                >
                   <canvas
                     ref={(el) => {
                       canvasRefs.current[i] = el
