@@ -578,6 +578,9 @@ export const en = {
       time: 'TIME',
       pace: 'PACE',
       avgHr: 'AVG HR',
+      choosePhoto: 'Choose a photo',
+      slideLabel: (n: number) => `Template ${n}`,
+      close: 'Close',
     },
     stats: {
       distance: 'Distance',
