@@ -1,15 +1,31 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { ChevronDown, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ChevronDown, Filter, X } from "lucide-react";
 import type { Map as MapLibreMap, StyleSpecification } from "maplibre-gl";
 import type {
   AllRoutesData,
   RouteCluster,
+  RouteMeta,
 } from "@/application/usecases/GetAllRoutes";
+import { ActivityTypeTag } from "@/components/activities/ActivityTypeTag";
+import { ACTIVITY_TYPE_CONFIG } from "@/domain/activity/types";
+import type { ActivityType } from "@/domain/activity/types";
 import { maptilerStyleUrl } from "@/lib/maptiler";
 import { useAccentColor } from "@/lib/useAccent";
 import { t } from "@/i18n";
+
+const ALL_TYPES = Object.keys(ACTIVITY_TYPE_CONFIG) as ActivityType[];
+
+function matchesFilters(
+  meta: RouteMeta,
+  types: ActivityType[],
+  year: string | null,
+): boolean {
+  if (types.length && !types.includes(meta.type)) return false;
+  if (year && meta.year !== year) return false;
+  return true;
+}
 
 function coordLabel(c: RouteCluster): string {
   const lat =
@@ -132,10 +148,46 @@ export function GlobalMapClient({ data }: Props) {
     data.clusters.map(coordLabel),
   );
   const [panelOpen, setPanelOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [selectedTypes, setSelectedTypes] = useState<ActivityType[]>([]);
+  const [selectedYear, setSelectedYear] = useState<string | null>(null);
   const accentColor = useAccentColor();
 
-  const { routes, clusters } = data;
+  const { routes, routeMeta, clusters } = data;
   const selected = clusters[selectedIdx];
+  const activeFilterCount = selectedTypes.length + (selectedYear ? 1 : 0);
+
+  const clusterStats = useMemo(
+    () =>
+      clusters.map((c) => {
+        const indices = c.routeIndices.filter((i) =>
+          matchesFilters(routeMeta[i], selectedTypes, selectedYear),
+        );
+        return {
+          routeCount: indices.length,
+          totalKm: Math.round(
+            indices.reduce((s, i) => s + routeMeta[i].distanceKm, 0),
+          ),
+        };
+      }),
+    [clusters, routeMeta, selectedTypes, selectedYear],
+  );
+
+  const visibleIndices = useMemo(
+    () =>
+      selected
+        ? selected.routeIndices.filter((i) =>
+            matchesFilters(routeMeta[i], selectedTypes, selectedYear),
+          )
+        : [],
+    [selected, routeMeta, selectedTypes, selectedYear],
+  );
+
+  function toggleType(type: ActivityType) {
+    setSelectedTypes((prev) =>
+      prev.includes(type) ? prev.filter((x) => x !== type) : [...prev, type],
+    );
+  }
 
   useEffect(() => {
     const token = process.env.NEXT_PUBLIC_MAPTILER_TOKEN;
@@ -274,12 +326,15 @@ export function GlobalMapClient({ data }: Props) {
   }, [accentColor, mapReady]);
 
   useEffect(() => {
-    if (!mapReady || !mapRef.current || !selected)
+    if (!mapReady || !mapRef.current)
       return; // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (mapRef.current.getSource("routes") as any)?.setData(
-      buildGeoJSON(routes, selected.routeIndices),
+      buildGeoJSON(routes, visibleIndices),
     );
+  }, [visibleIndices, mapReady]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (!mapReady || !mapRef.current || !selected) return;
     mapRef.current.fitBounds(
       [
         [selected.bounds.minLon, selected.bounds.minLat],
@@ -302,7 +357,7 @@ export function GlobalMapClient({ data }: Props) {
           {names[selectedIdx]}
         </span>
         <span className="text-[11px] text-subtle">
-          {t.common.runs(selected?.routeCount ?? 0)}
+          {t.common.runs(clusterStats[selectedIdx]?.routeCount ?? 0)}
         </span>
         <ChevronDown
           size={12}
@@ -343,12 +398,99 @@ export function GlobalMapClient({ data }: Props) {
                     {names[i]}
                   </span>
                   <span className="text-[11px] text-subtle">
-                    {t.common.runs(c.routeCount)} · {c.totalKm} {t.units.km}
+                    {t.common.runs(clusterStats[i].routeCount)} · {clusterStats[i].totalKm} {t.units.km}
                   </span>
                 </button>
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {/* Filters button - top right */}
+      <button
+        onClick={() => setFiltersOpen((o) => !o)}
+        className="absolute right-3 top-3 z-10 flex items-center gap-2 rounded-xl border border-border bg-card/90 px-3 py-2 shadow-card backdrop-blur-sm transition-colors hover:bg-muted"
+      >
+        <Filter size={12} className="text-muted-foreground" />
+        <span className="text-xs font-semibold text-foreground/80">
+          {t.pages.map.filters}
+        </span>
+        {activeFilterCount > 0 && (
+          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[10px] font-semibold text-accent-foreground">
+            {activeFilterCount}
+          </span>
+        )}
+      </button>
+
+      {/* Filters panel */}
+      {filtersOpen && (
+        <div className="absolute right-3 top-12 z-10 w-60 overflow-hidden rounded-xl border border-border bg-card/90 shadow-card backdrop-blur-sm">
+          <div className="flex items-center justify-between border-b border-border px-3 py-2">
+            <p className="text-xs font-semibold text-foreground/80">{t.pages.map.filters}</p>
+            <button onClick={() => setFiltersOpen(false)} className="text-muted-foreground hover:text-foreground">
+              <X size={12} />
+            </button>
+          </div>
+          <div className="space-y-3 p-3">
+            <div>
+              <p className="mb-1.5 text-[11px] font-medium text-subtle">{t.pages.map.type}</p>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  onClick={() => setSelectedTypes([])}
+                  className={[
+                    "rounded px-2.5 py-1 text-xs font-medium transition-colors",
+                    selectedTypes.length === 0
+                      ? "bg-accent-subtle text-accent-text"
+                      : "bg-muted text-muted-foreground hover:bg-muted/70",
+                  ].join(" ")}
+                >
+                  {t.activities.all}
+                </button>
+                {ALL_TYPES.map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => toggleType(type)}
+                    className="transition-opacity"
+                    style={{ opacity: selectedTypes.length && !selectedTypes.includes(type) ? 0.5 : 1 }}
+                  >
+                    <ActivityTypeTag type={type} />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="mb-1.5 text-[11px] font-medium text-subtle">{t.pages.map.year}</p>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  onClick={() => setSelectedYear(null)}
+                  className={[
+                    "rounded px-2.5 py-1 text-xs font-medium transition-colors",
+                    selectedYear === null
+                      ? "bg-accent-subtle text-accent-text"
+                      : "bg-muted text-muted-foreground hover:bg-muted/70",
+                  ].join(" ")}
+                >
+                  {t.pages.map.allYears}
+                </button>
+                {data.years.map((y) => (
+                  <button
+                    key={y}
+                    onClick={() => setSelectedYear(selectedYear === y ? null : y)}
+                    className={[
+                      "rounded px-2.5 py-1 text-xs font-medium transition-colors",
+                      selectedYear === y
+                        ? "bg-accent-subtle text-accent-text"
+                        : "bg-muted text-muted-foreground hover:bg-muted/70",
+                    ].join(" ")}
+                  >
+                    {y}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
