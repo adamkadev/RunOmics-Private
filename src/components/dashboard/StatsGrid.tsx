@@ -17,14 +17,17 @@ import type { ReactNode } from 'react'
 import { formatDuration, formatPace } from '@/lib/formatters'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { cardClass } from '@/components/ui/Card'
+import { WeekLoadBadge } from '@/components/dashboard/WeekLoadBadge'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { WeekSummary } from '@/domain/activity/types'
+import type { WeeklyLoadComparison } from '@/application/usecases/GetWeeklyLoadComparison'
 
 interface Props {
   weeks: WeekSummary[]
   currentStreak: number
   vo2max: number | null
+  weekLoad: WeeklyLoadComparison | null
 }
 
 interface StatCell {
@@ -35,7 +38,7 @@ interface StatCell {
   label: string
 }
 
-export function StatsGrid({ weeks, currentStreak, vo2max }: Props) {
+export function StatsGrid({ weeks, currentStreak, vo2max, weekLoad }: Props) {
   const s = t.dashboard.stats
   const lastIndex = weeks.length - 1
   const [index, setIndex] = useState(lastIndex)
@@ -93,11 +96,12 @@ export function StatsGrid({ weeks, currentStreak, vo2max }: Props) {
 
   return (
     <div className={cardClass({ overflow: true, padding: 'none' })}>
-      <div className="flex items-center gap-2 border-b border-border bg-card px-4 py-3.5">
+      <div className="flex flex-wrap items-center gap-2 border-b border-border bg-card px-4 py-3.5">
         <CalendarDays size={14} className="shrink-0 text-accent-text" />
         <span className="text-sm font-semibold text-foreground">
           {t.pages.dashboard.subtitle(currentWeek.weekNumber % 100, currentWeek.sessionCount, showYear ? weekYear : undefined)}
         </span>
+        {isCurrent && weekLoad && <WeekLoadBadge data={weekLoad} />}
         <div className="ml-auto flex items-center gap-1">
           {!isCurrent && (
             <button

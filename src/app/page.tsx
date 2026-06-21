@@ -2,6 +2,7 @@ import { getDashboardData } from '@/application/usecases/GetDashboardData'
 import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
 import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { getConsistencyScore } from '@/application/usecases/GetConsistencyScore'
+import { getWeeklyLoadComparison } from '@/application/usecases/GetWeeklyLoadComparison'
 import { getHeatmapData } from '@/application/usecases/GetHeatmapData'
 import { getLatestVO2max } from '@/application/usecases/GetVO2maxHistory'
 import { getRecords, getPrLabelsByActivityId, getMostRecentRecord } from '@/application/usecases/GetRecords'
@@ -30,6 +31,7 @@ export default async function DashboardPage() {
   const trainingLoad = getTrainingLoad()
   const trainingStatus = getTrainingStatus()
   const consistencyScore = getConsistencyScore()
+  const weekLoad = getWeeklyLoadComparison()
   const heatmapDays = getHeatmapData()
   const vo2max = getLatestVO2max()
   const records = await getRecords()
@@ -52,7 +54,7 @@ export default async function DashboardPage() {
   const widgets: DashboardWidget[] = [
     {
       id: 'stats',
-      element: <StatsGrid weeks={data.weeks} currentStreak={data.currentStreak} vo2max={vo2max} />,
+      element: <StatsGrid weeks={data.weeks} currentStreak={data.currentStreak} vo2max={vo2max} weekLoad={weekLoad} />,
     },
     ...(trainingStatus || consistencyScore ? [trainingOverviewWidget] : []),
     {

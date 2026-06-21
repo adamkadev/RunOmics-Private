@@ -233,6 +233,15 @@ export const en = {
       nextWeek: 'Next week',
       jumpToCurrent: 'Current week',
     },
+    weekLoad: {
+      label: (percent: number) => `${percent}% of a typical week`,
+      level: {
+        low: 'Light load',
+        normal: 'Normal load',
+        high: 'Heavy load',
+      },
+      tooltip: (window: number) => `Training load (TRIMP) so far this week vs the average of the last ${window} weeks`,
+    },
     recentActivities: {
       title: 'Recent Activities',
     },
