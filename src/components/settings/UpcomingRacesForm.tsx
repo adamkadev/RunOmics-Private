@@ -136,7 +136,7 @@ export function UpcomingRacesForm() {
                       type="date"
                       value={race.date}
                       onChange={(e) => updateRace(idx, 'date', e.target.value)}
-                      className={inputCls}
+                      className={cn(inputCls, 'min-w-0')}
                     />
                     <select
                       value={race.distance}
