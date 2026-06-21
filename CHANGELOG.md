@@ -2,6 +2,32 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.2] - 2026-06-21
+
+### Added
+
+- **Activity detail**: free-form notes and tags (stored in Firestore), native share
+  (Web Share API) for activity PNG cards, copy-to-clipboard fix on iOS Safari.
+- **Records**: PR-watch alerts for recent efforts close to existing records, shown as
+  a single-line message.
+- **Dashboard**: focus mode to hide and reorder widgets.
+- **Settings**: running-themed accent color picker (drives charts, save button,
+  sidebar logo, favicon, map route color), manual VMA field on athlete profile,
+  CSV/JSON data export, PWA push notification foundation (FCM registration) with
+  triggers for new PRs and weekly goal reminders.
+- **Heatmap**: type and year filters, replacing the year-chip picker with a dropdown.
+- Unit tests (Vitest + jsdom) for pure `lib` helpers (accent, colors, formatters, math,
+  utils, chart trend).
+
+### Changed
+
+- 60s revalidation on activities and dashboard pages.
+
+### Fixed
+
+- Upcoming race date field overflowing on Safari iOS, accent color picker overflow
+  on mobile, push notifications toggle row layout, pending tag input lost on save.
+
 ## [1.1] - 2026-06-20
 
 First tracked release. RunOmics started as a minimal Next.js dashboard reading Garmin
