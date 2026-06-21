@@ -25,6 +25,7 @@ import { MonthlyComparisonChart } from './MonthlyComparisonChart'
 import { RpeTrendChart } from './RpeTrendChart'
 import { TrainingEffectChart } from './TrainingEffectChart'
 import { DailyEfficiencyChart } from './DailyEfficiencyChart'
+import { RunningDynamicsTrendChart } from './RunningDynamicsTrendChart'
 import { VO2maxChart } from './VO2maxChart'
 import { TemperatureCorrelationChart } from './TemperatureCorrelationChart'
 import type { VO2maxPoint } from '@/application/usecases/GetVO2maxHistory'
@@ -337,6 +338,7 @@ export function AnalyticsClient({
                 <TrainingEffectChart data={active.trainingEffectTrend} />
                 {!isAll && <DailyEfficiencyChart data={data.efficiencyDaily} />}
               </div>
+              {!isAll && <RunningDynamicsTrendChart data={data.runningDynamicsDaily} />}
               {zones && <TrainingZones data={zones} />}
             </div>
           )}

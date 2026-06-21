@@ -142,6 +142,17 @@ export interface DailyEfficiency {
   ef30: number | null   // 30-day rolling average
 }
 
+export interface DailyRunningDynamics {
+  date: string
+  label: string
+  cadence7: number | null
+  cadence30: number | null
+  groundContact7: number | null
+  groundContact30: number | null
+  verticalOscillation7: number | null
+  verticalOscillation30: number | null
+}
+
 export interface TemperaturePoint {
   temp: number
   pace: number   // sec/km
@@ -155,6 +166,7 @@ export interface AnalyticsPageData {
   periodWeeks: number[]
   byPeriod: Record<number, PeriodAnalytics>
   efficiencyDaily: DailyEfficiency[]
+  runningDynamicsDaily: DailyRunningDynamics[]
   allTime: AllTimeAnalytics
   temperatureScatter: TemperaturePoint[]
 }
@@ -455,6 +467,33 @@ function buildEfficiencyDaily(activities: Activity[], now: Date): DailyEfficienc
   })
 }
 
+function buildRunningDynamicsDaily(activities: Activity[], now: Date): DailyRunningDynamics[] {
+  const DAY_MS = 86_400_000
+  const nowMs = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const stamped = activities.map((a) => ({ a, ms: new Date(a.date + 'T00:00:00').getTime() }))
+
+  return Array.from({ length: 90 }, (_, i) => {
+    const dayMs = nowMs - (89 - i) * DAY_MS
+    const day = new Date(dayMs)
+    const label = day.toLocaleDateString('en', { day: 'numeric', month: 'short' })
+    const date = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`
+
+    const in7  = stamped.filter((x) => x.ms >= dayMs - 6 * DAY_MS && x.ms <= dayMs).map((x) => x.a)
+    const in30 = stamped.filter((x) => x.ms >= dayMs - 29 * DAY_MS && x.ms <= dayMs).map((x) => x.a)
+
+    return {
+      date,
+      label,
+      cadence7:  in7.length  >= 2 ? weightedCadence(in7)  : null,
+      cadence30: in30.length >= 5 ? weightedCadence(in30) : null,
+      groundContact7:  in7.length  >= 2 ? weightedGroundContact(in7)  : null,
+      groundContact30: in30.length >= 5 ? weightedGroundContact(in30) : null,
+      verticalOscillation7:  in7.length  >= 2 ? weightedVerticalOscillation(in7)  : null,
+      verticalOscillation30: in30.length >= 5 ? weightedVerticalOscillation(in30) : null,
+    }
+  })
+}
+
 export function getAnalyticsData(): AnalyticsPageData {
   const all = getAllActivities()
   const now = new Date()
@@ -485,6 +524,7 @@ export function getAnalyticsData(): AnalyticsPageData {
     periodWeeks,
     byPeriod: Object.fromEntries(periodWeeks.map((w) => [w, buildPeriodAnalytics(all, w, now)])),
     efficiencyDaily: buildEfficiencyDaily(all, now),
+    runningDynamicsDaily: buildRunningDynamicsDaily(all, now),
     allTime: buildAllTimeAnalytics(byYearMap, all, now),
     temperatureScatter,
   }

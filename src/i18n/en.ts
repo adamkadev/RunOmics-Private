@@ -481,6 +481,26 @@ export const en = {
         unit: 'm/min·bpm',
         footnote: 'Rolling aerobic efficiency over the last 90 days. 7-day captures recent form, 30-day shows the underlying trend.',
       },
+      runningDynamicsRolling: {
+        title: 'Running Dynamics - Rolling Trend',
+        d7: '7-day',
+        d30: '30-day',
+        metrics: {
+          cadence: 'Cadence',
+          groundContact: 'Ground Contact',
+          verticalOscillation: 'Vertical Osc.',
+        } as Record<string, string>,
+        unit: {
+          cadence: 'spm',
+          groundContact: 'ms',
+          verticalOscillation: 'mm',
+        } as Record<string, string>,
+        footnote: {
+          cadence: 'Rolling average cadence over the last 90 days. 7-day captures recent form, 30-day shows the underlying trend.',
+          groundContact: 'Rolling average ground contact time over the last 90 days. Lower generally means a more efficient stride.',
+          verticalOscillation: 'Rolling average vertical oscillation over the last 90 days. Lower means less bounce per stride.',
+        } as Record<string, string>,
+      },
     },
     yearOverYear: {
       title: 'Year over Year',
