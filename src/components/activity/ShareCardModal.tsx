@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Ban, Check, Copy, Download, ImagePlus, Map, Route, Share2, X } from 'lucide-react'
+import { Ban, Check, Copy, Download, ImagePlus, Map, Moon, Route, Share2, Sun, X } from 'lucide-react'
 import type { Activity } from '@/domain/activity/types'
 import {
   PHOTO_PLACEHOLDER,
@@ -13,8 +13,9 @@ import {
   shareCardFileName,
   staticMapUrl,
   type MapMode,
+  type ShareTheme,
 } from '@/lib/shareCard'
-import { DEFAULT_ACCENT, isAccentId, type AccentId } from '@/lib/accent'
+import { ACCENT_IDS, ACCENT_SWATCHES, DEFAULT_ACCENT, isAccentId, type AccentId } from '@/lib/accent'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -39,12 +40,20 @@ function currentAccent(): AccentId {
   return isAccentId(value) ? value : DEFAULT_ACCENT
 }
 
+// Defaults to whichever theme matches the site's current dark/light mode; the user can still override it.
+function currentTheme(): ShareTheme {
+  if (typeof document === 'undefined') return 'light'
+  return document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+}
+
 export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose }: Props) {
-  const [accent] = useState<AccentId>(currentAccent)
+  const [accent, setAccent] = useState<AccentId>(currentAccent)
+  const [theme, setTheme] = useState<ShareTheme>(currentTheme)
   const [activeIndex, setActiveIndex] = useState(0)
   const [mapMode, setMapMode] = useState<MapMode>('run')
   const [bgImages, setBgImages] = useState<(HTMLImageElement | null)[]>(() => SHARE_STYLES.map(() => null))
-  const [mapImage, setMapImage] = useState<HTMLImageElement | null>(null)
+  // Keyed by URL so a stale tile (wrong color/text mode) is never shown while the new one loads.
+  const [mapTile, setMapTile] = useState<{ url: string; img: HTMLImageElement } | null>(null)
   const [photoImage, setPhotoImage] = useState<HTMLImageElement | null>(null)
   const [copyState, setCopyState] = useState<CopyState>('idle')
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -60,7 +69,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     let cancelled = false
     Promise.all(
       SHARE_STYLES.map((style) =>
-        loadImage(style === 'photo' ? PHOTO_PLACEHOLDER : backgroundSrc(accent, style)).catch((err) => {
+        loadImage(style === 'photo' ? PHOTO_PLACEHOLDER : backgroundSrc(accent, style, theme)).catch((err) => {
           console.error(err)
           return null
         })
@@ -71,7 +80,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     return () => {
       cancelled = true
     }
-  }, [accent])
+  }, [accent, theme])
 
   useEffect(() => {
     return () => {
@@ -79,28 +88,29 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     }
   }, [])
 
+  const mapUrl = canUseMap ? staticMapUrl(activity, accent, theme === 'dark', mapToken) : null
+  const mapImage = mapTile?.url === mapUrl ? mapTile.img : null
+
   useEffect(() => {
-    if (mapMode !== 'map' || mapImage || !canUseMap) return
-    const url = staticMapUrl(activity, accent, true, mapToken)
-    if (!url) return
+    if (mapMode !== 'map' || !mapUrl || mapTile?.url === mapUrl) return
     let cancelled = false
-    loadImage(url, true)
+    loadImage(mapUrl, true)
       .then((img) => {
-        if (!cancelled) setMapImage(img)
+        if (!cancelled) setMapTile({ url: mapUrl, img })
       })
       .catch((err) => console.error(err))
     return () => {
       cancelled = true
     }
-  }, [mapMode, mapImage, canUseMap, activity, accent, mapToken])
+  }, [mapMode, mapUrl, mapTile])
 
   useEffect(() => {
     SHARE_STYLES.forEach((style, i) => {
       const canvas = canvasRefs.current[i]
       const bgImage = style === 'photo' ? photoImage ?? bgImages[i] : bgImages[i]
-      if (canvas) renderShareCard(canvas, { activity, style, accent, mapMode, bgImage, mapImage })
+      if (canvas) renderShareCard(canvas, { activity, style, accent, theme, mapMode, bgImage, mapImage })
     })
-  }, [activity, accent, mapMode, bgImages, mapImage, photoImage])
+  }, [activity, accent, theme, mapMode, bgImages, mapImage, photoImage])
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -197,7 +207,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
         className="relative flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-card"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+        <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
           <h2 className="text-sm font-semibold text-foreground">{t.activity.share}</h2>
           <button
             onClick={onClose}
@@ -208,77 +218,119 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
           </button>
         </div>
 
-        <div ref={scrollRef} onScroll={handleScroll} className="flex snap-x snap-mandatory overflow-x-auto">
-          {SHARE_STYLES.map((style, i) => (
-            <div key={style} className="flex w-full shrink-0 snap-center items-center justify-center p-4">
-              <div className="relative aspect-[9/16] max-h-[60vh] w-full overflow-hidden rounded-xl bg-muted">
-                <canvas
-                  ref={(el) => {
-                    canvasRefs.current[i] = el
-                  }}
-                  className="block h-full w-full object-contain"
-                />
-                {style === 'photo' && (
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="absolute inset-x-0 bottom-3 mx-auto flex w-fit items-center gap-1.5 rounded-full bg-black/55 px-4 py-2 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-black/70"
-                  >
-                    <ImagePlus size={14} />
-                    {t.activity.shareCard.choosePhoto}
-                  </button>
-                )}
+        <div className="flex flex-1 flex-col overflow-y-auto">
+          <div ref={scrollRef} onScroll={handleScroll} className="flex snap-x snap-mandatory overflow-x-auto">
+            {SHARE_STYLES.map((style, i) => (
+              <div key={style} className="flex w-full shrink-0 snap-center items-center justify-center p-4">
+                <div className="relative aspect-[9/16] max-h-[60vh] w-full overflow-hidden rounded-xl bg-muted">
+                  <canvas
+                    ref={(el) => {
+                      canvasRefs.current[i] = el
+                    }}
+                    className="block h-full w-full object-contain"
+                  />
+                  {style === 'photo' && (
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="absolute inset-x-0 bottom-3 mx-auto flex w-fit items-center gap-1.5 rounded-full bg-black/55 px-4 py-2 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-black/70"
+                    >
+                      <ImagePlus size={14} />
+                      {t.activity.shareCard.choosePhoto}
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
 
-        <div className="flex items-center justify-center gap-2 py-2">
-          {SHARE_STYLES.map((style, i) => (
+          <div className="flex items-center justify-center gap-2 py-2">
+            {SHARE_STYLES.map((style, i) => (
+              <button
+                key={style}
+                onClick={() => scrollToIndex(i)}
+                aria-label={t.activity.shareCard.styleLabels[style]}
+                className={cn('h-1.5 w-1.5 rounded-full transition-colors', i === activeIndex ? 'bg-accent' : 'bg-border')}
+              />
+            ))}
+          </div>
+
+          <div className="flex items-center justify-center gap-2 px-3 pb-2">
+            <span className="mr-1 text-xs font-medium text-subtle">{t.activity.shareCard.colorLabel}</span>
+            {ACCENT_IDS.map((id) => (
+              <button
+                key={id}
+                onClick={() => setAccent(id)}
+                aria-label={t.settings.accent.options[id].label}
+                style={{ backgroundColor: ACCENT_SWATCHES[id] }}
+                className={cn(
+                  'h-6 w-6 rounded-full ring-2 ring-offset-2 ring-offset-card transition-shadow',
+                  accent === id ? 'ring-foreground' : 'ring-transparent'
+                )}
+              />
+            ))}
+          </div>
+
+          <div className="flex items-center justify-center gap-1.5 px-3 pb-2">
+            <span className="mr-1 text-xs font-medium text-subtle">{t.activity.shareCard.theme.label}</span>
             <button
-              key={style}
-              onClick={() => scrollToIndex(i)}
-              aria-label={t.activity.shareCard.styleLabels[style]}
-              className={cn('h-1.5 w-1.5 rounded-full transition-colors', i === activeIndex ? 'bg-accent' : 'bg-border')}
-            />
-          ))}
+              onClick={() => setTheme('light')}
+              className={cn(
+                'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
+                theme === 'light' ? 'border-accent bg-accent text-accent-foreground' : 'border-border bg-card text-foreground hover:bg-muted'
+              )}
+            >
+              <Sun size={13} />
+              {t.activity.shareCard.theme.light}
+            </button>
+            <button
+              onClick={() => setTheme('dark')}
+              className={cn(
+                'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
+                theme === 'dark' ? 'border-accent bg-accent text-accent-foreground' : 'border-border bg-card text-foreground hover:bg-muted'
+              )}
+            >
+              <Moon size={13} />
+              {t.activity.shareCard.theme.dark}
+            </button>
+          </div>
+
+          <div className="flex items-center justify-center gap-1.5 px-3 pb-1">
+            <span className="mr-1 text-xs font-medium text-subtle">{t.activity.shareCard.mapMode.label}</span>
+            <button
+              onClick={() => setMapMode('run')}
+              className={cn(
+                'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
+                mapMode === 'run' ? 'border-accent bg-accent text-accent-foreground' : 'border-border bg-card text-foreground hover:bg-muted'
+              )}
+            >
+              <Route size={13} />
+              {t.activity.shareCard.mapMode.run}
+            </button>
+            <button
+              onClick={() => setMapMode('map')}
+              disabled={!canUseMap}
+              className={cn(
+                'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40',
+                mapMode === 'map' ? 'border-accent bg-accent text-accent-foreground' : 'border-border bg-card text-foreground hover:bg-muted'
+              )}
+            >
+              <Map size={13} />
+              {t.activity.shareCard.mapMode.map}
+            </button>
+            <button
+              onClick={() => setMapMode('none')}
+              className={cn(
+                'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
+                mapMode === 'none' ? 'border-accent bg-accent text-accent-foreground' : 'border-border bg-card text-foreground hover:bg-muted'
+              )}
+            >
+              <Ban size={13} />
+              {t.activity.shareCard.mapMode.none}
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center justify-center gap-1.5 px-3 pb-1">
-          <span className="mr-1 text-xs font-medium text-subtle">{t.activity.shareCard.mapMode.label}</span>
-          <button
-            onClick={() => setMapMode('run')}
-            className={cn(
-              'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
-              mapMode === 'run' ? 'border-accent bg-accent text-accent-foreground' : 'border-border bg-card text-foreground hover:bg-muted'
-            )}
-          >
-            <Route size={13} />
-            {t.activity.shareCard.mapMode.run}
-          </button>
-          <button
-            onClick={() => setMapMode('map')}
-            disabled={!canUseMap}
-            className={cn(
-              'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40',
-              mapMode === 'map' ? 'border-accent bg-accent text-accent-foreground' : 'border-border bg-card text-foreground hover:bg-muted'
-            )}
-          >
-            <Map size={13} />
-            {t.activity.shareCard.mapMode.map}
-          </button>
-          <button
-            onClick={() => setMapMode('none')}
-            className={cn(
-              'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
-              mapMode === 'none' ? 'border-accent bg-accent text-accent-foreground' : 'border-border bg-card text-foreground hover:bg-muted'
-            )}
-          >
-            <Ban size={13} />
-            {t.activity.shareCard.mapMode.none}
-          </button>
-        </div>
-
-        <div className="flex gap-2 border-t border-border p-3">
+        <div className="flex shrink-0 gap-2 border-t border-border p-3">
           {canShareFiles && (
             <button
               onClick={handleShare}

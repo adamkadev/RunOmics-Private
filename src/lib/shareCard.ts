@@ -6,10 +6,11 @@ import { t } from '@/i18n'
 export type ShareStyle = 'topographic' | 'facets' | 'grain' | 'photo'
 // The route as a vector silhouette ('run'), a real map tile ('map'), or hidden entirely ('none').
 export type MapMode = 'run' | 'map' | 'none'
+// Which background variant to load ('light' = light bg + dark text, 'dark' = dark bg + light text).
+// Also drives the text color and photo scrim for the 'photo' style, which has no background variant of its own.
+export type ShareTheme = 'light' | 'dark'
 
 export const SHARE_STYLES: ShareStyle[] = ['topographic', 'facets', 'grain', 'photo']
-// Styles with a light background need dark text; the rest are dark and need light text.
-const LIGHT_STYLES = new Set<ShareStyle>(['topographic', 'facets'])
 
 // 'photo' lets the user supply their own background; this is shown until they pick one.
 export const PHOTO_PLACEHOLDER = '/backgrounds/_demo-photo.png'
@@ -28,10 +29,11 @@ interface Palette {
   brand: string
 }
 
-function paletteFor(style: ShareStyle): Palette {
-  return LIGHT_STYLES.has(style)
-    ? { title: '#0f172a', date: '#475569', label: '#475569', brand: '#334155' }
-    : { title: '#f8fafc', date: '#cbd5e1', label: '#e2e8f0', brand: '#f8fafc' }
+// Title/label/brand are forced to the same color (white or black); only the date is a step grayer.
+function paletteFor(theme: ShareTheme): Palette {
+  return theme === 'dark'
+    ? { title: '#f8fafc', date: '#cbd5e1', label: '#f8fafc', brand: '#f8fafc' }
+    : { title: '#0f172a', date: '#475569', label: '#0f172a', brand: '#0f172a' }
 }
 
 interface StatCell {
@@ -53,8 +55,9 @@ function buildShareStats(activity: Activity): StatCell[] {
   return stats
 }
 
-export function backgroundSrc(accent: AccentId, style: ShareStyle): string {
-  return `/backgrounds/${accent}/${style}.png`
+export function backgroundSrc(accent: AccentId, style: Exclude<ShareStyle, 'photo'>, theme: ShareTheme): string {
+  const suffix = theme === 'light' ? '-light' : ''
+  return `/backgrounds/${accent}/${style}${suffix}.png`
 }
 
 export function loadImage(src: string, crossOrigin = false): Promise<HTMLImageElement> {
@@ -213,16 +216,19 @@ function drawRouteShape(ctx: CanvasRenderingContext2D, route: [number, number][]
   ctx.stroke()
 }
 
-function drawPhotoScrims(ctx: CanvasRenderingContext2D) {
+/** Darkens/lightens the top and bottom of a user photo so the chosen text color stays legible. */
+function drawPhotoScrims(ctx: CanvasRenderingContext2D, theme: ShareTheme) {
+  const scrim = theme === 'dark' ? '2, 6, 23' : '248, 250, 252'
+
   const top = ctx.createLinearGradient(0, 0, 0, HEIGHT * 0.35)
-  top.addColorStop(0, 'rgba(2, 6, 23, 0.7)')
-  top.addColorStop(1, 'rgba(2, 6, 23, 0)')
+  top.addColorStop(0, `rgba(${scrim}, 0.7)`)
+  top.addColorStop(1, `rgba(${scrim}, 0)`)
   ctx.fillStyle = top
   ctx.fillRect(0, 0, WIDTH, HEIGHT * 0.35)
 
   const bottom = ctx.createLinearGradient(0, HEIGHT * 0.6, 0, HEIGHT)
-  bottom.addColorStop(0, 'rgba(2, 6, 23, 0)')
-  bottom.addColorStop(1, 'rgba(2, 6, 23, 0.85)')
+  bottom.addColorStop(0, `rgba(${scrim}, 0)`)
+  bottom.addColorStop(1, `rgba(${scrim}, 0.85)`)
   ctx.fillStyle = bottom
   ctx.fillRect(0, HEIGHT * 0.6, WIDTH, HEIGHT * 0.4)
 }
@@ -258,6 +264,7 @@ export interface RenderOptions {
   activity: Activity
   style: ShareStyle
   accent: AccentId
+  theme: ShareTheme
   mapMode: MapMode
   bgImage: HTMLImageElement | null
   mapImage?: HTMLImageElement | null
@@ -265,24 +272,24 @@ export interface RenderOptions {
 
 /** Renders an activity share card into `canvas` (1080x1920, Canvas 2D, no external deps). */
 export function renderShareCard(canvas: HTMLCanvasElement, options: RenderOptions) {
-  const { activity, style, accent, mapMode, bgImage, mapImage } = options
+  const { activity, style, accent, theme, mapMode, bgImage, mapImage } = options
   canvas.width = WIDTH
   canvas.height = HEIGHT
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('Canvas 2D context unavailable')
 
-  const palette = paletteFor(style)
+  const palette = paletteFor(theme)
   const accentHex = ACCENT_SWATCHES[accent]
 
   ctx.clearRect(0, 0, WIDTH, HEIGHT)
   if (bgImage) drawCover(ctx, bgImage, 0, 0, WIDTH, HEIGHT)
   else {
-    ctx.fillStyle = LIGHT_STYLES.has(style) ? '#e2e8f0' : '#0f172a'
+    ctx.fillStyle = theme === 'dark' ? '#0f172a' : '#e2e8f0'
     ctx.fillRect(0, 0, WIDTH, HEIGHT)
   }
 
-  // A user photo can be bright anywhere; darken top and bottom so white text stays legible.
-  if (style === 'photo') drawPhotoScrims(ctx)
+  // A user photo can be bright anywhere; darken/lighten top and bottom so the chosen text color stays legible.
+  if (style === 'photo') drawPhotoScrims(ctx, theme)
 
   drawVerticalBrand(ctx, palette.brand)
   drawTitleAndDate(ctx, activity, 320, palette)

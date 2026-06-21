@@ -592,6 +592,12 @@ export const en = {
         map: 'Map',
         none: 'Nothing',
       },
+      colorLabel: 'Color',
+      theme: {
+        label: 'Theme',
+        light: 'Light',
+        dark: 'Dark',
+      },
     },
     stats: {
       distance: 'Distance',
