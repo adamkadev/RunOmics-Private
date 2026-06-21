@@ -511,6 +511,17 @@ export const en = {
       rpeValue: (n: number) => `RPE ${n}`,
       na: 'N/A',
     },
+    compareMode: 'Compare',
+    compareCancel: 'Cancel',
+    compareCount: (n: number) => `${n}/2 selected`,
+    compareCta: 'Compare',
+  },
+
+  compare: {
+    title: 'Compare',
+    metric: 'Metric',
+    delta: 'Δ',
+    notFound: 'Select 2 valid activities to compare.',
   },
 
   activity: {

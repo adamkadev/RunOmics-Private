@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Search } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Search, GitCompare, X } from 'lucide-react'
 import { ActivityRow } from './ActivityRow'
 import { ActivityTypeTag } from './ActivityTypeTag'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
@@ -45,11 +46,25 @@ interface Props {
 }
 
 export function ActivityListClient({ activities, prLabelsByActivityId = {} }: Props) {
+  const router = useRouter()
   const [search, setSearch] = useState('')
   const [selectedType, setSelectedType] = useState<ActivityType | null>(null)
   const [sortBy, setSortBy] = useState<SortKey>('date')
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
   const [page, setPage] = useState(1)
+  const [compareMode, setCompareMode] = useState(false)
+  const [compareIds, setCompareIds] = useState<string[]>([])
+
+  function exitCompareMode() {
+    setCompareMode(false)
+    setCompareIds([])
+  }
+
+  function toggleCompareSelection(id: string) {
+    setCompareIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < 2 ? [...prev, id] : prev
+    )
+  }
 
   const filtered = useMemo(() => {
     return activities
@@ -110,6 +125,17 @@ export function ActivityListClient({ activities, prLabelsByActivityId = {} }: Pr
             </button>
           ))}
         </div>
+        <button
+          onClick={() => (compareMode ? exitCompareMode() : setCompareMode(true))}
+          className={`ml-auto inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
+            compareMode
+              ? 'bg-accent-subtle text-accent-text'
+              : 'bg-muted text-muted-foreground hover:bg-muted/70'
+          }`}
+        >
+          {compareMode ? <X size={13} /> : <GitCompare size={13} />}
+          {compareMode ? t.activities.compareCancel : t.activities.compareMode}
+        </button>
       </div>
 
       <div className="flex items-center justify-between">
@@ -137,12 +163,35 @@ export function ActivityListClient({ activities, prLabelsByActivityId = {} }: Pr
           </Card>
         ) : (
           paginated.map((a) => (
-            <ActivityRow key={a.id} activity={a} prLabels={prLabelsByActivityId[a.id]} />
+            <ActivityRow
+              key={a.id}
+              activity={a}
+              prLabels={prLabelsByActivityId[a.id]}
+              selectable={compareMode}
+              selected={compareIds.includes(a.id)}
+              selectionDisabled={compareMode && compareIds.length >= 2 && !compareIds.includes(a.id)}
+              onToggleSelect={() => toggleCompareSelection(a.id)}
+            />
           ))
         )}
       </div>
 
       <Pagination page={clampedPage} totalPages={totalPages} onChange={setPage} />
+
+      {compareMode && (
+        <div className="fixed inset-x-4 bottom-4 z-40 mx-auto flex max-w-md items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-lg">
+          <span className="text-xs font-medium text-muted-foreground">
+            {t.activities.compareCount(compareIds.length)}
+          </span>
+          <button
+            disabled={compareIds.length !== 2}
+            onClick={() => router.push(`/activities/compare?ids=${compareIds.join(',')}`)}
+            className="rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-accent-foreground transition-opacity disabled:opacity-40"
+          >
+            {t.activities.compareCta}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

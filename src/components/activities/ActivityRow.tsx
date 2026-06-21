@@ -1,10 +1,11 @@
 import Link from 'next/link'
-import { MessageSquare } from 'lucide-react'
+import { MessageSquare, Check } from 'lucide-react'
 import { ActivityTypeTag } from './ActivityTypeTag'
 import { PrBadge } from './PrBadge'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
 import type { Activity } from '@/domain/activity/types'
 import { cardClass } from '@/components/ui/Card'
+import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 function rpeChipClass(rpe: number): string {
@@ -17,19 +18,64 @@ function rpeChipClass(rpe: number): string {
 interface Props {
   activity: Activity
   prLabels?: string[]
+  selectable?: boolean
+  selected?: boolean
+  selectionDisabled?: boolean
+  onToggleSelect?: () => void
 }
 
-export function ActivityRow({ activity: a, prLabels = [] }: Props) {
+export function ActivityRow({
+  activity: a,
+  prLabels = [],
+  selectable = false,
+  selected = false,
+  selectionDisabled = false,
+  onToggleSelect,
+}: Props) {
+  const rowClassName = cardClass({
+    clickable: !selectionDisabled,
+    className: cn(
+      'grid grid-cols-[1fr_auto] items-center gap-x-4',
+      selected && 'border-accent ring-1 ring-accent',
+      selectionDisabled && 'cursor-not-allowed opacity-50'
+    ),
+  })
+
+  if (selectable) {
+    return (
+      <button
+        type="button"
+        onClick={onToggleSelect}
+        disabled={selectionDisabled}
+        className={cn(rowClassName, 'w-full text-left')}
+      >
+        <RowContent activity={a} prLabels={prLabels} selected={selected} />
+      </button>
+    )
+  }
+
   return (
-    <Link
-      href={`/activities/${a.id}`}
-      className={cardClass({
-        clickable: true,
-        className: 'grid grid-cols-[1fr_auto] items-center gap-x-4',
-      })}
-    >
+    <Link href={`/activities/${a.id}`} className={rowClassName}>
+      <RowContent activity={a} prLabels={prLabels} />
+    </Link>
+  )
+}
+
+function RowContent({ activity: a, prLabels, selected }: { activity: Activity; prLabels: string[]; selected?: boolean }) {
+  return (
+    <>
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
+          {selected !== undefined && (
+            <span
+              className={cn(
+                'flex h-4 w-4 shrink-0 items-center justify-center rounded-full border',
+                selected ? 'border-accent bg-accent text-accent-foreground' : 'border-border'
+              )}
+            >
+              {selected && <Check size={10} />}
+            </span>
+          )}
           <ActivityTypeTag type={a.type} />
           <PrBadge labels={prLabels} />
           {a.rpe !== null && (
@@ -82,6 +128,6 @@ export function ActivityRow({ activity: a, prLabels = [] }: Props) {
           </div>
         )}
       </div>
-    </Link>
+    </>
   )
 }
