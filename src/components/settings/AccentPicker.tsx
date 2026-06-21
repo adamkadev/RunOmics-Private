@@ -43,7 +43,7 @@ export function AccentPicker() {
                 className="flex h-6 w-6 items-center justify-center rounded-full sm:h-7 sm:w-7"
                 style={{ backgroundColor: ACCENT_SWATCHES[id] }}
               >
-                {active && <Check size={12} className="text-white sm:size-3.5" />}
+                {active && <Check size={12} className="text-white drop-shadow-[0_1px_1.5px_rgba(0,0,0,0.6)] sm:size-3.5" />}
               </span>
               <span className="hidden text-xs font-medium text-foreground sm:block">{label}</span>
               <span className="hidden text-[11px] text-muted-foreground sm:block">{description}</span>

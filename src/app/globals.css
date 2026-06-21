@@ -71,7 +71,7 @@
   --accent-subtle:     rgba(16, 185, 129, 0.1);
   --accent-text:       #34d399;  /* emerald-400 */
   --destructive:       #f87171;  /* red-400   */
-  --ring:              rgb(52 211 153 / 0.4);
+  --ring:              rgb(52 211 153 / 0.7);  /* 0.7 alpha for 3:1 focus contrast on dark surfaces */
 }
 
 /* ─── Accent palettes ──────────────────────────────── */
@@ -88,7 +88,7 @@
   --accent-foreground: #ffffff;
   --accent-subtle:     rgba(59, 130, 246, 0.1);
   --accent-text:       #60a5fa;  /* blue-400 */
-  --ring:              rgb(96 165 250 / 0.4);
+  --ring:              rgb(96 165 250 / 0.7);
 }
 
 [data-accent="impact"] {
@@ -103,7 +103,7 @@
   --accent-foreground: #ffffff;
   --accent-subtle:     rgba(244, 63, 94, 0.1);
   --accent-text:       #fb7185;  /* rose-400 */
-  --ring:              rgb(251 113 133 / 0.4);
+  --ring:              rgb(251 113 133 / 0.7);
 }
 
 [data-accent="motivation"] {
@@ -118,7 +118,7 @@
   --accent-foreground: #ffffff;
   --accent-subtle:     rgba(249, 115, 22, 0.1);
   --accent-text:       #fb923c;  /* orange-400 */
-  --ring:              rgb(251 146 60 / 0.4);
+  --ring:              rgb(251 146 60 / 0.7);
 }
 
 [data-accent="endurance"] {
@@ -133,7 +133,7 @@
   --accent-foreground: #ffffff;
   --accent-subtle:     rgba(139, 92, 246, 0.1);
   --accent-text:       #a78bfa;  /* violet-400 */
-  --ring:              rgb(167 139 250 / 0.4);
+  --ring:              rgb(167 139 250 / 0.7);
 }
 
 html {

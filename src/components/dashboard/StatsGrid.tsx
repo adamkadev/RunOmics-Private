@@ -130,11 +130,11 @@ export function StatsGrid({ weeks, currentStreak, vo2max }: Props) {
         {cells.map(({ Icon, color, borderTop, value, label }) => (
           <div
             key={label}
-            className={cn('flex flex-col items-center gap-0.5 border-t-2 bg-card px-3 py-3 text-center', borderTop)}
+            className={cn('flex flex-col items-center gap-0.5 border-t-2 bg-card px-2 py-2 text-center sm:px-3 sm:py-3', borderTop)}
           >
-            <Icon size={14} className={color} />
-            <div className="whitespace-nowrap text-sm font-bold leading-tight text-foreground">{value}</div>
-            <div className="text-[10px] leading-tight text-muted-foreground">{label}</div>
+            <Icon className={cn('size-3 sm:size-3.5', color)} />
+            <div className="whitespace-nowrap text-xs font-bold leading-tight text-foreground sm:text-sm">{value}</div>
+            <div className="text-[9px] leading-tight text-muted-foreground sm:text-[10px]">{label}</div>
           </div>
         ))}
       </div>
