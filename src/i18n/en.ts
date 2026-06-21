@@ -87,9 +87,6 @@ export const en = {
       title: 'Running Heatmap',
       routes: (n: number) => `${n} routes`,
       zones: 'Zones',
-      filters: 'Filters',
-      type: 'Type',
-      year: 'Year',
       allYears: 'All years',
     },
     shoes: {
