@@ -2,6 +2,30 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.3] - 2026-06-21
+
+### Added
+
+- **Goals**: independent monthly sub-goals derived from the annual target, and a
+  history section comparing past years (achieved vs missed).
+- **Analytics**: 90-day rolling trend chart for running dynamics, form (TSB) vs RPE
+  correlation chart with temperature coloring.
+- **Dashboard**: weekly load vs typical week badge on the snapshot, next race shown
+  as an inline status line instead of a widget.
+- **Records**: badge highlighting the most recently broken record on the dashboard
+  and records page.
+- **Activities**: side-by-side comparison of two activities (pace, HR, cadence,
+  elevation).
+- **Shoes**: per-shoe wear alert threshold with dashboard banner and push
+  notification.
+- **UI**: compact mobile sizing applied to all stat-card grids.
+
+### Fixed
+
+- Dark-mode focus/check contrast on stat cards.
+- Garmin sync reliability on GitHub Actions runners (Cloudflare WARP to bypass IP
+  blocking).
+
 ## [1.2] - 2026-06-21
 
 ### Added
