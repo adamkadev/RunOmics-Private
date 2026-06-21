@@ -205,9 +205,6 @@ export const en = {
     notifications: {
       title: 'Push notifications',
       subtitle: 'Get a reminder for your weekly goal and an alert when a new PR is detected.',
-      enable: 'Enable on this device',
-      disable: 'Disable on this device',
-      enabling: 'Enabling...',
       enabled: 'Notifications are enabled on this device.',
       denied: 'Notifications are blocked for this site - allow them in your browser settings to enable.',
       unsupported: 'Push notifications are not supported in this browser.',

@@ -1,11 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Bell, BellOff } from 'lucide-react'
+import { Bell } from 'lucide-react'
 import { disablePushNotifications, enablePushNotifications, isPushSupported } from '@/lib/pushNotifications'
 import { t } from '@/i18n'
 import { cardClass } from '@/components/ui/Card'
 import { Toast, useToast } from '@/components/ui/Toast'
+import { cn } from '@/lib/utils'
 
 type Status = 'loading' | 'unsupported' | 'idle' | 'enabling' | 'enabled' | 'disabling' | 'denied'
 
@@ -23,7 +24,20 @@ export function NotificationsForm() {
     })
   }, [])
 
-  async function handleEnable() {
+  async function handleToggle() {
+    if (status === 'enabled') {
+      setStatus('disabling')
+      try {
+        await disablePushNotifications()
+        setStatus('idle')
+        showToast(t.settings.notifications.disabled, true)
+      } catch {
+        setStatus('enabled')
+        showToast(t.settings.notifications.error, false)
+      }
+      return
+    }
+
     setStatus('enabling')
     try {
       await enablePushNotifications()
@@ -35,55 +49,44 @@ export function NotificationsForm() {
     }
   }
 
-  async function handleDisable() {
-    setStatus('disabling')
-    try {
-      await disablePushNotifications()
-      setStatus('idle')
-      showToast(t.settings.notifications.disabled, true)
-    } catch {
-      setStatus('enabled')
-      showToast(t.settings.notifications.error, false)
-    }
-  }
-
   const n = t.settings.notifications
+  const busy = status === 'loading' || status === 'enabling' || status === 'disabling'
+  const enabled = status === 'enabled' || status === 'disabling'
+  const description =
+    status === 'unsupported' ? n.unsupported :
+    status === 'denied'      ? n.denied :
+    enabled                  ? n.enabled :
+    n.subtitle
 
   return (
-    <section className={cardClass({ padding: 'none' })}>
-      <div className="border-b border-border px-4 py-3 sm:px-5">
-        <h2 className="text-sm font-semibold text-foreground">{n.title}</h2>
-        <p className="mt-0.5 text-xs text-muted-foreground">{n.subtitle}</p>
-      </div>
+    <section className={cardClass()}>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <Bell size={16} className="shrink-0 text-muted-foreground" />
+          <div>
+            <p className="text-sm font-medium text-foreground">{n.title}</p>
+            <p className="text-xs text-muted-foreground">{description}</p>
+          </div>
+        </div>
 
-      <div className="p-4 sm:p-5">
-        {status === 'unsupported' && <p className="text-xs text-muted-foreground">{n.unsupported}</p>}
-        {status === 'denied' && <p className="text-xs text-muted-foreground">{n.denied}</p>}
-        {status === 'enabled' && <p className="mb-3 text-xs text-muted-foreground">{n.enabled}</p>}
-
-        {(status === 'idle' || status === 'enabling') && (
-          <button
-            type="button"
-            onClick={handleEnable}
-            disabled={status === 'enabling'}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50"
-          >
-            <Bell size={13} />
-            {status === 'enabling' ? n.enabling : n.enable}
-          </button>
-        )}
-
-        {(status === 'enabled' || status === 'disabling') && (
-          <button
-            type="button"
-            onClick={handleDisable}
-            disabled={status === 'disabling'}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50"
-          >
-            <BellOff size={13} />
-            {n.disable}
-          </button>
-        )}
+        <button
+          type="button"
+          role="switch"
+          aria-checked={enabled}
+          onClick={handleToggle}
+          disabled={busy || status === 'unsupported' || status === 'denied'}
+          className={cn(
+            'relative h-5 w-9 shrink-0 rounded-full transition-colors disabled:opacity-50',
+            enabled ? 'bg-accent' : 'bg-muted'
+          )}
+        >
+          <span
+            className={cn(
+              'absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white transition-transform',
+              enabled && 'translate-x-4'
+            )}
+          />
+        </button>
       </div>
 
       <Toast toast={toast} />
