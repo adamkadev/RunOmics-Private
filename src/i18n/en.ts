@@ -578,9 +578,17 @@ export const en = {
       time: 'TIME',
       pace: 'PACE',
       avgHr: 'AVG HR',
-      choosePhoto: 'Choose a photo',
-      slideLabel: (n: number) => `Template ${n}`,
       close: 'Close',
+      styleLabels: {
+        topographic: 'Topographic',
+        facets: 'Facets',
+        grain: 'Grain',
+      },
+      mapMode: {
+        label: 'Route',
+        run: 'Run',
+        map: 'Map',
+      },
     },
     stats: {
       distance: 'Distance',

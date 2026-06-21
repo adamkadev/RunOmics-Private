@@ -1,9 +1,18 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Check, Copy, Download, ImagePlus, Share2, X } from 'lucide-react'
+import { Check, Copy, Download, Map, Route, Share2, X } from 'lucide-react'
 import type { Activity } from '@/domain/activity/types'
-import { SHARE_TEMPLATES, loadImage, renderShareCard, shareCardFileName } from '@/lib/shareCard'
+import {
+  SHARE_STYLES,
+  backgroundSrc,
+  loadImage,
+  renderShareCard,
+  shareCardFileName,
+  staticMapUrl,
+  type MapMode,
+} from '@/lib/shareCard'
+import { DEFAULT_ACCENT, isAccentId, type AccentId } from '@/lib/accent'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -22,21 +31,64 @@ function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   })
 }
 
+function currentAccent(): AccentId {
+  if (typeof document === 'undefined') return DEFAULT_ACCENT
+  const value = document.documentElement.getAttribute('data-accent')
+  return isAccentId(value) ? value : DEFAULT_ACCENT
+}
+
 export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose }: Props) {
+  const [accent] = useState<AccentId>(currentAccent)
   const [activeIndex, setActiveIndex] = useState(0)
-  const [photoImage, setPhotoImage] = useState<HTMLImageElement | null>(null)
+  const [mapMode, setMapMode] = useState<MapMode>('run')
+  const [bgImages, setBgImages] = useState<(HTMLImageElement | null)[]>(() => SHARE_STYLES.map(() => null))
+  const [mapImage, setMapImage] = useState<HTMLImageElement | null>(null)
   const [copyState, setCopyState] = useState<CopyState>('idle')
   const scrollRef = useRef<HTMLDivElement>(null)
   const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([])
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const photoObjectUrlRef = useRef<string | null>(null)
+
+  const hasRoute = !!activity.route && activity.route.length > 1
+  const mapToken = process.env.NEXT_PUBLIC_MAPTILER_TOKEN
+  const canUseMap = hasRoute && !!mapToken
 
   useEffect(() => {
-    SHARE_TEMPLATES.forEach((template, i) => {
-      const canvas = canvasRefs.current[i]
-      if (canvas) renderShareCard(canvas, activity, template, photoImage)
+    let cancelled = false
+    Promise.all(
+      SHARE_STYLES.map((style) =>
+        loadImage(backgroundSrc(accent, style)).catch((err) => {
+          console.error(err)
+          return null
+        })
+      )
+    ).then((images) => {
+      if (!cancelled) setBgImages(images)
     })
-  }, [activity, photoImage])
+    return () => {
+      cancelled = true
+    }
+  }, [accent])
+
+  useEffect(() => {
+    if (mapMode !== 'map' || mapImage || !canUseMap) return
+    const url = staticMapUrl(activity, accent, true, mapToken)
+    if (!url) return
+    let cancelled = false
+    loadImage(url, true)
+      .then((img) => {
+        if (!cancelled) setMapImage(img)
+      })
+      .catch((err) => console.error(err))
+    return () => {
+      cancelled = true
+    }
+  }, [mapMode, mapImage, canUseMap, activity, accent, mapToken])
+
+  useEffect(() => {
+    SHARE_STYLES.forEach((style, i) => {
+      const canvas = canvasRefs.current[i]
+      if (canvas) renderShareCard(canvas, { activity, style, accent, mapMode, bgImage: bgImages[i], mapImage })
+    })
+  }, [activity, accent, mapMode, bgImages, mapImage])
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -45,12 +97,6 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [onClose])
-
-  useEffect(() => {
-    return () => {
-      if (photoObjectUrlRef.current) URL.revokeObjectURL(photoObjectUrlRef.current)
-    }
-  }, [])
 
   function handleScroll() {
     const el = scrollRef.current
@@ -63,28 +109,11 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     scrollRef.current?.scrollTo({ left: index * scrollRef.current.clientWidth, behavior: 'smooth' })
   }
 
-  function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (!file) return
-    const url = URL.createObjectURL(file)
-    loadImage(url)
-      .then((img) => {
-        if (photoObjectUrlRef.current) URL.revokeObjectURL(photoObjectUrlRef.current)
-        photoObjectUrlRef.current = url
-        setPhotoImage(img)
-      })
-      .catch((err) => {
-        console.error(err)
-        URL.revokeObjectURL(url)
-      })
-  }
-
   async function handleShare() {
     const canvas = canvasRefs.current[activeIndex]
     if (!canvas) return
     const blob = await canvasToBlob(canvas)
-    const file = new File([blob], shareCardFileName(activity, SHARE_TEMPLATES[activeIndex]), { type: 'image/png' })
+    const file = new File([blob], shareCardFileName(activity, SHARE_STYLES[activeIndex]), { type: 'image/png' })
     if (!navigator.canShare({ files: [file] })) return
     try {
       await navigator.share({ files: [file] })
@@ -100,7 +129,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = shareCardFileName(activity, SHARE_TEMPLATES[activeIndex])
+    a.download = shareCardFileName(activity, SHARE_STYLES[activeIndex])
     a.click()
     setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
@@ -141,8 +170,8 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
         </div>
 
         <div ref={scrollRef} onScroll={handleScroll} className="flex snap-x snap-mandatory overflow-x-auto">
-          {SHARE_TEMPLATES.map((template, i) => (
-            <div key={template} className="flex w-full shrink-0 snap-center items-center justify-center p-4">
+          {SHARE_STYLES.map((style, i) => (
+            <div key={style} className="flex w-full shrink-0 snap-center items-center justify-center p-4">
               <div className="relative aspect-[9/16] max-h-[60vh] w-full overflow-hidden rounded-xl bg-muted">
                 <canvas
                   ref={(el) => {
@@ -150,29 +179,45 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
                   }}
                   className="block h-full w-full object-contain"
                 />
-                {template === 'photo' && !photoImage && (
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-sm font-medium text-white/80"
-                  >
-                    <ImagePlus size={28} />
-                    {t.activity.shareCard.choosePhoto}
-                  </button>
-                )}
               </div>
             </div>
           ))}
         </div>
 
         <div className="flex items-center justify-center gap-2 py-2">
-          {SHARE_TEMPLATES.map((template, i) => (
+          {SHARE_STYLES.map((style, i) => (
             <button
-              key={template}
+              key={style}
               onClick={() => scrollToIndex(i)}
-              aria-label={t.activity.shareCard.slideLabel(i + 1)}
+              aria-label={t.activity.shareCard.styleLabels[style]}
               className={cn('h-1.5 w-1.5 rounded-full transition-colors', i === activeIndex ? 'bg-accent' : 'bg-border')}
             />
           ))}
+        </div>
+
+        <div className="flex items-center justify-center gap-1.5 px-3 pb-1">
+          <span className="mr-1 text-xs font-medium text-subtle">{t.activity.shareCard.mapMode.label}</span>
+          <button
+            onClick={() => setMapMode('run')}
+            className={cn(
+              'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
+              mapMode === 'run' ? 'border-accent bg-accent text-accent-foreground' : 'border-border bg-card text-foreground hover:bg-muted'
+            )}
+          >
+            <Route size={13} />
+            {t.activity.shareCard.mapMode.run}
+          </button>
+          <button
+            onClick={() => setMapMode('map')}
+            disabled={!canUseMap}
+            className={cn(
+              'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40',
+              mapMode === 'map' ? 'border-accent bg-accent text-accent-foreground' : 'border-border bg-card text-foreground hover:bg-muted'
+            )}
+          >
+            <Map size={13} />
+            {t.activity.shareCard.mapMode.map}
+          </button>
         </div>
 
         <div className="flex gap-2 border-t border-border p-3">
@@ -205,8 +250,6 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             </button>
           )}
         </div>
-
-        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
       </div>
     </div>
   )

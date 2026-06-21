@@ -1,15 +1,35 @@
 import type { Activity } from '@/domain/activity/types'
 import { formatDateWithYear, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
-import { CHART_COLORS } from '@/lib/colors'
+import { ACCENT_SWATCHES, type AccentId } from '@/lib/accent'
 import { t } from '@/i18n'
 
-export type ShareTemplate = 'photo' | 'classic' | 'map' | 'transparent'
+export type ShareStyle = 'topographic' | 'facets' | 'grain'
+// The card always shows the route, either as a vector silhouette ('run') or a real map tile ('map').
+export type MapMode = 'run' | 'map'
 
-export const SHARE_TEMPLATES: ShareTemplate[] = ['photo', 'classic', 'map', 'transparent']
+export const SHARE_STYLES: ShareStyle[] = ['topographic', 'facets', 'grain']
+// Styles with a light background need dark text; the rest are dark and need light text.
+const LIGHT_STYLES = new Set<ShareStyle>(['topographic', 'facets'])
 
 const WIDTH = 1080
 const HEIGHT = 1920
 const MARGIN = 72
+
+// Centered region (between title and stats) where the route silhouette or map tile is drawn.
+const MAP_BOX = { x: MARGIN, y: 540, w: WIDTH - MARGIN * 2, h: 760 }
+
+interface Palette {
+  title: string
+  date: string
+  label: string
+  brand: string
+}
+
+function paletteFor(style: ShareStyle): Palette {
+  return LIGHT_STYLES.has(style)
+    ? { title: '#0f172a', date: '#475569', label: '#475569', brand: '#334155' }
+    : { title: '#f8fafc', date: '#cbd5e1', label: '#e2e8f0', brand: '#f8fafc' }
+}
 
 interface StatCell {
   label: string
@@ -30,13 +50,43 @@ function buildShareStats(activity: Activity): StatCell[] {
   return stats
 }
 
-export function loadImage(src: string): Promise<HTMLImageElement> {
+export function backgroundSrc(accent: AccentId, style: ShareStyle): string {
+  return `/backgrounds/${accent}/${style}.png`
+}
+
+export function loadImage(src: string, crossOrigin = false): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image()
+    if (crossOrigin) img.crossOrigin = 'anonymous'
     img.onload = () => resolve(img)
     img.onerror = () => reject(new Error(`Failed to load ${src}`))
     img.src = src
   })
+}
+
+/** Caps `route` at `max` points (keeping the last), to keep the static-map URL short. */
+function downsample(route: [number, number][], max: number): [number, number][] {
+  if (route.length <= max) return route
+  const step = (route.length - 1) / (max - 1)
+  const out: [number, number][] = []
+  for (let i = 0; i < max; i++) out.push(route[Math.round(i * step)])
+  return out
+}
+
+/**
+ * Builds a MapTiler Static Maps URL rendering the run's GPS track as a colored path.
+ * Returns null when there is no usable route or token.
+ */
+export function staticMapUrl(activity: Activity, accent: AccentId, isDark: boolean, token: string | undefined): string | null {
+  if (!token || !activity.route || activity.route.length < 2) return null
+  const style = isDark ? 'backdrop-v4-dark' : 'dataviz-v4'
+  const coords = downsample(activity.route, 90)
+    .map(([lng, lat]) => `${lng.toFixed(5)},${lat.toFixed(5)}`)
+    .join('|')
+  const path = `stroke:${ACCENT_SWATCHES[accent]}|width:6|${coords}`
+  const w = Math.round(MAP_BOX.w / 2)
+  const h = Math.round(MAP_BOX.h / 2)
+  return `https://api.maptiler.com/maps/${style}/static/auto/${w}x${h}@2x.png?key=${token}&padding=60&path=${encodeURIComponent(path)}`
 }
 
 /** Wraps text to fit `maxWidth`, capped at two lines (second line gets an ellipsis). */
@@ -69,7 +119,7 @@ function wrapTitle(ctx: CanvasRenderingContext2D, text: string, maxWidth: number
 /** "RunOmics" rotated along the right edge, anchored to the top-right corner with a margin. */
 function drawVerticalBrand(ctx: CanvasRenderingContext2D, color: string) {
   ctx.save()
-  ctx.translate(WIDTH - MARGIN, MARGIN)
+  ctx.translate(WIDTH - MARGIN, MARGIN + 40)
   ctx.rotate(Math.PI / 2)
   ctx.textBaseline = 'hanging'
   ctx.font = '600 30px system-ui, sans-serif'
@@ -79,13 +129,13 @@ function drawVerticalBrand(ctx: CanvasRenderingContext2D, color: string) {
 }
 
 /** Title (2 lines max) + date, leaving room on the right for the vertical brand strip. */
-function drawTitleAndDate(ctx: CanvasRenderingContext2D, activity: Activity, startY: number, titleColor: string, dateColor: string) {
+function drawTitleAndDate(ctx: CanvasRenderingContext2D, activity: Activity, startY: number, palette: Palette) {
   const title = activity.description || t.activity.runTitle(activity.dayOfWeek)
   const maxWidth = WIDTH - MARGIN * 2 - 80
 
   ctx.textBaseline = 'alphabetic'
   ctx.font = '700 60px system-ui, sans-serif'
-  ctx.fillStyle = titleColor
+  ctx.fillStyle = palette.title
   const lines = wrapTitle(ctx, title, maxWidth)
   let y = startY
   for (const line of lines) {
@@ -94,12 +144,12 @@ function drawTitleAndDate(ctx: CanvasRenderingContext2D, activity: Activity, sta
   }
 
   ctx.font = '400 34px system-ui, sans-serif'
-  ctx.fillStyle = dateColor
+  ctx.fillStyle = palette.date
   ctx.fillText(formatDateWithYear(activity.date), MARGIN, y + 16)
 }
 
 /** 2-column stats grid (distance/time/pace/HR), anchored at `gridTop`. */
-function drawStatsOverlay(ctx: CanvasRenderingContext2D, activity: Activity, gridTop: number, valueColor: string, labelColor: string) {
+function drawStatsOverlay(ctx: CanvasRenderingContext2D, activity: Activity, gridTop: number, accentHex: string, labelColor: string) {
   const stats = buildShareStats(activity)
   const cols = 2
   const cellWidth = (WIDTH - MARGIN * 2) / cols
@@ -112,7 +162,7 @@ function drawStatsOverlay(ctx: CanvasRenderingContext2D, activity: Activity, gri
     const y = gridTop + row * rowHeight
 
     ctx.font = '700 76px system-ui, sans-serif'
-    ctx.fillStyle = valueColor
+    ctx.fillStyle = accentHex
     ctx.fillText(stat.value, x, y)
 
     ctx.font = '600 28px system-ui, sans-serif'
@@ -129,12 +179,8 @@ function projectRoute(route: [number, number][]): { x: number; y: number }[] {
   return route.map(([lng, lat]) => ({ x: lng * cos, y: -lat }))
 }
 
-/**
- * Draws the GPS route as a vector silhouette centered in `box`.
- * TODO: swap for a real static map tile (MapTiler) + reverse-geocoded city names
- * once the visual design for the "map" template is finalized.
- */
-function drawRouteShape(ctx: CanvasRenderingContext2D, route: [number, number][], box: { x: number; y: number; size: number }, color: string) {
+/** Draws the GPS route as a vector silhouette centered in `box`. */
+function drawRouteShape(ctx: CanvasRenderingContext2D, route: [number, number][], color: string) {
   const points = projectRoute(route)
 
   let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
@@ -146,9 +192,9 @@ function drawRouteShape(ctx: CanvasRenderingContext2D, route: [number, number][]
   }
   const spanX = maxX - minX || 1
   const spanY = maxY - minY || 1
-  const scale = (box.size * 0.85) / Math.max(spanX, spanY)
-  const offsetX = box.x + box.size / 2 - ((minX + maxX) / 2) * scale
-  const offsetY = box.y + box.size / 2 - ((minY + maxY) / 2) * scale
+  const scale = (Math.min(MAP_BOX.w, MAP_BOX.h) * 0.82) / Math.max(spanX, spanY)
+  const offsetX = MAP_BOX.x + MAP_BOX.w / 2 - ((minX + maxX) / 2) * scale
+  const offsetY = MAP_BOX.y + MAP_BOX.h / 2 - ((minY + maxY) / 2) * scale
 
   ctx.beginPath()
   points.forEach((p, i) => {
@@ -158,7 +204,7 @@ function drawRouteShape(ctx: CanvasRenderingContext2D, route: [number, number][]
     else ctx.lineTo(x, y)
   })
   ctx.strokeStyle = color
-  ctx.lineWidth = 6
+  ctx.lineWidth = 8
   ctx.lineJoin = 'round'
   ctx.lineCap = 'round'
   ctx.stroke()
@@ -175,73 +221,61 @@ function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x: numb
   ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h)
 }
 
-function drawDarkBackground(ctx: CanvasRenderingContext2D) {
-  const gradient = ctx.createLinearGradient(0, 0, 0, HEIGHT)
-  gradient.addColorStop(0, '#0f172a')
-  gradient.addColorStop(1, '#020617')
-  ctx.fillStyle = gradient
-  ctx.fillRect(0, 0, WIDTH, HEIGHT)
-  ctx.fillStyle = CHART_COLORS.brand
-  ctx.fillRect(0, 0, WIDTH, 12)
+/** Draws the static map tile, cover-cropped and clipped to a rounded rectangle inside MAP_BOX. */
+function drawMapTile(ctx: CanvasRenderingContext2D, img: HTMLImageElement, borderColor: string) {
+  ctx.save()
+  ctx.beginPath()
+  ctx.roundRect(MAP_BOX.x, MAP_BOX.y, MAP_BOX.w, MAP_BOX.h, 32)
+  ctx.clip()
+  drawCover(ctx, img, MAP_BOX.x, MAP_BOX.y, MAP_BOX.w, MAP_BOX.h)
+  ctx.restore()
+
+  ctx.beginPath()
+  ctx.roundRect(MAP_BOX.x, MAP_BOX.y, MAP_BOX.w, MAP_BOX.h, 32)
+  ctx.strokeStyle = borderColor
+  ctx.lineWidth = 3
+  ctx.stroke()
 }
 
-function drawPhotoTemplate(ctx: CanvasRenderingContext2D, activity: Activity, photoImage: HTMLImageElement | null) {
-  if (photoImage) {
-    drawCover(ctx, photoImage, 0, 0, WIDTH, HEIGHT)
-  } else {
-    ctx.fillStyle = '#1e293b'
-    ctx.fillRect(0, 0, WIDTH, HEIGHT)
-  }
-
-  const scrim = ctx.createLinearGradient(0, HEIGHT * 0.55, 0, HEIGHT)
-  scrim.addColorStop(0, 'rgba(2, 6, 23, 0)')
-  scrim.addColorStop(1, 'rgba(2, 6, 23, 0.85)')
-  ctx.fillStyle = scrim
-  ctx.fillRect(0, HEIGHT * 0.55, WIDTH, HEIGHT * 0.45)
-
-  drawTitleAndDate(ctx, activity, HEIGHT - 560, '#f8fafc', '#cbd5e1')
-  drawStatsOverlay(ctx, activity, HEIGHT - 380, CHART_COLORS.brand, '#e2e8f0')
-}
-
-function drawClassicTemplate(ctx: CanvasRenderingContext2D, activity: Activity) {
-  drawDarkBackground(ctx)
-  drawVerticalBrand(ctx, '#f8fafc')
-  drawTitleAndDate(ctx, activity, 360, '#f8fafc', '#94a3b8')
-  drawStatsOverlay(ctx, activity, HEIGHT - 420, CHART_COLORS.brand, '#94a3b8')
-}
-
-function drawMapTemplate(ctx: CanvasRenderingContext2D, activity: Activity) {
-  drawDarkBackground(ctx)
-  drawVerticalBrand(ctx, '#f8fafc')
-  drawTitleAndDate(ctx, activity, 280, '#f8fafc', '#94a3b8')
-
-  if (activity.route && activity.route.length > 1) {
-    drawRouteShape(ctx, activity.route, { x: MARGIN, y: 420, size: WIDTH - MARGIN * 2 }, CHART_COLORS.brand)
-  }
-
-  drawStatsOverlay(ctx, activity, HEIGHT - 420, CHART_COLORS.brand, '#94a3b8')
-}
-
-function drawTransparentTemplate(ctx: CanvasRenderingContext2D, activity: Activity) {
-  drawVerticalBrand(ctx, '#f8fafc')
-  drawTitleAndDate(ctx, activity, 360, '#f8fafc', '#cbd5e1')
-  drawStatsOverlay(ctx, activity, HEIGHT - 420, CHART_COLORS.brand, '#e2e8f0')
+export interface RenderOptions {
+  activity: Activity
+  style: ShareStyle
+  accent: AccentId
+  mapMode: MapMode
+  bgImage: HTMLImageElement | null
+  mapImage?: HTMLImageElement | null
 }
 
 /** Renders an activity share card into `canvas` (1080x1920, Canvas 2D, no external deps). */
-export function renderShareCard(canvas: HTMLCanvasElement, activity: Activity, template: ShareTemplate, photoImage?: HTMLImageElement | null) {
+export function renderShareCard(canvas: HTMLCanvasElement, options: RenderOptions) {
+  const { activity, style, accent, mapMode, bgImage, mapImage } = options
   canvas.width = WIDTH
   canvas.height = HEIGHT
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('Canvas 2D context unavailable')
 
+  const palette = paletteFor(style)
+  const accentHex = ACCENT_SWATCHES[accent]
+
   ctx.clearRect(0, 0, WIDTH, HEIGHT)
-  if (template === 'photo') drawPhotoTemplate(ctx, activity, photoImage ?? null)
-  else if (template === 'map') drawMapTemplate(ctx, activity)
-  else if (template === 'transparent') drawTransparentTemplate(ctx, activity)
-  else drawClassicTemplate(ctx, activity)
+  if (bgImage) drawCover(ctx, bgImage, 0, 0, WIDTH, HEIGHT)
+  else {
+    ctx.fillStyle = LIGHT_STYLES.has(style) ? '#e2e8f0' : '#0f172a'
+    ctx.fillRect(0, 0, WIDTH, HEIGHT)
+  }
+
+  drawVerticalBrand(ctx, palette.brand)
+  drawTitleAndDate(ctx, activity, 320, palette)
+
+  if (mapMode === 'map' && mapImage) {
+    drawMapTile(ctx, mapImage, palette.label)
+  } else if (activity.route && activity.route.length > 1) {
+    drawRouteShape(ctx, activity.route, accentHex)
+  }
+
+  drawStatsOverlay(ctx, activity, HEIGHT - 400, accentHex, palette.label)
 }
 
-export function shareCardFileName(activity: Activity, template: ShareTemplate): string {
-  return `runomics-${activity.date}-${template}.png`
+export function shareCardFileName(activity: Activity, style: ShareStyle): string {
+  return `runomics-${activity.date}-${style}.png`
 }
