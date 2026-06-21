@@ -20,7 +20,7 @@ import {
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { APP_VERSION } from '@/lib/version'
-import { accentIconSrc } from '@/lib/accent'
+import { DEFAULT_ACCENT, accentIconSrc } from '@/lib/accent'
 import { useAccent } from '@/lib/useAccent'
 import { ThemeToggle } from './ThemeToggle'
 
@@ -50,10 +50,19 @@ function Brand({ onClick, logoSrc }: { onClick?: () => void; logoSrc: string }) 
 export function Sidebar() {
   const pathname = usePathname()
   const accent = useAccent()
-  const logoSrc = accentIconSrc(accent, 192)
   const [open, setOpen] = useState(false)
   const headerRef = useRef<HTMLElement>(null)
   const [headerOffset, setHeaderOffset] = useState(0)
+  const [mounted, setMounted] = useState(false)
+
+  // Render the default logo on the server/first paint, then switch to the stored
+  // accent after mount - matching the SSR markup avoids a hydration mismatch.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true)
+  }, [])
+
+  const logoSrc = accentIconSrc(mounted ? accent : DEFAULT_ACCENT)
 
   // Slide the mobile top bar up gradually as the page scrolls down. Reveal it
   // again only on a deliberate upward scroll (a small threshold ignores the

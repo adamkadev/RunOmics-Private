@@ -8,6 +8,7 @@ import type {
   RouteCluster,
 } from "@/application/usecases/GetAllRoutes";
 import { maptilerStyleUrl } from "@/lib/maptiler";
+import { useAccentColor } from "@/lib/useAccent";
 import { t } from "@/i18n";
 
 function coordLabel(c: RouteCluster): string {
@@ -131,6 +132,7 @@ export function GlobalMapClient({ data }: Props) {
     data.clusters.map(coordLabel),
   );
   const [panelOpen, setPanelOpen] = useState(false);
+  const accentColor = useAccentColor();
 
   const { routes, clusters } = data;
   const selected = clusters[selectedIdx];
@@ -207,7 +209,7 @@ export function GlobalMapClient({ data }: Props) {
             source: "routes",
             layout: { "line-join": "round", "line-cap": "round" },
             paint: {
-              "line-color": "#10b981",
+              "line-color": accentColor,
               // Thinner halo, scaling a touch with zoom, so popular overlapping
               // routes do not stack into a fat bright band.
               "line-width": [
@@ -228,7 +230,7 @@ export function GlobalMapClient({ data }: Props) {
             source: "routes",
             layout: { "line-join": "round", "line-cap": "round" },
             paint: {
-              "line-color": "#10b981",
+              "line-color": accentColor,
               "line-width": [
                 "interpolate", ["linear"], ["zoom"],
                 9, 1,
@@ -263,6 +265,13 @@ export function GlobalMapClient({ data }: Props) {
       setMapReady(false);
     };
   }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!mapReady || !map) return;
+    if (map.getLayer("routes-glow")) map.setPaintProperty("routes-glow", "line-color", accentColor);
+    if (map.getLayer("routes-line")) map.setPaintProperty("routes-line", "line-color", accentColor);
+  }, [accentColor, mapReady]);
 
   useEffect(() => {
     if (!mapReady || !mapRef.current || !selected)
