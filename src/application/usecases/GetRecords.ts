@@ -1,7 +1,8 @@
+import type { Activity } from '@/domain/activity/types'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getPbsFromFirestore } from '@/infrastructure/repositories/FirestoreConfigRepository'
 
-const EFFORTS = [
+export const EFFORTS = [
   { key: '1k',       label: '1K',       km: 1        },
   { key: '1mile',    label: '1 Mile',   km: 1.60934  },
   { key: '5k',       label: '5K',       km: 5        },
@@ -40,10 +41,33 @@ export interface TopEffortEntry {
 
 export type TopEfforts = Record<string, TopEffortEntry[]>
 
+export interface BestEffort {
+  seconds: number
+  activityId: string
+  date: string
+  description: string
+}
+
+export function computeBestEfforts(activities: Activity[]): Map<string, BestEffort> {
+  const best = new Map<string, BestEffort>()
+  for (const { key } of EFFORTS) {
+    let entry: BestEffort | null = null
+    for (const a of activities) {
+      const sec = a.bestEfforts?.[key]
+      if (sec != null && (entry === null || sec < entry.seconds)) {
+        entry = { seconds: sec, activityId: a.id, date: a.date, description: a.description }
+      }
+    }
+    if (entry) best.set(key, entry)
+  }
+  return best
+}
+
 export async function getRecords(): Promise<RecordEntry[]> {
   const activities = getAllActivities()
   const pbYears = await getPbsFromFirestore()
   const activityMap = new Map(activities.map((a) => [a.id, a]))
+  const computed = computeBestEfforts(activities)
 
   const officialPbs = new Map<string, { seconds: number; activityId: string | null }>()
   for (const year of pbYears) {
@@ -74,13 +98,7 @@ export async function getRecords(): Promise<RecordEntry[]> {
       }
     }
 
-    let best: { seconds: number; activityId: string; date: string; description: string } | null = null
-    for (const a of activities) {
-      const sec = a.bestEfforts?.[key]
-      if (sec != null && (best === null || sec < best.seconds)) {
-        best = { seconds: sec, activityId: a.id, date: a.date, description: a.description }
-      }
-    }
+    const best = computed.get(key) ?? null
     return {
       key,
       label,

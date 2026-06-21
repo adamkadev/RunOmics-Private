@@ -1,0 +1,16 @@
+name: Weekly Goal Reminder
+
+on:
+  # 16:00 UTC = 18:00 Paris time (CEST). Drifts to 17:00 Paris time in winter (CET).
+  schedule:
+    - cron: "0 16 * * 5"
+  workflow_dispatch:
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger weekly reminder
+        run: |
+          curl -fsS -X POST "${{ secrets.APP_URL }}/api/internal/weekly-reminder" \
+            -H "x-internal-secret: ${{ secrets.INTERNAL_NOTIFY_SECRET }}"

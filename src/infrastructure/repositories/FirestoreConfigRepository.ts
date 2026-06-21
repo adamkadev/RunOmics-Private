@@ -30,3 +30,16 @@ export async function getAthleteFromFirestore(): Promise<AthleteProfile> {
   const doc = await db.collection('athlete').doc('profile').get()
   return (doc.data() ?? {}) as AthleteProfile
 }
+
+export type PrState = Record<string, { seconds: number; activityId: string }>
+
+export async function getLastPrState(): Promise<PrState | null> {
+  const db = getAdminFirestore()
+  const doc = await db.collection('notifications').doc('lastPrs').get()
+  return doc.exists ? (doc.data() as PrState) : null
+}
+
+export async function saveLastPrState(state: PrState): Promise<void> {
+  const db = getAdminFirestore()
+  await db.collection('notifications').doc('lastPrs').set(state)
+}

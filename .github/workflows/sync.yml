@@ -63,6 +63,7 @@ jobs:
           python scripts/sync.py $ARGS
 
       - name: Commit updated activities.json
+        id: commit
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -71,6 +72,7 @@ jobs:
 
           if git diff --cached --quiet; then
             echo "Nothing to commit - no new activities."
+            echo "committed=false" >> "$GITHUB_OUTPUT"
           else
             ACTIVITY_COUNT=$(python - <<'EOF'
           import json, pathlib
@@ -80,4 +82,13 @@ jobs:
           )
             git commit -m "sync: update activities (${ACTIVITY_COUNT} total) [skip ci]"
             git push
+            echo "committed=true" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Trigger PR check
+        if: steps.commit.outputs.committed == 'true'
+        run: |
+          # Wait for Vercel to redeploy with the new activities.json before checking for new PRs.
+          sleep 60
+          curl -fsS -X POST "${{ secrets.APP_URL }}/api/internal/pr-check" \
+            -H "x-internal-secret: ${{ secrets.INTERNAL_NOTIFY_SECRET }}"
