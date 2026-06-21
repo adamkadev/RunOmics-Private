@@ -5,6 +5,7 @@ export interface AthleteProfile {
   lthrBpm?: number
   thresholdPaceSecPerKm?: number
   thresholdPowerWatts?: number
+  vmaKmh?: number
 }
 
 export async function getGoalsFromFirestore(): Promise<GoalYear[]> {

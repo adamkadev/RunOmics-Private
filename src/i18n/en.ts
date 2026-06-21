@@ -132,10 +132,13 @@ export const en = {
       thresholdPaceHint: 'min:ss per km, e.g. 4:14',
       thresholdPower: 'Threshold power (W)',
       thresholdPowerHint: 'Functional threshold power',
+      vma: 'VMA (km/h)',
+      vmaHint: 'Maximal aerobic speed',
       placeholders: {
         lthr: '177',
         thresholdPace: '4:14',
         thresholdPower: '339',
+        vma: '16',
       },
     },
     goals: {
