@@ -57,3 +57,18 @@ export async function saveLastShoeWearState(state: ShoeWearState): Promise<void>
   const db = getAdminFirestore()
   await db.collection('notifications').doc('lastShoeWear').set(state)
 }
+
+export interface OverreachingState {
+  alerted: boolean
+}
+
+export async function getLastOverreachingState(): Promise<OverreachingState | null> {
+  const db = getAdminFirestore()
+  const doc = await db.collection('notifications').doc('lastOverreaching').get()
+  return doc.exists ? (doc.data() as OverreachingState) : null
+}
+
+export async function saveLastOverreachingState(state: OverreachingState): Promise<void> {
+  const db = getAdminFirestore()
+  await db.collection('notifications').doc('lastOverreaching').set(state)
+}

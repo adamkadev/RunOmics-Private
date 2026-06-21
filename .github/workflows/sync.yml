@@ -112,3 +112,5 @@ jobs:
             -H "x-internal-secret: ${{ secrets.INTERNAL_NOTIFY_SECRET }}"
           curl -fsS -X POST "${{ secrets.APP_URL }}/api/internal/shoe-wear-check" \
             -H "x-internal-secret: ${{ secrets.INTERNAL_NOTIFY_SECRET }}"
+          curl -fsS -X POST "${{ secrets.APP_URL }}/api/internal/overreaching-check" \
+            -H "x-internal-secret: ${{ secrets.INTERNAL_NOTIFY_SECRET }}"
