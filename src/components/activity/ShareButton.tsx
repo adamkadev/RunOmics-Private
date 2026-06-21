@@ -44,11 +44,20 @@ export function ShareButton({ activity }: Props) {
     }
   }
 
-  async function handleCopy() {
-    const blob = await generateShareCardBlob(activity)
-    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
-    setMenu('copied')
-    setTimeout(() => setMenu('closed'), 1500)
+  function handleCopy() {
+    // navigator.clipboard.write() must run synchronously within the click handler
+    // (no preceding await) or iOS Safari drops user activation and rejects it.
+    // Passing a pending Blob promise into ClipboardItem lets WebKit wait for it.
+    navigator.clipboard
+      .write([new ClipboardItem({ 'image/png': generateShareCardBlob(activity) })])
+      .then(() => {
+        setMenu('copied')
+        setTimeout(() => setMenu('closed'), 1500)
+      })
+      .catch((err) => {
+        console.error(err)
+        setMenu('closed')
+      })
   }
 
   return (
