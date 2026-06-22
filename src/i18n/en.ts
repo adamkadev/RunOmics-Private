@@ -76,7 +76,6 @@ export const en = {
     },
     activities: {
       title: 'Activities',
-      subtitle: (total: number) => `${total} total activities`,
     },
     calendar: {
       title: 'Calendar',
@@ -523,10 +522,15 @@ export const en = {
 
   activities: {
     searchPlaceholder: 'Search...',
+    searchToggle: 'Search',
     all: 'All',
     count: (n: number) => `${n} activit${n !== 1 ? 'ies' : 'y'}`,
     page: (current: number, total: number) => ` · page ${current}/${total}`,
     empty: 'No activities found',
+    emptyFiltered: 'No sessions of this type',
+    resetFilters: 'Reset filters',
+    endOfList: 'That\'s all',
+    monthGroup: (count: number, km: number) => `${count} session${count !== 1 ? 's' : ''} · ${km} km`,
     sort: {
       label: 'Sort',
       date: 'Date',

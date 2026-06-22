@@ -52,6 +52,12 @@
   100% { transform: translate3d(0, 0, 0) scale(1.05); }
 }
 
+/* Shimmer sweep for glass skeleton cards (Activities list B5). */
+@keyframes ro-shimmer {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(200%);  }
+}
+
 /* ─── Light tokens ─────────────────────────────────── */
 :root {
   --shadow-card:       0 1px 3px 0 rgb(0 0 0 / 0.06),
@@ -277,6 +283,20 @@
     background: var(--glass-row-bg);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 14px;
+  }
+
+  /* Skeleton card sweep (Activities list B5/C2) - lighter than glass-card,
+     no backdrop-filter (skeletons don't count against the blur budget). */
+  .skeleton-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+  .skeleton-shimmer::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 0%, var(--glass-highlight) 50%, transparent 100%);
+    animation: ro-shimmer 1.8s ease-in-out infinite;
   }
 
   /* Fluid display title (Geist 800, ~25.6px -> 34px), responsive to viewport. */

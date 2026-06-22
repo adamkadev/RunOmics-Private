@@ -58,6 +58,12 @@ export function monthLabel(month: number): string {
   return new Date(2000, month - 1, 1).toLocaleString('en', { month: 'short' }).toUpperCase()
 }
 
+/** Full uppercase "MONTH YYYY" label for a date, used by sticky month group headers. */
+export function monthYearLabel(isoDate: string): string {
+  const d = new Date(isoDate + 'T00:00:00')
+  return d.toLocaleString('en', { month: 'long', year: 'numeric' }).toUpperCase()
+}
+
 /** Parse a `m:ss` or `h:mm:ss` string into seconds. Returns null if invalid. */
 export function parseTimeInput(str: string): number | null {
   const parts = str.trim().split(':').map(Number)
