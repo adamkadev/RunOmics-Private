@@ -31,13 +31,13 @@ export function GlassTabBar({ onMore, moreOpen }: { onMore: () => void; moreOpen
 
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-30 px-3.5 lg:hidden"
-      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)' }}
+      className="fixed inset-x-0 bottom-3 z-30 px-3 lg:hidden"
+      style={{ marginBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
       <GlassSurface
         as="nav"
         variant="nav"
-        className="flex items-center justify-between rounded-3xl px-3 py-2"
+        className="flex items-center justify-between rounded-full px-3.5 py-3"
       >
         {TABS.map(({ href, label, icon: Icon }) => {
           const active = isActive(pathname, href)
