@@ -14,6 +14,7 @@ import {
   Footprints,
   X,
   Settings,
+  User,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -189,6 +190,13 @@ export function Sidebar() {
             <ThemeToggle />
           </div>
           <Brand />
+          <Link
+            href="/settings"
+            className="absolute right-4 flex h-8 w-8 items-center justify-center rounded-full bg-foreground/10 text-muted-foreground transition-colors active:scale-90"
+            aria-label={t.nav.items.settings}
+          >
+            <User size={16} />
+          </Link>
         </div>
       </GlassSurface>
 

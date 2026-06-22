@@ -12,6 +12,46 @@ const RATING_STYLE: Record<ConsistencyRating, { tone: StatusTone; text: string }
   low:       { tone: 'zinc',   text: 'text-zinc-500' },
 }
 
+const RING_SIZE = 56
+const RING_STROKE = 5
+const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS
+
+// Decorative progress ring; the score is already conveyed as text, so it's hidden from a11y tree.
+function ConsistencyRing({ score }: { score: number }) {
+  const offset = RING_CIRCUMFERENCE * (1 - Math.min(score, 100) / 100)
+  return (
+    <svg
+      width={RING_SIZE}
+      height={RING_SIZE}
+      viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
+      className="-rotate-90"
+      aria-hidden="true"
+    >
+      <circle
+        cx={RING_SIZE / 2}
+        cy={RING_SIZE / 2}
+        r={RING_RADIUS}
+        fill="none"
+        stroke="currentColor"
+        strokeOpacity={0.14}
+        strokeWidth={RING_STROKE}
+      />
+      <circle
+        cx={RING_SIZE / 2}
+        cy={RING_SIZE / 2}
+        r={RING_RADIUS}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={RING_STROKE}
+        strokeLinecap="round"
+        strokeDasharray={RING_CIRCUMFERENCE}
+        strokeDashoffset={offset}
+      />
+    </svg>
+  )
+}
+
 export function ConsistencyCard({ data }: { data: ConsistencyScore }) {
   const s = t.consistencyScore
   const style = RATING_STYLE[data.rating]
@@ -24,11 +64,15 @@ export function ConsistencyCard({ data }: { data: ConsistencyScore }) {
         <StatusPill tone={style.tone}>{s.rating[data.rating]}</StatusPill>
       </div>
 
-      <div className="flex items-end justify-between">
+      <div className="flex items-center justify-between">
         <span className={cn('text-3xl font-bold tabular-nums', style.text)}>
           {data.score}
           <span className="ml-0.5 text-base font-normal text-muted-foreground">/100</span>
-        </span>      </div>
+        </span>
+        <span className={style.text}>
+          <ConsistencyRing score={data.score} />
+        </span>
+      </div>
     </GlassSurface>
   )
 }
