@@ -213,12 +213,18 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center sm:p-4"
+      onClick={onClose}
+    >
       <div
-        className="relative flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-card"
+        className="glass-sheet relative flex max-h-[92vh] w-full animate-sheet-up flex-col overflow-hidden rounded-t-3xl sm:max-w-md sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
+        <div className="flex shrink-0 justify-center pt-2.5 sm:hidden">
+          <span className="h-[5px] w-[38px] rounded-full bg-foreground/25" aria-hidden="true" />
+        </div>
+        <div className="flex shrink-0 items-center justify-between border-b border-border/60 px-4 py-3">
           <h2 className="text-sm font-semibold text-foreground">{t.activity.share}</h2>
           <button
             onClick={onClose}
@@ -353,11 +359,11 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
           </div>
         </div>
 
-        <div className="flex shrink-0 gap-2 border-t border-border p-3">
+        <div className="flex shrink-0 gap-2 border-t border-border/60 p-3">
           {canShareFiles && (
             <button
               onClick={handleShare}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-accent-foreground shadow-lg shadow-accent/25 transition-colors hover:bg-accent/90"
             >
               <Share2 size={15} />
               {t.activity.shareMenu.share}

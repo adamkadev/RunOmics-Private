@@ -142,14 +142,20 @@ export function CalendarClient({ activities }: Props) {
                       <Link
                         key={a.id}
                         href={`/activities/${a.id}`}
-                        className="block truncate rounded px-1.5 py-0.5 text-xs font-medium transition-opacity hover:opacity-75"
-                        style={{
-                          backgroundColor: `${ACTIVITY_TYPE_CONFIG[a.type].chartColor}22`,
-                          color: ACTIVITY_TYPE_CONFIG[a.type].chartColor,
-                        }}
+                        className="flex items-center gap-1.5 rounded px-1 py-0.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
                         title={`${a.description || a.type} · ${a.distanceKm} ${t.units.km}`}
                       >
-                        {a.distanceKm.toFixed(1)} {t.units.km}
+                        <span
+                          className="h-1.5 w-1.5 shrink-0 rounded-full"
+                          style={{ backgroundColor: ACTIVITY_TYPE_CONFIG[a.type].chartColor }}
+                          aria-hidden="true"
+                        />
+                        <span className="tabular-nums">
+                          {a.distanceKm.toFixed(1)}
+                          <span className="ml-0.5 text-[10px] font-normal text-muted-foreground">
+                            {t.units.km}
+                          </span>
+                        </span>
                       </Link>
                     ))}
                   </div>
@@ -163,7 +169,7 @@ export function CalendarClient({ activities }: Props) {
       <div className="flex flex-wrap items-center gap-3 text-xs text-subtle">
         {Object.entries(ACTIVITY_TYPE_CONFIG).map(([type, cfg]) => (
           <span key={type} className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-sm" style={{ background: cfg.chartColor }} />
+            <span className="h-2 w-2 rounded-full" style={{ background: cfg.chartColor }} />
             {t.activityTypes[type as ActivityType]}
           </span>
         ))}

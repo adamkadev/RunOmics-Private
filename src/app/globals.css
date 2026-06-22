@@ -21,6 +21,7 @@
   --shadow-card:             var(--shadow-card);
   --animate-fade-up:         fade-up 0.25s ease-out both;
   --animate-fade-in:         fade-in 0.2s ease-out both;
+  --animate-sheet-up:        sheet-up 0.42s cubic-bezier(0.22, 1.04, 0.36, 1) both;
 }
 
 @keyframes fade-up {
@@ -31,6 +32,12 @@
 @keyframes fade-in {
   from { opacity: 0; }
   to   { opacity: 1; }
+}
+
+/* Spring-like entrance for bottom sheets (slides up from below). */
+@keyframes sheet-up {
+  from { opacity: 0; transform: translateY(100%); }
+  to   { opacity: 1; transform: translateY(0);    }
 }
 
 /* ─── Light tokens ─────────────────────────────────── */
@@ -187,6 +194,14 @@
     -webkit-backdrop-filter: blur(8px) saturate(1.5);
     backdrop-filter: blur(8px) saturate(1.5);
   }
+
+  /* Fluid display title (Geist 800, ~25.6px -> 34px), responsive to viewport. */
+  .text-display {
+    font-size: clamp(1.6rem, 1.32rem + 1.4vw, 2.125rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
 }
 
 html {
@@ -243,7 +258,8 @@ h1 {
   }
 
   button:not(:disabled):active {
-    opacity: 0.7;
+    transform: scale(0.96);
+    opacity: 0.85;
   }
 
   :focus-visible {

@@ -76,7 +76,7 @@ export default async function DashboardPage() {
     <DashboardFocusProvider>
       <div className="space-y-6">
         <div className="space-y-3">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.pages.dashboard.title}</h1>
+          <h1 className="text-display text-foreground">{t.pages.dashboard.title}</h1>
           <DashboardHighlights
             record={mostRecentRecord}
             pbAlerts={pbAlerts}

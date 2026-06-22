@@ -17,7 +17,7 @@ export default async function RecordsPage() {
     <div className="space-y-8">
       <div className="space-y-2">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.pages.records.title}</h1>
+          <h1 className="text-display text-foreground">{t.pages.records.title}</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">{t.pages.records.subtitle}</p>
         </div>
 

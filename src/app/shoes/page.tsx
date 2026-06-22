@@ -12,7 +12,7 @@ export default function ShoesPage() {
   return (
     <div className="space-y-10">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.pages.shoes.title}</h1>
+        <h1 className="text-display text-foreground">{t.pages.shoes.title}</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">{t.pages.shoes.subtitle}</p>
       </div>
 

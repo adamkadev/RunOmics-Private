@@ -13,7 +13,7 @@ export default async function ActivitiesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.pages.activities.title}</h1>
+        <h1 className="text-display text-foreground">{t.pages.activities.title}</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
           {t.pages.activities.subtitle(activities.length)}
         </p>

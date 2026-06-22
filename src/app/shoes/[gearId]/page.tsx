@@ -36,7 +36,7 @@ export default async function ShoeDetailPage({
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{shoe.brand}</p>
             {shoe.retired && <Badge className="bg-muted text-muted-foreground">{t.shoes.retired}</Badge>}
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">{shoe.name}</h1>
+          <h1 className="text-display text-foreground">{shoe.name}</h1>
         </div>
       </div>
 

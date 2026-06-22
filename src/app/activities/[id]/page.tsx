@@ -65,7 +65,7 @@ export default async function ActivityDetailPage({
           <PrBadge labels={prLabels} />
           <ShoePairTag gearId={activity.gearId} />
         </div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+        <h1 className="text-display text-foreground">
           {activity.description || t.activity.runTitle(activity.dayOfWeek)}
         </h1>
         <div className="mt-1 flex items-center justify-between gap-3">
