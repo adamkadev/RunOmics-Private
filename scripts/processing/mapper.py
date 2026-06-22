@@ -260,7 +260,7 @@ def _parse_datetime(raw: str) -> datetime:
 
 
 def _decimate_list(items: list, max_points: int) -> list:
-    if len(items) <= max_points:
+    n = len(items)
+    if n <= max_points:
         return items
-    step = max(1, len(items) // max_points)
-    return items[::step][:max_points]
+    return [items[round(i * (n - 1) / (max_points - 1))] for i in range(max_points)]

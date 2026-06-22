@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 
@@ -412,8 +413,52 @@ def _best_efforts(dists: list[float], times: list[float]) -> dict[str, float]:
     return out
 
 
+def _perpendicular_distance(point: list[float], start: list[float], end: list[float]) -> float:
+    x0, y0 = point
+    x1, y1 = start
+    x2, y2 = end
+    if (x1, y1) == (x2, y2):
+        return math.hypot(x0 - x1, y0 - y1)
+    num = abs((x2 - x1) * (y0 - y1) - (x0 - x1) * (y2 - y1))
+    den = math.hypot(x2 - x1, y2 - y1)
+    return num / den
+
+
+def _rdp_simplify(coords: list[list[float]], epsilon: float) -> list[list[float]]:
+    """Douglas-Peucker simplification: drops points close to the line between
+    their neighbors, keeps points at turns. Always keeps the first and last point."""
+    if len(coords) < 3:
+        return coords
+    keep = [False] * len(coords)
+    keep[0] = keep[-1] = True
+    stack = [(0, len(coords) - 1)]
+    while stack:
+        start_i, end_i = stack.pop()
+        start, end = coords[start_i], coords[end_i]
+        max_dist = 0.0
+        max_i = -1
+        for i in range(start_i + 1, end_i):
+            dist = _perpendicular_distance(coords[i], start, end)
+            if dist > max_dist:
+                max_dist = dist
+                max_i = i
+        if max_i != -1 and max_dist > epsilon:
+            keep[max_i] = True
+            stack.append((start_i, max_i))
+            stack.append((max_i, end_i))
+    return [c for c, k in zip(coords, keep) if k]
+
+
 def _decimate(coords: list[list[float]], max_points: int) -> list[list[float]]:
     if len(coords) <= max_points:
         return coords
-    step = len(coords) // max_points
-    return coords[::step][:max_points]
+    lo, hi = 0.0, 0.01
+    simplified = coords
+    for _ in range(25):
+        mid = (lo + hi) / 2
+        simplified = _rdp_simplify(coords, mid)
+        if len(simplified) > max_points:
+            lo = mid
+        else:
+            hi = mid
+    return simplified

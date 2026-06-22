@@ -39,15 +39,18 @@ def main() -> int:
     print(f"activities.json: {store.count()} existing activities")
 
     with GarminClient(secret) as client:
-        print("Fetching activity list from Garmin Connect…")
-        all_ids = client.get_all_activity_ids(running_only=not args.all_types)
-
-        if args.force:
-            new_ids = list(all_ids)
+        if args.id:
+            new_ids = [args.id]
         else:
-            new_ids = [aid for aid in all_ids if aid not in existing_ids]
-        if args.limit:
-            new_ids = new_ids[: args.limit]
+            print("Fetching activity list from Garmin Connect…")
+            all_ids = client.get_all_activity_ids(running_only=not args.all_types)
+
+            if args.force:
+                new_ids = list(all_ids)
+            else:
+                new_ids = [aid for aid in all_ids if aid not in existing_ids]
+            if args.limit:
+                new_ids = new_ids[: args.limit]
 
         added = updated = failed = 0
 
@@ -103,7 +106,7 @@ def main() -> int:
                     print(f"updated → {status}")
 
         regeared = 0
-        if not args.force:
+        if not args.force and not args.id:
             recent_ids = [aid for aid in store.get_ids_since(_REGEAR_WINDOW_DAYS) if aid not in new_ids]
             if recent_ids:
                 print(
@@ -172,6 +175,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--limit", type=int, default=None, metavar="N")
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--id", default=None, metavar="ACTIVITY_ID", help="Re-fetch a single activity by id")
     return parser.parse_args()
 
 
