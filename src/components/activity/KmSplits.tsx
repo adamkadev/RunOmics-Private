@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Timer, ChevronRight } from 'lucide-react'
-import { Card } from '@/components/ui/Card'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 import { formatDuration, formatClock } from '@/lib/formatters'
 import { t } from '@/i18n'
 import type { Activity, ActivitySplit, SplitLap } from '@/domain/activity/types'
@@ -57,7 +57,7 @@ export function KmSplits({ activity }: Props) {
     : null
 
   return (
-    <Card padding="lg">
+    <GlassSurface variant="card" className="rounded-[22px] p-[18px]">
       <div className="mb-4 flex items-center gap-2">
         <Timer size={14} className="text-accent-text" />
         <h3 className="text-sm font-semibold text-foreground/80">{t.activity.splits.title}</h3>
@@ -144,6 +144,6 @@ export function KmSplits({ activity }: Props) {
           {showHr && <span className="hidden text-sm font-semibold tabular-nums sm:block">{totalAvgHr ?? '-'}</span>}
         </div>
       </div>
-    </Card>
+    </GlassSurface>
   )
 }

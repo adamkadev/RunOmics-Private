@@ -9,7 +9,7 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { CHART_COLORS } from '@/lib/colors'
-import { Card } from '@/components/ui/Card'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
 interface Props {
@@ -54,7 +54,7 @@ export function ElevationChart({ samples, distanceKm, elevationGain, onHoverFrac
   const { ticks: elevTicks, domain: elevDomain } = elevationTicks(samples)
 
   return (
-    <Card padding="lg">
+    <GlassSurface variant="card" className="rounded-[22px] p-[18px]">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">{t.activity.charts.elevation}</h3>
         {elevationGain != null && (
@@ -117,6 +117,6 @@ export function ElevationChart({ samples, distanceKm, elevationGain, onHoverFrac
           />
         </AreaChart>
       </ResponsiveContainer>
-    </Card>
+    </GlassSurface>
   )
 }

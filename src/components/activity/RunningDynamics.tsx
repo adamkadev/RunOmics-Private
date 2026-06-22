@@ -1,5 +1,5 @@
 import type { Activity } from '@/domain/activity/types'
-import { Card } from '@/components/ui/Card'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
 interface Metric {
@@ -28,7 +28,7 @@ export function RunningDynamics({ activity: a }: { activity: Activity }) {
   if (!metrics.length) return null
 
   return (
-    <Card padding="lg">
+    <GlassSurface variant="card" className="rounded-[22px] p-[18px]">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.activity.dynamics.title}
       </h3>
@@ -42,6 +42,6 @@ export function RunningDynamics({ activity: a }: { activity: Activity }) {
           </div>
         ))}
       </div>
-    </Card>
+    </GlassSurface>
   )
 }

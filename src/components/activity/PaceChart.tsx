@@ -10,7 +10,7 @@ import {
 } from 'recharts'
 import { CHART_COLORS } from '@/lib/colors'
 import { formatClock } from '@/lib/formatters'
-import { Card } from '@/components/ui/Card'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
 interface Props {
@@ -51,7 +51,7 @@ export function PaceChart({ samples, avgPaceSecPerKm, distanceKm, onHoverFractio
   const bestPace = validSamples.length ? Math.min(...validSamples) : null
 
   return (
-    <Card padding="lg">
+    <GlassSurface variant="card" className="rounded-[22px] p-[18px]">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">{t.activity.charts.pace}</h3>
         <span className="text-xs text-subtle">
@@ -121,6 +121,6 @@ export function PaceChart({ samples, avgPaceSecPerKm, distanceKm, onHoverFractio
           />
         </AreaChart>
       </ResponsiveContainer>
-    </Card>
+    </GlassSurface>
   )
 }

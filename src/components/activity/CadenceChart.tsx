@@ -9,7 +9,7 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { CHART_COLORS } from '@/lib/colors'
-import { Card } from '@/components/ui/Card'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
 interface Props {
@@ -48,7 +48,7 @@ export function CadenceChart({ samples, avgCadence, distanceKm, onHoverFraction 
   const maxSpm = Math.max(...samples)
 
   return (
-    <Card padding="lg">
+    <GlassSurface variant="card" className="rounded-[22px] p-[18px]">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">{t.activity.charts.cadence}</h3>
         <span className="text-xs text-subtle">
@@ -115,6 +115,6 @@ export function CadenceChart({ samples, avgCadence, distanceKm, onHoverFraction 
           />
         </AreaChart>
       </ResponsiveContainer>
-    </Card>
+    </GlassSurface>
   )
 }
