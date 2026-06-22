@@ -60,9 +60,17 @@ function dateStamp(): string {
 }
 
 async function fetchActivities(): Promise<Activity[]> {
-  const res = await fetch('/data/activities.json')
-  const data = (await res.json()) as { activities: Activity[] }
-  return data.activities
+  const indexRes = await fetch('/data/activities/index.json')
+  const { years } = (await indexRes.json()) as { years: string[] }
+
+  const yearFiles = await Promise.all(
+    years.map(async (year) => {
+      const res = await fetch(`/data/activities/${year}.json`)
+      const data = (await res.json()) as { activities: Activity[] }
+      return data.activities
+    })
+  )
+  return yearFiles.flat()
 }
 
 export function DataExportForm() {

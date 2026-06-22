@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
 
@@ -11,17 +10,16 @@ sys.path.insert(0, str(Path(__file__).parent))
 from processing.fit_parser import parse_fit
 from processing.activity_type import infer_type
 from processing.mapper import _decimate_list, _MAX_CHART_POINTS
+from repository.json_store import JsonActivityStore
 
 _FIT_DIR = Path(__file__).parent.parent / "public" / "fit"
-_JSON_PATH = Path(__file__).parent.parent / "public" / "data" / "activities.json"
 
 
 def main() -> int:
-    data = json.loads(_JSON_PATH.read_text("utf-8"))
-    activities = data.get("activities", [])
+    store = JsonActivityStore()
 
     updated = 0
-    for a in activities:
+    for a in store.all_activities():
         fit_path = _FIT_DIR / f"{a['id']}.fit"
         if not fit_path.exists():
             continue
@@ -47,11 +45,10 @@ def main() -> int:
         a["cadenceSamples"] = _decimate_list(parsed.cadence_samples, _MAX_CHART_POINTS) if parsed.cadence_samples else None
         if parsed.elevation_gain_m > 0:
             a["elevationGain"] = parsed.elevation_gain_m
+        store.touch(a["id"])
         updated += 1
 
-    tmp = _JSON_PATH.with_suffix(".json.tmp")
-    tmp.write_text(json.dumps(data, indent=2, ensure_ascii=False))
-    tmp.replace(_JSON_PATH)
+    store.save()
 
     print(f"{updated} activities reprocessed.")
     return 0

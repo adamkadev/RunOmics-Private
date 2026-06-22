@@ -20,14 +20,14 @@ Garmin Connect API
        │
   scripts/sync.py          ← Python pipeline (garth + garmin-fit-sdk)
        │
-  public/data/activities.json   ← static data store committed to repo
+  public/data/activities/  ← static data store committed to repo (one JSON file per year)
        │
   Next.js (SSG)            ← reads JSON at build time, no database
        │
   Vercel                   ← deploy & host
 ```
 
-All data is stored in `public/data/activities.json` and read at build time - no database, no API routes. A new Vercel deployment is triggered automatically after each push.
+All data is stored as one JSON file per year under `public/data/activities/` and read at build time - no database, no API routes. A new Vercel deployment is triggered automatically after each push.
 
 ---
 
@@ -83,7 +83,7 @@ NEXT_PUBLIC_MAPTILER_TOKEN=your_maptiler_key
 python scripts/sync.py
 ```
 
-This fetches all your running activities from Garmin Connect, downloads the FIT files, parses them, and writes `public/data/activities.json`. On first run this may take several minutes depending on your activity count.
+This fetches all your running activities from Garmin Connect, downloads the FIT files, parses them, and writes the per-year files under `public/data/activities/`. On first run this may take several minutes depending on your activity count.
 
 Options:
 
@@ -191,7 +191,7 @@ After each sync, commit the updated data file and push:
 
 ```bash
 python scripts/sync.py
-git add public/data/activities.json
+git add public/data/activities/
 git commit -m "sync: $(date +%Y-%m-%d)"
 git push
 ```

@@ -13,8 +13,8 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from garmin.client import GarminAPIError, GarminAuthError, GarminClient
 from processing.mapper import extract_gear_id
+from repository.json_store import JsonActivityStore
 
-_JSON_PATH = Path(__file__).parent.parent / "public" / "data" / "activities.json"
 _RATE_LIMIT_PAUSE = 1.0
 _RETRY_PAUSE = 60.0
 
@@ -28,9 +28,8 @@ def main() -> int:
         print("Run scripts/get_secret.py to generate it.", file=sys.stderr)
         return 1
 
-    data = json.loads(_JSON_PATH.read_text("utf-8"))
-    activities = data.get("activities", [])
-    pending = [a for a in activities if "gearId" not in a]
+    store = JsonActivityStore()
+    pending = [a for a in store.all_activities() if "gearId" not in a]
 
     if args.limit:
         pending = pending[: args.limit]
@@ -61,6 +60,7 @@ def main() -> int:
 
                 gear_id = extract_gear_id(raw_gear)
                 activity["gearId"] = gear_id
+                store.touch(activity_id)
                 print(f"gearId = {gear_id}")
                 updated += 1
 
@@ -78,9 +78,7 @@ def main() -> int:
         return 1
 
     if not args.dry_run:
-        tmp = _JSON_PATH.with_suffix(".json.tmp")
-        tmp.write_text(json.dumps(data, indent=2, ensure_ascii=False))
-        tmp.replace(_JSON_PATH)
+        store.save()
         print(f"\n{updated} activities updated and saved.")
     else:
         print(f"\nDry run: {updated} would be updated (not saved).")

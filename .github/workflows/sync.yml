@@ -32,7 +32,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: public/fit
-          key: fit-${{ hashFiles('public/data/activities.json') }}
+          key: fit-${{ hashFiles('public/data/activities/**') }}
           restore-keys: |
             fit-
 
@@ -86,7 +86,7 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add public/data/activities.json
+          git add public/data/activities/
 
           if git diff --cached --quiet; then
             echo "Nothing to commit - no new activities."
@@ -94,8 +94,12 @@ jobs:
           else
             ACTIVITY_COUNT=$(python - <<'EOF'
           import json, pathlib
-          data = json.loads(pathlib.Path("public/data/activities.json").read_text())
-          print(len(data.get("activities", [])))
+          total = 0
+          for path in pathlib.Path("public/data/activities").glob("*.json"):
+              if path.name == "index.json":
+                  continue
+              total += len(json.loads(path.read_text()).get("activities", []))
+          print(total)
           EOF
           )
             git commit -m "sync: update activities (${ACTIVITY_COUNT} total) [skip ci]"
