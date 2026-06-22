@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from garmin_fit_sdk import Decoder, Stream
 
 _SEMICIRCLE_TO_DEG = 180.0 / 2**31
-_MAX_ROUTE_POINTS = 300
+_MAX_ROUTE_POINTS = 2000
 _EFFORT_TARGETS_M = {
     "1k": 1000.0,
     "1mile": 1609.34,
@@ -413,7 +413,18 @@ def _best_efforts(dists: list[float], times: list[float]) -> dict[str, float]:
     return out
 
 
-def _perpendicular_distance(point: list[float], start: list[float], end: list[float]) -> float:
+_ROUTE_EPSILON_M = 0.5
+_METERS_PER_DEGREE = 111_320.0
+
+
+def _project_meters(lon: float, lat: float, lon0: float, lat0: float) -> tuple[float, float]:
+    """Equirectangular projection centered on the route, accurate enough at a single-run scale."""
+    x = (lon - lon0) * math.cos(math.radians(lat0)) * _METERS_PER_DEGREE
+    y = (lat - lat0) * _METERS_PER_DEGREE
+    return x, y
+
+
+def _perpendicular_distance(point: tuple[float, float], start: tuple[float, float], end: tuple[float, float]) -> float:
     x0, y0 = point
     x1, y1 = start
     x2, y2 = end
@@ -424,21 +435,19 @@ def _perpendicular_distance(point: list[float], start: list[float], end: list[fl
     return num / den
 
 
-def _rdp_simplify(coords: list[list[float]], epsilon: float) -> list[list[float]]:
+def _rdp_keep_mask(points: list[tuple[float, float]], epsilon: float) -> list[bool]:
     """Douglas-Peucker simplification: drops points close to the line between
     their neighbors, keeps points at turns. Always keeps the first and last point."""
-    if len(coords) < 3:
-        return coords
-    keep = [False] * len(coords)
+    keep = [False] * len(points)
     keep[0] = keep[-1] = True
-    stack = [(0, len(coords) - 1)]
+    stack = [(0, len(points) - 1)]
     while stack:
         start_i, end_i = stack.pop()
-        start, end = coords[start_i], coords[end_i]
+        start, end = points[start_i], points[end_i]
         max_dist = 0.0
         max_i = -1
         for i in range(start_i + 1, end_i):
-            dist = _perpendicular_distance(coords[i], start, end)
+            dist = _perpendicular_distance(points[i], start, end)
             if dist > max_dist:
                 max_dist = dist
                 max_i = i
@@ -446,19 +455,18 @@ def _rdp_simplify(coords: list[list[float]], epsilon: float) -> list[list[float]
             keep[max_i] = True
             stack.append((start_i, max_i))
             stack.append((max_i, end_i))
-    return [c for c, k in zip(coords, keep) if k]
+    return keep
 
 
 def _decimate(coords: list[list[float]], max_points: int) -> list[list[float]]:
-    if len(coords) <= max_points:
+    if len(coords) < 3:
         return coords
-    lo, hi = 0.0, 0.01
-    simplified = coords
-    for _ in range(25):
-        mid = (lo + hi) / 2
-        simplified = _rdp_simplify(coords, mid)
-        if len(simplified) > max_points:
-            lo = mid
-        else:
-            hi = mid
-    return simplified
+    lon0, lat0 = coords[len(coords) // 2]
+    points = [_project_meters(lon, lat, lon0, lat0) for lon, lat in coords]
+
+    epsilon = _ROUTE_EPSILON_M
+    keep = _rdp_keep_mask(points, epsilon)
+    while sum(keep) > max_points:
+        epsilon *= 1.5
+        keep = _rdp_keep_mask(points, epsilon)
+    return [c for c, k in zip(coords, keep) if k]
