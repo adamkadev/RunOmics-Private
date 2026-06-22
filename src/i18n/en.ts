@@ -31,6 +31,7 @@ export const en = {
       records: 'Records',
       heatmap: 'Heatmap',
       shoes: 'Shoes',
+      profile: 'Profile',
       settings: 'Settings',
       more: 'More',
     },
@@ -94,6 +95,9 @@ export const en = {
     shoes: {
       title: 'Shoes',
       subtitle: 'Mileage and wear per pair',
+    },
+    profile: {
+      title: 'Profile',
     },
     notFound: {
       code: '404',
@@ -763,6 +767,15 @@ export const en = {
       },
       activitiesTitle: 'Tracked Activities',
       empty: 'No activities recorded with this pair yet.',
+    },
+  },
+
+  profile: {
+    hero: {
+      since: (date: string) => `Athlete since ${date}`,
+      summary: (activities: number, km: number) => `${activities} activities · ${km} km`,
+      editName: 'Edit name',
+      namePlaceholder: 'Your name',
     },
   },
 

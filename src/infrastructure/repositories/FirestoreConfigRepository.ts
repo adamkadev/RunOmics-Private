@@ -6,6 +6,10 @@ export interface AthleteProfile {
   thresholdPaceSecPerKm?: number
   thresholdPowerWatts?: number
   vmaKmh?: number
+  displayName?: string
+  maxHrBpm?: number
+  // Top bpm of zones 1-4 (zone 5 runs from the 4th value up to maxHrBpm).
+  hrZoneBoundsBpm?: [number, number, number, number]
 }
 
 export async function getGoalsFromFirestore(): Promise<GoalYear[]> {

@@ -32,6 +32,7 @@ const NAV_ITEMS = [
   { href: '/records', label: t.nav.items.records, icon: Trophy },
   { href: '/map', label: t.nav.items.heatmap, icon: Map },
   { href: '/shoes', label: t.nav.items.shoes, icon: Footprints },
+  { href: '/profile', label: t.nav.items.profile, icon: User },
 ]
 
 // In-app brand mark: thin concentric rings inheriting the live accent color
@@ -191,9 +192,9 @@ export function Sidebar() {
           </div>
           <Brand />
           <Link
-            href="/settings"
+            href="/profile"
             className="absolute right-4 flex h-8 w-8 items-center justify-center rounded-full bg-foreground/10 text-muted-foreground transition-colors active:scale-90"
-            aria-label={t.nav.items.settings}
+            aria-label={t.nav.items.profile}
           >
             <User size={16} />
           </Link>
