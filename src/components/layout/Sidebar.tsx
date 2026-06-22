@@ -20,6 +20,7 @@ import { t } from '@/i18n'
 import { APP_VERSION } from '@/lib/version'
 import { ThemeToggle } from './ThemeToggle'
 import { GlassTabBar } from './GlassTabBar'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 
 const NAV_ITEMS = [
   { href: '/', label: t.nav.items.dashboard, icon: LayoutDashboard },
@@ -173,21 +174,23 @@ export function Sidebar() {
       </aside>
 
       {/* ─── Mobile top bar ─── */}
-      <header
+      <GlassSurface
+        as="header"
+        variant="chrome"
         ref={headerRef}
-        className="fixed inset-x-0 top-0 z-30 bg-card lg:hidden"
+        className="fixed inset-x-0 top-0 z-30 rounded-none rounded-b-2xl border-t-0 lg:hidden"
         style={{
           paddingTop: 'env(safe-area-inset-top, 0px)',
           transform: `translateY(-${headerOffset}px)`,
         }}
       >
-        <div className="relative flex h-14 items-center justify-center border-b border-border px-4">
+        <div className="relative flex h-14 items-center justify-center px-4">
           <div className="absolute left-4">
             <ThemeToggle />
           </div>
           <Brand />
         </div>
-      </header>
+      </GlassSurface>
 
       {/* ─── Mobile glass tab bar ─── */}
       <GlassTabBar onMore={() => setOpen(true)} moreOpen={open} />

@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils'
+import { forwardRef } from 'react'
 import type { ElementType, HTMLAttributes } from 'react'
 
 // `chrome` is the A3 name for the denser nav/top-bar density; it shares the
@@ -23,16 +24,13 @@ interface GlassSurfaceProps extends HTMLAttributes<HTMLElement> {
  * highlight, adapting to the theme via the `--glass-*` tokens. Use sparingly
  * (<= ~6 blurred surfaces per viewport) - backdrop-filter is GPU-costly.
  */
-export function GlassSurface({
-  variant = 'card',
-  as: Tag = 'div',
-  className,
-  children,
-  ...rest
-}: GlassSurfaceProps) {
+export const GlassSurface = forwardRef<HTMLElement, GlassSurfaceProps>(function GlassSurface(
+  { variant = 'card', as: Tag = 'div', className, children, ...rest },
+  ref
+) {
   return (
-    <Tag className={cn(VARIANT_CLASS[variant], className)} {...rest}>
+    <Tag ref={ref} className={cn(VARIANT_CLASS[variant], className)} {...rest}>
       {children}
     </Tag>
   )
-}
+})
