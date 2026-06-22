@@ -1,24 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import {
-  CalendarDays,
-  ChevronLeft,
-  ChevronRight,
-  Timer,
-  Footprints,
-  Heart,
-  TrendingUp,
-  Flame,
-  Activity,
-  type LucideIcon,
-} from 'lucide-react'
-import type { ReactNode } from 'react'
+import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
 import { formatDuration, formatPace } from '@/lib/formatters'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { cardClass } from '@/components/ui/Card'
+import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
 import { WeekLoadBadge } from '@/components/dashboard/WeekLoadBadge'
-import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { WeekSummary } from '@/domain/activity/types'
 import type { WeeklyLoadComparison } from '@/application/usecases/GetWeeklyLoadComparison'
@@ -30,14 +18,6 @@ interface Props {
   weekLoad: WeeklyLoadComparison | null
 }
 
-interface StatCell {
-  Icon: LucideIcon
-  color: string
-  borderTop: string
-  value: ReactNode
-  label: string
-}
-
 export function StatsGrid({ weeks, currentStreak, vo2max, weekLoad }: Props) {
   const s = t.dashboard.stats
   const lastIndex = weeks.length - 1
@@ -47,51 +27,25 @@ export function StatsGrid({ weeks, currentStreak, vo2max, weekLoad }: Props) {
   const weekYear = Math.floor(currentWeek.weekNumber / 100)
   const showYear = weekYear !== new Date().getFullYear()
 
-  const cells: StatCell[] = [
+  const metrics: Metric[] = [
     {
-      Icon: Footprints,
-      color: 'text-emerald-500 dark:text-emerald-400',
-      borderTop: 'border-t-emerald-400 dark:border-t-emerald-500',
-      value: <><AnimatedValue value={currentWeek.totalDistanceKm} decimals={currentWeek.totalDistanceKm >= 10 ? 1 : 2} /> {t.units.km}</>,
+      value: <AnimatedValue value={currentWeek.totalDistanceKm} decimals={currentWeek.totalDistanceKm >= 10 ? 1 : 2} />,
+      unit: 't.units.km',
       label: s.distance,
     },
+    { value: formatDuration(currentWeek.totalDurationSeconds), label: s.time },
     {
-      Icon: Timer,
-      color: 'text-blue-500 dark:text-blue-400',
-      borderTop: 'border-t-blue-400 dark:border-t-blue-500',
-      value: formatDuration(currentWeek.totalDurationSeconds),
-      label: s.time,
-    },
-    {
-      Icon: TrendingUp,
-      color: 'text-amber-500 dark:text-amber-400',
-      borderTop: 'border-t-amber-400 dark:border-t-amber-500',
       value: currentWeek.avgPaceSecPerKm ? formatPace(currentWeek.avgPaceSecPerKm) : s.empty,
+      unit: currentWeek.avgPaceSecPerKm ? t.units.minPerKm : undefined,
       label: s.avgPace,
     },
     {
-      Icon: Heart,
-      color: 'text-red-500 dark:text-red-400',
-      borderTop: 'border-t-red-400 dark:border-t-red-500',
-      value: currentWeek.avgHeartRate
-        ? <><AnimatedValue value={currentWeek.avgHeartRate} /> {t.units.bpm}</>
-        : s.empty,
+      value: currentWeek.avgHeartRate ? <AnimatedValue value={currentWeek.avgHeartRate} /> : s.empty,
+      unit: currentWeek.avgHeartRate ? t.units.bpm : undefined,
       label: s.avgHr,
     },
-    {
-      Icon: Flame,
-      color: 'text-orange-500 dark:text-orange-400',
-      borderTop: 'border-t-orange-400 dark:border-t-orange-500',
-      value: <><AnimatedValue value={currentStreak} />d</>,
-      label: s.streak,
-    },
-    {
-      Icon: Activity,
-      color: 'text-violet-500 dark:text-violet-400',
-      borderTop: 'border-t-violet-400 dark:border-t-violet-500',
-      value: vo2max !== null ? <AnimatedValue value={vo2max} /> : s.empty,
-      label: s.vo2max,
-    },
+    { value: <><AnimatedValue value={currentStreak} />d</>, label: s.streak },
+    { value: vo2max !== null ? <AnimatedValue value={vo2max} /> : s.empty, label: s.vo2max },
   ]
 
   return (
@@ -130,18 +84,7 @@ export function StatsGrid({ weeks, currentStreak, vo2max, weekLoad }: Props) {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-px bg-border lg:grid-cols-6">
-        {cells.map(({ Icon, color, borderTop, value, label }) => (
-          <div
-            key={label}
-            className={cn('flex flex-col items-center gap-0.5 border-t-2 bg-card px-2 py-2 text-center sm:px-3 sm:py-3', borderTop)}
-          >
-            <Icon className={cn('size-3 sm:size-3.5', color)} />
-            <div className="whitespace-nowrap text-xs font-bold leading-tight text-foreground sm:text-sm">{value}</div>
-            <div className="text-[9px] leading-tight text-muted-foreground sm:text-[10px]">{label}</div>
-          </div>
-        ))}
-      </div>
+      <MetricGrid metrics={metrics} className="grid-cols-3 px-4 py-4 lg:grid-cols-6" />
     </div>
   )
 }

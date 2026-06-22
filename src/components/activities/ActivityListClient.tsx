@@ -1,19 +1,20 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Search, GitCompare, X } from 'lucide-react'
 import { ActivityRow } from './ActivityRow'
-import { ActivityTypeTag } from './ActivityTypeTag'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import type { Activity, ActivityType } from '@/domain/activity/types'
 import { Card } from '@/components/ui/Card'
-import { Pagination } from '@/components/ui/Pagination'
+import { GlassSurface } from '@/components/ui/GlassSurface'
+import { Pill } from '@/components/ui/Pill'
 import { SortDropdown, type SortOrder } from '@/components/ui/SortDropdown'
+import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 const ALL_TYPES = Object.keys(ACTIVITY_TYPE_CONFIG) as ActivityType[]
-const PAGE_SIZE = 10
+const PAGE_SIZE = 12
 
 type SortKey = 'date' | 'distance' | 'duration' | 'pace' | 'avgHr'
 
@@ -51,7 +52,7 @@ export function ActivityListClient({ activities, prLabelsByActivityId = {} }: Pr
   const [selectedType, setSelectedType] = useState<ActivityType | null>(null)
   const [sortBy, setSortBy] = useState<SortKey>('date')
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
-  const [page, setPage] = useState(1)
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const [compareMode, setCompareMode] = useState(false)
   const [compareIds, setCompareIds] = useState<string[]>([])
 
@@ -64,6 +65,11 @@ export function ActivityListClient({ activities, prLabelsByActivityId = {} }: Pr
     setCompareIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < 2 ? [...prev, id] : prev
     )
+  }
+
+  // Reset the infinite-scroll window whenever the result set changes.
+  function resetWindow() {
+    setVisibleCount(PAGE_SIZE)
   }
 
   const filtered = useMemo(() => {
@@ -86,63 +92,94 @@ export function ActivityListClient({ activities, prLabelsByActivityId = {} }: Pr
     return [...filtered].sort((a, b) => direction * (sortValue(a, sortBy) - sortValue(b, sortBy)))
   }, [filtered, sortBy, sortOrder])
 
-  const totalPages = Math.ceil(sorted.length / PAGE_SIZE)
-  const clampedPage = Math.min(page, Math.max(1, totalPages))
-  const paginated = sorted.slice((clampedPage - 1) * PAGE_SIZE, clampedPage * PAGE_SIZE)
+  const visible = sorted.slice(0, visibleCount)
+  const hasMore = visibleCount < sorted.length
+
+  const sentinelRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!hasMore) return
+    const node = sentinelRef.current
+    if (!node) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((c) => Math.min(c + PAGE_SIZE, sorted.length))
+        }
+      },
+      { rootMargin: '400px' }
+    )
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [hasMore, sorted.length])
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-        <div className="relative">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-subtle" />
-          <input
-            type="text"
-            placeholder={t.activities.searchPlaceholder}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-8 w-full rounded-md border border-border bg-card pl-8 pr-3 text-sm text-foreground placeholder-subtle focus:border-accent focus:outline-none sm:w-auto"
-          />
-        </div>
-        <div className="flex flex-wrap gap-1.5">
+      <GlassSurface
+        variant="card"
+        className="sticky top-2 z-20 space-y-3 rounded-2xl p-3 lg:top-3"
+      >
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-subtle" />
+            <input
+              type="text"
+              placeholder={t.activities.searchPlaceholder}
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value)
+                resetWindow()
+              }}
+              className="h-9 w-full rounded-xl border border-border bg-card/60 pl-9 pr-3 text-sm text-foreground placeholder-subtle focus:border-accent focus:outline-none"
+            />
+          </div>
           <button
-            onClick={() => setSelectedType(null)}
-            className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
-              selectedType === null
+            onClick={() => (compareMode ? exitCompareMode() : setCompareMode(true))}
+            className={cn(
+              'inline-flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium transition-colors',
+              compareMode
                 ? 'bg-accent-subtle text-accent-text'
-                : 'bg-muted text-muted-foreground hover:bg-muted/70'
-            }`}
+                : 'border border-border bg-card/60 text-muted-foreground hover:bg-muted'
+            )}
+          >
+            {compareMode ? <X size={13} /> : <GitCompare size={13} />}
+            <span className="hidden sm:inline">{compareMode ? t.activities.compareCancel : t.activities.compareMode}</span>
+          </button>
+        </div>
+
+        <div className="-mx-3 flex gap-2 overflow-x-auto px-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <Pill
+            as="button"
+            variant={selectedType === null ? 'active' : 'neutral'}
+            onClick={() => {
+              setSelectedType(null)
+              resetWindow()
+            }}
           >
             {t.activities.all}
-          </button>
-          {ALL_TYPES.map((type) => (
-            <button
-              key={type}
-              onClick={() => setSelectedType(selectedType === type ? null : type)}
-              className="transition-opacity"
-              style={{ opacity: selectedType && selectedType !== type ? 0.5 : 1 }}
-            >
-              <ActivityTypeTag type={type} />
-            </button>
-          ))}
+          </Pill>
+          {ALL_TYPES.map((type) => {
+            const active = selectedType === type
+            return (
+              <Pill
+                key={type}
+                as="button"
+                variant="neutral"
+                dotColor={ACTIVITY_TYPE_CONFIG[type].dotColor}
+                onClick={() => {
+                  setSelectedType(active ? null : type)
+                  resetWindow()
+                }}
+                className={active ? 'border-accent/40 bg-accent-subtle text-accent-text' : undefined}
+              >
+                {t.activityTypes[type]}
+              </Pill>
+            )
+          })}
         </div>
-        <button
-          onClick={() => (compareMode ? exitCompareMode() : setCompareMode(true))}
-          className={`ml-auto inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
-            compareMode
-              ? 'bg-accent-subtle text-accent-text'
-              : 'bg-muted text-muted-foreground hover:bg-muted/70'
-          }`}
-        >
-          {compareMode ? <X size={13} /> : <GitCompare size={13} />}
-          {compareMode ? t.activities.compareCancel : t.activities.compareMode}
-        </button>
-      </div>
+      </GlassSurface>
 
       <div className="flex items-center justify-between">
-        <p className="text-xs text-subtle">
-          {t.activities.count(sorted.length)}
-          {totalPages > 1 && t.activities.page(clampedPage, totalPages)}
-        </p>
+        <p className="text-xs text-subtle">{t.activities.count(sorted.length)}</p>
         <SortDropdown
           options={SORT_OPTIONS}
           sortBy={sortBy}
@@ -150,19 +187,19 @@ export function ActivityListClient({ activities, prLabelsByActivityId = {} }: Pr
           onChange={(value, order) => {
             setSortBy(value)
             setSortOrder(order)
-            setPage(1)
+            resetWindow()
           }}
           label={t.activities.sort.label}
         />
       </div>
 
       <div className="space-y-2">
-        {paginated.length === 0 ? (
+        {visible.length === 0 ? (
           <Card dashed padding="none" className="py-12 text-center">
             <p className="text-sm text-subtle">{t.activities.empty}</p>
           </Card>
         ) : (
-          paginated.map((a) => (
+          visible.map((a) => (
             <ActivityRow
               key={a.id}
               activity={a}
@@ -176,10 +213,10 @@ export function ActivityListClient({ activities, prLabelsByActivityId = {} }: Pr
         )}
       </div>
 
-      <Pagination page={clampedPage} totalPages={totalPages} onChange={setPage} />
+      {hasMore && <div ref={sentinelRef} aria-hidden="true" className="h-1" />}
 
       {compareMode && (
-        <div className="fixed inset-x-4 bottom-4 z-40 mx-auto flex max-w-md items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-lg">
+        <div className="fixed inset-x-4 bottom-24 z-40 mx-auto flex max-w-md items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-lg lg:bottom-4">
           <span className="text-xs font-medium text-muted-foreground">
             {t.activities.compareCount(compareIds.length)}
           </span>
