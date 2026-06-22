@@ -32,6 +32,7 @@ export const en = {
       heatmap: 'Heatmap',
       shoes: 'Shoes',
       settings: 'Settings',
+      more: 'More',
     },
     openMenu: 'Open menu',
     closeMenu: 'Close menu',

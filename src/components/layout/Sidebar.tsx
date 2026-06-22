@@ -12,7 +12,6 @@ import {
   Target,
   Map,
   Footprints,
-  Menu,
   X,
   Settings,
 } from 'lucide-react'
@@ -20,6 +19,7 @@ import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { APP_VERSION } from '@/lib/version'
 import { ThemeToggle } from './ThemeToggle'
+import { GlassTabBar } from './GlassTabBar'
 
 const NAV_ITEMS = [
   { href: '/', label: t.nav.items.dashboard, icon: LayoutDashboard },
@@ -186,15 +186,11 @@ export function Sidebar() {
             <ThemeToggle />
           </div>
           <Brand />
-          <button
-            onClick={() => setOpen(true)}
-            className="absolute right-4 rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-            aria-label={t.nav.openMenu}
-          >
-            <Menu size={20} />
-          </button>
         </div>
       </header>
+
+      {/* ─── Mobile glass tab bar ─── */}
+      <GlassTabBar onMore={() => setOpen(true)} moreOpen={open} />
 
       {/* ─── Mobile full-screen menu ─── */}
       <div
