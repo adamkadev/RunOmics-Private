@@ -777,6 +777,13 @@ export const en = {
       editName: 'Edit name',
       namePlaceholder: 'Your name',
     },
+    ytd: {
+      title: 'This year',
+      distance: 'Distance',
+      duration: 'Duration',
+      sessions: 'Sessions',
+      elevation: 'Elevation',
+    },
   },
 
   records: {
