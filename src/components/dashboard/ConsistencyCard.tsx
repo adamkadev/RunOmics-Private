@@ -1,15 +1,15 @@
 import { RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { ConsistencyScore, ConsistencyRating } from '@/application/usecases/GetConsistencyScore'
-import { Badge } from '@/components/ui/Card'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { StatusPill, type StatusTone } from '@/components/ui/StatusPill'
 import { t } from '@/i18n'
 
-const RATING_STYLE: Record<ConsistencyRating, { badge: string; text: string }> = {
-  excellent: { badge: 'bg-accent-subtle text-accent-text', text: 'text-accent-text' },
-  good:      { badge: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',             text: 'text-blue-600 dark:text-blue-400' },
-  fair:      { badge: 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',         text: 'text-amber-600 dark:text-amber-400' },
-  low:       { badge: 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400',               text: 'text-zinc-500' },
+const RATING_STYLE: Record<ConsistencyRating, { tone: StatusTone; text: string }> = {
+  excellent: { tone: 'accent', text: 'text-accent-text' },
+  good:      { tone: 'blue',   text: 'text-blue-600 dark:text-blue-400' },
+  fair:      { tone: 'amber',  text: 'text-amber-600 dark:text-amber-400' },
+  low:       { tone: 'zinc',   text: 'text-zinc-500' },
 }
 
 export function ConsistencyCard({ data }: { data: ConsistencyScore }) {
@@ -21,7 +21,7 @@ export function ConsistencyCard({ data }: { data: ConsistencyScore }) {
       <div className="mb-3 flex items-center gap-2">
         <RefreshCw size={14} className="text-blue-500 dark:text-blue-400" />
         <h3 className="text-sm font-semibold text-foreground/80">{s.title}</h3>
-        <Badge className={style.badge}>{s.rating[data.rating]}</Badge>
+        <StatusPill tone={style.tone}>{s.rating[data.rating]}</StatusPill>
       </div>
 
       <div className="flex items-end justify-between">

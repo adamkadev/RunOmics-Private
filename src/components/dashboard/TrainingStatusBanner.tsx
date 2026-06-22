@@ -1,8 +1,8 @@
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { TrainingStatus, TrainingStatusType, LoadTrend } from '@/application/usecases/GetTrainingStatus'
-import { Badge } from '@/components/ui/Card'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { StatusPill, type StatusTone } from '@/components/ui/StatusPill'
 
 const STATUS_STYLE: Record<TrainingStatusType, { dot: string; badge: string; text: string }> = {
   productive: {
@@ -32,11 +32,11 @@ const STATUS_STYLE: Record<TrainingStatusType, { dot: string; badge: string; tex
   },
 }
 
-const TREND_STYLE: Record<LoadTrend, string> = {
-  building:    'bg-accent-subtle text-accent-text',
-  maintaining: 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400',
-  tapering:    'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-  detraining:  'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-500',
+const TREND_TONE: Record<LoadTrend, StatusTone> = {
+  building:    'accent',
+  maintaining: 'zinc',
+  tapering:    'blue',
+  detraining:  'zinc',
 }
 
 function Metric({ label, value, valueClass }: { label: string; value: string; valueClass?: string }) {
@@ -82,7 +82,7 @@ export function TrainingStatusBanner({ status }: { status: TrainingStatus }) {
               <span className={cn('text-base font-semibold', style.text)}>
                 {s.status[status.status]}
               </span>
-              <Badge className={TREND_STYLE[status.loadTrend]}>{s.loadTrend[status.loadTrend]}</Badge>
+              <StatusPill tone={TREND_TONE[status.loadTrend]}>{s.loadTrend[status.loadTrend]}</StatusPill>
             </div>
           </div>
         </div>
