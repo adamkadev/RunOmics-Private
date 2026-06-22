@@ -57,7 +57,7 @@ export function CadenceChart({ samples, avgCadence, distanceKm, onHoverFraction 
           {' '}{t.units.spm}
         </span>
       </div>
-      <ResponsiveContainer width="100%" height={140}>
+      <ResponsiveContainer width="100%" height={140} className="select-none touch-pan-y">
         <AreaChart
           data={data}
           margin={{ top: 4, right: 4, bottom: 0, left: 0 }}

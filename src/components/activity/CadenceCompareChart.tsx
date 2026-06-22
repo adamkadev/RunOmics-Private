@@ -88,7 +88,7 @@ export function CadenceCompareChart({ samplesA, samplesB, distanceA, distanceB, 
           {' '}{t.units.spm}
         </span>
       </div>
-      <ResponsiveContainer width="100%" height={140}>
+      <ResponsiveContainer width="100%" height={140} className="select-none touch-pan-y">
         <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
           <XAxis
             dataKey="d"
