@@ -568,7 +568,7 @@ export const en = {
     metaFallbackTitle: 'Activity',
     share: 'Share',
     shareMenu: {
-      share: 'Share to apps',
+      share: 'Share to',
       download: 'Download',
       copy: 'Copy image',
       copied: 'Copied!',

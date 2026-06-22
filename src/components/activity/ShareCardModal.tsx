@@ -225,7 +225,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             {SHARE_STYLES.map((style, i) => (
               <div key={style} className="flex w-full shrink-0 snap-center items-center justify-center p-4">
                 <div
-                  className={cn('relative aspect-[9/16] max-h-[60vh] w-full overflow-hidden rounded-xl', style === 'photo' ? 'bg-card' : 'bg-muted')}
+                  className={cn('relative aspect-[9/16] max-h-[60vh] max-w-full overflow-hidden rounded-xl', style === 'photo' ? 'bg-card' : 'bg-muted')}
                   style={
                     style === 'photo'
                       ? {
