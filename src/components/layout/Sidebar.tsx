@@ -125,9 +125,9 @@ export function Sidebar() {
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-60 flex-col border-r border-border bg-card lg:flex">
         <Link href="/" className="flex h-16 items-center gap-2 border-b border-border px-5">
           <HeaderMark size={22} />
-          <span className="text-lg tracking-tight text-foreground">
-            <span className="font-bold">{t.brand.namePrefix}</span>
-            <span className="font-bold text-accent-text">{t.brand.nameSuffix}</span>
+          <span className="text-lg font-bold tracking-tight text-foreground">
+            {t.brand.namePrefix}
+            <span className="text-accent-text">{t.brand.nameSuffix}</span>
           </span>
         </Link>
 
