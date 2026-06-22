@@ -17,6 +17,12 @@ interface Props {
   activity: Activity
 }
 
+function rpeToneClass(rpe: number): string {
+  if (rpe <= 4) return 'text-accent-text'
+  if (rpe <= 6) return 'text-foreground'
+  return 'text-[#f0a500]'
+}
+
 function buildStats(activity: Activity): Metric[] {
   const stats: Metric[] = [
     {
@@ -67,7 +73,8 @@ function buildStats(activity: Activity): Metric[] {
   stats.push({
     value: activity.rpe !== null ? t.activity.stats.rpeValue(activity.rpe) : t.activity.stats.rpe,
     label: activity.rpe !== null ? (t.rpeLabels[activity.rpe] ?? '-') : t.activity.stats.na,
-    accent: true,
+    // RPE semantics (ACTIVITY_DETAIL_TASKS.md C4): easy (1-4) accent, moderate (5-6) neutral, hard (7-10) amber.
+    valueClassName: activity.rpe !== null ? rpeToneClass(activity.rpe) : undefined,
   })
 
   return stats

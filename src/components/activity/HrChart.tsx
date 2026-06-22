@@ -47,8 +47,8 @@ export function HrChart({ samples, avgHr, distanceKm, onHoverFraction }: Props) 
         <h3 className="text-sm font-semibold text-foreground/80">{t.activity.charts.heartRate}</h3>
         {avgHr && (
           <span className="text-xs text-subtle">
-            {t.activity.charts.avg} <span className="font-semibold text-red-500 dark:text-red-400">{avgHr}</span>
-            {' · '}{t.activity.charts.max} <span className="font-semibold text-red-600 dark:text-red-400">{maxHr}</span>
+            {t.activity.charts.avg} <span className="font-semibold text-[#ff7676]">{avgHr}</span>
+            {' · '}{t.activity.charts.max} <span className="font-semibold text-[#ff7676]">{maxHr}</span>
             {' '}{t.units.bpm}
           </span>
         )}

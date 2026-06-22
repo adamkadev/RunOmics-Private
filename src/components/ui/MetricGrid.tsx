@@ -7,6 +7,8 @@ export interface Metric {
   label: string
   /** Render the value in the accent color (e.g. a form/status highlight). */
   accent?: boolean
+  /** Override the value's color entirely (e.g. a multi-tone semantic like RPE). */
+  valueClassName?: string
 }
 
 /**
@@ -23,12 +25,12 @@ export function MetricGrid({
 }) {
   return (
     <div className={cn('grid gap-y-4 gap-x-2', className)}>
-      {metrics.map(({ value, unit, label, accent }) => (
+      {metrics.map(({ value, unit, label, accent, valueClassName }) => (
         <div key={label} className="min-w-0">
           <div
             className={cn(
               'text-lg font-extrabold leading-none tracking-tight',
-              accent ? 'text-accent-text' : 'text-foreground'
+              valueClassName ?? (accent ? 'text-accent-text' : 'text-foreground')
             )}
           >
             {value}

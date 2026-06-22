@@ -60,7 +60,7 @@ export default async function ActivityDetailPage({
       <BackButton label={t.activity.back} fallbackHref="/activities" />
 
       <div>
-        <div className="mb-2 flex flex-wrap items-center gap-2">
+        <div className="mb-2 flex flex-nowrap items-center gap-2 overflow-x-auto">
           <ActivityTypeTag type={activity.type} />
           <PrBadge labels={prLabels} />
           <ShoePairTag gearId={activity.gearId} />

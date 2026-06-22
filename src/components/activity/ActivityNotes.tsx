@@ -92,7 +92,7 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
     <div ref={containerRef} className="relative shrink-0">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="glass-chip inline-flex items-center gap-1.5 rounded-[10px] px-3 py-1.5 text-xs font-medium text-foreground transition-transform active:scale-95"
+        className="glass-chip inline-flex items-center gap-1.5 rounded-[10px] px-3 py-1.5 text-xs font-medium text-foreground transition-transform active:scale-95 active:opacity-80"
       >
         <NotebookPen size={13} />
         {t.activity.notes.title}

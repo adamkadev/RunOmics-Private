@@ -253,6 +253,23 @@
     backdrop-filter: blur(8px) saturate(1.5);
   }
 
+  /* Floating chrome over media (map weather chip, fullscreen button) -
+     same chrome tint as nav but a lighter 12px blur, sized for small chips. */
+  .glass-map-chip {
+    background: var(--glass-bg-nav);
+    border: 1px solid var(--glass-border);
+    -webkit-backdrop-filter: blur(12px) saturate(var(--glass-sat));
+    backdrop-filter: blur(12px) saturate(var(--glass-sat));
+    border-radius: 10px;
+    color: var(--ro-text);
+  }
+
+  @supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
+    .glass-map-chip {
+      background: var(--glass-fallback);
+    }
+  }
+
   /* Lighter sub-surface for rows nested inside a glass-card (e.g. recent
      activities list) - no backdrop-filter of its own, just a translucent
      tint over the parent card's blur. */
