@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
 import { formatDuration, formatDurationShort } from '@/lib/formatters'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
-import { cardClass } from '@/components/ui/Card'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
 import { WeekLoadBadge } from '@/components/dashboard/WeekLoadBadge'
 import { t } from '@/i18n'
@@ -57,8 +57,8 @@ export function StatsGrid({ weeks, currentStreak, vo2max, weekLoad }: Props) {
   ]
 
   return (
-    <div className={cardClass({ overflow: true, padding: 'none' })}>
-      <div className="flex flex-wrap items-center gap-2 border-b border-border bg-card px-4 py-3.5">
+    <GlassSurface variant="card" className="overflow-hidden rounded-[22px]">
+      <div className="flex flex-wrap items-center gap-2 border-b border-foreground/[0.08] px-4 py-3.5">
         <CalendarDays size={14} className="shrink-0 text-accent-text" />
         <span className="text-sm font-semibold text-foreground">
           {t.pages.dashboard.subtitle(currentWeek.weekNumber % 100, currentWeek.sessionCount, showYear ? weekYear : undefined)}
@@ -93,6 +93,6 @@ export function StatsGrid({ weeks, currentStreak, vo2max, weekLoad }: Props) {
       </div>
 
       <MetricGrid metrics={metrics} className="grid-cols-3 px-4 py-4 lg:grid-cols-6" />
-    </div>
+    </GlassSurface>
   )
 }
