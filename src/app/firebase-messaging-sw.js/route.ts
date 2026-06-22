@@ -21,7 +21,7 @@ messaging.onBackgroundMessage((payload) => {
   const { title, body } = payload.notification || {}
   self.registration.showNotification(title || 'RunOmics', {
     body,
-    icon: '/icon-192.png',
+    icon: '/icons/icon-192.png',
   })
 })
 `

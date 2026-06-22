@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -20,8 +19,6 @@ import {
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { APP_VERSION } from '@/lib/version'
-import { DEFAULT_ACCENT, accentIconSrc } from '@/lib/accent'
-import { useAccent } from '@/lib/useAccent'
 import { ThemeToggle } from './ThemeToggle'
 
 const NAV_ITEMS = [
@@ -35,10 +32,32 @@ const NAV_ITEMS = [
   { href: '/shoes', label: t.nav.items.shoes, icon: Footprints },
 ]
 
-function Brand({ onClick, logoSrc }: { onClick?: () => void; logoSrc: string }) {
+// In-app brand mark: thin concentric rings inheriting the live accent color
+// (var(--accent) is set on <html> before paint, so it follows the theme without JS).
+function HeaderMark({ size = 24 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 64 64"
+      fill="none"
+      stroke="currentColor"
+      style={{ color: 'var(--accent)' }}
+      role="img"
+      aria-label=""
+      aria-hidden="true"
+    >
+      <circle cx="32" cy="32" r="9" strokeWidth="5" />
+      <circle cx="32" cy="32" r="16.5" strokeWidth="5" strokeOpacity="0.55" />
+      <circle cx="32" cy="32" r="24" strokeWidth="5" strokeOpacity="0.28" />
+    </svg>
+  )
+}
+
+function Brand({ onClick }: { onClick?: () => void }) {
   return (
     <Link href="/" onClick={onClick} className="flex items-center gap-2.5">
-      <Image src={logoSrc} alt="" width={24} height={24} unoptimized priority className="rounded-md" />
+      <HeaderMark size={26} />
       <span className="text-2xl tracking-tight text-foreground">
         <span className="font-bold">{t.brand.namePrefix}</span>
         <span className="font-normal">{t.brand.nameSuffix}</span>
@@ -49,20 +68,9 @@ function Brand({ onClick, logoSrc }: { onClick?: () => void; logoSrc: string }) 
 
 export function Sidebar() {
   const pathname = usePathname()
-  const accent = useAccent()
   const [open, setOpen] = useState(false)
   const headerRef = useRef<HTMLElement>(null)
   const [headerOffset, setHeaderOffset] = useState(0)
-  const [mounted, setMounted] = useState(false)
-
-  // Render the default logo on the server/first paint, then switch to the stored
-  // accent after mount - matching the SSR markup avoids a hydration mismatch.
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setMounted(true)
-  }, [])
-
-  const logoSrc = accentIconSrc(mounted ? accent : DEFAULT_ACCENT)
 
   // Slide the mobile top bar up gradually as the page scrolls down. Reveal it
   // again only on a deliberate upward scroll (a small threshold ignores the
@@ -116,7 +124,7 @@ export function Sidebar() {
       {/* ─── Desktop sidebar ─── */}
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-60 flex-col border-r border-border bg-card lg:flex">
         <Link href="/" className="flex h-16 items-center gap-2 border-b border-border px-5">
-          <Image src={logoSrc} alt="" width={20} height={20} priority className="rounded-md" />
+          <HeaderMark size={22} />
           <span className="text-lg tracking-tight text-foreground">
             <span className="font-bold">{t.brand.namePrefix}</span>
             <span className="font-normal">{t.brand.nameSuffix}</span>
@@ -177,7 +185,7 @@ export function Sidebar() {
           <div className="absolute left-4">
             <ThemeToggle />
           </div>
-          <Brand logoSrc={logoSrc} />
+          <Brand />
           <button
             onClick={() => setOpen(true)}
             className="absolute right-4 rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -200,7 +208,7 @@ export function Sidebar() {
         }}
       >
         <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-5">
-          <Brand onClick={() => setOpen(false)} logoSrc={logoSrc} />
+          <Brand onClick={() => setOpen(false)} />
           <button
             onClick={() => setOpen(false)}
             className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"

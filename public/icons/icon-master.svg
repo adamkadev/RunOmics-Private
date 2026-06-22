@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="RunOmics">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#10b981"></stop>
+      <stop offset="1" stop-color="#059669"></stop>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="114" fill="url(#tile)"></rect>
+  <g fill="none" stroke="#ffffff" stroke-width="34">
+    <circle cx="256" cy="256" r="174" stroke-opacity="0.30"></circle>
+    <circle cx="256" cy="256" r="116" stroke-opacity="0.62"></circle>
+    <circle cx="256" cy="256" r="58"></circle>
+  </g>
+</svg>

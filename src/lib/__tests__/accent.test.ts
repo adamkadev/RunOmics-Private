@@ -2,8 +2,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   ACCENT_CHANGE_EVENT,
   ACCENT_STORAGE_KEY,
-  DEFAULT_ACCENT,
-  accentIconSrc,
   isAccentId,
   persistAccent,
 } from '@/lib/accent'
@@ -19,16 +17,6 @@ describe('isAccentId', () => {
 
   it('rejects null', () => {
     expect(isAccentId(null)).toBe(false)
-  })
-})
-
-describe('accentIconSrc', () => {
-  it('uses the default icon for the default accent', () => {
-    expect(accentIconSrc(DEFAULT_ACCENT)).toBe('/icon-192.png')
-  })
-
-  it('uses a hue-rotated icon for other accents', () => {
-    expect(accentIconSrc('performance')).toBe('/icon-192-performance.png')
   })
 })
 

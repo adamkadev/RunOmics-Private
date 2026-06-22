@@ -24,11 +24,6 @@ export function isAccentId(value: string | null): value is AccentId {
 // event only fires in other tabs.
 export const ACCENT_CHANGE_EVENT = 'runomics:accent-change'
 
-// "nature" reuses the original icon-192.png; other palettes have a hue-rotated variant.
-export function accentIconSrc(accent: AccentId): string {
-  return accent === DEFAULT_ACCENT ? '/icon-192.png' : `/icon-192-${accent}.png`
-}
-
 // Persists the chosen accent and notifies listeners (sidebar logo, charts) in this tab.
 export function persistAccent(accent: AccentId): void {
   localStorage.setItem(ACCENT_STORAGE_KEY, accent)
