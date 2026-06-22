@@ -6,9 +6,12 @@ type PillVariant = 'active' | 'neutral' | 'highlight'
 // `highlight` carries its tint via className (semantic, semi-transparent).
 // Pills are rendered in long scrollable rows, so they stay solid - no
 // backdrop-filter (the blur budget is reserved for chrome + key cards).
+// `active`/`neutral` are the segmented-chip recipe (C2): a translucent,
+// foreground-tinted overlay so the chip reads as glass on top of a card
+// while still adapting automatically between light and dark.
 const VARIANT_CLASS: Record<PillVariant, string> = {
   active: 'bg-accent text-accent-foreground font-semibold',
-  neutral: 'border border-border bg-muted text-muted-foreground hover:bg-muted/70',
+  neutral: 'border border-foreground/[0.14] bg-foreground/[0.06] text-foreground/70 hover:bg-foreground/[0.1]',
   highlight: 'border font-semibold',
 }
 
@@ -30,7 +33,7 @@ export function Pill({
   return (
     <Tag
       className={cn(
-        'inline-flex flex-none items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium',
+        'inline-flex flex-none items-center gap-1.5 rounded-full px-3.5 py-[7px] text-xs font-medium',
         'whitespace-nowrap transition-transform active:scale-95',
         VARIANT_CLASS[variant],
         className
