@@ -15,6 +15,8 @@ interface Props {
   selected?: boolean
   selectionDisabled?: boolean
   onToggleSelect?: () => void
+  /** `glass` renders a lighter translucent sub-surface (Dashboard recent activities, B9). */
+  surface?: 'card' | 'glass'
 }
 
 export function ActivityRow({
@@ -24,15 +26,22 @@ export function ActivityRow({
   selected = false,
   selectionDisabled = false,
   onToggleSelect,
+  surface = 'card',
 }: Props) {
-  const rowClassName = cardClass({
-    clickable: !selectionDisabled,
-    className: cn(
-      'grid grid-cols-[1fr_auto] items-center gap-x-4',
-      selected && 'border-accent ring-1 ring-accent',
-      selectionDisabled && 'cursor-not-allowed opacity-50'
-    ),
-  })
+  const rowClassName = surface === 'glass'
+    ? cn(
+        'glass-row grid grid-cols-[1fr_auto] items-center gap-x-4 p-4 transition-transform active:scale-[0.99]',
+        selected && 'border-accent ring-1 ring-accent',
+        selectionDisabled && 'cursor-not-allowed opacity-50'
+      )
+    : cardClass({
+        clickable: !selectionDisabled,
+        className: cn(
+          'grid grid-cols-[1fr_auto] items-center gap-x-4',
+          selected && 'border-accent ring-1 ring-accent',
+          selectionDisabled && 'cursor-not-allowed opacity-50'
+        ),
+      })
 
   if (selectable) {
     return (

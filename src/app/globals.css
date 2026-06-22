@@ -97,6 +97,7 @@
   --glass-shadow-float: 0 18px 40px -24px rgba(8, 40, 28, 0.35);
   --glass-shadow-nav:   0 16px 36px -20px rgba(8, 40, 28, 0.35);
   --glass-fallback:     rgba(255, 255, 255, 0.96);  /* @supports not backdrop-filter */
+  --glass-row-bg:       rgba(255, 255, 255, 0.5);    /* B9 - sub-surface row */
 }
 
 /* ─── Dark tokens ──────────────────────────────────── */
@@ -141,6 +142,7 @@
   --glass-shadow-float: 0 24px 50px -26px rgba(0, 0, 0, 0.7);
   --glass-shadow-nav:   0 16px 36px -18px rgba(0, 0, 0, 0.80);
   --glass-fallback:     rgba(16, 26, 22, 0.92);  /* @supports not backdrop-filter */
+  --glass-row-bg:       rgba(255, 255, 255, 0.04);  /* B9 - sub-surface row */
 }
 
 /* ─── Accent palettes ──────────────────────────────── */
@@ -249,6 +251,15 @@
   .glass-chip {
     -webkit-backdrop-filter: blur(8px) saturate(1.5);
     backdrop-filter: blur(8px) saturate(1.5);
+  }
+
+  /* Lighter sub-surface for rows nested inside a glass-card (e.g. recent
+     activities list) - no backdrop-filter of its own, just a translucent
+     tint over the parent card's blur. */
+  .glass-row {
+    background: var(--glass-row-bg);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
   }
 
   /* Fluid display title (Geist 800, ~25.6px -> 34px), responsive to viewport. */

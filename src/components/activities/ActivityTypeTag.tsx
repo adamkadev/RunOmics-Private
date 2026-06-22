@@ -14,7 +14,7 @@ export function ActivityTypeTag({ type, className }: Props) {
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium',
+        'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium',
         'border border-white/10 bg-white/5 backdrop-blur-md',
         config.badgeClass,
         className
