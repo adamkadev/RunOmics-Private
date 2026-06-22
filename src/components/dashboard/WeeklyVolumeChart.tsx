@@ -13,7 +13,7 @@ import type { WeeklyVolume } from '@/domain/activity/types'
 import { CHART_COLORS } from '@/lib/colors'
 import { useAccentColor } from '@/lib/useAccent'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
-import { Card } from '@/components/ui/Card'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
 interface Props {
@@ -63,7 +63,7 @@ export function WeeklyVolumeChart({ data, currentWeek }: Props) {
   const currentWeekIdx = chartData.findIndex((d) => d.week === currentWeek)
 
   return (
-    <Card padding="lg">
+    <GlassSurface variant="card" className="rounded-[22px] p-5">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.dashboard.weeklyVolume.title}
       </h3>
@@ -110,6 +110,6 @@ export function WeeklyVolumeChart({ data, currentWeek }: Props) {
           />
         </AreaChart>
       </ResponsiveContainer>
-    </Card>
+    </GlassSurface>
   )
 }
