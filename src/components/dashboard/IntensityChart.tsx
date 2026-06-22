@@ -4,7 +4,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import type { TypeDistribution } from '@/domain/activity/types'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
-import { Card } from '@/components/ui/Card'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
 interface Props {
@@ -31,7 +31,7 @@ function CustomTooltip({ active, payload }: TooltipProps) {
 
 export function IntensityChart({ data }: Props) {
   return (
-    <Card padding="lg">
+    <GlassSurface variant="card" className="rounded-[22px] p-5">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.dashboard.trainingMix.title}
       </h3>
@@ -78,6 +78,6 @@ export function IntensityChart({ data }: Props) {
           })}
         </ul>
       </div>
-    </Card>
+    </GlassSurface>
   )
 }
