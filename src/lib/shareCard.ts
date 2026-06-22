@@ -17,7 +17,7 @@ const HEIGHT = 1920
 const MARGIN = 72
 
 // Centered region (between title and stats) where the route silhouette or map tile is drawn.
-const MAP_BOX = { x: MARGIN, y: 540, w: WIDTH - MARGIN * 2, h: 760 }
+export const MAP_BOX = { x: MARGIN, y: 540, w: WIDTH - MARGIN * 2, h: 760 }
 
 interface Palette {
   title: string
@@ -65,31 +65,6 @@ export function loadImage(src: string, crossOrigin = false): Promise<HTMLImageEl
     img.onerror = () => reject(new Error(`Failed to load ${src}`))
     img.src = src
   })
-}
-
-/** Caps `route` at `max` points (keeping the last), to keep the static-map URL short. */
-function downsample(route: [number, number][], max: number): [number, number][] {
-  if (route.length <= max) return route
-  const step = (route.length - 1) / (max - 1)
-  const out: [number, number][] = []
-  for (let i = 0; i < max; i++) out.push(route[Math.round(i * step)])
-  return out
-}
-
-/**
- * Builds a MapTiler Static Maps URL rendering the run's GPS track as a colored path.
- * Returns null when there is no usable route or token.
- */
-export function staticMapUrl(activity: Activity, accent: AccentId, isDark: boolean, token: string | undefined): string | null {
-  if (!token || !activity.route || activity.route.length < 2) return null
-  const style = isDark ? 'backdrop-v4-dark' : 'dataviz-v4'
-  const coords = downsample(activity.route, 90)
-    .map(([lng, lat]) => `${lng.toFixed(5)},${lat.toFixed(5)}`)
-    .join('|')
-  const path = `stroke:${ACCENT_SWATCHES[accent]}|width:6|${coords}`
-  const w = Math.round(MAP_BOX.w / 2)
-  const h = Math.round(MAP_BOX.h / 2)
-  return `https://api.maptiler.com/maps/${style}/static/auto/${w}x${h}@2x.png?key=${token}&padding=60&path=${encodeURIComponent(path)}`
 }
 
 /** Wraps text to fit `maxWidth`, capped at two lines (second line gets an ellipsis). */
@@ -230,13 +205,21 @@ function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x: numb
   ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h)
 }
 
-/** Draws the static map tile, cover-cropped and clipped to a rounded rectangle inside MAP_BOX. */
+/** Draws the map tile, cover-cropped and clipped to a rounded rectangle inside MAP_BOX. */
 function drawMapTile(ctx: CanvasRenderingContext2D, img: HTMLImageElement, borderColor: string) {
   ctx.save()
   ctx.beginPath()
   ctx.roundRect(MAP_BOX.x, MAP_BOX.y, MAP_BOX.w, MAP_BOX.h, 32)
   ctx.clip()
   drawCover(ctx, img, MAP_BOX.x, MAP_BOX.y, MAP_BOX.w, MAP_BOX.h)
+
+  // Required MapTiler/OSM attribution; the offscreen map snapshot has no DOM attribution control to capture.
+  ctx.font = '400 18px system-ui, sans-serif'
+  ctx.textAlign = 'right'
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.55)'
+  ctx.fillText(t.activity.shareCard.mapAttribution, MAP_BOX.x + MAP_BOX.w - 15, MAP_BOX.y + MAP_BOX.h - 13)
+  ctx.textAlign = 'left'
+
   ctx.restore()
 
   ctx.beginPath()

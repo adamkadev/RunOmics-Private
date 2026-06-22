@@ -598,6 +598,7 @@ export const en = {
         light: 'Light',
         dark: 'Dark',
       },
+      mapAttribution: '© MapTiler © OpenStreetMap contributors',
     },
     stats: {
       distance: 'Distance',

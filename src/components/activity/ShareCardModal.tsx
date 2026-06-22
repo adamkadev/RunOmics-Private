@@ -5,15 +5,16 @@ import { createPortal } from 'react-dom'
 import { Ban, Check, Copy, Download, ImagePlus, Map, Moon, Route, Share2, Sun, X } from 'lucide-react'
 import type { Activity } from '@/domain/activity/types'
 import {
+  MAP_BOX,
   SHARE_STYLES,
   backgroundSrc,
   loadImage,
   renderShareCard,
   shareCardFileName,
-  staticMapUrl,
   type MapMode,
   type ShareTheme,
 } from '@/lib/shareCard'
+import { captureRouteMapSnapshot } from '@/lib/routeMapSnapshot'
 import { ACCENT_IDS, ACCENT_SWATCHES, DEFAULT_ACCENT, isAccentId, type AccentId } from '@/lib/accent'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -51,8 +52,8 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   const [activeIndex, setActiveIndex] = useState(0)
   const [mapMode, setMapMode] = useState<MapMode>('run')
   const [bgImages, setBgImages] = useState<(HTMLImageElement | null)[]>(() => SHARE_STYLES.map(() => null))
-  // Keyed by URL so a stale tile (wrong color/text mode) is never shown while the new one loads.
-  const [mapTile, setMapTile] = useState<{ url: string; img: HTMLImageElement } | null>(null)
+  // Keyed by accent+theme so a stale tile (wrong color/text mode) is never shown while the new one loads.
+  const [mapTile, setMapTile] = useState<{ key: string; img: HTMLImageElement } | null>(null)
   const [photoImage, setPhotoImage] = useState<HTMLImageElement | null>(null)
   const [copyState, setCopyState] = useState<CopyState>('idle')
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -90,21 +91,29 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     }
   }, [])
 
-  const mapUrl = canUseMap ? staticMapUrl(activity, accent, theme === 'dark', mapToken) : null
-  const mapImage = mapTile?.url === mapUrl ? mapTile.img : null
+  const mapKey = canUseMap ? `${accent}:${theme}` : null
+  const mapImage = mapTile?.key === mapKey ? mapTile.img : null
 
   useEffect(() => {
-    if (mapMode !== 'map' || !mapUrl || mapTile?.url === mapUrl) return
+    if (mapMode !== 'map' || !mapKey || !mapToken || !activity.route || mapTile?.key === mapKey) return
     let cancelled = false
-    loadImage(mapUrl, true)
+    captureRouteMapSnapshot({
+      route: activity.route,
+      color: ACCENT_SWATCHES[accent],
+      isDark: theme === 'dark',
+      token: mapToken,
+      width: MAP_BOX.w,
+      height: MAP_BOX.h,
+    })
+      .then((dataUrl) => loadImage(dataUrl))
       .then((img) => {
-        if (!cancelled) setMapTile({ url: mapUrl, img })
+        if (!cancelled) setMapTile({ key: mapKey, img })
       })
       .catch((err) => console.error(err))
     return () => {
       cancelled = true
     }
-  }, [mapMode, mapUrl, mapTile])
+  }, [mapMode, mapKey, mapToken, activity.route, accent, theme, mapTile])
 
   useEffect(() => {
     SHARE_STYLES.forEach((style, i) => {
