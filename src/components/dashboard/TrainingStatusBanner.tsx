@@ -56,14 +56,9 @@ export function TrainingStatusBanner({ status }: { status: TrainingStatus }) {
 
   const tsbSign = status.tsb >= 0 ? '+' : ''
   const formValue = `${tsbSign}${status.tsb}`
-  const formClass =
-    status.tsb > 5
-      ? 'text-blue-600 dark:text-blue-400'
-      : status.tsb < -20
-        ? 'text-red-600 dark:text-red-400'
-        : status.tsb < -10
-          ? 'text-amber-600 dark:text-amber-400'
-          : 'text-foreground'
+  // C5 (validated PO, rule frozen): negative Form is a warning (amber),
+  // positive/zero Form is healthy (accent). No other gradations.
+  const formClass = status.tsb < 0 ? 'text-[#f0a500]' : 'text-accent-text'
 
   return (
     <GlassSurface variant="card" className="rounded-[22px] p-5">
