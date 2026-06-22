@@ -12,7 +12,7 @@ import {
 import type { TrainingLoadData, TrainingLoadPoint } from '@/application/usecases/GetTrainingLoad'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
-import { Card } from '@/components/ui/Card'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
 interface Props {
@@ -48,7 +48,7 @@ export function TrainingLoadChart({ data }: Props) {
   const status = formStatus(data.tsb)
 
   return (
-    <Card padding="lg">
+    <GlassSurface variant="card" className="rounded-[22px] p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-foreground/80">
           {t.dashboard.trainingLoad.title} <span className="font-normal text-subtle">{t.dashboard.trainingLoad.window}</span>
@@ -89,6 +89,6 @@ export function TrainingLoadChart({ data }: Props) {
       <p className="mt-2 text-xs text-subtle">
         {t.dashboard.trainingLoad.footnote}
       </p>
-    </Card>
+    </GlassSurface>
   )
 }
