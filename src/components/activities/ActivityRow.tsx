@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { MessageSquare, Check } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { ActivityTypeTag } from './ActivityTypeTag'
 import { PrBadge } from './PrBadge'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
@@ -7,13 +7,6 @@ import type { Activity } from '@/domain/activity/types'
 import { cardClass } from '@/components/ui/Card'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
-
-function rpeChipClass(rpe: number): string {
-  if (rpe <= 3) return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-  if (rpe <= 5) return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-  if (rpe <= 7) return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
-  return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-}
 
 interface Props {
   activity: Activity
@@ -79,14 +72,13 @@ function RowContent({ activity: a, prLabels, selected }: { activity: Activity; p
           <ActivityTypeTag type={a.type} />
           <PrBadge labels={prLabels} />
           {a.rpe !== null && (
-            <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${rpeChipClass(a.rpe)}`}>
+            <span className={`rounded px-1.5 py-0.5 text-xs font-medium text-subtle`}>
               RPE {a.rpe}
             </span>
           )}
-          <span className="text-xs text-subtle">{formatDate(a.date)}</span>
-          {a.comment && (
-            <MessageSquare size={12} className="text-subtle" />
-          )}
+          <div className="hidden sm:block">
+            <span className="text-xs text-subtle">{formatDate(a.date)}</span>
+          </div>
         </div>
         {a.description && (
           <p className="mt-1 text-sm font-medium text-foreground">
@@ -100,10 +92,11 @@ function RowContent({ activity: a, prLabels, selected }: { activity: Activity; p
 
       <div className="flex shrink-0 items-center gap-5 text-right text-sm">
         <div>
+          <span className="text-xs text-subtle">{formatDate(a.date)}</span>
           <p className="font-semibold text-foreground">
             {formatDistance(a.distanceKm)}
+            <span className="text-subtle"> {t.units.km}</span>
           </p>
-          <p className="text-xs text-subtle">{t.activities.row.distance}</p>
         </div>
         <div className="hidden sm:block">
           <p className="font-medium text-foreground/80">

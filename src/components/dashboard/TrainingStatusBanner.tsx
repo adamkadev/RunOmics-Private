@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
-import type { TrainingStatus, TrainingStatusType, RiskLevel, LoadTrend } from '@/application/usecases/GetTrainingStatus'
+import type { TrainingStatus, TrainingStatusType, LoadTrend } from '@/application/usecases/GetTrainingStatus'
 import { Card, Badge } from '@/components/ui/Card'
 
 const STATUS_STYLE: Record<TrainingStatusType, { dot: string; badge: string; text: string }> = {
@@ -94,10 +94,6 @@ export function TrainingStatusBanner({ status }: { status: TrainingStatus }) {
           <Metric label={s.metrics.form} value={formValue} valueClass={formClass} />
         </div>
       </div>
-
-      <p className="mt-3 text-xs text-muted-foreground/70">
-        {s.metrics.fitnessDelta(status.ctlDelta)}
-      </p>
     </Card>
   )
 }

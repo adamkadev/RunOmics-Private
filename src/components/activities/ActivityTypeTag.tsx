@@ -10,15 +10,23 @@ interface Props {
 
 export function ActivityTypeTag({ type, className }: Props) {
   const config = ACTIVITY_TYPE_CONFIG[type]
+
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded px-2 py-0.5 text-xs font-medium',
+        'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium',
+        'border border-white/10 bg-white/5 backdrop-blur-md',
         config.badgeClass,
         className
       )}
     >
-      {t.activityTypes[type]}
+      <span
+        className="h-1.5 w-1.5 shrink-0 rounded-full"
+        style={{ backgroundColor: config.dotColor }}
+      />
+      <span className="leading-none">
+        {t.activityTypes[type]}
+      </span>
     </span>
   )
 }

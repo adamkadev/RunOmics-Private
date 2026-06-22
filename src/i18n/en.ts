@@ -37,7 +37,6 @@ export const en = {
     openMenu: 'Open menu',
     closeMenu: 'Close menu',
   },
-
   meta: {
     description: 'Your personal running training dashboard - stats, maps, trends.',
   },
@@ -55,10 +54,12 @@ export const en = {
     mm: 'mm',
     percent: '%',
     kcal: 'kcal',
+    perKm: '/km',
     minPerKm: 'min/km',
     celsius: '°C',
     hour: 'h',
     day: 'd',
+    elevation: 'D+ m'
   },
 
   common: {
@@ -327,7 +328,6 @@ export const en = {
       fitness: 'Fitness',
       fatigue: 'Fatigue',
       form: 'Form',
-      fitnessDelta: (d: number) => `${d >= 0 ? '+' : ''}${d} over 2 wk`,
     },
   },
 
@@ -776,6 +776,14 @@ export const en = {
       pace: 'Pace',
       date: 'Date',
     },
+  },
+
+  pbAlerts: {
+    off: (diff: string) => `${diff} off your PR`,
+  },
+
+  nextRace: {
+    line: (name: string, distance: string, daysUntil: string) => `${name} (${distance}) - ${daysUntil}`,
   },
 
   racePredictions: {

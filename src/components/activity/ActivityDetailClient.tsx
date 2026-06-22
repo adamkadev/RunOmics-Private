@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { Footprints, Timer, TrendingUp, Heart, Mountain, Flame, Gauge, Zap, type LucideIcon } from 'lucide-react'
 import type { Activity } from '@/domain/activity/types'
 import { ActivityMapClient } from './ActivityMapClient'
 import { NoRouteMap } from './ActivityMap'
@@ -9,87 +8,70 @@ import { HrChart } from './HrChart'
 import { ElevationChart } from './ElevationChart'
 import { PaceChart } from './PaceChart'
 import { CadenceChart } from './CadenceChart'
-import { formatDistance, formatDuration, formatPace } from '@/lib/formatters'
+import { formatClock, formatDistance, formatDurationShort } from '@/lib/formatters'
 import { Card } from '@/components/ui/Card'
 import { t } from '@/i18n'
+import { cn } from '@/lib/utils'
 
 interface Props {
   activity: Activity
 }
 
 interface StatDef {
-  Icon: LucideIcon
-  color: string
   value: string
-  label: string
+  unit: string
 }
 
 function buildStats(activity: Activity): StatDef[] {
   const stats: StatDef[] = [
     {
-      Icon: Footprints,
-      color: 'text-emerald-500 dark:text-emerald-400',
       value: formatDistance(activity.distanceKm),
-      label: t.activity.stats.distance,
+      unit: t.units.km,
     },
     {
-      Icon: Timer,
-      color: 'text-blue-500 dark:text-blue-400',
-      value: formatDuration(activity.durationSeconds),
-      label: t.activity.stats.duration,
+      value: formatDurationShort(activity.durationSeconds),
+      unit: t.activity.stats.duration,
     },
   ]
 
   if (activity.paceSecPerKm) {
     stats.push({
-      Icon: TrendingUp,
-      color: 'text-violet-500 dark:text-violet-400',
-      value: formatPace(activity.paceSecPerKm),
-      label: t.activity.stats.avgPace,
+      value: formatClock(activity.paceSecPerKm),
+      unit: t.units.perKm,
     })
   }
 
   if (activity.avgHeartRate) {
     stats.push({
-      Icon: Heart,
-      color: 'text-red-500 dark:text-red-400',
-      value: `${activity.avgHeartRate} ${t.units.bpm}`,
-      label: t.activity.stats.avgHr,
+      value: `${activity.avgHeartRate}`,
+      unit: t.units.bpm,
     })
   }
 
   if (activity.calories != null) {
     stats.push({
-      Icon: Flame,
-      color: 'text-orange-500 dark:text-orange-400',
-      value: t.activity.stats.caloriesValue(activity.calories),
-      label: t.activity.stats.calories,
+      value: `${activity.calories}`,
+      unit: t.units.kcal
     })
   }
 
-  if (activity.elevationGain) {
+  if (activity.elevationGain !== null) {
     stats.push({
-      Icon: Mountain,
-      color: 'text-stone-500 dark:text-stone-400',
-      value: t.activity.stats.elevationValue(activity.elevationGain),
-      label: t.activity.stats.elevation,
+      value: `${activity.elevationGain > 0 ? '+' : '-'}${Math.abs(activity.elevationGain)}`,
+      unit: t.units.elevation,
     })
   }
 
   if (activity.cadenceSpm != null) {
     stats.push({
-      Icon: Gauge,
-      color: 'text-sky-500 dark:text-sky-400',
-      value: `${Math.round(activity.cadenceSpm)} ${t.units.spm}`,
-      label: t.activity.stats.cadence,
+      value: `${Math.round(activity.cadenceSpm)}`,
+      unit: t.units.spm,
     })
   }
 
   stats.push({
-    Icon: Zap,
-    color: 'text-amber-500 dark:text-amber-400',
-    value: activity.rpe !== null ? (t.rpeLabels[activity.rpe] ?? '-') : t.activity.stats.na,
-    label: activity.rpe !== null ? t.activity.stats.rpeValue(activity.rpe) : t.activity.stats.rpe,
+    value: activity.rpe !== null ? t.activity.stats.rpeValue(activity.rpe) : t.activity.stats.rpe,
+    unit: activity.rpe !== null ? (t.rpeLabels[activity.rpe] ?? '-') : t.activity.stats.na,
   })
 
   return stats
@@ -116,18 +98,28 @@ export function ActivityDetailClient({ activity }: Props) {
             <NoRouteMap className="h-full w-full" />
           )}
         </div>
+      </Card>
 
-        <div className="flex flex-wrap px-2 py-2">
-          {stats.map(({ Icon, color, value, label }) => (
-            <div key={label} className="flex min-w-[5rem] flex-1 flex-col items-center gap-0.5 px-2 py-2 text-center">
-              <Icon size={13} className={color} />
-              <div className="whitespace-nowrap text-sm font-bold leading-tight text-foreground">{value}</div>
-              <div className="text-[10px] leading-tight text-muted-foreground">{label}</div>
+      <Card padding="none" overflow>
+        <div className="flex flex-wrap justify-center px-2 py-2">
+          {stats.map(({ value, unit }, i) => (
+            <div
+              key={i}
+              className="flex min-w-[5rem] flex-1 flex-col items-start gap-0.5 px-2 py-2"
+            >
+              <div className={cn(
+                'whitespace-nowrap font-bold leading-tight text-foreground',
+                i === stats.length - 1 && 'text-accent-text'
+              )}>
+                {value}
+              </div>
+              <div className="text-[10px] leading-tight text-muted-foreground">
+                {unit}
+              </div>
             </div>
           ))}
         </div>
       </Card>
-
       {hasCharts && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {activity.hrSamples && (

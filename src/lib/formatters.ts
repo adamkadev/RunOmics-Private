@@ -11,12 +11,13 @@ export function formatDuration(seconds: number): string {
 export function formatDurationShort(seconds: number): string {
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
+  const s = seconds % 60
 
   if (h > 0) {
     return `${h}:${String(m).padStart(2, '0')}`
   }
 
-  return `${m}`
+  return `${m}:${String(s).padStart(2, '0')}`
 }
 
 /** Formats a number of seconds as `m:ss` (rounds to the nearest second). */
@@ -32,7 +33,7 @@ export function formatPace(secPerKm: number): string {
 }
 
 export function formatDistance(km: number): string {
-  return `${km.toFixed(km >= 10 ? 1 : 2)} km`
+  return `${km.toFixed(km >= 10 ? 1 : 2)}`
 }
 
 export function formatDate(isoDate: string): string {
