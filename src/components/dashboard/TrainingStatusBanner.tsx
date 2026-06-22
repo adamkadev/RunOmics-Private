@@ -1,7 +1,8 @@
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { TrainingStatus, TrainingStatusType, LoadTrend } from '@/application/usecases/GetTrainingStatus'
-import { Card, Badge } from '@/components/ui/Card'
+import { Badge } from '@/components/ui/Card'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 
 const STATUS_STYLE: Record<TrainingStatusType, { dot: string; badge: string; text: string }> = {
   productive: {
@@ -65,7 +66,7 @@ export function TrainingStatusBanner({ status }: { status: TrainingStatus }) {
           : 'text-foreground'
 
   return (
-    <Card padding="lg">
+    <GlassSurface variant="card" className="rounded-[22px] p-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
           <span
@@ -88,12 +89,12 @@ export function TrainingStatusBanner({ status }: { status: TrainingStatus }) {
 
         <div className="flex items-center gap-6 pl-5 sm:pl-0">
           <Metric label={s.metrics.fitness} value={String(status.ctl)} />
-          <div className="h-8 w-px bg-border" />
+          <div className="h-8 w-px bg-foreground/10" />
           <Metric label={s.metrics.fatigue} value={String(status.atl)} />
-          <div className="h-8 w-px bg-border" />
+          <div className="h-8 w-px bg-foreground/10" />
           <Metric label={s.metrics.form} value={formValue} valueClass={formClass} />
         </div>
       </div>
-    </Card>
+    </GlassSurface>
   )
 }
