@@ -127,7 +127,7 @@ export function Sidebar() {
           <HeaderMark size={22} />
           <span className="text-lg tracking-tight text-foreground">
             <span className="font-bold">{t.brand.namePrefix}</span>
-            <span className="font-normal">{t.brand.nameSuffix}</span>
+            <span className="font-bold text-accent-text">{t.brand.nameSuffix}</span>
           </span>
         </Link>
 
