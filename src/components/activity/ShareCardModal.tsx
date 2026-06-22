@@ -55,6 +55,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   // Keyed by accent+theme so a stale tile (wrong color/text mode) is never shown while the new one loads.
   const [mapTile, setMapTile] = useState<{ key: string; img: HTMLImageElement } | null>(null)
   const [photoImage, setPhotoImage] = useState<HTMLImageElement | null>(null)
+  const [brandMark, setBrandMark] = useState<HTMLImageElement | null>(null)
   const [copyState, setCopyState] = useState<CopyState>('idle')
   const scrollRef = useRef<HTMLDivElement>(null)
   const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([])
@@ -91,6 +92,12 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     }
   }, [])
 
+  useEffect(() => {
+    loadImage('/backgrounds/branding-mark.png')
+      .then(setBrandMark)
+      .catch((err) => console.error(err))
+  }, [])
+
   const mapKey = canUseMap ? `${accent}:${theme}` : null
   const mapImage = mapTile?.key === mapKey ? mapTile.img : null
 
@@ -119,9 +126,9 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     SHARE_STYLES.forEach((style, i) => {
       const canvas = canvasRefs.current[i]
       const bgImage = style === 'photo' ? photoImage ?? bgImages[i] : bgImages[i]
-      if (canvas) renderShareCard(canvas, { activity, style, accent, theme, mapMode, bgImage, mapImage })
+      if (canvas) renderShareCard(canvas, { activity, style, accent, theme, mapMode, bgImage, mapImage, brandMark })
     })
-  }, [activity, accent, theme, mapMode, bgImages, mapImage, photoImage])
+  }, [activity, accent, theme, mapMode, bgImages, mapImage, photoImage, brandMark])
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {

@@ -237,11 +237,12 @@ export interface RenderOptions {
   mapMode: MapMode
   bgImage: HTMLImageElement | null
   mapImage?: HTMLImageElement | null
+  brandMark?: HTMLImageElement | null
 }
 
 /** Renders an activity share card into `canvas` (1080x1920, Canvas 2D, no external deps). */
 export function renderShareCard(canvas: HTMLCanvasElement, options: RenderOptions) {
-  const { activity, style, accent, theme, mapMode, bgImage, mapImage } = options
+  const { activity, style, accent, theme, mapMode, bgImage, mapImage, brandMark } = options
   canvas.width = WIDTH
   canvas.height = HEIGHT
   const ctx = canvas.getContext('2d')
@@ -261,7 +262,10 @@ export function renderShareCard(canvas: HTMLCanvasElement, options: RenderOption
     ctx.fillRect(0, 0, WIDTH, HEIGHT)
   }
 
-  if (isPhoto && bgImage) drawPhotoScrims(ctx, 'dark')
+  if (isPhoto && bgImage) {
+    drawPhotoScrims(ctx, 'dark')
+    if (brandMark) ctx.drawImage(brandMark, 0, 0, WIDTH, HEIGHT)
+  }
 
   drawTitleAndDate(ctx, activity, 320, palette)
 
