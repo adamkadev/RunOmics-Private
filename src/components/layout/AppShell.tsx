@@ -1,13 +1,15 @@
 import { Sidebar } from './Sidebar'
 import { PageTransition } from './PageTransition'
 import { ThemeSync } from './ThemeSync'
+import { Aurora } from './Aurora'
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
+      <Aurora />
       <ThemeSync />
       <Sidebar />
-      <main className="min-h-screen bg-background lg:ml-60">
+      <main className="min-h-screen lg:ml-60">
         {/* Mobile spacer: top bar height + notch safe area */}
         <div
           className="lg:hidden"

@@ -84,7 +84,7 @@ export default async function DashboardPage() {
           />
         </div>
 
-        {/* TODO: MIGRATE TO LIQUID GLASS*/}
+        {/* NEED TO REMOVE EDITION MODE FOR SOMETHING MORE DISCREET SEE README*/}
         {/* <div className="flex justify-end">
           <DashboardFocusBar />
         </div> */}

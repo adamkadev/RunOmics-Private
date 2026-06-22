@@ -40,24 +40,44 @@
   to   { opacity: 1; transform: translateY(0);    }
 }
 
+/* Slow drifting aurora blobs (frozen under prefers-reduced-motion). */
+@keyframes ro-aurora {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  50%  { transform: translate3d(4%, -3%, 0) scale(1.12); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+@keyframes ro-aurora2 {
+  0%   { transform: translate3d(0, 0, 0) scale(1.05); }
+  50%  { transform: translate3d(-5%, 4%, 0) scale(1); }
+  100% { transform: translate3d(0, 0, 0) scale(1.05); }
+}
+
 /* ─── Light tokens ─────────────────────────────────── */
 :root {
   --shadow-card:       0 1px 3px 0 rgb(0 0 0 / 0.06),
                        0 4px 16px -4px rgb(0 0 0 / 0.09);
 
-  --background:        #f8fafc;  /* slate-50  */
+  --background:        #eef3f0;  /* emerald-tinted canvas base */
   --card:              #ffffff;
   --muted:             #f1f5f9;  /* slate-100 */
   --border:            #e2e8f0;  /* slate-200 */
   --foreground:        #0f172a;  /* slate-900 */
   --muted-foreground:  #64748b;  /* slate-500 */
   --subtle:            #94a3b8;  /* slate-400 */
-  --accent:            #10b981;  /* emerald-500 */
+  --accent:            #0e9f6e;  /* deep emerald - sole action color */
   --accent-foreground: #ffffff;
   --accent-subtle:     #ecfdf5;  /* emerald-50  */
   --accent-text:       #059669;  /* emerald-600 */
   --destructive:       #ef4444;  /* red-500 */
-  --ring:              rgb(16 185 129 / 0.35);
+  --ring:              rgb(14 159 110 / 0.35);
+
+  /* Living aurora canvas behind the glass */
+  --canvas:            linear-gradient(155deg, #f5f9f7 0%, #eef3f0 100%);
+  --aurora-1:          #a7f3d6;  /* emerald */
+  --aurora-2:          #bcd6ff;  /* blue */
+  --aurora-1-opacity:  0.65;
+  --aurora-2-opacity:  0.6;
+  --aurora-blur:       28px;
 
   /* Liquid glass surfaces (translucent chrome + key cards) */
   --glass-bg:           rgba(255, 255, 255, 0.62);
@@ -74,19 +94,27 @@
                        0 4px 16px -4px rgb(0 0 0 / 0.70),
                        inset 0 1px 0 0 rgb(255 255 255 / 0.06);
 
-  --background:        #030712;  /* gray-950  */
+  --background:        #070f0c;  /* deep emerald-tinted canvas base */
   --card:              #111827;  /* gray-900  */
   --muted:             #1f2937;  /* gray-800  */
   --border:            #1f2937;  /* gray-800 — distinct from muted for visible dividers */
   --foreground:        #f8fafc;  /* slate-50  */
   --muted-foreground:  #9ca3af;  /* gray-400  */
   --subtle:            #6b7280;  /* gray-500  */
-  --accent:            #10b981;  /* emerald-500 */
+  --accent:            #10b981;  /* emerald-500 (filled buttons) */
   --accent-foreground: #ffffff;
   --accent-subtle:     rgba(16, 185, 129, 0.1);
-  --accent-text:       #34d399;  /* emerald-400 */
+  --accent-text:       #2ed9a0;  /* bright emerald - text/icons + logo glow on dark */
   --destructive:       #f87171;  /* red-400   */
-  --ring:              rgb(52 211 153 / 0.7);  /* 0.7 alpha for 3:1 focus contrast on dark surfaces */
+  --ring:              rgb(46 217 160 / 0.7);  /* 0.7 alpha for 3:1 focus contrast on dark surfaces */
+
+  /* Living aurora canvas behind the glass */
+  --canvas:            linear-gradient(155deg, #0a1512 0%, #070f0c 100%);
+  --aurora-1:          #0e9f6e;  /* emerald */
+  --aurora-2:          #1276b8;  /* blue */
+  --aurora-1-opacity:  0.5;
+  --aurora-2-opacity:  0.42;
+  --aurora-blur:       30px;
 
   /* Liquid glass surfaces (translucent chrome + key cards) */
   --glass-bg:           rgba(22, 34, 30, 0.46);
@@ -201,6 +229,40 @@
     font-weight: 800;
     letter-spacing: -0.02em;
     line-height: 1.15;
+  }
+
+  /* Living aurora layer: tinted canvas + two drifting radial blobs, fixed
+     behind all content so glass surfaces blur it via backdrop-filter. */
+  .aurora {
+    position: fixed;
+    inset: 0;
+    z-index: -10;
+    overflow: hidden;
+    pointer-events: none;
+    background: var(--canvas);
+  }
+  .aurora-blob {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(var(--aurora-blur));
+  }
+  .aurora-blob-1 {
+    width: max(640px, 60vmax);
+    height: max(640px, 60vmax);
+    left: -14vmax;
+    top: -16vmax;
+    background: radial-gradient(circle, var(--aurora-1) 0%, transparent 62%);
+    opacity: var(--aurora-1-opacity);
+    animation: ro-aurora 16s ease-in-out infinite;
+  }
+  .aurora-blob-2 {
+    width: max(580px, 56vmax);
+    height: max(580px, 56vmax);
+    right: -14vmax;
+    top: 8vmax;
+    background: radial-gradient(circle, var(--aurora-2) 0%, transparent 62%);
+    opacity: var(--aurora-2-opacity);
+    animation: ro-aurora2 19s ease-in-out infinite;
   }
 }
 
