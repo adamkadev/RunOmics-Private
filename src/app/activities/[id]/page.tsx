@@ -83,17 +83,13 @@ export default async function ActivityDetailPage({
       <ActivityDetailClient activity={activity} />
 
       <div className="space-y-4">
+        <ZoneBar hrZones={activity.hrZones} />
         <KmSplits activity={activity} />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <ZoneBar hrZones={activity.hrZones} />
           <TrainingEffect aer={activity.aerTrainingEffect} ana={activity.anaTrainingEffect} />
+          {activity.bestEfforts && <BestEfforts bestEfforts={activity.bestEfforts} />}
+          <RunningDynamics activity={activity} />
         </div>
-        {(activity.bestEfforts || activity.strideLengthM != null || activity.groundContactMs != null) && (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {activity.bestEfforts && <BestEfforts bestEfforts={activity.bestEfforts} />}
-            <RunningDynamics activity={activity} />
-          </div>
-        )}
       </div>
     </div>
   )

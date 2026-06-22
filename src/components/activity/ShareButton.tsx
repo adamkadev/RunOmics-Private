@@ -23,7 +23,7 @@ export function ShareButton({ activity }: Props) {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+        className="inline-flex shrink-0 items-center gap-1.5 rounded-[10px] bg-accent px-3.5 py-1.5 text-xs font-semibold text-accent-foreground shadow-lg shadow-accent/30 transition-transform active:scale-95"
       >
         <Share2 size={13} />
         {t.activity.share}
