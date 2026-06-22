@@ -16,11 +16,13 @@ interface Highlight {
   label: string
 }
 
+// Glass-tinted pills (B10): translucent fill + tinted border, single hue for
+// both themes since the pill already sits on the glass card's blur.
 const TINT = {
-  record: 'border-amber-500/25 bg-amber-500/10 text-amber-600 dark:text-amber-400',
-  improvement: 'border-orange-500/25 bg-orange-500/10 text-orange-600 dark:text-orange-400',
-  wear: 'border-red-500/25 bg-red-500/10 text-red-600 dark:text-red-400',
-  race: 'border-blue-500/25 bg-blue-500/10 text-blue-600 dark:text-blue-400',
+  record: 'border-[#f0a500]/35 bg-[#f0a500]/[0.14] text-[#f0a500]',
+  improvement: 'border-[#e8730c]/35 bg-[#e8730c]/[0.14] text-[#e8730c]',
+  wear: 'border-red-500/35 bg-red-500/[0.14] text-red-500',
+  race: 'border-[#3b82f6]/35 bg-[#3b82f6]/[0.14] text-[#3b82f6]',
 }
 
 function daysUntil(date: string): number {
@@ -89,7 +91,7 @@ export function DashboardHighlights({ record, pbAlerts, shoes, nextRace }: Props
   if (highlights.length === 0) return null
 
   return (
-    <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="-mx-4 flex gap-2.5 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {highlights.map(({ key, href, Icon, tint, label }) => (
         <Link key={key} href={href} className="shrink-0">
           <Pill variant="highlight" className={tint}>
