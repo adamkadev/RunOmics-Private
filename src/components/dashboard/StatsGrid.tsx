@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
 import { formatDuration, formatDurationShort } from '@/lib/formatters'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
+import { Button } from '@/components/ui/Button'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
 import { WeekLoadBadge } from '@/components/dashboard/WeekLoadBadge'
@@ -66,29 +67,28 @@ export function StatsGrid({ weeks, currentStreak, vo2max, weekLoad }: Props) {
         {isCurrent && weekLoad && <WeekLoadBadge data={weekLoad} />}
         <div className="ml-auto flex items-center gap-1">
           {!isCurrent && (
-            <button
-              onClick={() => setIndex(lastIndex)}
-              className="rounded-md px-2 py-1 text-xs font-medium text-accent-text transition-colors hover:bg-accent-subtle"
-            >
+            <Button variant="ghost" onClick={() => setIndex(lastIndex)} className="px-2 py-1 text-xs">
               {s.jumpToCurrent}
-            </button>
+            </Button>
           )}
-          <button
+          <Button
+            variant="secondary"
             aria-label={s.prevWeek}
             onClick={() => setIndex((i) => Math.max(0, i - 1))}
             disabled={index === 0}
-            className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-all duration-150 hover:bg-muted active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+            className="h-7 w-7 rounded-md p-0"
           >
             <ChevronLeft size={14} />
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="secondary"
             aria-label={s.nextWeek}
             onClick={() => setIndex((i) => Math.min(lastIndex, i + 1))}
             disabled={isCurrent}
-            className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-all duration-150 hover:bg-muted active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+            className="h-7 w-7 rounded-md p-0"
           >
             <ChevronRight size={14} />
-          </button>
+          </Button>
         </div>
       </div>
 
