@@ -71,6 +71,15 @@
   --destructive:       #ef4444;  /* red-500 */
   --ring:              rgb(14 159 110 / 0.35);
 
+  /* Liquid glass design tokens (Dashboard refonte - A1) */
+  --ro-accent:    #0e9f6e;  /* deep emerald - brand + sole action color */
+  --ro-accent-hi: #14b886;  /* on-glass highlight (used on dark/glass) */
+  --ro-ink:       #0b1f17;  /* strong text (light) */
+  --ro-blur:      18px;     /* reference card blur */
+  --ro-text:      #0b1f17;  /* text strong   */
+  --ro-text-2:    #48564e;  /* text secondary */
+  --ro-text-3:    #7c8a82;  /* text tertiary  */
+
   /* Living aurora canvas behind the glass */
   --canvas:            linear-gradient(155deg, #f5f9f7 0%, #eef3f0 100%);
   --aurora-1:          #a7f3d6;  /* emerald */
@@ -79,13 +88,15 @@
   --aurora-2-opacity:  0.6;
   --aurora-blur:       28px;
 
-  /* Liquid glass surfaces (translucent chrome + key cards) */
-  --glass-bg:           rgba(255, 255, 255, 0.62);
-  --glass-bg-nav:       rgba(255, 255, 255, 0.62);
-  --glass-border:       rgba(255, 255, 255, 0.85);
-  --glass-highlight:    rgba(255, 255, 255, 0.75);
-  --glass-shadow-float: 0 20px 40px -26px rgba(8, 40, 28, 0.40);
-  --glass-shadow-nav:   0 16px 36px -20px rgba(8, 40, 28, 0.40);
+  /* Liquid glass surfaces - card + chrome (A3, exact values) */
+  --glass-sat:          1.4;
+  --glass-bg:           rgba(255, 255, 255, 0.62);  /* card  */
+  --glass-bg-nav:       rgba(255, 255, 255, 0.72);  /* chrome */
+  --glass-border:       rgba(255, 255, 255, 0.7);
+  --glass-highlight:    rgba(255, 255, 255, 0.9);
+  --glass-shadow-float: 0 18px 40px -24px rgba(8, 40, 28, 0.35);
+  --glass-shadow-nav:   0 16px 36px -20px rgba(8, 40, 28, 0.35);
+  --glass-fallback:     rgba(255, 255, 255, 0.96);  /* @supports not backdrop-filter */
 }
 
 /* ─── Dark tokens ──────────────────────────────────── */
@@ -108,6 +119,11 @@
   --destructive:       #f87171;  /* red-400   */
   --ring:              rgb(46 217 160 / 0.7);  /* 0.7 alpha for 3:1 focus contrast on dark surfaces */
 
+  /* Liquid glass design tokens (Dashboard refonte - A1) */
+  --ro-text:      #ffffff;                  /* text strong   */
+  --ro-text-2:    rgba(255, 255, 255, 0.6);  /* text secondary */
+  --ro-text-3:    rgba(255, 255, 255, 0.5);  /* text tertiary  */
+
   /* Living aurora canvas behind the glass */
   --canvas:            linear-gradient(155deg, #0a1512 0%, #070f0c 100%);
   --aurora-1:          #0e9f6e;  /* emerald */
@@ -116,13 +132,15 @@
   --aurora-2-opacity:  0.42;
   --aurora-blur:       30px;
 
-  /* Liquid glass surfaces (translucent chrome + key cards) */
-  --glass-bg:           rgba(22, 34, 30, 0.46);
-  --glass-bg-nav:       rgba(12, 20, 17, 0.55);
-  --glass-border:       rgba(255, 255, 255, 0.12);
+  /* Liquid glass surfaces - card + chrome (A3, exact values) */
+  --glass-sat:          1.6;
+  --glass-bg:           rgba(22, 34, 30, 0.42);  /* card  */
+  --glass-bg-nav:       rgba(12, 20, 17, 0.5);   /* chrome */
+  --glass-border:       rgba(255, 255, 255, 0.13);
   --glass-highlight:    rgba(255, 255, 255, 0.14);
-  --glass-shadow-float: 0 22px 44px -26px rgba(0, 0, 0, 0.70);
+  --glass-shadow-float: 0 24px 50px -26px rgba(0, 0, 0, 0.7);
   --glass-shadow-nav:   0 16px 36px -18px rgba(0, 0, 0, 0.80);
+  --glass-fallback:     rgba(16, 26, 22, 0.92);  /* @supports not backdrop-filter */
 }
 
 /* ─── Accent palettes ──────────────────────────────── */
@@ -197,8 +215,18 @@
   .glass-chip {
     border: 1px solid var(--glass-border);
     background: var(--glass-bg);
-    -webkit-backdrop-filter: blur(18px) saturate(1.6);
-    backdrop-filter: blur(18px) saturate(1.6);
+    -webkit-backdrop-filter: blur(var(--ro-blur)) saturate(var(--glass-sat));
+    backdrop-filter: blur(var(--ro-blur)) saturate(var(--glass-sat));
+  }
+
+  /* Fallback for browsers without backdrop-filter: opaque, clean surface. */
+  @supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
+    .glass-card,
+    .glass-nav,
+    .glass-sheet,
+    .glass-chip {
+      background: var(--glass-fallback);
+    }
   }
 
   .glass-card {
@@ -207,14 +235,14 @@
 
   .glass-nav {
     background: var(--glass-bg-nav);
-    -webkit-backdrop-filter: blur(28px) saturate(1.6);
-    backdrop-filter: blur(28px) saturate(1.6);
+    -webkit-backdrop-filter: blur(28px) saturate(var(--glass-sat));
+    backdrop-filter: blur(28px) saturate(var(--glass-sat));
     box-shadow: inset 0 1px 0 var(--glass-highlight), var(--glass-shadow-nav);
   }
 
   .glass-sheet {
-    -webkit-backdrop-filter: blur(32px) saturate(1.6);
-    backdrop-filter: blur(32px) saturate(1.6);
+    -webkit-backdrop-filter: blur(32px) saturate(var(--glass-sat));
+    backdrop-filter: blur(32px) saturate(var(--glass-sat));
     box-shadow: inset 0 1px 0 var(--glass-highlight), var(--glass-shadow-float);
   }
 

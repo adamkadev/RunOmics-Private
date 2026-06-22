@@ -1,10 +1,13 @@
 import { cn } from '@/lib/utils'
 import type { ElementType, HTMLAttributes } from 'react'
 
-type GlassVariant = 'card' | 'nav' | 'sheet' | 'chip'
+// `chrome` is the A3 name for the denser nav/top-bar density; it shares the
+// `glass-nav` recipe (alias) so shipped `nav` usages keep working.
+type GlassVariant = 'card' | 'chrome' | 'nav' | 'sheet' | 'chip'
 
 const VARIANT_CLASS: Record<GlassVariant, string> = {
   card: 'glass-card',
+  chrome: 'glass-nav',
   nav: 'glass-nav',
   sheet: 'glass-sheet',
   chip: 'glass-chip',
