@@ -8,6 +8,17 @@ export function formatDuration(seconds: number): string {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
+export function formatDurationShort(seconds: number): string {
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+
+  if (h > 0) {
+    return `${h}:${String(m).padStart(2, '0')}`
+  }
+
+  return `${m}`
+}
+
 /** Formats a number of seconds as `m:ss` (rounds to the nearest second). */
 export function formatClock(seconds: number): string {
   const total = Math.round(seconds)

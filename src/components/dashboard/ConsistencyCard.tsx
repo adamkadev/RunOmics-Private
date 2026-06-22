@@ -20,19 +20,14 @@ export function ConsistencyCard({ data }: { data: ConsistencyScore }) {
       <div className="mb-3 flex items-center gap-2">
         <RefreshCw size={14} className="text-blue-500 dark:text-blue-400" />
         <h3 className="text-sm font-semibold text-foreground/80">{s.title}</h3>
+        <Badge className={style.badge}>{s.rating[data.rating]}</Badge>
       </div>
 
       <div className="flex items-end justify-between">
         <span className={cn('text-3xl font-bold tabular-nums', style.text)}>
           {data.score}
           <span className="ml-0.5 text-base font-normal text-muted-foreground">/100</span>
-        </span>
-        <Badge className={style.badge}>{s.rating[data.rating]}</Badge>
-      </div>
-
-      <p className="mt-2 text-xs text-muted-foreground">
-        {s.detail(data.window, data.adherence)}
-      </p>
+        </span>      </div>
     </Card>
   )
 }

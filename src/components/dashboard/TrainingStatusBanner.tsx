@@ -31,12 +31,6 @@ const STATUS_STYLE: Record<TrainingStatusType, { dot: string; badge: string; tex
   },
 }
 
-const RISK_STYLE: Record<RiskLevel, string> = {
-  low:      'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400',
-  moderate: 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-  high:     'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-}
-
 const TREND_STYLE: Record<LoadTrend, string> = {
   building:    'bg-accent-subtle text-accent-text',
   maintaining: 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400',
@@ -88,11 +82,7 @@ export function TrainingStatusBanner({ status }: { status: TrainingStatus }) {
                 {s.status[status.status]}
               </span>
               <Badge className={TREND_STYLE[status.loadTrend]}>{s.loadTrend[status.loadTrend]}</Badge>
-              <Badge className={RISK_STYLE[status.risk]}>{s.risk[status.risk]}</Badge>
             </div>
-            <p className="mt-0.5 text-sm text-muted-foreground">
-              {s.description[status.status]}
-            </p>
           </div>
         </div>
 

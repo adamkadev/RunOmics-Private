@@ -49,7 +49,6 @@ export const en = {
   units: {
     km: 'km',
     bpm: 'bpm',
-    vo2max: 'ml/kg/min',
     spm: 'spm',
     m: 'm',
     ms: 'ms',
@@ -58,6 +57,8 @@ export const en = {
     kcal: 'kcal',
     minPerKm: 'min/km',
     celsius: '°C',
+    hour: 'h',
+    day: 'd',
   },
 
   common: {
@@ -235,7 +236,7 @@ export const en = {
       jumpToCurrent: 'Current week',
     },
     weekLoad: {
-      label: (percent: number) => `${percent}% of a typical week`,
+      label: (percent: number) => `${percent}%`,
       level: {
         low: 'Light load',
         normal: 'Normal load',
@@ -310,13 +311,6 @@ export const en = {
       overreaching: 'Overreaching',
       recovery: 'Recovery',
       detraining: 'Detraining',
-    },
-    description: {
-      productive: 'Fitness building steadily.',
-      fresh: 'Fresh and ready to perform.',
-      overreaching: 'Fatigue is high - consider easing off.',
-      recovery: 'Load reduced, form recovering.',
-      detraining: 'Training volume too low to maintain fitness.',
     },
     risk: {
       low: 'Low risk',
@@ -711,7 +705,7 @@ export const en = {
     emptyPbs: (year: number) => `No PBs for ${year} yet - add them in Settings.`,
     noPhoto: 'No photo',
     upcomingRaces: 'Upcoming Races',
-    daysUntil: (n: number) => n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : `In ${n} days`,
+    daysUntil: (n: number) => n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : `${n}d`,
     pastRace: 'Past',
     registrationLink: 'Registration',
     projection: {
@@ -784,14 +778,6 @@ export const en = {
     },
   },
 
-  pbAlerts: {
-    off: (diff: string) => `${diff} off your PR`,
-  },
-
-  nextRace: {
-    line: (name: string, distance: string, daysUntil: string) => `${name} (${distance}) - ${daysUntil}`,
-  },
-
   racePredictions: {
     title: 'Race Predictions',
     efforts: {
@@ -822,7 +808,6 @@ export const en = {
       fair: 'Fair',
       low: 'Low',
     },
-    detail: (weeks: number, adherence: number) => `${weeks} wk window · ${adherence}% weeks active`,
   },
 
   calendar: {

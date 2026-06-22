@@ -62,7 +62,7 @@ export function DashboardHighlights({ record, pbAlerts, shoes, nextRace }: Props
       href: `/activities/${a.activityId}`,
       Icon: Flame,
       tint: TINT.improvement,
-      label: `${a.label} ${t.pbAlerts.off(formatClock(a.diffSeconds))}`,
+      label: `${a.label} - ${(formatClock(a.diffSeconds))}`,
     })
   }
 
@@ -72,7 +72,7 @@ export function DashboardHighlights({ record, pbAlerts, shoes, nextRace }: Props
       href: '/goals',
       Icon: Flag,
       tint: TINT.race,
-      label: `${nextRace.name} · ${t.goals.daysUntil(daysUntil(nextRace.date))}`,
+      label: `${t.goals.daysUntil(daysUntil(nextRace.date))}`,
     })
   }
 

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
-import { formatDuration, formatPace } from '@/lib/formatters'
+import { formatDuration, formatDurationShort } from '@/lib/formatters'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { cardClass } from '@/components/ui/Card'
 import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
@@ -30,13 +30,16 @@ export function StatsGrid({ weeks, currentStreak, vo2max, weekLoad }: Props) {
   const metrics: Metric[] = [
     {
       value: <AnimatedValue value={currentWeek.totalDistanceKm} decimals={currentWeek.totalDistanceKm >= 10 ? 1 : 2} />,
-      unit: 't.units.km',
+      unit: currentWeek.totalDistanceKm ? t.units.km : undefined,
       label: s.distance,
     },
-    { value: formatDuration(currentWeek.totalDurationSeconds), label: s.time },
+    { value: formatDurationShort(currentWeek.totalDurationSeconds),
+      unit: currentWeek.totalDurationSeconds ? t.units.hour : undefined,
+      label: s.time,
+    },
     {
-      value: currentWeek.avgPaceSecPerKm ? formatPace(currentWeek.avgPaceSecPerKm) : s.empty,
-      unit: currentWeek.avgPaceSecPerKm ? t.units.minPerKm : undefined,
+      value: currentWeek.avgPaceSecPerKm ? formatDuration(currentWeek.avgPaceSecPerKm) : s.empty,
+      unit: currentWeek.avgPaceSecPerKm ? '/' + t.units.km : undefined,
       label: s.avgPace,
     },
     {
@@ -44,8 +47,13 @@ export function StatsGrid({ weeks, currentStreak, vo2max, weekLoad }: Props) {
       unit: currentWeek.avgHeartRate ? t.units.bpm : undefined,
       label: s.avgHr,
     },
-    { value: <><AnimatedValue value={currentStreak} />d</>, label: s.streak },
-    { value: vo2max !== null ? <AnimatedValue value={vo2max} /> : s.empty, label: s.vo2max },
+    { value: currentStreak ? <AnimatedValue value={currentStreak} /> : s.empty,
+      unit: currentStreak ? t.units.day : undefined,
+      label: s.streak },
+    { value: vo2max !== null ? <AnimatedValue value={vo2max} /> : s.empty,
+      unit: undefined,
+      label: s.vo2max 
+    },
   ]
 
   return (
