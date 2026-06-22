@@ -58,9 +58,9 @@ function Brand({ onClick }: { onClick?: () => void }) {
   return (
     <Link href="/" onClick={onClick} className="flex items-center gap-2.5">
       <HeaderMark size={26} />
-      <span className="text-2xl tracking-tight text-foreground">
-        <span className="font-bold">{t.brand.namePrefix}</span>
-        <span className="font-normal">{t.brand.nameSuffix}</span>
+      <span className="text-2xl font-bold tracking-tight text-foreground">
+        {t.brand.namePrefix}
+        <span className="text-accent-text">{t.brand.nameSuffix}</span>
       </span>
     </Link>
   )
