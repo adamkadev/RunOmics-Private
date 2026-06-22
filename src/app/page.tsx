@@ -17,7 +17,6 @@ import { TrainingStatusBanner } from '@/components/dashboard/TrainingStatusBanne
 import { ConsistencyCard } from '@/components/dashboard/ConsistencyCard'
 import { DashboardHighlights } from '@/components/dashboard/DashboardHighlights'
 import { DashboardFocusProvider } from '@/components/dashboard/DashboardFocusContext'
-import { DashboardFocusBar } from '@/components/dashboard/DashboardFocusBar'
 import { DashboardWidgets, type DashboardWidget } from '@/components/dashboard/DashboardWidgets'
 import { t } from '@/i18n'
 
@@ -85,9 +84,10 @@ export default async function DashboardPage() {
           />
         </div>
 
-        <div className="flex justify-end">
+        {/* TODO: MIGRATE TO LIQUID GLASS*/}
+        {/* <div className="flex justify-end">
           <DashboardFocusBar />
-        </div>
+        </div> */}
 
         <DashboardWidgets widgets={widgets} />
       </div>

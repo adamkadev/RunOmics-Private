@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { type LucideIcon, Footprints, Timer, Hash, Mountain, Gauge, Flame, CalendarRange, TrendingUp, TrendingDown } from 'lucide-react'
+import { TrendingUp, TrendingDown } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
@@ -31,38 +31,33 @@ import { TemperatureCorrelationChart } from './TemperatureCorrelationChart'
 import { RpeLoadCorrelationChart } from './RpeLoadCorrelationChart'
 import type { VO2maxPoint } from '@/application/usecases/GetVO2maxHistory'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
-import { formatDuration } from '@/lib/formatters'
+import { formatDurationShort } from '@/lib/formatters'
 import { cardClass } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
+import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
+
 const TABS = [
-  { id: 'volume',      label: t.analytics.tabs.volume      },
+  { id: 'volume', label: t.analytics.tabs.volume },
   { id: 'performance', label: t.analytics.tabs.performance },
-  { id: 'physiology',  label: t.analytics.tabs.physiology  },
-  { id: 'seasons',     label: t.analytics.tabs.seasons     },
+  { id: 'physiology', label: t.analytics.tabs.physiology },
+  { id: 'seasons', label: t.analytics.tabs.seasons },
 ] as const
 
 type TabId = (typeof TABS)[number]['id']
 type View = { kind: 'year'; year: number } | { kind: 'period'; weeks: number } | { kind: 'all' }
 
-interface StatCell {
-  Icon: LucideIcon
-  color: string
-  borderTop: string
-  value: ReactNode
-  label: string
-}
-
-
 function DeltaBadge({ text, good }: { text: string; good: boolean }) {
   const Icon = good ? TrendingUp : TrendingDown
   return (
-    <span className={cn(
-      'inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-medium',
-      good
-        ? 'bg-emerald-500/15 text-emerald-500 dark:text-emerald-400'
-        : 'bg-red-500/15 text-red-500 dark:text-red-400',
-    )}>
+    <span
+      className={cn(
+        'inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-medium',
+        good
+          ? 'bg-emerald-500/15 text-emerald-500 dark:text-emerald-400'
+          : 'bg-red-500/15 text-red-500 dark:text-red-400',
+      )}
+    >
       <Icon size={10} strokeWidth={2.5} />
       {text}
     </span>
@@ -71,20 +66,28 @@ function DeltaBadge({ text, good }: { text: string; good: boolean }) {
 
 function buildDeltaBadges(delta: PeriodDelta): ReactNode[] {
   const badges: ReactNode[] = []
+
   if (delta.distancePct != null)
     badges.push(<DeltaBadge key="dist" text={t.analytics.period.distancePct(delta.distancePct)} good={delta.distancePct >= 0} />)
+
   if (delta.sessionsPct != null)
     badges.push(<DeltaBadge key="sess" text={t.analytics.period.sessionsPct(delta.sessionsPct)} good={delta.sessionsPct >= 0} />)
+
   if (delta.easyPaceSec != null && delta.easyPaceSec !== 0) {
     const faster = delta.easyPaceSec < 0
     badges.push(
       <DeltaBadge
         key="pace"
-        text={faster ? t.analytics.period.paceFaster(Math.abs(delta.easyPaceSec)) : t.analytics.period.paceSlower(delta.easyPaceSec)}
+        text={
+          faster
+            ? t.analytics.period.paceFaster(Math.abs(delta.easyPaceSec))
+            : t.analytics.period.paceSlower(delta.easyPaceSec)
+        }
         good={faster}
       />,
     )
   }
+
   return badges
 }
 
@@ -102,19 +105,27 @@ export function AnalyticsClient({
   zones: TrainingZonesData | null
 }) {
   const { years, byYear, periodWeeks, byPeriod } = data
+
   const [view, setView] = useState<View>({ kind: 'year', year: years[0] })
   const [tab, setTab] = useState<TabId>('volume')
 
   const isPeriod = view.kind === 'period'
   const isAll = view.kind === 'all'
-  const active = view.kind === 'year' ? byYear[view.year] : view.kind === 'period' ? byPeriod[view.weeks] : data.allTime
+
+  const active =
+    view.kind === 'year'
+      ? byYear[view.year]
+      : view.kind === 'period'
+        ? byPeriod[view.weeks]
+        : data.allTime
+
   const totals = active?.totals ?? null
 
   const periodLabel = isAll
     ? t.analytics.allTimeTitle
     : isPeriod
-    ? t.analytics.period.title(view.weeks)
-    : t.analytics.season(view.year)
+      ? t.analytics.period.title(view.weeks)
+      : t.analytics.season(view.year)
 
   function selectPeriod(weeks: number) {
     setView({ kind: 'period', weeks })
@@ -133,152 +144,128 @@ export function AnalyticsClient({
   const visibleTabs = isPeriod || isAll ? TABS.filter((tb) => tb.id !== 'seasons') : TABS
   const displayYear = view.kind === 'year' ? view.year : years[0]
 
-  const statCells: StatCell[] = isAll && lifetime && totals
-    ? [
-        {
-          Icon: Footprints,
-          color: 'text-emerald-500 dark:text-emerald-400',
-          borderTop: 'border-t-emerald-400 dark:border-t-emerald-500',
-          value: <><AnimatedValue value={totals.distanceKm} /> {t.units.km}</>,
-          label: t.analytics.stats.distance,
-        },
-        {
-          Icon: Timer,
-          color: 'text-blue-500 dark:text-blue-400',
-          borderTop: 'border-t-blue-400 dark:border-t-blue-500',
-          value: formatDuration(totals.durationSeconds),
-          label: t.analytics.stats.time,
-        },
-        {
-          Icon: Hash,
-          color: 'text-violet-500 dark:text-violet-400',
-          borderTop: 'border-t-violet-400 dark:border-t-violet-500',
-          value: <AnimatedValue value={totals.sessionCount} />,
-          label: t.analytics.stats.sessions,
-        },
-        {
-          Icon: Mountain,
-          color: 'text-stone-500 dark:text-stone-400',
-          borderTop: 'border-t-stone-400 dark:border-t-stone-500',
-          value: <>+<AnimatedValue value={totals.elevationM} /> m</>,
-          label: t.analytics.stats.elevation,
-        },
-        {
-          Icon: Gauge,
-          color: 'text-amber-500 dark:text-amber-400',
-          borderTop: 'border-t-amber-400 dark:border-t-amber-500',
-          value: <><AnimatedValue value={totals.avgKmPerWeek} decimals={1} /> {t.units.km}</>,
-          label: t.analytics.stats.avgPerWeek,
-        },
-        {
-          Icon: CalendarRange,
-          color: 'text-indigo-500 dark:text-indigo-400',
-          borderTop: 'border-t-indigo-400 dark:border-t-indigo-500',
-          value: <AnimatedValue value={lifetime.yearsTracked} decimals={1} />,
-          label: t.analytics.stats.yearsTracked,
-        },
-      ]
-    : totals
-    ? [
-        {
-          Icon: Footprints,
-          color: 'text-emerald-500 dark:text-emerald-400',
-          borderTop: 'border-t-emerald-400 dark:border-t-emerald-500',
-          value: <><AnimatedValue value={totals.distanceKm} /> {t.units.km}</>,
-          label: t.analytics.stats.distance,
-        },
-        {
-          Icon: Timer,
-          color: 'text-blue-500 dark:text-blue-400',
-          borderTop: 'border-t-blue-400 dark:border-t-blue-500',
-          value: formatDuration(totals.durationSeconds),
-          label: t.analytics.stats.time,
-        },
-        {
-          Icon: Hash,
-          color: 'text-violet-500 dark:text-violet-400',
-          borderTop: 'border-t-violet-400 dark:border-t-violet-500',
-          value: <AnimatedValue value={totals.sessionCount} />,
-          label: t.analytics.stats.sessions,
-        },
-        {
-          Icon: Mountain,
-          color: 'text-stone-500 dark:text-stone-400',
-          borderTop: 'border-t-stone-400 dark:border-t-stone-500',
-          value: <>+<AnimatedValue value={totals.elevationM} /> m</>,
-          label: t.analytics.stats.elevation,
-        },
-        {
-          Icon: Gauge,
-          color: 'text-amber-500 dark:text-amber-400',
-          borderTop: 'border-t-amber-400 dark:border-t-amber-500',
-          value: <><AnimatedValue value={totals.avgKmPerWeek} decimals={1} /> {t.units.km}</>,
-          label: t.analytics.stats.avgPerWeek,
-        },
-        ...(totals.calories > 0
-          ? [{
-              Icon: Flame,
-              color: 'text-orange-500 dark:text-orange-400',
-              borderTop: 'border-t-orange-400 dark:border-t-orange-500',
-              value: <><AnimatedValue value={totals.calories / 1000} decimals={1} />k kcal</>,
-              label: t.analytics.stats.calories,
-            }]
-          : []),
-      ]
-    : []
+  const metrics: Metric[] =
+    isAll && lifetime && totals
+      ? [
+          {
+            value: <AnimatedValue value={totals.distanceKm} />,
+            unit: t.units.km,
+            label: t.analytics.stats.distance,
+          },
+          {
+            value: formatDurationShort(totals.durationSeconds),
+            unit: t.units.hour,
+            label: t.analytics.stats.time,
+          },
+          {
+            value: <AnimatedValue value={totals.sessionCount} />,
+            label: t.analytics.stats.sessions,
+          },
+          {
+            value: <AnimatedValue value={totals.elevationM} />,
+            unit: t.units.elevation,
+            label: t.analytics.stats.elevation,
+          },
+          {
+            value: <AnimatedValue value={totals.avgKmPerWeek} decimals={1} />,
+            unit: t.units.km,
+            label: t.analytics.stats.avgPerWeek,
+          },
+          {
+            value: <AnimatedValue value={lifetime.yearsTracked} decimals={1} />,
+            label: t.analytics.stats.yearsTracked,
+          },
+        ]
+      : totals
+        ? [
+            {
+              value: <AnimatedValue value={totals.distanceKm} />,
+              unit: t.units.km,
+              label: t.analytics.stats.distance,
+            },
+            {
+              value: formatDurationShort(totals.durationSeconds),
+              unit: t.units.hour,
+              label: t.analytics.stats.time,
+            },
+            {
+              value: <AnimatedValue value={totals.sessionCount} />,
+              label: t.analytics.stats.sessions,
+            },
+            {
+              value: <AnimatedValue value={totals.elevationM} />,
+              unit: t.units.m,
+              label: t.analytics.stats.elevation,
+            },
+            {
+              value: <AnimatedValue value={totals.avgKmPerWeek} decimals={1} />,
+              unit: t.units.km,
+              label: t.analytics.stats.avgPerWeek,
+            },
+            ...(totals.calories > 0
+              ? [
+                  {
+                    value: <AnimatedValue value={totals.calories / 1000} decimals={1} />,
+                    unit: `${'k'} ${t.units.kcal}`,
+                    label: t.analytics.stats.calories,
+                  },
+                ]
+              : []),
+          ]
+        : []
 
-  // Pad to next multiple of 3 so gap-px bg-border grid never shows orphaned rows
-  const mobileFill = statCells.length % 3 !== 0 ? 3 - (statCells.length % 3) : 0
-  const lgColsClass = statCells.length >= 6 ? 'lg:grid-cols-6' : statCells.length >= 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-3'
-
-  const deltaBadges: ReactNode[] = view.kind === 'period'
-    ? (() => { const d = byPeriod[view.weeks].delta; return d ? buildDeltaBadges(d) : [] })()
-    : []
+  const deltaBadges: ReactNode[] =
+    view.kind === 'period'
+      ? (() => {
+          const d = byPeriod[view.weeks].delta
+          return d ? buildDeltaBadges(d) : []
+        })()
+      : []
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.analytics.title}</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          {t.analytics.title}
+        </h1>
 
         <YearSelector
-            years={years}
-            selected={isAll ? null : displayYear}
-            onSelect={(y) => y === null ? selectAllTime() : selectYear(y)}
-            allTimeLabel={t.analytics.allTimeChip}
-            periods={periodWeeks.map((w) => ({ weeks: w, label: t.analytics.period.chip(w) }))}
-            activePeriod={isPeriod ? view.weeks : null}
-            onSelectPeriod={selectPeriod}
-          />
+          years={years}
+          selected={isAll ? null : displayYear}
+          onSelect={(y) => (y === null ? selectAllTime() : selectYear(y))}
+          allTimeLabel={t.analytics.allTimeChip}
+          periods={periodWeeks.map((w) => ({
+            weeks: w,
+            label: t.analytics.period.chip(w),
+          }))}
+          activePeriod={isPeriod ? view.weeks : null}
+          onSelectPeriod={selectPeriod}
+        />
       </div>
 
-      {/* Stats card */}
-      {statCells.length > 0 && (
+      {/* Stats */}
+      {metrics.length > 0 && (
         <div className={cardClass({ overflow: true, padding: 'none' })}>
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-b border-border bg-card px-4 py-3">
-            <span className="text-sm font-semibold text-foreground">{periodLabel}</span>
+            <span className="text-sm font-semibold text-foreground">
+              {periodLabel}
+            </span>
+
             {deltaBadges.length > 0 && (
               <div className="flex flex-wrap gap-1.5">{deltaBadges}</div>
             )}
           </div>
-          <div className={cn('grid gap-px bg-border grid-cols-3', lgColsClass)}>
-            {statCells.map(({ Icon, color, borderTop, value, label }) => (
-              <div key={label} className={cn('flex flex-col items-center gap-0.5 border-t-2 bg-card px-2 py-2 text-center sm:px-3 sm:py-3', borderTop)}>
-                <Icon className={cn('size-3 sm:size-3.5', color)} />
-                <div className="whitespace-nowrap text-xs font-bold leading-tight text-foreground sm:text-sm">{value}</div>
-                <div className="text-[9px] leading-tight text-muted-foreground sm:text-[10px]">{label}</div>
-              </div>
-            ))}
-            {Array.from({ length: mobileFill }).map((_, i) => (
-              <div key={`fill-${i}`} className="bg-card lg:hidden" />
-            ))}
+
+          <div className="px-4 py-4">
+            <MetricGrid metrics={metrics} className="grid-cols-3 lg:grid-cols-6" />
           </div>
         </div>
       )}
 
+      {/* Tabs */}
       {active && (
         <>
-          {/* Tabs - underline indicator */}
           <div className="flex border-b border-border">
             {visibleTabs.map((item) => (
               <button
@@ -286,7 +273,9 @@ export function AnalyticsClient({
                 onClick={() => setTab(item.id)}
                 className={cn(
                   'relative flex-1 py-2.5 text-sm font-medium transition-colors',
-                  tab === item.id ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
+                  tab === item.id
+                    ? 'text-foreground'
+                    : 'text-muted-foreground hover:text-foreground',
                 )}
               >
                 {item.label}
@@ -297,7 +286,7 @@ export function AnalyticsClient({
             ))}
           </div>
 
-          {/* Tab: Volume */}
+          {/* Content unchanged */}
           {tab === 'volume' && (
             <div className="space-y-4">
               <MonthlyVolumeChart data={active.monthlyVolume} typesPresent={active.typesPresent} />
@@ -309,7 +298,6 @@ export function AnalyticsClient({
             </div>
           )}
 
-          {/* Tab: Performance */}
           {tab === 'performance' && (
             <div className="space-y-4">
               <PaceTrendChart data={active.paceTrend} />
@@ -326,11 +314,12 @@ export function AnalyticsClient({
             </div>
           )}
 
-          {/* Tab: Physiology */}
           {tab === 'physiology' && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                {vo2maxHistory.length >= 2 && <VO2maxChart data={vo2maxHistory} />}
+                {vo2maxHistory.length >= 2 && (
+                  <VO2maxChart data={vo2maxHistory} />
+                )}
                 <HrTrendChart data={active.hrTrend} />
                 <ZoneDistributionChart data={active.zoneDistribution} />
                 <CadenceTrendChart data={active.cadenceTrend} />
@@ -338,20 +327,27 @@ export function AnalyticsClient({
                   <RunningFormChart data={active.runningFormTrend} />
                 </div>
               </div>
+
               <div className={cn('grid grid-cols-1 gap-4', !isAll && 'lg:grid-cols-2')}>
                 <TrainingEffectChart data={active.trainingEffectTrend} />
                 {!isAll && <DailyEfficiencyChart data={data.efficiencyDaily} />}
               </div>
-              {!isAll && <RunningDynamicsTrendChart data={data.runningDynamicsDaily} />}
+
+              {!isAll && (
+                <RunningDynamicsTrendChart data={data.runningDynamicsDaily} />
+              )}
+
               {zones && <TrainingZones data={zones} />}
             </div>
           )}
 
-          {/* Tab: Seasons (year view only) */}
           {tab === 'seasons' && view.kind === 'year' && (
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               {(() => {
-                const prevYear = years.find((y) => y < view.year) ?? years.find((y) => y !== view.year)
+                const prevYear =
+                  years.find((y) => y < view.year) ??
+                  years.find((y) => y !== view.year)
+
                 return prevYear !== undefined ? (
                   <MonthlyComparisonChart
                     currentYear={view.year}
@@ -361,6 +357,7 @@ export function AnalyticsClient({
                   />
                 ) : null
               })()}
+
               {comparison && <YearComparisonSection data={comparison} />}
             </div>
           )}
