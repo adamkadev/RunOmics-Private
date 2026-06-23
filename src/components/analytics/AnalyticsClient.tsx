@@ -229,25 +229,23 @@ export function AnalyticsClient({
   return (
     <div className="space-y-4">
       {/* Header - sticky glass nav, mirrors Activities list B1 */}
-      <GlassSurface as="header" variant="nav" className="sticky top-2 z-20 rounded-2xl px-5 py-3">
-        <div className="flex items-center justify-between gap-3">
-          <h1 className="text-[27px] font-extrabold leading-[1.1] tracking-tight text-foreground">
-            {t.analytics.title}
-          </h1>
+      <GlassSurface as="header" variant="nav" className="sticky top-2 z-20 space-y-2.5 rounded-2xl px-5 py-3">
+        <h1 className="text-[27px] font-extrabold leading-[1.1] tracking-tight text-foreground">
+          {t.analytics.title}
+        </h1>
 
-          <YearSelector
-            years={years}
-            selected={isAll ? null : displayYear}
-            onSelect={(y) => (y === null ? selectAllTime() : selectYear(y))}
-            allTimeLabel={t.analytics.allTimeChip}
-            periods={periodWeeks.map((w) => ({
-              weeks: w,
-              label: t.analytics.period.chip(w),
-            }))}
-            activePeriod={isPeriod ? view.weeks : null}
-            onSelectPeriod={selectPeriod}
-          />
-        </div>
+        <YearSelector
+          years={years}
+          selected={isAll ? null : displayYear}
+          onSelect={(y) => (y === null ? selectAllTime() : selectYear(y))}
+          allTimeLabel={t.analytics.allTimeChip}
+          periods={periodWeeks.map((w) => ({
+            weeks: w,
+            label: t.analytics.period.chip(w),
+          }))}
+          activePeriod={isPeriod ? view.weeks : null}
+          onSelectPeriod={selectPeriod}
+        />
       </GlassSurface>
 
       {/* Stats */}

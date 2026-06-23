@@ -1,9 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { ChevronDown } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { GlassSurface } from '@/components/ui/GlassSurface'
+import { Pill } from '@/components/ui/Pill'
 
 interface PeriodOption {
   weeks: number
@@ -12,7 +9,7 @@ interface PeriodOption {
 
 interface Props {
   years: number[]
-  selected: number | null       // year shown in button (null = all-time)
+  selected: number | null       // active year (null = all-time/period active)
   onSelect: (year: number | null) => void
   allTimeLabel?: string
   periods?: PeriodOption[]
@@ -20,6 +17,8 @@ interface Props {
   onSelectPeriod?: (weeks: number) => void
 }
 
+// Horizontally scrollable pill row - scales to any number of years, unlike a
+// 2-button toggle that breaks down past 2-3 options.
 export function YearSelector({
   years,
   selected,
@@ -29,90 +28,42 @@ export function YearSelector({
   activePeriod,
   onSelectPeriod,
 }: Props) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement | null>(null)
-
-  useEffect(() => {
-    if (!open) return
-    function onOutside(e: MouseEvent) {
-      if (!ref.current?.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', onOutside)
-    return () => document.removeEventListener('mousedown', onOutside)
-  }, [open])
-
   if (years.length <= 1 && !allTimeLabel && !periods?.length) return null
 
   const activePeriodOption = periods?.find((p) => p.weeks === activePeriod)
-  const buttonLabel = activePeriodOption?.label ?? (selected === null ? allTimeLabel : selected)
 
   return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1 rounded-lg bg-accent px-2.5 py-1 text-xs font-medium text-accent-foreground transition-colors"
-      >
-        {buttonLabel}
-        <ChevronDown size={11} className={cn('transition-transform', open && 'rotate-180')} />
-      </button>
+    <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {years.map((y) => (
+        <Pill
+          key={y}
+          as="button"
+          variant={y === selected && !activePeriodOption ? 'active' : 'neutral'}
+          onClick={() => onSelect(y)}
+        >
+          {y}
+        </Pill>
+      ))}
 
-      {open && (
-        <GlassSurface variant="sheet" className="absolute right-0 top-full z-20 mt-1 min-w-[5rem] overflow-hidden rounded-xl py-1">
-          {years.map((y) => (
-            <button
-              key={y}
-              onClick={() => { onSelect(y); setOpen(false) }}
-              className={cn(
-                'flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs font-medium transition-colors hover:bg-muted',
-                y === selected && !activePeriodOption ? 'text-accent-text' : 'text-foreground',
-              )}
-            >
-              {y}
-              {y === selected && !activePeriodOption && (
-                <span className="ml-auto h-1.5 w-1.5 rounded-full bg-accent" />
-              )}
-            </button>
-          ))}
+      {periods?.map((p) => (
+        <Pill
+          key={p.weeks}
+          as="button"
+          variant={p.weeks === activePeriod ? 'active' : 'neutral'}
+          onClick={() => onSelectPeriod?.(p.weeks)}
+        >
+          {p.label}
+        </Pill>
+      ))}
 
-          {periods && periods.length > 0 && (
-            <>
-              <div className="mx-2 my-1 border-t border-border" />
-              {periods.map((p) => (
-                <button
-                  key={p.weeks}
-                  onClick={() => { onSelectPeriod?.(p.weeks); setOpen(false) }}
-                  className={cn(
-                    'flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs font-medium transition-colors hover:bg-muted',
-                    p.weeks === activePeriod ? 'text-accent-text' : 'text-foreground',
-                  )}
-                >
-                  {p.label}
-                  {p.weeks === activePeriod && (
-                    <span className="ml-auto h-1.5 w-1.5 rounded-full bg-accent" />
-                  )}
-                </button>
-              ))}
-            </>
-          )}
-
-          {allTimeLabel && (
-            <>
-              <div className="mx-2 my-1 border-t border-border" />
-              <button
-                onClick={() => { onSelect(null); setOpen(false) }}
-                className={cn(
-                  'flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs font-medium transition-colors hover:bg-muted',
-                  selected === null && !activePeriodOption ? 'text-accent-text' : 'text-foreground',
-                )}
-              >
-                {allTimeLabel}
-                {selected === null && !activePeriodOption && (
-                  <span className="ml-auto h-1.5 w-1.5 rounded-full bg-accent" />
-                )}
-              </button>
-            </>
-          )}
-        </GlassSurface>
+      {allTimeLabel && (
+        <Pill
+          as="button"
+          variant={selected === null && !activePeriodOption ? 'active' : 'neutral'}
+          onClick={() => onSelect(null)}
+        >
+          {allTimeLabel}
+        </Pill>
       )}
     </div>
   )

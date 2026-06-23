@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { APP_VERSION } from '@/lib/version'
 import { isDetailRoute } from '@/lib/navigation'
+import { useScrollDirection } from '@/lib/useScrollDirection'
 import { ThemeToggle } from './ThemeToggle'
 import { GlassTabBar } from './GlassTabBar'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -112,41 +113,8 @@ function MoreMenuItem({
 export function Sidebar() {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
-  const headerRef = useRef<HTMLElement>(null)
-  const [headerOffset, setHeaderOffset] = useState(0)
+  const headerHidden = useScrollDirection()
   const showTopBar = !isDetailRoute(pathname)
-
-  // Slide the mobile top bar up gradually as the page scrolls down. Reveal it
-  // again only on a deliberate upward scroll (a small threshold ignores the
-  // bounce/toolbar shift that fires when scrolling stops), never on stop alone.
-  useEffect(() => {
-    const REVEAL_THRESHOLD = 8
-    let lastY = window.scrollY
-    let upAccum = 0
-    function onScroll() {
-      const y = window.scrollY
-      const h = headerRef.current?.offsetHeight ?? 56
-      const delta = y - lastY
-      lastY = y
-
-      if (y <= 0) {
-        upAccum = 0
-        setHeaderOffset(0)
-        return
-      }
-      if (delta > 0) {
-        upAccum = 0
-        setHeaderOffset((prev) => Math.min(h, prev + delta))
-      } else if (delta < 0) {
-        upAccum -= delta
-        if (upAccum > REVEAL_THRESHOLD) {
-          setHeaderOffset((prev) => Math.max(0, prev + delta))
-        }
-      }
-    }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
 
   // Lock background scroll while the mobile menu is open.
   useEffect(() => {
@@ -221,12 +189,11 @@ export function Sidebar() {
         <GlassSurface
           as="header"
           variant="chrome"
-          ref={headerRef}
-          className="fixed inset-x-0 top-0 z-30 rounded-none rounded-b-2xl border-t-0 lg:hidden"
-          style={{
-            paddingTop: 'max(env(safe-area-inset-top), 12px)',
-            transform: `translateY(-${headerOffset}px)`,
-          }}
+          className={cn(
+            'fixed inset-x-0 top-0 z-30 rounded-none rounded-b-2xl border-t-0 transition-transform duration-200 ease-out lg:hidden',
+            headerHidden ? '-translate-y-full' : 'translate-y-0'
+          )}
+          style={{ paddingTop: 'max(env(safe-area-inset-top), 12px)' }}
         >
           <div className="relative flex h-14 items-center justify-center px-4">
             <div className="absolute left-4">
