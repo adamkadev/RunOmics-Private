@@ -9,7 +9,7 @@ import { t } from '@/i18n'
 type Bounds = [number, number, number, number]
 
 const DEFAULT_LTHR = 170
-const ZONE_PERCENTS = [0.85, 0.9, 0.95, 1.0]
+const ZONE_PERCENTS = [0.80, 0.89, 0.95, 1.00]
 
 function defaultBounds(lthr: number): Bounds {
   return ZONE_PERCENTS.map((p) => Math.round(lthr * p)) as Bounds
@@ -39,7 +39,7 @@ export function ProfileHrZones({ athlete, onSave }: Props) {
   }
 
   const zones = [
-    { zone: 5, min: bounds[3], max: lthr, editableIndex: null },
+    { zone: 5, min: bounds[3], max: null, editableIndex: null },
     { zone: 4, min: bounds[2], max: bounds[3], editableIndex: 3 },
     { zone: 3, min: bounds[1], max: bounds[2], editableIndex: 2 },
     { zone: 2, min: bounds[0], max: bounds[1], editableIndex: 1 },
@@ -68,13 +68,22 @@ export function ProfileHrZones({ athlete, onSave }: Props) {
               {t.activity.zones.labels[zone]}
             </span>
             <span className="flex-1 text-xs text-muted-foreground">
-              {zone === 1 ? '< ' : `${min}–`}
-              {editableIndex !== null ? (
-                <EditableNumber value={max} onCommit={(n) => setBound(editableIndex, n)} />
-              ) : (
-                max
-              )}{' '}
-              bpm
+              {zone === 1 && `< ${max} bpm`}
+
+              {zone !== 1 && zone !== 5 && (
+                <>
+                  {min}–{editableIndex !== null ? (
+                    <EditableNumber
+                      value={max}
+                      onCommit={(n) => setBound(editableIndex, n)}
+                    />
+                  ) : (
+                    max
+                  )}{' '}
+                  bpm
+                </>
+              )}
+              {zone === 5 && `≥ ${min} bpm`}
             </span>
           </div>
         ))}
