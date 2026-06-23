@@ -19,7 +19,7 @@ export function GoalsClient({ data }: Props) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.goals.title}</h1>
+          <h1 className="text-display text-foreground">{t.goals.title}</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">{t.analytics.season(selectedYear)}</p>
         </div>
         <YearSelector years={years} selected={selectedYear} onSelect={(y) => y !== null && setSelectedYear(y)} />

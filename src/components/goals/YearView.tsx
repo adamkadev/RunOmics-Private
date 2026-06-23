@@ -4,7 +4,7 @@ import { Trophy, Target, Medal, TrendingUp, ArrowRight, Calendar, ImageOff, Flag
 import type { YearData, GoalProjection, MonthGoal } from '@/application/usecases/GetGoalsData'
 import { formatDuration, formatDate, formatPace, monthLabel } from '@/lib/formatters'
 import { ActivityTypeTag } from '@/components/activities/ActivityTypeTag'
-import { Card, cardClass } from '@/components/ui/Card'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
 const STATUS_CHIP: Record<GoalProjection['status'], string> = {
@@ -36,7 +36,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
             <Target size={14} className="text-accent-text" />
             {t.goals.annualGoal}
           </h2>
-          <Card padding="lg">
+          <GlassSurface variant="card" className="rounded-[22px] p-5">
             <div className="mb-3 flex items-end justify-between">
               <div>
                 <span className="text-3xl font-bold tracking-tight text-foreground">
@@ -81,7 +81,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
                 </span>
               </div>
             )}
-          </Card>
+          </GlassSurface>
         </section>
       )}
 
@@ -95,7 +95,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
             {monthlyGoals.map((mg) => {
               const progress = mg.targetKm > 0 ? Math.min((mg.actualKm / mg.targetKm) * 100, 100) : 0
               return (
-                <Card key={mg.month}>
+                <GlassSurface key={mg.month} variant="card" className="rounded-2xl p-3">
                   <div className="flex items-center justify-between gap-1">
                     <span className="text-xs font-semibold text-subtle">{monthLabel(mg.month)}</span>
                     <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${MONTH_STATUS_CHIP[mg.status]}`}>
@@ -105,13 +105,13 @@ export function YearView({ yearData }: { yearData: YearData }) {
                   <p className="mt-1.5 text-xs text-subtle">
                     {t.goals.monthlyGoal.km(Math.round(mg.actualKm), Math.round(mg.targetKm))}
                   </p>
-                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
+                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-foreground/[0.08]">
                     <div
                       className="h-full rounded-full bg-accent transition-all"
                       style={{ width: `${progress}%` }}
                     />
                   </div>
-                </Card>
+                </GlassSurface>
               )
             })}
           </div>
@@ -131,7 +131,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
               const delta = pbSeconds !== null && target.targetSeconds ? pbSeconds - target.targetSeconds : null
               const achieved = delta !== null && delta <= 0
               return (
-                <Card key={target.distance}>
+                <GlassSurface key={target.distance} variant="card" className="rounded-2xl p-4">
                   <p className="text-xs font-semibold text-subtle">{target.distance}</p>
                   <p className="mt-1 text-lg font-bold text-foreground">
                     {target.targetSeconds === null ? (
@@ -147,7 +147,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
                         : t.goals.targetToGo(formatDuration(delta))}
                     </p>
                   )}
-                </Card>
+                </GlassSurface>
               )
             })}
           </div>
@@ -167,11 +167,11 @@ export function YearView({ yearData }: { yearData: YearData }) {
               )
               const isPast = race.date < today
               return (
-                <Card key={idx} className="flex items-start justify-between gap-3">
+                <GlassSurface key={idx} variant="card" className="flex items-start justify-between gap-3 rounded-2xl p-4">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-semibold text-foreground">{race.name}</span>
-                      <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                      <span className="rounded-full bg-foreground/[0.06] px-2 py-0.5 text-xs font-medium text-foreground/70">
                         {race.distance}
                       </span>
                       {race.targetSeconds && (
@@ -213,7 +213,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
                   {isPast && (
                     <span className="shrink-0 text-xs text-subtle">{t.goals.pastRace}</span>
                   )}
-                </Card>
+                </GlassSurface>
               )
             })}
           </div>
@@ -231,7 +231,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
               <Link
                 key={entry.activityId}
                 href={`/activities/${entry.activityId}`}
-                className={cardClass({ padding: 'none', overflow: true, className: 'group relative transition-shadow hover:shadow-lg' })}
+                className="glass-card group relative overflow-hidden rounded-[20px] transition-shadow hover:shadow-lg"
               >
                 {photoPath ? (
                   <div className="relative h-40 w-full overflow-hidden bg-muted">
@@ -291,13 +291,10 @@ export function YearView({ yearData }: { yearData: YearData }) {
           </div>
         </section>
       ) : (
-        <Card dashed padding="none" className="p-10 text-center">
+        <GlassSurface variant="card" className="rounded-[20px] border-dashed p-10 text-center">
           <Trophy size={32} className="mx-auto mb-3 text-subtle" />
           <p className="text-sm text-subtle">{t.goals.emptyPbs(yearData.year)}</p>
-          <Link href="/settings" className="mt-2 inline-block text-xs text-accent-text hover:underline">
-            {t.nav.items.settings}
-          </Link>
-        </Card>
+        </GlassSurface>
       )}
     </div>
   )

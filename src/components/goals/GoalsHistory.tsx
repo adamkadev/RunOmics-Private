@@ -1,6 +1,6 @@
 import { History, CheckCircle2, XCircle } from 'lucide-react'
 import type { YearOutcome } from '@/application/usecases/GetGoalsData'
-import { Card } from '@/components/ui/Card'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
 function OutcomeBadge({ achieved }: { achieved: boolean }) {
@@ -33,7 +33,11 @@ export function GoalsHistory({ history }: { history: YearOutcome[] }) {
           const targetsAchieved = targetsWithResult.filter((target) => target.achieved).length
 
           return (
-            <Card key={outcome.year} className="flex flex-wrap items-center justify-between gap-2">
+            <GlassSurface
+              key={outcome.year}
+              variant="card"
+              className="flex flex-wrap items-center justify-between gap-2 rounded-2xl p-4"
+            >
               <span className="font-semibold text-foreground">{outcome.year}</span>
               <div className="flex flex-wrap items-center gap-2">
                 {outcome.annualGoal && (
@@ -53,7 +57,7 @@ export function GoalsHistory({ history }: { history: YearOutcome[] }) {
                   </span>
                 )}
               </div>
-            </Card>
+            </GlassSurface>
           )
         })}
       </div>
