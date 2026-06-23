@@ -784,6 +784,10 @@ export const en = {
       sessions: 'Sessions',
       elevation: 'Elevation',
     },
+    records: {
+      title: 'Personal records',
+      notYet: 'Not yet',
+    },
   },
 
   records: {

@@ -1,7 +1,10 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getAthleteFromFirestore, type AthleteProfile } from '@/infrastructure/repositories/FirestoreConfigRepository'
 import { getLifetimeStats } from '@/application/usecases/GetLifetimeStats'
+import { getRecords, type RecordEntry } from '@/application/usecases/GetRecords'
 import { round } from '@/lib/math'
+
+const PROFILE_RECORD_KEYS = ['5k', '10k', 'half', 'marathon']
 
 export interface ProfileHero {
   sinceDate: string | null
@@ -19,12 +22,14 @@ export interface ProfileYtdStats {
 export interface ProfileData {
   hero: ProfileHero
   ytd: ProfileYtdStats
+  records: RecordEntry[]
   athlete: AthleteProfile
 }
 
 export async function getProfileData(): Promise<ProfileData> {
   const activities = getAllActivities()
   const lifetime = getLifetimeStats()
+  const allRecords = await getRecords()
   const athlete = await getAthleteFromFirestore()
 
   const sinceDate = activities.length
@@ -46,6 +51,9 @@ export async function getProfileData(): Promise<ProfileData> {
       sessionCount: ytdActivities.length,
       elevationGainM: Math.round(ytdActivities.reduce((s, a) => s + (a.elevationGain ?? 0), 0)),
     },
+    records: PROFILE_RECORD_KEYS.map((key) => allRecords.find((r) => r.key === key)).filter(
+      (r): r is RecordEntry => r !== undefined
+    ),
     athlete,
   }
 }

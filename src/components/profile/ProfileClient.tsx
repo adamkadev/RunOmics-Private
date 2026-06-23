@@ -7,6 +7,7 @@ import type { ProfileData } from '@/application/usecases/GetProfileData'
 import type { AthleteProfile } from '@/infrastructure/repositories/FirestoreConfigRepository'
 import { ProfileHero } from './ProfileHero'
 import { ProfileStatsYtd } from './ProfileStatsYtd'
+import { ProfileRecords } from './ProfileRecords'
 
 interface Props {
   data: ProfileData
@@ -30,6 +31,7 @@ export function ProfileClient({ data }: Props) {
           onSaveName={(name) => saveAthlete({ displayName: name })}
         />
         <ProfileStatsYtd ytd={data.ytd} />
+        <ProfileRecords records={data.records} />
       </div>
     </div>
   )
