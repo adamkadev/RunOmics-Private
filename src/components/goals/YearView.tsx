@@ -19,6 +19,13 @@ const STATUS_ICON: Record<MonthGoal['status'], { Icon: typeof Check; className: 
   pending:  { Icon: Minus,       className: 'text-subtle/40' },
 }
 
+const MONTH_CELL_TINT: Record<MonthGoal['status'], { bg: string; border: string; bar: string }> = {
+  ahead:    { bg: 'rgba(14,159,110,0.12)',  border: 'rgba(14,159,110,0.28)',  bar: '#0e9f6e' },
+  on_track: { bg: 'rgba(47,116,224,0.10)',  border: 'rgba(47,116,224,0.28)',  bar: '#7db8ff' },
+  behind:   { bg: 'rgba(229,57,107,0.10)',  border: 'rgba(229,57,107,0.22)',  bar: '#e5396b' },
+  pending:  { bg: '',                        border: '',                        bar: 'rgba(255,255,255,0.08)' },
+}
+
 const STATUS_CHIP_BG: Record<GoalProjection['status'], string> = {
   ahead:    STATUS.success.bg,
   on_track: STATUS.progress.bg,
@@ -56,10 +63,13 @@ export function YearView({ yearData }: { yearData: YearData }) {
                 {annualProgress.toFixed(0)}%
               </span>
             </div>
-            <div className="h-3 overflow-hidden rounded-full bg-muted">
+            <div className="h-2 overflow-hidden rounded-full bg-foreground/[0.08]">
               <div
-                className="h-full rounded-full bg-emerald-500 transition-all"
-                style={{ width: `${annualProgress}%` }}
+                className="h-full rounded-full transition-all"
+                style={{
+                  width: `${annualProgress}%`,
+                  background: 'linear-gradient(90deg, #0e9f6e, #2ed9a0)',
+                }}
               />
             </div>
             <div className="mt-2 flex items-center justify-between text-xs">
@@ -97,8 +107,14 @@ export function YearView({ yearData }: { yearData: YearData }) {
             {monthlyGoals.map((mg) => {
               const progress = mg.targetKm > 0 ? Math.min((mg.actualKm / mg.targetKm) * 100, 100) : 0
               const { Icon: StatusIcon, className: statusClassName } = STATUS_ICON[mg.status]
+              const tint = MONTH_CELL_TINT[mg.status]
               return (
-                <GlassSurface key={mg.month} variant="card" className="rounded-2xl p-3">
+                <GlassSurface
+                  key={mg.month}
+                  variant="card"
+                  className="rounded-2xl p-3"
+                  style={tint.bg ? { background: tint.bg, borderColor: tint.border } : undefined}
+                >
                   <div className="flex items-center justify-between gap-1">
                     <span className="text-xs font-semibold text-subtle">{monthLabel(mg.month)}</span>
                     <StatusIcon
@@ -113,8 +129,8 @@ export function YearView({ yearData }: { yearData: YearData }) {
                   </p>
                   <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-foreground/[0.08]">
                     <div
-                      className="h-full rounded-full bg-emerald-500 transition-all"
-                      style={{ width: `${progress}%` }}
+                      className="h-full rounded-full transition-all"
+                      style={{ width: `${progress}%`, background: tint.bar }}
                     />
                   </div>
                 </GlassSurface>
