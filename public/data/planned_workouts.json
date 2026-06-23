@@ -22,47 +22,43 @@
     },
     {
       "date": "2026-06-23",
-      "name": "3000m / 2000m / 1000m"
+      "name": "3000m / 2000m /1000m",
+      "type": "Threshold",
+      "distanceM": 11920,
+      "durationSecs": 3775,
+      "scheduledTime": "18:00"
     },
     {
       "date": "2026-06-24",
-      "name": "40 min endurance"
-    },
-    {
-      "date": "2026-06-24",
-      "name": "40 min endurance"
-    },
-    {
-      "date": "2026-06-25",
-      "name": "20' progressives"
+      "name": "40 min endurance",
+      "type": "Base",
+      "distanceM": 7200,
+      "durationSecs": 2400,
+      "scheduledTime": "18:00"
     },
     {
       "date": "2026-06-25",
-      "name": "20' progressives"
+      "name": "20' progressives",
+      "type": "Tempo",
+      "distanceM": 10640,
+      "durationSecs": 3600,
+      "scheduledTime": "18:00"
     },
     {
       "date": "2026-06-26",
-      "name": "2 x 3000m allure spé"
-    },
-    {
-      "date": "2026-06-26",
-      "name": "2 x 3000m allure spé"
-    },
-    {
-      "date": "2026-06-27",
-      "name": "15' progressives"
+      "name": "2 x 3000m allure spé",
+      "type": "Threshold",
+      "distanceM": 11570,
+      "durationSecs": 3480,
+      "scheduledTime": "18:00"
     },
     {
       "date": "2026-06-27",
-      "name": "15' progressives"
-    },
-    {
-      "date": "2026-06-28",
-      "name": "8km endurance"
-    },
-    {
-      "date": "2026-06-28",
-      "name": "8km endurance"
+      "name": "15' progressives",
+      "type": "Tempo",
+      "distanceM": 9600,
+      "durationSecs": 3300,
+      "scheduledTime": "18:00"
     }
   ]
 }
