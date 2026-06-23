@@ -108,7 +108,7 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
                     }
                   >
                     {completed ? (
-                      <Check size={12} strokeWidth={2.5} className="text-accent" />
+                      <Check size={12} strokeWidth={2.5} style={{ color: '#10b981' }} />
                     ) : missed ? (
                       <X size={11} strokeWidth={2.5} style={{ color: MISSED_COLOR }} />
                     ) : planned ? (
