@@ -24,9 +24,13 @@
   --animate-sheet-up:        sheet-up 0.42s cubic-bezier(0.22, 1.04, 0.36, 1) both;
 }
 
+/* Ends on `none`, not `translateY(0)` - a lingering non-none transform stays
+   a containing block for `position: fixed` descendants (animation-fill-mode:
+   both keeps the "to" value applied forever), breaking viewport-fixed
+   elements like the Activities compare CTA bar rendered inside this wrapper. */
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0);   }
+  to   { opacity: 1; transform: none;             }
 }
 
 @keyframes fade-in {
@@ -37,7 +41,7 @@
 /* Spring-like entrance for bottom sheets (slides up from below). */
 @keyframes sheet-up {
   from { opacity: 0; transform: translateY(100%); }
-  to   { opacity: 1; transform: translateY(0);    }
+  to   { opacity: 1; transform: none;             }
 }
 
 /* Slow drifting aurora blobs (frozen under prefers-reduced-motion). */

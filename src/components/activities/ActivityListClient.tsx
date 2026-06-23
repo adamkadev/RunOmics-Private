@@ -297,19 +297,20 @@ export function ActivityListClient({ activities, prLabelsByActivityId = {} }: Pr
           )}
         </GlassSurface>
       ) : compareMode ? (
-        <div className="space-y-2">
+        <GlassSurface variant="card" className="flex flex-col gap-2 rounded-[20px] p-3">
           {visible.map((a) => (
             <ActivityRow
               key={a.id}
               activity={a}
               prLabels={prLabelsByActivityId[a.id]}
+              surface="glass"
               selectable
               selected={compareIds.includes(a.id)}
               selectionDisabled={compareIds.length >= 2 && !compareIds.includes(a.id)}
               onToggleSelect={() => toggleCompareSelection(a.id)}
             />
           ))}
-        </div>
+        </GlassSurface>
       ) : groups ? (
         <div className="space-y-4">
           {groups.map((g) => (
@@ -345,7 +346,10 @@ export function ActivityListClient({ activities, prLabelsByActivityId = {} }: Pr
       )}
 
       {compareMode && (
-        <div className="fixed inset-x-4 bottom-24 z-40 mx-auto flex max-w-md items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-lg lg:bottom-4">
+        <GlassSurface
+          variant="nav"
+          className="fixed inset-x-4 bottom-24 z-40 mx-auto flex max-w-md items-center justify-between gap-3 rounded-xl px-4 py-3 lg:bottom-4"
+        >
           <span className="text-xs font-medium text-muted-foreground">
             {t.activities.compareCount(compareIds.length)}
           </span>
@@ -356,7 +360,7 @@ export function ActivityListClient({ activities, prLabelsByActivityId = {} }: Pr
           >
             {t.activities.compareCta}
           </button>
-        </div>
+        </GlassSurface>
       )}
     </div>
   )

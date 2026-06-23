@@ -10,7 +10,7 @@ import {
 } from 'recharts'
 import { CHART_COLORS } from '@/lib/colors'
 import { buildCompareSeries } from '@/lib/compareChart'
-import { Card } from '@/components/ui/Card'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { t } from '@/i18n'
 
@@ -73,7 +73,7 @@ export function CadenceCompareChart({ samplesA, samplesB, distanceA, distanceB, 
   }))
 
   return (
-    <Card padding="lg">
+    <GlassSurface variant="card" className="rounded-[22px] p-5">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">{t.activity.charts.cadence}</h3>
         <span className="flex items-center gap-2 text-xs text-subtle">
@@ -131,6 +131,6 @@ export function CadenceCompareChart({ samplesA, samplesB, distanceA, distanceB, 
           />
         </LineChart>
       </ResponsiveContainer>
-    </Card>
+    </GlassSurface>
   )
 }
