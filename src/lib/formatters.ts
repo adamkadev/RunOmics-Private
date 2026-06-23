@@ -53,6 +53,14 @@ export function formatDateWithYear(isoDate: string): string {
   })
 }
 
+/** Short day + month, e.g. `Jun 16` - used for the agenda week-range subtitle. */
+export function formatDayMonth(isoDate: string): string {
+  return new Date(isoDate + 'T00:00:00').toLocaleDateString('en', {
+    month: 'short',
+    day: 'numeric',
+  })
+}
+
 /** Three-letter uppercase month label from a 1-based month number (1 = JAN). */
 export function monthLabel(month: number): string {
   return new Date(2000, month - 1, 1).toLocaleString('en', { month: 'short' }).toUpperCase()

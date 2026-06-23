@@ -1,26 +1,27 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import Link from 'next/link'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
-import type { Activity, ActivityType } from '@/domain/activity/types'
-import { round } from '@/lib/math'
-import { Card } from '@/components/ui/Card'
+import type { Activity } from '@/domain/activity/types'
+import { GlassSurface } from '@/components/ui/GlassSurface'
+import { WeekView } from './WeekView'
+import { MonthView } from './MonthView'
+import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
+import { formatDayMonth } from '@/lib/formatters'
+import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 interface Props {
   activities: Activity[]
 }
 
-const WEEKDAYS = t.calendar.weekdays
-
-function monthKey(year: number, month: number): string {
-  return `${year}-${String(month + 1).padStart(2, '0')}`
-}
+type ViewMode = 'week' | 'month'
 
 export function CalendarClient({ activities }: Props) {
   const now = new Date()
+  const today = isoDate(now)
+  const [mode, setMode] = useState<ViewMode>('week')
+  const [weekStart, setWeekStart] = useState(() => startOfWeek(now))
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth())
 
@@ -34,146 +35,96 @@ export function CalendarClient({ activities }: Props) {
     return map
   }, [activities])
 
-  const { cells, totalKm, sessionCount } = useMemo(() => {
-    const firstDay = new Date(year, month, 1)
-    const startOffset = (firstDay.getDay() || 7) - 1
-    const daysInMonth = new Date(year, month + 1, 0).getDate()
-    const prefix = monthKey(year, month)
+  const atPresent =
+    mode === 'week'
+      ? isoDate(weekStart) === isoDate(startOfWeek(now))
+      : year === now.getFullYear() && month === now.getMonth()
 
-    const cells: Array<{ day: number; date: string; acts: Activity[] } | null> = []
-    for (let i = 0; i < startOffset; i++) cells.push(null)
-    let totalKm = 0
-    let sessionCount = 0
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = `${prefix}-${String(day).padStart(2, '0')}`
-      const acts = byDate.get(date) ?? []
-      totalKm += acts.reduce((s, a) => s + a.distanceKm, 0)
-      sessionCount += acts.length
-      cells.push({ day, date, acts })
-    }
-    while (cells.length % 7 !== 0) cells.push(null)
-
-    return { cells, totalKm: round(totalKm), sessionCount }
-  }, [year, month, byDate])
-
-  const isCurrentMonth = year === now.getFullYear() && month === now.getMonth()
-  const todayIso = `${monthKey(now.getFullYear(), now.getMonth())}-${String(now.getDate()).padStart(2, '0')}`
-  const monthLabel = new Date(year, month, 1).toLocaleString(t.locale, {
-    month: 'long',
-    year: 'numeric',
-  })
+  const subtitle =
+    mode === 'week'
+      ? t.calendar.weekOf(formatDayMonth(isoDate(weekStart)))
+      : new Date(year, month, 1).toLocaleString(t.locale, { month: 'long', year: 'numeric' })
 
   function shift(delta: number) {
-    const d = new Date(year, month + delta, 1)
-    setYear(d.getFullYear())
-    setMonth(d.getMonth())
+    if (mode === 'week') {
+      setWeekStart((prev) => addDays(prev, delta * 7))
+    } else {
+      const d = new Date(year, month + delta, 1)
+      setYear(d.getFullYear())
+      setMonth(d.getMonth())
+    }
+  }
+
+  function goToday() {
+    setWeekStart(startOfWeek(now))
+    setYear(now.getFullYear())
+    setMonth(now.getMonth())
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => shift(-1)}
-            className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-all duration-150 hover:bg-muted active:scale-95"
-          >
-            <ChevronLeft size={14} />
-          </button>
-          <span className="min-w-40 text-center text-sm font-semibold text-foreground">
-            {monthLabel}
-          </span>
-          <button
-            onClick={() => shift(1)}
-            disabled={isCurrentMonth}
-            className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-all duration-150 hover:bg-muted active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            <ChevronRight size={14} />
-          </button>
-          {!isCurrentMonth && (
-            <button
-              onClick={() => {
-                setYear(now.getFullYear())
-                setMonth(now.getMonth())
-              }}
-              className="rounded-md px-2 py-1 text-xs font-medium text-accent-text transition-colors hover:bg-accent-subtle"
-            >
-              {t.calendar.today}
-            </button>
-          )}
+      <GlassSurface as="header" variant="nav" className="sticky top-2 z-20 rounded-2xl px-5 py-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-[27px] font-extrabold leading-[1.1] tracking-tight text-foreground">
+              {t.pages.calendar.title}
+            </h1>
+            <p className="mt-0.5 truncate text-[13px] font-medium text-muted-foreground">{subtitle}</p>
+          </div>
+
+          <div className="flex shrink-0 gap-0.5 rounded-[10px] border border-foreground/10 bg-foreground/[0.07] p-[3px]">
+            {(['week', 'month'] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setMode(m)}
+                className={cn(
+                  'rounded-[7px] px-2.5 py-1 text-[11px] font-semibold transition-colors',
+                  mode === m ? 'bg-foreground/[0.14] text-foreground' : 'text-muted-foreground'
+                )}
+              >
+                {m === 'week' ? t.calendar.switcher.week : t.calendar.switcher.month}
+              </button>
+            ))}
+          </div>
         </div>
-        <p className="text-xs text-subtle">
-          {t.calendar.summary(sessionCount, totalKm)}
-        </p>
+      </GlassSurface>
+
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => shift(-1)}
+          className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-foreground/[0.12] bg-foreground/[0.08] text-foreground/65 transition-colors hover:bg-foreground/[0.12] active:scale-95"
+        >
+          <ChevronLeft size={14} />
+        </button>
+        <button
+          type="button"
+          onClick={() => shift(1)}
+          disabled={atPresent}
+          className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-foreground/[0.12] bg-foreground/[0.08] text-foreground/65 transition-colors hover:bg-foreground/[0.12] active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <ChevronRight size={14} />
+        </button>
+        {!atPresent && (
+          <button
+            type="button"
+            onClick={goToday}
+            className="rounded-md px-2 py-1 text-xs font-medium text-accent-text transition-colors hover:bg-accent-subtle"
+          >
+            {t.calendar.today}
+          </button>
+        )}
       </div>
 
-      <Card padding="none" overflow>
-        <div className="grid grid-cols-7 border-b border-border">
-          {WEEKDAYS.map((d) => (
-            <div
-              key={d}
-              className="px-1 py-2 text-center text-xs font-medium uppercase tracking-wide text-subtle"
-            >
-              <span className="hidden sm:inline">{d}</span>
-              <span className="sm:hidden">{d[0]}</span>
-            </div>
-          ))}
-        </div>
-        <div className="grid grid-cols-7">
-          {cells.map((cell, i) => (
-            <div
-              key={i}
-              className={`min-h-16 border-b border-r border-border/30 p-1 sm:min-h-24 sm:p-1.5 [&:nth-child(7n)]:border-r-0/60 ${
-                cell ? '' : 'bg-muted/30'
-              }`}
-            >
-              {cell && (
-                <>
-                  <p
-                    className={`mb-1 text-xs ${
-                      cell.date === todayIso
-                        ? 'font-bold text-accent-text'
-                        : 'text-subtle'
-                    }`}
-                  >
-                    {cell.day}
-                  </p>
-                  <div className="space-y-1">
-                    {cell.acts.map((a) => (
-                      <Link
-                        key={a.id}
-                        href={`/activities/${a.id}`}
-                        className="flex items-center gap-1.5 rounded px-1 py-0.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
-                        title={`${a.description || a.type} · ${a.distanceKm} ${t.units.km}`}
-                      >
-                        <span
-                          className="h-1.5 w-1.5 shrink-0 rounded-full"
-                          style={{ backgroundColor: ACTIVITY_TYPE_CONFIG[a.type].chartColor }}
-                          aria-hidden="true"
-                        />
-                        <span className="tabular-nums">
-                          {a.distanceKm.toFixed(1)}
-                          <span className="ml-0.5 text-[10px] font-normal text-muted-foreground">
-                            {t.units.km}
-                          </span>
-                        </span>
-                      </Link>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          ))}
-        </div>
-      </Card>
+      {mode === 'week' ? (
+        <WeekView weekStart={weekStart} byDate={byDate} today={today} />
+      ) : (
+        <MonthView year={year} month={month} byDate={byDate} today={today} />
+      )}
 
-      <div className="flex flex-wrap items-center gap-3 text-xs text-subtle">
-        {Object.entries(ACTIVITY_TYPE_CONFIG).map(([type, cfg]) => (
-          <span key={type} className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full" style={{ background: cfg.chartColor }} />
-            {t.activityTypes[type as ActivityType]}
-          </span>
-        ))}
-      </div>
+      {/* TODO(agenda): once planned-workout sync exists, surface "Planned" /
+          "Missed" states + the quick-add FAB here (deferred - no plan data yet). */}
     </div>
   )
 }

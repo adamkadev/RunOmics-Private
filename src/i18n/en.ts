@@ -25,7 +25,7 @@ export const en = {
     items: {
       dashboard: 'Dashboard',
       activities: 'Activities',
-      calendar: 'Calendar',
+      calendar: 'Agenda',
       analytics: 'Analytics',
       goals: 'Goals',
       records: 'Records',
@@ -79,8 +79,7 @@ export const en = {
       title: 'Activities',
     },
     calendar: {
-      title: 'Calendar',
-      subtitle: 'Monthly training overview',
+      title: 'Agenda',
     },
     records: {
       title: 'Records',
@@ -866,6 +865,11 @@ export const en = {
       `${sessions} session${sessions !== 1 ? 's' : ''} · ${km} km`,
     weekdays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     readiness: (tsb: number) => `Form ${tsb >= 0 ? '+' : ''}${tsb}`,
+    switcher: { week: 'Week', month: 'Month' },
+    weekOf: (label: string) => `Week of ${label}`,
+    restDay: 'Rest day',
+    viewDetail: 'View detail',
+    type: 'Type',
   },
 
   // Display labels for domain enums. Styling (colors, badge classes) stays in

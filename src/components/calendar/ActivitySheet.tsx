@@ -1,0 +1,109 @@
+'use client'
+
+import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
+import Link from 'next/link'
+import { X } from 'lucide-react'
+import type { Activity } from '@/domain/activity/types'
+import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
+import { formatDuration, formatDate } from '@/lib/formatters'
+import { t } from '@/i18n'
+
+interface Props {
+  activity: Activity
+  onClose: () => void
+}
+
+/** Bottom sheet glass quick-view, opened by tapping a day's session in the agenda week view. */
+export function ActivitySheet({ activity, onClose }: Props) {
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [onClose])
+
+  useEffect(() => {
+    const { style } = document.documentElement
+    const prevOverflow = style.overflow
+    style.overflow = 'hidden'
+    return () => {
+      style.overflow = prevOverflow
+    }
+  }, [])
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center sm:p-4"
+      onClick={onClose}
+    >
+      <div
+        className="glass-sheet relative w-full animate-sheet-up rounded-t-[22px] p-4 sm:max-w-sm sm:rounded-[20px]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mx-auto mb-3.5 h-1 w-9 rounded-full bg-foreground/20 sm:hidden" aria-hidden="true" />
+
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <h2 className="text-sm font-bold text-foreground">
+            {activity.description || t.activityTypes[activity.type]}
+          </h2>
+          <button
+            onClick={onClose}
+            aria-label={t.activity.shareCard.close}
+            className="shrink-0 rounded-md p-1 text-subtle transition-colors hover:bg-foreground/10"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        <p className="mb-3 text-xs text-muted-foreground">{formatDate(activity.date)}</p>
+
+        <div className="grid grid-cols-2 gap-2">
+          <div className="rounded-[11px] bg-foreground/[0.05] p-2.5">
+            <div className="mb-0.5 text-[10px] text-muted-foreground">{t.calendar.type}</div>
+            <div className="flex items-center gap-1.5">
+              <span
+                className="h-[5px] w-[5px] rounded-full"
+                style={{ backgroundColor: ACTIVITY_TYPE_CONFIG[activity.type].dotColor }}
+              />
+              <span className="text-xs font-semibold text-foreground">{t.activityTypes[activity.type]}</span>
+            </div>
+          </div>
+          <div className="rounded-[11px] bg-foreground/[0.05] p-2.5">
+            <div className="mb-0.5 text-[10px] text-muted-foreground">{t.activities.sort.distance}</div>
+            <div className="text-xs font-semibold text-foreground">
+              {activity.distanceKm.toFixed(1)} {t.units.km}
+            </div>
+          </div>
+          <div className="rounded-[11px] bg-foreground/[0.05] p-2.5">
+            <div className="mb-0.5 text-[10px] text-muted-foreground">{t.activities.sort.duration}</div>
+            <div className="text-xs font-semibold text-foreground">{formatDuration(activity.durationSeconds)}</div>
+          </div>
+          <div className="rounded-[11px] bg-foreground/[0.05] p-2.5">
+            <div className="mb-0.5 text-[10px] text-muted-foreground">{t.activities.sort.avgHr}</div>
+            <div className="text-xs font-semibold text-foreground">
+              {activity.avgHeartRate ? `${activity.avgHeartRate} ${t.units.bpm}` : '-'}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-3 flex gap-2">
+          <button
+            onClick={onClose}
+            className="flex-1 rounded-xl border border-foreground/[0.12] bg-foreground/[0.07] py-2.5 text-center text-sm font-semibold text-foreground/70 transition-colors active:scale-[0.97]"
+          >
+            {t.activity.shareCard.close}
+          </button>
+          <Link
+            href={`/activities/${activity.id}`}
+            className="flex-1 rounded-xl bg-accent py-2.5 text-center text-sm font-bold text-accent-foreground shadow-[0_6px_16px_-6px_var(--accent)] transition-transform active:scale-[0.97]"
+          >
+            {t.calendar.viewDetail}
+          </Link>
+        </div>
+      </div>
+    </div>,
+    document.body
+  )
+}
