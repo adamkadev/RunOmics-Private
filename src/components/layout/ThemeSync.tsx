@@ -2,21 +2,19 @@
 
 import { useEffect } from 'react'
 import { useTheme } from 'next-themes'
-
-const COLORS = {
-  light: { background: '#f8fafc', card: '#ffffff' },
-  dark:  { background: '#030712', card: '#111827' },
-}
+import { useAccent } from '@/lib/useAccent'
 
 export function ThemeSync() {
   const { resolvedTheme } = useTheme()
+  const accent = useAccent()
 
   useEffect(() => {
-    const { background, card } = resolvedTheme === 'dark' ? COLORS.dark : COLORS.light
+    const style = getComputedStyle(document.documentElement)
+    const bg = style.getPropertyValue('--background').trim()
+    const card = style.getPropertyValue('--card').trim()
 
-    // Force iOS to repaint safe area with correct background color
-    document.documentElement.style.backgroundColor = background
-    document.body.style.backgroundColor = background
+    document.documentElement.style.backgroundColor = bg
+    document.body.style.backgroundColor = bg
 
     let meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
     if (!meta) {
@@ -25,7 +23,7 @@ export function ThemeSync() {
       document.head.appendChild(meta)
     }
     meta.content = card
-  }, [resolvedTheme])
+  }, [resolvedTheme, accent])
 
   return null
 }

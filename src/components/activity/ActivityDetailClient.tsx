@@ -12,6 +12,7 @@ import { formatClock, formatDistance, formatDurationShort } from '@/lib/formatte
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
 import { t } from '@/i18n'
+import { STATUS } from '@/lib/statusColors'
 
 interface Props {
   activity: Activity
@@ -20,7 +21,7 @@ interface Props {
 function rpeToneClass(rpe: number): string {
   if (rpe <= 4) return 'text-accent-text'
   if (rpe <= 6) return 'text-foreground'
-  return 'text-[#f0a500]'
+  return STATUS.warning.text
 }
 
 function buildStats(activity: Activity): Metric[] {
