@@ -1,37 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import fs from 'fs'
-import { computeProjection, computeYearOutcome, eventPhotoPath } from '../GetGoalsData'
+import { computeProjection, computeYearOutcome } from '../GetGoalsData'
 import type { Activity } from '@/domain/activity/types'
 import type { GoalYear, YearData } from '../GetGoalsData'
 
 const act = (date: string, km: number): Activity => ({ date, distanceKm: km }) as Activity
 
 const goal = (annualDistanceKm: number): GoalYear => ({ year: 2024, annualDistanceKm, targets: [] })
-
-// ---------- eventPhotoPath ----------
-
-describe('eventPhotoPath', () => {
-  afterEach(() => {
-    vi.restoreAllMocks()
-  })
-
-  it('returns null when no photo exists for any extension', () => {
-    vi.spyOn(fs, 'existsSync').mockReturnValue(false)
-    expect(eventPhotoPath('12345')).toBeNull()
-  })
-
-  it('returns the public path for the first matching extension', () => {
-    vi.spyOn(fs, 'existsSync').mockImplementation((p) => String(p).endsWith('12345.png'))
-    expect(eventPhotoPath('12345')).toBe('/events/12345.png')
-  })
-
-  it('prefers jpg over later extensions when both exist', () => {
-    vi.spyOn(fs, 'existsSync').mockImplementation(
-      (p) => String(p).endsWith('12345.jpg') || String(p).endsWith('12345.png')
-    )
-    expect(eventPhotoPath('12345')).toBe('/events/12345.jpg')
-  })
-})
 
 // ---------- computeProjection ----------
 
@@ -136,7 +111,7 @@ describe('computeYearOutcome', () => {
     const outcome = computeYearOutcome(
       yearData({
         goals: { year: 2024, annualDistanceKm: 0, targets: [{ distance: '10K', targetSeconds: 2400 }] },
-        pbs: [{ entry: { distance: '10K', seconds: 2300, activityId: 'a1' }, activity: {} as Activity, photoPath: null }],
+        pbs: [{ entry: { distance: '10K', seconds: 2300, activityId: 'a1' }, activity: {} as Activity }],
       })
     )
     expect(outcome?.targets).toEqual([
@@ -148,7 +123,7 @@ describe('computeYearOutcome', () => {
     const outcome = computeYearOutcome(
       yearData({
         goals: { year: 2024, annualDistanceKm: 0, targets: [{ distance: '10K', targetSeconds: 2400 }] },
-        pbs: [{ entry: { distance: '10K', seconds: 2500, activityId: 'a1' }, activity: {} as Activity, photoPath: null }],
+        pbs: [{ entry: { distance: '10K', seconds: 2500, activityId: 'a1' }, activity: {} as Activity }],
       })
     )
     expect(outcome?.targets[0].achieved).toBe(false)

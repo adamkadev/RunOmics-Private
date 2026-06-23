@@ -48,7 +48,6 @@ export interface UpcomingRaceYear {
 export interface PbData {
   entry: PbEntry
   activity: Activity
-  photoPath: string | null
 }
 
 export interface GoalProjection {
@@ -93,16 +92,6 @@ export interface GoalsPageData {
   years: number[]
   byYear: Record<number, YearData>
   history: YearOutcome[]
-}
-
-export function eventPhotoPath(activityId: string): string | null {
-  const publicDir = path.join(process.cwd(), 'public', 'events')
-  for (const ext of ['jpg', 'jpeg', 'png', 'webp', 'avif']) {
-    if (fs.existsSync(path.join(publicDir, `${activityId}.${ext}`))) {
-      return `/events/${activityId}.${ext}`
-    }
-  }
-  return null
 }
 
 // Uses last 8 calendar weeks (cross-year safe) for a stable rate.
@@ -240,7 +229,7 @@ export async function getGoalsPageData(): Promise<GoalsPageData> {
       .map((entry) => {
         const activity = activityMap.get(entry.activityId)
         if (!activity) return null
-        return { entry, activity, photoPath: eventPhotoPath(entry.activityId) }
+        return { entry, activity }
       })
       .filter((x): x is PbData => x !== null)
 
