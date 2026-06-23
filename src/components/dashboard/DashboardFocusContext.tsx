@@ -43,12 +43,20 @@ function readStoredState(): DashboardFocusState {
 const DashboardFocusContext = createContext<DashboardFocusContextValue | null>(null)
 
 export function DashboardFocusProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<DashboardFocusState>(readStoredState)
+  const [state, setState] = useState<DashboardFocusState>(defaultState)
   const [editMode, setEditMode] = useState(false)
+  const [hydrated, setHydrated] = useState(false)
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
-  }, [state])
+    setState(readStoredState())
+    setHydrated(true)
+  }, [])
+
+  useEffect(() => {
+    if (hydrated) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+    }
+  }, [state, hydrated])
 
   function toggleHidden(id: DashboardWidgetId) {
     setState((s) => ({
