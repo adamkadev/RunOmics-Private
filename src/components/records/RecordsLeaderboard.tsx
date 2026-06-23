@@ -7,20 +7,12 @@ import { Trophy } from 'lucide-react'
 import type { RecordEntry, TopEfforts } from '@/application/usecases/GetRecords'
 import { formatDuration, formatDistance, formatPace } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
-import { Card, cardClass, Badge } from '@/components/ui/Card'
+import { Badge } from '@/components/ui/Card'
+import { GlassSurface } from '@/components/ui/GlassSurface'
+import { Pill } from '@/components/ui/Pill'
 import { t } from '@/i18n'
 
 const PILL_ORDER = ['1k', '1mile', '5k', '10k', 'half', 'marathon', 'longest']
-
-const LABEL_COLOR: Record<string, string> = {
-  '1k':     'text-blue-600 dark:text-blue-400',
-  '1mile':  'text-cyan-600 dark:text-cyan-400',
-  '5k':     'text-emerald-600 dark:text-emerald-400',
-  '10k':    'text-amber-600 dark:text-amber-400',
-  half:     'text-violet-600 dark:text-violet-400',
-  marathon: 'text-rose-600 dark:text-rose-400',
-  longest:  'text-orange-600 dark:text-orange-400',
-}
 
 const LABELS: Record<string, string> = {
   '1k': '1K',
@@ -69,20 +61,17 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null }
         {t.records.title}
       </h2>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {pills.map((k) => (
-          <button
+          <Pill
             key={k}
+            as="button"
+            variant={selected === k ? 'active' : 'neutral'}
+            className="text-[13px] font-semibold"
             onClick={() => setSelected(k)}
-            className={cn(
-              'rounded-full px-3 py-1 text-xs font-semibold transition-colors',
-              selected === k
-                ? 'bg-accent text-foreground'
-                : 'bg-muted/50 text-muted-foreground hover:bg-muted'
-            )}
           >
             {k === 'all' ? t.records.all : (LABELS[k] ?? k)}
-          </button>
+          </Pill>
         ))}
       </div>
 
@@ -96,22 +85,22 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null }
               const card = (
                 <>
                   <div className="mb-3 flex items-center justify-between gap-1">
-                    <p className={cn('text-xs font-bold uppercase tracking-wide', LABEL_COLOR[r.key] ?? 'text-subtle')}>
+                    <p className="text-xs font-bold uppercase tracking-wide text-subtle">
                       {r.label}
                     </p>
-                    <div className="flex items-center">
+                    <div className="flex items-center gap-1">
                       {r.key === mostRecentKey && (
-                        <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+                        <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400">
                           {t.records.mostRecent}
                         </Badge>
                       )}
-                      {r.official && <span className="text-xs text-violet-400">★</span>}
+                      {r.official && <span className="text-xs text-amber-500">★</span>}
                     </div>
                   </div>
-                  <p className="text-2xl font-bold tracking-tight text-foreground">
+                  <p className="text-[28px] font-extrabold tracking-tight text-foreground">
                     {mainStat}
                   </p>
-                  <p className="mt-1 text-xs text-subtle">
+                  <p className="mt-1 text-xs font-medium text-subtle">
                     {r.distanceKm != null && <span>{formatDuration(r.seconds!)} · </span>}
                     {r.paceSecPerKm !== null && formatPace(r.paceSecPerKm)}
                     {r.date && <span> · {shortDate(r.date)}</span>}
@@ -123,12 +112,15 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null }
                 <Link
                   key={r.key}
                   href={`/activities/${r.activityId}`}
-                  className={cardClass({ clickable: true, className: spanFull ? 'col-span-full' : undefined })}
+                  className={cn('glass-card rounded-2xl p-4 transition-shadow hover:shadow-md', spanFull && 'col-span-full')}
                 >
                   {card}
                 </Link>
               ) : (
-                <div key={r.key} className={cardClass({ dashed: true, className: spanFull ? 'col-span-full' : undefined })}>
+                <div
+                  key={r.key}
+                  className={cn('glass-card rounded-2xl border-dashed p-4', spanFull && 'col-span-full')}
+                >
                   {card}
                 </div>
               )
@@ -137,10 +129,10 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null }
           <p className="text-xs text-subtle">{t.records.footnote}</p>
         </>
       ) : (
-        <Card padding="none" overflow>
+        <GlassSurface variant="card" className="overflow-hidden rounded-[22px]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border/60 bg-muted/30">
+              <tr className="border-b border-foreground/10 bg-foreground/[0.03]">
                 <th className="py-2 pl-4 pr-2 text-left text-xs font-semibold text-subtle">
                   {t.records.leaderboard.rank}
                 </th>
@@ -155,11 +147,11 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null }
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/40">
+            <tbody className="divide-y divide-foreground/[0.06]">
               {entries.map((e, i) => (
                 <tr
                   key={e.activityId}
-                  className="cursor-pointer transition-colors hover:bg-muted/30"
+                  className="cursor-pointer transition-colors hover:bg-foreground/[0.04]"
                   onClick={() => router.push(`/activities/${e.activityId}`)}
                 >
                   <td className={cn('py-2.5 pl-4 pr-2 font-mono text-xs', rankClass(i))}>{i + 1}</td>
@@ -183,7 +175,7 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null }
               ))}
             </tbody>
           </table>
-        </Card>
+        </GlassSurface>
       )}
     </section>
   )
