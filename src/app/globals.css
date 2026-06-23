@@ -21,6 +21,7 @@
   --shadow-card:             var(--shadow-card);
   --animate-fade-up:         fade-up 0.25s ease-out both;
   --animate-fade-in:         fade-in 0.2s ease-out both;
+  --animate-sheet-up:        sheet-up 0.42s cubic-bezier(0.22, 1.04, 0.36, 1) both;
 }
 
 @keyframes fade-up {
@@ -33,24 +34,77 @@
   to   { opacity: 1; }
 }
 
+/* Spring-like entrance for bottom sheets (slides up from below). */
+@keyframes sheet-up {
+  from { opacity: 0; transform: translateY(100%); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* Slow drifting aurora blobs (frozen under prefers-reduced-motion). */
+@keyframes ro-aurora {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  50%  { transform: translate3d(4%, -3%, 0) scale(1.12); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+@keyframes ro-aurora2 {
+  0%   { transform: translate3d(0, 0, 0) scale(1.05); }
+  50%  { transform: translate3d(-5%, 4%, 0) scale(1); }
+  100% { transform: translate3d(0, 0, 0) scale(1.05); }
+}
+
+/* Shimmer sweep for glass skeleton cards (Activities list B5). */
+@keyframes ro-shimmer {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(200%);  }
+}
+
 /* ─── Light tokens ─────────────────────────────────── */
 :root {
   --shadow-card:       0 1px 3px 0 rgb(0 0 0 / 0.06),
                        0 4px 16px -4px rgb(0 0 0 / 0.09);
 
-  --background:        #f8fafc;  /* slate-50  */
+  --background:        #eef3f0;  /* emerald-tinted canvas base */
   --card:              #ffffff;
   --muted:             #f1f5f9;  /* slate-100 */
   --border:            #e2e8f0;  /* slate-200 */
   --foreground:        #0f172a;  /* slate-900 */
   --muted-foreground:  #64748b;  /* slate-500 */
   --subtle:            #94a3b8;  /* slate-400 */
-  --accent:            #10b981;  /* emerald-500 */
+  --accent:            #0e9f6e;  /* deep emerald - sole action color */
   --accent-foreground: #ffffff;
   --accent-subtle:     #ecfdf5;  /* emerald-50  */
   --accent-text:       #059669;  /* emerald-600 */
   --destructive:       #ef4444;  /* red-500 */
-  --ring:              rgb(16 185 129 / 0.35);
+  --ring:              rgb(14 159 110 / 0.35);
+
+  /* Liquid glass design tokens (Dashboard refonte - A1) */
+  --ro-accent:    #0e9f6e;  /* deep emerald - brand + sole action color */
+  --ro-accent-hi: #14b886;  /* on-glass highlight (used on dark/glass) */
+  --ro-ink:       #0b1f17;  /* strong text (light) */
+  --ro-blur:      18px;     /* reference card blur */
+  --ro-text:      #0b1f17;  /* text strong   */
+  --ro-text-2:    #48564e;  /* text secondary */
+  --ro-text-3:    #7c8a82;  /* text tertiary  */
+
+  /* Living aurora canvas behind the glass */
+  --canvas:            linear-gradient(155deg, #f5f9f7 0%, #eef3f0 100%);
+  --aurora-1:          #a7f3d6;  /* emerald */
+  --aurora-2:          #bcd6ff;  /* blue */
+  --aurora-1-opacity:  0.65;
+  --aurora-2-opacity:  0.6;
+  --aurora-blur:       28px;
+
+  /* Liquid glass surfaces - card + chrome (A3, exact values) */
+  --glass-sat:          1.4;
+  --glass-bg:           rgba(255, 255, 255, 0.62);  /* card  */
+  --glass-bg-nav:       rgba(255, 255, 255, 0.72);  /* chrome */
+  --glass-border:       rgba(255, 255, 255, 0.7);
+  --glass-highlight:    rgba(255, 255, 255, 0.9);
+  --glass-shadow-float: 0 18px 40px -24px rgba(8, 40, 28, 0.35);
+  --glass-shadow-nav:   0 16px 36px -20px rgba(8, 40, 28, 0.35);
+  --glass-fallback:     rgba(255, 255, 255, 0.96);  /* @supports not backdrop-filter */
+  --glass-row-bg:       rgba(255, 255, 255, 0.5);    /* B9 - sub-surface row */
+  --glass-bg-sheet:     rgba(255, 255, 255, 0.86);  /* bottom sheets - more opaque than card/nav */
 }
 
 /* ─── Dark tokens ──────────────────────────────────── */
@@ -59,29 +113,58 @@
                        0 4px 16px -4px rgb(0 0 0 / 0.70),
                        inset 0 1px 0 0 rgb(255 255 255 / 0.06);
 
-  --background:        #030712;  /* gray-950  */
+  --background:        #070f0c;  /* deep emerald-tinted canvas base */
   --card:              #111827;  /* gray-900  */
   --muted:             #1f2937;  /* gray-800  */
   --border:            #1f2937;  /* gray-800 — distinct from muted for visible dividers */
   --foreground:        #f8fafc;  /* slate-50  */
   --muted-foreground:  #9ca3af;  /* gray-400  */
   --subtle:            #6b7280;  /* gray-500  */
-  --accent:            #10b981;  /* emerald-500 */
+  --accent:            #10b981;  /* emerald-500 (filled buttons) */
   --accent-foreground: #ffffff;
   --accent-subtle:     rgba(16, 185, 129, 0.1);
-  --accent-text:       #34d399;  /* emerald-400 */
+  --accent-text:       #2ed9a0;  /* bright emerald - text/icons + logo glow on dark */
   --destructive:       #f87171;  /* red-400   */
-  --ring:              rgb(52 211 153 / 0.7);  /* 0.7 alpha for 3:1 focus contrast on dark surfaces */
+  --ring:              rgb(46 217 160 / 0.7);  /* 0.7 alpha for 3:1 focus contrast on dark surfaces */
+
+  /* Liquid glass design tokens (Dashboard refonte - A1) */
+  --ro-text:      #ffffff;                  /* text strong   */
+  --ro-text-2:    rgba(255, 255, 255, 0.6);  /* text secondary */
+  --ro-text-3:    rgba(255, 255, 255, 0.5);  /* text tertiary  */
+
+  /* Living aurora canvas behind the glass */
+  --canvas:            linear-gradient(155deg, #0a1512 0%, #070f0c 100%);
+  --aurora-1:          #0e9f6e;  /* emerald */
+  --aurora-2:          #1276b8;  /* blue */
+  --aurora-1-opacity:  0.5;
+  --aurora-2-opacity:  0.42;
+  --aurora-blur:       30px;
+
+  /* Liquid glass surfaces - card + chrome (A3, exact values) */
+  --glass-sat:          1.6;
+  --glass-bg:           rgba(22, 34, 30, 0.42);  /* card  */
+  --glass-bg-nav:       rgba(12, 20, 17, 0.5);   /* chrome */
+  --glass-border:       rgba(255, 255, 255, 0.13);
+  --glass-highlight:    rgba(255, 255, 255, 0.14);
+  --glass-shadow-float: 0 24px 50px -26px rgba(0, 0, 0, 0.7);
+  --glass-shadow-nav:   0 16px 36px -18px rgba(0, 0, 0, 0.80);
+  --glass-fallback:     rgba(16, 26, 22, 0.92);  /* @supports not backdrop-filter */
+  --glass-row-bg:       rgba(255, 255, 255, 0.04);  /* B9 - sub-surface row */
+  --glass-bg-sheet:     rgba(12, 20, 17, 0.82);  /* bottom sheets - more opaque than card/nav */
 }
 
 /* ─── Accent palettes ──────────────────────────────── */
-/* "nature" is the default and already set above in :root / .dark */
+/* "nature" is the default and already set above in :root / .dark. Each accent
+   also retints the aurora (--aurora-1/2) so the background canvas matches the
+   selected accent, not just the foreground accent color (Wave 2 - Decision 3). */
 [data-accent="performance"] {
   --accent:            #3b82f6;  /* blue-500 */
   --accent-foreground: #ffffff;
   --accent-subtle:     #eff6ff;  /* blue-50  */
   --accent-text:       #2563eb;  /* blue-600 */
   --ring:              rgb(59 130 246 / 0.35);
+  --aurora-1:          #93c5fd;  /* blue-300 */
+  --aurora-2:          #bae6fd;  /* sky-200  */
 }
 .dark[data-accent="performance"] {
   --accent:            #3b82f6;  /* blue-500 */
@@ -89,6 +172,8 @@
   --accent-subtle:     rgba(59, 130, 246, 0.1);
   --accent-text:       #60a5fa;  /* blue-400 */
   --ring:              rgb(96 165 250 / 0.7);
+  --aurora-1:          #0a1e3d;
+  --aurora-2:          #0a2a44;
 }
 
 [data-accent="impact"] {
@@ -97,6 +182,8 @@
   --accent-subtle:     #fff1f2;  /* rose-50  */
   --accent-text:       #e11d48;  /* rose-600 */
   --ring:              rgb(244 63 94 / 0.35);
+  --aurora-1:          #fda4af;  /* rose-300  */
+  --aurora-2:          #fbcfe8;  /* pink-200  */
 }
 .dark[data-accent="impact"] {
   --accent:            #f43f5e;  /* rose-500 */
@@ -104,6 +191,8 @@
   --accent-subtle:     rgba(244, 63, 94, 0.1);
   --accent-text:       #fb7185;  /* rose-400 */
   --ring:              rgb(251 113 133 / 0.7);
+  --aurora-1:          #3d0a1a;
+  --aurora-2:          #2a0a1e;
 }
 
 [data-accent="motivation"] {
@@ -112,6 +201,8 @@
   --accent-subtle:     #fff7ed;  /* orange-50  */
   --accent-text:       #ea580c;  /* orange-600 */
   --ring:              rgb(249 115 22 / 0.35);
+  --aurora-1:          #fdba74;  /* orange-300 */
+  --aurora-2:          #fde68a;  /* amber-200  */
 }
 .dark[data-accent="motivation"] {
   --accent:            #f97316;  /* orange-500 */
@@ -119,6 +210,8 @@
   --accent-subtle:     rgba(249, 115, 22, 0.1);
   --accent-text:       #fb923c;  /* orange-400 */
   --ring:              rgb(251 146 60 / 0.7);
+  --aurora-1:          #3d1a0a;
+  --aurora-2:          #2a1a0a;
 }
 
 [data-accent="endurance"] {
@@ -127,6 +220,8 @@
   --accent-subtle:     #f5f3ff;  /* violet-50  */
   --accent-text:       #7c3aed;  /* violet-600 */
   --ring:              rgb(139 92 246 / 0.35);
+  --aurora-1:          #c4b5fd;  /* violet-300 */
+  --aurora-2:          #e9d5ff;  /* purple-200 */
 }
 .dark[data-accent="endurance"] {
   --accent:            #8b5cf6;  /* violet-500 */
@@ -134,6 +229,138 @@
   --accent-subtle:     rgba(139, 92, 246, 0.1);
   --accent-text:       #a78bfa;  /* violet-400 */
   --ring:              rgb(167 139 250 / 0.7);
+  --aurora-1:          #1a0a3d;
+  --aurora-2:          #2a0a3a;
+}
+
+/* ─── Liquid glass surfaces ────────────────────────── */
+/* Translucent chrome (nav, sheets) + key cards. Keep to <= ~6 blurred
+   surfaces per viewport: backdrop-filter is GPU-costly. */
+@layer components {
+  .glass-card,
+  .glass-nav,
+  .glass-sheet,
+  .glass-chip {
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: blur(var(--ro-blur)) saturate(var(--glass-sat));
+    backdrop-filter: blur(var(--ro-blur)) saturate(var(--glass-sat));
+  }
+
+  /* Fallback for browsers without backdrop-filter: opaque, clean surface. */
+  @supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
+    .glass-card,
+    .glass-nav,
+    .glass-sheet,
+    .glass-chip {
+      background: var(--glass-fallback);
+    }
+  }
+
+  .glass-card {
+    box-shadow: inset 0 1px 0 var(--glass-highlight), var(--glass-shadow-float);
+  }
+
+  .glass-nav {
+    background: var(--glass-bg-nav);
+    -webkit-backdrop-filter: blur(28px) saturate(var(--glass-sat));
+    backdrop-filter: blur(28px) saturate(var(--glass-sat));
+    box-shadow: inset 0 1px 0 var(--glass-highlight), var(--glass-shadow-nav);
+  }
+
+  .glass-sheet {
+    background: var(--glass-bg-sheet);
+    -webkit-backdrop-filter: blur(32px) saturate(var(--glass-sat));
+    backdrop-filter: blur(32px) saturate(var(--glass-sat));
+    box-shadow: inset 0 1px 0 var(--glass-highlight), var(--glass-shadow-float);
+  }
+
+  .glass-chip {
+    -webkit-backdrop-filter: blur(8px) saturate(1.5);
+    backdrop-filter: blur(8px) saturate(1.5);
+  }
+
+  /* Floating chrome over media (map weather chip, fullscreen button) -
+     same chrome tint as nav but a lighter 12px blur, sized for small chips. */
+  .glass-map-chip {
+    background: var(--glass-bg-nav);
+    border: 1px solid var(--glass-border);
+    -webkit-backdrop-filter: blur(12px) saturate(var(--glass-sat));
+    backdrop-filter: blur(12px) saturate(var(--glass-sat));
+    border-radius: 10px;
+    color: var(--ro-text);
+  }
+
+  @supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
+    .glass-map-chip {
+      background: var(--glass-fallback);
+    }
+  }
+
+  /* Lighter sub-surface for rows nested inside a glass-card (e.g. recent
+     activities list) - no backdrop-filter of its own, just a translucent
+     tint over the parent card's blur. */
+  .glass-row {
+    background: var(--glass-row-bg);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+  }
+
+  /* Skeleton card sweep (Activities list B5/C2) - lighter than glass-card,
+     no backdrop-filter (skeletons don't count against the blur budget). */
+  .skeleton-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+  .skeleton-shimmer::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 0%, var(--glass-highlight) 50%, transparent 100%);
+    animation: ro-shimmer 1.8s ease-in-out infinite;
+  }
+
+  /* Fluid display title (Geist 800, ~25.6px -> 34px), responsive to viewport. */
+  .text-display {
+    font-size: clamp(1.6rem, 1.32rem + 1.4vw, 2.125rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+
+  /* Living aurora layer: tinted canvas + two drifting radial blobs, fixed
+     behind all content so glass surfaces blur it via backdrop-filter. */
+  .aurora {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+    background: var(--canvas);
+  }
+  .aurora-blob {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(var(--aurora-blur));
+  }
+  .aurora-blob-1 {
+    width: max(640px, 60vmax);
+    height: max(640px, 60vmax);
+    left: -14vmax;
+    top: -16vmax;
+    background: radial-gradient(circle, var(--aurora-1) 0%, transparent 62%);
+    opacity: var(--aurora-1-opacity);
+    animation: ro-aurora 16s ease-in-out infinite;
+  }
+  .aurora-blob-2 {
+    width: max(580px, 56vmax);
+    height: max(580px, 56vmax);
+    right: -14vmax;
+    top: 8vmax;
+    background: radial-gradient(circle, var(--aurora-2) 0%, transparent 62%);
+    opacity: var(--aurora-2-opacity);
+    animation: ro-aurora2 19s ease-in-out infinite;
+  }
 }
 
 html {
@@ -190,7 +417,8 @@ h1 {
   }
 
   button:not(:disabled):active {
-    opacity: 0.7;
+    transform: scale(0.96);
+    opacity: 0.85;
   }
 
   :focus-visible {

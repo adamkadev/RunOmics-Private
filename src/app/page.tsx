@@ -15,12 +15,8 @@ import { RecentActivities } from '@/components/dashboard/RecentActivities'
 import { ActivityHeatmap } from '@/components/dashboard/ActivityHeatmap'
 import { TrainingStatusBanner } from '@/components/dashboard/TrainingStatusBanner'
 import { ConsistencyCard } from '@/components/dashboard/ConsistencyCard'
-import { PbAlertLine } from '@/components/ui/PbAlertLine'
-import { ShoeWearAlertLine } from '@/components/shoes/ShoeWearAlertLine'
-import { NextRaceLine } from '@/components/goals/NextRaceLine'
-import { LatestRecordBadge } from '@/components/records/LatestRecordBadge'
+import { DashboardHighlights } from '@/components/dashboard/DashboardHighlights'
 import { DashboardFocusProvider } from '@/components/dashboard/DashboardFocusContext'
-import { DashboardFocusBar } from '@/components/dashboard/DashboardFocusBar'
 import { DashboardWidgets, type DashboardWidget } from '@/components/dashboard/DashboardWidgets'
 import { t } from '@/i18n'
 
@@ -78,20 +74,20 @@ export default async function DashboardPage() {
   return (
     <DashboardFocusProvider>
       <div className="space-y-6">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.pages.dashboard.title}</h1>
-          <LatestRecordBadge record={mostRecentRecord} />
+        <div className="space-y-3">
+          <h1 className="text-display text-foreground">{t.pages.dashboard.title}</h1>
+          <DashboardHighlights
+            record={mostRecentRecord}
+            pbAlerts={pbAlerts}
+            shoes={shoes}
+            nextRace={nextRace}
+          />
         </div>
 
-        <div className="space-y-1.5">
-          <PbAlertLine alerts={pbAlerts} />
-          <ShoeWearAlertLine shoes={shoes} />
-          <NextRaceLine race={nextRace} />
-        </div>
-
-        <div className="flex justify-end">
+        {/* NEED TO REMOVE EDITION MODE FOR SOMETHING MORE DISCREET SEE README*/}
+        {/* <div className="flex justify-end">
           <DashboardFocusBar />
-        </div>
+        </div> */}
 
         <DashboardWidgets widgets={widgets} />
       </div>

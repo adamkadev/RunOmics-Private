@@ -18,7 +18,6 @@ export function cardClass({
 }: CardOptions = {}): string {
   return cn(
     'rounded-xl border border-border bg-card shadow-card',
-    'border-l-4',
     padding === 'sm'   && 'p-3',
     padding === 'base' && 'p-4',
     padding === 'lg'   && 'p-5',

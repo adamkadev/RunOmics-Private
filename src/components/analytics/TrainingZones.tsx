@@ -1,7 +1,7 @@
 import { Gauge } from 'lucide-react'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { formatClock as fmt, formatPace } from '@/lib/formatters'
-import { Card } from '@/components/ui/Card'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
 const ZONE_STYLE: Record<string, { dot: string; text: string; bar: string }> = {
@@ -21,9 +21,9 @@ export function TrainingZones({ data }: { data: TrainingZonesData }) {
   const range = slowest - fastest || 1
 
   return (
-    <section className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+    <GlassSurface variant="card" className="rounded-[22px] p-5">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
           <Gauge size={14} className="text-violet-500 dark:text-violet-400" />
           {t.trainingZones.title}
         </h2>
@@ -38,7 +38,7 @@ export function TrainingZones({ data }: { data: TrainingZonesData }) {
           const width = ((zone.paceMaxSecPerKm - zone.paceMinSecPerKm) / range) * 100
 
           return (
-            <Card key={zone.key}>
+            <div key={zone.key} className="rounded-xl border border-foreground/[0.08] bg-foreground/[0.04] p-3">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-1.5">
                   <span className={`h-2 w-2 shrink-0 rounded-full ${style.dot}`} />
@@ -50,7 +50,7 @@ export function TrainingZones({ data }: { data: TrainingZonesData }) {
                 </span>
               </div>
 
-              <div className="mt-2.5 h-2 w-full rounded-full bg-muted">
+              <div className="mt-2.5 h-2 w-full rounded-full bg-foreground/[0.07]">
                 <div
                   className={`h-full rounded-full ${style.bar} opacity-70`}
                   style={{ marginLeft: `${left}%`, width: `${Math.max(width, 3)}%` }}
@@ -61,10 +61,10 @@ export function TrainingZones({ data }: { data: TrainingZonesData }) {
                 {zone.shortDesc}
                 <span className="text-subtle"> · {zone.example}</span>
               </p>
-            </Card>
+            </div>
           )
         })}
       </div>
-    </section>
+    </GlassSurface>
   )
 }

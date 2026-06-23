@@ -1,20 +1,22 @@
 import type { HrZone } from '@/domain/activity/types'
 import { formatDuration } from '@/lib/formatters'
-import { Card } from '@/components/ui/Card'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
+/* Zone colors (ACTIVITY_DETAIL_TASKS.md B7): exact hex per zone, light/dark variants. */
 const ZONE_CONFIG: Record<number, {
   label: string
   barClass: string
   textClass: string
-  trackClass: string
 }> = {
-  1: { label: t.activity.zones.labels[1], barClass: 'bg-gray-400',    textClass: 'text-muted-foreground',       trackClass: 'bg-muted' },
-  2: { label: t.activity.zones.labels[2], barClass: 'bg-blue-400',    textClass: 'text-blue-600 dark:text-blue-400',       trackClass: 'bg-blue-50 dark:bg-blue-900/20' },
-  3: { label: t.activity.zones.labels[3], barClass: 'bg-emerald-400', textClass: 'text-emerald-600 dark:text-emerald-400', trackClass: 'bg-emerald-50 dark:bg-emerald-900/20' },
-  4: { label: t.activity.zones.labels[4], barClass: 'bg-orange-500',  textClass: 'text-orange-600 dark:text-orange-400',   trackClass: 'bg-orange-50 dark:bg-orange-900/20' },
-  5: { label: t.activity.zones.labels[5], barClass: 'bg-red-500',     textClass: 'text-red-600 dark:text-red-400',         trackClass: 'bg-red-50 dark:bg-red-900/20' },
+  1: { label: t.activity.zones.labels[1], barClass: 'bg-[#a7b1aa] dark:bg-white/55',         textClass: 'text-[#a7b1aa] dark:text-white/55' },
+  2: { label: t.activity.zones.labels[2], barClass: 'bg-[#3b82f6] dark:bg-[#7db8ff]',        textClass: 'text-[#3b82f6] dark:text-[#7db8ff]' },
+  3: { label: t.activity.zones.labels[3], barClass: 'bg-[#0e9f6e] dark:bg-[#2ed9a0]',        textClass: 'text-[#0e9f6e] dark:text-[#2ed9a0]' },
+  4: { label: t.activity.zones.labels[4], barClass: 'bg-[#f1761f] dark:bg-[#ff9a5a]',        textClass: 'text-[#f1761f] dark:text-[#ff9a5a]' },
+  5: { label: t.activity.zones.labels[5], barClass: 'bg-[#ff7676]',                          textClass: 'text-[#ff7676]' },
 }
+
+const TRACK_CLASS = 'bg-[rgba(11,31,23,0.07)] dark:bg-[rgba(255,255,255,0.08)]'
 
 interface ZoneRowProps {
   zone: HrZone
@@ -38,7 +40,7 @@ function ZoneRow({ zone }: ZoneRowProps) {
           <span className="w-10 text-right font-semibold text-foreground">{zone.percent}%</span>
         </div>
       </div>
-      <div className={`h-2 w-full overflow-hidden rounded-full ${cfg.trackClass}`}>
+      <div className={`h-2 w-full overflow-hidden rounded-full ${TRACK_CLASS}`}>
         <div
           className={`h-full rounded-full transition-all ${cfg.barClass}`}
           style={{ width: `${zone.percent}%` }}
@@ -55,16 +57,16 @@ interface Props {
 export function ZoneBar({ hrZones }: Props) {
   if (!hrZones || hrZones.length === 0) {
     return (
-      <Card padding="lg" className="flex h-full items-center justify-center">
+      <GlassSurface variant="card" className="flex h-full items-center justify-center rounded-[22px] p-[18px]">
         <p className="text-sm text-subtle">{t.activity.zones.noData}</p>
-      </Card>
+      </GlassSurface>
     )
   }
 
   const sorted = [...hrZones].sort((a, b) => b.zone - a.zone)
 
   return (
-    <Card padding="lg">
+    <GlassSurface variant="card" className="rounded-[22px] p-[18px]">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.activity.zones.title}
       </h3>
@@ -74,6 +76,6 @@ export function ZoneBar({ hrZones }: Props) {
           <ZoneRow key={z.zone} zone={z} />
         ))}
       </div>
-    </Card>
+    </GlassSurface>
   )
 }

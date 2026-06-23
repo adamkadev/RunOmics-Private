@@ -6,7 +6,7 @@ import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { ChartExplain } from '@/components/ui/ChartExplain'
 import { formatPace } from '@/lib/formatters'
-import { Card } from '@/components/ui/Card'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
 function linearRegression(pts: { x: number; y: number }[]): { slope: number; intercept: number } | null {
@@ -74,7 +74,7 @@ export function TemperatureCorrelationChart({ data }: Props) {
   const ex = t.analytics.charts.temperatureCorrelation.explains
 
   return (
-    <Card padding="lg">
+    <GlassSurface variant="card" className="rounded-[22px] p-5">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.analytics.charts.temperatureCorrelation.title}
       </h3>
@@ -129,6 +129,6 @@ export function TemperatureCorrelationChart({ data }: Props) {
       <p className="mt-1 text-xs text-subtle">
         {t.analytics.charts.temperatureCorrelation.footnote}
       </p>
-    </Card>
+    </GlassSurface>
   )
 }

@@ -25,18 +25,19 @@ export const en = {
     items: {
       dashboard: 'Dashboard',
       activities: 'Activities',
-      calendar: 'Calendar',
+      calendar: 'Agenda',
       analytics: 'Analytics',
       goals: 'Goals',
       records: 'Records',
       heatmap: 'Heatmap',
       shoes: 'Shoes',
+      profile: 'Profile',
       settings: 'Settings',
+      more: 'More',
     },
     openMenu: 'Open menu',
     closeMenu: 'Close menu',
   },
-
   meta: {
     description: 'Your personal running training dashboard - stats, maps, trends.',
   },
@@ -48,15 +49,18 @@ export const en = {
   units: {
     km: 'km',
     bpm: 'bpm',
-    vo2max: 'ml/kg/min',
     spm: 'spm',
     m: 'm',
     ms: 'ms',
     mm: 'mm',
     percent: '%',
     kcal: 'kcal',
+    perKm: '/km',
     minPerKm: 'min/km',
     celsius: '°C',
+    hour: 'h',
+    day: 'd',
+    elevation: 'D+ m'
   },
 
   common: {
@@ -73,11 +77,9 @@ export const en = {
     },
     activities: {
       title: 'Activities',
-      subtitle: (total: number) => `${total} total activities`,
     },
     calendar: {
-      title: 'Calendar',
-      subtitle: 'Monthly training overview',
+      title: 'Agenda',
     },
     records: {
       title: 'Records',
@@ -93,6 +95,9 @@ export const en = {
       title: 'Shoes',
       subtitle: 'Mileage and wear per pair',
     },
+    profile: {
+      title: 'Profile',
+    },
     notFound: {
       code: '404',
       heading: "This page went on a run and didn't come back.",
@@ -101,11 +106,18 @@ export const en = {
     },
     settings: {
       title: 'Settings',
-      subtitle: 'Manage your goals, personal bests and athlete profile.',
+      subtitle: 'Appearance, notifications and data export.',
     },
   },
 
   settings: {
+    appearance: {
+      title: 'Appearance',
+      themeLabel: 'Theme',
+      light: 'Light',
+      dark: 'Dark',
+      auroraNote: 'The aurora adapts to the selected accent.',
+    },
     accent: {
       title: 'Accent color',
       subtitle: 'Pick the vibe - this applies instantly, no account needed.',
@@ -234,7 +246,7 @@ export const en = {
       jumpToCurrent: 'Current week',
     },
     weekLoad: {
-      label: (percent: number) => `${percent}% of a typical week`,
+      label: (percent: number) => `${percent}%`,
       level: {
         low: 'Light load',
         normal: 'Normal load',
@@ -310,13 +322,6 @@ export const en = {
       recovery: 'Recovery',
       detraining: 'Detraining',
     },
-    description: {
-      productive: 'Fitness building steadily.',
-      fresh: 'Fresh and ready to perform.',
-      overreaching: 'Fatigue is high - consider easing off.',
-      recovery: 'Load reduced, form recovering.',
-      detraining: 'Training volume too low to maintain fitness.',
-    },
     risk: {
       low: 'Low risk',
       moderate: 'Moderate risk',
@@ -332,7 +337,6 @@ export const en = {
       fitness: 'Fitness',
       fatigue: 'Fatigue',
       form: 'Form',
-      fitnessDelta: (d: number) => `${d >= 0 ? '+' : ''}${d} over 2 wk`,
     },
   },
 
@@ -528,10 +532,15 @@ export const en = {
 
   activities: {
     searchPlaceholder: 'Search...',
+    searchToggle: 'Search',
     all: 'All',
     count: (n: number) => `${n} activit${n !== 1 ? 'ies' : 'y'}`,
     page: (current: number, total: number) => ` · page ${current}/${total}`,
     empty: 'No activities found',
+    emptyFiltered: 'No sessions of this type',
+    resetFilters: 'Reset filters',
+    endOfList: 'That\'s all',
+    monthGroup: (count: number, km: number) => `${count} session${count !== 1 ? 's' : ''} · ${km} km`,
     sort: {
       label: 'Sort',
       date: 'Date',
@@ -587,7 +596,7 @@ export const en = {
         photo: 'Photo',
       },
       mapMode: {
-        label: 'Route',
+        label: 'Background',
         run: 'Run',
         map: 'Map',
         none: 'Nothing',
@@ -710,7 +719,7 @@ export const en = {
     emptyPbs: (year: number) => `No PBs for ${year} yet - add them in Settings.`,
     noPhoto: 'No photo',
     upcomingRaces: 'Upcoming Races',
-    daysUntil: (n: number) => n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : `In ${n} days`,
+    daysUntil: (n: number) => n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : `${n}d`,
     pastRace: 'Past',
     registrationLink: 'Registration',
     projection: {
@@ -764,6 +773,42 @@ export const en = {
       },
       activitiesTitle: 'Tracked Activities',
       empty: 'No activities recorded with this pair yet.',
+    },
+  },
+
+  profile: {
+    hero: {
+      since: (date: string) => `Athlete since ${date}`,
+      summary: (activities: number, km: number) => `${activities} activities · ${km} km`,
+      editName: 'Edit name',
+      namePlaceholder: 'Your name',
+    },
+    ytd: {
+      title: 'This year',
+      distance: 'Distance',
+      duration: 'Duration',
+      sessions: 'Sessions',
+      elevation: 'Elevation',
+    },
+    records: {
+      title: 'Personal records',
+      notYet: 'Not yet',
+      viewAll: 'View all records',
+    },
+    shoes: {
+      title: 'Shoes',
+      line: (totalKm: number, remainingKm: number) => `${totalKm} km · ~${remainingKm} km left`,
+      viewShoes: 'View Shoes',
+    },
+    hrZones: {
+      title: 'Heart rate zones',
+      lthr: 'LTHR',
+      recalculate: 'Recalculate from LTHR',
+    },
+    goal: {
+      title: (year: number) => `Goal ${year}`,
+      pace: (km: number) => `At this pace: ${km} km by year-end`,
+      viewGoals: 'View Goals',
     },
   },
 
@@ -821,7 +866,6 @@ export const en = {
       fair: 'Fair',
       low: 'Low',
     },
-    detail: (weeks: number, adherence: number) => `${weeks} wk window · ${adherence}% weeks active`,
   },
 
   calendar: {
@@ -830,6 +874,11 @@ export const en = {
       `${sessions} session${sessions !== 1 ? 's' : ''} · ${km} km`,
     weekdays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     readiness: (tsb: number) => `Form ${tsb >= 0 ? '+' : ''}${tsb}`,
+    switcher: { week: 'Week', month: 'Month' },
+    weekOf: (label: string) => `Week of ${label}`,
+    restDay: 'Rest day',
+    viewDetail: 'View detail',
+    type: 'Type',
   },
 
   // Display labels for domain enums. Styling (colors, badge classes) stays in

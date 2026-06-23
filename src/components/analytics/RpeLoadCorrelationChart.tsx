@@ -5,7 +5,7 @@ import type { RpeLoadPoint } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { ChartExplain } from '@/components/ui/ChartExplain'
-import { Card } from '@/components/ui/Card'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
 const NEUTRAL_DOT = '#9ca3af' // gray-400, used when temperature is unknown
@@ -77,7 +77,7 @@ export function RpeLoadCorrelationChart({ data }: Props) {
   const ex = t.analytics.charts.rpeLoadCorrelation.explains
 
   return (
-    <Card padding="lg">
+    <GlassSurface variant="card" className="rounded-[22px] p-5">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.analytics.charts.rpeLoadCorrelation.title}
       </h3>
@@ -131,6 +131,6 @@ export function RpeLoadCorrelationChart({ data }: Props) {
       <p className="mt-1 text-xs text-subtle">
         {t.analytics.charts.rpeLoadCorrelation.footnote}
       </p>
-    </Card>
+    </GlassSurface>
   )
 }

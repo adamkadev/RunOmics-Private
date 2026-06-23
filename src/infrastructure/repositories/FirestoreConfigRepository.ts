@@ -6,6 +6,10 @@ export interface AthleteProfile {
   thresholdPaceSecPerKm?: number
   thresholdPowerWatts?: number
   vmaKmh?: number
+  displayName?: string
+  // Top bpm of zones 1-4 (zone 5 runs from the 4th value up to lthrBpm).
+  hrZoneBoundsBpm?: [number, number, number, number]
+  lastUpdate?: string
 }
 
 export async function getGoalsFromFirestore(): Promise<GoalYear[]> {
@@ -29,7 +33,9 @@ export async function getUpcomingRacesFromFirestore(): Promise<UpcomingRaceYear[
 export async function getAthleteFromFirestore(): Promise<AthleteProfile> {
   const db = getAdminFirestore()
   const doc = await db.collection('athlete').doc('profile').get()
-  return (doc.data() ?? {}) as AthleteProfile
+  const data = doc.data()
+  if (!data) return {}
+  return { ...data, lastUpdate: data.lastUpdate?.toDate().toISOString() } as AthleteProfile
 }
 
 export type PrState = Record<string, { seconds: number; activityId: string }>

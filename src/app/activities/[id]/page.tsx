@@ -56,16 +56,16 @@ export default async function ActivityDetailPage({
   const prLabels = getPrLabelsByActivityId(records)[id] ?? []
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 pt-[max(env(safe-area-inset-top),12px)] lg:pt-0">
       <BackButton label={t.activity.back} fallbackHref="/activities" />
 
       <div>
-        <div className="mb-2 flex flex-wrap items-center gap-2">
+        <div className="mb-2 flex flex-nowrap items-center gap-2 overflow-x-auto">
           <ActivityTypeTag type={activity.type} />
           <PrBadge labels={prLabels} />
           <ShoePairTag gearId={activity.gearId} />
         </div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+        <h1 className="text-display text-foreground">
           {activity.description || t.activity.runTitle(activity.dayOfWeek)}
         </h1>
         <div className="mt-1 flex items-center justify-between gap-3">
@@ -83,17 +83,13 @@ export default async function ActivityDetailPage({
       <ActivityDetailClient activity={activity} />
 
       <div className="space-y-4">
+        <ZoneBar hrZones={activity.hrZones} />
         <KmSplits activity={activity} />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <ZoneBar hrZones={activity.hrZones} />
           <TrainingEffect aer={activity.aerTrainingEffect} ana={activity.anaTrainingEffect} />
+          {activity.bestEfforts && <BestEfforts bestEfforts={activity.bestEfforts} />}
+          <RunningDynamics activity={activity} />
         </div>
-        {(activity.bestEfforts || activity.strideLengthM != null || activity.groundContactMs != null) && (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {activity.bestEfforts && <BestEfforts bestEfforts={activity.bestEfforts} />}
-            <RunningDynamics activity={activity} />
-          </div>
-        )}
       </div>
     </div>
   )

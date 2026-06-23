@@ -43,7 +43,7 @@ export default async function ActivityComparePage({
   return (
     <div className="space-y-5">
       <BackButton label={t.activity.back} fallbackHref="/activities" />
-      <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.compare.title}</h1>
+      <h1 className="text-display text-foreground">{t.compare.title}</h1>
       <ActivityCompareClient a={pair.a} b={pair.b} />
     </div>
   )

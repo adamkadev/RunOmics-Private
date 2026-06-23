@@ -5,10 +5,8 @@ export type ConsistencyRating = 'excellent' | 'good' | 'fair' | 'low'
 
 export interface ConsistencyScore {
   score: number
-  adherence: number       // % of weeks with at least 1 run
   stability: number       // 0-100, higher = more consistent weekly km
   rating: ConsistencyRating
-  window: number          // weeks analyzed
 }
 
 const WINDOW_WEEKS = 12
@@ -59,5 +57,5 @@ export function getConsistencyScore(): ConsistencyScore | null {
 
   const score = round(adherence * 0.6 + stability * 0.4)
 
-  return { score, adherence, stability, rating: rating(score), window: WINDOW_WEEKS }
+  return { score, stability, rating: rating(score) }
 }

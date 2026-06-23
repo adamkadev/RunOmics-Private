@@ -1,7 +1,8 @@
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
-import type { TrainingStatus, TrainingStatusType, RiskLevel, LoadTrend } from '@/application/usecases/GetTrainingStatus'
-import { Card, Badge } from '@/components/ui/Card'
+import type { TrainingStatus, TrainingStatusType, LoadTrend } from '@/application/usecases/GetTrainingStatus'
+import { GlassSurface } from '@/components/ui/GlassSurface'
+import { StatusPill, type StatusTone } from '@/components/ui/StatusPill'
 
 const STATUS_STYLE: Record<TrainingStatusType, { dot: string; badge: string; text: string }> = {
   productive: {
@@ -31,17 +32,11 @@ const STATUS_STYLE: Record<TrainingStatusType, { dot: string; badge: string; tex
   },
 }
 
-const RISK_STYLE: Record<RiskLevel, string> = {
-  low:      'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400',
-  moderate: 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-  high:     'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-}
-
-const TREND_STYLE: Record<LoadTrend, string> = {
-  building:    'bg-accent-subtle text-accent-text',
-  maintaining: 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400',
-  tapering:    'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-  detraining:  'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-500',
+const TREND_TONE: Record<LoadTrend, StatusTone> = {
+  building:    'accent',
+  maintaining: 'zinc',
+  tapering:    'blue',
+  detraining:  'zinc',
 }
 
 function Metric({ label, value, valueClass }: { label: string; value: string; valueClass?: string }) {
@@ -61,17 +56,12 @@ export function TrainingStatusBanner({ status }: { status: TrainingStatus }) {
 
   const tsbSign = status.tsb >= 0 ? '+' : ''
   const formValue = `${tsbSign}${status.tsb}`
-  const formClass =
-    status.tsb > 5
-      ? 'text-blue-600 dark:text-blue-400'
-      : status.tsb < -20
-        ? 'text-red-600 dark:text-red-400'
-        : status.tsb < -10
-          ? 'text-amber-600 dark:text-amber-400'
-          : 'text-foreground'
+  // C5 (validated PO, rule frozen): negative Form is a warning (amber),
+  // positive/zero Form is healthy (accent). No other gradations.
+  const formClass = status.tsb < 0 ? 'text-[#f0a500]' : 'text-accent-text'
 
   return (
-    <Card padding="lg">
+    <GlassSurface variant="card" className="rounded-[22px] p-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
           <span
@@ -87,27 +77,19 @@ export function TrainingStatusBanner({ status }: { status: TrainingStatus }) {
               <span className={cn('text-base font-semibold', style.text)}>
                 {s.status[status.status]}
               </span>
-              <Badge className={TREND_STYLE[status.loadTrend]}>{s.loadTrend[status.loadTrend]}</Badge>
-              <Badge className={RISK_STYLE[status.risk]}>{s.risk[status.risk]}</Badge>
+              <StatusPill tone={TREND_TONE[status.loadTrend]}>{s.loadTrend[status.loadTrend]}</StatusPill>
             </div>
-            <p className="mt-0.5 text-sm text-muted-foreground">
-              {s.description[status.status]}
-            </p>
           </div>
         </div>
 
         <div className="flex items-center gap-6 pl-5 sm:pl-0">
           <Metric label={s.metrics.fitness} value={String(status.ctl)} />
-          <div className="h-8 w-px bg-border" />
+          <div className="h-8 w-px bg-foreground/10" />
           <Metric label={s.metrics.fatigue} value={String(status.atl)} />
-          <div className="h-8 w-px bg-border" />
+          <div className="h-8 w-px bg-foreground/10" />
           <Metric label={s.metrics.form} value={formValue} valueClass={formClass} />
         </div>
       </div>
-
-      <p className="mt-3 text-xs text-muted-foreground/70">
-        {s.metrics.fitnessDelta(status.ctlDelta)}
-      </p>
-    </Card>
+    </GlassSurface>
   )
 }

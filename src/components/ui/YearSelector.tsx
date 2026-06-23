@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 
 interface PeriodOption {
   weeks: number
@@ -56,7 +57,7 @@ export function YearSelector({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-20 mt-1 min-w-[5rem] overflow-hidden rounded-xl border border-border bg-card py-1 shadow-lg">
+        <GlassSurface variant="sheet" className="absolute right-0 top-full z-20 mt-1 min-w-[5rem] overflow-hidden rounded-xl py-1">
           {years.map((y) => (
             <button
               key={y}
@@ -111,7 +112,7 @@ export function YearSelector({
               </button>
             </>
           )}
-        </div>
+        </GlassSurface>
       )}
     </div>
   )

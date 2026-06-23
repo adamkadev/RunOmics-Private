@@ -26,7 +26,7 @@ export default async function ShoeDetailPage({
   const prLabelsByActivityId = getPrLabelsByActivityId(records)
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 pt-[max(env(safe-area-inset-top),12px)] lg:pt-0">
       <BackButton label={t.shoes.detail.back} fallbackHref="/shoes" />
 
       <div className="flex items-start justify-between gap-2">
@@ -36,7 +36,7 @@ export default async function ShoeDetailPage({
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{shoe.brand}</p>
             {shoe.retired && <Badge className="bg-muted text-muted-foreground">{t.shoes.retired}</Badge>}
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">{shoe.name}</h1>
+          <h1 className="text-display text-foreground">{shoe.name}</h1>
         </div>
       </div>
 

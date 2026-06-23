@@ -6,7 +6,7 @@ import { CHART_COLORS } from '@/lib/colors'
 import { useAccentColor } from '@/lib/useAccent'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { ChartExplain } from '@/components/ui/ChartExplain'
-import { Card } from '@/components/ui/Card'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
 interface Props {
@@ -42,7 +42,7 @@ export function LongRunsChart({ data }: Props) {
       : { text: t.analytics.charts.longRuns.explains.low(avg), tone: 'caution' as const }
 
   return (
-    <Card padding="lg">
+    <GlassSurface variant="card" className="rounded-[22px] p-5">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">{t.analytics.charts.longRuns.title}</h3>
       <ResponsiveContainer width="100%" height={200}>
         <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>
@@ -75,6 +75,6 @@ export function LongRunsChart({ data }: Props) {
         </BarChart>
       </ResponsiveContainer>
       <ChartExplain text={explain.text} tone={explain.tone} />
-    </Card>
+    </GlassSurface>
   )
 }

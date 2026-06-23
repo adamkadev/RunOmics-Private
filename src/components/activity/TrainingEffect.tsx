@@ -1,4 +1,4 @@
-import { Card } from '@/components/ui/Card'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
 interface Props {
@@ -48,7 +48,7 @@ export function TrainingEffect({ aer, ana }: Props) {
   if (aer == null && ana == null) return null
 
   return (
-    <Card padding="lg">
+    <GlassSurface variant="card" className="rounded-[22px] p-[18px]">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.activity.trainingEffect.title}
       </h3>
@@ -56,6 +56,6 @@ export function TrainingEffect({ aer, ana }: Props) {
         {aer != null && <TEBar value={aer} label={t.activity.trainingEffect.aerobic} />}
         {ana != null && <TEBar value={ana} label={t.activity.trainingEffect.anaerobic} />}
       </div>
-    </Card>
+    </GlassSurface>
   )
 }

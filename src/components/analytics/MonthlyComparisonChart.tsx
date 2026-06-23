@@ -8,7 +8,7 @@ import type { MonthlyVolume } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { useAccentColor } from '@/lib/useAccent'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
-import { Card } from '@/components/ui/Card'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
 const MONTH_LABELS = t.dashboard.heatmap.months.map((m) => m.toUpperCase())
@@ -57,7 +57,7 @@ export function MonthlyComparisonChart({ currentYear, currentData, prevYear, pre
   })
 
   return (
-    <Card padding="lg">
+    <GlassSurface variant="card" className="rounded-[22px] p-5">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">{t.analytics.charts.monthlyComparison.title}</h3>
         <div className="flex items-center gap-4 text-xs text-subtle">
@@ -107,6 +107,6 @@ export function MonthlyComparisonChart({ currentYear, currentData, prevYear, pre
           />
         </LineChart>
       </ResponsiveContainer>
-    </Card>
+    </GlassSurface>
   )
 }

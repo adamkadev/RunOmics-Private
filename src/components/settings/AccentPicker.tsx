@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { Check } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { ACCENT_IDS, ACCENT_SWATCHES, persistAccent, type AccentId } from '@/lib/accent'
 import { useAccent } from '@/lib/useAccent'
@@ -21,36 +20,34 @@ export function AccentPicker() {
   }
 
   return (
-    <section className="rounded-xl border border-border bg-card p-5">
-      <h2 className="text-sm font-semibold text-foreground">{t.settings.accent.title}</h2>
+    <div>
+      <h2 className="text-sm font-bold text-foreground">{t.settings.accent.title}</h2>
       <p className="mt-0.5 text-xs text-muted-foreground">{t.settings.accent.subtitle}</p>
 
-      <div className="mt-4 grid grid-cols-5 gap-1.5 sm:gap-2.5">
+      <div className="mt-4 flex flex-wrap gap-3">
         {ACCENT_IDS.map((id) => {
-          const { label, description } = t.settings.accent.options[id]
+          const { label } = t.settings.accent.options[id]
+          const color = ACCENT_SWATCHES[id]
           const active = mounted && accent === id
           return (
             <button
               key={id}
+              type="button"
               onClick={() => selectAccent(id)}
               aria-label={label}
-              className={cn(
-                'flex flex-col items-center gap-1 rounded-lg border px-1 py-2 text-center transition-colors sm:gap-1.5 sm:px-3 sm:py-3',
-                active ? 'border-accent bg-accent-subtle' : 'border-border hover:bg-muted'
-              )}
+              aria-pressed={active}
+              style={{
+                backgroundColor: color,
+                borderColor: active ? color : 'transparent',
+                boxShadow: active ? `0 0 0 3px ${color}59` : 'none',
+              }}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 transition-transform active:scale-90"
             >
-              <span
-                className="flex h-6 w-6 items-center justify-center rounded-full sm:h-7 sm:w-7"
-                style={{ backgroundColor: ACCENT_SWATCHES[id] }}
-              >
-                {active && <Check size={12} className="text-white drop-shadow-[0_1px_1.5px_rgba(0,0,0,0.6)] sm:size-3.5" />}
-              </span>
-              <span className="hidden text-xs font-medium text-foreground sm:block">{label}</span>
-              <span className="hidden text-[11px] text-muted-foreground sm:block">{description}</span>
+              {active && <Check size={18} className="text-white drop-shadow-[0_1px_1.5px_rgba(0,0,0,0.6)]" />}
             </button>
           )
         })}
       </div>
-    </section>
+    </div>
   )
 }

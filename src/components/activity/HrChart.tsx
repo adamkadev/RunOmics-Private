@@ -9,7 +9,7 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { CHART_COLORS } from '@/lib/colors'
-import { Card } from '@/components/ui/Card'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
 interface Props {
@@ -42,13 +42,13 @@ export function HrChart({ samples, avgHr, distanceKm, onHoverFraction }: Props) 
   }
 
   return (
-    <Card padding="lg">
+    <GlassSurface variant="card" className="rounded-[22px] p-[18px]">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">{t.activity.charts.heartRate}</h3>
         {avgHr && (
           <span className="text-xs text-subtle">
-            {t.activity.charts.avg} <span className="font-semibold text-red-500 dark:text-red-400">{avgHr}</span>
-            {' · '}{t.activity.charts.max} <span className="font-semibold text-red-600 dark:text-red-400">{maxHr}</span>
+            {t.activity.charts.avg} <span className="font-semibold text-[#ff7676]">{avgHr}</span>
+            {' · '}{t.activity.charts.max} <span className="font-semibold text-[#ff7676]">{maxHr}</span>
             {' '}{t.units.bpm}
           </span>
         )}
@@ -106,6 +106,6 @@ export function HrChart({ samples, avgHr, distanceKm, onHoverFraction }: Props) 
           />
         </AreaChart>
       </ResponsiveContainer>
-    </Card>
+    </GlassSurface>
   )
 }

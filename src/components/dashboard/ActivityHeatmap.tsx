@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react'
 import type { HeatmapDay } from '@/application/usecases/GetHeatmapData'
-import { Card, tooltipSurfaceClass } from '@/components/ui/Card'
+import { tooltipSurfaceClass } from '@/components/ui/Card'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -89,7 +90,7 @@ export function ActivityHeatmap({ days }: Props) {
   const activeDays = days.filter(d => d.distanceKm > 0).length
 
   return (
-    <Card padding="lg">
+    <GlassSurface variant="card" className="rounded-[22px] p-5">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">
           {t.dashboard.heatmap.title} <span className="font-normal text-subtle">{t.dashboard.heatmap.window}</span>
@@ -178,6 +179,6 @@ export function ActivityHeatmap({ days }: Props) {
           </p>
         </div>
       )}
-    </Card>
+    </GlassSurface>
   )
 }

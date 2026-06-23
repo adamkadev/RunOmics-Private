@@ -6,13 +6,11 @@ import type { User } from 'firebase/auth'
 import { LogOut } from 'lucide-react'
 import { getClientAuth } from '@/lib/firebase'
 import { t } from '@/i18n'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 import { AccentPicker } from './AccentPicker'
-import { AthleteForm } from './AthleteForm'
+import { ThemeSegmented } from './ThemeSegmented'
 import { DataExportForm } from './DataExportForm'
-import { GoalsForm } from './GoalsForm'
 import { NotificationsForm } from './NotificationsForm'
-import { PbsForm } from './PbsForm'
-import { UpcomingRacesForm } from './UpcomingRacesForm'
 
 const OWNER_EMAIL = process.env.NEXT_PUBLIC_OWNER_EMAIL ?? ''
 
@@ -44,13 +42,15 @@ export function SettingsClient() {
 
   if (!user) {
     return (
-      <div className="space-y-8">
+      <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.pages.settings.title}</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">{t.pages.settings.subtitle}</p>
         </div>
 
-        <AccentPicker />
+        <GlassSurface variant="card" className="rounded-[22px] p-5">
+          <AccentPicker />
+        </GlassSurface>
 
         <div className="flex flex-col items-center gap-6 px-4 py-8">
           <button
@@ -80,29 +80,28 @@ export function SettingsClient() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.pages.settings.title}</h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">{t.pages.settings.subtitle}</p>
-        </div>
-        <button
-          onClick={handleSignOut}
-          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-red-400 hover:text-red-500 dark:hover:border-red-500 dark:hover:text-red-400"
-        >
-          <LogOut size={13} />
-          {t.settings.auth.signOut}
-        </button>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.pages.settings.title}</h1>
+        <p className="mt-0.5 text-sm text-muted-foreground">{t.pages.settings.subtitle}</p>
       </div>
 
-      <AccentPicker />
-      <NotificationsForm />
+      <GlassSurface variant="card" className="rounded-[22px] p-5">
+        <AccentPicker />
+        <div className="my-5 h-px bg-foreground/[0.06]" />
+        <ThemeSegmented />
+      </GlassSurface>
 
-      <AthleteForm />
-      <GoalsForm />
-      <UpcomingRacesForm />
-      <PbsForm />
+      <NotificationsForm />
       <DataExportForm />
+
+      <button
+        onClick={handleSignOut}
+        className="flex w-full items-center justify-center gap-2 rounded-2xl border border-red-500/20 bg-red-500/[0.08] px-4 py-3 text-sm font-semibold text-red-500 transition-colors hover:bg-red-500/[0.12]"
+      >
+        <LogOut size={15} />
+        {t.settings.auth.signOut}
+      </button>
     </div>
   )
 }

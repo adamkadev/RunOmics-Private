@@ -343,7 +343,7 @@ export function GlobalMapClient({ data }: Props) {
       {/* Badge - always visible */}
       <button
         onClick={() => setPanelOpen((o) => !o)}
-        className="absolute left-3 top-3 z-10 flex items-center gap-2 rounded-xl border border-border bg-card/90 px-3 py-2 shadow-card backdrop-blur-sm transition-colors hover:bg-muted"
+        className="glass-map-chip absolute left-3 top-3 z-10 flex items-center gap-2 px-3 py-2 transition-colors hover:bg-muted"
       >
         <span className="text-xs font-semibold text-accent-text">
           {names[selectedIdx]}
@@ -362,7 +362,7 @@ export function GlobalMapClient({ data }: Props) {
 
       {/* Full panel */}
       {panelOpen && (
-        <div className="absolute left-3 top-12 z-10 w-52 overflow-hidden rounded-xl border border-border bg-card/90 shadow-card backdrop-blur-sm">
+        <div className="glass-map-chip absolute left-3 top-12 z-10 w-52 overflow-hidden">
           <div className="flex items-center justify-between border-b border-border px-3 py-2">
             <p className="text-xs font-semibold text-foreground/80">{t.pages.map.zones}</p>
             <button onClick={() => setPanelOpen(false)} className="text-muted-foreground hover:text-foreground">
@@ -403,7 +403,7 @@ export function GlobalMapClient({ data }: Props) {
       <div ref={yearRef} className="absolute right-3 top-3 z-10">
         <button
           onClick={() => setYearOpen((o) => !o)}
-          className="flex items-center gap-2 rounded-xl border border-border bg-card/90 px-3 py-2 shadow-card backdrop-blur-sm transition-colors hover:bg-muted"
+          className="glass-map-chip flex items-center gap-2 px-3 py-2 transition-colors hover:bg-muted"
         >
           <span className="text-xs font-semibold text-foreground/80">
             {selectedYear ?? t.pages.map.allYears}
@@ -418,7 +418,7 @@ export function GlobalMapClient({ data }: Props) {
         </button>
 
         {yearOpen && (
-          <div className="absolute right-0 top-full z-10 mt-1 w-36 max-h-64 overflow-y-auto rounded-xl border border-border bg-card/90 py-1 shadow-card backdrop-blur-sm">
+          <div className="glass-map-chip absolute right-0 top-full z-10 mt-1 w-36 max-h-64 overflow-y-auto py-1">
             <button
               onClick={() => { setSelectedYear(null); setYearOpen(false); }}
               className={[

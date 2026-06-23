@@ -12,14 +12,17 @@ import {
   Target,
   Map,
   Footprints,
-  Menu,
-  X,
+  ChevronRight,
   Settings,
+  User,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { APP_VERSION } from '@/lib/version'
+import { isDetailRoute } from '@/lib/navigation'
 import { ThemeToggle } from './ThemeToggle'
+import { GlassTabBar } from './GlassTabBar'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 
 const NAV_ITEMS = [
   { href: '/', label: t.nav.items.dashboard, icon: LayoutDashboard },
@@ -30,6 +33,20 @@ const NAV_ITEMS = [
   { href: '/records', label: t.nav.items.records, icon: Trophy },
   { href: '/map', label: t.nav.items.heatmap, icon: Map },
   { href: '/shoes', label: t.nav.items.shoes, icon: Footprints },
+  { href: '/profile', label: t.nav.items.profile, icon: User },
+]
+
+// Mobile "More" bottom sheet: only the routes not already one tap away on
+// the persistent GlassTabBar (dashboard/activities/calendar/analytics).
+const MORE_PRIMARY_ITEMS = [
+  { href: '/goals', label: t.nav.items.goals, icon: Target },
+  { href: '/records', label: t.nav.items.records, icon: Trophy },
+  { href: '/map', label: t.nav.items.heatmap, icon: Map },
+  { href: '/shoes', label: t.nav.items.shoes, icon: Footprints },
+]
+const MORE_SECONDARY_ITEMS = [
+  { href: '/profile', label: t.nav.items.profile, icon: User },
+  { href: '/settings', label: t.nav.items.settings, icon: Settings },
 ]
 
 // In-app brand mark: thin concentric rings inheriting the live accent color
@@ -66,11 +83,38 @@ function Brand({ onClick }: { onClick?: () => void }) {
   )
 }
 
+function MoreMenuItem({
+  href,
+  label,
+  icon: Icon,
+  onNavigate,
+}: {
+  href: string
+  label: string
+  icon: typeof Target
+  onNavigate: () => void
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onNavigate}
+      className="flex items-center gap-4 rounded-2xl px-4 py-3.5 transition-colors active:bg-foreground/[0.06]"
+    >
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-foreground/10 bg-foreground/[0.08] text-foreground/70">
+        <Icon size={20} strokeWidth={1.8} />
+      </span>
+      <span className="text-base font-semibold text-foreground">{label}</span>
+      <ChevronRight size={16} className="ml-auto shrink-0 text-foreground/25" />
+    </Link>
+  )
+}
+
 export function Sidebar() {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const headerRef = useRef<HTMLElement>(null)
   const [headerOffset, setHeaderOffset] = useState(0)
+  const showTopBar = !isDetailRoute(pathname)
 
   // Slide the mobile top bar up gradually as the page scrolls down. Reveal it
   // again only on a deliberate upward scroll (a small threshold ignores the
@@ -172,89 +216,73 @@ export function Sidebar() {
         </div>
       </aside>
 
-      {/* ─── Mobile top bar ─── */}
-      <header
-        ref={headerRef}
-        className="fixed inset-x-0 top-0 z-30 bg-card lg:hidden"
-        style={{
-          paddingTop: 'env(safe-area-inset-top, 0px)',
-          transform: `translateY(-${headerOffset}px)`,
-        }}
-      >
-        <div className="relative flex h-14 items-center justify-center border-b border-border px-4">
-          <div className="absolute left-4">
-            <ThemeToggle />
+      {/* ─── Mobile top bar — only on the 5 primary tabs, not on detail pages (S2) ─── */}
+      {showTopBar && (
+        <GlassSurface
+          as="header"
+          variant="chrome"
+          ref={headerRef}
+          className="fixed inset-x-0 top-0 z-30 rounded-none rounded-b-2xl border-t-0 lg:hidden"
+          style={{
+            paddingTop: 'max(env(safe-area-inset-top), 12px)',
+            transform: `translateY(-${headerOffset}px)`,
+          }}
+        >
+          <div className="relative flex h-14 items-center justify-center px-4">
+            <div className="absolute left-4">
+              <ThemeToggle />
+            </div>
+            <Brand />
+            <Link
+              href="/profile"
+              className="absolute right-4 flex h-8 w-8 items-center justify-center rounded-full bg-foreground/10 text-muted-foreground transition-colors active:scale-90"
+              aria-label={t.nav.items.profile}
+            >
+              <User size={16} />
+            </Link>
           </div>
-          <Brand />
-          <button
-            onClick={() => setOpen(true)}
-            className="absolute right-4 rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-            aria-label={t.nav.openMenu}
-          >
-            <Menu size={20} />
-          </button>
-        </div>
-      </header>
+        </GlassSurface>
+      )}
 
-      {/* ─── Mobile full-screen menu ─── */}
-      <div
+      {/* ─── Mobile glass tab bar ─── */}
+      <GlassTabBar onMore={() => setOpen(true)} moreOpen={open} />
+
+      {/* ─── Mobile "More" bottom sheet (N1) ─── */}
+      {open && (
+        <div
+          className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[4px] lg:hidden"
+          onClick={() => setOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+      <GlassSurface
+        as="div"
+        variant="sheet"
+        role="menu"
         className={cn(
-          'fixed inset-0 z-50 flex flex-col bg-card lg:hidden transition-transform duration-300',
-          open ? 'translate-x-0 pointer-events-auto' : 'translate-x-full pointer-events-none'
+          'fixed inset-x-0 bottom-0 z-50 rounded-t-[24px] border-b-0 transition-transform duration-300 lg:hidden',
+          open ? 'translate-y-0' : 'translate-y-full pointer-events-none'
         )}
-        style={{
-          paddingTop: 'env(safe-area-inset-top, 0px)',
-          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-        }}
+        style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 20px)' }}
       >
-        <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-5">
-          <Brand onClick={() => setOpen(false)} />
-          <button
-            onClick={() => setOpen(false)}
-            className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-            aria-label={t.nav.closeMenu}
-          >
-            <X size={22} />
-          </button>
-        </div>
+        <div className="mx-auto mb-5 mt-3 h-[5px] w-[38px] rounded-full bg-foreground/[0.18]" />
 
-        <nav className="flex flex-1 flex-col gap-1 px-6 pt-4">
-          {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-            const active = pathname === href
-            return (
-              <Link
-                key={href}
-                href={href}
-                onClick={() => setOpen(false)}
-                className={cn(
-                  'flex items-center gap-5 rounded-2xl px-4 py-4 transition-colors',
-                  active ? 'text-accent-text' : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                <Icon size={26} />
-                <span className="text-3xl font-bold tracking-tight">{label}</span>
-              </Link>
-            )
-          })}
+        <nav className="flex flex-col gap-1 px-4">
+          {MORE_PRIMARY_ITEMS.map((item) => (
+            <MoreMenuItem key={item.href} {...item} onNavigate={() => setOpen(false)} />
+          ))}
         </nav>
 
-        <div className="shrink-0 border-t border-border px-6 py-4 flex items-center justify-between">
-          <span className="text-sm text-subtle">{t.brand.version(APP_VERSION)}</span>
-          <Link
-            href="/settings"
-            onClick={() => setOpen(false)}
-            className={cn(
-              'flex items-center gap-2 text-sm transition-colors',
-              pathname === '/settings'
-                ? 'text-accent-text'
-                : 'text-subtle hover:text-muted-foreground'
-            )}
-          >
-            <Settings size={16} />
-            {t.nav.items.settings}
-          </Link>
-        </div>
-      </div>
+        <div className="mx-5 my-2 h-px bg-foreground/[0.06]" />
+
+        <nav className="flex flex-col gap-1 px-4">
+          {MORE_SECONDARY_ITEMS.map((item) => (
+            <MoreMenuItem key={item.href} {...item} onNavigate={() => setOpen(false)} />
+          ))}
+        </nav>
+
+        <p className="pt-3 text-center text-xs text-foreground/20">{t.brand.version(APP_VERSION)}</p>
+      </GlassSurface>
     </>
   )
 }

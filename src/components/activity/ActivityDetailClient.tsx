@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { Footprints, Timer, TrendingUp, Heart, Mountain, Flame, Gauge, Zap, type LucideIcon } from 'lucide-react'
 import type { Activity } from '@/domain/activity/types'
 import { ActivityMapClient } from './ActivityMapClient'
 import { NoRouteMap } from './ActivityMap'
@@ -9,87 +8,73 @@ import { HrChart } from './HrChart'
 import { ElevationChart } from './ElevationChart'
 import { PaceChart } from './PaceChart'
 import { CadenceChart } from './CadenceChart'
-import { formatDistance, formatDuration, formatPace } from '@/lib/formatters'
-import { Card } from '@/components/ui/Card'
+import { formatClock, formatDistance, formatDurationShort } from '@/lib/formatters'
+import { GlassSurface } from '@/components/ui/GlassSurface'
+import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
 import { t } from '@/i18n'
 
 interface Props {
   activity: Activity
 }
 
-interface StatDef {
-  Icon: LucideIcon
-  color: string
-  value: string
-  label: string
+function rpeToneClass(rpe: number): string {
+  if (rpe <= 4) return 'text-accent-text'
+  if (rpe <= 6) return 'text-foreground'
+  return 'text-[#f0a500]'
 }
 
-function buildStats(activity: Activity): StatDef[] {
-  const stats: StatDef[] = [
+function buildStats(activity: Activity): Metric[] {
+  const stats: Metric[] = [
     {
-      Icon: Footprints,
-      color: 'text-emerald-500 dark:text-emerald-400',
       value: formatDistance(activity.distanceKm),
-      label: t.activity.stats.distance,
+      label: t.units.km,
     },
     {
-      Icon: Timer,
-      color: 'text-blue-500 dark:text-blue-400',
-      value: formatDuration(activity.durationSeconds),
+      value: formatDurationShort(activity.durationSeconds),
       label: t.activity.stats.duration,
     },
   ]
 
   if (activity.paceSecPerKm) {
     stats.push({
-      Icon: TrendingUp,
-      color: 'text-violet-500 dark:text-violet-400',
-      value: formatPace(activity.paceSecPerKm),
-      label: t.activity.stats.avgPace,
+      value: formatClock(activity.paceSecPerKm),
+      label: t.units.perKm,
     })
   }
 
   if (activity.avgHeartRate) {
     stats.push({
-      Icon: Heart,
-      color: 'text-red-500 dark:text-red-400',
-      value: `${activity.avgHeartRate} ${t.units.bpm}`,
-      label: t.activity.stats.avgHr,
+      value: `${activity.avgHeartRate}`,
+      label: t.units.bpm,
     })
   }
 
   if (activity.calories != null) {
     stats.push({
-      Icon: Flame,
-      color: 'text-orange-500 dark:text-orange-400',
-      value: t.activity.stats.caloriesValue(activity.calories),
-      label: t.activity.stats.calories,
+      value: `${activity.calories}`,
+      label: t.units.kcal,
     })
   }
 
-  if (activity.elevationGain) {
+  if (activity.elevationGain !== null) {
     stats.push({
-      Icon: Mountain,
-      color: 'text-stone-500 dark:text-stone-400',
-      value: t.activity.stats.elevationValue(activity.elevationGain),
-      label: t.activity.stats.elevation,
+      value: `${activity.elevationGain > 0 ? '+' : '-'}${Math.abs(activity.elevationGain)}`,
+      label: t.units.elevation,
     })
   }
 
   if (activity.cadenceSpm != null) {
     stats.push({
-      Icon: Gauge,
-      color: 'text-sky-500 dark:text-sky-400',
-      value: `${Math.round(activity.cadenceSpm)} ${t.units.spm}`,
-      label: t.activity.stats.cadence,
+      value: `${Math.round(activity.cadenceSpm)}`,
+      label: t.units.spm,
     })
   }
 
   stats.push({
-    Icon: Zap,
-    color: 'text-amber-500 dark:text-amber-400',
-    value: activity.rpe !== null ? (t.rpeLabels[activity.rpe] ?? '-') : t.activity.stats.na,
-    label: activity.rpe !== null ? t.activity.stats.rpeValue(activity.rpe) : t.activity.stats.rpe,
+    value: activity.rpe !== null ? t.activity.stats.rpeValue(activity.rpe) : t.activity.stats.rpe,
+    label: activity.rpe !== null ? (t.rpeLabels[activity.rpe] ?? '-') : t.activity.stats.na,
+    // RPE semantics (ACTIVITY_DETAIL_TASKS.md C4): easy (1-4) accent, moderate (5-6) neutral, hard (7-10) amber.
+    valueClassName: activity.rpe !== null ? rpeToneClass(activity.rpe) : undefined,
   })
 
   return stats
@@ -98,46 +83,37 @@ function buildStats(activity: Activity): StatDef[] {
 export function ActivityDetailClient({ activity }: Props) {
   const [hoverFraction, setHoverFraction] = useState<number | null>(null)
   const stats = buildStats(activity)
-  const hasCharts = !!(activity.hrSamples || activity.elevationProfile || activity.paceSamples || activity.cadenceSamples)
+  const hasSecondaryCharts = !!(activity.elevationProfile || activity.paceSamples || activity.cadenceSamples)
 
   return (
     <>
-      <Card padding="none" overflow>
-        <div className="h-[260px] overflow-hidden rounded-t-xl sm:h-[360px]">
-          {activity.route ? (
-            <ActivityMapClient
-              route={activity.route}
-              paceSamples={activity.paceSamples}
-              hoverFraction={hoverFraction}
-              avgTemperature={activity.avgTemperature}
-              className="h-full w-full"
-            />
-          ) : (
-            <NoRouteMap className="h-full w-full" />
-          )}
-        </div>
+      <div className="h-[260px] overflow-hidden rounded-[22px] border border-border sm:h-[360px]">
+        {activity.route ? (
+          <ActivityMapClient
+            route={activity.route}
+            paceSamples={activity.paceSamples}
+            hoverFraction={hoverFraction}
+            avgTemperature={activity.avgTemperature}
+            className="h-full w-full"
+          />
+        ) : (
+          <NoRouteMap className="h-full w-full" />
+        )}
+      </div>
 
-        <div className="flex flex-wrap px-2 py-2">
-          {stats.map(({ Icon, color, value, label }) => (
-            <div key={label} className="flex min-w-[5rem] flex-1 flex-col items-center gap-0.5 px-2 py-2 text-center">
-              <Icon size={13} className={color} />
-              <div className="whitespace-nowrap text-sm font-bold leading-tight text-foreground">{value}</div>
-              <div className="text-[10px] leading-tight text-muted-foreground">{label}</div>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {hasCharts && (
+      <GlassSurface variant="card" className="rounded-[22px] p-[18px]">
+        <MetricGrid metrics={stats} className="grid-cols-4" />
+      </GlassSurface>
+      {activity.hrSamples && (
+        <HrChart
+          samples={activity.hrSamples}
+          avgHr={activity.avgHeartRate}
+          distanceKm={activity.distanceKm}
+          onHoverFraction={activity.route ? setHoverFraction : undefined}
+        />
+      )}
+      {hasSecondaryCharts && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {activity.hrSamples && (
-            <HrChart
-              samples={activity.hrSamples}
-              avgHr={activity.avgHeartRate}
-              distanceKm={activity.distanceKm}
-              onHoverFraction={activity.route ? setHoverFraction : undefined}
-            />
-          )}
           {activity.paceSamples && (
             <PaceChart
               samples={activity.paceSamples}
