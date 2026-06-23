@@ -62,6 +62,25 @@
   to   { transform: translateX(200%);  }
 }
 
+/* Opacity-only pulse for "today" ring in WeekView (not scale+fade like animate-ping). */
+@keyframes pulse-ring {
+  0%, 100% { opacity: 0.45; }
+  50%       { opacity: 1;    }
+}
+
+/* ─── Design system tokens ─────────────────────────── */
+/* Centralized blur/radius values matching the Liquid Glass spec. */
+:root {
+  --blur-sm:     8px;
+  --blur-md:     18px;
+  --blur-lg:     28px;
+  --saturate:    1.6;
+  --radius-sm:   12px;
+  --radius-md:   18px;
+  --radius-lg:   22px;
+  --radius-pill: 999px;
+}
+
 /* ─── Light tokens ─────────────────────────────────── */
 :root {
   --shadow-card:       0 1px 3px 0 rgb(0 0 0 / 0.06),
