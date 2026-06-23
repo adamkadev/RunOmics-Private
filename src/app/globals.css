@@ -154,13 +154,17 @@
 }
 
 /* ─── Accent palettes ──────────────────────────────── */
-/* "nature" is the default and already set above in :root / .dark */
+/* "nature" is the default and already set above in :root / .dark. Each accent
+   also retints the aurora (--aurora-1/2) so the background canvas matches the
+   selected accent, not just the foreground accent color (Wave 2 - Decision 3). */
 [data-accent="performance"] {
   --accent:            #3b82f6;  /* blue-500 */
   --accent-foreground: #ffffff;
   --accent-subtle:     #eff6ff;  /* blue-50  */
   --accent-text:       #2563eb;  /* blue-600 */
   --ring:              rgb(59 130 246 / 0.35);
+  --aurora-1:          #93c5fd;  /* blue-300 */
+  --aurora-2:          #bae6fd;  /* sky-200  */
 }
 .dark[data-accent="performance"] {
   --accent:            #3b82f6;  /* blue-500 */
@@ -168,6 +172,8 @@
   --accent-subtle:     rgba(59, 130, 246, 0.1);
   --accent-text:       #60a5fa;  /* blue-400 */
   --ring:              rgb(96 165 250 / 0.7);
+  --aurora-1:          #0a1e3d;
+  --aurora-2:          #0a2a44;
 }
 
 [data-accent="impact"] {
@@ -176,6 +182,8 @@
   --accent-subtle:     #fff1f2;  /* rose-50  */
   --accent-text:       #e11d48;  /* rose-600 */
   --ring:              rgb(244 63 94 / 0.35);
+  --aurora-1:          #fda4af;  /* rose-300  */
+  --aurora-2:          #fbcfe8;  /* pink-200  */
 }
 .dark[data-accent="impact"] {
   --accent:            #f43f5e;  /* rose-500 */
@@ -183,6 +191,8 @@
   --accent-subtle:     rgba(244, 63, 94, 0.1);
   --accent-text:       #fb7185;  /* rose-400 */
   --ring:              rgb(251 113 133 / 0.7);
+  --aurora-1:          #3d0a1a;
+  --aurora-2:          #2a0a1e;
 }
 
 [data-accent="motivation"] {
@@ -191,6 +201,8 @@
   --accent-subtle:     #fff7ed;  /* orange-50  */
   --accent-text:       #ea580c;  /* orange-600 */
   --ring:              rgb(249 115 22 / 0.35);
+  --aurora-1:          #fdba74;  /* orange-300 */
+  --aurora-2:          #fde68a;  /* amber-200  */
 }
 .dark[data-accent="motivation"] {
   --accent:            #f97316;  /* orange-500 */
@@ -198,6 +210,8 @@
   --accent-subtle:     rgba(249, 115, 22, 0.1);
   --accent-text:       #fb923c;  /* orange-400 */
   --ring:              rgb(251 146 60 / 0.7);
+  --aurora-1:          #3d1a0a;
+  --aurora-2:          #2a1a0a;
 }
 
 [data-accent="endurance"] {
@@ -206,6 +220,8 @@
   --accent-subtle:     #f5f3ff;  /* violet-50  */
   --accent-text:       #7c3aed;  /* violet-600 */
   --ring:              rgb(139 92 246 / 0.35);
+  --aurora-1:          #c4b5fd;  /* violet-300 */
+  --aurora-2:          #e9d5ff;  /* purple-200 */
 }
 .dark[data-accent="endurance"] {
   --accent:            #8b5cf6;  /* violet-500 */
@@ -213,6 +229,8 @@
   --accent-subtle:     rgba(139, 92, 246, 0.1);
   --accent-text:       #a78bfa;  /* violet-400 */
   --ring:              rgb(167 139 250 / 0.7);
+  --aurora-1:          #1a0a3d;
+  --aurora-2:          #2a0a3a;
 }
 
 /* ─── Liquid glass surfaces ────────────────────────── */
