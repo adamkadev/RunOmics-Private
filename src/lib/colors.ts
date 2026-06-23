@@ -52,6 +52,22 @@ export const ZONE_COLORS: Record<number, string> = {
   5: '#ef4444', // red-500
 }
 
+// Race distance identity (Goals season-PR cards): each distance category gets
+// its own gradient overlay + text tint so cards read apart at a glance, same
+// idea as activity-type dots but for race length rather than effort type.
+const DISTANCE_TINTS = [
+  { match: /marathon/i, overlay: 'from-orange-500/35', text: 'text-orange-400' },
+  { match: /half|semi/i, overlay: 'from-emerald-500/35', text: 'text-emerald-400' },
+  { match: /10\s*k/i, overlay: 'from-blue-500/35', text: 'text-blue-400' },
+  { match: /5\s*k/i, overlay: 'from-violet-500/35', text: 'text-violet-400' },
+  { match: /1\s*k\b|mile/i, overlay: 'from-rose-500/35', text: 'text-rose-400' },
+] as const
+
+export function raceDistanceTint(distance: string): { overlay: string; text: string } {
+  const found = DISTANCE_TINTS.find((d) => d.match.test(distance))
+  return found ?? { overlay: 'from-accent/35', text: 'text-accent-text' }
+}
+
 // Cold -> hot icon color scale for temperature readings
 export function temperatureIconColor(celsius: number): string {
   if (celsius < 5)  return 'text-blue-500 dark:text-blue-400'

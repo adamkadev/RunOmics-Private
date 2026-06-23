@@ -31,7 +31,7 @@ function shortDate(iso: string): string {
 function rankClass(i: number): string {
   if (i === 0) return 'font-bold text-amber-500 dark:text-amber-400'
   if (i === 1) return 'font-bold text-slate-400 dark:text-slate-300'
-  if (i === 2) return 'font-bold text-amber-700 dark:text-amber-600'
+  if (i === 2) return 'font-bold text-amber-800 dark:text-amber-600'
   return 'text-subtle'
 }
 
@@ -51,8 +51,6 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null }
   const entries = isAll ? [] : (topEfforts[selected] ?? [])
 
   if (!records.some((r) => r.seconds !== null)) return null
-
-  const allRecords = records.filter((r) => r.seconds !== null)
 
   return (
     <section className="space-y-3">
@@ -78,9 +76,22 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null }
       {isAll ? (
         <>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            {allRecords.map((r, i, arr) => {
+            {records.map((r, i, arr) => {
               const spanFull = i === arr.length - 1 && arr.length % 2 !== 0
-              const mainStat = r.distanceKm != null ? formatDistance(r.distanceKm) : formatDuration(r.seconds!)
+
+              if (r.seconds === null) {
+                return (
+                  <div
+                    key={r.key}
+                    className={cn('glass-card rounded-2xl border-dashed p-4 opacity-60', spanFull && 'col-span-full')}
+                  >
+                    <p className="text-xs font-bold uppercase tracking-wide text-subtle">{r.label}</p>
+                    <p className="mt-3 text-sm text-subtle">{t.records.notYetRun}</p>
+                  </div>
+                )
+              }
+
+              const mainStat = r.distanceKm != null ? formatDistance(r.distanceKm) : formatDuration(r.seconds)
 
               const card = (
                 <>
@@ -101,7 +112,7 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null }
                     {mainStat}
                   </p>
                   <p className="mt-1 text-xs font-medium text-subtle">
-                    {r.distanceKm != null && <span>{formatDuration(r.seconds!)} · </span>}
+                    {r.distanceKm != null && <span>{formatDuration(r.seconds)} · </span>}
                     {r.paceSecPerKm !== null && formatPace(r.paceSecPerKm)}
                     {r.date && <span> · {shortDate(r.date)}</span>}
                   </p>

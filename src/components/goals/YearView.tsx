@@ -1,10 +1,12 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { Trophy, Target, Medal, TrendingUp, ArrowRight, Calendar, ImageOff, Flag, MapPin, ExternalLink } from 'lucide-react'
+import { Trophy, Target, Medal, TrendingUp, ArrowRight, Calendar, ImageOff, Flag, MapPin, ExternalLink, Check, X, Minus } from 'lucide-react'
 import type { YearData, GoalProjection, MonthGoal } from '@/application/usecases/GetGoalsData'
 import { formatDuration, formatDate, formatPace, monthLabel } from '@/lib/formatters'
 import { ActivityTypeTag } from '@/components/activities/ActivityTypeTag'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { raceDistanceTint } from '@/lib/colors'
+import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 const STATUS_CHIP: Record<GoalProjection['status'], string> = {
@@ -13,9 +15,12 @@ const STATUS_CHIP: Record<GoalProjection['status'], string> = {
   behind:   'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
 }
 
-const MONTH_STATUS_CHIP: Record<MonthGoal['status'], string> = {
-  ...STATUS_CHIP,
-  pending: 'bg-muted text-subtle',
+// Icon-only status, no label/unit in the badge - color carries the meaning (DA Wave 3).
+const MONTH_STATUS_ICON: Record<MonthGoal['status'], { Icon: typeof Check; className: string }> = {
+  ahead:    { Icon: Check, className: 'text-accent-text' },
+  on_track: { Icon: ArrowRight, className: 'text-blue-500 dark:text-blue-400' },
+  behind:   { Icon: X, className: 'text-amber-500 dark:text-amber-400' },
+  pending:  { Icon: Minus, className: 'text-subtle/40' },
 }
 
 export function YearView({ yearData }: { yearData: YearData }) {
@@ -94,15 +99,19 @@ export function YearView({ yearData }: { yearData: YearData }) {
           <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
             {monthlyGoals.map((mg) => {
               const progress = mg.targetKm > 0 ? Math.min((mg.actualKm / mg.targetKm) * 100, 100) : 0
+              const { Icon: StatusIcon, className: statusClassName } = MONTH_STATUS_ICON[mg.status]
               return (
                 <GlassSurface key={mg.month} variant="card" className="rounded-2xl p-3">
                   <div className="flex items-center justify-between gap-1">
                     <span className="text-xs font-semibold text-subtle">{monthLabel(mg.month)}</span>
-                    <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${MONTH_STATUS_CHIP[mg.status]}`}>
-                      {t.goals.monthlyGoal.status[mg.status]}
-                    </span>
+                    <StatusIcon
+                      size={11}
+                      strokeWidth={3}
+                      className={statusClassName}
+                      aria-label={t.goals.monthlyGoal.status[mg.status]}
+                    />
                   </div>
-                  <p className="mt-1.5 text-xs text-subtle">
+                  <p className="mt-1.5 text-xs font-medium text-foreground">
                     {t.goals.monthlyGoal.km(Math.round(mg.actualKm), Math.round(mg.targetKm))}
                   </p>
                   <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-foreground/[0.08]">
@@ -227,7 +236,9 @@ export function YearView({ yearData }: { yearData: YearData }) {
             {t.goals.seasonRaces}
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {pbs.map(({ entry, activity, photoPath }) => (
+            {pbs.map(({ entry, activity, photoPath }) => {
+              const tint = raceDistanceTint(entry.distance)
+              return (
               <Link
                 key={entry.activityId}
                 href={`/activities/${entry.activityId}`}
@@ -243,17 +254,19 @@ export function YearView({ yearData }: { yearData: YearData }) {
                       loading="eager"
                       className="object-cover transition-transform duration-300 group-hover:scale-105"
                     />
+                    <div className={cn('absolute inset-0 bg-gradient-to-br to-transparent', tint.overlay)} />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                     <span className="absolute bottom-3 left-4 text-2xl font-black text-white">
                       {entry.distance}
                     </span>
                   </div>
                 ) : (
-                  <div className="flex h-24 items-center justify-between bg-accent-subtle px-5">
-                    <span className="text-3xl font-black text-accent-text">
+                  <div className="relative flex h-24 items-center justify-between overflow-hidden bg-accent-subtle px-5">
+                    <div className={cn('absolute inset-0 bg-gradient-to-br to-transparent', tint.overlay)} />
+                    <span className={cn('relative text-3xl font-black', tint.text)}>
                       {entry.distance}
                     </span>
-                    <div className="flex items-center gap-1.5 text-accent-text/40">
+                    <div className={cn('relative flex items-center gap-1.5 opacity-50', tint.text)}>
                       <ImageOff size={14} />
                       <span className="text-xs">{t.goals.noPhoto}</span>
                     </div>
@@ -287,7 +300,8 @@ export function YearView({ yearData }: { yearData: YearData }) {
                   )}
                 </div>
               </Link>
-            ))}
+              )
+            })}
           </div>
         </section>
       ) : (

@@ -80,16 +80,10 @@ export function RacePredictions({ records }: Props) {
               </p>
               <p className="text-xs text-subtle">{formatPace(Math.round(predicted! / km))}</p>
               {actual?.seconds != null && (
-                <p
-                  className={`mt-0.5 text-xs font-medium ${
-                    actual.seconds <= predicted!
-                      ? 'text-accent-text'
-                      : 'text-orange-500 dark:text-orange-400'
-                  }`}
-                >
+                <p className="mt-0.5 text-xs font-medium text-accent-text">
                   {actual.seconds <= predicted!
                     ? t.racePredictions.beatBy(formatDuration(predicted! - actual.seconds))
-                    : t.racePredictions.pbOff(formatDuration(actual.seconds - predicted!))}
+                    : t.racePredictions.pbUpside(formatDuration(actual.seconds - predicted!))}
                 </p>
               )}
             </GlassSurface>

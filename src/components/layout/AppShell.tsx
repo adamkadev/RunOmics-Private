@@ -5,14 +5,14 @@ import { Sidebar } from './Sidebar'
 import { PageTransition } from './PageTransition'
 import { ThemeSync } from './ThemeSync'
 import { Aurora } from './Aurora'
-import { isDetailRoute } from '@/lib/navigation'
+import { isDetailRoute, getPageAuroraKey } from '@/lib/navigation'
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const showTopBar = !isDetailRoute(pathname)
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen" data-page-aurora={getPageAuroraKey(pathname)}>
       <Aurora />
       <ThemeSync />
       <Sidebar />

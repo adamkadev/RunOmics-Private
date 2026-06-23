@@ -210,6 +210,11 @@ export const en = {
       confirmYes: 'Yes',
       confirmCancel: 'Cancel',
     },
+    dataSource: {
+      title: 'Data source',
+      garmin: 'Garmin Connect',
+      syncMethod: 'Synced manually via export script',
+    },
     dataExport: {
       title: 'Export data',
       subtitle: 'Download your training data for use in other tools.',
@@ -741,7 +746,7 @@ export const en = {
         behind: 'Behind',
         pending: 'Upcoming',
       },
-      km: (actual: number, target: number) => `${actual} / ${target} km`,
+      km: (actual: number, target: number) => `${actual} / ${target}`,
     },
     history: {
       title: 'Past Years',
@@ -758,6 +763,8 @@ export const en = {
     neverUsed: 'Never used',
     kmOf: (total: number, max: number) => `${total} / ${max} km`,
     retired: 'Retired',
+  alertBadge: 'Alert',
+  criticalBadge: 'Critical',
     wearAlert: (name: string, totalKm: number, alertThresholdKm: number) => `${name} has ${totalKm} km - past its ${alertThresholdKm} km alert threshold`,
     summary: {
       totalDistance: 'Total distance',
@@ -818,6 +825,7 @@ export const en = {
     longest: 'Longest Run',
     mostRecent: 'Most recent',
     footnote: '★ official race time · others auto-detected from activity data',
+    notYetRun: 'Not yet run',
     leaderboard: {
       title: 'Top Times',
       rank: '#',
@@ -848,7 +856,7 @@ export const en = {
     } as Record<string, string>,
     from: (source: string) => `from ${source}`,
     beatBy: (time: string) => `✓ Beat by ${time}`,
-    pbOff: (time: string) => `PB ${time} off`,
+    pbUpside: (time: string) => `PB -${time}`,
     footnote: 'Riegel formula · t₂ = t₁ × (d₂/d₁)^1.06',
   },
 

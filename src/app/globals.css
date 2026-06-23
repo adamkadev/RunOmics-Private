@@ -233,6 +233,48 @@
   --aurora-2:          #2a0a3a;
 }
 
+/* ─── Page-specific aurora tints (Wave 3) ──────────── */
+/* Goals/Records/Shoes/Settings/Analytics share the same emerald+violet aurora
+   base as every other page, but lead with their own screen accent at a
+   subtler opacity (10-20%, below the default 0.42-0.65) so the tint reads as
+   identity, not a color wash. Independent of the user's chosen accent - the
+   attribute lives on a wrapper div, so it overrides the inherited
+   [data-accent] vars from <html> for this whole subtree. */
+[data-page-aurora="goals"] {
+  --aurora-1: #0e9f6e;  /* emerald - this screen's own accent, dominant */
+  --aurora-2: #8257e6;  /* violet  - shared base, secondary */
+  --aurora-1-opacity: 0.2;
+  --aurora-2-opacity: 0.14;
+}
+
+[data-page-aurora="records"] {
+  --aurora-1: #8257e6;  /* violet  - this screen's own accent, dominant */
+  --aurora-2: #0e9f6e;  /* emerald - shared base, secondary */
+  --aurora-1-opacity: 0.18;
+  --aurora-2-opacity: 0.15;
+}
+
+[data-page-aurora="shoes"] {
+  --aurora-1: #f1761f;  /* orange  - this screen's own accent, dominant */
+  --aurora-2: #0e9f6e;  /* emerald - shared base, secondary */
+  --aurora-1-opacity: 0.16;
+  --aurora-2-opacity: 0.15;
+}
+
+[data-page-aurora="settings"] {
+  --aurora-1: #e5396b;  /* rose    - this screen's own accent, dominant */
+  --aurora-2: #8257e6;  /* violet  - shared base, secondary */
+  --aurora-1-opacity: 0.14;
+  --aurora-2-opacity: 0.12;
+}
+
+[data-page-aurora="analytics"] {
+  --aurora-1: #1276b8;  /* cyan/blue - this screen's own accent, dominant */
+  --aurora-2: #0e9f6e;  /* emerald   - shared base, secondary */
+  --aurora-1-opacity: 0.18;
+  --aurora-2-opacity: 0.14;
+}
+
 /* ─── Liquid glass surfaces ────────────────────────── */
 /* Translucent chrome (nav, sheets) + key cards. Keep to <= ~6 blurred
    surfaces per viewport: backdrop-filter is GPU-costly. */

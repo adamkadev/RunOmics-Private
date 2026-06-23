@@ -9,6 +9,7 @@ import { t } from '@/i18n'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { AccentPicker } from './AccentPicker'
 import { ThemeSegmented } from './ThemeSegmented'
+import { DataSourceInfo } from './DataSourceInfo'
 import { DataExportForm } from './DataExportForm'
 import { NotificationsForm } from './NotificationsForm'
 
@@ -93,6 +94,7 @@ export function SettingsClient() {
       </GlassSurface>
 
       <NotificationsForm />
+      <DataSourceInfo />
       <DataExportForm />
 
       <button

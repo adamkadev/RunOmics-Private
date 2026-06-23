@@ -20,11 +20,28 @@ function wearTextClass(pct: number): string {
   return 'text-accent-text'
 }
 
+function wearBorderClass(pct: number): string {
+  if (pct >= 90) return 'border-red-500/50'
+  if (pct >= 70) return 'border-amber-400/50'
+  return ''
+}
+
+function wearAlertBadge(pct: number): { label: string; className: string } | null {
+  if (pct >= 90) return { label: t.shoes.criticalBadge, className: 'bg-red-500/15 text-red-600 dark:text-red-400' }
+  if (pct >= 70) return { label: t.shoes.alertBadge, className: 'bg-amber-400/15 text-amber-600 dark:text-amber-400' }
+  return null
+}
+
 function ShoeCard({ shoe }: { shoe: ShoeStats }) {
+  const alertBadge = !shoe.retired ? wearAlertBadge(shoe.wearPercent) : null
   return (
     <Link
       href={`/shoes/${shoe.gearId}`}
-      className={cn('glass-card rounded-[20px] p-5 transition-shadow hover:shadow-md', shoe.retired && 'opacity-65')}
+      className={cn(
+        'glass-card rounded-[20px] p-5 transition-shadow hover:shadow-md',
+        shoe.retired && 'opacity-65',
+        !shoe.retired && wearBorderClass(shoe.wearPercent)
+      )}
     >
       <div className="mb-3 flex items-start justify-between gap-2">
         <div>
@@ -34,6 +51,7 @@ function ShoeCard({ shoe }: { shoe: ShoeStats }) {
             {shoe.retired && (
               <Badge className="bg-foreground/[0.08] text-muted-foreground">{t.shoes.retired}</Badge>
             )}
+            {alertBadge && <Badge className={alertBadge.className}>{alertBadge.label}</Badge>}
           </div>
           <h3 className="text-base font-bold text-foreground">{shoe.name}</h3>
         </div>
