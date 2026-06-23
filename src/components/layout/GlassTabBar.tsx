@@ -32,7 +32,7 @@ export function GlassTabBar({ onMore, moreOpen }: { onMore: () => void; moreOpen
   return (
     <div
       className="fixed inset-x-0 bottom-3 z-30 px-3 lg:hidden"
-      style={{ marginBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      style={{ marginBottom: 'max(env(safe-area-inset-bottom), 8px)' }}
     >
       <GlassSurface
         as="nav"

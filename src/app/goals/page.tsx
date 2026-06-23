@@ -7,7 +7,7 @@ export default async function GoalsPage() {
   const data = await getGoalsPageData()
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-10 pt-[max(env(safe-area-inset-top),12px)] lg:pt-0">
       <GoalsClient data={data} />
     </div>
   )

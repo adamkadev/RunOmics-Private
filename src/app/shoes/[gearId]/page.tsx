@@ -26,7 +26,7 @@ export default async function ShoeDetailPage({
   const prLabelsByActivityId = getPrLabelsByActivityId(records)
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 pt-[max(env(safe-area-inset-top),12px)] lg:pt-0">
       <BackButton label={t.shoes.detail.back} fallbackHref="/shoes" />
 
       <div className="flex items-start justify-between gap-2">

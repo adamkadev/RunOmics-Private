@@ -15,7 +15,7 @@ export default function MapPage() {
   return (
     <div className="flex h-[calc(100dvh-3.5rem)] flex-col gap-3 lg:h-[calc(100dvh-2rem)]">
       {/* Stats strip */}
-      <div className="flex flex-wrap items-center gap-4 px-1">
+      <div className="flex flex-wrap items-center gap-4 px-1 pt-[max(env(safe-area-inset-top),12px)] lg:pt-0">
         <div className="flex items-center gap-2">
           <MapPin size={15} className="text-accent-text" />
           <h1 className="text-sm font-semibold text-foreground">{t.pages.map.title}</h1>

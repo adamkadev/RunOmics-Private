@@ -19,6 +19,7 @@ import {
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { APP_VERSION } from '@/lib/version'
+import { isDetailRoute } from '@/lib/navigation'
 import { ThemeToggle } from './ThemeToggle'
 import { GlassTabBar } from './GlassTabBar'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -74,6 +75,7 @@ export function Sidebar() {
   const [open, setOpen] = useState(false)
   const headerRef = useRef<HTMLElement>(null)
   const [headerOffset, setHeaderOffset] = useState(0)
+  const showTopBar = !isDetailRoute(pathname)
 
   // Slide the mobile top bar up gradually as the page scrolls down. Reveal it
   // again only on a deliberate upward scroll (a small threshold ignores the
@@ -175,31 +177,33 @@ export function Sidebar() {
         </div>
       </aside>
 
-      {/* ─── Mobile top bar ─── */}
-      <GlassSurface
-        as="header"
-        variant="chrome"
-        ref={headerRef}
-        className="fixed inset-x-0 top-0 z-30 rounded-none rounded-b-2xl border-t-0 lg:hidden"
-        style={{
-          paddingTop: 'env(safe-area-inset-top, 0px)',
-          transform: `translateY(-${headerOffset}px)`,
-        }}
-      >
-        <div className="relative flex h-14 items-center justify-center px-4">
-          <div className="absolute left-4">
-            <ThemeToggle />
+      {/* ─── Mobile top bar — only on the 5 primary tabs, not on detail pages (S2) ─── */}
+      {showTopBar && (
+        <GlassSurface
+          as="header"
+          variant="chrome"
+          ref={headerRef}
+          className="fixed inset-x-0 top-0 z-30 rounded-none rounded-b-2xl border-t-0 lg:hidden"
+          style={{
+            paddingTop: 'max(env(safe-area-inset-top), 12px)',
+            transform: `translateY(-${headerOffset}px)`,
+          }}
+        >
+          <div className="relative flex h-14 items-center justify-center px-4">
+            <div className="absolute left-4">
+              <ThemeToggle />
+            </div>
+            <Brand />
+            <Link
+              href="/profile"
+              className="absolute right-4 flex h-8 w-8 items-center justify-center rounded-full bg-foreground/10 text-muted-foreground transition-colors active:scale-90"
+              aria-label={t.nav.items.profile}
+            >
+              <User size={16} />
+            </Link>
           </div>
-          <Brand />
-          <Link
-            href="/profile"
-            className="absolute right-4 flex h-8 w-8 items-center justify-center rounded-full bg-foreground/10 text-muted-foreground transition-colors active:scale-90"
-            aria-label={t.nav.items.profile}
-          >
-            <User size={16} />
-          </Link>
-        </div>
-      </GlassSurface>
+        </GlassSurface>
+      )}
 
       {/* ─── Mobile glass tab bar ─── */}
       <GlassTabBar onMore={() => setOpen(true)} moreOpen={open} />
