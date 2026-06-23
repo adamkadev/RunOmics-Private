@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { doc, setDoc } from 'firebase/firestore'
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { getClientFirestore } from '@/lib/firebase'
 import type { ProfileData } from '@/application/usecases/GetProfileData'
 import type { AthleteProfile } from '@/infrastructure/repositories/FirestoreConfigRepository'
@@ -25,7 +25,7 @@ export function ProfileClient({ data }: Props) {
   async function saveAthlete(patch: Partial<AthleteProfile>) {
     const next = { ...athlete, ...patch }
     setAthlete(next)
-    await setDoc(doc(getClientFirestore(), 'athlete', 'profile'), next)
+    await setDoc(doc(getClientFirestore(), 'athlete', 'profile'), { ...next, lastUpdate: serverTimestamp() })
   }
 
   async function saveGoal(goalYear: GoalYear) {
