@@ -5,11 +5,13 @@ import { doc, setDoc } from 'firebase/firestore'
 import { getClientFirestore } from '@/lib/firebase'
 import type { ProfileData } from '@/application/usecases/GetProfileData'
 import type { AthleteProfile } from '@/infrastructure/repositories/FirestoreConfigRepository'
+import type { GoalYear } from '@/application/usecases/GetGoalsData'
 import { ProfileHero } from './ProfileHero'
 import { ProfileStatsYtd } from './ProfileStatsYtd'
 import { ProfileRecords } from './ProfileRecords'
 import { ProfileShoes } from './ProfileShoes'
 import { ProfileHrZones } from './ProfileHrZones'
+import { ProfileGoal } from './ProfileGoal'
 
 interface Props {
   data: ProfileData
@@ -17,11 +19,17 @@ interface Props {
 
 export function ProfileClient({ data }: Props) {
   const [athlete, setAthlete] = useState<AthleteProfile>(data.athlete)
+  const [goal, setGoal] = useState(data.goal)
 
   async function saveAthlete(patch: Partial<AthleteProfile>) {
     const next = { ...athlete, ...patch }
     setAthlete(next)
     await setDoc(doc(getClientFirestore(), 'athlete', 'profile'), next)
+  }
+
+  async function saveGoal(goalYear: GoalYear) {
+    setGoal((prev) => (prev ? { ...prev, goalYear } : prev))
+    await setDoc(doc(getClientFirestore(), 'goals', String(goalYear.year)), goalYear)
   }
 
   return (
@@ -36,6 +44,7 @@ export function ProfileClient({ data }: Props) {
         <ProfileRecords records={data.records} />
         <ProfileShoes shoes={data.shoes} />
         <ProfileHrZones athlete={athlete} onSave={saveAthlete} />
+        <ProfileGoal goal={goal} onSaveGoal={saveGoal} />
       </div>
     </div>
   )

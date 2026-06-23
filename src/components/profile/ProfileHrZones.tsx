@@ -1,8 +1,8 @@
 'use client'
 
-import { useRef, useState } from 'react'
 import { RotateCcw } from 'lucide-react'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { EditableNumber } from '@/components/ui/EditableNumber'
 import type { AthleteProfile } from '@/infrastructure/repositories/FirestoreConfigRepository'
 import { t } from '@/i18n'
 
@@ -21,50 +21,6 @@ const ZONE_COLOR_CLASS: Record<number, string> = {
   3: 'bg-[#0e9f6e] dark:bg-[#2ed9a0]',
   4: 'bg-[#f1761f] dark:bg-[#ff9a5a]',
   5: 'bg-[#ff7676]',
-}
-
-interface EditableProps {
-  value: number
-  onCommit: (n: number) => void
-  className?: string
-}
-
-function EditableNumber({ value, onCommit, className }: EditableProps) {
-  const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState(String(value))
-  const ref = useRef<HTMLInputElement>(null)
-
-  if (editing) {
-    return (
-      <input
-        ref={ref}
-        type="number"
-        autoFocus
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={() => {
-          setEditing(false)
-          const n = Number(draft)
-          if (!Number.isNaN(n) && n > 0) onCommit(Math.round(n))
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') ref.current?.blur()
-          if (e.key === 'Escape') setEditing(false)
-        }}
-        className="w-14 rounded-md border border-border bg-background px-1 py-0.5 text-xs tabular-nums focus:outline-none focus:ring-2 focus:ring-ring"
-      />
-    )
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={() => { setDraft(String(value)); setEditing(true) }}
-      className={className}
-    >
-      {value}
-    </button>
-  )
 }
 
 interface Props {

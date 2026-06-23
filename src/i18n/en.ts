@@ -798,6 +798,10 @@ export const en = {
       maxHr: 'Max HR',
       recalculate: 'Recalculate from max HR',
     },
+    goal: {
+      title: (year: number) => `Goal ${year}`,
+      pace: (km: number) => `At this pace: ${km} km by year-end`,
+    },
   },
 
   records: {
