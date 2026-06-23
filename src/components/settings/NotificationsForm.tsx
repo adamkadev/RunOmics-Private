@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Bell } from 'lucide-react'
 import { disablePushNotifications, enablePushNotifications, isPushSupported } from '@/lib/pushNotifications'
 import { t } from '@/i18n'
-import { cardClass } from '@/components/ui/Card'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 import { Toast, useToast } from '@/components/ui/Toast'
 import { cn } from '@/lib/utils'
 
@@ -59,7 +59,7 @@ export function NotificationsForm() {
     n.subtitle
 
   return (
-    <section className={cardClass()}>
+    <GlassSurface variant="card" className="rounded-[22px] p-5">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Bell size={16} className="shrink-0 text-muted-foreground" />
@@ -90,6 +90,6 @@ export function NotificationsForm() {
       </div>
 
       <Toast toast={toast} />
-    </section>
+    </GlassSurface>
   )
 }

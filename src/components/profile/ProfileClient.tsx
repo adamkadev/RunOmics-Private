@@ -11,6 +11,7 @@ import { ProfileStatsYtd } from './ProfileStatsYtd'
 import { ProfileRecords } from './ProfileRecords'
 import { ProfileShoes } from './ProfileShoes'
 import { ProfileHrZones } from './ProfileHrZones'
+import { ProfileAthleteStats } from './ProfileAthleteStats'
 import { ProfileGoal } from './ProfileGoal'
 
 interface Props {
@@ -44,6 +45,7 @@ export function ProfileClient({ data }: Props) {
         <ProfileRecords records={data.records} />
         <ProfileShoes shoes={data.shoes} />
         <ProfileHrZones athlete={athlete} onSave={saveAthlete} />
+        <ProfileAthleteStats athlete={athlete} onSave={saveAthlete} />
         <ProfileGoal goal={goal} onSaveGoal={saveGoal} />
       </div>
     </div>

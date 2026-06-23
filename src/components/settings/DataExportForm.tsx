@@ -6,7 +6,7 @@ import { collection, doc, getDoc, getDocs } from 'firebase/firestore'
 import { getClientFirestore } from '@/lib/firebase'
 import type { Activity } from '@/domain/activity/types'
 import { t } from '@/i18n'
-import { cardClass } from '@/components/ui/Card'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 import { Toast, useToast } from '@/components/ui/Toast'
 
 const CSV_COLUMNS: { key: keyof Activity; header: string }[] = [
@@ -117,18 +117,16 @@ export function DataExportForm() {
   }
 
   return (
-    <section className={cardClass({ padding: 'none' })}>
-      <div className="border-b border-border px-4 py-3 sm:px-5">
-        <h2 className="text-sm font-semibold text-foreground">{t.settings.dataExport.title}</h2>
-        <p className="mt-0.5 text-xs text-muted-foreground">{t.settings.dataExport.subtitle}</p>
-      </div>
+    <GlassSurface variant="card" className="rounded-[22px] p-5">
+      <h2 className="text-sm font-bold text-foreground">{t.settings.dataExport.title}</h2>
+      <p className="mt-0.5 text-xs text-muted-foreground">{t.settings.dataExport.subtitle}</p>
 
-      <div className="flex flex-wrap gap-3 p-4 sm:p-5">
+      <div className="mt-4 flex flex-wrap gap-3">
         <button
           type="button"
           onClick={handleExportCsv}
           disabled={loading !== null}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-foreground/10 bg-foreground/[0.04] px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-foreground/[0.08] disabled:opacity-50"
         >
           <Download size={13} />
           {loading === 'csv' ? t.settings.dataExport.exporting : t.settings.dataExport.csv}
@@ -137,7 +135,7 @@ export function DataExportForm() {
           type="button"
           onClick={handleExportJson}
           disabled={loading !== null}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-foreground/10 bg-foreground/[0.04] px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-foreground/[0.08] disabled:opacity-50"
         >
           <Download size={13} />
           {loading === 'json' ? t.settings.dataExport.exporting : t.settings.dataExport.json}
@@ -145,6 +143,6 @@ export function DataExportForm() {
       </div>
 
       <Toast toast={toast} />
-    </section>
+    </GlassSurface>
   )
 }

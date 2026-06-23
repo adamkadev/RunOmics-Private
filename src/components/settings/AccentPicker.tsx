@@ -21,8 +21,8 @@ export function AccentPicker() {
   }
 
   return (
-    <section className="rounded-xl border border-border bg-card p-5">
-      <h2 className="text-sm font-semibold text-foreground">{t.settings.accent.title}</h2>
+    <div>
+      <h2 className="text-sm font-bold text-foreground">{t.settings.accent.title}</h2>
       <p className="mt-0.5 text-xs text-muted-foreground">{t.settings.accent.subtitle}</p>
 
       <div className="mt-4 grid grid-cols-5 gap-1.5 sm:gap-2.5">
@@ -51,6 +51,6 @@ export function AccentPicker() {
           )
         })}
       </div>
-    </section>
+    </div>
   )
 }

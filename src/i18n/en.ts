@@ -106,11 +106,18 @@ export const en = {
     },
     settings: {
       title: 'Settings',
-      subtitle: 'Manage your goals, personal bests and athlete profile.',
+      subtitle: 'Appearance, notifications and data export.',
     },
   },
 
   settings: {
+    appearance: {
+      title: 'Appearance',
+      themeLabel: 'Theme',
+      light: 'Light',
+      dark: 'Dark',
+      auroraNote: 'The aurora adapts to the selected accent.',
+    },
     accent: {
       title: 'Accent color',
       subtitle: 'Pick the vibe - this applies instantly, no account needed.',
