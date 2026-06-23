@@ -4,7 +4,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceL
 import type { VO2maxPoint } from '@/application/usecases/GetVO2maxHistory'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
-import { Card } from '@/components/ui/Card'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
 const COLOR = CHART_COLORS.efficiency // violet-500
@@ -40,7 +40,7 @@ export function VO2maxChart({ data }: { data: VO2maxPoint[] }) {
   const avg = Math.round(values.reduce((s, v) => s + v, 0) / values.length * 10) / 10
 
   return (
-    <Card padding="lg">
+    <GlassSurface variant="card" className="rounded-[22px] p-5">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {s.title}
         <span className="ml-2 font-bold tabular-nums text-violet-600 dark:text-violet-400">
@@ -84,6 +84,6 @@ export function VO2maxChart({ data }: { data: VO2maxPoint[] }) {
       </ResponsiveContainer>
 
       <p className="mt-2 text-xs text-subtle">{s.footnote}</p>
-    </Card>
+    </GlassSurface>
   )
 }

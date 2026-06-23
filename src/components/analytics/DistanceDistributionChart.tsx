@@ -5,7 +5,7 @@ import type { DistanceBracket } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { useAccentColor } from '@/lib/useAccent'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
-import { Card } from '@/components/ui/Card'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
 interface Props {
@@ -33,7 +33,7 @@ export function DistanceDistributionChart({ data }: Props) {
   const max = Math.max(...data.map((d) => d.count))
 
   return (
-    <Card padding="lg">
+    <GlassSurface variant="card" className="rounded-[22px] p-5">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">{t.analytics.charts.distance.title}</h3>
         <span className="text-xs text-subtle">{t.analytics.charts.distance.runs(data.reduce((s, d) => s + d.count, 0))}</span>
@@ -65,6 +65,6 @@ export function DistanceDistributionChart({ data }: Props) {
         </BarChart>
       </ResponsiveContainer>
       <p className="mt-2 text-xs text-subtle">Color intensity reflects relative frequency.</p>
-    </Card>
+    </GlassSurface>
   )
 }

@@ -31,8 +31,10 @@ import { TemperatureCorrelationChart } from './TemperatureCorrelationChart'
 import { RpeLoadCorrelationChart } from './RpeLoadCorrelationChart'
 import type { VO2maxPoint } from '@/application/usecases/GetVO2maxHistory'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
+import type { TrainingLoadData } from '@/application/usecases/GetTrainingLoad'
 import { formatDurationShort } from '@/lib/formatters'
-import { cardClass } from '@/components/ui/Card'
+import { GlassSurface } from '@/components/ui/GlassSurface'
+import { TrainingLoadChart } from '@/components/dashboard/TrainingLoadChart'
 import { t } from '@/i18n'
 
 import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
@@ -97,12 +99,14 @@ export function AnalyticsClient({
   vo2maxHistory,
   lifetime,
   zones,
+  trainingLoad,
 }: {
   data: AnalyticsPageData
   comparison: YearComparisonData | null
   vo2maxHistory: VO2maxPoint[]
   lifetime: LifetimeStats | null
   zones: TrainingZonesData | null
+  trainingLoad: TrainingLoadData | null
 }) {
   const { years, byYear, periodWeeks, byPeriod } = data
 
@@ -223,31 +227,33 @@ export function AnalyticsClient({
       : []
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          {t.analytics.title}
-        </h1>
+    <div className="space-y-4">
+      {/* Header - sticky glass nav, mirrors Activities list B1 */}
+      <GlassSurface as="header" variant="nav" className="sticky top-2 z-20 rounded-2xl px-5 py-3">
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-[27px] font-extrabold leading-[1.1] tracking-tight text-foreground">
+            {t.analytics.title}
+          </h1>
 
-        <YearSelector
-          years={years}
-          selected={isAll ? null : displayYear}
-          onSelect={(y) => (y === null ? selectAllTime() : selectYear(y))}
-          allTimeLabel={t.analytics.allTimeChip}
-          periods={periodWeeks.map((w) => ({
-            weeks: w,
-            label: t.analytics.period.chip(w),
-          }))}
-          activePeriod={isPeriod ? view.weeks : null}
-          onSelectPeriod={selectPeriod}
-        />
-      </div>
+          <YearSelector
+            years={years}
+            selected={isAll ? null : displayYear}
+            onSelect={(y) => (y === null ? selectAllTime() : selectYear(y))}
+            allTimeLabel={t.analytics.allTimeChip}
+            periods={periodWeeks.map((w) => ({
+              weeks: w,
+              label: t.analytics.period.chip(w),
+            }))}
+            activePeriod={isPeriod ? view.weeks : null}
+            onSelectPeriod={selectPeriod}
+          />
+        </div>
+      </GlassSurface>
 
       {/* Stats */}
       {metrics.length > 0 && (
-        <div className={cardClass({ overflow: true, padding: 'none' })}>
-          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-b border-border bg-card px-4 py-3">
+        <GlassSurface variant="card" className="rounded-[22px]">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-b border-foreground/[0.08] px-4 py-3">
             <span className="text-sm font-semibold text-foreground">
               {periodLabel}
             </span>
@@ -260,7 +266,7 @@ export function AnalyticsClient({
           <div className="px-4 py-4">
             <MetricGrid metrics={metrics} className="grid-cols-3 lg:grid-cols-6" />
           </div>
-        </div>
+        </GlassSurface>
       )}
 
       {/* Tabs */}
@@ -316,6 +322,7 @@ export function AnalyticsClient({
 
           {tab === 'physiology' && (
             <div className="space-y-4">
+              {trainingLoad && <TrainingLoadChart data={trainingLoad} />}
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 {vo2maxHistory.length >= 2 && (
                   <VO2maxChart data={vo2maxHistory} />

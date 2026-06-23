@@ -4,7 +4,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 import type { MonthlyHr } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
-import { Card } from '@/components/ui/Card'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
 interface Props {
@@ -40,7 +40,7 @@ export function HrTrendChart({ data }: Props) {
   const max = Math.max(...values) + 5
 
   return (
-    <Card padding="lg">
+    <GlassSurface variant="card" className="rounded-[22px] p-5">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">{t.analytics.charts.hrTrend.title}</h3>
         <div className="flex gap-3">
@@ -91,6 +91,6 @@ export function HrTrendChart({ data }: Props) {
       <p className="mt-2 text-xs text-subtle">
         {t.analytics.charts.hrTrend.footnote}
       </p>
-    </Card>
+    </GlassSurface>
   )
 }
