@@ -53,6 +53,15 @@ export function formatDateWithYear(isoDate: string): string {
   })
 }
 
+/** Full weekday + day + month, e.g. `Tuesday 20 June` - used for the selected day header. */
+export function formatDateFull(isoDate: string): string {
+  return new Date(isoDate + 'T00:00:00').toLocaleDateString('en-US', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  })
+}
+
 /** Short day + month, e.g. `Jun 16` - used for the agenda week-range subtitle. */
 export function formatDayMonth(isoDate: string): string {
   return new Date(isoDate + 'T00:00:00').toLocaleDateString('en', {

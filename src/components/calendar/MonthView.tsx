@@ -3,7 +3,7 @@
 import { useMemo } from 'react'
 import Link from 'next/link'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
-import type { Activity, ActivityType } from '@/domain/activity/types'
+import type { Activity, ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import { round } from '@/lib/math'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
@@ -12,7 +12,7 @@ interface Props {
   year: number
   month: number
   byDate: Map<string, Activity[]>
-  byDatePlanned: Map<string, string>
+  byDatePlanned: Map<string, PlannedWorkout>
   today: string
 }
 
@@ -100,9 +100,9 @@ export function MonthView({ year, month, byDate, byDatePlanned, today }: Props) 
                     {cell.acts.length === 0 && byDatePlanned.has(cell.date) && (
                       <p
                         className="truncate px-1 py-0.5 text-[10px] italic text-accent-text/60"
-                        title={byDatePlanned.get(cell.date)}
+                        title={byDatePlanned.get(cell.date)?.name}
                       >
-                        {byDatePlanned.get(cell.date)}
+                        {byDatePlanned.get(cell.date)?.name}
                       </p>
                     )}
                   </div>

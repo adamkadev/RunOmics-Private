@@ -135,15 +135,13 @@ class GarminClient:
             pass
         return None
 
-    def get_workout_schedule(self, start_date: str, end_date: str) -> list[dict[str, Any]]:
-        return self._get(
-            f"{self._base}/workout-service/schedule/{start_date}/{end_date}"
-        ).json()
+    def get_calendar_month(self, year: int, month: int) -> dict[str, Any]:
+        url = f"{self._base}/calendar-service/year/{year}/month/{month - 1}"
+        return self._get(url).json()
 
     def get_workout_detail(self, workout_id: str) -> dict[str, Any]:
-        return self._get(
-            f"{self._base}/workout-service/workout/{workout_id}"
-        ).json()
+        url = f"{self._base}/workout-service/workout/{workout_id}"
+        return self._get(url).json()
 
     def close(self) -> None:
         self._http.close()

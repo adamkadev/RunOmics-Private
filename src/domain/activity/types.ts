@@ -70,6 +70,10 @@ export interface Activity {
 export interface PlannedWorkout {
   date: string
   name: string
+  type?: ActivityType
+  distanceM?: number
+  durationSecs?: number
+  scheduledTime?: string
 }
 
 export interface WeeklyVolume {

@@ -37,8 +37,8 @@ export function CalendarClient({ activities, plannedWorkouts }: Props) {
   }, [activities])
 
   const byDatePlanned = useMemo(() => {
-    const map = new Map<string, string>()
-    for (const p of plannedWorkouts) map.set(p.date, p.name)
+    const map = new Map<string, PlannedWorkout>()
+    for (const p of plannedWorkouts) map.set(p.date, p)
     return map
   }, [plannedWorkouts])
 

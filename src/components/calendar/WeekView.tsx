@@ -1,20 +1,19 @@
 'use client'
 
 import { useState } from 'react'
-import { Check } from 'lucide-react'
-import type { Activity, ActivityType } from '@/domain/activity/types'
+import { Check, ChevronRight, X } from 'lucide-react'
+import type { Activity, ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ActivitySheet } from './ActivitySheet'
+import { PlannedWorkoutSheet } from './PlannedWorkoutSheet'
 import { addDays, isoDate } from '@/lib/calendarDate'
-import { formatDate } from '@/lib/formatters'
-import { STATUS } from '@/lib/statusColors'
+import { formatDateFull } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
-// "Today" is its own semantic color, distinct from the accent (= completed):
-// it must stay visible whether or not a session lands on the current day.
 const TODAY_COLOR = '#f1761f'
+const MISSED_COLOR = '#E5396B'
 
 interface Day {
   date: string
@@ -25,7 +24,7 @@ interface Day {
 interface Props {
   weekStart: Date
   byDate: Map<string, Activity[]>
-  byDatePlanned: Map<string, string>
+  byDatePlanned: Map<string, PlannedWorkout>
   today: string
 }
 
@@ -39,14 +38,15 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
     () => days.find((d) => d.date === today)?.date ?? days[0].date
   )
   const [sheetActivity, setSheetActivity] = useState<Activity | null>(null)
+  const [sheetPlan, setSheetPlan] = useState<PlannedWorkout | null>(null)
 
-  // The selected day tracks the visible week: if the user navigates to another
-  // week, fall back to its first day instead of pointing at a date no longer shown.
   const selected = days.find((d) => d.date === selectedDate) ?? days[0]
+  const selectedPlan = byDatePlanned.get(selected.date)
 
   return (
     <div className="space-y-3">
       <GlassSurface variant="card" className="rounded-[20px] p-3.5 pb-2.5">
+        {/* Weekday labels */}
         <div className="mb-2 grid grid-cols-7 gap-1">
           {t.calendar.weekdays.map((label, i) => (
             <div
@@ -59,11 +59,15 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
           ))}
         </div>
 
+        {/* Day cells */}
         <div className="grid grid-cols-7 gap-1">
           {days.map((d) => {
             const isToday = d.date === today
+            const isPast = d.date < today
             const completed = d.acts.length > 0
-            const planned = !completed && byDatePlanned.has(d.date)
+            const plan = byDatePlanned.get(d.date)
+            const planned = !completed && !!plan
+            const missed = isPast && planned
             const primaryType: ActivityType | null = completed ? d.acts[0].type : null
 
             return (
@@ -76,51 +80,75 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
                   d.date === selectedDate && 'bg-foreground/[0.06]'
                 )}
               >
-                <div
-                  className={cn(
-                    'flex h-7 w-7 items-center justify-center rounded-[8px] border',
-                    completed && 'border-emerald-500/30 bg-emerald-50 dark:bg-emerald-900/20',
-                    planned && 'border-dashed border-accent/50 bg-accent/[0.06]',
-                    !completed && !planned && !isToday && 'border-foreground/[0.07] bg-foreground/[0.04]',
-                    !completed && isToday && 'animate-pulse border-[1.5px]'
+                {/* Cell box */}
+                <div className="relative flex h-7 w-7 items-center justify-center">
+                  {/* Pulse ring for today */}
+                  {isToday && !completed && (
+                    <div
+                      className="absolute inset-0 animate-ping rounded-[8px] border"
+                      style={{ borderColor: `${TODAY_COLOR}50` }}
+                    />
                   )}
-                  style={
-                    !completed && isToday
-                      ? { borderColor: TODAY_COLOR, backgroundColor: `${TODAY_COLOR}1f` }
-                      : undefined
-                  }
-                >
-                  {completed ? (
-                    <Check size={12} strokeWidth={2.5} className={STATUS.success.text} />
-                  ) : isToday ? (
-                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: TODAY_COLOR }} />
-                  ) : planned ? (
-                    <span className="h-2 w-2 rounded-full bg-accent/60" />
-                  ) : (
-                    <span className="text-[11px] text-foreground/20">-</span>
-                  )}
+
+                  <div
+                    className="relative flex h-7 w-7 items-center justify-center rounded-[8px] border transition-colors"
+                    style={
+                      completed
+                        ? { background: 'var(--color-accent, #f1761f)26', borderColor: 'var(--color-accent, #f1761f)4d' }
+                        : missed
+                          ? { background: `${MISSED_COLOR}1a`, borderColor: `${MISSED_COLOR}40`, opacity: 0.6 }
+                          : isToday
+                            ? { background: `${TODAY_COLOR}1a`, borderColor: TODAY_COLOR, borderStyle: 'solid' }
+                            : planned
+                              ? { background: 'rgba(255,255,255,.05)', borderColor: 'rgba(255,255,255,.18)', borderStyle: 'dashed' }
+                              : { background: 'rgba(0,0,0,.04)', borderColor: 'rgba(0,0,0,.07)' }
+                    }
+                  >
+                    {completed ? (
+                      <Check size={12} strokeWidth={2.5} className="text-accent" />
+                    ) : missed ? (
+                      <X size={11} strokeWidth={2.5} style={{ color: MISSED_COLOR }} />
+                    ) : planned ? (
+                      <span
+                        className="h-2 w-2 rounded-full border"
+                        style={isToday ? { borderColor: TODAY_COLOR } : { borderColor: 'rgba(255,255,255,.35)' }}
+                      />
+                    ) : isToday ? (
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: TODAY_COLOR }} />
+                    ) : (
+                      <span className="text-[11px] text-foreground/20">-</span>
+                    )}
+                  </div>
                 </div>
 
+                {/* Day number */}
                 <span
-                  className={cn(
-                    'text-[10px]',
-                    completed && 'text-foreground/70',
-                    planned && 'text-accent-text/70',
-                    !completed && !planned && !isToday && 'text-foreground/30',
-                    !completed && isToday && 'font-bold'
-                  )}
-                  style={!completed && isToday ? { color: TODAY_COLOR } : undefined}
+                  className="text-[10px]"
+                  style={
+                    isToday
+                      ? { color: TODAY_COLOR, fontWeight: 700 }
+                      : completed
+                        ? { color: 'var(--color-foreground)', opacity: 0.7 }
+                        : missed
+                          ? { color: MISSED_COLOR, opacity: 0.7 }
+                          : planned
+                            ? { color: 'var(--color-foreground)', opacity: 0.45 }
+                            : { color: 'var(--color-foreground)', opacity: 0.25 }
+                  }
                 >
                   {d.day}
                 </span>
 
+                {/* Bottom type bar */}
                 <div
                   className="h-[3px] w-[18px] rounded-full"
                   style={{
                     backgroundColor: completed
                       ? ACTIVITY_TYPE_CONFIG[primaryType as ActivityType].dotColor
                       : planned
-                        ? 'color-mix(in srgb, var(--color-accent) 35%, transparent)'
+                        ? isToday
+                          ? `${TODAY_COLOR}55`
+                          : 'rgba(255,255,255,.12)'
                         : 'transparent',
                   }}
                 />
@@ -130,33 +158,21 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
         </div>
       </GlassSurface>
 
+      {/* Selected day panel */}
       <GlassSurface
         variant="card"
         className={cn('rounded-[20px] p-4', selected.date === today && 'border-accent/30')}
       >
-        <div className="mb-2.5 flex items-center justify-between">
-          <span className="font-mono text-xs font-bold uppercase tracking-wide text-accent-text">
-            {formatDate(selected.date)}
+        <div className="mb-3 flex items-center justify-between">
+          <span className="text-xs font-bold uppercase tracking-widest text-accent-text">
+            {formatDateFull(selected.date)}
           </span>
           {selected.date === today && (
             <span className="text-[11px] font-semibold text-muted-foreground">{t.calendar.today}</span>
           )}
         </div>
 
-        {selected.acts.length === 0 ? (
-          byDatePlanned.has(selected.date) ? (
-            <div className="rounded-xl border border-dashed border-accent/40 bg-accent/[0.04] px-3 py-2.5">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-accent-text/70">
-                {t.calendar.planned}
-              </p>
-              <p className="mt-0.5 text-sm font-medium text-foreground/80">
-                {byDatePlanned.get(selected.date)}
-              </p>
-            </div>
-          ) : (
-            <p className="text-sm text-subtle">{t.calendar.restDay}</p>
-          )
-        ) : (
+        {selected.acts.length > 0 ? (
           <div className="space-y-2">
             {selected.acts.map((a) => (
               <button
@@ -177,13 +193,46 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
                     {t.activityTypes[a.type]} · {a.distanceKm.toFixed(1)} {t.units.km}
                   </span>
                 </span>
+                <ChevronRight size={14} className="shrink-0 text-foreground/30" />
               </button>
             ))}
           </div>
+        ) : selectedPlan ? (
+          <button
+            type="button"
+            onClick={() => setSheetPlan(selectedPlan)}
+            className="flex w-full items-center gap-3 rounded-xl border border-dashed border-accent/35 bg-accent/[0.04] p-3 text-left transition-colors hover:bg-accent/[0.07]"
+          >
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/10">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f1761f" strokeWidth="2.2">
+                <path d="M13 4a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-5 6l2-2 2 1 3-2M7 17l2-3 3 1 2-2" />
+              </svg>
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-bold text-foreground">
+                {selectedPlan.name}
+              </span>
+              <span className="mt-0.5 block text-xs text-muted-foreground">
+                {[
+                  selectedPlan.scheduledTime,
+                  selectedPlan.type ? t.activityTypes[selectedPlan.type as ActivityType] : null,
+                  selectedPlan.durationSecs
+                    ? `~${Math.round(selectedPlan.durationSecs / 60)} min`
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ') || t.calendar.planned}
+              </span>
+            </span>
+            <ChevronRight size={14} className="shrink-0 text-accent/40" />
+          </button>
+        ) : (
+          <p className="text-sm text-subtle">{t.calendar.restDay}</p>
         )}
       </GlassSurface>
 
       {sheetActivity && <ActivitySheet activity={sheetActivity} onClose={() => setSheetActivity(null)} />}
+      {sheetPlan && <PlannedWorkoutSheet workout={sheetPlan} onClose={() => setSheetPlan(null)} />}
     </div>
   )
 }
