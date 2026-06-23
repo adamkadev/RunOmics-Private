@@ -1,5 +1,7 @@
 'use client'
 
+import Link from 'next/link'
+import { ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { EditableNumber } from '@/components/ui/EditableNumber'
@@ -39,10 +41,7 @@ export function ProfileGoal({ goal, onSaveGoal }: Props) {
       </div>
 
       <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-foreground/[0.08]">
-        <div
-          className="h-full rounded-full bg-[linear-gradient(90deg,#0e9f6e,#2ed9a0)]"
-          style={{ width: `${progressPercent}%` }}
-        />
+        <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${progressPercent}%` }} />
       </div>
 
       {projection && (
@@ -53,6 +52,13 @@ export function ProfileGoal({ goal, onSaveGoal }: Props) {
           {t.profile.goal.pace(projection.projectedYearKm)} {projection.status === 'behind' ? '↓' : '↑'}
         </p>
       )}
+
+      <Link
+        href="/goals"
+        className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-accent-text active:scale-95"
+      >
+        {t.profile.goal.viewGoals} <ArrowRight size={14} />
+      </Link>
     </GlassSurface>
   )
 }

@@ -1,3 +1,5 @@
+import Link from 'next/link'
+import { ArrowRight } from 'lucide-react'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import type { RecordEntry } from '@/application/usecases/GetRecords'
 import { formatDuration, formatDateWithYear } from '@/lib/formatters'
@@ -42,6 +44,12 @@ export function ProfileRecords({ records }: { records: RecordEntry[] }) {
           )
         })}
       </div>
+      <Link
+        href="/records"
+        className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-accent-text active:scale-95"
+      >
+        {t.profile.records.viewAll} <ArrowRight size={14} />
+      </Link>
     </GlassSurface>
   )
 }

@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Plus } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import type { ShoeStats } from '@/application/usecases/GetShoeStats'
@@ -54,8 +54,7 @@ export function ProfileShoes({ shoes }: { shoes: ShoeStats[] }) {
         href="/shoes"
         className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-accent-text active:scale-95"
       >
-        <Plus size={16} />
-        {t.profile.shoes.addPair}
+        {t.profile.shoes.viewShoes} <ArrowRight size={14} />
       </Link>
     </GlassSurface>
   )

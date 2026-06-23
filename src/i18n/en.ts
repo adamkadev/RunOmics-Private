@@ -793,11 +793,12 @@ export const en = {
     records: {
       title: 'Personal records',
       notYet: 'Not yet',
+      viewAll: 'View all records',
     },
     shoes: {
       title: 'Shoes',
       line: (totalKm: number, remainingKm: number) => `${totalKm} km · ~${remainingKm} km left`,
-      addPair: 'Add a pair',
+      viewShoes: 'View Shoes',
     },
     hrZones: {
       title: 'Heart rate zones',
@@ -807,6 +808,7 @@ export const en = {
     goal: {
       title: (year: number) => `Goal ${year}`,
       pace: (km: number) => `At this pace: ${km} km by year-end`,
+      viewGoals: 'View Goals',
     },
   },
 
