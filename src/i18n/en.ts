@@ -801,8 +801,8 @@ export const en = {
     },
     hrZones: {
       title: 'Heart rate zones',
-      maxHr: 'Max HR',
-      recalculate: 'Recalculate from max HR',
+      lthr: 'LTHR',
+      recalculate: 'Recalculate from LTHR',
     },
     goal: {
       title: (year: number) => `Goal ${year}`,

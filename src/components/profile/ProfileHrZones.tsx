@@ -8,11 +8,11 @@ import { t } from '@/i18n'
 
 type Bounds = [number, number, number, number]
 
-const DEFAULT_MAX_HR = 190
-const ZONE_PERCENTS = [0.6, 0.7, 0.8, 0.9]
+const DEFAULT_LTHR = 170
+const ZONE_PERCENTS = [0.85, 0.9, 0.95, 1.0]
 
-function defaultBounds(maxHr: number): Bounds {
-  return ZONE_PERCENTS.map((p) => Math.round(maxHr * p)) as Bounds
+function defaultBounds(lthr: number): Bounds {
+  return ZONE_PERCENTS.map((p) => Math.round(lthr * p)) as Bounds
 }
 
 const ZONE_COLOR_CLASS: Record<number, string> = {
@@ -29,8 +29,8 @@ interface Props {
 }
 
 export function ProfileHrZones({ athlete, onSave }: Props) {
-  const maxHr = athlete.maxHrBpm ?? DEFAULT_MAX_HR
-  const bounds = athlete.hrZoneBoundsBpm ?? defaultBounds(maxHr)
+  const lthr = athlete.lthrBpm ?? DEFAULT_LTHR
+  const bounds = athlete.hrZoneBoundsBpm ?? defaultBounds(lthr)
 
   function setBound(index: number, n: number) {
     const next = [...bounds] as Bounds
@@ -39,7 +39,7 @@ export function ProfileHrZones({ athlete, onSave }: Props) {
   }
 
   const zones = [
-    { zone: 5, min: bounds[3], max: maxHr, editableIndex: null },
+    { zone: 5, min: bounds[3], max: lthr, editableIndex: null },
     { zone: 4, min: bounds[2], max: bounds[3], editableIndex: 3 },
     { zone: 3, min: bounds[1], max: bounds[2], editableIndex: 2 },
     { zone: 2, min: bounds[0], max: bounds[1], editableIndex: 1 },
@@ -51,10 +51,10 @@ export function ProfileHrZones({ athlete, onSave }: Props) {
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-bold text-foreground">{t.profile.hrZones.title}</h2>
         <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-          <span>{t.profile.hrZones.maxHr}</span>
+          <span>{t.profile.hrZones.lthr}</span>
           <EditableNumber
-            value={maxHr}
-            onCommit={(n) => onSave({ maxHrBpm: n })}
+            value={lthr}
+            onCommit={(n) => onSave({ lthrBpm: n })}
             className="text-xs font-bold text-[#ff7676]"
           />
         </div>
@@ -82,7 +82,7 @@ export function ProfileHrZones({ athlete, onSave }: Props) {
 
       <button
         type="button"
-        onClick={() => onSave({ hrZoneBoundsBpm: defaultBounds(maxHr) })}
+        onClick={() => onSave({ hrZoneBoundsBpm: defaultBounds(lthr) })}
         className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-accent-text active:opacity-60"
       >
         <RotateCcw size={13} />

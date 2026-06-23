@@ -7,8 +7,7 @@ export interface AthleteProfile {
   thresholdPowerWatts?: number
   vmaKmh?: number
   displayName?: string
-  maxHrBpm?: number
-  // Top bpm of zones 1-4 (zone 5 runs from the 4th value up to maxHrBpm).
+  // Top bpm of zones 1-4 (zone 5 runs from the 4th value up to lthrBpm).
   hrZoneBoundsBpm?: [number, number, number, number]
 }
 
