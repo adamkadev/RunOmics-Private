@@ -16,7 +16,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <Aurora />
       <ThemeSync />
       <Sidebar />
-      <main className="min-h-screen lg:ml-60">
+      <main className="min-h-screen lg:ml-[248px]">
         {/* Mobile spacer: top bar height + notch safe area - skipped on detail
             pages (S2), which manage their own safe-area top padding (S3) */}
         {showTopBar && (

@@ -134,8 +134,12 @@ export function Sidebar() {
   return (
     <>
       {/* ─── Desktop sidebar ─── */}
-      <aside className="fixed inset-y-0 left-0 z-20 hidden w-60 flex-col border-r border-border bg-card lg:flex">
-        <Link href="/" className="flex h-16 items-center gap-2 border-b border-border px-5">
+      <GlassSurface
+        as="aside"
+        variant="chrome"
+        className="fixed inset-y-3 left-3 z-20 hidden w-[220px] flex-col rounded-2xl lg:flex"
+      >
+        <Link href="/" className="flex h-16 shrink-0 items-center gap-2.5 px-5">
           <HeaderMark size={22} />
           <span className="text-lg font-bold tracking-tight text-foreground">
             {t.brand.namePrefix}
@@ -143,7 +147,9 @@ export function Sidebar() {
           </span>
         </Link>
 
-        <nav className="flex-1 space-y-0.5 p-3">
+        <div className="mx-4 h-px shrink-0 bg-foreground/[0.08]" />
+
+        <nav className="flex-1 space-y-0.5 overflow-y-auto p-3">
           {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
             const active = pathname === href
             return (
@@ -151,20 +157,22 @@ export function Sidebar() {
                 key={href}
                 href={href}
                 className={cn(
-                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                  'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
                   active
-                    ? 'bg-foreground/[0.14] text-foreground font-semibold'
+                    ? 'bg-accent/[0.12] font-semibold text-accent-text'
                     : 'text-muted-foreground hover:bg-foreground/[0.07] hover:text-foreground'
                 )}
               >
-                <Icon size={16} />
+                <Icon size={17} strokeWidth={active ? 2.2 : 1.8} />
                 {label}
               </Link>
             )
           })}
         </nav>
 
-        <div className="flex items-center justify-between border-t border-border px-4 py-3">
+        <div className="mx-4 h-px shrink-0 bg-foreground/[0.08]" />
+
+        <div className="flex shrink-0 items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
             <span className="text-xs text-subtle">{t.brand.version(APP_VERSION)}</span>
             <Link
@@ -182,7 +190,7 @@ export function Sidebar() {
           </div>
           <ThemeToggle />
         </div>
-      </aside>
+      </GlassSurface>
 
       {/* ─── Mobile top bar — only on the 5 primary tabs, not on detail pages (S2) ─── */}
       {showTopBar && (
