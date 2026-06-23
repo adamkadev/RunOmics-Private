@@ -1,0 +1,137 @@
+'use client'
+
+import { useRef, useState } from 'react'
+import { RotateCcw } from 'lucide-react'
+import { GlassSurface } from '@/components/ui/GlassSurface'
+import type { AthleteProfile } from '@/infrastructure/repositories/FirestoreConfigRepository'
+import { t } from '@/i18n'
+
+type Bounds = [number, number, number, number]
+
+const DEFAULT_MAX_HR = 190
+const ZONE_PERCENTS = [0.6, 0.7, 0.8, 0.9]
+
+function defaultBounds(maxHr: number): Bounds {
+  return ZONE_PERCENTS.map((p) => Math.round(maxHr * p)) as Bounds
+}
+
+const ZONE_COLOR_CLASS: Record<number, string> = {
+  1: 'bg-[#a7b1aa] dark:bg-white/55',
+  2: 'bg-[#3b82f6] dark:bg-[#7db8ff]',
+  3: 'bg-[#0e9f6e] dark:bg-[#2ed9a0]',
+  4: 'bg-[#f1761f] dark:bg-[#ff9a5a]',
+  5: 'bg-[#ff7676]',
+}
+
+interface EditableProps {
+  value: number
+  onCommit: (n: number) => void
+  className?: string
+}
+
+function EditableNumber({ value, onCommit, className }: EditableProps) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(String(value))
+  const ref = useRef<HTMLInputElement>(null)
+
+  if (editing) {
+    return (
+      <input
+        ref={ref}
+        type="number"
+        autoFocus
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={() => {
+          setEditing(false)
+          const n = Number(draft)
+          if (!Number.isNaN(n) && n > 0) onCommit(Math.round(n))
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') ref.current?.blur()
+          if (e.key === 'Escape') setEditing(false)
+        }}
+        className="w-14 rounded-md border border-border bg-background px-1 py-0.5 text-xs tabular-nums focus:outline-none focus:ring-2 focus:ring-ring"
+      />
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => { setDraft(String(value)); setEditing(true) }}
+      className={className}
+    >
+      {value}
+    </button>
+  )
+}
+
+interface Props {
+  athlete: AthleteProfile
+  onSave: (patch: Partial<AthleteProfile>) => void
+}
+
+export function ProfileHrZones({ athlete, onSave }: Props) {
+  const maxHr = athlete.maxHrBpm ?? DEFAULT_MAX_HR
+  const bounds = athlete.hrZoneBoundsBpm ?? defaultBounds(maxHr)
+
+  function setBound(index: number, n: number) {
+    const next = [...bounds] as Bounds
+    next[index] = n
+    onSave({ hrZoneBoundsBpm: next })
+  }
+
+  const zones = [
+    { zone: 5, min: bounds[3], max: maxHr, editableIndex: null },
+    { zone: 4, min: bounds[2], max: bounds[3], editableIndex: 3 },
+    { zone: 3, min: bounds[1], max: bounds[2], editableIndex: 2 },
+    { zone: 2, min: bounds[0], max: bounds[1], editableIndex: 1 },
+    { zone: 1, min: 0, max: bounds[0], editableIndex: 0 },
+  ]
+
+  return (
+    <GlassSurface variant="card" className="rounded-[22px] p-5">
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-bold text-foreground">{t.profile.hrZones.title}</h2>
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+          <span>{t.profile.hrZones.maxHr}</span>
+          <EditableNumber
+            value={maxHr}
+            onCommit={(n) => onSave({ maxHrBpm: n })}
+            className="text-xs font-bold text-[#ff7676]"
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        {zones.map(({ zone, min, max, editableIndex }) => (
+          <div key={zone} className="flex items-center gap-2.5">
+            <span className={`h-2 w-2 shrink-0 rounded-full ${ZONE_COLOR_CLASS[zone]}`} aria-hidden="true" />
+            <span className="w-28 shrink-0 text-xs font-semibold text-foreground/80">
+              {t.activity.zones.labels[zone]}
+            </span>
+            <span className="flex-1 text-xs text-muted-foreground">
+              {zone === 1 ? '< ' : `${min}–`}
+              {editableIndex !== null ? (
+                <EditableNumber value={max} onCommit={(n) => setBound(editableIndex, n)} />
+              ) : (
+                max
+              )}{' '}
+              bpm
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <button
+        type="button"
+        onClick={() => onSave({ hrZoneBoundsBpm: defaultBounds(maxHr) })}
+        className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-accent-text active:opacity-60"
+      >
+        <RotateCcw size={13} />
+        {t.profile.hrZones.recalculate}
+      </button>
+    </GlassSurface>
+  )
+}

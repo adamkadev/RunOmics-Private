@@ -793,6 +793,11 @@ export const en = {
       line: (totalKm: number, remainingKm: number) => `${totalKm} km · ~${remainingKm} km left`,
       addPair: 'Add a pair',
     },
+    hrZones: {
+      title: 'Heart rate zones',
+      maxHr: 'Max HR',
+      recalculate: 'Recalculate from max HR',
+    },
   },
 
   records: {
