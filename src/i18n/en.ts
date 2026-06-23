@@ -788,6 +788,11 @@ export const en = {
       title: 'Personal records',
       notYet: 'Not yet',
     },
+    shoes: {
+      title: 'Shoes',
+      line: (totalKm: number, remainingKm: number) => `${totalKm} km · ~${remainingKm} km left`,
+      addPair: 'Add a pair',
+    },
   },
 
   records: {

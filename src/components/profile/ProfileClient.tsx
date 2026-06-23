@@ -8,6 +8,7 @@ import type { AthleteProfile } from '@/infrastructure/repositories/FirestoreConf
 import { ProfileHero } from './ProfileHero'
 import { ProfileStatsYtd } from './ProfileStatsYtd'
 import { ProfileRecords } from './ProfileRecords'
+import { ProfileShoes } from './ProfileShoes'
 
 interface Props {
   data: ProfileData
@@ -32,6 +33,7 @@ export function ProfileClient({ data }: Props) {
         />
         <ProfileStatsYtd ytd={data.ytd} />
         <ProfileRecords records={data.records} />
+        <ProfileShoes shoes={data.shoes} />
       </div>
     </div>
   )

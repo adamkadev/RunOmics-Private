@@ -2,6 +2,7 @@ import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepo
 import { getAthleteFromFirestore, type AthleteProfile } from '@/infrastructure/repositories/FirestoreConfigRepository'
 import { getLifetimeStats } from '@/application/usecases/GetLifetimeStats'
 import { getRecords, type RecordEntry } from '@/application/usecases/GetRecords'
+import { getShoeStats, type ShoeStats } from '@/application/usecases/GetShoeStats'
 import { round } from '@/lib/math'
 
 const PROFILE_RECORD_KEYS = ['5k', '10k', 'half', 'marathon']
@@ -23,6 +24,7 @@ export interface ProfileData {
   hero: ProfileHero
   ytd: ProfileYtdStats
   records: RecordEntry[]
+  shoes: ShoeStats[]
   athlete: AthleteProfile
 }
 
@@ -54,6 +56,7 @@ export async function getProfileData(): Promise<ProfileData> {
     records: PROFILE_RECORD_KEYS.map((key) => allRecords.find((r) => r.key === key)).filter(
       (r): r is RecordEntry => r !== undefined
     ),
+    shoes: getShoeStats().filter((s) => !s.retired),
     athlete,
   }
 }
