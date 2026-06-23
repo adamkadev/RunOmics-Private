@@ -82,11 +82,14 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
               >
                 {/* Cell box */}
                 <div className="relative flex h-7 w-7 items-center justify-center">
-                  {/* Pulse ring for today */}
+                  {/* Pulse ring for today: opacity-only animation, not scale+fade */}
                   {isToday && !completed && (
                     <div
-                      className="absolute inset-0 animate-ping rounded-[8px] border"
-                      style={{ borderColor: `${TODAY_COLOR}50` }}
+                      className="absolute inset-0 rounded-[8px] border"
+                      style={{
+                        borderColor: `${TODAY_COLOR}60`,
+                        animation: 'pulse-ring 2s ease-in-out infinite',
+                      }}
                     />
                   )}
 
