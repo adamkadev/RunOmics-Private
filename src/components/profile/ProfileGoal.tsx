@@ -7,6 +7,7 @@ import { GlassSurface } from '@/components/ui/GlassSurface'
 import { EditableNumber } from '@/components/ui/EditableNumber'
 import type { ProfileGoal as ProfileGoalData } from '@/application/usecases/GetProfileData'
 import type { GoalYear } from '@/application/usecases/GetGoalsData'
+import { STATUS } from '@/lib/statusColors'
 import { t } from '@/i18n'
 
 interface Props {
@@ -41,13 +42,13 @@ export function ProfileGoal({ goal, onSaveGoal }: Props) {
       </div>
 
       <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-foreground/[0.08]">
-        <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${progressPercent}%` }} />
+        <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${progressPercent}%` }} />
       </div>
 
       {projection && (
         <p className={cn(
           'mt-2 text-[11.5px] font-medium',
-          projection.status === 'behind' ? 'text-amber-600 dark:text-amber-400' : 'text-accent-text'
+          projection.status === 'behind' ? STATUS.warning.text : STATUS.success.text
         )}>
           {t.profile.goal.pace(projection.projectedYearKm)} {projection.status === 'behind' ? '↓' : '↑'}
         </p>

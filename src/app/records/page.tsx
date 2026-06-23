@@ -16,10 +16,7 @@ export default async function RecordsPage() {
   return (
     <div className="space-y-8 pt-[max(env(safe-area-inset-top),12px)] lg:pt-0">
       <div className="space-y-2">
-        <div>
-          <h1 className="text-display text-foreground">{t.pages.records.title}</h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">{t.pages.records.subtitle}</p>
-        </div>
+        <h1 className="text-display text-foreground">{t.pages.records.title}</h1>
 
         <PbAlertLine alerts={pbAlerts} />
       </div>

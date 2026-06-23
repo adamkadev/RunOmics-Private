@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import fs from 'fs'
 import { computeProjection, computeYearOutcome } from '../GetGoalsData'
 import type { Activity } from '@/domain/activity/types'
 import type { GoalYear, YearData } from '../GetGoalsData'

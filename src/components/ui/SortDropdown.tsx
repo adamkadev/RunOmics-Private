@@ -38,7 +38,7 @@ export function SortDropdown<T extends string>({ options, sortBy, order, onChang
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1 rounded-md border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+        className="flex items-center gap-1 rounded-[10px] border border-foreground/[0.12] bg-foreground/[0.06] px-2.5 py-1 text-xs font-medium text-foreground/70 transition-colors hover:bg-foreground/[0.10]"
       >
         {label}: {activeLabel}
         {order === 'asc' ? <ArrowUp size={11} /> : <ArrowDown size={11} />}
@@ -46,7 +46,7 @@ export function SortDropdown<T extends string>({ options, sortBy, order, onChang
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-20 mt-1 min-w-[8rem] overflow-hidden rounded-xl border border-border bg-card py-1 shadow-lg">
+        <div className="absolute right-0 top-full z-20 mt-1 min-w-[8rem] overflow-hidden rounded-xl border border-foreground/[0.12] bg-background/80 backdrop-blur-md py-1 shadow-lg">
           {options.map((o) => (
             <button
               key={o.value}
@@ -55,8 +55,8 @@ export function SortDropdown<T extends string>({ options, sortBy, order, onChang
                 setOpen(false)
               }}
               className={cn(
-                'flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs font-medium transition-colors hover:bg-muted',
-                o.value === sortBy ? 'text-accent-text' : 'text-foreground',
+                'flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs font-medium transition-colors hover:bg-foreground/[0.07]',
+                o.value === sortBy ? 'bg-foreground/[0.10] text-foreground font-semibold' : 'text-foreground/70',
               )}
             >
               {o.label}

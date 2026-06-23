@@ -1,4 +1,4 @@
-const DETAIL_ROUTE_BASES = ['/goals', '/records', '/shoes', '/map', '/profile']
+const DETAIL_ROUTE_BASES = ['/goals', '/records', '/shoes', '/map', '/profile', '/settings']
 
 /**
  * Detail/secondary pages (reached from an activity row, a record, or the

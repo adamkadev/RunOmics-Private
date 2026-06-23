@@ -2,9 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import { useTheme } from 'next-themes'
-import { Sun, Moon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
+
+const OPTIONS = [
+  { value: 'light',  label: () => t.settings.appearance.light  },
+  { value: 'system', label: () => t.settings.appearance.auto   },
+  { value: 'dark',   label: () => t.settings.appearance.dark   },
+] as const
 
 export function ThemeSegmented() {
   const { theme, setTheme } = useTheme()
@@ -21,31 +26,21 @@ export function ThemeSegmented() {
   return (
     <div>
       <h2 className="text-sm font-bold text-foreground">{s.themeLabel}</h2>
-      <div className="mt-3 inline-flex rounded-full border border-foreground/10 bg-foreground/[0.04] p-1">
-        <button
-          type="button"
-          onClick={() => setTheme('light')}
-          className={cn(
-            'flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors',
-            current === 'light' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'
-          )}
-        >
-          <Sun size={13} />
-          {s.light}
-        </button>
-        <button
-          type="button"
-          onClick={() => setTheme('dark')}
-          className={cn(
-            'flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors',
-            current === 'dark' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'
-          )}
-        >
-          <Moon size={13} />
-          {s.dark}
-        </button>
+      <div className="mt-3 flex w-full rounded-full border border-foreground/10 bg-foreground/[0.04] p-1">
+        {OPTIONS.map(({ value, label }) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => setTheme(value)}
+            className={cn(
+              'flex-1 rounded-full py-1.5 text-xs font-semibold transition-colors',
+              current === value ? 'bg-foreground/[0.14] text-foreground' : 'text-foreground/55'
+            )}
+          >
+            {label()}
+          </button>
+        ))}
       </div>
-      <p className="mt-2 text-xs text-muted-foreground">{s.auroraNote}</p>
     </div>
   )
 }

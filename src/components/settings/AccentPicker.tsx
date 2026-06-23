@@ -24,7 +24,7 @@ export function AccentPicker() {
       <h2 className="text-sm font-bold text-foreground">{t.settings.accent.title}</h2>
       <p className="mt-0.5 text-xs text-muted-foreground">{t.settings.accent.subtitle}</p>
 
-      <div className="mt-4 flex flex-wrap gap-3">
+      <div className="mt-4 flex flex-wrap justify-center gap-3">
         {ACCENT_IDS.map((id) => {
           const { label } = t.settings.accent.options[id]
           const color = ACCENT_SWATCHES[id]

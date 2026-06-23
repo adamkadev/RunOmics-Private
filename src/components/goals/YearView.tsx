@@ -1,26 +1,28 @@
-import Image from 'next/image'
 import Link from 'next/link'
-import { Trophy, Target, Medal, TrendingUp, ArrowRight, Calendar, ImageOff, Flag, MapPin, ExternalLink, Check, X, Minus } from 'lucide-react'
+import { Trophy, Target, Medal, TrendingUp, ArrowRight, ArrowDown, Check, Minus, Calendar, Flag, MapPin } from 'lucide-react'
 import type { YearData, GoalProjection, MonthGoal } from '@/application/usecases/GetGoalsData'
 import { formatDuration, formatDate, formatPace, monthLabel } from '@/lib/formatters'
-import { ActivityTypeTag } from '@/components/activities/ActivityTypeTag'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { raceDistanceTint } from '@/lib/colors'
+import { STATUS } from '@/lib/statusColors'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
-const STATUS_CHIP: Record<GoalProjection['status'], string> = {
-  ahead:    'bg-accent-subtle text-accent-text',
-  on_track: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-  behind:   'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+const DIST_SHORT: Record<string, string> = { 'Half-Marathon': 'HM' }
+function shortDist(d: string) { return DIST_SHORT[d] ?? d }
+
+// Icon-only status indicators: ✓ green (ahead/done), → blue (on track), ↓ amber (behind), - gray (pending)
+const STATUS_ICON: Record<MonthGoal['status'], { Icon: typeof Check; className: string }> = {
+  ahead:    { Icon: Check,       className: STATUS.success.text },
+  on_track: { Icon: ArrowRight,  className: STATUS.progress.text },
+  behind:   { Icon: ArrowDown,   className: STATUS.warning.text },
+  pending:  { Icon: Minus,       className: 'text-subtle/40' },
 }
 
-// Icon-only status, no label/unit in the badge - color carries the meaning (DA Wave 3).
-const MONTH_STATUS_ICON: Record<MonthGoal['status'], { Icon: typeof Check; className: string }> = {
-  ahead:    { Icon: Check, className: 'text-accent-text' },
-  on_track: { Icon: ArrowRight, className: 'text-blue-500 dark:text-blue-400' },
-  behind:   { Icon: X, className: 'text-amber-500 dark:text-amber-400' },
-  pending:  { Icon: Minus, className: 'text-subtle/40' },
+const STATUS_CHIP_BG: Record<GoalProjection['status'], string> = {
+  ahead:    STATUS.success.bg,
+  on_track: STATUS.progress.bg,
+  behind:   STATUS.warning.bg,
 }
 
 export function YearView({ yearData }: { yearData: YearData }) {
@@ -32,16 +34,17 @@ export function YearView({ yearData }: { yearData: YearData }) {
     ? Math.min((totalDistanceKm / annualDistanceKm) * 100, 100)
     : 0
   const remaining = Math.max(annualDistanceKm - totalDistanceKm, 0)
+  const statusIcon = projection ? STATUS_ICON[projection.status] : null
 
   return (
     <div className="space-y-8">
       {goals && (
         <section className="space-y-3">
-          <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            <Target size={14} className="text-accent-text" />
-            {t.goals.annualGoal}
-          </h2>
           <GlassSurface variant="card" className="rounded-[22px] p-5">
+            <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              <Target size={14} className="text-accent-text" />
+              {t.goals.annualGoal}
+            </h2>
             <div className="mb-3 flex items-end justify-between">
               <div>
                 <span className="text-3xl font-bold tracking-tight text-foreground">
@@ -55,7 +58,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
             </div>
             <div className="h-3 overflow-hidden rounded-full bg-muted">
               <div
-                className="h-full rounded-full bg-accent transition-all"
+                className="h-full rounded-full bg-emerald-500 transition-all"
                 style={{ width: `${annualProgress}%` }}
               />
             </div>
@@ -63,23 +66,17 @@ export function YearView({ yearData }: { yearData: YearData }) {
               {remaining > 0 ? (
                 <span className="text-subtle">{t.goals.kmRemaining(Number(remaining.toFixed(0)))}</span>
               ) : (
-                <span className="font-medium text-accent-text">{t.goals.goalReached}</span>
+                <span className={cn('font-medium', STATUS.success.text)}>{t.goals.goalReached}</span>
               )}
             </div>
-            {projection && (
+            {projection && statusIcon && (
               <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                <span className={`rounded-full px-2.5 py-0.5 font-medium ${STATUS_CHIP[projection.status]}`}>
+                <span className={cn('rounded-full px-2.5 py-0.5 font-semibold', STATUS_CHIP_BG[projection.status], statusIcon.className)}>
                   {t.goals.projection.status[projection.status]}
                 </span>
-                <span className="text-foreground/80 font-medium">
-                  {t.goals.projection.projected(projection.projectedYearKm)}
-                </span>
-                <span className="text-subtle">
-                  {projection.status === 'ahead'
-                    ? t.goals.projection.aheadBy(projection.deltaKm)
-                    : projection.status === 'behind'
-                      ? t.goals.projection.behindBy(projection.deltaKm)
-                      : null}
+                <span className={cn('flex items-center gap-1 font-medium', statusIcon.className)}>
+                  <statusIcon.Icon size={12} strokeWidth={2.5} />
+                  {projection.deltaKm !== 0 && `${projection.status === 'ahead' ? '+' : '-'}${Math.abs(projection.deltaKm)} km`}
                 </span>
                 <span className="w-full text-subtle">
                   {t.goals.projection.rate(projection.weeklyRate, projection.weeklyNeeded)}
@@ -99,7 +96,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
           <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
             {monthlyGoals.map((mg) => {
               const progress = mg.targetKm > 0 ? Math.min((mg.actualKm / mg.targetKm) * 100, 100) : 0
-              const { Icon: StatusIcon, className: statusClassName } = MONTH_STATUS_ICON[mg.status]
+              const { Icon: StatusIcon, className: statusClassName } = STATUS_ICON[mg.status]
               return (
                 <GlassSurface key={mg.month} variant="card" className="rounded-2xl p-3">
                   <div className="flex items-center justify-between gap-1">
@@ -116,7 +113,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
                   </p>
                   <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-foreground/[0.08]">
                     <div
-                      className="h-full rounded-full bg-accent transition-all"
+                      className="h-full rounded-full bg-emerald-500 transition-all"
                       style={{ width: `${progress}%` }}
                     />
                   </div>
@@ -141,7 +138,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
               const achieved = delta !== null && delta <= 0
               return (
                 <GlassSurface key={target.distance} variant="card" className="rounded-2xl p-4">
-                  <p className="text-xs font-semibold text-subtle">{target.distance}</p>
+                  <p className="text-xs font-semibold text-subtle">{shortDist(target.distance)}</p>
                   <p className="mt-1 text-lg font-bold text-foreground">
                     {target.targetSeconds === null ? (
                       <span className="text-sm font-normal text-subtle">{t.goals.noTarget}</span>
@@ -150,7 +147,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
                     )}
                   </p>
                   {pbSeconds !== null && delta !== null && (
-                    <p className={`mt-0.5 text-xs font-medium ${achieved ? 'text-accent-text' : 'text-orange-500 dark:text-orange-400'}`}>
+                    <p className={cn('mt-0.5 text-xs font-medium', achieved ? STATUS.success.text : 'text-orange-500 dark:text-orange-400')}>
                       {achieved
                         ? t.goals.targetDone(formatDuration(Math.abs(delta)))
                         : t.goals.targetToGo(formatDuration(delta))}
@@ -181,15 +178,15 @@ export function YearView({ yearData }: { yearData: YearData }) {
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-semibold text-foreground">{race.name}</span>
                       <span className="rounded-full bg-foreground/[0.06] px-2 py-0.5 text-xs font-medium text-foreground/70">
-                        {race.distance}
+                        {shortDist(race.distance)}
                       </span>
-                      {race.targetSeconds && (
-                        <span className="flex items-center gap-1 text-xs font-medium text-accent-text">
-                          <Target size={11} />
-                          {formatDuration(race.targetSeconds)}
-                        </span>
-                      )}
                     </div>
+                    {race.targetSeconds && (
+                      <p className="mt-0.5 flex items-center gap-1 text-xs font-medium text-accent-text">
+                        <Target size={11} />
+                        {formatDuration(race.targetSeconds)}
+                      </p>
+                    )}
                     <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-subtle">
                       <span className="flex items-center gap-1">
                         <Calendar size={11} />
@@ -201,22 +198,11 @@ export function YearView({ yearData }: { yearData: YearData }) {
                           {race.location}
                         </span>
                       )}
-                      {race.url && (
-                        <a
-                          href={race.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-accent-text hover:underline"
-                        >
-                          <ExternalLink size={11} />
-                          {t.goals.registrationLink}
-                        </a>
-                      )}
                     </div>
                   </div>
                   {!isPast && (
-                    <span className="shrink-0 text-xs font-medium text-blue-600 dark:text-blue-400">
-                      {t.goals.daysUntil(daysUntil)}
+                    <span className={cn('shrink-0 text-xs font-semibold tabular-nums', STATUS.progress.text)}>
+                      D-{daysUntil}
                     </span>
                   )}
                   {isPast && (
@@ -236,70 +222,45 @@ export function YearView({ yearData }: { yearData: YearData }) {
             {t.goals.seasonRaces}
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {pbs.map(({ entry, activity, photoPath }) => {
+            {pbs.map(({ entry, activity }) => {
               const tint = raceDistanceTint(entry.distance)
               return (
-              <Link
-                key={entry.activityId}
-                href={`/activities/${entry.activityId}`}
-                className="glass-card group relative overflow-hidden rounded-[20px] transition-shadow hover:shadow-lg"
-              >
-                {photoPath ? (
-                  <div className="relative h-40 w-full overflow-hidden bg-muted">
-                    <Image
-                      src={photoPath}
-                      alt={t.goals.raceAlt(entry.distance)}
-                      fill
-                      sizes="(min-width: 640px) 50vw, 100vw"
-                      loading="eager"
-                      className="object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                    <div className={cn('absolute inset-0 bg-gradient-to-br to-transparent', tint.overlay)} />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                    <span className="absolute bottom-3 left-4 text-2xl font-black text-white">
-                      {entry.distance}
+                <Link
+                  key={entry.activityId}
+                  href={`/activities/${entry.activityId}`}
+                  className="glass-card group relative overflow-hidden rounded-[20px] transition-shadow hover:shadow-lg"
+                >
+                  <div className={cn('flex h-24 items-center bg-gradient-to-br to-transparent px-5', tint.overlay)}>
+                    <span className="text-3xl font-black text-foreground">
+                      {shortDist(entry.distance)}
                     </span>
                   </div>
-                ) : (
-                  <div className="relative flex h-24 items-center justify-between overflow-hidden bg-accent-subtle px-5">
-                    <div className={cn('absolute inset-0 bg-gradient-to-br to-transparent', tint.overlay)} />
-                    <span className={cn('relative text-3xl font-black', tint.text)}>
-                      {entry.distance}
-                    </span>
-                    <div className={cn('relative flex items-center gap-1.5 opacity-50', tint.text)}>
-                      <ImageOff size={14} />
-                      <span className="text-xs">{t.goals.noPhoto}</span>
-                    </div>
-                  </div>
-                )}
-                <div className="p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="text-xl font-bold tracking-tight text-foreground">
-                        {formatDuration(entry.seconds)}
-                      </p>
-                      {activity.paceSecPerKm && (
-                        <p className="text-sm text-muted-foreground">
-                          {formatPace(activity.paceSecPerKm)}
+                  <div className="p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="text-xl font-bold tracking-tight text-foreground">
+                          {formatDuration(entry.seconds)}
                         </p>
+                        {activity.paceSecPerKm && (
+                          <p className="text-sm text-muted-foreground">
+                            {formatPace(activity.paceSecPerKm)}
+                          </p>
+                        )}
+                      </div>
+                      <ArrowRight size={16} className="mt-1 shrink-0 text-subtle transition-colors group-hover:text-muted-foreground" />
+                    </div>
+                    <div className="mt-3 flex items-center gap-1.5 text-xs text-subtle">
+                      <Calendar size={11} className="shrink-0" />
+                      <span>{formatDate(activity.date)}</span>
+                      {activity.description && (
+                        <>
+                          <span className="text-subtle/40">·</span>
+                          <span className="truncate text-muted-foreground">{activity.description}</span>
+                        </>
                       )}
                     </div>
-                    <ArrowRight size={16} className="mt-1 shrink-0 text-subtle transition-colors group-hover:text-muted-foreground" />
                   </div>
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <ActivityTypeTag type={activity.type} />
-                    <span className="flex items-center gap-1 text-xs text-subtle">
-                      <Calendar size={11} />
-                      {formatDate(activity.date)}
-                    </span>
-                  </div>
-                  {activity.description && (
-                    <p className="mt-1.5 truncate text-xs text-muted-foreground">
-                      {activity.description}
-                    </p>
-                  )}
-                </div>
-              </Link>
+                </Link>
               )
             })}
           </div>

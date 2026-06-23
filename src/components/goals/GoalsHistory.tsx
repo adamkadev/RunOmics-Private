@@ -1,6 +1,7 @@
 import { History, CheckCircle2, XCircle } from 'lucide-react'
 import type { YearOutcome } from '@/application/usecases/GetGoalsData'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { STATUS } from '@/lib/statusColors'
 import { t } from '@/i18n'
 
 function OutcomeBadge({ achieved }: { achieved: boolean }) {
@@ -8,7 +9,7 @@ function OutcomeBadge({ achieved }: { achieved: boolean }) {
     <span
       className={`flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
         achieved
-          ? 'bg-accent-subtle text-accent-text'
+          ? STATUS.success.badge
           : 'bg-orange-50 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400'
       }`}
     >
@@ -24,7 +25,7 @@ export function GoalsHistory({ history }: { history: YearOutcome[] }) {
   return (
     <section className="space-y-3">
       <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-        <History size={14} className="text-accent-text" />
+        <History size={14} className="text-subtle" />
         {t.goals.history.title}
       </h2>
       <div className="space-y-2">

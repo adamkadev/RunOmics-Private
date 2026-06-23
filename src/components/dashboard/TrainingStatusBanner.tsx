@@ -3,12 +3,13 @@ import { t } from '@/i18n'
 import type { TrainingStatus, TrainingStatusType, LoadTrend } from '@/application/usecases/GetTrainingStatus'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { StatusPill, type StatusTone } from '@/components/ui/StatusPill'
+import { STATUS } from '@/lib/statusColors'
 
 const STATUS_STYLE: Record<TrainingStatusType, { dot: string; badge: string; text: string }> = {
   productive: {
-    dot:   'bg-accent',
-    badge: 'bg-accent-subtle text-accent-text',
-    text:  'text-accent-text',
+    dot:   STATUS.success.dot,
+    badge: STATUS.success.badge,
+    text:  STATUS.success.text,
   },
   fresh: {
     dot:   'bg-blue-500',
@@ -33,7 +34,7 @@ const STATUS_STYLE: Record<TrainingStatusType, { dot: string; badge: string; tex
 }
 
 const TREND_TONE: Record<LoadTrend, StatusTone> = {
-  building:    'accent',
+  building:    'emerald',
   maintaining: 'zinc',
   tapering:    'blue',
   detraining:  'zinc',
@@ -58,7 +59,7 @@ export function TrainingStatusBanner({ status }: { status: TrainingStatus }) {
   const formValue = `${tsbSign}${status.tsb}`
   // C5 (validated PO, rule frozen): negative Form is a warning (amber),
   // positive/zero Form is healthy (accent). No other gradations.
-  const formClass = status.tsb < 0 ? 'text-[#f0a500]' : 'text-accent-text'
+  const formClass = status.tsb < 0 ? 'text-[#f0a500]' : STATUS.success.text
 
   return (
     <GlassSurface variant="card" className="rounded-[22px] p-5">

@@ -1,7 +1,5 @@
-import Link from 'next/link'
 import { Footprints } from 'lucide-react'
 import type { ShoeStats } from '@/application/usecases/GetShoeStats'
-import { formatDate } from '@/lib/formatters'
 import { Badge } from '@/components/ui/Card'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { BrandIcon } from '@/components/shoes/BrandIcon'
@@ -11,13 +9,13 @@ import { t } from '@/i18n'
 function wearBarClass(pct: number): string {
   if (pct >= 90) return 'bg-red-500'
   if (pct >= 70) return 'bg-amber-400'
-  return 'bg-accent'
+  return 'bg-emerald-500'
 }
 
 function wearTextClass(pct: number): string {
   if (pct >= 90) return 'text-red-600 dark:text-red-400'
   if (pct >= 70) return 'text-amber-600 dark:text-amber-400'
-  return 'text-accent-text'
+  return 'text-emerald-600 dark:text-emerald-400'
 }
 
 function wearBorderClass(pct: number): string {
@@ -28,17 +26,27 @@ function wearBorderClass(pct: number): string {
 
 function wearAlertBadge(pct: number): { label: string; className: string } | null {
   if (pct >= 90) return { label: t.shoes.criticalBadge, className: 'bg-red-500/15 text-red-600 dark:text-red-400' }
-  if (pct >= 70) return { label: t.shoes.alertBadge, className: 'bg-amber-400/15 text-amber-600 dark:text-amber-400' }
+  if (pct >= 70) return { label: t.shoes.alertBadge,    className: 'bg-amber-400/15 text-amber-600 dark:text-amber-400' }
   return null
+}
+
+// Compact date: "Jun 16" (current year) or "Jan '25" (past year).
+function formatShoeDate(isoDate: string): string {
+  const d = new Date(isoDate + 'T00:00:00')
+  const currentYear = new Date().getFullYear()
+  return d.toLocaleDateString('en-US', d.getFullYear() === currentYear
+    ? { month: 'short', day: 'numeric' }
+    : { month: 'short', year: '2-digit' }
+  )
 }
 
 function ShoeCard({ shoe }: { shoe: ShoeStats }) {
   const alertBadge = !shoe.retired ? wearAlertBadge(shoe.wearPercent) : null
+
   return (
-    <Link
-      href={`/shoes/${shoe.gearId}`}
+    <div
       className={cn(
-        'glass-card rounded-[20px] p-5 transition-shadow hover:shadow-md',
+        'glass-card rounded-[20px] p-5',
         shoe.retired && 'opacity-65',
         !shoe.retired && wearBorderClass(shoe.wearPercent)
       )}
@@ -48,9 +56,6 @@ function ShoeCard({ shoe }: { shoe: ShoeStats }) {
           <div className="flex items-center gap-2">
             <BrandIcon brand={shoe.brand} size={14} />
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{shoe.brand}</p>
-            {shoe.retired && (
-              <Badge className="bg-foreground/[0.08] text-muted-foreground">{t.shoes.retired}</Badge>
-            )}
             {alertBadge && <Badge className={alertBadge.className}>{alertBadge.label}</Badge>}
           </div>
           <h3 className="text-base font-bold text-foreground">{shoe.name}</h3>
@@ -62,24 +67,34 @@ function ShoeCard({ shoe }: { shoe: ShoeStats }) {
         )}
       </div>
 
-      {!shoe.retired && (
-        <div className="h-[5px] overflow-hidden rounded-full bg-foreground/[0.08]">
-          <div
-            className={`h-full rounded-full transition-all ${wearBarClass(shoe.wearPercent)}`}
-            style={{ width: `${shoe.wearPercent}%` }}
-          />
+      {shoe.retired ? (
+        <div className="flex items-center justify-between text-xs text-subtle">
+          <span className="font-medium text-foreground">{Math.round(shoe.totalKm)} km</span>
+          <span className="flex items-center gap-1.5">
+            <span className="text-muted-foreground">{t.shoes.retired}</span>
+            {shoe.lastUsedDate && (
+              <span>{formatShoeDate(shoe.lastUsedDate)}</span>
+            )}
+          </span>
         </div>
+      ) : (
+        <>
+          <div className="h-[5px] overflow-hidden rounded-full bg-foreground/[0.08]">
+            <div
+              className={`h-full rounded-full transition-all ${wearBarClass(shoe.wearPercent)}`}
+              style={{ width: `${shoe.wearPercent}%` }}
+            />
+          </div>
+          <div className="mt-2.5 grid grid-cols-3 gap-1 text-xs text-subtle">
+            <span>{Math.round(shoe.totalKm)} / {shoe.maxKm} km</span>
+            <span className="text-center">{t.shoes.sessions(shoe.sessionCount)}</span>
+            <span className="text-right">
+              {shoe.lastUsedDate ? formatShoeDate(shoe.lastUsedDate) : '-'}
+            </span>
+          </div>
+        </>
       )}
-
-      <div className="mt-2 flex items-center justify-between text-xs text-subtle">
-        <span>{t.shoes.kmOf(shoe.totalKm, shoe.maxKm)}</span>
-        <span>{t.shoes.sessions(shoe.sessionCount)}</span>
-      </div>
-
-      <p className="mt-3 text-xs text-muted-foreground">
-        {shoe.lastUsedDate ? t.shoes.lastRun(formatDate(shoe.lastUsedDate)) : t.shoes.neverUsed}
-      </p>
-    </Link>
+    </div>
   )
 }
 

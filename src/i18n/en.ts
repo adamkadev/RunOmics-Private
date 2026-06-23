@@ -115,6 +115,7 @@ export const en = {
       title: 'Appearance',
       themeLabel: 'Theme',
       light: 'Light',
+      auto: 'Auto',
       dark: 'Dark',
       auroraNote: 'The aurora adapts to the selected accent.',
     },
@@ -216,21 +217,28 @@ export const en = {
       syncMethod: 'Synced manually via export script',
     },
     dataExport: {
-      title: 'Export data',
-      subtitle: 'Download your training data for use in other tools.',
-      csv: 'Export activities (CSV)',
-      json: 'Export full data (JSON)',
+      csv: 'Export activities (.csv)',
       exporting: 'Exporting...',
     },
     notifications: {
       title: 'Push notifications',
-      subtitle: 'Get a reminder for your weekly goal and an alert when a new PR is detected.',
-      enabled: 'Notifications are enabled on this device.',
-      denied: 'Notifications are blocked for this site - allow them in your browser settings to enable.',
+      denied: 'Notifications are blocked - allow them in your browser settings.',
       unsupported: 'Push notifications are not supported in this browser.',
-      success: 'Notifications enabled.',
-      disabled: 'Notifications disabled on this device.',
       error: 'Could not update notification settings, please retry.',
+      types: {
+        training: {
+          title: 'Training reminders',
+          subtitle: 'Weekly check-in on your distance goal.',
+        },
+        shoes: {
+          title: 'Shoe wear alerts',
+          subtitle: 'Warning at 70% and 90% wear.',
+        },
+        races: {
+          title: 'Race predictions',
+          subtitle: 'Automatic detection of new potential PR.',
+        },
+      },
     },
   },
 
@@ -733,9 +741,6 @@ export const en = {
         on_track: 'On track',
         behind: 'Behind',
       },
-      projected: (km: number) => `Projected ${km} km`,
-      aheadBy: (km: number) => `+${km} km vs goal`,
-      behindBy: (km: number) => `-${km} km vs goal`,
       rate: (current: number, needed: number) => `${current} km/wk pace · ${needed} km/wk needed`,
     },
     monthlyGoal: {
@@ -767,9 +772,9 @@ export const en = {
   criticalBadge: 'Critical',
     wearAlert: (name: string, totalKm: number, alertThresholdKm: number) => `${name} has ${totalKm} km - past its ${alertThresholdKm} km alert threshold`,
     summary: {
-      totalDistance: 'Total distance',
-      activePairs: 'Active pairs',
-      sessions: 'Sessions logged',
+      totalDistance: 'Total km',
+      activePairs: 'Active',
+      sessions: 'Sessions',
     },
     detail: {
       back: 'Shoes',
@@ -845,10 +850,10 @@ export const en = {
   },
 
   racePredictions: {
-    title: 'Race Predictions',
+    title: 'Predictions (Riegel)',
     efforts: {
       '1k': '1K',
-      '1mile': '1 Mile',
+      '1mile': '1M',
       '5k': '5K',
       '10k': '10K',
       half: 'Half',
@@ -857,7 +862,6 @@ export const en = {
     from: (source: string) => `from ${source}`,
     beatBy: (time: string) => `✓ Beat by ${time}`,
     pbUpside: (time: string) => `PB -${time}`,
-    footnote: 'Riegel formula · t₂ = t₁ × (d₂/d₁)^1.06',
   },
 
   trainingZones: {

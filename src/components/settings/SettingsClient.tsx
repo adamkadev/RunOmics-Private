@@ -10,7 +10,6 @@ import { GlassSurface } from '@/components/ui/GlassSurface'
 import { AccentPicker } from './AccentPicker'
 import { ThemeSegmented } from './ThemeSegmented'
 import { DataSourceInfo } from './DataSourceInfo'
-import { DataExportForm } from './DataExportForm'
 import { NotificationsForm } from './NotificationsForm'
 
 const OWNER_EMAIL = process.env.NEXT_PUBLIC_OWNER_EMAIL ?? ''
@@ -95,7 +94,6 @@ export function SettingsClient() {
 
       <NotificationsForm />
       <DataSourceInfo />
-      <DataExportForm />
 
       <button
         onClick={handleSignOut}

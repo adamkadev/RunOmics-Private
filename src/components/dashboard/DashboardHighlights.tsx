@@ -74,7 +74,7 @@ export function DashboardHighlights({ record, pbAlerts, shoes, nextRace }: Props
       href: '/goals',
       Icon: Flag,
       tint: TINT.race,
-      label: `${t.goals.daysUntil(daysUntil(nextRace.date))}`,
+      label: `D-${daysUntil(nextRace.date)}`,
     })
   }
 

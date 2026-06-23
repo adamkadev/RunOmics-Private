@@ -3,10 +3,11 @@ import { cn } from '@/lib/utils'
 import type { ConsistencyScore, ConsistencyRating } from '@/application/usecases/GetConsistencyScore'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { StatusPill, type StatusTone } from '@/components/ui/StatusPill'
+import { STATUS } from '@/lib/statusColors'
 import { t } from '@/i18n'
 
 const RATING_STYLE: Record<ConsistencyRating, { tone: StatusTone; text: string }> = {
-  excellent: { tone: 'accent', text: 'text-accent-text' },
+  excellent: { tone: 'emerald', text: STATUS.success.text },
   good:      { tone: 'blue',   text: 'text-blue-600 dark:text-blue-400' },
   fair:      { tone: 'amber',  text: 'text-amber-600 dark:text-amber-400' },
   low:       { tone: 'zinc',   text: 'text-zinc-500' },

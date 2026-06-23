@@ -2,6 +2,7 @@ import { TrendingUp } from 'lucide-react'
 import type { RecordEntry } from '@/application/usecases/GetRecords'
 import { formatDuration, formatPace } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { STATUS } from '@/lib/statusColors'
 import { t } from '@/i18n'
 
 const DIST_KM: Record<string, number> = {
@@ -66,7 +67,7 @@ export function RacePredictions({ records }: Props) {
   return (
     <section className="space-y-3">
       <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-        <TrendingUp size={14} className="text-emerald-500 dark:text-emerald-400" />
+        <TrendingUp size={14} className="text-violet-500 dark:text-violet-400" />
         {t.racePredictions.title}
       </h2>
 
@@ -76,11 +77,11 @@ export function RacePredictions({ records }: Props) {
             <GlassSurface key={key} variant="card" className="rounded-2xl p-3">
               <p className="text-xs font-semibold text-subtle">{label}</p>
               <p className="mt-0.5 text-lg font-bold leading-tight tracking-tight text-foreground">
-                ~{formatDuration(predicted!)}
+                {formatDuration(predicted!)}
               </p>
               <p className="text-xs text-subtle">{formatPace(Math.round(predicted! / km))}</p>
               {actual?.seconds != null && (
-                <p className="mt-0.5 text-xs font-medium text-accent-text">
+                <p className={`mt-0.5 text-xs font-medium ${STATUS.success.text}`}>
                   {actual.seconds <= predicted!
                     ? t.racePredictions.beatBy(formatDuration(predicted! - actual.seconds))
                     : t.racePredictions.pbUpside(formatDuration(actual.seconds - predicted!))}
@@ -90,8 +91,6 @@ export function RacePredictions({ records }: Props) {
           )
         })}
       </div>
-
-      <p className="text-xs text-subtle">{t.racePredictions.footnote}</p>
     </section>
   )
 }

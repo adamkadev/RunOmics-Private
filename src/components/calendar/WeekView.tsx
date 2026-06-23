@@ -8,6 +8,7 @@ import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ActivitySheet } from './ActivitySheet'
 import { addDays, isoDate } from '@/lib/calendarDate'
 import { formatDate } from '@/lib/formatters'
+import { STATUS } from '@/lib/statusColors'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -76,7 +77,7 @@ export function WeekView({ weekStart, byDate, today }: Props) {
                 <div
                   className={cn(
                     'flex h-7 w-7 items-center justify-center rounded-[8px] border',
-                    completed && 'border-accent/30 bg-accent-subtle',
+                    completed && 'border-emerald-500/30 bg-emerald-50 dark:bg-emerald-900/20',
                     !completed && !isToday && 'border-foreground/[0.07] bg-foreground/[0.04]',
                     !completed && isToday && 'animate-pulse border-[1.5px]'
                   )}
@@ -87,7 +88,7 @@ export function WeekView({ weekStart, byDate, today }: Props) {
                   }
                 >
                   {completed ? (
-                    <Check size={12} strokeWidth={2.5} className="text-accent-text" />
+                    <Check size={12} strokeWidth={2.5} className={STATUS.success.text} />
                   ) : isToday ? (
                     <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: TODAY_COLOR }} />
                   ) : (

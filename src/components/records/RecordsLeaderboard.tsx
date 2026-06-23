@@ -12,16 +12,15 @@ import { GlassSurface } from '@/components/ui/GlassSurface'
 import { Pill } from '@/components/ui/Pill'
 import { t } from '@/i18n'
 
-const PILL_ORDER = ['1k', '1mile', '5k', '10k', 'half', 'marathon', 'longest']
+const PILL_ORDER = ['1k', '1mile', '5k', '10k', 'half', 'marathon']
 
 const LABELS: Record<string, string> = {
   '1k': '1K',
-  '1mile': '1 Mile',
+  '1mile': '1M',
   '5k': '5K',
   '10k': '10K',
   half: 'Half',
   marathon: 'Marathon',
-  longest: 'Longest',
 }
 
 function shortDate(iso: string): string {
@@ -47,7 +46,6 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null }
   const [selected, setSelected] = useState('all')
 
   const isAll = selected === 'all'
-  const isLongest = selected === 'longest'
   const entries = isAll ? [] : (topEfforts[selected] ?? [])
 
   if (!records.some((r) => r.seconds !== null)) return null
@@ -76,7 +74,7 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null }
       {isAll ? (
         <>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            {records.map((r, i, arr) => {
+            {records.filter((r) => r.key !== 'longest').map((r, i, arr) => {
               const spanFull = i === arr.length - 1 && arr.length % 2 !== 0
 
               if (r.seconds === null) {
@@ -105,7 +103,7 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null }
                           {t.records.mostRecent}
                         </Badge>
                       )}
-                      {r.official && <span className="text-xs text-amber-500">★</span>}
+                      {r.official && <span className="text-base text-amber-500">★</span>}
                     </div>
                   </div>
                   <p className="text-[28px] font-extrabold tracking-tight text-foreground">
@@ -137,7 +135,6 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null }
               )
             })}
           </div>
-          <p className="text-xs text-subtle">{t.records.footnote}</p>
         </>
       ) : (
         <GlassSurface variant="card" className="overflow-hidden rounded-[22px]">
@@ -148,7 +145,7 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null }
                   {t.records.leaderboard.rank}
                 </th>
                 <th className="py-2 px-2 text-left text-xs font-semibold text-subtle">
-                  {isLongest ? t.records.leaderboard.dist : t.records.leaderboard.time}
+                  {t.records.leaderboard.time}
                 </th>
                 <th className="py-2 px-2 text-left text-xs font-semibold text-subtle">
                   {t.records.leaderboard.pace}
@@ -168,7 +165,7 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null }
                   <td className={cn('py-2.5 pl-4 pr-2 font-mono text-xs', rankClass(i))}>{i + 1}</td>
                   <td className="py-2.5 px-2">
                     <div className="font-bold text-foreground">
-                      {isLongest ? formatDistance(e.distanceKm) : formatDuration(e.seconds)}
+                      {formatDuration(e.seconds)}
                     </div>
                     {e.eventName && (
                       <div className="max-w-[140px] truncate text-xs text-subtle" title={e.eventName}>

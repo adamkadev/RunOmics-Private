@@ -1,5 +1,3 @@
-import fs from 'fs'
-import path from 'path'
 import type { Activity } from '@/domain/activity/types'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import {

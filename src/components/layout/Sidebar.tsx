@@ -153,8 +153,8 @@ export function Sidebar() {
                 className={cn(
                   'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                   active
-                    ? 'bg-accent-subtle text-accent-text'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    ? 'bg-foreground/[0.14] text-foreground font-semibold'
+                    : 'text-muted-foreground hover:bg-foreground/[0.07] hover:text-foreground'
                 )}
               >
                 <Icon size={16} />

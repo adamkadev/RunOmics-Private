@@ -10,8 +10,8 @@ type PillVariant = 'active' | 'neutral' | 'highlight'
 // foreground-tinted overlay so the chip reads as glass on top of a card
 // while still adapting automatically between light and dark.
 const VARIANT_CLASS: Record<PillVariant, string> = {
-  active: 'bg-accent text-accent-foreground font-semibold',
-  neutral: 'border border-foreground/[0.14] bg-foreground/[0.06] text-foreground/70 hover:bg-foreground/[0.1]',
+  active:    'border border-foreground/[0.20] bg-foreground/[0.14] text-foreground font-semibold',
+  neutral:   'border border-foreground/[0.12] bg-foreground/[0.06] text-foreground/60 hover:bg-foreground/[0.10]',
   highlight: 'border font-semibold',
 }
 

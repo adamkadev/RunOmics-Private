@@ -192,8 +192,8 @@ export function ActivityListClient({ activities, prLabelsByActivityId = {} }: Pr
             className={cn(
               'flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border transition-colors active:scale-95',
               searchOpen
-                ? 'border-accent/40 bg-accent-subtle text-accent-text'
-                : 'border-foreground/[0.12] bg-foreground/[0.08] text-foreground/65 hover:bg-foreground/[0.12]'
+                ? 'border-foreground/[0.20] bg-foreground/[0.14] text-foreground'
+                : 'border-foreground/[0.12] bg-foreground/[0.06] text-foreground/60 hover:bg-foreground/[0.10]'
             )}
           >
             {searchOpen ? <X size={18} /> : <Search size={18} />}
@@ -257,8 +257,8 @@ export function ActivityListClient({ activities, prLabelsByActivityId = {} }: Pr
             className={cn(
               'inline-flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-colors',
               compareMode
-                ? 'bg-accent-subtle text-accent-text'
-                : 'border border-border bg-card/60 text-muted-foreground hover:bg-muted'
+                ? 'border border-foreground/[0.20] bg-foreground/[0.14] text-foreground'
+                : 'border border-foreground/[0.12] bg-foreground/[0.06] text-muted-foreground hover:bg-foreground/[0.10]'
             )}
           >
             {compareMode ? <X size={13} /> : <GitCompare size={13} />}
