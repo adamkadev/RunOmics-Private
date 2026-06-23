@@ -1,9 +1,9 @@
 import type { ShoeStats } from '@/application/usecases/GetShoeStats'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 import { round } from '@/lib/math'
 import { t } from '@/i18n'
-import { cardClass } from '../ui/Card'
 
 export function ShoesSummary({ shoes }: { shoes: ShoeStats[] }) {
   const s = t.shoes.summary
@@ -32,8 +32,8 @@ export function ShoesSummary({ shoes }: { shoes: ShoeStats[] }) {
   ]
 
   return (
-    <div className={cardClass({ overflow: true, padding: 'none' })}> 
-      <MetricGrid metrics={metrics} className="grid-cols-3" />
-    </div>
+    <GlassSurface variant="card" className="overflow-hidden rounded-[22px]">
+      <MetricGrid metrics={metrics} className="grid-cols-3 px-4 py-4" />
+    </GlassSurface>
   )
 }

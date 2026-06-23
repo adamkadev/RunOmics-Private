@@ -2,7 +2,8 @@ import Link from 'next/link'
 import { Footprints } from 'lucide-react'
 import type { ShoeStats } from '@/application/usecases/GetShoeStats'
 import { formatDate } from '@/lib/formatters'
-import { cardClass, Badge, Card } from '@/components/ui/Card'
+import { Badge } from '@/components/ui/Card'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 import { BrandIcon } from '@/components/shoes/BrandIcon'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -23,7 +24,7 @@ function ShoeCard({ shoe }: { shoe: ShoeStats }) {
   return (
     <Link
       href={`/shoes/${shoe.gearId}`}
-      className={cardClass({ padding: 'lg', clickable: true, className: cn(shoe.retired && 'opacity-60') })}
+      className={cn('glass-card rounded-[20px] p-5 transition-shadow hover:shadow-md', shoe.retired && 'opacity-65')}
     >
       <div className="mb-3 flex items-start justify-between gap-2">
         <div>
@@ -31,22 +32,26 @@ function ShoeCard({ shoe }: { shoe: ShoeStats }) {
             <BrandIcon brand={shoe.brand} size={14} />
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{shoe.brand}</p>
             {shoe.retired && (
-              <Badge className="bg-muted text-muted-foreground">{t.shoes.retired}</Badge>
+              <Badge className="bg-foreground/[0.08] text-muted-foreground">{t.shoes.retired}</Badge>
             )}
           </div>
           <h3 className="text-base font-bold text-foreground">{shoe.name}</h3>
         </div>
-        <span className={`text-sm font-semibold ${wearTextClass(shoe.wearPercent)}`}>
-          {shoe.wearPercent}%
-        </span>
+        {!shoe.retired && (
+          <span className={`text-sm font-semibold ${wearTextClass(shoe.wearPercent)}`}>
+            {shoe.wearPercent}%
+          </span>
+        )}
       </div>
 
-      <div className="h-3 overflow-hidden rounded-full bg-muted">
-        <div
-          className={`h-full rounded-full transition-all ${wearBarClass(shoe.wearPercent)}`}
-          style={{ width: `${shoe.wearPercent}%` }}
-        />
-      </div>
+      {!shoe.retired && (
+        <div className="h-[5px] overflow-hidden rounded-full bg-foreground/[0.08]">
+          <div
+            className={`h-full rounded-full transition-all ${wearBarClass(shoe.wearPercent)}`}
+            style={{ width: `${shoe.wearPercent}%` }}
+          />
+        </div>
+      )}
 
       <div className="mt-2 flex items-center justify-between text-xs text-subtle">
         <span>{t.shoes.kmOf(shoe.totalKm, shoe.maxKm)}</span>
@@ -63,10 +68,10 @@ function ShoeCard({ shoe }: { shoe: ShoeStats }) {
 export function ShoesGrid({ shoes }: { shoes: ShoeStats[] }) {
   if (shoes.length === 0) {
     return (
-      <Card padding="lg" className="flex flex-col items-center gap-2 py-10 text-center">
+      <GlassSurface variant="card" className="flex flex-col items-center gap-2 rounded-[20px] border-dashed py-10 text-center">
         <Footprints size={24} className="text-subtle" />
         <p className="text-sm text-subtle">{t.shoes.neverUsed}</p>
-      </Card>
+      </GlassSurface>
     )
   }
 
