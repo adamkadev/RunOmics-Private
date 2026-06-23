@@ -16,8 +16,6 @@ import { ActivityHeatmap } from '@/components/dashboard/ActivityHeatmap'
 import { TrainingStatusBanner } from '@/components/dashboard/TrainingStatusBanner'
 import { ConsistencyCard } from '@/components/dashboard/ConsistencyCard'
 import { DashboardHighlights } from '@/components/dashboard/DashboardHighlights'
-import { DashboardFocusProvider } from '@/components/dashboard/DashboardFocusContext'
-import { DashboardWidgets, type DashboardWidget } from '@/components/dashboard/DashboardWidgets'
 import { t } from '@/i18n'
 
 export const revalidate = 60
@@ -37,60 +35,37 @@ export default async function DashboardPage() {
   const shoes = getShoeStats()
   const nextRace = await getNextRace()
 
-  const trainingOverviewWidget: DashboardWidget = {
-    id: 'trainingOverview',
-    element: (
-      <div className={trainingStatus && consistencyScore ? 'grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]' : undefined}>
-        {trainingStatus && <TrainingStatusBanner status={trainingStatus} />}
-        {consistencyScore && <ConsistencyCard data={consistencyScore} />}
-      </div>
-    ),
-  }
-
-  const widgets: DashboardWidget[] = [
-    {
-      id: 'stats',
-      element: <StatsGrid weeks={data.weeks} currentStreak={data.currentStreak} vo2max={vo2max} weekLoad={weekLoad} />,
-    },
-    ...(trainingStatus || consistencyScore ? [trainingOverviewWidget] : []),
-    {
-      id: 'charts',
-      element: (
-        <DashboardCharts
-          weeklyVolume={data.weeklyVolume}
-          currentWeek={data.currentWeek.weekNumber}
-          typeDistribution={data.typeDistribution}
-          trainingLoad={trainingLoad}
-        />
-      ),
-    },
-    { id: 'heatmap', element: <ActivityHeatmap days={heatmapDays} /> },
-    {
-      id: 'recentActivities',
-      element: <RecentActivities activities={data.recentActivities} prLabelsByActivityId={prLabelsByActivityId} />,
-    },
-  ]
-
   return (
-    <DashboardFocusProvider>
-      <div className="space-y-6">
-        <div className="space-y-3">
-          <h1 className="text-display text-foreground">{t.pages.dashboard.title}</h1>
-          <DashboardHighlights
-            record={mostRecentRecord}
-            pbAlerts={pbAlerts}
-            shoes={shoes}
-            nextRace={nextRace}
-          />
-        </div>
-
-        {/* NEED TO REMOVE EDITION MODE FOR SOMETHING MORE DISCREET SEE README*/}
-        {/* <div className="flex justify-end">
-          <DashboardFocusBar />
-        </div> */}
-
-        <DashboardWidgets widgets={widgets} />
+    <div className="space-y-6">
+      <div className="space-y-3">
+        <h1 className="text-display text-foreground">{t.pages.dashboard.title}</h1>
+        <DashboardHighlights
+          record={mostRecentRecord}
+          pbAlerts={pbAlerts}
+          shoes={shoes}
+          nextRace={nextRace}
+        />
       </div>
-    </DashboardFocusProvider>
+
+      <StatsGrid weeks={data.weeks} currentStreak={data.currentStreak} vo2max={vo2max} weekLoad={weekLoad} />
+
+      {(trainingStatus || consistencyScore) && (
+        <div className={trainingStatus && consistencyScore ? 'grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]' : undefined}>
+          {trainingStatus && <TrainingStatusBanner status={trainingStatus} />}
+          {consistencyScore && <ConsistencyCard data={consistencyScore} />}
+        </div>
+      )}
+
+      <DashboardCharts
+        weeklyVolume={data.weeklyVolume}
+        currentWeek={data.currentWeek.weekNumber}
+        typeDistribution={data.typeDistribution}
+        trainingLoad={trainingLoad}
+      />
+
+      <ActivityHeatmap days={heatmapDays} />
+
+      <RecentActivities activities={data.recentActivities} prLabelsByActivityId={prLabelsByActivityId} />
+    </div>
   )
 }
