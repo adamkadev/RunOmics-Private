@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Ban, Check, Copy, Download, ImagePlus, Map, Moon, Route, Share2, Sun, X } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import type { Activity } from '@/domain/activity/types'
 import {
   MAP_BOX,
@@ -17,7 +18,46 @@ import {
 import { captureRouteMapSnapshot } from '@/lib/routeMapSnapshot'
 import { ACCENT_IDS, ACCENT_SWATCHES, DEFAULT_ACCENT, isAccentId, type AccentId } from '@/lib/accent'
 import { cn } from '@/lib/utils'
+import { GlassSurface } from '@/components/ui/GlassSurface'
+import { Button } from '@/components/ui/Button'
 import { t } from '@/i18n'
+
+interface SegmentedOption<T extends string> {
+  value: T
+  label: string
+  icon: LucideIcon
+  disabled?: boolean
+}
+
+function SegmentedGlass<T extends string>({
+  value,
+  onChange,
+  options,
+}: {
+  value: T
+  onChange: (v: T) => void
+  options: SegmentedOption<T>[]
+}) {
+  return (
+    <div className="inline-flex rounded-full border border-foreground/10 bg-foreground/[0.04] p-1">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          type="button"
+          onClick={() => onChange(opt.value)}
+          disabled={opt.disabled}
+          className={cn(
+            'flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40',
+            value === opt.value ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'
+          )}
+        >
+          <opt.icon size={12} />
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  )
+}
 
 interface Props {
   activity: Activity
@@ -239,8 +279,9 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
           <div ref={scrollRef} onScroll={handleScroll} className="flex snap-x snap-mandatory overflow-x-auto">
             {SHARE_STYLES.map((style, i) => (
               <div key={style} className="flex w-full shrink-0 snap-center items-center justify-center p-4">
-                <div
-                  className={cn('relative aspect-[9/16] max-h-[60vh] max-w-full overflow-hidden rounded-xl', style === 'photo' ? 'bg-card' : 'bg-muted')}
+                <GlassSurface
+                  variant="card"
+                  className={cn('relative aspect-[9/16] max-h-[60vh] max-w-full overflow-hidden rounded-xl', style === 'photo' && 'bg-card')}
                   style={
                     style === 'photo'
                       ? {
@@ -267,7 +308,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
                       {t.activity.shareCard.choosePhoto}
                     </button>
                   )}
-                </div>
+                </GlassSurface>
               </div>
             ))}
           </div>
@@ -283,110 +324,79 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             ))}
           </div>
 
-          <div className="flex items-center justify-center gap-2 px-3 pb-2">
-            <span className="mr-1 text-xs font-medium text-subtle">{t.activity.shareCard.colorLabel}</span>
-            {ACCENT_IDS.map((id) => (
-              <button
-                key={id}
-                onClick={() => setAccent(id)}
-                aria-label={t.settings.accent.options[id].label}
-                style={{ backgroundColor: ACCENT_SWATCHES[id] }}
-                className={cn(
-                  'h-6 w-6 rounded-full ring-2 ring-offset-2 ring-offset-card transition-shadow',
-                  accent === id ? 'ring-foreground' : 'ring-transparent'
-                )}
+          <GlassSurface variant="card" className="mx-3 mb-3 flex flex-col gap-3 rounded-2xl p-3.5">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[11px] font-medium text-subtle">{t.activity.shareCard.colorLabel}</span>
+              <div className="flex gap-2">
+                {ACCENT_IDS.map((id) => {
+                  const color = ACCENT_SWATCHES[id]
+                  const active = accent === id
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => setAccent(id)}
+                      aria-label={t.settings.accent.options[id].label}
+                      aria-pressed={active}
+                      style={{
+                        backgroundColor: color,
+                        boxShadow: active ? `0 0 0 2px var(--glass-bg-sheet), 0 0 0 4px ${color}` : 'none',
+                      }}
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-shadow active:scale-90"
+                    >
+                      {active && <Check size={13} className="text-white drop-shadow-[0_1px_1.5px_rgba(0,0,0,0.6)]" />}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[11px] font-medium text-subtle">{t.activity.shareCard.theme.label}</span>
+              <SegmentedGlass
+                value={theme}
+                onChange={setTheme}
+                options={[
+                  { value: 'light', label: t.activity.shareCard.theme.light, icon: Sun },
+                  { value: 'dark', label: t.activity.shareCard.theme.dark, icon: Moon },
+                ]}
               />
-            ))}
-          </div>
+            </div>
 
-          <div className="flex items-center justify-center gap-1.5 px-3 pb-2">
-            <span className="mr-1 text-xs font-medium text-subtle">{t.activity.shareCard.theme.label}</span>
-            <button
-              onClick={() => setTheme('light')}
-              className={cn(
-                'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
-                theme === 'light' ? 'border-accent bg-accent text-accent-foreground' : 'border-border bg-card text-foreground hover:bg-muted'
-              )}
-            >
-              <Sun size={13} />
-              {t.activity.shareCard.theme.light}
-            </button>
-            <button
-              onClick={() => setTheme('dark')}
-              className={cn(
-                'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
-                theme === 'dark' ? 'border-accent bg-accent text-accent-foreground' : 'border-border bg-card text-foreground hover:bg-muted'
-              )}
-            >
-              <Moon size={13} />
-              {t.activity.shareCard.theme.dark}
-            </button>
-          </div>
-
-          <div className="flex items-center justify-center gap-1.5 px-3 pb-1">
-            <span className="mr-1 text-xs font-medium text-subtle">{t.activity.shareCard.mapMode.label}</span>
-            <button
-              onClick={() => setMapMode('run')}
-              className={cn(
-                'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
-                mapMode === 'run' ? 'border-accent bg-accent text-accent-foreground' : 'border-border bg-card text-foreground hover:bg-muted'
-              )}
-            >
-              <Route size={13} />
-              {t.activity.shareCard.mapMode.run}
-            </button>
-            <button
-              onClick={() => setMapMode('map')}
-              disabled={!canUseMap}
-              className={cn(
-                'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40',
-                mapMode === 'map' ? 'border-accent bg-accent text-accent-foreground' : 'border-border bg-card text-foreground hover:bg-muted'
-              )}
-            >
-              <Map size={13} />
-              {t.activity.shareCard.mapMode.map}
-            </button>
-            <button
-              onClick={() => setMapMode('none')}
-              className={cn(
-                'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
-                mapMode === 'none' ? 'border-accent bg-accent text-accent-foreground' : 'border-border bg-card text-foreground hover:bg-muted'
-              )}
-            >
-              <Ban size={13} />
-              {t.activity.shareCard.mapMode.none}
-            </button>
-          </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[11px] font-medium text-subtle">{t.activity.shareCard.mapMode.label}</span>
+              <SegmentedGlass
+                value={mapMode}
+                onChange={setMapMode}
+                options={[
+                  { value: 'run', label: t.activity.shareCard.mapMode.run, icon: Route },
+                  { value: 'map', label: t.activity.shareCard.mapMode.map, icon: Map, disabled: !canUseMap },
+                  { value: 'none', label: t.activity.shareCard.mapMode.none, icon: Ban },
+                ]}
+              />
+            </div>
+          </GlassSurface>
         </div>
 
-        <div className="flex shrink-0 gap-2 border-t border-border/60 p-3">
+        <div className="grid shrink-0 grid-cols-3 gap-2 border-t border-border/60 p-3">
           {canShareFiles && (
-            <button
-              onClick={handleShare}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-accent-foreground shadow-lg shadow-accent/25 transition-colors hover:bg-accent/90"
-            >
+            <Button onClick={handleShare} className="w-full">
               <Share2 size={15} />
               {t.activity.shareMenu.share}
-            </button>
+            </Button>
           )}
-          <button
-            onClick={handleSave}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-          >
+          <Button variant="secondary" onClick={handleSave} className="w-full">
             <Download size={15} />
             {t.activity.shareMenu.download}
-          </button>
+          </Button>
           {canCopyImage && (
-            <button
+            <Button
+              variant="secondary"
               onClick={handleCopy}
-              className={cn(
-                'flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium transition-colors hover:bg-muted',
-                copyState === 'copied' ? 'text-accent-text' : 'text-foreground'
-              )}
+              className={cn('w-full', copyState === 'copied' && 'text-accent-text')}
             >
               {copyState === 'copied' ? <Check size={15} /> : <Copy size={15} />}
               {copyState === 'copied' ? t.activity.shareMenu.copied : t.activity.shareMenu.copy}
-            </button>
+            </Button>
           )}
         </div>
 

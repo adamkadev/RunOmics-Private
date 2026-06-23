@@ -596,7 +596,7 @@ export const en = {
         photo: 'Photo',
       },
       mapMode: {
-        label: 'Route',
+        label: 'Background',
         run: 'Run',
         map: 'Map',
         none: 'Nothing',
