@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import type { Activity } from '@/domain/activity/types'
+import type { Activity, PlannedWorkout } from '@/domain/activity/types'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { WeekView } from './WeekView'
 import { MonthView } from './MonthView'
@@ -13,11 +13,12 @@ import { t } from '@/i18n'
 
 interface Props {
   activities: Activity[]
+  plannedWorkouts: PlannedWorkout[]
 }
 
 type ViewMode = 'week' | 'month'
 
-export function CalendarClient({ activities }: Props) {
+export function CalendarClient({ activities, plannedWorkouts }: Props) {
   const now = new Date()
   const today = isoDate(now)
   const [mode, setMode] = useState<ViewMode>('week')
@@ -34,6 +35,12 @@ export function CalendarClient({ activities }: Props) {
     }
     return map
   }, [activities])
+
+  const byDatePlanned = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const p of plannedWorkouts) map.set(p.date, p.name)
+    return map
+  }, [plannedWorkouts])
 
   const atPresent =
     mode === 'week'
@@ -118,13 +125,11 @@ export function CalendarClient({ activities }: Props) {
       </div>
 
       {mode === 'week' ? (
-        <WeekView weekStart={weekStart} byDate={byDate} today={today} />
+        <WeekView weekStart={weekStart} byDate={byDate} byDatePlanned={byDatePlanned} today={today} />
       ) : (
-        <MonthView year={year} month={month} byDate={byDate} today={today} />
+        <MonthView year={year} month={month} byDate={byDate} byDatePlanned={byDatePlanned} today={today} />
       )}
 
-      {/* TODO(agenda): once planned-workout sync exists, surface "Planned" /
-          "Missed" states + the quick-add FAB here (deferred - no plan data yet). */}
     </div>
   )
 }

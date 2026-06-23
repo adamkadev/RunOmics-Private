@@ -25,10 +25,11 @@ interface Day {
 interface Props {
   weekStart: Date
   byDate: Map<string, Activity[]>
+  byDatePlanned: Map<string, string>
   today: string
 }
 
-export function WeekView({ weekStart, byDate, today }: Props) {
+export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
   const days: Day[] = Array.from({ length: 7 }, (_, i) => {
     const date = isoDate(addDays(weekStart, i))
     return { date, day: Number(date.slice(8)), acts: byDate.get(date) ?? [] }
@@ -62,6 +63,7 @@ export function WeekView({ weekStart, byDate, today }: Props) {
           {days.map((d) => {
             const isToday = d.date === today
             const completed = d.acts.length > 0
+            const planned = !completed && byDatePlanned.has(d.date)
             const primaryType: ActivityType | null = completed ? d.acts[0].type : null
 
             return (
@@ -78,7 +80,8 @@ export function WeekView({ weekStart, byDate, today }: Props) {
                   className={cn(
                     'flex h-7 w-7 items-center justify-center rounded-[8px] border',
                     completed && 'border-emerald-500/30 bg-emerald-50 dark:bg-emerald-900/20',
-                    !completed && !isToday && 'border-foreground/[0.07] bg-foreground/[0.04]',
+                    planned && 'border-dashed border-accent/50 bg-accent/[0.06]',
+                    !completed && !planned && !isToday && 'border-foreground/[0.07] bg-foreground/[0.04]',
                     !completed && isToday && 'animate-pulse border-[1.5px]'
                   )}
                   style={
@@ -91,6 +94,8 @@ export function WeekView({ weekStart, byDate, today }: Props) {
                     <Check size={12} strokeWidth={2.5} className={STATUS.success.text} />
                   ) : isToday ? (
                     <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: TODAY_COLOR }} />
+                  ) : planned ? (
+                    <span className="h-2 w-2 rounded-full bg-accent/60" />
                   ) : (
                     <span className="text-[11px] text-foreground/20">-</span>
                   )}
@@ -100,7 +105,8 @@ export function WeekView({ weekStart, byDate, today }: Props) {
                   className={cn(
                     'text-[10px]',
                     completed && 'text-foreground/70',
-                    !completed && !isToday && 'text-foreground/30',
+                    planned && 'text-accent-text/70',
+                    !completed && !planned && !isToday && 'text-foreground/30',
                     !completed && isToday && 'font-bold'
                   )}
                   style={!completed && isToday ? { color: TODAY_COLOR } : undefined}
@@ -111,7 +117,11 @@ export function WeekView({ weekStart, byDate, today }: Props) {
                 <div
                   className="h-[3px] w-[18px] rounded-full"
                   style={{
-                    backgroundColor: completed ? ACTIVITY_TYPE_CONFIG[primaryType as ActivityType].dotColor : 'transparent',
+                    backgroundColor: completed
+                      ? ACTIVITY_TYPE_CONFIG[primaryType as ActivityType].dotColor
+                      : planned
+                        ? 'color-mix(in srgb, var(--color-accent) 35%, transparent)'
+                        : 'transparent',
                   }}
                 />
               </button>
@@ -134,7 +144,18 @@ export function WeekView({ weekStart, byDate, today }: Props) {
         </div>
 
         {selected.acts.length === 0 ? (
-          <p className="text-sm text-subtle">{t.calendar.restDay}</p>
+          byDatePlanned.has(selected.date) ? (
+            <div className="rounded-xl border border-dashed border-accent/40 bg-accent/[0.04] px-3 py-2.5">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-accent-text/70">
+                {t.calendar.planned}
+              </p>
+              <p className="mt-0.5 text-sm font-medium text-foreground/80">
+                {byDatePlanned.get(selected.date)}
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-subtle">{t.calendar.restDay}</p>
+          )
         ) : (
           <div className="space-y-2">
             {selected.acts.map((a) => (

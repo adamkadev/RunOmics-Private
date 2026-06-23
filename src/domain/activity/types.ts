@@ -67,6 +67,11 @@ export interface Activity {
   gearId: string | null
 }
 
+export interface PlannedWorkout {
+  date: string
+  name: string
+}
+
 export interface WeeklyVolume {
   week: number
   year: number

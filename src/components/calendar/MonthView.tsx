@@ -12,6 +12,7 @@ interface Props {
   year: number
   month: number
   byDate: Map<string, Activity[]>
+  byDatePlanned: Map<string, string>
   today: string
 }
 
@@ -21,7 +22,7 @@ function monthKey(year: number, month: number): string {
   return `${year}-${String(month + 1).padStart(2, '0')}`
 }
 
-export function MonthView({ year, month, byDate, today }: Props) {
+export function MonthView({ year, month, byDate, byDatePlanned, today }: Props) {
   const { cells, totalKm, sessionCount } = useMemo(() => {
     const firstDay = new Date(year, month, 1)
     const startOffset = (firstDay.getDay() || 7) - 1
@@ -96,6 +97,14 @@ export function MonthView({ year, month, byDate, today }: Props) {
                         </span>
                       </Link>
                     ))}
+                    {cell.acts.length === 0 && byDatePlanned.has(cell.date) && (
+                      <p
+                        className="truncate px-1 py-0.5 text-[10px] italic text-accent-text/60"
+                        title={byDatePlanned.get(cell.date)}
+                      >
+                        {byDatePlanned.get(cell.date)}
+                      </p>
+                    )}
                   </div>
                 </>
               )}

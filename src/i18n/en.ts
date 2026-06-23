@@ -889,6 +889,7 @@ export const en = {
     switcher: { week: 'Week', month: 'Month' },
     weekOf: (label: string) => `Week of ${label}`,
     restDay: 'Rest day',
+    planned: 'Planned',
     viewDetail: 'View detail',
     type: 'Type',
   },

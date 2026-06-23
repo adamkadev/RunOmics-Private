@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 import time
+from datetime import date, timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -129,7 +131,68 @@ def main() -> int:
         else:
             print(f"\nDry run: {added} would be added, {failed} would fail.")
 
+        if not args.dry_run and not args.id:
+            sync_planned_workouts(client)
+
     return 0 if failed == 0 else 2
+
+
+def sync_planned_workouts(client: GarminClient) -> None:
+    today = date.today()
+    start = (today - timedelta(days=7)).isoformat()
+    end = (today + timedelta(days=90)).isoformat()
+
+    print(f"Syncing planned workouts {start} -> {end}…")
+
+    try:
+        schedule = _retry_on_429(lambda: client.get_workout_schedule(start, end))
+    except GarminAPIError as exc:
+        print(f"  Could not fetch workout schedule: {exc}")
+        return
+
+    planned: list[dict] = []
+    seen_workout_ids: dict[str, str] = {}  # workoutId -> name cache
+
+    for item in schedule:
+        scheduled_date = item.get("scheduledDate", "")
+        if not scheduled_date:
+            continue
+
+        # Only include running workouts
+        workout_type_key = (
+            item.get("workoutType", {}).get("workoutTypeKey", "") or
+            item.get("sport", {}).get("sportTypeKey", "")
+        ).lower()
+        if workout_type_key and "running" not in workout_type_key:
+            continue
+
+        workout_id = str(item.get("workoutId", ""))
+
+        # Try to get name from nested workout object first (avoids extra API call)
+        name = item.get("workout", {}).get("workoutName", "")
+
+        if not name and workout_id:
+            if workout_id in seen_workout_ids:
+                name = seen_workout_ids[workout_id]
+            else:
+                try:
+                    detail = _retry_on_429(lambda: client.get_workout_detail(workout_id))
+                    name = detail.get("workoutName", "")
+                    time.sleep(_RATE_LIMIT_PAUSE)
+                except GarminAPIError:
+                    pass
+                seen_workout_ids[workout_id] = name
+
+        if not name:
+            continue
+
+        planned.append({"date": scheduled_date, "name": name})
+
+    planned.sort(key=lambda x: x["date"])
+
+    out_path = Path(__file__).parent.parent / "public" / "data" / "planned_workouts.json"
+    out_path.write_text(json.dumps({"planned": planned}, ensure_ascii=False, indent=2))
+    print(f"  {len(planned)} planned workout(s) written to planned_workouts.json")
 
 
 def _retry_on_429(fn):
