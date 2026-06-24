@@ -11,7 +11,6 @@ export function ThemeSync() {
   useEffect(() => {
     const style = getComputedStyle(document.documentElement)
     const bg = style.getPropertyValue('--background').trim()
-    const card = style.getPropertyValue('--card').trim()
 
     document.documentElement.style.backgroundColor = bg
     document.body.style.backgroundColor = bg
@@ -22,7 +21,7 @@ export function ThemeSync() {
       meta.name = 'theme-color'
       document.head.appendChild(meta)
     }
-    meta.content = card
+    meta.content = bg
   }, [resolvedTheme, accent])
 
   return null
