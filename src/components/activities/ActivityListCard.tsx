@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Footprints, ChevronRight } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import { PrBadge } from './PrBadge'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import type { Activity } from '@/domain/activity/types'
@@ -22,14 +22,10 @@ export function ActivityListCard({ activity: a, prLabels = [] }: Props) {
       className="glass-card block rounded-[20px] px-5 py-[18px] transition-transform duration-[120ms] ease-out active:scale-[0.98]"
     >
       <div className="flex items-center gap-2.5">
-        <span
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] border"
-          style={{
-            backgroundColor: `color-mix(in srgb, ${dotColor} 14%, transparent)`,
-            borderColor: `color-mix(in srgb, ${dotColor} 28%, transparent)`,
-          }}
-        >
-          <Footprints size={15} strokeWidth={2.2} style={{ color: dotColor }} />
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-accent/30 bg-accent/10">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="text-accent">
+            <path d="M13 4a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-5 6l2-2 2 1 3-2M7 17l2-3 3 1 2-2" />
+          </svg>
         </span>
         <span className="flex-1 truncate text-[15px] font-bold text-foreground">{title}</span>
         <ChevronRight size={16} className="shrink-0 text-foreground/30" />

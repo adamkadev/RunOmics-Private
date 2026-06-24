@@ -206,7 +206,7 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
             onClick={() => setSheetPlan(selectedPlan)}
             className="flex w-full items-center gap-3 rounded-xl border border-dashed border-accent/35 bg-accent/[0.04] p-3 text-left transition-colors hover:bg-accent/[0.07]"
           >
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/10">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-accent/30 bg-accent/10">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="text-accent">
                 <path d="M13 4a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-5 6l2-2 2 1 3-2M7 17l2-3 3 1 2-2" />
               </svg>
