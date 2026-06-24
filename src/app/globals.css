@@ -60,18 +60,6 @@
   50%       { opacity: 1;    }
 }
 
-/* ─── Design system tokens ─────────────────────────── */
-:root {
-  --blur-sm:     8px;
-  --blur-md:     18px;
-  --blur-lg:     28px;
-  --saturate:    1.6;
-  --radius-sm:   12px;
-  --radius-md:   18px;
-  --radius-lg:   22px;
-  --radius-pill: 999px;
-}
-
 /* ─── Light tokens — Nature (emerald, default) ─────── */
 :root {
   --shadow-card:       0 1px 3px 0 rgb(0 0 0 / 0.06),
