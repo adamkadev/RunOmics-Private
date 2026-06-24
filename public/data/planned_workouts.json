@@ -1,63 +1,83 @@
 {
   "planned": [
     {
-      "date": "2026-06-17",
-      "name": "40 min footing lent"
-    },
-    {
-      "date": "2026-06-18",
-      "name": "3000m / 2000m / 1000m"
-    },
-    {
-      "date": "2026-06-19",
-      "name": "1h dont 30' actives"
-    },
-    {
-      "date": "2026-06-20",
-      "name": "10 x (1'/1')"
-    },
-    {
-      "date": "2026-06-21",
-      "name": "8km endurance"
-    },
-    {
-      "date": "2026-06-23",
-      "name": "3000m / 2000m /1000m",
-      "type": "Threshold",
-      "distanceM": 11920,
-      "durationSecs": 3775,
+      "date": "2026-06-24",
+      "name": "40 min endurance",
+      "distanceM": 7200,
+      "durationSecs": 2400,
+      "type": "Base",
       "scheduledTime": "18:00"
     },
     {
       "date": "2026-06-24",
       "name": "40 min endurance",
-      "type": "Base",
       "distanceM": 7200,
       "durationSecs": 2400,
+      "type": "Base",
       "scheduledTime": "18:00"
     },
     {
       "date": "2026-06-25",
       "name": "20' progressives",
-      "type": "Tempo",
       "distanceM": 10640,
       "durationSecs": 3600,
+      "type": "Tempo",
+      "scheduledTime": "18:00"
+    },
+    {
+      "date": "2026-06-25",
+      "name": "20' progressives",
+      "distanceM": 10640,
+      "durationSecs": 3600,
+      "type": "Tempo",
       "scheduledTime": "18:00"
     },
     {
       "date": "2026-06-26",
-      "name": "2 x 3000m allure spé",
-      "type": "Threshold",
-      "distanceM": 11570,
+      "name": "2 x 2000m allure de course",
+      "distanceM": 4000,
       "durationSecs": 3480,
+      "type": "Threshold",
+      "scheduledTime": "18:00"
+    },
+    {
+      "date": "2026-06-26",
+      "name": "2 x 2000m allure de course",
+      "distanceM": 4000,
+      "durationSecs": 3480,
+      "type": "Threshold",
       "scheduledTime": "18:00"
     },
     {
       "date": "2026-06-27",
       "name": "15' progressives",
-      "type": "Tempo",
       "distanceM": 9600,
       "durationSecs": 3300,
+      "type": "Tempo",
+      "scheduledTime": "18:00"
+    },
+    {
+      "date": "2026-06-27",
+      "name": "15' progressives",
+      "distanceM": 9600,
+      "durationSecs": 3300,
+      "type": "Tempo",
+      "scheduledTime": "18:00"
+    },
+    {
+      "date": "2026-06-28",
+      "name": "8km endurance",
+      "distanceM": 8000,
+      "durationSecs": 2667,
+      "type": "Base",
+      "scheduledTime": "18:00"
+    },
+    {
+      "date": "2026-06-28",
+      "name": "8km endurance",
+      "distanceM": 8000,
+      "durationSecs": 2667,
+      "type": "Base",
       "scheduledTime": "18:00"
     }
   ]

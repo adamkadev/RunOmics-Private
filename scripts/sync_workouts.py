@@ -215,9 +215,9 @@ def _estimate_from_steps(steps: list[dict]) -> tuple[float, float]:
 
     for step in steps:
         cond_key = (step.get("endCondition") or {}).get("conditionTypeKey", "")
-        value = ((step.get("endConditionValue") or {}).get("parsedValue") or 0)
-        if not value:
-            continue
+    value = step.get("endConditionValue") or 0
+    if isinstance(value, dict):
+        value = value.get("parsedValue", 0)
 
         v1 = step.get("targetValueOne")
         v2 = step.get("targetValueTwo")
