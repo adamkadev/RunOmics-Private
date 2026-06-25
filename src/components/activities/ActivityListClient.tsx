@@ -173,7 +173,7 @@ export function ActivityListClient({
 
   return (
     <div className="space-y-4">
-      <GlassSurface as="header" variant="nav" ref={headerRef} className="sticky top-2 z-20 rounded-2xl px-5 py-3">
+      <GlassSurface as="div" variant="card" ref={headerRef} className="top-2 z-20 rounded-2xl px-5 py-3">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-[27px] font-extrabold leading-[1.1] tracking-tight text-foreground">
@@ -216,7 +216,6 @@ export function ActivityListClient({
         )}
       </GlassSurface>
 
-      {/* B2 - filter chips, single scrollable row (never sticky, never wraps) */}
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <Pill
           as="button"
@@ -257,7 +256,6 @@ export function ActivityListClient({
         />
       </div>
 
-      {/* B3 + B4 - sticky month separators + activity cards, or C1 empty state */}
       {items.length === 0 ? (
         <GlassSurface variant="card" className="rounded-2xl py-12 text-center">
           <SearchX size={28} className="mx-auto text-subtle" />
@@ -277,7 +275,7 @@ export function ActivityListClient({
         <div className="space-y-4">
           {groups.map((g) => (
             <div key={g.key}>
-              <div className="sticky z-10 flex items-center justify-between px-1 py-2" style={{ top: headerHeight + 16 }}>
+              <div className="z-10 flex items-center justify-between px-1 py-2" style={{ top: headerHeight + 16 }}>
                 <span className="font-mono text-[13px] font-bold tracking-wide text-muted-foreground/80">
                   {g.label}
                 </span>

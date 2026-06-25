@@ -75,7 +75,7 @@ export function monthLabel(month: number): string {
   return new Date(2000, month - 1, 1).toLocaleString('en', { month: 'short' }).toUpperCase()
 }
 
-/** Full uppercase "MONTH YYYY" label for a date, used by sticky month group headers. */
+/** Full uppercase "MONTH YYYY" label for a date, used by a month group div. */
 export function monthYearLabel(isoDate: string): string {
   const d = new Date(isoDate + 'T00:00:00')
   return d.toLocaleString('en', { month: 'long', year: 'numeric' }).toUpperCase()

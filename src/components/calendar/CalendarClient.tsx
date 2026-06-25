@@ -77,7 +77,7 @@ export function CalendarClient({ activities, plannedWorkouts }: Props) {
 
   return (
     <div className="space-y-4" {...swipeProps}>
-      <GlassSurface as="header" variant="nav" className="sticky top-2 z-20 rounded-2xl px-5 py-3">
+      <GlassSurface as="div" variant="nav" className="top-2 z-20 rounded-2xl px-5 py-3">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-[27px] font-extrabold leading-[1.1] tracking-tight text-foreground">

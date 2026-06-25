@@ -228,8 +228,7 @@ export function AnalyticsClient({
 
   return (
     <div className="space-y-4">
-      {/* Header - sticky glass nav, mirrors Activities list B1 */}
-      <GlassSurface as="header" variant="nav" className="sticky top-2 z-20 space-y-2.5 rounded-2xl px-5 py-3">
+      <GlassSurface as="div" variant="nav" className="top-2 z-20 space-y-2.5 rounded-2xl px-5 py-3">
         <h1 className="text-[27px] font-extrabold leading-[1.1] tracking-tight text-foreground">
           {t.analytics.title}
         </h1>
