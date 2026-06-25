@@ -20,7 +20,7 @@ import { ACCENT_SWATCHES, DEFAULT_ACCENT, isAccentId, type AccentId } from '@/li
 import { useDragToDismiss } from '@/hooks/useDragToDismiss'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
-import { getDesignConfig } from '@/components/activity/shareCardDesignTokens'
+import { ACCENT_TOKENS, getDesignConfig } from '@/components/activity/shareCardDesignTokens'
 import { DesignThumb } from '@/components/activity/ShareCardThumbnails'
 import { DesignPreview, PREVIEW_HEIGHT, PREVIEW_WIDTH } from '@/components/activity/ShareCardDesignPreview'
 import { t } from '@/i18n'
@@ -116,8 +116,9 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     if (!token) { console.warn('NEXT_PUBLIC_MAPTILER_TOKEN not set'); return }
 
     let cancelled = false
-    // light basemap: skip the accent theme entirely for the route highlight, go plain white.
-    const routeColor = mapStyle === 'light' ? '#ffffff' : getDesignConfig('map', accent).routeColor
+    // light basemap: the route's white halo (drawn in captureRouteMapSnapshot) needs a
+    // saturated line on top of it, not white, or it disappears against the light tiles.
+    const routeColor = mapStyle === 'light' ? ACCENT_TOKENS[accent].accentLight : getDesignConfig('map', accent).routeColor
     captureRouteMapSnapshot({
       route,
       color: routeColor,
