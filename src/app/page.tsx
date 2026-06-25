@@ -16,7 +16,6 @@ import { ActivityHeatmap } from '@/components/dashboard/ActivityHeatmap'
 import { TrainingStatusBanner } from '@/components/dashboard/TrainingStatusBanner'
 import { ConsistencyCard } from '@/components/dashboard/ConsistencyCard'
 import { DashboardHighlights } from '@/components/dashboard/DashboardHighlights'
-import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
 export default async function DashboardPage() {

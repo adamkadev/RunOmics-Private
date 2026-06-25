@@ -2,6 +2,48 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.0] - 2026-06-25
+
+Major version: full liquid glass redesign of the app, plus a new Calendar/Agenda
+feature for Garmin planned workouts.
+
+### Added
+
+- **Calendar**: new agenda page with weekly view, swipe left/right navigation,
+  Garmin planned-workout sync with step-count estimation and auto-inferred workout
+  type from the Garmin workout name, animated planned-workout sheet.
+- **Profile**: new screen (hero card, YTD stats, personal records, shoe wear gauge,
+  editable HR zones, annual goal card) consolidating data previously spread across
+  Settings.
+- **Share card**: Strava-style full-map design, day/night map style toggle,
+  multi-template 9:16 carousel, drag-to-dismiss gesture on bottom sheets.
+- **Settings**: restructured into Apparence / Notifications / Donnees / Deconnexion
+  tabs, accent picker redesigned as circular glass selectors.
+- **Notifications**: push alert when training risk reaches "overreaching".
+- **Activities**: server-side pagination, activity card icon colored by zone type.
+- New brand mark (ring signature) in the header and PWA icon kit.
+
+### Changed
+
+- **Liquid glass redesign across the entire app** (multi-wave rollout): aurora
+  background, glass design tokens, unified Button/Pill/StatusPill primitives,
+  floating glass sidebar and bottom sheets, redesigned mobile top bar and "More" menu.
+- `activities.json` split into one file per year for scalability; GPS route
+  simplification/decimation tuning for better curve fidelity on synced activities.
+- Settings admin forms (Goals/PBs/Athlete/Upcoming races) removed - that data
+  management now lives in a separate app.
+
+### Fixed
+
+- Share card and Heatmap route lines invisible/washed out against the light map
+  style.
+- Numerous mobile/Safari layout issues: safe-area paddings, hydration mismatches
+  from localStorage state, fixed-position CTA bugs, drag-to-dismiss pointer capture.
+
+### Removed
+
+- Activity comparison feature (superseded by server-side pagination).
+
 ## [1.3] - 2026-06-21
 
 ### Added
