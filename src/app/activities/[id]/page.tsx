@@ -56,7 +56,7 @@ export default async function ActivityDetailPage({
   const prLabels = getPrLabelsByActivityId(records)[id] ?? []
 
   return (
-    <div className="space-y-5 pt-[max(env(safe-area-inset-top),12px)] lg:pt-0">
+    <div className="space-y-5">
       <BackButton label={t.activity.back} fallbackHref="/activities" />
 
       <div>

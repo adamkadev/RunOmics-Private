@@ -19,7 +19,7 @@ import {
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { APP_VERSION } from '@/lib/version'
-import { isDetailRoute } from '@/lib/navigation'
+import { hasGlobalTopBar } from '@/lib/navigation'
 import { useScrollDirection } from '@/lib/useScrollDirection'
 import { useDragToDismiss } from '@/hooks/useDragToDismiss'
 import { ThemeToggle } from './ThemeToggle'
@@ -116,7 +116,7 @@ export function Sidebar() {
   const [open, setOpen] = useState(false)
   const { handleProps, sheetStyle } = useDragToDismiss(() => setOpen(false))
   const headerHidden = useScrollDirection()
-  const showTopBar = !isDetailRoute(pathname)
+  const showTopBar = hasGlobalTopBar(pathname)
 
   // Lock background scroll while the mobile menu is open.
   useEffect(() => {
@@ -194,7 +194,7 @@ export function Sidebar() {
         </div>
       </GlassSurface>
 
-      {/* ─── Mobile top bar — only on the 5 primary tabs, not on detail pages (S2) ─── */}
+      {/* ─── Mobile top bar — everywhere except Profile/Settings, which show their own header ─── */}
       {showTopBar && (
         <header
           className={cn(

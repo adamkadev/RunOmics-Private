@@ -5,11 +5,11 @@ import { Sidebar } from './Sidebar'
 import { PageTransition } from './PageTransition'
 import { ThemeSync } from './ThemeSync'
 import { Aurora } from './Aurora'
-import { isDetailRoute, getPageAuroraKey } from '@/lib/navigation'
+import { hasGlobalTopBar, getPageAuroraKey } from '@/lib/navigation'
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const showTopBar = !isDetailRoute(pathname)
+  const showTopBar = hasGlobalTopBar(pathname)
 
   return (
     <div className="min-h-screen" data-page-aurora={getPageAuroraKey(pathname)}>
@@ -17,8 +17,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <ThemeSync />
       <Sidebar />
       <main className="min-h-screen lg:ml-[248px]">
-        {/* Mobile spacer: top bar height + notch safe area - skipped on detail
-            pages (S2), which manage their own safe-area top padding (S3) */}
+        {/* Mobile spacer: top bar height + notch safe area - skipped on Profile/
+            Settings, which manage their own safe-area top padding */}
         {showTopBar && (
           <div
             className="lg:hidden"
