@@ -14,7 +14,7 @@ export function Tooltip({
   surfaceClassName?: string
 }) {
   return (
-    <span className={cn('group/tip relative cursor-help', className)}>
+    <span className={cn('group/tip relative inline-flex items-center cursor-help', className)}>
       {children}
       <span className={cn(tooltipSurfaceClass, surfaceClassName, 'pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 w-52 -translate-x-1/2 text-foreground/80 opacity-0 transition-opacity group-hover/tip:opacity-100')}>
         {content}
