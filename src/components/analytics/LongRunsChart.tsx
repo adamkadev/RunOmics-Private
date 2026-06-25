@@ -1,6 +1,6 @@
 'use client'
 
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import type { MonthlyLongRuns } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { useAccentColor } from '@/lib/useAccent'
@@ -45,7 +45,13 @@ export function LongRunsChart({ data }: Props) {
     <GlassSurface variant="card" className="rounded-[22px] p-5">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">{t.analytics.charts.longRuns.title}</h3>
       <ResponsiveContainer width="100%" height={200}>
-        <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>
+        <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>
+          <defs>
+            <linearGradient id="longRunGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={accentColor} stopOpacity={0.3} />
+              <stop offset="95%" stopColor={accentColor} stopOpacity={0.02} />
+            </linearGradient>
+          </defs>
           <XAxis
             dataKey="label"
             tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
@@ -58,7 +64,7 @@ export function LongRunsChart({ data }: Props) {
             tickLine={false}
             unit=" km"
           />
-          <Tooltip content={<CustomTooltip />} cursor={{ fill: CHART_COLORS.tooltipCursor }} />
+          <Tooltip content={<CustomTooltip />} cursor={{ stroke: accentColor, strokeWidth: 1, strokeDasharray: '4 3' }} />
           <ReferenceLine
             y={15}
             stroke={CHART_COLORS.referenceTarget}
@@ -66,13 +72,17 @@ export function LongRunsChart({ data }: Props) {
             strokeWidth={1}
             label={{ value: t.analytics.charts.longRuns.refLine, position: 'insideTopRight', fontSize: 10, fill: CHART_COLORS.referenceTarget }}
           />
-          <Bar
+          <Area
+            type="monotone"
             dataKey="longestKm"
-            fill={accentColor}
-            radius={[3, 3, 0, 0]}
+            stroke={accentColor}
+            strokeWidth={2}
+            fill="url(#longRunGradient)"
+            dot={{ r: 3, fill: accentColor, strokeWidth: 0 }}
+            activeDot={{ r: 4, fill: accentColor, strokeWidth: 0 }}
             isAnimationActive={false}
           />
-        </BarChart>
+        </AreaChart>
       </ResponsiveContainer>
       <ChartExplain text={explain.text} tone={explain.tone} />
     </GlassSurface>

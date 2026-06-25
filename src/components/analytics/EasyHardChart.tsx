@@ -1,8 +1,8 @@
 'use client'
 
 import {
-  BarChart,
-  Bar,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   Tooltip,
@@ -57,7 +57,7 @@ export function EasyHardChart({ data }: Props) {
         {t.analytics.charts.easyHard.title}
       </h3>
       <ResponsiveContainer width="100%" height={200}>
-        <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>
+        <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>
           <XAxis
             dataKey="label"
             tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
@@ -71,11 +71,31 @@ export function EasyHardChart({ data }: Props) {
             axisLine={false}
             tickLine={false}
           />
-          <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(156,163,175,0.1)' }} />
-          <Bar dataKey="easyPct" stackId="eh" fill={CHART_COLORS.easy} />
-          <Bar dataKey="hardPct" stackId="eh" fill={CHART_COLORS.hard} radius={[3, 3, 0, 0]} />
+          <Tooltip content={<CustomTooltip />} cursor={{ stroke: CHART_COLORS.referenceTarget, strokeWidth: 1, strokeDasharray: '4 3' }} />
+          <Area
+            type="monotone"
+            dataKey="easyPct"
+            stackId="eh"
+            stroke={CHART_COLORS.easy}
+            strokeWidth={1.5}
+            fill={CHART_COLORS.easy}
+            fillOpacity={0.55}
+            dot={false}
+            isAnimationActive={false}
+          />
+          <Area
+            type="monotone"
+            dataKey="hardPct"
+            stackId="eh"
+            stroke={CHART_COLORS.hard}
+            strokeWidth={1.5}
+            fill={CHART_COLORS.hard}
+            fillOpacity={0.55}
+            dot={false}
+            isAnimationActive={false}
+          />
           <ReferenceLine y={80} stroke={CHART_COLORS.referenceTarget} strokeDasharray="4 3" strokeWidth={1} />
-        </BarChart>
+        </AreaChart>
       </ResponsiveContainer>
       <ChartExplain text={explain.text} tone={explain.tone} />
       <p className="mt-1 text-xs text-subtle">

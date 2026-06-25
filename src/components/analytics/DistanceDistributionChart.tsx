@@ -39,21 +39,28 @@ export function DistanceDistributionChart({ data }: Props) {
         <span className="text-xs text-subtle">{t.analytics.charts.distance.runs(data.reduce((s, d) => s + d.count, 0))}</span>
       </div>
       <ResponsiveContainer width="100%" height={200}>
-        <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>
+        <BarChart
+          data={data}
+          layout="vertical"
+          margin={{ top: 4, right: 12, bottom: 0, left: 4 }}
+        >
           <XAxis
-            dataKey="label"
-            tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
-            axisLine={false}
-            tickLine={false}
-          />
-          <YAxis
+            type="number"
             allowDecimals={false}
             tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
           />
+          <YAxis
+            type="category"
+            dataKey="label"
+            width={56}
+            tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
+            axisLine={false}
+            tickLine={false}
+          />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
-          <Bar dataKey="count" radius={[4, 4, 0, 0]} isAnimationActive={false}>
+          <Bar dataKey="count" radius={[0, 4, 4, 0]} isAnimationActive={false}>
             {data.map((entry) => (
               <Cell
                 key={entry.label}
