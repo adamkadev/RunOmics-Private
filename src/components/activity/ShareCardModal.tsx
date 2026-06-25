@@ -97,10 +97,13 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   const [photoImage, setPhotoImage] = useState<HTMLImageElement | null>(null)
   const [brandMark, setBrandMark] = useState<HTMLImageElement | null>(null)
   const [copyState, setCopyState] = useState<CopyState>('idle')
+  const [isClosing, setIsClosing] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const headerRef = useRef<HTMLDivElement>(null)
   const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const photoObjectUrlRef = useRef<string | null>(null)
+  const wheelYRef = useRef(0)
 
   const hasRoute = !!activity.route && activity.route.length > 1
   const mapToken = process.env.NEXT_PUBLIC_MAPTILER_TOKEN
@@ -172,11 +175,32 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') {
+        setIsClosing(true)
+        setTimeout(onClose, 42)
+      }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [onClose])
+
+  useEffect(() => {
+    const header = headerRef.current
+    if (!header) return
+
+    function handleHeaderWheel(e: WheelEvent) {
+      if (isClosing) return
+
+      wheelYRef.current += e.deltaY
+      if (wheelYRef.current > 80) {
+        setIsClosing(true)
+        setTimeout(onClose, 320)
+      }
+    }
+
+    header.addEventListener('wheel', handleHeaderWheel, { passive: true })
+    return () => header.removeEventListener('wheel', handleHeaderWheel)
+  }, [isClosing, onClose])
 
   // Lock background scroll while the modal is open.
   useEffect(() => {
@@ -265,11 +289,14 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
       onClick={onClose}
     >
       <div
-        className="glass-sheet relative flex max-h-[92vh] w-full animate-sheet-up flex-col overflow-hidden rounded-t-3xl sm:max-w-md sm:rounded-2xl"
+        className={cn(
+          'glass-sheet relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-3xl sm:max-w-md sm:rounded-2xl',
+          isClosing ? 'animate-sheet-down' : 'animate-sheet-up'
+        )}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex shrink-0 justify-center pt-2.5 sm:hidden">
-          <span className="h-[5px] w-[38px] rounded-full bg-foreground/25" aria-hidden="true" />
+        <div ref={headerRef} className="flex shrink-0 cursor-grab active:cursor-grabbing flex-col pt-2.5 sm:hidden">
+          <span className="h-[5px] w-[38px] rounded-full bg-foreground/25 mx-auto" aria-hidden="true" />
         </div>
         <div className="flex shrink-0 items-center justify-between border-b border-border/60 px-4 py-3">
           <h2 className="text-sm font-semibold text-foreground">{t.activity.share}</h2>
