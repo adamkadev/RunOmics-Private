@@ -35,6 +35,7 @@ import type { TrainingLoadData } from '@/application/usecases/GetTrainingLoad'
 import { formatDurationShort } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { TrainingLoadChart } from '@/components/dashboard/TrainingLoadChart'
+import { STATUS } from '@/lib/statusColors'
 import { t } from '@/i18n'
 
 import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
@@ -55,9 +56,7 @@ function DeltaBadge({ text, good }: { text: string; good: boolean }) {
     <span
       className={cn(
         'inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-medium',
-        good
-          ? 'bg-emerald-500/15 text-emerald-500 dark:text-emerald-400'
-          : 'bg-red-500/15 text-red-500 dark:text-red-400',
+        good ? STATUS.success.badge : STATUS.danger.badge,
       )}
     >
       <Icon size={10} strokeWidth={2.5} />

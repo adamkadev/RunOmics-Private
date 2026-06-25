@@ -163,7 +163,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
                     )}
                   </p>
                   {pbSeconds !== null && delta !== null && (
-                    <p className={cn('mt-0.5 text-xs font-medium', achieved ? STATUS.success.text : 'text-orange-500 dark:text-orange-400')}>
+                    <p className={cn('mt-0.5 text-xs font-medium', achieved ? STATUS.success.text : STATUS.warning.text)}>
                       {achieved
                         ? t.goals.targetDone(formatDuration(Math.abs(delta)))
                         : t.goals.targetToGo(formatDuration(delta))}

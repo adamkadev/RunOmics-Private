@@ -8,9 +8,9 @@ import { t } from '@/i18n'
 
 const RATING_STYLE: Record<ConsistencyRating, { tone: StatusTone; text: string }> = {
   excellent: { tone: 'emerald', text: STATUS.success.text },
-  good:      { tone: 'blue',   text: 'text-blue-600 dark:text-blue-400' },
-  fair:      { tone: 'amber',  text: 'text-amber-600 dark:text-amber-400' },
-  low:       { tone: 'zinc',   text: 'text-zinc-500' },
+  good:      { tone: 'blue',   text: STATUS.progress.text },
+  fair:      { tone: 'amber',  text: STATUS.warning.text },
+  low:       { tone: 'zinc',   text: STATUS.pending.text },
 }
 
 const RING_SIZE = 56

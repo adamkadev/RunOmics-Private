@@ -11,6 +11,7 @@ import {
 } from 'recharts'
 import type { TrainingLoadData, TrainingLoadPoint } from '@/application/usecases/GetTrainingLoad'
 import { CHART_COLORS } from '@/lib/colors'
+import { STATUS } from '@/lib/statusColors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
@@ -38,10 +39,10 @@ function CustomTooltip({ active, payload }: TooltipProps) {
 
 function formStatus(tsb: number): { label: string; className: string } {
   const s = t.dashboard.trainingLoad.status
-  if (tsb > 5) return { label: s.fresh, className: 'text-emerald-600 dark:text-emerald-400' }
-  if (tsb >= -10) return { label: s.neutral, className: 'text-muted-foreground' }
-  if (tsb >= -30) return { label: s.building, className: 'text-orange-500 dark:text-orange-400' }
-  return { label: s.overreaching, className: 'text-red-500 dark:text-red-400' }
+  if (tsb > 5)   return { label: s.fresh,       className: STATUS.success.text }
+  if (tsb >= -10) return { label: s.neutral,     className: 'text-muted-foreground' }
+  if (tsb >= -30) return { label: s.building,    className: STATUS.warning.text }
+  return           { label: s.overreaching,       className: STATUS.danger.text }
 }
 
 export function TrainingLoadChart({ data }: Props) {

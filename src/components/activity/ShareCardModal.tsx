@@ -19,6 +19,7 @@ import { captureRouteMapSnapshot } from '@/lib/routeMapSnapshot'
 import { ACCENT_SWATCHES, DEFAULT_ACCENT, isAccentId, type AccentId } from '@/lib/accent'
 import { useDragToDismiss } from '@/hooks/useDragToDismiss'
 import { cn } from '@/lib/utils'
+import { STATUS } from '@/lib/statusColors'
 import { Button } from '@/components/ui/Button'
 import { ACCENT_TOKENS, getDesignConfig } from '@/components/activity/shareCardDesignTokens'
 import { DesignThumb } from '@/components/activity/ShareCardThumbnails'
@@ -321,7 +322,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             <Button
               variant="secondary"
               onClick={handleCopy}
-              className={cn('h-[42px] flex-1 text-[13px]', copyState === 'copied' && 'text-accent-text')}
+              className={cn('h-[42px] flex-1 text-[13px]', copyState === 'copied' && STATUS.success.text)}
             >
               {copyState === 'copied' ? <Check size={13} /> : <Copy size={13} />}
               {copyState === 'copied' ? t.activity.shareMenu.copied : t.activity.shareMenu.copy}

@@ -19,7 +19,7 @@ interface Props {
 }
 
 function rpeToneClass(rpe: number): string {
-  if (rpe <= 4) return 'text-accent-text'
+  if (rpe <= 4) return STATUS.success.text
   if (rpe <= 6) return 'text-foreground'
   return STATUS.warning.text
 }

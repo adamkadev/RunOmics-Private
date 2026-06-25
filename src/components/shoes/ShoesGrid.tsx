@@ -3,19 +3,20 @@ import type { ShoeStats } from '@/application/usecases/GetShoeStats'
 import { Badge } from '@/components/ui/Card'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { BrandIcon } from '@/components/shoes/BrandIcon'
+import { STATUS } from '@/lib/statusColors'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 function wearBarClass(pct: number): string {
-  if (pct >= 90) return 'bg-red-500'
-  if (pct >= 70) return 'bg-amber-400'
-  return 'bg-emerald-500'
+  if (pct >= 90) return STATUS.danger.dot
+  if (pct >= 70) return STATUS.warning.dot
+  return STATUS.success.dot
 }
 
 function wearTextClass(pct: number): string {
-  if (pct >= 90) return 'text-red-600 dark:text-red-400'
-  if (pct >= 70) return 'text-amber-600 dark:text-amber-400'
-  return 'text-emerald-600 dark:text-emerald-400'
+  if (pct >= 90) return STATUS.danger.text
+  if (pct >= 70) return STATUS.warning.text
+  return STATUS.success.text
 }
 
 function wearBorderClass(pct: number): string {
@@ -25,8 +26,8 @@ function wearBorderClass(pct: number): string {
 }
 
 function wearAlertBadge(pct: number): { label: string; className: string } | null {
-  if (pct >= 90) return { label: t.shoes.criticalBadge, className: 'bg-red-500/15 text-red-600 dark:text-red-400' }
-  if (pct >= 70) return { label: t.shoes.alertBadge,    className: 'bg-amber-400/15 text-amber-600 dark:text-amber-400' }
+  if (pct >= 90) return { label: t.shoes.criticalBadge, className: STATUS.danger.badge }
+  if (pct >= 70) return { label: t.shoes.alertBadge,    className: STATUS.warning.badge }
   return null
 }
 

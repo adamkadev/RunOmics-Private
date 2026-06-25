@@ -10,7 +10,7 @@ function OutcomeBadge({ achieved }: { achieved: boolean }) {
       className={`flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
         achieved
           ? STATUS.success.badge
-          : 'bg-orange-50 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400'
+          : STATUS.danger.badge
       }`}
     >
       {achieved ? <CheckCircle2 size={12} /> : <XCircle size={12} />}

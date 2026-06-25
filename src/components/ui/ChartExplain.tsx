@@ -1,11 +1,12 @@
 import { cn } from '@/lib/utils'
+import { STATUS } from '@/lib/statusColors'
 
 export type ExplainTone = 'positive' | 'neutral' | 'caution'
 
 const TONE_CLASS: Record<ExplainTone, string> = {
-  positive: 'text-accent-text',
+  positive: STATUS.success.text,
   neutral:  'text-muted-foreground',
-  caution:  'text-amber-600 dark:text-amber-400',
+  caution:  STATUS.warning.text,
 }
 
 export function ChartExplain({ text, tone }: { text: string; tone: ExplainTone }) {
