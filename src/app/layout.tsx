@@ -52,10 +52,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   viewportFit: 'cover',
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)',  color: '#111827' },
-  ],
+  // theme-color is set dynamically by ThemeSync (accent + light/dark aware);
+  // a static value here would fight its updates.
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
