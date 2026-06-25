@@ -26,7 +26,7 @@ import { DesignPreview, PREVIEW_HEIGHT, PREVIEW_WIDTH } from '@/components/activ
 import { t } from '@/i18n'
 
 const MAP_STYLES: MapStyle[] = ['light', 'dark']
-const PREVIEW_SCALE = 0.8
+const PREVIEW_SCALE = 1
 
 function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) => {
