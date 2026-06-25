@@ -26,8 +26,8 @@ import { DesignPreview, PREVIEW_HEIGHT, PREVIEW_WIDTH } from '@/components/activ
 import { t } from '@/i18n'
 
 const MAP_STYLES: MapStyle[] = ['light', 'dark']
-// Scaled down so the controls below (design picker, toggles) stay visible without scrolling.
-const PREVIEW_SCALE = 0.8
+// Sheet now takes near-full height (see h-[96vh] below), so the preview can run larger than its native size.
+const PREVIEW_SCALE = 1.15
 
 function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) => {
@@ -198,7 +198,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
       onClick={onClose}
     >
       <div
-        className="glass-sheet relative flex max-h-[92vh] w-full animate-sheet-up flex-col overflow-hidden rounded-t-3xl sm:max-w-md sm:rounded-2xl"
+        className="glass-sheet relative flex h-[96vh] w-full animate-sheet-up flex-col overflow-hidden rounded-t-3xl sm:h-auto sm:max-h-[92vh] sm:max-w-md sm:rounded-2xl"
         style={sheetStyle}
         onClick={(e) => e.stopPropagation()}
       >
@@ -221,7 +221,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
 
         {/* Scrollable body */}
         <div className="flex flex-1 flex-col overflow-y-auto">
-          {/* Preview card (interactive HTML preview, scaled down so the menus below stay visible) */}
+          {/* Preview card (interactive HTML preview, scaled up to fill the taller sheet) */}
           <div className="flex justify-center px-5 pb-4">
             <div style={{ width: PREVIEW_WIDTH * PREVIEW_SCALE, height: PREVIEW_HEIGHT * PREVIEW_SCALE }}>
               <div style={{ width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT, transform: `scale(${PREVIEW_SCALE})`, transformOrigin: 'top left' }}>
