@@ -601,7 +601,7 @@ export const en = {
       pace: 'PACE',
       avgHr: 'AVG HR',
       close: 'Close',
-      choosePhoto: 'Choose',
+      choosePhoto: 'Choose a photo',
       designLabel: 'Design',
       designLabels: {
         aurora: 'Aurora',
@@ -611,9 +611,6 @@ export const en = {
         memory: 'Memory',
       },
       mapToggle: 'Show map',
-      mapToggleNote: 'GPS route trace',
-      mapToggleAlways: 'Always visible on this design',
-      photoLabel: 'Background photo',
       galleryPlaceholder: 'My gallery',
       mapStyleLabel: 'Map style',
       mapStyleLight: 'Light',

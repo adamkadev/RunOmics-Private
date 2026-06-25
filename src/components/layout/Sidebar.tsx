@@ -21,6 +21,7 @@ import { t } from '@/i18n'
 import { APP_VERSION } from '@/lib/version'
 import { isDetailRoute } from '@/lib/navigation'
 import { useScrollDirection } from '@/lib/useScrollDirection'
+import { useDragToDismiss } from '@/hooks/useDragToDismiss'
 import { ThemeToggle } from './ThemeToggle'
 import { GlassTabBar } from './GlassTabBar'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -113,6 +114,7 @@ function MoreMenuItem({
 export function Sidebar() {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
+  const { handleProps, sheetStyle } = useDragToDismiss(() => setOpen(false))
   const headerHidden = useScrollDirection()
   const showTopBar = !isDetailRoute(pathname)
 
@@ -238,9 +240,11 @@ export function Sidebar() {
           'fixed inset-x-0 bottom-0 z-50 rounded-t-[24px] border-b-0 transition-transform duration-300 lg:hidden',
           open ? 'translate-y-0' : 'translate-y-full pointer-events-none'
         )}
-        style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 20px)' }}
+        style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 20px)', ...sheetStyle }}
       >
-        <div className="mx-auto mb-5 mt-3 h-[5px] w-[38px] rounded-full bg-foreground/[0.18]" />
+        <div className="flex justify-center pt-3 pb-3" {...handleProps}>
+          <div className="h-[5px] w-[38px] rounded-full bg-foreground/[0.18]" />
+        </div>
 
         <nav className="flex flex-col gap-1 px-4">
           {MORE_PRIMARY_ITEMS.map((item) => (

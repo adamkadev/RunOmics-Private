@@ -1,7 +1,8 @@
 'use client'
 
 import { useId } from 'react'
-import { ImagePlus, Map as MapIcon } from 'lucide-react'
+import Image from "next/image";
+import { ImagePlus, Map as MapIcon, Pencil } from 'lucide-react'
 import type { Activity } from '@/domain/activity/types'
 import { buildStatItems, projectRouteToCircle, routePathD, shareCardTitle, type MapStyle, type ShareDesign } from '@/lib/shareCard'
 import { formatDateWithYear } from '@/lib/formatters'
@@ -79,7 +80,7 @@ export function DesignPreview({ activity, design, accent, showMap, photoUrl, onP
       >
         {/* Photo background (Memory with photo) */}
         {isMemory && photoUrl && (
-          <img src={photoUrl} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+          <Image src={photoUrl} alt="" fill style={{ objectFit: 'cover' }} />
         )}
         {/* Photo placeholder (Memory without photo) */}
         {isMemory && !photoUrl && onPickPhoto && (
@@ -91,9 +92,35 @@ export function DesignPreview({ activity, design, accent, showMap, photoUrl, onP
             <span style={{ fontSize: 11, fontWeight: 500, color: 'rgba(255,255,255,0.45)' }}>{t.activity.shareCard.choosePhoto}</span>
           </button>
         )}
+        {/* Persistent "change photo" affordance (Memory only) - stays visible even once a photo
+            is set, so the control isn't only discoverable by scrolling to the picker below. */}
+        {isMemory && onPickPhoto && (
+          <button
+            onClick={onPickPhoto}
+            aria-label={t.activity.shareCard.choosePhoto}
+            style={{
+              position: 'absolute',
+              bottom: 14,
+              right: 14,
+              zIndex: 5,
+              width: 30,
+              height: 30,
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'rgba(0,0,0,0.45)',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              cursor: 'pointer',
+            }}
+          >
+            <Pencil size={13} color="#fff" strokeWidth={2} />
+          </button>
+        )}
         {/* Map background (Map design) */}
         {isMapBg && mapSnapshotUrl && (
-          <img src={mapSnapshotUrl} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+          <Image src={mapSnapshotUrl} alt="" fill style={{ objectFit: 'cover' }} />
         )}
         {isMapBg && !mapSnapshotUrl && mapLoading && (
           <div style={{ position: 'absolute', inset: 0, zIndex: 3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

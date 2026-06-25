@@ -7,6 +7,7 @@ import { X } from 'lucide-react'
 import type { Activity } from '@/domain/activity/types'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import { formatDuration, formatDate } from '@/lib/formatters'
+import { useDragToDismiss } from '@/hooks/useDragToDismiss'
 import { t } from '@/i18n'
 
 interface Props {
@@ -16,6 +17,8 @@ interface Props {
 
 /** Bottom sheet glass quick-view, opened by tapping a day's session in the agenda week view. */
 export function ActivitySheet({ activity, onClose }: Props) {
+  const { handleProps, sheetStyle } = useDragToDismiss(onClose)
+
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose()
@@ -40,9 +43,12 @@ export function ActivitySheet({ activity, onClose }: Props) {
     >
       <div
         className="glass-sheet relative w-full animate-sheet-up rounded-t-[22px] p-4 sm:max-w-sm sm:rounded-[20px]"
+        style={sheetStyle}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mx-auto mb-3.5 h-1 w-9 rounded-full bg-foreground/20 sm:hidden" aria-hidden="true" />
+        <div className="mb-2.5 flex justify-center sm:hidden" {...handleProps}>
+          <div className="h-1 w-9 rounded-full bg-foreground/20" aria-hidden="true" />
+        </div>
 
         <div className="mb-3 flex items-center justify-between gap-2">
           <h2 className="text-sm font-bold text-foreground">

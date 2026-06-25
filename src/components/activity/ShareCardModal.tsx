@@ -17,6 +17,7 @@ import {
 } from '@/lib/shareCard'
 import { captureRouteMapSnapshot } from '@/lib/routeMapSnapshot'
 import { ACCENT_SWATCHES, DEFAULT_ACCENT, isAccentId, type AccentId } from '@/lib/accent'
+import { useDragToDismiss } from '@/hooks/useDragToDismiss'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { getDesignConfig } from '@/components/activity/shareCardDesignTokens'
@@ -57,6 +58,8 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   const [copyState, setCopyState] = useState<'idle' | 'copied'>('idle')
   // Resolved map snapshots, cached per style so switching light/dark doesn't re-fetch.
   const [mapSnapshots, setMapSnapshots] = useState<Partial<Record<MapStyle, { url: string; img: HTMLImageElement }>>>({})
+
+  const { handleProps, sheetStyle } = useDragToDismiss(onClose)
 
   const [accent] = useState<AccentId>(currentAccent)
   const accentHex = ACCENT_SWATCHES[accent]
@@ -196,10 +199,11 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     >
       <div
         className="glass-sheet relative flex max-h-[92vh] w-full animate-sheet-up flex-col overflow-hidden rounded-t-3xl sm:max-w-md sm:rounded-2xl"
+        style={sheetStyle}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Drag handle (mobile) */}
-        <div className="flex shrink-0 justify-center pt-3 sm:hidden">
+        {/* Drag handle (mobile) - drag down to dismiss */}
+        <div className="flex shrink-0 justify-center pt-3 pb-1 sm:hidden" {...handleProps}>
           <span className="h-[5px] w-9 rounded-full bg-foreground/25" aria-hidden="true" />
         </div>
 
@@ -262,7 +266,6 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             <div className="flex items-center justify-between border-t border-foreground/[0.07] px-5 py-3">
               <div>
                 <div className="text-[15px] text-foreground">{t.activity.shareCard.mapToggle}</div>
-                <div className="mt-0.5 text-[12px] text-muted-foreground">{t.activity.shareCard.mapToggleNote}</div>
               </div>
               <button
                 type="button"
@@ -300,39 +303,27 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             </div>
           )}
 
-          {/* Photo picker (Memory only) */}
-          {design === 'memory' && (
-            <div className="flex items-center justify-between border-t border-foreground/[0.07] px-5 py-3">
-              <div className="text-[15px] text-foreground">{t.activity.shareCard.photoLabel}</div>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="rounded-[10px] border border-accent/25 bg-accent/10 px-4 py-2 text-[13px] font-semibold text-accent-text transition-colors hover:bg-accent/15"
-              >
-                {t.activity.shareCard.choosePhoto}
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Action buttons */}
-        <div className="flex shrink-0 gap-2.5 border-t border-foreground/[0.07] p-4">
+        <div className="flex shrink-0 gap-2 border-t border-foreground/[0.07] p-3">
           {canShareFiles ? (
-            <Button onClick={handleShare} className="flex-[1.5] h-[50px]">
-              <Share2 size={15} />
+            <Button onClick={handleShare} className="h-[42px] flex-[1.5] text-[13px]">
+              <Share2 size={13} />
               {t.activity.shareMenu.share}
             </Button>
           ) : null}
-          <Button variant="secondary" onClick={handleSave} className="flex-1 h-[50px]">
-            <Download size={15} />
+          <Button variant="secondary" onClick={handleSave} className="h-[42px] flex-1 text-[13px]">
+            <Download size={13} />
             {t.activity.shareMenu.download}
           </Button>
           {canCopyImage && (
             <Button
               variant="secondary"
               onClick={handleCopy}
-              className={cn('flex-1 h-[50px]', copyState === 'copied' && 'text-accent-text')}
+              className={cn('h-[42px] flex-1 text-[13px]', copyState === 'copied' && 'text-accent-text')}
             >
-              {copyState === 'copied' ? <Check size={15} /> : <Copy size={15} />}
+              {copyState === 'copied' ? <Check size={13} /> : <Copy size={13} />}
               {copyState === 'copied' ? t.activity.shareMenu.copied : t.activity.shareMenu.copy}
             </Button>
           )}
