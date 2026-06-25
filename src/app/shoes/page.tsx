@@ -4,8 +4,6 @@ import { ShoesSummary } from '@/components/shoes/ShoesSummary'
 import { ShoeWearAlertLine } from '@/components/shoes/ShoeWearAlertLine'
 import { t } from '@/i18n'
 
-export const revalidate = 60
-
 export default function ShoesPage() {
   const shoes = getShoeStats()
 

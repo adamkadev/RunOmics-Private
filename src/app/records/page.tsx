@@ -5,7 +5,9 @@ import { RecordsLeaderboard } from '@/components/records/RecordsLeaderboard'
 import { PbAlertLine } from '@/components/ui/PbAlertLine'
 import { t } from '@/i18n'
 
-export const revalidate = 60
+// Safety net: data is also revalidated on demand by /api/internal/revalidate
+// when the pbs Firestore collection is written.
+export const revalidate = 86400
 
 export default async function RecordsPage() {
   const records = await getRecords()

@@ -6,7 +6,9 @@ import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
 import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
 import { AnalyticsClient } from '@/components/analytics/AnalyticsClient'
 
-export const revalidate = 60
+// Safety net: data is also revalidated on demand by /api/internal/revalidate
+// when the athlete Firestore collection is written.
+export const revalidate = 86400
 
 export default async function AnalyticsPage() {
   const [data, comparison, vo2maxHistory, lifetime, zones] = await Promise.all([

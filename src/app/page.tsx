@@ -18,8 +18,6 @@ import { ConsistencyCard } from '@/components/dashboard/ConsistencyCard'
 import { DashboardHighlights } from '@/components/dashboard/DashboardHighlights'
 import { t } from '@/i18n'
 
-export const revalidate = 60
-
 export default async function DashboardPage() {
   const data = getDashboardData()
   const trainingLoad = getTrainingLoad()
