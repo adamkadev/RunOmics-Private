@@ -21,7 +21,7 @@ export function RecentActivities({ activities, prLabelsByActivityId = {} }: Prop
           href="/activities"
           className="flex items-center gap-1 text-xs text-accent-text hover:text-accent-text/70 transition-colors"
         >
-          {t.common.viewAll} <ArrowRight size={12} />
+          {t.common.viewAll} <ArrowRight size={16} />
         </Link>
       </div>
 

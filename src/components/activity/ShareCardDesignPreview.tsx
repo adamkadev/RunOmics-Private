@@ -88,7 +88,7 @@ export function DesignPreview({ activity, design, accent, showMap, photoUrl, onP
             onClick={onPickPhoto}
             style={{ position: 'absolute', inset: 0, zIndex: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'transparent', border: 'none', cursor: 'pointer' }}
           >
-            <ImagePlus size={28} color="rgba(255,255,255,0.45)" strokeWidth={1.5} />
+            <ImagePlus size={24} color="rgba(255,255,255,0.45)" strokeWidth={1.5} />
             <span style={{ fontSize: 11, fontWeight: 500, color: 'rgba(255,255,255,0.45)' }}>{t.activity.shareCard.choosePhoto}</span>
           </button>
         )}
@@ -115,7 +115,7 @@ export function DesignPreview({ activity, design, accent, showMap, photoUrl, onP
               cursor: 'pointer',
             }}
           >
-            <Pencil size={13} color="#fff" strokeWidth={2} />
+            <Pencil size={16} color="#fff" strokeWidth={2} />
           </button>
         )}
         {/* Map background (Map design) */}
@@ -124,7 +124,7 @@ export function DesignPreview({ activity, design, accent, showMap, photoUrl, onP
         )}
         {isMapBg && !mapSnapshotUrl && mapLoading && (
           <div style={{ position: 'absolute', inset: 0, zIndex: 3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <MapIcon size={26} color="rgba(255,255,255,0.3)" strokeWidth={1.5} className="animate-pulse" />
+            <MapIcon size={24} color="rgba(255,255,255,0.3)" strokeWidth={1.5} className="animate-pulse" />
           </div>
         )}
 

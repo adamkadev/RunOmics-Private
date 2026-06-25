@@ -102,7 +102,7 @@ export function DataSourceInfo() {
         disabled={loading}
         className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-foreground/10 bg-foreground/[0.04] px-4 py-2.5 text-xs font-medium text-foreground transition-colors hover:bg-foreground/[0.08] disabled:opacity-50"
       >
-        <Download size={13} />
+        <Download size={16} />
         {loading ? s.dataExport.exporting : s.dataExport.csv}
       </button>
 

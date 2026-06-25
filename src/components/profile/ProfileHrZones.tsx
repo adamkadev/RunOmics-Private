@@ -94,7 +94,7 @@ export function ProfileHrZones({ athlete, onSave }: Props) {
         onClick={() => onSave({ hrZoneBoundsBpm: defaultBounds(lthr) })}
         className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-accent-text active:opacity-60"
       >
-        <RotateCcw size={13} />
+        <RotateCcw size={16} />
         {t.profile.hrZones.recalculate}
       </button>
     </GlassSurface>

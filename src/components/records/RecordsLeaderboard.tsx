@@ -53,7 +53,7 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null }
   return (
     <section className="space-y-3">
       <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-        <Trophy size={14} className="text-accent-text" />
+        <Trophy size={16} className="text-accent-text" />
         {t.records.title}
       </h2>
 

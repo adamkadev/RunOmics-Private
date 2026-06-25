@@ -58,7 +58,7 @@ export function ProfileGoal({ goal, onSaveGoal }: Props) {
         href="/goals"
         className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-accent-text active:scale-95"
       >
-        {t.profile.goal.viewGoals} <ArrowRight size={14} />
+        {t.profile.goal.viewGoals} <ArrowRight size={16} />
       </Link>
     </GlassSurface>
   )

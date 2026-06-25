@@ -94,7 +94,7 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
         onClick={() => setOpen((o) => !o)}
         className="glass-chip inline-flex items-center gap-1.5 rounded-[10px] px-3 py-1.5 text-xs font-medium text-foreground transition-transform active:scale-95 active:opacity-80"
       >
-        <NotebookPen size={13} />
+        <NotebookPen size={16} />
         {t.activity.notes.title}
       </button>
 
@@ -119,7 +119,7 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
                     >
                       {tag}
                       <button type="button" onClick={() => removeTag(tag)} className="hover:text-destructive">
-                        <X size={12} />
+                        <X size={16} />
                       </button>
                     </span>
                   ))}

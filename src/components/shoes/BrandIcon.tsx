@@ -13,7 +13,7 @@ interface Props {
   className?: string
 }
 
-export function BrandIcon({ brand, size = 18, className }: Props) {
+export function BrandIcon({ brand, size = 16, className }: Props) {
   const icon = BRAND_ICONS[brand]
   if (!icon) return <Footprints size={size} className={className} />
 

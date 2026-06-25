@@ -18,7 +18,7 @@ export function BackButton({ label, fallbackHref = '/' }: Props) {
       }}
       className="mb-4 inline-flex items-center gap-1.5 text-[15px] font-semibold text-[#5c6a62] transition-colors hover:text-foreground dark:text-white/65"
     >
-      <ArrowLeft size={17} strokeWidth={2.2} />
+      <ArrowLeft size={16} strokeWidth={2.2} />
       {label}
     </button>
   )

@@ -18,7 +18,7 @@ export function Pagination({ page, totalPages, onChange }: Props) {
         disabled={page === 1}
         className="flex h-11 w-11 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-all duration-150 hover:bg-muted active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
       >
-        <ChevronLeft size={14} />
+        <ChevronLeft size={16} />
       </button>
 
       {Array.from({ length: totalPages }, (_, i) => i + 1)
@@ -51,7 +51,7 @@ export function Pagination({ page, totalPages, onChange }: Props) {
         disabled={page === totalPages}
         className="flex h-11 w-11 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-all duration-150 hover:bg-muted active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
       >
-        <ChevronRight size={14} />
+        <ChevronRight size={16} />
       </button>
     </div>
   )

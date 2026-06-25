@@ -167,7 +167,7 @@ export function Sidebar() {
                     : 'text-muted-foreground hover:bg-foreground/[0.07] hover:text-foreground'
                 )}
               >
-                <Icon size={17} strokeWidth={active ? 2.2 : 1.8} />
+                <Icon size={20} strokeWidth={active ? 2.2 : 1.8} />
                 {label}
               </Link>
             )
@@ -189,7 +189,7 @@ export function Sidebar() {
               )}
               title={t.nav.items.settings}
             >
-              <Settings size={14} />
+              <Settings size={16} />
             </Link>
           </div>
           <ThemeToggle />

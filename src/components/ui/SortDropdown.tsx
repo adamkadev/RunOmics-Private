@@ -41,8 +41,8 @@ export function SortDropdown<T extends string>({ options, sortBy, order, onChang
         className="flex items-center gap-1 rounded-[10px] border border-foreground/[0.12] bg-foreground/[0.06] px-2.5 py-1 text-xs font-medium text-foreground/70 transition-colors hover:bg-foreground/[0.10]"
       >
         {label}: {activeLabel}
-        {order === 'asc' ? <ArrowUp size={11} /> : <ArrowDown size={11} />}
-        <ChevronDown size={11} className={cn('transition-transform', open && 'rotate-180')} />
+        {order === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
+        <ChevronDown size={12} className={cn('transition-transform', open && 'rotate-180')} />
       </button>
 
       {open && (
@@ -60,7 +60,7 @@ export function SortDropdown<T extends string>({ options, sortBy, order, onChang
               )}
             >
               {o.label}
-              {o.value === sortBy && (order === 'asc' ? <ArrowUp size={11} className="ml-auto" /> : <ArrowDown size={11} className="ml-auto" />)}
+              {o.value === sortBy && (order === 'asc' ? <ArrowUp size={12} className="ml-auto" /> : <ArrowDown size={12} className="ml-auto" />)}
             </button>
           ))}
         </div>

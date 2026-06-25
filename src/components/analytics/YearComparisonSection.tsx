@@ -27,7 +27,7 @@ function DeltaBadge({ pct, lowerIsBetter = false }: { pct: number; lowerIsBetter
         improved ? 'text-emerald-500 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'
       }`}
     >
-      {improved ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+      {improved ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
       {Math.abs(pct)}%
     </span>
   )

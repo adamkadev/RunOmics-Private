@@ -54,7 +54,7 @@ export function ProfileShoes({ shoes }: { shoes: ShoeStats[] }) {
         href="/shoes"
         className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-accent-text active:scale-95"
       >
-        {t.profile.shoes.viewShoes} <ArrowRight size={14} />
+        {t.profile.shoes.viewShoes} <ArrowRight size={16} />
       </Link>
     </GlassSurface>
   )

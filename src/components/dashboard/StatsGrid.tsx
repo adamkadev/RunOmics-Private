@@ -65,7 +65,7 @@ export function StatsGrid({ weeks, currentStreak, vo2max, weekLoad }: Props) {
     <GlassSurface variant="card" className="overflow-hidden rounded-[22px]">
       <div className="flex items-center justify-between gap-2 border-b border-foreground/[0.08] px-4 py-3">
         <div className="flex min-w-0 items-center gap-2">
-          <CalendarDays size={14} className="shrink-0 text-accent-text" />
+          <CalendarDays size={16} className="shrink-0 text-accent-text" />
           <div>
             <div className="flex items-center gap-1.5">
               <span className="text-sm font-semibold text-foreground">
@@ -91,7 +91,7 @@ export function StatsGrid({ weeks, currentStreak, vo2max, weekLoad }: Props) {
             disabled={index === 0}
             className="h-11 w-11 rounded-md p-0"
           >
-            <ChevronLeft size={13} />
+            <ChevronLeft size={16} />
           </Button>
           <Button
             variant="secondary"
@@ -100,7 +100,7 @@ export function StatsGrid({ weeks, currentStreak, vo2max, weekLoad }: Props) {
             disabled={isCurrent}
             className="h-11 w-11 rounded-md p-0"
           >
-            <ChevronRight size={13} />
+            <ChevronRight size={16} />
           </Button>
         </div>
       </div>

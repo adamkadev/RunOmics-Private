@@ -49,7 +49,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
         <section className="space-y-3">
           <GlassSurface variant="card" className="rounded-[22px] p-5">
             <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              <Target size={14} className="text-accent-text" />
+              <Target size={16} className="text-accent-text" />
               {t.goals.annualGoal}
             </h2>
             <div className="mb-3 flex items-end justify-between">
@@ -100,7 +100,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
       {goals && monthlyGoals.length > 0 && (
         <section className="space-y-3">
           <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            <Calendar size={14} className="text-accent-text" />
+            <Calendar size={16} className="text-accent-text" />
             {t.goals.monthlyGoal.title}
           </h2>
           <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
@@ -118,7 +118,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
                   <div className="flex items-center justify-between gap-1">
                     <span className="text-xs font-semibold text-subtle">{monthLabel(mg.month)}</span>
                     <StatusIcon
-                      size={11}
+                      size={12}
                       strokeWidth={3}
                       className={statusClassName}
                       aria-label={t.goals.monthlyGoal.status[mg.status]}
@@ -143,7 +143,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
       {goals && goals.targets.length > 0 && (
         <section className="space-y-3">
           <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            <TrendingUp size={14} className="text-accent-text" />
+            <TrendingUp size={16} className="text-accent-text" />
             {t.goals.raceTargets}
           </h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -179,7 +179,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
       {upcomingRaces.length > 0 && (
         <section className="space-y-3">
           <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            <Flag size={14} className="text-accent-text" />
+            <Flag size={16} className="text-accent-text" />
             {t.goals.upcomingRaces}
           </h2>
           <div className="space-y-2">
@@ -199,18 +199,18 @@ export function YearView({ yearData }: { yearData: YearData }) {
                     </div>
                     {race.targetSeconds && (
                       <p className="mt-0.5 flex items-center gap-1 text-xs font-medium text-accent-text">
-                        <Target size={11} />
+                        <Target size={12} />
                         {formatDuration(race.targetSeconds)}
                       </p>
                     )}
                     <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-subtle">
                       <span className="flex items-center gap-1">
-                        <Calendar size={11} />
+                        <Calendar size={12} />
                         {formatDate(race.date)}
                       </span>
                       {race.location && (
                         <span className="flex items-center gap-1">
-                          <MapPin size={11} />
+                          <MapPin size={12} />
                           {race.location}
                         </span>
                       )}
@@ -234,7 +234,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
       {pbs.length > 0 ? (
         <section className="space-y-3">
           <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            <Medal size={14} className="text-accent-text" />
+            <Medal size={16} className="text-accent-text" />
             {t.goals.seasonRaces}
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -266,7 +266,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
                       <ArrowRight size={16} className="mt-1 shrink-0 text-subtle transition-colors group-hover:text-muted-foreground" />
                     </div>
                     <div className="mt-3 flex items-center gap-1.5 text-xs text-subtle">
-                      <Calendar size={11} className="shrink-0" />
+                      <Calendar size={12} className="shrink-0" />
                       <span>{formatDate(activity.date)}</span>
                       {activity.description && (
                         <>
@@ -283,7 +283,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
         </section>
       ) : (
         <GlassSurface variant="card" className="rounded-[20px] border-dashed p-10 text-center">
-          <Trophy size={32} className="mx-auto mb-3 text-subtle" />
+          <Trophy size={24} className="mx-auto mb-3 text-subtle" />
           <p className="text-sm text-subtle">{t.goals.emptyPbs(yearData.year)}</p>
         </GlassSurface>
       )}

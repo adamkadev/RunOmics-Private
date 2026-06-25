@@ -59,7 +59,7 @@ function DeltaBadge({ text, good }: { text: string; good: boolean }) {
         good ? STATUS.success.badge : STATUS.danger.badge,
       )}
     >
-      <Icon size={10} strokeWidth={2.5} />
+      <Icon size={12} strokeWidth={2.5} />
       {text}
     </span>
   )

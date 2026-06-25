@@ -60,7 +60,7 @@ export function ConsistencyCard({ data }: { data: ConsistencyScore }) {
   return (
     <GlassSurface variant="card" className="flex h-full flex-col rounded-[22px] p-5">
       <div className="mb-3 flex items-center gap-2">
-        <RefreshCw size={14} className={style.text} />
+        <RefreshCw size={16} className={style.text} />
         <h3 className="widget-label text-muted-foreground">{s.title}</h3>
       </div>
 

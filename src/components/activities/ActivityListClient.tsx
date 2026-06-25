@@ -200,7 +200,7 @@ export function ActivityListClient({
                 : 'border-foreground/[0.12] bg-foreground/[0.06] text-foreground/60 hover:bg-foreground/[0.10]'
             )}
           >
-            {searchOpen ? <X size={18} /> : <Search size={18} />}
+            {searchOpen ? <X size={16} /> : <Search size={16} />}
           </button>
         </div>
 
@@ -258,7 +258,7 @@ export function ActivityListClient({
 
       {items.length === 0 ? (
         <GlassSurface variant="card" className="rounded-2xl py-12 text-center">
-          <SearchX size={28} className="mx-auto text-subtle" />
+          <SearchX size={24} className="mx-auto text-subtle" />
           <p className="mt-3 text-sm text-subtle">
             {hasActiveFilter ? t.activities.emptyFiltered : t.activities.empty}
           </p>

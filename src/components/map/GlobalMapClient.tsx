@@ -360,7 +360,7 @@ export function GlobalMapClient({ data }: Props) {
           {t.common.runs(clusterStats[selectedIdx]?.routeCount ?? 0)}
         </span>
         <ChevronDown
-          size={12}
+          size={16}
           className={[
             "text-muted-foreground transition-transform",
             panelOpen ? "rotate-180" : "",
@@ -374,7 +374,7 @@ export function GlobalMapClient({ data }: Props) {
           <div className="flex items-center justify-between border-b border-border px-3 py-2">
             <p className="text-xs font-semibold text-foreground/80">{t.pages.map.zones}</p>
             <button onClick={() => setPanelOpen(false)} className="text-muted-foreground hover:text-foreground">
-              <X size={12} />
+              <X size={16} />
             </button>
           </div>
           <ul className="max-h-64 overflow-y-auto py-1">
@@ -417,7 +417,7 @@ export function GlobalMapClient({ data }: Props) {
             {selectedYear ?? t.pages.map.allYears}
           </span>
           <ChevronDown
-            size={12}
+            size={16}
             className={[
               "text-muted-foreground transition-transform",
               yearOpen ? "rotate-180" : "",

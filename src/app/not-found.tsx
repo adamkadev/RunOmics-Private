@@ -5,7 +5,7 @@ import { t } from '@/i18n'
 export default function NotFound() {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
-      <HeartPulse size={48} className="mb-4 text-accent-text opacity-60" />
+      <HeartPulse size={24} className="mb-4 text-accent-text opacity-60" />
       <h1 className="text-6xl font-black text-foreground">{t.pages.notFound.code}</h1>
       <p className="mt-2 text-lg font-medium text-muted-foreground">
         {t.pages.notFound.heading}

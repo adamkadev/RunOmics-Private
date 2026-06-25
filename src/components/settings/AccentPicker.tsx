@@ -43,7 +43,7 @@ export function AccentPicker() {
               }}
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 transition-transform active:scale-90"
             >
-              {active && <Check size={18} className="text-white drop-shadow-[0_1px_1.5px_rgba(0,0,0,0.6)]" />}
+              {active && <Check size={16} className="text-white drop-shadow-[0_1px_1.5px_rgba(0,0,0,0.6)]" />}
             </button>
           )
         })}

@@ -59,7 +59,7 @@ export function KmSplits({ activity }: Props) {
   return (
     <GlassSurface variant="card" className="rounded-[22px] p-[18px]">
       <div className="mb-4 flex items-center gap-2">
-        <Timer size={14} className="text-accent-text" />
+        <Timer size={16} className="text-accent-text" />
         <h3 className="text-sm font-semibold text-foreground/80">{t.activity.splits.title}</h3>
       </div>
 
@@ -107,7 +107,7 @@ export function KmSplits({ activity }: Props) {
                     {splitNum}
                     {hasSubLaps && (
                       <ChevronRight
-                        size={10}
+                        size={12}
                         className={`ml-0.5 shrink-0 text-subtle transition-transform duration-150 ${isOpen ? 'rotate-90' : ''}`}
                       />
                     )}

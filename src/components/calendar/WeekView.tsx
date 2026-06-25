@@ -113,7 +113,7 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
                     {completed ? (
                       <Check size={12} strokeWidth={2.5} style={{ color: '#10b981' }} />
                     ) : missed ? (
-                      <X size={11} strokeWidth={2.5} style={{ color: MISSED_COLOR }} />
+                      <X size={12} strokeWidth={2.5} style={{ color: MISSED_COLOR }} />
                     ) : planned ? (
                       <span
                         className="h-2 w-2 rounded-full border"
@@ -206,7 +206,7 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
                     {t.activityTypes[a.type]} · {a.distanceKm.toFixed(1)} {t.units.km}
                   </span>
                 </span>
-                <ChevronRight size={14} className="shrink-0 text-foreground/30" />
+                <ChevronRight size={16} className="shrink-0 text-foreground/30" />
               </button>
             ))}
           </div>
@@ -264,7 +264,7 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
               </span>
             </span>
             <ChevronRight
-              size={14}
+              size={16}
               className={cn('shrink-0', !planTypeColor && 'text-accent/40')}
               style={planTypeColor ? { color: `${planTypeColor}66` } : undefined}
             />

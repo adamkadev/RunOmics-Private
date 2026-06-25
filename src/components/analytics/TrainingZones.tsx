@@ -24,7 +24,7 @@ export function TrainingZones({ data }: { data: TrainingZonesData }) {
     <GlassSurface variant="card" className="rounded-[22px] p-5">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
-          <Gauge size={14} className="text-violet-500 dark:text-violet-400" />
+          <Gauge size={16} className="text-violet-500 dark:text-violet-400" />
           {t.trainingZones.title}
         </h2>
         <span className="text-xs text-subtle">{t.trainingZones.thresholdLabel(formatPace(thresholdPaceSecPerKm))}</span>

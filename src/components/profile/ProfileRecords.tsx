@@ -48,7 +48,7 @@ export function ProfileRecords({ records }: { records: RecordEntry[] }) {
         href="/records"
         className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-accent-text active:scale-95"
       >
-        {t.profile.records.viewAll} <ArrowRight size={14} />
+        {t.profile.records.viewAll} <ArrowRight size={16} />
       </Link>
     </GlassSurface>
   )

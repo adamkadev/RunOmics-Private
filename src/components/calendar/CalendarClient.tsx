@@ -110,7 +110,7 @@ export function CalendarClient({ activities, plannedWorkouts }: Props) {
           onClick={() => shift(-1)}
           className="flex h-11 w-11 items-center justify-center rounded-[10px] border border-foreground/[0.12] bg-foreground/[0.08] text-foreground/65 transition-colors hover:bg-foreground/[0.12] active:scale-95"
         >
-          <ChevronLeft size={14} />
+          <ChevronLeft size={16} />
         </button>
         <button
           type="button"
@@ -118,7 +118,7 @@ export function CalendarClient({ activities, plannedWorkouts }: Props) {
           disabled={atPresent}
           className="flex h-11 w-11 items-center justify-center rounded-[10px] border border-foreground/[0.12] bg-foreground/[0.08] text-foreground/65 transition-colors hover:bg-foreground/[0.12] active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          <ChevronRight size={14} />
+          <ChevronRight size={16} />
         </button>
         {!atPresent && (
           <button

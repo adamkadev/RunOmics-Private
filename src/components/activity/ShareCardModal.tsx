@@ -216,7 +216,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             aria-label={t.activity.shareCard.close}
             className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-foreground/[0.09] text-muted-foreground transition-colors hover:bg-foreground/[0.14]"
           >
-            <X size={13} strokeWidth={2} />
+            <X size={16} strokeWidth={2} />
           </button>
         </div>
 
@@ -310,12 +310,12 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
         <div className="flex shrink-0 gap-2 border-t border-foreground/[0.07] p-3">
           {canShareFiles ? (
             <Button onClick={handleShare} className="h-[42px] flex-[1.5] text-[13px]">
-              <Share2 size={13} />
+              <Share2 size={16} />
               {t.activity.shareMenu.share}
             </Button>
           ) : null}
           <Button variant="secondary" onClick={handleSave} className="h-[42px] flex-1 text-[13px]">
-            <Download size={13} />
+            <Download size={16} />
             {t.activity.shareMenu.download}
           </Button>
           {canCopyImage && (
@@ -324,7 +324,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
               onClick={handleCopy}
               className={cn('h-[42px] flex-1 text-[13px]', copyState === 'copied' && STATUS.success.text)}
             >
-              {copyState === 'copied' ? <Check size={13} /> : <Copy size={13} />}
+              {copyState === 'copied' ? <Check size={16} /> : <Copy size={16} />}
               {copyState === 'copied' ? t.activity.shareMenu.copied : t.activity.shareMenu.copy}
             </Button>
           )}

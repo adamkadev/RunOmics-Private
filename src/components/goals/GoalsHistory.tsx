@@ -25,7 +25,7 @@ export function GoalsHistory({ history }: { history: YearOutcome[] }) {
   return (
     <section className="space-y-3">
       <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-        <History size={14} className="text-subtle" />
+        <History size={16} className="text-subtle" />
         {t.goals.history.title}
       </h2>
       <div className="space-y-2">
