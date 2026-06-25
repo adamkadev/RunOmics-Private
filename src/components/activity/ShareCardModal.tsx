@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useTheme } from 'next-themes'
 import { Check, Copy, Download, Share2, X } from 'lucide-react'
 import type { Activity } from '@/domain/activity/types'
 import {
@@ -11,6 +12,7 @@ import {
   SHARE_DESIGNS,
   shareCardFileName,
   W as CARD_W,
+  type MapStyle,
   type ShareDesign,
 } from '@/lib/shareCard'
 import { captureRouteMapSnapshot } from '@/lib/routeMapSnapshot'
@@ -19,11 +21,12 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { getDesignConfig } from '@/components/activity/shareCardDesignTokens'
 import { DesignThumb } from '@/components/activity/ShareCardThumbnails'
-import { DesignPreview } from '@/components/activity/ShareCardDesignPreview'
+import { DesignPreview, PREVIEW_HEIGHT, PREVIEW_WIDTH } from '@/components/activity/ShareCardDesignPreview'
 import { t } from '@/i18n'
 
-type MapStyle = 'day' | 'night'
-const MAP_STYLES: MapStyle[] = ['day', 'night']
+const MAP_STYLES: MapStyle[] = ['light', 'dark']
+// Scaled down so the controls below (design picker, toggles) stay visible without scrolling.
+const PREVIEW_SCALE = 0.8
 
 function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) => {
@@ -45,13 +48,14 @@ interface Props {
 }
 
 export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose }: Props) {
+  const { resolvedTheme } = useTheme()
   const [design, setDesign] = useState<ShareDesign>('aurora')
   const [showMap, setShowMap] = useState(true)
-  const [mapStyle, setMapStyle] = useState<MapStyle>('night')
+  const [mapStyle, setMapStyle] = useState<MapStyle>(resolvedTheme === 'light' ? 'light' : 'dark')
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [photoImage, setPhotoImage] = useState<HTMLImageElement | null>(null)
   const [copyState, setCopyState] = useState<'idle' | 'copied'>('idle')
-  // Resolved map snapshots, cached per style so switching Day/Night doesn't re-fetch.
+  // Resolved map snapshots, cached per style so switching light/dark doesn't re-fetch.
   const [mapSnapshots, setMapSnapshots] = useState<Partial<Record<MapStyle, { url: string; img: HTMLImageElement }>>>({})
 
   const [accent] = useState<AccentId>(currentAccent)
@@ -76,8 +80,9 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
       showMap: effectiveShowMap,
       photoImage,
       mapImage: mapSnapshot?.img ?? null,
+      mapStyle,
     })
-  }, [activity, accent, design, effectiveShowMap, photoImage, mapSnapshot])
+  }, [activity, accent, design, effectiveShowMap, photoImage, mapSnapshot, mapStyle])
 
   useEffect(() => { redraw() }, [redraw])
 
@@ -99,7 +104,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   }, [])
 
   // Captures the route-on-map background for the selected style, the first time it's needed.
-  // Resolved snapshots are cached per style in state, so switching Day/Night back and forth
+  // Resolved snapshots are cached per style in state, so switching light/dark back and forth
   // doesn't re-fetch.
   useEffect(() => {
     if (!isMapBg || mapSnapshots[mapStyle]) return
@@ -109,10 +114,12 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     if (!token) { console.warn('NEXT_PUBLIC_MAPTILER_TOKEN not set'); return }
 
     let cancelled = false
+    // light basemap: skip the accent theme entirely for the route highlight, go plain white.
+    const routeColor = mapStyle === 'light' ? '#ffffff' : getDesignConfig('map', accent).routeColor
     captureRouteMapSnapshot({
       route,
-      color: getDesignConfig('map', accent).routeColor,
-      isDark: mapStyle === 'night',
+      color: routeColor,
+      isDark: mapStyle === 'dark',
       token,
       width: CARD_W,
       height: CARD_H,
@@ -126,6 +133,12 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
 
     return () => { cancelled = true }
   }, [isMapBg, activity.route, accent, mapStyle, mapSnapshots])
+
+  function selectDesign(d: ShareDesign) {
+    setDesign(d)
+    // Memory's photo is the focal point - don't clutter it with the route trace by default.
+    setShowMap(d !== 'memory')
+  }
 
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -204,69 +217,27 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
 
         {/* Scrollable body */}
         <div className="flex flex-1 flex-col overflow-y-auto">
-          {/* Preview card (interactive HTML preview) */}
+          {/* Preview card (interactive HTML preview, scaled down so the menus below stay visible) */}
           <div className="flex justify-center px-5 pb-4">
-            <DesignPreview
-              activity={activity}
-              design={design}
-              accent={accent}
-              showMap={showMap}
-              photoUrl={photoUrl}
-              onPickPhoto={() => fileInputRef.current?.click()}
-              mapSnapshotUrl={mapSnapshot?.url}
-              mapLoading={mapLoading}
-            />
+            <div style={{ width: PREVIEW_WIDTH * PREVIEW_SCALE, height: PREVIEW_HEIGHT * PREVIEW_SCALE }}>
+              <div style={{ width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT, transform: `scale(${PREVIEW_SCALE})`, transformOrigin: 'top left' }}>
+                <DesignPreview
+                  activity={activity}
+                  design={design}
+                  accent={accent}
+                  showMap={showMap}
+                  photoUrl={photoUrl}
+                  onPickPhoto={() => fileInputRef.current?.click()}
+                  mapSnapshotUrl={mapSnapshot?.url}
+                  mapLoading={mapLoading}
+                  mapStyle={mapStyle}
+                />
+              </div>
+            </div>
           </div>
 
           {/* Hidden canvas for export */}
           <canvas ref={canvasRef} style={{ display: 'none' }} />
-
-          {/* Map toggle - placed right under the preview so it's visible without scrolling */}
-          <div
-            className="flex items-center justify-between border-t border-foreground/[0.07] px-5 py-3"
-            style={{ opacity: isMapBg ? 0.42 : 1, transition: 'opacity 0.2s', pointerEvents: isMapBg ? 'none' : 'auto' }}
-          >
-            <div>
-              <div className="text-[15px] text-foreground">{t.activity.shareCard.mapToggle}</div>
-              <div className="mt-0.5 text-[12px] text-muted-foreground">
-                {isMapBg ? t.activity.shareCard.mapToggleAlways : t.activity.shareCard.mapToggleNote}
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => { if (!isMapBg) setShowMap((m) => !m) }}
-              aria-pressed={effectiveShowMap}
-              className="relative ml-4 h-[31px] w-[51px] shrink-0 rounded-full transition-colors duration-200"
-              style={{ background: effectiveShowMap ? accentHex : 'rgba(120,120,128,0.22)' }}
-            >
-              <span
-                className="absolute top-[2px] h-[27px] w-[27px] rounded-full bg-white shadow-[0_2px_6px_rgba(0,0,0,0.28)] transition-[left] duration-200"
-                style={{ left: effectiveShowMap ? 22 : 2 }}
-              />
-            </button>
-          </div>
-
-          {/* Map style (Day/Night basemap), Map design only */}
-          {isMapBg && (
-            <div className="flex items-center justify-between border-t border-foreground/[0.07] px-5 py-3">
-              <div className="text-[15px] text-foreground">{t.activity.shareCard.mapStyleLabel}</div>
-              <div className="flex gap-1 rounded-[10px] bg-foreground/[0.07] p-1">
-                {MAP_STYLES.map((style) => (
-                  <button
-                    key={style}
-                    type="button"
-                    onClick={() => setMapStyle(style)}
-                    className={cn(
-                      'rounded-[7px] px-3 py-1.5 text-[13px] font-semibold transition-colors',
-                      mapStyle === style ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'
-                    )}
-                  >
-                    {style === 'day' ? t.activity.shareCard.mapStyleDay : t.activity.shareCard.mapStyleNight}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Design picker */}
           <div className="border-t border-foreground/[0.07] px-5 py-3">
@@ -280,11 +251,54 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
                   design={d}
                   selected={design === d}
                   accentHex={accentHex}
-                  onClick={() => setDesign(d)}
+                  onClick={() => selectDesign(d)}
                 />
               ))}
             </div>
           </div>
+
+          {/* Map toggle - hidden for the Map design (the map is always the background there) */}
+          {!isMapBg && (
+            <div className="flex items-center justify-between border-t border-foreground/[0.07] px-5 py-3">
+              <div>
+                <div className="text-[15px] text-foreground">{t.activity.shareCard.mapToggle}</div>
+                <div className="mt-0.5 text-[12px] text-muted-foreground">{t.activity.shareCard.mapToggleNote}</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowMap((m) => !m)}
+                aria-pressed={showMap}
+                className="relative ml-4 h-[31px] w-[51px] shrink-0 rounded-full transition-colors duration-200"
+                style={{ background: showMap ? accentHex : 'rgba(120,120,128,0.22)' }}
+              >
+                <span
+                  className="absolute top-[2px] h-[27px] w-[27px] rounded-full bg-white shadow-[0_2px_6px_rgba(0,0,0,0.28)] transition-[left] duration-200"
+                  style={{ left: showMap ? 22 : 2 }}
+                />
+              </button>
+            </div>
+          )}
+          {/* Map style (light/dark basemap), Map design only */}
+          {isMapBg && (
+            <div className="flex items-center justify-between border-t border-foreground/[0.07] px-5 py-3">
+              <div className="text-[15px] text-foreground">{t.activity.shareCard.mapStyleLabel}</div>
+              <div className="flex rounded-full border border-foreground/10 bg-foreground/[0.04] p-1">
+                {MAP_STYLES.map((style) => (
+                  <button
+                    key={style}
+                    type="button"
+                    onClick={() => setMapStyle(style)}
+                    className={cn(
+                      'rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors',
+                      mapStyle === style ? 'bg-foreground/[0.14] text-foreground' : 'text-foreground/55'
+                    )}
+                  >
+                    {style === 'light' ? t.activity.shareCard.mapStyleLight : t.activity.shareCard.mapStyleDark}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Photo picker (Memory only) */}
           {design === 'memory' && (

@@ -2,8 +2,9 @@ import type { Activity } from '@/domain/activity/types'
 import { formatDateWithYear } from '@/lib/formatters'
 import { shareCardTitle, buildStatItems } from '@/lib/shareCardStats'
 import { projectRouteToCircle } from '@/lib/shareCardGeometry'
+import { t } from '@/i18n'
 import {
-  CR, CX, CY, H, M, MAP_BOTTOM_SCRIM_H, MAP_STATS_H, MAP_TOP_SCRIM_H, STATS_H, STATS_Y, W,
+  CR, CX, CY, H, M, MAP_BOTTOM_SCRIM_H, MAP_TOP_SCRIM_H, STATS_H, STATS_Y, W,
   type DesignPalette,
 } from '@/lib/shareCardPalette'
 
@@ -66,6 +67,14 @@ function drawMapScrims(ctx: CanvasRenderingContext2D) {
   bot.addColorStop(1, 'rgba(0,0,0,0.62)')
   ctx.fillStyle = bot
   ctx.fillRect(0, H - MAP_BOTTOM_SCRIM_H, W, MAP_BOTTOM_SCRIM_H)
+
+  // Extra dark patch behind the brand badge, so it stays legible on bright (Day) basemaps.
+  const cornerSize = 480
+  const corner = ctx.createRadialGradient(W, 0, 0, W, 0, cornerSize)
+  corner.addColorStop(0, 'rgba(0,0,0,0.7)')
+  corner.addColorStop(1, 'rgba(0,0,0,0)')
+  ctx.fillStyle = corner
+  ctx.fillRect(W - cornerSize, 0, cornerSize, cornerSize)
 }
 
 /** Fills the background: a captured/chosen image (with legibility scrims) or a flat/gradient color. */
@@ -140,17 +149,51 @@ function wrapTitle(ctx: CanvasRenderingContext2D, text: string, maxWidth: number
   return lines
 }
 
-export function drawHeader(ctx: CanvasRenderingContext2D, activity: Activity, p: DesignPalette) {
+// Scales the preview's 22x90 badge (within its 258-wide card) up to canvas size, so the
+// exported PNG's brand badge matches what's shown in the live HTML/CSS preview.
+const BADGE_SCALE = W / 258
+
+/** Glass-pill brand badge, top-right - mirrors the live preview's CSS badge. */
+export function drawBrandBadge(ctx: CanvasRenderingContext2D, p: DesignPalette) {
+  const w = 22 * BADGE_SCALE
+  const h = 90 * BADGE_SCALE
+  const top = 20 * BADGE_SCALE
+  const radius = 9 * BADGE_SCALE
+  const x = W - w
+
+  // Map's photographic background varies a lot more in brightness than the other
+  // designs' controlled gradients, so its pill needs a more opaque glass to stay legible.
+  const fillOpacity = p.isMapBg ? 0.32 : p.isLight ? 0.10 : 0.18
+  const borderOpacity = p.isMapBg ? 0.45 : p.isLight ? 0.18 : 0.3
+
   ctx.save()
-  ctx.translate(W - M + 8, 520)
-  ctx.rotate(-Math.PI / 2)
-  ctx.font = '800 26px system-ui, sans-serif'
-  ctx.fillStyle = p.brandColor
-  ctx.globalAlpha = 0.45
-  ctx.textBaseline = 'alphabetic'
-  ctx.fillText('RUNOMICS', 0, 0)
+  ctx.beginPath()
+  ctx.moveTo(x, top)
+  ctx.lineTo(x + w, top)
+  ctx.lineTo(x + w, top + h)
+  ctx.lineTo(x + radius, top + h)
+  ctx.quadraticCurveTo(x, top + h, x, top + h - radius)
+  ctx.lineTo(x, top)
+  ctx.closePath()
+  ctx.fillStyle = p.isLight ? `rgba(15,23,42,${fillOpacity})` : `rgba(255,255,255,${fillOpacity})`
+  ctx.fill()
+  ctx.strokeStyle = p.isLight ? `rgba(15,23,42,${borderOpacity})` : `rgba(255,255,255,${borderOpacity})`
+  ctx.lineWidth = 2
+  ctx.stroke()
   ctx.restore()
 
+  ctx.save()
+  ctx.translate(x + w / 2, top + h / 2)
+  ctx.rotate(Math.PI / 2)
+  ctx.font = `800 ${9.5 * BADGE_SCALE}px system-ui, sans-serif`
+  ctx.fillStyle = p.brandColor
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText('RUNOMICS', 0, 0)
+  ctx.restore()
+}
+
+export function drawHeader(ctx: CanvasRenderingContext2D, activity: Activity, p: DesignPalette) {
   ctx.textBaseline = 'alphabetic'
   ctx.textAlign = 'left'
   ctx.font = '700 68px system-ui, sans-serif'
@@ -169,16 +212,6 @@ export function drawHeader(ctx: CanvasRenderingContext2D, activity: Activity, p:
 
 /** Smaller header for the Map design, so the route stays the focal point. */
 export function drawCompactHeader(ctx: CanvasRenderingContext2D, activity: Activity, p: DesignPalette) {
-  ctx.save()
-  ctx.translate(W - M + 8, 420)
-  ctx.rotate(-Math.PI / 2)
-  ctx.font = '800 22px system-ui, sans-serif'
-  ctx.fillStyle = p.brandColor
-  ctx.globalAlpha = 0.5
-  ctx.textBaseline = 'alphabetic'
-  ctx.fillText('RUNOMICS', 0, 0)
-  ctx.restore()
-
   ctx.textBaseline = 'alphabetic'
   ctx.textAlign = 'left'
   ctx.font = '700 52px system-ui, sans-serif'
@@ -207,59 +240,81 @@ export function drawStatsCard(ctx: CanvasRenderingContext2D, activity: Activity,
   ctx.restore()
 
   const stats = buildStatItems(activity)
+  const rows = [stats.slice(0, 2), stats.slice(2, 4)]
   const cellW = (W - M * 2) / 2
-  const PAD = 52
-  const ROW_H = STATS_H / 2
+  const PAD_X = 52
+  const VALUE_LABEL_GAP = 14
+  const ROW_GAP = 36
 
   ctx.textBaseline = 'alphabetic'
   ctx.textAlign = 'left'
 
-  stats.slice(0, 4).forEach((stat, i) => {
-    const col = i % 2
-    const row = Math.floor(i / 2)
-    const x = M + PAD + col * cellW
-    const valueY = STATS_Y + (row === 0 ? 92 : ROW_H + 64)
+  // Measure actual glyph metrics (rather than hardcoded offsets) so the two stat
+  // rows can be centered as a block, matching the live preview's symmetric padding.
+  const rowMetrics = rows.map((row) => {
+    let valueAscent = 0, valueDescent = 0, labelAscent = 0, labelDescent = 0
+    row.forEach((stat) => {
+      ctx.font = `800 ${stat.big ? 92 : 66}px system-ui, sans-serif`
+      const vm = ctx.measureText(stat.value)
+      valueAscent = Math.max(valueAscent, vm.actualBoundingBoxAscent)
+      valueDescent = Math.max(valueDescent, vm.actualBoundingBoxDescent)
+      ctx.font = '600 30px system-ui, sans-serif'
+      const lm = ctx.measureText(stat.label)
+      labelAscent = Math.max(labelAscent, lm.actualBoundingBoxAscent)
+      labelDescent = Math.max(labelDescent, lm.actualBoundingBoxDescent)
+    })
+    return { valueAscent, valueDescent, labelAscent, labelDescent, height: valueAscent + valueDescent + VALUE_LABEL_GAP + labelAscent + labelDescent }
+  })
 
-    ctx.font = `800 ${stat.big ? 92 : 66}px system-ui, sans-serif`
-    ctx.fillStyle = stat.big ? p.valueColor : p.secondaryColor
-    ctx.fillText(stat.value, x, valueY)
+  const totalHeight = rowMetrics[0].height + ROW_GAP + rowMetrics[1].height
+  let cursorY = STATS_Y + (STATS_H - totalHeight) / 2
 
-    ctx.font = '600 30px system-ui, sans-serif'
-    ctx.fillStyle = p.labelColor
-    ctx.fillText(stat.label, x, valueY + 42)
+  rows.forEach((row, r) => {
+    const { valueAscent, valueDescent, labelAscent } = rowMetrics[r]
+    const valueBaseline = cursorY + valueAscent
+    const labelBaseline = valueBaseline + valueDescent + VALUE_LABEL_GAP + labelAscent
+
+    row.forEach((stat, c) => {
+      const x = M + PAD_X + c * cellW
+
+      ctx.font = `800 ${stat.big ? 92 : 66}px system-ui, sans-serif`
+      ctx.fillStyle = stat.big ? p.valueColor : p.secondaryColor
+      ctx.fillText(stat.value, x, valueBaseline)
+
+      ctx.font = '600 30px system-ui, sans-serif'
+      ctx.fillStyle = p.labelColor
+      ctx.fillText(stat.label, x, labelBaseline)
+    })
+
+    cursorY += rowMetrics[r].height + ROW_GAP
   })
 }
 
-/** Slim single-row stats bar for the Map design, leaving most of the map visible. */
-export function drawMapStatsBar(ctx: CanvasRenderingContext2D, activity: Activity, p: DesignPalette) {
-  const y = H - M - MAP_STATS_H
-  ctx.save()
-  ctx.beginPath()
-  ctx.roundRect(M, y, W - M * 2, MAP_STATS_H, 32)
-  ctx.fillStyle = p.statsBg
-  ctx.fill()
-  ctx.strokeStyle = p.statsBorder
-  ctx.lineWidth = 2
-  ctx.stroke()
-  ctx.restore()
-
-  const stats = buildStatItems(activity).slice(0, 4)
-  const PAD = 44
-  const cellW = (W - M * 2 - PAD * 2) / stats.length
-  const valueY = y + 96
+/**
+ * Image-background stats (Map, Memory): a hero distance readout plus a secondary line
+ * (time · pace · avg HR), sitting directly on the bottom scrim with no card background,
+ * so the map/photo stays visible.
+ */
+export function drawOverlayStats(ctx: CanvasRenderingContext2D, activity: Activity, p: DesignPalette) {
+  const [hero, ...rest] = buildStatItems(activity)
+  const baseline = H - M
+  const heroY = rest.length ? baseline - 78 : baseline
 
   ctx.textBaseline = 'alphabetic'
   ctx.textAlign = 'left'
 
-  stats.forEach((stat, i) => {
-    const x = M + PAD + i * cellW
-
-    ctx.font = `800 ${stat.big ? 50 : 42}px system-ui, sans-serif`
-    ctx.fillStyle = stat.big ? p.valueColor : p.secondaryColor
-    ctx.fillText(stat.value, x, valueY)
-
-    ctx.font = '600 22px system-ui, sans-serif'
+  if (rest.length) {
+    ctx.font = '600 34px system-ui, sans-serif'
     ctx.fillStyle = p.labelColor
-    ctx.fillText(stat.label, x, valueY + 36)
-  })
+    ctx.fillText(rest.map((stat) => stat.value).join('   ·   '), M, baseline)
+  }
+
+  ctx.font = '800 100px system-ui, sans-serif'
+  ctx.fillStyle = p.valueColor
+  ctx.fillText(hero.value, M, heroY)
+
+  const heroWidth = ctx.measureText(hero.value).width
+  ctx.font = '700 36px system-ui, sans-serif'
+  ctx.fillStyle = p.labelColor
+  ctx.fillText(t.units.km, M + heroWidth + 16, heroY)
 }

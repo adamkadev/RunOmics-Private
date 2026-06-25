@@ -3,11 +3,14 @@
 import { useId } from 'react'
 import { ImagePlus, Map as MapIcon } from 'lucide-react'
 import type { Activity } from '@/domain/activity/types'
-import { buildStatItems, projectRouteToCircle, routePathD, shareCardTitle, type ShareDesign } from '@/lib/shareCard'
+import { buildStatItems, projectRouteToCircle, routePathD, shareCardTitle, type MapStyle, type ShareDesign } from '@/lib/shareCard'
 import { formatDateWithYear } from '@/lib/formatters'
 import type { AccentId } from '@/lib/accent'
 import { t } from '@/i18n'
 import { ACCENT_TOKENS, getDesignConfig } from '@/components/activity/shareCardDesignTokens'
+
+export const PREVIEW_WIDTH = 258
+export const PREVIEW_HEIGHT = 368
 
 function BlobAnimation() {
   return (
@@ -35,13 +38,18 @@ interface Props {
   onPickPhoto?: () => void
   mapSnapshotUrl?: string | null
   mapLoading?: boolean
+  mapStyle?: MapStyle
 }
 
-export function DesignPreview({ activity, design, accent, showMap, photoUrl, onPickPhoto, mapSnapshotUrl, mapLoading }: Props) {
+export function DesignPreview({ activity, design, accent, showMap, photoUrl, onPickPhoto, mapSnapshotUrl, mapLoading, mapStyle }: Props) {
   const clipId = useId()
-  const config = getDesignConfig(design, accent)
+  const baseConfig = getDesignConfig(design, accent)
   const isMapBg = design === 'map'
   const isMemory = design === 'memory'
+  // Day basemap: skip the accent theme entirely for the overlay text, go plain white.
+  // isLight: true also flips the brand badge to a dark glass pill, since the bright
+  // basemap would otherwise leave the white-tinted pill (and its white text) unreadable.
+  const config = isMapBg && mapStyle === 'light' ? { ...baseConfig, accentColor: '#ffffff', routeColor: '#ffffff', isLight: true } : baseConfig
   const effectiveShowMap = showMap || isMapBg
   const barColor = ACCENT_TOKENS[accent].barColor
 
@@ -50,11 +58,12 @@ export function DesignPreview({ activity, design, accent, showMap, photoUrl, onP
   const stats = buildStatItems(activity).slice(0, 4)
 
   const hasBgImage = (isMemory && !!photoUrl) || (isMapBg && !!mapSnapshotUrl)
-  // The Map design keeps its overlays small so the route stays visible underneath.
-  const topScrimHeight = isMapBg ? 64 : 175
-  const bottomScrimHeight = isMapBg ? 100 : 265
-  const topScrimPeakOpacity = isMapBg ? 0.55 : 0.80
-  const bottomScrimPeakOpacity = isMapBg ? 0.62 : 0.92
+  // Image-background designs (Map, Memory) keep their overlays small, so the map/photo stays visible.
+  const isOverlayStyle = isMapBg || isMemory
+  const topScrimHeight = isOverlayStyle ? 64 : 175
+  const bottomScrimHeight = isOverlayStyle ? 100 : 265
+  const topScrimPeakOpacity = isOverlayStyle ? 0.55 : 0.80
+  const bottomScrimPeakOpacity = isOverlayStyle ? 0.62 : 0.92
 
   return (
     <>
@@ -62,8 +71,8 @@ export function DesignPreview({ activity, design, accent, showMap, photoUrl, onP
       <div
         className="relative overflow-hidden rounded-[22px]"
         style={{
-          width: 258,
-          height: 368,
+          width: PREVIEW_WIDTH,
+          height: PREVIEW_HEIGHT,
           background: hasBgImage ? 'transparent' : config.bg,
           boxShadow: '0 20px 56px rgba(0,0,0,0.45), 0 0 0 0.5px rgba(255,255,255,0.08)',
         }}
@@ -95,7 +104,13 @@ export function DesignPreview({ activity, design, accent, showMap, photoUrl, onP
         {/* Top accent bar */}
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: barColor, zIndex: 10 }} />
 
-        {/* Branding badge */}
+        {/* Extra dark corner behind the badge, so it stays legible on bright (Day) basemaps */}
+        {isMapBg && (
+          <div style={{ position: 'absolute', top: 0, right: 0, width: 90, height: 90, background: 'radial-gradient(circle at 100% 0%, rgba(0,0,0,0.7) 0%, transparent 70%)', zIndex: 11 }} />
+        )}
+
+        {/* Branding badge - Map's photographic background varies more in brightness than the
+            other designs' controlled gradients, so its pill needs a more opaque glass */}
         <div
           style={{
             position: 'absolute',
@@ -103,13 +118,13 @@ export function DesignPreview({ activity, design, accent, showMap, photoUrl, onP
             right: 0,
             width: 22,
             height: 90,
-            background: config.isLight ? 'rgba(15,23,42,0.07)' : 'rgba(255,255,255,0.14)',
+            background: config.isLight ? `rgba(15,23,42,${isMapBg ? 0.32 : 0.07})` : `rgba(255,255,255,${isMapBg ? 0.32 : 0.14})`,
             backdropFilter: 'blur(20px) saturate(1.6)',
             borderBottomLeftRadius: 9,
             borderLeft: '0.5px solid',
             borderBottom: '0.5px solid',
             borderTop: '0.5px solid',
-            borderColor: config.isLight ? 'rgba(15,23,42,0.12)' : 'rgba(255,255,255,0.24)',
+            borderColor: config.isLight ? `rgba(15,23,42,${isMapBg ? 0.45 : 0.12})` : `rgba(255,255,255,${isMapBg ? 0.45 : 0.24})`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -118,7 +133,7 @@ export function DesignPreview({ activity, design, accent, showMap, photoUrl, onP
         >
           <span
             style={{
-              writingMode: 'vertical-rl',
+              writingMode: 'vertical-lr',
               fontSize: 9.5,
               fontWeight: 800,
               letterSpacing: '0.14em',
@@ -199,25 +214,18 @@ export function DesignPreview({ activity, design, accent, showMap, photoUrl, onP
           {/* Spacer if no map circle */}
           {(isMapBg || !effectiveShowMap) && <div style={{ flex: 1 }} />}
 
-          {/* Stats: slim row for the Map design (leaves the map visible), full glass card otherwise */}
-          {isMapBg ? (
-            <div
-              style={{
-                display: 'flex', justifyContent: 'space-between', gap: 6,
-                background: config.statsBg, border: `1px solid ${config.statsBorder}`,
-                backdropFilter: 'blur(18px) saturate(1.4)', borderRadius: 12, padding: '8px 10px',
-              }}
-            >
-              {stats.map((stat) => (
-                <div key={stat.label}>
-                  <div style={{ fontSize: stat.big ? 14 : 12, fontWeight: 800, letterSpacing: '-0.03em', color: stat.big ? config.accentColor : config.statsPrimaryColor }}>
-                    {stat.value}
-                  </div>
-                  <div style={{ fontSize: 7, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: config.statsLabelColor, marginTop: 1 }}>
-                    {stat.label}
-                  </div>
+          {/* Stats: hero distance + secondary line directly on the scrim for Map/Memory (no card, so the map/photo stays visible), full glass card otherwise */}
+          {isOverlayStyle ? (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
+                <span style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.04em', color: config.accentColor }}>{stats[0].value}</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: config.statsLabelColor }}>{t.units.km}</span>
+              </div>
+              {stats.length > 1 && (
+                <div style={{ fontSize: 11, fontWeight: 600, color: config.statsLabelColor, marginTop: 2 }}>
+                  {stats.slice(1).map((s) => s.value).join('   ·   ')}
                 </div>
-              ))}
+              )}
             </div>
           ) : (
             <div

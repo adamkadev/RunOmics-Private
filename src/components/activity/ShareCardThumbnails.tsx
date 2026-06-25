@@ -39,11 +39,11 @@ function NightThumb() {
 function CleanThumb() {
   return (
     <div style={{ position: 'absolute', inset: 0, background: '#f8fafc' }}>
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '7px 8px' }}>
-        <div style={{ fontSize: 13, fontWeight: 800, color: '#0f172a', letterSpacing: '-0.04em', lineHeight: 1 }}>9.00</div>
-        <div style={{ fontSize: 8, fontWeight: 600, color: '#94a3b8', letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 2 }}>{t.units.km}</div>
-        <div style={{ height: 1, background: 'rgba(0,0,0,0.08)', margin: '4px 0' }} />
-        <div style={{ fontSize: 10, fontWeight: 700, color: '#334155', letterSpacing: '-0.025em' }}>54:33</div>
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '6px 7px' }}>
+        <div style={{ background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 7, padding: '5px 7px' }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: '#0f172a', letterSpacing: '-0.03em' }}>9.00</div>
+          <div style={{ fontSize: 8, color: '#94a3b8', fontWeight: 500, marginTop: 1 }}>{t.units.km}</div>
+        </div>
       </div>
     </div>
   )

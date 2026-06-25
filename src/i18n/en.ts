@@ -601,7 +601,7 @@ export const en = {
       pace: 'PACE',
       avgHr: 'AVG HR',
       close: 'Close',
-      choosePhoto: 'Choose a photo',
+      choosePhoto: 'Choose',
       designLabel: 'Design',
       designLabels: {
         aurora: 'Aurora',
@@ -616,8 +616,8 @@ export const en = {
       photoLabel: 'Background photo',
       galleryPlaceholder: 'My gallery',
       mapStyleLabel: 'Map style',
-      mapStyleDay: 'Day',
-      mapStyleNight: 'Night',
+      mapStyleLight: 'Light',
+      mapStyleDark: 'Dark',
     },
     stats: {
       distance: 'Distance',

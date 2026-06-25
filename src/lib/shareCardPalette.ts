@@ -16,15 +16,16 @@ export const CR = 330
 export const STATS_Y = 1400
 export const STATS_H = 420
 
-// Map design: keeps overlays small so the route map stays the focal point
-export const MAP_STATS_H = 220
+// Map design: keeps overlays small so the route map stays the focal point.
+// Stats sit directly on the scrim (no card background).
 export const MAP_TOP_SCRIM_H = 360
-export const MAP_BOTTOM_SCRIM_H = MAP_STATS_H + M * 2 + 80
+export const MAP_BOTTOM_SCRIM_H = 380
 
 export interface DesignPalette {
   bg: string
   showBlobs: boolean
   blob1: string; blob2: string; blob1Op: number; blob2Op: number
+  isLight: boolean
   titleColor: string; dateColor: string; brandColor: string
   circleBg: string; routeColor: string
   statsBg: string; statsBorder: string
@@ -91,6 +92,7 @@ export function resolveDesignPalette(design: ShareDesign, accent: AccentId): Des
       return {
         bg: a.lightBg, showBlobs: true,
         blob1: a.la1, blob2: a.la2, blob1Op: a.la1Op, blob2Op: a.la2Op,
+        isLight: true,
         titleColor: '#0f172a', dateColor: '#64748b', brandColor: '#0f172a',
         circleBg: a.lightCircle, routeColor: a.lightAccent,
         statsBg: 'rgba(255,255,255,0.68)', statsBorder: 'rgba(255,255,255,0.82)',
@@ -101,6 +103,7 @@ export function resolveDesignPalette(design: ShareDesign, accent: AccentId): Des
       return {
         bg: a.darkBg, showBlobs: true,
         blob1: a.da1, blob2: a.da2, blob1Op: a.da1Op, blob2Op: a.da2Op,
+        isLight: false,
         titleColor: '#ffffff', dateColor: 'rgba(255,255,255,0.45)', brandColor: '#ffffff',
         circleBg: a.darkCircle, routeColor: a.darkText,
         statsBg: 'rgba(255,255,255,0.07)', statsBorder: 'rgba(255,255,255,0.13)',
@@ -111,6 +114,7 @@ export function resolveDesignPalette(design: ShareDesign, accent: AccentId): Des
       return {
         bg: '#f8fafc', showBlobs: false,
         blob1: '#000', blob2: '#000', blob1Op: 0, blob2Op: 0,
+        isLight: true,
         titleColor: '#0f172a', dateColor: '#94a3b8', brandColor: '#0f172a',
         circleBg: 'rgba(0,0,0,0.035)', routeColor: a.lightAccent,
         statsBg: 'rgba(0,0,0,0.025)', statsBorder: 'rgba(0,0,0,0.08)',
@@ -121,6 +125,7 @@ export function resolveDesignPalette(design: ShareDesign, accent: AccentId): Des
       return {
         bg: '#0f172a', showBlobs: false,
         blob1: '#000', blob2: '#000', blob1Op: 0, blob2Op: 0,
+        isLight: false,
         titleColor: '#ffffff', dateColor: 'rgba(255,255,255,0.45)', brandColor: '#ffffff',
         circleBg: a.darkCircle, routeColor: a.darkText,
         statsBg: 'rgba(255,255,255,0.06)', statsBorder: 'rgba(255,255,255,0.10)',
@@ -131,6 +136,7 @@ export function resolveDesignPalette(design: ShareDesign, accent: AccentId): Des
       return {
         bg: '#1e3a5f', showBlobs: false,
         blob1: '#000', blob2: '#000', blob1Op: 0, blob2Op: 0,
+        isLight: false,
         titleColor: '#ffffff', dateColor: 'rgba(255,255,255,0.62)', brandColor: '#ffffff',
         circleBg: 'rgba(255,255,255,0.04)', routeColor: 'rgba(255,255,255,0.72)',
         statsBg: 'rgba(0,0,0,0.42)', statsBorder: 'rgba(255,255,255,0.12)',
