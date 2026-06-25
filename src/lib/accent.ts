@@ -28,5 +28,24 @@ export const ACCENT_CHANGE_EVENT = 'runomics:accent-change'
 export function persistAccent(accent: AccentId): void {
   localStorage.setItem(ACCENT_STORAGE_KEY, accent)
   document.documentElement.setAttribute('data-accent', accent)
+
+  // Update theme-color meta tag for iOS status bar
+  const bgColors: Record<AccentId, [string, string]> = {
+    nature: ['#eef3f0', '#070f0c'],
+    performance: ['#eff6ff', '#06091a'],
+    impact: ['#fff1f2', '#130608'],
+    motivation: ['#fff7ed', '#130a04'],
+    endurance: ['#f5f3ff', '#0d0a1a'],
+  }
+  const isDark =
+    typeof window !== 'undefined' &&
+    (localStorage.getItem('theme') === 'dark' ||
+      (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches))
+  const colors = bgColors[accent]
+  const color = isDark ? colors[1] : colors[0]
+  document.querySelectorAll('meta[name="theme-color"]').forEach((m) => {
+    m.setAttribute('content', color)
+  })
+
   window.dispatchEvent(new Event(ACCENT_CHANGE_EVENT))
 }

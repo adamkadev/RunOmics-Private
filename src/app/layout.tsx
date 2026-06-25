@@ -53,8 +53,8 @@ export const viewport: Viewport = {
   maximumScale: 1,
   viewportFit: 'cover',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)',  color: '#111827' },
+    { media: '(prefers-color-scheme: light)', color: '#eef3f0' },
+    { media: '(prefers-color-scheme: dark)',  color: '#070f0c' },
   ],
 }
 
@@ -73,6 +73,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             if(a&&a!=='nature'){
               document.documentElement.setAttribute('data-accent',a);
             }
+            var isDark=localStorage.getItem('theme')==='dark'||
+              (!localStorage.getItem('theme')&&window.matchMedia('(prefers-color-scheme: dark)').matches);
+            var bg={
+              nature:      ['#eef3f0','#070f0c'],
+              performance: ['#eff6ff','#06091a'],
+              impact:      ['#fff1f2','#130608'],
+              motivation:  ['#fff7ed','#130a04'],
+              endurance:   ['#f5f3ff','#0d0a1a']
+            };
+            var k=(a&&bg[a])?a:'nature';
+            var color=isDark?bg[k][1]:bg[k][0];
+            document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.setAttribute('content',color);});
           }catch(e){}`}
         </Script>
         <Providers>
