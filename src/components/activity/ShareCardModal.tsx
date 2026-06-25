@@ -247,7 +247,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             <div className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.07em] text-foreground/40">
               {t.activity.shareCard.designLabel}
             </div>
-            <div className="flex gap-2.5 overflow-x-auto pb-1">
+            <div className="flex gap-2.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {SHARE_DESIGNS.map((d) => (
                 <DesignThumb
                   key={d}
