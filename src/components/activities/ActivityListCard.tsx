@@ -22,8 +22,14 @@ export function ActivityListCard({ activity: a, prLabels = [] }: Props) {
       className="glass-card block rounded-[20px] px-5 py-[18px] transition-transform duration-[120ms] ease-out active:scale-[0.98]"
     >
       <div className="flex items-center gap-2.5">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-accent/30 bg-accent/10">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="text-accent">
+        <span
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border"
+          style={{
+            backgroundColor: `color-mix(in srgb, ${dotColor} 10%, transparent)`,
+            borderColor: `color-mix(in srgb, ${dotColor} 30%, transparent)`,
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={dotColor} strokeWidth="2.2">
             <path d="M13 4a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-5 6l2-2 2 1 3-2M7 17l2-3 3 1 2-2" />
           </svg>
         </span>
