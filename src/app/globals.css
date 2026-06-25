@@ -408,6 +408,26 @@
     line-height: 1.15;
   }
 
+  /* HIG touch target minimum (44x44pt) for nav controls */
+  .btn-nav {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Accessible metric progress bars (8px, previously 4px) */
+  .metric-bar {
+    height: 8px;
+    border-radius: 4px;
+  }
+
+  /* Eyebrow label style for widget headers */
+  .widget-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
   .aurora {
     position: fixed;
     inset: 0;

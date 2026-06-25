@@ -47,7 +47,6 @@ const MORE_PRIMARY_ITEMS = [
   { href: '/shoes', label: t.nav.items.shoes, icon: Footprints },
 ]
 const MORE_SECONDARY_ITEMS = [
-  { href: '/profile', label: t.nav.items.profile, icon: User },
   { href: '/settings', label: t.nav.items.settings, icon: Settings },
 ]
 
@@ -58,17 +57,20 @@ function HeaderMark({ size = 24 }: { size?: number }) {
     <svg
       width={size}
       height={size}
-      viewBox="0 0 64 64"
+      viewBox="0 0 44 44"
       fill="none"
-      stroke="currentColor"
-      style={{ color: 'var(--accent)' }}
+      className="text-accent-text"
       role="img"
-      aria-label=""
       aria-hidden="true"
     >
-      <circle cx="32" cy="32" r="9" strokeWidth="5" />
-      <circle cx="32" cy="32" r="16.5" strokeWidth="5" strokeOpacity="0.55" />
-      <circle cx="32" cy="32" r="24" strokeWidth="5" strokeOpacity="0.28" />
+      <path d="M 6 16 A 16 8 0 0 1 38 16" stroke="currentColor" strokeWidth="4.5" strokeLinecap="round" />
+      <line x1="6" y1="16" x2="6" y2="28" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" opacity="0.3" />
+      <line x1="38" y1="16" x2="38" y2="28" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" opacity="0.3" />
+      <path d="M 6 28 A 16 8 0 0 0 38 28" stroke="currentColor" strokeWidth="4.5" strokeLinecap="round" opacity="0.45" />
+      <path d="M 6 28 A 16 8 0 0 1 38 28" stroke="currentColor" strokeWidth="4.5" strokeLinecap="round" />
+      <line x1="6" y1="28" x2="6" y2="40" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" opacity="0.3" />
+      <line x1="38" y1="28" x2="38" y2="40" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" opacity="0.3" />
+      <path d="M 6 40 A 16 8 0 0 0 38 40" stroke="currentColor" strokeWidth="4.5" strokeLinecap="round" opacity="0.45" />
     </svg>
   )
 }
@@ -102,7 +104,7 @@ function MoreMenuItem({
       onClick={onNavigate}
       className="flex items-center gap-4 rounded-2xl px-4 py-3.5 transition-colors active:bg-foreground/[0.06]"
     >
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-foreground/10 bg-foreground/[0.08] text-foreground/70">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-foreground/10 bg-foreground/[0.08] text-foreground/70">
         <Icon size={20} strokeWidth={1.8} />
       </span>
       <span className="text-base font-semibold text-foreground">{label}</span>
@@ -196,19 +198,14 @@ export function Sidebar() {
 
       {/* ─── Mobile top bar — everywhere except Profile/Settings, which show their own header ─── */}
       {showTopBar && (
-        <GlassSurface
-          as="header"
-          variant="nav"
+        <header
           className={cn(
-            'fixed inset-x-0 top-0 z-30 border-x-0 border-t-0 transition-transform duration-200 ease-out lg:hidden',
+            'fixed inset-x-0 top-0 z-30 transition-transform duration-200 ease-out lg:hidden',
             headerHidden ? '-translate-y-full' : 'translate-y-0'
           )}
           style={{ paddingTop: 'max(calc(env(safe-area-inset-top) - 10px), 8px)' }}
         >
           <div className="relative flex h-14 items-center justify-center px-4">
-            <div className="absolute left-4">
-              <ThemeToggle />
-            </div>
             <Brand />
             <Link
               href="/profile"
@@ -218,7 +215,7 @@ export function Sidebar() {
               <User size={16} />
             </Link>
           </div>
-        </GlassSurface>
+        </header>
       )}
 
       {/* ─── Mobile glass tab bar ─── */}

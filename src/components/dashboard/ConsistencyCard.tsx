@@ -13,8 +13,8 @@ const RATING_STYLE: Record<ConsistencyRating, { tone: StatusTone; text: string }
   low:       { tone: 'zinc',   text: STATUS.pending.text },
 }
 
-const RING_SIZE = 56
-const RING_STROKE = 5
+const RING_SIZE = 88
+const RING_STROKE = 6
 const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS
 
@@ -61,15 +61,22 @@ export function ConsistencyCard({ data }: { data: ConsistencyScore }) {
     <GlassSurface variant="card" className="flex h-full flex-col rounded-[22px] p-5">
       <div className="mb-3 flex items-center gap-2">
         <RefreshCw size={14} className={style.text} />
-        <h3 className="text-sm font-semibold text-foreground/80">{s.title}</h3>
-        <StatusPill tone={style.tone}>{s.rating[data.rating]}</StatusPill>
+        <h3 className="widget-label text-muted-foreground">{s.title}</h3>
       </div>
 
       <div className="flex items-center justify-between">
-        <span className={cn('text-3xl font-bold tabular-nums', style.text)}>
-          {data.score}
-          <span className="ml-0.5 text-base font-normal text-muted-foreground">/100</span>
-        </span>
+        <div className="flex flex-col">
+          <span className={cn('text-3xl font-bold tabular-nums', style.text)}>
+            {data.score}
+            <span className="ml-0.5 text-base font-normal text-muted-foreground">/100</span>
+          </span>
+          <div className="mt-1.5 flex items-center gap-1.5">
+            <StatusPill tone={style.tone}>{s.rating[data.rating]}</StatusPill>
+            <span className="text-xs text-muted-foreground">
+              {data.activeWeeks}/{data.totalWeeks} {s.weeks}
+            </span>
+          </div>
+        </div>
         <span className={style.text}>
           <ConsistencyRing score={data.score} />
         </span>

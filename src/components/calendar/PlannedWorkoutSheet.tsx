@@ -71,7 +71,7 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
           {/* Header */}
           <div className="mb-4 flex items-start gap-3">
             <span
-              className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+              className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
               style={{ background: typeColor ? `${typeColor}1a` : 'rgba(255,255,255,.07)' }}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={typeColor ?? '#9ca3af'} strokeWidth="2.2">

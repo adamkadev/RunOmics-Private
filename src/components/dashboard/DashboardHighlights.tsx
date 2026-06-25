@@ -16,7 +16,7 @@ interface Highlight {
 
 const TINT = {
   record:      { pill: 'border-[#f0a500]/35 bg-[#f0a500]/[0.14] text-[#f0a500]', dot: '#f0a500' },
-  improvement: { pill: 'border-[#e8730c]/35 bg-[#e8730c]/[0.14] text-[#e8730c]', dot: '#e8730c' },
+  improvement: { pill: 'border-[#a855f7]/35 bg-[#a855f7]/[0.14] text-[#a855f7]', dot: '#a855f7' },
   wear:        { pill: 'border-red-500/35 bg-red-500/[0.14] text-red-500',        dot: '#ef4444' },
   race:        { pill: 'border-[#3b82f6]/35 bg-[#3b82f6]/[0.14] text-[#3b82f6]', dot: '#3b82f6' },
 }
@@ -45,7 +45,7 @@ export function DashboardHighlights({ record, pbAlerts, shoes, nextRace }: Props
       href: record.activityId ? `/activities/${record.activityId}` : '/records',
       dotColor: TINT.record.dot,
       tint: TINT.record.pill,
-      label: `${record.label} ${stat}`,
+      label: `PR · ${record.label} - ${stat}`,
     })
   }
 
@@ -65,7 +65,7 @@ export function DashboardHighlights({ record, pbAlerts, shoes, nextRace }: Props
       href: '/goals',
       dotColor: TINT.race.dot,
       tint: TINT.race.pill,
-      label: `D-${daysUntil(nextRace.date)}`,
+      label: `${nextRace.name} · D-${daysUntil(nextRace.date)}`,
     })
   }
 

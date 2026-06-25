@@ -72,8 +72,16 @@ export const en = {
   pages: {
     dashboard: {
       title: 'Dashboard',
+      greeting: {
+        morning:   'Good morning',
+        afternoon: 'Good afternoon',
+        evening:   'Good evening',
+        weekDate:  (week: number, date: string) => `Semaine ${week} · ${date}`,
+      },
       subtitle: (week: number, sessions: number, year?: number) =>
         `Week ${week}${year !== undefined ? ` ${year}` : ''} · ${sessions} session${sessions !== 1 ? 's' : ''}`,
+      weekTitle: (week: number, year?: number) =>
+        `Week ${week}${year !== undefined ? ` ${year}` : ''}`,
     },
     activities: {
       title: 'Activities',
@@ -259,7 +267,11 @@ export const en = {
       jumpToCurrent: 'Current week',
     },
     weekLoad: {
-      label: (percent: number) => `${percent}%`,
+      label: (percent: number) => {
+        const delta = percent - 100
+        if (delta === 0) return '= typ.'
+        return `${delta > 0 ? '↑' : '↓'} ${Math.abs(delta)}% vs typ.`
+      },
       level: {
         low: 'Light load',
         normal: 'Normal load',
@@ -353,6 +365,14 @@ export const en = {
       fitnessTooltip: 'Chronic Training Load (42d avg). Your aerobic base.',
       fatigueTooltip: 'Acute Training Load (7d avg). Recent fatigue.',
       formTooltip: 'Form = Fitness - Fatigue. Positive = fresh legs.',
+      tsbHint: (tsb: number): string => {
+        if (tsb >= 15) return 'Peak form\nrace ready'
+        if (tsb >= 5)  return 'Fresh legs\ntrain hard'
+        if (tsb >= 0)  return 'Balanced\noptimal window'
+        if (tsb >= -10) return 'Slight fatigue\nrecovery possible'
+        if (tsb >= -20) return 'High fatigue\nease off'
+        return 'Overreaching\nrest needed'
+      },
     },
   },
 
@@ -858,6 +878,7 @@ export const en = {
 
   consistencyScore: {
     title: 'Consistency',
+    weeks: 'weeks',
     rating: {
       excellent: 'Excellent',
       good: 'Good',

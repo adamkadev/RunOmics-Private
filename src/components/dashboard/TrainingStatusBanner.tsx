@@ -53,7 +53,7 @@ const BAR_MAX_TSB = 25
 function CtlAtlBar({ value, colorClass }: { value: number; colorClass: string }) {
   const pct = Math.min(Math.max(value / BAR_MAX_CTL, 0), 1) * 100
   return (
-    <div className="h-1 w-full rounded-full bg-foreground/10">
+    <div className="h-2 w-full rounded-full bg-foreground/10">
       <div className={cn('h-full rounded-full', colorClass)} style={{ width: `${pct}%` }} />
     </div>
   )
@@ -64,7 +64,7 @@ function TsbBar({ value }: { value: number }) {
   const halfPct = Math.abs(clamped / BAR_MAX_TSB) * 50
   const isPositive = value >= 0
   return (
-    <div className="relative h-1 w-full overflow-hidden rounded-full bg-foreground/10">
+    <div className="relative h-2 w-full overflow-hidden rounded-full bg-foreground/10">
       <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-foreground/20" />
       {isPositive ? (
         <div
@@ -81,30 +81,26 @@ function TsbBar({ value }: { value: number }) {
   )
 }
 
-function MetricBar({
+function SecondaryMetric({
   label,
   value,
-  valueClass,
   bar,
   tooltipContent,
   tooltipSurface,
 }: {
   label: string
   value: string
-  valueClass?: string
   bar: ReactNode
   tooltipContent: string
   tooltipSurface: string
 }) {
   return (
-    <div className="flex min-w-0 flex-1 flex-col gap-1 sm:min-w-[64px] sm:flex-none">
+    <div className="flex flex-col gap-1">
       <div className="flex items-baseline justify-between gap-1.5">
         <Tooltip content={tooltipContent} surfaceClassName={tooltipSurface}>
-          <span className="text-xs text-muted-foreground">{label}</span>
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
         </Tooltip>
-        <span className={cn('text-xs font-bold tabular-nums', valueClass ?? 'text-foreground')}>
-          {value}
-        </span>
+        <span className="text-xs font-bold tabular-nums text-foreground">{value}</span>
       </div>
       <div className="w-full">{bar}</div>
     </div>
@@ -117,11 +113,16 @@ export function TrainingStatusBanner({ status }: { status: TrainingStatus }) {
 
   const tsbSign = status.tsb >= 0 ? '+' : ''
   const formValue = `${tsbSign}${status.tsb}`
-  const formClass = status.tsb < 0 ? STATUS.warning.text : STATUS.success.text
+  const isNegativeTsb = status.tsb < 0
+  const formValueClass = isNegativeTsb ? STATUS.warning.text : STATUS.success.text
+  const heroBox = isNegativeTsb
+    ? 'border-amber-500/[0.18] bg-amber-500/[0.07]'
+    : 'border-emerald-500/[0.18] bg-emerald-500/[0.07]'
 
   return (
     <GlassSurface variant="card" className="rounded-[22px] p-5">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3">
+        {/* Status row */}
         <div className="flex items-center gap-3">
           <span
             className={cn(
@@ -139,28 +140,37 @@ export function TrainingStatusBanner({ status }: { status: TrainingStatus }) {
           </div>
         </div>
 
-        <div className="flex items-stretch gap-4 sm:gap-6 sm:pl-0">
-          <MetricBar
+        {/* TSB hero card */}
+        <Tooltip content={s.metrics.formTooltip} surfaceClassName={style.tooltip}>
+          <div className={cn('rounded-[14px] border p-3', heroBox)}>
+            <div className="widget-label mb-1.5 text-muted-foreground">{s.metrics.form}</div>
+            <div className="mb-2 flex items-baseline justify-between gap-2">
+              <span className={cn('text-[28px] font-extrabold leading-none tabular-nums', formValueClass)}>
+                {formValue}
+              </span>
+              <span className={cn('text-xs text-right whitespace-pre-line leading-snug opacity-70', formValueClass)}>
+                {s.metrics.tsbHint(status.tsb)}
+              </span>
+            </div>
+            <TsbBar value={status.tsb} />
+          </div>
+        </Tooltip>
+
+        {/* Fitness + Fatigue secondary grid */}
+        <div className="grid grid-cols-2 gap-3">
+          <SecondaryMetric
             label={s.metrics.fitness}
             value={String(status.ctl)}
             tooltipContent={s.metrics.fitnessTooltip}
             tooltipSurface={style.tooltip}
             bar={<CtlAtlBar value={status.ctl} colorClass="bg-blue-500" />}
           />
-          <MetricBar
+          <SecondaryMetric
             label={s.metrics.fatigue}
             value={String(status.atl)}
             tooltipContent={s.metrics.fatigueTooltip}
             tooltipSurface={style.tooltip}
             bar={<CtlAtlBar value={status.atl} colorClass="bg-amber-500" />}
-          />
-          <MetricBar
-            label={s.metrics.form}
-            value={formValue}
-            valueClass={formClass}
-            tooltipContent={s.metrics.formTooltip}
-            tooltipSurface={style.tooltip}
-            bar={<TsbBar value={status.tsb} />}
           />
         </div>
       </div>

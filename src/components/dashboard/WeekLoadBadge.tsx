@@ -1,4 +1,3 @@
-import { Gauge } from 'lucide-react'
 import { StatusPill, type StatusTone } from '@/components/ui/StatusPill'
 import { Tooltip } from '@/components/ui/Tooltip'
 import type { WeeklyLoadComparison, WeekLoadLevel } from '@/application/usecases/GetWeeklyLoadComparison'
@@ -16,7 +15,6 @@ export function WeekLoadBadge({ data }: { data: WeeklyLoadComparison }) {
   return (
     <Tooltip content={s.tooltip(data.window)}>
       <StatusPill tone={LEVEL_TONE[data.level]}>
-        <Gauge size={11} className="mr-1 shrink-0" />
         {s.label(data.percent)}
       </StatusPill>
     </Tooltip>

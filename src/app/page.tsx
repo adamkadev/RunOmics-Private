@@ -16,7 +16,7 @@ import { ActivityHeatmap } from '@/components/dashboard/ActivityHeatmap'
 import { TrainingStatusBanner } from '@/components/dashboard/TrainingStatusBanner'
 import { ConsistencyCard } from '@/components/dashboard/ConsistencyCard'
 import { DashboardHighlights } from '@/components/dashboard/DashboardHighlights'
-import { t } from '@/i18n'
+import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting'
 
 export default async function DashboardPage() {
   const data = getDashboardData()
@@ -36,7 +36,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-3">        
-        <h1 className="text-display text-foreground">{t.pages.dashboard.title}</h1>
+        <DashboardGreeting />
         <DashboardHighlights
           record={mostRecentRecord}
           pbAlerts={pbAlerts}
