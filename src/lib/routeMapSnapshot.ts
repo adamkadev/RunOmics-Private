@@ -67,7 +67,15 @@ export async function captureRouteMapSnapshot({ route, color, isDark, token, wid
 
     await new Promise<void>((resolve) => map.once('idle', () => resolve()))
 
-    return map.getCanvas().toDataURL('image/png')
+    // Two rAFs to ensure the WebGL pipeline has fully flushed before toDataURL.
+    await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
+
+    const canvas = map.getCanvas()
+    try {
+      return canvas.toDataURL('image/png')
+    } catch (err) {
+      throw new Error(`Map canvas export failed (CORS or WebGL issue): ${(err as Error).message}`)
+    }
   } finally {
     map.remove()
     container.remove()
