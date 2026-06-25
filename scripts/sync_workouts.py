@@ -22,12 +22,14 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from garmin.client import GarminAPIError, GarminAuthError, GarminClient
+from processing.planned_workout_type import infer_planned_type
 
 _DATA_DIR = Path(__file__).parent.parent / "public" / "data"
 _RATE_LIMIT_PAUSE = 1.0
 _RETRY_PAUSE = 60.0
 _WINDOW_PAST_DAYS = 7
 _WINDOW_FUTURE_DAYS = 90
+_DEFAULT_SCHEDULED_TIME = "19:00"
 
 
 def main() -> int:
@@ -60,11 +62,14 @@ def main() -> int:
 
 
 def write_planned_workouts(planned: list[dict]) -> None:
-    """Write planned workouts to JSON, preserving manual fields (type, scheduledTime)."""
+    """Write planned workouts to JSON, preserving manually-edited type/scheduledTime.
+
+    `type` and `scheduledTime` can't be derived from Garmin's calendar/workout
+    API, so once a value is set (manually, or by a prior sync's inference) it's
+    kept across syncs even if the Garmin-side name/distance/duration changes.
+    """
     out_path = _DATA_DIR / "planned_workouts.json"
 
-    # Preserve manually-set fields that sync cannot derive from Garmin
-    _MANUAL_FIELDS = {"type", "scheduledTime"}
     existing: dict[str, dict] = {}
     if out_path.exists():
         try:
@@ -76,9 +81,8 @@ def write_planned_workouts(planned: list[dict]) -> None:
 
     for entry in planned:
         prior = existing.get(entry["date"], {})
-        for field in _MANUAL_FIELDS:
-            if field in prior:
-                entry[field] = prior[field]
+        entry["type"] = prior.get("type") or infer_planned_type(entry["name"])
+        entry["scheduledTime"] = prior.get("scheduledTime", _DEFAULT_SCHEDULED_TIME)
 
     out_path.write_text(json.dumps({"planned": planned}, ensure_ascii=False, indent=2))
     print(f"  {len(planned)} planned workout(s) written to planned_workouts.json")
@@ -135,8 +139,14 @@ def _collect_scheduled(
             if sport and "running" not in sport:
                 continue
             workout_id = str(item.get("workoutId") or "")
-            if workout_id:
-                scheduled.append((sched_date, workout_id))
+            if not workout_id:
+                continue
+            # Garmin's calendar-service can list the same (date, workout) pair
+            # twice (month grids overlap at week boundaries) - dedupe here.
+            pair = (sched_date, workout_id)
+            if pair not in seen:
+                seen.add(pair)
+                scheduled.append(pair)
 
     return scheduled
 

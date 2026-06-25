@@ -1,84 +1,31 @@
 {
   "planned": [
     {
-      "date": "2026-06-24",
+      "date": "2026-06-25",
       "name": "40 min endurance",
-      "distanceM": 7200,
       "durationSecs": 2400,
       "type": "Base",
-      "scheduledTime": "18:00"
-    },
-    {
-      "date": "2026-06-24",
-      "name": "40 min endurance",
-      "distanceM": 7200,
-      "durationSecs": 2400,
-      "type": "Base",
-      "scheduledTime": "18:00"
-    },
-    {
-      "date": "2026-06-25",
-      "name": "20' progressives",
-      "distanceM": 10640,
-      "durationSecs": 3600,
-      "type": "Tempo",
-      "scheduledTime": "18:00"
-    },
-    {
-      "date": "2026-06-25",
-      "name": "20' progressives",
-      "distanceM": 10640,
-      "durationSecs": 3600,
-      "type": "Tempo",
-      "scheduledTime": "18:00"
+      "scheduledTime": "19:00"
     },
     {
       "date": "2026-06-26",
       "name": "2 x 2000m allure de course",
-      "distanceM": 4000,
-      "durationSecs": 3480,
       "type": "Threshold",
-      "scheduledTime": "18:00"
-    },
-    {
-      "date": "2026-06-26",
-      "name": "2 x 2000m allure de course",
-      "distanceM": 4000,
-      "durationSecs": 3480,
-      "type": "Threshold",
-      "scheduledTime": "18:00"
+      "scheduledTime": "19:00"
     },
     {
       "date": "2026-06-27",
       "name": "15' progressives",
-      "distanceM": 9600,
       "durationSecs": 3300,
       "type": "Tempo",
-      "scheduledTime": "18:00"
-    },
-    {
-      "date": "2026-06-27",
-      "name": "15' progressives",
-      "distanceM": 9600,
-      "durationSecs": 3300,
-      "type": "Tempo",
-      "scheduledTime": "18:00"
+      "scheduledTime": "19:00"
     },
     {
       "date": "2026-06-28",
       "name": "8km endurance",
       "distanceM": 8000,
-      "durationSecs": 2667,
       "type": "Base",
-      "scheduledTime": "18:00"
-    },
-    {
-      "date": "2026-06-28",
-      "name": "8km endurance",
-      "distanceM": 8000,
-      "durationSecs": 2667,
-      "type": "Base",
-      "scheduledTime": "18:00"
+      "scheduledTime": "19:00"
     }
   ]
 }
