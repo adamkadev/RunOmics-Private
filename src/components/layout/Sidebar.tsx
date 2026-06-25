@@ -201,7 +201,7 @@ export function Sidebar() {
             'fixed inset-x-0 top-0 z-30 transition-transform duration-200 ease-out lg:hidden',
             headerHidden ? '-translate-y-full' : 'translate-y-0'
           )}
-          style={{ paddingTop: 'max(env(safe-area-inset-top), 12px)' }}
+          style={{ paddingTop: 'max(calc(env(safe-area-inset-top) - 10px), 8px)' }}
         >
           <div className="relative flex h-14 items-center justify-center px-4">
             <div className="absolute left-4">
