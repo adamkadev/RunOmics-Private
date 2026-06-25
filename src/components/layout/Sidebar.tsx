@@ -196,9 +196,11 @@ export function Sidebar() {
 
       {/* ─── Mobile top bar — everywhere except Profile/Settings, which show their own header ─── */}
       {showTopBar && (
-        <header
+        <GlassSurface
+          as="header"
+          variant="nav"
           className={cn(
-            'fixed inset-x-0 top-0 z-30 transition-transform duration-200 ease-out lg:hidden',
+            'fixed inset-x-0 top-0 z-30 border-x-0 border-t-0 transition-transform duration-200 ease-out lg:hidden',
             headerHidden ? '-translate-y-full' : 'translate-y-0'
           )}
           style={{ paddingTop: 'max(calc(env(safe-area-inset-top) - 10px), 8px)' }}
@@ -216,7 +218,7 @@ export function Sidebar() {
               <User size={16} />
             </Link>
           </div>
-        </header>
+        </GlassSurface>
       )}
 
       {/* ─── Mobile glass tab bar ─── */}
