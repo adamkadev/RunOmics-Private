@@ -22,6 +22,17 @@
   --animate-fade-up:         fade-up 0.25s ease-out both;
   --animate-fade-in:         fade-in 0.2s ease-out both;
   --animate-sheet-up:        sheet-up 0.42s cubic-bezier(0.22, 1.04, 0.36, 1) both;
+  --animate-cal-forward:     cal-slide-forward 0.22s ease-out both;
+  --animate-cal-backward:    cal-slide-backward 0.22s ease-out both;
+}
+
+@keyframes cal-slide-forward {
+  from { opacity: 0; transform: translateX(28px); }
+  to   { opacity: 1; transform: none;             }
+}
+@keyframes cal-slide-backward {
+  from { opacity: 0; transform: translateX(-28px); }
+  to   { opacity: 1; transform: none;              }
 }
 
 @keyframes fade-up {
@@ -434,18 +445,12 @@ body {
   background-color: var(--background);
 }
 
-html {
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
-}
-
 body {
   color: var(--foreground);
   line-height: 1.625;
   font-variant-numeric: tabular-nums;
   overscroll-behavior-y: none;
+  overflow-x: hidden;
 }
 
 h1 {
