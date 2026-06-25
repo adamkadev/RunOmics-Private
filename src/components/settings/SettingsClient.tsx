@@ -34,7 +34,7 @@ export function SettingsClient() {
 
   if (user === 'loading') {
     return (
-      <div className="flex min-h-64 items-center justify-center">
+      <div className="flex min-h-64 items-center justify-center pt-[max(env(safe-area-inset-top),12px)] lg:pt-0">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground border-t-accent" />
       </div>
     )
@@ -42,9 +42,9 @@ export function SettingsClient() {
 
   if (!user) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 pt-[max(env(safe-area-inset-top),12px)] lg:pt-0">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.pages.settings.title}</h1>
+          <h1 className="text-display text-foreground">{t.pages.settings.title}</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">{t.pages.settings.subtitle}</p>
         </div>
 
@@ -80,9 +80,9 @@ export function SettingsClient() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-[max(env(safe-area-inset-top),12px)] lg:pt-0">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">{t.pages.settings.title}</h1>
+        <h1 className="text-display text-foreground">{t.pages.settings.title}</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">{t.pages.settings.subtitle}</p>
       </div>
 
