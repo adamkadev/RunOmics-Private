@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { X } from 'lucide-react'
 import type { Activity } from '@/domain/activity/types'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import { formatDuration, formatDate } from '@/lib/formatters'
+import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 interface Props {
@@ -16,9 +17,16 @@ interface Props {
 
 /** Bottom sheet glass quick-view, opened by tapping a day's session in the agenda week view. */
 export function ActivitySheet({ activity, onClose }: Props) {
+  const [isClosing, setIsClosing] = useState(false)
+  const headerRef = useRef<HTMLDivElement>(null)
+  const wheelYRef = useRef(0)
+
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') {
+        setIsClosing(true)
+        setTimeout(onClose, 42)
+      }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
@@ -33,16 +41,37 @@ export function ActivitySheet({ activity, onClose }: Props) {
     }
   }, [])
 
+  useEffect(() => {
+    const header = headerRef.current
+    if (!header) return
+
+    function handleHeaderWheel(e: WheelEvent) {
+      if (isClosing) return
+
+      wheelYRef.current += e.deltaY
+      if (wheelYRef.current > 80) {
+        setIsClosing(true)
+        setTimeout(onClose, 320)
+      }
+    }
+
+    header.addEventListener('wheel', handleHeaderWheel, { passive: true })
+    return () => header.removeEventListener('wheel', handleHeaderWheel)
+  }, [isClosing, onClose])
+
   return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center sm:p-4"
       onClick={onClose}
     >
       <div
-        className="glass-sheet relative w-full animate-sheet-up rounded-t-[22px] p-4 sm:max-w-sm sm:rounded-[20px]"
+        className={cn(
+          'glass-sheet relative w-full rounded-t-[22px] p-4 sm:max-w-sm sm:rounded-[20px]',
+          isClosing ? 'animate-sheet-down' : 'animate-sheet-up'
+        )}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mx-auto mb-3.5 h-1 w-9 rounded-full bg-foreground/20 sm:hidden" aria-hidden="true" />
+        <div ref={headerRef} className="mx-auto mb-3.5 h-1 w-9 rounded-full bg-foreground/20 cursor-grab active:cursor-grabbing sm:hidden" aria-hidden="true" />
 
         <div className="mb-3 flex items-center justify-between gap-2">
           <h2 className="text-sm font-bold text-foreground">
