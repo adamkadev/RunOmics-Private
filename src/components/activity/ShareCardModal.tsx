@@ -26,8 +26,7 @@ import { DesignPreview, PREVIEW_HEIGHT, PREVIEW_WIDTH } from '@/components/activ
 import { t } from '@/i18n'
 
 const MAP_STYLES: MapStyle[] = ['light', 'dark']
-// Sheet now takes near-full height (see h-[96vh] below), so the preview can run larger than its native size.
-const PREVIEW_SCALE = 1.15
+const PREVIEW_SCALE = 0.8
 
 function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) => {
@@ -198,7 +197,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
       onClick={onClose}
     >
       <div
-        className="glass-sheet relative flex h-[96vh] w-full animate-sheet-up flex-col overflow-hidden rounded-t-3xl sm:h-auto sm:max-h-[92vh] sm:max-w-md sm:rounded-2xl"
+        className="glass-sheet relative flex max-h-[92vh] w-full animate-sheet-up flex-col overflow-hidden rounded-t-3xl sm:h-auto sm:max-h-[92vh] sm:max-w-md sm:rounded-2xl"
         style={sheetStyle}
         onClick={(e) => e.stopPropagation()}
       >

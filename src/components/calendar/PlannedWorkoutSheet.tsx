@@ -21,6 +21,12 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
     return () => document.removeEventListener('keydown', handler)
   }, [onClose])
 
+  useEffect(() => {
+    const prev = document.documentElement.style.overflow
+    document.documentElement.style.overflow = 'hidden'
+    return () => { document.documentElement.style.overflow = prev }
+  }, [])
+
   const durationMin = workout.durationSecs ? Math.round(workout.durationSecs / 60) : null
   const distanceKm = workout.distanceM ? (workout.distanceM / 1000).toFixed(1) : null
   const typeColor = workout.type

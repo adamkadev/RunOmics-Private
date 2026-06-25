@@ -21,6 +21,9 @@ export function useDragToDismiss(onDismiss: () => void) {
   const [closing, setClosing] = useState(false)
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
+    // Capture keeps all pointer events routed to this element even when the
+    // pointer moves outside it, so the drag doesn't escape to page scroll.
+    e.currentTarget.setPointerCapture(e.pointerId)
     startY.current = e.clientY
     setDragging(true)
   }, [])
