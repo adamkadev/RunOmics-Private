@@ -17,15 +17,15 @@ interface Props {
 
 /** Bottom sheet glass quick-view, opened by tapping a day's session in the agenda week view. */
 export function ActivitySheet({ activity, onClose }: Props) {
-  const { handleProps, sheetStyle } = useDragToDismiss(onClose)
+  const { close, handleProps, sheetStyle } = useDragToDismiss(onClose)
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') close()
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [onClose])
+  }, [close])
 
   useEffect(() => {
     const { style } = document.documentElement
@@ -39,7 +39,7 @@ export function ActivitySheet({ activity, onClose }: Props) {
   return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center sm:p-4"
-      onClick={onClose}
+      onClick={close}
     >
       <div
         className="glass-sheet relative w-full animate-sheet-up rounded-t-[22px] p-4 sm:max-w-sm sm:rounded-[20px]"
@@ -55,7 +55,7 @@ export function ActivitySheet({ activity, onClose }: Props) {
             {activity.description || t.activityTypes[activity.type]}
           </h2>
           <button
-            onClick={onClose}
+            onClick={close}
             aria-label={t.activity.shareCard.close}
             className="shrink-0 rounded-md p-1 text-subtle transition-colors hover:bg-foreground/10"
           >
@@ -96,7 +96,7 @@ export function ActivitySheet({ activity, onClose }: Props) {
 
         <div className="mt-3 flex gap-2">
           <button
-            onClick={onClose}
+            onClick={close}
             className="flex-1 rounded-xl border border-foreground/[0.12] bg-foreground/[0.07] py-2.5 text-center text-sm font-semibold text-foreground/70 transition-colors active:scale-[0.97]"
           >
             {t.activity.shareCard.close}

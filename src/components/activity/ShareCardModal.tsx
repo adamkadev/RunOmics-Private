@@ -58,7 +58,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   // Resolved map snapshots, cached per style so switching light/dark doesn't re-fetch.
   const [mapSnapshots, setMapSnapshots] = useState<Partial<Record<MapStyle, { url: string; img: HTMLImageElement }>>>({})
 
-  const { handleProps, sheetStyle } = useDragToDismiss(onClose)
+  const { close, handleProps, sheetStyle } = useDragToDismiss(onClose)
 
   const [accent] = useState<AccentId>(currentAccent)
   const accentHex = ACCENT_SWATCHES[accent]
@@ -93,10 +93,10 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   }, [])
 
   useEffect(() => {
-    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') close() }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
+  }, [close])
 
   useEffect(() => {
     const { style } = document.documentElement
@@ -194,7 +194,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center sm:p-4"
-      onClick={onClose}
+      onClick={close}
     >
       <div
         className="glass-sheet relative flex max-h-[92vh] w-full animate-sheet-up flex-col overflow-hidden rounded-t-3xl sm:h-auto sm:max-h-[92vh] sm:max-w-md sm:rounded-2xl"
@@ -210,7 +210,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
         <div className="flex shrink-0 items-center justify-between px-5 py-3.5">
           <h2 className="text-[17px] font-semibold tracking-tight text-foreground">{t.activity.share}</h2>
           <button
-            onClick={onClose}
+            onClick={close}
             aria-label={t.activity.shareCard.close}
             className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-foreground/[0.09] text-muted-foreground transition-colors hover:bg-foreground/[0.14]"
           >

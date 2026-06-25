@@ -182,12 +182,19 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
                 key={a.id}
                 type="button"
                 onClick={() => setSheetActivity(a)}
-                className="flex w-full items-center gap-2.5 rounded-xl border border-foreground/[0.08] bg-foreground/[0.04] p-3 text-left transition-colors hover:bg-foreground/[0.07]"
+                className="flex w-full items-center gap-3 rounded-xl border border-foreground/[0.08] bg-foreground/[0.04] p-3 text-left transition-colors hover:bg-foreground/[0.07]"
               >
                 <span
-                  className="h-2 w-2 shrink-0 rounded-full"
-                  style={{ backgroundColor: ACTIVITY_TYPE_CONFIG[a.type].dotColor }}
-                />
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border"
+                  style={{
+                    background: `${ACTIVITY_TYPE_CONFIG[a.type].dotColor}1a`,
+                    borderColor: `${ACTIVITY_TYPE_CONFIG[a.type].dotColor}44`,
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={ACTIVITY_TYPE_CONFIG[a.type].dotColor} strokeWidth="2.2">
+                    <path d="M13 4a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-5 6l2-2 2 1 3-2M7 17l2-3 3 1 2-2" />
+                  </svg>
+                </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-semibold text-foreground">
                     {a.description || t.activityTypes[a.type]}

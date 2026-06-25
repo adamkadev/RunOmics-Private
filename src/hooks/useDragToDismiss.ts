@@ -20,6 +20,15 @@ export function useDragToDismiss(onDismiss: () => void) {
   const [dragging, setDragging] = useState(false)
   const [closing, setClosing] = useState(false)
 
+  const triggerClose = useCallback(() => {
+    setClosing(true)
+    setTimeout(() => {
+      onDismiss()
+      setClosing(false)
+      setDragY(0)
+    }, CLOSE_ANIMATION_MS)
+  }, [onDismiss])
+
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     // Capture keeps all pointer events routed to this element even when the
     // pointer moves outside it, so the drag doesn't escape to page scroll.
@@ -38,18 +47,16 @@ export function useDragToDismiss(onDismiss: () => void) {
     startY.current = null
     setDragging(false)
     if (dragY > DISMISS_THRESHOLD_PX) {
-      setClosing(true)
-      setTimeout(() => {
-        onDismiss()
-        setClosing(false)
-        setDragY(0)
-      }, CLOSE_ANIMATION_MS)
+      triggerClose()
     } else {
       setDragY(0)
     }
-  }, [dragY, onDismiss])
+  }, [dragY, triggerClose])
 
   return {
+    // Use `close` instead of calling onDismiss directly so all close paths
+    // (X button, backdrop, Escape) play the same slide-out animation as drag.
+    close: triggerClose,
     handleProps: {
       onPointerDown,
       onPointerMove,
@@ -57,12 +64,14 @@ export function useDragToDismiss(onDismiss: () => void) {
       onPointerCancel: endDrag,
       style: { touchAction: 'none' as const },
     },
+    // animation:'none' clears the animate-sheet-up keyframe so the closing
+    // transition can take effect (CSS animations outrank transitions in cascade).
     sheetStyle: closing
-      ? { transform: 'translateY(100%)', transition: `transform ${CLOSE_ANIMATION_MS}ms cubic-bezier(0.32,0.72,0,1)` }
+      ? { animation: 'none', transform: 'translateY(100%)', transition: `transform ${CLOSE_ANIMATION_MS}ms cubic-bezier(0.32,0.72,0,1)` }
       : dragY
-        ? { transform: `translateY(${dragY}px)`, transition: 'none' }
+        ? { animation: 'none', transform: `translateY(${dragY}px)`, transition: 'none' }
         : dragging
-          ? { transition: 'none' }
+          ? { animation: 'none', transition: 'none' }
           : undefined,
   }
 }
