@@ -42,6 +42,9 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
 
   const selected = days.find((d) => d.date === selectedDate) ?? days[0]
   const selectedPlan = byDatePlanned.get(selected.date)
+  const planTypeColor = selectedPlan?.type
+    ? ACTIVITY_TYPE_CONFIG[selectedPlan.type as ActivityType].dotColor
+    : null
 
   return (
     <div className="space-y-3">
@@ -182,12 +185,19 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
                 key={a.id}
                 type="button"
                 onClick={() => setSheetActivity(a)}
-                className="flex w-full items-center gap-2.5 rounded-xl border border-foreground/[0.08] bg-foreground/[0.04] p-3 text-left transition-colors hover:bg-foreground/[0.07]"
+                className="flex w-full items-center gap-3 rounded-xl border border-foreground/[0.08] bg-foreground/[0.04] p-3 text-left transition-colors hover:bg-foreground/[0.07]"
               >
                 <span
-                  className="h-2 w-2 shrink-0 rounded-full"
-                  style={{ backgroundColor: ACTIVITY_TYPE_CONFIG[a.type].dotColor }}
-                />
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border"
+                  style={{
+                    background: `${ACTIVITY_TYPE_CONFIG[a.type].dotColor}1a`,
+                    borderColor: `${ACTIVITY_TYPE_CONFIG[a.type].dotColor}44`,
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={ACTIVITY_TYPE_CONFIG[a.type].dotColor} strokeWidth="2.2">
+                    <path d="M13 4a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-5 6l2-2 2 1 3-2M7 17l2-3 3 1 2-2" />
+                  </svg>
+                </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-semibold text-foreground">
                     {a.description || t.activityTypes[a.type]}
@@ -204,10 +214,36 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
           <button
             type="button"
             onClick={() => setSheetPlan(selectedPlan)}
-            className="flex w-full items-center gap-3 rounded-xl border border-dashed border-accent/35 bg-accent/[0.04] p-3 text-left transition-colors hover:bg-accent/[0.07]"
+            className={cn(
+              'flex w-full items-center gap-3 rounded-xl border border-dashed p-3 text-left transition-colors',
+              !planTypeColor && 'border-accent/35 bg-accent/[0.04] hover:bg-accent/[0.07]'
+            )}
+            style={
+              planTypeColor
+                ? { borderColor: `${planTypeColor}59`, background: `${planTypeColor}14` }
+                : undefined
+            }
           >
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-accent/30 bg-accent/10">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="text-accent">
+            <span
+              className={cn(
+                'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border',
+                !planTypeColor && 'border-accent/30 bg-accent/10'
+              )}
+              style={
+                planTypeColor
+                  ? { background: `${planTypeColor}1a`, borderColor: `${planTypeColor}44` }
+                  : undefined
+              }
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke={planTypeColor ?? 'currentColor'}
+                strokeWidth="2.2"
+                className={!planTypeColor ? 'text-accent' : undefined}
+              >
                 <path d="M13 4a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-5 6l2-2 2 1 3-2M7 17l2-3 3 1 2-2" />
               </svg>
             </span>
@@ -227,7 +263,11 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
                   .join(' · ') || t.calendar.planned}
               </span>
             </span>
-            <ChevronRight size={14} className="shrink-0 text-accent/40" />
+            <ChevronRight
+              size={14}
+              className={cn('shrink-0', !planTypeColor && 'text-accent/40')}
+              style={planTypeColor ? { color: `${planTypeColor}66` } : undefined}
+            />
           </button>
         ) : (
           <p className="text-sm text-subtle">{t.calendar.restDay}</p>

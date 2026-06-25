@@ -101,7 +101,7 @@ export function ActivityHeatmap({ days }: Props) {
         </span>
       </div>
 
-      <div ref={containerRef} className="w-full overflow-x-auto">
+      <div ref={containerRef} className="w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <div style={{ minWidth: 'max-content' }}>
           {/* Month labels */}
           <div className="relative mb-1 h-3" style={{ paddingLeft: LABEL_W }}>

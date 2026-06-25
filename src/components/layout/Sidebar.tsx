@@ -19,8 +19,9 @@ import {
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { APP_VERSION } from '@/lib/version'
-import { isDetailRoute } from '@/lib/navigation'
+import { hasGlobalTopBar } from '@/lib/navigation'
 import { useScrollDirection } from '@/lib/useScrollDirection'
+import { useDragToDismiss } from '@/hooks/useDragToDismiss'
 import { ThemeToggle } from './ThemeToggle'
 import { GlassTabBar } from './GlassTabBar'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -113,8 +114,9 @@ function MoreMenuItem({
 export function Sidebar() {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
+  const { handleProps, sheetStyle } = useDragToDismiss(() => setOpen(false))
   const headerHidden = useScrollDirection()
-  const showTopBar = !isDetailRoute(pathname)
+  const showTopBar = hasGlobalTopBar(pathname)
 
   // Lock background scroll while the mobile menu is open.
   useEffect(() => {
@@ -192,16 +194,16 @@ export function Sidebar() {
         </div>
       </GlassSurface>
 
-      {/* ─── Mobile top bar — only on the 5 primary tabs, not on detail pages (S2) ─── */}
+      {/* ─── Mobile top bar — everywhere except Profile/Settings, which show their own header ─── */}
       {showTopBar && (
         <GlassSurface
           as="header"
-          variant="chrome"
+          variant="nav"
           className={cn(
-            'fixed inset-x-0 top-0 z-30 rounded-none rounded-b-2xl border-t-0 transition-transform duration-200 ease-out lg:hidden',
+            'fixed inset-x-0 top-0 z-30 border-x-0 border-t-0 transition-transform duration-200 ease-out lg:hidden',
             headerHidden ? '-translate-y-full' : 'translate-y-0'
           )}
-          style={{ paddingTop: 'max(env(safe-area-inset-top), 12px)' }}
+          style={{ paddingTop: 'max(calc(env(safe-area-inset-top) - 10px), 8px)' }}
         >
           <div className="relative flex h-14 items-center justify-center px-4">
             <div className="absolute left-4">
@@ -238,9 +240,11 @@ export function Sidebar() {
           'fixed inset-x-0 bottom-0 z-50 rounded-t-[24px] border-b-0 transition-transform duration-300 lg:hidden',
           open ? 'translate-y-0' : 'translate-y-full pointer-events-none'
         )}
-        style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 20px)' }}
+        style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 20px)', ...sheetStyle }}
       >
-        <div className="mx-auto mb-5 mt-3 h-[5px] w-[38px] rounded-full bg-foreground/[0.18]" />
+        <div className="flex justify-center pt-3 pb-3" {...handleProps}>
+          <div className="h-[5px] w-[38px] rounded-full bg-foreground/[0.18]" />
+        </div>
 
         <nav className="flex flex-col gap-1 px-4">
           {MORE_PRIMARY_ITEMS.map((item) => (

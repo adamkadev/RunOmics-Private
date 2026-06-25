@@ -22,6 +22,17 @@
   --animate-fade-up:         fade-up 0.25s ease-out both;
   --animate-fade-in:         fade-in 0.2s ease-out both;
   --animate-sheet-up:        sheet-up 0.42s cubic-bezier(0.22, 1.04, 0.36, 1) both;
+  --animate-cal-forward:     cal-slide-forward 0.22s ease-out both;
+  --animate-cal-backward:    cal-slide-backward 0.22s ease-out both;
+}
+
+@keyframes cal-slide-forward {
+  from { opacity: 0; transform: translateX(28px); }
+  to   { opacity: 1; transform: none;             }
+}
+@keyframes cal-slide-backward {
+  from { opacity: 0; transform: translateX(-28px); }
+  to   { opacity: 1; transform: none;              }
 }
 
 @keyframes fade-up {
@@ -63,6 +74,18 @@
 @keyframes pulse-ring {
   0%, 100% { opacity: 0.45; }
   50%       { opacity: 1;    }
+}
+
+/* ─── Design system tokens ─────────────────────────── */
+:root {
+  --blur-sm:     8px;
+  --blur-md:     18px;
+  --blur-lg:     28px;
+  --saturate:    1.6;
+  --radius-sm:   12px;
+  --radius-md:   18px;
+  --radius-lg:   22px;
+  --radius-pill: 999px;
 }
 
 /* ─── Light tokens — Nature (emerald, default) ─────── */
@@ -432,6 +455,7 @@ body {
   line-height: 1.625;
   font-variant-numeric: tabular-nums;
   overscroll-behavior-y: none;
+  overflow-x: hidden;
 }
 
 h1 {

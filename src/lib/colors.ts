@@ -8,26 +8,18 @@ export const CHART_COLORS = {
   atl:       '#f97316', // orange-500 - fatigue (acute)
   tsb:       '#10b981', // emerald-500 - form (balance)
 
-  // Activity metrics. The `*Light` shades are the same hue, used for the
-  // second activity when overlaying 2 series in activity comparison charts.
+  // Activity metrics
   hr:            '#ef4444', // red-500
   hrEasy:        '#fca5a5', // red-300
   pace:          '#3b82f6', // blue-500
-  paceLight:     '#93c5fd', // blue-300
   elevation:     '#78716c', // stone-500
-  elevationLight:'#d6d3d1', // stone-300
   cadence:       '#0ea5e9', // sky-500
-  cadenceLight:  '#7dd3fc', // sky-300
   efficiency:    '#8b5cf6', // violet-500
 
   // Running form
   groundContact:       '#f59e0b', // amber-500
   verticalOscillation: '#f43f5e', // rose-500
   strideLength:        '#14b8a6', // teal-500
-
-  // Generic activity identity (summary cards / table, not tied to a metric)
-  compareA: '#3b82f6', // blue-500
-  compareB: '#f97316', // orange-500
 
   // Easy / Hard split
   easy:      '#34d399', // emerald-400

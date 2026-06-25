@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import type { ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
+import { useDragToDismiss } from '@/hooks/useDragToDismiss'
 import { t } from '@/i18n'
 
 interface Props {
@@ -12,11 +13,19 @@ interface Props {
 }
 
 export function PlannedWorkoutSheet({ workout, onClose }: Props) {
+  const { handleProps, sheetStyle } = useDragToDismiss(onClose)
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
   }, [onClose])
+
+  useEffect(() => {
+    const prev = document.documentElement.style.overflow
+    document.documentElement.style.overflow = 'hidden'
+    return () => { document.documentElement.style.overflow = prev }
+  }, [])
 
   const durationMin = workout.durationSecs ? Math.round(workout.durationSecs / 60) : null
   const distanceKm = workout.distanceM ? (workout.distanceM / 1000).toFixed(1) : null
@@ -47,10 +56,11 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
           WebkitBackdropFilter: 'blur(28px)',
           borderRadius: '22px 22px 20px 20px',
           border: `1px solid ${typeColor ? `${typeColor}44` : 'rgba(255,255,255,.08)'}`,
+          ...sheetStyle,
         }}
       >
-        {/* Handle */}
-        <div className="flex justify-center pt-3 pb-1">
+        {/* Handle - drag down to dismiss */}
+        <div className="flex justify-center pt-3 pb-1" {...handleProps}>
           <div
             className="h-1 w-9 rounded-full"
             style={{ background: typeColor ? `${typeColor}55` : 'rgba(255,255,255,.2)' }}

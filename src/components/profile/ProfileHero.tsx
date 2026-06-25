@@ -44,7 +44,7 @@ export function ProfileHero({ hero, displayName, onSaveName }: Props) {
   return (
     <GlassSurface variant="card" className="relative flex items-center gap-5 rounded-[22px] px-5 py-6">
       <div
-        className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-2 border-white/70 text-2xl font-extrabold text-white shadow-[0_0_0_4px_rgba(14,159,110,0.10)] bg-[linear-gradient(135deg,#0e9f6e,#1d4ed8)] dark:border-white/[0.18] dark:shadow-[0_0_0_4px_rgba(14,159,110,0.15)] dark:bg-[linear-gradient(135deg,#0e9f6e,#0a2f44)]"
+        className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-2 border-white/30 text-2xl font-extrabold text-accent-foreground shadow-[0_0_0_4px_var(--ring)] bg-accent" 
         aria-hidden="true"
       >
         {displayName ? initials(displayName) : <User size={28} />}

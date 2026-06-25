@@ -5,7 +5,9 @@ import { RecordsLeaderboard } from '@/components/records/RecordsLeaderboard'
 import { PbAlertLine } from '@/components/ui/PbAlertLine'
 import { t } from '@/i18n'
 
-export const revalidate = 60
+// Safety net: data is also revalidated on demand by /api/internal/revalidate
+// when the pbs Firestore collection is written.
+export const revalidate = 86400
 
 export default async function RecordsPage() {
   const records = await getRecords()
@@ -14,9 +16,12 @@ export default async function RecordsPage() {
   const mostRecentRecord = getMostRecentRecord(records)
 
   return (
-    <div className="space-y-8 pt-[max(env(safe-area-inset-top),12px)] lg:pt-0">
+    <div className="space-y-8">
       <div className="space-y-2">
-        <h1 className="text-display text-foreground">{t.pages.records.title}</h1>
+        <div>
+          <h1 className="text-display text-foreground">{t.pages.records.title}</h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">{t.pages.records.subtitle}</p>
+        </div>
 
         <PbAlertLine alerts={pbAlerts} />
       </div>

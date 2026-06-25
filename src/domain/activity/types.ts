@@ -67,6 +67,24 @@ export interface Activity {
   gearId: string | null
 }
 
+// Lightweight projection of `Activity` for list views (activities list, search) -
+// excludes heavy per-sample arrays (hrSamples, paceSamples, elevationProfile, polyline...)
+// that the row UI never reads, so paginated list responses stay small.
+export type ActivitySummary = Pick<
+  Activity,
+  | 'id'
+  | 'date'
+  | 'dayOfWeek'
+  | 'type'
+  | 'description'
+  | 'comment'
+  | 'distanceKm'
+  | 'durationSeconds'
+  | 'paceSecPerKm'
+  | 'avgHeartRate'
+  | 'rpe'
+>
+
 export interface PlannedWorkout {
   date: string
   name: string

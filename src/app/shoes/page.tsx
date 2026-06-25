@@ -4,14 +4,15 @@ import { ShoesSummary } from '@/components/shoes/ShoesSummary'
 import { ShoeWearAlertLine } from '@/components/shoes/ShoeWearAlertLine'
 import { t } from '@/i18n'
 
-export const revalidate = 60
-
 export default function ShoesPage() {
   const shoes = getShoeStats()
 
   return (
-    <div className="space-y-10 pt-[max(env(safe-area-inset-top),12px)] lg:pt-0">
-      <h1 className="text-display text-foreground">{t.pages.shoes.title}</h1>
+    <div className="space-y-10">
+      <div>
+        <h1 className="text-display text-foreground">{t.pages.shoes.title}</h1>
+        <p className="mt-0.5 text-sm text-muted-foreground">{t.pages.shoes.subtitle}</p>
+      </div>
 
       <ShoeWearAlertLine shoes={shoes} />
       <ShoesSummary shoes={shoes} />

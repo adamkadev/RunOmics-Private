@@ -350,6 +350,9 @@ export const en = {
       fitness: 'Fitness',
       fatigue: 'Fatigue',
       form: 'Form',
+      fitnessTooltip: 'Chronic Training Load (42d avg). Your aerobic base.',
+      fatigueTooltip: 'Acute Training Load (7d avg). Recent fatigue.',
+      formTooltip: 'Form = Fitness - Fatigue. Positive = fresh legs.',
     },
   },
 
@@ -571,17 +574,6 @@ export const en = {
       rpeValue: (n: number) => `RPE ${n}`,
       na: 'N/A',
     },
-    compareMode: 'Compare',
-    compareCancel: 'Cancel',
-    compareCount: (n: number) => `${n}/2 selected`,
-    compareCta: 'Compare',
-  },
-
-  compare: {
-    title: 'Compare',
-    metric: 'Metric',
-    delta: 'Δ',
-    notFound: 'Select 2 valid activities to compare.',
   },
 
   activity: {
@@ -602,25 +594,19 @@ export const en = {
       avgHr: 'AVG HR',
       close: 'Close',
       choosePhoto: 'Choose a photo',
-      styleLabels: {
-        topographic: 'Topographic',
-        facets: 'Facets',
-        grain: 'Grain',
-        photo: 'Photo',
-      },
-      mapMode: {
-        label: 'Background',
-        run: 'Run',
+      designLabel: 'Design',
+      designLabels: {
+        aurora: 'Aurora',
+        night: 'Night',
+        clean: 'Clean',
         map: 'Map',
-        none: 'Nothing',
+        memory: 'Memory',
       },
-      colorLabel: 'Color',
-      theme: {
-        label: 'Theme',
-        light: 'Light',
-        dark: 'Dark',
-      },
-      mapAttribution: '© MapTiler © OpenStreetMap contributors',
+      mapToggle: 'Show map',
+      galleryPlaceholder: 'My gallery',
+      mapStyleLabel: 'Map style',
+      mapStyleLight: 'Light',
+      mapStyleDark: 'Dark',
     },
     stats: {
       distance: 'Distance',

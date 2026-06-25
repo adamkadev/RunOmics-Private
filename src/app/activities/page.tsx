@@ -1,13 +1,18 @@
-import { getActivities } from '@/application/usecases/GetActivities'
+import { queryActivities } from '@/application/usecases/QueryActivities'
 import { getRecords, getPrLabelsByActivityId } from '@/application/usecases/GetRecords'
 import { ActivityListClient } from '@/components/activities/ActivityListClient'
 
-export const revalidate = 60
-
 export default async function ActivitiesPage() {
-  const activities = getActivities()
+  const { items, total, nextOffset } = queryActivities({})
   const records = await getRecords()
   const prLabelsByActivityId = getPrLabelsByActivityId(records)
 
-  return <ActivityListClient activities={activities} prLabelsByActivityId={prLabelsByActivityId} />
+  return (
+    <ActivityListClient
+      initialItems={items}
+      initialNextOffset={nextOffset}
+      totalCount={total}
+      prLabelsByActivityId={prLabelsByActivityId}
+    />
+  )
 }

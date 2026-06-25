@@ -60,7 +60,7 @@ export function ConsistencyCard({ data }: { data: ConsistencyScore }) {
   return (
     <GlassSurface variant="card" className="flex h-full flex-col rounded-[22px] p-5">
       <div className="mb-3 flex items-center gap-2">
-        <RefreshCw size={14} className="text-blue-500 dark:text-blue-400" />
+        <RefreshCw size={14} className={style.text} />
         <h3 className="text-sm font-semibold text-foreground/80">{s.title}</h3>
         <StatusPill tone={style.tone}>{s.rating[data.rating]}</StatusPill>
       </div>

@@ -1,13 +1,13 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { X } from 'lucide-react'
 import type { Activity } from '@/domain/activity/types'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import { formatDuration, formatDate } from '@/lib/formatters'
-import { cn } from '@/lib/utils'
+import { useDragToDismiss } from '@/hooks/useDragToDismiss'
 import { t } from '@/i18n'
 
 interface Props {
@@ -17,20 +17,15 @@ interface Props {
 
 /** Bottom sheet glass quick-view, opened by tapping a day's session in the agenda week view. */
 export function ActivitySheet({ activity, onClose }: Props) {
-  const [isClosing, setIsClosing] = useState(false)
-  const headerRef = useRef<HTMLDivElement>(null)
-  const wheelYRef = useRef(0)
+  const { close, handleProps, sheetStyle } = useDragToDismiss(onClose)
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        setIsClosing(true)
-        setTimeout(onClose, 42)
-      }
+      if (e.key === 'Escape') close()
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [onClose])
+  }, [close])
 
   useEffect(() => {
     const { style } = document.documentElement
@@ -41,44 +36,26 @@ export function ActivitySheet({ activity, onClose }: Props) {
     }
   }, [])
 
-  useEffect(() => {
-    const header = headerRef.current
-    if (!header) return
-
-    function handleHeaderWheel(e: WheelEvent) {
-      if (isClosing) return
-
-      wheelYRef.current += e.deltaY
-      if (wheelYRef.current > 80) {
-        setIsClosing(true)
-        setTimeout(onClose, 320)
-      }
-    }
-
-    header.addEventListener('wheel', handleHeaderWheel, { passive: true })
-    return () => header.removeEventListener('wheel', handleHeaderWheel)
-  }, [isClosing, onClose])
-
   return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center sm:p-4"
-      onClick={onClose}
+      onClick={close}
     >
       <div
-        className={cn(
-          'glass-sheet relative w-full rounded-t-[22px] p-4 sm:max-w-sm sm:rounded-[20px]',
-          isClosing ? 'animate-sheet-down' : 'animate-sheet-up'
-        )}
+        className="glass-sheet relative w-full animate-sheet-up rounded-t-[22px] p-4 sm:max-w-sm sm:rounded-[20px]"
+        style={sheetStyle}
         onClick={(e) => e.stopPropagation()}
       >
-        <div ref={headerRef} className="mx-auto mb-3.5 h-1 w-9 rounded-full bg-foreground/20 cursor-grab active:cursor-grabbing sm:hidden" aria-hidden="true" />
+        <div className="mb-2.5 flex justify-center sm:hidden" {...handleProps}>
+          <div className="h-1 w-9 rounded-full bg-foreground/20" aria-hidden="true" />
+        </div>
 
         <div className="mb-3 flex items-center justify-between gap-2">
           <h2 className="text-sm font-bold text-foreground">
             {activity.description || t.activityTypes[activity.type]}
           </h2>
           <button
-            onClick={onClose}
+            onClick={close}
             aria-label={t.activity.shareCard.close}
             className="shrink-0 rounded-md p-1 text-subtle transition-colors hover:bg-foreground/10"
           >
@@ -119,7 +96,7 @@ export function ActivitySheet({ activity, onClose }: Props) {
 
         <div className="mt-3 flex gap-2">
           <button
-            onClick={onClose}
+            onClick={close}
             className="flex-1 rounded-xl border border-foreground/[0.12] bg-foreground/[0.07] py-2.5 text-center text-sm font-semibold text-foreground/70 transition-colors active:scale-[0.97]"
           >
             {t.activity.shareCard.close}

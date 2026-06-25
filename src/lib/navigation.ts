@@ -1,13 +1,14 @@
-const DETAIL_ROUTE_BASES = ['/goals', '/records', '/shoes', '/map', '/profile', '/settings']
+const NO_GLOBAL_TOP_BAR_BASES = ['/profile', '/settings']
 
 /**
- * Detail/secondary pages (reached from an activity row, a record, or the
- * "More" menu) get their own back bar or free title instead of the global
- * RunOmics top bar - only the 5 primary tabs keep it.
+ * Profile and Settings manage their own header entirely (no global RunOmics
+ * top bar with brand/theme toggle/profile shortcut) since they're already
+ * reached via that shortcut or show the user's own identity. Every other
+ * page - including activity detail and the "More" menu destinations -
+ * keeps the global top bar.
  */
-export function isDetailRoute(pathname: string): boolean {
-  if (pathname.startsWith('/activities/')) return true
-  return DETAIL_ROUTE_BASES.some((base) => pathname === base || pathname.startsWith(`${base}/`))
+export function hasGlobalTopBar(pathname: string): boolean {
+  return !NO_GLOBAL_TOP_BAR_BASES.some((base) => pathname === base || pathname.startsWith(`${base}/`))
 }
 
 const PAGE_AURORA_BASES = ['/goals', '/records', '/shoes', '/settings', '/analytics'] as const
