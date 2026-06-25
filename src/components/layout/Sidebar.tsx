@@ -196,11 +196,9 @@ export function Sidebar() {
 
       {/* ─── Mobile top bar — only on the 5 primary tabs, not on detail pages (S2) ─── */}
       {showTopBar && (
-        <GlassSurface
-          as="header"
-          variant="chrome"
+        <header
           className={cn(
-            'fixed inset-x-0 top-0 z-30 rounded-none rounded-b-2xl border-t-0 transition-transform duration-200 ease-out lg:hidden',
+            'fixed inset-x-0 top-0 z-30 transition-transform duration-200 ease-out lg:hidden',
             headerHidden ? '-translate-y-full' : 'translate-y-0'
           )}
           style={{ paddingTop: 'max(env(safe-area-inset-top), 12px)' }}
@@ -218,7 +216,7 @@ export function Sidebar() {
               <User size={16} />
             </Link>
           </div>
-        </GlassSurface>
+        </header>
       )}
 
       {/* ─── Mobile glass tab bar ─── */}

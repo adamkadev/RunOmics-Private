@@ -25,7 +25,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             style={{ height: 'calc(3.5rem + max(env(safe-area-inset-top), 12px))' }}
           />
         )}
-        <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:py-8">
+        <div className="mx-auto max-w-5xl px-4 pt-4 pb-6 sm:px-6 lg:pt-8 lg:pb-8">
           <PageTransition>{children}</PageTransition>
         </div>
         {/* Mobile spacer: floating glass tab bar + home indicator safe area */}

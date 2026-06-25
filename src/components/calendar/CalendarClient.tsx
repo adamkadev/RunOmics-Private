@@ -26,6 +26,8 @@ export function CalendarClient({ activities, plannedWorkouts }: Props) {
   const [weekStart, setWeekStart] = useState(() => startOfWeek(now))
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth())
+  const [animKey, setAnimKey] = useState(0)
+  const [direction, setDirection] = useState<'forward' | 'backward'>('forward')
 
   const byDate = useMemo(() => {
     const map = new Map<string, Activity[]>()
@@ -54,6 +56,8 @@ export function CalendarClient({ activities, plannedWorkouts }: Props) {
       : new Date(year, month, 1).toLocaleString(t.locale, { month: 'long', year: 'numeric' })
 
   function shift(delta: number) {
+    setDirection(delta > 0 ? 'forward' : 'backward')
+    setAnimKey((k) => k + 1)
     if (mode === 'week') {
       setWeekStart((prev) => addDays(prev, delta * 7))
     } else {
@@ -127,11 +131,17 @@ export function CalendarClient({ activities, plannedWorkouts }: Props) {
         )}
       </div>
 
-      {mode === 'week' ? (
-        <WeekView weekStart={weekStart} byDate={byDate} byDatePlanned={byDatePlanned} today={today} />
-      ) : (
-        <MonthView year={year} month={month} byDate={byDate} byDatePlanned={byDatePlanned} today={today} />
-      )}
+      <div
+        key={animKey}
+        className="overflow-hidden"
+        style={{ animation: `var(--animate-cal-${direction})` }}
+      >
+        {mode === 'week' ? (
+          <WeekView weekStart={weekStart} byDate={byDate} byDatePlanned={byDatePlanned} today={today} />
+        ) : (
+          <MonthView year={year} month={month} byDate={byDate} byDatePlanned={byDatePlanned} today={today} />
+        )}
+      </div>
 
     </div>
   )

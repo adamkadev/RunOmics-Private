@@ -1,8 +1,6 @@
 import Link from 'next/link'
-import { Trophy, Flame, AlertTriangle, Flag, type LucideIcon } from 'lucide-react'
 import { Pill } from '@/components/ui/Pill'
 import { formatClock, formatDistance, formatDuration } from '@/lib/formatters'
-import { t } from '@/i18n'
 import type { RecordEntry } from '@/application/usecases/GetRecords'
 import type { PbAlert } from '@/application/usecases/GetPbAlerts'
 import type { ShoeStats } from '@/application/usecases/GetShoeStats'
@@ -11,18 +9,16 @@ import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 interface Highlight {
   key: string
   href: string
-  Icon: LucideIcon
+  dotColor: string
   tint: string
   label: string
 }
 
-// Glass-tinted pills (B10): translucent fill + tinted border, single hue for
-// both themes since the pill already sits on the glass card's blur.
 const TINT = {
-  record: 'border-[#f0a500]/35 bg-[#f0a500]/[0.14] text-[#f0a500]',
-  improvement: 'border-[#e8730c]/35 bg-[#e8730c]/[0.14] text-[#e8730c]',
-  wear: 'border-red-500/35 bg-red-500/[0.14] text-red-500',
-  race: 'border-[#3b82f6]/35 bg-[#3b82f6]/[0.14] text-[#3b82f6]',
+  record:      { pill: 'border-[#f0a500]/35 bg-[#f0a500]/[0.14] text-[#f0a500]', dot: '#f0a500' },
+  improvement: { pill: 'border-[#e8730c]/35 bg-[#e8730c]/[0.14] text-[#e8730c]', dot: '#e8730c' },
+  wear:        { pill: 'border-red-500/35 bg-red-500/[0.14] text-red-500',        dot: '#ef4444' },
+  race:        { pill: 'border-[#3b82f6]/35 bg-[#3b82f6]/[0.14] text-[#3b82f6]', dot: '#3b82f6' },
 }
 
 function daysUntil(date: string): number {
@@ -39,11 +35,6 @@ interface Props {
   nextRace: UpcomingRace | null
 }
 
-/**
- * Single scrollable row of highlight pills - replaces the PR badge glued to
- * the title and the stacked alert lines. Each pill is a tinted, semantic
- * shortcut to the relevant page.
- */
 export function DashboardHighlights({ record, pbAlerts, shoes, nextRace }: Props) {
   const highlights: Highlight[] = []
 
@@ -52,8 +43,8 @@ export function DashboardHighlights({ record, pbAlerts, shoes, nextRace }: Props
     highlights.push({
       key: 'record',
       href: record.activityId ? `/activities/${record.activityId}` : '/records',
-      Icon: Trophy,
-      tint: TINT.record,
+      dotColor: TINT.record.dot,
+      tint: TINT.record.pill,
       label: `${record.label} ${stat}`,
     })
   }
@@ -62,8 +53,8 @@ export function DashboardHighlights({ record, pbAlerts, shoes, nextRace }: Props
     highlights.push({
       key: `pb-${a.key}`,
       href: `/activities/${a.activityId}`,
-      Icon: Flame,
-      tint: TINT.improvement,
+      dotColor: TINT.improvement.dot,
+      tint: TINT.improvement.pill,
       label: `${a.label} - ${(formatClock(a.diffSeconds))}`,
     })
   }
@@ -72,8 +63,8 @@ export function DashboardHighlights({ record, pbAlerts, shoes, nextRace }: Props
     highlights.push({
       key: 'race',
       href: '/goals',
-      Icon: Flag,
-      tint: TINT.race,
+      dotColor: TINT.race.dot,
+      tint: TINT.race.pill,
       label: `D-${daysUntil(nextRace.date)}`,
     })
   }
@@ -82,8 +73,8 @@ export function DashboardHighlights({ record, pbAlerts, shoes, nextRace }: Props
     highlights.push({
       key: `shoe-${shoe.gearId}`,
       href: `/shoes/${shoe.gearId}`,
-      Icon: AlertTriangle,
-      tint: TINT.wear,
+      dotColor: TINT.wear.dot,
+      tint: TINT.wear.pill,
       label: shoe.name,
     })
   }
@@ -92,10 +83,9 @@ export function DashboardHighlights({ record, pbAlerts, shoes, nextRace }: Props
 
   return (
     <div className="-mx-4 flex gap-2.5 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      {highlights.map(({ key, href, Icon, tint, label }) => (
+      {highlights.map(({ key, href, dotColor, tint, label }) => (
         <Link key={key} href={href} className="shrink-0">
-          <Pill variant="highlight" className={tint}>
-            <Icon size={13} className="shrink-0" aria-hidden="true" />
+          <Pill variant="highlight" className={tint} dotColor={dotColor}>
             {label}
           </Pill>
         </Link>

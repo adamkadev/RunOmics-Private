@@ -350,6 +350,9 @@ export const en = {
       fitness: 'Fitness',
       fatigue: 'Fatigue',
       form: 'Form',
+      fitnessTooltip: 'Chronic Training Load (42d avg). Your aerobic base.',
+      fatigueTooltip: 'Acute Training Load (7d avg). Recent fatigue.',
+      formTooltip: 'Form = Fitness - Fatigue. Positive = fresh legs.',
     },
   },
 
