@@ -249,8 +249,7 @@ export function ActivityListClient({ activities, prLabelsByActivityId = {} }: Pr
       </div>
 
       {/* Secondary controls: result count, compare mode, sort - not in the visual spec, kept from the existing feature set */}
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-xs text-subtle">{t.activities.count(sorted.length)}</p>
+      <div className="flex items-center justify-end gap-2">
         <div className="flex items-center gap-2">
           <button
             onClick={() => (compareMode ? exitCompareMode() : setCompareMode(true))}
