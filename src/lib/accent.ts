@@ -13,6 +13,16 @@ export const ACCENT_SWATCHES: Record<AccentId, string> = {
   endurance:   '#8b5cf6', // violet-500
 }
 
+// Darker variant of each accent for use on light backgrounds - the raw swatch above
+// washes out against pale map tiles / canvases (see ShareCardModal's light-style fix).
+export const ACCENT_SWATCHES_LIGHT: Record<AccentId, string> = {
+  nature:      '#059669',
+  performance: '#2563eb',
+  impact:      '#e11d48',
+  motivation:  '#ea580c',
+  endurance:   '#7c3aed',
+}
+
 export const ACCENT_IDS: AccentId[] = ['nature', 'performance', 'impact', 'motivation', 'endurance']
 
 export function isAccentId(value: string | null): value is AccentId {

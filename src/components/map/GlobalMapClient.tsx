@@ -9,7 +9,7 @@ import type {
   RouteMeta,
 } from "@/application/usecases/GetAllRoutes";
 import { maptilerStyleUrl } from "@/lib/maptiler";
-import { useAccentColor } from "@/lib/useAccent";
+import { useAccentColor, useAccentColorLight } from "@/lib/useAccent";
 import { t } from "@/i18n";
 
 function matchesFilters(meta: RouteMeta, year: string | null): boolean {
@@ -142,6 +142,8 @@ export function GlobalMapClient({ data }: Props) {
   const [selectedYear, setSelectedYear] = useState<string | null>(null);
   const yearRef = useRef<HTMLDivElement>(null);
   const accentColor = useAccentColor();
+  const accentColorLight = useAccentColorLight();
+  const isDarkRef = useRef(false);
 
   const { routes, routeMeta, clusters } = data;
   const selected = clusters[selectedIdx];
@@ -203,6 +205,7 @@ export function GlobalMapClient({ data }: Props) {
     let cancelled = false;
 
     async function initMap(isDark: boolean) {
+      isDarkRef.current = isDark;
       const mgl = await import("maplibre-gl");
       await import("maplibre-gl/dist/maplibre-gl.css");
       if (cancelled) return;
@@ -246,6 +249,10 @@ export function GlobalMapClient({ data }: Props) {
           data: buildGeoJSON(routes, first.routeIndices),
         });
 
+        // The light basemap is pale, so the raw accent swatch washes out at low
+        // opacity - use the darker, contrast-safe variant there instead.
+        const lineColor = isDark ? accentColor : accentColorLight;
+
         map.addLayer(
           {
             id: "routes-glow",
@@ -253,7 +260,7 @@ export function GlobalMapClient({ data }: Props) {
             source: "routes",
             layout: { "line-join": "round", "line-cap": "round" },
             paint: {
-              "line-color": accentColor,
+              "line-color": lineColor,
               // Thinner halo, scaling a touch with zoom, so popular overlapping
               // routes do not stack into a fat bright band.
               "line-width": [
@@ -274,7 +281,7 @@ export function GlobalMapClient({ data }: Props) {
             source: "routes",
             layout: { "line-join": "round", "line-cap": "round" },
             paint: {
-              "line-color": accentColor,
+              "line-color": lineColor,
               "line-width": [
                 "interpolate", ["linear"], ["zoom"],
                 9, 1,
@@ -313,9 +320,10 @@ export function GlobalMapClient({ data }: Props) {
   useEffect(() => {
     const map = mapRef.current;
     if (!mapReady || !map) return;
-    if (map.getLayer("routes-glow")) map.setPaintProperty("routes-glow", "line-color", accentColor);
-    if (map.getLayer("routes-line")) map.setPaintProperty("routes-line", "line-color", accentColor);
-  }, [accentColor, mapReady]);
+    const lineColor = isDarkRef.current ? accentColor : accentColorLight;
+    if (map.getLayer("routes-glow")) map.setPaintProperty("routes-glow", "line-color", lineColor);
+    if (map.getLayer("routes-line")) map.setPaintProperty("routes-line", "line-color", lineColor);
+  }, [accentColor, accentColorLight, mapReady]);
 
   useEffect(() => {
     if (!mapReady || !mapRef.current)
