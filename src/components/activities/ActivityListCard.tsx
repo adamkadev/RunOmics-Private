@@ -2,12 +2,12 @@ import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import { PrBadge } from './PrBadge'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
-import type { Activity } from '@/domain/activity/types'
+import type { ActivitySummary } from '@/domain/activity/types'
 import { formatDate, formatDistance, formatDuration, formatClock } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 interface Props {
-  activity: Activity
+  activity: ActivitySummary
   prLabels?: string[]
 }
 

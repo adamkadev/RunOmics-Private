@@ -4,7 +4,7 @@ const NO_GLOBAL_TOP_BAR_BASES = ['/profile', '/settings']
  * Profile and Settings manage their own header entirely (no global RunOmics
  * top bar with brand/theme toggle/profile shortcut) since they're already
  * reached via that shortcut or show the user's own identity. Every other
- * page - including activity detail/compare and the "More" menu destinations -
+ * page - including activity detail and the "More" menu destinations -
  * keeps the global top bar.
  */
 export function hasGlobalTopBar(pathname: string): boolean {

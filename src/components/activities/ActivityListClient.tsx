@@ -1,26 +1,24 @@
 'use client'
 
-import { useState, useMemo, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
-import { Search, X, GitCompare, SearchX } from 'lucide-react'
-import { ActivityRow } from './ActivityRow'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { Search, X, SearchX } from 'lucide-react'
 import { ActivityListCard } from './ActivityListCard'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
-import type { Activity, ActivityType } from '@/domain/activity/types'
+import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
+import type { ActivityQueryResult, ActivitySortKey, ActivitySortOrder } from '@/application/usecases/QueryActivities'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { Pill } from '@/components/ui/Pill'
-import { SortDropdown, type SortOrder } from '@/components/ui/SortDropdown'
+import { SortDropdown } from '@/components/ui/SortDropdown'
 import { monthYearLabel } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 const ALL_TYPES = Object.keys(ACTIVITY_TYPE_CONFIG) as ActivityType[]
-const BATCH_SIZE = 20
+const PAGE_SIZE = 20
+const SEARCH_DEBOUNCE_MS = 300
 const ACTIVE_CHIP_SHADOW = 'shadow-[0_4px_12px_-4px_rgba(14,159,110,0.5)]'
 
-type SortKey = 'date' | 'distance' | 'duration' | 'pace' | 'avgHr'
-
-const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+const SORT_OPTIONS: { value: ActivitySortKey; label: string }[] = [
   { value: 'date', label: t.activities.sort.date },
   { value: 'distance', label: t.activities.sort.distance },
   { value: 'duration', label: t.activities.sort.duration },
@@ -28,31 +26,16 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: 'avgHr', label: t.activities.sort.avgHr },
 ]
 
-function sortValue(activity: Activity, key: SortKey): number {
-  switch (key) {
-    case 'date':
-      return new Date(activity.date).getTime()
-    case 'distance':
-      return activity.distanceKm
-    case 'duration':
-      return activity.durationSeconds
-    case 'pace':
-      return activity.paceSecPerKm ?? Infinity
-    case 'avgHr':
-      return activity.avgHeartRate ?? -Infinity
-  }
-}
-
 interface MonthGroup {
   key: string
   label: string
-  items: Activity[]
+  items: ActivitySummary[]
   totalKm: number
 }
 
 // Groups are built from an already date-sorted list, so same-month items are
 // always contiguous - a single linear pass is enough (B3).
-function groupByMonth(items: Activity[]): MonthGroup[] {
+function groupByMonth(items: ActivitySummary[]): MonthGroup[] {
   const groups: MonthGroup[] = []
   for (const a of items) {
     const key = a.date.slice(0, 7)
@@ -67,21 +50,48 @@ function groupByMonth(items: Activity[]): MonthGroup[] {
   return groups
 }
 
+async function fetchActivities(params: {
+  type: ActivityType | null
+  search: string
+  sortBy: ActivitySortKey
+  sortOrder: ActivitySortOrder
+  offset: number
+}): Promise<ActivityQueryResult> {
+  const qs = new URLSearchParams({
+    sortBy: params.sortBy,
+    sortOrder: params.sortOrder,
+    offset: String(params.offset),
+    limit: String(PAGE_SIZE),
+  })
+  if (params.type) qs.set('type', params.type)
+  if (params.search.trim()) qs.set('search', params.search.trim())
+
+  const res = await fetch(`/api/activities?${qs}`)
+  return res.json()
+}
+
 interface Props {
-  activities: Activity[]
+  initialItems: ActivitySummary[]
+  initialNextOffset: number | null
+  totalCount: number
   prLabelsByActivityId?: Record<string, string[]>
 }
 
-export function ActivityListClient({ activities, prLabelsByActivityId = {} }: Props) {
-  const router = useRouter()
+export function ActivityListClient({
+  initialItems,
+  initialNextOffset,
+  totalCount,
+  prLabelsByActivityId = {},
+}: Props) {
   const [search, setSearch] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
   const [selectedType, setSelectedType] = useState<ActivityType | null>(null)
-  const [sortBy, setSortBy] = useState<SortKey>('date')
-  const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
-  const [visibleCount, setVisibleCount] = useState(BATCH_SIZE)
-  const [compareMode, setCompareMode] = useState(false)
-  const [compareIds, setCompareIds] = useState<string[]>([])
+  const [sortBy, setSortBy] = useState<ActivitySortKey>('date')
+  const [sortOrder, setSortOrder] = useState<ActivitySortOrder>('desc')
+
+  const [items, setItems] = useState(initialItems)
+  const [nextOffset, setNextOffset] = useState(initialNextOffset)
+  const [loadingMore, setLoadingMore] = useState(false)
 
   // B3 separators stick right under the B1 header - measure it so the offset
   // tracks its real height (search row open/closed, responsive font sizes).
@@ -98,53 +108,48 @@ export function ActivityListClient({ activities, prLabelsByActivityId = {} }: Pr
     return () => observer.disconnect()
   }, [])
 
-  function exitCompareMode() {
-    setCompareMode(false)
-    setCompareIds([])
-  }
+  // Debounce the search box before it hits the query (server round-trip).
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(search), SEARCH_DEBOUNCE_MS)
+    return () => clearTimeout(id)
+  }, [search])
 
-  function toggleCompareSelection(id: string) {
-    setCompareIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < 2 ? [...prev, id] : prev
-    )
-  }
+  // Re-query from offset 0 whenever a filter changes. Guards against a stale
+  // response from a previous filter combo landing after a newer one.
+  const requestSeq = useRef(0)
+  const isFirstRender = useRef(true)
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
+    const seq = ++requestSeq.current
+    fetchActivities({ type: selectedType, search: debouncedSearch, sortBy, sortOrder, offset: 0 }).then((result) => {
+      if (seq !== requestSeq.current) return
+      setItems(result.items)
+      setNextOffset(result.nextOffset)
+    })
+  }, [selectedType, debouncedSearch, sortBy, sortOrder])
 
-  // Reset the infinite-scroll window whenever the result set changes.
-  function resetWindow() {
-    setVisibleCount(BATCH_SIZE)
-  }
-
-  function resetFilters() {
-    setSelectedType(null)
-    setSearch('')
-    resetWindow()
-  }
-
-  const filtered = useMemo(() => {
-    return activities
-      .filter((a) => !selectedType || a.type === selectedType)
-      .filter((a) => {
-        if (!search.trim()) return true
-        const q = search.toLowerCase()
-        return (
-          a.description.toLowerCase().includes(q) ||
-          a.comment.toLowerCase().includes(q) ||
-          a.dayOfWeek.toLowerCase().includes(q) ||
-          a.date.includes(q)
-        )
-      })
-  }, [activities, selectedType, search])
-
-  const sorted = useMemo(() => {
-    const direction = sortOrder === 'asc' ? 1 : -1
-    return [...filtered].sort((a, b) => direction * (sortValue(a, sortBy) - sortValue(b, sortBy)))
-  }, [filtered, sortBy, sortOrder])
-
-  const visible = sorted.slice(0, visibleCount)
-  const hasMore = visibleCount < sorted.length
+  const hasMore = nextOffset !== null
   const hasActiveFilter = selectedType !== null || search.trim() !== ''
   // Month separators only make sense when browsing in chronological order.
-  const groups = sortBy === 'date' ? groupByMonth(visible) : null
+  const groups = sortBy === 'date' ? groupByMonth(items) : null
+
+  const loadMore = useCallback(() => {
+    if (nextOffset === null || loadingMore) return
+    setLoadingMore(true)
+    const seq = requestSeq.current
+    fetchActivities({ type: selectedType, search: debouncedSearch, sortBy, sortOrder, offset: nextOffset }).then(
+      (result) => {
+        setLoadingMore(false)
+        if (seq !== requestSeq.current) return
+        setItems((prev) => [...prev, ...result.items])
+        setNextOffset(result.nextOffset)
+      }
+    )
+  }, [nextOffset, loadingMore, selectedType, debouncedSearch, sortBy, sortOrder])
 
   const sentinelRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -153,15 +158,18 @@ export function ActivityListClient({ activities, prLabelsByActivityId = {} }: Pr
     if (!node) return
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) {
-          setVisibleCount((c) => Math.min(c + BATCH_SIZE, sorted.length))
-        }
+        if (entries[0].isIntersecting) loadMore()
       },
       { rootMargin: '200px' }
     )
     observer.observe(node)
     return () => observer.disconnect()
-  }, [hasMore, sorted.length])
+  }, [hasMore, loadMore])
+
+  function resetFilters() {
+    setSelectedType(null)
+    setSearch('')
+  }
 
   return (
     <div className="space-y-4">
@@ -172,17 +180,14 @@ export function ActivityListClient({ activities, prLabelsByActivityId = {} }: Pr
               {t.pages.activities.title}
             </h1>
             <p className="mt-0.5 text-[13px] font-medium text-muted-foreground">
-              {t.activities.count(activities.length)}
+              {t.activities.count(totalCount)}
             </p>
           </div>
           <button
             type="button"
             onClick={() =>
               setSearchOpen((open) => {
-                if (open) {
-                  setSearch('')
-                  resetWindow()
-                }
+                if (open) setSearch('')
                 return !open
               })
             }
@@ -205,10 +210,7 @@ export function ActivityListClient({ activities, prLabelsByActivityId = {} }: Pr
             type="text"
             placeholder={t.activities.searchPlaceholder}
             value={search}
-            onChange={(e) => {
-              setSearch(e.target.value)
-              resetWindow()
-            }}
+            onChange={(e) => setSearch(e.target.value)}
             className="mt-3 h-9 w-full rounded-xl border border-border bg-card/60 px-3 text-sm text-foreground placeholder-subtle focus:border-accent focus:outline-none"
           />
         )}
@@ -220,10 +222,7 @@ export function ActivityListClient({ activities, prLabelsByActivityId = {} }: Pr
           as="button"
           variant={selectedType === null ? 'active' : 'neutral'}
           className={cn('text-[13px] font-semibold', selectedType === null && ACTIVE_CHIP_SHADOW)}
-          onClick={() => {
-            setSelectedType(null)
-            resetWindow()
-          }}
+          onClick={() => setSelectedType(null)}
         >
           {t.activities.all}
         </Pill>
@@ -236,10 +235,7 @@ export function ActivityListClient({ activities, prLabelsByActivityId = {} }: Pr
               variant={active ? 'active' : 'neutral'}
               dotColor={active ? undefined : ACTIVITY_TYPE_CONFIG[type].dotColor}
               className={cn('text-[13px] font-semibold', active && ACTIVE_CHIP_SHADOW)}
-              onClick={() => {
-                setSelectedType(active ? null : type)
-                resetWindow()
-              }}
+              onClick={() => setSelectedType(active ? null : type)}
             >
               {t.activityTypes[type]}
             </Pill>
@@ -247,39 +243,22 @@ export function ActivityListClient({ activities, prLabelsByActivityId = {} }: Pr
         })}
       </div>
 
-      {/* Secondary controls: result count, compare mode, sort - not in the visual spec, kept from the existing feature set */}
+      {/* Secondary controls: sort - not in the visual spec, kept from the existing feature set */}
       <div className="flex items-center justify-end gap-2">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => (compareMode ? exitCompareMode() : setCompareMode(true))}
-            className={cn(
-              'inline-flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-colors',
-              compareMode
-                ? 'border border-foreground/[0.20] bg-foreground/[0.14] text-foreground'
-                : 'border border-foreground/[0.12] bg-foreground/[0.06] text-muted-foreground hover:bg-foreground/[0.10]'
-            )}
-          >
-            {compareMode ? <X size={13} /> : <GitCompare size={13} />}
-            <span className="hidden sm:inline">
-              {compareMode ? t.activities.compareCancel : t.activities.compareMode}
-            </span>
-          </button>
-          <SortDropdown
-            options={SORT_OPTIONS}
-            sortBy={sortBy}
-            order={sortOrder}
-            onChange={(value, order) => {
-              setSortBy(value)
-              setSortOrder(order)
-              resetWindow()
-            }}
-            label={t.activities.sort.label}
-          />
-        </div>
+        <SortDropdown
+          options={SORT_OPTIONS}
+          sortBy={sortBy}
+          order={sortOrder}
+          onChange={(value, order) => {
+            setSortBy(value)
+            setSortOrder(order)
+          }}
+          label={t.activities.sort.label}
+        />
       </div>
 
       {/* B3 + B4 - sticky month separators + activity cards, or C1 empty state */}
-      {sorted.length === 0 ? (
+      {items.length === 0 ? (
         <GlassSurface variant="card" className="rounded-2xl py-12 text-center">
           <SearchX size={28} className="mx-auto text-subtle" />
           <p className="mt-3 text-sm text-subtle">
@@ -293,21 +272,6 @@ export function ActivityListClient({ activities, prLabelsByActivityId = {} }: Pr
               {t.activities.resetFilters}
             </button>
           )}
-        </GlassSurface>
-      ) : compareMode ? (
-        <GlassSurface variant="card" className="flex flex-col gap-2 rounded-[20px] p-3">
-          {visible.map((a) => (
-            <ActivityRow
-              key={a.id}
-              activity={a}
-              prLabels={prLabelsByActivityId[a.id]}
-              surface="glass"
-              selectable
-              selected={compareIds.includes(a.id)}
-              selectionDisabled={compareIds.length >= 2 && !compareIds.includes(a.id)}
-              onToggleSelect={() => toggleCompareSelection(a.id)}
-            />
-          ))}
         </GlassSurface>
       ) : groups ? (
         <div className="space-y-4">
@@ -331,7 +295,7 @@ export function ActivityListClient({ activities, prLabelsByActivityId = {} }: Pr
         </div>
       ) : (
         <div className="space-y-2">
-          {visible.map((a) => (
+          {items.map((a) => (
             <ActivityListCard key={a.id} activity={a} prLabels={prLabelsByActivityId[a.id]} />
           ))}
         </div>
@@ -339,26 +303,8 @@ export function ActivityListClient({ activities, prLabelsByActivityId = {} }: Pr
 
       {/* B6 - infinite scroll sentinel / end of list */}
       {hasMore && <div ref={sentinelRef} aria-hidden="true" className="h-1" />}
-      {!hasMore && sorted.length > 0 && !compareMode && (
+      {!hasMore && items.length > 0 && (
         <p className="py-2 text-center text-xs text-subtle">{t.activities.endOfList}</p>
-      )}
-
-      {compareMode && (
-        <GlassSurface
-          variant="nav"
-          className="fixed inset-x-4 bottom-24 z-40 mx-auto flex max-w-md items-center justify-between gap-3 rounded-xl px-4 py-3 lg:bottom-4"
-        >
-          <span className="text-xs font-medium text-muted-foreground">
-            {t.activities.compareCount(compareIds.length)}
-          </span>
-          <button
-            disabled={compareIds.length !== 2}
-            onClick={() => router.push(`/activities/compare?ids=${compareIds.join(',')}`)}
-            className="rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-accent-foreground transition-opacity disabled:opacity-40"
-          >
-            {t.activities.compareCta}
-          </button>
-        </GlassSurface>
       )}
     </div>
   )
