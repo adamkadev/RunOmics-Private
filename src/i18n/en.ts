@@ -76,7 +76,7 @@ export const en = {
         morning:   'Good morning',
         afternoon: 'Good afternoon',
         evening:   'Good evening',
-        weekDate:  (week: number, date: string) => `Semaine ${week} · ${date}`,
+        weekDate:  (week: number, date: string) => `Week ${week} · ${date}`,
       },
       subtitle: (week: number, sessions: number, year?: number) =>
         `Week ${week}${year !== undefined ? ` ${year}` : ''} · ${sessions} session${sessions !== 1 ? 's' : ''}`,

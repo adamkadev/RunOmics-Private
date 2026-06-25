@@ -131,7 +131,7 @@
   --glass-shadow-nav:   0 16px 36px -20px rgba(8, 40, 28, 0.35);
   --glass-fallback:     rgba(255, 255, 255, 0.96);
   --glass-row-bg:       rgba(255, 255, 255, 0.5);
-  --glass-bg-sheet:     rgba(255, 255, 255, 0.86);
+  --glass-bg-sheet:     rgba(255, 255, 255, 0.94);
 }
 
 /* ─── Dark tokens — Nature (emerald, default) ──────── */
@@ -174,7 +174,7 @@
   --glass-shadow-nav:   0 16px 36px -18px rgba(0, 0, 0, 0.80);
   --glass-fallback:     rgba(16, 26, 22, 0.92);
   --glass-row-bg:       rgba(255, 255, 255, 0.04);
-  --glass-bg-sheet:     rgba(12, 20, 17, 0.82);
+  --glass-bg-sheet:     rgba(12, 20, 17, 0.94);
 }
 
 [data-accent="performance"] {

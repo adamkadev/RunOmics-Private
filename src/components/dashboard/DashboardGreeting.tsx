@@ -15,7 +15,7 @@ export function DashboardGreeting() {
   const name = "Adam"
   const g = t.pages.dashboard.greeting
   const text = now.getHours() < 12 ? g.morning : now.getHours() < 18 ? g.afternoon : g.evening
-  const dateStr = now.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+  const dateStr = now.toLocaleDateString('en', { day: 'numeric', month: 'long', year: 'numeric' })
   const subtitle = g.weekDate(isoWeek(now), dateStr)
 
   return (
