@@ -131,7 +131,7 @@ export function Sidebar() {
       {showTopBar && (
         <header
           className={cn(
-            'fixed inset-x-0 top-0 z-30 transition-transform duration-200 ease-out lg:hidden',
+            'inset-x-0 top-0 z-30 transition-transform duration-200 ease-out lg:hidden',
             headerHidden ? '-translate-y-full' : 'translate-y-0'
           )}
           style={{ paddingTop: 'max(calc(env(safe-area-inset-top) - 10px), 8px)' }}
