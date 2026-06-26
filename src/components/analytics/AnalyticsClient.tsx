@@ -39,6 +39,7 @@ import { STATUS } from '@/lib/statusColors'
 import { t } from '@/i18n'
 
 import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
+import { AnimatedDuration } from '../ui/AnimatedDuration'
 
 const TABS = [
   { id: 'volume', label: t.analytics.tabs.volume },
@@ -55,7 +56,7 @@ function DeltaBadge({ text, good }: { text: string; good: boolean }) {
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-caption font-medium',
+        'inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-medium',
         good ? STATUS.success.badge : STATUS.danger.badge,
       )}
     >
@@ -160,8 +161,9 @@ export function AnalyticsClient({
             unit: t.units.km,
             label: t.analytics.stats.distance,
           },
-          {
-            value: formatDurationShort(totals.durationSeconds),
+          { value: formatDurationShort(totals.durationSeconds)
+            ? <AnimatedDuration seconds={totals.durationSeconds} format={formatDurationShort} />
+              : formatDurationShort(0),
             unit: t.units.hour,
             label: t.analytics.stats.time,
           },
@@ -191,8 +193,9 @@ export function AnalyticsClient({
               unit: t.units.km,
               label: t.analytics.stats.distance,
             },
-            {
-              value: formatDurationShort(totals.durationSeconds),
+            { value: formatDurationShort(totals.durationSeconds)
+              ? <AnimatedDuration seconds={totals.durationSeconds} format={formatDurationShort} />
+                : formatDurationShort(0),
               unit: t.units.hour,
               label: t.analytics.stats.time,
             },
