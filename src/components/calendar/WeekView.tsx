@@ -12,8 +12,14 @@ import { formatDateFull } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
-const TODAY_COLOR = '#f1761f'
-const MISSED_COLOR = '#E5396B'
+const TODAY = 'var(--color-today)'
+const MISSED = 'var(--color-missed)'
+// alpha variants via color-mix (supported Safari 16.2+, all modern browsers)
+const TODAY_10 = 'color-mix(in srgb, var(--color-today) 10%, transparent)'
+const TODAY_33 = 'color-mix(in srgb, var(--color-today) 33%, transparent)'
+const TODAY_38 = 'color-mix(in srgb, var(--color-today) 38%, transparent)'
+const MISSED_10 = 'color-mix(in srgb, var(--color-missed) 10%, transparent)'
+const MISSED_25 = 'color-mix(in srgb, var(--color-missed) 25%, transparent)'
 
 interface Day {
   date: string
@@ -55,7 +61,7 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
             <div
               key={label}
               className="text-center font-mono text-micro font-semibold text-muted-foreground/50"
-              style={days[i].date === today ? { color: TODAY_COLOR, fontWeight: 700 } : undefined}
+              style={days[i].date === today ? { color: TODAY, fontWeight: 700 } : undefined}
             >
               {label[0]}
             </div>
@@ -90,7 +96,7 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
                     <div
                       className="absolute inset-0 rounded-[8px] border"
                       style={{
-                        borderColor: `${TODAY_COLOR}60`,
+                        borderColor: TODAY_38,
                         animation: 'pulse-ring 2s ease-in-out infinite',
                       }}
                     />
@@ -102,25 +108,25 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
                       completed
                         ? { background: 'var(--color-accent, #f1761f)26', borderColor: 'var(--color-accent, #f1761f)4d' }
                         : missed
-                          ? { background: `${MISSED_COLOR}1a`, borderColor: `${MISSED_COLOR}40`, opacity: 0.6 }
+                          ? { background: MISSED_10, borderColor: MISSED_25, opacity: 0.6 }
                           : isToday
-                            ? { background: `${TODAY_COLOR}1a`, borderColor: TODAY_COLOR, borderStyle: 'solid' }
+                            ? { background: TODAY_10, borderColor: TODAY, borderStyle: 'solid' }
                             : planned
                               ? { background: 'rgba(255,255,255,.05)', borderColor: 'rgba(255,255,255,.18)', borderStyle: 'dashed' }
                               : { background: 'rgba(0,0,0,.04)', borderColor: 'rgba(0,0,0,.07)' }
                     }
                   >
                     {completed ? (
-                      <Check size={12} strokeWidth={2.5} style={{ color: '#10b981' }} />
+                      <Check size={12} strokeWidth={2.5} style={{ color: 'var(--accent)' }} />
                     ) : missed ? (
-                      <X size={12} strokeWidth={2.5} style={{ color: MISSED_COLOR }} />
+                      <X size={12} strokeWidth={2.5} style={{ color: MISSED }} />
                     ) : planned ? (
                       <span
                         className="h-2 w-2 rounded-full border"
-                        style={isToday ? { borderColor: TODAY_COLOR } : { borderColor: 'rgba(255,255,255,.35)' }}
+                        style={isToday ? { borderColor: TODAY } : { borderColor: 'rgba(255,255,255,.35)' }}
                       />
                     ) : isToday ? (
-                      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: TODAY_COLOR }} />
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: TODAY }} />
                     ) : (
                       <span className="text-caption text-foreground/20">-</span>
                     )}
@@ -132,11 +138,11 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
                   className="text-micro"
                   style={
                     isToday
-                      ? { color: TODAY_COLOR, fontWeight: 700 }
+                      ? { color: TODAY, fontWeight: 700 }
                       : completed
                         ? { color: 'var(--color-foreground)', opacity: 0.7 }
                         : missed
-                          ? { color: MISSED_COLOR, opacity: 0.7 }
+                          ? { color: MISSED, opacity: 0.7 }
                           : planned
                             ? { color: 'var(--color-foreground)', opacity: 0.45 }
                             : { color: 'var(--color-foreground)', opacity: 0.25 }
@@ -153,7 +159,7 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
                       ? ACTIVITY_TYPE_CONFIG[primaryType as ActivityType].dotColor
                       : planned
                         ? isToday
-                          ? `${TODAY_COLOR}55`
+                          ? TODAY_33
                           : 'rgba(255,255,255,.12)'
                         : 'transparent',
                   }}

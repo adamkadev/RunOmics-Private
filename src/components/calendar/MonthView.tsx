@@ -71,7 +71,7 @@ export function MonthView({ year, month, byDate, byDatePlanned, today }: Props) 
                 <>
                   <p
                     className={`mb-1 text-xs ${
-                      cell.date === today ? 'font-bold text-accent-text' : 'text-subtle'
+                      cell.date === today ? 'font-bold text-accent-text' : 'text-muted-foreground'
                     }`}
                   >
                     {cell.day}
@@ -98,12 +98,15 @@ export function MonthView({ year, month, byDate, byDatePlanned, today }: Props) 
                       </Link>
                     ))}
                     {cell.acts.length === 0 && byDatePlanned.has(cell.date) && (
-                      <p
-                        className="truncate px-1 py-0.5 text-micro italic text-accent-text/60"
+                      <div
+                        className="flex items-center gap-1 rounded px-1 py-0.5"
                         title={byDatePlanned.get(cell.date)?.name}
                       >
-                        {byDatePlanned.get(cell.date)?.name}
-                      </p>
+                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent/50" aria-hidden="true" />
+                        <span className="truncate text-micro font-medium text-accent-text/70">
+                          {byDatePlanned.get(cell.date)?.name}
+                        </span>
+                      </div>
                     )}
                   </div>
                 </>
