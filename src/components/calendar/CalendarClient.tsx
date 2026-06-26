@@ -8,7 +8,6 @@ import { WeekView } from './WeekView'
 import { MonthView } from './MonthView'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
 import { formatDayMonth } from '@/lib/formatters'
-import { useHorizontalSwipe } from '@/hooks/useHorizontalSwipe'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -67,8 +66,6 @@ export function CalendarClient({ activities, plannedWorkouts }: Props) {
     }
   }
 
-  const swipeProps = useHorizontalSwipe(() => shift(1), () => shift(-1))
-
   function goToday() {
     setWeekStart(startOfWeek(now))
     setYear(now.getFullYear())
@@ -76,7 +73,7 @@ export function CalendarClient({ activities, plannedWorkouts }: Props) {
   }
 
   return (
-    <div className="space-y-4 pb-[max(env(safe-area-inset-bottom),80px)]" {...swipeProps}>
+    <div className="space-y-4 pb-[max(env(safe-area-inset-bottom),80px)]">
       <GlassSurface as="div" variant="nav" className="top-2 z-20 rounded-2xl px-5 py-3">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
