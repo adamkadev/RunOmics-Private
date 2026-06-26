@@ -1,45 +1,27 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import {
-  LayoutDashboard,
-  Activity,
-  CalendarDays,
-  Map,
-  ChevronRight,
-  Settings,
-  User,
-  type LucideIcon,
-} from 'lucide-react'
+import { LayoutDashboard, Activity, CalendarDays, Map, Settings, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { APP_VERSION } from '@/lib/version'
 import { hasGlobalTopBar } from '@/lib/navigation'
 import { useScrollDirection } from '@/lib/useScrollDirection'
-import { useDragToDismiss } from '@/hooks/useDragToDismiss'
 import { ThemeToggle } from './ThemeToggle'
 import { GlassTabBar } from './GlassTabBar'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 
+// Desktop sidebar only - mobile uses the 4-tab GlassTabBar (dashboard/
+// activities/calendar/profile). Analytics/Goals/Records/Shoes/Settings are
+// intentionally absent from both: they're reached contextually from
+// Dashboard/Profile instead of a persistent nav entry.
 const NAV_ITEMS = [
   { href: '/', label: t.nav.items.dashboard, icon: LayoutDashboard },
   { href: '/activities', label: t.nav.items.activities, icon: Activity },
   { href: '/calendar', label: t.nav.items.calendar, icon: CalendarDays },
   { href: '/map', label: t.nav.items.heatmap, icon: Map },
   { href: '/profile', label: t.nav.items.profile, icon: User },
-]
-
-// Mobile "More" bottom sheet: only the routes not already one tap away on
-// the persistent GlassTabBar (dashboard/activities/calendar/profile).
-// Analytics/Goals/Records/Shoes are intentionally absent from both - they're
-// reached contextually from Dashboard/Profile instead of the primary nav.
-const MORE_PRIMARY_ITEMS = [
-  { href: '/map', label: t.nav.items.heatmap, icon: Map },
-]
-const MORE_SECONDARY_ITEMS = [
-  { href: '/settings', label: t.nav.items.settings, icon: Settings },
 ]
 
 // In-app brand mark: thin concentric rings inheriting the live accent color
@@ -79,53 +61,10 @@ function Brand({ onClick }: { onClick?: () => void }) {
   )
 }
 
-function MoreMenuItem({
-  href,
-  label,
-  icon: Icon,
-  onNavigate,
-}: {
-  href: string
-  label: string
-  icon: LucideIcon
-  onNavigate: () => void
-}) {
-  return (
-    <Link
-      href={href}
-      onClick={onNavigate}
-      className="flex items-center gap-4 rounded-2xl px-4 py-3.5 transition-colors active:bg-foreground/[0.06]"
-    >
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-foreground/10 bg-foreground/[0.08] text-foreground/70">
-        <Icon size={20} strokeWidth={1.8} />
-      </span>
-      <span className="text-base font-semibold text-foreground">{label}</span>
-      <ChevronRight size={16} className="ml-auto shrink-0 text-foreground/25" />
-    </Link>
-  )
-}
-
 export function Sidebar() {
   const pathname = usePathname()
-  const [open, setOpen] = useState(false)
-  const { handleProps, sheetStyle } = useDragToDismiss(() => setOpen(false))
   const headerHidden = useScrollDirection()
   const showTopBar = hasGlobalTopBar(pathname)
-
-  // Lock background scroll while the mobile menu is open.
-  useEffect(() => {
-    if (!open) return
-    const { style: htmlStyle } = document.documentElement
-    const { style: bodyStyle } = document.body
-    const prevHtml = htmlStyle.overflow
-    const prevBody = bodyStyle.overflow
-    htmlStyle.overflow = 'hidden'
-    bodyStyle.overflow = 'hidden'
-    return () => {
-      htmlStyle.overflow = prevHtml
-      bodyStyle.overflow = prevBody
-    }
-  }, [open])
 
   return (
     <>
@@ -204,46 +143,7 @@ export function Sidebar() {
       )}
 
       {/* ─── Mobile glass tab bar ─── */}
-      <GlassTabBar onMore={() => setOpen(true)} moreOpen={open} />
-
-      {/* ─── Mobile "More" bottom sheet (N1) ─── */}
-      {open && (
-        <div
-          className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[4px] lg:hidden"
-          onClick={() => setOpen(false)}
-          aria-hidden="true"
-        />
-      )}
-      <GlassSurface
-        as="div"
-        variant="sheet"
-        role="menu"
-        className={cn(
-          'fixed inset-x-0 bottom-0 z-50 rounded-t-[24px] border-b-0 transition-transform duration-300 lg:hidden',
-          open ? 'translate-y-0' : 'translate-y-full pointer-events-none'
-        )}
-        style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 20px)', ...sheetStyle }}
-      >
-        <div className="flex justify-center pt-3 pb-3" {...handleProps}>
-          <div className="h-[5px] w-[38px] rounded-full bg-foreground/[0.18]" />
-        </div>
-
-        <nav className="flex flex-col gap-1 px-4">
-          {MORE_PRIMARY_ITEMS.map((item) => (
-            <MoreMenuItem key={item.href} {...item} onNavigate={() => setOpen(false)} />
-          ))}
-        </nav>
-
-        <div className="mx-5 my-2 h-px bg-foreground/[0.06]" />
-
-        <nav className="flex flex-col gap-1 px-4">
-          {MORE_SECONDARY_ITEMS.map((item) => (
-            <MoreMenuItem key={item.href} {...item} onNavigate={() => setOpen(false)} />
-          ))}
-        </nav>
-
-        <p className="pt-3 text-center text-xs text-foreground/20">{t.brand.version(APP_VERSION)}</p>
-      </GlassSurface>
+      <GlassTabBar />
     </>
   )
 }

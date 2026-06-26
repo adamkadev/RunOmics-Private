@@ -1,7 +1,8 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { User, Pencil } from 'lucide-react'
+import Link from 'next/link'
+import { User, Pencil, Settings } from 'lucide-react'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { Button } from '@/components/ui/Button'
 import { Tooltip } from '@/components/ui/Tooltip'
@@ -109,6 +110,14 @@ export function ProfileHero({ hero, displayName, onSaveName }: Props) {
           {t.profile.hero.summary(hero.lifetimeActivities, hero.lifetimeDistanceKm)}
         </p>
       </div>
+
+      <Link
+        href="/settings"
+        aria-label={t.nav.items.settings}
+        className="absolute left-5 top-4 flex h-8 w-8 items-center justify-center rounded-control border border-foreground/10 bg-foreground/[0.08] text-foreground/70 transition-colors active:scale-95"
+      >
+        <Settings size={16} />
+      </Link>
 
       <Button
         variant="secondary"

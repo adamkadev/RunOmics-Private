@@ -29,10 +29,7 @@ export const en = {
       heatmap: 'Heatmap',
       profile: 'Profile',
       settings: 'Settings',
-      more: 'More',
     },
-    openMenu: 'Open menu',
-    closeMenu: 'Close menu',
   },
   meta: {
     description: 'Your personal running training dashboard - stats, maps, trends.',
@@ -249,6 +246,7 @@ export const en = {
       title: 'Training Mix',
     },
     viewAnalytics: 'View full analytics',
+    viewRouteHeatmap: 'View route heatmap',
     trainingLoad: {
       title: 'Training Load',
       window: '· last 90 days',

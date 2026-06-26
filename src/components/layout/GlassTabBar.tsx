@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Activity, CalendarDays, User, MoreHorizontal } from 'lucide-react'
+import { LayoutDashboard, Activity, CalendarDays, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -21,14 +21,13 @@ function isActive(pathname: string, href: string): boolean {
 const tabClass = 'flex flex-1 flex-col items-center gap-1 py-1 transition-colors active:scale-95'
 
 /**
- * Persistent floating glass tab bar (mobile only). Replaces the burger-only
- * navigation: the four primary destinations are one tap away, and "More"
- * opens the full drawer for the remaining routes. Goals/Records/Shoes are
- * intentionally not in either - they're one tap away from Profile instead.
+ * Persistent floating glass tab bar (mobile only): the four primary
+ * destinations, no overflow menu. Everything else (Analytics, Goals,
+ * Records, Shoes, Heatmap, Settings) is reached contextually from
+ * Dashboard or Profile instead of a nav entry.
  */
-export function GlassTabBar({ onMore, moreOpen }: { onMore: () => void; moreOpen: boolean }) {
+export function GlassTabBar() {
   const pathname = usePathname()
-  const moreActive = moreOpen || !TABS.some((tab) => isActive(pathname, tab.href))
 
   return (
     <div
@@ -54,18 +53,6 @@ export function GlassTabBar({ onMore, moreOpen }: { onMore: () => void; moreOpen
             </Link>
           )
         })}
-        <button
-          type="button"
-          onClick={onMore}
-          aria-haspopup="menu"
-          aria-expanded={moreOpen}
-          className={cn(tabClass, moreActive ? 'text-accent-text' : 'text-muted-foreground')}
-        >
-          <MoreHorizontal size={20} strokeWidth={2} />
-          <span className={cn('text-micro', moreActive ? 'font-semibold' : 'font-medium')}>
-            {t.nav.items.more}
-          </span>
-        </button>
       </GlassSurface>
     </div>
   )
