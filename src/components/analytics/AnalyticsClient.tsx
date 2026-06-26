@@ -112,6 +112,11 @@ export function AnalyticsClient({
   const [view, setView] = useState<View>({ kind: 'year', year: years[0] })
   const [tab, setTab] = useState<TabId>('volume')
 
+  function selectTab(id: TabId) {
+    setTab(id)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   const isPeriod = view.kind === 'period'
   const isAll = view.kind === 'all'
 
@@ -268,11 +273,11 @@ export function AnalyticsClient({
       {/* Tabs */}
       {active && (
         <>
-          <div className="sticky top-2 z-10 flex border-b border-border bg-background/80 backdrop-blur-md">
+          <div className="sticky top-[max(env(safe-area-inset-top),8px)] z-10 flex border-b border-border bg-background/80 backdrop-blur-md">
             {visibleTabs.map((item) => (
               <button
                 key={item.id}
-                onClick={() => setTab(item.id)}
+                onClick={() => selectTab(item.id)}
                 className={cn(
                   'relative flex-1 py-3 text-sm font-medium transition-colors',
                   tab === item.id
