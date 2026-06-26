@@ -36,10 +36,7 @@ export function GlassTabBar() {
       <GlassSurface
         as="nav"
         variant="nav"
-        className="flex items-center justify-between px-4 py-3"
-        style={{
-          borderRadius: '0'
-        }}
+        className="flex items-center justify-between rounded-none px-4 pt-3"
       >
         {TABS.map(({ href, label, icon: Icon }) => {
           const active = isActive(pathname, href)
