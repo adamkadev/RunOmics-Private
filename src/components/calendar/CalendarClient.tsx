@@ -76,7 +76,7 @@ export function CalendarClient({ activities, plannedWorkouts }: Props) {
   }
 
   return (
-    <div className="space-y-4" {...swipeProps}>
+    <div className="space-y-4 pb-[max(env(safe-area-inset-bottom),80px)]" {...swipeProps}>
       <GlassSurface as="div" variant="nav" className="top-2 z-20 rounded-2xl px-5 py-3">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">

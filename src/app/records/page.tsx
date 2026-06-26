@@ -16,7 +16,7 @@ export default async function RecordsPage() {
   const mostRecentRecord = getMostRecentRecord(records)
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-[max(env(safe-area-inset-bottom),80px)]">
       <div className="space-y-2">
         <div>
           <h1 className="text-display text-foreground">{t.pages.records.title}</h1>

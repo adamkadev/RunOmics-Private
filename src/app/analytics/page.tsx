@@ -21,7 +21,7 @@ export default async function AnalyticsPage() {
   const trainingLoad = getTrainingLoad()
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-[max(env(safe-area-inset-bottom),80px)]">
       <AnalyticsClient
         data={data}
         comparison={comparison}
