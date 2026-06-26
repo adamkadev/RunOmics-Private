@@ -27,20 +27,6 @@ function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x: numb
   ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h)
 }
 
-function drawBlob(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, color: string, opacity: number) {
-  if (opacity === 0) return
-  const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r)
-  grad.addColorStop(0, color)
-  grad.addColorStop(1, color + '00')
-  ctx.save()
-  ctx.globalAlpha = opacity
-  ctx.fillStyle = grad
-  ctx.beginPath()
-  ctx.arc(cx, cy, r, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.restore()
-}
-
 function drawPhotoScrims(ctx: CanvasRenderingContext2D) {
   const top = ctx.createLinearGradient(0, 0, 0, H * 0.35)
   top.addColorStop(0, 'rgba(0,0,0,0.52)')
@@ -77,31 +63,18 @@ function drawMapScrims(ctx: CanvasRenderingContext2D) {
   ctx.fillRect(W - cornerSize, 0, cornerSize, cornerSize)
 }
 
-/** Fills the background: a captured/chosen image (with legibility scrims) or a flat/gradient color. */
-export function drawBackground(ctx: CanvasRenderingContext2D, p: DesignPalette, bgImage: HTMLImageElement | null) {
+export type BackgroundScrim = 'none' | 'map' | 'photo'
+
+/** Fills the background: a captured/chosen/static image (with legibility scrims) or a flat color. */
+export function drawBackground(ctx: CanvasRenderingContext2D, p: DesignPalette, bgImage: HTMLImageElement | null, scrim: BackgroundScrim) {
   if (bgImage) {
     drawCover(ctx, bgImage, 0, 0, W, H)
-    if (p.isMapBg) drawMapScrims(ctx)
-    else drawPhotoScrims(ctx)
+    if (scrim === 'map') drawMapScrims(ctx)
+    else if (scrim === 'photo') drawPhotoScrims(ctx)
   } else {
     ctx.fillStyle = p.bg
     ctx.fillRect(0, 0, W, H)
   }
-}
-
-export function drawBlobs(ctx: CanvasRenderingContext2D, p: DesignPalette) {
-  if (!p.showBlobs) return
-  drawBlob(ctx, W * 0.15, H * 0.18, W * 0.88, p.blob1, p.blob1Op)
-  drawBlob(ctx, W * 0.88, H * 0.34, W * 0.75, p.blob2, p.blob2Op)
-}
-
-export function fillRouteCircleBg(ctx: CanvasRenderingContext2D, circleBg: string) {
-  ctx.save()
-  ctx.beginPath()
-  ctx.arc(CX, CY, CR, 0, Math.PI * 2)
-  ctx.fillStyle = circleBg
-  ctx.fill()
-  ctx.restore()
 }
 
 export function strokeRouteInCircle(ctx: CanvasRenderingContext2D, route: [number, number][], color: string) {
@@ -149,47 +122,13 @@ function wrapTitle(ctx: CanvasRenderingContext2D, text: string, maxWidth: number
   return lines
 }
 
-// Scales the preview's 22x90 badge (within its 258-wide card) up to canvas size, so the
-// exported PNG's brand badge matches what's shown in the live HTML/CSS preview.
-const BADGE_SCALE = W / 258
-
-/** Glass-pill brand badge, top-right - mirrors the live preview's CSS badge. */
-export function drawBrandBadge(ctx: CanvasRenderingContext2D, p: DesignPalette) {
-  const w = 22 * BADGE_SCALE
-  const h = 90 * BADGE_SCALE
-  const top = 20 * BADGE_SCALE
-  const radius = 9 * BADGE_SCALE
-  const x = W - w
-
-  // Map's photographic background varies a lot more in brightness than the other
-  // designs' controlled gradients, so its pill needs a more opaque glass to stay legible.
-  const fillOpacity = p.isMapBg ? 0.32 : p.isLight ? 0.10 : 0.18
-  const borderOpacity = p.isMapBg ? 0.45 : p.isLight ? 0.18 : 0.3
-
+/** Stamps the brand mark asset full-bleed (Map, Memory - the texture designs' backgrounds
+ * already bake the mark in). The asset is black-on-transparent; inverted to white on dark
+ * designs/basemaps. */
+export function drawBrandMark(ctx: CanvasRenderingContext2D, brandMark: HTMLImageElement, invert: boolean) {
   ctx.save()
-  ctx.beginPath()
-  ctx.moveTo(x, top)
-  ctx.lineTo(x + w, top)
-  ctx.lineTo(x + w, top + h)
-  ctx.lineTo(x + radius, top + h)
-  ctx.quadraticCurveTo(x, top + h, x, top + h - radius)
-  ctx.lineTo(x, top)
-  ctx.closePath()
-  ctx.fillStyle = p.isLight ? `rgba(15,23,42,${fillOpacity})` : `rgba(255,255,255,${fillOpacity})`
-  ctx.fill()
-  ctx.strokeStyle = p.isLight ? `rgba(15,23,42,${borderOpacity})` : `rgba(255,255,255,${borderOpacity})`
-  ctx.lineWidth = 2
-  ctx.stroke()
-  ctx.restore()
-
-  ctx.save()
-  ctx.translate(x + w / 2, top + h / 2)
-  ctx.rotate(Math.PI / 2)
-  ctx.font = `800 ${9.5 * BADGE_SCALE}px system-ui, sans-serif`
-  ctx.fillStyle = p.brandColor
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.fillText('RUNOMICS', 0, 0)
+  if (invert) ctx.filter = 'invert(1)'
+  ctx.drawImage(brandMark, 0, 0, W, H)
   ctx.restore()
 }
 

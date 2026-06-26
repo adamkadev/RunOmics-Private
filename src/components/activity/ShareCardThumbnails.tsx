@@ -1,4 +1,8 @@
-import type { ShareDesign } from '@/lib/shareCard'
+'use client'
+
+import Image from 'next/image'
+import type { AccentId } from '@/lib/accent'
+import { isTexturedDesign, texturedBgPath, type ShareDesign, type ThemeMode } from '@/lib/shareCard'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -6,43 +10,22 @@ import { t } from '@/i18n'
 // real activity) - cheap to draw and legible at 60x84, unlike a cropped corner of the
 // full preview would be.
 
-function AuroraThumb() {
+function TexturedThumb({ design, accent, theme }: { design: 'facets' | 'grain' | 'topographic'; accent: AccentId; theme: ThemeMode }) {
+  const isLight = theme === 'light'
   return (
-    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(155deg,#f0f8ff,#eff6ff)' }}>
-      <div style={{ position: 'absolute', width: '130%', height: '90%', left: '-15%', top: '-25%', borderRadius: 9999, background: 'radial-gradient(circle,#93c5fd 0%,transparent 60%)', opacity: 0.55, filter: 'blur(14px)' }} />
-      <div style={{ position: 'absolute', width: '110%', height: '80%', right: '-20%', top: '22%', borderRadius: 9999, background: 'radial-gradient(circle,#bae6fd 0%,transparent 60%)', opacity: 0.48, filter: 'blur(12px)' }} />
+    <div style={{ position: 'absolute', inset: 0 }}>
+      <Image src={texturedBgPath(design, accent, theme)} alt="" fill style={{ objectFit: 'cover', objectPosition: 'top' }} />
       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '6px 7px' }}>
-        <div style={{ background: 'rgba(255,255,255,0.72)', border: '1px solid rgba(255,255,255,0.88)', borderRadius: 7, padding: '5px 7px', backdropFilter: 'blur(8px)' }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: '#2563eb', letterSpacing: '-0.03em' }}>9.00</div>
-          <div style={{ fontSize: 8, color: '#64748b', fontWeight: 500, marginTop: 1 }}>{t.units.km}</div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function NightThumb() {
-  return (
-    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(155deg,#070d20,#06091a)' }}>
-      <div style={{ position: 'absolute', width: '130%', height: '90%', left: '-15%', top: '-25%', borderRadius: 9999, background: 'radial-gradient(circle,#1d4ed8 0%,transparent 60%)', opacity: 0.52, filter: 'blur(14px)' }} />
-      <div style={{ position: 'absolute', width: '110%', height: '80%', right: '-20%', top: '22%', borderRadius: 9999, background: 'radial-gradient(circle,#0284c7 0%,transparent 60%)', opacity: 0.44, filter: 'blur(12px)' }} />
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '6px 7px' }}>
-        <div style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.13)', borderRadius: 7, padding: '5px 7px', backdropFilter: 'blur(8px)' }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: '#60a5fa', letterSpacing: '-0.03em' }}>9.00</div>
-          <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.38)', fontWeight: 500, marginTop: 1 }}>{t.units.km}</div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function CleanThumb() {
-  return (
-    <div style={{ position: 'absolute', inset: 0, background: '#f8fafc' }}>
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '6px 7px' }}>
-        <div style={{ background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 7, padding: '5px 7px' }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: '#0f172a', letterSpacing: '-0.03em' }}>9.00</div>
-          <div style={{ fontSize: 8, color: '#94a3b8', fontWeight: 500, marginTop: 1 }}>{t.units.km}</div>
+        <div
+          style={{
+            background: isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.08)',
+            border: `1px solid ${isLight ? 'rgba(0,0,0,0.07)' : 'rgba(255,255,255,0.13)'}`,
+            borderRadius: 7,
+            padding: '5px 7px',
+          }}
+        >
+          <div style={{ fontSize: 11, fontWeight: 800, color: isLight ? '#0f172a' : '#60a5fa', letterSpacing: '-0.03em' }}>9.00</div>
+          <div style={{ fontSize: 8, color: isLight ? '#94a3b8' : 'rgba(255,255,255,0.38)', fontWeight: 500, marginTop: 1 }}>{t.units.km}</div>
         </div>
       </div>
     </div>
@@ -85,18 +68,9 @@ function MemoryThumb() {
   )
 }
 
-const THUMBS: Record<ShareDesign, () => React.JSX.Element> = {
-  aurora: AuroraThumb,
-  night: NightThumb,
-  clean: CleanThumb,
-  map: MapThumb,
-  memory: MemoryThumb,
-}
-
-export function DesignThumb({ design, selected, accentHex, onClick }: {
-  design: ShareDesign; selected: boolean; accentHex: string; onClick: () => void
+export function DesignThumb({ design, accent, theme, selected, accentHex, onClick }: {
+  design: ShareDesign; accent: AccentId; theme: ThemeMode; selected: boolean; accentHex: string; onClick: () => void
 }) {
-  const Thumb = THUMBS[design]
   return (
     <button type="button" onClick={onClick} className="flex shrink-0 flex-col items-center gap-1.5">
       <div style={{
@@ -105,7 +79,7 @@ export function DesignThumb({ design, selected, accentHex, onClick }: {
         boxShadow: selected ? `0 0 0 2px ${accentHex}55, 0 4px 12px rgba(0,0,0,0.24)` : '0 2px 6px rgba(0,0,0,0.18)',
         transition: 'border 0.18s, box-shadow 0.18s',
       }}>
-        <Thumb />
+        {isTexturedDesign(design) ? <TexturedThumb design={design} accent={accent} theme={theme} /> : design === 'map' ? <MapThumb /> : <MemoryThumb />}
       </div>
       <span className={cn('text-caption transition-colors', selected ? 'font-semibold text-foreground' : 'font-normal text-muted-foreground')}>
         {t.activity.shareCard.designLabels[design]}

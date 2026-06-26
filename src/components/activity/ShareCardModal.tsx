@@ -6,14 +6,18 @@ import { useTheme } from 'next-themes'
 import { Check, Copy, Download, Share2, X } from 'lucide-react'
 import type { Activity } from '@/domain/activity/types'
 import {
+  BRAND_MARK_SRC,
   H as CARD_H,
+  isTexturedDesign,
   loadImage,
   renderShareCard,
   SHARE_DESIGNS,
   shareCardFileName,
+  texturedBgPath,
   W as CARD_W,
   type MapStyle,
   type ShareDesign,
+  type ThemeMode,
 } from '@/lib/shareCard'
 import { captureRouteMapSnapshot } from '@/lib/routeMapSnapshot'
 import { ACCENT_SWATCHES, DEFAULT_ACCENT, isAccentId, type AccentId } from '@/lib/accent'
@@ -52,14 +56,19 @@ interface Props {
 
 export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose }: Props) {
   const { resolvedTheme } = useTheme()
-  const [design, setDesign] = useState<ShareDesign>('aurora')
+  const theme: ThemeMode = resolvedTheme === 'light' ? 'light' : 'dark'
+  const [design, setDesign] = useState<ShareDesign>('facets')
   const [showMap, setShowMap] = useState(true)
-  const [mapStyle, setMapStyle] = useState<MapStyle>(resolvedTheme === 'light' ? 'light' : 'dark')
+  const [mapStyle, setMapStyle] = useState<MapStyle>(theme)
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [photoImage, setPhotoImage] = useState<HTMLImageElement | null>(null)
   const [copyState, setCopyState] = useState<'idle' | 'copied'>('idle')
   // Resolved map snapshots, cached per style so switching light/dark doesn't re-fetch.
   const [mapSnapshots, setMapSnapshots] = useState<Partial<Record<MapStyle, { url: string; img: HTMLImageElement }>>>({})
+  // Textured background images (Facets/Grain/Topographic), cached per design+theme so
+  // toggling between them doesn't re-fetch.
+  const [texturedBgImages, setTexturedBgImages] = useState<Partial<Record<string, HTMLImageElement>>>({})
+  const [brandMarkImage, setBrandMarkImage] = useState<HTMLImageElement | null>(null)
 
   const { close, handleProps, sheetStyle } = useDragToDismiss(onClose)
 
@@ -78,10 +87,13 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   const photoUrlRef = useRef<string | null>(null)
 
   const isMapBg = design === 'map'
+  const isTextured = isTexturedDesign(design)
   const effectiveShowMap = showMap || isMapBg
   const canCaptureMap = !!activity.route && activity.route.length > 1 && !!process.env.NEXT_PUBLIC_MAPTILER_TOKEN
   const mapSnapshot = mapSnapshots[mapStyle] ?? null
   const mapLoading = isMapBg && canCaptureMap && !mapSnapshot
+  const texturedBgKey = `${design}_${theme}`
+  const texturedBgImage = texturedBgImages[texturedBgKey] ?? null
 
   const redraw = useCallback(() => {
     const canvas = canvasRef.current
@@ -90,12 +102,15 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
       activity,
       design,
       accent,
+      theme,
       showMap: effectiveShowMap,
       photoImage,
       mapImage: mapSnapshot?.img ?? null,
+      texturedBgImage,
+      brandMarkImage,
       mapStyle,
     })
-  }, [activity, accent, design, effectiveShowMap, photoImage, mapSnapshot, mapStyle])
+  }, [activity, accent, theme, design, effectiveShowMap, photoImage, mapSnapshot, texturedBgImage, brandMarkImage, mapStyle])
 
   useEffect(() => { redraw() }, [redraw])
 
@@ -116,6 +131,22 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     return () => { style.overflow = prev }
   }, [])
 
+  useEffect(() => {
+    loadImage(BRAND_MARK_SRC).then(setBrandMarkImage).catch((err) => console.error(err))
+  }, [])
+
+  // Loads the static per-accent/theme texture background, the first time a given
+  // design+theme combination is needed. Cached in state so toggling back and forth
+  // between designs or themes doesn't re-fetch.
+  useEffect(() => {
+    if (!isTextured || texturedBgImages[texturedBgKey]) return
+    let cancelled = false
+    loadImage(texturedBgPath(design, accent, theme))
+      .then((img) => { if (!cancelled) setTexturedBgImages((prev) => ({ ...prev, [texturedBgKey]: img })) })
+      .catch((err) => console.error(err))
+    return () => { cancelled = true }
+  }, [isTextured, design, accent, theme, texturedBgKey, texturedBgImages])
+
   // Captures the route-on-map background for the selected style, the first time it's needed.
   // Resolved snapshots are cached per style in state, so switching light/dark back and forth
   // doesn't re-fetch.
@@ -129,7 +160,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     let cancelled = false
     // light basemap: the route's white halo (drawn in captureRouteMapSnapshot) needs a
     // saturated line on top of it, not white, or it disappears against the light tiles.
-    const routeColor = mapStyle === 'light' ? ACCENT_TOKENS[accent].accentLight : getDesignConfig('map', accent).routeColor
+    const routeColor = mapStyle === 'light' ? ACCENT_TOKENS[accent].accentLight : getDesignConfig('map', accent, theme).routeColor
     captureRouteMapSnapshot({
       route,
       color: routeColor,
@@ -146,7 +177,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
       .catch((err) => console.error(err))
 
     return () => { cancelled = true }
-  }, [isMapBg, activity.route, accent, mapStyle, mapSnapshots])
+  }, [isMapBg, activity.route, accent, theme, mapStyle, mapSnapshots])
 
   function selectDesign(d: ShareDesign) {
     setDesign(d)
@@ -252,6 +283,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
                   activity={activity}
                   design={design}
                   accent={accent}
+                  theme={theme}
                   showMap={showMap}
                   photoUrl={photoUrl}
                   onPickPhoto={() => fileInputRef.current?.click()}
@@ -276,6 +308,8 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
                 <DesignThumb
                   key={d}
                   design={d}
+                  accent={accent}
+                  theme={theme}
                   selected={design === d}
                   accentHex={accentHex}
                   onClick={() => selectDesign(d)}

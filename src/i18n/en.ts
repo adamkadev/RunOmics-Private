@@ -550,9 +550,9 @@ export const en = {
       choosePhoto: 'Choose a photo',
       designLabel: 'Design',
       designLabels: {
-        aurora: 'Aurora',
-        night: 'Night',
-        clean: 'Clean',
+        facets: 'Facets',
+        grain: 'Grain',
+        topographic: 'Topo',
         map: 'Map',
         memory: 'Memory',
       },
