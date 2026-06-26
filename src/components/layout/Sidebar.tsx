@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Activity, CalendarDays, Map, Settings, User } from 'lucide-react'
+import { LayoutDashboard, Activity, CalendarDays, Compass, Settings, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { APP_VERSION } from '@/lib/version'
@@ -12,15 +12,11 @@ import { ThemeToggle } from './ThemeToggle'
 import { GlassTabBar } from './GlassTabBar'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 
-// Desktop sidebar only - mobile uses the 4-tab GlassTabBar (dashboard/
-// activities/calendar/profile). Analytics/Goals/Records/Shoes/Settings are
-// intentionally absent from both: they're reached contextually from
-// Dashboard/Profile instead of a persistent nav entry.
 const NAV_ITEMS = [
   { href: '/', label: t.nav.items.dashboard, icon: LayoutDashboard },
   { href: '/activities', label: t.nav.items.activities, icon: Activity },
   { href: '/calendar', label: t.nav.items.calendar, icon: CalendarDays },
-  { href: '/map', label: t.nav.items.heatmap, icon: Map },
+  { href: '/explore', label: t.nav.items.explore, icon: Compass },
   { href: '/profile', label: t.nav.items.profile, icon: User },
 ]
 

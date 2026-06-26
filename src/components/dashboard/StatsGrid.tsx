@@ -13,15 +13,17 @@ import { WeekLoadBadge } from '@/components/dashboard/WeekLoadBadge'
 import { t } from '@/i18n'
 import type { WeekSummary } from '@/domain/activity/types'
 import type { WeeklyLoadComparison } from '@/application/usecases/GetWeeklyLoadComparison'
+import type { VO2maxTrend } from '@/application/usecases/GetVO2maxHistory'
 
 interface Props {
   weeks: WeekSummary[]
   currentStreak: number
   vo2max: number | null
+  vo2maxTrend: VO2maxTrend | null
   weekLoad: WeeklyLoadComparison | null
 }
 
-export function StatsGrid({ weeks, currentStreak, vo2max, weekLoad }: Props) {
+export function StatsGrid({ weeks, currentStreak, vo2max, vo2maxTrend, weekLoad }: Props) {
   const s = t.dashboard.stats
   const lastIndex = weeks.length - 1
   const [index, setIndex] = useState(lastIndex)
@@ -54,7 +56,13 @@ export function StatsGrid({ weeks, currentStreak, vo2max, weekLoad }: Props) {
       unit: currentWeek.avgHeartRate ? t.units.bpm : undefined,
       label: s.avgHr,
     },
-    { value: vo2max !== null ? <AnimatedValue value={vo2max} /> : s.empty,
+    { value: vo2max !== null
+        ? <span className="inline-flex items-baseline gap-0.5">
+            <AnimatedValue value={vo2max} />
+            {vo2maxTrend === 'up'   && <span className="text-[11px] font-bold text-accent-text">↑</span>}
+            {vo2maxTrend === 'down' && <span className="text-[11px] font-bold text-muted-foreground">↓</span>}
+          </span>
+        : s.empty,
       unit: undefined,
       label: s.vo2max
     },

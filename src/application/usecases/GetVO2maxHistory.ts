@@ -6,10 +6,21 @@ export interface VO2maxPoint {
   value: number
 }
 
+export type VO2maxTrend = 'up' | 'down' | 'stable'
+
 export function getLatestVO2max(): number | null {
   const activities = getAllActivities()
   const latest = activities.find((a) => a.vo2maxGarmin !== null && a.vo2maxGarmin !== undefined)
   return latest?.vo2maxGarmin ?? null
+}
+
+export function getVO2maxTrend(): VO2maxTrend | null {
+  const history = getVO2maxHistory()
+  if (history.length < 2) return null
+  const delta = history[history.length - 1].value - history[history.length - 2].value
+  if (delta > 0.4) return 'up'
+  if (delta < -0.4) return 'down'
+  return 'stable'
 }
 
 // Returns one data point per week (last activity of the week) for the last 12 weeks.

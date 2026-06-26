@@ -4,7 +4,7 @@ import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { getConsistencyScore } from '@/application/usecases/GetConsistencyScore'
 import { getWeeklyLoadComparison } from '@/application/usecases/GetWeeklyLoadComparison'
 import { getHeatmapData } from '@/application/usecases/GetHeatmapData'
-import { getLatestVO2max } from '@/application/usecases/GetVO2maxHistory'
+import { getLatestVO2max, getVO2maxTrend } from '@/application/usecases/GetVO2maxHistory'
 import { getRecords, getPrLabelsByActivityId, getMostRecentRecord } from '@/application/usecases/GetRecords'
 import { getPbAlerts } from '@/application/usecases/GetPbAlerts'
 import { getShoeStats } from '@/application/usecases/GetShoeStats'
@@ -26,6 +26,7 @@ export default async function DashboardPage() {
   const weekLoad = getWeeklyLoadComparison()
   const heatmapDays = getHeatmapData()
   const vo2max = getLatestVO2max()
+  const vo2maxTrend = getVO2maxTrend()
   const records = await getRecords()
   const prLabelsByActivityId = getPrLabelsByActivityId(records)
   const mostRecentRecord = getMostRecentRecord(records)
@@ -45,7 +46,7 @@ export default async function DashboardPage() {
         />
       </div>
 
-      <StatsGrid weeks={data.weeks} currentStreak={data.currentStreak} vo2max={vo2max} weekLoad={weekLoad} />
+      <StatsGrid weeks={data.weeks} currentStreak={data.currentStreak} vo2max={vo2max} vo2maxTrend={vo2maxTrend} weekLoad={weekLoad} />
 
       {(trainingStatus || consistencyScore) && (
         <div className={trainingStatus && consistencyScore ? 'grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]' : undefined}>
