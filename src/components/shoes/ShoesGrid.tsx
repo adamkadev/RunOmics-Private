@@ -88,7 +88,7 @@ function ShoeCard({ shoe }: { shoe: ShoeStats }) {
           </div>
           <div className="mt-2.5 grid grid-cols-3 gap-1 text-xs text-subtle">
             <span>{Math.round(shoe.totalKm)} / {shoe.maxKm} km</span>
-            <span className="text-center">{t.shoes.sessions(shoe.sessionCount)}</span>
+            <span className="text-center">{t.common.sessions(shoe.sessionCount)}</span>
             <span className="text-right">
               {shoe.lastUsedDate ? formatShoeDate(shoe.lastUsedDate) : '-'}
             </span>

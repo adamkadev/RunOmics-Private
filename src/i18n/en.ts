@@ -60,7 +60,7 @@ export const en = {
     celsius: '°C',
     hour: 'h',
     day: 'd',
-    elevation: 'D+ m'
+    elevation: 'm gain'
   },
 
   common: {
@@ -162,54 +162,6 @@ export const en = {
         vma: '16',
       },
     },
-    goals: {
-      title: 'Annual Goals',
-      year: 'Year',
-      annualKm: 'Annual distance (km)',
-      raceTargets: 'Race targets',
-      targetTime: 'Target (mm:ss)',
-      optional: 'optional',
-      addYear: 'Add year',
-      removeYear: 'Remove year',
-      placeholders: {
-        annualKm: '1500',
-        targetTime: 'mm:ss',
-      },
-    },
-    pbs: {
-      title: 'Personal Bests',
-      year: 'Year',
-      distance: 'Distance',
-      time: 'Time (mm:ss)',
-      activityId: 'Activity ID',
-      addEntry: 'Add entry',
-      removeEntry: 'Remove',
-      addYear: 'Add year',
-      removeYear: 'Remove year',
-      distanceOptions: ['5K', '10K', 'Half-Marathon', 'Marathon'],
-      placeholders: {
-        time: 'mm:ss',
-        activityId: '12345678901',
-      },
-    },
-    upcomingRaces: {
-      title: 'Upcoming Races',
-      year: 'Year',
-      date: 'Date',
-      name: 'Race name',
-      distance: 'Distance',
-      location: 'Location',
-      url: 'Registration link',
-      targetTime: 'Target (mm:ss)',
-      addRace: 'Add race',
-      removeRace: 'Remove',
-      placeholders: {
-        name: 'Marathon de Paris',
-        location: 'Paris, France',
-        url: 'https://...',
-        targetTime: 'mm:ss',
-      },
-    },
     actions: {
       save: 'Save',
       saving: 'Saving...',
@@ -290,7 +242,7 @@ export const en = {
       more: 'More',
       restDay: 'Rest day',
       day: (km: number, runs: number) =>
-        `${km} km · ${runs} run${runs > 1 ? 's' : ''}`,
+        `${km} km · ${runs} run${runs !== 1 ? 's' : ''}`,
       months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
       weekdays: ['Mon', '', 'Wed', '', 'Fri', '', ''],
     },
@@ -319,22 +271,6 @@ export const en = {
       title: 'VO₂max',
       unit: 'ml/kg/min',
       footnote: 'Garmin VO₂max estimate',
-    },
-    focus: {
-      customize: 'Customize',
-      done: 'Done',
-      reset: 'Reset layout',
-      hide: 'Hide',
-      show: 'Show',
-      moveUp: 'Move up',
-      moveDown: 'Move down',
-      widgets: {
-        stats: 'Stats',
-        trainingOverview: 'Training status',
-        charts: 'Charts',
-        heatmap: 'Activity heatmap',
-        recentActivities: 'Recent activities',
-      },
     },
   },
 
@@ -377,10 +313,10 @@ export const en = {
   },
 
   analytics: {
-  title: 'Analytics',
-  season: (year: number) => `${year} season`,
-  allTimeChip: 'All',
-  allTimeTitle: 'All-time',
+    title: 'Analytics',
+    season: (year: number) => `${year} season`,
+    allTimeChip: 'All',
+    allTimeTitle: 'All-time',
     period: {
       chip: (n: number) => `${n} wk`,
       title: (n: number) => `Last ${n} weeks`,
@@ -769,13 +705,12 @@ export const en = {
   },
 
   shoes: {
-    sessions: (n: number) => `${n} session${n !== 1 ? 's' : ''}`,
     lastRun: (date: string) => `Last run ${date}`,
     neverUsed: 'Never used',
     kmOf: (total: number, max: number) => `${total} / ${max} km`,
     retired: 'Retired',
-  alertBadge: 'Alert',
-  criticalBadge: 'Critical',
+    alertBadge: 'Alert',
+    criticalBadge: 'Critical',
     wearAlert: (name: string, totalKm: number, alertThresholdKm: number) => `${name} has ${totalKm} km - past its ${alertThresholdKm} km alert threshold`,
     summary: {
       totalDistance: 'Total km',
