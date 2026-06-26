@@ -3,6 +3,7 @@
 import { RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { ConsistencyScore, ConsistencyRating } from '@/application/usecases/GetConsistencyScore'
+import { tierFromPercentile } from '@/domain/athlete/rank'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { StatusPill, type StatusTone } from '@/components/ui/StatusPill'
@@ -22,19 +23,11 @@ const RING_STROKE = 6
 const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS
 
-function scoreGrade(score: number): string {
-  if (score >= 95) return 'A+'
-  if (score >= 85) return 'A'
-  if (score >= 70) return 'B+'
-  if (score >= 55) return 'B'
-  return 'C'
-}
-
 // Decorative progress ring; the score is already conveyed as text, so it's hidden from a11y tree.
 function ConsistencyRing({ score }: { score: number }) {
   const animatedScore = useCountUp(score)
   const offset = RING_CIRCUMFERENCE * (1 - Math.min(animatedScore, 100) / 100)
-  const grade = scoreGrade(score)
+  const grade = tierFromPercentile(score)
   return (
     <div className="relative h-[72px] w-[72px] flex-shrink-0">
       <svg

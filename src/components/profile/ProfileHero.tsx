@@ -7,7 +7,7 @@ import { GlassSurface } from '@/components/ui/GlassSurface'
 import { Button } from '@/components/ui/Button'
 import { Tooltip } from '@/components/ui/Tooltip'
 import type { ProfileHero as ProfileHeroData } from '@/application/usecases/GetProfileData'
-import type { RankTier } from '@/application/usecases/GetAthleteRank'
+import type { RankTier } from '@/domain/athlete/rank'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 

@@ -1,11 +1,10 @@
 import { getLatestVO2max } from '@/application/usecases/GetVO2maxHistory'
 import type { RecordEntry } from '@/application/usecases/GetRecords'
-import { ATHLETE_NAME, ATHLETE_BIRTHDATE, ATHLETE_SEX } from '@/domain/athlete/constants'
+import { ATHLETE_BIRTHDATE, ATHLETE_SEX } from '@/domain/athlete/constants'
+import { tierFromScore, type RankTier } from '@/domain/athlete/rank'
 import { round } from '@/lib/math'
 
-export type RankTier = 'D' | 'C-' | 'C+' | 'B-' | 'B+' | 'A-' | 'A+' | 'S' | 'S+'
-
-const RANK_LADDER: RankTier[] = ['D', 'C-', 'C+', 'B-', 'B+', 'A-', 'A+', 'S', 'S+']
+export type { RankTier }
 
 export interface AthleteRank {
   tier: RankTier
@@ -105,14 +104,6 @@ function tierThresholds(t: Vo2maxThresholds): number[] {
     t.excellent + excellentToSuperior * 10, // S (90th pct)
     t.superior, //               S+           (95th pct)
   ]
-}
-
-function tierFromScore(score: number, thresholds: number[]): RankTier {
-  let index = 0
-  for (let i = 0; i < thresholds.length; i++) {
-    if (score >= thresholds[i]) index = i
-  }
-  return RANK_LADDER[index]
 }
 
 export function getAthleteRank(records: RecordEntry[]): AthleteRank | null {
