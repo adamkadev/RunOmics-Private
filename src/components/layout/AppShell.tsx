@@ -23,7 +23,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <main className="min-h-screen lg:ml-[248px]">
         {/* Mobile spacer: top bar height + notch safe area - skipped on Profile/
             Settings, which manage their own safe-area top padding */}
-        <div className="mx-auto max-w-5xl px-4 pt-4 pb-6 sm:px-6 lg:pt-8 lg:pb-8">
+        <div className="mx-auto max-w-5xl px-4 pt-4 pb-28 sm:px-6 lg:pt-8 lg:pb-8">
           <PageTransition>{children}</PageTransition>
         </div>
       </main>
