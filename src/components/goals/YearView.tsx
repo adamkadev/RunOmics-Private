@@ -112,7 +112,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
                 <GlassSurface
                   key={mg.month}
                   variant="card"
-                  className="rounded-card-sm p-4"
+                  className="rounded-card-sm p-5"
                   style={tint.bg ? { background: tint.bg, borderColor: tint.border } : undefined}
                 >
                   <div className="flex items-center justify-between gap-1">
@@ -189,7 +189,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
               )
               const isPast = race.date < today
               return (
-                <GlassSurface key={idx} variant="card" className="flex items-start justify-between gap-3 rounded-2xl p-4">
+                <GlassSurface key={idx} variant="card" className="flex items-start justify-between gap-3 rounded-card-sm p-5">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-semibold text-foreground">{race.name}</span>
@@ -251,7 +251,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
                       {shortDist(entry.distance)}
                     </span>
                   </div>
-                  <div className="p-4">
+                  <div className="p-5">
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <p className="text-xl font-bold tracking-tight text-foreground">
