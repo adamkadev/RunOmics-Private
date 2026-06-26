@@ -13,43 +13,57 @@ const RATING_STYLE: Record<ConsistencyRating, { tone: StatusTone; text: string }
   low:       { tone: 'zinc',   text: STATUS.pending.text },
 }
 
-const RING_SIZE = 88
+const RING_SIZE = 72
 const RING_STROKE = 6
 const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS
 
+function scoreGrade(score: number): string {
+  if (score >= 95) return 'A+'
+  if (score >= 85) return 'A'
+  if (score >= 70) return 'B+'
+  if (score >= 55) return 'B'
+  return 'C'
+}
+
 // Decorative progress ring; the score is already conveyed as text, so it's hidden from a11y tree.
 function ConsistencyRing({ score }: { score: number }) {
   const offset = RING_CIRCUMFERENCE * (1 - Math.min(score, 100) / 100)
+  const grade = scoreGrade(score)
   return (
-    <svg
-      width={RING_SIZE}
-      height={RING_SIZE}
-      viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
-      className="-rotate-90"
-      aria-hidden="true"
-    >
-      <circle
-        cx={RING_SIZE / 2}
-        cy={RING_SIZE / 2}
-        r={RING_RADIUS}
-        fill="none"
-        stroke="currentColor"
-        strokeOpacity={0.14}
-        strokeWidth={RING_STROKE}
-      />
-      <circle
-        cx={RING_SIZE / 2}
-        cy={RING_SIZE / 2}
-        r={RING_RADIUS}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={RING_STROKE}
-        strokeLinecap="round"
-        strokeDasharray={RING_CIRCUMFERENCE}
-        strokeDashoffset={offset}
-      />
-    </svg>
+    <div className="relative h-[72px] w-[72px] flex-shrink-0">
+      <svg
+        width={RING_SIZE}
+        height={RING_SIZE}
+        viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
+        className="-rotate-90"
+        aria-hidden="true"
+      >
+        <circle
+          cx={RING_SIZE / 2}
+          cy={RING_SIZE / 2}
+          r={RING_RADIUS}
+          fill="none"
+          stroke="currentColor"
+          strokeOpacity={0.14}
+          strokeWidth={RING_STROKE}
+        />
+        <circle
+          cx={RING_SIZE / 2}
+          cy={RING_SIZE / 2}
+          r={RING_RADIUS}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={RING_STROKE}
+          strokeLinecap="round"
+          strokeDasharray={RING_CIRCUMFERENCE}
+          strokeDashoffset={offset}
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center text-xs font-bold" aria-hidden="true">
+        {grade}
+      </div>
+    </div>
   )
 }
 
