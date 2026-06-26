@@ -91,6 +91,8 @@ export const en = {
       routes: (n: number) => `${n} routes`,
       zones: 'Zones',
       allYears: 'All years',
+      fullscreen: 'Fullscreen',
+      exitFullscreen: 'Exit fullscreen',
     },
     shoes: {
       title: 'Shoes',
@@ -244,6 +246,7 @@ export const en = {
     },
     trainingMix: {
       title: 'Training Mix',
+      other: 'Other',
     },
     viewAnalytics: 'View full analytics',
     viewRouteHeatmap: 'View route heatmap',

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, X } from "lucide-react";
+import { ChevronDown, Maximize, Minimize, X } from "lucide-react";
 import type { Map as MapLibreMap, StyleSpecification } from "maplibre-gl";
 import type {
   AllRoutesData,
@@ -140,6 +140,7 @@ export function GlobalMapClient({ data }: Props) {
   const [panelOpen, setPanelOpen] = useState(false);
   const [yearOpen, setYearOpen] = useState(false);
   const [selectedYear, setSelectedYear] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const yearRef = useRef<HTMLDivElement>(null);
   const accentColor = useAccentColor();
   const accentColorLight = useAccentColorLight();
@@ -182,6 +183,19 @@ export function GlobalMapClient({ data }: Props) {
     document.addEventListener("mousedown", onOutside);
     return () => document.removeEventListener("mousedown", onOutside);
   }, [yearOpen]);
+
+  useEffect(() => {
+    mapRef.current?.resize();
+  }, [isFullscreen]);
+
+  useEffect(() => {
+    if (!isFullscreen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setIsFullscreen(false);
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [isFullscreen]);
 
   useEffect(() => {
     const token = process.env.NEXT_PUBLIC_MAPTILER_TOKEN;
@@ -345,7 +359,7 @@ export function GlobalMapClient({ data }: Props) {
   }, [selectedIdx, mapReady]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="relative h-full w-full">
+    <div className={isFullscreen ? "fixed inset-0 z-50 bg-background" : "relative h-full w-full"}>
       <div ref={containerRef} className="h-full w-full" />
 
       {/* Badge - always visible */}
@@ -409,6 +423,15 @@ export function GlobalMapClient({ data }: Props) {
           </ul>
         </div>
       )}
+
+      {/* Fullscreen toggle - bottom right */}
+      <button
+        onClick={() => setIsFullscreen((f) => !f)}
+        aria-label={isFullscreen ? t.pages.map.exitFullscreen : t.pages.map.fullscreen}
+        className="glass-map-chip absolute bottom-3 right-3 z-10 flex h-9 w-9 items-center justify-center transition-colors hover:bg-muted"
+      >
+        {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
+      </button>
 
       {/* Year filter - top right */}
       <div ref={yearRef} className="absolute right-3 top-3 z-10">
