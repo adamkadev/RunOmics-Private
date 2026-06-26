@@ -1,5 +1,6 @@
 'use client'
 
+import { ATHLETE_NAME } from '@/domain/athlete/constants'
 import { t } from '@/i18n'
 
 function isoWeek(d: Date): number {
@@ -12,7 +13,7 @@ function isoWeek(d: Date): number {
 
 export function DashboardGreeting() {
   const now = new Date()
-  const name = "Adam"
+  const name = ATHLETE_NAME
   const g = t.pages.dashboard.greeting
   const text = now.getHours() < 12 ? g.morning : now.getHours() < 18 ? g.afternoon : g.evening
   const dateStr = now.toLocaleDateString('en', { day: 'numeric', month: 'long', year: 'numeric' })

@@ -800,6 +800,12 @@ export const en = {
       summary: (activities: number, km: number) => `${activities} activities · ${km} km`,
       editName: 'Edit name',
       namePlaceholder: 'Your name',
+      rank: (vo2maxGarmin: number | null, vdot: number | null) => {
+        const parts = []
+        if (vo2maxGarmin !== null) parts.push(`VO₂max ${vo2maxGarmin}`)
+        if (vdot !== null) parts.push(`VDOT ${vdot}`)
+        return `Rank from ${parts.join(' · ')}`
+      },
     },
     ytd: {
       title: 'This year',

@@ -5,22 +5,22 @@ import { User, Pencil } from 'lucide-react'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { Button } from '@/components/ui/Button'
 import { Tooltip } from '@/components/ui/Tooltip'
-import { TONE_CLASS, type StatusTone } from '@/components/ui/StatusPill'
 import type { ProfileHero as ProfileHeroData } from '@/application/usecases/GetProfileData'
 import type { RankTier } from '@/application/usecases/GetAthleteRank'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
-const RANK_TONE: Record<RankTier, StatusTone> = {
-  'S+': 'amber',
-  S: 'amber',
-  'A+': 'emerald',
-  'A-': 'emerald',
-  'B+': 'blue',
-  'B-': 'blue',
-  'C+': 'zinc',
-  'C-': 'zinc',
-  D: 'zinc',
+// Gradient + glow scale up with the tier so S-rank actually feels earned.
+const RANK_BADGE_CLASS: Record<RankTier, string> = {
+  'S+': 'bg-gradient-to-br from-amber-300 via-yellow-400 to-amber-600 text-amber-950 ring-amber-100/80 shadow-[0_0_14px_2.5px_rgba(245,158,11,0.65)]',
+  S: 'bg-gradient-to-br from-amber-200 via-amber-300 to-amber-500 text-amber-950 ring-amber-100/70 shadow-[0_0_10px_2px_rgba(245,158,11,0.45)]',
+  'A+': 'bg-gradient-to-br from-emerald-300 via-emerald-400 to-emerald-600 text-emerald-950 ring-emerald-100/70 shadow-[0_0_10px_2px_rgba(16,185,129,0.4)]',
+  'A-': 'bg-gradient-to-br from-emerald-200 via-emerald-300 to-emerald-500 text-emerald-950 ring-emerald-100/60 shadow-sm',
+  'B+': 'bg-gradient-to-br from-sky-300 via-sky-400 to-sky-600 text-sky-950 ring-sky-100/60 shadow-sm',
+  'B-': 'bg-gradient-to-br from-sky-200 via-sky-300 to-sky-500 text-sky-950 ring-sky-100/50 shadow-sm',
+  'C+': 'bg-gradient-to-br from-zinc-300 via-zinc-400 to-zinc-500 text-zinc-900 ring-white/40 shadow-sm',
+  'C-': 'bg-gradient-to-br from-zinc-200 via-zinc-300 to-zinc-400 text-zinc-800 ring-white/40 shadow-sm',
+  D: 'bg-gradient-to-br from-zinc-200 via-zinc-300 to-zinc-400 text-zinc-700 ring-white/40 shadow-sm',
 }
 
 function initials(name: string): string {
@@ -67,13 +67,13 @@ export function ProfileHero({ hero, displayName, onSaveName }: Props) {
           {displayName ? initials(displayName) : <User size={24} />}
         </div>
         {hero.rank && (
-          <Tooltip content={t.profile.hero.rank(hero.rank.vo2max, hero.rank.consistencyScore)}>
+          <Tooltip content={t.profile.hero.rank(hero.rank.vo2maxGarmin, hero.rank.vdot)}>
             <span
               className={cn(
-                'absolute -bottom-1 -right-1 flex h-7 min-w-7 items-center justify-center rounded-full border-2 border-background px-1 text-[12px] font-extrabold',
-                TONE_CLASS[RANK_TONE[hero.rank.tier]]
+                'absolute -bottom-1.5 -right-1.5 flex h-8 min-w-8 -rotate-6 items-center justify-center rounded-full border-[2.5px] border-background px-1.5 text-[13px] font-black italic leading-none tracking-tight ring-1',
+                RANK_BADGE_CLASS[hero.rank.tier]
               )}
-              aria-label={t.profile.hero.rank(hero.rank.vo2max, hero.rank.consistencyScore)}
+              aria-label={t.profile.hero.rank(hero.rank.vo2maxGarmin, hero.rank.vdot)}
             >
               {hero.rank.tier}
             </span>

@@ -8,6 +8,7 @@ import { getLifetimeStats } from '@/application/usecases/GetLifetimeStats'
 import { getRecords, type RecordEntry } from '@/application/usecases/GetRecords'
 import { getShoeStats, type ShoeStats } from '@/application/usecases/GetShoeStats'
 import { computeProjection, type GoalYear, type GoalProjection } from '@/application/usecases/GetGoalsData'
+import { getAthleteRank, type AthleteRank } from '@/application/usecases/GetAthleteRank'
 import { round } from '@/lib/math'
 
 const PROFILE_RECORD_KEYS = ['5k', '10k', 'half', 'marathon']
@@ -16,6 +17,7 @@ export interface ProfileHero {
   sinceDate: string | null
   lifetimeActivities: number
   lifetimeDistanceKm: number
+  rank: AthleteRank | null
 }
 
 export interface ProfileYtdStats {
@@ -69,6 +71,7 @@ export async function getProfileData(): Promise<ProfileData> {
       sinceDate,
       lifetimeActivities: lifetime?.totalActivities ?? 0,
       lifetimeDistanceKm: lifetime ? round(lifetime.totalDistanceKm, 0) : 0,
+      rank: getAthleteRank(allRecords),
     },
     ytd: {
       distanceKm: round(ytdDistanceKm, 0),
