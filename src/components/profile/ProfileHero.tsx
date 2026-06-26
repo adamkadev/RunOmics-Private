@@ -59,7 +59,7 @@ export function ProfileHero({ hero, displayName, onSaveName }: Props) {
   }
 
   return (
-    <GlassSurface variant="card" className="relative flex items-center gap-5 px-5 py-6">
+    <GlassSurface variant="card" className="flex items-center gap-4 px-5 py-5">
       <div className="group/tip relative shrink-0">
         <div
           className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-white/30 text-2xl font-extrabold text-accent-foreground shadow-[0_0_0_4px_var(--ring)] bg-accent"
@@ -111,24 +111,23 @@ export function ProfileHero({ hero, displayName, onSaveName }: Props) {
         </p>
       </div>
 
-      <Link
-        href="/settings"
-        aria-label={t.nav.items.settings}
-        className="absolute left-5 flex h-11 w-11 items-center justify-center rounded-control border border-foreground/10 bg-foreground/[0.08] text-foreground/70 transition-colors active:scale-95"
-        style={{ top: 'max(16px, env(safe-area-inset-top))' }}
-      >
-        <Settings size={16} />
-      </Link>
-
-      <Button
-        variant="secondary"
-        onClick={startEditing}
-        aria-label={t.profile.hero.editName}
-        className="absolute right-5 h-11 w-11 rounded-control p-0"
-        style={{ top: 'max(16px, env(safe-area-inset-top))' }}
-      >
-        <Pencil size={16} />
-      </Button>
+      <div className="flex shrink-0 flex-col items-center gap-2">
+        <Button
+          variant="secondary"
+          onClick={startEditing}
+          aria-label={t.profile.hero.editName}
+          className="h-11 w-11 rounded-control p-0"
+        >
+          <Pencil size={16} />
+        </Button>
+        <Link
+          href="/settings"
+          aria-label={t.nav.items.settings}
+          className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-foreground/[0.06] text-muted-foreground transition-colors hover:bg-foreground/[0.10] active:scale-95"
+        >
+          <Settings size={20} />
+        </Link>
+      </div>
     </GlassSurface>
   )
 }
