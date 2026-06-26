@@ -30,7 +30,10 @@ const MAP_STYLES: MapStyle[] = ['light', 'dark']
 
 function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) => {
-    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png')
+    // Wait for the next frame to ensure canvas rendering is complete
+    requestAnimationFrame(() => {
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png')
+    })
   })
 }
 
@@ -180,11 +183,23 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     const canvas = canvasRef.current
     if (!canvas) return
     const blob = await canvasToBlob(canvas)
+    const file = new File([blob], shareCardFileName(activity, design), { type: 'image/png' })
+
+    // PWA iOS: try navigator.share first for better UX (saves to Photos directly)
+    const isIosPwa = /iPhone|iPad/.test(navigator.userAgent) && 'standalone' in navigator && (navigator as unknown as { standalone: boolean }).standalone === true
+    if (isIosPwa && navigator.canShare?.({ files: [file] })) {
+      try { await navigator.share({ files: [file] }); return }
+      catch (err) { if ((err as Error).name !== 'AbortError') console.error(err) }
+    }
+
+    // Fallback: traditional download link (works on desktop/web)
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = shareCardFileName(activity, design)
+    a.download = file.name
+    document.body.appendChild(a)
     a.click()
+    document.body.removeChild(a)
     setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
 
