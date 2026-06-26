@@ -98,7 +98,7 @@ function SecondaryMetric({
     <div className="flex flex-col gap-1">
       <div className="flex items-baseline justify-between gap-1.5">
         <Tooltip content={tooltipContent} surfaceClassName={tooltipSurface}>
-          <span className="text-micro font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
+          <span className="text-micro font-semibold uppercase tracking-wide text-muted-foreground">{label}</span>
         </Tooltip>
         <span className="text-xs font-bold tabular-nums text-foreground">{value}</span>
       </div>

@@ -19,7 +19,7 @@ export function ProfileStatsYtd({ ytd }: { ytd: ProfileYtdStats }) {
 
   return (
     <GlassSurface variant="card" className="rounded-[22px] p-5">
-      <div className="mb-3 text-micro font-bold uppercase tracking-[0.07em] text-muted-foreground">
+      <div className="mb-3 text-micro font-semibold uppercase tracking-wide text-muted-foreground">
         {t.profile.ytd.title}
       </div>
       <div className="grid grid-cols-2 gap-x-3.5 gap-y-3.5">

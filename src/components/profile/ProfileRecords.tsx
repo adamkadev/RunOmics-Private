@@ -24,7 +24,7 @@ export function ProfileRecords({ records }: { records: RecordEntry[] }) {
           const recent = r.seconds !== null && r.date && isRecentPr(r.date)
           return (
             <div key={r.key} className="rounded-xl border border-foreground/[0.08] bg-foreground/[0.04] p-3">
-              <div className="text-micro font-bold uppercase tracking-wide text-muted-foreground">
+              <div className="text-micro font-semibold uppercase tracking-wide text-muted-foreground">
                 {r.label}
               </div>
               <div className="mt-1 text-lg font-extrabold tracking-tight text-foreground">

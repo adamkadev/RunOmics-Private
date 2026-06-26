@@ -56,7 +56,7 @@ function ShoeCard({ shoe }: { shoe: ShoeStats }) {
         <div>
           <div className="flex items-center gap-2">
             <BrandIcon brand={shoe.brand} size={16} />
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{shoe.brand}</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{shoe.brand}</p>
             {alertBadge && <Badge className={alertBadge.className}>{alertBadge.label}</Badge>}
           </div>
           <h3 className="text-base font-bold text-foreground">{shoe.name}</h3>

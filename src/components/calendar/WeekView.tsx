@@ -170,7 +170,7 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
         className={cn('rounded-[20px] p-4', selected.date === today && 'border-accent/30')}
       >
         <div className="mb-3 flex items-center justify-between">
-          <span className="text-xs font-bold uppercase tracking-widest text-accent-text">
+          <span className="text-xs font-semibold uppercase tracking-wide text-accent-text">
             {formatDateFull(selected.date)}
           </span>
           {selected.date === today && (

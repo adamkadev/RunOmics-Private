@@ -119,7 +119,7 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
           )}
 
           {/* Label */}
-          <p className="text-caption font-semibold uppercase tracking-widest text-white/30">
+          <p className="text-caption font-semibold uppercase tracking-wide text-white/30">
             {t.calendar.planned}
           </p>
         </div>

@@ -83,7 +83,7 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null }
                     key={r.key}
                     className={cn('glass-card rounded-2xl border-dashed p-4 opacity-60', spanFull && 'col-span-full')}
                   >
-                    <p className="text-xs font-bold uppercase tracking-wide text-subtle">{r.label}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-subtle">{r.label}</p>
                     <p className="mt-3 text-sm text-subtle">{t.records.notYetRun}</p>
                   </div>
                 )
@@ -94,7 +94,7 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null }
               const card = (
                 <>
                   <div className="mb-3 flex items-center justify-between gap-1">
-                    <p className="text-xs font-bold uppercase tracking-wide text-subtle">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-subtle">
                       {r.label}
                     </p>
                     <div className="flex items-center gap-1">

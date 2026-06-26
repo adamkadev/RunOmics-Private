@@ -246,7 +246,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
 
           {/* Design picker */}
           <div className="border-t border-foreground/[0.07] px-5 py-3">
-            <div className="mb-2.5 text-caption font-semibold uppercase tracking-[0.07em] text-foreground/40">
+            <div className="mb-2.5 text-caption font-semibold uppercase tracking-wide text-foreground/40">
               {t.activity.shareCard.designLabel}
             </div>
             <div className="flex gap-2.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
