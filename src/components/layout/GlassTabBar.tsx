@@ -8,36 +8,28 @@ import { t } from '@/i18n'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 
 const TABS = [
-  { href: '/',           label: t.nav.items.dashboard,   icon: LayoutDashboard },
-  { href: '/activities', label: t.nav.items.activities,   icon: Activity },
-  { href: '/calendar',   label: t.nav.items.calendar,     icon: CalendarDays },
-  { href: '/explore',    label: t.nav.items.explore,      icon: Compass },
-  { href: '/profile',    label: t.nav.items.profile,      icon: User },
+  { href: '/',           label: t.nav.items.dashboard,  icon: LayoutDashboard },
+  { href: '/activities', label: t.nav.items.activities,  icon: Activity },
+  { href: '/calendar',   label: t.nav.items.calendar,    icon: CalendarDays },
+  { href: '/explore',    label: t.nav.items.explore,     icon: Compass },
+  { href: '/profile',    label: t.nav.items.profile,     icon: User },
 ] as const
 
 function isActive(pathname: string, href: string): boolean {
   return href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`)
 }
 
-const tabClass = 'flex flex-1 flex-col items-center gap-1 py-1 transition-colors active:scale-95'
+const tabClass = 'flex flex-1 flex-col items-center gap-0.5 py-1.5 transition-colors active:scale-95'
 
-/**
- * Persistent floating glass tab bar (mobile only): the four primary
- * destinations, no overflow menu. Everything else (Analytics, Goals,
- * Records, Shoes, Heatmap, Settings) is reached contextually from
- * Dashboard or Profile instead of a nav entry.
- */
 export function GlassTabBar() {
   const pathname = usePathname()
 
   return (
-    <div
-      className="fixed inset-x-0 bottom-3 z-30 px-3 lg:hidden"
-    >
+    <div className="fixed inset-x-0 bottom-3 z-30 px-6 py-2 lg:hidden">
       <GlassSurface
         as="nav"
         variant="nav"
-        className="flex items-center justify-between rounded-full px-3.5 py-3"
+        className="flex items-center justify-between rounded-full px-4 py-2.5"
       >
         {TABS.map(({ href, label, icon: Icon }) => {
           const active = isActive(pathname, href)
@@ -48,8 +40,10 @@ export function GlassTabBar() {
               aria-current={active ? 'page' : undefined}
               className={cn(tabClass, active ? 'text-accent-text' : 'text-muted-foreground')}
             >
-              <Icon size={20} strokeWidth={2} />
-              <span className={cn('text-micro', active ? 'font-semibold' : 'font-medium')}>{label}</span>
+              <Icon size={22} strokeWidth={1.75} />
+              <span className={cn('text-micro', active ? 'font-semibold' : 'font-medium')}>
+                {label}
+              </span>
             </Link>
           )
         })}
