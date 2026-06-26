@@ -314,7 +314,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
         </div>
 
         {/* Action buttons */}
-        <div className="flex shrink-0 gap-2 border-t border-foreground/[0.07] p-3">
+        <div className="flex shrink-0 gap-2 border-t border-foreground/[0.07] px-3 pb-[max(env(safe-area-inset-bottom),12px)] pt-3">
           {canShareFiles ? (
             <Button onClick={handleShare} className="h-11 flex-[1.5] text-footnote">
               <Share2 size={16} />

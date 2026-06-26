@@ -626,6 +626,8 @@ export const en = {
       elevation: 'Elevation',
       gain: (m: number) => `+${m} m gain`,
       cadence: 'Cadence',
+      sectionPhysiology: 'Physiology',
+      sectionPerformance: 'Pace & Cadence',
     },
     map: {
       fullscreen: 'Fullscreen',

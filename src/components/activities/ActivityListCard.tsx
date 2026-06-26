@@ -83,8 +83,8 @@ export function ActivityListCard({ activity: a, prLabels = [] }: Props) {
 
 function Metric({ value, unit }: { value: string; unit: string }) {
   return (
-    <div>
-      <div className="text-subhead font-extrabold text-foreground">{value}</div>
+    <div className="min-w-0">
+      <div className="truncate text-subhead font-extrabold text-foreground">{value}</div>
       <div className="text-micro font-semibold text-muted-foreground">{unit}</div>
     </div>
   )

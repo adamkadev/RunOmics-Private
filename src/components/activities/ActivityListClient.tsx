@@ -92,6 +92,7 @@ export function ActivityListClient({
   const [items, setItems] = useState(initialItems)
   const [nextOffset, setNextOffset] = useState(initialNextOffset)
   const [loadingMore, setLoadingMore] = useState(false)
+  const [isPending, setIsPending] = useState(false)
 
   // B3 separators stick right under the B1 header - measure it so the offset
   // tracks its real height (search row open/closed, responsive font sizes).
@@ -125,8 +126,10 @@ export function ActivityListClient({
       return
     }
     const seq = ++requestSeq.current
+    setIsPending(true)
     fetchActivities({ type: selectedType, search: debouncedSearch, sortBy, sortOrder, offset: 0 }).then((result) => {
       if (seq !== requestSeq.current) return
+      setIsPending(false)
       setItems(result.items)
       setNextOffset(result.nextOffset)
     })
@@ -256,7 +259,11 @@ export function ActivityListClient({
         />
       </div>
 
-      {items.length === 0 ? (
+      {isPending ? (
+        <div className="flex justify-center py-10">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-accent" />
+        </div>
+      ) : items.length === 0 ? (
         <GlassSurface variant="card" className="rounded-2xl py-12 text-center">
           <SearchX size={24} className="mx-auto text-subtle" />
           <p className="mt-3 text-sm text-subtle">

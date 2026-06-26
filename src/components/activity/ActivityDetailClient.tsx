@@ -88,7 +88,7 @@ export function ActivityDetailClient({ activity }: Props) {
 
   return (
     <>
-      <div className="h-[260px] overflow-hidden rounded-card border border-border sm:h-[360px]">
+      <div className="h-[clamp(220px,38vw,360px)] overflow-hidden rounded-card border border-border">
         {activity.route ? (
           <ActivityMapClient
             route={activity.route}
@@ -106,40 +106,46 @@ export function ActivityDetailClient({ activity }: Props) {
         <MetricGrid metrics={stats} className="grid-cols-4" />
       </GlassSurface>
       {activity.hrSamples && (
-        <HrChart
-          samples={activity.hrSamples}
-          avgHr={activity.avgHeartRate}
-          distanceKm={activity.distanceKm}
-          onHoverFraction={activity.route ? setHoverFraction : undefined}
-        />
+        <>
+          <p className="widget-label text-muted-foreground">{t.activity.charts.sectionPhysiology}</p>
+          <HrChart
+            samples={activity.hrSamples}
+            avgHr={activity.avgHeartRate}
+            distanceKm={activity.distanceKm}
+            onHoverFraction={activity.route ? setHoverFraction : undefined}
+          />
+        </>
       )}
       {hasSecondaryCharts && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {activity.paceSamples && (
-            <PaceChart
-              samples={activity.paceSamples}
-              avgPaceSecPerKm={activity.paceSecPerKm}
-              distanceKm={activity.distanceKm}
-              onHoverFraction={activity.route ? setHoverFraction : undefined}
-            />
-          )}
-          {activity.cadenceSamples && (
-            <CadenceChart
-              samples={activity.cadenceSamples}
-              avgCadence={activity.cadenceSpm}
-              distanceKm={activity.distanceKm}
-              onHoverFraction={activity.route ? setHoverFraction : undefined}
-            />
-          )}
-          {activity.elevationProfile && (
-            <ElevationChart
-              samples={activity.elevationProfile}
-              distanceKm={activity.distanceKm}
-              elevationGain={activity.elevationGain}
-              onHoverFraction={activity.route ? setHoverFraction : undefined}
-            />
-          )}
-        </div>
+        <>
+          <p className="widget-label text-muted-foreground">{t.activity.charts.sectionPerformance}</p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {activity.paceSamples && (
+              <PaceChart
+                samples={activity.paceSamples}
+                avgPaceSecPerKm={activity.paceSecPerKm}
+                distanceKm={activity.distanceKm}
+                onHoverFraction={activity.route ? setHoverFraction : undefined}
+              />
+            )}
+            {activity.cadenceSamples && (
+              <CadenceChart
+                samples={activity.cadenceSamples}
+                avgCadence={activity.cadenceSpm}
+                distanceKm={activity.distanceKm}
+                onHoverFraction={activity.route ? setHoverFraction : undefined}
+              />
+            )}
+            {activity.elevationProfile && (
+              <ElevationChart
+                samples={activity.elevationProfile}
+                distanceKm={activity.distanceKm}
+                elevationGain={activity.elevationGain}
+                onHoverFraction={activity.route ? setHoverFraction : undefined}
+              />
+            )}
+          </div>
+        </>
       )}
     </>
   )
