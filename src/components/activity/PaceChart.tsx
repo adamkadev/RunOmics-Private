@@ -51,7 +51,7 @@ export function PaceChart({ samples, avgPaceSecPerKm, distanceKm, onHoverFractio
   const bestPace = validSamples.length ? Math.min(...validSamples) : null
 
   return (
-    <GlassSurface variant="card" className="p-[18px]">
+    <GlassSurface variant="card" className="p-5">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">{t.activity.charts.pace}</h3>
         <span className="text-xs text-subtle">

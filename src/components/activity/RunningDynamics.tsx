@@ -28,7 +28,7 @@ export function RunningDynamics({ activity: a }: { activity: Activity }) {
   if (!metrics.length) return null
 
   return (
-    <GlassSurface variant="card" className="p-[18px]">
+    <GlassSurface variant="card" className="p-5">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.activity.dynamics.title}
       </h3>

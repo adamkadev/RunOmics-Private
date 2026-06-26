@@ -57,7 +57,7 @@ export function KmSplits({ activity }: Props) {
     : null
 
   return (
-    <GlassSurface variant="card" className="p-[18px]">
+    <GlassSurface variant="card" className="p-5">
       <div className="mb-4 flex items-center gap-2">
         <Timer size={16} className="text-accent-text" />
         <h3 className="text-sm font-semibold text-foreground/80">{t.activity.splits.title}</h3>

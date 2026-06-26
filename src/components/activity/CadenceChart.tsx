@@ -48,7 +48,7 @@ export function CadenceChart({ samples, avgCadence, distanceKm, onHoverFraction 
   const maxSpm = Math.max(...samples)
 
   return (
-    <GlassSurface variant="card" className="p-[18px]">
+    <GlassSurface variant="card" className="p-5">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">{t.activity.charts.cadence}</h3>
         <span className="text-xs text-subtle">

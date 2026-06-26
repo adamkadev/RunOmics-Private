@@ -102,7 +102,7 @@ export function ActivityDetailClient({ activity }: Props) {
         )}
       </div>
 
-      <GlassSurface variant="card" className="p-[18px]">
+      <GlassSurface variant="card" className="p-5">
         <MetricGrid metrics={stats} className="grid-cols-4" />
       </GlassSurface>
       {activity.hrSamples && (
