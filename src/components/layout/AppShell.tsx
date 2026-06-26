@@ -1,5 +1,6 @@
 'use client'
 
+import { useLayoutEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { Sidebar } from './Sidebar'
 import { PageTransition } from './PageTransition'
@@ -9,6 +10,10 @@ import { getPageAuroraKey } from '@/lib/navigation'
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
 
   return (
     <div className="min-h-screen" data-page-aurora={getPageAuroraKey(pathname)}>
