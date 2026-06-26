@@ -494,14 +494,13 @@ h1 {
 }
 
 * {
-  scrollbar-width: thin;
-  scrollbar-color: var(--border) transparent;
+  scrollbar-width: none;
 }
 
-::-webkit-scrollbar         { width: 5px; height: 5px; }
+::-webkit-scrollbar         { width: 0; height: 0; }
 ::-webkit-scrollbar-track   { background: transparent; }
-::-webkit-scrollbar-thumb   { background: var(--border); border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: var(--subtle); }
+::-webkit-scrollbar-thumb   { display: none; }
+::-webkit-scrollbar-thumb:hover { display: none; }
 
 .maplibregl-ctrl-attrib.maplibregl-compact {
   background: rgba(0 0 0 / 0.5) !important;
