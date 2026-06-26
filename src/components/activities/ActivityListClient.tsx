@@ -16,7 +16,7 @@ import { t } from '@/i18n'
 const ALL_TYPES = Object.keys(ACTIVITY_TYPE_CONFIG) as ActivityType[]
 const PAGE_SIZE = 20
 const SEARCH_DEBOUNCE_MS = 300
-const ACTIVE_CHIP_SHADOW = 'shadow-[0_4px_12px_-4px_rgba(14,159,110,0.5)]'
+const ACTIVE_CHIP_SHADOW = 'shadow-[0_4px_12px_-4px_var(--ring)]'
 
 const SORT_OPTIONS: { value: ActivitySortKey; label: string }[] = [
   { value: 'date', label: t.activities.sort.date },
@@ -194,7 +194,7 @@ export function ActivityListClient({
             aria-label={t.activities.searchToggle}
             aria-expanded={searchOpen}
             className={cn(
-              'flex h-9 w-9 shrink-0 items-center justify-center rounded-control border transition-colors active:scale-95',
+              'flex h-11 w-11 shrink-0 items-center justify-center rounded-control border transition-colors active:scale-95',
               searchOpen
                 ? 'border-foreground/[0.20] bg-foreground/[0.14] text-foreground'
                 : 'border-foreground/[0.12] bg-foreground/[0.06] text-foreground/60 hover:bg-foreground/[0.10]'
@@ -275,7 +275,7 @@ export function ActivityListClient({
         <div className="space-y-4">
           {groups.map((g) => (
             <div key={g.key}>
-              <div className="z-10 flex items-center justify-between px-1 py-2" style={{ top: headerHeight + 16 }}>
+              <div className="sticky z-10 flex items-center justify-between px-1 py-2" style={{ top: headerHeight + 16 }}>
                 <span className="font-mono text-footnote font-bold tracking-wide text-muted-foreground/80">
                   {g.label}
                 </span>

@@ -35,7 +35,7 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end"
+      className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center sm:p-4"
       role="dialog"
       aria-modal="true"
     >
@@ -47,7 +47,7 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
 
       {/* Sheet */}
       <div
-        className="relative w-full"
+        className="relative w-full sm:max-w-sm sm:rounded-card-sm"
         style={{
           background: typeColor
             ? `linear-gradient(160deg, ${typeColor}1f 0%, rgba(14,22,18,.88) 55%)`
@@ -67,7 +67,7 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
           />
         </div>
 
-        <div className="px-5 pb-10 pt-3">
+        <div className="px-5 pt-3" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 40px)' }}>
           {/* Header */}
           <div className="mb-4 flex items-start gap-3">
             <span

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Trophy } from 'lucide-react'
 import type { RecordEntry, TopEfforts } from '@/application/usecases/GetRecords'
@@ -30,7 +29,7 @@ function shortDate(iso: string): string {
 function rankClass(i: number): string {
   if (i === 0) return 'font-bold text-amber-500 dark:text-amber-400'
   if (i === 1) return 'font-bold text-slate-400 dark:text-slate-300'
-  if (i === 2) return 'font-bold text-amber-800 dark:text-amber-600'
+  if (i === 2) return 'font-bold text-amber-700 dark:text-amber-600'
   return 'text-subtle'
 }
 
@@ -41,7 +40,6 @@ interface Props {
 }
 
 export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null }: Props) {
-  const router = useRouter()
   const pills = ['all', ...PILL_ORDER.filter((k) => topEfforts[k])]
   const [selected, setSelected] = useState('all')
 
@@ -81,7 +79,7 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null }
                 return (
                   <div
                     key={r.key}
-                    className={cn('glass-card rounded-2xl border-dashed p-4 opacity-60', spanFull && 'col-span-full')}
+                    className={cn('glass-card rounded-card-sm border-dashed p-5 opacity-60', spanFull && 'col-span-full')}
                   >
                     <p className="text-xs font-semibold uppercase tracking-wide text-subtle">{r.label}</p>
                     <p className="mt-3 text-sm text-subtle">{t.records.notYetRun}</p>
@@ -121,14 +119,14 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null }
                 <Link
                   key={r.key}
                   href={`/activities/${r.activityId}`}
-                  className={cn('glass-card rounded-2xl p-4 transition-shadow hover:shadow-md', spanFull && 'col-span-full')}
+                  className={cn('glass-card rounded-card-sm p-5 transition-shadow hover:shadow-md', spanFull && 'col-span-full')}
                 >
                   {card}
                 </Link>
               ) : (
                 <div
                   key={r.key}
-                  className={cn('glass-card rounded-2xl border-dashed p-4', spanFull && 'col-span-full')}
+                  className={cn('glass-card rounded-card-sm border-dashed p-5', spanFull && 'col-span-full')}
                 >
                   {card}
                 </div>
@@ -157,27 +155,25 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null }
             </thead>
             <tbody className="divide-y divide-foreground/[0.06]">
               {entries.map((e, i) => (
-                <tr
-                  key={e.activityId}
-                  className="cursor-pointer transition-colors hover:bg-foreground/[0.04]"
-                  onClick={() => router.push(`/activities/${e.activityId}`)}
-                >
-                  <td className={cn('py-2.5 pl-4 pr-2 font-mono text-xs', rankClass(i))}>{i + 1}</td>
-                  <td className="py-2.5 px-2">
-                    <div className="font-bold text-foreground">
-                      {formatDuration(e.seconds)}
-                    </div>
-                    {e.eventName && (
-                      <div className="max-w-[140px] truncate text-xs text-subtle" title={e.eventName}>
-                        {e.eventName}
-                      </div>
-                    )}
-                  </td>
-                  <td className="py-2.5 px-2 text-xs text-subtle">
-                    {formatPace(Math.round(e.seconds / e.distanceKm))}
-                  </td>
-                  <td className="hidden py-2.5 px-2 text-xs text-subtle sm:table-cell">
-                    {shortDate(e.date)}
+                <tr key={e.activityId} className="transition-colors hover:bg-foreground/[0.04]">
+                  <td className="p-0" colSpan={4}>
+                    <Link href={`/activities/${e.activityId}`} className="grid grid-cols-[auto_1fr_auto_auto] items-center">
+                      <span className={cn('py-3.5 pl-4 pr-2 font-mono text-xs', rankClass(i))}>{i + 1}</span>
+                      <span className="py-3.5 px-2">
+                        <span className="block font-bold text-foreground">{formatDuration(e.seconds)}</span>
+                        {e.eventName && (
+                          <span className="block max-w-[140px] truncate text-xs text-subtle" title={e.eventName}>
+                            {e.eventName}
+                          </span>
+                        )}
+                      </span>
+                      <span className="py-3.5 px-2 text-xs text-subtle">
+                        {formatPace(Math.round(e.seconds / e.distanceKm))}
+                      </span>
+                      <span className="hidden py-3.5 px-2 text-xs text-subtle sm:block">
+                        {shortDate(e.date)}
+                      </span>
+                    </Link>
                   </td>
                 </tr>
               ))}

@@ -20,10 +20,10 @@ const STATUS_ICON: Record<MonthGoal['status'], { Icon: typeof Check; className: 
 }
 
 const MONTH_CELL_TINT: Record<MonthGoal['status'], { bg: string; border: string; bar: string }> = {
-  ahead:    { bg: 'rgba(14,159,110,0.12)',  border: 'rgba(14,159,110,0.28)',  bar: '#0e9f6e' },
-  on_track: { bg: 'rgba(47,116,224,0.10)',  border: 'rgba(47,116,224,0.28)',  bar: '#7db8ff' },
-  behind:   { bg: 'rgba(229,57,107,0.10)',  border: 'rgba(229,57,107,0.22)',  bar: '#e5396b' },
-  pending:  { bg: '',                        border: '',                        bar: 'rgba(255,255,255,0.08)' },
+  ahead:    { bg: 'var(--accent-subtle)',          border: 'var(--ring)',               bar: 'var(--accent)' },
+  on_track: { bg: 'rgba(47,116,224,0.10)',         border: 'rgba(47,116,224,0.28)',     bar: '#7db8ff' },
+  behind:   { bg: 'rgba(229,57,107,0.10)',         border: 'rgba(229,57,107,0.22)',     bar: '#e5396b' },
+  pending:  { bg: '',                              border: '',                           bar: 'rgba(255,255,255,0.08)' },
 }
 
 const STATUS_CHIP_BG: Record<GoalProjection['status'], string> = {
@@ -44,7 +44,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
   const statusIcon = projection ? STATUS_ICON[projection.status] : null
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-[max(env(safe-area-inset-bottom),80px)]">
       {goals && (
         <section className="space-y-3">
           <GlassSurface variant="card" className="p-5">
@@ -68,7 +68,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
                 className="h-full rounded-full transition-all"
                 style={{
                   width: `${annualProgress}%`,
-                  background: 'linear-gradient(90deg, #0e9f6e, #2ed9a0)',
+                  background: 'linear-gradient(90deg, var(--accent), var(--accent-text))',
                 }}
               />
             </div>
@@ -112,7 +112,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
                 <GlassSurface
                   key={mg.month}
                   variant="card"
-                  className="rounded-2xl p-3"
+                  className="rounded-card-sm p-4"
                   style={tint.bg ? { background: tint.bg, borderColor: tint.border } : undefined}
                 >
                   <div className="flex items-center justify-between gap-1">
@@ -127,7 +127,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
                   <p className="mt-1.5 text-xs font-medium text-foreground">
                     {t.goals.monthlyGoal.km(Math.round(mg.actualKm), Math.round(mg.targetKm))}
                   </p>
-                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-foreground/[0.08]">
+                  <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-foreground/[0.08]">
                     <div
                       className="h-full rounded-full transition-all"
                       style={{ width: `${progress}%`, background: tint.bar }}
@@ -153,7 +153,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
               const delta = pbSeconds !== null && target.targetSeconds ? pbSeconds - target.targetSeconds : null
               const achieved = delta !== null && delta <= 0
               return (
-                <GlassSurface key={target.distance} variant="card" className="rounded-2xl p-4">
+                <GlassSurface key={target.distance} variant="card" className="rounded-card-sm p-5">
                   <p className="text-xs font-semibold text-subtle">{shortDist(target.distance)}</p>
                   <p className="mt-1 text-lg font-bold text-foreground">
                     {target.targetSeconds === null ? (

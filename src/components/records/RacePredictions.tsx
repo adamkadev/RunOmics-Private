@@ -74,7 +74,7 @@ export function RacePredictions({ records }: Props) {
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {predictions.map(({ key, label, km, actual, predicted }) => {
           return (
-            <GlassSurface key={key} variant="card" className="rounded-2xl p-3">
+            <GlassSurface key={key} variant="card" className="rounded-card-sm p-5">
               <p className="text-xs font-semibold text-subtle">{label}</p>
               <p className="mt-0.5 text-lg font-bold leading-tight tracking-tight text-foreground">
                 {formatDuration(predicted!)}

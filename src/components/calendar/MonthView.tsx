@@ -81,7 +81,7 @@ export function MonthView({ year, month, byDate, byDatePlanned, today }: Props) 
                       <Link
                         key={a.id}
                         href={`/activities/${a.id}`}
-                        className="flex items-center gap-1.5 rounded px-1 py-0.5 text-xs font-medium text-foreground transition-colors hover:bg-foreground/[0.08]"
+                        className="flex min-h-[32px] items-center gap-1.5 rounded px-1 py-1 text-xs font-medium text-foreground transition-colors hover:bg-foreground/[0.08]"
                         title={`${a.description || a.type} · ${a.distanceKm} ${t.units.km}`}
                       >
                         <span

@@ -54,7 +54,7 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
           {t.calendar.weekdays.map((label, i) => (
             <div
               key={label}
-              className="text-center font-mono text-[9.5px] font-semibold text-muted-foreground/50"
+              className="text-center font-mono text-micro font-semibold text-muted-foreground/50"
               style={days[i].date === today ? { color: TODAY_COLOR, fontWeight: 700 } : undefined}
             >
               {label[0]}
@@ -79,12 +79,12 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
                 type="button"
                 onClick={() => setSelectedDate(d.date)}
                 className={cn(
-                  'flex flex-col items-center gap-1 rounded-lg py-0.5 transition-transform active:scale-95',
+                  'flex min-h-[44px] flex-col items-center gap-1 rounded-lg py-0.5 transition-transform active:scale-95',
                   d.date === selectedDate && 'bg-foreground/[0.06]'
                 )}
               >
                 {/* Cell box */}
-                <div className="relative flex h-7 w-7 items-center justify-center">
+                <div className="relative flex h-8 w-8 items-center justify-center">
                   {/* Pulse ring for today: opacity-only animation, not scale+fade */}
                   {isToday && !completed && (
                     <div
@@ -97,7 +97,7 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
                   )}
 
                   <div
-                    className="relative flex h-7 w-7 items-center justify-center rounded-[8px] border transition-colors"
+                    className="relative flex h-8 w-8 items-center justify-center rounded-[8px] border transition-colors"
                     style={
                       completed
                         ? { background: 'var(--color-accent, #f1761f)26', borderColor: 'var(--color-accent, #f1761f)4d' }
@@ -147,7 +147,7 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
 
                 {/* Bottom type bar */}
                 <div
-                  className="h-[3px] w-[18px] rounded-full"
+                  className="h-1 w-[18px] rounded-full"
                   style={{
                     backgroundColor: completed
                       ? ACTIVITY_TYPE_CONFIG[primaryType as ActivityType].dotColor

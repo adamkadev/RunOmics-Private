@@ -27,7 +27,6 @@ import { DesignPreview, PREVIEW_HEIGHT, PREVIEW_WIDTH } from '@/components/activ
 import { t } from '@/i18n'
 
 const MAP_STYLES: MapStyle[] = ['light', 'dark']
-const PREVIEW_SCALE = 1
 
 function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) => {
@@ -60,6 +59,14 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   const [mapSnapshots, setMapSnapshots] = useState<Partial<Record<MapStyle, { url: string; img: HTMLImageElement }>>>({})
 
   const { close, handleProps, sheetStyle } = useDragToDismiss(onClose)
+
+  const [previewScale, setPreviewScale] = useState(1)
+  useEffect(() => {
+    function update() { setPreviewScale(Math.min(1, (window.innerWidth - 40) / PREVIEW_WIDTH)) }
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [])
 
   const [accent] = useState<AccentId>(currentAccent)
   const accentHex = ACCENT_SWATCHES[accent]
@@ -214,9 +221,9 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
           <button
             onClick={close}
             aria-label={t.activity.shareCard.close}
-            className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-foreground/[0.09] text-muted-foreground transition-colors hover:bg-foreground/[0.14]"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-foreground/[0.09] text-muted-foreground transition-colors hover:bg-foreground/[0.14]"
           >
-            <X size={16} strokeWidth={2} />
+            <X size={18} strokeWidth={2} />
           </button>
         </div>
 
@@ -224,8 +231,8 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
         <div className="flex flex-1 flex-col overflow-y-auto">
           {/* Preview card (interactive HTML preview, scaled up to fill the taller sheet) */}
           <div className="flex justify-center px-5 pb-4">
-            <div style={{ width: PREVIEW_WIDTH * PREVIEW_SCALE, height: PREVIEW_HEIGHT * PREVIEW_SCALE }}>
-              <div style={{ width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT, transform: `scale(${PREVIEW_SCALE})`, transformOrigin: 'top left' }}>
+            <div style={{ width: PREVIEW_WIDTH * previewScale, height: PREVIEW_HEIGHT * previewScale }}>
+              <div style={{ width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT, transform: `scale(${previewScale})`, transformOrigin: 'top left' }}>
                 <DesignPreview
                   activity={activity}
                   design={design}
@@ -293,7 +300,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
                     type="button"
                     onClick={() => setMapStyle(style)}
                     className={cn(
-                      'rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors',
+                      'rounded-full px-3.5 py-2.5 text-xs font-semibold transition-colors',
                       mapStyle === style ? 'bg-foreground/[0.14] text-foreground' : 'text-foreground/55'
                     )}
                   >
@@ -309,12 +316,12 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
         {/* Action buttons */}
         <div className="flex shrink-0 gap-2 border-t border-foreground/[0.07] p-3">
           {canShareFiles ? (
-            <Button onClick={handleShare} className="h-[42px] flex-[1.5] text-footnote">
+            <Button onClick={handleShare} className="h-11 flex-[1.5] text-footnote">
               <Share2 size={16} />
               {t.activity.shareMenu.share}
             </Button>
           ) : null}
-          <Button variant="secondary" onClick={handleSave} className="h-[42px] flex-1 text-footnote">
+          <Button variant="secondary" onClick={handleSave} className="h-11 flex-1 text-footnote">
             <Download size={16} />
             {t.activity.shareMenu.download}
           </Button>
@@ -322,7 +329,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             <Button
               variant="secondary"
               onClick={handleCopy}
-              className={cn('h-[42px] flex-1 text-footnote', copyState === 'copied' && STATUS.success.text)}
+              className={cn('h-11 flex-1 text-footnote', copyState === 'copied' && STATUS.success.text)}
             >
               {copyState === 'copied' ? <Check size={16} /> : <Copy size={16} />}
               {copyState === 'copied' ? t.activity.shareMenu.copied : t.activity.shareMenu.copy}

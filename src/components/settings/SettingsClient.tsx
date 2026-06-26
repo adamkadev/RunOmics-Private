@@ -55,7 +55,7 @@ export function SettingsClient() {
         <div className="flex flex-col items-center gap-6 px-4 py-8">
           <button
             onClick={handleSignIn}
-            className="flex items-center gap-2.5 rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90 active:bg-accent/80"
+            className="flex items-center gap-2.5 rounded-xl bg-accent px-6 py-3.5 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90 active:bg-accent/80"
           >
             {t.settings.auth.signIn}
           </button>
@@ -70,7 +70,7 @@ export function SettingsClient() {
         <p className="text-center text-sm text-muted-foreground">{t.settings.auth.accessDenied}</p>
         <button
           onClick={handleSignOut}
-          className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-red-400 hover:text-red-500 dark:hover:border-red-500 dark:hover:text-red-400"
+          className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-red-400 hover:text-red-500 dark:hover:border-red-500 dark:hover:text-red-400"
         >
           <LogOut size={16} />
           {t.settings.auth.switchAccount}
@@ -80,7 +80,7 @@ export function SettingsClient() {
   }
 
   return (
-    <div className="space-y-6 pt-[max(env(safe-area-inset-top),12px)] lg:pt-0">
+    <div className="space-y-6 pb-[max(env(safe-area-inset-bottom),80px)] pt-[max(env(safe-area-inset-top),12px)] lg:pt-0">
       <div>
         <h1 className="text-display text-foreground">{t.pages.settings.title}</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">{t.pages.settings.subtitle}</p>
@@ -97,7 +97,7 @@ export function SettingsClient() {
 
       <button
         onClick={handleSignOut}
-        className="flex w-full items-center justify-center gap-2 rounded-2xl border border-red-500/20 bg-red-500/[0.08] px-4 py-3 text-sm font-semibold text-red-500 transition-colors hover:bg-red-500/[0.12]"
+        className="flex w-full items-center justify-center gap-2 rounded-2xl border border-red-500/20 bg-red-500/[0.08] px-4 py-3.5 text-sm font-semibold text-red-500 transition-colors hover:bg-red-500/[0.12]"
       >
         <LogOut size={16} />
         {t.settings.auth.signOut}

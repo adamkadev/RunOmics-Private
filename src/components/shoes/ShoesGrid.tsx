@@ -22,7 +22,7 @@ function wearTextClass(pct: number): string {
 function wearBorderClass(pct: number): string {
   if (pct >= 90) return 'border-red-500/50'
   if (pct >= 70) return 'border-amber-400/50'
-  return ''
+  return 'border-accent/20'
 }
 
 function wearAlertBadge(pct: number): { label: string; className: string } | null {
@@ -80,7 +80,7 @@ function ShoeCard({ shoe }: { shoe: ShoeStats }) {
         </div>
       ) : (
         <>
-          <div className="h-[5px] overflow-hidden rounded-full bg-foreground/[0.08]">
+          <div className="h-2 overflow-hidden rounded-full bg-foreground/[0.08]">
             <div
               className={`h-full rounded-full transition-all ${wearBarClass(shoe.wearPercent)}`}
               style={{ width: `${shoe.wearPercent}%` }}

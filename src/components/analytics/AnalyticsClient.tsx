@@ -59,7 +59,7 @@ function DeltaBadge({ text, good }: { text: string; good: boolean }) {
         good ? STATUS.success.badge : STATUS.danger.badge,
       )}
     >
-      <Icon size={12} strokeWidth={2.5} />
+      <Icon size={14} strokeWidth={2.5} />
       {text}
     </span>
   )
@@ -249,7 +249,7 @@ export function AnalyticsClient({
       {/* Stats */}
       {metrics.length > 0 && (
         <GlassSurface variant="card">
-          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-b border-foreground/[0.08] px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-b border-foreground/[0.08] px-5 py-3.5">
             <span className="text-sm font-semibold text-foreground">
               {periodLabel}
             </span>
@@ -259,7 +259,7 @@ export function AnalyticsClient({
             )}
           </div>
 
-          <div className="px-4 py-4">
+          <div className="px-5 py-5">
             <MetricGrid metrics={metrics} className="grid-cols-3 lg:grid-cols-6" />
           </div>
         </GlassSurface>
@@ -268,13 +268,13 @@ export function AnalyticsClient({
       {/* Tabs */}
       {active && (
         <>
-          <div className="flex border-b border-border">
+          <div className="sticky top-2 z-10 flex border-b border-border bg-background/80 backdrop-blur-md">
             {visibleTabs.map((item) => (
               <button
                 key={item.id}
                 onClick={() => setTab(item.id)}
                 className={cn(
-                  'relative flex-1 py-2.5 text-sm font-medium transition-colors',
+                  'relative flex-1 py-3 text-sm font-medium transition-colors',
                   tab === item.id
                     ? 'text-foreground'
                     : 'text-muted-foreground hover:text-foreground',

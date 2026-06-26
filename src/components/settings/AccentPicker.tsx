@@ -36,6 +36,11 @@ export function AccentPicker() {
               onClick={() => selectAccent(id)}
               aria-label={label}
               aria-pressed={active}
+              onKeyDown={(e) => {
+                const idx = ACCENT_IDS.indexOf(id)
+                if (e.key === 'ArrowRight') selectAccent(ACCENT_IDS[(idx + 1) % ACCENT_IDS.length])
+                if (e.key === 'ArrowLeft') selectAccent(ACCENT_IDS[(idx - 1 + ACCENT_IDS.length) % ACCENT_IDS.length])
+              }}
               style={{
                 backgroundColor: color,
                 borderColor: active ? color : 'transparent',

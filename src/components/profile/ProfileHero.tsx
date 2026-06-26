@@ -94,10 +94,10 @@ export function ProfileHero({ hero, displayName, onSaveName }: Props) {
               if (e.key === 'Escape') setEditing(false)
             }}
             placeholder={t.profile.hero.namePlaceholder}
-            className="w-full rounded-lg border border-border bg-background px-2 py-1 text-xl font-extrabold tracking-tight text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full rounded-xl border border-border bg-card/80 px-2 py-1 text-title1 font-extrabold tracking-tight text-foreground backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
         ) : (
-          <h1 className="truncate text-xl font-extrabold tracking-tight text-foreground">
+          <h1 className="truncate text-title1 font-extrabold tracking-tight text-foreground">
             {displayName || t.profile.hero.namePlaceholder}
           </h1>
         )}
@@ -114,7 +114,8 @@ export function ProfileHero({ hero, displayName, onSaveName }: Props) {
       <Link
         href="/settings"
         aria-label={t.nav.items.settings}
-        className="absolute left-5 top-4 flex h-8 w-8 items-center justify-center rounded-control border border-foreground/10 bg-foreground/[0.08] text-foreground/70 transition-colors active:scale-95"
+        className="absolute left-5 flex h-11 w-11 items-center justify-center rounded-control border border-foreground/10 bg-foreground/[0.08] text-foreground/70 transition-colors active:scale-95"
+        style={{ top: 'max(16px, env(safe-area-inset-top))' }}
       >
         <Settings size={16} />
       </Link>
@@ -123,7 +124,8 @@ export function ProfileHero({ hero, displayName, onSaveName }: Props) {
         variant="secondary"
         onClick={startEditing}
         aria-label={t.profile.hero.editName}
-        className="absolute right-5 top-4 h-8 w-8 rounded-control p-0"
+        className="absolute right-5 h-11 w-11 rounded-control p-0"
+        style={{ top: 'max(16px, env(safe-area-inset-top))' }}
       >
         <Pencil size={16} />
       </Button>
