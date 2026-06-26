@@ -48,7 +48,7 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
 
   return (
     <div className="space-y-3">
-      <GlassSurface variant="card" className="rounded-[20px] p-3.5 pb-2.5">
+      <GlassSurface variant="card" className="rounded-card-sm p-3.5 pb-2.5">
         {/* Weekday labels */}
         <div className="mb-2 grid grid-cols-7 gap-1">
           {t.calendar.weekdays.map((label, i) => (
@@ -167,7 +167,7 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
       {/* Selected day panel */}
       <GlassSurface
         variant="card"
-        className={cn('rounded-[20px] p-4', selected.date === today && 'border-accent/30')}
+        className={cn('rounded-card-sm p-4', selected.date === today && 'border-accent/30')}
       >
         <div className="mb-3 flex items-center justify-between">
           <span className="text-xs font-semibold uppercase tracking-wide text-accent-text">

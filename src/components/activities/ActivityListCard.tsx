@@ -19,7 +19,7 @@ export function ActivityListCard({ activity: a, prLabels = [] }: Props) {
   return (
     <Link
       href={`/activities/${a.id}`}
-      className="glass-card block rounded-[20px] px-5 py-[18px] transition-transform duration-[120ms] ease-out active:scale-[0.98]"
+      className="glass-card block rounded-card-sm px-5 py-[18px] transition-transform duration-[120ms] ease-out active:scale-[0.98]"
     >
       <div className="flex items-center gap-2.5">
         <span

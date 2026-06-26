@@ -21,7 +21,7 @@ export function TrainingZones({ data }: { data: TrainingZonesData }) {
   const range = slowest - fastest || 1
 
   return (
-    <GlassSurface variant="card" className="rounded-[22px] p-5">
+    <GlassSurface variant="card" className="p-5">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
           <Gauge size={16} className="text-violet-500 dark:text-violet-400" />

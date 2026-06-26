@@ -38,7 +38,7 @@ export function ZoneDistributionChart({ data }: Props) {
   if (!data.length) return null
 
   return (
-    <GlassSurface variant="card" className="rounded-[22px] p-5">
+    <GlassSurface variant="card" className="p-5">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.analytics.charts.zones.title}
       </h3>

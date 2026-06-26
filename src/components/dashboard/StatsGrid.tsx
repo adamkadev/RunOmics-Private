@@ -62,7 +62,7 @@ export function StatsGrid({ weeks, currentStreak, vo2max, weekLoad }: Props) {
     : baseMetrics
 
   return (
-    <GlassSurface variant="card" className="overflow-hidden rounded-[22px]">
+    <GlassSurface variant="card" className="overflow-hidden">
       <div className="flex items-center justify-between gap-2 border-b border-foreground/[0.08] px-4 py-3">
         <div className="flex min-w-0 items-center gap-2">
           <CalendarDays size={16} className="shrink-0 text-accent-text" />

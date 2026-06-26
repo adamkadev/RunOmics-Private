@@ -48,7 +48,7 @@ export function SettingsClient() {
           <p className="mt-0.5 text-sm text-muted-foreground">{t.pages.settings.subtitle}</p>
         </div>
 
-        <GlassSurface variant="card" className="rounded-[22px] p-5">
+        <GlassSurface variant="card" className="p-5">
           <AccentPicker />
         </GlassSurface>
 
@@ -86,7 +86,7 @@ export function SettingsClient() {
         <p className="mt-0.5 text-sm text-muted-foreground">{t.pages.settings.subtitle}</p>
       </div>
 
-      <GlassSurface variant="card" className="rounded-[22px] p-5">
+      <GlassSurface variant="card" className="p-5">
         <AccentPicker />
         <div className="my-5 h-px bg-foreground/[0.06]" />
         <ThemeSegmented />

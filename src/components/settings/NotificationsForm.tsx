@@ -123,7 +123,7 @@ export function NotificationsForm() {
   const busy = status === 'loading' || status === 'busy'
 
   return (
-    <GlassSurface variant="card" className="rounded-[22px] p-5">
+    <GlassSurface variant="card" className="p-5">
       <div className="mb-4 flex items-center gap-2">
         <Bell size={16} className="shrink-0 text-muted-foreground" />
         <h2 className="text-sm font-bold text-foreground">{n.title}</h2>

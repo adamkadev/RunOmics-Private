@@ -38,7 +38,7 @@ export function SortDropdown<T extends string>({ options, sortBy, order, onChang
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1 rounded-[10px] border border-foreground/[0.12] bg-foreground/[0.06] px-2.5 py-1 text-xs font-medium text-foreground/70 transition-colors hover:bg-foreground/[0.10]"
+        className="flex items-center gap-1 rounded-control border border-foreground/[0.12] bg-foreground/[0.06] px-2.5 py-1 text-xs font-medium text-foreground/70 transition-colors hover:bg-foreground/[0.10]"
       >
         {label}: {activeLabel}
         {order === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />}

@@ -70,7 +70,7 @@ export function DesignPreview({ activity, design, accent, showMap, photoUrl, onP
     <>
       <BlobAnimation />
       <div
-        className="relative overflow-hidden rounded-[22px]"
+        className="relative overflow-hidden rounded-card"
         style={{
           width: PREVIEW_WIDTH,
           height: PREVIEW_HEIGHT,

@@ -78,7 +78,7 @@ export function ProfileAthleteStats({ athlete, onSave }: Props) {
   ]
 
   return (
-    <GlassSurface variant="card" className="rounded-[22px] p-5">
+    <GlassSurface variant="card" className="p-5">
       <h2 className="mb-3 text-sm font-bold text-foreground">{a.title}</h2>
       <div className="flex flex-col gap-2.5">
         {rows.map((row) => (

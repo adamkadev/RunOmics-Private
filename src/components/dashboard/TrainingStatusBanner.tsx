@@ -120,7 +120,7 @@ export function TrainingStatusBanner({ status }: { status: TrainingStatus }) {
     : 'border-emerald-500/[0.18] bg-emerald-500/[0.07]'
 
   return (
-    <GlassSurface variant="card" className="rounded-[22px] p-5">
+    <GlassSurface variant="card" className="p-5">
       <div className="flex flex-col gap-3">
         {/* Status row */}
         <div className="flex items-center gap-3">

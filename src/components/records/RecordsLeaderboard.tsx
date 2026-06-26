@@ -137,7 +137,7 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null }
           </div>
         </>
       ) : (
-        <GlassSurface variant="card" className="overflow-hidden rounded-[22px]">
+        <GlassSurface variant="card" className="overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-foreground/10 bg-foreground/[0.03]">

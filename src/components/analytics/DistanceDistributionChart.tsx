@@ -33,7 +33,7 @@ export function DistanceDistributionChart({ data }: Props) {
   const max = Math.max(...data.map((d) => d.count))
 
   return (
-    <GlassSurface variant="card" className="rounded-[22px] p-5">
+    <GlassSurface variant="card" className="p-5">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">{t.analytics.charts.distance.title}</h3>
         <span className="text-xs text-subtle">{t.analytics.charts.distance.runs(data.reduce((s, d) => s + d.count, 0))}</span>

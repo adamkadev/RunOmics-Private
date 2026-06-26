@@ -47,7 +47,7 @@ export function ProfileHrZones({ athlete, onSave }: Props) {
   ]
 
   return (
-    <GlassSurface variant="card" className="rounded-[22px] p-5">
+    <GlassSurface variant="card" className="p-5">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-bold text-foreground">{t.profile.hrZones.title}</h2>
         <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">

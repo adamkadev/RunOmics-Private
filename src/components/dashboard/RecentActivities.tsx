@@ -12,7 +12,7 @@ interface Props {
 
 export function RecentActivities({ activities, prLabelsByActivityId = {} }: Props) {
   return (
-    <GlassSurface variant="card" className="overflow-hidden rounded-[22px]">
+    <GlassSurface variant="card" className="overflow-hidden">
       <div className="flex items-center justify-between border-b border-foreground/[0.08] px-5 py-4">
         <h3 className="text-sm font-semibold text-foreground/80">
           {t.dashboard.recentActivities.title}

@@ -57,7 +57,7 @@ export function MonthlyComparisonChart({ currentYear, currentData, prevYear, pre
   })
 
   return (
-    <GlassSurface variant="card" className="rounded-[22px] p-5">
+    <GlassSurface variant="card" className="p-5">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground/80">{t.analytics.charts.monthlyComparison.title}</h3>
         <div className="flex items-center gap-4 text-xs text-subtle">

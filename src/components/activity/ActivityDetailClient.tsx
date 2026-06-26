@@ -88,7 +88,7 @@ export function ActivityDetailClient({ activity }: Props) {
 
   return (
     <>
-      <div className="h-[260px] overflow-hidden rounded-[22px] border border-border sm:h-[360px]">
+      <div className="h-[260px] overflow-hidden rounded-card border border-border sm:h-[360px]">
         {activity.route ? (
           <ActivityMapClient
             route={activity.route}
@@ -102,7 +102,7 @@ export function ActivityDetailClient({ activity }: Props) {
         )}
       </div>
 
-      <GlassSurface variant="card" className="rounded-[22px] p-[18px]">
+      <GlassSurface variant="card" className="p-[18px]">
         <MetricGrid metrics={stats} className="grid-cols-4" />
       </GlassSurface>
       {activity.hrSamples && (

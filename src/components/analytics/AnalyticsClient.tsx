@@ -248,7 +248,7 @@ export function AnalyticsClient({
 
       {/* Stats */}
       {metrics.length > 0 && (
-        <GlassSurface variant="card" className="rounded-[22px]">
+        <GlassSurface variant="card">
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-b border-foreground/[0.08] px-4 py-3">
             <span className="text-sm font-semibold text-foreground">
               {periodLabel}

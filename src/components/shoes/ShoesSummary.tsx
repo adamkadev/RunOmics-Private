@@ -23,7 +23,7 @@ export function ShoesSummary({ shoes }: { shoes: ShoeStats[] }) {
   const totalSessions = shoes.reduce((sum, shoe) => sum + shoe.sessionCount, 0)
 
   return (
-    <GlassSurface variant="card" className="overflow-hidden rounded-[22px]">
+    <GlassSurface variant="card" className="overflow-hidden">
       <div className="grid grid-cols-3 gap-2 px-4 py-4">
         <Stat value={<AnimatedValue value={totalKm} decimals={1} />} label={s.totalDistance} />
         <Stat value={<AnimatedValue value={activePairs} />}          label={s.activePairs} />

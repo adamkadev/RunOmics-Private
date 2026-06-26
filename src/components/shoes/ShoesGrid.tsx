@@ -47,7 +47,7 @@ function ShoeCard({ shoe }: { shoe: ShoeStats }) {
   return (
     <div
       className={cn(
-        'glass-card rounded-[20px] p-5',
+        'glass-card rounded-card-sm p-5',
         shoe.retired && 'opacity-65',
         !shoe.retired && wearBorderClass(shoe.wearPercent)
       )}
@@ -102,7 +102,7 @@ function ShoeCard({ shoe }: { shoe: ShoeStats }) {
 export function ShoesGrid({ shoes }: { shoes: ShoeStats[] }) {
   if (shoes.length === 0) {
     return (
-      <GlassSurface variant="card" className="flex flex-col items-center gap-2 rounded-[20px] border-dashed py-10 text-center">
+      <GlassSurface variant="card" className="flex flex-col items-center gap-2 rounded-card-sm border-dashed py-10 text-center">
         <Footprints size={24} className="text-subtle" />
         <p className="text-sm text-subtle">{t.shoes.neverUsed}</p>
       </GlassSurface>

@@ -33,7 +33,7 @@ export function CadenceTrendChart({ data }: Props) {
   const max = Math.ceil(Math.max(...values)) + 2
 
   return (
-    <GlassSurface variant="card" className="rounded-[22px] p-5">
+    <GlassSurface variant="card" className="p-5">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">{t.analytics.charts.cadence.title}</h3>
       <ResponsiveContainer width="100%" height={200}>
         <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>

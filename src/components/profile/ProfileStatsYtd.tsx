@@ -18,7 +18,7 @@ export function ProfileStatsYtd({ ytd }: { ytd: ProfileYtdStats }) {
   ]
 
   return (
-    <GlassSurface variant="card" className="rounded-[22px] p-5">
+    <GlassSurface variant="card" className="p-5">
       <div className="mb-3 text-micro font-semibold uppercase tracking-wide text-muted-foreground">
         {t.profile.ytd.title}
       </div>

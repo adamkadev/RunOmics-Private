@@ -14,7 +14,7 @@ function isRecentPr(date: string): boolean {
 
 export function ProfileRecords({ records }: { records: RecordEntry[] }) {
   return (
-    <GlassSurface variant="card" className="rounded-[22px] p-5">
+    <GlassSurface variant="card" className="p-5">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-bold text-foreground">{t.profile.records.title}</h2>
         <span className="text-sm" aria-hidden="true">🏆</span>

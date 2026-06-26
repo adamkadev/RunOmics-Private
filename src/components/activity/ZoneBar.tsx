@@ -57,7 +57,7 @@ interface Props {
 export function ZoneBar({ hrZones }: Props) {
   if (!hrZones || hrZones.length === 0) {
     return (
-      <GlassSurface variant="card" className="flex h-full items-center justify-center rounded-[22px] p-[18px]">
+      <GlassSurface variant="card" className="flex h-full items-center justify-center p-[18px]">
         <p className="text-sm text-subtle">{t.activity.zones.noData}</p>
       </GlassSurface>
     )
@@ -66,7 +66,7 @@ export function ZoneBar({ hrZones }: Props) {
   const sorted = [...hrZones].sort((a, b) => b.zone - a.zone)
 
   return (
-    <GlassSurface variant="card" className="rounded-[22px] p-[18px]">
+    <GlassSurface variant="card" className="p-[18px]">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.activity.zones.title}
       </h3>

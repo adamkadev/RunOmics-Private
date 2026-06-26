@@ -194,7 +194,7 @@ export function ActivityListClient({
             aria-label={t.activities.searchToggle}
             aria-expanded={searchOpen}
             className={cn(
-              'flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border transition-colors active:scale-95',
+              'flex h-9 w-9 shrink-0 items-center justify-center rounded-control border transition-colors active:scale-95',
               searchOpen
                 ? 'border-foreground/[0.20] bg-foreground/[0.14] text-foreground'
                 : 'border-foreground/[0.12] bg-foreground/[0.06] text-foreground/60 hover:bg-foreground/[0.10]'

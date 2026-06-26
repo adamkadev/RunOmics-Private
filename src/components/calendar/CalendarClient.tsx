@@ -86,7 +86,7 @@ export function CalendarClient({ activities, plannedWorkouts }: Props) {
             <p className="mt-0.5 truncate text-footnote font-medium text-muted-foreground">{subtitle}</p>
           </div>
 
-          <div className="flex shrink-0 gap-0.5 rounded-[10px] border border-foreground/10 bg-foreground/[0.07] p-[3px]">
+          <div className="flex shrink-0 gap-0.5 rounded-control border border-foreground/10 bg-foreground/[0.07] p-[3px]">
             {(['week', 'month'] as const).map((m) => (
               <button
                 key={m}
@@ -108,7 +108,7 @@ export function CalendarClient({ activities, plannedWorkouts }: Props) {
         <button
           type="button"
           onClick={() => shift(-1)}
-          className="flex h-11 w-11 items-center justify-center rounded-[10px] border border-foreground/[0.12] bg-foreground/[0.08] text-foreground/65 transition-colors hover:bg-foreground/[0.12] active:scale-95"
+          className="flex h-11 w-11 items-center justify-center rounded-control border border-foreground/[0.12] bg-foreground/[0.08] text-foreground/65 transition-colors hover:bg-foreground/[0.12] active:scale-95"
         >
           <ChevronLeft size={16} />
         </button>
@@ -116,7 +116,7 @@ export function CalendarClient({ activities, plannedWorkouts }: Props) {
           type="button"
           onClick={() => shift(1)}
           disabled={atPresent}
-          className="flex h-11 w-11 items-center justify-center rounded-[10px] border border-foreground/[0.12] bg-foreground/[0.08] text-foreground/65 transition-colors hover:bg-foreground/[0.12] active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex h-11 w-11 items-center justify-center rounded-control border border-foreground/[0.12] bg-foreground/[0.08] text-foreground/65 transition-colors hover:bg-foreground/[0.12] active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <ChevronRight size={16} />
         </button>

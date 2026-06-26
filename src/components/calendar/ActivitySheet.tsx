@@ -42,7 +42,7 @@ export function ActivitySheet({ activity, onClose }: Props) {
       onClick={close}
     >
       <div
-        className="glass-sheet relative w-full animate-sheet-up rounded-t-[22px] p-4 sm:max-w-sm sm:rounded-[20px]"
+        className="glass-sheet relative w-full animate-sheet-up rounded-t-card p-4 sm:max-w-sm sm:rounded-card-sm"
         style={sheetStyle}
         onClick={(e) => e.stopPropagation()}
       >

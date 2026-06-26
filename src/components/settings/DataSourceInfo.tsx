@@ -85,7 +85,7 @@ export function DataSourceInfo() {
   }
 
   return (
-    <GlassSurface variant="card" className="rounded-[22px] p-5">
+    <GlassSurface variant="card" className="p-5">
       <div className="flex items-center gap-3">
         <Activity size={16} className="shrink-0 text-muted-foreground" />
         <div>

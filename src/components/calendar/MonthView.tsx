@@ -47,7 +47,7 @@ export function MonthView({ year, month, byDate, byDatePlanned, today }: Props) 
 
   return (
     <div className="space-y-3">
-      <GlassSurface variant="card" className="overflow-hidden rounded-[20px]">
+      <GlassSurface variant="card" className="overflow-hidden rounded-card-sm">
         <div className="grid grid-cols-7 border-b border-foreground/[0.08]">
           {WEEKDAYS.map((d) => (
             <div

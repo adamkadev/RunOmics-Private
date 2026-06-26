@@ -42,7 +42,7 @@ export function LongRunsChart({ data }: Props) {
       : { text: t.analytics.charts.longRuns.explains.low(avg), tone: 'caution' as const }
 
   return (
-    <GlassSurface variant="card" className="rounded-[22px] p-5">
+    <GlassSurface variant="card" className="p-5">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">{t.analytics.charts.longRuns.title}</h3>
       <ResponsiveContainer width="100%" height={200}>
         <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>

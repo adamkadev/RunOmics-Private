@@ -115,7 +115,7 @@ export function YearComparisonSection({ data }: Props) {
   ]
 
   return (
-    <GlassSurface variant="card" className="rounded-[22px] p-5">
+    <GlassSurface variant="card" className="p-5">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-base font-semibold text-foreground">{t.analytics.yearOverYear.title}</h2>
         <div className="flex items-center gap-4 text-xs text-subtle">

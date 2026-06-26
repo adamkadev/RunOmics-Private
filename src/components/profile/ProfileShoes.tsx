@@ -15,7 +15,7 @@ export function ProfileShoes({ shoes }: { shoes: ShoeStats[] }) {
   if (shoes.length === 0) return null
 
   return (
-    <GlassSurface variant="card" className="rounded-[22px] p-5">
+    <GlassSurface variant="card" className="p-5">
       <h2 className="mb-3 text-sm font-bold text-foreground">{t.profile.shoes.title}</h2>
       <div>
         {shoes.map((shoe, i) => {
@@ -29,7 +29,7 @@ export function ProfileShoes({ shoes }: { shoes: ShoeStats[] }) {
               )}
             >
               <div
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-foreground/[0.10] bg-foreground/[0.07] text-lg"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control border border-foreground/[0.10] bg-foreground/[0.07] text-lg"
                 aria-hidden="true"
               >
                 👟

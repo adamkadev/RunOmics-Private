@@ -47,7 +47,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
     <div className="space-y-8">
       {goals && (
         <section className="space-y-3">
-          <GlassSurface variant="card" className="rounded-[22px] p-5">
+          <GlassSurface variant="card" className="p-5">
             <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
               <Target size={16} className="text-accent-text" />
               {t.goals.annualGoal}
@@ -244,7 +244,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
                 <Link
                   key={entry.activityId}
                   href={`/activities/${entry.activityId}`}
-                  className="glass-card group relative overflow-hidden rounded-[20px] transition-shadow hover:shadow-lg"
+                  className="glass-card group relative overflow-hidden rounded-card-sm transition-shadow hover:shadow-lg"
                 >
                   <div className={cn('flex h-24 items-center bg-gradient-to-br to-transparent px-5', tint.overlay)}>
                     <span className="text-3xl font-black text-foreground">
@@ -282,7 +282,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
           </div>
         </section>
       ) : (
-        <GlassSurface variant="card" className="rounded-[20px] border-dashed p-10 text-center">
+        <GlassSurface variant="card" className="rounded-card-sm border-dashed p-10 text-center">
           <Trophy size={24} className="mx-auto mb-3 text-subtle" />
           <p className="text-sm text-subtle">{t.goals.emptyPbs(yearData.year)}</p>
         </GlassSurface>

@@ -58,7 +58,7 @@ export function ProfileHero({ hero, displayName, onSaveName }: Props) {
   }
 
   return (
-    <GlassSurface variant="card" className="relative flex items-center gap-5 rounded-[22px] px-5 py-6">
+    <GlassSurface variant="card" className="relative flex items-center gap-5 px-5 py-6">
       <div className="group/tip relative shrink-0">
         <div
           className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-white/30 text-2xl font-extrabold text-accent-foreground shadow-[0_0_0_4px_var(--ring)] bg-accent"
@@ -114,7 +114,7 @@ export function ProfileHero({ hero, displayName, onSaveName }: Props) {
         variant="secondary"
         onClick={startEditing}
         aria-label={t.profile.hero.editName}
-        className="absolute right-5 top-4 h-8 w-8 rounded-[10px] p-0"
+        className="absolute right-5 top-4 h-8 w-8 rounded-control p-0"
       >
         <Pencil size={16} />
       </Button>
