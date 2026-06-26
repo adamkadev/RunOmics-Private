@@ -1,10 +1,21 @@
 import Link from 'next/link'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, Zap, Flame, Wind, TrendingUp, Clock, Footprints, Flag } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { PrBadge } from './PrBadge'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
-import type { ActivitySummary } from '@/domain/activity/types'
+import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
 import { formatDate, formatDistance, formatDuration, formatClock } from '@/lib/formatters'
 import { t } from '@/i18n'
+
+const TYPE_ICON: Record<ActivityType, LucideIcon> = {
+  Sprint:    Zap,
+  Anaerobic: Flame,
+  VO2Max:    Wind,
+  Threshold: TrendingUp,
+  Tempo:     Clock,
+  Base:      Footprints,
+  Race:      Flag,
+}
 
 interface Props {
   activity: ActivitySummary
@@ -15,6 +26,7 @@ interface Props {
 export function ActivityListCard({ activity: a, prLabels = [] }: Props) {
   const { dotColor } = ACTIVITY_TYPE_CONFIG[a.type]
   const title = a.description || t.activity.runTitle(a.dayOfWeek)
+  const TypeIcon = TYPE_ICON[a.type]
 
   return (
     <Link
@@ -29,9 +41,7 @@ export function ActivityListCard({ activity: a, prLabels = [] }: Props) {
             borderColor: `color-mix(in srgb, ${dotColor} 30%, transparent)`,
           }}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={dotColor} strokeWidth="2.2">
-            <path d="M13 4a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-5 6l2-2 2 1 3-2M7 17l2-3 3 1 2-2" />
-          </svg>
+          <TypeIcon size={16} strokeWidth={2.2} style={{ color: dotColor }} />
         </span>
         <span className="flex-1 truncate text-subhead font-bold text-foreground">{title}</span>
         <ChevronRight size={16} className="shrink-0 text-foreground/30" />
