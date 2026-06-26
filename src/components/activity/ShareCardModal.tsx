@@ -210,7 +210,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
 
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between px-5 py-3.5">
-          <h2 className="text-[17px] font-semibold tracking-tight text-foreground">{t.activity.share}</h2>
+          <h2 className="text-body font-semibold tracking-tight text-foreground">{t.activity.share}</h2>
           <button
             onClick={close}
             aria-label={t.activity.shareCard.close}
@@ -246,7 +246,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
 
           {/* Design picker */}
           <div className="border-t border-foreground/[0.07] px-5 py-3">
-            <div className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.07em] text-foreground/40">
+            <div className="mb-2.5 text-caption font-semibold uppercase tracking-[0.07em] text-foreground/40">
               {t.activity.shareCard.designLabel}
             </div>
             <div className="flex gap-2.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -266,7 +266,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
           {!isMapBg && (
             <div className="flex items-center justify-between border-t border-foreground/[0.07] px-5 py-3">
               <div>
-                <div className="text-[15px] text-foreground">{t.activity.shareCard.mapToggle}</div>
+                <div className="text-subhead text-foreground">{t.activity.shareCard.mapToggle}</div>
               </div>
               <button
                 type="button"
@@ -285,7 +285,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
           {/* Map style (light/dark basemap), Map design only */}
           {isMapBg && (
             <div className="flex items-center justify-between border-t border-foreground/[0.07] px-5 py-3">
-              <div className="text-[15px] text-foreground">{t.activity.shareCard.mapStyleLabel}</div>
+              <div className="text-subhead text-foreground">{t.activity.shareCard.mapStyleLabel}</div>
               <div className="flex rounded-full border border-foreground/10 bg-foreground/[0.04] p-1">
                 {MAP_STYLES.map((style) => (
                   <button
@@ -309,12 +309,12 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
         {/* Action buttons */}
         <div className="flex shrink-0 gap-2 border-t border-foreground/[0.07] p-3">
           {canShareFiles ? (
-            <Button onClick={handleShare} className="h-[42px] flex-[1.5] text-[13px]">
+            <Button onClick={handleShare} className="h-[42px] flex-[1.5] text-footnote">
               <Share2 size={16} />
               {t.activity.shareMenu.share}
             </Button>
           ) : null}
-          <Button variant="secondary" onClick={handleSave} className="h-[42px] flex-1 text-[13px]">
+          <Button variant="secondary" onClick={handleSave} className="h-[42px] flex-1 text-footnote">
             <Download size={16} />
             {t.activity.shareMenu.download}
           </Button>
@@ -322,7 +322,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             <Button
               variant="secondary"
               onClick={handleCopy}
-              className={cn('h-[42px] flex-1 text-[13px]', copyState === 'copied' && STATUS.success.text)}
+              className={cn('h-[42px] flex-1 text-footnote', copyState === 'copied' && STATUS.success.text)}
             >
               {copyState === 'copied' ? <Check size={16} /> : <Copy size={16} />}
               {copyState === 'copied' ? t.activity.shareMenu.copied : t.activity.shareMenu.copy}

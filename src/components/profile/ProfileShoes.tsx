@@ -35,8 +35,8 @@ export function ProfileShoes({ shoes }: { shoes: ShoeStats[] }) {
                 👟
               </div>
               <div className="min-w-0 flex-1">
-                <div className="truncate text-[13px] font-bold text-foreground">{shoe.name}</div>
-                <div className="mt-0.5 text-[11px] text-muted-foreground">
+                <div className="truncate text-footnote font-bold text-foreground">{shoe.name}</div>
+                <div className="mt-0.5 text-caption text-muted-foreground">
                   {t.profile.shoes.line(Math.round(shoe.totalKm), remainingKm)}
                 </div>
                 <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-foreground/[0.08]">

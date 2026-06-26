@@ -356,7 +356,7 @@ export function GlobalMapClient({ data }: Props) {
         <span className="text-xs font-semibold text-accent-text">
           {names[selectedIdx]}
         </span>
-        <span className="text-[11px] text-subtle">
+        <span className="text-caption text-subtle">
           {t.common.runs(clusterStats[selectedIdx]?.routeCount ?? 0)}
         </span>
         <ChevronDown
@@ -397,7 +397,7 @@ export function GlobalMapClient({ data }: Props) {
                   >
                     {names[i]}
                   </span>
-                  <span className="text-[11px] text-subtle">
+                  <span className="text-caption text-subtle">
                     {t.common.runs(clusterStats[i].routeCount)} · {clusterStats[i].totalKm} {t.units.km}
                   </span>
                 </button>

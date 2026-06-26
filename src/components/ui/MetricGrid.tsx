@@ -34,7 +34,7 @@ export function MetricGrid({
             )}
           >
             {value}
-            {unit && <span className="ml-0.5 text-[11px] font-semibold text-muted-foreground">{unit}</span>}
+            {unit && <span className="ml-0.5 text-caption font-semibold text-muted-foreground">{unit}</span>}
           </div>
           <div className="mt-1 text-[10.5px] leading-tight text-muted-foreground">{label}</div>
         </div>

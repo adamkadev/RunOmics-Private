@@ -80,10 +80,10 @@ export function CalendarClient({ activities, plannedWorkouts }: Props) {
       <GlassSurface as="div" variant="nav" className="top-2 z-20 rounded-2xl px-5 py-3">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-[27px] font-extrabold leading-[1.1] tracking-tight text-foreground">
+            <h1 className="text-title1 font-extrabold leading-[1.1] tracking-tight text-foreground">
               {t.pages.calendar.title}
             </h1>
-            <p className="mt-0.5 truncate text-[13px] font-medium text-muted-foreground">{subtitle}</p>
+            <p className="mt-0.5 truncate text-footnote font-medium text-muted-foreground">{subtitle}</p>
           </div>
 
           <div className="flex shrink-0 gap-0.5 rounded-[10px] border border-foreground/10 bg-foreground/[0.07] p-[3px]">
@@ -93,7 +93,7 @@ export function CalendarClient({ activities, plannedWorkouts }: Props) {
                 type="button"
                 onClick={() => setMode(m)}
                 className={cn(
-                  'rounded-[7px] px-2.5 py-1 text-[11px] font-semibold transition-colors',
+                  'rounded-[7px] px-2.5 py-1 text-caption font-semibold transition-colors',
                   mode === m ? 'bg-foreground/[0.14] text-foreground' : 'text-muted-foreground'
                 )}
               >

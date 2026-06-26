@@ -46,7 +46,7 @@ export function TrainingZones({ data }: { data: TrainingZonesData }) {
                 </div>
                 <span className="shrink-0 font-mono text-sm font-bold tabular-nums text-foreground">
                   {fmt(zone.paceMinSecPerKm)}-{fmt(zone.paceMaxSecPerKm)}
-                  <span className="ml-1 text-[11px] font-normal text-subtle">{t.trainingZones.perKm}</span>
+                  <span className="ml-1 text-caption font-normal text-subtle">{t.trainingZones.perKm}</span>
                 </span>
               </div>
 

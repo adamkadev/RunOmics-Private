@@ -240,7 +240,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
       </button>
 
       {isFullscreen && (
-        <p className="pointer-events-none absolute bottom-8 left-3 z-10 text-[11px] text-white/60">
+        <p className="pointer-events-none absolute bottom-8 left-3 z-10 text-caption text-white/60">
           {t.activity.map.escToExit}
         </p>
       )}

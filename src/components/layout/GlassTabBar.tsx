@@ -49,7 +49,7 @@ export function GlassTabBar({ onMore, moreOpen }: { onMore: () => void; moreOpen
               className={cn(tabClass, active ? 'text-accent-text' : 'text-muted-foreground')}
             >
               <Icon size={20} strokeWidth={2} />
-              <span className={cn('text-[9px]', active ? 'font-semibold' : 'font-medium')}>{label}</span>
+              <span className={cn('text-micro', active ? 'font-semibold' : 'font-medium')}>{label}</span>
             </Link>
           )
         })}
@@ -61,7 +61,7 @@ export function GlassTabBar({ onMore, moreOpen }: { onMore: () => void; moreOpen
           className={cn(tabClass, moreActive ? 'text-accent-text' : 'text-muted-foreground')}
         >
           <MoreHorizontal size={20} strokeWidth={2} />
-          <span className={cn('text-[9px]', moreActive ? 'font-semibold' : 'font-medium')}>
+          <span className={cn('text-micro', moreActive ? 'font-semibold' : 'font-medium')}>
             {t.nav.items.more}
           </span>
         </button>

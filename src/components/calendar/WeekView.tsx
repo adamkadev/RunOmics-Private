@@ -122,14 +122,14 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
                     ) : isToday ? (
                       <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: TODAY_COLOR }} />
                     ) : (
-                      <span className="text-[11px] text-foreground/20">-</span>
+                      <span className="text-caption text-foreground/20">-</span>
                     )}
                   </div>
                 </div>
 
                 {/* Day number */}
                 <span
-                  className="text-[10px]"
+                  className="text-micro"
                   style={
                     isToday
                       ? { color: TODAY_COLOR, fontWeight: 700 }
@@ -174,7 +174,7 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
             {formatDateFull(selected.date)}
           </span>
           {selected.date === today && (
-            <span className="text-[11px] font-semibold text-muted-foreground">{t.calendar.today}</span>
+            <span className="text-caption font-semibold text-muted-foreground">{t.calendar.today}</span>
           )}
         </div>
 

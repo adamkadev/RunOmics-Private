@@ -18,6 +18,13 @@
   --color-ring:              var(--ring);
   --font-sans:               var(--font-geist-sans);
   --font-mono:               var(--font-geist-mono);
+  --text-micro:              10px;
+  --text-caption:            11px;
+  --text-footnote:           13px;
+  --text-subhead:            15px;
+  --text-body:               17px;
+  --text-title2:             22px;
+  --text-title1:             28px;
   --shadow-card:             var(--shadow-card);
   --animate-fade-up:         fade-up 0.25s ease-out both;
   --animate-fade-in:         fade-in 0.2s ease-out both;

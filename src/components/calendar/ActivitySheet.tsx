@@ -67,7 +67,7 @@ export function ActivitySheet({ activity, onClose }: Props) {
 
         <div className="grid grid-cols-2 gap-2">
           <div className="rounded-[11px] bg-foreground/[0.05] p-2.5">
-            <div className="mb-0.5 text-[10px] text-muted-foreground">{t.calendar.type}</div>
+            <div className="mb-0.5 text-micro text-muted-foreground">{t.calendar.type}</div>
             <div className="flex items-center gap-1.5">
               <span
                 className="h-[5px] w-[5px] rounded-full"
@@ -77,17 +77,17 @@ export function ActivitySheet({ activity, onClose }: Props) {
             </div>
           </div>
           <div className="rounded-[11px] bg-foreground/[0.05] p-2.5">
-            <div className="mb-0.5 text-[10px] text-muted-foreground">{t.activities.sort.distance}</div>
+            <div className="mb-0.5 text-micro text-muted-foreground">{t.activities.sort.distance}</div>
             <div className="text-xs font-semibold text-foreground">
               {activity.distanceKm.toFixed(1)} {t.units.km}
             </div>
           </div>
           <div className="rounded-[11px] bg-foreground/[0.05] p-2.5">
-            <div className="mb-0.5 text-[10px] text-muted-foreground">{t.activities.sort.duration}</div>
+            <div className="mb-0.5 text-micro text-muted-foreground">{t.activities.sort.duration}</div>
             <div className="text-xs font-semibold text-foreground">{formatDuration(activity.durationSeconds)}</div>
           </div>
           <div className="rounded-[11px] bg-foreground/[0.05] p-2.5">
-            <div className="mb-0.5 text-[10px] text-muted-foreground">{t.activities.sort.avgHr}</div>
+            <div className="mb-0.5 text-micro text-muted-foreground">{t.activities.sort.avgHr}</div>
             <div className="text-xs font-semibold text-foreground">
               {activity.avgHeartRate ? `${activity.avgHeartRate} ${t.units.bpm}` : '-'}
             </div>

@@ -52,7 +52,7 @@ export function MonthView({ year, month, byDate, byDatePlanned, today }: Props) 
           {WEEKDAYS.map((d) => (
             <div
               key={d}
-              className="px-1 py-2 text-center font-mono text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/60"
+              className="px-1 py-2 text-center font-mono text-micro font-semibold uppercase tracking-wide text-muted-foreground/60"
             >
               <span className="hidden sm:inline">{d}</span>
               <span className="sm:hidden">{d[0]}</span>
@@ -91,7 +91,7 @@ export function MonthView({ year, month, byDate, byDatePlanned, today }: Props) 
                         />
                         <span className="tabular-nums">
                           {a.distanceKm.toFixed(1)}
-                          <span className="ml-0.5 text-[10px] font-normal text-muted-foreground">
+                          <span className="ml-0.5 text-micro font-normal text-muted-foreground">
                             {t.units.km}
                           </span>
                         </span>
@@ -99,7 +99,7 @@ export function MonthView({ year, month, byDate, byDatePlanned, today }: Props) 
                     ))}
                     {cell.acts.length === 0 && byDatePlanned.has(cell.date) && (
                       <p
-                        className="truncate px-1 py-0.5 text-[10px] italic text-accent-text/60"
+                        className="truncate px-1 py-0.5 text-micro italic text-accent-text/60"
                         title={byDatePlanned.get(cell.date)?.name}
                       >
                         {byDatePlanned.get(cell.date)?.name}

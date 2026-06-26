@@ -63,7 +63,7 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null }
             key={k}
             as="button"
             variant={selected === k ? 'active' : 'neutral'}
-            className="text-[13px] font-semibold"
+            className="text-footnote font-semibold"
             onClick={() => setSelected(k)}
           >
             {k === 'all' ? t.records.all : (LABELS[k] ?? k)}
@@ -106,7 +106,7 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null }
                       {r.official && <span className="text-base text-amber-500">★</span>}
                     </div>
                   </div>
-                  <p className="text-[28px] font-extrabold tracking-tight text-foreground">
+                  <p className="text-title1 font-extrabold tracking-tight text-foreground">
                     {mainStat}
                   </p>
                   <p className="mt-1 text-xs font-medium text-subtle">

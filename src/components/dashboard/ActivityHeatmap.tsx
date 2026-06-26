@@ -108,7 +108,7 @@ export function ActivityHeatmap({ days }: Props) {
             {monthLabels.map(({ label, col }) => (
               <span
                 key={`${label}-${col}`}
-                className="absolute text-[10px] text-subtle"
+                className="absolute text-micro text-subtle"
                 style={{ left: LABEL_W + col * (cellSize + GAP) }}
               >
                 {label}
@@ -123,7 +123,7 @@ export function ActivityHeatmap({ days }: Props) {
               {t.dashboard.heatmap.weekdays.map((label, i) => (
                 <div
                   key={i}
-                  className="text-right text-[9px] leading-none text-subtle"
+                  className="text-right text-micro leading-none text-subtle"
                   style={{ height: cellSize, lineHeight: `${cellSize}px`, width: 20 }}
                 >
                   {label}
@@ -158,11 +158,11 @@ export function ActivityHeatmap({ days }: Props) {
 
       {/* Legend */}
       <div className="mt-3 flex items-center justify-end gap-1.5">
-        <span className="text-[10px] text-subtle">{t.dashboard.heatmap.less}</span>
+        <span className="text-micro text-subtle">{t.dashboard.heatmap.less}</span>
         {LEVEL_MIX_PCT.map((_, i) => (
           <div key={i} className="rounded-[2px]" style={{ width: 10, height: 10, ...levelStyle(i) }} />
         ))}
-        <span className="text-[10px] text-subtle">{t.dashboard.heatmap.more}</span>
+        <span className="text-micro text-subtle">{t.dashboard.heatmap.more}</span>
       </div>
 
       {/* Floating tooltip */}
@@ -172,7 +172,7 @@ export function ActivityHeatmap({ days }: Props) {
           style={{ left: tooltip.x, top: tooltip.y - 6 }}
         >
           <p className="text-xs font-medium text-foreground">{formatTooltipDate(tooltip.day.date)}</p>
-          <p className="text-[11px] text-subtle">
+          <p className="text-caption text-subtle">
             {tooltip.day.distanceKm > 0
               ? t.dashboard.heatmap.day(tooltip.day.distanceKm, tooltip.day.sessionCount)
               : t.dashboard.heatmap.restDay}

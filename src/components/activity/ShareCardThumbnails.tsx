@@ -107,7 +107,7 @@ export function DesignThumb({ design, selected, accentHex, onClick }: {
       }}>
         <Thumb />
       </div>
-      <span className={cn('text-[11px] transition-colors', selected ? 'font-semibold text-foreground' : 'font-normal text-muted-foreground')}>
+      <span className={cn('text-caption transition-colors', selected ? 'font-semibold text-foreground' : 'font-normal text-muted-foreground')}>
         {t.activity.shareCard.designLabels[design]}
       </span>
     </button>

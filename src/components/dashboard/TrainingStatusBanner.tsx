@@ -98,7 +98,7 @@ function SecondaryMetric({
     <div className="flex flex-col gap-1">
       <div className="flex items-baseline justify-between gap-1.5">
         <Tooltip content={tooltipContent} surfaceClassName={tooltipSurface}>
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
+          <span className="text-micro font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
         </Tooltip>
         <span className="text-xs font-bold tabular-nums text-foreground">{value}</span>
       </div>
@@ -145,7 +145,7 @@ export function TrainingStatusBanner({ status }: { status: TrainingStatus }) {
           <div className={cn('rounded-[14px] border p-3', heroBox)}>
             <div className="widget-label mb-1.5 text-muted-foreground">{s.metrics.form}</div>
             <div className="mb-2 flex items-baseline justify-between gap-2">
-              <span className={cn('text-[28px] font-extrabold leading-none tabular-nums', formValueClass)}>
+              <span className={cn('text-title1 font-extrabold leading-none tabular-nums', formValueClass)}>
                 {formValue}
               </span>
               <span className={cn('text-xs text-right whitespace-pre-line leading-snug opacity-70', formValueClass)}>

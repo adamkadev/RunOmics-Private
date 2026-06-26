@@ -28,10 +28,10 @@ export function ProfileGoal({ goal, onSaveGoal }: Props) {
       <h2 className="mb-2 text-sm font-bold text-foreground">{t.profile.goal.title(goalYear.year)}</h2>
 
       <div className="flex items-baseline gap-1.5">
-        <span className="text-[26px] font-extrabold tracking-tight text-foreground">
+        <span className="text-title1 font-extrabold tracking-tight text-foreground">
           {totalDistanceKm.toLocaleString('en-US')}
         </span>
-        <span className="text-[13px] font-semibold text-muted-foreground">
+        <span className="text-footnote font-semibold text-muted-foreground">
           {'/ '}
           <EditableNumber
             value={goalYear.annualDistanceKm}

@@ -24,18 +24,18 @@ export function ProfileRecords({ records }: { records: RecordEntry[] }) {
           const recent = r.seconds !== null && r.date && isRecentPr(r.date)
           return (
             <div key={r.key} className="rounded-xl border border-foreground/[0.08] bg-foreground/[0.04] p-3">
-              <div className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+              <div className="text-micro font-bold uppercase tracking-wide text-muted-foreground">
                 {r.label}
               </div>
               <div className="mt-1 text-lg font-extrabold tracking-tight text-foreground">
                 {r.seconds !== null ? formatDuration(r.seconds) : <span className="text-foreground/30">—</span>}
               </div>
               <div className="mt-0.5 flex items-center justify-between gap-1">
-                <span className="text-[10px] text-muted-foreground">
+                <span className="text-micro text-muted-foreground">
                   {r.date ? formatDateWithYear(r.date) : t.profile.records.notYet}
                 </span>
                 {recent && (
-                  <span className="rounded-[4px] border border-amber-500/25 bg-amber-500/[0.14] px-[5px] py-px text-[9px] font-bold text-amber-600 dark:text-amber-400">
+                  <span className="rounded-[4px] border border-amber-500/25 bg-amber-500/[0.14] px-[5px] py-px text-micro font-bold text-amber-600 dark:text-amber-400">
                     {t.activity.bestEfforts.prBadge}
                   </span>
                 )}

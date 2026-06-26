@@ -176,10 +176,10 @@ export function ActivityListClient({
       <GlassSurface as="div" variant="card" ref={headerRef} className="top-2 z-20 rounded-2xl px-5 py-3">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-[27px] font-extrabold leading-[1.1] tracking-tight text-foreground">
+            <h1 className="text-title1 font-extrabold leading-[1.1] tracking-tight text-foreground">
               {t.pages.activities.title}
             </h1>
-            <p className="mt-0.5 text-[13px] font-medium text-muted-foreground">
+            <p className="mt-0.5 text-footnote font-medium text-muted-foreground">
               {t.activities.count(totalCount)}
             </p>
           </div>
@@ -220,7 +220,7 @@ export function ActivityListClient({
         <Pill
           as="button"
           variant={selectedType === null ? 'active' : 'neutral'}
-          className={cn('text-[13px] font-semibold', selectedType === null && ACTIVE_CHIP_SHADOW)}
+          className={cn('text-footnote font-semibold', selectedType === null && ACTIVE_CHIP_SHADOW)}
           onClick={() => setSelectedType(null)}
         >
           {t.activities.all}
@@ -233,7 +233,7 @@ export function ActivityListClient({
               as="button"
               variant={active ? 'active' : 'neutral'}
               dotColor={active ? undefined : ACTIVITY_TYPE_CONFIG[type].dotColor}
-              className={cn('text-[13px] font-semibold', active && ACTIVE_CHIP_SHADOW)}
+              className={cn('text-footnote font-semibold', active && ACTIVE_CHIP_SHADOW)}
               onClick={() => setSelectedType(active ? null : type)}
             >
               {t.activityTypes[type]}
@@ -276,7 +276,7 @@ export function ActivityListClient({
           {groups.map((g) => (
             <div key={g.key}>
               <div className="z-10 flex items-center justify-between px-1 py-2" style={{ top: headerHeight + 16 }}>
-                <span className="font-mono text-[13px] font-bold tracking-wide text-muted-foreground/80">
+                <span className="font-mono text-footnote font-bold tracking-wide text-muted-foreground/80">
                   {g.label}
                 </span>
                 <span className="font-mono text-xs font-medium text-subtle">

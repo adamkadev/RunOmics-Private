@@ -33,13 +33,13 @@ export function ActivityListCard({ activity: a, prLabels = [] }: Props) {
             <path d="M13 4a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-5 6l2-2 2 1 3-2M7 17l2-3 3 1 2-2" />
           </svg>
         </span>
-        <span className="flex-1 truncate text-[15px] font-bold text-foreground">{title}</span>
+        <span className="flex-1 truncate text-subhead font-bold text-foreground">{title}</span>
         <ChevronRight size={16} className="shrink-0 text-foreground/30" />
       </div>
 
       <div className="mt-1.5 flex flex-wrap items-center gap-2">
         <span
-          className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-[3px] text-[11px] font-semibold"
+          className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-[3px] text-caption font-semibold"
           style={{
             backgroundColor: `color-mix(in srgb, ${dotColor} 16%, transparent)`,
             borderColor: `color-mix(in srgb, ${dotColor} 28%, transparent)`,
@@ -74,8 +74,8 @@ export function ActivityListCard({ activity: a, prLabels = [] }: Props) {
 function Metric({ value, unit }: { value: string; unit: string }) {
   return (
     <div>
-      <div className="text-[15px] font-extrabold text-foreground">{value}</div>
-      <div className="text-[10px] font-semibold text-muted-foreground">{unit}</div>
+      <div className="text-subhead font-extrabold text-foreground">{value}</div>
+      <div className="text-micro font-semibold text-muted-foreground">{unit}</div>
     </div>
   )
 }

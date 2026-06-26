@@ -19,7 +19,7 @@ export function ProfileStatsYtd({ ytd }: { ytd: ProfileYtdStats }) {
 
   return (
     <GlassSurface variant="card" className="rounded-[22px] p-5">
-      <div className="mb-3 text-[10px] font-bold uppercase tracking-[0.07em] text-muted-foreground">
+      <div className="mb-3 text-micro font-bold uppercase tracking-[0.07em] text-muted-foreground">
         {t.profile.ytd.title}
       </div>
       <div className="grid grid-cols-2 gap-x-3.5 gap-y-3.5">
@@ -32,8 +32,8 @@ export function ProfileStatsYtd({ ytd }: { ytd: ProfileYtdStats }) {
             )}
           >
             <div className="flex items-baseline gap-1">
-              <span className="text-[22px] font-extrabold tracking-tight text-foreground">{cell.value}</span>
-              {cell.unit && <span className="text-[11px] font-semibold text-muted-foreground">{cell.unit}</span>}
+              <span className="text-title2 font-extrabold tracking-tight text-foreground">{cell.value}</span>
+              {cell.unit && <span className="text-caption font-semibold text-muted-foreground">{cell.unit}</span>}
             </div>
             <div className="mt-0.5 text-[10.5px] text-muted-foreground">{cell.label}</div>
           </div>

@@ -70,7 +70,7 @@ export function ProfileHero({ hero, displayName, onSaveName }: Props) {
           <Tooltip content={t.profile.hero.rank(hero.rank.vo2maxGarmin, hero.rank.vdot)}>
             <span
               className={cn(
-                'absolute -bottom-1.5 -right-1.5 flex h-8 min-w-8 -rotate-6 items-center justify-center rounded-full border-[2.5px] border-background px-1.5 text-[13px] font-black italic leading-none tracking-tight ring-1',
+                'absolute -bottom-1.5 -right-1.5 flex h-8 min-w-8 -rotate-6 items-center justify-center rounded-full border-[2.5px] border-background px-1.5 text-footnote font-black italic leading-none tracking-tight ring-1',
                 RANK_BADGE_CLASS[hero.rank.tier]
               )}
               aria-label={t.profile.hero.rank(hero.rank.vo2maxGarmin, hero.rank.vdot)}
@@ -101,11 +101,11 @@ export function ProfileHero({ hero, displayName, onSaveName }: Props) {
           </h1>
         )}
         {hero.sinceDate && (
-          <p className="mt-0.5 text-[13px] text-muted-foreground">
+          <p className="mt-0.5 text-footnote text-muted-foreground">
             {t.profile.hero.since(monthYear(hero.sinceDate))}
           </p>
         )}
-        <p className="mt-0.5 text-[13px] font-medium text-accent-text">
+        <p className="mt-0.5 text-footnote font-medium text-accent-text">
           {t.profile.hero.summary(hero.lifetimeActivities, hero.lifetimeDistanceKm)}
         </p>
       </div>
