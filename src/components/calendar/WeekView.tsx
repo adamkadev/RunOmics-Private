@@ -1,9 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { Check, ChevronRight, X } from 'lucide-react'
+import { Check, ChevronRight, Footprints, X } from 'lucide-react'
 import type { Activity, ActivityType, PlannedWorkout } from '@/domain/activity/types'
-import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
+import { ACTIVITY_TYPE_CONFIG, ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ActivitySheet } from './ActivitySheet'
 import { PlannedWorkoutSheet } from './PlannedWorkoutSheet'
@@ -51,6 +51,9 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
   const planTypeColor = selectedPlan?.type
     ? ACTIVITY_TYPE_CONFIG[selectedPlan.type as ActivityType].dotColor
     : null
+  const PlanIcon = selectedPlan?.type
+    ? ACTIVITY_TYPE_ICONS[selectedPlan.type as ActivityType]
+    : Footprints
 
   return (
     <div className="space-y-3">
@@ -186,7 +189,9 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
 
         {selected.acts.length > 0 ? (
           <div className="space-y-2">
-            {selected.acts.map((a) => (
+            {selected.acts.map((a) => {
+              const ActIcon = ACTIVITY_TYPE_ICONS[a.type]
+              return (
               <button
                 key={a.id}
                 type="button"
@@ -200,9 +205,7 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
                     borderColor: `${ACTIVITY_TYPE_CONFIG[a.type].dotColor}44`,
                   }}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={ACTIVITY_TYPE_CONFIG[a.type].dotColor} strokeWidth="2.2">
-                    <path d="M13 4a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-5 6l2-2 2 1 3-2M7 17l2-3 3 1 2-2" />
-                  </svg>
+                  <ActIcon size={16} strokeWidth={2.2} style={{ color: ACTIVITY_TYPE_CONFIG[a.type].dotColor }} />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-semibold text-foreground">
@@ -214,7 +217,8 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
                 </span>
                 <ChevronRight size={16} className="shrink-0 text-foreground/30" />
               </button>
-            ))}
+              )
+            })}
           </div>
         ) : selectedPlan ? (
           <button
@@ -241,17 +245,12 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
                   : undefined
               }
             >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke={planTypeColor ?? 'currentColor'}
-                strokeWidth="2.2"
+              <PlanIcon
+                size={16}
+                strokeWidth={2.2}
+                style={planTypeColor ? { color: planTypeColor } : undefined}
                 className={!planTypeColor ? 'text-accent' : undefined}
-              >
-                <path d="M13 4a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-5 6l2-2 2 1 3-2M7 17l2-3 3 1 2-2" />
-              </svg>
+              />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block truncate text-sm font-bold text-foreground">

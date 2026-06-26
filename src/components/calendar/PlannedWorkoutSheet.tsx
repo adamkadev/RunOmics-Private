@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import type { ActivityType, PlannedWorkout } from '@/domain/activity/types'
-import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
+import { ACTIVITY_TYPE_CONFIG, ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
 import { useDragToDismiss } from '@/hooks/useDragToDismiss'
 import { t } from '@/i18n'
 
@@ -32,6 +32,7 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
   const typeColor = workout.type
     ? ACTIVITY_TYPE_CONFIG[workout.type as ActivityType].dotColor
     : null
+  const WorkoutIcon = ACTIVITY_TYPE_ICONS[workout.type as ActivityType]
 
   return createPortal(
     <div
@@ -74,9 +75,7 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
               className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
               style={{ background: typeColor ? `${typeColor}1a` : 'rgba(255,255,255,.07)' }}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={typeColor ?? '#9ca3af'} strokeWidth="2.2">
-                <path d="M13 4a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-5 6l2-2 2 1 3-2M7 17l2-3 3 1 2-2" />
-              </svg>
+              <WorkoutIcon size={20} strokeWidth={2.2} style={{ color: typeColor ?? '#9ca3af' }} />
             </span>
             <div className="min-w-0 flex-1">
               <h2 className="text-base font-bold leading-snug text-white">

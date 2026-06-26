@@ -1,21 +1,10 @@
 import Link from 'next/link'
-import { ChevronRight, Zap, Flame, Wind, TrendingUp, Clock, Footprints, Flag } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import { PrBadge } from './PrBadge'
-import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
-import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
+import { ACTIVITY_TYPE_CONFIG, ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
+import type { ActivitySummary } from '@/domain/activity/types'
 import { formatDate, formatDistance, formatDuration, formatClock } from '@/lib/formatters'
 import { t } from '@/i18n'
-
-const TYPE_ICON: Record<ActivityType, LucideIcon> = {
-  Sprint:    Zap,
-  Anaerobic: Flame,
-  VO2Max:    Wind,
-  Threshold: TrendingUp,
-  Tempo:     Clock,
-  Base:      Footprints,
-  Race:      Flag,
-}
 
 interface Props {
   activity: ActivitySummary
@@ -26,7 +15,7 @@ interface Props {
 export function ActivityListCard({ activity: a, prLabels = [] }: Props) {
   const { dotColor } = ACTIVITY_TYPE_CONFIG[a.type]
   const title = a.description || t.activity.runTitle(a.dayOfWeek)
-  const TypeIcon = TYPE_ICON[a.type]
+  const TypeIcon = ACTIVITY_TYPE_ICONS[a.type]
 
   return (
     <Link

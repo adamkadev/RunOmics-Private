@@ -1,3 +1,6 @@
+import { Zap, Flame, Wind, TrendingUp, Clock, Footprints, Flag } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+
 export type ActivityType =
   | 'Sprint'
   | 'Anaerobic'
@@ -178,4 +181,16 @@ export const ACTIVITY_TYPE_CONFIG: Record<
     chartColor: '#f59e0b', // amber-500
     dotColor: '#f59e0b',
   },
+}
+
+// Icon per activity type, shared by the activity list, calendar (week/planned
+// workout) and anywhere else a type needs a glyph - keeps them visually consistent.
+export const ACTIVITY_TYPE_ICONS: Record<ActivityType, LucideIcon> = {
+  Sprint: Zap,
+  Anaerobic: Flame,
+  VO2Max: Wind,
+  Threshold: TrendingUp,
+  Tempo: Clock,
+  Base: Footprints,
+  Race: Flag,
 }
