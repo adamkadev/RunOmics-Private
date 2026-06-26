@@ -33,7 +33,7 @@ export function ThemeSegmented() {
             type="button"
             onClick={() => setTheme(value)}
             className={cn(
-              'flex-1 rounded-full py-1.5 text-xs font-semibold transition-colors',
+              'flex-1 min-h-[44px] rounded-full py-1.5 text-xs font-semibold transition-colors',
               current === value ? 'bg-foreground/[0.14] text-foreground' : 'text-foreground/55'
             )}
           >

@@ -49,7 +49,8 @@ function Toggle({ enabled, busy, disabled: isDisabled, onToggle }: {
       onClick={onToggle}
       disabled={isDisabled || busy}
       className={cn(
-        'relative h-5 w-9 shrink-0 rounded-full transition-colors disabled:opacity-40',
+        'relative h-5 w-9 shrink-0 rounded-full p-0 transition-colors disabled:opacity-40',
+        'after:absolute after:-inset-[10px] after:content-[""]',
         enabled ? 'bg-emerald-500' : 'bg-muted'
       )}
     >
@@ -140,7 +141,7 @@ export function NotificationsForm() {
           const strings = n.types[key]
           const enabled = status === 'enabled' && prefs[key]
           return (
-            <div key={key} className="flex items-center justify-between gap-4">
+            <div key={key} className="flex min-h-[44px] items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-medium text-foreground">{strings.title}</p>
                 <p className="text-xs text-muted-foreground">{strings.subtitle}</p>
