@@ -129,7 +129,9 @@ export function DesignPreview({ activity, design, accent, showMap, photoUrl, onP
         )}
 
         {/* Top accent bar */}
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: barColor, zIndex: 10 }} />
+        {!isMemory && (
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: barColor, zIndex: 10 }} />
+        )}
 
         {/* Extra dark corner behind the badge, so it stays legible on bright (Day) basemaps */}
         {isMapBg && (
