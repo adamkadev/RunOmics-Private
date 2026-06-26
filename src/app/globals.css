@@ -220,6 +220,7 @@
   --accent-subtle:     #fff1f2;
   --accent-text:       #e11d48;
   --ring:              rgb(244 63 94 / 0.35);
+  --destructive:       #dc2626;
 
   --aurora-1:          #fda4af;  /* rose-300  */
   --aurora-2:          #fbcfe8;  /* pink-200  */
@@ -234,6 +235,7 @@
   --accent-subtle:     rgba(244, 63, 94, 0.1);
   --accent-text:       #fb7185;
   --ring:              rgb(251 113 133 / 0.7);
+  --destructive:       #fca5a5;
 
   --aurora-1:          #be185d;  /* pink-700  */
   --aurora-2:          #9d174d;  /* rose-800  */
@@ -248,6 +250,7 @@
   --accent-subtle:     #fff7ed;
   --accent-text:       #ea580c;
   --ring:              rgb(249 115 22 / 0.35);
+  --destructive:       #ef4444;
 
   --aurora-1:          #fdba74;  /* orange-300 */
   --aurora-2:          #fde68a;  /* amber-200  */
@@ -262,6 +265,7 @@
   --accent-subtle:     rgba(249, 115, 22, 0.1);
   --accent-text:       #fb923c;
   --ring:              rgb(251 146 60 / 0.7);
+  --destructive:       #fca5a5;
 
   --aurora-1:          #c2410c;  /* orange-700 */
   --aurora-2:          #b45309;  /* amber-700  */
@@ -296,6 +300,36 @@
 
   --background:        #0d0a1a;
   --canvas:            linear-gradient(155deg, #120f21 0%, #0d0a1a 100%);
+}
+
+[data-accent="silver"] {
+  --accent:            #64748b;
+  --accent-foreground: #ffffff;
+  --accent-subtle:     #f1f5f9;
+  --accent-text:       #475569;
+  --ring:              rgb(100 116 139 / 0.35);
+
+  --aurora-1:          #cbd5e1;
+  --aurora-2:          #e2e8f0;
+
+  --background:        #f8fafc;
+  --canvas:            linear-gradient(155deg, #fafbfc 0%, #f1f5f9 100%);
+}
+
+.dark[data-accent="silver"] {
+  --accent:            #94a3b8;
+  --accent-foreground: #ffffff;
+  --accent-subtle:     rgba(148, 163, 184, 0.1);
+  --accent-text:       #cbd5e1;
+  --ring:              rgb(203 213 225 / 0.5);
+
+  --aurora-1:          #334155;
+  --aurora-2:          #1e293b;
+  --aurora-1-opacity:  0.6;
+  --aurora-2-opacity:  0.5;
+
+  --background:        #080c10;
+  --canvas:            linear-gradient(155deg, #0d1117 0%, #080c10 100%);
 }
 
 [data-page-aurora="goals"] {

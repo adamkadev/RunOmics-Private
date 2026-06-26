@@ -19,11 +19,11 @@ const STATUS_ICON: Record<MonthGoal['status'], { Icon: typeof Check; className: 
   pending:  { Icon: Minus,       className: 'text-subtle/40' },
 }
 
-const MONTH_CELL_TINT: Record<MonthGoal['status'], { bg: string; border: string; bar: string }> = {
-  ahead:    { bg: 'var(--accent-subtle)',          border: 'var(--ring)',               bar: 'var(--accent)' },
+const MONTH_CELL_TINT: Record<MonthGoal['status'], { bg: string; border: string; bar: string; dashed?: boolean }> = {
+  ahead:    { bg: 'rgba(16,185,129,0.06)',         border: 'rgba(16,185,129,0.25)',     bar: 'var(--accent)' },
   on_track: { bg: 'rgba(47,116,224,0.10)',         border: 'rgba(47,116,224,0.28)',     bar: '#7db8ff' },
-  behind:   { bg: 'rgba(229,57,107,0.10)',         border: 'rgba(229,57,107,0.22)',     bar: '#e5396b' },
-  pending:  { bg: '',                              border: '',                           bar: 'rgba(255,255,255,0.08)' },
+  behind:   { bg: 'rgba(229,57,107,0.06)',         border: 'rgba(229,57,107,0.25)',     bar: '#e5396b' },
+  pending:  { bg: '',                              border: '',                           bar: 'rgba(255,255,255,0.08)', dashed: true },
 }
 
 const STATUS_CHIP_BG: Record<GoalProjection['status'], string> = {
@@ -112,7 +112,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
                 <GlassSurface
                   key={mg.month}
                   variant="card"
-                  className="rounded-card-sm p-5"
+                  className={cn('rounded-card-sm p-5', tint.dashed && 'border-dashed')}
                   style={tint.bg ? { background: tint.bg, borderColor: tint.border } : undefined}
                 >
                   <div className="flex items-center justify-between gap-1">

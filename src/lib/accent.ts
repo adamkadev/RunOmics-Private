@@ -1,4 +1,4 @@
-export type AccentId = 'nature' | 'performance' | 'impact' | 'motivation' | 'endurance'
+export type AccentId = 'nature' | 'performance' | 'impact' | 'motivation' | 'endurance' | 'silver'
 
 export const ACCENT_STORAGE_KEY = 'runomics-accent'
 
@@ -11,6 +11,7 @@ export const ACCENT_SWATCHES: Record<AccentId, string> = {
   impact:      '#f43f5e', // rose-500
   motivation:  '#f97316', // orange-500
   endurance:   '#8b5cf6', // violet-500
+  silver:      '#94a3b8', // slate-400
 }
 
 // Darker variant of each accent for use on light backgrounds - the raw swatch above
@@ -21,9 +22,10 @@ export const ACCENT_SWATCHES_LIGHT: Record<AccentId, string> = {
   impact:      '#e11d48',
   motivation:  '#ea580c',
   endurance:   '#7c3aed',
+  silver:      '#475569',
 }
 
-export const ACCENT_IDS: AccentId[] = ['nature', 'performance', 'impact', 'motivation', 'endurance']
+export const ACCENT_IDS: AccentId[] = ['nature', 'performance', 'impact', 'motivation', 'endurance', 'silver']
 
 export function isAccentId(value: string | null): value is AccentId {
   return value !== null && (ACCENT_IDS as string[]).includes(value)
@@ -46,6 +48,7 @@ export function persistAccent(accent: AccentId): void {
     impact: ['#fff1f2', '#130608'],
     motivation: ['#fff7ed', '#130a04'],
     endurance: ['#f5f3ff', '#0d0a1a'],
+    silver: ['#f8fafc', '#080c10'],
   }
   const isDark =
     typeof window !== 'undefined' &&

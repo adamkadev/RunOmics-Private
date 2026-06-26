@@ -51,7 +51,7 @@ function Toggle({ enabled, busy, disabled: isDisabled, onToggle }: {
       className={cn(
         'relative h-5 w-9 shrink-0 rounded-full p-0 transition-colors disabled:opacity-40',
         'after:absolute after:-inset-[10px] after:content-[""]',
-        enabled ? 'bg-emerald-500' : 'bg-muted'
+        enabled ? 'bg-accent' : 'bg-white/[0.12]'
       )}
     >
       <span

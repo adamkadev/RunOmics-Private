@@ -11,6 +11,7 @@ export const ACCENT_TOKENS: Record<AccentId, {
   impact: { barColor: '#e11d48', accentLight: '#e11d48', accentDark: '#f43f5e', accentTextDark: '#fb7185' },
   motivation: { barColor: '#ea580c', accentLight: '#ea580c', accentDark: '#f97316', accentTextDark: '#fdba74' },
   endurance: { barColor: '#7c3aed', accentLight: '#7c3aed', accentDark: '#8b5cf6', accentTextDark: '#c4b5fd' },
+  silver: { barColor: '#475569', accentLight: '#475569', accentDark: '#94a3b8', accentTextDark: '#cbd5e1' },
 }
 
 export interface DesignConfig {

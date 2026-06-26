@@ -4,7 +4,7 @@ import { useState } from 'react'
 import type { Activity } from '@/domain/activity/types'
 import { ActivityMapClient } from './ActivityMapClient'
 import { NoRouteMap } from './ActivityMap'
-import { HrChart } from './HrChart'
+import { HrZoneSection } from './HrZoneSection'
 import { ElevationChart } from './ElevationChart'
 import { PaceChart } from './PaceChart'
 import { CadenceChart } from './CadenceChart'
@@ -106,15 +106,13 @@ export function ActivityDetailClient({ activity }: Props) {
         <MetricGrid metrics={stats} className="grid-cols-4" />
       </GlassSurface>
       {activity.hrSamples && (
-        <>
-          <p className="widget-label text-muted-foreground">{t.activity.charts.sectionPhysiology}</p>
-          <HrChart
-            samples={activity.hrSamples}
-            avgHr={activity.avgHeartRate}
-            distanceKm={activity.distanceKm}
-            onHoverFraction={activity.route ? setHoverFraction : undefined}
-          />
-        </>
+        <HrZoneSection
+          hrSamples={activity.hrSamples}
+          hrZones={activity.hrZones ?? []}
+          avgHr={activity.avgHeartRate}
+          distanceKm={activity.distanceKm}
+          onHoverFraction={activity.route ? setHoverFraction : undefined}
+        />
       )}
       {hasSecondaryCharts && (
         <>

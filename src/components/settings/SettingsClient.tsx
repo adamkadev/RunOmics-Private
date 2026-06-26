@@ -97,10 +97,13 @@ export function SettingsClient() {
 
       <button
         onClick={handleSignOut}
-        className="flex w-full items-center justify-center gap-2 rounded-2xl border border-red-500/20 bg-red-500/[0.08] px-4 py-3.5 text-sm font-semibold text-red-500 transition-colors hover:bg-red-500/[0.12]"
+        className="w-full rounded-card-sm border border-destructive/40 py-4 text-base font-semibold
+                   text-destructive transition-colors hover:bg-destructive/[0.06] active:scale-[0.98]"
       >
-        <LogOut size={16} />
-        {t.settings.auth.signOut}
+        <span className="flex items-center justify-center gap-2">
+          <LogOut size={18} />
+          {t.settings.auth.signOut}
+        </span>
       </button>
     </div>
   )

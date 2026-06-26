@@ -273,7 +273,11 @@ export function AnalyticsClient({
       {/* Tabs */}
       {active && (
         <>
-          <div className="sticky top-[max(env(safe-area-inset-top),8px)] z-10 flex border-b border-border bg-background/80 backdrop-blur-md">
+          <GlassSurface
+            as="div"
+            variant="nav"
+            className="sticky top-[max(env(safe-area-inset-top),8px)] z-10 flex rounded-2xl mb-1"
+          >
             {visibleTabs.map((item) => (
               <button
                 key={item.id}
@@ -291,7 +295,7 @@ export function AnalyticsClient({
                 )}
               </button>
             ))}
-          </div>
+          </GlassSurface>
 
           {/* Content unchanged */}
           {tab === 'volume' && (

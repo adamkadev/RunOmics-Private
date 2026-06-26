@@ -26,6 +26,7 @@ export const en = {
       dashboard: 'Dashboard',
       activities: 'Activities',
       calendar: 'Agenda',
+      explore: 'Explore',
       heatmap: 'Heatmap',
       profile: 'Profile',
       settings: 'Settings',
@@ -131,6 +132,7 @@ export const en = {
         impact:      { label: 'Impact', description: 'Bold finish-line red' },
         motivation:  { label: 'Motivation', description: 'Energetic orange' },
         endurance:   { label: 'Endurance', description: 'Deep ultra violet' },
+        silver:      { label: 'Silver', description: 'Pure data monochrome' },
       },
     },
     auth: {
@@ -215,9 +217,10 @@ export const en = {
     },
     weekLoad: {
       label: (percent: number) => {
-        const delta = percent - 100
-        if (delta === 0) return '= typ.'
-        return `${delta > 0 ? '↑' : '↓'} ${Math.abs(delta)}% vs typ.`
+        if (percent >= 120) return '↑ Heavy week'
+        if (percent >= 90)  return 'Normal week'
+        if (percent >= 60)  return '↓ Light week'
+        return '↓ Very light week'
       },
       level: {
         low: 'Light load',

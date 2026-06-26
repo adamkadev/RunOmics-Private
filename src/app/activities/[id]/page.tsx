@@ -6,7 +6,6 @@ import { getRecords, getPrLabelsByActivityId } from '@/application/usecases/GetR
 import { ActivityTypeTag } from '@/components/activities/ActivityTypeTag'
 import { PrBadge } from '@/components/activities/PrBadge'
 import { ShoePairTag } from '@/components/activities/ShoePairTag'
-import { ZoneBar } from '@/components/activity/ZoneBar'
 import { TrainingEffect } from '@/components/activity/TrainingEffect'
 import { RunningDynamics } from '@/components/activity/RunningDynamics'
 import { ActivityDetailClient } from '@/components/activity/ActivityDetailClient'
@@ -83,7 +82,6 @@ export default async function ActivityDetailPage({
       <ActivityDetailClient activity={activity} />
 
       <div className="space-y-4">
-        <ZoneBar hrZones={activity.hrZones} />
         <KmSplits activity={activity} />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <TrainingEffect aer={activity.aerTrainingEffect} ana={activity.anaTrainingEffect} />

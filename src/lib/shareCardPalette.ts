@@ -63,6 +63,7 @@ const ACCENT_COLORS: Record<AccentId, AccentColors> = {
   impact: { lightAccent: '#f43f5e', lightText: '#e11d48', darkAccent: '#f43f5e', darkText: '#fb7185' },
   motivation: { lightAccent: '#f97316', lightText: '#ea580c', darkAccent: '#f97316', darkText: '#fb923c' },
   endurance: { lightAccent: '#8b5cf6', lightText: '#7c3aed', darkAccent: '#8b5cf6', darkText: '#a78bfa' },
+  silver: { lightAccent: '#64748b', lightText: '#475569', darkAccent: '#94a3b8', darkText: '#cbd5e1' },
 }
 
 export function resolveDesignPalette(design: ShareDesign, accent: AccentId, theme: ThemeMode): DesignPalette {
