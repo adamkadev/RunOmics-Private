@@ -110,7 +110,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   }, [close])
 
   useEffect(() => {
-    const { style } = document.documentElement
+    const { style } = document.body
     const prev = style.overflow
     style.overflow = 'hidden'
     return () => { style.overflow = prev }

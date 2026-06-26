@@ -31,13 +31,15 @@ export function GlassTabBar() {
 
   return (
     <div
-      className="fixed inset-x-0 bottom-3 z-30 px-3 lg:hidden"
-      style={{ marginBottom: 'max(env(safe-area-inset-bottom), 8px)' }}
+      className="fixed inset-x-0 bottom-0 z-30 lg:hidden"
     >
       <GlassSurface
         as="nav"
         variant="nav"
-        className="flex items-center justify-between rounded-full px-3.5 py-3"
+        className="flex items-center justify-between px-4 py-3"
+        style={{
+          borderRadius: '0'
+        }}
       >
         {TABS.map(({ href, label, icon: Icon }) => {
           const active = isActive(pathname, href)
