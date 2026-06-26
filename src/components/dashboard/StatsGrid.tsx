@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatDuration, formatDurationShort } from '@/lib/formatters'
+import { AnimatedDuration } from '@/components/ui/AnimatedDuration'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { Button } from '@/components/ui/Button'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -35,12 +36,16 @@ export function StatsGrid({ weeks, currentStreak, vo2max, weekLoad }: Props) {
       unit: currentWeek.totalDistanceKm ? t.units.km : undefined,
       label: s.distance,
     },
-    { value: formatDurationShort(currentWeek.totalDurationSeconds),
+    { value: currentWeek.totalDurationSeconds
+        ? <AnimatedDuration seconds={currentWeek.totalDurationSeconds} format={formatDurationShort} />
+        : formatDurationShort(0),
       unit: currentWeek.totalDurationSeconds ? t.units.hour : undefined,
       label: s.time,
     },
     {
-      value: currentWeek.avgPaceSecPerKm ? formatDuration(currentWeek.avgPaceSecPerKm) : s.empty,
+      value: currentWeek.avgPaceSecPerKm
+        ? <AnimatedDuration seconds={currentWeek.avgPaceSecPerKm} format={formatDuration} />
+        : s.empty,
       unit: currentWeek.avgPaceSecPerKm ? '/' + t.units.km : undefined,
       label: s.avgPace,
     },

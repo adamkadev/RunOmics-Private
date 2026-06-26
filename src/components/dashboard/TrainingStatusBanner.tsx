@@ -1,11 +1,15 @@
+'use client'
+
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { TrainingStatus, TrainingStatusType, LoadTrend } from '@/application/usecases/GetTrainingStatus'
+import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { StatusPill, type StatusTone } from '@/components/ui/StatusPill'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { STATUS } from '@/lib/statusColors'
+import { useCountUp } from '@/lib/useCountUp'
 
 const STATUS_STYLE: Record<TrainingStatusType, { dot: string; badge: string; text: string; tooltip: string }> = {
   productive: {
@@ -51,7 +55,8 @@ const BAR_MAX_CTL = 100
 const BAR_MAX_TSB = 25
 
 function CtlAtlBar({ value, colorClass }: { value: number; colorClass: string }) {
-  const pct = Math.min(Math.max(value / BAR_MAX_CTL, 0), 1) * 100
+  const animatedValue = useCountUp(value)
+  const pct = Math.min(Math.max(animatedValue / BAR_MAX_CTL, 0), 1) * 100
   return (
     <div className="h-2 w-full rounded-full bg-foreground/10">
       <div className={cn('h-full rounded-full', colorClass)} style={{ width: `${pct}%` }} />
@@ -60,7 +65,8 @@ function CtlAtlBar({ value, colorClass }: { value: number; colorClass: string })
 }
 
 function TsbBar({ value }: { value: number }) {
-  const clamped = Math.max(-BAR_MAX_TSB, Math.min(BAR_MAX_TSB, value))
+  const animatedValue = useCountUp(value)
+  const clamped = Math.max(-BAR_MAX_TSB, Math.min(BAR_MAX_TSB, animatedValue))
   const halfPct = Math.abs(clamped / BAR_MAX_TSB) * 50
   const isPositive = value >= 0
   return (
@@ -89,7 +95,7 @@ function SecondaryMetric({
   tooltipSurface,
 }: {
   label: string
-  value: string
+  value: ReactNode
   bar: ReactNode
   tooltipContent: string
   tooltipSurface: string
@@ -112,7 +118,8 @@ export function TrainingStatusBanner({ status }: { status: TrainingStatus }) {
   const style = STATUS_STYLE[status.status]
 
   const tsbSign = status.tsb >= 0 ? '+' : ''
-  const formValue = `${tsbSign}${status.tsb}`
+  const animatedTsb = useCountUp(status.tsb)
+  const formValue = `${tsbSign}${Math.round(animatedTsb)}`
   const isNegativeTsb = status.tsb < 0
   const formValueClass = isNegativeTsb ? STATUS.warning.text : STATUS.success.text
   const heroBox = isNegativeTsb
@@ -160,14 +167,14 @@ export function TrainingStatusBanner({ status }: { status: TrainingStatus }) {
         <div className="grid grid-cols-2 gap-3">
           <SecondaryMetric
             label={s.metrics.fitness}
-            value={String(status.ctl)}
+            value={<AnimatedValue value={status.ctl} />}
             tooltipContent={s.metrics.fitnessTooltip}
             tooltipSurface={style.tooltip}
             bar={<CtlAtlBar value={status.ctl} colorClass="bg-blue-500" />}
           />
           <SecondaryMetric
             label={s.metrics.fatigue}
-            value={String(status.atl)}
+            value={<AnimatedValue value={status.atl} />}
             tooltipContent={s.metrics.fatigueTooltip}
             tooltipSurface={style.tooltip}
             bar={<CtlAtlBar value={status.atl} colorClass="bg-amber-500" />}

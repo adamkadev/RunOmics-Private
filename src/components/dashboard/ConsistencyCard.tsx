@@ -1,9 +1,13 @@
+'use client'
+
 import { RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { ConsistencyScore, ConsistencyRating } from '@/application/usecases/GetConsistencyScore'
+import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { StatusPill, type StatusTone } from '@/components/ui/StatusPill'
 import { STATUS } from '@/lib/statusColors'
+import { useCountUp } from '@/lib/useCountUp'
 import { t } from '@/i18n'
 
 const RATING_STYLE: Record<ConsistencyRating, { tone: StatusTone; text: string }> = {
@@ -28,7 +32,8 @@ function scoreGrade(score: number): string {
 
 // Decorative progress ring; the score is already conveyed as text, so it's hidden from a11y tree.
 function ConsistencyRing({ score }: { score: number }) {
-  const offset = RING_CIRCUMFERENCE * (1 - Math.min(score, 100) / 100)
+  const animatedScore = useCountUp(score)
+  const offset = RING_CIRCUMFERENCE * (1 - Math.min(animatedScore, 100) / 100)
   const grade = scoreGrade(score)
   return (
     <div className="relative h-[72px] w-[72px] flex-shrink-0">
@@ -81,7 +86,7 @@ export function ConsistencyCard({ data }: { data: ConsistencyScore }) {
       <div className="flex items-center justify-between">
         <div className="flex flex-col">
           <span className={cn('text-3xl font-bold tabular-nums', style.text)}>
-            {data.score}
+            <AnimatedValue value={data.score} />
             <span className="ml-0.5 text-base font-normal text-muted-foreground">/100</span>
           </span>
           <div className="mt-1.5 flex items-center gap-1.5">
