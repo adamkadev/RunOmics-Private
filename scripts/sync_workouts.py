@@ -117,6 +117,7 @@ def _collect_scheduled(
         months.append((cur.year, cur.month))
         cur = (cur + timedelta(days=32)).replace(day=1)
 
+    seen: set[tuple[str, str]] = set()
     scheduled: list[tuple[str, str]] = []
     for year, month in months:
         try:
