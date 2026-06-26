@@ -6,6 +6,7 @@ import { Trophy } from 'lucide-react'
 import type { RecordEntry, TopEfforts } from '@/application/usecases/GetRecords'
 import { formatDuration, formatDistance, formatPace } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
+import { STATUS } from '@/lib/statusColors'
 import { Badge } from '@/components/ui/Card'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { Pill } from '@/components/ui/Pill'
@@ -27,9 +28,9 @@ function shortDate(iso: string): string {
 }
 
 function rankClass(i: number): string {
-  if (i === 0) return 'font-bold text-amber-500 dark:text-amber-400'
-  if (i === 1) return 'font-bold text-slate-400 dark:text-slate-300'
-  if (i === 2) return 'font-bold text-amber-700 dark:text-amber-600'
+  if (i === 0) return cn('font-bold', STATUS.gold.text)
+  if (i === 1) return cn('font-bold', STATUS.silver.text)
+  if (i === 2) return cn('font-bold', STATUS.bronze.text)
   return 'text-subtle'
 }
 
@@ -104,7 +105,7 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null }
                       {r.official && <span className="text-base text-amber-500">★</span>}
                     </div>
                   </div>
-                  <p className="text-title1 font-extrabold tracking-tight text-foreground">
+                  <p className="truncate text-title1 font-extrabold tracking-tight text-foreground">
                     {mainStat}
                   </p>
                   <p className="mt-1 text-xs font-medium text-subtle">
