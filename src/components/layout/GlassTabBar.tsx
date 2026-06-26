@@ -37,6 +37,7 @@ export function GlassTabBar() {
         as="nav"
         variant="nav"
         className="flex items-center justify-between rounded-none px-4 pt-3"
+        style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0.75rem)' }}
       >
         {TABS.map(({ href, label, icon: Icon }) => {
           const active = isActive(pathname, href)
