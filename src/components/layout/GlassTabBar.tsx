@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Activity, CalendarDays, BarChart2, MoreHorizontal } from 'lucide-react'
+import { LayoutDashboard, Activity, CalendarDays, User, MoreHorizontal } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -11,7 +11,7 @@ const TABS = [
   { href: '/', label: t.nav.items.dashboard, icon: LayoutDashboard },
   { href: '/activities', label: t.nav.items.activities, icon: Activity },
   { href: '/calendar', label: t.nav.items.calendar, icon: CalendarDays },
-  { href: '/analytics', label: t.nav.items.analytics, icon: BarChart2 },
+  { href: '/profile', label: t.nav.items.profile, icon: User },
 ] as const
 
 function isActive(pathname: string, href: string): boolean {
@@ -23,7 +23,8 @@ const tabClass = 'flex flex-1 flex-col items-center gap-1 py-1 transition-colors
 /**
  * Persistent floating glass tab bar (mobile only). Replaces the burger-only
  * navigation: the four primary destinations are one tap away, and "More"
- * opens the full drawer for the remaining routes (goals, records, etc.).
+ * opens the full drawer for the remaining routes. Goals/Records/Shoes are
+ * intentionally not in either - they're one tap away from Profile instead.
  */
 export function GlassTabBar({ onMore, moreOpen }: { onMore: () => void; moreOpen: boolean }) {
   const pathname = usePathname()

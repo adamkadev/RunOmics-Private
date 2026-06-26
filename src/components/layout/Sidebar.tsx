@@ -7,14 +7,11 @@ import {
   LayoutDashboard,
   Activity,
   CalendarDays,
-  BarChart2,
-  Trophy,
-  Target,
   Map,
-  Footprints,
   ChevronRight,
   Settings,
   User,
+  type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -30,21 +27,16 @@ const NAV_ITEMS = [
   { href: '/', label: t.nav.items.dashboard, icon: LayoutDashboard },
   { href: '/activities', label: t.nav.items.activities, icon: Activity },
   { href: '/calendar', label: t.nav.items.calendar, icon: CalendarDays },
-  { href: '/analytics', label: t.nav.items.analytics, icon: BarChart2 },
-  { href: '/goals', label: t.nav.items.goals, icon: Target },
-  { href: '/records', label: t.nav.items.records, icon: Trophy },
   { href: '/map', label: t.nav.items.heatmap, icon: Map },
-  { href: '/shoes', label: t.nav.items.shoes, icon: Footprints },
   { href: '/profile', label: t.nav.items.profile, icon: User },
 ]
 
 // Mobile "More" bottom sheet: only the routes not already one tap away on
-// the persistent GlassTabBar (dashboard/activities/calendar/analytics).
+// the persistent GlassTabBar (dashboard/activities/calendar/profile).
+// Analytics/Goals/Records/Shoes are intentionally absent from both - they're
+// reached contextually from Dashboard/Profile instead of the primary nav.
 const MORE_PRIMARY_ITEMS = [
-  { href: '/goals', label: t.nav.items.goals, icon: Target },
-  { href: '/records', label: t.nav.items.records, icon: Trophy },
   { href: '/map', label: t.nav.items.heatmap, icon: Map },
-  { href: '/shoes', label: t.nav.items.shoes, icon: Footprints },
 ]
 const MORE_SECONDARY_ITEMS = [
   { href: '/settings', label: t.nav.items.settings, icon: Settings },
@@ -95,7 +87,7 @@ function MoreMenuItem({
 }: {
   href: string
   label: string
-  icon: typeof Target
+  icon: LucideIcon
   onNavigate: () => void
 }) {
   return (
@@ -207,13 +199,6 @@ export function Sidebar() {
         >
           <div className="relative flex h-14 items-center justify-center px-4">
             <Brand />
-            <Link
-              href="/profile"
-              className="absolute right-4 flex h-8 w-8 items-center justify-center rounded-full bg-foreground/10 text-muted-foreground transition-colors active:scale-90"
-              aria-label={t.nav.items.profile}
-            >
-              <User size={16} />
-            </Link>
           </div>
         </header>
       )}

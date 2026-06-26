@@ -26,11 +26,7 @@ export const en = {
       dashboard: 'Dashboard',
       activities: 'Activities',
       calendar: 'Agenda',
-      analytics: 'Analytics',
-      goals: 'Goals',
-      records: 'Records',
       heatmap: 'Heatmap',
-      shoes: 'Shoes',
       profile: 'Profile',
       settings: 'Settings',
       more: 'More',
@@ -252,6 +248,7 @@ export const en = {
     trainingMix: {
       title: 'Training Mix',
     },
+    viewAnalytics: 'View full analytics',
     trainingLoad: {
       title: 'Training Load',
       window: '· last 90 days',
