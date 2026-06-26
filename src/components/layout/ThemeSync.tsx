@@ -2,12 +2,7 @@
 
 import { useEffect } from 'react'
 import { useTheme } from 'next-themes'
-import { ACCENT_STORAGE_KEY, DEFAULT_ACCENT, isAccentId, type AccentId } from '@/lib/accent'
-
-function readAccent(): AccentId {
-  const stored = localStorage.getItem(ACCENT_STORAGE_KEY)
-  return isAccentId(stored) ? stored : DEFAULT_ACCENT
-}
+import { ACCENT_STORAGE_KEY, DEFAULT_ACCENT, isAccentId } from '@/lib/accent'
 
 // Next.js's static viewport.themeColor (if configured with a `media` array) injects one
 // <meta name="theme-color"> per query - browsers honor whichever matches and silently
@@ -28,36 +23,17 @@ function applyMetaThemeColor(color: string) {
   primary.content = color
 }
 
-function applyAccentIcons(accent: AccentId) {
-  const suffix = accent === DEFAULT_ACCENT ? '' : `-${accent}`
-
-  const apple = document.querySelector<HTMLLinkElement>('link[rel="apple-touch-icon"]')
-  if (apple) apple.href = `/icons/apple-touch-icon-180${suffix}.png`
-
-  let favicon192 = document.querySelector<HTMLLinkElement>('link[rel="icon"][sizes="192x192"]')
-  if (!favicon192) {
-    favicon192 = document.createElement('link')
-    favicon192.rel = 'icon'
-    favicon192.type = 'image/png'
-    favicon192.setAttribute('sizes', '192x192')
-    document.head.appendChild(favicon192)
-  }
-  favicon192.href = `/icons/icon-192${suffix}.png`
-}
-
 export function ThemeSync() {
   const { resolvedTheme } = useTheme()
 
   useEffect(() => {
     function sync() {
-      const accent = readAccent()
       const style = getComputedStyle(document.documentElement)
       const bg = style.getPropertyValue('--background').trim()
 
       document.documentElement.style.backgroundColor = bg
       document.body.style.backgroundColor = bg
       applyMetaThemeColor(bg)
-      applyAccentIcons(accent)
     }
 
     sync()
