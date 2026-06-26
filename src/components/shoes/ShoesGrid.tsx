@@ -56,7 +56,7 @@ function ShoeCard({ shoe }: { shoe: ShoeStats }) {
         <div>
           <div className="flex items-center gap-2">
             <BrandIcon brand={shoe.brand} size={16} />
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{shoe.brand}</p>
+            <p className="widget-label text-muted-foreground">{shoe.brand}</p>
             {alertBadge && <Badge className={alertBadge.className}>{alertBadge.label}</Badge>}
           </div>
           <h3 className="text-base font-bold text-foreground">{shoe.name}</h3>
@@ -86,13 +86,9 @@ function ShoeCard({ shoe }: { shoe: ShoeStats }) {
               style={{ width: `${shoe.wearPercent}%` }}
             />
           </div>
-          <div className="mt-2.5 grid grid-cols-3 gap-1 text-xs text-subtle">
-            <span>{Math.round(shoe.totalKm)} / {shoe.maxKm} km</span>
-            <span className="text-center">{t.common.sessions(shoe.sessionCount)}</span>
-            <span className="text-right">
-              {shoe.lastUsedDate ? formatShoeDate(shoe.lastUsedDate) : '-'}
-            </span>
-          </div>
+          <p className="mt-2.5 text-xs text-subtle">
+            {Math.round(shoe.totalKm)} / {shoe.maxKm} km · {t.common.sessions(shoe.sessionCount)} · {shoe.lastUsedDate ? formatShoeDate(shoe.lastUsedDate) : '-'}
+          </p>
         </>
       )}
     </div>
