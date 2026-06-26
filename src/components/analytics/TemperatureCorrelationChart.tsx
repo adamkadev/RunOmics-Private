@@ -2,7 +2,7 @@
 
 import { ComposedChart, Scatter, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import type { TemperaturePoint } from '@/application/usecases/GetAnalyticsData'
-import { CHART_COLORS } from '@/lib/colors'
+import { CHART_COLORS, tempBandColor } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { ChartExplain } from '@/components/ui/ChartExplain'
 import { formatPace } from '@/lib/formatters'
@@ -20,18 +20,10 @@ function linearRegression(pts: { x: number; y: number }[]): { slope: number; int
   return { slope: ssXY / ssXX, intercept: meanY - (ssXY / ssXX) * meanX }
 }
 
-function tempColor(c: number): string {
-  if (c < 10) return '#60a5fa' // blue-400
-  if (c < 18) return '#34d399' // emerald-400
-  if (c < 24) return '#fbbf24' // amber-400
-  if (c < 30) return '#f97316' // orange-500
-  return '#ef4444'             // red-500
-}
-
 function CustomDot(props: Record<string, unknown>) {
   const { cx, cy, payload } = props as { cx?: number; cy?: number; payload?: TemperaturePoint }
   if (cx == null || cy == null || payload == null) return null
-  return <circle cx={cx} cy={cy} r={4} fill={tempColor(payload.temp)} fillOpacity={0.65} stroke="none" />
+  return <circle cx={cx} cy={cy} r={4} fill={tempBandColor(payload.temp)} fillOpacity={0.65} stroke="none" />
 }
 
 function CustomTooltip({ active, payload }: {
@@ -44,7 +36,7 @@ function CustomTooltip({ active, payload }: {
   const tc = t.analytics.charts.temperatureCorrelation.tooltip
   return (
     <TooltipCard label={label}>
-      <TooltipRow name={tc.temp} value={`${d.temp}°C`} color={tempColor(d.temp)} />
+      <TooltipRow name={tc.temp} value={`${d.temp}°C`} color={tempBandColor(d.temp)} />
       <TooltipRow name={tc.pace} value={formatPace(d.pace)} color={CHART_COLORS.pace} />
       <TooltipRow name={tc.distance} value={`${d.km} km`} />
     </TooltipCard>

@@ -33,7 +33,7 @@ export function YearSelector({
   const activePeriodOption = periods?.find((p) => p.weeks === activePeriod)
 
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="flex gap-2 overflow-x-auto pb-1 pr-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {years.map((y) => (
         <Pill
           key={y}

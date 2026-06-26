@@ -4,7 +4,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { formatDuration } from '@/lib/formatters'
 import type { ZoneShare } from '@/application/usecases/GetAnalyticsData'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
-import { ZONE_COLORS } from '@/lib/colors'
+import { CHART_COLORS, ZONE_COLORS } from '@/lib/colors'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
@@ -57,7 +57,7 @@ export function ZoneDistributionChart({ data }: Props) {
               isAnimationActive={false}
             >
               {data.map((z) => (
-                <Cell key={z.zone} fill={ZONE_COLORS[z.zone] ?? '#9ca3af'} />
+                <Cell key={z.zone} fill={ZONE_COLORS[z.zone] ?? CHART_COLORS.axisTick} />
               ))}
             </Pie>
             <Tooltip content={<CustomTooltip />} />

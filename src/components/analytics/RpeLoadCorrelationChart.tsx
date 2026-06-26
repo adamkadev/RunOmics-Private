@@ -2,13 +2,11 @@
 
 import { ComposedChart, Scatter, Line, ReferenceLine, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import type { RpeLoadPoint } from '@/application/usecases/GetAnalyticsData'
-import { CHART_COLORS } from '@/lib/colors'
+import { CHART_COLORS, tempBandColor } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { ChartExplain } from '@/components/ui/ChartExplain'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
-
-const NEUTRAL_DOT = '#9ca3af' // gray-400, used when temperature is unknown
 
 function linearRegression(pts: { x: number; y: number }[]): { slope: number; intercept: number } | null {
   const n = pts.length
@@ -21,18 +19,10 @@ function linearRegression(pts: { x: number; y: number }[]): { slope: number; int
   return { slope: ssXY / ssXX, intercept: meanY - (ssXY / ssXX) * meanX }
 }
 
-function tempColor(c: number): string {
-  if (c < 10) return '#60a5fa' // blue-400
-  if (c < 18) return '#34d399' // emerald-400
-  if (c < 24) return '#fbbf24' // amber-400
-  if (c < 30) return '#f97316' // orange-500
-  return '#ef4444'             // red-500
-}
-
 function CustomDot(props: Record<string, unknown>) {
   const { cx, cy, payload } = props as { cx?: number; cy?: number; payload?: RpeLoadPoint }
   if (cx == null || cy == null || payload == null) return null
-  const fill = payload.temp !== null ? tempColor(payload.temp) : NEUTRAL_DOT
+  const fill = payload.temp !== null ? tempBandColor(payload.temp) : CHART_COLORS.axisTick
   return <circle cx={cx} cy={cy} r={4} fill={fill} fillOpacity={0.65} stroke="none" />
 }
 
@@ -49,7 +39,7 @@ function CustomTooltip({ active, payload }: {
       <TooltipRow name={tc.form} value={d.tsb} color={CHART_COLORS.tsb} />
       <TooltipRow name={tc.rpe} value={d.rpe} />
       <TooltipRow name={tc.delta} value={d.rpeDelta > 0 ? `+${d.rpeDelta}` : d.rpeDelta} />
-      {d.temp !== null && <TooltipRow name={tc.temp} value={`${d.temp}°C`} color={tempColor(d.temp)} />}
+      {d.temp !== null && <TooltipRow name={tc.temp} value={`${d.temp}°C`} color={tempBandColor(d.temp)} />}
     </TooltipCard>
   )
 }

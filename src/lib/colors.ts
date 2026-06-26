@@ -69,3 +69,21 @@ export function temperatureIconColor(celsius: number): string {
   if (celsius < 30) return 'text-orange-500 dark:text-orange-400'
   return 'text-red-500 dark:text-red-400'
 }
+
+// Temperature band hex colors for Recharts scatter dots (cold=blue -> hot=red)
+// These represent physical reality and are intentionally accent-independent.
+export const TEMP_BAND_COLORS = {
+  cold:      '#60a5fa', // blue-400  (< 10 °C)
+  cool:      '#34d399', // emerald-400 (10-18 °C)
+  mild:      '#fbbf24', // amber-400  (18-24 °C)
+  warm:      '#f97316', // orange-500 (24-30 °C)
+  hot:       '#ef4444', // red-500    (>= 30 °C)
+} as const
+
+export function tempBandColor(celsius: number): string {
+  if (celsius < 10) return TEMP_BAND_COLORS.cold
+  if (celsius < 18) return TEMP_BAND_COLORS.cool
+  if (celsius < 24) return TEMP_BAND_COLORS.mild
+  if (celsius < 30) return TEMP_BAND_COLORS.warm
+  return TEMP_BAND_COLORS.hot
+}
