@@ -12,7 +12,10 @@ export function useScrollDirection(): boolean {
 
   useEffect(() => {
     let lastY = window.scrollY
-    function onScroll() {
+    let ticking = false
+
+    function update() {
+      ticking = false
       const y = window.scrollY
       const goingDown = y > lastY
       lastY = y
@@ -27,6 +30,13 @@ export function useScrollDirection(): boolean {
         setHidden(false)
       }
     }
+
+    function onScroll() {
+      if (ticking) return
+      ticking = true
+      requestAnimationFrame(update)
+    }
+
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
