@@ -282,7 +282,7 @@ export function ActivityListClient({
         <div className="space-y-4">
           {groups.map((g) => (
             <div key={g.key}>
-              <div className="sticky z-10 flex items-center justify-between px-1 py-2" style={{ top: headerHeight + 16 }}>
+              <div className="z-10 flex items-center justify-between px-1 py-2" style={{ top: headerHeight + 16 }}>
                 <span className="font-mono text-footnote font-bold tracking-wide text-muted-foreground/80">
                   {g.label}
                 </span>
