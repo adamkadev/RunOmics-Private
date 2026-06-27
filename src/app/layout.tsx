@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import Script from 'next/script'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import './globals.css'
 import { Providers } from './providers'
 import { AppShell } from '@/components/layout/AppShell'
@@ -72,6 +73,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           <AppShell>{children}</AppShell>
         </Providers>
+        <SpeedInsights />
       </body>
     </html>
   )
