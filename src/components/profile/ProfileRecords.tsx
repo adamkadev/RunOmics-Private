@@ -35,8 +35,8 @@ export function ProfileRecords({ records }: { records: RecordEntry[] }) {
                   {r.date ? formatDateWithYear(r.date) : t.profile.records.notYet}
                 </span>
                 {recent && (
-                  <span className="rounded-[4px] border border-amber-500/25 bg-amber-500/[0.14] px-[5px] py-px text-micro font-bold text-amber-600 dark:text-amber-400">
-                    {t.activity.bestEfforts.prBadge}
+                  <span className="rounded-[4px] border border-emerald-500/25 bg-emerald-500/[0.14] px-[5px] py-px text-micro font-bold text-emerald-600 dark:text-emerald-400">
+                    {t.profile.records.newBadge}
                   </span>
                 )}
               </div>
@@ -44,6 +44,7 @@ export function ProfileRecords({ records }: { records: RecordEntry[] }) {
           )
         })}
       </div>
+      <p className="mt-2 text-micro text-muted-foreground">{t.profile.records.legend}</p>
       <Link
         href="/records"
         className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-accent-text active:scale-95"

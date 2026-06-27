@@ -772,7 +772,7 @@ export const en = {
       notYet: 'Not yet',
       viewAll: 'View all records',
       newBadge: 'NEW',
-      legend: '🏅 current record · NEW = set in the last 90 days',
+      legend: 'NEW = set in the last 90 days',
     },
     shoes: {
       title: 'Shoes',
