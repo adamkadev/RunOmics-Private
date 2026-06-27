@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Search, X, SearchX } from 'lucide-react'
+import Link from 'next/link'
+import { Search, X, SearchX, Map } from 'lucide-react'
 import { ActivityListCard } from './ActivityListCard'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
@@ -247,6 +248,13 @@ export function ActivityListClient({
 
       {/* Secondary controls: sort - not in the visual spec, kept from the existing feature set */}
       <div className="flex items-center justify-end gap-2">
+        <Link
+          href="/map"
+          className="flex items-center gap-1 rounded-control border border-foreground/[0.12] bg-foreground/[0.06] px-2.5 py-1 text-xs font-medium text-foreground/70 transition-colors hover:bg-foreground/[0.10]"
+        >
+          <Map size={12} />
+          {t.nav.items.heatmap}
+        </Link>
         <SortDropdown
           options={SORT_OPTIONS}
           sortBy={sortBy}

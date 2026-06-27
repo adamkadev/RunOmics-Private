@@ -91,7 +91,7 @@ export const en = {
     },
     map: {
       title: 'Running Heatmap',
-      back: 'Dashboard',
+      back: 'Activities',
       routes: (n: number) => `${n} routes`,
       zones: 'Zones',
       allYears: 'All years',
@@ -341,7 +341,6 @@ export const en = {
       performance: 'Performance',
       physiology: 'Physiology',
       seasons: 'Seasons',
-      map: 'Map',
     },
     stats: {
       distance: 'Distance',

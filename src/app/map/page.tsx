@@ -25,7 +25,7 @@ export default function MapPage() {
 
   return (
     <div className="flex h-[calc(100dvh-7rem-max(env(safe-area-inset-top),12px))] flex-col gap-3 lg:h-[calc(100dvh-2rem)]">
-      <BackButton label={t.pages.map.back} fallbackHref="/" />
+      <BackButton label={t.pages.map.back} fallbackHref="/activities" />
 
       <div className="flex flex-wrap items-center gap-4 px-1">
         <div className="flex items-center gap-2">
