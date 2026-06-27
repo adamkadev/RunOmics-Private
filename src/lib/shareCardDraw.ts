@@ -76,16 +76,42 @@ function drawCover(ctx: Ctx, img: HTMLImageElement, x: number, y: number, w: num
   ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h)
 }
 
+// Route points are [lng, lat] (Garmin/GeoJSON order). Apply cosine correction so
+// the projection is isometric despite varying latitude.
 function projectGPS(coords: [number, number][], W: number, H: number): [number, number][] {
-  const lats = coords.map(c => c[0])
-  const lngs = coords.map(c => c[1])
-  const minLng = Math.min(...lngs), maxLng = Math.max(...lngs)
-  const minLat = Math.min(...lats), maxLat = Math.max(...lats)
+  const lngs = coords.map(([lng]) => lng)
+  const lats = coords.map(([, lat]) => lat)
+  const avgLat = lats.reduce((s, v) => s + v, 0) / lats.length
+  const cos = Math.cos((avgLat * Math.PI) / 180)
+  const xs = lngs.map(lng => lng * cos)
+  const ys = lats.map(lat => -lat)
+  const minX = Math.min(...xs), maxX = Math.max(...xs)
+  const minY = Math.min(...ys), maxY = Math.max(...ys)
   const pad = 0.14
-  return coords.map(([lat, lng]) => [
-    W * (pad + (1 - 2 * pad) * (lng - minLng) / (maxLng - minLng || 1)),
-    H * (pad + (1 - 2 * pad) * (1 - (lat - minLat) / (maxLat - minLat || 1))),
-  ])
+  const scaleX = W * (1 - 2 * pad) / (maxX - minX || 1)
+  const scaleY = H * (1 - 2 * pad) / (maxY - minY || 1)
+  const scale = Math.min(scaleX, scaleY)
+  const ox = W / 2 - ((minX + maxX) / 2) * scale
+  const oy = H / 2 - ((minY + maxY) / 2) * scale
+  return coords.map(([lng, lat]) => [lng * cos * scale + ox, -lat * scale + oy])
+}
+
+function projectRouteToBox(
+  route: [number, number][],
+  cx: number, cy: number,
+  size: number,
+): [number, number][] {
+  const avgLat = route.reduce((s, [, lat]) => s + lat, 0) / route.length
+  const cos = Math.cos((avgLat * Math.PI) / 180)
+  const xs = route.map(([lng]) => lng * cos)
+  const ys = route.map(([, lat]) => -lat)
+  const minX = Math.min(...xs), maxX = Math.max(...xs)
+  const minY = Math.min(...ys), maxY = Math.max(...ys)
+  const span = Math.max(maxX - minX, maxY - minY) || 1
+  const scale = size / span
+  const ox = cx - ((minX + maxX) / 2) * scale
+  const oy = cy - ((minY + maxY) / 2) * scale
+  return route.map(([lng, lat]) => [lng * cos * scale + ox, -lat * scale + oy])
 }
 
 // ── Theme background functions (ported from DC HTML) ────────────────────────
@@ -286,6 +312,45 @@ export function draw_memory(ctx: Ctx, W: number, H: number, r: number, g: number
   ctx.fillStyle = pan; ctx.fillRect(0, panY, W, H - panY)
   ctx.beginPath(); ctx.moveTo(0, panY); ctx.lineTo(W, panY)
   ctx.strokeStyle = dark ? 'rgba(255,255,255,.24)' : 'rgba(255,255,255,.92)'; ctx.lineWidth = 1.5; ctx.stroke()
+}
+
+// ── GPS route overlay (any design) ──────────────────────────────────────────
+
+export function drawRouteOverlay(
+  ctx: Ctx,
+  W: number,
+  H: number,
+  route: [number, number][],
+  r: number, g: number, b: number,
+  dark: boolean,
+  hasStats: boolean,
+) {
+  const size = W * 0.58
+  const cx = W / 2
+  const cy = hasStats ? H * 0.42 : H * 0.5
+  const pts = projectRouteToBox(route, cx, cy, size)
+
+  ctx.save()
+  ctx.filter = `blur(14px)`
+  ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1])
+  pts.forEach(([px, py]) => ctx.lineTo(px, py))
+  ctx.strokeStyle = `rgba(${r},${g},${b},${dark ? 0.65 : 0.4})`
+  ctx.lineWidth = 16; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke()
+  ctx.restore()
+
+  ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1])
+  pts.forEach(([px, py]) => ctx.lineTo(px, py))
+  ctx.strokeStyle = `rgba(${r},${g},${b},${dark ? 0.92 : 0.78})`
+  ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke()
+
+  ctx.beginPath(); ctx.arc(pts[0][0], pts[0][1], 5.5, 0, Math.PI * 2)
+  ctx.fillStyle = '#22c55e'; ctx.fill()
+  ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 1.5; ctx.stroke()
+
+  const last = pts[pts.length - 1]
+  ctx.beginPath(); ctx.arc(last[0], last[1], 5.5, 0, Math.PI * 2)
+  ctx.fillStyle = `rgb(${r},${g},${b})`; ctx.fill()
+  ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 1.5; ctx.stroke()
 }
 
 // ── Branding (Zone B) ────────────────────────────────────────────────────────

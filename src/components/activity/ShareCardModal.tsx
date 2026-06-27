@@ -34,16 +34,18 @@ interface ToggleProps {
   on: boolean
   onChange: (v: boolean) => void
   accentHex: string
+  disabled?: boolean
 }
 
-function Toggle({ on, onChange, accentHex }: ToggleProps) {
+function Toggle({ on, onChange, accentHex, disabled }: ToggleProps) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={on}
+      disabled={disabled}
       onClick={() => onChange(!on)}
-      className="relative ml-4 h-[31px] w-[51px] shrink-0 rounded-full transition-colors duration-200"
+      className="relative ml-4 h-[31px] w-[51px] shrink-0 rounded-full transition-colors duration-200 disabled:opacity-40"
       style={{ background: on ? accentHex : 'rgba(120,120,128,0.22)' }}
     >
       <span
@@ -74,6 +76,9 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   const [showStats, setShowStats] = useState(
     () => readLocalStorage('ro_shareStats', 'true') !== 'false'
   )
+  const [showMap, setShowMap] = useState(
+    () => readLocalStorage('ro_shareMap', 'true') !== 'false'
+  )
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [photoImage, setPhotoImage] = useState<HTMLImageElement | null>(null)
   const [copyState, setCopyState] = useState<'idle' | 'copied'>('idle')
@@ -90,6 +95,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   // Persist preferences
   useEffect(() => { try { localStorage.setItem('ro_shareTheme', selectedDesign) } catch { /* noop */ } }, [selectedDesign])
   useEffect(() => { try { localStorage.setItem('ro_shareStats', String(showStats)) } catch { /* noop */ } }, [showStats])
+  useEffect(() => { try { localStorage.setItem('ro_shareMap', String(showMap)) } catch { /* noop */ } }, [showMap])
 
   // Escape key
   useEffect(() => {
@@ -110,31 +116,27 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     if (photoUrlRef.current) URL.revokeObjectURL(photoUrlRef.current)
   }, [])
 
-  // Redraw export canvas whenever options change
-  const redraw = useCallback(() => {
+  const renderOptions = useCallback(() => ({
+    activity,
+    design: selectedDesign,
+    accent,
+    theme,
+    showStats,
+    showMap,
+    photoImage,
+    gpsRoute: activity.route,
+  }), [activity, selectedDesign, accent, theme, showStats, showMap, photoImage])
+
+  // Redraw preview canvas whenever options change
+  useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-    renderShareCard(canvas, {
-      activity,
-      design: selectedDesign,
-      accent,
-      theme,
-      showStats,
-      photoImage,
-      gpsRoute: activity.route,
-    })
-  }, [activity, selectedDesign, accent, theme, showStats, photoImage])
-
-  useEffect(() => { redraw() }, [redraw])
+    renderShareCard(canvas, renderOptions())
+  }, [renderOptions])
 
   function selectDesign(d: ShareDesign) {
     setSelectedDesign(d)
     if (d === 'memory') setShowStats(false)
-  }
-
-  function handleShowMapRoute(on: boolean) {
-    if (on) setSelectedDesign('map')
-    else if (selectedDesign === 'map') setSelectedDesign('aurora')
   }
 
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -153,13 +155,8 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   }
 
   async function handleSave() {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    // Re-render at 3x for high resolution
     const hiCanvas = document.createElement('canvas')
-    renderShareCard(hiCanvas, {
-      activity, design: selectedDesign, accent, theme, showStats, photoImage, gpsRoute: activity.route,
-    }, 3)
+    renderShareCard(hiCanvas, renderOptions(), 3)
     const blob = await canvasToBlob(hiCanvas)
     const file = new File([blob], shareCardFileName(activity, selectedDesign), { type: 'image/png' })
 
@@ -179,9 +176,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   async function handleShare() {
     if (!canShareFiles) { await handleSave(); return }
     const hiCanvas = document.createElement('canvas')
-    renderShareCard(hiCanvas, {
-      activity, design: selectedDesign, accent, theme, showStats, photoImage, gpsRoute: activity.route,
-    }, 3)
+    renderShareCard(hiCanvas, renderOptions(), 3)
     const blob = await canvasToBlob(hiCanvas)
     const file = new File([blob], shareCardFileName(activity, selectedDesign), { type: 'image/png' })
     if (!navigator.canShare({ files: [file] })) return
@@ -250,64 +245,84 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
           </button>
         </div>
 
-        {/* Theme picker */}
-        <div
-          className="flex gap-2.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          style={{ padding: '4px 14px 12px' }}
-        >
-          {SHARE_DESIGNS.map((d) => (
-            <ThemeCard
-              key={d}
-              design={d}
-              accent={accent}
-              theme={theme}
-              selected={selectedDesign === d}
-              accentHex={accentHex}
-              onClick={() => selectDesign(d)}
-              gpsRoute={activity.route}
-            />
-          ))}
-        </div>
+        {/* Scrollable body */}
+        <div className="overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 
-        {/* Divider */}
-        <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '0 16px' }} />
+          {/* Live preview */}
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '0 0 16px' }}>
+            <div style={{
+              borderRadius: 18, overflow: 'hidden', width: 158, height: 342,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.35)',
+              flexShrink: 0,
+            }}>
+              <canvas
+                ref={canvasRef}
+                style={{ width: '100%', height: '100%', display: 'block' }}
+              />
+            </div>
+          </div>
 
-        {/* Toggle: Activity Stats */}
-        <div className="flex items-center justify-between px-4 py-3.5">
-          <span style={{ fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.88)' }}>
-            {t.activity.shareCard.statsToggle}
-          </span>
-          <Toggle on={showStats} onChange={setShowStats} accentHex={accentHex} />
-        </div>
+          {/* Theme picker */}
+          <div
+            className="flex gap-2.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            style={{ padding: '4px 14px 12px' }}
+          >
+            {SHARE_DESIGNS.map((d) => (
+              <ThemeCard
+                key={d}
+                design={d}
+                accent={accent}
+                theme={theme}
+                selected={selectedDesign === d}
+                accentHex={accentHex}
+                onClick={() => selectDesign(d)}
+                gpsRoute={activity.route}
+              />
+            ))}
+          </div>
 
-        {/* Toggle: Show Map Route */}
-        <div className="flex items-center justify-between px-4 py-3.5">
-          <span style={{ fontSize: 14, fontWeight: 500, color: canRoute ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.32)' }}>
-            {t.activity.shareCard.mapRouteToggle}
-          </span>
-          <Toggle on={isMap} onChange={handleShowMapRoute} accentHex={accentHex} />
-        </div>
+          {/* Divider */}
+          <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '0 16px' }} />
 
-        {/* Memory: pick photo row */}
-        {isMemory && (
+          {/* Toggle: Activity Stats */}
           <div className="flex items-center justify-between px-4 py-3.5">
             <span style={{ fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.88)' }}>
-              {t.activity.shareCard.galleryPlaceholder}
+              {t.activity.shareCard.statsToggle}
             </span>
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              style={{
-                fontSize: 12, fontWeight: 600, color: accentHex,
-                background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0',
-              }}
-            >
-              {photoUrl ? 'Change' : 'Browse...'}
-            </button>
+            <Toggle on={showStats} onChange={setShowStats} accentHex={accentHex} />
           </div>
-        )}
 
-        {/* Divider */}
-        <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '0 16px' }} />
+          {/* Toggle: Show Map Route - only for map and memory designs */}
+          {(isMap || isMemory) && (
+            <div className="flex items-center justify-between px-4 py-3.5">
+              <span style={{ fontSize: 14, fontWeight: 500, color: canRoute ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.32)' }}>
+                {t.activity.shareCard.mapRouteToggle}
+              </span>
+              <Toggle on={showMap} onChange={setShowMap} accentHex={accentHex} disabled={!canRoute} />
+            </div>
+          )}
+
+          {/* Memory: pick photo row */}
+          {isMemory && (
+            <div className="flex items-center justify-between px-4 py-3.5">
+              <span style={{ fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.88)' }}>
+                {t.activity.shareCard.galleryPlaceholder}
+              </span>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  fontSize: 12, fontWeight: 600, color: accentHex,
+                  background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0',
+                }}
+              >
+                {photoUrl ? 'Change' : 'Browse...'}
+              </button>
+            </div>
+          )}
+
+          {/* Divider */}
+          <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '0 16px' }} />
+        </div>
 
         {/* Action row */}
         <div
@@ -363,9 +378,6 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             </button>
           )}
         </div>
-
-        {/* Hidden export canvas (1x preview used for copy) */}
-        <canvas ref={canvasRef} style={{ display: 'none' }} />
 
         <input
           ref={fileInputRef}
