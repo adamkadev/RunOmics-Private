@@ -28,8 +28,15 @@ export function SortDropdown<T extends string>({ options, sortBy, order, onChang
     function onOutside(e: MouseEvent) {
       if (!ref.current?.contains(e.target as Node)) setOpen(false)
     }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false)
+    }
     document.addEventListener('mousedown', onOutside)
-    return () => document.removeEventListener('mousedown', onOutside)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onOutside)
+      document.removeEventListener('keydown', onKey)
+    }
   }, [open])
 
   const activeLabel = options.find((o) => o.value === sortBy)?.label

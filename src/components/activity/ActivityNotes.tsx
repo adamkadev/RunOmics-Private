@@ -118,7 +118,12 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
                       className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-medium text-accent-text"
                     >
                       {tag}
-                      <button type="button" onClick={() => removeTag(tag)} className="hover:text-destructive">
+                      <button
+                        type="button"
+                        onClick={() => removeTag(tag)}
+                        aria-label={t.activity.notes.removeTag(tag)}
+                        className="hover:text-destructive"
+                      >
                         <X size={16} />
                       </button>
                     </span>

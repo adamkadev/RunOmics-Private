@@ -61,6 +61,7 @@ export const en = {
     viewAll: 'View all',
     sessions: (n: number) => `${n} session${n !== 1 ? 's' : ''}`,
     runs: (n: number) => `${n} run${n !== 1 ? 's' : ''}`,
+    close: 'Close',
   },
 
   pages: {
@@ -592,6 +593,7 @@ export const en = {
       title: 'Notes',
       notePlaceholder: 'How did it feel? Weather, terrain, sensations...',
       tagPlaceholder: 'Add a tag (e.g. rain, trail, tired)... press Enter',
+      removeTag: (tag: string) => `Remove tag ${tag}`,
     },
     zones: {
       title: 'Heart Rate Zones',
@@ -646,6 +648,7 @@ export const en = {
       escToExit: 'Esc to exit',
       noTrace: 'GPS trace unavailable',
       noTraceHint: 'Available after Garmin sync',
+      routeMap: 'Activity route map',
     },
     splits: {
       title: 'Intervals',

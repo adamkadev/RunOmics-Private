@@ -35,6 +35,7 @@ export function Pill({
       className={cn(
         'inline-flex flex-none items-center gap-1.5 rounded-full px-3.5 py-[7px] text-xs font-medium',
         'whitespace-nowrap transition-transform active:scale-95',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         VARIANT_CLASS[variant],
         className
       )}

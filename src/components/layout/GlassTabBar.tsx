@@ -51,6 +51,7 @@ export function GlassTabBar() {
               aria-current={active ? 'page' : undefined}
               className={cn(
                 'relative flex flex-1 flex-col items-center gap-0.5 py-1.5 transition-colors active:scale-95',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-2xl',
                 active ? 'text-accent-text' : 'text-muted-foreground'
               )}
             >

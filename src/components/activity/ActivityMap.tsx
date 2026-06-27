@@ -223,7 +223,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
         className
       )}
     >
-      <div ref={containerRef} className="h-full w-full" />
+      <div ref={containerRef} role="img" aria-label={t.activity.map.routeMap} className="h-full w-full" />
 
       {avgTemperature != null && (
         <div className="glass-map-chip absolute left-2 top-2 z-10 flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold">

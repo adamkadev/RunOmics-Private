@@ -73,7 +73,7 @@ export function GlobalMapClient({ data }: Props) {
 
   return (
     <div className={isFullscreen ? "fixed inset-0 z-50 bg-background" : "relative h-full w-full"}>
-      <div ref={containerRef} className="h-full w-full" />
+      <div ref={containerRef} role="img" aria-label={t.pages.map.title} className="h-full w-full" />
 
       <ClusterPanel
         clusters={clusters}
