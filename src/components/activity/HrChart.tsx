@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import {
   AreaChart,
   Area,
@@ -27,10 +28,11 @@ function kmTicks(distanceKm: number): number[] {
   return Array.from({ length: Math.floor(distanceKm / step) + 1 }, (_, i) => i * step)
 }
 
-function getZoneForBpm(hr: number, zones: HrZone[]): number {
-  const sorted = [...zones].sort((a, b) => a.minBpm - b.minBpm)
-  let zone = sorted[0]?.zone ?? 1
-  for (const z of sorted) {
+// `zones` must already be sorted ascending by minBpm - sorting here would
+// re-sort on every sample point instead of once per chart render.
+function getZoneForBpm(hr: number, sortedZones: HrZone[]): number {
+  let zone = sortedZones[0]?.zone ?? 1
+  for (const z of sortedZones) {
     if (hr >= z.minBpm) zone = z.zone
   }
   return zone
@@ -39,13 +41,14 @@ function getZoneForBpm(hr: number, zones: HrZone[]): number {
 const HR_TICKS = [100, 120, 140, 160, 180]
 const HR_DOMAIN: [number, number] = [80, 200]
 
-export function HrChart({ samples, avgHr, distanceKm, onHoverFraction, highlightZone, hrZones }: Props) {
+export const HrChart = memo(function HrChart({ samples, avgHr, distanceKm, onHoverFraction, highlightZone, hrZones }: Props) {
   const maxHr = Math.max(...samples)
+  const sortedZones = hrZones ? [...hrZones].sort((a, b) => a.minBpm - b.minBpm) : null
 
   const data = samples.map((bpm, i) => {
     const d = distanceKm != null ? (i / (samples.length - 1)) * distanceKm : i
-    const inZone = hrZones && highlightZone != null
-      ? getZoneForBpm(bpm, hrZones) === highlightZone
+    const inZone = sortedZones && highlightZone != null
+      ? getZoneForBpm(bpm, sortedZones) === highlightZone
       : true
     return { d, bpm, highlight: inZone ? bpm : null }
   })
@@ -145,4 +148,4 @@ export function HrChart({ samples, avgHr, distanceKm, onHoverFraction, highlight
       </ResponsiveContainer>
     </GlassSurface>
   )
-}
+})

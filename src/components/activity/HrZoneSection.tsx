@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import type { HrZone } from '@/domain/activity/types'
 import { HrChart } from './HrChart'
 import { ZoneBar } from './ZoneBar'
@@ -14,7 +14,7 @@ interface Props {
   onHoverFraction?: (fraction: number | null) => void
 }
 
-export function HrZoneSection({ hrSamples, hrZones, avgHr, distanceKm, onHoverFraction }: Props) {
+export const HrZoneSection = memo(function HrZoneSection({ hrSamples, hrZones, avgHr, distanceKm, onHoverFraction }: Props) {
   const [activeZone, setActiveZone] = useState<number | null>(null)
 
   function handleZoneSelect(zone: number) {
@@ -41,4 +41,4 @@ export function HrZoneSection({ hrSamples, hrZones, avgHr, distanceKm, onHoverFr
       )}
     </>
   )
-}
+})

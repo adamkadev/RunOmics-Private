@@ -82,6 +82,7 @@ export function EasyHardChart({ data }: Props) {
             fillOpacity={0.55}
             dot={false}
             isAnimationActive={false}
+            connectNulls
           />
           <Area
             type="monotone"
@@ -93,6 +94,7 @@ export function EasyHardChart({ data }: Props) {
             fillOpacity={0.55}
             dot={false}
             isAnimationActive={false}
+            connectNulls
           />
           <ReferenceLine y={80} stroke={CHART_COLORS.referenceTarget} strokeDasharray="4 3" strokeWidth={1} />
         </AreaChart>

@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import dynamic from 'next/dynamic'
 
 const ActivityMapDynamic = dynamic(() => import('./ActivityMap'), {
@@ -17,7 +18,7 @@ interface Props {
   className?: string
 }
 
-export function ActivityMapClient({ route, paceSamples, hoverFraction, avgTemperature, className }: Props) {
+export const ActivityMapClient = memo(function ActivityMapClient({ route, paceSamples, hoverFraction, avgTemperature, className }: Props) {
   return (
     <ActivityMapDynamic
       route={route}
@@ -27,4 +28,4 @@ export function ActivityMapClient({ route, paceSamples, hoverFraction, avgTemper
       className={className}
     />
   )
-}
+})

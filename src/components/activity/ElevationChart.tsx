@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import {
   AreaChart,
   Area,
@@ -38,7 +39,7 @@ function elevationTicks(samples: number[]): { ticks: number[]; domain: [number, 
   return { ticks, domain: [firstTick - step * 0.5, lastTick + step * 0.5] }
 }
 
-export function ElevationChart({ samples, distanceKm, elevationGain, onHoverFraction }: Props) {
+export const ElevationChart = memo(function ElevationChart({ samples, distanceKm, elevationGain, onHoverFraction }: Props) {
   const data = samples.map((alt, i) => {
     const d = distanceKm != null ? (i / (samples.length - 1)) * distanceKm : i
     return { d, alt: Math.round(alt) }
@@ -119,4 +120,4 @@ export function ElevationChart({ samples, distanceKm, elevationGain, onHoverFrac
       </ResponsiveContainer>
     </GlassSurface>
   )
-}
+})

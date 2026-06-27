@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import {
   AreaChart,
   Area,
@@ -32,7 +33,7 @@ function kmTicks(distanceKm: number): number[] {
   return Array.from({ length: Math.floor(distanceKm / step) + 1 }, (_, i) => i * step)
 }
 
-export function PaceChart({ samples, avgPaceSecPerKm, distanceKm, onHoverFraction }: Props) {
+export const PaceChart = memo(function PaceChart({ samples, avgPaceSecPerKm, distanceKm, onHoverFraction }: Props) {
   const data = samples.map((pace, i) => {
     const d = distanceKm != null ? (i / (samples.length - 1)) * distanceKm : i
     const clampedPace = pace > 0 ? Math.min(pace, PACE_CAP) : undefined
@@ -123,4 +124,4 @@ export function PaceChart({ samples, avgPaceSecPerKm, distanceKm, onHoverFractio
       </ResponsiveContainer>
     </GlassSurface>
   )
-}
+})

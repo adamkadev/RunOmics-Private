@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import {
   AreaChart,
   Area,
@@ -32,7 +33,7 @@ function formatCadenceTick(v: number): string {
   return v === CADENCE_CAP ? '<100' : String(v)
 }
 
-export function CadenceChart({ samples, avgCadence, distanceKm, onHoverFraction }: Props) {
+export const CadenceChart = memo(function CadenceChart({ samples, avgCadence, distanceKm, onHoverFraction }: Props) {
   const data = samples.map((spm, i) => {
     const d = distanceKm != null ? (i / (samples.length - 1)) * distanceKm : i
     return { d, spm: Math.max(spm, CADENCE_CAP) }
@@ -117,4 +118,4 @@ export function CadenceChart({ samples, avgCadence, distanceKm, onHoverFraction 
       </ResponsiveContainer>
     </GlassSurface>
   )
-}
+})

@@ -2,46 +2,9 @@
 
 import { useState } from 'react'
 import { Activity, Download } from 'lucide-react'
-import type { Activity as ActivityModel } from '@/domain/activity/types'
 import { t } from '@/i18n'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { Toast, useToast } from '@/components/ui/Toast'
-
-const CSV_COLUMNS: { key: keyof ActivityModel; header: string }[] = [
-  { key: 'date', header: 'date' },
-  { key: 'dayOfWeek', header: 'dayOfWeek' },
-  { key: 'type', header: 'type' },
-  { key: 'description', header: 'description' },
-  { key: 'durationSeconds', header: 'durationSeconds' },
-  { key: 'distanceKm', header: 'distanceKm' },
-  { key: 'paceSecPerKm', header: 'paceSecPerKm' },
-  { key: 'avgHeartRate', header: 'avgHeartRate' },
-  { key: 'rpe', header: 'rpe' },
-  { key: 'elevationGain', header: 'elevationGain' },
-  { key: 'aerTrainingEffect', header: 'aerTrainingEffect' },
-  { key: 'anaTrainingEffect', header: 'anaTrainingEffect' },
-  { key: 'calories', header: 'calories' },
-  { key: 'cadenceSpm', header: 'cadenceSpm' },
-  { key: 'groundContactMs', header: 'groundContactMs' },
-  { key: 'verticalOscillationMm', header: 'verticalOscillationMm' },
-  { key: 'verticalRatioPct', header: 'verticalRatioPct' },
-  { key: 'strideLengthM', header: 'strideLengthM' },
-  { key: 'vo2maxGarmin', header: 'vo2maxGarmin' },
-  { key: 'avgTemperature', header: 'avgTemperature' },
-  { key: 'comment', header: 'comment' },
-]
-
-function csvEscape(value: unknown): string {
-  if (value === null || value === undefined) return ''
-  const str = String(value)
-  return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str
-}
-
-function activitiesToCsv(activities: ActivityModel[]): string {
-  const header = CSV_COLUMNS.map((c) => c.header).join(',')
-  const rows = activities.map((a) => CSV_COLUMNS.map((c) => csvEscape(a[c.key])).join(','))
-  return [header, ...rows].join('\n')
-}
 
 function downloadBlob(content: string, filename: string, type: string) {
   const blob = new Blob([content], { type })
@@ -53,19 +16,6 @@ function downloadBlob(content: string, filename: string, type: string) {
   URL.revokeObjectURL(url)
 }
 
-async function fetchActivities(): Promise<ActivityModel[]> {
-  const indexRes = await fetch('/data/activities/index.json')
-  const { years } = (await indexRes.json()) as { years: string[] }
-  const yearFiles = await Promise.all(
-    years.map(async (year) => {
-      const res = await fetch(`/data/activities/${year}.json`)
-      const data = (await res.json()) as { activities: ActivityModel[] }
-      return data.activities
-    })
-  )
-  return yearFiles.flat()
-}
-
 export function DataSourceInfo() {
   const [loading, setLoading] = useState(false)
   const { toast, showToast } = useToast()
@@ -74,9 +24,10 @@ export function DataSourceInfo() {
   async function handleExport() {
     setLoading(true)
     try {
-      const activities = await fetchActivities()
+      const res = await fetch('/api/activities/export')
+      const csv = await res.text()
       const stamp = new Date().toISOString().slice(0, 10)
-      downloadBlob(activitiesToCsv(activities), `runomics-activities-${stamp}.csv`, 'text/csv;charset=utf-8;')
+      downloadBlob(csv, `runomics-activities-${stamp}.csv`, 'text/csv;charset=utf-8;')
     } catch {
       showToast(s.dataExport.exporting, false)
     } finally {

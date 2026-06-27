@@ -3,21 +3,11 @@
 import { ComposedChart, Scatter, Line, ReferenceLine, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import type { RpeLoadPoint } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS, tempBandColor } from '@/lib/colors'
+import { linearRegression } from '@/lib/math'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { ChartExplain } from '@/components/ui/ChartExplain'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
-
-function linearRegression(pts: { x: number; y: number }[]): { slope: number; intercept: number } | null {
-  const n = pts.length
-  if (n < 5) return null
-  const meanX = pts.reduce((s, p) => s + p.x, 0) / n
-  const meanY = pts.reduce((s, p) => s + p.y, 0) / n
-  const ssXX = pts.reduce((s, p) => s + (p.x - meanX) ** 2, 0)
-  const ssXY = pts.reduce((s, p) => s + (p.x - meanX) * (p.y - meanY), 0)
-  if (ssXX === 0) return null
-  return { slope: ssXY / ssXX, intercept: meanY - (ssXY / ssXX) * meanX }
-}
 
 function CustomDot(props: Record<string, unknown>) {
   const { cx, cy, payload } = props as { cx?: number; cy?: number; payload?: RpeLoadPoint }
