@@ -8,6 +8,7 @@
 //   words and units live here.
 
 import type { ActivityType } from '@/domain/activity/types'
+import type { RankTier } from '@/domain/athlete/rank'
 
 export const en = {
   // Locale tag used by Intl-based formatters (dates, numbers).
@@ -669,6 +670,10 @@ export const en = {
         interval_cooldown: 'Cooldown',
       } as Record<string, string>,
     },
+    nav: {
+      previous: 'Previous',
+      next: 'Next',
+    },
   },
 
   goals: {
@@ -746,11 +751,12 @@ export const en = {
       summary: (activities: number, km: number) => `${activities} activities · ${km} km`,
       editName: 'Edit name',
       namePlaceholder: 'Your name',
-      rank: (vo2maxGarmin: number | null, vdot: number | null) => {
+      rankExplain: 'Fitness rank from VO₂max and race pace.',
+      rankSource: (vo2maxGarmin: number | null, vdot: number | null) => {
         const parts = []
         if (vo2maxGarmin !== null) parts.push(`VO₂max ${vo2maxGarmin}`)
         if (vdot !== null) parts.push(`VDOT ${vdot}`)
-        return `Rank from ${parts.join(' · ')}`
+        return `From ${parts.join(' · ')}`
       },
     },
     ytd: {
@@ -831,12 +837,7 @@ export const en = {
   consistencyScore: {
     title: 'Consistency',
     weeks: 'weeks',
-    rating: {
-      excellent: 'Excellent',
-      good: 'Good',
-      fair: 'Fair',
-      low: 'Low',
-    },
+    gradeExplain: 'Ranks your last 12 weeks by weeks active (60%) and weekly volume stability (40%).',
   },
 
   calendar: {
@@ -877,4 +878,14 @@ export const en = {
     9: 'Near Maximal',
     10: 'Maximal',
   } as Record<number, string>,
+
+  // Shared by the consistency grade ring and the profile rank badge, both of which
+  // place a value on the same 9-tier percentile ladder (see domain/athlete/rank.ts).
+  rankTierLabels: {
+    D: 'Below average',
+    C: 'Average',
+    B: 'Above average',
+    A: 'Excellent',
+    S: 'Elite',
+  } as Record<RankTier, string>,
 } as const

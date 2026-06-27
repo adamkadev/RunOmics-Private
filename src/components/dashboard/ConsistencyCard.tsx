@@ -1,98 +1,56 @@
 'use client'
 
-import { RefreshCw } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import type { ConsistencyScore, ConsistencyRating } from '@/application/usecases/GetConsistencyScore'
 import { tierFromPercentile } from '@/domain/athlete/rank'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { StatusPill, type StatusTone } from '@/components/ui/StatusPill'
+import { RankExplainPanel } from '@/components/ui/RankExplainPanel'
 import { STATUS } from '@/lib/statusColors'
-import { useCountUp } from '@/lib/useCountUp'
 import { t } from '@/i18n'
 
-const RATING_STYLE: Record<ConsistencyRating, { tone: StatusTone; text: string }> = {
-  excellent: { tone: 'emerald', text: STATUS.success.text },
-  good:      { tone: 'blue',   text: STATUS.progress.text },
-  fair:      { tone: 'amber',  text: STATUS.warning.text },
-  low:       { tone: 'zinc',   text: STATUS.pending.text },
+const RATING_TEXT_CLASS: Record<ConsistencyRating, string> = {
+  excellent: STATUS.success.text,
+  good:      STATUS.progress.text,
+  fair:      STATUS.warning.text,
+  low:       STATUS.pending.text,
 }
 
-const RING_SIZE = 72
-const RING_STROKE = 6
-const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2
-const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS
-
-// Decorative progress ring; the score is already conveyed as text, so it's hidden from a11y tree.
-function ConsistencyRing({ score }: { score: number }) {
-  const animatedScore = useCountUp(score)
-  const offset = RING_CIRCUMFERENCE * (1 - Math.min(animatedScore, 100) / 100)
-  const grade = tierFromPercentile(score)
+// Decorative; the grade is restated as plain text in the explanation panel below.
+function ConsistencyRing({ grade }: { grade: string }) {
   return (
-    <div className="relative h-[72px] w-[72px] flex-shrink-0">
-      <svg
-        width={RING_SIZE}
-        height={RING_SIZE}
-        viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
-        className="-rotate-90"
-        aria-hidden="true"
-      >
-        <circle
-          cx={RING_SIZE / 2}
-          cy={RING_SIZE / 2}
-          r={RING_RADIUS}
-          fill="none"
-          stroke="currentColor"
-          strokeOpacity={0.14}
-          strokeWidth={RING_STROKE}
-        />
-        <circle
-          cx={RING_SIZE / 2}
-          cy={RING_SIZE / 2}
-          r={RING_RADIUS}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={RING_STROKE}
-          strokeLinecap="round"
-          strokeDasharray={RING_CIRCUMFERENCE}
-          strokeDashoffset={offset}
-        />
-      </svg>
-      <div className="absolute inset-0 flex items-center justify-center text-xs font-bold" aria-hidden="true">
-        {grade}
-      </div>
+    <div
+      className="flex h-[72px] w-[72px] flex-shrink-0 items-center justify-center rounded-full border-[6px] border-current text-xs font-bold"
+      aria-hidden="true"
+    >
+      {grade}
     </div>
   )
 }
 
 export function ConsistencyCard({ data }: { data: ConsistencyScore }) {
   const s = t.consistencyScore
-  const style = RATING_STYLE[data.rating]
+  const textClass = RATING_TEXT_CLASS[data.rating]
+  const grade = tierFromPercentile(data.score)
 
   return (
     <GlassSurface variant="card" className="flex h-full flex-col p-5">
-      <div className="mb-3 flex items-center gap-2">
-        <RefreshCw size={16} className={style.text} />
-        <h3 className="widget-label text-muted-foreground">{s.title}</h3>
-      </div>
-
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col">
-          <span className={cn('text-3xl font-bold tabular-nums', style.text)}>
-            <AnimatedValue value={data.score} />
-            <span className="ml-0.5 text-base font-normal text-muted-foreground">/100</span>
-          </span>
-          <div className="mt-1.5 flex items-center gap-1.5">
-            <StatusPill tone={style.tone}>{s.rating[data.rating]}</StatusPill>
-            <span className="text-xs text-muted-foreground">
-              {data.activeWeeks}/{data.totalWeeks} {s.weeks}
-            </span>
-          </div>
-        </div>
-        <span className={style.text}>
-          <ConsistencyRing score={data.score} />
+      <div className="flex items-center gap-4">
+        <span className={textClass}>
+          <ConsistencyRing grade={grade} />
         </span>
+        <div className="flex flex-col justify-center">
+          <span className="flex items-baseline gap-1.5 font-normal text-foreground">
+            <span>{s.title}</span>
+            <span className="tabular-nums">
+              <AnimatedValue value={data.score} />/100
+            </span>
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {data.activeWeeks}/{data.totalWeeks} {s.weeks}
+          </span>
+        </div>
       </div>
+      <RankExplainPanel tier={grade} description={s.gradeExplain} />
     </GlassSurface>
   )
 }

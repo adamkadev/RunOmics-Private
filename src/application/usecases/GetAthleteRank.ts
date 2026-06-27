@@ -84,26 +84,10 @@ function bracketForAge(age: number): AgeBracket {
   return AGE_BRACKETS[index]
 }
 
-// Maps the 4 known percentile anchors (fair=40th, good=60th, excellent=80th,
-// superior=95th) onto the 9-tier ladder, linearly interpolating/extrapolating
-// the VO2max value at each tier's percentile so every tier has a real threshold
-// instead of an arbitrary one.
+// Maps the 4 VO2max percentile anchors directly onto the D/C/B/A/S ladder:
+// D is the catch-all below fair (40th pct), C/B/A/S start at fair/good/excellent/superior.
 function tierThresholds(t: Vo2maxThresholds): number[] {
-  const fairToGood = (t.good - t.fair) / 20 // per percentile point, 40th -> 60th
-  const goodToExcellent = (t.excellent - t.good) / 20 // 60th -> 80th
-  const excellentToSuperior = (t.superior - t.excellent) / 15 // 80th -> 95th
-
-  return [
-    t.fair - fairToGood * 40, // D            (0th pct)
-    t.fair - fairToGood * 20, // C-           (20th pct)
-    t.fair, //                   C+           (40th pct)
-    t.fair + fairToGood * 10, // B-           (50th pct)
-    t.good, //                   B+           (60th pct)
-    t.good + goodToExcellent * 10, // A-      (70th pct)
-    t.excellent, //              A+           (80th pct)
-    t.excellent + excellentToSuperior * 10, // S (90th pct)
-    t.superior, //               S+           (95th pct)
-  ]
+  return [0, t.fair, t.good, t.excellent, t.superior]
 }
 
 export function getAthleteRank(records: RecordEntry[]): AthleteRank | null {
