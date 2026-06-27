@@ -73,12 +73,6 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
       return (SHARE_DESIGNS as string[]).includes(stored) ? stored as ShareDesign : 'aurora'
     }
   )
-  const [showStats, setShowStats] = useState(
-    () => readLocalStorage('ro_shareStats', 'true') !== 'false'
-  )
-  const [showMap, setShowMap] = useState(
-    () => readLocalStorage('ro_shareMap', 'true') !== 'false'
-  )
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [photoImage, setPhotoImage] = useState<HTMLImageElement | null>(null)
   const [copyState, setCopyState] = useState<'idle' | 'copied'>('idle')
@@ -95,13 +89,19 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const photoUrlRef = useRef<string | null>(null)
+  const prevNonMapRef = useRef<ShareDesign>(
+    selectedDesign === 'map' ? 'aurora' : selectedDesign
+  )
 
   const { close, handleProps, sheetStyle } = useDragToDismiss(onClose)
 
-  // Persist preferences
+  // Persist theme preference
   useEffect(() => { try { localStorage.setItem('ro_shareTheme', selectedDesign) } catch { /* noop */ } }, [selectedDesign])
-  useEffect(() => { try { localStorage.setItem('ro_shareStats', String(showStats)) } catch { /* noop */ } }, [showStats])
-  useEffect(() => { try { localStorage.setItem('ro_shareMap', String(showMap)) } catch { /* noop */ } }, [showMap])
+
+  // Track last non-map design so toggling map off restores it
+  useEffect(() => {
+    if (selectedDesign !== 'map') prevNonMapRef.current = selectedDesign
+  }, [selectedDesign])
 
   // Reverse geocoding for map watermark + street labels (cache in sessionStorage)
   useEffect(() => {
@@ -156,13 +156,13 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     design: selectedDesign,
     accent,
     theme,
-    showStats,
-    showMap,
+    showStats: true,
+    showMap: selectedDesign === 'map',
     photoImage,
     gpsRoute: activity.route,
     locationName,
     streetLabel,
-  }), [activity, selectedDesign, accent, theme, showStats, showMap, photoImage, locationName, streetLabel])
+  }), [activity, selectedDesign, accent, theme, photoImage, locationName, streetLabel])
 
   // Redraw preview canvas whenever options change
   useEffect(() => {
@@ -173,11 +173,11 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
 
   function selectDesign(d: ShareDesign) {
     setSelectedDesign(d)
-    if (d === 'memory') {
-      setShowStats(true)
-      // Tapping Memory jumps straight to the photo picker when none is chosen yet.
-      if (!photoImage) fileInputRef.current?.click()
-    }
+    if (d === 'memory' && !photoImage) fileInputRef.current?.click()
+  }
+
+  function handleMapToggle(v: boolean) {
+    setSelectedDesign(v ? 'map' : prevNonMapRef.current)
   }
 
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -237,7 +237,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
       .catch(console.error)
   }
 
-  const isMap = selectedDesign === 'map'
+  const showMap = selectedDesign === 'map'
   const isMemory = selectedDesign === 'memory'
   const canRoute = !!activity.route && activity.route.length > 1
 
@@ -326,23 +326,13 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
           {/* Divider */}
           <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '0 16px' }} />
 
-          {/* Toggle: Activity Stats */}
+          {/* Toggle: Show Map Route */}
           <div className="flex items-center justify-between px-4 py-3.5">
-            <span style={{ fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.88)' }}>
-              {t.activity.shareCard.statsToggle}
+            <span style={{ fontSize: 14, fontWeight: 500, color: canRoute ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.32)' }}>
+              {t.activity.shareCard.mapRouteToggle}
             </span>
-            <Toggle on={showStats} onChange={setShowStats} accentHex={accentHex} />
+            <Toggle on={showMap} onChange={handleMapToggle} accentHex={accentHex} disabled={!canRoute} />
           </div>
-
-          {/* Toggle: Show Map Route - only for map and memory designs */}
-          {(isMap || isMemory) && (
-            <div className="flex items-center justify-between px-4 py-3.5">
-              <span style={{ fontSize: 14, fontWeight: 500, color: canRoute ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.32)' }}>
-                {t.activity.shareCard.mapRouteToggle}
-              </span>
-              <Toggle on={showMap} onChange={setShowMap} accentHex={accentHex} disabled={!canRoute} />
-            </div>
-          )}
 
           {/* Memory: pick photo row */}
           {isMemory && (
