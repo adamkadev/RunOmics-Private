@@ -1,13 +1,17 @@
-const NO_GLOBAL_TOP_BAR_BASES = ['/profile', '/settings']
+const NO_GLOBAL_TOP_BAR_BASES = ['/profile', '/settings', '/map']
+const ACTIVITY_DETAIL_PATTERN = /^\/activities\/[^/]+$/
 
 /**
  * Profile and Settings manage their own header entirely (no global RunOmics
  * top bar with brand/theme toggle/profile shortcut) since they're already
- * reached via that shortcut or show the user's own identity. Every other
- * page - including activity detail and the "More" menu destinations -
- * keeps the global top bar.
+ * reached via that shortcut or show the user's own identity. Activity
+ * detail and the full-screen Map also hide it: both have their own inline
+ * back affordance and the brand logo would just eat vertical space above
+ * content (the session title, the map canvas) that should dominate the
+ * screen. Every other page keeps the global top bar.
  */
 export function hasGlobalTopBar(pathname: string): boolean {
+  if (ACTIVITY_DETAIL_PATTERN.test(pathname)) return false
   return !NO_GLOBAL_TOP_BAR_BASES.some((base) => pathname === base || pathname.startsWith(`${base}/`))
 }
 

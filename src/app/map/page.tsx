@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 
 import { getAllRoutes } from '@/application/usecases/GetAllRoutes'
 import { GlobalMapWrapper } from '@/components/map/GlobalMapWrapper'
+import { BackButton } from '@/components/ui/BackButton'
 import { t } from '@/i18n'
 
 export const metadata: Metadata = {
@@ -24,6 +25,8 @@ export default function MapPage() {
 
   return (
     <div className="flex h-[calc(100dvh-7rem-max(env(safe-area-inset-top),12px))] flex-col gap-3 lg:h-[calc(100dvh-2rem)]">
+      <BackButton label={t.pages.map.back} fallbackHref="/" />
+
       <div className="flex flex-wrap items-center gap-4 px-1">
         <div className="flex items-center gap-2">
           <MapPin size={16} className="text-accent-text" />
