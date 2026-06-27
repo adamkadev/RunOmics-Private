@@ -507,12 +507,16 @@ export function draw_map(
       ]
 
   const drawRoute = (lw: number, a: number, blur?: number) => {
-    if (blur) { ctx.save(); ctx.filter = `blur(${blur}px)` }
+    ctx.save()
+    if (blur) {
+      ctx.shadowColor = `rgba(${r},${g},${b},${a})`
+      ctx.shadowBlur = blur
+    }
     ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1])
     pts.forEach(([px, py]) => ctx.lineTo(px, py))
     ctx.strokeStyle = `rgba(${r},${g},${b},${a})`; ctx.lineWidth = lw
     ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke()
-    if (blur) ctx.restore()
+    ctx.restore()
   }
   drawRoute(18, dark ? 0.7 : 0.45, 14)
   drawRoute(3.5, dark ? 0.95 : 0.82)
@@ -628,7 +632,8 @@ export function drawRouteOverlay(
   const pts = rawPts.map(([x, y]) => [x, y + dy] as [number, number])
 
   ctx.save()
-  ctx.filter = `blur(14px)`
+  ctx.shadowColor = `rgba(${r},${g},${b},${dark ? 0.65 : 0.4})`
+  ctx.shadowBlur = 14
   ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1])
   pts.forEach(([px, py]) => ctx.lineTo(px, py))
   ctx.strokeStyle = `rgba(${r},${g},${b},${dark ? 0.65 : 0.4})`
