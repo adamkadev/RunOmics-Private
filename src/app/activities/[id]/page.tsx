@@ -9,6 +9,7 @@ import { ShoePairTag } from '@/components/activities/ShoePairTag'
 import { TrainingEffect } from '@/components/activity/TrainingEffect'
 import { RunningDynamics } from '@/components/activity/RunningDynamics'
 import { ActivityDetailClient } from '@/components/activity/ActivityDetailClient'
+import { ActivityNav } from '@/components/activity/ActivityNav'
 import { ShareButton } from '@/components/activity/ShareButton'
 import { ActivityNotes } from '@/components/activity/ActivityNotes'
 import { BestEfforts } from '@/components/activity/BestEfforts'
@@ -48,8 +49,13 @@ export default async function ActivityDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const activity = getActivities().find((a) => a.id === id)
+  const activities = getActivities()
+  const index = activities.findIndex((a) => a.id === id)
+  const activity = activities[index]
   if (!activity) notFound()
+
+  const prevActivity = index > 0 ? activities[index - 1] : null
+  const nextActivity = index < activities.length - 1 ? activities[index + 1] : null
 
   const records = await getRecords()
   const prLabels = getPrLabelsByActivityId(records)[id] ?? []
@@ -89,6 +95,8 @@ export default async function ActivityDetailPage({
           <RunningDynamics activity={activity} />
         </div>
       </div>
+
+      <ActivityNav prev={prevActivity} next={nextActivity} />
     </div>
   )
 }
