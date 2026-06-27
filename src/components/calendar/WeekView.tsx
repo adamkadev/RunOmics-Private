@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Check, ChevronRight, Footprints, X } from 'lucide-react'
+import { useId, useState } from 'react'
+import { Check, ChevronRight, Footprints, HelpCircle, X } from 'lucide-react'
 import type { Activity, ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import { ACTIVITY_TYPE_CONFIG, ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -45,6 +45,8 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
   )
   const [sheetActivity, setSheetActivity] = useState<Activity | null>(null)
   const [sheetPlan, setSheetPlan] = useState<PlannedWorkout | null>(null)
+  const [showLegend, setShowLegend] = useState(false)
+  const legendId = useId()
 
   const selected = days.find((d) => d.date === selectedDate) ?? days[0]
   const selectedPlan = byDatePlanned.get(selected.date)
@@ -58,6 +60,61 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today }: Props) {
   return (
     <div className="space-y-3">
       <GlassSurface variant="card" className="rounded-card-sm p-3.5 pb-2.5">
+        {/* Legend toggle */}
+        <div className="mb-1 flex justify-end">
+          <button
+            type="button"
+            onClick={() => setShowLegend((v) => !v)}
+            aria-expanded={showLegend}
+            aria-controls={legendId}
+            aria-label={t.calendar.legend.toggleLabel}
+            className="flex h-6 w-6 items-center justify-center rounded-full text-foreground/30 transition-colors hover:text-foreground/60"
+          >
+            <HelpCircle size={15} />
+          </button>
+        </div>
+
+        {showLegend && (
+          <div id={legendId} className="mb-3 grid grid-cols-2 gap-2 rounded-xl bg-foreground/[0.05] p-3 text-caption">
+            <div className="flex items-center gap-2">
+              <span
+                className="flex h-5 w-5 items-center justify-center rounded-[6px] border"
+                style={{ background: 'var(--color-accent, #f1761f)26', borderColor: 'var(--color-accent, #f1761f)4d' }}
+              >
+                <Check size={10} strokeWidth={2.5} style={{ color: 'var(--accent)' }} />
+              </span>
+              <span className="text-muted-foreground">{t.calendar.legend.completed}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span
+                className="flex h-5 w-5 items-center justify-center rounded-[6px] border"
+                style={{ background: MISSED_10, borderColor: MISSED_25 }}
+              >
+                <X size={10} strokeWidth={2.5} style={{ color: MISSED }} />
+              </span>
+              <span className="text-muted-foreground">{t.calendar.legend.missed}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span
+                className="flex h-5 w-5 items-center justify-center rounded-[6px] border border-dashed"
+                style={{ background: 'rgba(255,255,255,.05)', borderColor: 'rgba(255,255,255,.18)' }}
+              >
+                <span className="h-2 w-2 rounded-full border" style={{ borderColor: 'rgba(255,255,255,.35)' }} />
+              </span>
+              <span className="text-muted-foreground">{t.calendar.planned}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span
+                className="flex h-5 w-5 items-center justify-center rounded-[6px] border"
+                style={{ background: 'rgba(0,0,0,.04)', borderColor: 'rgba(0,0,0,.07)' }}
+              >
+                <span className="text-caption text-foreground/20">-</span>
+              </span>
+              <span className="text-muted-foreground">{t.calendar.restDay}</span>
+            </div>
+          </div>
+        )}
+
         {/* Weekday labels */}
         <div className="mb-2 grid grid-cols-7 gap-1">
           {t.calendar.weekdays.map((label, i) => (
