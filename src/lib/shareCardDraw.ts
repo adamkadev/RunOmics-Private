@@ -711,10 +711,10 @@ export function drawDataOverlay(ctx: Ctx, W: number, H: number, dark: boolean, r
   ctx.font = '800 18px Inter,system-ui,sans-serif'
   ctx.fillStyle = dark ? 'rgba(255,255,255,.92)' : 'rgba(0,0,0,.88)'
   ctx.textAlign = 'left'; ctx.textBaseline = 'top'
-  ctx.fillText(shareCardTitle(activity), 26, 32)
+  ctx.fillText(shareCardTitle(activity), 26, 70)
   ctx.font = '500 12px Inter,system-ui,sans-serif'
   ctx.fillStyle = dark ? 'rgba(255,255,255,.5)' : 'rgba(0,0,0,.44)'
-  ctx.fillText(formatShareDate(activity), 26, 56)
+  ctx.fillText(formatShareDate(activity), 26, 94)
   ctx.restore()
 
   // Zone D - hero metric centered in the card
