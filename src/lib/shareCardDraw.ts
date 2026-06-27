@@ -507,16 +507,12 @@ export function draw_map(
       ]
 
   const drawRoute = (lw: number, a: number, blur?: number) => {
-    ctx.save()
-    if (blur) {
-      ctx.shadowColor = `rgba(${r},${g},${b},${a})`
-      ctx.shadowBlur = blur
-    }
+    if (blur) { ctx.save(); ctx.filter = `blur(${blur}px)` }
     ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1])
     pts.forEach(([px, py]) => ctx.lineTo(px, py))
     ctx.strokeStyle = `rgba(${r},${g},${b},${a})`; ctx.lineWidth = lw
     ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke()
-    ctx.restore()
+    if (blur) ctx.restore()
   }
   drawRoute(18, dark ? 0.7 : 0.45, 14)
   drawRoute(3.5, dark ? 0.95 : 0.82)
@@ -632,8 +628,7 @@ export function drawRouteOverlay(
   const pts = rawPts.map(([x, y]) => [x, y + dy] as [number, number])
 
   ctx.save()
-  ctx.shadowColor = `rgba(${r},${g},${b},${dark ? 0.65 : 0.4})`
-  ctx.shadowBlur = 14
+  ctx.filter = `blur(14px)`
   ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1])
   pts.forEach(([px, py]) => ctx.lineTo(px, py))
   ctx.strokeStyle = `rgba(${r},${g},${b},${dark ? 0.65 : 0.4})`
@@ -659,51 +654,26 @@ export function drawRouteOverlay(
 
 export function drawBranding(ctx: Ctx, W: number, _H: number, dark: boolean) {
   ctx.save()
-  ctx.lineCap = 'round'
 
-  const iW = 24
-  const fs = 13
-  const gap = 8
-  const ry = 34
-  const rx = W - 18
+  const fs = 11
+  const paddingTop = 135
+  const edgeX = W - 14
+
+  const col = dark ? 'rgba(255,255,255,0.88)' : 'rgba(0,0,0,0.72)'
+
+  ctx.translate(edgeX, paddingTop)
+  ctx.rotate(Math.PI / 2)
 
   ctx.font = `800 ${fs}px Inter, system-ui, sans-serif`
-  ctx.textAlign = 'right'
+  ctx.textAlign = 'left'
   ctx.textBaseline = 'middle'
-  const tw = ctx.measureText('RUNOMICS').width
-
-  const baseAlpha = dark ? 0.92 : 0.88
-  const col = `rgba(255,255,255,${baseAlpha})`
-  ctx.shadowColor = 'rgba(0,0,0,0.55)'
-  ctx.shadowBlur = 8
+  ctx.shadowColor = dark ? 'rgba(0,0,0,0.55)' : 'rgba(0,0,0,0.12)'
+  ctx.shadowBlur = dark ? 8 : 4
   ctx.shadowOffsetY = 2
-
   ctx.fillStyle = col
-  ctx.fillText('RUNOMICS', rx, ry)
+  ctx.globalAlpha = 1
+  ctx.fillText('RUNOMICS', 0, 0)
 
-  const cx2 = (rx - tw - gap - iW) + iW / 2
-  ctx.save()
-  const scale = iW / 32
-  ctx.translate(cx2 - 22 * scale, ry - 28 * scale)
-  ctx.scale(scale, scale)
-  ctx.strokeStyle = col
-
-  const stroke = (alpha: number, lw: number, fn: () => void) => {
-    ctx.globalAlpha = baseAlpha * alpha
-    ctx.lineWidth = lw
-    ctx.beginPath(); fn(); ctx.stroke()
-  }
-
-  stroke(1.00, 4.5, () => ctx.ellipse(22, 16, 16, 8, 0, Math.PI, 0, true))
-  stroke(0.30, 2.5, () => { ctx.moveTo(6, 16); ctx.lineTo(6, 28) })
-  stroke(0.30, 2.5, () => { ctx.moveTo(38, 16); ctx.lineTo(38, 28) })
-  stroke(0.45, 4.5, () => ctx.ellipse(22, 28, 16, 8, 0, Math.PI, 0, false))
-  stroke(1.00, 4.5, () => ctx.ellipse(22, 28, 16, 8, 0, Math.PI, 0, true))
-  stroke(0.30, 2.5, () => { ctx.moveTo(6, 28); ctx.lineTo(6, 40) })
-  stroke(0.30, 2.5, () => { ctx.moveTo(38, 28); ctx.lineTo(38, 40) })
-  stroke(0.45, 4.5, () => ctx.ellipse(22, 40, 16, 8, 0, Math.PI, 0, false))
-
-  ctx.restore()
   ctx.restore()
 }
 
