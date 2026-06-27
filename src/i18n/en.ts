@@ -563,6 +563,11 @@ export const en = {
       },
       statsToggle: 'Activity Stats',
       mapRouteToggle: 'Show Map Route',
+      mapRouteSubtitle: 'Forces the Map theme',
+      lightModeToggle: 'Light mode',
+      lightModeSubtitle: 'Light background for printing',
+      accentTitle: 'Accent',
+      accentSubtitle: 'Unit color',
       galleryPlaceholder: 'Choose a photo',
     },
     stats: {

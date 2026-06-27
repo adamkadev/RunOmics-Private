@@ -23,10 +23,16 @@ export interface RenderOptions {
   gpsRoute?: [number, number][] | null
   locationName?: string | null
   streetLabels?: string[]
+  customAccentHex?: string
+}
+
+export function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace('#', '')
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]
 }
 
 export function renderShareCard(canvas: HTMLCanvasElement, options: RenderOptions, scale = 1) {
-  const { activity, design, accent, theme, showStats, showMap, photoImage, gpsRoute, locationName, streetLabels } = options
+  const { activity, design, accent, theme, showStats, showMap, photoImage, gpsRoute, locationName, streetLabels, customAccentHex } = options
   const dark = theme === 'dark'
   canvas.width = W * scale
   canvas.height = H * scale
@@ -34,7 +40,7 @@ export function renderShareCard(canvas: HTMLCanvasElement, options: RenderOption
   if (!ctx) return
   if (scale !== 1) ctx.scale(scale, scale)
 
-  const [r, g, b] = ACCENT_RGB[accent][dark ? 'dark' : 'light']
+  const [r, g, b] = customAccentHex ? hexToRgb(customAccentHex) : ACCENT_RGB[accent][dark ? 'dark' : 'light']
 
   // For the map design, only pass the real route when showMap is on.
   const routeForTheme = design === 'map' ? (showMap ? gpsRoute : null) : gpsRoute

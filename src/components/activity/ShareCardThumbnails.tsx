@@ -21,9 +21,10 @@ interface ThemeCardProps {
   gpsRoute?: [number, number][] | null
   // Memory design only: object URL of the chosen photo (preview), or null for the placeholder.
   photoUrl?: string | null
+  customRgb?: [number, number, number]
 }
 
-export function ThemeCard({ design, accent, theme, selected, accentHex, onClick, gpsRoute, photoUrl }: ThemeCardProps) {
+export function ThemeCard({ design, accent, theme, selected, accentHex, onClick, gpsRoute, photoUrl, customRgb }: ThemeCardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   // Memory shows the chosen photo once picked, otherwise the camera placeholder canvas.
   const showPhoto = design === 'memory' && !!photoUrl
@@ -35,12 +36,12 @@ export function ThemeCard({ design, accent, theme, selected, accentHex, onClick,
     const ctx = canvas.getContext('2d')
     if (!ctx) return
     const dark = theme === 'dark'
-    const [r, g, b] = ACCENT_RGB[accent][dark ? 'dark' : 'light']
+    const [r, g, b] = customRgb ?? ACCENT_RGB[accent][dark ? 'dark' : 'light']
     canvas.width = THUMB_CANVAS
     canvas.height = THUMB_CANVAS
     // For map theme: include real GPS route; for memory: no photo (camera placeholder).
     drawTheme(ctx, design, THUMB_CANVAS, THUMB_CANVAS, r, g, b, dark, design === 'map' ? gpsRoute : null, null)
-  }, [showPhoto, design, accent, theme, gpsRoute])
+  }, [showPhoto, design, accent, theme, gpsRoute, customRgb])
 
   return (
     <button type="button" onClick={onClick} className="flex shrink-0 flex-col items-center gap-1.5">

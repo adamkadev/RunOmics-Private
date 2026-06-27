@@ -6,11 +6,13 @@ import { useTheme } from 'next-themes'
 import { Check, Copy, Download, Share2, X } from 'lucide-react'
 import type { Activity } from '@/domain/activity/types'
 import { SHARE_DESIGNS, type ShareDesign, type ThemeMode } from '@/lib/shareCard'
-import { renderShareCard, shareCardFileName, loadImage } from '@/lib/shareCard'
-import { ACCENT_SWATCHES, DEFAULT_ACCENT, isAccentId, type AccentId } from '@/lib/accent'
+import { renderShareCard, shareCardFileName, loadImage, hexToRgb } from '@/lib/shareCard'
+import { ACCENT_SWATCHES, ACCENT_IDS, DEFAULT_ACCENT, isAccentId, type AccentId } from '@/lib/accent'
 import { useDragToDismiss } from '@/hooks/useDragToDismiss'
 import { t } from '@/i18n'
 import { ThemeCard } from '@/components/activity/ShareCardThumbnails'
+
+type ShareAccent = AccentId | 'custom'
 
 function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) => {
@@ -18,12 +20,6 @@ function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
       canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png')
     })
   })
-}
-
-function currentAccent(): AccentId {
-  if (typeof document === 'undefined') return DEFAULT_ACCENT
-  const v = document.documentElement.getAttribute('data-accent')
-  return isAccentId(v) ? v : DEFAULT_ACCENT
 }
 
 function readLocalStorage(key: string, fallback: string): string {
@@ -65,20 +61,28 @@ interface Props {
 
 export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose }: Props) {
   const { resolvedTheme } = useTheme()
-  const theme: ThemeMode = resolvedTheme === 'light' ? 'light' : 'dark'
+  const appTheme: ThemeMode = resolvedTheme === 'light' ? 'light' : 'dark'
 
-  const [selectedDesign, setSelectedDesign] = useState<ShareDesign>(
-    () => {
-      const stored = readLocalStorage('ro_shareTheme', 'aurora')
-      return (SHARE_DESIGNS as string[]).includes(stored) ? stored as ShareDesign : 'aurora'
-    }
+  const [selectedDesign, setSelectedDesign] = useState<ShareDesign>(() => {
+    const stored = readLocalStorage('ro_shareTheme', 'aurora')
+    return (SHARE_DESIGNS as string[]).includes(stored) ? stored as ShareDesign : 'aurora'
+  })
+
+  const [shareAccent, setShareAccent] = useState<ShareAccent>(() => {
+    const stored = readLocalStorage('ro_shareAccent', DEFAULT_ACCENT)
+    if (stored === 'custom') return 'custom'
+    return isAccentId(stored) ? stored : DEFAULT_ACCENT
+  })
+  const [customHex, setCustomHex] = useState<string>(() =>
+    readLocalStorage('ro_shareCustomHex', '#10b981')
   )
+  const [lightMode, setLightMode] = useState<boolean>(() =>
+    readLocalStorage('ro_shareLightMode', 'false') === 'true'
+  )
+
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [photoImage, setPhotoImage] = useState<HTMLImageElement | null>(null)
   const [copyState, setCopyState] = useState<'idle' | 'copied'>('idle')
-
-  const [accent] = useState<AccentId>(currentAccent)
-  const accentHex = ACCENT_SWATCHES[accent]
   const [locationName, setLocationName] = useState<string | null>(() => {
     try { return sessionStorage.getItem(`ro_geocode_${activity.id}`) } catch { return null }
   })
@@ -89,25 +93,25 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     } catch { return [] }
   })
 
+  const effectiveAccent: AccentId = shareAccent === 'custom' ? 'nature' : shareAccent
+  const customAccentHex: string | undefined = shareAccent === 'custom' ? customHex : undefined
+  const customRgb: [number, number, number] | undefined = shareAccent === 'custom' ? hexToRgb(customHex) : undefined
+  const shareAccentHex = shareAccent === 'custom' ? customHex : ACCENT_SWATCHES[shareAccent]
+  const shareTheme: ThemeMode = lightMode ? 'light' : appTheme
+
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const colorInputRef = useRef<HTMLInputElement>(null)
   const photoUrlRef = useRef<string | null>(null)
-  const prevNonMapRef = useRef<ShareDesign>(
-    selectedDesign === 'map' ? 'aurora' : selectedDesign
-  )
-
   const { close, handleProps, sheetStyle } = useDragToDismiss(onClose)
 
-  // Persist theme preference
+  // Persist preferences
   useEffect(() => { try { localStorage.setItem('ro_shareTheme', selectedDesign) } catch { /* noop */ } }, [selectedDesign])
+  useEffect(() => { try { localStorage.setItem('ro_shareAccent', shareAccent) } catch { /* noop */ } }, [shareAccent])
+  useEffect(() => { try { localStorage.setItem('ro_shareCustomHex', customHex) } catch { /* noop */ } }, [customHex])
+  useEffect(() => { try { localStorage.setItem('ro_shareLightMode', String(lightMode)) } catch { /* noop */ } }, [lightMode])
 
-  // Track last non-map design so toggling map off restores it
-  useEffect(() => {
-    if (selectedDesign !== 'map') prevNonMapRef.current = selectedDesign
-  }, [selectedDesign])
-
-  // Reverse geocoding for map watermark + street labels (cache in sessionStorage)
-  // Samples start, mid, end of route to collect multiple real street names
+  // Reverse geocoding (cache in sessionStorage)
   useEffect(() => {
     if (locationName !== null && streetLabels.length > 0) return
     if (!activity.route || activity.route.length < 1) return
@@ -169,17 +173,18 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   const renderOptions = useCallback(() => ({
     activity,
     design: selectedDesign,
-    accent,
-    theme,
+    accent: effectiveAccent,
+    customAccentHex,
+    theme: shareTheme,
     showStats: true,
     showMap: selectedDesign === 'map',
     photoImage,
     gpsRoute: activity.route,
     locationName,
     streetLabels,
-  }), [activity, selectedDesign, accent, theme, photoImage, locationName, streetLabels])
+  }), [activity, selectedDesign, effectiveAccent, customAccentHex, shareTheme, photoImage, locationName, streetLabels])
 
-  // Redraw preview canvas whenever options change; DPR-scale so shadowBlur maps to physical pixels
+  // Redraw preview canvas whenever options change
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -190,10 +195,6 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   function selectDesign(d: ShareDesign) {
     setSelectedDesign(d)
     if (d === 'memory' && !photoImage) fileInputRef.current?.click()
-  }
-
-  function handleMapToggle(v: boolean) {
-    setSelectedDesign(v ? 'map' : prevNonMapRef.current)
   }
 
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -253,9 +254,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
       .catch(console.error)
   }
 
-  const showMap = selectedDesign === 'map'
   const isMemory = selectedDesign === 'memory'
-  const canRoute = !!activity.route && activity.route.length > 1
 
   return createPortal(
     <div
@@ -328,13 +327,14 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
               <ThemeCard
                 key={d}
                 design={d}
-                accent={accent}
-                theme={theme}
+                accent={effectiveAccent}
+                theme={shareTheme}
                 selected={selectedDesign === d}
-                accentHex={accentHex}
+                accentHex={shareAccentHex}
                 onClick={() => selectDesign(d)}
                 gpsRoute={activity.route}
                 photoUrl={d === 'memory' ? photoUrl : null}
+                customRgb={customRgb}
               />
             ))}
           </div>
@@ -342,30 +342,102 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
           {/* Divider */}
           <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '0 16px' }} />
 
-          {/* Toggle: Show Map Route */}
-          <div className="flex items-center justify-between px-4 py-3.5">
-            <span style={{ fontSize: 14, fontWeight: 500, color: canRoute ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.32)' }}>
-              {t.activity.shareCard.mapRouteToggle}
-            </span>
-            <Toggle on={showMap} onChange={handleMapToggle} accentHex={accentHex} disabled={!canRoute} />
+          {/* Accent row */}
+          <div
+            className="flex items-center justify-between"
+            style={{ padding: '10px 16px' }}
+          >
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#f0faf5' }}>
+                {t.activity.shareCard.accentTitle}
+              </div>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>
+                {t.activity.shareCard.accentSubtitle}
+              </div>
+            </div>
+            <div className="flex items-center" style={{ gap: 5 }}>
+              {ACCENT_IDS.map((id) => {
+                const selected = shareAccent === id
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setShareAccent(id)}
+                    aria-label={id}
+                    style={{
+                      width: 18, height: 18, borderRadius: '50%',
+                      background: ACCENT_SWATCHES[id],
+                      border: selected ? 'none' : '1.5px solid rgba(255,255,255,0.2)',
+                      boxShadow: selected
+                        ? `0 0 0 2.5px rgba(255,255,255,0.85), 0 0 0 4.5px ${ACCENT_SWATCHES[id]}40`
+                        : 'none',
+                      cursor: 'pointer',
+                      flexShrink: 0,
+                      padding: 0,
+                    }}
+                  />
+                )
+              })}
+              {/* Custom color dot */}
+              <label style={{ position: 'relative', width: 18, height: 18, cursor: 'pointer', flexShrink: 0 }}>
+                <span
+                  style={{
+                    display: 'block', width: 18, height: 18, borderRadius: '50%',
+                    background: shareAccent === 'custom'
+                      ? customHex
+                      : 'conic-gradient(red, #ff0, lime, cyan, blue, magenta, red)',
+                    border: shareAccent === 'custom' ? 'none' : '1.5px solid rgba(255,255,255,0.2)',
+                    boxShadow: shareAccent === 'custom'
+                      ? `0 0 0 2.5px rgba(255,255,255,0.85), 0 0 0 4.5px ${customHex}40`
+                      : 'none',
+                  }}
+                />
+                <input
+                  ref={colorInputRef}
+                  type="color"
+                  value={customHex}
+                  onChange={(e) => { setShareAccent('custom'); setCustomHex(e.target.value) }}
+                  style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }}
+                />
+              </label>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '0 16px' }} />
+
+          {/* Toggle: Light mode */}
+          <div className="flex items-center justify-between" style={{ padding: '11px 16px' }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#f0faf5' }}>
+                {t.activity.shareCard.lightModeToggle}
+              </div>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>
+                {t.activity.shareCard.lightModeSubtitle}
+              </div>
+            </div>
+            <Toggle on={lightMode} onChange={setLightMode} accentHex={shareAccentHex} />
           </div>
 
           {/* Memory: pick photo row */}
           {isMemory && (
-            <div className="flex items-center justify-between px-4 py-3.5">
-              <span style={{ fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.88)' }}>
-                {t.activity.shareCard.galleryPlaceholder}
-              </span>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                style={{
-                  fontSize: 12, fontWeight: 600, color: accentHex,
-                  background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0',
-                }}
-              >
-                {photoUrl ? 'Change' : 'Browse...'}
-              </button>
-            </div>
+            <>
+              <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '0 16px' }} />
+              <div className="flex items-center justify-between" style={{ padding: '11px 16px' }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#f0faf5' }}>
+                  {t.activity.shareCard.galleryPlaceholder}
+                </span>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    fontSize: 12, fontWeight: 600, color: shareAccentHex,
+                    background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0',
+                  }}
+                >
+                  {photoUrl ? 'Change' : 'Browse...'}
+                </button>
+              </div>
+            </>
           )}
 
           {/* Divider */}
@@ -399,7 +471,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
               onClick={handleShare}
               style={{
                 height: 46, borderRadius: 14, border: 'none',
-                background: accentHex, color: '#fff',
+                background: shareAccentHex, color: '#fff',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                 fontSize: 13, fontWeight: 800, cursor: 'pointer',
               }}
@@ -415,7 +487,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
               style={{
                 height: 46, borderRadius: 14, border: '1px solid rgba(255,255,255,0.12)',
                 background: 'rgba(255,255,255,0.09)',
-                color: copyState === 'copied' ? accentHex : 'rgba(255,255,255,0.88)',
+                color: copyState === 'copied' ? shareAccentHex : 'rgba(255,255,255,0.88)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                 fontSize: 13, fontWeight: 700, cursor: 'pointer',
                 transition: 'color 0.2s',
