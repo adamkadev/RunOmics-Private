@@ -6,7 +6,8 @@ import { Sidebar } from './Sidebar'
 import { PageTransition } from './PageTransition'
 import { ThemeSync } from './ThemeSync'
 import { Aurora } from './Aurora'
-import { getPageAuroraKey } from '@/lib/navigation'
+import { getPageAuroraKey, hasGlobalTopBar } from '@/lib/navigation'
+import { cn } from '@/lib/utils'
 
 const SCROLL_POSITIONS_KEY = 'scrollPositions'
 
@@ -20,6 +21,7 @@ function getScrollPositions(): Record<string, number> {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const showTopBar = hasGlobalTopBar(pathname)
   const isPopNavigation = useRef(false)
 
   // Browser/router back-forward (popstate) restores scroll position instead
@@ -57,9 +59,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <ThemeSync />
       <Sidebar />
       <main className="min-h-screen lg:ml-[248px]">
-        {/* Mobile spacer: top bar height + notch safe area - skipped on Profile/
-            Settings, which manage their own safe-area top padding */}
-        <div className="mx-auto max-w-5xl px-4 pt-4 pb-28 sm:px-6 lg:pt-8 lg:pb-8">
+        {/* Mobile top padding: breathing room below the Dashboard's top bar,
+            or - on every other page, which has no top bar - the notch safe area instead. */}
+        <div
+          className={cn(
+            'mx-auto max-w-5xl px-4 pb-28 sm:px-6 lg:pb-8 lg:pt-8',
+            showTopBar ? 'pt-4' : 'pt-[max(env(safe-area-inset-top),12px)]'
+          )}
+        >
           <PageTransition>{children}</PageTransition>
         </div>
       </main>

@@ -34,7 +34,7 @@ export function ProfileClient({ data }: Props) {
   }
 
   return (
-    <div className="space-y-6 pt-[max(env(safe-area-inset-top),12px)] lg:pt-0">
+    <div className="space-y-6">
       <div className="space-y-3">
         <ProfileHero
           hero={data.hero}

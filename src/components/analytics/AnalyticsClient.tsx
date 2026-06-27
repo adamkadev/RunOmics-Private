@@ -284,14 +284,14 @@ export function AnalyticsClient({
           <GlassSurface
             as="div"
             variant="nav"
-            className="sticky top-[max(env(safe-area-inset-top),8px)] z-10 flex rounded-2xl mb-1"
+            className="sticky top-[max(env(safe-area-inset-top),8px)] z-10 flex gap-1 overflow-x-auto rounded-2xl mb-1 pr-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {visibleTabs.map((item) => (
               <button
                 key={item.id}
                 onClick={() => selectTab(item.id)}
                 className={cn(
-                  'relative flex-1 py-3 text-sm font-medium transition-colors',
+                  'relative min-w-fit flex-1 whitespace-nowrap px-2 py-3 text-sm font-medium transition-colors',
                   tab === item.id
                     ? 'text-foreground'
                     : 'text-muted-foreground hover:text-foreground',
