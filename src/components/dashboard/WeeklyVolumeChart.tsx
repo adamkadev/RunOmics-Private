@@ -89,6 +89,7 @@ export function WeeklyVolumeChart({ data, currentWeek }: Props) {
             tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
+            unit={` ${t.units.km}`}
           />
           <Tooltip content={<CustomTooltip />} cursor={{ stroke: accentColor, strokeWidth: 1, strokeDasharray: '4 3' }} />
           {currentWeekIdx >= 0 && (

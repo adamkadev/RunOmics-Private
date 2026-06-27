@@ -62,7 +62,7 @@ export function LongRunsChart({ data }: Props) {
             tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
-            unit=" km"
+            unit={` ${t.units.km}`}
           />
           <Tooltip content={<CustomTooltip />} cursor={{ stroke: accentColor, strokeWidth: 1, strokeDasharray: '4 3' }} />
           <ReferenceLine
