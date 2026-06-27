@@ -241,10 +241,10 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   }
 
   function handleCopy() {
-    const hiCanvas = document.createElement('canvas')
-    renderShareCard(hiCanvas, renderOptions(), 3)
+    const canvas = canvasRef.current
+    if (!canvas) return
     navigator.clipboard
-      .write([new ClipboardItem({ 'image/png': canvasToBlob(hiCanvas) })])
+      .write([new ClipboardItem({ 'image/png': canvasToBlob(canvas) })])
       .then(() => {
         setCopyState('copied')
         setTimeout(() => setCopyState('idle'), 1500)
