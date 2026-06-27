@@ -1,5 +1,9 @@
+'use client'
+
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Pill } from '@/components/ui/Pill'
+import { cn } from '@/lib/utils'
 import { formatClock, formatDistance, formatDuration } from '@/lib/formatters'
 import type { RecordEntry } from '@/application/usecases/GetRecords'
 import type { PbAlert } from '@/application/usecases/GetPbAlerts'
@@ -36,6 +40,9 @@ interface Props {
 }
 
 export function DashboardHighlights({ record, pbAlerts, shoes, nextRace }: Props) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [canScrollRight, setCanScrollRight] = useState(false)
+
   const highlights: Highlight[] = []
 
   if (record && record.seconds !== null && record.date !== null) {
@@ -79,10 +86,33 @@ export function DashboardHighlights({ record, pbAlerts, shoes, nextRace }: Props
     })
   }
 
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+
+    const update = () => setCanScrollRight(el.scrollWidth - el.scrollLeft - el.clientWidth > 1)
+    update()
+
+    el.addEventListener('scroll', update, { passive: true })
+    const observer = new ResizeObserver(update)
+    observer.observe(el)
+
+    return () => {
+      el.removeEventListener('scroll', update)
+      observer.disconnect()
+    }
+  }, [highlights.length])
+
   if (highlights.length === 0) return null
 
   return (
-    <div className="-mx-4 flex gap-2.5 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div
+      ref={scrollRef}
+      className={cn(
+        '-mx-4 flex gap-2.5 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+        canScrollRight && '[mask-image:linear-gradient(to_right,black_85%,transparent_100%)]'
+      )}
+    >
       {highlights.map(({ key, href, dotColor, tint, label }) => (
         <Link key={key} href={href} className="shrink-0">
           <Pill variant="highlight" className={tint} dotColor={dotColor}>
