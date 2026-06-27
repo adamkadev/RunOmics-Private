@@ -81,6 +81,18 @@ export function monthYearLabel(isoDate: string): string {
   return d.toLocaleString('en', { month: 'long', year: 'numeric' }).toUpperCase()
 }
 
+export type RelativeTimeUnit = 'now' | 'minutes' | 'hours' | 'days'
+
+/** Buckets the elapsed time since an ISO timestamp into a unit + value, for i18n display. */
+export function relativeTimeParts(iso: string, now: Date = new Date()): { unit: RelativeTimeUnit; value: number } {
+  const diffMinutes = Math.floor(Math.max(0, now.getTime() - new Date(iso).getTime()) / 60_000)
+  if (diffMinutes < 1) return { unit: 'now', value: 0 }
+  if (diffMinutes < 60) return { unit: 'minutes', value: diffMinutes }
+  const diffHours = Math.floor(diffMinutes / 60)
+  if (diffHours < 24) return { unit: 'hours', value: diffHours }
+  return { unit: 'days', value: Math.floor(diffHours / 24) }
+}
+
 /** Parse a `m:ss` or `h:mm:ss` string into seconds. Returns null if invalid. */
 export function parseTimeInput(str: string): number | null {
   const parts = str.trim().split(':').map(Number)

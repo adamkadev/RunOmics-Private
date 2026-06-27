@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -17,6 +19,7 @@ from processing.mapper import HrZone, extract_gear_id, map_activity, parse_hr_zo
 from repository.json_store import JsonActivityStore
 
 _FIT_DIR = Path(__file__).parent.parent / "public" / "fit"
+_SYNC_META_PATH = Path(__file__).parent.parent / "public" / "data" / "sync_meta.json"
 _RATE_LIMIT_PAUSE = 1.0
 _RETRY_PAUSE = 60.0
 # Garmin gear assignment is often corrected a few days after upload, after the
@@ -134,7 +137,17 @@ def main() -> int:
             planned = fetch_planned_workouts(client)
             write_planned_workouts(planned)
 
+        if not args.dry_run:
+            _write_sync_meta()
+
     return 0 if failed == 0 else 2
+
+
+def _write_sync_meta() -> None:
+    _SYNC_META_PATH.parent.mkdir(parents=True, exist_ok=True)
+    _SYNC_META_PATH.write_text(
+        json.dumps({"lastSyncedAt": datetime.now(timezone.utc).isoformat()}) + "\n"
+    )
 
 
 

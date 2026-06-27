@@ -2,6 +2,7 @@
 
 import { ATHLETE_NAME } from '@/domain/athlete/constants'
 import { t } from '@/i18n'
+import { SyncStatusBadge } from './SyncStatusBadge'
 
 function isoWeek(d: Date): number {
   const utc = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))
@@ -11,7 +12,7 @@ function isoWeek(d: Date): number {
   return Math.ceil(((utc.getTime() - yearStart.getTime()) / 86_400_000 + 1) / 7)
 }
 
-export function DashboardGreeting() {
+export function DashboardGreeting({ lastSyncedAt }: { lastSyncedAt: string | null }) {
   const now = new Date()
   const name = ATHLETE_NAME
   const g = t.pages.dashboard.greeting
@@ -20,9 +21,12 @@ export function DashboardGreeting() {
   const subtitle = g.weekDate(isoWeek(now), dateStr)
 
   return (
-    <div>
-      <h1 className="text-display text-foreground">{text}, {name}</h1>
-      <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>
+    <div className="flex items-start justify-between gap-3">
+      <div>
+        <h1 className="text-display text-foreground">{text}, {name}</h1>
+        <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>
+      </div>
+      <SyncStatusBadge lastSyncedAt={lastSyncedAt} />
     </div>
   )
 }

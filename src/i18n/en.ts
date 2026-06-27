@@ -275,6 +275,14 @@ export const en = {
       unit: 'ml/kg/min',
       footnote: 'Garmin VO₂max estimate',
     },
+    syncStatus: {
+      synced: (relative: string) => `Synced ${relative}`,
+      justNow: 'just now',
+      minutesAgo: (m: number) => `${m}m ago`,
+      hoursAgo: (h: number) => `${h}h ago`,
+      daysAgo: (d: number) => `${d}d ago`,
+      refreshHint: 'Tap to check for a newer deploy',
+    },
   },
 
   trainingStatus: {

@@ -1,4 +1,5 @@
 import { getDashboardData } from '@/application/usecases/GetDashboardData'
+import { getLastSyncedAt } from '@/application/usecases/GetSyncStatus'
 import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
 import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { getConsistencyScore } from '@/application/usecases/GetConsistencyScore'
@@ -20,6 +21,7 @@ import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting'
 
 export default async function DashboardPage() {
   const data = getDashboardData()
+  const lastSyncedAt = getLastSyncedAt()
   const trainingLoad = await getTrainingLoad()
   const trainingStatus = await getTrainingStatus()
   const consistencyScore = getConsistencyScore()
@@ -37,7 +39,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-3">        
-        <DashboardGreeting />
+        <DashboardGreeting lastSyncedAt={lastSyncedAt} />
         <DashboardHighlights
           record={mostRecentRecord}
           pbAlerts={pbAlerts}
