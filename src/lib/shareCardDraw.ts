@@ -108,6 +108,7 @@ function rrect(ctx: Ctx, x: number, y: number, w: number, h: number, rr: number)
 
 function glow(ctx: Ctx, W: number, H: number, cx: number, cy: number, radius: number, r: number, g: number, b: number, alpha: number) {
   ctx.save()
+  ctx.filter = `blur(${Math.round(radius * 0.22)}px)`
   const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius)
   grd.addColorStop(0, `rgba(${r},${g},${b},${alpha})`)
   grd.addColorStop(1, 'rgba(0,0,0,0)')
@@ -220,16 +221,10 @@ export function draw_pulse(ctx: Ctx, W: number, H: number, r: number, g: number,
   glow(ctx, W, H, W * 0.5, H * 0.5, W * 0.7, r, g, b, dark ? 0.18 : 0.07)
   const midY = H * 0.5, amp = H * 0.17, SEGS = 80, T = 15
   const wY = (i: number) => { const t2 = (i / SEGS) * Math.PI * 2.5, env = Math.sin(Math.PI * (i / SEGS)); return midY + Math.sin(t2) * amp * env * 1.5 }
-  ctx.save()
-  ctx.shadowColor = `rgba(${r},${g},${b},${dark ? 0.55 : 0.28})`
-  ctx.shadowBlur = 32
-  ctx.strokeStyle = `rgba(${r},${g},${b},${dark ? 0.45 : 0.22})`
-  ctx.lineWidth = 38
+  ctx.save(); ctx.filter = 'blur(28px)'
   ctx.beginPath(); ctx.moveTo(0, wY(0))
   for (let i = 1; i <= SEGS; i++) ctx.lineTo((i / SEGS) * W, wY(i))
-  ctx.stroke()
-  ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0
-  ctx.restore()
+  ctx.strokeStyle = `rgba(${r},${g},${b},${dark ? 0.75 : 0.38})`; ctx.lineWidth = 38; ctx.stroke(); ctx.restore()
   ctx.beginPath(); ctx.moveTo(0, wY(0) - T)
   for (let i = 1; i <= SEGS; i++) ctx.lineTo((i / SEGS) * W, wY(i) - T)
   for (let i = SEGS; i >= 0; i--) ctx.lineTo((i / SEGS) * W, wY(i) + T)
@@ -313,14 +308,10 @@ export function draw_cadence(ctx: Ctx, W: number, H: number, r: number, g: numbe
   heights.forEach((bh, idx) => {
     const bH = maxH * bh, x = idx * colW + colW * 0.15, w = colW * 0.7, y = baseY - bH, rr = w * 0.3
     if (bh > 0.6) {
-      ctx.save()
-      ctx.shadowColor = `rgba(${r},${g},${b},${dark ? 0.5 : 0.25})`
-      ctx.shadowBlur = w * 1.2
-      ctx.beginPath(); ctx.arc(x + w / 2, y + bH * 0.25, w * 0.3, 0, Math.PI * 2)
-      ctx.fillStyle = `rgba(${r},${g},${b},${dark ? 0.35 : 0.18})`
-      ctx.fill()
-      ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0
-      ctx.restore()
+      ctx.save(); ctx.filter = `blur(${w * 0.55}px)`
+      const gg = ctx.createRadialGradient(x + w / 2, y + bH * 0.25, 0, x + w / 2, y + bH * 0.25, w * 1.2)
+      gg.addColorStop(0, `rgba(${r},${g},${b},${dark ? 0.55 : 0.28})`)
+      gg.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = gg; ctx.fillRect(x - w, y - w, w * 3, bH + w * 2); ctx.restore()
     }
     rrect(ctx, x, y, w, bH, rr)
     ctx.shadowColor = dark ? 'rgba(0,0,0,.3)' : 'rgba(0,0,0,.09)'; ctx.shadowBlur = 10; ctx.shadowOffsetY = 4
@@ -516,19 +507,12 @@ export function draw_map(
       ]
 
   const drawRoute = (lw: number, a: number, blur?: number) => {
-    if (blur) {
-      ctx.save()
-      ctx.shadowColor = `rgba(${r},${g},${b},${a * 0.8})`
-      ctx.shadowBlur = blur * 2.5
-    }
+    if (blur) { ctx.save(); ctx.filter = `blur(${blur}px)` }
     ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1])
     pts.forEach(([px, py]) => ctx.lineTo(px, py))
     ctx.strokeStyle = `rgba(${r},${g},${b},${a})`; ctx.lineWidth = lw
     ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke()
-    if (blur) {
-      ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0
-      ctx.restore()
-    }
+    if (blur) ctx.restore()
   }
   drawRoute(18, dark ? 0.7 : 0.45, 14)
   drawRoute(3.5, dark ? 0.95 : 0.82)
@@ -643,15 +627,19 @@ export function drawRouteOverlay(
   const dy = H * 0.44 - H * 0.5
   const pts = rawPts.map(([x, y]) => [x, y + dy] as [number, number])
 
-  ctx.save()
-  ctx.shadowColor = `rgba(${r},${g},${b},${dark ? 0.52 : 0.32})`
-  ctx.shadowBlur = 35
-  ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1])
-  pts.forEach(([px, py]) => ctx.lineTo(px, py))
-  ctx.strokeStyle = `rgba(${r},${g},${b},${dark ? 0.65 : 0.4})`
-  ctx.lineWidth = 16; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke()
-  ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0
-  ctx.restore()
+  const drawRoute = (lw: number, a: number, blur?: number) => { 
+    ctx.save()
+    if (blur) ctx.filter = `blur(${blur}px)`
+      ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1])
+      pts.forEach(([px, py]) => ctx.lineTo(px, py))   
+      ctx.strokeStyle = `rgba(${r},${g},${b},${a})`; ctx.lineWidth = lw
+      ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke()
+      ctx.restore()
+    }
+
+    drawRoute(36, dark ? 0.45 : 0.28, 24) 
+    drawRoute(16, dark ? 0.75 : 0.48, 10) 
+    drawRoute(3.5, dark ? 0.98 : 0.85)
 
   ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1])
   pts.forEach(([px, py]) => ctx.lineTo(px, py))

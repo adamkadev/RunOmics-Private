@@ -179,11 +179,12 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     streetLabels,
   }), [activity, selectedDesign, accent, theme, photoImage, locationName, streetLabels])
 
-  // Redraw preview canvas whenever options change (scale=2 keeps it sharp on Retina/3x screens)
+  // Redraw preview canvas whenever options change; DPR-scale so shadowBlur maps to physical pixels
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-    renderShareCard(canvas, renderOptions(), 2)
+    const dpr = Math.min(window.devicePixelRatio || 1, 3)
+    renderShareCard(canvas, renderOptions(), dpr)
   }, [renderOptions])
 
   function selectDesign(d: ShareDesign) {
