@@ -4,6 +4,7 @@ import { RotateCcw } from 'lucide-react'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { EditableNumber } from '@/components/ui/EditableNumber'
 import type { AthleteProfile } from '@/infrastructure/repositories/FirestoreConfigRepository'
+import { ZONE_COLOR_CLASSES } from '@/lib/colors'
 import { t } from '@/i18n'
 
 type Bounds = [number, number, number, number]
@@ -13,14 +14,6 @@ const ZONE_PERCENTS = [0.80, 0.89, 0.95, 1.00]
 
 function defaultBounds(lthr: number): Bounds {
   return ZONE_PERCENTS.map((p) => Math.round(lthr * p)) as Bounds
-}
-
-const ZONE_COLOR_CLASS: Record<number, string> = {
-  1: 'bg-[#a7b1aa] dark:bg-white/55',
-  2: 'bg-[#3b82f6] dark:bg-[#7db8ff]',
-  3: 'bg-[#0e9f6e] dark:bg-[#2ed9a0]',
-  4: 'bg-[#f1761f] dark:bg-[#ff9a5a]',
-  5: 'bg-[#ff7676]',
 }
 
 interface Props {
@@ -63,7 +56,7 @@ export function ProfileHrZones({ athlete, onSave }: Props) {
       <div className="flex flex-col gap-2">
         {zones.map(({ zone, min, max, editableIndex }) => (
           <div key={zone} className="flex items-center gap-2.5">
-            <span className={`h-2 w-2 shrink-0 rounded-full ${ZONE_COLOR_CLASS[zone]}`} aria-hidden="true" />
+            <span className={`h-2 w-2 shrink-0 rounded-full ${ZONE_COLOR_CLASSES[zone].bg}`} aria-hidden="true" />
             <span className="w-28 shrink-0 text-xs font-semibold text-foreground/80">
               {t.activity.zones.labels[zone]}
             </span>

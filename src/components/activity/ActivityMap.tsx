@@ -5,7 +5,7 @@ import { MapPin, Maximize2, Minimize2, Thermometer } from 'lucide-react'
 import type { Map as MapLibreMap, Marker } from 'maplibre-gl'
 import { cn } from '@/lib/utils'
 import { maptilerStyleUrl } from '@/lib/maptiler'
-import { temperatureIconColor } from '@/lib/colors'
+import { CHART_COLORS, PACE_ROUTE_COLORS, temperatureIconColor } from '@/lib/colors'
 import { t } from '@/i18n'
 
 interface Props {
@@ -111,11 +111,12 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const lineColor: any = hasPace
         ? ['interpolate', ['linear'], ['get', 'pace'],
-            240, '#ef4444',  // ≤4:00/km → red
-            300, '#f59e0b',  //  5:00/km → amber
-            360, '#84cc16',  //  6:00/km → lime
-            420, '#10b981']  // ≥7:00/km → green
-        : '#10b981'
+            255, PACE_ROUTE_COLORS.fast,
+            300, PACE_ROUTE_COLORS.tempo,
+            350, PACE_ROUTE_COLORS.steady,
+            390, PACE_ROUTE_COLORS.easy,
+            450, PACE_ROUTE_COLORS.recovery]
+        : CHART_COLORS.brand
 
       map.on('load', () => {
         if (cancelled) return
@@ -141,7 +142,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
           paint: { 'line-color': lineColor, 'line-width': 4 },
         })
 
-        new mgl.Marker({ element: mkMarker('#10b981') }).setLngLat(route[0]).addTo(map)
+        new mgl.Marker({ element: mkMarker(CHART_COLORS.brand) }).setLngLat(route[0]).addTo(map)
 
         const total = segments.length
         const duration = 1800
@@ -162,7 +163,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
             animFrameRef.current = null
             const last = route[route.length - 1]
             if (Math.abs(last[0] - route[0][0]) > 0.0005 || Math.abs(last[1] - route[0][1]) > 0.0005) {
-              new mgl.Marker({ element: mkMarker('#ef4444') }).setLngLat(last).addTo(map)
+              new mgl.Marker({ element: mkMarker(PACE_ROUTE_COLORS.fast) }).setLngLat(last).addTo(map)
             }
           }
         }
@@ -206,8 +207,8 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
     if (!coord) return
 
     if (!hoverMarkerRef.current) {
-      const el = mkMarker('white', '#10b981', 14)
-      el.style.border = '3px solid #10b981'
+      const el = mkMarker('white', CHART_COLORS.brand, 14)
+      el.style.border = `3px solid ${CHART_COLORS.brand}`
       hoverMarkerRef.current = new mgl.Marker({ element: el }).setLngLat(coord).addTo(map)
     } else {
       hoverMarkerRef.current.setLngLat(coord)

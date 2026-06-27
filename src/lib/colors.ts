@@ -44,6 +44,17 @@ export const ZONE_COLORS: Record<number, string> = {
   5: '#ef4444', // red-500
 }
 
+// HR zone Tailwind classes (light/dark), keyed by zone number. Shared between
+// ZoneBar (activity detail) and ProfileHrZones (settings) - kept in sync here
+// rather than duplicated, since they style the same Z1-Z5 scale.
+export const ZONE_COLOR_CLASSES: Record<number, { bg: string; text: string }> = {
+  1: { bg: 'bg-[#a7b1aa] dark:bg-white/55',  text: 'text-[#a7b1aa] dark:text-white/55' },
+  2: { bg: 'bg-[#3b82f6] dark:bg-[#7db8ff]', text: 'text-[#3b82f6] dark:text-[#7db8ff]' },
+  3: { bg: 'bg-[#0e9f6e] dark:bg-[#2ed9a0]', text: 'text-[#0e9f6e] dark:text-[#2ed9a0]' },
+  4: { bg: 'bg-[#f1761f] dark:bg-[#ff9a5a]', text: 'text-[#f1761f] dark:text-[#ff9a5a]' },
+  5: { bg: 'bg-[#ff7676]',                   text: 'text-[#ff7676]' },
+}
+
 // Race distance identity (Goals season-PR cards): each distance category gets
 // its own gradient overlay + text tint so cards read apart at a glance, same
 // idea as activity-type dots but for race length rather than effort type.
@@ -69,6 +80,19 @@ export function temperatureIconColor(celsius: number): string {
   if (celsius < 30) return 'text-orange-500 dark:text-orange-400'
   return 'text-red-500 dark:text-red-400'
 }
+
+// Activity map route gradient (pace-based), thresholds (sec/km) calibrated on
+// this athlete's actual pace distribution (median ~5:52/km, p90 ~7:10/km) rather
+// than generic splits - so the gradient actually spans most real segments instead
+// of sitting mostly in one or two colors. Ends reuse CHART_COLORS.hr/brand/pace
+// so the map stays visually consistent with the HR/training-load/pace charts.
+export const PACE_ROUTE_COLORS = {
+  fast:      CHART_COLORS.hr,    // <= 4:15/km - intervals, race pace
+  tempo:     '#f59e0b',          //    5:00/km - amber-500
+  steady:    '#84cc16',          //    5:50/km - lime-500, near median pace
+  easy:      CHART_COLORS.brand, //    6:30/km
+  recovery:  CHART_COLORS.pace,  // >= 7:30/km - recovery jog / walk breaks
+} as const
 
 // Temperature band hex colors for Recharts scatter dots (cold=blue -> hot=red)
 // These represent physical reality and are intentionally accent-independent.

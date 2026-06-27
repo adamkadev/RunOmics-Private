@@ -3,6 +3,7 @@
 import type { HrZone } from '@/domain/activity/types'
 import { formatDuration } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { ZONE_COLOR_CLASSES } from '@/lib/colors'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -10,13 +11,12 @@ const ZONE_CONFIG: Record<number, {
   label: string
   barClass: string
   textClass: string
-}> = {
-  1: { label: t.activity.zones.labels[1], barClass: 'bg-[#a7b1aa] dark:bg-white/55',         textClass: 'text-[#a7b1aa] dark:text-white/55' },
-  2: { label: t.activity.zones.labels[2], barClass: 'bg-[#3b82f6] dark:bg-[#7db8ff]',        textClass: 'text-[#3b82f6] dark:text-[#7db8ff]' },
-  3: { label: t.activity.zones.labels[3], barClass: 'bg-[#0e9f6e] dark:bg-[#2ed9a0]',        textClass: 'text-[#0e9f6e] dark:text-[#2ed9a0]' },
-  4: { label: t.activity.zones.labels[4], barClass: 'bg-[#f1761f] dark:bg-[#ff9a5a]',        textClass: 'text-[#f1761f] dark:text-[#ff9a5a]' },
-  5: { label: t.activity.zones.labels[5], barClass: 'bg-[#ff7676]',                          textClass: 'text-[#ff7676]' },
-}
+}> = Object.fromEntries(
+  Object.entries(ZONE_COLOR_CLASSES).map(([zone, { bg, text }]) => [
+    zone,
+    { label: t.activity.zones.labels[Number(zone)], barClass: bg, textClass: text },
+  ])
+)
 
 const TRACK_CLASS = 'bg-[rgba(11,31,23,0.07)] dark:bg-[rgba(255,255,255,0.08)]'
 

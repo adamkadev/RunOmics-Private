@@ -10,7 +10,7 @@ import type {
 } from '@/domain/activity/types'
 
 
-function buildWeekSummary(weekNumber: number, activities: Activity[]): WeekSummary {
+export function buildWeekSummary(weekNumber: number, activities: Activity[]): WeekSummary {
   const totalDistanceKm = activities.reduce((s, a) => s + a.distanceKm, 0)
   const totalDurationSeconds = activities.reduce((s, a) => s + a.durationSeconds, 0)
   const hrs = activities.filter((a) => a.avgHeartRate !== null).map((a) => a.avgHeartRate!)
@@ -26,7 +26,7 @@ function buildWeekSummary(weekNumber: number, activities: Activity[]): WeekSumma
   }
 }
 
-function buildTypeDistribution(activities: Activity[]): TypeDistribution[] {
+export function buildTypeDistribution(activities: Activity[]): TypeDistribution[] {
   const total = activities.reduce((s, a) => s + a.distanceKm, 0)
   const map = new Map<ActivityType, { count: number; distanceKm: number }>()
 
@@ -45,11 +45,13 @@ function buildTypeDistribution(activities: Activity[]): TypeDistribution[] {
     .sort((a, b) => b.distanceKm - a.distanceKm)
 }
 
-function computeStreaks(activities: Activity[]): { current: number; longest: number } {
+export function computeStreaks(activities: Activity[]): { current: number; longest: number } {
   const dateSet = new Set(activities.map((a) => a.date.slice(0, 10)))
 
+  // Local date components, not toISOString() - the latter converts to UTC and
+  // shifts local midnight back a calendar day in UTC+ timezones, undercounting streaks.
   function fmt(d: Date) {
-    return d.toISOString().slice(0, 10)
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
   }
 
   const today = new Date()
