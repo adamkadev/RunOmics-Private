@@ -254,8 +254,6 @@ export const en = {
       title: 'Training Mix',
       other: 'Other',
     },
-    viewAnalytics: 'View full analytics',
-    viewRouteHeatmap: 'View route heatmap',
     trainingLoad: {
       title: 'Training Load',
       window: '· last 90 days',
