@@ -571,6 +571,7 @@ export const en = {
       accentTitle: 'Accent',
       accentSubtitle: 'Unit color',
       galleryPlaceholder: 'Choose a photo',
+      orUsePhoto: 'Or use your photo',
     },
     stats: {
       distance: 'Distance',
@@ -770,6 +771,8 @@ export const en = {
       title: 'Personal records',
       notYet: 'Not yet',
       viewAll: 'View all records',
+      newBadge: 'NEW',
+      legend: '🏅 current record · NEW = set in the last 90 days',
     },
     shoes: {
       title: 'Shoes',
@@ -852,6 +855,11 @@ export const en = {
     planned: 'Planned',
     viewDetail: 'View detail',
     type: 'Type',
+    legend: {
+      toggleLabel: 'Status legend',
+      completed: 'Completed',
+      missed: 'Missed',
+    },
   },
 
   // Display labels for domain enums. Styling (colors, badge classes) stays in

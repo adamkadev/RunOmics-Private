@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTheme } from 'next-themes'
 import { Check, Copy, Download, Share2, X } from 'lucide-react'
@@ -10,7 +10,7 @@ import { renderShareCard, shareCardFileName, loadImage, hexToRgb } from '@/lib/s
 import { ACCENT_SWATCHES, ACCENT_IDS, DEFAULT_ACCENT, isAccentId, type AccentId } from '@/lib/accent'
 import { useDragToDismiss } from '@/hooks/useDragToDismiss'
 import { t } from '@/i18n'
-import { ThemeCard } from '@/components/activity/ShareCardThumbnails'
+import { ThemeCard, ThemeDivider } from '@/components/activity/ShareCardThumbnails'
 
 type ShareAccent = AccentId | 'custom'
 
@@ -324,18 +324,20 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             style={{ padding: '4px 14px 12px' }}
           >
             {SHARE_DESIGNS.map((d) => (
-              <ThemeCard
-                key={d}
-                design={d}
-                accent={effectiveAccent}
-                theme={shareTheme}
-                selected={selectedDesign === d}
-                accentHex={shareAccentHex}
-                onClick={() => selectDesign(d)}
-                gpsRoute={activity.route}
-                photoUrl={d === 'memory' ? photoUrl : null}
-                customRgb={customRgb}
-              />
+              <Fragment key={d}>
+                {d === 'memory' && <ThemeDivider label={t.activity.shareCard.orUsePhoto} />}
+                <ThemeCard
+                  design={d}
+                  accent={effectiveAccent}
+                  theme={shareTheme}
+                  selected={selectedDesign === d}
+                  accentHex={shareAccentHex}
+                  onClick={() => selectDesign(d)}
+                  gpsRoute={activity.route}
+                  photoUrl={d === 'memory' ? photoUrl : null}
+                  customRgb={customRgb}
+                />
+              </Fragment>
             ))}
           </div>
 
