@@ -1,10 +1,12 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import type { Activity, ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import { round } from '@/lib/math'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { PlannedWorkoutSheet } from './PlannedWorkoutSheet'
+import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 interface Props {
@@ -40,11 +42,45 @@ function DayActivities({ activities }: { activities: Activity[] }) {
         )}
       </div>
       {totalKm > 0 && (
-        <span className="text-[10px] font-bold text-accent-text leading-none">
+        <span
+          className="text-[10px] font-bold leading-none"
+          style={{ color: ACTIVITY_TYPE_CONFIG[activities[0].type].dotColor }}
+        >
           {totalKm.toFixed(1)} km
         </span>
       )}
     </div>
+  )
+}
+
+function PlannedBadge({ workout, onTap }: { workout: PlannedWorkout; onTap: () => void }) {
+  const dotColor = workout.type ? ACTIVITY_TYPE_CONFIG[workout.type as ActivityType].dotColor : null
+  const label = workout.distanceM
+    ? `${round(workout.distanceM / 1000)} ${t.units.km}`
+    : workout.durationSecs
+      ? `${Math.round(workout.durationSecs / 60)}'`
+      : null
+
+  return (
+    <button
+      type="button"
+      onClick={onTap}
+      className="flex items-center gap-1 rounded px-1 py-0.5 transition-colors hover:bg-foreground/[0.06]"
+    >
+      <span
+        className={cn('h-1.5 w-1.5 shrink-0 rounded-full', !dotColor && 'bg-accent/50')}
+        style={dotColor ? { background: dotColor, opacity: 0.7 } : undefined}
+        aria-hidden="true"
+      />
+      {label && (
+        <span
+          className={cn('text-micro font-bold', !dotColor && 'text-accent-text/70')}
+          style={dotColor ? { color: dotColor } : undefined}
+        >
+          {label}
+        </span>
+      )}
+    </button>
   )
 }
 
@@ -53,6 +89,7 @@ function monthKey(year: number, month: number): string {
 }
 
 export function MonthView({ year, month, byDate, byDatePlanned, today }: Props) {
+  const [sheetPlan, setSheetPlan] = useState<PlannedWorkout | null>(null)
   const { cells, totalKm, sessionCount } = useMemo(() => {
     const firstDay = new Date(year, month, 1)
     const startOffset = (firstDay.getDay() || 7) - 1
@@ -109,15 +146,10 @@ export function MonthView({ year, month, byDate, byDatePlanned, today }: Props) 
                   {cell.acts.length > 0 ? (
                     <DayActivities activities={cell.acts} />
                   ) : byDatePlanned.has(cell.date) ? (
-                    <div
-                      className="flex items-center gap-1 rounded px-1 py-0.5"
-                      title={byDatePlanned.get(cell.date)?.name}
-                    >
-                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent/50" aria-hidden="true" />
-                      <span className="truncate text-micro font-medium text-accent-text/70">
-                        {byDatePlanned.get(cell.date)?.name}
-                      </span>
-                    </div>
+                    <PlannedBadge
+                      workout={byDatePlanned.get(cell.date)!}
+                      onTap={() => setSheetPlan(byDatePlanned.get(cell.date)!)}
+                    />
                   ) : null}
                 </>
               )}
@@ -137,6 +169,8 @@ export function MonthView({ year, month, byDate, byDatePlanned, today }: Props) 
         </div>
         <p className="font-mono">{t.calendar.summary(sessionCount, totalKm)}</p>
       </div>
+
+      {sheetPlan && <PlannedWorkoutSheet workout={sheetPlan} onClose={() => setSheetPlan(null)} />}
     </div>
   )
 }
