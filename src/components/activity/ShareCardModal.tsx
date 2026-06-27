@@ -82,8 +82,11 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   const [locationName, setLocationName] = useState<string | null>(() => {
     try { return sessionStorage.getItem(`ro_geocode_${activity.id}`) } catch { return null }
   })
-  const [streetLabel, setStreetLabel] = useState<string | null>(() => {
-    try { return sessionStorage.getItem(`ro_geocode_${activity.id}_road`) } catch { return null }
+  const [streetLabels, setStreetLabels] = useState<string[]>(() => {
+    try {
+      const cached = sessionStorage.getItem(`ro_geocode_${activity.id}_roads`)
+      return cached ? (JSON.parse(cached) as string[]) : []
+    } catch { return [] }
   })
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -104,33 +107,45 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   }, [selectedDesign])
 
   // Reverse geocoding for map watermark + street labels (cache in sessionStorage)
+  // Samples start, mid, end of route to collect multiple real street names
   useEffect(() => {
-    if (locationName !== null && streetLabel !== null) return
+    if (locationName !== null && streetLabels.length > 0) return
     if (!activity.route || activity.route.length < 1) return
-    const [lng, lat] = activity.route[0]
+    const route = activity.route
     const cacheKey = `ro_geocode_${activity.id}`
-    fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=16`,
-      { headers: { 'Accept-Language': 'fr', 'User-Agent': 'RunOmics/1.0' } }
-    )
-      .then(res => res.json())
-      .then((data: { address?: Record<string, string> }) => {
-        const addr = data.address ?? {}
-        const road = addr.road ?? addr.pedestrian ?? addr.path ?? null
-        const suburb = addr.suburb ?? addr.neighbourhood
-        const city = addr.city ?? addr.town ?? addr.village
-        const cityName = suburb ? `${suburb}, ${city}` : (city ?? null)
-        if (road) {
-          try { sessionStorage.setItem(`${cacheKey}_road`, road) } catch { /* noop */ }
-          setStreetLabel(road)
-        }
-        if (cityName) {
-          try { sessionStorage.setItem(cacheKey, cityName) } catch { /* noop */ }
-          setLocationName(cityName)
-        }
+    const indices = [...new Set([0, Math.floor(route.length * 0.5), route.length - 1])]
+    Promise.allSettled(
+      indices.map(idx => {
+        const [lng, lat] = route[idx]
+        return fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=16`,
+          { headers: { 'Accept-Language': 'fr', 'User-Agent': 'RunOmics/1.0' } }
+        ).then(res => res.json()) as Promise<{ address?: Record<string, string> }>
       })
-      .catch(() => { /* noop */ })
-  }, [activity.id, activity.route, locationName, streetLabel])
+    ).then(results => {
+      const roads: string[] = []
+      let cityName: string | null = null
+      for (const r of results) {
+        if (r.status !== 'fulfilled') continue
+        const addr = r.value.address ?? {}
+        const road = addr.road ?? addr.pedestrian ?? addr.path ?? null
+        if (road && !roads.includes(road)) roads.push(road)
+        if (!cityName) {
+          const suburb = addr.suburb ?? addr.neighbourhood
+          const city = addr.city ?? addr.town ?? addr.village
+          cityName = suburb ? `${suburb}, ${city}` : (city ?? null)
+        }
+      }
+      if (roads.length > 0) {
+        try { sessionStorage.setItem(`${cacheKey}_roads`, JSON.stringify(roads)) } catch { /* noop */ }
+        setStreetLabels(roads)
+      }
+      if (cityName) {
+        try { sessionStorage.setItem(cacheKey, cityName) } catch { /* noop */ }
+        setLocationName(cityName)
+      }
+    })
+  }, [activity.id, activity.route, locationName, streetLabels.length])
 
   // Escape key
   useEffect(() => {
@@ -161,8 +176,8 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     photoImage,
     gpsRoute: activity.route,
     locationName,
-    streetLabel,
-  }), [activity, selectedDesign, accent, theme, photoImage, locationName, streetLabel])
+    streetLabels,
+  }), [activity, selectedDesign, accent, theme, photoImage, locationName, streetLabels])
 
   // Redraw preview canvas whenever options change
   useEffect(() => {

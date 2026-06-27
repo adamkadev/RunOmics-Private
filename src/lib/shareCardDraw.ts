@@ -332,37 +332,45 @@ export function draw_cadence(ctx: Ctx, W: number, H: number, r: number, g: numbe
   ctx.strokeStyle = dark ? 'rgba(255,255,255,.14)' : 'rgba(0,0,0,.1)'; ctx.lineWidth = 1; ctx.stroke()
 }
 
-function drawMapStreetLabels(ctx: Ctx, W: number, H: number, dark: boolean, streetLabel: string) {
+function drawMapStreetLabels(ctx: Ctx, W: number, H: number, dark: boolean, streetLabels: string[]) {
+  if (streetLabels.length === 0) return
   ctx.save()
   ctx.font = '500 8.5px Inter,system-ui,sans-serif'
   const labelColor = dark ? 'rgba(255,255,255,0.42)' : 'rgba(0,0,0,0.38)'
   const bg = dark ? 'rgba(9,16,26,0.76)' : 'rgba(237,241,247,0.76)'
-  const tw = ctx.measureText(streetLabel).width
   const ph = 11, pad = 4
 
-  // Horizontal label on 2 major horizontal grid lines in the mid section
-  const hLines = [Math.round(H * 0.27), Math.round(H * 0.54)]
-  hLines.forEach(y => {
+  // All major horizontal grid lines (every 112px), cycling through labels
+  let hi = 0
+  for (let y = 112; y < H; y += 112) {
+    const lbl = streetLabels[hi++ % streetLabels.length]
+    const tw = ctx.measureText(lbl).width
     const lx = W * 0.05
     ctx.fillStyle = bg
     ctx.fillRect(lx - pad, y - ph / 2 - pad / 2, tw + pad * 2, ph + pad)
     ctx.fillStyle = labelColor
     ctx.textAlign = 'left'; ctx.textBaseline = 'middle'
-    ctx.fillText(streetLabel, lx, y)
-  })
+    ctx.fillText(lbl, lx, y)
+  }
 
-  // Vertical label on 1 major vertical grid line (rotated 90°)
-  const vX = Math.round(W * 0.55)
-  const labelY = H * 0.35
-  ctx.save()
-  ctx.translate(vX, labelY)
-  ctx.rotate(-Math.PI / 2)
-  ctx.fillStyle = bg
-  ctx.fillRect(-tw / 2 - pad, -ph / 2 - pad / 2, tw + pad * 2, ph + pad)
-  ctx.fillStyle = labelColor
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
-  ctx.fillText(streetLabel, 0, 0)
-  ctx.restore()
+  // Major vertical grid lines (every 112px, up to 3), cycling through labels in reverse
+  const vPool = streetLabels.length > 1 ? [...streetLabels].reverse() : streetLabels
+  let vi = 0
+  for (let vX = 112; vX < W && vi < 3; vX += 112) {
+    const lbl = vPool[vi % vPool.length]
+    const tw = ctx.measureText(lbl).width
+    const labelY = H * (0.25 + (vi + 1) * 0.15)
+    vi++
+    ctx.save()
+    ctx.translate(vX, labelY)
+    ctx.rotate(-Math.PI / 2)
+    ctx.fillStyle = bg
+    ctx.fillRect(-tw / 2 - pad, -ph / 2 - pad / 2, tw + pad * 2, ph + pad)
+    ctx.fillStyle = labelColor
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+    ctx.fillText(lbl, 0, 0)
+    ctx.restore()
+  }
 
   ctx.restore()
 }
@@ -453,7 +461,7 @@ export function draw_map(
   gpsRoute?: [number, number][] | null,
   locationName?: string | null,
   distanceKm?: number,
-  streetLabel?: string | null,
+  streetLabels?: string[] | null,
 ) {
   // Background + grid
   ctx.fillStyle = dark ? '#09101a' : '#edf1f7'; ctx.fillRect(0, 0, W, H)
@@ -465,7 +473,7 @@ export function draw_map(
   for (let y = 0; y < H; y += 112) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke() }
 
   // Street labels on major grid lines
-  if (streetLabel) drawMapStreetLabels(ctx, W, H, dark, streetLabel)
+  if (streetLabels?.length) drawMapStreetLabels(ctx, W, H, dark, streetLabels)
 
   glow(ctx, W, H, W * 0.5, H * 0.52, W * 0.55, r, g, b, dark ? 0.22 : 0.14)
 
@@ -744,7 +752,7 @@ export function drawTheme(
   photoImg?: HTMLImageElement | null,
   locationName?: string | null,
   distanceKm?: number,
-  streetLabel?: string | null,
+  streetLabels?: string[] | null,
 ): void {
   switch (theme) {
     case 'aurora':  draw_aurora(ctx, W, H, r, g, b, dark); break
@@ -752,7 +760,7 @@ export function drawTheme(
     case 'terrain': draw_terrain(ctx, W, H, r, g, b, dark); break
     case 'prism':   draw_prism(ctx, W, H, r, g, b, dark); break
     case 'cadence': draw_cadence(ctx, W, H, r, g, b, dark); break
-    case 'map':     draw_map(ctx, W, H, r, g, b, dark, gpsRoute, locationName, distanceKm, streetLabel); break
+    case 'map':     draw_map(ctx, W, H, r, g, b, dark, gpsRoute, locationName, distanceKm, streetLabels); break
     case 'memory':  draw_memory(ctx, W, H, r, g, b, dark, photoImg ?? null); break
   }
 }
