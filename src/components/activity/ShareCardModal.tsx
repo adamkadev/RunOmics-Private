@@ -5,36 +5,15 @@ import { createPortal } from 'react-dom'
 import { useTheme } from 'next-themes'
 import { Check, Copy, Download, Share2, X } from 'lucide-react'
 import type { Activity } from '@/domain/activity/types'
-import {
-  BRAND_MARK_SRC,
-  H as CARD_H,
-  isTexturedDesign,
-  loadImage,
-  renderShareCard,
-  SHARE_DESIGNS,
-  shareCardFileName,
-  texturedBgPath,
-  W as CARD_W,
-  type MapStyle,
-  type ShareDesign,
-  type ThemeMode,
-} from '@/lib/shareCard'
-import { captureRouteMapSnapshot } from '@/lib/routeMapSnapshot'
+import { SHARE_DESIGNS, type ShareDesign, type ThemeMode } from '@/lib/shareCard'
+import { renderShareCard, shareCardFileName, loadImage } from '@/lib/shareCard'
 import { ACCENT_SWATCHES, DEFAULT_ACCENT, isAccentId, type AccentId } from '@/lib/accent'
 import { useDragToDismiss } from '@/hooks/useDragToDismiss'
-import { cn } from '@/lib/utils'
-import { STATUS } from '@/lib/statusColors'
-import { Button } from '@/components/ui/Button'
-import { ACCENT_TOKENS, getDesignConfig } from '@/components/activity/shareCardDesignTokens'
-import { DesignThumb } from '@/components/activity/ShareCardThumbnails'
-import { DesignPreview, PREVIEW_HEIGHT, PREVIEW_WIDTH } from '@/components/activity/ShareCardDesignPreview'
 import { t } from '@/i18n'
-
-const MAP_STYLES: MapStyle[] = ['light', 'dark']
+import { ThemeCard } from '@/components/activity/ShareCardThumbnails'
 
 function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) => {
-    // Wait for the next frame to ensure canvas rendering is complete
     requestAnimationFrame(() => {
       canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png')
     })
@@ -47,6 +26,34 @@ function currentAccent(): AccentId {
   return isAccentId(v) ? v : DEFAULT_ACCENT
 }
 
+function readLocalStorage(key: string, fallback: string): string {
+  try { return localStorage.getItem(key) ?? fallback } catch { return fallback }
+}
+
+interface ToggleProps {
+  on: boolean
+  onChange: (v: boolean) => void
+  accentHex: string
+}
+
+function Toggle({ on, onChange, accentHex }: ToggleProps) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      onClick={() => onChange(!on)}
+      className="relative ml-4 h-[31px] w-[51px] shrink-0 rounded-full transition-colors duration-200"
+      style={{ background: on ? accentHex : 'rgba(120,120,128,0.22)' }}
+    >
+      <span
+        className="absolute top-[2px] h-[27px] w-[27px] rounded-full bg-white shadow-[0_2px_6px_rgba(0,0,0,0.28)] transition-[left] duration-200"
+        style={{ left: on ? 22 : 2 }}
+      />
+    </button>
+  )
+}
+
 interface Props {
   activity: Activity
   canShareFiles: boolean
@@ -57,132 +64,77 @@ interface Props {
 export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose }: Props) {
   const { resolvedTheme } = useTheme()
   const theme: ThemeMode = resolvedTheme === 'light' ? 'light' : 'dark'
-  const [design, setDesign] = useState<ShareDesign>('facets')
-  const [showMap, setShowMap] = useState(true)
-  const [mapStyle, setMapStyle] = useState<MapStyle>(theme)
+
+  const [selectedDesign, setSelectedDesign] = useState<ShareDesign>(
+    () => {
+      const stored = readLocalStorage('ro_shareTheme', 'aurora')
+      return (SHARE_DESIGNS as string[]).includes(stored) ? stored as ShareDesign : 'aurora'
+    }
+  )
+  const [showStats, setShowStats] = useState(
+    () => readLocalStorage('ro_shareStats', 'true') !== 'false'
+  )
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [photoImage, setPhotoImage] = useState<HTMLImageElement | null>(null)
   const [copyState, setCopyState] = useState<'idle' | 'copied'>('idle')
-  // Resolved map snapshots, cached per style so switching light/dark doesn't re-fetch.
-  const [mapSnapshots, setMapSnapshots] = useState<Partial<Record<MapStyle, { url: string; img: HTMLImageElement }>>>({})
-  // Textured background images (Facets/Grain/Topographic), cached per design+theme so
-  // toggling between them doesn't re-fetch.
-  const [texturedBgImages, setTexturedBgImages] = useState<Partial<Record<string, HTMLImageElement>>>({})
-  const [brandMarkImage, setBrandMarkImage] = useState<HTMLImageElement | null>(null)
-
-  const { close, handleProps, sheetStyle } = useDragToDismiss(onClose)
-
-  const [previewScale, setPreviewScale] = useState(1)
-  useEffect(() => {
-    function update() { setPreviewScale(Math.min(1, (window.innerWidth - 40) / PREVIEW_WIDTH)) }
-    update()
-    window.addEventListener('resize', update)
-    return () => window.removeEventListener('resize', update)
-  }, [])
 
   const [accent] = useState<AccentId>(currentAccent)
   const accentHex = ACCENT_SWATCHES[accent]
+
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const photoUrlRef = useRef<string | null>(null)
 
-  const isMapBg = design === 'map'
-  const isTextured = isTexturedDesign(design)
-  const effectiveShowMap = showMap || isMapBg
-  const canCaptureMap = !!activity.route && activity.route.length > 1 && !!process.env.NEXT_PUBLIC_MAPTILER_TOKEN
-  const mapSnapshot = mapSnapshots[mapStyle] ?? null
-  const mapLoading = isMapBg && canCaptureMap && !mapSnapshot
-  const texturedBgKey = `${design}_${theme}`
-  const texturedBgImage = texturedBgImages[texturedBgKey] ?? null
+  const { close, handleProps, sheetStyle } = useDragToDismiss(onClose)
 
-  const redraw = useCallback(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    renderShareCard(canvas, {
-      activity,
-      design,
-      accent,
-      theme,
-      showMap: effectiveShowMap,
-      photoImage,
-      mapImage: mapSnapshot?.img ?? null,
-      texturedBgImage,
-      brandMarkImage,
-      mapStyle,
-    })
-  }, [activity, accent, theme, design, effectiveShowMap, photoImage, mapSnapshot, texturedBgImage, brandMarkImage, mapStyle])
+  // Persist preferences
+  useEffect(() => { try { localStorage.setItem('ro_shareTheme', selectedDesign) } catch { /* noop */ } }, [selectedDesign])
+  useEffect(() => { try { localStorage.setItem('ro_shareStats', String(showStats)) } catch { /* noop */ } }, [showStats])
 
-  useEffect(() => { redraw() }, [redraw])
-
-  useEffect(() => () => {
-    if (photoUrlRef.current) URL.revokeObjectURL(photoUrlRef.current)
-  }, [])
-
+  // Escape key
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') close() }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [close])
 
+  // Body scroll lock
   useEffect(() => {
-    const { style } = document.body
-    const prev = style.overflow
-    style.overflow = 'hidden'
-    return () => { style.overflow = prev }
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = prev }
   }, [])
 
-  useEffect(() => {
-    loadImage(BRAND_MARK_SRC).then(setBrandMarkImage).catch((err) => console.error(err))
+  // Revoke photo object URL on unmount
+  useEffect(() => () => {
+    if (photoUrlRef.current) URL.revokeObjectURL(photoUrlRef.current)
   }, [])
 
-  // Loads the static per-accent/theme texture background, the first time a given
-  // design+theme combination is needed. Cached in state so toggling back and forth
-  // between designs or themes doesn't re-fetch.
-  useEffect(() => {
-    if (!isTextured || texturedBgImages[texturedBgKey]) return
-    let cancelled = false
-    loadImage(texturedBgPath(design, accent, theme))
-      .then((img) => { if (!cancelled) setTexturedBgImages((prev) => ({ ...prev, [texturedBgKey]: img })) })
-      .catch((err) => console.error(err))
-    return () => { cancelled = true }
-  }, [isTextured, design, accent, theme, texturedBgKey, texturedBgImages])
-
-  // Captures the route-on-map background for the selected style, the first time it's needed.
-  // Resolved snapshots are cached per style in state, so switching light/dark back and forth
-  // doesn't re-fetch.
-  useEffect(() => {
-    if (!isMapBg || mapSnapshots[mapStyle]) return
-    const route = activity.route
-    if (!route || route.length < 2) return
-    const token = process.env.NEXT_PUBLIC_MAPTILER_TOKEN
-    if (!token) { console.warn('NEXT_PUBLIC_MAPTILER_TOKEN not set'); return }
-
-    let cancelled = false
-    // light basemap: the route's white halo (drawn in captureRouteMapSnapshot) needs a
-    // saturated line on top of it, not white, or it disappears against the light tiles.
-    const routeColor = mapStyle === 'light' ? ACCENT_TOKENS[accent].accentLight : getDesignConfig('map', accent, theme).routeColor
-    captureRouteMapSnapshot({
-      route,
-      color: routeColor,
-      isDark: mapStyle === 'dark',
-      token,
-      width: CARD_W,
-      height: CARD_H,
+  // Redraw export canvas whenever options change
+  const redraw = useCallback(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    renderShareCard(canvas, {
+      activity,
+      design: selectedDesign,
+      accent,
+      theme,
+      showStats,
+      photoImage,
+      gpsRoute: activity.route,
     })
-      .then((url) => loadImage(url).then((img) => ({ url, img })))
-      .then((result) => {
-        if (cancelled) return
-        setMapSnapshots((prev) => ({ ...prev, [mapStyle]: result }))
-      })
-      .catch((err) => console.error(err))
+  }, [activity, selectedDesign, accent, theme, showStats, photoImage])
 
-    return () => { cancelled = true }
-  }, [isMapBg, activity.route, accent, theme, mapStyle, mapSnapshots])
+  useEffect(() => { redraw() }, [redraw])
 
   function selectDesign(d: ShareDesign) {
-    setDesign(d)
-    // Memory's photo is the focal point - don't clutter it with the route trace by default.
-    setShowMap(d !== 'memory')
+    setSelectedDesign(d)
+    if (d === 'memory') setShowStats(false)
+  }
+
+  function handleShowMapRoute(on: boolean) {
+    if (on) setSelectedDesign('map')
+    else if (selectedDesign === 'map') setSelectedDesign('aurora')
   }
 
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -200,38 +152,41 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
       .catch(() => URL.revokeObjectURL(url))
   }
 
-  async function handleShare() {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const blob = await canvasToBlob(canvas)
-    const file = new File([blob], shareCardFileName(activity, design), { type: 'image/png' })
-    if (!navigator.canShare({ files: [file] })) return
-    try { await navigator.share({ files: [file] }) }
-    catch (err) { if ((err as Error).name !== 'AbortError') console.error(err) }
-  }
-
   async function handleSave() {
     const canvas = canvasRef.current
     if (!canvas) return
-    const blob = await canvasToBlob(canvas)
-    const file = new File([blob], shareCardFileName(activity, design), { type: 'image/png' })
+    // Re-render at 3x for high resolution
+    const hiCanvas = document.createElement('canvas')
+    renderShareCard(hiCanvas, {
+      activity, design: selectedDesign, accent, theme, showStats, photoImage, gpsRoute: activity.route,
+    }, 3)
+    const blob = await canvasToBlob(hiCanvas)
+    const file = new File([blob], shareCardFileName(activity, selectedDesign), { type: 'image/png' })
 
-    // PWA iOS: try navigator.share first for better UX (saves to Photos directly)
     const isIosPwa = /iPhone|iPad/.test(navigator.userAgent) && 'standalone' in navigator && (navigator as unknown as { standalone: boolean }).standalone === true
     if (isIosPwa && navigator.canShare?.({ files: [file] })) {
       try { await navigator.share({ files: [file] }); return }
       catch (err) { if ((err as Error).name !== 'AbortError') console.error(err) }
     }
 
-    // Fallback: traditional download link (works on desktop/web)
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
-    a.href = url
-    a.download = file.name
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
+    a.href = url; a.download = file.name
+    document.body.appendChild(a); a.click(); document.body.removeChild(a)
     setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }
+
+  async function handleShare() {
+    if (!canShareFiles) { await handleSave(); return }
+    const hiCanvas = document.createElement('canvas')
+    renderShareCard(hiCanvas, {
+      activity, design: selectedDesign, accent, theme, showStats, photoImage, gpsRoute: activity.route,
+    }, 3)
+    const blob = await canvasToBlob(hiCanvas)
+    const file = new File([blob], shareCardFileName(activity, selectedDesign), { type: 'image/png' })
+    if (!navigator.canShare({ files: [file] })) return
+    try { await navigator.share({ files: [file], title: `${activity.description || 'Run'} - RunOmics` }) }
+    catch (err) { if ((err as Error).name !== 'AbortError') console.error(err) }
   }
 
   function handleCopy() {
@@ -246,147 +201,179 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
       .catch(console.error)
   }
 
+  const isMap = selectedDesign === 'map'
+  const isMemory = selectedDesign === 'memory'
+  const canRoute = !!activity.route && activity.route.length > 1
+
   return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center sm:p-4"
       onClick={close}
     >
       <div
-        className="glass-sheet relative flex max-h-[92vh] w-full animate-sheet-up flex-col overflow-hidden rounded-t-3xl sm:h-auto sm:max-h-[92vh] sm:max-w-md sm:rounded-2xl"
-        style={sheetStyle}
+        className="relative flex w-full max-w-md animate-sheet-up flex-col overflow-hidden sm:rounded-2xl"
+        style={{
+          ...sheetStyle,
+          borderRadius: '28px 28px 0 0',
+          background: 'rgba(8,18,13,0.92)',
+          backdropFilter: 'blur(40px)',
+          WebkitBackdropFilter: 'blur(40px)',
+          borderTop: '1px solid rgba(255,255,255,0.12)',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Drag handle (mobile) - drag down to dismiss */}
+        {/* Drag handle */}
         <div className="flex shrink-0 justify-center pt-3 pb-1 sm:hidden" {...handleProps}>
-          <span className="h-[5px] w-9 rounded-full bg-foreground/25" aria-hidden="true" />
+          <span
+            className="rounded-full"
+            aria-hidden="true"
+            style={{ width: 36, height: 4, background: 'rgba(255,255,255,0.25)' }}
+          />
         </div>
 
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between px-5 py-3.5">
-          <h2 className="text-body font-semibold tracking-tight text-foreground">{t.activity.share}</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 800, color: 'rgba(255,255,255,0.92)', letterSpacing: '-0.01em' }}>
+            {t.activity.share}
+          </h2>
           <button
             onClick={close}
             aria-label={t.activity.shareCard.close}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-foreground/[0.09] text-muted-foreground transition-colors hover:bg-foreground/[0.14]"
+            style={{
+              width: 28, height: 28, borderRadius: '50%',
+              background: 'rgba(255,255,255,0.1)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer',
+            }}
           >
-            <X size={18} strokeWidth={2} />
+            <X size={14} strokeWidth={2.5} />
           </button>
         </div>
 
-        {/* Scrollable body */}
-        <div className="flex flex-1 flex-col overflow-y-auto">
-          {/* Preview card (interactive HTML preview, scaled up to fill the taller sheet) */}
-          <div className="flex justify-center px-5 pb-4">
-            <div style={{ width: PREVIEW_WIDTH * previewScale, height: PREVIEW_HEIGHT * previewScale }}>
-              <div style={{ width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT, transform: `scale(${previewScale})`, transformOrigin: 'top left' }}>
-                <DesignPreview
-                  activity={activity}
-                  design={design}
-                  accent={accent}
-                  theme={theme}
-                  showMap={showMap}
-                  photoUrl={photoUrl}
-                  onPickPhoto={() => fileInputRef.current?.click()}
-                  mapSnapshotUrl={mapSnapshot?.url}
-                  mapLoading={mapLoading}
-                  mapStyle={mapStyle}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Hidden canvas for export */}
-          <canvas ref={canvasRef} style={{ display: 'none' }} />
-
-          {/* Design picker */}
-          <div className="border-t border-foreground/[0.07] px-5 py-3">
-            <div className="mb-2.5 text-caption font-semibold uppercase tracking-wide text-foreground/40">
-              {t.activity.shareCard.designLabel}
-            </div>
-            <div className="flex gap-2.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {SHARE_DESIGNS.map((d) => (
-                <DesignThumb
-                  key={d}
-                  design={d}
-                  accent={accent}
-                  theme={theme}
-                  selected={design === d}
-                  accentHex={accentHex}
-                  onClick={() => selectDesign(d)}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Map toggle - hidden for the Map design (the map is always the background there) */}
-          {!isMapBg && (
-            <div className="flex items-center justify-between border-t border-foreground/[0.07] px-5 py-3">
-              <div>
-                <div className="text-subhead text-foreground">{t.activity.shareCard.mapToggle}</div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowMap((m) => !m)}
-                aria-pressed={showMap}
-                className="relative ml-4 h-[31px] w-[51px] shrink-0 rounded-full transition-colors duration-200"
-                style={{ background: showMap ? accentHex : 'rgba(120,120,128,0.22)' }}
-              >
-                <span
-                  className="absolute top-[2px] h-[27px] w-[27px] rounded-full bg-white shadow-[0_2px_6px_rgba(0,0,0,0.28)] transition-[left] duration-200"
-                  style={{ left: showMap ? 22 : 2 }}
-                />
-              </button>
-            </div>
-          )}
-          {/* Map style (light/dark basemap), Map design only */}
-          {isMapBg && (
-            <div className="flex items-center justify-between border-t border-foreground/[0.07] px-5 py-3">
-              <div className="text-subhead text-foreground">{t.activity.shareCard.mapStyleLabel}</div>
-              <div className="flex rounded-full border border-foreground/10 bg-foreground/[0.04] p-1">
-                {MAP_STYLES.map((style) => (
-                  <button
-                    key={style}
-                    type="button"
-                    onClick={() => setMapStyle(style)}
-                    className={cn(
-                      'rounded-full px-3.5 py-2.5 text-xs font-semibold transition-colors',
-                      mapStyle === style ? 'bg-foreground/[0.14] text-foreground' : 'text-foreground/55'
-                    )}
-                  >
-                    {style === 'light' ? t.activity.shareCard.mapStyleLight : t.activity.shareCard.mapStyleDark}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
+        {/* Theme picker */}
+        <div
+          className="flex gap-2.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          style={{ padding: '4px 14px 12px' }}
+        >
+          {SHARE_DESIGNS.map((d) => (
+            <ThemeCard
+              key={d}
+              design={d}
+              accent={accent}
+              theme={theme}
+              selected={selectedDesign === d}
+              accentHex={accentHex}
+              onClick={() => selectDesign(d)}
+              gpsRoute={activity.route}
+            />
+          ))}
         </div>
 
-        {/* Action buttons */}
-        <div className="flex shrink-0 gap-2 border-t border-foreground/[0.07] px-3 pb-[max(env(safe-area-inset-bottom),12px)] pt-3">
-          {canShareFiles ? (
-            <Button onClick={handleShare} className="h-11 flex-[1.5] text-footnote">
-              <Share2 size={16} />
-              {t.activity.shareMenu.share}
-            </Button>
-          ) : null}
-          <Button variant="secondary" onClick={handleSave} className="h-11 flex-1 text-footnote">
-            <Download size={16} />
-            {t.activity.shareMenu.download}
-          </Button>
-          {canCopyImage && (
-            <Button
-              variant="secondary"
-              onClick={handleCopy}
-              className={cn('h-11 flex-1 text-footnote', copyState === 'copied' && STATUS.success.text)}
+        {/* Divider */}
+        <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '0 16px' }} />
+
+        {/* Toggle: Activity Stats */}
+        <div className="flex items-center justify-between px-4 py-3.5">
+          <span style={{ fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.88)' }}>
+            {t.activity.shareCard.statsToggle}
+          </span>
+          <Toggle on={showStats} onChange={setShowStats} accentHex={accentHex} />
+        </div>
+
+        {/* Toggle: Show Map Route */}
+        <div className="flex items-center justify-between px-4 py-3.5">
+          <span style={{ fontSize: 14, fontWeight: 500, color: canRoute ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.32)' }}>
+            {t.activity.shareCard.mapRouteToggle}
+          </span>
+          <Toggle on={isMap} onChange={handleShowMapRoute} accentHex={accentHex} />
+        </div>
+
+        {/* Memory: pick photo row */}
+        {isMemory && (
+          <div className="flex items-center justify-between px-4 py-3.5">
+            <span style={{ fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.88)' }}>
+              {t.activity.shareCard.galleryPlaceholder}
+            </span>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                fontSize: 12, fontWeight: 600, color: accentHex,
+                background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0',
+              }}
             >
-              {copyState === 'copied' ? <Check size={16} /> : <Copy size={16} />}
+              {photoUrl ? 'Change' : 'Browse...'}
+            </button>
+          </div>
+        )}
+
+        {/* Divider */}
+        <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '0 16px' }} />
+
+        {/* Action row */}
+        <div
+          className="grid shrink-0 gap-2.5"
+          style={{
+            gridTemplateColumns: canShareFiles ? '1fr 1fr 1fr' : canCopyImage ? '1fr 1fr' : '1fr',
+            padding: '12px 16px',
+            paddingBottom: 'max(24px, env(safe-area-inset-bottom))',
+          }}
+        >
+          <button
+            onClick={handleSave}
+            style={{
+              height: 46, borderRadius: 14, border: '1px solid rgba(255,255,255,0.12)',
+              background: 'rgba(255,255,255,0.09)', color: 'rgba(255,255,255,0.88)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              fontSize: 13, fontWeight: 700, cursor: 'pointer',
+            }}
+          >
+            <Download size={15} />
+            {t.activity.shareMenu.download}
+          </button>
+
+          {canShareFiles && (
+            <button
+              onClick={handleShare}
+              style={{
+                height: 46, borderRadius: 14, border: 'none',
+                background: accentHex, color: '#fff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                fontSize: 13, fontWeight: 800, cursor: 'pointer',
+              }}
+            >
+              <Share2 size={15} />
+              {t.activity.shareMenu.share}
+            </button>
+          )}
+
+          {canCopyImage && (
+            <button
+              onClick={handleCopy}
+              style={{
+                height: 46, borderRadius: 14, border: '1px solid rgba(255,255,255,0.12)',
+                background: 'rgba(255,255,255,0.09)',
+                color: copyState === 'copied' ? accentHex : 'rgba(255,255,255,0.88)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                transition: 'color 0.2s',
+              }}
+            >
+              {copyState === 'copied' ? <Check size={15} /> : <Copy size={15} />}
               {copyState === 'copied' ? t.activity.shareMenu.copied : t.activity.shareMenu.copy}
-            </Button>
+            </button>
           )}
         </div>
 
-        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+        {/* Hidden export canvas (1x preview used for copy) */}
+        <canvas ref={canvasRef} style={{ display: 'none' }} />
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handlePhotoChange}
+        />
       </div>
     </div>,
     document.body

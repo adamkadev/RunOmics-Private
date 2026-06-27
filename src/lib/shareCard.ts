@@ -1,68 +1,39 @@
 import type { Activity } from '@/domain/activity/types'
-import { type AccentId } from '@/lib/accent'
-import { isTexturedDesign, resolveDesignPalette, H, W, type ShareDesign, type ThemeMode } from '@/lib/shareCardPalette'
-import {
-  drawBackground, drawBrandMark, drawCompactHeader, drawHeader, drawOverlayStats, drawStatsCard,
-  strokeRouteInCircle,
-} from '@/lib/shareCardDraw'
+import type { AccentId } from '@/lib/accent'
+import { ACCENT_RGB, W, H, type ShareDesign, type ThemeMode } from '@/lib/shareCardPalette'
+import { drawTheme, drawBranding, drawDataOverlay } from '@/lib/shareCardDraw'
 
 export {
-  BRAND_MARK_SRC, SHARE_DESIGNS, TEXTURED_DESIGNS, isTexturedDesign, texturedBgPath, H, W,
-  type ShareDesign, type ThemeMode, type TexturedDesign,
+  SHARE_DESIGNS, W, H,
+  ACCENT_RGB,
+  type ShareDesign, type ThemeMode,
 } from '@/lib/shareCardPalette'
-export { loadImage } from '@/lib/shareCardDraw'
-export { projectRouteToCircle, routePathD } from '@/lib/shareCardGeometry'
-export { shareCardTitle, buildStatItems, type ShareStatItem } from '@/lib/shareCardStats'
-
-export type MapStyle = 'light' | 'dark'
+export { loadImage, drawTheme, drawBranding, drawDataOverlay } from '@/lib/shareCardDraw'
 
 export interface RenderOptions {
   activity: Activity
   design: ShareDesign
   accent: AccentId
   theme: ThemeMode
-  showMap: boolean
+  showStats: boolean
   photoImage?: HTMLImageElement | null
-  mapImage?: HTMLImageElement | null
-  texturedBgImage?: HTMLImageElement | null
-  brandMarkImage?: HTMLImageElement | null
-  mapStyle?: MapStyle
+  gpsRoute?: [number, number][] | null
 }
 
-export function renderShareCard(canvas: HTMLCanvasElement, options: RenderOptions) {
-  const { activity, design, accent, theme, showMap, photoImage, mapImage, texturedBgImage, brandMarkImage, mapStyle } = options
-  canvas.width = W
-  canvas.height = H
+export function renderShareCard(canvas: HTMLCanvasElement, options: RenderOptions, scale = 1) {
+  const { activity, design, accent, theme, showStats, photoImage, gpsRoute } = options
+  const dark = theme === 'dark'
+  canvas.width = W * scale
+  canvas.height = H * scale
   const ctx = canvas.getContext('2d')
   if (!ctx) return
+  if (scale !== 1) ctx.scale(scale, scale)
 
-  const basePalette = resolveDesignPalette(design, accent, theme)
-  // Day basemap: skip the accent theme entirely for the overlay text, go plain white.
-  const p = design === 'map' && mapStyle === 'light' ? { ...basePalette, valueColor: '#ffffff', isLight: true } : basePalette
+  const [r, g, b] = ACCENT_RGB[accent][dark ? 'dark' : 'light']
 
-  ctx.clearRect(0, 0, W, H)
-
-  const bgImage = design === 'memory' ? photoImage : design === 'map' ? mapImage : isTexturedDesign(design) ? texturedBgImage : null
-  const scrim = p.isMapBg ? 'map' : p.isPhoto ? 'photo' : 'none'
-  drawBackground(ctx, p, bgImage ?? null, scrim)
-  // The texture designs' backgrounds already bake in the brand mark - Map's captured
-  // snapshot and Memory's user photo need it stamped on top.
-  if ((design === 'map' || design === 'memory') && brandMarkImage) drawBrandMark(ctx, brandMarkImage, !p.isLight)
-
-  // Image-background designs (Map, Memory) use a smaller header and card-free stats,
-  // so the map/photo underneath stays visible.
-  const isOverlayStyle = p.isMapBg || p.isPhoto
-  if (isOverlayStyle) drawCompactHeader(ctx, activity, p)
-  else drawHeader(ctx, activity, p)
-
-  // Route circle (not for the full-bleed map design, where the map itself shows the route)
-  const hasRoute = !!activity.route && activity.route.length > 1
-  if (!p.isMapBg && showMap && hasRoute) {
-    strokeRouteInCircle(ctx, activity.route!, p.routeColor)
-  }
-
-  if (isOverlayStyle) drawOverlayStats(ctx, activity, p)
-  else drawStatsCard(ctx, activity, p)
+  drawTheme(ctx, design, W, H, r, g, b, dark, gpsRoute, photoImage)
+  drawBranding(ctx, W, H, dark)
+  if (showStats) drawDataOverlay(ctx, W, H, dark, r, g, b, activity)
 }
 
 export function shareCardFileName(activity: Activity, design: ShareDesign): string {
