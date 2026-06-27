@@ -156,6 +156,9 @@ def map_activity(
 
     activity_id = str(garmin_activity.get("activityId", ""))
     name: str = garmin_activity.get("activityName", "") or ""
+    # Garmin auto-names: "Strasbourg - Morning Run" → "Morning Run"
+    if " - " in name:
+        name = name.split(" - ", 1)[1]
 
     if parsed and parsed.start_time_local:
         dt = parsed.start_time_local
