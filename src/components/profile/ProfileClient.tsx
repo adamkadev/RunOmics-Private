@@ -42,11 +42,11 @@ export function ProfileClient({ data }: Props) {
           onSaveName={(name) => saveAthlete({ displayName: name })}
         />
         <ProfileStatsYtd ytd={data.ytd} />
+        <ProfileGoal goal={goal} onSaveGoal={saveGoal} />
         <ProfileRecords records={data.records} />
         <ProfileShoes shoes={data.shoes} />
-        <ProfileHrZones athlete={athlete} onSave={saveAthlete} />
         <ProfileAthleteStats athlete={athlete} onSave={saveAthlete} />
-        <ProfileGoal goal={goal} onSaveGoal={saveGoal} />
+        <ProfileHrZones athlete={athlete} onSave={saveAthlete} />
       </div>
     </div>
   )
