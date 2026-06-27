@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Share2 } from 'lucide-react'
+import { Share } from 'lucide-react'
 import type { Activity } from '@/domain/activity/types'
 import { ShareCardModal } from './ShareCardModal'
 import { t } from '@/i18n'
@@ -23,10 +23,10 @@ export function ShareButton({ activity }: Props) {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="inline-flex shrink-0 items-center gap-1.5 rounded-control bg-accent px-3.5 py-1.5 text-xs font-semibold text-accent-foreground shadow-lg shadow-accent/30 transition-transform active:scale-95 active:opacity-90"
+        aria-label={t.activity.share}
+        className="glass-chip inline-flex shrink-0 items-center justify-center rounded-full p-2 text-foreground transition-transform active:scale-95 active:opacity-80"
       >
-        <Share2 size={16} />
-        {t.activity.share}
+        <Share size={16} />
       </button>
 
       {isOpen && (
