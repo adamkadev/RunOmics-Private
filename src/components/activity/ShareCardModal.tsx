@@ -179,11 +179,11 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     streetLabels,
   }), [activity, selectedDesign, accent, theme, photoImage, locationName, streetLabels])
 
-  // Redraw preview canvas whenever options change
+  // Redraw preview canvas whenever options change (scale=2 keeps it sharp on Retina/3x screens)
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-    renderShareCard(canvas, renderOptions())
+    renderShareCard(canvas, renderOptions(), 2)
   }, [renderOptions])
 
   function selectDesign(d: ShareDesign) {
@@ -241,10 +241,10 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   }
 
   function handleCopy() {
-    const canvas = canvasRef.current
-    if (!canvas) return
+    const hiCanvas = document.createElement('canvas')
+    renderShareCard(hiCanvas, renderOptions(), 3)
     navigator.clipboard
-      .write([new ClipboardItem({ 'image/png': canvasToBlob(canvas) })])
+      .write([new ClipboardItem({ 'image/png': canvasToBlob(hiCanvas) })])
       .then(() => {
         setCopyState('copied')
         setTimeout(() => setCopyState('idle'), 1500)
