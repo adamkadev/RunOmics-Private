@@ -85,6 +85,9 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
 
   const [accent] = useState<AccentId>(currentAccent)
   const accentHex = ACCENT_SWATCHES[accent]
+  const [locationName, setLocationName] = useState<string | null>(() => {
+    try { return sessionStorage.getItem(`ro_geocode_${activity.id}`) } catch { return null }
+  })
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -96,6 +99,30 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   useEffect(() => { try { localStorage.setItem('ro_shareTheme', selectedDesign) } catch { /* noop */ } }, [selectedDesign])
   useEffect(() => { try { localStorage.setItem('ro_shareStats', String(showStats)) } catch { /* noop */ } }, [showStats])
   useEffect(() => { try { localStorage.setItem('ro_shareMap', String(showMap)) } catch { /* noop */ } }, [showMap])
+
+  // Reverse geocoding for map watermark (cache is read in state initializer above)
+  useEffect(() => {
+    if (locationName !== null) return
+    if (!activity.route || activity.route.length < 1) return
+    const [lng, lat] = activity.route[0]
+    const cacheKey = `ro_geocode_${activity.id}`
+    fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=12`,
+      { headers: { 'Accept-Language': 'fr', 'User-Agent': 'RunOmics/1.0' } }
+    )
+      .then(res => res.json())
+      .then((data: { address?: Record<string, string> }) => {
+        const addr = data.address ?? {}
+        const suburb = addr.suburb ?? addr.neighbourhood
+        const city = addr.city ?? addr.town ?? addr.village
+        const name = suburb ? `${suburb}, ${city}` : (city ?? null)
+        if (name) {
+          try { sessionStorage.setItem(cacheKey, name) } catch { /* noop */ }
+          setLocationName(name)
+        }
+      })
+      .catch(() => { /* noop */ })
+  }, [activity.id, activity.route, locationName])
 
   // Escape key
   useEffect(() => {
@@ -125,7 +152,8 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     showMap,
     photoImage,
     gpsRoute: activity.route,
-  }), [activity, selectedDesign, accent, theme, showStats, showMap, photoImage])
+    locationName,
+  }), [activity, selectedDesign, accent, theme, showStats, showMap, photoImage, locationName])
 
   // Redraw preview canvas whenever options change
   useEffect(() => {

@@ -76,6 +76,37 @@ function drawCover(ctx: Ctx, img: HTMLImageElement, x: number, y: number, w: num
   ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h)
 }
 
+function simplifyPolyline(coords: [number, number][], maxPoints = 150): [number, number][] {
+  if (coords.length <= maxPoints) return coords
+  const step = Math.ceil(coords.length / maxPoints)
+  return coords.filter((_, i) => i % step === 0 || i === coords.length - 1)
+}
+
+function getKmMarkers(
+  pts: [number, number][],
+  totalDistanceKm: number,
+): { pt: [number, number]; label: string }[] {
+  if (pts.length < 2 || totalDistanceKm <= 0) return []
+  let cumDist = 0
+  const cumDistances = [0]
+  for (let i = 1; i < pts.length; i++) {
+    const dx = pts[i][0] - pts[i - 1][0]
+    const dy = pts[i][1] - pts[i - 1][1]
+    cumDist += Math.sqrt(dx * dx + dy * dy)
+    cumDistances.push(cumDist)
+  }
+  const totalPixels = cumDist
+  const step = totalDistanceKm > 10 ? 2 : 1
+  const markers: { pt: [number, number]; label: string }[] = []
+  for (let km = step; km < Math.floor(totalDistanceKm); km += step) {
+    const targetPx = (km / totalDistanceKm) * totalPixels
+    let idx = cumDistances.findIndex(d => d >= targetPx)
+    if (idx < 0) idx = pts.length - 1
+    markers.push({ pt: pts[idx], label: `${km}` })
+  }
+  return markers
+}
+
 // Route points are [lng, lat] (Garmin/GeoJSON order). Apply cosine correction so
 // the projection is isometric despite varying latitude.
 function projectGPS(coords: [number, number][], W: number, H: number): [number, number][] {
@@ -94,24 +125,6 @@ function projectGPS(coords: [number, number][], W: number, H: number): [number, 
   const ox = W / 2 - ((minX + maxX) / 2) * scale
   const oy = H / 2 - ((minY + maxY) / 2) * scale
   return coords.map(([lng, lat]) => [lng * cos * scale + ox, -lat * scale + oy])
-}
-
-function projectRouteToBox(
-  route: [number, number][],
-  cx: number, cy: number,
-  size: number,
-): [number, number][] {
-  const avgLat = route.reduce((s, [, lat]) => s + lat, 0) / route.length
-  const cos = Math.cos((avgLat * Math.PI) / 180)
-  const xs = route.map(([lng]) => lng * cos)
-  const ys = route.map(([, lat]) => -lat)
-  const minX = Math.min(...xs), maxX = Math.max(...xs)
-  const minY = Math.min(...ys), maxY = Math.max(...ys)
-  const span = Math.max(maxX - minX, maxY - minY) || 1
-  const scale = size / span
-  const ox = cx - ((minX + maxX) / 2) * scale
-  const oy = cy - ((minY + maxY) / 2) * scale
-  return route.map(([lng, lat]) => [lng * cos * scale + ox, -lat * scale + oy])
 }
 
 // ── Theme background functions (ported from DC HTML) ────────────────────────
@@ -241,7 +254,14 @@ export function draw_cadence(ctx: Ctx, W: number, H: number, r: number, g: numbe
   ctx.strokeStyle = dark ? 'rgba(255,255,255,.14)' : 'rgba(0,0,0,.1)'; ctx.lineWidth = 1; ctx.stroke()
 }
 
-export function draw_map(ctx: Ctx, W: number, H: number, r: number, g: number, b: number, dark: boolean, gpsRoute?: [number, number][] | null) {
+export function draw_map(
+  ctx: Ctx, W: number, H: number,
+  r: number, g: number, b: number,
+  dark: boolean,
+  gpsRoute?: [number, number][] | null,
+  locationName?: string | null,
+  distanceKm?: number,
+) {
   ctx.fillStyle = dark ? '#09101a' : '#edf1f7'; ctx.fillRect(0, 0, W, H)
   ctx.strokeStyle = dark ? 'rgba(255,255,255,.055)' : 'rgba(0,0,0,.07)'; ctx.lineWidth = 0.8
   for (let x = 0; x < W; x += 28) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke() }
@@ -251,8 +271,20 @@ export function draw_map(ctx: Ctx, W: number, H: number, r: number, g: number, b
   for (let y = 0; y < H; y += 112) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke() }
   glow(ctx, W, H, W * 0.5, H * 0.52, W * 0.55, r, g, b, dark ? 0.22 : 0.14)
 
-  const pts: [number, number][] = gpsRoute && gpsRoute.length > 1
-    ? projectGPS(gpsRoute, W, H)
+  // Watermark neighbourhood name behind the route
+  if (locationName) {
+    const watermarkText = locationName.split(',')[0].toUpperCase()
+    ctx.save()
+    ctx.font = `800 ${Math.round(W * 0.19)}px Inter,system-ui,sans-serif`
+    ctx.fillStyle = dark ? 'rgba(255,255,255,0.045)' : 'rgba(0,0,0,0.055)'
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+    ctx.fillText(watermarkText, W / 2, H / 2)
+    ctx.restore()
+  }
+
+  const simplified = gpsRoute && gpsRoute.length > 1 ? simplifyPolyline(gpsRoute) : null
+  const pts: [number, number][] = simplified
+    ? projectGPS(simplified, W, H)
     : [
         [W * 0.22, H * 0.72], [W * 0.22, H * 0.58], [W * 0.3, H * 0.5], [W * 0.44, H * 0.5],
         [W * 0.44, H * 0.38], [W * 0.56, H * 0.3], [W * 0.68, H * 0.3], [W * 0.68, H * 0.42],
@@ -270,6 +302,24 @@ export function draw_map(ctx: Ctx, W: number, H: number, r: number, g: number, b
   }
   drawRoute(18, dark ? 0.7 : 0.45, 14)
   drawRoute(3.5, dark ? 0.95 : 0.82)
+
+  // Km markers along the real route
+  if (simplified && distanceKm && distanceKm > 0) {
+    const markers = getKmMarkers(pts, distanceKm)
+    markers.forEach(({ pt, label }) => {
+      ctx.save()
+      ctx.beginPath(); ctx.arc(pt[0], pt[1], 4, 0, Math.PI * 2)
+      ctx.fillStyle = dark ? 'rgba(0,0,0,.72)' : 'rgba(255,255,255,.82)'
+      ctx.fill()
+      ctx.strokeStyle = `rgba(${r},${g},${b},${dark ? 0.9 : 0.75})`; ctx.lineWidth = 1.5; ctx.stroke()
+      ctx.font = `700 8px Inter,system-ui,sans-serif`
+      ctx.fillStyle = dark ? `rgba(${r},${g},${b},1)` : `rgba(${r},${g},${b},1)`
+      ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'
+      ctx.fillText(label, pt[0], pt[1] - 6)
+      ctx.restore()
+    })
+  }
+
   ctx.beginPath(); ctx.arc(pts[0][0], pts[0][1], 7, 0, Math.PI * 2)
   ctx.fillStyle = '#22c55e'; ctx.fill()
   ctx.beginPath(); ctx.arc(pts[0][0], pts[0][1], 7, 0, Math.PI * 2)
@@ -326,12 +376,11 @@ export function drawRouteOverlay(
   route: [number, number][],
   r: number, g: number, b: number,
   dark: boolean,
-  hasStats: boolean,
 ) {
-  const size = W * 0.58
-  const cx = W / 2
-  const cy = hasStats ? H * 0.42 : H * 0.5
-  const pts = projectRouteToBox(route, cx, cy, size)
+  // Same projection as MAP (72% fill with 14% padding), shifted to center at H*0.44
+  const rawPts = projectGPS(route, W, H)
+  const dy = H * 0.44 - H * 0.5
+  const pts = rawPts.map(([x, y]) => [x, y + dy] as [number, number])
 
   ctx.save()
   ctx.filter = `blur(14px)`
@@ -453,6 +502,8 @@ export function drawTheme(
   dark: boolean,
   gpsRoute?: [number, number][] | null,
   photoImg?: HTMLImageElement | null,
+  locationName?: string | null,
+  distanceKm?: number,
 ): void {
   switch (theme) {
     case 'aurora':  draw_aurora(ctx, W, H, r, g, b, dark); break
@@ -460,7 +511,7 @@ export function drawTheme(
     case 'terrain': draw_terrain(ctx, W, H, r, g, b, dark); break
     case 'prism':   draw_prism(ctx, W, H, r, g, b, dark); break
     case 'cadence': draw_cadence(ctx, W, H, r, g, b, dark); break
-    case 'map':     draw_map(ctx, W, H, r, g, b, dark, gpsRoute); break
+    case 'map':     draw_map(ctx, W, H, r, g, b, dark, gpsRoute, locationName, distanceKm); break
     case 'memory':  draw_memory(ctx, W, H, r, g, b, dark, photoImg ?? null); break
   }
 }
