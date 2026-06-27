@@ -8,6 +8,8 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    env:
+      HAS_FIREBASE_SECRETS: ${{ secrets.FIREBASE_PROJECT_ID != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,7 +36,7 @@ jobs:
         # Firebase Admin credentials are required to prerender activity/profile
         # pages (Firestore-backed goals/PBs/athlete data). Skip on forks/PRs that
         # don't have access to repo secrets rather than failing CI for everyone.
-        if: ${{ secrets.FIREBASE_PROJECT_ID != '' }}
+        if: env.HAS_FIREBASE_SECRETS == 'true'
         env:
           FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
           FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
