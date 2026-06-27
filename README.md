@@ -68,14 +68,35 @@ This will prompt for your Garmin Connect email and password, then print a `GARMI
 Create a `.env.local` file at the root:
 
 ```env
-# Garmin Connect auth token (from get_secret.py)
+# Garmin Connect auth token (from get_secret.py) - used only by scripts/sync.py, never on Vercel
 GARMIN_SECRET=eyJ...
 
 # MapTiler API key (for route maps)
 NEXT_PUBLIC_MAPTILER_TOKEN=your_maptiler_key
+
+# Firebase Admin (server-side: reads/writes goals/pbs/athlete/notifications in Firestore)
+FIREBASE_PROJECT_ID=your-project-id
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk-...@your-project-id.iam.gserviceaccount.com
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+
+# Firebase client SDK (browser: auth, push notification tokens, activity notes)
+NEXT_PUBLIC_FIREBASE_API_KEY=...
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
+NEXT_PUBLIC_FIREBASE_APP_ID=...
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
+NEXT_PUBLIC_FIREBASE_VAPID_KEY=...
+
+# Google account allowed to sign in and edit notes/settings (everyone else is read-only)
+NEXT_PUBLIC_OWNER_EMAIL=you@example.com
+
+# Shared secret for the internal cron endpoints (PR/shoe-wear/overreaching checks, weekly reminder)
+INTERNAL_NOTIFY_SECRET=any-random-string
 ```
 
 > `.env.local` is gitignored. Never commit your secrets.
+
+See [Configuration: Firestore](#firestore-goals-pbs-athlete-profile) below for how to seed `goals`, `pbs`, and `athlete` data into Firestore once these are set.
 
 ### 4. Run the initial sync
 
@@ -103,13 +124,29 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ---
 
-## Configuration files
+## Configuration: Firestore (goals, PBs, athlete profile) {#firestore-goals-pbs-athlete-profile}
 
-These files live in `public/` and are committed to the repo alongside your activity data.
+Annual goals, official personal bests, upcoming races, and your athlete profile (HR
+zones, threshold pace, etc.) are **not** stored in the repo - they live in Firestore
+and are read server-side via `src/infrastructure/repositories/FirestoreConfigRepository.ts`.
+This keeps personal targets and race plans out of git history while still being
+editable without a redeploy.
 
-### `public/goals.json` - Annual goals and race targets
+Seed Firestore from local JSON files using `scripts/seed_firestore.js` (run once,
+or whenever you want to bulk-overwrite the collections):
+
+```bash
+node scripts/seed_firestore.js
+```
+
+It reads `public/goals.json`, `public/pbs.json`, and `public/athlete.json` (none of
+which are committed - create them locally first) and writes them to the `goals`,
+`pbs`, and `athlete` Firestore collections respectively. Requires the Firebase Admin
+env vars (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`) set
+in your shell.
 
 ```json
+// goals.json - one entry per year
 [
   {
     "year": 2026,
@@ -126,11 +163,9 @@ These files live in `public/` and are committed to the repo alongside your activ
 
 `targetSeconds` is the goal time in seconds (`null` = no target set).
 
-### `public/pbs.json` - Official personal bests
-
-Stores your official race times (chip time). These take priority over the auto-detected best efforts in the Records section.
-
 ```json
+// pbs.json - official race times (chip time), take priority over auto-detected
+// best efforts in the Records section
 [
   {
     "year": 2025,
@@ -142,8 +177,22 @@ Stores your official race times (chip time). These take priority over the auto-d
 ]
 ```
 
-Valid `distance` values: `"1K"`, `"5K"`, `"10K"`, `"Half-Marathon"`, `"Marathon"`.  
+Valid `distance` values: `"1K"`, `"5K"`, `"10K"`, `"Half-Marathon"`, `"Marathon"`.
 `activityId` links the card to the activity detail page (optional).
+
+```json
+// athlete.json - profile / training zones used across Analytics and Profile
+{
+  "displayName": "Adam",
+  "lthrBpm": 175,
+  "thresholdPaceSecPerKm": 240,
+  "vmaKmh": 18.5,
+  "hrZoneBoundsBpm": [120, 145, 160, 170]
+}
+```
+
+After seeding, hit `/api/internal/revalidate` (or just wait for the next deploy) to
+refresh the cached pages - see `src/app/api/internal/revalidate/route.ts`.
 
 ### `public/events/` - Race photos
 
@@ -177,13 +226,23 @@ Go to [vercel.com/new](https://vercel.com/new), import your GitHub repo, and kee
 
 ### 3. Set environment variables
 
-In your Vercel project → **Settings** → **Environment Variables**, add:
+In your Vercel project → **Settings** → **Environment Variables**, add every variable
+from your `.env.local` *except* `GARMIN_SECRET`:
 
-| Variable | Value |
-|----------|-------|
-| `NEXT_PUBLIC_MAPTILER_TOKEN` | Your MapTiler API key |
+| Variable | Used for |
+|----------|----------|
+| `NEXT_PUBLIC_MAPTILER_TOKEN` | Route maps |
+| `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` | Server-side Firestore reads (goals/pbs/athlete) and push notifications |
+| `NEXT_PUBLIC_FIREBASE_*` | Client-side auth, activity notes, push notification tokens |
+| `NEXT_PUBLIC_OWNER_EMAIL` | Restricts settings/notes editing to your Google account |
+| `INTERNAL_NOTIFY_SECRET` | Authenticates the GitHub Actions cron calls to `/api/internal/*` |
 
 > `GARMIN_SECRET` is only used locally by the sync script - it never runs on Vercel.
+
+For the scheduled GitHub Actions (`sync.yml`, `weekly-reminder.yml`) to reach those
+internal endpoints, also add `APP_URL` (your deployed domain) and
+`INTERNAL_NOTIFY_SECRET` as **repository secrets** under GitHub → Settings →
+Secrets and variables → Actions - separate from the Vercel env vars above.
 
 ### 4. Sync and deploy
 

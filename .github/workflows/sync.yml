@@ -110,8 +110,14 @@ jobs:
       - name: Trigger PR and shoe wear checks
         if: steps.commit.outputs.committed == 'true'
         run: |
-          # Wait for Vercel to redeploy with the new activities.json before checking for new PRs.
-          sleep 60
+          # Poll until the app responds before checking for new PRs (Vercel needs time to redeploy).
+          for i in $(seq 1 20); do
+            if curl -fsS -o /dev/null "${{ secrets.APP_URL }}/"; then
+              break
+            fi
+            sleep 15
+          done
+
           curl -fsS -X POST "${{ secrets.APP_URL }}/api/internal/pr-check" \
             -H "x-internal-secret: ${{ secrets.INTERNAL_NOTIFY_SECRET }}"
           curl -fsS -X POST "${{ secrets.APP_URL }}/api/internal/shoe-wear-check" \

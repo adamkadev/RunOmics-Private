@@ -2,7 +2,13 @@ import fs from 'fs'
 import path from 'path'
 import type { Activity } from '@/domain/activity/types'
 
+// Yearly activity files total several MB of JSON; cache the parsed result per
+// server process instead of re-reading/re-parsing on every call.
+let cache: Activity[] | null = null
+
 export function getAllActivities(): Activity[] {
+  if (cache) return cache
+
   const dirPath = path.join(process.cwd(), 'public', 'data', 'activities')
   const files = fs.readdirSync(dirPath).filter((f) => f.endsWith('.json') && f !== 'index.json')
 
@@ -12,5 +18,6 @@ export function getAllActivities(): Activity[] {
     return parsed.activities
   })
 
-  return activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  cache = activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  return cache
 }

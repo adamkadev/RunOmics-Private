@@ -1,12 +1,22 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { getAthleteFromFirestore } from '@/infrastructure/repositories/FirestoreConfigRepository'
 import { round } from '@/lib/math'
 import type { Activity } from '@/domain/activity/types'
 
-const MAX_HR = 195
-const RESTING_HR = 45
+// Population-average fallbacks, used when the athlete profile doesn't set
+// maxHrBpm/restingHrBpm.
+const DEFAULT_MAX_HR = 195
+const DEFAULT_RESTING_HR = 45
 const CTL_DAYS = 42
 const ATL_DAYS = 7
 const WINDOW_DAYS = 90
+
+export interface HrBounds {
+  maxHr: number
+  restingHr: number
+}
+
+const DEFAULT_HR_BOUNDS: HrBounds = { maxHr: DEFAULT_MAX_HR, restingHr: DEFAULT_RESTING_HR }
 
 export interface TrainingLoadPoint {
   date: string
@@ -29,11 +39,12 @@ export interface LoadSnapshot {
   tsb: number
 }
 
-export function trimp(activity: Activity): number {
+export function trimp(activity: Activity, hrBounds: HrBounds = DEFAULT_HR_BOUNDS): number {
   if (!activity.avgHeartRate || !activity.durationSeconds) return 0
+  const { maxHr, restingHr } = hrBounds
   const hrr = Math.min(
     1,
-    Math.max(0, (activity.avgHeartRate - RESTING_HR) / (MAX_HR - RESTING_HR))
+    Math.max(0, (activity.avgHeartRate - restingHr) / (maxHr - restingHr))
   )
   return (activity.durationSeconds / 60) * hrr * 0.64 * Math.exp(1.92 * hrr)
 }
@@ -44,10 +55,10 @@ function isoDate(d: Date): string {
 
 // Full TRIMP time series from first activity to today.
 // TSB is the form at the START of each day (before that day's load).
-export function buildTimeSeries(activities: Activity[]): Map<string, LoadSnapshot> {
+export function buildTimeSeries(activities: Activity[], hrBounds: HrBounds = DEFAULT_HR_BOUNDS): Map<string, LoadSnapshot> {
   const dailyLoad = new Map<string, number>()
   for (const a of activities) {
-    dailyLoad.set(a.date, (dailyLoad.get(a.date) ?? 0) + trimp(a))
+    dailyLoad.set(a.date, (dailyLoad.get(a.date) ?? 0) + trimp(a, hrBounds))
   }
 
   const series = new Map<string, LoadSnapshot>()
@@ -70,11 +81,17 @@ export function buildTimeSeries(activities: Activity[]): Map<string, LoadSnapsho
   return series
 }
 
-export function getTrainingLoad(): TrainingLoadData | null {
+export async function getTrainingLoad(): Promise<TrainingLoadData | null> {
   const activities = getAllActivities()
   if (!activities.length) return null
 
-  const series = buildTimeSeries(activities)
+  const athlete = await getAthleteFromFirestore()
+  const hrBounds: HrBounds = {
+    maxHr: athlete.maxHrBpm ?? DEFAULT_MAX_HR,
+    restingHr: athlete.restingHrBpm ?? DEFAULT_RESTING_HR,
+  }
+
+  const series = buildTimeSeries(activities, hrBounds)
   const entries = Array.from(series.entries())
   const window = entries.slice(-WINDOW_DAYS)
 

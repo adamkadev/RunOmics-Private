@@ -20,10 +20,10 @@ import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting'
 
 export default async function DashboardPage() {
   const data = getDashboardData()
-  const trainingLoad = getTrainingLoad()
-  const trainingStatus = getTrainingStatus()
+  const trainingLoad = await getTrainingLoad()
+  const trainingStatus = await getTrainingStatus()
   const consistencyScore = getConsistencyScore()
-  const weekLoad = getWeeklyLoadComparison()
+  const weekLoad = await getWeeklyLoadComparison()
   const heatmapDays = getHeatmapData()
   const vo2max = getLatestVO2max()
   const vo2maxTrend = getVO2maxTrend()

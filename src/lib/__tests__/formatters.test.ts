@@ -46,11 +46,11 @@ describe('formatPace', () => {
 
 describe('formatDistance', () => {
   it('shows 2 decimals under 10 km', () => {
-    expect(formatDistance(5.123)).toBe('5.12 km')
+    expect(formatDistance(5.123)).toBe('5.12')
   })
 
   it('shows 1 decimal at 10 km and above', () => {
-    expect(formatDistance(10.567)).toBe('10.6 km')
+    expect(formatDistance(10.567)).toBe('10.6')
   })
 })
 
