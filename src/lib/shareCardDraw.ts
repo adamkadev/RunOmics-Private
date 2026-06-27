@@ -108,12 +108,33 @@ function rrect(ctx: Ctx, x: number, y: number, w: number, h: number, rr: number)
 
 function glow(ctx: Ctx, W: number, H: number, cx: number, cy: number, radius: number, r: number, g: number, b: number, alpha: number) {
   ctx.save()
-  ctx.filter = `blur(${Math.round(radius * 0.22)}px)`
   const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius)
   grd.addColorStop(0, `rgba(${r},${g},${b},${alpha})`)
   grd.addColorStop(1, 'rgba(0,0,0,0)')
   ctx.fillStyle = grd
   ctx.fillRect(0, 0, W, H)
+  ctx.restore()
+}
+
+// ctx.filter blur never renders in WebKit, and ctx.shadowBlur draws the
+// shadow-casting shape itself in addition to its shadow, which leaves a solid
+// stroke instead of a soft bloom. Drawing the stroke far off-canvas and using
+// shadowOffsetX to bring back only its blurred shadow reproduces the
+// ctx.filter look with the cross-browser-reliable shadow primitive.
+// shadowOffsetX is in raw device pixels (unaffected by the canvas transform),
+// while translate() is in logical units, so the offset must be scaled by the
+// current transform to cancel the translate exactly.
+function strokeGlow(ctx: Ctx, points: [number, number][], lw: number, a: number, r: number, g: number, b: number, blur: number) {
+  const OFFSET = 1000
+  ctx.save()
+  ctx.translate(-OFFSET, 0)
+  ctx.shadowOffsetX = OFFSET * ctx.getTransform().a
+  ctx.shadowColor = `rgba(${r},${g},${b},${a})`
+  ctx.shadowBlur = blur
+  ctx.beginPath(); ctx.moveTo(points[0][0], points[0][1])
+  points.forEach(([px, py]) => ctx.lineTo(px, py))
+  ctx.strokeStyle = `rgba(${r},${g},${b},${a})`; ctx.lineWidth = lw
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke()
   ctx.restore()
 }
 
@@ -221,7 +242,8 @@ export function draw_pulse(ctx: Ctx, W: number, H: number, r: number, g: number,
   glow(ctx, W, H, W * 0.5, H * 0.5, W * 0.7, r, g, b, dark ? 0.18 : 0.07)
   const midY = H * 0.5, amp = H * 0.17, SEGS = 80, T = 15
   const wY = (i: number) => { const t2 = (i / SEGS) * Math.PI * 2.5, env = Math.sin(Math.PI * (i / SEGS)); return midY + Math.sin(t2) * amp * env * 1.5 }
-  ctx.save(); ctx.filter = 'blur(28px)'
+  ctx.save()
+  ctx.shadowColor = `rgba(${r},${g},${b},${dark ? 0.75 : 0.38})`; ctx.shadowBlur = 28
   ctx.beginPath(); ctx.moveTo(0, wY(0))
   for (let i = 1; i <= SEGS; i++) ctx.lineTo((i / SEGS) * W, wY(i))
   ctx.strokeStyle = `rgba(${r},${g},${b},${dark ? 0.75 : 0.38})`; ctx.lineWidth = 38; ctx.stroke(); ctx.restore()
@@ -308,7 +330,7 @@ export function draw_cadence(ctx: Ctx, W: number, H: number, r: number, g: numbe
   heights.forEach((bh, idx) => {
     const bH = maxH * bh, x = idx * colW + colW * 0.15, w = colW * 0.7, y = baseY - bH, rr = w * 0.3
     if (bh > 0.6) {
-      ctx.save(); ctx.filter = `blur(${w * 0.55}px)`
+      ctx.save()
       const gg = ctx.createRadialGradient(x + w / 2, y + bH * 0.25, 0, x + w / 2, y + bH * 0.25, w * 1.2)
       gg.addColorStop(0, `rgba(${r},${g},${b},${dark ? 0.55 : 0.28})`)
       gg.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = gg; ctx.fillRect(x - w, y - w, w * 3, bH + w * 2); ctx.restore()
@@ -507,12 +529,13 @@ export function draw_map(
       ]
 
   const drawRoute = (lw: number, a: number, blur?: number) => {
-    if (blur) { ctx.save(); ctx.filter = `blur(${blur}px)` }
+    if (blur) { strokeGlow(ctx, pts, lw, a, r, g, b, blur); return }
+    ctx.save()
     ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1])
     pts.forEach(([px, py]) => ctx.lineTo(px, py))
     ctx.strokeStyle = `rgba(${r},${g},${b},${a})`; ctx.lineWidth = lw
     ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke()
-    if (blur) ctx.restore()
+    ctx.restore()
   }
   drawRoute(18, dark ? 0.7 : 0.45, 14)
   drawRoute(3.5, dark ? 0.95 : 0.82)
@@ -627,19 +650,19 @@ export function drawRouteOverlay(
   const dy = H * 0.44 - H * 0.5
   const pts = rawPts.map(([x, y]) => [x, y + dy] as [number, number])
 
-  const drawRoute = (lw: number, a: number, blur?: number) => { 
+  const drawRoute = (lw: number, a: number, blur?: number) => {
+    if (blur) { strokeGlow(ctx, pts, lw, a, r, g, b, blur); return }
     ctx.save()
-    if (blur) ctx.filter = `blur(${blur}px)`
-      ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1])
-      pts.forEach(([px, py]) => ctx.lineTo(px, py))   
-      ctx.strokeStyle = `rgba(${r},${g},${b},${a})`; ctx.lineWidth = lw
-      ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke()
-      ctx.restore()
-    }
+    ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1])
+    pts.forEach(([px, py]) => ctx.lineTo(px, py))
+    ctx.strokeStyle = `rgba(${r},${g},${b},${a})`; ctx.lineWidth = lw
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke()
+    ctx.restore()
+  }
 
-    drawRoute(36, dark ? 0.45 : 0.28, 24) 
-    drawRoute(16, dark ? 0.75 : 0.48, 10) 
-    drawRoute(3.5, dark ? 0.98 : 0.85)
+  drawRoute(36, dark ? 0.45 : 0.28, 24)
+  drawRoute(16, dark ? 0.75 : 0.48, 10)
+  drawRoute(3.5, dark ? 0.98 : 0.85)
 
   ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1])
   pts.forEach(([px, py]) => ctx.lineTo(px, py))
