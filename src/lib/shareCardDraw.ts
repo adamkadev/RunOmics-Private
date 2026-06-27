@@ -471,7 +471,8 @@ export function draw_map(
 
   // Watermark city name (very subtle, behind route)
   if (locationName) {
-    const watermarkText = locationName.split(',')[0].toUpperCase()
+    const raw = locationName.split(',')[0].toUpperCase()
+    const watermarkText = raw.length > 18 ? raw.slice(0, 17) + '…' : raw
     ctx.save()
     ctx.font = `800 ${Math.round(W * 0.19)}px Inter,system-ui,sans-serif`
     ctx.fillStyle = dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.05)'
