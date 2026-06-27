@@ -242,11 +242,9 @@ export function draw_pulse(ctx: Ctx, W: number, H: number, r: number, g: number,
   glow(ctx, W, H, W * 0.5, H * 0.5, W * 0.7, r, g, b, dark ? 0.18 : 0.07)
   const midY = H * 0.5, amp = H * 0.17, SEGS = 80, T = 15
   const wY = (i: number) => { const t2 = (i / SEGS) * Math.PI * 2.5, env = Math.sin(Math.PI * (i / SEGS)); return midY + Math.sin(t2) * amp * env * 1.5 }
-  ctx.save()
-  ctx.shadowColor = `rgba(${r},${g},${b},${dark ? 0.75 : 0.38})`; ctx.shadowBlur = 28
-  ctx.beginPath(); ctx.moveTo(0, wY(0))
-  for (let i = 1; i <= SEGS; i++) ctx.lineTo((i / SEGS) * W, wY(i))
-  ctx.strokeStyle = `rgba(${r},${g},${b},${dark ? 0.75 : 0.38})`; ctx.lineWidth = 38; ctx.stroke(); ctx.restore()
+  const glowPts: [number, number][] = []
+  for (let i = 0; i <= SEGS; i++) glowPts.push([(i / SEGS) * W, wY(i)])
+  strokeGlow(ctx, glowPts, 38, dark ? 0.75 : 0.38, r, g, b, 28)
   ctx.beginPath(); ctx.moveTo(0, wY(0) - T)
   for (let i = 1; i <= SEGS; i++) ctx.lineTo((i / SEGS) * W, wY(i) - T)
   for (let i = SEGS; i >= 0; i--) ctx.lineTo((i / SEGS) * W, wY(i) + T)
