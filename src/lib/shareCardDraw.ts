@@ -282,29 +282,32 @@ export function draw_map(ctx: Ctx, W: number, H: number, r: number, g: number, b
 
 export function draw_memory(ctx: Ctx, W: number, H: number, r: number, g: number, b: number, dark: boolean, photoImg?: HTMLImageElement | null) {
   if (photoImg) {
-    drawCover(ctx, photoImg, 0, 0, W, H * 0.62)
-    const topScrim = ctx.createLinearGradient(0, 0, 0, H * 0.22)
-    topScrim.addColorStop(0, 'rgba(0,0,0,0.52)'); topScrim.addColorStop(1, 'rgba(0,0,0,0)')
-    ctx.fillStyle = topScrim; ctx.fillRect(0, 0, W, H * 0.22)
-  } else {
-    const sky = ctx.createLinearGradient(0, 0, 0, H * 0.62)
-    if (dark) { sky.addColorStop(0, '#1a0a05'); sky.addColorStop(0.5, '#2e1610'); sky.addColorStop(1, '#0a0806') }
-    else { sky.addColorStop(0, '#ffecd8'); sky.addColorStop(0.5, '#ffcba4'); sky.addColorStop(1, '#f0a87c') }
-    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H * 0.62)
-    const gnd = ctx.createLinearGradient(0, H * 0.56, 0, H)
-    if (dark) { gnd.addColorStop(0, '#060a07'); gnd.addColorStop(1, '#020402') }
-    else { gnd.addColorStop(0, '#88a870'); gnd.addColorStop(1, '#5c7a48') }
-    ctx.fillStyle = gnd; ctx.fillRect(0, H * 0.56, W, H * 0.44)
-    glow(ctx, W, H * 0.62, W * 0.62, H * 0.28, W * 0.5, r, g, b, dark ? 0.32 : 0.25)
-    ctx.fillStyle = dark ? 'rgba(0,0,0,.68)' : 'rgba(18,28,10,.5)'
-    const trees = [{ x: W * 0.12, h: 0.18, w: 0.12 }, { x: W * 0.28, h: 0.12, w: 0.09 }, { x: W * 0.55, h: 0.22, w: 0.14 }, { x: W * 0.78, h: 0.16, w: 0.1 }]
-    trees.forEach(tr => {
-      ctx.beginPath(); ctx.moveTo(tr.x, H * 0.62)
-      ctx.lineTo(tr.x - tr.w * W * 0.5, H * (1 - tr.h) * 0.62 + H * 0.62 * tr.h)
-      ctx.lineTo(tr.x + tr.w * W * 0.5, H * (1 - tr.h) * 0.62 + H * 0.62 * tr.h)
-      ctx.closePath(); ctx.fill()
-    })
+    drawCover(ctx, photoImg, 0, 0, W, H)
+    const topScrim = ctx.createLinearGradient(0, 0, 0, H * 0.32)
+    topScrim.addColorStop(0, 'rgba(0,0,0,0.62)'); topScrim.addColorStop(1, 'rgba(0,0,0,0)')
+    ctx.fillStyle = topScrim; ctx.fillRect(0, 0, W, H * 0.32)
+    const botScrim = ctx.createLinearGradient(0, H * 0.52, 0, H)
+    botScrim.addColorStop(0, 'rgba(0,0,0,0)'); botScrim.addColorStop(1, 'rgba(0,0,0,0.78)')
+    ctx.fillStyle = botScrim; ctx.fillRect(0, H * 0.52, W, H * 0.48)
+    return
   }
+  const sky = ctx.createLinearGradient(0, 0, 0, H * 0.62)
+  if (dark) { sky.addColorStop(0, '#1a0a05'); sky.addColorStop(0.5, '#2e1610'); sky.addColorStop(1, '#0a0806') }
+  else { sky.addColorStop(0, '#ffecd8'); sky.addColorStop(0.5, '#ffcba4'); sky.addColorStop(1, '#f0a87c') }
+  ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H * 0.62)
+  const gnd = ctx.createLinearGradient(0, H * 0.56, 0, H)
+  if (dark) { gnd.addColorStop(0, '#060a07'); gnd.addColorStop(1, '#020402') }
+  else { gnd.addColorStop(0, '#88a870'); gnd.addColorStop(1, '#5c7a48') }
+  ctx.fillStyle = gnd; ctx.fillRect(0, H * 0.56, W, H * 0.44)
+  glow(ctx, W, H * 0.62, W * 0.62, H * 0.28, W * 0.5, r, g, b, dark ? 0.32 : 0.25)
+  ctx.fillStyle = dark ? 'rgba(0,0,0,.68)' : 'rgba(18,28,10,.5)'
+  const trees = [{ x: W * 0.12, h: 0.18, w: 0.12 }, { x: W * 0.28, h: 0.12, w: 0.09 }, { x: W * 0.55, h: 0.22, w: 0.14 }, { x: W * 0.78, h: 0.16, w: 0.1 }]
+  trees.forEach(tr => {
+    ctx.beginPath(); ctx.moveTo(tr.x, H * 0.62)
+    ctx.lineTo(tr.x - tr.w * W * 0.5, H * (1 - tr.h) * 0.62 + H * 0.62 * tr.h)
+    ctx.lineTo(tr.x + tr.w * W * 0.5, H * (1 - tr.h) * 0.62 + H * 0.62 * tr.h)
+    ctx.closePath(); ctx.fill()
+  })
   const panY = H * 0.6
   const pan = ctx.createLinearGradient(0, panY, 0, H)
   pan.addColorStop(0, dark ? 'rgba(4,8,6,.78)' : 'rgba(255,255,255,.78)')
