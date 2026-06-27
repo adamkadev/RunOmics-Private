@@ -26,7 +26,7 @@ export const en = {
     items: {
       dashboard: 'Dashboard',
       activities: 'Activities',
-      calendar: 'Agenda',
+      calendar: 'Calendar',
       explore: 'Explore',
       heatmap: 'Heatmap',
       profile: 'Profile',
@@ -83,7 +83,7 @@ export const en = {
       title: 'Activities',
     },
     calendar: {
-      title: 'Agenda',
+      title: 'Calendar',
     },
     records: {
       title: 'Records',
