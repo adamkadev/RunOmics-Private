@@ -471,10 +471,16 @@ export function draw_map(
 
   // Watermark city name (very subtle, behind route)
   if (locationName) {
-    const raw = locationName.split(',')[0].toUpperCase()
-    const watermarkText = raw.length > 18 ? raw.slice(0, 17) + '…' : raw
+    const watermarkText = locationName.split(',')[0].toUpperCase()
+    let fontSize = Math.round(W * 0.19)
     ctx.save()
-    ctx.font = `800 ${Math.round(W * 0.19)}px Inter,system-ui,sans-serif`
+    ctx.font = `800 ${fontSize}px Inter,system-ui,sans-serif`
+    const measured = ctx.measureText(watermarkText).width
+    const maxWidth = W * 0.95
+    if (measured > maxWidth) {
+      fontSize = Math.round(fontSize * maxWidth / measured)
+      ctx.font = `800 ${fontSize}px Inter,system-ui,sans-serif`
+    }
     ctx.fillStyle = dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.05)'
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
     ctx.fillText(watermarkText, W / 2, H / 2)
