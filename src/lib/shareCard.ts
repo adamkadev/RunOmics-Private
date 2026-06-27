@@ -45,7 +45,7 @@ export function renderShareCard(canvas: HTMLCanvasElement, options: RenderOption
   }
 
   drawBranding(ctx, W, H, dark)
-  if (showStats) drawDataOverlay(ctx, W, H, dark, r, g, b, activity)
+  if (showStats) drawDataOverlay(ctx, W, H, dark, r, g, b, activity, design)
 }
 
 export function shareCardFileName(activity: Activity, design: ShareDesign): string {

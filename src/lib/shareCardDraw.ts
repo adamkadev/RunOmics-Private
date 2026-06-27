@@ -4,6 +4,84 @@ import { shareCardTitle } from '@/lib/shareCardStats'
 import type { ShareDesign } from '@/lib/shareCardPalette'
 import { t } from '@/i18n'
 
+// ── Hero metric helpers ──────────────────────────────────────────────────────
+
+const HERO_OPACITY: Partial<Record<ShareDesign, number>> = {
+  aurora: 0.12, pulse: 0.10, terrain: 0.14, prism: 0.11, cadence: 0.10,
+}
+
+function getHeroMetric(design: ShareDesign, activity: Activity): { value: string; unit: string } | null {
+  switch (design) {
+    case 'aurora':
+      return { value: activity.distanceKm.toFixed(1), unit: 'km' }
+    case 'pulse':
+      return activity.avgHeartRate
+        ? { value: String(activity.avgHeartRate), unit: 'bpm' }
+        : { value: activity.distanceKm.toFixed(1), unit: 'km' }
+    case 'prism':
+      return activity.paceSecPerKm
+        ? { value: formatClock(activity.paceSecPerKm), unit: '/km' }
+        : { value: activity.distanceKm.toFixed(1), unit: 'km' }
+    case 'cadence':
+      return activity.cadenceSpm
+        ? { value: String(activity.cadenceSpm), unit: 'spm' }
+        : { value: activity.distanceKm.toFixed(1), unit: 'km' }
+    case 'terrain':
+      return activity.elevationGain
+        ? { value: `+${activity.elevationGain}`, unit: 'm' }
+        : { value: activity.distanceKm.toFixed(1), unit: 'km' }
+    default:
+      return null
+  }
+}
+
+function drawHeroMetric(
+  ctx: Ctx,
+  W: number,
+  H: number,
+  dark: boolean,
+  r: number, g: number, b: number,
+  design: ShareDesign,
+  activity: Activity,
+) {
+  const metric = getHeroMetric(design, activity)
+  if (!metric) return
+
+  const base = HERO_OPACITY[design] ?? 0
+  const opacity = dark ? base : base / 1.4
+  const centerX = W / 2
+  const centerY = H * 0.44
+
+  ctx.save()
+
+  ctx.shadowColor = `rgba(${r},${g},${b},${dark ? 0.25 : 0.15})`
+  ctx.shadowBlur = 40
+
+  ctx.font = '900 96px Inter,system-ui,sans-serif'
+  ctx.fillStyle = dark ? `rgba(255,255,255,${opacity})` : `rgba(0,0,0,${opacity})`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'alphabetic'
+  ctx.fillText(metric.value, centerX, centerY)
+
+  ctx.shadowColor = 'transparent'
+  ctx.shadowBlur = 0
+
+  ctx.font = '700 18px Inter,system-ui,sans-serif'
+  ctx.fillStyle = dark ? `rgba(255,255,255,${opacity * 1.8})` : `rgba(0,0,0,${opacity * 1.5})`
+  ctx.textBaseline = 'top'
+  ctx.fillText(metric.unit, centerX, centerY + 4)
+
+  const lineW = 32
+  ctx.beginPath()
+  ctx.moveTo(centerX - lineW / 2, centerY - 108)
+  ctx.lineTo(centerX + lineW / 2, centerY - 108)
+  ctx.strokeStyle = dark ? `rgba(255,255,255,${opacity * 0.8})` : `rgba(0,0,0,${opacity * 0.7})`
+  ctx.lineWidth = 1
+  ctx.stroke()
+
+  ctx.restore()
+}
+
 export function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image()
@@ -437,7 +515,7 @@ function formatShareDate(activity: Activity): string {
   return `${day} ${date} ${month}`
 }
 
-export function drawDataOverlay(ctx: Ctx, W: number, H: number, dark: boolean, r: number, g: number, b: number, activity: Activity) {
+export function drawDataOverlay(ctx: Ctx, W: number, H: number, dark: boolean, r: number, g: number, b: number, activity: Activity, design: ShareDesign) {
   // Zone A - top-left: name + date
   ctx.save()
   ctx.font = '800 18px Inter,system-ui,sans-serif'
@@ -448,6 +526,9 @@ export function drawDataOverlay(ctx: Ctx, W: number, H: number, dark: boolean, r
   ctx.fillStyle = dark ? 'rgba(255,255,255,.5)' : 'rgba(0,0,0,.44)'
   ctx.fillText(formatShareDate(activity), 26, 56)
   ctx.restore()
+
+  // Zone D - hero metric centered in the card
+  drawHeroMetric(ctx, W, H, dark, r, g, b, design, activity)
 
   // Zone C - bottom stats glass card
   const cx = 20, cy = H - 148, cw = W - 40, ch = 122, crr = 18
