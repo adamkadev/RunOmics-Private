@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Activity, CalendarDays, Compass, Settings, User } from 'lucide-react'
+import { LayoutDashboard, Activity, CalendarDays, BarChart2, Settings, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { APP_VERSION } from '@/lib/version'
@@ -16,7 +16,7 @@ const NAV_ITEMS = [
   { href: '/', label: t.nav.items.dashboard, icon: LayoutDashboard },
   { href: '/activities', label: t.nav.items.activities, icon: Activity },
   { href: '/calendar', label: t.nav.items.calendar, icon: CalendarDays },
-  { href: '/explore', label: t.nav.items.explore, icon: Compass },
+  { href: '/analytics', label: t.nav.items.analytics, icon: BarChart2 },
   { href: '/profile', label: t.nav.items.profile, icon: User },
 ]
 

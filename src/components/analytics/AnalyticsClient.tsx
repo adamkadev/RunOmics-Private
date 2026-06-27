@@ -29,9 +29,11 @@ import { RunningDynamicsTrendChart } from './RunningDynamicsTrendChart'
 import { VO2maxChart } from './VO2maxChart'
 import { TemperatureCorrelationChart } from './TemperatureCorrelationChart'
 import { RpeLoadCorrelationChart } from './RpeLoadCorrelationChart'
+import { GlobalMapWrapper } from '@/components/map/GlobalMapWrapper'
 import type { VO2maxPoint } from '@/application/usecases/GetVO2maxHistory'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { TrainingLoadData } from '@/application/usecases/GetTrainingLoad'
+import type { AllRoutesData } from '@/application/usecases/GetAllRoutes'
 import { formatDurationShort } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { TrainingLoadChart } from '@/components/dashboard/TrainingLoadChart'
@@ -46,6 +48,7 @@ const TABS = [
   { id: 'performance', label: t.analytics.tabs.performance },
   { id: 'physiology', label: t.analytics.tabs.physiology },
   { id: 'seasons', label: t.analytics.tabs.seasons },
+  { id: 'map', label: t.analytics.tabs.map },
 ] as const
 
 type TabId = (typeof TABS)[number]['id']
@@ -100,6 +103,7 @@ export function AnalyticsClient({
   lifetime,
   zones,
   trainingLoad,
+  routes,
 }: {
   data: AnalyticsPageData
   comparison: YearComparisonData | null
@@ -107,6 +111,7 @@ export function AnalyticsClient({
   lifetime: LifetimeStats | null
   zones: TrainingZonesData | null
   trainingLoad: TrainingLoadData | null
+  routes: AllRoutesData
 }) {
   const { years, byYear, periodWeeks, byPeriod } = data
 
@@ -374,6 +379,12 @@ export function AnalyticsClient({
               })()}
 
               {comparison && <YearComparisonSection data={comparison} />}
+            </div>
+          )}
+
+          {tab === 'map' && (
+            <div className="h-[70vh] overflow-hidden rounded-xl border border-border shadow-card">
+              <GlobalMapWrapper data={routes} />
             </div>
           )}
         </>
