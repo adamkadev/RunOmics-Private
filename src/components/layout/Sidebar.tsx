@@ -125,7 +125,7 @@ export function Sidebar() {
         </div>
       </GlassSurface>
 
-      {/* ─── Mobile top bar — everywhere except Profile/Settings, which show their own header ─── */}
+      {/* ─── Mobile top bar — Dashboard only, every other screen is titled by its own h1 ─── */}
       {showTopBar && (
         <header
           className={cn(
