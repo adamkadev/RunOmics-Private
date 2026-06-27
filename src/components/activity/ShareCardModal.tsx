@@ -173,7 +173,11 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
 
   function selectDesign(d: ShareDesign) {
     setSelectedDesign(d)
-    if (d === 'memory') setShowStats(true)
+    if (d === 'memory') {
+      setShowStats(true)
+      // Tapping Memory jumps straight to the photo picker when none is chosen yet.
+      if (!photoImage) fileInputRef.current?.click()
+    }
   }
 
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -314,6 +318,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
                 accentHex={accentHex}
                 onClick={() => selectDesign(d)}
                 gpsRoute={activity.route}
+                photoUrl={d === 'memory' ? photoUrl : null}
               />
             ))}
           </div>

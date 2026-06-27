@@ -535,30 +535,66 @@ export function draw_memory(ctx: Ctx, W: number, H: number, r: number, g: number
     ctx.fillStyle = botScrim; ctx.fillRect(0, H * 0.52, W, H * 0.48)
     return
   }
-  const sky = ctx.createLinearGradient(0, 0, 0, H * 0.62)
-  if (dark) { sky.addColorStop(0, '#1a0a05'); sky.addColorStop(0.5, '#2e1610'); sky.addColorStop(1, '#0a0806') }
-  else { sky.addColorStop(0, '#ffecd8'); sky.addColorStop(0.5, '#ffcba4'); sky.addColorStop(1, '#f0a87c') }
-  ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H * 0.62)
-  const gnd = ctx.createLinearGradient(0, H * 0.56, 0, H)
-  if (dark) { gnd.addColorStop(0, '#060a07'); gnd.addColorStop(1, '#020402') }
-  else { gnd.addColorStop(0, '#88a870'); gnd.addColorStop(1, '#5c7a48') }
-  ctx.fillStyle = gnd; ctx.fillRect(0, H * 0.56, W, H * 0.44)
-  glow(ctx, W, H * 0.62, W * 0.62, H * 0.28, W * 0.5, r, g, b, dark ? 0.32 : 0.25)
-  ctx.fillStyle = dark ? 'rgba(0,0,0,.68)' : 'rgba(18,28,10,.5)'
-  const trees = [{ x: W * 0.12, h: 0.18, w: 0.12 }, { x: W * 0.28, h: 0.12, w: 0.09 }, { x: W * 0.55, h: 0.22, w: 0.14 }, { x: W * 0.78, h: 0.16, w: 0.1 }]
+  // Full-bleed photo placeholder (warm golden hour gradient)
+  const bg = ctx.createLinearGradient(0, 0, 0, H)
+  if (dark) {
+    bg.addColorStop(0, '#1c0c06'); bg.addColorStop(0.35, '#2e1610'); bg.addColorStop(0.6, '#12160a'); bg.addColorStop(1, '#060a05')
+  } else {
+    bg.addColorStop(0, '#ffe4cc'); bg.addColorStop(0.35, '#ffcba4'); bg.addColorStop(0.6, '#a8c88a'); bg.addColorStop(1, '#5c7a48')
+  }
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H)
+
+  // Sun glow (upper-right)
+  glow(ctx, W, H, W * 0.68, H * 0.22, W * 0.65, r, g, b, dark ? 0.38 : 0.28)
+
+  // Horizon silhouette (lower third)
+  ctx.fillStyle = dark ? 'rgba(0,0,0,.72)' : 'rgba(18,28,10,.48)'
+  const hzY = H * 0.62
+  const trees = [{ x: W * 0.08, h: 0.12, w: 0.1 }, { x: W * 0.22, h: 0.09, w: 0.08 }, { x: W * 0.48, h: 0.15, w: 0.12 }, { x: W * 0.72, h: 0.11, w: 0.09 }, { x: W * 0.88, h: 0.13, w: 0.11 }]
   trees.forEach(tr => {
-    ctx.beginPath(); ctx.moveTo(tr.x, H * 0.62)
-    ctx.lineTo(tr.x - tr.w * W * 0.5, H * (1 - tr.h) * 0.62 + H * 0.62 * tr.h)
-    ctx.lineTo(tr.x + tr.w * W * 0.5, H * (1 - tr.h) * 0.62 + H * 0.62 * tr.h)
+    ctx.beginPath(); ctx.moveTo(tr.x, hzY)
+    ctx.lineTo(tr.x - tr.w * W * 0.5, hzY - H * tr.h)
+    ctx.lineTo(tr.x + tr.w * W * 0.5, hzY - H * tr.h)
     ctx.closePath(); ctx.fill()
   })
-  const panY = H * 0.6
-  const pan = ctx.createLinearGradient(0, panY, 0, H)
-  pan.addColorStop(0, dark ? 'rgba(4,8,6,.78)' : 'rgba(255,255,255,.78)')
-  pan.addColorStop(1, dark ? 'rgba(2,4,2,.92)' : 'rgba(255,255,255,.9)')
-  ctx.fillStyle = pan; ctx.fillRect(0, panY, W, H - panY)
+
+  // Subtle grid hint
+  ctx.strokeStyle = dark ? 'rgba(255,255,255,.025)' : 'rgba(0,0,0,.03)'; ctx.lineWidth = 0.8
+  for (let x = 0; x < W; x += 44) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke() }
+  for (let y = 0; y < H; y += 44) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke() }
+
+  // Center "Add photo" indicator
+  const icW = 72, icH = 58, icX = (W - icW) / 2, icY = H * 0.38 - icH / 2
+  ctx.save()
+  rrect(ctx, icX - 8, icY - 8, icW + 16, icH + 16, 20)
+  ctx.fillStyle = dark ? 'rgba(0,0,0,.3)' : 'rgba(255,255,255,.35)'; ctx.fill()
+  rrect(ctx, icX - 8, icY - 8, icW + 16, icH + 16, 20)
+  ctx.strokeStyle = dark ? 'rgba(255,255,255,.22)' : 'rgba(255,255,255,.7)'; ctx.lineWidth = 1.5; ctx.stroke()
+  // Camera body
+  ctx.strokeStyle = dark ? 'rgba(255,255,255,.65)' : 'rgba(255,255,255,.9)'; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round'
+  rrect(ctx, icX + 4, icY + 16, icW - 8, icH - 22, 6); ctx.stroke()
+  // Lens
+  ctx.beginPath(); ctx.arc(icX + icW / 2, icY + icH / 2 + 2, 10, 0, Math.PI * 2); ctx.stroke()
+  // Viewfinder bump
+  ctx.beginPath(); ctx.moveTo(icX + icW / 2 - 10, icY + 16); ctx.lineTo(icX + icW / 2 - 6, icY + 8); ctx.lineTo(icX + icW / 2 + 6, icY + 8); ctx.lineTo(icX + icW / 2 + 10, icY + 16); ctx.stroke()
+  // Label
+  ctx.font = '600 11px Inter,system-ui,sans-serif'
+  ctx.fillStyle = dark ? 'rgba(255,255,255,.65)' : 'rgba(255,255,255,.9)'
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top'
+  ctx.fillText('Ajouter une photo', W / 2, icY + icH + 10)
+  ctx.restore()
+
+  // Bottom vignette + specular line (frosted overlay, stays on top of photo)
+  const panY = H * 0.65
+  ctx.save()
+  const vig = ctx.createLinearGradient(0, panY - 60, 0, H)
+  vig.addColorStop(0, 'rgba(0,0,0,0)')
+  vig.addColorStop(0.3, dark ? 'rgba(0,0,0,.55)' : 'rgba(0,0,0,.35)')
+  vig.addColorStop(1, dark ? 'rgba(0,0,0,.80)' : 'rgba(0,0,0,.55)')
+  ctx.fillStyle = vig; ctx.fillRect(0, panY - 60, W, H - (panY - 60))
   ctx.beginPath(); ctx.moveTo(0, panY); ctx.lineTo(W, panY)
-  ctx.strokeStyle = dark ? 'rgba(255,255,255,.24)' : 'rgba(255,255,255,.92)'; ctx.lineWidth = 1.5; ctx.stroke()
+  ctx.strokeStyle = dark ? 'rgba(255,255,255,.18)' : 'rgba(255,255,255,.55)'; ctx.lineWidth = 1; ctx.stroke()
+  ctx.restore()
 }
 
 // ── GPS route overlay (any design) ──────────────────────────────────────────
