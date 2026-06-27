@@ -659,21 +659,51 @@ export function drawRouteOverlay(
 
 export function drawBranding(ctx: Ctx, W: number, _H: number, dark: boolean) {
   ctx.save()
-  const alpha = dark ? 0.76 : 0.62
-  const col = dark ? `rgba(255,255,255,${alpha})` : `rgba(0,0,0,${alpha})`
-  ctx.strokeStyle = col; ctx.fillStyle = col
-  ctx.lineWidth = 1.35; ctx.lineCap = 'round'
-  ctx.font = '700 10px Inter,system-ui,sans-serif'
-  ctx.textAlign = 'right'; ctx.textBaseline = 'middle'
+  ctx.lineCap = 'round'
+
+  const iW = 24
+  const fs = 13
+  const gap = 8
+  const ry = 34
+  const rx = W - 18
+
+  ctx.font = `800 ${fs}px Inter, system-ui, sans-serif`
+  ctx.textAlign = 'right'
+  ctx.textBaseline = 'middle'
   const tw = ctx.measureText('RUNOMICS').width
-  const gap = 5, iW = 14, rx = W - 20, ry = 27
-  const ix = rx - tw - gap - iW, cx2 = ix + iW / 2
-  ctx.beginPath(); ctx.ellipse(cx2, ry - 4, iW / 2, 2.2, 0, Math.PI, 0, false); ctx.stroke()
-  ctx.beginPath(); ctx.ellipse(cx2, ry, iW / 2, 2.2, 0, Math.PI, 0, false); ctx.stroke()
-  ctx.beginPath(); ctx.ellipse(cx2, ry + 4, iW / 2, 2.2, 0, 0, Math.PI, false); ctx.stroke()
-  ctx.beginPath(); ctx.moveTo(ix, ry - 4); ctx.lineTo(ix, ry + 4); ctx.stroke()
-  ctx.beginPath(); ctx.moveTo(ix + iW, ry - 4); ctx.lineTo(ix + iW, ry + 4); ctx.stroke()
+
+  const baseAlpha = dark ? 0.92 : 0.88
+  const col = `rgba(255,255,255,${baseAlpha})`
+  ctx.shadowColor = 'rgba(0,0,0,0.55)'
+  ctx.shadowBlur = 8
+  ctx.shadowOffsetY = 2
+
+  ctx.fillStyle = col
   ctx.fillText('RUNOMICS', rx, ry)
+
+  const cx2 = (rx - tw - gap - iW) + iW / 2
+  ctx.save()
+  const scale = iW / 32
+  ctx.translate(cx2 - 22 * scale, ry - 28 * scale)
+  ctx.scale(scale, scale)
+  ctx.strokeStyle = col
+
+  const stroke = (alpha: number, lw: number, fn: () => void) => {
+    ctx.globalAlpha = baseAlpha * alpha
+    ctx.lineWidth = lw
+    ctx.beginPath(); fn(); ctx.stroke()
+  }
+
+  stroke(1.00, 4.5, () => ctx.ellipse(22, 16, 16, 8, 0, Math.PI, 0, true))
+  stroke(0.30, 2.5, () => { ctx.moveTo(6, 16); ctx.lineTo(6, 28) })
+  stroke(0.30, 2.5, () => { ctx.moveTo(38, 16); ctx.lineTo(38, 28) })
+  stroke(0.45, 4.5, () => ctx.ellipse(22, 28, 16, 8, 0, Math.PI, 0, false))
+  stroke(1.00, 4.5, () => ctx.ellipse(22, 28, 16, 8, 0, Math.PI, 0, true))
+  stroke(0.30, 2.5, () => { ctx.moveTo(6, 28); ctx.lineTo(6, 40) })
+  stroke(0.30, 2.5, () => { ctx.moveTo(38, 28); ctx.lineTo(38, 40) })
+  stroke(0.45, 4.5, () => ctx.ellipse(22, 40, 16, 8, 0, Math.PI, 0, false))
+
+  ctx.restore()
   ctx.restore()
 }
 
@@ -729,13 +759,13 @@ export function drawDataOverlay(ctx: Ctx, W: number, H: number, dark: boolean, r
     ctx.font = '600 8px Inter,system-ui,sans-serif'
     ctx.fillStyle = dark ? 'rgba(255,255,255,.38)' : 'rgba(0,0,0,.35)'
     ctx.textAlign = 'center'; ctx.textBaseline = 'top'
-    ctx.fillText(s.label.toUpperCase(), scx, cy + 18)
+    ctx.fillText(s.label.toUpperCase(), scx, cy + 34)
     ctx.font = '800 21px Inter,system-ui,sans-serif'
     ctx.fillStyle = dark ? 'rgba(255,255,255,.93)' : 'rgba(0,0,0,.88)'
-    ctx.fillText(s.value, scx, cy + 34)
+    ctx.fillText(s.value, scx, cy + 50)
     ctx.font = '600 10px Inter,system-ui,sans-serif'
     ctx.fillStyle = `rgba(${r},${g},${b},.9)`
-    ctx.fillText(s.unit, scx, cy + 62)
+    ctx.fillText(s.unit, scx, cy + 78)
     if (i < 3) {
       ctx.beginPath(); ctx.moveTo(cx + cellW * (i + 1), cy + 14); ctx.lineTo(cx + cellW * (i + 1), cy + ch - 14)
       ctx.strokeStyle = dark ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.06)'; ctx.lineWidth = 1; ctx.stroke()
