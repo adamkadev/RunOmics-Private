@@ -1,6 +1,7 @@
 import type { Activity } from '@/domain/activity/types'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
-import { trimp } from './GetTrainingLoad'
+import { getAthleteFromFirestore } from '@/infrastructure/repositories/FirestoreConfigRepository'
+import { trimp, type HrBounds } from './GetTrainingLoad'
 import { round } from '@/lib/math'
 
 export type WeekLoadLevel = 'low' | 'normal' | 'high'
@@ -21,7 +22,7 @@ export function level(percent: number): WeekLoadLevel {
   return 'normal'
 }
 
-export function getWeeklyLoadComparison(): WeeklyLoadComparison | null {
+export async function getWeeklyLoadComparison(): Promise<WeeklyLoadComparison | null> {
   const activities = getAllActivities()
   if (!activities.length) return null
 
@@ -37,7 +38,13 @@ export function getWeeklyLoadComparison(): WeeklyLoadComparison | null {
   const baselineWeeks = sortedWeeks.slice(-(BASELINE_WEEKS + 1), -1)
   if (baselineWeeks.length < 3) return null
 
-  const weekTrimp = (w: number) => byWeek.get(w)!.reduce((s, a) => s + trimp(a), 0)
+  const athlete = await getAthleteFromFirestore()
+  const hrBounds: HrBounds | undefined =
+    athlete.maxHrBpm && athlete.restingHrBpm
+      ? { maxHr: athlete.maxHrBpm, restingHr: athlete.restingHrBpm }
+      : undefined
+
+  const weekTrimp = (w: number) => byWeek.get(w)!.reduce((s, a) => s + trimp(a, hrBounds), 0)
 
   const currentLoad = round(weekTrimp(currentWeek))
   const typicalLoad = round(baselineWeeks.reduce((s, w) => s + weekTrimp(w), 0) / baselineWeeks.length)

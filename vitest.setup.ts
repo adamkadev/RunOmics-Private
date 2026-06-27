@@ -9,3 +9,19 @@ Object.defineProperty(globalThis, 'localStorage', {
     .localStorage,
   configurable: true,
 })
+
+// jsdom doesn't implement matchMedia - stub it so code reading prefers-color-scheme
+// (e.g. persistAccent) doesn't throw in tests.
+Object.defineProperty(window, 'matchMedia', {
+  value: (query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  }),
+  configurable: true,
+})

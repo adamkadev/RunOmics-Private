@@ -9,6 +9,10 @@ export interface AthleteProfile {
   displayName?: string
   // Top bpm of zones 1-4 (zone 5 runs from the 4th value up to lthrBpm).
   hrZoneBoundsBpm?: [number, number, number, number]
+  // Used by the TRIMP training-load calculation (GetTrainingLoad.ts). Falls
+  // back to population-average defaults when not set.
+  maxHrBpm?: number
+  restingHrBpm?: number
   lastUpdate?: string
 }
 

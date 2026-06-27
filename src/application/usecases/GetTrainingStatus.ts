@@ -50,8 +50,8 @@ export function classify(
   return { status: 'productive', risk: ratio !== null && ratio > 1.3 ? 'moderate' : 'low' }
 }
 
-export function getTrainingStatus(): TrainingStatus | null {
-  const load = getTrainingLoad()
+export async function getTrainingStatus(): Promise<TrainingStatus | null> {
+  const load = await getTrainingLoad()
   if (!load) return null
 
   const { ctl, atl, tsb, points } = load

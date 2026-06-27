@@ -1,5 +1,6 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
-import { buildTimeSeries } from '@/application/usecases/GetTrainingLoad'
+import { getAthleteFromFirestore } from '@/infrastructure/repositories/FirestoreConfigRepository'
+import { buildTimeSeries, type HrBounds } from '@/application/usecases/GetTrainingLoad'
 import type { Activity, ActivityType } from '@/domain/activity/types'
 import { monthLabel } from '@/lib/formatters'
 import { round } from '@/lib/math'
@@ -505,9 +506,15 @@ function buildRunningDynamicsDaily(activities: Activity[], now: Date): DailyRunn
   })
 }
 
-export function getAnalyticsData(): AnalyticsPageData {
+export async function getAnalyticsData(): Promise<AnalyticsPageData> {
   const all = getAllActivities()
   const now = new Date()
+
+  const athlete = await getAthleteFromFirestore()
+  const hrBounds: HrBounds | undefined =
+    athlete.maxHrBpm && athlete.restingHrBpm
+      ? { maxHr: athlete.maxHrBpm, restingHr: athlete.restingHrBpm }
+      : undefined
 
   const byYearMap = new Map<number, Activity[]>()
   for (const a of all) {
@@ -545,7 +552,7 @@ export function getAnalyticsData(): AnalyticsPageData {
     if (vals.length >= 3) avgRpeByType.set(type, vals.reduce((s, v) => s + v, 0) / vals.length)
   }
 
-  const loadSeries = buildTimeSeries(all)
+  const loadSeries = buildTimeSeries(all, hrBounds)
   const rpeLoadCorrelation: RpeLoadPoint[] = all
     .filter((a) => a.rpe !== null && a.distanceKm >= 3 && loadSeries.has(a.date) && avgRpeByType.has(a.type))
     .map((a) => ({

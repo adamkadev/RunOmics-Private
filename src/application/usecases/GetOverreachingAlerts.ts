@@ -13,7 +13,7 @@ export interface OverreachingAlert {
 // Fires once on the transition into risk=high, then resets once risk drops below high
 // so a later relapse re-alerts. Returns [] on the very first call (bootstraps the stored state).
 export async function getOverreachingAlerts(): Promise<OverreachingAlert[]> {
-  const status = getTrainingStatus()
+  const status = await getTrainingStatus()
   if (!status) return []
 
   const lastState = await getLastOverreachingState()

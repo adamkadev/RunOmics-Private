@@ -1,7 +1,6 @@
 'use client'
 
 import { useMemo } from 'react'
-import Link from 'next/link'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import type { Activity, ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import { round } from '@/lib/math'

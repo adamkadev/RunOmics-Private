@@ -11,14 +11,14 @@ import { AnalyticsClient } from '@/components/analytics/AnalyticsClient'
 export const revalidate = 86400
 
 export default async function AnalyticsPage() {
-  const [data, comparison, vo2maxHistory, lifetime, zones] = await Promise.all([
-    Promise.resolve(getAnalyticsData()),
+  const [data, comparison, vo2maxHistory, lifetime, zones, trainingLoad] = await Promise.all([
+    getAnalyticsData(),
     Promise.resolve(getYearComparison()),
     Promise.resolve(getVO2maxHistory()),
     Promise.resolve(getLifetimeStats()),
     getTrainingZones(),
+    getTrainingLoad(),
   ])
-  const trainingLoad = getTrainingLoad()
 
   return (
     <div className="space-y-6 pb-[max(env(safe-area-inset-bottom),80px)]">
