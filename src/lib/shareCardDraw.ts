@@ -332,6 +332,120 @@ export function draw_cadence(ctx: Ctx, W: number, H: number, r: number, g: numbe
   ctx.strokeStyle = dark ? 'rgba(255,255,255,.14)' : 'rgba(0,0,0,.1)'; ctx.lineWidth = 1; ctx.stroke()
 }
 
+function drawMapStreetLabels(ctx: Ctx, W: number, H: number, dark: boolean, streetLabel: string) {
+  ctx.save()
+  ctx.font = '500 8.5px Inter,system-ui,sans-serif'
+  const labelColor = dark ? 'rgba(255,255,255,0.42)' : 'rgba(0,0,0,0.38)'
+  const bg = dark ? 'rgba(9,16,26,0.76)' : 'rgba(237,241,247,0.76)'
+  const tw = ctx.measureText(streetLabel).width
+  const ph = 11, pad = 4
+
+  // Horizontal label on 2 major horizontal grid lines in the mid section
+  const hLines = [Math.round(H * 0.27), Math.round(H * 0.54)]
+  hLines.forEach(y => {
+    const lx = W * 0.05
+    ctx.fillStyle = bg
+    ctx.fillRect(lx - pad, y - ph / 2 - pad / 2, tw + pad * 2, ph + pad)
+    ctx.fillStyle = labelColor
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle'
+    ctx.fillText(streetLabel, lx, y)
+  })
+
+  // Vertical label on 1 major vertical grid line (rotated 90°)
+  const vX = Math.round(W * 0.55)
+  const labelY = H * 0.35
+  ctx.save()
+  ctx.translate(vX, labelY)
+  ctx.rotate(-Math.PI / 2)
+  ctx.fillStyle = bg
+  ctx.fillRect(-tw / 2 - pad, -ph / 2 - pad / 2, tw + pad * 2, ph + pad)
+  ctx.fillStyle = labelColor
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+  ctx.fillText(streetLabel, 0, 0)
+  ctx.restore()
+
+  ctx.restore()
+}
+
+function drawMapCompass(ctx: Ctx, W: number, H: number, r: number, g: number, b: number, dark: boolean) {
+  const cx = W - 34, cy = H - 178
+  const size = 13
+  ctx.save()
+
+  // Glass circle background
+  ctx.beginPath(); ctx.arc(cx, cy, size + 6, 0, Math.PI * 2)
+  ctx.fillStyle = dark ? 'rgba(0,0,0,0.62)' : 'rgba(255,255,255,0.72)'
+  ctx.fill()
+  ctx.strokeStyle = dark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.12)'
+  ctx.lineWidth = 1; ctx.stroke()
+
+  // North arrow (accent color, filled)
+  ctx.beginPath()
+  ctx.moveTo(cx, cy - size)
+  ctx.lineTo(cx - 4.5, cy + 1)
+  ctx.lineTo(cx, cy - 2)
+  ctx.lineTo(cx + 4.5, cy + 1)
+  ctx.closePath()
+  ctx.fillStyle = `rgb(${r},${g},${b})`; ctx.fill()
+
+  // South arrow (muted)
+  ctx.beginPath()
+  ctx.moveTo(cx, cy + size)
+  ctx.lineTo(cx + 4.5, cy - 1)
+  ctx.lineTo(cx, cy + 2)
+  ctx.lineTo(cx - 4.5, cy - 1)
+  ctx.closePath()
+  ctx.fillStyle = dark ? 'rgba(255,255,255,0.28)' : 'rgba(0,0,0,0.2)'; ctx.fill()
+
+  // E / W ticks
+  ctx.strokeStyle = dark ? 'rgba(255,255,255,0.38)' : 'rgba(0,0,0,0.28)'
+  ctx.lineWidth = 1.5
+  ctx.beginPath(); ctx.moveTo(cx - size, cy); ctx.lineTo(cx - 5, cy); ctx.stroke()
+  ctx.beginPath(); ctx.moveTo(cx + size, cy); ctx.lineTo(cx + 5, cy); ctx.stroke()
+
+  // "N" label
+  ctx.font = '800 7px Inter,system-ui,sans-serif'
+  ctx.fillStyle = dark ? 'rgba(255,255,255,0.88)' : 'rgba(0,0,0,0.78)'
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+  ctx.fillText('N', cx, cy - size - 7)
+
+  ctx.restore()
+}
+
+function drawKmPill(ctx: Ctx, pt: [number, number], label: string, r: number, g: number, b: number, dark: boolean) {
+  ctx.save()
+  ctx.font = '700 8px Inter,system-ui,sans-serif'
+  const text = `${label} km`
+  const tw = ctx.measureText(text).width
+  const pw = tw + 10, ph = 14, prr = 7
+  const px = pt[0] - pw / 2, py = pt[1] - 8 - ph - 2
+  rrect(ctx, px, py, pw, ph, prr)
+  ctx.fillStyle = dark ? 'rgba(9,16,26,0.84)' : 'rgba(255,255,255,0.88)'
+  ctx.fill()
+  rrect(ctx, px, py, pw, ph, prr)
+  ctx.strokeStyle = `rgba(${r},${g},${b},0.78)`; ctx.lineWidth = 1.2; ctx.stroke()
+  ctx.fillStyle = `rgba(${r},${g},${b},1)`
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+  ctx.fillText(text, pt[0], py + ph / 2)
+  ctx.beginPath(); ctx.arc(pt[0], pt[1], 3, 0, Math.PI * 2)
+  ctx.fillStyle = `rgba(${r},${g},${b},0.9)`; ctx.fill()
+  ctx.restore()
+}
+
+function drawDepartLabel(ctx: Ctx, pt: [number, number]) {
+  ctx.save()
+  ctx.font = '700 8px Inter,system-ui,sans-serif'
+  const tw = ctx.measureText('Départ').width
+  const pw = tw + 10, ph = 14, prr = 7
+  const px = pt[0] - pw / 2, py = pt[1] - 7 - ph - 4
+  rrect(ctx, px, py, pw, ph, prr)
+  ctx.fillStyle = '#22c55e'; ctx.fill()
+  ctx.fillStyle = 'rgba(255,255,255,0.95)'
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+  ctx.fillText('Départ', pt[0], py + ph / 2)
+  ctx.restore()
+}
+
 export function draw_map(
   ctx: Ctx, W: number, H: number,
   r: number, g: number, b: number,
@@ -339,7 +453,9 @@ export function draw_map(
   gpsRoute?: [number, number][] | null,
   locationName?: string | null,
   distanceKm?: number,
+  streetLabel?: string | null,
 ) {
+  // Background + grid
   ctx.fillStyle = dark ? '#09101a' : '#edf1f7'; ctx.fillRect(0, 0, W, H)
   ctx.strokeStyle = dark ? 'rgba(255,255,255,.055)' : 'rgba(0,0,0,.07)'; ctx.lineWidth = 0.8
   for (let x = 0; x < W; x += 28) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke() }
@@ -347,19 +463,24 @@ export function draw_map(
   ctx.strokeStyle = dark ? 'rgba(255,255,255,.1)' : 'rgba(0,0,0,.13)'; ctx.lineWidth = 2.2
   for (let x = 0; x < W; x += 112) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke() }
   for (let y = 0; y < H; y += 112) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke() }
+
+  // Street labels on major grid lines
+  if (streetLabel) drawMapStreetLabels(ctx, W, H, dark, streetLabel)
+
   glow(ctx, W, H, W * 0.5, H * 0.52, W * 0.55, r, g, b, dark ? 0.22 : 0.14)
 
-  // Watermark neighbourhood name behind the route
+  // Watermark city name (very subtle, behind route)
   if (locationName) {
     const watermarkText = locationName.split(',')[0].toUpperCase()
     ctx.save()
     ctx.font = `800 ${Math.round(W * 0.19)}px Inter,system-ui,sans-serif`
-    ctx.fillStyle = dark ? 'rgba(255,255,255,0.045)' : 'rgba(0,0,0,0.055)'
+    ctx.fillStyle = dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.05)'
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
     ctx.fillText(watermarkText, W / 2, H / 2)
     ctx.restore()
   }
 
+  // GPS route
   const simplified = gpsRoute && gpsRoute.length > 1 ? simplifyPolyline(gpsRoute) : null
   const pts: [number, number][] = simplified
     ? projectGPS(simplified, W, H)
@@ -381,31 +502,26 @@ export function draw_map(
   drawRoute(18, dark ? 0.7 : 0.45, 14)
   drawRoute(3.5, dark ? 0.95 : 0.82)
 
-  // Km markers along the real route
+  // Km pills
   if (simplified && distanceKm && distanceKm > 0) {
-    const markers = getKmMarkers(pts, distanceKm)
-    markers.forEach(({ pt, label }) => {
-      ctx.save()
-      ctx.beginPath(); ctx.arc(pt[0], pt[1], 4, 0, Math.PI * 2)
-      ctx.fillStyle = dark ? 'rgba(0,0,0,.72)' : 'rgba(255,255,255,.82)'
-      ctx.fill()
-      ctx.strokeStyle = `rgba(${r},${g},${b},${dark ? 0.9 : 0.75})`; ctx.lineWidth = 1.5; ctx.stroke()
-      ctx.font = `700 8px Inter,system-ui,sans-serif`
-      ctx.fillStyle = dark ? `rgba(${r},${g},${b},1)` : `rgba(${r},${g},${b},1)`
-      ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'
-      ctx.fillText(label, pt[0], pt[1] - 6)
-      ctx.restore()
-    })
+    getKmMarkers(pts, distanceKm).forEach(({ pt, label }) => drawKmPill(ctx, pt, label, r, g, b, dark))
   }
 
+  // Start dot + "Départ" label
   ctx.beginPath(); ctx.arc(pts[0][0], pts[0][1], 7, 0, Math.PI * 2)
   ctx.fillStyle = '#22c55e'; ctx.fill()
   ctx.beginPath(); ctx.arc(pts[0][0], pts[0][1], 7, 0, Math.PI * 2)
   ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 2; ctx.stroke()
+  drawDepartLabel(ctx, pts[0])
+
+  // End dot
   ctx.beginPath(); ctx.arc(pts[pts.length - 1][0], pts[pts.length - 1][1], 7, 0, Math.PI * 2)
   ctx.fillStyle = `rgb(${r},${g},${b})`; ctx.fill()
   ctx.beginPath(); ctx.arc(pts[pts.length - 1][0], pts[pts.length - 1][1], 7, 0, Math.PI * 2)
   ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 2; ctx.stroke()
+
+  // Compass rose (top of stats card area, bottom right)
+  drawMapCompass(ctx, W, H, r, g, b, dark)
 }
 
 export function draw_memory(ctx: Ctx, W: number, H: number, r: number, g: number, b: number, dark: boolean, photoImg?: HTMLImageElement | null) {
@@ -585,6 +701,7 @@ export function drawTheme(
   photoImg?: HTMLImageElement | null,
   locationName?: string | null,
   distanceKm?: number,
+  streetLabel?: string | null,
 ): void {
   switch (theme) {
     case 'aurora':  draw_aurora(ctx, W, H, r, g, b, dark); break
@@ -592,7 +709,7 @@ export function drawTheme(
     case 'terrain': draw_terrain(ctx, W, H, r, g, b, dark); break
     case 'prism':   draw_prism(ctx, W, H, r, g, b, dark); break
     case 'cadence': draw_cadence(ctx, W, H, r, g, b, dark); break
-    case 'map':     draw_map(ctx, W, H, r, g, b, dark, gpsRoute, locationName, distanceKm); break
+    case 'map':     draw_map(ctx, W, H, r, g, b, dark, gpsRoute, locationName, distanceKm, streetLabel); break
     case 'memory':  draw_memory(ctx, W, H, r, g, b, dark, photoImg ?? null); break
   }
 }

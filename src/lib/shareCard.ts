@@ -22,10 +22,11 @@ export interface RenderOptions {
   photoImage?: HTMLImageElement | null
   gpsRoute?: [number, number][] | null
   locationName?: string | null
+  streetLabel?: string | null
 }
 
 export function renderShareCard(canvas: HTMLCanvasElement, options: RenderOptions, scale = 1) {
-  const { activity, design, accent, theme, showStats, showMap, photoImage, gpsRoute, locationName } = options
+  const { activity, design, accent, theme, showStats, showMap, photoImage, gpsRoute, locationName, streetLabel } = options
   const dark = theme === 'dark'
   canvas.width = W * scale
   canvas.height = H * scale
@@ -37,7 +38,7 @@ export function renderShareCard(canvas: HTMLCanvasElement, options: RenderOption
 
   // For the map design, only pass the real route when showMap is on.
   const routeForTheme = design === 'map' ? (showMap ? gpsRoute : null) : gpsRoute
-  drawTheme(ctx, design, W, H, r, g, b, dark, routeForTheme, photoImage, locationName, activity.distanceKm)
+  drawTheme(ctx, design, W, H, r, g, b, dark, routeForTheme, photoImage, locationName, activity.distanceKm, streetLabel)
 
   // For the memory design, overlay the GPS trace on top when showMap is on.
   if (showMap && design === 'memory' && gpsRoute && gpsRoute.length > 1) {

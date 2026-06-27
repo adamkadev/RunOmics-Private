@@ -88,6 +88,9 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   const [locationName, setLocationName] = useState<string | null>(() => {
     try { return sessionStorage.getItem(`ro_geocode_${activity.id}`) } catch { return null }
   })
+  const [streetLabel, setStreetLabel] = useState<string | null>(() => {
+    try { return sessionStorage.getItem(`ro_geocode_${activity.id}_road`) } catch { return null }
+  })
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -100,29 +103,34 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   useEffect(() => { try { localStorage.setItem('ro_shareStats', String(showStats)) } catch { /* noop */ } }, [showStats])
   useEffect(() => { try { localStorage.setItem('ro_shareMap', String(showMap)) } catch { /* noop */ } }, [showMap])
 
-  // Reverse geocoding for map watermark (cache is read in state initializer above)
+  // Reverse geocoding for map watermark + street labels (cache in sessionStorage)
   useEffect(() => {
-    if (locationName !== null) return
+    if (locationName !== null && streetLabel !== null) return
     if (!activity.route || activity.route.length < 1) return
     const [lng, lat] = activity.route[0]
     const cacheKey = `ro_geocode_${activity.id}`
     fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=12`,
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=16`,
       { headers: { 'Accept-Language': 'fr', 'User-Agent': 'RunOmics/1.0' } }
     )
       .then(res => res.json())
       .then((data: { address?: Record<string, string> }) => {
         const addr = data.address ?? {}
+        const road = addr.road ?? addr.pedestrian ?? addr.path ?? null
         const suburb = addr.suburb ?? addr.neighbourhood
         const city = addr.city ?? addr.town ?? addr.village
-        const name = suburb ? `${suburb}, ${city}` : (city ?? null)
-        if (name) {
-          try { sessionStorage.setItem(cacheKey, name) } catch { /* noop */ }
-          setLocationName(name)
+        const cityName = suburb ? `${suburb}, ${city}` : (city ?? null)
+        if (road) {
+          try { sessionStorage.setItem(`${cacheKey}_road`, road) } catch { /* noop */ }
+          setStreetLabel(road)
+        }
+        if (cityName) {
+          try { sessionStorage.setItem(cacheKey, cityName) } catch { /* noop */ }
+          setLocationName(cityName)
         }
       })
       .catch(() => { /* noop */ })
-  }, [activity.id, activity.route, locationName])
+  }, [activity.id, activity.route, locationName, streetLabel])
 
   // Escape key
   useEffect(() => {
@@ -153,7 +161,8 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     photoImage,
     gpsRoute: activity.route,
     locationName,
-  }), [activity, selectedDesign, accent, theme, showStats, showMap, photoImage, locationName])
+    streetLabel,
+  }), [activity, selectedDesign, accent, theme, showStats, showMap, photoImage, locationName, streetLabel])
 
   // Redraw preview canvas whenever options change
   useEffect(() => {
@@ -164,7 +173,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
 
   function selectDesign(d: ShareDesign) {
     setSelectedDesign(d)
-    if (d === 'memory') setShowStats(false)
+    if (d === 'memory') setShowStats(true)
   }
 
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
