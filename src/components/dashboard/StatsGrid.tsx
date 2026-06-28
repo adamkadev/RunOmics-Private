@@ -3,12 +3,14 @@
 import { useRef, useState } from 'react'
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { isoWeekNumber } from '@/lib/calendarDate'
 import { formatDuration, formatDurationShort } from '@/lib/formatters'
 import { AnimatedDuration } from '@/components/ui/AnimatedDuration'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { Button } from '@/components/ui/Button'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
+import { StatusPill } from '@/components/ui/StatusPill'
 import { WeekLoadBadge } from '@/components/dashboard/WeekLoadBadge'
 import { t } from '@/i18n'
 import type { WeekSummary } from '@/domain/activity/types'
@@ -31,6 +33,10 @@ export function StatsGrid({ weeks, currentStreak, vo2max, vo2maxTrend, weekLoad 
   const isCurrent = index === lastIndex
   const weekYear = Math.floor(currentWeek.weekNumber / 100)
   const showYear = weekYear !== new Date().getFullYear()
+
+  const today = new Date()
+  const dayOfWeek = today.getDay() || 7
+  const isInProgress = isCurrent && currentWeek.weekNumber === isoWeekNumber(today) && dayOfWeek < 7
 
   const goPrev = () => setIndex((i) => Math.max(0, i - 1))
   const goNext = () => setIndex((i) => Math.min(lastIndex, i + 1))
@@ -109,8 +115,11 @@ export function StatsGrid({ weeks, currentStreak, vo2max, vo2maxTrend, weekLoad 
               </span>
               {isCurrent && weekLoad && <WeekLoadBadge data={weekLoad} />}
             </div>
-            <div className="mt-0.5 text-xs text-muted-foreground">
-              {t.common.sessions(currentWeek.sessionCount)}
+            <div className="mt-0.5 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+              <span>{t.common.sessions(currentWeek.sessionCount)}</span>
+              {isInProgress && (
+                <StatusPill tone="blue">{s.inProgress(dayOfWeek)}</StatusPill>
+              )}
             </div>
           </div>
           <Button

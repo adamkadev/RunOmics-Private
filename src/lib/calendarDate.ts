@@ -14,3 +14,14 @@ export function startOfWeek(d: Date): Date {
   const mondayOffset = (d.getDay() || 7) - 1
   return addDays(d, -mondayOffset)
 }
+
+/** ISO 8601 week number as `isoYear * 100 + isoWeek`, matching the sync pipeline's `week` field. */
+export function isoWeekNumber(d: Date): number {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))
+  const dayNum = date.getUTCDay() || 7
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum)
+  const isoYear = date.getUTCFullYear()
+  const yearStart = new Date(Date.UTC(isoYear, 0, 1))
+  const isoWeek = Math.ceil(((date.getTime() - yearStart.getTime()) / 86400000 + 1) / 7)
+  return isoYear * 100 + isoWeek
+}
