@@ -15,14 +15,16 @@ export function SyncStatusBadge({ lastSyncedAt }: { lastSyncedAt: string | null 
     unit === 'hours' ? s.hoursAgo(value) :
     s.daysAgo(value)
 
-  // Stale once the gap reaches a full day - this app expects roughly daily syncs.
-  const isStale = unit === 'days'
+  // Severity tiers reflect how badly the data lags a daily sync schedule:
+  // fresh (<6h), getting stale (6-24h), and stale (>=24h).
+  const hoursElapsed = (new Date().getTime() - new Date(lastSyncedAt).getTime()) / 3_600_000
+  const severity = hoursElapsed >= 24 ? STATUS.danger : hoursElapsed >= 6 ? STATUS.warning : STATUS.success
 
   return (
     <span
       className={cn(
         'flex shrink-0 items-center gap-1.5 rounded-full border border-foreground/10 bg-foreground/[0.04] px-2.5 py-1 text-xs font-medium',
-        isStale ? STATUS.warning.text : 'text-muted-foreground'
+        severity.text
       )}
     >
       <RefreshCw size={12} />
