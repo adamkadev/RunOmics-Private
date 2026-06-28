@@ -827,7 +827,9 @@ export const en = {
   },
 
   racePredictions: {
-    title: 'Predictions (Riegel)',
+    title: 'Race Predictions',
+    formulaLabel: '(Riegel formula)',
+    formulaExplainer: 'Peter Riegel\'s formula (1977): T2 = T1 × (D2/D1)^1.06. The standard used by most running apps.',
     efforts: {
       '1k': '1K',
       '1mile': '1M',

@@ -2,6 +2,7 @@ import { TrendingUp } from 'lucide-react'
 import type { RecordEntry } from '@/application/usecases/GetRecords'
 import { formatDuration, formatPace } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { STATUS } from '@/lib/statusColors'
 import { t } from '@/i18n'
 
@@ -69,6 +70,11 @@ export function RacePredictions({ records }: Props) {
       <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
         <TrendingUp size={16} className="text-accent-text" />
         {t.racePredictions.title}
+        <Tooltip content={t.racePredictions.formulaExplainer} className="normal-case tracking-normal text-subtle">
+          <button type="button" className="font-normal underline decoration-dotted">
+            {t.racePredictions.formulaLabel}
+          </button>
+        </Tooltip>
       </h2>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
