@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatDuration, formatDurationShort } from '@/lib/formatters'
@@ -31,6 +31,20 @@ export function StatsGrid({ weeks, currentStreak, vo2max, vo2maxTrend, weekLoad 
   const isCurrent = index === lastIndex
   const weekYear = Math.floor(currentWeek.weekNumber / 100)
   const showYear = weekYear !== new Date().getFullYear()
+
+  const goPrev = () => setIndex((i) => Math.max(0, i - 1))
+  const goNext = () => setIndex((i) => Math.min(lastIndex, i + 1))
+
+  const touchStartX = useRef<number | null>(null)
+  const onTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX }
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return
+    const delta = e.changedTouches[0].clientX - touchStartX.current
+    touchStartX.current = null
+    const SWIPE_THRESHOLD = 40
+    if (delta > SWIPE_THRESHOLD) goPrev()
+    else if (delta < -SWIPE_THRESHOLD) goNext()
+  }
 
   const baseMetrics: Metric[] = [
     {
@@ -75,13 +89,22 @@ export function StatsGrid({ weeks, currentStreak, vo2max, vo2maxTrend, weekLoad 
     : baseMetrics
 
   return (
-    <GlassSurface variant="card" className="overflow-hidden">
+    <GlassSurface variant="card" className="overflow-hidden" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       <div className="flex items-center justify-between gap-2 border-b border-foreground/[0.08] px-4 py-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <CalendarDays size={16} className="shrink-0 text-accent-text" />
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-sm font-semibold text-foreground">
+        <CalendarDays size={16} className="shrink-0 text-accent-text" />
+        <div className="flex min-w-0 flex-1 items-center justify-center gap-1.5">
+          <Button
+            variant="secondary"
+            aria-label={s.prevWeek}
+            onClick={goPrev}
+            disabled={index === 0}
+            className="h-11 w-11 shrink-0 rounded-md p-0"
+          >
+            <ChevronLeft size={16} />
+          </Button>
+          <div className="min-w-0 text-center">
+            <div className="flex items-center justify-center gap-1.5">
+              <span className="truncate text-sm font-semibold text-foreground">
                 {t.pages.dashboard.weekTitle(currentWeek.weekNumber % 100, showYear ? weekYear : undefined)}
               </span>
               {isCurrent && weekLoad && <WeekLoadBadge data={weekLoad} />}
@@ -90,31 +113,22 @@ export function StatsGrid({ weeks, currentStreak, vo2max, vo2maxTrend, weekLoad 
               {t.common.sessions(currentWeek.sessionCount)}
             </div>
           </div>
+          <Button
+            variant="secondary"
+            aria-label={s.nextWeek}
+            onClick={goNext}
+            disabled={isCurrent}
+            className="h-11 w-11 shrink-0 rounded-md p-0"
+          >
+            <ChevronRight size={16} />
+          </Button>
         </div>
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="shrink-0">
           {!isCurrent && (
             <Button variant="ghost" onClick={() => setIndex(lastIndex)} className="px-2 py-1 text-xs">
               {s.jumpToCurrent}
             </Button>
           )}
-          <Button
-            variant="secondary"
-            aria-label={s.prevWeek}
-            onClick={() => setIndex((i) => Math.max(0, i - 1))}
-            disabled={index === 0}
-            className="h-11 w-11 rounded-md p-0"
-          >
-            <ChevronLeft size={16} />
-          </Button>
-          <Button
-            variant="secondary"
-            aria-label={s.nextWeek}
-            onClick={() => setIndex((i) => Math.min(lastIndex, i + 1))}
-            disabled={isCurrent}
-            className="h-11 w-11 rounded-md p-0"
-          >
-            <ChevronRight size={16} />
-          </Button>
         </div>
       </div>
 
