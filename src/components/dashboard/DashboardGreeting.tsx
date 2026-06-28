@@ -24,9 +24,16 @@ export function DashboardGreeting({ lastSyncedAt }: { lastSyncedAt: string | nul
     <div className="flex items-start justify-between gap-3">
       <div>
         <h1 className="text-display text-foreground">{text}, {name}</h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>
+        <div className="mt-0.5 flex items-center justify-between gap-3">
+          <p className="text-sm text-muted-foreground">{subtitle}</p>
+          <div className="sm:hidden">
+            <SyncStatusBadge lastSyncedAt={lastSyncedAt} />
+          </div>
+        </div>
       </div>
-      <SyncStatusBadge lastSyncedAt={lastSyncedAt} />
+      <div className="hidden sm:block">
+        <SyncStatusBadge lastSyncedAt={lastSyncedAt} />
+      </div>
     </div>
   )
 }

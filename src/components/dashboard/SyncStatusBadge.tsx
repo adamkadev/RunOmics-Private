@@ -1,5 +1,3 @@
-'use client'
-
 import { RefreshCw } from 'lucide-react'
 import { t } from '@/i18n'
 import { relativeTimeParts } from '@/lib/formatters'
@@ -21,17 +19,14 @@ export function SyncStatusBadge({ lastSyncedAt }: { lastSyncedAt: string | null 
   const isStale = unit === 'days'
 
   return (
-    <button
-      type="button"
-      onClick={() => window.location.reload()}
-      title={s.refreshHint}
+    <span
       className={cn(
-        'flex shrink-0 items-center gap-1.5 rounded-full border border-foreground/10 bg-foreground/[0.04] px-2.5 py-1 text-xs font-medium transition-colors hover:bg-foreground/[0.08]',
+        'flex shrink-0 items-center gap-1.5 rounded-full border border-foreground/10 bg-foreground/[0.04] px-2.5 py-1 text-xs font-medium',
         isStale ? STATUS.warning.text : 'text-muted-foreground'
       )}
     >
       <RefreshCw size={12} />
       {s.synced(relative)}
-    </button>
+    </span>
   )
 }

@@ -280,7 +280,6 @@ export const en = {
       minutesAgo: (m: number) => `${m}m ago`,
       hoursAgo: (h: number) => `${h}h ago`,
       daysAgo: (d: number) => `${d}d ago`,
-      refreshHint: 'Tap to check for a newer deploy',
     },
   },
 
