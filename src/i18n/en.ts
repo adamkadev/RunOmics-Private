@@ -88,6 +88,7 @@ export const en = {
     records: {
       title: 'Records',
       subtitle: 'Personal bests and race predictions',
+      back: 'Profile',
     },
     map: {
       title: 'Running Heatmap',
@@ -101,6 +102,7 @@ export const en = {
     shoes: {
       title: 'Shoes',
       subtitle: 'Mileage and wear per pair',
+      back: 'Profile',
     },
     profile: {
       title: 'Profile',
@@ -114,6 +116,7 @@ export const en = {
     settings: {
       title: 'Settings',
       subtitle: 'Appearance, notifications and data export.',
+      back: 'Profile',
     },
   },
 
@@ -685,6 +688,7 @@ export const en = {
 
   goals: {
     title: 'Goals',
+    back: 'Profile',
     annualGoal: 'Annual Goal',
     kmRemaining: (km: number) => `${km} km remaining`,
     goalReached: 'Goal reached!',

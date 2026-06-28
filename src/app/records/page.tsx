@@ -3,6 +3,7 @@ import { getPbAlerts } from '@/application/usecases/GetPbAlerts'
 import { RacePredictions } from '@/components/records/RacePredictions'
 import { RecordsLeaderboard } from '@/components/records/RecordsLeaderboard'
 import { PbAlertLine } from '@/components/ui/PbAlertLine'
+import { BackButton } from '@/components/ui/BackButton'
 import { t } from '@/i18n'
 
 // Safety net: data is also revalidated on demand by /api/internal/revalidate
@@ -18,6 +19,7 @@ export default async function RecordsPage() {
   return (
     <div className="space-y-8 pb-[max(env(safe-area-inset-bottom),80px)]">
       <div className="space-y-2">
+        <BackButton label={t.pages.records.back} fallbackHref="/profile" />
         <div>
           <h1 className="text-display text-foreground">{t.pages.records.title}</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">{t.pages.records.subtitle}</p>

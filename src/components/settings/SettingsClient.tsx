@@ -7,6 +7,7 @@ import { LogOut } from 'lucide-react'
 import { getClientAuth } from '@/lib/firebase'
 import { t } from '@/i18n'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { BackButton } from '@/components/ui/BackButton'
 import { AccentPicker } from './AccentPicker'
 import { ThemeSegmented } from './ThemeSegmented'
 import { DataSourceInfo } from './DataSourceInfo'
@@ -43,6 +44,7 @@ export function SettingsClient() {
   if (!user) {
     return (
       <div className="space-y-6">
+        <BackButton label={t.pages.settings.back} fallbackHref="/profile" />
         <div>
           <h1 className="text-display text-foreground">{t.pages.settings.title}</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">{t.pages.settings.subtitle}</p>
@@ -67,6 +69,7 @@ export function SettingsClient() {
   if (user.email !== OWNER_EMAIL) {
     return (
       <div className="flex min-h-64 flex-col items-center justify-center gap-4 px-4">
+        <BackButton label={t.pages.settings.back} fallbackHref="/profile" />
         <p className="text-center text-sm text-muted-foreground">{t.settings.auth.accessDenied}</p>
         <button
           onClick={handleSignOut}
@@ -81,6 +84,7 @@ export function SettingsClient() {
 
   return (
     <div className="space-y-6 pb-[max(env(safe-area-inset-bottom),80px)]">
+      <BackButton label={t.pages.settings.back} fallbackHref="/profile" />
       <div>
         <h1 className="text-display text-foreground">{t.pages.settings.title}</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">{t.pages.settings.subtitle}</p>
