@@ -174,7 +174,7 @@ export const en = {
     dataSource: {
       title: 'Data source',
       garmin: 'Garmin Connect',
-      syncMethod: 'Synced manually via export script',
+      syncMethod: 'Synced automatically once a day',
     },
     dataExport: {
       csv: 'Export activities (.csv)',
