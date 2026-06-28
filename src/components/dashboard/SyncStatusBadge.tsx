@@ -15,10 +15,10 @@ export function SyncStatusBadge({ lastSyncedAt }: { lastSyncedAt: string | null 
     unit === 'hours' ? s.hoursAgo(value) :
     s.daysAgo(value)
 
-  // Severity tiers reflect how badly the data lags a daily sync schedule:
-  // fresh (<6h), getting stale (6-24h), and stale (>=24h).
+  // Sync runs once a day, so severity tiers are calibrated to that cadence:
+  // on schedule (<24h), one sync missed (24-48h), multiple syncs missed (>=48h).
   const hoursElapsed = (new Date().getTime() - new Date(lastSyncedAt).getTime()) / 3_600_000
-  const severity = hoursElapsed >= 24 ? STATUS.danger : hoursElapsed >= 6 ? STATUS.warning : STATUS.success
+  const severity = hoursElapsed >= 48 ? STATUS.danger : hoursElapsed >= 24 ? STATUS.warning : STATUS.success
 
   return (
     <span
