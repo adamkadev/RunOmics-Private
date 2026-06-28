@@ -89,10 +89,20 @@ jobs:
           git add public/data/activities/ public/data/planned_workouts.json
 
           if git diff --cached --quiet; then
-            echo "Nothing to commit - no new activities."
+            ACTIVITIES_CHANGED=false
+          else
+            ACTIVITIES_CHANGED=true
+          fi
+          echo "activities_changed=$ACTIVITIES_CHANGED" >> "$GITHUB_OUTPUT"
+
+          git add public/data/sync_meta.json
+
+          if git diff --cached --quiet; then
+            echo "Nothing to commit."
             echo "committed=false" >> "$GITHUB_OUTPUT"
           else
-            ACTIVITY_COUNT=$(python - <<'EOF'
+            if [ "$ACTIVITIES_CHANGED" = "true" ]; then
+              ACTIVITY_COUNT=$(python - <<'EOF'
           import json, pathlib
           total = 0
           for path in pathlib.Path("public/data/activities").glob("*.json"):
@@ -102,13 +112,16 @@ jobs:
           print(total)
           EOF
           )
-            git commit -m "sync: update activities (${ACTIVITY_COUNT} total) [skip ci]"
+              git commit -m "sync: update activities (${ACTIVITY_COUNT} total) [skip ci]"
+            else
+              git commit -m "sync: refresh last-synced timestamp [skip ci]"
+            fi
             git push
             echo "committed=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Trigger PR and shoe wear checks
-        if: steps.commit.outputs.committed == 'true'
+        if: steps.commit.outputs.activities_changed == 'true'
         run: |
           # Poll until the app responds before checking for new PRs (Vercel needs time to redeploy).
           for i in $(seq 1 20); do
