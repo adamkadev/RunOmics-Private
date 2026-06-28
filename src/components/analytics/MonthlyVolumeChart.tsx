@@ -66,6 +66,7 @@ export function MonthlyVolumeChart({ data, typesPresent }: Props) {
             tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
             axisLine={false}
             tickLine={false}
+            unit={` ${t.units.km}`}
           />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: CHART_COLORS.tooltipCursor }} />
           {orderedTypes.map((type, i) => (
