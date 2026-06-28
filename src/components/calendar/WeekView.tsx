@@ -151,7 +151,7 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today, atPresent, o
     <div className="space-y-3">
       <GlassSurface variant="card" className="rounded-card-sm p-3.5 pb-2.5">
         {/* Today jump + legend toggle share one row; legend renders inline next to the toggle, not below it */}
-        <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-2">
           {!atPresent ? <TodayButton onClick={onToday} /> : <span />}
 
           <div className="flex items-center gap-2.5">
