@@ -1,7 +1,6 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { Activity, PlannedWorkout } from '@/domain/activity/types'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { WeekView } from './WeekView'
@@ -101,42 +100,34 @@ export function CalendarClient({ activities, plannedWorkouts }: Props) {
         </div>
       </GlassSurface>
 
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => shift(-1)}
-          className="flex h-11 w-11 items-center justify-center rounded-control border border-foreground/[0.12] bg-foreground/[0.08] text-foreground/65 transition-colors hover:bg-foreground/[0.12] active:scale-95"
-        >
-          <ChevronLeft size={16} />
-        </button>
-        <button
-          type="button"
-          onClick={() => shift(1)}
-          disabled={atPresent}
-          className="flex h-11 w-11 items-center justify-center rounded-control border border-foreground/[0.12] bg-foreground/[0.08] text-foreground/65 transition-colors hover:bg-foreground/[0.12] active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          <ChevronRight size={16} />
-        </button>
-        {!atPresent && (
-          <button
-            type="button"
-            onClick={goToday}
-            className="rounded-md px-2 py-1 text-xs font-medium text-accent-text transition-colors hover:bg-accent-subtle"
-          >
-            {t.calendar.today}
-          </button>
-        )}
-      </div>
-
       <div
         key={animKey}
         className="overflow-hidden"
         style={{ animation: `var(--animate-cal-${direction})` }}
       >
         {mode === 'week' ? (
-          <WeekView weekStart={weekStart} byDate={byDate} byDatePlanned={byDatePlanned} today={today} />
+          <WeekView
+            weekStart={weekStart}
+            byDate={byDate}
+            byDatePlanned={byDatePlanned}
+            today={today}
+            atPresent={atPresent}
+            onPrev={() => shift(-1)}
+            onNext={() => shift(1)}
+            onToday={goToday}
+          />
         ) : (
-          <MonthView year={year} month={month} byDate={byDate} byDatePlanned={byDatePlanned} today={today} />
+          <MonthView
+            year={year}
+            month={month}
+            byDate={byDate}
+            byDatePlanned={byDatePlanned}
+            today={today}
+            atPresent={atPresent}
+            onPrev={() => shift(-1)}
+            onNext={() => shift(1)}
+            onToday={goToday}
+          />
         )}
       </div>
 

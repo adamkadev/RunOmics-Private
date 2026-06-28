@@ -860,6 +860,7 @@ export const en = {
     weekOf: (label: string) => `Week of ${label}`,
     restDay: 'Rest day',
     planned: 'Planned',
+    nextWeek: (n: number) => `Next week - ${n} planned`,
     viewDetail: 'View detail',
     type: 'Type',
     legend: {
