@@ -49,6 +49,11 @@ export function ActivityListCard({ activity: a, prLabels = [] }: Props) {
           {t.activityTypes[a.type]}
         </span>
         <PrBadge labels={prLabels} />
+        {a.rpe !== null && (
+          <span className="rounded-full bg-foreground/[0.07] px-2 py-[2px] text-caption font-semibold text-muted-foreground">
+            {t.activities.row.rpeValue(a.rpe)}
+          </span>
+        )}
         <span className="text-xs font-medium text-muted-foreground">{formatDate(a.date)}</span>
       </div>
 
