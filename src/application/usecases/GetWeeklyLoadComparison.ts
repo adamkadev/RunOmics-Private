@@ -2,6 +2,7 @@ import type { Activity } from '@/domain/activity/types'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getAthleteFromFirestore } from '@/infrastructure/repositories/FirestoreConfigRepository'
 import { trimp, type HrBounds } from './GetTrainingLoad'
+import { isoWeekNumber } from '@/lib/calendarDate'
 import { round } from '@/lib/math'
 
 export type WeekLoadLevel = 'low' | 'normal' | 'high'
@@ -33,9 +34,11 @@ export async function getWeeklyLoadComparison(): Promise<WeeklyLoadComparison | 
     byWeek.set(a.week, list)
   }
 
+  const currentWeekNum = isoWeekNumber(new Date())
+  if (!byWeek.has(currentWeekNum)) byWeek.set(currentWeekNum, [])
+
   const sortedWeeks = Array.from(byWeek.keys()).sort((a, b) => a - b)
-  const currentWeek = sortedWeeks[sortedWeeks.length - 1]
-  const baselineWeeks = sortedWeeks.slice(-(BASELINE_WEEKS + 1), -1)
+  const baselineWeeks = sortedWeeks.filter((w) => w !== currentWeekNum).slice(-BASELINE_WEEKS)
   if (baselineWeeks.length < 3) return null
 
   const athlete = await getAthleteFromFirestore()
@@ -44,9 +47,9 @@ export async function getWeeklyLoadComparison(): Promise<WeeklyLoadComparison | 
       ? { maxHr: athlete.maxHrBpm, restingHr: athlete.restingHrBpm }
       : undefined
 
-  const weekTrimp = (w: number) => byWeek.get(w)!.reduce((s, a) => s + trimp(a, hrBounds), 0)
+  const weekTrimp = (w: number) => (byWeek.get(w) ?? []).reduce((s, a) => s + trimp(a, hrBounds), 0)
 
-  const currentLoad = round(weekTrimp(currentWeek))
+  const currentLoad = round(weekTrimp(currentWeekNum))
   const typicalLoad = round(baselineWeeks.reduce((s, w) => s + weekTrimp(w), 0) / baselineWeeks.length)
   if (typicalLoad <= 0) return null
 

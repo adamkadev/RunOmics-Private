@@ -30,13 +30,12 @@ export function StatsGrid({ weeks, currentStreak, vo2max, vo2maxTrend, weekLoad 
   const lastIndex = weeks.length - 1
   const [index, setIndex] = useState(lastIndex)
   const currentWeek = weeks[index]
-  const isCurrent = index === lastIndex
-  const weekYear = Math.floor(currentWeek.weekNumber / 100)
-  const showYear = weekYear !== new Date().getFullYear()
-
   const today = new Date()
   const dayOfWeek = today.getDay() || 7
-  const isInProgress = isCurrent && currentWeek.weekNumber === isoWeekNumber(today) && dayOfWeek < 7
+  const isCurrent = currentWeek.weekNumber === isoWeekNumber(today)
+  const weekYear = Math.floor(currentWeek.weekNumber / 100)
+  const showYear = weekYear !== today.getFullYear()
+  const isInProgress = isCurrent && dayOfWeek < 7
 
   const goPrev = () => setIndex((i) => Math.max(0, i - 1))
   const goNext = () => setIndex((i) => Math.min(lastIndex, i + 1))
@@ -107,7 +106,7 @@ export function StatsGrid({ weeks, currentStreak, vo2max, vo2maxTrend, weekLoad 
           onPrev={goPrev}
           onNext={goNext}
           prevDisabled={index === 0}
-          nextDisabled={isCurrent}
+          nextDisabled={index === lastIndex}
           prevLabel={s.prevWeek}
           nextLabel={s.nextWeek}
           className="min-w-0 flex-1 justify-center"

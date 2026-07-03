@@ -219,7 +219,7 @@ export const en = {
       empty: '-',
       prevWeek: 'Previous week',
       nextWeek: 'Next week',
-      jumpToCurrent: 'Current week',
+      jumpToCurrent: 'This week',
       inProgress: (day: number) => `In progress · ${day}/7 days`,
     },
     weekLoad: {

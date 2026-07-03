@@ -1,4 +1,5 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { isoWeekNumber } from '@/lib/calendarDate'
 import { round } from '@/lib/math'
 import type {
   Activity,
@@ -103,6 +104,9 @@ export function getDashboardData(): DashboardData {
     list.push(a)
     byWeek.set(w, list)
   }
+
+  const todayWeekNum = isoWeekNumber(new Date())
+  if (!byWeek.has(todayWeekNum)) byWeek.set(todayWeekNum, [])
 
   const sortedWeeks = Array.from(byWeek.keys()).sort((a, b) => a - b)
   const weeks = sortedWeeks.map((w) => buildWeekSummary(w, byWeek.get(w)!))
