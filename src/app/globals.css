@@ -95,6 +95,9 @@
   /* Calendar status colors - intentionally fixed, not accent-dependent */
   --color-today:  #f1761f;
   --color-missed: #e5396b;
+  /* iOS safe area insets - use these on sticky/fixed elements and body padding */
+  --safe-top:    env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* ─── Light tokens — Nature (emerald, default) ─────── */

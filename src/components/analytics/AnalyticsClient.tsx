@@ -235,7 +235,7 @@ export function AnalyticsClient({
 
   return (
     <div className="space-y-4">
-      <GlassSurface as="div" variant="nav" className="top-2 z-20 space-y-2.5 rounded-2xl px-5 py-3">
+      <GlassSurface as="div" variant="nav" className="space-y-2.5 rounded-2xl px-5 py-3">
         <h1 className="text-title1 font-extrabold leading-[1.1] tracking-tight text-foreground">
           {t.analytics.title}
         </h1>
@@ -279,7 +279,7 @@ export function AnalyticsClient({
           <GlassSurface
             as="div"
             variant="nav"
-            className="sticky top-[max(env(safe-area-inset-top),8px)] z-10 flex gap-1 overflow-x-auto rounded-2xl mb-1 pr-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="sticky top-[max(var(--safe-top),8px)] z-10 flex gap-1 overflow-x-auto rounded-2xl mb-1 pr-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {visibleTabs.map((item) => (
               <button
