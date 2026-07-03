@@ -1,13 +1,6 @@
 {
   "planned": [
     {
-      "date": "2026-06-25",
-      "name": "40 min endurance",
-      "durationSecs": 2400,
-      "type": "Base",
-      "scheduledTime": "19:00"
-    },
-    {
       "date": "2026-06-26",
       "name": "2 x 2000m allure de course",
       "type": "Threshold",
