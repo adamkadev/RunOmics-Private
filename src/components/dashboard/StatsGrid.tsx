@@ -1,15 +1,15 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
+import { CalendarDays } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { isoWeekNumber } from '@/lib/calendarDate'
 import { formatDuration, formatDurationShort } from '@/lib/formatters'
 import { AnimatedDuration } from '@/components/ui/AnimatedDuration'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
-import { Button } from '@/components/ui/Button'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
+import { PeriodNav } from '@/components/ui/PeriodNav'
 import { StatusPill } from '@/components/ui/StatusPill'
 import { WeekLoadBadge } from '@/components/dashboard/WeekLoadBadge'
 import { t } from '@/i18n'
@@ -98,46 +98,36 @@ export function StatsGrid({ weeks, currentStreak, vo2max, vo2maxTrend, weekLoad 
     <GlassSurface variant="card" className="overflow-hidden" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       <div className="flex items-center justify-between gap-2 border-b border-foreground/[0.08] px-4 py-3">
         <CalendarDays size={16} className="shrink-0 text-accent-text" />
-        <div className="flex min-w-0 flex-1 items-center justify-center gap-1.5">
-          <Button
-            variant="secondary"
-            aria-label={s.prevWeek}
-            onClick={goPrev}
-            disabled={index === 0}
-            className="h-11 w-11 shrink-0 rounded-md p-0"
-          >
-            <ChevronLeft size={16} />
-          </Button>
-          <div className="min-w-0 text-center">
-            <div className="flex items-center justify-center gap-1.5">
-              <span className="truncate text-sm font-semibold text-foreground">
-                {t.pages.dashboard.weekTitle(currentWeek.weekNumber % 100, showYear ? weekYear : undefined)}
-              </span>
-            </div>
-            <div className="mt-0.5 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
-              <span>{t.common.sessions(currentWeek.sessionCount)}</span>
-              {isInProgress && (
-                <StatusPill tone="blue">{s.inProgress(dayOfWeek)}</StatusPill>
-              )}
-            </div>
-          </div>
-          <Button
-            variant="secondary"
-            aria-label={s.nextWeek}
-            onClick={goNext}
-            disabled={isCurrent}
-            className="h-11 w-11 shrink-0 rounded-md p-0"
-          >
-            <ChevronRight size={16} />
-          </Button>
-        </div>
+        <PeriodNav
+          label={
+            <span className="truncate text-sm font-semibold text-foreground">
+              {t.pages.dashboard.weekTitle(currentWeek.weekNumber % 100, showYear ? weekYear : undefined)}
+            </span>
+          }
+          onPrev={goPrev}
+          onNext={goNext}
+          prevDisabled={index === 0}
+          nextDisabled={isCurrent}
+          prevLabel={s.prevWeek}
+          nextLabel={s.nextWeek}
+          className="min-w-0 flex-1 justify-center"
+        >
+          <span>{t.common.sessions(currentWeek.sessionCount)}</span>
+          {isInProgress && (
+            <StatusPill tone="blue">{s.inProgress(dayOfWeek)}</StatusPill>
+          )}
+        </PeriodNav>
         <div className="shrink-0">
           {isCurrent && weekLoad
             ? <WeekLoadBadge data={weekLoad} />
             : !isCurrent && (
-                <Button variant="ghost" onClick={() => setIndex(lastIndex)} className="px-2 py-1 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setIndex(lastIndex)}
+                  className="px-2 py-1 text-xs text-foreground/80 hover:text-foreground active:opacity-60 transition-[transform,background-color,opacity] duration-150"
+                >
                   {s.jumpToCurrent}
-                </Button>
+                </button>
               )
           }
         </div>

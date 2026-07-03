@@ -1,8 +1,9 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import type { Activity, PlannedWorkout } from '@/domain/activity/types'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { PeriodNav } from '@/components/ui/PeriodNav'
 import { WeekView } from './WeekView'
 import { MonthView } from './MonthView'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
@@ -26,6 +27,7 @@ export function CalendarClient({ activities, plannedWorkouts }: Props) {
   const [month, setMonth] = useState(now.getMonth())
   const [animKey, setAnimKey] = useState(0)
   const [direction, setDirection] = useState<'forward' | 'backward'>('forward')
+  const touchStartX = useRef<number | null>(null)
 
   const byDate = useMemo(() => {
     const map = new Map<string, Activity[]>()
@@ -71,6 +73,15 @@ export function CalendarClient({ activities, plannedWorkouts }: Props) {
     setMonth(now.getMonth())
   }
 
+  const onTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX }
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return
+    const delta = e.changedTouches[0].clientX - touchStartX.current
+    touchStartX.current = null
+    if (delta > 50) shift(-1)
+    else if (delta < -50) shift(1)
+  }
+
   return (
     <div className="space-y-4 pb-[max(env(safe-area-inset-bottom),80px)]">
       <GlassSurface as="div" variant="nav" className="top-2 z-20 rounded-2xl px-5 py-3">
@@ -79,7 +90,16 @@ export function CalendarClient({ activities, plannedWorkouts }: Props) {
             <h1 className="text-title1 font-extrabold leading-[1.1] tracking-tight text-foreground">
               {t.pages.calendar.title}
             </h1>
-            <p className="mt-0.5 truncate text-footnote font-medium text-muted-foreground">{subtitle}</p>
+            <PeriodNav
+              label={<span className="text-footnote font-medium text-muted-foreground">{subtitle}</span>}
+              onPrev={() => shift(-1)}
+              onNext={() => shift(1)}
+              nextDisabled={atPresent}
+              prevLabel={t.calendar.prevPeriod}
+              nextLabel={t.calendar.nextPeriod}
+              size="sm"
+              className="mt-0.5"
+            />
           </div>
 
           <div className="flex shrink-0 gap-0.5 rounded-control border border-foreground/10 bg-foreground/[0.07] p-[3px]">
@@ -104,6 +124,8 @@ export function CalendarClient({ activities, plannedWorkouts }: Props) {
         key={animKey}
         className="overflow-hidden"
         style={{ animation: `var(--animate-cal-${direction})` }}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
       >
         {mode === 'week' ? (
           <WeekView
@@ -112,8 +134,6 @@ export function CalendarClient({ activities, plannedWorkouts }: Props) {
             byDatePlanned={byDatePlanned}
             today={today}
             atPresent={atPresent}
-            onPrev={() => shift(-1)}
-            onNext={() => shift(1)}
             onToday={goToday}
           />
         ) : (
@@ -124,8 +144,6 @@ export function CalendarClient({ activities, plannedWorkouts }: Props) {
             byDatePlanned={byDatePlanned}
             today={today}
             atPresent={atPresent}
-            onPrev={() => shift(-1)}
-            onNext={() => shift(1)}
             onToday={goToday}
           />
         )}

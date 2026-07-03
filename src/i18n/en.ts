@@ -858,6 +858,8 @@ export const en = {
 
   calendar: {
     today: 'Today',
+    prevPeriod: 'Previous',
+    nextPeriod: 'Next',
     summary: (sessions: number, km: number) =>
       `${sessions} session${sessions !== 1 ? 's' : ''} · ${km} km`,
     weekdays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],

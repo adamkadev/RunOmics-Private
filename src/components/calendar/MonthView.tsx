@@ -5,7 +5,7 @@ import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import type { Activity, ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import { round } from '@/lib/math'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { NavArrow, TodayButton } from './CalendarNav'
+import { TodayButton } from './CalendarNav'
 import { PlannedWorkoutSheet } from './PlannedWorkoutSheet'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -17,8 +17,6 @@ interface Props {
   byDatePlanned: Map<string, PlannedWorkout>
   today: string
   atPresent: boolean
-  onPrev: () => void
-  onNext: () => void
   onToday: () => void
 }
 
@@ -93,7 +91,7 @@ function monthKey(year: number, month: number): string {
   return `${year}-${String(month + 1).padStart(2, '0')}`
 }
 
-export function MonthView({ year, month, byDate, byDatePlanned, today, atPresent, onPrev, onNext, onToday }: Props) {
+export function MonthView({ year, month, byDate, byDatePlanned, today, atPresent, onToday }: Props) {
   const [sheetPlan, setSheetPlan] = useState<PlannedWorkout | null>(null)
   const { cells, totalKm, sessionCount } = useMemo(() => {
     const firstDay = new Date(year, month, 1)
@@ -125,11 +123,9 @@ export function MonthView({ year, month, byDate, byDatePlanned, today, atPresent
             <TodayButton onClick={onToday} />
           </div>
         )}
-        <div className="flex items-center gap-1.5 p-1.5">
-          <NavArrow direction="prev" onClick={onPrev} />
-          <div className="min-w-0 flex-1 overflow-hidden rounded-xl">
-            <div className="grid grid-cols-7 border-b border-foreground/[0.08]">
-              {WEEKDAYS.map((d) => (
+        <div className="overflow-hidden rounded-xl">
+          <div className="grid grid-cols-7 border-b border-foreground/[0.08]">
+            {WEEKDAYS.map((d) => (
                 <div
                   key={d}
                   className="px-1 py-2 text-center font-mono text-micro font-semibold uppercase tracking-wide text-muted-foreground/60"
@@ -169,8 +165,6 @@ export function MonthView({ year, month, byDate, byDatePlanned, today, atPresent
                 </div>
               ))}
             </div>
-          </div>
-          <NavArrow direction="next" onClick={onNext} disabled={atPresent} />
         </div>
       </GlassSurface>
 

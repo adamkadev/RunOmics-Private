@@ -6,7 +6,7 @@ import type { Activity, ActivityType, PlannedWorkout } from '@/domain/activity/t
 import { ACTIVITY_TYPE_CONFIG, ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ActivitySheet } from './ActivitySheet'
-import { NavArrow, TodayButton } from './CalendarNav'
+import { TodayButton } from './CalendarNav'
 import { PlannedWorkoutSheet } from './PlannedWorkoutSheet'
 import { addDays, isoDate } from '@/lib/calendarDate'
 import { formatDate, formatDateFull } from '@/lib/formatters'
@@ -117,12 +117,10 @@ interface Props {
   byDatePlanned: Map<string, PlannedWorkout>
   today: string
   atPresent: boolean
-  onPrev: () => void
-  onNext: () => void
   onToday: () => void
 }
 
-export function WeekView({ weekStart, byDate, byDatePlanned, today, atPresent, onPrev, onNext, onToday }: Props) {
+export function WeekView({ weekStart, byDate, byDatePlanned, today, atPresent, onToday }: Props) {
   const days: Day[] = Array.from({ length: 7 }, (_, i) => {
     const date = isoDate(addDays(weekStart, i))
     return { date, day: Number(date.slice(8)), acts: byDate.get(date) ?? [] }
@@ -188,27 +186,23 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today, atPresent, o
           </div>
         </div>
 
-        {/* Grid flanked by prev/next so the nav row above doesn't need its own arrows */}
-        <div className="flex items-center gap-1.5">
-          <NavArrow direction="prev" onClick={onPrev} />
+        <div className="mt-2">
+          {/* Weekday labels */}
+          <div className="mb-2 grid grid-cols-7 gap-1">
+            {t.calendar.weekdays.map((label, i) => (
+              <div
+                key={label}
+                className="text-center font-mono text-micro font-semibold text-muted-foreground/50"
+                style={days[i].date === today ? { color: TODAY, fontWeight: 700 } : undefined}
+              >
+                {label[0]}
+              </div>
+            ))}
+          </div>
 
-          <div className="min-w-0 flex-1">
-            {/* Weekday labels */}
-            <div className="mb-2 grid grid-cols-7 gap-1">
-              {t.calendar.weekdays.map((label, i) => (
-                <div
-                  key={label}
-                  className="text-center font-mono text-micro font-semibold text-muted-foreground/50"
-                  style={days[i].date === today ? { color: TODAY, fontWeight: 700 } : undefined}
-                >
-                  {label[0]}
-                </div>
-              ))}
-            </div>
-
-            {/* Day cells */}
-            <div className="grid grid-cols-7 gap-1">
-              {days.map((d) => {
+          {/* Day cells */}
+          <div className="grid grid-cols-7 gap-1">
+            {days.map((d) => {
                 const isToday = d.date === today
                 const isPast = d.date < today
                 const completed = d.acts.length > 0
@@ -307,9 +301,6 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today, atPresent, o
               })}
             </div>
           </div>
-
-          <NavArrow direction="next" onClick={onNext} disabled={atPresent} />
-        </div>
       </GlassSurface>
 
       {/* Selected day panel */}
