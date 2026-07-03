@@ -450,25 +450,12 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
         <div
           className="grid shrink-0 gap-2.5"
           style={{
-            gridTemplateColumns: canShareFiles ? '1fr 1fr 1fr' : canCopyImage ? '1fr 1fr' : '1fr',
+            gridTemplateColumns: canCopyImage ? '1fr 1fr' : '1fr',
             padding: '12px 16px',
             paddingBottom: 'max(24px, env(safe-area-inset-bottom))',
           }}
         >
-          <button
-            onClick={handleSave}
-            style={{
-              height: 46, borderRadius: 14, border: '1px solid rgba(255,255,255,0.12)',
-              background: 'rgba(255,255,255,0.09)', color: 'rgba(255,255,255,0.88)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-              fontSize: 13, fontWeight: 700, cursor: 'pointer',
-            }}
-          >
-            <Download size={15} />
-            {t.activity.shareMenu.download}
-          </button>
-
-          {canShareFiles && (
+          {canShareFiles ? (
             <button
               onClick={handleShare}
               style={{
@@ -480,6 +467,19 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             >
               <Share2 size={15} />
               {t.activity.shareMenu.share}
+            </button>
+          ) : (
+            <button
+              onClick={handleSave}
+              style={{
+                height: 46, borderRadius: 14, border: '1px solid rgba(255,255,255,0.12)',
+                background: 'rgba(255,255,255,0.09)', color: 'rgba(255,255,255,0.88)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                fontSize: 13, fontWeight: 700, cursor: 'pointer',
+              }}
+            >
+              <Download size={15} />
+              {t.activity.shareMenu.download}
             </button>
           )}
 
