@@ -31,11 +31,9 @@ export function StatsGrid({ weeks, currentStreak, vo2max, vo2maxTrend, weekLoad 
   const [index, setIndex] = useState(lastIndex)
   const currentWeek = weeks[index]
   const today = new Date()
-  const dayOfWeek = today.getDay() || 7
   const isCurrent = currentWeek.weekNumber === isoWeekNumber(today)
   const weekYear = Math.floor(currentWeek.weekNumber / 100)
   const showYear = weekYear !== today.getFullYear()
-  const isInProgress = isCurrent && dayOfWeek < 7
 
   const goPrev = () => setIndex((i) => Math.max(0, i - 1))
   const goNext = () => setIndex((i) => Math.min(lastIndex, i + 1))
@@ -96,7 +94,6 @@ export function StatsGrid({ weeks, currentStreak, vo2max, vo2maxTrend, weekLoad 
   return (
     <GlassSurface variant="card" className="overflow-hidden" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       <div className="flex items-center justify-between gap-2 border-b border-foreground/[0.08] px-4 py-3">
-        <CalendarDays size={16} className="shrink-0 text-accent-text" />
         <PeriodNav
           label={
             <span className="truncate text-sm font-semibold text-foreground">
@@ -109,21 +106,18 @@ export function StatsGrid({ weeks, currentStreak, vo2max, vo2maxTrend, weekLoad 
           nextDisabled={index === lastIndex}
           prevLabel={s.prevWeek}
           nextLabel={s.nextWeek}
-          className="min-w-0 flex-1 justify-center"
+          className="min-w-0 justify-center"
         >
           <span>{t.common.sessions(currentWeek.sessionCount)}</span>
-          {isInProgress && (
-            <StatusPill tone="blue">{s.inProgress(dayOfWeek)}</StatusPill>
-          )}
         </PeriodNav>
-        <div className="shrink-0">
+        <div className="flex min-w-28 shrink-0 items-center justify-end">
           {isCurrent && weekLoad
             ? <WeekLoadBadge data={weekLoad} />
             : !isCurrent && (
                 <button
                   type="button"
                   onClick={() => setIndex(lastIndex)}
-                  className="px-2 py-1 text-xs text-foreground/80 hover:text-foreground active:opacity-60 transition-[transform,background-color,opacity] duration-150"
+                  className="rounded-md px-2 py-1 text-xs font-medium text-accent-text transition-colors hover:bg-accent-subtle"
                 >
                   {s.jumpToCurrent}
                 </button>

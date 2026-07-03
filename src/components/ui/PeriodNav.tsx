@@ -51,7 +51,7 @@ export function PeriodNav({
         </button>
       )}
 
-      <div className="min-w-0 text-center">
+      <div className="min-w-0 overflow-hidden text-center">
         <div className="flex items-center justify-center">{label}</div>
         {children && (
           <div className="mt-0.5 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">

@@ -220,7 +220,6 @@ export const en = {
       prevWeek: 'Previous week',
       nextWeek: 'Next week',
       jumpToCurrent: 'This week',
-      inProgress: (day: number) => `In progress · ${day}/7 days`,
     },
     weekLoad: {
       label: (percent: number) => {
