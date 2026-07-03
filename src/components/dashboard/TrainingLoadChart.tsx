@@ -86,7 +86,7 @@ export function TrainingLoadChart({ data }: Props) {
         </div>
       </div>
       <ResponsiveContainer width="100%" height={200}>
-        <LineChart data={data.points} margin={{ top: 4, right: 56, bottom: 0, left: -20 }}>
+        <LineChart data={data.points} margin={{ top: 4, right: 80, bottom: 0, left: -20 }}>
           <XAxis
             dataKey="label"
             tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}

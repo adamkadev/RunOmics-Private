@@ -113,7 +113,6 @@ export function StatsGrid({ weeks, currentStreak, vo2max, vo2maxTrend, weekLoad 
               <span className="truncate text-sm font-semibold text-foreground">
                 {t.pages.dashboard.weekTitle(currentWeek.weekNumber % 100, showYear ? weekYear : undefined)}
               </span>
-              {isCurrent && weekLoad && <WeekLoadBadge data={weekLoad} />}
             </div>
             <div className="mt-0.5 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
               <span>{t.common.sessions(currentWeek.sessionCount)}</span>
@@ -133,11 +132,14 @@ export function StatsGrid({ weeks, currentStreak, vo2max, vo2maxTrend, weekLoad 
           </Button>
         </div>
         <div className="shrink-0">
-          {!isCurrent && (
-            <Button variant="ghost" onClick={() => setIndex(lastIndex)} className="px-2 py-1 text-xs">
-              {s.jumpToCurrent}
-            </Button>
-          )}
+          {isCurrent && weekLoad
+            ? <WeekLoadBadge data={weekLoad} />
+            : !isCurrent && (
+                <Button variant="ghost" onClick={() => setIndex(lastIndex)} className="px-2 py-1 text-xs">
+                  {s.jumpToCurrent}
+                </Button>
+              )
+          }
         </div>
       </div>
 
