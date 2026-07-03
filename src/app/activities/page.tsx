@@ -3,7 +3,8 @@ import { getRecords, getPrLabelsByActivityId } from '@/application/usecases/GetR
 import { ActivityListClient } from '@/components/activities/ActivityListClient'
 
 export default async function ActivitiesPage() {
-  const { items, total, nextOffset } = queryActivities({})
+  // Load all activities upfront so scroll position is fully restorable on back navigation.
+  const { items, total, nextOffset } = queryActivities({ limit: 9999 })
   const records = await getRecords()
   const prLabelsByActivityId = getPrLabelsByActivityId(records)
 
