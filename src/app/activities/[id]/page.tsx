@@ -54,8 +54,8 @@ export default async function ActivityDetailPage({
   const activity = activities[index]
   if (!activity) notFound()
 
-  const prevActivity = index > 0 ? activities[index - 1] : null
-  const nextActivity = index < activities.length - 1 ? activities[index + 1] : null
+  const prevActivity = index < activities.length - 1 ? activities[index + 1] : null
+  const nextActivity = index > 0 ? activities[index - 1] : null
 
   const records = await getRecords()
   const prLabels = getPrLabelsByActivityId(records)[id] ?? []
