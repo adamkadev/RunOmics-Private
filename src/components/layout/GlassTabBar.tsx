@@ -27,7 +27,10 @@ export function GlassTabBar() {
   const activeIndex = TABS.findIndex(({ href }) => isActive(pathname, href))
 
   return (
-    <div className="fixed inset-x-0 bottom-3 z-30 px-6 py-2 lg:hidden">
+    <div
+      className="fixed inset-x-0 bottom-0 z-30 px-6 pt-2 lg:hidden"
+      style={{ paddingBottom: 'max(12px, var(--safe-bottom))' }}
+    >
       <GlassSurface
         as="nav"
         variant="nav"

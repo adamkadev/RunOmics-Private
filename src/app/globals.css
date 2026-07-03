@@ -95,7 +95,9 @@
   /* Calendar status colors - intentionally fixed, not accent-dependent */
   --color-today:  #f1761f;
   --color-missed: #e5396b;
-  /* iOS safe area insets - use these on sticky/fixed elements and body padding */
+  /* iOS safe area insets (viewport-fit: cover required in metadata viewport)
+     Rule: every position:sticky uses top: var(--safe-top);
+           every position:fixed bottom edge uses padding-bottom: max(Npx, var(--safe-bottom)) */
   --safe-top:    env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
