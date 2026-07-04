@@ -11,10 +11,10 @@ interface Cell {
 
 export function ProfileStatsYtd({ ytd }: { ytd: ProfileYtdStats }) {
   const cells: Cell[] = [
-    { value: ytd.distanceKm.toLocaleString('en-US'), unit: t.units.km, label: t.profile.ytd.distance },
+    { value: ytd.distanceKm.toLocaleString(t.locale), unit: t.units.km, label: t.profile.ytd.distance },
     { value: String(Math.round(ytd.durationSeconds / 3600)), unit: t.units.hour, label: t.profile.ytd.duration },
     { value: String(ytd.sessionCount), label: t.profile.ytd.sessions },
-    { value: `+${ytd.elevationGainM.toLocaleString('en-US')}`, unit: t.units.m, label: t.profile.ytd.elevation },
+    { value: `+${ytd.elevationGainM.toLocaleString(t.locale)}`, unit: t.units.m, label: t.profile.ytd.elevation },
   ]
 
   return (

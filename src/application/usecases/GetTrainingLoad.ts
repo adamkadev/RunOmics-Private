@@ -1,3 +1,4 @@
+import { t } from '@/i18n'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getAthleteFromFirestore } from '@/infrastructure/repositories/FirestoreConfigRepository'
 import { round } from '@/lib/math'
@@ -99,7 +100,7 @@ export async function getTrainingLoad(): Promise<TrainingLoadData | null> {
     const d = new Date(date + 'T00:00:00')
     return {
       date,
-      label: d.toLocaleDateString('en', { day: 'numeric', month: 'short' }),
+      label: d.toLocaleDateString(t.locale, { day: 'numeric', month: 'short' }),
       ...snap,
     }
   })

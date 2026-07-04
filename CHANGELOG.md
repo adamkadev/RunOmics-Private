@@ -2,6 +2,26 @@
 
 All notable changes to this project are documented in this file.
 
+## [3.1] - 2026-07-04
+
+### Added
+
+- **French locale**: full `fr.ts` translation (running vocabulary: allure, FC,
+  dénivelé D+, sortie longue, affûtage, RP…), type-checked against the English
+  shape via `satisfies Strings`. Activated at build time with
+  `NEXT_PUBLIC_LOCALE=fr`; English stays the default. `t.locale` now drives all
+  `Intl` date/number formatting, so weekday/month names and thousands
+  separators follow the language.
+
+### Fixed
+
+- **Hardcoded `en`/`en-US` locales** in `formatters.ts`, the analytics chart
+  axes/tooltips, the dashboard greeting, profile stats and the share card now
+  use `t.locale` - dates rendered in English regardless of the active locale.
+- **Dashboard highlights**: the "PR · …" record chip and the race "D-n"
+  countdown were hardcoded English strings; both now come from the i18n
+  catalog (`RP · …` / `J-n` in French).
+
 ## [3.0] - 2026-07-04
 
 Harmonization + refactor pass across the whole app, plus a first batch of v3
@@ -75,7 +95,9 @@ improvements picked by impact/effort.
 - **ShareCardModal decomposition** (~515 lines: template carousel, theme
   toggle, canvas drawing orchestration in one component).
 - **French locale**: the i18n layer is ready (`Strings` type derived from
-  `en.ts`); add `fr.ts` and a language setting.
+  `en.ts`); add `fr.ts` and a language setting. *(Shipped in 3.1 as a
+  build-time `NEXT_PUBLIC_LOCALE` switch; a runtime language setting would
+  require moving `t` behind a React context.)*
 - **Virtualized activity list** if the paginated list grows beyond a few
   hundred rendered rows.
 

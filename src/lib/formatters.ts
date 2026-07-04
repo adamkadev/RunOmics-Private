@@ -1,3 +1,5 @@
+import { t } from '@/i18n'
+
 export function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
@@ -37,7 +39,7 @@ export function formatDistance(km: number): string {
 }
 
 export function formatDate(isoDate: string): string {
-  return new Date(isoDate + 'T00:00:00').toLocaleDateString('en-US', {
+  return new Date(isoDate + 'T00:00:00').toLocaleDateString(t.locale, {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
@@ -46,7 +48,7 @@ export function formatDate(isoDate: string): string {
 
 /** Date with year, for contexts spanning multiple years (e.g. `Mar 28, 2025`). */
 export function formatDateWithYear(isoDate: string): string {
-  return new Date(isoDate + 'T00:00:00').toLocaleDateString('en-US', {
+  return new Date(isoDate + 'T00:00:00').toLocaleDateString(t.locale, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -55,7 +57,7 @@ export function formatDateWithYear(isoDate: string): string {
 
 /** Full weekday + day + month, e.g. `Tuesday 20 June` - used for the selected day header. */
 export function formatDateFull(isoDate: string): string {
-  return new Date(isoDate + 'T00:00:00').toLocaleDateString('en-US', {
+  return new Date(isoDate + 'T00:00:00').toLocaleDateString(t.locale, {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -64,7 +66,7 @@ export function formatDateFull(isoDate: string): string {
 
 /** Short day + month, e.g. `Jun 16` - used for the agenda week-range subtitle. */
 export function formatDayMonth(isoDate: string): string {
-  return new Date(isoDate + 'T00:00:00').toLocaleDateString('en', {
+  return new Date(isoDate + 'T00:00:00').toLocaleDateString(t.locale, {
     month: 'short',
     day: 'numeric',
   })
@@ -72,13 +74,13 @@ export function formatDayMonth(isoDate: string): string {
 
 /** Three-letter uppercase month label from a 1-based month number (1 = JAN). */
 export function monthLabel(month: number): string {
-  return new Date(2000, month - 1, 1).toLocaleString('en', { month: 'short' }).toUpperCase()
+  return new Date(2000, month - 1, 1).toLocaleString(t.locale, { month: 'short' }).toUpperCase()
 }
 
 /** Full uppercase "MONTH YYYY" label for a date, used by a month group div. */
 export function monthYearLabel(isoDate: string): string {
   const d = new Date(isoDate + 'T00:00:00')
-  return d.toLocaleString('en', { month: 'long', year: 'numeric' }).toUpperCase()
+  return d.toLocaleString(t.locale, { month: 'long', year: 'numeric' }).toUpperCase()
 }
 
 export type RelativeTimeUnit = 'now' | 'minutes' | 'hours' | 'days'

@@ -708,9 +708,9 @@ export function drawBranding(ctx: Ctx, W: number, _H: number, dark: boolean) {
 
 function formatShareDate(activity: Activity): string {
   const d = new Date(activity.date + 'T00:00:00')
-  const day = d.toLocaleDateString('en-US', { weekday: 'short' })
+  const day = d.toLocaleDateString(t.locale, { weekday: 'short' })
   const date = d.getDate()
-  const month = d.toLocaleDateString('en-US', { month: 'short' })
+  const month = d.toLocaleDateString(t.locale, { month: 'short' })
   return `${day} ${date} ${month}`
 }
 

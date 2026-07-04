@@ -59,7 +59,7 @@ export function VO2maxChart({ data }: { data: VO2maxPoint[] }) {
             tickFormatter={(d: string) => {
               if (!tickDates.has(d)) return ''
               const dt = new Date(d + 'T00:00:00')
-              return dt.toLocaleDateString('en', { month: 'short', day: 'numeric' })
+              return dt.toLocaleDateString(t.locale, { month: 'short', day: 'numeric' })
             }}
           />
           <YAxis
