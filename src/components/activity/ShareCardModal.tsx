@@ -8,7 +8,7 @@ import type { Activity } from '@/domain/activity/types'
 import { SHARE_DESIGNS, type ShareDesign, type ThemeMode } from '@/lib/shareCard'
 import { renderShareCard, shareCardFileName, loadImage, hexToRgb } from '@/lib/shareCard'
 import { ACCENT_SWATCHES, ACCENT_IDS, DEFAULT_ACCENT, isAccentId, type AccentId } from '@/lib/accent'
-import { useDragToDismiss } from '@/hooks/useDragToDismiss'
+import { useDragToDismiss } from '@/lib/useDragToDismiss'
 import { t } from '@/i18n'
 import { ThemeCard, ThemeDivider } from '@/components/activity/ShareCardThumbnails'
 

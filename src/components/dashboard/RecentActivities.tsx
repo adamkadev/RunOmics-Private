@@ -27,7 +27,7 @@ export function RecentActivities({ activities, prLabelsByActivityId = {} }: Prop
 
       <div className="flex flex-col gap-3 p-3">
         {activities.map((a) => (
-          <ActivityRow key={a.id} activity={a} prLabels={prLabelsByActivityId[a.id]} surface="glass" />
+          <ActivityRow key={a.id} activity={a} prLabels={prLabelsByActivityId[a.id]} />
         ))}
       </div>
     </GlassSurface>

@@ -4,8 +4,9 @@ import { useMemo, useState } from 'react'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import type { Activity, ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import { round } from '@/lib/math'
+import { formatDateFull } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { TodayButton } from './CalendarNav'
+import { InlineJumpButton } from '@/components/ui/InlineJumpButton'
 import { PlannedWorkoutSheet } from './PlannedWorkoutSheet'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -18,6 +19,8 @@ interface Props {
   today: string
   atPresent: boolean
   onToday: () => void
+  /** Tap on a day with sessions: jump to the week view with that day selected. */
+  onSelectDay: (date: string) => void
 }
 
 const WEEKDAYS = t.calendar.weekdays
@@ -49,7 +52,7 @@ function DayActivities({ activities }: { activities: Activity[] }) {
           className="text-[10px] font-bold leading-none"
           style={{ color: ACTIVITY_TYPE_CONFIG[activities[0].type].dotColor }}
         >
-          {totalKm.toFixed(1)} km
+          {totalKm.toFixed(1)} {t.units.km}
         </span>
       )}
     </div>
@@ -91,7 +94,7 @@ function monthKey(year: number, month: number): string {
   return `${year}-${String(month + 1).padStart(2, '0')}`
 }
 
-export function MonthView({ year, month, byDate, byDatePlanned, today, atPresent, onToday }: Props) {
+export function MonthView({ year, month, byDate, byDatePlanned, today, atPresent, onToday, onSelectDay }: Props) {
   const [sheetPlan, setSheetPlan] = useState<PlannedWorkout | null>(null)
   const { cells, totalKm, sessionCount } = useMemo(() => {
     const firstDay = new Date(year, month, 1)
@@ -120,7 +123,7 @@ export function MonthView({ year, month, byDate, byDatePlanned, today, atPresent
       <GlassSurface variant="card" className="overflow-hidden rounded-card-sm">
         {!atPresent && (
           <div className="flex justify-end border-b border-foreground/[0.08] px-2 py-1.5">
-            <TodayButton onClick={onToday} />
+            <InlineJumpButton onClick={onToday}>{t.calendar.today}</InlineJumpButton>
           </div>
         )}
         <div className="overflow-hidden rounded-xl">
@@ -153,7 +156,14 @@ export function MonthView({ year, month, byDate, byDatePlanned, today, atPresent
                         {cell.day}
                       </p>
                       {cell.acts.length > 0 ? (
-                        <DayActivities activities={cell.acts} />
+                        <button
+                          type="button"
+                          onClick={() => onSelectDay(cell.date)}
+                          aria-label={formatDateFull(cell.date)}
+                          className="-m-1 block w-[calc(100%+8px)] rounded p-1 text-left transition-colors hover:bg-foreground/[0.06]"
+                        >
+                          <DayActivities activities={cell.acts} />
+                        </button>
                       ) : byDatePlanned.has(cell.date) ? (
                         <PlannedBadge
                           workout={byDatePlanned.get(cell.date)!}

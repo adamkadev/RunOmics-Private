@@ -2,6 +2,83 @@
 
 All notable changes to this project are documented in this file.
 
+## [3.0] - 2026-07-04
+
+Harmonization + refactor pass across the whole app, plus a first batch of v3
+improvements picked by impact/effort.
+
+### Added
+
+- **Calendar**: tapping a day with sessions in the month view now jumps to the
+  week view with that day pre-selected (completed activities were previously
+  only inspectable from the week view).
+- **Accessibility**: proper `tablist`/`tab`/`aria-selected` semantics on the
+  Analytics tabs and the Calendar week/month switcher; `role="dialog"` +
+  `aria-modal` on both calendar bottom sheets.
+
+### Changed
+
+- **Analytics (perf)**: the four tab panels (Volume / Performance / Physiology /
+  Seasons) are now code-split with `next/dynamic` - the page only parses and
+  hydrates the visible tab's Recharts components instead of all ~20 charts
+  upfront. `AnalyticsClient` shrank accordingly (tab content extracted to
+  `VolumeTab`/`PerformanceTab`/`PhysiologyTab`/`SeasonsTab`).
+- **Navigation chevrons**: kept alongside swipe everywhere (desktop has no
+  swipe, and they are the discoverable/accessible affordance), but the compact
+  calendar chevrons now expand their hit area to the 44px HIG minimum via an
+  invisible overlay (visual size unchanged). Calendar swipe-forward is now
+  clamped at the current week, matching the disabled next-chevron.
+- **Swipe navigation** factored into a shared `useSwipeNavigation` hook
+  (dashboard week stats + calendar previously had two hand-rolled copies with
+  different thresholds).
+- **"Jump back to now" buttons** (calendar "Today", dashboard "current week")
+  unified into a shared `InlineJumpButton` component.
+- **Dashboard loading skeleton** updated to mirror the v2 glass layout
+  (greeting, weekly stats card, charts, recent activities) instead of the old
+  v1 six-card grid.
+- Convention: `useDragToDismiss` moved from `src/hooks/` to `src/lib/` where
+  all other hooks live.
+
+### Fixed
+
+- **Activity detail map**: expanding to fullscreen now re-fits the view on the
+  route bounds - previously only `resize()` ran, leaving the trace off-screen
+  until the user panned.
+- **Calendar week view in light mode**: completed-day cells used an invalid
+  CSS color (`var(--color-accent, #f1761f)26`), silently dropping the
+  background; planned/rest cells used hardcoded white/black rgba values that
+  were invisible on a light background. All replaced with theme-aware
+  `color-mix` on the accent/foreground tokens.
+- **Analytics stats**: the "time" metric's animation guard tested a formatted
+  string (always truthy) instead of the duration; elevation unit label was
+  inconsistent between year view ("m") and all-time view ("m gain"); the two
+  near-identical metric arrays were merged.
+- **Dashboard recent activities**: date no longer rendered twice on desktop
+  widths; RPE chip now uses the shared i18n formatter.
+- **Planned workout sheet**: now slides up on open and plays the same animated
+  slide-out as the activity sheet when closed via scrim or Escape.
+
+### Removed
+
+- Dead code: unused `surface="card"` branch in `ActivityRow`, stale sticky
+  header measurement (ResizeObserver + state) in the activities list, unused
+  imports in `StatsGrid`, leftover `top-2 z-20` classes on non-sticky headers,
+  `CalendarNav.tsx` (superseded by `InlineJumpButton`).
+
+### v3 backlog (not implemented, by descending impact/effort ratio)
+
+- **Offline PWA shell**: cache the app shell + latest activities JSON with a
+  service worker so the dashboard opens offline (currently only the Firebase
+  messaging SW is registered).
+- **Focus trap + `inert` background** for bottom sheets and the share modal
+  (keyboard focus can currently escape behind the scrim).
+- **ShareCardModal decomposition** (~515 lines: template carousel, theme
+  toggle, canvas drawing orchestration in one component).
+- **French locale**: the i18n layer is ready (`Strings` type derived from
+  `en.ts`); add `fr.ts` and a language setting.
+- **Virtualized activity list** if the paginated list grows beyond a few
+  hundred rendered rows.
+
 ## [2.0] - 2026-06-25
 
 Major version: full liquid glass redesign of the app, plus a new Calendar/Agenda

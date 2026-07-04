@@ -7,7 +7,7 @@ import { X } from 'lucide-react'
 import type { Activity } from '@/domain/activity/types'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import { formatDuration, formatDate } from '@/lib/formatters'
-import { useDragToDismiss } from '@/hooks/useDragToDismiss'
+import { useDragToDismiss } from '@/lib/useDragToDismiss'
 import { t } from '@/i18n'
 
 interface Props {
@@ -39,6 +39,8 @@ export function ActivitySheet({ activity, onClose }: Props) {
   return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center sm:p-4"
+      role="dialog"
+      aria-modal="true"
       onClick={close}
     >
       <div

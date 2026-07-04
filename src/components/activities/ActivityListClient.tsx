@@ -95,21 +95,6 @@ export function ActivityListClient({
   const [loadingMore, setLoadingMore] = useState(false)
   const [isPending, setIsPending] = useState(false)
 
-  // B3 separators stick right under the B1 header - measure it so the offset
-  // tracks its real height (search row open/closed, responsive font sizes).
-  const headerRef = useRef<HTMLElement>(null)
-  const [headerHeight, setHeaderHeight] = useState(72)
-
-  useEffect(() => {
-    const node = headerRef.current
-    if (!node) return
-    const update = () => setHeaderHeight(node.getBoundingClientRect().height)
-    update()
-    const observer = new ResizeObserver(update)
-    observer.observe(node)
-    return () => observer.disconnect()
-  }, [])
-
   // Debounce the search box before it hits the query (server round-trip).
   const [debouncedSearch, setDebouncedSearch] = useState('')
   useEffect(() => {
@@ -177,7 +162,7 @@ export function ActivityListClient({
 
   return (
     <div className="space-y-4">
-      <GlassSurface as="div" variant="card" ref={headerRef} className="top-2 z-20 rounded-2xl px-5 py-3">
+      <GlassSurface as="div" variant="card" className="rounded-2xl px-5 py-3">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-title1 font-extrabold leading-[1.1] tracking-tight text-foreground">
@@ -290,7 +275,7 @@ export function ActivityListClient({
         <div className="space-y-4">
           {groups.map((g) => (
             <div key={g.key}>
-              <div className="z-10 flex items-center justify-between px-1 py-2" style={{ top: headerHeight + 16 }}>
+              <div className="flex items-center justify-between px-1 py-2">
                 <span className="font-mono text-footnote font-bold tracking-wide text-muted-foreground/80">
                   {g.label}
                 </span>

@@ -688,6 +688,7 @@ export const en = {
 
   goals: {
     title: 'Goals',
+    empty: 'No goals configured yet.',
     back: 'Profile',
     annualGoal: 'Annual Goal',
     kmRemaining: (km: number) => `${km} km remaining`,

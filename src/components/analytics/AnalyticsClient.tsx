@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import dynamic from 'next/dynamic'
 import { TrendingUp, TrendingDown } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
@@ -9,37 +10,30 @@ import type { AnalyticsPageData, PeriodDelta } from '@/application/usecases/GetA
 import type { YearComparisonData } from '@/application/usecases/GetYearComparison'
 import type { LifetimeStats } from '@/application/usecases/GetLifetimeStats'
 import { YearSelector } from '@/components/ui/YearSelector'
-import { TrainingZones } from './TrainingZones'
-import { MonthlyVolumeChart } from './MonthlyVolumeChart'
-import { PaceTrendChart } from './PaceTrendChart'
-import { EfficiencyChart } from './EfficiencyChart'
-import { ZoneDistributionChart } from './ZoneDistributionChart'
-import { HrTrendChart } from './HrTrendChart'
-import { CadenceTrendChart } from './CadenceTrendChart'
-import { RunningFormChart } from './RunningFormChart'
-import { LongRunsChart } from './LongRunsChart'
-import { EasyHardChart } from './EasyHardChart'
-import { YearComparisonSection } from './YearComparisonSection'
-import { DistanceDistributionChart } from './DistanceDistributionChart'
-import { MonthlyComparisonChart } from './MonthlyComparisonChart'
-import { RpeTrendChart } from './RpeTrendChart'
-import { TrainingEffectChart } from './TrainingEffectChart'
-import { DailyEfficiencyChart } from './DailyEfficiencyChart'
-import { RunningDynamicsTrendChart } from './RunningDynamicsTrendChart'
-import { VO2maxChart } from './VO2maxChart'
-import { TemperatureCorrelationChart } from './TemperatureCorrelationChart'
-import { RpeLoadCorrelationChart } from './RpeLoadCorrelationChart'
 import type { VO2maxPoint } from '@/application/usecases/GetVO2maxHistory'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { TrainingLoadData } from '@/application/usecases/GetTrainingLoad'
 import { formatDurationShort } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { TrainingLoadChart } from '@/components/dashboard/TrainingLoadChart'
+import { ChartCardSkeleton } from '@/components/ui/Skeleton'
 import { STATUS } from '@/lib/statusColors'
 import { t } from '@/i18n'
 
 import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
 import { AnimatedDuration } from '../ui/AnimatedDuration'
+
+// Each tab panel is code-split so the analytics page only parses/hydrates the
+// charts of the visible tab (~20 Recharts components across all tabs).
+const tabLoading = () => (
+  <div className="space-y-4">
+    <ChartCardSkeleton />
+    <ChartCardSkeleton />
+  </div>
+)
+const VolumeTab = dynamic(() => import('./VolumeTab').then((m) => m.VolumeTab), { loading: tabLoading })
+const PerformanceTab = dynamic(() => import('./PerformanceTab').then((m) => m.PerformanceTab), { loading: tabLoading })
+const PhysiologyTab = dynamic(() => import('./PhysiologyTab').then((m) => m.PhysiologyTab), { loading: tabLoading })
+const SeasonsTab = dynamic(() => import('./SeasonsTab').then((m) => m.SeasonsTab), { loading: tabLoading })
 
 const TABS = [
   { id: 'volume', label: t.analytics.tabs.volume },
@@ -153,77 +147,52 @@ export function AnalyticsClient({
   const visibleTabs = isPeriod || isAll ? TABS.filter((tb) => tb.id !== 'seasons') : TABS
   const displayYear = view.kind === 'year' ? view.year : years[0]
 
-  const metrics: Metric[] =
-    isAll && lifetime && totals
-      ? [
-          {
-            value: <AnimatedValue value={totals.distanceKm} />,
-            unit: t.units.km,
-            label: t.analytics.stats.distance,
-          },
-          { value: formatDurationShort(totals.durationSeconds)
+  const metrics: Metric[] = totals
+    ? [
+        {
+          value: <AnimatedValue value={totals.distanceKm} />,
+          unit: t.units.km,
+          label: t.analytics.stats.distance,
+        },
+        {
+          value: totals.durationSeconds
             ? <AnimatedDuration seconds={totals.durationSeconds} format={formatDurationShort} />
-              : formatDurationShort(0),
-            unit: t.units.hour,
-            label: t.analytics.stats.time,
-          },
-          {
-            value: <AnimatedValue value={totals.sessionCount} />,
-            label: t.analytics.stats.sessions,
-          },
-          {
-            value: <AnimatedValue value={totals.elevationM} />,
-            unit: t.units.elevation,
-            label: t.analytics.stats.elevation,
-          },
-          {
-            value: <AnimatedValue value={totals.avgKmPerWeek} decimals={1} />,
-            unit: t.units.km,
-            label: t.analytics.stats.avgPerWeek,
-          },
-          {
-            value: <AnimatedValue value={lifetime.yearsTracked} decimals={1} />,
-            label: t.analytics.stats.yearsTracked,
-          },
-        ]
-      : totals
-        ? [
-            {
-              value: <AnimatedValue value={totals.distanceKm} />,
-              unit: t.units.km,
-              label: t.analytics.stats.distance,
-            },
-            { value: formatDurationShort(totals.durationSeconds)
-              ? <AnimatedDuration seconds={totals.durationSeconds} format={formatDurationShort} />
-                : formatDurationShort(0),
-              unit: t.units.hour,
-              label: t.analytics.stats.time,
-            },
-            {
-              value: <AnimatedValue value={totals.sessionCount} />,
-              label: t.analytics.stats.sessions,
-            },
-            {
-              value: <AnimatedValue value={totals.elevationM} />,
-              unit: t.units.m,
-              label: t.analytics.stats.elevation,
-            },
-            {
-              value: <AnimatedValue value={totals.avgKmPerWeek} decimals={1} />,
-              unit: t.units.km,
-              label: t.analytics.stats.avgPerWeek,
-            },
-            ...(totals.calories > 0
-              ? [
-                  {
-                    value: <AnimatedValue value={totals.calories / 1000} decimals={1} />,
-                    unit: `${'k'} ${t.units.kcal}`,
-                    label: t.analytics.stats.calories,
-                  },
-                ]
-              : []),
-          ]
-        : []
+            : formatDurationShort(0),
+          unit: t.units.hour,
+          label: t.analytics.stats.time,
+        },
+        {
+          value: <AnimatedValue value={totals.sessionCount} />,
+          label: t.analytics.stats.sessions,
+        },
+        {
+          value: <AnimatedValue value={totals.elevationM} />,
+          unit: t.units.m,
+          label: t.analytics.stats.elevation,
+        },
+        {
+          value: <AnimatedValue value={totals.avgKmPerWeek} decimals={1} />,
+          unit: t.units.km,
+          label: t.analytics.stats.avgPerWeek,
+        },
+        ...(isAll && lifetime
+          ? [
+              {
+                value: <AnimatedValue value={lifetime.yearsTracked} decimals={1} />,
+                label: t.analytics.stats.yearsTracked,
+              },
+            ]
+          : totals.calories > 0
+            ? [
+                {
+                  value: <AnimatedValue value={totals.calories / 1000} decimals={1} />,
+                  unit: `k ${t.units.kcal}`,
+                  label: t.analytics.stats.calories,
+                },
+              ]
+            : []),
+      ]
+    : []
 
   const deltaBadges: ReactNode[] =
     view.kind === 'period'
@@ -279,11 +248,15 @@ export function AnalyticsClient({
           <GlassSurface
             as="div"
             variant="nav"
+            role="tablist"
+            aria-label={t.analytics.title}
             className="sticky top-[max(var(--safe-top),8px)] z-10 flex gap-1 overflow-x-auto rounded-2xl mb-1 pr-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {visibleTabs.map((item) => (
               <button
                 key={item.id}
+                role="tab"
+                aria-selected={tab === item.id}
                 onClick={() => selectTab(item.id)}
                 className={cn(
                   'relative min-w-fit flex-1 whitespace-nowrap px-2 py-3 text-sm font-medium transition-colors',
@@ -300,81 +273,36 @@ export function AnalyticsClient({
             ))}
           </GlassSurface>
 
-          {/* Content unchanged */}
-          {tab === 'volume' && (
-            <div className="space-y-4">
-              <MonthlyVolumeChart data={active.monthlyVolume} typesPresent={active.typesPresent} />
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                <LongRunsChart data={active.longRuns} />
-                <DistanceDistributionChart data={active.distanceDistribution} />
-              </div>
-              <EasyHardChart data={active.easyHardSplit} />
-            </div>
-          )}
+          {tab === 'volume' && <VolumeTab series={active} />}
 
           {tab === 'performance' && (
-            <div className="space-y-4">
-              <PaceTrendChart data={active.paceTrend} />
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                <EfficiencyChart data={active.efficiencyTrend} />
-                <RpeTrendChart data={active.rpeTrend} />
-              </div>
-              {data.temperatureScatter.length >= 10 && (
-                <TemperatureCorrelationChart data={data.temperatureScatter} />
-              )}
-              {data.rpeLoadCorrelation.length >= 10 && (
-                <RpeLoadCorrelationChart data={data.rpeLoadCorrelation} />
-              )}
-            </div>
+            <PerformanceTab
+              series={active}
+              temperatureScatter={data.temperatureScatter}
+              rpeLoadCorrelation={data.rpeLoadCorrelation}
+            />
           )}
 
           {tab === 'physiology' && (
-            <div className="space-y-4">
-              {trainingLoad && <TrainingLoadChart data={trainingLoad} />}
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                {vo2maxHistory.length >= 2 && (
-                  <VO2maxChart data={vo2maxHistory} />
-                )}
-                <HrTrendChart data={active.hrTrend} />
-                <ZoneDistributionChart data={active.zoneDistribution} />
-                <CadenceTrendChart data={active.cadenceTrend} />
-                <div className="lg:col-span-2">
-                  <RunningFormChart data={active.runningFormTrend} />
-                </div>
-              </div>
-
-              <div className={cn('grid grid-cols-1 gap-4', !isAll && 'lg:grid-cols-2')}>
-                <TrainingEffectChart data={active.trainingEffectTrend} />
-                {!isAll && <DailyEfficiencyChart data={data.efficiencyDaily} />}
-              </div>
-
-              {!isAll && (
-                <RunningDynamicsTrendChart data={data.runningDynamicsDaily} />
-              )}
-
-              {zones && <TrainingZones data={zones} />}
-            </div>
+            <PhysiologyTab
+              series={active}
+              trainingLoad={trainingLoad}
+              vo2maxHistory={vo2maxHistory}
+              zones={zones}
+              efficiencyDaily={data.efficiencyDaily}
+              runningDynamicsDaily={data.runningDynamicsDaily}
+              isAll={isAll}
+            />
           )}
 
           {tab === 'seasons' && view.kind === 'year' && (
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              {(() => {
-                const prevYear =
-                  years.find((y) => y < view.year) ??
-                  years.find((y) => y !== view.year)
-
-                return prevYear !== undefined ? (
-                  <MonthlyComparisonChart
-                    currentYear={view.year}
-                    currentData={active.monthlyVolume}
-                    prevYear={prevYear}
-                    prevData={byYear[prevYear]?.monthlyVolume ?? []}
-                  />
-                ) : null
-              })()}
-
-              {comparison && <YearComparisonSection data={comparison} />}
-            </div>
+            <SeasonsTab
+              year={view.year}
+              years={years}
+              byYear={byYear}
+              series={active}
+              comparison={comparison}
+            />
           )}
         </>
       )}
