@@ -117,6 +117,12 @@ export const fr = {
       sub: 'L’itinéraire que vous cherchez n’existe pas.',
       back: 'Retour à l’accueil',
     },
+    error: {
+      heading: 'Une foulée de travers.',
+      sub: 'Une erreur inattendue est survenue au chargement de cette page.',
+      retry: 'Réessayer',
+      back: 'Retour à l’accueil',
+    },
     settings: {
       title: 'Réglages',
       subtitle: 'Apparence, notifications et export de données.',

@@ -114,6 +114,12 @@ export const en = {
       sub: "The route you're looking for doesn't exist.",
       back: 'Back to Dashboard',
     },
+    error: {
+      heading: 'Something tripped mid-stride.',
+      sub: 'An unexpected error occurred while loading this page.',
+      retry: 'Try again',
+      back: 'Back to Dashboard',
+    },
     settings: {
       title: 'Settings',
       subtitle: 'Appearance, notifications and data export.',
