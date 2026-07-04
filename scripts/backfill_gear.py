@@ -12,11 +12,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from garmin.client import GarminAPIError, GarminAuthError, GarminClient
+from garmin.retry import retry_transient
 from processing.mapper import extract_gear_id
 from repository.json_store import JsonActivityStore
 
 _RATE_LIMIT_PAUSE = 1.0
-_RETRY_PAUSE = 60.0
 
 
 def main() -> int:
@@ -50,7 +50,7 @@ def main() -> int:
                 print(f"  [{i}/{len(pending)}] Activity {activity_id} …", end=" ", flush=True)
 
                 try:
-                    raw_gear = _retry_on_429(lambda: client.get_activity_gear(activity_id))
+                    raw_gear = retry_transient(lambda: client.get_activity_gear(activity_id))
                 except GarminAPIError as exc:
                     print(f"failed ({exc})")
                     continue
@@ -91,17 +91,6 @@ def main() -> int:
             print(f"  {gear_id}  {info['customMakeModel']!r}  maxKm={max_km}  retired={retired} (dateEnd={info['dateEnd']})")
 
     return 0
-
-
-def _retry_on_429(fn):
-    try:
-        return fn()
-    except GarminAPIError as exc:
-        if exc.status_code != 429:
-            raise
-        print(f"rate-limited, waiting {_RETRY_PAUSE}s…", flush=True)
-        time.sleep(_RETRY_PAUSE)
-        return fn()
 
 
 def _parse_args() -> argparse.Namespace:
