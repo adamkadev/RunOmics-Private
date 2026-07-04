@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { readFileSync } from "node:fs";
+import bundleAnalyzer from "@next/bundle-analyzer";
 
 // Single source of truth for the app version: package.json.
 const { version } = JSON.parse(readFileSync("./package.json", "utf8")) as { version: string };
@@ -52,4 +53,7 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// `npm run analyze` opens a per-bundle treemap - watch Recharts/MapLibre creep.
+const withBundleAnalyzer = bundleAnalyzer({ enabled: process.env.ANALYZE === "true" });
+
+export default withBundleAnalyzer(nextConfig);
