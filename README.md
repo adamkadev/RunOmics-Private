@@ -92,6 +92,9 @@ NEXT_PUBLIC_OWNER_EMAIL=you@example.com
 
 # Shared secret for the internal cron endpoints (PR/shoe-wear/overreaching checks, weekly reminder)
 INTERNAL_NOTIFY_SECRET=any-random-string
+
+# UI language: 'en' (default) or 'fr'. Picked at build time.
+NEXT_PUBLIC_LOCALE=en
 ```
 
 > `.env.local` is gitignored. Never commit your secrets.
@@ -236,6 +239,7 @@ from your `.env.local` *except* `GARMIN_SECRET`:
 | `NEXT_PUBLIC_FIREBASE_*` | Client-side auth, activity notes, push notification tokens |
 | `NEXT_PUBLIC_OWNER_EMAIL` | Restricts settings/notes editing to your Google account |
 | `INTERNAL_NOTIFY_SECRET` | Authenticates the GitHub Actions cron calls to `/api/internal/*` |
+| `NEXT_PUBLIC_LOCALE` | UI language, `en` (default) or `fr` — applied at build time |
 
 > `GARMIN_SECRET` is only used locally by the sync script - it never runs on Vercel.
 

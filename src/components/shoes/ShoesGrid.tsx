@@ -35,7 +35,7 @@ function wearAlertBadge(pct: number): { label: string; className: string } | nul
 function formatShoeDate(isoDate: string): string {
   const d = new Date(isoDate + 'T00:00:00')
   const currentYear = new Date().getFullYear()
-  return d.toLocaleDateString('en-US', d.getFullYear() === currentYear
+  return d.toLocaleDateString(t.locale, d.getFullYear() === currentYear
     ? { month: 'short', day: 'numeric' }
     : { month: 'short', year: '2-digit' }
   )

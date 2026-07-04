@@ -1,12 +1,13 @@
 'use client'
 
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { Activity, PlannedWorkout } from '@/domain/activity/types'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { PeriodNav } from '@/components/ui/PeriodNav'
 import { WeekView } from './WeekView'
 import { MonthView } from './MonthView'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
+import { useSwipeNavigation } from '@/lib/useSwipeNavigation'
 import { formatDayMonth } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -27,7 +28,8 @@ export function CalendarClient({ activities, plannedWorkouts }: Props) {
   const [month, setMonth] = useState(now.getMonth())
   const [animKey, setAnimKey] = useState(0)
   const [direction, setDirection] = useState<'forward' | 'backward'>('forward')
-  const touchStartX = useRef<number | null>(null)
+  // Set when jumping from a month cell into the week view, so the right day is pre-selected.
+  const [focusDate, setFocusDate] = useState<string | null>(null)
 
   const byDate = useMemo(() => {
     const map = new Map<string, Activity[]>()
@@ -56,6 +58,7 @@ export function CalendarClient({ activities, plannedWorkouts }: Props) {
       : new Date(year, month, 1).toLocaleString(t.locale, { month: 'long', year: 'numeric' })
 
   function shift(delta: number) {
+    setFocusDate(null)
     setDirection(delta > 0 ? 'forward' : 'backward')
     setAnimKey((k) => k + 1)
     if (mode === 'week') {
@@ -68,23 +71,30 @@ export function CalendarClient({ activities, plannedWorkouts }: Props) {
   }
 
   function goToday() {
+    setFocusDate(null)
     setWeekStart(startOfWeek(now))
     setYear(now.getFullYear())
     setMonth(now.getMonth())
   }
 
-  const onTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX }
-  const onTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current === null) return
-    const delta = e.changedTouches[0].clientX - touchStartX.current
-    touchStartX.current = null
-    if (delta > 50) shift(-1)
-    else if (delta < -50) shift(1)
+  /** Month view day tap: switch to the week view with that day pre-selected. */
+  function openWeekAt(date: string) {
+    const [y, m, d] = date.split('-').map(Number)
+    setWeekStart(startOfWeek(new Date(y, m - 1, d)))
+    setFocusDate(date)
+    setDirection('forward')
+    setAnimKey((k) => k + 1)
+    setMode('week')
   }
+
+  const { onTouchStart, onTouchEnd } = useSwipeNavigation(
+    () => shift(-1),
+    () => { if (!atPresent) shift(1) }
+  )
 
   return (
     <div className="space-y-4 pb-[max(env(safe-area-inset-bottom),80px)]">
-      <GlassSurface as="div" variant="nav" className="top-2 z-20 rounded-2xl px-5 py-3">
+      <GlassSurface as="div" variant="nav" className="rounded-2xl px-5 py-3">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-title1 font-extrabold leading-[1.1] tracking-tight text-foreground">
@@ -102,11 +112,17 @@ export function CalendarClient({ activities, plannedWorkouts }: Props) {
             />
           </div>
 
-          <div className="flex shrink-0 gap-0.5 rounded-control border border-foreground/10 bg-foreground/[0.07] p-[3px]">
+          <div
+            role="tablist"
+            aria-label={t.pages.calendar.title}
+            className="flex shrink-0 gap-0.5 rounded-control border border-foreground/10 bg-foreground/[0.07] p-[3px]"
+          >
             {(['week', 'month'] as const).map((m) => (
               <button
                 key={m}
                 type="button"
+                role="tab"
+                aria-selected={mode === m}
                 onClick={() => setMode(m)}
                 className={cn(
                   'rounded-[7px] px-2.5 py-1 text-caption font-semibold transition-colors',
@@ -135,6 +151,7 @@ export function CalendarClient({ activities, plannedWorkouts }: Props) {
             today={today}
             atPresent={atPresent}
             onToday={goToday}
+            initialSelectedDate={focusDate}
           />
         ) : (
           <MonthView
@@ -145,6 +162,7 @@ export function CalendarClient({ activities, plannedWorkouts }: Props) {
             today={today}
             atPresent={atPresent}
             onToday={goToday}
+            onSelectDay={openWeekAt}
           />
         )}
       </div>

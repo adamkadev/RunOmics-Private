@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { MapPin, Maximize2, Minimize2, Thermometer } from 'lucide-react'
-import type { Map as MapLibreMap, Marker } from 'maplibre-gl'
+import type { LngLatBounds, Map as MapLibreMap, Marker } from 'maplibre-gl'
 import { cn } from '@/lib/utils'
 import { maptilerStyleUrl } from '@/lib/maptiler'
 import { CHART_COLORS, PACE_ROUTE_COLORS, temperatureIconColor } from '@/lib/colors'
@@ -54,13 +54,23 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
   const mglRef = useRef<typeof import('maplibre-gl') | null>(null)
   const hoverMarkerRef = useRef<Marker | null>(null)
   const animFrameRef = useRef<number | null>(null)
+  const boundsRef = useRef<LngLatBounds | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
   const toggleFullscreen = useCallback(() => setIsFullscreen(v => !v), [])
 
-  // Resize map after fullscreen DOM reflow
+  // After the fullscreen DOM reflow: resize, then re-fit on the route bounds.
+  // resize() alone keeps the small-map center/zoom, which leaves the trace
+  // off-screen once the viewport grows - the user had to pan to find it.
   useEffect(() => {
-    const id = requestAnimationFrame(() => { mapRef.current?.resize() })
+    const id = requestAnimationFrame(() => {
+      const map = mapRef.current
+      if (!map) return
+      map.resize()
+      if (boundsRef.current) {
+        map.fitBounds(boundsRef.current, { padding: 40, maxZoom: 15, duration: 0 })
+      }
+    })
     return () => cancelAnimationFrame(id)
   }, [isFullscreen])
 
@@ -95,6 +105,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
         (b, c) => b.extend(c as [number, number]),
         new mgl.LngLatBounds(route[0], route[0])
       )
+      boundsRef.current = bounds
 
       const map = new mgl.Map({
         container: containerRef.current!,

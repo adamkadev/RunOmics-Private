@@ -1,16 +1,16 @@
 'use client'
 
-import { useRef, useState } from 'react'
-import { CalendarDays } from 'lucide-react'
+import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { isoWeekNumber } from '@/lib/calendarDate'
 import { formatDuration, formatDurationShort } from '@/lib/formatters'
+import { useSwipeNavigation } from '@/lib/useSwipeNavigation'
 import { AnimatedDuration } from '@/components/ui/AnimatedDuration'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { InlineJumpButton } from '@/components/ui/InlineJumpButton'
 import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
 import { PeriodNav } from '@/components/ui/PeriodNav'
-import { StatusPill } from '@/components/ui/StatusPill'
 import { WeekLoadBadge } from '@/components/dashboard/WeekLoadBadge'
 import { t } from '@/i18n'
 import type { WeekSummary } from '@/domain/activity/types'
@@ -38,16 +38,7 @@ export function StatsGrid({ weeks, currentStreak, vo2max, vo2maxTrend, weekLoad 
   const goPrev = () => setIndex((i) => Math.max(0, i - 1))
   const goNext = () => setIndex((i) => Math.min(lastIndex, i + 1))
 
-  const touchStartX = useRef<number | null>(null)
-  const onTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX }
-  const onTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current === null) return
-    const delta = e.changedTouches[0].clientX - touchStartX.current
-    touchStartX.current = null
-    const SWIPE_THRESHOLD = 40
-    if (delta > SWIPE_THRESHOLD) goPrev()
-    else if (delta < -SWIPE_THRESHOLD) goNext()
-  }
+  const { onTouchStart, onTouchEnd } = useSwipeNavigation(goPrev, goNext)
 
   const baseMetrics: Metric[] = [
     {
@@ -114,13 +105,7 @@ export function StatsGrid({ weeks, currentStreak, vo2max, vo2maxTrend, weekLoad 
           {isCurrent && weekLoad
             ? <WeekLoadBadge data={weekLoad} />
             : !isCurrent && (
-                <button
-                  type="button"
-                  onClick={() => setIndex(lastIndex)}
-                  className="rounded-md px-2 py-1 text-xs font-medium text-accent-text transition-colors hover:bg-accent-subtle"
-                >
-                  {s.jumpToCurrent}
-                </button>
+                <InlineJumpButton onClick={() => setIndex(lastIndex)}>{s.jumpToCurrent}</InlineJumpButton>
               )
           }
         </div>

@@ -4,7 +4,8 @@ import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import type { ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import { ACTIVITY_TYPE_CONFIG, ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
-import { useDragToDismiss } from '@/hooks/useDragToDismiss'
+import { useDragToDismiss } from '@/lib/useDragToDismiss'
+import { useFocusTrap } from '@/lib/useFocusTrap'
 import { t } from '@/i18n'
 
 interface Props {
@@ -13,13 +14,14 @@ interface Props {
 }
 
 export function PlannedWorkoutSheet({ workout, onClose }: Props) {
-  const { handleProps, sheetStyle } = useDragToDismiss(onClose)
+  const { close, handleProps, sheetStyle } = useDragToDismiss(onClose)
+  const trapRef = useFocusTrap<HTMLDivElement>()
 
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') close() }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
-  }, [onClose])
+  }, [close])
 
   useEffect(() => {
     const prev = document.documentElement.style.overflow
@@ -43,12 +45,13 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
       {/* Scrim */}
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
-        onClick={onClose}
+        onClick={close}
       />
 
       {/* Sheet */}
       <div
-        className="relative w-full sm:max-w-sm sm:rounded-card-sm"
+        ref={trapRef}
+        className="relative w-full animate-sheet-up sm:max-w-sm sm:rounded-card-sm"
         style={{
           background: typeColor
             ? `linear-gradient(160deg, ${typeColor}1f 0%, rgba(14,22,18,.88) 55%)`

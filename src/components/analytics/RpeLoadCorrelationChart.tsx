@@ -22,7 +22,7 @@ function CustomTooltip({ active, payload }: {
 }) {
   if (!active || !payload?.length) return null
   const d = payload[0].payload
-  const label = new Date(d.date + 'T12:00:00').toLocaleDateString('en', { day: 'numeric', month: 'short', year: 'numeric' })
+  const label = new Date(d.date + 'T12:00:00').toLocaleDateString(t.locale, { day: 'numeric', month: 'short', year: 'numeric' })
   const tc = t.analytics.charts.rpeLoadCorrelation.tooltip
   return (
     <TooltipCard label={`${t.activityTypes[d.type]} · ${label}`}>

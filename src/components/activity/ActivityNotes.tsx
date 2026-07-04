@@ -5,7 +5,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { onAuthStateChanged } from 'firebase/auth'
 import type { User } from 'firebase/auth'
 import { NotebookPen, X } from 'lucide-react'
-import { getClientFirestore, getClientAuth } from '@/lib/firebase'
+import { getClientFirestore, getClientAuth, isClientFirebaseConfigured } from '@/lib/firebase'
 import { inputCls } from '@/lib/formStyles'
 import { Badge } from '@/components/ui/Card'
 import { SaveButton, type SaveState } from '@/components/ui/SaveButton'
@@ -31,9 +31,13 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
   const { toast, showToast } = useToast()
   const containerRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => onAuthStateChanged(getClientAuth(), setUser), [])
+  useEffect(() => {
+    if (!isClientFirebaseConfigured) return
+    return onAuthStateChanged(getClientAuth(), setUser)
+  }, [])
 
   useEffect(() => {
+    if (!isClientFirebaseConfigured) return
     getDoc(doc(getClientFirestore(), 'activityNotes', activityId)).then((snap) => {
       if (!snap.exists()) return
       const data = snap.data() as ActivityNote

@@ -29,7 +29,7 @@ export function ProfileGoal({ goal, onSaveGoal }: Props) {
 
       <div className="flex items-baseline gap-1.5">
         <span className="text-title1 font-extrabold tracking-tight text-foreground">
-          {totalDistanceKm.toLocaleString('en-US')}
+          {totalDistanceKm.toLocaleString(t.locale)}
         </span>
         <span className="text-footnote font-semibold text-muted-foreground">
           {'/ '}

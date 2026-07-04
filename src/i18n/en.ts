@@ -1,5 +1,6 @@
-// English UI strings. To add a language later, create a sibling file (e.g. `fr.ts`)
-// with the same shape (`satisfies Strings`) and switch the active locale in `index.ts`.
+// English UI strings — the reference locale. Sibling files (e.g. `fr.ts`) must
+// keep the same shape (`satisfies Strings`); the active locale is picked in
+// `index.ts` via NEXT_PUBLIC_LOCALE.
 //
 // Conventions:
 // - Plain strings for static copy.
@@ -222,7 +223,7 @@ export const en = {
       jumpToCurrent: 'This week',
     },
     weekLoad: {
-      label: (percent: number) => {
+      label: (percent: number): string => {
         if (percent >= 120) return '↑ Heavy week'
         if (percent >= 90)  return 'Normal week'
         if (percent >= 60)  return '↓ Light week'
@@ -581,6 +582,8 @@ export const en = {
       accentSubtitle: 'Unit color',
       galleryPlaceholder: 'Choose a photo',
       orUsePhoto: 'Or use your photo',
+      changePhoto: 'Change',
+      browsePhoto: 'Browse...',
     },
     stats: {
       distance: 'Distance',
@@ -688,6 +691,7 @@ export const en = {
 
   goals: {
     title: 'Goals',
+    empty: 'No goals configured yet.',
     back: 'Profile',
     annualGoal: 'Annual Goal',
     kmRemaining: (km: number) => `${km} km remaining`,
@@ -824,6 +828,7 @@ export const en = {
 
   nextRace: {
     line: (name: string, distance: string, daysUntil: string) => `${name} (${distance}) - ${daysUntil}`,
+    countdown: (days: number) => `D-${days}`,
   },
 
   racePredictions: {
@@ -911,4 +916,4 @@ export const en = {
     A: 'Excellent',
     S: 'Elite',
   } as Record<RankTier, string>,
-} as const
+}

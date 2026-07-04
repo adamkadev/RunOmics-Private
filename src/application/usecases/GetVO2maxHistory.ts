@@ -1,3 +1,4 @@
+import { t } from '@/i18n'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 
 export interface VO2maxPoint {
@@ -43,7 +44,7 @@ export function getVO2maxHistory(): VO2maxPoint[] {
 
   return weeks.map(({ date, value }) => ({
     date,
-    label: new Date(date + 'T00:00:00').toLocaleDateString('en', { month: 'short', day: 'numeric' }),
+    label: new Date(date + 'T00:00:00').toLocaleDateString(t.locale, { month: 'short', day: 'numeric' }),
     value,
   }))
 }

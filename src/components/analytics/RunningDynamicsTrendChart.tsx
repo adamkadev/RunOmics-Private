@@ -134,7 +134,7 @@ export function RunningDynamicsTrendChart({ data }: Props) {
             tickFormatter={(date: string) => {
               if (!tickDates.has(date)) return ''
               const d = new Date(date + 'T00:00:00')
-              return d.toLocaleDateString('en', { day: 'numeric', month: 'short' })
+              return d.toLocaleDateString(t.locale, { day: 'numeric', month: 'short' })
             }}
           />
           <YAxis

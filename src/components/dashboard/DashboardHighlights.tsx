@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Pill } from '@/components/ui/Pill'
 import { cn } from '@/lib/utils'
 import { formatClock, formatDistance, formatDuration } from '@/lib/formatters'
+import { t } from '@/i18n'
 import type { RecordEntry } from '@/application/usecases/GetRecords'
 import type { PbAlert } from '@/application/usecases/GetPbAlerts'
 import type { ShoeStats } from '@/application/usecases/GetShoeStats'
@@ -52,7 +53,7 @@ export function DashboardHighlights({ record, pbAlerts, shoes, nextRace }: Props
       href: record.activityId ? `/activities/${record.activityId}` : '/records',
       dotColor: TINT.record.dot,
       tint: TINT.record.pill,
-      label: `PR · ${record.label} - ${stat}`,
+      label: `${t.activity.bestEfforts.prBadge} · ${record.label} - ${stat}`,
     })
   }
 
@@ -72,7 +73,7 @@ export function DashboardHighlights({ record, pbAlerts, shoes, nextRace }: Props
       href: '/goals',
       dotColor: TINT.race.dot,
       tint: TINT.race.pill,
-      label: `${nextRace.name} · D-${daysUntil(nextRace.date)}`,
+      label: `${nextRace.name} · ${t.nextRace.countdown(daysUntil(nextRace.date))}`,
     })
   }
 

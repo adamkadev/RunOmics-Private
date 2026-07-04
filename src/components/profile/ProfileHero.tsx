@@ -28,7 +28,7 @@ function initials(name: string): string {
 }
 
 function monthYear(isoDate: string): string {
-  return new Date(isoDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  return new Date(isoDate + 'T00:00:00').toLocaleDateString(t.locale, { month: 'long', year: 'numeric' })
 }
 
 interface Props {

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { onAuthStateChanged, signInWithPopup, signOut, GoogleAuthProvider } from 'firebase/auth'
 import type { User } from 'firebase/auth'
 import { LogOut } from 'lucide-react'
-import { getClientAuth } from '@/lib/firebase'
+import { getClientAuth, isClientFirebaseConfigured } from '@/lib/firebase'
 import { t } from '@/i18n'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { BackButton } from '@/components/ui/BackButton'
@@ -16,9 +16,14 @@ import { NotificationsForm } from './NotificationsForm'
 const OWNER_EMAIL = process.env.NEXT_PUBLIC_OWNER_EMAIL ?? ''
 
 export function SettingsClient() {
-  const [user, setUser] = useState<User | null | 'loading'>('loading')
+  // Without the public Firebase config, start signed-out (theme/accent
+  // settings still work) instead of spinning forever waiting for auth.
+  const [user, setUser] = useState<User | null | 'loading'>(
+    isClientFirebaseConfigured ? 'loading' : null
+  )
 
   useEffect(() => {
+    if (!isClientFirebaseConfigured) return
     const auth = getClientAuth()
     return onAuthStateChanged(auth, (u) => setUser(u))
   }, [])

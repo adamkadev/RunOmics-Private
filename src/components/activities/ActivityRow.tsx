@@ -3,31 +3,27 @@ import { ActivityTypeTag } from './ActivityTypeTag'
 import { PrBadge } from './PrBadge'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
 import type { Activity } from '@/domain/activity/types'
-import { cardClass } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 interface Props {
   activity: Activity
   prLabels?: string[]
-  /** `glass` renders a lighter translucent sub-surface (Dashboard recent activities, B9). */
-  surface?: 'card' | 'glass'
 }
 
-export function ActivityRow({ activity: a, prLabels = [], surface = 'card' }: Props) {
-  const rowClassName =
-    surface === 'glass'
-      ? 'glass-row grid grid-cols-[1fr_auto] items-center gap-x-4 p-4 transition-transform active:scale-[0.99]'
-      : cardClass({ clickable: true, className: 'grid grid-cols-[1fr_auto] items-center gap-x-4' })
-
+/** Translucent sub-surface row (Dashboard recent activities, B9). */
+export function ActivityRow({ activity: a, prLabels = [] }: Props) {
   return (
-    <Link href={`/activities/${a.id}`} className={rowClassName}>
+    <Link
+      href={`/activities/${a.id}`}
+      className="glass-row grid grid-cols-[1fr_auto] items-center gap-x-4 p-4 transition-transform active:scale-[0.99]"
+    >
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <ActivityTypeTag type={a.type} />
           <PrBadge labels={prLabels} />
           {a.rpe !== null && (
-            <span className={`rounded px-1.5 py-0.5 text-xs font-medium text-subtle`}>
-              RPE {a.rpe}
+            <span className="rounded px-1.5 py-0.5 text-xs font-medium text-subtle">
+              {t.activities.row.rpeValue(a.rpe)}
             </span>
           )}
           <div className="hidden sm:block">
@@ -46,7 +42,8 @@ export function ActivityRow({ activity: a, prLabels = [], surface = 'card' }: Pr
 
       <div className="flex shrink-0 items-center gap-5 text-right text-sm">
         <div>
-          <span className="text-xs text-subtle">{formatDate(a.date)}</span>
+          {/* Date moves next to the tags on sm+; keep it here on mobile only */}
+          <span className="text-xs text-subtle sm:hidden">{formatDate(a.date)}</span>
           <p className="font-semibold text-foreground">
             {formatDistance(a.distanceKm)}
             <span className="text-subtle"> {t.units.km}</span>

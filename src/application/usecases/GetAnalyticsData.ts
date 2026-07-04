@@ -1,3 +1,4 @@
+import { t } from '@/i18n'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getAthleteFromFirestore } from '@/infrastructure/repositories/FirestoreConfigRepository'
 import { buildTimeSeries, type HrBounds } from '@/application/usecases/GetTrainingLoad'
@@ -411,7 +412,7 @@ function buildPeriodAnalytics(all: Activity[], weeks: number, now: Date): Period
   for (let i = weeks - 1; i >= 0; i--) {
     const mon = new Date(thisMonday)
     mon.setDate(thisMonday.getDate() - i * 7)
-    buckets.push({ id: isoDate(mon), label: mon.toLocaleDateString('en', { day: 'numeric', month: 'short' }), acts: [] })
+    buckets.push({ id: isoDate(mon), label: mon.toLocaleDateString(t.locale, { day: 'numeric', month: 'short' }), acts: [] })
   }
 
   const windowActs: Activity[] = []
@@ -464,7 +465,7 @@ function buildEfficiencyDaily(activities: Activity[], now: Date): DailyEfficienc
   return Array.from({ length: 90 }, (_, i) => {
     const dayMs = nowMs - (89 - i) * DAY_MS
     const day = new Date(dayMs)
-    const label = day.toLocaleDateString('en', { day: 'numeric', month: 'short' })
+    const label = day.toLocaleDateString(t.locale, { day: 'numeric', month: 'short' })
     const date = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`
 
     const in7  = stamped.filter((x) => x.ms >= dayMs - 6 * DAY_MS && x.ms <= dayMs).map((x) => x.a)
@@ -487,7 +488,7 @@ function buildRunningDynamicsDaily(activities: Activity[], now: Date): DailyRunn
   return Array.from({ length: 90 }, (_, i) => {
     const dayMs = nowMs - (89 - i) * DAY_MS
     const day = new Date(dayMs)
-    const label = day.toLocaleDateString('en', { day: 'numeric', month: 'short' })
+    const label = day.toLocaleDateString(t.locale, { day: 'numeric', month: 'short' })
     const date = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`
 
     const in7  = stamped.filter((x) => x.ms >= dayMs - 6 * DAY_MS && x.ms <= dayMs).map((x) => x.a)

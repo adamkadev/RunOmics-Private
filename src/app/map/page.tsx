@@ -44,7 +44,7 @@ export default function MapPage() {
           <Divider />
 
           <span>
-            {totalKm.toLocaleString()} {t.units.km}
+            {totalKm.toLocaleString(t.locale)} {t.units.km}
           </span>
 
           <Divider />

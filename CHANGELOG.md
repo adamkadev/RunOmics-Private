@@ -2,6 +2,128 @@
 
 All notable changes to this project are documented in this file.
 
+## [3.1] - 2026-07-04
+
+### Added
+
+- **Offline PWA shell**: new `public/sw.js` service worker - hashed build
+  assets and icons are cached cache-first, pages/RSC payloads/data JSON
+  network-first with cache fallback, so previously seen pages (and the
+  dashboard as a fallback for unvisited deep links) open without a network.
+  Registered in production only.
+- **Modal accessibility**: new `useFocusTrap` hook applied to the calendar
+  bottom sheets and the share modal - the rest of the page is `inert` while
+  a dialog is open, Tab/Shift+Tab cycle inside it, and focus returns to the
+  opener on close. The share modal also gains `role="dialog"`/`aria-modal`.
+- **French locale**: full `fr.ts` translation (running vocabulary: allure, FC,
+  dénivelé D+, sortie longue, affûtage, RP…), type-checked against the English
+  shape via `satisfies Strings`. Activated at build time with
+  `NEXT_PUBLIC_LOCALE=fr`; English stays the default. `t.locale` now drives all
+  `Intl` date/number formatting, so weekday/month names and thousands
+  separators follow the language.
+
+### Changed
+
+- **ShareCardModal decomposed** (~520 → ~260 lines): theme carousel
+  (`ShareThemePicker`), accent dots (`ShareAccentPicker`), action row
+  (`ShareCardActions`) and setting-row primitives (`ShareCardControls`)
+  extracted as components; preferences persistence (`useShareCardPrefs`),
+  reverse geocoding (`useShareCardGeocode`) and high-res PNG export
+  (`shareCardExport`) extracted to `src/lib`. The modal keeps only state
+  wiring, the live preview and layout. The photo-row "Change"/"Browse..."
+  labels and the share-sheet title fallback moved into the i18n catalog.
+
+### Fixed
+
+- **Hardcoded `en`/`en-US` locales** in `formatters.ts`, the analytics chart
+  axes/tooltips, the dashboard greeting, profile stats and the share card now
+  use `t.locale` - dates rendered in English regardless of the active locale.
+- **Dashboard highlights**: the "PR · …" record chip and the race "D-n"
+  countdown were hardcoded English strings; both now come from the i18n
+  catalog (`RP · …` / `J-n` in French).
+- **Push notifications**: enabling push registered `/firebase-messaging-sw.js`,
+  which does not exist in `public/` - the registration 404'd. FCM now binds to
+  the app service worker, which displays push payloads itself.
+- `<html lang>` was hardcoded to `en`; it now follows the active locale.
+
+## [3.0] - 2026-07-04
+
+Harmonization + refactor pass across the whole app, plus a first batch of v3
+improvements picked by impact/effort.
+
+### Added
+
+- **Calendar**: tapping a day with sessions in the month view now jumps to the
+  week view with that day pre-selected (completed activities were previously
+  only inspectable from the week view).
+- **Accessibility**: proper `tablist`/`tab`/`aria-selected` semantics on the
+  Analytics tabs and the Calendar week/month switcher; `role="dialog"` +
+  `aria-modal` on both calendar bottom sheets.
+
+### Changed
+
+- **Analytics (perf)**: the four tab panels (Volume / Performance / Physiology /
+  Seasons) are now code-split with `next/dynamic` - the page only parses and
+  hydrates the visible tab's Recharts components instead of all ~20 charts
+  upfront. `AnalyticsClient` shrank accordingly (tab content extracted to
+  `VolumeTab`/`PerformanceTab`/`PhysiologyTab`/`SeasonsTab`).
+- **Navigation chevrons**: kept alongside swipe everywhere (desktop has no
+  swipe, and they are the discoverable/accessible affordance), but the compact
+  calendar chevrons now expand their hit area to the 44px HIG minimum via an
+  invisible overlay (visual size unchanged). Calendar swipe-forward is now
+  clamped at the current week, matching the disabled next-chevron.
+- **Swipe navigation** factored into a shared `useSwipeNavigation` hook
+  (dashboard week stats + calendar previously had two hand-rolled copies with
+  different thresholds).
+- **"Jump back to now" buttons** (calendar "Today", dashboard "current week")
+  unified into a shared `InlineJumpButton` component.
+- **Dashboard loading skeleton** updated to mirror the v2 glass layout
+  (greeting, weekly stats card, charts, recent activities) instead of the old
+  v1 six-card grid.
+- Convention: `useDragToDismiss` moved from `src/hooks/` to `src/lib/` where
+  all other hooks live.
+
+### Fixed
+
+- **Activity detail map**: expanding to fullscreen now re-fits the view on the
+  route bounds - previously only `resize()` ran, leaving the trace off-screen
+  until the user panned.
+- **Calendar week view in light mode**: completed-day cells used an invalid
+  CSS color (`var(--color-accent, #f1761f)26`), silently dropping the
+  background; planned/rest cells used hardcoded white/black rgba values that
+  were invisible on a light background. All replaced with theme-aware
+  `color-mix` on the accent/foreground tokens.
+- **Analytics stats**: the "time" metric's animation guard tested a formatted
+  string (always truthy) instead of the duration; elevation unit label was
+  inconsistent between year view ("m") and all-time view ("m gain"); the two
+  near-identical metric arrays were merged.
+- **Dashboard recent activities**: date no longer rendered twice on desktop
+  widths; RPE chip now uses the shared i18n formatter.
+- **Planned workout sheet**: now slides up on open and plays the same animated
+  slide-out as the activity sheet when closed via scrim or Escape.
+
+### Removed
+
+- Dead code: unused `surface="card"` branch in `ActivityRow`, stale sticky
+  header measurement (ResizeObserver + state) in the activities list, unused
+  imports in `StatsGrid`, leftover `top-2 z-20` classes on non-sticky headers,
+  `CalendarNav.tsx` (superseded by `InlineJumpButton`).
+
+### v3 backlog (not implemented, by descending impact/effort ratio)
+
+- **Offline PWA shell**: cache the app shell + latest activities JSON with a
+  service worker so the dashboard opens offline. *(Shipped in 3.1.)*
+- **Focus trap + `inert` background** for bottom sheets and the share modal
+  (keyboard focus can currently escape behind the scrim). *(Shipped in 3.1.)*
+- **ShareCardModal decomposition** (~515 lines: template carousel, theme
+  toggle, canvas drawing orchestration in one component). *(Shipped in 3.1.)*
+- **French locale**: the i18n layer is ready (`Strings` type derived from
+  `en.ts`); add `fr.ts` and a language setting. *(Shipped in 3.1 as a
+  build-time `NEXT_PUBLIC_LOCALE` switch; a runtime language setting would
+  require moving `t` behind a React context.)*
+- **Virtualized activity list** if the paginated list grows beyond a few
+  hundred rendered rows.
+
 ## [2.0] - 2026-06-25
 
 Major version: full liquid glass redesign of the app, plus a new Calendar/Agenda

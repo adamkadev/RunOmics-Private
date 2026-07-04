@@ -6,7 +6,7 @@ import type { Activity, ActivityType, PlannedWorkout } from '@/domain/activity/t
 import { ACTIVITY_TYPE_CONFIG, ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ActivitySheet } from './ActivitySheet'
-import { TodayButton } from './CalendarNav'
+import { InlineJumpButton } from '@/components/ui/InlineJumpButton'
 import { PlannedWorkoutSheet } from './PlannedWorkoutSheet'
 import { addDays, isoDate } from '@/lib/calendarDate'
 import { formatDate, formatDateFull } from '@/lib/formatters'
@@ -21,6 +21,16 @@ const TODAY_33 = 'color-mix(in srgb, var(--color-today) 33%, transparent)'
 const TODAY_38 = 'color-mix(in srgb, var(--color-today) 38%, transparent)'
 const MISSED_10 = 'color-mix(in srgb, var(--color-missed) 10%, transparent)'
 const MISSED_25 = 'color-mix(in srgb, var(--color-missed) 25%, transparent)'
+const ACCENT_15 = 'color-mix(in srgb, var(--accent) 15%, transparent)'
+const ACCENT_30 = 'color-mix(in srgb, var(--accent) 30%, transparent)'
+// foreground-tinted neutrals so planned/rest cells stay visible in light mode
+// (previously hardcoded rgba(255,255,255,...) - white on white in light)
+const FG_04 = 'color-mix(in srgb, var(--color-foreground) 4%, transparent)'
+const FG_05 = 'color-mix(in srgb, var(--color-foreground) 5%, transparent)'
+const FG_07 = 'color-mix(in srgb, var(--color-foreground) 7%, transparent)'
+const FG_12 = 'color-mix(in srgb, var(--color-foreground) 12%, transparent)'
+const FG_18 = 'color-mix(in srgb, var(--color-foreground) 18%, transparent)'
+const FG_35 = 'color-mix(in srgb, var(--color-foreground) 35%, transparent)'
 
 interface Day {
   date: string
@@ -118,16 +128,21 @@ interface Props {
   today: string
   atPresent: boolean
   onToday: () => void
+  /** Pre-selects this day when landing from the month view (component remounts per navigation). */
+  initialSelectedDate?: string | null
 }
 
-export function WeekView({ weekStart, byDate, byDatePlanned, today, atPresent, onToday }: Props) {
+export function WeekView({ weekStart, byDate, byDatePlanned, today, atPresent, onToday, initialSelectedDate }: Props) {
   const days: Day[] = Array.from({ length: 7 }, (_, i) => {
     const date = isoDate(addDays(weekStart, i))
     return { date, day: Number(date.slice(8)), acts: byDate.get(date) ?? [] }
   })
 
   const [selectedDate, setSelectedDate] = useState(
-    () => days.find((d) => d.date === today)?.date ?? days[0].date
+    () =>
+      days.find((d) => d.date === initialSelectedDate)?.date ??
+      days.find((d) => d.date === today)?.date ??
+      days[0].date
   )
   const [sheetActivity, setSheetActivity] = useState<Activity | null>(null)
   const [sheetPlan, setSheetPlan] = useState<PlannedWorkout | null>(null)
@@ -150,7 +165,7 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today, atPresent, o
       <GlassSurface variant="card" className="rounded-card-sm p-3.5 pb-2.5">
         {/* Today jump + legend toggle share one row; legend renders inline next to the toggle, not below it */}
         <div className="flex items-center justify-between gap-2">
-          {!atPresent ? <TodayButton onClick={onToday} /> : <span />}
+          {!atPresent ? <InlineJumpButton onClick={onToday}>{t.calendar.today}</InlineJumpButton> : <span />}
 
           <div className="flex items-center gap-2.5">
             {showLegend && (
@@ -164,7 +179,7 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today, atPresent, o
                   {t.calendar.legend.missed}
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-full border" style={{ borderColor: 'rgba(255,255,255,.35)' }} />
+                  <span className="h-2 w-2 rounded-full border" style={{ borderColor: FG_35 }} />
                   {t.calendar.planned}
                 </span>
                 <span className="flex items-center gap-1">
@@ -238,14 +253,14 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today, atPresent, o
                         className="relative flex h-8 w-8 items-center justify-center rounded-[8px] border transition-colors"
                         style={
                           completed
-                            ? { background: 'var(--color-accent, #f1761f)26', borderColor: 'var(--color-accent, #f1761f)4d' }
+                            ? { background: ACCENT_15, borderColor: ACCENT_30 }
                             : missed
                               ? { background: MISSED_10, borderColor: MISSED_25, opacity: 0.6 }
                               : isToday
                                 ? { background: TODAY_10, borderColor: TODAY, borderStyle: 'solid' }
                                 : planned
-                                  ? { background: 'rgba(255,255,255,.05)', borderColor: 'rgba(255,255,255,.18)', borderStyle: 'dashed' }
-                                  : { background: 'rgba(0,0,0,.04)', borderColor: 'rgba(0,0,0,.07)' }
+                                  ? { background: FG_05, borderColor: FG_18, borderStyle: 'dashed' }
+                                  : { background: FG_04, borderColor: FG_07 }
                         }
                       >
                         {completed ? (
@@ -255,7 +270,7 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today, atPresent, o
                         ) : planned ? (
                           <span
                             className="h-2 w-2 rounded-full border"
-                            style={isToday ? { borderColor: TODAY } : { borderColor: 'rgba(255,255,255,.35)' }}
+                            style={isToday ? { borderColor: TODAY } : { borderColor: FG_35 }}
                           />
                         ) : isToday ? (
                           <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: TODAY }} />
@@ -292,7 +307,7 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today, atPresent, o
                           : planned
                             ? isToday
                               ? TODAY_33
-                              : 'rgba(255,255,255,.12)'
+                              : FG_12
                             : 'transparent',
                       }}
                     />
