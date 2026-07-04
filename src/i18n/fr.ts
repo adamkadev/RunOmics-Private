@@ -585,6 +585,8 @@ export const fr = {
       accentSubtitle: 'Couleur des unités',
       galleryPlaceholder: 'Choisir une photo',
       orUsePhoto: 'Ou utilisez votre photo',
+      changePhoto: 'Modifier',
+      browsePhoto: 'Parcourir...',
     },
     stats: {
       distance: 'Distance',

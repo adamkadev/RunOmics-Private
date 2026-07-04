@@ -582,6 +582,8 @@ export const en = {
       accentSubtitle: 'Unit color',
       galleryPlaceholder: 'Choose a photo',
       orUsePhoto: 'Or use your photo',
+      changePhoto: 'Change',
+      browsePhoto: 'Browse...',
     },
     stats: {
       distance: 'Distance',

@@ -22,6 +22,17 @@ All notable changes to this project are documented in this file.
   `Intl` date/number formatting, so weekday/month names and thousands
   separators follow the language.
 
+### Changed
+
+- **ShareCardModal decomposed** (~520 → ~260 lines): theme carousel
+  (`ShareThemePicker`), accent dots (`ShareAccentPicker`), action row
+  (`ShareCardActions`) and setting-row primitives (`ShareCardControls`)
+  extracted as components; preferences persistence (`useShareCardPrefs`),
+  reverse geocoding (`useShareCardGeocode`) and high-res PNG export
+  (`shareCardExport`) extracted to `src/lib`. The modal keeps only state
+  wiring, the live preview and layout. The photo-row "Change"/"Browse..."
+  labels and the share-sheet title fallback moved into the i18n catalog.
+
 ### Fixed
 
 - **Hardcoded `en`/`en-US` locales** in `formatters.ts`, the analytics chart
@@ -105,7 +116,7 @@ improvements picked by impact/effort.
 - **Focus trap + `inert` background** for bottom sheets and the share modal
   (keyboard focus can currently escape behind the scrim). *(Shipped in 3.1.)*
 - **ShareCardModal decomposition** (~515 lines: template carousel, theme
-  toggle, canvas drawing orchestration in one component).
+  toggle, canvas drawing orchestration in one component). *(Shipped in 3.1.)*
 - **French locale**: the i18n layer is ready (`Strings` type derived from
   `en.ts`); add `fr.ts` and a language setting. *(Shipped in 3.1 as a
   build-time `NEXT_PUBLIC_LOCALE` switch; a runtime language setting would
