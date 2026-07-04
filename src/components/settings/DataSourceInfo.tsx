@@ -5,16 +5,7 @@ import { Activity, Download, Trash2 } from 'lucide-react'
 import { t } from '@/i18n'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { Toast, useToast } from '@/components/ui/Toast'
-
-function downloadBlob(content: string, filename: string, type: string) {
-  const blob = new Blob([content], { type })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.click()
-  URL.revokeObjectURL(url)
-}
+import { saveFileWithFallback } from '@/lib/fileExport'
 
 export function DataSourceInfo() {
   const [loading, setLoading] = useState(false)
@@ -39,7 +30,9 @@ export function DataSourceInfo() {
       const res = await fetch('/api/activities/export')
       const csv = await res.text()
       const stamp = new Date().toISOString().slice(0, 10)
-      downloadBlob(csv, `runomics-activities-${stamp}.csv`, 'text/csv;charset=utf-8;')
+      // Share sheet on iOS PWAs (no downloads UI there), download elsewhere.
+      const file = new File([csv], `runomics-activities-${stamp}.csv`, { type: 'text/csv' })
+      await saveFileWithFallback(file)
     } catch {
       showToast(s.dataExport.exporting, false)
     } finally {

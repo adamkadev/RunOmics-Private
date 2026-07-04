@@ -89,10 +89,12 @@ priorité, 🟡 moyenne, 🟢 confort/nice-to-have).
       à couvrir, nécessitent un bypass d'auth dédié aux tests.)*
 - [x] 🟡 Pas de rapport de couverture configuré dans `vitest.config.ts`
       (`test.coverage`). Ajouter `@vitest/coverage-v8` et un seuil minimal en CI. *(✅ fait en 3.2 : `npm run test:coverage` (v8, text+lcov), sans seuil bloquant pour l'instant.)*
-- [ ] 🟢 Scripts Python (`scripts/`) explicitement exclus du lint ESLint (normal,
+- [x] 🟢 Scripts Python (`scripts/`) explicitement exclus du lint ESLint (normal,
       ce n'est pas du JS) mais aucun test Python visible (`pytest`, etc.) pour
       `sync.py`/`reprocess.py`/parsing FIT — au moins un test sur le parsing des
       splits/records serait rassurant vu leur rôle central dans les PRs/records.
+      *(✅ fait en 3.3 : 41 tests pytest sur best efforts, pace, décimation RDP,
+      splits, VO2max, mapper et retry + job CI `python-tests`.)*
 
 ## 5. Accessibilité
 
@@ -115,7 +117,10 @@ priorité, 🟡 moyenne, 🟢 confort/nice-to-have).
       changelog. Passer `t` derrière un contexte React (déjà identifié comme
       piste) pour permettre un vrai sélecteur de langue en Settings sans
       redeploy — cohérent avec le fait que Settings gère déjà les préférences
-      utilisateur (thème, accent…). *(⏸ non fait en 3.2 : `t` est importé au
+      utilisateur (thème, accent…). *(❌ non retenu (décision 3.3) : app
+      mono-utilisateur, `NEXT_PUBLIC_LOCALE=fr` sur Vercel couvre le besoin à
+      coût nul ; à réévaluer seulement si l'app devient multi-utilisateurs.
+      Détail technique : ⏸ non fait en 3.2 : `t` est importé au
       niveau module dans ~100 fichiers, y compris des composants serveur SSG —
       un contexte React ne couvrirait que le client et produirait une UI
       mi-anglaise mi-française. Un vrai switch runtime exige soit un segment

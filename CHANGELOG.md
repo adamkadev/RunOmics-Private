@@ -6,6 +6,11 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
+- **Python test suite** (`scripts/tests/`, 41 tests + CI job): pins the FIT
+  pipeline's pure logic - best-effort/PR detection, pace smoothing, RDP route
+  decimation, interval splits, VO2max scaling, local time offsets, corrupt-FIT
+  robustness, the Garmin→activity mapper and the transient-retry policy.
+
 - **End-to-end tests (Playwright)**: first e2e batch covering the read-only
   golden paths - dashboard, activities list → detail, calendar, records,
   goals. Runs against a real production build (`next build && next start`)
@@ -25,8 +30,22 @@ All notable changes to this project are documented in this file.
     project setup (Firestore rules deploy, service account key, GitHub
     secrets).
 
+### Changed
+
+- **garth migration evaluated and declined**: upstream deprecation only
+  breaks the one-time login flow (`get_secret.py`); daily syncs merely
+  refresh the existing ~1-year OAuth token and keep working. The community
+  alternatives are unmaintained cat-and-mouse workarounds. Documented in the
+  README, with an actionable failure message added to `get_secret.py`.
+
 ### Fixed
 
+- **CSV export in the iOS PWA**: the blob download either failed silently or
+  opened an awkward preview (no downloads UI in standalone mode). The export
+  now goes through the same native share sheet as the activity share card
+  (Save to Files, AirDrop...), with the regular download kept everywhere
+  else - logic extracted to a shared `saveFileWithFallback` helper used by
+  both, and closing the share sheet no longer falls through to a download.
 - Vitest's default test file pattern was also matching Playwright's
   `e2e/*.spec.ts`, which use an incompatible `test`/`expect` - excluded the
   `e2e/` directory from the Vitest config.
