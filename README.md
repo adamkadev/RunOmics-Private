@@ -207,6 +207,30 @@ Drop a photo named `{activityId}.jpg` (or `.png`, `.webp`) into `public/events/`
 
 ---
 
+## Tests & quality
+
+```bash
+npm test               # Vitest: usecases, lib helpers, component tests (RTL), a11y smoke (axe-core)
+npm run test:coverage  # same suite with a v8 coverage report (text + lcov)
+npm run lint           # ESLint (next/core-web-vitals + TS)
+npx tsc --noEmit       # typecheck
+npm run analyze        # production build with @next/bundle-analyzer treemaps
+```
+
+CI (`.github/workflows/ci.yml`) runs lint, typecheck, tests, a production-dependency
+audit (`npm audit --omit=dev --audit-level=high`) and the build on every push/PR.
+
+The improvement backlog lives in
+[`docs/product-improvement-todolist.md`](docs/product-improvement-todolist.md).
+
+### Monitoring
+
+`GET /api/internal/health` (authenticated with `x-internal-secret`) reports the
+last synced activity date and flags the data as `stale` after 7 days without
+one - point any uptime monitor at it to catch a silently broken Garmin sync.
+
+---
+
 ## Reprocessing
 
 If you update the FIT parser (e.g. after adding new metrics), reprocess all activities from the cached FIT files without re-downloading from Garmin:

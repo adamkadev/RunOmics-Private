@@ -2,6 +2,56 @@
 
 All notable changes to this project are documented in this file.
 
+## [3.2] - 2026-07-04
+
+Hardening pass driven by the audit in `docs/product-improvement-todolist.md`:
+security, reliability, observability, tests and pipeline robustness.
+
+### Added
+
+- **Error boundaries**: `src/app/error.tsx` (all routes, themed retry/back
+  fallback) and `global-error.tsx` (root-layout failures, inline-styled).
+- **Firestore rules versioned**: `firestore.rules` committed as the source of
+  truth (public read, owner-only writes) with deploy instructions.
+- **Content-Security-Policy** header covering MapTiler, Firebase/Google APIs,
+  Nominatim, MapLibre blob workers and the FCM service worker.
+- **Rate limiting + logging on `/api/internal/*`**: shared
+  `handleInternalRoute` wrapper - 20 req/min/IP fixed window (applied before
+  the secret check), structured `[internal:<route>]` error logs, 500s the
+  cron workflows can surface.
+- **Health probe**: `GET /api/internal/health` reports last-activity date,
+  staleness (> 7 days) and app version for uptime monitoring of the sync.
+- **PWA update banner**: a waiting service worker now triggers a "new version
+  ready" banner; Refresh activates it (SKIP_WAITING) and reloads. Settings >
+  Data gains a "Clear offline cache" action. 192/512 maskable icons added to
+  the manifest (rendered from the brand SVG).
+- **Component/a11y/security tests** (first RTL layer): `useFocusTrap` cycling
+  and inert handling, `ActivityNotes` owner gate, `ErrorFallback` + axe-core
+  smoke run, `internalAuth` secret + rate-limit behavior, and a WCAG 3:1
+  contrast test locking the whole accent palette on both themes. Coverage
+  reporting via `npm run test:coverage` (v8, text+lcov).
+- **Bundle analyzer**: `npm run analyze` (@next/bundle-analyzer).
+- CI: production-dependency audit step
+  (`npm audit --omit=dev --audit-level=high`).
+
+### Changed
+
+- **Sync pipeline resilience**: new `garmin/retry.py` with exponential
+  backoff (60s flat on 429; 2s/8s/32s on 5xx and network errors) replacing
+  the duplicated single-shot 429 helpers; the whole per-activity body is now
+  isolated so one corrupt FIT or API error can no longer abort the run and
+  lose the batch. `reprocess.py` gains `--dry-run`.
+- **Activity list**: offscreen cards skip layout/paint via
+  `content-visibility: auto` (native CSS virtualization, no library).
+- README: security model clarified (`NEXT_PUBLIC_OWNER_EMAIL` is a UI gate;
+  Firestore rules are the enforcement), new "Tests & quality" section.
+
+### Fixed
+
+- React Testing Library cleanup never ran between tests (vitest globals are
+  disabled), leaking renders across test cases.
+- `__pycache__` artifacts were not gitignored.
+
 ## [3.1] - 2026-07-04
 
 ### Added
