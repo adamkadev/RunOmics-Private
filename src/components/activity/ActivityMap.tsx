@@ -237,7 +237,12 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
       <div ref={containerRef} role="img" aria-label={t.activity.map.routeMap} className="h-full w-full" />
 
       {avgTemperature != null && (
-        <div className="glass-map-chip absolute left-2 top-2 z-10 flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold">
+        <div
+          className={cn(
+            'glass-map-chip absolute left-2 z-10 flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold',
+            isFullscreen ? 'top-[max(env(safe-area-inset-top),8px)]' : 'top-2'
+          )}
+        >
           <Thermometer size={12} className={temperatureIconColor(avgTemperature)} />
           {avgTemperature}{t.units.celsius}
         </div>
@@ -245,7 +250,10 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
 
       <button
         onClick={toggleFullscreen}
-        className="glass-map-chip absolute right-2 top-2 z-10 flex h-11 w-11 items-center justify-center transition-opacity active:opacity-70"
+        className={cn(
+          'glass-map-chip absolute right-2 z-10 flex h-11 w-11 items-center justify-center transition-opacity active:opacity-70',
+          isFullscreen ? 'top-[max(env(safe-area-inset-top),8px)]' : 'top-2'
+        )}
         aria-label={isFullscreen ? t.activity.map.exitFullscreen : t.activity.map.fullscreen}
       >
         {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
