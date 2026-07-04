@@ -63,6 +63,16 @@ python scripts/get_secret.py
 
 This will prompt for your Garmin Connect email and password, then print a `GARMIN_SECRET` string. Copy it - you'll need it as an environment variable.
 
+> **Note on garth's deprecation**: garth is [no longer maintained](https://github.com/matin/garth/discussions/222)
+> because Garmin keeps breaking its *login* flow. This project only uses that flow
+> here, once, to mint the token - `sync.py` merely loads and refreshes the existing
+> OAuth token, which continues to work (the underlying OAuth1 token lasts ~1 year).
+> No migration is planned while this holds: the community alternatives are
+> browser-automation or TLS-impersonation workarounds in an ongoing cat-and-mouse
+> game, i.e. no more future-proof than staying put. If `get_secret.py` stops
+> working when your token expires, check that discussion for the current
+> workaround before switching libraries.
+
 ### 3. Configure environment variables
 
 Create a `.env.local` file at the root:
