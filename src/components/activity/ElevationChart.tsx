@@ -11,6 +11,7 @@ import {
 } from 'recharts'
 import { CHART_COLORS } from '@/lib/colors'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { SingleSeriesTooltip } from '@/components/ui/ChartTooltip'
 import { t } from '@/i18n'
 
 interface Props {
@@ -70,6 +71,8 @@ export const ElevationChart = memo(function ElevationChart({ samples, distanceKm
           margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
           onMouseMove={handleMove}
           onMouseLeave={() => onHoverFraction?.(null)}
+          syncId="activity-charts"
+          syncMethod="value"
         >
           <defs>
             <linearGradient id="elevGradient" x1="0" y1="0" x2="0" y2="1">
@@ -98,14 +101,14 @@ export const ElevationChart = memo(function ElevationChart({ samples, distanceKm
             tickFormatter={(v: number) => `${v}m`}
           />
           <Tooltip
-            contentStyle={{
-              background: 'var(--tooltip-bg, #fff)',
-              border: '1px solid #e5e7eb',
-              borderRadius: 8,
-              fontSize: 12,
-            }}
-            formatter={(v) => [`${v} ${t.units.m}`, t.activity.charts.altitude]}
-            labelFormatter={(v) => `${Number(v).toFixed(1)} km`}
+            content={
+              <SingleSeriesTooltip
+                dataKey="alt"
+                color={CHART_COLORS.elevation}
+                name={t.activity.charts.altitude}
+                formatValue={(v) => `${v} ${t.units.m}`}
+              />
+            }
           />
           <Area
             type="monotone"

@@ -49,7 +49,7 @@ export function ThemeCard({ design, accent, theme, selected, accentHex, onClick,
       <div
         style={{
           width: THUMB_SIZE, height: THUMB_SIZE, borderRadius: 18, overflow: 'hidden', position: 'relative',
-          border: selected ? `2px solid ${accentHex}cc` : '2px solid rgba(255,255,255,0.12)',
+          border: selected ? `2px solid ${accentHex}cc` : '2px solid color-mix(in srgb, var(--ro-text) 12%, transparent)',
           boxShadow: selected ? `0 0 0 2px ${accentHex}55, 0 4px 12px rgba(0,0,0,0.45)` : '0 4px 12px rgba(0,0,0,0.45)',
           transition: 'border 0.18s, box-shadow 0.18s',
         }}
@@ -79,7 +79,7 @@ export function ThemeDivider({ label }: { label: string }) {
   return (
     <div className="flex shrink-0 flex-col items-center gap-1.5 px-0.5" style={{ width: 44 }}>
       <div className="flex items-center justify-center" style={{ height: THUMB_SIZE }}>
-        <div style={{ width: 1, height: '100%', background: 'rgba(255,255,255,0.14)' }} />
+        <div style={{ width: 1, height: '100%', background: 'color-mix(in srgb, var(--ro-text) 14%, transparent)' }} />
       </div>
       <span className="text-center text-[9px] font-semibold leading-tight tracking-wide text-muted-foreground/50">
         {label}

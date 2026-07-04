@@ -234,7 +234,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
 
       <button
         onClick={toggleFullscreen}
-        className="glass-map-chip absolute right-2 top-2 z-10 flex h-[30px] w-[30px] items-center justify-center transition-opacity active:opacity-70"
+        className="glass-map-chip absolute right-2 top-2 z-10 flex h-11 w-11 items-center justify-center transition-opacity active:opacity-70"
         aria-label={isFullscreen ? t.activity.map.exitFullscreen : t.activity.map.fullscreen}
       >
         {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}

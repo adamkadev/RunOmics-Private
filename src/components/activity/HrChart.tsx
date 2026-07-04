@@ -11,6 +11,7 @@ import {
 } from 'recharts'
 import { CHART_COLORS } from '@/lib/colors'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { SingleSeriesTooltip } from '@/components/ui/ChartTooltip'
 import type { HrZone } from '@/domain/activity/types'
 import { t } from '@/i18n'
 
@@ -80,6 +81,8 @@ export const HrChart = memo(function HrChart({ samples, avgHr, distanceKm, onHov
           margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
           onMouseMove={handleMove}
           onMouseLeave={() => onHoverFraction?.(null)}
+          syncId="activity-charts"
+          syncMethod="value"
         >
           <defs>
             <linearGradient id="hrGradient" x1="0" y1="0" x2="0" y2="1">
@@ -111,14 +114,14 @@ export const HrChart = memo(function HrChart({ samples, avgHr, distanceKm, onHov
             width={40}
           />
           <Tooltip
-            contentStyle={{
-              background: 'var(--tooltip-bg, #fff)',
-              border: '1px solid #e5e7eb',
-              borderRadius: 8,
-              fontSize: 12,
-            }}
-            formatter={(v) => [`${v} ${t.units.bpm}`, t.activity.charts.hr]}
-            labelFormatter={(v) => `${Number(v).toFixed(1)} km`}
+            content={
+              <SingleSeriesTooltip
+                dataKey="bpm"
+                color={CHART_COLORS.hr}
+                name={t.activity.charts.hr}
+                formatValue={(v) => `${v} ${t.units.bpm}`}
+              />
+            }
           />
           {/* Base area - dimmed when filtering by zone */}
           <Area

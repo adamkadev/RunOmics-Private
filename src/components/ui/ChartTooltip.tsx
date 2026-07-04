@@ -32,3 +32,40 @@ export function TooltipRow({
     </p>
   )
 }
+
+interface RechartsTooltipPayloadEntry {
+  dataKey: string
+  value: number
+}
+
+/**
+ * Recharts tooltip content for a chart with a single plotted series (e.g. the
+ * activity detail's HR/pace/cadence/elevation charts). Looks up `dataKey` in
+ * the payload so it renders nothing while the area is dimmed/absent (e.g.
+ * HR zone filtering).
+ */
+export function SingleSeriesTooltip({
+  active,
+  payload,
+  label,
+  dataKey,
+  color,
+  name,
+  formatValue,
+}: {
+  active?: boolean
+  payload?: RechartsTooltipPayloadEntry[]
+  label?: number
+  dataKey: string
+  color: string
+  name: string
+  formatValue: (value: number) => string
+}) {
+  const value = payload?.find((p) => p.dataKey === dataKey)?.value
+  if (!active || value == null || label == null) return null
+  return (
+    <TooltipCard label={`${label.toFixed(1)} km`}>
+      <TooltipRow color={color} name={name} value={formatValue(value)} />
+    </TooltipCard>
+  )
+}
