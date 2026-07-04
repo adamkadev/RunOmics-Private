@@ -154,22 +154,19 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
           />
         </div>
 
-        {/* Header */}
-        <div className="flex shrink-0 items-center justify-between px-5 py-3.5">
-          <h2 style={{ fontSize: 15, fontWeight: 800, color: 'var(--ro-text)', letterSpacing: '-0.01em' }}>
-            {t.activity.share}
-          </h2>
+        {/* Header: close button only, no title label */}
+        <div className="flex shrink-0 items-center justify-end px-4 pt-2 pb-1">
           <button
             onClick={close}
             aria-label={t.activity.shareCard.close}
             style={{
-              width: 28, height: 28, borderRadius: '50%',
+              width: 34, height: 34, borderRadius: '50%',
               background: 'color-mix(in srgb, var(--ro-text) 10%, transparent)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: 'var(--ro-text-2)', border: 'none', cursor: 'pointer',
             }}
           >
-            <X size={14} strokeWidth={2.5} />
+            <X size={17} strokeWidth={2.5} />
           </button>
         </div>
 
@@ -179,7 +176,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
           {/* Live preview */}
           <div style={{ display: 'flex', justifyContent: 'center', padding: '0 0 16px' }}>
             <div style={{
-              borderRadius: 18, overflow: 'hidden', width: 158, height: 342,
+              borderRadius: 18, overflow: 'hidden', width: 176, height: 380,
               boxShadow: '0 8px 32px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.35)',
               flexShrink: 0,
             }}>
