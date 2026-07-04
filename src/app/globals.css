@@ -45,9 +45,14 @@
   to   { opacity: 1; transform: none;              }
 }
 
+/* margin-top (not transform): PageTransition wraps every page, including
+   the activity map's `fixed inset-0` fullscreen overlay. A transform here
+   -- even one whose animation has finished -- makes this div a containing
+   block for fixed-position descendants in some browsers, so the "fullscreen"
+   map would size/center against this page wrapper instead of the viewport. */
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: none;             }
+  from { opacity: 0; margin-top: 8px; }
+  to   { opacity: 1; margin-top: 0;   }
 }
 
 @keyframes fade-in {
