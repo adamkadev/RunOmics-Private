@@ -88,6 +88,10 @@ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
 NEXT_PUBLIC_FIREBASE_VAPID_KEY=...
 
 # Google account allowed to sign in and edit notes/settings (everyone else is read-only)
+# NOTE: this only gates the UI. The actual write authorization is enforced by
+# the Firestore security rules (firestore.rules at the repo root) - keep the
+# email there in sync with this one, and deploy rule changes with
+# `firebase deploy --only firestore:rules`.
 NEXT_PUBLIC_OWNER_EMAIL=you@example.com
 
 # Shared secret for the internal cron endpoints (PR/shoe-wear/overreaching checks, weekly reminder)
