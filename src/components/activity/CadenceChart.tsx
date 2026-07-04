@@ -11,6 +11,7 @@ import {
 } from 'recharts'
 import { CHART_COLORS } from '@/lib/colors'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { SingleSeriesTooltip } from '@/components/ui/ChartTooltip'
 import { t } from '@/i18n'
 
 interface Props {
@@ -31,6 +32,10 @@ const CADENCE_DOMAIN: [number, number] = [90, 200]
 
 function formatCadenceTick(v: number): string {
   return v === CADENCE_CAP ? '<100' : String(v)
+}
+
+function formatCadenceTooltip(spm: number): string {
+  return spm <= CADENCE_CAP ? `<100 ${t.units.spm}` : `${spm} ${t.units.spm}`
 }
 
 export const CadenceChart = memo(function CadenceChart({ samples, avgCadence, distanceKm, onHoverFraction }: Props) {
@@ -64,6 +69,8 @@ export const CadenceChart = memo(function CadenceChart({ samples, avgCadence, di
           margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
           onMouseMove={handleMove}
           onMouseLeave={() => onHoverFraction?.(null)}
+          syncId="activity-charts"
+          syncMethod="value"
         >
           <defs>
             <linearGradient id="cadenceGradient" x1="0" y1="0" x2="0" y2="1">
@@ -92,18 +99,14 @@ export const CadenceChart = memo(function CadenceChart({ samples, avgCadence, di
             tickFormatter={formatCadenceTick}
           />
           <Tooltip
-            contentStyle={{
-              background: 'var(--tooltip-bg, #fff)',
-              border: '1px solid #e5e7eb',
-              borderRadius: 8,
-              fontSize: 12,
-            }}
-            formatter={(v) => {
-              const spm = Number(v)
-              const label = spm <= CADENCE_CAP ? `<100 ${t.units.spm}` : `${spm} ${t.units.spm}`
-              return [label, t.activity.charts.cadence]
-            }}
-            labelFormatter={(v) => `${Number(v).toFixed(1)} km`}
+            content={
+              <SingleSeriesTooltip
+                dataKey="spm"
+                color={CHART_COLORS.cadence}
+                name={t.activity.charts.cadence}
+                formatValue={formatCadenceTooltip}
+              />
+            }
           />
           <Area
             type="monotone"

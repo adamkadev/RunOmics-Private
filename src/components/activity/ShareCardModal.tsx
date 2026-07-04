@@ -266,10 +266,10 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
         style={{
           ...sheetStyle,
           borderRadius: '28px 28px 0 0',
-          background: 'rgba(8,18,13,0.92)',
+          background: 'var(--glass-bg-sheet)',
           backdropFilter: 'blur(40px)',
           WebkitBackdropFilter: 'blur(40px)',
-          borderTop: '1px solid rgba(255,255,255,0.12)',
+          borderTop: '1px solid var(--glass-border)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -278,13 +278,13 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
           <span
             className="rounded-full"
             aria-hidden="true"
-            style={{ width: 36, height: 4, background: 'rgba(255,255,255,0.25)' }}
+            style={{ width: 36, height: 4, background: 'color-mix(in srgb, var(--ro-text) 25%, transparent)' }}
           />
         </div>
 
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between px-5 py-3.5">
-          <h2 style={{ fontSize: 15, fontWeight: 800, color: 'rgba(255,255,255,0.92)', letterSpacing: '-0.01em' }}>
+          <h2 style={{ fontSize: 15, fontWeight: 800, color: 'var(--ro-text)', letterSpacing: '-0.01em' }}>
             {t.activity.share}
           </h2>
           <button
@@ -292,9 +292,9 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             aria-label={t.activity.shareCard.close}
             style={{
               width: 28, height: 28, borderRadius: '50%',
-              background: 'rgba(255,255,255,0.1)',
+              background: 'color-mix(in srgb, var(--ro-text) 10%, transparent)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer',
+              color: 'var(--ro-text-2)', border: 'none', cursor: 'pointer',
             }}
           >
             <X size={14} strokeWidth={2.5} />
@@ -342,7 +342,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
           </div>
 
           {/* Divider */}
-          <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '0 16px' }} />
+          <div style={{ height: 1, background: 'var(--border)', margin: '0 16px' }} />
 
           {/* Accent row */}
           <div
@@ -350,10 +350,10 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             style={{ padding: '10px 16px' }}
           >
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#f0faf5' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ro-text)' }}>
                 {t.activity.shareCard.accentTitle}
               </div>
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>
+              <div style={{ fontSize: 10, color: 'var(--ro-text-3)' }}>
                 {t.activity.shareCard.accentSubtitle}
               </div>
             </div>
@@ -369,9 +369,9 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
                     style={{
                       width: 18, height: 18, borderRadius: '50%',
                       background: ACCENT_SWATCHES[id],
-                      border: selected ? 'none' : '1.5px solid rgba(255,255,255,0.2)',
+                      border: selected ? 'none' : '1.5px solid color-mix(in srgb, var(--ro-text) 20%, transparent)',
                       boxShadow: selected
-                        ? `0 0 0 2.5px rgba(255,255,255,0.85), 0 0 0 4.5px ${ACCENT_SWATCHES[id]}40`
+                        ? `0 0 0 2.5px var(--background), 0 0 0 4.5px ${ACCENT_SWATCHES[id]}40`
                         : 'none',
                       cursor: 'pointer',
                       flexShrink: 0,
@@ -388,9 +388,9 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
                     background: shareAccent === 'custom'
                       ? customHex
                       : 'conic-gradient(red, #ff0, lime, cyan, blue, magenta, red)',
-                    border: shareAccent === 'custom' ? 'none' : '1.5px solid rgba(255,255,255,0.2)',
+                    border: shareAccent === 'custom' ? 'none' : '1.5px solid color-mix(in srgb, var(--ro-text) 20%, transparent)',
                     boxShadow: shareAccent === 'custom'
-                      ? `0 0 0 2.5px rgba(255,255,255,0.85), 0 0 0 4.5px ${customHex}40`
+                      ? `0 0 0 2.5px var(--background), 0 0 0 4.5px ${customHex}40`
                       : 'none',
                   }}
                 />
@@ -406,15 +406,15 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
           </div>
 
           {/* Divider */}
-          <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '0 16px' }} />
+          <div style={{ height: 1, background: 'var(--border)', margin: '0 16px' }} />
 
           {/* Toggle: Light mode */}
           <div className="flex items-center justify-between" style={{ padding: '11px 16px' }}>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#f0faf5' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ro-text)' }}>
                 {t.activity.shareCard.lightModeToggle}
               </div>
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>
+              <div style={{ fontSize: 10, color: 'var(--ro-text-3)' }}>
                 {t.activity.shareCard.lightModeSubtitle}
               </div>
             </div>
@@ -424,9 +424,9 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
           {/* Memory: pick photo row */}
           {isMemory && (
             <>
-              <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '0 16px' }} />
+              <div style={{ height: 1, background: 'var(--border)', margin: '0 16px' }} />
               <div className="flex items-center justify-between" style={{ padding: '11px 16px' }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#f0faf5' }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ro-text)' }}>
                   {t.activity.shareCard.galleryPlaceholder}
                 </span>
                 <button
@@ -443,7 +443,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
           )}
 
           {/* Divider */}
-          <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '0 16px' }} />
+          <div style={{ height: 1, background: 'var(--border)', margin: '0 16px' }} />
         </div>
 
         {/* Action row */}
@@ -472,8 +472,8 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             <button
               onClick={handleSave}
               style={{
-                height: 46, borderRadius: 14, border: '1px solid rgba(255,255,255,0.12)',
-                background: 'rgba(255,255,255,0.09)', color: 'rgba(255,255,255,0.88)',
+                height: 46, borderRadius: 14, border: '1px solid var(--glass-border)',
+                background: 'color-mix(in srgb, var(--ro-text) 9%, transparent)', color: 'var(--ro-text-2)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                 fontSize: 13, fontWeight: 700, cursor: 'pointer',
               }}
@@ -487,9 +487,9 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             <button
               onClick={handleCopy}
               style={{
-                height: 46, borderRadius: 14, border: '1px solid rgba(255,255,255,0.12)',
-                background: 'rgba(255,255,255,0.09)',
-                color: copyState === 'copied' ? shareAccentHex : 'rgba(255,255,255,0.88)',
+                height: 46, borderRadius: 14, border: '1px solid var(--glass-border)',
+                background: 'color-mix(in srgb, var(--ro-text) 9%, transparent)',
+                color: copyState === 'copied' ? shareAccentHex : 'var(--ro-text-2)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                 fontSize: 13, fontWeight: 700, cursor: 'pointer',
                 transition: 'color 0.2s',

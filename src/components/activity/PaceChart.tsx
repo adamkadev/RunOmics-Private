@@ -12,6 +12,7 @@ import {
 import { CHART_COLORS } from '@/lib/colors'
 import { formatClock } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { SingleSeriesTooltip } from '@/components/ui/ChartTooltip'
 import { t } from '@/i18n'
 
 interface Props {
@@ -26,6 +27,10 @@ const PACE_TICKS = [480, 420, 360, 300, 240] // 8:00, 7:00, 6:00, 5:00, 4:00
 
 function formatPaceTick(v: number): string {
   return v === PACE_CAP ? '>8:15' : formatClock(v)
+}
+
+function formatPaceTooltip(sec: number): string {
+  return sec >= PACE_CAP ? `>8:15 /${t.units.km}` : `${formatClock(sec)}/${t.units.km}`
 }
 
 function kmTicks(distanceKm: number): number[] {
@@ -67,6 +72,8 @@ export const PaceChart = memo(function PaceChart({ samples, avgPaceSecPerKm, dis
           margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
           onMouseMove={handleMove}
           onMouseLeave={() => onHoverFraction?.(null)}
+          syncId="activity-charts"
+          syncMethod="value"
         >
           <defs>
             <linearGradient id="paceGradient" x1="0" y1="0" x2="0" y2="1">
@@ -96,18 +103,14 @@ export const PaceChart = memo(function PaceChart({ samples, avgPaceSecPerKm, dis
             tickFormatter={formatPaceTick}
           />
           <Tooltip
-            contentStyle={{
-              background: 'var(--tooltip-bg, #fff)',
-              border: '1px solid #e5e7eb',
-              borderRadius: 8,
-              fontSize: 12,
-            }}
-            formatter={(v) => {
-              const sec = Number(v)
-              const label = sec >= PACE_CAP ? `>8:15 /${t.units.km}` : `${formatClock(sec)}/${t.units.km}`
-              return [label, t.activity.charts.pace]
-            }}
-            labelFormatter={(v) => `${Number(v).toFixed(1)} km`}
+            content={
+              <SingleSeriesTooltip
+                dataKey="pace"
+                color={CHART_COLORS.pace}
+                name={t.activity.charts.pace}
+                formatValue={formatPaceTooltip}
+              />
+            }
           />
           <Area
             type="monotone"
