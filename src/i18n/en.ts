@@ -66,6 +66,11 @@ export const en = {
     close: 'Close',
   },
 
+  pwa: {
+    updateAvailable: 'A new version of RunOmics is ready.',
+    refresh: 'Refresh',
+  },
+
   pages: {
     dashboard: {
       title: 'Dashboard',
@@ -189,6 +194,11 @@ export const en = {
     dataExport: {
       csv: 'Export activities (.csv)',
       exporting: 'Exporting...',
+    },
+    offlineCache: {
+      clear: 'Clear offline cache',
+      cleared: 'Offline cache cleared.',
+      failed: 'Could not clear the offline cache.',
     },
     notifications: {
       title: 'Push notifications',

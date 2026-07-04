@@ -67,6 +67,11 @@ export const fr = {
     close: 'Fermer',
   },
 
+  pwa: {
+    updateAvailable: 'Une nouvelle version de RunOmics est prête.',
+    refresh: 'Actualiser',
+  },
+
   pages: {
     dashboard: {
       title: 'Tableau de bord',
@@ -192,6 +197,11 @@ export const fr = {
     dataExport: {
       csv: 'Exporter les activités (.csv)',
       exporting: 'Export en cours...',
+    },
+    offlineCache: {
+      clear: 'Vider le cache hors ligne',
+      cleared: 'Cache hors ligne vidé.',
+      failed: 'Impossible de vider le cache hors ligne.',
     },
     notifications: {
       title: 'Notifications push',

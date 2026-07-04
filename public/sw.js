@@ -28,6 +28,12 @@ self.addEventListener('install', (event) => {
   )
 })
 
+// The update banner in ServiceWorkerRegistration asks the waiting worker to
+// take over immediately instead of waiting for every tab to close.
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting()
+})
+
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches

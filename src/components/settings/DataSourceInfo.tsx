@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Activity, Download } from 'lucide-react'
+import { Activity, Download, Trash2 } from 'lucide-react'
 import { t } from '@/i18n'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { Toast, useToast } from '@/components/ui/Toast'
@@ -20,6 +20,18 @@ export function DataSourceInfo() {
   const [loading, setLoading] = useState(false)
   const { toast, showToast } = useToast()
   const s = t.settings
+
+  // Escape hatch for stale offline content: drop every SW cache. The service
+  // worker repopulates them on the next loads.
+  async function handleClearCache() {
+    try {
+      const keys = await caches.keys()
+      await Promise.all(keys.map((key) => caches.delete(key)))
+      showToast(s.offlineCache.cleared, true)
+    } catch {
+      showToast(s.offlineCache.failed, false)
+    }
+  }
 
   async function handleExport() {
     setLoading(true)
@@ -55,6 +67,15 @@ export function DataSourceInfo() {
       >
         <Download size={16} />
         {loading ? s.dataExport.exporting : s.dataExport.csv}
+      </button>
+
+      <button
+        type="button"
+        onClick={handleClearCache}
+        className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-foreground/10 bg-foreground/[0.04] px-4 py-2.5 text-xs font-medium text-foreground transition-colors hover:bg-foreground/[0.08]"
+      >
+        <Trash2 size={16} />
+        {s.offlineCache.clear}
       </button>
 
       <Toast toast={toast} />
