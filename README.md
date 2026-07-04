@@ -223,6 +223,54 @@ audit (`npm audit --omit=dev --audit-level=high`) and the build on every push/PR
 The improvement backlog lives in
 [`docs/product-improvement-todolist.md`](docs/product-improvement-todolist.md).
 
+### End-to-end tests
+
+Playwright drives a real production build (`next build && next start`) against a
+**dedicated Firebase project** (`runomics-dev`), never the real one - so goals/pbs/
+athlete reads/writes during e2e can't touch your actual data. Activities themselves
+come from the real, committed `public/data/activities/*.json` (read-only, no risk).
+
+**One-time setup** (any Google account, free Spark plan is enough):
+
+1. Create a Firebase project (e.g. `runomics-dev`) with Firestore enabled, and
+   register a web app - copy its config into `.env.e2e` (already done in this repo
+   if you're picking up an existing setup; the web config is not a secret, it ships
+   in every browser bundle).
+2. Deploy the same `firestore.rules` from this repo to that project (swap the owner
+   email if you want to test the write-gated paths as yourself):
+   ```bash
+   firebase deploy --only firestore:rules --project runomics-dev
+   ```
+3. Generate a **service account key** for that project (Firebase console → Project
+   settings → Service accounts → Generate new private key) and export it locally:
+   ```bash
+   export FIREBASE_PROJECT_ID=runomics-dev
+   export FIREBASE_CLIENT_EMAIL=firebase-adminsdk-...@runomics-dev.iam.gserviceaccount.com
+   export FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+   ```
+   In GitHub Actions, add these as repo secrets named `DEV_FIREBASE_PROJECT_ID`,
+   `DEV_FIREBASE_CLIENT_EMAIL`, `DEV_FIREBASE_PRIVATE_KEY` (`.github/workflows/e2e.yml`
+   skips the job entirely if they're absent, so forks/external PRs don't fail).
+
+**Running:**
+
+```bash
+npm run e2e:seed    # upserts e2e/fixtures/{goals,pbs,athlete}.json into runomics-dev
+npm run test:e2e    # builds, starts, and runs the Playwright specs in e2e/
+```
+
+`e2e/fixtures/*.json` are committed (non-secret, generic values) and seeded via
+`e2e/seed.mjs` - a small script separate from `scripts/seed_firestore.js` so e2e
+runs can never accidentally point at your real prod data. `.env.e2e` carries the
+non-secret client config; put the three `FIREBASE_*` Admin vars above in
+`.env.e2e.local` (gitignored) for local runs instead of exporting them each time.
+
+The first e2e batch covers read-only golden paths (dashboard, activities list →
+detail, calendar, records, goals) rendered from real activity data + the seeded
+Firestore fixtures. Sign-in-gated flows (Settings, activity notes editing) aren't
+covered yet - Google's OAuth popup isn't something Playwright can drive without a
+test-only auth bypass, which is its own follow-up.
+
 ### Monitoring
 
 `GET /api/internal/health` (authenticated with `x-internal-secret`) reports the

@@ -13,6 +13,9 @@ export default defineConfig({
       jsdom: { url: 'http://localhost' },
     },
     setupFiles: ['./vitest.setup.ts'],
+    // e2e/*.spec.ts are Playwright tests (own runner, own `test`/`expect`) -
+    // Vitest's default include pattern would otherwise pick them up too.
+    exclude: ['**/node_modules/**', '**/dist/**', 'e2e/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],

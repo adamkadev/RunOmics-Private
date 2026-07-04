@@ -77,13 +77,16 @@ priorité, 🟡 moyenne, 🟢 confort/nice-to-have).
       ShareCardModal récemment refactorisé). Ajouter React Testing Library sur
       les composants les plus critiques : `ActivityNotes`, `SettingsClient`
       (contrôle d'accès), `ShareCardModal`, `useFocusTrap`. *(✅ première couche posée en 3.2 : `useFocusTrap`, `ActivityNotes` (gate propriétaire), `ErrorFallback` ; `SettingsClient`/`ShareCardModal` restent à couvrir.)*
-- [ ] 🟡 **Aucun test end-to-end** (Playwright déjà pré-installé dans
+- [x] 🟡 **Aucun test end-to-end** (Playwright déjà pré-installé dans
       l'environnement d'exécution mais pas utilisé dans le projet). Un parcours
       e2e minimal (dashboard → activité → partage, calendrier → séance planifiée)
       sécuriserait les refontes visuelles fréquentes (déjà 2 redesigns majeurs
-      en v2/v3). *(⏸ non fait en 3.2 : le serveur exige les credentials
-      Firebase Admin pour prérendre les pages, indisponibles hors prod — à
-      monter avec un mode de données mockées ou les secrets CI.)*
+      en v2/v3). *(✅ fait en 3.3 : Playwright branché sur un projet Firebase
+      dédié `runomics-dev` (pas de mock), fixtures versionnées + script de seed
+      idempotent, job CI dédié gated sur les secrets `DEV_FIREBASE_*`. Premier
+      lot = parcours lecture seule (dashboard, activités → détail, calendrier,
+      records, goals) ; les flux gated par connexion (Settings, notes) restent
+      à couvrir, nécessitent un bypass d'auth dédié aux tests.)*
 - [x] 🟡 Pas de rapport de couverture configuré dans `vitest.config.ts`
       (`test.coverage`). Ajouter `@vitest/coverage-v8` et un seuil minimal en CI. *(✅ fait en 3.2 : `npm run test:coverage` (v8, text+lcov), sans seuil bloquant pour l'instant.)*
 - [ ] 🟢 Scripts Python (`scripts/`) explicitement exclus du lint ESLint (normal,

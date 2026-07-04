@@ -2,6 +2,35 @@
 
 All notable changes to this project are documented in this file.
 
+## [3.3] - 2026-07-04
+
+### Added
+
+- **End-to-end tests (Playwright)**: first e2e batch covering the read-only
+  golden paths - dashboard, activities list → detail, calendar, records,
+  goals. Runs against a real production build (`next build && next start`)
+  and a **dedicated `runomics-dev` Firebase project**, never the real one,
+  so Firestore reads/writes during tests can't touch actual data. Activities
+  come from the real, committed activity JSON (read-only).
+  - `e2e/seed.mjs` + `e2e/fixtures/{goals,pbs,athlete}.json`: idempotent,
+    version-controlled fixtures seeded into `runomics-dev` before each run -
+    kept fully separate from `scripts/seed_firestore.js` (which targets the
+    real project from uncommitted local JSON).
+  - `.env.e2e` (committed, non-secret client Firebase config) +
+    `.env.e2e.local` (gitignored, Admin credentials) for local runs.
+  - `npm run e2e:seed` / `npm run test:e2e`; new
+    `.github/workflows/e2e.yml` job, gated on `DEV_FIREBASE_*` repo secrets
+    so forks/external PRs skip it instead of failing.
+  - README > "End-to-end tests" documents the one-time `runomics-dev`
+    project setup (Firestore rules deploy, service account key, GitHub
+    secrets).
+
+### Fixed
+
+- Vitest's default test file pattern was also matching Playwright's
+  `e2e/*.spec.ts`, which use an incompatible `test`/`expect` - excluded the
+  `e2e/` directory from the Vitest config.
+
 ## [3.2] - 2026-07-04
 
 Hardening pass driven by the audit in `docs/product-improvement-todolist.md`:

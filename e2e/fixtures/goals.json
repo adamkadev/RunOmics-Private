@@ -1,0 +1,22 @@
+[
+  {
+    "year": 2025,
+    "annualDistanceKm": 1200,
+    "targets": [
+      { "distance": "5K", "targetSeconds": 1260 },
+      { "distance": "10K", "targetSeconds": 2580 },
+      { "distance": "Half-Marathon", "targetSeconds": 6000 },
+      { "distance": "Marathon", "targetSeconds": null }
+    ]
+  },
+  {
+    "year": 2026,
+    "annualDistanceKm": 1500,
+    "targets": [
+      { "distance": "5K", "targetSeconds": 1200 },
+      { "distance": "10K", "targetSeconds": 2460 },
+      { "distance": "Half-Marathon", "targetSeconds": 5760 },
+      { "distance": "Marathon", "targetSeconds": 12600 }
+    ]
+  }
+]

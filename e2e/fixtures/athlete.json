@@ -1,0 +1,7 @@
+{
+  "displayName": "E2E Runner",
+  "lthrBpm": 172,
+  "thresholdPaceSecPerKm": 255,
+  "vmaKmh": 17.5,
+  "hrZoneBoundsBpm": [118, 142, 158, 168]
+}

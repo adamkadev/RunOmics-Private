@@ -1,0 +1,56 @@
+name: E2E
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    env:
+      HAS_DEV_FIREBASE_SECRETS: ${{ secrets.DEV_FIREBASE_PROJECT_ID != '' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        # Forks/external PRs don't have access to the runomics-dev secrets
+        # below, so skip the whole job for them rather than fail (same
+        # pattern as the Firebase-gated build step in ci.yml).
+        if: env.HAS_DEV_FIREBASE_SECRETS == 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Seed runomics-dev fixtures
+        if: env.HAS_DEV_FIREBASE_SECRETS == 'true'
+        env:
+          FIREBASE_PROJECT_ID: ${{ secrets.DEV_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.DEV_FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.DEV_FIREBASE_PRIVATE_KEY }}
+        run: npm run e2e:seed
+
+      - name: Run Playwright tests
+        if: env.HAS_DEV_FIREBASE_SECRETS == 'true'
+        env:
+          FIREBASE_PROJECT_ID: ${{ secrets.DEV_FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.DEV_FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.DEV_FIREBASE_PRIVATE_KEY }}
+        run: npm run test:e2e
+
+      - name: Upload Playwright report
+        if: always() && env.HAS_DEV_FIREBASE_SECRETS == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14

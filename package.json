@@ -1,6 +1,6 @@
 {
   "name": "runomics",
-  "version": "3.2",
+  "version": "3.3",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -9,7 +9,11 @@
     "lint": "eslint",
     "test": "vitest run",
     "analyze": "ANALYZE=true next build",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "e2e:build": "dotenv -e .env.e2e -- next build",
+    "e2e:start": "dotenv -e .env.e2e -- next start",
+    "e2e:seed": "node e2e/seed.mjs",
+    "test:e2e": "dotenv -e .env.e2e -- playwright test"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
@@ -29,6 +33,7 @@
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^16.2.10",
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -39,6 +44,7 @@
     "@vitejs/plugin-react": "^6.0.3",
     "@vitest/coverage-v8": "^4.1.9",
     "axe-core": "^4.12.1",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "jsdom": "^29.1.1",
