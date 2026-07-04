@@ -6,6 +6,15 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
+- **Offline PWA shell**: new `public/sw.js` service worker - hashed build
+  assets and icons are cached cache-first, pages/RSC payloads/data JSON
+  network-first with cache fallback, so previously seen pages (and the
+  dashboard as a fallback for unvisited deep links) open without a network.
+  Registered in production only.
+- **Modal accessibility**: new `useFocusTrap` hook applied to the calendar
+  bottom sheets and the share modal - the rest of the page is `inert` while
+  a dialog is open, Tab/Shift+Tab cycle inside it, and focus returns to the
+  opener on close. The share modal also gains `role="dialog"`/`aria-modal`.
 - **French locale**: full `fr.ts` translation (running vocabulary: allure, FC,
   dénivelé D+, sortie longue, affûtage, RP…), type-checked against the English
   shape via `satisfies Strings`. Activated at build time with
@@ -21,6 +30,10 @@ All notable changes to this project are documented in this file.
 - **Dashboard highlights**: the "PR · …" record chip and the race "D-n"
   countdown were hardcoded English strings; both now come from the i18n
   catalog (`RP · …` / `J-n` in French).
+- **Push notifications**: enabling push registered `/firebase-messaging-sw.js`,
+  which does not exist in `public/` - the registration 404'd. FCM now binds to
+  the app service worker, which displays push payloads itself.
+- `<html lang>` was hardcoded to `en`; it now follows the active locale.
 
 ## [3.0] - 2026-07-04
 
@@ -88,10 +101,9 @@ improvements picked by impact/effort.
 ### v3 backlog (not implemented, by descending impact/effort ratio)
 
 - **Offline PWA shell**: cache the app shell + latest activities JSON with a
-  service worker so the dashboard opens offline (currently only the Firebase
-  messaging SW is registered).
+  service worker so the dashboard opens offline. *(Shipped in 3.1.)*
 - **Focus trap + `inert` background** for bottom sheets and the share modal
-  (keyboard focus can currently escape behind the scrim).
+  (keyboard focus can currently escape behind the scrim). *(Shipped in 3.1.)*
 - **ShareCardModal decomposition** (~515 lines: template carousel, theme
   toggle, canvas drawing orchestration in one component).
 - **French locale**: the i18n layer is ready (`Strings` type derived from

@@ -9,6 +9,7 @@ import { SHARE_DESIGNS, type ShareDesign, type ThemeMode } from '@/lib/shareCard
 import { renderShareCard, shareCardFileName, loadImage, hexToRgb } from '@/lib/shareCard'
 import { ACCENT_SWATCHES, ACCENT_IDS, DEFAULT_ACCENT, isAccentId, type AccentId } from '@/lib/accent'
 import { useDragToDismiss } from '@/lib/useDragToDismiss'
+import { useFocusTrap } from '@/lib/useFocusTrap'
 import { t } from '@/i18n'
 import { ThemeCard, ThemeDivider } from '@/components/activity/ShareCardThumbnails'
 
@@ -104,6 +105,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   const colorInputRef = useRef<HTMLInputElement>(null)
   const photoUrlRef = useRef<string | null>(null)
   const { close, handleProps, sheetStyle } = useDragToDismiss(onClose)
+  const trapRef = useFocusTrap<HTMLDivElement>()
 
   // Persist preferences
   useEffect(() => { try { localStorage.setItem('ro_shareTheme', selectedDesign) } catch { /* noop */ } }, [selectedDesign])
@@ -259,9 +261,12 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center sm:p-4"
+      role="dialog"
+      aria-modal="true"
       onClick={close}
     >
       <div
+        ref={trapRef}
         className="relative flex w-full max-w-md animate-sheet-up flex-col overflow-hidden sm:rounded-2xl"
         style={{
           ...sheetStyle,

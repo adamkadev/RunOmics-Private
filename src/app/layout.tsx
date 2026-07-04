@@ -6,6 +6,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next'
 import './globals.css'
 import { Providers } from './providers'
 import { AppShell } from '@/components/layout/AppShell'
+import { ServiceWorkerRegistration } from '@/components/layout/ServiceWorkerRegistration'
 import { t } from '@/i18n'
 import { ACCENT_STORAGE_KEY } from '@/lib/accent'
 
@@ -57,7 +58,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
-      lang="en"
+      lang={t.locale.split('-')[0]}
       suppressHydrationWarning
       data-scroll-behavior="smooth"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
@@ -74,6 +75,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           <AppShell>{children}</AppShell>
         </Providers>
+        <ServiceWorkerRegistration />
         <Analytics />
         <SpeedInsights />
       </body>

@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import type { ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import { ACTIVITY_TYPE_CONFIG, ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
 import { useDragToDismiss } from '@/lib/useDragToDismiss'
+import { useFocusTrap } from '@/lib/useFocusTrap'
 import { t } from '@/i18n'
 
 interface Props {
@@ -14,6 +15,7 @@ interface Props {
 
 export function PlannedWorkoutSheet({ workout, onClose }: Props) {
   const { close, handleProps, sheetStyle } = useDragToDismiss(onClose)
+  const trapRef = useFocusTrap<HTMLDivElement>()
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') close() }
@@ -48,6 +50,7 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
 
       {/* Sheet */}
       <div
+        ref={trapRef}
         className="relative w-full animate-sheet-up sm:max-w-sm sm:rounded-card-sm"
         style={{
           background: typeColor

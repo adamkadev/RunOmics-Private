@@ -14,7 +14,10 @@ export async function isPushSupported(): Promise<boolean> {
 }
 
 export async function enablePushNotifications(): Promise<string> {
-  const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js')
+  // The app service worker (public/sw.js) handles push display itself, so FCM
+  // binds to it - the previously referenced firebase-messaging-sw.js never
+  // existed in public/ and this registration 404'd.
+  const registration = await navigator.serviceWorker.register('/sw.js')
   const permission = await Notification.requestPermission()
   if (permission !== 'granted') throw new Error('permission-denied')
 
