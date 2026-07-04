@@ -13,5 +13,12 @@ export default defineConfig({
       jsdom: { url: 'http://localhost' },
     },
     setupFiles: ['./vitest.setup.ts'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov'],
+      // Pure logic and tested UI only - app router pages/layouts are
+      // exercised by the build, not by unit tests.
+      include: ['src/lib/**', 'src/application/**', 'src/domain/**', 'src/components/**'],
+    },
   },
 })
