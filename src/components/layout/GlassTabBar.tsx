@@ -6,6 +6,7 @@ import { LayoutDashboard, Activity, CalendarDays, BarChart2, User } from 'lucide
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { useFullscreenChromeHidden } from './FullscreenChromeContext'
 
 const TABS = [
   { href: '/',           label: t.nav.items.dashboard,  icon: LayoutDashboard },
@@ -25,10 +26,14 @@ const PAD = 8 // matches px-2 = 8px
 export function GlassTabBar() {
   const pathname = usePathname()
   const activeIndex = TABS.findIndex(({ href }) => isActive(pathname, href))
+  const hidden = useFullscreenChromeHidden()
 
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-30 px-6 pt-2 lg:hidden"
+      className={cn(
+        'fixed inset-x-0 bottom-0 z-30 px-6 pt-2 transition-transform duration-200 ease-out lg:hidden',
+        hidden ? 'pointer-events-none translate-y-[calc(100%+2rem)]' : 'translate-y-0'
+      )}
       style={{ paddingBottom: 'max(12px, var(--safe-bottom))' }}
     >
       <GlassSurface

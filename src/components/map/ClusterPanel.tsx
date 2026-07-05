@@ -16,9 +16,10 @@ interface Props {
   stats: ClusterStat[];
   selectedIdx: number;
   onSelect: (idx: number) => void;
+  isFullscreen?: boolean;
 }
 
-export function ClusterPanel({ clusters, names, stats, selectedIdx, onSelect }: Props) {
+export function ClusterPanel({ clusters, names, stats, selectedIdx, onSelect, isFullscreen }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -39,7 +40,13 @@ export function ClusterPanel({ clusters, names, stats, selectedIdx, onSelect }: 
   }, [open]);
 
   return (
-    <div ref={ref} className="absolute left-3 top-3 z-10">
+    <div
+      ref={ref}
+      className={[
+        "absolute left-3 z-10",
+        isFullscreen ? "top-[max(env(safe-area-inset-top),12px)]" : "top-3",
+      ].join(" ")}
+    >
       <button
         onClick={() => setOpen((o) => !o)}
         className="glass-map-chip flex items-center gap-2 px-3 py-2.5 transition-colors hover:bg-muted"
