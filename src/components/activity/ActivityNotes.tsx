@@ -14,6 +14,10 @@ import { t } from '@/i18n'
 
 const OWNER_EMAIL = process.env.NEXT_PUBLIC_OWNER_EMAIL ?? ''
 
+const NOTE_MAX_LENGTH = 500
+const TAG_MAX_LENGTH = 24
+const TAGS_MAX_COUNT = 10
+
 interface ActivityNote {
   note: string
   tags: string[]
@@ -59,9 +63,9 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
   const hasNote = saved.note !== '' || saved.tags.length > 0
 
   function addTag() {
-    const tag = tagInput.trim()
+    const tag = tagInput.trim().slice(0, TAG_MAX_LENGTH)
     setTagInput('')
-    if (!tag || draft.tags.includes(tag)) return
+    if (!tag || draft.tags.includes(tag) || draft.tags.length >= TAGS_MAX_COUNT) return
     setDraft((d) => ({ ...d, tags: [...d.tags, tag] }))
     setSaveState('idle')
   }
@@ -72,9 +76,12 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
   }
 
   async function handleSave() {
-    const pendingTag = tagInput.trim()
-    const tags = pendingTag && !draft.tags.includes(pendingTag) ? [...draft.tags, pendingTag] : draft.tags
-    const toSave: ActivityNote = { ...draft, tags }
+    const pendingTag = tagInput.trim().slice(0, TAG_MAX_LENGTH)
+    const tags =
+      pendingTag && !draft.tags.includes(pendingTag) && draft.tags.length < TAGS_MAX_COUNT
+        ? [...draft.tags, pendingTag]
+        : draft.tags
+    const toSave: ActivityNote = { ...draft, note: draft.note.slice(0, NOTE_MAX_LENGTH), tags }
 
     setSaveState('saving')
     try {
@@ -110,6 +117,7 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
                 value={draft.note}
                 onChange={(e) => { setDraft((d) => ({ ...d, note: e.target.value })); setSaveState('idle') }}
                 placeholder={t.activity.notes.notePlaceholder}
+                maxLength={NOTE_MAX_LENGTH}
                 rows={3}
                 className={inputCls}
               />
@@ -141,6 +149,8 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag() } }}
                 placeholder={t.activity.notes.tagPlaceholder}
+                maxLength={TAG_MAX_LENGTH}
+                disabled={draft.tags.length >= TAGS_MAX_COUNT}
                 className={inputCls}
               />
 
