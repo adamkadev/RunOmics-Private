@@ -16,30 +16,55 @@ export interface AthleteProfile {
   lastUpdate?: string
 }
 
+// Read at build time (SSG) - a Firestore outage must not fail the whole build.
+function logFirestoreReadError(collection: string, error: unknown): void {
+  console.error(`[firestore:${collection}] read failed, falling back to empty result`, error)
+}
+
 export async function getGoalsFromFirestore(): Promise<GoalYear[]> {
-  const db = getAdminFirestore()
-  const snapshot = await db.collection('goals').get()
-  return snapshot.docs.map((doc) => doc.data() as GoalYear)
+  try {
+    const db = getAdminFirestore()
+    const snapshot = await db.collection('goals').get()
+    return snapshot.docs.map((doc) => doc.data() as GoalYear)
+  } catch (error) {
+    logFirestoreReadError('goals', error)
+    return []
+  }
 }
 
 export async function getPbsFromFirestore(): Promise<PbYear[]> {
-  const db = getAdminFirestore()
-  const snapshot = await db.collection('pbs').get()
-  return snapshot.docs.map((doc) => doc.data() as PbYear)
+  try {
+    const db = getAdminFirestore()
+    const snapshot = await db.collection('pbs').get()
+    return snapshot.docs.map((doc) => doc.data() as PbYear)
+  } catch (error) {
+    logFirestoreReadError('pbs', error)
+    return []
+  }
 }
 
 export async function getUpcomingRacesFromFirestore(): Promise<UpcomingRaceYear[]> {
-  const db = getAdminFirestore()
-  const snapshot = await db.collection('upcomingRaces').get()
-  return snapshot.docs.map((doc) => doc.data() as UpcomingRaceYear)
+  try {
+    const db = getAdminFirestore()
+    const snapshot = await db.collection('upcomingRaces').get()
+    return snapshot.docs.map((doc) => doc.data() as UpcomingRaceYear)
+  } catch (error) {
+    logFirestoreReadError('upcomingRaces', error)
+    return []
+  }
 }
 
 export async function getAthleteFromFirestore(): Promise<AthleteProfile> {
-  const db = getAdminFirestore()
-  const doc = await db.collection('athlete').doc('profile').get()
-  const data = doc.data()
-  if (!data) return {}
-  return { ...data, lastUpdate: data.lastUpdate?.toDate().toISOString() } as AthleteProfile
+  try {
+    const db = getAdminFirestore()
+    const doc = await db.collection('athlete').doc('profile').get()
+    const data = doc.data()
+    if (!data) return {}
+    return { ...data, lastUpdate: data.lastUpdate?.toDate().toISOString() } as AthleteProfile
+  } catch (error) {
+    logFirestoreReadError('athlete', error)
+    return {}
+  }
 }
 
 export type PrState = Record<string, { seconds: number; activityId: string }>
