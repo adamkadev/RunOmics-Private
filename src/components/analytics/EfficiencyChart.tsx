@@ -22,10 +22,11 @@ interface TooltipProps {
 }
 
 function CustomTooltip({ active, payload, label }: TooltipProps) {
-  if (!active || !payload?.length) return null
+  const point = payload?.[0]
+  if (!active || !point) return null
   return (
     <TooltipCard label={label}>
-      <p className="text-sm font-semibold text-foreground">{payload[0].value.toFixed(2)} {t.analytics.charts.efficiency.unit}</p>
+      <p className="text-sm font-semibold text-foreground">{point.value.toFixed(2)} {t.analytics.charts.efficiency.unit}</p>
     </TooltipCard>
   )
 }

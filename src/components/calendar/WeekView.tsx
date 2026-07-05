@@ -137,19 +137,21 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today, atPresent, o
     const date = isoDate(addDays(weekStart, i))
     return { date, day: Number(date.slice(8)), acts: byDate.get(date) ?? [] }
   })
+  // Array.from({ length: 7 }) is always non-empty.
+  const firstDay = days[0]!
 
   const [selectedDate, setSelectedDate] = useState(
     () =>
       days.find((d) => d.date === initialSelectedDate)?.date ??
       days.find((d) => d.date === today)?.date ??
-      days[0].date
+      firstDay.date
   )
   const [sheetActivity, setSheetActivity] = useState<Activity | null>(null)
   const [sheetPlan, setSheetPlan] = useState<PlannedWorkout | null>(null)
   const [showLegend, setShowLegend] = useState(false)
   const legendId = useId()
 
-  const selected = days.find((d) => d.date === selectedDate) ?? days[0]
+  const selected = days.find((d) => d.date === selectedDate) ?? firstDay
   const selectedPlan = byDatePlanned.get(selected.date)
 
   const nextWeekPlans = useMemo(
@@ -208,7 +210,7 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today, atPresent, o
               <div
                 key={label}
                 className="text-center font-mono text-micro font-semibold text-muted-foreground/50"
-                style={days[i].date === today ? { color: TODAY, fontWeight: 700 } : undefined}
+                style={days[i]?.date === today ? { color: TODAY, fontWeight: 700 } : undefined}
               >
                 {label[0]}
               </div>
@@ -224,7 +226,7 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today, atPresent, o
                 const plan = byDatePlanned.get(d.date)
                 const planned = !completed && !!plan
                 const missed = isPast && planned
-                const primaryType: ActivityType | null = completed ? d.acts[0].type : null
+                const primaryType: ActivityType | null = d.acts[0]?.type ?? null
 
                 return (
                   <button

@@ -98,7 +98,8 @@ export function relativeTimeParts(iso: string, now: Date = new Date()): { unit: 
 /** Parse a `m:ss` or `h:mm:ss` string into seconds. Returns null if invalid. */
 export function parseTimeInput(str: string): number | null {
   const parts = str.trim().split(':').map(Number)
-  if (parts.length === 2 && !parts.some(isNaN)) return parts[0] * 60 + parts[1]
-  if (parts.length === 3 && !parts.some(isNaN)) return parts[0] * 3600 + parts[1] * 60 + parts[2]
+  const [a, b, c] = parts
+  if (parts.length === 2 && a !== undefined && b !== undefined && !parts.some(isNaN)) return a * 60 + b
+  if (parts.length === 3 && a !== undefined && b !== undefined && c !== undefined && !parts.some(isNaN)) return a * 3600 + b * 60 + c
   return null
 }

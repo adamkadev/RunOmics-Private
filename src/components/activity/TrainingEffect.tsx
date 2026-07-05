@@ -16,7 +16,8 @@ const LEVELS = [
 ]
 
 function getLevel(value: number) {
-  return LEVELS.find((l) => value < l.max) ?? LEVELS[LEVELS.length - 1]
+  // LEVELS is a fixed non-empty literal, so the last element always exists.
+  return LEVELS.find((l) => value < l.max) ?? LEVELS[LEVELS.length - 1]!
 }
 
 function TEBar({ value, label }: { value: number; label: string }) {

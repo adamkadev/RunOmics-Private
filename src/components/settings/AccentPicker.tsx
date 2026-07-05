@@ -38,8 +38,14 @@ export function AccentPicker() {
               aria-pressed={active}
               onKeyDown={(e) => {
                 const idx = ACCENT_IDS.indexOf(id)
-                if (e.key === 'ArrowRight') selectAccent(ACCENT_IDS[(idx + 1) % ACCENT_IDS.length])
-                if (e.key === 'ArrowLeft') selectAccent(ACCENT_IDS[(idx - 1 + ACCENT_IDS.length) % ACCENT_IDS.length])
+                if (e.key === 'ArrowRight') {
+                  const next = ACCENT_IDS[(idx + 1) % ACCENT_IDS.length]
+                  if (next) selectAccent(next)
+                }
+                if (e.key === 'ArrowLeft') {
+                  const prev = ACCENT_IDS[(idx - 1 + ACCENT_IDS.length) % ACCENT_IDS.length]
+                  if (prev) selectAccent(prev)
+                }
               }}
               style={{
                 backgroundColor: color,

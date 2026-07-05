@@ -125,7 +125,7 @@ describe('computeYearOutcome', () => {
         pbs: [{ entry: { distance: '10K', seconds: 2500, activityId: 'a1' }, activity: {} as Activity }],
       })
     )
-    expect(outcome?.targets[0].achieved).toBe(false)
+    expect(outcome?.targets[0]?.achieved).toBe(false)
   })
 
   it('leaves a race target unresolved when there is no PB for it', () => {

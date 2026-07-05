@@ -4,8 +4,12 @@ import { formatClock as fmt, formatPace } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
-const ZONE_STYLE: Record<string, { dot: string; text: string; bar: string }> = {
-  easy:      { dot: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', bar: 'bg-emerald-500' },
+type ZoneStyle = { dot: string; text: string; bar: string }
+
+const DEFAULT_ZONE_STYLE: ZoneStyle = { dot: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', bar: 'bg-emerald-500' }
+
+const ZONE_STYLE: Record<string, ZoneStyle> = {
+  easy:      DEFAULT_ZONE_STYLE,
   marathon:  { dot: 'bg-blue-500',    text: 'text-blue-600 dark:text-blue-400',       bar: 'bg-blue-500'    },
   threshold: { dot: 'bg-amber-500',   text: 'text-amber-600 dark:text-amber-400',     bar: 'bg-amber-500'   },
   vo2max:    { dot: 'bg-red-500',     text: 'text-red-600 dark:text-red-400',         bar: 'bg-red-500'     },
@@ -32,7 +36,7 @@ export function TrainingZones({ data }: { data: TrainingZonesData }) {
 
       <div className="space-y-2">
         {zones.map((zone) => {
-          const style = ZONE_STYLE[zone.key] ?? ZONE_STYLE.easy
+          const style = ZONE_STYLE[zone.key] ?? DEFAULT_ZONE_STYLE
           // Slow on the left, fast on the right: map slowest pace to 0%.
           const left = ((slowest - zone.paceMaxSecPerKm) / range) * 100
           const width = ((zone.paceMaxSecPerKm - zone.paceMinSecPerKm) / range) * 100

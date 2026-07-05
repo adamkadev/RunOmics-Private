@@ -32,9 +32,9 @@ const ACTIVE_PILL_CLASS: Record<Metric, string> = {
 }
 
 const UNIT_BY_KEY: Record<string, string> = {
-  groundContactMs: t.analytics.charts.runningForm.unit.groundContact,
-  verticalOscillationMm: t.analytics.charts.runningForm.unit.verticalOscillation,
-  strideLengthM: t.analytics.charts.runningForm.unit.strideLength,
+  groundContactMs: t.analytics.charts.runningForm.unit.groundContact ?? '',
+  verticalOscillationMm: t.analytics.charts.runningForm.unit.verticalOscillation ?? '',
+  strideLengthM: t.analytics.charts.runningForm.unit.strideLength ?? '',
 }
 
 const TICK_DECIMALS: Record<Metric, number> = {
@@ -54,8 +54,8 @@ interface TooltipProps {
 }
 
 function CustomTooltip({ active, payload, label }: TooltipProps) {
-  if (!active || !payload?.length) return null
-  const p = payload[0]
+  const p = payload?.[0]
+  if (!active || !p) return null
   return (
     <TooltipCard label={label}>
       <p className="text-sm font-semibold text-foreground">{p.value} {UNIT_BY_KEY[p.dataKey]}</p>

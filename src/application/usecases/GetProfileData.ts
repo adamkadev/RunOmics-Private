@@ -49,8 +49,9 @@ export async function getProfileData(): Promise<ProfileData> {
   const goalYears = await getGoalsFromFirestore()
   const athlete = await getAthleteFromFirestore()
 
-  const sinceDate = activities.length
-    ? activities.reduce((min, a) => (a.date < min ? a.date : min), activities[0].date)
+  const firstActivity = activities[0]
+  const sinceDate = firstActivity
+    ? activities.reduce((min, a) => (a.date < min ? a.date : min), firstActivity.date)
     : null
 
   const currentYear = new Date().getFullYear()

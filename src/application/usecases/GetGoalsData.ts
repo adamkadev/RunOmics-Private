@@ -247,7 +247,10 @@ export async function getGoalsPageData(): Promise<GoalsPageData> {
 
   const history = allYears
     .filter((year) => year < currentYear)
-    .map((year) => computeYearOutcome(byYear[year]))
+    .map((year) => {
+      const data = byYear[year]
+      return data ? computeYearOutcome(data) : null
+    })
     .filter((outcome): outcome is YearOutcome => outcome !== null)
 
   return { years: allYears, byYear, history }

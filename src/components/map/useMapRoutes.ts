@@ -43,6 +43,7 @@ export function useMapRoutes(
       setMapReady(false);
 
       const first = clusters[data.defaultClusterIdx];
+      if (!first) return;
       const map = new mgl.Map({
         container: containerRef.current!,
         style: maptilerStyleUrl(isDark, token),

@@ -21,8 +21,8 @@ interface TooltipProps {
 }
 
 function CustomTooltip({ active, payload }: TooltipProps) {
-  if (!active || !payload?.length) return null
-  const z = payload[0].payload
+  const z = payload?.[0]?.payload
+  if (!active || !z) return null
   return (
     <TooltipCard>
       <p className="text-xs font-medium text-foreground">

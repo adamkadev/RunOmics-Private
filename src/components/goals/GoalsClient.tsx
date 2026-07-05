@@ -26,7 +26,7 @@ export function GoalsClient({ data }: Props) {
         )}
       </div>
 
-      <YearSelector years={years} selected={selectedYear} onSelect={(y) => y !== null && setSelectedYear(y)} />
+      <YearSelector years={years} selected={selectedYear ?? null} onSelect={(y) => y !== null && setSelectedYear(y)} />
 
       {yearData ? (
         <YearView yearData={yearData} />

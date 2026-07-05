@@ -47,7 +47,7 @@ function DayActivities({ activities }: { activities: Activity[] }) {
           </span>
         )}
       </div>
-      {totalKm > 0 && (
+      {totalKm > 0 && activities[0] && (
         <span
           className="text-[10px] font-bold leading-none"
           style={{ color: ACTIVITY_TYPE_CONFIG[activities[0].type].dotColor }}

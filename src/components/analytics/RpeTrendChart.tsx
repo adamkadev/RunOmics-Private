@@ -27,12 +27,13 @@ interface TooltipProps {
 }
 
 function CustomTooltip({ active, payload, label }: TooltipProps) {
-  if (!active || !payload?.length) return null
+  const point = payload?.[0]
+  if (!active || !point) return null
 
   return (
     <TooltipCard label={label}>
       <p className="text-sm font-semibold text-foreground">
-        {t.analytics.charts.rpe.prefix} {payload[0].value.toFixed(1)}
+        {t.analytics.charts.rpe.prefix} {point.value.toFixed(1)}
       </p>
     </TooltipCard>
   )

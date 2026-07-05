@@ -421,7 +421,7 @@ function buildPeriodAnalytics(all: Activity[], weeks: number, now: Date): Period
     const aMonday = startOfWeek(new Date(a.date + 'T12:00:00'))
     const weeksAgo = Math.round((thisMonday.getTime() - aMonday.getTime()) / (7 * 86400000))
     if (weeksAgo >= 0 && weeksAgo < weeks) {
-      buckets[weeks - 1 - weeksAgo].acts.push(a)
+      buckets[weeks - 1 - weeksAgo]?.acts.push(a)
       windowActs.push(a)
     } else if (weeksAgo >= weeks && weeksAgo < weeks * 2) {
       prevActs.push(a)

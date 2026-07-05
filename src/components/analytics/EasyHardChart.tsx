@@ -29,8 +29,8 @@ interface TooltipProps {
 }
 
 function CustomTooltip({ active, payload, label }: TooltipProps) {
-  if (!active || !payload?.length) return null
-  const entry = payload[0].payload
+  const entry = payload?.[0]?.payload
+  if (!active || !entry) return null
   return (
     <TooltipCard label={label}>
       <p className="text-sm text-emerald-600 dark:text-emerald-400">{t.analytics.charts.easyHard.easy(entry.easyPct ?? 0)}</p>

@@ -17,8 +17,10 @@ export function getLatestVO2max(): number | null {
 
 export function getVO2maxTrend(): VO2maxTrend | null {
   const history = getVO2maxHistory()
-  if (history.length < 2) return null
-  const delta = history[history.length - 1].value - history[history.length - 2].value
+  const latest = history[history.length - 1]
+  const previous = history[history.length - 2]
+  if (!latest || !previous) return null
+  const delta = latest.value - previous.value
   if (delta > 0.4) return 'up'
   if (delta < -0.4) return 'down'
   return 'stable'

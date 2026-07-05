@@ -81,7 +81,7 @@ export function ActivityHeatmap({ days }: Props) {
     if (!firstDate) return
     const month = new Date(firstDate + 'T12:00:00').getMonth()
     if (month !== lastMonth) {
-      monthLabels.push({ label: MONTHS[month], col })
+      monthLabels.push({ label: MONTHS[month] ?? '', col })
       lastMonth = month
     }
   })

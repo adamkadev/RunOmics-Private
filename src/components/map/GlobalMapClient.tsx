@@ -28,7 +28,7 @@ export function GlobalMapClient({ data }: Props) {
         const indices = c.routeIndices.filter((i) => matchesFilters(routeMeta[i], selectedYear));
         return {
           routeCount: indices.length,
-          totalKm: Math.round(indices.reduce((s, i) => s + routeMeta[i].distanceKm, 0)),
+          totalKm: Math.round(indices.reduce((s, i) => s + (routeMeta[i]?.distanceKm ?? 0), 0)),
         };
       }),
     [clusters, routeMeta, selectedYear],
