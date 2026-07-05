@@ -7,6 +7,7 @@ import { ActivityListCard } from './ActivityListCard'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
 import type { ActivityQueryResult, ActivitySortKey, ActivitySortOrder } from '@/application/usecases/QueryActivities'
+import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { Pill } from '@/components/ui/Pill'
 import { SortDropdown } from '@/components/ui/SortDropdown'
@@ -75,14 +76,14 @@ interface Props {
   initialItems: ActivitySummary[]
   initialNextOffset: number | null
   totalCount: number
-  prLabelsByActivityId?: Record<string, string[]>
+  qualifiedEffortsByActivityId?: Record<string, QualifiedEffort[]>
 }
 
 export function ActivityListClient({
   initialItems,
   initialNextOffset,
   totalCount,
-  prLabelsByActivityId = {},
+  qualifiedEffortsByActivityId = {},
 }: Props) {
   const [search, setSearch] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
@@ -285,7 +286,7 @@ export function ActivityListClient({
               </div>
               <div className="space-y-2">
                 {g.items.map((a) => (
-                  <ActivityListCard key={a.id} activity={a} prLabels={prLabelsByActivityId[a.id]} />
+                  <ActivityListCard key={a.id} activity={a} qualifiedEfforts={qualifiedEffortsByActivityId[a.id]} />
                 ))}
               </div>
             </div>
@@ -294,7 +295,7 @@ export function ActivityListClient({
       ) : (
         <div className="space-y-2">
           {items.map((a) => (
-            <ActivityListCard key={a.id} activity={a} prLabels={prLabelsByActivityId[a.id]} />
+            <ActivityListCard key={a.id} activity={a} qualifiedEfforts={qualifiedEffortsByActivityId[a.id]} />
           ))}
         </div>
       )}

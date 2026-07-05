@@ -631,6 +631,7 @@ export const en = {
     bestEfforts: {
       title: 'Best Efforts',
       prBadge: 'PR',
+      rankBadge: (rank: number) => `#${rank}`,
     },
     notes: {
       title: 'Notes',

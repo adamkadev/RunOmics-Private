@@ -3,16 +3,17 @@ import { ChevronRight } from 'lucide-react'
 import { PrBadge } from './PrBadge'
 import { ACTIVITY_TYPE_CONFIG, ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
 import type { ActivitySummary } from '@/domain/activity/types'
+import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import { formatDate, formatDistance, formatDuration, formatClock } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 interface Props {
   activity: ActivitySummary
-  prLabels?: string[]
+  qualifiedEfforts?: QualifiedEffort[]
 }
 
 /** B4 anatomy: icon + title + chevron, type pill + date, 4-metric grid. */
-export function ActivityListCard({ activity: a, prLabels = [] }: Props) {
+export function ActivityListCard({ activity: a, qualifiedEfforts = [] }: Props) {
   const { dotColor } = ACTIVITY_TYPE_CONFIG[a.type]
   const title = a.description || t.activity.runTitle(a.dayOfWeek)
   const TypeIcon = ACTIVITY_TYPE_ICONS[a.type]
@@ -50,7 +51,7 @@ export function ActivityListCard({ activity: a, prLabels = [] }: Props) {
           <span className="h-[5px] w-[5px] shrink-0 rounded-full" style={{ backgroundColor: dotColor }} />
           {t.activityTypes[a.type]}
         </span>
-        <PrBadge labels={prLabels} />
+        <PrBadge efforts={qualifiedEfforts} />
         {a.rpe !== null && (
           <span className="rounded-full bg-foreground/[0.07] px-2 py-[2px] text-caption font-semibold text-muted-foreground">
             {t.activities.row.rpeValue(a.rpe)}

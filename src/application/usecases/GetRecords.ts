@@ -149,17 +149,51 @@ export function getMostRecentRecord(records: RecordEntry[]): RecordEntry | null 
   return withDate.reduce((latest, r) => (r.date! > latest.date! ? r : latest))
 }
 
-export function getPrLabelsByActivityId(records: RecordEntry[]): Record<string, string[]> {
-  const result: Record<string, string[]> = {}
+export interface QualifiedEffort {
+  key: string
+  label: string
+  /** 1 = the current all-time record for this distance; 2/3 = next-best all-time. */
+  rank: number
+}
+
+/**
+ * Every activity that ranks in the top `topN` all-time for at least one
+ * distance, grouped by activityId. Rank 1 comes from `records` (which is
+ * official-PB-aware); ranks 2..topN come from the locally-recorded
+ * leaderboard (`getTopEfforts`), skipping whichever activity already holds
+ * rank 1 for that distance so it isn't double-labeled.
+ */
+export function getQualifiedEffortsByActivityId(
+  records: RecordEntry[],
+  activities: Activity[] = getAllActivities(),
+  topN = 3,
+): Record<string, QualifiedEffort[]> {
+  const result: Record<string, QualifiedEffort[]> = {}
+  const push = (activityId: string, entry: QualifiedEffort) => {
+    result[activityId] = [...(result[activityId] ?? []), entry]
+  }
+
+  const rank1ActivityByKey = new Map<string, string>()
   for (const r of records) {
     if (!r.activityId) continue
-    result[r.activityId] = [...(result[r.activityId] ?? []), r.label]
+    rank1ActivityByKey.set(r.key, r.activityId)
+    push(r.activityId, { key: r.key, label: r.label, rank: 1 })
   }
+
+  const topEfforts = getTopEfforts(activities, topN)
+  for (const { key, label } of EFFORTS) {
+    const officialActivityId = rank1ActivityByKey.get(key)
+    for (const [i, entry] of (topEfforts[key] ?? []).entries()) {
+      const rank = i + 1
+      if (rank > topN || entry.activityId === officialActivityId) continue
+      push(entry.activityId, { key, label, rank })
+    }
+  }
+
   return result
 }
 
-export function getTopEfforts(n = 5): TopEfforts {
-  const activities = getAllActivities()
+export function getTopEfforts(activities: Activity[] = getAllActivities(), n = 5): TopEfforts {
   const result: TopEfforts = {}
 
   for (const { key, km } of EFFORTS) {

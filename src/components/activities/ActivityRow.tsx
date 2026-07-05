@@ -3,15 +3,16 @@ import { ActivityTypeTag } from './ActivityTypeTag'
 import { PrBadge } from './PrBadge'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
 import type { Activity } from '@/domain/activity/types'
+import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import { t } from '@/i18n'
 
 interface Props {
   activity: Activity
-  prLabels?: string[]
+  qualifiedEfforts?: QualifiedEffort[]
 }
 
 /** Translucent sub-surface row (Dashboard recent activities, B9). */
-export function ActivityRow({ activity: a, prLabels = [] }: Props) {
+export function ActivityRow({ activity: a, qualifiedEfforts = [] }: Props) {
   return (
     <Link
       href={`/activities/${a.id}`}
@@ -20,7 +21,7 @@ export function ActivityRow({ activity: a, prLabels = [] }: Props) {
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <ActivityTypeTag type={a.type} />
-          <PrBadge labels={prLabels} />
+          <PrBadge efforts={qualifiedEfforts} />
           {a.rpe !== null && (
             <span className="rounded px-1.5 py-0.5 text-xs font-medium text-subtle">
               {t.activities.row.rpeValue(a.rpe)}

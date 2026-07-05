@@ -6,7 +6,7 @@ import { getConsistencyScore } from '@/application/usecases/GetConsistencyScore'
 import { getWeeklyLoadComparison } from '@/application/usecases/GetWeeklyLoadComparison'
 import { getHeatmapData } from '@/application/usecases/GetHeatmapData'
 import { getLatestVO2max, getVO2maxTrend } from '@/application/usecases/GetVO2maxHistory'
-import { getRecords, getPrLabelsByActivityId, getMostRecentRecord } from '@/application/usecases/GetRecords'
+import { getRecords, getQualifiedEffortsByActivityId, getMostRecentRecord } from '@/application/usecases/GetRecords'
 import { getPbAlerts } from '@/application/usecases/GetPbAlerts'
 import { getShoeStats } from '@/application/usecases/GetShoeStats'
 import { getNextRace } from '@/application/usecases/GetNextRace'
@@ -30,7 +30,7 @@ export default async function DashboardPage() {
   const vo2max = getLatestVO2max()
   const vo2maxTrend = getVO2maxTrend()
   const records = await getRecords()
-  const prLabelsByActivityId = getPrLabelsByActivityId(records)
+  const qualifiedEffortsByActivityId = getQualifiedEffortsByActivityId(records)
   const mostRecentRecord = getMostRecentRecord(records)
   const pbAlerts = await getPbAlerts()
   const shoes = getShoeStats()
@@ -66,7 +66,7 @@ export default async function DashboardPage() {
 
       <ActivityHeatmap days={heatmapDays} />
 
-      <RecentActivities activities={data.recentActivities} prLabelsByActivityId={prLabelsByActivityId} />
+      <RecentActivities activities={data.recentActivities} qualifiedEffortsByActivityId={qualifiedEffortsByActivityId} />
     </div>
   )
 }

@@ -1,4 +1,5 @@
 import { Zap } from 'lucide-react'
+import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import { formatDuration, formatPace } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
@@ -13,12 +14,16 @@ const EFFORTS = [
 
 interface Props {
   bestEfforts: Record<string, number>
+  qualifiedEfforts?: QualifiedEffort[]
 }
 
-export function BestEfforts({ bestEfforts }: Props) {
+export function BestEfforts({ bestEfforts, qualifiedEfforts = [] }: Props) {
+  const s = t.activity.bestEfforts
+  const rankByKey = new Map(qualifiedEfforts.map((e) => [e.key, e.rank]))
+
   const entries = EFFORTS.flatMap((e) => {
     const seconds = bestEfforts[e.key]
-    return seconds != null ? [{ ...e, seconds: Math.round(seconds) }] : []
+    return seconds != null ? [{ ...e, seconds: Math.round(seconds), rank: rankByKey.get(e.key) }] : []
   })
   if (!entries.length) return null
 
@@ -26,12 +31,17 @@ export function BestEfforts({ bestEfforts }: Props) {
     <GlassSurface variant="card" className="p-5">
       <div className="mb-3 flex items-center gap-2">
         <Zap size={16} className="text-amber-500 dark:text-amber-400" />
-        <h3 className="text-sm font-semibold text-foreground/80">{t.activity.bestEfforts.title}</h3>
+        <h3 className="text-sm font-semibold text-foreground/80">{s.title}</h3>
       </div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-        {entries.map(({ key, label, km, seconds }) => {
+        {entries.map(({ key, label, km, seconds, rank }) => {
           return (
-            <div key={key} className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
+            <div key={key} className="relative rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
+              {rank != null && (
+                <span className="absolute right-2 top-2 rounded-full bg-amber-100 px-1.5 py-[1px] text-[10px] font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+                  {rank === 1 ? s.prBadge : s.rankBadge(rank)}
+                </span>
+              )}
               <p className="text-xs font-semibold text-subtle">{label}</p>
               <p className="mt-0.5 text-base font-bold tracking-tight text-foreground">{formatDuration(seconds)}</p>
               <p className="text-xs text-subtle">{formatPace(Math.round(seconds / km))}</p>

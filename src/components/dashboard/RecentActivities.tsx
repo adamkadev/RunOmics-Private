@@ -4,13 +4,14 @@ import { ActivityRow } from '@/components/activities/ActivityRow'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 import type { Activity } from '@/domain/activity/types'
+import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 
 interface Props {
   activities: Activity[]
-  prLabelsByActivityId?: Record<string, string[]>
+  qualifiedEffortsByActivityId?: Record<string, QualifiedEffort[]>
 }
 
-export function RecentActivities({ activities, prLabelsByActivityId = {} }: Props) {
+export function RecentActivities({ activities, qualifiedEffortsByActivityId = {} }: Props) {
   return (
     <GlassSurface variant="card" className="overflow-hidden">
       <div className="flex items-center justify-between border-b border-foreground/[0.08] px-5 py-4">
@@ -27,7 +28,7 @@ export function RecentActivities({ activities, prLabelsByActivityId = {} }: Prop
 
       <div className="flex flex-col gap-3 p-3">
         {activities.map((a) => (
-          <ActivityRow key={a.id} activity={a} prLabels={prLabelsByActivityId[a.id]} />
+          <ActivityRow key={a.id} activity={a} qualifiedEfforts={qualifiedEffortsByActivityId[a.id]} />
         ))}
       </div>
     </GlassSurface>

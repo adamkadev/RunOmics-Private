@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { BackButton } from '@/components/ui/BackButton'
 import { getActivities } from '@/application/usecases/GetActivities'
-import { getRecords, getPrLabelsByActivityId } from '@/application/usecases/GetRecords'
+import { getRecords, getQualifiedEffortsByActivityId } from '@/application/usecases/GetRecords'
 import { ActivityTypeTag } from '@/components/activities/ActivityTypeTag'
 import { PrBadge } from '@/components/activities/PrBadge'
 import { ShoePairTag } from '@/components/activities/ShoePairTag'
@@ -58,7 +58,7 @@ export default async function ActivityDetailPage({
   const nextActivity = index > 0 ? activities[index - 1] ?? null : null
 
   const records = await getRecords()
-  const prLabels = getPrLabelsByActivityId(records)[id] ?? []
+  const qualifiedEfforts = getQualifiedEffortsByActivityId(records)[id] ?? []
 
   return (
     <div className="space-y-5">
@@ -67,7 +67,7 @@ export default async function ActivityDetailPage({
       <div>
         <div className="mb-2 flex flex-nowrap items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <ActivityTypeTag type={activity.type} />
-          <PrBadge labels={prLabels} />
+          <PrBadge efforts={qualifiedEfforts} />
           <ShoePairTag gearId={activity.gearId} />
         </div>
         <h1 className="text-display text-foreground">
@@ -91,7 +91,7 @@ export default async function ActivityDetailPage({
         <KmSplits activity={activity} />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <TrainingEffect aer={activity.aerTrainingEffect} ana={activity.anaTrainingEffect} />
-          {activity.bestEfforts && <BestEfforts bestEfforts={activity.bestEfforts} />}
+          {activity.bestEfforts && <BestEfforts bestEfforts={activity.bestEfforts} qualifiedEfforts={qualifiedEfforts} />}
           <RunningDynamics activity={activity} />
         </div>
       </div>
