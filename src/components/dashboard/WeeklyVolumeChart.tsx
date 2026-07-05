@@ -43,8 +43,9 @@ function weekToMonthAbbr(weekNum: number): string {
 }
 
 function CustomTooltip({ active, payload }: TooltipProps) {
-  if (!active || !payload?.length) return null
-  const { value, payload: entry } = payload[0]
+  const first = payload?.[0]
+  if (!active || !first) return null
+  const { value, payload: entry } = first
   return (
     <TooltipCard label={`W${entry.week % 100} · ${weekToMonthAbbr(entry.week)}`}>
       <p className="text-sm font-semibold text-foreground">{value.toFixed(1)} km</p>
@@ -56,7 +57,8 @@ export function WeeklyVolumeChart({ data, currentWeek }: Props) {
   const accentColor = useAccentColor()
   const chartData: ChartEntry[] = data.map((entry, i) => {
     const month = weekToMonthAbbr(entry.week)
-    const prev = i > 0 ? weekToMonthAbbr(data[i - 1].week) : null
+    const prevEntry = data[i - 1]
+    const prev = prevEntry ? weekToMonthAbbr(prevEntry.week) : null
     return { ...entry, idx: i, monthLabel: month !== prev ? month : '' }
   })
 

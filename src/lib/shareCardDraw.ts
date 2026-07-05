@@ -125,13 +125,15 @@ function glow(ctx: Ctx, W: number, H: number, cx: number, cy: number, radius: nu
 // while translate() is in logical units, so the offset must be scaled by the
 // current transform to cancel the translate exactly.
 function strokeGlow(ctx: Ctx, points: [number, number][], lw: number, a: number, r: number, g: number, b: number, blur: number) {
+  const first = points[0]
+  if (!first) return
   const OFFSET = 1000
   ctx.save()
   ctx.translate(-OFFSET, 0)
   ctx.shadowOffsetX = OFFSET * ctx.getTransform().a
   ctx.shadowColor = `rgba(${r},${g},${b},${a})`
   ctx.shadowBlur = blur
-  ctx.beginPath(); ctx.moveTo(points[0][0], points[0][1])
+  ctx.beginPath(); ctx.moveTo(first[0], first[1])
   points.forEach(([px, py]) => ctx.lineTo(px, py))
   ctx.strokeStyle = `rgba(${r},${g},${b},${a})`; ctx.lineWidth = lw
   ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke()
@@ -189,8 +191,10 @@ function getKmMarkers(
   let cumDist = 0
   const cumDistances = [0]
   for (let i = 1; i < pts.length; i++) {
-    const dx = pts[i][0] - pts[i - 1][0]
-    const dy = pts[i][1] - pts[i - 1][1]
+    const cur = pts[i], prev = pts[i - 1]
+    if (!cur || !prev) continue
+    const dx = cur[0] - prev[0]
+    const dy = cur[1] - prev[1]
     cumDist += Math.sqrt(dx * dx + dy * dy)
     cumDistances.push(cumDist)
   }
@@ -201,7 +205,8 @@ function getKmMarkers(
     const targetPx = (km / totalDistanceKm) * totalPixels
     let idx = cumDistances.findIndex(d => d >= targetPx)
     if (idx < 0) idx = pts.length - 1
-    markers.push({ pt: pts[idx], label: `${km}` })
+    const pt = pts[idx]
+    if (pt) markers.push({ pt, label: `${km}` })
   }
   return markers
 }
@@ -272,17 +277,21 @@ export function draw_terrain(ctx: Ctx, W: number, H: number, r: number, g: numbe
     { pts: [[0, H * 0.84], [W * 0.08, H * 0.75], [W * 0.25, H * 0.69], [W * 0.46, H * 0.78], [W * 0.68, H * 0.72], [W, H * 0.82]] as [number, number][], a: dark ? 0.28 : 0.6 },
   ]
   layers.forEach(layer => {
-    const pts = layer.pts, last = pts[pts.length - 1]
+    const pts = layer.pts
+    const first = pts[0], last = pts[pts.length - 1]
+    if (!first || !last) return
     const ridge = () => {
-      ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1])
+      ctx.beginPath(); ctx.moveTo(first[0], first[1])
       for (let i = 1; i < pts.length; i++) {
-        const [ax, ay] = pts[i - 1], [bx, by] = pts[i]
+        const prev = pts[i - 1], cur = pts[i]
+        if (!prev || !cur) continue
+        const [ax, ay] = prev, [bx, by] = cur
         ctx.quadraticCurveTo(ax, ay, (ax + bx) / 2, (ay + by) / 2)
       }
       ctx.lineTo(last[0], last[1])
     }
     ridge(); ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath()
-    const fill = ctx.createLinearGradient(0, pts[0][1] - H * 0.05, 0, H)
+    const fill = ctx.createLinearGradient(0, first[1] - H * 0.05, 0, H)
     fill.addColorStop(0, `rgba(${r},${g},${b},${layer.a})`)
     fill.addColorStop(0.2, `rgba(255,255,255,${layer.a * (dark ? 1.5 : 2.2)})`)
     fill.addColorStop(1, `rgba(${r},${g},${b},${layer.a * 0.45})`)
@@ -364,6 +373,7 @@ function drawMapStreetLabels(ctx: Ctx, W: number, H: number, dark: boolean, stre
   let hi = 0
   for (let y = 112; y < H; y += 112) {
     const lbl = streetLabels[hi++ % streetLabels.length]
+    if (!lbl) continue
     const tw = ctx.measureText(lbl).width
     const lx = W * 0.05
     ctx.fillStyle = bg
@@ -378,6 +388,7 @@ function drawMapStreetLabels(ctx: Ctx, W: number, H: number, dark: boolean, stre
   let vi = 0
   for (let vX = 112; vX < W && vi < 3; vX += 112) {
     const lbl = vPool[vi % vPool.length]
+    if (!lbl) continue
     const tw = ctx.measureText(lbl).width
     const labelY = H * (0.25 + (vi + 1) * 0.15)
     vi++
@@ -499,7 +510,7 @@ export function draw_map(
 
   // Watermark city name (very subtle, behind route)
   if (locationName) {
-    const watermarkText = locationName.split(',')[0].toUpperCase()
+    const watermarkText = (locationName.split(',')[0] ?? locationName).toUpperCase()
     let fontSize = Math.round(W * 0.19)
     ctx.save()
     ctx.font = `800 ${fontSize}px Inter,system-ui,sans-serif`
@@ -526,10 +537,14 @@ export function draw_map(
         [W * 0.56, H * 0.78], [W * 0.44, H * 0.7], [W * 0.22, H * 0.72],
       ]
 
+  const first = pts[0]
+  const last = pts[pts.length - 1]
+  if (!first || !last) return
+
   const drawRoute = (lw: number, a: number, blur?: number) => {
     if (blur) { strokeGlow(ctx, pts, lw, a, r, g, b, blur); return }
     ctx.save()
-    ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1])
+    ctx.beginPath(); ctx.moveTo(first[0], first[1])
     pts.forEach(([px, py]) => ctx.lineTo(px, py))
     ctx.strokeStyle = `rgba(${r},${g},${b},${a})`; ctx.lineWidth = lw
     ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke()
@@ -544,16 +559,16 @@ export function draw_map(
   }
 
   // Start dot + "Départ" label
-  ctx.beginPath(); ctx.arc(pts[0][0], pts[0][1], 7, 0, Math.PI * 2)
+  ctx.beginPath(); ctx.arc(first[0], first[1], 7, 0, Math.PI * 2)
   ctx.fillStyle = '#22c55e'; ctx.fill()
-  ctx.beginPath(); ctx.arc(pts[0][0], pts[0][1], 7, 0, Math.PI * 2)
+  ctx.beginPath(); ctx.arc(first[0], first[1], 7, 0, Math.PI * 2)
   ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 2; ctx.stroke()
-  drawDepartLabel(ctx, pts[0])
+  drawDepartLabel(ctx, first)
 
   // End dot
-  ctx.beginPath(); ctx.arc(pts[pts.length - 1][0], pts[pts.length - 1][1], 7, 0, Math.PI * 2)
+  ctx.beginPath(); ctx.arc(last[0], last[1], 7, 0, Math.PI * 2)
   ctx.fillStyle = `rgb(${r},${g},${b})`; ctx.fill()
-  ctx.beginPath(); ctx.arc(pts[pts.length - 1][0], pts[pts.length - 1][1], 7, 0, Math.PI * 2)
+  ctx.beginPath(); ctx.arc(last[0], last[1], 7, 0, Math.PI * 2)
   ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 2; ctx.stroke()
 
   // Compass rose (top of stats card area, bottom right)
@@ -648,10 +663,14 @@ export function drawRouteOverlay(
   const dy = H * 0.44 - H * 0.5
   const pts = rawPts.map(([x, y]) => [x, y + dy] as [number, number])
 
+  const first = pts[0]
+  const last = pts[pts.length - 1]
+  if (!first || !last) return
+
   const drawRoute = (lw: number, a: number, blur?: number) => {
     if (blur) { strokeGlow(ctx, pts, lw, a, r, g, b, blur); return }
     ctx.save()
-    ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1])
+    ctx.beginPath(); ctx.moveTo(first[0], first[1])
     pts.forEach(([px, py]) => ctx.lineTo(px, py))
     ctx.strokeStyle = `rgba(${r},${g},${b},${a})`; ctx.lineWidth = lw
     ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke()
@@ -662,16 +681,15 @@ export function drawRouteOverlay(
   drawRoute(16, dark ? 0.75 : 0.48, 10)
   drawRoute(3.5, dark ? 0.98 : 0.85)
 
-  ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1])
+  ctx.beginPath(); ctx.moveTo(first[0], first[1])
   pts.forEach(([px, py]) => ctx.lineTo(px, py))
   ctx.strokeStyle = `rgba(${r},${g},${b},${dark ? 0.92 : 0.78})`
   ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke()
 
-  ctx.beginPath(); ctx.arc(pts[0][0], pts[0][1], 5.5, 0, Math.PI * 2)
+  ctx.beginPath(); ctx.arc(first[0], first[1], 5.5, 0, Math.PI * 2)
   ctx.fillStyle = '#22c55e'; ctx.fill()
   ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 1.5; ctx.stroke()
 
-  const last = pts[pts.length - 1]
   ctx.beginPath(); ctx.arc(last[0], last[1], 5.5, 0, Math.PI * 2)
   ctx.fillStyle = `rgb(${r},${g},${b})`; ctx.fill()
   ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 1.5; ctx.stroke()

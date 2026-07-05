@@ -22,6 +22,7 @@ function bestSource(
   records: RecordEntry[]
 ): { seconds: number; sourceLabel: string; sourceKm: number; eventName?: string } | null {
   const targetKm = DIST_KM[targetKey]
+  if (targetKm === undefined) return null
   let best: {
     seconds: number
     sourceLabel: string
@@ -31,8 +32,8 @@ function bestSource(
   } | null = null
 
   for (const r of records) {
-    if (r.seconds === null || r.key === targetKey || !DIST_KM[r.key]) continue
     const sourceKm = DIST_KM[r.key]
+    if (r.seconds === null || r.key === targetKey || sourceKm === undefined) continue
     const ratio = Math.abs(Math.log(targetKm / sourceKm))
     if (best === null || ratio < best.ratio) {
       best = { seconds: r.seconds, sourceLabel: r.label, sourceKm, eventName: r.eventName, ratio }

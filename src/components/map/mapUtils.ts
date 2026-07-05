@@ -1,6 +1,7 @@
 import type { RouteMeta, RouteCluster } from "@/application/usecases/GetAllRoutes";
 
-export function matchesFilters(meta: RouteMeta, year: string | null): boolean {
+export function matchesFilters(meta: RouteMeta | undefined, year: string | null): boolean {
+  if (!meta) return false;
   return !year || meta.year === year;
 }
 
@@ -16,11 +17,15 @@ export function buildGeoJSON(
 ): GeoJSON.FeatureCollection {
   return {
     type: "FeatureCollection",
-    features: indices.map((i) => ({
-      type: "Feature" as const,
-      id: i,
-      properties: {},
-      geometry: { type: "LineString" as const, coordinates: routes[i] },
-    })),
+    features: indices.flatMap((i) => {
+      const coordinates = routes[i];
+      if (!coordinates) return [];
+      return [{
+        type: "Feature" as const,
+        id: i,
+        properties: {},
+        geometry: { type: "LineString" as const, coordinates },
+      }];
+    }),
   };
 }

@@ -21,8 +21,8 @@ function CustomTooltip({ active, payload }: {
   active?: boolean
   payload?: Array<{ payload: TemperaturePoint }>
 }) {
-  if (!active || !payload?.length) return null
-  const d = payload[0].payload
+  const d = payload?.[0]?.payload
+  if (!active || !d) return null
   const label = new Date(d.date + 'T12:00:00').toLocaleDateString(t.locale, { day: 'numeric', month: 'short', year: 'numeric' })
   const tc = t.analytics.charts.temperatureCorrelation.tooltip
   return (

@@ -41,8 +41,8 @@ describe('getTrainingZones', () => {
     const result = await getTrainingZones()
     const byKey = Object.fromEntries(result!.zones.map((z) => [z.key, z]))
 
-    expect(byKey.easy.paceMinSecPerKm).toBeGreaterThan(byKey.marathon.paceMinSecPerKm)
-    expect(byKey.marathon.paceMinSecPerKm).toBeGreaterThan(byKey.threshold.paceMinSecPerKm)
-    expect(byKey.threshold.paceMinSecPerKm).toBeGreaterThan(byKey.vo2max.paceMinSecPerKm)
+    expect(byKey.easy!.paceMinSecPerKm).toBeGreaterThan(byKey.marathon!.paceMinSecPerKm)
+    expect(byKey.marathon!.paceMinSecPerKm).toBeGreaterThan(byKey.threshold!.paceMinSecPerKm)
+    expect(byKey.threshold!.paceMinSecPerKm).toBeGreaterThan(byKey.vo2max!.paceMinSecPerKm)
   })
 })

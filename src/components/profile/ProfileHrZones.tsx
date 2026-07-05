@@ -56,7 +56,7 @@ export function ProfileHrZones({ athlete, onSave }: Props) {
       <div className="flex flex-col gap-2">
         {zones.map(({ zone, min, max, editableIndex }) => (
           <div key={zone} className="flex items-center gap-2.5">
-            <span className={`h-2 w-2 shrink-0 rounded-full ${ZONE_COLOR_CLASSES[zone].bg}`} aria-hidden="true" />
+            <span className={`h-2 w-2 shrink-0 rounded-full ${ZONE_COLOR_CLASSES[zone]?.bg ?? ''}`} aria-hidden="true" />
             <span className="w-28 shrink-0 text-xs font-semibold text-foreground/80">
               {t.activity.zones.labels[zone]}
             </span>

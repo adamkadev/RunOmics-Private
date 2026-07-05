@@ -5,9 +5,9 @@ export const RANK_LADDER: RankTier[] = ['D', 'C', 'B', 'A', 'S']
 export function tierFromScore(score: number, thresholds: number[]): RankTier {
   let index = 0
   for (let i = 0; i < thresholds.length; i++) {
-    if (score >= thresholds[i]) index = i
+    if (score >= (thresholds[i] ?? Infinity)) index = i
   }
-  return RANK_LADDER[index]
+  return RANK_LADDER[Math.min(index, RANK_LADDER.length - 1)] ?? 'D'
 }
 
 // Same percentile anchors as GetAthleteRank's tierThresholds() (40th/60th/80th/95th),

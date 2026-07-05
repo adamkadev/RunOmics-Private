@@ -25,12 +25,14 @@ function buildSegmentFeatures(route: [number, number][], paceSamples: number[] |
       const low = Math.floor(sampleIdx)
       const high = Math.min(Math.ceil(sampleIdx), paceSamples.length - 1)
       const t = sampleIdx - low
-      pace = paceSamples[low] * (1 - t) + paceSamples[high] * t
+      pace = (paceSamples[low] ?? pace) * (1 - t) + (paceSamples[high] ?? pace) * t
     }
+    // slice(0, -1) guarantees route[i + 1] exists.
+    const next = route[i + 1]!
     return {
       type: 'Feature' as const,
       properties: { pace },
-      geometry: { type: 'LineString' as const, coordinates: [coord, route[i + 1]] },
+      geometry: { type: 'LineString' as const, coordinates: [coord, next] },
     }
   })
 }
@@ -94,6 +96,10 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
       const token = process.env.NEXT_PUBLIC_MAPTILER_TOKEN
       if (!token) { console.warn('NEXT_PUBLIC_MAPTILER_TOKEN not set'); return }
 
+      const start = route[0]
+      if (!start) return
+      const [startLng, startLat] = start
+
       if (animFrameRef.current) { cancelAnimationFrame(animFrameRef.current); animFrameRef.current = null }
       mapRef.current?.remove()
       mapRef.current = null
@@ -153,7 +159,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
           paint: { 'line-color': lineColor, 'line-width': 4 },
         })
 
-        new mgl.Marker({ element: mkMarker(CHART_COLORS.brand) }).setLngLat(route[0]).addTo(map)
+        new mgl.Marker({ element: mkMarker(CHART_COLORS.brand) }).setLngLat(start).addTo(map)
 
         const total = segments.length
         const duration = 1800
@@ -173,7 +179,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
           } else {
             animFrameRef.current = null
             const last = route[route.length - 1]
-            if (Math.abs(last[0] - route[0][0]) > 0.0005 || Math.abs(last[1] - route[0][1]) > 0.0005) {
+            if (last && (Math.abs(last[0] - startLng) > 0.0005 || Math.abs(last[1] - startLat) > 0.0005)) {
               new mgl.Marker({ element: mkMarker(PACE_ROUTE_COLORS.fast) }).setLngLat(last).addTo(map)
             }
           }

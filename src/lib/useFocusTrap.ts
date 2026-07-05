@@ -41,12 +41,12 @@ export function useFocusTrap<T extends HTMLElement>() {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key !== 'Tab') return
       const els = focusables()
-      if (els.length === 0) {
+      const first = els[0]
+      const last = els[els.length - 1]
+      if (!first || !last) {
         e.preventDefault()
         return
       }
-      const first = els[0]
-      const last = els[els.length - 1]
       const active = document.activeElement
       if (e.shiftKey && (active === first || active === container)) {
         e.preventDefault()

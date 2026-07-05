@@ -104,7 +104,7 @@ export function AnalyticsClient({
 }) {
   const { years, byYear, periodWeeks, byPeriod } = data
 
-  const [view, setView] = useState<View>({ kind: 'year', year: years[0] })
+  const [view, setView] = useState<View>({ kind: 'year', year: years[0] ?? new Date().getFullYear() })
   const [tab, setTab] = useState<TabId>('volume')
 
   function selectTab(id: TabId) {
@@ -145,7 +145,7 @@ export function AnalyticsClient({
   }
 
   const visibleTabs = isPeriod || isAll ? TABS.filter((tb) => tb.id !== 'seasons') : TABS
-  const displayYear = view.kind === 'year' ? view.year : years[0]
+  const displayYear = view.kind === 'year' ? view.year : (years[0] ?? null)
 
   const metrics: Metric[] = totals
     ? [
@@ -197,7 +197,7 @@ export function AnalyticsClient({
   const deltaBadges: ReactNode[] =
     view.kind === 'period'
       ? (() => {
-          const d = byPeriod[view.weeks].delta
+          const d = byPeriod[view.weeks]?.delta
           return d ? buildDeltaBadges(d) : []
         })()
       : []

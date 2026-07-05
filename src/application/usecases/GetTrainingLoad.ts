@@ -63,7 +63,9 @@ export function buildTimeSeries(activities: Activity[], hrBounds: HrBounds = DEF
   }
 
   const series = new Map<string, LoadSnapshot>()
-  const first = new Date(activities[activities.length - 1].date + 'T00:00:00')
+  const firstAct = activities[activities.length - 1]
+  if (!firstAct) return series
+  const first = new Date(firstAct.date + 'T00:00:00')
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
@@ -106,5 +108,6 @@ export async function getTrainingLoad(): Promise<TrainingLoadData | null> {
   })
 
   const last = points[points.length - 1]
+  if (!last) return null
   return { points, ctl: last.ctl, atl: last.atl, tsb: last.tsb }
 }

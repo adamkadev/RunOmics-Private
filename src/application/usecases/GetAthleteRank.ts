@@ -81,7 +81,7 @@ function ageFromBirthdate(birthdateIso: string): number {
 function bracketForAge(age: number): AgeBracket {
   const clamped = Math.min(Math.max(age, 20), 79)
   const index = Math.min(Math.floor((clamped - 20) / 10), AGE_BRACKETS.length - 1)
-  return AGE_BRACKETS[index]
+  return AGE_BRACKETS[index] ?? '20-29'
 }
 
 // Maps the 4 VO2max percentile anchors directly onto the D/C/B/A/S ladder:

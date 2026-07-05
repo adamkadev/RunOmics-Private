@@ -17,11 +17,12 @@ interface TooltipProps {
 }
 
 function CustomTooltip({ active, payload, label }: TooltipProps) {
-  if (!active || !payload?.length) return null
+  const point = payload?.[0]
+  if (!active || !point) return null
   const s = t.dashboard.vo2maxChart
   return (
     <TooltipCard label={label}>
-      <TooltipRow color={COLOR} name="VO₂max" value={`${payload[0].value.toFixed(1)} ${s.unit}`} />
+      <TooltipRow color={COLOR} name="VO₂max" value={`${point.value.toFixed(1)} ${s.unit}`} />
     </TooltipCard>
   )
 }
@@ -31,6 +32,7 @@ export function VO2maxChart({ data }: { data: VO2maxPoint[] }) {
 
   const s = t.dashboard.vo2maxChart
   const values = data.map((d) => d.value)
+  const latestValue = values[values.length - 1] ?? 0
   const min = Math.floor(Math.min(...values)) - 1
   const max = Math.ceil(Math.max(...values)) + 1
 
@@ -46,7 +48,7 @@ export function VO2maxChart({ data }: { data: VO2maxPoint[] }) {
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {s.title}
         <span className="ml-2 font-bold tabular-nums text-violet-600 dark:text-violet-400">
-          {values[values.length - 1].toFixed(1)}
+          {latestValue.toFixed(1)}
           <span className="ml-1 font-normal text-muted-foreground">{s.unit}</span>
         </span>
       </h3>

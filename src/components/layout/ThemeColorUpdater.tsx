@@ -4,8 +4,10 @@ import { useEffect } from 'react'
 import { useTheme } from 'next-themes'
 import { useAccent } from '@/lib/useAccent'
 
+const DEFAULT_BG: [string, string] = ['#eef3f0', '#070f0c']
+
 const bgColors: Record<string, [string, string]> = {
-  nature: ['#eef3f0', '#070f0c'],
+  nature: DEFAULT_BG,
   performance: ['#eff6ff', '#06091a'],
   impact: ['#fff1f2', '#130608'],
   motivation: ['#fff7ed', '#130a04'],
@@ -18,7 +20,7 @@ export function ThemeColorUpdater() {
 
   useEffect(() => {
     const isDark = theme === 'dark' || (theme === 'system' && systemTheme === 'dark')
-    const colors = bgColors[accent] || bgColors.nature
+    const colors = bgColors[accent] ?? DEFAULT_BG
     const color = isDark ? colors[1] : colors[0]
 
     document.querySelectorAll('meta[name="theme-color"]').forEach((m) => {

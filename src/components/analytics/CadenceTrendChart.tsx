@@ -19,10 +19,11 @@ interface TooltipProps {
 }
 
 function CustomTooltip({ active, payload, label }: TooltipProps) {
-  if (!active || !payload?.length) return null
+  const point = payload?.[0]
+  if (!active || !point) return null
   return (
     <TooltipCard label={label}>
-      <p className="text-sm font-semibold text-foreground">{payload[0].value} {t.analytics.charts.cadence.unit}</p>
+      <p className="text-sm font-semibold text-foreground">{point.value} {t.analytics.charts.cadence.unit}</p>
     </TooltipCard>
   )
 }

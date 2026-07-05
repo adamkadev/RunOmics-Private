@@ -31,14 +31,16 @@ export function StatsGrid({ weeks, currentStreak, vo2max, vo2maxTrend, weekLoad 
   const [index, setIndex] = useState(lastIndex)
   const currentWeek = weeks[index]
   const today = new Date()
-  const isCurrent = currentWeek.weekNumber === isoWeekNumber(today)
-  const weekYear = Math.floor(currentWeek.weekNumber / 100)
-  const showYear = weekYear !== today.getFullYear()
 
   const goPrev = () => setIndex((i) => Math.max(0, i - 1))
   const goNext = () => setIndex((i) => Math.min(lastIndex, i + 1))
 
   const { onTouchStart, onTouchEnd } = useSwipeNavigation(goPrev, goNext)
+
+  if (!currentWeek) return null
+  const isCurrent = currentWeek.weekNumber === isoWeekNumber(today)
+  const weekYear = Math.floor(currentWeek.weekNumber / 100)
+  const showYear = weekYear !== today.getFullYear()
 
   const baseMetrics: Metric[] = [
     {

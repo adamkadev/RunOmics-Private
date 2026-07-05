@@ -147,7 +147,7 @@ export function ActivityListClient({
     if (!node) return
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) loadMore()
+        if (entries[0]?.isIntersecting) loadMore()
       },
       { rootMargin: '200px' }
     )

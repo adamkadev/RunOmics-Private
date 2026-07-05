@@ -65,9 +65,9 @@ export function getYearComparison(): YearComparisonData | null {
   }
 
   const years = Array.from(byYear.keys()).sort((a, b) => b - a)
-  if (years.length < 2) return null
-
   const [newer, older] = years
+  if (newer === undefined || older === undefined) return null
+
   return {
     years: [newer, older],
     newer: buildMetrics(newer, byYear.get(newer)!),

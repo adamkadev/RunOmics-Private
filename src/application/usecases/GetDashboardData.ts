@@ -111,7 +111,8 @@ export function getDashboardData(): DashboardData {
   const sortedWeeks = Array.from(byWeek.keys()).sort((a, b) => a - b)
   const weeks = sortedWeeks.map((w) => buildWeekSummary(w, byWeek.get(w)!))
 
-  const currentWeek = weeks[weeks.length - 1]
+  // weeks is non-empty: today's week is always seeded into byWeek above.
+  const currentWeek = weeks[weeks.length - 1]!
   const lastWeekSummary = weeks[weeks.length - 2] ?? currentWeek
 
   const weeklyVolume: WeeklyVolume[] = sortedWeeks.slice(-12).map((w) => {

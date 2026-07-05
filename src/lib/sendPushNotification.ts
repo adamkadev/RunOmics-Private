@@ -14,8 +14,9 @@ export async function sendPushToAllDevices(title: string, body: string): Promise
     notification: { title, body },
   })
 
-  const staleTokens = tokens.filter(
-    (_, i) => !response.responses[i].success && response.responses[i].error?.code === 'messaging/registration-token-not-registered'
-  )
+  const staleTokens = tokens.filter((_, i) => {
+    const res = response.responses[i]
+    return res && !res.success && res.error?.code === 'messaging/registration-token-not-registered'
+  })
   await Promise.all(staleTokens.map((token) => db.collection(PUSH_TOKENS_COLLECTION).doc(token).delete()))
 }

@@ -88,6 +88,7 @@ export function getAllRoutes(): AllRoutesData {
       }) - 1
 
     const g = acc[clusterIdx]
+    if (!g) return
     g.indices.push(idx)
     g.minLon = Math.min(g.minLon, ...lons)
     g.maxLon = Math.max(g.maxLon, ...lons)

@@ -14,12 +14,13 @@ export function useSwipeNavigation(onPrev: () => void, onNext: () => void) {
   const touchStartX = useRef<number | null>(null)
 
   const onTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX
+    touchStartX.current = e.touches[0]?.clientX ?? null
   }
 
   const onTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current === null) return
-    const delta = e.changedTouches[0].clientX - touchStartX.current
+    const endX = e.changedTouches[0]?.clientX
+    if (touchStartX.current === null || endX === undefined) return
+    const delta = endX - touchStartX.current
     touchStartX.current = null
     if (delta > SWIPE_THRESHOLD_PX) onPrev()
     else if (delta < -SWIPE_THRESHOLD_PX) onNext()

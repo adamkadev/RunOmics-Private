@@ -56,10 +56,13 @@ export async function getTrainingStatus(): Promise<TrainingStatus | null> {
 
   const { ctl, atl, tsb, points } = load
   const prevPoint = points.length >= 15 ? points[points.length - 15] : points[0]
+  if (!prevPoint) return null
   const ctlDelta = round(ctl - prevPoint.ctl, 1)
 
   const activities = getAllActivities()
-  const refDate = new Date(activities[0].date + 'T00:00:00')
+  const firstActivity = activities[0]
+  if (!firstActivity) return null
+  const refDate = new Date(firstActivity.date + 'T00:00:00')
   const ratio = acwr(activities, refDate)
 
   const { status, risk } = classify(tsb, ctlDelta, ratio)

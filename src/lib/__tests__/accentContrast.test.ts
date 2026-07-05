@@ -7,12 +7,12 @@ function luminance(hex: string): number {
     const c = parseInt(hex.slice(i, i + 2), 16) / 255
     return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
   })
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+  return 0.2126 * (r ?? 0) + 0.7152 * (g ?? 0) + 0.0722 * (b ?? 0)
 }
 
 function contrast(fg: string, bg: string): number {
   const [l1, l2] = [luminance(fg), luminance(bg)].sort((a, b) => b - a)
-  return (l1 + 0.05) / (l2 + 0.05)
+  return ((l1 ?? 0) + 0.05) / ((l2 ?? 0) + 0.05)
 }
 
 // The accent palette is fixed, so contrast can be guaranteed by test instead

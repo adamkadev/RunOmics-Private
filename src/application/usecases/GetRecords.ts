@@ -164,14 +164,17 @@ export function getTopEfforts(n = 5): TopEfforts {
 
   for (const { key, km } of EFFORTS) {
     const entries = activities
-      .filter((a) => a.bestEfforts?.[key] != null)
-      .map((a) => ({
-        seconds: Math.round(a.bestEfforts![key]),
-        distanceKm: km,
-        activityId: a.id,
-        date: a.date,
-        eventName: a.description || undefined,
-      }))
+      .flatMap((a) => {
+        const seconds = a.bestEfforts?.[key]
+        if (seconds == null) return []
+        return [{
+          seconds: Math.round(seconds),
+          distanceKm: km,
+          activityId: a.id,
+          date: a.date,
+          eventName: a.description || undefined,
+        }]
+      })
       .sort((a, b) => a.seconds - b.seconds)
       .slice(0, n)
     if (entries.length) result[key] = entries

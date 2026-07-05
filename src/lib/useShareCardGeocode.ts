@@ -31,7 +31,7 @@ export function useShareCardGeocode(activity: Activity): {
     const indices = [...new Set([0, Math.floor(route.length * 0.5), route.length - 1])]
     Promise.allSettled(
       indices.map(idx => {
-        const [lng, lat] = route[idx]
+        const [lng, lat] = route[idx] ?? [0, 0]
         return fetch(
           `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=16`,
           { headers: { 'Accept-Language': 'fr', 'User-Agent': 'RunOmics/1.0' } }

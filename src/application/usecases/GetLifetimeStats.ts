@@ -12,10 +12,11 @@ export interface LifetimeStats {
 
 export function getLifetimeStats(): LifetimeStats | null {
   const activities = getAllActivities()
-  if (!activities.length) return null
+  const firstActivity = activities[0]
+  if (!firstActivity) return null
 
-  const firstActivityDate = activities.reduce((min, a) => (a.date < min ? a.date : min), activities[0].date)
-  const latestDate = activities.reduce((max, a) => (a.date > max ? a.date : max), activities[0].date)
+  const firstActivityDate = activities.reduce((min, a) => (a.date < min ? a.date : min), firstActivity.date)
+  const latestDate = activities.reduce((max, a) => (a.date > max ? a.date : max), firstActivity.date)
   const yearsTracked = round(
     (new Date(latestDate + 'T00:00:00').getTime() - new Date(firstActivityDate + 'T00:00:00').getTime()) /
       (YEAR_DAYS * DAY_MS),

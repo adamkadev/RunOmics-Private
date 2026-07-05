@@ -80,6 +80,7 @@ export function CalendarClient({ activities, plannedWorkouts }: Props) {
   /** Month view day tap: switch to the week view with that day pre-selected. */
   function openWeekAt(date: string) {
     const [y, m, d] = date.split('-').map(Number)
+    if (y === undefined || m === undefined || d === undefined) return
     setWeekStart(startOfWeek(new Date(y, m - 1, d)))
     setFocusDate(date)
     setDirection('forward')

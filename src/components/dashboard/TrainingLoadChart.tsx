@@ -28,8 +28,8 @@ interface TooltipProps {
 }
 
 function CustomTooltip({ active, payload }: TooltipProps) {
-  if (!active || !payload?.length) return null
-  const p = payload[0].payload
+  const p = payload?.[0]?.payload
+  if (!active || !p) return null
   return (
     <TooltipCard label={p.label}>
       <p className="text-sm text-blue-500 dark:text-blue-400">{t.dashboard.trainingLoad.fitness} {p.ctl}</p>

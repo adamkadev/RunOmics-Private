@@ -14,7 +14,7 @@ const ZONE_CONFIG: Record<number, {
 }> = Object.fromEntries(
   Object.entries(ZONE_COLOR_CLASSES).map(([zone, { bg, text }]) => [
     zone,
-    { label: t.activity.zones.labels[Number(zone)], barClass: bg, textClass: text },
+    { label: t.activity.zones.labels[Number(zone)] ?? '', barClass: bg, textClass: text },
   ])
 )
 

@@ -92,7 +92,7 @@ export function ClusterPanel({ clusters, names, stats, selectedIdx, onSelect, is
                     {names[i]}
                   </span>
                   <span className="text-caption text-subtle">
-                    {t.common.runs(stats[i].routeCount)} · {stats[i].totalKm} {t.units.km}
+                    {t.common.runs(stats[i]?.routeCount ?? 0)} · {stats[i]?.totalKm ?? 0} {t.units.km}
                   </span>
                 </button>
               </li>
