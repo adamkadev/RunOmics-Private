@@ -66,6 +66,11 @@ export const en = {
     close: 'Close',
   },
 
+  pwa: {
+    updateAvailable: 'A new version of RunOmics is ready.',
+    refresh: 'Refresh',
+  },
+
   pages: {
     dashboard: {
       title: 'Dashboard',
@@ -112,6 +117,12 @@ export const en = {
       code: '404',
       heading: "This page went on a run and didn't come back.",
       sub: "The route you're looking for doesn't exist.",
+      back: 'Back to Dashboard',
+    },
+    error: {
+      heading: 'Something tripped mid-stride.',
+      sub: 'An unexpected error occurred while loading this page.',
+      retry: 'Try again',
       back: 'Back to Dashboard',
     },
     settings: {
@@ -183,6 +194,11 @@ export const en = {
     dataExport: {
       csv: 'Export activities (.csv)',
       exporting: 'Exporting...',
+    },
+    offlineCache: {
+      clear: 'Clear offline cache',
+      cleared: 'Offline cache cleared.',
+      failed: 'Could not clear the offline cache.',
     },
     notifications: {
       title: 'Push notifications',

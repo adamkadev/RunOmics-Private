@@ -67,6 +67,11 @@ export const fr = {
     close: 'Fermer',
   },
 
+  pwa: {
+    updateAvailable: 'Une nouvelle version de RunOmics est prête.',
+    refresh: 'Actualiser',
+  },
+
   pages: {
     dashboard: {
       title: 'Tableau de bord',
@@ -115,6 +120,12 @@ export const fr = {
       code: '404',
       heading: 'Cette page est partie courir et n’est jamais revenue.',
       sub: 'L’itinéraire que vous cherchez n’existe pas.',
+      back: 'Retour à l’accueil',
+    },
+    error: {
+      heading: 'Une foulée de travers.',
+      sub: 'Une erreur inattendue est survenue au chargement de cette page.',
+      retry: 'Réessayer',
       back: 'Retour à l’accueil',
     },
     settings: {
@@ -186,6 +197,11 @@ export const fr = {
     dataExport: {
       csv: 'Exporter les activités (.csv)',
       exporting: 'Export en cours...',
+    },
+    offlineCache: {
+      clear: 'Vider le cache hors ligne',
+      cleared: 'Cache hors ligne vidé.',
+      failed: 'Impossible de vider le cache hors ligne.',
     },
     notifications: {
       title: 'Notifications push',

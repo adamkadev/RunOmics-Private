@@ -17,6 +17,16 @@ def main() -> int:
         garth.login(email, password)
     except Exception as e:
         print(f"\nAuthentication failed: {e}", file=sys.stderr)
+        print(
+            "\nNote: garth is deprecated and Garmin has been breaking its login\n"
+            "flow (the OAuth token it produces keeps working for ~1 year and\n"
+            "sync.py only refreshes that token, so day-to-day syncs are not\n"
+            "affected - only this initial login is fragile). If login fails:\n"
+            "  - try again from a residential IP (Cloudflare blocks datacenter IPs),\n"
+            "  - see https://github.com/matin/garth/discussions/222 for current\n"
+            "    workarounds (e.g. overriding the User-Agent) and alternatives.\n",
+            file=sys.stderr,
+        )
         return 1
 
     secret = garth.client.dumps()

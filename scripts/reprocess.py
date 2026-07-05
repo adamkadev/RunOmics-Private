@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
 
@@ -16,6 +17,12 @@ _FIT_DIR = Path(__file__).parent.parent / "public" / "fit"
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="Re-run the FIT parser on all cached FIT files and rewrite activities JSON"
+    )
+    parser.add_argument("--dry-run", action="store_true", help="report what would change without writing")
+    args = parser.parse_args()
+
     store = JsonActivityStore()
 
     updated = 0
@@ -49,6 +56,10 @@ def main() -> int:
             a["elevationGain"] = parsed.elevation_gain_m
         store.touch(a["id"])
         updated += 1
+
+    if args.dry_run:
+        print(f"Dry run: {updated} activities would be reprocessed (nothing written).")
+        return 0
 
     store.save()
 

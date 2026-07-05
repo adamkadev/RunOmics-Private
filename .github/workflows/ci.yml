@@ -6,6 +6,25 @@ on:
   pull_request:
 
 jobs:
+  python-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: scripts/requirements-dev.txt
+
+      - name: Install Python dependencies
+        run: pip install -r scripts/requirements-dev.txt
+
+      - name: Run pytest
+        run: python -m pytest scripts/tests/ -q
+
   verify:
     runs-on: ubuntu-latest
     env:
@@ -25,6 +44,11 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Audit production dependencies
+        # High/critical advisories in prod deps fail CI; dev-only and
+        # moderate advisories stay informational (npm audit for details).
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Lint
         run: npm run lint

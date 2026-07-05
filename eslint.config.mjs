@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Node utility scripts, not part of the linted Next.js app.
     "scripts/**",
+    // Vitest coverage report output.
+    "coverage/**",
   ]),
 ]);
 

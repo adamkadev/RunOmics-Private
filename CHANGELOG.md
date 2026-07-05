@@ -2,6 +2,104 @@
 
 All notable changes to this project are documented in this file.
 
+## [3.3] - 2026-07-04
+
+### Added
+
+- **Python test suite** (`scripts/tests/`, 41 tests + CI job): pins the FIT
+  pipeline's pure logic - best-effort/PR detection, pace smoothing, RDP route
+  decimation, interval splits, VO2max scaling, local time offsets, corrupt-FIT
+  robustness, the Garmin→activity mapper and the transient-retry policy.
+
+- **End-to-end tests (Playwright)**: first e2e batch covering the read-only
+  golden paths - dashboard, activities list → detail, calendar, records,
+  goals. Runs against a real production build (`next build && next start`)
+  and a **dedicated `runomics-dev` Firebase project**, never the real one,
+  so Firestore reads/writes during tests can't touch actual data. Activities
+  come from the real, committed activity JSON (read-only).
+  - `e2e/seed.mjs` + `e2e/fixtures/{goals,pbs,athlete}.json`: idempotent,
+    version-controlled fixtures seeded into `runomics-dev` before each run -
+    kept fully separate from `scripts/seed_firestore.js` (which targets the
+    real project from uncommitted local JSON).
+  - `.env.e2e` (committed, non-secret client Firebase config) +
+    `.env.e2e.local` (gitignored, Admin credentials) for local runs.
+  - `npm run e2e:seed` / `npm run test:e2e`; new
+    `.github/workflows/e2e.yml` job, gated on `DEV_FIREBASE_*` repo secrets
+    so forks/external PRs skip it instead of failing.
+  - README > "End-to-end tests" documents the one-time `runomics-dev`
+    project setup (Firestore rules deploy, service account key, GitHub
+    secrets).
+
+### Changed
+
+- **garth migration evaluated and declined**: upstream deprecation only
+  breaks the one-time login flow (`get_secret.py`); daily syncs merely
+  refresh the existing ~1-year OAuth token and keep working. The community
+  alternatives are unmaintained cat-and-mouse workarounds. Documented in the
+  README, with an actionable failure message added to `get_secret.py`.
+
+### Fixed
+
+- **CSV export in the iOS PWA**: the blob download either failed silently or
+  opened an awkward preview (no downloads UI in standalone mode). The export
+  now goes through the same native share sheet as the activity share card
+  (Save to Files, AirDrop...), with the regular download kept everywhere
+  else - logic extracted to a shared `saveFileWithFallback` helper used by
+  both, and closing the share sheet no longer falls through to a download.
+- Vitest's default test file pattern was also matching Playwright's
+  `e2e/*.spec.ts`, which use an incompatible `test`/`expect` - excluded the
+  `e2e/` directory from the Vitest config.
+
+## [3.2] - 2026-07-04
+
+Hardening pass driven by the audit in `docs/product-improvement-todolist.md`:
+security, reliability, observability, tests and pipeline robustness.
+
+### Added
+
+- **Error boundaries**: `src/app/error.tsx` (all routes, themed retry/back
+  fallback) and `global-error.tsx` (root-layout failures, inline-styled).
+- **Firestore rules versioned**: `firestore.rules` committed as the source of
+  truth (public read, owner-only writes) with deploy instructions.
+- **Content-Security-Policy** header covering MapTiler, Firebase/Google APIs,
+  Nominatim, MapLibre blob workers and the FCM service worker.
+- **Rate limiting + logging on `/api/internal/*`**: shared
+  `handleInternalRoute` wrapper - 20 req/min/IP fixed window (applied before
+  the secret check), structured `[internal:<route>]` error logs, 500s the
+  cron workflows can surface.
+- **Health probe**: `GET /api/internal/health` reports last-activity date,
+  staleness (> 7 days) and app version for uptime monitoring of the sync.
+- **PWA update banner**: a waiting service worker now triggers a "new version
+  ready" banner; Refresh activates it (SKIP_WAITING) and reloads. Settings >
+  Data gains a "Clear offline cache" action. 192/512 maskable icons added to
+  the manifest (rendered from the brand SVG).
+- **Component/a11y/security tests** (first RTL layer): `useFocusTrap` cycling
+  and inert handling, `ActivityNotes` owner gate, `ErrorFallback` + axe-core
+  smoke run, `internalAuth` secret + rate-limit behavior, and a WCAG 3:1
+  contrast test locking the whole accent palette on both themes. Coverage
+  reporting via `npm run test:coverage` (v8, text+lcov).
+- **Bundle analyzer**: `npm run analyze` (@next/bundle-analyzer).
+- CI: production-dependency audit step
+  (`npm audit --omit=dev --audit-level=high`).
+
+### Changed
+
+- **Sync pipeline resilience**: new `garmin/retry.py` with exponential
+  backoff (60s flat on 429; 2s/8s/32s on 5xx and network errors) replacing
+  the duplicated single-shot 429 helpers; the whole per-activity body is now
+  isolated so one corrupt FIT or API error can no longer abort the run and
+  lose the batch. `reprocess.py` gains `--dry-run`.
+- **Activity list**: offscreen cards skip layout/paint via
+  `content-visibility: auto` (native CSS virtualization, no library).
+- README: security model clarified (`NEXT_PUBLIC_OWNER_EMAIL` is a UI gate;
+  Firestore rules are the enforcement), new "Tests & quality" section.
+
+### Fixed
+
+- React Testing Library cleanup never ran between tests (vitest globals are
+  disabled), leaking renders across test cases.
+- `__pycache__` artifacts were not gitignored.
+
 ## [3.1] - 2026-07-04
 
 ### Added

@@ -63,6 +63,16 @@ python scripts/get_secret.py
 
 This will prompt for your Garmin Connect email and password, then print a `GARMIN_SECRET` string. Copy it - you'll need it as an environment variable.
 
+> **Note on garth's deprecation**: garth is [no longer maintained](https://github.com/matin/garth/discussions/222)
+> because Garmin keeps breaking its *login* flow. This project only uses that flow
+> here, once, to mint the token - `sync.py` merely loads and refreshes the existing
+> OAuth token, which continues to work (the underlying OAuth1 token lasts ~1 year).
+> No migration is planned while this holds: the community alternatives are
+> browser-automation or TLS-impersonation workarounds in an ongoing cat-and-mouse
+> game, i.e. no more future-proof than staying put. If `get_secret.py` stops
+> working when your token expires, check that discussion for the current
+> workaround before switching libraries.
+
 ### 3. Configure environment variables
 
 Create a `.env.local` file at the root:
@@ -88,6 +98,10 @@ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
 NEXT_PUBLIC_FIREBASE_VAPID_KEY=...
 
 # Google account allowed to sign in and edit notes/settings (everyone else is read-only)
+# NOTE: this only gates the UI. The actual write authorization is enforced by
+# the Firestore security rules (firestore.rules at the repo root) - keep the
+# email there in sync with this one, and deploy rule changes with
+# `firebase deploy --only firestore:rules`.
 NEXT_PUBLIC_OWNER_EMAIL=you@example.com
 
 # Shared secret for the internal cron endpoints (PR/shoe-wear/overreaching checks, weekly reminder)
@@ -200,6 +214,78 @@ refresh the cached pages - see `src/app/api/internal/revalidate/route.ts`.
 ### `public/events/` - Race photos
 
 Drop a photo named `{activityId}.jpg` (or `.png`, `.webp`) into `public/events/` and it will appear as the cover image on the PB card for that activity.
+
+---
+
+## Tests & quality
+
+```bash
+npm test               # Vitest: usecases, lib helpers, component tests (RTL), a11y smoke (axe-core)
+npm run test:coverage  # same suite with a v8 coverage report (text + lcov)
+npm run lint           # ESLint (next/core-web-vitals + TS)
+npx tsc --noEmit       # typecheck
+npm run analyze        # production build with @next/bundle-analyzer treemaps
+```
+
+CI (`.github/workflows/ci.yml`) runs lint, typecheck, tests, a production-dependency
+audit (`npm audit --omit=dev --audit-level=high`) and the build on every push/PR.
+
+The improvement backlog lives in
+[`docs/product-improvement-todolist.md`](docs/product-improvement-todolist.md).
+
+### End-to-end tests
+
+Playwright drives a real production build (`next build && next start`) against a
+**dedicated Firebase project** (`runomics-dev`), never the real one - so goals/pbs/
+athlete reads/writes during e2e can't touch your actual data. Activities themselves
+come from the real, committed `public/data/activities/*.json` (read-only, no risk).
+
+**One-time setup** (any Google account, free Spark plan is enough):
+
+1. Create a Firebase project (e.g. `runomics-dev`) with Firestore enabled, and
+   register a web app - copy its config into `.env.e2e` (already done in this repo
+   if you're picking up an existing setup; the web config is not a secret, it ships
+   in every browser bundle).
+2. Deploy the same `firestore.rules` from this repo to that project (swap the owner
+   email if you want to test the write-gated paths as yourself):
+   ```bash
+   firebase deploy --only firestore:rules --project runomics-dev
+   ```
+3. Generate a **service account key** for that project (Firebase console → Project
+   settings → Service accounts → Generate new private key) and export it locally:
+   ```bash
+   export FIREBASE_PROJECT_ID=runomics-dev
+   export FIREBASE_CLIENT_EMAIL=firebase-adminsdk-...@runomics-dev.iam.gserviceaccount.com
+   export FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+   ```
+   In GitHub Actions, add these as repo secrets named `DEV_FIREBASE_PROJECT_ID`,
+   `DEV_FIREBASE_CLIENT_EMAIL`, `DEV_FIREBASE_PRIVATE_KEY` (`.github/workflows/e2e.yml`
+   skips the job entirely if they're absent, so forks/external PRs don't fail).
+
+**Running:**
+
+```bash
+npm run e2e:seed    # upserts e2e/fixtures/{goals,pbs,athlete}.json into runomics-dev
+npm run test:e2e    # builds, starts, and runs the Playwright specs in e2e/
+```
+
+`e2e/fixtures/*.json` are committed (non-secret, generic values) and seeded via
+`e2e/seed.mjs` - a small script separate from `scripts/seed_firestore.js` so e2e
+runs can never accidentally point at your real prod data. `.env.e2e` carries the
+non-secret client config; put the three `FIREBASE_*` Admin vars above in
+`.env.e2e.local` (gitignored) for local runs instead of exporting them each time.
+
+The first e2e batch covers read-only golden paths (dashboard, activities list →
+detail, calendar, records, goals) rendered from real activity data + the seeded
+Firestore fixtures. Sign-in-gated flows (Settings, activity notes editing) aren't
+covered yet - Google's OAuth popup isn't something Playwright can drive without a
+test-only auth bypass, which is its own follow-up.
+
+### Monitoring
+
+`GET /api/internal/health` (authenticated with `x-internal-secret`) reports the
+last synced activity date and flags the data as `stale` after 7 days without
+one - point any uptime monitor at it to catch a silently broken Garmin sync.
 
 ---
 

@@ -13,6 +13,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from garmin.client import GarminAuthError, GarminAPIError, GarminClient
+from garmin.retry import retry_transient
 from sync_workouts import fetch_planned_workouts, write_planned_workouts
 from processing.fit_parser import ParsedFit, parse_fit
 from processing.mapper import HrZone, extract_gear_id, map_activity, parse_hr_zones
@@ -21,7 +22,6 @@ from repository.json_store import JsonActivityStore
 _FIT_DIR = Path(__file__).parent.parent / "public" / "fit"
 _SYNC_META_PATH = Path(__file__).parent.parent / "public" / "data" / "sync_meta.json"
 _RATE_LIMIT_PAUSE = 1.0
-_RETRY_PAUSE = 60.0
 # Garmin gear assignment is often corrected a few days after upload, after the
 # activity has already been synced - re-check gear (only) for recent activities
 # on every run so those corrections aren't missed without a full --force resync.
@@ -66,31 +66,33 @@ def main() -> int:
             for i, activity_id in enumerate(new_ids, 1):
                 print(f"  [{i}/{len(new_ids)}] Activity {activity_id} …", end=" ", flush=True)
 
+                # One bad activity (API error, corrupt FIT, mapping bug) must
+                # not abort the run and lose everything synced before it.
                 try:
-                    detail = _retry_on_429(lambda: client.get_activity_detail(activity_id))
-                except GarminAPIError as exc:
-                    print(f"failed ({exc})")
+                    detail = retry_transient(lambda: client.get_activity_detail(activity_id))
+
+                    parsed, file_name = _fetch_track_file(client, activity_id, dry_run=args.dry_run)
+
+                    try:
+                        raw_zones = retry_transient(lambda: client.get_hr_zones(activity_id))
+                        hr_zones = parse_hr_zones(raw_zones)
+                    except GarminAPIError:
+                        hr_zones = []
+
+                    try:
+                        gear = retry_transient(lambda: client.get_activity_gear(activity_id))
+                    except GarminAPIError:
+                        gear = []
+
+                    time.sleep(_RATE_LIMIT_PAUSE)
+
+                    activity_data = map_activity(
+                        detail, parsed, hr_zones=hr_zones, file_name=file_name, gear=gear
+                    )
+                except Exception as exc:
+                    print(f"failed ({type(exc).__name__}: {exc})")
                     failed += 1
                     continue
-
-                parsed, file_name = _fetch_track_file(client, activity_id, dry_run=args.dry_run)
-
-                try:
-                    raw_zones = _retry_on_429(lambda: client.get_hr_zones(activity_id))
-                    hr_zones = parse_hr_zones(raw_zones)
-                except GarminAPIError:
-                    hr_zones = []
-
-                try:
-                    gear = _retry_on_429(lambda: client.get_activity_gear(activity_id))
-                except GarminAPIError:
-                    gear = []
-
-                time.sleep(_RATE_LIMIT_PAUSE)
-
-                activity_data = map_activity(
-                    detail, parsed, hr_zones=hr_zones, file_name=file_name, gear=gear
-                )
 
                 route_info = f"{len(activity_data.route)} pts" if activity_data.route else "no GPS"
                 hr_info = f"avg HR {activity_data.avg_heart_rate}" if activity_data.avg_heart_rate else "no HR"
@@ -119,7 +121,7 @@ def main() -> int:
                 )
                 for activity_id in recent_ids:
                     try:
-                        raw_gear = _retry_on_429(lambda: client.get_activity_gear(activity_id))
+                        raw_gear = retry_transient(lambda: client.get_activity_gear(activity_id))
                     except GarminAPIError:
                         continue
                     if store.update_gear(activity_id, extract_gear_id(raw_gear)):
@@ -151,17 +153,6 @@ def _write_sync_meta() -> None:
 
 
 
-def _retry_on_429(fn):
-    try:
-        return fn()
-    except GarminAPIError as exc:
-        if exc.status_code != 429:
-            raise
-        print(f"rate-limited, waiting {_RETRY_PAUSE}s…", flush=True)
-        time.sleep(_RETRY_PAUSE)
-        return fn()
-
-
 def _fetch_track_file(
     client: GarminClient, activity_id: str, *, dry_run: bool
 ) -> tuple[ParsedFit | None, str | None]:
@@ -172,7 +163,7 @@ def _fetch_track_file(
             return parsed, fit_path.name
 
     try:
-        fit_bytes = _retry_on_429(lambda: client.download_fit(activity_id))
+        fit_bytes = retry_transient(lambda: client.download_fit(activity_id))
     except GarminAPIError:
         return None, None
 

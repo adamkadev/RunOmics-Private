@@ -1,4 +1,10 @@
 import '@testing-library/jest-dom/vitest'
+import { afterEach } from 'vitest'
+import { cleanup } from '@testing-library/react'
+
+// Vitest globals are disabled, so react-testing-library cannot register its
+// automatic afterEach cleanup - do it explicitly or renders leak across tests.
+afterEach(cleanup)
 
 // Node's built-in `localStorage` global (stable since Node 22) shadows jsdom's
 // implementation: vitest only overrides globals it doesn't find already present on

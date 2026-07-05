@@ -20,7 +20,9 @@ export function ActivityListCard({ activity: a, prLabels = [] }: Props) {
   return (
     <Link
       href={`/activities/${a.id}`}
-      className="glass-card block rounded-card-sm p-5 transition-transform duration-[120ms] ease-out active:scale-[0.98]"
+      // content-visibility skips layout/paint for offscreen cards, which keeps
+      // long infinite-scroll sessions cheap without a virtualization library.
+      className="glass-card block rounded-card-sm p-5 transition-transform duration-[120ms] ease-out active:scale-[0.98] [contain-intrinsic-size:auto_170px] [content-visibility:auto]"
     >
       <div className="flex items-center gap-2.5">
         <span
