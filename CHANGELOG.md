@@ -2,6 +2,20 @@
 
 All notable changes to this project are documented in this file.
 
+## [3.4] - 2026-07-04
+
+### Added
+
+- **Accessible chart summaries**: new `ChartFigure` component
+  (`role="img"` + `aria-label`, chart SVG marked `aria-hidden`) applied to
+  all 25 Recharts charts across activity detail, dashboard and analytics.
+  Each summary is computed from the data already in the component (value
+  range, series min/max, pie/bar breakdown, or the existing `ChartExplain`
+  insight text for scatter/regression charts) - no new i18n copy, every
+  label reuses strings already translated elsewhere in the same component.
+  Screen readers now get one concise sentence per chart instead of either
+  silence or a scattering of raw SVG tick-label text nodes.
+
 ## [3.3] - 2026-07-04
 
 ### Added

@@ -14,6 +14,7 @@ import { CHART_COLORS } from '@/lib/colors'
 import { useAccentColor } from '@/lib/useAccent'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { ChartFigure } from '@/components/ui/ChartFigure'
 import { t } from '@/i18n'
 
 interface Props {
@@ -62,55 +63,60 @@ export function WeeklyVolumeChart({ data, currentWeek }: Props) {
   const monthTicks = chartData.filter((d) => d.monthLabel !== '').map((d) => d.idx)
   const currentWeekIdx = chartData.findIndex((d) => d.week === currentWeek)
 
+  const distances = chartData.map((d) => d.distanceKm)
+  const summary = `${t.dashboard.weeklyVolume.title}: ${Math.min(...distances).toFixed(1)}–${Math.max(...distances).toFixed(1)} ${t.units.km}`
+
   return (
     <GlassSurface variant="card" className="p-5">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.dashboard.weeklyVolume.title}
       </h3>
-      <ResponsiveContainer width="100%" height={180}>
-        <AreaChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
-          <defs>
-            <linearGradient id="volumeGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor={accentColor} stopOpacity={0.3} />
-              <stop offset="95%" stopColor={accentColor} stopOpacity={0.02} />
-            </linearGradient>
-          </defs>
-          <XAxis
-            dataKey="idx"
-            type="number"
-            domain={[0, data.length - 1]}
-            ticks={monthTicks}
-            tickFormatter={(i: number) => chartData[i]?.monthLabel ?? ''}
-            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-            axisLine={false}
-            tickLine={false}
-          />
-          <YAxis
-            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-            axisLine={false}
-            tickLine={false}
-            unit={` ${t.units.km}`}
-          />
-          <Tooltip content={<CustomTooltip />} cursor={{ stroke: accentColor, strokeWidth: 1, strokeDasharray: '4 3' }} />
-          {currentWeekIdx >= 0 && (
-            <ReferenceLine
-              x={currentWeekIdx}
-              stroke={accentColor}
-              strokeWidth={1.5}
-              strokeDasharray="4 3"
+      <ChartFigure summary={summary}>
+        <ResponsiveContainer width="100%" height={180}>
+          <AreaChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+            <defs>
+              <linearGradient id="volumeGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={accentColor} stopOpacity={0.3} />
+                <stop offset="95%" stopColor={accentColor} stopOpacity={0.02} />
+              </linearGradient>
+            </defs>
+            <XAxis
+              dataKey="idx"
+              type="number"
+              domain={[0, data.length - 1]}
+              ticks={monthTicks}
+              tickFormatter={(i: number) => chartData[i]?.monthLabel ?? ''}
+              tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+              axisLine={false}
+              tickLine={false}
             />
-          )}
-          <Area
-            type="monotone"
-            dataKey="distanceKm"
-            stroke={accentColor}
-            strokeWidth={2}
-            fill="url(#volumeGradient)"
-            dot={false}
-            activeDot={{ r: 4, fill: accentColor, strokeWidth: 0 }}
-          />
-        </AreaChart>
-      </ResponsiveContainer>
+            <YAxis
+              tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+              axisLine={false}
+              tickLine={false}
+              unit={` ${t.units.km}`}
+            />
+            <Tooltip content={<CustomTooltip />} cursor={{ stroke: accentColor, strokeWidth: 1, strokeDasharray: '4 3' }} />
+            {currentWeekIdx >= 0 && (
+              <ReferenceLine
+                x={currentWeekIdx}
+                stroke={accentColor}
+                strokeWidth={1.5}
+                strokeDasharray="4 3"
+              />
+            )}
+            <Area
+              type="monotone"
+              dataKey="distanceKm"
+              stroke={accentColor}
+              strokeWidth={2}
+              fill="url(#volumeGradient)"
+              dot={false}
+              activeDot={{ r: 4, fill: accentColor, strokeWidth: 0 }}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </ChartFigure>
     </GlassSurface>
   )
 }

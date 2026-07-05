@@ -6,6 +6,7 @@ import type { ZoneShare } from '@/application/usecases/GetAnalyticsData'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { CHART_COLORS, ZONE_COLORS } from '@/lib/colors'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { ChartFigure } from '@/components/ui/ChartFigure'
 import { t } from '@/i18n'
 
 const ZONE_LABELS = t.analytics.charts.zones.labels
@@ -37,32 +38,36 @@ function CustomTooltip({ active, payload }: TooltipProps) {
 export function ZoneDistributionChart({ data }: Props) {
   if (!data.length) return null
 
+  const summary = `${t.analytics.charts.zones.title}: ${data.map((z) => `Z${z.zone} ${z.percent}%`).join(', ')}`
+
   return (
     <GlassSurface variant="card" className="p-5">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.analytics.charts.zones.title}
       </h3>
       <div className="flex items-center gap-4">
-        <ResponsiveContainer width={140} height={140}>
-          <PieChart>
-            <Pie
-              data={data}
-              dataKey="seconds"
-              nameKey="zone"
-              cx="50%"
-              cy="50%"
-              innerRadius={42}
-              outerRadius={64}
-              paddingAngle={2}
-              isAnimationActive={false}
-            >
-              {data.map((z) => (
-                <Cell key={z.zone} fill={ZONE_COLORS[z.zone] ?? CHART_COLORS.axisTick} />
-              ))}
-            </Pie>
-            <Tooltip content={<CustomTooltip />} />
-          </PieChart>
-        </ResponsiveContainer>
+        <ChartFigure summary={summary}>
+          <ResponsiveContainer width={140} height={140}>
+            <PieChart>
+              <Pie
+                data={data}
+                dataKey="seconds"
+                nameKey="zone"
+                cx="50%"
+                cy="50%"
+                innerRadius={42}
+                outerRadius={64}
+                paddingAngle={2}
+                isAnimationActive={false}
+              >
+                {data.map((z) => (
+                  <Cell key={z.zone} fill={ZONE_COLORS[z.zone] ?? CHART_COLORS.axisTick} />
+                ))}
+              </Pie>
+              <Tooltip content={<CustomTooltip />} />
+            </PieChart>
+          </ResponsiveContainer>
+        </ChartFigure>
         <ul className="flex-1 space-y-2">
           {data.map((z) => (
             <li key={z.zone} className="flex items-center justify-between text-xs">

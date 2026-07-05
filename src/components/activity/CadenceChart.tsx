@@ -12,6 +12,7 @@ import {
 import { CHART_COLORS } from '@/lib/colors'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { SingleSeriesTooltip } from '@/components/ui/ChartTooltip'
+import { ChartFigure } from '@/components/ui/ChartFigure'
 import { t } from '@/i18n'
 
 interface Props {
@@ -52,6 +53,9 @@ export const CadenceChart = memo(function CadenceChart({ samples, avgCadence, di
   }
 
   const maxSpm = Math.max(...samples)
+  const summary = `${t.activity.charts.cadence}: ${
+    avgCadence ? `${t.activity.charts.avg} ${avgCadence.toFixed(0)}, ` : ''
+  }${t.activity.charts.max} ${maxSpm} ${t.units.spm}`
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -63,62 +67,64 @@ export const CadenceChart = memo(function CadenceChart({ samples, avgCadence, di
           {' '}{t.units.spm}
         </span>
       </div>
-      <ResponsiveContainer width="100%" height={140} className="select-none touch-pan-y">
-        <AreaChart
-          data={data}
-          margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
-          onMouseMove={handleMove}
-          onMouseLeave={() => onHoverFraction?.(null)}
-          syncId="activity-charts"
-          syncMethod="value"
-        >
-          <defs>
-            <linearGradient id="cadenceGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor={CHART_COLORS.cadence} stopOpacity={0.25} />
-              <stop offset="95%" stopColor={CHART_COLORS.cadence} stopOpacity={0.02} />
-            </linearGradient>
-          </defs>
-          <XAxis
-            dataKey="d"
-            type="number"
-            domain={[0, distanceKm ?? 'dataMax']}
-            ticks={distanceKm != null ? kmTicks(distanceKm) : undefined}
-            tickFormatter={(v) => (v === 0 ? '' : `${v} km`)}
-            tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
-            axisLine={false}
-            tickLine={false}
-          />
-          <YAxis
-            domain={CADENCE_DOMAIN}
-            ticks={CADENCE_TICKS}
-            interval={0}
-            tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
-            axisLine={false}
-            tickLine={false}
-            width={40}
-            tickFormatter={formatCadenceTick}
-          />
-          <Tooltip
-            content={
-              <SingleSeriesTooltip
-                dataKey="spm"
-                color={CHART_COLORS.cadence}
-                name={t.activity.charts.cadence}
-                formatValue={formatCadenceTooltip}
-              />
-            }
-          />
-          <Area
-            type="monotone"
-            dataKey="spm"
-            stroke={CHART_COLORS.cadence}
-            strokeWidth={1.5}
-            fill="url(#cadenceGradient)"
-            dot={false}
-            isAnimationActive={false}
-          />
-        </AreaChart>
-      </ResponsiveContainer>
+      <ChartFigure summary={summary}>
+        <ResponsiveContainer width="100%" height={140} className="select-none touch-pan-y">
+          <AreaChart
+            data={data}
+            margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
+            onMouseMove={handleMove}
+            onMouseLeave={() => onHoverFraction?.(null)}
+            syncId="activity-charts"
+            syncMethod="value"
+          >
+            <defs>
+              <linearGradient id="cadenceGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={CHART_COLORS.cadence} stopOpacity={0.25} />
+                <stop offset="95%" stopColor={CHART_COLORS.cadence} stopOpacity={0.02} />
+              </linearGradient>
+            </defs>
+            <XAxis
+              dataKey="d"
+              type="number"
+              domain={[0, distanceKm ?? 'dataMax']}
+              ticks={distanceKm != null ? kmTicks(distanceKm) : undefined}
+              tickFormatter={(v) => (v === 0 ? '' : `${v} km`)}
+              tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis
+              domain={CADENCE_DOMAIN}
+              ticks={CADENCE_TICKS}
+              interval={0}
+              tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
+              axisLine={false}
+              tickLine={false}
+              width={40}
+              tickFormatter={formatCadenceTick}
+            />
+            <Tooltip
+              content={
+                <SingleSeriesTooltip
+                  dataKey="spm"
+                  color={CHART_COLORS.cadence}
+                  name={t.activity.charts.cadence}
+                  formatValue={formatCadenceTooltip}
+                />
+              }
+            />
+            <Area
+              type="monotone"
+              dataKey="spm"
+              stroke={CHART_COLORS.cadence}
+              strokeWidth={1.5}
+              fill="url(#cadenceGradient)"
+              dot={false}
+              isAnimationActive={false}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </ChartFigure>
     </GlassSurface>
   )
 })

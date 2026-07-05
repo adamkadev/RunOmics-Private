@@ -5,6 +5,7 @@ import type { VO2maxPoint } from '@/application/usecases/GetVO2maxHistory'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { ChartFigure } from '@/components/ui/ChartFigure'
 import { t } from '@/i18n'
 
 const COLOR = CHART_COLORS.efficiency // violet-500
@@ -38,6 +39,7 @@ export function VO2maxChart({ data }: { data: VO2maxPoint[] }) {
   const tickDates = new Set(data.filter((_, i) => i % step === 0 || i === data.length - 1).map((d) => d.date))
 
   const avg = Math.round(values.reduce((s, v) => s + v, 0) / values.length * 10) / 10
+  const summary = `${s.title}: ${min}–${max} ${s.unit}, ${t.activity.charts.avg} ${avg}`
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -49,39 +51,41 @@ export function VO2maxChart({ data }: { data: VO2maxPoint[] }) {
         </span>
       </h3>
 
-      <ResponsiveContainer width="100%" height={200}>
-        <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
-          <XAxis
-            dataKey="date"
-            tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
-            axisLine={false}
-            tickLine={false}
-            tickFormatter={(d: string) => {
-              if (!tickDates.has(d)) return ''
-              const dt = new Date(d + 'T00:00:00')
-              return dt.toLocaleDateString(t.locale, { month: 'short', day: 'numeric' })
-            }}
-          />
-          <YAxis
-            domain={[min, max]}
-            tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
-            axisLine={false}
-            tickLine={false}
-            width={32}
-            tickFormatter={(v: number) => v.toFixed(0)}
-          />
-          <ReferenceLine y={avg} stroke={CHART_COLORS.axisTick} strokeDasharray="3 3" strokeOpacity={0.4} />
-          <Tooltip content={<CustomTooltip />} />
-          <Line
-            type="monotone"
-            dataKey="value"
-            stroke={COLOR}
-            strokeWidth={2}
-            dot={{ r: 2.5, fill: COLOR, strokeWidth: 0 }}
-            isAnimationActive={false}
-          />
-        </LineChart>
-      </ResponsiveContainer>
+      <ChartFigure summary={summary}>
+        <ResponsiveContainer width="100%" height={200}>
+          <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
+            <XAxis
+              dataKey="date"
+              tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(d: string) => {
+                if (!tickDates.has(d)) return ''
+                const dt = new Date(d + 'T00:00:00')
+                return dt.toLocaleDateString(t.locale, { month: 'short', day: 'numeric' })
+              }}
+            />
+            <YAxis
+              domain={[min, max]}
+              tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
+              axisLine={false}
+              tickLine={false}
+              width={32}
+              tickFormatter={(v: number) => v.toFixed(0)}
+            />
+            <ReferenceLine y={avg} stroke={CHART_COLORS.axisTick} strokeDasharray="3 3" strokeOpacity={0.4} />
+            <Tooltip content={<CustomTooltip />} />
+            <Line
+              type="monotone"
+              dataKey="value"
+              stroke={COLOR}
+              strokeWidth={2}
+              dot={{ r: 2.5, fill: COLOR, strokeWidth: 0 }}
+              isAnimationActive={false}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </ChartFigure>
 
       <p className="mt-2 text-xs text-subtle">{s.footnote}</p>
     </GlassSurface>

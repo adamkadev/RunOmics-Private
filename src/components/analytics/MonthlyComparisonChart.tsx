@@ -9,6 +9,7 @@ import { CHART_COLORS } from '@/lib/colors'
 import { useAccentColor } from '@/lib/useAccent'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { ChartFigure } from '@/components/ui/ChartFigure'
 import { t } from '@/i18n'
 
 const MONTH_LABELS = t.dashboard.heatmap.months.map((m) => m.toUpperCase())
@@ -56,6 +57,10 @@ export function MonthlyComparisonChart({ currentYear, currentData, prevYear, pre
     }
   })
 
+  const curTotal = currentData.reduce((s, d) => s + d.totalKm, 0)
+  const prevTotal = prevData.reduce((s, d) => s + d.totalKm, 0)
+  const summary = `${t.analytics.charts.monthlyComparison.title}: ${currentYear} ${curTotal.toFixed(0)} ${t.units.km}, ${prevYear} ${prevTotal.toFixed(0)} ${t.units.km}`
+
   return (
     <GlassSurface variant="card" className="p-5">
       <div className="mb-4 flex items-center justify-between">
@@ -71,42 +76,44 @@ export function MonthlyComparisonChart({ currentYear, currentData, prevYear, pre
           </span>
         </div>
       </div>
-      <ResponsiveContainer width="100%" height={200}>
-        <LineChart data={merged} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>
-          <XAxis
-            dataKey="label"
-            tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
-            axisLine={false}
-            tickLine={false}
-          />
-          <YAxis
-            tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
-            axisLine={false}
-            tickLine={false}
-            unit=" km"
-          />
-          <Tooltip content={<CustomTooltip />} />
-          <Line
-            type="monotone"
-            dataKey={currentYear}
-            stroke={accentColor}
-            strokeWidth={2}
-            dot={false}
-            isAnimationActive={false}
-            connectNulls
-          />
-          <Line
-            type="monotone"
-            dataKey={prevYear}
-            stroke={CHART_COLORS.axisTick}
-            strokeWidth={1.5}
-            strokeDasharray="4 3"
-            dot={false}
-            isAnimationActive={false}
-            connectNulls
-          />
-        </LineChart>
-      </ResponsiveContainer>
+      <ChartFigure summary={summary}>
+        <ResponsiveContainer width="100%" height={200}>
+          <LineChart data={merged} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>
+            <XAxis
+              dataKey="label"
+              tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis
+              tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
+              axisLine={false}
+              tickLine={false}
+              unit=" km"
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Line
+              type="monotone"
+              dataKey={currentYear}
+              stroke={accentColor}
+              strokeWidth={2}
+              dot={false}
+              isAnimationActive={false}
+              connectNulls
+            />
+            <Line
+              type="monotone"
+              dataKey={prevYear}
+              stroke={CHART_COLORS.axisTick}
+              strokeWidth={1.5}
+              strokeDasharray="4 3"
+              dot={false}
+              isAnimationActive={false}
+              connectNulls
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </ChartFigure>
     </GlassSurface>
   )
 }

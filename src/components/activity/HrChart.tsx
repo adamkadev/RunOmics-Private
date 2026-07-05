@@ -12,6 +12,7 @@ import {
 import { CHART_COLORS } from '@/lib/colors'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { SingleSeriesTooltip } from '@/components/ui/ChartTooltip'
+import { ChartFigure } from '@/components/ui/ChartFigure'
 import type { HrZone } from '@/domain/activity/types'
 import { t } from '@/i18n'
 
@@ -55,6 +56,9 @@ export const HrChart = memo(function HrChart({ samples, avgHr, distanceKm, onHov
   })
 
   const isFiltering = highlightZone != null && hrZones && hrZones.length > 0
+  const summary = avgHr
+    ? `${t.activity.charts.heartRate}: ${t.activity.charts.avg} ${avgHr}, ${t.activity.charts.max} ${maxHr} ${t.units.bpm}`
+    : `${t.activity.charts.heartRate}: ${t.activity.charts.max} ${maxHr} ${t.units.bpm}`
 
   function handleMove(state: Record<string, unknown> | null) {
     const idx = state?.activeTooltipIndex
@@ -75,80 +79,82 @@ export const HrChart = memo(function HrChart({ samples, avgHr, distanceKm, onHov
           </span>
         )}
       </div>
-      <ResponsiveContainer width="100%" height={140} className="select-none touch-pan-y">
-        <AreaChart
-          data={data}
-          margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
-          onMouseMove={handleMove}
-          onMouseLeave={() => onHoverFraction?.(null)}
-          syncId="activity-charts"
-          syncMethod="value"
-        >
-          <defs>
-            <linearGradient id="hrGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor={CHART_COLORS.hr} stopOpacity={0.25} />
-              <stop offset="95%" stopColor={CHART_COLORS.hr} stopOpacity={0.02} />
-            </linearGradient>
-            <linearGradient id="hrHighlightGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor={CHART_COLORS.hr} stopOpacity={0.45} />
-              <stop offset="95%" stopColor={CHART_COLORS.hr} stopOpacity={0.05} />
-            </linearGradient>
-          </defs>
-          <XAxis
-            dataKey="d"
-            type="number"
-            domain={[0, distanceKm ?? 'dataMax']}
-            ticks={distanceKm != null ? kmTicks(distanceKm) : undefined}
-            tickFormatter={(v) => (v === 0 ? '' : `${v} km`)}
-            tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
-            axisLine={false}
-            tickLine={false}
-          />
-          <YAxis
-            domain={HR_DOMAIN}
-            ticks={HR_TICKS}
-            interval={0}
-            tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
-            axisLine={false}
-            tickLine={false}
-            width={40}
-          />
-          <Tooltip
-            content={
-              <SingleSeriesTooltip
-                dataKey="bpm"
-                color={CHART_COLORS.hr}
-                name={t.activity.charts.hr}
-                formatValue={(v) => `${v} ${t.units.bpm}`}
-              />
-            }
-          />
-          {/* Base area - dimmed when filtering by zone */}
-          <Area
-            type="monotone"
-            dataKey="bpm"
-            stroke={CHART_COLORS.hr}
-            strokeWidth={isFiltering ? 1 : 1.5}
-            strokeOpacity={isFiltering ? 0.15 : 1}
-            fill={isFiltering ? 'none' : 'url(#hrGradient)'}
-            dot={false}
-            isAnimationActive={false}
-          />
-          {/* Highlighted zone overlay */}
-          {isFiltering && (
+      <ChartFigure summary={summary}>
+        <ResponsiveContainer width="100%" height={140} className="select-none touch-pan-y">
+          <AreaChart
+            data={data}
+            margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
+            onMouseMove={handleMove}
+            onMouseLeave={() => onHoverFraction?.(null)}
+            syncId="activity-charts"
+            syncMethod="value"
+          >
+            <defs>
+              <linearGradient id="hrGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={CHART_COLORS.hr} stopOpacity={0.25} />
+                <stop offset="95%" stopColor={CHART_COLORS.hr} stopOpacity={0.02} />
+              </linearGradient>
+              <linearGradient id="hrHighlightGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={CHART_COLORS.hr} stopOpacity={0.45} />
+                <stop offset="95%" stopColor={CHART_COLORS.hr} stopOpacity={0.05} />
+              </linearGradient>
+            </defs>
+            <XAxis
+              dataKey="d"
+              type="number"
+              domain={[0, distanceKm ?? 'dataMax']}
+              ticks={distanceKm != null ? kmTicks(distanceKm) : undefined}
+              tickFormatter={(v) => (v === 0 ? '' : `${v} km`)}
+              tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis
+              domain={HR_DOMAIN}
+              ticks={HR_TICKS}
+              interval={0}
+              tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
+              axisLine={false}
+              tickLine={false}
+              width={40}
+            />
+            <Tooltip
+              content={
+                <SingleSeriesTooltip
+                  dataKey="bpm"
+                  color={CHART_COLORS.hr}
+                  name={t.activity.charts.hr}
+                  formatValue={(v) => `${v} ${t.units.bpm}`}
+                />
+              }
+            />
+            {/* Base area - dimmed when filtering by zone */}
             <Area
               type="monotone"
-              dataKey="highlight"
+              dataKey="bpm"
               stroke={CHART_COLORS.hr}
-              strokeWidth={1.5}
-              fill="url(#hrHighlightGradient)"
+              strokeWidth={isFiltering ? 1 : 1.5}
+              strokeOpacity={isFiltering ? 0.15 : 1}
+              fill={isFiltering ? 'none' : 'url(#hrGradient)'}
               dot={false}
               isAnimationActive={false}
-              connectNulls={false}
             />
-          )}
-        </AreaChart>
-      </ResponsiveContainer>
+            {/* Highlighted zone overlay */}
+            {isFiltering && (
+              <Area
+                type="monotone"
+                dataKey="highlight"
+                stroke={CHART_COLORS.hr}
+                strokeWidth={1.5}
+                fill="url(#hrHighlightGradient)"
+                dot={false}
+                isAnimationActive={false}
+                connectNulls={false}
+              />
+            )}
+          </AreaChart>
+        </ResponsiveContainer>
+      </ChartFigure>
     </GlassSurface>
   )
 })

@@ -6,6 +6,7 @@ import type { TypeDistribution } from '@/domain/activity/types'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { CHART_COLORS } from '@/lib/colors'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { ChartFigure } from '@/components/ui/ChartFigure'
 import { t } from '@/i18n'
 
 const MIN_PERCENT = 3
@@ -69,6 +70,7 @@ function CustomTooltip({ active, payload }: TooltipProps) {
 
 export function IntensityChart({ data }: Props) {
   const entries = toDisplayEntries(data)
+  const summary = `${t.dashboard.trainingMix.title}: ${entries.map((e) => `${e.label} ${e.percent}%`).join(', ')}`
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -76,26 +78,28 @@ export function IntensityChart({ data }: Props) {
         {t.dashboard.trainingMix.title}
       </h3>
       <div className="flex items-center gap-4">
-        <ResponsiveContainer width={140} height={140}>
-          <PieChart>
-            <Pie
-              data={entries}
-              dataKey="distanceKm"
-              nameKey="label"
-              cx="50%"
-              cy="50%"
-              innerRadius={42}
-              outerRadius={64}
-              paddingAngle={2}
-              isAnimationActive={false}
-            >
-              {entries.map((entry) => (
-                <Cell key={entry.label} fill={entry.color} />
-              ))}
-            </Pie>
-            <Tooltip content={<CustomTooltip />} />
-          </PieChart>
-        </ResponsiveContainer>
+        <ChartFigure summary={summary}>
+          <ResponsiveContainer width={140} height={140}>
+            <PieChart>
+              <Pie
+                data={entries}
+                dataKey="distanceKm"
+                nameKey="label"
+                cx="50%"
+                cy="50%"
+                innerRadius={42}
+                outerRadius={64}
+                paddingAngle={2}
+                isAnimationActive={false}
+              >
+                {entries.map((entry) => (
+                  <Cell key={entry.label} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip content={<CustomTooltip />} />
+            </PieChart>
+          </ResponsiveContainer>
+        </ChartFigure>
         <ul className="flex-1 space-y-2">
           {entries.map((entry) => (
             <li key={entry.label} className="flex items-center justify-between text-xs">

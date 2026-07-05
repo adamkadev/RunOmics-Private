@@ -5,6 +5,7 @@ import type { MonthlyHr } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { ChartFigure } from '@/components/ui/ChartFigure'
 import { t } from '@/i18n'
 
 interface Props {
@@ -39,6 +40,13 @@ export function HrTrendChart({ data }: Props) {
   const min = Math.min(...values) - 5
   const max = Math.max(...values) + 5
 
+  const easyVals = data.map((d) => d.easyAvgHr).filter((v): v is number => v !== null)
+  const hardVals = data.map((d) => d.hardAvgHr).filter((v): v is number => v !== null)
+  const summaryParts = []
+  if (easyVals.length) summaryParts.push(`${t.analytics.charts.paceTrend.easy} ${Math.min(...easyVals)}–${Math.max(...easyVals)} ${t.units.bpm}`)
+  if (hardVals.length) summaryParts.push(`${t.analytics.charts.paceTrend.workout} ${Math.min(...hardVals)}–${Math.max(...hardVals)} ${t.units.bpm}`)
+  const summary = `${t.analytics.charts.hrTrend.title}: ${summaryParts.join(', ')}`
+
   return (
     <GlassSurface variant="card" className="p-5">
       <div className="mb-4 flex items-center justify-between">
@@ -52,42 +60,44 @@ export function HrTrendChart({ data }: Props) {
           </span>
         </div>
       </div>
-      <ResponsiveContainer width="100%" height={200}>
-        <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
-          <XAxis
-            dataKey="label"
-            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-            axisLine={false}
-            tickLine={false}
-          />
-          <YAxis
-            domain={[min, max]}
-            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-            axisLine={false}
-            tickLine={false}
-            width={42}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          <Line
-            type="monotone"
-            dataKey="easyAvgHr"
-            stroke={CHART_COLORS.hrEasy}
-            strokeWidth={2}
-            dot={{ r: 3, fill: CHART_COLORS.hrEasy, strokeWidth: 0 }}
-            connectNulls
-            isAnimationActive={false}
-          />
-          <Line
-            type="monotone"
-            dataKey="hardAvgHr"
-            stroke={CHART_COLORS.hr}
-            strokeWidth={2}
-            dot={{ r: 3, fill: CHART_COLORS.hr, strokeWidth: 0 }}
-            connectNulls
-            isAnimationActive={false}
-          />
-        </LineChart>
-      </ResponsiveContainer>
+      <ChartFigure summary={summary}>
+        <ResponsiveContainer width="100%" height={200}>
+          <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
+            <XAxis
+              dataKey="label"
+              tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis
+              domain={[min, max]}
+              tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+              axisLine={false}
+              tickLine={false}
+              width={42}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Line
+              type="monotone"
+              dataKey="easyAvgHr"
+              stroke={CHART_COLORS.hrEasy}
+              strokeWidth={2}
+              dot={{ r: 3, fill: CHART_COLORS.hrEasy, strokeWidth: 0 }}
+              connectNulls
+              isAnimationActive={false}
+            />
+            <Line
+              type="monotone"
+              dataKey="hardAvgHr"
+              stroke={CHART_COLORS.hr}
+              strokeWidth={2}
+              dot={{ r: 3, fill: CHART_COLORS.hr, strokeWidth: 0 }}
+              connectNulls
+              isAnimationActive={false}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </ChartFigure>
       <p className="mt-2 text-xs text-subtle">
         {t.analytics.charts.hrTrend.footnote}
       </p>

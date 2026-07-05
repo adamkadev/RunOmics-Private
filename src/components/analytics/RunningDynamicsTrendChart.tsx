@@ -6,6 +6,7 @@ import type { DailyRunningDynamics } from '@/application/usecases/GetAnalyticsDa
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { ChartFigure } from '@/components/ui/ChartFigure'
 import { t } from '@/i18n'
 
 type Metric = 'cadence' | 'groundContact' | 'verticalOscillation'
@@ -96,6 +97,9 @@ export function RunningDynamicsTrendChart({ data }: Props) {
     data.filter((_, i) => i % 14 === 0).map((d) => d.date)
   )
 
+  const decimals = TICK_DECIMALS[metric]
+  const summary = `${s.title}: ${s.metrics[metric]} ${Math.min(...values).toFixed(decimals)}–${Math.max(...values).toFixed(decimals)} ${s.unit[metric]}`
+
   return (
     <GlassSurface variant="card" className="p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
@@ -124,51 +128,53 @@ export function RunningDynamicsTrendChart({ data }: Props) {
           {s.d30}
         </span>
       </div>
-      <ResponsiveContainer width="100%" height={200}>
-        <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
-          <XAxis
-            dataKey="date"
-            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-            axisLine={false}
-            tickLine={false}
-            tickFormatter={(date: string) => {
-              if (!tickDates.has(date)) return ''
-              const d = new Date(date + 'T00:00:00')
-              return d.toLocaleDateString(t.locale, { day: 'numeric', month: 'short' })
-            }}
-          />
-          <YAxis
-            domain={[min, max]}
-            tickFormatter={(v: number) => v.toFixed(TICK_DECIMALS[metric])}
-            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-            axisLine={false}
-            tickLine={false}
-            width={42}
-          />
-          <Tooltip content={<CustomTooltip metric={metric} />} />
-          <Line
-            type="monotone"
-            dataKey={key7}
-            stroke={color}
-            strokeOpacity={0.5}
-            strokeWidth={1.5}
-            dot={false}
-            activeDot={{ r: 3, fill: color, fillOpacity: 0.5, stroke: color, strokeOpacity: 0.5 }}
-            connectNulls
-            isAnimationActive={false}
-          />
-          <Line
-            type="monotone"
-            dataKey={key30}
-            stroke={color}
-            strokeWidth={2.5}
-            dot={false}
-            activeDot={{ r: 4, fill: color, stroke: color }}
-            connectNulls
-            isAnimationActive={false}
-          />
-        </LineChart>
-      </ResponsiveContainer>
+      <ChartFigure summary={summary}>
+        <ResponsiveContainer width="100%" height={200}>
+          <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
+            <XAxis
+              dataKey="date"
+              tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(date: string) => {
+                if (!tickDates.has(date)) return ''
+                const d = new Date(date + 'T00:00:00')
+                return d.toLocaleDateString(t.locale, { day: 'numeric', month: 'short' })
+              }}
+            />
+            <YAxis
+              domain={[min, max]}
+              tickFormatter={(v: number) => v.toFixed(TICK_DECIMALS[metric])}
+              tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+              axisLine={false}
+              tickLine={false}
+              width={42}
+            />
+            <Tooltip content={<CustomTooltip metric={metric} />} />
+            <Line
+              type="monotone"
+              dataKey={key7}
+              stroke={color}
+              strokeOpacity={0.5}
+              strokeWidth={1.5}
+              dot={false}
+              activeDot={{ r: 3, fill: color, fillOpacity: 0.5, stroke: color, strokeOpacity: 0.5 }}
+              connectNulls
+              isAnimationActive={false}
+            />
+            <Line
+              type="monotone"
+              dataKey={key30}
+              stroke={color}
+              strokeWidth={2.5}
+              dot={false}
+              activeDot={{ r: 4, fill: color, stroke: color }}
+              connectNulls
+              isAnimationActive={false}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </ChartFigure>
       <p className="mt-2 text-xs text-subtle">{s.footnote[metric]}</p>
     </GlassSurface>
   )

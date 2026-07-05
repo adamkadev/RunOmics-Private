@@ -12,6 +12,7 @@ import {
 import { CHART_COLORS } from '@/lib/colors'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { SingleSeriesTooltip } from '@/components/ui/ChartTooltip'
+import { ChartFigure } from '@/components/ui/ChartFigure'
 import { t } from '@/i18n'
 
 interface Props {
@@ -55,6 +56,12 @@ export const ElevationChart = memo(function ElevationChart({ samples, distanceKm
 
   const { ticks: elevTicks, domain: elevDomain } = elevationTicks(samples)
 
+  const minAlt = Math.round(Math.min(...samples))
+  const maxAlt = Math.round(Math.max(...samples))
+  const summary = `${t.activity.charts.elevation}: ${minAlt}–${maxAlt} ${t.units.m}${
+    elevationGain != null ? ` (+${elevationGain} ${t.units.m})` : ''
+  }`
+
   return (
     <GlassSurface variant="card" className="p-5">
       <div className="mb-3 flex items-center justify-between">
@@ -65,62 +72,64 @@ export const ElevationChart = memo(function ElevationChart({ samples, distanceKm
           </span>
         )}
       </div>
-      <ResponsiveContainer width="100%" height={140} className="select-none touch-pan-y">
-        <AreaChart
-          data={data}
-          margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
-          onMouseMove={handleMove}
-          onMouseLeave={() => onHoverFraction?.(null)}
-          syncId="activity-charts"
-          syncMethod="value"
-        >
-          <defs>
-            <linearGradient id="elevGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor={CHART_COLORS.elevation} stopOpacity={0.3} />
-              <stop offset="95%" stopColor={CHART_COLORS.elevation} stopOpacity={0.04} />
-            </linearGradient>
-          </defs>
-          <XAxis
-            dataKey="d"
-            type="number"
-            domain={[0, distanceKm ?? 'dataMax']}
-            ticks={distanceKm != null ? kmTicks(distanceKm) : undefined}
-            tickFormatter={(v) => (v === 0 ? '' : `${v} km`)}
-            tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
-            axisLine={false}
-            tickLine={false}
-          />
-          <YAxis
-            domain={elevDomain}
-            ticks={elevTicks}
-            interval={0}
-            tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
-            axisLine={false}
-            tickLine={false}
-            width={46}
-            tickFormatter={(v: number) => `${v}m`}
-          />
-          <Tooltip
-            content={
-              <SingleSeriesTooltip
-                dataKey="alt"
-                color={CHART_COLORS.elevation}
-                name={t.activity.charts.altitude}
-                formatValue={(v) => `${v} ${t.units.m}`}
-              />
-            }
-          />
-          <Area
-            type="monotone"
-            dataKey="alt"
-            stroke={CHART_COLORS.elevation}
-            strokeWidth={1.5}
-            fill="url(#elevGradient)"
-            dot={false}
-            isAnimationActive={false}
-          />
-        </AreaChart>
-      </ResponsiveContainer>
+      <ChartFigure summary={summary}>
+        <ResponsiveContainer width="100%" height={140} className="select-none touch-pan-y">
+          <AreaChart
+            data={data}
+            margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
+            onMouseMove={handleMove}
+            onMouseLeave={() => onHoverFraction?.(null)}
+            syncId="activity-charts"
+            syncMethod="value"
+          >
+            <defs>
+              <linearGradient id="elevGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={CHART_COLORS.elevation} stopOpacity={0.3} />
+                <stop offset="95%" stopColor={CHART_COLORS.elevation} stopOpacity={0.04} />
+              </linearGradient>
+            </defs>
+            <XAxis
+              dataKey="d"
+              type="number"
+              domain={[0, distanceKm ?? 'dataMax']}
+              ticks={distanceKm != null ? kmTicks(distanceKm) : undefined}
+              tickFormatter={(v) => (v === 0 ? '' : `${v} km`)}
+              tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis
+              domain={elevDomain}
+              ticks={elevTicks}
+              interval={0}
+              tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
+              axisLine={false}
+              tickLine={false}
+              width={46}
+              tickFormatter={(v: number) => `${v}m`}
+            />
+            <Tooltip
+              content={
+                <SingleSeriesTooltip
+                  dataKey="alt"
+                  color={CHART_COLORS.elevation}
+                  name={t.activity.charts.altitude}
+                  formatValue={(v) => `${v} ${t.units.m}`}
+                />
+              }
+            />
+            <Area
+              type="monotone"
+              dataKey="alt"
+              stroke={CHART_COLORS.elevation}
+              strokeWidth={1.5}
+              fill="url(#elevGradient)"
+              dot={false}
+              isAnimationActive={false}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </ChartFigure>
     </GlassSurface>
   )
 })

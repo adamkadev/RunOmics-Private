@@ -15,6 +15,7 @@ import { CHART_COLORS } from '@/lib/colors'
 import { STATUS } from '@/lib/statusColors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { ChartFigure } from '@/components/ui/ChartFigure'
 import { t } from '@/i18n'
 
 interface Props {
@@ -66,6 +67,7 @@ function formStatus(tsb: number): { label: string; className: string } {
 export function TrainingLoadChart({ data }: Props) {
   const status = formStatus(data.tsb)
   const lastIndex = data.points.length - 1
+  const summary = `${t.dashboard.trainingLoad.title}: ${t.dashboard.trainingLoad.fitness} ${data.ctl}, ${t.dashboard.trainingLoad.fatigue} ${data.atl}, ${t.dashboard.trainingLoad.form} ${data.tsb} (${status.label})`
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -85,39 +87,41 @@ export function TrainingLoadChart({ data }: Props) {
           </span>
         </div>
       </div>
-      <ResponsiveContainer width="100%" height={200}>
-        <LineChart data={data.points} margin={{ top: 4, right: 80, bottom: 0, left: -20 }}>
-          <XAxis
-            dataKey="label"
-            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-            axisLine={false}
-            tickLine={false}
-            minTickGap={40}
-          />
-          <YAxis
-            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-            axisLine={false}
-            tickLine={false}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          <ReferenceLine y={0} stroke={CHART_COLORS.referenceLine} strokeWidth={1} />
-          <Line type="monotone" dataKey="ctl" stroke={CHART_COLORS.ctl} strokeWidth={2} dot={false} isAnimationActive={false}>
-            <LabelList dataKey="ctl" content={(props: { x?: string | number; y?: string | number; value?: string | number | boolean | null; index?: number }) => (
-              <EndLabel x={props.x} y={props.y} value={props.value} index={props.index} lastIndex={lastIndex} text={t.dashboard.trainingLoad.fitness} color={CHART_COLORS.ctl} />
-            )} />
-          </Line>
-          <Line type="monotone" dataKey="atl" stroke={CHART_COLORS.atl} strokeWidth={1.5} dot={false} isAnimationActive={false}>
-            <LabelList dataKey="atl" content={(props: { x?: string | number; y?: string | number; value?: string | number | boolean | null; index?: number }) => (
-              <EndLabel x={props.x} y={props.y} value={props.value} index={props.index} lastIndex={lastIndex} text={t.dashboard.trainingLoad.fatigue} color={CHART_COLORS.atl} />
-            )} />
-          </Line>
-          <Line type="monotone" dataKey="tsb" stroke={CHART_COLORS.tsb} strokeWidth={1.5} dot={false} isAnimationActive={false}>
-            <LabelList dataKey="tsb" content={(props: { x?: string | number; y?: string | number; value?: string | number | boolean | null; index?: number }) => (
-              <EndLabel x={props.x} y={props.y} value={props.value} index={props.index} lastIndex={lastIndex} text={t.dashboard.trainingLoad.form} color={CHART_COLORS.tsb} />
-            )} />
-          </Line>
-        </LineChart>
-      </ResponsiveContainer>
+      <ChartFigure summary={summary}>
+        <ResponsiveContainer width="100%" height={200}>
+          <LineChart data={data.points} margin={{ top: 4, right: 80, bottom: 0, left: -20 }}>
+            <XAxis
+              dataKey="label"
+              tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+              axisLine={false}
+              tickLine={false}
+              minTickGap={40}
+            />
+            <YAxis
+              tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <ReferenceLine y={0} stroke={CHART_COLORS.referenceLine} strokeWidth={1} />
+            <Line type="monotone" dataKey="ctl" stroke={CHART_COLORS.ctl} strokeWidth={2} dot={false} isAnimationActive={false}>
+              <LabelList dataKey="ctl" content={(props: { x?: string | number; y?: string | number; value?: string | number | boolean | null; index?: number }) => (
+                <EndLabel x={props.x} y={props.y} value={props.value} index={props.index} lastIndex={lastIndex} text={t.dashboard.trainingLoad.fitness} color={CHART_COLORS.ctl} />
+              )} />
+            </Line>
+            <Line type="monotone" dataKey="atl" stroke={CHART_COLORS.atl} strokeWidth={1.5} dot={false} isAnimationActive={false}>
+              <LabelList dataKey="atl" content={(props: { x?: string | number; y?: string | number; value?: string | number | boolean | null; index?: number }) => (
+                <EndLabel x={props.x} y={props.y} value={props.value} index={props.index} lastIndex={lastIndex} text={t.dashboard.trainingLoad.fatigue} color={CHART_COLORS.atl} />
+              )} />
+            </Line>
+            <Line type="monotone" dataKey="tsb" stroke={CHART_COLORS.tsb} strokeWidth={1.5} dot={false} isAnimationActive={false}>
+              <LabelList dataKey="tsb" content={(props: { x?: string | number; y?: string | number; value?: string | number | boolean | null; index?: number }) => (
+                <EndLabel x={props.x} y={props.y} value={props.value} index={props.index} lastIndex={lastIndex} text={t.dashboard.trainingLoad.form} color={CHART_COLORS.tsb} />
+              )} />
+            </Line>
+          </LineChart>
+        </ResponsiveContainer>
+      </ChartFigure>
       <p className="mt-2 text-xs text-subtle">
         {t.dashboard.trainingLoad.footnote}
       </p>

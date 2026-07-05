@@ -6,6 +6,7 @@ import { CHART_COLORS } from '@/lib/colors'
 import { useAccentColor } from '@/lib/useAccent'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { ChartFigure } from '@/components/ui/ChartFigure'
 import { t } from '@/i18n'
 
 interface Props {
@@ -31,6 +32,7 @@ function CustomTooltip({ active, payload }: TooltipProps) {
 export function DistanceDistributionChart({ data }: Props) {
   const accentColor = useAccentColor()
   const max = Math.max(...data.map((d) => d.count))
+  const summary = `${t.analytics.charts.distance.title}: ${data.map((d) => `${d.label} ${t.common.runs(d.count)}`).join(', ')}`
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -38,39 +40,41 @@ export function DistanceDistributionChart({ data }: Props) {
         <h3 className="text-sm font-semibold text-foreground/80">{t.analytics.charts.distance.title}</h3>
         <span className="text-xs text-subtle">{t.analytics.charts.distance.runs(data.reduce((s, d) => s + d.count, 0))}</span>
       </div>
-      <ResponsiveContainer width="100%" height={200}>
-        <BarChart
-          data={data}
-          layout="vertical"
-          margin={{ top: 4, right: 12, bottom: 0, left: 4 }}
-        >
-          <XAxis
-            type="number"
-            allowDecimals={false}
-            tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
-            axisLine={false}
-            tickLine={false}
-          />
-          <YAxis
-            type="category"
-            dataKey="label"
-            width={56}
-            tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
-            axisLine={false}
-            tickLine={false}
-          />
-          <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
-          <Bar dataKey="count" radius={[0, 4, 4, 0]} isAnimationActive={false}>
-            {data.map((entry) => (
-              <Cell
-                key={entry.label}
-                fill={accentColor}
-                fillOpacity={0.45 + 0.55 * (entry.count / max)}
-              />
-            ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
+      <ChartFigure summary={summary}>
+        <ResponsiveContainer width="100%" height={200}>
+          <BarChart
+            data={data}
+            layout="vertical"
+            margin={{ top: 4, right: 12, bottom: 0, left: 4 }}
+          >
+            <XAxis
+              type="number"
+              allowDecimals={false}
+              tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis
+              type="category"
+              dataKey="label"
+              width={56}
+              tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
+            <Bar dataKey="count" radius={[0, 4, 4, 0]} isAnimationActive={false}>
+              {data.map((entry) => (
+                <Cell
+                  key={entry.label}
+                  fill={accentColor}
+                  fillOpacity={0.45 + 0.55 * (entry.count / max)}
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartFigure>
       <p className="mt-2 text-xs text-subtle">Color intensity reflects relative frequency.</p>
     </GlassSurface>
   )

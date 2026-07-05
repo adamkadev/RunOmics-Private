@@ -15,6 +15,7 @@ import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { ChartExplain } from '@/components/ui/ChartExplain'
 import type { ExplainTone } from '@/components/ui/ChartExplain'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { ChartFigure } from '@/components/ui/ChartFigure'
 import { t } from '@/i18n'
 
 interface Props {
@@ -50,55 +51,58 @@ export function EasyHardChart({ data }: Props) {
       : avgEasy < 78
         ? { text: ex.tooHard(avgEasy), tone: 'caution' }
         : { text: ex.tooEasy(avgEasy), tone: 'neutral' }
+  const summary = `${t.analytics.charts.easyHard.title}: ${explain.text}`
 
   return (
     <GlassSurface variant="card" className="p-5">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.analytics.charts.easyHard.title}
       </h3>
-      <ResponsiveContainer width="100%" height={200}>
-        <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>
-          <XAxis
-            dataKey="label"
-            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-            axisLine={false}
-            tickLine={false}
-          />
-          <YAxis
-            domain={[0, 100]}
-            tickFormatter={(v: number) => `${v}%`}
-            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-            axisLine={false}
-            tickLine={false}
-          />
-          <Tooltip content={<CustomTooltip />} cursor={{ stroke: CHART_COLORS.referenceTarget, strokeWidth: 1, strokeDasharray: '4 3' }} />
-          <Area
-            type="monotone"
-            dataKey="easyPct"
-            stackId="eh"
-            stroke={CHART_COLORS.easy}
-            strokeWidth={1.5}
-            fill={CHART_COLORS.easy}
-            fillOpacity={0.55}
-            dot={false}
-            isAnimationActive={false}
-            connectNulls
-          />
-          <Area
-            type="monotone"
-            dataKey="hardPct"
-            stackId="eh"
-            stroke={CHART_COLORS.hard}
-            strokeWidth={1.5}
-            fill={CHART_COLORS.hard}
-            fillOpacity={0.55}
-            dot={false}
-            isAnimationActive={false}
-            connectNulls
-          />
-          <ReferenceLine y={80} stroke={CHART_COLORS.referenceTarget} strokeDasharray="4 3" strokeWidth={1} />
-        </AreaChart>
-      </ResponsiveContainer>
+      <ChartFigure summary={summary}>
+        <ResponsiveContainer width="100%" height={200}>
+          <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>
+            <XAxis
+              dataKey="label"
+              tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis
+              domain={[0, 100]}
+              tickFormatter={(v: number) => `${v}%`}
+              tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <Tooltip content={<CustomTooltip />} cursor={{ stroke: CHART_COLORS.referenceTarget, strokeWidth: 1, strokeDasharray: '4 3' }} />
+            <Area
+              type="monotone"
+              dataKey="easyPct"
+              stackId="eh"
+              stroke={CHART_COLORS.easy}
+              strokeWidth={1.5}
+              fill={CHART_COLORS.easy}
+              fillOpacity={0.55}
+              dot={false}
+              isAnimationActive={false}
+              connectNulls
+            />
+            <Area
+              type="monotone"
+              dataKey="hardPct"
+              stackId="eh"
+              stroke={CHART_COLORS.hard}
+              strokeWidth={1.5}
+              fill={CHART_COLORS.hard}
+              fillOpacity={0.55}
+              dot={false}
+              isAnimationActive={false}
+              connectNulls
+            />
+            <ReferenceLine y={80} stroke={CHART_COLORS.referenceTarget} strokeDasharray="4 3" strokeWidth={1} />
+          </AreaChart>
+        </ResponsiveContainer>
+      </ChartFigure>
       <ChartExplain text={explain.text} tone={explain.tone} />
       <p className="mt-1 text-xs text-subtle">
         {t.analytics.charts.easyHard.footnote}

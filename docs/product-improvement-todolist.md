@@ -106,9 +106,14 @@ priorité, 🟡 moyenne, 🟢 confort/nice-to-have).
       color-picker permet un accent libre — un accent trop clair/foncé peut
       casser le contraste WCAG AA sur certains éléments). Ajouter une validation
       ou un avertissement dans le picker. *(✅ fait en 3.2 : la palette est fixe, un test verrouille un ratio ≥ 3:1 (WCAG 1.4.11) pour les 6 accents sur les deux thèmes.)*
-- [ ] 🟢 Graphiques Recharts : vérifier la présence de résumés textuels
+- [x] 🟢 Graphiques Recharts : vérifier la présence de résumés textuels
       (`aria-label`/`<caption>` équivalent) pour les lecteurs d'écran — les
-      charts SVG sont rarement accessibles nativement.
+      charts SVG sont rarement accessibles nativement. *(✅ fait en 3.4 :
+      nouveau composant `ChartFigure` (`role="img"` + `aria-label` +
+      `aria-hidden` sur le SVG) appliqué aux 25 graphiques Recharts de l'app
+      (activité, dashboard, analytics), résumé calculé à partir des données
+      déjà en mémoire de chaque composant — pas de nouvelles clés i18n,
+      réutilise les libellés déjà traduits.)*
 
 ## 6. Internationalisation
 

@@ -9,6 +9,7 @@ import type { ExplainTone } from '@/components/ui/ChartExplain'
 import { trendFromSeries } from '@/lib/chartTrend'
 import { formatClock } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { ChartFigure } from '@/components/ui/ChartFigure'
 import { t } from '@/i18n'
 
 interface Props {
@@ -52,6 +53,7 @@ export function PaceTrendChart({ data }: Props) {
         ? { text: ex.slowing(Math.round(trend.delta)), tone: 'caution' }
         : { text: ex.stable, tone: 'neutral' }
     : null
+  const summary = `${t.analytics.charts.paceTrend.title}${explain ? `: ${explain.text}` : ''}`
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -66,44 +68,46 @@ export function PaceTrendChart({ data }: Props) {
           </span>
         </div>
       </div>
-      <ResponsiveContainer width="100%" height={200}>
-        <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
-          <XAxis
-            dataKey="label"
-            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-            axisLine={false}
-            tickLine={false}
-          />
-          <YAxis
-            domain={[minPace, maxPace]}
-            reversed
-            tickFormatter={formatClock}
-            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-            axisLine={false}
-            tickLine={false}
-            width={46}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          <Line
-            type="monotone"
-            dataKey="easyPace"
-            stroke={CHART_COLORS.brand}
-            strokeWidth={2}
-            dot={{ r: 3, fill: CHART_COLORS.brand, strokeWidth: 0 }}
-            connectNulls
-            isAnimationActive={false}
-          />
-          <Line
-            type="monotone"
-            dataKey="hardPace"
-            stroke={CHART_COLORS.atl}
-            strokeWidth={2}
-            dot={{ r: 3, fill: CHART_COLORS.atl, strokeWidth: 0 }}
-            connectNulls
-            isAnimationActive={false}
-          />
-        </LineChart>
-      </ResponsiveContainer>
+      <ChartFigure summary={summary}>
+        <ResponsiveContainer width="100%" height={200}>
+          <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
+            <XAxis
+              dataKey="label"
+              tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis
+              domain={[minPace, maxPace]}
+              reversed
+              tickFormatter={formatClock}
+              tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+              axisLine={false}
+              tickLine={false}
+              width={46}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Line
+              type="monotone"
+              dataKey="easyPace"
+              stroke={CHART_COLORS.brand}
+              strokeWidth={2}
+              dot={{ r: 3, fill: CHART_COLORS.brand, strokeWidth: 0 }}
+              connectNulls
+              isAnimationActive={false}
+            />
+            <Line
+              type="monotone"
+              dataKey="hardPace"
+              stroke={CHART_COLORS.atl}
+              strokeWidth={2}
+              dot={{ r: 3, fill: CHART_COLORS.atl, strokeWidth: 0 }}
+              connectNulls
+              isAnimationActive={false}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </ChartFigure>
       {explain && <ChartExplain text={explain.text} tone={explain.tone} />}
       <p className="mt-1 text-xs text-subtle">
         {t.analytics.charts.paceTrend.footnote}

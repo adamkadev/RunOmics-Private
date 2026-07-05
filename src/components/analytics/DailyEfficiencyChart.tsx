@@ -5,6 +5,7 @@ import type { DailyEfficiency } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { ChartFigure } from '@/components/ui/ChartFigure'
 import { t } from '@/i18n'
 
 const COLOR_7  = CHART_COLORS.efficiency        // violet-500
@@ -46,6 +47,8 @@ export function DailyEfficiencyChart({ data }: { data: DailyEfficiency[] }) {
     data.filter((_, i) => i % 14 === 0).map((d) => d.date)
   )
 
+  const summary = `${s.title}: ${min.toFixed(2)}–${max.toFixed(2)} ${s.unit}`
+
   return (
     <GlassSurface variant="card" className="p-5">
       <div className="mb-4 flex items-center justify-between">
@@ -61,48 +64,50 @@ export function DailyEfficiencyChart({ data }: { data: DailyEfficiency[] }) {
           </span>
         </div>
       </div>
-      <ResponsiveContainer width="100%" height={200}>
-        <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
-          <XAxis
-            dataKey="date"
-            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-            axisLine={false}
-            tickLine={false}
-            tickFormatter={(date: string) => {
-              if (!tickDates.has(date)) return ''
-              const d = new Date(date + 'T00:00:00')
-              return d.toLocaleDateString(t.locale, { day: 'numeric', month: 'short' })
-            }}
-          />
-          <YAxis
-            domain={[min, max]}
-            tickFormatter={(v: number) => v.toFixed(1)}
-            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-            axisLine={false}
-            tickLine={false}
-            width={42}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          <Line
-            type="monotone"
-            dataKey="ef7"
-            stroke={COLOR_7}
-            strokeWidth={1.5}
-            dot={false}
-            connectNulls
-            isAnimationActive={false}
-          />
-          <Line
-            type="monotone"
-            dataKey="ef30"
-            stroke={COLOR_30}
-            strokeWidth={2.5}
-            dot={false}
-            connectNulls
-            isAnimationActive={false}
-          />
-        </LineChart>
-      </ResponsiveContainer>
+      <ChartFigure summary={summary}>
+        <ResponsiveContainer width="100%" height={200}>
+          <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
+            <XAxis
+              dataKey="date"
+              tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(date: string) => {
+                if (!tickDates.has(date)) return ''
+                const d = new Date(date + 'T00:00:00')
+                return d.toLocaleDateString(t.locale, { day: 'numeric', month: 'short' })
+              }}
+            />
+            <YAxis
+              domain={[min, max]}
+              tickFormatter={(v: number) => v.toFixed(1)}
+              tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+              axisLine={false}
+              tickLine={false}
+              width={42}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Line
+              type="monotone"
+              dataKey="ef7"
+              stroke={COLOR_7}
+              strokeWidth={1.5}
+              dot={false}
+              connectNulls
+              isAnimationActive={false}
+            />
+            <Line
+              type="monotone"
+              dataKey="ef30"
+              stroke={COLOR_30}
+              strokeWidth={2.5}
+              dot={false}
+              connectNulls
+              isAnimationActive={false}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </ChartFigure>
       <p className="mt-2 text-xs text-subtle">{s.footnote}</p>
     </GlassSurface>
   )

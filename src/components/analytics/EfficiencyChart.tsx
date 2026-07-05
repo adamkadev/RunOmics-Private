@@ -8,6 +8,7 @@ import { ChartExplain } from '@/components/ui/ChartExplain'
 import type { ExplainTone } from '@/components/ui/ChartExplain'
 import { trendFromSeries } from '@/lib/chartTrend'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { ChartFigure } from '@/components/ui/ChartFigure'
 import { t } from '@/i18n'
 
 interface Props {
@@ -43,47 +44,50 @@ export function EfficiencyChart({ data }: Props) {
         ? { text: ex.declining, tone: 'caution' }
         : { text: ex.stable, tone: 'neutral' }
     : null
+  const summary = `${t.analytics.charts.efficiency.title}${explain ? `: ${explain.text}` : ''}`
 
   return (
     <GlassSurface variant="card" className="p-5">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.analytics.charts.efficiency.title}
       </h3>
-      <ResponsiveContainer width="100%" height={200}>
-        <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
-          <defs>
-            <linearGradient id="efGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor={CHART_COLORS.efficiency} stopOpacity={0.25} />
-              <stop offset="95%" stopColor={CHART_COLORS.efficiency} stopOpacity={0.02} />
-            </linearGradient>
-          </defs>
-          <XAxis
-            dataKey="label"
-            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-            axisLine={false}
-            tickLine={false}
-          />
-          <YAxis
-            domain={[min, max]}
-            tickFormatter={(v: number) => v.toFixed(1)}
-            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-            axisLine={false}
-            tickLine={false}
-            width={42}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          <Area
-            type="monotone"
-            dataKey="ef"
-            stroke={CHART_COLORS.efficiency}
-            strokeWidth={2}
-            fill="url(#efGradient)"
-            dot={{ r: 3, fill: CHART_COLORS.efficiency, strokeWidth: 0 }}
-            connectNulls
-            isAnimationActive={false}
-          />
-        </AreaChart>
-      </ResponsiveContainer>
+      <ChartFigure summary={summary}>
+        <ResponsiveContainer width="100%" height={200}>
+          <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
+            <defs>
+              <linearGradient id="efGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={CHART_COLORS.efficiency} stopOpacity={0.25} />
+                <stop offset="95%" stopColor={CHART_COLORS.efficiency} stopOpacity={0.02} />
+              </linearGradient>
+            </defs>
+            <XAxis
+              dataKey="label"
+              tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis
+              domain={[min, max]}
+              tickFormatter={(v: number) => v.toFixed(1)}
+              tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+              axisLine={false}
+              tickLine={false}
+              width={42}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Area
+              type="monotone"
+              dataKey="ef"
+              stroke={CHART_COLORS.efficiency}
+              strokeWidth={2}
+              fill="url(#efGradient)"
+              dot={{ r: 3, fill: CHART_COLORS.efficiency, strokeWidth: 0 }}
+              connectNulls
+              isAnimationActive={false}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </ChartFigure>
       {explain && <ChartExplain text={explain.text} tone={explain.tone} />}
       <p className="mt-1 text-xs text-subtle">
         {t.analytics.charts.efficiency.footnote}

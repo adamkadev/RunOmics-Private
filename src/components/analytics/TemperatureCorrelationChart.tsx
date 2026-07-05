@@ -8,6 +8,7 @@ import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { ChartExplain } from '@/components/ui/ChartExplain'
 import { formatPace } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { ChartFigure } from '@/components/ui/ChartFigure'
 import { t } from '@/i18n'
 
 function CustomDot(props: Record<string, unknown>) {
@@ -54,54 +55,59 @@ export function TemperatureCorrelationChart({ data }: Props) {
 
   const slopePer10 = reg ? Math.round(reg.slope * 10) : 0
   const ex = t.analytics.charts.temperatureCorrelation.explains
+  const summary = `${t.analytics.charts.temperatureCorrelation.title}${
+    reg ? `: ${slopePer10 > 3 ? ex.slowing(slopePer10) : ex.stable}` : ''
+  }`
 
   return (
     <GlassSurface variant="card" className="p-5">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.analytics.charts.temperatureCorrelation.title}
       </h3>
-      <ResponsiveContainer width="100%" height={240}>
-        <ComposedChart margin={{ top: 4, right: 4, bottom: 0, left: 4 }}>
-          <XAxis
-            type="number"
-            dataKey="temp"
-            domain={['auto', 'auto']}
-            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-            axisLine={false}
-            tickLine={false}
-            tickFormatter={(v: number) => `${v}°`}
-          />
-          <YAxis
-            type="number"
-            dataKey="pace"
-            reversed
-            domain={['auto', 'auto']}
-            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-            axisLine={false}
-            tickLine={false}
-            tickFormatter={(v: number) => formatPace(v)}
-            width={44}
-          />
-          <Tooltip content={<CustomTooltip />} cursor={false} />
-          <Scatter
-            data={data}
-            shape={<CustomDot />}
-            isAnimationActive={false}
-          />
-          {trendLine.length === 2 && (
-            <Line
-              data={trendLine}
-              type="linear"
+      <ChartFigure summary={summary}>
+        <ResponsiveContainer width="100%" height={240}>
+          <ComposedChart margin={{ top: 4, right: 4, bottom: 0, left: 4 }}>
+            <XAxis
+              type="number"
+              dataKey="temp"
+              domain={['auto', 'auto']}
+              tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(v: number) => `${v}°`}
+            />
+            <YAxis
+              type="number"
               dataKey="pace"
-              stroke={CHART_COLORS.axisTick}
-              strokeWidth={1.5}
-              strokeDasharray="4 2"
-              dot={false}
+              reversed
+              domain={['auto', 'auto']}
+              tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(v: number) => formatPace(v)}
+              width={44}
+            />
+            <Tooltip content={<CustomTooltip />} cursor={false} />
+            <Scatter
+              data={data}
+              shape={<CustomDot />}
               isAnimationActive={false}
             />
-          )}
-        </ComposedChart>
-      </ResponsiveContainer>
+            {trendLine.length === 2 && (
+              <Line
+                data={trendLine}
+                type="linear"
+                dataKey="pace"
+                stroke={CHART_COLORS.axisTick}
+                strokeWidth={1.5}
+                strokeDasharray="4 2"
+                dot={false}
+                isAnimationActive={false}
+              />
+            )}
+          </ComposedChart>
+        </ResponsiveContainer>
+      </ChartFigure>
       {reg && (
         <ChartExplain
           text={slopePer10 > 3 ? ex.slowing(slopePer10) : ex.stable}

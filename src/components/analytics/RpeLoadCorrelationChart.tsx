@@ -7,6 +7,7 @@ import { linearRegression } from '@/lib/math'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { ChartExplain } from '@/components/ui/ChartExplain'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { ChartFigure } from '@/components/ui/ChartFigure'
 import { t } from '@/i18n'
 
 function CustomDot(props: Record<string, unknown>) {
@@ -55,53 +56,58 @@ export function RpeLoadCorrelationChart({ data }: Props) {
 
   const dropPer10 = reg ? Math.round(reg.slope * -10 * 10) / 10 : 0
   const ex = t.analytics.charts.rpeLoadCorrelation.explains
+  const summary = `${t.analytics.charts.rpeLoadCorrelation.title}${
+    reg ? `: ${dropPer10 > 0.3 ? ex.harder(dropPer10) : ex.stable}` : ''
+  }`
 
   return (
     <GlassSurface variant="card" className="p-5">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.analytics.charts.rpeLoadCorrelation.title}
       </h3>
-      <ResponsiveContainer width="100%" height={240}>
-        <ComposedChart margin={{ top: 4, right: 4, bottom: 0, left: 4 }}>
-          <XAxis
-            type="number"
-            dataKey="tsb"
-            domain={['auto', 'auto']}
-            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-            axisLine={false}
-            tickLine={false}
-          />
-          <YAxis
-            type="number"
-            dataKey="rpeDelta"
-            domain={['auto', 'auto']}
-            tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-            axisLine={false}
-            tickLine={false}
-            tickFormatter={(v: number) => (v > 0 ? `+${v}` : `${v}`)}
-            width={28}
-          />
-          <Tooltip content={<CustomTooltip />} cursor={false} />
-          <ReferenceLine y={0} stroke={CHART_COLORS.referenceLine} />
-          <Scatter
-            data={data}
-            shape={<CustomDot />}
-            isAnimationActive={false}
-          />
-          {trendLine.length === 2 && (
-            <Line
-              data={trendLine}
-              type="linear"
+      <ChartFigure summary={summary}>
+        <ResponsiveContainer width="100%" height={240}>
+          <ComposedChart margin={{ top: 4, right: 4, bottom: 0, left: 4 }}>
+            <XAxis
+              type="number"
+              dataKey="tsb"
+              domain={['auto', 'auto']}
+              tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis
+              type="number"
               dataKey="rpeDelta"
-              stroke={CHART_COLORS.axisTick}
-              strokeWidth={1.5}
-              strokeDasharray="4 2"
-              dot={false}
+              domain={['auto', 'auto']}
+              tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(v: number) => (v > 0 ? `+${v}` : `${v}`)}
+              width={28}
+            />
+            <Tooltip content={<CustomTooltip />} cursor={false} />
+            <ReferenceLine y={0} stroke={CHART_COLORS.referenceLine} />
+            <Scatter
+              data={data}
+              shape={<CustomDot />}
               isAnimationActive={false}
             />
-          )}
-        </ComposedChart>
-      </ResponsiveContainer>
+            {trendLine.length === 2 && (
+              <Line
+                data={trendLine}
+                type="linear"
+                dataKey="rpeDelta"
+                stroke={CHART_COLORS.axisTick}
+                strokeWidth={1.5}
+                strokeDasharray="4 2"
+                dot={false}
+                isAnimationActive={false}
+              />
+            )}
+          </ComposedChart>
+        </ResponsiveContainer>
+      </ChartFigure>
       {reg && (
         <ChartExplain
           text={dropPer10 > 0.3 ? ex.harder(dropPer10) : ex.stable}
