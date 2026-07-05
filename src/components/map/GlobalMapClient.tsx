@@ -5,6 +5,7 @@ import { Maximize, Minimize } from "lucide-react";
 import type { AllRoutesData } from "@/application/usecases/GetAllRoutes";
 import { reverseGeocode } from "@/lib/reverseGeocode";
 import { t } from "@/i18n";
+import { useSetFullscreenChromeHidden } from "@/components/layout/FullscreenChromeContext";
 import { ClusterPanel } from "./ClusterPanel";
 import { YearPicker } from "./YearPicker";
 import { useMapRoutes } from "./useMapRoutes";
@@ -42,6 +43,8 @@ export function GlobalMapClient({ data }: Props) {
   );
 
   const { containerRef, resize } = useMapRoutes(data, selectedIdx, visibleIndices);
+
+  useSetFullscreenChromeHidden(isFullscreen);
 
   useEffect(() => {
     resize();
@@ -81,14 +84,23 @@ export function GlobalMapClient({ data }: Props) {
         stats={clusterStats}
         selectedIdx={selectedIdx}
         onSelect={setSelectedIdx}
+        isFullscreen={isFullscreen}
       />
 
-      <YearPicker years={data.years} value={selectedYear} onChange={setSelectedYear} />
+      <YearPicker
+        years={data.years}
+        value={selectedYear}
+        onChange={setSelectedYear}
+        isFullscreen={isFullscreen}
+      />
 
       <button
         onClick={() => setIsFullscreen((f) => !f)}
         aria-label={isFullscreen ? t.pages.map.exitFullscreen : t.pages.map.fullscreen}
-        className="glass-map-chip absolute bottom-3 right-3 z-10 flex h-11 w-11 items-center justify-center transition-colors hover:bg-muted"
+        className={[
+          "glass-map-chip absolute right-3 z-10 flex h-11 w-11 items-center justify-center transition-colors hover:bg-muted",
+          isFullscreen ? "bottom-[max(env(safe-area-inset-bottom),12px)]" : "bottom-3",
+        ].join(" ")}
       >
         {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
       </button>
