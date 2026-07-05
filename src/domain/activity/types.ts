@@ -95,6 +95,9 @@ export interface PlannedWorkout {
   distanceM?: number
   durationSecs?: number
   scheduledTime?: string
+  /** TRIMP estimated from historical load for this type - see GetPlannedWorkouts. */
+  estimatedLoad?: number
+  isEstimated?: boolean
 }
 
 export interface WeeklyVolume {
