@@ -131,9 +131,7 @@ export function AnalyticsClient({
   const [view, setView] = useState<View>({ kind: 'year', year: years[0] ?? new Date().getFullYear() })
   const [tab, setTab] = useState<TabId>('volume')
 
-  // Restore the last-viewed period after mount (not in the initializer) so the
-  // first client render still matches the server-rendered default and avoids
-  // a hydration mismatch.
+  // Restore after mount, not in the initializer, to avoid a hydration mismatch.
   useEffect(() => {
     const stored = readStoredView(years, periodWeeks)
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore from localStorage after mount

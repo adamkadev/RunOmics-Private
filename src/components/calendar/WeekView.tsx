@@ -1,14 +1,18 @@
 'use client'
 
-import { useId, useMemo, useState } from 'react'
-import { Calendar, Check, ChevronRight, Footprints, HelpCircle, X } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Calendar, Check, ChevronRight, Footprints, X } from 'lucide-react'
 import type { Activity, ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import { ACTIVITY_TYPE_CONFIG, ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
+import type { HrBounds } from '@/domain/training/trimp'
+import { summarizeWeek, weeklyTrimpTotals, compareWeekLoad } from '@/domain/training/weekSummary'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { ChartFigure } from '@/components/ui/ChartFigure'
+import { StatusPill, type StatusTone } from '@/components/ui/StatusPill'
 import { ActivitySheet } from './ActivitySheet'
 import { InlineJumpButton } from '@/components/ui/InlineJumpButton'
 import { PlannedWorkoutSheet } from './PlannedWorkoutSheet'
-import { addDays, isoDate } from '@/lib/calendarDate'
+import { addDays, isoDate, isoWeekNumber } from '@/lib/calendarDate'
 import { formatDate, formatDateFull } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -17,7 +21,6 @@ const TODAY = 'var(--color-today)'
 const MISSED = 'var(--color-missed)'
 // alpha variants via color-mix (supported Safari 16.2+, all modern browsers)
 const TODAY_10 = 'color-mix(in srgb, var(--color-today) 10%, transparent)'
-const TODAY_33 = 'color-mix(in srgb, var(--color-today) 33%, transparent)'
 const TODAY_38 = 'color-mix(in srgb, var(--color-today) 38%, transparent)'
 const MISSED_10 = 'color-mix(in srgb, var(--color-missed) 10%, transparent)'
 const MISSED_25 = 'color-mix(in srgb, var(--color-missed) 25%, transparent)'
@@ -28,9 +31,15 @@ const ACCENT_30 = 'color-mix(in srgb, var(--accent) 30%, transparent)'
 const FG_04 = 'color-mix(in srgb, var(--color-foreground) 4%, transparent)'
 const FG_05 = 'color-mix(in srgb, var(--color-foreground) 5%, transparent)'
 const FG_07 = 'color-mix(in srgb, var(--color-foreground) 7%, transparent)'
-const FG_12 = 'color-mix(in srgb, var(--color-foreground) 12%, transparent)'
 const FG_18 = 'color-mix(in srgb, var(--color-foreground) 18%, transparent)'
-const FG_35 = 'color-mix(in srgb, var(--color-foreground) 35%, transparent)'
+
+const TREND_WEEKS = 8
+
+const LOAD_LEVEL_TONE: Record<'low' | 'normal' | 'high', StatusTone> = {
+  low: 'blue',
+  normal: 'green',
+  high: 'amber',
+}
 
 interface Day {
   date: string
@@ -121,10 +130,43 @@ function NextWeekPlanRow({ plan, onTap }: { plan: PlannedWorkout; onTap: () => v
   )
 }
 
+function SummaryStat({ label, value, sub }: { label: string; value: string; sub?: React.ReactNode }) {
+  return (
+    <div className="rounded-lg border border-foreground/[0.07] bg-foreground/[0.03] px-2.5 py-2">
+      <div className="text-micro font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="mt-0.5 flex items-baseline gap-1.5">
+        <span className="text-sm font-extrabold tabular-nums text-foreground">{value}</span>
+        {sub}
+      </div>
+    </div>
+  )
+}
+
+/** Minimal bar row (not Recharts - too small a surface to justify it) situating the week within the trailing block. */
+function LoadTrendBars({ totals, highlightIndex }: { totals: number[]; highlightIndex: number }) {
+  const max = Math.max(...totals, 1)
+  return (
+    <div className="flex h-8 items-end gap-1">
+      {totals.map((v, i) => (
+        <div
+          key={i}
+          className="flex-1 rounded-t-sm"
+          style={{
+            height: `${Math.max((v / max) * 100, 4)}%`,
+            backgroundColor: i === highlightIndex ? 'var(--accent)' : FG_18,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
 interface Props {
   weekStart: Date
+  activities: Activity[]
   byDate: Map<string, Activity[]>
   byDatePlanned: Map<string, PlannedWorkout>
+  hrBounds?: HrBounds
   today: string
   atPresent: boolean
   onToday: () => void
@@ -132,7 +174,17 @@ interface Props {
   initialSelectedDate?: string | null
 }
 
-export function WeekView({ weekStart, byDate, byDatePlanned, today, atPresent, onToday, initialSelectedDate }: Props) {
+export function WeekView({
+  weekStart,
+  activities,
+  byDate,
+  byDatePlanned,
+  hrBounds,
+  today,
+  atPresent,
+  onToday,
+  initialSelectedDate,
+}: Props) {
   const days: Day[] = Array.from({ length: 7 }, (_, i) => {
     const date = isoDate(addDays(weekStart, i))
     return { date, day: Number(date.slice(8)), acts: byDate.get(date) ?? [] }
@@ -148,8 +200,6 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today, atPresent, o
   )
   const [sheetActivity, setSheetActivity] = useState<Activity | null>(null)
   const [sheetPlan, setSheetPlan] = useState<PlannedWorkout | null>(null)
-  const [showLegend, setShowLegend] = useState(false)
-  const legendId = useId()
 
   const selected = days.find((d) => d.date === selectedDate) ?? firstDay
   const selectedPlan = byDatePlanned.get(selected.date)
@@ -162,48 +212,66 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today, atPresent, o
     [weekStart, byDatePlanned]
   )
 
+  const byWeekNumber = useMemo(() => {
+    const map = new Map<number, Activity[]>()
+    for (const a of activities) {
+      const list = map.get(a.week) ?? []
+      list.push(a)
+      map.set(a.week, list)
+    }
+    return map
+  }, [activities])
+
+  const weekActs = useMemo(() => days.flatMap((d) => d.acts), [days])
+  const summary = useMemo(() => summarizeWeek(weekActs, hrBounds), [weekActs, hrBounds])
+
+  const trendWeekNumbers = useMemo(
+    () => Array.from({ length: TREND_WEEKS }, (_, i) => isoWeekNumber(addDays(weekStart, (i - (TREND_WEEKS - 1)) * 7))),
+    [weekStart]
+  )
+  const trendTotals = useMemo(
+    () => weeklyTrimpTotals(trendWeekNumbers, byWeekNumber, hrBounds),
+    [trendWeekNumbers, byWeekNumber, hrBounds]
+  )
+  const comparison = useMemo(() => compareWeekLoad(summary.totalTrimp, trendTotals.slice(0, -1)), [summary.totalTrimp, trendTotals])
+
   return (
     <div className="space-y-3">
       <GlassSurface variant="card" className="rounded-card-sm p-3.5 pb-2.5">
-        {/* Today jump + legend toggle share one row; legend renders inline next to the toggle, not below it */}
-        <div className="flex items-center justify-between gap-2">
-          {!atPresent ? <InlineJumpButton onClick={onToday}>{t.calendar.today}</InlineJumpButton> : <span />}
-
-          <div className="flex items-center gap-2.5">
-            {showLegend && (
-              <div id={legendId} className="flex flex-wrap items-center gap-2.5 text-micro text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <Check size={10} strokeWidth={2.5} style={{ color: 'var(--accent)' }} />
-                  {t.calendar.legend.completed}
-                </span>
-                <span className="flex items-center gap-1">
-                  <X size={10} strokeWidth={2.5} style={{ color: MISSED }} />
-                  {t.calendar.legend.missed}
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-full border" style={{ borderColor: FG_35 }} />
-                  {t.calendar.planned}
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="text-foreground/30">-</span>
-                  {t.calendar.restDay}
-                </span>
-              </div>
-            )}
-            <button
-              type="button"
-              onClick={() => setShowLegend((v) => !v)}
-              aria-expanded={showLegend}
-              aria-controls={legendId}
-              aria-label={t.calendar.legend.toggleLabel}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-foreground/30 transition-colors hover:text-foreground/60"
-            >
-              <HelpCircle size={15} />
-            </button>
+        {!atPresent && (
+          <div className="mb-2.5">
+            <InlineJumpButton onClick={onToday}>{t.calendar.today}</InlineJumpButton>
           </div>
+        )}
+
+        {/* Decisional header: load + comparison, easy/hard, elevation, key sessions */}
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <SummaryStat
+            label={t.calendar.weekSummary.load}
+            value={String(summary.totalTrimp)}
+            sub={
+              comparison && (
+                <StatusPill tone={LOAD_LEVEL_TONE[comparison.level]} className="text-[10px]">
+                  {t.calendar.weekSummary.vsTypical(comparison.percent)}
+                </StatusPill>
+              )
+            }
+          />
+          <SummaryStat
+            label={t.calendar.weekSummary.easyHard}
+            value={summary.easyPct !== null ? `${Math.round(summary.easyPct)}/${Math.round(summary.hardPct ?? 0)}` : '–'}
+          />
+          <SummaryStat label={t.calendar.weekSummary.elevation} value={`${summary.elevationGainM} ${t.units.m}`} />
+          <SummaryStat label={t.calendar.weekSummary.keySessions} value={String(summary.keySessionsCount)} />
         </div>
 
-        <div className="mt-2">
+        <div className="mt-2.5">
+          <ChartFigure summary={t.calendar.weekSummary.trendSummary(TREND_WEEKS)}>
+            <LoadTrendBars totals={trendTotals} highlightIndex={trendTotals.length - 1} />
+          </ChartFigure>
+        </div>
+
+        <div className="mt-3">
           {/* Weekday labels */}
           <div className="mb-2 grid grid-cols-7 gap-1">
             {t.calendar.weekdays.map((label, i) => (
@@ -226,7 +294,8 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today, atPresent, o
                 const plan = byDatePlanned.get(d.date)
                 const planned = !completed && !!plan
                 const missed = isPast && planned
-                const primaryType: ActivityType | null = d.acts[0]?.type ?? null
+                const primaryType: ActivityType | null = (d.acts[0]?.type ?? plan?.type) ?? null
+                const typeColor = primaryType ? ACTIVITY_TYPE_CONFIG[primaryType].dotColor : null
 
                 return (
                   <button
@@ -255,24 +324,24 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today, atPresent, o
                         className="relative flex h-8 w-8 items-center justify-center rounded-[8px] border transition-colors"
                         style={
                           completed
-                            ? { background: ACCENT_15, borderColor: ACCENT_30 }
+                            ? { background: typeColor ? `${typeColor}26` : ACCENT_15, borderColor: typeColor ? `${typeColor}66` : ACCENT_30 }
                             : missed
                               ? { background: MISSED_10, borderColor: MISSED_25, opacity: 0.6 }
                               : isToday
                                 ? { background: TODAY_10, borderColor: TODAY, borderStyle: 'solid' }
                                 : planned
-                                  ? { background: FG_05, borderColor: FG_18, borderStyle: 'dashed' }
+                                  ? { background: typeColor ? `${typeColor}14` : FG_05, borderColor: typeColor ? `${typeColor}59` : FG_18, borderStyle: 'dashed' }
                                   : { background: FG_04, borderColor: FG_07 }
                         }
                       >
                         {completed ? (
-                          <Check size={12} strokeWidth={2.5} style={{ color: 'var(--accent)' }} />
+                          <Check size={12} strokeWidth={2.5} style={{ color: typeColor ?? 'var(--accent)' }} />
                         ) : missed ? (
                           <X size={12} strokeWidth={2.5} style={{ color: MISSED }} />
                         ) : planned ? (
                           <span
                             className="h-2 w-2 rounded-full border"
-                            style={isToday ? { borderColor: TODAY } : { borderColor: FG_35 }}
+                            style={{ borderColor: typeColor ?? (isToday ? TODAY : FG_18) }}
                           />
                         ) : isToday ? (
                           <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: TODAY }} />
@@ -299,25 +368,31 @@ export function WeekView({ weekStart, byDate, byDatePlanned, today, atPresent, o
                     >
                       {d.day}
                     </span>
-
-                    {/* Bottom type bar */}
-                    <div
-                      className="h-1 w-[18px] rounded-full"
-                      style={{
-                        backgroundColor: completed
-                          ? ACTIVITY_TYPE_CONFIG[primaryType as ActivityType].dotColor
-                          : planned
-                            ? isToday
-                              ? TODAY_33
-                              : FG_12
-                            : 'transparent',
-                      }}
-                    />
                   </button>
                 )
               })}
             </div>
           </div>
+
+        {/* Always-visible legend - auto-explicit pastilles instead of a hidden toggle */}
+        <div className="mt-2.5 flex flex-wrap items-center gap-2.5 border-t border-foreground/[0.06] pt-2 text-micro text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <Check size={10} strokeWidth={2.5} style={{ color: 'var(--accent)' }} />
+            {t.calendar.legend.completed}
+          </span>
+          <span className="flex items-center gap-1">
+            <X size={10} strokeWidth={2.5} style={{ color: MISSED }} />
+            {t.calendar.legend.missed}
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="h-2 w-2 rounded-full border" style={{ borderColor: FG_18 }} />
+            {t.calendar.planned}
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="text-foreground/30">-</span>
+            {t.calendar.restDay}
+          </span>
+        </div>
       </GlassSurface>
 
       {/* Selected day panel */}

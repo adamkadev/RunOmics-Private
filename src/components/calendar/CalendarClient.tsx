@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import type { Activity, PlannedWorkout } from '@/domain/activity/types'
+import type { HrBounds } from '@/domain/training/trimp'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { PeriodNav } from '@/components/ui/PeriodNav'
 import { WeekView } from './WeekView'
@@ -15,11 +16,12 @@ import { t } from '@/i18n'
 interface Props {
   activities: Activity[]
   plannedWorkouts: PlannedWorkout[]
+  hrBounds?: HrBounds
 }
 
 type ViewMode = 'week' | 'month'
 
-export function CalendarClient({ activities, plannedWorkouts }: Props) {
+export function CalendarClient({ activities, plannedWorkouts, hrBounds }: Props) {
   const now = new Date()
   const today = isoDate(now)
   const [mode, setMode] = useState<ViewMode>('week')
@@ -147,8 +149,10 @@ export function CalendarClient({ activities, plannedWorkouts }: Props) {
         {mode === 'week' ? (
           <WeekView
             weekStart={weekStart}
+            activities={activities}
             byDate={byDate}
             byDatePlanned={byDatePlanned}
+            hrBounds={hrBounds}
             today={today}
             atPresent={atPresent}
             onToday={goToday}

@@ -5,9 +5,7 @@ import { acwr } from './GetTrainingStatus'
 import { addDays, isoDate } from '@/lib/calendarDate'
 import { round } from '@/lib/math'
 
-// Foster's monotony/strain model plus the ACWR already computed (but never
-// surfaced) in GetTrainingStatus. 'low' is an informational, non-adverse
-// signal (undercharge); 'safe'/'caution'/'risk' form the actual risk ladder.
+// 'low' is informational (undercharge); 'safe'/'caution'/'risk' is the actual risk ladder.
 export type RiskZone = 'low' | 'safe' | 'caution' | 'risk'
 
 export interface LoadRiskPanel {

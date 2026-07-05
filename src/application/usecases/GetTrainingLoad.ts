@@ -3,21 +3,13 @@ import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepo
 import { getAthleteFromFirestore } from '@/infrastructure/repositories/FirestoreConfigRepository'
 import { round } from '@/lib/math'
 import type { Activity } from '@/domain/activity/types'
+import { trimp, DEFAULT_HR_BOUNDS, type HrBounds } from '@/domain/training/trimp'
 
-// Population-average fallbacks, used when the athlete profile doesn't set
-// maxHrBpm/restingHrBpm.
-const DEFAULT_MAX_HR = 195
-const DEFAULT_RESTING_HR = 45
+export { trimp, type HrBounds }
+
 const CTL_DAYS = 42
 const ATL_DAYS = 7
 const WINDOW_DAYS = 90
-
-export interface HrBounds {
-  maxHr: number
-  restingHr: number
-}
-
-const DEFAULT_HR_BOUNDS: HrBounds = { maxHr: DEFAULT_MAX_HR, restingHr: DEFAULT_RESTING_HR }
 
 export interface TrainingLoadPoint {
   date: string
@@ -40,23 +32,11 @@ export interface LoadSnapshot {
   tsb: number
 }
 
-export function trimp(activity: Activity, hrBounds: HrBounds = DEFAULT_HR_BOUNDS): number {
-  if (!activity.avgHeartRate || !activity.durationSeconds) return 0
-  const { maxHr, restingHr } = hrBounds
-  const hrr = Math.min(
-    1,
-    Math.max(0, (activity.avgHeartRate - restingHr) / (maxHr - restingHr))
-  )
-  return (activity.durationSeconds / 60) * hrr * 0.64 * Math.exp(1.92 * hrr)
-}
-
 function isoDate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-// Per-day TRIMP, summed across same-day activities. Exposed (not just an
-// internal `buildTimeSeries` step) because monotony/strain need the raw daily
-// series, not the smoothed CTL/ATL rolling averages.
+// Exposed separately from buildTimeSeries because monotony/strain need the raw daily series, not CTL/ATL.
 export function dailyTrimpByDate(activities: Activity[], hrBounds: HrBounds = DEFAULT_HR_BOUNDS): Map<string, number> {
   const dailyLoad = new Map<string, number>()
   for (const a of activities) {
@@ -98,8 +78,8 @@ export async function getTrainingLoad(): Promise<TrainingLoadData | null> {
 
   const athlete = await getAthleteFromFirestore()
   const hrBounds: HrBounds = {
-    maxHr: athlete.maxHrBpm ?? DEFAULT_MAX_HR,
-    restingHr: athlete.restingHrBpm ?? DEFAULT_RESTING_HR,
+    maxHr: athlete.maxHrBpm ?? DEFAULT_HR_BOUNDS.maxHr,
+    restingHr: athlete.restingHrBpm ?? DEFAULT_HR_BOUNDS.restingHr,
   }
 
   const series = buildTimeSeries(activities, hrBounds)

@@ -926,6 +926,15 @@ export const fr = {
       completed: 'Réalisée',
       missed: 'Manquée',
     },
+    weekSummary: {
+      load: 'Charge',
+      vsTypical: (percent: number) => `${percent - 100 >= 0 ? '+' : ''}${percent - 100}% vs type`,
+      easyHard: 'Facile / Dur',
+      elevation: 'D+',
+      keySessions: 'Séances clés',
+      trend: 'Tendance de charge',
+      trendSummary: (weeks: number) => `Charge d’entraînement (TRIMP) hebdomadaire sur les ${weeks} dernières semaines`,
+    },
   },
 
   // Display labels for domain enums. Styling (colors, badge classes) stays in

@@ -11,14 +11,14 @@ const act = (type: Activity['type'], durationSeconds: number, distanceKm: number
 describe('buildTypeLoadStats', () => {
   it('groups trimp/minute, pace and avg duration by type', () => {
     const activities = [
-      act('Base', 1800, 5), // 30 min, 5 km
-      act('Base', 3600, 10), // 60 min, 10 km
-      act('Threshold', 1200, 4), // 20 min, 4 km
+      act('Base', 1800, 5),
+      act('Base', 3600, 10),
+      act('Threshold', 1200, 4),
     ]
     const { byType } = buildTypeLoadStats(activities, HR_BOUNDS)
 
     expect(byType.Base).toBeDefined()
-    expect(byType.Base?.avgDurationMinutes).toBe(45) // (30+60)/2
+    expect(byType.Base?.avgDurationMinutes).toBe(45)
     expect(byType.Base?.paceSecPerKm).toBeCloseTo((1800 + 3600) / 15, 5)
     expect(byType.Threshold).toBeDefined()
     expect(byType.Threshold?.avgDurationMinutes).toBe(20)
@@ -53,23 +53,22 @@ describe('estimatePlannedLoad', () => {
 
   it('uses durationSecs directly when present', () => {
     const w = estimatePlannedLoad(plan({ type: 'Base', durationSecs: 1800 }), byType, overall)
-    expect(w.estimatedLoad).toBe(60) // 2 trimp/min * 30 min
+    expect(w.estimatedLoad).toBe(60)
     expect(w.isEstimated).toBe(true)
   })
 
   it('derives duration from distance and the type pace when durationSecs is absent', () => {
-    // 5km at 300 s/km = 1500s = 25 min -> 2 * 25 = 50
     const w = estimatePlannedLoad(plan({ type: 'Base', distanceM: 5000 }), byType, overall)
     expect(w.estimatedLoad).toBe(50)
   })
 
   it('falls back to the type average duration with neither distance nor duration', () => {
     const w = estimatePlannedLoad(plan({ type: 'Base' }), byType, overall)
-    expect(w.estimatedLoad).toBe(90) // 2 * 45
+    expect(w.estimatedLoad).toBe(90)
   })
 
   it('falls back to overall stats for an unknown/untracked type', () => {
     const w = estimatePlannedLoad(plan({ type: 'Race' }), byType, overall)
-    expect(w.estimatedLoad).toBe(40) // 1 * 40 (overall avgDurationMinutes)
+    expect(w.estimatedLoad).toBe(40)
   })
 })

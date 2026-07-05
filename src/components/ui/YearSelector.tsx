@@ -15,8 +15,6 @@ interface Props {
   periods?: PeriodOption[]
   activePeriod?: number | null
   onSelectPeriod?: (weeks: number) => void
-  // Group captions ("Year" / "Window") - only rendered (and only needed) once
-  // `periods` mixes a different semantic (rolling window) into the same control.
   yearGroupLabel?: string
   windowGroupLabel?: string
 }
@@ -67,7 +65,6 @@ export function YearSelector({
     </div>
   )
 
-  // No periods: single row, unchanged from before (e.g. Goals' year-only usage).
   if (!periods?.length) return yearRow
 
   const windowRow = (

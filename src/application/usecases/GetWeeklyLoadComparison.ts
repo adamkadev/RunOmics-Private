@@ -2,8 +2,10 @@ import type { Activity } from '@/domain/activity/types'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getAthleteFromFirestore } from '@/infrastructure/repositories/FirestoreConfigRepository'
 import { trimp, type HrBounds } from './GetTrainingLoad'
-import { isoWeekNumber, startOfWeek, isoDate } from '@/lib/calendarDate'
+import { isoWeekNumber, daysElapsedInWeek } from '@/lib/calendarDate'
 import { round } from '@/lib/math'
+
+export { daysElapsedInWeek }
 
 export type WeekLoadLevel = 'low' | 'normal' | 'high' | 'in-progress'
 
@@ -16,20 +18,13 @@ export interface WeeklyLoadComparison {
 }
 
 const BASELINE_WEEKS = 8
-// Below this many elapsed days, comparing to 8 full baseline weeks is
-// mechanically biased toward "light" — report a neutral in-progress state.
+// Below this, comparing a partial week to 8 full baseline weeks is mechanically biased "light".
 const MIN_DAYS_ELAPSED_FOR_COMPARISON = 4
 
 export function level(percent: number): WeekLoadLevel {
   if (percent < 70) return 'low'
   if (percent > 130) return 'high'
   return 'normal'
-}
-
-export function daysElapsedInWeek(now: Date): number {
-  const midnightToday = new Date(isoDate(now) + 'T00:00:00')
-  const monday = startOfWeek(midnightToday)
-  return Math.round((midnightToday.getTime() - monday.getTime()) / 86_400_000) + 1
 }
 
 export async function getWeeklyLoadComparison(): Promise<WeeklyLoadComparison | null> {

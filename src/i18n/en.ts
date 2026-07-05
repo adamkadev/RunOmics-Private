@@ -338,9 +338,7 @@ export const en = {
       fatigueTooltip: 'Acute Training Load (7d avg). Recent fatigue.',
       formTooltip: 'Form = Fitness - Fatigue. Positive = fresh legs.',
       tsbHint: (tsb: number, status: TrainingStatusType): string => {
-        // A high TSB can come from a real block (fitness maintained) or from
-        // undertraining (fitness declining) — 'recovery'/'detraining' status
-        // signals the latter, so it must never read as "race ready".
+        // 'recovery'/'detraining' means the high TSB is from undertraining, not a real block.
         const undertrained = status === 'recovery' || status === 'detraining'
         if (tsb >= 15) return undertrained ? 'Fresh · undertrained\nBuild your volume back up' : 'Peak form\nrace ready'
         if (tsb >= 5)  return undertrained ? 'Fresh · light week\nEase back into training' : 'Fresh legs\ntrain hard'
@@ -924,6 +922,15 @@ export const en = {
       toggleLabel: 'Status legend',
       completed: 'Completed',
       missed: 'Missed',
+    },
+    weekSummary: {
+      load: 'Load',
+      vsTypical: (percent: number) => `${percent - 100 >= 0 ? '+' : ''}${percent - 100}% vs typical`,
+      easyHard: 'Easy / Hard',
+      elevation: 'Elevation',
+      keySessions: 'Key sessions',
+      trend: 'Load trend',
+      trendSummary: (weeks: number) => `Weekly training load (TRIMP) over the last ${weeks} weeks`,
     },
   },
 

@@ -81,10 +81,10 @@ describe('getQualifiedEffortsByActivityId', () => {
   it('ranks the next-best locally recorded efforts as #2/#3, skipping the record holder', () => {
     const records: RecordEntry[] = [record('5k', '5K', 'a1')]
     const activities = [
-      act('a1', '2026-03-01', { '5k': 1000 }), // rank 1 (record)
-      act('a2', '2026-02-01', { '5k': 1100 }), // rank 2
-      act('a3', '2026-01-01', { '5k': 1200 }), // rank 3
-      act('a4', '2025-12-01', { '5k': 1300 }), // outside top 3
+      act('a1', '2026-03-01', { '5k': 1000 }),
+      act('a2', '2026-02-01', { '5k': 1100 }),
+      act('a3', '2026-01-01', { '5k': 1200 }),
+      act('a4', '2025-12-01', { '5k': 1300 }),
     ]
 
     const result = getQualifiedEffortsByActivityId(records, activities, 3)
