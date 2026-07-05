@@ -10,6 +10,8 @@
 
 import type { ActivityType } from '@/domain/activity/types'
 import type { RankTier } from '@/domain/athlete/rank'
+import type { TrainingStatusType } from '@/application/usecases/GetTrainingStatus'
+import type { WeekLoadLevel } from '@/application/usecases/GetWeeklyLoadComparison'
 import type { Strings } from './index'
 
 export const fr = {
@@ -242,7 +244,8 @@ export const fr = {
       jumpToCurrent: 'Cette semaine',
     },
     weekLoad: {
-      label: (percent: number): string => {
+      label: (percent: number, level: WeekLoadLevel): string => {
+        if (level === 'in-progress') return 'Semaine en cours'
         if (percent >= 120) return '↑ Grosse semaine'
         if (percent >= 90)  return 'Semaine normale'
         if (percent >= 60)  return '↓ Semaine légère'
@@ -252,8 +255,12 @@ export const fr = {
         low: 'Charge légère',
         normal: 'Charge normale',
         high: 'Charge élevée',
+        'in-progress': 'Semaine en cours',
       },
-      tooltip: (window: number) => `Charge d’entraînement (TRIMP) cette semaine vs la moyenne des ${window} dernières semaines`,
+      tooltip: (window: number, level: WeekLoadLevel) =>
+        level === 'in-progress'
+          ? `Pas assez de jours écoulés cette semaine pour comparer la charge — repasse plus tard dans la semaine`
+          : `Charge d’entraînement (TRIMP) cette semaine vs la moyenne des ${window} dernières semaines`,
     },
     recentActivities: {
       title: 'Activités récentes',
@@ -333,9 +340,10 @@ export const fr = {
       fitnessTooltip: 'Charge chronique (moy. 42 j). Votre base aérobie.',
       fatigueTooltip: 'Charge aiguë (moy. 7 j). Fatigue récente.',
       formTooltip: 'Forme = Condition - Fatigue. Positif = jambes fraîches.',
-      tsbHint: (tsb: number): string => {
-        if (tsb >= 15) return 'Pic de forme\nprêt à courir'
-        if (tsb >= 5)  return 'Jambes fraîches\nplace à l’intensité'
+      tsbHint: (tsb: number, status: TrainingStatusType): string => {
+        const undertrained = status === 'recovery' || status === 'detraining'
+        if (tsb >= 15) return undertrained ? 'Frais · sous-charge\nReprends du volume' : 'Pic de forme\nprêt à courir'
+        if (tsb >= 5)  return undertrained ? 'Frais · semaine légère\nReprends progressivement' : 'Jambes fraîches\nplace à l’intensité'
         if (tsb >= 0)  return 'Équilibré\nfenêtre optimale'
         if (tsb >= -10) return 'Légère fatigue\nrécupération possible'
         if (tsb >= -20) return 'Fatigue élevée\nlevez le pied'
@@ -349,6 +357,8 @@ export const fr = {
     season: (year: number) => `Saison ${year}`,
     allTimeChip: 'Tout',
     allTimeTitle: 'Historique complet',
+    yearGroupLabel: 'Année',
+    windowGroupLabel: 'Fenêtre',
     period: {
       chip: (n: number) => `${n} sem`,
       title: (n: number) => `${n} dernières semaines`,
@@ -871,6 +881,21 @@ export const fr = {
     title: 'Zones d’entraînement',
     thresholdLabel: (pace: string) => `Seuil ${pace}`,
     perKm: '/km',
+  },
+
+  loadRisk: {
+    title: 'Risque de charge',
+    insufficientData: 'Données insuffisantes',
+    zone: {
+      low: 'Sous-charge',
+      safe: 'Zone sûre',
+      caution: 'Prudence',
+      risk: 'Risque élevé',
+    },
+    acwr: { label: 'ACWR', description: 'Charge aiguë/chronique · cible 0,8–1,3' },
+    monotony: { label: 'Monotonie', description: 'Variété de charge au quotidien · alerte au-delà de 2,0' },
+    strain: { label: 'Strain', description: 'Charge hebdo × monotonie (Foster)' },
+    rampRate: { label: 'Ramp rate', description: 'Variation de la condition (CTL) sur 7 jours' },
   },
 
   consistencyScore: {

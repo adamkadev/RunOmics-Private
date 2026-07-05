@@ -54,13 +54,21 @@ function isoDate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-// Full TRIMP time series from first activity to today.
-// TSB is the form at the START of each day (before that day's load).
-export function buildTimeSeries(activities: Activity[], hrBounds: HrBounds = DEFAULT_HR_BOUNDS): Map<string, LoadSnapshot> {
+// Per-day TRIMP, summed across same-day activities. Exposed (not just an
+// internal `buildTimeSeries` step) because monotony/strain need the raw daily
+// series, not the smoothed CTL/ATL rolling averages.
+export function dailyTrimpByDate(activities: Activity[], hrBounds: HrBounds = DEFAULT_HR_BOUNDS): Map<string, number> {
   const dailyLoad = new Map<string, number>()
   for (const a of activities) {
     dailyLoad.set(a.date, (dailyLoad.get(a.date) ?? 0) + trimp(a, hrBounds))
   }
+  return dailyLoad
+}
+
+// Full TRIMP time series from first activity to today.
+// TSB is the form at the START of each day (before that day's load).
+export function buildTimeSeries(activities: Activity[], hrBounds: HrBounds = DEFAULT_HR_BOUNDS): Map<string, LoadSnapshot> {
+  const dailyLoad = dailyTrimpByDate(activities, hrBounds)
 
   const series = new Map<string, LoadSnapshot>()
   const firstAct = activities[activities.length - 1]

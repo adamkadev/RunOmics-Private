@@ -10,6 +10,8 @@
 
 import type { ActivityType } from '@/domain/activity/types'
 import type { RankTier } from '@/domain/athlete/rank'
+import type { TrainingStatusType } from '@/application/usecases/GetTrainingStatus'
+import type { WeekLoadLevel } from '@/application/usecases/GetWeeklyLoadComparison'
 
 export const en = {
   // Locale tag used by Intl-based formatters (dates, numbers).
@@ -239,7 +241,8 @@ export const en = {
       jumpToCurrent: 'This week',
     },
     weekLoad: {
-      label: (percent: number): string => {
+      label: (percent: number, level: WeekLoadLevel): string => {
+        if (level === 'in-progress') return 'Week in progress'
         if (percent >= 120) return '↑ Heavy week'
         if (percent >= 90)  return 'Normal week'
         if (percent >= 60)  return '↓ Light week'
@@ -249,8 +252,12 @@ export const en = {
         low: 'Light load',
         normal: 'Normal load',
         high: 'Heavy load',
+        'in-progress': 'Week in progress',
       },
-      tooltip: (window: number) => `Training load (TRIMP) so far this week vs the average of the last ${window} weeks`,
+      tooltip: (window: number, level: WeekLoadLevel) =>
+        level === 'in-progress'
+          ? `Not enough of the week has elapsed yet to compare load — check back later in the week`
+          : `Training load (TRIMP) so far this week vs the average of the last ${window} weeks`,
     },
     recentActivities: {
       title: 'Recent Activities',
@@ -330,9 +337,13 @@ export const en = {
       fitnessTooltip: 'Chronic Training Load (42d avg). Your aerobic base.',
       fatigueTooltip: 'Acute Training Load (7d avg). Recent fatigue.',
       formTooltip: 'Form = Fitness - Fatigue. Positive = fresh legs.',
-      tsbHint: (tsb: number): string => {
-        if (tsb >= 15) return 'Peak form\nrace ready'
-        if (tsb >= 5)  return 'Fresh legs\ntrain hard'
+      tsbHint: (tsb: number, status: TrainingStatusType): string => {
+        // A high TSB can come from a real block (fitness maintained) or from
+        // undertraining (fitness declining) — 'recovery'/'detraining' status
+        // signals the latter, so it must never read as "race ready".
+        const undertrained = status === 'recovery' || status === 'detraining'
+        if (tsb >= 15) return undertrained ? 'Fresh · undertrained\nBuild your volume back up' : 'Peak form\nrace ready'
+        if (tsb >= 5)  return undertrained ? 'Fresh · light week\nEase back into training' : 'Fresh legs\ntrain hard'
         if (tsb >= 0)  return 'Balanced\noptimal window'
         if (tsb >= -10) return 'Slight fatigue\nrecovery possible'
         if (tsb >= -20) return 'High fatigue\nease off'
@@ -346,6 +357,8 @@ export const en = {
     season: (year: number) => `${year} season`,
     allTimeChip: 'All',
     allTimeTitle: 'All-time',
+    yearGroupLabel: 'Year',
+    windowGroupLabel: 'Window',
     period: {
       chip: (n: number) => `${n} wk`,
       title: (n: number) => `Last ${n} weeks`,
@@ -868,6 +881,21 @@ export const en = {
     title: 'Training Zones',
     thresholdLabel: (pace: string) => `Threshold ${pace}`,
     perKm: '/km',
+  },
+
+  loadRisk: {
+    title: 'Load Risk',
+    insufficientData: 'Not enough data',
+    zone: {
+      low: 'Reduced load',
+      safe: 'Safe zone',
+      caution: 'Caution',
+      risk: 'High risk',
+    },
+    acwr: { label: 'ACWR', description: 'Acute:chronic load ratio · target 0.8–1.3' },
+    monotony: { label: 'Monotony', description: 'Day-to-day load variety · alert above 2.0' },
+    strain: { label: 'Strain', description: 'Weekly load × monotony (Foster)' },
+    rampRate: { label: 'Ramp rate', description: 'Fitness (CTL) change over 7 days' },
   },
 
   consistencyScore: {

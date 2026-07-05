@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { TrendingUp, TrendingDown } from 'lucide-react'
 import type { ReactNode } from 'react'
@@ -13,6 +13,7 @@ import { YearSelector } from '@/components/ui/YearSelector'
 import type { VO2maxPoint } from '@/application/usecases/GetVO2maxHistory'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { TrainingLoadData } from '@/application/usecases/GetTrainingLoad'
+import type { LoadRiskPanel as LoadRiskPanelData } from '@/application/usecases/GetLoadRiskPanel'
 import { formatDurationShort } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartCardSkeleton } from '@/components/ui/Skeleton'
@@ -44,6 +45,27 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]['id']
 type View = { kind: 'year'; year: number } | { kind: 'period'; weeks: number } | { kind: 'all' }
+
+const VIEW_STORAGE_KEY = 'analytics:view'
+
+function readStoredView(years: number[], periodWeeks: number[]): View | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = localStorage.getItem(VIEW_STORAGE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as Partial<View>
+    if (parsed.kind === 'year' && typeof parsed.year === 'number' && years.includes(parsed.year)) {
+      return { kind: 'year', year: parsed.year }
+    }
+    if (parsed.kind === 'period' && typeof parsed.weeks === 'number' && periodWeeks.includes(parsed.weeks)) {
+      return { kind: 'period', weeks: parsed.weeks }
+    }
+    if (parsed.kind === 'all') return { kind: 'all' }
+  } catch {
+    // Malformed/absent storage - fall back to the default view.
+  }
+  return null
+}
 
 function DeltaBadge({ text, good }: { text: string; good: boolean }) {
   const Icon = good ? TrendingUp : TrendingDown
@@ -94,6 +116,7 @@ export function AnalyticsClient({
   lifetime,
   zones,
   trainingLoad,
+  loadRisk,
 }: {
   data: AnalyticsPageData
   comparison: YearComparisonData | null
@@ -101,11 +124,27 @@ export function AnalyticsClient({
   lifetime: LifetimeStats | null
   zones: TrainingZonesData | null
   trainingLoad: TrainingLoadData | null
+  loadRisk: LoadRiskPanelData | null
 }) {
   const { years, byYear, periodWeeks, byPeriod } = data
 
   const [view, setView] = useState<View>({ kind: 'year', year: years[0] ?? new Date().getFullYear() })
   const [tab, setTab] = useState<TabId>('volume')
+
+  // Restore the last-viewed period after mount (not in the initializer) so the
+  // first client render still matches the server-rendered default and avoids
+  // a hydration mismatch.
+  useEffect(() => {
+    const stored = readStoredView(years, periodWeeks)
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore from localStorage after mount
+    if (stored) setView(stored)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    localStorage.setItem(VIEW_STORAGE_KEY, JSON.stringify(view))
+  }, [view])
 
   function selectTab(id: TabId) {
     setTab(id)
@@ -220,6 +259,8 @@ export function AnalyticsClient({
           }))}
           activePeriod={isPeriod ? view.weeks : null}
           onSelectPeriod={selectPeriod}
+          yearGroupLabel={t.analytics.yearGroupLabel}
+          windowGroupLabel={t.analytics.windowGroupLabel}
         />
       </GlassSurface>
 
@@ -287,6 +328,7 @@ export function AnalyticsClient({
             <PhysiologyTab
               series={active}
               trainingLoad={trainingLoad}
+              loadRisk={loadRisk}
               vo2maxHistory={vo2maxHistory}
               zones={zones}
               efficiencyDaily={data.efficiencyDaily}
