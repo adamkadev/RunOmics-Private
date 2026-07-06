@@ -1,4 +1,4 @@
-import { CheckCircle2, AlertTriangle, Calendar } from 'lucide-react'
+import { CheckCircle2, AlertTriangle } from 'lucide-react'
 import type { DigestFact, WeeklyDigest as WeeklyDigestData } from '@/application/usecases/GetWeeklyDigest'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
@@ -19,31 +19,12 @@ export function WeeklyDigest({ data }: { data: WeeklyDigestData }) {
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-        {data.review.length > 0 && (
-          <div>
-            <h3 className="mb-2.5 text-sm font-semibold text-foreground/80">{s.reviewTitle}</h3>
-            <ul className="space-y-2">
-              {data.review.map((fact) => (
-                <FactRow key={fact.key} fact={fact} />
-              ))}
-            </ul>
-          </div>
-        )}
-        {data.comingUp.length > 0 && (
-          <div>
-            <h3 className="mb-2.5 flex items-center gap-1.5 text-sm font-semibold text-foreground/80">
-              <Calendar size={14} className="text-accent-text" />
-              {s.comingUpTitle}
-            </h3>
-            <ul className="space-y-2">
-              {data.comingUp.map((fact) => (
-                <FactRow key={fact.key} fact={fact} />
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
+      <h3 className="mb-2.5 text-sm font-semibold text-foreground/80">{s.reviewTitle}</h3>
+      <ul className="space-y-2">
+        {data.review.map((fact) => (
+          <FactRow key={fact.key} fact={fact} />
+        ))}
+      </ul>
     </GlassSurface>
   )
 }

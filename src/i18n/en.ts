@@ -318,15 +318,12 @@ export const en = {
     },
     weeklyDigest: {
       reviewTitle: 'This Week In Review',
-      comingUpTitle: 'Coming Up',
       newPr: (label: string, time: string) => `New ${label} best: ${time}`,
       statusFresh: (tsb: number) => `Fresh zone (Form +${tsb}) - a good window to train hard`,
       statusOverreaching: (tsb: number) => `Overreaching (Form ${tsb}) - consider easing off`,
       acwrWatch: (acwr: number) => `Acute:chronic load ratio at ${acwr.toFixed(2)} - outside the safe 0.8-1.3 range`,
       monotonyWatch: (monotony: number) => `Monotony at ${monotony.toFixed(1)} - your week lacks variety in daily load`,
       hardShareWatch: (hardPct: number) => `${Math.round(hardPct)}% of your time was hard effort - above the usual 80/20 guideline`,
-      nextRace: (name: string, days: number) => `${name} in ${days}d`,
-      nextKeySession: (type: string, date: string) => `Next key session: ${type} on ${date}`,
     },
     syncStatus: {
       synced: (relative: string) => `Synced ${relative}`,
@@ -954,6 +951,7 @@ export const en = {
     readiness: (tsb: number) => `Form ${tsb >= 0 ? '+' : ''}${tsb}`,
     switcher: { week: 'Week', month: 'Month' },
     weekOf: (label: string) => `Week of ${label}`,
+    weekNumber: (n: number) => `Week ${n}`,
     restDay: 'Rest day',
     planned: 'Planned',
     nextWeek: (n: number) => `Next week - ${n} planned`,

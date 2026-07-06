@@ -1,14 +1,11 @@
-import type { Activity, PlannedWorkout } from '@/domain/activity/types'
+import type { Activity } from '@/domain/activity/types'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getTrainingStatus, type TrainingStatus } from './GetTrainingStatus'
 import { getLoadRiskPanel, type LoadRiskPanel } from './GetLoadRiskPanel'
 import { getRecords, type RecordEntry } from './GetRecords'
-import { getPlannedWorkouts } from './GetPlannedWorkouts'
-import { getNextRace } from './GetNextRace'
-import type { UpcomingRace } from './GetGoalsData'
 import { easyHardShare } from '@/domain/training/easyHard'
-import { isoWeekNumber, isoDate } from '@/lib/calendarDate'
-import { formatDuration, formatDayMonth } from '@/lib/formatters'
+import { isoWeekNumber } from '@/lib/calendarDate'
+import { formatDuration } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 const HARD_PCT_WATCH_THRESHOLD = 30
@@ -23,11 +20,6 @@ export interface DigestFact {
 
 export interface WeeklyDigest {
   review: DigestFact[]
-  comingUp: DigestFact[]
-}
-
-export function daysUntil(date: string, today: string): number {
-  return Math.round((new Date(`${date}T00:00:00`).getTime() - new Date(`${today}T00:00:00`).getTime()) / 86_400_000)
 }
 
 export function buildPrFacts(records: RecordEntry[], currentWeekNum: number): DigestFact[] {
@@ -67,35 +59,11 @@ export function buildHardShareFact(hardPct: number | null): DigestFact | null {
   return { key: '8020', severity: 'watch', text: t.dashboard.weeklyDigest.hardShareWatch(hardPct) }
 }
 
-export function buildNextRaceFact(nextRace: UpcomingRace | null, today: string): DigestFact | null {
-  if (!nextRace) return null
-  return { key: 'race', severity: 'positive', text: t.dashboard.weeklyDigest.nextRace(nextRace.name, daysUntil(nextRace.date, today)) }
-}
-
-export function buildNextKeySessionFact(planned: PlannedWorkout[], today: string): DigestFact | null {
-  const next = planned
-    .filter((p) => p.date >= today && p.type && p.type !== 'Base')
-    .sort((a, b) => a.date.localeCompare(b.date))[0]
-  if (!next?.type) return null
-  return {
-    key: 'next-key',
-    severity: 'positive',
-    text: t.dashboard.weeklyDigest.nextKeySession(t.activityTypes[next.type], formatDayMonth(next.date)),
-  }
-}
-
 export async function getWeeklyDigest(): Promise<WeeklyDigest | null> {
   const activities: Activity[] = getAllActivities()
   const currentWeekNum = isoWeekNumber(new Date())
-  const today = isoDate(new Date())
 
-  const [records, status, loadRisk, nextRace, planned] = await Promise.all([
-    getRecords(),
-    getTrainingStatus(),
-    getLoadRiskPanel(),
-    getNextRace(),
-    getPlannedWorkouts(),
-  ])
+  const [records, status, loadRisk] = await Promise.all([getRecords(), getTrainingStatus(), getLoadRiskPanel()])
 
   const currentWeekActs = activities.filter((a) => a.week === currentWeekNum)
   const { hardPct } = easyHardShare(currentWeekActs)
@@ -107,10 +75,6 @@ export async function getWeeklyDigest(): Promise<WeeklyDigest | null> {
     ...([buildHardShareFact(hardPct)].filter((f): f is DigestFact => f !== null)),
   ]
 
-  const comingUp: DigestFact[] = [buildNextRaceFact(nextRace, today), buildNextKeySessionFact(planned, today)].filter(
-    (f): f is DigestFact => f !== null,
-  )
-
-  if (!review.length && !comingUp.length) return null
-  return { review, comingUp }
+  if (!review.length) return null
+  return { review }
 }
