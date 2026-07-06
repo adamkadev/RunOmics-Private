@@ -121,13 +121,17 @@ export function useMapRoutes(
           firstSymbolId,
         );
 
-        // Transparent, wide per-route layer on top purely for tap/hover hit-testing.
+        // Fully transparent, wide per-route layer on top purely for tap/hover
+        // hit-testing. Must be opacity 0 (not a low non-zero value): this layer is
+        // NOT frequency-merged, so on heavily overlapped stretches even 0.01 alpha
+        // stacks into an opaque black smear that buries the heat colours.
+        // queryRenderedFeatures still returns features from a 0-opacity layer.
         map.addLayer({
           id: "hit-line",
           type: "line",
           source: "hit",
           layout: { "line-join": "round", "line-cap": "round" },
-          paint: { "line-color": "#000000", "line-width": 16, "line-opacity": 0.01 },
+          paint: { "line-color": "#000000", "line-width": 16, "line-opacity": 0 },
         });
 
         map.on("mouseenter", "hit-line", () => {

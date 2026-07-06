@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented in this file.
 
+## [3.5.1] - 2026-07-06
+
+### Fixed
+
+- **Heatmap black smear on busy stretches**: the transparent tap-to-inspect
+  hit layer used `line-opacity: 0.01`; being per-route (not frequency-merged),
+  it stacked into an opaque black band over heavily overlapped paths, burying
+  the heat colours. Set to fully transparent (`opacity: 0`) - hit-testing via
+  `queryRenderedFeatures` is unaffected, and the cool→hot ramp now shows.
+
 ## [3.5] - 2026-07-06
 
 ### Added
