@@ -137,6 +137,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
         className="relative flex w-full max-w-md animate-sheet-up flex-col overflow-hidden sm:rounded-2xl"
         style={{
           ...sheetStyle,
+          maxHeight: 'calc(100dvh - max(env(safe-area-inset-top), 24px) - 24px)',
           borderRadius: '28px 28px 0 0',
           background: 'var(--glass-bg-sheet)',
           backdropFilter: 'blur(40px)',
@@ -171,7 +172,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
         </div>
 
         {/* Scrollable body */}
-        <div className="overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="min-h-0 flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 
           {/* Live preview */}
           <div style={{ display: 'flex', justifyContent: 'center', padding: '0 0 16px' }}>
