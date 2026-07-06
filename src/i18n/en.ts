@@ -640,7 +640,11 @@ export const en = {
       elevationValue: (m: number) => `+${m}m`,
       caloriesValue: (kcal: number) => `${kcal} kcal`,
       cadence: 'Cadence',
+      sessionLoad: 'Session Load',
     },
+    heatNote: (temperature: number, adjustSeconds: number) =>
+      `Hot run (${temperature}°C) - pace looks ~${adjustSeconds}s/km slower than the same effort in mild weather.`,
+    loadNote: (atlContribution: number) => `Contributes ~${atlContribution} to this week's fatigue (ATL).`,
     bestEfforts: {
       title: 'Best Efforts',
       prBadge: 'PR',

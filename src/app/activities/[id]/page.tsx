@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation'
 import { BackButton } from '@/components/ui/BackButton'
 import { getActivities } from '@/application/usecases/GetActivities'
 import { getRecords, getQualifiedEffortsByActivityId } from '@/application/usecases/GetRecords'
+import { getAthleteFromFirestore } from '@/infrastructure/repositories/FirestoreConfigRepository'
+import type { HrBounds } from '@/domain/training/trimp'
 import { ActivityTypeTag } from '@/components/activities/ActivityTypeTag'
 import { PrBadge } from '@/components/activities/PrBadge'
 import { ShoePairTag } from '@/components/activities/ShoePairTag'
@@ -59,6 +61,11 @@ export default async function ActivityDetailPage({
 
   const records = await getRecords()
   const qualifiedEfforts = getQualifiedEffortsByActivityId(records)[id] ?? []
+  const athlete = await getAthleteFromFirestore()
+  const hrBounds: HrBounds | undefined =
+    athlete.maxHrBpm && athlete.restingHrBpm
+      ? { maxHr: athlete.maxHrBpm, restingHr: athlete.restingHrBpm }
+      : undefined
 
   return (
     <div className="space-y-5">
@@ -85,7 +92,7 @@ export default async function ActivityDetailPage({
         )}
       </div>
 
-      <ActivityDetailClient activity={activity} />
+      <ActivityDetailClient activity={activity} hrBounds={hrBounds} />
 
       <div className="space-y-4">
         <KmSplits activity={activity} />

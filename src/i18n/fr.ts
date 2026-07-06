@@ -642,7 +642,11 @@ export const fr = {
       elevationValue: (m: number) => `+${m}m`,
       caloriesValue: (kcal: number) => `${kcal} kcal`,
       cadence: 'Cadence',
+      sessionLoad: 'Charge de la séance',
     },
+    heatNote: (temperature: number, adjustSeconds: number) =>
+      `Sortie par forte chaleur (${temperature}°C) - l’allure paraît ~${adjustSeconds}s/km plus lente qu’un effort identique par temps clément.`,
+    loadNote: (atlContribution: number) => `Contribue ~${atlContribution} à la fatigue de la semaine (ATL).`,
     bestEfforts: {
       title: 'Meilleurs efforts',
       prBadge: 'RP',

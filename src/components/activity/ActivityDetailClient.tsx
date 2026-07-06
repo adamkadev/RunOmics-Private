@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import type { Activity } from '@/domain/activity/types'
+import { trimp, type HrBounds } from '@/domain/training/trimp'
+import { heatAdjustmentSecondsPerKm, shouldAnnotateHeat } from '@/domain/training/heatAdjustment'
 import { ActivityMapClient } from './ActivityMapClient'
 import { NoRouteMap } from './ActivityMap'
 import { HrZoneSection } from './HrZoneSection'
@@ -16,6 +18,7 @@ import { STATUS } from '@/lib/statusColors'
 
 interface Props {
   activity: Activity
+  hrBounds?: HrBounds
 }
 
 function rpeToneClass(rpe: number): string {
@@ -24,7 +27,7 @@ function rpeToneClass(rpe: number): string {
   return STATUS.warning.text
 }
 
-function buildStats(activity: Activity): Metric[] {
+function buildStats(activity: Activity, sessionTrimp: number): Metric[] {
   const stats: Metric[] = [
     {
       value: formatDistance(activity.distanceKm),
@@ -78,13 +81,25 @@ function buildStats(activity: Activity): Metric[] {
     valueClassName: activity.rpe !== null ? rpeToneClass(activity.rpe) : undefined,
   })
 
+  if (sessionTrimp > 0) {
+    stats.push({
+      value: `${Math.round(sessionTrimp)}`,
+      label: t.activity.stats.sessionLoad,
+    })
+  }
+
   return stats
 }
 
-export function ActivityDetailClient({ activity }: Props) {
+export function ActivityDetailClient({ activity, hrBounds }: Props) {
   const [hoverFraction, setHoverFraction] = useState<number | null>(null)
-  const stats = buildStats(activity)
+  const sessionTrimp = trimp(activity, hrBounds)
+  const stats = buildStats(activity, sessionTrimp)
   const hasSecondaryCharts = !!(activity.elevationProfile || activity.paceSamples || activity.cadenceSamples)
+  const heatAdjustSeconds =
+    activity.paceSecPerKm && shouldAnnotateHeat(activity.avgTemperature)
+      ? heatAdjustmentSecondsPerKm(activity.paceSecPerKm, activity.avgTemperature)
+      : 0
 
   return (
     <>
@@ -104,6 +119,12 @@ export function ActivityDetailClient({ activity }: Props) {
 
       <GlassSurface variant="card" className="p-5">
         <MetricGrid metrics={stats} className="grid-cols-4" />
+        {(heatAdjustSeconds > 0 || sessionTrimp > 0) && (
+          <div className="mt-3 space-y-1 border-t border-foreground/[0.07] pt-3 text-xs text-subtle">
+            {heatAdjustSeconds > 0 && <p>{t.activity.heatNote(activity.avgTemperature as number, heatAdjustSeconds)}</p>}
+            {sessionTrimp > 0 && <p>{t.activity.loadNote(Math.round(sessionTrimp / 7))}</p>}
+          </div>
+        )}
       </GlassSurface>
       {activity.hrSamples && (
         <HrZoneSection
