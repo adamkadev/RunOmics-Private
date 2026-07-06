@@ -178,6 +178,8 @@ export const en = {
       switchAccount: 'Sign out and try another account',
       accessDenied: 'Access denied - this page is restricted to the site owner.',
       signingIn: 'Signing in...',
+      error: 'Could not sign in, please retry.',
+      notConfigured: 'Sign-in is not available right now.',
     },
     athlete: {
       title: 'Athlete Profile',
