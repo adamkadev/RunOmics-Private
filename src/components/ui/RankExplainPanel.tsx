@@ -20,8 +20,8 @@ export function RankExplainPanel({
           {prefix} {tier}
         </span>{' '}
         - {t.rankTierLabels[tier]} - {description}
+        {detail && <> {detail}</>}
       </p>
-      {detail && <p className="mt-1 text-xs text-muted-foreground">{detail}</p>}
       <div className="mt-3">
         <RankLadder current={tier} />
       </div>
