@@ -67,6 +67,7 @@ export const fr = {
     sessions: (n: number) => `${n} séance${n > 1 ? 's' : ''}`,
     runs: (n: number) => `${n} sortie${n > 1 ? 's' : ''}`,
     close: 'Fermer',
+    refreshing: 'Actualisation...',
   },
 
   pwa: {

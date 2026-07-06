@@ -1,13 +1,16 @@
 'use client'
 
 import { useLayoutEffect, useRef } from 'react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { RefreshCw } from 'lucide-react'
 import { Sidebar } from './Sidebar'
 import { PageTransition } from './PageTransition'
 import { ThemeSync } from './ThemeSync'
 import { Aurora } from './Aurora'
 import { getPageAuroraKey, hasGlobalTopBar } from '@/lib/navigation'
+import { usePullToRefresh, PULL_THRESHOLD_PX } from '@/lib/usePullToRefresh'
 import { cn } from '@/lib/utils'
+import { t } from '@/i18n'
 
 const SCROLL_POSITIONS_KEY = 'scrollPositions'
 
@@ -21,8 +24,10 @@ function getScrollPositions(): Record<string, number> {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const router = useRouter()
   const showTopBar = hasGlobalTopBar(pathname)
   const isPopNavigation = useRef(false)
+  const { containerRef, pullPx, refreshing } = usePullToRefresh(() => router.refresh())
 
   // Browser/router back-forward (popstate) restores scroll position instead
   // of resetting to top, so returning from a detail page lands where you left.
@@ -58,7 +63,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <Aurora />
       <ThemeSync />
       <Sidebar />
-      <main className="min-h-screen lg:ml-[248px]">
+      <main ref={containerRef} className="min-h-screen lg:ml-[248px]">
+        <div
+          className="flex justify-center overflow-hidden transition-[height] duration-200 lg:hidden"
+          style={{ height: refreshing ? 40 : pullPx }}
+        >
+          <div className="flex items-center gap-2 pt-2 text-xs font-semibold text-accent-text">
+            <RefreshCw
+              size={16}
+              className={refreshing ? 'animate-spin' : undefined}
+              style={refreshing ? undefined : { transform: `rotate(${(pullPx / PULL_THRESHOLD_PX) * 360}deg)` }}
+            />
+            {refreshing && <span>{t.common.refreshing}</span>}
+          </div>
+        </div>
         {/* Mobile top padding: breathing room below the Dashboard's top bar,
             or - on every other page, which has no top bar - the notch safe area instead. */}
         <div

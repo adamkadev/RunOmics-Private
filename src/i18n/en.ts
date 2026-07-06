@@ -66,6 +66,7 @@ export const en = {
     sessions: (n: number) => `${n} session${n !== 1 ? 's' : ''}`,
     runs: (n: number) => `${n} run${n !== 1 ? 's' : ''}`,
     close: 'Close',
+    refreshing: 'Refreshing...',
   },
 
   pwa: {
