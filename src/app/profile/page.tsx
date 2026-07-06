@@ -1,4 +1,5 @@
 import { getProfileData } from '@/application/usecases/GetProfileData'
+import { getMilestones } from '@/application/usecases/GetMilestones'
 import { ProfileClient } from '@/components/profile/ProfileClient'
 
 // Safety net: data is also revalidated on demand by /api/internal/revalidate
@@ -7,6 +8,7 @@ export const revalidate = 86400
 
 export default async function ProfilePage() {
   const data = await getProfileData()
+  const milestones = await getMilestones()
 
-  return <ProfileClient data={data} />
+  return <ProfileClient data={data} milestones={milestones} />
 }

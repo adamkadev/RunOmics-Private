@@ -857,6 +857,14 @@ export const en = {
       title: 'Running Heatmap',
       subtitle: 'Every route you have ever run, mapped',
     },
+    milestones: {
+      title: 'Milestones',
+      distanceTier: (km: number) => `${km} km this year`,
+      distanceTierDetail: (year: number) => `Crossed in ${year}`,
+      streak: (weeks: number) => `${weeks}-week active streak`,
+      streakDetail: 'Still going - a run logged every week since',
+      record: (label: string) => `${label} record`,
+    },
     hrZones: {
       title: 'Heart rate zones',
       lthr: 'LTHR',

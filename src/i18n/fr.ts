@@ -859,6 +859,14 @@ export const fr = {
       title: 'Heatmap de course',
       subtitle: 'Tous tes parcours, cartographiés',
     },
+    milestones: {
+      title: 'Jalons',
+      distanceTier: (km: number) => `${km} km cette année`,
+      distanceTierDetail: (year: number) => `Franchi en ${year}`,
+      streak: (weeks: number) => `${weeks} semaines d’affilée`,
+      streakDetail: 'Toujours en cours - une sortie chaque semaine depuis',
+      record: (label: string) => `Record ${label}`,
+    },
     hrZones: {
       title: 'Zones cardiaques',
       lthr: 'LTHR',
