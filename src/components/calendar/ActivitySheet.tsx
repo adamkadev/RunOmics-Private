@@ -9,7 +9,6 @@ import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import { formatDuration, formatDate } from '@/lib/formatters'
 import { useDragToDismiss } from '@/lib/useDragToDismiss'
 import { useFocusTrap } from '@/lib/useFocusTrap'
-import { useScrollLock } from '@/lib/useScrollLock'
 import { t } from '@/i18n'
 
 interface Props {
@@ -30,7 +29,14 @@ export function ActivitySheet({ activity, onClose }: Props) {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [close])
 
-  useScrollLock()
+  useEffect(() => {
+    const { style } = document.documentElement
+    const prevOverflow = style.overflow
+    style.overflow = 'hidden'
+    return () => {
+      style.overflow = prevOverflow
+    }
+  }, [])
 
   return createPortal(
     <div
