@@ -23,6 +23,10 @@ import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting'
 import { RaceCockpit } from '@/components/dashboard/RaceCockpit'
 import { WeeklyDigest } from '@/components/dashboard/WeeklyDigest'
 
+// Safety net: data is also revalidated on demand by /api/internal/revalidate
+// when the pbs/athlete Firestore collections are written.
+export const revalidate = 86400
+
 export default async function DashboardPage() {
   const data = getDashboardData()
   const lastSyncedAt = getLastSyncedAt()

@@ -4,6 +4,10 @@ import { getAthleteFromFirestore } from '@/infrastructure/repositories/Firestore
 import { CalendarClient } from '@/components/calendar/CalendarClient'
 import type { HrBounds } from '@/domain/training/trimp'
 
+// Safety net: data is also revalidated on demand by /api/internal/revalidate
+// when the athlete Firestore collection is written.
+export const revalidate = 86400
+
 export default async function CalendarPage() {
   const activities = getActivities()
   const plannedWorkouts = await getPlannedWorkouts()
