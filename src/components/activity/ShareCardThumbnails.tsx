@@ -10,7 +10,7 @@ import { t } from '@/i18n'
 // Thumbnails render at 390x390 (square crop of the design) and display at THUMB_SIZE via CSS.
 // Each canvas re-renders whenever accent, theme, or design changes.
 const THUMB_CANVAS = 390
-export const THUMB_SIZE = 84
+export const THUMB_SIZE = 104
 
 interface ThemeCardProps {
   design: ShareDesign
