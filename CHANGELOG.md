@@ -2,6 +2,22 @@
 
 All notable changes to this project are documented in this file.
 
+## [3.5.2] - 2026-07-06
+
+### Changed
+
+- **Heatmap now uses a logarithmic intensity scale**: run frequency is heavily
+  right-skewed (a few home streets run 100+ times, most stretches run once or
+  twice), so the previous linear ramp left almost the whole map stuck on the
+  cool "rare" blue. Colour and width breakpoints are now spaced geometrically
+  between 1 and the max frequency, spreading the warm colours across the counts
+  that actually occur. Grid widened to ~30m so repeated passes merge into one
+  high-count segment instead of scattering into parallel low-count threads.
+- **Heatmap top controls no longer overlap**: the zone chip and the type/year
+  filters are laid out in a single flex row with the zone name truncating,
+  instead of two absolutely-positioned groups that collided on long zone names.
+  The collapsed zone chip drops the km (kept in the zone list) to stay compact.
+
 ## [3.5.1] - 2026-07-06
 
 ### Fixed

@@ -41,10 +41,13 @@ export function buildGeoJSON(
   };
 }
 
-// Grid cell size in degrees (~20m). Snapping every trace vertex to this grid lets
+// Grid cell size in degrees (~30m). Snapping every trace vertex to this grid lets
 // runs down the same street collapse onto shared segments despite GPS jitter, so we
 // can count how many times each stretch was actually run - the basis of the heatmap.
-export const HEAT_GRID = 0.0002;
+// Kept wider than raw GPS noise (~5-15m) so repeated passes merge into one high-count
+// segment instead of scattering into parallel low-count threads (which would pin the
+// whole map at the "rare" end of the ramp).
+export const HEAT_GRID = 0.0003;
 
 function snap(v: number): number {
   return Math.round(v / HEAT_GRID) * HEAT_GRID;
@@ -113,41 +116,51 @@ export function buildHeatGeoJSON(
 
 // Cool -> hot ramp for run frequency, from the shared, accent-independent heat
 // palette (defined in lib/colors alongside the pace-route and temperature ramps).
-const HEAT_STOPS: [number, string][] = [
-  [0, HEAT_ROUTE_COLORS.rare],
-  [0.35, HEAT_ROUTE_COLORS.seldom],
-  [0.65, HEAT_ROUTE_COLORS.often],
-  [1, HEAT_ROUTE_COLORS.frequent],
+const HEAT_COLORS = [
+  HEAT_ROUTE_COLORS.rare,
+  HEAT_ROUTE_COLORS.seldom,
+  HEAT_ROUTE_COLORS.often,
+  HEAT_ROUTE_COLORS.frequent,
 ];
+// Fractions of the (logarithmic) frequency range each colour anchors at.
+const HEAT_FRACTIONS = [0, 0.35, 0.65, 1];
 
 /**
- * MapLibre `interpolate` color expression over `count`, with stops scaled to the
- * actual max frequency so the ramp always spans the data present.
+ * Count breakpoints for the ramp, spaced *geometrically* (i.e. a log scale) between
+ * 1 and the max frequency. Run frequency is heavily right-skewed - a handful of
+ * home streets are run 100+ times while most stretches are run once or twice - so a
+ * linear scale would leave almost everything pinned at the cool "rare" end. Log
+ * spacing spreads the mid colours across the counts that actually occur.
+ * Always strictly ascending (base >= 2), so the interpolate expression is valid even
+ * with no overlaps.
  */
+function heatBreakpoints(maxCount: number): number[] {
+  const base = Math.max(2, maxCount);
+  return HEAT_FRACTIONS.map((frac) => Math.pow(base, frac));
+}
+
+/** MapLibre `interpolate` colour expression over `count`, on the log breakpoints. */
 export function heatColorExpression(maxCount: number): unknown[] {
-  const span = Math.max(1, maxCount - 1);
+  const bp = heatBreakpoints(maxCount);
   const expr: unknown[] = ["interpolate", ["linear"], ["get", "count"]];
-  for (const [t, color] of HEAT_STOPS) {
-    expr.push(1 + t * span, color);
-  }
+  bp.forEach((b, i) => expr.push(b, HEAT_COLORS[i]));
   return expr;
 }
 
-/** Width grows with frequency and zoom so busy stretches read as thicker arteries. */
+/** Width grows with frequency (log-spaced) and zoom so busy stretches read as thicker arteries. */
 export function heatWidthExpression(maxCount: number): unknown[] {
-  const span = Math.max(1, maxCount - 1);
-  return [
-    "interpolate",
-    ["linear"],
-    ["zoom"],
-    9,
-    ["interpolate", ["linear"], ["get", "count"], 1, 0.8, 1 + span, 2.2],
-    14,
-    ["interpolate", ["linear"], ["get", "count"], 1, 1.6, 1 + span, 5],
-  ];
+  const bp = heatBreakpoints(maxCount);
+  const widthsLow = [0.8, 1.2, 1.8, 2.6];
+  const widthsHigh = [1.4, 2.4, 3.8, 5];
+  const byCount = (widths: number[]): unknown[] => {
+    const expr: unknown[] = ["interpolate", ["linear"], ["get", "count"]];
+    bp.forEach((b, i) => expr.push(b, widths[i]));
+    return expr;
+  };
+  return ["interpolate", ["linear"], ["zoom"], 9, byCount(widthsLow), 14, byCount(widthsHigh)];
 }
 
-/** Discrete swatches + labels for the on-map legend. */
+/** Discrete swatches for the on-map legend. */
 export function heatLegendSwatches(): string[] {
-  return HEAT_STOPS.map(([, color]) => color);
+  return [...HEAT_COLORS];
 }

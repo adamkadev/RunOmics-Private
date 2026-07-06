@@ -87,4 +87,25 @@ describe('heatColorExpression', () => {
     expect(expr[3]).toBe(1) // first stop is always count = 1
     expect(expr[expr.length - 2]).toBe(10) // last stop reaches maxCount
   })
+
+  it('spaces stops logarithmically so mid colours fall on low counts', () => {
+    // With a right-skewed max of 100, a linear ramp would put the 2nd/3rd stops at
+    // ~35/~65; log spacing must place them far lower so the bulk of (low-count)
+    // segments still pick up warm colour instead of all reading "rare".
+    const expr = heatColorExpression(100)
+    const secondStop = expr[5] as number // count breakpoint for the 2nd colour
+    const thirdStop = expr[7] as number
+    expect(secondStop).toBeLessThan(10)
+    expect(thirdStop).toBeLessThan(30)
+    // Still strictly ascending overall.
+    const stops = [expr[3], expr[5], expr[7], expr[9]] as number[]
+    expect(stops).toEqual([...stops].sort((a, b) => a - b))
+    expect(new Set(stops).size).toBe(4)
+  })
+
+  it('stays valid (strictly ascending) with no overlaps', () => {
+    const stops = [1, 3, 5, 7].map((i) => heatColorExpression(1)[i] as number)
+    expect(stops).toEqual([...stops].sort((a, b) => a - b))
+    expect(new Set(stops).size).toBe(4)
+  })
 })
