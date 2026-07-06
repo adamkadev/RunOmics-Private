@@ -114,6 +114,12 @@ export const HEAT_ROUTE_COLORS = {
 // emerald, matching the activity-detail route line/marker.
 export const HEAT_SELECTED_COLOR = CHART_COLORS.brand // #10b981 emerald-500
 
+// World-view cluster bubbles (one per running zone, sized by route count). These
+// encode "which zone", not run frequency, so they deliberately sit off the
+// blue->red heat ramp - reusing the same brand emerald as the tap-to-inspect
+// highlight keeps the map's "your own data" accents in one family.
+export const CLUSTER_BUBBLE_COLOR = CHART_COLORS.brand // #10b981 emerald-500
+
 // Temperature band hex colors for Recharts scatter dots (cold=blue -> hot=red)
 // These represent physical reality and are intentionally accent-independent.
 export const TEMP_BAND_COLORS = {

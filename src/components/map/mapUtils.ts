@@ -169,3 +169,15 @@ export function heatWidthExpression(maxCount: number): unknown[] {
 export function heatLegendSwatches(): string[] {
   return [...HEAT_COLORS];
 }
+
+// World-view bubble sizing: humans read bubble charts by AREA, so radius scales with
+// sqrt(count) rather than count itself - a zone with 4x the runs should look ~4x the
+// "weight", not 4x the diameter. A floor keeps single-route zones big enough to tap.
+const CLUSTER_BUBBLE_MIN_RADIUS = 14;
+const CLUSTER_BUBBLE_MAX_RADIUS = 32;
+
+export function clusterBubbleRadius(count: number, maxCount: number): number {
+  if (maxCount <= 0 || count <= 0) return CLUSTER_BUBBLE_MIN_RADIUS;
+  const ratio = Math.sqrt(Math.min(count, maxCount) / maxCount);
+  return CLUSTER_BUBBLE_MIN_RADIUS + ratio * (CLUSTER_BUBBLE_MAX_RADIUS - CLUSTER_BUBBLE_MIN_RADIUS);
+}
