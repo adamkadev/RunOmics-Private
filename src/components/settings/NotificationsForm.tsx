@@ -67,7 +67,7 @@ function Toggle({ enabled, busy, disabled: isDisabled, onToggle }: {
 export function NotificationsForm() {
   const [status, setStatus] = useState<PushStatus>('loading')
   const [prefs, setPrefs] = useState<Record<NotifType, boolean>>({ training: false, shoes: false, races: false })
-  const { toast, showToast } = useToast()
+  const { toast, leaving, showToast } = useToast()
   const n = t.settings.notifications
 
   useEffect(() => {
@@ -157,7 +157,7 @@ export function NotificationsForm() {
         })}
       </div>
 
-      <Toast toast={toast} />
+      <Toast toast={toast} leaving={leaving} />
     </GlassSurface>
   )
 }

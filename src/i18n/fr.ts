@@ -181,6 +181,8 @@ export const fr = {
       switchAccount: 'Se déconnecter et essayer un autre compte',
       accessDenied: 'Accès refusé - cette page est réservée au propriétaire du site.',
       signingIn: 'Connexion...',
+      error: 'Connexion impossible, veuillez réessayer.',
+      notConfigured: "La connexion n'est pas disponible pour le moment.",
     },
     athlete: {
       title: 'Profil athlète',

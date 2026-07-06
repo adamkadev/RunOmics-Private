@@ -32,7 +32,7 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
   const [tagInput, setTagInput] = useState('')
   const [saveState, setSaveState] = useState<SaveState>('idle')
   const [open, setOpen] = useState(false)
-  const { toast, showToast } = useToast()
+  const { toast, leaving, showToast } = useToast()
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -171,7 +171,7 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
         </div>
       )}
 
-      <Toast toast={toast} />
+      <Toast toast={toast} leaving={leaving} />
     </div>
   )
 }

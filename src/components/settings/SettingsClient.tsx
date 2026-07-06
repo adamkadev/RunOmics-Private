@@ -8,6 +8,7 @@ import { getClientAuth, isClientFirebaseConfigured } from '@/lib/firebase'
 import { t } from '@/i18n'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { BackButton } from '@/components/ui/BackButton'
+import { Toast, useToast } from '@/components/ui/Toast'
 import { AccentPicker } from './AccentPicker'
 import { ThemeSegmented } from './ThemeSegmented'
 import { DataSourceInfo } from './DataSourceInfo'
@@ -21,6 +22,8 @@ export function SettingsClient() {
   const [user, setUser] = useState<User | null | 'loading'>(
     isClientFirebaseConfigured ? 'loading' : null
   )
+  const [signingIn, setSigningIn] = useState(false)
+  const { toast, leaving, showToast } = useToast()
 
   useEffect(() => {
     if (!isClientFirebaseConfigured) return
@@ -29,9 +32,24 @@ export function SettingsClient() {
   }, [])
 
   async function handleSignIn() {
-    const provider = new GoogleAuthProvider()
-    provider.setCustomParameters({ prompt: 'select_account' })
-    await signInWithPopup(getClientAuth(), provider)
+    if (!isClientFirebaseConfigured) {
+      showToast(t.settings.auth.notConfigured, false)
+      return
+    }
+    setSigningIn(true)
+    try {
+      const provider = new GoogleAuthProvider()
+      provider.setCustomParameters({ prompt: 'select_account' })
+      await signInWithPopup(getClientAuth(), provider)
+    } catch (err) {
+      // Ignore the user closing/cancelling the popup themselves.
+      const code = (err as { code?: string }).code
+      if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
+        showToast(t.settings.auth.error, false)
+      }
+    } finally {
+      setSigningIn(false)
+    }
   }
 
   async function handleSignOut() {
@@ -62,11 +80,14 @@ export function SettingsClient() {
         <div className="flex flex-col items-center gap-6 px-4 py-8">
           <button
             onClick={handleSignIn}
-            className="flex items-center gap-2.5 rounded-xl bg-accent px-6 py-3.5 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90 active:bg-accent/80"
+            disabled={signingIn}
+            className="flex items-center gap-2.5 rounded-xl bg-accent px-6 py-3.5 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90 active:bg-accent/80 disabled:opacity-60"
           >
-            {t.settings.auth.signIn}
+            {signingIn ? t.settings.auth.signingIn : t.settings.auth.signIn}
           </button>
         </div>
+
+        <Toast toast={toast} leaving={leaving} />
       </div>
     )
   }
