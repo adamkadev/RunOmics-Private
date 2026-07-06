@@ -156,7 +156,7 @@ export function TrainingStatusBanner({ status }: { status: TrainingStatus }) {
                 {formValue}
               </span>
               <span className={cn('text-xs text-right whitespace-pre-line leading-snug opacity-70', formValueClass)}>
-                {s.metrics.tsbHint(status.tsb)}
+                {s.metrics.tsbHint(status.tsb, status.status)}
               </span>
             </div>
             <TsbBar value={status.tsb} />

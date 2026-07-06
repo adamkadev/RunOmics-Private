@@ -10,6 +10,8 @@
 
 import type { ActivityType } from '@/domain/activity/types'
 import type { RankTier } from '@/domain/athlete/rank'
+import type { TrainingStatusType } from '@/application/usecases/GetTrainingStatus'
+import type { WeekLoadLevel } from '@/application/usecases/GetWeeklyLoadComparison'
 import type { Strings } from './index'
 
 export const fr = {
@@ -107,6 +109,7 @@ export const fr = {
       allYears: 'Toutes les années',
       fullscreen: 'Plein écran',
       exitFullscreen: 'Quitter le plein écran',
+      raceRoutesOnly: 'Parcours de course',
     },
     shoes: {
       title: 'Chaussures',
@@ -242,7 +245,8 @@ export const fr = {
       jumpToCurrent: 'Cette semaine',
     },
     weekLoad: {
-      label: (percent: number): string => {
+      label: (percent: number, level: WeekLoadLevel): string => {
+        if (level === 'in-progress') return 'Semaine en cours'
         if (percent >= 120) return '↑ Grosse semaine'
         if (percent >= 90)  return 'Semaine normale'
         if (percent >= 60)  return '↓ Semaine légère'
@@ -252,8 +256,12 @@ export const fr = {
         low: 'Charge légère',
         normal: 'Charge normale',
         high: 'Charge élevée',
+        'in-progress': 'Semaine en cours',
       },
-      tooltip: (window: number) => `Charge d’entraînement (TRIMP) cette semaine vs la moyenne des ${window} dernières semaines`,
+      tooltip: (window: number, level: WeekLoadLevel) =>
+        level === 'in-progress'
+          ? `Pas assez de jours écoulés cette semaine pour comparer la charge — repasse plus tard dans la semaine`
+          : `Charge d’entraînement (TRIMP) cette semaine vs la moyenne des ${window} dernières semaines`,
     },
     recentActivities: {
       title: 'Activités récentes',
@@ -297,6 +305,33 @@ export const fr = {
       unit: 'ml/kg/min',
       footnote: 'Estimation VO₂max Garmin',
     },
+    raceCockpit: {
+      title: 'Projection de forme',
+      titleWithRace: (name: string) => `Projection de forme · ${name}`,
+      daysToTarget: (days: number) => `J+${days}`,
+      projectedForm: 'Forme projetée',
+      today: 'Aujourd’hui',
+      projected: 'Projeté',
+      verdict: {
+        'on-track': 'Sur les rails',
+        'ease-off': 'Fatigue résiduelle - allège',
+        'peak-ready': 'En bonne voie pour un pic de forme',
+        'build-more': 'Risque de sous-affûtage - continue de construire',
+      },
+      footnote: 'Estimé à partir des séances planifiées - la forme réelle dépendra de ce que tu cours vraiment.',
+    },
+    weeklyDigest: {
+      reviewTitle: 'Ta semaine en revue',
+      comingUpTitle: 'À venir',
+      newPr: (label: string, time: string) => `Nouveau record ${label} : ${time}`,
+      statusFresh: (tsb: number) => `Zone fraîche (Forme +${tsb}) - bonne fenêtre pour une séance dure`,
+      statusOverreaching: (tsb: number) => `Surcharge (Forme ${tsb}) - envisage de lever le pied`,
+      acwrWatch: (acwr: number) => `Ratio charge aiguë/chronique à ${acwr.toFixed(2)} - hors de la zone sûre 0,8-1,3`,
+      monotonyWatch: (monotony: number) => `Monotonie à ${monotony.toFixed(1)} - ta semaine manque de variété de charge`,
+      hardShareWatch: (hardPct: number) => `${Math.round(hardPct)}% de ton temps en effort dur - au-dessus de la règle 80/20`,
+      nextRace: (name: string, days: number) => `${name} dans ${days}j`,
+      nextKeySession: (type: string, date: string) => `Prochaine séance clé : ${type} le ${date}`,
+    },
     syncStatus: {
       synced: (relative: string) => `Synchronisé ${relative}`,
       justNow: 'à l’instant',
@@ -333,9 +368,10 @@ export const fr = {
       fitnessTooltip: 'Charge chronique (moy. 42 j). Votre base aérobie.',
       fatigueTooltip: 'Charge aiguë (moy. 7 j). Fatigue récente.',
       formTooltip: 'Forme = Condition - Fatigue. Positif = jambes fraîches.',
-      tsbHint: (tsb: number): string => {
-        if (tsb >= 15) return 'Pic de forme\nprêt à courir'
-        if (tsb >= 5)  return 'Jambes fraîches\nplace à l’intensité'
+      tsbHint: (tsb: number, status: TrainingStatusType): string => {
+        const undertrained = status === 'recovery' || status === 'detraining'
+        if (tsb >= 15) return undertrained ? 'Frais · sous-charge\nReprends du volume' : 'Pic de forme\nprêt à courir'
+        if (tsb >= 5)  return undertrained ? 'Frais · semaine légère\nReprends progressivement' : 'Jambes fraîches\nplace à l’intensité'
         if (tsb >= 0)  return 'Équilibré\nfenêtre optimale'
         if (tsb >= -10) return 'Légère fatigue\nrécupération possible'
         if (tsb >= -20) return 'Fatigue élevée\nlevez le pied'
@@ -349,6 +385,8 @@ export const fr = {
     season: (year: number) => `Saison ${year}`,
     allTimeChip: 'Tout',
     allTimeTitle: 'Historique complet',
+    yearGroupLabel: 'Année',
+    windowGroupLabel: 'Fenêtre',
     period: {
       chip: (n: number) => `${n} sem`,
       title: (n: number) => `${n} dernières semaines`,
@@ -617,10 +655,15 @@ export const fr = {
       elevationValue: (m: number) => `+${m}m`,
       caloriesValue: (kcal: number) => `${kcal} kcal`,
       cadence: 'Cadence',
+      sessionLoad: 'Charge de la séance',
     },
+    heatNote: (temperature: number, adjustSeconds: number) =>
+      `Sortie par forte chaleur (${temperature}°C) - l’allure paraît ~${adjustSeconds}s/km plus lente qu’un effort identique par temps clément.`,
+    loadNote: (atlContribution: number) => `Contribue ~${atlContribution} à la fatigue de la semaine (ATL).`,
     bestEfforts: {
       title: 'Meilleurs efforts',
       prBadge: 'RP',
+      rankBadge: (rank: number) => `#${rank}`,
     },
     notes: {
       title: 'Notes',
@@ -812,6 +855,18 @@ export const fr = {
       line: (totalKm: number, remainingKm: number) => `${totalKm} km · ~${remainingKm} km restants`,
       viewShoes: 'Voir les chaussures',
     },
+    mapEntry: {
+      title: 'Heatmap de course',
+      subtitle: 'Tous tes parcours, cartographiés',
+    },
+    milestones: {
+      title: 'Jalons',
+      distanceTier: (km: number) => `${km} km cette année`,
+      distanceTierDetail: (year: number) => `Franchi en ${year}`,
+      streak: (weeks: number) => `${weeks} semaines d’affilée`,
+      streakDetail: 'Toujours en cours - une sortie chaque semaine depuis',
+      record: (label: string) => `Record ${label}`,
+    },
     hrZones: {
       title: 'Zones cardiaques',
       lthr: 'LTHR',
@@ -865,12 +920,42 @@ export const fr = {
     from: (source: string) => `d’après ${source}`,
     beatBy: (time: string) => `✓ Battu de ${time}`,
     pbUpside: (time: string) => `RP -${time}`,
+    trendFaster: (time: string, weeks: number) => `${time} plus rapide en ${weeks} sem.`,
+    trendSlower: (time: string, weeks: number) => `${time} plus lent en ${weeks} sem.`,
+    trendFlat: 'Stable',
+  },
+
+  racePacePlan: {
+    title: 'Plan d’allure',
+    titleWithRace: (name: string) => `Plan d’allure · ${name}`,
+    target: (time: string) => `Objectif ${time}`,
+    estimated: 'Estimé à partir de ta forme actuelle - pas d’objectif chronométré défini',
+    even: 'Allure régulière',
+    negative: 'Négative split',
+    zoneContext: (zone: string, range: string) => `L’allure de course se situe dans ta zone ${zone} (${range}/km)`,
+    km: 'Km',
+    cumulative: 'Total',
   },
 
   trainingZones: {
     title: 'Zones d’entraînement',
     thresholdLabel: (pace: string) => `Seuil ${pace}`,
     perKm: '/km',
+  },
+
+  loadRisk: {
+    title: 'Risque de charge',
+    insufficientData: 'Données insuffisantes',
+    zone: {
+      low: 'Sous-charge',
+      safe: 'Zone sûre',
+      caution: 'Prudence',
+      risk: 'Risque élevé',
+    },
+    acwr: { label: 'ACWR', description: 'Charge aiguë/chronique · cible 0,8–1,3' },
+    monotony: { label: 'Monotonie', description: 'Variété de charge au quotidien · alerte au-delà de 2,0' },
+    strain: { label: 'Strain', description: 'Charge hebdo × monotonie (Foster)' },
+    rampRate: { label: 'Ramp rate', description: 'Variation de la condition (CTL) sur 7 jours' },
   },
 
   consistencyScore: {
@@ -899,6 +984,17 @@ export const fr = {
       toggleLabel: 'Légende des statuts',
       completed: 'Réalisée',
       missed: 'Manquée',
+    },
+    weekSummary: {
+      load: 'Charge',
+      vsTypical: (percent: number) => `${percent - 100 >= 0 ? '+' : ''}${percent - 100}% vs type`,
+      easyHard: 'Facile / Dur',
+      elevation: 'D+',
+      keySessions: 'Séances clés',
+      trend: 'Tendance de charge',
+      trendSummary: (weeks: number) => `Charge d’entraînement (TRIMP) hebdomadaire sur les ${weeks} dernières semaines`,
+      compliance: 'Conformité',
+      loadCompliance: (percent: number) => `${percent}% charge`,
     },
   },
 

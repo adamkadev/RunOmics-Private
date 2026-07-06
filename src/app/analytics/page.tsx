@@ -4,6 +4,7 @@ import { getVO2maxHistory } from '@/application/usecases/GetVO2maxHistory'
 import { getLifetimeStats } from '@/application/usecases/GetLifetimeStats'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
 import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
+import { getLoadRiskPanel } from '@/application/usecases/GetLoadRiskPanel'
 import { AnalyticsClient } from '@/components/analytics/AnalyticsClient'
 
 // Safety net: data is also revalidated on demand by /api/internal/revalidate
@@ -11,13 +12,14 @@ import { AnalyticsClient } from '@/components/analytics/AnalyticsClient'
 export const revalidate = 86400
 
 export default async function AnalyticsPage() {
-  const [data, comparison, vo2maxHistory, lifetime, zones, trainingLoad] = await Promise.all([
+  const [data, comparison, vo2maxHistory, lifetime, zones, trainingLoad, loadRisk] = await Promise.all([
     getAnalyticsData(),
     Promise.resolve(getYearComparison()),
     Promise.resolve(getVO2maxHistory()),
     Promise.resolve(getLifetimeStats()),
     getTrainingZones(),
     getTrainingLoad(),
+    getLoadRiskPanel(),
   ])
 
   return (
@@ -29,6 +31,7 @@ export default async function AnalyticsPage() {
         lifetime={lifetime}
         zones={zones}
         trainingLoad={trainingLoad}
+        loadRisk={loadRisk}
       />
     </div>
   )

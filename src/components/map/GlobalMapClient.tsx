@@ -8,6 +8,7 @@ import { t } from "@/i18n";
 import { useSetFullscreenChromeHidden } from "@/components/layout/FullscreenChromeContext";
 import { ClusterPanel } from "./ClusterPanel";
 import { YearPicker } from "./YearPicker";
+import { RaceRoutesToggle } from "./RaceRoutesToggle";
 import { useMapRoutes } from "./useMapRoutes";
 import { coordLabel, matchesFilters } from "./mapUtils";
 
@@ -19,27 +20,28 @@ export function GlobalMapClient({ data }: Props) {
   const { clusters, routeMeta } = data;
   const [selectedIdx, setSelectedIdx] = useState(data.defaultClusterIdx);
   const [selectedYear, setSelectedYear] = useState<string | null>(null);
+  const [raceOnly, setRaceOnly] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [names, setNames] = useState<string[]>(() => clusters.map(coordLabel));
 
   const clusterStats = useMemo(
     () =>
       clusters.map((c) => {
-        const indices = c.routeIndices.filter((i) => matchesFilters(routeMeta[i], selectedYear));
+        const indices = c.routeIndices.filter((i) => matchesFilters(routeMeta[i], selectedYear, raceOnly));
         return {
           routeCount: indices.length,
           totalKm: Math.round(indices.reduce((s, i) => s + (routeMeta[i]?.distanceKm ?? 0), 0)),
         };
       }),
-    [clusters, routeMeta, selectedYear],
+    [clusters, routeMeta, selectedYear, raceOnly],
   );
 
   const visibleIndices = useMemo(
     () =>
       clusters[selectedIdx]?.routeIndices.filter((i) =>
-        matchesFilters(routeMeta[i], selectedYear),
+        matchesFilters(routeMeta[i], selectedYear, raceOnly),
       ) ?? [],
-    [clusters, selectedIdx, routeMeta, selectedYear],
+    [clusters, selectedIdx, routeMeta, selectedYear, raceOnly],
   );
 
   const { containerRef, resize } = useMapRoutes(data, selectedIdx, visibleIndices);
@@ -87,12 +89,15 @@ export function GlobalMapClient({ data }: Props) {
         isFullscreen={isFullscreen}
       />
 
-      <YearPicker
-        years={data.years}
-        value={selectedYear}
-        onChange={setSelectedYear}
-        isFullscreen={isFullscreen}
-      />
+      <div
+        className={[
+          "absolute right-3 z-10 flex items-start gap-2",
+          isFullscreen ? "top-[max(env(safe-area-inset-top),12px)]" : "top-3",
+        ].join(" ")}
+      >
+        <RaceRoutesToggle value={raceOnly} onChange={setRaceOnly} />
+        <YearPicker years={data.years} value={selectedYear} onChange={setSelectedYear} />
+      </div>
 
       <button
         onClick={() => setIsFullscreen((f) => !f)}

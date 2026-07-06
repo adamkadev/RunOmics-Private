@@ -1,0 +1,49 @@
+import { CheckCircle2, AlertTriangle, Calendar } from 'lucide-react'
+import type { DigestFact, WeeklyDigest as WeeklyDigestData } from '@/application/usecases/GetWeeklyDigest'
+import { GlassSurface } from '@/components/ui/GlassSurface'
+import { t } from '@/i18n'
+
+function FactRow({ fact }: { fact: DigestFact }) {
+  const Icon = fact.severity === 'watch' ? AlertTriangle : CheckCircle2
+  const iconClass = fact.severity === 'watch' ? 'text-amber-500 dark:text-amber-400' : 'text-emerald-500 dark:text-emerald-400'
+  return (
+    <li className="flex items-start gap-2 text-sm text-foreground">
+      <Icon size={15} className={`mt-0.5 shrink-0 ${iconClass}`} />
+      <span>{fact.text}</span>
+    </li>
+  )
+}
+
+export function WeeklyDigest({ data }: { data: WeeklyDigestData }) {
+  const s = t.dashboard.weeklyDigest
+
+  return (
+    <GlassSurface variant="card" className="p-5">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        {data.review.length > 0 && (
+          <div>
+            <h3 className="mb-2.5 text-sm font-semibold text-foreground/80">{s.reviewTitle}</h3>
+            <ul className="space-y-2">
+              {data.review.map((fact) => (
+                <FactRow key={fact.key} fact={fact} />
+              ))}
+            </ul>
+          </div>
+        )}
+        {data.comingUp.length > 0 && (
+          <div>
+            <h3 className="mb-2.5 flex items-center gap-1.5 text-sm font-semibold text-foreground/80">
+              <Calendar size={14} className="text-accent-text" />
+              {s.comingUpTitle}
+            </h3>
+            <ul className="space-y-2">
+              {data.comingUp.map((fact) => (
+                <FactRow key={fact.key} fact={fact} />
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </GlassSurface>
+  )
+}

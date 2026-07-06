@@ -15,6 +15,12 @@ interface Props {
   periods?: PeriodOption[]
   activePeriod?: number | null
   onSelectPeriod?: (weeks: number) => void
+  yearGroupLabel?: string
+  windowGroupLabel?: string
+}
+
+function GroupLabel({ children }: { children: string }) {
+  return <span className="text-micro font-semibold uppercase tracking-wide text-muted-foreground">{children}</span>
 }
 
 // Horizontally scrollable pill row - scales to any number of years, unlike a
@@ -27,12 +33,14 @@ export function YearSelector({
   periods,
   activePeriod,
   onSelectPeriod,
+  yearGroupLabel,
+  windowGroupLabel,
 }: Props) {
   if (years.length <= 1 && !allTimeLabel && !periods?.length) return null
 
   const activePeriodOption = periods?.find((p) => p.weeks === activePeriod)
 
-  return (
+  const yearRow = (
     <div className="flex gap-2 overflow-x-auto pb-1 pr-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {years.map((y) => (
         <Pill
@@ -45,17 +53,6 @@ export function YearSelector({
         </Pill>
       ))}
 
-      {periods?.map((p) => (
-        <Pill
-          key={p.weeks}
-          as="button"
-          variant={p.weeks === activePeriod ? 'active' : 'neutral'}
-          onClick={() => onSelectPeriod?.(p.weeks)}
-        >
-          {p.label}
-        </Pill>
-      ))}
-
       {allTimeLabel && (
         <Pill
           as="button"
@@ -65,6 +62,36 @@ export function YearSelector({
           {allTimeLabel}
         </Pill>
       )}
+    </div>
+  )
+
+  if (!periods?.length) return yearRow
+
+  const windowRow = (
+    <div className="flex gap-2 overflow-x-auto pb-1 pr-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {periods.map((p) => (
+        <Pill
+          key={p.weeks}
+          as="button"
+          variant={p.weeks === activePeriod ? 'active' : 'neutral'}
+          onClick={() => onSelectPeriod?.(p.weeks)}
+        >
+          {p.label}
+        </Pill>
+      ))}
+    </div>
+  )
+
+  return (
+    <div className="space-y-2">
+      <div className="space-y-1">
+        {yearGroupLabel && <GroupLabel>{yearGroupLabel}</GroupLabel>}
+        {yearRow}
+      </div>
+      <div className="space-y-1">
+        {windowGroupLabel && <GroupLabel>{windowGroupLabel}</GroupLabel>}
+        {windowRow}
+      </div>
     </div>
   )
 }

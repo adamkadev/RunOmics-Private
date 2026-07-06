@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeBestEfforts, getMostRecentRecord, getPrLabelsByActivityId, type RecordEntry } from '../GetRecords'
+import { computeBestEfforts, getMostRecentRecord, getQualifiedEffortsByActivityId, type RecordEntry } from '../GetRecords'
 import type { Activity } from '@/domain/activity/types'
 
 const act = (id: string, date: string, bestEfforts: Record<string, number> | null, description = ''): Activity =>
@@ -53,17 +53,54 @@ describe('getMostRecentRecord', () => {
   })
 })
 
-describe('getPrLabelsByActivityId', () => {
-  it('groups record labels by activityId', () => {
-    const records: RecordEntry[] = [
-      { key: '5k', label: '5K', seconds: 1, paceSecPerKm: 1, activityId: 'a1', date: null, official: false },
-      { key: '10k', label: '10K', seconds: 1, paceSecPerKm: 1, activityId: 'a1', date: null, official: false },
-      { key: 'half', label: 'Half', seconds: 1, paceSecPerKm: 1, activityId: 'a2', date: null, official: false },
-      { key: 'marathon', label: 'Marathon', seconds: null, paceSecPerKm: null, activityId: null, date: null, official: false },
+describe('getQualifiedEffortsByActivityId', () => {
+  const record = (key: string, label: string, activityId: string | null): RecordEntry => ({
+    key,
+    label,
+    seconds: 1,
+    paceSecPerKm: 1,
+    activityId,
+    date: null,
+    official: false,
+  })
+
+  it('labels the current record holder as rank 1', () => {
+    const records: RecordEntry[] = [record('5k', '5K', 'a1'), record('10k', '10K', 'a1'), record('half', 'Half', 'a2')]
+    const activities = [act('a1', '2026-01-01', { '5k': 1200, '10k': 2500 }), act('a2', '2026-01-05', { half: 6000 })]
+
+    const result = getQualifiedEffortsByActivityId(records, activities)
+    expect(result.a1).toEqual(
+      expect.arrayContaining([
+        { key: '5k', label: '5K', rank: 1 },
+        { key: '10k', label: '10K', rank: 1 },
+      ]),
+    )
+    expect(result.a2).toEqual(expect.arrayContaining([{ key: 'half', label: 'Half', rank: 1 }]))
+  })
+
+  it('ranks the next-best locally recorded efforts as #2/#3, skipping the record holder', () => {
+    const records: RecordEntry[] = [record('5k', '5K', 'a1')]
+    const activities = [
+      act('a1', '2026-03-01', { '5k': 1000 }),
+      act('a2', '2026-02-01', { '5k': 1100 }),
+      act('a3', '2026-01-01', { '5k': 1200 }),
+      act('a4', '2025-12-01', { '5k': 1300 }),
     ]
-    expect(getPrLabelsByActivityId(records)).toEqual({
-      a1: ['5K', '10K'],
-      a2: ['Half'],
-    })
+
+    const result = getQualifiedEffortsByActivityId(records, activities, 3)
+    expect(result.a1).toEqual([{ key: '5k', label: '5K', rank: 1 }])
+    expect(result.a2).toEqual([{ key: '5k', label: '5K', rank: 2 }])
+    expect(result.a3).toEqual([{ key: '5k', label: '5K', rank: 3 }])
+    expect(result.a4).toBeUndefined()
+  })
+
+  it('breaks ties by recency (newest activity keeps the better rank)', () => {
+    const activities = [
+      act('newer', '2026-02-01', { '5k': 1000 }),
+      act('older', '2026-01-01', { '5k': 1000 }),
+    ]
+    const result = getQualifiedEffortsByActivityId([], activities, 2)
+    expect(result.newer).toEqual([{ key: '5k', label: '5K', rank: 1 }])
+    expect(result.older).toEqual([{ key: '5k', label: '5K', rank: 2 }])
   })
 })

@@ -10,6 +10,8 @@
 
 import type { ActivityType } from '@/domain/activity/types'
 import type { RankTier } from '@/domain/athlete/rank'
+import type { TrainingStatusType } from '@/application/usecases/GetTrainingStatus'
+import type { WeekLoadLevel } from '@/application/usecases/GetWeeklyLoadComparison'
 
 export const en = {
   // Locale tag used by Intl-based formatters (dates, numbers).
@@ -104,6 +106,7 @@ export const en = {
       allYears: 'All years',
       fullscreen: 'Fullscreen',
       exitFullscreen: 'Exit fullscreen',
+      raceRoutesOnly: 'Race routes',
     },
     shoes: {
       title: 'Shoes',
@@ -239,7 +242,8 @@ export const en = {
       jumpToCurrent: 'This week',
     },
     weekLoad: {
-      label: (percent: number): string => {
+      label: (percent: number, level: WeekLoadLevel): string => {
+        if (level === 'in-progress') return 'Week in progress'
         if (percent >= 120) return '↑ Heavy week'
         if (percent >= 90)  return 'Normal week'
         if (percent >= 60)  return '↓ Light week'
@@ -249,8 +253,12 @@ export const en = {
         low: 'Light load',
         normal: 'Normal load',
         high: 'Heavy load',
+        'in-progress': 'Week in progress',
       },
-      tooltip: (window: number) => `Training load (TRIMP) so far this week vs the average of the last ${window} weeks`,
+      tooltip: (window: number, level: WeekLoadLevel) =>
+        level === 'in-progress'
+          ? `Not enough of the week has elapsed yet to compare load — check back later in the week`
+          : `Training load (TRIMP) so far this week vs the average of the last ${window} weeks`,
     },
     recentActivities: {
       title: 'Recent Activities',
@@ -294,6 +302,33 @@ export const en = {
       unit: 'ml/kg/min',
       footnote: 'Garmin VO₂max estimate',
     },
+    raceCockpit: {
+      title: 'Form Projection',
+      titleWithRace: (name: string) => `Form Projection · ${name}`,
+      daysToTarget: (days: number) => `+${days} d`,
+      projectedForm: 'Projected form',
+      today: 'Today',
+      projected: 'Projected',
+      verdict: {
+        'on-track': 'On track',
+        'ease-off': 'Residual fatigue - ease off',
+        'peak-ready': 'On track for a fresh peak',
+        'build-more': 'Undertaper risk - keep building',
+      },
+      footnote: 'Estimated from planned sessions - actual form will vary with what you actually run.',
+    },
+    weeklyDigest: {
+      reviewTitle: 'This Week In Review',
+      comingUpTitle: 'Coming Up',
+      newPr: (label: string, time: string) => `New ${label} best: ${time}`,
+      statusFresh: (tsb: number) => `Fresh zone (Form +${tsb}) - a good window to train hard`,
+      statusOverreaching: (tsb: number) => `Overreaching (Form ${tsb}) - consider easing off`,
+      acwrWatch: (acwr: number) => `Acute:chronic load ratio at ${acwr.toFixed(2)} - outside the safe 0.8-1.3 range`,
+      monotonyWatch: (monotony: number) => `Monotony at ${monotony.toFixed(1)} - your week lacks variety in daily load`,
+      hardShareWatch: (hardPct: number) => `${Math.round(hardPct)}% of your time was hard effort - above the usual 80/20 guideline`,
+      nextRace: (name: string, days: number) => `${name} in ${days}d`,
+      nextKeySession: (type: string, date: string) => `Next key session: ${type} on ${date}`,
+    },
     syncStatus: {
       synced: (relative: string) => `Synced ${relative}`,
       justNow: 'just now',
@@ -330,9 +365,11 @@ export const en = {
       fitnessTooltip: 'Chronic Training Load (42d avg). Your aerobic base.',
       fatigueTooltip: 'Acute Training Load (7d avg). Recent fatigue.',
       formTooltip: 'Form = Fitness - Fatigue. Positive = fresh legs.',
-      tsbHint: (tsb: number): string => {
-        if (tsb >= 15) return 'Peak form\nrace ready'
-        if (tsb >= 5)  return 'Fresh legs\ntrain hard'
+      tsbHint: (tsb: number, status: TrainingStatusType): string => {
+        // 'recovery'/'detraining' means the high TSB is from undertraining, not a real block.
+        const undertrained = status === 'recovery' || status === 'detraining'
+        if (tsb >= 15) return undertrained ? 'Fresh · undertrained\nBuild your volume back up' : 'Peak form\nrace ready'
+        if (tsb >= 5)  return undertrained ? 'Fresh · light week\nEase back into training' : 'Fresh legs\ntrain hard'
         if (tsb >= 0)  return 'Balanced\noptimal window'
         if (tsb >= -10) return 'Slight fatigue\nrecovery possible'
         if (tsb >= -20) return 'High fatigue\nease off'
@@ -346,6 +383,8 @@ export const en = {
     season: (year: number) => `${year} season`,
     allTimeChip: 'All',
     allTimeTitle: 'All-time',
+    yearGroupLabel: 'Year',
+    windowGroupLabel: 'Window',
     period: {
       chip: (n: number) => `${n} wk`,
       title: (n: number) => `Last ${n} weeks`,
@@ -614,10 +653,15 @@ export const en = {
       elevationValue: (m: number) => `+${m}m`,
       caloriesValue: (kcal: number) => `${kcal} kcal`,
       cadence: 'Cadence',
+      sessionLoad: 'Session Load',
     },
+    heatNote: (temperature: number, adjustSeconds: number) =>
+      `Hot run (${temperature}°C) - pace looks ~${adjustSeconds}s/km slower than the same effort in mild weather.`,
+    loadNote: (atlContribution: number) => `Contributes ~${atlContribution} to this week's fatigue (ATL).`,
     bestEfforts: {
       title: 'Best Efforts',
       prBadge: 'PR',
+      rankBadge: (rank: number) => `#${rank}`,
     },
     notes: {
       title: 'Notes',
@@ -809,6 +853,18 @@ export const en = {
       line: (totalKm: number, remainingKm: number) => `${totalKm} km · ~${remainingKm} km left`,
       viewShoes: 'View Shoes',
     },
+    mapEntry: {
+      title: 'Running Heatmap',
+      subtitle: 'Every route you have ever run, mapped',
+    },
+    milestones: {
+      title: 'Milestones',
+      distanceTier: (km: number) => `${km} km this year`,
+      distanceTierDetail: (year: number) => `Crossed in ${year}`,
+      streak: (weeks: number) => `${weeks}-week active streak`,
+      streakDetail: 'Still going - a run logged every week since',
+      record: (label: string) => `${label} record`,
+    },
     hrZones: {
       title: 'Heart rate zones',
       lthr: 'LTHR',
@@ -862,12 +918,42 @@ export const en = {
     from: (source: string) => `from ${source}`,
     beatBy: (time: string) => `✓ Beat by ${time}`,
     pbUpside: (time: string) => `PB -${time}`,
+    trendFaster: (time: string, weeks: number) => `${time} faster in ${weeks}wk`,
+    trendSlower: (time: string, weeks: number) => `${time} slower in ${weeks}wk`,
+    trendFlat: 'Stable',
+  },
+
+  racePacePlan: {
+    title: 'Race Pace Plan',
+    titleWithRace: (name: string) => `Race Pace Plan · ${name}`,
+    target: (time: string) => `Target ${time}`,
+    estimated: 'Estimated from your current form - no target time set yet',
+    even: 'Even split',
+    negative: 'Negative split',
+    zoneContext: (zone: string, range: string) => `Race pace sits in your ${zone} zone (${range}/km)`,
+    km: 'Km',
+    cumulative: 'Total',
   },
 
   trainingZones: {
     title: 'Training Zones',
     thresholdLabel: (pace: string) => `Threshold ${pace}`,
     perKm: '/km',
+  },
+
+  loadRisk: {
+    title: 'Load Risk',
+    insufficientData: 'Not enough data',
+    zone: {
+      low: 'Reduced load',
+      safe: 'Safe zone',
+      caution: 'Caution',
+      risk: 'High risk',
+    },
+    acwr: { label: 'ACWR', description: 'Acute:chronic load ratio · target 0.8–1.3' },
+    monotony: { label: 'Monotony', description: 'Day-to-day load variety · alert above 2.0' },
+    strain: { label: 'Strain', description: 'Weekly load × monotony (Foster)' },
+    rampRate: { label: 'Ramp rate', description: 'Fitness (CTL) change over 7 days' },
   },
 
   consistencyScore: {
@@ -895,6 +981,17 @@ export const en = {
       toggleLabel: 'Status legend',
       completed: 'Completed',
       missed: 'Missed',
+    },
+    weekSummary: {
+      load: 'Load',
+      vsTypical: (percent: number) => `${percent - 100 >= 0 ? '+' : ''}${percent - 100}% vs typical`,
+      easyHard: 'Easy / Hard',
+      elevation: 'Elevation',
+      keySessions: 'Key sessions',
+      trend: 'Load trend',
+      trendSummary: (weeks: number) => `Weekly training load (TRIMP) over the last ${weeks} weeks`,
+      compliance: 'Compliance',
+      loadCompliance: (percent: number) => `${percent}% load`,
     },
   },
 

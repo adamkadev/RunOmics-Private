@@ -9,7 +9,9 @@ import type {
 import type { VO2maxPoint } from '@/application/usecases/GetVO2maxHistory'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { TrainingLoadData } from '@/application/usecases/GetTrainingLoad'
+import type { LoadRiskPanel as LoadRiskPanelData } from '@/application/usecases/GetLoadRiskPanel'
 import { TrainingLoadChart } from '@/components/dashboard/TrainingLoadChart'
+import { LoadRiskPanel } from './LoadRiskPanel'
 import { HrTrendChart } from './HrTrendChart'
 import { ZoneDistributionChart } from './ZoneDistributionChart'
 import { CadenceTrendChart } from './CadenceTrendChart'
@@ -23,6 +25,7 @@ import { TrainingZones } from './TrainingZones'
 interface Props {
   series: AnalyticsSeries
   trainingLoad: TrainingLoadData | null
+  loadRisk: LoadRiskPanelData | null
   vo2maxHistory: VO2maxPoint[]
   zones: TrainingZonesData | null
   efficiencyDaily: DailyEfficiency[]
@@ -33,6 +36,7 @@ interface Props {
 export function PhysiologyTab({
   series,
   trainingLoad,
+  loadRisk,
   vo2maxHistory,
   zones,
   efficiencyDaily,
@@ -42,6 +46,7 @@ export function PhysiologyTab({
   return (
     <div className="space-y-4">
       {trainingLoad && <TrainingLoadChart data={trainingLoad} />}
+      {loadRisk && <LoadRiskPanel data={loadRisk} />}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {vo2maxHistory.length >= 2 && <VO2maxChart data={vo2maxHistory} />}
         <HrTrendChart data={series.hrTrend} />

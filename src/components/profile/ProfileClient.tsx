@@ -6,9 +6,12 @@ import { getClientFirestore } from '@/lib/firebase'
 import type { ProfileData } from '@/application/usecases/GetProfileData'
 import type { AthleteProfile } from '@/infrastructure/repositories/FirestoreConfigRepository'
 import type { GoalYear } from '@/application/usecases/GetGoalsData'
+import type { Milestone } from '@/application/usecases/GetMilestones'
 import { ProfileHero } from './ProfileHero'
 import { ProfileStatsYtd } from './ProfileStatsYtd'
 import { ProfileRecords } from './ProfileRecords'
+import { ProfileMapEntry } from './ProfileMapEntry'
+import { Milestones } from './Milestones'
 import { ProfileShoes } from './ProfileShoes'
 import { ProfileHrZones } from './ProfileHrZones'
 import { ProfileAthleteStats } from './ProfileAthleteStats'
@@ -16,9 +19,10 @@ import { ProfileGoal } from './ProfileGoal'
 
 interface Props {
   data: ProfileData
+  milestones: Milestone[]
 }
 
-export function ProfileClient({ data }: Props) {
+export function ProfileClient({ data, milestones }: Props) {
   const [athlete, setAthlete] = useState<AthleteProfile>(data.athlete)
   const [goal, setGoal] = useState(data.goal)
 
@@ -44,6 +48,8 @@ export function ProfileClient({ data }: Props) {
         <ProfileStatsYtd ytd={data.ytd} />
         <ProfileGoal goal={goal} onSaveGoal={saveGoal} />
         <ProfileRecords records={data.records} />
+        <Milestones milestones={milestones} />
+        <ProfileMapEntry />
         <ProfileShoes shoes={data.shoes} />
         <ProfileAthleteStats athlete={athlete} onSave={saveAthlete} />
         <ProfileHrZones athlete={athlete} onSave={saveAthlete} />

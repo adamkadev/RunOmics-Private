@@ -6,10 +6,12 @@ import { getConsistencyScore } from '@/application/usecases/GetConsistencyScore'
 import { getWeeklyLoadComparison } from '@/application/usecases/GetWeeklyLoadComparison'
 import { getHeatmapData } from '@/application/usecases/GetHeatmapData'
 import { getLatestVO2max, getVO2maxTrend } from '@/application/usecases/GetVO2maxHistory'
-import { getRecords, getPrLabelsByActivityId, getMostRecentRecord } from '@/application/usecases/GetRecords'
+import { getRecords, getQualifiedEffortsByActivityId, getMostRecentRecord } from '@/application/usecases/GetRecords'
 import { getPbAlerts } from '@/application/usecases/GetPbAlerts'
 import { getShoeStats } from '@/application/usecases/GetShoeStats'
 import { getNextRace } from '@/application/usecases/GetNextRace'
+import { getFormProjection } from '@/application/usecases/GetFormProjection'
+import { getWeeklyDigest } from '@/application/usecases/GetWeeklyDigest'
 import { StatsGrid } from '@/components/dashboard/StatsGrid'
 import { DashboardCharts } from '@/components/dashboard/DashboardCharts'
 import { RecentActivities } from '@/components/dashboard/RecentActivities'
@@ -18,6 +20,8 @@ import { TrainingStatusBanner } from '@/components/dashboard/TrainingStatusBanne
 import { ConsistencyCard } from '@/components/dashboard/ConsistencyCard'
 import { DashboardHighlights } from '@/components/dashboard/DashboardHighlights'
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting'
+import { RaceCockpit } from '@/components/dashboard/RaceCockpit'
+import { WeeklyDigest } from '@/components/dashboard/WeeklyDigest'
 
 export default async function DashboardPage() {
   const data = getDashboardData()
@@ -30,11 +34,13 @@ export default async function DashboardPage() {
   const vo2max = getLatestVO2max()
   const vo2maxTrend = getVO2maxTrend()
   const records = await getRecords()
-  const prLabelsByActivityId = getPrLabelsByActivityId(records)
+  const qualifiedEffortsByActivityId = getQualifiedEffortsByActivityId(records)
   const mostRecentRecord = getMostRecentRecord(records)
   const pbAlerts = await getPbAlerts()
   const shoes = getShoeStats()
   const nextRace = await getNextRace()
+  const formProjection = await getFormProjection()
+  const weeklyDigest = await getWeeklyDigest()
 
   return (
     <div className="space-y-6">
@@ -57,6 +63,10 @@ export default async function DashboardPage() {
         </div>
       )}
 
+      {weeklyDigest && <WeeklyDigest data={weeklyDigest} />}
+
+      {formProjection && <RaceCockpit data={formProjection} />}
+
       <DashboardCharts
         weeklyVolume={data.weeklyVolume}
         currentWeek={data.currentWeek.weekNumber}
@@ -66,7 +76,7 @@ export default async function DashboardPage() {
 
       <ActivityHeatmap days={heatmapDays} />
 
-      <RecentActivities activities={data.recentActivities} prLabelsByActivityId={prLabelsByActivityId} />
+      <RecentActivities activities={data.recentActivities} qualifiedEffortsByActivityId={qualifiedEffortsByActivityId} />
     </div>
   )
 }

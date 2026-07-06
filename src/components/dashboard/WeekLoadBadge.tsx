@@ -7,15 +7,16 @@ const LEVEL_TONE: Record<WeekLoadLevel, StatusTone> = {
   low: 'blue',
   normal: 'green',
   high: 'amber',
+  'in-progress': 'zinc',
 }
 
 export function WeekLoadBadge({ data }: { data: WeeklyLoadComparison }) {
   const s = t.dashboard.weekLoad
 
   return (
-    <Tooltip content={s.tooltip(data.window)}>
+    <Tooltip content={s.tooltip(data.window, data.level)}>
       <StatusPill tone={LEVEL_TONE[data.level]}>
-        {s.label(data.percent)}
+        {s.label(data.percent, data.level)}
       </StatusPill>
     </Tooltip>
   )
