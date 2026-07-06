@@ -1,13 +1,6 @@
 {
   "planned": [
     {
-      "date": "2026-06-28",
-      "name": "8km endurance",
-      "distanceM": 8000,
-      "type": "Base",
-      "scheduledTime": "19:00"
-    },
-    {
       "date": "2026-06-30",
       "name": "3 x 1500m allure spé",
       "type": "Threshold",
