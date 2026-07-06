@@ -891,6 +891,18 @@ export const en = {
     pbUpside: (time: string) => `PB -${time}`,
   },
 
+  racePacePlan: {
+    title: 'Race Pace Plan',
+    titleWithRace: (name: string) => `Race Pace Plan · ${name}`,
+    target: (time: string) => `Target ${time}`,
+    estimated: 'Estimated from your current form - no target time set yet',
+    even: 'Even split',
+    negative: 'Negative split',
+    zoneContext: (zone: string, range: string) => `Race pace sits in your ${zone} zone (${range}/km)`,
+    km: 'Km',
+    cumulative: 'Total',
+  },
+
   trainingZones: {
     title: 'Training Zones',
     thresholdLabel: (pace: string) => `Threshold ${pace}`,

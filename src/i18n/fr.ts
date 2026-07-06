@@ -893,6 +893,18 @@ export const fr = {
     pbUpside: (time: string) => `RP -${time}`,
   },
 
+  racePacePlan: {
+    title: 'Plan d’allure',
+    titleWithRace: (name: string) => `Plan d’allure · ${name}`,
+    target: (time: string) => `Objectif ${time}`,
+    estimated: 'Estimé à partir de ta forme actuelle - pas d’objectif chronométré défini',
+    even: 'Allure régulière',
+    negative: 'Négative split',
+    zoneContext: (zone: string, range: string) => `L’allure de course se situe dans ta zone ${zone} (${range}/km)`,
+    km: 'Km',
+    cumulative: 'Total',
+  },
+
   trainingZones: {
     title: 'Zones d’entraînement',
     thresholdLabel: (pace: string) => `Seuil ${pace}`,
