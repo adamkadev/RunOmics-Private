@@ -11,6 +11,7 @@ import { getPbAlerts } from '@/application/usecases/GetPbAlerts'
 import { getShoeStats } from '@/application/usecases/GetShoeStats'
 import { getNextRace } from '@/application/usecases/GetNextRace'
 import { getFormProjection } from '@/application/usecases/GetFormProjection'
+import { getWeeklyDigest } from '@/application/usecases/GetWeeklyDigest'
 import { StatsGrid } from '@/components/dashboard/StatsGrid'
 import { DashboardCharts } from '@/components/dashboard/DashboardCharts'
 import { RecentActivities } from '@/components/dashboard/RecentActivities'
@@ -20,6 +21,7 @@ import { ConsistencyCard } from '@/components/dashboard/ConsistencyCard'
 import { DashboardHighlights } from '@/components/dashboard/DashboardHighlights'
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting'
 import { RaceCockpit } from '@/components/dashboard/RaceCockpit'
+import { WeeklyDigest } from '@/components/dashboard/WeeklyDigest'
 
 export default async function DashboardPage() {
   const data = getDashboardData()
@@ -38,6 +40,7 @@ export default async function DashboardPage() {
   const shoes = getShoeStats()
   const nextRace = await getNextRace()
   const formProjection = await getFormProjection()
+  const weeklyDigest = await getWeeklyDigest()
 
   return (
     <div className="space-y-6">
@@ -59,6 +62,8 @@ export default async function DashboardPage() {
           {consistencyScore && <ConsistencyCard data={consistencyScore} />}
         </div>
       )}
+
+      {weeklyDigest && <WeeklyDigest data={weeklyDigest} />}
 
       {formProjection && <RaceCockpit data={formProjection} />}
 
