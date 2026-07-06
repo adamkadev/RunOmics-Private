@@ -115,6 +115,11 @@ export const fr = {
       subtitle: 'Kilométrage et usure par paire',
       back: 'Profil',
     },
+    milestones: {
+      title: 'Jalons',
+      subtitle: 'Paliers de distance, séries et records personnels dans le temps',
+      back: 'Profil',
+    },
     profile: {
       title: 'Profil',
     },
@@ -857,6 +862,7 @@ export const fr = {
       streak: (weeks: number) => `${weeks} semaines d’affilée`,
       streakDetail: 'Toujours en cours - une sortie chaque semaine depuis',
       record: (label: string) => `Record ${label}`,
+      viewAll: 'Voir tous les jalons',
     },
     hrZones: {
       title: 'Zones cardiaques',

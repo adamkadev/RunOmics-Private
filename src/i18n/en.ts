@@ -112,6 +112,11 @@ export const en = {
       subtitle: 'Mileage and wear per pair',
       back: 'Profile',
     },
+    milestones: {
+      title: 'Milestones',
+      subtitle: 'Distance tiers, streaks, and personal records over time',
+      back: 'Profile',
+    },
     profile: {
       title: 'Profile',
     },
@@ -855,6 +860,7 @@ export const en = {
       streak: (weeks: number) => `${weeks}-week active streak`,
       streakDetail: 'Still going - a run logged every week since',
       record: (label: string) => `${label} record`,
+      viewAll: 'View all milestones',
     },
     hrZones: {
       title: 'Heart rate zones',
