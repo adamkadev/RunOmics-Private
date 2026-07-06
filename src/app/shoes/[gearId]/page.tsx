@@ -51,7 +51,7 @@ export default async function ShoeDetailPage({
   const alertBadge = !shoe.retired ? wearAlertBadge(shoe.wearPercent) : null
 
   return (
-    <div className="space-y-8 pb-[max(env(safe-area-inset-bottom),80px)]">
+    <div className="space-y-8">
       <div>
         <BackButton label={d.back} fallbackHref="/shoes" />
         <div className="flex items-center gap-2">

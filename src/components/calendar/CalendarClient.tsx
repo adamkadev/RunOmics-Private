@@ -96,7 +96,7 @@ export function CalendarClient({ activities, plannedWorkouts, hrBounds }: Props)
   )
 
   return (
-    <div className="space-y-4 pb-[max(env(safe-area-inset-bottom),80px)]">
+    <div className="space-y-4">
       <GlassSurface as="div" variant="nav" className="rounded-2xl px-5 py-3">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">

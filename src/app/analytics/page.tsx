@@ -23,7 +23,7 @@ export default async function AnalyticsPage() {
   ])
 
   return (
-    <div className="space-y-6 pb-[max(env(safe-area-inset-bottom),80px)]">
+    <div className="space-y-6">
       <AnalyticsClient
         data={data}
         comparison={comparison}

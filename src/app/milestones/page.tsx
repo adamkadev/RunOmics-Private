@@ -11,7 +11,7 @@ export default async function MilestonesPage() {
   const milestones = await getMilestones()
 
   return (
-    <div className="space-y-6 pb-[max(env(safe-area-inset-bottom),80px)]">
+    <div className="space-y-6">
       <div>
         <BackButton label={t.pages.milestones.back} fallbackHref="/profile" />
         <h1 className="text-display text-foreground">{t.pages.milestones.title}</h1>

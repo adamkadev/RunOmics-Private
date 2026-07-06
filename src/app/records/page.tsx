@@ -19,7 +19,7 @@ export default async function RecordsPage() {
   const predictions = await getRacePredictions()
 
   return (
-    <div className="space-y-8 pb-[max(env(safe-area-inset-bottom),80px)]">
+    <div className="space-y-8">
       <div className="space-y-2">
         <BackButton label={t.pages.records.back} fallbackHref="/profile" />
         <div>

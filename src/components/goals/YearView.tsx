@@ -44,7 +44,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
   const statusIcon = projection ? STATUS_ICON[projection.status] : null
 
   return (
-    <div className="space-y-8 pb-[max(env(safe-area-inset-bottom),80px)]">
+    <div className="space-y-8">
       {goals && (
         <section className="space-y-3">
           <GlassSurface variant="card" className="p-5">

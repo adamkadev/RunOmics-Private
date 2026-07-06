@@ -88,7 +88,7 @@ export function SettingsClient() {
   }
 
   return (
-    <div className="space-y-6 pb-[max(env(safe-area-inset-bottom),80px)]">
+    <div className="space-y-6">
       <BackButton label={t.pages.settings.back} fallbackHref="/profile" />
       <div>
         <h1 className="text-display text-foreground">{t.pages.settings.title}</h1>
