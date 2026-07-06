@@ -16,10 +16,9 @@ interface Props {
   stats: ClusterStat[];
   selectedIdx: number;
   onSelect: (idx: number) => void;
-  isFullscreen?: boolean;
 }
 
-export function ClusterPanel({ clusters, names, stats, selectedIdx, onSelect, isFullscreen }: Props) {
+export function ClusterPanel({ clusters, names, stats, selectedIdx, onSelect }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -40,25 +39,18 @@ export function ClusterPanel({ clusters, names, stats, selectedIdx, onSelect, is
   }, [open]);
 
   return (
-    <div
-      ref={ref}
-      className={[
-        "absolute left-3 z-10",
-        isFullscreen ? "top-[max(env(safe-area-inset-top),12px)]" : "top-3",
-      ].join(" ")}
-    >
+    <div ref={ref} className="relative min-w-0">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="glass-map-chip flex items-center gap-2 px-3 py-2.5 transition-colors hover:bg-muted"
+        className="glass-map-chip flex max-w-full items-center gap-2 px-3 py-2.5 transition-colors hover:bg-muted"
       >
-        <span className="text-xs font-semibold text-accent-text">{names[selectedIdx]}</span>
-        <span className="text-caption text-subtle">
-          {t.common.runs(stats[selectedIdx]?.routeCount ?? 0)} · {stats[selectedIdx]?.totalKm ?? 0}{" "}
-          {t.units.km}
+        <span className="truncate text-xs font-semibold text-accent-text">{names[selectedIdx]}</span>
+        <span className="shrink-0 text-caption text-subtle">
+          {t.common.runs(stats[selectedIdx]?.routeCount ?? 0)}
         </span>
         <ChevronDown
           size={16}
-          className={["text-muted-foreground transition-transform", open ? "rotate-180" : ""].join(" ")}
+          className={["shrink-0 text-muted-foreground transition-transform", open ? "rotate-180" : ""].join(" ")}
         />
       </button>
 

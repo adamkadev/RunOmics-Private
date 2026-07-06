@@ -116,25 +116,26 @@ export function GlobalMapClient({ data }: Props) {
     <div className={isFullscreen ? "fixed inset-0 z-50 bg-background" : "relative h-full w-full"}>
       <div ref={containerRef} role="img" aria-label={t.pages.map.title} className="h-full w-full" />
 
-      <ClusterPanel
-        clusters={clusters}
-        names={names}
-        stats={clusterStats}
-        selectedIdx={selectedIdx}
-        onSelect={setSelectedIdx}
-        isFullscreen={isFullscreen}
-      />
-
       <div
         className={[
-          "absolute right-3 z-10 flex items-start gap-2",
+          "absolute inset-x-3 z-10 flex items-start justify-between gap-2",
           isFullscreen ? "top-[max(env(safe-area-inset-top),12px)]" : "top-3",
         ].join(" ")}
       >
-        {availableTypes.length > 1 && (
-          <TypePicker types={availableTypes} value={selectedType} onChange={setSelectedType} />
-        )}
-        <YearPicker years={data.years} value={selectedYear} onChange={setSelectedYear} />
+        <ClusterPanel
+          clusters={clusters}
+          names={names}
+          stats={clusterStats}
+          selectedIdx={selectedIdx}
+          onSelect={setSelectedIdx}
+        />
+
+        <div className="flex shrink-0 items-start gap-2">
+          {availableTypes.length > 1 && (
+            <TypePicker types={availableTypes} value={selectedType} onChange={setSelectedType} />
+          )}
+          <YearPicker years={data.years} value={selectedYear} onChange={setSelectedYear} />
+        </div>
       </div>
 
       {visibleIndices.length === 0 && (
