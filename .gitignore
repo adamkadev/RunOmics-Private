@@ -15,6 +15,10 @@
 /playwright-report/
 /test-results/
 
+# generated screenshot audit output (regenerated on demand via `npm run screenshots`)
+/screenshots/output/
+/screenshots/.pw-artifacts/
+
 # next.js
 /.next/
 /out/
