@@ -109,6 +109,7 @@ export const fr = {
       allYears: 'Toutes les années',
       fullscreen: 'Plein écran',
       exitFullscreen: 'Quitter le plein écran',
+      raceRoutesOnly: 'Parcours de course',
     },
     shoes: {
       title: 'Chaussures',
@@ -853,6 +854,10 @@ export const fr = {
       title: 'Chaussures',
       line: (totalKm: number, remainingKm: number) => `${totalKm} km · ~${remainingKm} km restants`,
       viewShoes: 'Voir les chaussures',
+    },
+    mapEntry: {
+      title: 'Heatmap de course',
+      subtitle: 'Tous tes parcours, cartographiés',
     },
     hrZones: {
       title: 'Zones cardiaques',

@@ -106,6 +106,7 @@ export const en = {
       allYears: 'All years',
       fullscreen: 'Fullscreen',
       exitFullscreen: 'Exit fullscreen',
+      raceRoutesOnly: 'Race routes',
     },
     shoes: {
       title: 'Shoes',
@@ -851,6 +852,10 @@ export const en = {
       title: 'Shoes',
       line: (totalKm: number, remainingKm: number) => `${totalKm} km · ~${remainingKm} km left`,
       viewShoes: 'View Shoes',
+    },
+    mapEntry: {
+      title: 'Running Heatmap',
+      subtitle: 'Every route you have ever run, mapped',
     },
     hrZones: {
       title: 'Heart rate zones',

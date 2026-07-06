@@ -8,10 +8,9 @@ interface Props {
   years: string[];
   value: string | null;
   onChange: (year: string | null) => void;
-  isFullscreen?: boolean;
 }
 
-export function YearPicker({ years, value, onChange, isFullscreen }: Props) {
+export function YearPicker({ years, value, onChange }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -37,13 +36,7 @@ export function YearPicker({ years, value, onChange, isFullscreen }: Props) {
   }
 
   return (
-    <div
-      ref={ref}
-      className={[
-        "absolute right-3 z-10",
-        isFullscreen ? "top-[max(env(safe-area-inset-top),12px)]" : "top-3",
-      ].join(" ")}
-    >
+    <div ref={ref} className="relative z-10">
       <button
         onClick={() => setOpen((o) => !o)}
         className="glass-map-chip flex items-center gap-2 px-3 py-2.5 transition-colors hover:bg-muted"

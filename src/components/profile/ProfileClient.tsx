@@ -9,6 +9,7 @@ import type { GoalYear } from '@/application/usecases/GetGoalsData'
 import { ProfileHero } from './ProfileHero'
 import { ProfileStatsYtd } from './ProfileStatsYtd'
 import { ProfileRecords } from './ProfileRecords'
+import { ProfileMapEntry } from './ProfileMapEntry'
 import { ProfileShoes } from './ProfileShoes'
 import { ProfileHrZones } from './ProfileHrZones'
 import { ProfileAthleteStats } from './ProfileAthleteStats'
@@ -44,6 +45,7 @@ export function ProfileClient({ data }: Props) {
         <ProfileStatsYtd ytd={data.ytd} />
         <ProfileGoal goal={goal} onSaveGoal={saveGoal} />
         <ProfileRecords records={data.records} />
+        <ProfileMapEntry />
         <ProfileShoes shoes={data.shoes} />
         <ProfileAthleteStats athlete={athlete} onSave={saveAthlete} />
         <ProfileHrZones athlete={athlete} onSave={saveAthlete} />
