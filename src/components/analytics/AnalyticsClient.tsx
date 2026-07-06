@@ -187,12 +187,14 @@ export function AnalyticsClient({
 
   function goPrevTab() {
     const idx = visibleTabs.findIndex((tb) => tb.id === tab)
-    if (idx > 0) selectTab(visibleTabs[idx - 1].id)
+    const prev = idx > 0 ? visibleTabs[idx - 1] : undefined
+    if (prev) selectTab(prev.id)
   }
 
   function goNextTab() {
     const idx = visibleTabs.findIndex((tb) => tb.id === tab)
-    if (idx >= 0 && idx < visibleTabs.length - 1) selectTab(visibleTabs[idx + 1].id)
+    const next = idx >= 0 && idx < visibleTabs.length - 1 ? visibleTabs[idx + 1] : undefined
+    if (next) selectTab(next.id)
   }
 
   const { onTouchStart, onTouchEnd } = useSwipeNavigation(goPrevTab, goNextTab)
