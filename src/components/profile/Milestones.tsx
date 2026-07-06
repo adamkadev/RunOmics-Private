@@ -8,10 +8,12 @@ import { t } from '@/i18n'
 
 const PREVIEW_COUNT = 4
 
+// Records are already shown just above in ProfileRecords - only show tiers/streaks here to avoid duplicating the same PRs twice.
 export function Milestones({ milestones }: { milestones: Milestone[] }) {
-  if (milestones.length === 0) return null
+  const nonRecord = milestones.filter((m) => m.type !== 'record')
+  if (nonRecord.length === 0) return null
 
-  const preview = milestones.slice(0, PREVIEW_COUNT)
+  const preview = nonRecord.slice(0, PREVIEW_COUNT)
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -36,7 +38,7 @@ export function Milestones({ milestones }: { milestones: Milestone[] }) {
         })}
       </div>
 
-      {milestones.length > PREVIEW_COUNT && (
+      {nonRecord.length > PREVIEW_COUNT && (
         <Link
           href="/milestones"
           className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-accent-text active:scale-95"
