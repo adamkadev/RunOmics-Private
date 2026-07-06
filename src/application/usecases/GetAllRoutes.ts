@@ -21,14 +21,21 @@ export interface RouteCluster {
   routeIndices: number[]
 }
 
-export interface AllRoutesData {
-  routes: [number, number][][]
+// Everything the /map page needs to render its shell (zone list, world-view
+// bubbles, filters) WITHOUT any GPS coordinates - safe to ship on first load
+// regardless of dataset size. Route geometry is fetched separately, per zone,
+// via /api/map/routes (see MapRoutesForCluster below).
+export interface MapShellData {
   routeMeta: RouteMeta[]
   clusters: RouteCluster[]
   defaultClusterIdx: number
   totalCount: number
   totalKm: number
   years: string[]
+}
+
+export interface AllRoutesData extends MapShellData {
+  routes: [number, number][][]
 }
 
 // Two cluster centers closer than this are considered the same place. Far enough to
@@ -139,4 +146,12 @@ export function getAllRoutes(): AllRoutesData {
     totalKm: Math.round(activities.reduce((s, a) => s + a.distanceKm, 0)),
     years: Array.from(new Set(activities.map((a) => a.date.slice(0, 4)))).sort(),
   }
+}
+
+// For the initial /map page load: same clustering/metadata as getAllRoutes(), minus
+// the GPS coordinate arrays (which can be tens of MB across a multi-year dataset).
+// Route geometry is fetched on demand, per zone, once the user actually looks at one.
+export function getMapShellData(): MapShellData {
+  const { routeMeta, clusters, defaultClusterIdx, totalCount, totalKm, years } = getAllRoutes()
+  return { routeMeta, clusters, defaultClusterIdx, totalCount, totalKm, years }
 }

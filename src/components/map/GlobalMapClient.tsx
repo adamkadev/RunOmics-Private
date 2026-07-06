@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Globe, Maximize, Minimize } from "lucide-react";
-import type { AllRoutesData } from "@/application/usecases/GetAllRoutes";
+import type { MapShellData } from "@/application/usecases/GetAllRoutes";
 import type { ActivityType } from "@/domain/activity/types";
 import { reverseGeocode } from "@/lib/reverseGeocode";
 import { t } from "@/i18n";
@@ -27,7 +27,7 @@ const TYPE_ORDER: ActivityType[] = [
 ];
 
 interface Props {
-  data: AllRoutesData;
+  data: MapShellData;
 }
 
 export function GlobalMapClient({ data }: Props) {
@@ -39,6 +39,41 @@ export function GlobalMapClient({ data }: Props) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [worldView, setWorldView] = useState(false);
   const [names, setNames] = useState<string[]>(() => clusters.map(coordLabel));
+
+  // GPS coordinates, sparse and keyed by absolute activity index - populated lazily
+  // per zone (see effect below) so the world view and an unvisited zone never pay
+  // for coordinate data they don't render. Undefined entries are already handled
+  // throughout mapUtils.ts (buildGeoJSON/buildHeatGeoJSON skip missing routes).
+  const [routes, setRoutes] = useState<[number, number][][]>([]);
+  const loadedClusterIds = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    const cluster = clusters[selectedIdx];
+    if (!cluster || loadedClusterIds.current.has(cluster.id)) return;
+    let cancelled = false;
+
+    fetch(`/api/map/routes?cluster=${encodeURIComponent(cluster.id)}`)
+      .then((res) => (res.ok ? (res.json() as Promise<{ routes: Record<string, [number, number][]> }>) : null))
+      .then((json) => {
+        if (cancelled || !json) return;
+        loadedClusterIds.current.add(cluster.id);
+        setRoutes((prev) => {
+          const next = [...prev];
+          for (const [idxStr, coords] of Object.entries(json.routes)) {
+            next[Number(idxStr)] = coords;
+          }
+          return next;
+        });
+      })
+      .catch(() => {
+        // Best-effort: the zone just renders with no heat trace until a retry
+        // (e.g. a re-select) succeeds.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedIdx, clusters]);
 
   const filters: HeatFilters = useMemo(
     () => ({ year: selectedYear, type: selectedType }),
@@ -84,6 +119,7 @@ export function GlobalMapClient({ data }: Props) {
 
   const { containerRef, resize } = useMapRoutes(
     data,
+    routes,
     selectedIdx,
     visibleIndices,
     effectiveRouteIdx,
