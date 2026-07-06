@@ -71,22 +71,9 @@ export function TrainingLoadChart({ data }: Props) {
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-foreground/80">
-          {t.dashboard.trainingLoad.title} <span className="font-normal text-subtle">{t.dashboard.trainingLoad.window}</span>
-        </h3>
-        <div className="flex items-center gap-4 text-xs">
-          <span className="text-blue-500 dark:text-blue-400">
-            {t.dashboard.trainingLoad.fitness} <span className="font-semibold">{data.ctl}</span>
-          </span>
-          <span className="text-orange-500 dark:text-orange-400">
-            {t.dashboard.trainingLoad.fatigue} <span className="font-semibold">{data.atl}</span>
-          </span>
-          <span className={status.className}>
-            {t.dashboard.trainingLoad.form} <span className="font-semibold">{data.tsb}</span> · {status.label}
-          </span>
-        </div>
-      </div>
+      <h3 className="mb-4 text-sm font-semibold text-foreground/80">
+        {t.dashboard.trainingLoad.title} <span className="font-normal text-subtle">{t.dashboard.trainingLoad.window}</span>
+      </h3>
       <ChartFigure summary={summary}>
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={data.points} margin={{ top: 4, right: 80, bottom: 0, left: -20 }}>
