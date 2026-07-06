@@ -1,9 +1,11 @@
+import Link from 'next/link'
 import { Footprints } from 'lucide-react'
 import type { ShoeStats } from '@/application/usecases/GetShoeStats'
 import { Badge } from '@/components/ui/Card'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { BrandIcon } from '@/components/shoes/BrandIcon'
 import { STATUS } from '@/lib/statusColors'
+import { formatCompactDate } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -31,23 +33,14 @@ function wearAlertBadge(pct: number): { label: string; className: string } | nul
   return null
 }
 
-// Compact date: "Jun 16" (current year) or "Jan '25" (past year).
-function formatShoeDate(isoDate: string): string {
-  const d = new Date(isoDate + 'T00:00:00')
-  const currentYear = new Date().getFullYear()
-  return d.toLocaleDateString(t.locale, d.getFullYear() === currentYear
-    ? { month: 'short', day: 'numeric' }
-    : { month: 'short', year: '2-digit' }
-  )
-}
-
 function ShoeCard({ shoe }: { shoe: ShoeStats }) {
   const alertBadge = !shoe.retired ? wearAlertBadge(shoe.wearPercent) : null
 
   return (
-    <div
+    <Link
+      href={`/shoes/${shoe.gearId}`}
       className={cn(
-        'glass-card rounded-card-sm p-5',
+        'glass-card block rounded-card-sm p-5 transition-transform active:scale-[0.99]',
         shoe.retired && 'opacity-65',
         !shoe.retired && wearBorderClass(shoe.wearPercent)
       )}
@@ -74,7 +67,7 @@ function ShoeCard({ shoe }: { shoe: ShoeStats }) {
           <span className="flex items-center gap-1.5">
             <span className="text-muted-foreground">{t.shoes.retired}</span>
             {shoe.lastUsedDate && (
-              <span>{formatShoeDate(shoe.lastUsedDate)}</span>
+              <span>{formatCompactDate(shoe.lastUsedDate)}</span>
             )}
           </span>
         </div>
@@ -87,11 +80,11 @@ function ShoeCard({ shoe }: { shoe: ShoeStats }) {
             />
           </div>
           <p className="mt-2.5 text-xs text-subtle">
-            {Math.round(shoe.totalKm)} / {shoe.maxKm} km · {t.common.sessions(shoe.sessionCount)} · {shoe.lastUsedDate ? formatShoeDate(shoe.lastUsedDate) : '-'}
+            {Math.round(shoe.totalKm)} / {shoe.maxKm} km · {t.common.sessions(shoe.sessionCount)} · {shoe.lastUsedDate ? formatCompactDate(shoe.lastUsedDate) : '-'}
           </p>
         </>
       )}
-    </div>
+    </Link>
   )
 }
 

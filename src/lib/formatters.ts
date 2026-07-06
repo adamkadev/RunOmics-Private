@@ -72,6 +72,16 @@ export function formatDayMonth(isoDate: string): string {
   })
 }
 
+/** Compact date for tight spaces: `Jun 16` in the current year, `Jan '25` otherwise. */
+export function formatCompactDate(isoDate: string): string {
+  const d = new Date(isoDate + 'T00:00:00')
+  const currentYear = new Date().getFullYear()
+  return d.toLocaleDateString(t.locale, d.getFullYear() === currentYear
+    ? { month: 'short', day: 'numeric' }
+    : { month: 'short', year: '2-digit' }
+  )
+}
+
 /** Three-letter uppercase month label from a 1-based month number (1 = JAN). */
 export function monthLabel(month: number): string {
   return new Date(2000, month - 1, 1).toLocaleString(t.locale, { month: 'short' }).toUpperCase()
