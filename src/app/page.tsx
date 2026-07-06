@@ -10,6 +10,7 @@ import { getRecords, getQualifiedEffortsByActivityId, getMostRecentRecord } from
 import { getPbAlerts } from '@/application/usecases/GetPbAlerts'
 import { getShoeStats } from '@/application/usecases/GetShoeStats'
 import { getNextRace } from '@/application/usecases/GetNextRace'
+import { getFormProjection } from '@/application/usecases/GetFormProjection'
 import { StatsGrid } from '@/components/dashboard/StatsGrid'
 import { DashboardCharts } from '@/components/dashboard/DashboardCharts'
 import { RecentActivities } from '@/components/dashboard/RecentActivities'
@@ -18,6 +19,7 @@ import { TrainingStatusBanner } from '@/components/dashboard/TrainingStatusBanne
 import { ConsistencyCard } from '@/components/dashboard/ConsistencyCard'
 import { DashboardHighlights } from '@/components/dashboard/DashboardHighlights'
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting'
+import { RaceCockpit } from '@/components/dashboard/RaceCockpit'
 
 export default async function DashboardPage() {
   const data = getDashboardData()
@@ -35,6 +37,7 @@ export default async function DashboardPage() {
   const pbAlerts = await getPbAlerts()
   const shoes = getShoeStats()
   const nextRace = await getNextRace()
+  const formProjection = await getFormProjection()
 
   return (
     <div className="space-y-6">
@@ -56,6 +59,8 @@ export default async function DashboardPage() {
           {consistencyScore && <ConsistencyCard data={consistencyScore} />}
         </div>
       )}
+
+      {formProjection && <RaceCockpit data={formProjection} />}
 
       <DashboardCharts
         weeklyVolume={data.weeklyVolume}

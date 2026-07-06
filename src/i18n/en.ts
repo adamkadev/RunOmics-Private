@@ -301,6 +301,21 @@ export const en = {
       unit: 'ml/kg/min',
       footnote: 'Garmin VO₂max estimate',
     },
+    raceCockpit: {
+      title: 'Form Projection',
+      titleWithRace: (name: string) => `Form Projection · ${name}`,
+      daysToTarget: (days: number) => `+${days} d`,
+      projectedForm: 'Projected form',
+      today: 'Today',
+      projected: 'Projected',
+      verdict: {
+        'on-track': 'On track',
+        'ease-off': 'Residual fatigue - ease off',
+        'peak-ready': 'On track for a fresh peak',
+        'build-more': 'Undertaper risk - keep building',
+      },
+      footnote: 'Estimated from planned sessions - actual form will vary with what you actually run.',
+    },
     syncStatus: {
       synced: (relative: string) => `Synced ${relative}`,
       justNow: 'just now',
