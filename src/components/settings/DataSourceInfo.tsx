@@ -9,7 +9,7 @@ import { saveFileWithFallback } from '@/lib/fileExport'
 
 export function DataSourceInfo() {
   const [loading, setLoading] = useState(false)
-  const { toast, showToast } = useToast()
+  const { toast, leaving, showToast } = useToast()
   const s = t.settings
 
   // Escape hatch for stale offline content: drop every SW cache. The service
@@ -71,7 +71,7 @@ export function DataSourceInfo() {
         {s.offlineCache.clear}
       </button>
 
-      <Toast toast={toast} />
+      <Toast toast={toast} leaving={leaving} />
     </GlassSurface>
   )
 }

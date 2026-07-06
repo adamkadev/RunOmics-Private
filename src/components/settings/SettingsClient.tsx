@@ -23,7 +23,7 @@ export function SettingsClient() {
     isClientFirebaseConfigured ? 'loading' : null
   )
   const [signingIn, setSigningIn] = useState(false)
-  const { toast, showToast } = useToast()
+  const { toast, leaving, showToast } = useToast()
 
   useEffect(() => {
     if (!isClientFirebaseConfigured) return
@@ -87,7 +87,7 @@ export function SettingsClient() {
           </button>
         </div>
 
-        <Toast toast={toast} />
+        <Toast toast={toast} leaving={leaving} />
       </div>
     )
   }
