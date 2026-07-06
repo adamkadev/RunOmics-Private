@@ -1,8 +1,16 @@
+import type { ActivityType } from "@/domain/activity/types";
 import type { RouteMeta, RouteCluster } from "@/application/usecases/GetAllRoutes";
 
-export function matchesFilters(meta: RouteMeta | undefined, year: string | null): boolean {
+export interface HeatFilters {
+  year: string | null;
+  type: ActivityType | null;
+}
+
+export function matchesFilters(meta: RouteMeta | undefined, filters: HeatFilters): boolean {
   if (!meta) return false;
-  return !year || meta.year === year;
+  if (filters.year && meta.year !== filters.year) return false;
+  if (filters.type && meta.type !== filters.type) return false;
+  return true;
 }
 
 export function coordLabel(c: RouteCluster): string {
@@ -11,6 +19,8 @@ export function coordLabel(c: RouteCluster): string {
   return `${lat} ${lon}`;
 }
 
+// Per-route lines, keyed by their route index. Used for the transparent hit-test
+// layer that powers tap-to-inspect (feature.id maps back to the route/meta).
 export function buildGeoJSON(
   routes: [number, number][][],
   indices: number[],
@@ -28,4 +38,116 @@ export function buildGeoJSON(
       }];
     }),
   };
+}
+
+// Grid cell size in degrees (~20m). Snapping every trace vertex to this grid lets
+// runs down the same street collapse onto shared segments despite GPS jitter, so we
+// can count how many times each stretch was actually run - the basis of the heatmap.
+export const HEAT_GRID = 0.0002;
+
+function snap(v: number): number {
+  return Math.round(v / HEAT_GRID) * HEAT_GRID;
+}
+
+function nodeKey(lon: number, lat: number): string {
+  return `${Math.round(lon / HEAT_GRID)}:${Math.round(lat / HEAT_GRID)}`;
+}
+
+/**
+ * Aggregate all visible routes into unique grid-snapped segments carrying a `count`
+ * of how many times that stretch was run. Overlapping passes merge into one segment,
+ * so intensity comes from a real frequency value instead of stacked line opacity.
+ */
+export function buildHeatGeoJSON(
+  routes: [number, number][][],
+  indices: number[],
+): { data: GeoJSON.FeatureCollection; maxCount: number } {
+  const segments = new Map<string, { coords: [number, number][]; count: number }>();
+
+  for (const i of indices) {
+    const coords = routes[i];
+    if (!coords || coords.length < 2) continue;
+
+    let prevLon = snap(coords[0]![0]);
+    let prevLat = snap(coords[0]![1]);
+    let prevKey = nodeKey(coords[0]![0], coords[0]![1]);
+
+    for (let p = 1; p < coords.length; p++) {
+      const lon = snap(coords[p]![0]);
+      const lat = snap(coords[p]![1]);
+      const key = nodeKey(coords[p]![0], coords[p]![1]);
+
+      if (key !== prevKey) {
+        // Order-independent key so both travel directions share one segment.
+        const segKey = prevKey < key ? `${prevKey}|${key}` : `${key}|${prevKey}`;
+        const existing = segments.get(segKey);
+        if (existing) {
+          existing.count += 1;
+        } else {
+          segments.set(segKey, {
+            coords: [[prevLon, prevLat], [lon, lat]],
+            count: 1,
+          });
+        }
+        prevLon = lon;
+        prevLat = lat;
+        prevKey = key;
+      }
+    }
+  }
+
+  let maxCount = 1;
+  const features: GeoJSON.Feature[] = [];
+  for (const seg of segments.values()) {
+    if (seg.count > maxCount) maxCount = seg.count;
+    features.push({
+      type: "Feature",
+      properties: { count: seg.count },
+      geometry: { type: "LineString", coordinates: seg.coords },
+    });
+  }
+
+  return { data: { type: "FeatureCollection", features }, maxCount };
+}
+
+// Cool -> hot ramp for run frequency. Kept independent of the accent so the map
+// reads as a true intensity heatmap; the anchors stay legible on both the pale and
+// dark basemaps (yellow is avoided - it washes out on the light style).
+const HEAT_STOPS: [number, string][] = [
+  [0, "#3b82f6"], // blue - run once
+  [0.35, "#8b5cf6"], // violet
+  [0.65, "#ec4899"], // pink
+  [1, "#ef4444"], // red - run most often
+];
+
+/**
+ * MapLibre `interpolate` color expression over `count`, with stops scaled to the
+ * actual max frequency so the ramp always spans the data present.
+ */
+export function heatColorExpression(maxCount: number): unknown[] {
+  const span = Math.max(1, maxCount - 1);
+  const expr: unknown[] = ["interpolate", ["linear"], ["get", "count"]];
+  for (const [t, color] of HEAT_STOPS) {
+    expr.push(1 + t * span, color);
+  }
+  return expr;
+}
+
+/** Width grows with frequency and zoom so busy stretches read as thicker arteries. */
+export function heatWidthExpression(maxCount: number): unknown[] {
+  const span = Math.max(1, maxCount - 1);
+  return [
+    "interpolate",
+    ["linear"],
+    ["zoom"],
+    9,
+    ["interpolate", ["linear"], ["get", "count"], 1, 0.8, 1 + span, 2.2],
+    14,
+    ["interpolate", ["linear"], ["get", "count"], 1, 1.6, 1 + span, 5],
+  ];
+}
+
+/** Discrete swatches + labels for the on-map legend. */
+export function heatLegendSwatches(): string[] {
+  return HEAT_STOPS.map(([, color]) => color);
 }

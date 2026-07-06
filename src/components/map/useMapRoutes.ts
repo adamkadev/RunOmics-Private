@@ -1,16 +1,25 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Map as MapLibreMap, StyleSpecification } from "maplibre-gl";
+import type { Map as MapLibreMap, MapGeoJSONFeature, StyleSpecification } from "maplibre-gl";
 import type { AllRoutesData } from "@/application/usecases/GetAllRoutes";
 import { maptilerStyleUrl } from "@/lib/maptiler";
 import { useAccentColor, useAccentColorLight } from "@/lib/useAccent";
-import { buildGeoJSON } from "./mapUtils";
+import {
+  buildGeoJSON,
+  buildHeatGeoJSON,
+  heatColorExpression,
+  heatWidthExpression,
+} from "./mapUtils";
+
+const EMPTY: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
 
 export function useMapRoutes(
   data: AllRoutesData,
   selectedIdx: number,
   visibleIndices: number[],
+  selectedRouteIdx: number | null,
+  onSelectRoute: (idx: number | null) => void,
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -18,6 +27,12 @@ export function useMapRoutes(
   const isDarkRef = useRef(false);
   const accentColor = useAccentColor();
   const accentColorLight = useAccentColorLight();
+
+  // Keep the newest select handler reachable from map events without re-init.
+  const onSelectRef = useRef(onSelectRoute);
+  useEffect(() => {
+    onSelectRef.current = onSelectRoute;
+  }, [onSelectRoute]);
 
   const { routes, clusters } = data;
   const selected = clusters[selectedIdx];
@@ -65,46 +80,67 @@ export function useMapRoutes(
         };
         const firstSymbolId = style.layers.find((l) => l.type === "symbol")?.id;
 
-        // The light basemap is pale, so the raw accent swatch washes out at low
-        // opacity - use the darker, contrast-safe variant there instead.
-        const lineColor = isDark ? accentColor : accentColorLight;
+        const { data: heat, maxCount } = buildHeatGeoJSON(routes, first.routeIndices);
 
-        map.addSource("routes", {
+        map.addSource("heat", { type: "geojson", data: heat });
+        map.addSource("selected", { type: "geojson", data: EMPTY });
+        map.addSource("hit", {
           type: "geojson",
           data: buildGeoJSON(routes, first.routeIndices),
         });
 
+        // Intensity layer: color + width driven by how often each stretch was run.
         map.addLayer(
           {
-            id: "routes-glow",
+            id: "heat-line",
             type: "line",
-            source: "routes",
+            source: "heat",
             layout: { "line-join": "round", "line-cap": "round" },
             paint: {
-              "line-color": lineColor,
-              // Thinner halo, scaling a touch with zoom, so popular overlapping
-              // routes do not stack into a fat bright band.
-              "line-width": ["interpolate", ["linear"], ["zoom"], 9, 2.5, 14, 5],
-              "line-opacity": 0.04,
+              "line-color": heatColorExpression(maxCount) as never,
+              "line-width": heatWidthExpression(maxCount) as never,
+              "line-opacity": 0.85,
             },
           },
           firstSymbolId,
         );
 
+        // Bright highlight for a tapped run, drawn above the heat but under labels.
         map.addLayer(
           {
-            id: "routes-line",
+            id: "selected-line",
             type: "line",
-            source: "routes",
+            source: "selected",
             layout: { "line-join": "round", "line-cap": "round" },
             paint: {
-              "line-color": lineColor,
-              "line-width": ["interpolate", ["linear"], ["zoom"], 9, 1, 14, 1.6],
-              "line-opacity": 0.22,
+              "line-color": isDark ? accentColor : accentColorLight,
+              "line-width": ["interpolate", ["linear"], ["zoom"], 9, 2.5, 14, 4],
+              "line-opacity": 1,
             },
           },
           firstSymbolId,
         );
+
+        // Transparent, wide per-route layer on top purely for tap/hover hit-testing.
+        map.addLayer({
+          id: "hit-line",
+          type: "line",
+          source: "hit",
+          layout: { "line-join": "round", "line-cap": "round" },
+          paint: { "line-color": "#000000", "line-width": 16, "line-opacity": 0.01 },
+        });
+
+        map.on("mouseenter", "hit-line", () => {
+          map.getCanvas().style.cursor = "pointer";
+        });
+        map.on("mouseleave", "hit-line", () => {
+          map.getCanvas().style.cursor = "";
+        });
+        map.on("click", (e) => {
+          const hits = map.queryRenderedFeatures(e.point, { layers: ["hit-line"] });
+          const feat = hits[0] as MapGeoJSONFeature | undefined;
+          onSelectRef.current(feat?.id != null ? Number(feat.id) : null);
+        });
 
         setMapReady(true);
       });
@@ -129,19 +165,40 @@ export function useMapRoutes(
     };
   }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Recolor the highlight when the accent changes.
   useEffect(() => {
     const map = mapRef.current;
     if (!mapReady || !map) return;
     const lineColor = isDarkRef.current ? accentColor : accentColorLight;
-    if (map.getLayer("routes-glow")) map.setPaintProperty("routes-glow", "line-color", lineColor);
-    if (map.getLayer("routes-line")) map.setPaintProperty("routes-line", "line-color", lineColor);
+    if (map.getLayer("selected-line")) {
+      map.setPaintProperty("selected-line", "line-color", lineColor);
+    }
   }, [accentColor, accentColorLight, mapReady]);
 
+  // Rebuild heat + hit geometry (and rescale the ramp) whenever the filters change.
   useEffect(() => {
-    if (!mapReady || !mapRef.current) return;
+    const map = mapRef.current;
+    if (!mapReady || !map) return;
+    const { data: heat, maxCount } = buildHeatGeoJSON(routes, visibleIndices);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (mapRef.current.getSource("routes") as any)?.setData(buildGeoJSON(routes, visibleIndices));
+    (map.getSource("heat") as any)?.setData(heat);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (map.getSource("hit") as any)?.setData(buildGeoJSON(routes, visibleIndices));
+    if (map.getLayer("heat-line")) {
+      map.setPaintProperty("heat-line", "line-color", heatColorExpression(maxCount) as never);
+      map.setPaintProperty("heat-line", "line-width", heatWidthExpression(maxCount) as never);
+    }
   }, [visibleIndices, mapReady]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Highlight the currently inspected run.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!mapReady || !map) return;
+    const geo =
+      selectedRouteIdx != null ? buildGeoJSON(routes, [selectedRouteIdx]) : EMPTY;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (map.getSource("selected") as any)?.setData(geo);
+  }, [selectedRouteIdx, mapReady]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!mapReady || !mapRef.current || !selected) return;

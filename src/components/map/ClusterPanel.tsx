@@ -53,7 +53,8 @@ export function ClusterPanel({ clusters, names, stats, selectedIdx, onSelect, is
       >
         <span className="text-xs font-semibold text-accent-text">{names[selectedIdx]}</span>
         <span className="text-caption text-subtle">
-          {t.common.runs(stats[selectedIdx]?.routeCount ?? 0)}
+          {t.common.runs(stats[selectedIdx]?.routeCount ?? 0)} · {stats[selectedIdx]?.totalKm ?? 0}{" "}
+          {t.units.km}
         </span>
         <ChevronDown
           size={16}
