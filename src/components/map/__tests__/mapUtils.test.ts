@@ -3,6 +3,7 @@ import {
   matchesFilters,
   buildHeatGeoJSON,
   heatColorExpression,
+  clusterBubbleRadius,
   type HeatFilters,
 } from '../mapUtils'
 import type { RouteMeta } from '@/application/usecases/GetAllRoutes'
@@ -129,5 +130,29 @@ describe('heatColorExpression', () => {
     const stops = [1, 3, 5, 7].map((i) => heatColorExpression(1)[i] as number)
     expect(stops).toEqual([...stops].sort((a, b) => a - b))
     expect(new Set(stops).size).toBe(4)
+  })
+})
+
+describe('clusterBubbleRadius', () => {
+  it('grows with count, capped at the max', () => {
+    const r1 = clusterBubbleRadius(1, 100)
+    const r50 = clusterBubbleRadius(50, 100)
+    const rMax = clusterBubbleRadius(100, 100)
+    expect(r1).toBeLessThan(r50)
+    expect(r50).toBeLessThan(rMax)
+  })
+
+  it('scales by area (sqrt), not linearly - 4x the count is not 4x the radius', () => {
+    const rQuarter = clusterBubbleRadius(25, 100)
+    const rFull = clusterBubbleRadius(100, 100)
+    // sqrt(25/100) = 0.5, so rQuarter sits at the ramp's midpoint, not a quarter of it.
+    const min = clusterBubbleRadius(0, 100)
+    expect(rQuarter - min).toBeCloseTo((rFull - min) / 2, 5)
+  })
+
+  it('floors at a tappable size for zero/negative counts or an empty max', () => {
+    const floor = clusterBubbleRadius(0, 100)
+    expect(clusterBubbleRadius(-1, 100)).toBe(floor)
+    expect(clusterBubbleRadius(5, 0)).toBe(floor)
   })
 })

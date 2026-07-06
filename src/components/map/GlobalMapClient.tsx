@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Maximize, Minimize } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Globe, Maximize, Minimize } from "lucide-react";
 import type { AllRoutesData } from "@/application/usecases/GetAllRoutes";
 import type { ActivityType } from "@/domain/activity/types";
 import { reverseGeocode } from "@/lib/reverseGeocode";
@@ -37,6 +37,7 @@ export function GlobalMapClient({ data }: Props) {
   const [selectedType, setSelectedType] = useState<ActivityType | null>(null);
   const [selectedRouteIdx, setSelectedRouteIdx] = useState<number | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [worldView, setWorldView] = useState(false);
   const [names, setNames] = useState<string[]>(() => clusters.map(coordLabel));
 
   const filters: HeatFilters = useMemo(
@@ -72,12 +73,25 @@ export function GlobalMapClient({ data }: Props) {
   const effectiveRouteIdx =
     selectedRouteIdx != null && visibleIndices.includes(selectedRouteIdx) ? selectedRouteIdx : null;
 
+  // Shared by the zone dropdown and the world-view bubbles, so either path exits
+  // world view the same way and hands the camera back to the per-zone effect.
+  const handleSelectCluster = useCallback((idx: number) => {
+    setSelectedIdx(idx);
+    setWorldView(false);
+  }, []);
+
+  const clusterCounts = useMemo(() => clusterStats.map((s) => s.routeCount), [clusterStats]);
+
   const { containerRef, resize } = useMapRoutes(
     data,
     selectedIdx,
     visibleIndices,
     effectiveRouteIdx,
     setSelectedRouteIdx,
+    worldView,
+    clusterCounts,
+    names,
+    handleSelectCluster,
   );
 
   useSetFullscreenChromeHidden(isFullscreen);
@@ -127,7 +141,7 @@ export function GlobalMapClient({ data }: Props) {
           names={names}
           stats={clusterStats}
           selectedIdx={selectedIdx}
-          onSelect={setSelectedIdx}
+          onSelect={handleSelectCluster}
         />
 
         <div className="flex shrink-0 items-start gap-2">
@@ -138,7 +152,7 @@ export function GlobalMapClient({ data }: Props) {
         </div>
       </div>
 
-      {visibleIndices.length === 0 && (
+      {!worldView && visibleIndices.length === 0 && (
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
           <span className="glass-map-chip px-4 py-2 text-xs font-medium text-subtle">
             {t.pages.map.noRoutes}
@@ -146,7 +160,16 @@ export function GlobalMapClient({ data }: Props) {
         </div>
       )}
 
-      {selectedMeta ? (
+      {worldView ? (
+        <span
+          className={[
+            "glass-map-chip pointer-events-none absolute left-3 z-10 px-3 py-2 text-xs font-medium text-subtle",
+            isFullscreen ? "bottom-[max(env(safe-area-inset-bottom),12px)]" : "bottom-3",
+          ].join(" ")}
+        >
+          {t.pages.map.worldViewHint}
+        </span>
+      ) : selectedMeta ? (
         <RouteInfoCard
           meta={selectedMeta}
           onClose={() => setSelectedRouteIdx(null)}
@@ -155,6 +178,19 @@ export function GlobalMapClient({ data }: Props) {
       ) : (
         <HeatLegend isFullscreen={isFullscreen} />
       )}
+
+      <button
+        onClick={() => setWorldView((w) => !w)}
+        aria-label={worldView ? t.pages.map.exitWorldView : t.pages.map.worldView}
+        aria-pressed={worldView}
+        className={[
+          "glass-map-chip absolute right-3 z-20 flex h-11 w-11 items-center justify-center transition-colors hover:bg-muted",
+          worldView ? "text-accent-text" : "",
+          isFullscreen ? "bottom-[calc(max(env(safe-area-inset-bottom),12px)+3.25rem)]" : "bottom-16",
+        ].join(" ")}
+      >
+        <Globe size={16} />
+      </button>
 
       <button
         onClick={() => setIsFullscreen((f) => !f)}
