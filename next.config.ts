@@ -10,9 +10,12 @@ const { version } = JSON.parse(readFileSync("./package.json", "utf8")) as { vers
 // additionally needs 'unsafe-eval' for react-refresh.
 const csp = [
   "default-src 'self'",
-  // www.gstatic.com: firebase-messaging-sw.js importScripts (this header is
-  // also served on the SW route, so its CSP must allow it too).
-  `script-src 'self' 'unsafe-inline' https://www.gstatic.com${
+  // www.gstatic.com: firebase-messaging-sw.js importScripts. apis.google.com:
+  // gapi loader (api.js) that signInWithPopup needs for its postMessage
+  // relay - without it the popup opens but the sign-in promise never
+  // resolves (this header is also served on the SW route, so it must allow
+  // both there too).
+  `script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com${
     process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""
   }`,
   "style-src 'self' 'unsafe-inline'",
@@ -20,12 +23,13 @@ const csp = [
   "img-src 'self' data: blob: https://api.maptiler.com",
   "font-src 'self' data:",
   // googleapis: Firestore/Auth/FCM; maptiler: styles/tiles/geocoding;
-  // nominatim: share-card reverse geocoding.
-  "connect-src 'self' https://api.maptiler.com https://nominatim.openstreetmap.org https://*.googleapis.com",
+  // nominatim: share-card reverse geocoding; apis.google.com: gapi loader (see script-src).
+  "connect-src 'self' https://api.maptiler.com https://nominatim.openstreetmap.org https://*.googleapis.com https://apis.google.com",
   // MapLibre spawns blob: workers.
   "worker-src 'self' blob:",
-  // Firebase Auth sign-in iframe (authDomain) + Google account chooser.
-  "frame-src https://*.firebaseapp.com https://accounts.google.com",
+  // Firebase Auth sign-in iframe (authDomain) + Google account chooser +
+  // gapi's own relay iframes.
+  "frame-src https://*.firebaseapp.com https://accounts.google.com https://apis.google.com",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
