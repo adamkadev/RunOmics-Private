@@ -21,7 +21,28 @@ function logFirestoreReadError(collection: string, error: unknown): void {
   console.error(`[firestore:${collection}] read failed, falling back to empty result`, error)
 }
 
-export async function getGoalsFromFirestore(): Promise<GoalYear[]> {
+// These collections are small and rarely change, but are re-read independently by
+// many pages/use-cases (dashboard, calendar, analytics, every static activity page,
+// etc). Without this, a single `next build` re-reads the same doc hundreds of times.
+// Cached per server process for a short window; writes also trigger an explicit
+// revalidatePath via /api/internal/revalidate, so this is a bound on worst-case
+// staleness rather than the primary invalidation path.
+const CACHE_TTL_MS = 5 * 60 * 1000
+
+function cached<T>(fetcher: () => Promise<T>): () => Promise<T> {
+  let entry: { value: Promise<T>; expiresAt: number } | null = null
+  return () => {
+    if (entry && entry.expiresAt > Date.now()) return entry.value
+    const value = fetcher().catch((error) => {
+      entry = null
+      throw error
+    })
+    entry = { value, expiresAt: Date.now() + CACHE_TTL_MS }
+    return value
+  }
+}
+
+export const getGoalsFromFirestore = cached(async (): Promise<GoalYear[]> => {
   try {
     const db = getAdminFirestore()
     const snapshot = await db.collection('goals').get()
@@ -30,9 +51,9 @@ export async function getGoalsFromFirestore(): Promise<GoalYear[]> {
     logFirestoreReadError('goals', error)
     return []
   }
-}
+})
 
-export async function getPbsFromFirestore(): Promise<PbYear[]> {
+export const getPbsFromFirestore = cached(async (): Promise<PbYear[]> => {
   try {
     const db = getAdminFirestore()
     const snapshot = await db.collection('pbs').get()
@@ -41,9 +62,9 @@ export async function getPbsFromFirestore(): Promise<PbYear[]> {
     logFirestoreReadError('pbs', error)
     return []
   }
-}
+})
 
-export async function getUpcomingRacesFromFirestore(): Promise<UpcomingRaceYear[]> {
+export const getUpcomingRacesFromFirestore = cached(async (): Promise<UpcomingRaceYear[]> => {
   try {
     const db = getAdminFirestore()
     const snapshot = await db.collection('upcomingRaces').get()
@@ -52,9 +73,9 @@ export async function getUpcomingRacesFromFirestore(): Promise<UpcomingRaceYear[
     logFirestoreReadError('upcomingRaces', error)
     return []
   }
-}
+})
 
-export async function getAthleteFromFirestore(): Promise<AthleteProfile> {
+export const getAthleteFromFirestore = cached(async (): Promise<AthleteProfile> => {
   try {
     const db = getAdminFirestore()
     const doc = await db.collection('athlete').doc('profile').get()
@@ -65,7 +86,7 @@ export async function getAthleteFromFirestore(): Promise<AthleteProfile> {
     logFirestoreReadError('athlete', error)
     return {}
   }
-}
+})
 
 export type PrState = Record<string, { seconds: number; activityId: string }>
 

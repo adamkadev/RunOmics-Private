@@ -8,7 +8,13 @@ const TARGETS: Record<FirestoreCollection, { path: string; type?: 'page' }[]> = 
   goals: [{ path: '/goals' }],
   pbs: [{ path: '/' }, { path: '/activities' }, { path: '/activities/[id]', type: 'page' }, { path: '/records' }, { path: '/goals' }],
   upcomingRaces: [{ path: '/goals' }],
-  athlete: [{ path: '/profile' }, { path: '/analytics' }],
+  athlete: [
+    { path: '/profile' },
+    { path: '/analytics' },
+    { path: '/' },
+    { path: '/calendar' },
+    { path: '/activities/[id]', type: 'page' },
+  ],
 }
 
 export async function POST(req: NextRequest) {

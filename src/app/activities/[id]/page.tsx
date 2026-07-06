@@ -19,6 +19,10 @@ import { KmSplits } from '@/components/activity/KmSplits'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
 import { t } from '@/i18n'
 
+// Safety net: data is also revalidated on demand by /api/internal/revalidate
+// when the pbs/athlete Firestore collections are written.
+export const revalidate = 86400
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params
   const activity = getActivities().find((a) => a.id === id)
