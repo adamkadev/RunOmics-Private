@@ -11,7 +11,6 @@ import { useShareCardPrefs } from '@/lib/useShareCardPrefs'
 import { useShareCardGeocode } from '@/lib/useShareCardGeocode'
 import { useDragToDismiss } from '@/lib/useDragToDismiss'
 import { useFocusTrap } from '@/lib/useFocusTrap'
-import { useScrollLock } from '@/lib/useScrollLock'
 import { t } from '@/i18n'
 import { ShareThemePicker } from '@/components/activity/ShareThemePicker'
 import { ShareAccentPicker } from '@/components/activity/ShareAccentPicker'
@@ -55,7 +54,12 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     return () => window.removeEventListener('keydown', onKey)
   }, [close])
 
-  useScrollLock()
+  // Body scroll lock
+  useEffect(() => {
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = prev }
+  }, [])
 
   // Revoke photo object URL on unmount
   useEffect(() => () => {
