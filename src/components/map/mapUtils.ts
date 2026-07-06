@@ -1,8 +1,7 @@
 import type { RouteMeta, RouteCluster } from "@/application/usecases/GetAllRoutes";
 
-export function matchesFilters(meta: RouteMeta | undefined, year: string | null, raceOnly = false): boolean {
+export function matchesFilters(meta: RouteMeta | undefined, year: string | null): boolean {
   if (!meta) return false;
-  if (raceOnly && meta.type !== "Race") return false;
   return !year || meta.year === year;
 }
 

@@ -109,7 +109,6 @@ export const fr = {
       allYears: 'Toutes les années',
       fullscreen: 'Plein écran',
       exitFullscreen: 'Quitter le plein écran',
-      raceRoutesOnly: 'Parcours de course',
     },
     shoes: {
       title: 'Chaussures',
@@ -655,7 +654,6 @@ export const fr = {
       elevationValue: (m: number) => `+${m}m`,
       caloriesValue: (kcal: number) => `${kcal} kcal`,
       cadence: 'Cadence',
-      sessionLoad: 'Charge de la séance',
     },
     heatNote: (temperature: number, adjustSeconds: number) =>
       `Sortie par forte chaleur (${temperature}°C) - l’allure paraît ~${adjustSeconds}s/km plus lente qu’un effort identique par temps clément.`,
@@ -855,10 +853,6 @@ export const fr = {
       line: (totalKm: number, remainingKm: number) => `${totalKm} km · ~${remainingKm} km restants`,
       viewShoes: 'Voir les chaussures',
     },
-    mapEntry: {
-      title: 'Heatmap de course',
-      subtitle: 'Tous tes parcours, cartographiés',
-    },
     milestones: {
       title: 'Jalons',
       distanceTier: (km: number) => `${km} km cette année`,
@@ -925,18 +919,6 @@ export const fr = {
     trendFlat: 'Stable',
   },
 
-  racePacePlan: {
-    title: 'Plan d’allure',
-    titleWithRace: (name: string) => `Plan d’allure · ${name}`,
-    target: (time: string) => `Objectif ${time}`,
-    estimated: 'Estimé à partir de ta forme actuelle - pas d’objectif chronométré défini',
-    even: 'Allure régulière',
-    negative: 'Négative split',
-    zoneContext: (zone: string, range: string) => `L’allure de course se situe dans ta zone ${zone} (${range}/km)`,
-    km: 'Km',
-    cumulative: 'Total',
-  },
-
   trainingZones: {
     title: 'Zones d’entraînement',
     thresholdLabel: (pace: string) => `Seuil ${pace}`,
@@ -993,8 +975,6 @@ export const fr = {
       keySessions: 'Séances clés',
       trend: 'Tendance de charge',
       trendSummary: (weeks: number) => `Charge d’entraînement (TRIMP) hebdomadaire sur les ${weeks} dernières semaines`,
-      compliance: 'Conformité',
-      loadCompliance: (percent: number) => `${percent}% charge`,
     },
   },
 

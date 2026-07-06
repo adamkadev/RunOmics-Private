@@ -17,14 +17,4 @@ describe('matchesFilters', () => {
     expect(matchesFilters(meta({ year: '2025' }), '2026')).toBe(false)
     expect(matchesFilters(meta({ year: '2026' }), '2026')).toBe(true)
   })
-
-  it('filters to Race type when raceOnly is set', () => {
-    expect(matchesFilters(meta({ type: 'Base' }), null, true)).toBe(false)
-    expect(matchesFilters(meta({ type: 'Race' }), null, true)).toBe(true)
-  })
-
-  it('combines year and raceOnly', () => {
-    expect(matchesFilters(meta({ type: 'Race', year: '2025' }), '2026', true)).toBe(false)
-    expect(matchesFilters(meta({ type: 'Race', year: '2026' }), '2026', true)).toBe(true)
-  })
 })

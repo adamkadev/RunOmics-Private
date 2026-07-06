@@ -27,7 +27,7 @@ function rpeToneClass(rpe: number): string {
   return STATUS.warning.text
 }
 
-function buildStats(activity: Activity, sessionTrimp: number): Metric[] {
+function buildStats(activity: Activity): Metric[] {
   const stats: Metric[] = [
     {
       value: formatDistance(activity.distanceKm),
@@ -81,20 +81,13 @@ function buildStats(activity: Activity, sessionTrimp: number): Metric[] {
     valueClassName: activity.rpe !== null ? rpeToneClass(activity.rpe) : undefined,
   })
 
-  if (sessionTrimp > 0) {
-    stats.push({
-      value: `${Math.round(sessionTrimp)}`,
-      label: t.activity.stats.sessionLoad,
-    })
-  }
-
   return stats
 }
 
 export function ActivityDetailClient({ activity, hrBounds }: Props) {
   const [hoverFraction, setHoverFraction] = useState<number | null>(null)
   const sessionTrimp = trimp(activity, hrBounds)
-  const stats = buildStats(activity, sessionTrimp)
+  const stats = buildStats(activity)
   const hasSecondaryCharts = !!(activity.elevationProfile || activity.paceSamples || activity.cadenceSamples)
   const heatAdjustSeconds =
     activity.paceSecPerKm && shouldAnnotateHeat(activity.avgTemperature)

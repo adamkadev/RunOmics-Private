@@ -10,7 +10,6 @@ import type { Milestone } from '@/application/usecases/GetMilestones'
 import { ProfileHero } from './ProfileHero'
 import { ProfileStatsYtd } from './ProfileStatsYtd'
 import { ProfileRecords } from './ProfileRecords'
-import { ProfileMapEntry } from './ProfileMapEntry'
 import { Milestones } from './Milestones'
 import { ProfileShoes } from './ProfileShoes'
 import { ProfileHrZones } from './ProfileHrZones'
@@ -49,7 +48,6 @@ export function ProfileClient({ data, milestones }: Props) {
         <ProfileGoal goal={goal} onSaveGoal={saveGoal} />
         <ProfileRecords records={data.records} />
         <Milestones milestones={milestones} />
-        <ProfileMapEntry />
         <ProfileShoes shoes={data.shoes} />
         <ProfileAthleteStats athlete={athlete} onSave={saveAthlete} />
         <ProfileHrZones athlete={athlete} onSave={saveAthlete} />
