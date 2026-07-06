@@ -106,7 +106,6 @@ export const en = {
       allYears: 'All years',
       fullscreen: 'Fullscreen',
       exitFullscreen: 'Exit fullscreen',
-      raceRoutesOnly: 'Race routes',
     },
     shoes: {
       title: 'Shoes',
@@ -653,7 +652,6 @@ export const en = {
       elevationValue: (m: number) => `+${m}m`,
       caloriesValue: (kcal: number) => `${kcal} kcal`,
       cadence: 'Cadence',
-      sessionLoad: 'Session Load',
     },
     heatNote: (temperature: number, adjustSeconds: number) =>
       `Hot run (${temperature}°C) - pace looks ~${adjustSeconds}s/km slower than the same effort in mild weather.`,
@@ -853,10 +851,6 @@ export const en = {
       line: (totalKm: number, remainingKm: number) => `${totalKm} km · ~${remainingKm} km left`,
       viewShoes: 'View Shoes',
     },
-    mapEntry: {
-      title: 'Running Heatmap',
-      subtitle: 'Every route you have ever run, mapped',
-    },
     milestones: {
       title: 'Milestones',
       distanceTier: (km: number) => `${km} km this year`,
@@ -923,18 +917,6 @@ export const en = {
     trendFlat: 'Stable',
   },
 
-  racePacePlan: {
-    title: 'Race Pace Plan',
-    titleWithRace: (name: string) => `Race Pace Plan · ${name}`,
-    target: (time: string) => `Target ${time}`,
-    estimated: 'Estimated from your current form - no target time set yet',
-    even: 'Even split',
-    negative: 'Negative split',
-    zoneContext: (zone: string, range: string) => `Race pace sits in your ${zone} zone (${range}/km)`,
-    km: 'Km',
-    cumulative: 'Total',
-  },
-
   trainingZones: {
     title: 'Training Zones',
     thresholdLabel: (pace: string) => `Threshold ${pace}`,
@@ -990,8 +972,6 @@ export const en = {
       keySessions: 'Key sessions',
       trend: 'Load trend',
       trendSummary: (weeks: number) => `Weekly training load (TRIMP) over the last ${weeks} weeks`,
-      compliance: 'Compliance',
-      loadCompliance: (percent: number) => `${percent}% load`,
     },
   },
 

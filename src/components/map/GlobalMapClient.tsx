@@ -8,7 +8,6 @@ import { t } from "@/i18n";
 import { useSetFullscreenChromeHidden } from "@/components/layout/FullscreenChromeContext";
 import { ClusterPanel } from "./ClusterPanel";
 import { YearPicker } from "./YearPicker";
-import { RaceRoutesToggle } from "./RaceRoutesToggle";
 import { useMapRoutes } from "./useMapRoutes";
 import { coordLabel, matchesFilters } from "./mapUtils";
 
@@ -20,28 +19,27 @@ export function GlobalMapClient({ data }: Props) {
   const { clusters, routeMeta } = data;
   const [selectedIdx, setSelectedIdx] = useState(data.defaultClusterIdx);
   const [selectedYear, setSelectedYear] = useState<string | null>(null);
-  const [raceOnly, setRaceOnly] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [names, setNames] = useState<string[]>(() => clusters.map(coordLabel));
 
   const clusterStats = useMemo(
     () =>
       clusters.map((c) => {
-        const indices = c.routeIndices.filter((i) => matchesFilters(routeMeta[i], selectedYear, raceOnly));
+        const indices = c.routeIndices.filter((i) => matchesFilters(routeMeta[i], selectedYear));
         return {
           routeCount: indices.length,
           totalKm: Math.round(indices.reduce((s, i) => s + (routeMeta[i]?.distanceKm ?? 0), 0)),
         };
       }),
-    [clusters, routeMeta, selectedYear, raceOnly],
+    [clusters, routeMeta, selectedYear],
   );
 
   const visibleIndices = useMemo(
     () =>
       clusters[selectedIdx]?.routeIndices.filter((i) =>
-        matchesFilters(routeMeta[i], selectedYear, raceOnly),
+        matchesFilters(routeMeta[i], selectedYear),
       ) ?? [],
-    [clusters, selectedIdx, routeMeta, selectedYear, raceOnly],
+    [clusters, selectedIdx, routeMeta, selectedYear],
   );
 
   const { containerRef, resize } = useMapRoutes(data, selectedIdx, visibleIndices);
@@ -95,7 +93,6 @@ export function GlobalMapClient({ data }: Props) {
           isFullscreen ? "top-[max(env(safe-area-inset-top),12px)]" : "top-3",
         ].join(" ")}
       >
-        <RaceRoutesToggle value={raceOnly} onChange={setRaceOnly} />
         <YearPicker years={data.years} value={selectedYear} onChange={setSelectedYear} />
       </div>
 
