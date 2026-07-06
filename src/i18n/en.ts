@@ -677,6 +677,9 @@ export const en = {
       prBadge: 'PR',
       rankBadge: (rank: number) => `#${rank}`,
     },
+    achievements: {
+      title: 'Achievements from this run',
+    },
     notes: {
       title: 'Notes',
       notePlaceholder: 'How did it feel? Weather, terrain, sensations...',

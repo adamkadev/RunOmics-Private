@@ -679,6 +679,9 @@ export const fr = {
       prBadge: 'RP',
       rankBadge: (rank: number) => `#${rank}`,
     },
+    achievements: {
+      title: 'Exploits de cette sortie',
+    },
     notes: {
       title: 'Notes',
       notePlaceholder: 'Comment c’était ? Météo, terrain, sensations...',
