@@ -9,7 +9,7 @@ export default function ShoesPage() {
   const shoes = getShoeStats()
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       <div>
         <BackButton label={t.pages.shoes.back} fallbackHref="/profile" />
         <h1 className="text-display text-foreground">{t.pages.shoes.title}</h1>

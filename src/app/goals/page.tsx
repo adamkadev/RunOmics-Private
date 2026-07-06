@@ -11,7 +11,7 @@ export default async function GoalsPage() {
   const data = await getGoalsPageData()
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       <BackButton label={t.goals.back} fallbackHref="/profile" />
       <GoalsClient data={data} />
     </div>

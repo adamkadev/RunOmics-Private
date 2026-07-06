@@ -13,7 +13,7 @@ function CardSkeleton() {
 
 export default function RecordsLoading() {
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       {/* Header */}
       <div className="space-y-2">
         <Skeleton className="h-8 w-32" />
