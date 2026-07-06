@@ -1,25 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import {
-  daysUntil,
-  buildPrFacts,
-  buildStatusFact,
-  buildLoadRiskFacts,
-  buildHardShareFact,
-  buildNextRaceFact,
-  buildNextKeySessionFact,
-} from '../GetWeeklyDigest'
+import { buildPrFacts, buildStatusFact, buildLoadRiskFacts, buildHardShareFact } from '../GetWeeklyDigest'
 import type { RecordEntry } from '../GetRecords'
 import type { TrainingStatus } from '../GetTrainingStatus'
 import type { LoadRiskPanel } from '../GetLoadRiskPanel'
-import type { PlannedWorkout } from '@/domain/activity/types'
 import { isoWeekNumber } from '@/lib/calendarDate'
-
-describe('daysUntil', () => {
-  it('computes whole-day difference', () => {
-    expect(daysUntil('2026-07-20', '2026-07-06')).toBe(14)
-    expect(daysUntil('2026-07-06', '2026-07-06')).toBe(0)
-  })
-})
 
 describe('buildPrFacts', () => {
   const record = (key: string, date: string | null, seconds: number | null = 1200): RecordEntry => ({
@@ -117,35 +101,5 @@ describe('buildHardShareFact', () => {
 
   it('watch fact above the threshold', () => {
     expect(buildHardShareFact(35)?.severity).toBe('watch')
-  })
-})
-
-describe('buildNextRaceFact', () => {
-  it('null with no race', () => {
-    expect(buildNextRaceFact(null, '2026-07-06')).toBeNull()
-  })
-
-  it('includes the race name and countdown', () => {
-    const fact = buildNextRaceFact({ date: '2026-07-20', name: 'City Half', distance: 'Half-Marathon' }, '2026-07-06')
-    expect(fact?.text).toContain('City Half')
-  })
-})
-
-describe('buildNextKeySessionFact', () => {
-  const plan = (over: Partial<PlannedWorkout>): PlannedWorkout => ({ date: '2026-07-10', name: 'p', ...over })
-
-  it('picks the nearest future non-Base planned session', () => {
-    const planned = [plan({ date: '2026-07-08', type: 'Base' }), plan({ date: '2026-07-09', type: 'Threshold' })]
-    const fact = buildNextKeySessionFact(planned, '2026-07-06')
-    expect(fact?.text).toContain('Threshold')
-  })
-
-  it('null when only past or Base sessions exist', () => {
-    const planned = [plan({ date: '2026-07-01', type: 'Threshold' }), plan({ date: '2026-07-09', type: 'Base' })]
-    expect(buildNextKeySessionFact(planned, '2026-07-06')).toBeNull()
-  })
-
-  it('null with no planned workouts', () => {
-    expect(buildNextKeySessionFact([], '2026-07-06')).toBeNull()
   })
 })

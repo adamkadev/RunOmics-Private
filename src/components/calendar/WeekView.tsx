@@ -234,6 +234,7 @@ export function WeekView({
     [trendWeekNumbers, byWeekNumber, hrBounds]
   )
   const comparison = useMemo(() => compareWeekLoad(summary.totalTrimp, trendTotals.slice(0, -1)), [summary.totalTrimp, trendTotals])
+  const weekNumber = isoWeekNumber(weekStart)
 
   return (
     <div className="space-y-3">
@@ -244,19 +245,20 @@ export function WeekView({
           </div>
         )}
 
-        {/* Decisional header: load + comparison, easy/hard, elevation, key sessions */}
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <SummaryStat
-            label={t.calendar.weekSummary.load}
-            value={String(summary.totalTrimp)}
-            sub={
-              comparison && (
-                <StatusPill tone={LOAD_LEVEL_TONE[comparison.level]} className="text-[10px]">
-                  {t.calendar.weekSummary.vsTypical(comparison.percent)}
-                </StatusPill>
-              )
-            }
-          />
+        <div className="mb-2.5 flex items-center justify-between gap-2">
+          <span className="text-sm font-bold text-foreground">{t.calendar.weekNumber(weekNumber)}</span>
+          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            {t.calendar.weekSummary.load} <strong className="font-bold text-foreground">{summary.totalTrimp}</strong>
+            {comparison && (
+              <StatusPill tone={LOAD_LEVEL_TONE[comparison.level]} className="text-[10px]">
+                {t.calendar.weekSummary.vsTypical(comparison.percent)}
+              </StatusPill>
+            )}
+          </span>
+        </div>
+
+        {/* Decisional header: easy/hard, elevation, key sessions (load lives in the title row above) */}
+        <div className="grid grid-cols-3 gap-2">
           <SummaryStat
             label={t.calendar.weekSummary.easyHard}
             value={summary.easyPct !== null ? `${Math.round(summary.easyPct)}/${Math.round(summary.hardPct ?? 0)}` : '–'}
@@ -285,7 +287,7 @@ export function WeekView({
             ))}
           </div>
 
-          {/* Day cells */}
+          {/* Day cells: colored, type-labeled blocks (rest/missed keep a distinct, non-typed look) */}
           <div className="grid grid-cols-7 gap-1">
             {days.map((d) => {
                 const isToday = d.date === today
@@ -294,8 +296,10 @@ export function WeekView({
                 const plan = byDatePlanned.get(d.date)
                 const planned = !completed && !!plan
                 const missed = isPast && planned
+                const rest = !completed && !planned
                 const primaryType: ActivityType | null = (d.acts[0]?.type ?? plan?.type) ?? null
-                const typeColor = primaryType ? ACTIVITY_TYPE_CONFIG[primaryType].dotColor : null
+                const typeColor = primaryType && !missed ? ACTIVITY_TYPE_CONFIG[primaryType].dotColor : null
+                const label = primaryType ? t.activityTypes[primaryType] : null
 
                 return (
                   <button
@@ -303,16 +307,16 @@ export function WeekView({
                     type="button"
                     onClick={() => setSelectedDate(d.date)}
                     className={cn(
-                      'flex min-h-[44px] flex-col items-center gap-1 rounded-lg py-0.5 transition-transform active:scale-95',
+                      'flex flex-col items-center gap-1 rounded-lg py-0.5 transition-transform active:scale-95',
                       d.date === selectedDate && 'bg-foreground/[0.06]'
                     )}
                   >
                     {/* Cell box */}
-                    <div className="relative flex h-8 w-8 items-center justify-center">
+                    <div className="relative w-full">
                       {/* Pulse ring for today: opacity-only animation, not scale+fade */}
-                      {isToday && !completed && (
+                      {isToday && rest && (
                         <div
-                          className="absolute inset-0 rounded-[8px] border"
+                          className="pointer-events-none absolute -inset-0.5 rounded-[10px] border"
                           style={{
                             borderColor: TODAY_38,
                             animation: 'pulse-ring 2s ease-in-out infinite',
@@ -321,33 +325,39 @@ export function WeekView({
                       )}
 
                       <div
-                        className="relative flex h-8 w-8 items-center justify-center rounded-[8px] border transition-colors"
+                        className="relative flex h-10 w-full items-center justify-center rounded-[8px] border px-0.5 transition-colors sm:h-11"
                         style={
                           completed
-                            ? { background: typeColor ? `${typeColor}26` : ACCENT_15, borderColor: typeColor ? `${typeColor}66` : ACCENT_30 }
+                            ? { background: typeColor ? `${typeColor}33` : ACCENT_15, borderColor: typeColor ? `${typeColor}80` : ACCENT_30 }
                             : missed
-                              ? { background: MISSED_10, borderColor: MISSED_25, opacity: 0.6 }
-                              : isToday
-                                ? { background: TODAY_10, borderColor: TODAY, borderStyle: 'solid' }
-                                : planned
-                                  ? { background: typeColor ? `${typeColor}14` : FG_05, borderColor: typeColor ? `${typeColor}59` : FG_18, borderStyle: 'dashed' }
-                                  : { background: FG_04, borderColor: FG_07 }
+                              ? { background: MISSED_10, borderColor: MISSED_25, borderStyle: 'dashed' }
+                              : planned
+                                ? { background: typeColor ? `${typeColor}14` : FG_05, borderColor: typeColor ? `${typeColor}59` : FG_18, borderStyle: 'dashed' }
+                                : isToday
+                                  ? { background: TODAY_10, borderColor: TODAY, borderStyle: 'solid' }
+                                  : { background: FG_04, borderColor: FG_07, borderStyle: 'dashed' }
                         }
                       >
-                        {completed ? (
-                          <Check size={12} strokeWidth={2.5} style={{ color: typeColor ?? 'var(--accent)' }} />
-                        ) : missed ? (
-                          <X size={12} strokeWidth={2.5} style={{ color: MISSED }} />
-                        ) : planned ? (
+                        {label ? (
                           <span
-                            className="h-2 w-2 rounded-full border"
-                            style={{ borderColor: typeColor ?? (isToday ? TODAY : FG_18) }}
-                          />
-                        ) : isToday ? (
-                          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: TODAY }} />
+                            className="truncate text-[9px] font-bold leading-tight"
+                            style={{ color: missed ? MISSED : (typeColor ?? 'var(--accent)') }}
+                          >
+                            {label}
+                          </span>
                         ) : (
                           <span className="text-caption text-foreground/20">-</span>
                         )}
+
+                        {completed && (
+                          <Check
+                            size={9}
+                            strokeWidth={3}
+                            className="absolute right-0.5 top-0.5"
+                            style={{ color: typeColor ?? 'var(--accent)' }}
+                          />
+                        )}
+                        {missed && <X size={9} strokeWidth={3} className="absolute right-0.5 top-0.5" style={{ color: MISSED }} />}
                       </div>
                     </div>
 
