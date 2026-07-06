@@ -1,48 +1,49 @@
-import { Trophy, Flame, Milestone as MilestoneIcon } from 'lucide-react'
-import type { Milestone, MilestoneType } from '@/application/usecases/GetMilestones'
+import Link from 'next/link'
+import { ArrowRight } from 'lucide-react'
+import type { Milestone } from '@/application/usecases/GetMilestones'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { MILESTONE_ICON, MILESTONE_ICON_CLASS } from '@/components/milestones/milestoneVisuals'
 import { formatDateWithYear } from '@/lib/formatters'
 import { t } from '@/i18n'
 
-const ICON: Record<MilestoneType, typeof Trophy> = {
-  'distance-tier': MilestoneIcon,
-  streak: Flame,
-  record: Trophy,
-}
-
-const ICON_CLASS: Record<MilestoneType, string> = {
-  'distance-tier': 'text-blue-500 dark:text-blue-400',
-  streak: 'text-orange-500 dark:text-orange-400',
-  record: 'text-amber-500 dark:text-amber-400',
-}
+const PREVIEW_COUNT = 4
 
 export function Milestones({ milestones }: { milestones: Milestone[] }) {
   if (milestones.length === 0) return null
+
+  const preview = milestones.slice(0, PREVIEW_COUNT)
 
   return (
     <GlassSurface variant="card" className="p-5">
       <h2 className="mb-3 text-sm font-bold text-foreground">{t.profile.milestones.title}</h2>
 
-      <ul className="space-y-2">
-        {milestones.map((m, i) => {
-          const Icon = ICON[m.type]
+      <div className="grid grid-cols-2 gap-2">
+        {preview.map((m, i) => {
+          const Icon = MILESTONE_ICON[m.type]
           return (
-            <li
+            <div
               key={`${m.type}-${m.date}-${i}`}
-              className="flex items-center gap-3 rounded-xl border border-foreground/[0.08] bg-foreground/[0.04] p-3"
+              className="rounded-xl border border-foreground/[0.08] bg-foreground/[0.04] p-3"
             >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control border border-foreground/[0.08] bg-foreground/[0.06]">
-                <Icon size={16} className={ICON_CLASS[m.type]} />
+              <span className="mb-2 flex h-7 w-7 items-center justify-center rounded-control border border-foreground/[0.08] bg-foreground/[0.06]">
+                <Icon size={14} className={MILESTONE_ICON_CLASS[m.type]} />
               </span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-bold text-foreground">{m.label}</span>
-                <span className="block text-caption text-muted-foreground">{m.detail}</span>
-              </span>
-              <span className="shrink-0 text-caption text-subtle">{formatDateWithYear(m.date)}</span>
-            </li>
+              <div className="truncate text-caption font-bold text-foreground">{m.label}</div>
+              <div className="truncate text-micro text-muted-foreground">{m.detail}</div>
+              <div className="mt-1 text-micro text-subtle">{formatDateWithYear(m.date)}</div>
+            </div>
           )
         })}
-      </ul>
+      </div>
+
+      {milestones.length > PREVIEW_COUNT && (
+        <Link
+          href="/milestones"
+          className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-accent-text active:scale-95"
+        >
+          {t.profile.milestones.viewAll} <ArrowRight size={16} />
+        </Link>
+      )}
     </GlassSurface>
   )
 }
