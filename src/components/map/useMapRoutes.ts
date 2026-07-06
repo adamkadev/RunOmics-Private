@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Map as MapLibreMap, MapGeoJSONFeature, Marker, StyleSpecification } from "maplibre-gl";
-import type { AllRoutesData } from "@/application/usecases/GetAllRoutes";
+import type { MapShellData } from "@/application/usecases/GetAllRoutes";
 import { maptilerStyleUrl } from "@/lib/maptiler";
 import { CLUSTER_BUBBLE_COLOR, HEAT_SELECTED_COLOR } from "@/lib/colors";
 import {
@@ -45,7 +45,8 @@ function mkClusterMarker(count: number, radius: number, label: string, isDark: b
 }
 
 export function useMapRoutes(
-  data: AllRoutesData,
+  data: MapShellData,
+  routes: [number, number][][],
   selectedIdx: number,
   visibleIndices: number[],
   selectedRouteIdx: number | null,
@@ -72,7 +73,7 @@ export function useMapRoutes(
     onSelectClusterRef.current = onSelectCluster;
   }, [onSelectCluster]);
 
-  const { routes, clusters } = data;
+  const { clusters } = data;
   const selected = clusters[selectedIdx];
 
   const clearClusterMarkers = useCallback(() => {
@@ -214,7 +215,10 @@ export function useMapRoutes(
     };
   }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Rebuild heat + hit geometry (and rescale the ramp) whenever the filters change.
+  // Rebuild heat + hit geometry (and rescale the ramp) whenever the filters change,
+  // or whenever more route geometry arrives from /api/map/routes - the zone a user
+  // lands on has no coordinates yet on first render (see GlobalMapClient), so this
+  // reruns again once its fetch resolves and `routes` gains those entries.
   useEffect(() => {
     const map = mapRef.current;
     if (!mapReady || !map) return;
@@ -227,7 +231,7 @@ export function useMapRoutes(
       map.setPaintProperty("heat-line", "line-color", heatColorExpression(maxCount) as never);
       map.setPaintProperty("heat-line", "line-width", heatWidthExpression(maxCount) as never);
     }
-  }, [visibleIndices, mapReady]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [visibleIndices, mapReady, routes]);
 
   // Highlight the currently inspected run.
   useEffect(() => {

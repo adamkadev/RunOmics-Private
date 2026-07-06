@@ -1,7 +1,7 @@
 import { MapPin } from 'lucide-react'
 import type { Metadata } from 'next'
 
-import { getAllRoutes } from '@/application/usecases/GetAllRoutes'
+import { getMapShellData } from '@/application/usecases/GetAllRoutes'
 import { GlobalMapWrapper } from '@/components/map/GlobalMapWrapper'
 import { BackButton } from '@/components/ui/BackButton'
 import { t } from '@/i18n'
@@ -15,7 +15,7 @@ function Divider() {
 }
 
 export default function MapPage() {
-  const data = getAllRoutes()
+  const data = getMapShellData()
   const { years, totalCount, totalKm } = data
 
   const yearLabel =
