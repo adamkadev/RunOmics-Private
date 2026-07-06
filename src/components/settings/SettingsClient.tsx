@@ -46,7 +46,7 @@ export function SettingsClient() {
       const code = (err as { code?: string }).code
       if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
         console.error('Google sign-in failed:', err)
-        showToast(t.settings.auth.error, false)
+        showToast(code ? `${t.settings.auth.error} (${code})` : t.settings.auth.error, false)
       }
     } finally {
       setSigningIn(false)

@@ -15,7 +15,7 @@ export function useToast() {
   function showToast(msg: string, ok: boolean) {
     setLeaving(false)
     setToast({ msg, ok })
-    const displayMs = ok ? 2000 : 3500
+    const displayMs = ok ? 2000 : 6000
     setTimeout(() => setLeaving(true), displayMs)
     setTimeout(() => setToast(null), displayMs + EXIT_MS)
   }
