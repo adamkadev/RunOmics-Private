@@ -6,6 +6,7 @@ import type { Activity, ActivityType, PlannedWorkout } from '@/domain/activity/t
 import { ACTIVITY_TYPE_CONFIG, ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
 import type { HrBounds } from '@/domain/training/trimp'
 import { summarizeWeek, weeklyTrimpTotals, compareWeekLoad } from '@/domain/training/weekSummary'
+import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { StatusPill, type StatusTone } from '@/components/ui/StatusPill'
 import { ActivitySheet } from './ActivitySheet'
@@ -128,7 +129,7 @@ function NextWeekPlanRow({ plan, onTap }: { plan: PlannedWorkout; onTap: () => v
   )
 }
 
-function SummaryStat({ label, value, sub }: { label: string; value: string; sub?: React.ReactNode }) {
+function SummaryStat({ label, value, sub }: { label: string; value: React.ReactNode; sub?: React.ReactNode }) {
   return (
     <div className="rounded-lg border border-foreground/[0.07] bg-foreground/[0.03] px-2.5 py-2">
       <div className="text-micro font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
@@ -220,7 +221,10 @@ export function WeekView({
         <div className={cn('mb-2.5 flex items-center gap-2', atPresent ? 'justify-end' : 'justify-between')}>
           {!atPresent && <InlineJumpButton onClick={onToday}>{t.calendar.today}</InlineJumpButton>}
           <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            {t.calendar.weekSummary.load} <strong className="font-bold text-foreground">{summary.totalTrimp}</strong>
+            {t.calendar.weekSummary.load}{' '}
+            <strong className="font-bold text-foreground">
+              <AnimatedValue value={summary.totalTrimp} />
+            </strong>
             {comparison && (
               <StatusPill tone={LOAD_LEVEL_TONE[comparison.level]} className="text-[10px]">
                 {t.calendar.weekSummary.vsTypical(comparison.percent)}
@@ -233,10 +237,26 @@ export function WeekView({
         <div className="grid grid-cols-3 gap-2">
           <SummaryStat
             label={t.calendar.weekSummary.easyHard}
-            value={summary.easyPct !== null ? `${Math.round(summary.easyPct)}/${Math.round(summary.hardPct ?? 0)}` : '–'}
+            value={
+              summary.easyPct !== null ? (
+                <>
+                  <AnimatedValue value={Math.round(summary.easyPct)} />/
+                  <AnimatedValue value={Math.round(summary.hardPct ?? 0)} />
+                </>
+              ) : (
+                '–'
+              )
+            }
           />
-          <SummaryStat label={t.calendar.weekSummary.elevation} value={`${summary.elevationGainM} ${t.units.m}`} />
-          <SummaryStat label={t.calendar.weekSummary.keySessions} value={String(summary.keySessionsCount)} />
+          <SummaryStat
+            label={t.calendar.weekSummary.elevation}
+            value={
+              <>
+                <AnimatedValue value={summary.elevationGainM} /> {t.units.m}
+              </>
+            }
+          />
+          <SummaryStat label={t.calendar.weekSummary.keySessions} value={<AnimatedValue value={summary.keySessionsCount} />} />
         </div>
 
         <div className="mt-3">

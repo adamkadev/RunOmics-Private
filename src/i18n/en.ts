@@ -951,7 +951,7 @@ export const en = {
     readiness: (tsb: number) => `Form ${tsb >= 0 ? '+' : ''}${tsb}`,
     switcher: { week: 'Week', month: 'Month' },
     weekOf: (label: string) => `Week of ${label}`,
-    restDay: 'Rest day',
+    restDay: 'Rest',
     planned: 'Planned',
     nextWeek: (n: number) => `Next week - ${n} planned`,
     viewDetail: 'View detail',
