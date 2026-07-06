@@ -155,27 +155,26 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
           />
         </div>
 
-        {/* Header: close button only, no title label */}
-        <div className="flex shrink-0 items-center justify-end px-4 pt-2 pb-1">
-          <button
-            onClick={close}
-            aria-label={t.activity.shareCard.close}
-            style={{
-              width: 34, height: 34, borderRadius: '50%',
-              background: 'color-mix(in srgb, var(--ro-text) 10%, transparent)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'var(--ro-text-2)', border: 'none', cursor: 'pointer',
-            }}
-          >
-            <X size={17} strokeWidth={2.5} />
-          </button>
-        </div>
+        {/* Close button floats over the scrollable body instead of owning its own row */}
+        <button
+          onClick={close}
+          aria-label={t.activity.shareCard.close}
+          className="absolute right-4 top-4 z-10"
+          style={{
+            width: 34, height: 34, borderRadius: '50%',
+            background: 'color-mix(in srgb, var(--ro-text) 10%, transparent)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'var(--ro-text-2)', border: 'none', cursor: 'pointer',
+          }}
+        >
+          <X size={17} strokeWidth={2.5} />
+        </button>
 
         {/* Scrollable body */}
         <div className="min-h-0 flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 
           {/* Live preview */}
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '0 0 16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0 16px' }}>
             <div style={{
               borderRadius: 18, overflow: 'hidden', width: 176, height: 380,
               boxShadow: '0 8px 32px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.35)',
