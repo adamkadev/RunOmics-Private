@@ -367,6 +367,11 @@ export const fr = {
       kmRemaining: (km: number) => `Plus que ${km} km pour boucler la semaine`,
       goalReached: 'Objectif hebdomadaire atteint',
     },
+    celebration: {
+      eyebrow: 'Nouveau record personnel',
+      later: 'Plus tard',
+      viewAndShare: 'Voir et partager',
+    },
   },
 
   trainingStatus: {

@@ -25,6 +25,7 @@ import { DashboardHighlights } from '@/components/dashboard/DashboardHighlights'
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting'
 import { TodayHero } from '@/components/dashboard/TodayHero'
 import { WeeklyStreakCard } from '@/components/dashboard/WeeklyStreakCard'
+import { CelebrationOverlay } from '@/components/dashboard/CelebrationOverlay'
 import { RaceCockpit } from '@/components/dashboard/RaceCockpit'
 import { WeeklyDigest } from '@/components/dashboard/WeeklyDigest'
 
@@ -56,6 +57,8 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      <CelebrationOverlay record={mostRecentRecord} />
+
       <div className="space-y-3">
         <DashboardGreeting lastSyncedAt={lastSyncedAt} />
         <DashboardHighlights

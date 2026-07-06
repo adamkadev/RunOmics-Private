@@ -364,6 +364,11 @@ export const en = {
       kmRemaining: (km: number) => `${km} km left to hit this week's goal`,
       goalReached: 'Weekly goal reached',
     },
+    celebration: {
+      eyebrow: 'New personal record',
+      later: 'Later',
+      viewAndShare: 'View & share',
+    },
   },
 
   trainingStatus: {
