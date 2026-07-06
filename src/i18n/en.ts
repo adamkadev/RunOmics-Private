@@ -932,7 +932,7 @@ export const en = {
     acwr: { label: 'ACWR', description: 'Acute:chronic load ratio · target 0.8–1.3' },
     monotony: { label: 'Monotony', description: 'Day-to-day load variety · alert above 2.0' },
     strain: { label: 'Strain', description: 'Weekly load × monotony (Foster)' },
-    rampRate: { label: 'Ramp rate', description: 'Fitness (CTL) change over 7 days' },
+    rampRate: { label: 'Ramp rate', description: 'Δ CTL over 7 days' },
   },
 
   consistencyScore: {

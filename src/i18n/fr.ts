@@ -934,7 +934,7 @@ export const fr = {
     acwr: { label: 'ACWR', description: 'Charge aiguë/chronique · cible 0,8–1,3' },
     monotony: { label: 'Monotonie', description: 'Variété de charge au quotidien · alerte au-delà de 2,0' },
     strain: { label: 'Strain', description: 'Charge hebdo × monotonie (Foster)' },
-    rampRate: { label: 'Ramp rate', description: 'Variation de la condition (CTL) sur 7 jours' },
+    rampRate: { label: 'Ramp rate', description: 'Δ CTL sur 7 jours' },
   },
 
   consistencyScore: {
