@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { findDistanceTierMilestones, currentWeekStreak } from '../GetMilestones'
+import { findDistanceTierMilestones, currentWeekStreak, longestWeekStreak } from '../GetMilestones'
 import type { Activity } from '@/domain/activity/types'
 import { isoWeekNumber } from '@/lib/calendarDate'
 
@@ -61,5 +61,27 @@ describe('currentWeekStreak', () => {
     const acts = [act('2026-07-06'), act('2026-06-22')] // gap on 06-29
     const streak = currentWeekStreak(acts, now)
     expect(streak?.weeks).toBe(1)
+  })
+})
+
+describe('longestWeekStreak', () => {
+  const act = (date: string): Activity => ({ date, week: isoWeekNumber(new Date(date + 'T00:00:00')) }) as Activity
+
+  it('0 with no activities', () => {
+    expect(longestWeekStreak([])).toBe(0)
+  })
+
+  it('finds the longest run of consecutive active weeks, not just the current one', () => {
+    const acts = [
+      act('2026-01-05'), act('2026-01-12'), act('2026-01-19'), act('2026-01-26'), // 4-week run
+      act('2026-03-02'), // isolated week
+      act('2026-06-01'), act('2026-06-08'), // 2-week run
+    ]
+    expect(longestWeekStreak(acts)).toBe(4)
+  })
+
+  it('counts a run spanning a calendar year boundary', () => {
+    const acts = [act('2025-12-22'), act('2025-12-29'), act('2026-01-05')]
+    expect(longestWeekStreak(acts)).toBe(3)
   })
 })

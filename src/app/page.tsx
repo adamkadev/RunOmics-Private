@@ -13,6 +13,8 @@ import { getNextRace } from '@/application/usecases/GetNextRace'
 import { getFormProjection } from '@/application/usecases/GetFormProjection'
 import { getWeeklyDigest } from '@/application/usecases/GetWeeklyDigest'
 import { getTodayPlannedWorkout } from '@/application/usecases/GetPlannedWorkouts'
+import { getWeeklyStreakData } from '@/application/usecases/GetMilestones'
+import { getCurrentWeeklyGoal } from '@/application/usecases/GetGoalsData'
 import { StatsGrid } from '@/components/dashboard/StatsGrid'
 import { DashboardCharts } from '@/components/dashboard/DashboardCharts'
 import { RecentActivities } from '@/components/dashboard/RecentActivities'
@@ -22,6 +24,7 @@ import { ConsistencyCard } from '@/components/dashboard/ConsistencyCard'
 import { DashboardHighlights } from '@/components/dashboard/DashboardHighlights'
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting'
 import { TodayHero } from '@/components/dashboard/TodayHero'
+import { WeeklyStreakCard } from '@/components/dashboard/WeeklyStreakCard'
 import { RaceCockpit } from '@/components/dashboard/RaceCockpit'
 import { WeeklyDigest } from '@/components/dashboard/WeeklyDigest'
 
@@ -48,6 +51,8 @@ export default async function DashboardPage() {
   const formProjection = await getFormProjection()
   const weeklyDigest = await getWeeklyDigest()
   const todayPlannedWorkout = await getTodayPlannedWorkout()
+  const weeklyStreak = getWeeklyStreakData()
+  const weeklyGoal = await getCurrentWeeklyGoal()
 
   return (
     <div className="space-y-6">
@@ -67,6 +72,8 @@ export default async function DashboardPage() {
         nextRace={nextRace}
         lastSyncedAt={lastSyncedAt}
       />
+
+      {weeklyStreak && <WeeklyStreakCard data={weeklyStreak} goal={weeklyGoal} />}
 
       <StatsGrid weeks={data.weeks} currentStreak={data.currentStreak} vo2max={vo2max} vo2maxTrend={vo2maxTrend} weekLoad={weekLoad} />
 

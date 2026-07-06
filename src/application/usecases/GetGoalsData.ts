@@ -5,6 +5,7 @@ import {
   getPbsFromFirestore,
   getUpcomingRacesFromFirestore,
 } from '@/infrastructure/repositories/FirestoreConfigRepository'
+import { addDays, startOfWeek } from '@/lib/calendarDate'
 import { round } from '@/lib/math'
 
 export interface PbEntry {
@@ -193,6 +194,42 @@ export function computeYearOutcome(yearData: YearData): YearOutcome | null {
   })
 
   return { year, annualGoal, targets }
+}
+
+export interface WeeklyGoal {
+  targetKm: number
+  actualKm: number
+}
+
+// Prorates the annual goal to a week the same way computeMonthlyGoals prorates it to a month.
+export function computeWeeklyGoal(activities: Activity[], year: number, goals: GoalYear, now = new Date()): WeeklyGoal | null {
+  if (goals.annualDistanceKm <= 0) return null
+
+  const daysInYear = (new Date(year + 1, 0, 1).getTime() - new Date(year, 0, 1).getTime()) / 86_400_000
+  const targetKm = round((goals.annualDistanceKm * 7) / daysInYear, 1)
+
+  const weekStart = startOfWeek(now)
+  const weekEnd = addDays(weekStart, 7)
+  const actualKm = round(
+    activities
+      .filter((a) => {
+        const d = new Date(a.date + 'T00:00:00')
+        return d >= weekStart && d < weekEnd
+      })
+      .reduce((s, a) => s + a.distanceKm, 0),
+    1
+  )
+
+  return { targetKm, actualKm }
+}
+
+/** The current week's distance goal, prorated from the current year's annual target - null if no goal is set. */
+export async function getCurrentWeeklyGoal(): Promise<WeeklyGoal | null> {
+  const year = new Date().getFullYear()
+  const goalYears = await getGoalsFromFirestore()
+  const goals = goalYears.find((g) => g.year === year)
+  if (!goals) return null
+  return computeWeeklyGoal(getAllActivities(), year, goals)
 }
 
 export async function getGoalsPageData(): Promise<GoalsPageData> {
