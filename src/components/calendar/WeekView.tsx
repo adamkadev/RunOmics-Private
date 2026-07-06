@@ -234,7 +234,6 @@ export function WeekView({
     [trendWeekNumbers, byWeekNumber, hrBounds]
   )
   const comparison = useMemo(() => compareWeekLoad(summary.totalTrimp, trendTotals.slice(0, -1)), [summary.totalTrimp, trendTotals])
-  const weekNumber = isoWeekNumber(weekStart)
 
   return (
     <div className="space-y-3">
@@ -245,8 +244,7 @@ export function WeekView({
           </div>
         )}
 
-        <div className="mb-2.5 flex items-center justify-between gap-2">
-          <span className="text-sm font-bold text-foreground">{t.calendar.weekNumber(weekNumber)}</span>
+        <div className="mb-2.5 flex items-center justify-end gap-2">
           <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
             {t.calendar.weekSummary.load} <strong className="font-bold text-foreground">{summary.totalTrimp}</strong>
             {comparison && (

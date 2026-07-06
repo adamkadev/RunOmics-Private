@@ -954,7 +954,6 @@ export const fr = {
     switcher: { week: 'Semaine', month: 'Mois' },
     // Abbreviated: sits between the period chevrons, where the full word wraps.
     weekOf: (label: string) => `Sem. du ${label}`,
-    weekNumber: (n: number) => `Semaine ${n}`,
     restDay: 'Repos',
     planned: 'Prévu',
     nextWeek: (n: number) => `Semaine prochaine - ${n} prévue${n > 1 ? 's' : ''}`,
