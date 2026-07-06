@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useRef, useState } from 'react'
+import { useHaptic } from './useHaptic'
 
 const DISMISS_THRESHOLD_PX = 80
 const CLOSE_ANIMATION_MS = 220
@@ -19,6 +20,8 @@ export function useDragToDismiss(onDismiss: () => void) {
   const [dragY, setDragY] = useState(0)
   const [dragging, setDragging] = useState(false)
   const [closing, setClosing] = useState(false)
+  const pastThreshold = useRef(false)
+  const haptic = useHaptic()
 
   const triggerClose = useCallback(() => {
     setClosing(true)
@@ -39,13 +42,20 @@ export function useDragToDismiss(onDismiss: () => void) {
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
     if (startY.current === null) return
-    setDragY(Math.max(0, e.clientY - startY.current))
-  }, [])
+    const y = Math.max(0, e.clientY - startY.current)
+    setDragY(y)
+    const crossed = y > DISMISS_THRESHOLD_PX
+    if (crossed !== pastThreshold.current) {
+      pastThreshold.current = crossed
+      haptic('light')
+    }
+  }, [haptic])
 
   const endDrag = useCallback(() => {
     if (startY.current === null) return
     startY.current = null
     setDragging(false)
+    pastThreshold.current = false
     if (dragY > DISMISS_THRESHOLD_PX) {
       triggerClose()
     } else {
