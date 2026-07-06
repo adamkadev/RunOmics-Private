@@ -370,6 +370,9 @@ export const en = {
       later: 'Later',
       viewAndShare: 'View & share',
     },
+    onboarding: {
+      message: 'Your form, planned session, and race countdown live in the card above - your running heatmap is further down the page.',
+    },
   },
 
   trainingStatus: {

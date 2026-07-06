@@ -373,6 +373,9 @@ export const fr = {
       later: 'Plus tard',
       viewAndShare: 'Voir et partager',
     },
+    onboarding: {
+      message: 'Ta forme, ta séance planifiée et le compte à rebours course sont dans la carte ci-dessus - ta heatmap de course est plus bas sur la page.',
+    },
   },
 
   trainingStatus: {
