@@ -94,6 +94,26 @@ export const PACE_ROUTE_COLORS = {
   recovery:  CHART_COLORS.pace,  // >= 7:30/km - recovery jog / walk breaks
 } as const
 
+// Running heatmap intensity ramp (rare -> frequent). Cool->hot and deliberately
+// accent-independent, like PACE_ROUTE_COLORS / TEMP_BAND_COLORS: how often a stretch
+// was run is a property of the data, not a theme choice, so the map must not repaint
+// when the user changes their accent. Anchors reuse chart hues so the map sits in the
+// same visual system, and skip yellow/lime (they wash out on the pale basemap). Read
+// as a continuous gradient, not a categorical legend - adjacent stops are meant to
+// blend. The hottest end reuses CHART_COLORS.hr so "most run" shares the app's
+// red = highest-intensity language (HR, temperature).
+export const HEAT_ROUTE_COLORS = {
+  rare:     CHART_COLORS.pace,                // #3b82f6 blue-500   - run once
+  seldom:   CHART_COLORS.efficiency,          // #8b5cf6 violet-500
+  often:    CHART_COLORS.verticalOscillation, // #f43f5e rose-500
+  frequent: CHART_COLORS.hr,                  // #ef4444 red-500    - run most often
+} as const
+
+// Highlight color for a run tapped on the heatmap. Fixed (accent-independent) and
+// chosen to stand out against the whole blue->red heat ramp - reuses the brand
+// emerald, matching the activity-detail route line/marker.
+export const HEAT_SELECTED_COLOR = CHART_COLORS.brand // #10b981 emerald-500
+
 // Temperature band hex colors for Recharts scatter dots (cold=blue -> hot=red)
 // These represent physical reality and are intentionally accent-independent.
 export const TEMP_BAND_COLORS = {

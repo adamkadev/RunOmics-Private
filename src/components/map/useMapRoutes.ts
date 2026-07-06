@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Map as MapLibreMap, MapGeoJSONFeature, StyleSpecification } from "maplibre-gl";
 import type { AllRoutesData } from "@/application/usecases/GetAllRoutes";
 import { maptilerStyleUrl } from "@/lib/maptiler";
-import { useAccentColor, useAccentColorLight } from "@/lib/useAccent";
+import { HEAT_SELECTED_COLOR } from "@/lib/colors";
 import {
   buildGeoJSON,
   buildHeatGeoJSON,
@@ -24,9 +24,6 @@ export function useMapRoutes(
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const [mapReady, setMapReady] = useState(false);
-  const isDarkRef = useRef(false);
-  const accentColor = useAccentColor();
-  const accentColorLight = useAccentColorLight();
 
   // Keep the newest select handler reachable from map events without re-init.
   const onSelectRef = useRef(onSelectRoute);
@@ -42,7 +39,6 @@ export function useMapRoutes(
     let cancelled = false;
 
     async function initMap(isDark: boolean) {
-      isDarkRef.current = isDark;
       const mgl = await import("maplibre-gl");
       await import("maplibre-gl/dist/maplibre-gl.css");
       if (cancelled) return;
@@ -113,7 +109,7 @@ export function useMapRoutes(
             source: "selected",
             layout: { "line-join": "round", "line-cap": "round" },
             paint: {
-              "line-color": isDark ? accentColor : accentColorLight,
+              "line-color": HEAT_SELECTED_COLOR,
               "line-width": ["interpolate", ["linear"], ["zoom"], 9, 2.5, 14, 4],
               "line-opacity": 1,
             },
@@ -168,16 +164,6 @@ export function useMapRoutes(
       setMapReady(false);
     };
   }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Recolor the highlight when the accent changes.
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!mapReady || !map) return;
-    const lineColor = isDarkRef.current ? accentColor : accentColorLight;
-    if (map.getLayer("selected-line")) {
-      map.setPaintProperty("selected-line", "line-color", lineColor);
-    }
-  }, [accentColor, accentColorLight, mapReady]);
 
   // Rebuild heat + hit geometry (and rescale the ramp) whenever the filters change.
   useEffect(() => {
