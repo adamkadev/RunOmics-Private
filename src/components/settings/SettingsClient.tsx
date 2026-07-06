@@ -45,6 +45,7 @@ export function SettingsClient() {
       // Ignore the user closing/cancelling the popup themselves.
       const code = (err as { code?: string }).code
       if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
+        console.error('Google sign-in failed:', err)
         showToast(t.settings.auth.error, false)
       }
     } finally {
