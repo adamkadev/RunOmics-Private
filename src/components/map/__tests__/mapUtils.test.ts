@@ -46,29 +46,51 @@ describe('matchesFilters', () => {
 })
 
 describe('buildHeatGeoJSON', () => {
-  it('counts a shared stretch as run twice', () => {
-    // Two routes covering the same two-segment stretch.
+  it('counts a shared stretch as run twice, keeping the original coordinates', () => {
+    // Two identical routes covering the same stretch.
     const routes: [number, number][][] = [
       [[7.7, 48.6], [7.701, 48.6], [7.702, 48.6]],
       [[7.7, 48.6], [7.701, 48.6], [7.702, 48.6]],
     ]
     const { data, maxCount } = buildHeatGeoJSON(routes, [0, 1])
     expect(maxCount).toBe(2)
-    // Both segments merged into two unique features, each with count 2.
+    // One feature per route (frequency doesn't change along it), geometry unsnapped.
+    expect(data.features).toHaveLength(2)
+    for (const feat of data.features) {
+      expect(feat.properties?.count).toBe(2)
+      expect(feat.geometry).toEqual({
+        type: 'LineString',
+        coordinates: [[7.7, 48.6], [7.701, 48.6], [7.702, 48.6]],
+      })
+    }
+  })
+
+  it('gives opposite directions of the same stretch the same shared count', () => {
+    const routes: [number, number][][] = [
+      [[7.7, 48.6], [7.701, 48.6]],
+      [[7.701, 48.6], [7.7, 48.6]],
+    ]
+    const { data, maxCount } = buildHeatGeoJSON(routes, [0, 1])
+    expect(maxCount).toBe(2)
     expect(data.features).toHaveLength(2)
     for (const feat of data.features) {
       expect(feat.properties?.count).toBe(2)
     }
   })
 
-  it('treats opposite directions as the same segment', () => {
+  it('splits a route into separate features where run frequency changes', () => {
+    // Route B only covers the first two (shared, count=2) cells of route A;
+    // route A continues on alone through two more (count=1) cells.
     const routes: [number, number][][] = [
-      [[7.7, 48.6], [7.701, 48.6]],
-      [[7.701, 48.6], [7.7, 48.6]],
+      [[7.6, 48.6], [7.7, 48.6], [7.8, 48.6], [7.9, 48.6]],
+      [[7.6, 48.6], [7.7, 48.6]],
     ]
     const { data, maxCount } = buildHeatGeoJSON(routes, [0, 1])
-    expect(data.features).toHaveLength(1)
     expect(maxCount).toBe(2)
+    // Route A breaks into a count=2 leg and a count=1 leg; route B stays count=2.
+    expect(data.features).toHaveLength(3)
+    const counts = data.features.map((f) => f.properties?.count).sort()
+    expect(counts).toEqual([1, 2, 2])
   })
 
   it('ignores routes with fewer than two points', () => {
