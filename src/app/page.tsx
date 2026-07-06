@@ -12,6 +12,7 @@ import { getShoeStats } from '@/application/usecases/GetShoeStats'
 import { getNextRace } from '@/application/usecases/GetNextRace'
 import { getFormProjection } from '@/application/usecases/GetFormProjection'
 import { getWeeklyDigest } from '@/application/usecases/GetWeeklyDigest'
+import { getTodayPlannedWorkout } from '@/application/usecases/GetPlannedWorkouts'
 import { StatsGrid } from '@/components/dashboard/StatsGrid'
 import { DashboardCharts } from '@/components/dashboard/DashboardCharts'
 import { RecentActivities } from '@/components/dashboard/RecentActivities'
@@ -20,6 +21,7 @@ import { TrainingStatusBanner } from '@/components/dashboard/TrainingStatusBanne
 import { ConsistencyCard } from '@/components/dashboard/ConsistencyCard'
 import { DashboardHighlights } from '@/components/dashboard/DashboardHighlights'
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting'
+import { TodayHero } from '@/components/dashboard/TodayHero'
 import { RaceCockpit } from '@/components/dashboard/RaceCockpit'
 import { WeeklyDigest } from '@/components/dashboard/WeeklyDigest'
 
@@ -45,10 +47,11 @@ export default async function DashboardPage() {
   const nextRace = await getNextRace()
   const formProjection = await getFormProjection()
   const weeklyDigest = await getWeeklyDigest()
+  const todayPlannedWorkout = await getTodayPlannedWorkout()
 
   return (
     <div className="space-y-6">
-      <div className="space-y-3">        
+      <div className="space-y-3">
         <DashboardGreeting lastSyncedAt={lastSyncedAt} />
         <DashboardHighlights
           record={mostRecentRecord}
@@ -57,6 +60,13 @@ export default async function DashboardPage() {
           nextRace={nextRace}
         />
       </div>
+
+      <TodayHero
+        status={trainingStatus}
+        plannedWorkout={todayPlannedWorkout}
+        nextRace={nextRace}
+        lastSyncedAt={lastSyncedAt}
+      />
 
       <StatsGrid weeks={data.weeks} currentStreak={data.currentStreak} vo2max={vo2max} vo2maxTrend={vo2maxTrend} weekLoad={weekLoad} />
 

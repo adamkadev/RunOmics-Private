@@ -351,6 +351,19 @@ export const en = {
       hoursAgo: (h: number) => `${h}h ago`,
       daysAgo: (d: number) => `${d}d ago`,
     },
+    todayHero: {
+      eyebrow: 'Today',
+      plannedSession: 'Planned session',
+      race: 'Race',
+      daysToRace: (days: number) => `D-${days}`,
+    },
+    weeklyStreak: {
+      weeksInARow: (weeks: number) => `${weeks} week streak`,
+      longestStreak: (weeks: number) => `Longest streak: ${weeks} weeks`,
+      weeklyGoal: 'Weekly goal',
+      kmRemaining: (km: number) => `${km} km left to hit this week's goal`,
+      goalReached: 'Weekly goal reached',
+    },
   },
 
   trainingStatus: {

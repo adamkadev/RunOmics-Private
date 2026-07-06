@@ -354,6 +354,19 @@ export const fr = {
       hoursAgo: (h: number) => `il y a ${h} h`,
       daysAgo: (d: number) => `il y a ${d} j`,
     },
+    todayHero: {
+      eyebrow: 'Aujourd’hui',
+      plannedSession: 'Séance planifiée',
+      race: 'Course',
+      daysToRace: (days: number) => `J-${days}`,
+    },
+    weeklyStreak: {
+      weeksInARow: (weeks: number) => `${weeks} semaines d’affilée`,
+      longestStreak: (weeks: number) => `Plus longue série : ${weeks} semaines`,
+      weeklyGoal: 'Objectif hebdomadaire',
+      kmRemaining: (km: number) => `Plus que ${km} km pour boucler la semaine`,
+      goalReached: 'Objectif hebdomadaire atteint',
+    },
   },
 
   trainingStatus: {
