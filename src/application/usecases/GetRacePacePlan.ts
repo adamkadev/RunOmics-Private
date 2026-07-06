@@ -1,6 +1,9 @@
 import { getNextRace } from './GetNextRace'
 import { getRecords, type RecordEntry } from './GetRecords'
 import { getTrainingZones } from './GetTrainingZones'
+import { riegel, bestSourceFromMap } from '@/domain/training/riegel'
+
+export { riegel }
 
 const DISTANCE_KM: Record<string, number> = {
   '1K': 1,
@@ -48,24 +51,16 @@ export interface RacePacePlan {
   zonePaceRange?: [number, number]
 }
 
-export function riegel(sourceSeconds: number, sourceKm: number, targetKm: number): number {
-  return Math.round(sourceSeconds * Math.pow(targetKm / sourceKm, 1.06))
-}
-
-/** Picks the recorded distance closest (in log-ratio) to the target - mirrors RacePredictions' own heuristic. */
 export function bestSource(
   targetKey: string,
   targetKm: number,
   records: RecordEntry[],
 ): { seconds: number; sourceKm: number } | null {
-  let best: { seconds: number; sourceKm: number; ratio: number } | null = null
+  const bestByKey = new Map<string, number>()
   for (const r of records) {
-    const sourceKm = KM_BY_RECORD_KEY[r.key]
-    if (r.seconds === null || r.key === targetKey || sourceKm === undefined) continue
-    const ratio = Math.abs(Math.log(targetKm / sourceKm))
-    if (best === null || ratio < best.ratio) best = { seconds: r.seconds, sourceKm, ratio }
+    if (r.seconds !== null) bestByKey.set(r.key, r.seconds)
   }
-  return best ? { seconds: best.seconds, sourceKm: best.sourceKm } : null
+  return bestSourceFromMap(bestByKey, targetKey, KM_BY_RECORD_KEY, targetKm)
 }
 
 /** 1km segments plus a final fractional one for non-integer distances (e.g. 21.0975km). */

@@ -1,6 +1,7 @@
 import { getRecords, getTopEfforts, getMostRecentRecord } from '@/application/usecases/GetRecords'
 import { getPbAlerts } from '@/application/usecases/GetPbAlerts'
 import { getRacePacePlan } from '@/application/usecases/GetRacePacePlan'
+import { getRacePredictions } from '@/application/usecases/GetRacePredictions'
 import { RacePredictions } from '@/components/records/RacePredictions'
 import { PacePlan } from '@/components/records/PacePlan'
 import { RecordsLeaderboard } from '@/components/records/RecordsLeaderboard'
@@ -18,6 +19,7 @@ export default async function RecordsPage() {
   const pbAlerts = await getPbAlerts()
   const mostRecentRecord = getMostRecentRecord(records)
   const pacePlan = await getRacePacePlan()
+  const predictions = await getRacePredictions()
 
   return (
     <div className="space-y-8 pb-[max(env(safe-area-inset-bottom),80px)]">
@@ -32,7 +34,7 @@ export default async function RecordsPage() {
       </div>
 
       <RecordsLeaderboard records={records} topEfforts={topEfforts} mostRecentKey={mostRecentRecord?.key ?? null} />
-      <RacePredictions records={records} />
+      <RacePredictions predictions={predictions} />
       {pacePlan && <PacePlan data={pacePlan} />}
     </div>
   )

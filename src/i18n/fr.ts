@@ -891,6 +891,9 @@ export const fr = {
     from: (source: string) => `d’après ${source}`,
     beatBy: (time: string) => `✓ Battu de ${time}`,
     pbUpside: (time: string) => `RP -${time}`,
+    trendFaster: (time: string, weeks: number) => `${time} plus rapide en ${weeks} sem.`,
+    trendSlower: (time: string, weeks: number) => `${time} plus lent en ${weeks} sem.`,
+    trendFlat: 'Stable',
   },
 
   racePacePlan: {
