@@ -64,7 +64,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div
           className={cn(
             'mx-auto max-w-5xl px-4 pb-28 sm:px-6 lg:pb-8 lg:pt-8',
-            showTopBar ? 'pt-4' : 'pt-[max(env(safe-area-inset-top),12px)]'
+            showTopBar ? 'pt-4' : 'pt-[max(env(safe-area-inset-top),20px)]'
           )}
         >
           <PageTransition>{children}</PageTransition>
