@@ -2,6 +2,29 @@
 
 All notable changes to this project are documented in this file.
 
+## [3.5] - 2026-07-06
+
+### Added
+
+- **Frequency-based running heatmap**: the map now renders true intensity
+  instead of flat monochrome lines. Every trace is snapped to a ~20m grid and
+  aggregated into unique segments carrying a `count` of how many times that
+  stretch was run (`buildHeatGeoJSON`); a cool→hot ramp (blue→violet→pink→red)
+  and frequency-scaled line width make favourite streets stand out from one-off
+  outings. An on-map **intensity legend** (`HeatLegend`) makes the colour scale
+  readable.
+- **Tap-to-inspect a run**: a transparent per-route hit layer powers
+  tap/click on the heatmap, highlighting the run and opening a
+  `RouteInfoCard` (type, date, distance, duration, pace).
+- **Activity-type filter** (`TypePicker`): filter the heatmap by run type,
+  alongside the existing year filter; both combine. An empty-state chip shows
+  when a filter leaves no routes.
+
+### Changed
+
+- The selected-zone chip now shows total distance (`runs · km`) to match the
+  zone list rows.
+
 ## [3.4] - 2026-07-04
 
 ### Added

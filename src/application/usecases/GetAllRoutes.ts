@@ -2,9 +2,13 @@ import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepo
 import type { ActivityType } from '@/domain/activity/types'
 
 export interface RouteMeta {
+  id: string
   type: ActivityType
   year: string
+  date: string
   distanceKm: number
+  durationSeconds: number
+  paceSecPerKm: number | null
 }
 
 export interface RouteCluster {
@@ -120,7 +124,15 @@ export function getAllRoutes(): AllRoutesData {
 
   return {
     routes: activities.map((a) => a.route!),
-    routeMeta: activities.map((a) => ({ type: a.type, year: a.date.slice(0, 4), distanceKm: a.distanceKm })),
+    routeMeta: activities.map((a) => ({
+      id: a.id,
+      type: a.type,
+      year: a.date.slice(0, 4),
+      date: a.date.slice(0, 10),
+      distanceKm: a.distanceKm,
+      durationSeconds: a.durationSeconds,
+      paceSecPerKm: a.paceSecPerKm,
+    })),
     clusters,
     defaultClusterIdx,
     totalCount: activities.length,
