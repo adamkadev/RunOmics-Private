@@ -934,6 +934,8 @@ export const fr = {
       keySessions: 'Séances clés',
       trend: 'Tendance de charge',
       trendSummary: (weeks: number) => `Charge d’entraînement (TRIMP) hebdomadaire sur les ${weeks} dernières semaines`,
+      compliance: 'Conformité',
+      loadCompliance: (percent: number) => `${percent}% charge`,
     },
   },
 

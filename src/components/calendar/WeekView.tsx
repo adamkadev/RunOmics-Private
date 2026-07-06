@@ -6,6 +6,7 @@ import type { Activity, ActivityType, PlannedWorkout } from '@/domain/activity/t
 import { ACTIVITY_TYPE_CONFIG, ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
 import type { HrBounds } from '@/domain/training/trimp'
 import { summarizeWeek, weeklyTrimpTotals, compareWeekLoad } from '@/domain/training/weekSummary'
+import { buildWeekCompliance } from '@/domain/training/planCompliance'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { StatusPill, type StatusTone } from '@/components/ui/StatusPill'
@@ -235,6 +236,16 @@ export function WeekView({
   )
   const comparison = useMemo(() => compareWeekLoad(summary.totalTrimp, trendTotals.slice(0, -1)), [summary.totalTrimp, trendTotals])
 
+  const compliance = useMemo(
+    () =>
+      buildWeekCompliance(
+        days.map((d) => ({ date: d.date, activities: d.acts, planned: byDatePlanned.get(d.date) })),
+        today,
+        hrBounds,
+      ),
+    [days, byDatePlanned, today, hrBounds]
+  )
+
   return (
     <div className="space-y-3">
       <GlassSurface variant="card" className="rounded-card-sm p-3.5 pb-2.5">
@@ -244,8 +255,8 @@ export function WeekView({
           </div>
         )}
 
-        {/* Decisional header: load + comparison, easy/hard, elevation, key sessions */}
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {/* Decisional header: load + comparison, easy/hard, elevation, key sessions, plan compliance */}
+        <div className={cn('grid grid-cols-2 gap-2', compliance.sessionsCompliancePct !== null ? 'sm:grid-cols-5' : 'sm:grid-cols-4')}>
           <SummaryStat
             label={t.calendar.weekSummary.load}
             value={String(summary.totalTrimp)}
@@ -263,6 +274,19 @@ export function WeekView({
           />
           <SummaryStat label={t.calendar.weekSummary.elevation} value={`${summary.elevationGainM} ${t.units.m}`} />
           <SummaryStat label={t.calendar.weekSummary.keySessions} value={String(summary.keySessionsCount)} />
+          {compliance.sessionsCompliancePct !== null && (
+            <SummaryStat
+              label={t.calendar.weekSummary.compliance}
+              value={`${compliance.sessionsCompliancePct}%`}
+              sub={
+                compliance.loadCompliancePct !== null && (
+                  <span className="text-[10px] text-muted-foreground">
+                    {t.calendar.weekSummary.loadCompliance(compliance.loadCompliancePct)}
+                  </span>
+                )
+              }
+            />
+          )}
         </div>
 
         <div className="mt-2.5">

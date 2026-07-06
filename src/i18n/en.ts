@@ -931,6 +931,8 @@ export const en = {
       keySessions: 'Key sessions',
       trend: 'Load trend',
       trendSummary: (weeks: number) => `Weekly training load (TRIMP) over the last ${weeks} weeks`,
+      compliance: 'Compliance',
+      loadCompliance: (percent: number) => `${percent}% load`,
     },
   },
 
