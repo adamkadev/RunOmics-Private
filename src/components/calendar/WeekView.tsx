@@ -130,10 +130,10 @@ function NextWeekPlanRow({ plan, onTap }: { plan: PlannedWorkout; onTap: () => v
 
 function SummaryStat({ label, value, sub }: { label: string; value: string; sub?: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-foreground/[0.08] bg-foreground/[0.04] p-3.5">
-      <div className="widget-label mb-1.5 text-muted-foreground">{label}</div>
-      <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
-        <span className="text-title2 font-extrabold tabular-nums text-foreground">{value}</span>
+    <div className="rounded-lg border border-foreground/[0.07] bg-foreground/[0.03] px-2.5 py-2">
+      <div className="text-micro font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="mt-0.5 flex items-baseline gap-1.5">
+        <span className="text-base font-extrabold tabular-nums text-foreground">{value}</span>
         {sub}
       </div>
     </div>
@@ -217,13 +217,8 @@ export function WeekView({
   return (
     <div className="space-y-3">
       <GlassSurface variant="card" className="rounded-card-sm p-3.5 pb-2.5">
-        {!atPresent && (
-          <div className="mb-2.5">
-            <InlineJumpButton onClick={onToday}>{t.calendar.today}</InlineJumpButton>
-          </div>
-        )}
-
-        <div className="mb-2.5 flex items-center justify-end gap-2">
+        <div className={cn('mb-2.5 flex items-center gap-2', atPresent ? 'justify-end' : 'justify-between')}>
+          {!atPresent && <InlineJumpButton onClick={onToday}>{t.calendar.today}</InlineJumpButton>}
           <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
             {t.calendar.weekSummary.load} <strong className="font-bold text-foreground">{summary.totalTrimp}</strong>
             {comparison && (
