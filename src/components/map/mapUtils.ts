@@ -1,5 +1,6 @@
 import type { ActivityType } from "@/domain/activity/types";
 import type { RouteMeta, RouteCluster } from "@/application/usecases/GetAllRoutes";
+import { HEAT_ROUTE_COLORS } from "@/lib/colors";
 
 export interface HeatFilters {
   year: string | null;
@@ -110,14 +111,13 @@ export function buildHeatGeoJSON(
   return { data: { type: "FeatureCollection", features }, maxCount };
 }
 
-// Cool -> hot ramp for run frequency. Kept independent of the accent so the map
-// reads as a true intensity heatmap; the anchors stay legible on both the pale and
-// dark basemaps (yellow is avoided - it washes out on the light style).
+// Cool -> hot ramp for run frequency, from the shared, accent-independent heat
+// palette (defined in lib/colors alongside the pace-route and temperature ramps).
 const HEAT_STOPS: [number, string][] = [
-  [0, "#3b82f6"], // blue - run once
-  [0.35, "#8b5cf6"], // violet
-  [0.65, "#ec4899"], // pink
-  [1, "#ef4444"], // red - run most often
+  [0, HEAT_ROUTE_COLORS.rare],
+  [0.35, HEAT_ROUTE_COLORS.seldom],
+  [0.65, HEAT_ROUTE_COLORS.often],
+  [1, HEAT_ROUTE_COLORS.frequent],
 ];
 
 /**
