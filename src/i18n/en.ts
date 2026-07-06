@@ -956,19 +956,12 @@ export const en = {
     nextWeek: (n: number) => `Next week - ${n} planned`,
     viewDetail: 'View detail',
     type: 'Type',
-    legend: {
-      toggleLabel: 'Status legend',
-      completed: 'Completed',
-      missed: 'Missed',
-    },
     weekSummary: {
       load: 'Load',
       vsTypical: (percent: number) => `${percent - 100 >= 0 ? '+' : ''}${percent - 100}% vs typical`,
       easyHard: 'Easy / Hard',
       elevation: 'Elevation',
       keySessions: 'Key sessions',
-      trend: 'Load trend',
-      trendSummary: (weeks: number) => `Weekly training load (TRIMP) over the last ${weeks} weeks`,
     },
   },
 

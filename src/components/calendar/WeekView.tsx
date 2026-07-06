@@ -7,7 +7,6 @@ import { ACTIVITY_TYPE_CONFIG, ACTIVITY_TYPE_ICONS } from '@/domain/activity/typ
 import type { HrBounds } from '@/domain/training/trimp'
 import { summarizeWeek, weeklyTrimpTotals, compareWeekLoad } from '@/domain/training/weekSummary'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { ChartFigure } from '@/components/ui/ChartFigure'
 import { StatusPill, type StatusTone } from '@/components/ui/StatusPill'
 import { ActivitySheet } from './ActivitySheet'
 import { InlineJumpButton } from '@/components/ui/InlineJumpButton'
@@ -28,7 +27,6 @@ const ACCENT_15 = 'color-mix(in srgb, var(--accent) 15%, transparent)'
 const ACCENT_30 = 'color-mix(in srgb, var(--accent) 30%, transparent)'
 // foreground-tinted neutrals so planned/rest cells stay visible in light mode
 // (previously hardcoded rgba(255,255,255,...) - white on white in light)
-const FG_04 = 'color-mix(in srgb, var(--color-foreground) 4%, transparent)'
 const FG_05 = 'color-mix(in srgb, var(--color-foreground) 5%, transparent)'
 const FG_07 = 'color-mix(in srgb, var(--color-foreground) 7%, transparent)'
 const FG_18 = 'color-mix(in srgb, var(--color-foreground) 18%, transparent)'
@@ -132,31 +130,12 @@ function NextWeekPlanRow({ plan, onTap }: { plan: PlannedWorkout; onTap: () => v
 
 function SummaryStat({ label, value, sub }: { label: string; value: string; sub?: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-foreground/[0.07] bg-foreground/[0.03] px-2.5 py-2">
-      <div className="text-micro font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className="mt-0.5 flex items-baseline gap-1.5">
-        <span className="text-sm font-extrabold tabular-nums text-foreground">{value}</span>
+    <div className="rounded-xl border border-foreground/[0.08] bg-foreground/[0.04] p-3.5">
+      <div className="widget-label mb-1.5 text-muted-foreground">{label}</div>
+      <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
+        <span className="text-title2 font-extrabold tabular-nums text-foreground">{value}</span>
         {sub}
       </div>
-    </div>
-  )
-}
-
-/** Minimal bar row (not Recharts - too small a surface to justify it) situating the week within the trailing block. */
-function LoadTrendBars({ totals, highlightIndex }: { totals: number[]; highlightIndex: number }) {
-  const max = Math.max(...totals, 1)
-  return (
-    <div className="flex h-8 items-end gap-1">
-      {totals.map((v, i) => (
-        <div
-          key={i}
-          className="flex-1 rounded-t-sm"
-          style={{
-            height: `${Math.max((v / max) * 100, 4)}%`,
-            backgroundColor: i === highlightIndex ? 'var(--accent)' : FG_18,
-          }}
-        />
-      ))}
     </div>
   )
 }
@@ -265,12 +244,6 @@ export function WeekView({
           <SummaryStat label={t.calendar.weekSummary.keySessions} value={String(summary.keySessionsCount)} />
         </div>
 
-        <div className="mt-2.5">
-          <ChartFigure summary={t.calendar.weekSummary.trendSummary(TREND_WEEKS)}>
-            <LoadTrendBars totals={trendTotals} highlightIndex={trendTotals.length - 1} />
-          </ChartFigure>
-        </div>
-
         <div className="mt-3">
           {/* Weekday labels */}
           <div className="mb-2 grid grid-cols-7 gap-1">
@@ -297,7 +270,7 @@ export function WeekView({
                 const rest = !completed && !planned
                 const primaryType: ActivityType | null = (d.acts[0]?.type ?? plan?.type) ?? null
                 const typeColor = primaryType && !missed ? ACTIVITY_TYPE_CONFIG[primaryType].dotColor : null
-                const label = primaryType ? t.activityTypes[primaryType] : null
+                const label = primaryType ? t.activityTypes[primaryType] : rest ? t.calendar.restDay : null
 
                 return (
                   <button
@@ -323,7 +296,7 @@ export function WeekView({
                       )}
 
                       <div
-                        className="relative flex h-10 w-full items-center justify-center rounded-[8px] border px-0.5 transition-colors sm:h-11"
+                        className="relative flex h-12 w-full items-center justify-center rounded-[8px] border px-0.5 transition-colors sm:h-14"
                         style={
                           completed
                             ? { background: typeColor ? `${typeColor}33` : ACCENT_15, borderColor: typeColor ? `${typeColor}80` : ACCENT_30 }
@@ -333,29 +306,25 @@ export function WeekView({
                                 ? { background: typeColor ? `${typeColor}14` : FG_05, borderColor: typeColor ? `${typeColor}59` : FG_18, borderStyle: 'dashed' }
                                 : isToday
                                   ? { background: TODAY_10, borderColor: TODAY, borderStyle: 'solid' }
-                                  : { background: FG_04, borderColor: FG_07, borderStyle: 'dashed' }
+                                  : { background: FG_05, borderColor: FG_07 }
                         }
                       >
-                        {label ? (
-                          <span
-                            className="truncate text-[9px] font-bold leading-tight"
-                            style={{ color: missed ? MISSED : (typeColor ?? 'var(--accent)') }}
-                          >
-                            {label}
-                          </span>
-                        ) : (
-                          <span className="text-caption text-foreground/20">-</span>
-                        )}
+                        <span
+                          className={cn('truncate text-[10px] font-bold leading-tight sm:text-xs', rest && 'font-semibold opacity-40')}
+                          style={{ color: missed ? MISSED : rest ? 'var(--color-foreground)' : (typeColor ?? 'var(--accent)') }}
+                        >
+                          {label}
+                        </span>
 
                         {completed && (
                           <Check
-                            size={9}
+                            size={10}
                             strokeWidth={3}
-                            className="absolute right-0.5 top-0.5"
+                            className="absolute right-1 top-1"
                             style={{ color: typeColor ?? 'var(--accent)' }}
                           />
                         )}
-                        {missed && <X size={9} strokeWidth={3} className="absolute right-0.5 top-0.5" style={{ color: MISSED }} />}
+                        {missed && <X size={10} strokeWidth={3} className="absolute right-1 top-1" style={{ color: MISSED }} />}
                       </div>
                     </div>
 
@@ -381,26 +350,6 @@ export function WeekView({
               })}
             </div>
           </div>
-
-        {/* Always-visible legend - auto-explicit pastilles instead of a hidden toggle */}
-        <div className="mt-2.5 flex flex-wrap items-center gap-2.5 border-t border-foreground/[0.06] pt-2 text-micro text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <Check size={10} strokeWidth={2.5} style={{ color: 'var(--accent)' }} />
-            {t.calendar.legend.completed}
-          </span>
-          <span className="flex items-center gap-1">
-            <X size={10} strokeWidth={2.5} style={{ color: MISSED }} />
-            {t.calendar.legend.missed}
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full border" style={{ borderColor: FG_18 }} />
-            {t.calendar.planned}
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="text-foreground/30">-</span>
-            {t.calendar.restDay}
-          </span>
-        </div>
       </GlassSurface>
 
       {/* Selected day panel */}

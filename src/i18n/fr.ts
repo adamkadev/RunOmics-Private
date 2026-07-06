@@ -959,19 +959,12 @@ export const fr = {
     nextWeek: (n: number) => `Semaine prochaine - ${n} prévue${n > 1 ? 's' : ''}`,
     viewDetail: 'Voir le détail',
     type: 'Type',
-    legend: {
-      toggleLabel: 'Légende des statuts',
-      completed: 'Réalisée',
-      missed: 'Manquée',
-    },
     weekSummary: {
       load: 'Charge',
       vsTypical: (percent: number) => `${percent - 100 >= 0 ? '+' : ''}${percent - 100}% vs type`,
       easyHard: 'Facile / Dur',
       elevation: 'D+',
       keySessions: 'Séances clés',
-      trend: 'Tendance de charge',
-      trendSummary: (weeks: number) => `Charge d’entraînement (TRIMP) hebdomadaire sur les ${weeks} dernières semaines`,
     },
   },
 
