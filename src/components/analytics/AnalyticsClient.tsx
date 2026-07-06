@@ -18,6 +18,7 @@ import { formatDurationShort } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartCardSkeleton } from '@/components/ui/Skeleton'
 import { STATUS } from '@/lib/statusColors'
+import { useSwipeNavigation } from '@/lib/useSwipeNavigation'
 import { t } from '@/i18n'
 
 import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
@@ -184,6 +185,18 @@ export function AnalyticsClient({
   const visibleTabs = isPeriod || isAll ? TABS.filter((tb) => tb.id !== 'seasons') : TABS
   const displayYear = view.kind === 'year' ? view.year : (years[0] ?? null)
 
+  function goPrevTab() {
+    const idx = visibleTabs.findIndex((tb) => tb.id === tab)
+    if (idx > 0) selectTab(visibleTabs[idx - 1].id)
+  }
+
+  function goNextTab() {
+    const idx = visibleTabs.findIndex((tb) => tb.id === tab)
+    if (idx >= 0 && idx < visibleTabs.length - 1) selectTab(visibleTabs[idx + 1].id)
+  }
+
+  const { onTouchStart, onTouchEnd } = useSwipeNavigation(goPrevTab, goNextTab)
+
   const metrics: Metric[] = totals
     ? [
         {
@@ -312,38 +325,40 @@ export function AnalyticsClient({
             ))}
           </GlassSurface>
 
-          {tab === 'volume' && <VolumeTab series={active} />}
+          <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+            {tab === 'volume' && <VolumeTab series={active} />}
 
-          {tab === 'performance' && (
-            <PerformanceTab
-              series={active}
-              temperatureScatter={data.temperatureScatter}
-              rpeLoadCorrelation={data.rpeLoadCorrelation}
-            />
-          )}
+            {tab === 'performance' && (
+              <PerformanceTab
+                series={active}
+                temperatureScatter={data.temperatureScatter}
+                rpeLoadCorrelation={data.rpeLoadCorrelation}
+              />
+            )}
 
-          {tab === 'physiology' && (
-            <PhysiologyTab
-              series={active}
-              trainingLoad={trainingLoad}
-              loadRisk={loadRisk}
-              vo2maxHistory={vo2maxHistory}
-              zones={zones}
-              efficiencyDaily={data.efficiencyDaily}
-              runningDynamicsDaily={data.runningDynamicsDaily}
-              isAll={isAll}
-            />
-          )}
+            {tab === 'physiology' && (
+              <PhysiologyTab
+                series={active}
+                trainingLoad={trainingLoad}
+                loadRisk={loadRisk}
+                vo2maxHistory={vo2maxHistory}
+                zones={zones}
+                efficiencyDaily={data.efficiencyDaily}
+                runningDynamicsDaily={data.runningDynamicsDaily}
+                isAll={isAll}
+              />
+            )}
 
-          {tab === 'seasons' && view.kind === 'year' && (
-            <SeasonsTab
-              year={view.year}
-              years={years}
-              byYear={byYear}
-              series={active}
-              comparison={comparison}
-            />
-          )}
+            {tab === 'seasons' && view.kind === 'year' && (
+              <SeasonsTab
+                year={view.year}
+                years={years}
+                byYear={byYear}
+                series={active}
+                comparison={comparison}
+              />
+            )}
+          </div>
         </>
       )}
     </div>
