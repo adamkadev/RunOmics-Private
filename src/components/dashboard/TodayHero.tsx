@@ -35,6 +35,15 @@ function formatSyncedAgo(lastSyncedAt: string): string {
   return s.synced(relative)
 }
 
+function HeroMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-[10px] uppercase tracking-wide text-white/50">{label}</div>
+      <div className="mt-0.5 text-sm font-semibold tabular-nums">{value}</div>
+    </div>
+  )
+}
+
 // Pure display aggregation of already-computed dashboard data - never a training recommendation.
 export function TodayHero({ status, plannedWorkout, nextRace, lastSyncedAt }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -50,8 +59,8 @@ export function TodayHero({ status, plannedWorkout, nextRace, lastSyncedAt }: Pr
 
   return (
     <div
-      className="rounded-card border border-white/[0.06] p-5 text-white shadow-[0_10px_26px_-6px_rgba(13,46,26,0.4)]"
-      style={{ background: 'linear-gradient(150deg,#0d2e1a,#14532d 70%,#166534)' }}
+      className="rounded-card border border-white/[0.06] p-5 text-white shadow-[0_10px_26px_-6px_rgba(0,0,0,0.35)]"
+      style={{ background: 'var(--hero-gradient)' }}
     >
       <div className="mb-3.5 flex items-center justify-between gap-2">
         <span className="rounded-full bg-emerald-400/[0.18] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-300">
@@ -63,14 +72,21 @@ export function TodayHero({ status, plannedWorkout, nextRace, lastSyncedAt }: Pr
       </div>
 
       {status && (
-        <div className="mb-1 flex items-end gap-2">
-          <span className={cn('text-title1 font-extrabold leading-none tabular-nums', formValueClass)}>
-            {formValue}
-          </span>
-          <span className="pb-0.5 text-[13px] text-white/70">
-            {t.trainingStatus.status[status.status]}
-          </span>
-        </div>
+        <>
+          <div className="mb-1 flex items-end gap-2">
+            <span className={cn('text-title1 font-extrabold leading-none tabular-nums', formValueClass)}>
+              {formValue}
+            </span>
+            <span className="pb-0.5 text-[13px] text-white/70">
+              {t.trainingStatus.status[status.status]}
+            </span>
+          </div>
+          <div className="mt-3.5 grid grid-cols-3 gap-3">
+            <HeroMetric label={t.trainingStatus.metrics.fitness} value={String(Math.round(status.ctl))} />
+            <HeroMetric label={t.trainingStatus.metrics.fatigue} value={String(Math.round(status.atl))} />
+            <HeroMetric label={s.load} value={t.trainingStatus.loadTrend[status.loadTrend]} />
+          </div>
+        </>
       )}
 
       {(plannedWorkout || nextRace) && (

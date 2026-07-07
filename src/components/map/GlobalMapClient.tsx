@@ -12,6 +12,7 @@ import { YearPicker } from "./YearPicker";
 import { TypePicker } from "./TypePicker";
 import { HeatLegend } from "./HeatLegend";
 import { RouteInfoCard } from "./RouteInfoCard";
+import { buildPersonalSegment } from "./personalSegment";
 import { useMapRoutes } from "./useMapRoutes";
 import { coordLabel, matchesFilters, type HeatFilters } from "./mapUtils";
 
@@ -162,6 +163,14 @@ export function GlobalMapClient({ data }: Props) {
 
   const selectedMeta = effectiveRouteIdx != null ? routeMeta[effectiveRouteIdx] : undefined;
 
+  const selectedSegment = useMemo(
+    () =>
+      effectiveRouteIdx != null
+        ? buildPersonalSegment(effectiveRouteIdx, visibleIndices, routes, routeMeta)
+        : null,
+    [effectiveRouteIdx, visibleIndices, routes, routeMeta],
+  );
+
   return (
     <div className={isFullscreen ? "fixed inset-0 z-50 bg-background" : "relative h-full w-full"}>
       <div ref={containerRef} role="img" aria-label={t.pages.map.title} className="h-full w-full" />
@@ -208,6 +217,7 @@ export function GlobalMapClient({ data }: Props) {
       ) : selectedMeta ? (
         <RouteInfoCard
           meta={selectedMeta}
+          segment={selectedSegment}
           onClose={() => setSelectedRouteIdx(null)}
           isFullscreen={isFullscreen}
         />

@@ -135,6 +135,7 @@
   --ro-text-3:    #7c8a82;
 
   --canvas:            linear-gradient(155deg, #f5f9f7 0%, #eef3f0 100%);
+  --hero-gradient:     linear-gradient(150deg, #0d2e1a, #14532d 70%, #166534);
   --aurora-1:          #a7f3d6;
   --aurora-2:          #bcd6ff;
   --aurora-1-opacity:  0.65;
@@ -178,6 +179,7 @@
   --ro-text-3:    rgba(255, 255, 255, 0.5);
 
   --canvas:            linear-gradient(155deg, #0a1512 0%, #070f0c 100%);
+  --hero-gradient:     linear-gradient(150deg, #082113, #0f3d22 70%, #14532d);
   --aurora-1:          #0e9f6e;
   --aurora-2:          #1276b8;
   --aurora-1-opacity:  0.5;
@@ -203,6 +205,7 @@
   --accent-text:       #2563eb;
   --ring:              rgb(59 130 246 / 0.35);
 
+  --hero-gradient:     linear-gradient(150deg, #0c1f3f, #1e3a8a 70%, #1d4ed8);
   --aurora-1:          #93c5fd;  /* blue-300  */
   --aurora-2:          #bae6fd;  /* sky-200   */
 
@@ -217,6 +220,7 @@
   --accent-text:       #60a5fa;
   --ring:              rgb(96 165 250 / 0.7);
 
+  --hero-gradient:     linear-gradient(150deg, #081733, #14295e 70%, #1e40af);
   --aurora-1:          #1d4ed8;  /* blue-700  */
   --aurora-2:          #0284c7;  /* sky-600   */
 
@@ -232,6 +236,7 @@
   --ring:              rgb(244 63 94 / 0.35);
   --destructive:       #dc2626;
 
+  --hero-gradient:     linear-gradient(150deg, #3b0716, #881337 70%, #be123c);
   --aurora-1:          #fda4af;  /* rose-300  */
   --aurora-2:          #fbcfe8;  /* pink-200  */
 
@@ -247,6 +252,7 @@
   --ring:              rgb(251 113 133 / 0.7);
   --destructive:       #fca5a5;
 
+  --hero-gradient:     linear-gradient(150deg, #2c0511, #6e0f2c 70%, #9f1239);
   --aurora-1:          #be185d;  /* pink-700  */
   --aurora-2:          #9d174d;  /* rose-800  */
 
@@ -262,6 +268,7 @@
   --ring:              rgb(249 115 22 / 0.35);
   --destructive:       #ef4444;
 
+  --hero-gradient:     linear-gradient(150deg, #431407, #7c2d12 70%, #c2410c);
   --aurora-1:          #fdba74;  /* orange-300 */
   --aurora-2:          #fde68a;  /* amber-200  */
 
@@ -277,6 +284,7 @@
   --ring:              rgb(251 146 60 / 0.7);
   --destructive:       #fca5a5;
 
+  --hero-gradient:     linear-gradient(150deg, #331005, #61230e 70%, #9a3412);
   --aurora-1:          #c2410c;  /* orange-700 */
   --aurora-2:          #b45309;  /* amber-700  */
 
@@ -291,6 +299,7 @@
   --accent-text:       #7c3aed;
   --ring:              rgb(139 92 246 / 0.35);
 
+  --hero-gradient:     linear-gradient(150deg, #1e1038, #4c1d95 70%, #6d28d9);
   --aurora-1:          #c4b5fd;  /* violet-300 */
   --aurora-2:          #e9d5ff;  /* purple-200 */
 
@@ -305,6 +314,7 @@
   --accent-text:       #a78bfa;
   --ring:              rgb(167 139 250 / 0.7);
 
+  --hero-gradient:     linear-gradient(150deg, #170c2b, #38157a 70%, #5b21b6);
   --aurora-1:          #6d28d9;  /* violet-700 */
   --aurora-2:          #7e22ce;  /* purple-800 */
 
@@ -319,6 +329,7 @@
   --accent-text:       #475569;
   --ring:              rgb(100 116 139 / 0.35);
 
+  --hero-gradient:     linear-gradient(150deg, #0f172a, #1e293b 70%, #334155);
   --aurora-1:          #cbd5e1;
   --aurora-2:          #e2e8f0;
 
@@ -333,6 +344,7 @@
   --accent-text:       #cbd5e1;
   --ring:              rgb(203 213 225 / 0.5);
 
+  --hero-gradient:     linear-gradient(150deg, #0b111e, #16202f 70%, #273549);
   --aurora-1:          #334155;
   --aurora-2:          #1e293b;
   --aurora-1-opacity:  0.6;

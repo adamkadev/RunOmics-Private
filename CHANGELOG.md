@@ -2,6 +2,39 @@
 
 All notable changes to this project are documented in this file.
 
+## [3.1.0] - 2026-07-07
+
+Closes the two "out of scope" chantiers of the v4 audit (B2 similar runs, C2
+personal segments) and finishes the dashboard engagement pass.
+
+### Added
+
+- **Similar runs** (audit B2): the activity page now detects other outings on
+  the same route (grid-cell overlap on the heatmap's ~30m binning, with a
+  distance guard so two laps of a loop don't match one) and, from 3 matched
+  passes, shows a card with a pace-progression chart, this run's rank, and a
+  podium of your times.
+- **Personal segments** (audit C2): tapping a trace on the heatmap that you
+  have run 3+ times grows the route card into a personal segment - pass count,
+  record pace, 90-day trend, and a podium of your own times linking to each
+  activity. Same matching engine as similar runs (`lib/routeMatch`).
+
+### Changed
+
+- **TodayHero follows the theme**: the hero (and the celebration overlay and
+  greeting avatar) now derive their gradient from a per-accent, light/dark
+  `--hero-gradient` token instead of a hard-coded green - so a blue/rose/violet
+  accent no longer gets a clashing green hero.
+- **Dashboard deduplicated**: the TrainingStatusBanner is gone (its form
+  verdict duplicated TodayHero's); fitness, fatigue and load-trend now live as
+  three key metrics inside the hero. The race pill left the highlights row
+  (the countdown is already in TodayHero and RaceCockpit), which now only
+  carries shoe-wear alerts. Weekly digest and consistency card share one row.
+
+### Fixed
+
+- Vitest no longer picks up the Playwright screenshots spec.
+
 ## [3.0.0] - 2026-07-07
 
 A deliberate version reset marking the UI/UX audit v4 release - not a downgrade

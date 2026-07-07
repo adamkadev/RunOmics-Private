@@ -293,7 +293,6 @@ export function AnalyticsClient({
         />
       </GlassSurface>
 
-      {/* Stats */}
       {metrics.length > 0 && (
         <GlassSurface variant="card">
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-b border-foreground/[0.08] px-5 py-3.5">
@@ -328,7 +327,6 @@ export function AnalyticsClient({
         </GlassSurface>
       )}
 
-      {/* Tabs */}
       {active && (
         <>
           <GlassSurface

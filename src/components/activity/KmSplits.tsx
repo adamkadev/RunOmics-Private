@@ -64,7 +64,6 @@ export function KmSplits({ activity }: Props) {
       </div>
 
       <div className="w-full space-y-0.5">
-        {/* Header */}
         <div className={`${rowCls} pb-1.5 text-micro font-semibold uppercase tracking-wide text-subtle`}>
           <span>{t.activity.splits.cols.step}</span>
           <span>{t.activity.splits.cols.type}</span>
@@ -134,7 +133,6 @@ export function KmSplits({ activity }: Props) {
           })
         })()}
 
-        {/* Summary */}
         <div className={`${rowCls} border-t border-border px-1 pb-1 pt-2.5`}>
           <span className="text-sm text-subtle">--</span>
           <span className="text-sm font-semibold text-foreground/70">{t.activity.splits.cols.total}</span>

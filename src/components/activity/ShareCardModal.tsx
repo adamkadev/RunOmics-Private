@@ -146,7 +146,6 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Drag handle */}
         <div className="flex shrink-0 justify-center pt-3 pb-1 sm:hidden" {...handleProps}>
           <span
             className="rounded-full"
@@ -170,10 +169,8 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
           <X size={17} strokeWidth={2.5} />
         </button>
 
-        {/* Scrollable body */}
         <div className="min-h-0 flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 
-          {/* Live preview */}
           <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0 16px' }}>
             <div style={{
               borderRadius: 18, overflow: 'hidden', width: 176, height: 380,

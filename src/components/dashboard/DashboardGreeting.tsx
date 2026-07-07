@@ -25,7 +25,7 @@ export function DashboardGreeting() {
         <h1 className="text-display text-foreground">{text}, {name}</h1>
         <p className="mt-0.5 text-sm capitalize text-muted-foreground">{subtitle}</p>
       </div>
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#0d2e1a] text-sm font-bold text-emerald-400">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-bold text-accent-foreground">
         {initials(name)}
       </div>
     </div>

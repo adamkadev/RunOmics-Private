@@ -14,7 +14,6 @@ function CardSkeleton() {
 export default function RecordsLoading() {
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="space-y-2">
         <Skeleton className="h-8 w-32" />
         <Skeleton className="h-4 w-56" />

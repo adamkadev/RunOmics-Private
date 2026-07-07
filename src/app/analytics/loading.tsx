@@ -3,7 +3,6 @@ import { ChartCardSkeleton, StatCardSkeleton, Skeleton } from '@/components/ui/S
 export default function AnalyticsLoading() {
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="space-y-2">
           <Skeleton className="h-8 w-32" />

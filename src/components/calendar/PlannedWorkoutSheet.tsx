@@ -42,13 +42,11 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
       role="dialog"
       aria-modal="true"
     >
-      {/* Scrim */}
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
         onClick={close}
       />
 
-      {/* Sheet */}
       <div
         ref={trapRef}
         className="relative w-full animate-sheet-up sm:max-w-sm sm:rounded-card-sm"
@@ -72,7 +70,6 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
         </div>
 
         <div className="px-5 pt-3" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 40px)' }}>
-          {/* Header */}
           <div className="mb-4 flex items-start gap-3">
             <span
               className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
@@ -120,7 +117,6 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
             </div>
           )}
 
-          {/* Label */}
           <p className="text-caption font-semibold uppercase tracking-wide text-white/30">
             {t.calendar.planned}
           </p>

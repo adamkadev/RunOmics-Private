@@ -10,7 +10,6 @@
 
 import type { ActivityType } from '@/domain/activity/types'
 import type { RankTier } from '@/domain/athlete/rank'
-import type { TrainingStatusType } from '@/application/usecases/GetTrainingStatus'
 import type { Strings } from './index'
 
 export const fr = {
@@ -121,6 +120,14 @@ export const fr = {
       passes: (n: number) => `${n} passages`,
       noRoutes: 'Aucun parcours pour ce filtre',
       closeCard: 'Fermer',
+      segment: {
+        badge: 'Segment perso',
+        passesLabel: 'passages',
+        recordLabel: 'record /km',
+        trendLabel: 'tendance 90 j',
+        leaderboard: 'Ton classement',
+        openRun: (date: string) => `Ouvrir la sortie du ${date}`,
+      },
     },
     shoes: {
       title: 'Chaussures',
@@ -324,6 +331,7 @@ export const fr = {
       eyebrow: 'Aujourd’hui',
       plannedSession: 'Séance planifiée',
       race: 'Course',
+      load: 'Charge',
       daysToRace: (days: number) => `J-${days}`,
     },
     weeklyStreak: {
@@ -366,19 +374,6 @@ export const fr = {
     metrics: {
       fitness: 'Condition',
       fatigue: 'Fatigue',
-      form: 'Forme',
-      fitnessTooltip: 'Charge chronique (moy. 42 j). Votre base aérobie.',
-      fatigueTooltip: 'Charge aiguë (moy. 7 j). Fatigue récente.',
-      formTooltip: 'Forme = Condition - Fatigue. Positif = jambes fraîches.',
-      tsbHint: (tsb: number, status: TrainingStatusType): string => {
-        const undertrained = status === 'recovery' || status === 'detraining'
-        if (tsb >= 15) return undertrained ? 'Frais · sous-charge\nReprends du volume' : 'Pic de forme\nprêt à courir'
-        if (tsb >= 5)  return undertrained ? 'Frais · semaine légère\nReprends progressivement' : 'Jambes fraîches\nplace à l’intensité'
-        if (tsb >= 0)  return 'Équilibré\nfenêtre optimale'
-        if (tsb >= -10) return 'Légère fatigue\nrécupération possible'
-        if (tsb >= -20) return 'Fatigue élevée\nlevez le pied'
-        return 'Surcharge\nrepos nécessaire'
-      },
     },
   },
 
@@ -673,6 +668,18 @@ export const fr = {
     },
     achievements: {
       title: 'Exploits de cette sortie',
+    },
+    similarRuns: {
+      title: 'Sorties similaires',
+      timesBadge: (n: number) => `${n} fois`,
+      summary: (n: number, rank: number) =>
+        `Tu as couru ce parcours ${n} fois. Cette sortie : ${rank === 1 ? 'ta meilleure allure' : `ta ${rank}ᵉ meilleure allure`}.`,
+      thisRun: 'Cette sortie',
+      record: 'record',
+      recordLine: (pace: string) => `record ${pace}/km`,
+      paceDelta: (seconds: number) => `+${seconds} s/km`,
+      chartSummary: (n: number, best: string) =>
+        `Allure sur tes ${n} passages de ce parcours ; record ${best}/km.`,
     },
     notes: {
       title: 'Notes',

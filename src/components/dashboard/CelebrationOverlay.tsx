@@ -58,7 +58,7 @@ export function CelebrationOverlay({ record }: { record: RecordEntry | null }) {
       <div
         ref={trapRef}
         className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden px-6 text-center text-white"
-        style={{ background: 'linear-gradient(160deg,#0d2e1a,#052e16)' }}
+        style={{ background: 'var(--hero-gradient)' }}
       >
         {CONFETTI.map((c, i) => (
           <span
