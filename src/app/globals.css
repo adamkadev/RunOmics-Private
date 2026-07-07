@@ -36,13 +36,17 @@
   --animate-cal-backward:    cal-slide-backward 0.22s ease-out both;
 }
 
+/* margin-left (not transform): see the fade-up comment below - the activity
+   detail page (the forward/backward target here) hosts the map's `fixed
+   inset-0` fullscreen overlay, so this pair needs the same non-transform
+   workaround. */
 @keyframes cal-slide-forward {
-  from { opacity: 0; transform: translateX(28px); }
-  to   { opacity: 1; transform: none;             }
+  from { opacity: 0; margin-left: 28px; }
+  to   { opacity: 1; margin-left: 0;    }
 }
 @keyframes cal-slide-backward {
-  from { opacity: 0; transform: translateX(-28px); }
-  to   { opacity: 1; transform: none;              }
+  from { opacity: 0; margin-left: -28px; }
+  to   { opacity: 1; margin-left: 0;     }
 }
 
 /* margin-top (not transform): PageTransition wraps every page, including

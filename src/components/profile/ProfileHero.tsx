@@ -9,6 +9,7 @@ import { RankExplainPanel } from '@/components/ui/RankExplainPanel'
 import type { ProfileHero as ProfileHeroData } from '@/application/usecases/GetProfileData'
 import type { RankTier } from '@/domain/athlete/rank'
 import { cn } from '@/lib/utils'
+import { initials } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 // Gradient + glow scale up with the tier so S-rank actually feels earned.
@@ -18,14 +19,6 @@ const RANK_BADGE_CLASS: Record<RankTier, string> = {
   B: 'bg-gradient-to-br from-sky-300 via-sky-400 to-sky-600 text-sky-950 ring-sky-100/60 shadow-sm',
   C: 'bg-gradient-to-br from-zinc-300 via-zinc-400 to-zinc-500 text-zinc-900 ring-white/40 shadow-sm',
   D: 'bg-gradient-to-br from-zinc-200 via-zinc-300 to-zinc-400 text-zinc-700 ring-white/40 shadow-sm',
-}
-
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean)
-  const [first, second] = parts
-  if (!first) return ''
-  if (!second) return first.slice(0, 2).toUpperCase()
-  return ((first[0] ?? '') + (second[0] ?? '')).toUpperCase()
 }
 
 function monthYear(isoDate: string): string {
