@@ -122,10 +122,7 @@ export const en = {
       intensity: 'Intensity',
       less: 'Rare',
       more: 'Frequent',
-      passesOne: '1 pass',
-      passes: (n: number) => `${n} passes`,
       noRoutes: 'No routes for this filter',
-      closeCard: 'Close',
     },
     shoes: {
       title: 'Shoes',
@@ -237,7 +234,7 @@ export const en = {
       types: {
         training: {
           title: 'Training reminders',
-          subtitle: 'Weekly check-in on your distance goal.',
+          subtitle: 'Daily session at 10am, plus a weekly check-in on your distance goal.',
         },
         shoes: {
           title: 'Shoe wear alerts',

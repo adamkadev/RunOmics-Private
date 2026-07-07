@@ -21,27 +21,6 @@ export function coordLabel(c: RouteCluster): string {
   return `${lat} ${lon}`;
 }
 
-// Per-route lines, keyed by their route index. Used for the transparent hit-test
-// layer that powers tap-to-inspect (feature.id maps back to the route/meta).
-export function buildGeoJSON(
-  routes: [number, number][][],
-  indices: number[],
-): GeoJSON.FeatureCollection {
-  return {
-    type: "FeatureCollection",
-    features: indices.flatMap((i) => {
-      const coordinates = routes[i];
-      if (!coordinates) return [];
-      return [{
-        type: "Feature" as const,
-        id: i,
-        properties: {},
-        geometry: { type: "LineString" as const, coordinates },
-      }];
-    }),
-  };
-}
-
 // Binning only - never moves a coordinate. Shared with route matching (similar
 // runs, personal segments) so "same street" means the same thing everywhere.
 export const HEAT_GRID = ROUTE_GRID;
