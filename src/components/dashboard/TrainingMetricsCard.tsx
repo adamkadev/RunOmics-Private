@@ -60,18 +60,24 @@ export function TrainingMetricsCard({ status, vo2max, vo2maxTrend }: Props) {
   const fitnessTrend = status.ctlDelta > 1 ? 'up' : status.ctlDelta < -1 ? 'down' : 'stable'
 
   return (
-    <GlassSurface variant="card" className="grid grid-cols-3 gap-3 p-5">
-      <Metric
-        label={t.dashboard.vo2maxChart.title}
-        value={vo2max !== null ? vo2max.toFixed(1) : '–'}
-        trailing={<TrendIcon direction={vo2maxTrend} />}
-      />
-      <Metric label={s.load} value={charge ? charge.label : '–'} valueClassName={charge?.className} />
-      <Metric
-        label={t.trainingStatus.metrics.fitness}
-        value={String(Math.round(status.ctl))}
-        trailing={<TrendIcon direction={fitnessTrend} />}
-      />
-    </GlassSurface>
+    <div className="grid grid-cols-3 gap-3">
+      <GlassSurface variant="card" className="p-4">
+        <Metric
+          label={t.dashboard.vo2maxChart.title}
+          value={vo2max !== null ? vo2max.toFixed(1) : '–'}
+          trailing={<TrendIcon direction={vo2maxTrend} />}
+        />
+      </GlassSurface>
+      <GlassSurface variant="card" className="p-4">
+        <Metric label={s.load} value={charge ? charge.label : '–'} valueClassName={charge?.className} />
+      </GlassSurface>
+      <GlassSurface variant="card" className="p-4">
+        <Metric
+          label={t.trainingStatus.metrics.fitness}
+          value={String(Math.round(status.ctl))}
+          trailing={<TrendIcon direction={fitnessTrend} />}
+        />
+      </GlassSurface>
+    </div>
   )
 }
