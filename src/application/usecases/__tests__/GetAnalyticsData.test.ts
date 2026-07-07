@@ -7,7 +7,6 @@ import {
   zoneDistribution,
   distanceDistribution,
   computeTotals,
-  buildWeeklyHistory,
 } from '../GetAnalyticsData'
 import type { Activity, HrZone } from '@/domain/activity/types'
 
@@ -168,31 +167,5 @@ describe('computeTotals', () => {
   it('clamps elapsedDays to a minimum of 1 to avoid division by zero', () => {
     const totals = computeTotals([act({ distanceKm: 2 })], 0)
     expect(totals.avgKmPerWeek).toBe(14)
-  })
-})
-
-// ---------- buildWeeklyHistory ----------
-
-describe('buildWeeklyHistory', () => {
-  const now = new Date('2026-07-06T12:00:00') // a Monday
-
-  it('empty with no activities', () => {
-    expect(buildWeeklyHistory([], now)).toEqual([])
-  })
-
-  it('a single activity in the current week produces one entry, current week last', () => {
-    const history = buildWeeklyHistory([act({ date: '2026-07-06' })], now)
-    expect(history).toHaveLength(1)
-    expect(history[0]?.weekStart).toBe('2026-07-06')
-    expect(history[0]?.period.totals.sessionCount).toBe(1)
-  })
-
-  it('spans every week from the earliest activity through the current one, oldest first', () => {
-    const acts = [act({ date: '2026-06-15' }), act({ date: '2026-07-06' })] // 3 weeks apart
-    const history = buildWeeklyHistory(acts, now)
-    expect(history.map((h) => h.weekStart)).toEqual(['2026-06-15', '2026-06-22', '2026-06-29', '2026-07-06'])
-    expect(history[0]?.period.totals.sessionCount).toBe(1)
-    expect(history[1]?.period.totals.sessionCount).toBe(0)
-    expect(history[3]?.period.totals.sessionCount).toBe(1)
   })
 })

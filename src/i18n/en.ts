@@ -400,11 +400,6 @@ export const en = {
       sessionsPct: (p: number) => `${p >= 0 ? '+' : ''}${p}% runs`,
       paceFaster: (s: number) => `easy pace -${s}s/km`,
       paceSlower: (s: number) => `easy pace +${s}s/km`,
-      lastWeek: 'Last week',
-      weekOf: (date: string) => `Week of ${date}`,
-      prevWeek: 'Previous week',
-      nextWeek: 'Next week',
-      jumpToCurrentWeek: 'This week',
     },
     tabs: {
       volume: 'Volume',
