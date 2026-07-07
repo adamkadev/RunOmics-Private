@@ -2,8 +2,8 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, fireEvent, waitFor } from '@testing-library/react'
 import { usePullToRefresh } from '../usePullToRefresh'
 
-function Harness({ onRefresh }: { onRefresh: () => void }) {
-  const { containerRef, pullPx, refreshing } = usePullToRefresh(onRefresh)
+function Harness({ onRefresh, enabled = true }: { onRefresh: () => void; enabled?: boolean }) {
+  const { containerRef, pullPx, refreshing } = usePullToRefresh(onRefresh, enabled)
   return (
     <div ref={containerRef} data-testid="container">
       <span data-testid="pull">{pullPx}</span>
@@ -60,5 +60,18 @@ describe('usePullToRefresh', () => {
     fireEvent.touchEnd(el)
 
     expect(onRefresh).not.toHaveBeenCalled()
+  })
+
+  it('does nothing when disabled', () => {
+    const onRefresh = vi.fn()
+    const { getByTestId } = render(<Harness onRefresh={onRefresh} enabled={false} />)
+    const el = getByTestId('container')
+
+    fireEvent.touchStart(el, touch(0))
+    fireEvent.touchMove(el, touch(200))
+    fireEvent.touchEnd(el)
+
+    expect(onRefresh).not.toHaveBeenCalled()
+    expect(Number(getByTestId('pull').textContent)).toBe(0)
   })
 })
