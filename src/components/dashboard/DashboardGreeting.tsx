@@ -1,16 +1,8 @@
 'use client'
 
 import { ATHLETE_NAME } from '@/domain/athlete/constants'
+import { initials } from '@/lib/formatters'
 import { t } from '@/i18n'
-
-function initials(name: string): string {
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? '')
-    .join('')
-}
 
 export function DashboardGreeting() {
   const now = new Date()

@@ -1,5 +1,10 @@
 import { t } from '@/i18n'
 
+// Single letter avatar badge, matching the Dashboard greeting's style.
+export function initials(name: string): string {
+  return name.trim().charAt(0).toUpperCase()
+}
+
 export function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
