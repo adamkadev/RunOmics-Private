@@ -4,6 +4,7 @@ import type { Activity, ActivityType, PlannedWorkout } from '@/domain/activity/t
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getAthleteFromFirestore } from '@/infrastructure/repositories/FirestoreConfigRepository'
 import { trimp, type HrBounds } from './GetTrainingLoad'
+import { isoDate } from '@/lib/calendarDate'
 import { round } from '@/lib/math'
 
 // Flat duration assumed for a planned workout that has neither a duration nor
@@ -101,4 +102,11 @@ export async function getPlannedWorkouts(): Promise<PlannedWorkout[]> {
 
   const { byType, overall } = buildTypeLoadStats(activities, hrBounds)
   return planned.map((w) => estimatePlannedLoad(w, byType, overall))
+}
+
+/** Today's planned workout, if Garmin has one scheduled. */
+export async function getTodayPlannedWorkout(): Promise<PlannedWorkout | null> {
+  const planned = await getPlannedWorkouts()
+  const today = isoDate(new Date())
+  return planned.find((w) => w.date === today) ?? null
 }

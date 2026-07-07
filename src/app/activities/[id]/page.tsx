@@ -6,7 +6,6 @@ import { getRecords, getQualifiedEffortsByActivityId } from '@/application/useca
 import { getAthleteFromFirestore } from '@/infrastructure/repositories/FirestoreConfigRepository'
 import type { HrBounds } from '@/domain/training/trimp'
 import { ActivityTypeTag } from '@/components/activities/ActivityTypeTag'
-import { PrBadge } from '@/components/activities/PrBadge'
 import { ShoePairTag } from '@/components/activities/ShoePairTag'
 import { TrainingEffect } from '@/components/activity/TrainingEffect'
 import { RunningDynamics } from '@/components/activity/RunningDynamics'
@@ -14,6 +13,7 @@ import { ActivityDetailClient } from '@/components/activity/ActivityDetailClient
 import { ActivityNav } from '@/components/activity/ActivityNav'
 import { ShareButton } from '@/components/activity/ShareButton'
 import { ActivityNotes } from '@/components/activity/ActivityNotes'
+import { ActivityAchievements } from '@/components/activity/ActivityAchievements'
 import { BestEfforts } from '@/components/activity/BestEfforts'
 import { KmSplits } from '@/components/activity/KmSplits'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
@@ -78,7 +78,6 @@ export default async function ActivityDetailPage({
       <div>
         <div className="mb-2 flex flex-nowrap items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <ActivityTypeTag type={activity.type} />
-          <PrBadge efforts={qualifiedEfforts} />
           <ShoePairTag gearId={activity.gearId} />
         </div>
         <h1 className="text-display text-foreground">
@@ -95,6 +94,10 @@ export default async function ActivityDetailPage({
           <p className="mt-1 text-sm text-muted-foreground">{activity.comment}</p>
         )}
       </div>
+
+      {activity.bestEfforts && (
+        <ActivityAchievements bestEfforts={activity.bestEfforts} qualifiedEfforts={qualifiedEfforts} />
+      )}
 
       <ActivityDetailClient activity={activity} hrBounds={hrBounds} />
 

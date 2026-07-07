@@ -42,7 +42,8 @@ export function ClusterPanel({ clusters, names, stats, selectedIdx, onSelect }: 
     <div ref={ref} className="relative min-w-0">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="glass-map-chip flex max-w-full items-center gap-2 px-3 py-2.5 transition-colors hover:bg-muted"
+        title={names[selectedIdx]}
+        className="glass-map-chip flex min-w-[7rem] max-w-full items-center gap-2 px-3 py-2.5 transition-colors hover:bg-muted"
       >
         <span className="truncate text-xs font-semibold text-accent-text">{names[selectedIdx]}</span>
         <span className="shrink-0 text-caption text-subtle">

@@ -1,5 +1,5 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
-import { isoWeekNumber } from '@/lib/calendarDate'
+import { addDays, isoDate, isoWeekNumber, startOfWeek } from '@/lib/calendarDate'
 import { round } from '@/lib/math'
 import type {
   Activity,
@@ -92,6 +92,13 @@ export function computeStreaks(activities: Activity[]): { current: number; longe
   }
 
   return { current, longest }
+}
+
+/** Whether each day (Mon..Sun) of the week containing `now` has an activity. */
+export function computeWeekActivityDays(activities: Activity[], now: Date): boolean[] {
+  const dateSet = new Set(activities.map((a) => a.date.slice(0, 10)))
+  const monday = startOfWeek(now)
+  return Array.from({ length: 7 }, (_, i) => dateSet.has(isoDate(addDays(monday, i))))
 }
 
 export function getDashboardData(): DashboardData {

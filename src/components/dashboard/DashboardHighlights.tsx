@@ -4,10 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Pill } from '@/components/ui/Pill'
 import { cn } from '@/lib/utils'
-import { formatClock, formatDistance, formatDuration } from '@/lib/formatters'
 import { t } from '@/i18n'
-import type { RecordEntry } from '@/application/usecases/GetRecords'
-import type { PbAlert } from '@/application/usecases/GetPbAlerts'
 import type { ShoeStats } from '@/application/usecases/GetShoeStats'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 
@@ -20,10 +17,8 @@ interface Highlight {
 }
 
 const TINT = {
-  record:      { pill: 'border-[#f0a500]/35 bg-[#f0a500]/[0.14] text-[#f0a500]', dot: '#f0a500' },
-  improvement: { pill: 'border-[#a855f7]/35 bg-[#a855f7]/[0.14] text-[#a855f7]', dot: '#a855f7' },
-  wear:        { pill: 'border-red-500/35 bg-red-500/[0.14] text-red-500',        dot: '#ef4444' },
-  race:        { pill: 'border-[#3b82f6]/35 bg-[#3b82f6]/[0.14] text-[#3b82f6]', dot: '#3b82f6' },
+  wear: { pill: 'border-red-500/35 bg-red-500/[0.14] text-red-500',        dot: '#ef4444' },
+  race: { pill: 'border-[#3b82f6]/35 bg-[#3b82f6]/[0.14] text-[#3b82f6]', dot: '#3b82f6' },
 }
 
 function daysUntil(date: string): number {
@@ -34,38 +29,15 @@ function daysUntil(date: string): number {
 }
 
 interface Props {
-  record: RecordEntry | null
-  pbAlerts: PbAlert[]
   shoes: ShoeStats[]
   nextRace: UpcomingRace | null
 }
 
-export function DashboardHighlights({ record, pbAlerts, shoes, nextRace }: Props) {
+export function DashboardHighlights({ shoes, nextRace }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [canScrollRight, setCanScrollRight] = useState(false)
 
   const highlights: Highlight[] = []
-
-  if (record && record.seconds !== null && record.date !== null) {
-    const stat = record.distanceKm != null ? formatDistance(record.distanceKm) : formatDuration(record.seconds)
-    highlights.push({
-      key: 'record',
-      href: record.activityId ? `/activities/${record.activityId}` : '/records',
-      dotColor: TINT.record.dot,
-      tint: TINT.record.pill,
-      label: `${t.activity.bestEfforts.prBadge} · ${record.label} - ${stat}`,
-    })
-  }
-
-  for (const a of pbAlerts) {
-    highlights.push({
-      key: `pb-${a.key}`,
-      href: `/activities/${a.activityId}`,
-      dotColor: TINT.improvement.dot,
-      tint: TINT.improvement.pill,
-      label: `${a.label} - ${(formatClock(a.diffSeconds))}`,
-    })
-  }
 
   if (nextRace) {
     highlights.push({

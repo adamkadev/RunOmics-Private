@@ -1,6 +1,7 @@
 import type { Activity } from '@/domain/activity/types'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getRecords } from './GetRecords'
+import { computeWeekActivityDays } from './GetDashboardData'
 import { isoWeekNumber, startOfWeek, addDays, isoDate } from '@/lib/calendarDate'
 import { formatDuration } from '@/lib/formatters'
 import { t } from '@/i18n'
@@ -70,6 +71,41 @@ export function currentWeekStreak(activities: Activity[], now: Date): WeekStreak
 
   const streakStartWeek = addDays(cursor, 7)
   return { weeks, startDate: isoDate(startOfWeek(streakStartWeek)) }
+}
+
+/** Longest run of consecutive active weeks across all history, by ISO week-start date rather than the (non-contiguous across years) week number. */
+export function longestWeekStreak(activities: Activity[]): number {
+  const weekStarts = new Set(activities.map((a) => isoDate(startOfWeek(new Date(a.date + 'T00:00:00')))))
+  const sorted = Array.from(weekStarts).sort()
+
+  let longest = 0
+  let run = 0
+  let prev: string | null = null
+  for (const day of sorted) {
+    const diffDays = prev ? Math.round((new Date(day + 'T00:00:00').getTime() - new Date(prev + 'T00:00:00').getTime()) / 86_400_000) : null
+    run = diffDays === 7 ? run + 1 : 1
+    if (run > longest) longest = run
+    prev = day
+  }
+  return longest
+}
+
+export interface WeeklyStreakData {
+  currentWeeks: number
+  longestWeeks: number
+  weekDays: boolean[] // Mon..Sun
+}
+
+/** Null only when the athlete has no activity history at all. */
+export function getWeeklyStreakData(now = new Date()): WeeklyStreakData | null {
+  const activities = getAllActivities()
+  if (!activities.length) return null
+  const streak = currentWeekStreak(activities, now)
+  return {
+    currentWeeks: streak?.weeks ?? 0,
+    longestWeeks: longestWeekStreak(activities),
+    weekDays: computeWeekActivityDays(activities, now),
+  }
 }
 
 export async function getMilestones(): Promise<Milestone[]> {

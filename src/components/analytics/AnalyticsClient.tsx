@@ -14,9 +14,11 @@ import type { VO2maxPoint } from '@/application/usecases/GetVO2maxHistory'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { TrainingLoadData } from '@/application/usecases/GetTrainingLoad'
 import type { LoadRiskPanel as LoadRiskPanelData } from '@/application/usecases/GetLoadRiskPanel'
-import { formatDurationShort } from '@/lib/formatters'
+import { formatDateWithYear, formatDurationShort } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartCardSkeleton } from '@/components/ui/Skeleton'
+import { PeriodNav } from '@/components/ui/PeriodNav'
+import { InlineJumpButton } from '@/components/ui/InlineJumpButton'
 import { STATUS } from '@/lib/statusColors'
 import { useSwipeNavigation } from '@/lib/useSwipeNavigation'
 import { t } from '@/i18n'
@@ -127,10 +129,12 @@ export function AnalyticsClient({
   trainingLoad: TrainingLoadData | null
   loadRisk: LoadRiskPanelData | null
 }) {
-  const { years, byYear, periodWeeks, byPeriod } = data
+  const { years, byYear, periodWeeks, byPeriod, weeklyHistory } = data
+  const lastWeekIdx = weeklyHistory.length - 1
 
   const [view, setView] = useState<View>({ kind: 'year', year: years[0] ?? new Date().getFullYear() })
   const [tab, setTab] = useState<TabId>('volume')
+  const [weekIndex, setWeekIndex] = useState(lastWeekIdx)
 
   // Restore after mount, not in the initializer, to avoid a hydration mismatch.
   useEffect(() => {
@@ -152,25 +156,42 @@ export function AnalyticsClient({
 
   const isPeriod = view.kind === 'period'
   const isAll = view.kind === 'all'
+  const isSingleWeek = isPeriod && view.kind === 'period' && view.weeks === 1
+  const activeWeekEntry = isSingleWeek ? weeklyHistory[weekIndex] : undefined
 
   const active =
     view.kind === 'year'
       ? byYear[view.year]
       : view.kind === 'period'
-        ? byPeriod[view.weeks]
+        ? (isSingleWeek ? activeWeekEntry?.period : byPeriod[view.weeks])
         : data.allTime
 
   const totals = active?.totals ?? null
 
   const periodLabel = isAll
     ? t.analytics.allTimeTitle
-    : isPeriod
-      ? t.analytics.period.title(view.weeks)
-      : t.analytics.season(view.year)
+    : isSingleWeek
+      ? weekIndex === lastWeekIdx
+        ? t.analytics.period.title(1)
+        : weekIndex === lastWeekIdx - 1
+          ? t.analytics.period.lastWeek
+          : t.analytics.period.weekOf(formatDateWithYear(activeWeekEntry?.weekStart ?? ''))
+      : isPeriod
+        ? t.analytics.period.title(view.weeks)
+        : t.analytics.season(view.year)
 
   function selectPeriod(weeks: number) {
     setView({ kind: 'period', weeks })
+    if (weeks === 1) setWeekIndex(lastWeekIdx)
     if (tab === 'seasons') setTab('volume')
+  }
+
+  function goPrevWeek() {
+    setWeekIndex((i) => Math.max(0, i - 1))
+  }
+
+  function goNextWeek() {
+    setWeekIndex((i) => Math.min(lastWeekIdx, i + 1))
   }
 
   function selectAllTime() {
@@ -246,13 +267,8 @@ export function AnalyticsClient({
       ]
     : []
 
-  const deltaBadges: ReactNode[] =
-    view.kind === 'period'
-      ? (() => {
-          const d = byPeriod[view.weeks]?.delta
-          return d ? buildDeltaBadges(d) : []
-        })()
-      : []
+  const periodDelta = isSingleWeek ? activeWeekEntry?.period.delta : view.kind === 'period' ? byPeriod[view.weeks]?.delta : null
+  const deltaBadges: ReactNode[] = periodDelta ? buildDeltaBadges(periodDelta) : []
 
   return (
     <div className="space-y-4">
@@ -281,17 +297,33 @@ export function AnalyticsClient({
       {metrics.length > 0 && (
         <GlassSurface variant="card">
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-b border-foreground/[0.08] px-5 py-3.5">
-            <span className="text-sm font-semibold text-foreground">
-              {periodLabel}
-            </span>
-
-            {deltaBadges.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">{deltaBadges}</div>
+            {isSingleWeek ? (
+              <PeriodNav
+                label={<span className="text-sm font-semibold text-foreground">{periodLabel}</span>}
+                onPrev={goPrevWeek}
+                onNext={goNextWeek}
+                prevDisabled={weekIndex === 0}
+                nextDisabled={weekIndex === lastWeekIdx}
+                prevLabel={t.analytics.period.prevWeek}
+                nextLabel={t.analytics.period.nextWeek}
+                size="sm"
+              />
+            ) : (
+              <span className="text-sm font-semibold text-foreground">{periodLabel}</span>
             )}
+
+            <div className="flex flex-wrap items-center gap-1.5">
+              {isSingleWeek && weekIndex !== lastWeekIdx && (
+                <InlineJumpButton onClick={() => setWeekIndex(lastWeekIdx)}>
+                  {t.analytics.period.jumpToCurrentWeek}
+                </InlineJumpButton>
+              )}
+              {deltaBadges.length > 0 && deltaBadges}
+            </div>
           </div>
 
           <div className="px-5 py-5">
-            <MetricGrid metrics={metrics} className="grid-cols-3 lg:grid-cols-6" />
+            <MetricGrid metrics={metrics} className={metrics.length <= 5 ? 'grid-cols-5' : 'grid-cols-3 lg:grid-cols-6'} />
           </div>
         </GlassSurface>
       )}

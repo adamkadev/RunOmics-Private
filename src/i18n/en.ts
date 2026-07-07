@@ -11,7 +11,6 @@
 import type { ActivityType } from '@/domain/activity/types'
 import type { RankTier } from '@/domain/athlete/rank'
 import type { TrainingStatusType } from '@/application/usecases/GetTrainingStatus'
-import type { WeekLoadLevel } from '@/application/usecases/GetWeeklyLoadComparison'
 
 export const en = {
   // Locale tag used by Intl-based formatters (dates, numbers).
@@ -66,6 +65,7 @@ export const en = {
     sessions: (n: number) => `${n} session${n !== 1 ? 's' : ''}`,
     runs: (n: number) => `${n} run${n !== 1 ? 's' : ''}`,
     close: 'Close',
+    refreshing: 'Refreshing...',
   },
 
   pwa: {
@@ -244,40 +244,6 @@ export const en = {
   },
 
   dashboard: {
-    stats: {
-      distance: 'Distance',
-      distanceSub: (lastWeek: string) => `vs ${lastWeek} last week`,
-      time: 'Time',
-      avgHr: 'Avg HR',
-      avgPace: 'Avg Pace',
-      thisWeek: 'this week',
-      streak: 'Streak',
-      streakSub: (best: number) => `best ${best}d`,
-      vo2max: 'VO₂max',
-      empty: '-',
-      prevWeek: 'Previous week',
-      nextWeek: 'Next week',
-      jumpToCurrent: 'This week',
-    },
-    weekLoad: {
-      label: (percent: number, level: WeekLoadLevel): string => {
-        if (level === 'in-progress') return 'Week in progress'
-        if (percent >= 120) return '↑ Heavy week'
-        if (percent >= 90)  return 'Normal week'
-        if (percent >= 60)  return '↓ Light week'
-        return '↓ Very light week'
-      },
-      level: {
-        low: 'Light load',
-        normal: 'Normal load',
-        high: 'Heavy load',
-        'in-progress': 'Week in progress',
-      },
-      tooltip: (window: number, level: WeekLoadLevel) =>
-        level === 'in-progress'
-          ? `Not enough of the week has elapsed yet to compare load — check back later in the week`
-          : `Training load (TRIMP) so far this week vs the average of the last ${window} weeks`,
-    },
     recentActivities: {
       title: 'Recent Activities',
     },
@@ -351,6 +317,27 @@ export const en = {
       hoursAgo: (h: number) => `${h}h ago`,
       daysAgo: (d: number) => `${d}d ago`,
     },
+    todayHero: {
+      eyebrow: 'Today',
+      plannedSession: 'Planned session',
+      race: 'Race',
+      daysToRace: (days: number) => `D-${days}`,
+    },
+    weeklyStreak: {
+      weeksInARow: (weeks: number) => `${weeks} week streak`,
+      longestStreak: (weeks: number) => `Longest streak: ${weeks} weeks`,
+      weeklyGoal: 'Weekly goal',
+      kmRemaining: (km: number) => `${km} km left to hit this week's goal`,
+      goalReached: 'Weekly goal reached',
+    },
+    celebration: {
+      eyebrow: 'New personal record',
+      later: 'Later',
+      viewAndShare: 'View & share',
+    },
+    onboarding: {
+      message: 'Your form, planned session, and race countdown live in the card above - your running heatmap is further down the page.',
+    },
   },
 
   trainingStatus: {
@@ -402,12 +389,17 @@ export const en = {
     windowGroupLabel: 'Window',
     period: {
       chip: (n: number) => `${n} wk`,
-      title: (n: number) => `Last ${n} weeks`,
-      vsPrevious: (n: number) => `vs previous ${n} weeks`,
+      title: (n: number) => (n === 1 ? 'This week' : `Last ${n} weeks`),
+      vsPrevious: (n: number) => (n === 1 ? 'vs previous week' : `vs previous ${n} weeks`),
       distancePct: (p: number) => `${p >= 0 ? '+' : ''}${p}% km`,
       sessionsPct: (p: number) => `${p >= 0 ? '+' : ''}${p}% runs`,
       paceFaster: (s: number) => `easy pace -${s}s/km`,
       paceSlower: (s: number) => `easy pace +${s}s/km`,
+      lastWeek: 'Last week',
+      weekOf: (date: string) => `Week of ${date}`,
+      prevWeek: 'Previous week',
+      nextWeek: 'Next week',
+      jumpToCurrentWeek: 'This week',
     },
     tabs: {
       volume: 'Volume',
@@ -676,6 +668,9 @@ export const en = {
       title: 'Best Efforts',
       prBadge: 'PR',
       rankBadge: (rank: number) => `#${rank}`,
+    },
+    achievements: {
+      title: 'Achievements from this run',
     },
     notes: {
       title: 'Notes',

@@ -1,0 +1,16 @@
+name: Stale Sync Check
+
+on:
+  # 6:00 UTC daily - independent of sync.yml so a broken/silent sync still gets caught.
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger stale sync check
+        run: |
+          curl -fsS -X POST "${{ secrets.APP_URL }}/api/internal/stale-sync-check" \
+            -H "x-internal-secret: ${{ secrets.INTERNAL_NOTIFY_SECRET }}"

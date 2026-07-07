@@ -18,7 +18,10 @@ const EMPTY: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: 
 // One DOM circle per zone for the world view - simpler and more robust than a GL
 // symbol layer, which would need a text-font guaranteed present in the vector
 // style's glyph set just to print a route count.
-function mkClusterMarker(count: number, radius: number, label: string, isDark: boolean): HTMLDivElement {
+// Bubbles above this diameter show the zone name under the count - small bubbles stay count-only.
+const LABELED_BUBBLE_SIZE = 44;
+
+function mkClusterMarker(count: number, radius: number, name: string, label: string, isDark: boolean): HTMLDivElement {
   const size = radius * 2;
   const el = document.createElement("div");
   el.setAttribute("role", "button");
@@ -33,14 +36,36 @@ function mkClusterMarker(count: number, radius: number, label: string, isDark: b
     border: `2px solid ${isDark ? "#0b1220" : "#ffffff"}`,
     boxShadow: "0 2px 8px rgba(0,0,0,0.35)",
     display: "flex",
+    flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
     color: "#ffffff",
     fontWeight: "700",
-    fontSize: size > 44 ? "14px" : "12px",
+    fontSize: size > LABELED_BUBBLE_SIZE ? "14px" : "12px",
     cursor: "pointer",
+    textAlign: "center",
+    lineHeight: "1.1",
   });
-  el.textContent = String(count);
+
+  const countEl = document.createElement("span");
+  countEl.textContent = String(count);
+  el.appendChild(countEl);
+
+  if (size > LABELED_BUBBLE_SIZE && name) {
+    const nameEl = document.createElement("span");
+    nameEl.textContent = name;
+    Object.assign(nameEl.style, {
+      fontSize: "9px",
+      fontWeight: "500",
+      opacity: "0.85",
+      maxWidth: `${size - 8}px`,
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap",
+    });
+    el.appendChild(nameEl);
+  }
+
   return el;
 }
 
@@ -280,13 +305,18 @@ export function useMapRoutes(
       const maxCount = Math.max(1, ...clusterCounts);
       let bounds: InstanceType<typeof mgl.LngLatBounds> | null = null;
 
-      clusters.forEach((c, i) => {
+      // Add markers smallest-first so busier zones stack on top instead of being buried under one-off bubbles.
+      const zOrder = clusters.map((_, i) => i).sort((a, b) => (clusterCounts[a] ?? 0) - (clusterCounts[b] ?? 0));
+
+      for (const i of zOrder) {
+        const c = clusters[i];
         const count = clusterCounts[i] ?? 0;
-        if (count <= 0) return;
+        if (!c || count <= 0) continue;
 
         const radius = clusterBubbleRadius(count, maxCount);
-        const label = `${clusterNames[i] ?? ""} · ${count}`.trim();
-        const el = mkClusterMarker(count, radius, label, isDark);
+        const name = clusterNames[i] ?? "";
+        const label = `${name} · ${count}`.trim();
+        const el = mkClusterMarker(count, radius, name, label, isDark);
         el.addEventListener("click", () => onSelectClusterRef.current(i));
         el.addEventListener("keydown", (e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -303,7 +333,7 @@ export function useMapRoutes(
           [c.bounds.maxLon, c.bounds.maxLat],
         ];
         bounds = bounds ? bounds.extend(cb) : new mgl.LngLatBounds(cb[0], cb[1]);
-      });
+      }
 
       if (bounds) {
         map.fitBounds(bounds, { padding: 70, maxZoom: 11, duration: 800 });

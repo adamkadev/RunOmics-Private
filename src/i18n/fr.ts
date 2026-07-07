@@ -11,7 +11,6 @@
 import type { ActivityType } from '@/domain/activity/types'
 import type { RankTier } from '@/domain/athlete/rank'
 import type { TrainingStatusType } from '@/application/usecases/GetTrainingStatus'
-import type { WeekLoadLevel } from '@/application/usecases/GetWeeklyLoadComparison'
 import type { Strings } from './index'
 
 export const fr = {
@@ -67,6 +66,7 @@ export const fr = {
     sessions: (n: number) => `${n} séance${n > 1 ? 's' : ''}`,
     runs: (n: number) => `${n} sortie${n > 1 ? 's' : ''}`,
     close: 'Fermer',
+    refreshing: 'Actualisation...',
   },
 
   pwa: {
@@ -247,40 +247,6 @@ export const fr = {
   },
 
   dashboard: {
-    stats: {
-      distance: 'Distance',
-      distanceSub: (lastWeek: string) => `vs ${lastWeek} sem. dernière`,
-      time: 'Temps',
-      avgHr: 'FC moy.',
-      avgPace: 'Allure moy.',
-      thisWeek: 'cette semaine',
-      streak: 'Série',
-      streakSub: (best: number) => `record ${best}j`,
-      vo2max: 'VO₂max',
-      empty: '-',
-      prevWeek: 'Semaine précédente',
-      nextWeek: 'Semaine suivante',
-      jumpToCurrent: 'Cette semaine',
-    },
-    weekLoad: {
-      label: (percent: number, level: WeekLoadLevel): string => {
-        if (level === 'in-progress') return 'Semaine en cours'
-        if (percent >= 120) return '↑ Grosse semaine'
-        if (percent >= 90)  return 'Semaine normale'
-        if (percent >= 60)  return '↓ Semaine légère'
-        return '↓ Semaine très légère'
-      },
-      level: {
-        low: 'Charge légère',
-        normal: 'Charge normale',
-        high: 'Charge élevée',
-        'in-progress': 'Semaine en cours',
-      },
-      tooltip: (window: number, level: WeekLoadLevel) =>
-        level === 'in-progress'
-          ? `Pas assez de jours écoulés cette semaine pour comparer la charge — repasse plus tard dans la semaine`
-          : `Charge d’entraînement (TRIMP) cette semaine vs la moyenne des ${window} dernières semaines`,
-    },
     recentActivities: {
       title: 'Activités récentes',
     },
@@ -354,6 +320,27 @@ export const fr = {
       hoursAgo: (h: number) => `il y a ${h} h`,
       daysAgo: (d: number) => `il y a ${d} j`,
     },
+    todayHero: {
+      eyebrow: 'Aujourd’hui',
+      plannedSession: 'Séance planifiée',
+      race: 'Course',
+      daysToRace: (days: number) => `J-${days}`,
+    },
+    weeklyStreak: {
+      weeksInARow: (weeks: number) => `${weeks} semaines d’affilée`,
+      longestStreak: (weeks: number) => `Plus longue série : ${weeks} semaines`,
+      weeklyGoal: 'Objectif hebdomadaire',
+      kmRemaining: (km: number) => `Plus que ${km} km pour boucler la semaine`,
+      goalReached: 'Objectif hebdomadaire atteint',
+    },
+    celebration: {
+      eyebrow: 'Nouveau record personnel',
+      later: 'Plus tard',
+      viewAndShare: 'Voir et partager',
+    },
+    onboarding: {
+      message: 'Ta forme, ta séance planifiée et le compte à rebours course sont dans la carte ci-dessus - ta heatmap de course est plus bas sur la page.',
+    },
   },
 
   trainingStatus: {
@@ -404,12 +391,17 @@ export const fr = {
     windowGroupLabel: 'Fenêtre',
     period: {
       chip: (n: number) => `${n} sem`,
-      title: (n: number) => `${n} dernières semaines`,
-      vsPrevious: (n: number) => `vs les ${n} semaines précédentes`,
+      title: (n: number) => (n === 1 ? 'Cette semaine' : `${n} dernières semaines`),
+      vsPrevious: (n: number) => (n === 1 ? 'vs la semaine précédente' : `vs les ${n} semaines précédentes`),
       distancePct: (p: number) => `${p >= 0 ? '+' : ''}${p}% km`,
       sessionsPct: (p: number) => `${p >= 0 ? '+' : ''}${p}% sorties`,
       paceFaster: (s: number) => `allure facile -${s}s/km`,
       paceSlower: (s: number) => `allure facile +${s}s/km`,
+      lastWeek: 'Semaine dernière',
+      weekOf: (date: string) => `Semaine du ${date}`,
+      prevWeek: 'Semaine précédente',
+      nextWeek: 'Semaine suivante',
+      jumpToCurrentWeek: 'Cette semaine',
     },
     tabs: {
       volume: 'Volume',
@@ -678,6 +670,9 @@ export const fr = {
       title: 'Meilleurs efforts',
       prBadge: 'RP',
       rankBadge: (rank: number) => `#${rank}`,
+    },
+    achievements: {
+      title: 'Exploits de cette sortie',
     },
     notes: {
       title: 'Notes',

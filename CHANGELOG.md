@@ -2,6 +2,66 @@
 
 All notable changes to this project are documented in this file.
 
+## [3.0.0] - 2026-07-07
+
+A deliberate version reset marking the UI/UX audit v4 release - not a downgrade
+from 3.5.2, a rebrand of this milestone as "the real v3.0".
+
+### Added
+
+- **TodayHero**: a dashboard "today" card aggregating training status (form),
+  today's planned Garmin session, and the race countdown - pure display, no
+  training recommendation. Hidden when none of the three are available.
+- **Weekly streak & goal ring**: consecutive-active-weeks streak (with a
+  longest-streak callout), a weekly distance ring prorated from the annual
+  goal, and a 7-day activity dot row, on the Dashboard.
+- **Celebration overlay**: a full-screen moment (confetti, haptic, share CTA)
+  the first time a recent personal record is seen in a browser, gated by a
+  3-day recency window and a localStorage seen-flag.
+- **Activity achievements strip**: top-3 qualifying best-efforts surfaced as a
+  dedicated strip above the charts on the activity detail page.
+- **Heatmap world view**: bubbles now stack busiest-zone-on-top instead of
+  random z-order, and large bubbles show their zone name.
+- **Pull-to-refresh**: dragging down at the top of any page re-fetches the
+  current view's data and updates the sync-freshness badge. This refreshes
+  the already-synced data on disk - it does not trigger a live Garmin sync,
+  which stays on its own daily schedule (out of scope for this release).
+- **Haptics**: short vibration bursts on tab switches, sheet dismiss, pull-to-
+  refresh, and the celebration overlay, on supporting devices.
+- **First-launch hint**: a dismissible one-time card pointing new visitors at
+  the dashboard's form/session/heatmap.
+- **Stale-sync push alert**: a new notification if no Garmin sync has landed
+  in 72h, on its own daily schedule independent of the sync workflow.
+- **Analytics 1-week window**: a Monday-anchored "this week" option alongside
+  the existing 8/12/16-week windows, with prev/next navigation through every
+  past week and a jump-to-current shortcut.
+
+### Changed
+
+- Deduplicated the Profile "Milestones" preview against "Personal records"
+  (records already shown just above) - it now only surfaces distance tiers
+  and streaks.
+- Widened the map's zone-name chip before it truncates.
+- Enlarged share-card design thumbnails (84px -> 104px).
+- Directional page transition for the activities list <-> detail navigation.
+- Simplified the Dashboard: the greeting now shows the full weekday and date
+  (no week number) with an initials avatar, drops the now-redundant sync
+  badge (still shown in TodayHero), and no longer shows PR/record pills
+  (superseded by the achievements strip and celebration overlay) or the
+  distance/time/pace/VO2max stats grid (that granular breakdown now lives in
+  Analytics' new 1-week window).
+
+### Fixed
+
+- Removed the global `overscroll-behavior-y: none` that was actively blocking
+  pull-to-refresh.
+
+### Out of scope (left in the audit for a future pass)
+
+- "Similar outings" (matched-run comparison) and "personal segments" -
+  un-mocked, open-ended, the two biggest remaining chantiers.
+- Live, on-demand Garmin resync triggered from the client.
+
 ## [3.5.2] - 2026-07-06
 
 ### Changed

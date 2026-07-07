@@ -6,6 +6,7 @@ import { LayoutDashboard, Activity, CalendarDays, BarChart2, User } from 'lucide
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { useHaptic } from '@/lib/useHaptic'
 import { useFullscreenChromeHidden } from './FullscreenChromeContext'
 
 const TABS = [
@@ -27,6 +28,7 @@ export function GlassTabBar() {
   const pathname = usePathname()
   const activeIndex = TABS.findIndex(({ href }) => isActive(pathname, href))
   const hidden = useFullscreenChromeHidden()
+  const haptic = useHaptic()
 
   return (
     <div
@@ -56,6 +58,7 @@ export function GlassTabBar() {
             <Link
               key={href}
               href={href}
+              onClick={() => { if (!active) haptic('light') }}
               aria-current={active ? 'page' : undefined}
               className={cn(
                 'relative flex flex-1 flex-col items-center gap-0.5 py-1.5 transition-colors active:scale-95',

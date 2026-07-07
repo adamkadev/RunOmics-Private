@@ -128,3 +128,18 @@ export async function saveLastOverreachingState(state: OverreachingState): Promi
   const db = getAdminFirestore()
   await db.collection('notifications').doc('lastOverreaching').set(state)
 }
+
+export interface StaleSyncState {
+  alerted: boolean
+}
+
+export async function getLastStaleSyncState(): Promise<StaleSyncState | null> {
+  const db = getAdminFirestore()
+  const doc = await db.collection('notifications').doc('lastStaleSync').get()
+  return doc.exists ? (doc.data() as StaleSyncState) : null
+}
+
+export async function saveLastStaleSyncState(state: StaleSyncState): Promise<void> {
+  const db = getAdminFirestore()
+  await db.collection('notifications').doc('lastStaleSync').set(state)
+}

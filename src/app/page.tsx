@@ -3,16 +3,15 @@ import { getLastSyncedAt } from '@/application/usecases/GetSyncStatus'
 import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
 import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { getConsistencyScore } from '@/application/usecases/GetConsistencyScore'
-import { getWeeklyLoadComparison } from '@/application/usecases/GetWeeklyLoadComparison'
 import { getHeatmapData } from '@/application/usecases/GetHeatmapData'
-import { getLatestVO2max, getVO2maxTrend } from '@/application/usecases/GetVO2maxHistory'
 import { getRecords, getQualifiedEffortsByActivityId, getMostRecentRecord } from '@/application/usecases/GetRecords'
-import { getPbAlerts } from '@/application/usecases/GetPbAlerts'
 import { getShoeStats } from '@/application/usecases/GetShoeStats'
 import { getNextRace } from '@/application/usecases/GetNextRace'
 import { getFormProjection } from '@/application/usecases/GetFormProjection'
 import { getWeeklyDigest } from '@/application/usecases/GetWeeklyDigest'
-import { StatsGrid } from '@/components/dashboard/StatsGrid'
+import { getTodayPlannedWorkout } from '@/application/usecases/GetPlannedWorkouts'
+import { getWeeklyStreakData } from '@/application/usecases/GetMilestones'
+import { getCurrentWeeklyGoal } from '@/application/usecases/GetGoalsData'
 import { DashboardCharts } from '@/components/dashboard/DashboardCharts'
 import { RecentActivities } from '@/components/dashboard/RecentActivities'
 import { ActivityHeatmap } from '@/components/dashboard/ActivityHeatmap'
@@ -20,6 +19,10 @@ import { TrainingStatusBanner } from '@/components/dashboard/TrainingStatusBanne
 import { ConsistencyCard } from '@/components/dashboard/ConsistencyCard'
 import { DashboardHighlights } from '@/components/dashboard/DashboardHighlights'
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting'
+import { TodayHero } from '@/components/dashboard/TodayHero'
+import { WeeklyStreakCard } from '@/components/dashboard/WeeklyStreakCard'
+import { CelebrationOverlay } from '@/components/dashboard/CelebrationOverlay'
+import { FirstLaunchHint } from '@/components/dashboard/FirstLaunchHint'
 import { RaceCockpit } from '@/components/dashboard/RaceCockpit'
 import { WeeklyDigest } from '@/components/dashboard/WeeklyDigest'
 
@@ -33,32 +36,36 @@ export default async function DashboardPage() {
   const trainingLoad = await getTrainingLoad()
   const trainingStatus = await getTrainingStatus()
   const consistencyScore = getConsistencyScore()
-  const weekLoad = await getWeeklyLoadComparison()
   const heatmapDays = getHeatmapData()
-  const vo2max = getLatestVO2max()
-  const vo2maxTrend = getVO2maxTrend()
   const records = await getRecords()
   const qualifiedEffortsByActivityId = getQualifiedEffortsByActivityId(records)
   const mostRecentRecord = getMostRecentRecord(records)
-  const pbAlerts = await getPbAlerts()
   const shoes = getShoeStats()
   const nextRace = await getNextRace()
   const formProjection = await getFormProjection()
   const weeklyDigest = await getWeeklyDigest()
+  const todayPlannedWorkout = await getTodayPlannedWorkout()
+  const weeklyStreak = getWeeklyStreakData()
+  const weeklyGoal = await getCurrentWeeklyGoal()
 
   return (
     <div className="space-y-6">
-      <div className="space-y-3">        
-        <DashboardGreeting lastSyncedAt={lastSyncedAt} />
-        <DashboardHighlights
-          record={mostRecentRecord}
-          pbAlerts={pbAlerts}
-          shoes={shoes}
-          nextRace={nextRace}
-        />
+      <CelebrationOverlay record={mostRecentRecord} />
+
+      <div className="space-y-3">
+        <FirstLaunchHint />
+        <DashboardGreeting />
+        <DashboardHighlights shoes={shoes} nextRace={nextRace} />
       </div>
 
-      <StatsGrid weeks={data.weeks} currentStreak={data.currentStreak} vo2max={vo2max} vo2maxTrend={vo2maxTrend} weekLoad={weekLoad} />
+      <TodayHero
+        status={trainingStatus}
+        plannedWorkout={todayPlannedWorkout}
+        nextRace={nextRace}
+        lastSyncedAt={lastSyncedAt}
+      />
+
+      {weeklyStreak && <WeeklyStreakCard data={weeklyStreak} goal={weeklyGoal} />}
 
       {(trainingStatus || consistencyScore) && (
         <div className={trainingStatus && consistencyScore ? 'grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]' : undefined}>
