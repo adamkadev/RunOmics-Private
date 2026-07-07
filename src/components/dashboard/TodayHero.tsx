@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
+import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
-import type { PlannedWorkout, ActivityType } from '@/domain/activity/types'
-import { ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
+import type { VO2maxTrend } from '@/application/usecases/GetVO2maxHistory'
+import type { PlannedWorkout } from '@/domain/activity/types'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import { PlannedWorkoutSheet } from '@/components/calendar/PlannedWorkoutSheet'
 import { relativeTimeParts } from '@/lib/formatters'
@@ -17,6 +18,8 @@ interface Props {
   plannedWorkout: PlannedWorkout | null
   nextRace: UpcomingRace | null
   lastSyncedAt: string | null
+  vo2max: number | null
+  vo2maxTrend: VO2maxTrend | null
 }
 
 function daysUntil(date: string): number {
@@ -35,17 +38,35 @@ function formatSyncedAgo(lastSyncedAt: string): string {
   return s.synced(relative)
 }
 
-function HeroMetric({ label, value }: { label: string; value: string }) {
+function HeroMetric({ label, value, trailing }: { label: string; value: string; trailing?: ReactNode }) {
   return (
     <div>
       <div className="text-[10px] uppercase tracking-wide text-white/50">{label}</div>
-      <div className="mt-0.5 text-sm font-semibold tabular-nums">{value}</div>
+      <div className="mt-0.5 flex items-center gap-1">
+        <span className="text-sm font-semibold tabular-nums">{value}</span>
+        {trailing}
+      </div>
     </div>
   )
 }
 
+function TrendIcon({ direction }: { direction: 'up' | 'down' | 'stable' | null }) {
+  if (direction === 'up') return <TrendingUp size={12} className="text-emerald-300" />
+  if (direction === 'down') return <TrendingDown size={12} className="text-amber-300" />
+  if (direction === 'stable') return <Minus size={12} className="text-white/50" />
+  return null
+}
+
+function chargeStatus(acwr: number | null): { label: string; className: string } | null {
+  if (acwr === null) return null
+  const s = t.dashboard.todayHero
+  if (acwr > 1.3) return { label: s.chargeHigh, className: 'text-amber-300' }
+  if (acwr < 0.8) return { label: s.chargeLow, className: 'text-amber-300' }
+  return { label: s.chargeOptimal, className: 'text-emerald-300' }
+}
+
 // Pure display aggregation of already-computed dashboard data - never a training recommendation.
-export function TodayHero({ status, plannedWorkout, nextRace, lastSyncedAt }: Props) {
+export function TodayHero({ status, plannedWorkout, nextRace, lastSyncedAt, vo2max, vo2maxTrend }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false)
   const animatedTsb = useCountUp(status?.tsb ?? 0)
 
@@ -55,7 +76,8 @@ export function TodayHero({ status, plannedWorkout, nextRace, lastSyncedAt }: Pr
   const isNegativeTsb = (status?.tsb ?? 0) < 0
   const formValueClass = isNegativeTsb ? STATUS.warning.text : STATUS.success.text
   const formValue = status ? `${status.tsb >= 0 ? '+' : ''}${Math.round(animatedTsb)}` : null
-  const WorkoutIcon = plannedWorkout?.type ? ACTIVITY_TYPE_ICONS[plannedWorkout.type as ActivityType] : null
+  const charge = status ? chargeStatus(status.acwr) : null
+  const fitnessTrend = status ? (status.ctlDelta > 1 ? 'up' : status.ctlDelta < -1 ? 'down' : 'stable') : null
 
   return (
     <div
@@ -74,17 +96,29 @@ export function TodayHero({ status, plannedWorkout, nextRace, lastSyncedAt }: Pr
       {status && (
         <>
           <div className="mb-1 flex items-end gap-2">
-            <span className={cn('text-title1 font-extrabold leading-none tabular-nums', formValueClass)}>
+            <span className={cn('text-5xl font-extrabold leading-none tabular-nums', formValueClass)}>
               {formValue}
             </span>
-            <span className="pb-0.5 text-[13px] text-white/70">
+            <span className="pb-1 text-[13px] text-white/70">
               {t.trainingStatus.status[status.status]}
             </span>
           </div>
           <div className="mt-3.5 grid grid-cols-3 gap-3">
-            <HeroMetric label={t.trainingStatus.metrics.fitness} value={String(Math.round(status.ctl))} />
-            <HeroMetric label={t.trainingStatus.metrics.fatigue} value={String(Math.round(status.atl))} />
-            <HeroMetric label={s.load} value={t.trainingStatus.loadTrend[status.loadTrend]} />
+            <HeroMetric
+              label={t.dashboard.vo2maxChart.title}
+              value={vo2max !== null ? vo2max.toFixed(1) : '–'}
+              trailing={<TrendIcon direction={vo2maxTrend} />}
+            />
+            <HeroMetric
+              label={s.load}
+              value={status.acwr !== null ? status.acwr.toFixed(2) : '–'}
+              trailing={charge && <span className={cn('text-[10px] font-semibold', charge.className)}>{charge.label}</span>}
+            />
+            <HeroMetric
+              label={t.trainingStatus.metrics.fitness}
+              value={String(Math.round(status.ctl))}
+              trailing={<TrendIcon direction={fitnessTrend} />}
+            />
           </div>
         </>
       )}
@@ -99,8 +133,7 @@ export function TodayHero({ status, plannedWorkout, nextRace, lastSyncedAt }: Pr
                 onClick={() => setSheetOpen(true)}
                 className="flex-1 text-left active:opacity-80"
               >
-                <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide text-white/50">
-                  {WorkoutIcon && <WorkoutIcon size={11} />}
+                <div className="text-[10px] uppercase tracking-wide text-white/50">
                   {s.plannedSession}
                 </div>
                 <div className="mt-0.5 truncate text-sm font-semibold">{plannedWorkout.name}</div>

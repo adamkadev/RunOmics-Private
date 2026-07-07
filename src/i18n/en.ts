@@ -339,6 +339,9 @@ export const en = {
       race: 'Race',
       load: 'Load',
       daysToRace: (days: number) => `D-${days}`,
+      chargeOptimal: 'Optimal',
+      chargeHigh: 'High',
+      chargeLow: 'Low',
     },
     weeklyStreak: {
       weeksInARow: (weeks: number) => `${weeks} week streak`,
@@ -379,7 +382,6 @@ export const en = {
     },
     metrics: {
       fitness: 'Fitness',
-      fatigue: 'Fatigue',
     },
   },
 
