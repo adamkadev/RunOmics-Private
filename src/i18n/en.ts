@@ -234,7 +234,7 @@ export const en = {
       types: {
         training: {
           title: 'Training reminders',
-          subtitle: 'Weekly check-in on your distance goal.',
+          subtitle: 'Daily session at 10am, plus a weekly check-in on your distance goal.',
         },
         shoes: {
           title: 'Shoe wear alerts',

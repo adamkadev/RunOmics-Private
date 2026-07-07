@@ -228,7 +228,7 @@ export const fr = {
       types: {
         training: {
           title: 'Rappels d’entraînement',
-          subtitle: 'Point hebdomadaire sur votre objectif kilométrique.',
+          subtitle: 'Séance du jour à 10h, plus un point hebdomadaire sur votre objectif kilométrique.',
         },
         shoes: {
           title: 'Alertes d’usure des chaussures',
