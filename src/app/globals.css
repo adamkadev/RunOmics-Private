@@ -545,6 +545,17 @@ body {
   line-height: 1.625;
   font-variant-numeric: tabular-nums;
   overflow-x: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Text selection stays available where it's actually useful: editable
+   fields and free-form notes, not the app chrome. */
+input,
+textarea,
+[contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 h1 {
