@@ -66,7 +66,14 @@ function findNearestClusterIdx(
   return nearestIdx
 }
 
+// Clustering runs over every activity's full GPS trace - cache it per server
+// process (mirrors JsonActivityRepository's own cache) so /api/map/routes
+// doesn't redo this work on every single zone request.
+let cache: AllRoutesData | null = null
+
 export function getAllRoutes(): AllRoutesData {
+  if (cache) return cache
+
   // getAllActivities returns newest-first; keep that order so index 0 = most recent run
   const activities = getAllActivities().filter((a) => a.route && a.route.length > 1)
 
@@ -129,7 +136,7 @@ export function getAllRoutes(): AllRoutesData {
     ? Math.max(0, clusters.findIndex((c) => c.id === mostRecentId))
     : 0
 
-  return {
+  cache = {
     routes: activities.map((a) => a.route!),
     routeMeta: activities.map((a) => ({
       id: a.id,
@@ -146,6 +153,7 @@ export function getAllRoutes(): AllRoutesData {
     totalKm: Math.round(activities.reduce((s, a) => s + a.distanceKm, 0)),
     years: Array.from(new Set(activities.map((a) => a.date.slice(0, 4)))).sort(),
   }
+  return cache
 }
 
 // For the initial /map page load: same clustering/metadata as getAllRoutes(), minus
