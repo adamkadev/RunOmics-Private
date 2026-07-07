@@ -27,7 +27,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const showTopBar = hasGlobalTopBar(pathname)
   const isPopNavigation = useRef(false)
-  const { containerRef, pullPx, refreshing } = usePullToRefresh(() => router.refresh())
+  // Pull-to-refresh is a Dashboard-only affordance, same scope as the top bar.
+  const { containerRef, pullPx, refreshing } = usePullToRefresh(() => router.refresh(), showTopBar)
 
   // Browser/router back-forward (popstate) restores scroll position instead
   // of resetting to top, so returning from a detail page lands where you left.

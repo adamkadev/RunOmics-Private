@@ -11,8 +11,10 @@ const RESISTANCE = 0.5
  * Pull-down-to-refresh at the top of the page. Calls `onRefresh` once past the
  * threshold - this refreshes the current view (re-fetches already-synced server
  * data), it does not trigger a live Garmin sync, which stays on its own daily schedule.
+ * Pass `enabled: false` to skip attaching the touch listeners entirely (e.g. on
+ * pages other than the Dashboard, where pull-to-refresh isn't offered).
  */
-export function usePullToRefresh(onRefresh: () => void | Promise<void>) {
+export function usePullToRefresh(onRefresh: () => void | Promise<void>, enabled: boolean) {
   const containerRef = useRef<HTMLDivElement>(null)
   const startY = useRef<number | null>(null)
   const crossedRef = useRef(false)
@@ -27,7 +29,7 @@ export function usePullToRefresh(onRefresh: () => void | Promise<void>) {
 
   useEffect(() => {
     const el = containerRef.current
-    if (!el) return
+    if (!el || !enabled) return
 
     function onTouchStart(e: TouchEvent) {
       if (window.scrollY > 0 || refreshingRef.current) { startY.current = null; return }
@@ -71,7 +73,7 @@ export function usePullToRefresh(onRefresh: () => void | Promise<void>) {
       el.removeEventListener('touchend', onTouchEnd)
       el.removeEventListener('touchcancel', onTouchEnd)
     }
-  }, [haptic])
+  }, [haptic, enabled])
 
   return { containerRef, pullPx, refreshing }
 }
