@@ -33,7 +33,8 @@ from 3.5.2, a rebrand of this milestone as "the real v3.0".
 - **Stale-sync push alert**: a new notification if no Garmin sync has landed
   in 72h, on its own daily schedule independent of the sync workflow.
 - **Analytics 1-week window**: a Monday-anchored "this week" option alongside
-  the existing 8/12/16-week windows.
+  the existing 8/12/16-week windows, with prev/next navigation through every
+  past week and a jump-to-current shortcut.
 
 ### Changed
 

@@ -397,6 +397,11 @@ export const fr = {
       sessionsPct: (p: number) => `${p >= 0 ? '+' : ''}${p}% sorties`,
       paceFaster: (s: number) => `allure facile -${s}s/km`,
       paceSlower: (s: number) => `allure facile +${s}s/km`,
+      lastWeek: 'Semaine dernière',
+      weekOf: (date: string) => `Semaine du ${date}`,
+      prevWeek: 'Semaine précédente',
+      nextWeek: 'Semaine suivante',
+      jumpToCurrentWeek: 'Cette semaine',
     },
     tabs: {
       volume: 'Volume',
