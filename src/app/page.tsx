@@ -15,7 +15,6 @@ import { getCurrentWeeklyGoal } from '@/application/usecases/GetGoalsData'
 import { DashboardCharts } from '@/components/dashboard/DashboardCharts'
 import { RecentActivities } from '@/components/dashboard/RecentActivities'
 import { ActivityHeatmap } from '@/components/dashboard/ActivityHeatmap'
-import { TrainingStatusBanner } from '@/components/dashboard/TrainingStatusBanner'
 import { ConsistencyCard } from '@/components/dashboard/ConsistencyCard'
 import { DashboardHighlights } from '@/components/dashboard/DashboardHighlights'
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting'
@@ -55,7 +54,7 @@ export default async function DashboardPage() {
       <div className="space-y-3">
         <FirstLaunchHint />
         <DashboardGreeting />
-        <DashboardHighlights shoes={shoes} nextRace={nextRace} />
+        <DashboardHighlights shoes={shoes} />
       </div>
 
       <TodayHero
@@ -67,14 +66,12 @@ export default async function DashboardPage() {
 
       {weeklyStreak && <WeeklyStreakCard data={weeklyStreak} goal={weeklyGoal} />}
 
-      {(trainingStatus || consistencyScore) && (
-        <div className={trainingStatus && consistencyScore ? 'grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]' : undefined}>
-          {trainingStatus && <TrainingStatusBanner status={trainingStatus} />}
+      {(weeklyDigest || consistencyScore) && (
+        <div className={weeklyDigest && consistencyScore ? 'grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]' : undefined}>
+          {weeklyDigest && <WeeklyDigest data={weeklyDigest} />}
           {consistencyScore && <ConsistencyCard data={consistencyScore} />}
         </div>
       )}
-
-      {weeklyDigest && <WeeklyDigest data={weeklyDigest} />}
 
       {formProjection && <RaceCockpit data={formProjection} />}
 

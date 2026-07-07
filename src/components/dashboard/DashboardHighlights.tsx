@@ -4,9 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Pill } from '@/components/ui/Pill'
 import { cn } from '@/lib/utils'
-import { t } from '@/i18n'
 import type { ShoeStats } from '@/application/usecases/GetShoeStats'
-import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 
 interface Highlight {
   key: string
@@ -17,47 +15,23 @@ interface Highlight {
 }
 
 const TINT = {
-  wear: { pill: 'border-red-500/35 bg-red-500/[0.14] text-red-500',        dot: '#ef4444' },
-  race: { pill: 'border-[#3b82f6]/35 bg-[#3b82f6]/[0.14] text-[#3b82f6]', dot: '#3b82f6' },
+  wear: { pill: 'border-red-500/35 bg-red-500/[0.14] text-red-500', dot: '#ef4444' },
 }
 
-function daysUntil(date: string): number {
-  const today = new Date().toISOString().slice(0, 10)
-  return Math.round(
-    (new Date(`${date}T00:00:00`).getTime() - new Date(`${today}T00:00:00`).getTime()) / 86_400_000
-  )
-}
-
-interface Props {
-  shoes: ShoeStats[]
-  nextRace: UpcomingRace | null
-}
-
-export function DashboardHighlights({ shoes, nextRace }: Props) {
+// Race countdown intentionally absent: it already lives in TodayHero (D-x) and RaceCockpit.
+export function DashboardHighlights({ shoes }: { shoes: ShoeStats[] }) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [canScrollRight, setCanScrollRight] = useState(false)
 
-  const highlights: Highlight[] = []
-
-  if (nextRace) {
-    highlights.push({
-      key: 'race',
-      href: '/goals',
-      dotColor: TINT.race.dot,
-      tint: TINT.race.pill,
-      label: `${nextRace.name} · ${t.nextRace.countdown(daysUntil(nextRace.date))}`,
-    })
-  }
-
-  for (const shoe of shoes.filter((s) => s.nearingLimit)) {
-    highlights.push({
+  const highlights: Highlight[] = shoes
+    .filter((s) => s.nearingLimit)
+    .map((shoe) => ({
       key: `shoe-${shoe.gearId}`,
       href: `/shoes/${shoe.gearId}`,
       dotColor: TINT.wear.dot,
       tint: TINT.wear.pill,
       label: shoe.name,
-    })
-  }
+    }))
 
   useEffect(() => {
     const el = scrollRef.current

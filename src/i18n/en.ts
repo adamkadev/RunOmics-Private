@@ -10,7 +10,6 @@
 
 import type { ActivityType } from '@/domain/activity/types'
 import type { RankTier } from '@/domain/athlete/rank'
-import type { TrainingStatusType } from '@/application/usecases/GetTrainingStatus'
 
 export const en = {
   // Locale tag used by Intl-based formatters (dates, numbers).
@@ -321,6 +320,7 @@ export const en = {
       eyebrow: 'Today',
       plannedSession: 'Planned session',
       race: 'Race',
+      load: 'Load',
       daysToRace: (days: number) => `D-${days}`,
     },
     weeklyStreak: {
@@ -363,20 +363,6 @@ export const en = {
     metrics: {
       fitness: 'Fitness',
       fatigue: 'Fatigue',
-      form: 'Form',
-      fitnessTooltip: 'Chronic Training Load (42d avg). Your aerobic base.',
-      fatigueTooltip: 'Acute Training Load (7d avg). Recent fatigue.',
-      formTooltip: 'Form = Fitness - Fatigue. Positive = fresh legs.',
-      tsbHint: (tsb: number, status: TrainingStatusType): string => {
-        // 'recovery'/'detraining' means the high TSB is from undertraining, not a real block.
-        const undertrained = status === 'recovery' || status === 'detraining'
-        if (tsb >= 15) return undertrained ? 'Fresh · undertrained\nBuild your volume back up' : 'Peak form\nrace ready'
-        if (tsb >= 5)  return undertrained ? 'Fresh · light week\nEase back into training' : 'Fresh legs\ntrain hard'
-        if (tsb >= 0)  return 'Balanced\noptimal window'
-        if (tsb >= -10) return 'Slight fatigue\nrecovery possible'
-        if (tsb >= -20) return 'High fatigue\nease off'
-        return 'Overreaching\nrest needed'
-      },
     },
   },
 
