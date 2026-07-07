@@ -20,6 +20,7 @@ import { ConsistencyCard } from '@/components/dashboard/ConsistencyCard'
 import { DashboardHighlights } from '@/components/dashboard/DashboardHighlights'
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting'
 import { TodayHero } from '@/components/dashboard/TodayHero'
+import { TrainingMetricsCard } from '@/components/dashboard/TrainingMetricsCard'
 import { WeeklyStreakCard } from '@/components/dashboard/WeeklyStreakCard'
 import { CelebrationOverlay } from '@/components/dashboard/CelebrationOverlay'
 import { FirstLaunchHint } from '@/components/dashboard/FirstLaunchHint'
@@ -65,9 +66,9 @@ export default async function DashboardPage() {
         plannedWorkout={todayPlannedWorkout}
         nextRace={nextRace}
         lastSyncedAt={lastSyncedAt}
-        vo2max={vo2max}
-        vo2maxTrend={vo2maxTrend}
       />
+
+      <TrainingMetricsCard status={trainingStatus} vo2max={vo2max} vo2maxTrend={vo2maxTrend} />
 
       {weeklyStreak && <WeeklyStreakCard data={weeklyStreak} goal={weeklyGoal} />}
 
