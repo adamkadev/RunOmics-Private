@@ -137,11 +137,6 @@ export interface PeriodAnalytics extends AnalyticsSeries {
   delta: PeriodDelta | null
 }
 
-export interface WeekHistoryEntry {
-  weekStart: string
-  period: PeriodAnalytics
-}
-
 export interface AllTimeAnalytics extends AnalyticsSeries {
   totals: YearTotals
 }
@@ -185,7 +180,6 @@ export interface AnalyticsPageData {
   byYear: Record<number, YearAnalytics>
   periodWeeks: number[]
   byPeriod: Record<number, PeriodAnalytics>
-  weeklyHistory: WeekHistoryEntry[]
   efficiencyDaily: DailyEfficiency[]
   runningDynamicsDaily: DailyRunningDynamics[]
   allTime: AllTimeAnalytics
@@ -437,26 +431,6 @@ function buildPeriodAnalytics(all: Activity[], weeks: number, now: Date): Period
   return { weeks, totals: computeTotals(windowActs, weeks * 7), delta, ...buildSeries(buckets, windowActs) }
 }
 
-// Every calendar week (Monday-Sunday) from the athlete's first activity through the
-// current week, each built via buildPeriodAnalytics(weeks=1) so it gets the same
-// single-week totals/delta - lets the "1 week" view page back through real history.
-export function buildWeeklyHistory(all: Activity[], now: Date): WeekHistoryEntry[] {
-  if (!all.length) return []
-
-  const thisMonday = startOfWeek(now)
-  const earliestDate = all.reduce((min, a) => (a.date < min ? a.date : min), all[0]!.date)
-  const earliestMonday = startOfWeek(new Date(earliestDate + 'T12:00:00'))
-  const totalWeeks = Math.round((thisMonday.getTime() - earliestMonday.getTime()) / (7 * 86_400_000)) + 1
-
-  const history: WeekHistoryEntry[] = []
-  for (let i = totalWeeks - 1; i >= 0; i--) {
-    const mon = new Date(thisMonday)
-    mon.setDate(thisMonday.getDate() - i * 7)
-    history.push({ weekStart: isoDate(mon), period: buildPeriodAnalytics(all, 1, mon) })
-  }
-  return history
-}
-
 // One bucket per calendar year across the whole history.
 function buildAllTimeAnalytics(byYearMap: Map<number, Activity[]>, all: Activity[], now: Date): AllTimeAnalytics {
   const buckets: Bucket[] = Array.from(byYearMap.keys())
@@ -542,7 +516,7 @@ export async function getAnalyticsData(): Promise<AnalyticsPageData> {
   }
 
   const years = Array.from(byYearMap.keys()).sort((a, b) => b - a)
-  const periodWeeks = [1, 8, 12, 16]
+  const periodWeeks = [8, 12, 16]
 
   const temperatureScatter: TemperaturePoint[] = all
     .filter((a) => a.avgTemperature !== null && a.paceSecPerKm !== null && a.distanceKm >= 3)
@@ -586,7 +560,6 @@ export async function getAnalyticsData(): Promise<AnalyticsPageData> {
     byYear: Object.fromEntries(years.map((y) => [y, buildYearAnalytics(y, byYearMap.get(y)!, now)])),
     periodWeeks,
     byPeriod: Object.fromEntries(periodWeeks.map((w) => [w, buildPeriodAnalytics(all, w, now)])),
-    weeklyHistory: buildWeeklyHistory(all, now),
     efficiencyDaily: buildEfficiencyDaily(all, now),
     runningDynamicsDaily: buildRunningDynamicsDaily(all, now),
     allTime: buildAllTimeAnalytics(byYearMap, all, now),

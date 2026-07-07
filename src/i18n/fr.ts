@@ -120,14 +120,6 @@ export const fr = {
       passes: (n: number) => `${n} passages`,
       noRoutes: 'Aucun parcours pour ce filtre',
       closeCard: 'Fermer',
-      segment: {
-        badge: 'Segment perso',
-        passesLabel: 'passages',
-        recordLabel: 'record /km',
-        trendLabel: 'tendance 90 j',
-        leaderboard: 'Ton classement',
-        openRun: (date: string) => `Ouvrir la sortie du ${date}`,
-      },
     },
     shoes: {
       title: 'Chaussures',
@@ -394,11 +386,6 @@ export const fr = {
       sessionsPct: (p: number) => `${p >= 0 ? '+' : ''}${p}% sorties`,
       paceFaster: (s: number) => `allure facile -${s}s/km`,
       paceSlower: (s: number) => `allure facile +${s}s/km`,
-      lastWeek: 'Semaine dernière',
-      weekOf: (date: string) => `Semaine du ${date}`,
-      prevWeek: 'Semaine précédente',
-      nextWeek: 'Semaine suivante',
-      jumpToCurrentWeek: 'Cette semaine',
     },
     tabs: {
       volume: 'Volume',
