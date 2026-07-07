@@ -103,7 +103,6 @@ export function ActivityHeatmap({ days }: Props) {
 
       <div ref={containerRef} className="w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <div style={{ minWidth: 'max-content' }}>
-          {/* Month labels */}
           <div className="relative mb-1 h-3" style={{ paddingLeft: LABEL_W }}>
             {monthLabels.map(({ label, col }) => (
               <span
@@ -156,7 +155,6 @@ export function ActivityHeatmap({ days }: Props) {
         </div>
       </div>
 
-      {/* Legend */}
       <div className="mt-3 flex items-center justify-end gap-1.5">
         <span className="text-micro text-subtle">{t.dashboard.heatmap.less}</span>
         {LEVEL_MIX_PCT.map((_, i) => (

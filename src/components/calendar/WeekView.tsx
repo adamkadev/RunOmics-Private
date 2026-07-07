@@ -260,7 +260,6 @@ export function WeekView({
         </div>
 
         <div className="mt-3">
-          {/* Weekday labels */}
           <div className="mb-2 grid grid-cols-7 gap-1">
             {t.calendar.weekdays.map((label, i) => (
               <div
@@ -297,7 +296,6 @@ export function WeekView({
                       d.date === selectedDate && 'bg-foreground/[0.06]'
                     )}
                   >
-                    {/* Cell box */}
                     <div className="relative w-full">
                       {/* Pulse ring for today: opacity-only animation, not scale+fade */}
                       {isToday && rest && (
@@ -343,7 +341,6 @@ export function WeekView({
                       </div>
                     </div>
 
-                    {/* Day number */}
                     <span
                       className="text-micro"
                       style={
