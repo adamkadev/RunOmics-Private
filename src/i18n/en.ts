@@ -126,6 +126,14 @@ export const en = {
       passes: (n: number) => `${n} passes`,
       noRoutes: 'No routes for this filter',
       closeCard: 'Close',
+      segment: {
+        badge: 'Personal segment',
+        passesLabel: 'passes',
+        recordLabel: 'record /km',
+        trendLabel: '90-day trend',
+        leaderboard: 'Your leaderboard',
+        openRun: (date: string) => `Open the run from ${date}`,
+      },
     },
     shoes: {
       title: 'Shoes',

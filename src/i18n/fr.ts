@@ -120,6 +120,14 @@ export const fr = {
       passes: (n: number) => `${n} passages`,
       noRoutes: 'Aucun parcours pour ce filtre',
       closeCard: 'Fermer',
+      segment: {
+        badge: 'Segment perso',
+        passesLabel: 'passages',
+        recordLabel: 'record /km',
+        trendLabel: 'tendance 90 j',
+        leaderboard: 'Ton classement',
+        openRun: (date: string) => `Ouvrir la sortie du ${date}`,
+      },
     },
     shoes: {
       title: 'Chaussures',
