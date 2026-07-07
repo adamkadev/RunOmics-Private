@@ -1,6 +1,7 @@
 import type { ActivityType } from "@/domain/activity/types";
 import type { RouteMeta, RouteCluster } from "@/application/usecases/GetAllRoutes";
 import { HEAT_ROUTE_COLORS } from "@/lib/colors";
+import { ROUTE_GRID, routeCellKey } from "@/lib/routeMatch";
 
 export interface HeatFilters {
   year: string | null;
@@ -41,15 +42,10 @@ export function buildGeoJSON(
   };
 }
 
-// Grid cell size in degrees (~30m), used only to BIN vertices for frequency counting
-// - never to move a coordinate. Kept wider than raw GPS noise (~5-15m) so repeated
-// passes down the same street land in one cell instead of scattering across several
-// low-count cells (which would pin the whole map at the "rare" end of the ramp).
-export const HEAT_GRID = 0.0003;
-
-function cellKey(lon: number, lat: number): string {
-  return `${Math.round(lon / HEAT_GRID)}:${Math.round(lat / HEAT_GRID)}`;
-}
+// Binning only - never moves a coordinate. Shared with route matching (similar
+// runs, personal segments) so "same street" means the same thing everywhere.
+export const HEAT_GRID = ROUTE_GRID;
+const cellKey = routeCellKey;
 
 /**
  * Aggregate all visible routes into a heat-coloured trace. Frequency is counted per

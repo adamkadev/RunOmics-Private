@@ -661,6 +661,18 @@ export const fr = {
     achievements: {
       title: 'Exploits de cette sortie',
     },
+    similarRuns: {
+      title: 'Sorties similaires',
+      timesBadge: (n: number) => `${n} fois`,
+      summary: (n: number, rank: number) =>
+        `Tu as couru ce parcours ${n} fois. Cette sortie : ${rank === 1 ? 'ta meilleure allure' : `ta ${rank}ᵉ meilleure allure`}.`,
+      thisRun: 'Cette sortie',
+      record: 'record',
+      recordLine: (pace: string) => `record ${pace}/km`,
+      paceDelta: (seconds: number) => `+${seconds} s/km`,
+      chartSummary: (n: number, best: string) =>
+        `Allure sur tes ${n} passages de ce parcours ; record ${best}/km.`,
+    },
     notes: {
       title: 'Notes',
       notePlaceholder: 'Comment c’était ? Météo, terrain, sensations...',

@@ -14,6 +14,8 @@ import { ActivityNav } from '@/components/activity/ActivityNav'
 import { ShareButton } from '@/components/activity/ShareButton'
 import { ActivityNotes } from '@/components/activity/ActivityNotes'
 import { ActivityAchievements } from '@/components/activity/ActivityAchievements'
+import { SimilarRuns } from '@/components/activity/SimilarRuns'
+import { getSimilarRuns } from '@/application/usecases/GetSimilarRuns'
 import { BestEfforts } from '@/components/activity/BestEfforts'
 import { KmSplits } from '@/components/activity/KmSplits'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
@@ -65,6 +67,7 @@ export default async function ActivityDetailPage({
 
   const records = await getRecords()
   const qualifiedEfforts = getQualifiedEffortsByActivityId(records)[id] ?? []
+  const similarRuns = getSimilarRuns(id)
   const athlete = await getAthleteFromFirestore()
   const hrBounds: HrBounds | undefined =
     athlete.maxHrBpm && athlete.restingHrBpm
@@ -98,6 +101,8 @@ export default async function ActivityDetailPage({
       {activity.bestEfforts && (
         <ActivityAchievements bestEfforts={activity.bestEfforts} qualifiedEfforts={qualifiedEfforts} />
       )}
+
+      {similarRuns && <SimilarRuns data={similarRuns} />}
 
       <ActivityDetailClient activity={activity} hrBounds={hrBounds} />
 

@@ -11,6 +11,15 @@
 import type { ActivityType } from '@/domain/activity/types'
 import type { RankTier } from '@/domain/athlete/rank'
 
+function ordinal(n: number): string {
+  const rem10 = n % 10
+  const rem100 = n % 100
+  if (rem10 === 1 && rem100 !== 11) return `${n}st`
+  if (rem10 === 2 && rem100 !== 12) return `${n}nd`
+  if (rem10 === 3 && rem100 !== 13) return `${n}rd`
+  return `${n}th`
+}
+
 export const en = {
   // Locale tag used by Intl-based formatters (dates, numbers).
   locale: 'en-US',
@@ -657,6 +666,18 @@ export const en = {
     },
     achievements: {
       title: 'Achievements from this run',
+    },
+    similarRuns: {
+      title: 'Similar runs',
+      timesBadge: (n: number) => `${n} times`,
+      summary: (n: number, rank: number) =>
+        `You've run this route ${n} times. This run: ${rank === 1 ? 'your best pace' : `your ${ordinal(rank)}-best pace`}.`,
+      thisRun: 'This run',
+      record: 'record',
+      recordLine: (pace: string) => `record ${pace}/km`,
+      paceDelta: (seconds: number) => `+${seconds}s/km`,
+      chartSummary: (n: number, best: string) =>
+        `Pace across your ${n} runs on this route; record ${best}/km.`,
     },
     notes: {
       title: 'Notes',
