@@ -122,10 +122,7 @@ export const en = {
       intensity: 'Intensity',
       less: 'Rare',
       more: 'Frequent',
-      passesOne: '1 pass',
-      passes: (n: number) => `${n} passes`,
       noRoutes: 'No routes for this filter',
-      closeCard: 'Close',
     },
     shoes: {
       title: 'Shoes',

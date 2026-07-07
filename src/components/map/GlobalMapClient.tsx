@@ -11,7 +11,6 @@ import { ClusterPanel } from "./ClusterPanel";
 import { YearPicker } from "./YearPicker";
 import { TypePicker } from "./TypePicker";
 import { HeatLegend } from "./HeatLegend";
-import { RouteInfoCard } from "./RouteInfoCard";
 import { useMapRoutes } from "./useMapRoutes";
 import { coordLabel, matchesFilters, type HeatFilters } from "./mapUtils";
 
@@ -35,7 +34,6 @@ export function GlobalMapClient({ data }: Props) {
   const [selectedIdx, setSelectedIdx] = useState(data.defaultClusterIdx);
   const [selectedYear, setSelectedYear] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<ActivityType | null>(null);
-  const [selectedRouteIdx, setSelectedRouteIdx] = useState<number | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [worldView, setWorldView] = useState(false);
   const [names, setNames] = useState<string[]>(() => clusters.map(coordLabel));
@@ -103,11 +101,6 @@ export function GlobalMapClient({ data }: Props) {
     [clusters, selectedIdx, routeMeta, filters],
   );
 
-  // Ignore an inspected run once it leaves the screen (filter or zone change),
-  // without a cascading setState-in-effect - just derive the effective selection.
-  const effectiveRouteIdx =
-    selectedRouteIdx != null && visibleIndices.includes(selectedRouteIdx) ? selectedRouteIdx : null;
-
   // Shared by the zone dropdown and the world-view bubbles, so either path exits
   // world view the same way and hands the camera back to the per-zone effect.
   const handleSelectCluster = useCallback((idx: number) => {
@@ -122,8 +115,6 @@ export function GlobalMapClient({ data }: Props) {
     routes,
     selectedIdx,
     visibleIndices,
-    effectiveRouteIdx,
-    setSelectedRouteIdx,
     worldView,
     clusterCounts,
     names,
@@ -159,8 +150,6 @@ export function GlobalMapClient({ data }: Props) {
       cancelled = true;
     };
   }, [clusters]);
-
-  const selectedMeta = effectiveRouteIdx != null ? routeMeta[effectiveRouteIdx] : undefined;
 
   return (
     <div className={isFullscreen ? "fixed inset-0 z-50 bg-background" : "relative h-full w-full"}>
@@ -205,12 +194,6 @@ export function GlobalMapClient({ data }: Props) {
         >
           {t.pages.map.worldViewHint}
         </span>
-      ) : selectedMeta ? (
-        <RouteInfoCard
-          meta={selectedMeta}
-          onClose={() => setSelectedRouteIdx(null)}
-          isFullscreen={isFullscreen}
-        />
       ) : (
         <HeatLegend isFullscreen={isFullscreen} />
       )}

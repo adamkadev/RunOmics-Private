@@ -116,10 +116,7 @@ export const fr = {
       intensity: 'Intensité',
       less: 'Rare',
       more: 'Fréquent',
-      passesOne: '1 passage',
-      passes: (n: number) => `${n} passages`,
       noRoutes: 'Aucun parcours pour ce filtre',
-      closeCard: 'Fermer',
     },
     shoes: {
       title: 'Chaussures',

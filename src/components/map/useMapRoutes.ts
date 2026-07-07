@@ -1,19 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Map as MapLibreMap, MapGeoJSONFeature, Marker, StyleSpecification } from "maplibre-gl";
+import type { Map as MapLibreMap, Marker, StyleSpecification } from "maplibre-gl";
 import type { MapShellData } from "@/application/usecases/GetAllRoutes";
 import { maptilerStyleUrl } from "@/lib/maptiler";
-import { CLUSTER_BUBBLE_COLOR, HEAT_SELECTED_COLOR } from "@/lib/colors";
 import {
-  buildGeoJSON,
   buildHeatGeoJSON,
   clusterBubbleRadius,
   heatColorExpression,
   heatWidthExpression,
 } from "./mapUtils";
-
-const EMPTY: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
 
 // One DOM circle per zone for the world view - simpler and more robust than a GL
 // symbol layer, which would need a text-font guaranteed present in the vector
@@ -32,7 +28,7 @@ function mkClusterMarker(count: number, radius: number, name: string, label: str
     width: `${size}px`,
     height: `${size}px`,
     borderRadius: "50%",
-    backgroundColor: `${CLUSTER_BUBBLE_COLOR}cc`,
+    backgroundColor: "color-mix(in srgb, var(--accent) 80%, transparent)",
     border: `2px solid ${isDark ? "#0b1220" : "#ffffff"}`,
     boxShadow: "0 2px 8px rgba(0,0,0,0.35)",
     display: "flex",
@@ -74,8 +70,6 @@ export function useMapRoutes(
   routes: [number, number][][],
   selectedIdx: number,
   visibleIndices: number[],
-  selectedRouteIdx: number | null,
-  onSelectRoute: (idx: number | null) => void,
   worldView: boolean,
   clusterCounts: number[],
   clusterNames: string[],
@@ -86,12 +80,6 @@ export function useMapRoutes(
   const mglRef = useRef<typeof import("maplibre-gl") | null>(null);
   const clusterMarkersRef = useRef<Marker[]>([]);
   const [mapReady, setMapReady] = useState(false);
-
-  // Keep the newest handlers reachable from map events without re-init.
-  const onSelectRef = useRef(onSelectRoute);
-  useEffect(() => {
-    onSelectRef.current = onSelectRoute;
-  }, [onSelectRoute]);
 
   const onSelectClusterRef = useRef(onSelectCluster);
   useEffect(() => {
@@ -153,11 +141,6 @@ export function useMapRoutes(
         const { data: heat, maxCount } = buildHeatGeoJSON(routes, first.routeIndices);
 
         map.addSource("heat", { type: "geojson", data: heat });
-        map.addSource("selected", { type: "geojson", data: EMPTY });
-        map.addSource("hit", {
-          type: "geojson",
-          data: buildGeoJSON(routes, first.routeIndices),
-        });
 
         // Intensity layer: color + width driven by how often each stretch was run.
         map.addLayer(
@@ -174,47 +157,6 @@ export function useMapRoutes(
           },
           firstSymbolId,
         );
-
-        // Bright highlight for a tapped run, drawn above the heat but under labels.
-        map.addLayer(
-          {
-            id: "selected-line",
-            type: "line",
-            source: "selected",
-            layout: { "line-join": "round", "line-cap": "round" },
-            paint: {
-              "line-color": HEAT_SELECTED_COLOR,
-              "line-width": ["interpolate", ["linear"], ["zoom"], 9, 2.5, 14, 4],
-              "line-opacity": 1,
-            },
-          },
-          firstSymbolId,
-        );
-
-        // Fully transparent, wide per-route layer on top purely for tap/hover
-        // hit-testing. Must be opacity 0 (not a low non-zero value): this layer is
-        // NOT frequency-merged, so on heavily overlapped stretches even 0.01 alpha
-        // stacks into an opaque black smear that buries the heat colours.
-        // queryRenderedFeatures still returns features from a 0-opacity layer.
-        map.addLayer({
-          id: "hit-line",
-          type: "line",
-          source: "hit",
-          layout: { "line-join": "round", "line-cap": "round" },
-          paint: { "line-color": "#000000", "line-width": 16, "line-opacity": 0 },
-        });
-
-        map.on("mouseenter", "hit-line", () => {
-          map.getCanvas().style.cursor = "pointer";
-        });
-        map.on("mouseleave", "hit-line", () => {
-          map.getCanvas().style.cursor = "";
-        });
-        map.on("click", (e) => {
-          const hits = map.queryRenderedFeatures(e.point, { layers: ["hit-line"] });
-          const feat = hits[0] as MapGeoJSONFeature | undefined;
-          onSelectRef.current(feat?.id != null ? Number(feat.id) : null);
-        });
 
         setMapReady(true);
       });
@@ -240,8 +182,8 @@ export function useMapRoutes(
     };
   }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Rebuild heat + hit geometry (and rescale the ramp) whenever the filters change,
-  // or whenever more route geometry arrives from /api/map/routes - the zone a user
+  // Rebuild heat geometry (and rescale the ramp) whenever the filters change, or
+  // whenever more route geometry arrives from /api/map/routes - the zone a user
   // lands on has no coordinates yet on first render (see GlobalMapClient), so this
   // reruns again once its fetch resolves and `routes` gains those entries.
   useEffect(() => {
@@ -250,23 +192,11 @@ export function useMapRoutes(
     const { data: heat, maxCount } = buildHeatGeoJSON(routes, visibleIndices);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (map.getSource("heat") as any)?.setData(heat);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (map.getSource("hit") as any)?.setData(buildGeoJSON(routes, visibleIndices));
     if (map.getLayer("heat-line")) {
       map.setPaintProperty("heat-line", "line-color", heatColorExpression(maxCount) as never);
       map.setPaintProperty("heat-line", "line-width", heatWidthExpression(maxCount) as never);
     }
   }, [visibleIndices, mapReady, routes]);
-
-  // Highlight the currently inspected run.
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!mapReady || !map) return;
-    const geo =
-      selectedRouteIdx != null ? buildGeoJSON(routes, [selectedRouteIdx]) : EMPTY;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (map.getSource("selected") as any)?.setData(geo);
-  }, [selectedRouteIdx, mapReady]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Re-fits on the selected zone - but not while the world view owns the camera
   // (see below), and it re-fires when world view turns off even if selectedIdx
@@ -292,10 +222,8 @@ export function useMapRoutes(
     const mgl = mglRef.current;
     if (!mapReady || !map || !mgl) return;
 
-    for (const id of ["heat-line", "selected-line", "hit-line"]) {
-      if (map.getLayer(id)) {
-        map.setLayoutProperty(id, "visibility", worldView ? "none" : "visible");
-      }
+    if (map.getLayer("heat-line")) {
+      map.setLayoutProperty("heat-line", "visibility", worldView ? "none" : "visible");
     }
 
     clearClusterMarkers();
