@@ -1,20 +1,22 @@
+import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import type { ProfileYtdStats } from '@/application/usecases/GetProfileData'
 import { t } from '@/i18n'
 
 interface Cell {
-  value: string
+  value: ReactNode
   unit?: string
   label: string
 }
 
 export function ProfileStatsYtd({ ytd }: { ytd: ProfileYtdStats }) {
   const cells: Cell[] = [
-    { value: ytd.distanceKm.toLocaleString(t.locale), unit: t.units.km, label: t.profile.ytd.distance },
-    { value: String(Math.round(ytd.durationSeconds / 3600)), unit: t.units.hour, label: t.profile.ytd.duration },
-    { value: String(ytd.sessionCount), label: t.profile.ytd.sessions },
-    { value: `+${ytd.elevationGainM.toLocaleString(t.locale)}`, unit: t.units.m, label: t.profile.ytd.elevation },
+    { value: <AnimatedValue value={ytd.distanceKm} />, unit: t.units.km, label: t.profile.ytd.distance },
+    { value: <AnimatedValue value={Math.round(ytd.durationSeconds / 3600)} />, unit: t.units.hour, label: t.profile.ytd.duration },
+    { value: <AnimatedValue value={ytd.sessionCount} />, label: t.profile.ytd.sessions },
+    { value: <>+<AnimatedValue value={ytd.elevationGainM} /></>, unit: t.units.m, label: t.profile.ytd.elevation },
   ]
 
   return (

@@ -7,6 +7,7 @@ import { ChartFigure } from '@/components/ui/ChartFigure'
 import { StatusPill, type StatusTone } from '@/components/ui/StatusPill'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { CHART_COLORS } from '@/lib/colors'
+import { useCountUp } from '@/lib/useCountUp'
 import { t } from '@/i18n'
 
 const VERDICT_TONE: Record<ProjectionVerdict, StatusTone> = {
@@ -61,6 +62,7 @@ function CustomTooltip({ active, payload }: TooltipProps) {
 
 export function RaceCockpit({ data }: { data: FormProjection }) {
   const s = t.dashboard.raceCockpit
+  const animatedProjectedTsb = useCountUp(data.projectedTsb)
   const chartData = buildChartData(data)
   const title = data.isRaceTarget && data.raceName ? s.titleWithRace(data.raceName) : s.title
   const summary = `${title}: ${s.projectedForm} ${data.projectedTsb} (${data.projectedTsbLow} to ${data.projectedTsbHigh}), ${s.verdict[data.verdict]}`
@@ -77,7 +79,7 @@ export function RaceCockpit({ data }: { data: FormProjection }) {
       <div className="mb-3 flex flex-wrap items-baseline gap-2">
         <span className="text-title2 font-extrabold tabular-nums text-foreground">
           {data.projectedTsb >= 0 ? '+' : ''}
-          {data.projectedTsb}
+          {round1(animatedProjectedTsb)}
         </span>
         <span className="text-xs text-subtle">
           ({data.projectedTsbLow >= 0 ? '+' : ''}
@@ -130,4 +132,8 @@ export function RaceCockpit({ data }: { data: FormProjection }) {
       <p className="mt-2 text-xs text-subtle">{s.footnote}</p>
     </GlassSurface>
   )
+}
+
+function round1(n: number): number {
+  return Math.round(n * 10) / 10
 }

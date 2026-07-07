@@ -3,6 +3,7 @@ import { Trophy, Target, Medal, TrendingUp, ArrowRight, ArrowDown, Check, Minus,
 import type { YearData, GoalProjection, MonthGoal } from '@/application/usecases/GetGoalsData'
 import { formatDuration, formatDate, formatPace, monthLabel } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { raceDistanceTint } from '@/lib/colors'
 import { STATUS } from '@/lib/statusColors'
 import { cn } from '@/lib/utils'
@@ -55,12 +56,12 @@ export function YearView({ yearData }: { yearData: YearData }) {
             <div className="mb-3 flex items-end justify-between">
               <div>
                 <span className="text-3xl font-bold tracking-tight text-foreground">
-                  {totalDistanceKm.toFixed(0)}
+                  <AnimatedValue value={totalDistanceKm} />
                 </span>
                 <span className="ml-1 text-sm text-subtle">/ {goals.annualDistanceKm} {t.units.km}</span>
               </div>
               <span className="text-sm font-semibold text-accent-text">
-                {annualProgress.toFixed(0)}%
+                <AnimatedValue value={annualProgress} />%
               </span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-foreground/[0.08]">
@@ -125,7 +126,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
                     />
                   </div>
                   <p className="mt-1.5 text-xs font-medium text-foreground">
-                    {t.goals.monthlyGoal.km(Math.round(mg.actualKm), Math.round(mg.targetKm))}
+                    <AnimatedValue value={Math.round(mg.actualKm)} /> / {Math.round(mg.targetKm)}
                   </p>
                   <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-foreground/[0.08]">
                     <div

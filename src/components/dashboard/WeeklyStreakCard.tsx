@@ -18,6 +18,7 @@ function WeeklyGoalRing({ goal }: { goal: WeeklyGoal }) {
   const pct = goal.targetKm > 0 ? Math.min(1, goal.actualKm / goal.targetKm) : 0
   const animatedPct = useCountUp(pct * 100) / 100
   const offset = RING_CIRCUMFERENCE * (1 - animatedPct)
+  const animatedActualKm = useCountUp(goal.actualKm)
   const remaining = Math.max(0, Math.round((goal.targetKm - goal.actualKm) * 10) / 10)
 
   return (
@@ -40,7 +41,7 @@ function WeeklyGoalRing({ goal }: { goal: WeeklyGoal }) {
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-title2 font-extrabold leading-none tabular-nums text-foreground">
-            {Math.round(goal.actualKm)}
+            {Math.round(animatedActualKm)}
           </span>
           <span className="text-xs text-muted-foreground">/ {Math.round(goal.targetKm)} {t.units.km}</span>
         </div>
