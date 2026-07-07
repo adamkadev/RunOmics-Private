@@ -5,6 +5,7 @@ import { ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { EditableNumber } from '@/components/ui/EditableNumber'
+import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import type { ProfileGoal as ProfileGoalData } from '@/application/usecases/GetProfileData'
 import type { GoalYear } from '@/application/usecases/GetGoalsData'
 import { STATUS } from '@/lib/statusColors'
@@ -29,7 +30,7 @@ export function ProfileGoal({ goal, onSaveGoal }: Props) {
 
       <div className="flex items-baseline gap-1.5">
         <span className="text-title1 font-extrabold tracking-tight text-foreground">
-          {totalDistanceKm.toLocaleString(t.locale)}
+          <AnimatedValue value={totalDistanceKm} />
         </span>
         <span className="text-footnote font-semibold text-muted-foreground">
           {'/ '}

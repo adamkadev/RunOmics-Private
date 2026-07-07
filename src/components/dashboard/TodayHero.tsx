@@ -38,6 +38,7 @@ function formatSyncedAgo(lastSyncedAt: string): string {
 export function TodayHero({ status, plannedWorkout, nextRace, lastSyncedAt }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false)
   const animatedTsb = useCountUp(status?.tsb ?? 0)
+  const animatedDaysToRace = useCountUp(nextRace ? daysUntil(nextRace.date) : 0)
 
   if (!status && !plannedWorkout && !nextRace) return null
 
@@ -90,7 +91,7 @@ export function TodayHero({ status, plannedWorkout, nextRace, lastSyncedAt }: Pr
             {nextRace && (
               <div>
                 <div className="text-[10px] uppercase tracking-wide text-white/50">{s.race}</div>
-                <div className="mt-0.5 text-sm font-semibold">{s.daysToRace(daysUntil(nextRace.date))}</div>
+                <div className="mt-0.5 text-sm font-semibold">{s.daysToRace(Math.round(animatedDaysToRace))}</div>
               </div>
             )}
           </div>

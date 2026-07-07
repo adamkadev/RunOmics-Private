@@ -581,6 +581,12 @@ h1 {
     cursor: pointer;
   }
 
+  /* Prevent iOS's long-press link-preview/share menu on in-app navigation -
+     it reads as a native browser affordance, not part of the PWA. */
+  a {
+    -webkit-touch-callout: none;
+  }
+
   button:not(:disabled):active {
     transform: scale(0.96);
     opacity: 0.85;

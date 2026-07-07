@@ -5,6 +5,7 @@ import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import type { VO2maxTrend } from '@/application/usecases/GetVO2maxHistory'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { STATUS } from '@/lib/statusColors'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -22,7 +23,7 @@ function Metric({
   trailing,
 }: {
   label: string
-  value: string
+  value: ReactNode
   valueClassName?: string
   trailing?: ReactNode
 }) {
@@ -64,7 +65,7 @@ export function TrainingMetricsCard({ status, vo2max, vo2maxTrend }: Props) {
       <GlassSurface variant="card" className="p-4">
         <Metric
           label={t.dashboard.vo2maxChart.title}
-          value={vo2max !== null ? vo2max.toFixed(1) : '–'}
+          value={vo2max !== null ? <AnimatedValue value={vo2max} decimals={1} /> : '–'}
           trailing={<TrendIcon direction={vo2maxTrend} />}
         />
       </GlassSurface>
@@ -74,7 +75,7 @@ export function TrainingMetricsCard({ status, vo2max, vo2maxTrend }: Props) {
       <GlassSurface variant="card" className="p-4">
         <Metric
           label={t.trainingStatus.metrics.fitness}
-          value={String(Math.round(status.ctl))}
+          value={<AnimatedValue value={Math.round(status.ctl)} />}
           trailing={<TrendIcon direction={fitnessTrend} />}
         />
       </GlassSurface>
