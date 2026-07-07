@@ -516,7 +516,7 @@ export async function getAnalyticsData(): Promise<AnalyticsPageData> {
   }
 
   const years = Array.from(byYearMap.keys()).sort((a, b) => b - a)
-  const periodWeeks = [8, 12, 16]
+  const periodWeeks = [1, 8, 12, 16]
 
   const temperatureScatter: TemperaturePoint[] = all
     .filter((a) => a.avgTemperature !== null && a.paceSecPerKm !== null && a.distanceKm >= 3)

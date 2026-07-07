@@ -11,7 +11,6 @@
 import type { ActivityType } from '@/domain/activity/types'
 import type { RankTier } from '@/domain/athlete/rank'
 import type { TrainingStatusType } from '@/application/usecases/GetTrainingStatus'
-import type { WeekLoadLevel } from '@/application/usecases/GetWeeklyLoadComparison'
 
 export const en = {
   // Locale tag used by Intl-based formatters (dates, numbers).
@@ -245,40 +244,6 @@ export const en = {
   },
 
   dashboard: {
-    stats: {
-      distance: 'Distance',
-      distanceSub: (lastWeek: string) => `vs ${lastWeek} last week`,
-      time: 'Time',
-      avgHr: 'Avg HR',
-      avgPace: 'Avg Pace',
-      thisWeek: 'this week',
-      streak: 'Streak',
-      streakSub: (best: number) => `best ${best}d`,
-      vo2max: 'VO₂max',
-      empty: '-',
-      prevWeek: 'Previous week',
-      nextWeek: 'Next week',
-      jumpToCurrent: 'This week',
-    },
-    weekLoad: {
-      label: (percent: number, level: WeekLoadLevel): string => {
-        if (level === 'in-progress') return 'Week in progress'
-        if (percent >= 120) return '↑ Heavy week'
-        if (percent >= 90)  return 'Normal week'
-        if (percent >= 60)  return '↓ Light week'
-        return '↓ Very light week'
-      },
-      level: {
-        low: 'Light load',
-        normal: 'Normal load',
-        high: 'Heavy load',
-        'in-progress': 'Week in progress',
-      },
-      tooltip: (window: number, level: WeekLoadLevel) =>
-        level === 'in-progress'
-          ? `Not enough of the week has elapsed yet to compare load — check back later in the week`
-          : `Training load (TRIMP) so far this week vs the average of the last ${window} weeks`,
-    },
     recentActivities: {
       title: 'Recent Activities',
     },
@@ -424,8 +389,8 @@ export const en = {
     windowGroupLabel: 'Window',
     period: {
       chip: (n: number) => `${n} wk`,
-      title: (n: number) => `Last ${n} weeks`,
-      vsPrevious: (n: number) => `vs previous ${n} weeks`,
+      title: (n: number) => (n === 1 ? 'This week' : `Last ${n} weeks`),
+      vsPrevious: (n: number) => (n === 1 ? 'vs previous week' : `vs previous ${n} weeks`),
       distancePct: (p: number) => `${p >= 0 ? '+' : ''}${p}% km`,
       sessionsPct: (p: number) => `${p >= 0 ? '+' : ''}${p}% runs`,
       paceFaster: (s: number) => `easy pace -${s}s/km`,
