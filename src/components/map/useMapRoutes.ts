@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Map as MapLibreMap, Marker, StyleSpecification } from "maplibre-gl";
+import type { GeoJSONSource, Map as MapLibreMap, Marker, StyleSpecification } from "maplibre-gl";
 import type { MapShellData } from "@/application/usecases/GetAllRoutes";
 import { maptilerStyleUrl } from "@/lib/maptiler";
 import {
@@ -16,6 +16,11 @@ import {
 // style's glyph set just to print a route count.
 // Bubbles above this diameter show the zone name under the count - small bubbles stay count-only.
 const LABELED_BUBBLE_SIZE = 44;
+
+// Reveal the heat trace in steps instead of popping in all at once - color/width
+// stay fixed on the final maxCount throughout so the ramp doesn't shift mid-animation.
+const REVEAL_STEPS = 16;
+const REVEAL_STEP_MS = 45;
 
 function mkClusterMarker(count: number, radius: number, name: string, label: string, isDark: boolean): HTMLDivElement {
   const size = radius * 2;
@@ -185,17 +190,41 @@ export function useMapRoutes(
   // Rebuild heat geometry (and rescale the ramp) whenever the filters change, or
   // whenever more route geometry arrives from /api/map/routes - the zone a user
   // lands on has no coordinates yet on first render (see GlobalMapClient), so this
-  // reruns again once its fetch resolves and `routes` gains those entries.
+  // reruns again once its fetch resolves and `routes` gains those entries. The
+  // trace is revealed in steps rather than set all at once, so streets build up
+  // on screen instead of popping in.
   useEffect(() => {
     const map = mapRef.current;
-    if (!mapReady || !map) return;
+    const source = map?.getSource("heat") as GeoJSONSource | undefined;
+    if (!mapReady || !map || !source) return;
+
     const { data: heat, maxCount } = buildHeatGeoJSON(routes, visibleIndices);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (map.getSource("heat") as any)?.setData(heat);
     if (map.getLayer("heat-line")) {
       map.setPaintProperty("heat-line", "line-color", heatColorExpression(maxCount) as never);
       map.setPaintProperty("heat-line", "line-width", heatWidthExpression(maxCount) as never);
     }
+
+    const features = heat.features;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduceMotion || features.length === 0) {
+      source.setData(heat);
+      return;
+    }
+
+    let step = 0;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    function reveal() {
+      step += 1;
+      const count = Math.ceil((features.length * step) / REVEAL_STEPS);
+      source!.setData({ type: "FeatureCollection", features: features.slice(0, count) });
+      if (step < REVEAL_STEPS) timeoutId = setTimeout(reveal, REVEAL_STEP_MS);
+    }
+    reveal();
+
+    return () => {
+      if (timeoutId !== null) clearTimeout(timeoutId);
+    };
   }, [visibleIndices, mapReady, routes]);
 
   // Re-fits on the selected zone - but not while the world view owns the camera
