@@ -2,37 +2,31 @@
 
 import { ATHLETE_NAME } from '@/domain/athlete/constants'
 import { t } from '@/i18n'
-import { SyncStatusBadge } from './SyncStatusBadge'
 
-function isoWeek(d: Date): number {
-  const utc = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))
-  const day = utc.getUTCDay() || 7
-  utc.setUTCDate(utc.getUTCDate() + 4 - day)
-  const yearStart = new Date(Date.UTC(utc.getUTCFullYear(), 0, 1))
-  return Math.ceil(((utc.getTime() - yearStart.getTime()) / 86_400_000 + 1) / 7)
+function initials(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('')
 }
 
-export function DashboardGreeting({ lastSyncedAt }: { lastSyncedAt: string | null }) {
+export function DashboardGreeting() {
   const now = new Date()
   const name = ATHLETE_NAME
   const g = t.pages.dashboard.greeting
   const text = now.getHours() < 12 ? g.morning : now.getHours() < 18 ? g.afternoon : g.evening
-  const dateStr = now.toLocaleDateString(t.locale, { day: 'numeric', month: 'long', year: 'numeric' })
-  const subtitle = g.weekDate(isoWeek(now), dateStr)
+  const subtitle = now.toLocaleDateString(t.locale, { weekday: 'long', day: 'numeric', month: 'long' })
 
   return (
     <div className="flex items-start justify-between gap-3">
       <div>
         <h1 className="text-display text-foreground">{text}, {name}</h1>
-        <div className="mt-0.5 flex items-center justify-between gap-3">
-          <p className="text-sm text-muted-foreground">{subtitle}</p>
-          <div className="sm:hidden">
-            <SyncStatusBadge lastSyncedAt={lastSyncedAt} />
-          </div>
-        </div>
+        <p className="mt-0.5 text-sm capitalize text-muted-foreground">{subtitle}</p>
       </div>
-      <div className="hidden sm:block">
-        <SyncStatusBadge lastSyncedAt={lastSyncedAt} />
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#0d2e1a] text-sm font-bold text-emerald-400">
+        {initials(name)}
       </div>
     </div>
   )

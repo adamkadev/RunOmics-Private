@@ -3,11 +3,8 @@ import { getLastSyncedAt } from '@/application/usecases/GetSyncStatus'
 import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
 import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { getConsistencyScore } from '@/application/usecases/GetConsistencyScore'
-import { getWeeklyLoadComparison } from '@/application/usecases/GetWeeklyLoadComparison'
 import { getHeatmapData } from '@/application/usecases/GetHeatmapData'
-import { getLatestVO2max, getVO2maxTrend } from '@/application/usecases/GetVO2maxHistory'
 import { getRecords, getQualifiedEffortsByActivityId, getMostRecentRecord } from '@/application/usecases/GetRecords'
-import { getPbAlerts } from '@/application/usecases/GetPbAlerts'
 import { getShoeStats } from '@/application/usecases/GetShoeStats'
 import { getNextRace } from '@/application/usecases/GetNextRace'
 import { getFormProjection } from '@/application/usecases/GetFormProjection'
@@ -15,7 +12,6 @@ import { getWeeklyDigest } from '@/application/usecases/GetWeeklyDigest'
 import { getTodayPlannedWorkout } from '@/application/usecases/GetPlannedWorkouts'
 import { getWeeklyStreakData } from '@/application/usecases/GetMilestones'
 import { getCurrentWeeklyGoal } from '@/application/usecases/GetGoalsData'
-import { StatsGrid } from '@/components/dashboard/StatsGrid'
 import { DashboardCharts } from '@/components/dashboard/DashboardCharts'
 import { RecentActivities } from '@/components/dashboard/RecentActivities'
 import { ActivityHeatmap } from '@/components/dashboard/ActivityHeatmap'
@@ -40,14 +36,10 @@ export default async function DashboardPage() {
   const trainingLoad = await getTrainingLoad()
   const trainingStatus = await getTrainingStatus()
   const consistencyScore = getConsistencyScore()
-  const weekLoad = await getWeeklyLoadComparison()
   const heatmapDays = getHeatmapData()
-  const vo2max = getLatestVO2max()
-  const vo2maxTrend = getVO2maxTrend()
   const records = await getRecords()
   const qualifiedEffortsByActivityId = getQualifiedEffortsByActivityId(records)
   const mostRecentRecord = getMostRecentRecord(records)
-  const pbAlerts = await getPbAlerts()
   const shoes = getShoeStats()
   const nextRace = await getNextRace()
   const formProjection = await getFormProjection()
@@ -62,13 +54,8 @@ export default async function DashboardPage() {
 
       <div className="space-y-3">
         <FirstLaunchHint />
-        <DashboardGreeting lastSyncedAt={lastSyncedAt} />
-        <DashboardHighlights
-          record={mostRecentRecord}
-          pbAlerts={pbAlerts}
-          shoes={shoes}
-          nextRace={nextRace}
-        />
+        <DashboardGreeting />
+        <DashboardHighlights shoes={shoes} nextRace={nextRace} />
       </div>
 
       <TodayHero
@@ -79,8 +66,6 @@ export default async function DashboardPage() {
       />
 
       {weeklyStreak && <WeeklyStreakCard data={weeklyStreak} goal={weeklyGoal} />}
-
-      <StatsGrid weeks={data.weeks} currentStreak={data.currentStreak} vo2max={vo2max} vo2maxTrend={vo2maxTrend} weekLoad={weekLoad} />
 
       {(trainingStatus || consistencyScore) && (
         <div className={trainingStatus && consistencyScore ? 'grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]' : undefined}>
