@@ -1,12 +1,6 @@
 {
   "planned": [
     {
-      "date": "2026-06-30",
-      "name": "3 x 1500m allure spé",
-      "type": "Threshold",
-      "scheduledTime": "19:00"
-    },
-    {
       "date": "2026-07-01",
       "name": "50 min endurance",
       "durationSecs": 3000,
