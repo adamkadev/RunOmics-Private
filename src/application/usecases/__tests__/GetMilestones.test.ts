@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { findDistanceTierMilestones, currentWeekStreak, longestWeekStreak } from '../GetMilestones'
+import {
+  findDistanceTierMilestones,
+  findLifetimeDistanceMilestones,
+  findActivityCountMilestones,
+  currentWeekStreak,
+  longestWeekStreak,
+} from '../GetMilestones'
 import type { Activity } from '@/domain/activity/types'
 import { isoWeekNumber } from '@/lib/calendarDate'
 
@@ -38,6 +44,45 @@ describe('findDistanceTierMilestones', () => {
 
   it('empty with no activities', () => {
     expect(findDistanceTierMilestones([])).toEqual([])
+  })
+})
+
+describe('findLifetimeDistanceMilestones', () => {
+  it('does not reset at year boundaries, unlike the per-year tiers', () => {
+    const acts = [
+      { date: '2025-12-31', distanceKm: 800 },
+      { date: '2026-01-01', distanceKm: 800 },
+    ]
+    const crossings = findLifetimeDistanceMilestones(acts, [500, 1000, 1500])
+    expect(crossings).toEqual([
+      { tierKm: 500, date: '2025-12-31', cumulativeKm: 800 },
+      { tierKm: 1000, date: '2026-01-01', cumulativeKm: 1600 },
+      { tierKm: 1500, date: '2026-01-01', cumulativeKm: 1600 },
+    ])
+  })
+
+  it('empty with no activities', () => {
+    expect(findLifetimeDistanceMilestones([])).toEqual([])
+  })
+})
+
+describe('findActivityCountMilestones', () => {
+  it('fires on the exact Nth activity, tracking cumulative distance', () => {
+    const acts = [
+      { date: '2026-01-01', distanceKm: 10 },
+      { date: '2026-01-02', distanceKm: 10 },
+      { date: '2026-01-03', distanceKm: 10 },
+    ]
+    const crossings = findActivityCountMilestones(acts, [2, 3])
+    expect(crossings).toEqual([
+      { count: 2, date: '2026-01-02', cumulativeKm: 20 },
+      { count: 3, date: '2026-01-03', cumulativeKm: 30 },
+    ])
+  })
+
+  it('empty when activity count never reaches the first tier', () => {
+    const acts = [{ date: '2026-01-01', distanceKm: 10 }]
+    expect(findActivityCountMilestones(acts, [5, 10])).toEqual([])
   })
 })
 

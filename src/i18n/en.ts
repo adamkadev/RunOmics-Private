@@ -871,6 +871,13 @@ export const en = {
       streakDetail: 'Still going - a run logged every week since',
       record: (label: string) => `${label} record`,
       viewAll: 'View all milestones',
+      firstActivity: 'First step',
+      firstActivityDetail: (km: number) => `Where it all began - ${km.toFixed(1)} km`,
+      lifetimeDistance: (km: number) => `${km.toLocaleString('en-US')} km lifetime`,
+      lifetimeDistanceDetail: (marathons: number) => `≈ ${marathons.toLocaleString('en-US')} marathons run`,
+      lifetimeDistanceWorldTour: '🌍 A full trip around the Earth',
+      activityCount: (n: number) => `${ordinal(n)} run`,
+      activityCountDetail: (km: number) => `${km.toLocaleString('en-US')} km covered so far`,
     },
     hrZones: {
       title: 'Heart rate zones',
