@@ -10,7 +10,16 @@ const DISTANCE_TIERS_KM = [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 5000]
 const MIN_STREAK_WEEKS = 8
 const MAX_STREAK_WEEKS_TO_CHECK = 208 // 4 years
 
-export type MilestoneType = 'distance-tier' | 'streak' | 'record'
+// Never reset (unlike DISTANCE_TIERS_KM, which is per calendar year) - this
+// is the "since day 1" lifetime odometer. Tops out at Earth's equatorial
+// circumference, a fitting final tier for a distance that only ever grows.
+const LIFETIME_DISTANCE_TIERS_KM = [500, 1000, 1500, 2000, 3000, 4000, 5000, 7500, 10_000, 15_000, 20_000, 30_000, 40_075]
+const EARTH_CIRCUMFERENCE_KM = 40_075
+const MARATHON_KM = 42.195
+
+const ACTIVITY_COUNT_TIERS = [25, 50, 100, 150, 200, 250, 300, 400, 500, 750, 1000]
+
+export type MilestoneType = 'distance-tier' | 'streak' | 'record' | 'lifetime-distance' | 'activity-count' | 'first-activity'
 
 export interface Milestone {
   type: MilestoneType
@@ -48,6 +57,59 @@ export function findDistanceTierMilestones(
       tierIdx++
     }
   }
+
+  return results
+}
+
+export interface LifetimeDistanceCrossing {
+  tierKm: number
+  date: string
+  cumulativeKm: number
+}
+
+/** All-time cumulative distance tier crossings, in the order they happened. Unlike findDistanceTierMilestones, never resets. */
+export function findLifetimeDistanceMilestones(
+  activitiesAscByDate: { date: string; distanceKm: number }[],
+  tiers: number[] = LIFETIME_DISTANCE_TIERS_KM,
+): LifetimeDistanceCrossing[] {
+  const results: LifetimeDistanceCrossing[] = []
+  let cumulative = 0
+  let tierIdx = 0
+
+  for (const a of activitiesAscByDate) {
+    cumulative += a.distanceKm
+    while (tierIdx < tiers.length && cumulative >= (tiers[tierIdx] as number)) {
+      results.push({ tierKm: tiers[tierIdx] as number, date: a.date, cumulativeKm: cumulative })
+      tierIdx++
+    }
+  }
+
+  return results
+}
+
+export interface ActivityCountCrossing {
+  count: number
+  date: string
+  cumulativeKm: number
+}
+
+/** Every-Nth-session milestones ("100th run"), in the order they happened. */
+export function findActivityCountMilestones(
+  activitiesAscByDate: { date: string; distanceKm: number }[],
+  tiers: number[] = ACTIVITY_COUNT_TIERS,
+): ActivityCountCrossing[] {
+  const results: ActivityCountCrossing[] = []
+  let cumulative = 0
+  let tierIdx = 0
+
+  activitiesAscByDate.forEach((a, i) => {
+    cumulative += a.distanceKm
+    const count = i + 1
+    if (tierIdx < tiers.length && count === tiers[tierIdx]) {
+      results.push({ count, date: a.date, cumulativeKm: cumulative })
+      tierIdx++
+    }
+  })
 
   return results
 }
@@ -120,6 +182,37 @@ export async function getMilestones(): Promise<Milestone[]> {
       date: crossing.date,
       label: t.profile.milestones.distanceTier(crossing.tierKm),
       detail: t.profile.milestones.distanceTierDetail(crossing.year),
+    })
+  }
+
+  if (ascending.length > 0) {
+    const first = ascending[0] as Activity
+    milestones.push({
+      type: 'first-activity',
+      date: first.date,
+      label: t.profile.milestones.firstActivity,
+      detail: t.profile.milestones.firstActivityDetail(first.distanceKm),
+    })
+  }
+
+  for (const crossing of findLifetimeDistanceMilestones(ascending)) {
+    milestones.push({
+      type: 'lifetime-distance',
+      date: crossing.date,
+      label: t.profile.milestones.lifetimeDistance(crossing.tierKm),
+      detail:
+        crossing.tierKm >= EARTH_CIRCUMFERENCE_KM
+          ? t.profile.milestones.lifetimeDistanceWorldTour
+          : t.profile.milestones.lifetimeDistanceDetail(Math.round(crossing.cumulativeKm / MARATHON_KM)),
+    })
+  }
+
+  for (const crossing of findActivityCountMilestones(ascending)) {
+    milestones.push({
+      type: 'activity-count',
+      date: crossing.date,
+      label: t.profile.milestones.activityCount(crossing.count),
+      detail: t.profile.milestones.activityCountDetail(Math.round(crossing.cumulativeKm)),
     })
   }
 

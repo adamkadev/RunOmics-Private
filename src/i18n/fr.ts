@@ -865,6 +865,13 @@ export const fr = {
       streakDetail: 'Toujours en cours - une sortie chaque semaine depuis',
       record: (label: string) => `Record ${label}`,
       viewAll: 'Voir tous les jalons',
+      firstActivity: 'Premier pas',
+      firstActivityDetail: (km: number) => `Le début de l’aventure - ${km.toFixed(1)} km`,
+      lifetimeDistance: (km: number) => `${km.toLocaleString('fr-FR')} km au total`,
+      lifetimeDistanceDetail: (marathons: number) => `≈ ${marathons.toLocaleString('fr-FR')} marathons courus`,
+      lifetimeDistanceWorldTour: '🌍 Le tour du monde à l’équateur',
+      activityCount: (n: number) => `${n}ᵉ sortie`,
+      activityCountDetail: (km: number) => `${km.toLocaleString('fr-FR')} km parcourus au total`,
     },
     hrZones: {
       title: 'Zones cardiaques',
