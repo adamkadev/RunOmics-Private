@@ -533,6 +533,11 @@
 
 html {
   scroll-behavior: smooth;
+  /* Blocks iOS Safari's rubber-band bounce at the document edge, which is
+     enough residual touch scroll to trigger the toolbar's show/hide
+     animation (and drag every `position: fixed` element along with it) even
+     while useScrollLock has the body pinned. */
+  overscroll-behavior-y: none;
 }
 
 html,

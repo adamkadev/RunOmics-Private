@@ -35,6 +35,7 @@ export function ActivitySheet({ activity, onClose }: Props) {
   return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center sm:p-4"
+      style={{ touchAction: 'none' }}
       role="dialog"
       aria-modal="true"
       onClick={close}
@@ -42,7 +43,7 @@ export function ActivitySheet({ activity, onClose }: Props) {
       <div
         ref={trapRef}
         className="glass-sheet relative w-full animate-sheet-up rounded-t-card p-4 sm:max-w-sm sm:rounded-card-sm"
-        style={sheetStyle}
+        style={{ ...sheetStyle, paddingBottom: 'max(16px, calc(var(--safe-bottom) + 8px))' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-2.5 flex justify-center sm:hidden" {...handleProps}>
