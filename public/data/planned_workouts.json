@@ -35,13 +35,6 @@
       "scheduledTime": "19:00"
     },
     {
-      "date": "2026-07-08",
-      "name": "2 x 10' tempo",
-      "durationSecs": 3540,
-      "type": "Tempo",
-      "scheduledTime": "19:00"
-    },
-    {
       "date": "2026-07-09",
       "name": "1 h endurance",
       "durationSecs": 3600,
