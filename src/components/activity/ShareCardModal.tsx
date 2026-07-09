@@ -170,7 +170,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
 
           <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0 16px' }}>
             <div style={{
-              borderRadius: 18, overflow: 'hidden', width: 176, height: 380,
+              borderRadius: 14, overflow: 'hidden', width: 132, height: 285,
               boxShadow: '0 8px 32px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.35)',
               flexShrink: 0,
             }}>
