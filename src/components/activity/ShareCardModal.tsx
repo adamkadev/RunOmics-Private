@@ -134,7 +134,12 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
         className="relative flex w-full max-w-md animate-sheet-up flex-col overflow-hidden sm:rounded-2xl"
         style={{
           ...sheetStyle,
-          maxHeight: 'calc(100dvh - max(env(safe-area-inset-top), 24px) - 24px)',
+          // Fill nearly the whole screen: top edge sits just below the notch /
+          // Dynamic Island (the safe-area inset), with the sheet anchored to the
+          // bottom edge. Using `height` (not just `maxHeight`) so it always
+          // reaches that height instead of only growing to fit its content.
+          height: 'calc(100dvh - max(env(safe-area-inset-top), 12px) - 8px)',
+          maxHeight: 'calc(100dvh - max(env(safe-area-inset-top), 12px) - 8px)',
           borderRadius: '28px 28px 0 0',
           background: 'var(--glass-bg-sheet)',
           backdropFilter: 'blur(40px)',
@@ -170,7 +175,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
 
           <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0 16px' }}>
             <div style={{
-              borderRadius: 14, overflow: 'hidden', width: 132, height: 285,
+              borderRadius: 18, overflow: 'hidden', width: 176, height: 380,
               boxShadow: '0 8px 32px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.35)',
               flexShrink: 0,
             }}>
