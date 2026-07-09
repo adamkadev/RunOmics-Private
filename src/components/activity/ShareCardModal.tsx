@@ -134,17 +134,18 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
         className="relative flex w-full max-w-md animate-sheet-up flex-col overflow-hidden sm:rounded-2xl"
         style={{
           ...sheetStyle,
-          // Fill nearly the whole screen: top edge sits just below the notch /
-          // Dynamic Island (the safe-area inset), with the sheet anchored to the
-          // bottom edge. Using `height` (not just `maxHeight`) so it always
-          // reaches that height instead of only growing to fit its content.
-          height: 'calc(100dvh - max(env(safe-area-inset-top), 12px) - 8px)',
-          maxHeight: 'calc(100dvh - max(env(safe-area-inset-top), 12px) - 8px)',
-          borderRadius: '28px 28px 0 0',
+          // Full-height sheet: the glass background spans the entire screen
+          // (including behind the notch / Dynamic Island) so there's no dark
+          // strip above the drag handle. `paddingTop` keeps the handle and the
+          // close button clear of the top safe-area inset, so the content still
+          // starts just below the notch even though the fill reaches the top.
+          height: '100dvh',
+          maxHeight: '100dvh',
+          paddingTop: 'max(env(safe-area-inset-top), 12px)',
+          borderRadius: '0',
           background: 'var(--glass-bg-sheet)',
           backdropFilter: 'blur(40px)',
           WebkitBackdropFilter: 'blur(40px)',
-          borderTop: '1px solid var(--glass-border)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -160,8 +161,13 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
         <button
           onClick={close}
           aria-label={t.activity.shareCard.close}
-          className="absolute right-4 top-4 z-10"
+          className="absolute right-4 z-10"
           style={{
+            // Offset below the top safe-area inset by hand: an absolutely
+            // positioned element is placed against the sheet's padding box, so
+            // the sheet's paddingTop doesn't push it down like it does the
+            // handle - without this it would sit behind the notch.
+            top: 'calc(max(env(safe-area-inset-top), 12px) + 6px)',
             width: 34, height: 34, borderRadius: '50%',
             background: 'color-mix(in srgb, var(--ro-text) 10%, transparent)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
