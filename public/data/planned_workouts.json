@@ -1,13 +1,6 @@
 {
   "planned": [
     {
-      "date": "2026-07-02",
-      "name": "45 min endurance",
-      "durationSecs": 2700,
-      "type": "Base",
-      "scheduledTime": "19:00"
-    },
-    {
       "date": "2026-07-03",
       "name": "6 x 1000m allure spé",
       "type": "Threshold",
