@@ -36,15 +36,15 @@
     },
     {
       "date": "2026-07-10",
-      "name": "2 x 10' tempo",
-      "durationSecs": 3540,
+      "name": "40 min footing + renforcement musculaire",
+      "durationSecs": 2400,
       "type": "Threshold",
       "scheduledTime": "19:00"
     },
     {
       "date": "2026-07-11",
-      "name": "40 min footing + renforcement musculaire",
-      "durationSecs": 2400,
+      "name": "2 x 10' tempo",
+      "durationSecs": 3540,
       "type": "Base",
       "scheduledTime": "19:00"
     },
