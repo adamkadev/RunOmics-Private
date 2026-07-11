@@ -1068,7 +1068,6 @@ export const fr = {
       vsTypical: (percent: number) => `${percent - 100 >= 0 ? '+' : ''}${percent - 100}% vs type`,
       easyHard: 'Facile / Dur',
       elevation: 'D+',
-      keySessions: 'Séances clés',
     },
     weekPurpose: {
       recovery: 'Semaine de récupération',

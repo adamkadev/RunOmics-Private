@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { computeProjection, computeYearOutcome } from '../GetGoalsData'
+import { computeProjection, computeYearOutcome, computeNextRaceSpotlight } from '../GetGoalsData'
 import type { Activity } from '@/domain/activity/types'
-import type { GoalYear, YearData } from '../GetGoalsData'
+import type { GoalYear, YearData, UpcomingRace } from '../GetGoalsData'
+import type { RacePrediction } from '../GetRacePredictions'
 
 const act = (date: string, km: number): Activity => ({ date, distanceKm: km }) as Activity
 
@@ -77,6 +78,7 @@ const yearData = (overrides: Partial<YearData> = {}): YearData => ({
   upcomingRaces: [],
   projection: null,
   monthlyGoals: [],
+  nextRaceSpotlight: null,
   ...overrides,
 })
 
@@ -135,5 +137,59 @@ describe('computeYearOutcome', () => {
       })
     )
     expect(outcome?.targets[0]).toEqual({ distance: '10K', targetSeconds: 2400, pbSeconds: null, achieved: null })
+  })
+})
+
+// ---------- computeNextRaceSpotlight ----------
+
+const race = (overrides: Partial<UpcomingRace> = {}): UpcomingRace => ({
+  date: '2024-09-05',
+  name: 'Kulturlaf',
+  distance: '5K',
+  targetSeconds: 1200,
+  ...overrides,
+})
+
+const prediction = (overrides: Partial<RacePrediction> = {}): RacePrediction => ({
+  key: '5k',
+  label: '5K',
+  km: 5,
+  predictedSeconds: 1290,
+  lowSeconds: 1280,
+  highSeconds: 1300,
+  actualSeconds: null,
+  trendDeltaSeconds: null,
+  trendWeeks: 12,
+  ...overrides,
+})
+
+describe('computeNextRaceSpotlight', () => {
+  it('returns null when there are no races on or after today', () => {
+    expect(computeNextRaceSpotlight([race({ date: '2024-01-01' })], [], '2024-07-01')).toBeNull()
+  })
+
+  it('picks the earliest race on or after today', () => {
+    const races = [race({ date: '2024-06-01', name: 'Old' }), race({ date: '2024-09-05', name: 'Kulturlaf' })]
+    const result = computeNextRaceSpotlight(races, [], '2024-07-01')
+    expect(result?.race.name).toBe('Kulturlaf')
+    expect(result?.daysUntil).toBe(66)
+  })
+
+  it('matches the prediction by distance and computes the gap vs the target', () => {
+    const result = computeNextRaceSpotlight([race({ targetSeconds: 1200 })], [prediction({ predictedSeconds: 1290 })], '2024-07-01')
+    expect(result?.predictedSeconds).toBe(1290)
+    expect(result?.gapSeconds).toBe(90)
+  })
+
+  it('leaves predictedSeconds/gapSeconds null when no prediction matches the distance', () => {
+    const result = computeNextRaceSpotlight([race({ distance: 'Marathon' })], [prediction()], '2024-07-01')
+    expect(result?.predictedSeconds).toBeNull()
+    expect(result?.gapSeconds).toBeNull()
+  })
+
+  it('leaves gapSeconds null when the race has no target time', () => {
+    const result = computeNextRaceSpotlight([race({ targetSeconds: null })], [prediction()], '2024-07-01')
+    expect(result?.predictedSeconds).toBe(1290)
+    expect(result?.gapSeconds).toBeNull()
   })
 })

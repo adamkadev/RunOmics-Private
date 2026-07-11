@@ -129,7 +129,7 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds }: Props) {
                 onClick={() => setMode(m)}
                 className={cn(
                   'rounded-[7px] px-2.5 py-1 text-caption font-semibold transition-colors',
-                  mode === m ? 'bg-foreground/[0.14] text-foreground' : 'text-muted-foreground'
+                  mode === m ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'
                 )}
               >
                 {m === 'week' ? t.plan.switcher.week : t.plan.switcher.month}

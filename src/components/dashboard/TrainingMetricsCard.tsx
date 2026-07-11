@@ -74,27 +74,36 @@ function fitnessBand(ctl: number, ctlPeak: number): 'building' | 'nearPeak' | 'p
   return 'building'
 }
 
-function TrendIcon({ direction }: { direction: 'up' | 'down' | 'stable' | null }) {
-  if (direction === 'up') return <TrendingUp size={13} className={STATUS.success.text} />
-  if (direction === 'down') return <TrendingDown size={13} className={STATUS.warning.text} />
+function TrendIcon({
+  direction,
+  goodDirection = 'up',
+}: {
+  direction: 'up' | 'down' | 'stable' | null
+  /** Which raw direction reads as "good" (green) rather than "caution" (amber) - down for fatigue, up for fitness/VO2max. */
+  goodDirection?: 'up' | 'down'
+}) {
   if (direction === 'stable') return <Minus size={13} className="text-muted-foreground" />
-  return null
+  if (direction === null) return null
+  const isGood = direction === goodDirection
+  const Icon = direction === 'up' ? TrendingUp : TrendingDown
+  return <Icon size={13} className={isGood ? STATUS.success.text : STATUS.warning.text} />
 }
 
-function chargeStatus(acwr: number | null): { label: string; className: string } | null {
+function chargeStatus(acwr: number | null): { label: string; textClassName: string; dotClassName: string } | null {
   if (acwr === null) return null
   const s = t.dashboard.todayHero
-  if (acwr > 1.3) return { label: s.chargeHigh, className: STATUS.warning.text }
-  if (acwr < 0.8) return { label: s.chargeLow, className: STATUS.warning.text }
-  return { label: s.chargeOptimal, className: STATUS.success.text }
+  if (acwr > 1.3) return { label: s.chargeHigh, textClassName: STATUS.warning.text, dotClassName: STATUS.warning.dot }
+  if (acwr < 0.8) return { label: s.chargeLow, textClassName: STATUS.warning.text, dotClassName: STATUS.warning.dot }
+  return { label: s.chargeOptimal, textClassName: STATUS.success.text, dotClassName: STATUS.success.dot }
 }
 
 export function TrainingMetricsCard({ status, vo2max, vo2maxTrend }: Props) {
   if (!status) return null
 
-  const s = t.dashboard.todayHero
   const charge = chargeStatus(status.acwr)
   const fitnessTrend = status.ctlDelta > 1 ? 'up' : status.ctlDelta < -1 ? 'down' : 'stable'
+  const fatigueTrend = status.atlDelta > 1 ? 'up' : status.atlDelta < -1 ? 'down' : 'stable'
+  const acwrProgress = status.acwr !== null ? Math.min(1, status.acwr / 1.5) : 0
 
   const age = ageFromBirthdate(ATHLETE_BIRTHDATE)
   const vo2Band = vo2max !== null ? vo2maxBand(vo2max, age, ATHLETE_SEX) : null
@@ -123,9 +132,6 @@ export function TrainingMetricsCard({ status, vo2max, vo2maxTrend }: Props) {
         />
       </GlassSurface>
       <GlassSurface variant="card" className="p-4">
-        <Metric label={s.load} value={charge ? charge.label : '–'} valueClassName={charge?.className} />
-      </GlassSurface>
-      <GlassSurface variant="card" className="p-4">
         <Metric
           label={t.trainingStatus.metrics.fitness}
           value={<AnimatedValue value={Math.round(status.ctl)} />}
@@ -136,6 +142,23 @@ export function TrainingMetricsCard({ status, vo2max, vo2maxTrend }: Props) {
             textClassName: fBandStyle.text,
             dotClassName: fBandStyle.dot,
           }}
+        />
+      </GlassSurface>
+      <GlassSurface variant="card" className="p-4">
+        <Metric
+          label={t.dashboard.trainingLoad.fatigue}
+          value={<AnimatedValue value={Math.round(status.atl)} />}
+          trailing={<TrendIcon direction={fatigueTrend} goodDirection="down" />}
+          band={
+            charge
+              ? {
+                  label: charge.label,
+                  progress: acwrProgress,
+                  textClassName: charge.textClassName,
+                  dotClassName: charge.dotClassName,
+                }
+              : undefined
+          }
         />
       </GlassSurface>
     </div>

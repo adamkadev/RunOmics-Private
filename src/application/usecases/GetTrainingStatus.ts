@@ -16,6 +16,7 @@ export interface TrainingStatus {
   tsb: number
   acwr: number | null
   ctlDelta: number
+  atlDelta: number
   ctlPeak: number
 }
 
@@ -59,6 +60,7 @@ export async function getTrainingStatus(): Promise<TrainingStatus | null> {
   const prevPoint = points.length >= 15 ? points[points.length - 15] : points[0]
   if (!prevPoint) return null
   const ctlDelta = round(ctl - prevPoint.ctl, 1)
+  const atlDelta = round(atl - prevPoint.atl, 1)
 
   const activities = getAllActivities()
   const firstActivity = activities[0]
@@ -69,5 +71,5 @@ export async function getTrainingStatus(): Promise<TrainingStatus | null> {
   const { status, risk } = classify(tsb, ctlDelta, ratio)
   const ctlPeak = points.reduce((max, p) => Math.max(max, p.ctl), ctl)
 
-  return { status, risk, loadTrend: loadTrend(ctlDelta, tsb), ctl, atl, tsb, acwr: ratio, ctlDelta, ctlPeak }
+  return { status, risk, loadTrend: loadTrend(ctlDelta, tsb), ctl, atl, tsb, acwr: ratio, ctlDelta, atlDelta, ctlPeak }
 }

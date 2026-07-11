@@ -1,30 +1,25 @@
 import Link from 'next/link'
-import { Trophy, Target, Medal, TrendingUp, ArrowRight, ArrowDown, Check, Minus, Calendar, Flag, MapPin } from 'lucide-react'
-import type { YearData, GoalProjection, MonthGoal } from '@/application/usecases/GetGoalsData'
-import { formatDuration, formatDate, formatPace, monthLabel } from '@/lib/formatters'
+import { Trophy, Target, Medal, TrendingUp, ArrowRight, ArrowDown, Check, Calendar, Flag, MapPin } from 'lucide-react'
+import type { YearData, GoalProjection } from '@/application/usecases/GetGoalsData'
+import { formatDuration, formatDate, formatPace } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
+import { MonthlyGoalsGrid } from './MonthlyGoalsGrid'
+import { NextRaceSpotlight } from './NextRaceSpotlight'
 import { raceDistanceTint } from '@/lib/colors'
 import { STATUS } from '@/lib/statusColors'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 const DIST_SHORT: Record<string, string> = { 'Half-Marathon': 'HM' }
-function shortDist(d: string) { return DIST_SHORT[d] ?? d }
+export function shortDist(d: string) { return DIST_SHORT[d] ?? d }
 
-// Icon-only status indicators: ✓ green (ahead/done), → blue (on track), ↓ amber (behind), - gray (pending)
-const STATUS_ICON: Record<MonthGoal['status'], { Icon: typeof Check; className: string }> = {
+// Icon-only status indicator for the annual-goal projection chip: check green
+// (ahead), arrow blue (on track), down amber (behind).
+const PROJECTION_STATUS_ICON: Record<GoalProjection['status'], { Icon: typeof Check; className: string }> = {
   ahead:    { Icon: Check,       className: STATUS.success.text },
   on_track: { Icon: ArrowRight,  className: STATUS.progress.text },
   behind:   { Icon: ArrowDown,   className: STATUS.warning.text },
-  pending:  { Icon: Minus,       className: 'text-subtle/40' },
-}
-
-const MONTH_CELL_TINT: Record<MonthGoal['status'], { bg: string; border: string; bar: string; dashed?: boolean }> = {
-  ahead:    { bg: 'rgba(16,185,129,0.06)',         border: 'rgba(16,185,129,0.25)',     bar: 'var(--accent)' },
-  on_track: { bg: 'rgba(47,116,224,0.10)',         border: 'rgba(47,116,224,0.28)',     bar: '#7db8ff' },
-  behind:   { bg: 'rgba(229,57,107,0.06)',         border: 'rgba(229,57,107,0.25)',     bar: '#e5396b' },
-  pending:  { bg: '',                              border: '',                           bar: 'rgba(255,255,255,0.08)', dashed: true },
 }
 
 const STATUS_CHIP_BG: Record<GoalProjection['status'], string> = {
@@ -33,8 +28,21 @@ const STATUS_CHIP_BG: Record<GoalProjection['status'], string> = {
   behind:   STATUS.warning.bg,
 }
 
+// Two-segment trend line for the annual-goal hero: solid from Jan 1 to today's
+// actual progress, dashed from today to the year-end projection. Purely
+// presentational - the underlying numbers all come from computeProjection.
+function projectionSparkline(year: number, annualDistanceKm: number, annualProgress: number, projection: GoalProjection) {
+  const yearStart = new Date(year, 0, 1).getTime()
+  const yearEnd = new Date(year + 1, 0, 1).getTime()
+  const elapsedFraction = Math.min(Math.max((Date.now() - yearStart) / (yearEnd - yearStart), 0), 1)
+  const projectedPercent = (projection.projectedYearKm / annualDistanceKm) * 100
+  const domainMax = Math.max(100, projectedPercent) * 1.08
+  const yFor = (pct: number) => 40 - (Math.min(Math.max(pct, 0), domainMax) / domainMax) * 34
+  return { nowX: 4 + elapsedFraction * 292, nowY: yFor(annualProgress), endY: yFor(projectedPercent) }
+}
+
 export function YearView({ yearData }: { yearData: YearData }) {
-  const { goals, pbs, upcomingRaces, totalDistanceKm, projection, monthlyGoals } = yearData
+  const { goals, pbs, upcomingRaces, totalDistanceKm, projection, monthlyGoals, nextRaceSpotlight } = yearData
   const today = new Date().toISOString().slice(0, 10)
 
   const annualDistanceKm = goals?.annualDistanceKm ?? 0
@@ -42,7 +50,11 @@ export function YearView({ yearData }: { yearData: YearData }) {
     ? Math.min((totalDistanceKm / annualDistanceKm) * 100, 100)
     : 0
   const remaining = Math.max(annualDistanceKm - totalDistanceKm, 0)
-  const statusIcon = projection ? STATUS_ICON[projection.status] : null
+  const statusIcon = projection ? PROJECTION_STATUS_ICON[projection.status] : null
+  const sparkline = projection && annualDistanceKm > 0
+    ? projectionSparkline(yearData.year, annualDistanceKm, annualProgress, projection)
+    : null
+  const otherUpcomingRaces = upcomingRaces.filter((race) => race !== nextRaceSpotlight?.race)
 
   return (
     <div className="space-y-8">
@@ -94,52 +106,33 @@ export function YearView({ yearData }: { yearData: YearData }) {
                 </span>
               </div>
             )}
+            {sparkline && projection && (
+              <>
+                <svg viewBox="0 0 300 44" className="mt-2 h-9 w-full">
+                  <path
+                    d={`M4 40 L${sparkline.nowX.toFixed(1)} ${sparkline.nowY.toFixed(1)}`}
+                    fill="none"
+                    stroke="var(--accent)"
+                    strokeWidth={2.5}
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d={`M${sparkline.nowX.toFixed(1)} ${sparkline.nowY.toFixed(1)} L296 ${sparkline.endY.toFixed(1)}`}
+                    fill="none"
+                    className="text-subtle"
+                    stroke="currentColor"
+                    strokeWidth={1.5}
+                    strokeDasharray="4 4"
+                  />
+                </svg>
+                <p className="text-[11px] text-subtle">{t.goals.projection.projected(projection.projectedYearKm)}</p>
+              </>
+            )}
           </GlassSurface>
         </section>
       )}
 
-      {goals && monthlyGoals.length > 0 && (
-        <section className="space-y-3">
-          <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            <Calendar size={16} className="text-accent-text" />
-            {t.goals.monthlyGoal.title}
-          </h2>
-          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-            {monthlyGoals.map((mg) => {
-              const progress = mg.targetKm > 0 ? Math.min((mg.actualKm / mg.targetKm) * 100, 100) : 0
-              const { Icon: StatusIcon, className: statusClassName } = STATUS_ICON[mg.status]
-              const tint = MONTH_CELL_TINT[mg.status]
-              return (
-                <GlassSurface
-                  key={mg.month}
-                  variant="card"
-                  className={cn('rounded-card-sm p-5', tint.dashed && 'border-dashed')}
-                  style={tint.bg ? { background: tint.bg, borderColor: tint.border } : undefined}
-                >
-                  <div className="flex items-center justify-between gap-1">
-                    <span className="text-xs font-semibold text-subtle">{monthLabel(mg.month)}</span>
-                    <StatusIcon
-                      size={12}
-                      strokeWidth={3}
-                      className={statusClassName}
-                      aria-label={t.goals.monthlyGoal.status[mg.status]}
-                    />
-                  </div>
-                  <p className="mt-1.5 text-xs font-medium text-foreground">
-                    <AnimatedValue value={Math.round(mg.actualKm)} /> / {Math.round(mg.targetKm)}
-                  </p>
-                  <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-foreground/[0.08]">
-                    <div
-                      className="h-full rounded-full transition-all"
-                      style={{ width: `${progress}%`, background: tint.bar }}
-                    />
-                  </div>
-                </GlassSurface>
-              )
-            })}
-          </div>
-        </section>
-      )}
+      {nextRaceSpotlight && <NextRaceSpotlight spotlight={nextRaceSpotlight} />}
 
       {goals && goals.targets.length > 0 && (
         <section className="space-y-3">
@@ -177,14 +170,16 @@ export function YearView({ yearData }: { yearData: YearData }) {
         </section>
       )}
 
-      {upcomingRaces.length > 0 && (
+      {goals && monthlyGoals.length > 0 && <MonthlyGoalsGrid monthlyGoals={monthlyGoals} />}
+
+      {otherUpcomingRaces.length > 0 && (
         <section className="space-y-3">
           <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             <Flag size={16} className="text-accent-text" />
             {t.goals.upcomingRaces}
           </h2>
           <div className="space-y-2">
-            {upcomingRaces.map((race, idx) => {
+            {otherUpcomingRaces.map((race, idx) => {
               const daysUntil = Math.round(
                 (new Date(race.date + 'T00:00:00').getTime() - new Date(today + 'T00:00:00').getTime()) / 86_400_000
               )

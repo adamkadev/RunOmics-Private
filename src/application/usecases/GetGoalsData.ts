@@ -5,6 +5,8 @@ import {
   getPbsFromFirestore,
   getUpcomingRacesFromFirestore,
 } from '@/infrastructure/repositories/FirestoreConfigRepository'
+import { getRacePredictions, type RacePrediction } from './GetRacePredictions'
+import { DISTANCE_KEY } from './GetRecords'
 import { addDays, startOfWeek } from '@/lib/calendarDate'
 import { round } from '@/lib/math'
 
@@ -64,6 +66,13 @@ export interface MonthGoal {
   status: 'ahead' | 'on_track' | 'behind' | 'pending'
 }
 
+export interface NextRaceSpotlight {
+  race: UpcomingRace
+  daysUntil: number
+  predictedSeconds: number | null
+  gapSeconds: number | null
+}
+
 export interface YearData {
   year: number
   totalDistanceKm: number
@@ -72,6 +81,7 @@ export interface YearData {
   upcomingRaces: UpcomingRace[]
   projection: GoalProjection | null
   monthlyGoals: MonthGoal[]
+  nextRaceSpotlight: NextRaceSpotlight | null
 }
 
 export interface GoalTargetOutcome {
@@ -171,6 +181,30 @@ export function computeMonthlyGoals(activities: Activity[], year: number, goals:
   })
 }
 
+// Predicted time comes from the Riegel race-prediction model (GetRacePredictions),
+// matched to the race's distance via the same DISTANCE_KEY map GetRecords uses for PBs.
+export function computeNextRaceSpotlight(
+  upcomingRaces: UpcomingRace[],
+  predictions: RacePrediction[],
+  today: string,
+): NextRaceSpotlight | null {
+  const race = upcomingRaces.find((r) => r.date >= today)
+  if (!race) return null
+
+  const daysUntil = Math.round(
+    (new Date(race.date + 'T00:00:00').getTime() - new Date(today + 'T00:00:00').getTime()) / 86_400_000
+  )
+
+  const predictionKey = DISTANCE_KEY[race.distance]
+  const predictedSeconds = predictionKey
+    ? predictions.find((p) => p.key === predictionKey)?.predictedSeconds ?? null
+    : null
+  const gapSeconds =
+    predictedSeconds !== null && race.targetSeconds ? predictedSeconds - race.targetSeconds : null
+
+  return { race, daysUntil, predictedSeconds, gapSeconds }
+}
+
 // A year is only included in the history if it has goals set.
 // Annual distance is achieved when total km reaches the target; race targets
 // are achieved when a PB exists at or under the target time.
@@ -234,10 +268,11 @@ export async function getCurrentWeeklyGoal(): Promise<WeeklyGoal | null> {
 
 export async function getGoalsPageData(): Promise<GoalsPageData> {
   const activities = getAllActivities()
-  const [goalYears, pbYears, upcomingRaceYears] = await Promise.all([
+  const [goalYears, pbYears, upcomingRaceYears, predictions] = await Promise.all([
     getGoalsFromFirestore(),
     getPbsFromFirestore(),
     getUpcomingRacesFromFirestore(),
+    getRacePredictions(),
   ])
 
   const activityMap = new Map(activities.map((a) => [a.id, a]))
@@ -251,6 +286,7 @@ export async function getGoalsPageData(): Promise<GoalsPageData> {
   ).sort((a, b) => b - a)
 
   const currentYear = new Date().getFullYear()
+  const today = new Date().toISOString().slice(0, 10)
   const byYear: Record<number, YearData> = {}
 
   for (const year of allYears) {
@@ -279,7 +315,10 @@ export async function getGoalsPageData(): Promise<GoalsPageData> {
 
     const monthlyGoals = goals ? computeMonthlyGoals(activities, year, goals) : []
 
-    byYear[year] = { year, totalDistanceKm, goals, pbs, upcomingRaces, projection, monthlyGoals }
+    const nextRaceSpotlight =
+      year === currentYear ? computeNextRaceSpotlight(upcomingRaces, predictions, today) : null
+
+    byYear[year] = { year, totalDistanceKm, goals, pbs, upcomingRaces, projection, monthlyGoals, nextRaceSpotlight }
   }
 
   const history = allYears

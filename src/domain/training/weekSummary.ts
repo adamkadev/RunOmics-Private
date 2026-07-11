@@ -45,3 +45,21 @@ export function compareWeekLoad(currentTrimp: number, priorWeeksTrimp: number[])
   const percent = Math.round((currentTrimp / typicalTrimp) * 100)
   return { percent, level: classifyWeekLoadLevel(percent) }
 }
+
+export interface WeekAdherence {
+  due: number
+  done: number
+  percent: number
+}
+
+// Planned vs done, counted only for days that have already happened (today
+// included) - a planned session later this week isn't "missed" yet.
+export function computeWeekAdherence(
+  days: { date: string; planned: boolean; completed: boolean }[],
+  today: string,
+): WeekAdherence | null {
+  const due = days.filter((d) => d.planned && d.date <= today)
+  if (due.length === 0) return null
+  const done = due.filter((d) => d.completed).length
+  return { due: due.length, done, percent: Math.round((done / due.length) * 100) }
+}

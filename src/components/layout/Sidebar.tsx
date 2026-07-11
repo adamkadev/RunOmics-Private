@@ -13,7 +13,7 @@ import { GlassSurface } from '@/components/ui/GlassSurface'
 const NAV_ITEMS = [
   { href: '/', label: t.nav.items.dashboard, icon: LayoutDashboard },
   { href: '/activities', label: t.nav.items.activities, icon: Activity },
-  { href: '/calendar', label: t.nav.items.calendar, icon: CalendarDays },
+  { href: '/plan', label: t.nav.items.plan, icon: CalendarDays },
   { href: '/analytics', label: t.nav.items.analytics, icon: BarChart2 },
   { href: '/map', label: t.nav.items.heatmap, icon: Map },
   { href: '/profile', label: t.nav.items.profile, icon: User },

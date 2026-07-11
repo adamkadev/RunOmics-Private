@@ -1073,7 +1073,6 @@ export const en = {
       vsTypical: (percent: number) => `${percent - 100 >= 0 ? '+' : ''}${percent - 100}% vs typical`,
       easyHard: 'Easy / Hard',
       elevation: 'Elevation',
-      keySessions: 'Key sessions',
     },
     weekPurpose: {
       recovery: 'Recovery week',

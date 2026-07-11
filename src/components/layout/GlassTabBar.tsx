@@ -11,7 +11,7 @@ import { useFullscreenChromeHidden } from './FullscreenChromeContext'
 const TABS = [
   { href: '/',           label: t.nav.items.dashboard,  icon: LayoutDashboard },
   { href: '/activities', label: t.nav.items.activities,  icon: Activity },
-  { href: '/calendar',   label: t.nav.items.calendar,    icon: CalendarDays },
+  { href: '/plan',       label: t.nav.items.plan,        icon: CalendarDays },
   { href: '/analytics',  label: t.nav.items.analytics,   icon: BarChart2 },
   { href: '/profile',    label: t.nav.items.profile,     icon: User },
 ] as const

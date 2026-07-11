@@ -11,7 +11,7 @@ export const EFFORTS = [
   { key: 'marathon', label: 'Marathon', km: 42.195   },
 ]
 
-const DISTANCE_KEY: Record<string, string> = {
+export const DISTANCE_KEY: Record<string, string> = {
   '1K': '1k',
   '5K': '5k',
   '10K': '10k',

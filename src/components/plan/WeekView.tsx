@@ -223,17 +223,13 @@ export function WeekView({
       <WeekPurposeBanner level={comparison?.level ?? null} percent={comparison?.percent ?? null} adherence={adherence} />
 
       <GlassSurface variant="card" className="rounded-card-sm p-3.5 pb-2.5">
-        <div className={cn('mb-2.5 flex items-center gap-2', atPresent ? 'justify-end' : 'justify-between')}>
-          {!atPresent && <InlineJumpButton onClick={onToday}>{t.plan.today}</InlineJumpButton>}
-          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            {t.plan.weekSummary.load}{' '}
-            <strong className="font-bold text-foreground">
-              <AnimatedValue value={summary.totalTrimp} />
-            </strong>
-          </span>
-        </div>
+        {!atPresent && (
+          <div className="mb-2.5 flex items-center justify-end gap-2">
+            <InlineJumpButton onClick={onToday}>{t.plan.today}</InlineJumpButton>
+          </div>
+        )}
 
-        {/* Decisional header: easy/hard, elevation, key sessions (load lives in the title row above) */}
+        {/* Decisional header: easy/hard, elevation, load */}
         <div className="grid grid-cols-3 gap-2">
           <SummaryStat
             label={t.plan.weekSummary.easyHard}
@@ -256,7 +252,7 @@ export function WeekView({
               </>
             }
           />
-          <SummaryStat label={t.plan.weekSummary.keySessions} value={<AnimatedValue value={summary.keySessionsCount} />} />
+          <SummaryStat label={t.plan.weekSummary.load} value={<AnimatedValue value={summary.totalTrimp} />} />
         </div>
 
         <div className="mt-3">

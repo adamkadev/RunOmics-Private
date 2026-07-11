@@ -62,7 +62,7 @@ function WeeklyGoalRing({ goal, hardShareFact }: { goal: WeeklyGoal; hardShareFa
 }
 
 function WeekDots({ weekDays }: { weekDays: boolean[] }) {
-  const labels = t.calendar.weekdays
+  const labels = t.plan.weekdays
   const today = (new Date().getDay() + 6) % 7 // Mon=0..Sun=6
 
   return (

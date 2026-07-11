@@ -78,13 +78,6 @@ export default async function DashboardPage() {
         />
       )}
 
-      {(weeklyDigest || consistencyScore) && (
-        <div className={weeklyDigest && consistencyScore ? 'grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]' : undefined}>
-          {weeklyDigest && <WeeklyDigest data={weeklyDigest} />}
-          {consistencyScore && <ConsistencyCard data={consistencyScore} />}
-        </div>
-      )}
-
       {formProjection && <RaceCockpit data={formProjection} />}
 
       <DashboardCharts
