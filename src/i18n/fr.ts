@@ -289,6 +289,11 @@ export const fr = {
       title: 'VO₂max',
       unit: 'ml/kg/min',
       footnote: 'Estimation VO₂max Garmin',
+      reading: {
+        up: (avg: number) => `En hausse, moyenne de ${avg} sur cette période.`,
+        down: (avg: number) => `En baisse, moyenne de ${avg} sur cette période.`,
+        flat: (avg: number) => `Stable autour de ${avg}.`,
+      },
     },
     raceCockpit: {
       title: 'Projection de forme',
@@ -406,6 +411,7 @@ export const fr = {
 
   analytics: {
     title: 'Analyses',
+    readingLabel: 'Lecture :',
     season: (year: number) => `Saison ${year}`,
     allTimeChip: 'Tout',
     allTimeTitle: 'Historique complet',
@@ -439,7 +445,10 @@ export const fr = {
       caloriesValue: (k: number) => `${k}k kcal`,
     },
     charts: {
-      monthlyVolume: { title: 'Volume' },
+      monthlyVolume: {
+        title: 'Volume',
+        reading: (topType: string, pct: number) => `${topType} représente la plus grosse part du volume mensuel (~${pct}%).`,
+      },
       paceTrend: {
         title: 'Tendance d’allure',
         easy: 'Facile',
@@ -463,6 +472,7 @@ export const fr = {
       },
       zones: {
         title: 'Temps en zones',
+        reading: (pct: number, zoneLabel: string) => `La majorité du temps (${pct}%) se passe en zone ${zoneLabel} - ton entraînement penche vers cette intensité.`,
         labels: {
           1: 'Échauffement',
           2: 'Facile',
@@ -474,11 +484,21 @@ export const fr = {
       hrTrend: {
         title: 'FC moyenne',
         footnote: 'FC moyenne pondérée par la durée, sorties faciles vs séances de qualité.',
+        reading: {
+          down: (bpm: number) => `La FC en sortie facile baisse - environ ${bpm} bpm de moins pour le même effort, signe d'une forme qui progresse.`,
+          up: (bpm: number) => `La FC en sortie facile augmente - environ ${bpm} bpm de plus pour le même effort, à surveiller.`,
+          flat: 'La FC en sortie facile et en séance de qualité reste stable.',
+        },
       },
       cadence: {
         title: 'Cadence',
         unit: 'pas/min',
         footnote: 'Cadence moyenne pondérée par la durée (pas/min).',
+        reading: {
+          up: (avg: number) => `La cadence est en hausse, moyenne de ${avg} pas/min.`,
+          down: (avg: number) => `La cadence est en baisse, moyenne de ${avg} pas/min.`,
+          flat: (avg: number) => `La cadence est stable autour de ${avg} pas/min.`,
+        },
       },
       runningForm: {
         title: 'Technique de course',
@@ -497,6 +517,11 @@ export const fr = {
           verticalOscillation: 'Oscillation verticale moyenne pondérée par la durée. Plus bas = moins de rebond par foulée.',
           strideLength: 'Longueur de foulée moyenne pondérée par la durée.',
         } as Record<string, string>,
+        reading: {
+          groundContact: (min: string, max: string) => `Le contact au sol varie entre ${min} et ${max} ms sur la période - plus bas est généralement plus efficace.`,
+          verticalOscillation: (min: string, max: string) => `L'oscillation verticale varie entre ${min} et ${max} mm - plus bas signifie moins de rebond par foulée.`,
+          strideLength: (min: string, max: string) => `La longueur de foulée varie entre ${min} et ${max} m sur la période.`,
+        } as Record<string, (min: string, max: string) => string>,
       },
       longRuns: {
         title: 'Plus longue sortie par mois',
@@ -522,17 +547,28 @@ export const fr = {
         title: 'Répartition des distances',
         runs: (n: number) => `${n} sorties`,
         kmTotal: (km: number) => `${km} km au total`,
+        reading: (bracket: string, pct: number) => `La majorité des sorties (${pct}%) se situe dans la tranche ${bracket}.`,
       },
       rpe: {
         title: 'Tendance RPE',
         prefix: 'RPE',
         footnote: 'Effort perçu moyen (1–10).',
+        reading: {
+          down: (avg: string) => `L'effort perçu diminue, moyenne RPE ${avg}.`,
+          up: (avg: string) => `L'effort perçu augmente, moyenne RPE ${avg}.`,
+          flat: (avg: string) => `L'effort perçu est stable autour de RPE ${avg}.`,
+        },
       },
       trainingEffect: {
         title: 'Training Effect',
         aerobic: 'Aérobie',
         anaerobic: 'Anaérobie',
         footnote: 'Training effect aérobie et anaérobie moyen (1–5).',
+        reading: {
+          aerobicLed: "Le training effect aérobie dépasse l'anaérobie - la plupart des séances construisent l'endurance plutôt que la haute intensité.",
+          anaerobicLed: "Le training effect anaérobie dépasse l'aérobie - la plupart des séances penchent vers la haute intensité.",
+          balanced: 'Le training effect aérobie et anaérobie sont à peu près équilibrés.',
+        },
       },
       temperatureCorrelation: {
         title: 'Température vs allure',
@@ -552,13 +588,24 @@ export const fr = {
           stable: 'Votre forme influe peu sur la difficulté ressentie des sorties',
         },
       },
-      monthlyComparison: { title: 'Mois par mois' },
+      monthlyComparison: {
+        title: 'Mois par mois',
+        reading: (curYear: number, deltaPct: number) =>
+          deltaPct >= 0
+            ? `Le volume ${curYear} devance l'an dernier de ${deltaPct}%.`
+            : `Le volume ${curYear} accuse un retard de ${Math.abs(deltaPct)}% sur l'an dernier.`,
+      },
       efficiencyRolling: {
         title: 'Efficacité aérobie - tendance glissante',
         ef7: '7 j',
         ef30: '30 j',
         unit: 'm/min·bpm',
         footnote: 'Efficacité aérobie glissante sur les 90 derniers jours. 7 j capture la forme récente, 30 j montre la tendance de fond.',
+        reading: {
+          up: (d: string) => `La tendance 30 j progresse, +${d} m/min·bpm - plus de vitesse par battement.`,
+          down: 'La tendance 30 j baisse - ajoute des sorties faciles ou surveille une fatigue accumulée.',
+          flat: 'La tendance 30 j reste stable.',
+        },
       },
       runningDynamicsRolling: {
         title: 'Dynamique de course - tendance glissante',
@@ -579,6 +626,11 @@ export const fr = {
           groundContact: 'Temps de contact au sol moyen glissant sur les 90 derniers jours. Plus bas = foulée généralement plus efficace.',
           verticalOscillation: 'Oscillation verticale moyenne glissante sur les 90 derniers jours. Plus bas = moins de rebond par foulée.',
         } as Record<string, string>,
+        reading: {
+          cadence: (min: string, max: string) => `La cadence 30 j varie entre ${min} et ${max} pas/min sur les 90 derniers jours.`,
+          groundContact: (min: string, max: string) => `Le contact au sol 30 j varie entre ${min} et ${max} ms - plus bas est généralement plus efficace.`,
+          verticalOscillation: (min: string, max: string) => `L'oscillation verticale 30 j varie entre ${min} et ${max} mm - plus bas signifie moins de rebond par foulée.`,
+        } as Record<string, (min: string, max: string) => string>,
       },
     },
     seasonHeadline: {

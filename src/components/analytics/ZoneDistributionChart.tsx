@@ -7,6 +7,7 @@ import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { CHART_COLORS, ZONE_COLORS } from '@/lib/colors'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
+import { ChartExplain } from '@/components/ui/ChartExplain'
 import { t } from '@/i18n'
 
 const ZONE_LABELS = t.analytics.charts.zones.labels
@@ -39,6 +40,8 @@ export function ZoneDistributionChart({ data }: Props) {
   if (!data.length) return null
 
   const summary = `${t.analytics.charts.zones.title}: ${data.map((z) => `Z${z.zone} ${z.percent}%`).join(', ')}`
+  const top = data.reduce((a, b) => (b.percent > a.percent ? b : a))
+  const reading = t.analytics.charts.zones.reading(top.percent, `Z${top.zone} · ${ZONE_LABELS[top.zone]}`)
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -85,6 +88,7 @@ export function ZoneDistributionChart({ data }: Props) {
           ))}
         </ul>
       </div>
+      <ChartExplain text={reading} />
     </GlassSurface>
   )
 }

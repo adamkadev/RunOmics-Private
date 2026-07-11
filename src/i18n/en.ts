@@ -295,6 +295,11 @@ export const en = {
       title: 'VO₂max',
       unit: 'ml/kg/min',
       footnote: 'Garmin VO₂max estimate',
+      reading: {
+        up: (avg: number) => `Trending up, averaging ${avg} over this window.`,
+        down: (avg: number) => `Trending down, averaging ${avg} over this window.`,
+        flat: (avg: number) => `Holding steady around ${avg}.`,
+      },
     },
     raceCockpit: {
       title: 'Form Projection',
@@ -412,6 +417,7 @@ export const en = {
 
   analytics: {
     title: 'Analytics',
+    readingLabel: 'Reading:',
     season: (year: number) => `${year} season`,
     allTimeChip: 'All',
     allTimeTitle: 'All-time',
@@ -445,7 +451,10 @@ export const en = {
       caloriesValue: (k: number) => `${k}k kcal`,
     },
     charts: {
-      monthlyVolume: { title: 'Volume' },
+      monthlyVolume: {
+        title: 'Volume',
+        reading: (topType: string, pct: number) => `${topType} makes up the largest share of monthly volume (~${pct}%).`,
+      },
       paceTrend: {
         title: 'Pace Trend',
         easy: 'Easy',
@@ -469,6 +478,7 @@ export const en = {
       },
       zones: {
         title: 'Time in Zones',
+        reading: (pct: number, zoneLabel: string) => `Most time (${pct}%) sits in ${zoneLabel} - your training skews toward this intensity.`,
         labels: {
           1: 'Warm Up',
           2: 'Easy',
@@ -480,11 +490,21 @@ export const en = {
       hrTrend: {
         title: 'Avg Heart Rate',
         footnote: 'Duration-weighted average HR, easy vs workout runs.',
+        reading: {
+          down: (bpm: number) => `Easy-run heart rate is dropping - down ~${bpm} bpm, same effort for less strain, a sign of improving fitness.`,
+          up: (bpm: number) => `Easy-run heart rate is rising - up ~${bpm} bpm for the same effort, worth watching.`,
+          flat: 'Easy and workout heart rate are holding steady.',
+        },
       },
       cadence: {
         title: 'Cadence',
         unit: 'spm',
         footnote: 'Duration-weighted average cadence (steps/min).',
+        reading: {
+          up: (avg: number) => `Cadence is trending up, averaging ${avg} spm.`,
+          down: (avg: number) => `Cadence is trending down, averaging ${avg} spm.`,
+          flat: (avg: number) => `Cadence is steady around ${avg} spm.`,
+        },
       },
       runningForm: {
         title: 'Running Form',
@@ -503,6 +523,11 @@ export const en = {
           verticalOscillation: 'Duration-weighted average vertical oscillation. Lower means less bounce per stride.',
           strideLength: 'Duration-weighted average stride length.',
         } as Record<string, string>,
+        reading: {
+          groundContact: (min: string, max: string) => `Ground contact ranges ${min}-${max} ms over this window - lower is generally more efficient.`,
+          verticalOscillation: (min: string, max: string) => `Vertical oscillation ranges ${min}-${max} mm - lower means less bounce per stride.`,
+          strideLength: (min: string, max: string) => `Stride length ranges ${min}-${max} m over this window.`,
+        } as Record<string, (min: string, max: string) => string>,
       },
       longRuns: {
         title: 'Longest Run per Month',
@@ -528,17 +553,28 @@ export const en = {
         title: 'Distance Distribution',
         runs: (n: number) => `${n} runs`,
         kmTotal: (km: number) => `${km} km total`,
+        reading: (bracket: string, pct: number) => `Most runs (${pct}%) land in the ${bracket} bracket.`,
       },
       rpe: {
         title: 'RPE Trend',
         prefix: 'RPE',
         footnote: 'Average perceived effort (1–10).',
+        reading: {
+          down: (avg: string) => `Perceived effort is easing, averaging RPE ${avg}.`,
+          up: (avg: string) => `Perceived effort is rising, averaging RPE ${avg}.`,
+          flat: (avg: string) => `Perceived effort is steady around RPE ${avg}.`,
+        },
       },
       trainingEffect: {
         title: 'Training Effect',
         aerobic: 'Aerobic',
         anaerobic: 'Anaerobic',
         footnote: 'Avg aerobic & anaerobic training effect (1–5).',
+        reading: {
+          aerobicLed: 'Aerobic training effect runs higher than anaerobic - most sessions build endurance rather than high-intensity capacity.',
+          anaerobicLed: 'Anaerobic training effect runs higher than aerobic - most sessions lean toward high-intensity work.',
+          balanced: 'Aerobic and anaerobic training effect are roughly balanced.',
+        },
       },
       temperatureCorrelation: {
         title: 'Temperature vs Pace',
@@ -558,13 +594,24 @@ export const en = {
           stable: 'Your form has little impact on how hard runs feel relative to usual',
         },
       },
-      monthlyComparison: { title: 'Month by Month' },
+      monthlyComparison: {
+        title: 'Month by Month',
+        reading: (curYear: number, deltaPct: number) =>
+          deltaPct >= 0
+            ? `${curYear} volume is running ${deltaPct}% ahead of last year.`
+            : `${curYear} volume is running ${Math.abs(deltaPct)}% behind last year.`,
+      },
       efficiencyRolling: {
         title: 'Aerobic Efficiency - Rolling Trend',
         ef7: '7-day',
         ef30: '30-day',
         unit: 'm/min·bpm',
         footnote: 'Rolling aerobic efficiency over the last 90 days. 7-day captures recent form, 30-day shows the underlying trend.',
+        reading: {
+          up: (d: string) => `The 30-day trend is climbing, +${d} m/min·bpm - more speed per heartbeat.`,
+          down: 'The 30-day trend is declining - consider more easy running or check for accumulated fatigue.',
+          flat: 'The 30-day trend is holding steady.',
+        },
       },
       runningDynamicsRolling: {
         title: 'Running Dynamics - Rolling Trend',
@@ -585,6 +632,11 @@ export const en = {
           groundContact: 'Rolling average ground contact time over the last 90 days. Lower generally means a more efficient stride.',
           verticalOscillation: 'Rolling average vertical oscillation over the last 90 days. Lower means less bounce per stride.',
         } as Record<string, string>,
+        reading: {
+          cadence: (min: string, max: string) => `30-day cadence ranges ${min}-${max} spm over the last 90 days.`,
+          groundContact: (min: string, max: string) => `30-day ground contact ranges ${min}-${max} ms - lower is generally more efficient.`,
+          verticalOscillation: (min: string, max: string) => `30-day vertical oscillation ranges ${min}-${max} mm - lower means less bounce per stride.`,
+        } as Record<string, (min: string, max: string) => string>,
       },
     },
     seasonHeadline: {

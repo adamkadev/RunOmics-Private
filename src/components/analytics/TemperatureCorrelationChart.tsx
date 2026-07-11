@@ -110,22 +110,20 @@ export function TemperatureCorrelationChart({ data }: Props) {
           </ComposedChart>
         </ResponsiveContainer>
       </ChartFigure>
-      {reg && (
-        <ChartExplain
-          text={isSignal ? ex.slowing(slopePer10) : ex.stable}
-          tone={isSignal ? 'caution' : 'neutral'}
-        />
-      )}
+      {reg && <ChartExplain text={isSignal ? ex.slowing(slopePer10) : ex.stable} />}
       <p className="mt-1 text-xs text-subtle">
         {t.analytics.charts.temperatureCorrelation.footnote}
       </p>
     </GlassSurface>
   )
 
-  if (isSignal) return chart
-
+  // Always collapsed behind a tap-to-expand chip on mobile - a ~200-point
+  // scatter is illegible at a glance whether or not a real trend exists.
   return (
-    <LowSignalChip title={t.analytics.charts.temperatureCorrelation.title} summary={ex.stable}>
+    <LowSignalChip
+      title={t.analytics.charts.temperatureCorrelation.title}
+      summary={isSignal ? ex.slowing(slopePer10) : ex.stable}
+    >
       {chart}
     </LowSignalChip>
   )

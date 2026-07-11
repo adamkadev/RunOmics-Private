@@ -8,6 +8,7 @@ import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
+import { ChartExplain } from '@/components/ui/ChartExplain'
 import { t } from '@/i18n'
 
 // Base at the bottom (training pyramid), high-intensity and races at the top
@@ -52,6 +53,18 @@ export function MonthlyVolumeChart({ data, typesPresent }: Props) {
 
   const totals = data.map((m) => m.totalKm)
   const summary = `${t.analytics.charts.monthlyVolume.title}: ${Math.min(...totals).toFixed(0)}–${Math.max(...totals).toFixed(0)} ${t.units.km}`
+
+  const totalByType = new Map<ActivityType, number>()
+  for (const m of data) {
+    for (const type of orderedTypes) {
+      totalByType.set(type, (totalByType.get(type) ?? 0) + (m.byType[type] ?? 0))
+    }
+  }
+  const grandTotal = [...totalByType.values()].reduce((s, v) => s + v, 0)
+  const topEntry = [...totalByType.entries()].reduce((a, b) => (b[1] > a[1] ? b : a), orderedTypes[0] ? [orderedTypes[0], 0] as [ActivityType, number] : ['Base', 0])
+  const reading = grandTotal > 0
+    ? t.analytics.charts.monthlyVolume.reading(t.activityTypes[topEntry[0]], Math.round((topEntry[1] / grandTotal) * 100))
+    : null
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -98,6 +111,7 @@ export function MonthlyVolumeChart({ data, typesPresent }: Props) {
           </span>
         ))}
       </div>
+      {reading && <ChartExplain text={reading} />}
     </GlassSurface>
   )
 }

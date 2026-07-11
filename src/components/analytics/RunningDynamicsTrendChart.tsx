@@ -7,6 +7,7 @@ import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
+import { ChartExplain } from '@/components/ui/ChartExplain'
 import { t } from '@/i18n'
 
 type Metric = 'cadence' | 'groundContact' | 'verticalOscillation'
@@ -99,6 +100,11 @@ export function RunningDynamicsTrendChart({ data }: Props) {
 
   const decimals = TICK_DECIMALS[metric]
   const summary = `${s.title}: ${s.metrics[metric]} ${Math.min(...values).toFixed(decimals)}–${Math.max(...values).toFixed(decimals)} ${s.unit[metric]}`
+  const values30 = data.map((d) => d[key30]).filter((v): v is number => v !== null)
+  const reading = t.analytics.charts.runningDynamicsRolling.reading[metric]!(
+    Math.min(...values30).toFixed(decimals),
+    Math.max(...values30).toFixed(decimals),
+  )
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -166,7 +172,7 @@ export function RunningDynamicsTrendChart({ data }: Props) {
               type="monotone"
               dataKey={key30}
               stroke={color}
-              strokeWidth={2.5}
+              strokeWidth={3}
               dot={false}
               activeDot={{ r: 4, fill: color, stroke: color }}
               connectNulls
@@ -175,6 +181,7 @@ export function RunningDynamicsTrendChart({ data }: Props) {
           </LineChart>
         </ResponsiveContainer>
       </ChartFigure>
+      <ChartExplain text={reading} />
       <p className="mt-2 text-xs text-subtle">{s.footnote[metric]}</p>
     </GlassSurface>
   )

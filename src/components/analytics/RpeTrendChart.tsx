@@ -14,6 +14,8 @@ import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
+import { ChartExplain } from '@/components/ui/ChartExplain'
+import { trendFromSeries } from '@/lib/chartTrend'
 import { t } from '@/i18n'
 
 interface Props {
@@ -47,6 +49,10 @@ export function RpeTrendChart({ data }: Props) {
   if (!values.length) return null
 
   const summary = `${t.analytics.charts.rpe.title}: ${Math.min(...values).toFixed(1)}–${Math.max(...values).toFixed(1)}`
+  const avg = (values.reduce((s, v) => s + v, 0) / values.length).toFixed(1)
+  const r = t.analytics.charts.rpe.reading
+  const trend = trendFromSeries(values, 0.3)
+  const reading = trend ? (trend.direction === 'down' ? r.down(avg) : trend.direction === 'up' ? r.up(avg) : r.flat(avg)) : null
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -88,7 +94,7 @@ export function RpeTrendChart({ data }: Props) {
               type="monotone"
               dataKey="avgRpe"
               stroke={CHART_COLORS.hr}
-              strokeWidth={2}
+              strokeWidth={3}
               dot={{ r: 3, fill: CHART_COLORS.hr, strokeWidth: 0 }}
               connectNulls
               isAnimationActive={false}
@@ -97,6 +103,7 @@ export function RpeTrendChart({ data }: Props) {
         </ResponsiveContainer>
       </ChartFigure>
 
+      {reading && <ChartExplain text={reading} />}
       <p className="mt-2 text-xs text-subtle">
         {t.analytics.charts.rpe.footnote}
       </p>

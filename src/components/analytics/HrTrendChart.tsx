@@ -6,6 +6,8 @@ import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
+import { ChartExplain } from '@/components/ui/ChartExplain'
+import { trendFromSeries } from '@/lib/chartTrend'
 import { t } from '@/i18n'
 
 interface Props {
@@ -46,6 +48,12 @@ export function HrTrendChart({ data }: Props) {
   if (easyVals.length) summaryParts.push(`${t.analytics.charts.paceTrend.easy} ${Math.min(...easyVals)}–${Math.max(...easyVals)} ${t.units.bpm}`)
   if (hardVals.length) summaryParts.push(`${t.analytics.charts.paceTrend.workout} ${Math.min(...hardVals)}–${Math.max(...hardVals)} ${t.units.bpm}`)
   const summary = `${t.analytics.charts.hrTrend.title}: ${summaryParts.join(', ')}`
+  const r = t.analytics.charts.hrTrend.reading
+  // Lower easy-run HR for the same effort reads as improving fitness, so "down" is positive here.
+  const trend = trendFromSeries(easyVals, 2)
+  const reading = trend
+    ? trend.direction === 'down' ? r.down(Math.round(Math.abs(trend.delta))) : trend.direction === 'up' ? r.up(Math.round(trend.delta)) : r.flat
+    : null
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -81,7 +89,7 @@ export function HrTrendChart({ data }: Props) {
               type="monotone"
               dataKey="easyAvgHr"
               stroke={CHART_COLORS.hrEasy}
-              strokeWidth={2}
+              strokeWidth={3}
               dot={{ r: 3, fill: CHART_COLORS.hrEasy, strokeWidth: 0 }}
               connectNulls
               isAnimationActive={false}
@@ -90,7 +98,7 @@ export function HrTrendChart({ data }: Props) {
               type="monotone"
               dataKey="hardAvgHr"
               stroke={CHART_COLORS.hr}
-              strokeWidth={2}
+              strokeWidth={3}
               dot={{ r: 3, fill: CHART_COLORS.hr, strokeWidth: 0 }}
               connectNulls
               isAnimationActive={false}
@@ -98,6 +106,7 @@ export function HrTrendChart({ data }: Props) {
           </LineChart>
         </ResponsiveContainer>
       </ChartFigure>
+      {reading && <ChartExplain text={reading} />}
       <p className="mt-2 text-xs text-subtle">
         {t.analytics.charts.hrTrend.footnote}
       </p>

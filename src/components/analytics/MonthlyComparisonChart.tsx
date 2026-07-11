@@ -10,6 +10,7 @@ import { useAccentColor } from '@/lib/useAccent'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
+import { ChartExplain } from '@/components/ui/ChartExplain'
 import { t } from '@/i18n'
 
 const MONTH_LABELS = t.dashboard.heatmap.months.map((m) => m.toUpperCase())
@@ -60,6 +61,8 @@ export function MonthlyComparisonChart({ currentYear, currentData, prevYear, pre
   const curTotal = currentData.reduce((s, d) => s + d.totalKm, 0)
   const prevTotal = prevData.reduce((s, d) => s + d.totalKm, 0)
   const summary = `${t.analytics.charts.monthlyComparison.title}: ${currentYear} ${curTotal.toFixed(0)} ${t.units.km}, ${prevYear} ${prevTotal.toFixed(0)} ${t.units.km}`
+  const deltaPct = prevTotal > 0 ? Math.round(((curTotal - prevTotal) / prevTotal) * 100) : 0
+  const reading = prevTotal > 0 ? t.analytics.charts.monthlyComparison.reading(currentYear, deltaPct) : null
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -96,7 +99,7 @@ export function MonthlyComparisonChart({ currentYear, currentData, prevYear, pre
               type="monotone"
               dataKey={currentYear}
               stroke={accentColor}
-              strokeWidth={2}
+              strokeWidth={3}
               dot={false}
               isAnimationActive={false}
               connectNulls
@@ -114,6 +117,7 @@ export function MonthlyComparisonChart({ currentYear, currentData, prevYear, pre
           </LineChart>
         </ResponsiveContainer>
       </ChartFigure>
+      {reading && <ChartExplain text={reading} />}
     </GlassSurface>
   )
 }

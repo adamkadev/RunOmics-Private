@@ -40,8 +40,8 @@ const PhysiologyTab = dynamic(() => import('./PhysiologyTab').then((m) => m.Phys
 const SeasonsTab = dynamic(() => import('./SeasonsTab').then((m) => m.SeasonsTab), { loading: tabLoading })
 
 const TABS = [
-  { id: 'volume', label: t.analytics.tabs.volume },
   { id: 'performance', label: t.analytics.tabs.performance },
+  { id: 'volume', label: t.analytics.tabs.volume },
   { id: 'physiology', label: t.analytics.tabs.physiology },
   { id: 'seasons', label: t.analytics.tabs.seasons },
 ] as const
@@ -134,7 +134,7 @@ export function AnalyticsClient({
   const { years, byYear, periodWeeks, byPeriod } = data
 
   const [view, setView] = useState<View>({ kind: 'year', year: years[0] ?? new Date().getFullYear() })
-  const [tab, setTab] = useState<TabId>('volume')
+  const [tab, setTab] = useState<TabId>('performance')
 
   // Restore after mount, not in the initializer, to avoid a hydration mismatch.
   useEffect(() => {

@@ -5,7 +5,6 @@ import type { MonthlyEfficiency } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { ChartExplain } from '@/components/ui/ChartExplain'
-import type { ExplainTone } from '@/components/ui/ChartExplain'
 import { trendFromSeries } from '@/lib/chartTrend'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
@@ -38,14 +37,14 @@ export function EfficiencyChart({ data }: Props) {
 
   const ex = t.analytics.charts.efficiency.explains
   const trend = trendFromSeries(data.map((d) => d.ef), 0.03)
-  const explain: { text: string; tone: ExplainTone } | null = trend
+  const explain: string | null = trend
     ? trend.direction === 'up'
-      ? { text: ex.improving(Math.abs(trend.delta).toFixed(2)), tone: 'positive' }
+      ? ex.improving(Math.abs(trend.delta).toFixed(2))
       : trend.direction === 'down'
-        ? { text: ex.declining, tone: 'caution' }
-        : { text: ex.stable, tone: 'neutral' }
+        ? ex.declining
+        : ex.stable
     : null
-  const summary = `${t.analytics.charts.efficiency.title}${explain ? `: ${explain.text}` : ''}`
+  const summary = `${t.analytics.charts.efficiency.title}${explain ? `: ${explain}` : ''}`
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -80,7 +79,7 @@ export function EfficiencyChart({ data }: Props) {
               type="monotone"
               dataKey="ef"
               stroke={CHART_COLORS.efficiency}
-              strokeWidth={2}
+              strokeWidth={3}
               fill="url(#efGradient)"
               dot={{ r: 3, fill: CHART_COLORS.efficiency, strokeWidth: 0 }}
               connectNulls
@@ -89,7 +88,7 @@ export function EfficiencyChart({ data }: Props) {
           </AreaChart>
         </ResponsiveContainer>
       </ChartFigure>
-      {explain && <ChartExplain text={explain.text} tone={explain.tone} />}
+      {explain && <ChartExplain text={explain} />}
       <p className="mt-1 text-xs text-subtle">
         {t.analytics.charts.efficiency.footnote}
       </p>

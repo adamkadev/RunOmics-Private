@@ -6,6 +6,8 @@ import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
+import { ChartExplain } from '@/components/ui/ChartExplain'
+import { trendFromSeries } from '@/lib/chartTrend'
 import { t } from '@/i18n'
 
 interface Props {
@@ -34,6 +36,10 @@ export function CadenceTrendChart({ data }: Props) {
   const min = Math.floor(Math.min(...values)) - 2
   const max = Math.ceil(Math.max(...values)) + 2
   const summary = `${t.analytics.charts.cadence.title}: ${Math.min(...values)}–${Math.max(...values)} ${t.analytics.charts.cadence.unit}`
+  const avg = Math.round(values.reduce((s, v) => s + v, 0) / values.length)
+  const r = t.analytics.charts.cadence.reading
+  const trend = trendFromSeries(values, 1)
+  const reading = trend ? (trend.direction === 'up' ? r.up(avg) : trend.direction === 'down' ? r.down(avg) : r.flat(avg)) : null
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -59,7 +65,7 @@ export function CadenceTrendChart({ data }: Props) {
               type="monotone"
               dataKey="cadence"
               stroke={CHART_COLORS.cadence}
-              strokeWidth={2}
+              strokeWidth={3}
               dot={{ r: 3, fill: CHART_COLORS.cadence, strokeWidth: 0 }}
               connectNulls
               isAnimationActive={false}
@@ -67,6 +73,7 @@ export function CadenceTrendChart({ data }: Props) {
           </LineChart>
         </ResponsiveContainer>
       </ChartFigure>
+      {reading && <ChartExplain text={reading} />}
       <p className="mt-2 text-xs text-subtle">
         {t.analytics.charts.cadence.footnote}
       </p>

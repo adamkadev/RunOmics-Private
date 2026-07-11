@@ -38,11 +38,10 @@ export function LongRunsChart({ data }: Props) {
   if (nonZero.length === 0) return null
 
   const avg = Math.round(nonZero.reduce((s, d) => s + d.longestKm, 0) / nonZero.length)
-  const explain =
-    avg >= 15
-      ? { text: t.analytics.charts.longRuns.explains.good(avg), tone: 'positive' as const }
-      : { text: t.analytics.charts.longRuns.explains.low(avg), tone: 'caution' as const }
-  const summary = `${t.analytics.charts.longRuns.title}: ${explain.text}`
+  const explain = avg >= 15
+    ? t.analytics.charts.longRuns.explains.good(avg)
+    : t.analytics.charts.longRuns.explains.low(avg)
+  const summary = `${t.analytics.charts.longRuns.title}: ${explain}`
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -80,7 +79,7 @@ export function LongRunsChart({ data }: Props) {
               type="monotone"
               dataKey="longestKm"
               stroke={accentColor}
-              strokeWidth={2}
+              strokeWidth={3}
               fill="url(#longRunGradient)"
               dot={{ r: 3, fill: accentColor, strokeWidth: 0 }}
               activeDot={{ r: 4, fill: accentColor, strokeWidth: 0 }}
@@ -89,7 +88,7 @@ export function LongRunsChart({ data }: Props) {
           </AreaChart>
         </ResponsiveContainer>
       </ChartFigure>
-      <ChartExplain text={explain.text} tone={explain.tone} />
+      <ChartExplain text={explain} />
     </GlassSurface>
   )
 }

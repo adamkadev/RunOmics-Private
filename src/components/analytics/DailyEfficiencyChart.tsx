@@ -6,6 +6,8 @@ import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
+import { ChartExplain } from '@/components/ui/ChartExplain'
+import { trendFromSeries } from '@/lib/chartTrend'
 import { t } from '@/i18n'
 
 const COLOR_7  = CHART_COLORS.efficiency        // violet-500
@@ -48,6 +50,11 @@ export function DailyEfficiencyChart({ data }: { data: DailyEfficiency[] }) {
   )
 
   const summary = `${s.title}: ${min.toFixed(2)}–${max.toFixed(2)} ${s.unit}`
+  const values30 = data.map((d) => d.ef30).filter((v): v is number => v !== null)
+  const trend = trendFromSeries(values30, 0.03)
+  const reading = trend
+    ? trend.direction === 'up' ? s.reading.up(trend.delta.toFixed(2)) : trend.direction === 'down' ? s.reading.down : s.reading.flat
+    : null
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -100,7 +107,7 @@ export function DailyEfficiencyChart({ data }: { data: DailyEfficiency[] }) {
               type="monotone"
               dataKey="ef30"
               stroke={COLOR_30}
-              strokeWidth={2.5}
+              strokeWidth={3}
               dot={false}
               connectNulls
               isAnimationActive={false}
@@ -108,6 +115,7 @@ export function DailyEfficiencyChart({ data }: { data: DailyEfficiency[] }) {
           </LineChart>
         </ResponsiveContainer>
       </ChartFigure>
+      {reading && <ChartExplain text={reading} />}
       <p className="mt-2 text-xs text-subtle">{s.footnote}</p>
     </GlassSurface>
   )
