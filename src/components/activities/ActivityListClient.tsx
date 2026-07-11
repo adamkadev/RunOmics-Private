@@ -222,7 +222,7 @@ export function ActivityListClient({
               key={type}
               as="button"
               variant={active ? 'active' : 'neutral'}
-              dotColor={active ? undefined : ACTIVITY_TYPE_CONFIG[type].dotColor}
+              dotColor={active ? undefined : ACTIVITY_TYPE_CONFIG[type].chartColor}
               className={cn('text-footnote font-semibold', active && ACTIVE_CHIP_SHADOW)}
               onClick={() => setSelectedType(active ? null : type)}
             >

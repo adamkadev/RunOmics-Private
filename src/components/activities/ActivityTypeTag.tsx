@@ -22,7 +22,7 @@ export function ActivityTypeTag({ type, className }: Props) {
     >
       <span
         className="h-1.5 w-1.5 shrink-0 rounded-full"
-        style={{ backgroundColor: config.dotColor }}
+        style={{ backgroundColor: config.chartColor }}
       />
       <span className="leading-none">
         {t.activityTypes[type]}

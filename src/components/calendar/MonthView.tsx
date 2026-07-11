@@ -38,7 +38,7 @@ function DayActivities({ activities }: { activities: Activity[] }) {
           <span
             key={a.id}
             className="inline-block h-[7px] w-[7px] rounded-full shrink-0"
-            style={{ background: ACTIVITY_TYPE_CONFIG[a.type].dotColor }}
+            style={{ background: ACTIVITY_TYPE_CONFIG[a.type].chartColor }}
           />
         ))}
         {overflow > 0 && (
@@ -50,7 +50,7 @@ function DayActivities({ activities }: { activities: Activity[] }) {
       {totalKm > 0 && activities[0] && (
         <span
           className="text-[10px] font-bold leading-none"
-          style={{ color: ACTIVITY_TYPE_CONFIG[activities[0].type].dotColor }}
+          style={{ color: ACTIVITY_TYPE_CONFIG[activities[0].type].chartColor }}
         >
           {totalKm.toFixed(1)} {t.units.km}
         </span>
@@ -60,7 +60,7 @@ function DayActivities({ activities }: { activities: Activity[] }) {
 }
 
 function PlannedBadge({ workout, onTap }: { workout: PlannedWorkout; onTap: () => void }) {
-  const dotColor = workout.type ? ACTIVITY_TYPE_CONFIG[workout.type as ActivityType].dotColor : null
+  const dotColor = workout.type ? ACTIVITY_TYPE_CONFIG[workout.type as ActivityType].chartColor : null
   const label = workout.distanceM
     ? `${round(workout.distanceM / 1000)} ${t.units.km}`
     : workout.durationSecs
@@ -182,7 +182,7 @@ export function MonthView({ year, month, byDate, byDatePlanned, today, atPresent
         <div className="flex flex-wrap items-center gap-3">
           {Object.entries(ACTIVITY_TYPE_CONFIG).map(([type, cfg]) => (
             <span key={type} className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full" style={{ background: cfg.dotColor }} />
+              <span className="h-2 w-2 rounded-full" style={{ background: cfg.chartColor }} />
               {t.activityTypes[type as ActivityType]}
             </span>
           ))}

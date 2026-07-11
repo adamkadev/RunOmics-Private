@@ -14,7 +14,7 @@ interface Props {
 
 /** B4 anatomy: icon + title + chevron, type pill + date, 4-metric grid. */
 export function ActivityListCard({ activity: a, qualifiedEfforts = [] }: Props) {
-  const { dotColor } = ACTIVITY_TYPE_CONFIG[a.type]
+  const { chartColor } = ACTIVITY_TYPE_CONFIG[a.type]
   const title = a.description || t.activity.runTitle(a.dayOfWeek)
   const TypeIcon = ACTIVITY_TYPE_ICONS[a.type]
 
@@ -29,11 +29,11 @@ export function ActivityListCard({ activity: a, qualifiedEfforts = [] }: Props) 
         <span
           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border"
           style={{
-            backgroundColor: `color-mix(in srgb, ${dotColor} 10%, transparent)`,
-            borderColor: `color-mix(in srgb, ${dotColor} 30%, transparent)`,
+            backgroundColor: `color-mix(in srgb, ${chartColor} 10%, transparent)`,
+            borderColor: `color-mix(in srgb, ${chartColor} 30%, transparent)`,
           }}
         >
-          <TypeIcon size={16} strokeWidth={2.2} style={{ color: dotColor }} />
+          <TypeIcon size={16} strokeWidth={2.2} style={{ color: chartColor }} />
         </span>
         <span className="flex-1 truncate text-subhead font-bold text-foreground">{title}</span>
         <ChevronRight size={16} className="shrink-0 text-foreground/30" />
@@ -43,12 +43,12 @@ export function ActivityListCard({ activity: a, qualifiedEfforts = [] }: Props) 
         <span
           className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-[3px] text-caption font-semibold"
           style={{
-            backgroundColor: `color-mix(in srgb, ${dotColor} 16%, transparent)`,
-            borderColor: `color-mix(in srgb, ${dotColor} 28%, transparent)`,
-            color: dotColor,
+            backgroundColor: `color-mix(in srgb, ${chartColor} 16%, transparent)`,
+            borderColor: `color-mix(in srgb, ${chartColor} 28%, transparent)`,
+            color: chartColor,
           }}
         >
-          <span className="h-[5px] w-[5px] shrink-0 rounded-full" style={{ backgroundColor: dotColor }} />
+          <span className="h-[5px] w-[5px] shrink-0 rounded-full" style={{ backgroundColor: chartColor }} />
           {t.activityTypes[a.type]}
         </span>
         <PrBadge efforts={qualifiedEfforts} />

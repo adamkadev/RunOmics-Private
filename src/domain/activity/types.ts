@@ -137,52 +137,45 @@ export interface DashboardData {
 
 // Visual styling per activity type. Human-readable labels live in i18n
 // (`t.activityTypes`); only colors / badge classes belong here.
-// `dotColor` is the canonical "type = pastille" color (liquid glass design):
-// session types appear only as a 6-9px dot + label, never as a card-wide fill.
+// `chartColor` is the canonical "type" color: used both for charts and for the
+// "type = pastille" dots/badges (liquid glass design) - one color per type.
 export const ACTIVITY_TYPE_CONFIG: Record<
   ActivityType,
-  { badgeClass: string; chartColor: string; dotColor: string }
+  { badgeClass: string; chartColor: string }
 > = {
   Sprint: {
     badgeClass: 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/30 dark:text-fuchsia-400',
     chartColor: '#d946ef', // fuchsia-500
-    dotColor: '#d946b5',
   },
 
   Anaerobic: {
     badgeClass: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
     chartColor: '#7c3aed', // violet-600
-    dotColor: '#8257e6',
   },
 
   VO2Max: {
     badgeClass: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
     chartColor: '#ef4444', // red-500
-    dotColor: '#e5396b',
   },
 
   Threshold: {
     badgeClass: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
     chartColor: '#f97316', // orange-500
-    dotColor: '#f1761f',
   },
 
   Tempo: {
     badgeClass: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
     chartColor: '#eab308', // yellow-500
-    dotColor: '#eab308',
   },
 
   Base: {
     badgeClass: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
     chartColor: '#22c55e', // green-500
-    dotColor: '#10b981',
   },
 
   Race: {
     badgeClass: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
     chartColor: '#f59e0b', // amber-500
-    dotColor: '#f59e0b',
   },
 }
 

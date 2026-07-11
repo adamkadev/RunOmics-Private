@@ -29,7 +29,7 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
   const durationMin = workout.durationSecs ? Math.round(workout.durationSecs / 60) : null
   const distanceKm = workout.distanceM ? (workout.distanceM / 1000).toFixed(1) : null
   const typeColor = workout.type
-    ? ACTIVITY_TYPE_CONFIG[workout.type as ActivityType].dotColor
+    ? ACTIVITY_TYPE_CONFIG[workout.type as ActivityType].chartColor
     : null
   const WorkoutIcon = ACTIVITY_TYPE_ICONS[workout.type as ActivityType]
 

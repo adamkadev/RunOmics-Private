@@ -16,7 +16,7 @@ function Dot({ type }: { type: ActivityType }) {
   return (
     <span
       className="h-2 w-2 shrink-0 rounded-full"
-      style={{ backgroundColor: ACTIVITY_TYPE_CONFIG[type].dotColor }}
+      style={{ backgroundColor: ACTIVITY_TYPE_CONFIG[type].chartColor }}
       aria-hidden
     />
   );

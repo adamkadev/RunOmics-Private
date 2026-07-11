@@ -47,7 +47,7 @@ interface Day {
 }
 
 function PlannedWorkoutRow({ plan, onTap }: { plan: PlannedWorkout; onTap: () => void }) {
-  const typeColor = plan.type ? ACTIVITY_TYPE_CONFIG[plan.type as ActivityType].dotColor : null
+  const typeColor = plan.type ? ACTIVITY_TYPE_CONFIG[plan.type as ActivityType].chartColor : null
   const Icon = plan.type ? ACTIVITY_TYPE_ICONS[plan.type as ActivityType] : Footprints
 
   return (
@@ -98,7 +98,7 @@ function PlannedWorkoutRow({ plan, onTap }: { plan: PlannedWorkout; onTap: () =>
 /** Compact row for the next-week preview: a color dot instead of a type icon, date+time as the
  * primary line since several rows are listed together (the workout name doesn't fit the format). */
 function NextWeekPlanRow({ plan, onTap }: { plan: PlannedWorkout; onTap: () => void }) {
-  const typeColor = plan.type ? ACTIVITY_TYPE_CONFIG[plan.type as ActivityType].dotColor : null
+  const typeColor = plan.type ? ACTIVITY_TYPE_CONFIG[plan.type as ActivityType].chartColor : null
   const meta =
     [
       plan.type ? t.activityTypes[plan.type as ActivityType] : null,
@@ -283,7 +283,7 @@ export function WeekView({
                 const missed = isPast && planned
                 const rest = !completed && !planned
                 const primaryType: ActivityType | null = (d.acts[0]?.type ?? plan?.type) ?? null
-                const typeColor = primaryType && !missed ? ACTIVITY_TYPE_CONFIG[primaryType].dotColor : null
+                const typeColor = primaryType && !missed ? ACTIVITY_TYPE_CONFIG[primaryType].chartColor : null
                 const label = primaryType ? t.activityTypes[primaryType] : rest ? t.calendar.restDay : null
 
                 return (
@@ -392,11 +392,11 @@ export function WeekView({
                 <span
                   className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border"
                   style={{
-                    background: `${ACTIVITY_TYPE_CONFIG[a.type].dotColor}1a`,
-                    borderColor: `${ACTIVITY_TYPE_CONFIG[a.type].dotColor}44`,
+                    background: `${ACTIVITY_TYPE_CONFIG[a.type].chartColor}1a`,
+                    borderColor: `${ACTIVITY_TYPE_CONFIG[a.type].chartColor}44`,
                   }}
                 >
-                  <ActIcon size={16} strokeWidth={2.2} style={{ color: ACTIVITY_TYPE_CONFIG[a.type].dotColor }} />
+                  <ActIcon size={16} strokeWidth={2.2} style={{ color: ACTIVITY_TYPE_CONFIG[a.type].chartColor }} />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-semibold text-foreground">

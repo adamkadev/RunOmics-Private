@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { BrandIcon } from '@/components/shoes/BrandIcon'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import type { ShoeStats } from '@/application/usecases/GetShoeStats'
 import { STATUS } from '@/lib/statusColors'
@@ -29,11 +30,8 @@ export function ProfileShoes({ shoes }: { shoes: ShoeStats[] }) {
                 i < shoes.length - 1 && 'border-b border-foreground/[0.07]'
               )}
             >
-              <div
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control border border-foreground/[0.10] bg-foreground/[0.07] text-lg"
-                aria-hidden="true"
-              >
-                👟
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control border border-foreground/[0.10] bg-foreground/[0.07]">
+                <BrandIcon brand={shoe.brand} size={18} />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="truncate text-footnote font-bold text-foreground">{shoe.name}</div>

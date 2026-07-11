@@ -71,7 +71,7 @@ export function ActivitySheet({ activity, onClose }: Props) {
             <div className="flex items-center gap-1.5">
               <span
                 className="h-[5px] w-[5px] rounded-full"
-                style={{ backgroundColor: ACTIVITY_TYPE_CONFIG[activity.type].dotColor }}
+                style={{ backgroundColor: ACTIVITY_TYPE_CONFIG[activity.type].chartColor }}
               />
               <span className="text-xs font-semibold text-foreground">{t.activityTypes[activity.type]}</span>
             </div>
