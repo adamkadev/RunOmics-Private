@@ -1,9 +1,13 @@
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
 import { Trophy, Target, Medal, TrendingUp, ArrowRight, ArrowDown, Check, Calendar, Flag, MapPin } from 'lucide-react'
-import type { YearData, GoalProjection } from '@/application/usecases/GetGoalsData'
+import type { YearData, GoalProjection, GoalYear } from '@/application/usecases/GetGoalsData'
 import { formatDuration, formatDate, formatPace } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
+import { EditableNumber } from '@/components/ui/EditableNumber'
 import { MonthlyGoalsGrid } from './MonthlyGoalsGrid'
 import { NextRaceSpotlight } from './NextRaceSpotlight'
 import { raceDistanceTint } from '@/lib/colors'
@@ -41,11 +45,19 @@ function projectionSparkline(year: number, annualDistanceKm: number, annualProgr
   return { nowX: 4 + elapsedFraction * 292, nowY: yFor(annualProgress), endY: yFor(projectedPercent) }
 }
 
-export function YearView({ yearData }: { yearData: YearData }) {
+interface Props {
+  yearData: YearData
+  onSaveGoal?: (goalYear: GoalYear) => void
+}
+
+// The annual goal target is edited here - its one home - not on the Progress
+// hub teaser, which only links back to this page.
+export function YearView({ yearData, onSaveGoal }: Props) {
   const { goals, pbs, upcomingRaces, totalDistanceKm, projection, monthlyGoals, nextRaceSpotlight } = yearData
   const today = new Date().toISOString().slice(0, 10)
 
-  const annualDistanceKm = goals?.annualDistanceKm ?? 0
+  const [editedAnnualKm, setEditedAnnualKm] = useState(goals?.annualDistanceKm ?? 0)
+  const annualDistanceKm = editedAnnualKm
   const annualProgress = annualDistanceKm > 0
     ? Math.min((totalDistanceKm / annualDistanceKm) * 100, 100)
     : 0
@@ -70,7 +82,17 @@ export function YearView({ yearData }: { yearData: YearData }) {
                 <span className="text-3xl font-bold tracking-tight text-foreground">
                   <AnimatedValue value={totalDistanceKm} />
                 </span>
-                <span className="ml-1 text-sm text-subtle">/ {goals.annualDistanceKm} {t.units.km}</span>
+                <span className="ml-1 text-sm text-subtle">
+                  {'/ '}
+                  <EditableNumber
+                    value={editedAnnualKm}
+                    onCommit={(n) => {
+                      setEditedAnnualKm(n)
+                      onSaveGoal?.({ ...goals, annualDistanceKm: n })
+                    }}
+                  />
+                  {' '}{t.units.km}
+                </span>
               </div>
               <span className="text-sm font-semibold text-accent-text">
                 <AnimatedValue value={annualProgress} />%

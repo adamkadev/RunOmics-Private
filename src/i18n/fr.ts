@@ -1015,7 +1015,7 @@ export const fr = {
     },
     goal: {
       title: (year: number) => `Objectif ${year}`,
-      pace: (km: number) => `À ce rythme : ${km} km en fin d’année`,
+      progress: (total: number, target: number) => `${total} / ${target} km`,
       viewGoals: 'Voir les objectifs',
     },
   },
