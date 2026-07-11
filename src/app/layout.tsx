@@ -9,6 +9,7 @@ import { AppShell } from '@/components/layout/AppShell'
 import { ServiceWorkerRegistration } from '@/components/layout/ServiceWorkerRegistration'
 import { t } from '@/i18n'
 import { ACCENT_STORAGE_KEY } from '@/lib/accent'
+import { appleStartupImages } from '@/lib/splashScreens'
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] })
@@ -24,6 +25,7 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: 'black-translucent',
     title: 'RunOmics',
+    startupImage: [...appleStartupImages],
   },
   icons: {
     icon: [{ url: '/icons/logo.svg', type: 'image/svg+xml' }],
