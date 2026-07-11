@@ -37,15 +37,15 @@
     },
     {
       "date": "2026-07-11",
-      "name": "2 x 10' tempo",
-      "durationSecs": 3540,
+      "name": "7km endurance",
+      "distanceM": 7000,
       "type": "Tempo",
       "scheduledTime": "19:00"
     },
     {
       "date": "2026-07-12",
-      "name": "7km endurance",
-      "distanceM": 7000,
+      "name": "2 x 10' tempo",
+      "durationSecs": 3540,
       "type": "Base",
       "scheduledTime": "19:00"
     },
