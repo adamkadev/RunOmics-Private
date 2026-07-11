@@ -23,7 +23,7 @@ interface Props {
   onSelectDay: (date: string) => void
 }
 
-const WEEKDAYS = t.calendar.weekdays
+const WEEKDAYS = t.plan.weekdays
 
 const MAX_DOTS = 3
 
@@ -123,7 +123,7 @@ export function MonthView({ year, month, byDate, byDatePlanned, today, atPresent
       <GlassSurface variant="card" className="overflow-hidden rounded-card-sm">
         {!atPresent && (
           <div className="flex justify-end border-b border-foreground/[0.08] px-2 py-1.5">
-            <InlineJumpButton onClick={onToday}>{t.calendar.today}</InlineJumpButton>
+            <InlineJumpButton onClick={onToday}>{t.plan.today}</InlineJumpButton>
           </div>
         )}
         <div className="overflow-hidden rounded-xl">
@@ -187,7 +187,7 @@ export function MonthView({ year, month, byDate, byDatePlanned, today, atPresent
             </span>
           ))}
         </div>
-        <p className="font-mono">{t.calendar.summary(sessionCount, totalKm)}</p>
+        <p className="font-mono">{t.plan.summary(sessionCount, totalKm)}</p>
       </div>
 
       {sheetPlan && <PlannedWorkoutSheet workout={sheetPlan} onClose={() => setSheetPlan(null)} />}

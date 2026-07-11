@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { summarizeWeek, weeklyTrimpTotals, classifyWeekLoadLevel, compareWeekLoad } from '../weekSummary'
+import { summarizeWeek, weeklyTrimpTotals, classifyWeekLoadLevel, compareWeekLoad, computeWeekAdherence } from '../weekSummary'
 import type { Activity } from '@/domain/activity/types'
 
 const HR_BOUNDS = { maxHr: 190, restingHr: 50 }
@@ -60,5 +60,30 @@ describe('compareWeekLoad', () => {
 
   it('computes percent vs the baseline average', () => {
     expect(compareWeekLoad(120, [80, 100, 120])).toEqual({ percent: 120, level: 'normal' })
+  })
+})
+
+describe('computeWeekAdherence', () => {
+  const day = (date: string, planned: boolean, completed: boolean) => ({ date, planned, completed })
+
+  it('returns null when nothing was planned yet', () => {
+    const days = [day('2026-07-06', false, false), day('2026-07-07', false, true)]
+    expect(computeWeekAdherence(days, '2026-07-07')).toBeNull()
+  })
+
+  it('ignores planned days that have not happened yet', () => {
+    const days = [
+      day('2026-07-06', true, true),
+      day('2026-07-08', true, false), // in the future relative to "today"
+    ]
+    expect(computeWeekAdherence(days, '2026-07-07')).toEqual({ due: 1, done: 1, percent: 100 })
+  })
+
+  it('counts a due-but-incomplete planned day as missed', () => {
+    const days = [
+      day('2026-07-06', true, true),
+      day('2026-07-07', true, false),
+    ]
+    expect(computeWeekAdherence(days, '2026-07-07')).toEqual({ due: 2, done: 1, percent: 50 })
   })
 })

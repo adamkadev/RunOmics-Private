@@ -28,7 +28,7 @@ export const fr = {
     items: {
       dashboard: 'Aujourd’hui',
       activities: 'Activités',
-      calendar: 'Plan',
+      plan: 'Plan',
       analytics: 'Analyses',
       heatmap: 'Heatmap',
       profile: 'Progression',
@@ -92,7 +92,7 @@ export const fr = {
     activities: {
       title: 'Activités',
     },
-    calendar: {
+    plan: {
       title: 'Plan',
     },
     records: {
@@ -306,7 +306,6 @@ export const fr = {
       footnote: 'Estimé à partir des séances planifiées - la forme réelle dépendra de ce que tu cours vraiment.',
     },
     weeklyDigest: {
-      reviewTitle: 'Ta semaine en revue',
       newPr: (label: string, time: string) => `Nouveau record ${label} : ${time}`,
       statusFresh: (tsb: number) => `Zone fraîche (Forme +${tsb}) - bonne fenêtre pour une séance dure`,
       statusOverreaching: (tsb: number) => `Surcharge (Forme ${tsb}) - envisage de lever le pied`,
@@ -352,10 +351,8 @@ export const fr = {
           body: (tsb: number) => `La forme est à ${tsb} et le risque est élevé - une journée facile ou du repos aiderait.`,
         },
       },
-      plannedSession: 'Séance planifiée',
       sessionCta: 'Détails',
       race: 'Course',
-      load: 'Charge',
       daysToRace: (days: number) => `J-${days}`,
       chargeOptimal: 'Optimale',
       chargeHigh: 'Élevée',
@@ -846,6 +843,12 @@ export const fr = {
     daysUntil: (n: number) => n === 0 ? 'Aujourd’hui' : n === 1 ? 'Demain' : `${n}j`,
     pastRace: 'Passée',
     registrationLink: 'Inscription',
+    nextRace: {
+      title: 'Prochaine course',
+      target: 'Objectif',
+      predicted: 'Prédit',
+      gap: 'Écart',
+    },
     projection: {
       status: {
         ahead: 'En avance',
@@ -853,9 +856,12 @@ export const fr = {
         behind: 'En retard',
       },
       rate: (current: number, needed: number) => `rythme ${current} km/sem · ${needed} km/sem nécessaires`,
+      projected: (km: number) => `Projection ${km.toLocaleString()} km`,
     },
     monthlyGoal: {
       title: 'Objectifs mensuels',
+      expand: 'Détailler',
+      collapse: 'Réduire',
       status: {
         ahead: 'En avance',
         on_track: 'Sur la bonne voie',
@@ -1041,7 +1047,7 @@ export const fr = {
     gradeExplain: 'Note vos 12 dernières semaines selon les semaines actives (60 %) et la stabilité du volume hebdo (40 %).',
   },
 
-  calendar: {
+  plan: {
     today: 'Aujourd’hui',
     prevPeriod: 'Précédent',
     nextPeriod: 'Suivant',
@@ -1063,6 +1069,13 @@ export const fr = {
       easyHard: 'Facile / Dur',
       elevation: 'D+',
       keySessions: 'Séances clés',
+    },
+    weekPurpose: {
+      recovery: 'Semaine de récupération',
+      steady: 'Semaine stable',
+      build: 'Semaine de développement',
+      thisWeek: 'Cette semaine',
+      adherence: (done: number, due: number) => `${done}/${due} faites`,
     },
   },
 

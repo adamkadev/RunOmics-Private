@@ -12,7 +12,7 @@ const TARGETS: Record<FirestoreCollection, { path: string; type?: 'page' }[]> = 
     { path: '/profile' },
     { path: '/analytics' },
     { path: '/' },
-    { path: '/calendar' },
+    { path: '/plan' },
     { path: '/activities/[id]', type: 'page' },
   ],
 }

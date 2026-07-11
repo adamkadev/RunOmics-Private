@@ -22,7 +22,7 @@ function logFirestoreReadError(collection: string, error: unknown): void {
 }
 
 // These collections are small and rarely change, but are re-read independently by
-// many pages/use-cases (dashboard, calendar, analytics, every static activity page,
+// many pages/use-cases (dashboard, plan, analytics, every static activity page,
 // etc). Without this, a single `next build` re-reads the same doc hundreds of times.
 // Cached per server process for a short window; writes also trigger an explicit
 // revalidatePath via /api/internal/revalidate, so this is a bound on worst-case

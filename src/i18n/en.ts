@@ -36,7 +36,7 @@ export const en = {
     items: {
       dashboard: 'Today',
       activities: 'Activities',
-      calendar: 'Plan',
+      plan: 'Plan',
       analytics: 'Analytics',
       heatmap: 'Heatmap',
       profile: 'Progress',
@@ -98,7 +98,7 @@ export const en = {
     activities: {
       title: 'Activities',
     },
-    calendar: {
+    plan: {
       title: 'Plan',
     },
     records: {
@@ -312,13 +312,12 @@ export const en = {
       footnote: 'Estimated from planned sessions - actual form will vary with what you actually run.',
     },
     weeklyDigest: {
-      reviewTitle: 'This Week In Review',
       newPr: (label: string, time: string) => `New ${label} best: ${time}`,
       statusFresh: (tsb: number) => `Fresh zone (Form +${tsb}) - a good window to train hard`,
       statusOverreaching: (tsb: number) => `Overreaching (Form ${tsb}) - consider easing off`,
       acwrWatch: (acwr: number) => `Acute:chronic load ratio at ${acwr.toFixed(2)} - outside the safe 0.8-1.3 range`,
       monotonyWatch: (monotony: number) => `Monotony at ${monotony.toFixed(1)} - your week lacks variety in daily load`,
-      hardShareWatch: (hardPct: number) => `${Math.round(hardPct)}% of your time was hard effort - above the usual 80/20 guideline`,
+      hardShareWatch: (hardPct: number) => `${Math.round(hardPct)}% hard - above the usual 80/20`,
     },
     syncStatus: {
       synced: (relative: string) => `Synced ${relative}`,
@@ -358,10 +357,8 @@ export const en = {
           body: (tsb: number) => `Form is ${tsb} and risk is elevated - an easy day or rest would help.`,
         },
       },
-      plannedSession: 'Planned session',
       sessionCta: 'Details',
       race: 'Race',
-      load: 'Load',
       daysToRace: (days: number) => `D-${days}`,
       chargeOptimal: 'Optimal',
       chargeHigh: 'High',
@@ -852,6 +849,12 @@ export const en = {
     daysUntil: (n: number) => n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : `${n}d`,
     pastRace: 'Past',
     registrationLink: 'Registration',
+    nextRace: {
+      title: 'Next Race',
+      target: 'Target',
+      predicted: 'Predicted',
+      gap: 'Gap',
+    },
     projection: {
       status: {
         ahead: 'Ahead',
@@ -859,9 +862,12 @@ export const en = {
         behind: 'Behind',
       },
       rate: (current: number, needed: number) => `${current} km/wk pace · ${needed} km/wk needed`,
+      projected: (km: number) => `Projected ${km.toLocaleString()} km`,
     },
     monthlyGoal: {
       title: 'Monthly Goals',
+      expand: 'Expand',
+      collapse: 'Collapse',
       status: {
         ahead: 'Ahead',
         on_track: 'On track',
@@ -1047,7 +1053,7 @@ export const en = {
     gradeExplain: 'Ranks your last 12 weeks by weeks active (60%) and weekly volume stability (40%).',
   },
 
-  calendar: {
+  plan: {
     today: 'Today',
     prevPeriod: 'Previous',
     nextPeriod: 'Next',
@@ -1068,6 +1074,13 @@ export const en = {
       easyHard: 'Easy / Hard',
       elevation: 'Elevation',
       keySessions: 'Key sessions',
+    },
+    weekPurpose: {
+      recovery: 'Recovery week',
+      steady: 'Steady week',
+      build: 'Build week',
+      thisWeek: 'This week',
+      adherence: (done: number, due: number) => `${done}/${due} done`,
     },
   },
 

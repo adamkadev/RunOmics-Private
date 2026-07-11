@@ -12,7 +12,7 @@ function DaySkeleton() {
   )
 }
 
-export default function CalendarLoading() {
+export default function PlanLoading() {
   return (
     <div className="space-y-6">
       <Skeleton className="h-8 w-32" />
@@ -33,7 +33,7 @@ export default function CalendarLoading() {
         ))}
       </div>
 
-      {/* Calendar grid -5 weeks */}
+      {/* Plan grid -5 weeks */}
       <div className="grid grid-cols-7 gap-1">
         {Array.from({ length: 35 }).map((_, i) => <DaySkeleton key={i} />)}
       </div>

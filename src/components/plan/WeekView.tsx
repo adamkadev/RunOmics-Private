@@ -5,13 +5,13 @@ import { Calendar, Check, ChevronRight, Footprints, X } from 'lucide-react'
 import type { Activity, ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import { ACTIVITY_TYPE_CONFIG, ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
 import type { HrBounds } from '@/domain/training/trimp'
-import { summarizeWeek, weeklyTrimpTotals, compareWeekLoad } from '@/domain/training/weekSummary'
+import { summarizeWeek, weeklyTrimpTotals, compareWeekLoad, computeWeekAdherence } from '@/domain/training/weekSummary'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { StatusPill, type StatusTone } from '@/components/ui/StatusPill'
 import { ActivitySheet } from './ActivitySheet'
 import { InlineJumpButton } from '@/components/ui/InlineJumpButton'
 import { PlannedWorkoutSheet } from './PlannedWorkoutSheet'
+import { WeekPurposeBanner } from './WeekPurposeBanner'
 import { addDays, isoDate, isoWeekNumber } from '@/lib/calendarDate'
 import { formatDate, formatDateFull } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
@@ -33,12 +33,6 @@ const FG_07 = 'color-mix(in srgb, var(--color-foreground) 7%, transparent)'
 const FG_18 = 'color-mix(in srgb, var(--color-foreground) 18%, transparent)'
 
 const TREND_WEEKS = 8
-
-const LOAD_LEVEL_TONE: Record<'low' | 'normal' | 'high', StatusTone> = {
-  low: 'blue',
-  normal: 'green',
-  high: 'amber',
-}
 
 interface Day {
   date: string
@@ -83,7 +77,7 @@ function PlannedWorkoutRow({ plan, onTap }: { plan: PlannedWorkout; onTap: () =>
             plan.durationSecs ? `~${Math.round(plan.durationSecs / 60)} min` : null,
           ]
             .filter(Boolean)
-            .join(' · ') || t.calendar.planned}
+            .join(' · ') || t.plan.planned}
         </span>
       </span>
       <ChevronRight
@@ -105,7 +99,7 @@ function NextWeekPlanRow({ plan, onTap }: { plan: PlannedWorkout; onTap: () => v
       plan.durationSecs ? `~${Math.round(plan.durationSecs / 60)} min` : null,
     ]
       .filter(Boolean)
-      .join(' · ') || t.calendar.planned
+      .join(' · ') || t.plan.planned
 
   return (
     <button
@@ -215,28 +209,34 @@ export function WeekView({
   )
   const comparison = useMemo(() => compareWeekLoad(summary.totalTrimp, trendTotals.slice(0, -1)), [summary.totalTrimp, trendTotals])
 
+  const adherence = useMemo(
+    () =>
+      computeWeekAdherence(
+        days.map((d) => ({ date: d.date, planned: byDatePlanned.has(d.date), completed: d.acts.length > 0 })),
+        today
+      ),
+    [days, byDatePlanned, today]
+  )
+
   return (
     <div className="space-y-3">
+      <WeekPurposeBanner level={comparison?.level ?? null} percent={comparison?.percent ?? null} adherence={adherence} />
+
       <GlassSurface variant="card" className="rounded-card-sm p-3.5 pb-2.5">
         <div className={cn('mb-2.5 flex items-center gap-2', atPresent ? 'justify-end' : 'justify-between')}>
-          {!atPresent && <InlineJumpButton onClick={onToday}>{t.calendar.today}</InlineJumpButton>}
+          {!atPresent && <InlineJumpButton onClick={onToday}>{t.plan.today}</InlineJumpButton>}
           <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            {t.calendar.weekSummary.load}{' '}
+            {t.plan.weekSummary.load}{' '}
             <strong className="font-bold text-foreground">
               <AnimatedValue value={summary.totalTrimp} />
             </strong>
-            {comparison && (
-              <StatusPill tone={LOAD_LEVEL_TONE[comparison.level]} className="text-[10px]">
-                {t.calendar.weekSummary.vsTypical(comparison.percent)}
-              </StatusPill>
-            )}
           </span>
         </div>
 
         {/* Decisional header: easy/hard, elevation, key sessions (load lives in the title row above) */}
         <div className="grid grid-cols-3 gap-2">
           <SummaryStat
-            label={t.calendar.weekSummary.easyHard}
+            label={t.plan.weekSummary.easyHard}
             value={
               summary.easyPct !== null ? (
                 <>
@@ -249,19 +249,19 @@ export function WeekView({
             }
           />
           <SummaryStat
-            label={t.calendar.weekSummary.elevation}
+            label={t.plan.weekSummary.elevation}
             value={
               <>
                 <AnimatedValue value={summary.elevationGainM} /> {t.units.m}
               </>
             }
           />
-          <SummaryStat label={t.calendar.weekSummary.keySessions} value={<AnimatedValue value={summary.keySessionsCount} />} />
+          <SummaryStat label={t.plan.weekSummary.keySessions} value={<AnimatedValue value={summary.keySessionsCount} />} />
         </div>
 
         <div className="mt-3">
           <div className="mb-2 grid grid-cols-7 gap-1">
-            {t.calendar.weekdays.map((label, i) => (
+            {t.plan.weekdays.map((label, i) => (
               <div
                 key={label}
                 className="text-center font-mono text-micro font-semibold text-muted-foreground/50"
@@ -284,7 +284,7 @@ export function WeekView({
                 const rest = !completed && !planned
                 const primaryType: ActivityType | null = (d.acts[0]?.type ?? plan?.type) ?? null
                 const typeColor = primaryType && !missed ? ACTIVITY_TYPE_CONFIG[primaryType].chartColor : null
-                const label = primaryType ? t.activityTypes[primaryType] : rest ? t.calendar.restDay : null
+                const label = primaryType ? t.activityTypes[primaryType] : rest ? t.plan.restDay : null
 
                 return (
                   <button
@@ -374,7 +374,7 @@ export function WeekView({
             {formatDateFull(selected.date)}
           </span>
           {selected.date === today && (
-            <span className="text-caption font-semibold text-muted-foreground">{t.calendar.today}</span>
+            <span className="text-caption font-semibold text-muted-foreground">{t.plan.today}</span>
           )}
         </div>
 
@@ -414,7 +414,7 @@ export function WeekView({
         ) : selectedPlan ? (
           <PlannedWorkoutRow plan={selectedPlan} onTap={() => setSheetPlan(selectedPlan)} />
         ) : (
-          <p className="text-sm text-subtle">{t.calendar.restDay}</p>
+          <p className="text-sm text-subtle">{t.plan.restDay}</p>
         )}
       </GlassSurface>
 
@@ -422,7 +422,7 @@ export function WeekView({
         <GlassSurface variant="card" className="rounded-card-sm p-4">
           <p className="mb-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-accent-text">
             <Calendar size={13} strokeWidth={2.4} />
-            {t.calendar.nextWeek(nextWeekPlans.length)}
+            {t.plan.nextWeek(nextWeekPlans.length)}
           </p>
           <div className="space-y-2">
             {nextWeekPlans.map((plan) => (

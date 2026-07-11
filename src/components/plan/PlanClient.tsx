@@ -21,7 +21,7 @@ interface Props {
 
 type ViewMode = 'week' | 'month'
 
-export function CalendarClient({ activities, plannedWorkouts, hrBounds }: Props) {
+export function PlanClient({ activities, plannedWorkouts, hrBounds }: Props) {
   const now = new Date()
   const today = isoDate(now)
   const [mode, setMode] = useState<ViewMode>('week')
@@ -56,7 +56,7 @@ export function CalendarClient({ activities, plannedWorkouts, hrBounds }: Props)
 
   const subtitle =
     mode === 'week'
-      ? t.calendar.weekOf(formatDayMonth(isoDate(weekStart)))
+      ? t.plan.weekOf(formatDayMonth(isoDate(weekStart)))
       : new Date(year, month, 1).toLocaleString(t.locale, { month: 'long', year: 'numeric' })
 
   function shift(delta: number) {
@@ -101,15 +101,15 @@ export function CalendarClient({ activities, plannedWorkouts, hrBounds }: Props)
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-title1 font-extrabold leading-[1.1] tracking-tight text-foreground">
-              {t.pages.calendar.title}
+              {t.pages.plan.title}
             </h1>
             <PeriodNav
               label={<span className="text-footnote font-medium text-muted-foreground">{subtitle}</span>}
               onPrev={() => shift(-1)}
               onNext={() => shift(1)}
               nextDisabled={atPresent}
-              prevLabel={t.calendar.prevPeriod}
-              nextLabel={t.calendar.nextPeriod}
+              prevLabel={t.plan.prevPeriod}
+              nextLabel={t.plan.nextPeriod}
               size="sm"
               className="mt-0.5"
             />
@@ -117,7 +117,7 @@ export function CalendarClient({ activities, plannedWorkouts, hrBounds }: Props)
 
           <div
             role="tablist"
-            aria-label={t.pages.calendar.title}
+            aria-label={t.pages.plan.title}
             className="flex shrink-0 gap-0.5 rounded-control border border-foreground/10 bg-foreground/[0.07] p-[3px]"
           >
             {(['week', 'month'] as const).map((m) => (
@@ -132,7 +132,7 @@ export function CalendarClient({ activities, plannedWorkouts, hrBounds }: Props)
                   mode === m ? 'bg-foreground/[0.14] text-foreground' : 'text-muted-foreground'
                 )}
               >
-                {m === 'week' ? t.calendar.switcher.week : t.calendar.switcher.month}
+                {m === 'week' ? t.plan.switcher.week : t.plan.switcher.month}
               </button>
             ))}
           </div>

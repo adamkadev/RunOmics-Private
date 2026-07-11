@@ -67,7 +67,7 @@ export function ActivitySheet({ activity, onClose }: Props) {
 
         <div className="grid grid-cols-2 gap-2">
           <div className="rounded-[11px] bg-foreground/[0.05] p-2.5">
-            <div className="mb-0.5 text-micro text-muted-foreground">{t.calendar.type}</div>
+            <div className="mb-0.5 text-micro text-muted-foreground">{t.plan.type}</div>
             <div className="flex items-center gap-1.5">
               <span
                 className="h-[5px] w-[5px] rounded-full"
@@ -105,7 +105,7 @@ export function ActivitySheet({ activity, onClose }: Props) {
             href={`/activities/${activity.id}`}
             className="flex-1 rounded-xl bg-accent py-2.5 text-center text-sm font-bold text-accent-foreground shadow-[0_6px_16px_-6px_var(--accent)] transition-transform active:scale-[0.97]"
           >
-            {t.calendar.viewDetail}
+            {t.plan.viewDetail}
           </Link>
         </div>
       </div>

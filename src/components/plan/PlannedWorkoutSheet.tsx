@@ -116,7 +116,7 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
           )}
 
           <p className="text-caption font-semibold uppercase tracking-wide text-white/30">
-            {t.calendar.planned}
+            {t.plan.planned}
           </p>
         </div>
       </div>
