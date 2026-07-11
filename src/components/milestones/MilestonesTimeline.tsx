@@ -1,7 +1,8 @@
 import type { Milestone } from '@/application/usecases/GetMilestones'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { formatDateWithYear } from '@/lib/formatters'
-import { MILESTONE_ICON, MILESTONE_ICON_CLASS } from './milestoneVisuals'
+import { formatDayMonth } from '@/lib/formatters'
+import { cn } from '@/lib/utils'
+import { MILESTONE_ICON, MILESTONE_ICON_CLASS, MILESTONE_NODE_CLASS } from './milestoneVisuals'
 
 /** Milestones are already sorted newest-first; grouping preserves that order across years. */
 function groupByYear(milestones: Milestone[]): [string, Milestone[]][] {
@@ -15,6 +16,30 @@ function groupByYear(milestones: Milestone[]): [string, Milestone[]][] {
   return [...groups.entries()]
 }
 
+function MilestoneColumn({ milestone }: { milestone: Milestone }) {
+  const Icon = MILESTONE_ICON[milestone.type]
+  return (
+    <li className="flex w-36 shrink-0 flex-col items-center">
+      <div className="flex min-h-[4.5rem] flex-col items-center justify-end px-1 text-center">
+        <span className="text-sm font-bold leading-tight text-foreground">{milestone.label}</span>
+        <span className="mt-0.5 text-caption leading-tight text-muted-foreground">{milestone.detail}</span>
+      </div>
+      <div className="relative flex h-12 w-full items-center justify-center">
+        <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-foreground/[0.12]" aria-hidden />
+        <span
+          className={cn(
+            'relative z-10 flex h-9 w-9 items-center justify-center rounded-full border ring-4 ring-background',
+            MILESTONE_NODE_CLASS[milestone.type]
+          )}
+        >
+          <Icon size={15} className={MILESTONE_ICON_CLASS[milestone.type]} />
+        </span>
+      </div>
+      <time className="mt-1.5 text-caption tabular-nums text-subtle">{formatDayMonth(milestone.date)}</time>
+    </li>
+  )
+}
+
 export function MilestonesTimeline({ milestones }: { milestones: Milestone[] }) {
   if (milestones.length === 0) return null
 
@@ -23,27 +48,14 @@ export function MilestonesTimeline({ milestones }: { milestones: Milestone[] }) 
       {groupByYear(milestones).map(([year, items]) => (
         <div key={year}>
           <h2 className="mb-2 px-1 text-sm font-bold text-muted-foreground">{year}</h2>
-          <GlassSurface variant="card" className="p-2">
-            <ul className="space-y-2">
-              {items.map((m, i) => {
-                const Icon = MILESTONE_ICON[m.type]
-                return (
-                  <li
-                    key={`${m.type}-${m.date}-${i}`}
-                    className="flex items-center gap-3 rounded-xl border border-foreground/[0.08] bg-foreground/[0.04] p-3"
-                  >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control border border-foreground/[0.08] bg-foreground/[0.06]">
-                      <Icon size={16} className={MILESTONE_ICON_CLASS[m.type]} />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-bold text-foreground">{m.label}</span>
-                      <span className="block text-caption text-muted-foreground">{m.detail}</span>
-                    </span>
-                    <span className="shrink-0 text-caption text-subtle">{formatDateWithYear(m.date)}</span>
-                  </li>
-                )
-              })}
-            </ul>
+          <GlassSurface variant="card" className="p-4 sm:p-6">
+            <div className="overflow-x-auto pb-1">
+              <ol className="flex min-w-max">
+                {items.map((m, i) => (
+                  <MilestoneColumn key={`${m.type}-${m.date}-${i}`} milestone={m} />
+                ))}
+              </ol>
+            </div>
           </GlassSurface>
         </div>
       ))}

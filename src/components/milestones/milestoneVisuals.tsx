@@ -18,3 +18,12 @@ export const MILESTONE_ICON_CLASS: Record<MilestoneType, string> = {
   'activity-count': 'text-violet-500 dark:text-violet-400',
   'first-activity': 'text-rose-500 dark:text-rose-400',
 }
+
+export const MILESTONE_NODE_CLASS: Record<MilestoneType, string> = {
+  'distance-tier': 'border-blue-500/25 bg-blue-500/10',
+  streak: 'border-orange-500/25 bg-orange-500/10',
+  record: 'border-amber-500/25 bg-amber-500/10',
+  'lifetime-distance': 'border-teal-500/25 bg-teal-500/10',
+  'activity-count': 'border-violet-500/25 bg-violet-500/10',
+  'first-activity': 'border-rose-500/25 bg-rose-500/10',
+}
