@@ -7,8 +7,6 @@ import { getAthleteFromFirestore } from '@/infrastructure/repositories/Firestore
 import type { HrBounds } from '@/domain/training/trimp'
 import { ActivityTypeTag } from '@/components/activities/ActivityTypeTag'
 import { ShoePairTag } from '@/components/activities/ShoePairTag'
-import { TrainingEffect } from '@/components/activity/TrainingEffect'
-import { RunningDynamics } from '@/components/activity/RunningDynamics'
 import { ActivityDetailClient } from '@/components/activity/ActivityDetailClient'
 import { ActivityNav } from '@/components/activity/ActivityNav'
 import { ShareButton } from '@/components/activity/ShareButton'
@@ -16,8 +14,6 @@ import { ActivityNotes } from '@/components/activity/ActivityNotes'
 import { ActivityAchievements } from '@/components/activity/ActivityAchievements'
 import { SimilarRuns } from '@/components/activity/SimilarRuns'
 import { getSimilarRuns } from '@/application/usecases/GetSimilarRuns'
-import { BestEfforts } from '@/components/activity/BestEfforts'
-import { KmSplits } from '@/components/activity/KmSplits'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
 import { t } from '@/i18n'
 
@@ -104,16 +100,7 @@ export default async function ActivityDetailPage({
 
       {similarRuns && <SimilarRuns data={similarRuns} />}
 
-      <ActivityDetailClient activity={activity} hrBounds={hrBounds} />
-
-      <div className="space-y-4">
-        <KmSplits activity={activity} />
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <TrainingEffect aer={activity.aerTrainingEffect} ana={activity.anaTrainingEffect} />
-          {activity.bestEfforts && <BestEfforts bestEfforts={activity.bestEfforts} qualifiedEfforts={qualifiedEfforts} />}
-          <RunningDynamics activity={activity} />
-        </div>
-      </div>
+      <ActivityDetailClient activity={activity} hrBounds={hrBounds} qualifiedEfforts={qualifiedEfforts} />
 
       <ActivityNav prev={prevActivity} next={nextActivity} />
     </div>

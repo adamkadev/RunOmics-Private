@@ -722,6 +722,7 @@ export const en = {
       effortClause: (rpeLabel: string, rpe: number) => `Perceived effort: ${rpeLabel} (RPE ${rpe}).`,
     },
     tabs: {
+      groupLabel: 'Activity sections',
       overview: 'Overview',
       splits: 'Splits',
       charts: 'Charts',
