@@ -173,6 +173,8 @@ def _build_entries(
 
         detail = details_cache[workout_id]
         name = (detail.get("workoutName") or "").strip()
+        if " + " in name:
+            name = name.split(" + ", 1)[0].strip()
         if not name:
             continue
 
