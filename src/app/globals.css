@@ -164,7 +164,7 @@
                        0 4px 16px -4px rgb(0 0 0 / 0.70),
                        inset 0 1px 0 0 rgb(255 255 255 / 0.06);
 
-  --background:        #070f0c;
+  --background:        #05100a;
   --card:              #111827;
   --muted:             #1f2937;
   --border:            #1f2937;
@@ -172,7 +172,7 @@
   --muted-foreground:  #9ca3af;
   --subtle:            #6b7280;
   --accent:            #10b981;
-  --accent-foreground: #ffffff;
+  --accent-foreground: #052015;
   --accent-subtle:     rgba(16, 185, 129, 0.1);
   --accent-text:       #2ed9a0;
   --destructive:       #f87171;
@@ -182,12 +182,12 @@
   --ro-text-2:    rgba(255, 255, 255, 0.6);
   --ro-text-3:    rgba(255, 255, 255, 0.5);
 
-  --canvas:            linear-gradient(155deg, #0a1512 0%, #070f0c 100%);
+  --canvas:            linear-gradient(155deg, #081310 0%, #05100a 100%);
   --hero-gradient:     linear-gradient(150deg, #082113, #0f3d22 70%, #14532d);
   --aurora-1:          #0e9f6e;
   --aurora-2:          #1276b8;
-  --aurora-1-opacity:  0.5;
-  --aurora-2-opacity:  0.42;
+  --aurora-1-opacity:  0.22;
+  --aurora-2-opacity:  0.16;
   --aurora-blur:       30px;
 
   --glass-sat:          1.6;

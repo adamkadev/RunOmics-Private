@@ -1,9 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, Footprints } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
-import type { PlannedWorkout } from '@/domain/activity/types'
+import type { ActivityType, PlannedWorkout } from '@/domain/activity/types'
+import { ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import { PlannedWorkoutSheet } from '@/components/calendar/PlannedWorkoutSheet'
 import { readinessTone } from '@/domain/training/readiness'
@@ -78,6 +80,16 @@ export function TodayHero({ status, plannedWorkout, nextRace, lastSyncedAt }: Pr
   const formValue = status ? `${status.tsb >= 0 ? '+' : ''}${Math.round(animatedTsb)}` : null
   const tone = status ? readinessTone(status.status, status.risk) : null
   const verdict = status ? readinessCopy(status) : null
+  const PlannedWorkoutIcon: LucideIcon = plannedWorkout?.type
+    ? ACTIVITY_TYPE_ICONS[plannedWorkout.type as ActivityType]
+    : Footprints
+  const plannedWorkoutMeta = plannedWorkout
+    ? [
+        plannedWorkout.type ? t.activityTypes[plannedWorkout.type as ActivityType] : null,
+        plannedWorkout.durationSecs ? `~${Math.round(plannedWorkout.durationSecs / 60)} min` : null,
+        plannedWorkout.scheduledTime,
+      ].filter(Boolean).join(' · ')
+    : null
 
   return (
     <div
@@ -121,13 +133,16 @@ export function TodayHero({ status, plannedWorkout, nextRace, lastSyncedAt }: Pr
                 onClick={() => setSheetOpen(true)}
                 className="flex flex-1 items-center gap-3 rounded-xl bg-black/20 px-3 py-2.5 text-left transition-colors active:opacity-80"
               >
-                <div className="min-w-0 flex-1">
-                  <div className="text-[10px] uppercase tracking-wide text-white/50">
-                    {s.plannedSession}
-                  </div>
-                  <div className="mt-0.5 truncate text-sm font-semibold">{plannedWorkout.name}</div>
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-accent/[0.18]">
+                  <PlannedWorkoutIcon size={17} className="text-accent-text" />
                 </div>
-                <span className="flex shrink-0 items-center gap-0.5 rounded-lg bg-white/[0.12] px-2.5 py-1.5 text-[11px] font-semibold">
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-semibold">{plannedWorkout.name}</div>
+                  {plannedWorkoutMeta && (
+                    <div className="mt-0.5 truncate text-[11px] text-white/50">{plannedWorkoutMeta}</div>
+                  )}
+                </div>
+                <span className="flex shrink-0 items-center gap-0.5 rounded-lg bg-accent px-2.5 py-1.5 text-[11px] font-semibold text-accent-foreground">
                   {s.sessionCta}
                   <ChevronRight size={13} strokeWidth={2.5} />
                 </span>

@@ -1,19 +1,20 @@
 'use client'
 
-import { Flame } from 'lucide-react'
+import { Flame, AlertTriangle } from 'lucide-react'
 import type { WeeklyStreakData } from '@/application/usecases/GetMilestones'
 import type { WeeklyGoal } from '@/application/usecases/GetGoalsData'
+import type { DigestFact } from '@/application/usecases/GetWeeklyDigest'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { useCountUp } from '@/lib/useCountUp'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
-const RING_SIZE = 128
-const RING_STROKE = 12
+const RING_SIZE = 56
+const RING_STROKE = 7
 const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS
 
-function WeeklyGoalRing({ goal }: { goal: WeeklyGoal }) {
+function WeeklyGoalRing({ goal, hardShareFact }: { goal: WeeklyGoal; hardShareFact: DigestFact | null }) {
   const s = t.dashboard.weeklyStreak
   const pct = goal.targetKm > 0 ? Math.min(1, goal.actualKm / goal.targetKm) : 0
   const animatedPct = useCountUp(pct * 100) / 100
@@ -22,9 +23,8 @@ function WeeklyGoalRing({ goal }: { goal: WeeklyGoal }) {
   const remaining = Math.max(0, Math.round((goal.targetKm - goal.actualKm) * 10) / 10)
 
   return (
-    <GlassSurface variant="card" className="flex flex-col items-center p-5 text-center">
-      <div className="mb-3.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{s.weeklyGoal}</div>
-      <div className="relative" style={{ width: RING_SIZE, height: RING_SIZE }}>
+    <GlassSurface variant="card" className="flex items-center gap-3.5 p-4">
+      <div className="relative shrink-0" style={{ width: RING_SIZE, height: RING_SIZE }}>
         <svg width={RING_SIZE} height={RING_SIZE} className="-rotate-90">
           <circle cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={RING_RADIUS} fill="none" strokeWidth={RING_STROKE} className="stroke-foreground/10" />
           <circle
@@ -40,15 +40,23 @@ function WeeklyGoalRing({ goal }: { goal: WeeklyGoal }) {
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-title2 font-extrabold leading-none tabular-nums text-foreground">
+          <span className="text-subhead font-extrabold leading-none tabular-nums text-foreground">
             {Math.round(animatedActualKm)}
           </span>
-          <span className="text-xs text-muted-foreground">/ {Math.round(goal.targetKm)} {t.units.km}</span>
+          <span className="text-micro text-muted-foreground">/ {Math.round(goal.targetKm)} {t.units.km}</span>
         </div>
       </div>
-      <p className="mt-3.5 text-xs text-muted-foreground">
-        {remaining > 0 ? s.kmRemaining(remaining) : s.goalReached}
-      </p>
+      <div className="min-w-0 flex-1 text-left">
+        <p className="text-sm font-semibold text-foreground">
+          {remaining > 0 ? s.kmRemaining(remaining) : s.goalReached}
+        </p>
+        {hardShareFact && (
+          <p className="mt-0.5 flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+            <AlertTriangle size={12} className="shrink-0" />
+            <span className="truncate">{hardShareFact.text}</span>
+          </p>
+        )}
+      </div>
     </GlassSurface>
   )
 }
@@ -81,15 +89,16 @@ function WeekDots({ weekDays }: { weekDays: boolean[] }) {
 interface Props {
   data: WeeklyStreakData
   goal: WeeklyGoal | null
+  hardShareFact: DigestFact | null
 }
 
-export function WeeklyStreakCard({ data, goal }: Props) {
+export function WeeklyStreakCard({ data, goal, hardShareFact }: Props) {
   const s = t.dashboard.weeklyStreak
   const animatedWeeks = useCountUp(data.currentWeeks)
 
   return (
     <div className={cn('grid grid-cols-1 gap-4', goal && 'lg:grid-cols-[1fr_1.4fr]')}>
-      {goal && <WeeklyGoalRing goal={goal} />}
+      {goal && <WeeklyGoalRing goal={goal} hardShareFact={hardShareFact} />}
       <GlassSurface variant="card" className="p-5">
         <div className="flex items-center gap-3.5">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control bg-orange-500/[0.12]">

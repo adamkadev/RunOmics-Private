@@ -370,8 +370,7 @@ export const en = {
     weeklyStreak: {
       weeksInARow: (weeks: number) => `${weeks} week streak`,
       longestStreak: (weeks: number) => `Longest streak: ${weeks} weeks`,
-      weeklyGoal: 'Weekly goal',
-      kmRemaining: (km: number) => `${km} km left to hit this week's goal`,
+      kmRemaining: (km: number) => `${km} km to this week's goal`,
       goalReached: 'Weekly goal reached',
     },
     celebration: {

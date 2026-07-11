@@ -364,7 +364,6 @@ export const fr = {
     weeklyStreak: {
       weeksInARow: (weeks: number) => `${weeks} semaines d’affilée`,
       longestStreak: (weeks: number) => `Plus longue série : ${weeks} semaines`,
-      weeklyGoal: 'Objectif hebdomadaire',
       kmRemaining: (km: number) => `Plus que ${km} km pour boucler la semaine`,
       goalReached: 'Objectif hebdomadaire atteint',
     },

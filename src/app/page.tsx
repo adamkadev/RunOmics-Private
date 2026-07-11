@@ -70,7 +70,13 @@ export default async function DashboardPage() {
 
       <TrainingMetricsCard status={trainingStatus} vo2max={vo2max} vo2maxTrend={vo2maxTrend} />
 
-      {weeklyStreak && <WeeklyStreakCard data={weeklyStreak} goal={weeklyGoal} />}
+      {weeklyStreak && (
+        <WeeklyStreakCard
+          data={weeklyStreak}
+          goal={weeklyGoal}
+          hardShareFact={weeklyDigest?.review.find((f) => f.key === '8020') ?? null}
+        />
+      )}
 
       {(weeklyDigest || consistencyScore) && (
         <div className={weeklyDigest && consistencyScore ? 'grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]' : undefined}>
