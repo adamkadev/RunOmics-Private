@@ -1,12 +1,6 @@
 {
   "planned": [
     {
-      "date": "2026-07-03",
-      "name": "6 x 1000m allure spé",
-      "type": "Threshold",
-      "scheduledTime": "19:00"
-    },
-    {
       "date": "2026-07-04",
       "name": "1h dont 30' actives",
       "durationSecs": 3600,
