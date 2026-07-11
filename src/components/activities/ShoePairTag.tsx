@@ -9,7 +9,7 @@ export function ShoePairTag({ gearId }: Props) {
   if (!shoe) return null
   return (
     <span
-      className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded px-2 py-0.5 text-xs font-medium"
+      className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-white/10 px-2 py-0.5 text-xs font-medium backdrop-blur-md"
       style={{
         backgroundColor: `color-mix(in srgb, ${shoe.dotColor} 16%, transparent)`,
         color: shoe.dotColor,
@@ -19,7 +19,7 @@ export function ShoePairTag({ gearId }: Props) {
         className="h-1.5 w-1.5 shrink-0 rounded-full"
         style={{ backgroundColor: shoe.dotColor }}
       />
-      {shoe.name}
+      <span className="leading-none">{shoe.name}</span>
     </span>
   )
 }
