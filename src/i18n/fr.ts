@@ -669,6 +669,8 @@ export const fr = {
     resetFilters: 'Réinitialiser les filtres',
     endOfList: 'C’est tout',
     monthGroup: (count: number, km: number) => `${count} séance${count > 1 ? 's' : ''} · ${km} km`,
+    thisWeek: 'Cette semaine',
+    weekGroup: (km: number, runs: number, easyPct: number, hardPct: number) => `${km} km · ${runs} sortie${runs > 1 ? 's' : ''} · ${easyPct}/${hardPct} F/D`,
     sort: {
       label: 'Trier',
       date: 'Date',

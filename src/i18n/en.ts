@@ -675,6 +675,8 @@ export const en = {
     resetFilters: 'Reset filters',
     endOfList: 'That\'s all',
     monthGroup: (count: number, km: number) => `${count} session${count !== 1 ? 's' : ''} · ${km} km`,
+    thisWeek: 'This week',
+    weekGroup: (km: number, runs: number, easyPct: number, hardPct: number) => `${km} km · ${runs} run${runs !== 1 ? 's' : ''} · ${easyPct}/${hardPct} E/H`,
     sort: {
       label: 'Sort',
       date: 'Date',

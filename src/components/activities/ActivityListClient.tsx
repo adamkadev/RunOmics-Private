@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
-import { Search, X, SearchX, Map } from 'lucide-react'
+import { Search, X, SearchX, Map, ChevronDown } from 'lucide-react'
 import { ActivityListCard } from './ActivityListCard'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
@@ -11,7 +11,8 @@ import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { Pill } from '@/components/ui/Pill'
 import { SortDropdown } from '@/components/ui/SortDropdown'
-import { monthYearLabel } from '@/lib/formatters'
+import { weekRangeLabel } from '@/lib/formatters'
+import { isoDate, addDays, startOfWeek } from '@/lib/calendarDate'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -28,28 +29,41 @@ const SORT_OPTIONS: { value: ActivitySortKey; label: string }[] = [
   { value: 'avgHr', label: t.activities.sort.avgHr },
 ]
 
-interface MonthGroup {
+interface WeekGroup {
   key: string
   label: string
   items: ActivitySummary[]
   totalKm: number
+  easyPct: number
+  hardPct: number
 }
 
-// Groups are built from an already date-sorted list, so same-month items are
-// always contiguous - a single linear pass is enough (B3).
-function groupByMonth(items: ActivitySummary[]): MonthGroup[] {
-  const groups: MonthGroup[] = []
+// Groups are built from an already date-sorted list, so same-week items are
+// always contiguous - a single linear pass is enough (B3). Weeks are Monday-
+// Sunday, matching the Plan page's week convention.
+function groupByWeek(items: ActivitySummary[]): WeekGroup[] {
+  const raw: { key: string; items: ActivitySummary[] }[] = []
   for (const a of items) {
-    const key = a.date.slice(0, 7)
-    const last = groups[groups.length - 1]
+    const key = isoDate(startOfWeek(new Date(a.date + 'T00:00:00')))
+    const last = raw[raw.length - 1]
     if (last && last.key === key) {
       last.items.push(a)
-      last.totalKm += a.distanceKm
     } else {
-      groups.push({ key, label: monthYearLabel(a.date), items: [a], totalKm: a.distanceKm })
+      raw.push({ key, items: [a] })
     }
   }
-  return groups
+
+  const currentWeekStart = isoDate(startOfWeek(new Date()))
+
+  return raw.map(({ key, items: weekItems }) => {
+    const totalKm = weekItems.reduce((s, a) => s + a.distanceKm, 0)
+    const easyCount = weekItems.filter((a) => a.type === 'Base').length
+    const easyPct = Math.round((easyCount / weekItems.length) * 100)
+    const label = key === currentWeekStart
+      ? t.activities.thisWeek
+      : weekRangeLabel(key, isoDate(addDays(new Date(key + 'T00:00:00'), 6)))
+    return { key, label, items: weekItems, totalKm, easyPct, hardPct: 100 - easyPct }
+  })
 }
 
 async function fetchActivities(params: {
@@ -95,6 +109,9 @@ export function ActivityListClient({
   const [nextOffset, setNextOffset] = useState(initialNextOffset)
   const [loadingMore, setLoadingMore] = useState(false)
   const [isPending, setIsPending] = useState(false)
+  // Past weeks start collapsed - only the first (most recent) week group reads
+  // as a training block by default; older weeks are a tap away.
+  const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(new Set())
 
   // Debounce the search box before it hits the query (server round-trip).
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -124,8 +141,8 @@ export function ActivityListClient({
 
   const hasMore = nextOffset !== null
   const hasActiveFilter = selectedType !== null || search.trim() !== ''
-  // Month separators only make sense when browsing in chronological order.
-  const groups = sortBy === 'date' ? groupByMonth(items) : null
+  // Week separators only make sense when browsing in chronological order.
+  const groups = sortBy === 'date' ? groupByWeek(items) : null
 
   const loadMore = useCallback(() => {
     if (nextOffset === null || loadingMore) return
@@ -273,24 +290,54 @@ export function ActivityListClient({
           )}
         </GlassSurface>
       ) : groups ? (
-        <div className="space-y-4">
-          {groups.map((g) => (
-            <div key={g.key}>
-              <div className="flex items-center justify-between px-1 py-2">
-                <span className="font-mono text-footnote font-bold tracking-wide text-muted-foreground/80">
-                  {g.label}
-                </span>
-                <span className="font-mono text-xs font-medium text-subtle">
-                  {t.activities.monthGroup(g.items.length, Math.round(g.totalKm))}
-                </span>
+        <div className="space-y-3">
+          {groups.map((g, i) => {
+            const isCurrent = i === 0
+            const isExpanded = isCurrent || expandedWeeks.has(g.key)
+            return (
+              <div key={g.key}>
+                {isCurrent ? (
+                  <div
+                    className="sticky top-[max(var(--safe-top),8px)] z-10 flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5"
+                    style={{ background: 'rgba(30,215,135,0.08)', borderColor: 'rgba(30,215,135,0.22)' }}
+                  >
+                    <div className="min-w-0">
+                      <div className="text-sm font-bold text-foreground">{g.label}</div>
+                    </div>
+                    <div className="shrink-0 text-right text-xs font-medium text-subtle">
+                      {t.activities.weekGroup(Math.round(g.totalKm), g.items.length, g.easyPct, g.hardPct)}
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setExpandedWeeks((prev) => {
+                        const next = new Set(prev)
+                        if (next.has(g.key)) next.delete(g.key)
+                        else next.add(g.key)
+                        return next
+                      })
+                    }
+                    className="flex w-full items-center justify-between gap-3 rounded-xl bg-card px-3.5 py-2.5 text-left"
+                  >
+                    <div className="min-w-0 text-sm font-semibold text-foreground">{g.label}</div>
+                    <div className="flex shrink-0 items-center gap-2 text-xs font-medium text-subtle">
+                      {t.activities.monthGroup(g.items.length, Math.round(g.totalKm))}
+                      <ChevronDown size={14} className={cn('transition-transform', isExpanded && 'rotate-180')} />
+                    </div>
+                  </button>
+                )}
+                {isExpanded && (
+                  <div className="mt-2 space-y-2">
+                    {g.items.map((a) => (
+                      <ActivityListCard key={a.id} activity={a} qualifiedEfforts={qualifiedEffortsByActivityId[a.id]} />
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="space-y-2">
-                {g.items.map((a) => (
-                  <ActivityListCard key={a.id} activity={a} qualifiedEfforts={qualifiedEffortsByActivityId[a.id]} />
-                ))}
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       ) : (
         <div className="space-y-2">
