@@ -3,12 +3,13 @@ import { ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import type { ShoeStats } from '@/application/usecases/GetShoeStats'
+import { STATUS } from '@/lib/statusColors'
 import { t } from '@/i18n'
 
 function wearFillClass(pct: number): string {
-  if (pct > 80) return 'bg-[#e5396b]'
-  if (pct > 60) return 'bg-[#f0a500]'
-  return 'bg-[#2ed9a0]'
+  if (pct > 80) return STATUS.danger.dot
+  if (pct > 60) return STATUS.warning.dot
+  return STATUS.success.dot
 }
 
 export function ProfileShoes({ shoes }: { shoes: ShoeStats[] }) {

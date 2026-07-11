@@ -9,7 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
-import { CHART_COLORS } from '@/lib/colors'
+import { CHART_COLORS, ZONE_COLOR_CLASSES } from '@/lib/colors'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { SingleSeriesTooltip } from '@/components/ui/ChartTooltip'
 import { ChartFigure } from '@/components/ui/ChartFigure'
@@ -73,8 +73,8 @@ export const HrChart = memo(function HrChart({ samples, avgHr, distanceKm, onHov
         <h3 className="text-sm font-semibold text-foreground/80">{t.activity.charts.heartRate}</h3>
         {avgHr && (
           <span className="text-xs text-subtle">
-            {t.activity.charts.avg} <span className="font-semibold text-[#ff7676]">{avgHr}</span>
-            {' · '}{t.activity.charts.max} <span className="font-semibold text-[#ff7676]">{maxHr}</span>
+            {t.activity.charts.avg} <span className={`font-semibold ${ZONE_COLOR_CLASSES[5]?.text}`}>{avgHr}</span>
+            {' · '}{t.activity.charts.max} <span className={`font-semibold ${ZONE_COLOR_CLASSES[5]?.text}`}>{maxHr}</span>
             {' '}{t.units.bpm}
           </span>
         )}
