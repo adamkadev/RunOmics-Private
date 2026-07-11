@@ -6,8 +6,6 @@ import { LayoutDashboard, Activity, CalendarDays, BarChart2, Map, Settings, User
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { APP_VERSION } from '@/lib/version'
-import { hasGlobalTopBar } from '@/lib/navigation'
-import { useScrollDirection } from '@/lib/useScrollDirection'
 import { ThemeToggle } from './ThemeToggle'
 import { GlassTabBar } from './GlassTabBar'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -46,22 +44,8 @@ function HeaderMark({ size = 24 }: { size?: number }) {
   )
 }
 
-function Brand({ onClick }: { onClick?: () => void }) {
-  return (
-    <Link href="/" onClick={onClick} className="flex items-center gap-2.5">
-      <HeaderMark size={26} />
-      <span className="text-2xl font-bold tracking-tight text-foreground">
-        {t.brand.namePrefix}
-        <span className="text-accent-text">{t.brand.nameSuffix}</span>
-      </span>
-    </Link>
-  )
-}
-
 export function Sidebar() {
   const pathname = usePathname()
-  const headerHidden = useScrollDirection()
-  const showTopBar = hasGlobalTopBar(pathname)
 
   return (
     <>
@@ -125,21 +109,6 @@ export function Sidebar() {
           <ThemeToggle />
         </div>
       </GlassSurface>
-
-      {/* ─── Mobile top bar — Dashboard only, every other screen is titled by its own h1 ─── */}
-      {showTopBar && (
-        <header
-          className={cn(
-            'inset-x-0 top-0 z-30 transition-transform duration-200 ease-out lg:hidden',
-            headerHidden ? '-translate-y-full' : 'translate-y-0'
-          )}
-          style={{ paddingTop: 'max(calc(env(safe-area-inset-top) - 10px), 8px)' }}
-        >
-          <div className="relative flex h-14 items-center justify-center px-4">
-            <Brand />
-          </div>
-        </header>
-      )}
 
       {/* ─── Mobile glass tab bar ─── */}
       <GlassTabBar />

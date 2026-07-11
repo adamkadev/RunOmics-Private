@@ -1,10 +1,8 @@
 /**
- * The brand logo only anchors the Dashboard ("home"), like a native iOS app's
- * tab bar root. Every other screen is titled by its own <h1> (or, for
- * Activity detail / Map, has its own inline header) so the logo would just
- * eat vertical space without adding information.
+ * Pull-to-refresh is scoped to the Today page ("home"), like a native iOS
+ * app's tab bar root.
  */
-export function hasGlobalTopBar(pathname: string): boolean {
+export function isPullToRefreshPage(pathname: string): boolean {
   return pathname === '/'
 }
 

@@ -7,9 +7,8 @@ import { Sidebar } from './Sidebar'
 import { PageTransition } from './PageTransition'
 import { ThemeSync } from './ThemeSync'
 import { Aurora } from './Aurora'
-import { getPageAuroraKey, hasGlobalTopBar } from '@/lib/navigation'
+import { getPageAuroraKey, isPullToRefreshPage } from '@/lib/navigation'
 import { usePullToRefresh, PULL_THRESHOLD_PX } from '@/lib/usePullToRefresh'
-import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 const SCROLL_POSITIONS_KEY = 'scrollPositions'
@@ -25,10 +24,8 @@ function getScrollPositions(): Record<string, number> {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
-  const showTopBar = hasGlobalTopBar(pathname)
   const isPopNavigation = useRef(false)
-  // Pull-to-refresh is a Dashboard-only affordance, same scope as the top bar.
-  const { containerRef, pullPx, refreshing } = usePullToRefresh(() => router.refresh(), showTopBar)
+  const { containerRef, pullPx, refreshing } = usePullToRefresh(() => router.refresh(), isPullToRefreshPage(pathname))
 
   // Browser/router back-forward (popstate) restores scroll position instead
   // of resetting to top, so returning from a detail page lands where you left.
@@ -78,14 +75,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {refreshing && <span>{t.common.refreshing}</span>}
           </div>
         </div>
-        {/* Mobile top padding: breathing room below the Dashboard's top bar,
-            or - on every other page, which has no top bar - the notch safe area instead. */}
-        <div
-          className={cn(
-            'mx-auto max-w-5xl px-4 pb-28 sm:px-6 lg:pb-8 lg:pt-8',
-            showTopBar ? 'pt-4' : 'pt-[max(env(safe-area-inset-top),20px)]'
-          )}
-        >
+        <div className="mx-auto max-w-5xl px-4 pb-28 pt-[max(env(safe-area-inset-top),20px)] sm:px-6 lg:pb-8 lg:pt-8">
           <PageTransition>{children}</PageTransition>
         </div>
       </main>
