@@ -159,6 +159,10 @@ def map_activity(
     # Garmin auto-names: "Strasbourg - Morning Run" → "Morning Run"
     if " - " in name:
         name = name.split(" - ", 1)[1]
+    # Drop trailing extras: "40 min footing + renforcement" → "40 min footing"
+    if " + " in name:
+        name = name.split(" + ", 1)[0]
+    name = name.strip()
 
     if parsed and parsed.start_time_local:
         dt = parsed.start_time_local
