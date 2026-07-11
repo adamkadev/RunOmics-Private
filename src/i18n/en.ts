@@ -709,6 +709,24 @@ export const en = {
     heatNote: (temperature: number, adjustSeconds: number) =>
       `Hot run (${temperature}°C) - pace looks ~${adjustSeconds}s/km slower than the same effort in mild weather.`,
     loadNote: (atlContribution: number) => `Contributes ~${atlContribution} to this week's fatigue (ATL).`,
+    verdict: {
+      title: 'Run Verdict',
+      headline: {
+        positive: (type: string) => `Solid ${type}`,
+        neutral: (type: string) => `${type} logged`,
+        caution: (type: string) => `Tough ${type}`,
+      },
+      heatSuffix: ' in tough heat',
+      heatClause: (pace: string, adjustSeconds: number, temperature: number) =>
+        `${pace}/km was ~${adjustSeconds}s slower than usual - expected at ${temperature}°C.`,
+      effortClause: (rpeLabel: string, rpe: number) => `Perceived effort: ${rpeLabel} (RPE ${rpe}).`,
+    },
+    tabs: {
+      overview: 'Overview',
+      splits: 'Splits',
+      charts: 'Charts',
+      dynamics: 'Dynamics',
+    },
     bestEfforts: {
       title: 'Best Efforts',
       prBadge: 'PR',

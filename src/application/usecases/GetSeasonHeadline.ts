@@ -21,16 +21,20 @@ const VOLUME_THRESHOLD_PCT = 5
 
 function efficiencyBullet(trend: MonthlyEfficiency[]): SeasonHeadlineBullet | null {
   const known = trend.filter((m): m is MonthlyEfficiency & { ef: number } => m.ef !== null)
-  if (known.length < 2) return null
-  const diff = round(known[known.length - 1].ef - known[0].ef, 2)
+  const first = known[0]
+  const last = known[known.length - 1]
+  if (!first || !last || first === last) return null
+  const diff = round(last.ef - first.ef, 2)
   if (Math.abs(diff) < EFFICIENCY_THRESHOLD) return null
   return { tone: diff > 0 ? 'positive' : 'caution', text: t.analytics.seasonHeadline.efficiency(diff) }
 }
 
 function easyPaceBullet(trend: MonthlyPace[]): SeasonHeadlineBullet | null {
   const known = trend.filter((m): m is MonthlyPace & { easyPace: number } => m.easyPace !== null)
-  if (known.length < 2) return null
-  const diffSec = known[known.length - 1].easyPace - known[0].easyPace // negative = faster
+  const first = known[0]
+  const last = known[known.length - 1]
+  if (!first || !last || first === last) return null
+  const diffSec = last.easyPace - first.easyPace // negative = faster
   if (Math.abs(diffSec) < EASY_PACE_THRESHOLD_SEC) return null
   return { tone: diffSec < 0 ? 'positive' : 'caution', text: t.analytics.seasonHeadline.easyPace(diffSec) }
 }
@@ -67,7 +71,7 @@ export function getSeasonHeadline(
   const bullets = [
     efficiencyBullet(season.efficiencyTrend),
     easyPaceBullet(season.paceTrend),
-    volumeBullet(comparison, currentYear),
+    volumeBullet(comparison, season.year),
   ].filter((b): b is SeasonHeadlineBullet => b !== null)
 
   if (bullets.length === 0) return null

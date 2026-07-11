@@ -703,6 +703,24 @@ export const fr = {
     heatNote: (temperature: number, adjustSeconds: number) =>
       `Sortie par forte chaleur (${temperature}°C) - l’allure paraît ~${adjustSeconds}s/km plus lente qu’un effort identique par temps clément.`,
     loadNote: (atlContribution: number) => `Contribue ~${atlContribution} à la fatigue de la semaine (ATL).`,
+    verdict: {
+      title: 'Verdict de la sortie',
+      headline: {
+        positive: (type: string) => `Belle sortie ${type}`,
+        neutral: (type: string) => `Sortie ${type} enregistrée`,
+        caution: (type: string) => `Sortie ${type} exigeante`,
+      },
+      heatSuffix: ' par forte chaleur',
+      heatClause: (pace: string, adjustSeconds: number, temperature: number) =>
+        `${pace}/km, soit ~${adjustSeconds}s/km plus lent que d’habitude - attendu à ${temperature}°C.`,
+      effortClause: (rpeLabel: string, rpe: number) => `Effort ressenti : ${rpeLabel} (RPE ${rpe}).`,
+    },
+    tabs: {
+      overview: 'Aperçu',
+      splits: 'Intervalles',
+      charts: 'Graphiques',
+      dynamics: 'Dynamique',
+    },
     bestEfforts: {
       title: 'Meilleurs efforts',
       prBadge: 'RP',

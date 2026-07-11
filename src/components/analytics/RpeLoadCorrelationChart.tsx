@@ -8,6 +8,7 @@ import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { ChartExplain } from '@/components/ui/ChartExplain'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
+import { LowSignalChip } from '@/components/ui/LowSignalChip'
 import { t } from '@/i18n'
 
 function CustomDot(props: Record<string, unknown>) {
@@ -55,12 +56,13 @@ export function RpeLoadCorrelationChart({ data }: Props) {
     : []
 
   const dropPer10 = reg ? Math.round(reg.slope * -10 * 10) / 10 : 0
+  const isSignal = reg !== null && dropPer10 > 0.3
   const ex = t.analytics.charts.rpeLoadCorrelation.explains
   const summary = `${t.analytics.charts.rpeLoadCorrelation.title}${
-    reg ? `: ${dropPer10 > 0.3 ? ex.harder(dropPer10) : ex.stable}` : ''
+    reg ? `: ${isSignal ? ex.harder(dropPer10) : ex.stable}` : ''
   }`
 
-  return (
+  const chart = (
     <GlassSurface variant="card" className="p-5">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.analytics.charts.rpeLoadCorrelation.title}
@@ -110,13 +112,21 @@ export function RpeLoadCorrelationChart({ data }: Props) {
       </ChartFigure>
       {reg && (
         <ChartExplain
-          text={dropPer10 > 0.3 ? ex.harder(dropPer10) : ex.stable}
-          tone={dropPer10 > 0.3 ? 'caution' : 'neutral'}
+          text={isSignal ? ex.harder(dropPer10) : ex.stable}
+          tone={isSignal ? 'caution' : 'neutral'}
         />
       )}
       <p className="mt-1 text-xs text-subtle">
         {t.analytics.charts.rpeLoadCorrelation.footnote}
       </p>
     </GlassSurface>
+  )
+
+  if (isSignal) return chart
+
+  return (
+    <LowSignalChip title={t.analytics.charts.rpeLoadCorrelation.title} summary={ex.stable}>
+      {chart}
+    </LowSignalChip>
   )
 }

@@ -8,6 +8,8 @@ import { cn } from '@/lib/utils'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import type { AnalyticsPageData, PeriodDelta } from '@/application/usecases/GetAnalyticsData'
 import type { YearComparisonData } from '@/application/usecases/GetYearComparison'
+import type { SeasonHeadlineData } from '@/application/usecases/GetSeasonHeadline'
+import { SeasonHeadline } from '@/components/analytics/SeasonHeadline'
 import type { LifetimeStats } from '@/application/usecases/GetLifetimeStats'
 import { YearSelector } from '@/components/ui/YearSelector'
 import type { VO2maxPoint } from '@/application/usecases/GetVO2maxHistory'
@@ -113,6 +115,7 @@ function buildDeltaBadges(delta: PeriodDelta): ReactNode[] {
 export function AnalyticsClient({
   data,
   comparison,
+  seasonHeadline,
   vo2maxHistory,
   lifetime,
   zones,
@@ -121,6 +124,7 @@ export function AnalyticsClient({
 }: {
   data: AnalyticsPageData
   comparison: YearComparisonData | null
+  seasonHeadline: SeasonHeadlineData | null
   vo2maxHistory: VO2maxPoint[]
   lifetime: LifetimeStats | null
   zones: TrainingZonesData | null
@@ -271,6 +275,8 @@ export function AnalyticsClient({
           windowGroupLabel={t.analytics.windowGroupLabel}
         />
       </GlassSurface>
+
+      {seasonHeadline && <SeasonHeadline data={seasonHeadline} />}
 
       {metrics.length > 0 && (
         <GlassSurface variant="card">

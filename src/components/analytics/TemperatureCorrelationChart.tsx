@@ -9,6 +9,7 @@ import { ChartExplain } from '@/components/ui/ChartExplain'
 import { formatPace } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
+import { LowSignalChip } from '@/components/ui/LowSignalChip'
 import { t } from '@/i18n'
 
 function CustomDot(props: Record<string, unknown>) {
@@ -54,12 +55,13 @@ export function TemperatureCorrelationChart({ data }: Props) {
     : []
 
   const slopePer10 = reg ? Math.round(reg.slope * 10) : 0
+  const isSignal = reg !== null && slopePer10 > 3
   const ex = t.analytics.charts.temperatureCorrelation.explains
   const summary = `${t.analytics.charts.temperatureCorrelation.title}${
-    reg ? `: ${slopePer10 > 3 ? ex.slowing(slopePer10) : ex.stable}` : ''
+    reg ? `: ${isSignal ? ex.slowing(slopePer10) : ex.stable}` : ''
   }`
 
-  return (
+  const chart = (
     <GlassSurface variant="card" className="p-5">
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.analytics.charts.temperatureCorrelation.title}
@@ -110,13 +112,21 @@ export function TemperatureCorrelationChart({ data }: Props) {
       </ChartFigure>
       {reg && (
         <ChartExplain
-          text={slopePer10 > 3 ? ex.slowing(slopePer10) : ex.stable}
-          tone={slopePer10 > 3 ? 'caution' : 'neutral'}
+          text={isSignal ? ex.slowing(slopePer10) : ex.stable}
+          tone={isSignal ? 'caution' : 'neutral'}
         />
       )}
       <p className="mt-1 text-xs text-subtle">
         {t.analytics.charts.temperatureCorrelation.footnote}
       </p>
     </GlassSurface>
+  )
+
+  if (isSignal) return chart
+
+  return (
+    <LowSignalChip title={t.analytics.charts.temperatureCorrelation.title} summary={ex.stable}>
+      {chart}
+    </LowSignalChip>
   )
 }
