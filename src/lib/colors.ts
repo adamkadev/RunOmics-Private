@@ -12,7 +12,7 @@ export const CHART_COLORS = {
   hr:            '#ef4444', // red-500
   hrEasy:        '#fca5a5', // red-300
   pace:          '#3b82f6', // blue-500
-  elevation:     '#78716c', // stone-500
+  elevation:     '#a1662f', // rust-brown (bumped chroma from stone-500, which read as gray in the categorical set)
   cadence:       '#0ea5e9', // sky-500
   efficiency:    '#8b5cf6', // violet-500
 

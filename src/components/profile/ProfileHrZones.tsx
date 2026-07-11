@@ -48,7 +48,7 @@ export function ProfileHrZones({ athlete, onSave }: Props) {
           <EditableNumber
             value={lthr}
             onCommit={(n) => onSave({ lthrBpm: n })}
-            className="text-xs font-bold text-[#ff7676]"
+            className={`text-xs font-bold ${ZONE_COLOR_CLASSES[5]?.text}`}
           />
         </div>
       </div>
