@@ -26,12 +26,12 @@ export const fr = {
 
   nav: {
     items: {
-      dashboard: 'Accueil',
+      dashboard: 'Aujourd’hui',
       activities: 'Activités',
-      calendar: 'Calendrier',
+      calendar: 'Plan',
       analytics: 'Analyses',
       heatmap: 'Heatmap',
-      profile: 'Profil',
+      profile: 'Progression',
       settings: 'Réglages',
     },
   },
@@ -75,7 +75,7 @@ export const fr = {
 
   pages: {
     dashboard: {
-      title: 'Tableau de bord',
+      title: 'Aujourd’hui',
       greeting: {
         morning:   'Bonjour',
         afternoon: 'Bon après-midi',
@@ -93,12 +93,12 @@ export const fr = {
       title: 'Activités',
     },
     calendar: {
-      title: 'Calendrier',
+      title: 'Plan',
     },
     records: {
       title: 'Records',
       subtitle: 'Records personnels et prédictions de course',
-      back: 'Profil',
+      back: 'Progression',
     },
     map: {
       title: 'Heatmap de course',
@@ -121,32 +121,32 @@ export const fr = {
     shoes: {
       title: 'Chaussures',
       subtitle: 'Kilométrage et usure par paire',
-      back: 'Profil',
+      back: 'Progression',
     },
     milestones: {
       title: 'Jalons',
       subtitle: 'Paliers de distance, séries et records personnels dans le temps',
-      back: 'Profil',
+      back: 'Progression',
     },
     profile: {
-      title: 'Profil',
+      title: 'Progression',
     },
     notFound: {
       code: '404',
       heading: 'Cette page est partie courir et n’est jamais revenue.',
       sub: 'L’itinéraire que vous cherchez n’existe pas.',
-      back: 'Retour à l’accueil',
+      back: 'Retour à aujourd’hui',
     },
     error: {
       heading: 'Une foulée de travers.',
       sub: 'Une erreur inattendue est survenue au chargement de cette page.',
       retry: 'Réessayer',
-      back: 'Retour à l’accueil',
+      back: 'Retour à aujourd’hui',
     },
     settings: {
       title: 'Réglages',
       subtitle: 'Apparence, notifications et export de données.',
-      back: 'Profil',
+      back: 'Progression',
     },
   },
 
@@ -756,7 +756,7 @@ export const fr = {
   goals: {
     title: 'Objectifs',
     empty: 'Aucun objectif configuré pour le moment.',
-    back: 'Profil',
+    back: 'Progression',
     annualGoal: 'Objectif annuel',
     kmRemaining: (km: number) => `${km} km restants`,
     goalReached: 'Objectif atteint !',

@@ -34,12 +34,12 @@ export const en = {
 
   nav: {
     items: {
-      dashboard: 'Dashboard',
+      dashboard: 'Today',
       activities: 'Activities',
-      calendar: 'Calendar',
+      calendar: 'Plan',
       analytics: 'Analytics',
       heatmap: 'Heatmap',
-      profile: 'Profile',
+      profile: 'Progress',
       settings: 'Settings',
     },
   },
@@ -83,7 +83,7 @@ export const en = {
 
   pages: {
     dashboard: {
-      title: 'Dashboard',
+      title: 'Today',
       greeting: {
         morning:   'Good morning',
         afternoon: 'Good afternoon',
@@ -99,12 +99,12 @@ export const en = {
       title: 'Activities',
     },
     calendar: {
-      title: 'Calendar',
+      title: 'Plan',
     },
     records: {
       title: 'Records',
       subtitle: 'Personal bests and race predictions',
-      back: 'Profile',
+      back: 'Progress',
     },
     map: {
       title: 'Running Heatmap',
@@ -127,32 +127,32 @@ export const en = {
     shoes: {
       title: 'Shoes',
       subtitle: 'Mileage and wear per pair',
-      back: 'Profile',
+      back: 'Progress',
     },
     milestones: {
       title: 'Milestones',
       subtitle: 'Distance tiers, streaks, and personal records over time',
-      back: 'Profile',
+      back: 'Progress',
     },
     profile: {
-      title: 'Profile',
+      title: 'Progress',
     },
     notFound: {
       code: '404',
       heading: "This page went on a run and didn't come back.",
       sub: "The route you're looking for doesn't exist.",
-      back: 'Back to Dashboard',
+      back: 'Back to Today',
     },
     error: {
       heading: 'Something tripped mid-stride.',
       sub: 'An unexpected error occurred while loading this page.',
       retry: 'Try again',
-      back: 'Back to Dashboard',
+      back: 'Back to Today',
     },
     settings: {
       title: 'Settings',
       subtitle: 'Appearance, notifications and data export.',
-      back: 'Profile',
+      back: 'Progress',
     },
   },
 
@@ -762,7 +762,7 @@ export const en = {
   goals: {
     title: 'Goals',
     empty: 'No goals configured yet.',
-    back: 'Profile',
+    back: 'Progress',
     annualGoal: 'Annual Goal',
     kmRemaining: (km: number) => `${km} km remaining`,
     goalReached: 'Goal reached!',
