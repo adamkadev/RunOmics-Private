@@ -1027,6 +1027,15 @@ export const fr = {
     mostRecent: 'Plus récent',
     footnote: '★ temps officiel en course · les autres sont détectés automatiquement dans les activités',
     notYetRun: 'Pas encore couru',
+    segmented: {
+      prs: 'Records personnels',
+      milestones: 'Étapes',
+    },
+    riegelAhead: (predicted: string, delta: string) => `Riegel ${predicted} · tu as ${delta} d'avance`,
+    riegelBehind: (predicted: string, delta: string) => `Riegel ${predicted} · tu as ${delta} de retard`,
+    noRecordYet: 'Pas encore de record',
+    predictedFromFitness: (time: string) => `Prédit à ${time} d'après ta forme actuelle.`,
+    findRace: (distance: string) => `Trouver un ${distance.toLowerCase()} ›`,
     leaderboard: {
       title: 'Meilleurs temps',
       rank: '#',

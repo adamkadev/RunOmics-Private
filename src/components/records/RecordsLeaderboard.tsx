@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Trophy } from 'lucide-react'
 import type { RecordEntry, TopEfforts } from '@/application/usecases/GetRecords'
+import type { RacePrediction } from '@/application/usecases/GetRacePredictions'
 import { formatDuration, formatDistance, formatPace } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { STATUS } from '@/lib/statusColors'
@@ -38,11 +39,13 @@ interface Props {
   records: RecordEntry[]
   topEfforts: TopEfforts
   mostRecentKey?: string | null
+  predictions?: RacePrediction[]
 }
 
-export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null }: Props) {
+export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null, predictions = [] }: Props) {
   const pills = ['all', ...PILL_ORDER.filter((k) => topEfforts[k])]
   const [selected, setSelected] = useState('all')
+  const predictionByKey = new Map(predictions.map((p) => [p.key, p]))
 
   const isAll = selected === 'all'
   const entries = isAll ? [] : (topEfforts[selected] ?? [])
@@ -76,19 +79,32 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null }
             {records.filter((r) => r.key !== 'longest').map((r, i, arr) => {
               const spanFull = i === arr.length - 1 && arr.length % 2 !== 0
 
+              const prediction = predictionByKey.get(r.key)
+
               if (r.seconds === null) {
                 return (
                   <div
                     key={r.key}
-                    className={cn('glass-card rounded-card-sm border-dashed p-5 opacity-60', spanFull && 'col-span-full')}
+                    className={cn('glass-card rounded-card-sm border-dashed p-5', spanFull && 'col-span-full')}
                   >
                     <p className="text-xs font-semibold uppercase tracking-wide text-subtle">{r.label}</p>
-                    <p className="mt-3 text-sm text-subtle">{t.records.notYetRun}</p>
+                    <p className="mt-3 text-sm font-semibold text-foreground">{t.records.noRecordYet}</p>
+                    {prediction ? (
+                      <>
+                        <p className="mt-1 text-xs text-subtle">{t.records.predictedFromFitness(formatDuration(prediction.predictedSeconds))}</p>
+                        <Link href="/goals" className="mt-3 inline-block text-xs font-semibold text-accent-text">
+                          {t.records.findRace(r.label)}
+                        </Link>
+                      </>
+                    ) : (
+                      <p className="mt-1 text-xs text-subtle">{t.records.notYetRun}</p>
+                    )}
                   </div>
                 )
               }
 
               const mainStat = r.distanceKm != null ? formatDistance(r.distanceKm) : formatDuration(r.seconds)
+              const riegelDeltaSeconds = prediction ? prediction.predictedSeconds - r.seconds : null
 
               const card = (
                 <>
@@ -113,6 +129,13 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null }
                     {r.paceSecPerKm !== null && formatPace(r.paceSecPerKm)}
                     {r.date && <span> · {shortDate(r.date)}</span>}
                   </p>
+                  {riegelDeltaSeconds !== null && (
+                    <p className={cn('mt-2 border-t border-foreground/[0.08] pt-2 text-xs font-medium', riegelDeltaSeconds >= 0 ? STATUS.success.text : STATUS.warning.text)}>
+                      {riegelDeltaSeconds >= 0
+                        ? t.records.riegelAhead(formatDuration(prediction!.predictedSeconds), formatDuration(riegelDeltaSeconds))
+                        : t.records.riegelBehind(formatDuration(prediction!.predictedSeconds), formatDuration(-riegelDeltaSeconds))}
+                    </p>
+                  )}
                 </>
               )
 

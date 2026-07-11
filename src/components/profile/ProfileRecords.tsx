@@ -20,10 +20,9 @@ function mostRecent(records: RecordEntry[]): (RecordEntry & { date: string }) | 
 
 interface Props {
   records: RecordEntry[]
-  milestonesCount: number
 }
 
-export function ProfileRecords({ records, milestonesCount }: Props) {
+export function ProfileRecords({ records }: Props) {
   const best = mostRecent(records)
   const recent = best?.date ? isRecentPr(best.date) : false
 
@@ -54,22 +53,12 @@ export function ProfileRecords({ records, milestonesCount }: Props) {
         <p className="text-micro text-muted-foreground">{t.profile.records.notYet}</p>
       )}
 
-      <div className="mt-auto flex flex-col gap-1.5">
-        <Link
-          href="/records"
-          className="flex items-center gap-1.5 text-sm font-semibold text-accent-text active:scale-95"
-        >
-          {t.profile.records.viewAll} <ArrowRight size={16} />
-        </Link>
-        {milestonesCount > 0 && (
-          <Link
-            href="/milestones"
-            className="flex items-center gap-1.5 text-caption font-semibold text-muted-foreground active:scale-95"
-          >
-            {t.profile.milestones.viewAll} <ArrowRight size={14} />
-          </Link>
-        )}
-      </div>
+      <Link
+        href="/records"
+        className="mt-auto flex items-center gap-1.5 text-sm font-semibold text-accent-text active:scale-95"
+      >
+        {t.profile.records.viewAll} <ArrowRight size={16} />
+      </Link>
     </GlassSurface>
   )
 }

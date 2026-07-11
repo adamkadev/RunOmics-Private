@@ -1033,6 +1033,15 @@ export const en = {
     mostRecent: 'Most recent',
     footnote: '★ official race time · others auto-detected from activity data',
     notYetRun: 'Not yet run',
+    segmented: {
+      prs: 'Personal records',
+      milestones: 'Milestones',
+    },
+    riegelAhead: (predicted: string, delta: string) => `Riegel ${predicted} · you're ${delta} ahead`,
+    riegelBehind: (predicted: string, delta: string) => `Riegel ${predicted} · you're ${delta} behind`,
+    noRecordYet: 'No record yet',
+    predictedFromFitness: (time: string) => `Predicted ${time} from your current fitness.`,
+    findRace: (distance: string) => `Find a ${distance.toLowerCase()} ›`,
     leaderboard: {
       title: 'Top Times',
       rank: '#',
