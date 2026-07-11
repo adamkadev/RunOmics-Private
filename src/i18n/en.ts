@@ -332,32 +332,26 @@ export const en = {
         caution: 'Caution',
         hold: 'Hold back',
       },
+      moodByTone: {
+        go: 'fresh',
+        caution: 'neutral',
+        hold: 'fatigued',
+      },
       readiness: {
-        fresh: {
+        go: {
           headline: "You're fresh. Good day for quality.",
-          body: (tsb: number) => `Form is +${tsb} and fatigue is low.`,
+          body: (tsb: string) => `Form is ${tsb} and fatigue is trending down - the planned session is a go.`,
         },
-        productive: {
-          headline: 'Building well.',
-          body: (loadTrendLabel: string, risk: 'low' | 'moderate' | 'high') =>
-            risk === 'moderate'
-              ? `Load is ${loadTrendLabel.toLowerCase()} - fitness is climbing fast, keep an eye on volume.`
-              : `Load is ${loadTrendLabel.toLowerCase()} and form is holding steady.`,
+        caution: {
+          headline: 'Steady day. Keep it moderate.',
+          body: (loadTrendLabel: string) => `Load is ${loadTrendLabel.toLowerCase()} and form is holding neutral - stay honest on easy days.`,
         },
-        recovery: {
-          headline: 'Recovering - keep it easy.',
-          body: 'Form is positive but load just eased off - ease back in gradually.',
-        },
-        detraining: {
-          headline: 'Load has eased off.',
-          body: 'No signs of strain, but volume has been dropping - a session would help rebuild.',
-        },
-        overreaching: {
+        hold: {
           headline: 'Dial it back today.',
-          body: (tsb: number) => `Form is ${tsb} and risk is elevated - an easy day or rest would help.`,
+          body: (tsb: string) => `Form is ${tsb} and fatigue is elevated - an easy day or rest would help.`,
         },
       },
-      sessionCta: 'Details',
+      sessionCta: 'Start',
       race: 'Race',
       daysToRace: (days: number) => `D-${days}`,
       chargeOptimal: 'Optimal',

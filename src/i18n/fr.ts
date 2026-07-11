@@ -326,32 +326,26 @@ export const fr = {
         caution: 'Prudence',
         hold: 'Lever le pied',
       },
+      moodByTone: {
+        go: 'frais',
+        caution: 'neutre',
+        hold: 'fatigué',
+      },
       readiness: {
-        fresh: {
+        go: {
           headline: 'Tu es frais. Bon jour pour de la qualité.',
-          body: (tsb: number) => `La forme est à +${tsb} et la fatigue est basse.`,
+          body: (tsb: string) => `La forme est à ${tsb} et la fatigue baisse - la séance prévue est un feu vert.`,
         },
-        productive: {
-          headline: 'Bonne progression.',
-          body: (loadTrendLabel: string, risk: 'low' | 'moderate' | 'high') =>
-            risk === 'moderate'
-              ? `La charge est en ${loadTrendLabel.toLowerCase()} - la forme grimpe vite, surveille le volume.`
-              : `La charge est en ${loadTrendLabel.toLowerCase()} et la forme tient bon.`,
+        caution: {
+          headline: 'Journée neutre. Reste modéré.',
+          body: (loadTrendLabel: string) => `La charge est en ${loadTrendLabel.toLowerCase()} et la forme est neutre - reste honnête sur les jours faciles.`,
         },
-        recovery: {
-          headline: 'Récupération - reste facile.',
-          body: 'La forme est positive mais la charge vient de baisser - reprends progressivement.',
-        },
-        detraining: {
-          headline: 'La charge a baissé.',
-          body: 'Pas de signe de fatigue, mais le volume diminue - une séance aiderait à relancer.',
-        },
-        overreaching: {
+        hold: {
           headline: 'Lève le pied aujourd’hui.',
-          body: (tsb: number) => `La forme est à ${tsb} et le risque est élevé - une journée facile ou du repos aiderait.`,
+          body: (tsb: string) => `La forme est à ${tsb} et la fatigue est élevée - une journée facile ou du repos aiderait.`,
         },
       },
-      sessionCta: 'Détails',
+      sessionCta: 'Démarrer',
       race: 'Course',
       daysToRace: (days: number) => `J-${days}`,
       chargeOptimal: 'Optimale',

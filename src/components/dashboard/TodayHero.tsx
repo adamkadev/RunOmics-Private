@@ -7,25 +7,38 @@ import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import type { ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import { ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
+import type { ReadinessTone } from '@/domain/training/readiness'
 import { PlannedWorkoutSheet } from '@/components/plan/PlannedWorkoutSheet'
-import { readinessTone } from '@/domain/training/readiness'
 import { relativeTimeParts } from '@/lib/formatters'
-import { STATUS } from '@/lib/statusColors'
 import { useCountUp } from '@/lib/useCountUp'
-import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
-const TONE_EYEBROW_CLASS = {
-  go: 'bg-emerald-400/[0.18] text-emerald-300',
-  caution: 'bg-amber-400/[0.18] text-amber-300',
-  hold: 'bg-rose-400/[0.18] text-rose-300',
-} as const
+// Fixed hex, independent of the accent picker - a readiness verdict means the
+// same thing (go/caution/hold) whichever accent the athlete has chosen.
+const TONE_HEX: Record<ReadinessTone, string> = {
+  go: '#1ed787',
+  caution: '#f5b700',
+  hold: '#ef4444',
+}
 
 interface Props {
   status: TrainingStatus | null
   plannedWorkout: PlannedWorkout | null
   nextRace: UpcomingRace | null
   lastSyncedAt: string | null
+}
+
+// Deterministic verdict tone, read directly off the already-computed Form
+// (TSB) and fatigue trend (ATL delta) - no new data, just a rules layer:
+//   TSB > +5 and fatigue falling  -> green light
+//   TSB < -10 or fatigue rising   -> hold back
+//   otherwise                     -> caution
+function verdictTone(tsb: number, atlDelta: number): ReadinessTone {
+  const fatigueRising = atlDelta > 1
+  const fatigueFalling = atlDelta < -1
+  if (tsb < -10 || fatigueRising) return 'hold'
+  if (tsb > 5 && fatigueFalling) return 'go'
+  return 'caution'
 }
 
 function daysUntil(date: string): number {
@@ -44,42 +57,33 @@ function formatSyncedAgo(lastSyncedAt: string): string {
   return s.synced(relative)
 }
 
-// Rules layer over the already-computed status/load - every clause reads an
-// existing field (tsb, loadTrend, risk), nothing here is invented.
-function readinessCopy(status: TrainingStatus): { headline: string; body: string } {
+// Rules layer over the already-computed status/load - copy is keyed by the
+// same tone as the pastille, so the verdict sentence never contradicts it.
+function readinessCopy(status: TrainingStatus, tone: ReadinessTone, tsb: string): { headline: string; body: string } {
   const r = t.dashboard.todayHero.readiness
-  const tsb = Math.round(status.tsb)
-  switch (status.status) {
-    case 'fresh':
-      return { headline: r.fresh.headline, body: r.fresh.body(tsb) }
-    case 'productive':
-      return {
-        headline: r.productive.headline,
-        body: r.productive.body(t.trainingStatus.loadTrend[status.loadTrend], status.risk),
-      }
-    case 'recovery':
-      return { headline: r.recovery.headline, body: r.recovery.body }
-    case 'detraining':
-      return { headline: r.detraining.headline, body: r.detraining.body }
-    case 'overreaching':
-      return { headline: r.overreaching.headline, body: r.overreaching.body(tsb) }
+  switch (tone) {
+    case 'go':
+      return { headline: r.go.headline, body: r.go.body(tsb) }
+    case 'hold':
+      return { headline: r.hold.headline, body: r.hold.body(tsb) }
+    case 'caution':
+      return { headline: r.caution.headline, body: r.caution.body(t.trainingStatus.loadTrend[status.loadTrend]) }
   }
 }
 
 // Pure display + a rules-based readiness verdict over already-computed status/load data.
 export function TodayHero({ status, plannedWorkout, nextRace, lastSyncedAt }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false)
-  const animatedTsb = useCountUp(status?.tsb ?? 0)
   const animatedDaysToRace = useCountUp(nextRace ? daysUntil(nextRace.date) : 0)
 
   if (!status && !plannedWorkout && !nextRace) return null
 
   const s = t.dashboard.todayHero
-  const isNegativeTsb = (status?.tsb ?? 0) < 0
-  const formValueClass = isNegativeTsb ? STATUS.warning.text : STATUS.success.text
-  const formValue = status ? `${status.tsb >= 0 ? '+' : ''}${Math.round(animatedTsb)}` : null
-  const tone = status ? readinessTone(status.status, status.risk) : null
-  const verdict = status ? readinessCopy(status) : null
+  const tone = status ? verdictTone(status.tsb, status.atlDelta) : null
+  const toneHex = tone ? TONE_HEX[tone] : TONE_HEX.go
+  const tsbLabel = status ? `${status.tsb >= 0 ? '+' : ''}${status.tsb.toFixed(1)}` : null
+  const verdict = status && tone && tsbLabel ? readinessCopy(status, tone, tsbLabel) : null
+  const formLine = tsbLabel ? `${t.dashboard.trainingLoad.form} ${tsbLabel} · ${s.moodByTone[tone ?? 'go']}` : null
   const PlannedWorkoutIcon: LucideIcon = plannedWorkout?.type
     ? ACTIVITY_TYPE_ICONS[plannedWorkout.type as ActivityType]
     : Footprints
@@ -93,69 +97,61 @@ export function TodayHero({ status, plannedWorkout, nextRace, lastSyncedAt }: Pr
 
   return (
     <div
-      className="rounded-card border border-white/[0.06] p-5 text-white shadow-[0_10px_26px_-6px_rgba(0,0,0,0.35)]"
-      style={{ background: 'var(--hero-gradient)' }}
+      className="rounded-[22px] border p-[18px] text-[#eef2f0] shadow-[0_10px_26px_-6px_rgba(0,0,0,0.35)]"
+      style={{ background: 'var(--hero-gradient)', borderColor: `${toneHex}59` }}
     >
-      <div className="mb-3.5 flex items-center justify-between gap-2">
-        <span className={cn('rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide', tone ? TONE_EYEBROW_CLASS[tone] : TONE_EYEBROW_CLASS.go)}>
+      <div className="flex items-center justify-between gap-2">
+        <span
+          className="inline-flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.1em]"
+          style={{ color: toneHex }}
+        >
+          <span
+            className="h-[9px] w-[9px] shrink-0 rounded-full"
+            style={{ background: toneHex, boxShadow: `0 0 10px ${toneHex}` }}
+          />
           {tone ? s.eyebrowByTone[tone] : s.eyebrowByTone.go}
         </span>
-        {lastSyncedAt && (
-          <span className="text-[11px] text-white/60">{formatSyncedAgo(lastSyncedAt)}</span>
-        )}
+        {formLine && <span className="text-[11px] text-[#8a978f]">{formLine}</span>}
       </div>
 
-      {status && (
-        <div className="mb-1 flex items-end gap-2">
-          <span className={cn('text-5xl font-extrabold leading-none tabular-nums', formValueClass)}>
-            {formValue}
-          </span>
-          <span className="pb-1 text-[13px] text-white/70">
-            {t.trainingStatus.status[status.status]}
-          </span>
-        </div>
-      )}
-
       {verdict && (
-        <div className="mt-2">
-          <div className="text-[15px] font-semibold leading-snug">{verdict.headline}</div>
-          <div className="mt-0.5 text-[13px] leading-snug text-white/70">{verdict.body}</div>
+        <div className="mt-3.5">
+          <div className="font-display text-[19px] font-bold leading-snug tracking-tight">{verdict.headline}</div>
+          <div className="mt-1 text-[12.5px] leading-snug text-[#a8b4ae]">{verdict.body}</div>
         </div>
       )}
 
-      {(plannedWorkout || nextRace) && (
-        <>
-          <div className="my-3.5 h-px bg-white/[0.12]" />
-          <div className="flex gap-4">
-            {plannedWorkout && (
-              <button
-                type="button"
-                onClick={() => setSheetOpen(true)}
-                className="flex flex-1 items-center gap-3 rounded-xl bg-black/20 px-3 py-2.5 text-left transition-colors active:opacity-80"
-              >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-accent/[0.18]">
-                  <PlannedWorkoutIcon size={17} className="text-accent-text" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-semibold">{plannedWorkout.name}</div>
-                  {plannedWorkoutMeta && (
-                    <div className="mt-0.5 truncate text-[11px] text-white/50">{plannedWorkoutMeta}</div>
-                  )}
-                </div>
-                <span className="flex shrink-0 items-center gap-0.5 rounded-lg bg-accent px-2.5 py-1.5 text-[11px] font-semibold text-accent-foreground">
-                  {s.sessionCta}
-                  <ChevronRight size={13} strokeWidth={2.5} />
-                </span>
-              </button>
-            )}
-            {nextRace && (
-              <div>
-                <div className="text-[10px] uppercase tracking-wide text-white/50">{s.race}</div>
-                <div className="mt-0.5 text-sm font-semibold">{s.daysToRace(Math.round(animatedDaysToRace))}</div>
-              </div>
+      {plannedWorkout && (
+        <button
+          type="button"
+          onClick={() => setSheetOpen(true)}
+          className="mt-3.5 flex w-full items-center gap-3 rounded-[14px] bg-black/25 px-3.5 py-3 text-left transition-colors active:opacity-80"
+        >
+          <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px] bg-accent/[0.18]">
+            <PlannedWorkoutIcon size={17} className="text-accent-text" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-semibold">{plannedWorkout.name}</div>
+            {plannedWorkoutMeta && (
+              <div className="mt-0.5 truncate text-[11px] text-[#8a978f]">{plannedWorkoutMeta}</div>
             )}
           </div>
-        </>
+          <span className="flex shrink-0 items-center gap-0.5 rounded-[10px] bg-accent px-3.5 py-2 text-[11px] font-bold text-accent-foreground">
+            {s.sessionCta}
+            <ChevronRight size={13} strokeWidth={2.5} />
+          </span>
+        </button>
+      )}
+
+      {nextRace && !plannedWorkout && (
+        <div className="mt-3.5">
+          <div className="text-[10px] uppercase tracking-wide text-[#8a978f]">{s.race}</div>
+          <div className="mt-0.5 text-sm font-semibold">{s.daysToRace(Math.round(animatedDaysToRace))}</div>
+        </div>
+      )}
+
+      {lastSyncedAt && (
+        <div className="mt-3 text-[10px] text-[#6b7a74]">{formatSyncedAgo(lastSyncedAt)}</div>
       )}
 
       {sheetOpen && plannedWorkout && (
