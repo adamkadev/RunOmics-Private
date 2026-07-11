@@ -1,57 +1,34 @@
 import Link from 'next/link'
-import { ArrowRight } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { BrandIcon } from '@/components/shoes/BrandIcon'
+import { Footprints, ArrowRight } from 'lucide-react'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import type { ShoeStats } from '@/application/usecases/GetShoeStats'
 import { STATUS } from '@/lib/statusColors'
 import { t } from '@/i18n'
 
-function wearFillClass(pct: number): string {
-  if (pct > 80) return STATUS.danger.dot
-  if (pct > 60) return STATUS.warning.dot
-  return STATUS.success.dot
-}
-
 export function ProfileShoes({ shoes }: { shoes: ShoeStats[] }) {
   if (shoes.length === 0) return null
 
+  const alertCount = shoes.filter((s) => s.nearingLimit).length
+
   return (
-    <GlassSurface variant="card" className="p-5">
-      <h2 className="mb-3 text-sm font-bold text-foreground">{t.profile.shoes.title}</h2>
-      <div>
-        {shoes.map((shoe, i) => {
-          const remainingKm = Math.max(0, Math.round(shoe.maxKm - shoe.totalKm))
-          return (
-            <div
-              key={shoe.gearId}
-              className={cn(
-                'flex items-center gap-3 py-3',
-                i < shoes.length - 1 && 'border-b border-foreground/[0.07]'
-              )}
-            >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-control border border-foreground/[0.10] bg-foreground/[0.07]">
-                <BrandIcon brand={shoe.brand} size={18} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-footnote font-bold text-foreground">{shoe.name}</div>
-                <div className="mt-0.5 text-caption text-muted-foreground">
-                  {t.profile.shoes.line(Math.round(shoe.totalKm), remainingKm)}
-                </div>
-                <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-foreground/[0.08]">
-                  <div
-                    className={cn('h-full rounded-full', wearFillClass(shoe.wearPercent))}
-                    style={{ width: `${shoe.wearPercent}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-          )
-        })}
+    <GlassSurface variant="card" className="flex flex-col gap-3 p-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-bold text-foreground">{t.profile.shoes.title}</h2>
+        <Footprints size={16} className="text-muted-foreground" aria-hidden="true" />
       </div>
+
+      <div>
+        <div className="text-lg font-extrabold tracking-tight text-foreground">
+          {t.profile.shoes.pairs(shoes.length)}
+        </div>
+        <div className={`mt-0.5 text-micro font-medium ${alertCount > 0 ? STATUS.warning.text : 'text-muted-foreground'}`}>
+          {alertCount > 0 ? t.profile.shoes.needsReplacing(alertCount) : t.profile.shoes.allGood}
+        </div>
+      </div>
+
       <Link
         href="/shoes"
-        className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-accent-text active:scale-95"
+        className="mt-auto flex items-center gap-1.5 text-sm font-semibold text-accent-text active:scale-95"
       >
         {t.profile.shoes.viewShoes} <ArrowRight size={16} />
       </Link>

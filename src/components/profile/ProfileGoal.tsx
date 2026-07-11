@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Target } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { EditableNumber } from '@/components/ui/EditableNumber'
@@ -25,39 +25,44 @@ export function ProfileGoal({ goal, onSaveGoal }: Props) {
     : 0
 
   return (
-    <GlassSurface variant="card" className="p-5">
-      <h2 className="mb-2 text-sm font-bold text-foreground">{t.profile.goal.title(goalYear.year)}</h2>
-
-      <div className="flex items-baseline gap-1.5">
-        <span className="text-title1 font-extrabold tracking-tight text-foreground">
-          <AnimatedValue value={totalDistanceKm} />
-        </span>
-        <span className="text-footnote font-semibold text-muted-foreground">
-          {'/ '}
-          <EditableNumber
-            value={goalYear.annualDistanceKm}
-            onCommit={(n) => onSaveGoal({ ...goalYear, annualDistanceKm: n })}
-          />
-          {' '}{t.units.km}
-        </span>
+    <GlassSurface variant="card" className="flex flex-col gap-3 p-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-bold text-foreground">{t.profile.goal.title(goalYear.year)}</h2>
+        <Target size={16} className="text-muted-foreground" aria-hidden="true" />
       </div>
 
-      <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-foreground/[0.08]">
-        <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${progressPercent}%` }} />
-      </div>
+      <div>
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-lg font-extrabold tracking-tight text-foreground">
+            <AnimatedValue value={totalDistanceKm} />
+          </span>
+          <span className="text-micro font-semibold text-muted-foreground">
+            {'/ '}
+            <EditableNumber
+              value={goalYear.annualDistanceKm}
+              onCommit={(n) => onSaveGoal({ ...goalYear, annualDistanceKm: n })}
+            />
+            {' '}{t.units.km}
+          </span>
+        </div>
 
-      {projection && (
-        <p className={cn(
-          'mt-2 text-[11.5px] font-medium',
-          projection.status === 'behind' ? STATUS.warning.text : STATUS.success.text
-        )}>
-          {t.profile.goal.pace(projection.projectedYearKm)} {projection.status === 'behind' ? '↓' : '↑'}
-        </p>
-      )}
+        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-foreground/[0.08]">
+          <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${progressPercent}%` }} />
+        </div>
+
+        {projection && (
+          <p className={cn(
+            'mt-1.5 text-micro font-medium',
+            projection.status === 'behind' ? STATUS.warning.text : STATUS.success.text
+          )}>
+            {t.profile.goal.pace(projection.projectedYearKm)} {projection.status === 'behind' ? '↓' : '↑'}
+          </p>
+        )}
+      </div>
 
       <Link
         href="/goals"
-        className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-accent-text active:scale-95"
+        className="mt-auto flex items-center gap-1.5 text-sm font-semibold text-accent-text active:scale-95"
       >
         {t.profile.goal.viewGoals} <ArrowRight size={16} />
       </Link>

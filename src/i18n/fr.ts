@@ -128,6 +128,11 @@ export const fr = {
       subtitle: 'Paliers de distance, séries et records personnels dans le temps',
       back: 'Progression',
     },
+    athlete: {
+      title: 'Athlète',
+      subtitle: 'Seuils et zones de fréquence cardiaque',
+      back: 'Progression',
+    },
     profile: {
       title: 'Progression',
     },
@@ -586,6 +591,16 @@ export const fr = {
         } as Record<string, string>,
       },
     },
+    seasonHeadline: {
+      eyebrow: 'Bilan de saison',
+      titlePositive: 'Plus en forme et plus efficace qu\'en début de saison.',
+      titleCaution: 'Un passage plus difficile qu\'en début de saison.',
+      titleMixed: 'Une saison en demi-teinte - des progrès par endroits, des baisses ailleurs.',
+      efficiency: (d: number) => `Efficacité aérobie ${d > 0 ? '+' : ''}${d} - ${d > 0 ? 'plus' : 'moins'} de vitesse par battement`,
+      easyPace: (s: number) => `Allure facile ${Math.abs(s)}s/km ${s < 0 ? 'plus rapide' : 'plus lente'} qu\'en début de saison`,
+      volume: (pct: number, year: number) =>
+        `Volume ${pct > 0 ? 'en hausse de' : 'en baisse de'} ${Math.abs(pct)}% vs ${year}${pct < 0 ? ' - attention à la régularité' : ''}`,
+    },
     yearOverYear: {
       title: 'Année sur année',
       vs: 'vs',
@@ -896,6 +911,9 @@ export const fr = {
     shoes: {
       title: 'Chaussures',
       line: (totalKm: number, remainingKm: number) => `${totalKm} km · ~${remainingKm} km restants`,
+      pairs: (n: number) => `${n} paire${n !== 1 ? 's' : ''}`,
+      allGood: 'Tout va bien',
+      needsReplacing: (n: number) => n === 1 ? '1 paire à remplacer' : `${n} paires à remplacer`,
       viewShoes: 'Voir les chaussures',
     },
     milestones: {
@@ -918,6 +936,12 @@ export const fr = {
       title: 'Zones cardiaques',
       lthr: 'LTHR',
       recalculate: 'Recalculer depuis la LTHR',
+    },
+    athlete: {
+      title: 'Athlète',
+      lthr: 'LTHR',
+      notSet: 'Non défini',
+      viewAthlete: 'Voir le profil athlète',
     },
     goal: {
       title: (year: number) => `Objectif ${year}`,

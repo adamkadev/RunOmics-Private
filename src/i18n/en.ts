@@ -134,6 +134,11 @@ export const en = {
       subtitle: 'Distance tiers, streaks, and personal records over time',
       back: 'Progress',
     },
+    athlete: {
+      title: 'Athlete',
+      subtitle: 'Thresholds and heart rate zones',
+      back: 'Progress',
+    },
     profile: {
       title: 'Progress',
     },
@@ -592,6 +597,16 @@ export const en = {
         } as Record<string, string>,
       },
     },
+    seasonHeadline: {
+      eyebrow: 'Season headline',
+      titlePositive: 'Fitter and more efficient than early season.',
+      titleCaution: 'A tougher stretch than early season.',
+      titleMixed: 'A mixed season - gains in some areas, dips in others.',
+      efficiency: (d: number) => `Aerobic efficiency ${d > 0 ? '+' : ''}${d} - ${d > 0 ? 'more' : 'less'} speed per heartbeat`,
+      easyPace: (s: number) => `Easy pace ${Math.abs(s)}s/km ${s < 0 ? 'faster' : 'slower'} than early season`,
+      volume: (pct: number, year: number) =>
+        `Volume ${pct > 0 ? 'up' : 'down'} ${Math.abs(pct)}% vs ${year}${pct < 0 ? ' - watch consistency' : ''}`,
+    },
     yearOverYear: {
       title: 'Year over Year',
       vs: 'vs',
@@ -902,6 +917,9 @@ export const en = {
     shoes: {
       title: 'Shoes',
       line: (totalKm: number, remainingKm: number) => `${totalKm} km · ~${remainingKm} km left`,
+      pairs: (n: number) => `${n} pair${n !== 1 ? 's' : ''}`,
+      allGood: 'All good',
+      needsReplacing: (n: number) => n === 1 ? '1 pair needs replacing' : `${n} pairs need replacing`,
       viewShoes: 'View Shoes',
     },
     milestones: {
@@ -924,6 +942,12 @@ export const en = {
       title: 'Heart rate zones',
       lthr: 'LTHR',
       recalculate: 'Recalculate from LTHR',
+    },
+    athlete: {
+      title: 'Athlete',
+      lthr: 'LTHR',
+      notSet: 'Not set',
+      viewAthlete: 'View Athlete',
     },
     goal: {
       title: (year: number) => `Goal ${year}`,

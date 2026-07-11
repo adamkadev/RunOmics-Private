@@ -4,16 +4,13 @@ import { useState } from 'react'
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { getClientFirestore } from '@/lib/firebase'
 import type { ProfileData } from '@/application/usecases/GetProfileData'
-import type { AthleteProfile } from '@/infrastructure/repositories/FirestoreConfigRepository'
 import type { GoalYear } from '@/application/usecases/GetGoalsData'
 import type { Milestone } from '@/application/usecases/GetMilestones'
 import { ProfileHero } from './ProfileHero'
 import { ProfileStatsYtd } from './ProfileStatsYtd'
 import { ProfileRecords } from './ProfileRecords'
-import { Milestones } from './Milestones'
 import { ProfileShoes } from './ProfileShoes'
-import { ProfileHrZones } from './ProfileHrZones'
-import { ProfileAthleteStats } from './ProfileAthleteStats'
+import { ProfileAthleteTile } from './ProfileAthleteTile'
 import { ProfileGoal } from './ProfileGoal'
 
 interface Props {
@@ -22,13 +19,15 @@ interface Props {
 }
 
 export function ProfileClient({ data, milestones }: Props) {
-  const [athlete, setAthlete] = useState<AthleteProfile>(data.athlete)
+  const [displayName, setDisplayName] = useState(data.athlete.displayName)
   const [goal, setGoal] = useState(data.goal)
 
-  async function saveAthlete(patch: Partial<AthleteProfile>) {
-    const next = { ...athlete, ...patch }
-    setAthlete(next)
-    await setDoc(doc(getClientFirestore(), 'athlete', 'profile'), { ...next, lastUpdate: serverTimestamp() })
+  async function saveDisplayName(name: string) {
+    setDisplayName(name)
+    await setDoc(
+      doc(getClientFirestore(), 'athlete', 'profile'),
+      { ...data.athlete, displayName: name, lastUpdate: serverTimestamp() }
+    )
   }
 
   async function saveGoal(goalYear: GoalYear) {
@@ -36,21 +35,19 @@ export function ProfileClient({ data, milestones }: Props) {
     await setDoc(doc(getClientFirestore(), 'goals', String(goalYear.year)), goalYear)
   }
 
+  const milestonesCount = milestones.filter((m) => m.type !== 'record').length
+
   return (
     <div className="space-y-6">
       <div className="space-y-3">
-        <ProfileHero
-          hero={data.hero}
-          displayName={athlete.displayName}
-          onSaveName={(name) => saveAthlete({ displayName: name })}
-        />
+        <ProfileHero hero={data.hero} displayName={displayName} onSaveName={saveDisplayName} />
         <ProfileStatsYtd ytd={data.ytd} />
-        <ProfileGoal goal={goal} onSaveGoal={saveGoal} />
-        <ProfileRecords records={data.records} />
-        <Milestones milestones={milestones} />
-        <ProfileShoes shoes={data.shoes} />
-        <ProfileAthleteStats athlete={athlete} onSave={saveAthlete} />
-        <ProfileHrZones athlete={athlete} onSave={saveAthlete} />
+        <div className="grid grid-cols-2 gap-3">
+          <ProfileGoal goal={goal} onSaveGoal={saveGoal} />
+          <ProfileRecords records={data.records} milestonesCount={milestonesCount} />
+          <ProfileShoes shoes={data.shoes} />
+          <ProfileAthleteTile athlete={data.athlete} />
+        </div>
       </div>
     </div>
   )
