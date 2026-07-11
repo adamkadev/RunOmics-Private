@@ -16,6 +16,7 @@ export interface TrainingStatus {
   tsb: number
   acwr: number | null
   ctlDelta: number
+  ctlPeak: number
 }
 
 const DAY_MS = 86_400_000
@@ -66,6 +67,7 @@ export async function getTrainingStatus(): Promise<TrainingStatus | null> {
   const ratio = acwr(activities, refDate)
 
   const { status, risk } = classify(tsb, ctlDelta, ratio)
+  const ctlPeak = points.reduce((max, p) => Math.max(max, p.ctl), ctl)
 
-  return { status, risk, loadTrend: loadTrend(ctlDelta, tsb), ctl, atl, tsb, acwr: ratio, ctlDelta }
+  return { status, risk, loadTrend: loadTrend(ctlDelta, tsb), ctl, atl, tsb, acwr: ratio, ctlDelta, ctlPeak }
 }

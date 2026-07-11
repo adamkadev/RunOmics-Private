@@ -317,8 +317,38 @@ export const fr = {
       daysAgo: (d: number) => `il y a ${d} j`,
     },
     todayHero: {
-      eyebrow: 'Aujourd’hui',
+      eyebrowByTone: {
+        go: 'Feu vert',
+        caution: 'Prudence',
+        hold: 'Lever le pied',
+      },
+      readiness: {
+        fresh: {
+          headline: 'Tu es frais. Bon jour pour de la qualité.',
+          body: (tsb: number) => `La forme est à +${tsb} et la fatigue est basse.`,
+        },
+        productive: {
+          headline: 'Bonne progression.',
+          body: (loadTrendLabel: string, risk: 'low' | 'moderate' | 'high') =>
+            risk === 'moderate'
+              ? `La charge est en ${loadTrendLabel.toLowerCase()} - la forme grimpe vite, surveille le volume.`
+              : `La charge est en ${loadTrendLabel.toLowerCase()} et la forme tient bon.`,
+        },
+        recovery: {
+          headline: 'Récupération - reste facile.',
+          body: 'La forme est positive mais la charge vient de baisser - reprends progressivement.',
+        },
+        detraining: {
+          headline: 'La charge a baissé.',
+          body: 'Pas de signe de fatigue, mais le volume diminue - une séance aiderait à relancer.',
+        },
+        overreaching: {
+          headline: 'Lève le pied aujourd’hui.',
+          body: (tsb: number) => `La forme est à ${tsb} et le risque est élevé - une journée facile ou du repos aiderait.`,
+        },
+      },
       plannedSession: 'Séance planifiée',
+      sessionCta: 'Détails',
       race: 'Course',
       load: 'Charge',
       daysToRace: (days: number) => `J-${days}`,
@@ -365,6 +395,17 @@ export const fr = {
     },
     metrics: {
       fitness: 'Condition',
+      vo2maxBand: {
+        building: 'En construction',
+        solid: 'Solide',
+        strong: 'Forte',
+        elite: 'Élite',
+      },
+      fitnessBand: {
+        peak: 'Pic de forme',
+        nearPeak: 'Proche du pic',
+        building: 'En construction',
+      },
     },
   },
 

@@ -323,8 +323,38 @@ export const en = {
       daysAgo: (d: number) => `${d}d ago`,
     },
     todayHero: {
-      eyebrow: 'Today',
+      eyebrowByTone: {
+        go: 'Green light',
+        caution: 'Caution',
+        hold: 'Hold back',
+      },
+      readiness: {
+        fresh: {
+          headline: "You're fresh. Good day for quality.",
+          body: (tsb: number) => `Form is +${tsb} and fatigue is low.`,
+        },
+        productive: {
+          headline: 'Building well.',
+          body: (loadTrendLabel: string, risk: 'low' | 'moderate' | 'high') =>
+            risk === 'moderate'
+              ? `Load is ${loadTrendLabel.toLowerCase()} - fitness is climbing fast, keep an eye on volume.`
+              : `Load is ${loadTrendLabel.toLowerCase()} and form is holding steady.`,
+        },
+        recovery: {
+          headline: 'Recovering - keep it easy.',
+          body: 'Form is positive but load just eased off - ease back in gradually.',
+        },
+        detraining: {
+          headline: 'Load has eased off.',
+          body: 'No signs of strain, but volume has been dropping - a session would help rebuild.',
+        },
+        overreaching: {
+          headline: 'Dial it back today.',
+          body: (tsb: number) => `Form is ${tsb} and risk is elevated - an easy day or rest would help.`,
+        },
+      },
       plannedSession: 'Planned session',
+      sessionCta: 'Details',
       race: 'Race',
       load: 'Load',
       daysToRace: (days: number) => `D-${days}`,
@@ -371,6 +401,17 @@ export const en = {
     },
     metrics: {
       fitness: 'Fitness',
+      vo2maxBand: {
+        building: 'Building',
+        solid: 'Solid',
+        strong: 'Strong',
+        elite: 'Elite',
+      },
+      fitnessBand: {
+        peak: 'Peak fitness',
+        nearPeak: 'Near peak',
+        building: 'Building',
+      },
     },
   },
 
