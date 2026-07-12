@@ -32,6 +32,7 @@ function toSummary(a: Activity): ActivitySummary {
     paceSecPerKm: a.paceSecPerKm,
     avgHeartRate: a.avgHeartRate,
     rpe: a.rpe,
+    hrZones: a.hrZones,
   }
 }
 

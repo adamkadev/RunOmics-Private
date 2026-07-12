@@ -2,6 +2,7 @@ import { t } from '@/i18n'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import type { Activity, ActivityType } from '@/domain/activity/types'
 import { easyHardShare } from '@/domain/training/easyHard'
+import { sumDistanceKm } from '@/domain/activity/distance'
 import { monthLabel } from '@/lib/formatters'
 import { round } from '@/lib/math'
 
@@ -325,7 +326,9 @@ function buildSeries(buckets: Bucket[], scoped: Activity[]): AnalyticsSeries {
 }
 
 export function computeTotals(activities: Activity[], elapsedDays: number): YearTotals {
-  const distanceKm = round(activities.reduce((s, a) => s + a.distanceKm, 0))
+  // Round once to a whole km (shared selector) - not round(…, 1) then round
+  // again at display, which pushed Analytics 1 km above Progress/Goals.
+  const distanceKm = sumDistanceKm(activities)
   const calories = activities.reduce((s, a) => s + (a.calories ?? 0), 0)
   const days = Math.max(elapsedDays, 1)
   return {

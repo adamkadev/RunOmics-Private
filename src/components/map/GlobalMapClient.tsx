@@ -189,7 +189,9 @@ export function GlobalMapClient({ data }: Props) {
         <span
           className={[
             "glass-map-chip pointer-events-none absolute left-3 z-10 px-3 py-2 text-xs font-medium text-subtle",
-            isFullscreen ? "bottom-[max(env(safe-area-inset-bottom),12px)]" : "bottom-3",
+            isFullscreen
+              ? "bottom-[calc(max(env(safe-area-inset-bottom),12px)+2.25rem)]"
+              : "bottom-11",
           ].join(" ")}
         >
           {t.pages.map.worldViewHint}

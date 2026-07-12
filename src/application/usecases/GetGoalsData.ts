@@ -1,4 +1,5 @@
 import type { Activity } from '@/domain/activity/types'
+import { yearDistanceKm } from '@/domain/activity/distance'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import {
   getGoalsFromFirestore,
@@ -304,13 +305,16 @@ export async function getGoalsPageData(): Promise<GoalsPageData> {
       })
       .filter((x): x is PbData => x !== null)
 
-    const totalDistanceKm = activities
+    const rawYearKm = activities
       .filter((a) => a.date.startsWith(String(year)))
       .reduce((sum, a) => sum + a.distanceKm, 0)
+    // Displayed / compared value uses the shared whole-km selector so Goals
+    // matches Progress and Analytics; the projection keeps the raw sum.
+    const totalDistanceKm = yearDistanceKm(activities, year)
 
     const projection =
       year === currentYear && goals
-        ? computeProjection(activities, year, totalDistanceKm, goals)
+        ? computeProjection(activities, year, rawYearKm, goals)
         : null
 
     const monthlyGoals = goals ? computeMonthlyGoals(activities, year, goals) : []

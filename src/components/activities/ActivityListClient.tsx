@@ -11,6 +11,7 @@ import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { Pill } from '@/components/ui/Pill'
 import { SortDropdown } from '@/components/ui/SortDropdown'
+import { easyHardShare } from '@/domain/training/easyHard'
 import { weekRangeLabel } from '@/lib/formatters'
 import { isoDate, addDays, startOfWeek } from '@/lib/calendarDate'
 import { cn } from '@/lib/utils'
@@ -36,8 +37,8 @@ interface WeekGroup {
   range: string
   items: ActivitySummary[]
   totalKm: number
-  easyPct: number
-  hardPct: number
+  easyPct: number | null
+  hardPct: number | null
 }
 
 function WeekStat({ value, label }: { value: string; label: string }) {
@@ -68,11 +69,23 @@ function groupByWeek(items: ActivitySummary[]): WeekGroup[] {
 
   return raw.map(({ key, items: weekItems }) => {
     const totalKm = weekItems.reduce((s, a) => s + a.distanceKm, 0)
-    const easyCount = weekItems.filter((a) => a.type === 'Base').length
-    const easyPct = Math.round((easyCount / weekItems.length) * 100)
+    // Same source as Today and Plan (time in HR zones 1-2 vs 3+) so the E/H
+    // ratio can't diverge between screens.
+    const { hardPct } = easyHardShare(weekItems)
+    // Derive easy from the rounded hard so the two always sum to 100 and match
+    // Today's "N% hard".
+    const hard = hardPct === null ? null : Math.round(hardPct)
     const range = weekRangeLabel(key, isoDate(addDays(new Date(key + 'T00:00:00'), 6)))
     const label = key === currentWeekStart ? t.activities.thisWeek : range
-    return { key, label, range, items: weekItems, totalKm, easyPct, hardPct: 100 - easyPct }
+    return {
+      key,
+      label,
+      range,
+      items: weekItems,
+      totalKm,
+      easyPct: hard === null ? null : 100 - hard,
+      hardPct: hard,
+    }
   })
 }
 
@@ -296,7 +309,7 @@ export function ActivityListClient({
                     <div className="flex shrink-0 items-end gap-4 text-right">
                       <WeekStat value={String(Math.round(g.totalKm))} label={t.activities.weekStat.km} />
                       <WeekStat value={String(g.items.length)} label={t.activities.weekStat.runs} />
-                      <WeekStat value={`${g.easyPct}/${g.hardPct}`} label={t.activities.weekStat.easyHard} />
+                      <WeekStat value={g.easyPct !== null ? `${g.easyPct}/${g.hardPct}` : '–'} label={t.activities.weekStat.easyHard} />
                     </div>
                   </div>
                 ) : (

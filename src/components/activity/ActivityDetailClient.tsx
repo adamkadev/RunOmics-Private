@@ -120,28 +120,32 @@ export function ActivityDetailClient({ activity, qualifiedEfforts }: Props) {
       )}
 
       {tabs.length > 1 && (
-        <GlassSurface
-          as="div"
-          variant="card"
-          role="tablist"
-          aria-label={t.activity.tabs.groupLabel}
-          className="sticky top-[max(var(--safe-top),8px)] z-10 flex gap-1 overflow-x-auto rounded-full p-1 mb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        >
-          {tabs.map((item) => (
-            <button
-              key={item.id}
-              role="tab"
-              aria-selected={tab === item.id}
-              onClick={() => setTab(item.id)}
-              className={cn(
-                'min-w-fit flex-1 whitespace-nowrap rounded-full py-2.5 text-sm font-semibold transition-colors',
-                tab === item.id ? 'bg-accent text-accent-foreground' : 'text-subtle hover:text-foreground',
-              )}
-            >
-              {item.label}
-            </button>
-          ))}
-        </GlassSurface>
+        // Opaque bar anchored at top:0 with a safe-area top pad, so when the
+        // tabs stick the status bar never shows the content scrolling beneath.
+        <div className="sticky top-0 z-10 -mx-4 mb-3 bg-background px-4 pb-1 pt-[max(var(--safe-top),8px)] sm:-mx-6 sm:px-6">
+          <GlassSurface
+            as="div"
+            variant="card"
+            role="tablist"
+            aria-label={t.activity.tabs.groupLabel}
+            className="flex gap-1 overflow-x-auto rounded-full p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {tabs.map((item) => (
+              <button
+                key={item.id}
+                role="tab"
+                aria-selected={tab === item.id}
+                onClick={() => setTab(item.id)}
+                className={cn(
+                  'min-w-fit flex-1 whitespace-nowrap rounded-full py-2.5 text-sm font-semibold transition-colors',
+                  tab === item.id ? 'bg-accent text-accent-foreground' : 'text-subtle hover:text-foreground',
+                )}
+              >
+                {item.label}
+              </button>
+            ))}
+          </GlassSurface>
+        </div>
       )}
 
       {tab === 'overview' && (

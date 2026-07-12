@@ -2,7 +2,7 @@ import { getDashboardData } from '@/application/usecases/GetDashboardData'
 import { getLastSyncedAt } from '@/application/usecases/GetSyncStatus'
 import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
 import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
-import { getLatestVO2max, getVO2maxTrend } from '@/application/usecases/GetVO2maxHistory'
+import { getLatestVO2max } from '@/application/usecases/GetVO2maxHistory'
 import { getHeatmapData } from '@/application/usecases/GetHeatmapData'
 import { getRecords, getQualifiedEffortsByActivityId, getMostRecentRecord } from '@/application/usecases/GetRecords'
 import { getShoeStats } from '@/application/usecases/GetShoeStats'
@@ -34,7 +34,6 @@ export default async function DashboardPage() {
   const trainingLoad = await getTrainingLoad()
   const trainingStatus = await getTrainingStatus()
   const vo2max = getLatestVO2max()
-  const vo2maxTrend = getVO2maxTrend()
   const heatmapDays = getHeatmapData()
   const records = await getRecords()
   const qualifiedEffortsByActivityId = getQualifiedEffortsByActivityId(records)
@@ -64,7 +63,7 @@ export default async function DashboardPage() {
         lastSyncedAt={lastSyncedAt}
       />
 
-      <TrainingMetricsCard status={trainingStatus} vo2max={vo2max} vo2maxTrend={vo2maxTrend} />
+      <TrainingMetricsCard status={trainingStatus} vo2max={vo2max} />
 
       {weeklyStreak && (
         <WeeklyStreakCard
