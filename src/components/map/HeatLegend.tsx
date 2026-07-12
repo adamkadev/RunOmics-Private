@@ -11,8 +11,11 @@ export function HeatLegend({ isFullscreen }: { isFullscreen?: boolean }) {
   return (
     <div
       className={[
+        // Sits above the bottom-left map attribution so the two don't overlap.
         "glass-map-chip absolute left-3 z-10 flex items-center gap-2 px-3 py-2",
-        isFullscreen ? "bottom-[max(env(safe-area-inset-bottom),12px)]" : "bottom-3",
+        isFullscreen
+          ? "bottom-[calc(max(env(safe-area-inset-bottom),12px)+2.25rem)]"
+          : "bottom-11",
       ].join(" ")}
     >
       <span className="text-caption text-subtle">{t.pages.map.less}</span>

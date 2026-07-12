@@ -131,7 +131,12 @@ export function useMapRoutes(
         fitBoundsOptions: { padding: 60, maxZoom: 14 },
         attributionControl: false,
       });
-      map.addControl(new mgl.AttributionControl({ compact: true }), "bottom-right");
+      // Bottom-left, out of the floating buttons' column on the right, with a
+      // short custom credit so it can't spill a long cut-off string over them.
+      map.addControl(
+        new mgl.AttributionControl({ compact: true, customAttribution: "© MapTiler · OSM" }),
+        "bottom-left",
+      );
       mapRef.current = map;
       mglRef.current = mgl;
 
