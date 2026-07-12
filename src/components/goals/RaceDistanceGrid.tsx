@@ -25,10 +25,9 @@ export function RaceDistanceGrid({ yearData }: { yearData: YearData }) {
   return (
     <section className="space-y-3">
       <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">{s.raceDistances}</h2>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-2 gap-3">
         {goals.targets.map((target) => {
           const pb = pbs.find((p) => p.entry.distance === target.distance)
-          const isSpotlight = nextRaceSpotlight?.race.distance === target.distance
           const otherRace = upcomingRaces.find((r) => r.distance === target.distance && r !== nextRaceSpotlight?.race)
           const achieved = !!pb && target.targetSeconds !== null && pb.entry.seconds <= target.targetSeconds
           const predictionFallback =
@@ -48,18 +47,7 @@ export function RaceDistanceGrid({ yearData }: { yearData: YearData }) {
                 </span>
               </div>
 
-              {isSpotlight && nextRaceSpotlight ? (
-                <>
-                  <p className="mt-1.5 flex items-baseline gap-1.5 text-xl font-bold text-foreground">
-                    {nextRaceSpotlight.predictedSeconds !== null ? formatDuration(nextRaceSpotlight.predictedSeconds) : '-'}
-                    <span className="text-xs font-normal text-subtle">{s.predictedTag}</span>
-                  </p>
-                  <p className="mt-0.5 truncate text-xs text-subtle">
-                    {nextRaceSpotlight.race.name} · {formatDate(nextRaceSpotlight.race.date)} ·{' '}
-                    {t.nextRace.countdown(nextRaceSpotlight.daysUntil)}
-                  </p>
-                </>
-              ) : pb ? (
+              {pb ? (
                 <>
                   <p className={cn('mt-1.5 flex items-center gap-1.5 text-xl font-bold', achieved ? STATUS.success.text : 'text-foreground')}>
                     {formatDuration(pb.entry.seconds)}

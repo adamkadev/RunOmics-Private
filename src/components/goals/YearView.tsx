@@ -136,11 +136,9 @@ export function YearView({ yearData, onSaveGoal }: Props) {
         </section>
       )}
 
-      {goals && goals.targets.length > 0 ? (
-        <RaceDistanceGrid yearData={yearData} />
-      ) : (
-        nextRaceSpotlight && <NextRaceSpotlight spotlight={nextRaceSpotlight} />
-      )}
+      {nextRaceSpotlight && <NextRaceSpotlight spotlight={nextRaceSpotlight} />}
+
+      {goals && goals.targets.length > 0 && <RaceDistanceGrid yearData={yearData} />}
 
       {goals && monthlyGoals.length > 0 && <MonthlyGoalsGrid monthlyGoals={monthlyGoals} />}
 

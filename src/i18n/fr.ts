@@ -891,7 +891,6 @@ export const fr = {
     noTarget: '-',
     noTargetSet: 'Aucun objectif défini',
     best: 'Record',
-    predictedTag: 'prédit',
     nextRaceHint: (name: string, date: string) => `prochaine : ${name} ${date}`,
     seasonRaces: 'Courses de la saison',
     raceAlt: (distance: string) => `course de ${distance}`,

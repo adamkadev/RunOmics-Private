@@ -897,7 +897,6 @@ export const en = {
     noTarget: '-',
     noTargetSet: 'No target set',
     best: 'Best',
-    predictedTag: 'predicted',
     nextRaceHint: (name: string, date: string) => `next: ${name} ${date}`,
     seasonRaces: 'Season Races',
     raceAlt: (distance: string) => `${distance} race`,
