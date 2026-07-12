@@ -51,16 +51,16 @@ function ShoeHeroCard({ shoe, insight }: { shoe: ShoeStats; insight: string | nu
   return (
     <Link
       href={`/shoes/${shoe.gearId}`}
-      className="block rounded-2xl border p-4 transition-transform active:scale-[0.99]"
+      className="block rounded-2xl border p-4 text-center transition-transform active:scale-[0.99]"
       style={HERO_SURFACE[status]}
     >
-      <div className="mb-2 flex items-center justify-between gap-2">
+      <div className="flex items-center justify-center gap-2">
         <span className={cn('font-mono text-[10px] font-semibold uppercase tracking-[0.12em]', WEAR_TEXT[status])}>
           {t.shoes.status[status]}
         </span>
-        <span className={cn('text-[15px] font-bold tabular-nums', WEAR_TEXT[status])}>{shoe.wearPercent}%</span>
+        <span className={cn('text-[13px] font-bold tabular-nums', WEAR_TEXT[status])}>{shoe.wearPercent}%</span>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="mt-1.5 flex items-center justify-center gap-2">
         <BrandIcon brand={shoe.brand} size={16} />
         <p className="font-display text-[17px] font-bold text-foreground">{shoe.name}</p>
       </div>
@@ -70,7 +70,7 @@ function ShoeHeroCard({ shoe, insight }: { shoe: ShoeStats; insight: string | nu
       <div className="h-1.5 overflow-hidden rounded-full bg-foreground/[0.1]">
         <div className={cn('h-full rounded-full', WEAR_BAR[status])} style={{ width: `${shoe.wearPercent}%` }} />
       </div>
-      {insight && <p className="mt-2.5 text-[11px] leading-snug text-foreground/75">{insight}</p>}
+      {insight && <p className="mx-auto mt-2.5 max-w-[46ch] text-[11px] leading-snug text-foreground/75">{insight}</p>}
     </Link>
   )
 }
