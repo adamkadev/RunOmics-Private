@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react'
 import type { Activity } from '@/domain/activity/types'
 
 /**
- * Reverse-geocodes an activity's route (start / middle / end) into a city name
- * and up to three street names, for the share-card map/terrain designs.
- * Results are cached in sessionStorage so a card re-open doesn't re-hit
- * Nominatim.
+ * Reverse-geocodes a handful of points evenly spaced along an activity's route
+ * into a city name and a set of distinct street names, for the share-card
+ * map/terrain designs. Results are cached in sessionStorage so a card re-open
+ * doesn't re-hit Nominatim.
  */
 export function useShareCardGeocode(activity: Activity): {
   locationName: string | null
@@ -28,7 +28,12 @@ export function useShareCardGeocode(activity: Activity): {
     if (!activity.route || activity.route.length < 1) return
     const route = activity.route
     const cacheKey = `ro_geocode_${activity.id}`
-    const indices = [...new Set([0, Math.floor(route.length * 0.5), route.length - 1])]
+    // Sample evenly along the route so the map picks up several distinct
+    // streets rather than repeating the same two or three names.
+    const last = route.length - 1
+    const indices = [...new Set(
+      [0, 0.2, 0.4, 0.6, 0.8, 1].map((f) => Math.round(f * last))
+    )]
     Promise.allSettled(
       indices.map(idx => {
         const [lng, lat] = route[idx] ?? [0, 0]

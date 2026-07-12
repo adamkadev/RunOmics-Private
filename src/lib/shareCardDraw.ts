@@ -362,18 +362,26 @@ export function draw_cadence(ctx: Ctx, W: number, H: number, r: number, g: numbe
 }
 
 function drawMapStreetLabels(ctx: Ctx, W: number, H: number, dark: boolean, streetLabels: string[]) {
-  if (streetLabels.length === 0) return
+  // Each street name is drawn once - repeating the same two or three names on
+  // every grid line reads as fake, so we spread the distinct names out instead.
+  const labels = [...new Set(streetLabels.filter(Boolean))]
+  if (labels.length === 0) return
   ctx.save()
   ctx.font = '500 8.5px Inter,system-ui,sans-serif'
   const labelColor = dark ? 'rgba(255,255,255,0.42)' : 'rgba(0,0,0,0.38)'
   const bg = dark ? 'rgba(9,16,26,0.76)' : 'rgba(237,241,247,0.76)'
   const ph = 11, pad = 4
+  const snap = (v: number) => Math.round(v / 112) * 112
 
-  // All major horizontal grid lines (every 112px), cycling through labels
-  let hi = 0
-  for (let y = 112; y < H; y += 112) {
-    const lbl = streetLabels[hi++ % streetLabels.length]
-    if (!lbl) continue
+  // Rotate a third of the names onto vertical grid lines for a map-like feel,
+  // keeping the rest horizontal. Both are confined to the 0.15-0.85 band so
+  // they clear the title and the stats panel.
+  const vCount = Math.min(2, Math.floor(labels.length / 3))
+  const horizontal = labels.slice(0, labels.length - vCount)
+  const vertical = labels.slice(labels.length - vCount)
+
+  horizontal.forEach((lbl, i) => {
+    const y = snap(H * (0.15 + 0.7 * ((i + 0.5) / horizontal.length)))
     const tw = ctx.measureText(lbl).width
     const lx = W * 0.05
     ctx.fillStyle = bg
@@ -381,17 +389,12 @@ function drawMapStreetLabels(ctx: Ctx, W: number, H: number, dark: boolean, stre
     ctx.fillStyle = labelColor
     ctx.textAlign = 'left'; ctx.textBaseline = 'middle'
     ctx.fillText(lbl, lx, y)
-  }
+  })
 
-  // Major vertical grid lines (every 112px, up to 3), cycling through labels in reverse
-  const vPool = streetLabels.length > 1 ? [...streetLabels].reverse() : streetLabels
-  let vi = 0
-  for (let vX = 112; vX < W && vi < 3; vX += 112) {
-    const lbl = vPool[vi % vPool.length]
-    if (!lbl) continue
+  vertical.forEach((lbl, i) => {
+    const vX = snap(W * ((i + 1) / (vertical.length + 1)))
+    const labelY = H * (0.35 + i * 0.22)
     const tw = ctx.measureText(lbl).width
-    const labelY = H * (0.25 + (vi + 1) * 0.15)
-    vi++
     ctx.save()
     ctx.translate(vX, labelY)
     ctx.rotate(-Math.PI / 2)
@@ -401,7 +404,7 @@ function drawMapStreetLabels(ctx: Ctx, W: number, H: number, dark: boolean, stre
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
     ctx.fillText(lbl, 0, 0)
     ctx.restore()
-  }
+  })
 
   ctx.restore()
 }
