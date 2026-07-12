@@ -1,6 +1,6 @@
 import { Check } from 'lucide-react'
 import type { YearData } from '@/application/usecases/GetGoalsData'
-import { DISTANCE_KEY } from '@/application/usecases/GetRecords'
+import { DISTANCE_KEY } from '@/domain/activity/effort'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { formatCompactDate, formatDate, formatDuration } from '@/lib/formatters'
 import { STATUS } from '@/lib/statusColors'
