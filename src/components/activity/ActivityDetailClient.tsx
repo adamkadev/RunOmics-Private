@@ -120,9 +120,7 @@ export function ActivityDetailClient({ activity, qualifiedEfforts }: Props) {
       )}
 
       {tabs.length > 1 && (
-        // Opaque bar anchored at top:0 with a safe-area top pad, so when the
-        // tabs stick the status bar never shows the content scrolling beneath.
-        <div className="sticky top-0 z-10 -mx-4 mb-3 bg-background px-4 pb-1 pt-[max(var(--safe-top),8px)] sm:-mx-6 sm:px-6">
+        <div className="sticky top-0 z-10 -mx-4 mb-3 px-4 pb-1 sm:-mx-6 sm:px-6">
           <GlassSurface
             as="div"
             variant="card"

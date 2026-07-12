@@ -309,7 +309,7 @@ export function AnalyticsClient({
             ref={tabsRef}
             role="tablist"
             aria-label={t.analytics.title}
-            className="sticky top-0 z-10 -mx-4 flex gap-1 overflow-x-auto bg-background px-4 pb-2 pt-[max(var(--safe-top),8px)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="sticky top-0 z-10 -mx-4 flex gap-1 overflow-x-auto bg-background px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {visibleTabs.map((item) => (
               <button
