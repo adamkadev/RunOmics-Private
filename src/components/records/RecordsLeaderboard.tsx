@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Trophy } from 'lucide-react'
 import type { RecordEntry, TopEfforts } from '@/application/usecases/GetRecords'
 import type { RacePrediction } from '@/application/usecases/GetRacePredictions'
 import { formatDuration, formatDistance, formatPace } from '@/lib/formatters'
@@ -54,8 +53,7 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null, 
 
   return (
     <section className="space-y-3">
-      <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-        <Trophy size={16} className="text-accent-text" />
+      <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
         {t.records.title}
       </h2>
 

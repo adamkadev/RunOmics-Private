@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Trophy, ArrowRight } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import type { RecordEntry } from '@/application/usecases/GetRecords'
 import { formatDuration, formatDateWithYear } from '@/lib/formatters'
@@ -28,10 +28,7 @@ export function ProfileRecords({ records }: Props) {
 
   return (
     <GlassSurface variant="card" className="flex flex-col gap-3 p-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-bold text-foreground">{t.profile.records.title}</h2>
-        <Trophy size={16} className="text-muted-foreground" aria-hidden="true" />
-      </div>
+      <h2 className="text-sm font-bold text-foreground">{t.profile.records.title}</h2>
 
       {best ? (
         <div>

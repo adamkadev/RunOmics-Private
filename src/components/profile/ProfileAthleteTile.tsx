@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { User, ArrowRight } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import type { AthleteProfile } from '@/infrastructure/repositories/FirestoreConfigRepository'
 import { t } from '@/i18n'
@@ -9,10 +9,7 @@ export function ProfileAthleteTile({ athlete }: { athlete: AthleteProfile }) {
 
   return (
     <GlassSurface variant="card" className="flex flex-col gap-3 p-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-bold text-foreground">{a.title}</h2>
-        <User size={16} className="text-muted-foreground" aria-hidden="true" />
-      </div>
+      <h2 className="text-sm font-bold text-foreground">{a.title}</h2>
 
       <div>
         <div className="text-lg font-extrabold tracking-tight text-foreground">

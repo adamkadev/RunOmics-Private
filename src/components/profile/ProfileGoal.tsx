@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowRight, Target } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import type { ProfileGoal as ProfileGoalData } from '@/application/usecases/GetProfileData'
@@ -23,10 +23,7 @@ export function ProfileGoal({ goal }: Props) {
 
   return (
     <GlassSurface variant="card" className="flex flex-col gap-3 p-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-bold text-foreground">{t.profile.goal.title(goalYear.year)}</h2>
-        <Target size={16} className="text-muted-foreground" aria-hidden="true" />
-      </div>
+      <h2 className="text-sm font-bold text-foreground">{t.profile.goal.title(goalYear.year)}</h2>
 
       <div>
         <span className="text-lg font-extrabold tracking-tight text-foreground">{progressPercent}%</span>

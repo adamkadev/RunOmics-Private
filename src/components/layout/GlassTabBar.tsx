@@ -31,7 +31,7 @@ export function GlassTabBar() {
         'fixed inset-x-0 bottom-0 z-30 flex items-center border-t border-border/70 bg-background/95 backdrop-blur-md transition-transform duration-200 ease-out lg:hidden',
         hidden ? 'pointer-events-none translate-y-full' : 'translate-y-0'
       )}
-      style={{ paddingBottom: 'max(10px, var(--safe-bottom))' }}
+      style={{ paddingBottom: 'max(4px, var(--safe-bottom))' }}
     >
       {TABS.map(({ href, label, icon: Icon }) => {
         const active = isActive(pathname, href)
@@ -42,7 +42,7 @@ export function GlassTabBar() {
             onClick={() => { if (!active) haptic('light') }}
             aria-current={active ? 'page' : undefined}
             className={cn(
-              'flex flex-1 flex-col items-center gap-0.5 py-2.5 transition-colors active:scale-95',
+              'flex flex-1 flex-col items-center gap-0.5 pt-2.5 pb-1.5 transition-colors active:scale-95',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-xl',
               active ? 'text-accent-text' : 'text-muted-foreground'
             )}

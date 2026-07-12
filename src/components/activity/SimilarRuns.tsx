@@ -1,6 +1,5 @@
 'use client'
 
-import { Repeat } from 'lucide-react'
 import { Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import type { SimilarRun, SimilarRunsData } from '@/application/usecases/GetSimilarRuns'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -104,8 +103,7 @@ export function SimilarRuns({ data }: { data: SimilarRunsData }) {
   return (
     <GlassSurface variant="card" className="p-5">
       <div className="mb-1 flex items-center justify-between gap-2">
-        <h3 className="flex items-center gap-1.5 text-sm font-semibold text-foreground/80">
-          <Repeat size={14} className="text-accent-text" />
+        <h3 className="text-sm font-semibold text-foreground/80">
           {s.title}
         </h3>
         <span className="rounded-full bg-accent-subtle px-2.5 py-0.5 text-xs font-semibold text-accent-text">

@@ -1,4 +1,3 @@
-import { ShieldAlert } from 'lucide-react'
 import type { LoadRiskPanel as LoadRiskPanelData, RiskZone } from '@/application/usecases/GetLoadRiskPanel'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { StatusPill, type StatusTone } from '@/components/ui/StatusPill'
@@ -43,8 +42,7 @@ export function LoadRiskPanel({ data }: { data: LoadRiskPanelData }) {
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-foreground/80">
-        <ShieldAlert size={16} className="text-violet-500 dark:text-violet-400" />
+      <h2 className="mb-4 text-sm font-semibold text-foreground/80">
         {s.title}
       </h2>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
