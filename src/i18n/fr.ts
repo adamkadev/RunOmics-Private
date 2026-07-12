@@ -348,7 +348,7 @@ export const fr = {
       readiness: {
         go: {
           headline: 'Tu es frais. Bon jour pour de la qualité.',
-          body: (tsb: string) => `La forme est à ${tsb} et la fatigue baisse - la séance prévue est un feu vert.`,
+          body: () => `La fatigue baisse - la séance prévue est un feu vert.`,
         },
         caution: {
           headline: 'Journée neutre. Reste modéré.',
@@ -356,7 +356,7 @@ export const fr = {
         },
         hold: {
           headline: 'Lève le pied aujourd’hui.',
-          body: (tsb: string) => `La forme est à ${tsb} et la fatigue est élevée - une journée facile ou du repos aiderait.`,
+          body: () => `La fatigue est élevée - une journée facile ou du repos aiderait.`,
         },
       },
       sessionCta: 'Démarrer',
@@ -669,6 +669,12 @@ export const fr = {
     monthGroup: (count: number, km: number) => `${count} séance${count > 1 ? 's' : ''} · ${km} km`,
     thisWeek: 'Cette semaine',
     weekGroup: (km: number, runs: number, easyPct: number, hardPct: number) => `${km} km · ${runs} sortie${runs > 1 ? 's' : ''} · ${easyPct}/${hardPct} F/D`,
+    weekStat: {
+      km: 'km',
+      runs: 'sorties',
+      easyHard: 'F/D',
+    },
+    weekGroupCompact: (runs: number, km: number) => `${runs} sortie${runs > 1 ? 's' : ''} · ${km} km`,
     sort: {
       label: 'Trier',
       date: 'Date',

@@ -59,13 +59,13 @@ function formatSyncedAgo(lastSyncedAt: string): string {
 
 // Rules layer over the already-computed status/load - copy is keyed by the
 // same tone as the pastille, so the verdict sentence never contradicts it.
-function readinessCopy(status: TrainingStatus, tone: ReadinessTone, tsb: string): { headline: string; body: string } {
+function readinessCopy(status: TrainingStatus, tone: ReadinessTone): { headline: string; body: string } {
   const r = t.dashboard.todayHero.readiness
   switch (tone) {
     case 'go':
-      return { headline: r.go.headline, body: r.go.body(tsb) }
+      return { headline: r.go.headline, body: r.go.body() }
     case 'hold':
-      return { headline: r.hold.headline, body: r.hold.body(tsb) }
+      return { headline: r.hold.headline, body: r.hold.body() }
     case 'caution':
       return { headline: r.caution.headline, body: r.caution.body(t.trainingStatus.loadTrend[status.loadTrend]) }
   }
@@ -82,7 +82,7 @@ export function TodayHero({ status, plannedWorkout, nextRace, lastSyncedAt }: Pr
   const tone = status ? verdictTone(status.tsb, status.atlDelta) : null
   const toneHex = tone ? TONE_HEX[tone] : TONE_HEX.go
   const tsbLabel = status ? `${status.tsb >= 0 ? '+' : ''}${status.tsb.toFixed(1)}` : null
-  const verdict = status && tone && tsbLabel ? readinessCopy(status, tone, tsbLabel) : null
+  const verdict = status && tone ? readinessCopy(status, tone) : null
   const formLine = tsbLabel ? `${t.dashboard.trainingLoad.form} ${tsbLabel} · ${s.moodByTone[tone ?? 'go']}` : null
   const PlannedWorkoutIcon: LucideIcon = plannedWorkout?.type
     ? ACTIVITY_TYPE_ICONS[plannedWorkout.type as ActivityType]

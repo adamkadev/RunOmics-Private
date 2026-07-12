@@ -354,7 +354,7 @@ export const en = {
       readiness: {
         go: {
           headline: "You're fresh. Good day for quality.",
-          body: (tsb: string) => `Form is ${tsb} and fatigue is trending down - the planned session is a go.`,
+          body: () => `Fatigue is trending down - the planned session is a go.`,
         },
         caution: {
           headline: 'Steady day. Keep it moderate.',
@@ -362,7 +362,7 @@ export const en = {
         },
         hold: {
           headline: 'Dial it back today.',
-          body: (tsb: string) => `Form is ${tsb} and fatigue is elevated - an easy day or rest would help.`,
+          body: () => `Fatigue is elevated - an easy day or rest would help.`,
         },
       },
       sessionCta: 'Start',
@@ -675,6 +675,12 @@ export const en = {
     monthGroup: (count: number, km: number) => `${count} session${count !== 1 ? 's' : ''} · ${km} km`,
     thisWeek: 'This week',
     weekGroup: (km: number, runs: number, easyPct: number, hardPct: number) => `${km} km · ${runs} run${runs !== 1 ? 's' : ''} · ${easyPct}/${hardPct} E/H`,
+    weekStat: {
+      km: 'km',
+      runs: 'runs',
+      easyHard: 'E/H',
+    },
+    weekGroupCompact: (runs: number, km: number) => `${runs} run${runs !== 1 ? 's' : ''} · ${km} km`,
     sort: {
       label: 'Sort',
       date: 'Date',
