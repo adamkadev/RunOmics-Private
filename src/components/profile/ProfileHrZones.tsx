@@ -1,6 +1,5 @@
 'use client'
 
-import { RotateCcw } from 'lucide-react'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { EditableNumber } from '@/components/ui/EditableNumber'
 import type { AthleteProfile } from '@/infrastructure/repositories/FirestoreConfigRepository'
@@ -57,10 +56,10 @@ export function ProfileHrZones({ athlete, onSave }: Props) {
         {zones.map(({ zone, min, max, editableIndex }) => (
           <div key={zone} className="flex items-center gap-2.5">
             <span className={`h-2 w-2 shrink-0 rounded-full ${ZONE_COLOR_CLASSES[zone]?.bg ?? ''}`} aria-hidden="true" />
-            <span className="w-28 shrink-0 text-xs font-semibold text-foreground/80">
+            <span className={`w-28 shrink-0 text-xs font-semibold ${ZONE_COLOR_CLASSES[zone]?.text ?? 'text-foreground/80'}`}>
               {t.activity.zones.labels[zone]}
             </span>
-            <span className="flex-1 text-xs text-muted-foreground">
+            <span className="flex-1 text-right text-xs tabular-nums text-muted-foreground">
               {zone === 1 && `< ${max} bpm`}
 
               {zone !== 1 && zone !== 5 && (
@@ -85,10 +84,9 @@ export function ProfileHrZones({ athlete, onSave }: Props) {
       <button
         type="button"
         onClick={() => onSave({ hrZoneBoundsBpm: defaultBounds(lthr) })}
-        className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-accent-text active:opacity-60"
+        className="mt-3 text-xs font-semibold text-accent-text active:opacity-60"
       >
-        <RotateCcw size={16} />
-        {t.profile.hrZones.recalculate}
+        {t.profile.hrZones.recalculate} ›
       </button>
     </GlassSurface>
   )
