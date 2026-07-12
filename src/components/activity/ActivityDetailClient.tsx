@@ -22,7 +22,6 @@ import { GlassSurface } from '@/components/ui/GlassSurface'
 import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
-import { STATUS } from '@/lib/statusColors'
 
 interface Props {
   activity: Activity
@@ -32,11 +31,6 @@ interface Props {
 
 type TabId = 'overview' | 'splits' | 'charts' | 'dynamics'
 
-function rpeToneClass(rpe: number): string {
-  if (rpe <= 4) return STATUS.success.text
-  if (rpe <= 6) return 'text-foreground'
-  return STATUS.warning.text
-}
 
 // The primary stat row is capped at the 4 numbers the mockup specifies
 // (distance/time/pace/HR) - everything else becomes secondary stats inside
@@ -70,44 +64,10 @@ function buildPrimaryStats(activity: Activity): Metric[] {
   return stats
 }
 
-function buildSecondaryStats(activity: Activity): Metric[] {
-  const stats: Metric[] = []
-
-  if (activity.calories != null) {
-    stats.push({
-      value: `${activity.calories}`,
-      label: t.units.kcal,
-    })
-  }
-
-  if (activity.elevationGain !== null) {
-    stats.push({
-      value: `${activity.elevationGain > 0 ? '+' : '-'}${Math.abs(activity.elevationGain)}`,
-      label: t.units.elevation,
-    })
-  }
-
-  if (activity.cadenceSpm != null) {
-    stats.push({
-      value: `${Math.round(activity.cadenceSpm)}`,
-      label: t.units.spm,
-    })
-  }
-
-  stats.push({
-    value: activity.rpe !== null ? t.activity.stats.rpeValue(activity.rpe) : t.activity.stats.rpe,
-    label: activity.rpe !== null ? (t.rpeLabels[activity.rpe] ?? '-') : t.activity.stats.na,
-    // RPE semantics (ACTIVITY_DETAIL_TASKS.md C4): easy (1-4) accent, moderate (5-6) neutral, hard (7-10) amber.
-    valueClassName: activity.rpe !== null ? rpeToneClass(activity.rpe) : undefined,
-  })
-
-  return stats
-}
 
 export function ActivityDetailClient({ activity, qualifiedEfforts }: Props) {
   const [tab, setTab] = useState<TabId>('overview')
   const stats = buildPrimaryStats(activity)
-  const secondaryStats = buildSecondaryStats(activity)
   const hasSecondaryCharts = !!(activity.elevationProfile || activity.paceSamples || activity.cadenceSamples)
   const hasCharts = hasSecondaryCharts || !!activity.hrSamples
   const hasSplits = !!(activity.splits && activity.splits.length > 0)
@@ -175,11 +135,6 @@ export function ActivityDetailClient({ activity, qualifiedEfforts }: Props) {
 
       {tab === 'overview' && (
         <>
-          {secondaryStats.length > 0 && (
-            <GlassSurface variant="card" className="p-5">
-              <MetricGrid metrics={secondaryStats} className="grid-cols-4" />
-            </GlassSurface>
-          )}
           {activity.hrZones.length > 0 && (
             <ZoneBar
               hrZones={activity.hrZones}

@@ -34,7 +34,7 @@ function Metric({
   return (
     <div>
       <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className="mt-0.5 flex items-center gap-1">
+      <div className="mt-0.5 flex items-center justify-center gap-1">
         <span className={cn('text-lg font-semibold tabular-nums', valueClassName ?? 'text-foreground')}>{value}</span>
         {trailing}
       </div>
@@ -113,7 +113,7 @@ export function TrainingMetricsCard({ status, vo2max, vo2maxTrend }: Props) {
   const fBandStyle = FITNESS_BAND_STYLE[fBand]
 
   return (
-    <div className="grid grid-cols-3 gap-3">
+    <div className="grid grid-cols-3 gap-3 text-center">
       <GlassSurface variant="card" className="p-4">
         <Metric
           label={t.dashboard.vo2maxChart.title}

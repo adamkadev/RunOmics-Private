@@ -813,9 +813,8 @@ export const fr = {
       rangeOpen: (min: number) => `>${min} bpm`,
     },
     trainingEffect: {
-      title: 'Training Effect',
-      aerobic: 'Aérobie',
-      anaerobic: 'Anaérobie',
+      aerobic: 'Effet aérobie',
+      anaerobic: 'Effet anaérobie',
       levels: {
         noBenefit: 'Aucun bénéfice',
         minor: 'Mineur',

@@ -3,7 +3,6 @@ import { getLastSyncedAt } from '@/application/usecases/GetSyncStatus'
 import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
 import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { getLatestVO2max, getVO2maxTrend } from '@/application/usecases/GetVO2maxHistory'
-import { getConsistencyScore } from '@/application/usecases/GetConsistencyScore'
 import { getHeatmapData } from '@/application/usecases/GetHeatmapData'
 import { getRecords, getQualifiedEffortsByActivityId, getMostRecentRecord } from '@/application/usecases/GetRecords'
 import { getShoeStats } from '@/application/usecases/GetShoeStats'
@@ -16,7 +15,6 @@ import { getCurrentWeeklyGoal } from '@/application/usecases/GetGoalsData'
 import { DashboardCharts } from '@/components/dashboard/DashboardCharts'
 import { RecentActivities } from '@/components/dashboard/RecentActivities'
 import { ActivityHeatmap } from '@/components/dashboard/ActivityHeatmap'
-import { ConsistencyCard } from '@/components/dashboard/ConsistencyCard'
 import { DashboardHighlights } from '@/components/dashboard/DashboardHighlights'
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting'
 import { TodayHero } from '@/components/dashboard/TodayHero'
@@ -25,7 +23,6 @@ import { WeeklyStreakCard } from '@/components/dashboard/WeeklyStreakCard'
 import { CelebrationOverlay } from '@/components/dashboard/CelebrationOverlay'
 import { FirstLaunchHint } from '@/components/dashboard/FirstLaunchHint'
 import { RaceCockpit } from '@/components/dashboard/RaceCockpit'
-import { WeeklyDigest } from '@/components/dashboard/WeeklyDigest'
 
 // Safety net: data is also revalidated on demand by /api/internal/revalidate
 // when the pbs/athlete Firestore collections are written.
@@ -38,7 +35,6 @@ export default async function DashboardPage() {
   const trainingStatus = await getTrainingStatus()
   const vo2max = getLatestVO2max()
   const vo2maxTrend = getVO2maxTrend()
-  const consistencyScore = getConsistencyScore()
   const heatmapDays = getHeatmapData()
   const records = await getRecords()
   const qualifiedEffortsByActivityId = getQualifiedEffortsByActivityId(records)

@@ -1,4 +1,3 @@
-import { GlassSurface } from '@/components/ui/GlassSurface'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -27,24 +26,26 @@ function TETile({ value, label }: { value: number; label: string }) {
   return (
     <div className="rounded-xl border border-foreground/[0.08] bg-foreground/[0.04] p-3.5 text-center">
       <p className="text-xs font-medium text-muted-foreground">{label}</p>
-      <p className="mt-1 text-2xl font-extrabold tabular-nums text-foreground">{value.toFixed(1)}</p>
-      <p className={cn('mt-0.5 text-xs font-semibold', level.textClass)}>{level.label}</p>
+      <p className={cn('mt-1 text-base font-extrabold tabular-nums', level.textClass)}>{value.toFixed(1)} · {level.label}</p>
     </div>
   )
 }
 
 export function TrainingEffect({ aer, ana }: Props) {
-  if (aer == null && ana == null) return null
+  const effectsCount = [aer, ana].filter((v) => v != null && v !== 0).length
+  if (effectsCount === 0) return null
 
   return (
-    <GlassSurface variant="card" className="p-5">
-      <h3 className="mb-4 text-sm font-semibold text-foreground/80">
-        {t.activity.trainingEffect.title}
-      </h3>
-      <div className="grid grid-cols-2 gap-3">
-        {aer != null && <TETile value={aer} label={t.activity.trainingEffect.aerobic} />}
-        {ana != null && <TETile value={ana} label={t.activity.trainingEffect.anaerobic} />}
-      </div>
-    </GlassSurface>
+    <div className={cn(
+      'grid gap-3',
+      effectsCount === 1 ? 'grid-cols-1' : 'grid-cols-2'
+    )}>
+      {aer != null && aer !== 0 && (
+        <TETile value={aer} label={t.activity.trainingEffect.aerobic} />
+      )}
+      {ana != null && ana !== 0 && (
+        <TETile value={ana} label={t.activity.trainingEffect.anaerobic} />
+      )}
+    </div>
   )
 }
