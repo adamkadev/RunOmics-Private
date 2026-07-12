@@ -51,11 +51,8 @@ export function ProfileHero({ hero, displayName, onSaveName }: Props) {
 
   return (
     <div
-      className="flex items-center gap-3.5 rounded-[20px] border p-4"
-      style={{
-        background: 'linear-gradient(155deg, rgba(30,215,135,0.16), rgba(30,215,135,0.03))',
-        borderColor: 'rgba(30,215,135,0.35)',
-      }}
+      className="flex items-center gap-3.5 rounded-[20px] border border-accent/30 p-4"
+      style={{ background: 'var(--hero-gradient)' }}
     >
       <div className="relative shrink-0">
         <div
