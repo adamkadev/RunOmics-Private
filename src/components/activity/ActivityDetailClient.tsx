@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import type { Activity } from '@/domain/activity/types'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
-import { trimp, type HrBounds } from '@/domain/training/trimp'
+import type { HrBounds } from '@/domain/training/trimp'
 import { heatAdjustmentSecondsPerKm, shouldAnnotateHeat } from '@/domain/training/heatAdjustment'
 import { ActivityMapClient } from './ActivityMapClient'
 import { NoRouteMap } from './ActivityMap'
@@ -104,9 +104,8 @@ function buildSecondaryStats(activity: Activity): Metric[] {
   return stats
 }
 
-export function ActivityDetailClient({ activity, hrBounds, qualifiedEfforts }: Props) {
+export function ActivityDetailClient({ activity, qualifiedEfforts }: Props) {
   const [tab, setTab] = useState<TabId>('overview')
-  const sessionTrimp = trimp(activity, hrBounds)
   const stats = buildPrimaryStats(activity)
   const secondaryStats = buildSecondaryStats(activity)
   const hasSecondaryCharts = !!(activity.elevationProfile || activity.paceSamples || activity.cadenceSamples)
@@ -147,22 +146,15 @@ export function ActivityDetailClient({ activity, hrBounds, qualifiedEfforts }: P
 
       <RunVerdict activity={activity} heatAdjustSeconds={heatAdjustSeconds} />
 
-      <GlassSurface variant="card" className="p-5">
-        <MetricGrid metrics={stats} className="grid-cols-4" />
-        {sessionTrimp > 0 && (
-          <div className="mt-3 border-t border-foreground/[0.07] pt-3 text-xs text-subtle">
-            <p>{t.activity.loadNote(Math.round(sessionTrimp / 7))}</p>
-          </div>
-        )}
-      </GlassSurface>
+      <MetricGrid metrics={stats} className="grid-cols-4 px-1 text-center" />
 
       {tabs.length > 1 && (
         <GlassSurface
           as="div"
-          variant="nav"
+          variant="card"
           role="tablist"
           aria-label={t.activity.tabs.groupLabel}
-          className="sticky top-[max(var(--safe-top),8px)] z-10 flex gap-1 overflow-x-auto rounded-2xl mb-1 pr-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="sticky top-[max(var(--safe-top),8px)] z-10 flex gap-1 overflow-x-auto rounded-xl p-1 mb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {tabs.map((item) => (
             <button
@@ -171,12 +163,11 @@ export function ActivityDetailClient({ activity, hrBounds, qualifiedEfforts }: P
               aria-selected={tab === item.id}
               onClick={() => setTab(item.id)}
               className={cn(
-                'relative min-w-fit flex-1 whitespace-nowrap px-2 py-3 text-sm font-medium transition-colors',
-                tab === item.id ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
+                'min-w-fit flex-1 whitespace-nowrap rounded-lg py-2.5 text-sm font-semibold transition-colors',
+                tab === item.id ? 'bg-accent text-accent-foreground' : 'text-subtle hover:text-foreground',
               )}
             >
               {item.label}
-              {tab === item.id && <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-t-full bg-accent" />}
             </button>
           ))}
         </GlassSurface>
@@ -189,7 +180,13 @@ export function ActivityDetailClient({ activity, hrBounds, qualifiedEfforts }: P
               <MetricGrid metrics={secondaryStats} className="grid-cols-4" />
             </GlassSurface>
           )}
-          {activity.hrZones.length > 0 && <ZoneBar hrZones={activity.hrZones} />}
+          {activity.hrZones.length > 0 && (
+            <ZoneBar
+              hrZones={activity.hrZones}
+              avgHr={activity.avgHeartRate}
+              maxHr={activity.hrSamples ? Math.max(...activity.hrSamples) : null}
+            />
+          )}
           <TrainingEffect aer={activity.aerTrainingEffect} ana={activity.anaTrainingEffect} />
           {activity.bestEfforts && (
             <BestEfforts bestEfforts={activity.bestEfforts} qualifiedEfforts={qualifiedEfforts} />

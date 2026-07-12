@@ -1,7 +1,6 @@
 'use client'
 
 import type { HrZone } from '@/domain/activity/types'
-import { formatDuration } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ZONE_COLOR_CLASSES } from '@/lib/colors'
 import { cn } from '@/lib/utils'
@@ -29,47 +28,36 @@ interface ZoneRowProps {
 function ZoneRow({ zone, active, onSelect }: ZoneRowProps) {
   const cfg = ZONE_CONFIG[zone.zone]
   if (!cfg) return null
-  const bpmLabel = zone.maxBpm
-    ? t.activity.zones.range(zone.minBpm, zone.maxBpm)
-    : t.activity.zones.rangeOpen(zone.minBpm)
   return (
     <button
       type="button"
       onClick={() => onSelect(zone.zone)}
       className={cn(
-        'w-full rounded-lg px-2 py-1.5 text-left transition-colors',
+        'flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors',
         active ? 'bg-foreground/[0.08]' : 'hover:bg-foreground/[0.04]'
       )}
     >
-      <div className="space-y-1">
-        <div className="flex items-center justify-between text-xs">
-          <div className="flex items-center gap-2">
-            <span className={`font-medium ${cfg.textClass}`}>{cfg.label}</span>
-            <span className="text-subtle">{bpmLabel}</span>
-          </div>
-          <div className="flex items-center gap-2 tabular-nums">
-            <span className="text-muted-foreground">{formatDuration(zone.seconds)}</span>
-            <span className="w-10 text-right font-semibold text-foreground">{zone.percent}%</span>
-          </div>
-        </div>
-        <div className={`h-2 w-full overflow-hidden rounded-full ${TRACK_CLASS}`}>
-          <div
-            className={cn('h-full rounded-full transition-all', cfg.barClass)}
-            style={{ width: `${zone.percent}%` }}
-          />
-        </div>
+      <span className={cn('w-[74px] shrink-0 text-left text-xs font-medium', cfg.textClass)}>{cfg.label}</span>
+      <div className={`h-2 flex-1 overflow-hidden rounded-full ${TRACK_CLASS}`}>
+        <div
+          className={cn('h-full rounded-full transition-all', cfg.barClass)}
+          style={{ width: `${zone.percent}%` }}
+        />
       </div>
+      <span className="w-9 shrink-0 text-right text-xs font-semibold tabular-nums text-foreground">{zone.percent}%</span>
     </button>
   )
 }
 
 interface Props {
   hrZones: HrZone[]
+  avgHr?: number | null
+  maxHr?: number | null
   activeZone?: number | null
   onZoneSelect?: (zone: number) => void
 }
 
-export function ZoneBar({ hrZones, activeZone, onZoneSelect }: Props) {
+export function ZoneBar({ hrZones, avgHr, maxHr, activeZone, onZoneSelect }: Props) {
   if (!hrZones || hrZones.length === 0) {
     return (
       <GlassSurface variant="card" className="flex h-full items-center justify-center p-5">
@@ -83,9 +71,21 @@ export function ZoneBar({ hrZones, activeZone, onZoneSelect }: Props) {
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <h3 className="mb-4 text-sm font-semibold text-foreground/80">
-        {t.activity.zones.title}
-      </h3>
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-foreground/80">{t.activity.zones.title}</h3>
+        {(avgHr || maxHr) && (
+          <span className="text-xs text-subtle">
+            {avgHr && (
+              <>{t.activity.charts.avg} <span className={`font-semibold ${ZONE_COLOR_CLASSES[5]?.text}`}>{avgHr}</span></>
+            )}
+            {avgHr && maxHr && ' · '}
+            {maxHr && (
+              <>{t.activity.charts.max} <span className={`font-semibold ${ZONE_COLOR_CLASSES[5]?.text}`}>{maxHr}</span></>
+            )}
+            {' '}{t.units.bpm}
+          </span>
+        )}
+      </div>
 
       <div className="space-y-1">
         {sorted.map((z) => (
