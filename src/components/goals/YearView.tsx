@@ -138,7 +138,7 @@ export function YearView({ yearData, onSaveGoal }: Props) {
       {nextRaceSpotlight && <NextRaceSpotlight spotlight={nextRaceSpotlight} />}
 
       {goals && goals.targets.length > 0 && (
-        <section className="space-y-3 text-center justify-text  ">
+        <section className="space-y-3">
           <div className="grid grid-cols-4 gap-2">
             {goals.targets.map((target) => {
               const pb = pbs.find((p) => p.entry.distance === target.distance)
@@ -149,19 +149,17 @@ export function YearView({ yearData, onSaveGoal }: Props) {
                 <GlassSurface
                   key={target.distance}
                   variant="card"
-                  className={cn('rounded-card-sm p-3', achieved && 'border-emerald-500/30 bg-emerald-500/[0.1]')}
-                  style={achieved ? { background: 'rgba(30,215,135,0.1)', borderColor: 'rgba(30,215,135,0.3)' } : undefined}
+                  className="rounded-card-sm p-3 text-center"
+                  style={achieved ? { background: 'rgba(30,215,135,0.18)', borderColor: 'rgba(30,215,135,0.4)' } : undefined}
                 >
-                  <div className="flex items-center justify-center gap-1">
-                    <p className="text-xs font-semibold text-subtle">{shortDist(target.distance)}</p>
-                    {achieved && <Check size={13} strokeWidth={3} className={STATUS.success.text} />}
-                  </div>
-                  <p className="mt-1 text-base font-bold text-foreground">
+                  <p className="text-xs font-semibold text-subtle">{shortDist(target.distance)}</p>
+                  <p className={cn('mt-1 flex items-center justify-center gap-1 text-base font-bold', achieved ? STATUS.success.text : 'text-foreground')}>
                     {target.targetSeconds === null ? (
                       <span className="text-sm font-normal text-subtle">{t.goals.noTarget}</span>
                     ) : (
                       formatDurationShort(target.targetSeconds)
                     )}
+                    {achieved && <Check size={13} strokeWidth={3} />}
                   </p>
                 </GlassSurface>
               )
