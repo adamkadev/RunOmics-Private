@@ -57,6 +57,7 @@ export function RpeLoadCorrelationChart({ data }: Props) {
 
   const dropPer10 = reg ? Math.round(reg.slope * -10 * 10) / 10 : 0
   const isSignal = reg !== null && dropPer10 > 0.3
+  const effectLevel = dropPer10 <= 0.2 ? 'little' : dropPer10 <= 0.5 ? 'medium' : 'big'
   const ex = t.analytics.charts.rpeLoadCorrelation.explains
   const summary = `${t.analytics.charts.rpeLoadCorrelation.title}${
     reg ? `: ${isSignal ? ex.harder(dropPer10) : ex.stable}` : ''
@@ -122,7 +123,7 @@ export function RpeLoadCorrelationChart({ data }: Props) {
   return (
     <LowSignalChip
       title={t.analytics.charts.rpeLoadCorrelation.title}
-      summary={isSignal ? ex.harder(dropPer10) : ex.stable}
+      summary={t.analytics.effectLevel[effectLevel]}
     >
       {chart}
     </LowSignalChip>

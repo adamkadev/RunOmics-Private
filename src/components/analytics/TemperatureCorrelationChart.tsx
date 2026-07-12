@@ -56,6 +56,7 @@ export function TemperatureCorrelationChart({ data }: Props) {
 
   const slopePer10 = reg ? Math.round(reg.slope * 10) : 0
   const isSignal = reg !== null && slopePer10 > 3
+  const effectLevel = slopePer10 <= 2 ? 'little' : slopePer10 <= 5 ? 'medium' : 'big'
   const ex = t.analytics.charts.temperatureCorrelation.explains
   const summary = `${t.analytics.charts.temperatureCorrelation.title}${
     reg ? `: ${isSignal ? ex.slowing(slopePer10) : ex.stable}` : ''
@@ -122,7 +123,7 @@ export function TemperatureCorrelationChart({ data }: Props) {
   return (
     <LowSignalChip
       title={t.analytics.charts.temperatureCorrelation.title}
-      summary={isSignal ? ex.slowing(slopePer10) : ex.stable}
+      summary={t.analytics.effectLevel[effectLevel]}
     >
       {chart}
     </LowSignalChip>

@@ -255,7 +255,7 @@ export function AnalyticsClient({
 
   return (
     <div className="space-y-4">
-      <GlassSurface as="div" variant="nav" className="space-y-2.5 rounded-2xl px-5 py-3">
+      <div className="space-y-2.5 px-1">
         <h1 className="text-title1 font-extrabold leading-[1.1] tracking-tight text-foreground">
           {t.analytics.title}
         </h1>
@@ -274,7 +274,7 @@ export function AnalyticsClient({
           yearGroupLabel={t.analytics.yearGroupLabel}
           windowGroupLabel={t.analytics.windowGroupLabel}
         />
-      </GlassSurface>
+      </div>
 
       {seasonHeadline && <SeasonHeadline data={seasonHeadline} />}
 
@@ -298,10 +298,10 @@ export function AnalyticsClient({
         <>
           <GlassSurface
             as="div"
-            variant="nav"
+            variant="card"
             role="tablist"
             aria-label={t.analytics.title}
-            className="sticky top-[max(var(--safe-top),8px)] z-10 flex gap-1 overflow-x-auto rounded-2xl mb-1 pr-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="sticky top-[max(var(--safe-top),8px)] z-10 flex gap-1 overflow-x-auto rounded-xl p-1 mb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {visibleTabs.map((item) => (
               <button
@@ -310,16 +310,13 @@ export function AnalyticsClient({
                 aria-selected={tab === item.id}
                 onClick={() => selectTab(item.id)}
                 className={cn(
-                  'relative min-w-fit flex-1 whitespace-nowrap px-2 py-3 text-sm font-medium transition-colors',
+                  'min-w-fit flex-1 whitespace-nowrap rounded-lg py-2.5 text-sm font-semibold transition-colors',
                   tab === item.id
-                    ? 'text-foreground'
-                    : 'text-muted-foreground hover:text-foreground',
+                    ? 'bg-accent text-accent-foreground'
+                    : 'text-subtle hover:text-foreground',
                 )}
               >
                 {item.label}
-                {tab === item.id && (
-                  <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-t-full bg-accent" />
-                )}
               </button>
             ))}
           </GlassSurface>
