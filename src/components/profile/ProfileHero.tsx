@@ -4,21 +4,10 @@ import { useRef, useState } from 'react'
 import Link from 'next/link'
 import { User, Pencil, Settings } from 'lucide-react'
 import type { ProfileHero as ProfileHeroData } from '@/application/usecases/GetProfileData'
-import type { RankTier } from '@/domain/athlete/rank'
 import { ATHLETE_BIRTHDATE, ATHLETE_SEX } from '@/domain/athlete/constants'
 import { ageFromBirthdate, vo2maxTopPercent } from '@/domain/athlete/vo2maxNorms'
-import { cn } from '@/lib/utils'
 import { initials } from '@/lib/formatters'
 import { t } from '@/i18n'
-
-// Gradient + glow scale up with the tier so S-rank actually feels earned.
-const RANK_BADGE_CLASS: Record<RankTier, string> = {
-  S: 'bg-gradient-to-br from-amber-200 via-amber-300 to-amber-500 text-amber-950 shadow-[0_0_10px_2px_rgba(245,158,11,0.45)]',
-  A: 'bg-gradient-to-br from-emerald-300 via-emerald-400 to-emerald-600 text-emerald-950 shadow-[0_0_10px_2px_rgba(16,185,129,0.4)]',
-  B: 'bg-gradient-to-br from-sky-300 via-sky-400 to-sky-600 text-sky-950 shadow-sm',
-  C: 'bg-gradient-to-br from-zinc-300 via-zinc-400 to-zinc-500 text-zinc-900 shadow-sm',
-  D: 'bg-gradient-to-br from-zinc-200 via-zinc-300 to-zinc-400 text-zinc-700 shadow-sm',
-}
 
 interface Props {
   hero: ProfileHeroData
@@ -54,25 +43,12 @@ export function ProfileHero({ hero, displayName, onSaveName }: Props) {
       className="flex items-center gap-3.5 rounded-[20px] border border-accent/30 p-4"
       style={{ background: 'var(--hero-gradient)' }}
     >
-      <div className="relative shrink-0">
-        <div
-          className="flex h-[52px] w-[52px] items-center justify-center rounded-full text-lg font-bold text-accent-foreground"
-          style={{ background: 'linear-gradient(140deg, var(--accent), color-mix(in srgb, var(--accent) 74%, #000))' }}
-          aria-hidden="true"
-        >
-          {displayName ? initials(displayName) : <User size={20} />}
-        </div>
-        {hero.rank && (
-          <span
-            aria-hidden="true"
-            className={cn(
-              'absolute -bottom-1 -right-1.5 rounded-full border-2 border-background px-1.5 py-px text-[13px] font-black leading-tight',
-              RANK_BADGE_CLASS[hero.rank.tier]
-            )}
-          >
-            {hero.rank.tier}
-          </span>
-        )}
+      <div
+        className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full text-lg font-bold text-accent-foreground"
+        style={{ background: 'linear-gradient(140deg, var(--accent), color-mix(in srgb, var(--accent) 74%, #000))' }}
+        aria-hidden="true"
+      >
+        {displayName ? initials(displayName) : <User size={20} />}
       </div>
 
       <div className="min-w-0 flex-1">

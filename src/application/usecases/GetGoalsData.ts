@@ -72,6 +72,8 @@ export interface NextRaceSpotlight {
   daysUntil: number
   predictedSeconds: number | null
   gapSeconds: number | null
+  prSeconds: number | null
+  prDate: string | null
 }
 
 export interface YearData {
@@ -83,6 +85,7 @@ export interface YearData {
   projection: GoalProjection | null
   monthlyGoals: MonthGoal[]
   nextRaceSpotlight: NextRaceSpotlight | null
+  predictions: RacePrediction[]
 }
 
 export interface GoalTargetOutcome {
@@ -183,7 +186,9 @@ export function computeMonthlyGoals(activities: Activity[], year: number, goals:
 }
 
 // Predicted time comes from the Riegel race-prediction model (GetRacePredictions),
-// matched to the race's distance via the same DISTANCE_KEY map GetRecords uses for PBs.
+// matched to the race's distance via the same DISTANCE_KEY map GetRecords uses for PBs,
+// then capped at the PR already set at that exact distance (never predict a race slower
+// than a result the athlete has already run).
 export function computeNextRaceSpotlight(
   upcomingRaces: UpcomingRace[],
   predictions: RacePrediction[],
@@ -197,13 +202,26 @@ export function computeNextRaceSpotlight(
   )
 
   const predictionKey = DISTANCE_KEY[race.distance]
-  const predictedSeconds = predictionKey
-    ? predictions.find((p) => p.key === predictionKey)?.predictedSeconds ?? null
-    : null
+  const prediction = predictionKey ? predictions.find((p) => p.key === predictionKey) ?? null : null
+
+  // Never predict slower than a PR already proven at this exact distance -
+  // the Riegel model can undershoot when it leans on a less-specific source distance.
+  const predictedSeconds =
+    prediction?.predictedSeconds != null && prediction.actualSeconds != null
+      ? Math.min(prediction.predictedSeconds, prediction.actualSeconds)
+      : prediction?.predictedSeconds ?? null
+
   const gapSeconds =
     predictedSeconds !== null && race.targetSeconds ? predictedSeconds - race.targetSeconds : null
 
-  return { race, daysUntil, predictedSeconds, gapSeconds }
+  return {
+    race,
+    daysUntil,
+    predictedSeconds,
+    gapSeconds,
+    prSeconds: prediction?.actualSeconds ?? null,
+    prDate: prediction?.actualDate ?? null,
+  }
 }
 
 // A year is only included in the history if it has goals set.
@@ -322,7 +340,17 @@ export async function getGoalsPageData(): Promise<GoalsPageData> {
     const nextRaceSpotlight =
       year === currentYear ? computeNextRaceSpotlight(upcomingRaces, predictions, today) : null
 
-    byYear[year] = { year, totalDistanceKm, goals, pbs, upcomingRaces, projection, monthlyGoals, nextRaceSpotlight }
+    byYear[year] = {
+      year,
+      totalDistanceKm,
+      goals,
+      pbs,
+      upcomingRaces,
+      projection,
+      monthlyGoals,
+      nextRaceSpotlight,
+      predictions: year === currentYear ? predictions : [],
+    }
   }
 
   const history = allYears

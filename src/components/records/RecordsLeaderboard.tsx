@@ -7,7 +7,6 @@ import type { RacePrediction } from '@/application/usecases/GetRacePredictions'
 import { formatDuration, formatDistance, formatPace } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { STATUS } from '@/lib/statusColors'
-import { Badge } from '@/components/ui/Card'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { Pill } from '@/components/ui/Pill'
 import { t } from '@/i18n'
@@ -138,19 +137,9 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null, 
 
               const card = (
                 <>
-                  <div className="mb-3 flex items-center justify-between gap-1">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-subtle">
-                      {r.label}
-                    </p>
-                    <div className="flex items-center gap-1">
-                      {r.key === mostRecentKey && (
-                        <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400">
-                          {t.records.mostRecent}
-                        </Badge>
-                      )}
-                      {r.official && <span className="text-base text-amber-500">★</span>}
-                    </div>
-                  </div>
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-subtle">
+                    {r.label}
+                  </p>
                   <p className="truncate text-title1 font-extrabold tracking-tight text-foreground">
                     {mainStat}
                   </p>
@@ -158,6 +147,8 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null, 
                     {r.distanceKm != null && <span>{formatDuration(r.seconds)} · </span>}
                     {r.paceSecPerKm !== null && formatPace(r.paceSecPerKm)}
                     {r.date && <span> · {shortDate(r.date)}</span>}
+                    {r.key === mostRecentKey && <span> · {t.records.mostRecent}</span>}
+                    {r.official && <span> · {t.records.raceTag}</span>}
                   </p>
                   {progressions[r.key] && <ProgressionSparkline progression={progressions[r.key]!} />}
                   {riegelDeltaSeconds !== null && (

@@ -21,6 +21,7 @@ export interface RacePrediction {
   lowSeconds: number
   highSeconds: number
   actualSeconds: number | null
+  actualDate: string | null
   trendDeltaSeconds: number | null
   trendWeeks: number
 }
@@ -110,6 +111,7 @@ export async function getRacePredictions(): Promise<RacePrediction[]> {
       lowSeconds: predictedSeconds - band,
       highSeconds: predictedSeconds + band,
       actualSeconds: record?.seconds ?? null,
+      actualDate: record?.date ?? null,
       trendDeltaSeconds,
       trendWeeks: TREND_WEEKS,
     })

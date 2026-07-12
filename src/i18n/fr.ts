@@ -886,10 +886,13 @@ export const fr = {
     annualGoal: 'Objectif annuel',
     kmRemaining: (km: number) => `${km} km restants`,
     goalReached: 'Objectif atteint !',
-    raceTargets: 'Objectifs de course',
+    raceDistances: 'Distances de course',
+    target: 'Objectif',
     noTarget: '-',
-    targetDone: (ahead: string) => `✓ Réussi (${ahead} d’avance)`,
-    targetToGo: (time: string) => `${time} à gagner`,
+    noTargetSet: 'Aucun objectif défini',
+    best: 'Record',
+    predictedTag: 'prédit',
+    nextRaceHint: (name: string, date: string) => `prochaine : ${name} ${date}`,
     seasonRaces: 'Courses de la saison',
     raceAlt: (distance: string) => `course de ${distance}`,
     emptyPbs: (year: number) => `Pas encore de RP pour ${year} - ajoutez-les dans les Réglages.`,
@@ -903,6 +906,9 @@ export const fr = {
       target: 'Objectif',
       predicted: 'Prédit',
       gap: 'Écart',
+      basedOnPr: (distance: string, time: string, date: string) =>
+        `Basé sur ton record ${distance} · ${time} (${date}) + tendance de forme actuelle`,
+      basedOnFitness: 'Basé sur ta tendance de forme actuelle',
     },
     projection: {
       status: {
@@ -1047,8 +1053,8 @@ export const fr = {
     title: 'Meilleurs temps',
     all: 'Tous',
     longest: 'Plus longue sortie',
-    mostRecent: 'Plus récent',
-    footnote: '★ temps officiel en course · les autres sont détectés automatiquement dans les activités',
+    mostRecent: 'plus récent',
+    raceTag: 'course',
     notYetRun: 'Pas encore couru',
     segmented: {
       prs: 'Records personnels',

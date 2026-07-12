@@ -1,3 +1,6 @@
+'use client'
+
+import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 import type { Milestone } from '@/application/usecases/GetMilestones'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { formatDayMonth } from '@/lib/formatters'
@@ -19,7 +22,7 @@ function groupByYear(milestones: Milestone[]): [string, Milestone[]][] {
 function MilestoneColumn({ milestone }: { milestone: Milestone }) {
   const Icon = MILESTONE_ICON[milestone.type]
   return (
-    <li className="flex w-36 shrink-0 flex-col items-center">
+    <li className="flex w-36 shrink-0 snap-start flex-col items-center">
       <div className="flex min-h-[4.5rem] flex-col items-center justify-end px-1 text-center">
         <span className="text-sm font-bold leading-tight text-foreground">{milestone.label}</span>
         <span className="mt-0.5 text-caption leading-tight text-muted-foreground">{milestone.detail}</span>
@@ -40,6 +43,55 @@ function MilestoneColumn({ milestone }: { milestone: Milestone }) {
   )
 }
 
+function MilestoneRow({ items }: { items: Milestone[] }) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [activeIndex, setActiveIndex] = useState(0)
+  const [showRightFade, setShowRightFade] = useState(items.length > 1)
+
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current
+    if (!el) return
+    setShowRightFade(el.scrollLeft < el.scrollWidth - el.clientWidth - 4)
+    const itemWidth = el.scrollWidth / items.length
+    setActiveIndex(Math.min(items.length - 1, Math.round(el.scrollLeft / itemWidth)))
+  }, [items.length])
+
+  // Corrects the optimistic initial fade once the row's actual width is known -
+  // short rows that fit without scrolling shouldn't show a "more to scroll" fade.
+  useLayoutEffect(() => {
+    handleScroll()
+  }, [handleScroll])
+
+  return (
+    <>
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className={cn(
+          'overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+          showRightFade && '[mask-image:linear-gradient(to_right,black_calc(100%-2.5rem),transparent)]'
+        )}
+      >
+        <ol className="flex min-w-max snap-x snap-mandatory">
+          {items.map((m, i) => (
+            <MilestoneColumn key={`${m.type}-${m.date}-${i}`} milestone={m} />
+          ))}
+        </ol>
+      </div>
+      {items.length > 1 && (
+        <div className="mt-2 flex justify-center gap-1.5" aria-hidden>
+          {items.map((_, i) => (
+            <span
+              key={i}
+              className={cn('h-1 w-1 rounded-full transition-colors', i === activeIndex ? 'bg-foreground/50' : 'bg-foreground/15')}
+            />
+          ))}
+        </div>
+      )}
+    </>
+  )
+}
+
 export function MilestonesTimeline({ milestones }: { milestones: Milestone[] }) {
   if (milestones.length === 0) return null
 
@@ -49,13 +101,7 @@ export function MilestonesTimeline({ milestones }: { milestones: Milestone[] }) 
         <div key={year}>
           <h2 className="mb-2 px-1 text-sm font-bold text-muted-foreground">{year}</h2>
           <GlassSurface variant="card" className="p-4 sm:p-6">
-            <div className="overflow-x-auto pb-1">
-              <ol className="flex min-w-max">
-                {items.map((m, i) => (
-                  <MilestoneColumn key={`${m.type}-${m.date}-${i}`} milestone={m} />
-                ))}
-              </ol>
-            </div>
+            <MilestoneRow items={items} />
           </GlassSurface>
         </div>
       ))}

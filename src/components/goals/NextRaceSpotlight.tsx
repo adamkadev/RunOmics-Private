@@ -1,6 +1,6 @@
 import type { NextRaceSpotlight as NextRaceSpotlightData } from '@/application/usecases/GetGoalsData'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { formatDate, formatDuration } from '@/lib/formatters'
+import { formatCompactDate, formatDate, formatDuration } from '@/lib/formatters'
 import { STATUS } from '@/lib/statusColors'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -13,9 +13,15 @@ function gapDisplay(gapSeconds: number | null): { label: string; className: stri
 }
 
 export function NextRaceSpotlight({ spotlight }: { spotlight: NextRaceSpotlightData }) {
-  const { race, daysUntil, predictedSeconds, gapSeconds } = spotlight
+  const { race, daysUntil, predictedSeconds, gapSeconds, prSeconds, prDate } = spotlight
   const s = t.goals.nextRace
   const gap = gapDisplay(gapSeconds)
+  const basis =
+    predictedSeconds !== null && prSeconds !== null && prDate !== null
+      ? s.basedOnPr(shortDist(race.distance), formatDuration(prSeconds), formatCompactDate(prDate))
+      : predictedSeconds !== null
+        ? s.basedOnFitness
+        : null
 
   return (
     <GlassSurface
@@ -63,6 +69,8 @@ export function NextRaceSpotlight({ spotlight }: { spotlight: NextRaceSpotlightD
           </div>
         </div>
       )}
+
+      {basis && <p className="mt-2 text-center text-[10px] text-subtle">{basis}</p>}
     </GlassSurface>
   )
 }

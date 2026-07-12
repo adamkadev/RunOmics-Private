@@ -79,6 +79,7 @@ const yearData = (overrides: Partial<YearData> = {}): YearData => ({
   projection: null,
   monthlyGoals: [],
   nextRaceSpotlight: null,
+  predictions: [],
   ...overrides,
 })
 
@@ -158,6 +159,7 @@ const prediction = (overrides: Partial<RacePrediction> = {}): RacePrediction => 
   lowSeconds: 1280,
   highSeconds: 1300,
   actualSeconds: null,
+  actualDate: null,
   trendDeltaSeconds: null,
   trendWeeks: 12,
   ...overrides,
@@ -191,5 +193,26 @@ describe('computeNextRaceSpotlight', () => {
     const result = computeNextRaceSpotlight([race({ targetSeconds: null })], [prediction()], '2024-07-01')
     expect(result?.predictedSeconds).toBe(1290)
     expect(result?.gapSeconds).toBeNull()
+  })
+
+  it('caps predictedSeconds at the PR already set at that distance', () => {
+    const result = computeNextRaceSpotlight(
+      [race({ targetSeconds: 1200 })],
+      [prediction({ predictedSeconds: 1291, actualSeconds: 1238, actualDate: '2024-05-16' })],
+      '2024-07-01'
+    )
+    expect(result?.predictedSeconds).toBe(1238)
+    expect(result?.gapSeconds).toBe(38)
+    expect(result?.prSeconds).toBe(1238)
+    expect(result?.prDate).toBe('2024-05-16')
+  })
+
+  it('leaves predictedSeconds uncapped when it is already faster than the PR', () => {
+    const result = computeNextRaceSpotlight(
+      [race({ targetSeconds: 1200 })],
+      [prediction({ predictedSeconds: 1210, actualSeconds: 1238, actualDate: '2024-05-16' })],
+      '2024-07-01'
+    )
+    expect(result?.predictedSeconds).toBe(1210)
   })
 })

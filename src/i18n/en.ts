@@ -892,10 +892,13 @@ export const en = {
     annualGoal: 'Annual Goal',
     kmRemaining: (km: number) => `${km} km remaining`,
     goalReached: 'Goal reached!',
-    raceTargets: 'Race Targets',
+    raceDistances: 'Race Distances',
+    target: 'Target',
     noTarget: '-',
-    targetDone: (ahead: string) => `✓ Done (${ahead} ahead)`,
-    targetToGo: (time: string) => `${time} to go`,
+    noTargetSet: 'No target set',
+    best: 'Best',
+    predictedTag: 'predicted',
+    nextRaceHint: (name: string, date: string) => `next: ${name} ${date}`,
     seasonRaces: 'Season Races',
     raceAlt: (distance: string) => `${distance} race`,
     emptyPbs: (year: number) => `No PBs for ${year} yet - add them in Settings.`,
@@ -909,6 +912,9 @@ export const en = {
       target: 'Target',
       predicted: 'Predicted',
       gap: 'Gap',
+      basedOnPr: (distance: string, time: string, date: string) =>
+        `Based on your ${distance} PR · ${time} (${date}) + current form trend`,
+      basedOnFitness: 'Based on your current fitness trend',
     },
     projection: {
       status: {
@@ -1053,8 +1059,8 @@ export const en = {
     title: 'Top Times',
     all: 'All',
     longest: 'Longest Run',
-    mostRecent: 'Most recent',
-    footnote: '★ official race time · others auto-detected from activity data',
+    mostRecent: 'most recent',
+    raceTag: 'race',
     notYetRun: 'Not yet run',
     segmented: {
       prs: 'Personal records',

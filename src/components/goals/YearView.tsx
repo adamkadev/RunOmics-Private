@@ -2,14 +2,15 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Trophy, ArrowRight, Calendar, MapPin, Check, Target } from 'lucide-react'
+import { Trophy, ArrowRight, Calendar, MapPin, Target } from 'lucide-react'
 import type { YearData, GoalProjection, GoalYear } from '@/application/usecases/GetGoalsData'
-import { formatDuration, formatDate, formatPace, formatDurationShort } from '@/lib/formatters'
+import { formatDuration, formatDate, formatPace } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { EditableNumber } from '@/components/ui/EditableNumber'
 import { MonthlyGoalsGrid } from './MonthlyGoalsGrid'
 import { NextRaceSpotlight } from './NextRaceSpotlight'
+import { RaceDistanceGrid } from './RaceDistanceGrid'
 import { raceDistanceTint } from '@/lib/colors'
 import { STATUS } from '@/lib/statusColors'
 import { cn } from '@/lib/utils'
@@ -135,37 +136,10 @@ export function YearView({ yearData, onSaveGoal }: Props) {
         </section>
       )}
 
-      {nextRaceSpotlight && <NextRaceSpotlight spotlight={nextRaceSpotlight} />}
-
-      {goals && goals.targets.length > 0 && (
-        <section className="space-y-3">
-          <div className="grid grid-cols-4 gap-2">
-            {goals.targets.map((target) => {
-              const pb = pbs.find((p) => p.entry.distance === target.distance)
-              const pbSeconds = pb?.entry.seconds ?? null
-              const delta = pbSeconds !== null && target.targetSeconds ? pbSeconds - target.targetSeconds : null
-              const achieved = delta !== null && delta <= 0
-              return (
-                <GlassSurface
-                  key={target.distance}
-                  variant="card"
-                  className="rounded-card-sm p-3 text-center"
-                  style={achieved ? { background: 'rgba(30,215,135,0.18)', borderColor: 'rgba(30,215,135,0.4)' } : undefined}
-                >
-                  <p className="text-xs font-semibold text-subtle">{shortDist(target.distance)}</p>
-                  <p className={cn('mt-1 flex items-center justify-center gap-1 text-base font-bold', achieved ? STATUS.success.text : 'text-foreground')}>
-                    {target.targetSeconds === null ? (
-                      <span className="text-sm font-normal text-subtle">{t.goals.noTarget}</span>
-                    ) : (
-                      formatDurationShort(target.targetSeconds)
-                    )}
-                    {achieved && <Check size={13} strokeWidth={3} />}
-                  </p>
-                </GlassSurface>
-              )
-            })}
-          </div>
-        </section>
+      {goals && goals.targets.length > 0 ? (
+        <RaceDistanceGrid yearData={yearData} />
+      ) : (
+        nextRaceSpotlight && <NextRaceSpotlight spotlight={nextRaceSpotlight} />
       )}
 
       {goals && monthlyGoals.length > 0 && <MonthlyGoalsGrid monthlyGoals={monthlyGoals} />}
@@ -224,60 +198,62 @@ export function YearView({ yearData, onSaveGoal }: Props) {
         </section>
       )}
 
-      {pbs.length > 0 ? (
-        <section className="space-y-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            {t.goals.seasonRaces}
-          </h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {pbs.map(({ entry, activity }) => {
-              const tint = raceDistanceTint(entry.distance)
-              return (
-                <Link
-                  key={entry.activityId}
-                  href={`/activities/${entry.activityId}`}
-                  className="glass-card group relative overflow-hidden rounded-card-sm transition-shadow hover:shadow-lg"
-                >
-                  <div className={cn('flex h-24 items-center bg-gradient-to-br to-transparent px-5', tint.overlay)}>
-                    <span className="text-3xl font-black text-foreground">
-                      {shortDist(entry.distance)}
-                    </span>
-                  </div>
-                  <div className="p-5">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="text-xl font-bold tracking-tight text-foreground">
-                          {formatDuration(entry.seconds)}
-                        </p>
-                        {activity.paceSecPerKm && (
-                          <p className="text-sm text-muted-foreground">
-                            {formatPace(activity.paceSecPerKm)}
+      {(!goals || goals.targets.length === 0) && (
+        pbs.length > 0 ? (
+          <section className="space-y-3">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              {t.goals.seasonRaces}
+            </h2>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {pbs.map(({ entry, activity }) => {
+                const tint = raceDistanceTint(entry.distance)
+                return (
+                  <Link
+                    key={entry.activityId}
+                    href={`/activities/${entry.activityId}`}
+                    className="glass-card group relative overflow-hidden rounded-card-sm transition-shadow hover:shadow-lg"
+                  >
+                    <div className={cn('flex h-24 items-center bg-gradient-to-br to-transparent px-5', tint.overlay)}>
+                      <span className="text-3xl font-black text-foreground">
+                        {shortDist(entry.distance)}
+                      </span>
+                    </div>
+                    <div className="p-5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="text-xl font-bold tracking-tight text-foreground">
+                            {formatDuration(entry.seconds)}
                           </p>
+                          {activity.paceSecPerKm && (
+                            <p className="text-sm text-muted-foreground">
+                              {formatPace(activity.paceSecPerKm)}
+                            </p>
+                          )}
+                        </div>
+                        <ArrowRight size={16} className="mt-1 shrink-0 text-subtle transition-colors group-hover:text-muted-foreground" />
+                      </div>
+                      <div className="mt-3 flex items-center gap-1.5 text-xs text-subtle">
+                        <Calendar size={12} className="shrink-0" />
+                        <span>{formatDate(activity.date)}</span>
+                        {activity.description && (
+                          <>
+                            <span className="text-subtle/40">·</span>
+                            <span className="truncate text-muted-foreground">{activity.description}</span>
+                          </>
                         )}
                       </div>
-                      <ArrowRight size={16} className="mt-1 shrink-0 text-subtle transition-colors group-hover:text-muted-foreground" />
                     </div>
-                    <div className="mt-3 flex items-center gap-1.5 text-xs text-subtle">
-                      <Calendar size={12} className="shrink-0" />
-                      <span>{formatDate(activity.date)}</span>
-                      {activity.description && (
-                        <>
-                          <span className="text-subtle/40">·</span>
-                          <span className="truncate text-muted-foreground">{activity.description}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
-        </section>
-      ) : (
-        <GlassSurface variant="card" className="rounded-card-sm border-dashed p-10 text-center">
-          <Trophy size={24} className="mx-auto mb-3 text-subtle" />
-          <p className="text-sm text-subtle">{t.goals.emptyPbs(yearData.year)}</p>
-        </GlassSurface>
+                  </Link>
+                )
+              })}
+            </div>
+          </section>
+        ) : (
+          <GlassSurface variant="card" className="rounded-card-sm border-dashed p-10 text-center">
+            <Trophy size={24} className="mx-auto mb-3 text-subtle" />
+            <p className="text-sm text-subtle">{t.goals.emptyPbs(yearData.year)}</p>
+          </GlassSurface>
+        )
       )}
     </div>
   )
