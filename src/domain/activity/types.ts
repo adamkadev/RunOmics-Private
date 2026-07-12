@@ -86,6 +86,9 @@ export type ActivitySummary = Pick<
   | 'paceSecPerKm'
   | 'avgHeartRate'
   | 'rpe'
+  // 5 aggregate HR-zone buckets (not per-sample) - kept so list views can
+  // derive the easy/hard split from the same source as Today and Plan.
+  | 'hrZones'
 >
 
 export interface PlannedWorkout {

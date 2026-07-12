@@ -232,10 +232,11 @@ export function WeekView({
         <SummaryStat
           label={t.plan.weekSummary.easyHard}
           value={
-            summary.easyPct !== null ? (
+            summary.hardPct !== null ? (
               <>
-                <AnimatedValue value={Math.round(summary.easyPct)} />/
-                <AnimatedValue value={Math.round(summary.hardPct ?? 0)} />
+                {/* Easy derived from rounded hard so they sum to 100 and match Today/Activities. */}
+                <AnimatedValue value={100 - Math.round(summary.hardPct)} />/
+                <AnimatedValue value={Math.round(summary.hardPct)} />
               </>
             ) : (
               '–'
