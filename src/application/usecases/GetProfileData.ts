@@ -9,6 +9,7 @@ import { getRecords, type RecordEntry } from '@/application/usecases/GetRecords'
 import { getShoeStats, type ShoeStats } from '@/application/usecases/GetShoeStats'
 import { computeProjection, type GoalYear, type GoalProjection } from '@/application/usecases/GetGoalsData'
 import { getAthleteRank, type AthleteRank } from '@/application/usecases/GetAthleteRank'
+import { yearDistanceKm } from '@/domain/activity/distance'
 import { round } from '@/lib/math'
 
 const PROFILE_RECORD_KEYS = ['5k', '10k', 'half', 'marathon']
@@ -57,12 +58,14 @@ export async function getProfileData(): Promise<ProfileData> {
   const currentYear = new Date().getFullYear()
   const ytdActivities = activities.filter((a) => a.date.startsWith(String(currentYear)))
   const ytdDistanceKm = ytdActivities.reduce((s, a) => s + a.distanceKm, 0)
+  // Shared selector so Progress/Goals/Analytics show the exact same whole-km total.
+  const ytdDistanceKmRounded = yearDistanceKm(activities, currentYear)
 
   const goalYear = goalYears.find((g) => g.year === currentYear) ?? null
   const goal: ProfileGoal | null = goalYear
     ? {
         goalYear,
-        totalDistanceKm: round(ytdDistanceKm, 0),
+        totalDistanceKm: ytdDistanceKmRounded,
         projection: computeProjection(activities, currentYear, ytdDistanceKm, goalYear),
       }
     : null
@@ -75,7 +78,7 @@ export async function getProfileData(): Promise<ProfileData> {
       rank: getAthleteRank(allRecords),
     },
     ytd: {
-      distanceKm: round(ytdDistanceKm, 0),
+      distanceKm: ytdDistanceKmRounded,
       durationSeconds: ytdActivities.reduce((s, a) => s + a.durationSeconds, 0),
       sessionCount: ytdActivities.length,
       elevationGainM: Math.round(ytdActivities.reduce((s, a) => s + (a.elevationGain ?? 0), 0)),
