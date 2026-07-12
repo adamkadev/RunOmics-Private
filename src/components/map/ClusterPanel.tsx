@@ -39,13 +39,15 @@ export function ClusterPanel({ clusters, names, stats, selectedIdx, onSelect }: 
   }, [open]);
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative min-w-0">
       <button
         onClick={() => setOpen((o) => !o)}
         title={names[selectedIdx]}
-        className="glass-map-chip flex items-center gap-2 px-3 py-2.5 transition-colors hover:bg-muted"
+        className="glass-map-chip flex min-w-0 items-center gap-2 px-3 py-2.5 transition-colors hover:bg-muted"
       >
-        <span className="whitespace-nowrap text-xs font-semibold text-accent-text">{names[selectedIdx]}</span>
+        {/* Truncates only when the row is too tight, so the name shrinks before
+            it can push the Types / year pickers off the right edge. */}
+        <span className="truncate text-xs font-semibold text-accent-text">{names[selectedIdx]}</span>
         <span className="shrink-0 text-caption text-subtle">
           {stats[selectedIdx]?.routeCount ?? 0}
         </span>
