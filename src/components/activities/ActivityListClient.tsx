@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
-import { Search, X, SearchX, Map, ChevronDown } from 'lucide-react'
+import { Search, SearchX, ChevronDown } from 'lucide-react'
 import { ActivityListCard } from './ActivityListCard'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
@@ -100,7 +100,6 @@ export function ActivityListClient({
   qualifiedEffortsByActivityId = {},
 }: Props) {
   const [search, setSearch] = useState('')
-  const [searchOpen, setSearchOpen] = useState(false)
   const [selectedType, setSelectedType] = useState<ActivityType | null>(null)
   const [sortBy, setSortBy] = useState<ActivitySortKey>('date')
   const [sortOrder, setSortOrder] = useState<ActivitySortOrder>('desc')
@@ -181,46 +180,23 @@ export function ActivityListClient({
   return (
     <div className="space-y-4">
       <div className="px-1">
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="text-title1 font-extrabold leading-[1.1] tracking-tight text-foreground">
-              {t.pages.activities.title}
-            </h1>
-            <p className="mt-0.5 text-footnote font-medium text-muted-foreground">
-              {t.activities.count(totalCount)}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() =>
-              setSearchOpen((open) => {
-                if (open) setSearch('')
-                return !open
-              })
-            }
-            aria-label={t.activities.searchToggle}
-            aria-expanded={searchOpen}
-            className={cn(
-              'flex h-11 w-11 shrink-0 items-center justify-center rounded-control border transition-colors active:scale-95',
-              searchOpen
-                ? 'border-foreground/[0.20] bg-foreground/[0.14] text-foreground'
-                : 'border-foreground/[0.12] bg-foreground/[0.06] text-foreground/60 hover:bg-foreground/[0.10]'
-            )}
-          >
-            {searchOpen ? <X size={16} /> : <Search size={16} />}
-          </button>
-        </div>
+        <h1 className="text-title1 font-extrabold leading-[1.1] tracking-tight text-foreground">
+          {t.pages.activities.title}
+        </h1>
+        <p className="mt-0.5 text-footnote font-medium text-muted-foreground">
+          {t.activities.count(totalCount)}
+        </p>
 
-        {searchOpen && (
+        <div className="relative mt-3">
+          <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-subtle-2" />
           <input
-            autoFocus
             type="text"
             placeholder={t.activities.searchPlaceholder}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="mt-3 h-9 w-full rounded-xl border border-border bg-card/60 px-3 text-sm text-foreground placeholder-subtle focus:border-accent focus:outline-none"
+            className="h-10 w-full rounded-[11px] bg-foreground/[0.05] pl-9 pr-3 text-sm text-foreground placeholder-subtle-2 focus:outline-none"
           />
-        )}
+        </div>
       </div>
 
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -249,13 +225,12 @@ export function ActivityListClient({
         })}
       </div>
 
-      {/* Secondary controls: sort - not in the visual spec, kept from the existing feature set */}
+      {/* Secondary controls: heatmap link + sort - not in the visual spec, kept from the existing feature set */}
       <div className="flex items-center justify-end gap-2">
         <Link
           href="/map"
-          className="flex items-center gap-1 rounded-control border border-foreground/[0.12] bg-foreground/[0.06] px-2.5 py-1 text-xs font-medium text-foreground/70 transition-colors hover:bg-foreground/[0.10]"
+          className="rounded-control border border-foreground/[0.12] bg-foreground/[0.06] px-2.5 py-1 text-xs font-medium text-foreground/70 transition-colors hover:bg-foreground/[0.10]"
         >
-          <Map size={12} />
           {t.nav.items.heatmap}
         </Link>
         <SortDropdown
