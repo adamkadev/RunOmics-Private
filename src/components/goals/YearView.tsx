@@ -110,7 +110,7 @@ export function YearView({ yearData, onSaveGoal }: Props) {
             </div>
             {sparkline && projection && (
               <>
-                <svg viewBox="0 0 300 44" className="mt-3 h-9 w-full">
+                <svg viewBox="0 0 300 44" preserveAspectRatio="none" className="mt-3 h-9 w-full">
                   <path
                     d={`M0 40 L${sparkline.nowX.toFixed(1)} ${sparkline.nowY.toFixed(1)}`}
                     fill="none"
