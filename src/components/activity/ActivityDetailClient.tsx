@@ -98,6 +98,7 @@ export function ActivityDetailClient({ activity, qualifiedEfforts }: Props) {
             paceSamples={activity.paceSamples}
             avgTemperature={activity.avgTemperature}
             activityType={activity.type}
+            gearId={activity.gearId}
             className="h-full w-full"
           />
         ) : (

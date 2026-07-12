@@ -18,10 +18,11 @@ interface Props {
   hoverFraction?: number | null
   avgTemperature?: number | null
   activityType?: ActivityType | null
+  gearId?: string | null
   className?: string
 }
 
-export const ActivityMapClient = memo(function ActivityMapClient({ route, paceSamples, hoverFraction, avgTemperature, activityType, className }: Props) {
+export const ActivityMapClient = memo(function ActivityMapClient({ route, paceSamples, hoverFraction, avgTemperature, activityType, gearId, className }: Props) {
   return (
     <ActivityMapDynamic
       route={route}
@@ -29,6 +30,7 @@ export const ActivityMapClient = memo(function ActivityMapClient({ route, paceSa
       hoverFraction={hoverFraction}
       avgTemperature={avgTemperature}
       activityType={activityType}
+      gearId={gearId}
       className={className}
     />
   )
