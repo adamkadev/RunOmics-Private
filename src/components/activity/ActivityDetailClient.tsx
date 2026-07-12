@@ -97,6 +97,7 @@ export function ActivityDetailClient({ activity, qualifiedEfforts }: Props) {
             route={activity.route}
             paceSamples={activity.paceSamples}
             avgTemperature={activity.avgTemperature}
+            activityType={activity.type}
             className="h-full w-full"
           />
         ) : (
@@ -123,7 +124,7 @@ export function ActivityDetailClient({ activity, qualifiedEfforts }: Props) {
           variant="card"
           role="tablist"
           aria-label={t.activity.tabs.groupLabel}
-          className="sticky top-[max(var(--safe-top),8px)] z-10 flex gap-1 overflow-x-auto rounded-xl p-1 mb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="sticky top-[max(var(--safe-top),8px)] z-10 flex gap-1 overflow-x-auto rounded-full p-1 mb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {tabs.map((item) => (
             <button
@@ -132,7 +133,7 @@ export function ActivityDetailClient({ activity, qualifiedEfforts }: Props) {
               aria-selected={tab === item.id}
               onClick={() => setTab(item.id)}
               className={cn(
-                'min-w-fit flex-1 whitespace-nowrap rounded-lg py-2.5 text-sm font-semibold transition-colors',
+                'min-w-fit flex-1 whitespace-nowrap rounded-full py-2.5 text-sm font-semibold transition-colors',
                 tab === item.id ? 'bg-accent text-accent-foreground' : 'text-subtle hover:text-foreground',
               )}
             >

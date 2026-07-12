@@ -6,6 +6,8 @@ import type { LngLatBounds, Map as MapLibreMap, Marker } from 'maplibre-gl'
 import { cn } from '@/lib/utils'
 import { maptilerStyleUrl } from '@/lib/maptiler'
 import { CHART_COLORS, PACE_ROUTE_COLORS, temperatureIconColor } from '@/lib/colors'
+import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
+import type { ActivityType } from '@/domain/activity/types'
 import { t } from '@/i18n'
 
 interface Props {
@@ -13,6 +15,8 @@ interface Props {
   paceSamples?: number[] | null
   hoverFraction?: number | null
   avgTemperature?: number | null
+  /** Rendered as a colored badge next to the temperature chip, saving a header row. */
+  activityType?: ActivityType | null
   className?: string
 }
 
@@ -50,7 +54,7 @@ function mkMarker(bg: string, border = 'white', size = 13) {
   return el
 }
 
-export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemperature, className }: Props) {
+export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemperature, activityType, className }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<MapLibreMap | null>(null)
   const mglRef = useRef<typeof import('maplibre-gl') | null>(null)
@@ -242,15 +246,30 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
     >
       <div ref={containerRef} role="img" aria-label={t.activity.map.routeMap} className="h-full w-full" />
 
-      {avgTemperature != null && (
+      {(avgTemperature != null || activityType) && (
         <div
           className={cn(
-            'glass-map-chip absolute left-2 z-10 flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold',
+            'absolute left-2 z-10 flex items-center gap-1.5',
             isFullscreen ? 'top-[max(env(safe-area-inset-top),8px)]' : 'top-2'
           )}
         >
-          <Thermometer size={12} className={temperatureIconColor(avgTemperature)} />
-          {avgTemperature}{t.units.celsius}
+          {avgTemperature != null && (
+            <div className="glass-map-chip flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold">
+              <Thermometer size={12} className={temperatureIconColor(avgTemperature)} />
+              {avgTemperature}{t.units.celsius}
+            </div>
+          )}
+          {activityType && (
+            <span
+              className="rounded-[10px] px-2.5 py-1.5 text-xs font-bold uppercase tracking-wide"
+              style={{
+                background: ACTIVITY_TYPE_CONFIG[activityType].chartColor,
+                color: '#1a1400',
+              }}
+            >
+              {t.activityTypes[activityType]}
+            </span>
+          )}
         </div>
       )}
 

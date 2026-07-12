@@ -5,7 +5,6 @@ import { getActivities } from '@/application/usecases/GetActivities'
 import { getRecords, getQualifiedEffortsByActivityId } from '@/application/usecases/GetRecords'
 import { getAthleteFromFirestore } from '@/infrastructure/repositories/FirestoreConfigRepository'
 import type { HrBounds } from '@/domain/training/trimp'
-import { ActivityTypeTag } from '@/components/activities/ActivityTypeTag'
 import { ShoePairTag } from '@/components/activities/ShoePairTag'
 import { ActivityDetailClient } from '@/components/activity/ActivityDetailClient'
 import { ActivityNav } from '@/components/activity/ActivityNav'
@@ -76,7 +75,6 @@ export default async function ActivityDetailPage({
 
       <div>
         <div className="mb-2 flex flex-nowrap items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <ActivityTypeTag type={activity.type} />
           <ShoePairTag gearId={activity.gearId} />
         </div>
         <h1 className="text-display text-foreground">
