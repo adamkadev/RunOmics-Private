@@ -117,7 +117,7 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds }: Props) {
           <div
             role="tablist"
             aria-label={t.pages.plan.title}
-            className="flex shrink-0 gap-0.5 rounded-control border border-foreground/10 bg-foreground/[0.07] p-[3px]"
+            className="flex shrink-0 gap-0.5 rounded-full border border-foreground/10 bg-foreground/[0.07] p-[3px]"
           >
             {(['week', 'month'] as const).map((m) => (
               <button
@@ -127,7 +127,7 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds }: Props) {
                 aria-selected={mode === m}
                 onClick={() => setMode(m)}
                 className={cn(
-                  'rounded-[7px] px-4 py-1 text-caption font-medium transition-colors',
+                  'rounded-full px-5 py-1.5 text-caption font-medium transition-colors',
                   mode === m ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'
                 )}
               >

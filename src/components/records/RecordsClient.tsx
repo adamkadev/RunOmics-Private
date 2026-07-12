@@ -37,7 +37,7 @@ export function RecordsClient({ records, topEfforts, mostRecentKey, predictions,
         variant="card"
         role="tablist"
         aria-label={s.prs}
-        className="flex gap-1 rounded-xl p-1"
+        className="flex gap-1 rounded-full p-1"
       >
         {(['prs', 'milestones'] as const).map((id) => (
           <button
@@ -46,7 +46,7 @@ export function RecordsClient({ records, topEfforts, mostRecentKey, predictions,
             aria-selected={tab === id}
             onClick={() => setTab(id)}
             className={cn(
-              'flex-1 rounded-lg py-2 text-sm font-semibold transition-colors',
+              'flex-1 rounded-full py-2 text-sm font-semibold transition-colors',
               tab === id ? 'bg-accent text-accent-foreground' : 'text-subtle hover:text-foreground'
             )}
           >
