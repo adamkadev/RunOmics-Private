@@ -1,4 +1,4 @@
-import { getRecords, getTopEfforts, getMostRecentRecord } from '@/application/usecases/GetRecords'
+import { getRecords, getTopEfforts, getMostRecentRecord, getEffortProgressions } from '@/application/usecases/GetRecords'
 import { getPbAlerts } from '@/application/usecases/GetPbAlerts'
 import { getRacePredictions } from '@/application/usecases/GetRacePredictions'
 import { getMilestones } from '@/application/usecases/GetMilestones'
@@ -17,6 +17,7 @@ export default async function RecordsPage() {
   const mostRecentRecord = getMostRecentRecord(records)
   const predictions = await getRacePredictions()
   const milestones = await getMilestones()
+  const progressions = getEffortProgressions()
 
   return (
     <div className="space-y-6">
@@ -35,6 +36,7 @@ export default async function RecordsPage() {
         predictions={predictions}
         pbAlerts={pbAlerts}
         milestones={milestones}
+        progressions={progressions}
       />
     </div>
   )

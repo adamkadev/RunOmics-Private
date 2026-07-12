@@ -1027,6 +1027,7 @@ export const fr = {
       prs: 'Records personnels',
       milestones: 'Étapes',
     },
+    improvedThisYear: (time: string) => `-${time} cette année`,
     riegelAhead: (predicted: string, delta: string) => `Riegel ${predicted} · tu as ${delta} d'avance`,
     riegelBehind: (predicted: string, delta: string) => `Riegel ${predicted} · tu as ${delta} de retard`,
     noRecordYet: 'Pas encore de record',

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import type { RecordEntry, TopEfforts } from '@/application/usecases/GetRecords'
+import type { RecordEntry, TopEfforts, EffortProgression } from '@/application/usecases/GetRecords'
 import type { RacePrediction } from '@/application/usecases/GetRacePredictions'
 import { formatDuration, formatDistance, formatPace } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
@@ -34,14 +34,46 @@ function rankClass(i: number): string {
   return 'text-subtle'
 }
 
+// PR trajectory over the last 12 months: running-best line ending in a dot,
+// with the seconds shaved this year underneath. Improvement only - a flat
+// line with "-0:00" is noise, so it renders nothing without a real drop.
+function ProgressionSparkline({ progression }: { progression: EffortProgression }) {
+  const { seconds, improvedSeconds } = progression
+  if (improvedSeconds <= 0 || seconds.length < 3) return null
+
+  const min = Math.min(...seconds)
+  const max = Math.max(...seconds)
+  const range = max - min || 1
+  const w = 64
+  const h = 22
+  const xFor = (i: number) => (i / (seconds.length - 1)) * (w - 6) + 3
+  const yFor = (s: number) => 3 + ((s - min) / range) * (h - 6)
+  const points = seconds.map((s, i) => `${xFor(i).toFixed(1)},${yFor(s).toFixed(1)}`).join(' ')
+  const lastX = xFor(seconds.length - 1)
+  const lastY = yFor(seconds[seconds.length - 1]!)
+
+  return (
+    <span className="mt-2 flex items-center gap-2">
+      <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="h-4 min-w-0 flex-1" aria-hidden>
+        <polyline points={points} fill="none" stroke="var(--accent)" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+        <circle cx={lastX} cy={lastY} r={2.5} fill="var(--accent)" />
+      </svg>
+      <span className="shrink-0 text-[9px] font-semibold text-accent-text">
+        {t.records.improvedThisYear(formatDuration(improvedSeconds))}
+      </span>
+    </span>
+  )
+}
+
 interface Props {
   records: RecordEntry[]
   topEfforts: TopEfforts
   mostRecentKey?: string | null
   predictions?: RacePrediction[]
+  progressions?: Record<string, EffortProgression>
 }
 
-export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null, predictions = [] }: Props) {
+export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null, predictions = [], progressions = {} }: Props) {
   const pills = ['all', ...PILL_ORDER.filter((k) => topEfforts[k])]
   const [selected, setSelected] = useState('all')
   const predictionByKey = new Map(predictions.map((p) => [p.key, p]))
@@ -127,6 +159,7 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null, 
                     {r.paceSecPerKm !== null && formatPace(r.paceSecPerKm)}
                     {r.date && <span> · {shortDate(r.date)}</span>}
                   </p>
+                  {progressions[r.key] && <ProgressionSparkline progression={progressions[r.key]!} />}
                   {riegelDeltaSeconds !== null && (
                     <p className={cn('mt-2 border-t border-foreground/[0.08] pt-2 text-xs font-medium', riegelDeltaSeconds >= 0 ? STATUS.success.text : STATUS.warning.text)}>
                       {riegelDeltaSeconds >= 0
