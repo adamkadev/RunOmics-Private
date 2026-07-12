@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Trophy, ArrowRight, Calendar, MapPin, Check, Target } from 'lucide-react'
 import type { YearData, GoalProjection, GoalYear } from '@/application/usecases/GetGoalsData'
-import { formatDuration, formatDate, formatPace } from '@/lib/formatters'
+import { formatDuration, formatDate, formatPace, formatDurationShort } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { EditableNumber } from '@/components/ui/EditableNumber'
@@ -138,10 +138,7 @@ export function YearView({ yearData, onSaveGoal }: Props) {
       {nextRaceSpotlight && <NextRaceSpotlight spotlight={nextRaceSpotlight} />}
 
       {goals && goals.targets.length > 0 && (
-        <section className="space-y-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            {t.goals.raceTargets}
-          </h2>
+        <section className="space-y-3 text-center justify-text  ">
           <div className="grid grid-cols-4 gap-2">
             {goals.targets.map((target) => {
               const pb = pbs.find((p) => p.entry.distance === target.distance)
@@ -155,7 +152,7 @@ export function YearView({ yearData, onSaveGoal }: Props) {
                   className={cn('rounded-card-sm p-3', achieved && 'border-emerald-500/30 bg-emerald-500/[0.1]')}
                   style={achieved ? { background: 'rgba(30,215,135,0.1)', borderColor: 'rgba(30,215,135,0.3)' } : undefined}
                 >
-                  <div className="flex items-center justify-between gap-1">
+                  <div className="flex items-center justify-center gap-1">
                     <p className="text-xs font-semibold text-subtle">{shortDist(target.distance)}</p>
                     {achieved && <Check size={13} strokeWidth={3} className={STATUS.success.text} />}
                   </div>
@@ -163,7 +160,7 @@ export function YearView({ yearData, onSaveGoal }: Props) {
                     {target.targetSeconds === null ? (
                       <span className="text-sm font-normal text-subtle">{t.goals.noTarget}</span>
                     ) : (
-                      formatDuration(target.targetSeconds)
+                      formatDurationShort(target.targetSeconds)
                     )}
                   </p>
                 </GlassSurface>

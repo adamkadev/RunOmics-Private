@@ -874,7 +874,7 @@ export const en = {
     kmRemaining: (km: number) => `${km} km remaining`,
     goalReached: 'Goal reached!',
     raceTargets: 'Race Targets',
-    noTarget: 'No target',
+    noTarget: '-',
     targetDone: (ahead: string) => `✓ Done (${ahead} ahead)`,
     targetToGo: (time: string) => `${time} to go`,
     seasonRaces: 'Season Races',
