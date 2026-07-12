@@ -162,6 +162,15 @@ export const en = {
   },
 
   settings: {
+    sections: {
+      appearance: 'Appearance',
+      notificationsData: 'Notifications & data',
+      account: 'Account',
+    },
+    rowAction: {
+      export: 'Export ›',
+      clear: 'Clear ›',
+    },
     appearance: {
       title: 'Appearance',
       themeLabel: 'Theme',
@@ -934,6 +943,12 @@ export const en = {
       replace: 'Replace',
     },
     kmLeft: (km: number) => `~${km} km left`,
+    hero: {
+      usage: (n: number, total: number) => `Used in ${n} of your last ${total} tempo/threshold runs`,
+      rotateBeforeRace: (date: string) => ` - rotate in a backup before your ${date} race.`,
+      rotate: ' - rotate in a backup.',
+      restOfRotation: 'Rest of rotation',
+    },
     wearAlert: (name: string, totalKm: number, alertThresholdKm: number) => `${name} has ${totalKm} km - past its ${alertThresholdKm} km alert threshold`,
     summary: {
       totalDistance: 'Total km',
@@ -956,6 +971,8 @@ export const en = {
     hero: {
       since: (date: string) => `Athlete since ${date}`,
       summary: (activities: number, km: number) => `${activities} activities · ${km} km`,
+      lifetime: (runs: number, km: number) => `${runs} runs · ${km.toLocaleString('en')} km lifetime`,
+      rankLine: (tier: string, pct: number) => `Rank ${tier} · top ${pct}% of VO₂max for your age`,
       editName: 'Edit name',
       namePlaceholder: 'Your name',
       rankExplain: 'Fitness rank from VO₂max and race pace.',

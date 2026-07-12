@@ -2,13 +2,16 @@ import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import type { ShoeStats } from '@/application/usecases/GetShoeStats'
+import { wearStatus } from '@/components/shoes/ShoesGrid'
 import { STATUS } from '@/lib/statusColors'
 import { t } from '@/i18n'
 
 export function ProfileShoes({ shoes }: { shoes: ShoeStats[] }) {
   if (shoes.length === 0) return null
 
-  const alertCount = shoes.filter((s) => s.nearingLimit).length
+  // Same watch/replace threshold as the Shoes page hero, so this tile never
+  // says "all good" while /shoes is flagging a pair.
+  const alertCount = shoes.filter((s) => !s.retired && wearStatus(s.wearPercent) !== 'ok').length
 
   return (
     <GlassSurface variant="card" className="flex flex-col gap-3 p-4">

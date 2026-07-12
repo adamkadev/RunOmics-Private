@@ -156,6 +156,15 @@ export const fr = {
   },
 
   settings: {
+    sections: {
+      appearance: 'Apparence',
+      notificationsData: 'Notifications & données',
+      account: 'Compte',
+    },
+    rowAction: {
+      export: 'Exporter ›',
+      clear: 'Vider ›',
+    },
     appearance: {
       title: 'Apparence',
       themeLabel: 'Thème',
@@ -928,6 +937,12 @@ export const fr = {
       replace: 'À remplacer',
     },
     kmLeft: (km: number) => `~${km} km restants`,
+    hero: {
+      usage: (n: number, total: number) => `Utilisée sur ${n} de tes ${total} dernières séances tempo/seuil`,
+      rotateBeforeRace: (date: string) => ` - fais tourner une autre paire avant ta course du ${date}.`,
+      rotate: ' - fais tourner une autre paire.',
+      restOfRotation: 'Reste de la rotation',
+    },
     wearAlert: (name: string, totalKm: number, alertThresholdKm: number) => `${name} affiche ${totalKm} km - au-delà de son seuil d’alerte de ${alertThresholdKm} km`,
     summary: {
       totalDistance: 'Km totaux',
@@ -950,6 +965,8 @@ export const fr = {
     hero: {
       since: (date: string) => `Athlète depuis ${date}`,
       summary: (activities: number, km: number) => `${activities} activités · ${km} km`,
+      lifetime: (runs: number, km: number) => `${runs} sorties · ${km.toLocaleString('fr')} km au total`,
+      rankLine: (tier: string, pct: number) => `Rang ${tier} · top ${pct}% de VO₂max pour ton âge`,
       editName: 'Modifier le nom',
       namePlaceholder: 'Votre nom',
       rankExplain: 'Rang de forme basé sur la VO₂max et l’allure de course.',
