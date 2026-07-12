@@ -123,14 +123,11 @@ function NextWeekPlanRow({ plan, onTap }: { plan: PlannedWorkout; onTap: () => v
   )
 }
 
-function SummaryStat({ label, value, sub }: { label: string; value: React.ReactNode; sub?: React.ReactNode }) {
+function SummaryStat({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-foreground/[0.07] bg-foreground/[0.03] px-2.5 py-2">
+    <div className="rounded-xl px-2.5 py-2.5 text-center" style={{ background: 'rgba(0,0,0,0.25)' }}>
       <div className="text-micro font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className="mt-0.5 flex items-baseline gap-1.5">
-        <span className="text-base font-extrabold tabular-nums text-foreground">{value}</span>
-        {sub}
-      </div>
+      <div className="mt-1 text-base font-extrabold tabular-nums text-foreground">{value}</div>
     </div>
   )
 }
@@ -222,6 +219,32 @@ export function WeekView({
     <div className="space-y-3">
       <WeekPurposeBanner level={comparison?.level ?? null} percent={comparison?.percent ?? null} adherence={adherence} />
 
+      {/* Decisional header: easy/hard, elevation, load - standalone dark tiles, not a card */}
+      <div className="grid grid-cols-3 gap-2">
+        <SummaryStat
+          label={t.plan.weekSummary.easyHard}
+          value={
+            summary.easyPct !== null ? (
+              <>
+                <AnimatedValue value={Math.round(summary.easyPct)} />/
+                <AnimatedValue value={Math.round(summary.hardPct ?? 0)} />
+              </>
+            ) : (
+              '–'
+            )
+          }
+        />
+        <SummaryStat
+          label={t.plan.weekSummary.elevation}
+          value={
+            <>
+              <AnimatedValue value={summary.elevationGainM} /> {t.units.m}
+            </>
+          }
+        />
+        <SummaryStat label={t.plan.weekSummary.load} value={<AnimatedValue value={summary.totalTrimp} />} />
+      </div>
+
       <GlassSurface variant="card" className="rounded-card-sm p-3.5 pb-2.5">
         {!atPresent && (
           <div className="mb-2.5 flex items-center justify-end gap-2">
@@ -229,33 +252,7 @@ export function WeekView({
           </div>
         )}
 
-        {/* Decisional header: easy/hard, elevation, load */}
-        <div className="grid grid-cols-3 gap-2">
-          <SummaryStat
-            label={t.plan.weekSummary.easyHard}
-            value={
-              summary.easyPct !== null ? (
-                <>
-                  <AnimatedValue value={Math.round(summary.easyPct)} />/
-                  <AnimatedValue value={Math.round(summary.hardPct ?? 0)} />
-                </>
-              ) : (
-                '–'
-              )
-            }
-          />
-          <SummaryStat
-            label={t.plan.weekSummary.elevation}
-            value={
-              <>
-                <AnimatedValue value={summary.elevationGainM} /> {t.units.m}
-              </>
-            }
-          />
-          <SummaryStat label={t.plan.weekSummary.load} value={<AnimatedValue value={summary.totalTrimp} />} />
-        </div>
-
-        <div className="mt-3">
+        <div>
           <div className="mb-2 grid grid-cols-7 gap-1">
             {t.plan.weekdays.map((label, i) => (
               <div
@@ -305,7 +302,7 @@ export function WeekView({
                       )}
 
                       <div
-                        className="relative flex h-12 w-full items-center justify-center rounded-[8px] border px-0.5 transition-colors sm:h-14"
+                        className="relative flex h-9 w-full items-center justify-center rounded-[8px] border px-0.5 transition-colors sm:h-10"
                         style={
                           completed
                             ? { background: typeColor ? `${typeColor}33` : ACCENT_15, borderColor: typeColor ? `${typeColor}80` : ACCENT_30 }
@@ -319,7 +316,7 @@ export function WeekView({
                         }
                       >
                         <span
-                          className={cn('truncate text-[10px] font-bold leading-tight sm:text-xs', rest && 'font-semibold opacity-40')}
+                          className={cn('truncate text-[10px] font-bold leading-tight', rest && 'font-semibold opacity-40')}
                           style={{ color: missed ? MISSED : rest ? 'var(--color-foreground)' : (typeColor ?? 'var(--accent)') }}
                         >
                           {label}
@@ -336,23 +333,6 @@ export function WeekView({
                         {missed && <X size={10} strokeWidth={3} className="absolute right-1 top-1" style={{ color: MISSED }} />}
                       </div>
                     </div>
-
-                    <span
-                      className="text-micro"
-                      style={
-                        isToday
-                          ? { color: TODAY, fontWeight: 700 }
-                          : completed
-                            ? { color: 'var(--color-foreground)', opacity: 0.7 }
-                            : missed
-                              ? { color: MISSED, opacity: 0.7 }
-                              : planned
-                                ? { color: 'var(--color-foreground)', opacity: 0.45 }
-                                : { color: 'var(--color-foreground)', opacity: 0.25 }
-                      }
-                    >
-                      {d.day}
-                    </span>
                   </button>
                 )
               })}
@@ -361,18 +341,11 @@ export function WeekView({
       </GlassSurface>
 
       {/* Selected day panel */}
-      <GlassSurface
-        variant="card"
-        className={cn('rounded-card-sm p-4', selected.date === today && 'border-accent/30')}
-      >
-        <div className="mb-3 flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-wide text-accent-text">
-            {formatDateFull(selected.date)}
-          </span>
-          {selected.date === today && (
-            <span className="text-caption font-semibold text-muted-foreground">{t.plan.today}</span>
-          )}
-        </div>
+      <div className="space-y-3 px-1">
+        <p className="text-center text-xs font-bold uppercase tracking-wide text-accent-text">
+          {formatDateFull(selected.date)}
+          {selected.date === today && ` · ${t.plan.today}`}
+        </p>
 
         {selected.acts.length > 0 ? (
           <div className="space-y-2">
@@ -410,9 +383,9 @@ export function WeekView({
         ) : selectedPlan ? (
           <PlannedWorkoutRow plan={selectedPlan} onTap={() => setSheetPlan(selectedPlan)} />
         ) : (
-          <p className="text-sm text-subtle">{t.plan.restDay}</p>
+          <p className="text-center text-sm text-subtle">{t.plan.restDay}</p>
         )}
-      </GlassSurface>
+      </div>
 
       {nextWeekPlans.length > 0 && (
         <GlassSurface variant="card" className="rounded-card-sm p-4">

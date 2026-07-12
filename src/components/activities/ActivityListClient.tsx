@@ -180,7 +180,7 @@ export function ActivityListClient({
 
   return (
     <div className="space-y-4">
-      <GlassSurface as="div" variant="card" className="rounded-2xl px-5 py-3">
+      <div className="px-1">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-title1 font-extrabold leading-[1.1] tracking-tight text-foreground">
@@ -221,7 +221,7 @@ export function ActivityListClient({
             className="mt-3 h-9 w-full rounded-xl border border-border bg-card/60 px-3 text-sm text-foreground placeholder-subtle focus:border-accent focus:outline-none"
           />
         )}
-      </GlassSurface>
+      </div>
 
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <Pill
