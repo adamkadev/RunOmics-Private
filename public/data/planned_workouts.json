@@ -1,13 +1,6 @@
 {
   "planned": [
     {
-      "date": "2026-07-04",
-      "name": "1h dont 30' actives",
-      "durationSecs": 3600,
-      "type": "Base",
-      "scheduledTime": "19:00"
-    },
-    {
       "date": "2026-07-05",
       "name": "8km endurance",
       "distanceM": 8000,
