@@ -284,7 +284,10 @@ export function ActivityListClient({
                 {isCurrent ? (
                   <div
                     className="sticky top-[max(var(--safe-top),8px)] z-10 flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5"
-                    style={{ background: 'rgba(30,215,135,0.08)', borderColor: 'rgba(30,215,135,0.22)' }}
+                    style={{
+                      background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
+                      borderColor: 'color-mix(in srgb, var(--accent) 22%, transparent)',
+                    }}
                   >
                     <div className="min-w-0">
                       <div className="text-sm font-bold text-foreground">{g.label}</div>
