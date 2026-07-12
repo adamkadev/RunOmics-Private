@@ -772,6 +772,10 @@ export const fr = {
     achievements: {
       title: 'Exploits de cette sortie',
     },
+    dataQuality: {
+      estimated: 'Estimé',
+      noHr: 'Pas de fréquence cardiaque - zones et charge estimées depuis l’allure.',
+    },
     similarRuns: {
       title: 'Sorties similaires',
       timesBadge: (n: number) => `${n} fois`,
@@ -1129,6 +1133,16 @@ export const fr = {
     weekOf: (label: string) => `Sem. du ${label}`,
     restDay: 'Repos',
     planned: 'Prévu',
+    structure: {
+      title: 'Structure',
+      warmup: 'Échauffement',
+      cooldown: 'Retour au calme',
+      single: (min: number, zone: string) => `${min}' @ ${zone}`,
+      reps: (n: number, effort: number, zone: string) => `${n} × ${effort}' @ ${zone}`,
+      repsWithRecovery: (n: number, effort: number, recovery: number, zone: string) => `${n} × ${effort}' @ ${zone} / ${recovery}' facile`,
+      easyZone: 'Z1-Z2',
+      min: (m: number) => `${m}'`,
+    },
     nextWeek: (n: number) => `Semaine prochaine - ${n} prévue${n > 1 ? 's' : ''}`,
     viewDetail: 'Voir le détail',
     type: 'Type',

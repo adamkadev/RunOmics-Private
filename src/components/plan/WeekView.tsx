@@ -6,6 +6,8 @@ import type { Activity, ActivityType, PlannedWorkout } from '@/domain/activity/t
 import { ACTIVITY_TYPE_CONFIG, ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
 import type { HrBounds } from '@/domain/training/trimp'
 import { summarizeWeek, weeklyTrimpTotals, compareWeekLoad, computeWeekAdherence } from '@/domain/training/weekSummary'
+import { parseWorkoutStructure } from '@/domain/training/workoutStructure'
+import { WorkoutStructureBars } from './WorkoutStructure'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ActivitySheet } from './ActivitySheet'
@@ -43,48 +45,54 @@ interface Day {
 function PlannedWorkoutRow({ plan, onTap }: { plan: PlannedWorkout; onTap: () => void }) {
   const typeColor = plan.type ? ACTIVITY_TYPE_CONFIG[plan.type as ActivityType].chartColor : null
   const Icon = plan.type ? ACTIVITY_TYPE_ICONS[plan.type as ActivityType] : Footprints
+  const structure = parseWorkoutStructure(plan.name, plan.durationSecs)
 
   return (
     <button
       type="button"
       onClick={onTap}
       className={cn(
-        'flex w-full items-center gap-3 rounded-xl border border-dashed p-3 text-left transition-colors',
+        'w-full rounded-xl border border-dashed p-3 text-left transition-colors',
         !typeColor && 'border-accent/35 bg-accent/[0.04] hover:bg-accent/[0.07]'
       )}
       style={typeColor ? { borderColor: `${typeColor}59`, background: `${typeColor}14` } : undefined}
     >
-      <span
-        className={cn(
-          'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border',
-          !typeColor && 'border-accent/30 bg-accent/10'
-        )}
-        style={typeColor ? { background: `${typeColor}1a`, borderColor: `${typeColor}44` } : undefined}
-      >
-        <Icon
-          size={16}
-          strokeWidth={2.2}
-          style={typeColor ? { color: typeColor } : undefined}
-          className={!typeColor ? 'text-accent' : undefined}
-        />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-bold text-foreground">{plan.name}</span>
-        <span className="mt-0.5 block text-xs text-muted-foreground">
-          {[
-            plan.scheduledTime,
-            plan.type ? t.activityTypes[plan.type as ActivityType] : null,
-            plan.durationSecs ? `~${Math.round(plan.durationSecs / 60)} min` : null,
-          ]
-            .filter(Boolean)
-            .join(' · ') || t.plan.planned}
+      <div className="flex items-center gap-3">
+        <span
+          className={cn(
+            'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border',
+            !typeColor && 'border-accent/30 bg-accent/10'
+          )}
+          style={typeColor ? { background: `${typeColor}1a`, borderColor: `${typeColor}44` } : undefined}
+        >
+          <Icon
+            size={16}
+            strokeWidth={2.2}
+            style={typeColor ? { color: typeColor } : undefined}
+            className={!typeColor ? 'text-accent' : undefined}
+          />
         </span>
-      </span>
-      <ChevronRight
-        size={16}
-        className={cn('shrink-0', !typeColor && 'text-accent/40')}
-        style={typeColor ? { color: `${typeColor}66` } : undefined}
-      />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-bold text-foreground">{plan.name}</span>
+          <span className="mt-0.5 block text-xs text-muted-foreground">
+            {[
+              plan.scheduledTime,
+              plan.type ? t.activityTypes[plan.type as ActivityType] : null,
+              plan.durationSecs ? `~${Math.round(plan.durationSecs / 60)} min` : null,
+            ]
+              .filter(Boolean)
+              .join(' · ') || t.plan.planned}
+          </span>
+        </span>
+        <ChevronRight
+          size={16}
+          className={cn('shrink-0', !typeColor && 'text-accent/40')}
+          style={typeColor ? { color: `${typeColor}66` } : undefined}
+        />
+      </div>
+      {structure && (
+        <WorkoutStructureBars steps={structure} className="mt-3 flex h-[18px] items-end gap-[2px]" />
+      )}
     </button>
   )
 }

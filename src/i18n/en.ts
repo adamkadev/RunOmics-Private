@@ -778,6 +778,10 @@ export const en = {
     achievements: {
       title: 'Achievements from this run',
     },
+    dataQuality: {
+      estimated: 'Estimated',
+      noHr: 'No heart-rate data - zones and load are estimated from pace.',
+    },
     similarRuns: {
       title: 'Similar runs',
       timesBadge: (n: number) => `${n} times`,
@@ -1134,6 +1138,16 @@ export const en = {
     weekOf: (label: string) => `Week of ${label}`,
     restDay: 'Rest',
     planned: 'Planned',
+    structure: {
+      title: 'Structure',
+      warmup: 'Warm-up',
+      cooldown: 'Cool-down',
+      single: (min: number, zone: string) => `${min}' @ ${zone}`,
+      reps: (n: number, effort: number, zone: string) => `${n} × ${effort}' @ ${zone}`,
+      repsWithRecovery: (n: number, effort: number, recovery: number, zone: string) => `${n} × ${effort}' @ ${zone} / ${recovery}' easy`,
+      easyZone: 'Z1-Z2',
+      min: (m: number) => `${m}'`,
+    },
     nextWeek: (n: number) => `Next week - ${n} planned`,
     viewDetail: 'View detail',
     type: 'Type',

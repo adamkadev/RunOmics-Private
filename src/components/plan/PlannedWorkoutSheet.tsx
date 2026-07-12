@@ -4,6 +4,8 @@ import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import type { ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import { ACTIVITY_TYPE_CONFIG, ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
+import { parseWorkoutStructure } from '@/domain/training/workoutStructure'
+import { WorkoutStructureBars, WorkoutStepList } from './WorkoutStructure'
 import { useDragToDismiss } from '@/lib/useDragToDismiss'
 import { useFocusTrap } from '@/lib/useFocusTrap'
 import { useScrollLock } from '@/lib/useScrollLock'
@@ -28,6 +30,7 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
 
   const durationMin = workout.durationSecs ? Math.round(workout.durationSecs / 60) : null
   const distanceKm = workout.distanceM ? (workout.distanceM / 1000).toFixed(1) : null
+  const structure = parseWorkoutStructure(workout.name, workout.durationSecs)
   const typeColor = workout.type
     ? ACTIVITY_TYPE_CONFIG[workout.type as ActivityType].chartColor
     : null
@@ -112,6 +115,16 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
                   {distanceKm} {t.units.km}
                 </span>
               )}
+            </div>
+          )}
+
+          {structure && (
+            <div className="mb-4">
+              <p className="mb-2 text-caption font-semibold uppercase tracking-wide text-white/30">
+                {t.plan.structure.title}
+              </p>
+              <WorkoutStructureBars steps={structure} className="mb-3 flex h-[26px] items-end gap-[3px]" />
+              <WorkoutStepList steps={structure} type={workout.type as ActivityType | undefined} />
             </div>
           )}
 
