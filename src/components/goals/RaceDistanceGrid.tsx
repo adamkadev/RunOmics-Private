@@ -2,16 +2,11 @@ import { Check } from 'lucide-react'
 import type { YearData } from '@/application/usecases/GetGoalsData'
 import { DISTANCE_KEY } from '@/domain/activity/effort'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { formatCompactDate, formatDate, formatDuration } from '@/lib/formatters'
+import { formatDayMonth, formatDuration } from '@/lib/formatters'
 import { STATUS } from '@/lib/statusColors'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { shortDist } from './YearView'
-
-function gapDisplay(gapSeconds: number): { label: string; className: string } {
-  if (gapSeconds <= 0) return { label: `-${formatDuration(Math.abs(gapSeconds))}`, className: STATUS.success.text }
-  return { label: `+${formatDuration(gapSeconds)}`, className: STATUS.warning.text }
-}
 
 // One card per race distance the athlete has a goal for - target, result (or
 // prediction) and race context live in the same place instead of being split
@@ -28,6 +23,7 @@ export function RaceDistanceGrid({ yearData }: { yearData: YearData }) {
       <div className="grid grid-cols-2 gap-3">
         {goals.targets.map((target) => {
           const pb = pbs.find((p) => p.entry.distance === target.distance)
+          const isSpotlight = nextRaceSpotlight?.race.distance === target.distance
           const otherRace = upcomingRaces.find((r) => r.distance === target.distance && r !== nextRaceSpotlight?.race)
           const achieved = !!pb && target.targetSeconds !== null && pb.entry.seconds <= target.targetSeconds
           const predictionFallback =
@@ -37,7 +33,7 @@ export function RaceDistanceGrid({ yearData }: { yearData: YearData }) {
             <GlassSurface
               key={target.distance}
               variant="card"
-              className="rounded-card-sm p-4"
+              className={cn('rounded-card-sm p-4', !pb && 'border-dashed')}
               style={achieved ? { background: 'rgba(30,215,135,0.18)', borderColor: 'rgba(30,215,135,0.4)' } : undefined}
             >
               <div className="flex items-center justify-between gap-2">
@@ -47,22 +43,33 @@ export function RaceDistanceGrid({ yearData }: { yearData: YearData }) {
                 </span>
               </div>
 
-              {pb ? (
+              {isSpotlight && nextRaceSpotlight ? (
+                <>
+                  <p className="mt-1.5 flex items-baseline gap-1.5 text-xl font-bold text-accent-text">
+                    {nextRaceSpotlight.predictedSeconds !== null ? formatDuration(nextRaceSpotlight.predictedSeconds) : '-'}
+                    <span className="text-xs font-normal text-subtle">{s.predictedTag}</span>
+                  </p>
+                  <p className="mt-0.5 truncate text-xs text-orange-400">
+                    {nextRaceSpotlight.race.name} · {formatDayMonth(nextRaceSpotlight.race.date)} ·{' '}
+                    {t.nextRace.countdown(nextRaceSpotlight.daysUntil)}
+                  </p>
+                </>
+              ) : pb ? (
                 <>
                   <p className={cn('mt-1.5 flex items-center gap-1.5 text-xl font-bold', achieved ? STATUS.success.text : 'text-foreground')}>
                     {formatDuration(pb.entry.seconds)}
                     {achieved && <Check size={15} strokeWidth={3} />}
                     {!achieved && target.targetSeconds !== null && (
-                      <span className={cn('text-sm font-semibold', gapDisplay(pb.entry.seconds - target.targetSeconds).className)}>
-                        {gapDisplay(pb.entry.seconds - target.targetSeconds).label}
+                      <span className="text-sm font-semibold text-accent-text">
+                        +{formatDuration(pb.entry.seconds - target.targetSeconds)}
                       </span>
                     )}
                   </p>
                   <p className="mt-0.5 truncate text-xs text-subtle">
                     {achieved
-                      ? `${formatDate(pb.activity.date)}${pb.activity.description ? ` · ${pb.activity.description}` : ''}`
-                      : `${s.best} · ${formatDate(pb.activity.date)}${
-                          otherRace ? ` · ${s.nextRaceHint(otherRace.name, formatCompactDate(otherRace.date))}` : ''
+                      ? `${formatDayMonth(pb.activity.date)}${pb.activity.description ? ` · ${pb.activity.description}` : ''}`
+                      : `${s.best} · ${formatDayMonth(pb.activity.date)}${
+                          otherRace ? ` · ${s.nextRaceHint(otherRace.name, formatDayMonth(otherRace.date))}` : ''
                         }`}
                   </p>
                 </>
@@ -72,7 +79,10 @@ export function RaceDistanceGrid({ yearData }: { yearData: YearData }) {
                     {target.targetSeconds === null ? s.noTargetSet : s.noTarget}
                   </p>
                   {predictionFallback !== null && (
-                    <p className="mt-0.5 text-xs text-subtle">{t.records.predictedFromFitness(formatDuration(predictionFallback))}</p>
+                    <p className="mt-0.5 text-xs text-subtle">
+                      {t.records.predictedFromFitness(formatDuration(predictionFallback))}{' '}
+                      <span className="text-accent-text">{s.findRace}</span>
+                    </p>
                   )}
                 </>
               )}

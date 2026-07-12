@@ -218,39 +218,3 @@ export function getTopEfforts(activities: Activity[] = getAllActivities(), n = 5
 
   return result
 }
-
-export interface EffortProgression {
-  /** Running-best seconds at each attempt of this distance over the last 12 months, oldest first. */
-  seconds: number[]
-  /** Seconds shaved off the running best over the window (positive = improved). */
-  improvedSeconds: number
-}
-
-// Running-best trajectory per distance for the PR-card sparklines: each attempt
-// in the last 12 months contributes a point at the best time achieved so far,
-// so the line only moves down when a PR actually falls.
-export function getEffortProgressions(activities: Activity[] = getAllActivities()): Record<string, EffortProgression> {
-  const cutoff = new Date()
-  cutoff.setFullYear(cutoff.getFullYear() - 1)
-  const cutoffIso = cutoff.toISOString().slice(0, 10)
-
-  const result: Record<string, EffortProgression> = {}
-  for (const { key } of EFFORTS) {
-    const attempts = activities
-      .filter((a) => a.date >= cutoffIso && a.bestEfforts?.[key] != null)
-      .sort((a, b) => a.date.localeCompare(b.date))
-      .map((a) => Math.round(a.bestEfforts![key] as number))
-    if (attempts.length < 3) continue
-
-    const runningBest: number[] = []
-    let best = Infinity
-    for (const s of attempts) {
-      best = Math.min(best, s)
-      runningBest.push(best)
-    }
-    const first = runningBest[0]!
-    const last = runningBest[runningBest.length - 1]!
-    result[key] = { seconds: runningBest, improvedSeconds: first - last }
-  }
-  return result
-}

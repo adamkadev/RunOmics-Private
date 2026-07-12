@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import type { RecordEntry, TopEfforts, EffortProgression } from '@/application/usecases/GetRecords'
+import type { RecordEntry, TopEfforts } from '@/application/usecases/GetRecords'
 import type { RacePrediction } from '@/application/usecases/GetRacePredictions'
 import type { Milestone } from '@/application/usecases/GetMilestones'
 import type { PbAlert } from '@/application/usecases/GetPbAlerts'
@@ -21,12 +21,11 @@ interface Props {
   predictions: RacePrediction[]
   pbAlerts: PbAlert[]
   milestones: Milestone[]
-  progressions?: Record<string, EffortProgression>
 }
 
 // Records and Milestones used to be two separate routes - merged here behind
 // a segmented control so "personal bests" has one screen, not two.
-export function RecordsClient({ records, topEfforts, mostRecentKey, predictions, pbAlerts, milestones, progressions = {} }: Props) {
+export function RecordsClient({ records, topEfforts, mostRecentKey, predictions, pbAlerts, milestones }: Props) {
   const [tab, setTab] = useState<Tab>('prs')
   const s = t.records.segmented
 
@@ -63,7 +62,6 @@ export function RecordsClient({ records, topEfforts, mostRecentKey, predictions,
             topEfforts={topEfforts}
             mostRecentKey={mostRecentKey}
             predictions={predictions}
-            progressions={progressions}
           />
         </div>
       )}
