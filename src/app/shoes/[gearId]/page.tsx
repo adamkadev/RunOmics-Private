@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getShoeDetail } from '@/application/usecases/GetShoeDetail'
 import { SHOE_REGISTRY } from '@/domain/shoe/types'
-import { ActivityRow } from '@/components/activities/ActivityRow'
+import { ActivityListCard } from '@/components/activities/ActivityListCard'
 import { BrandIcon } from '@/components/shoes/BrandIcon'
 import { Badge } from '@/components/ui/Card'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -110,7 +110,7 @@ export default async function ShoeDetailPage({
         ) : (
           <div className="space-y-2">
             {shoe.activities.map((activity) => (
-              <ActivityRow key={activity.id} activity={activity} />
+              <ActivityListCard key={activity.id} activity={activity} />
             ))}
           </div>
         )}

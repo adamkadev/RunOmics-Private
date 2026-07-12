@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Sparkles } from 'lucide-react'
+import { X } from 'lucide-react'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
@@ -23,7 +23,6 @@ export function FirstLaunchHint() {
 
   return (
     <GlassSurface variant="card" className="flex items-start gap-3 p-4">
-      <Sparkles size={18} className="mt-0.5 shrink-0 text-accent-text" />
       <p className="flex-1 text-sm text-foreground/80">{s.message}</p>
       <button
         onClick={dismiss}
