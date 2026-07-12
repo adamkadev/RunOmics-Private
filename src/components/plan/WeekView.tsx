@@ -133,10 +133,10 @@ function NextWeekPlanRow({ plan, onTap }: { plan: PlannedWorkout; onTap: () => v
 
 function SummaryStat({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="rounded-xl px-2.5 py-2.5 text-center" style={{ background: 'rgba(0,0,0,0.25)' }}>
+    <GlassSurface variant="card" className="rounded-xl px-2.5 py-2.5 text-center">
       <div className="text-micro font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
       <div className="mt-1 text-base font-extrabold tabular-nums text-foreground">{value}</div>
-    </div>
+    </GlassSurface>
   )
 }
 
