@@ -583,24 +583,6 @@ export const en = {
           balanced: 'Aerobic and anaerobic training effect are roughly balanced.',
         },
       },
-      temperatureCorrelation: {
-        title: 'Temperature vs Pace',
-        footnote: 'Each dot is one run (>= 3 km). Dashed line shows the overall trend.',
-        tooltip: { temp: 'Temp', pace: 'Pace', distance: 'Distance' },
-        explains: {
-          slowing: (sec: number) => `Pace slows ~${sec}s/km per 10°C - heat has a clear impact`,
-          stable: 'Temperature has little impact on your pace',
-        },
-      },
-      rpeLoadCorrelation: {
-        title: 'Form vs Relative Effort',
-        footnote: 'Each dot is one run (>= 3 km), compared to your usual RPE for that session type so a sprint and an easy run are judged fairly. Color shows temperature when known. Dashed line shows the overall trend.',
-        tooltip: { form: 'Form (TSB)', rpe: 'RPE', delta: 'vs usual', temp: 'Temp' },
-        explains: {
-          harder: (delta: number) => `Runs feel ~${delta} RPE harder than usual per 10-point drop in form - fatigue clearly affects perceived effort`,
-          stable: 'Your form has little impact on how hard runs feel relative to usual',
-        },
-      },
       monthlyComparison: {
         title: 'Month by Month',
         reading: (curYear: number, deltaPct: number) =>

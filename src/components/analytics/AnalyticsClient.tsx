@@ -298,7 +298,7 @@ export function AnalyticsClient({
         <>
           <GlassSurface
             as="div"
-            variant="card"
+            variant="nav"
             role="tablist"
             aria-label={t.analytics.title}
             className="sticky top-[max(var(--safe-top),8px)] z-10 flex gap-1 overflow-x-auto rounded-xl p-1 mb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -310,13 +310,16 @@ export function AnalyticsClient({
                 aria-selected={tab === item.id}
                 onClick={() => selectTab(item.id)}
                 className={cn(
-                  'min-w-fit flex-1 whitespace-nowrap rounded-lg py-2.5 text-sm font-semibold transition-colors',
+                  'relative min-w-fit flex-1 whitespace-nowrap px-2 py-3 text-sm font-medium transition-colors',
                   tab === item.id
-                    ? 'bg-accent text-accent-foreground'
-                    : 'text-subtle hover:text-foreground',
+                    ? 'text-accent'
+                    : 'text-muted-foreground hover:text-foreground',
                 )}
               >
                 {item.label}
+                {tab === item.id && (
+                  <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-t-full bg-accent" />
+                )}
               </button>
             ))}
           </GlassSurface>
@@ -327,8 +330,6 @@ export function AnalyticsClient({
             {tab === 'performance' && (
               <PerformanceTab
                 series={active}
-                temperatureScatter={data.temperatureScatter}
-                rpeLoadCorrelation={data.rpeLoadCorrelation}
               />
             )}
 

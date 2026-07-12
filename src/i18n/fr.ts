@@ -577,24 +577,6 @@ export const fr = {
           balanced: 'Le training effect aérobie et anaérobie sont à peu près équilibrés.',
         },
       },
-      temperatureCorrelation: {
-        title: 'Température vs allure',
-        footnote: 'Chaque point est une sortie (>= 3 km). La ligne pointillée montre la tendance globale.',
-        tooltip: { temp: 'Temp', pace: 'Allure', distance: 'Distance' },
-        explains: {
-          slowing: (sec: number) => `L’allure ralentit d’environ ${sec}s/km par 10°C - la chaleur a un impact net`,
-          stable: 'La température a peu d’impact sur votre allure',
-        },
-      },
-      rpeLoadCorrelation: {
-        title: 'Forme vs effort relatif',
-        footnote: 'Chaque point est une sortie (>= 3 km), comparée à votre RPE habituel pour ce type de séance - un sprint et un footing sont ainsi jugés équitablement. La couleur indique la température quand elle est connue. La ligne pointillée montre la tendance globale.',
-        tooltip: { form: 'Forme (TSB)', rpe: 'RPE', delta: 'vs habituel', temp: 'Temp' },
-        explains: {
-          harder: (delta: number) => `Les sorties semblent ~${delta} RPE plus dures que d’habitude par baisse de 10 points de forme - la fatigue pèse clairement sur l’effort perçu`,
-          stable: 'Votre forme influe peu sur la difficulté ressentie des sorties',
-        },
-      },
       monthlyComparison: {
         title: 'Mois par mois',
         reading: (curYear: number, deltaPct: number) =>

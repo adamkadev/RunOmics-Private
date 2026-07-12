@@ -42,8 +42,6 @@ function pageData(byYear: Record<number, YearAnalytics>): AnalyticsPageData {
     efficiencyDaily: [],
     runningDynamicsDaily: [],
     allTime: { ...season(), totals: season().totals },
-    temperatureScatter: [],
-    rpeLoadCorrelation: [],
   }
 }
 
