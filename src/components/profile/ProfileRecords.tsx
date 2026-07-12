@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Trophy, ArrowRight } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import type { RecordEntry } from '@/application/usecases/GetRecords'
 import { formatDuration, formatDateWithYear } from '@/lib/formatters'
@@ -20,19 +20,15 @@ function mostRecent(records: RecordEntry[]): (RecordEntry & { date: string }) | 
 
 interface Props {
   records: RecordEntry[]
-  milestonesCount: number
 }
 
-export function ProfileRecords({ records, milestonesCount }: Props) {
+export function ProfileRecords({ records }: Props) {
   const best = mostRecent(records)
   const recent = best?.date ? isRecentPr(best.date) : false
 
   return (
     <GlassSurface variant="card" className="flex flex-col gap-3 p-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-bold text-foreground">{t.profile.records.title}</h2>
-        <Trophy size={16} className="text-muted-foreground" aria-hidden="true" />
-      </div>
+      <h2 className="text-sm font-bold text-foreground">{t.profile.records.title}</h2>
 
       {best ? (
         <div>
@@ -54,22 +50,12 @@ export function ProfileRecords({ records, milestonesCount }: Props) {
         <p className="text-micro text-muted-foreground">{t.profile.records.notYet}</p>
       )}
 
-      <div className="mt-auto flex flex-col gap-1.5">
-        <Link
-          href="/records"
-          className="flex items-center gap-1.5 text-sm font-semibold text-accent-text active:scale-95"
-        >
-          {t.profile.records.viewAll} <ArrowRight size={16} />
-        </Link>
-        {milestonesCount > 0 && (
-          <Link
-            href="/milestones"
-            className="flex items-center gap-1.5 text-caption font-semibold text-muted-foreground active:scale-95"
-          >
-            {t.profile.milestones.viewAll} <ArrowRight size={14} />
-          </Link>
-        )}
-      </div>
+      <Link
+        href="/records"
+        className="mt-auto flex items-center gap-1.5 text-sm font-semibold text-accent-text active:scale-95"
+      >
+        {t.profile.records.viewAll} <ArrowRight size={16} />
+      </Link>
     </GlassSurface>
   )
 }

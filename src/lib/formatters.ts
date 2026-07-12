@@ -92,10 +92,16 @@ export function monthLabel(month: number): string {
   return new Date(2000, month - 1, 1).toLocaleString(t.locale, { month: 'short' }).toUpperCase()
 }
 
-/** Full uppercase "MONTH YYYY" label for a date, used by a month group div. */
-export function monthYearLabel(isoDate: string): string {
-  const d = new Date(isoDate + 'T00:00:00')
-  return d.toLocaleString(t.locale, { month: 'long', year: 'numeric' }).toUpperCase()
+/** "Jul 6 - 12" (or "Jun 29 - Jul 5" across a month boundary), for a Monday-Sunday week group header. */
+export function weekRangeLabel(startIso: string, endIso: string): string {
+  const start = new Date(startIso + 'T00:00:00')
+  const end = new Date(endIso + 'T00:00:00')
+  const sameMonth = start.getMonth() === end.getMonth()
+  const endLabel = end.toLocaleDateString(t.locale, { month: 'short', day: 'numeric' })
+  if (sameMonth) {
+    return `${end.toLocaleDateString(t.locale, { month: 'short' })} ${start.getDate()} - ${end.getDate()}`
+  }
+  return `${start.toLocaleDateString(t.locale, { month: 'short', day: 'numeric' })} - ${endLabel}`
 }
 
 export type RelativeTimeUnit = 'now' | 'minutes' | 'hours' | 'days'

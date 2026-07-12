@@ -1,9 +1,13 @@
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
-import { Trophy, Target, Medal, TrendingUp, ArrowRight, ArrowDown, Check, Calendar, Flag, MapPin } from 'lucide-react'
-import type { YearData, GoalProjection } from '@/application/usecases/GetGoalsData'
-import { formatDuration, formatDate, formatPace } from '@/lib/formatters'
+import { Trophy, ArrowRight, Calendar, MapPin, Check, Target } from 'lucide-react'
+import type { YearData, GoalProjection, GoalYear } from '@/application/usecases/GetGoalsData'
+import { formatDuration, formatDate, formatPace, formatDurationShort } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
+import { EditableNumber } from '@/components/ui/EditableNumber'
 import { MonthlyGoalsGrid } from './MonthlyGoalsGrid'
 import { NextRaceSpotlight } from './NextRaceSpotlight'
 import { raceDistanceTint } from '@/lib/colors'
@@ -14,23 +18,18 @@ import { t } from '@/i18n'
 const DIST_SHORT: Record<string, string> = { 'Half-Marathon': 'HM' }
 export function shortDist(d: string) { return DIST_SHORT[d] ?? d }
 
-// Icon-only status indicator for the annual-goal projection chip: check green
-// (ahead), arrow blue (on track), down amber (behind).
-const PROJECTION_STATUS_ICON: Record<GoalProjection['status'], { Icon: typeof Check; className: string }> = {
-  ahead:    { Icon: Check,       className: STATUS.success.text },
-  on_track: { Icon: ArrowRight,  className: STATUS.progress.text },
-  behind:   { Icon: ArrowDown,   className: STATUS.warning.text },
-}
-
-const STATUS_CHIP_BG: Record<GoalProjection['status'], string> = {
-  ahead:    STATUS.success.bg,
-  on_track: STATUS.progress.bg,
-  behind:   STATUS.warning.bg,
+// Text-only status indicator for the annual-goal header (no chip background,
+// no icon): green ahead, blue on track, amber behind.
+const PROJECTION_STATUS_CLASS: Record<GoalProjection['status'], string> = {
+  ahead:    STATUS.success.text,
+  on_track: STATUS.progress.text,
+  behind:   STATUS.warning.text,
 }
 
 // Two-segment trend line for the annual-goal hero: solid from Jan 1 to today's
 // actual progress, dashed from today to the year-end projection. Purely
 // presentational - the underlying numbers all come from computeProjection.
+// Runs edge-to-edge (x: 0-300) so the card's full width is used.
 function projectionSparkline(year: number, annualDistanceKm: number, annualProgress: number, projection: GoalProjection) {
   const yearStart = new Date(year, 0, 1).getTime()
   const yearEnd = new Date(year + 1, 0, 1).getTime()
@@ -38,19 +37,25 @@ function projectionSparkline(year: number, annualDistanceKm: number, annualProgr
   const projectedPercent = (projection.projectedYearKm / annualDistanceKm) * 100
   const domainMax = Math.max(100, projectedPercent) * 1.08
   const yFor = (pct: number) => 40 - (Math.min(Math.max(pct, 0), domainMax) / domainMax) * 34
-  return { nowX: 4 + elapsedFraction * 292, nowY: yFor(annualProgress), endY: yFor(projectedPercent) }
+  return { nowX: elapsedFraction * 300, nowY: yFor(annualProgress), endY: yFor(projectedPercent) }
 }
 
-export function YearView({ yearData }: { yearData: YearData }) {
+interface Props {
+  yearData: YearData
+  onSaveGoal?: (goalYear: GoalYear) => void
+}
+
+// The annual goal target is edited here - its one home - not on the Progress
+// hub teaser, which only links back to this page.
+export function YearView({ yearData, onSaveGoal }: Props) {
   const { goals, pbs, upcomingRaces, totalDistanceKm, projection, monthlyGoals, nextRaceSpotlight } = yearData
   const today = new Date().toISOString().slice(0, 10)
 
-  const annualDistanceKm = goals?.annualDistanceKm ?? 0
+  const [editedAnnualKm, setEditedAnnualKm] = useState(goals?.annualDistanceKm ?? 0)
+  const annualDistanceKm = editedAnnualKm
   const annualProgress = annualDistanceKm > 0
     ? Math.min((totalDistanceKm / annualDistanceKm) * 100, 100)
     : 0
-  const remaining = Math.max(annualDistanceKm - totalDistanceKm, 0)
-  const statusIcon = projection ? PROJECTION_STATUS_ICON[projection.status] : null
   const sparkline = projection && annualDistanceKm > 0
     ? projectionSparkline(yearData.year, annualDistanceKm, annualProgress, projection)
     : null
@@ -61,16 +66,33 @@ export function YearView({ yearData }: { yearData: YearData }) {
       {goals && (
         <section className="space-y-3">
           <GlassSurface variant="card" className="p-5">
-            <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              <Target size={16} className="text-accent-text" />
-              {t.goals.annualGoal}
-            </h2>
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                {t.goals.annualGoal}
+              </h2>
+              {projection && (
+                <span className={cn('shrink-0 text-xs font-semibold', PROJECTION_STATUS_CLASS[projection.status])}>
+                  {t.goals.projection.status[projection.status]}
+                  {projection.deltaKm !== 0 && ` ${projection.status === 'ahead' ? '+' : '-'}${Math.abs(projection.deltaKm)} km`}
+                </span>
+              )}
+            </div>
             <div className="mb-3 flex items-end justify-between">
               <div>
                 <span className="text-3xl font-bold tracking-tight text-foreground">
                   <AnimatedValue value={totalDistanceKm} />
                 </span>
-                <span className="ml-1 text-sm text-subtle">/ {goals.annualDistanceKm} {t.units.km}</span>
+                <span className="ml-1 text-sm text-subtle">
+                  {'/ '}
+                  <EditableNumber
+                    value={editedAnnualKm}
+                    onCommit={(n) => {
+                      setEditedAnnualKm(n)
+                      onSaveGoal?.({ ...goals, annualDistanceKm: n })
+                    }}
+                  />
+                  {' '}{t.units.km}
+                </span>
               </div>
               <span className="text-sm font-semibold text-accent-text">
                 <AnimatedValue value={annualProgress} />%
@@ -85,39 +107,18 @@ export function YearView({ yearData }: { yearData: YearData }) {
                 }}
               />
             </div>
-            <div className="mt-2 flex items-center justify-between text-xs">
-              {remaining > 0 ? (
-                <span className="text-subtle">{t.goals.kmRemaining(Number(remaining.toFixed(0)))}</span>
-              ) : (
-                <span className={cn('font-medium', STATUS.success.text)}>{t.goals.goalReached}</span>
-              )}
-            </div>
-            {projection && statusIcon && (
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                <span className={cn('rounded-full px-2.5 py-0.5 font-semibold', STATUS_CHIP_BG[projection.status], statusIcon.className)}>
-                  {t.goals.projection.status[projection.status]}
-                </span>
-                <span className={cn('flex items-center gap-1 font-medium', statusIcon.className)}>
-                  <statusIcon.Icon size={12} strokeWidth={2.5} />
-                  {projection.deltaKm !== 0 && `${projection.status === 'ahead' ? '+' : '-'}${Math.abs(projection.deltaKm)} km`}
-                </span>
-                <span className="w-full text-subtle">
-                  {t.goals.projection.rate(projection.weeklyRate, projection.weeklyNeeded)}
-                </span>
-              </div>
-            )}
             {sparkline && projection && (
               <>
-                <svg viewBox="0 0 300 44" className="mt-2 h-9 w-full">
+                <svg viewBox="0 0 300 44" className="mt-3 h-9 w-full">
                   <path
-                    d={`M4 40 L${sparkline.nowX.toFixed(1)} ${sparkline.nowY.toFixed(1)}`}
+                    d={`M0 40 L${sparkline.nowX.toFixed(1)} ${sparkline.nowY.toFixed(1)}`}
                     fill="none"
                     stroke="var(--accent)"
                     strokeWidth={2.5}
                     strokeLinecap="round"
                   />
                   <path
-                    d={`M${sparkline.nowX.toFixed(1)} ${sparkline.nowY.toFixed(1)} L296 ${sparkline.endY.toFixed(1)}`}
+                    d={`M${sparkline.nowX.toFixed(1)} ${sparkline.nowY.toFixed(1)} L300 ${sparkline.endY.toFixed(1)}`}
                     fill="none"
                     className="text-subtle"
                     stroke="currentColor"
@@ -125,7 +126,9 @@ export function YearView({ yearData }: { yearData: YearData }) {
                     strokeDasharray="4 4"
                   />
                 </svg>
-                <p className="text-[11px] text-subtle">{t.goals.projection.projected(projection.projectedYearKm)}</p>
+                <p className="mt-1 text-[11px] text-subtle">
+                  {t.goals.projection.rate(projection.weeklyRate)} - {t.goals.projection.projected(projection.projectedYearKm)}
+                </p>
               </>
             )}
           </GlassSurface>
@@ -136,33 +139,28 @@ export function YearView({ yearData }: { yearData: YearData }) {
 
       {goals && goals.targets.length > 0 && (
         <section className="space-y-3">
-          <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            <TrendingUp size={16} className="text-accent-text" />
-            {t.goals.raceTargets}
-          </h2>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-4 gap-2">
             {goals.targets.map((target) => {
               const pb = pbs.find((p) => p.entry.distance === target.distance)
               const pbSeconds = pb?.entry.seconds ?? null
               const delta = pbSeconds !== null && target.targetSeconds ? pbSeconds - target.targetSeconds : null
               const achieved = delta !== null && delta <= 0
               return (
-                <GlassSurface key={target.distance} variant="card" className="rounded-card-sm p-5">
+                <GlassSurface
+                  key={target.distance}
+                  variant="card"
+                  className="rounded-card-sm p-3 text-center"
+                  style={achieved ? { background: 'rgba(30,215,135,0.18)', borderColor: 'rgba(30,215,135,0.4)' } : undefined}
+                >
                   <p className="text-xs font-semibold text-subtle">{shortDist(target.distance)}</p>
-                  <p className="mt-1 text-lg font-bold text-foreground">
+                  <p className={cn('mt-1 flex items-center justify-center gap-1 text-base font-bold', achieved ? STATUS.success.text : 'text-foreground')}>
                     {target.targetSeconds === null ? (
                       <span className="text-sm font-normal text-subtle">{t.goals.noTarget}</span>
                     ) : (
-                      formatDuration(target.targetSeconds)
+                      formatDurationShort(target.targetSeconds)
                     )}
+                    {achieved && <Check size={13} strokeWidth={3} />}
                   </p>
-                  {pbSeconds !== null && delta !== null && (
-                    <p className={cn('mt-0.5 text-xs font-medium', achieved ? STATUS.success.text : STATUS.warning.text)}>
-                      {achieved
-                        ? t.goals.targetDone(formatDuration(Math.abs(delta)))
-                        : t.goals.targetToGo(formatDuration(delta))}
-                    </p>
-                  )}
                 </GlassSurface>
               )
             })}
@@ -174,8 +172,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
 
       {otherUpcomingRaces.length > 0 && (
         <section className="space-y-3">
-          <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            <Flag size={16} className="text-accent-text" />
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             {t.goals.upcomingRaces}
           </h2>
           <div className="space-y-2">
@@ -229,8 +226,7 @@ export function YearView({ yearData }: { yearData: YearData }) {
 
       {pbs.length > 0 ? (
         <section className="space-y-3">
-          <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            <Medal size={16} className="text-accent-text" />
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             {t.goals.seasonRaces}
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

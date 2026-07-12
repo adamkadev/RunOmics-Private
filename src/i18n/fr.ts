@@ -156,6 +156,15 @@ export const fr = {
   },
 
   settings: {
+    sections: {
+      appearance: 'Apparence',
+      notificationsData: 'Notifications & données',
+      account: 'Compte',
+    },
+    rowAction: {
+      export: 'Exporter ›',
+      clear: 'Vider ›',
+    },
     appearance: {
       title: 'Apparence',
       themeLabel: 'Thème',
@@ -289,6 +298,11 @@ export const fr = {
       title: 'VO₂max',
       unit: 'ml/kg/min',
       footnote: 'Estimation VO₂max Garmin',
+      reading: {
+        up: (avg: number) => `En hausse, moyenne de ${avg} sur cette période.`,
+        down: (avg: number) => `En baisse, moyenne de ${avg} sur cette période.`,
+        flat: (avg: number) => `Stable autour de ${avg}.`,
+      },
     },
     raceCockpit: {
       title: 'Projection de forme',
@@ -326,32 +340,26 @@ export const fr = {
         caution: 'Prudence',
         hold: 'Lever le pied',
       },
+      moodByTone: {
+        go: 'frais',
+        caution: 'neutre',
+        hold: 'fatigué',
+      },
       readiness: {
-        fresh: {
+        go: {
           headline: 'Tu es frais. Bon jour pour de la qualité.',
-          body: (tsb: number) => `La forme est à +${tsb} et la fatigue est basse.`,
+          body: () => `La fatigue baisse - la séance prévue est un feu vert.`,
         },
-        productive: {
-          headline: 'Bonne progression.',
-          body: (loadTrendLabel: string, risk: 'low' | 'moderate' | 'high') =>
-            risk === 'moderate'
-              ? `La charge est en ${loadTrendLabel.toLowerCase()} - la forme grimpe vite, surveille le volume.`
-              : `La charge est en ${loadTrendLabel.toLowerCase()} et la forme tient bon.`,
+        caution: {
+          headline: 'Journée neutre. Reste modéré.',
+          body: (loadTrendLabel: string) => `La charge est en ${loadTrendLabel.toLowerCase()} et la forme est neutre - reste honnête sur les jours faciles.`,
         },
-        recovery: {
-          headline: 'Récupération - reste facile.',
-          body: 'La forme est positive mais la charge vient de baisser - reprends progressivement.',
-        },
-        detraining: {
-          headline: 'La charge a baissé.',
-          body: 'Pas de signe de fatigue, mais le volume diminue - une séance aiderait à relancer.',
-        },
-        overreaching: {
+        hold: {
           headline: 'Lève le pied aujourd’hui.',
-          body: (tsb: number) => `La forme est à ${tsb} et le risque est élevé - une journée facile ou du repos aiderait.`,
+          body: () => `La fatigue est élevée - une journée facile ou du repos aiderait.`,
         },
       },
-      sessionCta: 'Détails',
+      sessionCta: 'Démarrer',
       race: 'Course',
       daysToRace: (days: number) => `J-${days}`,
       chargeOptimal: 'Optimale',
@@ -402,6 +410,7 @@ export const fr = {
         strong: 'Forte',
         elite: 'Élite',
       },
+      topPercent: (pct: number) => `top ${pct}%`,
       fitnessBand: {
         peak: 'Pic de forme',
         nearPeak: 'Proche du pic',
@@ -412,6 +421,13 @@ export const fr = {
 
   analytics: {
     title: 'Analyses',
+    readingLabel: 'Lecture :',
+    effectLevel: {
+      little: 'Effet faible',
+      medium: 'Effet moyen',
+      big: 'Effet fort',
+    },
+    tapToExpand: 'Toucher pour voir le nuage de points complet - masqué par défaut.',
     season: (year: number) => `Saison ${year}`,
     allTimeChip: 'Tout',
     allTimeTitle: 'Historique complet',
@@ -445,7 +461,10 @@ export const fr = {
       caloriesValue: (k: number) => `${k}k kcal`,
     },
     charts: {
-      monthlyVolume: { title: 'Volume' },
+      monthlyVolume: {
+        title: 'Volume',
+        reading: (topType: string, pct: number) => `${topType} représente la plus grosse part du volume mensuel (~${pct}%).`,
+      },
       paceTrend: {
         title: 'Tendance d’allure',
         easy: 'Facile',
@@ -469,6 +488,7 @@ export const fr = {
       },
       zones: {
         title: 'Temps en zones',
+        reading: (pct: number, zoneLabel: string) => `La majorité du temps (${pct}%) se passe en zone ${zoneLabel} - ton entraînement penche vers cette intensité.`,
         labels: {
           1: 'Échauffement',
           2: 'Facile',
@@ -480,11 +500,21 @@ export const fr = {
       hrTrend: {
         title: 'FC moyenne',
         footnote: 'FC moyenne pondérée par la durée, sorties faciles vs séances de qualité.',
+        reading: {
+          down: (bpm: number) => `La FC en sortie facile baisse - environ ${bpm} bpm de moins pour le même effort, signe d'une forme qui progresse.`,
+          up: (bpm: number) => `La FC en sortie facile augmente - environ ${bpm} bpm de plus pour le même effort, à surveiller.`,
+          flat: 'La FC en sortie facile et en séance de qualité reste stable.',
+        },
       },
       cadence: {
         title: 'Cadence',
         unit: 'pas/min',
         footnote: 'Cadence moyenne pondérée par la durée (pas/min).',
+        reading: {
+          up: (avg: number) => `La cadence est en hausse, moyenne de ${avg} pas/min.`,
+          down: (avg: number) => `La cadence est en baisse, moyenne de ${avg} pas/min.`,
+          flat: (avg: number) => `La cadence est stable autour de ${avg} pas/min.`,
+        },
       },
       runningForm: {
         title: 'Technique de course',
@@ -503,6 +533,11 @@ export const fr = {
           verticalOscillation: 'Oscillation verticale moyenne pondérée par la durée. Plus bas = moins de rebond par foulée.',
           strideLength: 'Longueur de foulée moyenne pondérée par la durée.',
         } as Record<string, string>,
+        reading: {
+          groundContact: (min: string, max: string) => `Le contact au sol varie entre ${min} et ${max} ms sur la période - plus bas est généralement plus efficace.`,
+          verticalOscillation: (min: string, max: string) => `L'oscillation verticale varie entre ${min} et ${max} mm - plus bas signifie moins de rebond par foulée.`,
+          strideLength: (min: string, max: string) => `La longueur de foulée varie entre ${min} et ${max} m sur la période.`,
+        } as Record<string, (min: string, max: string) => string>,
       },
       longRuns: {
         title: 'Plus longue sortie par mois',
@@ -528,43 +563,47 @@ export const fr = {
         title: 'Répartition des distances',
         runs: (n: number) => `${n} sorties`,
         kmTotal: (km: number) => `${km} km au total`,
+        reading: (bracket: string, pct: number) => `La majorité des sorties (${pct}%) se situe dans la tranche ${bracket}.`,
       },
       rpe: {
         title: 'Tendance RPE',
         prefix: 'RPE',
         footnote: 'Effort perçu moyen (1–10).',
+        reading: {
+          down: (avg: string) => `L'effort perçu diminue, moyenne RPE ${avg}.`,
+          up: (avg: string) => `L'effort perçu augmente, moyenne RPE ${avg}.`,
+          flat: (avg: string) => `L'effort perçu est stable autour de RPE ${avg}.`,
+        },
       },
       trainingEffect: {
         title: 'Training Effect',
         aerobic: 'Aérobie',
         anaerobic: 'Anaérobie',
         footnote: 'Training effect aérobie et anaérobie moyen (1–5).',
-      },
-      temperatureCorrelation: {
-        title: 'Température vs allure',
-        footnote: 'Chaque point est une sortie (>= 3 km). La ligne pointillée montre la tendance globale.',
-        tooltip: { temp: 'Temp', pace: 'Allure', distance: 'Distance' },
-        explains: {
-          slowing: (sec: number) => `L’allure ralentit d’environ ${sec}s/km par 10°C - la chaleur a un impact net`,
-          stable: 'La température a peu d’impact sur votre allure',
+        reading: {
+          aerobicLed: "Le training effect aérobie dépasse l'anaérobie - la plupart des séances construisent l'endurance plutôt que la haute intensité.",
+          anaerobicLed: "Le training effect anaérobie dépasse l'aérobie - la plupart des séances penchent vers la haute intensité.",
+          balanced: 'Le training effect aérobie et anaérobie sont à peu près équilibrés.',
         },
       },
-      rpeLoadCorrelation: {
-        title: 'Forme vs effort relatif',
-        footnote: 'Chaque point est une sortie (>= 3 km), comparée à votre RPE habituel pour ce type de séance - un sprint et un footing sont ainsi jugés équitablement. La couleur indique la température quand elle est connue. La ligne pointillée montre la tendance globale.',
-        tooltip: { form: 'Forme (TSB)', rpe: 'RPE', delta: 'vs habituel', temp: 'Temp' },
-        explains: {
-          harder: (delta: number) => `Les sorties semblent ~${delta} RPE plus dures que d’habitude par baisse de 10 points de forme - la fatigue pèse clairement sur l’effort perçu`,
-          stable: 'Votre forme influe peu sur la difficulté ressentie des sorties',
-        },
+      monthlyComparison: {
+        title: 'Mois par mois',
+        reading: (curYear: number, deltaPct: number) =>
+          deltaPct >= 0
+            ? `Le volume ${curYear} devance l'an dernier de ${deltaPct}%.`
+            : `Le volume ${curYear} accuse un retard de ${Math.abs(deltaPct)}% sur l'an dernier.`,
       },
-      monthlyComparison: { title: 'Mois par mois' },
       efficiencyRolling: {
         title: 'Efficacité aérobie - tendance glissante',
         ef7: '7 j',
         ef30: '30 j',
         unit: 'm/min·bpm',
         footnote: 'Efficacité aérobie glissante sur les 90 derniers jours. 7 j capture la forme récente, 30 j montre la tendance de fond.',
+        reading: {
+          up: (d: string) => `La tendance 30 j progresse, +${d} m/min·bpm - plus de vitesse par battement.`,
+          down: 'La tendance 30 j baisse - ajoute des sorties faciles ou surveille une fatigue accumulée.',
+          flat: 'La tendance 30 j reste stable.',
+        },
       },
       runningDynamicsRolling: {
         title: 'Dynamique de course - tendance glissante',
@@ -585,6 +624,11 @@ export const fr = {
           groundContact: 'Temps de contact au sol moyen glissant sur les 90 derniers jours. Plus bas = foulée généralement plus efficace.',
           verticalOscillation: 'Oscillation verticale moyenne glissante sur les 90 derniers jours. Plus bas = moins de rebond par foulée.',
         } as Record<string, string>,
+        reading: {
+          cadence: (min: string, max: string) => `La cadence 30 j varie entre ${min} et ${max} pas/min sur les 90 derniers jours.`,
+          groundContact: (min: string, max: string) => `Le contact au sol 30 j varie entre ${min} et ${max} ms - plus bas est généralement plus efficace.`,
+          verticalOscillation: (min: string, max: string) => `L'oscillation verticale 30 j varie entre ${min} et ${max} mm - plus bas signifie moins de rebond par foulée.`,
+        } as Record<string, (min: string, max: string) => string>,
       },
     },
     seasonHeadline: {
@@ -623,6 +667,14 @@ export const fr = {
     resetFilters: 'Réinitialiser les filtres',
     endOfList: 'C’est tout',
     monthGroup: (count: number, km: number) => `${count} séance${count > 1 ? 's' : ''} · ${km} km`,
+    thisWeek: 'Cette semaine',
+    weekGroup: (km: number, runs: number, easyPct: number, hardPct: number) => `${km} km · ${runs} sortie${runs > 1 ? 's' : ''} · ${easyPct}/${hardPct} F/D`,
+    weekStat: {
+      km: 'km',
+      runs: 'sorties',
+      easyHard: 'F/D',
+    },
+    weekGroupCompact: (runs: number, km: number) => `${runs} sortie${runs > 1 ? 's' : ''} · ${km} km`,
     sort: {
       label: 'Trier',
       date: 'Date',
@@ -726,6 +778,10 @@ export const fr = {
     achievements: {
       title: 'Exploits de cette sortie',
     },
+    dataQuality: {
+      estimated: 'Estimé',
+      noHr: 'Pas de fréquence cardiaque - zones et charge estimées depuis l’allure.',
+    },
     similarRuns: {
       title: 'Sorties similaires',
       timesBadge: (n: number) => `${n} fois`,
@@ -745,7 +801,7 @@ export const fr = {
       removeTag: (tag: string) => `Supprimer le tag ${tag}`,
     },
     zones: {
-      title: 'Zones de fréquence cardiaque',
+      title: 'Temps en zones',
       noData: 'Pas de données de zones FC',
       labels: {
         1: 'Z1 · Échauffement',
@@ -758,9 +814,8 @@ export const fr = {
       rangeOpen: (min: number) => `>${min} bpm`,
     },
     trainingEffect: {
-      title: 'Training Effect',
-      aerobic: 'Aérobie',
-      anaerobic: 'Anaérobie',
+      aerobic: 'Effet aérobie',
+      anaerobic: 'Effet anaérobie',
       levels: {
         noBenefit: 'Aucun bénéfice',
         minor: 'Mineur',
@@ -832,7 +887,7 @@ export const fr = {
     kmRemaining: (km: number) => `${km} km restants`,
     goalReached: 'Objectif atteint !',
     raceTargets: 'Objectifs de course',
-    noTarget: 'Pas d’objectif',
+    noTarget: '-',
     targetDone: (ahead: string) => `✓ Réussi (${ahead} d’avance)`,
     targetToGo: (time: string) => `${time} à gagner`,
     seasonRaces: 'Courses de la saison',
@@ -855,7 +910,7 @@ export const fr = {
         on_track: 'Sur la bonne voie',
         behind: 'En retard',
       },
-      rate: (current: number, needed: number) => `rythme ${current} km/sem · ${needed} km/sem nécessaires`,
+      rate: (current: number) => `rythme ${current} km/sem`,
       projected: (km: number) => `Projection ${km.toLocaleString()} km`,
     },
     monthlyGoal: {
@@ -886,6 +941,18 @@ export const fr = {
     retired: 'Retraitée',
     alertBadge: 'Alerte',
     criticalBadge: 'Critique',
+    status: {
+      ok: 'Bon état',
+      watch: 'À remplacer bientôt',
+      replace: 'À remplacer',
+    },
+    kmLeft: (km: number) => `~${km} km restants`,
+    hero: {
+      usage: (n: number, total: number) => `Utilisée sur ${n} de tes ${total} dernières séances tempo/seuil`,
+      rotateBeforeRace: (date: string) => ` - fais tourner une autre paire avant ta course du ${date}.`,
+      rotate: ' - fais tourner une autre paire.',
+      restOfRotation: 'Reste de la rotation',
+    },
     wearAlert: (name: string, totalKm: number, alertThresholdKm: number) => `${name} affiche ${totalKm} km - au-delà de son seuil d’alerte de ${alertThresholdKm} km`,
     summary: {
       totalDistance: 'Km totaux',
@@ -908,6 +975,8 @@ export const fr = {
     hero: {
       since: (date: string) => `Athlète depuis ${date}`,
       summary: (activities: number, km: number) => `${activities} activités · ${km} km`,
+      lifetime: (runs: number, km: number) => `${runs} sorties · ${km.toLocaleString('fr')} km au total`,
+      rankLine: (tier: string, pct: number) => `Rang ${tier} · top ${pct}% de VO₂max pour ton âge`,
       editName: 'Modifier le nom',
       namePlaceholder: 'Votre nom',
       rankExplain: 'Rang de forme basé sur la VO₂max et l’allure de course.',
@@ -969,7 +1038,7 @@ export const fr = {
     },
     goal: {
       title: (year: number) => `Objectif ${year}`,
-      pace: (km: number) => `À ce rythme : ${km} km en fin d’année`,
+      progress: (total: number, target: number) => `${total} / ${target} km`,
       viewGoals: 'Voir les objectifs',
     },
   },
@@ -981,6 +1050,16 @@ export const fr = {
     mostRecent: 'Plus récent',
     footnote: '★ temps officiel en course · les autres sont détectés automatiquement dans les activités',
     notYetRun: 'Pas encore couru',
+    segmented: {
+      prs: 'Records personnels',
+      milestones: 'Étapes',
+    },
+    improvedThisYear: (time: string) => `-${time} cette année`,
+    riegelAhead: (predicted: string, delta: string) => `Riegel ${predicted} · tu as ${delta} d'avance`,
+    riegelBehind: (predicted: string, delta: string) => `Riegel ${predicted} · tu as ${delta} de retard`,
+    noRecordYet: 'Pas encore de record',
+    predictedFromFitness: (time: string) => `Prédit à ${time} d'après ta forme actuelle.`,
+    findRace: (distance: string) => `Trouver un ${distance.toLowerCase()} ›`,
     leaderboard: {
       title: 'Meilleurs temps',
       rank: '#',
@@ -1060,6 +1139,16 @@ export const fr = {
     weekOf: (label: string) => `Sem. du ${label}`,
     restDay: 'Repos',
     planned: 'Prévu',
+    structure: {
+      title: 'Structure',
+      warmup: 'Échauffement',
+      cooldown: 'Retour au calme',
+      single: (min: number, zone: string) => `${min}' @ ${zone}`,
+      reps: (n: number, effort: number, zone: string) => `${n} × ${effort}' @ ${zone}`,
+      repsWithRecovery: (n: number, effort: number, recovery: number, zone: string) => `${n} × ${effort}' @ ${zone} / ${recovery}' facile`,
+      easyZone: 'Z1-Z2',
+      min: (m: number) => `${m}'`,
+    },
     nextWeek: (n: number) => `Semaine prochaine - ${n} prévue${n > 1 ? 's' : ''}`,
     viewDetail: 'Voir le détail',
     type: 'Type',

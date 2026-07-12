@@ -13,7 +13,6 @@ import type { MonthlyEasyHard } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { ChartExplain } from '@/components/ui/ChartExplain'
-import type { ExplainTone } from '@/components/ui/ChartExplain'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { t } from '@/i18n'
@@ -45,13 +44,12 @@ export function EasyHardChart({ data }: Props) {
   const ex = t.analytics.charts.easyHard.explains
   const easyValues = data.map((d) => d.easyPct).filter((v): v is number => v !== null)
   const avgEasy = Math.round(easyValues.reduce((s, v) => s + v, 0) / easyValues.length)
-  const explain: { text: string; tone: ExplainTone } =
-    avgEasy >= 78 && avgEasy <= 88
-      ? { text: ex.balanced(avgEasy), tone: 'positive' }
-      : avgEasy < 78
-        ? { text: ex.tooHard(avgEasy), tone: 'caution' }
-        : { text: ex.tooEasy(avgEasy), tone: 'neutral' }
-  const summary = `${t.analytics.charts.easyHard.title}: ${explain.text}`
+  const explain = avgEasy >= 78 && avgEasy <= 88
+    ? ex.balanced(avgEasy)
+    : avgEasy < 78
+      ? ex.tooHard(avgEasy)
+      : ex.tooEasy(avgEasy)
+  const summary = `${t.analytics.charts.easyHard.title}: ${explain}`
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -103,7 +101,7 @@ export function EasyHardChart({ data }: Props) {
           </AreaChart>
         </ResponsiveContainer>
       </ChartFigure>
-      <ChartExplain text={explain.text} tone={explain.tone} />
+      <ChartExplain text={explain} />
       <p className="mt-1 text-xs text-subtle">
         {t.analytics.charts.easyHard.footnote}
       </p>

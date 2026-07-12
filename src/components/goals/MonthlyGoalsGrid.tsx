@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Calendar, ChevronDown, ArrowRight, ArrowDown, Check, Minus } from 'lucide-react'
+import { ChevronDown, ArrowRight, ArrowDown, Check, Minus } from 'lucide-react'
 import type { MonthGoal } from '@/application/usecases/GetGoalsData'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
@@ -41,8 +41,7 @@ export function MonthlyGoalsGrid({ monthlyGoals }: { monthlyGoals: MonthGoal[] }
         onClick={() => setExpanded((v) => !v)}
         className="flex w-full items-center justify-between gap-2"
       >
-        <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          <Calendar size={16} className="text-accent-text" />
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           {t.goals.monthlyGoal.title}
         </h2>
         <span className="flex items-center gap-1 text-xs font-medium text-accent-text">

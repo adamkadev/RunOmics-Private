@@ -33,13 +33,8 @@ export function RunVerdict({ activity, heatAdjustSeconds }: Props) {
   ].filter((part): part is string => !!part)
 
   return (
-    <GlassSurface variant="card" className="p-5">
-      {activity.avgTemperature != null && (
-        <span className="mb-2 inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs font-medium text-muted-foreground backdrop-blur-md">
-          🌡 {activity.avgTemperature}°C
-        </span>
-      )}
-      <p className="widget-label text-muted-foreground">{v.title}</p>
+    <GlassSurface variant="card" className="p-5 text-center">
+      <p className="widget-label text-accent-text">{v.title}</p>
       <h2 className={cn('mt-1 text-lg font-bold leading-snug', TONE_TEXT_CLASS[tone])}>{headline}</h2>
       {bodyParts.length > 0 && (
         <p className="mt-1 text-sm leading-snug text-muted-foreground">{bodyParts.join(' ')}</p>

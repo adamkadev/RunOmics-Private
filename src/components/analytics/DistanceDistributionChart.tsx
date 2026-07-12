@@ -7,6 +7,7 @@ import { useAccentColor } from '@/lib/useAccent'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
+import { ChartExplain } from '@/components/ui/ChartExplain'
 import { t } from '@/i18n'
 
 interface Props {
@@ -33,6 +34,11 @@ export function DistanceDistributionChart({ data }: Props) {
   const accentColor = useAccentColor()
   const max = Math.max(...data.map((d) => d.count))
   const summary = `${t.analytics.charts.distance.title}: ${data.map((d) => `${d.label} ${t.common.runs(d.count)}`).join(', ')}`
+  const totalCount = data.reduce((s, d) => s + d.count, 0)
+  const top = data.reduce((a, b) => (b.count > a.count ? b : a))
+  const reading = totalCount > 0
+    ? t.analytics.charts.distance.reading(top.label, Math.round((top.count / totalCount) * 100))
+    : null
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -75,6 +81,7 @@ export function DistanceDistributionChart({ data }: Props) {
           </BarChart>
         </ResponsiveContainer>
       </ChartFigure>
+      {reading && <ChartExplain text={reading} />}
       <p className="mt-2 text-xs text-subtle">Color intensity reflects relative frequency.</p>
     </GlassSurface>
   )

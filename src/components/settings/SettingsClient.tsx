@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { onAuthStateChanged, signInWithPopup, signOut, GoogleAuthProvider } from 'firebase/auth'
 import type { User } from 'firebase/auth'
-import { LogOut } from 'lucide-react'
 import { getClientAuth, isClientFirebaseConfigured } from '@/lib/firebase'
 import { t } from '@/i18n'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -100,9 +99,8 @@ export function SettingsClient() {
         <p className="text-center text-sm text-muted-foreground">{t.settings.auth.accessDenied}</p>
         <button
           onClick={handleSignOut}
-          className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-red-400 hover:text-red-500 dark:hover:border-red-500 dark:hover:text-red-400"
+          className="rounded-lg border border-border px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-red-400 hover:text-red-500 dark:hover:border-red-500 dark:hover:text-red-400"
         >
-          <LogOut size={16} />
           {t.settings.auth.switchAccount}
         </button>
       </div>
@@ -117,25 +115,37 @@ export function SettingsClient() {
         <p className="mt-0.5 text-sm text-muted-foreground">{t.pages.settings.subtitle}</p>
       </div>
 
-      <GlassSurface variant="card" className="p-5">
-        <AccentPicker />
-        <div className="my-5 h-px bg-foreground/[0.06]" />
-        <ThemeSegmented />
-      </GlassSurface>
+      <section className="space-y-2">
+        <h2 className="px-1 text-[10px] font-medium uppercase tracking-[0.08em] text-accent-text">
+          {t.settings.sections.appearance}
+        </h2>
+        <GlassSurface variant="card" className="p-5">
+          <AccentPicker />
+          <div className="my-5 h-px bg-foreground/[0.06]" />
+          <ThemeSegmented />
+        </GlassSurface>
+      </section>
 
-      <NotificationsForm />
-      <DataSourceInfo />
+      <section className="space-y-2">
+        <h2 className="px-1 text-[10px] font-medium uppercase tracking-[0.08em] text-subtle-2">
+          {t.settings.sections.notificationsData}
+        </h2>
+        <NotificationsForm />
+        <DataSourceInfo />
+      </section>
 
-      <button
-        onClick={handleSignOut}
-        className="w-full rounded-card-sm border border-destructive/40 py-4 text-base font-semibold
-                   text-destructive transition-colors hover:bg-destructive/[0.06] active:scale-[0.98]"
-      >
-        <span className="flex items-center justify-center gap-2">
-          <LogOut size={18} />
+      <section className="space-y-2">
+        <h2 className="px-1 text-[10px] font-medium uppercase tracking-[0.08em] text-subtle-2">
+          {t.settings.sections.account}
+        </h2>
+        <button
+          onClick={handleSignOut}
+          className="w-full rounded-card-sm border border-destructive/40 py-3.5 text-sm font-semibold
+                     text-destructive transition-colors hover:bg-destructive/[0.06] active:scale-[0.98]"
+        >
           {t.settings.auth.signOut}
-        </span>
-      </button>
+        </button>
+      </section>
     </div>
   )
 }

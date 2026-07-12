@@ -1,4 +1,3 @@
-import { MapPin } from 'lucide-react'
 import type { Metadata } from 'next'
 
 import { getMapShellData } from '@/application/usecases/GetAllRoutes'
@@ -28,12 +27,9 @@ export default function MapPage() {
       <BackButton label={t.pages.map.back} fallbackHref="/activities" />
 
       <div className="flex flex-wrap items-center gap-4 px-1">
-        <div className="flex items-center gap-2">
-          <MapPin size={16} className="text-accent-text" />
-          <h1 className="text-sm font-semibold text-foreground">
-            {t.pages.map.title}
-          </h1>
-        </div>
+        <h1 className="text-sm font-semibold text-foreground">
+          {t.pages.map.title}
+        </h1>
 
         <div
           className="flex items-center gap-3 text-xs text-subtle"

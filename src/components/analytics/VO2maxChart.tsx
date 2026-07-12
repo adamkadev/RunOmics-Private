@@ -6,6 +6,8 @@ import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
+import { ChartExplain } from '@/components/ui/ChartExplain'
+import { trendFromSeries } from '@/lib/chartTrend'
 import { t } from '@/i18n'
 
 const COLOR = CHART_COLORS.efficiency // violet-500
@@ -42,6 +44,10 @@ export function VO2maxChart({ data }: { data: VO2maxPoint[] }) {
 
   const avg = Math.round(values.reduce((s, v) => s + v, 0) / values.length * 10) / 10
   const summary = `${s.title}: ${min}–${max} ${s.unit}, ${t.activity.charts.avg} ${avg}`
+  const trend = trendFromSeries(values, 0.3)
+  const reading = trend
+    ? trend.direction === 'up' ? s.reading.up(avg) : trend.direction === 'down' ? s.reading.down(avg) : s.reading.flat(avg)
+    : null
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -81,7 +87,7 @@ export function VO2maxChart({ data }: { data: VO2maxPoint[] }) {
               type="monotone"
               dataKey="value"
               stroke={COLOR}
-              strokeWidth={2}
+              strokeWidth={3}
               dot={{ r: 2.5, fill: COLOR, strokeWidth: 0 }}
               isAnimationActive={false}
             />
@@ -89,6 +95,7 @@ export function VO2maxChart({ data }: { data: VO2maxPoint[] }) {
         </ResponsiveContainer>
       </ChartFigure>
 
+      {reading && <ChartExplain text={reading} />}
       <p className="mt-2 text-xs text-subtle">{s.footnote}</p>
     </GlassSurface>
   )

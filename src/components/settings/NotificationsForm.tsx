@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Bell } from 'lucide-react'
 import { disablePushNotifications, enablePushNotifications, isPushSupported } from '@/lib/pushNotifications'
 import { t } from '@/i18n'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -125,10 +124,7 @@ export function NotificationsForm() {
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <div className="mb-4 flex items-center gap-2">
-        <Bell size={16} className="shrink-0 text-muted-foreground" />
-        <h2 className="text-sm font-bold text-foreground">{n.title}</h2>
-      </div>
+      <h2 className="mb-4 text-sm font-bold text-foreground">{n.title}</h2>
 
       {blocked && (
         <p className="mb-3 text-xs text-muted-foreground">

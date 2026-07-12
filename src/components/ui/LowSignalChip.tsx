@@ -21,14 +21,14 @@ export function LowSignalChip({ title, summary, children }: Props) {
   return (
     <GlassSurface
       variant="card"
-      className="flex cursor-pointer items-center justify-between gap-3 p-4 transition-colors hover:bg-foreground/[0.03] active:bg-foreground/[0.05]"
+      className="flex cursor-pointer flex-col gap-1 p-4 transition-colors hover:bg-foreground/[0.03] active:bg-foreground/[0.05]"
       onClick={() => setExpanded(true)}
     >
-      <span className="min-w-0">
-        <span className="block text-xs font-semibold uppercase tracking-wide text-subtle">{title}</span>
-        <span className="block truncate text-sm text-foreground/70">{summary}</span>
-      </span>
-      <ChevronRight size={16} className="shrink-0 text-subtle" />
+      <div className="flex items-center justify-between gap-2">
+        <span className="truncate text-xs font-semibold uppercase tracking-wide text-subtle">{title}</span>
+        <ChevronRight size={14} className="shrink-0 text-subtle" />
+      </div>
+      <span className="text-sm font-bold text-foreground">{summary}</span>
     </GlassSurface>
   )
 }

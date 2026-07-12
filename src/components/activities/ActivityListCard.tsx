@@ -1,10 +1,9 @@
 import Link from 'next/link'
-import { ChevronRight } from 'lucide-react'
 import { PrBadge } from './PrBadge'
-import { ACTIVITY_TYPE_CONFIG, ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
+import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import type { ActivitySummary } from '@/domain/activity/types'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
-import { formatDate, formatDistance, formatDuration, formatClock } from '@/lib/formatters'
+import { formatDate, formatDistance } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 interface Props {
@@ -12,77 +11,36 @@ interface Props {
   qualifiedEfforts?: QualifiedEffort[]
 }
 
-/** B4 anatomy: icon + title + chevron, type pill + date, 4-metric grid. */
+/** Compact row: type dot, title + type/RPE/date subtitle, distance on the right. */
 export function ActivityListCard({ activity: a, qualifiedEfforts = [] }: Props) {
   const { chartColor } = ACTIVITY_TYPE_CONFIG[a.type]
   const title = a.description || t.activity.runTitle(a.dayOfWeek)
-  const TypeIcon = ACTIVITY_TYPE_ICONS[a.type]
+
+  const subtitle = [
+    t.activityTypes[a.type],
+    a.rpe !== null ? t.activities.row.rpeValue(a.rpe) : null,
+    formatDate(a.date),
+  ].filter(Boolean).join(' · ')
 
   return (
     <Link
       href={`/activities/${a.id}`}
       // content-visibility skips layout/paint for offscreen cards, which keeps
       // long infinite-scroll sessions cheap without a virtualization library.
-      className="glass-card block rounded-card-sm p-5 transition-transform duration-[120ms] ease-out active:scale-[0.98] [contain-intrinsic-size:auto_170px] [content-visibility:auto]"
+      className="glass-card flex items-center gap-3 rounded-xl px-3.5 py-2.5 transition-transform duration-[120ms] ease-out active:scale-[0.98] [contain-intrinsic-size:auto_52px] [content-visibility:auto]"
     >
-      <div className="flex items-center gap-2.5">
-        <span
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border"
-          style={{
-            backgroundColor: `color-mix(in srgb, ${chartColor} 10%, transparent)`,
-            borderColor: `color-mix(in srgb, ${chartColor} 30%, transparent)`,
-          }}
-        >
-          <TypeIcon size={16} strokeWidth={2.2} style={{ color: chartColor }} />
+      <span className="h-[7px] w-[7px] shrink-0 rounded-full" style={{ backgroundColor: chartColor }} />
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center gap-1.5">
+          <span className="truncate text-xs font-semibold text-foreground">{title}</span>
+          <PrBadge efforts={qualifiedEfforts} />
         </span>
-        <span className="flex-1 truncate text-subhead font-bold text-foreground">{title}</span>
-        <ChevronRight size={16} className="shrink-0 text-foreground/30" />
-      </div>
-
-      <div className="mt-1.5 flex flex-wrap items-center gap-2">
-        <span
-          className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-[3px] text-caption font-semibold"
-          style={{
-            backgroundColor: `color-mix(in srgb, ${chartColor} 16%, transparent)`,
-            borderColor: `color-mix(in srgb, ${chartColor} 28%, transparent)`,
-            color: chartColor,
-          }}
-        >
-          <span className="h-[5px] w-[5px] shrink-0 rounded-full" style={{ backgroundColor: chartColor }} />
-          {t.activityTypes[a.type]}
-        </span>
-        <PrBadge efforts={qualifiedEfforts} />
-        {a.rpe !== null && (
-          <span className="rounded-full bg-foreground/[0.07] px-2 py-[2px] text-caption font-semibold text-muted-foreground">
-            {t.activities.row.rpeValue(a.rpe)}
-          </span>
-        )}
-        <span className="text-xs font-medium text-muted-foreground">{formatDate(a.date)}</span>
-      </div>
-
-      <div className="mt-3 grid grid-cols-4 gap-x-1 gap-y-2.5 border-t border-foreground/[0.07] pt-2.5">
-        <Metric value={formatDistance(a.distanceKm)} unit={t.units.km} />
-        <Metric value={formatDuration(a.durationSeconds)} unit={t.activities.row.duration} />
-        {a.paceSecPerKm ? (
-          <Metric value={formatClock(a.paceSecPerKm)} unit={t.units.perKm} />
-        ) : (
-          <Metric value="-" unit={t.units.perKm} />
-        )}
-        {a.avgHeartRate ? (
-          <Metric value={`${a.avgHeartRate}`} unit={t.units.bpm} />
-        ) : (
-          <Metric value="-" unit={t.units.bpm} />
-        )}
-      </div>
+        <span className="mt-0.5 block truncate text-[9.5px] text-subtle">{subtitle}</span>
+      </span>
+      <span className="shrink-0 text-right">
+        <span className="font-display text-[13px] font-bold text-foreground">{formatDistance(a.distanceKm)}</span>
+        <span className="ml-0.5 text-[8px] font-semibold text-muted-foreground">{t.units.km}</span>
+      </span>
     </Link>
-  )
-}
-
-function Metric({ value, unit }: { value: string; unit: string }) {
-  return (
-    <div className="min-w-0">
-      <div className="truncate text-subhead font-extrabold text-foreground">{value}</div>
-      <div className="text-micro font-semibold text-muted-foreground">{unit}</div>
-    </div>
   )
 }

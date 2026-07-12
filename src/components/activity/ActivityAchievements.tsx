@@ -20,10 +20,7 @@ export function ActivityAchievements({ bestEfforts, qualifiedEfforts }: Props) {
 
   return (
     <GlassSurface variant="card" className="p-4">
-      <div className="mb-3 flex items-center gap-2">
-        <Trophy size={16} className="text-amber-500 dark:text-amber-400" />
-        <h3 className="text-sm font-semibold text-foreground/80">{t.activity.achievements.title}</h3>
-      </div>
+      <h3 className="mb-3 text-sm font-semibold text-foreground/80">{t.activity.achievements.title}</h3>
       <div className="flex flex-col gap-2.5">
         {ranked.map((effort) => {
           const seconds = bestEfforts[effort.key]

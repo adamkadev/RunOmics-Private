@@ -5,7 +5,6 @@ import type { MonthlyPace } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { ChartExplain } from '@/components/ui/ChartExplain'
-import type { ExplainTone } from '@/components/ui/ChartExplain'
 import { trendFromSeries } from '@/lib/chartTrend'
 import { formatClock } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -46,14 +45,14 @@ export function PaceTrendChart({ data }: Props) {
   // Pace in sec/km: lower = faster = better, so "down" is positive
   const ex = t.analytics.charts.paceTrend.explains
   const trend = trendFromSeries(data.map((d) => d.easyPace), 8)
-  const explain: { text: string; tone: ExplainTone } | null = trend
+  const explain: string | null = trend
     ? trend.direction === 'down'
-      ? { text: ex.improving(Math.abs(Math.round(trend.delta))), tone: 'positive' }
+      ? ex.improving(Math.abs(Math.round(trend.delta)))
       : trend.direction === 'up'
-        ? { text: ex.slowing(Math.round(trend.delta)), tone: 'caution' }
-        : { text: ex.stable, tone: 'neutral' }
+        ? ex.slowing(Math.round(trend.delta))
+        : ex.stable
     : null
-  const summary = `${t.analytics.charts.paceTrend.title}${explain ? `: ${explain.text}` : ''}`
+  const summary = `${t.analytics.charts.paceTrend.title}${explain ? `: ${explain}` : ''}`
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -91,7 +90,7 @@ export function PaceTrendChart({ data }: Props) {
               type="monotone"
               dataKey="easyPace"
               stroke={CHART_COLORS.brand}
-              strokeWidth={2}
+              strokeWidth={3}
               dot={{ r: 3, fill: CHART_COLORS.brand, strokeWidth: 0 }}
               connectNulls
               isAnimationActive={false}
@@ -100,7 +99,7 @@ export function PaceTrendChart({ data }: Props) {
               type="monotone"
               dataKey="hardPace"
               stroke={CHART_COLORS.atl}
-              strokeWidth={2}
+              strokeWidth={3}
               dot={{ r: 3, fill: CHART_COLORS.atl, strokeWidth: 0 }}
               connectNulls
               isAnimationActive={false}
@@ -108,7 +107,7 @@ export function PaceTrendChart({ data }: Props) {
           </LineChart>
         </ResponsiveContainer>
       </ChartFigure>
-      {explain && <ChartExplain text={explain.text} tone={explain.tone} />}
+      {explain && <ChartExplain text={explain} />}
       <p className="mt-1 text-xs text-subtle">
         {t.analytics.charts.paceTrend.footnote}
       </p>

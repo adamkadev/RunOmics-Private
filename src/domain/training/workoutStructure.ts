@@ -1,0 +1,103 @@
+import type { ActivityType } from '@/domain/activity/types'
+
+export type WorkoutStepKind = 'warmup' | 'effort' | 'recovery' | 'cooldown'
+
+export interface WorkoutStep {
+  kind: WorkoutStepKind
+  minutes: number
+  /** Repetition index for interval steps (1-based), for "2 × 10'" style labels. */
+  rep?: number
+}
+
+const DEFAULT_WARMUP_MIN = 15
+const DEFAULT_COOLDOWN_MIN = 10
+const DEFAULT_RECOVERY_MIN = 2
+const MIN_BOOKEND_MIN = 5
+
+// "10 x (1'/1')" - reps with explicit effort/recovery minutes
+const REPS_WITH_RECOVERY = /(\d+)\s*[x×]\s*\(\s*(\d+)\s*['’]\s*\/\s*(\d+)\s*['’]\s*\)/i
+// "2 × 10' tempo" - reps of a minute block, recovery implied
+const REPS_SIMPLE = /(\d+)\s*[x×]\s*(\d+)\s*['’]/i
+// "50' dont 20' actives" - continuous run with an active block inside
+const TOTAL_WITH_ACTIVE = /(\d+)\s*['’]\s*dont\s+(\d+)\s*['’]/i
+
+function bookends(totalMin: number | null, workMin: number): { warmup: number; cooldown: number } {
+  if (totalMin === null || totalMin <= workMin + 2 * MIN_BOOKEND_MIN) {
+    return { warmup: DEFAULT_WARMUP_MIN, cooldown: DEFAULT_COOLDOWN_MIN }
+  }
+  const remaining = totalMin - workMin
+  const warmup = Math.round(remaining * 0.55)
+  return { warmup, cooldown: remaining - warmup }
+}
+
+/**
+ * Deterministic structure parsed from a planned workout's name (the only
+ * structure Garmin exports for these workouts). Returns null when the name
+ * carries no interval pattern we can honestly decompose - meter-based reps
+ * would need a pace assumption, so they are deliberately not guessed.
+ */
+export function parseWorkoutStructure(name: string, durationSecs?: number): WorkoutStep[] | null {
+  const totalMin = durationSecs ? Math.round(durationSecs / 60) : null
+
+  const withRecovery = name.match(REPS_WITH_RECOVERY)
+  const simple = withRecovery ? null : name.match(REPS_SIMPLE)
+  const totalActive = withRecovery || simple ? null : name.match(TOTAL_WITH_ACTIVE)
+
+  if (withRecovery) {
+    const reps = Number(withRecovery[1])
+    const effortMin = Number(withRecovery[2])
+    const recoveryMin = Number(withRecovery[3])
+    if (!reps || reps > 30) return null
+    const workMin = reps * effortMin + (reps - 1) * recoveryMin
+    const { warmup, cooldown } = bookends(totalMin, workMin)
+    const steps: WorkoutStep[] = [{ kind: 'warmup', minutes: warmup }]
+    for (let i = 1; i <= reps; i++) {
+      steps.push({ kind: 'effort', minutes: effortMin, rep: i })
+      if (i < reps) steps.push({ kind: 'recovery', minutes: recoveryMin })
+    }
+    steps.push({ kind: 'cooldown', minutes: cooldown })
+    return steps
+  }
+
+  if (simple) {
+    const reps = Number(simple[1])
+    const effortMin = Number(simple[2])
+    if (!reps || reps > 30 || !effortMin) return null
+    const workMin = reps * effortMin + (reps - 1) * DEFAULT_RECOVERY_MIN
+    const { warmup, cooldown } = bookends(totalMin, workMin)
+    const steps: WorkoutStep[] = [{ kind: 'warmup', minutes: warmup }]
+    for (let i = 1; i <= reps; i++) {
+      steps.push({ kind: 'effort', minutes: effortMin, rep: i })
+      if (i < reps) steps.push({ kind: 'recovery', minutes: DEFAULT_RECOVERY_MIN })
+    }
+    steps.push({ kind: 'cooldown', minutes: cooldown })
+    return steps
+  }
+
+  if (totalActive) {
+    const total = Number(totalActive[1])
+    const active = Number(totalActive[2])
+    if (!total || !active || active >= total) return null
+    const remaining = total - active
+    const warmup = Math.round(remaining * 0.55)
+    return [
+      { kind: 'warmup', minutes: warmup },
+      { kind: 'effort', minutes: active, rep: 1 },
+      { kind: 'cooldown', minutes: remaining - warmup },
+    ]
+  }
+
+  return null
+}
+
+// Static effort-target zone per workout type (audit §11 MVP: "a static step
+// list with target pace/HR zones per rep"). Warmup/recovery/cooldown are Z1-Z2.
+export const EFFORT_ZONE_BY_TYPE: Partial<Record<ActivityType, string>> = {
+  Base: 'Z2',
+  Tempo: 'Z3',
+  Threshold: 'Z4',
+  VO2Max: 'Z5',
+  Anaerobic: 'Z5',
+  Sprint: 'Z5',
+  Race: 'Z4-Z5',
+}

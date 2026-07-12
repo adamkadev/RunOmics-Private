@@ -1,12 +1,12 @@
 // Hex colors for Recharts (cannot use Tailwind classes in SVG attributes)
 export const CHART_COLORS = {
   // Brand / primary metric
-  brand:     '#10b981', // emerald-500
+  brand:     '#1ed787', // emerald (dark-mode accent)
 
   // Training load
   ctl:       '#3b82f6', // blue-500   - fitness (chronic)
   atl:       '#f97316', // orange-500 - fatigue (acute)
-  tsb:       '#10b981', // emerald-500 - form (balance)
+  tsb:       '#1ed787', // emerald - form (balance)
 
   // Activity metrics
   hr:            '#ef4444', // red-500
@@ -26,13 +26,14 @@ export const CHART_COLORS = {
   hard:      '#fb923c', // orange-400
 
   // Long run bar
-  longRun: '#10b981', // emerald-500
+  longRun: '#1ed787', // emerald
 
-  // Chart decoration
-  axisTick:        '#9ca3af', // gray-400
+  // Chart decoration - muted floor kept at #8a978f/#a8b4ae so axis/legend
+  // text clears WCAG contrast against the dark-mode #060a08 background.
+  axisTick:        '#a8b4ae',
   referenceLine:   '#e5e7eb', // gray-200
-  referenceTarget: '#6b7280', // gray-500
-  tooltipCursor:   'rgba(156,163,175,0.1)',
+  referenceTarget: '#8a978f',
+  tooltipCursor:   'rgba(168,180,174,0.12)',
 } as const
 
 // HR zone colors (Z1-Z5), keyed by zone number
@@ -50,7 +51,7 @@ export const ZONE_COLORS: Record<number, string> = {
 export const ZONE_COLOR_CLASSES: Record<number, { bg: string; text: string }> = {
   1: { bg: 'bg-[#a7b1aa] dark:bg-white/55',  text: 'text-[#a7b1aa] dark:text-white/55' },
   2: { bg: 'bg-[#3b82f6] dark:bg-[#7db8ff]', text: 'text-[#3b82f6] dark:text-[#7db8ff]' },
-  3: { bg: 'bg-[#0e9f6e] dark:bg-[#2ed9a0]', text: 'text-[#0e9f6e] dark:text-[#2ed9a0]' },
+  3: { bg: 'bg-[#0e9f6e] dark:bg-[#4fe6a0]', text: 'text-[#0e9f6e] dark:text-[#4fe6a0]' },
   4: { bg: 'bg-[#f1761f] dark:bg-[#ff9a5a]', text: 'text-[#f1761f] dark:text-[#ff9a5a]' },
   5: { bg: 'bg-[#ff7676]',                   text: 'text-[#ff7676]' },
 }

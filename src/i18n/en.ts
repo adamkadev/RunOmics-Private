@@ -162,6 +162,15 @@ export const en = {
   },
 
   settings: {
+    sections: {
+      appearance: 'Appearance',
+      notificationsData: 'Notifications & data',
+      account: 'Account',
+    },
+    rowAction: {
+      export: 'Export ›',
+      clear: 'Clear ›',
+    },
     appearance: {
       title: 'Appearance',
       themeLabel: 'Theme',
@@ -295,6 +304,11 @@ export const en = {
       title: 'VO₂max',
       unit: 'ml/kg/min',
       footnote: 'Garmin VO₂max estimate',
+      reading: {
+        up: (avg: number) => `Trending up, averaging ${avg} over this window.`,
+        down: (avg: number) => `Trending down, averaging ${avg} over this window.`,
+        flat: (avg: number) => `Holding steady around ${avg}.`,
+      },
     },
     raceCockpit: {
       title: 'Form Projection',
@@ -332,32 +346,26 @@ export const en = {
         caution: 'Caution',
         hold: 'Hold back',
       },
+      moodByTone: {
+        go: 'fresh',
+        caution: 'neutral',
+        hold: 'fatigued',
+      },
       readiness: {
-        fresh: {
+        go: {
           headline: "You're fresh. Good day for quality.",
-          body: (tsb: number) => `Form is +${tsb} and fatigue is low.`,
+          body: () => `Fatigue is trending down - the planned session is a go.`,
         },
-        productive: {
-          headline: 'Building well.',
-          body: (loadTrendLabel: string, risk: 'low' | 'moderate' | 'high') =>
-            risk === 'moderate'
-              ? `Load is ${loadTrendLabel.toLowerCase()} - fitness is climbing fast, keep an eye on volume.`
-              : `Load is ${loadTrendLabel.toLowerCase()} and form is holding steady.`,
+        caution: {
+          headline: 'Steady day. Keep it moderate.',
+          body: (loadTrendLabel: string) => `Load is ${loadTrendLabel.toLowerCase()} and form is holding neutral - stay honest on easy days.`,
         },
-        recovery: {
-          headline: 'Recovering - keep it easy.',
-          body: 'Form is positive but load just eased off - ease back in gradually.',
-        },
-        detraining: {
-          headline: 'Load has eased off.',
-          body: 'No signs of strain, but volume has been dropping - a session would help rebuild.',
-        },
-        overreaching: {
+        hold: {
           headline: 'Dial it back today.',
-          body: (tsb: number) => `Form is ${tsb} and risk is elevated - an easy day or rest would help.`,
+          body: () => `Fatigue is elevated - an easy day or rest would help.`,
         },
       },
-      sessionCta: 'Details',
+      sessionCta: 'Start',
       race: 'Race',
       daysToRace: (days: number) => `D-${days}`,
       chargeOptimal: 'Optimal',
@@ -408,6 +416,7 @@ export const en = {
         strong: 'Strong',
         elite: 'Elite',
       },
+      topPercent: (pct: number) => `top ${pct}%`,
       fitnessBand: {
         peak: 'Peak fitness',
         nearPeak: 'Near peak',
@@ -418,6 +427,13 @@ export const en = {
 
   analytics: {
     title: 'Analytics',
+    readingLabel: 'Reading:',
+    effectLevel: {
+      little: 'Little effect',
+      medium: 'Medium effect',
+      big: 'Big effect',
+    },
+    tapToExpand: 'Tap to expand the full scatter - hidden by default.',
     season: (year: number) => `${year} season`,
     allTimeChip: 'All',
     allTimeTitle: 'All-time',
@@ -451,7 +467,10 @@ export const en = {
       caloriesValue: (k: number) => `${k}k kcal`,
     },
     charts: {
-      monthlyVolume: { title: 'Volume' },
+      monthlyVolume: {
+        title: 'Volume',
+        reading: (topType: string, pct: number) => `${topType} makes up the largest share of monthly volume (~${pct}%).`,
+      },
       paceTrend: {
         title: 'Pace Trend',
         easy: 'Easy',
@@ -475,6 +494,7 @@ export const en = {
       },
       zones: {
         title: 'Time in Zones',
+        reading: (pct: number, zoneLabel: string) => `Most time (${pct}%) sits in ${zoneLabel} - your training skews toward this intensity.`,
         labels: {
           1: 'Warm Up',
           2: 'Easy',
@@ -486,11 +506,21 @@ export const en = {
       hrTrend: {
         title: 'Avg Heart Rate',
         footnote: 'Duration-weighted average HR, easy vs workout runs.',
+        reading: {
+          down: (bpm: number) => `Easy-run heart rate is dropping - down ~${bpm} bpm, same effort for less strain, a sign of improving fitness.`,
+          up: (bpm: number) => `Easy-run heart rate is rising - up ~${bpm} bpm for the same effort, worth watching.`,
+          flat: 'Easy and workout heart rate are holding steady.',
+        },
       },
       cadence: {
         title: 'Cadence',
         unit: 'spm',
         footnote: 'Duration-weighted average cadence (steps/min).',
+        reading: {
+          up: (avg: number) => `Cadence is trending up, averaging ${avg} spm.`,
+          down: (avg: number) => `Cadence is trending down, averaging ${avg} spm.`,
+          flat: (avg: number) => `Cadence is steady around ${avg} spm.`,
+        },
       },
       runningForm: {
         title: 'Running Form',
@@ -509,6 +539,11 @@ export const en = {
           verticalOscillation: 'Duration-weighted average vertical oscillation. Lower means less bounce per stride.',
           strideLength: 'Duration-weighted average stride length.',
         } as Record<string, string>,
+        reading: {
+          groundContact: (min: string, max: string) => `Ground contact ranges ${min}-${max} ms over this window - lower is generally more efficient.`,
+          verticalOscillation: (min: string, max: string) => `Vertical oscillation ranges ${min}-${max} mm - lower means less bounce per stride.`,
+          strideLength: (min: string, max: string) => `Stride length ranges ${min}-${max} m over this window.`,
+        } as Record<string, (min: string, max: string) => string>,
       },
       longRuns: {
         title: 'Longest Run per Month',
@@ -534,43 +569,47 @@ export const en = {
         title: 'Distance Distribution',
         runs: (n: number) => `${n} runs`,
         kmTotal: (km: number) => `${km} km total`,
+        reading: (bracket: string, pct: number) => `Most runs (${pct}%) land in the ${bracket} bracket.`,
       },
       rpe: {
         title: 'RPE Trend',
         prefix: 'RPE',
         footnote: 'Average perceived effort (1–10).',
+        reading: {
+          down: (avg: string) => `Perceived effort is easing, averaging RPE ${avg}.`,
+          up: (avg: string) => `Perceived effort is rising, averaging RPE ${avg}.`,
+          flat: (avg: string) => `Perceived effort is steady around RPE ${avg}.`,
+        },
       },
       trainingEffect: {
         title: 'Training Effect',
         aerobic: 'Aerobic',
         anaerobic: 'Anaerobic',
         footnote: 'Avg aerobic & anaerobic training effect (1–5).',
-      },
-      temperatureCorrelation: {
-        title: 'Temperature vs Pace',
-        footnote: 'Each dot is one run (>= 3 km). Dashed line shows the overall trend.',
-        tooltip: { temp: 'Temp', pace: 'Pace', distance: 'Distance' },
-        explains: {
-          slowing: (sec: number) => `Pace slows ~${sec}s/km per 10°C - heat has a clear impact`,
-          stable: 'Temperature has little impact on your pace',
+        reading: {
+          aerobicLed: 'Aerobic training effect runs higher than anaerobic - most sessions build endurance rather than high-intensity capacity.',
+          anaerobicLed: 'Anaerobic training effect runs higher than aerobic - most sessions lean toward high-intensity work.',
+          balanced: 'Aerobic and anaerobic training effect are roughly balanced.',
         },
       },
-      rpeLoadCorrelation: {
-        title: 'Form vs Relative Effort',
-        footnote: 'Each dot is one run (>= 3 km), compared to your usual RPE for that session type so a sprint and an easy run are judged fairly. Color shows temperature when known. Dashed line shows the overall trend.',
-        tooltip: { form: 'Form (TSB)', rpe: 'RPE', delta: 'vs usual', temp: 'Temp' },
-        explains: {
-          harder: (delta: number) => `Runs feel ~${delta} RPE harder than usual per 10-point drop in form - fatigue clearly affects perceived effort`,
-          stable: 'Your form has little impact on how hard runs feel relative to usual',
-        },
+      monthlyComparison: {
+        title: 'Month by Month',
+        reading: (curYear: number, deltaPct: number) =>
+          deltaPct >= 0
+            ? `${curYear} volume is running ${deltaPct}% ahead of last year.`
+            : `${curYear} volume is running ${Math.abs(deltaPct)}% behind last year.`,
       },
-      monthlyComparison: { title: 'Month by Month' },
       efficiencyRolling: {
         title: 'Aerobic Efficiency - Rolling Trend',
         ef7: '7-day',
         ef30: '30-day',
         unit: 'm/min·bpm',
         footnote: 'Rolling aerobic efficiency over the last 90 days. 7-day captures recent form, 30-day shows the underlying trend.',
+        reading: {
+          up: (d: string) => `The 30-day trend is climbing, +${d} m/min·bpm - more speed per heartbeat.`,
+          down: 'The 30-day trend is declining - consider more easy running or check for accumulated fatigue.',
+          flat: 'The 30-day trend is holding steady.',
+        },
       },
       runningDynamicsRolling: {
         title: 'Running Dynamics - Rolling Trend',
@@ -591,6 +630,11 @@ export const en = {
           groundContact: 'Rolling average ground contact time over the last 90 days. Lower generally means a more efficient stride.',
           verticalOscillation: 'Rolling average vertical oscillation over the last 90 days. Lower means less bounce per stride.',
         } as Record<string, string>,
+        reading: {
+          cadence: (min: string, max: string) => `30-day cadence ranges ${min}-${max} spm over the last 90 days.`,
+          groundContact: (min: string, max: string) => `30-day ground contact ranges ${min}-${max} ms - lower is generally more efficient.`,
+          verticalOscillation: (min: string, max: string) => `30-day vertical oscillation ranges ${min}-${max} mm - lower means less bounce per stride.`,
+        } as Record<string, (min: string, max: string) => string>,
       },
     },
     seasonHeadline: {
@@ -629,6 +673,14 @@ export const en = {
     resetFilters: 'Reset filters',
     endOfList: 'That\'s all',
     monthGroup: (count: number, km: number) => `${count} session${count !== 1 ? 's' : ''} · ${km} km`,
+    thisWeek: 'This week',
+    weekGroup: (km: number, runs: number, easyPct: number, hardPct: number) => `${km} km · ${runs} run${runs !== 1 ? 's' : ''} · ${easyPct}/${hardPct} E/H`,
+    weekStat: {
+      km: 'km',
+      runs: 'runs',
+      easyHard: 'E/H',
+    },
+    weekGroupCompact: (runs: number, km: number) => `${runs} run${runs !== 1 ? 's' : ''} · ${km} km`,
     sort: {
       label: 'Sort',
       date: 'Date',
@@ -732,6 +784,10 @@ export const en = {
     achievements: {
       title: 'Achievements from this run',
     },
+    dataQuality: {
+      estimated: 'Estimated',
+      noHr: 'No heart-rate data - zones and load are estimated from pace.',
+    },
     similarRuns: {
       title: 'Similar runs',
       timesBadge: (n: number) => `${n} times`,
@@ -751,7 +807,7 @@ export const en = {
       removeTag: (tag: string) => `Remove tag ${tag}`,
     },
     zones: {
-      title: 'Heart Rate Zones',
+      title: 'Time in Zones',
       noData: 'No HR zone data',
       labels: {
         1: 'Z1 · Warmup',
@@ -764,9 +820,8 @@ export const en = {
       rangeOpen: (min: number) => `>${min} bpm`,
     },
     trainingEffect: {
-      title: 'Training Effect',
-      aerobic: 'Aerobic',
-      anaerobic: 'Anaerobic',
+      aerobic: 'Aerobic effect',
+      anaerobic: 'Anaerobic effect',
       levels: {
         noBenefit: 'No benefit',
         minor: 'Minor',
@@ -838,7 +893,7 @@ export const en = {
     kmRemaining: (km: number) => `${km} km remaining`,
     goalReached: 'Goal reached!',
     raceTargets: 'Race Targets',
-    noTarget: 'No target',
+    noTarget: '-',
     targetDone: (ahead: string) => `✓ Done (${ahead} ahead)`,
     targetToGo: (time: string) => `${time} to go`,
     seasonRaces: 'Season Races',
@@ -861,7 +916,7 @@ export const en = {
         on_track: 'On track',
         behind: 'Behind',
       },
-      rate: (current: number, needed: number) => `${current} km/wk pace · ${needed} km/wk needed`,
+      rate: (current: number) => `${current} km/wk pace`,
       projected: (km: number) => `Projected ${km.toLocaleString()} km`,
     },
     monthlyGoal: {
@@ -892,6 +947,18 @@ export const en = {
     retired: 'Retired',
     alertBadge: 'Alert',
     criticalBadge: 'Critical',
+    status: {
+      ok: 'Good',
+      watch: 'Replace soon',
+      replace: 'Replace',
+    },
+    kmLeft: (km: number) => `~${km} km left`,
+    hero: {
+      usage: (n: number, total: number) => `Used in ${n} of your last ${total} tempo/threshold runs`,
+      rotateBeforeRace: (date: string) => ` - rotate in a backup before your ${date} race.`,
+      rotate: ' - rotate in a backup.',
+      restOfRotation: 'Rest of rotation',
+    },
     wearAlert: (name: string, totalKm: number, alertThresholdKm: number) => `${name} has ${totalKm} km - past its ${alertThresholdKm} km alert threshold`,
     summary: {
       totalDistance: 'Total km',
@@ -914,6 +981,8 @@ export const en = {
     hero: {
       since: (date: string) => `Athlete since ${date}`,
       summary: (activities: number, km: number) => `${activities} activities · ${km} km`,
+      lifetime: (runs: number, km: number) => `${runs} runs · ${km.toLocaleString('en')} km lifetime`,
+      rankLine: (tier: string, pct: number) => `Rank ${tier} · top ${pct}% of VO₂max for your age`,
       editName: 'Edit name',
       namePlaceholder: 'Your name',
       rankExplain: 'Fitness rank from VO₂max and race pace.',
@@ -975,7 +1044,7 @@ export const en = {
     },
     goal: {
       title: (year: number) => `Goal ${year}`,
-      pace: (km: number) => `At this pace: ${km} km by year-end`,
+      progress: (total: number, target: number) => `${total} / ${target} km`,
       viewGoals: 'View Goals',
     },
   },
@@ -987,6 +1056,16 @@ export const en = {
     mostRecent: 'Most recent',
     footnote: '★ official race time · others auto-detected from activity data',
     notYetRun: 'Not yet run',
+    segmented: {
+      prs: 'Personal records',
+      milestones: 'Milestones',
+    },
+    improvedThisYear: (time: string) => `-${time} this yr`,
+    riegelAhead: (predicted: string, delta: string) => `Riegel ${predicted} · you're ${delta} ahead`,
+    riegelBehind: (predicted: string, delta: string) => `Riegel ${predicted} · you're ${delta} behind`,
+    noRecordYet: 'No record yet',
+    predictedFromFitness: (time: string) => `Predicted ${time} from your current fitness.`,
+    findRace: (distance: string) => `Find a ${distance.toLowerCase()} ›`,
     leaderboard: {
       title: 'Top Times',
       rank: '#',
@@ -1065,6 +1144,16 @@ export const en = {
     weekOf: (label: string) => `Week of ${label}`,
     restDay: 'Rest',
     planned: 'Planned',
+    structure: {
+      title: 'Structure',
+      warmup: 'Warm-up',
+      cooldown: 'Cool-down',
+      single: (min: number, zone: string) => `${min}' @ ${zone}`,
+      reps: (n: number, effort: number, zone: string) => `${n} × ${effort}' @ ${zone}`,
+      repsWithRecovery: (n: number, effort: number, recovery: number, zone: string) => `${n} × ${effort}' @ ${zone} / ${recovery}' easy`,
+      easyZone: 'Z1-Z2',
+      min: (m: number) => `${m}'`,
+    },
     nextWeek: (n: number) => `Next week - ${n} planned`,
     viewDetail: 'View detail',
     type: 'Type',

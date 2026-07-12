@@ -9,8 +9,8 @@ import { useCountUp } from '@/lib/useCountUp'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
-const RING_SIZE = 56
-const RING_STROKE = 7
+const RING_SIZE = 66
+const RING_STROKE = 6
 const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS
 
@@ -39,11 +39,11 @@ function WeeklyGoalRing({ goal, hardShareFact }: { goal: WeeklyGoal; hardShareFa
             strokeDashoffset={offset}
           />
         </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-subhead font-extrabold leading-none tabular-nums text-foreground">
+        <div className="absolute inset-0 flex flex-col items-center justify-center px-1">
+          <span className="text-sm font-extrabold leading-none tabular-nums text-foreground">
             {Math.round(animatedActualKm)}
           </span>
-          <span className="text-micro text-muted-foreground">/ {Math.round(goal.targetKm)} {t.units.km}</span>
+          <span className="text-[9px] leading-tight text-muted-foreground">/{Math.round(goal.targetKm)}{t.units.km}</span>
         </div>
       </div>
       <div className="min-w-0 flex-1 text-left">

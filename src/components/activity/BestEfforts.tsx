@@ -1,4 +1,3 @@
-import { Zap } from 'lucide-react'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import { formatDuration, formatPace } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -29,10 +28,7 @@ export function BestEfforts({ bestEfforts, qualifiedEfforts = [] }: Props) {
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <div className="mb-3 flex items-center gap-2">
-        <Zap size={16} className="text-amber-500 dark:text-amber-400" />
-        <h3 className="text-sm font-semibold text-foreground/80">{s.title}</h3>
-      </div>
+      <h3 className="mb-3 text-sm font-semibold text-foreground/80">{s.title}</h3>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
         {entries.map(({ key, label, km, seconds, rank }) => {
           return (

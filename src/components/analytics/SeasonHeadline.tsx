@@ -7,7 +7,7 @@ import { t } from '@/i18n'
 
 export function SeasonHeadline({ data }: { data: SeasonHeadlineData }) {
   return (
-    <GlassSurface variant="card" className="border-accent/30 bg-gradient-to-br from-accent/[0.1] to-transparent p-5">
+    <GlassSurface variant="card" className="border-accent/30 bg-gradient-to-br from-accent/[0.1] to-transparent p-5 text-center">
       <div className="mb-1.5 text-micro font-semibold uppercase tracking-wide text-accent-text">
         {t.analytics.seasonHeadline.eyebrow}
       </div>
@@ -17,8 +17,8 @@ export function SeasonHeadline({ data }: { data: SeasonHeadlineData }) {
           const Icon = bullet.tone === 'positive' ? ArrowUpRight : ArrowRight
           const tone = bullet.tone === 'positive' ? STATUS.success.text : STATUS.warning.text
           return (
-            <li key={i} className="flex items-start gap-2 text-sm text-foreground/80">
-              <Icon size={15} strokeWidth={2.5} className={cn('mt-0.5 shrink-0', tone)} />
+            <li key={i} className="flex items-center justify-center gap-2 text-sm text-foreground/80">
+              <Icon size={15} strokeWidth={2.5} className={cn('shrink-0', tone)} />
               {bullet.text}
             </li>
           )

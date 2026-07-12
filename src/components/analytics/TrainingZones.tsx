@@ -1,4 +1,3 @@
-import { Gauge } from 'lucide-react'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { formatClock as fmt, formatPace } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -27,8 +26,7 @@ export function TrainingZones({ data }: { data: TrainingZonesData }) {
   return (
     <GlassSurface variant="card" className="p-5">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
-          <Gauge size={16} className="text-violet-500 dark:text-violet-400" />
+        <h2 className="text-sm font-semibold text-foreground/80">
           {t.trainingZones.title}
         </h2>
         <span className="text-xs text-subtle">{t.trainingZones.thresholdLabel(formatPace(thresholdPaceSecPerKm))}</span>

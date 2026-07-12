@@ -7,6 +7,7 @@ import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
+import { ChartExplain } from '@/components/ui/ChartExplain'
 import { t } from '@/i18n'
 
 type Metric = 'groundContact' | 'verticalOscillation' | 'strideLength'
@@ -75,6 +76,7 @@ export function RunningFormChart({ data }: Props) {
   const max = Math.max(...values) * 1.03
   const decimals = TICK_DECIMALS[metric]
   const summary = `${t.analytics.charts.runningForm.title}: ${t.analytics.charts.runningForm.metrics[metric]} ${Math.min(...values).toFixed(decimals)}–${Math.max(...values).toFixed(decimals)} ${UNIT_BY_KEY[key]}`
+  const reading = t.analytics.charts.runningForm.reading[metric]!(Math.min(...values).toFixed(decimals), Math.max(...values).toFixed(decimals))
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -116,7 +118,7 @@ export function RunningFormChart({ data }: Props) {
               type="monotone"
               dataKey={key}
               stroke={color}
-              strokeWidth={2}
+              strokeWidth={3}
               dot={{ r: 3, fill: color, strokeWidth: 0 }}
               connectNulls
               isAnimationActive={false}
@@ -124,6 +126,7 @@ export function RunningFormChart({ data }: Props) {
           </LineChart>
         </ResponsiveContainer>
       </ChartFigure>
+      <ChartExplain text={reading} />
       <p className="mt-2 text-xs text-subtle">
         {t.analytics.charts.runningForm.footnote[metric]}
       </p>

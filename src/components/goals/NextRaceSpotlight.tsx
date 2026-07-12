@@ -1,4 +1,3 @@
-import { Flag, MapPin } from 'lucide-react'
 import type { NextRaceSpotlight as NextRaceSpotlightData } from '@/application/usecases/GetGoalsData'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { formatDate, formatDuration } from '@/lib/formatters'
@@ -22,50 +21,44 @@ export function NextRaceSpotlight({ spotlight }: { spotlight: NextRaceSpotlightD
     <GlassSurface
       variant="card"
       className="rounded-2xl p-5"
-      style={{ background: 'rgba(245,158,11,0.07)', borderColor: 'rgba(245,158,11,0.28)' }}
+      style={{
+        background: 'linear-gradient(150deg, rgba(249,115,22,0.16), rgba(249,115,22,0.02))',
+        borderColor: 'rgba(249,115,22,0.32)',
+      }}
     >
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-          <Flag size={13} />
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#f7a05a' }}>
           {s.title}
         </span>
-        <span className="shrink-0 text-xs font-bold tabular-nums text-amber-600 dark:text-amber-400">
-          {t.goals.daysUntil(daysUntil)}
+        <span className="shrink-0 text-xs font-bold tabular-nums" style={{ color: '#f97316' }}>
+          {t.nextRace.countdown(daysUntil)}
         </span>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-lg font-bold text-foreground">{race.name}</span>
-        <span className="rounded-full bg-foreground/[0.06] px-2 py-0.5 text-xs font-medium text-foreground/70">
-          {shortDist(race.distance)}
-        </span>
-      </div>
-      <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-subtle">
-        <span>{formatDate(race.date)}</span>
-        {race.location && (
-          <span className="flex items-center gap-1">
-            <MapPin size={12} />
-            {race.location}
-          </span>
-        )}
-      </div>
+      <p className="text-center text-[17px] font-bold text-foreground">
+        {race.name} • {shortDist(race.distance)}
+      </p>
+      <p className="mt-0.5 text-center text-[10.5px] text-muted-foreground">
+        {formatDate(race.date)}
+        {race.location && ` · ${race.location}`}
+      </p>
 
       {(race.targetSeconds || predictedSeconds !== null) && (
         <div className="mt-3 grid grid-cols-3 gap-2">
-          <div className="rounded-xl bg-black/[0.15] p-2.5 text-center">
-            <div className="text-[10px] text-subtle">{s.target}</div>
+          <div className="rounded-xl p-2.5 text-center" style={{ background: 'rgba(0,0,0,0.25)' }}>
+            <div className="text-[10px] uppercase tracking-wide text-subtle">{s.target}</div>
             <div className="mt-0.5 text-sm font-bold text-foreground">
               {race.targetSeconds ? formatDuration(race.targetSeconds) : '-'}
             </div>
           </div>
-          <div className="rounded-xl bg-black/[0.15] p-2.5 text-center">
-            <div className="text-[10px] text-subtle">{s.predicted}</div>
-            <div className="mt-0.5 text-sm font-bold text-foreground">
+          <div className="rounded-xl p-2.5 text-center" style={{ background: 'rgba(0,0,0,0.25)' }}>
+            <div className="text-[10px] uppercase tracking-wide text-subtle">{s.predicted}</div>
+            <div className="mt-0.5 text-sm font-bold" style={{ color: '#f5b700' }}>
               {predictedSeconds !== null ? formatDuration(predictedSeconds) : '-'}
             </div>
           </div>
-          <div className="rounded-xl bg-black/[0.15] p-2.5 text-center">
-            <div className="text-[10px] text-subtle">{s.gap}</div>
+          <div className="rounded-xl p-2.5 text-center" style={{ background: 'rgba(0,0,0,0.25)' }}>
+            <div className="text-[10px] uppercase tracking-wide text-subtle">{s.gap}</div>
             <div className={cn('mt-0.5 text-sm font-bold', gap.className)}>{gap.label}</div>
           </div>
         </div>

@@ -3,7 +3,6 @@
 import { useMemo, useState } from 'react'
 import type { Activity, PlannedWorkout } from '@/domain/activity/types'
 import type { HrBounds } from '@/domain/training/trimp'
-import { GlassSurface } from '@/components/ui/GlassSurface'
 import { PeriodNav } from '@/components/ui/PeriodNav'
 import { WeekView } from './WeekView'
 import { MonthView } from './MonthView'
@@ -97,7 +96,7 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds }: Props) {
 
   return (
     <div className="space-y-4">
-      <GlassSurface as="div" variant="nav" className="rounded-2xl px-5 py-3">
+      <div className="px-1">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-title1 font-extrabold leading-[1.1] tracking-tight text-foreground">
@@ -118,7 +117,7 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds }: Props) {
           <div
             role="tablist"
             aria-label={t.pages.plan.title}
-            className="flex shrink-0 gap-0.5 rounded-control border border-foreground/10 bg-foreground/[0.07] p-[3px]"
+            className="flex shrink-0 gap-0.5 rounded-full border border-foreground/10 bg-foreground/[0.07] p-[3px]"
           >
             {(['week', 'month'] as const).map((m) => (
               <button
@@ -128,7 +127,7 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds }: Props) {
                 aria-selected={mode === m}
                 onClick={() => setMode(m)}
                 className={cn(
-                  'rounded-[7px] px-2.5 py-1 text-caption font-semibold transition-colors',
+                  'rounded-full px-5 py-1.5 text-caption font-medium transition-colors',
                   mode === m ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'
                 )}
               >
@@ -137,7 +136,7 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds }: Props) {
             ))}
           </div>
         </div>
-      </GlassSurface>
+      </div>
 
       <div
         key={animKey}

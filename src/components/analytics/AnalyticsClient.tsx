@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { TrendingUp, TrendingDown } from 'lucide-react'
 import type { ReactNode } from 'react'
@@ -40,8 +40,8 @@ const PhysiologyTab = dynamic(() => import('./PhysiologyTab').then((m) => m.Phys
 const SeasonsTab = dynamic(() => import('./SeasonsTab').then((m) => m.SeasonsTab), { loading: tabLoading })
 
 const TABS = [
-  { id: 'volume', label: t.analytics.tabs.volume },
   { id: 'performance', label: t.analytics.tabs.performance },
+  { id: 'volume', label: t.analytics.tabs.volume },
   { id: 'physiology', label: t.analytics.tabs.physiology },
   { id: 'seasons', label: t.analytics.tabs.seasons },
 ] as const
@@ -134,7 +134,7 @@ export function AnalyticsClient({
   const { years, byYear, periodWeeks, byPeriod } = data
 
   const [view, setView] = useState<View>({ kind: 'year', year: years[0] ?? new Date().getFullYear() })
-  const [tab, setTab] = useState<TabId>('volume')
+  const [tab, setTab] = useState<TabId>('performance')
 
   // Restore after mount, not in the initializer, to avoid a hydration mismatch.
   useEffect(() => {
@@ -149,9 +149,18 @@ export function AnalyticsClient({
     localStorage.setItem(VIEW_STORAGE_KEY, JSON.stringify(view))
   }, [view])
 
+  const tabsRef = useRef<HTMLDivElement>(null)
+
   function selectTab(id: TabId) {
     setTab(id)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    // Scroll to the tab strip (not the page top) so the charts start just
+    // below where the finger already is - the sticky offset keeps the tabs
+    // pinned at the top of the viewport.
+    const el = tabsRef.current
+    if (el) {
+      const top = el.getBoundingClientRect().top + window.scrollY - 12
+      window.scrollTo({ top, behavior: 'smooth' })
+    }
   }
 
   const isPeriod = view.kind === 'period'
@@ -255,7 +264,7 @@ export function AnalyticsClient({
 
   return (
     <div className="space-y-4">
-      <GlassSurface as="div" variant="nav" className="space-y-2.5 rounded-2xl px-5 py-3">
+      <div className="space-y-2.5 px-1">
         <h1 className="text-title1 font-extrabold leading-[1.1] tracking-tight text-foreground">
           {t.analytics.title}
         </h1>
@@ -274,7 +283,7 @@ export function AnalyticsClient({
           yearGroupLabel={t.analytics.yearGroupLabel}
           windowGroupLabel={t.analytics.windowGroupLabel}
         />
-      </GlassSurface>
+      </div>
 
       {seasonHeadline && <SeasonHeadline data={seasonHeadline} />}
 
@@ -296,12 +305,11 @@ export function AnalyticsClient({
 
       {active && (
         <>
-          <GlassSurface
-            as="div"
-            variant="nav"
+          <div
+            ref={tabsRef}
             role="tablist"
             aria-label={t.analytics.title}
-            className="sticky top-[max(var(--safe-top),8px)] z-10 flex gap-1 overflow-x-auto rounded-2xl mb-1 pr-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="sticky top-0 z-10 -mx-4 flex gap-1 overflow-x-auto bg-background px-4 pb-2 pt-[max(var(--safe-top),8px)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {visibleTabs.map((item) => (
               <button
@@ -310,19 +318,19 @@ export function AnalyticsClient({
                 aria-selected={tab === item.id}
                 onClick={() => selectTab(item.id)}
                 className={cn(
-                  'relative min-w-fit flex-1 whitespace-nowrap px-2 py-3 text-sm font-medium transition-colors',
+                  'relative min-w-fit flex-1 whitespace-nowrap px-2 py-2.5 text-sm font-medium transition-colors',
                   tab === item.id
-                    ? 'text-foreground'
+                    ? 'text-accent'
                     : 'text-muted-foreground hover:text-foreground',
                 )}
               >
                 {item.label}
                 {tab === item.id && (
-                  <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-t-full bg-accent" />
+                  <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-t-full bg-accent" />
                 )}
               </button>
             ))}
-          </GlassSurface>
+          </div>
 
           <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
             {tab === 'volume' && <VolumeTab series={active} />}
@@ -330,8 +338,6 @@ export function AnalyticsClient({
             {tab === 'performance' && (
               <PerformanceTab
                 series={active}
-                temperatureScatter={data.temperatureScatter}
-                rpeLoadCorrelation={data.rpeLoadCorrelation}
               />
             )}
 

@@ -7,7 +7,7 @@ import type { VO2maxTrend } from '@/application/usecases/GetVO2maxHistory'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { ATHLETE_BIRTHDATE, ATHLETE_SEX } from '@/domain/athlete/constants'
-import { ageFromBirthdate, vo2maxBand, vo2maxProgressToSuperior } from '@/domain/athlete/vo2maxNorms'
+import { ageFromBirthdate, vo2maxBand, vo2maxProgressToSuperior, vo2maxTopPercent } from '@/domain/athlete/vo2maxNorms'
 import { STATUS } from '@/lib/statusColors'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -34,7 +34,7 @@ function Metric({
   return (
     <div>
       <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className="mt-0.5 flex items-center gap-1">
+      <div className="mt-0.5 flex items-center justify-center gap-1">
         <span className={cn('text-lg font-semibold tabular-nums', valueClassName ?? 'text-foreground')}>{value}</span>
         {trailing}
       </div>
@@ -113,7 +113,7 @@ export function TrainingMetricsCard({ status, vo2max, vo2maxTrend }: Props) {
   const fBandStyle = FITNESS_BAND_STYLE[fBand]
 
   return (
-    <div className="grid grid-cols-3 gap-3">
+    <div className="grid grid-cols-3 gap-3 text-center">
       <GlassSurface variant="card" className="p-4">
         <Metric
           label={t.dashboard.vo2maxChart.title}
@@ -122,7 +122,7 @@ export function TrainingMetricsCard({ status, vo2max, vo2maxTrend }: Props) {
           band={
             vo2max !== null && vo2Band && vo2BandStyle
               ? {
-                  label: t.trainingStatus.metrics.vo2maxBand[vo2Band],
+                  label: `${t.trainingStatus.metrics.vo2maxBand[vo2Band]} · ${t.trainingStatus.metrics.topPercent(vo2maxTopPercent(vo2max, age, ATHLETE_SEX))}`,
                   progress: vo2maxProgressToSuperior(vo2max, age, ATHLETE_SEX),
                   textClassName: vo2BandStyle.text,
                   dotClassName: vo2BandStyle.dot,

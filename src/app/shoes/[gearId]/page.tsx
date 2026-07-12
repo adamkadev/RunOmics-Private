@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getShoeDetail } from '@/application/usecases/GetShoeDetail'
 import { SHOE_REGISTRY } from '@/domain/shoe/types'
-import { ActivityRow } from '@/components/activities/ActivityRow'
+import { ActivityListCard } from '@/components/activities/ActivityListCard'
 import { BrandIcon } from '@/components/shoes/BrandIcon'
 import { Badge } from '@/components/ui/Card'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -10,18 +10,30 @@ import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { BackButton } from '@/components/ui/BackButton'
 import { STATUS } from '@/lib/statusColors'
 import { formatCompactDate } from '@/lib/formatters'
+import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
-function wearTextClass(pct: number): string {
-  if (pct >= 90) return STATUS.danger.text
-  if (pct >= 70) return STATUS.warning.text
-  return STATUS.success.text
+type WearStatus = 'ok' | 'watch' | 'replace'
+
+function wearStatus(pct: number): WearStatus {
+  if (pct >= 90) return 'replace'
+  if (pct >= 70) return 'watch'
+  return 'ok'
 }
 
-function wearAlertBadge(pct: number): { label: string; className: string } | null {
-  if (pct >= 90) return { label: t.shoes.criticalBadge, className: STATUS.danger.badge }
-  if (pct >= 70) return { label: t.shoes.alertBadge, className: STATUS.warning.badge }
-  return null
+const WEAR_STYLE: Record<WearStatus, { bar: string; text: string }> = {
+  ok:      { bar: STATUS.success.dot, text: STATUS.success.text },
+  watch:   { bar: STATUS.warning.dot, text: STATUS.warning.text },
+  replace: { bar: STATUS.danger.dot,  text: STATUS.danger.text },
+}
+
+function Stat({ value, label }: { value: React.ReactNode; label: string }) {
+  return (
+    <div className="rounded-xl px-2.5 py-2.5 text-center" style={{ background: 'rgba(0,0,0,0.25)' }}>
+      <div className="text-micro font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="mt-1 text-base font-extrabold tabular-nums text-foreground">{value}</div>
+    </div>
+  )
 }
 
 export async function generateMetadata({
@@ -48,7 +60,9 @@ export default async function ShoeDetailPage({
   if (!shoe) notFound()
 
   const d = t.shoes.detail
-  const alertBadge = !shoe.retired ? wearAlertBadge(shoe.wearPercent) : null
+  const status = wearStatus(shoe.wearPercent)
+  const style = WEAR_STYLE[status]
+  const kmLeft = Math.max(0, Math.round(shoe.maxKm - shoe.totalKm))
 
   return (
     <div className="space-y-6">
@@ -58,44 +72,45 @@ export default async function ShoeDetailPage({
           <BrandIcon brand={shoe.brand} size={16} />
           <p className="widget-label text-muted-foreground">{shoe.brand}</p>
           {shoe.retired && <Badge className={STATUS.pending.badge}>{t.shoes.retired}</Badge>}
-          {alertBadge && <Badge className={alertBadge.className}>{alertBadge.label}</Badge>}
         </div>
         <h1 className="text-display text-foreground">{shoe.name}</h1>
       </div>
 
-      <GlassSurface variant="card" className="overflow-hidden">
-        <div className="grid grid-cols-3 gap-2 px-4 py-4">
-          <div className="flex flex-col items-center gap-1">
-            <span className={`text-lg font-extrabold leading-none tracking-tight ${wearTextClass(shoe.wearPercent)}`}>
-              <AnimatedValue value={shoe.totalKm} decimals={1} />
-            </span>
-            <span className="text-[10.5px] text-muted-foreground">{d.stats.distance}</span>
+      {!shoe.retired && (
+        <GlassSurface variant="card" className="p-5">
+          <div className="mb-2.5 flex items-center justify-between gap-2">
+            <span className={cn('text-sm font-bold', style.text)}>{t.shoes.status[status]}</span>
+            <span className={cn('text-sm font-bold tabular-nums', style.text)}>{shoe.wearPercent}%</span>
           </div>
-          <div className="flex flex-col items-center gap-1">
-            <span className="text-lg font-extrabold leading-none tracking-tight text-foreground">
-              <AnimatedValue value={shoe.activities.length} />
-            </span>
-            <span className="text-[10.5px] text-muted-foreground">{d.stats.activities}</span>
+          <div className="h-2 overflow-hidden rounded-full bg-foreground/[0.08]">
+            <div
+              className={`h-full rounded-full transition-all ${style.bar}`}
+              style={{ width: `${shoe.wearPercent}%` }}
+            />
           </div>
-          <div className="flex flex-col items-center gap-1">
-            <span className="text-lg font-extrabold leading-none tracking-tight text-foreground">
-              {shoe.firstUsedDate ? formatCompactDate(shoe.firstUsedDate) : '-'}
-            </span>
-            <span className="text-[10.5px] text-muted-foreground">{d.stats.firstUsed}</span>
-          </div>
-        </div>
-      </GlassSurface>
+          <p className="mt-2.5 flex items-center justify-between text-xs text-subtle">
+            <span>{t.shoes.kmOf(Math.round(shoe.totalKm), shoe.maxKm)}</span>
+            <span className="font-medium">{t.shoes.kmLeft(kmLeft)}</span>
+          </p>
+        </GlassSurface>
+      )}
+
+      <div className="grid grid-cols-3 gap-2">
+        <Stat value={<AnimatedValue value={shoe.totalKm} decimals={0} />} label={d.stats.distance} />
+        <Stat value={<AnimatedValue value={shoe.activities.length} />} label={d.stats.activities} />
+        <Stat value={shoe.firstUsedDate ? formatCompactDate(shoe.firstUsedDate) : '-'} label={d.stats.firstUsed} />
+      </div>
 
       <div className="space-y-3">
         <h2 className="widget-label text-muted-foreground">{d.activitiesTitle}</h2>
         {shoe.activities.length === 0 ? (
-          <GlassSurface variant="card" className="flex flex-col items-center gap-2 rounded-card-sm border-dashed py-10 text-center">
+          <GlassSurface variant="card" className="rounded-card-sm border-dashed py-10 text-center">
             <p className="text-sm text-subtle">{d.empty}</p>
           </GlassSurface>
         ) : (
           <div className="space-y-2">
             {shoe.activities.map((activity) => (
-              <ActivityRow key={activity.id} activity={activity} />
+              <ActivityListCard key={activity.id} activity={activity} />
             ))}
           </div>
         )}

@@ -6,6 +6,7 @@ import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
+import { ChartExplain } from '@/components/ui/ChartExplain'
 import { t } from '@/i18n'
 
 interface Props {
@@ -42,6 +43,12 @@ export function TrainingEffectChart({ data }: Props) {
   if (aerVals.length) summaryParts.push(`${t.analytics.charts.trainingEffect.aerobic} ${Math.min(...aerVals).toFixed(1)}–${Math.max(...aerVals).toFixed(1)}`)
   if (anaVals.length) summaryParts.push(`${t.analytics.charts.trainingEffect.anaerobic} ${Math.min(...anaVals).toFixed(1)}–${Math.max(...anaVals).toFixed(1)}`)
   const summary = `${t.analytics.charts.trainingEffect.title}: ${summaryParts.join(', ')}`
+  const avgAer = aerVals.length ? aerVals.reduce((s, v) => s + v, 0) / aerVals.length : null
+  const avgAna = anaVals.length ? anaVals.reduce((s, v) => s + v, 0) / anaVals.length : null
+  const r = t.analytics.charts.trainingEffect.reading
+  const reading = avgAer !== null && avgAna !== null
+    ? (avgAer - avgAna > 0.3 ? r.aerobicLed : avgAna - avgAer > 0.3 ? r.anaerobicLed : r.balanced)
+    : null
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -107,6 +114,7 @@ export function TrainingEffectChart({ data }: Props) {
           </LineChart>
         </ResponsiveContainer>
       </ChartFigure>
+      {reading && <ChartExplain text={reading} />}
       <p className="mt-2 text-xs text-subtle">{t.analytics.charts.trainingEffect.footnote}</p>
     </GlassSurface>
   )

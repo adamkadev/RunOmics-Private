@@ -1,7 +1,5 @@
 import { t } from '@/i18n'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
-import { getAthleteFromFirestore } from '@/infrastructure/repositories/FirestoreConfigRepository'
-import { buildTimeSeries, type HrBounds } from '@/application/usecases/GetTrainingLoad'
 import type { Activity, ActivityType } from '@/domain/activity/types'
 import { easyHardShare } from '@/domain/training/easyHard'
 import { monthLabel } from '@/lib/formatters'
@@ -159,22 +157,6 @@ export interface DailyRunningDynamics {
   verticalOscillation30: number | null
 }
 
-export interface TemperaturePoint {
-  temp: number
-  pace: number   // sec/km
-  km: number
-  date: string
-}
-
-export interface RpeLoadPoint {
-  tsb: number          // form at the start of the day, before that day's load
-  rpe: number
-  rpeDelta: number     // rpe minus this session type's usual rpe, so types are comparable
-  type: ActivityType
-  temp: number | null
-  date: string
-}
-
 export interface AnalyticsPageData {
   years: number[]
   byYear: Record<number, YearAnalytics>
@@ -183,8 +165,6 @@ export interface AnalyticsPageData {
   efficiencyDaily: DailyEfficiency[]
   runningDynamicsDaily: DailyRunningDynamics[]
   allTime: AllTimeAnalytics
-  temperatureScatter: TemperaturePoint[]
-  rpeLoadCorrelation: RpeLoadPoint[]
 }
 
 // A value (possibly null) paired with a weight, averaged across activities.
@@ -501,12 +481,6 @@ export async function getAnalyticsData(): Promise<AnalyticsPageData> {
   const all = getAllActivities()
   const now = new Date()
 
-  const athlete = await getAthleteFromFirestore()
-  const hrBounds: HrBounds | undefined =
-    athlete.maxHrBpm && athlete.restingHrBpm
-      ? { maxHr: athlete.maxHrBpm, restingHr: athlete.restingHrBpm }
-      : undefined
-
   const byYearMap = new Map<number, Activity[]>()
   for (const a of all) {
     const y = Number(a.date.slice(0, 4))
@@ -518,14 +492,6 @@ export async function getAnalyticsData(): Promise<AnalyticsPageData> {
   const years = Array.from(byYearMap.keys()).sort((a, b) => b - a)
   const periodWeeks = [8, 12, 16]
 
-  const temperatureScatter: TemperaturePoint[] = all
-    .filter((a) => a.avgTemperature !== null && a.paceSecPerKm !== null && a.distanceKm >= 3)
-    .map((a) => ({
-      temp: a.avgTemperature!,
-      pace: a.paceSecPerKm!,
-      km: round(a.distanceKm, 1),
-      date: a.date,
-    }))
 
   // RPE is driven far more by session type (a sprint workout always reads
   // higher than an easy run) than by form, so we compare each run against the
@@ -543,18 +509,6 @@ export async function getAnalyticsData(): Promise<AnalyticsPageData> {
     if (vals.length >= 3) avgRpeByType.set(type, vals.reduce((s, v) => s + v, 0) / vals.length)
   }
 
-  const loadSeries = buildTimeSeries(all, hrBounds)
-  const rpeLoadCorrelation: RpeLoadPoint[] = all
-    .filter((a) => a.rpe !== null && a.distanceKm >= 3 && loadSeries.has(a.date) && avgRpeByType.has(a.type))
-    .map((a) => ({
-      tsb: loadSeries.get(a.date)!.tsb,
-      rpe: a.rpe!,
-      rpeDelta: round(a.rpe! - avgRpeByType.get(a.type)!, 1),
-      type: a.type,
-      temp: a.avgTemperature,
-      date: a.date,
-    }))
-
   return {
     years,
     byYear: Object.fromEntries(years.map((y) => [y, buildYearAnalytics(y, byYearMap.get(y)!, now)])),
@@ -563,7 +517,5 @@ export async function getAnalyticsData(): Promise<AnalyticsPageData> {
     efficiencyDaily: buildEfficiencyDaily(all, now),
     runningDynamicsDaily: buildRunningDynamicsDaily(all, now),
     allTime: buildAllTimeAnalytics(byYearMap, all, now),
-    temperatureScatter,
-    rpeLoadCorrelation,
   }
 }

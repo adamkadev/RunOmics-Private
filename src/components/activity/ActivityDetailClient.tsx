@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import type { Activity } from '@/domain/activity/types'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
-import { trimp, type HrBounds } from '@/domain/training/trimp'
+import type { HrBounds } from '@/domain/training/trimp'
 import { heatAdjustmentSecondsPerKm, shouldAnnotateHeat } from '@/domain/training/heatAdjustment'
 import { ActivityMapClient } from './ActivityMapClient'
 import { NoRouteMap } from './ActivityMap'
@@ -22,7 +22,6 @@ import { GlassSurface } from '@/components/ui/GlassSurface'
 import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
-import { STATUS } from '@/lib/statusColors'
 
 interface Props {
   activity: Activity
@@ -32,13 +31,11 @@ interface Props {
 
 type TabId = 'overview' | 'splits' | 'charts' | 'dynamics'
 
-function rpeToneClass(rpe: number): string {
-  if (rpe <= 4) return STATUS.success.text
-  if (rpe <= 6) return 'text-foreground'
-  return STATUS.warning.text
-}
 
-function buildStats(activity: Activity): Metric[] {
+// The primary stat row is capped at the 4 numbers the mockup specifies
+// (distance/time/pace/HR) - everything else becomes secondary stats inside
+// the Overview tab instead of wrapping the header row onto a second line.
+function buildPrimaryStats(activity: Activity): Metric[] {
   const stats: Metric[] = [
     {
       value: formatDistance(activity.distanceKm),
@@ -64,41 +61,13 @@ function buildStats(activity: Activity): Metric[] {
     })
   }
 
-  if (activity.calories != null) {
-    stats.push({
-      value: `${activity.calories}`,
-      label: t.units.kcal,
-    })
-  }
-
-  if (activity.elevationGain !== null) {
-    stats.push({
-      value: `${activity.elevationGain > 0 ? '+' : '-'}${Math.abs(activity.elevationGain)}`,
-      label: t.units.elevation,
-    })
-  }
-
-  if (activity.cadenceSpm != null) {
-    stats.push({
-      value: `${Math.round(activity.cadenceSpm)}`,
-      label: t.units.spm,
-    })
-  }
-
-  stats.push({
-    value: activity.rpe !== null ? t.activity.stats.rpeValue(activity.rpe) : t.activity.stats.rpe,
-    label: activity.rpe !== null ? (t.rpeLabels[activity.rpe] ?? '-') : t.activity.stats.na,
-    // RPE semantics (ACTIVITY_DETAIL_TASKS.md C4): easy (1-4) accent, moderate (5-6) neutral, hard (7-10) amber.
-    valueClassName: activity.rpe !== null ? rpeToneClass(activity.rpe) : undefined,
-  })
-
   return stats
 }
 
-export function ActivityDetailClient({ activity, hrBounds, qualifiedEfforts }: Props) {
+
+export function ActivityDetailClient({ activity, qualifiedEfforts }: Props) {
   const [tab, setTab] = useState<TabId>('overview')
-  const sessionTrimp = trimp(activity, hrBounds)
-  const stats = buildStats(activity)
+  const stats = buildPrimaryStats(activity)
   const hasSecondaryCharts = !!(activity.elevationProfile || activity.paceSamples || activity.cadenceSamples)
   const hasCharts = hasSecondaryCharts || !!activity.hrSamples
   const hasSplits = !!(activity.splits && activity.splits.length > 0)
@@ -122,24 +91,41 @@ export function ActivityDetailClient({ activity, hrBounds, qualifiedEfforts }: P
 
   return (
     <>
+      <div className="h-[clamp(220px,38vw,360px)] overflow-hidden rounded-card border border-border">
+        {activity.route ? (
+          <ActivityMapClient
+            route={activity.route}
+            paceSamples={activity.paceSamples}
+            avgTemperature={activity.avgTemperature}
+            activityType={activity.type}
+            gearId={activity.gearId}
+            className="h-full w-full"
+          />
+        ) : (
+          <NoRouteMap className="h-full w-full" />
+        )}
+      </div>
+
       <RunVerdict activity={activity} heatAdjustSeconds={heatAdjustSeconds} />
 
-      <GlassSurface variant="card" className="p-5">
-        <MetricGrid metrics={stats} className="grid-cols-4" />
-        {sessionTrimp > 0 && (
-          <div className="mt-3 border-t border-foreground/[0.07] pt-3 text-xs text-subtle">
-            <p>{t.activity.loadNote(Math.round(sessionTrimp / 7))}</p>
-          </div>
-        )}
-      </GlassSurface>
+      <MetricGrid metrics={stats} className="grid-cols-4 px-1 text-center" />
+
+      {!activity.avgHeartRate && (
+        <p className="flex items-center justify-center gap-2 text-[10.5px] text-subtle-2">
+          <span className="rounded-full border border-amber-500/30 bg-amber-500/[0.1] px-2 py-px font-mono text-[9px] font-semibold uppercase tracking-[0.1em] text-amber-600 dark:text-amber-400">
+            {t.activity.dataQuality.estimated}
+          </span>
+          {t.activity.dataQuality.noHr}
+        </p>
+      )}
 
       {tabs.length > 1 && (
         <GlassSurface
           as="div"
-          variant="nav"
+          variant="card"
           role="tablist"
           aria-label={t.activity.tabs.groupLabel}
-          className="sticky top-[max(var(--safe-top),8px)] z-10 flex gap-1 overflow-x-auto rounded-2xl mb-1 pr-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="sticky top-[max(var(--safe-top),8px)] z-10 flex gap-1 overflow-x-auto rounded-full p-1 mb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {tabs.map((item) => (
             <button
@@ -148,12 +134,11 @@ export function ActivityDetailClient({ activity, hrBounds, qualifiedEfforts }: P
               aria-selected={tab === item.id}
               onClick={() => setTab(item.id)}
               className={cn(
-                'relative min-w-fit flex-1 whitespace-nowrap px-2 py-3 text-sm font-medium transition-colors',
-                tab === item.id ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
+                'min-w-fit flex-1 whitespace-nowrap rounded-full py-2.5 text-sm font-semibold transition-colors',
+                tab === item.id ? 'bg-accent text-accent-foreground' : 'text-subtle hover:text-foreground',
               )}
             >
               {item.label}
-              {tab === item.id && <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-t-full bg-accent" />}
             </button>
           ))}
         </GlassSurface>
@@ -161,19 +146,13 @@ export function ActivityDetailClient({ activity, hrBounds, qualifiedEfforts }: P
 
       {tab === 'overview' && (
         <>
-          <div className="h-[clamp(220px,38vw,360px)] overflow-hidden rounded-card border border-border">
-            {activity.route ? (
-              <ActivityMapClient
-                route={activity.route}
-                paceSamples={activity.paceSamples}
-                avgTemperature={activity.avgTemperature}
-                className="h-full w-full"
-              />
-            ) : (
-              <NoRouteMap className="h-full w-full" />
-            )}
-          </div>
-          {activity.hrZones.length > 0 && <ZoneBar hrZones={activity.hrZones} />}
+          {activity.hrZones.length > 0 && (
+            <ZoneBar
+              hrZones={activity.hrZones}
+              avgHr={activity.avgHeartRate}
+              maxHr={activity.hrSamples ? Math.max(...activity.hrSamples) : null}
+            />
+          )}
           <TrainingEffect aer={activity.aerTrainingEffect} ana={activity.anaTrainingEffect} />
           {activity.bestEfforts && (
             <BestEfforts bestEfforts={activity.bestEfforts} qualifiedEfforts={qualifiedEfforts} />

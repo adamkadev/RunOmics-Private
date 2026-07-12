@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
-import { Search, X, SearchX, Map } from 'lucide-react'
+import { Search, SearchX, ChevronDown } from 'lucide-react'
 import { ActivityListCard } from './ActivityListCard'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
@@ -11,7 +11,8 @@ import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { Pill } from '@/components/ui/Pill'
 import { SortDropdown } from '@/components/ui/SortDropdown'
-import { monthYearLabel } from '@/lib/formatters'
+import { weekRangeLabel } from '@/lib/formatters'
+import { isoDate, addDays, startOfWeek } from '@/lib/calendarDate'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -28,28 +29,51 @@ const SORT_OPTIONS: { value: ActivitySortKey; label: string }[] = [
   { value: 'avgHr', label: t.activities.sort.avgHr },
 ]
 
-interface MonthGroup {
+interface WeekGroup {
   key: string
   label: string
+  /** Always the "Jul 6 - 12" range, shown as a subtitle even under "This week". */
+  range: string
   items: ActivitySummary[]
   totalKm: number
+  easyPct: number
+  hardPct: number
 }
 
-// Groups are built from an already date-sorted list, so same-month items are
-// always contiguous - a single linear pass is enough (B3).
-function groupByMonth(items: ActivitySummary[]): MonthGroup[] {
-  const groups: MonthGroup[] = []
+function WeekStat({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="text-center">
+      <div className="text-sm font-bold tabular-nums text-foreground">{value}</div>
+      <div className="text-[9px] uppercase tracking-wide text-subtle">{label}</div>
+    </div>
+  )
+}
+
+// Groups are built from an already date-sorted list, so same-week items are
+// always contiguous - a single linear pass is enough (B3). Weeks are Monday-
+// Sunday, matching the Plan page's week convention.
+function groupByWeek(items: ActivitySummary[]): WeekGroup[] {
+  const raw: { key: string; items: ActivitySummary[] }[] = []
   for (const a of items) {
-    const key = a.date.slice(0, 7)
-    const last = groups[groups.length - 1]
+    const key = isoDate(startOfWeek(new Date(a.date + 'T00:00:00')))
+    const last = raw[raw.length - 1]
     if (last && last.key === key) {
       last.items.push(a)
-      last.totalKm += a.distanceKm
     } else {
-      groups.push({ key, label: monthYearLabel(a.date), items: [a], totalKm: a.distanceKm })
+      raw.push({ key, items: [a] })
     }
   }
-  return groups
+
+  const currentWeekStart = isoDate(startOfWeek(new Date()))
+
+  return raw.map(({ key, items: weekItems }) => {
+    const totalKm = weekItems.reduce((s, a) => s + a.distanceKm, 0)
+    const easyCount = weekItems.filter((a) => a.type === 'Base').length
+    const easyPct = Math.round((easyCount / weekItems.length) * 100)
+    const range = weekRangeLabel(key, isoDate(addDays(new Date(key + 'T00:00:00'), 6)))
+    const label = key === currentWeekStart ? t.activities.thisWeek : range
+    return { key, label, range, items: weekItems, totalKm, easyPct, hardPct: 100 - easyPct }
+  })
 }
 
 async function fetchActivities(params: {
@@ -86,7 +110,6 @@ export function ActivityListClient({
   qualifiedEffortsByActivityId = {},
 }: Props) {
   const [search, setSearch] = useState('')
-  const [searchOpen, setSearchOpen] = useState(false)
   const [selectedType, setSelectedType] = useState<ActivityType | null>(null)
   const [sortBy, setSortBy] = useState<ActivitySortKey>('date')
   const [sortOrder, setSortOrder] = useState<ActivitySortOrder>('desc')
@@ -95,6 +118,9 @@ export function ActivityListClient({
   const [nextOffset, setNextOffset] = useState(initialNextOffset)
   const [loadingMore, setLoadingMore] = useState(false)
   const [isPending, setIsPending] = useState(false)
+  // Past weeks start collapsed - only the first (most recent) week group reads
+  // as a training block by default; older weeks are a tap away.
+  const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(new Set())
 
   // Debounce the search box before it hits the query (server round-trip).
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -124,8 +150,8 @@ export function ActivityListClient({
 
   const hasMore = nextOffset !== null
   const hasActiveFilter = selectedType !== null || search.trim() !== ''
-  // Month separators only make sense when browsing in chronological order.
-  const groups = sortBy === 'date' ? groupByMonth(items) : null
+  // Week separators only make sense when browsing in chronological order.
+  const groups = sortBy === 'date' ? groupByWeek(items) : null
 
   const loadMore = useCallback(() => {
     if (nextOffset === null || loadingMore) return
@@ -163,48 +189,25 @@ export function ActivityListClient({
 
   return (
     <div className="space-y-4">
-      <GlassSurface as="div" variant="card" className="rounded-2xl px-5 py-3">
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="text-title1 font-extrabold leading-[1.1] tracking-tight text-foreground">
-              {t.pages.activities.title}
-            </h1>
-            <p className="mt-0.5 text-footnote font-medium text-muted-foreground">
-              {t.activities.count(totalCount)}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() =>
-              setSearchOpen((open) => {
-                if (open) setSearch('')
-                return !open
-              })
-            }
-            aria-label={t.activities.searchToggle}
-            aria-expanded={searchOpen}
-            className={cn(
-              'flex h-11 w-11 shrink-0 items-center justify-center rounded-control border transition-colors active:scale-95',
-              searchOpen
-                ? 'border-foreground/[0.20] bg-foreground/[0.14] text-foreground'
-                : 'border-foreground/[0.12] bg-foreground/[0.06] text-foreground/60 hover:bg-foreground/[0.10]'
-            )}
-          >
-            {searchOpen ? <X size={16} /> : <Search size={16} />}
-          </button>
-        </div>
+      <div className="px-1">
+        <h1 className="text-title1 font-extrabold leading-[1.1] tracking-tight text-foreground">
+          {t.pages.activities.title}
+        </h1>
+        <p className="mt-0.5 text-footnote font-medium text-muted-foreground">
+          {t.activities.count(totalCount)}
+        </p>
 
-        {searchOpen && (
+        <div className="relative mt-3">
+          <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-subtle-2" />
           <input
-            autoFocus
             type="text"
             placeholder={t.activities.searchPlaceholder}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="mt-3 h-9 w-full rounded-xl border border-border bg-card/60 px-3 text-sm text-foreground placeholder-subtle focus:border-accent focus:outline-none"
+            className="h-10 w-full rounded-[11px] bg-foreground/[0.05] pl-9 pr-3 text-sm text-foreground placeholder-subtle-2 focus:outline-none"
           />
-        )}
-      </GlassSurface>
+        </div>
+      </div>
 
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <Pill
@@ -232,13 +235,12 @@ export function ActivityListClient({
         })}
       </div>
 
-      {/* Secondary controls: sort - not in the visual spec, kept from the existing feature set */}
+      {/* Secondary controls: heatmap link + sort - not in the visual spec, kept from the existing feature set */}
       <div className="flex items-center justify-end gap-2">
         <Link
           href="/map"
-          className="flex items-center gap-1 rounded-control border border-foreground/[0.12] bg-foreground/[0.06] px-2.5 py-1 text-xs font-medium text-foreground/70 transition-colors hover:bg-foreground/[0.10]"
+          className="rounded-control border border-foreground/[0.12] bg-foreground/[0.06] px-2.5 py-1 text-xs font-medium text-foreground/70 transition-colors hover:bg-foreground/[0.10]"
         >
-          <Map size={12} />
           {t.nav.items.heatmap}
         </Link>
         <SortDropdown
@@ -273,24 +275,59 @@ export function ActivityListClient({
           )}
         </GlassSurface>
       ) : groups ? (
-        <div className="space-y-4">
-          {groups.map((g) => (
-            <div key={g.key}>
-              <div className="flex items-center justify-between px-1 py-2">
-                <span className="font-mono text-footnote font-bold tracking-wide text-muted-foreground/80">
-                  {g.label}
-                </span>
-                <span className="font-mono text-xs font-medium text-subtle">
-                  {t.activities.monthGroup(g.items.length, Math.round(g.totalKm))}
-                </span>
+        <div className="space-y-3">
+          {groups.map((g, i) => {
+            const isCurrent = i === 0
+            const isExpanded = isCurrent || expandedWeeks.has(g.key)
+            return (
+              <div key={g.key}>
+                {isCurrent ? (
+                  <div
+                    className="sticky top-[max(var(--safe-top),8px)] z-10 flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5"
+                    style={{ background: 'rgba(30,215,135,0.08)', borderColor: 'rgba(30,215,135,0.22)' }}
+                  >
+                    <div className="min-w-0">
+                      <div className="text-sm font-bold text-foreground">{g.label}</div>
+                      <div className="text-[10px] text-subtle">{g.range}</div>
+                    </div>
+                    <div className="flex shrink-0 items-end gap-4 text-right">
+                      <WeekStat value={String(Math.round(g.totalKm))} label={t.activities.weekStat.km} />
+                      <WeekStat value={String(g.items.length)} label={t.activities.weekStat.runs} />
+                      <WeekStat value={`${g.easyPct}/${g.hardPct}`} label={t.activities.weekStat.easyHard} />
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setExpandedWeeks((prev) => {
+                        const next = new Set(prev)
+                        if (next.has(g.key)) next.delete(g.key)
+                        else next.add(g.key)
+                        return next
+                      })
+                    }
+                    className="glass-card flex w-full items-center justify-between gap-3 rounded-xl px-3.5 py-2.5 text-left"
+                  >
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold text-foreground">{g.label}</div>
+                      <div className="mt-0.5 text-[11px] text-subtle">
+                        {t.activities.weekGroupCompact(g.items.length, Math.round(g.totalKm))}
+                      </div>
+                    </div>
+                    <ChevronDown size={16} className={cn('shrink-0 text-subtle transition-transform', isExpanded && 'rotate-180')} />
+                  </button>
+                )}
+                {isExpanded && (
+                  <div className="mt-2 space-y-2">
+                    {g.items.map((a) => (
+                      <ActivityListCard key={a.id} activity={a} qualifiedEfforts={qualifiedEffortsByActivityId[a.id]} />
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="space-y-2">
-                {g.items.map((a) => (
-                  <ActivityListCard key={a.id} activity={a} qualifiedEfforts={qualifiedEffortsByActivityId[a.id]} />
-                ))}
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       ) : (
         <div className="space-y-2">

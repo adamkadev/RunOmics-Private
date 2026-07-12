@@ -1,12 +1,35 @@
 import { getShoeStats } from '@/application/usecases/GetShoeStats'
-import { ShoesGrid } from '@/components/shoes/ShoesGrid'
+import { getNextRace } from '@/application/usecases/GetNextRace'
+import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { ShoesGrid, pickHeroShoe } from '@/components/shoes/ShoesGrid'
 import { ShoesSummary } from '@/components/shoes/ShoesSummary'
-import { ShoeWearAlertLine } from '@/components/shoes/ShoeWearAlertLine'
 import { BackButton } from '@/components/ui/BackButton'
+import { formatDayMonth } from '@/lib/formatters'
 import { t } from '@/i18n'
 
-export default function ShoesPage() {
+// Safety net: data is also revalidated on demand by /api/internal/revalidate
+// when the upcomingRaces Firestore collection is written.
+export const revalidate = 86400
+
+const QUALITY_RUNS_WINDOW = 6
+
+export default async function ShoesPage() {
   const shoes = getShoeStats()
+
+  // Deterministic rotation insight for the at-risk pair: how often it carried
+  // the recent quality sessions, and whether a race is close enough to matter.
+  const hero = pickHeroShoe(shoes)
+  let heroInsight: string | null = null
+  if (hero) {
+    const qualityRuns = getAllActivities()
+      .filter((a) => a.type === 'Tempo' || a.type === 'Threshold')
+      .slice(0, QUALITY_RUNS_WINDOW)
+    const usedCount = qualityRuns.filter((a) => a.gearId === hero.gearId).length
+    const nextRace = await getNextRace()
+    heroInsight =
+      t.shoes.hero.usage(usedCount, qualityRuns.length) +
+      (nextRace ? t.shoes.hero.rotateBeforeRace(formatDayMonth(nextRace.date)) : t.shoes.hero.rotate)
+  }
 
   return (
     <div className="space-y-6">
@@ -16,9 +39,8 @@ export default function ShoesPage() {
         <p className="mt-0.5 text-sm text-muted-foreground">{t.pages.shoes.subtitle}</p>
       </div>
 
-      <ShoeWearAlertLine shoes={shoes} />
       <ShoesSummary shoes={shoes} />
-      <ShoesGrid shoes={shoes} />
+      <ShoesGrid shoes={shoes} heroInsight={heroInsight} />
     </div>
   )
 }

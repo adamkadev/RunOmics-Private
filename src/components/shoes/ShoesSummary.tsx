@@ -1,16 +1,14 @@
 import type { ShoeStats } from '@/application/usecases/GetShoeStats'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
-import { GlassSurface } from '@/components/ui/GlassSurface'
 import { round } from '@/lib/math'
 import { t } from '@/i18n'
 
+// Standalone dark tiles (same language as Plan's load row), not a glass card.
 function Stat({ value, label }: { value: React.ReactNode; label: string }) {
   return (
-    <div className="flex flex-col items-center gap-1">
-      <span className="text-lg font-extrabold leading-none tracking-tight text-foreground">
-        {value}
-      </span>
-      <span className="text-[10.5px] text-muted-foreground">{label}</span>
+    <div className="rounded-xl px-2.5 py-2.5 text-center" style={{ background: 'rgba(0,0,0,0.25)' }}>
+      <div className="text-micro font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="mt-1 text-base font-extrabold tabular-nums text-foreground">{value}</div>
     </div>
   )
 }
@@ -18,17 +16,15 @@ function Stat({ value, label }: { value: React.ReactNode; label: string }) {
 export function ShoesSummary({ shoes }: { shoes: ShoeStats[] }) {
   const s = t.shoes.summary
 
-  const totalKm = round(shoes.reduce((sum, shoe) => sum + shoe.totalKm, 0), 1)
+  const totalKm = round(shoes.reduce((sum, shoe) => sum + shoe.totalKm, 0), 0)
   const activePairs = shoes.filter((shoe) => !shoe.retired).length
   const totalSessions = shoes.reduce((sum, shoe) => sum + shoe.sessionCount, 0)
 
   return (
-    <GlassSurface variant="card" className="overflow-hidden">
-      <div className="grid grid-cols-3 gap-2 px-4 py-4">
-        <Stat value={<AnimatedValue value={totalKm} decimals={1} />} label={s.totalDistance} />
-        <Stat value={<AnimatedValue value={activePairs} />}          label={s.activePairs} />
-        <Stat value={<AnimatedValue value={totalSessions} />}        label={s.sessions} />
-      </div>
-    </GlassSurface>
+    <div className="grid grid-cols-3 gap-2">
+      <Stat value={<AnimatedValue value={totalKm} />} label={s.totalDistance} />
+      <Stat value={<AnimatedValue value={activePairs} />} label={s.activePairs} />
+      <Stat value={<AnimatedValue value={totalSessions} />} label={s.sessions} />
+    </div>
   )
 }
