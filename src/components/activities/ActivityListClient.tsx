@@ -32,10 +32,21 @@ const SORT_OPTIONS: { value: ActivitySortKey; label: string }[] = [
 interface WeekGroup {
   key: string
   label: string
+  /** Always the "Jul 6 - 12" range, shown as a subtitle even under "This week". */
+  range: string
   items: ActivitySummary[]
   totalKm: number
   easyPct: number
   hardPct: number
+}
+
+function WeekStat({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="text-center">
+      <div className="text-sm font-bold tabular-nums text-foreground">{value}</div>
+      <div className="text-[9px] uppercase tracking-wide text-subtle">{label}</div>
+    </div>
+  )
 }
 
 // Groups are built from an already date-sorted list, so same-week items are
@@ -59,10 +70,9 @@ function groupByWeek(items: ActivitySummary[]): WeekGroup[] {
     const totalKm = weekItems.reduce((s, a) => s + a.distanceKm, 0)
     const easyCount = weekItems.filter((a) => a.type === 'Base').length
     const easyPct = Math.round((easyCount / weekItems.length) * 100)
-    const label = key === currentWeekStart
-      ? t.activities.thisWeek
-      : weekRangeLabel(key, isoDate(addDays(new Date(key + 'T00:00:00'), 6)))
-    return { key, label, items: weekItems, totalKm, easyPct, hardPct: 100 - easyPct }
+    const range = weekRangeLabel(key, isoDate(addDays(new Date(key + 'T00:00:00'), 6)))
+    const label = key === currentWeekStart ? t.activities.thisWeek : range
+    return { key, label, range, items: weekItems, totalKm, easyPct, hardPct: 100 - easyPct }
   })
 }
 
@@ -278,9 +288,12 @@ export function ActivityListClient({
                   >
                     <div className="min-w-0">
                       <div className="text-sm font-bold text-foreground">{g.label}</div>
+                      <div className="text-[10px] text-subtle">{g.range}</div>
                     </div>
-                    <div className="shrink-0 text-right text-xs font-medium text-subtle">
-                      {t.activities.weekGroup(Math.round(g.totalKm), g.items.length, g.easyPct, g.hardPct)}
+                    <div className="flex shrink-0 items-end gap-4 text-right">
+                      <WeekStat value={String(Math.round(g.totalKm))} label={t.activities.weekStat.km} />
+                      <WeekStat value={String(g.items.length)} label={t.activities.weekStat.runs} />
+                      <WeekStat value={`${g.easyPct}/${g.hardPct}`} label={t.activities.weekStat.easyHard} />
                     </div>
                   </div>
                 ) : (
@@ -294,13 +307,15 @@ export function ActivityListClient({
                         return next
                       })
                     }
-                    className="flex w-full items-center justify-between gap-3 rounded-xl bg-card px-3.5 py-2.5 text-left"
+                    className="glass-card flex w-full items-center justify-between gap-3 rounded-xl px-3.5 py-2.5 text-left"
                   >
-                    <div className="min-w-0 text-sm font-semibold text-foreground">{g.label}</div>
-                    <div className="flex shrink-0 items-center gap-2 text-xs font-medium text-subtle">
-                      {t.activities.monthGroup(g.items.length, Math.round(g.totalKm))}
-                      <ChevronDown size={14} className={cn('transition-transform', isExpanded && 'rotate-180')} />
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold text-foreground">{g.label}</div>
+                      <div className="mt-0.5 text-[11px] text-subtle">
+                        {t.activities.weekGroupCompact(g.items.length, Math.round(g.totalKm))}
+                      </div>
                     </div>
+                    <ChevronDown size={16} className={cn('shrink-0 text-subtle transition-transform', isExpanded && 'rotate-180')} />
                   </button>
                 )}
                 {isExpanded && (
