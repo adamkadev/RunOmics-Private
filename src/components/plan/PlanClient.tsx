@@ -102,6 +102,8 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds }: Props) {
             <h1 className="text-title1 font-extrabold leading-[1.1] tracking-tight text-foreground">
               {t.pages.plan.title}
             </h1>
+            {/* Hidden on mobile - the week/month is changed by swiping there,
+                so the label + arrows are redundant. Shown from sm up. */}
             <PeriodNav
               label={<span className="text-footnote font-medium text-muted-foreground">{subtitle}</span>}
               onPrev={() => shift(-1)}
@@ -110,7 +112,7 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds }: Props) {
               prevLabel={t.plan.prevPeriod}
               nextLabel={t.plan.nextPeriod}
               size="sm"
-              className="mt-0.5"
+              className="mt-0.5 hidden sm:flex"
             />
           </div>
 
