@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { TrendingUp, TrendingDown } from 'lucide-react'
 import type { ReactNode } from 'react'
@@ -149,9 +149,18 @@ export function AnalyticsClient({
     localStorage.setItem(VIEW_STORAGE_KEY, JSON.stringify(view))
   }, [view])
 
+  const tabsRef = useRef<HTMLDivElement>(null)
+
   function selectTab(id: TabId) {
     setTab(id)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    // Scroll to the tab strip (not the page top) so the charts start just
+    // below where the finger already is - the sticky offset keeps the tabs
+    // pinned at the top of the viewport.
+    const el = tabsRef.current
+    if (el) {
+      const top = el.getBoundingClientRect().top + window.scrollY - 12
+      window.scrollTo({ top, behavior: 'smooth' })
+    }
   }
 
   const isPeriod = view.kind === 'period'
@@ -296,12 +305,11 @@ export function AnalyticsClient({
 
       {active && (
         <>
-          <GlassSurface
-            as="div"
-            variant="nav"
+          <div
+            ref={tabsRef}
             role="tablist"
             aria-label={t.analytics.title}
-            className="sticky top-[max(var(--safe-top),8px)] z-10 flex gap-1 overflow-x-auto rounded-xl p-1 mb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="sticky top-0 z-10 -mx-4 flex gap-1 overflow-x-auto bg-background px-4 pb-2 pt-[max(var(--safe-top),8px)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {visibleTabs.map((item) => (
               <button
@@ -310,7 +318,7 @@ export function AnalyticsClient({
                 aria-selected={tab === item.id}
                 onClick={() => selectTab(item.id)}
                 className={cn(
-                  'relative min-w-fit flex-1 whitespace-nowrap px-2 py-3 text-sm font-medium transition-colors',
+                  'relative min-w-fit flex-1 whitespace-nowrap px-2 py-2.5 text-sm font-medium transition-colors',
                   tab === item.id
                     ? 'text-accent'
                     : 'text-muted-foreground hover:text-foreground',
@@ -318,11 +326,11 @@ export function AnalyticsClient({
               >
                 {item.label}
                 {tab === item.id && (
-                  <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-t-full bg-accent" />
+                  <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-t-full bg-accent" />
                 )}
               </button>
             ))}
-          </GlassSurface>
+          </div>
 
           <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
             {tab === 'volume' && <VolumeTab series={active} />}
