@@ -46,22 +46,26 @@ export function DataSourceInfo() {
         {s.dataSource.garmin} - {s.dataSource.syncMethod}
       </p>
 
-      <button
-        type="button"
-        onClick={handleExport}
-        disabled={loading}
-        className="mt-4 w-full rounded-xl border border-foreground/10 bg-foreground/[0.04] px-4 py-2.5 text-center text-xs font-medium text-foreground transition-colors hover:bg-foreground/[0.08] disabled:opacity-50"
-      >
-        {loading ? s.dataExport.exporting : s.dataExport.csv}
-      </button>
+      <div className="mt-4 space-y-2.5">
+        <button
+          type="button"
+          onClick={handleExport}
+          disabled={loading}
+          className="flex w-full items-center justify-between gap-2 text-[12.5px] text-muted-foreground transition-opacity active:opacity-60 disabled:opacity-50"
+        >
+          <span>{loading ? s.dataExport.exporting : s.dataExport.csv}</span>
+          <span className="shrink-0 font-semibold text-accent-text">{s.rowAction.export}</span>
+        </button>
 
-      <button
-        type="button"
-        onClick={handleClearCache}
-        className="mt-2 w-full rounded-xl border border-foreground/10 bg-foreground/[0.04] px-4 py-2.5 text-center text-xs font-medium text-foreground transition-colors hover:bg-foreground/[0.08]"
-      >
-        {s.offlineCache.clear}
-      </button>
+        <button
+          type="button"
+          onClick={handleClearCache}
+          className="flex w-full items-center justify-between gap-2 text-[12.5px] text-muted-foreground transition-opacity active:opacity-60"
+        >
+          <span>{s.offlineCache.clear}</span>
+          <span className="shrink-0 font-semibold text-accent-text">{s.rowAction.clear}</span>
+        </button>
+      </div>
 
       <Toast toast={toast} leaving={leaving} />
     </GlassSurface>
