@@ -401,6 +401,7 @@ export const fr = {
         strong: 'Forte',
         elite: 'Élite',
       },
+      topPercent: (pct: number) => `top ${pct}%`,
       fitnessBand: {
         peak: 'Pic de forme',
         nearPeak: 'Proche du pic',
@@ -412,6 +413,12 @@ export const fr = {
   analytics: {
     title: 'Analyses',
     readingLabel: 'Lecture :',
+    effectLevel: {
+      little: 'Effet faible',
+      medium: 'Effet moyen',
+      big: 'Effet fort',
+    },
+    tapToExpand: 'Toucher pour voir le nuage de points complet - masqué par défaut.',
     season: (year: number) => `Saison ${year}`,
     allTimeChip: 'Tout',
     allTimeTitle: 'Historique complet',
@@ -793,7 +800,7 @@ export const fr = {
       removeTag: (tag: string) => `Supprimer le tag ${tag}`,
     },
     zones: {
-      title: 'Zones de fréquence cardiaque',
+      title: 'Temps en zones',
       noData: 'Pas de données de zones FC',
       labels: {
         1: 'Z1 · Échauffement',

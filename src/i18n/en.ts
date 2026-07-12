@@ -407,6 +407,7 @@ export const en = {
         strong: 'Strong',
         elite: 'Elite',
       },
+      topPercent: (pct: number) => `top ${pct}%`,
       fitnessBand: {
         peak: 'Peak fitness',
         nearPeak: 'Near peak',
@@ -418,6 +419,12 @@ export const en = {
   analytics: {
     title: 'Analytics',
     readingLabel: 'Reading:',
+    effectLevel: {
+      little: 'Little effect',
+      medium: 'Medium effect',
+      big: 'Big effect',
+    },
+    tapToExpand: 'Tap to expand the full scatter - hidden by default.',
     season: (year: number) => `${year} season`,
     allTimeChip: 'All',
     allTimeTitle: 'All-time',
@@ -799,7 +806,7 @@ export const en = {
       removeTag: (tag: string) => `Remove tag ${tag}`,
     },
     zones: {
-      title: 'Heart Rate Zones',
+      title: 'Time in Zones',
       noData: 'No HR zone data',
       labels: {
         1: 'Z1 · Warmup',

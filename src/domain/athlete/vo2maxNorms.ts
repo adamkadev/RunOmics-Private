@@ -66,3 +66,34 @@ export function vo2maxProgressToSuperior(vo2max: number, age: number, sex: 'male
   const t = VO2MAX_NORMS[sex][bracketForAge(age)]
   return Math.max(0, Math.min(1, vo2max / t.superior))
 }
+
+// Interpolates a percentile (1-99) between the fair/good/excellent/superior
+// anchors (40th/60th/80th/95th pct) for the "· top X%" band suffix - reuses
+// the same norms table as vo2maxBand, no separate lookup.
+export function vo2maxTopPercent(vo2max: number, age: number, sex: 'male' | 'female'): number {
+  const t = VO2MAX_NORMS[sex][bracketForAge(age)]
+  const anchors: [number, number][] = [[0, 1], [40, t.fair], [60, t.good], [80, t.excellent], [95, t.superior]]
+
+  let percentile: number
+  if (vo2max >= t.superior) {
+    percentile = Math.min(99, 95 + ((vo2max - t.superior) / t.superior) * 100)
+  } else {
+    let lo = anchors[0]!
+    let hi = anchors[anchors.length - 1]!
+    for (let i = 0; i < anchors.length - 1; i++) {
+      const [, loVal] = anchors[i]!
+      const [, hiVal] = anchors[i + 1]!
+      if (vo2max >= loVal && vo2max <= hiVal) {
+        lo = anchors[i]!
+        hi = anchors[i + 1]!
+        break
+      }
+    }
+    const [loPct, loVal] = lo
+    const [hiPct, hiVal] = hi
+    const frac = hiVal > loVal ? (vo2max - loVal) / (hiVal - loVal) : 0
+    percentile = loPct + frac * (hiPct - loPct)
+  }
+
+  return Math.max(1, Math.round(100 - percentile))
+}

@@ -7,7 +7,7 @@ import type { VO2maxTrend } from '@/application/usecases/GetVO2maxHistory'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { ATHLETE_BIRTHDATE, ATHLETE_SEX } from '@/domain/athlete/constants'
-import { ageFromBirthdate, vo2maxBand, vo2maxProgressToSuperior } from '@/domain/athlete/vo2maxNorms'
+import { ageFromBirthdate, vo2maxBand, vo2maxProgressToSuperior, vo2maxTopPercent } from '@/domain/athlete/vo2maxNorms'
 import { STATUS } from '@/lib/statusColors'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -122,7 +122,7 @@ export function TrainingMetricsCard({ status, vo2max, vo2maxTrend }: Props) {
           band={
             vo2max !== null && vo2Band && vo2BandStyle
               ? {
-                  label: t.trainingStatus.metrics.vo2maxBand[vo2Band],
+                  label: `${t.trainingStatus.metrics.vo2maxBand[vo2Band]} · ${t.trainingStatus.metrics.topPercent(vo2maxTopPercent(vo2max, age, ATHLETE_SEX))}`,
                   progress: vo2maxProgressToSuperior(vo2max, age, ATHLETE_SEX),
                   textClassName: vo2BandStyle.text,
                   dotClassName: vo2BandStyle.dot,
