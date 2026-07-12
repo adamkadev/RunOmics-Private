@@ -922,6 +922,12 @@ export const fr = {
     retired: 'Retraitée',
     alertBadge: 'Alerte',
     criticalBadge: 'Critique',
+    status: {
+      ok: 'Bon état',
+      watch: 'À remplacer bientôt',
+      replace: 'À remplacer',
+    },
+    kmLeft: (km: number) => `~${km} km restants`,
     wearAlert: (name: string, totalKm: number, alertThresholdKm: number) => `${name} affiche ${totalKm} km - au-delà de son seuil d’alerte de ${alertThresholdKm} km`,
     summary: {
       totalDistance: 'Km totaux',

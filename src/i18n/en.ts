@@ -928,6 +928,12 @@ export const en = {
     retired: 'Retired',
     alertBadge: 'Alert',
     criticalBadge: 'Critical',
+    status: {
+      ok: 'Good',
+      watch: 'Replace soon',
+      replace: 'Replace',
+    },
+    kmLeft: (km: number) => `~${km} km left`,
     wearAlert: (name: string, totalKm: number, alertThresholdKm: number) => `${name} has ${totalKm} km - past its ${alertThresholdKm} km alert threshold`,
     summary: {
       totalDistance: 'Total km',
