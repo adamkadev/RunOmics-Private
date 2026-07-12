@@ -910,7 +910,7 @@ export const fr = {
         on_track: 'Sur la bonne voie',
         behind: 'En retard',
       },
-      rate: (current: number, needed: number) => `rythme ${current} km/sem · ${needed} km/sem nécessaires`,
+      rate: (current: number) => `rythme ${current} km/sem`,
       projected: (km: number) => `Projection ${km.toLocaleString()} km`,
     },
     monthlyGoal: {

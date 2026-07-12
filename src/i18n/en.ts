@@ -916,7 +916,7 @@ export const en = {
         on_track: 'On track',
         behind: 'Behind',
       },
-      rate: (current: number, needed: number) => `${current} km/wk pace · ${needed} km/wk needed`,
+      rate: (current: number) => `${current} km/wk pace`,
       projected: (km: number) => `Projected ${km.toLocaleString()} km`,
     },
     monthlyGoal: {
