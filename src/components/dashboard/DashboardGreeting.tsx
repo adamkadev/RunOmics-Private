@@ -21,7 +21,7 @@ export function DashboardGreeting() {
       </div>
       <div
         className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full text-sm font-bold text-accent-foreground"
-        style={{ background: 'linear-gradient(140deg, var(--accent), var(--accent-dark, var(--accent)))' }}
+        style={{ background: 'linear-gradient(140deg, var(--accent), color-mix(in srgb, var(--accent) 74%, #000))' }}
       >
         {initials(name)}
       </div>
