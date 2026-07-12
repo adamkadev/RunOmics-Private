@@ -59,7 +59,7 @@ export function NextRaceSpotlight({ spotlight }: { spotlight: NextRaceSpotlightD
           </div>
           <div className="rounded-xl p-2.5 text-center" style={{ background: 'rgba(0,0,0,0.25)' }}>
             <div className="text-[10px] uppercase tracking-wide text-subtle">{s.predicted}</div>
-            <div className="mt-0.5 text-sm font-bold" style={{ color: '#f5b700' }}>
+            <div className="mt-0.5 text-sm font-bold text-accent-text">
               {predictedSeconds !== null ? formatDuration(predictedSeconds) : '-'}
             </div>
           </div>

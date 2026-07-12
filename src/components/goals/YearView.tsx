@@ -61,6 +61,7 @@ export function YearView({ yearData, onSaveGoal }: Props) {
     ? projectionSparkline(yearData.year, annualDistanceKm, annualProgress, projection)
     : null
   const otherUpcomingRaces = upcomingRaces.filter((race) => race !== nextRaceSpotlight?.race)
+  const hasRaceDistanceCards = !!goals && (goals.targets.length > 0 || upcomingRaces.length > 0)
 
   return (
     <div className="space-y-8">
@@ -138,7 +139,7 @@ export function YearView({ yearData, onSaveGoal }: Props) {
 
       {nextRaceSpotlight && <NextRaceSpotlight spotlight={nextRaceSpotlight} />}
 
-      {goals && goals.targets.length > 0 && <RaceDistanceGrid yearData={yearData} />}
+      {hasRaceDistanceCards && <RaceDistanceGrid yearData={yearData} />}
 
       {goals && monthlyGoals.length > 0 && <MonthlyGoalsGrid monthlyGoals={monthlyGoals} />}
 
@@ -196,7 +197,7 @@ export function YearView({ yearData, onSaveGoal }: Props) {
         </section>
       )}
 
-      {(!goals || goals.targets.length === 0) && (
+      {!hasRaceDistanceCards && (
         pbs.length > 0 ? (
           <section className="space-y-3">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
