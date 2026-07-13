@@ -2,8 +2,10 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getShoeDetail } from '@/application/usecases/GetShoeDetail'
 import { SHOE_REGISTRY } from '@/domain/shoe/types'
+import { wearStatus, type WearStatus } from '@/domain/shoe/wearStatus'
 import { ActivityListCard } from '@/components/activities/ActivityListCard'
 import { BrandIcon } from '@/components/shoes/BrandIcon'
+import { HERO_SURFACE } from '@/components/shoes/ShoesGrid'
 import { Badge } from '@/components/ui/Card'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
@@ -13,18 +15,17 @@ import { formatCompactDate } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
-type WearStatus = 'ok' | 'watch' | 'replace'
-
-function wearStatus(pct: number): WearStatus {
-  if (pct >= 90) return 'replace'
-  if (pct >= 70) return 'watch'
-  return 'ok'
-}
-
 const WEAR_STYLE: Record<WearStatus, { bar: string; text: string }> = {
   ok:      { bar: STATUS.success.dot, text: STATUS.success.text },
   watch:   { bar: STATUS.warning.dot, text: STATUS.warning.text },
   replace: { bar: STATUS.danger.dot,  text: STATUS.danger.text },
+}
+
+function verdictBody(status: 'watch' | 'replace', weeksRemaining: number | null): string {
+  const v = t.shoes.detail.verdict
+  if (weeksRemaining === null) return v.noPaceData
+  const action = status === 'replace' ? v.replaceNow : v.planReplacement
+  return `${v.weeksLeft(weeksRemaining)} ${action}`
 }
 
 function Stat({ value, label }: { value: React.ReactNode; label: string }) {
@@ -63,6 +64,7 @@ export default async function ShoeDetailPage({
   const status = wearStatus(shoe.wearPercent)
   const style = WEAR_STYLE[status]
   const kmLeft = Math.max(0, Math.round(shoe.maxKm - shoe.totalKm))
+  const weeksRemaining = shoe.kmPerWeek > 0 ? Math.max(0, Math.round(kmLeft / shoe.kmPerWeek)) : null
 
   return (
     <div className="space-y-6">
@@ -75,6 +77,17 @@ export default async function ShoeDetailPage({
         </div>
         <h1 className="text-display text-foreground">{shoe.name}</h1>
       </div>
+
+      {!shoe.retired && status !== 'ok' && (
+        <div className="rounded-2xl border p-4" style={HERO_SURFACE[status]}>
+          <p className={cn('font-mono text-[10px] font-semibold uppercase tracking-[0.12em]', style.text)}>
+            {d.verdict.eyebrow(t.shoes.status[status])}
+          </p>
+          <p className="mt-2 text-[15px] font-semibold leading-snug text-foreground">
+            {verdictBody(status, weeksRemaining)}
+          </p>
+        </div>
+      )}
 
       {!shoe.retired && (
         <GlassSurface variant="card" className="p-5">
@@ -95,9 +108,10 @@ export default async function ShoeDetailPage({
         </GlassSurface>
       )}
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-4 gap-2">
         <Stat value={<AnimatedValue value={shoe.totalKm} decimals={0} />} label={d.stats.distance} />
         <Stat value={<AnimatedValue value={shoe.activities.length} />} label={d.stats.activities} />
+        <Stat value={<AnimatedValue value={shoe.kmPerWeek} decimals={0} />} label={d.stats.kmPerWeek} />
         <Stat value={shoe.firstUsedDate ? formatCompactDate(shoe.firstUsedDate) : '-'} label={d.stats.firstUsed} />
       </div>
 

@@ -13,6 +13,7 @@ export interface ShoeDetail {
   totalKm: number
   wearPercent: number
   firstUsedDate: string | null
+  kmPerWeek: number
   activities: Activity[]
 }
 
@@ -25,6 +26,11 @@ export function getShoeDetail(gearId: string): ShoeDetail | null {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
   const totalKm = round(activities.reduce((sum, a) => sum + a.distanceKm, 0), 1)
+  const firstUsedDate = activities.at(-1)?.date ?? null
+  const daysSinceFirstUse = firstUsedDate
+    ? Math.max(1, (Date.now() - new Date(firstUsedDate).getTime()) / 86_400_000)
+    : 0
+  const kmPerWeek = daysSinceFirstUse > 0 ? round((totalKm / daysSinceFirstUse) * 7, 1) : 0
 
   return {
     gearId,
@@ -35,7 +41,8 @@ export function getShoeDetail(gearId: string): ShoeDetail | null {
     retired: info.retired,
     totalKm,
     wearPercent: info.retired ? 100 : Math.min(100, round((totalKm / info.maxKm) * 100, 0)),
-    firstUsedDate: activities.at(-1)?.date ?? null,
+    firstUsedDate,
+    kmPerWeek,
     activities,
   }
 }

@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import type { ShoeStats } from '@/application/usecases/GetShoeStats'
-import { wearStatus } from '@/components/shoes/ShoesGrid'
+import { wearStatus } from '@/domain/shoe/wearStatus'
 import { STATUS } from '@/lib/statusColors'
 import { t } from '@/i18n'
 

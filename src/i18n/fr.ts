@@ -977,9 +977,17 @@ export const fr = {
         distance: 'Distance',
         activities: 'Activités',
         firstUsed: 'Première sortie',
+        kmPerWeek: 'km / sem.',
       },
       activitiesTitle: 'Activités suivies',
       empty: 'Aucune activité enregistrée avec cette paire pour le moment.',
+      verdict: {
+        eyebrow: (statusLabel: string) => `Verdict · ${statusLabel}`,
+        weeksLeft: (weeks: number) => `Encore ~${weeks} semaines à ton rythme.`,
+        planReplacement: 'Prévois la remplaçante ce mois-ci.',
+        replaceNow: 'Prévois la remplaçante dès maintenant.',
+        noPaceData: 'Pas assez de kilométrage récent pour projeter un horizon.',
+      },
     },
   },
 

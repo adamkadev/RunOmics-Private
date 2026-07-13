@@ -1,21 +1,12 @@
 import Link from 'next/link'
 import type { ShoeStats } from '@/application/usecases/GetShoeStats'
+import { wearStatus, type WearStatus } from '@/domain/shoe/wearStatus'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { BrandIcon } from '@/components/shoes/BrandIcon'
 import { STATUS } from '@/lib/statusColors'
 import { formatCompactDate } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
-
-type WearStatus = 'ok' | 'watch' | 'replace'
-
-// Deterministic decision layer over the wear percent - the at-risk pair is
-// promoted to a hero card, everything else drops to a compact row.
-export function wearStatus(pct: number): WearStatus {
-  if (pct >= 90) return 'replace'
-  if (pct >= 70) return 'watch'
-  return 'ok'
-}
 
 /** The single pair most in need of action, or null when the rotation is healthy. */
 export function pickHeroShoe(shoes: ShoeStats[]): ShoeStats | null {
@@ -39,7 +30,7 @@ const WEAR_BAR: Record<WearStatus, string> = {
 }
 
 // Hero gradient per state, mirroring NextRaceSpotlight's orange treatment.
-const HERO_SURFACE: Record<'watch' | 'replace', { background: string; borderColor: string }> = {
+export const HERO_SURFACE: Record<'watch' | 'replace', { background: string; borderColor: string }> = {
   watch:   { background: 'linear-gradient(150deg, rgba(245,158,11,0.16), rgba(245,158,11,0.02))', borderColor: 'rgba(245,158,11,0.35)' },
   replace: { background: 'linear-gradient(150deg, rgba(239,68,68,0.16), rgba(239,68,68,0.02))',   borderColor: 'rgba(239,68,68,0.35)' },
 }

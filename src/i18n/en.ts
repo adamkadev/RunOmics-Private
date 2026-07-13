@@ -983,9 +983,17 @@ export const en = {
         distance: 'Distance',
         activities: 'Activities',
         firstUsed: 'First worn',
+        kmPerWeek: 'km / week',
       },
       activitiesTitle: 'Tracked Activities',
       empty: 'No activities recorded with this pair yet.',
+      verdict: {
+        eyebrow: (statusLabel: string) => `Verdict · ${statusLabel}`,
+        weeksLeft: (weeks: number) => `About ${weeks} more weeks at your pace.`,
+        planReplacement: 'Plan the replacement this month.',
+        replaceNow: 'Line up the replacement now.',
+        noPaceData: 'Not enough recent mileage to project a timeline yet.',
+      },
     },
   },
 

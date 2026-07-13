@@ -129,6 +129,16 @@ export function relativeTimeParts(iso: string, now: Date = new Date()): { unit: 
   return { unit: 'days', value: Math.floor(diffHours / 24) }
 }
 
+/** "2h ago" / "il y a 2 h" - shared by the Today hero and the Settings data-source status. */
+export function formatRelativeAgo(iso: string): string {
+  const s = t.dashboard.syncStatus
+  const { unit, value } = relativeTimeParts(iso)
+  return unit === 'now' ? s.justNow :
+    unit === 'minutes' ? s.minutesAgo(value) :
+    unit === 'hours' ? s.hoursAgo(value) :
+    s.daysAgo(value)
+}
+
 /** Parse a `m:ss` or `h:mm:ss` string into seconds. Returns null if invalid. */
 export function parseTimeInput(str: string): number | null {
   const parts = str.trim().split(':').map(Number)

@@ -9,8 +9,7 @@ import { ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { ReadinessTone } from '@/domain/training/readiness'
 import { PlannedWorkoutSheet } from '@/components/plan/PlannedWorkoutSheet'
-import { relativeTimeParts } from '@/lib/formatters'
-import { useCountUp } from '@/lib/useCountUp'
+import { formatRelativeAgo } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 // Fixed hex, independent of the accent picker - a readiness verdict means the
@@ -41,20 +40,8 @@ function verdictTone(tsb: number, atlDelta: number): ReadinessTone {
   return 'caution'
 }
 
-function daysUntil(date: string): number {
-  const today = new Date().toISOString().slice(0, 10)
-  return Math.round((new Date(`${date}T00:00:00`).getTime() - new Date(`${today}T00:00:00`).getTime()) / 86_400_000)
-}
-
 function formatSyncedAgo(lastSyncedAt: string): string {
-  const s = t.dashboard.syncStatus
-  const { unit, value } = relativeTimeParts(lastSyncedAt)
-  const relative =
-    unit === 'now' ? s.justNow :
-    unit === 'minutes' ? s.minutesAgo(value) :
-    unit === 'hours' ? s.hoursAgo(value) :
-    s.daysAgo(value)
-  return s.synced(relative)
+  return t.dashboard.syncStatus.synced(formatRelativeAgo(lastSyncedAt))
 }
 
 // Rules layer over the already-computed status/load - copy is keyed by the
@@ -74,7 +61,6 @@ function readinessCopy(status: TrainingStatus, tone: ReadinessTone): { headline:
 // Pure display + a rules-based readiness verdict over already-computed status/load data.
 export function TodayHero({ status, plannedWorkout, nextRace, lastSyncedAt }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false)
-  const animatedDaysToRace = useCountUp(nextRace ? daysUntil(nextRace.date) : 0)
 
   if (!status && !plannedWorkout && !nextRace) return null
 
