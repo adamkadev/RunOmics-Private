@@ -66,7 +66,8 @@ export const en = {
     hour: 'h',
     min: 'min',
     day: 'd',
-    elevation: 'm gain'
+    elevation: 'm gain',
+    yrs: 'yrs'
   },
 
   common: {
@@ -146,6 +147,7 @@ export const en = {
       title: 'Athlete',
       subtitle: 'Thresholds and heart rate zones',
       back: 'Progress',
+      lastUpdated: (when: string) => `Updated ${when}`,
     },
     profile: {
       title: 'Progress',
@@ -211,13 +213,14 @@ export const en = {
     },
     athlete: {
       title: 'Athlete Profile',
-      lthr: 'LTHR (bpm)',
+      age: 'Age',
+      lthr: 'LTHR',
       lthrHint: 'Lactate threshold heart rate',
-      thresholdPace: 'Threshold pace',
+      thresholdPace: 'Threshold',
       thresholdPaceHint: 'min:ss per km, e.g. 4:14',
-      thresholdPower: 'Threshold power (W)',
-      thresholdPowerHint: 'Functional threshold power',
-      vma: 'VMA (km/h)',
+      maxHr: 'Max HR',
+      restingHr: 'Resting HR',
+      vma: 'VMA',
       vmaHint: 'Maximal aerobic speed',
     },
     actions: {

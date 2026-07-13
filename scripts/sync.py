@@ -166,10 +166,14 @@ def _merge_athlete_metrics(metrics: dict) -> None:
     if _ATHLETE_PATH.exists():
         existing = json.loads(_ATHLETE_PATH.read_text())
 
-    if "maxHrBpm" in metrics and existing.get("maxHrBpm"):
-        metrics["maxHrBpm"] = max(metrics["maxHrBpm"], existing["maxHrBpm"])
+    fetched_at = metrics.pop("lastUpdate", None)
+
+    changed = any(existing.get(key) != value for key, value in metrics.items())
 
     merged = {**existing, **metrics}
+    if changed and fetched_at:
+        merged["lastUpdate"] = fetched_at
+
     _ATHLETE_PATH.parent.mkdir(parents=True, exist_ok=True)
     _ATHLETE_PATH.write_text(json.dumps(merged, indent=2, sort_keys=True) + "\n")
 

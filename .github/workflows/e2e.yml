@@ -8,8 +8,6 @@ on:
 jobs:
   e2e:
     runs-on: ubuntu-latest
-    env:
-      HAS_DEV_FIREBASE_SECRETS: ${{ secrets.DEV_FIREBASE_PROJECT_ID != '' }}
 
     steps:
       - name: Checkout
@@ -25,30 +23,13 @@ jobs:
         run: npm ci
 
       - name: Install Playwright browsers
-        # Forks/external PRs don't have access to the runomics-dev secrets
-        # below, so skip the whole job for them rather than fail (same
-        # pattern as the Firebase-gated build step in ci.yml).
-        if: env.HAS_DEV_FIREBASE_SECRETS == 'true'
         run: npx playwright install --with-deps chromium
 
-      - name: Seed runomics-dev fixtures
-        if: env.HAS_DEV_FIREBASE_SECRETS == 'true'
-        env:
-          FIREBASE_PROJECT_ID: ${{ secrets.DEV_FIREBASE_PROJECT_ID }}
-          FIREBASE_CLIENT_EMAIL: ${{ secrets.DEV_FIREBASE_CLIENT_EMAIL }}
-          FIREBASE_PRIVATE_KEY: ${{ secrets.DEV_FIREBASE_PRIVATE_KEY }}
-        run: npm run e2e:seed
-
       - name: Run Playwright tests
-        if: env.HAS_DEV_FIREBASE_SECRETS == 'true'
-        env:
-          FIREBASE_PROJECT_ID: ${{ secrets.DEV_FIREBASE_PROJECT_ID }}
-          FIREBASE_CLIENT_EMAIL: ${{ secrets.DEV_FIREBASE_CLIENT_EMAIL }}
-          FIREBASE_PRIVATE_KEY: ${{ secrets.DEV_FIREBASE_PRIVATE_KEY }}
         run: npm run test:e2e
 
       - name: Upload Playwright report
-        if: always() && env.HAS_DEV_FIREBASE_SECRETS == 'true'
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report

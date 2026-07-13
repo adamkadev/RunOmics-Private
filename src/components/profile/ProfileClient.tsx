@@ -16,7 +16,7 @@ export function ProfileClient({ data }: Props) {
   return (
     <div className="space-y-6">
       <div className="space-y-3">
-        <ProfileHero hero={data.hero} displayName={data.athlete.displayName} />
+        <ProfileHero hero={data.hero} displayName={data.athlete.displayName} age={data.athlete.age} sex={data.athlete.sex} />
         <ProfileStatsYtd ytd={data.ytd} />
         <div className="grid grid-cols-2 gap-3">
           <ProfileGoal goal={data.goal} />

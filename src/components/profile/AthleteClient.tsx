@@ -3,8 +3,10 @@
 import type { AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import type { ZoneShare } from '@/application/usecases/GetAnalyticsData'
 import { BackButton } from '@/components/ui/BackButton'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ProfileAthleteStats } from './ProfileAthleteStats'
 import { ProfileHrZones } from './ProfileHrZones'
+import { formatRelativeAgo } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 interface Props {

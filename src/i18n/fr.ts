@@ -58,7 +58,8 @@ export const fr = {
     hour: 'h',
     min: 'min',
     day: 'j',
-    elevation: 'm D+'
+    elevation: 'm D+',
+    yrs: 'ans'
   },
 
   common: {
@@ -140,6 +141,7 @@ export const fr = {
       title: 'Athlète',
       subtitle: 'Seuils et zones de fréquence cardiaque',
       back: 'Progression',
+      lastUpdated: (when: string) => `Mis à jour ${when}`,
     },
     profile: {
       title: 'Progression',
@@ -205,13 +207,14 @@ export const fr = {
     },
     athlete: {
       title: 'Profil athlète',
-      lthr: 'LTHR (bpm)',
+      age: 'Âge',
+      lthr: 'LTHR',
       lthrHint: 'Fréquence cardiaque au seuil lactique',
       thresholdPace: 'Allure seuil',
       thresholdPaceHint: 'min:ss par km, ex. 4:14',
-      thresholdPower: 'Puissance seuil (W)',
-      thresholdPowerHint: 'Puissance seuil fonctionnelle',
-      vma: 'VMA (km/h)',
+      maxHr: 'FC max',
+      restingHr: 'FC repos',
+      vma: 'VMA',
       vmaHint: 'Vitesse maximale aérobie',
     },
     actions: {

@@ -44,8 +44,6 @@ jobs:
         run: npm ci
 
       - name: Audit production dependencies
-        # High/critical advisories in prod deps fail CI; dev-only and
-        # moderate advisories stay informational (npm audit for details).
         run: npm audit --omit=dev --audit-level=high
 
       - name: Lint
@@ -56,7 +54,3 @@ jobs:
 
       - name: Test
         run: npm test
-        # Production build (next build) is intentionally not run here - it
-        # prerenders Firestore-backed pages against prod Firebase Admin
-        # credentials, and Vercel already runs that same build on every push.
-        # Running it twice was burning through the Firestore read quota.

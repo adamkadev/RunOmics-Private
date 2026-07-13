@@ -30,17 +30,6 @@ export const VO2MAX_NORMS: Record<'male' | 'female', Record<AgeBracket, Vo2maxTh
 
 const AGE_BRACKETS: AgeBracket[] = ['20-29', '30-39', '40-49', '50-59', '60-69', '70-79']
 
-export function ageFromBirthdate(birthdateIso: string): number {
-  const today = new Date()
-  const birth = new Date(birthdateIso + 'T00:00:00')
-  let age = today.getFullYear() - birth.getFullYear()
-  const hadBirthdayThisYear =
-    today.getMonth() > birth.getMonth() ||
-    (today.getMonth() === birth.getMonth() && today.getDate() >= birth.getDate())
-  if (!hadBirthdayThisYear) age--
-  return age
-}
-
 export function bracketForAge(age: number): AgeBracket {
   const clamped = Math.min(Math.max(age, 20), 79)
   const index = Math.min(Math.floor((clamped - 20) / 10), AGE_BRACKETS.length - 1)

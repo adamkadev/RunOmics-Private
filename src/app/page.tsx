@@ -1,3 +1,4 @@
+import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { getDashboardData } from '@/application/usecases/GetDashboardData'
 import { getLastSyncedAt } from '@/application/usecases/GetSyncStatus'
 import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
@@ -26,6 +27,7 @@ import { RaceCockpit } from '@/components/dashboard/RaceCockpit'
 
 export default async function DashboardPage() {
   const data = getDashboardData()
+  const athlete = getAthleteProfile()
   const lastSyncedAt = getLastSyncedAt()
   const trainingLoad = await getTrainingLoad()
   const trainingStatus = await getTrainingStatus()
@@ -48,7 +50,7 @@ export default async function DashboardPage() {
 
       <div className="space-y-3">
         <FirstLaunchHint />
-        <DashboardGreeting />
+        <DashboardGreeting name={athlete.displayName} />
         <DashboardHighlights shoes={shoes} />
       </div>
 
@@ -59,7 +61,7 @@ export default async function DashboardPage() {
         lastSyncedAt={lastSyncedAt}
       />
 
-      <TrainingMetricsCard status={trainingStatus} vo2max={vo2max} />
+      <TrainingMetricsCard status={trainingStatus} vo2max={vo2max} age={athlete.age} sex={athlete.sex} />
 
       {weeklyStreak && (
         <WeeklyStreakCard

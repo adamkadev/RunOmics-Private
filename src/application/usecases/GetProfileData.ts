@@ -72,7 +72,7 @@ export async function getProfileData(): Promise<ProfileData> {
       sinceDate,
       lifetimeActivities: lifetime?.totalActivities ?? 0,
       lifetimeDistanceKm: lifetime ? round(lifetime.totalDistanceKm, 0) : 0,
-      rank: getAthleteRank(allRecords),
+      rank: getAthleteRank(allRecords, athlete),
     },
     ytd: {
       distanceKm: ytdDistanceKmRounded,

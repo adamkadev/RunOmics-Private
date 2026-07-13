@@ -4,17 +4,16 @@ import path from 'path'
 export interface AthleteProfile {
   lthrBpm?: number
   thresholdPaceSecPerKm?: number
-  thresholdPowerWatts?: number
   vmaKmh?: number
   displayName?: string
   hrZoneBoundsBpm?: [number, number, number, number]
   maxHrBpm?: number
   restingHrBpm?: number
+  age?: number
+  sex?: 'male' | 'female'
   lastUpdate?: string
 }
 
-// Null fields are placeholders for values not yet filled in (manually, or by
-// the next Garmin sync) - normalized away so callers see plain `undefined`.
 export function getAthleteProfile(): AthleteProfile {
   const filePath = path.join(process.cwd(), 'public', 'data', 'athlete.json')
   if (!fs.existsSync(filePath)) return {}

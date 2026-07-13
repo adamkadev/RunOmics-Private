@@ -1,21 +1,22 @@
 import Link from 'next/link'
 import { User, Settings } from 'lucide-react'
 import type { ProfileHero as ProfileHeroData } from '@/application/usecases/GetProfileData'
-import { ATHLETE_BIRTHDATE, ATHLETE_SEX } from '@/domain/athlete/constants'
-import { ageFromBirthdate, vo2maxTopPercent } from '@/domain/athlete/vo2maxNorms'
+import { vo2maxTopPercent } from '@/domain/athlete/vo2maxNorms'
 import { initials } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 interface Props {
   hero: ProfileHeroData
   displayName?: string
+  age?: number
+  sex?: 'male' | 'female'
 }
 
 // Hub hero per audit §13c: rank + lifetime summary promoted into the same
 // hero-gradient card language as Today's readiness verdict.
-export function ProfileHero({ hero, displayName }: Props) {
-  const topPct = hero.rank?.vo2maxGarmin != null
-    ? vo2maxTopPercent(hero.rank.vo2maxGarmin, ageFromBirthdate(ATHLETE_BIRTHDATE), ATHLETE_SEX)
+export function ProfileHero({ hero, displayName, age, sex }: Props) {
+  const topPct = hero.rank?.vo2maxGarmin != null && age !== undefined && sex
+    ? vo2maxTopPercent(hero.rank.vo2maxGarmin, age, sex)
     : null
 
   return (

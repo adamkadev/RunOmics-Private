@@ -84,7 +84,7 @@ GARMIN_SECRET=eyJ...
 # MapTiler API key (for route maps)
 NEXT_PUBLIC_MAPTILER_TOKEN=your_maptiler_key
 
-# Firebase Admin (server-side: reads/writes goals/pbs/athlete/notifications in Firestore)
+# Firebase Admin (server-side: notification dedup state in Firestore, push notifications)
 FIREBASE_PROJECT_ID=your-project-id
 FIREBASE_CLIENT_EMAIL=firebase-adminsdk-...@your-project-id.iam.gserviceaccount.com
 FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
@@ -113,7 +113,8 @@ NEXT_PUBLIC_LOCALE=en
 
 > `.env.local` is gitignored. Never commit your secrets.
 
-See [Configuration: Firestore](#firestore-goals-pbs-athlete-profile) below for how to seed `goals`, `pbs`, and `athlete` data into Firestore once these are set.
+See [Configuration: goals, PBs, athlete profile](#goals-pbs-athlete-profile) below for the
+hand-edited JSON files these features read from.
 
 ### 4. Run the initial sync
 
@@ -141,68 +142,77 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ---
 
-## Configuration: Firestore (goals, PBs, athlete profile) {#firestore-goals-pbs-athlete-profile}
+## Configuration: goals, PBs, athlete profile {#goals-pbs-athlete-profile}
 
 Annual goals, official personal bests, and your athlete profile (HR zones, threshold
-pace, etc.) are **not** stored in the repo - they live in Firestore and are read
-server-side via `src/infrastructure/repositories/FirestoreConfigRepository.ts`. This
-keeps personal targets out of git history while still being editable without a
-redeploy. (Upcoming races are the exception: synced from Garmin Connect into
+pace, etc.) are **not** in Firestore - they're hand-edited JSON files committed to the
+repo, read server-side at build time. Editing one takes effect on the next deploy
+(push to `main`, or wait for the daily Garmin sync to push its own commit).
+(Upcoming races are the similar exception: synced from Garmin Connect into
 `public/data/upcoming_races.json` by `scripts/sync_upcoming_races.py` - see that
 file's docstring.)
 
-These collections are managed by a separate admin app, not by this repo. To write
-to them directly (e.g. one-off fixes), use the Firebase console or the Admin SDK -
-document shapes below.
-
 ```json
-// goals collection - one document per year
-[
-  {
-    "year": 2026,
-    "annualDistanceKm": 1500,
-    "targets": [
-      { "distance": "5K",            "targetSeconds": 1200 },
-      { "distance": "10K",           "targetSeconds": 2400 },
-      { "distance": "Half-Marathon", "targetSeconds": 6300 },
-      { "distance": "Marathon",      "targetSeconds": null }
-    ]
-  }
-]
+// public/data/goals.json
+{
+  "years": [
+    {
+      "year": 2026,
+      "annualDistanceKm": 1500,
+      "targets": [
+        { "distance": "5K",            "target": "20:00" },
+        { "distance": "10K",           "target": "40:00" },
+        { "distance": "Half-Marathon", "target": "1:45:00" },
+        { "distance": "Marathon",      "target": null }
+      ]
+    }
+  ]
+}
 ```
 
-`targetSeconds` is the goal time in seconds (`null` = no target set).
+`target` is `"mm:ss"` or `"h:mm:ss"` (`null` = no target set).
 
 ```json
-// pbs collection - official race times (chip time), take priority over auto-detected
-// best efforts in the Records section
-[
-  {
-    "year": 2025,
-    "entries": [
-      { "distance": "5K",            "seconds": 1238, "activityId": "20526043740" },
-      { "distance": "Half-Marathon", "seconds": 5859, "activityId": "22904920506" }
-    ]
-  }
-]
+// public/data/pbs.json - official race times (chip time), take priority over
+// auto-detected best efforts in the Records section
+{
+  "years": [
+    {
+      "year": 2025,
+      "entries": [
+        { "distance": "5K",            "time": "20:38",   "activityId": "20526043740" },
+        { "distance": "Half-Marathon", "time": "1:37:39", "activityId": "22904920506" }
+      ]
+    }
+  ]
+}
 ```
 
 Valid `distance` values: `"1K"`, `"5K"`, `"10K"`, `"Half-Marathon"`, `"Marathon"`.
 `activityId` links the card to the activity detail page (optional).
 
 ```json
-// athlete/profile document - training zones used across Analytics and Profile
+// public/data/athlete.json - training zones used across Analytics and Profile
 {
   "displayName": "Adam",
-  "lthrBpm": 175,
-  "thresholdPaceSecPerKm": 240,
-  "vmaKmh": 18.5,
-  "hrZoneBoundsBpm": [120, 145, 160, 170]
+  "thresholdPowerWatts": null,
+  "lthrBpm": 177,
+  "thresholdPaceSecPerKm": 254,
+  "hrZoneBoundsBpm": [142, 158, 168, 177],
+  "restingHrBpm": 64,
+  "maxHrBpm": 185,
+  "vmaKmh": 16,
+  "lastUpdate": "2026-07-13T17:22:27Z"
 }
 ```
 
-After writing, hit `/api/internal/revalidate` (or just wait for the next deploy) to
-refresh the cached pages - see `src/app/api/internal/revalidate/route.ts`.
+`lthrBpm`, `thresholdPaceSecPerKm`, `hrZoneBoundsBpm`, `restingHrBpm`, `maxHrBpm`,
+`vmaKmh` and `lastUpdate` are fetched from Garmin Connect and merged in automatically
+by every `scripts/sync.py` run (see `scripts/garmin/athlete.py`) - existing values are
+preserved if a field can't be fetched, and `maxHrBpm` only ever ratchets up.
+`displayName` and `thresholdPowerWatts` have no Garmin equivalent and are edited by
+hand. Set any field to `null` to clear it (the app falls back to a population-average
+default where one exists, e.g. training load).
 
 ### `public/events/` - Race photos
 
@@ -228,51 +238,24 @@ The improvement backlog lives in
 
 ### End-to-end tests
 
-Playwright drives a real production build (`next build && next start`) against a
-**dedicated Firebase project** (`runomics-dev`), never the real one - so goals/pbs/
-athlete reads/writes during e2e can't touch your actual data. Activities themselves
-come from the real, committed `public/data/activities/*.json` (read-only, no risk).
-
-**One-time setup** (any Google account, free Spark plan is enough):
-
-1. Create a Firebase project (e.g. `runomics-dev`) with Firestore enabled, and
-   register a web app - copy its config into `.env.e2e` (already done in this repo
-   if you're picking up an existing setup; the web config is not a secret, it ships
-   in every browser bundle).
-2. Deploy the same `firestore.rules` from this repo to that project (swap the owner
-   email if you want to test the write-gated paths as yourself):
-   ```bash
-   firebase deploy --only firestore:rules --project runomics-dev
-   ```
-3. Generate a **service account key** for that project (Firebase console → Project
-   settings → Service accounts → Generate new private key) and export it locally:
-   ```bash
-   export FIREBASE_PROJECT_ID=runomics-dev
-   export FIREBASE_CLIENT_EMAIL=firebase-adminsdk-...@runomics-dev.iam.gserviceaccount.com
-   export FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
-   ```
-   In GitHub Actions, add these as repo secrets named `DEV_FIREBASE_PROJECT_ID`,
-   `DEV_FIREBASE_CLIENT_EMAIL`, `DEV_FIREBASE_PRIVATE_KEY` (`.github/workflows/e2e.yml`
-   skips the job entirely if they're absent, so forks/external PRs don't fail).
+Playwright drives a real production build (`next build && next start`). No Firebase
+project or secrets are needed: every page the current specs cover (dashboard,
+activities list → detail, analytics, calendar, records, goals, map, shoes, plan) is
+built from the real, committed `public/data/*.json` files - read-only, no risk of
+touching anything.
 
 **Running:**
 
 ```bash
-npm run e2e:seed    # upserts e2e/fixtures/{goals,pbs,athlete}.json into runomics-dev
 npm run test:e2e    # builds, starts, and runs the Playwright specs in e2e/
 ```
 
-`e2e/fixtures/*.json` are committed (non-secret, generic values) and seeded via
-`e2e/seed.mjs` - a small script separate from `scripts/seed_firestore.js` so e2e
-runs can never accidentally point at your real prod data. `.env.e2e` carries the
-non-secret client config; put the three `FIREBASE_*` Admin vars above in
-`.env.e2e.local` (gitignored) for local runs instead of exporting them each time.
+`.env.e2e` carries the non-secret Firebase client config (still needed for the app
+to boot, even though these specs don't exercise sign-in-gated flows).
 
-The first e2e batch covers read-only golden paths (dashboard, activities list →
-detail, calendar, records, goals) rendered from real activity data + the seeded
-Firestore fixtures. Sign-in-gated flows (Settings, activity notes editing) aren't
-covered yet - Google's OAuth popup isn't something Playwright can drive without a
-test-only auth bypass, which is its own follow-up.
+The first e2e batch covers read-only golden paths. Sign-in-gated flows (Settings,
+activity notes editing) aren't covered yet - Google's OAuth popup isn't something
+Playwright can drive without a test-only auth bypass, which is its own follow-up.
 
 ### Monitoring
 
@@ -314,7 +297,7 @@ from your `.env.local` *except* `GARMIN_SECRET`:
 | Variable | Used for |
 |----------|----------|
 | `NEXT_PUBLIC_MAPTILER_TOKEN` | Route maps |
-| `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` | Server-side Firestore reads (goals/pbs/athlete) and push notifications |
+| `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` | Server-side notification dedup state and push notifications |
 | `NEXT_PUBLIC_FIREBASE_*` | Client-side auth, activity notes, push notification tokens |
 | `NEXT_PUBLIC_OWNER_EMAIL` | Restricts settings/notes editing to your Google account |
 | `INTERNAL_NOTIFY_SECRET` | Authenticates the GitHub Actions cron calls to `/api/internal/*` |

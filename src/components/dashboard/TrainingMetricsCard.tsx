@@ -4,8 +4,7 @@ import type { ReactNode } from 'react'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
-import { ATHLETE_BIRTHDATE, ATHLETE_SEX } from '@/domain/athlete/constants'
-import { ageFromBirthdate, vo2maxBand, vo2maxProgressToSuperior, vo2maxTopPercent } from '@/domain/athlete/vo2maxNorms'
+import { vo2maxBand, vo2maxProgressToSuperior, vo2maxTopPercent } from '@/domain/athlete/vo2maxNorms'
 import { STATUS } from '@/lib/statusColors'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -13,6 +12,8 @@ import { t } from '@/i18n'
 interface Props {
   status: TrainingStatus | null
   vo2max: number | null
+  age?: number
+  sex?: 'male' | 'female'
 }
 
 function Metric({
@@ -76,14 +77,13 @@ function chargeStatus(acwr: number | null): { label: string; textClassName: stri
   return { label: s.chargeOptimal, textClassName: STATUS.success.text, dotClassName: STATUS.success.dot }
 }
 
-export function TrainingMetricsCard({ status, vo2max }: Props) {
+export function TrainingMetricsCard({ status, vo2max, age, sex }: Props) {
   if (!status) return null
 
   const charge = chargeStatus(status.acwr)
   const acwrProgress = status.acwr !== null ? Math.min(1, status.acwr / 1.5) : 0
 
-  const age = ageFromBirthdate(ATHLETE_BIRTHDATE)
-  const vo2Band = vo2max !== null ? vo2maxBand(vo2max, age, ATHLETE_SEX) : null
+  const vo2Band = vo2max !== null && age !== undefined && sex ? vo2maxBand(vo2max, age, sex) : null
   const vo2BandStyle = vo2Band ? VO2MAX_BAND_STYLE[vo2Band] : null
 
   const fBand = fitnessBand(status.ctl, status.ctlPeak)
@@ -96,10 +96,10 @@ export function TrainingMetricsCard({ status, vo2max }: Props) {
           label={t.dashboard.vo2maxChart.title}
           value={vo2max !== null ? <AnimatedValue value={vo2max} decimals={1} /> : '–'}
           band={
-            vo2max !== null && vo2Band && vo2BandStyle
+            vo2max !== null && age !== undefined && sex && vo2Band && vo2BandStyle
               ? {
-                  label: `${t.trainingStatus.metrics.vo2maxBand[vo2Band]} · ${t.trainingStatus.metrics.topPercent(vo2maxTopPercent(vo2max, age, ATHLETE_SEX))}`,
-                  progress: vo2maxProgressToSuperior(vo2max, age, ATHLETE_SEX),
+                  label: `${t.trainingStatus.metrics.vo2maxBand[vo2Band]} · ${t.trainingStatus.metrics.topPercent(vo2maxTopPercent(vo2max, age, sex))}`,
+                  progress: vo2maxProgressToSuperior(vo2max, age, sex),
                   textClassName: vo2BandStyle.text,
                   dotClassName: vo2BandStyle.dot,
                 }

@@ -1,6 +1,7 @@
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { formatDuration } from '@/lib/formatters'
 import type { AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
+import { formatRelativeAgo } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 interface Props {
@@ -33,16 +34,24 @@ export function ProfileAthleteStats({ athlete }: Props) {
   return (
     <GlassSurface variant="card" className="p-5">
       <h2 className="mb-3 text-sm font-bold text-foreground">{a.title}</h2>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-3 gap-2">
+        <Tile label={a.age} unit={t.units.yrs} value={athlete.age} />
+        <Tile label={a.restingHr} unit={t.units.bpm} value={athlete.restingHrBpm} />
+        <Tile label={a.maxHr} unit={t.units.bpm} value={athlete.maxHrBpm} />
         <Tile label={a.lthr} unit={t.units.bpm} value={athlete.lthrBpm} />
         <Tile
           label={a.thresholdPace}
           unit={t.units.minPerKm}
           value={athlete.thresholdPaceSecPerKm ? formatDuration(athlete.thresholdPaceSecPerKm) : undefined}
         />
-        <Tile label={a.thresholdPower} unit="W" value={athlete.thresholdPowerWatts} />
         <Tile label={a.vma} unit="km/h" value={athlete.vmaKmh} />
       </div>
+
+      {athlete.lastUpdate && (
+        <div className="mt-4 border-t border-foreground/[0.06] pt-3.5 text-xs leading-snug text-muted-foreground">
+          {t.pages.athlete.lastUpdated(formatRelativeAgo(athlete.lastUpdate))}
+        </div>
+        )}
     </GlassSurface>
   )
 }
