@@ -83,7 +83,10 @@ function MilestoneRow({ items }: { items: Milestone[] }) {
           {items.map((_, i) => (
             <span
               key={i}
-              className={cn('h-1 w-1 rounded-full transition-colors', i === activeIndex ? 'bg-foreground/50' : 'bg-foreground/15')}
+              className={cn(
+                'h-1.5 w-1.5 rounded-full border transition-colors',
+                i === activeIndex ? 'border-accent bg-accent/30' : 'border-foreground/15 bg-transparent'
+              )}
             />
           ))}
         </div>

@@ -919,7 +919,18 @@ export const en = {
       rate: (current: number) => `${current} km/wk pace`,
       projected: (km: number) => `Projected ${km.toLocaleString()} km`,
     },
-    monthlyVolume: 'Monthly Volume',
+    monthlyVolume: {
+      title: 'Monthly Volume',
+      expand: 'Expand',
+      collapse: 'Collapse',
+      status: {
+        ahead: 'Ahead',
+        on_track: 'On track',
+        behind: 'Behind',
+        pending: 'Upcoming',
+      },
+      km: (actual: number, target: number) => `${actual} / ${target}`,
+    },
     history: {
       title: 'Past Years',
       achieved: 'Achieved',

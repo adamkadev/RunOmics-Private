@@ -70,7 +70,13 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null, 
           const isExpanded = expandedKey === r.key
 
           return (
-            <div key={r.key} className="glass-card overflow-hidden rounded-card-sm">
+            <div
+              key={r.key}
+              className={cn(
+                'overflow-hidden rounded-card-sm transition-colors',
+                isExpanded ? 'border border-accent/35 bg-accent/[0.05]' : 'glass-card'
+              )}
+            >
               <button
                 type="button"
                 onClick={() => setExpandedKey(isExpanded ? null : r.key)}
@@ -91,29 +97,29 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null, 
               </button>
 
               {isExpanded && entries.length > 0 && (
-                <div className="divide-y divide-foreground/[0.06] border-t border-foreground/10 px-4">
+                <div className="flex flex-col gap-2 border-t border-accent/15 px-4 pb-3 pt-2.5">
                   {entries.map((e, i) => {
                     const dotClass = medalDotClass(i)
                     return (
                       <Link
                         key={e.activityId}
                         href={`/activities/${e.activityId}`}
-                        className="flex items-center gap-3 py-3 transition-colors hover:bg-foreground/[0.04]"
+                        className="flex items-center gap-2.5 rounded-lg transition-colors hover:bg-foreground/[0.04]"
                       >
                         {dotClass ? (
-                          <span className={cn('h-2.5 w-2.5 shrink-0 rounded-full', dotClass)} />
+                          <span className={cn('h-2 w-2 shrink-0 rounded-full', dotClass)} />
                         ) : (
-                          <span className="w-2.5 shrink-0 text-center font-mono text-xs text-subtle">{i + 1}</span>
+                          <span className="w-2 shrink-0 text-center font-mono text-[11px] text-subtle">{i + 1}</span>
                         )}
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-bold text-foreground">{formatDuration(e.seconds)}</p>
+                          <p className="text-sm font-semibold text-foreground">{formatDuration(e.seconds)}</p>
                           {e.eventName && (
-                            <p className="truncate text-xs text-subtle" title={e.eventName}>
+                            <p className="truncate text-[11px] text-subtle" title={e.eventName}>
                               {e.eventName}
                             </p>
                           )}
                         </div>
-                        <span className="shrink-0 text-xs text-subtle">
+                        <span className="shrink-0 text-[11px] text-subtle">
                           {formatPace(Math.round(e.seconds / e.distanceKm))}
                         </span>
                       </Link>

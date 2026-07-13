@@ -913,7 +913,18 @@ export const fr = {
       rate: (current: number) => `rythme ${current} km/sem`,
       projected: (km: number) => `Projection ${km.toLocaleString()} km`,
     },
-    monthlyVolume: 'Volume mensuel',
+    monthlyVolume: {
+      title: 'Volume mensuel',
+      expand: 'Détailler',
+      collapse: 'Réduire',
+      status: {
+        ahead: 'En avance',
+        on_track: 'Sur la bonne voie',
+        behind: 'En retard',
+        pending: 'À venir',
+      },
+      km: (actual: number, target: number) => `${actual} / ${target}`,
+    },
     history: {
       title: 'Années passées',
       achieved: 'Atteint',
