@@ -582,6 +582,16 @@ textarea,
   user-select: text;
 }
 
+/* Desktop browser tabs get free text selection back. Mouse + hover rules out
+   touch/mobile browsers, and `display-mode: browser` rules out the installed
+   PWA, where selection still fights the app-like chrome. */
+@media (hover: hover) and (pointer: fine) and (display-mode: browser) {
+  body {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+}
+
 h1 {
   letter-spacing: -0.025em;
   line-height: 1.2;

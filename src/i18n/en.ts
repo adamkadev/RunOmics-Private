@@ -65,14 +65,11 @@ export const en = {
     celsius: '°C',
     hour: 'h',
     min: 'min',
-    day: 'd',
-    elevation: 'm gain',
     yrs: 'yrs'
   },
 
   common: {
     viewAll: 'View all',
-    sessions: (n: number) => `${n} session${n !== 1 ? 's' : ''}`,
     runs: (n: number) => `${n} run${n !== 1 ? 's' : ''}`,
     close: 'Close',
     refreshing: 'Refreshing...',
@@ -85,17 +82,12 @@ export const en = {
 
   pages: {
     dashboard: {
-      title: 'Today',
       greeting: {
         morning:   'Good morning',
         afternoon: 'Good afternoon',
         evening:   'Good evening',
         weekDate:  (week: number, date: string) => `Week ${week} · ${date}`,
       },
-      subtitle: (week: number, sessions: number, year?: number) =>
-        `Week ${week}${year !== undefined ? ` ${year}` : ''} · ${sessions} session${sessions !== 1 ? 's' : ''}`,
-      weekTitle: (week: number, year?: number) =>
-        `Week ${week}${year !== undefined ? ` ${year}` : ''}`,
     },
     activities: {
       title: 'Activities',
@@ -121,7 +113,6 @@ export const en = {
       worldView: 'World view',
       exitWorldView: 'Exit world view',
       worldViewHint: 'Tap a zone to explore it',
-      intensity: 'Intensity',
       less: 'Rare',
       more: 'Frequent',
       noRoutes: 'No routes for this filter',
@@ -138,19 +129,11 @@ export const en = {
       subtitle: 'Mileage and wear per pair',
       back: 'Progress',
     },
-    milestones: {
-      title: 'Milestones',
-      subtitle: 'Distance tiers, streaks, and personal records over time',
-      back: 'Progress',
-    },
     athlete: {
       title: 'Athlete',
       subtitle: 'Thresholds and heart rate zones',
       back: 'Progress',
       lastUpdated: (when: string) => `Updated ${when}`,
-    },
-    profile: {
-      title: 'Progress',
     },
     notFound: {
       code: '404',
@@ -397,19 +380,6 @@ export const en = {
   },
 
   trainingStatus: {
-    title: 'Training Status',
-    status: {
-      productive: 'Productive',
-      fresh: 'Fresh',
-      overreaching: 'Overreaching',
-      recovery: 'Recovery',
-      detraining: 'Detraining',
-    },
-    risk: {
-      low: 'Low risk',
-      moderate: 'Moderate risk',
-      high: 'High risk',
-    },
     loadTrend: {
       building: 'Building',
       maintaining: 'Maintaining',
@@ -436,12 +406,6 @@ export const en = {
   analytics: {
     title: 'Analytics',
     readingLabel: 'Reading:',
-    effectLevel: {
-      little: 'Little effect',
-      medium: 'Medium effect',
-      big: 'Big effect',
-    },
-    tapToExpand: 'Tap to expand the full scatter - hidden by default.',
     season: (year: number) => `${year} season`,
     allTimeChip: 'All',
     allTimeTitle: 'All-time',
@@ -450,7 +414,6 @@ export const en = {
     period: {
       chip: (n: number) => `${n} wk`,
       title: (n: number) => (n === 1 ? 'This week' : `Last ${n} weeks`),
-      vsPrevious: (n: number) => (n === 1 ? 'vs previous week' : `vs previous ${n} weeks`),
       distancePct: (p: number) => `${p >= 0 ? '+' : ''}${p}% km`,
       sessionsPct: (p: number) => `${p >= 0 ? '+' : ''}${p}% runs`,
       paceFaster: (s: number) => `easy pace -${s}s/km`,
@@ -470,9 +433,7 @@ export const en = {
       avgPerWeek: 'Avg / week',
       yearsTracked: 'Years tracked',
       calories: 'Calories',
-      kcalPerWeek: 'Kcal / week',
       elevationValue: (m: number) => `+${m} m`,
-      caloriesValue: (k: number) => `${k}k kcal`,
     },
     charts: {
       monthlyVolume: {
@@ -672,17 +633,13 @@ export const en = {
 
   activities: {
     searchPlaceholder: 'Search...',
-    searchToggle: 'Search',
     all: 'All',
     count: (n: number) => `${n} activit${n !== 1 ? 'ies' : 'y'}`,
-    page: (current: number, total: number) => ` · page ${current}/${total}`,
     empty: 'No activities found',
     emptyFiltered: 'No sessions of this type',
     resetFilters: 'Reset filters',
     endOfList: 'That\'s all',
-    monthGroup: (count: number, km: number) => `${count} session${count !== 1 ? 's' : ''} · ${km} km`,
     thisWeek: 'This week',
-    weekGroup: (km: number, runs: number, easyPct: number, hardPct: number) => `${km} km · ${runs} run${runs !== 1 ? 's' : ''} · ${easyPct}/${hardPct} E/H`,
     weekStat: {
       km: 'km',
       runs: 'runs',
@@ -698,13 +655,7 @@ export const en = {
       avgHr: 'Avg HR',
     },
     row: {
-      distance: 'distance',
-      duration: 'duration',
-      pace: 'pace',
-      avgHr: 'avg HR',
-      rpe: 'RPE',
       rpeValue: (n: number) => `RPE ${n}`,
-      na: 'N/A',
     },
   },
 
@@ -725,8 +676,6 @@ export const en = {
       pace: 'PACE',
       avgHr: 'AVG HR',
       close: 'Close',
-      choosePhoto: 'Choose a photo',
-      designLabel: 'Theme',
       designLabels: {
         aurora: 'Aurora',
         pulse: 'Pulse',
@@ -736,9 +685,6 @@ export const en = {
         map: 'Map',
         memory: 'Memory',
       },
-      statsToggle: 'Activity Stats',
-      mapRouteToggle: 'Show Map Route',
-      mapRouteSubtitle: 'Forces the Map theme',
       lightModeToggle: 'Light mode',
       lightModeSubtitle: 'Light background for printing',
       accentTitle: 'Accent',
@@ -749,22 +695,8 @@ export const en = {
       browsePhoto: 'Browse...',
     },
     stats: {
-      distance: 'Distance',
       duration: 'Duration',
-      avgPace: 'Avg Pace',
-      avgHr: 'Avg HR',
-      elevation: 'Elevation',
-      calories: 'Calories',
-      rpe: 'RPE',
-      rpeValue: (n: number) => `RPE ${n}`,
-      na: 'N/A',
-      elevationValue: (m: number) => `+${m}m`,
-      caloriesValue: (kcal: number) => `${kcal} kcal`,
-      cadence: 'Cadence',
     },
-    heatNote: (temperature: number, adjustSeconds: number) =>
-      `Hot run (${temperature}°C) - pace looks ~${adjustSeconds}s/km slower than the same effort in mild weather.`,
-    loadNote: (atlContribution: number) => `Contributes ~${atlContribution} to this week's fatigue (ATL).`,
     verdict: {
       title: 'Run Verdict',
       headline: {
@@ -824,8 +756,6 @@ export const en = {
         4: 'Z4 · Threshold',
         5: 'Z5 · Max',
       } as Record<number, string>,
-      range: (min: number, max: number) => `${min}–${max} bpm`,
-      rangeOpen: (min: number) => `>${min} bpm`,
     },
     trainingEffect: {
       aerobic: 'Aerobic effect',
@@ -855,7 +785,6 @@ export const en = {
       pace: 'Pace',
       altitude: 'Altitude',
       elevation: 'Elevation',
-      gain: (m: number) => `+${m} m gain`,
       cadence: 'Cadence',
       sectionPhysiology: 'Physiology',
       sectionPerformance: 'Pace & Cadence',
@@ -949,12 +878,9 @@ export const en = {
   },
 
   shoes: {
-    lastRun: (date: string) => `Last run ${date}`,
     neverUsed: 'Never used',
     kmOf: (total: number, max: number) => `${total} / ${max} km`,
     retired: 'Retired',
-    alertBadge: 'Alert',
-    criticalBadge: 'Critical',
     status: {
       ok: 'Good',
       watch: 'Replace soon',
@@ -995,18 +921,9 @@ export const en = {
 
   profile: {
     hero: {
-      since: (date: string) => `Athlete since ${date}`,
-      summary: (activities: number, km: number) => `${activities} activities · ${km} km`,
       lifetime: (runs: number, km: number) => `${runs} runs · ${km.toLocaleString('en')} km lifetime`,
       rankLine: (tier: string, pct: number) => `Rank ${tier} · top ${pct}% of VO₂max for your age`,
       namePlaceholder: 'Your name',
-      rankExplain: 'Fitness rank from VO₂max and race pace.',
-      rankSource: (vo2maxGarmin: number | null, vdot: number | null) => {
-        const parts = []
-        if (vo2maxGarmin !== null) parts.push(`VO₂max ${vo2maxGarmin}`)
-        if (vdot !== null) parts.push(`VDOT ${vdot}`)
-        return `From ${parts.join(' · ')}`
-      },
     },
     ytd: {
       title: 'This year',
@@ -1020,24 +937,20 @@ export const en = {
       notYet: 'Not yet',
       viewAll: 'View all records',
       newBadge: 'NEW',
-      legend: 'NEW = set in the last 90 days',
     },
     shoes: {
       title: 'Shoes',
-      line: (totalKm: number, remainingKm: number) => `${totalKm} km · ~${remainingKm} km left`,
       pairs: (n: number) => `${n} pair${n !== 1 ? 's' : ''}`,
       allGood: 'All good',
       needsReplacing: (n: number) => n === 1 ? '1 pair needs replacing' : `${n} pairs need replacing`,
       viewShoes: 'View Shoes',
     },
     milestones: {
-      title: 'Milestones',
       distanceTier: (km: number) => `${km} km this year`,
       distanceTierDetail: (year: number) => `Crossed in ${year}`,
       streak: (weeks: number) => `${weeks}-week active streak`,
       streakDetail: 'Still going - a run logged every week since',
       record: (label: string) => `${label} record`,
-      viewAll: 'View all milestones',
       firstActivity: 'First step',
       firstActivityDetail: (km: number) => `Where it all began - ${km.toFixed(1)} km`,
       lifetimeDistance: (km: number) => `${km.toLocaleString('en-US')} km lifetime`,
@@ -1074,8 +987,6 @@ export const en = {
 
   records: {
     title: 'Top Times',
-    all: 'All',
-    longest: 'Longest Run',
     mostRecent: 'most recent',
     raceTag: 'race',
     notYetRun: 'Not yet run',
@@ -1086,14 +997,6 @@ export const en = {
     noRecordYet: 'No record yet',
     predictedFromFitness: (time: string) => `Predicted ${time}`,
     findRace: (distance: string) => `Find a ${distance.toLowerCase()} ›`,
-    leaderboard: {
-      title: 'Top Times',
-      rank: '#',
-      time: 'Time',
-      dist: 'Distance',
-      pace: 'Pace',
-      date: 'Date',
-    },
   },
 
   pbAlerts: {
@@ -1101,28 +1004,7 @@ export const en = {
   },
 
   nextRace: {
-    line: (name: string, distance: string, daysUntil: string) => `${name} (${distance}) - ${daysUntil}`,
     countdown: (days: number) => `D-${days}`,
-  },
-
-  racePredictions: {
-    title: 'Race Predictions',
-    formulaLabel: '(Riegel formula)',
-    formulaExplainer: 'Peter Riegel\'s formula (1977): T2 = T1 × (D2/D1)^1.06. The standard used by most running apps.',
-    efforts: {
-      '1k': '1K',
-      '1mile': '1M',
-      '5k': '5K',
-      '10k': '10K',
-      half: 'Half',
-      marathon: 'Marathon',
-    } as Record<string, string>,
-    from: (source: string) => `from ${source}`,
-    beatBy: (time: string) => `✓ Beat by ${time}`,
-    pbUpside: (time: string) => `PB -${time}`,
-    trendFaster: (time: string, weeks: number) => `${time} faster in ${weeks}wk`,
-    trendSlower: (time: string, weeks: number) => `${time} slower in ${weeks}wk`,
-    trendFlat: 'Stable',
   },
 
   trainingZones: {
@@ -1146,12 +1028,6 @@ export const en = {
     rampRate: { label: 'Ramp rate', description: 'Δ CTL over 7 days' },
   },
 
-  consistencyScore: {
-    title: 'Consistency',
-    weeks: 'weeks',
-    gradeExplain: 'Ranks your last 12 weeks by weeks active (60%) and weekly volume stability (40%).',
-  },
-
   plan: {
     today: 'Today',
     prevPeriod: 'Previous',
@@ -1159,7 +1035,6 @@ export const en = {
     summary: (sessions: number, km: number) =>
       `${sessions} session${sessions !== 1 ? 's' : ''} · ${km} km`,
     weekdays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    readiness: (tsb: number) => `Form ${tsb >= 0 ? '+' : ''}${tsb}`,
     switcher: { week: 'Week', month: 'Month' },
     weekOf: (label: string) => `Week of ${label}`,
     restDay: 'Rest',
