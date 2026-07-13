@@ -773,7 +773,7 @@ export const fr = {
       },
       heatSuffix: ' par forte chaleur',
       heatClause: (pace: string, adjustSeconds: number, temperature: number) =>
-        `${pace}/km, soit ~${adjustSeconds}s/km plus lent que d’habitude - attendu à ${temperature}°C.`,
+        `${pace}/km, soit ~${adjustSeconds}s/km plus lent qu'en météo clémente - attendu à ${temperature}°C.`,
       effortClause: (rpeLabel: string, rpe: number) => `Effort ressenti : ${rpeLabel} (RPE ${rpe}).`,
     },
     tabs: {

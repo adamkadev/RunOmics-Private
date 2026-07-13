@@ -779,7 +779,7 @@ export const en = {
       },
       heatSuffix: ' in tough heat',
       heatClause: (pace: string, adjustSeconds: number, temperature: number) =>
-        `${pace}/km was ~${adjustSeconds}s slower than usual - expected at ${temperature}°C.`,
+        `${pace}/km was ~${adjustSeconds}s slower than it would be in mild weather - expected at ${temperature}°C.`,
       effortClause: (rpeLabel: string, rpe: number) => `Perceived effort: ${rpeLabel} (RPE ${rpe}).`,
     },
     tabs: {
