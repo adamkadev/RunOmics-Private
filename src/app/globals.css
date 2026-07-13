@@ -429,13 +429,10 @@
     box-shadow: inset 0 1px 0 var(--glass-highlight), var(--glass-shadow-float);
   }
 
-  /* Primary tier of the visual-hierarchy system: full-width, accentuated
-     hero cards (readiness verdict, run verdict, season headline, next race,
-     week banner). Secondary tier is .glass-card; tertiary is chips/pills. */
   .glass-hero {
     border-radius: var(--radius-card);
     padding: 18px;
-    border: 1px solid rgba(30, 215, 135, 0.35);
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
     background: var(--hero-gradient);
     box-shadow: 0 10px 26px -6px rgba(0, 0, 0, 0.35);
   }

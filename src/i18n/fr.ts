@@ -117,6 +117,13 @@ export const fr = {
       less: 'Rare',
       more: 'Fréquent',
       noRoutes: 'Aucun parcours pour ce filtre',
+      territory: {
+        eyebrow: (year: string) => `Ton territoire · ${year}`,
+        headline: (percent: number, radius: number) => `${percent}% de ton volume tient dans un rayon de ${radius} km.`,
+        aroundPlace: (place: string) => `Surtout autour de ${place}.`,
+        routesStat: 'routes distinctes',
+        radiusStat: 'rayon médian',
+      },
     },
     shoes: {
       title: 'Chaussures',

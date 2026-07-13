@@ -1,5 +1,6 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import type { ActivityType } from '@/domain/activity/types'
+import { distanceKm } from '@/lib/math'
 
 export interface RouteMeta {
   id: string
@@ -42,12 +43,6 @@ export interface AllRoutesData extends MapShellData {
 // keep an entire city's runs together, close enough to split distinct towns that a
 // fixed lon/lat grid cell would otherwise merge (e.g. Luxembourg-ville and Remich).
 const CLUSTER_RADIUS_KM = 12
-
-function distanceKm(lon1: number, lat1: number, lon2: number, lat2: number): number {
-  const dLat = (lat1 - lat2) * 111.32
-  const dLon = (lon1 - lon2) * 111.32 * Math.cos((lat1 * Math.PI) / 180)
-  return Math.hypot(dLat, dLon)
-}
 
 function findNearestClusterIdx(
   lon: number,

@@ -123,6 +123,13 @@ export const en = {
       less: 'Rare',
       more: 'Frequent',
       noRoutes: 'No routes for this filter',
+      territory: {
+        eyebrow: (year: string) => `Your territory · ${year}`,
+        headline: (percent: number, radius: number) => `${percent}% of your volume falls within a ${radius} km radius.`,
+        aroundPlace: (place: string) => `Mostly around ${place}.`,
+        routesStat: 'distinct routes',
+        radiusStat: 'median radius',
+      },
     },
     shoes: {
       title: 'Shoes',
