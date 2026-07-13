@@ -200,6 +200,10 @@ def _build_entries(
         if dur_s is not None:
             entry["durationSecs"] = int(dur_s)
 
+        steps = _build_workout_steps(detail)
+        if steps is not None:
+            entry["steps"] = steps
+
         planned.append(entry)
 
     planned.sort(key=lambda x: x["date"])
@@ -228,9 +232,9 @@ def _estimate_from_steps(steps: list[dict]) -> tuple[float, float]:
 
     for step in steps:
         cond_key = (step.get("endCondition") or {}).get("conditionTypeKey", "")
-    value = step.get("endConditionValue") or 0
-    if isinstance(value, dict):
-        value = value.get("parsedValue", 0)
+        value = step.get("endConditionValue") or 0
+        if isinstance(value, dict):
+            value = value.get("parsedValue", 0)
 
         v1 = step.get("targetValueOne")
         v2 = step.get("targetValueTwo")
@@ -246,6 +250,77 @@ def _estimate_from_steps(steps: list[dict]) -> tuple[float, float]:
                 total_dist += value * speed
 
     return total_dist, total_dur
+
+
+# Garmin stepType.stepTypeKey -> RunOmics WorkoutStepKind. "other" and
+# "interval" both denote a hard/main effort in Decathlon Pacer plans (the
+# former inside a RepeatGroupDTO, the latter for a single continuous block).
+_STEP_KIND_BY_TYPE_KEY = {
+    "warmup": "warmup",
+    "cooldown": "cooldown",
+    "recovery": "recovery",
+    "rest": "recovery",
+    "interval": "effort",
+    "other": "effort",
+}
+
+
+def _step_minutes(step: dict) -> float:
+    """Duration of a single step in minutes, from its end condition."""
+    cond_key = (step.get("endCondition") or {}).get("conditionTypeKey", "")
+    value = step.get("endConditionValue") or 0
+    if isinstance(value, dict):
+        value = value.get("parsedValue", 0)
+
+    if cond_key == "time":
+        return value / 60
+
+    if cond_key == "distance":
+        v1 = step.get("targetValueOne")
+        v2 = step.get("targetValueTwo")
+        speed = (v1 + v2) / 2 if v1 and v2 else None
+        return (value / speed) / 60 if speed and speed > 0 else 0
+
+    return 0
+
+
+def _expand_step(step: dict, rep: int | None = None) -> list[dict]:
+    """Flatten one Garmin workout step into 0-1 RunOmics WorkoutStep dicts,
+    recursing into RepeatGroupDTO children once per iteration."""
+    if step.get("type") == "RepeatGroupDTO":
+        iterations = int(step.get("numberOfIterations") or 0)
+        children = step.get("workoutSteps", [])
+        expanded: list[dict] = []
+        for i in range(1, iterations + 1):
+            for child in children:
+                expanded.extend(_expand_step(child, rep=i))
+        return expanded
+
+    kind = _STEP_KIND_BY_TYPE_KEY.get((step.get("stepType") or {}).get("stepTypeKey", ""))
+    if kind is None:
+        return []
+
+    minutes = _step_minutes(step)
+    if minutes <= 0:
+        return []
+
+    entry: dict = {"kind": kind, "minutes": int(minutes + 0.5)}
+    if rep is not None:
+        entry["rep"] = rep
+    return [entry]
+
+
+def _build_workout_steps(detail: dict) -> list[dict] | None:
+    """Real step-by-step structure from Garmin's workout detail, or None when
+    there's nothing to show (a single continuous block, or no steps at all)."""
+    raw_steps = [
+        step for seg in detail.get("workoutSegments", []) for step in seg.get("workoutSteps", [])
+    ]
+    steps: list[dict] = []
+    for step in raw_steps:
+        steps.extend(_expand_step(step))
+
+    return steps if len(steps) > 1 else None
 
 
 def _retry_on_429(fn):

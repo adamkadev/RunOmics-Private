@@ -1,24 +1,14 @@
-import type { ActivityType } from '@/domain/activity/types'
+import type { ActivityType, WorkoutStep } from '@/domain/activity/types'
 
-export type WorkoutStepKind = 'warmup' | 'effort' | 'recovery' | 'cooldown'
-
-export interface WorkoutStep {
-  kind: WorkoutStepKind
-  minutes: number
-  /** Repetition index for interval steps (1-based), for "2 × 10'" style labels. */
-  rep?: number
-}
+export type { WorkoutStep, WorkoutStepKind } from '@/domain/activity/types'
 
 const DEFAULT_WARMUP_MIN = 15
 const DEFAULT_COOLDOWN_MIN = 10
 const DEFAULT_RECOVERY_MIN = 2
 const MIN_BOOKEND_MIN = 5
 
-// "10 x (1'/1')" - reps with explicit effort/recovery minutes
 const REPS_WITH_RECOVERY = /(\d+)\s*[x×]\s*\(\s*(\d+)\s*['’]\s*\/\s*(\d+)\s*['’]\s*\)/i
-// "2 × 10' tempo" - reps of a minute block, recovery implied
 const REPS_SIMPLE = /(\d+)\s*[x×]\s*(\d+)\s*['’]/i
-// "50' dont 20' actives" - continuous run with an active block inside
 const TOTAL_WITH_ACTIVE = /(\d+)\s*['’]\s*dont\s+(\d+)\s*['’]/i
 
 function bookends(totalMin: number | null, workMin: number): { warmup: number; cooldown: number } {
@@ -30,12 +20,6 @@ function bookends(totalMin: number | null, workMin: number): { warmup: number; c
   return { warmup, cooldown: remaining - warmup }
 }
 
-/**
- * Deterministic structure parsed from a planned workout's name (the only
- * structure Garmin exports for these workouts). Returns null when the name
- * carries no interval pattern we can honestly decompose - meter-based reps
- * would need a pace assumption, so they are deliberately not guessed.
- */
 export function parseWorkoutStructure(name: string, durationSecs?: number): WorkoutStep[] | null {
   const totalMin = durationSecs ? Math.round(durationSecs / 60) : null
 
@@ -90,8 +74,6 @@ export function parseWorkoutStructure(name: string, durationSecs?: number): Work
   return null
 }
 
-// Static effort-target zone per workout type (audit §11 MVP: "a static step
-// list with target pace/HR zones per rep"). Warmup/recovery/cooldown are Z1-Z2.
 export const EFFORT_ZONE_BY_TYPE: Partial<Record<ActivityType, string>> = {
   Base: 'Z2',
   Tempo: 'Z3',
