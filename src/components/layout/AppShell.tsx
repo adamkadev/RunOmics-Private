@@ -27,8 +27,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isPopNavigation = useRef(false)
   const { containerRef, pullPx, refreshing } = usePullToRefresh(() => router.refresh(), isPullToRefreshPage(pathname))
 
-  // Browser/router back-forward (popstate) restores scroll position instead
-  // of resetting to top, so returning from a detail page lands where you left.
   useLayoutEffect(() => {
     const onPopState = () => {
       isPopNavigation.current = true
@@ -39,7 +37,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   useLayoutEffect(() => {
     const positions = getScrollPositions()
-    window.scrollTo(0, isPopNavigation.current ? positions[pathname] ?? 0 : 0)
+    const top = isPopNavigation.current ? positions[pathname] ?? 0 : 0
+    window.scrollTo({ top, left: 0, behavior: 'instant' })
     isPopNavigation.current = false
   }, [pathname])
 
