@@ -212,8 +212,6 @@ export const fr = {
       lthrHint: 'Fréquence cardiaque au seuil lactique',
       thresholdPace: 'Allure seuil',
       thresholdPaceHint: 'min:ss par km, ex. 4:14',
-      maxHr: 'FC max',
-      restingHr: 'FC repos',
       vma: 'VMA',
       vmaHint: 'Vitesse maximale aérobie',
     },

@@ -44,17 +44,6 @@ def fetch_athlete_metrics(client: GarminClient) -> dict[str, Any]:
     if vo2max:
         metrics["vmaKmh"] = round(vo2max / _VO2_PER_KMH, 1)
 
-    try:
-        display_name = client.get_social_profile().get("displayName")
-        today = date.today().isoformat()
-        summary = client.get_daily_summary(display_name, today) if display_name else {}
-    except GarminAPIError:
-        summary = {}
-
-    resting_hr = summary.get("restingHeartRate")
-    if resting_hr:
-        metrics["restingHrBpm"] = int(resting_hr)
-
     if metrics:
         metrics["lastUpdate"] = datetime.now(timezone.utc).isoformat()
 

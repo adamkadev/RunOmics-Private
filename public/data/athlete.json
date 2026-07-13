@@ -9,8 +9,8 @@
   ],
   "lastUpdate": "2026-07-13T17:22:27.656984+00:00",
   "lthrBpm": 177,
-  "maxHrBpm": null,
-  "restingHrBpm": 64,
+  "maxHrBpm": 196,
+  "restingHrBpm": 45,
   "sex": "male",
   "thresholdPaceSecPerKm": 254,
   "vmaKmh": 16.0

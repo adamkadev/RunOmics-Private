@@ -34,10 +34,8 @@ export function ProfileAthleteStats({ athlete }: Props) {
   return (
     <GlassSurface variant="card" className="p-5">
       <h2 className="mb-3 text-sm font-bold text-foreground">{a.title}</h2>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2">
         <Tile label={a.age} unit={t.units.yrs} value={athlete.age} />
-        <Tile label={a.restingHr} unit={t.units.bpm} value={athlete.restingHrBpm} />
-        <Tile label={a.maxHr} unit={t.units.bpm} value={athlete.maxHrBpm} />
         <Tile label={a.lthr} unit={t.units.bpm} value={athlete.lthrBpm} />
         <Tile
           label={a.thresholdPace}
