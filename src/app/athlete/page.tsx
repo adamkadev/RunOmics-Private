@@ -1,6 +1,6 @@
 import { getAthleteFromFirestore } from '@/infrastructure/repositories/FirestoreConfigRepository'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
-import { zoneDistribution } from '@/application/usecases/GetAnalyticsData'
+import { zoneDistribution, recentZoneDistribution } from '@/application/usecases/GetAnalyticsData'
 import { isoWeekNumber } from '@/lib/calendarDate'
 import { AthleteClient } from '@/components/profile/AthleteClient'
 
@@ -10,9 +10,12 @@ export const revalidate = 86400
 
 export default async function AthletePage() {
   const athlete = await getAthleteFromFirestore()
+  const activities = getAllActivities()
 
   const currentWeek = isoWeekNumber(new Date())
-  const weeklyZoneTime = zoneDistribution(getAllActivities().filter((a) => a.week === currentWeek))
+  const weeklyZoneTime = zoneDistribution(activities.filter((a) => a.week === currentWeek))
 
-  return <AthleteClient athlete={athlete} weeklyZoneTime={weeklyZoneTime} />
+  const recentZoneTime = recentZoneDistribution(activities, 28)
+
+  return <AthleteClient athlete={athlete} weeklyZoneTime={weeklyZoneTime} recentZoneTime={recentZoneTime} />
 }

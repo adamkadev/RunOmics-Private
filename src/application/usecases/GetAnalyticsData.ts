@@ -218,6 +218,12 @@ export function zoneDistribution(activities: Activity[]): ZoneShare[] {
     }))
 }
 
+/** zoneDistribution over a rolling window ending `now` - keeps the impure Date read out of callers rendering as a component. */
+export function recentZoneDistribution(activities: Activity[], days: number, now: Date = new Date()): ZoneShare[] {
+  const cutoff = new Date(now.getTime() - days * 86_400_000)
+  return zoneDistribution(activities.filter((a) => new Date(a.date + 'T00:00:00') >= cutoff))
+}
+
 
 export function efficiencyFactor(activities: Activity[]): number | null {
   const valid = activities.filter(

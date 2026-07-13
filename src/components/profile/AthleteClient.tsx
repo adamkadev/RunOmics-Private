@@ -13,9 +13,10 @@ import { t } from '@/i18n'
 interface Props {
   athlete: AthleteProfile
   weeklyZoneTime: ZoneShare[]
+  recentZoneTime: ZoneShare[]
 }
 
-export function AthleteClient({ athlete: initialAthlete, weeklyZoneTime }: Props) {
+export function AthleteClient({ athlete: initialAthlete, weeklyZoneTime, recentZoneTime }: Props) {
   const [athlete, setAthlete] = useState<AthleteProfile>(initialAthlete)
 
   async function saveAthlete(patch: Partial<AthleteProfile>) {
@@ -33,7 +34,7 @@ export function AthleteClient({ athlete: initialAthlete, weeklyZoneTime }: Props
       </div>
 
       <ProfileAthleteStats athlete={athlete} onSave={saveAthlete} />
-      <ProfileHrZones athlete={athlete} onSave={saveAthlete} weeklyZoneTime={weeklyZoneTime} />
+      <ProfileHrZones athlete={athlete} onSave={saveAthlete} weeklyZoneTime={weeklyZoneTime} recentZoneTime={recentZoneTime} />
     </div>
   )
 }

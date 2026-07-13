@@ -1050,12 +1050,14 @@ export const fr = {
       title: 'Zones cardiaques',
       lthr: 'LTHR',
       recalculate: 'Recalculer depuis la LTHR',
-      thisWeek: 'cette semaine',
-      noSessionsThisWeek: 'Aucune séance enregistrée cette semaine.',
+      thisWeek: 'Cette semaine',
+      recentWeeks: '4 dernières semaines',
+      noSessionsThisWeek: 'Aucune séance enregistrée pour le moment.',
+      emptyWeekFallback: 'Pas encore de séance cette semaine - affichage des 4 dernières semaines.',
       insight: {
         polarized: (pct: number, zoneLabel: string) =>
-          `Semaine très polarisée : ${pct}% en ${zoneLabel}, peu de travail au seuil. Cohérent avec une phase de base.`,
-        dominant: (pct: number, zoneLabel: string) => `${pct}% du temps cette semaine se passe en ${zoneLabel}.`,
+          `Très polarisé : ${pct}% en ${zoneLabel}, peu de travail au seuil. Cohérent avec une phase de base.`,
+        dominant: (pct: number, zoneLabel: string) => `${pct}% du temps se passe en ${zoneLabel}.`,
       },
     },
     athlete: {

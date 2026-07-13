@@ -1056,12 +1056,14 @@ export const en = {
       title: 'Heart rate zones',
       lthr: 'LTHR',
       recalculate: 'Recalculate from LTHR',
-      thisWeek: 'this week',
-      noSessionsThisWeek: 'No sessions logged this week yet.',
+      thisWeek: 'This week',
+      recentWeeks: 'Last 4 weeks',
+      noSessionsThisWeek: 'No sessions logged yet.',
+      emptyWeekFallback: 'This week has no sessions yet - showing your last 4 weeks instead.',
       insight: {
         polarized: (pct: number, zoneLabel: string) =>
-          `Very polarized week: ${pct}% in ${zoneLabel}, little threshold work. Consistent with a base phase.`,
-        dominant: (pct: number, zoneLabel: string) => `${pct}% of this week's time sits in ${zoneLabel}.`,
+          `Very polarized: ${pct}% in ${zoneLabel}, little threshold work. Consistent with a base phase.`,
+        dominant: (pct: number, zoneLabel: string) => `${pct}% of the time sits in ${zoneLabel}.`,
       },
     },
     athlete: {
