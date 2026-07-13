@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 import time
 from datetime import date, timedelta
@@ -136,15 +137,35 @@ def fetch_upcoming_races(client: GarminClient) -> list[dict]:
 
 
 def _map_race(item: dict) -> dict:
+    distance = _format_distance(item.get("completionTarget"))
     entry: dict = {
         "garminEventUuid": item["shareableEventUuid"],
         "date": item["date"],
-        "name": (item.get("title") or "").strip(),
-        "distance": _format_distance(item.get("completionTarget")),
+        "name": _strip_distance_suffix((item.get("title") or "").strip(), distance),
+        "distance": distance,
     }
     if item.get("location"):
-        entry["location"] = item["location"]
+        entry["location"] = _simplify_location(item["location"])
     return entry
+
+
+def _strip_distance_suffix(name: str, distance: str) -> str:
+    """Drop a trailing "(distance)" suffix that just duplicates the `distance` field."""
+    if not distance:
+        return name
+    match = re.search(r"\s*\(([^()]*)\)\s*$", name)
+    if not match:
+        return name
+    normalized_suffix = match.group(1).replace("-", " ").strip().lower()
+    normalized_distance = distance.replace("-", " ").strip().lower()
+    if normalized_suffix != normalized_distance:
+        return name
+    return name[: match.start()].rstrip()
+
+
+def _simplify_location(location: str) -> str:
+    """Keep just the city, dropping the ", country/region" suffix Garmin appends."""
+    return location.split(",")[0].strip()
 
 
 def _format_distance(completion_target: dict | None) -> str:
