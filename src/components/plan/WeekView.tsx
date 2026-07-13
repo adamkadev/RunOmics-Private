@@ -45,7 +45,7 @@ interface Day {
 function PlannedWorkoutRow({ plan, onTap }: { plan: PlannedWorkout; onTap: () => void }) {
   const typeColor = plan.type ? ACTIVITY_TYPE_CONFIG[plan.type as ActivityType].chartColor : null
   const Icon = plan.type ? ACTIVITY_TYPE_ICONS[plan.type as ActivityType] : Footprints
-  const structure = parseWorkoutStructure(plan.name, plan.durationSecs)
+  const structure = plan.steps ?? parseWorkoutStructure(plan.name, plan.durationSecs)
 
   return (
     <button

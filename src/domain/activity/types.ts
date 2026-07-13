@@ -70,9 +70,6 @@ export interface Activity {
   gearId: string | null
 }
 
-// Lightweight projection of `Activity` for list views (activities list, search) -
-// excludes heavy per-sample arrays (hrSamples, paceSamples, elevationProfile, polyline...)
-// that the row UI never reads, so paginated list responses stay small.
 export type ActivitySummary = Pick<
   Activity,
   | 'id'
@@ -86,10 +83,17 @@ export type ActivitySummary = Pick<
   | 'paceSecPerKm'
   | 'avgHeartRate'
   | 'rpe'
-  // 5 aggregate HR-zone buckets (not per-sample) - kept so list views can
-  // derive the easy/hard split from the same source as Today and Plan.
   | 'hrZones'
 >
+
+export type WorkoutStepKind = 'warmup' | 'effort' | 'recovery' | 'cooldown'
+
+export interface WorkoutStep {
+  kind: WorkoutStepKind
+  minutes: number
+  /** Repetition index for interval steps (1-based), for "2 × 10'" style labels. */
+  rep?: number
+}
 
 export interface PlannedWorkout {
   date: string
@@ -98,9 +102,9 @@ export interface PlannedWorkout {
   distanceM?: number
   durationSecs?: number
   scheduledTime?: string
-  /** TRIMP estimated from historical load for this type - see GetPlannedWorkouts. */
   estimatedLoad?: number
   isEstimated?: boolean
+  steps?: WorkoutStep[]
 }
 
 export interface WeeklyVolume {
@@ -182,8 +186,6 @@ export const ACTIVITY_TYPE_CONFIG: Record<
   },
 }
 
-// Icon per activity type, shared by the activity list, calendar (week/planned
-// workout) and anywhere else a type needs a glyph - keeps them visually consistent.
 export const ACTIVITY_TYPE_ICONS: Record<ActivityType, LucideIcon> = {
   Sprint: Zap,
   Anaerobic: Flame,

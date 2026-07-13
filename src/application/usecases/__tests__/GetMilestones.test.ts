@@ -107,6 +107,19 @@ describe('currentWeekStreak', () => {
     const streak = currentWeekStreak(acts, now)
     expect(streak?.weeks).toBe(1)
   })
+
+  it('carries the streak into a new week that has no run yet, instead of resetting to 0', () => {
+    const now = new Date('2026-07-13T00:00:00') // Monday, brand-new week, nothing logged today
+    const acts = [act('2026-07-06'), act('2026-06-29'), act('2026-06-22')] // 3 consecutive prior weeks
+    const streak = currentWeekStreak(acts, now)
+    expect(streak?.weeks).toBe(3)
+  })
+
+  it('null when neither the current nor the previous week has an activity', () => {
+    const now = new Date('2026-07-13T00:00:00')
+    const acts = [act('2026-06-22')] // last week (07-06) is also empty - streak actually broken
+    expect(currentWeekStreak(acts, now)).toBeNull()
+  })
 })
 
 describe('longestWeekStreak', () => {

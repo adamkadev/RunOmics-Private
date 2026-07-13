@@ -119,12 +119,11 @@ export interface WeekStreak {
   startDate: string
 }
 
-/** Consecutive weeks (counting back from `now`) with at least one activity. Null if the current week is inactive. */
 export function currentWeekStreak(activities: Activity[], now: Date): WeekStreak | null {
   const activeWeeks = new Set(activities.map((a) => a.week))
-  let weeks = 0
-  let cursor = now
+  let cursor = activeWeeks.has(isoWeekNumber(now)) ? now : addDays(now, -7)
 
+  let weeks = 0
   while (weeks < MAX_STREAK_WEEKS_TO_CHECK && activeWeeks.has(isoWeekNumber(cursor))) {
     weeks++
     cursor = addDays(cursor, -7)
@@ -135,7 +134,6 @@ export function currentWeekStreak(activities: Activity[], now: Date): WeekStreak
   return { weeks, startDate: isoDate(startOfWeek(streakStartWeek)) }
 }
 
-/** Longest run of consecutive active weeks across all history, by ISO week-start date rather than the (non-contiguous across years) week number. */
 export function longestWeekStreak(activities: Activity[]): number {
   const weekStarts = new Set(activities.map((a) => isoDate(startOfWeek(new Date(a.date + 'T00:00:00')))))
   const sorted = Array.from(weekStarts).sort()
@@ -158,7 +156,6 @@ export interface WeeklyStreakData {
   weekDays: boolean[] // Mon..Sun
 }
 
-/** Null only when the athlete has no activity history at all. */
 export function getWeeklyStreakData(now = new Date()): WeeklyStreakData | null {
   const activities = getAllActivities()
   if (!activities.length) return null
