@@ -15,6 +15,14 @@ export function formatDuration(seconds: number): string {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
+/** "1 h 40" / "48 min" - rounded to the minute, for compact time-in-zone readouts. */
+export function formatDurationWords(seconds: number): string {
+  const totalMinutes = Math.round(seconds / 60)
+  const h = Math.floor(totalMinutes / 60)
+  const m = totalMinutes % 60
+  return h > 0 ? `${h} ${t.units.hour} ${m}` : `${m} ${t.units.min}`
+}
+
 export function formatDurationShort(seconds: number): string {
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)

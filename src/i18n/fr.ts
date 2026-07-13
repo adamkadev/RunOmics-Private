@@ -56,6 +56,7 @@ export const fr = {
     minPerKm: 'min/km',
     celsius: '°C',
     hour: 'h',
+    min: 'min',
     day: 'j',
     elevation: 'm D+'
   },
@@ -1040,6 +1041,13 @@ export const fr = {
       title: 'Zones cardiaques',
       lthr: 'LTHR',
       recalculate: 'Recalculer depuis la LTHR',
+      thisWeek: 'cette semaine',
+      noSessionsThisWeek: 'Aucune séance enregistrée cette semaine.',
+      insight: {
+        polarized: (pct: number, zoneLabel: string) =>
+          `Semaine très polarisée : ${pct}% en ${zoneLabel}, peu de travail au seuil. Cohérent avec une phase de base.`,
+        dominant: (pct: number, zoneLabel: string) => `${pct}% du temps cette semaine se passe en ${zoneLabel}.`,
+      },
     },
     athlete: {
       title: 'Athlète',
