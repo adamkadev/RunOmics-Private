@@ -360,6 +360,8 @@ export const fr = {
         },
       },
       sessionCta: 'Démarrer',
+      restDay: 'Jour de repos',
+      restDaySubtitle: 'Aucune séance prévue',
       race: 'Course',
       daysToRace: (days: number) => `J-${days}`,
       chargeOptimal: 'Optimale',

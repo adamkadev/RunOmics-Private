@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronRight, Footprints } from 'lucide-react'
+import { ChevronRight, Footprints, BedDouble } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import type { ActivityType, PlannedWorkout } from '@/domain/activity/types'
@@ -121,7 +121,7 @@ export function TodayHero({ status, plannedWorkout, nextRace, lastSyncedAt }: Pr
         </div>
       )}
 
-      {plannedWorkout && (
+      {plannedWorkout ? (
         <button
           type="button"
           onClick={() => setSheetOpen(true)}
@@ -141,12 +141,15 @@ export function TodayHero({ status, plannedWorkout, nextRace, lastSyncedAt }: Pr
             <ChevronRight size={13} strokeWidth={2.5} />
           </span>
         </button>
-      )}
-
-      {nextRace && !plannedWorkout && (
-        <div className="mt-3.5">
-          <div className="text-[10px] uppercase tracking-wide text-[#8a978f]">{s.race}</div>
-          <div className="mt-0.5 text-sm font-semibold">{s.daysToRace(Math.round(animatedDaysToRace))}</div>
+      ) : (
+        <div className="mt-3.5 flex items-center gap-3 rounded-[14px] bg-black/25 px-3.5 py-3">
+          <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px] bg-accent/[0.18]">
+            <BedDouble size={17} className="text-accent-text" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-semibold">{s.restDay}</div>
+            <div className="mt-0.5 truncate text-[11px] text-[#8a978f]">{s.restDaySubtitle}</div>
+          </div>
         </div>
       )}
 

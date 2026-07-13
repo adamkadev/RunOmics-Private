@@ -366,6 +366,8 @@ export const en = {
         },
       },
       sessionCta: 'Start',
+      restDay: 'Rest day',
+      restDaySubtitle: 'No session scheduled',
       race: 'Race',
       daysToRace: (days: number) => `D-${days}`,
       chargeOptimal: 'Optimal',
