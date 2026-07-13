@@ -7,7 +7,6 @@ import { formatDayMonth } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { MILESTONE_ICON, MILESTONE_ICON_CLASS, MILESTONE_NODE_CLASS } from './milestoneVisuals'
 
-/** Milestones are already sorted newest-first; grouping preserves that order across years. */
 function groupByYear(milestones: Milestone[]): [string, Milestone[]][] {
   const groups = new Map<string, Milestone[]>()
   for (const m of milestones) {
@@ -79,16 +78,11 @@ function MilestoneRow({ items }: { items: Milestone[] }) {
         </ol>
       </div>
       {items.length > 1 && (
-        <div className="mt-2 flex justify-center gap-1.5" aria-hidden>
-          {items.map((_, i) => (
-            <span
-              key={i}
-              className={cn(
-                'h-1.5 w-1.5 rounded-full border transition-colors',
-                i === activeIndex ? 'border-accent bg-accent/30' : 'border-foreground/15 bg-transparent'
-              )}
-            />
-          ))}
+        <div className="mx-auto mt-2 h-1 w-16 overflow-hidden rounded-full bg-foreground/10" aria-hidden>
+          <div
+            className="h-full rounded-full bg-accent transition-[width] duration-200 ease-out"
+            style={{ width: `${((activeIndex + 1) / items.length) * 100}%` }}
+          />
         </div>
       )}
     </>
