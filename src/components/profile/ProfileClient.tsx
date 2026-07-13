@@ -1,8 +1,5 @@
 'use client'
 
-import { useState } from 'react'
-import { doc, serverTimestamp, setDoc } from 'firebase/firestore'
-import { getClientFirestore } from '@/lib/firebase'
 import type { ProfileData } from '@/application/usecases/GetProfileData'
 import { ProfileHero } from './ProfileHero'
 import { ProfileStatsYtd } from './ProfileStatsYtd'
@@ -16,20 +13,10 @@ interface Props {
 }
 
 export function ProfileClient({ data }: Props) {
-  const [displayName, setDisplayName] = useState(data.athlete.displayName)
-
-  async function saveDisplayName(name: string) {
-    setDisplayName(name)
-    await setDoc(
-      doc(getClientFirestore(), 'athlete', 'profile'),
-      { ...data.athlete, displayName: name, lastUpdate: serverTimestamp() }
-    )
-  }
-
   return (
     <div className="space-y-6">
       <div className="space-y-3">
-        <ProfileHero hero={data.hero} displayName={displayName} onSaveName={saveDisplayName} />
+        <ProfileHero hero={data.hero} displayName={data.athlete.displayName} />
         <ProfileStatsYtd ytd={data.ytd} />
         <div className="grid grid-cols-2 gap-3">
           <ProfileGoal goal={data.goal} />

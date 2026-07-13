@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import type { AthleteProfile } from '@/infrastructure/repositories/FirestoreConfigRepository'
+import type { AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { t } from '@/i18n'
 
 export function ProfileAthleteTile({ athlete }: { athlete: AthleteProfile }) {

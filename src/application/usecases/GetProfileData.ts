@@ -1,9 +1,6 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
-import {
-  getAthleteFromFirestore,
-  getGoalsFromFirestore,
-  type AthleteProfile,
-} from '@/infrastructure/repositories/FirestoreConfigRepository'
+import { getAthleteProfile, type AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
+import { getGoalYears } from '@/infrastructure/repositories/JsonGoalRepository'
 import { getLifetimeStats } from '@/application/usecases/GetLifetimeStats'
 import { getRecords, type RecordEntry } from '@/application/usecases/GetRecords'
 import { getShoeStats, type ShoeStats } from '@/application/usecases/GetShoeStats'
@@ -47,8 +44,8 @@ export async function getProfileData(): Promise<ProfileData> {
   const activities = getAllActivities()
   const lifetime = getLifetimeStats()
   const allRecords = await getRecords()
-  const goalYears = await getGoalsFromFirestore()
-  const athlete = await getAthleteFromFirestore()
+  const goalYears = getGoalYears()
+  const athlete = getAthleteProfile()
 
   const firstActivity = activities[0]
   const sinceDate = firstActivity

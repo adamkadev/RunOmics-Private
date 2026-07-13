@@ -12,6 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
+from garmin.athlete import fetch_athlete_metrics
 from garmin.client import GarminAuthError, GarminAPIError, GarminClient
 from garmin.retry import retry_transient
 from sync_workouts import fetch_planned_workouts, write_planned_workouts
@@ -22,6 +23,7 @@ from repository.json_store import JsonActivityStore
 
 _FIT_DIR = Path(__file__).parent.parent / "public" / "fit"
 _SYNC_META_PATH = Path(__file__).parent.parent / "public" / "data" / "sync_meta.json"
+_ATHLETE_PATH = Path(__file__).parent.parent / "public" / "data" / "athlete.json"
 _RATE_LIMIT_PAUSE = 1.0
 _REGEAR_WINDOW_DAYS = 10
 
@@ -140,6 +142,9 @@ def main() -> int:
             races = fetch_upcoming_races(client)
             write_upcoming_races(races)
 
+            metrics = fetch_athlete_metrics(client)
+            _merge_athlete_metrics(metrics)
+
         if not args.dry_run:
             _write_sync_meta()
 
@@ -151,6 +156,22 @@ def _write_sync_meta() -> None:
     _SYNC_META_PATH.write_text(
         json.dumps({"lastSyncedAt": datetime.now(timezone.utc).isoformat()}) + "\n"
     )
+
+
+def _merge_athlete_metrics(metrics: dict) -> None:
+    if not metrics:
+        return
+
+    existing: dict = {}
+    if _ATHLETE_PATH.exists():
+        existing = json.loads(_ATHLETE_PATH.read_text())
+
+    if "maxHrBpm" in metrics and existing.get("maxHrBpm"):
+        metrics["maxHrBpm"] = max(metrics["maxHrBpm"], existing["maxHrBpm"])
+
+    merged = {**existing, **metrics}
+    _ATHLETE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    _ATHLETE_PATH.write_text(json.dumps(merged, indent=2, sort_keys=True) + "\n")
 
 
 

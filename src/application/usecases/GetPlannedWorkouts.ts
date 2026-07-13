@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import type { Activity, ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
-import { getAthleteFromFirestore } from '@/infrastructure/repositories/FirestoreConfigRepository'
+import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { trimp, type HrBounds } from './GetTrainingLoad'
 import { isoDate } from '@/lib/calendarDate'
 import { round } from '@/lib/math'
@@ -94,7 +94,7 @@ export async function getPlannedWorkouts(): Promise<PlannedWorkout[]> {
   if (!planned.length) return planned
 
   const activities = getAllActivities()
-  const athlete = await getAthleteFromFirestore()
+  const athlete = getAthleteProfile()
   const hrBounds: HrBounds | undefined =
     athlete.maxHrBpm && athlete.restingHrBpm
       ? { maxHr: athlete.maxHrBpm, restingHr: athlete.restingHrBpm }

@@ -1,8 +1,9 @@
 import type { Activity } from '@/domain/activity/types'
 import { yearDistanceKm } from '@/domain/activity/distance'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
-import { getGoalsFromFirestore, getPbsFromFirestore } from '@/infrastructure/repositories/FirestoreConfigRepository'
 import { getUpcomingRaceYears } from '@/infrastructure/repositories/JsonUpcomingRaceRepository'
+import { getGoalYears } from '@/infrastructure/repositories/JsonGoalRepository'
+import { getPbYears } from '@/infrastructure/repositories/JsonPbRepository'
 import { getRacePredictions, type RacePrediction } from './GetRacePredictions'
 import { DISTANCE_KEY } from './GetRecords'
 import { addDays, startOfWeek } from '@/lib/calendarDate'
@@ -275,7 +276,7 @@ export function computeWeeklyGoal(activities: Activity[], year: number, goals: G
 /** The current week's distance goal, prorated from the current year's annual target - null if no goal is set. */
 export async function getCurrentWeeklyGoal(): Promise<WeeklyGoal | null> {
   const year = new Date().getFullYear()
-  const goalYears = await getGoalsFromFirestore()
+  const goalYears = getGoalYears()
   const goals = goalYears.find((g) => g.year === year)
   if (!goals) return null
   return computeWeeklyGoal(getAllActivities(), year, goals)
@@ -284,11 +285,9 @@ export async function getCurrentWeeklyGoal(): Promise<WeeklyGoal | null> {
 export async function getGoalsPageData(): Promise<GoalsPageData> {
   const activities = getAllActivities()
   const upcomingRaceYears = getUpcomingRaceYears()
-  const [goalYears, pbYears, predictions] = await Promise.all([
-    getGoalsFromFirestore(),
-    getPbsFromFirestore(),
-    getRacePredictions(),
-  ])
+  const goalYears = getGoalYears()
+  const pbYears = getPbYears()
+  const predictions = await getRacePredictions()
 
   const activityMap = new Map(activities.map((a) => [a.id, a]))
 

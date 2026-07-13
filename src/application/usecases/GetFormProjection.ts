@@ -1,5 +1,5 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
-import { getAthleteFromFirestore } from '@/infrastructure/repositories/FirestoreConfigRepository'
+import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { buildTimeSeries, type HrBounds } from './GetTrainingLoad'
 import { getPlannedWorkouts } from './GetPlannedWorkouts'
 import { getNextRace } from './GetNextRace'
@@ -70,7 +70,7 @@ export async function getFormProjection(): Promise<FormProjection | null> {
   const activities = getAllActivities()
   if (!activities.length) return null
 
-  const athlete = await getAthleteFromFirestore()
+  const athlete = getAthleteProfile()
   const hrBounds: HrBounds | undefined =
     athlete.maxHrBpm && athlete.restingHrBpm
       ? { maxHr: athlete.maxHrBpm, restingHr: athlete.restingHrBpm }

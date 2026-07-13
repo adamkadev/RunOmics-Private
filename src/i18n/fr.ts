@@ -213,12 +213,6 @@ export const fr = {
       thresholdPowerHint: 'Puissance seuil fonctionnelle',
       vma: 'VMA (km/h)',
       vmaHint: 'Vitesse maximale aérobie',
-      placeholders: {
-        lthr: '177',
-        thresholdPace: '4:14',
-        thresholdPower: '339',
-        vma: '16',
-      },
     },
     actions: {
       save: 'Enregistrer',
@@ -998,7 +992,6 @@ export const fr = {
       summary: (activities: number, km: number) => `${activities} activités · ${km} km`,
       lifetime: (runs: number, km: number) => `${runs} sorties · ${km.toLocaleString('fr')} km au total`,
       rankLine: (tier: string, pct: number) => `Rang ${tier} · top ${pct}% de VO₂max pour ton âge`,
-      editName: 'Modifier le nom',
       namePlaceholder: 'Votre nom',
       rankExplain: 'Rang de forme basé sur la VO₂max et l’allure de course.',
       rankSource: (vo2maxGarmin: number | null, vdot: number | null) => {
@@ -1049,7 +1042,6 @@ export const fr = {
     hrZones: {
       title: 'Zones cardiaques',
       lthr: 'LTHR',
-      recalculate: 'Recalculer depuis la LTHR',
       thisWeek: 'Cette semaine',
       recentWeeks: '4 dernières semaines',
       noSessionsThisWeek: 'Aucune séance enregistrée pour le moment.',

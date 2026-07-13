@@ -2,8 +2,7 @@
 
 import { useState } from 'react'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { EditableNumber } from '@/components/ui/EditableNumber'
-import type { AthleteProfile } from '@/infrastructure/repositories/FirestoreConfigRepository'
+import type { AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import type { ZoneShare } from '@/application/usecases/GetAnalyticsData'
 import { formatDurationWords } from '@/lib/formatters'
 import { ZONE_COLOR_CLASSES } from '@/lib/colors'
@@ -26,12 +25,11 @@ function totalSeconds(zoneTime: ZoneShare[]): number {
 
 interface Props {
   athlete: AthleteProfile
-  onSave: (patch: Partial<AthleteProfile>) => void
   weeklyZoneTime: ZoneShare[]
   recentZoneTime: ZoneShare[]
 }
 
-export function ProfileHrZones({ athlete, onSave, weeklyZoneTime, recentZoneTime }: Props) {
+export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime }: Props) {
   const s = t.profile.hrZones
   const lthr = athlete.lthrBpm ?? DEFAULT_LTHR
   const bounds = athlete.hrZoneBoundsBpm ?? defaultBounds(lthr)
@@ -42,18 +40,12 @@ export function ProfileHrZones({ athlete, onSave, weeklyZoneTime, recentZoneTime
   const isAutoFallback = manualView === null && !weekHasData
   const zoneTime = view === 'week' ? weeklyZoneTime : recentZoneTime
 
-  function setBound(index: number, n: number) {
-    const next = [...bounds] as Bounds
-    next[index] = n
-    onSave({ hrZoneBoundsBpm: next })
-  }
-
   const zones = [
-    { zone: 5, min: bounds[3], max: null, editableIndex: null },
-    { zone: 4, min: bounds[2], max: bounds[3], editableIndex: 3 },
-    { zone: 3, min: bounds[1], max: bounds[2], editableIndex: 2 },
-    { zone: 2, min: bounds[0], max: bounds[1], editableIndex: 1 },
-    { zone: 1, min: 0, max: bounds[0], editableIndex: 0 },
+    { zone: 5, min: bounds[3], max: null },
+    { zone: 4, min: bounds[2], max: bounds[3] },
+    { zone: 3, min: bounds[1], max: bounds[2] },
+    { zone: 2, min: bounds[0], max: bounds[1] },
+    { zone: 1, min: 0, max: bounds[0] },
   ]
 
   const timeByZone = new Map(zoneTime.map((z) => [z.zone, z]))
@@ -82,7 +74,7 @@ export function ProfileHrZones({ athlete, onSave, weeklyZoneTime, recentZoneTime
         <h2 className="text-sm font-bold text-foreground">{s.title}</h2>
         <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
           <span>{s.lthr}</span>
-          <EditableNumber value={lthr} onCommit={(n) => onSave({ lthrBpm: n })} className="text-xs font-bold text-accent-text" />
+          <span className="text-xs font-bold text-accent-text">{lthr}</span>
         </div>
       </div>
 
@@ -110,7 +102,7 @@ export function ProfileHrZones({ athlete, onSave, weeklyZoneTime, recentZoneTime
       </div>
 
       <div className="flex flex-col gap-3.5">
-        {zones.map(({ zone, min, max, editableIndex }) => {
+        {zones.map(({ zone, min, max }) => {
           const time = timeByZone.get(zone)
           const barPercent = time && maxZoneSeconds > 0 ? Math.max(4, Math.round((time.seconds / maxZoneSeconds) * 100)) : 0
           const isDominant = dominant?.zone === zone
@@ -121,18 +113,8 @@ export function ProfileHrZones({ athlete, onSave, weeklyZoneTime, recentZoneTime
                 <span className="text-foreground/80">
                   {t.activity.zones.labels[zone]}
                   {' · '}
-                  {zone === 1 && (
-                    <>
-                      &lt;
-                      <EditableNumber value={max as number} onCommit={(n) => setBound(editableIndex as number, n)} />
-                    </>
-                  )}
-                  {zone !== 1 && zone !== 5 && (
-                    <>
-                      {min}–
-                      <EditableNumber value={max as number} onCommit={(n) => setBound(editableIndex as number, n)} />
-                    </>
-                  )}
+                  {zone === 1 && <>&lt;{max}</>}
+                  {zone !== 1 && zone !== 5 && <>{min}–{max}</>}
                   {zone === 5 && <>&ge; {min}</>}
                 </span>
                 <span className={isDominant ? 'font-semibold text-foreground' : 'tabular-nums text-muted-foreground'}>
@@ -153,14 +135,6 @@ export function ProfileHrZones({ athlete, onSave, weeklyZoneTime, recentZoneTime
       <div className="mt-4 border-t border-foreground/[0.06] pt-3.5 text-xs leading-snug text-muted-foreground">
         {insight}
       </div>
-
-      <button
-        type="button"
-        onClick={() => onSave({ hrZoneBoundsBpm: defaultBounds(lthr) })}
-        className="mt-3 text-xs font-semibold text-accent-text active:opacity-60"
-      >
-        {s.recalculate} ›
-      </button>
     </GlassSurface>
   )
 }

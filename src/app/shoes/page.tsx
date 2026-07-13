@@ -7,10 +7,6 @@ import { BackButton } from '@/components/ui/BackButton'
 import { formatDayMonth } from '@/lib/formatters'
 import { t } from '@/i18n'
 
-// Next race comes from public/data/upcoming_races.json (synced from Garmin);
-// this ISR window bounds staleness between deploys.
-export const revalidate = 86400
-
 const QUALITY_RUNS_WINDOW = 6
 
 export default async function ShoesPage() {

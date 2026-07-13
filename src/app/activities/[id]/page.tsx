@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import { BackButton } from '@/components/ui/BackButton'
 import { getActivities } from '@/application/usecases/GetActivities'
 import { getRecords, getQualifiedEffortsByActivityId } from '@/application/usecases/GetRecords'
-import { getAthleteFromFirestore } from '@/infrastructure/repositories/FirestoreConfigRepository'
+import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import type { HrBounds } from '@/domain/training/trimp'
 import { ActivityDetailClient } from '@/components/activity/ActivityDetailClient'
 import { ActivityNav } from '@/components/activity/ActivityNav'
@@ -14,10 +14,6 @@ import { SimilarRuns } from '@/components/activity/SimilarRuns'
 import { getSimilarRuns } from '@/application/usecases/GetSimilarRuns'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
 import { t } from '@/i18n'
-
-// Safety net: data is also revalidated on demand by /api/internal/revalidate
-// when the pbs/athlete Firestore collections are written.
-export const revalidate = 86400
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params
@@ -62,7 +58,7 @@ export default async function ActivityDetailPage({
   const records = await getRecords()
   const qualifiedEfforts = getQualifiedEffortsByActivityId(records)[id] ?? []
   const similarRuns = getSimilarRuns(id)
-  const athlete = await getAthleteFromFirestore()
+  const athlete = getAthleteProfile()
   const hrBounds: HrBounds | undefined =
     athlete.maxHrBpm && athlete.restingHrBpm
       ? { maxHr: athlete.maxHrBpm, restingHr: athlete.restingHrBpm }

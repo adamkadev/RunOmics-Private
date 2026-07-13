@@ -1,6 +1,6 @@
 import { t } from '@/i18n'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
-import { getAthleteFromFirestore } from '@/infrastructure/repositories/FirestoreConfigRepository'
+import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { round } from '@/lib/math'
 import type { Activity } from '@/domain/activity/types'
 import { trimp, DEFAULT_HR_BOUNDS, type HrBounds } from '@/domain/training/trimp'
@@ -76,7 +76,7 @@ export async function getTrainingLoad(): Promise<TrainingLoadData | null> {
   const activities = getAllActivities()
   if (!activities.length) return null
 
-  const athlete = await getAthleteFromFirestore()
+  const athlete = getAthleteProfile()
   const hrBounds: HrBounds = {
     maxHr: athlete.maxHrBpm ?? DEFAULT_HR_BOUNDS.maxHr,
     restingHr: athlete.restingHrBpm ?? DEFAULT_HR_BOUNDS.restingHr,

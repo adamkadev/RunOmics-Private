@@ -135,6 +135,18 @@ class GarminClient:
             pass
         return None
 
+    def get_user_settings(self) -> dict[str, Any]:
+        return self._get(f"{self._base}/userprofile-service/userprofile/user-settings").json()
+
+    def get_social_profile(self) -> dict[str, Any]:
+        return self._get(f"{self._base}/userprofile-service/socialProfile").json()
+
+    def get_daily_summary(self, display_name: str, cdate: str) -> dict[str, Any]:
+        return self._get(
+            f"{self._base}/usersummary-service/usersummary/daily/{display_name}",
+            params={"calendarDate": cdate},
+        ).json()
+
     def get_calendar_month(self, year: int, month: int) -> dict[str, Any]:
         url = f"{self._base}/calendar-service/year/{year}/month/{month - 1}"
         return self._get(url).json()

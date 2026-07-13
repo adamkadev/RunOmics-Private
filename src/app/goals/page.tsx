@@ -3,11 +3,6 @@ import { GoalsClient } from '@/components/goals/GoalsClient'
 import { BackButton } from '@/components/ui/BackButton'
 import { t } from '@/i18n'
 
-// Safety net: data is also revalidated on demand by /api/internal/revalidate
-// when the goals/pbs Firestore collections are written. Upcoming races come
-// from public/data/upcoming_races.json (synced from Garmin), refreshed on deploy.
-export const revalidate = 86400
-
 export default async function GoalsPage() {
   const data = await getGoalsPageData()
 

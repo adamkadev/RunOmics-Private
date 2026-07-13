@@ -1,11 +1,11 @@
 import type { Activity } from '@/domain/activity/types'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
-import { getPbsFromFirestore } from '@/infrastructure/repositories/FirestoreConfigRepository'
+import { getPbYears } from '@/infrastructure/repositories/JsonPbRepository'
 import { EFFORTS, DISTANCE_KEY } from '@/domain/activity/effort'
 
-// Pure (no Firestore dependency) - re-exported here for existing importers,
-// but client components should import from the domain module directly so
-// they don't pull this file's server-only Firestore import into the browser bundle.
+// Pure (no fs dependency) - re-exported here for existing importers, but client
+// components should import from the domain module directly so they don't pull
+// this file's server-only fs import into the browser bundle.
 export { EFFORTS, DISTANCE_KEY }
 
 export interface RecordEntry {
@@ -54,7 +54,7 @@ export function computeBestEfforts(activities: Activity[]): Map<string, BestEffo
 
 export async function getRecords(): Promise<RecordEntry[]> {
   const activities = getAllActivities()
-  const pbYears = await getPbsFromFirestore()
+  const pbYears = getPbYears()
   const activityMap = new Map(activities.map((a) => [a.id, a]))
   const computed = computeBestEfforts(activities)
 

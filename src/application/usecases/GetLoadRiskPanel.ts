@@ -1,5 +1,5 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
-import { getAthleteFromFirestore } from '@/infrastructure/repositories/FirestoreConfigRepository'
+import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { buildTimeSeries, dailyTrimpByDate, type HrBounds } from './GetTrainingLoad'
 import { acwr } from './GetTrainingStatus'
 import { addDays, isoDate } from '@/lib/calendarDate'
@@ -83,7 +83,7 @@ export async function getLoadRiskPanel(): Promise<LoadRiskPanel | null> {
   const earliest = activities[activities.length - 1]
   if (!latest || !earliest) return null
 
-  const athlete = await getAthleteFromFirestore()
+  const athlete = getAthleteProfile()
   const hrBounds: HrBounds | undefined =
     athlete.maxHrBpm && athlete.restingHrBpm
       ? { maxHr: athlete.maxHrBpm, restingHr: athlete.restingHrBpm }

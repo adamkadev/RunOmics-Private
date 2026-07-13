@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-vi.mock('@/infrastructure/repositories/FirestoreConfigRepository', () => ({
-  getAthleteFromFirestore: vi.fn(),
+vi.mock('@/infrastructure/repositories/JsonAthleteRepository', () => ({
+  getAthleteProfile: vi.fn(),
 }))
 
 describe('getTrainingZones', () => {
@@ -10,16 +10,16 @@ describe('getTrainingZones', () => {
   })
 
   it('returns null when the athlete has no threshold pace set', async () => {
-    const { getAthleteFromFirestore } = await import('@/infrastructure/repositories/FirestoreConfigRepository')
-    vi.mocked(getAthleteFromFirestore).mockResolvedValue({})
+    const { getAthleteProfile } = await import('@/infrastructure/repositories/JsonAthleteRepository')
+    vi.mocked(getAthleteProfile).mockReturnValue({})
 
     const { getTrainingZones } = await import('../GetTrainingZones')
     expect(await getTrainingZones()).toBeNull()
   })
 
   it('derives the 4 zones as a multiplier of threshold pace', async () => {
-    const { getAthleteFromFirestore } = await import('@/infrastructure/repositories/FirestoreConfigRepository')
-    vi.mocked(getAthleteFromFirestore).mockResolvedValue({ thresholdPaceSecPerKm: 240 })
+    const { getAthleteProfile } = await import('@/infrastructure/repositories/JsonAthleteRepository')
+    vi.mocked(getAthleteProfile).mockReturnValue({ thresholdPaceSecPerKm: 240 })
 
     const { getTrainingZones } = await import('../GetTrainingZones')
     const result = await getTrainingZones()
@@ -34,8 +34,8 @@ describe('getTrainingZones', () => {
   })
 
   it('zones get progressively faster from easy to vo2max', async () => {
-    const { getAthleteFromFirestore } = await import('@/infrastructure/repositories/FirestoreConfigRepository')
-    vi.mocked(getAthleteFromFirestore).mockResolvedValue({ thresholdPaceSecPerKm: 300 })
+    const { getAthleteProfile } = await import('@/infrastructure/repositories/JsonAthleteRepository')
+    vi.mocked(getAthleteProfile).mockReturnValue({ thresholdPaceSecPerKm: 300 })
 
     const { getTrainingZones } = await import('../GetTrainingZones')
     const result = await getTrainingZones()

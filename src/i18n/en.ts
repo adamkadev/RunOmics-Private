@@ -219,12 +219,6 @@ export const en = {
       thresholdPowerHint: 'Functional threshold power',
       vma: 'VMA (km/h)',
       vmaHint: 'Maximal aerobic speed',
-      placeholders: {
-        lthr: '177',
-        thresholdPace: '4:14',
-        thresholdPower: '339',
-        vma: '16',
-      },
     },
     actions: {
       save: 'Save',
@@ -1004,7 +998,6 @@ export const en = {
       summary: (activities: number, km: number) => `${activities} activities · ${km} km`,
       lifetime: (runs: number, km: number) => `${runs} runs · ${km.toLocaleString('en')} km lifetime`,
       rankLine: (tier: string, pct: number) => `Rank ${tier} · top ${pct}% of VO₂max for your age`,
-      editName: 'Edit name',
       namePlaceholder: 'Your name',
       rankExplain: 'Fitness rank from VO₂max and race pace.',
       rankSource: (vo2maxGarmin: number | null, vdot: number | null) => {
@@ -1055,7 +1048,6 @@ export const en = {
     hrZones: {
       title: 'Heart rate zones',
       lthr: 'LTHR',
-      recalculate: 'Recalculate from LTHR',
       thisWeek: 'This week',
       recentWeeks: 'Last 4 weeks',
       noSessionsThisWeek: 'No sessions logged yet.',

@@ -1,13 +1,11 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import { Trophy, ArrowRight, Calendar } from 'lucide-react'
-import type { YearData, GoalProjection, GoalYear } from '@/application/usecases/GetGoalsData'
+import type { YearData, GoalProjection } from '@/application/usecases/GetGoalsData'
 import { formatDuration, formatDate, formatPace } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
-import { EditableNumber } from '@/components/ui/EditableNumber'
 import { MonthlyVolumeChart } from './MonthlyVolumeChart'
 import { SeasonTimeline } from './SeasonTimeline'
 import { raceDistanceTint } from '@/lib/colors'
@@ -42,16 +40,12 @@ function projectionSparkline(year: number, annualDistanceKm: number, annualProgr
 
 interface Props {
   yearData: YearData
-  onSaveGoal?: (goalYear: GoalYear) => void
 }
 
-// The annual goal target is edited here - its one home - not on the Progress
-// hub teaser, which only links back to this page.
-export function YearView({ yearData, onSaveGoal }: Props) {
+export function YearView({ yearData }: Props) {
   const { goals, pbs, upcomingRaces, totalDistanceKm, projection, monthlyGoals } = yearData
 
-  const [editedAnnualKm, setEditedAnnualKm] = useState(goals?.annualDistanceKm ?? 0)
-  const annualDistanceKm = editedAnnualKm
+  const annualDistanceKm = goals?.annualDistanceKm ?? 0
   const annualProgress = annualDistanceKm > 0
     ? Math.min((totalDistanceKm / annualDistanceKm) * 100, 100)
     : 0
@@ -82,15 +76,7 @@ export function YearView({ yearData, onSaveGoal }: Props) {
                   <AnimatedValue value={totalDistanceKm} />
                 </span>
                 <span className="ml-1 text-sm text-subtle">
-                  {'/ '}
-                  <EditableNumber
-                    value={editedAnnualKm}
-                    onCommit={(n) => {
-                      setEditedAnnualKm(n)
-                      onSaveGoal?.({ ...goals, annualDistanceKm: n })
-                    }}
-                  />
-                  {' '}{t.units.km}
+                  {'/ '}{annualDistanceKm}{' '}{t.units.km}
                 </span>
               </div>
               <span className="text-sm font-semibold text-accent-text">

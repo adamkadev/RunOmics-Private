@@ -24,10 +24,6 @@ import { CelebrationOverlay } from '@/components/dashboard/CelebrationOverlay'
 import { FirstLaunchHint } from '@/components/dashboard/FirstLaunchHint'
 import { RaceCockpit } from '@/components/dashboard/RaceCockpit'
 
-// Safety net: data is also revalidated on demand by /api/internal/revalidate
-// when the pbs/athlete Firestore collections are written.
-export const revalidate = 86400
-
 export default async function DashboardPage() {
   const data = getDashboardData()
   const lastSyncedAt = getLastSyncedAt()

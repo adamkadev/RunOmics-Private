@@ -1,4 +1,4 @@
-import { getAthleteFromFirestore } from '@/infrastructure/repositories/FirestoreConfigRepository'
+import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 
 export interface TrainingZone {
   key: string
@@ -51,7 +51,7 @@ const ZONE_DEFS = [
 ] as const
 
 export async function getTrainingZones(): Promise<TrainingZonesData | null> {
-  const { thresholdPaceSecPerKm } = await getAthleteFromFirestore()
+  const { thresholdPaceSecPerKm } = getAthleteProfile()
   if (!thresholdPaceSecPerKm) return null
 
   const zones: TrainingZone[] = ZONE_DEFS.map(({ key, label, shortDesc, example, paceMultMin, paceMultMax }) => ({
