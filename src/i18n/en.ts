@@ -190,6 +190,7 @@ export const en = {
     accent: {
       title: 'Accent color',
       subtitle: 'Pick the vibe - this applies instantly, no account needed.',
+      preview: 'Preview',
       options: {
         nature:      { label: 'Nature', description: 'Calm trail green' },
         performance: { label: 'Performance', description: 'Electric race blue' },
@@ -235,9 +236,9 @@ export const en = {
       confirmCancel: 'Cancel',
     },
     dataSource: {
-      title: 'Data source',
       garmin: 'Garmin Connect',
-      syncMethod: 'Synced automatically once a day',
+      connected: (source: string) => `${source} connected`,
+      lastSync: 'Last synced',
     },
     dataExport: {
       csv: 'Export activities (.csv)',

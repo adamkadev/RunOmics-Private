@@ -26,7 +26,7 @@ export function ThemeSegmented() {
   return (
     <div>
       <h2 className="text-sm font-bold text-foreground">{s.themeLabel}</h2>
-      <div className="mt-3 flex w-full rounded-full border border-foreground/10 bg-foreground/[0.04] p-1">
+      <div className="mt-3 flex w-full gap-1 rounded-full bg-foreground/[0.04] p-1">
         {OPTIONS.map(({ value, label }) => (
           <button
             key={value}
@@ -34,7 +34,7 @@ export function ThemeSegmented() {
             onClick={() => setTheme(value)}
             className={cn(
               'flex-1 min-h-[44px] rounded-full py-1.5 text-xs font-semibold transition-colors',
-              current === value ? 'bg-foreground/[0.14] text-foreground' : 'text-foreground/55'
+              current === value ? 'bg-accent text-accent-foreground' : 'text-foreground/55'
             )}
           >
             {label()}

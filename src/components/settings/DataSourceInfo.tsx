@@ -5,8 +5,14 @@ import { t } from '@/i18n'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { Toast, useToast } from '@/components/ui/Toast'
 import { saveFileWithFallback } from '@/lib/fileExport'
+import { formatRelativeAgo } from '@/lib/formatters'
 
-export function DataSourceInfo() {
+interface Props {
+  lastSyncedAt: string | null
+  activityCount: number
+}
+
+export function DataSourceInfo({ lastSyncedAt, activityCount }: Props) {
   const [loading, setLoading] = useState(false)
   const { toast, leaving, showToast } = useToast()
   const s = t.settings
@@ -41,12 +47,26 @@ export function DataSourceInfo() {
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <p className="text-sm font-medium text-foreground">{s.dataSource.title}</p>
-      <p className="text-xs text-muted-foreground">
-        {s.dataSource.garmin} - {s.dataSource.syncMethod}
-      </p>
+      {lastSyncedAt && (
+        <div className="flex items-center gap-3.5">
+          <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px] bg-accent/[0.14]">
+            <span
+              className="h-2 w-2 rounded-full bg-accent"
+              style={{ boxShadow: '0 0 8px var(--accent)', animation: 'pulse-ring 2s ease-in-out infinite' }}
+            />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold text-foreground">{s.dataSource.connected(s.dataSource.garmin)}</p>
+            <p className="mt-0.5 truncate text-[11.5px] text-muted-foreground">
+              {s.dataSource.lastSync} {formatRelativeAgo(lastSyncedAt)} · {t.common.runs(activityCount)}
+            </p>
+          </div>
+        </div>
+      )}
 
-      <div className="mt-4 space-y-2.5">
+      {lastSyncedAt && <div className="my-4 h-px bg-foreground/[0.06]" />}
+
+      <div className="space-y-2.5">
         <button
           type="button"
           onClick={handleExport}

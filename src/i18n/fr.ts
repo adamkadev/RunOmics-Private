@@ -184,6 +184,7 @@ export const fr = {
     accent: {
       title: 'Couleur d’accent',
       subtitle: 'Choisissez l’ambiance - appliqué instantanément, sans compte.',
+      preview: 'Aperçu',
       options: {
         nature:      { label: 'Nature', description: 'Vert sentier apaisant' },
         performance: { label: 'Performance', description: 'Bleu course électrique' },
@@ -229,9 +230,9 @@ export const fr = {
       confirmCancel: 'Annuler',
     },
     dataSource: {
-      title: 'Source de données',
       garmin: 'Garmin Connect',
-      syncMethod: 'Synchronisation automatique une fois par jour',
+      connected: (source: string) => `${source} connecté`,
+      lastSync: 'Dernière synchro',
     },
     dataExport: {
       csv: 'Exporter les activités (.csv)',

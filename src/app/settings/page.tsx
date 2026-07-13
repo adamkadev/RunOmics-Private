@@ -1,4 +1,6 @@
 import { SettingsClient } from '@/components/settings/SettingsClient'
+import { getLastSyncedAt } from '@/application/usecases/GetSyncStatus'
+import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { t } from '@/i18n'
 
 export const metadata = {
@@ -6,5 +8,8 @@ export const metadata = {
 }
 
 export default function SettingsPage() {
-  return <SettingsClient />
+  const lastSyncedAt = getLastSyncedAt()
+  const activityCount = getAllActivities().length
+
+  return <SettingsClient lastSyncedAt={lastSyncedAt} activityCount={activityCount} />
 }

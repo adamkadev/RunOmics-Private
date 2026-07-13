@@ -24,6 +24,29 @@ export function AccentPicker() {
       <h2 className="text-sm font-bold text-foreground">{t.settings.accent.title}</h2>
       <p className="mt-0.5 text-xs text-muted-foreground">{t.settings.accent.subtitle}</p>
 
+      <div
+        className="mt-4 flex items-center gap-3 rounded-xl border p-3.5"
+        style={{
+          background: 'linear-gradient(135deg, var(--accent-subtle), transparent)',
+          borderColor: 'color-mix(in srgb, var(--accent) 20%, transparent)',
+        }}
+      >
+        <div
+          className="h-[38px] w-[38px] shrink-0 rounded-full"
+          style={{
+            background: 'conic-gradient(var(--accent) 0deg 250deg, color-mix(in srgb, var(--foreground) 8%, transparent) 250deg 360deg)',
+          }}
+          aria-hidden="true"
+        />
+        <div className="min-w-0 flex-1">
+          <div className="mb-1.5 h-[7px] w-3/5 rounded-full bg-accent" />
+          <div className="h-1.5 w-[85%] rounded-full bg-foreground/10" />
+        </div>
+        <span className="shrink-0 rounded-md bg-accent px-2.5 py-1 text-[10px] font-semibold text-accent-foreground">
+          {t.settings.accent.preview}
+        </span>
+      </div>
+
       <div className="mt-4 flex flex-wrap justify-center gap-3">
         {ACCENT_IDS.map((id) => {
           const { label } = t.settings.accent.options[id]

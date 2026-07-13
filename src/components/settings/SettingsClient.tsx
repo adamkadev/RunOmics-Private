@@ -15,7 +15,12 @@ import { NotificationsForm } from './NotificationsForm'
 
 const OWNER_EMAIL = process.env.NEXT_PUBLIC_OWNER_EMAIL ?? ''
 
-export function SettingsClient() {
+interface Props {
+  lastSyncedAt: string | null
+  activityCount: number
+}
+
+export function SettingsClient({ lastSyncedAt, activityCount }: Props) {
   // Without the public Firebase config, start signed-out (theme/accent
   // settings still work) instead of spinning forever waiting for auth.
   const [user, setUser] = useState<User | null | 'loading'>(
@@ -131,7 +136,7 @@ export function SettingsClient() {
           {t.settings.sections.notificationsData}
         </h2>
         <NotificationsForm />
-        <DataSourceInfo />
+        <DataSourceInfo lastSyncedAt={lastSyncedAt} activityCount={activityCount} />
       </section>
 
       <section className="space-y-2">
