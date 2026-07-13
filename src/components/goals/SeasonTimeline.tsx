@@ -63,13 +63,16 @@ export function SeasonTimeline({ yearData }: { yearData: YearData }) {
           : null
 
       if (scheduledRace) {
+        const hasPassed = scheduledRace.date < today
         return {
           distance: target.distance,
           sortKey: scheduledRace.date,
-          kind: 'scheduled',
-          dateLabel: daysUntil !== null && daysUntil >= 0
-            ? `${formatDayMonth(scheduledRace.date)} · ${t.nextRace.countdown(daysUntil)}`
-            : formatDayMonth(scheduledRace.date),
+          kind: hasPassed ? 'done' : 'scheduled',
+          dateLabel: hasPassed
+            ? `${formatDayMonth(scheduledRace.date)} · ${s.done}`
+            : daysUntil !== null && daysUntil >= 0
+              ? `${formatDayMonth(scheduledRace.date)} · ${t.nextRace.countdown(daysUntil)}`
+              : formatDayMonth(scheduledRace.date),
           title: `${shortDist(target.distance)} · ${scheduledRace.name}`,
           timeLabel: predictedSeconds !== null ? formatDuration(predictedSeconds) : '-',
           timeSuffix: s.predictedTag,
