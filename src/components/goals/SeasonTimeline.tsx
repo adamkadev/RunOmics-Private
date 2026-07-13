@@ -64,6 +64,14 @@ export function SeasonTimeline({ yearData }: { yearData: YearData }) {
 
       if (scheduledRace) {
         const hasPassed = scheduledRace.date < today
+        const raceResult = hasPassed
+          ? pbs.find((p) => p.entry.distance === target.distance && p.activity.date === scheduledRace.date) ?? null
+          : null
+        const raceAchieved =
+          raceResult !== null && target.targetSeconds !== null && raceResult.entry.seconds <= target.targetSeconds
+        const gapSeconds =
+          raceResult !== null && target.targetSeconds !== null ? raceResult.entry.seconds - target.targetSeconds : null
+
         return {
           distance: target.distance,
           sortKey: scheduledRace.date,
@@ -74,14 +82,22 @@ export function SeasonTimeline({ yearData }: { yearData: YearData }) {
               ? `${formatDayMonth(scheduledRace.date)} · ${t.nextRace.countdown(daysUntil)}`
               : formatDayMonth(scheduledRace.date),
           title: `${shortDist(target.distance)} · ${scheduledRace.name}`,
-          timeLabel: predictedSeconds !== null ? formatDuration(predictedSeconds) : '-',
-          timeSuffix: s.predictedTag,
-          timeClassName: 'text-accent-text',
-          achieved: false,
-          detailLabel: [
-            target.targetSeconds !== null ? `${s.target} ${formatDuration(target.targetSeconds)}` : null,
-            scheduledRace.location ?? null,
-          ].filter(Boolean).join(' · '),
+          timeLabel: hasPassed
+            ? raceResult !== null ? formatDuration(raceResult.entry.seconds) : '-'
+            : predictedSeconds !== null ? formatDuration(predictedSeconds) : '-',
+          timeSuffix: hasPassed ? null : s.predictedTag,
+          timeClassName: hasPassed
+            ? raceAchieved ? STATUS.success.text : 'text-foreground'
+            : 'text-accent-text',
+          achieved: raceAchieved,
+          detailLabel: gapSeconds !== null
+            ? `${s.target} ${formatDuration(target.targetSeconds!)} · ${
+                gapSeconds <= 0 ? s.beatenBy(formatDuration(Math.abs(gapSeconds))) : s.missedBy(formatDuration(gapSeconds))
+              }`
+            : [
+                target.targetSeconds !== null ? `${s.target} ${formatDuration(target.targetSeconds)}` : null,
+                scheduledRace.location ?? null,
+              ].filter(Boolean).join(' · '),
         }
       }
 
@@ -144,10 +160,14 @@ export function SeasonTimeline({ yearData }: { yearData: YearData }) {
               <span className={cn('min-w-0 truncate font-semibold', entry.kind === 'open' ? 'text-muted-foreground' : 'text-foreground')}>
                 {entry.title}
               </span>
-              <span className={cn('shrink-0 text-sm font-bold', entry.timeClassName)}>
+              <span className={cn('shrink-0 text-sm', entry.timeClassName)}>
                 {entry.timeLabel}
                 {entry.achieved && <Check size={13} strokeWidth={3} className="ml-1 inline" />}
-                {entry.timeSuffix && <span className="ml-1 text-xs font-normal text-subtle">{entry.timeSuffix}</span>}
+                {entry.timeSuffix && (
+                  <span className={cn('ml-1 text-xs', entry.kind === 'scheduled' ? 'text-accent-text' : 'text-subtle')}>
+                    {entry.timeSuffix}
+                  </span>
+                )}
               </span>
             </div>
             <p className={cn('text-xs', entry.kind === 'open' ? 'text-accent-text' : 'text-subtle')}>
