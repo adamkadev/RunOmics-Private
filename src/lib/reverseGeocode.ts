@@ -1,5 +1,14 @@
+import { t } from "@/i18n";
+
 const TTL_MS = 1000 * 60 * 60 * 24 * 30;
-const CACHE_VERSION = "v2";
+// Bumped because entries cached before language-locking would carry
+// MapTiler's default-language names, not t.locale's.
+const CACHE_VERSION = "v3";
+
+// MapTiler expects an ISO 639-1 code (e.g. 'en', 'fr'), while t.locale is a
+// BCP 47 tag (e.g. 'en-US', 'fr-FR'). Keeps the dropdown in sync with the
+// map, which is localized the same way in maptiler.ts.
+const GEOCODE_LANGUAGE = t.locale.split("-")[0];
 
 type GeoFeature = {
   text: string;
@@ -19,7 +28,7 @@ export async function reverseGeocode(
 
   try {
     const res = await fetch(
-      `https://api.maptiler.com/geocoding/${lon.toFixed(4)},${lat.toFixed(4)}.json?key=${token}`,
+      `https://api.maptiler.com/geocoding/${lon.toFixed(4)},${lat.toFixed(4)}.json?key=${token}&language=${GEOCODE_LANGUAGE}`,
     );
     if (!res.ok) return writeCache(key, null);
 
