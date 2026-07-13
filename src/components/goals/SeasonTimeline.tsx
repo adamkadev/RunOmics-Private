@@ -67,7 +67,7 @@ export function SeasonTimeline({ yearData }: { yearData: YearData }) {
           distance: target.distance,
           sortKey: scheduledRace.date,
           kind: 'scheduled',
-          dateLabel: daysUntil !== null
+          dateLabel: daysUntil !== null && daysUntil >= 0
             ? `${formatDayMonth(scheduledRace.date)} · ${t.nextRace.countdown(daysUntil)}`
             : formatDayMonth(scheduledRace.date),
           title: `${shortDist(target.distance)} · ${scheduledRace.name}`,
