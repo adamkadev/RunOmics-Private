@@ -55,3 +55,18 @@ export async function saveLastStaleSyncState(state: StaleSyncState): Promise<voi
   const db = getAdminFirestore()
   await db.collection('notifications').doc('lastStaleSync').set(state)
 }
+
+export interface ActivitySyncState {
+  knownIds: string[]
+}
+
+export async function getLastActivitySyncState(): Promise<ActivitySyncState | null> {
+  const db = getAdminFirestore()
+  const doc = await db.collection('notifications').doc('lastActivitySync').get()
+  return doc.exists ? (doc.data() as ActivitySyncState) : null
+}
+
+export async function saveLastActivitySyncState(state: ActivitySyncState): Promise<void> {
+  const db = getAdminFirestore()
+  await db.collection('notifications').doc('lastActivitySync').set(state)
+}
