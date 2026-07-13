@@ -2,15 +2,14 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Trophy, ArrowRight, Calendar, MapPin, Target } from 'lucide-react'
+import { Trophy, ArrowRight, Calendar } from 'lucide-react'
 import type { YearData, GoalProjection, GoalYear } from '@/application/usecases/GetGoalsData'
 import { formatDuration, formatDate, formatPace } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { EditableNumber } from '@/components/ui/EditableNumber'
-import { MonthlyGoalsGrid } from './MonthlyGoalsGrid'
-import { NextRaceSpotlight } from './NextRaceSpotlight'
-import { RaceDistanceGrid } from './RaceDistanceGrid'
+import { MonthlyVolumeChart } from './MonthlyVolumeChart'
+import { SeasonTimeline } from './SeasonTimeline'
 import { raceDistanceTint } from '@/lib/colors'
 import { STATUS } from '@/lib/statusColors'
 import { cn } from '@/lib/utils'
@@ -49,8 +48,7 @@ interface Props {
 // The annual goal target is edited here - its one home - not on the Progress
 // hub teaser, which only links back to this page.
 export function YearView({ yearData, onSaveGoal }: Props) {
-  const { goals, pbs, upcomingRaces, totalDistanceKm, projection, monthlyGoals, nextRaceSpotlight } = yearData
-  const today = new Date().toISOString().slice(0, 10)
+  const { goals, pbs, upcomingRaces, totalDistanceKm, projection, monthlyGoals } = yearData
 
   const [editedAnnualKm, setEditedAnnualKm] = useState(goals?.annualDistanceKm ?? 0)
   const annualDistanceKm = editedAnnualKm
@@ -60,7 +58,6 @@ export function YearView({ yearData, onSaveGoal }: Props) {
   const sparkline = projection && annualDistanceKm > 0
     ? projectionSparkline(yearData.year, annualDistanceKm, annualProgress, projection)
     : null
-  const otherUpcomingRaces = upcomingRaces.filter((race) => race !== nextRaceSpotlight?.race)
   const hasRaceDistanceCards = !!goals && (goals.targets.length > 0 || upcomingRaces.length > 0)
 
   return (
@@ -137,65 +134,9 @@ export function YearView({ yearData, onSaveGoal }: Props) {
         </section>
       )}
 
-      {nextRaceSpotlight && <NextRaceSpotlight spotlight={nextRaceSpotlight} />}
+      {hasRaceDistanceCards && <SeasonTimeline yearData={yearData} />}
 
-      {hasRaceDistanceCards && <RaceDistanceGrid yearData={yearData} />}
-
-      {goals && monthlyGoals.length > 0 && <MonthlyGoalsGrid monthlyGoals={monthlyGoals} />}
-
-      {otherUpcomingRaces.length > 0 && (
-        <section className="space-y-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            {t.goals.upcomingRaces}
-          </h2>
-          <div className="space-y-2">
-            {otherUpcomingRaces.map((race, idx) => {
-              const daysUntil = Math.round(
-                (new Date(race.date + 'T00:00:00').getTime() - new Date(today + 'T00:00:00').getTime()) / 86_400_000
-              )
-              const isPast = race.date < today
-              return (
-                <GlassSurface key={idx} variant="card" className="flex items-start justify-between gap-3 rounded-card-sm p-5">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-semibold text-foreground">{race.name}</span>
-                      <span className="rounded-full bg-foreground/[0.06] px-2 py-0.5 text-xs font-medium text-foreground/70">
-                        {shortDist(race.distance)}
-                      </span>
-                    </div>
-                    {race.targetSeconds && (
-                      <p className="mt-0.5 flex items-center gap-1 text-xs font-medium text-accent-text">
-                        <Target size={12} />
-                        {formatDuration(race.targetSeconds)}
-                      </p>
-                    )}
-                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-subtle">
-                      <span className="flex items-center gap-1">
-                        <Calendar size={12} />
-                        {formatDate(race.date)}
-                      </span>
-                      {race.location && (
-                        <span className="flex items-center gap-1">
-                          <MapPin size={12} />
-                          {race.location}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  {!isPast && (
-                    <span className={cn('shrink-0 text-xs font-semibold tabular-nums', STATUS.progress.text)}>
-                      D-{daysUntil}
-                    </span>
-                  )}
-                  {isPast && (
-                    <span className="shrink-0 text-xs text-subtle">{t.goals.pastRace}</span>
-                  )}
-                </GlassSurface>
-              )
-            })}
-          </div>
-        </section>
-      )}
+      {goals && monthlyGoals.length > 0 && <MonthlyVolumeChart monthlyGoals={monthlyGoals} />}
 
       {!hasRaceDistanceCards && (
         pbs.length > 0 ? (
