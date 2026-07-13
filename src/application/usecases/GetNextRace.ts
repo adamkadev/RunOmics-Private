@@ -1,8 +1,8 @@
-import { getUpcomingRacesFromFirestore } from '@/infrastructure/repositories/FirestoreConfigRepository'
+import { getUpcomingRaceYears } from '@/infrastructure/repositories/JsonUpcomingRaceRepository'
 import type { UpcomingRace } from './GetGoalsData'
 
 export async function getNextRace(): Promise<UpcomingRace | null> {
-  const raceYears = await getUpcomingRacesFromFirestore()
+  const raceYears = getUpcomingRaceYears()
   const today = new Date().toISOString().slice(0, 10)
 
   const upcoming = raceYears

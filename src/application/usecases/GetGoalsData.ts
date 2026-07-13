@@ -1,11 +1,8 @@
 import type { Activity } from '@/domain/activity/types'
 import { yearDistanceKm } from '@/domain/activity/distance'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
-import {
-  getGoalsFromFirestore,
-  getPbsFromFirestore,
-  getUpcomingRacesFromFirestore,
-} from '@/infrastructure/repositories/FirestoreConfigRepository'
+import { getGoalsFromFirestore, getPbsFromFirestore } from '@/infrastructure/repositories/FirestoreConfigRepository'
+import { getUpcomingRaceYears } from '@/infrastructure/repositories/JsonUpcomingRaceRepository'
 import { getRacePredictions, type RacePrediction } from './GetRacePredictions'
 import { DISTANCE_KEY } from './GetRecords'
 import { addDays, startOfWeek } from '@/lib/calendarDate'
@@ -38,7 +35,6 @@ export interface UpcomingRace {
   name: string
   distance: string
   location?: string
-  url?: string
   targetSeconds?: number | null
 }
 
@@ -287,10 +283,10 @@ export async function getCurrentWeeklyGoal(): Promise<WeeklyGoal | null> {
 
 export async function getGoalsPageData(): Promise<GoalsPageData> {
   const activities = getAllActivities()
-  const [goalYears, pbYears, upcomingRaceYears, predictions] = await Promise.all([
+  const upcomingRaceYears = getUpcomingRaceYears()
+  const [goalYears, pbYears, predictions] = await Promise.all([
     getGoalsFromFirestore(),
     getPbsFromFirestore(),
-    getUpcomingRacesFromFirestore(),
     getRacePredictions(),
   ])
 

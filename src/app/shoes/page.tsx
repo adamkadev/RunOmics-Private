@@ -7,8 +7,8 @@ import { BackButton } from '@/components/ui/BackButton'
 import { formatDayMonth } from '@/lib/formatters'
 import { t } from '@/i18n'
 
-// Safety net: data is also revalidated on demand by /api/internal/revalidate
-// when the upcomingRaces Firestore collection is written.
+// Next race comes from public/data/upcoming_races.json (synced from Garmin);
+// this ISR window bounds staleness between deploys.
 export const revalidate = 86400
 
 const QUALITY_RUNS_WINDOW = 6

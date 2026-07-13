@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from garmin.client import GarminAuthError, GarminAPIError, GarminClient
 from garmin.retry import retry_transient
 from sync_workouts import fetch_planned_workouts, write_planned_workouts
+from sync_upcoming_races import fetch_upcoming_races, write_upcoming_races
 from processing.fit_parser import ParsedFit, parse_fit
 from processing.mapper import HrZone, extract_gear_id, map_activity, parse_hr_zones
 from repository.json_store import JsonActivityStore
@@ -22,9 +23,6 @@ from repository.json_store import JsonActivityStore
 _FIT_DIR = Path(__file__).parent.parent / "public" / "fit"
 _SYNC_META_PATH = Path(__file__).parent.parent / "public" / "data" / "sync_meta.json"
 _RATE_LIMIT_PAUSE = 1.0
-# Garmin gear assignment is often corrected a few days after upload, after the
-# activity has already been synced - re-check gear (only) for recent activities
-# on every run so those corrections aren't missed without a full --force resync.
 _REGEAR_WINDOW_DAYS = 10
 
 
@@ -138,6 +136,9 @@ def main() -> int:
         if not args.dry_run and not args.id:
             planned = fetch_planned_workouts(client)
             write_planned_workouts(planned)
+
+            races = fetch_upcoming_races(client)
+            write_upcoming_races(races)
 
         if not args.dry_run:
             _write_sync_meta()

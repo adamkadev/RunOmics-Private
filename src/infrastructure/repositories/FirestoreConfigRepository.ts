@@ -1,5 +1,5 @@
 import { getAdminFirestore } from '@/lib/firebase-admin'
-import type { GoalYear, PbYear, UpcomingRaceYear } from '@/application/usecases/GetGoalsData'
+import type { GoalYear, PbYear } from '@/application/usecases/GetGoalsData'
 
 export interface AthleteProfile {
   lthrBpm?: number
@@ -7,10 +7,7 @@ export interface AthleteProfile {
   thresholdPowerWatts?: number
   vmaKmh?: number
   displayName?: string
-  // Top bpm of zones 1-4 (zone 5 runs from the 4th value up to lthrBpm).
   hrZoneBoundsBpm?: [number, number, number, number]
-  // Used by the TRIMP training-load calculation (GetTrainingLoad.ts). Falls
-  // back to population-average defaults when not set.
   maxHrBpm?: number
   restingHrBpm?: number
   lastUpdate?: string
@@ -60,17 +57,6 @@ export const getPbsFromFirestore = cached(async (): Promise<PbYear[]> => {
     return snapshot.docs.map((doc) => doc.data() as PbYear)
   } catch (error) {
     logFirestoreReadError('pbs', error)
-    return []
-  }
-})
-
-export const getUpcomingRacesFromFirestore = cached(async (): Promise<UpcomingRaceYear[]> => {
-  try {
-    const db = getAdminFirestore()
-    const snapshot = await db.collection('upcomingRaces').get()
-    return snapshot.docs.map((doc) => doc.data() as UpcomingRaceYear)
-  } catch (error) {
-    logFirestoreReadError('upcomingRaces', error)
     return []
   }
 })
