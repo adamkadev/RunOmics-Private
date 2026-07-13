@@ -93,6 +93,8 @@ export interface WorkoutStep {
   minutes: number
   /** Repetition index for interval steps (1-based), for "2 × 10'" style labels. */
   rep?: number
+  /** Real target pace range [fast, slow] in sec/km, from Garmin's pace.zone target - see sync_workouts.py. */
+  paceSecPerKm?: [number, number]
 }
 
 export interface PlannedWorkout {

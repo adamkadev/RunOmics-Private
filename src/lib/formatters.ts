@@ -39,6 +39,11 @@ export function formatPace(secPerKm: number): string {
   return `${formatClock(secPerKm)} /km`
 }
 
+/** Formats a [fast, slow] sec/km pair as `3:42-3:48 /km`. */
+export function formatPaceRange([fast, slow]: [number, number]): string {
+  return `${formatClock(fast)}-${formatClock(slow)} /km`
+}
+
 export function formatDistance(km: number): string {
   return `${km.toFixed(km >= 10 ? 1 : 2)}`
 }

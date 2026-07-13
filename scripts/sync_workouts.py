@@ -284,6 +284,22 @@ def _step_minutes(step: dict) -> float:
     return 0
 
 
+def _step_pace_sec_per_km(step: dict) -> list[int] | None:
+    """Real [fast, slow] target pace in sec/km, from a pace.zone target speed
+    range in m/s. None for any other target type (e.g. heart-rate zone)."""
+    target_key = (step.get("targetType") or {}).get("workoutTargetTypeKey", "")
+    if target_key != "pace.zone":
+        return None
+
+    v1 = step.get("targetValueOne")
+    v2 = step.get("targetValueTwo")
+    if not v1 or not v2:
+        return None
+
+    paces = sorted([1000 / v1, 1000 / v2])
+    return [round(paces[0]), round(paces[1])]
+
+
 def _expand_step(step: dict, rep: int | None = None) -> list[dict]:
     """Flatten one Garmin workout step into 0-1 RunOmics WorkoutStep dicts,
     recursing into RepeatGroupDTO children once per iteration."""
@@ -307,6 +323,9 @@ def _expand_step(step: dict, rep: int | None = None) -> list[dict]:
     entry: dict = {"kind": kind, "minutes": int(minutes + 0.5)}
     if rep is not None:
         entry["rep"] = rep
+    pace = _step_pace_sec_per_km(step)
+    if pace is not None:
+        entry["paceSecPerKm"] = pace
     return [entry]
 
 

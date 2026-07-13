@@ -1,5 +1,6 @@
-import type { ActivityType } from '@/domain/activity/types'
-import { EFFORT_ZONE_BY_TYPE, type WorkoutStep } from '@/domain/training/workoutStructure'
+import type { ActivityType, WorkoutStep } from '@/domain/activity/types'
+import { EFFORT_ZONE_BY_TYPE } from '@/domain/training/workoutStructure'
+import { formatPaceRange } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 // SPECS §4: effort yellow / recovery blue, warmup-cooldown muted. Fixed hex -
@@ -45,7 +46,9 @@ export function WorkoutStepList({ steps, type }: { steps: WorkoutStep[]; type?: 
   const recoveries = steps.filter((st) => st.kind === 'recovery')
   const warmup = steps.find((st) => st.kind === 'warmup')
   const cooldown = steps.find((st) => st.kind === 'cooldown')
-  const zone = (type && EFFORT_ZONE_BY_TYPE[type]) || s.easyZone
+  const zoneLabel = (step: WorkoutStep | undefined, fallback: string) =>
+    step?.paceSecPerKm ? formatPaceRange(step.paceSecPerKm) : fallback
+  const zone = zoneLabel(efforts[0], (type && EFFORT_ZONE_BY_TYPE[type]) || s.easyZone)
   const effortMin = efforts[0]?.minutes ?? 0
 
   const intervalLabel =
