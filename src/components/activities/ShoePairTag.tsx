@@ -8,18 +8,9 @@ export function ShoePairTag({ gearId }: Props) {
   const shoe = gearId ? SHOE_REGISTRY[gearId] : undefined
   if (!shoe) return null
   return (
-    <span
-      className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-white/10 px-2 py-0.5 text-xs font-medium backdrop-blur-md"
-      style={{
-        backgroundColor: `color-mix(in srgb, ${shoe.dotColor} 16%, transparent)`,
-        color: shoe.dotColor,
-      }}
-    >
-      <span
-        className="h-1.5 w-1.5 shrink-0 rounded-full"
-        style={{ backgroundColor: shoe.dotColor }}
-      />
-      <span className="leading-none">{shoe.name}</span>
+    <span className="glass-map-chip inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap px-2.5 py-1.5 text-xs font-semibold">
+      <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: shoe.dotColor }} />
+      {shoe.name}
     </span>
   )
 }
