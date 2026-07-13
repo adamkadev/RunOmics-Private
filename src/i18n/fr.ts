@@ -370,9 +370,11 @@ export const fr = {
     },
     weeklyStreak: {
       weeksInARow: (weeks: number) => `${weeks} semaines d’affilée`,
-      longestStreak: (weeks: number) => `Plus longue série : ${weeks} semaines`,
       kmRemaining: (km: number) => `Plus que ${km} km pour boucler la semaine`,
       goalReached: 'Objectif hebdomadaire atteint',
+      freshWeek: 'Nouvelle semaine.',
+      freshWeekGoal: (km: number) => `Objectif ${km} km - un premier run lance la série.`,
+      streakSummary: (longest: number, current: number) => `Meilleure série : ${longest} semaines - en cours : ${current}`,
     },
     celebration: {
       eyebrow: 'Nouveau record personnel',

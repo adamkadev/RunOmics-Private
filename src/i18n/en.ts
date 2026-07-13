@@ -376,9 +376,11 @@ export const en = {
     },
     weeklyStreak: {
       weeksInARow: (weeks: number) => `${weeks} week streak`,
-      longestStreak: (weeks: number) => `Longest streak: ${weeks} weeks`,
       kmRemaining: (km: number) => `${km} km to this week's goal`,
       goalReached: 'Weekly goal reached',
+      freshWeek: 'New week.',
+      freshWeekGoal: (km: number) => `Goal ${km} km - a first run kicks off the streak.`,
+      streakSummary: (longest: number, current: number) => `Best streak: ${longest} weeks - current: ${current}`,
     },
     celebration: {
       eyebrow: 'New personal record',
