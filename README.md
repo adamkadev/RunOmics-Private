@@ -143,27 +143,20 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Configuration: Firestore (goals, PBs, athlete profile) {#firestore-goals-pbs-athlete-profile}
 
-Annual goals, official personal bests, upcoming races, and your athlete profile (HR
-zones, threshold pace, etc.) are **not** stored in the repo - they live in Firestore
-and are read server-side via `src/infrastructure/repositories/FirestoreConfigRepository.ts`.
-This keeps personal targets and race plans out of git history while still being
-editable without a redeploy.
+Annual goals, official personal bests, and your athlete profile (HR zones, threshold
+pace, etc.) are **not** stored in the repo - they live in Firestore and are read
+server-side via `src/infrastructure/repositories/FirestoreConfigRepository.ts`. This
+keeps personal targets out of git history while still being editable without a
+redeploy. (Upcoming races are the exception: synced from Garmin Connect into
+`public/data/upcoming_races.json` by `scripts/sync_upcoming_races.py` - see that
+file's docstring.)
 
-Seed Firestore from local JSON files using `scripts/seed_firestore.js` (run once,
-or whenever you want to bulk-overwrite the collections):
-
-```bash
-node scripts/seed_firestore.js
-```
-
-It reads `public/goals.json`, `public/pbs.json`, and `public/athlete.json` (none of
-which are committed - create them locally first) and writes them to the `goals`,
-`pbs`, and `athlete` Firestore collections respectively. Requires the Firebase Admin
-env vars (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`) set
-in your shell.
+These collections are managed by a separate admin app, not by this repo. To write
+to them directly (e.g. one-off fixes), use the Firebase console or the Admin SDK -
+document shapes below.
 
 ```json
-// goals.json - one entry per year
+// goals collection - one document per year
 [
   {
     "year": 2026,
@@ -181,7 +174,7 @@ in your shell.
 `targetSeconds` is the goal time in seconds (`null` = no target set).
 
 ```json
-// pbs.json - official race times (chip time), take priority over auto-detected
+// pbs collection - official race times (chip time), take priority over auto-detected
 // best efforts in the Records section
 [
   {
@@ -198,7 +191,7 @@ Valid `distance` values: `"1K"`, `"5K"`, `"10K"`, `"Half-Marathon"`, `"Marathon"
 `activityId` links the card to the activity detail page (optional).
 
 ```json
-// athlete.json - profile / training zones used across Analytics and Profile
+// athlete/profile document - training zones used across Analytics and Profile
 {
   "displayName": "Adam",
   "lthrBpm": 175,
@@ -208,7 +201,7 @@ Valid `distance` values: `"1K"`, `"5K"`, `"10K"`, `"Half-Marathon"`, `"Marathon"
 }
 ```
 
-After seeding, hit `/api/internal/revalidate` (or just wait for the next deploy) to
+After writing, hit `/api/internal/revalidate` (or just wait for the next deploy) to
 refresh the cached pages - see `src/app/api/internal/revalidate/route.ts`.
 
 ### `public/events/` - Race photos
