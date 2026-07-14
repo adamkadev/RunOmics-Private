@@ -345,6 +345,7 @@ export const fr = {
         },
       },
       sessionCta: 'Démarrer',
+      viewCta: 'Voir',
       restDay: 'Jour de repos',
       restDaySubtitle: 'Aucune séance prévue',
       race: 'Course',

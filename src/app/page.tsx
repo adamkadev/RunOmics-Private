@@ -11,6 +11,7 @@ import { getNextRace } from '@/application/usecases/GetNextRace'
 import { getFormProjection } from '@/application/usecases/GetFormProjection'
 import { getWeeklyDigest } from '@/application/usecases/GetWeeklyDigest'
 import { getTodayPlannedWorkout } from '@/application/usecases/GetPlannedWorkouts'
+import { isoDate } from '@/lib/calendarDate'
 import { getWeeklyStreakData } from '@/application/usecases/GetMilestones'
 import { getCurrentWeeklyGoal } from '@/application/usecases/GetGoalsData'
 import { DashboardCharts } from '@/components/dashboard/DashboardCharts'
@@ -44,6 +45,11 @@ export default async function DashboardPage() {
   const weeklyStreak = getWeeklyStreakData()
   const weeklyGoal = await getCurrentWeeklyGoal()
 
+  // recentActivities is newest-first, so today's run (if already synced) is
+  // whatever entry matches today's date - same date-only pairing WeekView uses.
+  const today = isoDate(new Date())
+  const todayActivity = data.recentActivities.find((a) => a.date === today) ?? null
+
   return (
     <div className="space-y-6">
       <CelebrationOverlay record={mostRecentRecord} />
@@ -57,6 +63,7 @@ export default async function DashboardPage() {
       <TodayHero
         status={trainingStatus}
         plannedWorkout={todayPlannedWorkout}
+        todayActivity={todayActivity}
         nextRace={nextRace}
         lastSyncedAt={lastSyncedAt}
       />

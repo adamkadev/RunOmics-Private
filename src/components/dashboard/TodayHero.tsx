@@ -1,15 +1,16 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronRight, Footprints, BedDouble } from 'lucide-react'
+import Link from 'next/link'
+import { ChevronRight, Check, Footprints, BedDouble } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
-import type { ActivityType, PlannedWorkout } from '@/domain/activity/types'
+import type { Activity, ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import { ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { ReadinessTone } from '@/domain/training/readiness'
 import { PlannedWorkoutSheet } from '@/components/plan/PlannedWorkoutSheet'
-import { formatRelativeAgo } from '@/lib/formatters'
+import { formatRelativeAgo, formatDistance, formatDurationWords } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 // Fixed hex, independent of the accent picker - a readiness verdict means the
@@ -23,6 +24,7 @@ const TONE_HEX: Record<ReadinessTone, string> = {
 interface Props {
   status: TrainingStatus | null
   plannedWorkout: PlannedWorkout | null
+  todayActivity: Activity | null
   nextRace: UpcomingRace | null
   lastSyncedAt: string | null
 }
@@ -60,7 +62,7 @@ function readinessCopy(status: TrainingStatus, tone: ReadinessTone): { headline:
 }
 
 // Pure display + a rules-based readiness verdict over already-computed status/load data.
-export function TodayHero({ status, plannedWorkout, nextRace, lastSyncedAt }: Props) {
+export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, lastSyncedAt }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false)
 
   if (!status && !plannedWorkout && !nextRace) return null
@@ -79,6 +81,12 @@ export function TodayHero({ status, plannedWorkout, nextRace, lastSyncedAt }: Pr
         plannedWorkout.type ? t.activityTypes[plannedWorkout.type as ActivityType] : null,
         plannedWorkout.durationSecs ? `~${Math.round(plannedWorkout.durationSecs / 60)} min` : null,
         plannedWorkout.scheduledTime,
+      ].filter(Boolean).join(' · ')
+    : null
+  const completedMeta = todayActivity
+    ? [
+        `${formatDistance(todayActivity.distanceKm)} ${t.units.km}`,
+        formatDurationWords(todayActivity.durationSeconds),
       ].filter(Boolean).join(' · ')
     : null
 
@@ -108,7 +116,26 @@ export function TodayHero({ status, plannedWorkout, nextRace, lastSyncedAt }: Pr
         </div>
       )}
 
-      {plannedWorkout ? (
+      {plannedWorkout && todayActivity ? (
+        <Link
+          href={`/activities/${todayActivity.id}`}
+          className="mt-3.5 flex w-full items-center gap-3 rounded-[14px] bg-black/25 px-3.5 py-3 text-left transition-colors active:opacity-80"
+        >
+          <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px] bg-accent/[0.18]">
+            <Check size={17} className="text-accent-text" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-semibold">{plannedWorkout.name}</div>
+            {completedMeta && (
+              <div className="mt-0.5 truncate text-[11px] text-[#8a978f]">{completedMeta}</div>
+            )}
+          </div>
+          <span className="flex shrink-0 items-center gap-0.5 rounded-[10px] bg-accent px-3.5 py-2 text-[11px] font-bold text-accent-foreground">
+            {s.viewCta}
+            <ChevronRight size={13} strokeWidth={2.5} />
+          </span>
+        </Link>
+      ) : plannedWorkout ? (
         <button
           type="button"
           onClick={() => setSheetOpen(true)}
