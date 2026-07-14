@@ -14,6 +14,8 @@ export interface TrainingStatus {
   ctl: number
   atl: number
   tsb: number
+  /** Form right now, including today's already-logged session - use this (not `tsb`) for "how do I feel today" reads. */
+  tsbNow: number
   acwr: number | null
   ctlDelta: number
   atlDelta: number
@@ -56,7 +58,7 @@ export async function getTrainingStatus(): Promise<TrainingStatus | null> {
   const load = await getTrainingLoad()
   if (!load) return null
 
-  const { ctl, atl, tsb, points } = load
+  const { ctl, atl, tsb, tsbNow, points } = load
   const prevPoint = points.length >= 15 ? points[points.length - 15] : points[0]
   if (!prevPoint) return null
   const ctlDelta = round(ctl - prevPoint.ctl, 1)
@@ -71,5 +73,5 @@ export async function getTrainingStatus(): Promise<TrainingStatus | null> {
   const { status, risk } = classify(tsb, ctlDelta, ratio)
   const ctlPeak = points.reduce((max, p) => Math.max(max, p.ctl), ctl)
 
-  return { status, risk, loadTrend: loadTrend(ctlDelta, tsb), ctl, atl, tsb, acwr: ratio, ctlDelta, atlDelta, ctlPeak }
+  return { status, risk, loadTrend: loadTrend(ctlDelta, tsb), ctl, atl, tsb, tsbNow, acwr: ratio, ctlDelta, atlDelta, ctlPeak }
 }

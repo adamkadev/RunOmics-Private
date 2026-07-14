@@ -24,6 +24,8 @@ export interface TrainingLoadData {
   ctl: number
   atl: number
   tsb: number
+  /** Form right now, including today's already-logged session (ctl/atl are post-load; `tsb` above is start-of-day). */
+  tsbNow: number
 }
 
 export interface LoadSnapshot {
@@ -97,5 +99,5 @@ export async function getTrainingLoad(): Promise<TrainingLoadData | null> {
 
   const last = points[points.length - 1]
   if (!last) return null
-  return { points, ctl: last.ctl, atl: last.atl, tsb: last.tsb }
+  return { points, ctl: last.ctl, atl: last.atl, tsb: last.tsb, tsbNow: round(last.ctl - last.atl) }
 }

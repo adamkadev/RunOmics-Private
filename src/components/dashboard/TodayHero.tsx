@@ -27,8 +27,9 @@ interface Props {
   lastSyncedAt: string | null
 }
 
-// Deterministic verdict tone, read directly off the already-computed Form
-// (TSB) and fatigue trend (ATL delta) - no new data, just a rules layer:
+// Deterministic verdict tone, read directly off today's Form (TSB, including
+// any session already synced today) and fatigue trend (ATL delta) - no new
+// data, just a rules layer:
 //   TSB > +5 and fatigue falling  -> green light
 //   TSB < -10 or fatigue rising   -> hold back
 //   otherwise                     -> caution
@@ -65,9 +66,9 @@ export function TodayHero({ status, plannedWorkout, nextRace, lastSyncedAt }: Pr
   if (!status && !plannedWorkout && !nextRace) return null
 
   const s = t.dashboard.todayHero
-  const tone = status ? verdictTone(status.tsb, status.atlDelta) : null
+  const tone = status ? verdictTone(status.tsbNow, status.atlDelta) : null
   const toneHex = tone ? TONE_HEX[tone] : TONE_HEX.go
-  const tsbLabel = status ? `${status.tsb >= 0 ? '+' : ''}${status.tsb.toFixed(1)}` : null
+  const tsbLabel = status ? `${status.tsbNow >= 0 ? '+' : ''}${status.tsbNow.toFixed(1)}` : null
   const verdict = status && tone ? readinessCopy(status, tone) : null
   const formLine = tsbLabel ? `${t.dashboard.trainingLoad.form} ${tsbLabel} · ${s.moodByTone[tone ?? 'go']}` : null
   const PlannedWorkoutIcon: LucideIcon = plannedWorkout?.type
