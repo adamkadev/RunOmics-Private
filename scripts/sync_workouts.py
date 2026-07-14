@@ -3,8 +3,14 @@
 
 Fetches the calendar month-by-month to find scheduled running workouts,
 then enriches each entry with the workout detail (name, estimated distance
-and duration). Distance/duration are estimated from workoutSteps when the
-Garmin-provided values are null (e.g. workouts created by Decathlon Pacer).
+and duration). Distance/duration are always derived by summing every step
+(warm-up, main set, cool-down) rather than trusted from Garmin's top-level
+`estimatedDistanceInMeters`/`estimatedDurationInSecs`: those have been
+observed to cover only the main interval block for workouts created by
+third-party plan providers (e.g. Decathlon Pacer / Kiprun), silently
+dropping the warm-up and cool-down. Steps with no pace target (typical of
+easy/footing time blocks) fall back to the athlete's own easy-zone pace
+(see `_load_easy_pace_sec_per_km`) instead of contributing zero distance.
 
 Can be run standalone or imported by sync.py.
 """
@@ -30,6 +36,16 @@ _RETRY_PAUSE = 60.0
 _WINDOW_PAST_DAYS = 7
 _WINDOW_FUTURE_DAYS = 90
 _DEFAULT_SCHEDULED_TIME = "19:00"
+
+# Slow end of the "easy" training zone as a multiplier of threshold pace -
+# mirrors ZONE_DEFS.easy.paceMultMax in src/application/usecases/GetTrainingZones.ts
+# (the app's own "training zone chart"), so footing/endurance distance
+# estimates line up with what the athlete sees there.
+_EASY_PACE_MULT_MAX = 1.46
+# Used only when the athlete's threshold pace isn't available - a generic
+# slow-easy/footing pace, in line with the 5:45-6:15/km range most runners
+# fall in for those sessions.
+_DEFAULT_EASY_PACE_SEC_PER_KM = 375
 
 
 def main() -> int:
@@ -86,6 +102,20 @@ def write_planned_workouts(planned: list[dict]) -> None:
 
     out_path.write_text(json.dumps({"planned": planned}, ensure_ascii=False, indent=2))
     print(f"  {len(planned)} planned workout(s) written to planned_workouts.json")
+
+
+def _load_easy_pace_sec_per_km(data_dir: Path = _DATA_DIR) -> float:
+    """Slow-end easy/footing pace (sec/km), derived from the athlete's own
+    threshold pace when available, else a generic 6'15/km default."""
+    athlete_path = data_dir / "athlete.json"
+    if athlete_path.exists():
+        try:
+            threshold = json.loads(athlete_path.read_text()).get("thresholdPaceSecPerKm")
+            if threshold:
+                return threshold * _EASY_PACE_MULT_MAX
+        except Exception:
+            pass
+    return _DEFAULT_EASY_PACE_SEC_PER_KM
 
 
 def fetch_planned_workouts(client: GarminClient) -> list[dict]:
@@ -158,6 +188,7 @@ def _build_entries(
     """Fetch workout details and build the final entry list."""
     details_cache: dict[str, dict] = {}
     planned: list[dict] = []
+    easy_pace = _load_easy_pace_sec_per_km()
 
     for sched_date, workout_id in scheduled:
         if workout_id not in details_cache:
@@ -182,17 +213,13 @@ def _build_entries(
         if sport_key and "running" not in sport_key:
             continue
 
-        dist_m = detail.get("estimatedDistanceInMeters")
-        dur_s = detail.get("estimatedDurationInSecs")
-
-        # Estimate from steps when the provider didn't fill the top-level fields
-        if dist_m is None or dur_s is None:
-            steps = _collect_steps(detail)
-            est_dist, est_dur = _estimate_from_steps(steps)
-            if dist_m is None and est_dist > 0:
-                dist_m = round(est_dist)
-            if dur_s is None and est_dur > 0:
-                dur_s = round(est_dur)
+        # Sum every step (warm-up, main set, cool-down) rather than trusting
+        # Garmin's top-level estimate, which can silently cover only the main
+        # interval block for third-party-provider workouts (see module docstring).
+        steps = _collect_steps(detail)
+        est_dist, est_dur = _estimate_from_steps(steps, easy_pace)
+        dist_m = round(est_dist) if est_dist > 0 else detail.get("estimatedDistanceInMeters")
+        dur_s = round(est_dur) if est_dur > 0 else detail.get("estimatedDurationInSecs")
 
         entry: dict = {"date": sched_date, "name": name}
         if dist_m is not None:
@@ -220,15 +247,20 @@ def _collect_steps(detail: dict) -> list[dict]:
     ]
 
 
-def _estimate_from_steps(steps: list[dict]) -> tuple[float, float]:
+def _estimate_from_steps(steps: list[dict], fallback_pace_sec_per_km: float | None = None) -> tuple[float, float]:
     """Estimate total distance (m) and duration (s) from workoutSteps.
 
     For distance-condition steps, duration is estimated via target speed midpoint.
     For time-condition steps, distance is estimated via target speed midpoint.
     targetValueOne/Two are in m/s (Garmin pace zone speed values).
+
+    Steps with no pace target (typical of open-ended easy/footing time
+    blocks) fall back to `fallback_pace_sec_per_km` - the athlete's own
+    easy-zone pace - instead of contributing zero distance.
     """
     total_dist = 0.0
     total_dur = 0.0
+    fallback_speed = 1000 / fallback_pace_sec_per_km if fallback_pace_sec_per_km else None
 
     for step in steps:
         cond_key = (step.get("endCondition") or {}).get("conditionTypeKey", "")
@@ -246,8 +278,9 @@ def _estimate_from_steps(steps: list[dict]) -> tuple[float, float]:
                 total_dur += value / speed
         elif cond_key == "time":
             total_dur += value
-            if speed and speed > 0:
-                total_dist += value * speed
+            step_speed = speed if speed and speed > 0 else fallback_speed
+            if step_speed:
+                total_dist += value * step_speed
 
     return total_dist, total_dur
 
@@ -338,6 +371,13 @@ def _build_workout_steps(detail: dict) -> list[dict] | None:
     steps: list[dict] = []
     for step in raw_steps:
         steps.extend(_expand_step(step))
+
+    # A standalone rest/recovery step at the very end of the workout (no rep
+    # number, i.e. not one of the in-repeat recovery jogs from a RepeatGroupDTO)
+    # is really the cool-down: Garmin's stepTypeKey "rest" is used for both, and
+    # _STEP_KIND_BY_TYPE_KEY can't tell them apart from the key alone.
+    if steps and steps[-1]["kind"] == "recovery" and "rep" not in steps[-1]:
+        steps[-1]["kind"] = "cooldown"
 
     return steps if len(steps) > 1 else None
 
