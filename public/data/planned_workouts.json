@@ -5,14 +5,14 @@
       "name": "Footing 60min",
       "distanceM": 9600,
       "durationSecs": 3600,
-      "type": "VO2Max",
+      "type": "Base",
       "scheduledTime": "19:00"
     },
     {
       "date": "2026-07-15",
       "name": "9 x 400m (R=1 min)",
-      "distanceM": 4933,
-      "durationSecs": 1800,
+      "distanceM": 11169,
+      "durationSecs": 3420,
       "steps": [
         {
           "kind": "warmup",
@@ -193,7 +193,7 @@
           ]
         }
       ],
-      "type": "Base",
+      "type": "VO2Max",
       "scheduledTime": "19:00"
     },
     {
@@ -209,7 +209,8 @@
       "name": "8km endurance",
       "distanceM": 8000,
       "type": "Base",
-      "scheduledTime": "19:00"
+      "scheduledTime": "19:00",
+      "durationSecs": 2967
     }
   ]
 }

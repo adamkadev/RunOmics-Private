@@ -82,7 +82,12 @@ def write_planned_workouts(planned: list[dict]) -> None:
 
     `type` and `scheduledTime` can't be derived from Garmin's calendar/workout
     API, so once a value is set (manually, or by a prior sync's inference) it's
-    kept across syncs even if the Garmin-side name/distance/duration changes.
+    kept across syncs even if the Garmin-side distance/duration changes for the
+    *same* workout. But `type` is keyed off the workout name (see
+    `infer_planned_type`), so it's only carried over when the name at that date
+    is unchanged - otherwise the date just happens to hold a different session
+    now (e.g. the plan was reordered/edited upstream) and the old type would be
+    plain wrong for it.
     """
     out_path = _DATA_DIR / "planned_workouts.json"
 
@@ -97,7 +102,8 @@ def write_planned_workouts(planned: list[dict]) -> None:
 
     for entry in planned:
         prior = existing.get(entry["date"], {})
-        entry["type"] = prior.get("type") or infer_planned_type(entry["name"])
+        prior_type = prior.get("type") if prior.get("name") == entry["name"] else None
+        entry["type"] = prior_type or infer_planned_type(entry["name"])
         entry["scheduledTime"] = prior.get("scheduledTime", _DEFAULT_SCHEDULED_TIME)
 
     out_path.write_text(json.dumps({"planned": planned}, ensure_ascii=False, indent=2))
@@ -221,6 +227,16 @@ def _build_entries(
         dist_m = round(est_dist) if est_dist > 0 else detail.get("estimatedDistanceInMeters")
         dur_s = round(est_dur) if est_dur > 0 else detail.get("estimatedDurationInSecs")
 
+        # Open/continuous workouts (no structured steps at all, e.g. a plain
+        # "1h endurance" goal) sometimes have only one of distance/duration
+        # filled in by Garmin - derive the other from the athlete's easy pace,
+        # same fallback as the footing/endurance step case above.
+        if not steps:
+            if dist_m is None and dur_s is not None:
+                dist_m = round(dur_s * 1000 / easy_pace)
+            elif dur_s is None and dist_m is not None:
+                dur_s = round(dist_m / 1000 * easy_pace)
+
         entry: dict = {"date": sched_date, "name": name}
         if dist_m is not None:
             entry["distanceM"] = int(dist_m)
@@ -237,14 +253,29 @@ def _build_entries(
     return planned
 
 
+def _flatten_executable_steps(steps: list[dict]) -> list[dict]:
+    """Recursively expand RepeatGroupDTO steps into their repeated
+    ExecutableStepDTO children (e.g. "9 x 400m" -> 9 copies of interval+recovery)."""
+    flat: list[dict] = []
+    for step in steps:
+        if step.get("type") == "RepeatGroupDTO":
+            iterations = int(step.get("numberOfIterations") or 0)
+            children = step.get("workoutSteps", [])
+            for _ in range(iterations):
+                flat.extend(_flatten_executable_steps(children))
+        elif step.get("type") == "ExecutableStepDTO":
+            flat.append(step)
+    return flat
+
+
 def _collect_steps(detail: dict) -> list[dict]:
-    """Flatten all ExecutableStepDTO steps from all workout segments."""
-    return [
-        step
-        for seg in detail.get("workoutSegments", [])
-        for step in seg.get("workoutSteps", [])
-        if step.get("type") == "ExecutableStepDTO"
-    ]
+    """Flatten all ExecutableStepDTO steps from all workout segments, expanding
+    RepeatGroupDTO repeats into their repeated children - without this, an
+    interval block like "9 x 400m" (a single RepeatGroupDTO) would vanish
+    entirely from the distance/duration totals, since it isn't itself an
+    ExecutableStepDTO."""
+    top_level = [step for seg in detail.get("workoutSegments", []) for step in seg.get("workoutSteps", [])]
+    return _flatten_executable_steps(top_level)
 
 
 def _estimate_from_steps(steps: list[dict], fallback_pace_sec_per_km: float | None = None) -> tuple[float, float]:

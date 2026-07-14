@@ -4,8 +4,10 @@ from sync_workouts import (
     _DEFAULT_EASY_PACE_SEC_PER_KM,
     _build_entries,
     _build_workout_steps,
+    _collect_steps,
     _estimate_from_steps,
     _load_easy_pace_sec_per_km,
+    write_planned_workouts,
 )
 
 
@@ -160,6 +162,38 @@ class TestBuildWorkoutSteps:
         assert steps[-1]["rep"] == 3
 
 
+class TestCollectSteps:
+    def test_expands_repeat_group_children_per_iteration(self):
+        # Real Garmin/Kiprun interval workouts wrap the reps in a single
+        # RepeatGroupDTO (type != "ExecutableStepDTO"), not a flat list - a
+        # naive top-level filter drops the whole interval block.
+        detail = _detail_with_steps(
+            _pace_zone_step("warmup", "time", 20 * 60, 346, 375),
+            _repeat_group(
+                9,
+                [
+                    _pace_zone_step("interval", "distance", 400, 225, 225),
+                    _pace_zone_step("rest", "time", 60, 375, 375),
+                ],
+            ),
+            _pace_zone_step("rest", "time", 10 * 60, 375, 375),
+        )
+
+        steps = _collect_steps(detail)
+
+        # 1 warmup + 9*(interval + rest) + 1 final rest = 20 raw steps.
+        assert len(steps) == 20
+
+    def test_flat_workout_with_no_repeat_group_is_unaffected(self):
+        detail = _detail_with_steps(
+            _pace_zone_step("warmup", "time", 20 * 60, 346, 375),
+            _pace_zone_step("interval", "time", 20 * 60, 240, 240),
+            _pace_zone_step("cooldown", "time", 10 * 60, 375, 375),
+        )
+
+        assert len(_collect_steps(detail)) == 3
+
+
 class _FakeClient:
     """Minimal stand-in for GarminClient.get_workout_detail used by _build_entries."""
 
@@ -173,9 +207,13 @@ class _FakeClient:
 class TestBuildEntriesPrefersStepSum:
     def test_ignores_garmins_incomplete_top_level_estimate(self, monkeypatch):
         monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
-        # Garmin's own estimatedDistanceInMeters/estimatedDurationInSecs cover
-        # only the main 9x400m block (the exact bug from the bug report),
-        # while the full step list includes a 20' warm-up and 10' cool-down.
+        # Real Kiprun/Decathlon Pacer structure: warmup, a RepeatGroupDTO for
+        # the 9x400m block, then a trailing rest (cool-down). Garmin's own
+        # estimatedDistanceInMeters/estimatedDurationInSecs cover only the
+        # warm-up + cool-down here (the exact bug from the bug report - and
+        # also what a repeat-group-blind step collector would independently
+        # arrive at, which is why this must use a real RepeatGroupDTO and not
+        # a flattened step list).
         detail = {
             "workoutName": "9 x 400m (R=1 min)",
             "sportType": {"sportTypeKey": "running"},
@@ -185,9 +223,14 @@ class TestBuildEntriesPrefersStepSum:
                 {
                     "workoutSteps": [
                         _pace_zone_step("warmup", "time", 20 * 60, 346, 375),
-                        _pace_zone_step("interval", "distance", 400, 225, 225),
-                        _pace_zone_step("recovery", "time", 60, 375, 375),
-                        _pace_zone_step("cooldown", "time", 10 * 60, 375, 375),
+                        _repeat_group(
+                            9,
+                            [
+                                _pace_zone_step("interval", "distance", 400, 225, 225),
+                                _pace_zone_step("rest", "time", 60, 375, 375),
+                            ],
+                        ),
+                        _pace_zone_step("rest", "time", 10 * 60, 375, 375),
                     ]
                 }
             ],
@@ -198,10 +241,13 @@ class TestBuildEntriesPrefersStepSum:
 
         assert len(entries) == 1
         entry = entries[0]
-        # Full sum (warm-up + interval + recovery + cool-down) is well above
-        # Garmin's 30 min / 4.9 km top-level estimate.
+        # Full sum (warm-up + 9x400m + recovery jogs + cool-down) is well
+        # above Garmin's 30 min / 4.9 km top-level estimate.
         assert entry["durationSecs"] > 1800
         assert entry["distanceM"] > 4933
+        # The cool-down block must show up as its own row, not folded into
+        # "recovery" (which would inflate the main interval row's minutes).
+        assert entry["steps"][-1]["kind"] == "cooldown"
 
     def test_falls_back_to_garmin_top_level_when_no_steps(self, monkeypatch):
         monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
@@ -218,3 +264,75 @@ class TestBuildEntriesPrefersStepSum:
 
         assert entries[0]["distanceM"] == 8000
         assert entries[0]["durationSecs"] == 2700
+
+    def test_estimates_missing_duration_for_open_distance_goal_run(self, monkeypatch):
+        # "8km endurance": Garmin gave a distance goal but no duration, and
+        # there's no structured step breakdown to estimate from either.
+        monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
+        monkeypatch.setattr("sync_workouts._load_easy_pace_sec_per_km", lambda: 375)
+        detail = {
+            "workoutName": "8km endurance",
+            "sportType": {"sportTypeKey": "running"},
+            "estimatedDistanceInMeters": 8000,
+            "estimatedDurationInSecs": None,
+            "workoutSegments": [],
+        }
+        client = _FakeClient(detail)
+
+        entries = _build_entries(client, [("2026-07-19", "789")])
+
+        assert entries[0]["distanceM"] == 8000
+        assert entries[0]["durationSecs"] == round(8 * 375)
+
+    def test_estimates_missing_distance_for_open_time_goal_run(self, monkeypatch):
+        # "1h endurance": Garmin gave a duration goal but no distance.
+        monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
+        monkeypatch.setattr("sync_workouts._load_easy_pace_sec_per_km", lambda: 375)
+        detail = {
+            "workoutName": "1 h endurance",
+            "sportType": {"sportTypeKey": "running"},
+            "estimatedDistanceInMeters": None,
+            "estimatedDurationInSecs": 3600,
+            "workoutSegments": [],
+        }
+        client = _FakeClient(detail)
+
+        entries = _build_entries(client, [("2026-07-09", "321")])
+
+        assert entries[0]["durationSecs"] == 3600
+        assert entries[0]["distanceM"] == round(3600 * 1000 / 375)
+
+
+class TestWritePlannedWorkouts:
+    def test_reinfers_type_when_workout_name_at_that_date_changed(self, tmp_path, monkeypatch):
+        # The plan was reordered upstream (Kiprun): a VO2Max session that used
+        # to be on this date was replaced by a footing. The date-keyed "type"
+        # from the old workout must not leak onto the new one.
+        monkeypatch.setattr("sync_workouts._DATA_DIR", tmp_path)
+        (tmp_path / "planned_workouts.json").write_text(json.dumps({
+            "planned": [
+                {"date": "2026-07-14", "name": "9 x 400m (R=1 min)", "type": "VO2Max", "scheduledTime": "19:00"},
+            ]
+        }))
+
+        write_planned_workouts([{"date": "2026-07-14", "name": "Footing 60min"}])
+
+        written = json.loads((tmp_path / "planned_workouts.json").read_text())
+        assert written["planned"][0]["type"] == "Base"
+
+    def test_keeps_prior_type_when_workout_name_unchanged(self, tmp_path, monkeypatch):
+        monkeypatch.setattr("sync_workouts._DATA_DIR", tmp_path)
+        (tmp_path / "planned_workouts.json").write_text(json.dumps({
+            "planned": [
+                {"date": "2026-07-14", "name": "Footing 60min", "type": "Tempo", "scheduledTime": "07:00"},
+            ]
+        }))
+
+        write_planned_workouts([{"date": "2026-07-14", "name": "Footing 60min"}])
+
+        written = json.loads((tmp_path / "planned_workouts.json").read_text())
+        # A manual correction (or a prior sync's inference) for the *same*
+        # workout name survives the resync even though it disagrees with
+        # what infer_planned_type would guess from the name alone.
+        assert written["planned"][0]["type"] == "Tempo"
+        assert written["planned"][0]["scheduledTime"] == "07:00"
