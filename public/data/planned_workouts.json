@@ -11,8 +11,8 @@
     {
       "date": "2026-07-15",
       "name": "9 x 400m (R=1 min)",
-      "distanceM": 11169,
-      "durationSecs": 3420,
+      "distanceM": 9973,
+      "durationSecs": 3150,
       "steps": [
         {
           "kind": "warmup",
@@ -209,8 +209,7 @@
       "name": "8km endurance",
       "distanceM": 8000,
       "type": "Base",
-      "scheduledTime": "19:00",
-      "durationSecs": 2967
+      "scheduledTime": "19:00"
     }
   ]
 }

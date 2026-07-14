@@ -2,16 +2,16 @@
   "age": 29,
   "displayName": "Adam",
   "hrZoneBoundsBpm": [
-    142,
-    158,
-    168,
-    177
+    144,
+    160,
+    171,
+    180
   ],
-  "lastUpdate": "2026-07-13T17:22:27.656984+00:00",
-  "lthrBpm": 177,
+  "lastUpdate": "2026-07-14T20:41:11.262403+00:00",
+  "lthrBpm": 180,
   "maxHrBpm": 196,
   "restingHrBpm": 45,
   "sex": "male",
-  "thresholdPaceSecPerKm": 254,
+  "thresholdPaceSecPerKm": 257,
   "vmaKmh": 16.0
 }
