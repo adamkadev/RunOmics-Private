@@ -129,8 +129,8 @@
     {
       "date": "2026-07-14",
       "name": "9 x 400m (R=200m)",
-      "distanceM": 4933,
-      "durationSecs": 1800,
+      "distanceM": 11169,
+      "durationSecs": 3420,
       "steps": [
         {
           "kind": "warmup",
@@ -303,7 +303,7 @@
           ]
         },
         {
-          "kind": "recovery",
+          "kind": "cooldown",
           "minutes": 10,
           "paceSecPerKm": [
             367,
