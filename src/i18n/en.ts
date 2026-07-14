@@ -353,6 +353,7 @@ export const en = {
         },
       },
       sessionCta: 'Start',
+      viewCta: 'View',
       restDay: 'Rest day',
       restDaySubtitle: 'No session scheduled',
       race: 'Race',
