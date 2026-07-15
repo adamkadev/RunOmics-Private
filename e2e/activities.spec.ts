@@ -18,7 +18,7 @@ test('activities list renders and links into a detail page', async ({ page }) =>
 test('activities list search narrows results', async ({ page }) => {
   await page.goto('/activities')
 
-  await page.getByRole('button', { name: /search/i }).click()
+  // The search input is always visible (no toggle button to reveal it).
   await page.getByPlaceholder(/search/i).fill('zzz-no-such-activity-zzz')
 
   await expect(page.getByText(/no activities found|no sessions of this type/i)).toBeVisible()

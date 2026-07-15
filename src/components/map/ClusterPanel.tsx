@@ -49,7 +49,7 @@ export function ClusterPanel({ clusters, names, stats, selectedIdx, onSelect }: 
             it can push the Types / year pickers off the right edge. */}
         <span className="min-w-0 truncate text-xs font-semibold text-accent-text">{names[selectedIdx]}</span>
         <span className="shrink-0 text-caption text-subtle">
-          {stats[selectedIdx]?.routeCount ?? 0}
+          {t.common.runs(stats[selectedIdx]?.routeCount ?? 0)}
         </span>
         <ChevronDown
           size={16}
