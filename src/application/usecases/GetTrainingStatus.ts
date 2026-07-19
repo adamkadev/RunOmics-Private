@@ -1,6 +1,6 @@
 import type { Activity } from '@/domain/activity/types'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
-import { getTrainingLoad } from './GetTrainingLoad'
+import { getTrainingLoad, ATL_DAYS } from './GetTrainingLoad'
 import { round } from '@/lib/math'
 
 export type TrainingStatusType = 'productive' | 'fresh' | 'overreaching' | 'recovery' | 'detraining'
@@ -62,7 +62,16 @@ export async function getTrainingStatus(): Promise<TrainingStatus | null> {
   const prevPoint = points.length >= 15 ? points[points.length - 15] : points[0]
   if (!prevPoint) return null
   const ctlDelta = round(ctl - prevPoint.ctl, 1)
-  const atlDelta = round(atl - prevPoint.atl, 1)
+
+  // atlDelta feeds only the Today hero's readiness verdict (verdictTone in
+  // TodayHero.tsx), which needs a responsive read on the athlete's *acute* trend -
+  // unlike ctlDelta's 14-day lookback (a deliberately slower fitness-trend signal
+  // also used by loadTrend/classify below). Comparing against ATL's own time
+  // constant means a taper reads as falling fatigue right away, instead of still
+  // reading "rising" against a stale ATL low from two weeks ago.
+  const atlPrevPoint = points.length >= ATL_DAYS + 1 ? points[points.length - (ATL_DAYS + 1)] : points[0]
+  if (!atlPrevPoint) return null
+  const atlDelta = round(atl - atlPrevPoint.atl, 1)
 
   const activities = getAllActivities()
   const firstActivity = activities[0]
