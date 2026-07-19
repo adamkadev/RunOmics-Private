@@ -4,6 +4,8 @@ import { zoneDistribution, recentZoneDistribution } from '@/application/usecases
 import { isoWeekNumber } from '@/lib/calendarDate'
 import { AthleteClient } from '@/components/profile/AthleteClient'
 
+export const revalidate = 3600
+
 export default async function AthletePage() {
   const athlete = getAthleteProfile()
   const activities = getAllActivities()

@@ -26,6 +26,8 @@ import { CelebrationOverlay } from '@/components/dashboard/CelebrationOverlay'
 import { FirstLaunchHint } from '@/components/dashboard/FirstLaunchHint'
 import { RaceCockpit } from '@/components/dashboard/RaceCockpit'
 
+export const revalidate = 3600
+
 export default async function DashboardPage() {
   const data = getDashboardData()
   const athlete = getAthleteProfile()

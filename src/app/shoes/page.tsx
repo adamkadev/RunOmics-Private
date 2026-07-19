@@ -9,6 +9,8 @@ import { t } from '@/i18n'
 
 const QUALITY_RUNS_WINDOW = 6
 
+export const revalidate = 3600
+
 export default async function ShoesPage() {
   const shoes = getShoeStats()
 
