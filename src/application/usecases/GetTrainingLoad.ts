@@ -8,7 +8,7 @@ import { trimp, DEFAULT_HR_BOUNDS, type HrBounds } from '@/domain/training/trimp
 export { trimp, type HrBounds }
 
 const CTL_DAYS = 42
-const ATL_DAYS = 7
+export const ATL_DAYS = 7
 const WINDOW_DAYS = 90
 
 export interface TrainingLoadPoint {
