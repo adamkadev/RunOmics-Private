@@ -8,6 +8,10 @@ import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
 import { getLoadRiskPanel } from '@/application/usecases/GetLoadRiskPanel'
 import { AnalyticsClient } from '@/components/analytics/AnalyticsClient'
 
+// Keep in sync with DATE_SENSITIVE_REVALIDATE_SECONDS in @/lib/revalidate (see
+// that file for why this can't just be imported here).
+export const revalidate = 3600
+
 export default async function AnalyticsPage() {
   const [data, comparison, vo2maxHistory, lifetime, zones, trainingLoad, loadRisk] = await Promise.all([
     getAnalyticsData(),

@@ -9,6 +9,10 @@ import { t } from '@/i18n'
 
 const QUALITY_RUNS_WINDOW = 6
 
+// Keep in sync with DATE_SENSITIVE_REVALIDATE_SECONDS in @/lib/revalidate (see
+// that file for why this can't just be imported here).
+export const revalidate = 3600
+
 export default async function ShoesPage() {
   const shoes = getShoeStats()
 

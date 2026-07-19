@@ -4,6 +4,10 @@ import { zoneDistribution, recentZoneDistribution } from '@/application/usecases
 import { isoWeekNumber } from '@/lib/calendarDate'
 import { AthleteClient } from '@/components/profile/AthleteClient'
 
+// Keep in sync with DATE_SENSITIVE_REVALIDATE_SECONDS in @/lib/revalidate (see
+// that file for why this can't just be imported here).
+export const revalidate = 3600
+
 export default async function AthletePage() {
   const athlete = getAthleteProfile()
   const activities = getAllActivities()
