@@ -26,8 +26,6 @@ import { CelebrationOverlay } from '@/components/dashboard/CelebrationOverlay'
 import { FirstLaunchHint } from '@/components/dashboard/FirstLaunchHint'
 import { RaceCockpit } from '@/components/dashboard/RaceCockpit'
 
-// Keep in sync with DATE_SENSITIVE_REVALIDATE_SECONDS in @/lib/revalidate (see
-// that file for why this can't just be imported here).
 export const revalidate = 3600
 
 export default async function DashboardPage() {
