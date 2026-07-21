@@ -1,91 +1,18 @@
 import json
 
 from garmin.client import GarminAPIError
+from garmin_step_fixtures import (
+    detail_with_steps as _detail_with_steps,
+    open_time_step as _open_time_step,
+    pace_zone_step as _pace_zone_step,
+    repeat_group as _repeat_group,
+)
 from sync_workouts import (
     _DEFAULT_EASY_PACE_SEC_PER_KM,
     _build_entries,
-    _build_workout_steps,
-    _collect_steps,
-    _estimate_from_steps,
     _load_easy_pace_sec_per_km,
-    _quality_descriptor,
     write_planned_workouts,
 )
-
-
-def _pace_zone_step(kind_key: str, cond_key: str, value, fast_sec_per_km: int, slow_sec_per_km: int) -> dict:
-    """Build a raw Garmin ExecutableStepDTO with a pace.zone target."""
-    return {
-        "type": "ExecutableStepDTO",
-        "stepType": {"stepTypeKey": kind_key},
-        "endCondition": {"conditionTypeKey": cond_key},
-        "endConditionValue": value,
-        "targetType": {"workoutTargetTypeKey": "pace.zone"},
-        "targetValueOne": 1000 / slow_sec_per_km,  # slower speed
-        "targetValueTwo": 1000 / fast_sec_per_km,  # faster speed
-    }
-
-
-def _open_time_step(kind_key: str, seconds: float) -> dict:
-    """A time-based step with no pace/speed target (e.g. a plain footing block)."""
-    return {
-        "type": "ExecutableStepDTO",
-        "stepType": {"stepTypeKey": kind_key},
-        "endCondition": {"conditionTypeKey": "time"},
-        "endConditionValue": seconds,
-    }
-
-
-def _repeat_group(iterations: int, children: list[dict]) -> dict:
-    return {"type": "RepeatGroupDTO", "numberOfIterations": iterations, "workoutSteps": children}
-
-
-def _detail_with_steps(*top_level_steps: dict) -> dict:
-    return {"workoutSegments": [{"workoutSteps": list(top_level_steps)}]}
-
-
-class TestEstimateFromSteps:
-    def test_sums_warmup_main_and_cooldown(self):
-        # Mirrors the "9 x 400m (R=1min)" Kiprun session: 20' warm-up,
-        # 9x400m @ 3'45/km with 1' easy jog recovery, 10' cool-down.
-        steps = [
-            _pace_zone_step("warmup", "time", 20 * 60, 346, 375),
-            *[
-                s
-                for i in range(9)
-                for s in (
-                    _pace_zone_step("interval", "distance", 400, 225, 225),
-                    _pace_zone_step("recovery", "time", 60, 375, 375),
-                )
-            ],
-            _pace_zone_step("cooldown", "time", 10 * 60, 375, 375),
-        ]
-
-        total_dist, total_dur = _estimate_from_steps(steps)
-
-        interval_secs = 400 / (1000 / 225)  # distance / speed
-        # Warm-up + 9x400m + 9x1' recovery + cool-down: none of it should be dropped.
-        assert total_dur == 20 * 60 + 9 * interval_secs + 9 * 60 + 10 * 60
-        assert total_dist > 9 * 400  # warm-up/cool-down/recovery jogging adds real km on top of the 9x400m
-
-    def test_time_step_without_pace_target_uses_fallback_pace(self):
-        steps = [_open_time_step("interval", 45 * 60)]
-
-        total_dist, total_dur = _estimate_from_steps(steps, fallback_pace_sec_per_km=375)
-
-        assert total_dur == 45 * 60
-        assert total_dist == (45 * 60) * (1000 / 375)
-
-    def test_time_step_without_pace_target_and_no_fallback_contributes_zero_distance(self):
-        steps = [_open_time_step("interval", 45 * 60)]
-
-        total_dist, total_dur = _estimate_from_steps(steps)
-
-        assert total_dur == 45 * 60
-        assert total_dist == 0
-
-    def test_no_steps_returns_zero(self):
-        assert _estimate_from_steps([]) == (0.0, 0.0)
 
 
 class TestLoadEasyPaceSecPerKm:
@@ -105,95 +32,31 @@ class TestLoadEasyPaceSecPerKm:
         assert _load_easy_pace_sec_per_km(tmp_path) == _DEFAULT_EASY_PACE_SEC_PER_KM
 
 
-class TestBuildWorkoutSteps:
-    def test_trailing_standalone_rest_step_is_relabeled_cooldown(self):
-        # Garmin's stepTypeKey "rest" is used both for the in-repeat recovery
-        # jog and, in Decathlon Pacer/Kiprun plans, for the final cool-down -
-        # RunOmics can only tell them apart by position (standalone vs. inside
-        # the RepeatGroupDTO).
-        detail = _detail_with_steps(
-            _pace_zone_step("warmup", "time", 20 * 60, 346, 375),
-            _repeat_group(
-                9,
-                [
-                    _pace_zone_step("interval", "distance", 400, 225, 225),
-                    _pace_zone_step("rest", "time", 60, 375, 375),
-                ],
-            ),
-            _pace_zone_step("rest", "time", 10 * 60, 375, 375),
-        )
+class TestContinuousBaseWorkoutGetsTheSameFields:
+    """A plain Base run (single pace-zone step, no structure) should surface
+    distance/duration/pace exactly like a structured quality session does -
+    matching what Garmin Connect itself shows for such a run (e.g. "1:25:00 /
+    15.80 km / 5:03-5:43 min/km" for a time-goal footing session)."""
 
-        steps = _build_workout_steps(detail)
+    def test_distance_duration_and_pace_are_all_populated(self, monkeypatch):
+        monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
+        detail = {
+            "workoutName": "Footing",
+            "sportType": {"sportTypeKey": "running"},
+            "workoutSegments": [
+                {"workoutSteps": [_pace_zone_step("interval", "time", 85 * 60, 303, 343)]}
+            ],
+        }
+        client = _FakeClient(detail)
 
-        assert steps[0]["kind"] == "warmup"
-        assert steps[-1]["kind"] == "cooldown"
-        assert "rep" not in steps[-1]
-        # The 9 in-repeat recovery jogs keep their "recovery" kind and rep number.
-        in_repeat_recoveries = [s for s in steps if s["kind"] == "recovery"]
-        assert len(in_repeat_recoveries) == 9
-        assert all("rep" in s for s in in_repeat_recoveries)
+        entries = _build_entries(client, [("2026-07-21", "555", "", False)])
 
-    def test_already_typed_cooldown_step_is_left_alone(self):
-        detail = _detail_with_steps(
-            _pace_zone_step("warmup", "time", 20 * 60, 346, 375),
-            _pace_zone_step("interval", "time", 20 * 60, 240, 240),
-            _pace_zone_step("cooldown", "time", 10 * 60, 375, 375),
-        )
-
-        steps = _build_workout_steps(detail)
-
-        assert steps[-1]["kind"] == "cooldown"
-
-    def test_no_trailing_standalone_step_leaves_last_in_repeat_recovery_alone(self):
-        # Workout ends right on the last recovery jog inside the repeat group -
-        # there's no separate cool-down to infer, so it must stay "recovery".
-        detail = _detail_with_steps(
-            _pace_zone_step("warmup", "time", 20 * 60, 346, 375),
-            _repeat_group(
-                3,
-                [
-                    _pace_zone_step("interval", "distance", 400, 225, 225),
-                    _pace_zone_step("rest", "time", 60, 375, 375),
-                ],
-            ),
-        )
-
-        steps = _build_workout_steps(detail)
-
-        assert steps[-1]["kind"] == "recovery"
-        assert steps[-1]["rep"] == 3
-
-
-class TestCollectSteps:
-    def test_expands_repeat_group_children_per_iteration(self):
-        # Real Garmin/Kiprun interval workouts wrap the reps in a single
-        # RepeatGroupDTO (type != "ExecutableStepDTO"), not a flat list - a
-        # naive top-level filter drops the whole interval block.
-        detail = _detail_with_steps(
-            _pace_zone_step("warmup", "time", 20 * 60, 346, 375),
-            _repeat_group(
-                9,
-                [
-                    _pace_zone_step("interval", "distance", 400, 225, 225),
-                    _pace_zone_step("rest", "time", 60, 375, 375),
-                ],
-            ),
-            _pace_zone_step("rest", "time", 10 * 60, 375, 375),
-        )
-
-        steps = _collect_steps(detail)
-
-        # 1 warmup + 9*(interval + rest) + 1 final rest = 20 raw steps.
-        assert len(steps) == 20
-
-    def test_flat_workout_with_no_repeat_group_is_unaffected(self):
-        detail = _detail_with_steps(
-            _pace_zone_step("warmup", "time", 20 * 60, 346, 375),
-            _pace_zone_step("interval", "time", 20 * 60, 240, 240),
-            _pace_zone_step("cooldown", "time", 10 * 60, 375, 375),
-        )
-
-        assert len(_collect_steps(detail)) == 3
+        entry = entries[0]
+        assert entry["durationSecs"] == 85 * 60
+        assert entry["distanceM"] > 0
+        assert entry["steps"] == [
+            {"kind": "effort", "minutes": 85, "paceSecPerKm": [303, 343]}
+        ]
 
 
 class _FakeClient:
@@ -377,6 +240,62 @@ class TestAdaptiveWorkoutFallback:
         assert entries[0]["distanceM"] == 8000
         assert entries[0]["durationSecs"] == 2880
 
+    def test_trusts_the_top_level_estimate_over_the_step_sum(self, monkeypatch):
+        # Garmin Coach's own numbers are first-party, unlike third-party plans
+        # (see module docstring) - they win even when the step-derived sum
+        # would give a different total.
+        monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
+        detail = {
+            "workoutName": "Seuil",
+            "sportType": {"sportTypeKey": "running"},
+            "estimatedDistanceInMeters": 10003,
+            "estimatedDurationInSecs": 2880,
+            "workoutSegments": [
+                {
+                    "workoutSteps": [
+                        _pace_zone_step("warmup", "time", 10 * 60, 303, 343),
+                        _repeat_group(
+                            3, [_pace_zone_step("interval", "time", 8 * 60, 247, 265)]
+                        ),
+                        _pace_zone_step("cooldown", "time", 10 * 60, 303, 343),
+                    ]
+                }
+            ],
+        }
+        client = _FakeClient(detail)
+
+        entries = _build_entries(
+            client, [("2026-07-21", "744f8b60-38dc-4665-b641-1221027c26ce", "", True)]
+        )
+
+        assert entries[0]["distanceM"] == 10003
+        assert entries[0]["durationSecs"] == 2880
+
+    def test_fills_a_missing_top_level_field_from_the_step_sum(self, monkeypatch):
+        monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
+        detail = {
+            "workoutName": "Seuil",
+            "sportType": {"sportTypeKey": "running"},
+            "estimatedDistanceInMeters": None,
+            "estimatedDurationInSecs": 2880,
+            "workoutSegments": [
+                {
+                    "workoutSteps": [
+                        _pace_zone_step("warmup", "time", 10 * 60, 303, 343),
+                        _pace_zone_step("cooldown", "time", 10 * 60, 303, 343),
+                    ]
+                }
+            ],
+        }
+        client = _FakeClient(detail)
+
+        entries = _build_entries(
+            client, [("2026-07-21", "744f8b60-38dc-4665-b641-1221027c26ce", "", True)]
+        )
+
+        assert entries[0]["durationSecs"] == 2880
+        assert entries[0]["distanceM"] > 0
+
 
 class TestGarminSuppliedMetadata:
     """Garmin Coach's adaptive workouts state their own training-effect target
@@ -521,7 +440,11 @@ class TestGarminSuppliedMetadata:
         assert entries[0]["name"] == "Seuil - 3x8:00@4:16"
 
 
-class TestQualityDescriptor:
+class TestMainSetDescriptorFoldedIntoTitle:
+    """Unit coverage for the descriptor logic itself lives in
+    test_garmin_workout.py - these exercise the orchestration decision of
+    *when* _build_entries folds it into the title at all."""
+
     def test_folds_main_interval_block_into_terse_coach_name(self, monkeypatch):
         # Garmin Coach's own workout names are terse ("Seuil") unlike
         # third-party plans, which already spell out the structure - so a
@@ -579,16 +502,6 @@ class TestQualityDescriptor:
         entries = _build_entries(client, [("2026-07-22", "111", "", False)])
 
         assert entries[0]["name"] == "Footing fractionne"
-
-    def test_no_descriptor_without_a_repeated_effort_step(self):
-        # A single continuous effort block (no RepeatGroupDTO) has nothing to
-        # summarize as "Nx...".
-        steps = [
-            {"kind": "warmup", "minutes": 10},
-            {"kind": "effort", "minutes": 20, "paceSecPerKm": [240, 250]},
-            {"kind": "cooldown", "minutes": 10},
-        ]
-        assert _quality_descriptor(steps) is None
 
 
 class TestWritePlannedWorkouts:
