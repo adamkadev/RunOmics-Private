@@ -5,6 +5,12 @@
       "thresholdPaceSecPerKm": 257,
       "vo2maxMlKgMin": 56.0,
       "weightKg": 62.0
+    },
+    "2026-07-22": {
+      "lthrBpm": 180,
+      "thresholdPaceSecPerKm": 257,
+      "vo2maxMlKgMin": 55.0,
+      "weightKg": 62.0
     }
   }
 }
