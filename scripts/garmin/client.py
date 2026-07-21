@@ -11,6 +11,7 @@ import httpx
 os.environ.setdefault("GARTH_TELEMETRY_ENABLED", "false")
 
 _CONNECT_API = "https://connectapi.garmin.com"
+_CONNECT_WEB = "https://connect.garmin.com"
 _TIMEOUT = httpx.Timeout(120.0, connect=30.0)
 _USER_AGENT = "Mozilla/5.0 (RunOmics/1.0)"
 
@@ -137,6 +138,12 @@ class GarminClient:
 
     def get_user_settings(self) -> dict[str, Any]:
         return self._get(f"{self._base}/userprofile-service/userprofile/user-settings").json()
+
+    def get_vo2max_norms(self) -> dict[str, Any]:
+        # Static reference table (Cooper Institute age/sex percentile anchors),
+        # served from the web host rather than connectapi - but still 403s
+        # without the session headers.
+        return self._get(f"{_CONNECT_WEB}/web-api/web-data/vo2Max/VO2Max.json").json()
 
     def get_calendar_month(self, year: int, month: int) -> dict[str, Any]:
         url = f"{self._base}/calendar-service/year/{year}/month/{month - 1}"

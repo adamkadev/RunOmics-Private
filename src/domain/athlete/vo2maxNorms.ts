@@ -1,3 +1,5 @@
+import norms from '../../../public/data/vo2max_norms.json'
+
 export type AgeBracket = '20-29' | '30-39' | '40-49' | '50-59' | '60-69' | '70-79'
 
 export interface Vo2maxThresholds {
@@ -8,25 +10,11 @@ export interface Vo2maxThresholds {
 }
 
 // Cooper/Garmin age-graded VO2max percentile norms (mL/kg/min): superior = 95th
-// percentile, excellent = 80th, good = 60th, fair = 40th.
-export const VO2MAX_NORMS: Record<'male' | 'female', Record<AgeBracket, Vo2maxThresholds>> = {
-  male: {
-    '20-29': { superior: 55.4, excellent: 51.1, good: 45.4, fair: 41.7 },
-    '30-39': { superior: 54, excellent: 48.3, good: 44, fair: 40.5 },
-    '40-49': { superior: 52.5, excellent: 46.4, good: 42.4, fair: 38.5 },
-    '50-59': { superior: 48.9, excellent: 43.4, good: 39.2, fair: 35.6 },
-    '60-69': { superior: 45.7, excellent: 39.5, good: 35.5, fair: 32.3 },
-    '70-79': { superior: 42.1, excellent: 36.7, good: 32.3, fair: 29.4 },
-  },
-  female: {
-    '20-29': { superior: 49.6, excellent: 43.9, good: 39.5, fair: 36.1 },
-    '30-39': { superior: 47.4, excellent: 42.4, good: 37.8, fair: 34.4 },
-    '40-49': { superior: 45.3, excellent: 39.7, good: 36.3, fair: 33 },
-    '50-59': { superior: 41.1, excellent: 36.7, good: 33, fair: 30.1 },
-    '60-69': { superior: 37.8, excellent: 33, good: 30, fair: 27.5 },
-    '70-79': { superior: 36.7, excellent: 30.9, good: 28.1, fair: 25.9 },
-  },
-}
+// percentile, excellent = 80th, good = 60th, fair = 40th. Not hand-maintained -
+// scripts/garmin/vo2max_norms.py refreshes the JSON from Garmin on every sync
+// and logs a diff when Garmin moves an anchor. Small enough (~1 KB) to inline
+// into the client bundle, which keeps every lookup below synchronous.
+export const VO2MAX_NORMS: Record<'male' | 'female', Record<AgeBracket, Vo2maxThresholds>> = norms
 
 const AGE_BRACKETS: AgeBracket[] = ['20-29', '30-39', '40-49', '50-59', '60-69', '70-79']
 

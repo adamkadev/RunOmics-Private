@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from garmin.athlete import fetch_athlete_metrics
 from garmin.client import GarminAuthError, GarminAPIError, GarminClient
 from garmin.retry import retry_transient
+from garmin.vo2max_norms import fetch_vo2max_norms, write_vo2max_norms
 from sync_workouts import fetch_planned_workouts, write_planned_workouts
 from sync_upcoming_races import fetch_upcoming_races, write_upcoming_races
 from processing.fit_parser import ParsedFit, parse_fit
@@ -144,6 +145,8 @@ def main() -> int:
 
             metrics = fetch_athlete_metrics(client)
             _merge_athlete_metrics(metrics)
+
+            write_vo2max_norms(fetch_vo2max_norms(client))
 
         if not args.dry_run:
             _write_sync_meta()
