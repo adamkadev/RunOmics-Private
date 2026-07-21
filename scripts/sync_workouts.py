@@ -270,9 +270,17 @@ def _build_entries(
         if dur_s is not None:
             entry["durationSecs"] = int(dur_s)
 
-        steps = _build_workout_steps(detail)
-        if steps is not None:
-            entry["steps"] = steps
+        workout_steps = _build_workout_steps(detail)
+        if workout_steps is not None:
+            entry["steps"] = workout_steps
+            # Quality sessions (Threshold/Tempo/VO2Max/Anaerobic/Sprint) get their
+            # main interval block folded into the title, e.g. "Seuil - 3x8:00@4:20" -
+            # Garmin Coach's own workout names are terse ("Seuil") unlike third-party
+            # plans, which already spell out the structure in the name.
+            if infer_planned_type(name) != "Base":
+                descriptor = _quality_descriptor(workout_steps)
+                if descriptor:
+                    entry["name"] = f"{name} - {descriptor}"
 
         planned.append(entry)
 
@@ -438,6 +446,28 @@ def _build_workout_steps(detail: dict) -> list[dict] | None:
         steps[-1]["kind"] = "cooldown"
 
     return steps if len(steps) > 1 else None
+
+
+def _quality_descriptor(steps: list[dict]) -> str | None:
+    """Compact "NxMM:SS@pace" summary of a workout's main interval block, e.g.
+    "3x8:00@4:20" for three 8-minute efforts at 4:20/km. None when the workout
+    has no repeated effort step (nothing to summarize)."""
+    effort_reps = [s for s in steps if s.get("kind") == "effort" and "rep" in s]
+    if not effort_reps:
+        return None
+
+    reps = max(s["rep"] for s in effort_reps)
+    first = next(s for s in effort_reps if s["rep"] == 1)
+    pace = first.get("paceSecPerKm")
+    pace_str = f"@{_format_pace_mmss(pace)}" if pace else ""
+    return f"{reps}x{first['minutes']}:00{pace_str}"
+
+
+def _format_pace_mmss(pace_range: list[int]) -> str:
+    """Midpoint of a [fast, slow] sec/km target range as "M:SS", matching the
+    single pace value Garmin's own UI shows for a pace.zone target."""
+    mid = round(sum(pace_range) / 2)
+    return f"{mid // 60}:{mid % 60:02d}"
 
 
 def _retry_on_429(fn):

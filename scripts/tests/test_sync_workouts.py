@@ -7,6 +7,7 @@ from sync_workouts import (
     _collect_steps,
     _estimate_from_steps,
     _load_easy_pace_sec_per_km,
+    _quality_descriptor,
     write_planned_workouts,
 )
 
@@ -301,6 +302,76 @@ class TestBuildEntriesPrefersStepSum:
 
         assert entries[0]["durationSecs"] == 3600
         assert entries[0]["distanceM"] == round(3600 * 1000 / 375)
+
+
+class TestQualityDescriptor:
+    def test_folds_main_interval_block_into_terse_coach_name(self, monkeypatch):
+        # Garmin Coach's own workout names are terse ("Seuil") unlike
+        # third-party plans, which already spell out the structure - so a
+        # quality session's title should gain the interval summary.
+        monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
+        detail = {
+            "workoutName": "Seuil",
+            "sportType": {"sportTypeKey": "running"},
+            "workoutSegments": [
+                {
+                    "workoutSteps": [
+                        _pace_zone_step("warmup", "time", 10 * 60, 303, 343),
+                        _repeat_group(
+                            3,
+                            [
+                                _pace_zone_step("interval", "time", 8 * 60, 247, 265),
+                                _pace_zone_step("recovery", "time", 2 * 60, 343, 429),
+                            ],
+                        ),
+                        _pace_zone_step("cooldown", "time", 10 * 60, 303, 343),
+                    ]
+                }
+            ],
+        }
+        client = _FakeClient(detail)
+
+        entries = _build_entries(client, [("2026-07-21", "999")])
+
+        assert entries[0]["name"] == "Seuil - 3x8:00@4:16"
+
+    def test_no_descriptor_for_base_session_even_with_repeats(self, monkeypatch):
+        # A repeated structure alone shouldn't grow a title for an easy/base
+        # session - only sessions infer_planned_type already classifies as
+        # quality get the interval summary.
+        monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
+        detail = {
+            "workoutName": "Footing fractionne",
+            "sportType": {"sportTypeKey": "running"},
+            "workoutSegments": [
+                {
+                    "workoutSteps": [
+                        _repeat_group(
+                            2,
+                            [
+                                _open_time_step("other", 5 * 60),
+                                _open_time_step("recovery", 60),
+                            ],
+                        ),
+                    ]
+                }
+            ],
+        }
+        client = _FakeClient(detail)
+
+        entries = _build_entries(client, [("2026-07-22", "111")])
+
+        assert entries[0]["name"] == "Footing fractionne"
+
+    def test_no_descriptor_without_a_repeated_effort_step(self):
+        # A single continuous effort block (no RepeatGroupDTO) has nothing to
+        # summarize as "Nx...".
+        steps = [
+            {"kind": "warmup", "minutes": 10},
+            {"kind": "effort", "minutes": 20, "paceSecPerKm": [240, 250]},
+            {"kind": "cooldown", "minutes": 10},
+        ]
+        assert _quality_descriptor(steps) is None
 
 
 class TestWritePlannedWorkouts:
