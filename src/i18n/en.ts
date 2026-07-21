@@ -412,6 +412,15 @@ export const en = {
   },
 
   trainingStatus: {
+    status: {
+      productive: 'Productive',
+      fresh: 'Peaking',
+      overreaching: 'Overreaching',
+      recovery: 'Recovery',
+      detraining: 'Detraining',
+      maintaining: 'Maintaining',
+      unproductive: 'Unproductive',
+    },
     loadTrend: {
       building: 'Building',
       maintaining: 'Maintaining',
@@ -513,36 +522,34 @@ export const en = {
           flat: 'Easy and workout heart rate are holding steady.',
         },
       },
-      cadence: {
-        title: 'Cadence',
-        unit: 'spm',
-        footnote: 'Duration-weighted average cadence (steps/min).',
-        reading: {
-          up: (avg: number) => `Cadence is trending up, averaging ${avg} spm.`,
-          down: (avg: number) => `Cadence is trending down, averaging ${avg} spm.`,
-          flat: (avg: number) => `Cadence is steady around ${avg} spm.`,
-        },
-      },
       runningForm: {
         title: 'Running Form',
         metrics: {
+          cadence: 'Cadence',
           groundContact: 'Ground Contact',
           verticalOscillation: 'Vertical Osc.',
+          verticalRatio: 'Vertical Ratio',
           strideLength: 'Stride Length',
         } as Record<string, string>,
         unit: {
+          cadence: 'spm',
           groundContact: 'ms',
           verticalOscillation: 'mm',
+          verticalRatio: '%',
           strideLength: 'm',
         } as Record<string, string>,
         footnote: {
+          cadence: 'Duration-weighted average cadence (steps/min).',
           groundContact: 'Duration-weighted average ground contact time. Lower generally means a more efficient stride.',
           verticalOscillation: 'Duration-weighted average vertical oscillation. Lower means less bounce per stride.',
+          verticalRatio: 'Vertical oscillation as a share of stride length. Lower means less energy spent going up for every metre gained forward.',
           strideLength: 'Duration-weighted average stride length.',
         } as Record<string, string>,
         reading: {
+          cadence: (min: string, max: string) => `Cadence ranges ${min}-${max} spm over this window.`,
           groundContact: (min: string, max: string) => `Ground contact ranges ${min}-${max} ms over this window - lower is generally more efficient.`,
           verticalOscillation: (min: string, max: string) => `Vertical oscillation ranges ${min}-${max} mm - lower means less bounce per stride.`,
+          verticalRatio: (min: string, max: string) => `Vertical ratio ranges ${min}-${max}% - lower means more of the effort goes forward.`,
           strideLength: (min: string, max: string) => `Stride length ranges ${min}-${max} m over this window.`,
         } as Record<string, (min: string, max: string) => string>,
       },
@@ -611,6 +618,47 @@ export const en = {
           down: 'The 30-day trend is declining - consider more easy running or check for accumulated fatigue.',
           flat: 'The 30-day trend is holding steady.',
         },
+      },
+      threshold: {
+        title: 'Lactate Threshold',
+        pace: 'Threshold pace',
+        lthr: 'Threshold HR',
+        footnote: 'Lactate threshold as the watch estimates it. Garmin only exposes today\'s value, so this series is built from the readings recorded at each sync - it cannot be backfilled.',
+        reading: {
+          faster: (sec: number) => `Threshold pace is ${sec}s/km faster than the first reading.`,
+          slower: (sec: number) => `Threshold pace is ${sec}s/km slower than the first reading.`,
+          flat: 'Threshold pace is unchanged since the first reading.',
+        },
+      },
+      racePredictor: {
+        title: 'Race Predictor',
+        window: 'last 6 months',
+        distances: {
+          '5k': '5K',
+          '10k': '10K',
+          half: 'Half',
+          marathon: 'Marathon',
+        } as Record<string, string>,
+        footnote: 'Finish times the watch predicts from VO₂max and recent training. Plotted as pace so all four distances share one scale; higher = faster.',
+        reading: {
+          faster: (distance: string, gain: string, current: string) =>
+            `${distance} potential improved by ${gain} over this window, now ${current}.`,
+          slower: (distance: string, loss: string) =>
+            `${distance} potential slipped by ${loss} over this window.`,
+          flat: 'Predicted times held steady over this window.',
+        },
+      },
+      trainingStatusHistory: {
+        title: 'Training Status',
+        window: 'last 90 days',
+        status: 'Status',
+        chronic: 'Chronic load',
+        acute: 'Acute load',
+        target: 'Garmin target',
+        daysUnit: 'd',
+        footnote: 'The watch\'s daily verdict, with the acute and chronic load Firstbeat measured. The blue band is the chronic load range Garmin personalises for you.',
+        reading: (dominant: string, pct: number, latest: string | null) =>
+          `${dominant} dominates this window (${pct}% of rated days)${latest ? `, currently reading "${latest}"` : ''}.`,
       },
       runningDynamicsRolling: {
         title: 'Running Dynamics - Rolling Trend',
@@ -1045,6 +1093,33 @@ export const en = {
     perKm: '/km',
   },
 
+  loadBalance: {
+    title: 'Load Balance',
+    window: 'last 4 weeks',
+    buckets: {
+      aerobicLow: 'Low Aerobic',
+      aerobicHigh: 'High Aerobic',
+      anaerobic: 'Anaerobic',
+    },
+    verdict: {
+      below: 'Below target',
+      onTarget: 'On target',
+      above: 'Above target',
+    },
+    range: (min: number, max: number) => `Target ${min}–${max}`,
+    // Garmin's own phrases; anything it adds later falls back to the raw code.
+    feedback: {
+      BELOW_TARGETS: 'Below targets',
+      ABOVE_TARGETS: 'Above targets',
+      ON_TARGET: 'Well balanced',
+      LACKING_HIGH_AEROBIC: 'Lacking high aerobic',
+      LACKING_LOW_AEROBIC: 'Lacking low aerobic',
+      LACKING_ANAEROBIC: 'Lacking anaerobic',
+      NO_DATA: 'Not enough data',
+    } as Record<string, string | undefined>,
+    footnote: 'Firstbeat load over the last 4 weeks split by intensity, against the ranges Garmin personalises from your history. The marker is where you sit; the green zone is the target.',
+  },
+
   loadRisk: {
     title: 'Load Risk',
     insufficientData: 'Not enough data',
@@ -1054,7 +1129,12 @@ export const en = {
       caution: 'Caution',
       risk: 'High risk',
     },
-    acwr: { label: 'ACWR', description: 'Acute:chronic load ratio · target 0.8–1.3' },
+    source: { garmin: 'Garmin', local: 'estimated' },
+    acwr: {
+      label: 'ACWR',
+      description: 'Acute:chronic load ratio estimated from km · target 0.8–1.3',
+      descriptionGarmin: 'Acute:chronic load ratio measured by the watch · Garmin verdict',
+    },
     monotony: { label: 'Monotony', description: 'Day-to-day load variety · alert above 2.0' },
     strain: { label: 'Strain', description: 'Weekly load × monotony (Foster)' },
     rampRate: { label: 'Ramp rate', description: 'Δ CTL over 7 days' },

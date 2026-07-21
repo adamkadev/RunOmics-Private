@@ -4,6 +4,7 @@ import {
   strain,
   rampRate,
   acwrZone,
+  acwrZoneFromGarmin,
   monotonyZone,
   strainZone,
   rampRateZone,
@@ -68,6 +69,27 @@ describe('acwrZone', () => {
 
   it('risk above 1.5', () => {
     expect(acwrZone(1.6)).toBe('risk')
+  })
+})
+
+describe('acwrZoneFromGarmin', () => {
+  it('maps the watch verdict onto our ladder', () => {
+    expect(acwrZoneFromGarmin('LOW', 0.5)).toBe('low')
+    expect(acwrZoneFromGarmin('OPTIMAL', 1.0)).toBe('safe')
+    expect(acwrZoneFromGarmin('HIGH', 1.4)).toBe('caution')
+    expect(acwrZoneFromGarmin('VERY_HIGH', 1.8)).toBe('risk')
+  })
+
+  it('prefers the verdict over our thresholds when the two disagree', () => {
+    // 0.6 would read as 'low' locally, but the watch grades it against a band
+    // it personalises per athlete.
+    expect(acwrZoneFromGarmin('OPTIMAL', 0.6)).toBe('safe')
+  })
+
+  it('falls back to our thresholds on unknown or missing phrasing', () => {
+    expect(acwrZoneFromGarmin(null, 1.6)).toBe('risk')
+    expect(acwrZoneFromGarmin('SOMETHING_NEW', 1.0)).toBe('safe')
+    expect(acwrZoneFromGarmin(undefined, null)).toBeNull()
   })
 })
 

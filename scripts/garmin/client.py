@@ -38,6 +38,7 @@ class GarminClient:
 
         self._base = _CONNECT_API
         self._http = httpx.Client(timeout=_TIMEOUT)
+        self._profile_uuid: str | None = None
 
     def _headers(self) -> dict[str, str]:
         return {
@@ -147,6 +148,27 @@ class GarminClient:
     def get_training_load_balance(self, day: str) -> dict[str, Any]:
         return self._get(
             f"{self._base}/metrics-service/metrics/trainingloadbalance/latest/{day}"
+        ).json()
+
+    def get_social_profile(self) -> dict[str, Any]:
+        return self._get(f"{self._base}/userprofile-service/socialProfile").json()
+
+    def get_profile_uuid(self) -> str:
+        """The account's profile UUID, which keys the race-prediction endpoint.
+
+        Not the numeric user id and not the email: Garmin calls it `displayName`
+        on the social profile, and it is the only accepted path segment there.
+        """
+        if self._profile_uuid is None:
+            self._profile_uuid = str(self.get_social_profile()["displayName"])
+        return self._profile_uuid
+
+    # Dates go in the query string here, unlike the other metrics-service
+    # endpoints which take them as path segments.
+    def get_race_predictions(self, start: str, end: str) -> list[dict[str, Any]]:
+        return self._get(
+            f"{self._base}/metrics-service/metrics/racepredictions/daily/{self.get_profile_uuid()}",
+            params={"fromCalendarDate": start, "toCalendarDate": end},
         ).json()
 
     def get_fitness_age(self, start: str, end: str) -> list[dict[str, Any]]:

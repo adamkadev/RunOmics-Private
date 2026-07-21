@@ -19,7 +19,6 @@ function season(overrides: Partial<YearAnalytics> = {}): YearAnalytics {
     paceTrend: [],
     efficiencyTrend: [],
     hrTrend: [],
-    cadenceTrend: [],
     runningFormTrend: [],
     longRuns: [],
     easyHardSplit: [],

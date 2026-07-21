@@ -10,37 +10,47 @@ import { ChartFigure } from '@/components/ui/ChartFigure'
 import { ChartExplain } from '@/components/ui/ChartExplain'
 import { t } from '@/i18n'
 
-type Metric = 'groundContact' | 'verticalOscillation' | 'strideLength'
+type Metric = 'cadence' | 'groundContact' | 'verticalOscillation' | 'verticalRatio' | 'strideLength'
 
-const METRICS: Metric[] = ['groundContact', 'verticalOscillation', 'strideLength']
+const METRICS: Metric[] = ['cadence', 'groundContact', 'verticalOscillation', 'verticalRatio', 'strideLength']
 
 const DATA_KEY: Record<Metric, keyof MonthlyRunningForm> = {
+  cadence: 'cadenceSpm',
   groundContact: 'groundContactMs',
   verticalOscillation: 'verticalOscillationMm',
+  verticalRatio: 'verticalRatioPct',
   strideLength: 'strideLengthM',
 }
 
 const COLOR: Record<Metric, string> = {
+  cadence: CHART_COLORS.cadence,
   groundContact: CHART_COLORS.groundContact,
   verticalOscillation: CHART_COLORS.verticalOscillation,
+  verticalRatio: CHART_COLORS.verticalRatio,
   strideLength: CHART_COLORS.strideLength,
 }
 
 const ACTIVE_PILL_CLASS: Record<Metric, string> = {
+  cadence: 'bg-sky-500 text-white',
   groundContact: 'bg-amber-500 text-white',
   verticalOscillation: 'bg-rose-500 text-white',
+  verticalRatio: 'bg-fuchsia-500 text-white',
   strideLength: 'bg-teal-500 text-white',
 }
 
 const UNIT_BY_KEY: Record<string, string> = {
+  cadenceSpm: t.analytics.charts.runningForm.unit.cadence ?? '',
   groundContactMs: t.analytics.charts.runningForm.unit.groundContact ?? '',
   verticalOscillationMm: t.analytics.charts.runningForm.unit.verticalOscillation ?? '',
+  verticalRatioPct: t.analytics.charts.runningForm.unit.verticalRatio ?? '',
   strideLengthM: t.analytics.charts.runningForm.unit.strideLength ?? '',
 }
 
 const TICK_DECIMALS: Record<Metric, number> = {
+  cadence: 0,
   groundContact: 0,
   verticalOscillation: 1,
+  verticalRatio: 1,
   strideLength: 2,
 }
 

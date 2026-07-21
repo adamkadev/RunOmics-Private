@@ -60,6 +60,7 @@ describe('buildLoadRiskFacts', () => {
   const base: LoadRiskPanel = {
     acwr: null,
     acwrZone: null,
+    acwrSource: null,
     monotony: null,
     monotonyZone: null,
     strain: null,

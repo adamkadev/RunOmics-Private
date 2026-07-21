@@ -16,6 +16,10 @@ import type { VO2maxPoint } from '@/application/usecases/GetVO2maxHistory'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { TrainingLoadData } from '@/application/usecases/GetTrainingLoad'
 import type { LoadRiskPanel as LoadRiskPanelData } from '@/application/usecases/GetLoadRiskPanel'
+import type { LoadBalanceData } from '@/application/usecases/GetLoadBalance'
+import type { TrainingStatusHistory } from '@/application/usecases/GetTrainingStatusHistory'
+import type { GarminRacePredictionsData } from '@/application/usecases/GetGarminRacePredictions'
+import type { ThresholdHistoryData } from '@/application/usecases/GetThresholdHistory'
 import { formatDurationShort } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartCardSkeleton } from '@/components/ui/Skeleton'
@@ -121,6 +125,10 @@ export function AnalyticsClient({
   zones,
   trainingLoad,
   loadRisk,
+  loadBalance,
+  statusHistory,
+  racePredictions,
+  threshold,
 }: {
   data: AnalyticsPageData
   comparison: YearComparisonData | null
@@ -130,6 +138,10 @@ export function AnalyticsClient({
   zones: TrainingZonesData | null
   trainingLoad: TrainingLoadData | null
   loadRisk: LoadRiskPanelData | null
+  loadBalance: LoadBalanceData | null
+  statusHistory: TrainingStatusHistory | null
+  racePredictions: GarminRacePredictionsData | null
+  threshold: ThresholdHistoryData | null
 }) {
   const { years, byYear, periodWeeks, byPeriod } = data
 
@@ -338,6 +350,10 @@ export function AnalyticsClient({
             {tab === 'performance' && (
               <PerformanceTab
                 series={active}
+                efficiencyDaily={data.efficiencyDaily}
+                racePredictions={racePredictions}
+                threshold={threshold}
+                isAll={isAll}
               />
             )}
 
@@ -346,9 +362,10 @@ export function AnalyticsClient({
                 series={active}
                 trainingLoad={trainingLoad}
                 loadRisk={loadRisk}
+                loadBalance={loadBalance}
+                statusHistory={statusHistory}
                 vo2maxHistory={vo2maxHistory}
                 zones={zones}
-                efficiencyDaily={data.efficiencyDaily}
                 runningDynamicsDaily={data.runningDynamicsDaily}
                 isAll={isAll}
               />

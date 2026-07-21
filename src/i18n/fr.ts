@@ -404,6 +404,15 @@ export const fr = {
   },
 
   trainingStatus: {
+    status: {
+      productive: 'Productif',
+      fresh: 'En forme',
+      overreaching: 'Surmenage',
+      recovery: 'Récupération',
+      detraining: 'Désentraînement',
+      maintaining: 'Maintien',
+      unproductive: 'Improductif',
+    },
     loadTrend: {
       building: 'En progression',
       maintaining: 'Maintien',
@@ -505,36 +514,34 @@ export const fr = {
           flat: 'La FC en sortie facile et en séance de qualité reste stable.',
         },
       },
-      cadence: {
-        title: 'Cadence',
-        unit: 'pas/min',
-        footnote: 'Cadence moyenne pondérée par la durée (pas/min).',
-        reading: {
-          up: (avg: number) => `La cadence est en hausse, moyenne de ${avg} pas/min.`,
-          down: (avg: number) => `La cadence est en baisse, moyenne de ${avg} pas/min.`,
-          flat: (avg: number) => `La cadence est stable autour de ${avg} pas/min.`,
-        },
-      },
       runningForm: {
         title: 'Technique de course',
         metrics: {
+          cadence: 'Cadence',
           groundContact: 'Contact au sol',
           verticalOscillation: 'Osc. verticale',
+          verticalRatio: 'Rapport vertical',
           strideLength: 'Longueur de foulée',
         } as Record<string, string>,
         unit: {
+          cadence: 'pas/min',
           groundContact: 'ms',
           verticalOscillation: 'mm',
+          verticalRatio: '%',
           strideLength: 'm',
         } as Record<string, string>,
         footnote: {
+          cadence: 'Cadence moyenne pondérée par la durée (pas/min).',
           groundContact: 'Temps de contact au sol moyen pondéré par la durée. Plus bas = foulée généralement plus efficace.',
           verticalOscillation: 'Oscillation verticale moyenne pondérée par la durée. Plus bas = moins de rebond par foulée.',
+          verticalRatio: 'Oscillation verticale rapportée à la longueur de foulée. Plus bas = moins d’énergie perdue vers le haut à chaque mètre parcouru.',
           strideLength: 'Longueur de foulée moyenne pondérée par la durée.',
         } as Record<string, string>,
         reading: {
+          cadence: (min: string, max: string) => `La cadence varie entre ${min} et ${max} pas/min sur la période.`,
           groundContact: (min: string, max: string) => `Le contact au sol varie entre ${min} et ${max} ms sur la période - plus bas est généralement plus efficace.`,
           verticalOscillation: (min: string, max: string) => `L'oscillation verticale varie entre ${min} et ${max} mm - plus bas signifie moins de rebond par foulée.`,
+          verticalRatio: (min: string, max: string) => `Le rapport vertical varie entre ${min} et ${max} % - plus bas signifie plus d’énergie dirigée vers l’avant.`,
           strideLength: (min: string, max: string) => `La longueur de foulée varie entre ${min} et ${max} m sur la période.`,
         } as Record<string, (min: string, max: string) => string>,
       },
@@ -603,6 +610,47 @@ export const fr = {
           down: 'La tendance 30 j baisse - ajoute des sorties faciles ou surveille une fatigue accumulée.',
           flat: 'La tendance 30 j reste stable.',
         },
+      },
+      threshold: {
+        title: 'Seuil lactique',
+        pace: 'Allure au seuil',
+        lthr: 'FC au seuil',
+        footnote: 'Seuil lactique estimé par la montre. Garmin n’expose que la valeur du jour : la série se construit à partir des relevés enregistrés à chaque sync, sans reprise de l’historique.',
+        reading: {
+          faster: (sec: number) => `L’allure au seuil a gagné ${sec}s/km depuis le premier relevé.`,
+          slower: (sec: number) => `L’allure au seuil a perdu ${sec}s/km depuis le premier relevé.`,
+          flat: 'L’allure au seuil est stable depuis le premier relevé.',
+        },
+      },
+      racePredictor: {
+        title: 'Prédicteur de course',
+        window: '6 derniers mois',
+        distances: {
+          '5k': '5 km',
+          '10k': '10 km',
+          half: 'Semi',
+          marathon: 'Marathon',
+        } as Record<string, string>,
+        footnote: 'Temps de passage prédits par la montre à partir de la VO₂max et de l’entraînement récent. Tracés en allure pour que les quatre distances tiennent sur une même échelle ; plus haut = plus rapide.',
+        reading: {
+          faster: (distance: string, gain: string, current: string) =>
+            `Le potentiel sur ${distance} progresse de ${gain} sur la période, à ${current} aujourd’hui.`,
+          slower: (distance: string, loss: string) =>
+            `Le potentiel sur ${distance} recule de ${loss} sur la période.`,
+          flat: 'Les temps prédits sont stables sur la période.',
+        },
+      },
+      trainingStatusHistory: {
+        title: 'Statut d’entraînement',
+        window: '90 derniers jours',
+        status: 'Statut',
+        chronic: 'Charge chronique',
+        acute: 'Charge aiguë',
+        target: 'Cible Garmin',
+        daysUnit: 'j',
+        footnote: 'Verdict quotidien de la montre, avec la charge aiguë et chronique mesurées par Firstbeat. La bande bleue est la plage de charge chronique que Garmin personnalise pour vous.',
+        reading: (dominant: string, pct: number, latest: string | null) =>
+          `${dominant} domine la période (${pct}% des jours notés)${latest ? `, avec un statut actuel « ${latest} »` : ''}.`,
       },
       runningDynamicsRolling: {
         title: 'Dynamique de course - tendance glissante',
@@ -1037,6 +1085,33 @@ export const fr = {
     perKm: '/km',
   },
 
+  loadBalance: {
+    title: 'Équilibre des charges',
+    window: '4 dernières semaines',
+    buckets: {
+      aerobicLow: 'Aérobie basse',
+      aerobicHigh: 'Aérobie haute',
+      anaerobic: 'Anaérobie',
+    },
+    verdict: {
+      below: 'Sous la cible',
+      onTarget: 'Dans la cible',
+      above: 'Au-dessus',
+    },
+    range: (min: number, max: number) => `Cible ${min}–${max}`,
+    // Garmin's own phrases; anything it adds later falls back to the raw code.
+    feedback: {
+      BELOW_TARGETS: 'Sous les cibles',
+      ABOVE_TARGETS: 'Au-dessus des cibles',
+      ON_TARGET: 'Équilibre optimal',
+      LACKING_HIGH_AEROBIC: 'Manque d’aérobie haute',
+      LACKING_LOW_AEROBIC: 'Manque d’aérobie basse',
+      LACKING_ANAEROBIC: 'Manque d’anaérobie',
+      NO_DATA: 'Pas assez de données',
+    } as Record<string, string | undefined>,
+    footnote: 'Charge Firstbeat des 4 dernières semaines par intensité, face aux plages que Garmin personnalise à partir de votre historique. Le repère indique où vous vous situez ; la zone verte est la cible.',
+  },
+
   loadRisk: {
     title: 'Risque de charge',
     insufficientData: 'Données insuffisantes',
@@ -1046,7 +1121,12 @@ export const fr = {
       caution: 'Prudence',
       risk: 'Risque élevé',
     },
-    acwr: { label: 'ACWR', description: 'Charge aiguë/chronique · cible 0,8–1,3' },
+    source: { garmin: 'Garmin', local: 'estimé' },
+    acwr: {
+      label: 'ACWR',
+      description: 'Charge aiguë/chronique estimée sur les km · cible 0,8–1,3',
+      descriptionGarmin: 'Charge aiguë/chronique mesurée par la montre · verdict Garmin',
+    },
     monotony: { label: 'Monotonie', description: 'Variété de charge au quotidien · alerte au-delà de 2,0' },
     strain: { label: 'Strain', description: 'Charge hebdo × monotonie (Foster)' },
     rampRate: { label: 'Ramp rate', description: 'Δ CTL sur 7 jours' },

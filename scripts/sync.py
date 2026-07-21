@@ -12,9 +12,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from garmin.athlete import fetch_athlete_metrics
+from garmin.athlete import fetch_athlete_metrics, record_athlete_history
 from garmin.client import GarminAuthError, GarminAPIError, GarminClient
 from garmin.retry import retry_transient
+from garmin.race_predictions import sync_race_predictions
 from garmin.training_status import sync_load_balance, sync_training_status
 from garmin.vo2max_norms import fetch_vo2max_norms, write_vo2max_norms
 from sync_workouts import fetch_planned_workouts, write_planned_workouts
@@ -145,6 +146,8 @@ def main() -> int:
             write_upcoming_races(races)
 
             metrics = fetch_athlete_metrics(client)
+            if record_athlete_history(metrics):
+                print("Athlete threshold metrics changed - recorded a history entry.")
             _merge_athlete_metrics(metrics)
 
             write_vo2max_norms(fetch_vo2max_norms(client))
@@ -152,6 +155,7 @@ def main() -> int:
             first_day = _first_activity_date(store)
             if first_day:
                 sync_training_status(client, first_day)
+            sync_race_predictions(client)
             sync_load_balance(client)
 
         if not args.dry_run:

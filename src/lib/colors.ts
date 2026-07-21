@@ -19,6 +19,7 @@ export const CHART_COLORS = {
   // Running form
   groundContact:       '#f59e0b', // amber-500
   verticalOscillation: '#f43f5e', // rose-500
+  verticalRatio:       '#d946ef', // fuchsia-500 - oscillation normalised by stride, so kept adjacent to rose
   strideLength:        '#14b8a6', // teal-500
 
   // Easy / Hard split
@@ -35,6 +36,20 @@ export const CHART_COLORS = {
   referenceTarget: '#8a978f',
   tooltipCursor:   'rgba(168,180,174,0.12)',
 } as const
+
+// Garmin training status, keyed by the names in GetTrainingStatus's
+// TrainingStatusType. Read as a ladder rather than a categorical set: green =
+// the training is paying off, blue = deliberate rest, amber/red = the load is
+// no longer productive.
+export const TRAINING_STATUS_COLORS: Record<string, string> = {
+  fresh:        '#1ed787', // emerald - peak fitness, fatigue shed
+  productive:   '#34d399', // emerald-400
+  maintaining:  '#0ea5e9', // sky-500
+  recovery:     '#60a5fa', // blue-400
+  unproductive: '#f59e0b', // amber-500
+  detraining:   '#a1a1aa', // zinc-400
+  overreaching: '#ef4444', // red-500
+}
 
 // HR zone colors (Z1-Z5), keyed by zone number
 export const ZONE_COLORS: Record<number, string> = {

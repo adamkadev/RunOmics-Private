@@ -1,9 +1,18 @@
 from __future__ import annotations
 
+import json
 from datetime import date, datetime, timedelta, timezone
+from pathlib import Path
 from typing import Any
 
 from .client import GarminAPIError, GarminClient
+
+_HISTORY_PATH = Path(__file__).parent.parent.parent / "public" / "data" / "athlete_history.json"
+
+# Threshold and capacity metrics worth a trend line. Garmin exposes only the
+# current value of each - there is no history endpoint - so the series is built
+# by snapshotting them here, one entry per day the numbers actually move.
+_TRACKED_METRICS = ("lthrBpm", "thresholdPaceSecPerKm", "vo2maxMlKgMin", "weightKg")
 
 # Fallback zone floors as a fraction of LTHR, used only when Garmin's own
 # zone config is unavailable.
@@ -111,6 +120,38 @@ def _fetch_primary_device(client: GarminClient) -> dict[str, Any]:
         return extract_primary_device(client.get_primary_training_device())
     except GarminAPIError:
         return {}
+
+
+def tracked_snapshot(metrics: dict[str, Any]) -> dict[str, Any]:
+    return {key: metrics[key] for key in _TRACKED_METRICS if metrics.get(key) is not None}
+
+
+def record_athlete_history(metrics: dict[str, Any], today: date | None = None) -> bool:
+    """Append today's threshold metrics when they differ from the last entry.
+
+    Returns True when a new entry was written. Writing only on change keeps the
+    file a change log rather than one identical row per sync, which is what a
+    trend line wants: Garmin revises these every few weeks at most.
+    """
+    snapshot = tracked_snapshot(metrics)
+    if not snapshot:
+        return False
+
+    days: dict[str, Any] = {}
+    if _HISTORY_PATH.exists():
+        try:
+            days = json.loads(_HISTORY_PATH.read_text()).get("days") or {}
+        except Exception:
+            days = {}
+
+    latest = days[max(days)] if days else None
+    if latest == snapshot:
+        return False
+
+    days[(today or date.today()).isoformat()] = snapshot
+    _HISTORY_PATH.parent.mkdir(parents=True, exist_ok=True)
+    _HISTORY_PATH.write_text(json.dumps({"days": dict(sorted(days.items()))}, indent=2) + "\n")
+    return True
 
 
 def fetch_athlete_metrics(client: GarminClient) -> dict[str, Any]:

@@ -64,6 +64,11 @@ const GARMIN_STATUS: Record<string, TrainingStatusType> = {
   peaking: 'fresh',
 }
 
+/** Garmin's status name for a day, in our vocabulary. Null for days it declined to rate. */
+export function garminStatusType(raw: string | null | undefined): TrainingStatusType | null {
+  return raw ? (GARMIN_STATUS[raw] ?? null) : null
+}
+
 /** Risk from the watch's verdict rather than our thresholds. `HIGH` is Garmin's own overload flag. */
 export function riskFromGarmin(status: TrainingStatusType, acwrStatus: string | null): RiskLevel {
   if (status === 'overreaching') return 'high'
@@ -119,7 +124,7 @@ export async function getTrainingStatus(): Promise<TrainingStatus | null> {
   // easy week as overload. The local calculation stays as the fallback for a
   // profile that has never synced the metrics-service endpoint.
   const garmin = getLatestTrainingStatusDay()
-  const garminType = garmin?.status ? GARMIN_STATUS[garmin.status] : undefined
+  const garminType = garminStatusType(garmin?.status) ?? undefined
 
   const localRatio = acwr(activities, refDate)
   const local = classify(tsb, ctlDelta, localRatio)

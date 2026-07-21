@@ -38,17 +38,13 @@ export interface MonthlyHr {
   hardAvgHr: number | null
 }
 
-export interface MonthlyCadence {
-  month: string
-  label: string
-  cadence: number | null
-}
-
 export interface MonthlyRunningForm {
   month: string
   label: string
+  cadenceSpm: number | null
   groundContactMs: number | null
   verticalOscillationMm: number | null
+  verticalRatioPct: number | null
   strideLengthM: number | null
 }
 
@@ -107,7 +103,6 @@ export interface AnalyticsSeries {
   paceTrend: MonthlyPace[]
   efficiencyTrend: MonthlyEfficiency[]
   hrTrend: MonthlyHr[]
-  cadenceTrend: MonthlyCadence[]
   runningFormTrend: MonthlyRunningForm[]
   longRuns: MonthlyLongRuns[]
   easyHardSplit: MonthlyEasyHard[]
@@ -198,6 +193,7 @@ const weightedHr = (acts: Activity[]) => weightedAvg(acts, (a) => a.avgHeartRate
 const weightedCadence = (acts: Activity[]) => weightedAvg(acts, (a) => a.cadenceSpm, (a) => a.durationSeconds)
 const weightedGroundContact = (acts: Activity[]) => weightedAvg(acts, (a) => a.groundContactMs, (a) => a.durationSeconds, 0)
 const weightedVerticalOscillation = (acts: Activity[]) => weightedAvg(acts, (a) => a.verticalOscillationMm, (a) => a.durationSeconds)
+const weightedVerticalRatio = (acts: Activity[]) => weightedAvg(acts, (a) => a.verticalRatioPct, (a) => a.durationSeconds)
 const weightedStrideLength = (acts: Activity[]) => weightedAvg(acts, (a) => a.strideLengthM, (a) => a.durationSeconds, 2)
 
 export function zoneDistribution(activities: Activity[]): ZoneShare[] {
@@ -270,7 +266,6 @@ function buildSeries(buckets: Bucket[], scoped: Activity[]): AnalyticsSeries {
   const paceTrend: MonthlyPace[] = []
   const efficiencyTrend: MonthlyEfficiency[] = []
   const hrTrend: MonthlyHr[] = []
-  const cadenceTrend: MonthlyCadence[] = []
   const runningFormTrend: MonthlyRunningForm[] = []
   const longRuns: MonthlyLongRuns[] = []
   const easyHardSplit: MonthlyEasyHard[] = []
@@ -294,11 +289,12 @@ function buildSeries(buckets: Bucket[], scoped: Activity[]): AnalyticsSeries {
     paceTrend.push({ ...base, easyPace: weightedPace(easy), hardPace: weightedPace(hard) })
     efficiencyTrend.push({ ...base, ef: efficiencyFactor(easy) })
     hrTrend.push({ ...base, easyAvgHr: weightedHr(easy), hardAvgHr: weightedHr(hard) })
-    cadenceTrend.push({ ...base, cadence: weightedCadence(acts) })
     runningFormTrend.push({
       ...base,
+      cadenceSpm: weightedCadence(acts),
       groundContactMs: weightedGroundContact(acts),
       verticalOscillationMm: weightedVerticalOscillation(acts),
+      verticalRatioPct: weightedVerticalRatio(acts),
       strideLengthM: weightedStrideLength(acts),
     })
     longRuns.push({
@@ -319,7 +315,6 @@ function buildSeries(buckets: Bucket[], scoped: Activity[]): AnalyticsSeries {
     paceTrend,
     efficiencyTrend,
     hrTrend,
-    cadenceTrend,
     runningFormTrend,
     longRuns,
     easyHardSplit,
