@@ -155,6 +155,13 @@ def _collect_scheduled(
 
     seen: set[tuple[str, str]] = set()
     scheduled: list[tuple[str, str]] = []
+    # Diagnostics only (don't affect filtering) - surfaces in the sync's Actions
+    # log why a calendar item was excluded, since e.g. Garmin Coach entries have
+    # been reported missing from the synced plan with no other visible cause.
+    item_type_counts: dict[str, int] = {}
+    skipped_sports: list[str] = []
+    skipped_no_workout_id = 0
+
     for year, month in months:
         try:
             data = _retry_on_429(
@@ -165,18 +172,23 @@ def _collect_scheduled(
             continue
 
         for item in data.get("calendarItems", []):
+            sched_date = item.get("date", "")
+            in_window = bool(sched_date) and start_date.isoformat() <= sched_date <= end_date.isoformat()
+            if in_window:
+                item_type = item.get("itemType") or "(none)"
+                item_type_counts[item_type] = item_type_counts.get(item_type, 0) + 1
+
             if item.get("itemType") != "workout":
                 continue
-            sched_date = item.get("date", "")
-            if not sched_date:
-                continue
-            if sched_date < start_date.isoformat() or sched_date > end_date.isoformat():
+            if not sched_date or not in_window:
                 continue
             sport = (item.get("sport", "") or "").lower()
             if sport and "running" not in sport:
+                skipped_sports.append(sport)
                 continue
             workout_id = str(item.get("workoutId") or "")
             if not workout_id:
+                skipped_no_workout_id += 1
                 continue
             # Garmin's calendar-service can list the same (date, workout) pair
             # twice (month grids overlap at week boundaries) - dedupe here.
@@ -184,6 +196,14 @@ def _collect_scheduled(
             if pair not in seen:
                 seen.add(pair)
                 scheduled.append(pair)
+
+    if item_type_counts:
+        breakdown = ", ".join(f"{k}={v}" for k, v in sorted(item_type_counts.items()))
+        print(f"  Calendar items in window by itemType: {breakdown}")
+    if skipped_sports:
+        print(f"  Skipped {len(skipped_sports)} workout(s) with non-running sport: {sorted(set(skipped_sports))}")
+    if skipped_no_workout_id:
+        print(f"  Skipped {skipped_no_workout_id} workout(s) with no workoutId")
 
     return scheduled
 
