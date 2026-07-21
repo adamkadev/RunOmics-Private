@@ -1,16 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { buildSegments } from '../GetTrainingStatusHistory'
-import type { TrainingStatusHistoryPoint } from '../GetTrainingStatusHistory'
-import type { TrainingStatusType } from '../GetTrainingStatus'
+import { buildSegments } from '../statusHistory'
+import type { TrainingStatusType } from '@/application/usecases/GetTrainingStatus'
 
-const point = (date: string, status: TrainingStatusType | null): TrainingStatusHistoryPoint => ({
-  date,
-  label: date,
-  status,
-  acuteLoad: null,
-  chronicLoad: null,
-  targetBand: null,
-})
+const point = (date: string, status: TrainingStatusType | null) => ({ date, status })
 
 describe('buildSegments', () => {
   it('collapses consecutive days sharing a status', () => {

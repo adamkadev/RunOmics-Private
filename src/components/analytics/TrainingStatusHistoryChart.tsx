@@ -6,11 +6,13 @@ import type {
   TrainingStatusHistoryPoint,
 } from '@/application/usecases/GetTrainingStatusHistory'
 import type { TrainingStatusType } from '@/application/usecases/GetTrainingStatus'
+import { buildSegments, type TrainingStatusSegment } from '@/domain/training/statusHistory'
 import { CHART_COLORS, TRAINING_STATUS_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { ChartExplain } from '@/components/ui/ChartExplain'
+import { ChartRangeChips, ChartWindowPager, useChartWindow } from '@/components/ui/ChartWindowNav'
 import { t } from '@/i18n'
 
 const BAND_COLOR = CHART_COLORS.ctl
@@ -55,10 +57,10 @@ function CustomTooltip({ active, payload }: TooltipProps) {
  * than a few percent still get a sliver of width so a one-day flip into
  * overreaching stays visible instead of collapsing to nothing.
  */
-function StatusRibbon({ history }: { history: TrainingStatusHistory }) {
+function StatusRibbon({ segments }: { segments: TrainingStatusSegment[] }) {
   return (
     <div className="mt-3 flex h-2 gap-px overflow-hidden rounded-full">
-      {history.segments.map((segment) => (
+      {segments.map((segment) => (
         <div
           key={`${segment.status}-${segment.from}`}
           className="min-w-[3px]"
@@ -76,37 +78,50 @@ function StatusRibbon({ history }: { history: TrainingStatusHistory }) {
 export function TrainingStatusHistoryChart({ data }: { data: TrainingStatusHistory }) {
   const s = t.analytics.charts.trainingStatusHistory
 
+  const { range, selectRange, bounds, visible, canGoBack, canGoForward, goBack, goForward } =
+    useChartWindow(data.points, '6m')
+
+  // Ribbon, legend and reading all describe the visible window, not the whole
+  // stored history - paging back re-tells that period's story.
+  const segments = buildSegments(visible)
+  const ratedDays = segments.reduce((sum, segment) => sum + segment.days, 0)
+
   // Days present in the ribbon, ranked by how much of the window they cover -
   // the legend reads as "what this block of training actually was".
   const daysByStatus = new Map<TrainingStatusType, number>()
-  for (const segment of data.segments) {
+  for (const segment of segments) {
     daysByStatus.set(segment.status, (daysByStatus.get(segment.status) ?? 0) + segment.days)
   }
   const legend = Array.from(daysByStatus.entries()).sort(([, a], [, b]) => b - a)
 
   const [dominantStatus, dominantDays] = legend[0] ?? []
+  // The current status stays anchored on the freshest reading while paging back,
+  // so an older window is always read against today's verdict.
   const latest = data.points[data.points.length - 1]
   const reading =
-    dominantStatus && dominantDays
+    dominantStatus && dominantDays && ratedDays
       ? s.reading(
           t.trainingStatus.status[dominantStatus],
-          Math.round((dominantDays / data.ratedDays) * 100),
+          Math.round((dominantDays / ratedDays) * 100),
           latest?.status ? t.trainingStatus.status[latest.status] : null,
         )
       : null
 
-  const tickDates = new Set(data.points.filter((_, i) => i % 14 === 0).map((p) => p.date))
+  const step = Math.max(1, Math.floor(visible.length / 6))
+  const tickDates = new Set(visible.filter((_, i) => i % step === 0).map((p) => p.date))
   const summary = `${s.title}: ${legend
     .map(([status, days]) => `${t.trainingStatus.status[status]} ${days} ${s.daysUnit}`)
     .join(', ')}`
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-foreground/80">
-          {s.title} <span className="font-normal text-subtle">{s.window}</span>
-        </h3>
-        <div className="flex flex-wrap gap-x-3 gap-y-1">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold text-foreground/80">{s.title}</h3>
+        <ChartRangeChips value={range} onChange={selectRange} />
+      </div>
+
+      {legend.length > 0 && (
+        <div className="mb-3 flex flex-wrap gap-x-3 gap-y-1">
           {legend.map(([status, days]) => (
             <span key={status} className="flex items-center gap-1 text-xs text-subtle">
               <span
@@ -117,70 +132,85 @@ export function TrainingStatusHistoryChart({ data }: { data: TrainingStatusHisto
             </span>
           ))}
         </div>
-      </div>
+      )}
 
-      <ChartFigure summary={summary}>
-        <ResponsiveContainer width="100%" height={200}>
-          <ComposedChart data={data.points} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
-            <XAxis
-              dataKey="date"
-              tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-              axisLine={false}
-              tickLine={false}
-              tickFormatter={(date: string) => {
-                if (!tickDates.has(date)) return ''
-                return new Date(date + 'T00:00:00').toLocaleDateString(t.locale, {
-                  day: 'numeric',
-                  month: 'short',
-                })
-              }}
-            />
-            <YAxis
-              tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-              axisLine={false}
-              tickLine={false}
-              width={42}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            {/* Stacked pair: an invisible riser to the band floor, then the band itself. */}
-            <Area
-              dataKey={(point: TrainingStatusHistoryPoint) => point.targetBand?.[0] ?? null}
-              stackId="target"
-              stroke="none"
-              fill="none"
-              isAnimationActive={false}
-            />
-            <Area
-              dataKey={(point: TrainingStatusHistoryPoint) => point.targetBand?.[1] ?? null}
-              stackId="target"
-              stroke="none"
-              fill={BAND_COLOR}
-              fillOpacity={0.12}
-              isAnimationActive={false}
-            />
-            <Line
-              type="monotone"
-              dataKey="chronicLoad"
-              stroke={BAND_COLOR}
-              strokeWidth={3}
-              dot={false}
-              connectNulls
-              isAnimationActive={false}
-            />
-            <Line
-              type="monotone"
-              dataKey="acuteLoad"
-              stroke={CHART_COLORS.atl}
-              strokeWidth={1.5}
-              dot={false}
-              connectNulls
-              isAnimationActive={false}
-            />
-          </ComposedChart>
-        </ResponsiveContainer>
-      </ChartFigure>
+      <ChartWindowPager
+        bounds={bounds}
+        canGoBack={canGoBack}
+        canGoForward={canGoForward}
+        onBack={goBack}
+        onForward={goForward}
+      />
 
-      <StatusRibbon history={data} />
+      {visible.length === 0 ? (
+        <p className="py-12 text-center text-sm text-subtle">{t.chartWindow.empty}</p>
+      ) : (
+        <>
+          <ChartFigure summary={summary}>
+            <ResponsiveContainer width="100%" height={200}>
+              <ComposedChart data={visible} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(date: string) => {
+                    if (!tickDates.has(date)) return ''
+                    return new Date(date + 'T00:00:00').toLocaleDateString(t.locale, {
+                      day: 'numeric',
+                      month: 'short',
+                    })
+                  }}
+                />
+                <YAxis
+                  tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={42}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                {/* Stacked pair: an invisible riser to the band floor, then the band itself. */}
+                <Area
+                  dataKey={(point: TrainingStatusHistoryPoint) => point.targetBand?.[0] ?? null}
+                  stackId="target"
+                  stroke="none"
+                  fill="none"
+                  isAnimationActive={false}
+                />
+                <Area
+                  dataKey={(point: TrainingStatusHistoryPoint) => point.targetBand?.[1] ?? null}
+                  stackId="target"
+                  stroke="none"
+                  fill={BAND_COLOR}
+                  fillOpacity={0.12}
+                  isAnimationActive={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="chronicLoad"
+                  stroke={BAND_COLOR}
+                  strokeWidth={3}
+                  dot={false}
+                  connectNulls
+                  isAnimationActive={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="acuteLoad"
+                  stroke={CHART_COLORS.atl}
+                  strokeWidth={1.5}
+                  dot={false}
+                  connectNulls
+                  isAnimationActive={false}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </ChartFigure>
+
+          {segments.length > 0 && <StatusRibbon segments={segments} />}
+        </>
+      )}
+
       {reading && <ChartExplain text={reading} />}
       <p className="mt-2 text-xs text-subtle">{s.footnote}</p>
     </GlassSurface>

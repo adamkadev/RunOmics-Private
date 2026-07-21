@@ -43,6 +43,17 @@ export const fr = {
     toggle: 'Changer de thème',
   },
 
+  chartWindow: {
+    ranges: {
+      '4w': '4 sem',
+      '6m': '6 mois',
+      '1y': '1 an',
+    },
+    previous: 'Période précédente',
+    next: 'Période suivante',
+    empty: 'Aucune donnée enregistrée sur cette période.',
+  },
+
   units: {
     km: 'km',
     bpm: 'bpm',
@@ -297,7 +308,6 @@ export const fr = {
     },
     trainingLoad: {
       title: 'Charge d’entraînement',
-      window: '· 90 derniers jours',
       fitness: 'Condition',
       fatigue: 'Fatigue',
       form: 'Forme',
@@ -605,7 +615,7 @@ export const fr = {
         ef7: '7 j',
         ef30: '30 j',
         unit: 'm/min·bpm',
-        footnote: 'Efficacité aérobie glissante sur les 90 derniers jours. 7 j capture la forme récente, 30 j montre la tendance de fond.',
+        footnote: 'Efficacité aérobie glissante sur la fenêtre affichée. 7 j capture la forme récente, 30 j montre la tendance de fond.',
         reading: {
           up: (d: string) => `La tendance 30 j progresse, +${d} m/min·bpm - plus de vitesse par battement.`,
           down: 'La tendance 30 j baisse - ajoute des sorties faciles ou surveille une fatigue accumulée.',
@@ -625,13 +635,6 @@ export const fr = {
       },
       racePredictor: {
         title: 'Prédicteur de course',
-        ranges: {
-          '4w': '4 sem',
-          '6m': '6 mois',
-          '1y': '1 an',
-        } as Record<string, string>,
-        previous: 'Période précédente',
-        next: 'Période suivante',
         emptyWindow: 'Aucune prédiction enregistrée sur cette période.',
         distances: {
           '5k': '5 km',
@@ -650,7 +653,6 @@ export const fr = {
       },
       trainingStatusHistory: {
         title: 'Statut d’entraînement',
-        window: '90 derniers jours',
         status: 'Statut',
         chronic: 'Charge chronique',
         acute: 'Charge aiguë',
@@ -675,12 +677,12 @@ export const fr = {
           verticalOscillation: 'mm',
         } as Record<string, string>,
         footnote: {
-          cadence: 'Cadence moyenne glissante sur les 90 derniers jours. 7 j capture la forme récente, 30 j montre la tendance de fond.',
-          groundContact: 'Temps de contact au sol moyen glissant sur les 90 derniers jours. Plus bas = foulée généralement plus efficace.',
-          verticalOscillation: 'Oscillation verticale moyenne glissante sur les 90 derniers jours. Plus bas = moins de rebond par foulée.',
+          cadence: 'Cadence moyenne glissante sur la fenêtre affichée. 7 j capture la forme récente, 30 j montre la tendance de fond.',
+          groundContact: 'Temps de contact au sol moyen glissant sur la fenêtre affichée. Plus bas = foulée généralement plus efficace.',
+          verticalOscillation: 'Oscillation verticale moyenne glissante sur la fenêtre affichée. Plus bas = moins de rebond par foulée.',
         } as Record<string, string>,
         reading: {
-          cadence: (min: string, max: string) => `La cadence 30 j varie entre ${min} et ${max} pas/min sur les 90 derniers jours.`,
+          cadence: (min: string, max: string) => `La cadence 30 j varie entre ${min} et ${max} pas/min sur la période.`,
           groundContact: (min: string, max: string) => `Le contact au sol 30 j varie entre ${min} et ${max} ms - plus bas est généralement plus efficace.`,
           verticalOscillation: (min: string, max: string) => `L'oscillation verticale 30 j varie entre ${min} et ${max} mm - plus bas signifie moins de rebond par foulée.`,
         } as Record<string, (min: string, max: string) => string>,

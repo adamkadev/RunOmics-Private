@@ -8,6 +8,7 @@ import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { ChartExplain } from '@/components/ui/ChartExplain'
+import { ChartRangeChips, ChartWindowPager, useChartWindow } from '@/components/ui/ChartWindowNav'
 import { t } from '@/i18n'
 
 type Metric = 'cadence' | 'groundContact' | 'verticalOscillation'
@@ -83,28 +84,30 @@ function CustomTooltip({ active, payload, label, metric }: TooltipProps) {
 export function RunningDynamicsTrendChart({ data }: Props) {
   const available = METRICS.filter((m) => data.some((d) => d[KEY_30[m]] !== null))
   const [metric, setMetric] = useState<Metric | null>(available[0] ?? null)
+  const { range, selectRange, bounds, visible, canGoBack, canGoForward, goBack, goForward } =
+    useChartWindow(data, '6m')
   if (!metric) return null
 
   const s = t.analytics.charts.runningDynamicsRolling
   const key7 = KEY_7[metric]
   const key30 = KEY_30[metric]
   const color = COLOR[metric]
-  const values = data.flatMap((d) => [d[key7], d[key30]]).filter((v): v is number => v !== null)
+  const values = visible.flatMap((d) => [d[key7], d[key30]]).filter((v): v is number => v !== null)
   const min = Math.min(...values) * 0.97
   const max = Math.max(...values) * 1.03
 
-  // Show one label per ~2 weeks to avoid clutter (90 days = ~7 labels)
-  const tickDates = new Set(
-    data.filter((_, i) => i % 14 === 0).map((d) => d.date)
-  )
+  const step = Math.max(1, Math.floor(visible.length / 6))
+  const tickDates = new Set(visible.filter((_, i) => i % step === 0).map((d) => d.date))
 
   const decimals = TICK_DECIMALS[metric]
   const summary = `${s.title}: ${s.metrics[metric]} ${Math.min(...values).toFixed(decimals)}–${Math.max(...values).toFixed(decimals)} ${s.unit[metric]}`
-  const values30 = data.map((d) => d[key30]).filter((v): v is number => v !== null)
-  const reading = t.analytics.charts.runningDynamicsRolling.reading[metric]!(
-    Math.min(...values30).toFixed(decimals),
-    Math.max(...values30).toFixed(decimals),
-  )
+  const values30 = visible.map((d) => d[key30]).filter((v): v is number => v !== null)
+  const reading = values30.length
+    ? t.analytics.charts.runningDynamicsRolling.reading[metric]!(
+        Math.min(...values30).toFixed(decimals),
+        Math.max(...values30).toFixed(decimals),
+      )
+    : null
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -124,19 +127,32 @@ export function RunningDynamicsTrendChart({ data }: Props) {
           ))}
         </div>
       </div>
-      <div className="mb-2 flex gap-3">
-        <span className="flex items-center gap-1 text-xs text-subtle">
-          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color, opacity: 0.5 }} />
-          {s.d7}
-        </span>
-        <span className="flex items-center gap-1 text-xs text-subtle">
-          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
-          {s.d30}
-        </span>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex gap-3">
+          <span className="flex items-center gap-1 text-xs text-subtle">
+            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color, opacity: 0.5 }} />
+            {s.d7}
+          </span>
+          <span className="flex items-center gap-1 text-xs text-subtle">
+            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+            {s.d30}
+          </span>
+        </div>
+        <ChartRangeChips value={range} onChange={selectRange} />
       </div>
+      <ChartWindowPager
+        bounds={bounds}
+        canGoBack={canGoBack}
+        canGoForward={canGoForward}
+        onBack={goBack}
+        onForward={goForward}
+      />
+      {values.length === 0 ? (
+        <p className="py-12 text-center text-sm text-subtle">{t.chartWindow.empty}</p>
+      ) : (
       <ChartFigure summary={summary}>
         <ResponsiveContainer width="100%" height={200}>
-          <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
+          <LineChart data={visible} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
             <XAxis
               dataKey="date"
               tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
@@ -181,7 +197,8 @@ export function RunningDynamicsTrendChart({ data }: Props) {
           </LineChart>
         </ResponsiveContainer>
       </ChartFigure>
-      <ChartExplain text={reading} />
+      )}
+      {reading && <ChartExplain text={reading} />}
       <p className="mt-2 text-xs text-subtle">{s.footnote[metric]}</p>
     </GlassSurface>
   )

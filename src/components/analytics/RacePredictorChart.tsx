@@ -1,25 +1,16 @@
 'use client'
 
-import { useMemo, useState } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { GarminRacePredictionsData } from '@/application/usecases/GetGarminRacePredictions'
 import { RACE_DISTANCE_KM, type RaceDistanceKey } from '@/domain/race/distances'
-import {
-  PREDICTION_RANGES,
-  bestTrend,
-  hasEarlierPoints,
-  pointsInWindow,
-  windowBounds,
-  type PredictionRange,
-} from '@/domain/race/predictionWindow'
+import { bestTrend } from '@/domain/race/predictionWindow'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { ChartExplain } from '@/components/ui/ChartExplain'
+import { ChartRangeChips, ChartWindowPager, useChartWindow } from '@/components/ui/ChartWindowNav'
 import { formatDuration, formatPace } from '@/lib/formatters'
-import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 // Same hue order as the Goals race cards (violet 5k -> blue 10k -> emerald half
@@ -74,27 +65,8 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
 export function RacePredictorChart({ data }: { data: GarminRacePredictionsData }) {
   const s = t.analytics.charts.racePredictor
 
-  const [range, setRange] = useState<PredictionRange>('4w')
-  // 0 is the window ending today; each step back is one window earlier.
-  const [offset, setOffset] = useState(0)
-
-  // Anchored on the freshest reading rather than the wall clock, so a stale
-  // sync still opens on a window that has data in it.
-  const anchor = useMemo(
-    () => new Date((data.latestDate ?? data.points[data.points.length - 1]?.date ?? '') + 'T00:00:00'),
-    [data.latestDate, data.points],
-  )
-
-  const bounds = useMemo(() => windowBounds(range, offset, anchor), [range, offset, anchor])
-  const visible = useMemo(() => pointsInWindow(data.points, bounds), [data.points, bounds])
-
-  const canGoBack = hasEarlierPoints(data.points, bounds)
-  const canGoForward = offset > 0
-
-  function selectRange(next: PredictionRange) {
-    setRange(next)
-    setOffset(0)
-  }
+  const { range, selectRange, bounds, visible, canGoBack, canGoForward, goBack, goForward } =
+    useChartWindow(data.points, '4w')
 
   const distances = data.distances.filter((d) => visible.some((p) => p[d] !== null))
   const paces = visible.flatMap((p) => distances.map((d) => p[d])).filter((v): v is number => v !== null)
@@ -122,22 +94,7 @@ export function RacePredictorChart({ data }: { data: GarminRacePredictionsData }
     <GlassSurface variant="card" className="p-5">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-foreground/80">{s.title}</h3>
-        <div className="flex gap-1">
-          {PREDICTION_RANGES.map((r) => (
-            <button
-              key={r}
-              onClick={() => selectRange(r)}
-              className={cn(
-                'rounded-md px-2 py-1 text-xs font-medium transition-colors',
-                r === range
-                  ? 'bg-accent text-white'
-                  : 'border border-border bg-card text-muted-foreground hover:bg-muted',
-              )}
-            >
-              {s.ranges[r]}
-            </button>
-          ))}
-        </div>
+        <ChartRangeChips value={range} onChange={selectRange} />
       </div>
 
       {/* "Most recent" - the current estimate, which stays put while paging back
@@ -154,27 +111,13 @@ export function RacePredictorChart({ data }: { data: GarminRacePredictionsData }
         ))}
       </div>
 
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <button
-          onClick={() => setOffset(offset + 1)}
-          disabled={!canGoBack}
-          aria-label={s.previous}
-          className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-30"
-        >
-          <ChevronLeft size={16} />
-        </button>
-        <span className="text-xs font-medium text-muted-foreground">
-          {shortDate(bounds.from)} – {shortDate(bounds.to)}
-        </span>
-        <button
-          onClick={() => setOffset(offset - 1)}
-          disabled={!canGoForward}
-          aria-label={s.next}
-          className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-30"
-        >
-          <ChevronRight size={16} />
-        </button>
-      </div>
+      <ChartWindowPager
+        bounds={bounds}
+        canGoBack={canGoBack}
+        canGoForward={canGoForward}
+        onBack={goBack}
+        onForward={goForward}
+      />
 
       {paces.length === 0 ? (
         <p className="py-12 text-center text-sm text-subtle">{s.emptyWindow}</p>

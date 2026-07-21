@@ -51,6 +51,17 @@ export const en = {
     toggle: 'Toggle theme',
   },
 
+  chartWindow: {
+    ranges: {
+      '4w': '4 wk',
+      '6m': '6 mo',
+      '1y': '1 yr',
+    },
+    previous: 'Previous period',
+    next: 'Next period',
+    empty: 'No data recorded for this period.',
+  },
+
   units: {
     km: 'km',
     bpm: 'bpm',
@@ -305,7 +316,6 @@ export const en = {
     },
     trainingLoad: {
       title: 'Training Load',
-      window: '· last 90 days',
       fitness: 'Fitness',
       fatigue: 'Fatigue',
       form: 'Form',
@@ -613,7 +623,7 @@ export const en = {
         ef7: '7-day',
         ef30: '30-day',
         unit: 'm/min·bpm',
-        footnote: 'Rolling aerobic efficiency over the last 90 days. 7-day captures recent form, 30-day shows the underlying trend.',
+        footnote: 'Rolling aerobic efficiency over the shown window. 7-day captures recent form, 30-day shows the underlying trend.',
         reading: {
           up: (d: string) => `The 30-day trend is climbing, +${d} m/min·bpm - more speed per heartbeat.`,
           down: 'The 30-day trend is declining - consider more easy running or check for accumulated fatigue.',
@@ -633,13 +643,6 @@ export const en = {
       },
       racePredictor: {
         title: 'Race Predictor',
-        ranges: {
-          '4w': '4 wk',
-          '6m': '6 mo',
-          '1y': '1 yr',
-        } as Record<string, string>,
-        previous: 'Previous period',
-        next: 'Next period',
         emptyWindow: 'No predictions recorded for this period.',
         distances: {
           '5k': '5K',
@@ -658,7 +661,6 @@ export const en = {
       },
       trainingStatusHistory: {
         title: 'Training Status',
-        window: 'last 90 days',
         status: 'Status',
         chronic: 'Chronic load',
         acute: 'Acute load',
@@ -683,12 +685,12 @@ export const en = {
           verticalOscillation: 'mm',
         } as Record<string, string>,
         footnote: {
-          cadence: 'Rolling average cadence over the last 90 days. 7-day captures recent form, 30-day shows the underlying trend.',
-          groundContact: 'Rolling average ground contact time over the last 90 days. Lower generally means a more efficient stride.',
-          verticalOscillation: 'Rolling average vertical oscillation over the last 90 days. Lower means less bounce per stride.',
+          cadence: 'Rolling average cadence over the shown window. 7-day captures recent form, 30-day shows the underlying trend.',
+          groundContact: 'Rolling average ground contact time over the shown window. Lower generally means a more efficient stride.',
+          verticalOscillation: 'Rolling average vertical oscillation over the shown window. Lower means less bounce per stride.',
         } as Record<string, string>,
         reading: {
-          cadence: (min: string, max: string) => `30-day cadence ranges ${min}-${max} spm over the last 90 days.`,
+          cadence: (min: string, max: string) => `30-day cadence ranges ${min}-${max} spm over this window.`,
           groundContact: (min: string, max: string) => `30-day ground contact ranges ${min}-${max} ms - lower is generally more efficient.`,
           verticalOscillation: (min: string, max: string) => `30-day vertical oscillation ranges ${min}-${max} mm - lower means less bounce per stride.`,
         } as Record<string, (min: string, max: string) => string>,

@@ -9,7 +9,7 @@ export { trimp, type HrBounds }
 
 const CTL_DAYS = 42
 export const ATL_DAYS = 7
-const WINDOW_DAYS = 90
+const MAX_DAYS = 1095
 
 export interface TrainingLoadPoint {
   date: string
@@ -24,7 +24,6 @@ export interface TrainingLoadData {
   ctl: number
   atl: number
   tsb: number
-  /** Form right now, including today's already-logged session (ctl/atl are post-load; `tsb` above is start-of-day). */
   tsbNow: number
 }
 
@@ -86,7 +85,7 @@ export async function getTrainingLoad(): Promise<TrainingLoadData | null> {
 
   const series = buildTimeSeries(activities, hrBounds)
   const entries = Array.from(series.entries())
-  const window = entries.slice(-WINDOW_DAYS)
+  const window = entries.slice(-MAX_DAYS)
 
   const points: TrainingLoadPoint[] = window.map(([date, snap]) => {
     const d = new Date(date + 'T00:00:00')

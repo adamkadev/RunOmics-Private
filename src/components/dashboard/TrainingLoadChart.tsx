@@ -16,6 +16,7 @@ import { STATUS } from '@/lib/statusColors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
+import { ChartRangeChips, ChartWindowPager, useChartWindow } from '@/components/ui/ChartWindowNav'
 import { t } from '@/i18n'
 
 interface Props {
@@ -66,17 +67,30 @@ function formStatus(tsb: number): { label: string; className: string } {
 
 export function TrainingLoadChart({ data }: Props) {
   const status = formStatus(data.tsb)
-  const lastIndex = data.points.length - 1
+  const { range, selectRange, bounds, visible, canGoBack, canGoForward, goBack, goForward } =
+    useChartWindow(data.points, '6m')
+  const lastIndex = visible.length - 1
   const summary = `${t.dashboard.trainingLoad.title}: ${t.dashboard.trainingLoad.fitness} ${data.ctl}, ${t.dashboard.trainingLoad.fatigue} ${data.atl}, ${t.dashboard.trainingLoad.form} ${data.tsb} (${status.label})`
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <h3 className="mb-4 text-sm font-semibold text-foreground/80">
-        {t.dashboard.trainingLoad.title} <span className="font-normal text-subtle">{t.dashboard.trainingLoad.window}</span>
-      </h3>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold text-foreground/80">{t.dashboard.trainingLoad.title}</h3>
+        <ChartRangeChips value={range} onChange={selectRange} />
+      </div>
+      <ChartWindowPager
+        bounds={bounds}
+        canGoBack={canGoBack}
+        canGoForward={canGoForward}
+        onBack={goBack}
+        onForward={goForward}
+      />
+      {visible.length === 0 ? (
+        <p className="py-12 text-center text-sm text-subtle">{t.chartWindow.empty}</p>
+      ) : (
       <ChartFigure summary={summary}>
         <ResponsiveContainer width="100%" height={200}>
-          <LineChart data={data.points} margin={{ top: 4, right: 80, bottom: 0, left: -20 }}>
+          <LineChart data={visible} margin={{ top: 4, right: 80, bottom: 0, left: -20 }}>
             <XAxis
               dataKey="label"
               tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
@@ -109,6 +123,7 @@ export function TrainingLoadChart({ data }: Props) {
           </LineChart>
         </ResponsiveContainer>
       </ChartFigure>
+      )}
       <p className="mt-2 text-xs text-subtle">
         {t.dashboard.trainingLoad.footnote}
       </p>

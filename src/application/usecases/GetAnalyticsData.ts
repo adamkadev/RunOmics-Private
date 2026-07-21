@@ -427,6 +427,13 @@ function buildAllTimeAnalytics(byYearMap: Map<number, Activity[]>, all: Activity
   return { totals: computeTotals(all, elapsedDays), ...buildSeries(buckets, all) }
 }
 
+const ROLLING_DAYS = 365
+
+function trimLeadingEmpty<T>(points: T[], hasValue: (p: T) => boolean): T[] {
+  const first = points.findIndex(hasValue)
+  return first === -1 ? [] : points.slice(first)
+}
+
 function buildEfficiencyDaily(activities: Activity[], now: Date): DailyEfficiency[] {
   const EASY_TYPES_SET = new Set(EASY_TYPES)
   const DAY_MS = 86_400_000
@@ -436,8 +443,8 @@ function buildEfficiencyDaily(activities: Activity[], now: Date): DailyEfficienc
   // Pre-compute timestamps once
   const stamped = easy.map((a) => ({ a, ms: new Date(a.date + 'T00:00:00').getTime() }))
 
-  return Array.from({ length: 90 }, (_, i) => {
-    const dayMs = nowMs - (89 - i) * DAY_MS
+  const points = Array.from({ length: ROLLING_DAYS }, (_, i) => {
+    const dayMs = nowMs - (ROLLING_DAYS - 1 - i) * DAY_MS
     const day = new Date(dayMs)
     const label = day.toLocaleDateString(t.locale, { day: 'numeric', month: 'short' })
     const date = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`
@@ -452,6 +459,8 @@ function buildEfficiencyDaily(activities: Activity[], now: Date): DailyEfficienc
       ef30: in30.length >= 5 ? efficiencyFactor(in30) : null,
     }
   })
+
+  return trimLeadingEmpty(points, (p) => p.ef7 !== null || p.ef30 !== null)
 }
 
 function buildRunningDynamicsDaily(activities: Activity[], now: Date): DailyRunningDynamics[] {
@@ -459,8 +468,8 @@ function buildRunningDynamicsDaily(activities: Activity[], now: Date): DailyRunn
   const nowMs = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
   const stamped = activities.map((a) => ({ a, ms: new Date(a.date + 'T00:00:00').getTime() }))
 
-  return Array.from({ length: 90 }, (_, i) => {
-    const dayMs = nowMs - (89 - i) * DAY_MS
+  const points = Array.from({ length: ROLLING_DAYS }, (_, i) => {
+    const dayMs = nowMs - (ROLLING_DAYS - 1 - i) * DAY_MS
     const day = new Date(dayMs)
     const label = day.toLocaleDateString(t.locale, { day: 'numeric', month: 'short' })
     const date = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`
@@ -479,6 +488,8 @@ function buildRunningDynamicsDaily(activities: Activity[], now: Date): DailyRunn
       verticalOscillation30: in30.length >= 5 ? weightedVerticalOscillation(in30) : null,
     }
   })
+
+  return trimLeadingEmpty(points, (p) => p.cadence7 !== null || p.cadence30 !== null)
 }
 
 export async function getAnalyticsData(): Promise<AnalyticsPageData> {
@@ -496,11 +507,6 @@ export async function getAnalyticsData(): Promise<AnalyticsPageData> {
   const years = Array.from(byYearMap.keys()).sort((a, b) => b - a)
   const periodWeeks = [8, 12, 16]
 
-
-  // RPE is driven far more by session type (a sprint workout always reads
-  // higher than an easy run) than by form, so we compare each run against the
-  // usual RPE for its own type rather than the raw value. Types with too few
-  // rated sessions don't get a reliable baseline and are left out.
   const rpeByType = new Map<ActivityType, number[]>()
   for (const a of all) {
     if (a.rpe === null) continue
