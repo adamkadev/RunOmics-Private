@@ -199,6 +199,11 @@ export function WeekView({
   const selected = days.find((d) => d.date === selectedDate) ?? firstDay
   const selectedPlan = byDatePlanned.get(selected.date)
 
+  function activityTitle(a: Activity): string {
+    if (a.description && a.description !== t.activityTypes[a.type]) return a.description
+    return selectedPlan?.name ?? a.description ?? t.activityTypes[a.type]
+  }
+
   const nextWeekPlans = useMemo(
     () =>
       Array.from({ length: 7 }, (_, i) => isoDate(addDays(weekStart, 7 + i)))
@@ -422,7 +427,7 @@ export function WeekView({
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-semibold text-foreground">
-                    {a.description || t.activityTypes[a.type]}
+                    {activityTitle(a)}
                   </span>
                   <span className="text-xs text-muted-foreground">
                     {t.activityTypes[a.type]} · {a.distanceKm.toFixed(1)} {t.units.km}
@@ -454,7 +459,13 @@ export function WeekView({
         </GlassSurface>
       )}
 
-      {sheetActivity && <ActivitySheet activity={sheetActivity} onClose={() => setSheetActivity(null)} />}
+      {sheetActivity && (
+        <ActivitySheet
+          activity={sheetActivity}
+          title={activityTitle(sheetActivity)}
+          onClose={() => setSheetActivity(null)}
+        />
+      )}
       {sheetPlan && <PlannedWorkoutSheet workout={sheetPlan} onClose={() => setSheetPlan(null)} />}
     </div>
   )

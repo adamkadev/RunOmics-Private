@@ -14,11 +14,12 @@ import { t } from '@/i18n'
 
 interface Props {
   activity: Activity
+  title?: string
   onClose: () => void
 }
 
 /** Bottom sheet glass quick-view, opened by tapping a day's session in the agenda week view. */
-export function ActivitySheet({ activity, onClose }: Props) {
+export function ActivitySheet({ activity, title, onClose }: Props) {
   const { close, handleProps, sheetStyle } = useDragToDismiss(onClose)
   const trapRef = useFocusTrap<HTMLDivElement>()
 
@@ -52,7 +53,7 @@ export function ActivitySheet({ activity, onClose }: Props) {
 
         <div className="mb-3 flex items-center justify-between gap-2">
           <h2 className="text-sm font-bold text-foreground">
-            {activity.description || t.activityTypes[activity.type]}
+            {title || activity.description || t.activityTypes[activity.type]}
           </h2>
           <button
             onClick={close}
