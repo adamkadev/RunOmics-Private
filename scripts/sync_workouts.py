@@ -161,6 +161,7 @@ def _collect_scheduled(
     item_type_counts: dict[str, int] = {}
     skipped_sports: list[str] = []
     skipped_no_workout_id = 0
+    debug_dumps_left = 3
 
     for year, month in months:
         try:
@@ -178,7 +179,10 @@ def _collect_scheduled(
                 item_type = item.get("itemType") or "(none)"
                 item_type_counts[item_type] = item_type_counts.get(item_type, 0) + 1
 
-            if item.get("itemType") != "workout":
+            # Garmin Coach's adaptive training plans schedule "fbtAdaptiveWorkout"
+            # items (Firstbeat-driven adaptive coaching), alongside plain
+            # "workout" items used by manually-created/third-party-imported plans.
+            if item.get("itemType") not in ("workout", "fbtAdaptiveWorkout"):
                 continue
             if not sched_date or not in_window:
                 continue
@@ -189,6 +193,9 @@ def _collect_scheduled(
             workout_id = str(item.get("workoutId") or "")
             if not workout_id:
                 skipped_no_workout_id += 1
+                if debug_dumps_left > 0:
+                    debug_dumps_left -= 1
+                    print(f"  Debug: {item.get('itemType')} item with no workoutId: {json.dumps(item, ensure_ascii=False)[:800]}")
                 continue
             # Garmin's calendar-service can list the same (date, workout) pair
             # twice (month grids overlap at week boundaries) - dedupe here.
