@@ -145,8 +145,10 @@ def fetch_planned_workouts(client: GarminClient) -> list[dict]:
 
 def _collect_scheduled(
     client: GarminClient, start_date: date, end_date: date
-) -> list[tuple[str, str]]:
-    """Return (date, workoutId) pairs from the calendar for the given window."""
+) -> list[tuple[str, str, str]]:
+    """Return (date, workoutId, fallbackTitle) triples from the calendar for the
+    given window. fallbackTitle is the calendar item's own name - used when a
+    workout's detail can't be fetched (see _build_entries)."""
     months: list[tuple[int, int]] = []
     cur = start_date.replace(day=1)
     while cur <= end_date:
@@ -154,7 +156,14 @@ def _collect_scheduled(
         cur = (cur + timedelta(days=32)).replace(day=1)
 
     seen: set[tuple[str, str]] = set()
-    scheduled: list[tuple[str, str]] = []
+    scheduled: list[tuple[str, str, str]] = []
+    # Diagnostics only (don't affect filtering) - surfaces in the sync's Actions
+    # log why a calendar item was excluded, since e.g. Garmin Coach entries have
+    # been reported missing from the synced plan with no other visible cause.
+    item_type_counts: dict[str, int] = {}
+    skipped_sports: list[str] = []
+    skipped_no_workout_id = 0
+
     for year, month in months:
         try:
             data = _retry_on_429(
@@ -165,51 +174,76 @@ def _collect_scheduled(
             continue
 
         for item in data.get("calendarItems", []):
-            if item.get("itemType") != "workout":
-                continue
             sched_date = item.get("date", "")
-            if not sched_date:
+            in_window = bool(sched_date) and start_date.isoformat() <= sched_date <= end_date.isoformat()
+            if in_window:
+                item_type = item.get("itemType") or "(none)"
+                item_type_counts[item_type] = item_type_counts.get(item_type, 0) + 1
+
+            # Garmin Coach's adaptive training plans schedule "fbtAdaptiveWorkout"
+            # items (Firstbeat-driven adaptive coaching), alongside plain
+            # "workout" items used by manually-created/third-party-imported plans.
+            if item.get("itemType") not in ("workout", "fbtAdaptiveWorkout"):
                 continue
-            if sched_date < start_date.isoformat() or sched_date > end_date.isoformat():
+            if not sched_date or not in_window:
                 continue
             sport = (item.get("sport", "") or "").lower()
             if sport and "running" not in sport:
+                skipped_sports.append(sport)
                 continue
-            workout_id = str(item.get("workoutId") or "")
+            # fbtAdaptiveWorkout items have no numeric workoutId - they carry a
+            # workoutUuid instead, which workout-service/workout/{id} also accepts.
+            workout_id = str(item.get("workoutId") or item.get("workoutUuid") or "")
             if not workout_id:
+                skipped_no_workout_id += 1
                 continue
             # Garmin's calendar-service can list the same (date, workout) pair
             # twice (month grids overlap at week boundaries) - dedupe here.
             pair = (sched_date, workout_id)
             if pair not in seen:
                 seen.add(pair)
-                scheduled.append(pair)
+                scheduled.append((sched_date, workout_id, (item.get("title") or "").strip()))
+
+    if item_type_counts:
+        breakdown = ", ".join(f"{k}={v}" for k, v in sorted(item_type_counts.items()))
+        print(f"  Calendar items in window by itemType: {breakdown}")
+    if skipped_sports:
+        print(f"  Skipped {len(skipped_sports)} workout(s) with non-running sport: {sorted(set(skipped_sports))}")
+    if skipped_no_workout_id:
+        print(f"  Skipped {skipped_no_workout_id} workout(s) with no workoutId")
 
     return scheduled
 
 
 def _build_entries(
-    client: GarminClient, scheduled: list[tuple[str, str]]
+    client: GarminClient, scheduled: list[tuple[str, str, str]]
 ) -> list[dict]:
     """Fetch workout details and build the final entry list."""
-    details_cache: dict[str, dict] = {}
+    details_cache: dict[str, dict | None] = {}
     planned: list[dict] = []
     easy_pace = _load_easy_pace_sec_per_km()
 
-    for sched_date, workout_id in scheduled:
+    for sched_date, workout_id, fallback_title in scheduled:
         if workout_id not in details_cache:
             try:
-                detail = _retry_on_429(
+                details_cache[workout_id] = _retry_on_429(
                     lambda wid=workout_id: client.get_workout_detail(wid)
                 )
-                details_cache[workout_id] = detail
                 time.sleep(_RATE_LIMIT_PAUSE)
             except GarminAPIError as exc:
                 print(f"  Warning: workout {workout_id} detail failed: {exc}")
-                continue
+                details_cache[workout_id] = None
 
         detail = details_cache[workout_id]
-        name = (detail.get("workoutName") or "").strip()
+        if detail is None:
+            # No structured detail available (seen for Garmin Coach's adaptive
+            # workouts when workout-service doesn't recognize their workoutUuid) -
+            # still show the session by name/date rather than dropping it entirely.
+            if fallback_title:
+                planned.append({"date": sched_date, "name": fallback_title})
+            continue
+
+        name = (detail.get("workoutName") or fallback_title).strip()
         if " + " in name:
             name = name.split(" + ", 1)[0].strip()
         if not name:
@@ -243,9 +277,17 @@ def _build_entries(
         if dur_s is not None:
             entry["durationSecs"] = int(dur_s)
 
-        steps = _build_workout_steps(detail)
-        if steps is not None:
-            entry["steps"] = steps
+        workout_steps = _build_workout_steps(detail)
+        if workout_steps is not None:
+            entry["steps"] = workout_steps
+            # Quality sessions (Threshold/Tempo/VO2Max/Anaerobic/Sprint) get their
+            # main interval block folded into the title, e.g. "Seuil - 3x8:00@4:20" -
+            # Garmin Coach's own workout names are terse ("Seuil") unlike third-party
+            # plans, which already spell out the structure in the name.
+            if infer_planned_type(name) != "Base":
+                descriptor = _quality_descriptor(workout_steps)
+                if descriptor:
+                    entry["name"] = f"{name} - {descriptor}"
 
         planned.append(entry)
 
@@ -411,6 +453,28 @@ def _build_workout_steps(detail: dict) -> list[dict] | None:
         steps[-1]["kind"] = "cooldown"
 
     return steps if len(steps) > 1 else None
+
+
+def _quality_descriptor(steps: list[dict]) -> str | None:
+    """Compact "NxMM:SS@pace" summary of a workout's main interval block, e.g.
+    "3x8:00@4:20" for three 8-minute efforts at 4:20/km. None when the workout
+    has no repeated effort step (nothing to summarize)."""
+    effort_reps = [s for s in steps if s.get("kind") == "effort" and "rep" in s]
+    if not effort_reps:
+        return None
+
+    reps = max(s["rep"] for s in effort_reps)
+    first = next(s for s in effort_reps if s["rep"] == 1)
+    pace = first.get("paceSecPerKm")
+    pace_str = f"@{_format_pace_mmss(pace)}" if pace else ""
+    return f"{reps}x{first['minutes']}:00{pace_str}"
+
+
+def _format_pace_mmss(pace_range: list[int]) -> str:
+    """Midpoint of a [fast, slow] sec/km target range as "M:SS", matching the
+    single pace value Garmin's own UI shows for a pace.zone target."""
+    mid = round(sum(pace_range) / 2)
+    return f"{mid // 60}:{mid % 60:02d}"
 
 
 def _retry_on_429(fn):
