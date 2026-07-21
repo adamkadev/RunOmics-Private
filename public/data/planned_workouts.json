@@ -120,6 +120,36 @@
       "distanceM": 8000,
       "type": "Base",
       "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-07-21",
+      "name": "Seuil",
+      "type": "Threshold",
+      "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-07-22",
+      "name": "Base",
+      "type": "Base",
+      "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-07-23",
+      "name": "Sprint",
+      "type": "Sprint",
+      "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-07-25",
+      "name": "Sprint",
+      "type": "Sprint",
+      "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-07-26",
+      "name": "Longue course",
+      "type": "Base",
+      "scheduledTime": "19:00"
     }
   ]
 }
