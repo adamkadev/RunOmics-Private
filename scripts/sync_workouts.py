@@ -161,7 +161,7 @@ def _collect_scheduled(
     item_type_counts: dict[str, int] = {}
     skipped_sports: list[str] = []
     skipped_no_workout_id = 0
-    debug_dumps_left = 3
+    debug_dumps_left = 1
 
     for year, month in months:
         try:
@@ -195,7 +195,7 @@ def _collect_scheduled(
                 skipped_no_workout_id += 1
                 if debug_dumps_left > 0:
                     debug_dumps_left -= 1
-                    print(f"  Debug: {item.get('itemType')} item with no workoutId: {json.dumps(item, ensure_ascii=False)[:800]}")
+                    print(f"  Debug: {item.get('itemType')} item with no workoutId: {json.dumps(item, ensure_ascii=False)}")
                 continue
             # Garmin's calendar-service can list the same (date, workout) pair
             # twice (month grids overlap at week boundaries) - dedupe here.
