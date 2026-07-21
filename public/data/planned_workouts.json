@@ -5,6 +5,16 @@
       "name": "Footing 60min",
       "distanceM": 9600,
       "durationSecs": 3600,
+      "steps": [
+        {
+          "kind": "effort",
+          "minutes": 60,
+          "paceSecPerKm": [
+            367,
+            384
+          ]
+        }
+      ],
       "type": "Base",
       "scheduledTime": "19:00"
     },
@@ -13,6 +23,16 @@
       "name": "40 min footing",
       "distanceM": 6400,
       "durationSecs": 2400,
+      "steps": [
+        {
+          "kind": "effort",
+          "minutes": 40,
+          "paceSecPerKm": [
+            367,
+            384
+          ]
+        }
+      ],
       "type": "Base",
       "scheduledTime": "19:00"
     },
@@ -124,8 +144,8 @@
     {
       "date": "2026-07-21",
       "name": "Seuil - 3x8:00@4:20/km",
-      "distanceM": 10316,
-      "durationSecs": 3000,
+      "distanceM": 10003,
+      "durationSecs": 2880,
       "steps": [
         {
           "kind": "warmup",
@@ -204,16 +224,26 @@
     {
       "date": "2026-07-22",
       "name": "Base",
-      "distanceM": 5972,
+      "distanceM": 5973,
       "durationSecs": 1920,
+      "steps": [
+        {
+          "kind": "effort",
+          "minutes": 32,
+          "paceSecPerKm": [
+            303,
+            343
+          ]
+        }
+      ],
       "type": "Base",
       "scheduledTime": "19:00"
     },
     {
       "date": "2026-07-23",
       "name": "Sprint - 3x3x0:15@2:45/km",
-      "distanceM": 12170,
-      "durationSecs": 4155,
+      "distanceM": 8642,
+      "durationSecs": 3300,
       "steps": [
         {
           "kind": "warmup",
@@ -391,8 +421,8 @@
     {
       "date": "2026-07-25",
       "name": "Sprint - 2x3x0:15@2:45/km",
-      "distanceM": 9669,
-      "durationSecs": 3270,
+      "distanceM": 7054,
+      "durationSecs": 2640,
       "steps": [
         {
           "kind": "warmup",
@@ -519,8 +549,18 @@
     {
       "date": "2026-07-26",
       "name": "Longue course",
-      "distanceM": 15864,
+      "distanceM": 15867,
       "durationSecs": 5100,
+      "steps": [
+        {
+          "kind": "effort",
+          "minutes": 85,
+          "paceSecPerKm": [
+            303,
+            343
+          ]
+        }
+      ],
       "type": "Base",
       "scheduledTime": "19:00"
     }
