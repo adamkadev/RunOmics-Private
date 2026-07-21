@@ -59,12 +59,20 @@ function DayActivities({ activities }: { activities: Activity[] }) {
   )
 }
 
+// "45'" below the hour mark (matches the day cell's tight width), "1h30" above it.
+function formatDurationTickCompact(durationSecs: number): string {
+  const totalMin = Math.round(durationSecs / 60)
+  const h = Math.floor(totalMin / 60)
+  const m = totalMin % 60
+  return h > 0 ? `${h}${t.units.hour}${String(m).padStart(2, '0')}` : `${m}'`
+}
+
 function PlannedBadge({ workout, onTap }: { workout: PlannedWorkout; onTap: () => void }) {
   const dotColor = workout.type ? ACTIVITY_TYPE_CONFIG[workout.type as ActivityType].chartColor : null
   const label = workout.distanceM
     ? `${round(workout.distanceM / 1000)} ${t.units.km}`
     : workout.durationSecs
-      ? `${Math.round(workout.durationSecs / 60)}'`
+      ? formatDurationTickCompact(workout.durationSecs)
       : null
 
   return (

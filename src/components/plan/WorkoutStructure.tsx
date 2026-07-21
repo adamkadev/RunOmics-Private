@@ -58,11 +58,18 @@ export function WorkoutStepList({ steps, type }: { steps: WorkoutStep[]; type?: 
         ? s.repsWithRecovery(efforts.length, effortMin, recoveries[0]?.minutes ?? 0, zone)
         : s.reps(efforts.length, effortMin, zone)
 
-  const rows: { label: string; minutes: number; zone: string; accent: boolean }[] = []
+  const rows: { label: string; minutes: number | null; zone: string; accent: boolean }[] = []
   if (warmup) rows.push({ label: s.warmup, minutes: warmup.minutes, zone: s.easyZone, accent: false })
   rows.push({
     label: intervalLabel,
-    minutes: efforts.reduce((sum, st) => sum + st.minutes, 0) + recoveries.reduce((sum, st) => sum + st.minutes, 0),
+    // A single effort already states its own duration in the label ("85' @
+    // pace") - repeating it on the right would just echo the same number.
+    // With reps (label is "N × effort'"), the right side adds real info: the
+    // block's total duration including recoveries, which the label doesn't sum.
+    minutes:
+      efforts.length === 1
+        ? null
+        : efforts.reduce((sum, st) => sum + st.minutes, 0) + recoveries.reduce((sum, st) => sum + st.minutes, 0),
     zone,
     accent: true,
   })
@@ -73,7 +80,9 @@ export function WorkoutStepList({ steps, type }: { steps: WorkoutStep[]; type?: 
       {rows.map((row, i) => (
         <div key={i} className="flex items-center justify-between gap-2 text-xs">
           <span className={row.accent ? 'font-semibold text-white' : 'text-white/70'}>{row.label}</span>
-          <span className="shrink-0 tabular-nums text-white/50">{s.min(row.minutes)}</span>
+          {row.minutes !== null && (
+            <span className="shrink-0 tabular-nums text-white/50">{s.min(row.minutes)}</span>
+          )}
         </div>
       ))}
     </div>

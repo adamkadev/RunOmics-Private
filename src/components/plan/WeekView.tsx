@@ -15,7 +15,7 @@ import { InlineJumpButton } from '@/components/ui/InlineJumpButton'
 import { PlannedWorkoutSheet } from './PlannedWorkoutSheet'
 import { WeekPurposeBanner } from './WeekPurposeBanner'
 import { addDays, isoDate, isoWeekNumber } from '@/lib/calendarDate'
-import { formatDate, formatDateFull } from '@/lib/formatters'
+import { formatDate, formatDateFull, formatDurationWords } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -78,7 +78,7 @@ function PlannedWorkoutRow({ plan, onTap }: { plan: PlannedWorkout; onTap: () =>
             {[
               plan.scheduledTime,
               plan.type ? t.activityTypes[plan.type as ActivityType] : null,
-              plan.durationSecs ? `~${Math.round(plan.durationSecs / 60)} min` : null,
+              plan.durationSecs ? `${formatDurationWords(plan.durationSecs)}` : null,
             ]
               .filter(Boolean)
               .join(' · ') || t.plan.planned}
@@ -104,7 +104,7 @@ function NextWeekPlanRow({ plan, onTap }: { plan: PlannedWorkout; onTap: () => v
   const meta =
     [
       plan.type ? t.activityTypes[plan.type as ActivityType] : null,
-      plan.durationSecs ? `~${Math.round(plan.durationSecs / 60)} min` : null,
+      plan.durationSecs ? `${formatDurationWords(plan.durationSecs)}` : null,
     ]
       .filter(Boolean)
       .join(' · ') || t.plan.planned

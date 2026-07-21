@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import type { ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import { ACTIVITY_TYPE_CONFIG, ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
 import { parseWorkoutStructure } from '@/domain/training/workoutStructure'
+import { formatDurationWords } from '@/lib/formatters'
 import { WorkoutStructureBars, WorkoutStepList } from './WorkoutStructure'
 import { useDragToDismiss } from '@/lib/useDragToDismiss'
 import { useFocusTrap } from '@/lib/useFocusTrap'
@@ -28,7 +29,7 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
 
   useScrollLock()
 
-  const durationMin = workout.durationSecs ? Math.round(workout.durationSecs / 60) : null
+  const durationLabel = workout.durationSecs ? formatDurationWords(workout.durationSecs) : null
   const distanceKm = workout.distanceM ? (workout.distanceM / 1000).toFixed(1) : null
   const structure = workout.steps ?? parseWorkoutStructure(workout.name, workout.durationSecs)
   const typeColor = workout.type
@@ -86,7 +87,7 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
           </div>
 
           {/* Stats chips: time | type | duration | distance */}
-          {(workout.scheduledTime || workout.type || durationMin || distanceKm) && (
+          {(workout.scheduledTime || workout.type || durationLabel || distanceKm) && (
             <div className="mb-4 flex flex-wrap gap-2">
               {workout.scheduledTime && (
                 <span className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-xs font-semibold text-white/70">
@@ -105,9 +106,9 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
                   {t.activityTypes[workout.type as ActivityType]}
                 </span>
               )}
-              {durationMin && (
+              {durationLabel && (
                 <span className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-xs font-semibold text-white/70">
-                  ~{durationMin} min
+                  {durationLabel}
                 </span>
               )}
               {distanceKm && (

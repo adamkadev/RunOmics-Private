@@ -79,7 +79,7 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, las
   const plannedWorkoutMeta = plannedWorkout
     ? [
         plannedWorkout.type ? t.activityTypes[plannedWorkout.type as ActivityType] : null,
-        plannedWorkout.durationSecs ? `~${Math.round(plannedWorkout.durationSecs / 60)} min` : null,
+        plannedWorkout.durationSecs ? `~${formatDurationWords(plannedWorkout.durationSecs)}` : null,
         plannedWorkout.scheduledTime,
       ].filter(Boolean).join(' · ')
     : null
