@@ -2,11 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
-import { TrendingUp, TrendingDown } from 'lucide-react'
-import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
-import type { AnalyticsPageData, PeriodDelta } from '@/application/usecases/GetAnalyticsData'
+import type { AnalyticsPageData } from '@/application/usecases/GetAnalyticsData'
 import type { YearComparisonData } from '@/application/usecases/GetYearComparison'
 import type { SeasonHeadlineData } from '@/application/usecases/GetSeasonHeadline'
 import { SeasonHeadline } from '@/components/analytics/SeasonHeadline'
@@ -23,7 +21,6 @@ import type { ThresholdHistoryData } from '@/application/usecases/GetThresholdHi
 import { formatDurationShort } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartCardSkeleton } from '@/components/ui/Skeleton'
-import { STATUS } from '@/lib/statusColors'
 import { useSwipeNavigation } from '@/lib/useSwipeNavigation'
 import { t } from '@/i18n'
 
@@ -51,11 +48,15 @@ const TABS = [
 ] as const
 
 type TabId = (typeof TABS)[number]['id']
-type View = { kind: 'year'; year: number } | { kind: 'period'; weeks: number } | { kind: 'all' }
+
+// Season scope for the headline stats, the Volume tab and the Seasons tab. The
+// per-metric trend charts are not governed by this - each one pages through its
+// own 4w/6m/1y window (see WindowedChartCard).
+type View = { kind: 'year'; year: number } | { kind: 'all' }
 
 const VIEW_STORAGE_KEY = 'analytics:view'
 
-function readStoredView(years: number[], periodWeeks: number[]): View | null {
+function readStoredView(years: number[]): View | null {
   if (typeof window === 'undefined') return null
   try {
     const raw = localStorage.getItem(VIEW_STORAGE_KEY)
@@ -64,56 +65,11 @@ function readStoredView(years: number[], periodWeeks: number[]): View | null {
     if (parsed.kind === 'year' && typeof parsed.year === 'number' && years.includes(parsed.year)) {
       return { kind: 'year', year: parsed.year }
     }
-    if (parsed.kind === 'period' && typeof parsed.weeks === 'number' && periodWeeks.includes(parsed.weeks)) {
-      return { kind: 'period', weeks: parsed.weeks }
-    }
     if (parsed.kind === 'all') return { kind: 'all' }
   } catch {
     // Malformed/absent storage - fall back to the default view.
   }
   return null
-}
-
-function DeltaBadge({ text, good }: { text: string; good: boolean }) {
-  const Icon = good ? TrendingUp : TrendingDown
-  return (
-    <span
-      className={cn(
-        'inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-medium',
-        good ? STATUS.success.badge : STATUS.danger.badge,
-      )}
-    >
-      <Icon size={14} strokeWidth={2.5} />
-      {text}
-    </span>
-  )
-}
-
-function buildDeltaBadges(delta: PeriodDelta): ReactNode[] {
-  const badges: ReactNode[] = []
-
-  if (delta.distancePct != null)
-    badges.push(<DeltaBadge key="dist" text={t.analytics.period.distancePct(delta.distancePct)} good={delta.distancePct >= 0} />)
-
-  if (delta.sessionsPct != null)
-    badges.push(<DeltaBadge key="sess" text={t.analytics.period.sessionsPct(delta.sessionsPct)} good={delta.sessionsPct >= 0} />)
-
-  if (delta.easyPaceSec != null && delta.easyPaceSec !== 0) {
-    const faster = delta.easyPaceSec < 0
-    badges.push(
-      <DeltaBadge
-        key="pace"
-        text={
-          faster
-            ? t.analytics.period.paceFaster(Math.abs(delta.easyPaceSec))
-            : t.analytics.period.paceSlower(delta.easyPaceSec)
-        }
-        good={faster}
-      />,
-    )
-  }
-
-  return badges
 }
 
 export function AnalyticsClient({
@@ -143,14 +99,14 @@ export function AnalyticsClient({
   racePredictions: GarminRacePredictionsData | null
   threshold: ThresholdHistoryData | null
 }) {
-  const { years, byYear, periodWeeks, byPeriod } = data
+  const { years, byYear } = data
 
   const [view, setView] = useState<View>({ kind: 'year', year: years[0] ?? new Date().getFullYear() })
   const [tab, setTab] = useState<TabId>('performance')
 
   // Restore after mount, not in the initializer, to avoid a hydration mismatch.
   useEffect(() => {
-    const stored = readStoredView(years, periodWeeks)
+    const stored = readStoredView(years)
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore from localStorage after mount
     if (stored) setView(stored)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -175,28 +131,13 @@ export function AnalyticsClient({
     }
   }
 
-  const isPeriod = view.kind === 'period'
   const isAll = view.kind === 'all'
 
-  const active =
-    view.kind === 'year'
-      ? byYear[view.year]
-      : view.kind === 'period'
-        ? byPeriod[view.weeks]
-        : data.allTime
+  const active = view.kind === 'year' ? byYear[view.year] : data.allTime
 
   const totals = active?.totals ?? null
 
-  const periodLabel = isAll
-    ? t.analytics.allTimeTitle
-    : isPeriod
-      ? t.analytics.period.title(view.weeks)
-      : t.analytics.season(view.year)
-
-  function selectPeriod(weeks: number) {
-    setView({ kind: 'period', weeks })
-    if (tab === 'seasons') setTab('volume')
-  }
+  const periodLabel = isAll ? t.analytics.allTimeTitle : t.analytics.season(view.year)
 
   function selectAllTime() {
     setView({ kind: 'all' })
@@ -207,7 +148,7 @@ export function AnalyticsClient({
     setView({ kind: 'year', year: y })
   }
 
-  const visibleTabs = isPeriod || isAll ? TABS.filter((tb) => tb.id !== 'seasons') : TABS
+  const visibleTabs = isAll ? TABS.filter((tb) => tb.id !== 'seasons') : TABS
   const displayYear = view.kind === 'year' ? view.year : (years[0] ?? null)
 
   function goPrevTab() {
@@ -271,9 +212,6 @@ export function AnalyticsClient({
       ]
     : []
 
-  const periodDelta = view.kind === 'period' ? byPeriod[view.weeks]?.delta : null
-  const deltaBadges: ReactNode[] = periodDelta ? buildDeltaBadges(periodDelta) : []
-
   return (
     <div className="space-y-4">
       <div className="space-y-2.5 px-1">
@@ -286,14 +224,6 @@ export function AnalyticsClient({
           selected={isAll ? null : displayYear}
           onSelect={(y) => (y === null ? selectAllTime() : selectYear(y))}
           allTimeLabel={t.analytics.allTimeChip}
-          periods={periodWeeks.map((w) => ({
-            weeks: w,
-            label: t.analytics.period.chip(w),
-          }))}
-          activePeriod={isPeriod ? view.weeks : null}
-          onSelectPeriod={selectPeriod}
-          yearGroupLabel={t.analytics.yearGroupLabel}
-          windowGroupLabel={t.analytics.windowGroupLabel}
         />
       </div>
 
@@ -301,12 +231,8 @@ export function AnalyticsClient({
 
       {metrics.length > 0 && (
         <GlassSurface variant="card">
-          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-b border-foreground/[0.08] px-5 py-3.5">
+          <div className="border-b border-foreground/[0.08] px-5 py-3.5">
             <span className="text-sm font-semibold text-foreground">{periodLabel}</span>
-
-            <div className="flex flex-wrap items-center gap-1.5">
-              {deltaBadges.length > 0 && deltaBadges}
-            </div>
           </div>
 
           <div className="px-5 py-5">
@@ -349,17 +275,16 @@ export function AnalyticsClient({
 
             {tab === 'performance' && (
               <PerformanceTab
-                series={active}
+                weeklyTrends={data.weeklyTrends}
                 efficiencyDaily={data.efficiencyDaily}
                 racePredictions={racePredictions}
                 threshold={threshold}
-                isAll={isAll}
               />
             )}
 
             {tab === 'physiology' && (
               <PhysiologyTab
-                series={active}
+                weeklyTrends={data.weeklyTrends}
                 trainingLoad={trainingLoad}
                 loadRisk={loadRisk}
                 loadBalance={loadBalance}
@@ -367,7 +292,6 @@ export function AnalyticsClient({
                 vo2maxHistory={vo2maxHistory}
                 zones={zones}
                 runningDynamicsDaily={data.runningDynamicsDaily}
-                isAll={isAll}
               />
             )}
 

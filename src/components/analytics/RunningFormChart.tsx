@@ -2,19 +2,19 @@
 
 import { useState } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
-import type { MonthlyRunningForm } from '@/application/usecases/GetAnalyticsData'
+import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
-import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { ChartExplain } from '@/components/ui/ChartExplain'
+import { WindowedChartCard, windowTickDate, windowTicks } from '@/components/ui/ChartWindowNav'
 import { t } from '@/i18n'
 
 type Metric = 'cadence' | 'groundContact' | 'verticalOscillation' | 'verticalRatio' | 'strideLength'
 
 const METRICS: Metric[] = ['cadence', 'groundContact', 'verticalOscillation', 'verticalRatio', 'strideLength']
 
-const DATA_KEY: Record<Metric, keyof MonthlyRunningForm> = {
+const DATA_KEY: Record<Metric, keyof WeeklyTrendPoint> = {
   cadence: 'cadenceSpm',
   groundContact: 'groundContactMs',
   verticalOscillation: 'verticalOscillationMm',
@@ -54,92 +54,105 @@ const TICK_DECIMALS: Record<Metric, number> = {
   strideLength: 2,
 }
 
-interface Props {
-  data: MonthlyRunningForm[]
-}
-
 interface TooltipProps {
   active?: boolean
-  payload?: Array<{ dataKey: string; value: number }>
-  label?: string
+  payload?: Array<{ dataKey: string; value: number; payload?: { label?: string } }>
 }
 
-function CustomTooltip({ active, payload, label }: TooltipProps) {
+function CustomTooltip({ active, payload }: TooltipProps) {
   const p = payload?.[0]
   if (!active || !p) return null
   return (
-    <TooltipCard label={label}>
+    <TooltipCard label={p.payload?.label}>
       <p className="text-sm font-semibold text-foreground">{p.value} {UNIT_BY_KEY[p.dataKey]}</p>
     </TooltipCard>
   )
 }
 
-export function RunningFormChart({ data }: Props) {
-  const available = METRICS.filter((m) => data.some((d) => d[DATA_KEY[m]] !== null))
-  const [metric, setMetric] = useState<Metric | null>(available[0] ?? null)
-  if (!metric) return null
+export function RunningFormChart({ points }: { points: WeeklyTrendPoint[] }) {
+  // Availability is judged over the whole history, not the visible window, so
+  // the metric pills stay stable while paging.
+  const available = METRICS.filter((m) => points.some((p) => p[DATA_KEY[m]] !== null))
+  const [metric, setMetric] = useState<Metric>(available[0] ?? 'cadence')
+  if (!available.length) return null
 
-  const key = DATA_KEY[metric]
-  const color = COLOR[metric]
-  const values = data.map((d) => d[key]).filter((v): v is number => v !== null)
-  const min = Math.min(...values) * 0.97
-  const max = Math.max(...values) * 1.03
-  const decimals = TICK_DECIMALS[metric]
-  const summary = `${t.analytics.charts.runningForm.title}: ${t.analytics.charts.runningForm.metrics[metric]} ${Math.min(...values).toFixed(decimals)}–${Math.max(...values).toFixed(decimals)} ${UNIT_BY_KEY[key]}`
-  const reading = t.analytics.charts.runningForm.reading[metric]!(Math.min(...values).toFixed(decimals), Math.max(...values).toFixed(decimals))
+  const active = available.includes(metric) ? metric : available[0]!
+  const key = DATA_KEY[active]
+  const color = COLOR[active]
+  const decimals = TICK_DECIMALS[active]
+
+  const controls = (
+    <div className="flex flex-wrap gap-1">
+      {available.map((m) => (
+        <button
+          key={m}
+          onClick={() => setMetric(m)}
+          className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+            m === active ? ACTIVE_PILL_CLASS[m] : 'border border-border bg-card text-muted-foreground hover:bg-muted'
+          }`}
+        >
+          {t.analytics.charts.runningForm.metrics[m]}
+        </button>
+      ))}
+    </div>
+  )
 
   return (
-    <GlassSurface variant="card" className="p-5">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-foreground/80">{t.analytics.charts.runningForm.title}</h3>
-        <div className="flex gap-1">
-          {available.map((m) => (
-            <button
-              key={m}
-              onClick={() => setMetric(m)}
-              className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${
-                m === metric ? ACTIVE_PILL_CLASS[m] : 'border border-border bg-card text-muted-foreground hover:bg-muted'
-              }`}
-            >
-              {t.analytics.charts.runningForm.metrics[m]}
-            </button>
-          ))}
-        </div>
-      </div>
-      <ChartFigure summary={summary}>
-        <ResponsiveContainer width="100%" height={200}>
-          <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
-            <XAxis
-              dataKey="label"
-              tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-              axisLine={false}
-              tickLine={false}
-            />
-            <YAxis
-              domain={[min, max]}
-              tickFormatter={(v: number) => v.toFixed(TICK_DECIMALS[metric])}
-              tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-              axisLine={false}
-              tickLine={false}
-              width={42}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Line
-              type="monotone"
-              dataKey={key}
-              stroke={color}
-              strokeWidth={3}
-              dot={{ r: 3, fill: color, strokeWidth: 0 }}
-              connectNulls
-              isAnimationActive={false}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </ChartFigure>
-      <ChartExplain text={reading} />
-      <p className="mt-2 text-xs text-subtle">
-        {t.analytics.charts.runningForm.footnote[metric]}
-      </p>
-    </GlassSurface>
+    <WindowedChartCard
+      title={t.analytics.charts.runningForm.title}
+      controls={controls}
+      points={points}
+      footnote={t.analytics.charts.runningForm.footnote[active]}
+    >
+      {(visible) => {
+        const values = visible.map((d) => d[key]).filter((v): v is number => typeof v === 'number')
+        if (!values.length) return <p className="py-12 text-center text-sm text-subtle">{t.chartWindow.empty}</p>
+
+        const min = Math.min(...values) * 0.97
+        const max = Math.max(...values) * 1.03
+        const ticks = windowTicks(visible)
+        const lo = Math.min(...values).toFixed(decimals)
+        const hi = Math.max(...values).toFixed(decimals)
+        const summary = `${t.analytics.charts.runningForm.title}: ${t.analytics.charts.runningForm.metrics[active]} ${lo}–${hi} ${UNIT_BY_KEY[key]}`
+        const reading = t.analytics.charts.runningForm.reading[active]!(lo, hi)
+
+        return (
+          <>
+            <ChartFigure summary={summary}>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={visible} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(date: string) => (ticks.has(date) ? windowTickDate(date) : '')}
+                  />
+                  <YAxis
+                    domain={[min, max]}
+                    tickFormatter={(v: number) => v.toFixed(decimals)}
+                    tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+                    axisLine={false}
+                    tickLine={false}
+                    width={42}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Line
+                    type="monotone"
+                    dataKey={key}
+                    stroke={color}
+                    strokeWidth={3}
+                    dot={false}
+                    connectNulls
+                    isAnimationActive={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartFigure>
+            <ChartExplain text={reading} />
+          </>
+        )
+      }}
+    </WindowedChartCard>
   )
 }

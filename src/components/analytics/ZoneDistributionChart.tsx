@@ -2,18 +2,32 @@
 
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { formatDuration } from '@/lib/formatters'
-import type { ZoneShare } from '@/application/usecases/GetAnalyticsData'
+import type { WeeklyTrendPoint, ZoneShare } from '@/application/usecases/GetAnalyticsData'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { CHART_COLORS, ZONE_COLORS } from '@/lib/colors'
-import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { ChartExplain } from '@/components/ui/ChartExplain'
+import { WindowedChartCard } from '@/components/ui/ChartWindowNav'
+import { round } from '@/lib/math'
 import { t } from '@/i18n'
 
 const ZONE_LABELS = t.analytics.charts.zones.labels
 
-interface Props {
-  data: ZoneShare[]
+/** Sum each week's zone seconds across the window, then turn them into shares. */
+function zoneShares(weeks: WeeklyTrendPoint[]): ZoneShare[] {
+  const seconds = new Map<number, number>()
+  for (const week of weeks) {
+    for (const [zone, secs] of Object.entries(week.zoneSeconds)) {
+      seconds.set(Number(zone), (seconds.get(Number(zone)) ?? 0) + secs)
+    }
+  }
+
+  const total = Array.from(seconds.values()).reduce((s, v) => s + v, 0)
+  if (total === 0) return []
+
+  return Array.from(seconds.entries())
+    .sort(([a], [b]) => a - b)
+    .map(([zone, secs]) => ({ zone, seconds: secs, percent: round((secs / total) * 100, 1) }))
 }
 
 interface TooltipProps {
@@ -36,59 +50,62 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   )
 }
 
-export function ZoneDistributionChart({ data }: Props) {
-  if (!data.length) return null
-
-  const summary = `${t.analytics.charts.zones.title}: ${data.map((z) => `Z${z.zone} ${z.percent}%`).join(', ')}`
-  const top = data.reduce((a, b) => (b.percent > a.percent ? b : a))
-  const reading = t.analytics.charts.zones.reading(top.percent, `Z${top.zone} · ${ZONE_LABELS[top.zone]}`)
+export function ZoneDistributionChart({ points }: { points: WeeklyTrendPoint[] }) {
+  if (!points.some((p) => Object.keys(p.zoneSeconds).length > 0)) return null
 
   return (
-    <GlassSurface variant="card" className="p-5">
-      <h3 className="mb-4 text-sm font-semibold text-foreground/80">
-        {t.analytics.charts.zones.title}
-      </h3>
-      <div className="flex items-center gap-4">
-        <ChartFigure summary={summary}>
-          <ResponsiveContainer width={140} height={140}>
-            <PieChart>
-              <Pie
-                data={data}
-                dataKey="seconds"
-                nameKey="zone"
-                cx="50%"
-                cy="50%"
-                innerRadius={42}
-                outerRadius={64}
-                paddingAngle={2}
-                isAnimationActive={false}
-              >
+    <WindowedChartCard title={t.analytics.charts.zones.title} points={points}>
+      {(visible) => {
+        const data = zoneShares(visible)
+        if (!data.length) return <p className="py-12 text-center text-sm text-subtle">{t.chartWindow.empty}</p>
+
+        const summary = `${t.analytics.charts.zones.title}: ${data.map((z) => `Z${z.zone} ${z.percent}%`).join(', ')}`
+        const top = data.reduce((a, b) => (b.percent > a.percent ? b : a))
+        const reading = t.analytics.charts.zones.reading(top.percent, `Z${top.zone} · ${ZONE_LABELS[top.zone]}`)
+
+        return (
+          <>
+            <div className="flex items-center gap-4">
+              <ChartFigure summary={summary}>
+                <ResponsiveContainer width={140} height={140}>
+                  <PieChart>
+                    <Pie
+                      data={data}
+                      dataKey="seconds"
+                      nameKey="zone"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={42}
+                      outerRadius={64}
+                      paddingAngle={2}
+                      isAnimationActive={false}
+                    >
+                      {data.map((z) => (
+                        <Cell key={z.zone} fill={ZONE_COLORS[z.zone] ?? CHART_COLORS.axisTick} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </ChartFigure>
+              <ul className="flex-1 space-y-2">
                 {data.map((z) => (
-                  <Cell key={z.zone} fill={ZONE_COLORS[z.zone] ?? CHART_COLORS.axisTick} />
+                  <li key={z.zone} className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: ZONE_COLORS[z.zone] }} />
+                      <span className="text-muted-foreground">
+                        Z{z.zone} {ZONE_LABELS[z.zone]}
+                      </span>
+                    </div>
+                    <span className="font-medium text-foreground">{z.percent}%</span>
+                  </li>
                 ))}
-              </Pie>
-              <Tooltip content={<CustomTooltip />} />
-            </PieChart>
-          </ResponsiveContainer>
-        </ChartFigure>
-        <ul className="flex-1 space-y-2">
-          {data.map((z) => (
-            <li key={z.zone} className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2">
-                <span
-                  className="h-2 w-2 rounded-full"
-                  style={{ backgroundColor: ZONE_COLORS[z.zone] }}
-                />
-                <span className="text-muted-foreground">
-                  Z{z.zone} {ZONE_LABELS[z.zone]}
-                </span>
-              </div>
-              <span className="font-medium text-foreground">{z.percent}%</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-      <ChartExplain text={reading} />
-    </GlassSurface>
+              </ul>
+            </div>
+            <ChartExplain text={reading} />
+          </>
+        )
+      }}
+    </WindowedChartCard>
   )
 }

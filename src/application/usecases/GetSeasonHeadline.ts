@@ -1,6 +1,6 @@
 import { t } from '@/i18n'
 import { round } from '@/lib/math'
-import type { AnalyticsPageData, MonthlyEfficiency, MonthlyPace } from '@/application/usecases/GetAnalyticsData'
+import type { AnalyticsPageData, WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import type { YearComparisonData } from '@/application/usecases/GetYearComparison'
 
 export type SeasonHeadlineTone = 'positive' | 'caution'
@@ -19,8 +19,8 @@ const EFFICIENCY_THRESHOLD = 0.05
 const EASY_PACE_THRESHOLD_SEC = 10
 const VOLUME_THRESHOLD_PCT = 5
 
-function efficiencyBullet(trend: MonthlyEfficiency[]): SeasonHeadlineBullet | null {
-  const known = trend.filter((m): m is MonthlyEfficiency & { ef: number } => m.ef !== null)
+function efficiencyBullet(weeks: WeeklyTrendPoint[]): SeasonHeadlineBullet | null {
+  const known = weeks.filter((w): w is WeeklyTrendPoint & { ef: number } => w.ef !== null)
   const first = known[0]
   const last = known[known.length - 1]
   if (!first || !last || first === last) return null
@@ -29,8 +29,8 @@ function efficiencyBullet(trend: MonthlyEfficiency[]): SeasonHeadlineBullet | nu
   return { tone: diff > 0 ? 'positive' : 'caution', text: t.analytics.seasonHeadline.efficiency(diff) }
 }
 
-function easyPaceBullet(trend: MonthlyPace[]): SeasonHeadlineBullet | null {
-  const known = trend.filter((m): m is MonthlyPace & { easyPace: number } => m.easyPace !== null)
+function easyPaceBullet(weeks: WeeklyTrendPoint[]): SeasonHeadlineBullet | null {
+  const known = weeks.filter((w): w is WeeklyTrendPoint & { easyPace: number } => w.easyPace !== null)
   const first = known[0]
   const last = known[known.length - 1]
   if (!first || !last || first === last) return null
@@ -57,21 +57,24 @@ function headlineTitle(bullets: SeasonHeadlineBullet[]): string {
 }
 
 // Names the 2-3 biggest changes of the current season from data that's already
-// computed elsewhere (year trend series + year-over-year comparison) - no new
-// aggregation, just a reading over it. Returns null when nothing crosses the
-// signal thresholds, so the card stays honest rather than forcing a verdict.
+// computed elsewhere (the weekly trend base + year-over-year comparison) - no
+// new aggregation, just a reading of the current calendar year's weeks. Returns
+// null when nothing crosses the signal thresholds, so the card stays honest
+// rather than forcing a verdict.
 export function getSeasonHeadline(
   data: AnalyticsPageData,
   comparison: YearComparisonData | null,
 ): SeasonHeadlineData | null {
   const currentYear = data.years[0]
-  const season = currentYear !== undefined ? data.byYear[currentYear] : undefined
-  if (!season) return null
+  if (currentYear === undefined) return null
+
+  const prefix = `${currentYear}-`
+  const seasonWeeks = data.weeklyTrends.filter((w) => w.date.startsWith(prefix))
 
   const bullets = [
-    efficiencyBullet(season.efficiencyTrend),
-    easyPaceBullet(season.paceTrend),
-    volumeBullet(comparison, season.year),
+    efficiencyBullet(seasonWeeks),
+    easyPaceBullet(seasonWeeks),
+    volumeBullet(comparison, currentYear),
   ].filter((b): b is SeasonHeadlineBullet => b !== null)
 
   if (bullets.length === 0) return null

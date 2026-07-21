@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import {
   CHART_RANGES,
@@ -10,6 +10,7 @@ import {
   type ChartRange,
   type WindowBounds,
 } from '@/domain/timeWindow'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -122,4 +123,71 @@ export function ChartWindowPager({
       </button>
     </div>
   )
+}
+
+/**
+ * Card frame for a self-windowing trend chart: title, optional extra header
+ * controls and legend, the range chips, the pager, an empty state, and the
+ * footnote. The chart body is a render-prop given the visible slice, so every
+ * windowed chart shares one layout and only supplies its own plot.
+ */
+export function WindowedChartCard<T extends { date: string }>({
+  title,
+  controls,
+  legend,
+  points,
+  initialRange = '6m',
+  footnote,
+  children,
+}: {
+  title: ReactNode
+  controls?: ReactNode
+  legend?: ReactNode
+  points: T[]
+  initialRange?: ChartRange
+  footnote?: ReactNode
+  children: (visible: T[]) => ReactNode
+}) {
+  const w = useChartWindow(points, initialRange)
+
+  return (
+    <GlassSurface variant="card" className="p-5">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold text-foreground/80">{title}</h3>
+        <div className="flex flex-wrap items-center gap-2">
+          {controls}
+          <ChartRangeChips value={w.range} onChange={w.selectRange} />
+        </div>
+      </div>
+
+      {legend && <div className="mb-3 flex flex-wrap gap-x-3 gap-y-1">{legend}</div>}
+
+      <ChartWindowPager
+        bounds={w.bounds}
+        canGoBack={w.canGoBack}
+        canGoForward={w.canGoForward}
+        onBack={w.goBack}
+        onForward={w.goForward}
+      />
+
+      {w.visible.length === 0 ? (
+        <p className="py-12 text-center text-sm text-subtle">{t.chartWindow.empty}</p>
+      ) : (
+        children(w.visible)
+      )}
+
+      {footnote && <p className="mt-2 text-xs text-subtle">{footnote}</p>}
+    </GlassSurface>
+  )
+}
+
+/** Short "24 Jun" label for a chart's date-keyed X axis. */
+export function windowTickDate(date: string): string {
+  return shortDate(date)
+}
+
+/** Dates to keep as X-axis ticks so a dense window shows ~`count` labels. */
+export function windowTicks<T extends { date: string }>(points: T[], count = 6): Set<string> {
+  const step = Math.max(1, Math.floor(points.length / count))
+  return new Set(points.filter((_, i) => i % step === 0).map((p) => p.date))
 }

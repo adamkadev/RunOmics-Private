@@ -18,36 +18,6 @@ export interface MonthlyVolume {
   byType: Partial<Record<ActivityType, number>>
 }
 
-export interface MonthlyPace {
-  month: string
-  label: string
-  easyPace: number | null
-  hardPace: number | null
-}
-
-export interface MonthlyEfficiency {
-  month: string
-  label: string
-  ef: number | null
-}
-
-export interface MonthlyHr {
-  month: string
-  label: string
-  easyAvgHr: number | null
-  hardAvgHr: number | null
-}
-
-export interface MonthlyRunningForm {
-  month: string
-  label: string
-  cadenceSpm: number | null
-  groundContactMs: number | null
-  verticalOscillationMm: number | null
-  verticalRatioPct: number | null
-  strideLengthM: number | null
-}
-
 export interface MonthlyLongRuns {
   month: string
   label: string
@@ -67,6 +37,25 @@ export interface ZoneShare {
   percent: number
 }
 
+export interface WeeklyTrendPoint {
+  date: string
+  label: string
+  easyPace: number | null
+  hardPace: number | null
+  ef: number | null
+  easyAvgHr: number | null
+  hardAvgHr: number | null
+  cadenceSpm: number | null
+  groundContactMs: number | null
+  verticalOscillationMm: number | null
+  verticalRatioPct: number | null
+  strideLengthM: number | null
+  avgRpe: number | null
+  aer: number | null
+  ana: number | null
+  zoneSeconds: Record<number, number>
+}
+
 export interface DistanceBracket {
   label: string
   count: number
@@ -83,52 +72,17 @@ export interface YearTotals {
   caloriesPerWeek: number
 }
 
-export interface MonthlyRpe {
-  month: string
-  label: string
-  avgRpe: number | null
-}
-
-export interface MonthlyTrainingEffect {
-  month: string
-  label: string
-  aer: number | null
-  ana: number | null
-}
-
-// Per-bucket trend series shared by both the yearly (monthly buckets) and the
-// rolling-period (weekly buckets) views, so the same charts render either one.
 export interface AnalyticsSeries {
   monthlyVolume: MonthlyVolume[]
-  paceTrend: MonthlyPace[]
-  efficiencyTrend: MonthlyEfficiency[]
-  hrTrend: MonthlyHr[]
-  runningFormTrend: MonthlyRunningForm[]
   longRuns: MonthlyLongRuns[]
   easyHardSplit: MonthlyEasyHard[]
-  zoneDistribution: ZoneShare[]
   distanceDistribution: DistanceBracket[]
-  rpeTrend: MonthlyRpe[]
-  trainingEffectTrend: MonthlyTrainingEffect[]
   typesPresent: ActivityType[]
 }
 
 export interface YearAnalytics extends AnalyticsSeries {
   year: number
   totals: YearTotals
-}
-
-// Progression vs the previous equally long window.
-export interface PeriodDelta {
-  distancePct: number | null
-  sessionsPct: number | null
-  easyPaceSec: number | null // negative = faster
-}
-
-export interface PeriodAnalytics extends AnalyticsSeries {
-  weeks: number
-  totals: YearTotals
-  delta: PeriodDelta | null
 }
 
 export interface AllTimeAnalytics extends AnalyticsSeries {
@@ -156,14 +110,12 @@ export interface DailyRunningDynamics {
 export interface AnalyticsPageData {
   years: number[]
   byYear: Record<number, YearAnalytics>
-  periodWeeks: number[]
-  byPeriod: Record<number, PeriodAnalytics>
+  weeklyTrends: WeeklyTrendPoint[]
   efficiencyDaily: DailyEfficiency[]
   runningDynamicsDaily: DailyRunningDynamics[]
   allTime: AllTimeAnalytics
 }
 
-// A value (possibly null) paired with a weight, averaged across activities.
 export function weightedAvg(
   activities: Activity[],
   value: (a: Activity) => number | null,
@@ -182,7 +134,6 @@ export function weightedAvg(
   return totalWeight === 0 ? null : round(weightedSum / totalWeight, decimals)
 }
 
-// Simple mean of a (possibly null) field across activities; null when none present.
 export function avgField(activities: Activity[], pick: (a: Activity) => number | null): number | null {
   const vals = activities.map(pick).filter((v): v is number => v !== null)
   return vals.length ? round(vals.reduce((s, v) => s + v, 0) / vals.length) : null
@@ -214,7 +165,7 @@ export function zoneDistribution(activities: Activity[]): ZoneShare[] {
     }))
 }
 
-/** zoneDistribution over a rolling window ending `now` - keeps the impure Date read out of callers rendering as a component. */
+
 export function recentZoneDistribution(activities: Activity[], days: number, now: Date = new Date()): ZoneShare[] {
   const cutoff = new Date(now.getTime() - days * 86_400_000)
   return zoneDistribution(activities.filter((a) => new Date(a.date + 'T00:00:00') >= cutoff))
@@ -258,24 +209,14 @@ interface Bucket {
   acts: Activity[]
 }
 
-// Build every per-bucket trend series in a single pass. `scoped` is the full set
-// of activities the buckets cover (used for the distribution charts).
 function buildSeries(buckets: Bucket[], scoped: Activity[]): AnalyticsSeries {
   const typesPresent = new Set<ActivityType>()
   const monthlyVolume: MonthlyVolume[] = []
-  const paceTrend: MonthlyPace[] = []
-  const efficiencyTrend: MonthlyEfficiency[] = []
-  const hrTrend: MonthlyHr[] = []
-  const runningFormTrend: MonthlyRunningForm[] = []
   const longRuns: MonthlyLongRuns[] = []
   const easyHardSplit: MonthlyEasyHard[] = []
-  const rpeTrend: MonthlyRpe[] = []
-  const trainingEffectTrend: MonthlyTrainingEffect[] = []
 
   for (const { id, label, acts } of buckets) {
     const base = { month: id, label }
-    const easy = acts.filter((a) => EASY_TYPES.includes(a.type))
-    const hard = acts.filter((a) => !EASY_TYPES.includes(a.type))
 
     const byType: Partial<Record<ActivityType, number>> = {}
     for (const a of acts) {
@@ -286,44 +227,62 @@ function buildSeries(buckets: Bucket[], scoped: Activity[]): AnalyticsSeries {
     const { easyPct, hardPct } = easyHardShare(acts)
 
     monthlyVolume.push({ ...base, sessionCount: acts.length, totalKm: round(acts.reduce((s, a) => s + a.distanceKm, 0)), byType })
-    paceTrend.push({ ...base, easyPace: weightedPace(easy), hardPace: weightedPace(hard) })
-    efficiencyTrend.push({ ...base, ef: efficiencyFactor(easy) })
-    hrTrend.push({ ...base, easyAvgHr: weightedHr(easy), hardAvgHr: weightedHr(hard) })
-    runningFormTrend.push({
-      ...base,
-      cadenceSpm: weightedCadence(acts),
-      groundContactMs: weightedGroundContact(acts),
-      verticalOscillationMm: weightedVerticalOscillation(acts),
-      verticalRatioPct: weightedVerticalRatio(acts),
-      strideLengthM: weightedStrideLength(acts),
-    })
     longRuns.push({
       ...base,
       longestKm: acts.length > 0 ? round(Math.max(...acts.map((a) => a.distanceKm))) : 0,
     })
     easyHardSplit.push({ ...base, easyPct, hardPct })
-    rpeTrend.push({ ...base, avgRpe: avgField(acts, (a) => a.rpe) })
-    trainingEffectTrend.push({
-      ...base,
-      aer: avgField(acts, (a) => a.aerTrainingEffect),
-      ana: avgField(acts, (a) => a.anaTrainingEffect),
-    })
   }
 
   return {
     monthlyVolume,
-    paceTrend,
-    efficiencyTrend,
-    hrTrend,
-    runningFormTrend,
     longRuns,
     easyHardSplit,
-    zoneDistribution: zoneDistribution(scoped),
     distanceDistribution: distanceDistribution(scoped),
-    rpeTrend,
-    trainingEffectTrend,
     typesPresent: Array.from(typesPresent),
   }
+}
+
+export function buildWeeklyTrends(all: Activity[]): WeeklyTrendPoint[] {
+  const byWeek = new Map<string, Activity[]>()
+  for (const a of all) {
+    const monday = isoDate(startOfWeek(new Date(a.date + 'T12:00:00')))
+    const list = byWeek.get(monday) ?? []
+    list.push(a)
+    byWeek.set(monday, list)
+  }
+
+  return Array.from(byWeek.keys())
+    .sort()
+    .map((monday) => {
+      const acts = byWeek.get(monday)!
+      const easy = acts.filter((a) => EASY_TYPES.includes(a.type))
+      const hard = acts.filter((a) => !EASY_TYPES.includes(a.type))
+
+      const zoneSeconds: Record<number, number> = {}
+      for (const a of acts) {
+        for (const z of a.hrZones) zoneSeconds[z.zone] = (zoneSeconds[z.zone] ?? 0) + z.seconds
+      }
+
+      return {
+        date: monday,
+        label: new Date(monday + 'T00:00:00').toLocaleDateString(t.locale, { day: 'numeric', month: 'short' }),
+        easyPace: weightedPace(easy),
+        hardPace: weightedPace(hard),
+        ef: efficiencyFactor(easy),
+        easyAvgHr: weightedHr(easy),
+        hardAvgHr: weightedHr(hard),
+        cadenceSpm: weightedCadence(acts),
+        groundContactMs: weightedGroundContact(acts),
+        verticalOscillationMm: weightedVerticalOscillation(acts),
+        verticalRatioPct: weightedVerticalRatio(acts),
+        strideLengthM: weightedStrideLength(acts),
+        avgRpe: avgField(acts, (a) => a.rpe),
+        aer: avgField(acts, (a) => a.aerTrainingEffect),
+        ana: avgField(acts, (a) => a.anaTrainingEffect),
+        zoneSeconds,
+      }
+    })
 }
 
 export function computeTotals(activities: Activity[], elapsedDays: number): YearTotals {
@@ -378,44 +337,7 @@ function isoDate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-// Rolling window of the last `weeks` ISO weeks, bucketed by week, with a delta
-// vs the previous equally long window.
-function buildPeriodAnalytics(all: Activity[], weeks: number, now: Date): PeriodAnalytics {
-  const thisMonday = startOfWeek(now)
-  const buckets: Bucket[] = []
-  for (let i = weeks - 1; i >= 0; i--) {
-    const mon = new Date(thisMonday)
-    mon.setDate(thisMonday.getDate() - i * 7)
-    buckets.push({ id: isoDate(mon), label: mon.toLocaleDateString(t.locale, { day: 'numeric', month: 'short' }), acts: [] })
-  }
 
-  const windowActs: Activity[] = []
-  const prevActs: Activity[] = []
-  for (const a of all) {
-    const aMonday = startOfWeek(new Date(a.date + 'T12:00:00'))
-    const weeksAgo = Math.round((thisMonday.getTime() - aMonday.getTime()) / (7 * 86400000))
-    if (weeksAgo >= 0 && weeksAgo < weeks) {
-      buckets[weeks - 1 - weeksAgo]?.acts.push(a)
-      windowActs.push(a)
-    } else if (weeksAgo >= weeks && weeksAgo < weeks * 2) {
-      prevActs.push(a)
-    }
-  }
-
-  const pct = (cur: number, old: number) => (old > 0 ? Math.round(((cur - old) / old) * 100) : null)
-  const easyOf = (acts: Activity[]) => acts.filter((a) => EASY_TYPES.includes(a.type))
-  const easyPaceNow = weightedPace(easyOf(windowActs))
-  const easyPacePrev = weightedPace(easyOf(prevActs))
-  const delta: PeriodDelta | null = prevActs.length === 0 ? null : {
-    distancePct: pct(windowActs.reduce((s, a) => s + a.distanceKm, 0), prevActs.reduce((s, a) => s + a.distanceKm, 0)),
-    sessionsPct: pct(windowActs.length, prevActs.length),
-    easyPaceSec: easyPaceNow != null && easyPacePrev != null ? Math.round(easyPaceNow - easyPacePrev) : null,
-  }
-
-  return { weeks, totals: computeTotals(windowActs, weeks * 7), delta, ...buildSeries(buckets, windowActs) }
-}
-
-// One bucket per calendar year across the whole history.
 function buildAllTimeAnalytics(byYearMap: Map<number, Activity[]>, all: Activity[], now: Date): AllTimeAnalytics {
   const buckets: Bucket[] = Array.from(byYearMap.keys())
     .sort((a, b) => a - b)
@@ -505,25 +427,11 @@ export async function getAnalyticsData(): Promise<AnalyticsPageData> {
   }
 
   const years = Array.from(byYearMap.keys()).sort((a, b) => b - a)
-  const periodWeeks = [8, 12, 16]
-
-  const rpeByType = new Map<ActivityType, number[]>()
-  for (const a of all) {
-    if (a.rpe === null) continue
-    const list = rpeByType.get(a.type) ?? []
-    list.push(a.rpe)
-    rpeByType.set(a.type, list)
-  }
-  const avgRpeByType = new Map<ActivityType, number>()
-  for (const [type, vals] of rpeByType) {
-    if (vals.length >= 3) avgRpeByType.set(type, vals.reduce((s, v) => s + v, 0) / vals.length)
-  }
 
   return {
     years,
     byYear: Object.fromEntries(years.map((y) => [y, buildYearAnalytics(y, byYearMap.get(y)!, now)])),
-    periodWeeks,
-    byPeriod: Object.fromEntries(periodWeeks.map((w) => [w, buildPeriodAnalytics(all, w, now)])),
+    weeklyTrends: buildWeeklyTrends(all),
     efficiencyDaily: buildEfficiencyDaily(all, now),
     runningDynamicsDaily: buildRunningDynamicsDaily(all, now),
     allTime: buildAllTimeAnalytics(byYearMap, all, now),

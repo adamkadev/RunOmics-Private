@@ -1,4 +1,5 @@
-import { RACE_DISTANCE_KM, type RaceDistanceKey } from './distances'
+import { RACE_DISTANCE_KM, RACE_DISTANCES, type RaceDistanceKey } from './distances'
+import type { ChartRange } from '../timeWindow'
 
 export interface DatedPaces {
   date: string
@@ -6,6 +7,53 @@ export interface DatedPaces {
   '10k': number | null
   half: number | null
   marathon: number | null
+}
+
+function weekKey(date: string): string {
+  const d = new Date(date + 'T12:00:00')
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7))
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+export function downsamplePaces<T extends DatedPaces & { label: string }>(
+  points: T[],
+  range: ChartRange,
+): (DatedPaces & { label: string })[] {
+  if (points.length === 0) return []
+
+  const keyOf = range === '4w' ? weekKey : (date: string) => date.slice(0, 7)
+
+  const buckets = new Map<string, T[]>()
+  for (const point of points) {
+    const key = keyOf(point.date)
+    const list = buckets.get(key) ?? []
+    list.push(point)
+    buckets.set(key, list)
+  }
+
+  return Array.from(buckets.keys())
+    .sort()
+    .map((key) => {
+      const bucket = buckets.get(key)!
+      const last = bucket[bucket.length - 1]!
+      const averaged: DatedPaces & { label: string } = {
+        date: last.date,
+        label: last.label,
+        '5k': null,
+        '10k': null,
+        half: null,
+        marathon: null,
+      }
+
+      for (const distance of RACE_DISTANCES) {
+        const values = bucket.map((p) => p[distance]).filter((v): v is number => v !== null)
+        averaged[distance] = values.length
+          ? Math.round(values.reduce((s, v) => s + v, 0) / values.length)
+          : null
+      }
+
+      return averaged
+    })
 }
 
 export interface PredictionTrend {

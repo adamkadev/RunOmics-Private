@@ -1,29 +1,24 @@
 'use client'
 
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
-import type { MonthlyHr } from '@/application/usecases/GetAnalyticsData'
+import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
-import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { ChartExplain } from '@/components/ui/ChartExplain'
+import { WindowedChartCard, windowTickDate, windowTicks } from '@/components/ui/ChartWindowNav'
 import { trendFromSeries } from '@/lib/chartTrend'
 import { t } from '@/i18n'
 
-interface Props {
-  data: MonthlyHr[]
-}
-
 interface TooltipProps {
   active?: boolean
-  payload?: Array<{ dataKey: string; value: number; stroke: string }>
-  label?: string
+  payload?: Array<{ dataKey: string; value: number; stroke: string; payload?: { label?: string } }>
 }
 
-function CustomTooltip({ active, payload, label }: TooltipProps) {
+function CustomTooltip({ active, payload }: TooltipProps) {
   if (!active || !payload?.length) return null
   return (
-    <TooltipCard label={label}>
+    <TooltipCard label={payload[0]?.payload?.label}>
       {payload.map((p) => (
         <TooltipRow
           key={p.dataKey}
@@ -36,80 +31,86 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
   )
 }
 
-export function HrTrendChart({ data }: Props) {
-  const values = data.flatMap((d) => [d.easyAvgHr, d.hardAvgHr]).filter((v): v is number => v !== null)
-  if (!values.length) return null
-  const min = Math.min(...values) - 5
-  const max = Math.max(...values) + 5
+function LegendDot({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="flex items-center gap-1 text-xs text-subtle">
+      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} /> {label}
+    </span>
+  )
+}
 
-  const easyVals = data.map((d) => d.easyAvgHr).filter((v): v is number => v !== null)
-  const hardVals = data.map((d) => d.hardAvgHr).filter((v): v is number => v !== null)
-  const summaryParts = []
-  if (easyVals.length) summaryParts.push(`${t.analytics.charts.paceTrend.easy} ${Math.min(...easyVals)}–${Math.max(...easyVals)} ${t.units.bpm}`)
-  if (hardVals.length) summaryParts.push(`${t.analytics.charts.paceTrend.workout} ${Math.min(...hardVals)}–${Math.max(...hardVals)} ${t.units.bpm}`)
-  const summary = `${t.analytics.charts.hrTrend.title}: ${summaryParts.join(', ')}`
-  const r = t.analytics.charts.hrTrend.reading
-  // Lower easy-run HR for the same effort reads as improving fitness, so "down" is positive here.
-  const trend = trendFromSeries(easyVals, 2)
-  const reading = trend
-    ? trend.direction === 'down' ? r.down(Math.round(Math.abs(trend.delta))) : trend.direction === 'up' ? r.up(Math.round(trend.delta)) : r.flat
-    : null
+export function HrTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
+  if (!points.some((p) => p.easyAvgHr !== null || p.hardAvgHr !== null)) return null
+
+  const legend = (
+    <>
+      <LegendDot color={CHART_COLORS.hrEasy} label={t.analytics.charts.paceTrend.easy} />
+      <LegendDot color={CHART_COLORS.hr} label={t.analytics.charts.paceTrend.workout} />
+    </>
+  )
 
   return (
-    <GlassSurface variant="card" className="p-5">
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground/80">{t.analytics.charts.hrTrend.title}</h3>
-        <div className="flex gap-3">
-          <span className="flex items-center gap-1 text-xs text-subtle">
-            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: CHART_COLORS.hrEasy }} /> {t.analytics.charts.paceTrend.easy}
-          </span>
-          <span className="flex items-center gap-1 text-xs text-subtle">
-            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: CHART_COLORS.hr }} /> {t.analytics.charts.paceTrend.workout}
-          </span>
-        </div>
-      </div>
-      <ChartFigure summary={summary}>
-        <ResponsiveContainer width="100%" height={200}>
-          <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
-            <XAxis
-              dataKey="label"
-              tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-              axisLine={false}
-              tickLine={false}
-            />
-            <YAxis
-              domain={[min, max]}
-              tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-              axisLine={false}
-              tickLine={false}
-              width={42}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Line
-              type="monotone"
-              dataKey="easyAvgHr"
-              stroke={CHART_COLORS.hrEasy}
-              strokeWidth={3}
-              dot={{ r: 3, fill: CHART_COLORS.hrEasy, strokeWidth: 0 }}
-              connectNulls
-              isAnimationActive={false}
-            />
-            <Line
-              type="monotone"
-              dataKey="hardAvgHr"
-              stroke={CHART_COLORS.hr}
-              strokeWidth={3}
-              dot={{ r: 3, fill: CHART_COLORS.hr, strokeWidth: 0 }}
-              connectNulls
-              isAnimationActive={false}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </ChartFigure>
-      {reading && <ChartExplain text={reading} />}
-      <p className="mt-2 text-xs text-subtle">
-        {t.analytics.charts.hrTrend.footnote}
-      </p>
-    </GlassSurface>
+    <WindowedChartCard
+      title={t.analytics.charts.hrTrend.title}
+      legend={legend}
+      points={points}
+      footnote={t.analytics.charts.hrTrend.footnote}
+    >
+      {(visible) => {
+        const values = visible.flatMap((d) => [d.easyAvgHr, d.hardAvgHr]).filter((v): v is number => v !== null)
+        if (!values.length) return <p className="py-12 text-center text-sm text-subtle">{t.chartWindow.empty}</p>
+
+        const min = Math.min(...values) - 5
+        const max = Math.max(...values) + 5
+        const ticks = windowTicks(visible)
+
+        const easyVals = visible.map((d) => d.easyAvgHr).filter((v): v is number => v !== null)
+        const hardVals = visible.map((d) => d.hardAvgHr).filter((v): v is number => v !== null)
+        const summaryParts: string[] = []
+        if (easyVals.length) summaryParts.push(`${t.analytics.charts.paceTrend.easy} ${Math.min(...easyVals)}–${Math.max(...easyVals)} ${t.units.bpm}`)
+        if (hardVals.length) summaryParts.push(`${t.analytics.charts.paceTrend.workout} ${Math.min(...hardVals)}–${Math.max(...hardVals)} ${t.units.bpm}`)
+        const summary = `${t.analytics.charts.hrTrend.title}: ${summaryParts.join(', ')}`
+
+        const r = t.analytics.charts.hrTrend.reading
+        // Lower easy-run HR for the same effort reads as improving fitness, so "down" is positive here.
+        const trend = trendFromSeries(easyVals, 2)
+        const reading = trend
+          ? trend.direction === 'down'
+            ? r.down(Math.round(Math.abs(trend.delta)))
+            : trend.direction === 'up'
+              ? r.up(Math.round(trend.delta))
+              : r.flat
+          : null
+
+        return (
+          <>
+            <ChartFigure summary={summary}>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={visible} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(date: string) => (ticks.has(date) ? windowTickDate(date) : '')}
+                  />
+                  <YAxis
+                    domain={[min, max]}
+                    tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+                    axisLine={false}
+                    tickLine={false}
+                    width={42}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Line type="monotone" dataKey="easyAvgHr" stroke={CHART_COLORS.hrEasy} strokeWidth={3} dot={false} connectNulls isAnimationActive={false} />
+                  <Line type="monotone" dataKey="hardAvgHr" stroke={CHART_COLORS.hr} strokeWidth={3} dot={false} connectNulls isAnimationActive={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartFigure>
+            {reading && <ChartExplain text={reading} />}
+          </>
+        )
+      }}
+    </WindowedChartCard>
   )
 }

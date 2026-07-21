@@ -1,9 +1,6 @@
 'use client'
 
-import type {
-  AnalyticsSeries,
-  DailyRunningDynamics,
-} from '@/application/usecases/GetAnalyticsData'
+import type { DailyRunningDynamics, WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import type { VO2maxSeries } from '@/application/usecases/GetVO2maxHistory'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { TrainingLoadData } from '@/application/usecases/GetTrainingLoad'
@@ -23,7 +20,7 @@ import { VO2maxChart } from './VO2maxChart'
 import { TrainingZones } from './TrainingZones'
 
 interface Props {
-  series: AnalyticsSeries
+  weeklyTrends: WeeklyTrendPoint[]
   trainingLoad: TrainingLoadData | null
   loadRisk: LoadRiskPanelData | null
   loadBalance: LoadBalanceData | null
@@ -31,11 +28,10 @@ interface Props {
   vo2maxHistory: VO2maxSeries
   zones: TrainingZonesData | null
   runningDynamicsDaily: DailyRunningDynamics[]
-  isAll: boolean
 }
 
 export function PhysiologyTab({
-  series,
+  weeklyTrends,
   trainingLoad,
   loadRisk,
   loadBalance,
@@ -43,7 +39,6 @@ export function PhysiologyTab({
   vo2maxHistory,
   zones,
   runningDynamicsDaily,
-  isAll,
 }: Props) {
   return (
     <div className="space-y-4">
@@ -53,15 +48,15 @@ export function PhysiologyTab({
       {loadBalance && <LoadBalancePanel data={loadBalance} />}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <VO2maxChart series={vo2maxHistory} />
-        <HrTrendChart data={series.hrTrend} />
-        <ZoneDistributionChart data={series.zoneDistribution} />
-        <TrainingEffectChart data={series.trainingEffectTrend} />
+        <HrTrendChart points={weeklyTrends} />
+        <ZoneDistributionChart points={weeklyTrends} />
+        <TrainingEffectChart points={weeklyTrends} />
         <div className="lg:col-span-2">
-          <RunningFormChart data={series.runningFormTrend} />
+          <RunningFormChart points={weeklyTrends} />
         </div>
       </div>
 
-      {!isAll && <RunningDynamicsTrendChart data={runningDynamicsDaily} />}
+      <RunningDynamicsTrendChart data={runningDynamicsDaily} />
 
       {zones && <TrainingZones data={zones} />}
     </div>

@@ -611,7 +611,7 @@ export const fr = {
             : `Le volume ${curYear} accuse un retard de ${Math.abs(deltaPct)}% sur l'an dernier.`,
       },
       efficiencyRolling: {
-        title: 'Efficacité aérobie - tendance glissante',
+        title: 'Efficacité aérobie',
         ef7: '7 j',
         ef30: '30 j',
         unit: 'm/min·bpm',
@@ -663,7 +663,7 @@ export const fr = {
           `${dominant} domine la période (${pct}% des jours notés)${latest ? `, avec un statut actuel « ${latest} »` : ''}.`,
       },
       runningDynamicsRolling: {
-        title: 'Dynamique de course - tendance glissante',
+        title: 'Dynamique de course',
         d7: '7 j',
         d30: '30 j',
         metrics: {

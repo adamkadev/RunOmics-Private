@@ -619,7 +619,7 @@ export const en = {
             : `${curYear} volume is running ${Math.abs(deltaPct)}% behind last year.`,
       },
       efficiencyRolling: {
-        title: 'Aerobic Efficiency - Rolling Trend',
+        title: 'Aerobic Efficiency',
         ef7: '7-day',
         ef30: '30-day',
         unit: 'm/min·bpm',
@@ -671,7 +671,7 @@ export const en = {
           `${dominant} dominates this window (${pct}% of rated days)${latest ? `, currently reading "${latest}"` : ''}.`,
       },
       runningDynamicsRolling: {
-        title: 'Running Dynamics - Rolling Trend',
+        title: 'Running Dynamics',
         d7: '7-day',
         d30: '30-day',
         metrics: {

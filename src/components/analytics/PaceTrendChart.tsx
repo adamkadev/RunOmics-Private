@@ -1,30 +1,27 @@
 'use client'
 
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
-import type { MonthlyPace } from '@/application/usecases/GetAnalyticsData'
+import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { ChartExplain } from '@/components/ui/ChartExplain'
+import { WindowedChartCard, windowTickDate, windowTicks } from '@/components/ui/ChartWindowNav'
 import { trendFromSeries } from '@/lib/chartTrend'
 import { formatClock } from '@/lib/formatters'
-import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { t } from '@/i18n'
 
-interface Props {
-  data: MonthlyPace[]
-}
-
 interface TooltipProps {
   active?: boolean
-  payload?: Array<{ dataKey: string; value: number; stroke: string }>
-  label?: string
+  payload?: Array<{ dataKey: string; value: number; stroke: string; payload?: { label?: string } }>
 }
 
-function CustomTooltip({ active, payload, label }: TooltipProps) {
+// The X axis is keyed on the ISO date, so the header reads the point's own
+// human label rather than Recharts' raw category value.
+function CustomTooltip({ active, payload }: TooltipProps) {
   if (!active || !payload?.length) return null
   return (
-    <TooltipCard label={label}>
+    <TooltipCard label={payload[0]?.payload?.label}>
       {payload.map((p) => (
         <TooltipRow
           key={p.dataKey}
@@ -37,80 +34,81 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
   )
 }
 
-export function PaceTrendChart({ data }: Props) {
-  const paces = data.flatMap((d) => [d.easyPace, d.hardPace]).filter((p): p is number => p !== null)
-  const minPace = Math.min(...paces) - 10
-  const maxPace = Math.max(...paces) + 10
+function LegendDot({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="flex items-center gap-1 text-xs text-subtle">
+      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} /> {label}
+    </span>
+  )
+}
 
-  // Pace in sec/km: lower = faster = better, so "down" is positive
-  const ex = t.analytics.charts.paceTrend.explains
-  const trend = trendFromSeries(data.map((d) => d.easyPace), 8)
-  const explain: string | null = trend
-    ? trend.direction === 'down'
-      ? ex.improving(Math.abs(Math.round(trend.delta)))
-      : trend.direction === 'up'
-        ? ex.slowing(Math.round(trend.delta))
-        : ex.stable
-    : null
-  const summary = `${t.analytics.charts.paceTrend.title}${explain ? `: ${explain}` : ''}`
+export function PaceTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
+  if (!points.some((p) => p.easyPace !== null || p.hardPace !== null)) return null
+
+  const legend = (
+    <>
+      <LegendDot color={CHART_COLORS.brand} label={t.analytics.charts.paceTrend.easy} />
+      <LegendDot color={CHART_COLORS.atl} label={t.analytics.charts.paceTrend.workout} />
+    </>
+  )
 
   return (
-    <GlassSurface variant="card" className="p-5">
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground/80">{t.analytics.charts.paceTrend.title}</h3>
-        <div className="flex gap-3">
-          <span className="flex items-center gap-1 text-xs text-subtle">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" /> {t.analytics.charts.paceTrend.easy}
-          </span>
-          <span className="flex items-center gap-1 text-xs text-subtle">
-            <span className="h-2 w-2 rounded-full bg-orange-500" /> {t.analytics.charts.paceTrend.workout}
-          </span>
-        </div>
-      </div>
-      <ChartFigure summary={summary}>
-        <ResponsiveContainer width="100%" height={200}>
-          <LineChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
-            <XAxis
-              dataKey="label"
-              tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-              axisLine={false}
-              tickLine={false}
-            />
-            <YAxis
-              domain={[minPace, maxPace]}
-              reversed
-              tickFormatter={formatClock}
-              tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-              axisLine={false}
-              tickLine={false}
-              width={46}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Line
-              type="monotone"
-              dataKey="easyPace"
-              stroke={CHART_COLORS.brand}
-              strokeWidth={3}
-              dot={{ r: 3, fill: CHART_COLORS.brand, strokeWidth: 0 }}
-              connectNulls
-              isAnimationActive={false}
-            />
-            <Line
-              type="monotone"
-              dataKey="hardPace"
-              stroke={CHART_COLORS.atl}
-              strokeWidth={3}
-              dot={{ r: 3, fill: CHART_COLORS.atl, strokeWidth: 0 }}
-              connectNulls
-              isAnimationActive={false}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </ChartFigure>
-      {explain && <ChartExplain text={explain} />}
-      <p className="mt-1 text-xs text-subtle">
-        {t.analytics.charts.paceTrend.footnote}
-      </p>
-    </GlassSurface>
+    <WindowedChartCard
+      title={t.analytics.charts.paceTrend.title}
+      legend={legend}
+      points={points}
+      footnote={t.analytics.charts.paceTrend.footnote}
+    >
+      {(visible) => {
+        const paces = visible.flatMap((d) => [d.easyPace, d.hardPace]).filter((p): p is number => p !== null)
+        if (!paces.length) return <p className="py-12 text-center text-sm text-subtle">{t.chartWindow.empty}</p>
+
+        const min = Math.min(...paces) - 10
+        const max = Math.max(...paces) + 10
+        const ticks = windowTicks(visible)
+
+        const ex = t.analytics.charts.paceTrend.explains
+        const trend = trendFromSeries(visible.map((d) => d.easyPace), 8)
+        const explain = trend
+          ? trend.direction === 'down'
+            ? ex.improving(Math.abs(Math.round(trend.delta)))
+            : trend.direction === 'up'
+              ? ex.slowing(Math.round(trend.delta))
+              : ex.stable
+          : null
+        const summary = `${t.analytics.charts.paceTrend.title}${explain ? `: ${explain}` : ''}`
+
+        return (
+          <>
+            <ChartFigure summary={summary}>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={visible} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(date: string) => (ticks.has(date) ? windowTickDate(date) : '')}
+                  />
+                  <YAxis
+                    domain={[min, max]}
+                    reversed
+                    tickFormatter={formatClock}
+                    tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+                    axisLine={false}
+                    tickLine={false}
+                    width={46}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Line type="monotone" dataKey="easyPace" stroke={CHART_COLORS.brand} strokeWidth={3} dot={false} connectNulls isAnimationActive={false} />
+                  <Line type="monotone" dataKey="hardPace" stroke={CHART_COLORS.atl} strokeWidth={3} dot={false} connectNulls isAnimationActive={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartFigure>
+            {explain && <ChartExplain text={explain} />}
+          </>
+        )
+      }}
+    </WindowedChartCard>
   )
 }

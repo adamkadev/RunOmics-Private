@@ -7,6 +7,7 @@ import {
   zoneDistribution,
   distanceDistribution,
   computeTotals,
+  buildWeeklyTrends,
 } from '../GetAnalyticsData'
 import type { Activity, HrZone } from '@/domain/activity/types'
 
@@ -138,6 +139,62 @@ describe('distanceDistribution', () => {
     const result = distanceDistribution(acts)
     expect(result.find((b) => b.label === '5–10 km')?.count).toBe(1)
     expect(result.find((b) => b.label === '42+ km')?.count).toBe(1)
+  })
+})
+
+// ---------- buildWeeklyTrends ----------
+
+describe('buildWeeklyTrends', () => {
+  it('groups activities into ISO weeks keyed on the Monday, oldest first', () => {
+    // 2024-06-01 is a Saturday (week of Mon 27 May); 2024-06-05 a Wednesday.
+    const points = buildWeeklyTrends([
+      act({ date: '2024-06-05', type: 'Base' }),
+      act({ date: '2024-06-01', type: 'Base' }),
+    ])
+
+    expect(points.map((p) => p.date)).toEqual(['2024-05-27', '2024-06-03'])
+  })
+
+  it('puts every activity of the same week in one point', () => {
+    const points = buildWeeklyTrends([
+      act({ date: '2024-06-03', type: 'Base', avgHeartRate: 140, durationSeconds: 600 }),
+      act({ date: '2024-06-06', type: 'Base', avgHeartRate: 160, durationSeconds: 600 }),
+    ])
+
+    expect(points).toHaveLength(1)
+    expect(points[0]?.easyAvgHr).toBe(150)
+  })
+
+  it('sums HR zone seconds per week for the zone pie', () => {
+    const points = buildWeeklyTrends([
+      act({ date: '2024-06-03', hrZones: [zone(1, 300), zone(2, 200)] }),
+      act({ date: '2024-06-04', hrZones: [zone(1, 100)] }),
+    ])
+
+    expect(points[0]?.zoneSeconds).toEqual({ 1: 400, 2: 200 })
+  })
+
+  it('skips weeks with no activity rather than padding them with nulls', () => {
+    const points = buildWeeklyTrends([
+      act({ date: '2024-06-03' }),
+      act({ date: '2024-07-01' }),
+    ])
+
+    expect(points.map((p) => p.date)).toEqual(['2024-06-03', '2024-07-01'])
+  })
+
+  it('splits easy from hard runs when averaging pace', () => {
+    const points = buildWeeklyTrends([
+      act({ date: '2024-06-03', type: 'Base', paceSecPerKm: 360, distanceKm: 10 }),
+      act({ date: '2024-06-04', type: 'Threshold', paceSecPerKm: 240, distanceKm: 10 }),
+    ])
+
+    expect(points[0]?.easyPace).toBe(360)
+    expect(points[0]?.hardPace).toBe(240)
+  })
+
+  it('is empty when there are no activities', () => {
+    expect(buildWeeklyTrends([])).toEqual([])
   })
 })
 

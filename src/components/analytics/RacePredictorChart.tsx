@@ -3,7 +3,7 @@
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import type { GarminRacePredictionsData } from '@/application/usecases/GetGarminRacePredictions'
 import { RACE_DISTANCE_KM, type RaceDistanceKey } from '@/domain/race/distances'
-import { bestTrend } from '@/domain/race/predictionWindow'
+import { bestTrend, downsamplePaces } from '@/domain/race/predictionWindow'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -13,8 +13,6 @@ import { ChartRangeChips, ChartWindowPager, useChartWindow } from '@/components/
 import { formatDuration, formatPace } from '@/lib/formatters'
 import { t } from '@/i18n'
 
-// Same hue order as the Goals race cards (violet 5k -> blue 10k -> emerald half
-// -> orange marathon), so a distance keeps its identity across the app.
 const COLOR: Record<RaceDistanceKey, string> = {
   '5k': CHART_COLORS.efficiency,
   '10k': CHART_COLORS.pace,
@@ -22,10 +20,59 @@ const COLOR: Record<RaceDistanceKey, string> = {
   marathon: CHART_COLORS.atl,
 }
 
-// The i18n table is keyed loosely (it is shared shape across locales), so the
-// distance key doubles as the fallback label.
 function distanceLabel(distance: RaceDistanceKey): string {
   return t.analytics.charts.racePredictor.distances[distance] ?? distance
+}
+
+type MarkerShape = 'circle' | 'triangle' | 'square' | 'diamond'
+
+const SHAPE: Record<RaceDistanceKey, MarkerShape> = {
+  '5k': 'circle',
+  '10k': 'triangle',
+  half: 'square',
+  marathon: 'diamond',
+}
+
+function markerPath(shape: MarkerShape, cx: number, cy: number, r: number) {
+  switch (shape) {
+    case 'square':
+      return <rect x={cx - r} y={cy - r} width={r * 2} height={r * 2} />
+    case 'triangle':
+      return <polygon points={`${cx},${cy - r - 1} ${cx - r - 1},${cy + r} ${cx + r + 1},${cy + r}`} />
+    case 'diamond':
+      return <polygon points={`${cx},${cy - r - 1} ${cx + r + 1},${cy} ${cx},${cy + r + 1} ${cx - r - 1},${cy}`} />
+    default:
+      return <circle cx={cx} cy={cy} r={r} />
+  }
+}
+
+function Marker({ shape, color, size = 4 }: { shape: MarkerShape; color: string; size?: number }) {
+  const box = (size + 2) * 2
+  return (
+    <svg width={box} height={box} viewBox={`0 0 ${box} ${box}`} className="shrink-0" aria-hidden>
+      <g fill={color}>{markerPath(shape, box / 2, box / 2, size)}</g>
+    </svg>
+  )
+}
+
+interface DotProps {
+  cx?: number
+  cy?: number
+  value?: number | null
+  index?: number
+}
+
+function distanceDot(distance: RaceDistanceKey) {
+  const Dot = ({ cx, cy, value, index }: DotProps) => {
+    if (cx == null || cy == null || value == null) return null
+    return (
+      <g key={`${distance}-${index}`} fill={COLOR[distance]}>
+        {markerPath(SHAPE[distance], cx, cy, 4)}
+      </g>
+    )
+  }
+  Dot.displayName = `RaceDot(${distance})`
+  return Dot
 }
 
 function clock(seconds: number): string {
@@ -38,15 +85,14 @@ function shortDate(date: string): string {
 
 interface TooltipProps {
   active?: boolean
-  payload?: Array<{ dataKey: string; value: number }>
-  label?: string
+  payload?: Array<{ dataKey: string; value: number; payload?: { label?: string } }>
 }
 
-function CustomTooltip({ active, payload, label }: TooltipProps) {
+function CustomTooltip({ active, payload }: TooltipProps) {
   if (!active || !payload?.length) return null
 
   return (
-    <TooltipCard label={label}>
+    <TooltipCard label={payload[0]?.payload?.label}>
       {payload.map((p) => {
         const distance = p.dataKey as RaceDistanceKey
         return (
@@ -68,10 +114,12 @@ export function RacePredictorChart({ data }: { data: GarminRacePredictionsData }
   const { range, selectRange, bounds, visible, canGoBack, canGoForward, goBack, goForward } =
     useChartWindow(data.points, '4w')
 
-  const distances = data.distances.filter((d) => visible.some((p) => p[d] !== null))
-  const paces = visible.flatMap((p) => distances.map((d) => p[d])).filter((v): v is number => v !== null)
+  const plotted = downsamplePaces(visible, range)
 
-  const trend = bestTrend(visible, distances)
+  const distances = data.distances.filter((d) => plotted.some((p) => p[d] !== null))
+  const paces = plotted.flatMap((p) => distances.map((d) => p[d])).filter((v): v is number => v !== null)
+
+  const trend = bestTrend(plotted, distances)
   const reading = trend
     ? trend.improvementSec > 0
       ? s.reading.faster(distanceLabel(trend.distance), formatDuration(trend.improvementSec), formatDuration(trend.currentSec))
@@ -83,8 +131,8 @@ export function RacePredictorChart({ data }: { data: GarminRacePredictionsData }
   const min = paces.length ? Math.floor(Math.min(...paces)) - 5 : 0
   const max = paces.length ? Math.ceil(Math.max(...paces)) + 5 : 0
 
-  const step = Math.max(1, Math.floor(visible.length / 6))
-  const tickDates = new Set(visible.filter((_, i) => i % step === 0).map((p) => p.date))
+  const step = Math.max(1, Math.floor(plotted.length / 6))
+  const tickDates = new Set(plotted.filter((_, i) => i % step === 0).map((p) => p.date))
 
   const summary = `${s.title}: ${data.distances
     .map((d) => `${distanceLabel(d)} ${data.latest[d] !== undefined ? formatDuration(data.latest[d]!) : '–'}`)
@@ -97,12 +145,10 @@ export function RacePredictorChart({ data }: { data: GarminRacePredictionsData }
         <ChartRangeChips value={range} onChange={selectRange} />
       </div>
 
-      {/* "Most recent" - the current estimate, which stays put while paging back
-          so an older window is always read against today's value. */}
       <div className="mb-3 flex flex-wrap gap-x-3 gap-y-1">
         {data.distances.map((distance) => (
           <span key={distance} className="flex items-center gap-1 text-xs text-subtle">
-            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: COLOR[distance] }} />
+            <Marker shape={SHAPE[distance]} color={COLOR[distance]} size={3} />
             {distanceLabel(distance)}
             {data.latest[distance] !== undefined && (
               <span className="font-semibold text-foreground/80">{formatDuration(data.latest[distance]!)}</span>
@@ -124,7 +170,7 @@ export function RacePredictorChart({ data }: { data: GarminRacePredictionsData }
       ) : (
         <ChartFigure summary={summary}>
           <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={visible} margin={{ top: 4, right: 4, bottom: 0, left: 4 }}>
+            <LineChart data={plotted} margin={{ top: 8, right: 8, bottom: 0, left: 4 }}>
               <XAxis
                 dataKey="date"
                 tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
@@ -145,11 +191,12 @@ export function RacePredictorChart({ data }: { data: GarminRacePredictionsData }
               {distances.map((distance) => (
                 <Line
                   key={distance}
-                  type="monotone"
+                  type="linear"
                   dataKey={distance}
                   stroke={COLOR[distance]}
                   strokeWidth={2}
-                  dot={false}
+                  dot={distanceDot(distance)}
+                  activeDot={{ r: 6, fill: COLOR[distance], stroke: 'none' }}
                   connectNulls
                   isAnimationActive={false}
                 />
