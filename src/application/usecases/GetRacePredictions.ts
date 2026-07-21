@@ -50,12 +50,21 @@ export function confidenceBandSeconds(predictedSeconds: number, recentTimes: num
   return Math.round(predictedSeconds * (stdev(recentTimes) / mean))
 }
 
-/** Ratio of current VO2max to its value ~`windowWeeks` ago (1 = unchanged, >1 = improved). */
+/**
+ * Ratio of current VO2max to its value ~`windowWeeks` ago (1 = unchanged, >1 = improved).
+ *
+ * The reference point is found by date rather than by counting entries back:
+ * the series is sampled monthly, and a sample is missing for any month with no
+ * reading, so its index says nothing about how long ago it was.
+ */
 export function vo2maxFormFactor(history: VO2maxPoint[], windowWeeks: number): number {
   if (history.length < 2) return 1
   const latest = history[history.length - 1]
-  const past = history[Math.max(0, history.length - 1 - windowWeeks)]
-  if (!latest || !past || past.value <= 0) return 1
+  if (!latest) return 1
+
+  const cutoff = isoDate(addDays(new Date(latest.date + 'T00:00:00'), -windowWeeks * 7))
+  const past = [...history].reverse().find((p) => p.date <= cutoff) ?? history[0]
+  if (!past || past === latest || past.value <= 0) return 1
   return latest.value / past.value
 }
 

@@ -4,7 +4,7 @@ import type {
   AnalyticsSeries,
   DailyRunningDynamics,
 } from '@/application/usecases/GetAnalyticsData'
-import type { VO2maxPoint } from '@/application/usecases/GetVO2maxHistory'
+import type { VO2maxSeries } from '@/application/usecases/GetVO2maxHistory'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { TrainingLoadData } from '@/application/usecases/GetTrainingLoad'
 import type { LoadRiskPanel as LoadRiskPanelData } from '@/application/usecases/GetLoadRiskPanel'
@@ -28,7 +28,7 @@ interface Props {
   loadRisk: LoadRiskPanelData | null
   loadBalance: LoadBalanceData | null
   statusHistory: TrainingStatusHistory | null
-  vo2maxHistory: VO2maxPoint[]
+  vo2maxHistory: VO2maxSeries
   zones: TrainingZonesData | null
   runningDynamicsDaily: DailyRunningDynamics[]
   isAll: boolean
@@ -52,7 +52,7 @@ export function PhysiologyTab({
       {loadRisk && <LoadRiskPanel data={loadRisk} />}
       {loadBalance && <LoadBalancePanel data={loadBalance} />}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {vo2maxHistory.length >= 2 && <VO2maxChart data={vo2maxHistory} />}
+        <VO2maxChart series={vo2maxHistory} />
         <HrTrendChart data={series.hrTrend} />
         <ZoneDistributionChart data={series.zoneDistribution} />
         <TrainingEffectChart data={series.trainingEffectTrend} />

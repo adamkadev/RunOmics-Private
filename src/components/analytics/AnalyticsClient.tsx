@@ -12,7 +12,7 @@ import type { SeasonHeadlineData } from '@/application/usecases/GetSeasonHeadlin
 import { SeasonHeadline } from '@/components/analytics/SeasonHeadline'
 import type { LifetimeStats } from '@/application/usecases/GetLifetimeStats'
 import { YearSelector } from '@/components/ui/YearSelector'
-import type { VO2maxPoint } from '@/application/usecases/GetVO2maxHistory'
+import type { VO2maxSeries } from '@/application/usecases/GetVO2maxHistory'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { TrainingLoadData } from '@/application/usecases/GetTrainingLoad'
 import type { LoadRiskPanel as LoadRiskPanelData } from '@/application/usecases/GetLoadRiskPanel'
@@ -133,7 +133,7 @@ export function AnalyticsClient({
   data: AnalyticsPageData
   comparison: YearComparisonData | null
   seasonHeadline: SeasonHeadlineData | null
-  vo2maxHistory: VO2maxPoint[]
+  vo2maxHistory: VO2maxSeries
   lifetime: LifetimeStats | null
   zones: TrainingZonesData | null
   trainingLoad: TrainingLoadData | null

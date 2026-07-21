@@ -54,14 +54,27 @@ describe('vo2maxFormFactor', () => {
     expect(vo2maxFormFactor([point('2026-01-01', 50)], 8)).toBe(1)
   })
 
+  // Ten monthly samples, Jan through Oct.
+  const monthly = (value: (i: number) => number) =>
+    Array.from({ length: 10 }, (_, i) => point(`2026-${String(i + 1).padStart(2, '0')}-28`, value(i)))
+
   it('greater than 1 when VO2max has improved', () => {
-    const history = Array.from({ length: 10 }, (_, i) => point(`w${i}`, 50 + i))
-    expect(vo2maxFormFactor(history, 8)).toBeGreaterThan(1)
+    expect(vo2maxFormFactor(monthly((i) => 50 + i), 8)).toBeGreaterThan(1)
   })
 
   it('less than 1 when VO2max has declined', () => {
-    const history = Array.from({ length: 10 }, (_, i) => point(`w${i}`, 60 - i))
-    expect(vo2maxFormFactor(history, 8)).toBeLessThan(1)
+    expect(vo2maxFormFactor(monthly((i) => 60 - i), 8)).toBeLessThan(1)
+  })
+
+  it('compares against the window, not against a fixed number of entries back', () => {
+    // Latest is 2026-10-28, so an 8-week window reaches back to ~2026-08-28:
+    // the August sample (57), not the first one.
+    expect(vo2maxFormFactor(monthly((i) => 50 + i), 8)).toBeCloseTo(59 / 57)
+  })
+
+  it('falls back to the oldest sample when the history is shorter than the window', () => {
+    const history = [point('2026-10-01', 50), point('2026-10-28', 55)]
+    expect(vo2maxFormFactor(history, 8)).toBeCloseTo(55 / 50)
   })
 })
 

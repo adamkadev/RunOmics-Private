@@ -1,7 +1,7 @@
 import { getAnalyticsData } from '@/application/usecases/GetAnalyticsData'
 import { getYearComparison } from '@/application/usecases/GetYearComparison'
 import { getSeasonHeadline } from '@/application/usecases/GetSeasonHeadline'
-import { getVO2maxHistory } from '@/application/usecases/GetVO2maxHistory'
+import { getVO2maxSeries } from '@/application/usecases/GetVO2maxHistory'
 import { getLifetimeStats } from '@/application/usecases/GetLifetimeStats'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
 import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
@@ -18,7 +18,7 @@ export default async function AnalyticsPage() {
   const [data, comparison, vo2maxHistory, lifetime, zones, trainingLoad, loadRisk] = await Promise.all([
     getAnalyticsData(),
     Promise.resolve(getYearComparison()),
-    Promise.resolve(getVO2maxHistory()),
+    Promise.resolve(getVO2maxSeries()),
     Promise.resolve(getLifetimeStats()),
     getTrainingZones(),
     getTrainingLoad(),

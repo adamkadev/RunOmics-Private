@@ -1,6 +1,7 @@
 import { t } from '@/i18n'
 import { getRacePredictionDays } from '@/infrastructure/repositories/JsonRacePredictionRepository'
 import { RACE_DISTANCES, RACE_DISTANCE_KM, type RaceDistanceKey } from '@/domain/race/distances'
+import type { DatedPaces } from '@/domain/race/predictionWindow'
 
 /**
  * Garmin's own finish-time estimates over time.
@@ -11,7 +12,7 @@ import { RACE_DISTANCES, RACE_DISTANCE_KM, type RaceDistanceKey } from '@/domain
  * potential moving?" rather than "what would I run today?".
  */
 
-export interface GarminRacePredictionPoint {
+export interface GarminRacePredictionPoint extends DatedPaces {
   date: string
   label: string
   /**
@@ -25,51 +26,22 @@ export interface GarminRacePredictionPoint {
   marathon: number | null
 }
 
-export interface GarminRacePredictionTrend {
-  distance: RaceDistanceKey
-  /** Seconds taken off the predicted finish across the window; negative = slower. */
-  improvementSec: number
-  currentSec: number
-}
-
 export interface GarminRacePredictionsData {
+  /** The whole stored history: the chart pages through it client-side. */
   points: GarminRacePredictionPoint[]
-  /** Distances the watch actually predicted across the window. */
+  /** Distances the watch actually predicted at some point. */
   distances: RaceDistanceKey[]
-  /** Latest predicted finish time per distance, in seconds. */
+  /** Latest predicted finish time per distance, in seconds - "most recent" whatever window is shown. */
   latest: Partial<Record<RaceDistanceKey, number>>
-  /** Biggest movement over the window - the headline the chart explains. */
-  bestTrend: GarminRacePredictionTrend | null
+  latestDate: string | null
 }
 
-const WINDOW_DAYS = 180
-
-export function bestTrend(
-  points: GarminRacePredictionPoint[],
-  distances: RaceDistanceKey[],
-): GarminRacePredictionTrend | null {
-  let best: GarminRacePredictionTrend | null = null
-
-  for (const distance of distances) {
-    const paces = points.map((p) => p[distance]).filter((v): v is number => v !== null)
-    const first = paces[0]
-    const last = paces[paces.length - 1]
-    if (first === undefined || last === undefined || paces.length < 2) continue
-
-    const km = RACE_DISTANCE_KM[distance]
-    const trend: GarminRacePredictionTrend = {
-      distance,
-      improvementSec: Math.round((first - last) * km),
-      currentSec: Math.round(last * km),
-    }
-    if (!best || trend.improvementSec > best.improvementSec) best = trend
-  }
-
-  return best
-}
+// Caps how much history is shipped to the client. The series grows by one small
+// record a day, so a few years stays well under a chart's worth of payload.
+const MAX_DAYS = 1095
 
 export function getGarminRacePredictions(): GarminRacePredictionsData | null {
-  const days = getRacePredictionDays().slice(-WINDOW_DAYS)
+  const days = getRacePredictionDays().slice(-MAX_DAYS)
   if (days.length < 2) return null
 
   const points: GarminRacePredictionPoint[] = days.map((day) => ({
@@ -91,7 +63,7 @@ export function getGarminRacePredictions(): GarminRacePredictionsData | null {
     if (seconds !== undefined) latest[distance] = seconds
   }
 
-  return { points, distances, latest, bestTrend: bestTrend(points, distances) }
+  return { points, distances, latest, latestDate: lastDay.date }
 }
 
 function paceOf(seconds: number | undefined, distance: RaceDistanceKey): number | null {
