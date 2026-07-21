@@ -145,8 +145,10 @@ def fetch_planned_workouts(client: GarminClient) -> list[dict]:
 
 def _collect_scheduled(
     client: GarminClient, start_date: date, end_date: date
-) -> list[tuple[str, str]]:
-    """Return (date, workoutId) pairs from the calendar for the given window."""
+) -> list[tuple[str, str, str]]:
+    """Return (date, workoutId, fallbackTitle) triples from the calendar for the
+    given window. fallbackTitle is the calendar item's own name - used when a
+    workout's detail can't be fetched (see _build_entries)."""
     months: list[tuple[int, int]] = []
     cur = start_date.replace(day=1)
     while cur <= end_date:
@@ -154,14 +156,13 @@ def _collect_scheduled(
         cur = (cur + timedelta(days=32)).replace(day=1)
 
     seen: set[tuple[str, str]] = set()
-    scheduled: list[tuple[str, str]] = []
+    scheduled: list[tuple[str, str, str]] = []
     # Diagnostics only (don't affect filtering) - surfaces in the sync's Actions
     # log why a calendar item was excluded, since e.g. Garmin Coach entries have
     # been reported missing from the synced plan with no other visible cause.
     item_type_counts: dict[str, int] = {}
     skipped_sports: list[str] = []
     skipped_no_workout_id = 0
-    debug_dumps_left = 1
 
     for year, month in months:
         try:
@@ -190,19 +191,18 @@ def _collect_scheduled(
             if sport and "running" not in sport:
                 skipped_sports.append(sport)
                 continue
-            workout_id = str(item.get("workoutId") or "")
+            # fbtAdaptiveWorkout items have no numeric workoutId - they carry a
+            # workoutUuid instead, which workout-service/workout/{id} also accepts.
+            workout_id = str(item.get("workoutId") or item.get("workoutUuid") or "")
             if not workout_id:
                 skipped_no_workout_id += 1
-                if debug_dumps_left > 0:
-                    debug_dumps_left -= 1
-                    print(f"  Debug: {item.get('itemType')} item with no workoutId: {json.dumps(item, ensure_ascii=False)}")
                 continue
             # Garmin's calendar-service can list the same (date, workout) pair
             # twice (month grids overlap at week boundaries) - dedupe here.
             pair = (sched_date, workout_id)
             if pair not in seen:
                 seen.add(pair)
-                scheduled.append(pair)
+                scheduled.append((sched_date, workout_id, (item.get("title") or "").strip()))
 
     if item_type_counts:
         breakdown = ", ".join(f"{k}={v}" for k, v in sorted(item_type_counts.items()))
@@ -216,27 +216,34 @@ def _collect_scheduled(
 
 
 def _build_entries(
-    client: GarminClient, scheduled: list[tuple[str, str]]
+    client: GarminClient, scheduled: list[tuple[str, str, str]]
 ) -> list[dict]:
     """Fetch workout details and build the final entry list."""
-    details_cache: dict[str, dict] = {}
+    details_cache: dict[str, dict | None] = {}
     planned: list[dict] = []
     easy_pace = _load_easy_pace_sec_per_km()
 
-    for sched_date, workout_id in scheduled:
+    for sched_date, workout_id, fallback_title in scheduled:
         if workout_id not in details_cache:
             try:
-                detail = _retry_on_429(
+                details_cache[workout_id] = _retry_on_429(
                     lambda wid=workout_id: client.get_workout_detail(wid)
                 )
-                details_cache[workout_id] = detail
                 time.sleep(_RATE_LIMIT_PAUSE)
             except GarminAPIError as exc:
                 print(f"  Warning: workout {workout_id} detail failed: {exc}")
-                continue
+                details_cache[workout_id] = None
 
         detail = details_cache[workout_id]
-        name = (detail.get("workoutName") or "").strip()
+        if detail is None:
+            # No structured detail available (seen for Garmin Coach's adaptive
+            # workouts when workout-service doesn't recognize their workoutUuid) -
+            # still show the session by name/date rather than dropping it entirely.
+            if fallback_title:
+                planned.append({"date": sched_date, "name": fallback_title})
+            continue
+
+        name = (detail.get("workoutName") or fallback_title).strip()
         if " + " in name:
             name = name.split(" + ", 1)[0].strip()
         if not name:

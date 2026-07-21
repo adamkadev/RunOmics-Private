@@ -1,5 +1,6 @@
 import json
 
+from garmin.client import GarminAPIError
 from sync_workouts import (
     _DEFAULT_EASY_PACE_SEC_PER_KM,
     _build_entries,
@@ -238,7 +239,7 @@ class TestBuildEntriesPrefersStepSum:
         }
         client = _FakeClient(detail)
 
-        entries = _build_entries(client, [("2026-07-14", "123")])
+        entries = _build_entries(client, [("2026-07-14", "123", "")])
 
         assert len(entries) == 1
         entry = entries[0]
@@ -261,7 +262,7 @@ class TestBuildEntriesPrefersStepSum:
         }
         client = _FakeClient(detail)
 
-        entries = _build_entries(client, [("2026-07-15", "456")])
+        entries = _build_entries(client, [("2026-07-15", "456", "")])
 
         assert entries[0]["distanceM"] == 8000
         assert entries[0]["durationSecs"] == 2700
@@ -280,7 +281,7 @@ class TestBuildEntriesPrefersStepSum:
         }
         client = _FakeClient(detail)
 
-        entries = _build_entries(client, [("2026-07-19", "789")])
+        entries = _build_entries(client, [("2026-07-19", "789", "")])
 
         assert entries[0]["distanceM"] == 8000
         assert entries[0]["durationSecs"] == round(8 * 375)
@@ -298,10 +299,59 @@ class TestBuildEntriesPrefersStepSum:
         }
         client = _FakeClient(detail)
 
-        entries = _build_entries(client, [("2026-07-09", "321")])
+        entries = _build_entries(client, [("2026-07-09", "321", "")])
 
         assert entries[0]["durationSecs"] == 3600
         assert entries[0]["distanceM"] == round(3600 * 1000 / 375)
+
+
+class TestAdaptiveWorkoutFallback:
+    """Garmin Coach's fbtAdaptiveWorkout calendar items have no workoutId, only
+    a workoutUuid, and workout-service/workout/{id} may not recognize it."""
+
+    def test_falls_back_to_calendar_title_when_detail_fetch_fails(self, monkeypatch):
+        monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
+
+        class _FailingClient:
+            def get_workout_detail(self, workout_id):
+                raise GarminAPIError(404, f"workout/{workout_id}")
+
+        entries = _build_entries(
+            _FailingClient(), [("2026-07-21", "744f8b60-38dc-4665-b641-1221027c26ce", "Seuil")]
+        )
+
+        assert entries == [{"date": "2026-07-21", "name": "Seuil"}]
+
+    def test_drops_entry_silently_when_detail_fails_and_no_fallback_title(self, monkeypatch):
+        monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
+
+        class _FailingClient:
+            def get_workout_detail(self, workout_id):
+                raise GarminAPIError(404, f"workout/{workout_id}")
+
+        entries = _build_entries(_FailingClient(), [("2026-07-21", "999", "")])
+
+        assert entries == []
+
+    def test_uses_workout_uuid_detail_when_it_succeeds(self, monkeypatch):
+        # If workout-service *does* resolve a workoutUuid, use its real detail
+        # instead of the bare calendar title.
+        monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
+        detail = {
+            "workoutName": "Seuil",
+            "sportType": {"sportTypeKey": "running"},
+            "estimatedDistanceInMeters": 8000,
+            "estimatedDurationInSecs": 2880,
+            "workoutSegments": [],
+        }
+        client = _FakeClient(detail)
+
+        entries = _build_entries(
+            client, [("2026-07-21", "744f8b60-38dc-4665-b641-1221027c26ce", "Seuil")]
+        )
+
+        assert entries[0]["distanceM"] == 8000
+        assert entries[0]["durationSecs"] == 2880
 
 
 class TestQualityDescriptor:
@@ -331,7 +381,7 @@ class TestQualityDescriptor:
         }
         client = _FakeClient(detail)
 
-        entries = _build_entries(client, [("2026-07-21", "999")])
+        entries = _build_entries(client, [("2026-07-21", "999", "")])
 
         assert entries[0]["name"] == "Seuil - 3x8:00@4:16"
 
@@ -359,7 +409,7 @@ class TestQualityDescriptor:
         }
         client = _FakeClient(detail)
 
-        entries = _build_entries(client, [("2026-07-22", "111")])
+        entries = _build_entries(client, [("2026-07-22", "111", "")])
 
         assert entries[0]["name"] == "Footing fractionne"
 
