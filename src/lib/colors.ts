@@ -51,6 +51,18 @@ export const TRAINING_STATUS_COLORS: Record<string, string> = {
   overreaching: '#ef4444', // red-500
 }
 
+// Garmin Coach plan phase, keyed by the names in GetTrainingPlan's
+// TrainingPlanPhase. A separate ramp from TRAINING_STATUS_COLORS: this is
+// intent (what the plan calls for), not a reading of what happened, so it
+// gets its own build -> peak -> taper -> race-day progression instead of
+// reusing the status ladder's green/blue/amber/red meaning.
+export const TRAINING_PLAN_PHASE_COLORS: Record<string, string> = {
+  build:   '#3b82f6', // blue-500
+  peak:    '#8b5cf6', // violet-500
+  taper:   '#f59e0b', // amber-500
+  raceDay: '#ef4444', // red-500
+}
+
 // HR zone colors (Z1-Z5), keyed by zone number
 export const ZONE_COLORS: Record<number, string> = {
   1: '#9ca3af', // gray-400

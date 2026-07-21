@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { summarizeWeek, weeklyTrimpTotals, classifyWeekLoadLevel, compareWeekLoad, computeWeekAdherence } from '../weekSummary'
+import { summarizeWeek, weeklyTrimpTotals, classifyWeekLoadLevel, compareWeekLoad, computeWeekAdherence, summarizePlannedWeek } from '../weekSummary'
 import type { Activity } from '@/domain/activity/types'
 
 const HR_BOUNDS = { maxHr: 190, restingHr: 50 }
@@ -66,24 +66,34 @@ describe('compareWeekLoad', () => {
 describe('computeWeekAdherence', () => {
   const day = (date: string, planned: boolean, completed: boolean) => ({ date, planned, completed })
 
-  it('returns null when nothing was planned yet', () => {
+  it('returns null when nothing was planned', () => {
     const days = [day('2026-07-06', false, false), day('2026-07-07', false, true)]
-    expect(computeWeekAdherence(days, '2026-07-07')).toBeNull()
+    expect(computeWeekAdherence(days)).toBeNull()
   })
 
-  it('ignores planned days that have not happened yet', () => {
+  it('counts every session planned in the week, including the ones still to come', () => {
     const days = [
       day('2026-07-06', true, true),
-      day('2026-07-08', true, false), // in the future relative to "today"
+      day('2026-07-08', true, false), // later in the week
     ]
-    expect(computeWeekAdherence(days, '2026-07-07')).toEqual({ due: 1, done: 1, percent: 100 })
+    expect(computeWeekAdherence(days)).toEqual({ planned: 2, done: 1, percent: 50 })
   })
 
-  it('counts a due-but-incomplete planned day as missed', () => {
+  it('ignores completed days that were never planned', () => {
     const days = [
       day('2026-07-06', true, true),
-      day('2026-07-07', true, false),
+      day('2026-07-07', false, true),
     ]
-    expect(computeWeekAdherence(days, '2026-07-07')).toEqual({ due: 2, done: 1, percent: 50 })
+    expect(computeWeekAdherence(days)).toEqual({ planned: 1, done: 1, percent: 100 })
+  })
+})
+
+describe('summarizePlannedWeek', () => {
+  it('counts every planned session, and the non-easy ones as key', () => {
+    expect(summarizePlannedWeek(['Base', 'VO2Max', 'Threshold', 'Base'])).toEqual({ total: 4, key: 2 })
+  })
+
+  it('counts an untyped planned session in the total but never as key', () => {
+    expect(summarizePlannedWeek(['Base', null, undefined])).toEqual({ total: 3, key: 0 })
   })
 })

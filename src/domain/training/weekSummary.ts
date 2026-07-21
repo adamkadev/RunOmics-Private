@@ -46,20 +46,34 @@ export function compareWeekLoad(currentTrimp: number, priorWeeksTrimp: number[])
   return { percent, level: classifyWeekLoadLevel(percent) }
 }
 
+export interface PlannedWeek {
+  total: number
+  /** Planned sessions that are not easy base runs - what gives the week its intent. */
+  key: number
+}
+
+/** What the plan holds for a week. Untyped planned sessions count in the total but never as key. */
+export function summarizePlannedWeek(plannedTypes: (string | null | undefined)[]): PlannedWeek {
+  const key = plannedTypes.filter((type) => !!type && !EASY_TYPES.includes(type as ActivityType)).length
+  return { total: plannedTypes.length, key }
+}
+
 export interface WeekAdherence {
-  due: number
+  /** Sessions planned across the whole week. */
+  planned: number
   done: number
   percent: number
 }
 
-// Planned vs done, counted only for days that have already happened (today
-// included) - a planned session later this week isn't "missed" yet.
+// Counted over the whole week rather than the elapsed days only: the athlete
+// reads this against the plan they wrote, so on Tuesday of a five-session week
+// "0/5" is the number they expect - a denominator that grew day by day showed
+// "0/1" and read as a bug. Sessions still to come are simply not done yet.
 export function computeWeekAdherence(
   days: { date: string; planned: boolean; completed: boolean }[],
-  today: string,
 ): WeekAdherence | null {
-  const due = days.filter((d) => d.planned && d.date <= today)
-  if (due.length === 0) return null
-  const done = due.filter((d) => d.completed).length
-  return { due: due.length, done, percent: Math.round((done / due.length) * 100) }
+  const planned = days.filter((d) => d.planned)
+  if (planned.length === 0) return null
+  const done = planned.filter((d) => d.completed).length
+  return { planned: planned.length, done, percent: Math.round((done / planned.length) * 100) }
 }

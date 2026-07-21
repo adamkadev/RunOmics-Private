@@ -5,7 +5,17 @@ import { Calendar, Check, ChevronRight, Footprints, X } from 'lucide-react'
 import type { Activity, ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import { ACTIVITY_TYPE_CONFIG, ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
 import type { HrBounds } from '@/domain/training/trimp'
-import { summarizeWeek, weeklyTrimpTotals, compareWeekLoad, computeWeekAdherence } from '@/domain/training/weekSummary'
+import {
+  summarizeWeek,
+  weeklyTrimpTotals,
+  compareWeekLoad,
+  computeWeekAdherence,
+  summarizePlannedWeek,
+} from '@/domain/training/weekSummary'
+import { weekTrainingStatus } from '@/domain/training/weekStatus'
+import { weekPlanPhase } from '@/domain/training/weekPlanPhase'
+import type { TrainingStatusCalendar } from '@/application/usecases/GetTrainingStatusCalendar'
+import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import { parseWorkoutStructure } from '@/domain/training/workoutStructure'
 import { WorkoutStructureBars } from './WorkoutStructure'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
@@ -149,6 +159,10 @@ interface Props {
   today: string
   atPresent: boolean
   onToday: () => void
+  /** Garmin's daily training status, keyed by date - empty when the watch has never synced it. */
+  statusByDate: TrainingStatusCalendar
+  /** The current Garmin Coach plan's phases - empty when the athlete has none active. */
+  planPhaseRanges: PlanPhaseRange[]
   /** Pre-selects this day when landing from the month view (component remounts per navigation). */
   initialSelectedDate?: string | null
 }
@@ -162,6 +176,8 @@ export function WeekView({
   today,
   atPresent,
   onToday,
+  statusByDate,
+  planPhaseRanges,
   initialSelectedDate,
 }: Props) {
   const days: Day[] = Array.from({ length: 7 }, (_, i) => {
@@ -217,15 +233,43 @@ export function WeekView({
   const adherence = useMemo(
     () =>
       computeWeekAdherence(
-        days.map((d) => ({ date: d.date, planned: byDatePlanned.has(d.date), completed: d.acts.length > 0 })),
-        today
+        days.map((d) => ({ date: d.date, planned: byDatePlanned.has(d.date), completed: d.acts.length > 0 }))
       ),
-    [days, byDatePlanned, today]
+    [days, byDatePlanned]
   )
+
+  const garminStatus = useMemo(
+    () => weekTrainingStatus(days.map((d) => d.date), statusByDate),
+    [days, statusByDate]
+  )
+
+  const planPhase = useMemo(
+    () => weekPlanPhase(days.map((d) => d.date), planPhaseRanges),
+    [days, planPhaseRanges]
+  )
+
+  const planned = useMemo(() => {
+    // Untyped planned sessions still count, so map the workouts, not the types.
+    const workouts = days.map((d) => byDatePlanned.get(d.date)).filter((p) => p !== undefined)
+    return workouts.length ? summarizePlannedWeek(workouts.map((p) => p.type)) : null
+  }, [days, byDatePlanned])
+
+  // days[6] exists (fixed-length 7 array); the last day gone means the week is judgeable.
+  const weekOver = days[days.length - 1]!.date < today
+  const isCurrentWeek = !weekOver && firstDay.date <= today
 
   return (
     <div className="space-y-3">
-      <WeekPurposeBanner level={comparison?.level ?? null} percent={comparison?.percent ?? null} adherence={adherence} />
+      <WeekPurposeBanner
+        over={weekOver}
+        current={isCurrentWeek}
+        level={comparison?.level ?? null}
+        percent={comparison?.percent ?? null}
+        adherence={adherence}
+        garminStatus={garminStatus}
+        planPhase={planPhase}
+        planned={planned}
+      />
 
       {/* Decisional header: easy/hard, elevation, load - standalone dark tiles, not a card */}
       <div className="grid grid-cols-3 gap-2">

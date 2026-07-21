@@ -322,6 +322,7 @@ export const en = {
       title: 'VO₂max',
       unit: 'ml/kg/min',
       footnote: 'Garmin VO₂max estimate',
+      ranges: { '4w': '4 wk', '6m': '6 mo', '1y': '1 yr' },
       reading: {
         up: (avg: number) => `Trending up, averaging ${avg} over this window.`,
         down: (avg: number) => `Trending down, averaging ${avg} over this window.`,
@@ -632,7 +633,14 @@ export const en = {
       },
       racePredictor: {
         title: 'Race Predictor',
-        window: 'last 6 months',
+        ranges: {
+          '4w': '4 wk',
+          '6m': '6 mo',
+          '1y': '1 yr',
+        } as Record<string, string>,
+        previous: 'Previous period',
+        next: 'Next period',
+        emptyWindow: 'No predictions recorded for this period.',
         distances: {
           '5k': '5K',
           '10k': '10K',
@@ -1175,6 +1183,17 @@ export const en = {
       steady: 'Steady week',
       build: 'Build week',
       thisWeek: 'This week',
+      upcoming: 'Upcoming week',
+      planPhase: {
+        build: 'Build week',
+        peak: 'Peak week',
+        taper: 'Taper week',
+        raceDay: 'Race day',
+      },
+      plannedSessions: (total: number, key: number) =>
+        key > 0
+          ? `${total} session${total > 1 ? 's' : ''} planned · ${key} key`
+          : `${total} session${total > 1 ? 's' : ''} planned`,
       adherence: (done: number, due: number) => `${done}/${due} done`,
     },
   },

@@ -1,5 +1,7 @@
 import { getActivities } from '@/application/usecases/GetActivities'
 import { getPlannedWorkouts } from '@/application/usecases/GetPlannedWorkouts'
+import { getTrainingStatusCalendar } from '@/application/usecases/GetTrainingStatusCalendar'
+import { getTrainingPlan } from '@/application/usecases/GetTrainingPlan'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { PlanClient } from '@/components/plan/PlanClient'
 import type { HrBounds } from '@/domain/training/trimp'
@@ -13,5 +15,13 @@ export default async function PlanPage() {
       ? { maxHr: athlete.maxHrBpm, restingHr: athlete.restingHrBpm }
       : undefined
 
-  return <PlanClient activities={activities} plannedWorkouts={plannedWorkouts} hrBounds={hrBounds} />
+  return (
+    <PlanClient
+      activities={activities}
+      plannedWorkouts={plannedWorkouts}
+      hrBounds={hrBounds}
+      statusByDate={getTrainingStatusCalendar()}
+      planPhaseRanges={getTrainingPlan()?.ranges ?? []}
+    />
+  )
 }

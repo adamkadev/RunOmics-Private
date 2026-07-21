@@ -171,6 +171,16 @@ class GarminClient:
             params={"fromCalendarDate": start, "toCalendarDate": end},
         ).json()
 
+    def get_max_met_monthly(self, start: str, end: str) -> list[dict[str, Any]]:
+        return self._get(
+            f"{self._base}/metrics-service/metrics/maxmet/monthly/{start}/{end}"
+        ).json()
+
+    def get_max_met_daily(self, start: str, end: str) -> list[dict[str, Any]]:
+        return self._get(
+            f"{self._base}/metrics-service/metrics/maxmet/daily/{start}/{end}"
+        ).json()
+
     def get_fitness_age(self, start: str, end: str) -> list[dict[str, Any]]:
         return self._get(f"{self._base}/fitnessage-service/stats/daily/{start}/{end}").json()
 
@@ -181,7 +191,6 @@ class GarminClient:
         return self._get(f"{self._base}/biometric-service/heartRateZones/").json()
 
     def get_vo2max_norms(self) -> dict[str, Any]:
-        # Static reference table (Cooper Institute age/sex percentile anchors),
         return self._get(f"{_CONNECT_WEB}/web-data/vo2Max/VO2Max.json").json()
 
     def get_calendar_month(self, year: int, month: int) -> dict[str, Any]:
@@ -194,6 +203,16 @@ class GarminClient:
 
     def get_adaptive_workout_detail(self, workout_uuid: str) -> dict[str, Any]:
         url = f"{self._base}/workout-service/fbt-adaptive/{workout_uuid}"
+        return self._get(url).json()
+
+    def get_training_plans(self) -> dict[str, Any]:
+        return self._get(
+            f"{self._base}/trainingplan-service/trainingplan/plans",
+            params={"limit": 50},
+        ).json()
+
+    def get_training_plan_detail(self, plan_id: int | str) -> dict[str, Any]:
+        url = f"{self._base}/trainingplan-service/trainingplan/fbt-adaptive/{plan_id}"
         return self._get(url).json()
 
     def close(self) -> None:

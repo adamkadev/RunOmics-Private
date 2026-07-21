@@ -314,6 +314,7 @@ export const fr = {
       title: 'VO₂max',
       unit: 'ml/kg/min',
       footnote: 'Estimation VO₂max Garmin',
+      ranges: { '4w': '4 sem.', '6m': '6 mois', '1y': '1 an' },
       reading: {
         up: (avg: number) => `En hausse, moyenne de ${avg} sur cette période.`,
         down: (avg: number) => `En baisse, moyenne de ${avg} sur cette période.`,
@@ -624,7 +625,14 @@ export const fr = {
       },
       racePredictor: {
         title: 'Prédicteur de course',
-        window: '6 derniers mois',
+        ranges: {
+          '4w': '4 sem',
+          '6m': '6 mois',
+          '1y': '1 an',
+        } as Record<string, string>,
+        previous: 'Période précédente',
+        next: 'Période suivante',
+        emptyWindow: 'Aucune prédiction enregistrée sur cette période.',
         distances: {
           '5k': '5 km',
           '10k': '10 km',
@@ -1168,6 +1176,17 @@ export const fr = {
       steady: 'Semaine stable',
       build: 'Semaine de développement',
       thisWeek: 'Cette semaine',
+      upcoming: 'Semaine à venir',
+      planPhase: {
+        build: 'Semaine de développement',
+        peak: 'Semaine de pic de forme',
+        taper: 'Semaine d’affûtage',
+        raceDay: 'Jour de course',
+      },
+      plannedSessions: (total: number, key: number) =>
+        key > 0
+          ? `${total} séance${total > 1 ? 's' : ''} prévue${total > 1 ? 's' : ''} · ${key} qualité`
+          : `${total} séance${total > 1 ? 's' : ''} prévue${total > 1 ? 's' : ''}`,
       adherence: (done: number, due: number) => `${done}/${due} faites`,
     },
   },

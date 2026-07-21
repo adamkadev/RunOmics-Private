@@ -3,6 +3,8 @@
 import { useMemo, useState } from 'react'
 import type { Activity, PlannedWorkout } from '@/domain/activity/types'
 import type { HrBounds } from '@/domain/training/trimp'
+import type { TrainingStatusCalendar } from '@/application/usecases/GetTrainingStatusCalendar'
+import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import { PeriodNav } from '@/components/ui/PeriodNav'
 import { WeekView } from './WeekView'
 import { MonthView } from './MonthView'
@@ -16,11 +18,13 @@ interface Props {
   activities: Activity[]
   plannedWorkouts: PlannedWorkout[]
   hrBounds?: HrBounds
+  statusByDate: TrainingStatusCalendar
+  planPhaseRanges: PlanPhaseRange[]
 }
 
 type ViewMode = 'week' | 'month'
 
-export function PlanClient({ activities, plannedWorkouts, hrBounds }: Props) {
+export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate, planPhaseRanges }: Props) {
   const now = new Date()
   const today = isoDate(now)
   const [mode, setMode] = useState<ViewMode>('week')
@@ -157,6 +161,8 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds }: Props) {
             today={today}
             atPresent={atPresent}
             onToday={goToday}
+            statusByDate={statusByDate}
+            planPhaseRanges={planPhaseRanges}
             initialSelectedDate={focusDate}
           />
         ) : (
