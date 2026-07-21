@@ -1,8 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { computeProjection, computeYearOutcome, computeNextRaceSpotlight } from '../GetGoalsData'
 import type { Activity } from '@/domain/activity/types'
-import type { GoalYear, YearData, UpcomingRace } from '../GetGoalsData'
-import type { RacePrediction } from '../GetRacePredictions'
+import type { GoalYear, YearData, UpcomingRace, GoalRacePrediction } from '../GetGoalsData'
 
 const act = (date: string, km: number): Activity => ({ date, distanceKm: km }) as Activity
 
@@ -151,17 +150,11 @@ const race = (overrides: Partial<UpcomingRace> = {}): UpcomingRace => ({
   ...overrides,
 })
 
-const prediction = (overrides: Partial<RacePrediction> = {}): RacePrediction => ({
+const prediction = (overrides: Partial<GoalRacePrediction> = {}): GoalRacePrediction => ({
   key: '5k',
-  label: '5K',
-  km: 5,
   predictedSeconds: 1290,
-  lowSeconds: 1280,
-  highSeconds: 1300,
   actualSeconds: null,
   actualDate: null,
-  trendDeltaSeconds: null,
-  trendWeeks: 12,
   ...overrides,
 })
 

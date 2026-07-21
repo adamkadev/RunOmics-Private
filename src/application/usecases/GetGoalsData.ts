@@ -4,8 +4,9 @@ import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepo
 import { getUpcomingRaceYears } from '@/infrastructure/repositories/JsonUpcomingRaceRepository'
 import { getGoalYears } from '@/infrastructure/repositories/JsonGoalRepository'
 import { getPbYears } from '@/infrastructure/repositories/JsonPbRepository'
-import { getRacePredictions, type RacePrediction } from './GetRacePredictions'
-import { DISTANCE_KEY } from './GetRecords'
+import { getGarminRacePredictions } from './GetGarminRacePredictions'
+import { DISTANCE_KEY, getRecords } from './GetRecords'
+import { RACE_DISTANCES, type RaceDistanceKey } from '@/domain/race/distances'
 import { addDays, startOfWeek } from '@/lib/calendarDate'
 import { round } from '@/lib/math'
 
@@ -73,6 +74,14 @@ export interface NextRaceSpotlight {
   prDate: string | null
 }
 
+/** A distance's predicted finish time, sourced from Garmin's own race predictor. */
+export interface GoalRacePrediction {
+  key: RaceDistanceKey
+  predictedSeconds: number
+  actualSeconds: number | null
+  actualDate: string | null
+}
+
 export interface YearData {
   year: number
   totalDistanceKm: number
@@ -82,7 +91,7 @@ export interface YearData {
   projection: GoalProjection | null
   monthlyGoals: MonthGoal[]
   nextRaceSpotlight: NextRaceSpotlight | null
-  predictions: RacePrediction[]
+  predictions: GoalRacePrediction[]
 }
 
 export interface GoalTargetOutcome {
@@ -182,13 +191,13 @@ export function computeMonthlyGoals(activities: Activity[], year: number, goals:
   })
 }
 
-// Predicted time comes from the Riegel race-prediction model (GetRacePredictions),
+// Predicted time comes straight from Garmin's own race predictor (GetGarminRacePredictions),
 // matched to the race's distance via the same DISTANCE_KEY map GetRecords uses for PBs,
 // then capped at the PR already set at that exact distance (never predict a race slower
 // than a result the athlete has already run).
 export function computeNextRaceSpotlight(
   upcomingRaces: UpcomingRace[],
-  predictions: RacePrediction[],
+  predictions: GoalRacePrediction[],
   today: string,
 ): NextRaceSpotlight | null {
   const race = upcomingRaces.find((r) => r.date >= today)
@@ -202,7 +211,7 @@ export function computeNextRaceSpotlight(
   const prediction = predictionKey ? predictions.find((p) => p.key === predictionKey) ?? null : null
 
   // Never predict slower than a PR already proven at this exact distance -
-  // the Riegel model can undershoot when it leans on a less-specific source distance.
+  // Garmin's model can undershoot when its own recent form estimate lags a fresh PR.
   const predictedSeconds =
     prediction?.predictedSeconds != null && prediction.actualSeconds != null
       ? Math.min(prediction.predictedSeconds, prediction.actualSeconds)
@@ -282,12 +291,32 @@ export async function getCurrentWeeklyGoal(): Promise<WeeklyGoal | null> {
   return computeWeeklyGoal(getAllActivities(), year, goals)
 }
 
+// Garmin's `latest` finish-time estimate per distance, paired with the athlete's own
+// PR at that distance (for the "never predict slower than a proven PR" cap below).
+async function getGoalPredictions(): Promise<GoalRacePrediction[]> {
+  const garmin = getGarminRacePredictions()
+  if (!garmin) return []
+
+  const records = await getRecords()
+  const recordByKey = new Map(records.map((r) => [r.key, r]))
+
+  return RACE_DISTANCES.filter((key) => garmin.latest[key] != null).map((key) => {
+    const record = recordByKey.get(key)
+    return {
+      key,
+      predictedSeconds: garmin.latest[key]!,
+      actualSeconds: record?.seconds ?? null,
+      actualDate: record?.date ?? null,
+    }
+  })
+}
+
 export async function getGoalsPageData(): Promise<GoalsPageData> {
   const activities = getAllActivities()
   const upcomingRaceYears = getUpcomingRaceYears()
   const goalYears = getGoalYears()
   const pbYears = getPbYears()
-  const predictions = await getRacePredictions()
+  const predictions = await getGoalPredictions()
 
   const activityMap = new Map(activities.map((a) => [a.id, a]))
 
