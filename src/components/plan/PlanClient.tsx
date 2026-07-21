@@ -77,6 +77,8 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate
 
   function goToday() {
     setFocusDate(null)
+    setDirection(weekStart < startOfWeek(now) ? 'forward' : 'backward')
+    setAnimKey((k) => k + 1)
     setWeekStart(startOfWeek(now))
     setYear(now.getFullYear())
     setMonth(now.getMonth())
