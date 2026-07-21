@@ -20,11 +20,11 @@ from garmin.training_plan import sync_training_plan
 from garmin.training_status import sync_load_balance, sync_training_status
 from garmin.vo2max_history import sync_vo2max_history
 from garmin.vo2max_norms import fetch_vo2max_norms, write_vo2max_norms
-from sync_workouts import fetch_planned_workouts, write_planned_workouts
+from sync_workouts import enrich_description_from_plan, fetch_planned_workouts, write_planned_workouts
 from sync_upcoming_races import fetch_upcoming_races, write_upcoming_races
 from processing.fit_parser import ParsedFit, parse_fit
 from processing.mapper import HrZone, extract_gear_id, map_activity, parse_hr_zones
-from repository.json_store import JsonActivityStore
+from repository.json_store import JsonActivityStore, PlannedWorkoutStore
 
 _FIT_DIR = Path(__file__).parent.parent / "public" / "fit"
 _SYNC_META_PATH = Path(__file__).parent.parent / "public" / "data" / "sync_meta.json"
@@ -46,8 +46,20 @@ def main() -> int:
     store = JsonActivityStore()
     existing_ids = store.get_existing_ids()
     print(f"activities.json: {store.count()} existing activities")
+    planned_store = PlannedWorkoutStore()
 
     with GarminClient(secret) as client:
+        # Fetched early (before the activity loop) so newly-synced activities can be
+        # enriched against it below - but must not block the more important activity
+        # sync if Garmin's calendar API hiccups, so it falls back to whatever's
+        # already on disk rather than aborting the whole run.
+        if not args.dry_run and not args.id:
+            try:
+                planned = fetch_planned_workouts(client)
+                write_planned_workouts(planned, store=planned_store)
+            except Exception as exc:
+                print(f"Warning: planned workouts sync failed ({type(exc).__name__}: {exc}), continuing with existing data.")
+
         if args.id:
             new_ids = [args.id]
         else:
@@ -94,6 +106,7 @@ def main() -> int:
                     activity_data = map_activity(
                         detail, parsed, hr_zones=hr_zones, file_name=file_name, gear=gear
                     )
+                    enrich_description_from_plan(activity_data, planned_store)
                 except Exception as exc:
                     print(f"failed ({type(exc).__name__}: {exc})")
                     failed += 1
@@ -141,9 +154,6 @@ def main() -> int:
             print(f"\nDry run: {added} would be added, {failed} would fail.")
 
         if not args.dry_run and not args.id:
-            planned = fetch_planned_workouts(client)
-            write_planned_workouts(planned)
-
             races = fetch_upcoming_races(client)
             write_upcoming_races(races)
 

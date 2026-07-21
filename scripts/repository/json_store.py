@@ -8,10 +8,17 @@ from typing import Any
 from processing.mapper import ActivityData
 
 _DEFAULT_DIR = Path(__file__).resolve().parents[2] / "public" / "data" / "activities"
+_PLANNED_DEFAULT_DIR = Path(__file__).resolve().parents[2] / "public" / "data" / "planned_workouts"
 
 
 def _year_of(date: str) -> str | None:
     return date[:4] if len(date) >= 4 else None
+
+
+def _atomic_write_json(path: Path, data: dict[str, Any]) -> None:
+    tmp = path.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    tmp.replace(path)
 
 
 class JsonActivityStore:
@@ -72,10 +79,10 @@ class JsonActivityStore:
         self._dir.mkdir(parents=True, exist_ok=True)
         for year in self._dirty_years:
             activities = sorted(by_year.get(year, []), key=lambda a: a.get("date", ""), reverse=True)
-            self._write_json(self._dir / f"{year}.json", {"activities": activities})
+            _atomic_write_json(self._dir / f"{year}.json", {"activities": activities})
         self._dirty_years.clear()
 
-        self._write_json(self._dir / "index.json", {"years": sorted(by_year.keys(), reverse=True)})
+        _atomic_write_json(self._dir / "index.json", {"years": sorted(by_year.keys(), reverse=True)})
 
     def count(self) -> int:
         return len(self._by_id)
@@ -93,8 +100,67 @@ class JsonActivityStore:
             for activity in data.get("activities", []):
                 self._by_id[activity["id"]] = activity
 
-    @staticmethod
-    def _write_json(path: Path, data: dict[str, Any]) -> None:
-        tmp = path.with_suffix(".json.tmp")
-        tmp.write_text(json.dumps(data, indent=2, ensure_ascii=False))
-        tmp.replace(path)
+
+class PlannedWorkoutStore:
+    """Planned workouts, one JSON file per year (`<dir>/<year>.json`) plus an
+    `index.json` manifest, mirroring JsonActivityStore - but keyed by date (one
+    planned workout per day) instead of id, and sorted ascending (oldest first)
+    to match sync_workouts.py's existing order, the opposite of JsonActivityStore's
+    descending sort.
+
+    Unlike the old flat planned_workouts.json (rewritten wholesale from a rolling
+    ~7-day-past/90-day-future fetch window every sync), every date ever written
+    here survives forever - a sync only re-touches the year(s) whose entries
+    actually changed."""
+
+    def __init__(self, dir_path: Path = _PLANNED_DEFAULT_DIR) -> None:
+        self._dir = dir_path
+        self._by_date: dict[str, dict[str, Any]] = {}
+        self._dirty_years: set[str] = set()
+        self._load()
+
+    def get(self, date: str) -> dict[str, Any] | None:
+        return self._by_date.get(date)
+
+    def all_entries(self) -> list[dict[str, Any]]:
+        return list(self._by_date.values())
+
+    def upsert(self, entry: dict[str, Any]) -> None:
+        self._by_date[entry["date"]] = entry
+        year = _year_of(entry["date"])
+        if year:
+            self._dirty_years.add(year)
+
+    def count(self) -> int:
+        return len(self._by_date)
+
+    def save(self) -> None:
+        if not self._dirty_years:
+            return
+
+        by_year: dict[str, list[dict[str, Any]]] = {}
+        for entry in self._by_date.values():
+            year = _year_of(entry.get("date", ""))
+            if year:
+                by_year.setdefault(year, []).append(entry)
+
+        self._dir.mkdir(parents=True, exist_ok=True)
+        for year in self._dirty_years:
+            entries = sorted(by_year.get(year, []), key=lambda e: e.get("date", ""))
+            _atomic_write_json(self._dir / f"{year}.json", {"planned": entries})
+        self._dirty_years.clear()
+
+        _atomic_write_json(self._dir / "index.json", {"years": sorted(by_year.keys(), reverse=True)})
+
+    def _load(self) -> None:
+        if not self._dir.exists():
+            return
+        for path in sorted(self._dir.glob("*.json")):
+            if path.name == "index.json":
+                continue
+            try:
+                data = json.loads(path.read_text("utf-8"))
+            except (json.JSONDecodeError, OSError):
+                continue
+            for entry in data.get("planned", []):
+                self._by_date[entry["date"]] = entry

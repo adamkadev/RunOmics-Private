@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Sync planned workouts from Garmin Connect to public/data/planned_workouts.json.
+"""Sync planned workouts from Garmin Connect to public/data/planned_workouts/.
 
 Fetches the calendar month-by-month to find scheduled running workouts, then
 enriches each with its workout detail. The Garmin-payload parsing (distance/
@@ -30,10 +30,12 @@ from processing.garmin_workout import (
     resolve_adaptive_distance_duration,
     resolve_manual_distance_duration,
 )
+from processing.mapper import ActivityData
 from processing.planned_workout_type import (
     infer_planned_type,
     type_from_training_effect_label,
 )
+from repository.json_store import PlannedWorkoutStore
 
 _DATA_DIR = Path(__file__).parent.parent / "public" / "data"
 _RATE_LIMIT_PAUSE = 1.0
@@ -82,8 +84,11 @@ def main() -> int:
     return 0
 
 
-def write_planned_workouts(planned: list[dict]) -> None:
-    """Write planned workouts to JSON, preserving manually-edited type/scheduledTime.
+def write_planned_workouts(
+    planned: list[dict], store: PlannedWorkoutStore | None = None
+) -> PlannedWorkoutStore:
+    """Upsert this sync's fetch window into the durable per-year planned-workout
+    store, preserving manually-edited type/scheduledTime.
 
     `scheduledTime`, and `type` for any workout Garmin doesn't label itself,
     can't be derived from the calendar/workout API - so once a value is set
@@ -93,20 +98,15 @@ def write_planned_workouts(planned: list[dict]) -> None:
     only carried over when the name at that date is unchanged - otherwise the
     date just happens to hold a different session now (e.g. the plan was
     reordered/edited upstream) and the old type would be plain wrong for it.
-    """
-    out_path = _DATA_DIR / "planned_workouts.json"
 
-    existing: dict[str, dict] = {}
-    if out_path.exists():
-        try:
-            raw = json.loads(out_path.read_text())
-            for entry in raw.get("planned", []):
-                existing[entry["date"]] = entry
-        except Exception:
-            pass
+    Unlike the old flat-file version, dates outside this sync's fetch window
+    are left untouched in the store rather than dropped - the store is a
+    growing history, not a rolling snapshot.
+    """
+    store = store if store is not None else PlannedWorkoutStore()
 
     for entry in planned:
-        prior = existing.get(entry["date"], {})
+        prior = store.get(entry["date"]) or {}
         # A `type` already on the entry came from Garmin's own training-effect
         # label (Garmin Coach) - authoritative, so neither the prior value nor
         # the name-based guess gets a say.
@@ -114,9 +114,37 @@ def write_planned_workouts(planned: list[dict]) -> None:
             prior_type = prior.get("type") if prior.get("name") == entry["name"] else None
             entry["type"] = prior_type or infer_planned_type(entry["name"])
         entry["scheduledTime"] = prior.get("scheduledTime", _DEFAULT_SCHEDULED_TIME)
+        store.upsert(entry)
 
-    out_path.write_text(json.dumps({"planned": planned}, ensure_ascii=False, indent=2))
-    print(f"  {len(planned)} planned workout(s) written to planned_workouts.json")
+    store.save()
+    print(f"  {len(planned)} planned workout(s) upserted ({store.count()} total in store)")
+    return store
+
+
+def prefer_planned_name(description: str, planned_name: str | None) -> str | None:
+    """Return planned_name if it's a strict, longer, same-prefix superset of
+    description (case-insensitive) - e.g. "Seuil" -> "Seuil - 3x8@4:20" - else
+    None. No locale-specific keyword list is needed: both names ultimately
+    derive from the same Garmin workoutName string, whatever language the
+    athlete's device uses. A genuinely custom rename never matches this (it
+    won't be a prefix), so it's never clobbered."""
+    if not planned_name or len(planned_name) <= len(description):
+        return None
+    if not planned_name.lower().startswith(description.lower()):
+        return None
+    return planned_name
+
+
+def enrich_description_from_plan(activity: ActivityData, store: PlannedWorkoutStore) -> None:
+    """Mutates activity.description in place if the workout planned for
+    activity.date is a richer version of the same name Garmin gave it -
+    so the detail survives permanently, independent of the store's window."""
+    plan = store.get(activity.date)
+    if not plan:
+        return
+    better = prefer_planned_name(activity.description, plan.get("name"))
+    if better:
+        activity.description = better
 
 
 def _load_easy_pace_sec_per_km(data_dir: Path = _DATA_DIR) -> float:

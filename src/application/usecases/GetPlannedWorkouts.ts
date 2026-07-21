@@ -1,7 +1,6 @@
-import fs from 'fs'
-import path from 'path'
 import type { Activity, ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { getAllPlannedWorkouts } from '@/infrastructure/repositories/JsonPlannedWorkoutRepository'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { trimp, type HrBounds } from './GetTrainingLoad'
 import { isoDate } from '@/lib/calendarDate'
@@ -81,16 +80,8 @@ export function estimatePlannedLoad(
   return { ...workout, estimatedLoad: round(stats.trimpPerMinute * minutes, 0), isEstimated: true }
 }
 
-function readPlannedWorkoutsFile(): PlannedWorkout[] {
-  const filePath = path.join(process.cwd(), 'public', 'data', 'planned_workouts.json')
-  if (!fs.existsSync(filePath)) return []
-  const raw = fs.readFileSync(filePath, 'utf-8')
-  const parsed = JSON.parse(raw) as { planned: PlannedWorkout[] }
-  return parsed.planned
-}
-
 export async function getPlannedWorkouts(): Promise<PlannedWorkout[]> {
-  const planned = readPlannedWorkoutsFile()
+  const planned = getAllPlannedWorkouts()
   if (!planned.length) return planned
 
   const activities = getAllActivities()

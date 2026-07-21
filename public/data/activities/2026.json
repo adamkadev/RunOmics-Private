@@ -6,7 +6,7 @@
       "date": "2026-07-21",
       "dayOfWeek": "Tuesday",
       "type": "VO2Max",
-      "description": "Seuil",
+      "description": "Seuil - 3x8:00@4:20/km",
       "durationSeconds": 2886,
       "distanceKm": 9.02,
       "paceSecPerKm": 320.0,

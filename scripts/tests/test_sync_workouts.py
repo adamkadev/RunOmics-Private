@@ -7,10 +7,14 @@ from garmin_step_fixtures import (
     pace_zone_step as _pace_zone_step,
     repeat_group as _repeat_group,
 )
+from processing.mapper import ActivityData
+from repository.json_store import PlannedWorkoutStore
 from sync_workouts import (
     _DEFAULT_EASY_PACE_SEC_PER_KM,
     _build_entries,
     _load_easy_pace_sec_per_km,
+    enrich_description_from_plan,
+    prefer_planned_name,
     write_planned_workouts,
 )
 
@@ -370,15 +374,17 @@ class TestGarminSuppliedMetadata:
 
         assert entries == []
 
-    def test_garmin_type_wins_over_a_preserved_prior_type(self, tmp_path, monkeypatch):
-        monkeypatch.setattr("sync_workouts._DATA_DIR", tmp_path)
-        (tmp_path / "planned_workouts.json").write_text(
-            json.dumps({"planned": [{"date": "2026-07-21", "name": "Seuil", "type": "Base"}]})
+    def test_garmin_type_wins_over_a_preserved_prior_type(self, tmp_path):
+        prior = PlannedWorkoutStore(tmp_path)
+        prior.upsert({"date": "2026-07-21", "name": "Seuil", "type": "Base"})
+        prior.save()
+
+        write_planned_workouts(
+            [{"date": "2026-07-21", "name": "Seuil", "type": "Threshold"}],
+            store=PlannedWorkoutStore(tmp_path),
         )
 
-        write_planned_workouts([{"date": "2026-07-21", "name": "Seuil", "type": "Threshold"}])
-
-        written = json.loads((tmp_path / "planned_workouts.json").read_text())
+        written = json.loads((tmp_path / "2026.json").read_text())
         assert written["planned"][0]["type"] == "Threshold"
 
     def test_prefers_garmins_own_description_over_the_reconstructed_summary(self, monkeypatch):
@@ -505,35 +511,128 @@ class TestMainSetDescriptorFoldedIntoTitle:
 
 
 class TestWritePlannedWorkouts:
-    def test_reinfers_type_when_workout_name_at_that_date_changed(self, tmp_path, monkeypatch):
+    def test_reinfers_type_when_workout_name_at_that_date_changed(self, tmp_path):
         # The plan was reordered upstream (Kiprun): a VO2Max session that used
         # to be on this date was replaced by a footing. The date-keyed "type"
         # from the old workout must not leak onto the new one.
-        monkeypatch.setattr("sync_workouts._DATA_DIR", tmp_path)
-        (tmp_path / "planned_workouts.json").write_text(json.dumps({
-            "planned": [
-                {"date": "2026-07-14", "name": "9 x 400m (R=1 min)", "type": "VO2Max", "scheduledTime": "19:00"},
-            ]
-        }))
+        prior = PlannedWorkoutStore(tmp_path)
+        prior.upsert({"date": "2026-07-14", "name": "9 x 400m (R=1 min)", "type": "VO2Max", "scheduledTime": "19:00"})
+        prior.save()
 
-        write_planned_workouts([{"date": "2026-07-14", "name": "Footing 60min"}])
+        write_planned_workouts(
+            [{"date": "2026-07-14", "name": "Footing 60min"}],
+            store=PlannedWorkoutStore(tmp_path),
+        )
 
-        written = json.loads((tmp_path / "planned_workouts.json").read_text())
+        written = json.loads((tmp_path / "2026.json").read_text())
         assert written["planned"][0]["type"] == "Base"
 
-    def test_keeps_prior_type_when_workout_name_unchanged(self, tmp_path, monkeypatch):
-        monkeypatch.setattr("sync_workouts._DATA_DIR", tmp_path)
-        (tmp_path / "planned_workouts.json").write_text(json.dumps({
-            "planned": [
-                {"date": "2026-07-14", "name": "Footing 60min", "type": "Tempo", "scheduledTime": "07:00"},
-            ]
-        }))
+    def test_keeps_prior_type_when_workout_name_unchanged(self, tmp_path):
+        prior = PlannedWorkoutStore(tmp_path)
+        prior.upsert({"date": "2026-07-14", "name": "Footing 60min", "type": "Tempo", "scheduledTime": "07:00"})
+        prior.save()
 
-        write_planned_workouts([{"date": "2026-07-14", "name": "Footing 60min"}])
+        write_planned_workouts(
+            [{"date": "2026-07-14", "name": "Footing 60min"}],
+            store=PlannedWorkoutStore(tmp_path),
+        )
 
-        written = json.loads((tmp_path / "planned_workouts.json").read_text())
+        written = json.loads((tmp_path / "2026.json").read_text())
         # A manual correction (or a prior sync's inference) for the *same*
         # workout name survives the resync even though it disagrees with
         # what infer_planned_type would guess from the name alone.
         assert written["planned"][0]["type"] == "Tempo"
         assert written["planned"][0]["scheduledTime"] == "07:00"
+
+
+def _activity(date: str, description: str) -> ActivityData:
+    return ActivityData(
+        id="1",
+        week=202629,
+        date=date,
+        day_of_week="Saturday",
+        type="Threshold",
+        description=description,
+        duration_seconds=1800,
+        distance_km=5.0,
+        pace_sec_per_km=360.0,
+        hr_zones=[],
+        avg_heart_rate=150,
+        rpe=None,
+        comment="",
+        polyline=None,
+        route=None,
+        elevation_gain=None,
+        aer_training_effect=None,
+        ana_training_effect=None,
+        hr_samples=None,
+        elevation_profile=None,
+        calories=None,
+        cadence_spm=None,
+        ground_contact_ms=None,
+        vertical_oscillation_mm=None,
+        vertical_ratio_pct=None,
+        stride_length_m=None,
+        best_efforts=None,
+        pace_samples=None,
+        vo2max_garmin=None,
+        avg_temperature=None,
+        cadence_samples=None,
+        splits=None,
+        gear_id=None,
+    )
+
+
+class TestPreferPlannedName:
+    def test_exact_match_is_unchanged(self):
+        assert prefer_planned_name("Seuil", "Seuil") is None
+
+    def test_longer_same_prefix_is_adopted(self):
+        assert prefer_planned_name("Seuil", "Seuil - 3x8@4:20") == "Seuil - 3x8@4:20"
+
+    def test_case_insensitive_prefix_match(self):
+        assert prefer_planned_name("seuil", "Seuil - 3x8@4:20") == "Seuil - 3x8@4:20"
+
+    def test_shorter_planned_name_is_unchanged(self):
+        assert prefer_planned_name("Seuil - 3x8@4:20", "Seuil") is None
+
+    def test_same_length_is_unchanged(self):
+        assert prefer_planned_name("Seuil!", "Seui1?") is None
+
+    def test_not_a_prefix_is_unchanged(self):
+        # A genuine custom rename by the athlete - must never be clobbered.
+        assert prefer_planned_name("Course avec Paul", "Seuil - 3x8@4:20") is None
+
+    def test_empty_description_adopts_any_planned_name(self):
+        assert prefer_planned_name("", "Seuil - 3x8@4:20") == "Seuil - 3x8@4:20"
+
+    def test_no_planned_name_is_unchanged(self):
+        assert prefer_planned_name("Seuil", None) is None
+
+
+class TestEnrichDescriptionFromPlan:
+    def test_adopts_richer_planned_name(self, tmp_path):
+        store = PlannedWorkoutStore(tmp_path)
+        store.upsert({"date": "2026-07-18", "name": "Seuil - 3x8@4:20"})
+        activity = _activity("2026-07-18", "Seuil")
+
+        enrich_description_from_plan(activity, store)
+
+        assert activity.description == "Seuil - 3x8@4:20"
+
+    def test_no_plan_for_that_date_is_unchanged(self, tmp_path):
+        store = PlannedWorkoutStore(tmp_path)
+        activity = _activity("2026-07-18", "Seuil")
+
+        enrich_description_from_plan(activity, store)
+
+        assert activity.description == "Seuil"
+
+    def test_custom_title_is_never_clobbered(self, tmp_path):
+        store = PlannedWorkoutStore(tmp_path)
+        store.upsert({"date": "2026-07-18", "name": "Seuil - 3x8@4:20"})
+        activity = _activity("2026-07-18", "Course avec Paul")
+
+        enrich_description_from_plan(activity, store)
+
+        assert activity.description == "Course avec Paul"

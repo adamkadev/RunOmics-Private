@@ -86,7 +86,7 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add public/data/activities/ public/data/planned_workouts.json public/data/upcoming_races.json public/data/athlete.json
+          git add public/data/activities/ public/data/planned_workouts/ public/data/upcoming_races.json public/data/athlete.json
 
           if git diff --cached --quiet; then
             ACTIVITIES_CHANGED=false

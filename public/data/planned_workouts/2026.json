@@ -1,0 +1,1072 @@
+{
+  "planned": [
+    {
+      "date": "2026-06-17",
+      "name": "40 min footing lent"
+    },
+    {
+      "date": "2026-06-18",
+      "name": "3000m / 2000m / 1000m"
+    },
+    {
+      "date": "2026-06-19",
+      "name": "1h dont 30' actives"
+    },
+    {
+      "date": "2026-06-20",
+      "name": "10 x (1'/1')"
+    },
+    {
+      "date": "2026-06-21",
+      "name": "8km endurance"
+    },
+    {
+      "date": "2026-06-23",
+      "name": "3000m / 2000m /1000m",
+      "type": "Threshold",
+      "distanceM": 11920,
+      "durationSecs": 3775,
+      "scheduledTime": "18:00"
+    },
+    {
+      "date": "2026-06-24",
+      "name": "40 min endurance",
+      "distanceM": 7200,
+      "durationSecs": 2400,
+      "type": "Base",
+      "scheduledTime": "18:00"
+    },
+    {
+      "date": "2026-06-25",
+      "name": "40 min endurance",
+      "durationSecs": 2400,
+      "type": "Base",
+      "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-06-26",
+      "name": "2 x 2000m allure de course",
+      "type": "Threshold",
+      "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-06-27",
+      "name": "15' progressives",
+      "durationSecs": 3300,
+      "type": "Tempo",
+      "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-06-28",
+      "name": "8km endurance",
+      "distanceM": 8000,
+      "type": "Base",
+      "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-06-30",
+      "name": "3 x 1500m allure spÃ©",
+      "type": "Threshold",
+      "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-07-01",
+      "name": "50 min endurance",
+      "durationSecs": 3000,
+      "type": "Base",
+      "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-07-02",
+      "name": "45 min endurance",
+      "durationSecs": 2700,
+      "type": "Base",
+      "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-07-03",
+      "name": "6 x 1000m allure spÃ©",
+      "type": "Threshold",
+      "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-07-04",
+      "name": "1h dont 30' actives",
+      "durationSecs": 3600,
+      "type": "Base",
+      "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-07-05",
+      "name": "8km endurance",
+      "distanceM": 8000,
+      "type": "Base",
+      "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-07-07",
+      "name": "50' dont 20' actives",
+      "distanceM": 9067,
+      "durationSecs": 3000,
+      "steps": [
+        {
+          "kind": "warmup",
+          "minutes": 20,
+          "paceSecPerKm": [
+            352,
+            368
+          ]
+        },
+        {
+          "kind": "effort",
+          "minutes": 10,
+          "paceSecPerKm": [
+            295,
+            305
+          ]
+        },
+        {
+          "kind": "effort",
+          "minutes": 10,
+          "paceSecPerKm": [
+            277,
+            286
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 10,
+          "paceSecPerKm": [
+            367,
+            384
+          ]
+        }
+      ],
+      "type": "Base",
+      "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-07-08",
+      "name": "2 x 10' tempo",
+      "durationSecs": 3540,
+      "type": "Tempo",
+      "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-07-09",
+      "name": "1 h endurance",
+      "durationSecs": 3600,
+      "type": "Base",
+      "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-07-10",
+      "name": "40 min footing",
+      "distanceM": 6400,
+      "durationSecs": 2400,
+      "type": "Base",
+      "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-07-11",
+      "name": "7km endurance",
+      "distanceM": 7000,
+      "type": "Tempo",
+      "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-07-12",
+      "name": "2 x 10' tempo",
+      "distanceM": 5767,
+      "durationSecs": 3540,
+      "steps": [
+        {
+          "kind": "warmup",
+          "minutes": 25,
+          "paceSecPerKm": [
+            352,
+            368
+          ]
+        },
+        {
+          "kind": "effort",
+          "minutes": 10,
+          "rep": 1,
+          "paceSecPerKm": [
+            255,
+            263
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 2,
+          "rep": 1,
+          "paceSecPerKm": [
+            367,
+            384
+          ]
+        },
+        {
+          "kind": "effort",
+          "minutes": 10,
+          "rep": 2,
+          "paceSecPerKm": [
+            255,
+            263
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 2,
+          "rep": 2,
+          "paceSecPerKm": [
+            367,
+            384
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 10,
+          "paceSecPerKm": [
+            367,
+            384
+          ]
+        }
+      ],
+      "type": "Base",
+      "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-07-14",
+      "name": "Footing 60min",
+      "distanceM": 9600,
+      "durationSecs": 3600,
+      "steps": [
+        {
+          "kind": "effort",
+          "minutes": 60,
+          "paceSecPerKm": [
+            367,
+            384
+          ]
+        }
+      ],
+      "type": "Base",
+      "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-07-15",
+      "name": "9 x 400m (R=1 min)",
+      "distanceM": 9973,
+      "durationSecs": 3150,
+      "steps": [
+        {
+          "kind": "warmup",
+          "minutes": 20,
+          "paceSecPerKm": [
+            352,
+            368
+          ]
+        },
+        {
+          "kind": "effort",
+          "minutes": 2,
+          "rep": 1,
+          "paceSecPerKm": [
+            222,
+            228
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 1,
+          "rep": 1,
+          "paceSecPerKm": [
+            367,
+            384
+          ]
+        },
+        {
+          "kind": "effort",
+          "minutes": 2,
+          "rep": 2,
+          "paceSecPerKm": [
+            222,
+            228
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 1,
+          "rep": 2,
+          "paceSecPerKm": [
+            367,
+            384
+          ]
+        },
+        {
+          "kind": "effort",
+          "minutes": 2,
+          "rep": 3,
+          "paceSecPerKm": [
+            222,
+            228
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 1,
+          "rep": 3,
+          "paceSecPerKm": [
+            367,
+            384
+          ]
+        },
+        {
+          "kind": "effort",
+          "minutes": 2,
+          "rep": 4,
+          "paceSecPerKm": [
+            222,
+            228
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 1,
+          "rep": 4,
+          "paceSecPerKm": [
+            367,
+            384
+          ]
+        },
+        {
+          "kind": "effort",
+          "minutes": 2,
+          "rep": 5,
+          "paceSecPerKm": [
+            222,
+            228
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 1,
+          "rep": 5,
+          "paceSecPerKm": [
+            367,
+            384
+          ]
+        },
+        {
+          "kind": "effort",
+          "minutes": 2,
+          "rep": 6,
+          "paceSecPerKm": [
+            222,
+            228
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 1,
+          "rep": 6,
+          "paceSecPerKm": [
+            367,
+            384
+          ]
+        },
+        {
+          "kind": "effort",
+          "minutes": 2,
+          "rep": 7,
+          "paceSecPerKm": [
+            222,
+            228
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 1,
+          "rep": 7,
+          "paceSecPerKm": [
+            367,
+            384
+          ]
+        },
+        {
+          "kind": "effort",
+          "minutes": 2,
+          "rep": 8,
+          "paceSecPerKm": [
+            222,
+            228
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 1,
+          "rep": 8,
+          "paceSecPerKm": [
+            367,
+            384
+          ]
+        },
+        {
+          "kind": "effort",
+          "minutes": 2,
+          "rep": 9,
+          "paceSecPerKm": [
+            222,
+            228
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 1,
+          "rep": 9,
+          "paceSecPerKm": [
+            367,
+            384
+          ]
+        },
+        {
+          "kind": "cooldown",
+          "minutes": 10,
+          "paceSecPerKm": [
+            367,
+            384
+          ]
+        }
+      ],
+      "type": "VO2Max",
+      "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-07-16",
+      "name": "40 min footing",
+      "distanceM": 6400,
+      "durationSecs": 2400,
+      "steps": [
+        {
+          "kind": "effort",
+          "minutes": 40,
+          "paceSecPerKm": [
+            367,
+            384
+          ]
+        }
+      ],
+      "type": "Base",
+      "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-07-17",
+      "name": "3 x 2000m allure SpÃ©",
+      "distanceM": 4933,
+      "durationSecs": 1800,
+      "steps": [
+        {
+          "kind": "warmup",
+          "minutes": 20,
+          "paceSecPerKm": [
+            352,
+            368
+          ]
+        },
+        {
+          "kind": "effort",
+          "minutes": 8,
+          "rep": 1,
+          "paceSecPerKm": [
+            237,
+            244
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 2,
+          "rep": 1,
+          "paceSecPerKm": [
+            367,
+            384
+          ]
+        },
+        {
+          "kind": "effort",
+          "minutes": 8,
+          "rep": 2,
+          "paceSecPerKm": [
+            237,
+            244
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 2,
+          "rep": 2,
+          "paceSecPerKm": [
+            367,
+            384
+          ]
+        },
+        {
+          "kind": "effort",
+          "minutes": 8,
+          "rep": 3,
+          "paceSecPerKm": [
+            237,
+            244
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 2,
+          "rep": 3,
+          "paceSecPerKm": [
+            367,
+            384
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 10,
+          "paceSecPerKm": [
+            367,
+            384
+          ]
+        }
+      ],
+      "type": "Threshold",
+      "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-07-18",
+      "name": "4 x 1000m allure cible - 4x4:00@4:00",
+      "distanceM": 10213,
+      "durationSecs": 3240,
+      "steps": [
+        {
+          "kind": "warmup",
+          "minutes": 20,
+          "paceSecPerKm": [
+            352,
+            368
+          ]
+        },
+        {
+          "kind": "effort",
+          "minutes": 4,
+          "rep": 1,
+          "paceSecPerKm": [
+            237,
+            244
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 2,
+          "rep": 1,
+          "paceSecPerKm": [
+            367,
+            384
+          ]
+        },
+        {
+          "kind": "effort",
+          "minutes": 4,
+          "rep": 2,
+          "paceSecPerKm": [
+            237,
+            244
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 2,
+          "rep": 2,
+          "paceSecPerKm": [
+            367,
+            384
+          ]
+        },
+        {
+          "kind": "effort",
+          "minutes": 4,
+          "rep": 3,
+          "paceSecPerKm": [
+            237,
+            244
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 2,
+          "rep": 3,
+          "paceSecPerKm": [
+            367,
+            384
+          ]
+        },
+        {
+          "kind": "effort",
+          "minutes": 4,
+          "rep": 4,
+          "paceSecPerKm": [
+            237,
+            244
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 2,
+          "rep": 4,
+          "paceSecPerKm": [
+            367,
+            384
+          ]
+        },
+        {
+          "kind": "cooldown",
+          "minutes": 10,
+          "paceSecPerKm": [
+            367,
+            384
+          ]
+        }
+      ],
+      "type": "Threshold",
+      "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-07-19",
+      "name": "8km endurance",
+      "distanceM": 8000,
+      "type": "Base",
+      "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-07-21",
+      "name": "Seuil - 3x8:00@4:20/km",
+      "distanceM": 10003,
+      "durationSecs": 2880,
+      "steps": [
+        {
+          "kind": "warmup",
+          "minutes": 10,
+          "paceSecPerKm": [
+            303,
+            343
+          ]
+        },
+        {
+          "kind": "effort",
+          "minutes": 8,
+          "rep": 1,
+          "paceSecPerKm": [
+            247,
+            265
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 2,
+          "rep": 1,
+          "paceSecPerKm": [
+            343,
+            429
+          ]
+        },
+        {
+          "kind": "effort",
+          "minutes": 8,
+          "rep": 2,
+          "paceSecPerKm": [
+            247,
+            265
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 2,
+          "rep": 2,
+          "paceSecPerKm": [
+            343,
+            429
+          ]
+        },
+        {
+          "kind": "effort",
+          "minutes": 8,
+          "rep": 3,
+          "paceSecPerKm": [
+            247,
+            265
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 2,
+          "rep": 3,
+          "paceSecPerKm": [
+            343,
+            429
+          ]
+        },
+        {
+          "kind": "cooldown",
+          "minutes": 10,
+          "paceSecPerKm": [
+            303,
+            343
+          ]
+        }
+      ],
+      "type": "Threshold",
+      "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-07-22",
+      "name": "Base",
+      "distanceM": 5973,
+      "durationSecs": 1920,
+      "steps": [
+        {
+          "kind": "effort",
+          "minutes": 32,
+          "paceSecPerKm": [
+            303,
+            343
+          ]
+        }
+      ],
+      "type": "Base",
+      "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-07-23",
+      "name": "Sprint - 3x3x0:15@2:45/km",
+      "distanceM": 8642,
+      "durationSecs": 3300,
+      "steps": [
+        {
+          "kind": "warmup",
+          "minutes": 15,
+          "paceSecPerKm": [
+            303,
+            343
+          ]
+        },
+        {
+          "kind": "effort",
+          "minutes": 0,
+          "rep": 1,
+          "paceSecPerKm": [
+            153,
+            176
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 3,
+          "rep": 1
+        },
+        {
+          "kind": "effort",
+          "minutes": 0,
+          "rep": 2,
+          "paceSecPerKm": [
+            153,
+            176
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 3,
+          "rep": 2
+        },
+        {
+          "kind": "effort",
+          "minutes": 0,
+          "rep": 3,
+          "paceSecPerKm": [
+            153,
+            176
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 3,
+          "rep": 3
+        },
+        {
+          "kind": "recovery",
+          "minutes": 5,
+          "rep": 1,
+          "paceSecPerKm": [
+            343,
+            429
+          ]
+        },
+        {
+          "kind": "effort",
+          "minutes": 0,
+          "rep": 1,
+          "paceSecPerKm": [
+            153,
+            176
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 3,
+          "rep": 1
+        },
+        {
+          "kind": "effort",
+          "minutes": 0,
+          "rep": 2,
+          "paceSecPerKm": [
+            153,
+            176
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 3,
+          "rep": 2
+        },
+        {
+          "kind": "effort",
+          "minutes": 0,
+          "rep": 3,
+          "paceSecPerKm": [
+            153,
+            176
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 3,
+          "rep": 3
+        },
+        {
+          "kind": "recovery",
+          "minutes": 5,
+          "rep": 2,
+          "paceSecPerKm": [
+            343,
+            429
+          ]
+        },
+        {
+          "kind": "effort",
+          "minutes": 0,
+          "rep": 1,
+          "paceSecPerKm": [
+            153,
+            176
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 3,
+          "rep": 1
+        },
+        {
+          "kind": "effort",
+          "minutes": 0,
+          "rep": 2,
+          "paceSecPerKm": [
+            153,
+            176
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 3,
+          "rep": 2
+        },
+        {
+          "kind": "effort",
+          "minutes": 0,
+          "rep": 3,
+          "paceSecPerKm": [
+            153,
+            176
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 3,
+          "rep": 3
+        },
+        {
+          "kind": "recovery",
+          "minutes": 5,
+          "rep": 3,
+          "paceSecPerKm": [
+            343,
+            429
+          ]
+        },
+        {
+          "kind": "cooldown",
+          "minutes": 10,
+          "paceSecPerKm": [
+            303,
+            343
+          ]
+        }
+      ],
+      "type": "Sprint",
+      "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-07-25",
+      "name": "Sprint - 2x3x0:15@2:45/km",
+      "distanceM": 7054,
+      "durationSecs": 2640,
+      "steps": [
+        {
+          "kind": "warmup",
+          "minutes": 15,
+          "paceSecPerKm": [
+            303,
+            343
+          ]
+        },
+        {
+          "kind": "effort",
+          "minutes": 0,
+          "rep": 1,
+          "paceSecPerKm": [
+            153,
+            176
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 3,
+          "rep": 1
+        },
+        {
+          "kind": "effort",
+          "minutes": 0,
+          "rep": 2,
+          "paceSecPerKm": [
+            153,
+            176
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 3,
+          "rep": 2
+        },
+        {
+          "kind": "effort",
+          "minutes": 0,
+          "rep": 3,
+          "paceSecPerKm": [
+            153,
+            176
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 3,
+          "rep": 3
+        },
+        {
+          "kind": "recovery",
+          "minutes": 5,
+          "rep": 1,
+          "paceSecPerKm": [
+            343,
+            429
+          ]
+        },
+        {
+          "kind": "effort",
+          "minutes": 0,
+          "rep": 1,
+          "paceSecPerKm": [
+            153,
+            176
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 3,
+          "rep": 1
+        },
+        {
+          "kind": "effort",
+          "minutes": 0,
+          "rep": 2,
+          "paceSecPerKm": [
+            153,
+            176
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 3,
+          "rep": 2
+        },
+        {
+          "kind": "effort",
+          "minutes": 0,
+          "rep": 3,
+          "paceSecPerKm": [
+            153,
+            176
+          ]
+        },
+        {
+          "kind": "recovery",
+          "minutes": 3,
+          "rep": 3
+        },
+        {
+          "kind": "recovery",
+          "minutes": 5,
+          "rep": 2,
+          "paceSecPerKm": [
+            343,
+            429
+          ]
+        },
+        {
+          "kind": "cooldown",
+          "minutes": 10,
+          "paceSecPerKm": [
+            303,
+            343
+          ]
+        }
+      ],
+      "type": "Sprint",
+      "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-07-26",
+      "name": "Longue course",
+      "distanceM": 15867,
+      "durationSecs": 5100,
+      "steps": [
+        {
+          "kind": "effort",
+          "minutes": 85,
+          "paceSecPerKm": [
+            303,
+            343
+          ]
+        }
+      ],
+      "type": "Base",
+      "scheduledTime": "19:00"
+    }
+  ]
+}
