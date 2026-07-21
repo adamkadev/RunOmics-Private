@@ -146,6 +146,10 @@ class GarminClient:
         url = f"{self._base}/workout-service/workout/{workout_id}"
         return self._get(url).json()
 
+    def get_adaptive_workout_detail(self, workout_uuid: str) -> dict[str, Any]:
+        url = f"{self._base}/workout-service/fbt-adaptive/{workout_uuid}"
+        return self._get(url).json()
+
     def close(self) -> None:
         self._http.close()
 

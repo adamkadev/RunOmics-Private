@@ -197,12 +197,19 @@ class TestCollectSteps:
 
 
 class _FakeClient:
-    """Minimal stand-in for GarminClient.get_workout_detail used by _build_entries."""
+    """Minimal stand-in for the GarminClient detail calls used by _build_entries.
+    Records which endpoint each workout id was resolved through."""
 
     def __init__(self, detail: dict):
         self._detail = detail
+        self.calls: list[tuple[str, str]] = []
 
     def get_workout_detail(self, workout_id):
+        self.calls.append(("workout", workout_id))
+        return self._detail
+
+    def get_adaptive_workout_detail(self, workout_uuid):
+        self.calls.append(("fbt-adaptive", workout_uuid))
         return self._detail
 
 
@@ -239,7 +246,7 @@ class TestBuildEntriesPrefersStepSum:
         }
         client = _FakeClient(detail)
 
-        entries = _build_entries(client, [("2026-07-14", "123", "")])
+        entries = _build_entries(client, [("2026-07-14", "123", "", False)])
 
         assert len(entries) == 1
         entry = entries[0]
@@ -262,7 +269,7 @@ class TestBuildEntriesPrefersStepSum:
         }
         client = _FakeClient(detail)
 
-        entries = _build_entries(client, [("2026-07-15", "456", "")])
+        entries = _build_entries(client, [("2026-07-15", "456", "", False)])
 
         assert entries[0]["distanceM"] == 8000
         assert entries[0]["durationSecs"] == 2700
@@ -281,7 +288,7 @@ class TestBuildEntriesPrefersStepSum:
         }
         client = _FakeClient(detail)
 
-        entries = _build_entries(client, [("2026-07-19", "789", "")])
+        entries = _build_entries(client, [("2026-07-19", "789", "", False)])
 
         assert entries[0]["distanceM"] == 8000
         assert entries[0]["durationSecs"] == round(8 * 375)
@@ -299,7 +306,7 @@ class TestBuildEntriesPrefersStepSum:
         }
         client = _FakeClient(detail)
 
-        entries = _build_entries(client, [("2026-07-09", "321", "")])
+        entries = _build_entries(client, [("2026-07-09", "321", "", False)])
 
         assert entries[0]["durationSecs"] == 3600
         assert entries[0]["distanceM"] == round(3600 * 1000 / 375)
@@ -307,17 +314,35 @@ class TestBuildEntriesPrefersStepSum:
 
 class TestAdaptiveWorkoutFallback:
     """Garmin Coach's fbtAdaptiveWorkout calendar items have no workoutId, only
-    a workoutUuid, and workout-service/workout/{id} may not recognize it."""
+    a workoutUuid, which workout-service/workout/{id} doesn't recognize - their
+    detail comes from workout-service/fbt-adaptive/{uuid} instead."""
+
+    def test_adaptive_items_are_resolved_through_the_fbt_adaptive_endpoint(self, monkeypatch):
+        monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
+        client = _FakeClient({"workoutName": "Seuil", "workoutSegments": []})
+
+        _build_entries(
+            client,
+            [
+                ("2026-07-21", "744f8b60-38dc-4665-b641-1221027c26ce", "Seuil", True),
+                ("2026-07-22", "123", "Footing", False),
+            ],
+        )
+
+        assert client.calls == [
+            ("fbt-adaptive", "744f8b60-38dc-4665-b641-1221027c26ce"),
+            ("workout", "123"),
+        ]
 
     def test_falls_back_to_calendar_title_when_detail_fetch_fails(self, monkeypatch):
         monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
 
         class _FailingClient:
-            def get_workout_detail(self, workout_id):
-                raise GarminAPIError(404, f"workout/{workout_id}")
+            def get_adaptive_workout_detail(self, workout_uuid):
+                raise GarminAPIError(404, f"fbt-adaptive/{workout_uuid}")
 
         entries = _build_entries(
-            _FailingClient(), [("2026-07-21", "744f8b60-38dc-4665-b641-1221027c26ce", "Seuil")]
+            _FailingClient(), [("2026-07-21", "744f8b60-38dc-4665-b641-1221027c26ce", "Seuil", True)]
         )
 
         assert entries == [{"date": "2026-07-21", "name": "Seuil"}]
@@ -329,13 +354,12 @@ class TestAdaptiveWorkoutFallback:
             def get_workout_detail(self, workout_id):
                 raise GarminAPIError(404, f"workout/{workout_id}")
 
-        entries = _build_entries(_FailingClient(), [("2026-07-21", "999", "")])
+        entries = _build_entries(_FailingClient(), [("2026-07-21", "999", "", False)])
 
         assert entries == []
 
-    def test_uses_workout_uuid_detail_when_it_succeeds(self, monkeypatch):
-        # If workout-service *does* resolve a workoutUuid, use its real detail
-        # instead of the bare calendar title.
+    def test_uses_adaptive_detail_when_it_succeeds(self, monkeypatch):
+        # With the real detail resolved, use it rather than the bare calendar title.
         monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
         detail = {
             "workoutName": "Seuil",
@@ -347,11 +371,154 @@ class TestAdaptiveWorkoutFallback:
         client = _FakeClient(detail)
 
         entries = _build_entries(
-            client, [("2026-07-21", "744f8b60-38dc-4665-b641-1221027c26ce", "Seuil")]
+            client, [("2026-07-21", "744f8b60-38dc-4665-b641-1221027c26ce", "Seuil", True)]
         )
 
         assert entries[0]["distanceM"] == 8000
         assert entries[0]["durationSecs"] == 2880
+
+
+class TestGarminSuppliedMetadata:
+    """Garmin Coach's adaptive workouts state their own training-effect target
+    and a terse structure description; third-party plans (Kiprun) carry neither,
+    so those keep falling back to name-based inference."""
+
+    def test_training_effect_label_sets_the_type(self, monkeypatch):
+        monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
+        detail = {
+            "workoutName": "Cadence",
+            "sportType": {"sportTypeKey": "running"},
+            "trainingEffectLabel": "VO2MAX",
+            "workoutSegments": [],
+        }
+        client = _FakeClient(detail)
+
+        entries = _build_entries(client, [("2026-07-23", "abc", "", True)])
+
+        # Name-based inference would have said "Base" for "Cadence".
+        assert entries[0]["type"] == "VO2Max"
+
+    def test_workout_phrase_is_not_used_as_a_type(self, monkeypatch):
+        # workoutPhrase is a finer-grained coaching taxonomy on a different
+        # axis (LONG_WORKOUT, AEROBIC_LOW_SHORTAGE_BASE, ...) - only
+        # trainingEffectLabel maps onto ActivityType.
+        monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
+        detail = {
+            "workoutName": "Longue course",
+            "sportType": {"sportTypeKey": "running"},
+            "trainingEffectLabel": "AEROBIC_BASE",
+            "workoutPhrase": "LONG_WORKOUT",
+            "workoutSegments": [],
+        }
+        client = _FakeClient(detail)
+
+        entries = _build_entries(client, [("2026-07-26", "abc", "", True)])
+
+        assert entries[0]["type"] == "Base"
+
+    def test_speed_label_maps_to_sprint(self, monkeypatch):
+        # Garmin labels short-rep neuromuscular sessions SPEED, not SPRINT.
+        monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
+        detail = {
+            "workoutName": "Sprint",
+            "sportType": {"sportTypeKey": "running"},
+            "trainingEffectLabel": "SPEED",
+            "workoutPhrase": "ANAEROBIC_SPEED",
+            "description": "3x3x0:15@2:45/km",
+            "workoutSegments": [],
+        }
+        client = _FakeClient(detail)
+
+        entries = _build_entries(client, [("2026-07-23", "abc", "", True)])
+
+        assert entries[0]["type"] == "Sprint"
+        assert entries[0]["name"] == "Sprint - 3x3x0:15@2:45/km"
+
+    def test_skips_rest_days(self, monkeypatch):
+        # Garmin Coach schedules rest days as calendar items like any other
+        # session: no name, no sport, trainingEffectLabel "INVALID".
+        monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
+        detail = {
+            "workoutName": None,
+            "sportType": None,
+            "trainingEffectLabel": "INVALID",
+            "workoutPhrase": "FORCED_REST",
+            "restDay": True,
+        }
+        client = _FakeClient(detail)
+
+        entries = _build_entries(client, [("2026-07-24", "abc", "Repos", True)])
+
+        assert entries == []
+
+    def test_garmin_type_wins_over_a_preserved_prior_type(self, tmp_path, monkeypatch):
+        monkeypatch.setattr("sync_workouts._DATA_DIR", tmp_path)
+        (tmp_path / "planned_workouts.json").write_text(
+            json.dumps({"planned": [{"date": "2026-07-21", "name": "Seuil", "type": "Base"}]})
+        )
+
+        write_planned_workouts([{"date": "2026-07-21", "name": "Seuil", "type": "Threshold"}])
+
+        written = json.loads((tmp_path / "planned_workouts.json").read_text())
+        assert written["planned"][0]["type"] == "Threshold"
+
+    def test_prefers_garmins_own_description_over_the_reconstructed_summary(self, monkeypatch):
+        # Garmin's description is authoritative for reps in seconds or metres,
+        # which the step-derived summary can only render as whole minutes.
+        monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
+        detail = {
+            "workoutName": "VMA",
+            "sportType": {"sportTypeKey": "running"},
+            "workoutPhrase": "VO2MAX",
+            "description": "10x400m@3:45/km",
+            "workoutSegments": [],
+        }
+        client = _FakeClient(detail)
+
+        entries = _build_entries(client, [("2026-07-24", "def", "", True)])
+
+        assert entries[0]["name"] == "VMA - 10x400m@3:45/km"
+
+    def test_ignores_a_description_the_name_already_spells_out(self, monkeypatch):
+        monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
+        detail = {
+            "workoutName": "Seuil 3x8:00",
+            "sportType": {"sportTypeKey": "running"},
+            "description": "3x8:00",
+            "workoutSegments": [],
+        }
+        client = _FakeClient(detail)
+
+        entries = _build_entries(client, [("2026-07-25", "ghi", "", True)])
+
+        assert entries[0]["name"] == "Seuil 3x8:00"
+
+    def test_ignores_prose_description_from_a_third_party_plan(self, monkeypatch):
+        monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
+        detail = {
+            "workoutName": "Seuil",
+            "sportType": {"sportTypeKey": "running"},
+            "description": (
+                "Cette seance de seuil vise a ameliorer votre capacite a tenir "
+                "une allure soutenue sur la duree."
+            ),
+            "workoutSegments": [
+                {
+                    "workoutSteps": [
+                        _pace_zone_step("warmup", "time", 10 * 60, 303, 343),
+                        _repeat_group(
+                            3, [_pace_zone_step("interval", "time", 8 * 60, 247, 265)]
+                        ),
+                        _pace_zone_step("cooldown", "time", 10 * 60, 303, 343),
+                    ]
+                }
+            ],
+        }
+        client = _FakeClient(detail)
+
+        entries = _build_entries(client, [("2026-07-26", "jkl", "", False)])
+
+        assert entries[0]["name"] == "Seuil - 3x8:00@4:16"
 
 
 class TestQualityDescriptor:
@@ -381,7 +548,7 @@ class TestQualityDescriptor:
         }
         client = _FakeClient(detail)
 
-        entries = _build_entries(client, [("2026-07-21", "999", "")])
+        entries = _build_entries(client, [("2026-07-21", "999", "", False)])
 
         assert entries[0]["name"] == "Seuil - 3x8:00@4:16"
 
@@ -409,7 +576,7 @@ class TestQualityDescriptor:
         }
         client = _FakeClient(detail)
 
-        entries = _build_entries(client, [("2026-07-22", "111", "")])
+        entries = _build_entries(client, [("2026-07-22", "111", "", False)])
 
         assert entries[0]["name"] == "Footing fractionne"
 

@@ -28,7 +28,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from garmin.client import GarminAPIError, GarminAuthError, GarminClient
-from processing.planned_workout_type import infer_planned_type
+from processing.planned_workout_type import (
+    infer_planned_type,
+    type_from_training_effect_label,
+)
 
 _DATA_DIR = Path(__file__).parent.parent / "public" / "data"
 _RATE_LIMIT_PAUSE = 1.0
@@ -80,14 +83,14 @@ def main() -> int:
 def write_planned_workouts(planned: list[dict]) -> None:
     """Write planned workouts to JSON, preserving manually-edited type/scheduledTime.
 
-    `type` and `scheduledTime` can't be derived from Garmin's calendar/workout
-    API, so once a value is set (manually, or by a prior sync's inference) it's
-    kept across syncs even if the Garmin-side distance/duration changes for the
-    *same* workout. But `type` is keyed off the workout name (see
-    `infer_planned_type`), so it's only carried over when the name at that date
-    is unchanged - otherwise the date just happens to hold a different session
-    now (e.g. the plan was reordered/edited upstream) and the old type would be
-    plain wrong for it.
+    `scheduledTime`, and `type` for any workout Garmin doesn't label itself,
+    can't be derived from the calendar/workout API - so once a value is set
+    (manually, or by a prior sync's inference) it's kept across syncs even if
+    the Garmin-side distance/duration changes for the *same* workout. But
+    `type` is keyed off the workout name (see `infer_planned_type`), so it's
+    only carried over when the name at that date is unchanged - otherwise the
+    date just happens to hold a different session now (e.g. the plan was
+    reordered/edited upstream) and the old type would be plain wrong for it.
     """
     out_path = _DATA_DIR / "planned_workouts.json"
 
@@ -102,8 +105,12 @@ def write_planned_workouts(planned: list[dict]) -> None:
 
     for entry in planned:
         prior = existing.get(entry["date"], {})
-        prior_type = prior.get("type") if prior.get("name") == entry["name"] else None
-        entry["type"] = prior_type or infer_planned_type(entry["name"])
+        # A `type` already on the entry came from Garmin's own training-effect
+        # label (Garmin Coach) - authoritative, so neither the prior value nor
+        # the name-based guess gets a say.
+        if not entry.get("type"):
+            prior_type = prior.get("type") if prior.get("name") == entry["name"] else None
+            entry["type"] = prior_type or infer_planned_type(entry["name"])
         entry["scheduledTime"] = prior.get("scheduledTime", _DEFAULT_SCHEDULED_TIME)
 
     out_path.write_text(json.dumps({"planned": planned}, ensure_ascii=False, indent=2))
@@ -145,10 +152,12 @@ def fetch_planned_workouts(client: GarminClient) -> list[dict]:
 
 def _collect_scheduled(
     client: GarminClient, start_date: date, end_date: date
-) -> list[tuple[str, str, str]]:
-    """Return (date, workoutId, fallbackTitle) triples from the calendar for the
-    given window. fallbackTitle is the calendar item's own name - used when a
-    workout's detail can't be fetched (see _build_entries)."""
+) -> list[tuple[str, str, str, bool]]:
+    """Return (date, workoutId, fallbackTitle, isAdaptive) tuples from the
+    calendar for the given window. fallbackTitle is the calendar item's own name
+    - used when a workout's detail can't be fetched (see _build_entries).
+    isAdaptive marks Garmin Coach items, whose detail comes from a different
+    endpoint (see GarminClient.get_adaptive_workout_detail)."""
     months: list[tuple[int, int]] = []
     cur = start_date.replace(day=1)
     while cur <= end_date:
@@ -156,7 +165,7 @@ def _collect_scheduled(
         cur = (cur + timedelta(days=32)).replace(day=1)
 
     seen: set[tuple[str, str]] = set()
-    scheduled: list[tuple[str, str, str]] = []
+    scheduled: list[tuple[str, str, str, bool]] = []
     # Diagnostics only (don't affect filtering) - surfaces in the sync's Actions
     # log why a calendar item was excluded, since e.g. Garmin Coach entries have
     # been reported missing from the synced plan with no other visible cause.
@@ -192,7 +201,8 @@ def _collect_scheduled(
                 skipped_sports.append(sport)
                 continue
             # fbtAdaptiveWorkout items have no numeric workoutId - they carry a
-            # workoutUuid instead, which workout-service/workout/{id} also accepts.
+            # workoutUuid instead, resolved through the fbt-adaptive endpoint.
+            is_adaptive = item.get("itemType") == "fbtAdaptiveWorkout"
             workout_id = str(item.get("workoutId") or item.get("workoutUuid") or "")
             if not workout_id:
                 skipped_no_workout_id += 1
@@ -202,7 +212,8 @@ def _collect_scheduled(
             pair = (sched_date, workout_id)
             if pair not in seen:
                 seen.add(pair)
-                scheduled.append((sched_date, workout_id, (item.get("title") or "").strip()))
+                title = (item.get("title") or "").strip()
+                scheduled.append((sched_date, workout_id, title, is_adaptive))
 
     if item_type_counts:
         breakdown = ", ".join(f"{k}={v}" for k, v in sorted(item_type_counts.items()))
@@ -216,18 +227,22 @@ def _collect_scheduled(
 
 
 def _build_entries(
-    client: GarminClient, scheduled: list[tuple[str, str, str]]
+    client: GarminClient, scheduled: list[tuple[str, str, str, bool]]
 ) -> list[dict]:
     """Fetch workout details and build the final entry list."""
     details_cache: dict[str, dict | None] = {}
     planned: list[dict] = []
     easy_pace = _load_easy_pace_sec_per_km()
 
-    for sched_date, workout_id, fallback_title in scheduled:
+    for sched_date, workout_id, fallback_title, is_adaptive in scheduled:
         if workout_id not in details_cache:
+            fetch = (
+                client.get_adaptive_workout_detail if is_adaptive
+                else client.get_workout_detail
+            )
             try:
                 details_cache[workout_id] = _retry_on_429(
-                    lambda wid=workout_id: client.get_workout_detail(wid)
+                    lambda wid=workout_id, f=fetch: f(wid)
                 )
                 time.sleep(_RATE_LIMIT_PAUSE)
             except GarminAPIError as exc:
@@ -236,11 +251,16 @@ def _build_entries(
 
         detail = details_cache[workout_id]
         if detail is None:
-            # No structured detail available (seen for Garmin Coach's adaptive
-            # workouts when workout-service doesn't recognize their workoutUuid) -
-            # still show the session by name/date rather than dropping it entirely.
+            # No structured detail available - still show the session by
+            # name/date rather than dropping it entirely.
             if fallback_title:
                 planned.append({"date": sched_date, "name": fallback_title})
+            continue
+
+        # Garmin Coach schedules rest days as calendar items like any other
+        # session, but with no name, no sport and no steps - they're plan
+        # structure, not something to plan for.
+        if detail.get("restDay") or detail.get("workoutPhrase") == "FORCED_REST":
             continue
 
         name = (detail.get("workoutName") or fallback_title).strip()
@@ -280,14 +300,22 @@ def _build_entries(
         workout_steps = _build_workout_steps(detail)
         if workout_steps is not None:
             entry["steps"] = workout_steps
-            # Quality sessions (Threshold/Tempo/VO2Max/Anaerobic/Sprint) get their
-            # main interval block folded into the title, e.g. "Seuil - 3x8:00@4:20" -
-            # Garmin Coach's own workout names are terse ("Seuil") unlike third-party
-            # plans, which already spell out the structure in the name.
-            if infer_planned_type(name) != "Base":
-                descriptor = _quality_descriptor(workout_steps)
-                if descriptor:
-                    entry["name"] = f"{name} - {descriptor}"
+
+        # Garmin Coach's adaptive workouts state their own training-effect
+        # target; that beats guessing the session type from a terse French
+        # name. Third-party plans (Kiprun etc.) carry no such label.
+        workout_type = type_from_training_effect_label(detail.get("trainingEffectLabel"))
+        if workout_type:
+            entry["type"] = workout_type
+
+        # Quality sessions (Threshold/Tempo/VO2Max/Anaerobic/Sprint) get their
+        # main interval block folded into the title, e.g. "Seuil - 3x8:00@4:20/km" -
+        # Garmin Coach's own workout names are terse ("Seuil") unlike third-party
+        # plans, which already spell out the structure in the name.
+        if (workout_type or infer_planned_type(name)) != "Base":
+            descriptor = _descriptor(detail, name, workout_steps)
+            if descriptor:
+                entry["name"] = f"{name} - {descriptor}"
 
         planned.append(entry)
 
@@ -453,6 +481,27 @@ def _build_workout_steps(detail: dict) -> list[dict] | None:
         steps[-1]["kind"] = "cooldown"
 
     return steps if len(steps) > 1 else None
+
+
+# Garmin Coach's `description` is a terse structure summary ("3x8:00@4:20/km").
+# Anything longer is prose from some other provider, not a descriptor - and a
+# descriptor that's already in the name would just duplicate it.
+_MAX_DESCRIPTOR_LEN = 40
+
+
+def _descriptor(detail: dict, name: str, steps: list[dict] | None) -> str | None:
+    """Compact summary of a workout's main set, for folding into its title.
+
+    Garmin's own `description` wins when it's there: it's authoritative about
+    reps expressed in seconds or in metres, which `_quality_descriptor` can't
+    represent (it renders every effort as whole minutes)."""
+    description = (detail.get("description") or "").strip()
+    if description and len(description) <= _MAX_DESCRIPTOR_LEN:
+        if description.lower() not in name.lower():
+            return description
+        return None
+
+    return _quality_descriptor(steps) if steps else None
 
 
 def _quality_descriptor(steps: list[dict]) -> str | None:
