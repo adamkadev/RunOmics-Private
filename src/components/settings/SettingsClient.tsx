@@ -10,7 +10,7 @@ import { BackButton } from '@/components/ui/BackButton'
 import { Toast, useToast } from '@/components/ui/Toast'
 import { AccentPicker } from './AccentPicker'
 import { ThemeSegmented } from './ThemeSegmented'
-import { DataSourceInfo } from './DataSourceInfo'
+import { DataSourceInfo, type SyncDevice } from './DataSourceInfo'
 import { NotificationsForm } from './NotificationsForm'
 
 const OWNER_EMAIL = process.env.NEXT_PUBLIC_OWNER_EMAIL ?? ''
@@ -18,9 +18,10 @@ const OWNER_EMAIL = process.env.NEXT_PUBLIC_OWNER_EMAIL ?? ''
 interface Props {
   lastSyncedAt: string | null
   activityCount: number
+  device?: SyncDevice
 }
 
-export function SettingsClient({ lastSyncedAt, activityCount }: Props) {
+export function SettingsClient({ lastSyncedAt, activityCount, device }: Props) {
   // Without the public Firebase config, start signed-out (theme/accent
   // settings still work) instead of spinning forever waiting for auth.
   const [user, setUser] = useState<User | null | 'loading'>(
@@ -136,7 +137,7 @@ export function SettingsClient({ lastSyncedAt, activityCount }: Props) {
           {t.settings.sections.notificationsData}
         </h2>
         <NotificationsForm />
-        <DataSourceInfo lastSyncedAt={lastSyncedAt} activityCount={activityCount} />
+        <DataSourceInfo lastSyncedAt={lastSyncedAt} activityCount={activityCount} device={device} />
       </section>
 
       <section className="space-y-2">

@@ -14,6 +14,12 @@ export interface AthleteProfile {
   restingHrBpm?: number
   age?: number
   sex?: 'male' | 'female'
+  /** Primary training device the Garmin metrics above are measured by. */
+  deviceId?: number
+  deviceName?: string
+  deviceFirmware?: string
+  /** ISO date the device was registered on Garmin Connect. */
+  deviceSince?: string
   lastUpdate?: string
 }
 

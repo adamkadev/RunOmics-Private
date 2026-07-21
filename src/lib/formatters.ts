@@ -100,6 +100,14 @@ export function formatCompactDate(isoDate: string): string {
   )
 }
 
+/** Month + year, e.g. `August 2025` - for spans where the exact day is noise. */
+export function formatMonthYear(isoDate: string): string {
+  return new Date(isoDate + 'T00:00:00').toLocaleDateString(t.locale, {
+    month: 'long',
+    year: 'numeric',
+  })
+}
+
 /** Three-letter uppercase month label from a 1-based month number (1 = JAN). */
 export function monthLabel(month: number): string {
   return new Date(2000, month - 1, 1).toLocaleString(t.locale, { month: 'short' }).toUpperCase()

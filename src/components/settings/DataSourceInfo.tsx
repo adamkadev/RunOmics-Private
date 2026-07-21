@@ -1,18 +1,27 @@
 'use client'
 
 import { useState } from 'react'
+import { siGarmin } from 'simple-icons'
 import { t } from '@/i18n'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { Toast, useToast } from '@/components/ui/Toast'
 import { saveFileWithFallback } from '@/lib/fileExport'
-import { formatRelativeAgo } from '@/lib/formatters'
+import { formatMonthYear, formatRelativeAgo } from '@/lib/formatters'
+
+export interface SyncDevice {
+  name?: string
+  firmware?: string
+  /** ISO date the watch was paired with Garmin Connect. */
+  since?: string
+}
 
 interface Props {
   lastSyncedAt: string | null
   activityCount: number
+  device?: SyncDevice
 }
 
-export function DataSourceInfo({ lastSyncedAt, activityCount }: Props) {
+export function DataSourceInfo({ lastSyncedAt, activityCount, device }: Props) {
   const [loading, setLoading] = useState(false)
   const { toast, leaving, showToast } = useToast()
   const s = t.settings
@@ -45,21 +54,44 @@ export function DataSourceInfo({ lastSyncedAt, activityCount }: Props) {
     }
   }
 
+  // Device provenance, shown only once the sync has actually reported a watch.
+  const provenance = device && [
+    s.dataSource.garmin,
+    device.firmware && s.dataSource.firmware(device.firmware),
+    device.since && s.dataSource.since(formatMonthYear(device.since)),
+  ].filter(Boolean).join(' · ')
+
   return (
     <GlassSurface variant="card" className="p-5">
       {lastSyncedAt && (
         <div className="flex items-center gap-3.5">
-          <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px] bg-accent/[0.14]">
+          <div className="relative flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px] bg-accent/[0.14]">
+            <svg
+              role="img"
+              viewBox="0 0 24 24"
+              width={19}
+              height={19}
+              fill="currentColor"
+              className="text-accent"
+            >
+              <title>{s.dataSource.garmin}</title>
+              <path d={siGarmin.path} />
+            </svg>
             <span
-              className="h-2 w-2 rounded-full bg-accent"
+              className="absolute -bottom-px -right-px h-2 w-2 rounded-full bg-accent ring-2 ring-card"
               style={{ boxShadow: '0 0 8px var(--accent)', animation: 'pulse-ring 2s ease-in-out infinite' }}
             />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-foreground">{s.dataSource.connected(s.dataSource.garmin)}</p>
+            <p className="truncate text-sm font-semibold text-foreground">
+              {device?.name ?? s.dataSource.connected(s.dataSource.garmin)}
+            </p>
             <p className="mt-0.5 truncate text-[11.5px] text-muted-foreground">
               {s.dataSource.lastSync} {formatRelativeAgo(lastSyncedAt)} · {t.common.runs(activityCount)}
             </p>
+            {device?.name && provenance && (
+              <p className="mt-0.5 truncate text-[11px] text-subtle-2">{provenance}</p>
+            )}
           </div>
         </div>
       )}

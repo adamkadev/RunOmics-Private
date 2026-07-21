@@ -7,7 +7,7 @@ import json
 import os
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from garmin.athlete import fetch_athlete_metrics
 from garmin.client import GarminAuthError, GarminAPIError, GarminClient
 from garmin.retry import retry_transient
+from garmin.training_status import sync_load_balance, sync_training_status
 from garmin.vo2max_norms import fetch_vo2max_norms, write_vo2max_norms
 from sync_workouts import fetch_planned_workouts, write_planned_workouts
 from sync_upcoming_races import fetch_upcoming_races, write_upcoming_races
@@ -148,10 +149,21 @@ def main() -> int:
 
             write_vo2max_norms(fetch_vo2max_norms(client))
 
+            first_day = _first_activity_date(store)
+            if first_day:
+                sync_training_status(client, first_day)
+            sync_load_balance(client)
+
         if not args.dry_run:
             _write_sync_meta()
 
     return 0 if failed == 0 else 2
+
+
+def _first_activity_date(store: JsonActivityStore) -> date | None:
+    """Earliest activity date - there is no training status worth having before it."""
+    dates = [a["date"] for a in store.all_activities() if a.get("date")]
+    return date.fromisoformat(min(dates)) if dates else None
 
 
 def _write_sync_meta() -> None:

@@ -223,6 +223,8 @@ export const fr = {
       garmin: 'Garmin Connect',
       connected: (source: string) => `${source} connecté`,
       lastSync: 'Dernière synchro',
+      firmware: (version: string) => `Firmware ${version}`,
+      since: (monthYear: string) => `appairée depuis ${monthYear}`,
     },
     dataExport: {
       csv: 'Exporter les activités (.csv)',

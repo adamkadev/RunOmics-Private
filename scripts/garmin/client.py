@@ -139,6 +139,19 @@ class GarminClient:
     def get_user_settings(self) -> dict[str, Any]:
         return self._get(f"{self._base}/userprofile-service/userprofile/user-settings").json()
 
+    # Garmin Connect's web front-end calls both of these under a /gc-api/ prefix
+    # on connect.garmin.com; on connectapi.garmin.com the prefix does not exist.
+    def get_training_status(self, day: str) -> dict[str, Any]:
+        return self._get(f"{self._base}/metrics-service/metrics/trainingstatus/daily/{day}").json()
+
+    def get_training_load_balance(self, day: str) -> dict[str, Any]:
+        return self._get(
+            f"{self._base}/metrics-service/metrics/trainingloadbalance/latest/{day}"
+        ).json()
+
+    def get_primary_training_device(self) -> dict[str, Any]:
+        return self._get(f"{self._base}/web-gateway/device-info/primary-training-device").json()
+
     def get_heart_rate_zones(self) -> list[dict[str, Any]]:
         return self._get(f"{self._base}/biometric-service/heartRateZones/").json()
 

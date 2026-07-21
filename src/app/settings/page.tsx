@@ -1,6 +1,7 @@
 import { SettingsClient } from '@/components/settings/SettingsClient'
 import { getLastSyncedAt } from '@/application/usecases/GetSyncStatus'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { t } from '@/i18n'
 
 export const metadata = {
@@ -10,6 +11,13 @@ export const metadata = {
 export default function SettingsPage() {
   const lastSyncedAt = getLastSyncedAt()
   const activityCount = getAllActivities().length
+  const { deviceName, deviceFirmware, deviceSince } = getAthleteProfile()
 
-  return <SettingsClient lastSyncedAt={lastSyncedAt} activityCount={activityCount} />
+  return (
+    <SettingsClient
+      lastSyncedAt={lastSyncedAt}
+      activityCount={activityCount}
+      device={deviceName ? { name: deviceName, firmware: deviceFirmware, since: deviceSince } : undefined}
+    />
+  )
 }

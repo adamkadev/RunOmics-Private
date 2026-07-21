@@ -28,6 +28,54 @@ def _fetch_zone_config(client: GarminClient) -> dict[str, Any] | None:
     return by_sport.get("RUNNING") or by_sport.get("DEFAULT")
 
 
+def extract_primary_device(payload: dict[str, Any]) -> dict[str, Any]:
+    """Name, firmware and registration date of the watch the metrics come from.
+
+    Garmin returns every device ever registered; only the primary training one
+    is the source of the numbers we display, so the rest is dropped. The serial
+    number it also carries is deliberately not kept - athlete.json is served
+    publicly and a hardware id buys us nothing.
+    """
+    registered = payload.get("RegisteredDevices") or []
+    if not registered:
+        return {}
+
+    primary_id = (payload.get("PrimaryTrainingDevice") or {}).get("deviceId")
+    by_id = {device.get("deviceId"): device for device in registered}
+    device = by_id.get(primary_id) or next(
+        (d for d in registered if d.get("primary")), registered[0]
+    )
+
+    info: dict[str, Any] = {}
+
+    device_id = device.get("deviceId")
+    if device_id:
+        info["deviceId"] = device_id
+
+    name = device.get("displayName") or device.get("productDisplayName")
+    if name:
+        info["deviceName"] = name
+
+    firmware = device.get("currentFirmwareVersion")
+    if firmware:
+        info["deviceFirmware"] = str(firmware)
+
+    registered_at = device.get("registeredDate")
+    if registered_at:
+        info["deviceSince"] = (
+            datetime.fromtimestamp(registered_at / 1000, timezone.utc).date().isoformat()
+        )
+
+    return info
+
+
+def _fetch_primary_device(client: GarminClient) -> dict[str, Any]:
+    try:
+        return extract_primary_device(client.get_primary_training_device())
+    except GarminAPIError:
+        return {}
+
+
 def fetch_athlete_metrics(client: GarminClient) -> dict[str, Any]:
     metrics: dict[str, Any] = {}
 
@@ -81,6 +129,8 @@ def fetch_athlete_metrics(client: GarminClient) -> dict[str, Any]:
     height = user_data.get("height")
     if height:
         metrics["heightCm"] = round(height, 1)
+
+    metrics.update(_fetch_primary_device(client))
 
     if metrics:
         metrics["lastUpdate"] = datetime.now(timezone.utc).isoformat()
