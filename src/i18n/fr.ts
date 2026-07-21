@@ -204,6 +204,21 @@ export const fr = {
       vo2max: 'VO2max',
       weight: 'Poids',
       height: 'Taille',
+      fitnessAge: 'Âge de forme',
+      achievableFitnessAge: 'Potentiel',
+      bmi: 'IMC',
+      // Kept to a single short token - the tiles are a third of a phone wide.
+      fitnessAgeBand: {
+        younger: (years: number) => `−${years} ans`,
+        onPar: 'à niveau',
+        older: (years: number) => `+${years} ans`,
+      },
+      bmiBand: {
+        underweight: 'maigreur',
+        healthy: 'normal',
+        overweight: 'surpoids',
+        obese: 'obésité',
+      },
       categories: {
         performance: 'Performance',
         cardio: 'Cardio',

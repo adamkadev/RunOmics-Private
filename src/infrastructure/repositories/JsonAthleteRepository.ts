@@ -14,6 +14,10 @@ export interface AthleteProfile {
   restingHrBpm?: number
   age?: number
   sex?: 'male' | 'female'
+  /** Garmin's fitness age, and the floor it says the current training can reach. */
+  fitnessAgeYrs?: number
+  achievableFitnessAgeYrs?: number
+  bmi?: number
   /** Primary training device the Garmin metrics above are measured by. */
   deviceId?: number
   deviceName?: string

@@ -149,6 +149,9 @@ class GarminClient:
             f"{self._base}/metrics-service/metrics/trainingloadbalance/latest/{day}"
         ).json()
 
+    def get_fitness_age(self, start: str, end: str) -> list[dict[str, Any]]:
+        return self._get(f"{self._base}/fitnessage-service/stats/daily/{start}/{end}").json()
+
     def get_primary_training_device(self) -> dict[str, Any]:
         return self._get(f"{self._base}/web-gateway/device-info/primary-training-device").json()
 

@@ -1,10 +1,13 @@
 {
+  "achievableFitnessAgeYrs": 21.1,
   "age": 29,
+  "bmi": 20.7,
   "deviceFirmware": "28.05",
   "deviceId": 3604810488,
   "deviceName": "Forerunner 255 Music",
   "deviceSince": "2025-08-04",
   "displayName": "Adam",
+  "fitnessAgeYrs": 22.0,
   "heightCm": 173.0,
   "hrZoneBoundsBpm": [
     118,

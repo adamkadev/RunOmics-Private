@@ -69,18 +69,26 @@ function fitnessBand(ctl: number, ctlPeak: number): 'building' | 'nearPeak' | 'p
   return 'building'
 }
 
-function chargeStatus(acwr: number | null): { label: string; textClassName: string; dotClassName: string } | null {
+// Garmin's own LOW/OPTIMAL/HIGH verdict when the watch supplied one - it is
+// calibrated on the athlete, where the 0.8/1.3 cutoffs below are generic.
+function chargeStatus(
+  acwr: number | null,
+  acwrStatus: string | null,
+): { label: string; textClassName: string; dotClassName: string } | null {
   if (acwr === null) return null
   const s = t.dashboard.todayHero
-  if (acwr > 1.3) return { label: s.chargeHigh, textClassName: STATUS.warning.text, dotClassName: STATUS.warning.dot }
-  if (acwr < 0.8) return { label: s.chargeLow, textClassName: STATUS.warning.text, dotClassName: STATUS.warning.dot }
+  const high = acwrStatus ? acwrStatus === 'HIGH' : acwr > 1.3
+  const low = acwrStatus ? acwrStatus === 'LOW' : acwr < 0.8
+
+  if (high) return { label: s.chargeHigh, textClassName: STATUS.warning.text, dotClassName: STATUS.warning.dot }
+  if (low) return { label: s.chargeLow, textClassName: STATUS.warning.text, dotClassName: STATUS.warning.dot }
   return { label: s.chargeOptimal, textClassName: STATUS.success.text, dotClassName: STATUS.success.dot }
 }
 
 export function TrainingMetricsCard({ status, vo2max, age, sex }: Props) {
   if (!status) return null
 
-  const charge = chargeStatus(status.acwr)
+  const charge = chargeStatus(status.acwr, status.acwrStatus)
   const acwrProgress = status.acwr !== null ? Math.min(1, status.acwr / 1.5) : 0
 
   const vo2Band = vo2max !== null && age !== undefined && sex ? vo2maxBand(vo2max, age, sex) : null

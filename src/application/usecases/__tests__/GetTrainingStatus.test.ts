@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { acwr, loadTrend, classify } from '../GetTrainingStatus'
+import { acwr, loadTrend, classify, riskFromGarmin } from '../GetTrainingStatus'
 import type { Activity } from '@/domain/activity/types'
 
 // ---------- helpers ----------
@@ -139,5 +139,31 @@ describe('classify', () => {
   it('productive/low as default', () => {
     expect(classify(0, 0, null)).toEqual({ status: 'productive', risk: 'low' })
     expect(classify(-5, 0, 1.0)).toEqual({ status: 'productive', risk: 'low' })
+  })
+})
+
+// ---------- riskFromGarmin ----------
+
+describe('riskFromGarmin', () => {
+  it('high when the watch reports overreaching', () => {
+    expect(riskFromGarmin('overreaching', 'HIGH')).toBe('high')
+  })
+
+  it('moderate when unproductive, whatever the ratio says', () => {
+    expect(riskFromGarmin('unproductive', 'LOW')).toBe('moderate')
+    expect(riskFromGarmin('unproductive', 'OPTIMAL')).toBe('moderate')
+  })
+
+  it('moderate on a HIGH ratio even under a productive status', () => {
+    expect(riskFromGarmin('productive', 'HIGH')).toBe('moderate')
+  })
+
+  it('low for a productive or maintaining block in range', () => {
+    expect(riskFromGarmin('productive', 'OPTIMAL')).toBe('low')
+    expect(riskFromGarmin('maintaining', 'LOW')).toBe('low')
+  })
+
+  it('low when the watch gave no ratio verdict', () => {
+    expect(riskFromGarmin('recovery', null)).toBe('low')
   })
 })

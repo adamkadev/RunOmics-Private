@@ -1,9 +1,17 @@
 import type { Activity } from '@/domain/activity/types'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { getLatestTrainingStatusDay } from '@/infrastructure/repositories/JsonTrainingStatusRepository'
 import { getTrainingLoad, ATL_DAYS } from './GetTrainingLoad'
 import { round } from '@/lib/math'
 
-export type TrainingStatusType = 'productive' | 'fresh' | 'overreaching' | 'recovery' | 'detraining'
+export type TrainingStatusType =
+  | 'productive'
+  | 'fresh'
+  | 'overreaching'
+  | 'recovery'
+  | 'detraining'
+  | 'maintaining'
+  | 'unproductive'
 export type RiskLevel = 'low' | 'moderate' | 'high'
 export type LoadTrend = 'building' | 'maintaining' | 'tapering' | 'detraining'
 
@@ -20,6 +28,14 @@ export interface TrainingStatus {
   ctlDelta: number
   atlDelta: number
   ctlPeak: number
+  /** Where `status`/`acwr` came from: the watch, or our own TRIMP fallback. */
+  source: 'garmin' | 'local'
+  /** Garmin's own verdict on the ratio (LOW / OPTIMAL / HIGH), when it supplied one. */
+  acwrStatus: string | null
+  chronicLoad: number | null
+  /** Personalised optimal band for chronic load - Garmin only, no local equivalent. */
+  chronicLoadMin: number | null
+  chronicLoadMax: number | null
 }
 
 const DAY_MS = 86_400_000
@@ -33,6 +49,26 @@ export function acwr(activities: Activity[], refDate: Date): number | null {
 
   const chronic = kmInWindow(28) / 4
   return chronic > 5 ? round(kmInWindow(7) / chronic, 2) : null
+}
+
+// Garmin's own status names, mapped onto ours. `peaking` has no separate slot:
+// it describes high fitness with shed fatigue, which is what `fresh` already
+// means here, and folding it in keeps the weekly digest's positive fact firing.
+const GARMIN_STATUS: Record<string, TrainingStatusType> = {
+  productive: 'productive',
+  maintaining: 'maintaining',
+  recovery: 'recovery',
+  detraining: 'detraining',
+  overreaching: 'overreaching',
+  unproductive: 'unproductive',
+  peaking: 'fresh',
+}
+
+/** Risk from the watch's verdict rather than our thresholds. `HIGH` is Garmin's own overload flag. */
+export function riskFromGarmin(status: TrainingStatusType, acwrStatus: string | null): RiskLevel {
+  if (status === 'overreaching') return 'high'
+  if (status === 'unproductive' || acwrStatus === 'HIGH') return 'moderate'
+  return 'low'
 }
 
 export function loadTrend(ctlDelta: number, tsb: number): LoadTrend {
@@ -77,10 +113,39 @@ export async function getTrainingStatus(): Promise<TrainingStatus | null> {
   const firstActivity = activities[0]
   if (!firstActivity) return null
   const refDate = new Date(firstActivity.date + 'T00:00:00')
-  const ratio = acwr(activities, refDate)
 
-  const { status, risk } = classify(tsb, ctlDelta, ratio)
+  // Garmin's reading wins when the watch has one: its ratio is computed on
+  // Firstbeat load, where ours is a kilometre proxy that reads a high-volume
+  // easy week as overload. The local calculation stays as the fallback for a
+  // profile that has never synced the metrics-service endpoint.
+  const garmin = getLatestTrainingStatusDay()
+  const garminType = garmin?.status ? GARMIN_STATUS[garmin.status] : undefined
+
+  const localRatio = acwr(activities, refDate)
+  const local = classify(tsb, ctlDelta, localRatio)
+  const useGarmin = garminType !== undefined
+  const ratio = useGarmin ? (garmin?.acwr ?? null) : localRatio
+  const status = garminType ?? local.status
+  const risk = useGarmin ? riskFromGarmin(status, garmin?.acwrStatus ?? null) : local.risk
+
   const ctlPeak = points.reduce((max, p) => Math.max(max, p.ctl), ctl)
 
-  return { status, risk, loadTrend: loadTrend(ctlDelta, tsb), ctl, atl, tsb, tsbNow, acwr: ratio, ctlDelta, atlDelta, ctlPeak }
+  return {
+    status,
+    risk,
+    loadTrend: loadTrend(ctlDelta, tsb),
+    ctl,
+    atl,
+    tsb,
+    tsbNow,
+    acwr: ratio,
+    ctlDelta,
+    atlDelta,
+    ctlPeak,
+    source: useGarmin ? 'garmin' : 'local',
+    acwrStatus: garmin?.acwrStatus ?? null,
+    chronicLoad: garmin?.chronicLoad ?? null,
+    chronicLoadMin: garmin?.chronicLoadMin ?? null,
+    chronicLoadMax: garmin?.chronicLoadMax ?? null,
+  }
 }

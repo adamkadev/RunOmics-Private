@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
 from .client import GarminAPIError, GarminClient
@@ -26,6 +26,43 @@ def _fetch_zone_config(client: GarminClient) -> dict[str, Any] | None:
 
     by_sport = {zone.get("sport"): zone for zone in zones}
     return by_sport.get("RUNNING") or by_sport.get("DEFAULT")
+
+
+def extract_fitness_age(days: list[dict[str, Any]]) -> dict[str, Any]:
+    """Latest fitness age and BMI from Garmin's daily fitness-age series.
+
+    Garmin only recomputes these every few days, so the last entries of a range
+    can repeat or carry no values at all - walk backwards to the freshest day
+    that actually holds a fitness age.
+    """
+    for day in reversed(days or []):
+        values = day.get("values") or {}
+        fitness_age = values.get("fitnessAge")
+        if not fitness_age:
+            continue
+
+        metrics: dict[str, Any] = {"fitnessAgeYrs": round(fitness_age, 1)}
+
+        achievable = values.get("achievableFitnessAge")
+        if achievable:
+            metrics["achievableFitnessAgeYrs"] = round(achievable, 1)
+
+        bmi = values.get("bmi")
+        if bmi:
+            metrics["bmi"] = round(bmi, 1)
+
+        return metrics
+
+    return {}
+
+
+def _fetch_fitness_age(client: GarminClient) -> dict[str, Any]:
+    today = date.today()
+    try:
+        days = client.get_fitness_age((today - timedelta(days=6)).isoformat(), today.isoformat())
+    except GarminAPIError:
+        return {}
+    return extract_fitness_age(days)
 
 
 def extract_primary_device(payload: dict[str, Any]) -> dict[str, Any]:
@@ -130,6 +167,7 @@ def fetch_athlete_metrics(client: GarminClient) -> dict[str, Any]:
     if height:
         metrics["heightCm"] = round(height, 1)
 
+    metrics.update(_fetch_fitness_age(client))
     metrics.update(_fetch_primary_device(client))
 
     if metrics:
