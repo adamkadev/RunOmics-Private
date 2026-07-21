@@ -43,6 +43,8 @@ export function ProfileAthleteStats({ athlete }: Props) {
           value={athlete.thresholdPaceSecPerKm ? formatDuration(athlete.thresholdPaceSecPerKm) : undefined}
         />
         <Tile label={a.vma} unit="km/h" value={athlete.vmaKmh} />
+        <Tile label={a.maxHr} unit={t.units.bpm} value={athlete.maxHrBpm} />
+        <Tile label={a.restingHr} unit={t.units.bpm} value={athlete.restingHrBpm} />
       </div>
 
       {athlete.lastUpdate && (

@@ -195,6 +195,8 @@ export const fr = {
       thresholdPaceHint: 'min:ss par km, ex. 4:14',
       vma: 'VMA',
       vmaHint: 'Vitesse maximale aérobie',
+      maxHr: 'FC max',
+      restingHr: 'FC repos',
     },
     actions: {
       save: 'Enregistrer',

@@ -139,6 +139,9 @@ class GarminClient:
     def get_user_settings(self) -> dict[str, Any]:
         return self._get(f"{self._base}/userprofile-service/userprofile/user-settings").json()
 
+    def get_heart_rate_zones(self) -> list[dict[str, Any]]:
+        return self._get(f"{self._base}/biometric-service/heartRateZones/").json()
+
     def get_vo2max_norms(self) -> dict[str, Any]:
         # Static reference table (Cooper Institute age/sex percentile anchors),
         return self._get(f"{_CONNECT_WEB}/web-data/vo2Max/VO2Max.json").json()

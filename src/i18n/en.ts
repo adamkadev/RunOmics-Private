@@ -203,6 +203,8 @@ export const en = {
       thresholdPaceHint: 'min:ss per km, e.g. 4:14',
       vma: 'VMA',
       vmaHint: 'Maximal aerobic speed',
+      maxHr: 'Max HR',
+      restingHr: 'Resting HR',
     },
     actions: {
       save: 'Save',

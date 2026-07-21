@@ -9,11 +9,11 @@ import { ZONE_COLOR_CLASSES } from '@/lib/colors'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
-type Bounds = [number, number, number, number]
+type Bounds = [number, number, number, number, number]
 type View = 'week' | 'recent'
 
 const DEFAULT_LTHR = 170
-const ZONE_PERCENTS = [0.80, 0.89, 0.95, 1.00]
+const ZONE_PERCENTS = [0.65, 0.80, 0.89, 0.95, 1.00]
 
 function defaultBounds(lthr: number): Bounds {
   return ZONE_PERCENTS.map((p) => Math.round(lthr * p)) as Bounds
@@ -40,12 +40,14 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime }: Prop
   const isAutoFallback = manualView === null && !weekHasData
   const zoneTime = view === 'week' ? weeklyZoneTime : recentZoneTime
 
+  // Garmin gives us a floor per zone and ends each range one bpm below the next
+  // floor; zone 5 stays open-ended.
   const zones = [
-    { zone: 5, min: bounds[3], max: null },
-    { zone: 4, min: bounds[2], max: bounds[3] },
-    { zone: 3, min: bounds[1], max: bounds[2] },
-    { zone: 2, min: bounds[0], max: bounds[1] },
-    { zone: 1, min: 0, max: bounds[0] },
+    { zone: 5, min: bounds[4], max: null },
+    { zone: 4, min: bounds[3], max: bounds[4] - 1 },
+    { zone: 3, min: bounds[2], max: bounds[3] - 1 },
+    { zone: 2, min: bounds[1], max: bounds[2] - 1 },
+    { zone: 1, min: bounds[0], max: bounds[1] - 1 },
   ]
 
   const timeByZone = new Map(zoneTime.map((z) => [z.zone, z]))
@@ -113,9 +115,7 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime }: Prop
                 <span className="text-foreground/80">
                   {t.activity.zones.labels[zone]}
                   {' · '}
-                  {zone === 1 && <>&lt;{max}</>}
-                  {zone !== 1 && zone !== 5 && <>{min}–{max}</>}
-                  {zone === 5 && <>&ge; {min}</>}
+                  {max === null ? <>&ge; {min}</> : <>{min}–{max}</>}
                 </span>
                 <span className={isDominant ? 'font-semibold text-foreground' : 'tabular-nums text-muted-foreground'}>
                   {time ? formatDurationWords(time.seconds) : `0 ${t.units.min}`}

@@ -6,7 +6,7 @@ export interface AthleteProfile {
   thresholdPaceSecPerKm?: number
   vmaKmh?: number
   displayName?: string
-  hrZoneBoundsBpm?: [number, number, number, number]
+  hrZoneBoundsBpm?: [number, number, number, number, number]
   maxHrBpm?: number
   restingHrBpm?: number
   age?: number
