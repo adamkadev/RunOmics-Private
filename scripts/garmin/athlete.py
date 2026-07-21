@@ -71,7 +71,16 @@ def fetch_athlete_metrics(client: GarminClient) -> dict[str, Any]:
 
     vo2max = user_data.get("vo2MaxRunning") or user_data.get("vO2MaxRunning")
     if vo2max:
+        metrics["vo2maxMlKgMin"] = round(vo2max, 1)
         metrics["vmaKmh"] = round(vo2max / _VO2_PER_KMH, 1)
+
+    weight_g = user_data.get("weight")
+    if weight_g:
+        metrics["weightKg"] = round(weight_g / 1000, 1)
+
+    height = user_data.get("height")
+    if height:
+        metrics["heightCm"] = round(height, 1)
 
     if metrics:
         metrics["lastUpdate"] = datetime.now(timezone.utc).isoformat()

@@ -57,7 +57,11 @@ export const fr = {
     celsius: '°C',
     hour: 'h',
     min: 'min',
-    yrs: 'ans'
+    yrs: 'ans',
+    kg: 'kg',
+    cm: 'cm',
+    kmh: 'km/h',
+    mlKgMin: 'ml/kg/min',
   },
 
   common: {
@@ -197,6 +201,14 @@ export const fr = {
       vmaHint: 'Vitesse maximale aérobie',
       maxHr: 'FC max',
       restingHr: 'FC repos',
+      vo2max: 'VO2max',
+      weight: 'Poids',
+      height: 'Taille',
+      categories: {
+        performance: 'Performance',
+        cardio: 'Cardio',
+        body: 'Morphologie',
+      },
     },
     actions: {
       save: 'Enregistrer',

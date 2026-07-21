@@ -1,5 +1,6 @@
 import { t } from '@/i18n'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 
 export interface VO2maxPoint {
   date: string
@@ -10,6 +11,9 @@ export interface VO2maxPoint {
 export type VO2maxTrend = 'up' | 'down' | 'stable'
 
 export function getLatestVO2max(): number | null {
+  const profileVo2max = getAthleteProfile().vo2maxMlKgMin
+  if (profileVo2max) return profileVo2max
+
   const activities = getAllActivities()
   const latest = activities.find((a) => a.vo2maxGarmin !== null && a.vo2maxGarmin !== undefined)
   return latest?.vo2maxGarmin ?? null

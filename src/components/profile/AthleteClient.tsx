@@ -9,11 +9,12 @@ import { t } from '@/i18n'
 
 interface Props {
   athlete: AthleteProfile
+  latestVo2max: number | null
   weeklyZoneTime: ZoneShare[]
   recentZoneTime: ZoneShare[]
 }
 
-export function AthleteClient({ athlete, weeklyZoneTime, recentZoneTime }: Props) {
+export function AthleteClient({ athlete, latestVo2max, weeklyZoneTime, recentZoneTime }: Props) {
   return (
     <div className="space-y-6">
       <div>
@@ -22,7 +23,7 @@ export function AthleteClient({ athlete, weeklyZoneTime, recentZoneTime }: Props
         <p className="mt-0.5 text-sm text-muted-foreground">{t.pages.athlete.subtitle}</p>
       </div>
 
-      <ProfileAthleteStats athlete={athlete} />
+      <ProfileAthleteStats athlete={athlete} latestVo2max={latestVo2max} />
       <ProfileHrZones athlete={athlete} weeklyZoneTime={weeklyZoneTime} recentZoneTime={recentZoneTime} />
     </div>
   )

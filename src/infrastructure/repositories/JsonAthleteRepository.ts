@@ -5,6 +5,9 @@ export interface AthleteProfile {
   lthrBpm?: number
   thresholdPaceSecPerKm?: number
   vmaKmh?: number
+  vo2maxMlKgMin?: number
+  weightKg?: number
+  heightCm?: number
   displayName?: string
   hrZoneBoundsBpm?: [number, number, number, number, number]
   maxHrBpm?: number

@@ -1,6 +1,7 @@
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { zoneDistribution, recentZoneDistribution } from '@/application/usecases/GetAnalyticsData'
+import { getLatestVO2max } from '@/application/usecases/GetVO2maxHistory'
 import { isoWeekNumber } from '@/lib/calendarDate'
 import { AthleteClient } from '@/components/profile/AthleteClient'
 
@@ -15,5 +16,12 @@ export default async function AthletePage() {
 
   const recentZoneTime = recentZoneDistribution(activities, 28)
 
-  return <AthleteClient athlete={athlete} weeklyZoneTime={weeklyZoneTime} recentZoneTime={recentZoneTime} />
+  return (
+    <AthleteClient
+      athlete={athlete}
+      latestVo2max={getLatestVO2max()}
+      weeklyZoneTime={weeklyZoneTime}
+      recentZoneTime={recentZoneTime}
+    />
+  )
 }
