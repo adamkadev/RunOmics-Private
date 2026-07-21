@@ -328,6 +328,11 @@ export const en = {
       footnote:
         'Fitness = 42-day load average (CTL) · Fatigue = 7-day (ATL) · Form = Fitness - Fatigue (TSB).',
     },
+    trainingStatusWeeks: {
+      title: 'Training Status',
+      thisWeek: 'This week',
+      noReading: 'No reading',
+    },
     vo2maxChart: {
       title: 'VO₂max',
       unit: 'ml/kg/min',
@@ -374,11 +379,6 @@ export const en = {
         go: 'Green light',
         caution: 'Caution',
         hold: 'Hold back',
-      },
-      moodByTone: {
-        go: 'fresh',
-        caution: 'neutral',
-        hold: 'fatigued',
       },
       readiness: {
         go: {

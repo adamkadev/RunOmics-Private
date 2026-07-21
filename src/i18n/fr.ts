@@ -320,6 +320,11 @@ export const fr = {
       footnote:
         'Condition = charge moyenne sur 42 j (CTL) · Fatigue = 7 j (ATL) · Forme = Condition - Fatigue (TSB).',
     },
+    trainingStatusWeeks: {
+      title: 'Training Status',
+      thisWeek: 'Cette semaine',
+      noReading: 'Pas de lecture',
+    },
     vo2maxChart: {
       title: 'VO₂max',
       unit: 'ml/kg/min',
@@ -366,11 +371,6 @@ export const fr = {
         go: 'Feu vert',
         caution: 'Prudence',
         hold: 'Lever le pied',
-      },
-      moodByTone: {
-        go: 'frais',
-        caution: 'neutre',
-        hold: 'fatigué',
       },
       readiness: {
         go: {

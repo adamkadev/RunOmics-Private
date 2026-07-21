@@ -3,6 +3,7 @@ import { getDashboardData } from '@/application/usecases/GetDashboardData'
 import { getLastSyncedAt } from '@/application/usecases/GetSyncStatus'
 import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
 import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
+import { getTrainingStatusWeeks } from '@/application/usecases/GetTrainingStatusWeeks'
 import { getLatestVO2max } from '@/application/usecases/GetVO2maxHistory'
 import { getHeatmapData } from '@/application/usecases/GetHeatmapData'
 import { getRecords, getQualifiedEffortsByActivityId, getMostRecentRecord } from '@/application/usecases/GetRecords'
@@ -21,6 +22,7 @@ import { DashboardHighlights } from '@/components/dashboard/DashboardHighlights'
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting'
 import { TodayHero } from '@/components/dashboard/TodayHero'
 import { TrainingMetricsCard } from '@/components/dashboard/TrainingMetricsCard'
+import { TrainingStatusWeeksBar } from '@/components/dashboard/TrainingStatusWeeksBar'
 import { WeeklyStreakCard } from '@/components/dashboard/WeeklyStreakCard'
 import { CelebrationOverlay } from '@/components/dashboard/CelebrationOverlay'
 import { FirstLaunchHint } from '@/components/dashboard/FirstLaunchHint'
@@ -34,6 +36,7 @@ export default async function DashboardPage() {
   const lastSyncedAt = getLastSyncedAt()
   const trainingLoad = await getTrainingLoad()
   const trainingStatus = await getTrainingStatus()
+  const trainingStatusWeeks = getTrainingStatusWeeks()
   const vo2max = getLatestVO2max()
   const heatmapDays = getHeatmapData()
   const records = await getRecords()
@@ -71,6 +74,8 @@ export default async function DashboardPage() {
       />
 
       <TrainingMetricsCard status={trainingStatus} vo2max={vo2max} age={athlete.age} sex={athlete.sex} />
+
+      <TrainingStatusWeeksBar weeks={trainingStatusWeeks} />
 
       {weeklyStreak && (
         <WeeklyStreakCard

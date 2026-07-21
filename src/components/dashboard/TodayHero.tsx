@@ -29,18 +29,20 @@ interface Props {
   lastSyncedAt: string | null
 }
 
-// Deterministic verdict tone, read directly off today's Form (TSB, including
-// any session already synced today) and fatigue trend (ATL delta) - no new
-// data, just a rules layer:
-//   TSB > +5 and fatigue falling  -> green light
-//   TSB < -10 or fatigue rising   -> hold back
-//   otherwise                     -> caution
-function verdictTone(tsb: number, atlDelta: number): ReadinessTone {
-  const fatigueRising = atlDelta > 1
-  const fatigueFalling = atlDelta < -1
-  if (tsb < -10 || fatigueRising) return 'hold'
-  if (tsb > 5 && fatigueFalling) return 'go'
-  return 'caution'
+
+function verdictTone(status: TrainingStatus): ReadinessTone {
+  const fatigueRising = status.atlDelta > 1
+  const fatigueFalling = status.atlDelta < -1
+  let tone: ReadinessTone
+  if (status.tsbNow < -10 || fatigueRising) tone = 'hold'
+  else if (status.tsbNow > 5 && fatigueFalling) tone = 'go'
+  else tone = 'caution'
+
+  if (status.status === 'overreaching') return 'hold'
+  if (tone === 'go' && (status.status === 'unproductive' || status.status === 'detraining' || status.status === 'recovery')) {
+    return 'caution'
+  }
+  return tone
 }
 
 function formatSyncedAgo(lastSyncedAt: string): string {
@@ -68,11 +70,13 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, las
   if (!status && !plannedWorkout && !nextRace) return null
 
   const s = t.dashboard.todayHero
-  const tone = status ? verdictTone(status.tsbNow, status.atlDelta) : null
+  const tone = status ? verdictTone(status) : null
   const toneHex = tone ? TONE_HEX[tone] : TONE_HEX.go
   const tsbLabel = status ? `${status.tsbNow >= 0 ? '+' : ''}${status.tsbNow.toFixed(1)}` : null
   const verdict = status && tone ? readinessCopy(status, tone) : null
-  const formLine = tsbLabel ? `${t.dashboard.trainingLoad.form} ${tsbLabel} · ${s.moodByTone[tone ?? 'go']}` : null
+  const formLine = status && tsbLabel
+    ? `${t.dashboard.trainingLoad.form} ${tsbLabel} · ${t.trainingStatus.status[status.status]}`
+    : null
   const PlannedWorkoutIcon: LucideIcon = plannedWorkout?.type
     ? ACTIVITY_TYPE_ICONS[plannedWorkout.type as ActivityType]
     : Footprints
