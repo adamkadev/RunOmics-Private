@@ -59,6 +59,8 @@ type AccentVariant = {
   id: string
   light: {
     accent: string
+    accentHover: string
+    accentDark: string
     accentSubtle: string
     accentText: string
     ring: string
@@ -75,6 +77,7 @@ type AccentVariant = {
   }
   dark: {
     accent: string
+    accentHover: string
     accentText: string
     ring: string
     destructive?: string
@@ -91,13 +94,13 @@ const ACCENT_VARIANTS: AccentVariant[] = [
   {
     id: 'performance',
     light: {
-      accent: c.blue500, accentSubtle: c.blue50, accentText: c.blue600, ring: withAlpha(c.blue500, 0.35),
+      accent: c.blue500, accentHover: c.blue400, accentDark: c.blue600, accentSubtle: c.blue50, accentText: c.blue600, ring: withAlpha(c.blue500, 0.35),
       heroFrom: c.performanceHeroDeep, heroVia: c.blue900, heroTo: c.blue700,
       aurora1: c.blue300, aurora2: c.sky200,
       background: c.blue50, canvasTop: c.performanceCanvasTop,
     },
     dark: {
-      accent: c.blue500, accentText: c.blue400, ring: withAlpha(c.blue400, 0.7),
+      accent: c.blue400, accentHover: c.blue300, accentText: c.blue300, ring: withAlpha(c.blue400, 0.7),
       aurora1: c.blue700, aurora2: c.sky600,
       background: c.performanceBgDark, canvasTop: c.performanceCanvasDark,
     },
@@ -105,14 +108,14 @@ const ACCENT_VARIANTS: AccentVariant[] = [
   {
     id: 'impact',
     light: {
-      accent: c.rose500, accentSubtle: c.rose50, accentText: c.rose600, ring: withAlpha(c.rose500, 0.35),
+      accent: c.rose500, accentHover: c.rose400, accentDark: c.rose600, accentSubtle: c.rose50, accentText: c.rose600, ring: withAlpha(c.rose500, 0.35),
       destructive: c.red600,
       heroFrom: c.rose950, heroVia: c.rose800, heroTo: c.rose700,
       aurora1: c.rose300, aurora2: c.pink200,
       background: c.rose50, canvasTop: c.impactCanvasTop,
     },
     dark: {
-      accent: c.rose500, accentText: c.rose400, ring: withAlpha(c.rose400, 0.7),
+      accent: c.rose400, accentHover: c.rose300, accentText: c.rose300, ring: withAlpha(c.rose400, 0.7),
       destructive: c.red300,
       aurora1: c.pink700, aurora2: c.pink800,
       background: c.impactBgDark, canvasTop: c.impactCanvasDark,
@@ -121,14 +124,14 @@ const ACCENT_VARIANTS: AccentVariant[] = [
   {
     id: 'motivation',
     light: {
-      accent: c.orange500, accentSubtle: c.orange50, accentText: c.orange600, ring: withAlpha(c.orange500, 0.35),
+      accent: c.orange500, accentHover: c.orange400, accentDark: c.orange600, accentSubtle: c.orange50, accentText: c.orange600, ring: withAlpha(c.orange500, 0.35),
       destructive: c.red500,
       heroFrom: c.orange950, heroVia: c.orange800, heroTo: c.orange700,
       aurora1: c.orange300, aurora2: c.amber200,
       background: c.orange50, canvasTop: c.motivationCanvasTop,
     },
     dark: {
-      accent: c.orange500, accentText: c.orange400, ring: withAlpha(c.orange400, 0.7),
+      accent: c.orange400, accentHover: c.orange300, accentText: c.orange300, ring: withAlpha(c.orange400, 0.7),
       destructive: c.red300,
       aurora1: c.orange700, aurora2: c.amber700,
       background: c.motivationBgDark, canvasTop: c.motivationCanvasDark,
@@ -137,13 +140,13 @@ const ACCENT_VARIANTS: AccentVariant[] = [
   {
     id: 'endurance',
     light: {
-      accent: c.violet500, accentSubtle: c.violet50, accentText: c.violet600, ring: withAlpha(c.violet500, 0.35),
+      accent: c.violet500, accentHover: c.violet400, accentDark: c.violet600, accentSubtle: c.violet50, accentText: c.violet600, ring: withAlpha(c.violet500, 0.35),
       heroFrom: c.enduranceHeroDeep, heroVia: c.violet900, heroTo: c.violet700,
       aurora1: c.violet300, aurora2: c.purple200,
       background: c.violet50, canvasTop: c.enduranceCanvasTop,
     },
     dark: {
-      accent: c.violet500, accentText: c.violet400, ring: withAlpha(c.violet400, 0.7),
+      accent: c.violet400, accentHover: c.violet300, accentText: c.violet300, ring: withAlpha(c.violet400, 0.7),
       aurora1: c.violet700, aurora2: c.purple700,
       background: c.enduranceBgDark, canvasTop: c.enduranceCanvasDark,
     },
@@ -151,13 +154,13 @@ const ACCENT_VARIANTS: AccentVariant[] = [
   {
     id: 'silver',
     light: {
-      accent: c.slate500, accentSubtle: c.slate100, accentText: c.slate600, ring: withAlpha(c.slate500, 0.35),
+      accent: c.slate500, accentHover: c.slate400, accentDark: c.slate600, accentSubtle: c.slate100, accentText: c.slate600, ring: withAlpha(c.slate500, 0.35),
       heroFrom: c.slate900, heroVia: c.slate800, heroTo: c.slate700,
       aurora1: c.slate300, aurora2: c.slate200,
       background: c.slate50, canvasTop: c.silverCanvasTop, canvasBottom: c.slate100,
     },
     dark: {
-      accent: c.slate400, accentText: c.slate300, ring: withAlpha(c.slate300, 0.5),
+      accent: c.slate400, accentHover: c.slate300, accentText: c.slate300, ring: withAlpha(c.slate300, 0.5),
       aurora1: c.slate700, aurora2: c.slate800,
       auroraOpacity1: '0.6', auroraOpacity2: '0.5',
       background: c.silverBgDark, canvasTop: c.silverCanvasDark,
@@ -187,6 +190,8 @@ function accentBlocks(v: AccentVariant): TokenBlock[] {
       selector: `[data-accent="${v.id}"]`,
       tokens: {
         '--accent': l.accent,
+        '--accent-hover': l.accentHover,
+        '--accent-dark': l.accentDark,
         '--accent-foreground': white,
         '--accent-subtle': l.accentSubtle,
         '--accent-text': l.accentText,
@@ -203,6 +208,8 @@ function accentBlocks(v: AccentVariant): TokenBlock[] {
       selector: `.dark[data-accent="${v.id}"]`,
       tokens: {
         '--accent': d.accent,
+        '--accent-hover': d.accentHover,
+        '--accent-dark': l.accent,
         '--accent-foreground': ACCENT_INK,
         '--accent-subtle': withAlpha(d.accent, 0.1),
         '--accent-text': d.accentText,
