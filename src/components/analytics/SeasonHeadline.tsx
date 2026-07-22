@@ -1,29 +1,40 @@
 import { ArrowUpRight, ArrowRight } from 'lucide-react'
-import { GlassSurface } from '@/components/ui/GlassSurface'
-import { STATUS } from '@/lib/statusColors'
 import { cn } from '@/lib/utils'
 import type { SeasonHeadlineData } from '@/application/usecases/GetSeasonHeadline'
 import { t } from '@/i18n'
 
+// The insight-first opener: what the season says in one line, backed by up to
+// three reads. Centered green-gradient card, left-aligned bullets.
 export function SeasonHeadline({ data }: { data: SeasonHeadlineData }) {
   return (
-    <GlassSurface variant="card" className="border-accent/30 bg-gradient-to-br from-accent/[0.1] to-transparent p-5 text-center">
-      <div className="mb-1.5 text-micro font-semibold uppercase tracking-wide text-accent-text">
+    <div
+      className="rounded-[20px] border p-4 text-center"
+      style={{
+        borderColor: 'rgba(30,215,135,0.32)',
+        background: 'linear-gradient(158deg, rgba(30,215,135,0.11), rgba(30,215,135,0.02))',
+      }}
+    >
+      <div className="mb-2 font-mono text-[9.5px] font-bold uppercase tracking-[0.14em] text-accent-text">
         {t.analytics.seasonHeadline.eyebrow}
       </div>
-      <p className="mb-3 text-base font-bold leading-snug text-foreground">{data.title}</p>
-      <ul className="space-y-1.5">
+      <p className="mb-3 font-display text-[19px] font-bold leading-[1.18] tracking-tight text-foreground">
+        {data.title}
+      </p>
+      <ul className="flex flex-col gap-2 text-left">
         {data.bullets.map((bullet, i) => {
           const Icon = bullet.tone === 'positive' ? ArrowUpRight : ArrowRight
-          const tone = bullet.tone === 'positive' ? STATUS.success.text : STATUS.warning.text
           return (
-            <li key={i} className="flex items-center justify-center gap-2 text-sm text-foreground/80">
-              <Icon size={15} strokeWidth={2.5} className={cn('shrink-0', tone)} />
+            <li key={i} className="flex items-center gap-2.5 text-[12.5px] text-muted-foreground">
+              <Icon
+                size={14}
+                strokeWidth={2.4}
+                className={cn('shrink-0', bullet.tone === 'positive' ? 'text-accent' : 'text-amber-500')}
+              />
               {bullet.text}
             </li>
           )
         })}
       </ul>
-    </GlassSurface>
+    </div>
   )
 }

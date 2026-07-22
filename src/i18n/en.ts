@@ -477,6 +477,21 @@ export const en = {
       volume: 'Volume',
       health: 'Health',
     },
+    insightCards: {
+      vo2max: 'VO₂max',
+      easyPace: 'Easy pace',
+      threshold: 'Threshold',
+      consistency: 'Consistency',
+      days: 'days',
+      holding: 'holding',
+      excellent: 'excellent',
+      topPercent: (p: number) => `top ${p}%`,
+      faster: (s: number) => `↓ ${s} s`,
+      slower: (s: number) => `↑ ${s} s`,
+    },
+    raceTimes: {
+      trend: 'Race times ↓',
+    },
     stats: {
       distance: 'Distance',
       time: 'Time',
