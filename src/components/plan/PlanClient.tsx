@@ -5,6 +5,7 @@ import type { Activity, PlannedWorkout } from '@/domain/activity/types'
 import type { HrBounds } from '@/domain/training/trimp'
 import type { TrainingStatusCalendar } from '@/application/usecases/GetTrainingStatusCalendar'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
+import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import { PeriodNav } from '@/components/ui/PeriodNav'
 import { WeekView } from './WeekView'
 import { MonthView } from './MonthView'
@@ -20,11 +21,12 @@ interface Props {
   hrBounds?: HrBounds
   statusByDate: TrainingStatusCalendar
   planPhaseRanges: PlanPhaseRange[]
+  nextRace: UpcomingRace | null
 }
 
 type ViewMode = 'week' | 'month'
 
-export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate, planPhaseRanges }: Props) {
+export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate, planPhaseRanges, nextRace }: Props) {
   const now = new Date()
   const today = isoDate(now)
   const [mode, setMode] = useState<ViewMode>('week')
@@ -165,6 +167,7 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate
             onToday={goToday}
             statusByDate={statusByDate}
             planPhaseRanges={planPhaseRanges}
+            nextRace={nextRace}
             initialSelectedDate={focusDate}
           />
         ) : (

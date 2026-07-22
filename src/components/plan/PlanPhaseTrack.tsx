@@ -1,0 +1,70 @@
+import type { PlanPhaseRange, TrainingPlanPhase } from '@/application/usecases/GetTrainingPlan'
+import { TRAINING_PLAN_PHASE_COLORS } from '@/lib/colors'
+import { t } from '@/i18n'
+
+const TRACK = 'var(--surface3, #182420)'
+
+const PHASE_LABEL: Record<TrainingPlanPhase, string> = {
+  build: t.plan.phaseTrack.build,
+  peak: t.plan.phaseTrack.peak,
+  taper: t.plan.phaseTrack.taper,
+  raceDay: t.plan.phaseTrack.raceDay,
+}
+
+function days(from: string, to: string): number {
+  return Math.max(
+    1,
+    Math.round((new Date(to + 'T00:00:00').getTime() - new Date(from + 'T00:00:00').getTime()) / 86_400_000) + 1,
+  )
+}
+
+// Base -> Build -> Peak -> Taper progress bar, driven by the real Garmin Coach
+// phase ranges (build/peak/taper/race day - Garmin has no "base"). Each phase is
+// a segment sized by its length: past phases fill solid, the current one fills to
+// today, upcoming ones stay on the track. Nothing invents a phase the plan
+// doesn't state.
+export function PlanPhaseTrack({ ranges, today }: { ranges: PlanPhaseRange[]; today: string }) {
+  if (ranges.length < 2) return null
+
+  return (
+    <div className="mt-3.5">
+      <div className="flex items-center gap-1">
+        {ranges.map((r) => {
+          const color = TRAINING_PLAN_PHASE_COLORS[r.phase] ?? 'var(--accent)'
+          const isPast = r.endDate < today
+          const isCurrent = r.startDate <= today && today <= r.endDate
+          const progress = isCurrent
+            ? Math.min(100, Math.max(0, (days(r.startDate, today) / days(r.startDate, r.endDate)) * 100))
+            : 0
+          const background = isPast
+            ? color
+            : isCurrent
+              ? `linear-gradient(90deg, ${color} ${progress}%, ${TRACK} ${progress}%)`
+              : TRACK
+          return (
+            <div
+              key={r.startDate}
+              className="h-[5px] rounded-[3px]"
+              style={{ flex: days(r.startDate, r.endDate), background }}
+            />
+          )
+        })}
+      </div>
+      <div className="mt-1.5 flex justify-between font-mono text-[9.5px]">
+        {ranges.map((r) => {
+          const color = TRAINING_PLAN_PHASE_COLORS[r.phase] ?? 'var(--accent)'
+          const active = r.endDate >= today && r.startDate <= today
+          const done = r.endDate < today
+          return (
+            <span
+              key={r.startDate}
+              style={{ color: active || done ? color : 'var(--subtle)' }}
+            >
+              {PHASE_LABEL[r.phase]}
+            </span>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
