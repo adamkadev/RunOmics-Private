@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { getDashboardData } from '@/application/usecases/GetDashboardData'
 import { getLastSyncedAt } from '@/application/usecases/GetSyncStatus'
@@ -19,6 +20,7 @@ import { TrainingStatusWeeksBar } from '@/components/dashboard/TrainingStatusWee
 import { WeeklyStreakCard } from '@/components/dashboard/WeeklyStreakCard'
 import { CelebrationOverlay } from '@/components/dashboard/CelebrationOverlay'
 import { FirstLaunchHint } from '@/components/dashboard/FirstLaunchHint'
+import { t } from '@/i18n'
 
 export const revalidate = 3600
 
@@ -69,11 +71,15 @@ export default async function DashboardPage() {
       <TrainingStatusWeeksBar weeks={trainingStatusWeeks} />
 
       {weeklyStreak && (
-        <WeeklyStreakCard
-          data={weeklyStreak}
-          goal={weeklyGoal}
-          hardShareFact={weeklyDigest?.review.find((f) => f.key === '8020') ?? null}
-        />
+        // The week glance folds the retired Plan tab into Today: it taps
+        // through to the full planner.
+        <Link href="/plan" aria-label={t.plan.openPlanner} className="block active:scale-[0.99]">
+          <WeeklyStreakCard
+            data={weeklyStreak}
+            goal={weeklyGoal}
+            hardShareFact={weeklyDigest?.review.find((f) => f.key === '8020') ?? null}
+          />
+        </Link>
       )}
 
       <RecentActivities

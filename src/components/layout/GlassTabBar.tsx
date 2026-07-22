@@ -2,16 +2,17 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Activity, CalendarDays, BarChart2, User } from 'lucide-react'
+import { LayoutDashboard, Activity, BarChart2, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { useHaptic } from '@/lib/useHaptic'
 import { useFullscreenChromeHidden } from './FullscreenChromeContext'
 
+// Four tabs since Phase 3: the standalone Plan tab is retired and its week
+// glance folds into Today (which taps through to the full planner at /plan).
 const TABS = [
   { href: '/',           label: t.nav.items.dashboard,  icon: LayoutDashboard },
   { href: '/activities', label: t.nav.items.activities,  icon: Activity },
-  { href: '/plan',       label: t.nav.items.plan,        icon: CalendarDays },
   { href: '/analytics',  label: t.nav.items.analytics,   icon: BarChart2 },
   { href: '/profile',    label: t.nav.items.profile,     icon: User },
 ] as const
