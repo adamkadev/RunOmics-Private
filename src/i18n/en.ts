@@ -472,10 +472,10 @@ export const en = {
       paceSlower: (s: number) => `easy pace +${s}s/km`,
     },
     tabs: {
-      volume: 'Volume',
+      fitness: 'Fitness',
       performance: 'Performance',
-      physiology: 'Physiology',
-      seasons: 'Seasons',
+      volume: 'Volume',
+      health: 'Health',
     },
     stats: {
       distance: 'Distance',

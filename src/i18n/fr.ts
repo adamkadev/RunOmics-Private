@@ -464,10 +464,10 @@ export const fr = {
       paceSlower: (s: number) => `allure facile +${s}s/km`,
     },
     tabs: {
-      volume: 'Volume',
+      fitness: 'Forme',
       performance: 'Performance',
-      physiology: 'Physiologie',
-      seasons: 'Saisons',
+      volume: 'Volume',
+      health: 'Santé',
     },
     stats: {
       distance: 'Distance',
