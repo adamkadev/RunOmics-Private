@@ -32,6 +32,16 @@ function getLevel(km: number): number {
   return 3
 }
 
+function useThemeVersion(): number {
+  const [version, setVersion] = useState(0)
+  useEffect(() => {
+    const obs = new MutationObserver(() => setVersion(v => v + 1))
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-accent'] })
+    return () => obs.disconnect()
+  }, [])
+  return version
+}
+
 function formatTooltipDate(dateStr: string) {
   return new Date(dateStr + 'T12:00:00').toLocaleDateString(t.locale, {
     weekday: 'short', month: 'short', day: 'numeric',
@@ -47,6 +57,7 @@ export function ActivityHeatmap({ days }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [cellSize, setCellSize] = useState(11)
   const gap = gapFor(cellSize)
+  const themeVersion = useThemeVersion()
 
   // Group into weeks (Mon-Sun columns)
   const weeks: HeatmapDay[][] = []
@@ -119,7 +130,8 @@ export function ActivityHeatmap({ days }: Props) {
       <div ref={containerRef} className="w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <div style={{ minWidth: 'max-content' }}>
           {/* Grid - no weekday-label gutter, so the full width goes to cells */}
-          <div className="flex" style={{ gap: gap }}>
+          {/* keyed on themeVersion so the color-mix cells remount and re-resolve on a theme/accent switch */}
+          <div key={themeVersion} className="flex" style={{ gap: gap }}>
             {weeks.map((wk, col) => (
               <div key={col} className="flex flex-col" style={{ gap: gap }}>
                 {wk.map((day, row) =>
@@ -160,7 +172,7 @@ export function ActivityHeatmap({ days }: Props) {
         </div>
       </div>
 
-      <div className="mt-1 flex items-center justify-end gap-1.5">
+      <div key={themeVersion} className="mt-1 flex items-center justify-end gap-1.5">
         <span className="text-micro text-subtle">{t.dashboard.heatmap.less}</span>
         {LEVEL_MIX_PCT.map((_, i) => (
           <div key={i} className="rounded-[2px]" style={{ width: 10, height: 10, ...levelStyle(i) }} />
