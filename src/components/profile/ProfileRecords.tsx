@@ -28,20 +28,20 @@ export function ProfileRecords({ records }: Props) {
 
   return (
     <GlassSurface variant="card" className="flex flex-col gap-3 p-4">
-      <h2 className="text-sm font-bold text-foreground">{t.profile.records.title}</h2>
+      <div className="flex items-start justify-between">
+        <h2 className="text-sm font-bold text-foreground">{t.profile.records.title}</h2>
+        {best && recent && (
+          <span className="rounded-[5px] border border-emerald-500/25 bg-emerald-500/[0.14] px-[6px] py-px text-micro font-bold text-emerald-600 dark:text-emerald-400">
+            {t.profile.records.newBadge}
+          </span>
+        )}
+      </div>
 
       {best ? (
         <div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-lg font-extrabold tracking-tight text-foreground">
-              {best.seconds !== null ? formatDuration(best.seconds) : '—'}
-            </span>
-            {recent && (
-              <span className="rounded-[4px] border border-emerald-500/25 bg-emerald-500/[0.14] px-[5px] py-px text-micro font-bold text-emerald-600 dark:text-emerald-400">
-                {t.profile.records.newBadge}
-              </span>
-            )}
-          </div>
+          <span className="text-lg font-extrabold tracking-tight text-foreground">
+            {best.seconds !== null ? formatDuration(best.seconds) : '—'}
+          </span>
           <div className="mt-0.5 truncate text-micro text-muted-foreground">
             {best.label} · {formatDateWithYear(best.date)}
           </div>

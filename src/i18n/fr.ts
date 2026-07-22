@@ -1032,14 +1032,14 @@ export const fr = {
       elevation: 'Dénivelé',
     },
     records: {
-      title: 'Records personnels',
+      title: 'Records',
       notYet: 'Pas encore',
       viewAll: 'Voir tous les records',
       newBadge: 'NOUVEAU',
     },
     shoes: {
       title: 'Chaussures',
-      pairs: (n: number) => `${n} paire${n !== 1 ? 's' : ''}`,
+      pairs: (n: number) => `${n} paire${n !== 1 ? 's' : ''} active${n !== 1 ? 's' : ''}`,
       allGood: 'Tout va bien',
       needsReplacing: (n: number) => n === 1 ? '1 paire à remplacer' : `${n} paires à remplacer`,
       viewShoes: 'Voir les chaussures',

@@ -8,15 +8,16 @@ import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 const MONTHS = t.dashboard.heatmap.months
-const GAP = 3
+const GAP = 2
 const LABEL_W = 26 // matches paddingLeft of month labels row
 
 // Intensity scale mixed from the active accent, so it follows the chosen palette.
-// Mixing toward --card (rather than fixed light/dark stops) adapts to dark mode for free.
-const LEVEL_MIX_PCT = [0, 20, 40, 60, 80, 100] as const
+// Mixing toward --card (rather than fixed light/dark stops) adapts to dark mode
+// for free. Level 0 keeps a faint green tint (like the mockup's empty cells) and
+// the ramp climbs steeply so busy weeks read as a vivid, saturated accent.
+const LEVEL_MIX_PCT = [10, 32, 54, 74, 90, 100] as const
 
 function levelStyle(level: number) {
-  if (level === 0) return { backgroundColor: 'var(--muted)' }
   return { backgroundColor: `color-mix(in oklab, var(--accent) ${LEVEL_MIX_PCT[level]}%, var(--card))` }
 }
 
@@ -65,7 +66,9 @@ export function ActivityHeatmap({ days }: Props) {
     const compute = () => {
       const w = el.clientWidth
       const size = Math.floor((w - LABEL_W - (weeks.length - 1) * GAP) / weeks.length)
-      setCellSize(Math.max(11, Math.min(16, size)))
+      // Small, dense cells so the full 12 months fit without scrolling (matches
+      // the mockup) instead of chunky squares that overflow and auto-scroll.
+      setCellSize(Math.max(4, Math.min(9, size)))
     }
     compute()
     const obs = new ResizeObserver(compute)
@@ -139,7 +142,7 @@ export function ActivityHeatmap({ days }: Props) {
                   ) : (
                     <div
                       key={row}
-                      className="rounded-[2px] transition-opacity hover:opacity-70"
+                      className="rounded-[1.5px] transition-opacity hover:opacity-70"
                       style={{ width: cellSize, height: cellSize, cursor: 'default', ...levelStyle(getLevel(day.distanceKm)) }}
                       onMouseEnter={(e) => {
                         const rect = e.currentTarget.getBoundingClientRect()

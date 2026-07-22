@@ -1040,14 +1040,14 @@ export const en = {
       elevation: 'Elevation',
     },
     records: {
-      title: 'Personal records',
+      title: 'Records',
       notYet: 'Not yet',
       viewAll: 'View all records',
       newBadge: 'NEW',
     },
     shoes: {
       title: 'Shoes',
-      pairs: (n: number) => `${n} pair${n !== 1 ? 's' : ''}`,
+      pairs: (n: number) => `${n} pair${n !== 1 ? 's' : ''} active`,
       allGood: 'All good',
       needsReplacing: (n: number) => n === 1 ? '1 pair needs replacing' : `${n} pairs need replacing`,
       viewShoes: 'View Shoes',
