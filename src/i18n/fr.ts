@@ -1021,6 +1021,7 @@ export const fr = {
       lifetime: (runs: number, km: number) => `${runs} sorties · ${km.toLocaleString('fr')} km au total`,
       rankLine: (tier: string, pct: number) => `Rang ${tier} · top ${pct}% de VO₂max pour ton âge`,
       rankBadge: (tier: string) => `RANG ${tier}`,
+      topPctLine: (pct: number) => `Top ${pct}% de VO₂max pour ton âge`,
       namePlaceholder: 'Votre nom',
     },
     ytd: {

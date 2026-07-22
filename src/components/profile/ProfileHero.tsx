@@ -43,12 +43,9 @@ export function ProfileHero({ hero, displayName, age, sex }: Props) {
             </span>
           )}
         </div>
-        {hero.rank && topPct !== null && (
-          <p
-            className="text-[11px] font-semibold"
-            style={{ color: 'color-mix(in srgb, var(--accent) 42%, #ffffff)' }}
-          >
-            {t.profile.hero.rankLine(hero.rank.tier, topPct)}
+        {topPct !== null && (
+          <p className="text-[11px] text-white/70">
+            {t.profile.hero.topPctLine(topPct)}
           </p>
         )}
         <p className="mt-0.5 text-[10.5px] text-white/55">
