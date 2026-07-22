@@ -1,7 +1,6 @@
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { getDashboardData } from '@/application/usecases/GetDashboardData'
 import { getLastSyncedAt } from '@/application/usecases/GetSyncStatus'
-import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
 import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { getTrainingStatusWeeks } from '@/application/usecases/GetTrainingStatusWeeks'
 import { getLatestVO2max } from '@/application/usecases/GetVO2maxHistory'
@@ -34,7 +33,6 @@ export default async function DashboardPage() {
   const data = getDashboardData()
   const athlete = getAthleteProfile()
   const lastSyncedAt = getLastSyncedAt()
-  const trainingLoad = await getTrainingLoad()
   const trainingStatus = await getTrainingStatus()
   const trainingStatusWeeks = getTrainingStatusWeeks()
   const vo2max = getLatestVO2max()
@@ -91,7 +89,6 @@ export default async function DashboardPage() {
         weeklyVolume={data.weeklyVolume}
         currentWeek={data.currentWeek.weekNumber}
         typeDistribution={data.typeDistribution}
-        trainingLoad={trainingLoad}
       />
 
       <ActivityHeatmap days={heatmapDays} />

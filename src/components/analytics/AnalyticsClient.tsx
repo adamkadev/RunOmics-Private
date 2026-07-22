@@ -17,7 +17,6 @@ import type { LoadRiskPanel as LoadRiskPanelData } from '@/application/usecases/
 import type { LoadBalanceData } from '@/application/usecases/GetLoadBalance'
 import type { TrainingStatusHistory } from '@/application/usecases/GetTrainingStatusHistory'
 import type { GarminRacePredictionsData } from '@/application/usecases/GetGarminRacePredictions'
-import type { ThresholdHistoryData } from '@/application/usecases/GetThresholdHistory'
 import { formatDurationShort } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartCardSkeleton } from '@/components/ui/Skeleton'
@@ -84,7 +83,6 @@ export function AnalyticsClient({
   loadBalance,
   statusHistory,
   racePredictions,
-  threshold,
 }: {
   data: AnalyticsPageData
   comparison: YearComparisonData | null
@@ -97,7 +95,6 @@ export function AnalyticsClient({
   loadBalance: LoadBalanceData | null
   statusHistory: TrainingStatusHistory | null
   racePredictions: GarminRacePredictionsData | null
-  threshold: ThresholdHistoryData | null
 }) {
   const { years, byYear } = data
 
@@ -276,9 +273,7 @@ export function AnalyticsClient({
             {tab === 'performance' && (
               <PerformanceTab
                 weeklyTrends={data.weeklyTrends}
-                efficiencyDaily={data.efficiencyDaily}
                 racePredictions={racePredictions}
-                threshold={threshold}
               />
             )}
 
@@ -291,7 +286,6 @@ export function AnalyticsClient({
                 statusHistory={statusHistory}
                 vo2maxHistory={vo2maxHistory}
                 zones={zones}
-                runningDynamicsDaily={data.runningDynamicsDaily}
               />
             )}
 
