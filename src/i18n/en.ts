@@ -418,7 +418,7 @@ export const en = {
       viewAndShare: 'View & share',
     },
     onboarding: {
-      message: 'Your form, planned session, and race countdown live in the card above - your running heatmap is further down the page.',
+      message: "Today's decision lives in the card above - your readiness verdict and the one session to run next.",
     },
   },
 

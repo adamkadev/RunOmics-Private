@@ -96,8 +96,13 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, las
 
   return (
     <div
-      className="rounded-[22px] border p-[18px] text-[#eef2f0] shadow-[0_10px_26px_-6px_rgba(0,0,0,0.35)]"
-      style={{ background: 'var(--hero-gradient)', borderColor: `${toneHex}59` }}
+      className="rounded-[22px] border p-[18px] text-[#eef2f0] shadow-[0_10px_30px_-12px_rgba(0,0,0,0.5)]"
+      style={{
+        // Hero gradient tinted by the verdict tone (go/caution/hold), so the
+        // whole card reads the decision - not just the pastille.
+        background: `linear-gradient(158deg, ${toneHex}1f, ${toneHex}05)`,
+        borderColor: `${toneHex}59`,
+      }}
     >
       <div className="flex items-center justify-between gap-2">
         <span
@@ -114,9 +119,9 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, las
       </div>
 
       {verdict && (
-        <div className="mt-3.5">
-          <div className="font-display text-[19px] font-bold leading-snug tracking-tight">{verdict.headline}</div>
-          <div className="mt-1 text-[12.5px] leading-snug text-[#a8b4ae]">{verdict.body}</div>
+        <div className="mt-3">
+          <div className="font-display text-[22px] font-bold leading-[1.12] tracking-tight">{verdict.headline}</div>
+          <div className="mt-1.5 text-[13px] leading-snug text-[#a8b4ae]">{verdict.body}</div>
         </div>
       )}
 

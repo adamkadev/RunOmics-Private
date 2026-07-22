@@ -410,7 +410,7 @@ export const fr = {
       viewAndShare: 'Voir et partager',
     },
     onboarding: {
-      message: 'Ta forme, ta séance planifiée et le compte à rebours course sont dans la carte ci-dessus - ta heatmap de course est plus bas sur la page.',
+      message: 'La décision du jour est dans la carte ci-dessus - ton verdict de forme et la séance à courir ensuite.',
     },
   },
 
