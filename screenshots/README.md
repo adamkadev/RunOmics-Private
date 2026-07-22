@@ -60,7 +60,7 @@ For **each accent × each theme × each route**:
 | `end`     | Bottom of the page (only if the page scrolls)                    |
 | `full`    | Whole page stitched into one tall image                          |
 
-Pages with in-page tabs (**Analytics**, **Calendar**) additionally get the same
+Pages with in-page tabs (**Analytics**, **Calendar**, **Records**) additionally get the same
 begin/middle/end/full set per tab, prefixed `tab-<n>-<label>-…`.
 
 ### Output layout
@@ -80,9 +80,13 @@ screenshots/output/
 ## Routes covered
 
 Dashboard, Activities (list + a sample detail), Calendar, Analytics, Map,
-Goals, Milestones, Records, Shoes (list + a sample detail), Profile, Settings —
-defined in [`routes.ts`](./routes.ts). Detail pages use real IDs from committed
-data so they render with content instead of 404s.
+Goals, Records (PRs + Milestones tabs), Shoes (list + a sample detail), Profile,
+Settings — defined in [`routes.ts`](./routes.ts). Detail pages use real IDs from
+committed data so they render with content instead of 404s.
+
+There is no `/milestones` entry: that screen merged into `/records` behind the
+segmented control, and the leftover route is a redirect — capturing it raced the
+client navigation and tore the page down mid-shot.
 
 ## How themes and accents are pinned
 

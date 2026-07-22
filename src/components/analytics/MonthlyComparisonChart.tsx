@@ -6,7 +6,7 @@ import {
 } from 'recharts'
 import type { MonthlyVolume } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
-import { useAccentColor } from '@/lib/useAccent'
+import { useAccentUiColor } from '@/lib/useAccent'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
@@ -45,7 +45,7 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
 }
 
 export function MonthlyComparisonChart({ currentYear, currentData, prevYear, prevData }: Props) {
-  const accentColor = useAccentColor()
+  const accentColor = useAccentUiColor()
   // Merge into a unified 12-month array by month index
   const merged = MONTH_LABELS.map((label, i) => {
     const monthStr = String(i + 1).padStart(2, '0')

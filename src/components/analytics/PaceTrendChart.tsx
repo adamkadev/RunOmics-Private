@@ -3,6 +3,7 @@
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
+import { useAccentUiColor } from '@/lib/useAccent'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { ChartExplain } from '@/components/ui/ChartExplain'
 import { WindowedChartCard, trendDots, windowTickDate, windowTicks } from '@/components/ui/ChartWindowNav'
@@ -43,11 +44,15 @@ function LegendDot({ color, label }: { color: string; label: string }) {
 }
 
 export function PaceTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
+  // Easy pace is the chart's primary series, so it follows the accent; the
+  // workout line keeps CHART_COLORS.atl so hard efforts stay orange.
+  const easyColor = useAccentUiColor()
+
   if (!points.some((p) => p.easyPace !== null || p.hardPace !== null)) return null
 
   const legend = (
     <>
-      <LegendDot color={CHART_COLORS.brand} label={t.analytics.charts.paceTrend.easy} />
+      <LegendDot color={easyColor} label={t.analytics.charts.paceTrend.easy} />
       <LegendDot color={CHART_COLORS.atl} label={t.analytics.charts.paceTrend.workout} />
     </>
   )
@@ -100,7 +105,7 @@ export function PaceTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
                     width={46}
                   />
                   <Tooltip content={<CustomTooltip />} />
-                  <Line type="monotone" dataKey="easyPace" stroke={CHART_COLORS.brand} strokeWidth={3} {...trendDots(CHART_COLORS.brand)} connectNulls isAnimationActive={false} />
+                  <Line type="monotone" dataKey="easyPace" stroke={easyColor} strokeWidth={3} {...trendDots(easyColor)} connectNulls isAnimationActive={false} />
                   <Line type="monotone" dataKey="hardPace" stroke={CHART_COLORS.atl} strokeWidth={3} {...trendDots(CHART_COLORS.atl)} connectNulls isAnimationActive={false} />
                 </LineChart>
               </ResponsiveContainer>

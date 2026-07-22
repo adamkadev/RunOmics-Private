@@ -2,8 +2,8 @@ import { ACCENT_SWATCHES, type AccentId } from '@/lib/accent'
 import { HUE, rgbTriplet } from '@/lib/palette'
 
 export type ThemeMode = 'light' | 'dark'
-export type ShareDesign = 'aurora' | 'pulse' | 'terrain' | 'prism' | 'cadence' | 'map' | 'memory'
-export const SHARE_DESIGNS: ShareDesign[] = ['aurora', 'pulse', 'terrain', 'prism', 'cadence', 'map', 'memory']
+export type ShareDesign = 'aurora' | 'pulse' | 'terrain' | 'prism' | 'route' | 'map' | 'memory'
+export const SHARE_DESIGNS: ShareDesign[] = ['aurora', 'pulse', 'terrain', 'prism', 'route', 'map', 'memory']
 
 export const W = 390
 export const H = 844

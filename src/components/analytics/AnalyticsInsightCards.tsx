@@ -6,10 +6,10 @@ import type { VO2maxSeries } from '@/application/usecases/GetVO2maxHistory'
 import type { ThresholdHistoryData } from '@/application/usecases/GetThresholdHistory'
 import { formatClock } from '@/lib/formatters'
 import { CHART_COLORS } from '@/lib/colors'
+import { useAccentUiColor } from '@/lib/useAccent'
 import { t } from '@/i18n'
 
 const VIOLET = CHART_COLORS.efficiency
-const ACCENT = CHART_COLORS.brand
 const SKY = CHART_COLORS.cadence
 
 function linePoints(values: number[]): string {
@@ -107,6 +107,9 @@ interface Props {
 // already-computed series - no new physiology.
 export function AnalyticsInsightCards({ vo2maxSeries, vo2maxTopPercent, weeklyTrends, threshold, activeDays }: Props) {
   const s = t.analytics.insightCards
+  // Easy pace and consistency are the app's own headline reads, so their sparks
+  // follow the accent; VO2max and threshold keep their fixed violet/sky.
+  const accent = useAccentUiColor()
 
   const vo2Points = vo2maxSeries['1y'].length >= 2 ? vo2maxSeries['1y'] : vo2maxSeries['6m']
   const vo2Values = vo2Points.map((p) => p.value)
@@ -148,7 +151,7 @@ export function AnalyticsInsightCards({ vo2maxSeries, vo2maxTopPercent, weeklyTr
           value={formatClock(easyLatest)}
           unit={t.units.perKm}
         >
-          <LineSpark values={easyPaces} color={ACCENT} invert />
+          <LineSpark values={easyPaces} color={accent} invert />
         </Card>
       )}
 
@@ -165,7 +168,7 @@ export function AnalyticsInsightCards({ vo2maxSeries, vo2maxTopPercent, weeklyTr
       )}
 
       <Card label={s.consistency} chip={s.excellent} value={String(activeDays)} unit={s.days}>
-        <BarSpark values={consistencyBars} color={ACCENT} />
+        <BarSpark values={consistencyBars} color={accent} />
       </Card>
     </div>
   )

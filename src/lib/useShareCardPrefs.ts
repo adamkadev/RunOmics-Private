@@ -19,6 +19,8 @@ function readLocalStorage(key: string, fallback: string): string {
 export function useShareCardPrefs(appTheme: ThemeMode) {
   const [selectedDesign, setSelectedDesign] = useState<ShareDesign>(() => {
     const stored = readLocalStorage('ro_shareTheme', 'aurora')
+    // `route` took `cadence`'s slot; keep those athletes on the new design.
+    if (stored === 'cadence') return 'route'
     return (SHARE_DESIGNS as string[]).includes(stored) ? stored as ShareDesign : 'aurora'
   })
   const [shareAccent, setShareAccent] = useState<ShareAccent>(() => {

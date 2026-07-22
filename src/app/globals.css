@@ -142,6 +142,7 @@
   --accent-foreground:   #ffffff;
   --accent-subtle:       #ecfdf5;
   --accent-text:         #059669;
+  --accent-on-dark:      #4fe6a0;
   --destructive:         #ef4444;
   --ring:                rgba(14, 159, 110, 0.35);
   --track:               rgba(11, 31, 23, 0.07);
@@ -159,6 +160,7 @@
   --ro-text-3:           #7c8a82;
   --canvas:              linear-gradient(155deg, #f5f9f7 0%, #eef3f0 100%);
   --hero-gradient:       linear-gradient(150deg, #0d2e1a, #14532d 70%, #166534);
+  --hero-glow:           transparent;
   --aurora-1:            #a7f3d6;
   --aurora-2:            #bcd6ff;
   --aurora-1-opacity:    0.65;
@@ -193,7 +195,8 @@
   --accent-foreground:   #052015;
   --accent-subtle:       rgba(30, 215, 135, 0.1);
   --accent-text:         #4fe6a0;
-  --destructive:         #ef4444;
+  --accent-on-dark:      #4fe6a0;
+  --destructive:         #f87171;
   --ring:                rgba(30, 215, 135, 0.7);
   --track:               rgba(255, 255, 255, 0.08);
   --zone-1:              rgba(255, 255, 255, 0.55);
@@ -205,7 +208,8 @@
   --ro-text-2:           #a8b4ae;
   --ro-text-3:           #8a978f;
   --canvas:              linear-gradient(155deg, #07100c 0%, #060a08 100%);
-  --hero-gradient:       linear-gradient(155deg, rgba(30, 215, 135, 0.16), rgba(30, 215, 135, 0.03));
+  --hero-gradient:       linear-gradient(155deg, rgba(30, 215, 135, 0.3), rgba(30, 215, 135, 0.1) 55%, rgba(30, 215, 135, 0.03));
+  --hero-glow:           rgba(30, 215, 135, 0.28);
   --aurora-1:            #1ed787;
   --aurora-2:            #1276b8;
   --aurora-1-opacity:    0.16;
@@ -230,8 +234,10 @@
   --accent-foreground:  #ffffff;
   --accent-subtle:      #eff6ff;
   --accent-text:        #2563eb;
+  --accent-on-dark:     #93c5fd;
   --ring:               rgba(59, 130, 246, 0.35);
   --hero-gradient:      linear-gradient(150deg, #0c1f3f, #1e3a8a 70%, #1d4ed8);
+  --hero-glow:          transparent;
   --aurora-1:           #93c5fd;
   --aurora-2:           #bae6fd;
   --background:         #eff6ff;
@@ -242,11 +248,14 @@
   --accent:             #60a5fa;
   --accent-hover:       #93c5fd;
   --accent-dark:        #3b82f6;
-  --accent-foreground:  #052015;
+  --accent-foreground:  #04122b;
   --accent-subtle:      rgba(96, 165, 250, 0.1);
   --accent-text:        #93c5fd;
+  --accent-on-dark:     #93c5fd;
   --ring:               rgba(96, 165, 250, 0.7);
-  --hero-gradient:      linear-gradient(155deg, rgba(96, 165, 250, 0.16), rgba(96, 165, 250, 0.03));
+  --destructive:        #f87171;
+  --hero-gradient:      linear-gradient(155deg, rgba(96, 165, 250, 0.3), rgba(96, 165, 250, 0.1) 55%, rgba(96, 165, 250, 0.03));
+  --hero-glow:          rgba(96, 165, 250, 0.28);
   --aurora-1:           #1d4ed8;
   --aurora-2:           #0284c7;
   --background:         #06091a;
@@ -260,9 +269,11 @@
   --accent-foreground:  #ffffff;
   --accent-subtle:      #fff1f2;
   --accent-text:        #e11d48;
+  --accent-on-dark:     #fda4af;
   --ring:               rgba(244, 63, 94, 0.35);
   --destructive:        #dc2626;
   --hero-gradient:      linear-gradient(150deg, #3b0716, #881337 70%, #be123c);
+  --hero-glow:          transparent;
   --aurora-1:           #fda4af;
   --aurora-2:           #fbcfe8;
   --background:         #fff1f2;
@@ -273,12 +284,14 @@
   --accent:             #fb7185;
   --accent-hover:       #fda4af;
   --accent-dark:        #f43f5e;
-  --accent-foreground:  #052015;
+  --accent-foreground:  #2b040c;
   --accent-subtle:      rgba(251, 113, 133, 0.1);
   --accent-text:        #fda4af;
+  --accent-on-dark:     #fda4af;
   --ring:               rgba(251, 113, 133, 0.7);
-  --destructive:        #fca5a5;
-  --hero-gradient:      linear-gradient(155deg, rgba(251, 113, 133, 0.16), rgba(251, 113, 133, 0.03));
+  --destructive:        #f87171;
+  --hero-gradient:      linear-gradient(155deg, rgba(251, 113, 133, 0.3), rgba(251, 113, 133, 0.1) 55%, rgba(251, 113, 133, 0.03));
+  --hero-glow:          rgba(251, 113, 133, 0.28);
   --aurora-1:           #be185d;
   --aurora-2:           #9d174d;
   --background:         #130608;
@@ -292,9 +305,11 @@
   --accent-foreground:  #ffffff;
   --accent-subtle:      #fff7ed;
   --accent-text:        #ea580c;
+  --accent-on-dark:     #fdba74;
   --ring:               rgba(249, 115, 22, 0.35);
   --destructive:        #ef4444;
   --hero-gradient:      linear-gradient(150deg, #431407, #7c2d12 70%, #c2410c);
+  --hero-glow:          transparent;
   --aurora-1:           #fdba74;
   --aurora-2:           #fde68a;
   --background:         #fff7ed;
@@ -305,12 +320,14 @@
   --accent:             #fb923c;
   --accent-hover:       #fdba74;
   --accent-dark:        #f97316;
-  --accent-foreground:  #052015;
+  --accent-foreground:  #2b1203;
   --accent-subtle:      rgba(251, 146, 60, 0.1);
   --accent-text:        #fdba74;
+  --accent-on-dark:     #fdba74;
   --ring:               rgba(251, 146, 60, 0.7);
-  --destructive:        #fca5a5;
-  --hero-gradient:      linear-gradient(155deg, rgba(251, 146, 60, 0.16), rgba(251, 146, 60, 0.03));
+  --destructive:        #f87171;
+  --hero-gradient:      linear-gradient(155deg, rgba(251, 146, 60, 0.3), rgba(251, 146, 60, 0.1) 55%, rgba(251, 146, 60, 0.03));
+  --hero-glow:          rgba(251, 146, 60, 0.28);
   --aurora-1:           #c2410c;
   --aurora-2:           #b45309;
   --background:         #130a04;
@@ -324,8 +341,10 @@
   --accent-foreground:  #ffffff;
   --accent-subtle:      #f5f3ff;
   --accent-text:        #7c3aed;
+  --accent-on-dark:     #c4b5fd;
   --ring:               rgba(139, 92, 246, 0.35);
   --hero-gradient:      linear-gradient(150deg, #1e1038, #4c1d95 70%, #6d28d9);
+  --hero-glow:          transparent;
   --aurora-1:           #c4b5fd;
   --aurora-2:           #e9d5ff;
   --background:         #f5f3ff;
@@ -336,11 +355,14 @@
   --accent:             #a78bfa;
   --accent-hover:       #c4b5fd;
   --accent-dark:        #8b5cf6;
-  --accent-foreground:  #052015;
+  --accent-foreground:  #170b2e;
   --accent-subtle:      rgba(167, 139, 250, 0.1);
   --accent-text:        #c4b5fd;
+  --accent-on-dark:     #c4b5fd;
   --ring:               rgba(167, 139, 250, 0.7);
-  --hero-gradient:      linear-gradient(155deg, rgba(167, 139, 250, 0.16), rgba(167, 139, 250, 0.03));
+  --destructive:        #f87171;
+  --hero-gradient:      linear-gradient(155deg, rgba(167, 139, 250, 0.3), rgba(167, 139, 250, 0.1) 55%, rgba(167, 139, 250, 0.03));
+  --hero-glow:          rgba(167, 139, 250, 0.28);
   --aurora-1:           #6d28d9;
   --aurora-2:           #7e22ce;
   --background:         #0d0a1a;
@@ -354,8 +376,10 @@
   --accent-foreground:  #ffffff;
   --accent-subtle:      #f1f5f9;
   --accent-text:        #475569;
+  --accent-on-dark:     #cbd5e1;
   --ring:               rgba(100, 116, 139, 0.35);
   --hero-gradient:      linear-gradient(150deg, #0f172a, #1e293b 70%, #334155);
+  --hero-glow:          transparent;
   --aurora-1:           #cbd5e1;
   --aurora-2:           #e2e8f0;
   --background:         #f8fafc;
@@ -366,11 +390,14 @@
   --accent:             #94a3b8;
   --accent-hover:       #cbd5e1;
   --accent-dark:        #64748b;
-  --accent-foreground:  #052015;
+  --accent-foreground:  #0b1220;
   --accent-subtle:      rgba(148, 163, 184, 0.1);
   --accent-text:        #cbd5e1;
+  --accent-on-dark:     #cbd5e1;
   --ring:               rgba(203, 213, 225, 0.5);
-  --hero-gradient:      linear-gradient(155deg, rgba(148, 163, 184, 0.16), rgba(148, 163, 184, 0.03));
+  --destructive:        #f87171;
+  --hero-gradient:      linear-gradient(155deg, rgba(148, 163, 184, 0.3), rgba(148, 163, 184, 0.1) 55%, rgba(148, 163, 184, 0.03));
+  --hero-glow:          rgba(148, 163, 184, 0.28);
   --aurora-1:           #334155;
   --aurora-2:           #1e293b;
   --aurora-1-opacity:   0.6;
@@ -382,6 +409,11 @@
 [data-page-aurora="goals"] {
   --aurora-1:          #0e9f6e;
   --aurora-2:          #8257e6;
+  --aurora-1-opacity:  0.45;
+  --aurora-2-opacity:  0.32;
+}
+
+.dark [data-page-aurora="goals"] {
   --aurora-1-opacity:  0.2;
   --aurora-2-opacity:  0.14;
 }
@@ -389,6 +421,11 @@
 [data-page-aurora="records"] {
   --aurora-1:          #8257e6;
   --aurora-2:          #0e9f6e;
+  --aurora-1-opacity:  0.42;
+  --aurora-2-opacity:  0.34;
+}
+
+.dark [data-page-aurora="records"] {
   --aurora-1-opacity:  0.18;
   --aurora-2-opacity:  0.15;
 }
@@ -396,6 +433,11 @@
 [data-page-aurora="shoes"] {
   --aurora-1:          #f1761f;
   --aurora-2:          #0e9f6e;
+  --aurora-1-opacity:  0.38;
+  --aurora-2-opacity:  0.34;
+}
+
+.dark [data-page-aurora="shoes"] {
   --aurora-1-opacity:  0.16;
   --aurora-2-opacity:  0.15;
 }
@@ -403,6 +445,11 @@
 [data-page-aurora="settings"] {
   --aurora-1:          #e5396b;
   --aurora-2:          #8257e6;
+  --aurora-1-opacity:  0.34;
+  --aurora-2-opacity:  0.28;
+}
+
+.dark [data-page-aurora="settings"] {
   --aurora-1-opacity:  0.14;
   --aurora-2-opacity:  0.12;
 }
@@ -410,6 +457,11 @@
 [data-page-aurora="analytics"] {
   --aurora-1:          #1276b8;
   --aurora-2:          #0e9f6e;
+  --aurora-1-opacity:  0.42;
+  --aurora-2-opacity:  0.32;
+}
+
+.dark [data-page-aurora="analytics"] {
   --aurora-1-opacity:  0.18;
   --aurora-2-opacity:  0.14;
 }
@@ -447,7 +499,9 @@
     padding: 18px;
     border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
     background: var(--hero-gradient);
-    box-shadow: 0 10px 26px -6px rgba(0, 0, 0, 0.35);
+    /* The second layer is the accent bloom around the card. It is transparent in
+       light mode, where the hero is already a deep opaque gradient. */
+    box-shadow: 0 10px 26px -6px rgba(0, 0, 0, 0.35), 0 8px 40px -8px var(--hero-glow);
   }
 
   .glass-nav {

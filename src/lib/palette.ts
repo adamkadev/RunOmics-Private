@@ -81,6 +81,7 @@ export const HUE = {
   orange950: '#431407',
 
   red300: '#fca5a5',
+  red400: '#f87171',
   red500: '#ef4444',
   red600: '#dc2626',
 
@@ -122,6 +123,15 @@ export const HUE = {
   roEmeraldShadeDark: '#0b9c63',
   /** Text/icon color that sits on top of the emerald accent in dark mode. */
   roEmeraldInk:   '#052015',
+
+  // Ink that sits on top of each *dark* accent fill. One per hue: a shared ink
+  // would tint every primary button toward whichever hue it was cut from (the
+  // emerald ink used to green out the blue/rose/orange/violet/silver themes).
+  performanceInk: '#04122b',
+  impactInk:      '#2b040c',
+  motivationInk:  '#2b1203',
+  enduranceInk:   '#170b2e',
+  silverInk:      '#0b1220',
 
   roAmber:   '#f5b700',
   roOrange:  '#f1761f',
@@ -202,8 +212,6 @@ export const HUE = {
   shareTerrainLight: '#f2faf4',
   sharePrismDark:    '#060408',
   sharePrismLight:   '#fafaf9',
-  shareCadenceDark:  '#04090a',
-  shareCadenceLight: '#f8fbf9',
   shareMapDark:      '#09101a',
   shareMapLight:     '#edf1f7',
 

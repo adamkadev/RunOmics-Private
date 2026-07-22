@@ -7,6 +7,7 @@ import { ChartFigure } from '@/components/ui/ChartFigure'
 import { StatusPill, type StatusTone } from '@/components/ui/StatusPill'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { CHART_COLORS } from '@/lib/colors'
+import { useAccentUiColor } from '@/lib/useAccent'
 import { useCountUp } from '@/lib/useCountUp'
 import { t } from '@/i18n'
 
@@ -46,13 +47,14 @@ interface TooltipProps {
 }
 
 function CustomTooltip({ active, payload }: TooltipProps) {
+  const formColor = useAccentUiColor()
   const p = payload?.[0]?.payload
   if (!active || !p) return null
   const value = p.histTsb ?? p.projTsb
   if (value === undefined) return null
   return (
     <TooltipCard label={p.label}>
-      <p className="text-sm" style={{ color: CHART_COLORS.tsb }}>
+      <p className="text-sm" style={{ color: formColor }}>
         {t.dashboard.trainingLoad.form} {value}
         {p.projTsb !== undefined && p.histTsb === undefined ? ` (${t.dashboard.raceCockpit.projected})` : ''}
       </p>
@@ -62,6 +64,8 @@ function CustomTooltip({ active, payload }: TooltipProps) {
 
 export function RaceCockpit({ data }: { data: FormProjection }) {
   const s = t.dashboard.raceCockpit
+  // The whole plot is one metric - projected form - so it wears the accent.
+  const formColor = useAccentUiColor()
   const animatedProjectedTsb = useCountUp(data.projectedTsb)
   const chartData = buildChartData(data)
   const title = data.isRaceTarget && data.raceName ? s.titleWithRace(data.raceName) : s.title
@@ -105,14 +109,14 @@ export function RaceCockpit({ data }: { data: FormProjection }) {
             <Area
               dataKey="band"
               stroke="none"
-              fill={CHART_COLORS.tsb}
+              fill={formColor}
               fillOpacity={0.12}
               isAnimationActive={false}
             />
             <Line
               type="monotone"
               dataKey="histTsb"
-              stroke={CHART_COLORS.tsb}
+              stroke={formColor}
               strokeWidth={2}
               dot={false}
               isAnimationActive={false}
@@ -120,7 +124,7 @@ export function RaceCockpit({ data }: { data: FormProjection }) {
             <Line
               type="monotone"
               dataKey="projTsb"
-              stroke={CHART_COLORS.tsb}
+              stroke={formColor}
               strokeWidth={2}
               strokeDasharray="4 4"
               dot={false}

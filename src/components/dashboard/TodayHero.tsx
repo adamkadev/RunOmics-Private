@@ -24,6 +24,14 @@ const TONE_HEX: Record<ReadinessTone, string> = READINESS_TONE_COLORS
 // out the white text.
 const HERO_BASE = HUE.heroBase
 
+// The panel is dark in both themes, so its accent trim has to be too:
+// `--accent-text` drops to a 600 tone in light mode, calibrated for pale
+// surfaces, and goes near-invisible here. `--accent-on-dark` holds the dark
+// value in both themes. Any component painted on a fixed dark surface (or on
+// --hero-gradient) wants this token rather than text-accent-text.
+const ACCENT_ON_DARK = 'var(--accent-on-dark)'
+const ICON_WELL = { background: `color-mix(in srgb, ${ACCENT_ON_DARK} 18%, transparent)` }
+
 interface Props {
   status: TrainingStatus | null
   plannedWorkout: PlannedWorkout | null
@@ -130,8 +138,8 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace }: P
           href={`/activities/${todayActivity.id}`}
           className="mt-3.5 flex w-full items-center gap-3 rounded-[14px] bg-black/25 px-3.5 py-3 text-left transition-colors active:opacity-80"
         >
-          <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px] bg-accent/[0.18]">
-            <Check size={17} className="text-accent-text" />
+          <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px]" style={ICON_WELL}>
+            <Check size={17} style={{ color: ACCENT_ON_DARK }} />
           </div>
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-semibold">{plannedWorkout.name}</div>
@@ -150,8 +158,8 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace }: P
           onClick={() => setSheetOpen(true)}
           className="mt-3.5 flex w-full items-center gap-3 rounded-[14px] bg-black/25 px-3.5 py-3 text-left transition-colors active:opacity-80"
         >
-          <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px] bg-accent/[0.18]">
-            <PlannedWorkoutIcon size={17} className="text-accent-text" />
+          <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px]" style={ICON_WELL}>
+            <PlannedWorkoutIcon size={17} style={{ color: ACCENT_ON_DARK }} />
           </div>
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-semibold">{plannedWorkout.name}</div>
@@ -166,8 +174,8 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace }: P
         </button>
       ) : (
         <div className="mt-3.5 flex items-center gap-3 rounded-[14px] bg-black/25 px-3.5 py-3">
-          <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px] bg-accent/[0.18]">
-            <BedDouble size={17} className="text-accent-text" />
+          <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px]" style={ICON_WELL}>
+            <BedDouble size={17} style={{ color: ACCENT_ON_DARK }} />
           </div>
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-semibold">{s.restDay}</div>

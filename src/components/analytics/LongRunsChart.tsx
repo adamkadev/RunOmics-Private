@@ -3,7 +3,7 @@
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import type { MonthlyLongRuns } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
-import { useAccentColor } from '@/lib/useAccent'
+import { useAccentUiColor } from '@/lib/useAccent'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { ChartExplain } from '@/components/ui/ChartExplain'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -33,7 +33,7 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
 }
 
 export function LongRunsChart({ data }: Props) {
-  const accentColor = useAccentColor()
+  const accentColor = useAccentUiColor()
   const nonZero = data.filter((d) => d.longestKm > 0)
   if (nonZero.length === 0) return null
 

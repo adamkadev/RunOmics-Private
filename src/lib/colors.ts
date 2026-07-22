@@ -12,14 +12,18 @@ const c = HUE
 
 // ── Charts ──────────────────────────────────────────────────────────────────
 
+// Form (TSB), weekly volume and the long-run bar used to live here as fixed
+// emerald. They are the "this is your headline number" marks, so they now come
+// from `useAccentUiColor()` and repaint with the accent picker; everything left
+// below is either categorical or semantic and stays put.
 export const CHART_COLORS = {
-  // Brand / primary metric
+  // Brand green, for the marks that are the app's own voice rather than a
+  // metric: the map's route/start marker and the pace ramp's easy end.
   brand:     c.roEmerald,
 
   // Training load
   ctl:       c.blue500,   // fitness (chronic)
   atl:       c.orange500, // fatigue (acute)
-  tsb:       c.roEmerald, // form (balance)
 
   // Activity metrics
   hr:            c.red500,
@@ -38,9 +42,6 @@ export const CHART_COLORS = {
   // Easy / Hard split
   easy:      c.emerald400,
   hard:      c.orange400,
-
-  // Long run bar
-  longRun: c.roEmerald,
 
   // Chart decoration - the muted floor is the dark theme's own `--subtle` /
   // `--muted-foreground`, so axis/legend text clears WCAG contrast against the
@@ -132,7 +133,7 @@ export const READINESS_TONE_COLORS = {
  * fixed hues so "behind" cannot end up reading as a brand color.
  */
 export const GOAL_PACE_COLORS = {
-  ahead:   { bg: withAlpha(c.emerald500, 0.06), border: withAlpha(c.emerald500, 0.25), bar: 'var(--accent)' },
+  ahead:   { bg: 'color-mix(in srgb, var(--accent) 6%, transparent)', border: 'color-mix(in srgb, var(--accent) 25%, transparent)', bar: 'var(--accent)' },
   onTrack: { bg: withAlpha(c.roBlueMid, 0.1),   border: withAlpha(c.roBlueMid, 0.28), bar: c.roBlueHi },
   behind:  { bg: withAlpha(c.roPink, 0.06),     border: withAlpha(c.roPink, 0.25),    bar: c.roPink },
   pending: { bg: '',                            border: '',                           bar: 'var(--track-on-dark)' },
@@ -248,7 +249,6 @@ export const SHARE_BACKDROPS = {
   pulse:   [c.sharePulseLight,   c.sharePulseDark],
   terrain: [c.shareTerrainLight, c.shareTerrainDark],
   prism:   [c.sharePrismLight,   c.sharePrismDark],
-  cadence: [c.shareCadenceLight, c.shareCadenceDark],
   map:     [c.shareMapLight,     c.shareMapDark],
 } as const
 

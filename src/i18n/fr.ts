@@ -776,7 +776,7 @@ export const fr = {
         pulse: 'Pulse',
         terrain: 'Terrain',
         prism: 'Prisme',
-        cadence: 'Cadence',
+        route: 'Parcours',
         map: 'Carte',
         memory: 'Souvenir',
       },

@@ -2,14 +2,15 @@ import type { TrainingLoadData } from '@/application/usecases/GetTrainingLoad'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { CHART_COLORS } from '@/lib/colors'
-import { HUE } from '@/lib/palette'
 import { t } from '@/i18n'
 
-// Accent-independent - Form/Fitness/Fatigue mean the same thing (fresh/fit/tired)
-// whichever accent the athlete has chosen, and the blue/orange pairing has to
-// stay put for the reading to hold. Same hues the training-load chart uses.
-const FORM_VALUE = HUE.roEmeraldHi
-const FORM_LINE = CHART_COLORS.tsb
+// Form is the headline metric, so it wears the live accent - a server component,
+// hence the CSS variables rather than `useAccentUiColor()`. Fitness and fatigue
+// stay fixed: the blue/orange pairing has to hold for the reading to work, and
+// they mean the same thing whichever accent the athlete has chosen. Same hues
+// the training-load chart uses.
+const FORM_VALUE = 'var(--accent-text)'
+const FORM_LINE = 'var(--accent)'
 const FITNESS = CHART_COLORS.ctl
 const FATIGUE = CHART_COLORS.atl
 
@@ -38,7 +39,9 @@ function Sparkline({ values, color }: { values: number[]; color: string }) {
       <polyline
         points={sparkPoints(values)}
         fill="none"
-        stroke={color}
+        // `style`, not the `stroke` attribute: presentation attributes do not
+        // accept `var()`, and the form line is passed one.
+        style={{ stroke: color }}
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"

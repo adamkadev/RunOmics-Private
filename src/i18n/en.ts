@@ -784,7 +784,7 @@ export const en = {
         pulse: 'Pulse',
         terrain: 'Terrain',
         prism: 'Prism',
-        cadence: 'Cadence',
+        route: 'Route',
         map: 'Map',
         memory: 'Memory',
       },

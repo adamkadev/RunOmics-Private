@@ -18,9 +18,6 @@ export type TokenBlock = {
 
 const c = HUE
 
-/** Every accent's dark-mode `--accent-foreground`: ink that reads on a vivid fill. */
-const ACCENT_INK = c.roEmeraldInk
-
 // ── Glass surface sets ──────────────────────────────────────────────────────
 // The frosted chrome (cards, nav, sheets). Light glass is white-on-white with a
 // forest-tinted shadow; dark glass is white-alpha on the near-black canvas.
@@ -79,8 +76,9 @@ type AccentVariant = {
     accent: string
     accentHover: string
     accentText: string
+    /** `--accent-foreground`: ink that reads on this hue's vivid fill. */
+    accentInk: string
     ring: string
-    destructive?: string
     aurora1: string
     aurora2: string
     auroraOpacity1?: string
@@ -100,7 +98,7 @@ const ACCENT_VARIANTS: AccentVariant[] = [
       background: c.blue50, canvasTop: c.performanceCanvasTop,
     },
     dark: {
-      accent: c.blue400, accentHover: c.blue300, accentText: c.blue300, ring: withAlpha(c.blue400, 0.7),
+      accent: c.blue400, accentHover: c.blue300, accentText: c.blue300, accentInk: c.performanceInk, ring: withAlpha(c.blue400, 0.7),
       aurora1: c.blue700, aurora2: c.sky600,
       background: c.performanceBgDark, canvasTop: c.performanceCanvasDark,
     },
@@ -115,8 +113,7 @@ const ACCENT_VARIANTS: AccentVariant[] = [
       background: c.rose50, canvasTop: c.impactCanvasTop,
     },
     dark: {
-      accent: c.rose400, accentHover: c.rose300, accentText: c.rose300, ring: withAlpha(c.rose400, 0.7),
-      destructive: c.red300,
+      accent: c.rose400, accentHover: c.rose300, accentText: c.rose300, accentInk: c.impactInk, ring: withAlpha(c.rose400, 0.7),
       aurora1: c.pink700, aurora2: c.pink800,
       background: c.impactBgDark, canvasTop: c.impactCanvasDark,
     },
@@ -131,8 +128,7 @@ const ACCENT_VARIANTS: AccentVariant[] = [
       background: c.orange50, canvasTop: c.motivationCanvasTop,
     },
     dark: {
-      accent: c.orange400, accentHover: c.orange300, accentText: c.orange300, ring: withAlpha(c.orange400, 0.7),
-      destructive: c.red300,
+      accent: c.orange400, accentHover: c.orange300, accentText: c.orange300, accentInk: c.motivationInk, ring: withAlpha(c.orange400, 0.7),
       aurora1: c.orange700, aurora2: c.amber700,
       background: c.motivationBgDark, canvasTop: c.motivationCanvasDark,
     },
@@ -146,7 +142,7 @@ const ACCENT_VARIANTS: AccentVariant[] = [
       background: c.violet50, canvasTop: c.enduranceCanvasTop,
     },
     dark: {
-      accent: c.violet400, accentHover: c.violet300, accentText: c.violet300, ring: withAlpha(c.violet400, 0.7),
+      accent: c.violet400, accentHover: c.violet300, accentText: c.violet300, accentInk: c.enduranceInk, ring: withAlpha(c.violet400, 0.7),
       aurora1: c.violet700, aurora2: c.purple700,
       background: c.enduranceBgDark, canvasTop: c.enduranceCanvasDark,
     },
@@ -160,7 +156,7 @@ const ACCENT_VARIANTS: AccentVariant[] = [
       background: c.slate50, canvasTop: c.silverCanvasTop, canvasBottom: c.slate100,
     },
     dark: {
-      accent: c.slate400, accentHover: c.slate300, accentText: c.slate300, ring: withAlpha(c.slate300, 0.5),
+      accent: c.slate400, accentHover: c.slate300, accentText: c.slate300, accentInk: c.silverInk, ring: withAlpha(c.slate300, 0.5),
       aurora1: c.slate700, aurora2: c.slate800,
       auroraOpacity1: '0.6', auroraOpacity2: '0.5',
       background: c.silverBgDark, canvasTop: c.silverCanvasDark,
@@ -195,9 +191,11 @@ function accentBlocks(v: AccentVariant): TokenBlock[] {
         '--accent-foreground': white,
         '--accent-subtle': l.accentSubtle,
         '--accent-text': l.accentText,
+        '--accent-on-dark': d.accentText,
         '--ring': l.ring,
         ...(l.destructive ? { '--destructive': l.destructive } : {}),
         '--hero-gradient': `linear-gradient(150deg, ${l.heroFrom}, ${l.heroVia} 70%, ${l.heroTo})`,
+        '--hero-glow': 'transparent',
         '--aurora-1': l.aurora1,
         '--aurora-2': l.aurora2,
         '--background': l.background,
@@ -210,12 +208,14 @@ function accentBlocks(v: AccentVariant): TokenBlock[] {
         '--accent': d.accent,
         '--accent-hover': d.accentHover,
         '--accent-dark': l.accent,
-        '--accent-foreground': ACCENT_INK,
+        '--accent-foreground': d.accentInk,
         '--accent-subtle': withAlpha(d.accent, 0.1),
         '--accent-text': d.accentText,
+        '--accent-on-dark': d.accentText,
         '--ring': d.ring,
-        ...(d.destructive ? { '--destructive': d.destructive } : {}),
-        '--hero-gradient': `linear-gradient(155deg, ${withAlpha(d.accent, 0.16)}, ${withAlpha(d.accent, 0.03)})`,
+        '--destructive': c.red400,
+        '--hero-gradient': `linear-gradient(155deg, ${withAlpha(d.accent, 0.30)}, ${withAlpha(d.accent, 0.10)} 55%, ${withAlpha(d.accent, 0.03)})`,
+        '--hero-glow': withAlpha(d.accent, 0.28),
         '--aurora-1': d.aurora1,
         '--aurora-2': d.aurora2,
         ...(d.auroraOpacity1 ? { '--aurora-1-opacity': d.auroraOpacity1 } : {}),
@@ -229,12 +229,16 @@ function accentBlocks(v: AccentVariant): TokenBlock[] {
 
 // ── Per-page aurora tints ───────────────────────────────────────────────────
 
-const PAGE_AURORAS: Record<string, [string, string, number, number]> = {
-  goals:     [c.roEmeraldDeep, c.roViolet,      0.2,  0.14],
-  records:   [c.roViolet,      c.roEmeraldDeep, 0.18, 0.15],
-  shoes:     [c.roOrange,      c.roEmeraldDeep, 0.16, 0.15],
-  settings:  [c.roPink,        c.roViolet,      0.14, 0.12],
-  analytics: [c.roBlue,        c.roEmeraldDeep, 0.18, 0.14],
+// Each page keeps its two tints but carries an opacity pair per theme: the
+// values are calibrated for the surface behind them, and the light canvas needs
+// roughly triple the alpha the near-black one does before the wash reads at all.
+// [tint1, tint2, lightOpacity1, lightOpacity2, darkOpacity1, darkOpacity2]
+const PAGE_AURORAS: Record<string, [string, string, number, number, number, number]> = {
+  goals:     [c.roEmeraldDeep, c.roViolet,      0.45, 0.32, 0.2,  0.14],
+  records:   [c.roViolet,      c.roEmeraldDeep, 0.42, 0.34, 0.18, 0.15],
+  shoes:     [c.roOrange,      c.roEmeraldDeep, 0.38, 0.34, 0.16, 0.15],
+  settings:  [c.roPink,        c.roViolet,      0.34, 0.28, 0.14, 0.12],
+  analytics: [c.roBlue,        c.roEmeraldDeep, 0.42, 0.32, 0.18, 0.14],
 }
 
 // ── The generated stylesheet ────────────────────────────────────────────────
@@ -301,6 +305,7 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--accent-foreground': white,
       '--accent-subtle': c.emerald50,
       '--accent-text': c.emerald600,
+      '--accent-on-dark': c.roEmeraldHi,
       '--destructive': c.red500,
       '--ring': withAlpha(c.roEmeraldDeep, 0.35),
       '--track': withAlpha(c.roInk, 0.07),
@@ -323,6 +328,7 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
 
       '--canvas': `linear-gradient(155deg, ${c.natureCanvasTop} 0%, ${c.natureBg} 100%)`,
       '--hero-gradient': `linear-gradient(150deg, ${c.natureHeroDeep}, ${c.green900} 70%, ${c.green800})`,
+      '--hero-glow': 'transparent',
       '--aurora-1': c.natureAurora1,
       '--aurora-2': c.natureAurora2,
       '--aurora-1-opacity': '0.65',
@@ -349,10 +355,11 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--accent': c.roEmerald,
       '--accent-hover': c.roEmeraldHi,
       '--accent-dark': c.roEmeraldShadeDark,
-      '--accent-foreground': ACCENT_INK,
+      '--accent-foreground': c.roEmeraldInk,
       '--accent-subtle': withAlpha(c.roEmerald, 0.1),
       '--accent-text': c.roEmeraldHi,
-      '--destructive': c.red500,
+      '--accent-on-dark': c.roEmeraldHi,
+      '--destructive': c.red400,
       '--ring': withAlpha(c.roEmerald, 0.7),
       '--track': paper(0.08),
 
@@ -367,7 +374,8 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--ro-text-3': c.roInkInv3,
 
       '--canvas': `linear-gradient(155deg, ${c.natureCanvasDark} 0%, ${c.natureBgDark} 100%)`,
-      '--hero-gradient': `linear-gradient(155deg, ${withAlpha(c.roEmerald, 0.16)}, ${withAlpha(c.roEmerald, 0.03)})`,
+      '--hero-gradient': `linear-gradient(155deg, ${withAlpha(c.roEmerald, 0.30)}, ${withAlpha(c.roEmerald, 0.10)} 55%, ${withAlpha(c.roEmerald, 0.03)})`,
+      '--hero-glow': withAlpha(c.roEmerald, 0.28),
       '--aurora-1': c.roEmerald,
       '--aurora-2': c.roBlue,
       '--aurora-1-opacity': '0.16',
@@ -378,13 +386,22 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
     },
   },
   ...ACCENT_VARIANTS.flatMap(accentBlocks),
-  ...Object.entries(PAGE_AURORAS).map(([page, [a1, a2, o1, o2]]) => ({
-    selector: `[data-page-aurora="${page}"]`,
-    tokens: {
-      '--aurora-1': a1,
-      '--aurora-2': a2,
-      '--aurora-1-opacity': String(o1),
-      '--aurora-2-opacity': String(o2),
+  ...Object.entries(PAGE_AURORAS).flatMap(([page, [a1, a2, lo1, lo2, do1, do2]]): TokenBlock[] => [
+    {
+      selector: `[data-page-aurora="${page}"]`,
+      tokens: {
+        '--aurora-1': a1,
+        '--aurora-2': a2,
+        '--aurora-1-opacity': String(lo1),
+        '--aurora-2-opacity': String(lo2),
+      },
     },
-  })),
+    {
+      selector: `.dark [data-page-aurora="${page}"]`,
+      tokens: {
+        '--aurora-1-opacity': String(do1),
+        '--aurora-2-opacity': String(do2),
+      },
+    },
+  ]),
 ]

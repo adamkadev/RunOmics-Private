@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { ACCENT_CHANGE_EVENT, ACCENT_STORAGE_KEY, ACCENT_SWATCHES, ACCENT_SWATCHES_LIGHT, DEFAULT_ACCENT, isAccentId, type AccentId } from '@/lib/accent'
+import { useTheme } from 'next-themes'
+import { ACCENT_CHANGE_EVENT, ACCENT_STORAGE_KEY, ACCENT_SWATCHES, ACCENT_SWATCHES_LIGHT, ACCENT_UI, DEFAULT_ACCENT, isAccentId, type AccentId } from '@/lib/accent'
 
 function readAccent(): AccentId {
   if (typeof window === 'undefined') return DEFAULT_ACCENT
@@ -37,4 +38,19 @@ export function useAccentColor(): string {
 // raw accent swatch doesn't have enough contrast.
 export function useAccentColorLight(): string {
   return ACCENT_SWATCHES_LIGHT[useAccent()]
+}
+
+/**
+ * The live value of `--accent` for the current accent *and* theme - for chart
+ * marks that carry the primary metric and so must repaint with the UI around
+ * them. Prefer this over `useAccentColor()` anywhere the mark sits next to
+ * accent-colored chrome; the swatch version is only the picker's preview hue.
+ */
+export function useAccentUiColor(): string {
+  const accent = useAccent()
+  const { resolvedTheme } = useTheme()
+  // `resolvedTheme` is undefined for the first render (next-themes resolves
+  // `system` on the client), so the dark value stands in - it is the one that
+  // reads on both canvases if the very first paint lands on the wrong branch.
+  return ACCENT_UI[accent][resolvedTheme === 'light' ? 0 : 1]
 }

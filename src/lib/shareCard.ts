@@ -25,13 +25,17 @@ export interface RenderOptions {
   locationName?: string | null
   streetLabels?: string[]
   customAccentHex?: string
+  // The `route` design's MapTiler basemap: the image once loaded, or the flag
+  // that says it never will and the drawn `map` should stand in.
+  mapImage?: HTMLImageElement | null
+  mapFailed?: boolean
 }
 
 /** Re-exported under its historical name; the implementation lives in the palette. */
 export { rgbTriplet as hexToRgb }
 
 export function renderShareCard(canvas: HTMLCanvasElement, options: RenderOptions, scale = 1) {
-  const { activity, design, accent, theme, showStats, showMap, photoImage, gpsRoute, locationName, streetLabels, customAccentHex } = options
+  const { activity, design, accent, theme, showStats, showMap, photoImage, gpsRoute, locationName, streetLabels, customAccentHex, mapImage, mapFailed } = options
   const dark = theme === 'dark'
   canvas.width = W * scale
   canvas.height = H * scale
@@ -41,9 +45,18 @@ export function renderShareCard(canvas: HTMLCanvasElement, options: RenderOption
 
   const [r, g, b] = customAccentHex ? rgbTriplet(customAccentHex) : ACCENT_RGB[accent][dark ? 'dark' : 'light']
 
-  // For the map design, only pass the real route when showMap is on.
+  // For the map design, only pass the real route when showMap is on. The route
+  // design is the trace itself, so showMap never applies to it.
   const routeForTheme = design === 'map' ? (showMap ? gpsRoute : null) : gpsRoute
-  drawTheme(ctx, design, W, H, r, g, b, dark, routeForTheme, photoImage, locationName, activity.distanceKm, streetLabels)
+  drawTheme(ctx, design, W, H, r, g, b, dark, {
+    gpsRoute: routeForTheme,
+    photoImg: photoImage,
+    locationName,
+    distanceKm: activity.distanceKm,
+    streetLabels,
+    mapImage,
+    mapFailed,
+  })
 
   // For the memory design, overlay the GPS trace on top when showMap is on.
   if (showMap && design === 'memory' && gpsRoute && gpsRoute.length > 1) {

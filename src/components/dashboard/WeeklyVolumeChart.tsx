@@ -11,7 +11,7 @@ import {
 } from 'recharts'
 import type { WeeklyVolume } from '@/domain/activity/types'
 import { CHART_COLORS } from '@/lib/colors'
-import { useAccentColor } from '@/lib/useAccent'
+import { useAccentUiColor } from '@/lib/useAccent'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
@@ -54,7 +54,7 @@ function CustomTooltip({ active, payload }: TooltipProps) {
 }
 
 export function WeeklyVolumeChart({ data, currentWeek }: Props) {
-  const accentColor = useAccentColor()
+  const accentColor = useAccentUiColor()
   const chartData: ChartEntry[] = data.map((entry, i) => {
     const month = weekToMonthAbbr(entry.week)
     const prevEntry = data[i - 1]

@@ -29,7 +29,20 @@ export const ACCENT_SWATCHES_LIGHT: Record<AccentId, string> = {
   silver:      HUE.slate600,
 }
 
-export const ACCENT_IDS: AccentId[] = ['nature', 'performance', 'impact', 'motivation', 'endurance', 'silver']
+// The actual `--accent` value per theme, as [light, dark] - what Recharts/SVG
+// need when a mark is meant to *be* the accent rather than merely evoke it.
+// ACCENT_SWATCHES above is the picker's preview chip and rounds to the generic
+// Tailwind 500s; these are the values globals.css was generated from.
+export const ACCENT_UI: Record<AccentId, [light: string, dark: string]> = {
+  nature:      [HUE.roEmeraldDeep, HUE.roEmerald],
+  performance: [HUE.blue500,       HUE.blue400],
+  impact:      [HUE.rose500,       HUE.rose400],
+  motivation:  [HUE.orange500,     HUE.orange400],
+  endurance:   [HUE.violet500,     HUE.violet400],
+  silver:      [HUE.slate500,      HUE.slate400],
+}
+
+export const ACCENT_IDS: AccentId[] =['nature', 'performance', 'impact', 'motivation', 'endurance', 'silver']
 
 export function isAccentId(value: string | null): value is AccentId {
   return value !== null && (ACCENT_IDS as string[]).includes(value)

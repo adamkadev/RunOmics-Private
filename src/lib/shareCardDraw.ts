@@ -2,6 +2,7 @@ import type { Activity } from '@/domain/activity/types'
 import { formatClock, formatDistance, formatDurationShort } from '@/lib/formatters'
 import { shareCardTitle } from '@/lib/shareCardStats'
 import type { ShareDesign } from '@/lib/shareCardPalette'
+import { projectRoute, simplifyRoute, type LngLat } from '@/lib/shareCardMap'
 import { SHARE_BACKDROPS, SHARE_CARD_COLORS as SHARE } from '@/lib/colors'
 import { ink, paper } from '@/lib/palette'
 import { t } from '@/i18n'
@@ -31,7 +32,7 @@ function memoryStops(grad: CanvasGradient, stops: readonly [string, string, stri
 // ── Hero metric helpers ──────────────────────────────────────────────────────
 
 const HERO_OPACITY: Partial<Record<ShareDesign, number>> = {
-  aurora: 0.12, pulse: 0.10, terrain: 0.14, prism: 0.11, cadence: 0.10,
+  aurora: 0.12, pulse: 0.10, terrain: 0.14, prism: 0.11,
 }
 
 function getHeroMetric(design: ShareDesign, activity: Activity): { value: string; unit: string } | null {
@@ -45,10 +46,6 @@ function getHeroMetric(design: ShareDesign, activity: Activity): { value: string
     case 'prism':
       return activity.paceSecPerKm
         ? { value: formatClock(activity.paceSecPerKm), unit: '/km' }
-        : { value: activity.distanceKm.toFixed(1), unit: 'km' }
-    case 'cadence':
-      return activity.cadenceSpm
-        ? { value: String(activity.cadenceSpm), unit: 'spm' }
         : { value: activity.distanceKm.toFixed(1), unit: 'km' }
     case 'terrain':
       return activity.elevationGain
@@ -106,9 +103,12 @@ function drawHeroMetric(
   ctx.restore()
 }
 
-export function loadImage(src: string): Promise<HTMLImageElement> {
+/** `crossOrigin` must be set for remote images, or drawing them taints the
+ *  canvas and every PNG export throws. */
+export function loadImage(src: string, crossOrigin?: 'anonymous'): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image()
+    if (crossOrigin) img.crossOrigin = crossOrigin
     img.onload = () => resolve(img)
     img.onerror = () => reject(new Error(`Failed to load ${src}`))
     img.src = src
@@ -199,12 +199,6 @@ function drawCover(ctx: Ctx, img: HTMLImageElement, x: number, y: number, w: num
   const sx = (img.width - sw) / 2
   const sy = (img.height - sh) / 2
   ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h)
-}
-
-function simplifyPolyline(coords: [number, number][], maxPoints = 150): [number, number][] {
-  if (coords.length <= maxPoints) return coords
-  const step = Math.ceil(coords.length / maxPoints)
-  return coords.filter((_, i) => i % step === 0 || i === coords.length - 1)
 }
 
 function getKmMarkers(
@@ -353,36 +347,60 @@ export function draw_prism(ctx: Ctx, W: number, H: number, r: number, g: number,
   })
 }
 
-export function draw_cadence(ctx: Ctx, W: number, H: number, r: number, g: number, b: number, dark: boolean) {
-  ctx.fillStyle = backdrop('cadence', dark); ctx.fillRect(0, 0, W, H)
-  glow(ctx, W, H, W * 0.5, H * 0.72, W * 0.78, r, g, b, dark ? 0.34 : 0.13)
-  const heights = [0.42, 0.68, 0.34, 0.86, 0.55, 0.8, 0.38, 0.65, 0.42]
-  const COLS = heights.length, colW = W / COLS, baseY = H * 0.84, maxH = H * 0.56
-  heights.forEach((bh, idx) => {
-    const bH = maxH * bh, x = idx * colW + colW * 0.15, w = colW * 0.7, y = baseY - bH, rr = w * 0.3
-    if (bh > 0.6) {
-      ctx.save()
-      const gg = ctx.createRadialGradient(x + w / 2, y + bH * 0.25, 0, x + w / 2, y + bH * 0.25, w * 1.2)
-      gg.addColorStop(0, accent(r, g, b, dark ? 0.55 : 0.28))
-      gg.addColorStop(1, TRANSPARENT); ctx.fillStyle = gg; ctx.fillRect(x - w, y - w, w * 3, bH + w * 2); ctx.restore()
-    }
-    rrect(ctx, x, y, w, bH, rr)
-    ctx.shadowColor = dark ? ink(0.3) : ink(0.09); ctx.shadowBlur = 10; ctx.shadowOffsetY = 4
-    const bf = ctx.createLinearGradient(x, y, x, y + bH)
-    bf.addColorStop(0, dark ? paper(0.24) : paper(0.82))
-    bf.addColorStop(0.2, accent(r, g, b, dark ? 0.13 : 0.1))
-    bf.addColorStop(1, dark ? paper(0.05) : paper(0.35))
-    ctx.fillStyle = bf; ctx.fill()
-    rrect(ctx, x, y, w, bH, rr)
-    ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0
-    const be = ctx.createLinearGradient(x, y, x + w * 0.55, y + bH * 0.42)
-    be.addColorStop(0, dark ? paper(0.68) : paper(0.96))
-    be.addColorStop(0.28, dark ? paper(0.22) : paper(0.55))
-    be.addColorStop(1, paper(0.02))
-    ctx.strokeStyle = be; ctx.lineWidth = 1.5; ctx.stroke()
-  })
-  ctx.beginPath(); ctx.moveTo(colW * 0.15, H * 0.84 + 3); ctx.lineTo(W - colW * 0.15, H * 0.84 + 3)
-  ctx.strokeStyle = dark ? paper(0.14) : ink(0.1); ctx.lineWidth = 1; ctx.stroke()
+// ── Route design (real basemap) ─────────────────────────────────────────────
+
+/** Wash pulled over the top and bottom bands of the basemap so the branding and
+ *  the stats card stay readable whatever the map underneath happens to be. */
+function drawMapScrim(ctx: Ctx, W: number, H: number, dark: boolean) {
+  const band = H * 0.22
+  const wash = dark ? ink : paper
+  const a = dark ? 0.35 : 0.30
+
+  const top = ctx.createLinearGradient(0, 0, 0, band)
+  top.addColorStop(0, wash(a)); top.addColorStop(1, wash(0))
+  ctx.fillStyle = top; ctx.fillRect(0, 0, W, band)
+
+  const bottom = ctx.createLinearGradient(0, H - band, 0, H)
+  bottom.addColorStop(0, wash(0)); bottom.addColorStop(1, wash(a))
+  ctx.fillStyle = bottom; ctx.fillRect(0, H - band, W, band)
+}
+
+/** Stand-in while the basemap image is in flight: the map backdrop with a
+ *  diagonal sheen across it, the same shape as the app's loading skeletons. */
+function drawMapShimmer(ctx: Ctx, W: number, H: number, dark: boolean) {
+  ctx.fillStyle = backdrop('map', dark); ctx.fillRect(0, 0, W, H)
+  const sheen = ctx.createLinearGradient(0, H * 0.25, W, H * 0.75)
+  const glint = dark ? paper : ink
+  sheen.addColorStop(0, glint(0))
+  sheen.addColorStop(0.5, glint(dark ? 0.06 : 0.05))
+  sheen.addColorStop(1, glint(0))
+  ctx.fillStyle = sheen; ctx.fillRect(0, 0, W, H)
+}
+
+export function draw_route(
+  ctx: Ctx, W: number, H: number,
+  r: number, g: number, b: number,
+  dark: boolean,
+  gpsRoute?: LngLat[] | null,
+  mapImage?: HTMLImageElement | null,
+  mapFailed?: boolean,
+) {
+  // No usable trace, or MapTiler is out of reach: the stylized map design is
+  // the graceful degradation, not a blank card.
+  if (!gpsRoute || gpsRoute.length < 2 || mapFailed) {
+    draw_map(ctx, W, H, r, g, b, dark, gpsRoute, null, undefined, null)
+    return
+  }
+
+  if (mapImage) {
+    drawCover(ctx, mapImage, 0, 0, W, H)
+  } else {
+    drawMapShimmer(ctx, W, H, dark)
+  }
+  drawMapScrim(ctx, W, H, dark)
+
+  // Same framing MapTiler used for the image, so the trace lands on its streets.
+  paintRoute(ctx, projectRoute(gpsRoute, W, H), r, g, b, dark)
 }
 
 function drawMapStreetLabels(ctx: Ctx, W: number, H: number, dark: boolean, streetLabels: string[]) {
@@ -554,7 +572,7 @@ export function draw_map(
   }
 
   // GPS route
-  const simplified = gpsRoute && gpsRoute.length > 1 ? simplifyPolyline(gpsRoute) : null
+  const simplified = gpsRoute && gpsRoute.length > 1 ? simplifyRoute(gpsRoute) : null
   const pts: [number, number][] = simplified
     ? projectGPS(simplified, W, H)
     : [
@@ -688,8 +706,17 @@ export function drawRouteOverlay(
   // Same projection as MAP (72% fill with 14% padding), shifted to center at H*0.44
   const rawPts = projectGPS(route, W, H)
   const dy = H * 0.44 - H * 0.5
-  const pts = rawPts.map(([x, y]) => [x, y + dy] as [number, number])
+  paintRoute(ctx, rawPts.map(([x, y]) => [x, y + dy] as [number, number]), r, g, b, dark)
+}
 
+/** The RunOmics trace: a soft casing, the accent line, and the start/finish
+ *  dots. Takes points already in canvas space, whatever projected them. */
+function paintRoute(
+  ctx: Ctx,
+  pts: [number, number][],
+  r: number, g: number, b: number,
+  dark: boolean,
+) {
   const first = pts[0]
   const last = pts[pts.length - 1]
   if (!first || !last) return
@@ -818,6 +845,19 @@ export function drawDataOverlay(ctx: Ctx, W: number, H: number, dark: boolean, r
 
 // ── Dispatch ─────────────────────────────────────────────────────────────────
 
+/** Everything a backdrop may need beyond its colors. Designs pick what applies. */
+export interface ThemeData {
+  gpsRoute?: LngLat[] | null
+  photoImg?: HTMLImageElement | null
+  locationName?: string | null
+  distanceKm?: number
+  streetLabels?: string[] | null
+  /** `route` design: the MapTiler basemap, once it has loaded. */
+  mapImage?: HTMLImageElement | null
+  /** `route` design: the basemap will not arrive, fall back to `map`. */
+  mapFailed?: boolean
+}
+
 export function drawTheme(
   ctx: Ctx,
   theme: ShareDesign,
@@ -825,18 +865,15 @@ export function drawTheme(
   H: number,
   r: number, g: number, b: number,
   dark: boolean,
-  gpsRoute?: [number, number][] | null,
-  photoImg?: HTMLImageElement | null,
-  locationName?: string | null,
-  distanceKm?: number,
-  streetLabels?: string[] | null,
+  data: ThemeData = {},
 ): void {
+  const { gpsRoute, photoImg, locationName, distanceKm, streetLabels, mapImage, mapFailed } = data
   switch (theme) {
     case 'aurora':  draw_aurora(ctx, W, H, r, g, b, dark); break
     case 'pulse':   draw_pulse(ctx, W, H, r, g, b, dark); break
     case 'terrain': draw_terrain(ctx, W, H, r, g, b, dark); break
     case 'prism':   draw_prism(ctx, W, H, r, g, b, dark); break
-    case 'cadence': draw_cadence(ctx, W, H, r, g, b, dark); break
+    case 'route':   draw_route(ctx, W, H, r, g, b, dark, gpsRoute, mapImage, mapFailed); break
     case 'map':     draw_map(ctx, W, H, r, g, b, dark, gpsRoute, locationName, distanceKm, streetLabels); break
     case 'memory':  draw_memory(ctx, W, H, r, g, b, dark, photoImg ?? null); break
   }

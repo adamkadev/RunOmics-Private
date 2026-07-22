@@ -11,6 +11,7 @@ import {
 } from 'recharts'
 import type { TrainingLoadData, TrainingLoadPoint } from '@/application/usecases/GetTrainingLoad'
 import { CHART_COLORS } from '@/lib/colors'
+import { useAccentUiColor } from '@/lib/useAccent'
 import { STATUS } from '@/lib/statusColors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -67,6 +68,9 @@ function formStatus(tsb: number): { label: string; className: string } {
 
 export function TrainingLoadChart({ data }: Props) {
   const status = formStatus(data.tsb)
+  // Form is the headline of this chart, so it follows the accent; fitness and
+  // fatigue keep their fixed blue/orange pairing.
+  const formColor = useAccentUiColor()
   const { range, selectRange, bounds, visible, canGoBack, canGoForward, goBack, goForward } =
     useChartWindow(data.points)
   // Uniform point budget per window (4/6/12) so a year of daily CTL/ATL/TSB
@@ -85,7 +89,7 @@ export function TrainingLoadChart({ data }: Props) {
       <div className="mb-3 flex flex-wrap gap-x-3.5 gap-y-1">
         <LegendValue label={t.dashboard.trainingLoad.fitness} value={data.ctl} color={CHART_COLORS.ctl} />
         <LegendValue label={t.dashboard.trainingLoad.fatigue} value={data.atl} color={CHART_COLORS.atl} />
-        <LegendValue label={t.dashboard.trainingLoad.form} value={data.tsb} color={CHART_COLORS.tsb} signed />
+        <LegendValue label={t.dashboard.trainingLoad.form} value={data.tsb} color={formColor} signed />
       </div>
 
       <ChartWindowPager
@@ -117,7 +121,7 @@ export function TrainingLoadChart({ data }: Props) {
             <ReferenceLine y={0} stroke={CHART_COLORS.referenceLine} strokeWidth={1} />
             <Line type="monotone" dataKey="ctl" stroke={CHART_COLORS.ctl} strokeWidth={2.5} {...trendDots(CHART_COLORS.ctl)} isAnimationActive={false} />
             <Line type="monotone" dataKey="atl" stroke={CHART_COLORS.atl} strokeWidth={2.5} {...trendDots(CHART_COLORS.atl)} isAnimationActive={false} />
-            <Line type="monotone" dataKey="tsb" stroke={CHART_COLORS.tsb} strokeWidth={2.5} {...trendDots(CHART_COLORS.tsb)} isAnimationActive={false} />
+            <Line type="monotone" dataKey="tsb" stroke={formColor} strokeWidth={2.5} {...trendDots(formColor)} isAnimationActive={false} />
           </LineChart>
         </ResponsiveContainer>
       </ChartFigure>
