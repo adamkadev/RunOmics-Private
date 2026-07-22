@@ -42,6 +42,21 @@ export const ACCENT_UI: Record<AccentId, [light: string, dark: string]> = {
   silver:      [HUE.slate500,      HUE.slate400],
 }
 
+// The colour for a chart's *headline* line (Form / TSB) when it shares a plot
+// with fixed-hue series (Fitness blue, Fatigue orange, HR red). The accent may
+// only stand in when it stays distinguishable from all of them; the three
+// red-adjacent accents (performance≈Fitness, motivation≈Fatigue, impact≈HR)
+// collide, so they fall back to the brand emerald. Mono-series charts keep the
+// accent via `useAccentUiColor()` instead. See F13.
+export const HEADLINE_CHART_COLOR: Record<AccentId, [light: string, dark: string]> = {
+  nature:      [HUE.roEmeraldDeep, HUE.roEmerald],
+  endurance:   [HUE.violet500,     HUE.violet400],
+  silver:      [HUE.slate500,      HUE.slate400],
+  performance: [HUE.roEmeraldDeep, HUE.roEmerald], // accent bleu = Fitness
+  motivation:  [HUE.roEmeraldDeep, HUE.roEmerald], // accent orange = Fatigue
+  impact:      [HUE.roEmeraldDeep, HUE.roEmerald], // accent rose = HR
+}
+
 export const ACCENT_IDS: AccentId[] =['nature', 'performance', 'impact', 'motivation', 'endurance', 'silver']
 
 export function isAccentId(value: string | null): value is AccentId {

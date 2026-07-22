@@ -272,7 +272,7 @@
   --accent-on-dark:     #fda4af;
   --ring:               rgba(244, 63, 94, 0.35);
   --destructive:        #dc2626;
-  --hero-gradient:      linear-gradient(150deg, #3b0716, #881337 70%, #be123c);
+  --hero-gradient:      linear-gradient(150deg, #2b0712, #6f1030 70%, #9f1239);
   --hero-glow:          transparent;
   --aurora-1:           #fda4af;
   --aurora-2:           #fbcfe8;
@@ -308,7 +308,7 @@
   --accent-on-dark:     #fdba74;
   --ring:               rgba(249, 115, 22, 0.35);
   --destructive:        #ef4444;
-  --hero-gradient:      linear-gradient(150deg, #431407, #7c2d12 70%, #c2410c);
+  --hero-gradient:      linear-gradient(150deg, #33110a, #5f2510 70%, #983811);
   --hero-glow:          transparent;
   --aurora-1:           #fdba74;
   --aurora-2:           #fde68a;

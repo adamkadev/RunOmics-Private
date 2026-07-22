@@ -177,10 +177,19 @@ export const HUE = {
   impactCanvasTop:  '#fff5f6',
   impactBgDark:     '#130608',
   impactCanvasDark: '#190a0d',
+  // Light hero stops mixed toward ink: the raw rose ramp read as a saturated
+  // "destructive/error" wash rather than branding (F14).
+  impactHeroFrom:   '#2b0712',
+  impactHeroVia:    '#6f1030',
+  impactHeroTo:     '#9f1239',
 
   motivationCanvasTop:  '#fffaf3',
   motivationBgDark:     '#130a04',
   motivationCanvasDark: '#1a1007',
+  // Same softening as impact: burnt-orange toward ink instead of an alert orange.
+  motivationHeroFrom:   '#33110a',
+  motivationHeroVia:    '#5f2510',
+  motivationHeroTo:     '#983811',
 
   enduranceCanvasTop:  '#faf8ff',
   enduranceBgDark:     '#0d0a1a',

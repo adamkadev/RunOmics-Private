@@ -11,7 +11,7 @@ import {
 } from 'recharts'
 import type { TrainingLoadData, TrainingLoadPoint } from '@/application/usecases/GetTrainingLoad'
 import { CHART_COLORS } from '@/lib/colors'
-import { useAccentUiColor } from '@/lib/useAccent'
+import { useHeadlineChartColor } from '@/lib/useAccent'
 import { STATUS } from '@/lib/statusColors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -68,9 +68,10 @@ function formStatus(tsb: number): { label: string; className: string } {
 
 export function TrainingLoadChart({ data }: Props) {
   const status = formStatus(data.tsb)
-  // Form is the headline of this chart, so it follows the accent; fitness and
-  // fatigue keep their fixed blue/orange pairing.
-  const formColor = useAccentUiColor()
+  // Form is the headline of this chart, so it follows the accent - but only when
+  // that accent stays clear of the fixed blue fitness / orange fatigue lines;
+  // red-adjacent accents fall back to the brand emerald (F13).
+  const formColor = useHeadlineChartColor()
   const { range, selectRange, bounds, visible, canGoBack, canGoForward, goBack, goForward } =
     useChartWindow(data.points)
   // Uniform point budget per window (4/6/12) so a year of daily CTL/ATL/TSB

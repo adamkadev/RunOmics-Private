@@ -108,7 +108,7 @@ const ACCENT_VARIANTS: AccentVariant[] = [
     light: {
       accent: c.rose500, accentHover: c.rose400, accentDark: c.rose600, accentSubtle: c.rose50, accentText: c.rose600, ring: withAlpha(c.rose500, 0.35),
       destructive: c.red600,
-      heroFrom: c.rose950, heroVia: c.rose800, heroTo: c.rose700,
+      heroFrom: c.impactHeroFrom, heroVia: c.impactHeroVia, heroTo: c.impactHeroTo,
       aurora1: c.rose300, aurora2: c.pink200,
       background: c.rose50, canvasTop: c.impactCanvasTop,
     },
@@ -123,7 +123,7 @@ const ACCENT_VARIANTS: AccentVariant[] = [
     light: {
       accent: c.orange500, accentHover: c.orange400, accentDark: c.orange600, accentSubtle: c.orange50, accentText: c.orange600, ring: withAlpha(c.orange500, 0.35),
       destructive: c.red500,
-      heroFrom: c.orange950, heroVia: c.orange800, heroTo: c.orange700,
+      heroFrom: c.motivationHeroFrom, heroVia: c.motivationHeroVia, heroTo: c.motivationHeroTo,
       aurora1: c.orange300, aurora2: c.amber200,
       background: c.orange50, canvasTop: c.motivationCanvasTop,
     },
