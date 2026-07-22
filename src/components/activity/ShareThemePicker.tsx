@@ -22,12 +22,16 @@ interface Props {
 export function ShareThemePicker({
   selectedDesign, accent, theme, accentHex, customRgb, gpsRoute, photoUrl, onSelect,
 }: Props) {
+  // `route` is the activity's own trace on a real basemap: with no GPS there is
+  // nothing to show, so it drops out the way any missing datum would.
+  const designs = SHARE_DESIGNS.filter((d) => d !== 'route' || (gpsRoute?.length ?? 0) > 1)
+
   return (
     <div
       className="flex gap-2.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       style={{ padding: '4px 14px 12px' }}
     >
-      {SHARE_DESIGNS.map((d) => (
+      {designs.map((d) => (
         <Fragment key={d}>
           {d === 'memory' && <ThemeDivider label={t.activity.shareCard.orUsePhoto} />}
           <ThemeCard

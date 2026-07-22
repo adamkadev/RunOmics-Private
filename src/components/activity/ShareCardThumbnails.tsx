@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react'
 import type { AccentId } from '@/lib/accent'
 import { ACCENT_RGB, type ShareDesign, type ThemeMode } from '@/lib/shareCard'
 import { drawTheme } from '@/lib/shareCardDraw'
+import { useShareCardMap } from '@/lib/useShareCardMap'
 import { cn } from '@/lib/utils'
 import { SHARE_CARD_COLORS } from '@/lib/colors'
 import { withAlpha } from '@/lib/palette'
@@ -31,6 +32,15 @@ export function ThemeCard({ design, accent, theme, selected, accentHex, onClick,
   const canvasRef = useRef<HTMLCanvasElement>(null)
   // Memory shows the chosen photo once picked, otherwise the camera placeholder canvas.
   const showPhoto = design === 'memory' && !!photoUrl
+  // The square thumbnail gets its own render rather than a crop of the tall
+  // one: the fit is per aspect ratio, and so is the projected trace.
+  const { image: mapImage, points: mapPoints, failed: mapFailed } = useShareCardMap({
+    route: gpsRoute,
+    theme,
+    width: THUMB_CANVAS,
+    height: THUMB_CANVAS,
+    enabled: design === 'route',
+  })
 
   useEffect(() => {
     if (showPhoto) return
@@ -42,9 +52,15 @@ export function ThemeCard({ design, accent, theme, selected, accentHex, onClick,
     const [r, g, b] = customRgb ?? ACCENT_RGB[accent][dark ? 'dark' : 'light']
     canvas.width = THUMB_CANVAS
     canvas.height = THUMB_CANVAS
-    // For map theme: include real GPS route; for memory: no photo (camera placeholder).
-    drawTheme(ctx, design, THUMB_CANVAS, THUMB_CANVAS, r, g, b, dark, design === 'map' ? gpsRoute : null, null)
-  }, [showPhoto, design, accent, theme, gpsRoute, customRgb])
+    // Map and route themes get the real GPS route; memory gets no photo here
+    // (the camera placeholder), since the picked one renders as an <img>.
+    drawTheme(ctx, design, THUMB_CANVAS, THUMB_CANVAS, r, g, b, dark, {
+      gpsRoute: design === 'map' || design === 'route' ? gpsRoute : null,
+      mapImage,
+      mapPoints,
+      mapFailed,
+    })
+  }, [showPhoto, design, accent, theme, gpsRoute, customRgb, mapImage, mapPoints, mapFailed])
 
   return (
     <button type="button" onClick={onClick} className="flex shrink-0 flex-col items-center gap-1.5">

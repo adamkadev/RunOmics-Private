@@ -1,24 +1,30 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
 const STORAGE_KEY = 'ro-onboarding-seen'
 
+// Whether the hint was already dismissed lives in localStorage, which the server
+// can't see - reading it during render would hydrate-mismatch for everyone who
+// dismissed it. Render nothing until mounted, then show the hint only if unseen,
+// so a returning user never gets a flash of the card they already closed.
 export function FirstLaunchHint() {
-  const [dismissed, setDismissed] = useState(
-    () => typeof window !== 'undefined' && !!window.localStorage.getItem(STORAGE_KEY)
-  )
+  const [visible, setVisible] = useState(false)
 
-  if (dismissed) return null
+  useEffect(() => {
+    if (!window.localStorage.getItem(STORAGE_KEY)) setVisible(true)
+  }, [])
+
+  if (!visible) return null
 
   const s = t.dashboard.onboarding
 
   function dismiss() {
     window.localStorage.setItem(STORAGE_KEY, '1')
-    setDismissed(true)
+    setVisible(false)
   }
 
   return (

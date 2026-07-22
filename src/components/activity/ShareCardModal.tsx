@@ -5,9 +5,10 @@ import { createPortal } from 'react-dom'
 import { useTheme } from 'next-themes'
 import { X } from 'lucide-react'
 import type { Activity } from '@/domain/activity/types'
-import { renderShareCard, loadImage, type ShareDesign, type ThemeMode } from '@/lib/shareCard'
+import { renderShareCard, loadImage, W, H, type ShareDesign, type ThemeMode } from '@/lib/shareCard'
 import { shareCardFile, saveCardPng, copyCardPng } from '@/lib/shareCardExport'
 import { useShareCardPrefs } from '@/lib/useShareCardPrefs'
+import { useShareCardMap } from '@/lib/useShareCardMap'
 import { useShareCardGeocode } from '@/lib/useShareCardGeocode'
 import { useDragToDismiss } from '@/lib/useDragToDismiss'
 import { useFocusTrap } from '@/lib/useFocusTrap'
@@ -38,6 +39,19 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   } = useShareCardPrefs(appTheme)
   const { locationName, streetLabels } = useShareCardGeocode(activity)
 
+  // The route design needs a real trace; without one its thumbnail is hidden,
+  // so a design remembered from another activity falls back for this render
+  // only - the stored preference is left alone.
+  const hasRoute = (activity.route?.length ?? 0) > 1
+  const design: ShareDesign = selectedDesign === 'route' && !hasRoute ? 'aurora' : selectedDesign
+  const { image: mapImage, points: mapPoints, failed: mapFailed } = useShareCardMap({
+    route: activity.route,
+    theme: shareTheme,
+    width: W,
+    height: H,
+    enabled: design === 'route',
+  })
+
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [photoImage, setPhotoImage] = useState<HTMLImageElement | null>(null)
   const [copyState, setCopyState] = useState<'idle' | 'copied'>('idle')
@@ -65,17 +79,20 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
 
   const renderOptions = useCallback(() => ({
     activity,
-    design: selectedDesign,
+    design,
     accent: effectiveAccent,
     customAccentHex,
     theme: shareTheme,
     showStats: true,
-    showMap: selectedDesign === 'map',
+    showMap: design === 'map',
     photoImage,
     gpsRoute: activity.route,
     locationName,
     streetLabels,
-  }), [activity, selectedDesign, effectiveAccent, customAccentHex, shareTheme, photoImage, locationName, streetLabels])
+    mapImage,
+    mapPoints,
+    mapFailed,
+  }), [activity, design, effectiveAccent, customAccentHex, shareTheme, photoImage, locationName, streetLabels, mapImage, mapPoints, mapFailed])
 
   // Redraw preview canvas whenever options change
   useEffect(() => {
@@ -105,10 +122,10 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
       .catch(() => URL.revokeObjectURL(url))
   }
 
-  const handleSave = () => saveCardPng(activity, selectedDesign, renderOptions())
+  const handleSave = () => saveCardPng(activity, design, renderOptions())
   const handleShare = () =>
     canShareFiles
-      ? shareCardFile(activity, selectedDesign, renderOptions(),
+      ? shareCardFile(activity, design, renderOptions(),
           `${activity.description || t.activity.metaFallbackTitle} - RunOmics`)
       : handleSave()
   const handleCopy = () => {
@@ -120,7 +137,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
       .catch(console.error)
   }
 
-  const isMemory = selectedDesign === 'memory'
+  const isMemory = design === 'memory'
 
   return createPortal(
     <div
@@ -193,7 +210,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
           </div>
 
           <ShareThemePicker
-            selectedDesign={selectedDesign}
+            selectedDesign={design}
             accent={effectiveAccent}
             theme={shareTheme}
             accentHex={shareAccentHex}

@@ -3,7 +3,7 @@ import { formatClock, formatDistance, formatDurationShort } from '@/lib/formatte
 import { shareCardTitle } from '@/lib/shareCardStats'
 import type { ShareDesign } from '@/lib/shareCardPalette'
 import { projectRoute, simplifyRoute, type LngLat } from '@/lib/shareCardMap'
-import { SHARE_BACKDROPS, SHARE_CARD_COLORS as SHARE } from '@/lib/colors'
+import { MAP_COLORS, SHARE_BACKDROPS, SHARE_CARD_COLORS as SHARE } from '@/lib/colors'
 import { ink, paper } from '@/lib/palette'
 import { t } from '@/i18n'
 
@@ -103,12 +103,9 @@ function drawHeroMetric(
   ctx.restore()
 }
 
-/** `crossOrigin` must be set for remote images, or drawing them taints the
- *  canvas and every PNG export throws. */
-export function loadImage(src: string, crossOrigin?: 'anonymous'): Promise<HTMLImageElement> {
+export function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image()
-    if (crossOrigin) img.crossOrigin = crossOrigin
     img.onload = () => resolve(img)
     img.onerror = () => reject(new Error(`Failed to load ${src}`))
     img.src = src
@@ -191,7 +188,7 @@ function glass(ctx: Ctx, cx: number, cy: number, w: number, h: number, rot: numb
   ctx.restore()
 }
 
-function drawCover(ctx: Ctx, img: HTMLImageElement, x: number, y: number, w: number, h: number) {
+function drawCover(ctx: Ctx, img: HTMLImageElement | HTMLCanvasElement, x: number, y: number, w: number, h: number) {
   const ir = img.width / img.height
   const br = w / h
   const sw = ir > br ? img.height * br : img.width
@@ -377,16 +374,56 @@ function drawMapShimmer(ctx: Ctx, W: number, H: number, dark: boolean) {
   ctx.fillStyle = sheen; ctx.fillRect(0, 0, W, H)
 }
 
+/** The trace exactly as the activity map draws it - a casing under a flat
+ *  line, round joins, no glow - with the line in the athlete's accent. */
+function paintActivityTrace(ctx: Ctx, pts: [number, number][], r: number, g: number, b: number, dark: boolean) {
+  const first = pts[0]
+  const last = pts[pts.length - 1]
+  if (!first || !last) return
+
+  const stroke = (color: string, lw: number, alpha = 1) => {
+    ctx.save()
+    ctx.beginPath(); ctx.moveTo(first[0], first[1])
+    pts.forEach(([px, py]) => ctx.lineTo(px, py))
+    ctx.globalAlpha = alpha
+    ctx.strokeStyle = color; ctx.lineWidth = lw
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke()
+    ctx.restore()
+  }
+  // Slightly wider than the activity map's 7/4: the card is read at phone
+  // scale, where the thinner pair all but disappears.
+  stroke(dark ? MAP_COLORS.routeCasingDark : MAP_COLORS.routeCasingLight, 9, 0.85)
+  stroke(accent(r, g, b, 1), 6)
+
+  // Start and finish dots, in the activity map's marker shape (white ring),
+  // keeping the share card's own colors: green start, accent finish. The
+  // finish only exists when the run is not a loop, as on the activity map.
+  const dot = (pt: [number, number], fill: string) => {
+    ctx.save()
+    ctx.beginPath(); ctx.arc(pt[0], pt[1], 6.5, 0, Math.PI * 2)
+    ctx.fillStyle = fill
+    ctx.shadowColor = ink(0.3); ctx.shadowBlur = 5; ctx.shadowOffsetY = 1
+    ctx.fill()
+    ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0
+    ctx.strokeStyle = paper(1); ctx.lineWidth = 2; ctx.stroke()
+    ctx.restore()
+  }
+  const isLoop = Math.abs(last[0] - first[0]) < 4 && Math.abs(last[1] - first[1]) < 4
+  dot(first, SHARE.routeStart)
+  if (!isLoop) dot(last, accent(r, g, b, 1))
+}
+
 export function draw_route(
   ctx: Ctx, W: number, H: number,
   r: number, g: number, b: number,
   dark: boolean,
   gpsRoute?: LngLat[] | null,
-  mapImage?: HTMLImageElement | null,
+  mapImage?: HTMLCanvasElement | null,
+  mapPoints?: [number, number][] | null,
   mapFailed?: boolean,
 ) {
-  // No usable trace, or MapTiler is out of reach: the stylized map design is
-  // the graceful degradation, not a blank card.
+  // No usable trace, or the map never rendered: the stylized map design is the
+  // graceful degradation, not a blank card.
   if (!gpsRoute || gpsRoute.length < 2 || mapFailed) {
     draw_map(ctx, W, H, r, g, b, dark, gpsRoute, null, undefined, null)
     return
@@ -399,8 +436,9 @@ export function draw_route(
   }
   drawMapScrim(ctx, W, H, dark)
 
-  // Same framing MapTiler used for the image, so the trace lands on its streets.
-  paintRoute(ctx, projectRoute(gpsRoute, W, H), r, g, b, dark)
+  // MapLibre's own projection once it has rendered, so the trace lands exactly
+  // on its streets; the matching fit stands in while the tiles are on their way.
+  paintActivityTrace(ctx, mapPoints ?? projectRoute(gpsRoute, W, H), r, g, b, dark)
 }
 
 function drawMapStreetLabels(ctx: Ctx, W: number, H: number, dark: boolean, streetLabels: string[]) {
@@ -852,8 +890,10 @@ export interface ThemeData {
   locationName?: string | null
   distanceKm?: number
   streetLabels?: string[] | null
-  /** `route` design: the MapTiler basemap, once it has loaded. */
-  mapImage?: HTMLImageElement | null
+  /** `route` design: the rendered basemap, once it has loaded. */
+  mapImage?: HTMLCanvasElement | null
+  /** `route` design: the trace as the basemap's own renderer projected it. */
+  mapPoints?: [number, number][] | null
   /** `route` design: the basemap will not arrive, fall back to `map`. */
   mapFailed?: boolean
 }
@@ -867,13 +907,13 @@ export function drawTheme(
   dark: boolean,
   data: ThemeData = {},
 ): void {
-  const { gpsRoute, photoImg, locationName, distanceKm, streetLabels, mapImage, mapFailed } = data
+  const { gpsRoute, photoImg, locationName, distanceKm, streetLabels, mapImage, mapPoints, mapFailed } = data
   switch (theme) {
     case 'aurora':  draw_aurora(ctx, W, H, r, g, b, dark); break
     case 'pulse':   draw_pulse(ctx, W, H, r, g, b, dark); break
     case 'terrain': draw_terrain(ctx, W, H, r, g, b, dark); break
     case 'prism':   draw_prism(ctx, W, H, r, g, b, dark); break
-    case 'route':   draw_route(ctx, W, H, r, g, b, dark, gpsRoute, mapImage, mapFailed); break
+    case 'route':   draw_route(ctx, W, H, r, g, b, dark, gpsRoute, mapImage, mapPoints, mapFailed); break
     case 'map':     draw_map(ctx, W, H, r, g, b, dark, gpsRoute, locationName, distanceKm, streetLabels); break
     case 'memory':  draw_memory(ctx, W, H, r, g, b, dark, photoImg ?? null); break
   }

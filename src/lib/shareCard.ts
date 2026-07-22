@@ -25,9 +25,11 @@ export interface RenderOptions {
   locationName?: string | null
   streetLabels?: string[]
   customAccentHex?: string
-  // The `route` design's MapTiler basemap: the image once loaded, or the flag
-  // that says it never will and the drawn `map` should stand in.
-  mapImage?: HTMLImageElement | null
+  // The `route` design's basemap: the rendered tiles and the trace projected
+  // onto them, or the flag saying they never arrived and the drawn `map`
+  // should stand in.
+  mapImage?: HTMLCanvasElement | null
+  mapPoints?: [number, number][] | null
   mapFailed?: boolean
 }
 
@@ -35,7 +37,7 @@ export interface RenderOptions {
 export { rgbTriplet as hexToRgb }
 
 export function renderShareCard(canvas: HTMLCanvasElement, options: RenderOptions, scale = 1) {
-  const { activity, design, accent, theme, showStats, showMap, photoImage, gpsRoute, locationName, streetLabels, customAccentHex, mapImage, mapFailed } = options
+  const { activity, design, accent, theme, showStats, showMap, photoImage, gpsRoute, locationName, streetLabels, customAccentHex, mapImage, mapPoints, mapFailed } = options
   const dark = theme === 'dark'
   canvas.width = W * scale
   canvas.height = H * scale
@@ -55,6 +57,7 @@ export function renderShareCard(canvas: HTMLCanvasElement, options: RenderOption
     distanceKm: activity.distanceKm,
     streetLabels,
     mapImage,
+    mapPoints,
     mapFailed,
   })
 
