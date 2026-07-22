@@ -295,9 +295,8 @@ export const en = {
       title: 'Recent Activities',
     },
     heatmap: {
-      title: 'Activity',
-      window: '· 12 months',
-      days: 'days',
+      title: 'Consistency',
+      activeDays: (n: number) => `${n} active days`,
       less: 'Less',
       more: 'More',
       restDay: 'Rest day',

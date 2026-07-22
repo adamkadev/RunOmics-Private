@@ -287,9 +287,8 @@ export const fr = {
       title: 'Activités récentes',
     },
     heatmap: {
-      title: 'Activité',
-      window: '· 12 mois',
-      days: 'jours',
+      title: 'Régularité',
+      activeDays: (n: number) => `${n} jours actifs`,
       less: 'Moins',
       more: 'Plus',
       restDay: 'Repos',

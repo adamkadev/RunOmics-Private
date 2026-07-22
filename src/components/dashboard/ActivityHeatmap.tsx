@@ -8,13 +8,18 @@ import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 const MONTHS = t.dashboard.heatmap.months
-const GAP = 1
+
+// Cells stay square and fill the card width, so the gap has to grow with them -
+// a fixed 1px between 20px cells reads as one solid block rather than a grid.
+function gapFor(cellSize: number): number {
+  return cellSize >= 16 ? 3 : cellSize >= 11 ? 2 : 1
+}
 
 // Intensity scale mixed from the active accent, so it follows the chosen palette.
 // Mixing toward --card (rather than fixed light/dark stops) adapts to dark mode
 // for free. Level 0 keeps a faint green tint (like the mockup's empty cells) and
 // the ramp climbs steeply so busy weeks read as a vivid, saturated accent.
-const LEVEL_MIX_PCT = [10, 32, 54, 74, 90, 100] as const
+const LEVEL_MIX_PCT = [10, 45, 72, 100] as const
 
 function levelStyle(level: number) {
   return { backgroundColor: `color-mix(in oklab, var(--accent) ${LEVEL_MIX_PCT[level]}%, var(--card))` }
@@ -22,11 +27,9 @@ function levelStyle(level: number) {
 
 function getLevel(km: number): number {
   if (km === 0) return 0
-  if (km < 5)  return 1
-  if (km < 10) return 2
-  if (km < 15) return 3
-  if (km < 20) return 4
-  return 5
+  if (km < 8)  return 1
+  if (km < 16) return 2
+  return 3
 }
 
 function formatTooltipDate(dateStr: string) {
@@ -43,6 +46,7 @@ export function ActivityHeatmap({ days }: Props) {
   const [tooltip, setTooltip] = useState<{ day: HeatmapDay; x: number; y: number } | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [cellSize, setCellSize] = useState(11)
+  const gap = gapFor(cellSize)
 
   // Group into weeks (Mon-Sun columns)
   const weeks: HeatmapDay[][] = []
@@ -64,11 +68,12 @@ export function ActivityHeatmap({ days }: Props) {
     if (!el) return
     const compute = () => {
       const w = el.clientWidth
-      // No weekday-label gutter to reserve now, so the grid gets the full
-      // width - dense small cells so all 12 months fit on one line without
-      // scrolling (matches the mockup) instead of chunky squares that overflow.
-      const size = Math.floor((w - (weeks.length - 1) * GAP) / weeks.length)
-      setCellSize(Math.max(5, Math.min(11, size)))
+      // All 12 months fit on one line without scrolling. No upper cap on the
+      // cell size: on desktop the cells grow so the grid spans the whole card
+      // instead of stopping at ~640px and leaving dead space to the right.
+      // Two passes, since the gap tier depends on the size it helps determine.
+      const solve = (gap: number) => Math.floor((w - (weeks.length - 1) * gap) / weeks.length)
+      setCellSize(Math.max(5, solve(gapFor(solve(1)))))
     }
     compute()
     const obs = new ResizeObserver(compute)
@@ -90,49 +95,47 @@ export function ActivityHeatmap({ days }: Props) {
       lastMonth = month
     }
   })
-  const shownMonthLabels = monthLabels.filter((_, i) => i % 2 === 0)
 
-  const totalKm = days.reduce((s, d) => s + d.distanceKm, 0)
+  // A 12-month window straddles 13 calendar months (it opens mid-month and
+  // closes in that same month a year later), and alternating over 13 leaves 7
+  // labels with the same month at both ends. Drop the leading sliver so the
+  // scale is 12 whole months and alternating yields 6.
+  const firstDay = days.find(d => d.date)?.date
+  const opensMidMonth = firstDay ? new Date(firstDay + 'T12:00:00').getDate() !== 1 : false
+  const wholeMonths = opensMidMonth ? monthLabels.slice(1) : monthLabels
+  const shownMonthLabels = wholeMonths.filter((_, i) => i % 2 === 0)
+
   const activeDays = days.filter(d => d.distanceKm > 0).length
 
   return (
     <GlassSurface variant="card" className="p-5">
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground/80">
-          {t.dashboard.heatmap.title} <span className="font-normal text-subtle">{t.dashboard.heatmap.window}</span>
-        </h3>
-        <span className="text-xs text-subtle">
-          <span className="font-semibold text-foreground">{activeDays}</span> {t.dashboard.heatmap.days} ·{' '}
-          <span className="font-semibold text-foreground">{Math.round(totalKm)}</span> {t.units.km}
+        <h3 className="text-sm font-semibold text-foreground/80">{t.dashboard.heatmap.title}</h3>
+        <span className="text-sm font-semibold text-accent-text">
+          {t.dashboard.heatmap.activeDays(activeDays)}
         </span>
       </div>
 
       <div ref={containerRef} className="w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <div style={{ minWidth: 'max-content' }}>
-          <div className="relative mb-1 h-3">
-            {shownMonthLabels.map(({ label, col }) => (
-              <span
-                key={`${label}-${col}`}
-                className="absolute text-micro text-subtle"
-                style={{ left: col * (cellSize + GAP) }}
-              >
-                {label}
-              </span>
-            ))}
-          </div>
-
           {/* Grid - no weekday-label gutter, so the full width goes to cells */}
-          <div className="flex" style={{ gap: GAP }}>
+          <div className="flex" style={{ gap: gap }}>
             {weeks.map((wk, col) => (
-              <div key={col} className="flex flex-col" style={{ gap: GAP }}>
+              <div key={col} className="flex flex-col" style={{ gap: gap }}>
                 {wk.map((day, row) =>
                   !day.date ? (
                     <div key={row} style={{ width: cellSize, height: cellSize }} />
                   ) : (
                     <div
                       key={row}
-                      className="rounded-[1.5px] transition-opacity hover:opacity-70"
-                      style={{ width: cellSize, height: cellSize, cursor: 'default', ...levelStyle(getLevel(day.distanceKm)) }}
+                      className="transition-opacity hover:opacity-70"
+                      style={{
+                        width: cellSize,
+                        height: cellSize,
+                        borderRadius: Math.max(1.5, cellSize * 0.18),
+                        cursor: 'default',
+                        ...levelStyle(getLevel(day.distanceKm)),
+                      }}
                       onMouseEnter={(e) => {
                         const rect = e.currentTarget.getBoundingClientRect()
                         setTooltip({ day, x: rect.left + rect.width / 2, y: rect.top })
@@ -144,10 +147,20 @@ export function ActivityHeatmap({ days }: Props) {
               </div>
             ))}
           </div>
+
+          {/* Month scale sits under the grid, like an x-axis */}
+          {/* Spread rather than absolutely positioned per column: the labels
+              mark evenly spaced months anyway, and justify-between pins the
+              first flush left and the last flush right across the full grid. */}
+          <div className="mt-2 flex justify-between leading-4 text-micro text-subtle">
+            {shownMonthLabels.map(({ label, col }) => (
+              <span key={`${label}-${col}`}>{label}</span>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="mt-3 flex items-center justify-end gap-1.5">
+      <div className="mt-1 flex items-center justify-end gap-1.5">
         <span className="text-micro text-subtle">{t.dashboard.heatmap.less}</span>
         {LEVEL_MIX_PCT.map((_, i) => (
           <div key={i} className="rounded-[2px]" style={{ width: 10, height: 10, ...levelStyle(i) }} />
