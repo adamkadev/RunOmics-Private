@@ -17,6 +17,8 @@ import type { LoadRiskPanel as LoadRiskPanelData } from '@/application/usecases/
 import type { LoadBalanceData } from '@/application/usecases/GetLoadBalance'
 import type { TrainingStatusHistory } from '@/application/usecases/GetTrainingStatusHistory'
 import type { GarminRacePredictionsData } from '@/application/usecases/GetGarminRacePredictions'
+import type { ThresholdHistoryData } from '@/application/usecases/GetThresholdHistory'
+import type { FormProjection } from '@/application/usecases/GetFormProjection'
 import { formatDurationShort } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartCardSkeleton } from '@/components/ui/Skeleton'
@@ -85,6 +87,10 @@ export function AnalyticsClient({
   loadBalance,
   statusHistory,
   racePredictions,
+  threshold,
+  vo2maxTopPercent,
+  activeDays,
+  formProjection,
 }: {
   data: AnalyticsPageData
   comparison: YearComparisonData | null
@@ -97,6 +103,10 @@ export function AnalyticsClient({
   loadBalance: LoadBalanceData | null
   statusHistory: TrainingStatusHistory | null
   racePredictions: GarminRacePredictionsData | null
+  threshold: ThresholdHistoryData | null
+  vo2maxTopPercent: number | null
+  activeDays: number
+  formProjection: FormProjection | null
 }) {
   const { years, byYear } = data
 
@@ -275,8 +285,14 @@ export function AnalyticsClient({
               <FitnessGroup
                 trainingLoad={trainingLoad}
                 statusHistory={statusHistory}
-                vo2maxHistory={vo2maxHistory}
                 loadRisk={loadRisk}
+                vo2maxHistory={vo2maxHistory}
+                vo2maxTopPercent={vo2maxTopPercent}
+                weeklyTrends={data.weeklyTrends}
+                threshold={threshold}
+                activeDays={activeDays}
+                racePredictions={racePredictions}
+                formProjection={formProjection}
               />
             )}
 
