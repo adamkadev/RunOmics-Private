@@ -9,7 +9,6 @@ import { getLoadRiskPanel } from '@/application/usecases/GetLoadRiskPanel'
 import { getLoadBalance } from '@/application/usecases/GetLoadBalance'
 import { getTrainingStatusHistory } from '@/application/usecases/GetTrainingStatusHistory'
 import { getGarminRacePredictions } from '@/application/usecases/GetGarminRacePredictions'
-import { getThresholdHistory } from '@/application/usecases/GetThresholdHistory'
 import { AnalyticsClient } from '@/components/analytics/AnalyticsClient'
 
 export const revalidate = 3600
@@ -28,7 +27,6 @@ export default async function AnalyticsPage() {
   const loadBalance = getLoadBalance()
   const statusHistory = getTrainingStatusHistory()
   const racePredictions = getGarminRacePredictions()
-  const threshold = getThresholdHistory()
 
   const seasonHeadline = getSeasonHeadline(data, comparison)
 
@@ -46,7 +44,6 @@ export default async function AnalyticsPage() {
         loadBalance={loadBalance}
         statusHistory={statusHistory}
         racePredictions={racePredictions}
-        threshold={threshold}
       />
     </div>
   )

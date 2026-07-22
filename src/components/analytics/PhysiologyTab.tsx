@@ -1,6 +1,6 @@
 'use client'
 
-import type { DailyRunningDynamics, WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
+import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import type { VO2maxSeries } from '@/application/usecases/GetVO2maxHistory'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { TrainingLoadData } from '@/application/usecases/GetTrainingLoad'
@@ -14,8 +14,6 @@ import { TrainingStatusHistoryChart } from './TrainingStatusHistoryChart'
 import { HrTrendChart } from './HrTrendChart'
 import { ZoneDistributionChart } from './ZoneDistributionChart'
 import { RunningFormChart } from './RunningFormChart'
-import { TrainingEffectChart } from './TrainingEffectChart'
-import { RunningDynamicsTrendChart } from './RunningDynamicsTrendChart'
 import { VO2maxChart } from './VO2maxChart'
 import { TrainingZones } from './TrainingZones'
 
@@ -27,7 +25,6 @@ interface Props {
   statusHistory: TrainingStatusHistory | null
   vo2maxHistory: VO2maxSeries
   zones: TrainingZonesData | null
-  runningDynamicsDaily: DailyRunningDynamics[]
 }
 
 export function PhysiologyTab({
@@ -38,7 +35,6 @@ export function PhysiologyTab({
   statusHistory,
   vo2maxHistory,
   zones,
-  runningDynamicsDaily,
 }: Props) {
   return (
     <div className="space-y-4">
@@ -50,13 +46,10 @@ export function PhysiologyTab({
         <VO2maxChart series={vo2maxHistory} />
         <HrTrendChart points={weeklyTrends} />
         <ZoneDistributionChart points={weeklyTrends} />
-        <TrainingEffectChart points={weeklyTrends} />
         <div className="lg:col-span-2">
           <RunningFormChart points={weeklyTrends} />
         </div>
       </div>
-
-      <RunningDynamicsTrendChart data={runningDynamicsDaily} />
 
       {zones && <TrainingZones data={zones} />}
     </div>
