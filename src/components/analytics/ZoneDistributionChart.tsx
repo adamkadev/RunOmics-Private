@@ -4,7 +4,8 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { formatDuration } from '@/lib/formatters'
 import type { WeeklyTrendPoint, ZoneShare } from '@/application/usecases/GetAnalyticsData'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
-import { CHART_COLORS, ZONE_COLORS } from '@/lib/colors'
+import { CHART_COLORS, ZONE_COLORS, ZONE_COLORS_DARK } from '@/lib/colors'
+import { useTheme } from 'next-themes'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { ChartExplain } from '@/components/ui/ChartExplain'
 import { WindowedChartCard } from '@/components/ui/ChartWindowNav'
@@ -51,6 +52,12 @@ function CustomTooltip({ active, payload }: TooltipProps) {
 }
 
 export function ZoneDistributionChart({ points }: { points: WeeklyTrendPoint[] }) {
+  // Read before the empty-data bail so the hook order never changes. Undefined
+  // on the first client render (next-themes resolves `system` late), and the
+  // dark ramp is the safer stand-in - it also reads on the light canvas.
+  const { resolvedTheme } = useTheme()
+  const zoneColors = resolvedTheme === 'light' ? ZONE_COLORS : ZONE_COLORS_DARK
+
   if (!points.some((p) => Object.keys(p.zoneSeconds).length > 0)) return null
 
   // The donut sums the whole window rather than plotting it, so it needs every
@@ -83,7 +90,7 @@ export function ZoneDistributionChart({ points }: { points: WeeklyTrendPoint[] }
                       isAnimationActive={false}
                     >
                       {data.map((z) => (
-                        <Cell key={z.zone} fill={ZONE_COLORS[z.zone] ?? CHART_COLORS.axisTick} />
+                        <Cell key={z.zone} fill={zoneColors[z.zone] ?? CHART_COLORS.axisTick} />
                       ))}
                     </Pie>
                     <Tooltip content={<CustomTooltip />} />
@@ -94,7 +101,7 @@ export function ZoneDistributionChart({ points }: { points: WeeklyTrendPoint[] }
                 {data.map((z) => (
                   <li key={z.zone} className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: ZONE_COLORS[z.zone] }} />
+                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: zoneColors[z.zone] }} />
                       <span className="text-muted-foreground">
                         Z{z.zone} {ZONE_LABELS[z.zone]}
                       </span>

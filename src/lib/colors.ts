@@ -59,7 +59,9 @@ export const CHART_COLORS = {
 export const TRAINING_STATUS_COLORS: Record<string, string> = {
   fresh:        c.roEmerald, // peak fitness, fatigue shed
   productive:   c.emerald400,
-  maintaining:  c.sky500,
+  // Teal rather than a second blue: recovery already owns "blue = deliberate
+  // rest", and the two read as the same swatch in the dark legend.
+  maintaining:  c.teal500,
   recovery:     c.blue600,
   unproductive: c.amber500,
   detraining:   c.zinc400,
@@ -84,13 +86,27 @@ export const TRAINING_PLAN_PHASE_COLORS: Record<string, string> = {
 // against different backdrops. They are listed together so the divergence is
 // visible rather than scattered across components.
 
-/** Z1-Z5 for charts and inline SVG. */
+/** Z1-Z5 for charts and inline SVG, on a light canvas. */
 export const ZONE_COLORS: Record<number, string> = {
   1: c.gray400,
   2: c.blue400,
   3: c.emerald400,
   4: c.orange500,
   5: c.red500,
+}
+
+/**
+ * The dark-canvas half of the same ramp - the `--zone-4` / `--zone-5` tokens.
+ * Z4 orange500 and Z5 red500 collapse into one hue at donut-slice size on the
+ * near-black canvas; the lifted pair keeps them apart. Recharts takes attribute
+ * strings, so the tokens have to be resolved here rather than via `var()`.
+ */
+export const ZONE_COLORS_DARK: Record<number, string> = {
+  1: paper(0.55),
+  2: c.roBlueHi,
+  3: c.roEmeraldHi,
+  4: c.roOrangeHi,
+  5: c.roRed,
 }
 
 // HR zone Tailwind classes, keyed by zone number. Shared between ZoneBar

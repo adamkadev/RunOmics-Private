@@ -538,9 +538,13 @@
     }
   }
 
+  /* The dense-grid glass: translucent like .glass-card but deliberately without
+     a backdrop-filter, so a grid of small tiles never blows the ~6-blurred-
+     surfaces-per-viewport budget (see GlassSurface). Use it for tile grids and
+     list rows; use .glass-card for the large cards. */
   .glass-row {
     background: var(--glass-row-bg);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--glass-border);
     border-radius: 14px;
   }
 

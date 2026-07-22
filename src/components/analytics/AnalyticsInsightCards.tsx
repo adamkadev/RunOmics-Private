@@ -78,7 +78,7 @@ function Card({
   children: ReactNode
 }) {
   return (
-    <div className="rounded-[15px] border border-border bg-card p-[13px]">
+    <div className="glass-row rounded-[15px] p-[13px]">
       <div className="flex items-start justify-between">
         <span className="text-[10px] font-bold uppercase tracking-[0.05em] text-subtle">{label}</span>
         <span className={chipTone === 'accent' ? 'text-[10px] font-semibold text-accent-text' : 'text-[10px] font-semibold text-subtle'}>

@@ -17,7 +17,7 @@ export function ProfileShoes({ shoes }: { shoes: ShoeStats[] }) {
   return (
     <Link
       href="/shoes"
-      className="flex items-center gap-3 rounded-[15px] border border-border bg-card px-3.5 py-3.5 transition-colors active:scale-[0.99]"
+      className="glass-row flex items-center gap-3 rounded-[15px] px-3.5 py-3.5 transition-colors active:scale-[0.99]"
     >
       <span className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-foreground/[0.06] text-muted-foreground">
         <Footprints size={18} strokeWidth={1.8} />

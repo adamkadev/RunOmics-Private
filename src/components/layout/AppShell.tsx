@@ -59,6 +59,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen" data-page-aurora={getPageAuroraKey(pathname)}>
       <Aurora />
       <ThemeSync />
+      {/* Scrim under the iOS status bar: scrolling content used to run straight
+          under the clock and battery. A plain fade out of `--background` rather
+          than a blur - it already follows the theme, and costs no compositing.
+          Mobile only; the desktop layout has no status bar over it. */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-x-0 top-0 z-20 lg:hidden"
+        style={{
+          height: 'calc(var(--safe-top) + 28px)',
+          background: 'linear-gradient(to bottom, var(--background) 30%, transparent)',
+        }}
+      />
       <Sidebar />
       <main ref={containerRef} className="min-h-screen lg:ml-[248px]">
         <div

@@ -4,7 +4,7 @@ import { Skeleton } from '@/components/ui/Skeleton'
 export default function ActivitiesLoading() {
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-border bg-card/60 px-5 py-3">
+      <div className="glass-row rounded-2xl px-5 py-3">
         <Skeleton className="h-7 w-32" />
         <Skeleton className="mt-2 h-3.5 w-24" />
       </div>

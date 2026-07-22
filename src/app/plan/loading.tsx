@@ -2,7 +2,7 @@ import { Skeleton } from '@/components/ui/Skeleton'
 
 function DaySkeleton() {
   return (
-    <div className="rounded-lg border border-border bg-card p-2">
+    <div className="glass-row rounded-lg p-2">
       <Skeleton className="mb-2 h-3 w-5" />
       <div className="space-y-1">
         <Skeleton className="h-2.5 w-full rounded" />

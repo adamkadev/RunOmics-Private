@@ -44,8 +44,11 @@ export function HrTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
 
   const legend = (
     <>
-      <LegendDot color={CHART_COLORS.hrEasy} label={t.analytics.charts.paceTrend.easy} />
-      <LegendDot color={CHART_COLORS.hr} label={t.analytics.charts.paceTrend.workout} />
+      {/* The easy/hard pair, not two reds: hrEasy (red300) and hr (red500) are
+          the same hue family and were indistinguishable in dark mode. Red stays
+          reserved for absolute HR readouts. */}
+      <LegendDot color={CHART_COLORS.easy} label={t.analytics.charts.paceTrend.easy} />
+      <LegendDot color={CHART_COLORS.hard} label={t.analytics.charts.paceTrend.workout} />
     </>
   )
 
@@ -102,8 +105,8 @@ export function HrTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
                     width={42}
                   />
                   <Tooltip content={<CustomTooltip />} />
-                  <Line type="monotone" dataKey="easyAvgHr" stroke={CHART_COLORS.hrEasy} strokeWidth={3} {...trendDots(CHART_COLORS.hrEasy)} connectNulls isAnimationActive={false} />
-                  <Line type="monotone" dataKey="hardAvgHr" stroke={CHART_COLORS.hr} strokeWidth={3} {...trendDots(CHART_COLORS.hr)} connectNulls isAnimationActive={false} />
+                  <Line type="monotone" dataKey="easyAvgHr" stroke={CHART_COLORS.easy} strokeWidth={3} {...trendDots(CHART_COLORS.easy)} connectNulls isAnimationActive={false} />
+                  <Line type="monotone" dataKey="hardAvgHr" stroke={CHART_COLORS.hard} strokeWidth={3} {...trendDots(CHART_COLORS.hard)} connectNulls isAnimationActive={false} />
                 </LineChart>
               </ResponsiveContainer>
             </ChartFigure>

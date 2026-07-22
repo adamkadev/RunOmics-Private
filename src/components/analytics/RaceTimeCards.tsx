@@ -34,7 +34,7 @@ export function RaceTimeCards({ data }: { data: GarminRacePredictionsData }) {
           const seconds = data.latest[key]!
           const trend = paceTrend(data.points, key)
           return (
-            <div key={key} className="rounded-[13px] border border-border bg-card px-2 py-[11px] text-center">
+            <div key={key} className="glass-row rounded-[13px] px-2 py-[11px] text-center">
               <div className="text-[9.5px] font-semibold text-subtle">{SHORT_LABEL[key]}</div>
               <div className="mt-[3px] font-display text-[13.5px] font-bold tabular-nums text-foreground">
                 {formatDurationShort(seconds)}

@@ -30,7 +30,11 @@ export function GlassTabBar() {
   return (
     <nav
       className={cn(
-        'fixed inset-x-0 bottom-0 z-30 flex items-center border-t border-border/70 bg-background/95 backdrop-blur-md transition-transform duration-200 ease-out lg:hidden',
+        // glass-nav, the same recipe as the Sidebar - the tab bar used to be
+        // near-opaque `bg-background/95` while every other chrome surface was glass.
+        // glass-nav draws a border on all four sides; only the top edge is on
+        // screen, so the other three are zeroed out.
+        'glass-nav fixed inset-x-0 bottom-0 z-30 flex items-center border-x-0 border-b-0 transition-transform duration-200 ease-out lg:hidden',
         hidden ? 'pointer-events-none translate-y-full' : 'translate-y-0'
       )}
       style={{ paddingBottom: 'max(4px, var(--safe-bottom))' }}
