@@ -71,6 +71,7 @@ export const TRAINING_STATUS_COLORS: Record<string, string> = {
 // gets its own build -> peak -> taper -> race-day progression instead of
 // reusing the status ladder's green/blue/amber/red meaning.
 export const TRAINING_PLAN_PHASE_COLORS: Record<string, string> = {
+  base:    c.roEmerald,
   build:   c.blue500,
   peak:    c.violet500,
   taper:   c.amber500,

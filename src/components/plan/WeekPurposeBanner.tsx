@@ -5,6 +5,7 @@ import type { TrainingStatusType } from '@/application/usecases/GetTrainingStatu
 import type { PlanPhaseRange, TrainingPlanPhase } from '@/application/usecases/GetTrainingPlan'
 import { TRAINING_STATUS_COLORS, TRAINING_PLAN_PHASE_COLORS } from '@/lib/colors'
 import { PlanPhaseTrack } from './PlanPhaseTrack'
+import { weeksInPlan, type PlanSpan } from '@/domain/training/planProgress'
 import { t } from '@/i18n'
 
 const TONE_CLASS: Record<WeekLoadLevel, { border: string; text: string; from: string }> = {
@@ -34,6 +35,8 @@ interface Props {
   /** The current Garmin Coach plan's phase ranges, rendered as a track inside
    *  this same card - the block banner and its progress are one visual unit. */
   planPhaseRanges: PlanPhaseRange[]
+  /** The plan's own start/end - the phases omit the base weeks. */
+  planSpan: PlanSpan | null
   today: string
 }
 
@@ -64,6 +67,7 @@ export function WeekPurposeBanner({
   planPhase,
   planned,
   planPhaseRanges,
+  planSpan,
   today,
 }: Props) {
   const verdict = over ? garminStatus : null
@@ -72,6 +76,7 @@ export function WeekPurposeBanner({
   if (over && level === null && adherence === null && verdict === null) return null
 
   const tone = TONE_CLASS[level ?? 'normal']
+  const blockWeek = weeksInPlan(planSpan, today)
   const accentColor = verdict ? TRAINING_STATUS_COLORS[verdict] : phase ? TRAINING_PLAN_PHASE_COLORS[phase] : null
   const title = verdict
     ? t.trainingStatus.status[verdict]
@@ -105,7 +110,7 @@ export function WeekPurposeBanner({
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <div
-            className={cn('text-[15px] font-bold leading-tight', !accentColor && tone.text)}
+            className={cn('font-display text-[18px] font-bold leading-tight', !accentColor && tone.text)}
             style={accentColor ? { color: accentColor } : undefined}
           >
             {title}
@@ -113,8 +118,13 @@ export function WeekPurposeBanner({
           {/* A running week shows what is planned; a finished one, how its load
               landed. The load percent is meaningless mid-week (partial total). */}
           {!over && planned && (
-            <div className="mt-0.5 text-xs text-muted-foreground">
-              {t.plan.weekPurpose.plannedSessions(planned.total, planned.key)}
+            <div className="mt-0.5 text-[11.5px] text-muted-foreground">
+              {[
+                t.plan.weekPurpose.plannedSessions(planned.total, planned.key),
+                blockWeek ? t.plan.weekPurpose.weekOfBlock(blockWeek.done, blockWeek.total) : null,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
             </div>
           )}
           {over && percent !== null && (
@@ -124,7 +134,7 @@ export function WeekPurposeBanner({
         {adherence && (
           <div className="shrink-0 text-right">
             <div
-              className={cn('text-base font-extrabold tabular-nums', !accentColor && tone.text)}
+              className={cn('font-display text-[22px] font-bold leading-none tabular-nums', !accentColor && tone.text)}
               style={accentColor ? { color: accentColor } : undefined}
             >
               {adherence.percent}%

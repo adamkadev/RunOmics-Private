@@ -8,6 +8,7 @@ import { t } from '@/i18n'
 const TRACK = 'color-mix(in srgb, var(--foreground) 8%, transparent)'
 
 const PHASE_LABEL: Record<TrainingPlanPhase, string> = {
+  base: t.plan.phaseTrack.base,
   build: t.plan.phaseTrack.build,
   peak: t.plan.phaseTrack.peak,
   taper: t.plan.phaseTrack.taper,
@@ -22,10 +23,11 @@ function days(from: string, to: string): number {
 }
 
 // Base -> Build -> Peak -> Taper progress bar, driven by the real Garmin Coach
-// phase ranges (build/peak/taper/race day - Garmin has no "base"). Each phase is
-// a segment sized by its length: past phases fill solid, the current one fills to
-// today, upcoming ones stay on the track. Nothing invents a phase the plan
-// doesn't state.
+// phase ranges. Garmin publishes no BASE phase, so getTrainingPlan reconstructs
+// it from the gap between the plan's own start date and its first published
+// phase - real dates, not a guess. Each phase is a segment sized by its length:
+// past phases fill solid, the current one fills to today, upcoming ones stay on
+// the track.
 export function PlanPhaseTrack({ ranges, today }: { ranges: PlanPhaseRange[]; today: string }) {
   if (ranges.length < 2) return null
 
@@ -53,7 +55,7 @@ export function PlanPhaseTrack({ ranges, today }: { ranges: PlanPhaseRange[]; to
           )
         })}
       </div>
-      <div className="mt-1.5 flex justify-between font-mono text-[9.5px]">
+      <div className="mt-1.5 flex justify-between font-mono text-[9.5px] font-semibold uppercase tracking-[0.04em]">
         {ranges.map((r) => {
           const color = TRAINING_PLAN_PHASE_COLORS[r.phase] ?? 'var(--accent)'
           const active = r.endDate >= today && r.startDate <= today

@@ -1180,6 +1180,17 @@ export const en = {
     weekdays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     switcher: { week: 'Week', month: 'Month' },
     weekOf: (label: string) => `Week of ${label}`,
+    // Tile-sized abbreviations of the activity types: a 44px day cell cannot
+    // fit "VO₂ Max" or "Threshold" without clipping them to nonsense.
+    typeShort: {
+      Sprint: 'Sprint',
+      Anaerobic: 'Anaero',
+      VO2Max: 'VO₂',
+      Threshold: 'Thresh',
+      Tempo: 'Tempo',
+      Base: 'Base',
+      Race: 'Race',
+    } as Record<ActivityType, string>,
     restDay: 'Rest',
     planned: 'Planned',
     structure: {
@@ -1225,6 +1236,7 @@ export const en = {
       thisWeek: 'This week',
       upcoming: 'Upcoming week',
       planPhase: {
+        base: 'Base week',
         build: 'Build week',
         peak: 'Peak week',
         taper: 'Taper week',
@@ -1232,9 +1244,10 @@ export const en = {
       },
       plannedSessions: (total: number, key: number) =>
         key > 0
-          ? `${total} session${total > 1 ? 's' : ''} planned · ${key} key`
-          : `${total} session${total > 1 ? 's' : ''} planned`,
-      adherence: (done: number, due: number) => `${done}/${due} done`,
+          ? `${total} session${total > 1 ? 's' : ''} · ${key} key`
+          : `${total} session${total > 1 ? 's' : ''}`,
+      weekOfBlock: (done: number, total: number) => `week ${done} of ${total}`,
+      adherence: (done: number, due: number) => `${done} / ${due} done`,
     },
   },
 

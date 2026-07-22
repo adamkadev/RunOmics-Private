@@ -3,6 +3,7 @@ import { getPlannedWorkouts } from '@/application/usecases/GetPlannedWorkouts'
 import { getTrainingStatusCalendar } from '@/application/usecases/GetTrainingStatusCalendar'
 import { getTrainingPlan } from '@/application/usecases/GetTrainingPlan'
 import { getNextRace } from '@/application/usecases/GetNextRace'
+import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { PlanClient } from '@/components/plan/PlanClient'
 import type { HrBounds } from '@/domain/training/trimp'
@@ -11,6 +12,8 @@ export default async function PlanPage() {
   const activities = getActivities()
   const plannedWorkouts = await getPlannedWorkouts()
   const nextRace = await getNextRace()
+  const trainingZones = await getTrainingZones()
+  const trainingPlan = getTrainingPlan()
   const athlete = getAthleteProfile()
   const hrBounds: HrBounds | undefined =
     athlete.maxHrBpm && athlete.restingHrBpm
@@ -23,8 +26,10 @@ export default async function PlanPage() {
       plannedWorkouts={plannedWorkouts}
       hrBounds={hrBounds}
       statusByDate={getTrainingStatusCalendar()}
-      planPhaseRanges={getTrainingPlan()?.ranges ?? []}
+      planPhaseRanges={trainingPlan?.ranges ?? []}
+      planSpan={trainingPlan}
       nextRace={nextRace}
+      trainingZones={trainingZones}
     />
   )
 }

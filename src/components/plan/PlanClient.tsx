@@ -6,6 +6,8 @@ import type { HrBounds } from '@/domain/training/trimp'
 import type { TrainingStatusCalendar } from '@/application/usecases/GetTrainingStatusCalendar'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
+import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
+import type { PlanSpan } from '@/domain/training/planProgress'
 import { PeriodNav } from '@/components/ui/PeriodNav'
 import { WeekView } from './WeekView'
 import { MonthView } from './MonthView'
@@ -22,11 +24,15 @@ interface Props {
   statusByDate: TrainingStatusCalendar
   planPhaseRanges: PlanPhaseRange[]
   nextRace: UpcomingRace | null
+  /** Athlete pace zones, so a planned session can state its target pace. */
+  trainingZones: TrainingZonesData | null
+  /** The plan's own start/end, for the week-of-block count. */
+  planSpan: PlanSpan | null
 }
 
 type ViewMode = 'week' | 'month'
 
-export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate, planPhaseRanges, nextRace }: Props) {
+export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate, planPhaseRanges, nextRace, trainingZones, planSpan }: Props) {
   const now = new Date()
   const today = isoDate(now)
   const [mode, setMode] = useState<ViewMode>('week')
@@ -168,6 +174,8 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate
             statusByDate={statusByDate}
             planPhaseRanges={planPhaseRanges}
             nextRace={nextRace}
+            trainingZones={trainingZones}
+            planSpan={planSpan}
             initialSelectedDate={focusDate}
           />
         ) : (

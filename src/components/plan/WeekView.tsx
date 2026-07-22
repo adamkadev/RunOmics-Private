@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Calendar, Check, ChevronRight, Footprints, X } from 'lucide-react'
+import { Check, ChevronRight, Footprints, X } from 'lucide-react'
 import type { Activity, ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import { ACTIVITY_TYPE_CONFIG, ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
 import type { HrBounds } from '@/domain/training/trimp'
@@ -26,15 +26,16 @@ import { PlannedWorkoutSheet } from './PlannedWorkoutSheet'
 import { WeekPurposeBanner } from './WeekPurposeBanner'
 import { RaceFooter } from './RaceFooter'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
+import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
+import { paceZoneKeyFor } from '@/domain/training/typePaceZone'
+import type { PlanSpan } from '@/domain/training/planProgress'
 import { addDays, isoDate, isoWeekNumber } from '@/lib/calendarDate'
-import { formatDateFull, formatDurationWords } from '@/lib/formatters'
+import { formatDate, formatDateFull, formatDurationWords, formatPaceRange } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
-const TODAY = 'var(--color-today)'
 const MISSED = 'var(--color-missed)'
 // alpha variants via color-mix (supported Safari 16.2+, all modern browsers)
-const TODAY_10 = 'color-mix(in srgb, var(--color-today) 10%, transparent)'
 const TODAY_38 = 'color-mix(in srgb, var(--color-today) 38%, transparent)'
 const MISSED_10 = 'color-mix(in srgb, var(--color-missed) 10%, transparent)'
 const MISSED_25 = 'color-mix(in srgb, var(--color-missed) 25%, transparent)'
@@ -54,53 +55,68 @@ interface Day {
   acts: Activity[]
 }
 
-function PlannedWorkoutRow({ plan, onTap }: { plan: PlannedWorkout; onTap: () => void }) {
+// The card itself stays a neutral surface and only the icon tile carries the
+// session's colour - a fully tinted card competes with the week strip above it,
+// where colour is what distinguishes the days.
+function PlannedWorkoutRow({
+  plan,
+  zones,
+  onTap,
+}: {
+  plan: PlannedWorkout
+  zones: TrainingZonesData | null
+  onTap: () => void
+}) {
   const typeColor = plan.type ? ACTIVITY_TYPE_CONFIG[plan.type as ActivityType].chartColor : null
   const Icon = plan.type ? ACTIVITY_TYPE_ICONS[plan.type as ActivityType] : Footprints
   const structure = plan.steps ?? parseWorkoutStructure(plan.name, plan.durationSecs)
+
+  // Target pace for the steady-effort types, straight off the athlete's own
+  // threshold-derived zones. Interval types have no single range, so they
+  // simply keep the type name.
+  const zoneKey = paceZoneKeyFor(plan.type as ActivityType | undefined)
+  const zone = zoneKey ? zones?.zones.find((z) => z.key === zoneKey) ?? null : null
+  const title = [
+    plan.name,
+    plan.durationSecs ? formatDurationWords(plan.durationSecs) : null,
+  ]
+    .filter(Boolean)
+    .join(' · ')
 
   return (
     <button
       type="button"
       onClick={onTap}
-      className={cn(
-        'w-full rounded-xl border border-dashed p-3 text-left transition-colors',
-        !typeColor && 'border-accent/35 bg-accent/[0.04] hover:bg-accent/[0.07]'
-      )}
-      style={typeColor ? { borderColor: `${typeColor}59`, background: `${typeColor}14` } : undefined}
+      className="w-full rounded-2xl border border-foreground/[0.08] bg-foreground/[0.04] p-3.5 text-left transition-colors hover:bg-foreground/[0.07]"
     >
       <div className="flex items-center gap-3">
         <span
           className={cn(
-            'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border',
-            !typeColor && 'border-accent/30 bg-accent/10'
+            'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl',
+            !typeColor && 'bg-accent/10'
           )}
-          style={typeColor ? { background: `${typeColor}1a`, borderColor: `${typeColor}44` } : undefined}
+          style={typeColor ? { background: `${typeColor}1f` } : undefined}
         >
           <Icon
-            size={16}
+            size={19}
             strokeWidth={2.2}
             style={typeColor ? { color: typeColor } : undefined}
             className={!typeColor ? 'text-accent' : undefined}
           />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-bold text-foreground">{plan.name}</span>
-          <span className="mt-0.5 block text-xs text-muted-foreground">
+          <span className="block truncate text-sm font-bold text-foreground">{title}</span>
+          <span className="mt-0.5 block truncate text-xs text-muted-foreground">
             {[
               plan.scheduledTime,
-              plan.type ? t.activityTypes[plan.type as ActivityType] : null,
-              plan.durationSecs ? `${formatDurationWords(plan.durationSecs)}` : null,
+              zone ? zone.label : plan.type ? t.activityTypes[plan.type as ActivityType] : null,
+              zone ? formatPaceRange([zone.paceMinSecPerKm, zone.paceMaxSecPerKm]) : null,
             ]
               .filter(Boolean)
               .join(' · ') || t.plan.planned}
           </span>
         </span>
-        <ChevronRight
-          size={16}
-          className={cn('shrink-0', !typeColor && 'text-accent/40')}
-          style={typeColor ? { color: `${typeColor}66` } : undefined}
-        />
+        <ChevronRight size={18} className="shrink-0 text-muted-foreground" />
       </div>
       {/* A single continuous block (e.g. an easy run) has no interval shape to
           show - one 100%-height bar would just be visual noise. */}
@@ -158,9 +174,9 @@ function NextWeekPlanRow({ plan, onTap }: { plan: PlannedWorkout; onTap: () => v
 
 function SummaryStat({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <GlassSurface variant="card" className="rounded-xl px-2.5 py-2.5 text-center">
-      <div className="text-micro font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className="mt-1 text-base font-extrabold tabular-nums text-foreground">{value}</div>
+    <GlassSurface variant="card" className="rounded-[14px] px-3 py-3">
+      <div className="text-[9.5px] font-bold uppercase tracking-[0.05em] text-muted-foreground">{label}</div>
+      <div className="mt-1 font-display text-[19px] font-bold tabular-nums text-foreground">{value}</div>
     </GlassSurface>
   )
 }
@@ -180,6 +196,10 @@ interface Props {
   planPhaseRanges: PlanPhaseRange[]
   /** The next upcoming race, for the plan's build-toward footer. */
   nextRace?: UpcomingRace | null
+  /** Athlete pace zones, so a planned session can state its target pace. */
+  trainingZones?: TrainingZonesData | null
+  /** The plan's own start/end, for the week-of-block count. */
+  planSpan?: PlanSpan | null
   /** Pre-selects this day when landing from the month view (component remounts per navigation). */
   initialSelectedDate?: string | null
 }
@@ -196,6 +216,8 @@ export function WeekView({
   statusByDate,
   planPhaseRanges,
   nextRace,
+  trainingZones = null,
+  planSpan = null,
   initialSelectedDate,
 }: Props) {
   const days: Day[] = Array.from({ length: 7 }, (_, i) => {
@@ -298,8 +320,115 @@ export function WeekView({
         planPhase={planPhase}
         planned={planned}
         planPhaseRanges={planPhaseRanges}
+        planSpan={planSpan}
         today={today}
       />
+
+      {/* Week strip, bare on the background as in the mockup: the day tiles are
+          themselves the framed objects, so a card around them double-frames. */}
+      <div className="px-0.5">
+        {!atPresent && (
+          <div className="mb-2.5 flex items-center justify-end gap-2">
+            <InlineJumpButton onClick={onToday}>{t.plan.today}</InlineJumpButton>
+          </div>
+        )}
+
+        <div>
+          <div className="mb-2 grid grid-cols-7 gap-1">
+            {t.plan.weekdays.map((label, i) => (
+              <div
+                key={label}
+                className="text-center font-mono text-micro font-semibold text-muted-foreground/50"
+                style={days[i]?.date === today ? { color: 'var(--accent-text)', fontWeight: 700 } : undefined}
+              >
+                {label[0]}
+              </div>
+            ))}
+          </div>
+
+          {/* Day cells: colored, type-labeled blocks (rest/missed keep a distinct, non-typed look) */}
+          <div className="grid grid-cols-7 gap-1">
+            {days.map((d) => {
+                const isToday = d.date === today
+                const isPast = d.date < today
+                const completed = d.acts.length > 0
+                const plan = byDatePlanned.get(d.date)
+                const planned = !completed && !!plan
+                const missed = isPast && planned
+                const rest = !completed && !planned
+                const primaryType: ActivityType | null = (d.acts[0]?.type ?? plan?.type) ?? null
+                const typeColor = primaryType && !missed ? ACTIVITY_TYPE_CONFIG[primaryType].chartColor : null
+                const label = primaryType ? t.plan.typeShort[primaryType] : rest ? t.plan.restDay : null
+
+                return (
+                  <button
+                    key={d.date}
+                    type="button"
+                    onClick={() => setSelectedDate(d.date)}
+                    className={cn(
+                      'flex flex-col items-center gap-1 rounded-lg py-0.5 transition-transform active:scale-95',
+                      d.date === selectedDate && 'bg-foreground/[0.06]'
+                    )}
+                  >
+                    <div className="relative w-full">
+                      {/* Pulse ring for today: opacity-only animation, not scale+fade */}
+                      {isToday && rest && (
+                        <div
+                          className="pointer-events-none absolute -inset-0.5 rounded-[10px] border"
+                          style={{
+                            borderColor: TODAY_38,
+                            animation: 'pulse-ring 2s ease-in-out infinite',
+                          }}
+                        />
+                      )}
+
+                      <div
+                        className="relative flex h-[52px] w-full flex-col items-center justify-center gap-0.5 rounded-[11px] border px-0.5 transition-colors"
+                        style={{
+                          // Solid borders everywhere, as in the mockup - the
+                          // dashed planned/missed cells read as broken tiles.
+                          ...(completed
+                            ? { background: typeColor ? `${typeColor}33` : ACCENT_15, borderColor: typeColor ? `${typeColor}80` : ACCENT_30 }
+                            : missed
+                              ? { background: MISSED_10, borderColor: MISSED_25 }
+                              : planned
+                                ? { background: typeColor ? `${typeColor}14` : FG_05, borderColor: typeColor ? `${typeColor}59` : FG_18 }
+                                : { background: FG_05, borderColor: FG_07 }),
+                          // Today is ringed and lit whatever it holds, rather
+                          // than only when it happens to be a rest day.
+                          ...(isToday
+                            ? {
+                                borderColor: 'var(--accent)',
+                                borderWidth: 1.5,
+                                boxShadow: '0 0 14px color-mix(in srgb, var(--accent) 35%, transparent)',
+                              }
+                            : null),
+                        }}
+                      >
+                        <span
+                          className={cn(
+                            'truncate text-center text-[10px] font-bold leading-tight',
+                            rest && 'font-semibold opacity-40'
+                          )}
+                          style={{ color: missed ? MISSED : rest ? 'var(--color-foreground)' : (typeColor ?? 'var(--accent)') }}
+                        >
+                          {label}
+                        </span>
+
+                        {/* Stacked under the type, not pinned to the corner:
+                            the mockup reads type-then-outcome top to bottom. */}
+                        {completed && (
+                          <Check size={11} strokeWidth={3.4} style={{ color: typeColor ?? 'var(--accent)' }} />
+                        )}
+                        {missed && <X size={11} strokeWidth={3.4} style={{ color: MISSED }} />}
+                      </div>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+      </div>
 
       {/* Decisional header: easy/hard, load, climb - standalone dark tiles, not a card */}
       <div className="grid grid-cols-3 gap-2">
@@ -328,106 +457,14 @@ export function WeekView({
         />
       </div>
 
-      <GlassSurface variant="card" className="rounded-card-sm p-3.5 pb-2.5">
-        {!atPresent && (
-          <div className="mb-2.5 flex items-center justify-end gap-2">
-            <InlineJumpButton onClick={onToday}>{t.plan.today}</InlineJumpButton>
-          </div>
-        )}
-
-        <div>
-          <div className="mb-2 grid grid-cols-7 gap-1">
-            {t.plan.weekdays.map((label, i) => (
-              <div
-                key={label}
-                className="text-center font-mono text-micro font-semibold text-muted-foreground/50"
-                style={days[i]?.date === today ? { color: TODAY, fontWeight: 700 } : undefined}
-              >
-                {label[0]}
-              </div>
-            ))}
-          </div>
-
-          {/* Day cells: colored, type-labeled blocks (rest/missed keep a distinct, non-typed look) */}
-          <div className="grid grid-cols-7 gap-1">
-            {days.map((d) => {
-                const isToday = d.date === today
-                const isPast = d.date < today
-                const completed = d.acts.length > 0
-                const plan = byDatePlanned.get(d.date)
-                const planned = !completed && !!plan
-                const missed = isPast && planned
-                const rest = !completed && !planned
-                const primaryType: ActivityType | null = (d.acts[0]?.type ?? plan?.type) ?? null
-                const typeColor = primaryType && !missed ? ACTIVITY_TYPE_CONFIG[primaryType].chartColor : null
-                const label = primaryType ? t.activityTypes[primaryType] : rest ? t.plan.restDay : null
-
-                return (
-                  <button
-                    key={d.date}
-                    type="button"
-                    onClick={() => setSelectedDate(d.date)}
-                    className={cn(
-                      'flex flex-col items-center gap-1 rounded-lg py-0.5 transition-transform active:scale-95',
-                      d.date === selectedDate && 'bg-foreground/[0.06]'
-                    )}
-                  >
-                    <div className="relative w-full">
-                      {/* Pulse ring for today: opacity-only animation, not scale+fade */}
-                      {isToday && rest && (
-                        <div
-                          className="pointer-events-none absolute -inset-0.5 rounded-[10px] border"
-                          style={{
-                            borderColor: TODAY_38,
-                            animation: 'pulse-ring 2s ease-in-out infinite',
-                          }}
-                        />
-                      )}
-
-                      <div
-                        className="relative flex h-[52px] w-full items-center justify-center rounded-[11px] border px-0.5 transition-colors"
-                        style={
-                          completed
-                            ? { background: typeColor ? `${typeColor}33` : ACCENT_15, borderColor: typeColor ? `${typeColor}80` : ACCENT_30 }
-                            : missed
-                              ? { background: MISSED_10, borderColor: MISSED_25, borderStyle: 'dashed' }
-                              : planned
-                                ? { background: typeColor ? `${typeColor}14` : FG_05, borderColor: typeColor ? `${typeColor}59` : FG_18, borderStyle: 'dashed' }
-                                : isToday
-                                  ? { background: TODAY_10, borderColor: TODAY, borderStyle: 'solid' }
-                                  : { background: FG_05, borderColor: FG_07 }
-                        }
-                      >
-                        <span
-                          className={cn('truncate text-[10px] font-bold leading-tight', rest && 'font-semibold opacity-40')}
-                          style={{ color: missed ? MISSED : rest ? 'var(--color-foreground)' : (typeColor ?? 'var(--accent)') }}
-                        >
-                          {label}
-                        </span>
-
-                        {completed && (
-                          <Check
-                            size={10}
-                            strokeWidth={3}
-                            className="absolute right-1 top-1"
-                            style={{ color: typeColor ?? 'var(--accent)' }}
-                          />
-                        )}
-                        {missed && <X size={10} strokeWidth={3} className="absolute right-1 top-1" style={{ color: MISSED }} />}
-                      </div>
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-      </GlassSurface>
-
       {/* Selected day panel */}
       <div className="space-y-3 px-1">
-        <p className="text-center text-xs font-bold uppercase tracking-wide text-accent-text">
-          {formatDateFull(selected.date)}
-          {selected.date === today && ` · ${t.plan.today}`}
+        {/* Left-aligned section eyebrow, "Today · Wed, Jul 22" - the mockup
+            leads with what the day is, then dates it. */}
+        <p className="text-xs font-bold uppercase tracking-wide text-accent-text">
+          {selected.date === today
+            ? `${t.plan.today} · ${formatDate(selected.date)}`
+            : formatDateFull(selected.date)}
         </p>
 
         {selected.acts.length > 0 ? (
@@ -464,16 +501,17 @@ export function WeekView({
             })}
           </div>
         ) : selectedPlan ? (
-          <PlannedWorkoutRow plan={selectedPlan} onTap={() => setSheetPlan(selectedPlan)} />
+          <PlannedWorkoutRow plan={selectedPlan} zones={trainingZones} onTap={() => setSheetPlan(selectedPlan)} />
         ) : (
           <p className="text-center text-sm text-subtle">{t.plan.restDay}</p>
         )}
       </div>
 
+      {/* A section, not a card: the rows are already surfaces, so boxing them
+          again nests a card inside a card. Muted eyebrow like the mockup. */}
       {atPresent && nextWeekPlans.length > 0 && (
-        <GlassSurface variant="card" className="rounded-card-sm p-4">
-          <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-accent-text">
-            <Calendar size={13} strokeWidth={2.4} />
+        <div className="px-1">
+          <p className="mb-2.5 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground">
             {t.plan.comingUp}
             <span className="rounded-[5px] border border-accent/30 bg-accent/10 px-1.5 py-px font-mono text-[9px] font-bold text-accent-text">
               {t.plan.comingUpBadge}
@@ -484,11 +522,11 @@ export function WeekView({
               <NextWeekPlanRow key={plan.date} plan={plan} onTap={() => setSheetPlan(plan)} />
             ))}
           </div>
-        </GlassSurface>
+        </div>
       )}
 
       {nextRace && atPresent && (
-        <RaceFooter race={nextRace} ranges={planPhaseRanges} today={today} />
+        <RaceFooter race={nextRace} planSpan={planSpan} today={today} />
       )}
 
       {sheetActivity && (

@@ -1173,6 +1173,17 @@ export const fr = {
     switcher: { week: 'Semaine', month: 'Mois' },
     // Abbreviated: sits between the period chevrons, where the full word wraps.
     weekOf: (label: string) => `Sem. du ${label}`,
+    // Abréviations calibrées pour une case de 44px : les noms complets y sont
+    // tronqués en charabia.
+    typeShort: {
+      Sprint: 'Sprint',
+      Anaerobic: 'Anaéro',
+      VO2Max: 'VO₂',
+      Threshold: 'Seuil',
+      Tempo: 'Tempo',
+      Base: 'Base',
+      Race: 'Course',
+    } as Record<ActivityType, string>,
     restDay: 'Repos',
     planned: 'Prévu',
     structure: {
@@ -1218,6 +1229,7 @@ export const fr = {
       thisWeek: 'Cette semaine',
       upcoming: 'Semaine à venir',
       planPhase: {
+        base: 'Semaine de base',
         build: 'Semaine de développement',
         peak: 'Semaine de pic de forme',
         taper: 'Semaine d’affûtage',
@@ -1225,9 +1237,10 @@ export const fr = {
       },
       plannedSessions: (total: number, key: number) =>
         key > 0
-          ? `${total} séance${total > 1 ? 's' : ''} prévue${total > 1 ? 's' : ''} · ${key} qualité`
-          : `${total} séance${total > 1 ? 's' : ''} prévue${total > 1 ? 's' : ''}`,
-      adherence: (done: number, due: number) => `${done}/${due} faites`,
+          ? `${total} séance${total > 1 ? 's' : ''} · ${key} qualité`
+          : `${total} séance${total > 1 ? 's' : ''}`,
+      weekOfBlock: (done: number, total: number) => `semaine ${done} sur ${total}`,
+      adherence: (done: number, due: number) => `${done} / ${due} faites`,
     },
   },
 
