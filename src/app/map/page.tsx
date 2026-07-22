@@ -52,7 +52,7 @@ export default function MapPage() {
         </div>
       </div>
 
-      {territory && <TerritoryBand territory={territory} year={years.at(-1) ?? ''} />}
+      {territory && <TerritoryBand territory={territory} />}
 
       <div className="flex-1 overflow-hidden rounded-xl border border-border shadow-card">
         <GlobalMapWrapper data={data} />

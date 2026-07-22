@@ -12,10 +12,9 @@ const ACCENT_ON_DARK = 'var(--accent-on-dark)'
 
 interface Props {
   territory: MapTerritory
-  year: string
 }
 
-export function TerritoryBand({ territory, year }: Props) {
+export function TerritoryBand({ territory }: Props) {
   const s = t.pages.map.territory
   const [place, setPlace] = useState<string | null>(null)
 
@@ -39,7 +38,7 @@ export function TerritoryBand({ territory, year }: Props) {
           here) - same rule as TodayHero and ProfileHero. */}
       <div>
         <p className="font-mono text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: ACCENT_ON_DARK }}>
-          {s.eyebrow(year)}
+          {s.eyebrow}
         </p>
         <p className="mt-2 text-base font-semibold leading-snug text-white">
           {s.headline(territory.percentVolume, territory.medianRadiusKm)}

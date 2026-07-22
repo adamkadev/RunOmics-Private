@@ -124,9 +124,11 @@ export const fr = {
       more: 'Fréquent',
       noRoutes: 'Aucun parcours pour ce filtre',
       territory: {
-        eyebrow: (year: string) => `Ton territoire · ${year}`,
-        headline: (percent: number, radius: number) => `${percent}% de ton volume tient dans un rayon de ${radius} km.`,
-        aroundPlace: (place: string) => `Surtout autour de ${place}.`,
+        // Camp de base de toujours, indépendant du sélecteur de zone plus bas -
+        // le texte le dit clairement pour ne pas être lu comme la zone choisie.
+        eyebrow: 'Camp de base · depuis toujours',
+        headline: (percent: number, radius: number) => `${percent}% de toutes tes sorties tiennent dans un rayon de ${radius} km.`,
+        aroundPlace: (place: string) => `Centré sur ${place}, là où tu cours le plus.`,
         routesStat: 'routes distinctes',
         radiusStat: 'rayon médian',
       },

@@ -132,9 +132,9 @@ export const en = {
       more: 'Frequent',
       noRoutes: 'No routes for this filter',
       territory: {
-        eyebrow: (year: string) => `Your territory · ${year}`,
-        headline: (percent: number, radius: number) => `${percent}% of your volume falls within a ${radius} km radius.`,
-        aroundPlace: (place: string) => `Mostly around ${place}.`,
+        eyebrow: 'Home base · all-time',
+        headline: (percent: number, radius: number) => `${percent}% of all your running sits within a ${radius} km radius.`,
+        aroundPlace: (place: string) => `Centered on ${place}, where you run most.`,
         routesStat: 'distinct routes',
         radiusStat: 'median radius',
       },
