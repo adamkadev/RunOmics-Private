@@ -3,16 +3,18 @@
 import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import type { GarminRacePredictionsData } from '@/application/usecases/GetGarminRacePredictions'
 import { PaceTrendChart } from './PaceTrendChart'
+import { RacePredictorChart } from './RacePredictorChart'
 import { EfficiencyChart } from './EfficiencyChart'
 import { RpeTrendChart } from './RpeTrendChart'
-import { RacePredictorChart } from './RacePredictorChart'
 
 interface Props {
   weeklyTrends: WeeklyTrendPoint[]
   racePredictions: GarminRacePredictionsData | null
 }
 
-export function PerformanceTab({ weeklyTrends, racePredictions }: Props) {
+// "Am I getting faster?" — pace, race projections, aerobic efficiency and the
+// perceived-effort read that pairs with them.
+export function PerformanceGroup({ weeklyTrends, racePredictions }: Props) {
   return (
     <div className="space-y-4">
       <PaceTrendChart points={weeklyTrends} />

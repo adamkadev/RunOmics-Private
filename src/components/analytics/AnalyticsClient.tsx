@@ -34,23 +34,25 @@ const tabLoading = () => (
     <ChartCardSkeleton />
   </div>
 )
-const VolumeTab = dynamic(() => import('./VolumeTab').then((m) => m.VolumeTab), { loading: tabLoading })
-const PerformanceTab = dynamic(() => import('./PerformanceTab').then((m) => m.PerformanceTab), { loading: tabLoading })
-const PhysiologyTab = dynamic(() => import('./PhysiologyTab').then((m) => m.PhysiologyTab), { loading: tabLoading })
-const SeasonsTab = dynamic(() => import('./SeasonsTab').then((m) => m.SeasonsTab), { loading: tabLoading })
+const FitnessGroup = dynamic(() => import('./FitnessGroup').then((m) => m.FitnessGroup), { loading: tabLoading })
+const PerformanceGroup = dynamic(() => import('./PerformanceGroup').then((m) => m.PerformanceGroup), { loading: tabLoading })
+const VolumeGroup = dynamic(() => import('./VolumeGroup').then((m) => m.VolumeGroup), { loading: tabLoading })
+const HealthGroup = dynamic(() => import('./HealthGroup').then((m) => m.HealthGroup), { loading: tabLoading })
 
+// The four data-type tabs (Performance/Volume/Physiology/Seasons) become four
+// meaning groups: what question is this chart set answering?
 const TABS = [
+  { id: 'fitness', label: t.analytics.tabs.fitness },
   { id: 'performance', label: t.analytics.tabs.performance },
   { id: 'volume', label: t.analytics.tabs.volume },
-  { id: 'physiology', label: t.analytics.tabs.physiology },
-  { id: 'seasons', label: t.analytics.tabs.seasons },
+  { id: 'health', label: t.analytics.tabs.health },
 ] as const
 
 type TabId = (typeof TABS)[number]['id']
 
-// Season scope for the headline stats, the Volume tab and the Seasons tab. The
-// per-metric trend charts are not governed by this - each one pages through its
-// own 4w/6m/1y window (see WindowedChartCard).
+// Season scope for the headline stats and the Volume group's comparison charts.
+// The per-metric trend charts are not governed by this - each one pages through
+// its own 4w/6m/1y window (see WindowedChartCard).
 type View = { kind: 'year'; year: number } | { kind: 'all' }
 
 const VIEW_STORAGE_KEY = 'analytics:view'
@@ -99,7 +101,7 @@ export function AnalyticsClient({
   const { years, byYear } = data
 
   const [view, setView] = useState<View>({ kind: 'year', year: years[0] ?? new Date().getFullYear() })
-  const [tab, setTab] = useState<TabId>('performance')
+  const [tab, setTab] = useState<TabId>('fitness')
 
   // Restore after mount, not in the initializer, to avoid a hydration mismatch.
   useEffect(() => {
@@ -138,14 +140,15 @@ export function AnalyticsClient({
 
   function selectAllTime() {
     setView({ kind: 'all' })
-    if (tab === 'seasons') setTab('volume')
   }
 
   function selectYear(y: number) {
     setView({ kind: 'year', year: y })
   }
 
-  const visibleTabs = isAll ? TABS.filter((tb) => tb.id !== 'seasons') : TABS
+  // All four meaning groups are available in every view; the year selector only
+  // scopes the Volume group's season-over-season comparison.
+  const visibleTabs = TABS
   const displayYear = view.kind === 'year' ? view.year : (years[0] ?? null)
 
   function goPrevTab() {
@@ -268,34 +271,37 @@ export function AnalyticsClient({
           </div>
 
           <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-            {tab === 'volume' && <VolumeTab series={active} />}
+            {tab === 'fitness' && (
+              <FitnessGroup
+                trainingLoad={trainingLoad}
+                statusHistory={statusHistory}
+                vo2maxHistory={vo2maxHistory}
+                loadRisk={loadRisk}
+              />
+            )}
 
             {tab === 'performance' && (
-              <PerformanceTab
+              <PerformanceGroup
                 weeklyTrends={data.weeklyTrends}
                 racePredictions={racePredictions}
               />
             )}
 
-            {tab === 'physiology' && (
-              <PhysiologyTab
-                weeklyTrends={data.weeklyTrends}
-                trainingLoad={trainingLoad}
-                loadRisk={loadRisk}
-                loadBalance={loadBalance}
-                statusHistory={statusHistory}
-                vo2maxHistory={vo2maxHistory}
-                zones={zones}
+            {tab === 'volume' && (
+              <VolumeGroup
+                series={active}
+                year={view.kind === 'year' ? view.year : null}
+                years={years}
+                byYear={byYear}
+                comparison={comparison}
               />
             )}
 
-            {tab === 'seasons' && view.kind === 'year' && (
-              <SeasonsTab
-                year={view.year}
-                years={years}
-                byYear={byYear}
-                series={active}
-                comparison={comparison}
+            {tab === 'health' && (
+              <HealthGroup
+                weeklyTrends={data.weeklyTrends}
+                zones={zones}
+                loadBalance={loadBalance}
               />
             )}
           </div>
