@@ -210,12 +210,17 @@ export function WeekView({
     return selectedPlan?.name ?? a.description ?? t.activityTypes[a.type]
   }
 
+  // "Coming up" is the next sessions from now, not just next week - it catches
+  // this week's remaining key days too (the mockup's Thu/Sun). Scans the two
+  // weeks after today and keeps the soonest few; only meaningful on the present
+  // week, so the render gates on atPresent.
   const nextWeekPlans = useMemo(
     () =>
-      Array.from({ length: 7 }, (_, i) => isoDate(addDays(weekStart, 7 + i)))
+      Array.from({ length: 14 }, (_, i) => isoDate(addDays(new Date(today + 'T00:00:00'), i + 1)))
         .map((date) => byDatePlanned.get(date))
-        .filter((p): p is PlannedWorkout => !!p),
-    [weekStart, byDatePlanned]
+        .filter((p): p is PlannedWorkout => !!p)
+        .slice(0, 3),
+    [today, byDatePlanned]
   )
 
   const byWeekNumber = useMemo(() => {
@@ -454,7 +459,7 @@ export function WeekView({
         )}
       </div>
 
-      {nextWeekPlans.length > 0 && (
+      {atPresent && nextWeekPlans.length > 0 && (
         <GlassSurface variant="card" className="rounded-card-sm p-4">
           <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-accent-text">
             <Calendar size={13} strokeWidth={2.4} />
