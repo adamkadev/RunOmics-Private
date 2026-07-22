@@ -33,15 +33,19 @@ export function ProfileHero({ hero, displayName, age, sex }: Props) {
       </div>
 
       <div className="min-w-0 flex-1">
-        <h1 className="truncate font-display text-base font-bold text-white">
-          {displayName || t.profile.hero.namePlaceholder}
-        </h1>
-        {hero.rank && topPct !== null && (
-          <p
-            className="text-[11px] font-semibold"
-            style={{ color: 'color-mix(in srgb, var(--accent) 42%, #ffffff)' }}
-          >
-            {t.profile.hero.rankLine(hero.rank.tier, topPct)}
+        <div className="flex items-center gap-2">
+          <h1 className="truncate font-display text-lg font-bold text-white">
+            {displayName || t.profile.hero.namePlaceholder}
+          </h1>
+          {hero.rank && (
+            <span className="shrink-0 rounded-[6px] bg-accent px-1.5 py-0.5 font-mono text-[10px] font-bold text-accent-foreground">
+              {t.profile.hero.rankBadge(hero.rank.tier)}
+            </span>
+          )}
+        </div>
+        {topPct !== null && (
+          <p className="text-[11px] text-white/70">
+            {t.profile.hero.topPctLine(topPct)}
           </p>
         )}
         <p className="mt-0.5 text-[10.5px] text-white/55">

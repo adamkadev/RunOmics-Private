@@ -1028,6 +1028,8 @@ export const en = {
     hero: {
       lifetime: (runs: number, km: number) => `${runs} runs · ${km.toLocaleString('en')} km lifetime`,
       rankLine: (tier: string, pct: number) => `Rank ${tier} · top ${pct}% of VO₂max for your age`,
+      rankBadge: (tier: string) => `RANK ${tier}`,
+      topPctLine: (pct: number) => `Top ${pct}% VO₂max for your age`,
       namePlaceholder: 'Your name',
     },
     ytd: {
@@ -1082,6 +1084,10 @@ export const en = {
       lthr: 'LTHR',
       notSet: 'Not set',
       viewAthlete: 'View Athlete',
+      details: 'Details',
+      vo2maxShort: 'VO₂MAX',
+      vmaShort: 'VMA',
+      lthrShort: 'LTHR',
     },
     goal: {
       title: (year: number) => `Goal ${year}`,
