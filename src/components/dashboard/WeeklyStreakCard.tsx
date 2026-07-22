@@ -1,6 +1,6 @@
 'use client'
 
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, Check } from 'lucide-react'
 import type { WeeklyStreakData } from '@/application/usecases/GetMilestones'
 import type { WeeklyGoal } from '@/application/usecases/GetGoalsData'
 import type { DigestFact } from '@/application/usecases/GetWeeklyDigest'
@@ -9,8 +9,8 @@ import { useCountUp } from '@/lib/useCountUp'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
-const RING_SIZE = 66
-const RING_STROKE = 6
+const RING_SIZE = 76
+const RING_STROKE = 7
 const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS
 
@@ -26,11 +26,13 @@ function WeekDots({ weekDays, today }: { weekDays: boolean[]; today: number }) {
           <div key={i} className="text-center">
             <div
               className={cn(
-                'h-6 w-6 rounded-full',
-                active ? 'bg-accent' : isFuture ? 'border-2 border-dashed border-foreground/15' : 'bg-foreground/10',
-                isToday && 'border-2 border-accent shadow-[0_0_10px_var(--accent)]'
+                'mx-auto flex h-[26px] w-[26px] items-center justify-center rounded-full',
+                active ? 'bg-accent' : isFuture ? 'border-[1.5px] border-dashed border-foreground/15' : 'bg-foreground/10',
+                isToday && !active && 'border-2 border-accent bg-transparent shadow-[0_0_12px_rgba(30,215,135,0.5)]'
               )}
-            />
+            >
+              {active && <Check size={13} strokeWidth={3.2} className="text-accent-foreground" />}
+            </div>
             <div className={cn('mt-1 text-micro', isToday ? 'font-semibold text-accent-text' : 'text-muted-foreground')}>
               {labels[i]?.slice(0, 1)}
             </div>
@@ -99,20 +101,16 @@ export function WeeklyStreakCard({ data, goal, hardShareFact }: Props) {
             <p className="mt-0.5 text-xs text-muted-foreground">{s.freshWeekGoal(Math.round(goal.targetKm))}</p>
           )}
           {hardShareFact && (
-            <p className="mt-0.5 flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+            <span className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-amber-500/[0.28] bg-amber-500/[0.12] px-2 py-1 text-[11px] text-amber-600 dark:text-amber-400">
               <AlertTriangle size={12} className="shrink-0" />
               <span className="truncate">{hardShareFact.text}</span>
-            </p>
+            </span>
           )}
         </div>
       </div>
 
       <div className="mt-4">
         <WeekDots weekDays={data.weekDays} today={today} />
-      </div>
-
-      <div className="mt-3.5 border-t border-foreground/[0.06] pt-3.5 text-center text-xs text-muted-foreground">
-        {s.streakSummary(data.longestWeeks, data.currentWeeks)}
       </div>
     </GlassSurface>
   )
