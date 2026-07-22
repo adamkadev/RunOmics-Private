@@ -1180,6 +1180,8 @@ export const fr = {
       min: (m: number) => `${m}'`,
     },
     nextWeek: (n: number) => `Semaine prochaine - ${n} prévue${n > 1 ? 's' : ''}`,
+    comingUp: 'À venir',
+    comingUpBadge: 'NOUVEAU',
     viewDetail: 'Voir le détail',
     type: 'Type',
     weekSummary: {
@@ -1187,6 +1189,19 @@ export const fr = {
       vsTypical: (percent: number) => `${percent - 100 >= 0 ? '+' : ''}${percent - 100}% vs type`,
       easyHard: 'Facile / Dur',
       elevation: 'D+',
+      climb: 'D+',
+    },
+    raceFooter: {
+      inDays: (days: number) => (days === 0 ? "aujourd'hui" : days === 1 ? 'dans 1 jour' : `dans ${days} jours`),
+      weeksIn: (done: number, total: number) => `${done}/${total}`,
+      weeksInLabel: 'semaines',
+    },
+    phaseTrack: {
+      base: 'Base',
+      build: 'Build',
+      peak: 'Peak',
+      taper: 'Taper',
+      raceDay: 'Course',
     },
     weekPurpose: {
       recovery: 'Semaine de récupération',

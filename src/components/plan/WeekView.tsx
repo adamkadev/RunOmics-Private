@@ -24,6 +24,9 @@ import { ActivitySheet } from './ActivitySheet'
 import { InlineJumpButton } from '@/components/ui/InlineJumpButton'
 import { PlannedWorkoutSheet } from './PlannedWorkoutSheet'
 import { WeekPurposeBanner } from './WeekPurposeBanner'
+import { PlanPhaseTrack } from './PlanPhaseTrack'
+import { RaceFooter } from './RaceFooter'
+import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import { addDays, isoDate, isoWeekNumber } from '@/lib/calendarDate'
 import { formatDate, formatDateFull, formatDurationWords } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
@@ -163,6 +166,8 @@ interface Props {
   statusByDate: TrainingStatusCalendar
   /** The current Garmin Coach plan's phases - empty when the athlete has none active. */
   planPhaseRanges: PlanPhaseRange[]
+  /** The next upcoming race, for the plan's build-toward footer. */
+  nextRace?: UpcomingRace | null
   /** Pre-selects this day when landing from the month view (component remounts per navigation). */
   initialSelectedDate?: string | null
 }
@@ -178,6 +183,7 @@ export function WeekView({
   onToday,
   statusByDate,
   planPhaseRanges,
+  nextRace,
   initialSelectedDate,
 }: Props) {
   const days: Day[] = Array.from({ length: 7 }, (_, i) => {
@@ -204,12 +210,17 @@ export function WeekView({
     return selectedPlan?.name ?? a.description ?? t.activityTypes[a.type]
   }
 
+  // "Coming up" is the next sessions from now, not just next week - it catches
+  // this week's remaining key days too (the mockup's Thu/Sun). Scans the two
+  // weeks after today and keeps the soonest few; only meaningful on the present
+  // week, so the render gates on atPresent.
   const nextWeekPlans = useMemo(
     () =>
-      Array.from({ length: 7 }, (_, i) => isoDate(addDays(weekStart, 7 + i)))
+      Array.from({ length: 14 }, (_, i) => isoDate(addDays(new Date(today + 'T00:00:00'), i + 1)))
         .map((date) => byDatePlanned.get(date))
-        .filter((p): p is PlannedWorkout => !!p),
-    [weekStart, byDatePlanned]
+        .filter((p): p is PlannedWorkout => !!p)
+        .slice(0, 3),
+    [today, byDatePlanned]
   )
 
   const byWeekNumber = useMemo(() => {
@@ -265,18 +276,21 @@ export function WeekView({
 
   return (
     <div className="space-y-3">
-      <WeekPurposeBanner
-        over={weekOver}
-        current={isCurrentWeek}
-        level={comparison?.level ?? null}
-        percent={comparison?.percent ?? null}
-        adherence={adherence}
-        garminStatus={garminStatus}
-        planPhase={planPhase}
-        planned={planned}
-      />
+      <div>
+        <WeekPurposeBanner
+          over={weekOver}
+          current={isCurrentWeek}
+          level={comparison?.level ?? null}
+          percent={comparison?.percent ?? null}
+          adherence={adherence}
+          garminStatus={garminStatus}
+          planPhase={planPhase}
+          planned={planned}
+        />
+        <PlanPhaseTrack ranges={planPhaseRanges} today={today} />
+      </div>
 
-      {/* Decisional header: easy/hard, elevation, load - standalone dark tiles, not a card */}
+      {/* Decisional header: easy/hard, load, climb - standalone dark tiles, not a card */}
       <div className="grid grid-cols-3 gap-2">
         <SummaryStat
           label={t.plan.weekSummary.easyHard}
@@ -292,15 +306,15 @@ export function WeekView({
             )
           }
         />
+        <SummaryStat label={t.plan.weekSummary.load} value={<AnimatedValue value={summary.totalTrimp} />} />
         <SummaryStat
-          label={t.plan.weekSummary.elevation}
+          label={t.plan.weekSummary.climb}
           value={
             <>
               <AnimatedValue value={summary.elevationGainM} /> {t.units.m}
             </>
           }
         />
-        <SummaryStat label={t.plan.weekSummary.load} value={<AnimatedValue value={summary.totalTrimp} />} />
       </div>
 
       <GlassSurface variant="card" className="rounded-card-sm p-3.5 pb-2.5">
@@ -360,7 +374,7 @@ export function WeekView({
                       )}
 
                       <div
-                        className="relative flex h-9 w-full items-center justify-center rounded-[8px] border px-0.5 transition-colors sm:h-10"
+                        className="relative flex h-11 w-full items-center justify-center rounded-[10px] border px-0.5 transition-colors sm:h-[52px]"
                         style={
                           completed
                             ? { background: typeColor ? `${typeColor}33` : ACCENT_15, borderColor: typeColor ? `${typeColor}80` : ACCENT_30 }
@@ -445,11 +459,14 @@ export function WeekView({
         )}
       </div>
 
-      {nextWeekPlans.length > 0 && (
+      {atPresent && nextWeekPlans.length > 0 && (
         <GlassSurface variant="card" className="rounded-card-sm p-4">
-          <p className="mb-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-accent-text">
+          <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-accent-text">
             <Calendar size={13} strokeWidth={2.4} />
-            {t.plan.nextWeek(nextWeekPlans.length)}
+            {t.plan.comingUp}
+            <span className="rounded-[5px] border border-accent/30 bg-accent/10 px-1.5 py-px font-mono text-[9px] font-bold text-accent-text">
+              {t.plan.comingUpBadge}
+            </span>
           </p>
           <div className="space-y-2">
             {nextWeekPlans.map((plan) => (
@@ -457,6 +474,10 @@ export function WeekView({
             ))}
           </div>
         </GlassSurface>
+      )}
+
+      {nextRace && atPresent && (
+        <RaceFooter race={nextRace} ranges={planPhaseRanges} today={today} />
       )}
 
       {sheetActivity && (
