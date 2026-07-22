@@ -18,8 +18,14 @@ const TABS = [
   { href: '/profile',    label: t.nav.items.profile,     icon: User },
 ] as const
 
+const PROFILE_ROUTES = ['/records', '/shoes', '/athlete', '/settings', '/goals']
+
 function isActive(pathname: string, href: string): boolean {
-  return href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`)
+  if (href === '/') return pathname === '/'
+  if (href === '/profile' && PROFILE_ROUTES.some((r) => pathname === r || pathname.startsWith(`${r}/`))) {
+    return true
+  }
+  return pathname === href || pathname.startsWith(`${href}/`)
 }
 
 export function GlassTabBar() {
