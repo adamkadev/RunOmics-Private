@@ -2,6 +2,7 @@
 
 import { ACCENT_IDS, ACCENT_SWATCHES, type AccentId } from '@/lib/accent'
 import type { ShareAccent } from '@/lib/useShareCardPrefs'
+import { SHARE_CARD_COLORS } from '@/lib/colors'
 
 interface Props {
   shareAccent: ShareAccent
@@ -42,7 +43,7 @@ export function ShareAccentPicker({ shareAccent, customHex, onSelectAccent, onSe
             display: 'block', width: 18, height: 18, borderRadius: '50%',
             background: shareAccent === 'custom'
               ? customHex
-              : 'conic-gradient(red, #ff0, lime, cyan, blue, magenta, red)',
+              : SHARE_CARD_COLORS.customWheel,
             border: shareAccent === 'custom' ? 'none' : '1.5px solid color-mix(in srgb, var(--ro-text) 20%, transparent)',
             boxShadow: shareAccent === 'custom'
               ? `0 0 0 2.5px var(--background), 0 0 0 4.5px ${customHex}40`

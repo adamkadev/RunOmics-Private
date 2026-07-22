@@ -26,7 +26,7 @@ export function ProfileHero({ hero, displayName, age, sex }: Props) {
     >
       <div
         className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full text-lg font-bold text-accent-foreground"
-        style={{ background: 'linear-gradient(140deg, var(--accent), color-mix(in srgb, var(--accent) 74%, #000))' }}
+        style={{ background: 'var(--accent-gradient)' }}
         aria-hidden="true"
       >
         {displayName ? initials(displayName) : <User size={20} />}

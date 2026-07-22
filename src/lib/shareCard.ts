@@ -2,6 +2,7 @@ import type { Activity } from '@/domain/activity/types'
 import type { AccentId } from '@/lib/accent'
 import { ACCENT_RGB, W, H, type ShareDesign, type ThemeMode } from '@/lib/shareCardPalette'
 import { drawTheme, drawBranding, drawDataOverlay, drawRouteOverlay } from '@/lib/shareCardDraw'
+import { rgbTriplet } from '@/lib/palette'
 
 export {
   SHARE_DESIGNS, W, H,
@@ -26,10 +27,8 @@ export interface RenderOptions {
   customAccentHex?: string
 }
 
-export function hexToRgb(hex: string): [number, number, number] {
-  const h = hex.replace('#', '')
-  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]
-}
+/** Re-exported under its historical name; the implementation lives in the palette. */
+export { rgbTriplet as hexToRgb }
 
 export function renderShareCard(canvas: HTMLCanvasElement, options: RenderOptions, scale = 1) {
   const { activity, design, accent, theme, showStats, showMap, photoImage, gpsRoute, locationName, streetLabels, customAccentHex } = options
@@ -40,7 +39,7 @@ export function renderShareCard(canvas: HTMLCanvasElement, options: RenderOption
   if (!ctx) return
   if (scale !== 1) ctx.scale(scale, scale)
 
-  const [r, g, b] = customAccentHex ? hexToRgb(customAccentHex) : ACCENT_RGB[accent][dark ? 'dark' : 'light']
+  const [r, g, b] = customAccentHex ? rgbTriplet(customAccentHex) : ACCENT_RGB[accent][dark ? 'dark' : 'light']
 
   // For the map design, only pass the real route when showMap is on.
   const routeForTheme = design === 'map' ? (showMap ? gpsRoute : null) : gpsRoute

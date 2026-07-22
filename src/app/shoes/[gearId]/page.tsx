@@ -30,7 +30,7 @@ function verdictBody(status: 'watch' | 'replace', weeksRemaining: number | null)
 
 function Stat({ value, label }: { value: React.ReactNode; label: string }) {
   return (
-    <div className="rounded-xl px-2.5 py-2.5 text-center" style={{ background: 'rgba(0,0,0,0.25)' }}>
+    <div className="rounded-xl px-2.5 py-2.5 text-center" style={{ background: 'var(--scrim)' }}>
       <div className="text-micro font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
       <div className="mt-1 text-base font-extrabold tabular-nums text-foreground">{value}</div>
     </div>

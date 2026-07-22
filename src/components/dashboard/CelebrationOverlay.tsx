@@ -8,18 +8,21 @@ import type { RecordEntry } from '@/application/usecases/GetRecords'
 import { formatDuration, formatDistance } from '@/lib/formatters'
 import { useHaptic } from '@/lib/useHaptic'
 import { useFocusTrap } from '@/lib/useFocusTrap'
+import { CELEBRATION_COLORS } from '@/lib/colors'
 import { t } from '@/i18n'
 
 const CELEBRATION_WINDOW_DAYS = 3
 const STORAGE_PREFIX = 'ro-celebration-seen:'
 
+const [GREEN, AMBER, CYAN, PINK] = CELEBRATION_COLORS.confetti
+
 const CONFETTI = [
-  { top: '16%', left: '14%', color: '#4ade80', size: 8, rotate: '20deg' },
-  { top: '24%', left: '80%', color: '#fbbf24', size: 7, rotate: '-15deg' },
-  { top: '34%', left: '22%', color: '#67e8f9', size: 6, round: true },
-  { top: '20%', left: '65%', color: '#f472b6', size: 6, round: true },
-  { bottom: '28%', left: '18%', color: '#fbbf24', size: 7, rotate: '40deg' },
-  { bottom: '34%', left: '84%', color: '#4ade80', size: 8, rotate: '-30deg' },
+  { top: '16%', left: '14%', color: GREEN, size: 8, rotate: '20deg' },
+  { top: '24%', left: '80%', color: AMBER, size: 7, rotate: '-15deg' },
+  { top: '34%', left: '22%', color: CYAN, size: 6, round: true },
+  { top: '20%', left: '65%', color: PINK, size: 6, round: true },
+  { bottom: '28%', left: '18%', color: AMBER, size: 7, rotate: '40deg' },
+  { bottom: '34%', left: '84%', color: GREEN, size: 8, rotate: '-30deg' },
 ] as const
 
 function isRecent(date: string): boolean {
@@ -79,7 +82,7 @@ export function CelebrationOverlay({ record }: { record: RecordEntry | null }) {
 
         <div
           className="mb-6 flex h-28 w-28 items-center justify-center rounded-full"
-          style={{ background: 'radial-gradient(circle,#22c55e,#15803d)', boxShadow: '0 0 50px rgba(34,197,94,0.5)' }}
+          style={{ background: CELEBRATION_COLORS.burst, boxShadow: CELEBRATION_COLORS.burstGlow }}
         >
           <Trophy size={52} className="text-white" />
         </div>

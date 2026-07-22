@@ -1,14 +1,16 @@
 import type { TrainingLoadData } from '@/application/usecases/GetTrainingLoad'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
+import { CHART_COLORS } from '@/lib/colors'
+import { HUE } from '@/lib/palette'
 import { t } from '@/i18n'
 
-// Fixed hex, independent of the accent picker - Form/Fitness/Fatigue mean the
-// same thing (fresh/fit/tired) whichever accent the athlete has chosen, and the
-// blue/orange pairing has to stay put for the reading to hold.
-const FORM_VALUE = '#4fe6a0'
-const FORM_LINE = '#1ed787'
-const FITNESS = '#3b82f6'
-const FATIGUE = '#f97316'
+// Accent-independent - Form/Fitness/Fatigue mean the same thing (fresh/fit/tired)
+// whichever accent the athlete has chosen, and the blue/orange pairing has to
+// stay put for the reading to hold. Same hues the training-load chart uses.
+const FORM_VALUE = HUE.roEmeraldHi
+const FORM_LINE = CHART_COLORS.tsb
+const FITNESS = CHART_COLORS.ctl
+const FATIGUE = CHART_COLORS.atl
 
 const SPARK_POINTS = 30
 

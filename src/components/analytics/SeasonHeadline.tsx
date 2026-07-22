@@ -1,5 +1,6 @@
 import { ArrowUpRight, ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { BRAND_TINTS } from '@/lib/colors'
 import type { SeasonHeadlineData } from '@/application/usecases/GetSeasonHeadline'
 import { t } from '@/i18n'
 
@@ -10,8 +11,8 @@ export function SeasonHeadline({ data }: { data: SeasonHeadlineData }) {
     <div
       className="rounded-[20px] border p-4 text-center"
       style={{
-        borderColor: 'rgba(30,215,135,0.32)',
-        background: 'linear-gradient(158deg, rgba(30,215,135,0.11), rgba(30,215,135,0.02))',
+        borderColor: BRAND_TINTS.headlineBorder,
+        background: BRAND_TINTS.headlineFill,
       }}
     >
       <div className="mb-2 font-mono text-[9.5px] font-bold uppercase tracking-[0.14em] text-accent-text">

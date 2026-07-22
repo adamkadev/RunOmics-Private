@@ -1,4 +1,5 @@
-import { type AccentId } from '@/lib/accent'
+import { ACCENT_SWATCHES, type AccentId } from '@/lib/accent'
+import { HUE, rgbTriplet } from '@/lib/palette'
 
 export type ThemeMode = 'light' | 'dark'
 export type ShareDesign = 'aurora' | 'pulse' | 'terrain' | 'prism' | 'cadence' | 'map' | 'memory'
@@ -7,12 +8,25 @@ export const SHARE_DESIGNS: ShareDesign[] = ['aurora', 'pulse', 'terrain', 'pris
 export const W = 390
 export const H = 844
 
-/** Accent RGB values [r, g, b] for canvas drawing per theme mode */
-export const ACCENT_RGB: Record<AccentId, { dark: [number, number, number]; light: [number, number, number] }> = {
-  nature:      { dark: [16, 185, 129],  light: [14, 159, 110] },
-  performance: { dark: [59, 130, 246],  light: [37, 99, 235] },
-  impact:      { dark: [244, 63, 94],   light: [225, 29, 72] },
-  motivation:  { dark: [249, 115, 22],  light: [234, 88, 12] },
-  endurance:   { dark: [139, 92, 246],  light: [124, 58, 237] },
-  silver:      { dark: [148, 163, 184], light: [100, 116, 139] },
+/**
+ * The accent the canvas paints with, per theme mode. Dark reuses the picker's
+ * own swatch; light needs a deeper tone to survive the pale backdrops, but not
+ * the same deepening ACCENT_SWATCHES_LIGHT applies - nature and silver sit one
+ * step brighter here so the route line does not go muddy against the map design.
+ */
+const CANVAS_ACCENT_HEX: Record<AccentId, { dark: string; light: string }> = {
+  nature:      { dark: ACCENT_SWATCHES.nature,      light: HUE.roEmeraldDeep },
+  performance: { dark: ACCENT_SWATCHES.performance, light: HUE.blue600 },
+  impact:      { dark: ACCENT_SWATCHES.impact,      light: HUE.rose600 },
+  motivation:  { dark: ACCENT_SWATCHES.motivation,  light: HUE.orange600 },
+  endurance:   { dark: ACCENT_SWATCHES.endurance,   light: HUE.violet600 },
+  silver:      { dark: ACCENT_SWATCHES.silver,      light: HUE.slate500 },
 }
+
+/** Accent RGB values [r, g, b] for canvas drawing per theme mode */
+export const ACCENT_RGB = Object.fromEntries(
+  Object.entries(CANVAS_ACCENT_HEX).map(([id, { dark, light }]) => [
+    id,
+    { dark: rgbTriplet(dark), light: rgbTriplet(light) },
+  ]),
+) as Record<AccentId, { dark: [number, number, number]; light: [number, number, number] }>

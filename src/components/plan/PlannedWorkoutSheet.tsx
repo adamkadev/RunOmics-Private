@@ -10,6 +10,8 @@ import { WorkoutStructureBars, WorkoutStepList } from './WorkoutStructure'
 import { useDragToDismiss } from '@/lib/useDragToDismiss'
 import { useFocusTrap } from '@/lib/useFocusTrap'
 import { useScrollLock } from '@/lib/useScrollLock'
+import { WORKOUT_SHEET_COLORS as SHEET } from '@/lib/colors'
+import { withAlpha } from '@/lib/palette'
 import { t } from '@/i18n'
 
 interface Props {
@@ -54,12 +56,12 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
         className="relative w-full animate-sheet-up sm:max-w-sm sm:rounded-card-sm"
         style={{
           background: typeColor
-            ? `linear-gradient(160deg, ${typeColor}1f 0%, rgba(14,22,18,.88) 55%)`
-            : 'rgba(14,22,18,.82)',
+            ? `linear-gradient(160deg, ${withAlpha(typeColor, SHEET.tint.fill)} 0%, ${SHEET.baseTinted} 55%)`
+            : SHEET.base,
           backdropFilter: 'blur(28px)',
           WebkitBackdropFilter: 'blur(28px)',
           borderRadius: '22px 22px 20px 20px',
-          border: `1px solid ${typeColor ? `${typeColor}44` : 'rgba(255,255,255,.08)'}`,
+          border: `1px solid ${typeColor ? withAlpha(typeColor, SHEET.tint.border) : SHEET.border}`,
           ...sheetStyle,
         }}
       >
@@ -67,7 +69,7 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
         <div className="flex justify-center pt-3 pb-1" {...handleProps}>
           <div
             className="h-1 w-9 rounded-full"
-            style={{ background: typeColor ? `${typeColor}55` : 'rgba(255,255,255,.2)' }}
+            style={{ background: typeColor ? withAlpha(typeColor, SHEET.tint.handle) : SHEET.handle }}
           />
         </div>
 
@@ -75,9 +77,9 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
           <div className="mb-4 flex items-start gap-3">
             <span
               className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
-              style={{ background: typeColor ? `${typeColor}1a` : 'rgba(255,255,255,.07)' }}
+              style={{ background: typeColor ? withAlpha(typeColor, SHEET.tint.iconWell) : SHEET.iconWell }}
             >
-              <WorkoutIcon size={20} strokeWidth={2.2} style={{ color: typeColor ?? '#9ca3af' }} />
+              <WorkoutIcon size={20} strokeWidth={2.2} style={{ color: typeColor ?? SHEET.iconFallback }} />
             </span>
             <div className="min-w-0 flex-1">
               <h2 className="text-base font-bold leading-snug text-white">

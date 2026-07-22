@@ -5,7 +5,7 @@ import { MapPin, Maximize2, Minimize2, Thermometer } from 'lucide-react'
 import type { LngLatBounds, Map as MapLibreMap, Marker } from 'maplibre-gl'
 import { cn } from '@/lib/utils'
 import { maptilerStyleUrl } from '@/lib/maptiler'
-import { CHART_COLORS, PACE_ROUTE_COLORS, temperatureIconColor } from '@/lib/colors'
+import { CHART_COLORS, MAP_COLORS, PACE_ROUTE_COLORS, temperatureIconColor } from '@/lib/colors'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import type { ActivityType } from '@/domain/activity/types'
 import { ShoePairTag } from '@/components/activities/ShoePairTag'
@@ -51,7 +51,7 @@ function mkMarker(bg: string, border = 'white', size = 13) {
     borderRadius: '50%',
     backgroundColor: bg,
     border: `2px solid ${border}`,
-    boxShadow: '0 1px 4px rgba(0,0,0,0.35)',
+    boxShadow: MAP_COLORS.chipShadow,
     pointerEvents: 'none',
   })
   return el
@@ -155,7 +155,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
           type: 'line',
           source: 'route',
           layout: { 'line-join': 'round', 'line-cap': 'round' },
-          paint: { 'line-color': isDark ? '#1f2937' : '#ffffff', 'line-width': 7, 'line-opacity': 0.85 },
+          paint: { 'line-color': isDark ? MAP_COLORS.routeCasingDark : MAP_COLORS.routeCasingLight, 'line-width': 7, 'line-opacity': 0.85 },
         })
 
         map.addLayer({
@@ -267,7 +267,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
               className="rounded-[10px] px-2.5 py-1.5 text-xs font-bold uppercase tracking-wide"
               style={{
                 background: ACTIVITY_TYPE_CONFIG[activityType].chartColor,
-                color: '#1a1400',
+                color: MAP_COLORS.chipInkOnAmber,
               }}
             >
               {t.activityTypes[activityType]}

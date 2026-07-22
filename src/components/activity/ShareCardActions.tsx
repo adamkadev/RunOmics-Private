@@ -1,6 +1,7 @@
 'use client'
 
 import { Check, Copy, Download, Share2 } from 'lucide-react'
+import { SHARE_CARD_COLORS } from '@/lib/colors'
 import { t } from '@/i18n'
 
 interface Props {
@@ -29,7 +30,7 @@ export function ShareCardActions({ canShareFiles, canCopyImage, accentHex, copyS
           onClick={onShare}
           style={{
             height: 46, borderRadius: 14, border: 'none',
-            background: accentHex, color: '#fff',
+            background: accentHex, color: SHARE_CARD_COLORS.onAccent,
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
             fontSize: 13, fontWeight: 800, cursor: 'pointer',
           }}

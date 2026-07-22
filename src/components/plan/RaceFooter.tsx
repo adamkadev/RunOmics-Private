@@ -1,5 +1,6 @@
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
+import { BRAND_TINTS } from '@/lib/colors'
 import { t } from '@/i18n'
 
 function daysBetween(from: string, to: string): number {
@@ -34,7 +35,7 @@ export function RaceFooter({
   return (
     <div
       className="mt-4 flex items-center justify-between rounded-[14px] border border-border px-3.5 py-3.5"
-      style={{ background: 'linear-gradient(155deg, rgba(30,215,135,0.08), transparent)' }}
+      style={{ background: BRAND_TINTS.footerFill }}
     >
       <div className="min-w-0">
         <div className="truncate text-[12.5px] font-semibold text-foreground">{race.name}</div>

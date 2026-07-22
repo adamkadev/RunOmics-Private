@@ -5,11 +5,16 @@ import sharp from 'sharp'
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
+import { loadLibModules } from './loadPalette.mjs'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const outDir = join(root, 'public/icons/splash')
-const BG = '#06091a'
-const LOGO_COLOR = '#34d399'
+
+// The launch screen shares its scheme with the root error boundary (BOOT_COLORS
+// in src/lib/colors.ts): both render before, or without, globals.css.
+const { HUE } = await loadLibModules('palette', ['palette'])
+const BG = HUE.performanceBgDark
+const LOGO_COLOR = HUE.emerald400
 
 // device-independent CSS points + device-pixel-ratio, per modern iPhone/iPad.
 const DEVICES = [

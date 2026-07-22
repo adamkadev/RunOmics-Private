@@ -11,22 +11,18 @@ import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { ReadinessTone } from '@/domain/training/readiness'
 import { PlannedWorkoutSheet } from '@/components/plan/PlannedWorkoutSheet'
 import { formatDistance, formatDurationWords } from '@/lib/formatters'
+import { READINESS_TONE_COLORS } from '@/lib/colors'
+import { HUE, withAlpha } from '@/lib/palette'
 import { t } from '@/i18n'
 
-// Fixed hex, independent of the accent picker - a readiness verdict means the
-// same thing (go/caution/hold) whichever accent the athlete has chosen.
-const TONE_HEX: Record<ReadinessTone, string> = {
-  go: '#1ed787',
-  caution: '#f5b700',
-  hold: '#ef4444',
-}
+const TONE_HEX: Record<ReadinessTone, string> = READINESS_TONE_COLORS
 
 // A fixed near-black base (matching --bg) rather than the page background, so
 // the card stays a deliberately dark, always-legible panel in both themes -
 // the same pattern var(--hero-gradient) uses elsewhere (see ProfileHero).
 // A translucent tint here would let a light-mode page bleed through and wash
 // out the white text.
-const HERO_BASE = '#0a0f0c'
+const HERO_BASE = HUE.heroBase
 
 interface Props {
   status: TrainingStatus | null
@@ -98,14 +94,14 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace }: P
 
   return (
     <div
-      className="rounded-[22px] border p-[18px] text-white shadow-[0_10px_30px_-12px_rgba(0,0,0,0.5)]"
+      className="rounded-[22px] border p-[18px] text-white shadow-[var(--shadow-hero)]"
       style={{
         // Hero gradient tinted by the verdict tone (go/caution/hold), so the
         // whole card reads the decision - not just the pastille. Blended into a
         // fixed dark base (not the page background) so the card stays legible
         // in light mode too - same idea as var(--hero-gradient) elsewhere.
         background: `linear-gradient(158deg, color-mix(in srgb, ${toneHex} 20%, ${HERO_BASE}), color-mix(in srgb, ${toneHex} 5%, ${HERO_BASE}))`,
-        borderColor: `${toneHex}59`,
+        borderColor: withAlpha(toneHex, 0.35),
       }}
     >
       <div className="flex items-center justify-between gap-2">

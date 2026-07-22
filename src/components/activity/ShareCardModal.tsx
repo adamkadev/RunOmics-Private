@@ -182,7 +182,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
           <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0 16px' }}>
             <div style={{
               borderRadius: 18, overflow: 'hidden', width: 176, height: 380,
-              boxShadow: '0 8px 32px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.35)',
+              boxShadow: 'var(--shadow-modal)',
               flexShrink: 0,
             }}>
               <canvas

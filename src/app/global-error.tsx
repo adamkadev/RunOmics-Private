@@ -1,10 +1,12 @@
 'use client'
 
+import { BOOT_COLORS } from '@/lib/colors'
 import { t } from '@/i18n'
 
 // Last-resort boundary: only renders if the root layout itself throws.
 // It replaces the whole document, so the app's CSS is not guaranteed to be
-// loaded - style inline and keep it dependency-free.
+// loaded - style inline. BOOT_COLORS is a plain constants module, so this
+// stays free of any runtime that could itself be the thing that broke.
 export default function GlobalError({
   error,
   reset,
@@ -23,8 +25,8 @@ export default function GlobalError({
           alignItems: 'center',
           justifyContent: 'center',
           textAlign: 'center',
-          background: '#06091a',
-          color: '#e5e7eb',
+          background: BOOT_COLORS.background,
+          color: BOOT_COLORS.foreground,
           fontFamily: 'system-ui, sans-serif',
         }}
       >
@@ -41,8 +43,8 @@ export default function GlobalError({
             padding: '10px 20px',
             borderRadius: 8,
             border: 'none',
-            background: '#10b981',
-            color: '#06091a',
+            background: BOOT_COLORS.actionBg,
+            color: BOOT_COLORS.actionFg,
             fontSize: 14,
             fontWeight: 600,
             cursor: 'pointer',

@@ -7,6 +7,7 @@ import { GlassSurface } from '@/components/ui/GlassSurface'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { monthLabel } from '@/lib/formatters'
 import { STATUS } from '@/lib/statusColors'
+import { GOAL_PACE_COLORS } from '@/lib/colors'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -18,10 +19,10 @@ const STATUS_ICON: Record<MonthGoal['status'], { Icon: typeof Check; className: 
 }
 
 const MONTH_CELL_TINT: Record<MonthGoal['status'], { bg: string; border: string; bar: string; dashed?: boolean }> = {
-  ahead:    { bg: 'rgba(16,185,129,0.06)', border: 'rgba(16,185,129,0.25)', bar: 'var(--accent)' },
-  on_track: { bg: 'rgba(47,116,224,0.10)', border: 'rgba(47,116,224,0.28)', bar: '#7db8ff' },
-  behind:   { bg: 'rgba(229,57,107,0.06)', border: 'rgba(229,57,107,0.25)', bar: '#e5396b' },
-  pending:  { bg: '', border: '', bar: 'rgba(255,255,255,0.08)', dashed: true },
+  ahead:    GOAL_PACE_COLORS.ahead,
+  on_track: GOAL_PACE_COLORS.onTrack,
+  behind:   GOAL_PACE_COLORS.behind,
+  pending:  { ...GOAL_PACE_COLORS.pending, dashed: true },
 }
 
 // Clamped to a visible minimum so a near-zero month still renders a sliver.

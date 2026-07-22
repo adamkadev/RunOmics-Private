@@ -2,7 +2,31 @@ import type { Activity } from '@/domain/activity/types'
 import { formatClock, formatDistance, formatDurationShort } from '@/lib/formatters'
 import { shareCardTitle } from '@/lib/shareCardStats'
 import type { ShareDesign } from '@/lib/shareCardPalette'
+import { SHARE_BACKDROPS, SHARE_CARD_COLORS as SHARE } from '@/lib/colors'
+import { ink, paper } from '@/lib/palette'
 import { t } from '@/i18n'
+
+// ── Canvas ink ───────────────────────────────────────────────────────────────
+// The card is painted in three inks: the athlete's accent (passed down as an
+// r/g/b triple, since it can be a custom color the palette never sees), plus
+// `paper` and `ink` for the white and black washes that build the glass. Alphas
+// stay inline at the call site - they are composition, not color.
+
+/** The accent at a given opacity. `a = 1` gives the solid fill. */
+const accent = (r: number, g: number, b: number, a: number): string => `rgba(${r},${g},${b},${a})`
+
+/** Fully transparent stop, for gradients that fade to nothing. */
+const TRANSPARENT = ink(0)
+
+/** The flat backdrop a design paints before anything else. */
+const backdrop = (design: keyof typeof SHARE_BACKDROPS, dark: boolean): string =>
+  SHARE_BACKDROPS[design][dark ? 1 : 0]
+
+/** The four-stop golden-hour ramp behind the `memory` design's placeholder. */
+function memoryStops(grad: CanvasGradient, stops: readonly [string, string, string, string]): void {
+  const offsets = [0, 0.35, 0.6, 1]
+  stops.forEach((color, i) => grad.addColorStop(offsets[i]!, color))
+}
 
 // ── Hero metric helpers ──────────────────────────────────────────────────────
 
@@ -54,11 +78,11 @@ function drawHeroMetric(
 
   ctx.save()
 
-  ctx.shadowColor = `rgba(${r},${g},${b},${dark ? 0.25 : 0.15})`
+  ctx.shadowColor = accent(r, g, b, dark ? 0.25 : 0.15)
   ctx.shadowBlur = 40
 
   ctx.font = '900 96px Inter,system-ui,sans-serif'
-  ctx.fillStyle = dark ? `rgba(255,255,255,${opacity})` : `rgba(0,0,0,${opacity})`
+  ctx.fillStyle = dark ? paper(opacity) : ink(opacity)
   ctx.textAlign = 'center'
   ctx.textBaseline = 'alphabetic'
   ctx.fillText(metric.value, centerX, centerY)
@@ -67,7 +91,7 @@ function drawHeroMetric(
   ctx.shadowBlur = 0
 
   ctx.font = '700 18px Inter,system-ui,sans-serif'
-  ctx.fillStyle = dark ? `rgba(255,255,255,${opacity * 1.8})` : `rgba(0,0,0,${opacity * 1.5})`
+  ctx.fillStyle = dark ? paper(opacity * 1.8) : ink(opacity * 1.5)
   ctx.textBaseline = 'top'
   ctx.fillText(metric.unit, centerX, centerY + 4)
 
@@ -75,7 +99,7 @@ function drawHeroMetric(
   ctx.beginPath()
   ctx.moveTo(centerX - lineW / 2, centerY - 108)
   ctx.lineTo(centerX + lineW / 2, centerY - 108)
-  ctx.strokeStyle = dark ? `rgba(255,255,255,${opacity * 0.8})` : `rgba(0,0,0,${opacity * 0.7})`
+  ctx.strokeStyle = dark ? paper(opacity * 0.8) : ink(opacity * 0.7)
   ctx.lineWidth = 1
   ctx.stroke()
 
@@ -109,8 +133,8 @@ function rrect(ctx: Ctx, x: number, y: number, w: number, h: number, rr: number)
 function glow(ctx: Ctx, W: number, H: number, cx: number, cy: number, radius: number, r: number, g: number, b: number, alpha: number) {
   ctx.save()
   const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius)
-  grd.addColorStop(0, `rgba(${r},${g},${b},${alpha})`)
-  grd.addColorStop(1, 'rgba(0,0,0,0)')
+  grd.addColorStop(0, accent(r, g, b, alpha))
+  grd.addColorStop(1, TRANSPARENT)
   ctx.fillStyle = grd
   ctx.fillRect(0, 0, W, H)
   ctx.restore()
@@ -131,11 +155,11 @@ function strokeGlow(ctx: Ctx, points: [number, number][], lw: number, a: number,
   ctx.save()
   ctx.translate(-OFFSET, 0)
   ctx.shadowOffsetX = OFFSET * ctx.getTransform().a
-  ctx.shadowColor = `rgba(${r},${g},${b},${a})`
+  ctx.shadowColor = accent(r, g, b, a)
   ctx.shadowBlur = blur
   ctx.beginPath(); ctx.moveTo(first[0], first[1])
   points.forEach(([px, py]) => ctx.lineTo(px, py))
-  ctx.strokeStyle = `rgba(${r},${g},${b},${a})`; ctx.lineWidth = lw
+  ctx.strokeStyle = accent(r, g, b, a); ctx.lineWidth = lw
   ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke()
   ctx.restore()
 }
@@ -145,24 +169,24 @@ function glass(ctx: Ctx, cx: number, cy: number, w: number, h: number, rot: numb
   ctx.translate(cx, cy); ctx.rotate(rot)
   const rr = Math.min(w, h) * 0.1, x = -w / 2, y = -h / 2
   rrect(ctx, x, y, w, h, rr)
-  ctx.shadowColor = `rgba(0,0,0,${dark ? 0.4 : 0.12})`; ctx.shadowBlur = 28; ctx.shadowOffsetY = 8
+  ctx.shadowColor = ink(dark ? 0.4 : 0.12); ctx.shadowBlur = 28; ctx.shadowOffsetY = 8
   const fill = ctx.createLinearGradient(x, y, x + w * 0.45, y + h * 0.45)
   if (dark) {
-    fill.addColorStop(0, `rgba(255,255,255,${al * 1.6})`)
-    fill.addColorStop(0.4, `rgba(${r},${g},${b},${al * 0.55})`)
-    fill.addColorStop(1, `rgba(255,255,255,${al * 0.22})`)
+    fill.addColorStop(0, paper(al * 1.6))
+    fill.addColorStop(0.4, accent(r, g, b, al * 0.55))
+    fill.addColorStop(1, paper(al * 0.22))
   } else {
-    fill.addColorStop(0, `rgba(255,255,255,${al * 2.5})`)
-    fill.addColorStop(0.4, `rgba(${r},${g},${b},${al * 0.25})`)
-    fill.addColorStop(1, `rgba(255,255,255,${al * 1.6})`)
+    fill.addColorStop(0, paper(al * 2.5))
+    fill.addColorStop(0.4, accent(r, g, b, al * 0.25))
+    fill.addColorStop(1, paper(al * 1.6))
   }
   ctx.fillStyle = fill; ctx.fill()
   ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0
   rrect(ctx, x, y, w, h, rr)
   const edge = ctx.createLinearGradient(x, y, x + w * 0.38, y + h * 0.38)
-  edge.addColorStop(0, `rgba(255,255,255,${dark ? 0.55 : 0.95})`)
-  edge.addColorStop(0.28, `rgba(255,255,255,${dark ? 0.18 : 0.45})`)
-  edge.addColorStop(1, 'rgba(255,255,255,0.02)')
+  edge.addColorStop(0, paper(dark ? 0.55 : 0.95))
+  edge.addColorStop(0.28, paper(dark ? 0.18 : 0.45))
+  edge.addColorStop(1, paper(0.02))
   ctx.strokeStyle = edge; ctx.lineWidth = 1.5; ctx.stroke()
   ctx.restore()
 }
@@ -234,7 +258,7 @@ function projectGPS(coords: [number, number][], W: number, H: number): [number, 
 // ── Theme background functions (ported from DC HTML) ────────────────────────
 
 export function draw_aurora(ctx: Ctx, W: number, H: number, r: number, g: number, b: number, dark: boolean) {
-  ctx.fillStyle = dark ? '#050d0a' : '#f0fdf8'; ctx.fillRect(0, 0, W, H)
+  ctx.fillStyle = backdrop('aurora', dark); ctx.fillRect(0, 0, W, H)
   glow(ctx, W, H, -W * 0.22, H * 0.12, W * 0.95, r, g, b, dark ? 0.55 : 0.18)
   glow(ctx, W, H, W * 1.18, H * 0.52, W * 0.78, r, g, b, dark ? 0.38 : 0.13)
   glow(ctx, W, H, W * 0.32, H * 1.08, W * 0.65, r, g, b, dark ? 0.28 : 0.09)
@@ -243,7 +267,7 @@ export function draw_aurora(ctx: Ctx, W: number, H: number, r: number, g: number
 }
 
 export function draw_pulse(ctx: Ctx, W: number, H: number, r: number, g: number, b: number, dark: boolean) {
-  ctx.fillStyle = dark ? '#040810' : '#f8fafe'; ctx.fillRect(0, 0, W, H)
+  ctx.fillStyle = backdrop('pulse', dark); ctx.fillRect(0, 0, W, H)
   glow(ctx, W, H, W * 0.5, H * 0.5, W * 0.7, r, g, b, dark ? 0.18 : 0.07)
   const midY = H * 0.5, amp = H * 0.17, SEGS = 80, T = 15
   const wY = (i: number) => { const t2 = (i / SEGS) * Math.PI * 2.5, env = Math.sin(Math.PI * (i / SEGS)); return midY + Math.sin(t2) * amp * env * 1.5 }
@@ -255,19 +279,19 @@ export function draw_pulse(ctx: Ctx, W: number, H: number, r: number, g: number,
   for (let i = SEGS; i >= 0; i--) ctx.lineTo((i / SEGS) * W, wY(i) + T)
   ctx.closePath()
   const wg = ctx.createLinearGradient(0, midY - amp, 0, midY + amp)
-  wg.addColorStop(0, `rgba(255,255,255,${dark ? 0.52 : 0.84})`)
-  wg.addColorStop(0.3, `rgba(${r},${g},${b},${dark ? 0.28 : 0.14})`)
-  wg.addColorStop(1, `rgba(255,255,255,${dark ? 0.09 : 0.42})`)
+  wg.addColorStop(0, paper(dark ? 0.52 : 0.84))
+  wg.addColorStop(0.3, accent(r, g, b, dark ? 0.28 : 0.14))
+  wg.addColorStop(1, paper(dark ? 0.09 : 0.42))
   ctx.fillStyle = wg; ctx.fill()
   ctx.beginPath(); ctx.moveTo(0, wY(0) - T + 2)
   for (let i = 1; i <= SEGS; i++) ctx.lineTo((i / SEGS) * W, wY(i) - T + 2)
-  ctx.strokeStyle = `rgba(255,255,255,${dark ? 0.72 : 0.96})`; ctx.lineWidth = 1.5; ctx.stroke()
+  ctx.strokeStyle = paper(dark ? 0.72 : 0.96); ctx.lineWidth = 1.5; ctx.stroke()
   glass(ctx, W * 0.5, H * 0.16, W * 0.84, H * 0.09, 0, r, g, b, dark, dark ? 0.09 : 0.36)
   glass(ctx, W * 0.5, H * 0.84, W * 0.84, H * 0.09, 0, r, g, b, dark, dark ? 0.09 : 0.36)
 }
 
 export function draw_terrain(ctx: Ctx, W: number, H: number, r: number, g: number, b: number, dark: boolean) {
-  ctx.fillStyle = dark ? '#040a06' : '#f2faf4'; ctx.fillRect(0, 0, W, H)
+  ctx.fillStyle = backdrop('terrain', dark); ctx.fillRect(0, 0, W, H)
   glow(ctx, W, H, W * 0.5, H * 0.92, W * 0.9, r, g, b, dark ? 0.4 : 0.16)
   const layers = [
     { pts: [[0, H * 0.55], [W * 0.18, H * 0.4], [W * 0.42, H * 0.32], [W * 0.68, H * 0.44], [W, H * 0.52]] as [number, number][], a: dark ? 0.06 : 0.22 },
@@ -292,16 +316,16 @@ export function draw_terrain(ctx: Ctx, W: number, H: number, r: number, g: numbe
     }
     ridge(); ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath()
     const fill = ctx.createLinearGradient(0, first[1] - H * 0.05, 0, H)
-    fill.addColorStop(0, `rgba(${r},${g},${b},${layer.a})`)
-    fill.addColorStop(0.2, `rgba(255,255,255,${layer.a * (dark ? 1.5 : 2.2)})`)
-    fill.addColorStop(1, `rgba(${r},${g},${b},${layer.a * 0.45})`)
+    fill.addColorStop(0, accent(r, g, b, layer.a))
+    fill.addColorStop(0.2, paper(layer.a * (dark ? 1.5 : 2.2)))
+    fill.addColorStop(1, accent(r, g, b, layer.a * 0.45))
     ctx.fillStyle = fill; ctx.fill()
-    ridge(); ctx.strokeStyle = `rgba(255,255,255,${dark ? layer.a * 3.2 : layer.a * 1.6})`; ctx.lineWidth = 1.5; ctx.stroke()
+    ridge(); ctx.strokeStyle = paper(dark ? layer.a * 3.2 : layer.a * 1.6); ctx.lineWidth = 1.5; ctx.stroke()
   })
 }
 
 export function draw_prism(ctx: Ctx, W: number, H: number, r: number, g: number, b: number, dark: boolean) {
-  ctx.fillStyle = dark ? '#060408' : '#fafaf9'; ctx.fillRect(0, 0, W, H)
+  ctx.fillStyle = backdrop('prism', dark); ctx.fillRect(0, 0, W, H)
   glow(ctx, W, H, W * 0.62, H * 0.38, W * 0.72, r, g, b, dark ? 0.28 : 0.11)
   const shapes = [
     { pts: [[W * 0.22, 0], [W * 1.05, 0], [W * 1.05, H * 0.68], [W * 0.52, H * 0.9]] as [number, number][], al: dark ? 0.12 : 0.55 },
@@ -312,25 +336,25 @@ export function draw_prism(ctx: Ctx, W: number, H: number, r: number, g: number,
     const xs = shape.pts.map(p => p[0]), ys = shape.pts.map(p => p[1])
     const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys)
     ctx.save()
-    ctx.shadowColor = dark ? 'rgba(0,0,0,.38)' : 'rgba(0,0,0,.08)'; ctx.shadowBlur = 20; ctx.shadowOffsetY = 6
+    ctx.shadowColor = dark ? ink(0.38) : ink(0.08); ctx.shadowBlur = 20; ctx.shadowOffsetY = 6
     ctx.beginPath(); shape.pts.forEach(([px, py], i) => i ? ctx.lineTo(px, py) : ctx.moveTo(px, py)); ctx.closePath()
     const fill = ctx.createLinearGradient(x0, y0, x0 + (x1 - x0) * 0.7, y0 + (y1 - y0) * 0.7)
-    fill.addColorStop(0, dark ? `rgba(255,255,255,${shape.al * 1.5})` : `rgba(255,255,255,${shape.al * 1.2})`)
-    fill.addColorStop(0.38, `rgba(${r},${g},${b},${shape.al * 0.55})`)
-    fill.addColorStop(1, dark ? `rgba(255,255,255,${shape.al * 0.22})` : `rgba(255,255,255,${shape.al * 0.7})`)
+    fill.addColorStop(0, dark ? paper(shape.al * 1.5) : paper(shape.al * 1.2))
+    fill.addColorStop(0.38, accent(r, g, b, shape.al * 0.55))
+    fill.addColorStop(1, dark ? paper(shape.al * 0.22) : paper(shape.al * 0.7))
     ctx.fillStyle = fill; ctx.fill()
     ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0
     ctx.beginPath(); shape.pts.forEach(([px, py], i) => i ? ctx.lineTo(px, py) : ctx.moveTo(px, py)); ctx.closePath()
     const edge = ctx.createLinearGradient(x0, y0, x0 + (x1 - x0) * 0.4, y0 + (y1 - y0) * 0.4)
-    edge.addColorStop(0, dark ? 'rgba(255,255,255,.58)' : 'rgba(255,255,255,.96)')
-    edge.addColorStop(0.3, dark ? 'rgba(255,255,255,.2)' : 'rgba(255,255,255,.52)')
-    edge.addColorStop(1, 'rgba(255,255,255,.02)')
+    edge.addColorStop(0, dark ? paper(0.58) : paper(0.96))
+    edge.addColorStop(0.3, dark ? paper(0.2) : paper(0.52))
+    edge.addColorStop(1, paper(0.02))
     ctx.strokeStyle = edge; ctx.lineWidth = 1.5; ctx.stroke(); ctx.restore()
   })
 }
 
 export function draw_cadence(ctx: Ctx, W: number, H: number, r: number, g: number, b: number, dark: boolean) {
-  ctx.fillStyle = dark ? '#04090a' : '#f8fbf9'; ctx.fillRect(0, 0, W, H)
+  ctx.fillStyle = backdrop('cadence', dark); ctx.fillRect(0, 0, W, H)
   glow(ctx, W, H, W * 0.5, H * 0.72, W * 0.78, r, g, b, dark ? 0.34 : 0.13)
   const heights = [0.42, 0.68, 0.34, 0.86, 0.55, 0.8, 0.38, 0.65, 0.42]
   const COLS = heights.length, colW = W / COLS, baseY = H * 0.84, maxH = H * 0.56
@@ -339,26 +363,26 @@ export function draw_cadence(ctx: Ctx, W: number, H: number, r: number, g: numbe
     if (bh > 0.6) {
       ctx.save()
       const gg = ctx.createRadialGradient(x + w / 2, y + bH * 0.25, 0, x + w / 2, y + bH * 0.25, w * 1.2)
-      gg.addColorStop(0, `rgba(${r},${g},${b},${dark ? 0.55 : 0.28})`)
-      gg.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = gg; ctx.fillRect(x - w, y - w, w * 3, bH + w * 2); ctx.restore()
+      gg.addColorStop(0, accent(r, g, b, dark ? 0.55 : 0.28))
+      gg.addColorStop(1, TRANSPARENT); ctx.fillStyle = gg; ctx.fillRect(x - w, y - w, w * 3, bH + w * 2); ctx.restore()
     }
     rrect(ctx, x, y, w, bH, rr)
-    ctx.shadowColor = dark ? 'rgba(0,0,0,.3)' : 'rgba(0,0,0,.09)'; ctx.shadowBlur = 10; ctx.shadowOffsetY = 4
+    ctx.shadowColor = dark ? ink(0.3) : ink(0.09); ctx.shadowBlur = 10; ctx.shadowOffsetY = 4
     const bf = ctx.createLinearGradient(x, y, x, y + bH)
-    bf.addColorStop(0, dark ? 'rgba(255,255,255,.24)' : 'rgba(255,255,255,.82)')
-    bf.addColorStop(0.2, `rgba(${r},${g},${b},${dark ? 0.13 : 0.1})`)
-    bf.addColorStop(1, dark ? 'rgba(255,255,255,.05)' : 'rgba(255,255,255,.35)')
+    bf.addColorStop(0, dark ? paper(0.24) : paper(0.82))
+    bf.addColorStop(0.2, accent(r, g, b, dark ? 0.13 : 0.1))
+    bf.addColorStop(1, dark ? paper(0.05) : paper(0.35))
     ctx.fillStyle = bf; ctx.fill()
     rrect(ctx, x, y, w, bH, rr)
     ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0
     const be = ctx.createLinearGradient(x, y, x + w * 0.55, y + bH * 0.42)
-    be.addColorStop(0, dark ? 'rgba(255,255,255,.68)' : 'rgba(255,255,255,.96)')
-    be.addColorStop(0.28, dark ? 'rgba(255,255,255,.22)' : 'rgba(255,255,255,.55)')
-    be.addColorStop(1, 'rgba(255,255,255,.02)')
+    be.addColorStop(0, dark ? paper(0.68) : paper(0.96))
+    be.addColorStop(0.28, dark ? paper(0.22) : paper(0.55))
+    be.addColorStop(1, paper(0.02))
     ctx.strokeStyle = be; ctx.lineWidth = 1.5; ctx.stroke()
   })
   ctx.beginPath(); ctx.moveTo(colW * 0.15, H * 0.84 + 3); ctx.lineTo(W - colW * 0.15, H * 0.84 + 3)
-  ctx.strokeStyle = dark ? 'rgba(255,255,255,.14)' : 'rgba(0,0,0,.1)'; ctx.lineWidth = 1; ctx.stroke()
+  ctx.strokeStyle = dark ? paper(0.14) : ink(0.1); ctx.lineWidth = 1; ctx.stroke()
 }
 
 function drawMapStreetLabels(ctx: Ctx, W: number, H: number, dark: boolean, streetLabels: string[]) {
@@ -368,8 +392,8 @@ function drawMapStreetLabels(ctx: Ctx, W: number, H: number, dark: boolean, stre
   if (labels.length === 0) return
   ctx.save()
   ctx.font = '500 8.5px Inter,system-ui,sans-serif'
-  const labelColor = dark ? 'rgba(255,255,255,0.42)' : 'rgba(0,0,0,0.38)'
-  const bg = dark ? 'rgba(9,16,26,0.76)' : 'rgba(237,241,247,0.76)'
+  const labelColor = dark ? paper(0.42) : ink(0.38)
+  const bg = dark ? SHARE.mapLabelPlateDark : SHARE.mapLabelPlateLight
   const ph = 11, pad = 4
   const snap = (v: number) => Math.round(v / 112) * 112
 
@@ -416,9 +440,9 @@ function drawMapCompass(ctx: Ctx, W: number, H: number, r: number, g: number, b:
 
   // Glass circle background
   ctx.beginPath(); ctx.arc(cx, cy, size + 6, 0, Math.PI * 2)
-  ctx.fillStyle = dark ? 'rgba(0,0,0,0.62)' : 'rgba(255,255,255,0.72)'
+  ctx.fillStyle = dark ? ink(0.62) : paper(0.72)
   ctx.fill()
-  ctx.strokeStyle = dark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.12)'
+  ctx.strokeStyle = dark ? paper(0.2) : ink(0.12)
   ctx.lineWidth = 1; ctx.stroke()
 
   // North arrow (accent color, filled)
@@ -428,7 +452,7 @@ function drawMapCompass(ctx: Ctx, W: number, H: number, r: number, g: number, b:
   ctx.lineTo(cx, cy - 2)
   ctx.lineTo(cx + 4.5, cy + 1)
   ctx.closePath()
-  ctx.fillStyle = `rgb(${r},${g},${b})`; ctx.fill()
+  ctx.fillStyle = accent(r, g, b, 1); ctx.fill()
 
   // South arrow (muted)
   ctx.beginPath()
@@ -437,17 +461,17 @@ function drawMapCompass(ctx: Ctx, W: number, H: number, r: number, g: number, b:
   ctx.lineTo(cx, cy + 2)
   ctx.lineTo(cx - 4.5, cy - 1)
   ctx.closePath()
-  ctx.fillStyle = dark ? 'rgba(255,255,255,0.28)' : 'rgba(0,0,0,0.2)'; ctx.fill()
+  ctx.fillStyle = dark ? paper(0.28) : ink(0.2); ctx.fill()
 
   // E / W ticks
-  ctx.strokeStyle = dark ? 'rgba(255,255,255,0.38)' : 'rgba(0,0,0,0.28)'
+  ctx.strokeStyle = dark ? paper(0.38) : ink(0.28)
   ctx.lineWidth = 1.5
   ctx.beginPath(); ctx.moveTo(cx - size, cy); ctx.lineTo(cx - 5, cy); ctx.stroke()
   ctx.beginPath(); ctx.moveTo(cx + size, cy); ctx.lineTo(cx + 5, cy); ctx.stroke()
 
   // "N" label
   ctx.font = '800 7px Inter,system-ui,sans-serif'
-  ctx.fillStyle = dark ? 'rgba(255,255,255,0.88)' : 'rgba(0,0,0,0.78)'
+  ctx.fillStyle = dark ? paper(0.88) : ink(0.78)
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
   ctx.fillText('N', cx, cy - size - 7)
 
@@ -462,15 +486,15 @@ function drawKmPill(ctx: Ctx, pt: [number, number], label: string, r: number, g:
   const pw = tw + 10, ph = 14, prr = 7
   const px = pt[0] - pw / 2, py = pt[1] - 8 - ph - 2
   rrect(ctx, px, py, pw, ph, prr)
-  ctx.fillStyle = dark ? 'rgba(9,16,26,0.84)' : 'rgba(255,255,255,0.88)'
+  ctx.fillStyle = dark ? SHARE.mapPillDark : SHARE.mapPillLight
   ctx.fill()
   rrect(ctx, px, py, pw, ph, prr)
-  ctx.strokeStyle = `rgba(${r},${g},${b},0.78)`; ctx.lineWidth = 1.2; ctx.stroke()
-  ctx.fillStyle = `rgba(${r},${g},${b},1)`
+  ctx.strokeStyle = accent(r, g, b, 0.78); ctx.lineWidth = 1.2; ctx.stroke()
+  ctx.fillStyle = accent(r, g, b, 1)
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
   ctx.fillText(text, pt[0], py + ph / 2)
   ctx.beginPath(); ctx.arc(pt[0], pt[1], 3, 0, Math.PI * 2)
-  ctx.fillStyle = `rgba(${r},${g},${b},0.9)`; ctx.fill()
+  ctx.fillStyle = accent(r, g, b, 0.9); ctx.fill()
   ctx.restore()
 }
 
@@ -481,8 +505,8 @@ function drawDepartLabel(ctx: Ctx, pt: [number, number]) {
   const pw = tw + 10, ph = 14, prr = 7
   const px = pt[0] - pw / 2, py = pt[1] - 7 - ph - 4
   rrect(ctx, px, py, pw, ph, prr)
-  ctx.fillStyle = '#22c55e'; ctx.fill()
-  ctx.fillStyle = 'rgba(255,255,255,0.95)'
+  ctx.fillStyle = SHARE.routeStart; ctx.fill()
+  ctx.fillStyle = paper(0.95)
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
   ctx.fillText('Départ', pt[0], py + ph / 2)
   ctx.restore()
@@ -498,11 +522,11 @@ export function draw_map(
   streetLabels?: string[] | null,
 ) {
   // Background + grid
-  ctx.fillStyle = dark ? '#09101a' : '#edf1f7'; ctx.fillRect(0, 0, W, H)
-  ctx.strokeStyle = dark ? 'rgba(255,255,255,.055)' : 'rgba(0,0,0,.07)'; ctx.lineWidth = 0.8
+  ctx.fillStyle = backdrop('map', dark); ctx.fillRect(0, 0, W, H)
+  ctx.strokeStyle = dark ? paper(0.055) : ink(0.07); ctx.lineWidth = 0.8
   for (let x = 0; x < W; x += 28) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke() }
   for (let y = 0; y < H; y += 28) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke() }
-  ctx.strokeStyle = dark ? 'rgba(255,255,255,.1)' : 'rgba(0,0,0,.13)'; ctx.lineWidth = 2.2
+  ctx.strokeStyle = dark ? paper(0.1) : ink(0.13); ctx.lineWidth = 2.2
   for (let x = 0; x < W; x += 112) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke() }
   for (let y = 0; y < H; y += 112) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke() }
 
@@ -523,7 +547,7 @@ export function draw_map(
       fontSize = Math.round(fontSize * maxWidth / measured)
       ctx.font = `800 ${fontSize}px Inter,system-ui,sans-serif`
     }
-    ctx.fillStyle = dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.05)'
+    ctx.fillStyle = dark ? paper(0.04) : ink(0.05)
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
     ctx.fillText(watermarkText, W / 2, H / 2)
     ctx.restore()
@@ -549,7 +573,7 @@ export function draw_map(
     ctx.save()
     ctx.beginPath(); ctx.moveTo(first[0], first[1])
     pts.forEach(([px, py]) => ctx.lineTo(px, py))
-    ctx.strokeStyle = `rgba(${r},${g},${b},${a})`; ctx.lineWidth = lw
+    ctx.strokeStyle = accent(r, g, b, a); ctx.lineWidth = lw
     ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke()
     ctx.restore()
   }
@@ -563,16 +587,16 @@ export function draw_map(
 
   // Start dot + "Départ" label
   ctx.beginPath(); ctx.arc(first[0], first[1], 7, 0, Math.PI * 2)
-  ctx.fillStyle = '#22c55e'; ctx.fill()
+  ctx.fillStyle = SHARE.routeStart; ctx.fill()
   ctx.beginPath(); ctx.arc(first[0], first[1], 7, 0, Math.PI * 2)
-  ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 2; ctx.stroke()
+  ctx.strokeStyle = paper(0.7); ctx.lineWidth = 2; ctx.stroke()
   drawDepartLabel(ctx, first)
 
   // End dot
   ctx.beginPath(); ctx.arc(last[0], last[1], 7, 0, Math.PI * 2)
-  ctx.fillStyle = `rgb(${r},${g},${b})`; ctx.fill()
+  ctx.fillStyle = accent(r, g, b, 1); ctx.fill()
   ctx.beginPath(); ctx.arc(last[0], last[1], 7, 0, Math.PI * 2)
-  ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 2; ctx.stroke()
+  ctx.strokeStyle = paper(0.7); ctx.lineWidth = 2; ctx.stroke()
 
   // Compass rose (top of stats card area, bottom right)
   drawMapCompass(ctx, W, H, r, g, b, dark)
@@ -582,19 +606,19 @@ export function draw_memory(ctx: Ctx, W: number, H: number, r: number, g: number
   if (photoImg) {
     drawCover(ctx, photoImg, 0, 0, W, H)
     const topScrim = ctx.createLinearGradient(0, 0, 0, H * 0.32)
-    topScrim.addColorStop(0, 'rgba(0,0,0,0.62)'); topScrim.addColorStop(1, 'rgba(0,0,0,0)')
+    topScrim.addColorStop(0, ink(0.62)); topScrim.addColorStop(1, TRANSPARENT)
     ctx.fillStyle = topScrim; ctx.fillRect(0, 0, W, H * 0.32)
     const botScrim = ctx.createLinearGradient(0, H * 0.52, 0, H)
-    botScrim.addColorStop(0, 'rgba(0,0,0,0)'); botScrim.addColorStop(1, 'rgba(0,0,0,0.78)')
+    botScrim.addColorStop(0, TRANSPARENT); botScrim.addColorStop(1, ink(0.78))
     ctx.fillStyle = botScrim; ctx.fillRect(0, H * 0.52, W, H * 0.48)
     return
   }
   // Full-bleed photo placeholder (warm golden hour gradient)
   const bg = ctx.createLinearGradient(0, 0, 0, H)
   if (dark) {
-    bg.addColorStop(0, '#1c0c06'); bg.addColorStop(0.35, '#2e1610'); bg.addColorStop(0.6, '#12160a'); bg.addColorStop(1, '#060a05')
+    memoryStops(bg, SHARE.memoryDark)
   } else {
-    bg.addColorStop(0, '#ffe4cc'); bg.addColorStop(0.35, '#ffcba4'); bg.addColorStop(0.6, '#a8c88a'); bg.addColorStop(1, '#5c7a48')
+    memoryStops(bg, SHARE.memoryLight)
   }
   ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H)
 
@@ -602,7 +626,7 @@ export function draw_memory(ctx: Ctx, W: number, H: number, r: number, g: number
   glow(ctx, W, H, W * 0.68, H * 0.22, W * 0.65, r, g, b, dark ? 0.38 : 0.28)
 
   // Horizon silhouette (lower third)
-  ctx.fillStyle = dark ? 'rgba(0,0,0,.72)' : 'rgba(18,28,10,.48)'
+  ctx.fillStyle = dark ? ink(0.72) : SHARE.memoryHorizonLight
   const hzY = H * 0.62
   const trees = [{ x: W * 0.08, h: 0.12, w: 0.1 }, { x: W * 0.22, h: 0.09, w: 0.08 }, { x: W * 0.48, h: 0.15, w: 0.12 }, { x: W * 0.72, h: 0.11, w: 0.09 }, { x: W * 0.88, h: 0.13, w: 0.11 }]
   trees.forEach(tr => {
@@ -613,7 +637,7 @@ export function draw_memory(ctx: Ctx, W: number, H: number, r: number, g: number
   })
 
   // Subtle grid hint
-  ctx.strokeStyle = dark ? 'rgba(255,255,255,.025)' : 'rgba(0,0,0,.03)'; ctx.lineWidth = 0.8
+  ctx.strokeStyle = dark ? paper(0.025) : ink(0.03); ctx.lineWidth = 0.8
   for (let x = 0; x < W; x += 44) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke() }
   for (let y = 0; y < H; y += 44) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke() }
 
@@ -621,11 +645,11 @@ export function draw_memory(ctx: Ctx, W: number, H: number, r: number, g: number
   const icW = 72, icH = 58, icX = (W - icW) / 2, icY = H * 0.38 - icH / 2
   ctx.save()
   rrect(ctx, icX - 8, icY - 8, icW + 16, icH + 16, 20)
-  ctx.fillStyle = dark ? 'rgba(0,0,0,.3)' : 'rgba(255,255,255,.35)'; ctx.fill()
+  ctx.fillStyle = dark ? ink(0.3) : paper(0.35); ctx.fill()
   rrect(ctx, icX - 8, icY - 8, icW + 16, icH + 16, 20)
-  ctx.strokeStyle = dark ? 'rgba(255,255,255,.22)' : 'rgba(255,255,255,.7)'; ctx.lineWidth = 1.5; ctx.stroke()
+  ctx.strokeStyle = dark ? paper(0.22) : paper(0.7); ctx.lineWidth = 1.5; ctx.stroke()
   // Camera body
-  ctx.strokeStyle = dark ? 'rgba(255,255,255,.65)' : 'rgba(255,255,255,.9)'; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round'
+  ctx.strokeStyle = dark ? paper(0.65) : paper(0.9); ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round'
   rrect(ctx, icX + 4, icY + 16, icW - 8, icH - 22, 6); ctx.stroke()
   // Lens
   ctx.beginPath(); ctx.arc(icX + icW / 2, icY + icH / 2 + 2, 10, 0, Math.PI * 2); ctx.stroke()
@@ -633,7 +657,7 @@ export function draw_memory(ctx: Ctx, W: number, H: number, r: number, g: number
   ctx.beginPath(); ctx.moveTo(icX + icW / 2 - 10, icY + 16); ctx.lineTo(icX + icW / 2 - 6, icY + 8); ctx.lineTo(icX + icW / 2 + 6, icY + 8); ctx.lineTo(icX + icW / 2 + 10, icY + 16); ctx.stroke()
   // Label
   ctx.font = '600 11px Inter,system-ui,sans-serif'
-  ctx.fillStyle = dark ? 'rgba(255,255,255,.65)' : 'rgba(255,255,255,.9)'
+  ctx.fillStyle = dark ? paper(0.65) : paper(0.9)
   ctx.textAlign = 'center'; ctx.textBaseline = 'top'
   ctx.fillText('Ajouter une photo', W / 2, icY + icH + 10)
   ctx.restore()
@@ -642,12 +666,12 @@ export function draw_memory(ctx: Ctx, W: number, H: number, r: number, g: number
   const panY = H * 0.65
   ctx.save()
   const vig = ctx.createLinearGradient(0, panY - 60, 0, H)
-  vig.addColorStop(0, 'rgba(0,0,0,0)')
-  vig.addColorStop(0.3, dark ? 'rgba(0,0,0,.55)' : 'rgba(0,0,0,.35)')
-  vig.addColorStop(1, dark ? 'rgba(0,0,0,.80)' : 'rgba(0,0,0,.55)')
+  vig.addColorStop(0, TRANSPARENT)
+  vig.addColorStop(0.3, dark ? ink(0.55) : ink(0.35))
+  vig.addColorStop(1, dark ? ink(0.80) : ink(0.55))
   ctx.fillStyle = vig; ctx.fillRect(0, panY - 60, W, H - (panY - 60))
   ctx.beginPath(); ctx.moveTo(0, panY); ctx.lineTo(W, panY)
-  ctx.strokeStyle = dark ? 'rgba(255,255,255,.18)' : 'rgba(255,255,255,.55)'; ctx.lineWidth = 1; ctx.stroke()
+  ctx.strokeStyle = dark ? paper(0.18) : paper(0.55); ctx.lineWidth = 1; ctx.stroke()
   ctx.restore()
 }
 
@@ -675,7 +699,7 @@ export function drawRouteOverlay(
     ctx.save()
     ctx.beginPath(); ctx.moveTo(first[0], first[1])
     pts.forEach(([px, py]) => ctx.lineTo(px, py))
-    ctx.strokeStyle = `rgba(${r},${g},${b},${a})`; ctx.lineWidth = lw
+    ctx.strokeStyle = accent(r, g, b, a); ctx.lineWidth = lw
     ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke()
     ctx.restore()
   }
@@ -686,16 +710,16 @@ export function drawRouteOverlay(
 
   ctx.beginPath(); ctx.moveTo(first[0], first[1])
   pts.forEach(([px, py]) => ctx.lineTo(px, py))
-  ctx.strokeStyle = `rgba(${r},${g},${b},${dark ? 0.92 : 0.78})`
+  ctx.strokeStyle = accent(r, g, b, dark ? 0.92 : 0.78)
   ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke()
 
   ctx.beginPath(); ctx.arc(first[0], first[1], 5.5, 0, Math.PI * 2)
-  ctx.fillStyle = '#22c55e'; ctx.fill()
-  ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 1.5; ctx.stroke()
+  ctx.fillStyle = SHARE.routeStart; ctx.fill()
+  ctx.strokeStyle = paper(0.7); ctx.lineWidth = 1.5; ctx.stroke()
 
   ctx.beginPath(); ctx.arc(last[0], last[1], 5.5, 0, Math.PI * 2)
-  ctx.fillStyle = `rgb(${r},${g},${b})`; ctx.fill()
-  ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 1.5; ctx.stroke()
+  ctx.fillStyle = accent(r, g, b, 1); ctx.fill()
+  ctx.strokeStyle = paper(0.7); ctx.lineWidth = 1.5; ctx.stroke()
 }
 
 // ── Branding (Zone B) ────────────────────────────────────────────────────────
@@ -707,7 +731,7 @@ export function drawBranding(ctx: Ctx, W: number, _H: number, dark: boolean) {
   const paddingTop = 135
   const edgeX = W - 14
 
-  const col = dark ? 'rgba(255,255,255,0.88)' : 'rgba(0,0,0,0.72)'
+  const col = dark ? paper(0.88) : ink(0.72)
 
   ctx.translate(edgeX, paddingTop)
   ctx.rotate(Math.PI / 2)
@@ -715,7 +739,7 @@ export function drawBranding(ctx: Ctx, W: number, _H: number, dark: boolean) {
   ctx.font = `800 ${fs}px Inter, system-ui, sans-serif`
   ctx.textAlign = 'left'
   ctx.textBaseline = 'middle'
-  ctx.shadowColor = dark ? 'rgba(0,0,0,0.55)' : 'rgba(0,0,0,0.12)'
+  ctx.shadowColor = dark ? ink(0.55) : ink(0.12)
   ctx.shadowBlur = dark ? 8 : 4
   ctx.shadowOffsetY = 2
   ctx.fillStyle = col
@@ -739,11 +763,11 @@ export function drawDataOverlay(ctx: Ctx, W: number, H: number, dark: boolean, r
   // Zone A - top-left: name + date
   ctx.save()
   ctx.font = '800 18px Inter,system-ui,sans-serif'
-  ctx.fillStyle = dark ? 'rgba(255,255,255,.92)' : 'rgba(0,0,0,.88)'
+  ctx.fillStyle = dark ? paper(0.92) : ink(0.88)
   ctx.textAlign = 'left'; ctx.textBaseline = 'top'
   ctx.fillText(shareCardTitle(activity), 26, 70)
   ctx.font = '500 12px Inter,system-ui,sans-serif'
-  ctx.fillStyle = dark ? 'rgba(255,255,255,.5)' : 'rgba(0,0,0,.44)'
+  ctx.fillStyle = dark ? paper(0.5) : ink(0.44)
   ctx.fillText(formatShareDate(activity), 26, 94)
   ctx.restore()
 
@@ -754,11 +778,11 @@ export function drawDataOverlay(ctx: Ctx, W: number, H: number, dark: boolean, r
   const cx = 20, cy = H - 148, cw = W - 40, ch = 122, crr = 18
   ctx.save()
   rrect(ctx, cx, cy, cw, ch, crr)
-  ctx.fillStyle = dark ? 'rgba(0,0,0,.52)' : 'rgba(255,255,255,.62)'
-  ctx.shadowColor = 'rgba(0,0,0,.28)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 4
+  ctx.fillStyle = dark ? ink(0.52) : paper(0.62)
+  ctx.shadowColor = ink(0.28); ctx.shadowBlur = 18; ctx.shadowOffsetY = 4
   ctx.fill()
   rrect(ctx, cx, cy, cw, ch, crr)
-  ctx.strokeStyle = dark ? 'rgba(255,255,255,.14)' : 'rgba(255,255,255,.78)'
+  ctx.strokeStyle = dark ? paper(0.14) : paper(0.78)
   ctx.lineWidth = 1; ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0
   ctx.stroke(); ctx.restore()
 
@@ -775,18 +799,18 @@ export function drawDataOverlay(ctx: Ctx, W: number, H: number, dark: boolean, r
     const scx = cx + cellW * i + cellW / 2
     ctx.save()
     ctx.font = '600 8px Inter,system-ui,sans-serif'
-    ctx.fillStyle = dark ? 'rgba(255,255,255,.38)' : 'rgba(0,0,0,.35)'
+    ctx.fillStyle = dark ? paper(0.38) : ink(0.35)
     ctx.textAlign = 'center'; ctx.textBaseline = 'top'
     ctx.fillText(s.label.toUpperCase(), scx, cy + 34)
     ctx.font = '800 21px Inter,system-ui,sans-serif'
-    ctx.fillStyle = dark ? 'rgba(255,255,255,.93)' : 'rgba(0,0,0,.88)'
+    ctx.fillStyle = dark ? paper(0.93) : ink(0.88)
     ctx.fillText(s.value, scx, cy + 50)
     ctx.font = '600 10px Inter,system-ui,sans-serif'
-    ctx.fillStyle = `rgba(${r},${g},${b},.9)`
+    ctx.fillStyle = accent(r, g, b, .9)
     ctx.fillText(s.unit, scx, cy + 78)
     if (i < 3) {
       ctx.beginPath(); ctx.moveTo(cx + cellW * (i + 1), cy + 14); ctx.lineTo(cx + cellW * (i + 1), cy + ch - 14)
-      ctx.strokeStyle = dark ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.06)'; ctx.lineWidth = 1; ctx.stroke()
+      ctx.strokeStyle = dark ? paper(0.07) : ink(0.06); ctx.lineWidth = 1; ctx.stroke()
     }
     ctx.restore()
   })

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { SHARE_DESIGNS, hexToRgb, type ShareDesign, type ThemeMode } from '@/lib/shareCard'
 import { ACCENT_SWATCHES, DEFAULT_ACCENT, isAccentId, type AccentId } from '@/lib/accent'
+import { HUE } from '@/lib/palette'
 
 export type ShareAccent = AccentId | 'custom'
 
@@ -26,7 +27,7 @@ export function useShareCardPrefs(appTheme: ThemeMode) {
     return isAccentId(stored) ? stored : DEFAULT_ACCENT
   })
   const [customHex, setCustomHex] = useState<string>(() =>
-    readLocalStorage('ro_shareCustomHex', '#10b981')
+    readLocalStorage('ro_shareCustomHex', HUE.emerald500)
   )
   const [lightMode, setLightMode] = useState<boolean>(() =>
     readLocalStorage('ro_shareLightMode', 'false') === 'true'

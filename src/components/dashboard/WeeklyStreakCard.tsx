@@ -28,7 +28,7 @@ function WeekDots({ weekDays, today }: { weekDays: boolean[]; today: number }) {
               className={cn(
                 'mx-auto flex h-[26px] w-[26px] items-center justify-center rounded-full',
                 active ? 'bg-accent' : isFuture ? 'border-[1.5px] border-dashed border-foreground/15' : 'bg-foreground/10',
-                isToday && !active && 'border-2 border-accent bg-transparent shadow-[0_0_12px_rgba(30,215,135,0.5)]'
+                isToday && !active && 'border-2 border-accent bg-transparent shadow-[0_0_12px_var(--brand-glow)]'
               )}
             >
               {active && <Check size={13} strokeWidth={3.2} className="text-accent-foreground" />}

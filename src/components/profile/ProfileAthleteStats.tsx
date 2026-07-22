@@ -62,7 +62,7 @@ function VerdictIcon({ band }: { band: NonNullable<TileData['band']> }) {
 // not editable from the app.
 function Tile({ label, unit, value, band }: TileData) {
   return (
-    <div className="relative rounded-xl px-2.5 py-2.5 text-center" style={{ background: 'rgba(0,0,0,0.25)' }}>
+    <div className="relative rounded-xl px-2.5 py-2.5 text-center" style={{ background: 'var(--scrim)' }}>
       {value !== undefined && band && <VerdictIcon band={band} />}
       <div className="text-micro font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
       <div className="mt-1 text-base font-extrabold tabular-nums text-foreground">

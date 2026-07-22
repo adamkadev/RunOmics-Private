@@ -7,7 +7,7 @@ interface Props {
   weeks: TrainingStatusWeek[]
 }
 
-const EMPTY_SEGMENT = 'rgba(255,255,255,0.08)'
+const EMPTY_SEGMENT = 'var(--track-on-dark)'
 
 function weekLabel(week: TrainingStatusWeek): string {
   const s = t.dashboard.trainingStatusWeeks

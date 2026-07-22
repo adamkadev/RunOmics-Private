@@ -5,11 +5,12 @@ import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import type { VO2maxSeries } from '@/application/usecases/GetVO2maxHistory'
 import type { ThresholdHistoryData } from '@/application/usecases/GetThresholdHistory'
 import { formatClock } from '@/lib/formatters'
+import { CHART_COLORS } from '@/lib/colors'
 import { t } from '@/i18n'
 
-const VIOLET = '#8b5cf6'
-const ACCENT = '#1ed787'
-const SKY = '#0ea5e9'
+const VIOLET = CHART_COLORS.efficiency
+const ACCENT = CHART_COLORS.brand
+const SKY = CHART_COLORS.cadence
 
 function linePoints(values: number[]): string {
   if (values.length < 2) return '0,9 80,9'

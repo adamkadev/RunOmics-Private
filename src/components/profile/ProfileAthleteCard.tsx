@@ -3,16 +3,18 @@ import { ChevronRight } from 'lucide-react'
 import type { AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import type { ZoneShare } from '@/application/usecases/GetAnalyticsData'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { CHART_COLORS, ZONE_HEADLINE_COLORS } from '@/lib/colors'
 import { t } from '@/i18n'
 
-const VIOLET = '#8b5cf6'
+const VIOLET = CHART_COLORS.efficiency
 
 // The three headline zones the mockup surfaces - the full ladder lives on the
-// Athlete detail. Fixed hex so Z5/Z4/Z2 keep their heat/threshold/easy meaning.
+// Athlete detail. Accent-independent so Z5/Z4/Z2 keep their heat/threshold/easy
+// meaning.
 const ZONE_ROWS: { zone: number; label: string; color: string }[] = [
-  { zone: 5, label: 'Z5 Max', color: '#ef4444' },
-  { zone: 4, label: 'Z4 Thr', color: '#f97316' },
-  { zone: 2, label: 'Z2 Easy', color: '#3b82f6' },
+  { zone: 5, label: 'Z5 Max', color: ZONE_HEADLINE_COLORS[5] },
+  { zone: 4, label: 'Z4 Thr', color: ZONE_HEADLINE_COLORS[4] },
+  { zone: 2, label: 'Z2 Easy', color: ZONE_HEADLINE_COLORS[2] },
 ]
 
 function Tile({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {

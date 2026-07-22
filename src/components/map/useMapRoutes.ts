@@ -10,6 +10,7 @@ import {
   heatColorExpression,
   heatWidthExpression,
 } from "./mapUtils";
+import { MAP_COLORS } from "@/lib/colors";
 
 // One DOM circle per zone for the world view - simpler and more robust than a GL
 // symbol layer, which would need a text-font guaranteed present in the vector
@@ -34,13 +35,13 @@ function mkClusterMarker(count: number, radius: number, name: string, label: str
     height: `${size}px`,
     borderRadius: "50%",
     backgroundColor: "color-mix(in srgb, var(--accent) 80%, transparent)",
-    border: `2px solid ${isDark ? "#0b1220" : "#ffffff"}`,
-    boxShadow: "0 2px 8px rgba(0,0,0,0.35)",
+    border: `2px solid ${isDark ? MAP_COLORS.markerRingDark : MAP_COLORS.markerRingLight}`,
+    boxShadow: MAP_COLORS.markerShadow,
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    color: "#ffffff",
+    color: MAP_COLORS.markerLabel,
     fontWeight: "700",
     fontSize: size > LABELED_BUBBLE_SIZE ? "14px" : "12px",
     cursor: "pointer",

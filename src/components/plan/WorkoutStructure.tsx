@@ -1,16 +1,12 @@
 import type { ActivityType, WorkoutStep } from '@/domain/activity/types'
 import { EFFORT_ZONE_BY_TYPE } from '@/domain/training/workoutStructure'
 import { formatPaceRange } from '@/lib/formatters'
+import { WORKOUT_SEGMENT_COLORS } from '@/lib/colors'
 import { t } from '@/i18n'
 
-// SPECS §4: effort yellow / recovery blue, warmup-cooldown muted. Fixed hex -
-// step intensity is data, not a theme choice.
-const STEP_COLOR: Record<WorkoutStep['kind'], string> = {
-  warmup:   'rgba(255,255,255,0.18)',
-  effort:   '#f5b700',
-  recovery: '#3b82f6',
-  cooldown: 'rgba(255,255,255,0.18)',
-}
+// SPECS §4: effort yellow / recovery blue, warmup-cooldown muted. Accent-
+// independent - step intensity is data, not a theme choice.
+const STEP_COLOR: Record<WorkoutStep['kind'], string> = WORKOUT_SEGMENT_COLORS
 
 const STEP_HEIGHT: Record<WorkoutStep['kind'], string> = {
   warmup:   '35%',

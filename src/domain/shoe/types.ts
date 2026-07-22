@@ -1,3 +1,5 @@
+import { HUE } from '@/lib/palette'
+
 export interface ShoeInfo {
   name: string
   brand: string
@@ -16,7 +18,7 @@ export interface ShoeInfo {
 // Only 3 shoes, changes a few times a year - not worth a Firestore-backed
 // settings form like Goals/PBs.
 export const SHOE_REGISTRY: Record<string, ShoeInfo> = {
-  'e6aa89fbda0747059f5acbd4dfb5736f': { name: 'Adizero EVO SL', brand: 'Adidas', maxKm: 1000, alertThresholdKm: 800, retired: false, dotColor: '#0ea5e9' },
-  '31632434996e484ea1d41eb9c5b20b11': { name: 'Vomero Plus', brand: 'Nike', maxKm: 1000, alertThresholdKm: 800, retired: false, dotColor: '#f1761f' },
-  'c6216c2eb2bf450e8e442e72fc7a284f': { name: 'Pegasus 40', brand: 'Nike', maxKm: 1000, alertThresholdKm: 800, retired: true, dotColor: '#8257e6' },
+  'e6aa89fbda0747059f5acbd4dfb5736f': { name: 'Adizero EVO SL', brand: 'Adidas', maxKm: 1000, alertThresholdKm: 800, retired: false, dotColor: HUE.sky500 },
+  '31632434996e484ea1d41eb9c5b20b11': { name: 'Vomero Plus', brand: 'Nike', maxKm: 1000, alertThresholdKm: 800, retired: false, dotColor: HUE.roOrange },
+  'c6216c2eb2bf450e8e442e72fc7a284f': { name: 'Pegasus 40', brand: 'Nike', maxKm: 1000, alertThresholdKm: 800, retired: true, dotColor: HUE.roViolet },
 }

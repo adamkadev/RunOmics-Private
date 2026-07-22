@@ -5,6 +5,8 @@ import type { AccentId } from '@/lib/accent'
 import { ACCENT_RGB, type ShareDesign, type ThemeMode } from '@/lib/shareCard'
 import { drawTheme } from '@/lib/shareCardDraw'
 import { cn } from '@/lib/utils'
+import { SHARE_CARD_COLORS } from '@/lib/colors'
+import { withAlpha } from '@/lib/palette'
 import { t } from '@/i18n'
 
 // Thumbnails render at 390x390 (square crop of the design) and display at THUMB_SIZE via CSS.
@@ -50,7 +52,7 @@ export function ThemeCard({ design, accent, theme, selected, accentHex, onClick,
         style={{
           width: THUMB_SIZE, height: THUMB_SIZE, borderRadius: 18, overflow: 'hidden', position: 'relative',
           border: selected ? `2px solid ${accentHex}cc` : '2px solid color-mix(in srgb, var(--ro-text) 12%, transparent)',
-          boxShadow: selected ? `0 0 0 2px ${accentHex}55, 0 4px 12px rgba(0,0,0,0.45)` : '0 4px 12px rgba(0,0,0,0.45)',
+          boxShadow: selected ? `0 0 0 2px ${withAlpha(accentHex, SHARE_CARD_COLORS.thumbRingAlpha)}, var(--shadow-thumb)` : 'var(--shadow-thumb)',
           transition: 'border 0.18s, box-shadow 0.18s',
         }}
       >

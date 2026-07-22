@@ -15,7 +15,7 @@ const ZONE_CONFIG: Record<number, {
   ])
 )
 
-const TRACK_CLASS = 'bg-[rgba(11,31,23,0.07)] dark:bg-[rgba(255,255,255,0.08)]'
+const TRACK_CLASS = 'bg-[var(--track)]'
 
 interface ZoneRowProps {
   zone: HrZone
