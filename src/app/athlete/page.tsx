@@ -2,6 +2,7 @@ import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepo
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { zoneDistribution, recentZoneDistribution } from '@/application/usecases/GetAnalyticsData'
 import { getLatestVO2max } from '@/application/usecases/GetVO2maxHistory'
+import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
 import { isoWeekNumber } from '@/lib/calendarDate'
 import { AthleteClient } from '@/components/profile/AthleteClient'
 
@@ -22,6 +23,7 @@ export default async function AthletePage() {
       latestVo2max={getLatestVO2max()}
       weeklyZoneTime={weeklyZoneTime}
       recentZoneTime={recentZoneTime}
+      paceZones={await getTrainingZones()}
     />
   )
 }

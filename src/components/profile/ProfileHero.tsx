@@ -33,9 +33,16 @@ export function ProfileHero({ hero, displayName, age, sex }: Props) {
       </div>
 
       <div className="min-w-0 flex-1">
-        <h1 className="truncate font-display text-base font-bold text-white">
-          {displayName || t.profile.hero.namePlaceholder}
-        </h1>
+        <div className="flex items-center gap-2">
+          <h1 className="truncate font-display text-lg font-bold text-white">
+            {displayName || t.profile.hero.namePlaceholder}
+          </h1>
+          {hero.rank && (
+            <span className="shrink-0 rounded-[6px] bg-accent px-1.5 py-0.5 font-mono text-[10px] font-bold text-accent-foreground">
+              {t.profile.hero.rankBadge(hero.rank.tier)}
+            </span>
+          )}
+        </div>
         {hero.rank && topPct !== null && (
           <p
             className="text-[11px] font-semibold"

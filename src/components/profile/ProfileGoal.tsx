@@ -26,14 +26,19 @@ export function ProfileGoal({ goal }: Props) {
       <h2 className="text-sm font-bold text-foreground">{t.profile.goal.title(goalYear.year)}</h2>
 
       <div>
-        <span className="text-lg font-extrabold tracking-tight text-foreground">{progressPercent}%</span>
-        <div className="mt-0.5 truncate text-micro text-muted-foreground">
-          {t.profile.goal.progress(totalDistanceKm, goalYear.annualDistanceKm)}
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-lg font-extrabold tracking-tight text-foreground">{progressPercent}%</span>
           {projection && (
-            <span className={cn('ml-1 font-medium', projection.status === 'behind' ? STATUS.warning.text : STATUS.success.text)}>
-              · {t.goals.projection.status[projection.status]}
+            <span className={cn('text-[11px] font-semibold', projection.status === 'behind' ? STATUS.warning.text : STATUS.success.text)}>
+              {t.goals.projection.status[projection.status]}
             </span>
           )}
+        </div>
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-foreground/[0.08]">
+          <div className="h-full rounded-full bg-accent" style={{ width: `${progressPercent}%` }} />
+        </div>
+        <div className="mt-1.5 truncate text-micro text-muted-foreground">
+          {t.profile.goal.progress(totalDistanceKm, goalYear.annualDistanceKm)}
         </div>
       </div>
 

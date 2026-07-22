@@ -11,7 +11,6 @@ import { SeasonHeadline } from '@/components/analytics/SeasonHeadline'
 import type { LifetimeStats } from '@/application/usecases/GetLifetimeStats'
 import { YearSelector } from '@/components/ui/YearSelector'
 import type { VO2maxSeries } from '@/application/usecases/GetVO2maxHistory'
-import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { TrainingLoadData } from '@/application/usecases/GetTrainingLoad'
 import type { LoadRiskPanel as LoadRiskPanelData } from '@/application/usecases/GetLoadRiskPanel'
 import type { LoadBalanceData } from '@/application/usecases/GetLoadBalance'
@@ -81,7 +80,6 @@ export function AnalyticsClient({
   seasonHeadline,
   vo2maxHistory,
   lifetime,
-  zones,
   trainingLoad,
   loadRisk,
   loadBalance,
@@ -97,7 +95,6 @@ export function AnalyticsClient({
   seasonHeadline: SeasonHeadlineData | null
   vo2maxHistory: VO2maxSeries
   lifetime: LifetimeStats | null
-  zones: TrainingZonesData | null
   trainingLoad: TrainingLoadData | null
   loadRisk: LoadRiskPanelData | null
   loadBalance: LoadBalanceData | null
@@ -316,7 +313,6 @@ export function AnalyticsClient({
             {tab === 'health' && (
               <HealthGroup
                 weeklyTrends={data.weeklyTrends}
-                zones={zones}
                 loadBalance={loadBalance}
               />
             )}
