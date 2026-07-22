@@ -334,18 +334,6 @@ export function WeekView({
         )}
 
         <div>
-          <div className="mb-2 grid grid-cols-7 gap-1">
-            {t.plan.weekdays.map((label, i) => (
-              <div
-                key={label}
-                className="text-center font-mono text-micro font-semibold text-muted-foreground/50"
-                style={days[i]?.date === today ? { color: 'var(--accent-text)', fontWeight: 700 } : undefined}
-              >
-                {label[0]}
-              </div>
-            ))}
-          </div>
-
           {/* Day cells: colored, type-labeled blocks (rest/missed keep a distinct, non-typed look) */}
           <div className="grid grid-cols-7 gap-1">
             {days.map((d) => {
