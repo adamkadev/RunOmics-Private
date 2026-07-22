@@ -5641,12 +5641,25 @@
       "statusCode": 2,
       "feedback": "UNPRODUCTIVE_2",
       "fitnessTrend": 1,
-      "acuteLoad": 363,
-      "chronicLoad": 330,
-      "acwr": 1.1,
+      "acuteLoad": 429,
+      "chronicLoad": 337,
+      "acwr": 1.2,
       "acwrStatus": "OPTIMAL",
-      "chronicLoadMin": 264.0,
-      "chronicLoadMax": 495.0,
+      "chronicLoadMin": 269.6,
+      "chronicLoadMax": 505.5,
+      "deviceId": 3604810488
+    },
+    "2026-07-23": {
+      "status": "unproductive",
+      "statusCode": 2,
+      "feedback": "UNPRODUCTIVE_2",
+      "fitnessTrend": 1,
+      "acuteLoad": 429,
+      "chronicLoad": 337,
+      "acwr": 1.2,
+      "acwrStatus": "OPTIMAL",
+      "chronicLoadMin": 269.6,
+      "chronicLoadMax": 505.5,
       "deviceId": 3604810488
     }
   }
