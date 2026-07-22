@@ -37,7 +37,7 @@ export function GlassTabBar() {
         'glass-nav fixed inset-x-0 bottom-0 z-30 flex items-center border-x-0 border-b-0 transition-transform duration-200 ease-out lg:hidden',
         hidden ? 'pointer-events-none translate-y-full' : 'translate-y-0'
       )}
-      style={{ paddingBottom: 'max(4px, var(--safe-bottom))' }}
+      style={{ paddingBottom: 'max(4px, calc(var(--safe-bottom) * 0.6))' }}
     >
       {TABS.map(({ href, label, icon: Icon }) => {
         const active = isActive(pathname, href)
