@@ -1,7 +1,16 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { test, type Page } from '@playwright/test'
-import { ROUTES, THEMES, type RouteSpec, type Theme } from './routes'
+import {
+  DEFAULT_ACCENT_ID,
+  ROUTES,
+  selectedAccents,
+  selectedThemes,
+  type Accent,
+  type RouteSpec,
+  type Theme,
+} from './routes'
+import { ACCENT_STORAGE_KEY } from '@/lib/accent'
 
 const OUTPUT_DIR = path.join(__dirname, 'output')
 
@@ -73,18 +82,23 @@ async function captureScrolls(page: Page, dir: string, prefix: string): Promise<
   await page.screenshot({ path: p('full'), fullPage: true })
 }
 
-async function gotoAndSettle(page: Page, route: RouteSpec, theme: Theme): Promise<void> {
-  // Seed the theme + accent-safe defaults before any app script runs, so the
-  // very first paint is already in the right mode (no light->dark flash).
+async function gotoAndSettle(page: Page, route: RouteSpec, theme: Theme, accent: Accent): Promise<void> {
+  // Seed the theme + the accent palette before any app script runs, so the very
+  // first paint is already in the right mode (no light->dark or nature->x flash).
+  // layout.tsx's beforeInteractive script reads the accent key and stamps
+  // `data-accent` from it, which is what the palette CSS keys off.
   await page.addInitScript(
-    ([key, value]) => {
+    (entries) => {
       try {
-        localStorage.setItem(key, value)
+        for (const [key, value] of entries) localStorage.setItem(key, value)
       } catch {
         /* private mode etc. - the emulated color-scheme still covers us */
       }
     },
-    [THEME_STORAGE_KEY, theme] as const
+    [
+      [THEME_STORAGE_KEY, theme],
+      [ACCENT_STORAGE_KEY, accent],
+    ] as const
   )
 
   // Reduce motion for any prefers-reduced-motion CSS (belt-and-braces with the
@@ -111,35 +125,50 @@ async function gotoAndSettle(page: Page, route: RouteSpec, theme: Theme): Promis
     })
     .catch(() => {})
 
+  // Same for the accent. The default one is the bare stylesheet, so it is the
+  // *absence* of the attribute we wait on there.
+  await page
+    .waitForFunction(
+      (a) => {
+        const attr = document.documentElement.getAttribute('data-accent')
+        return a === DEFAULT_ACCENT_ID ? attr === null || attr === a : attr === a
+      },
+      accent,
+      { timeout: 5_000 }
+    )
+    .catch(() => {})
+
   await page.addStyleTag({ content: FREEZE_MOTION_CSS })
   await page.evaluate(() => (document as unknown as { fonts: FontFaceSet }).fonts?.ready)
   await page.waitForTimeout(600)
 }
 
-for (const theme of THEMES) {
-  test.describe(`${theme} mode`, () => {
-    // Emulated color-scheme backs up the seeded localStorage value for any
-    // prefers-color-scheme CSS and for the pre-hydration paint.
-    test.use({ colorScheme: theme as Theme })
+for (const accent of selectedAccents()) {
+  for (const theme of selectedThemes()) {
+    test.describe(`${accent} / ${theme} mode`, () => {
+      // Emulated color-scheme backs up the seeded localStorage value for any
+      // prefers-color-scheme CSS and for the pre-hydration paint.
+      test.use({ colorScheme: theme })
 
-    for (const route of ROUTES) {
-      test(`${route.name}`, async ({ page }) => {
-        const dir = path.join(OUTPUT_DIR, theme, route.name)
-        await gotoAndSettle(page, route, theme)
-        await captureScrolls(page, dir, '')
+      for (const route of ROUTES) {
+        test(`${route.name}`, async ({ page }) => {
+          const dir = path.join(OUTPUT_DIR, accent, theme, route.name)
+          await gotoAndSettle(page, route, theme, accent)
+          await captureScrolls(page, dir, '')
 
-        if (route.hasTabs) {
-          const tabs = page.getByRole('tab')
-          const count = await tabs.count()
-          for (let i = 0; i < count; i++) {
-            const tab = tabs.nth(i)
-            const label = slugify((await tab.textContent())?.trim() ?? `tab-${i}`)
-            await tab.click()
-            await page.waitForTimeout(400)
-            await captureScrolls(page, dir, `tab-${i + 1}-${label}`)
+          if (route.hasTabs) {
+            const tabs = page.getByRole('tab')
+            const count = await tabs.count()
+            for (let i = 0; i < count; i++) {
+              const tab = tabs.nth(i)
+              const label = slugify((await tab.textContent())?.trim() ?? `tab-${i}`)
+              await tab.click()
+              await page.waitForTimeout(400)
+              await captureScrolls(page, dir, `tab-${i + 1}-${label}`)
+            }
           }
-        }
-      })
-    }
-  })
+        })
+      }
+    })
+  }
 }

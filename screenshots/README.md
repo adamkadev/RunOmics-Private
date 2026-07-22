@@ -1,8 +1,9 @@
 # Screenshot audit
 
-Automated **light + dark mode** screen captures of every page in RunOmics, for
-visual auditing and "does it still render?" spot checks. The app is phone-first,
-so shots are taken through an **iPhone 13** viewport (390×844 @3x).
+Automated **light + dark mode** screen captures of every page in RunOmics, in
+any of the **accent palettes**, for visual auditing and "does it still render?"
+spot checks. The app is phone-first, so shots are taken through an **iPhone 13**
+viewport (390×844 @3x).
 
 ## Run it
 
@@ -11,7 +12,8 @@ npm run screenshots
 ```
 
 That builds the app once (`next build`), starts it (`next start`), walks every
-route in both themes, and writes PNGs to `screenshots/output/` (git-ignored).
+route in both themes on the default (nature) accent, and writes PNGs to
+`screenshots/output/` (git-ignored).
 
 Already have a server running (or want to point at a deployed URL)? Skip the
 build:
@@ -26,9 +28,30 @@ Clear old output:
 npm run screenshots:clean
 ```
 
+## Choosing themes and accents
+
+Two env vars slice the matrix. Each takes `all` or a comma-separated list, and
+fails loudly on an unknown value:
+
+| Var                  | Values                                                                 | Default          |
+| -------------------- | ---------------------------------------------------------------------- | ---------------- |
+| `SCREENSHOT_THEMES`  | `light`, `dark`                                                         | both             |
+| `SCREENSHOT_ACCENTS` | `nature`, `performance`, `impact`, `motivation`, `endurance`, `silver`  | `nature`         |
+
+```bash
+# The whole matrix: 6 accents x 2 themes x every route
+SCREENSHOT_ACCENTS=all npm run screenshots
+
+# Just what you're working on
+SCREENSHOT_ACCENTS=impact,silver SCREENSHOT_THEMES=dark npm run screenshots
+```
+
+The accent list is imported from `src/lib/accent.ts`, so a newly shipped palette
+is captured without touching this folder.
+
 ## What gets captured
 
-For **each route × each theme** (light, dark):
+For **each accent × each theme × each route**:
 
 | Frame     | What it is                                                        |
 | --------- | ---------------------------------------------------------------- |
@@ -44,13 +67,14 @@ begin/middle/end/full set per tab, prefixed `tab-<n>-<label>-…`.
 
 ```
 screenshots/output/
-├── light/
-│   ├── dashboard/           begin.png  middle.png  end.png  full.png
-│   ├── analytics/           begin.png … + tab-1-volume-begin.png, tab-2-performance-…
-│   ├── calendar/            begin.png … + tab-1-week-…, tab-2-month-…
-│   └── … (one folder per route)
-└── dark/
-    └── … (mirror of light)
+└── nature/                      (one folder per captured accent)
+    ├── light/
+    │   ├── dashboard/           begin.png  middle.png  end.png  full.png
+    │   ├── analytics/           begin.png … + tab-1-volume-begin.png, tab-2-performance-…
+    │   ├── calendar/            begin.png … + tab-1-week-…, tab-2-month-…
+    │   └── … (one folder per route)
+    └── dark/
+        └── … (mirror of light)
 ```
 
 ## Routes covered
@@ -60,12 +84,16 @@ Goals, Milestones, Records, Shoes (list + a sample detail), Profile, Settings �
 defined in [`routes.ts`](./routes.ts). Detail pages use real IDs from committed
 data so they render with content instead of 404s.
 
-## How themes are pinned
+## How themes and accents are pinned
 
 `next-themes` is class-based with `storageKey="theme"`. Before the first paint
 the capture seeds `localStorage.theme` **and** emulates the OS `color-scheme`,
-so each run is deterministically light or dark with no flash. Animations and
-transitions are frozen while shooting so repeat runs are diff-stable.
+so each run is deterministically light or dark with no flash. The accent is
+seeded the same way under `runomics-accent`, which `layout.tsx`'s
+`beforeInteractive` script reads to stamp `data-accent` on `<html>` — the
+attribute the palette CSS keys off — so the first paint is already in-palette.
+Animations and transitions are frozen while shooting so repeat runs are
+diff-stable.
 
 ## Notes
 
