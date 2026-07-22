@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Activity, CalendarDays, BarChart2, Map, Settings, User } from 'lucide-react'
+import { LayoutDashboard, Activity, BarChart2, Map, Settings, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { APP_VERSION } from '@/lib/version'
@@ -10,10 +10,11 @@ import { ThemeToggle } from './ThemeToggle'
 import { GlassTabBar } from './GlassTabBar'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 
+// Plan is no longer a top-level destination (Phase 3): its week glance folds
+// into Today, which links through to the full planner at /plan.
 const NAV_ITEMS = [
   { href: '/', label: t.nav.items.dashboard, icon: LayoutDashboard },
   { href: '/activities', label: t.nav.items.activities, icon: Activity },
-  { href: '/plan', label: t.nav.items.plan, icon: CalendarDays },
   { href: '/analytics', label: t.nav.items.analytics, icon: BarChart2 },
   { href: '/map', label: t.nav.items.heatmap, icon: Map },
   { href: '/profile', label: t.nav.items.profile, icon: User },

@@ -1188,6 +1188,7 @@ export const fr = {
     nextWeek: (n: number) => `Semaine prochaine - ${n} prévue${n > 1 ? 's' : ''}`,
     comingUp: 'À venir',
     comingUpBadge: 'NOUVEAU',
+    openPlanner: 'Ouvrir le planificateur',
     viewDetail: 'Voir le détail',
     type: 'Type',
     weekSummary: {
