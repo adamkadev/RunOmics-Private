@@ -23,6 +23,8 @@ export interface ProfileYtdStats {
   durationSeconds: number
   sessionCount: number
   elevationGainM: number
+  avgKmPerWeek: number
+  calories: number
 }
 
 export interface ProfileGoal {
@@ -52,7 +54,14 @@ export async function getProfileData(): Promise<ProfileData> {
     ? activities.reduce((min, a) => (a.date < min ? a.date : min), firstActivity.date)
     : null
 
-  const currentYear = new Date().getFullYear()
+  const now = new Date()
+  const currentYear = now.getFullYear()
+  // Days elapsed since Jan 1, so "avg / week" is the season's real rate rather
+  // than a year-to-date total spread over 52 weeks.
+  const elapsedDaysThisYear = Math.max(
+    1,
+    Math.floor((now.getTime() - new Date(currentYear, 0, 1).getTime()) / 86400000) + 1,
+  )
   const ytdActivities = activities.filter((a) => a.date.startsWith(String(currentYear)))
   const ytdDistanceKm = ytdActivities.reduce((s, a) => s + a.distanceKm, 0)
   // Shared selector so Progress/Goals/Analytics show the exact same whole-km total.
@@ -79,6 +88,8 @@ export async function getProfileData(): Promise<ProfileData> {
       durationSeconds: ytdActivities.reduce((s, a) => s + a.durationSeconds, 0),
       sessionCount: ytdActivities.length,
       elevationGainM: Math.round(ytdActivities.reduce((s, a) => s + (a.elevationGain ?? 0), 0)),
+      avgKmPerWeek: round((ytdDistanceKmRounded / elapsedDaysThisYear) * 7),
+      calories: ytdActivities.reduce((s, a) => s + (a.calories ?? 0), 0),
     },
     records: PROFILE_RECORD_KEYS.map((key) => allRecords.find((r) => r.key === key)).filter(
       (r): r is RecordEntry => r !== undefined

@@ -6,6 +6,7 @@ import {
   CHART_RANGES,
   hasEarlierPoints,
   pointsInWindow,
+  sampleForRange,
   windowBounds,
   type ChartRange,
   type WindowBounds,
@@ -25,9 +26,12 @@ export interface ChartWindow<T extends { date: string }> {
   goForward: () => void
 }
 
+// 4w is the default everywhere: the range lives in component state only, so
+// leaving the page and coming back always lands back on the recent window
+// rather than whatever was last inspected.
 export function useChartWindow<T extends { date: string }>(
   points: T[],
-  initialRange: ChartRange = '6m',
+  initialRange: ChartRange = '4w',
 ): ChartWindow<T> {
   const [range, setRange] = useState<ChartRange>(initialRange)
   // 0 is the window ending on the anchor; each step back is one window earlier.
@@ -66,15 +70,16 @@ export function ChartRangeChips({
   onChange: (range: ChartRange) => void
 }) {
   return (
-    <div className="flex gap-0.5 rounded-md bg-muted p-0.5">
+    <div className="flex gap-0.5 rounded-full bg-foreground/[0.06] p-0.5">
       {CHART_RANGES.map((r) => (
         <button
           key={r}
           onClick={() => onChange(r)}
           className={cn(
-            'rounded px-2 py-1 text-xs font-semibold transition-colors',
+            'rounded-full px-2.5 py-1 text-xs font-semibold transition-all active:scale-95',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
             r === value
-              ? 'bg-accent text-accent-foreground'
+              ? 'bg-accent text-accent-foreground shadow-sm'
               : 'text-muted-foreground hover:text-foreground',
           )}
         >
@@ -132,13 +137,20 @@ export function ChartWindowPager({
  * controls and legend, the range chips, the pager, an empty state, and the
  * footnote. The chart body is a render-prop given the visible slice, so every
  * windowed chart shares one layout and only supplies its own plot.
+ *
+ * The slice handed to `children` is downsampled to the window's point budget
+ * (4w -> 4, 6m -> 6, 1y -> 12) so every trend chart in the app reads at the
+ * same density as the Fitness group's load chart. Charts that aggregate the
+ * whole window instead of plotting it (the zone donut) opt out with
+ * `sample={false}`.
  */
 export function WindowedChartCard<T extends { date: string }>({
   title,
   controls,
   legend,
   points,
-  initialRange = '6m',
+  initialRange = '4w',
+  sample = true,
   footnote,
   children,
 }: {
@@ -147,10 +159,12 @@ export function WindowedChartCard<T extends { date: string }>({
   legend?: ReactNode
   points: T[]
   initialRange?: ChartRange
+  sample?: boolean
   footnote?: ReactNode
   children: (visible: T[]) => ReactNode
 }) {
   const w = useChartWindow(points, initialRange)
+  const plotted = sample ? sampleForRange(w.visible, w.range) : w.visible
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -172,15 +186,27 @@ export function WindowedChartCard<T extends { date: string }>({
         onForward={w.goForward}
       />
 
-      {w.visible.length === 0 ? (
+      {plotted.length === 0 ? (
         <p className="py-12 text-center text-sm text-subtle">{t.chartWindow.empty}</p>
       ) : (
-        children(w.visible)
+        children(plotted)
       )}
 
       {footnote && <p className="mt-2 text-xs text-subtle">{footnote}</p>}
     </GlassSurface>
   )
+}
+
+/**
+ * Dot props for a windowed trend line. The point budget leaves 4-12 values per
+ * window, so each reading is worth marking - at that density a bare line hides
+ * where the actual measurements are.
+ */
+export function trendDots(color: string) {
+  return {
+    dot: { r: 3, fill: color, stroke: 'none' },
+    activeDot: { r: 5, fill: color, stroke: 'none' },
+  }
 }
 
 /** Short "24 Jun" label for a chart's date-keyed X axis. */

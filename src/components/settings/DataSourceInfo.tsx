@@ -10,7 +10,6 @@ import { formatMonthYear, formatRelativeAgo } from '@/lib/formatters'
 
 export interface SyncDevice {
   name?: string
-  firmware?: string
   /** ISO date the watch was paired with Garmin Connect. */
   since?: string
 }
@@ -57,7 +56,6 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device }: Props) {
   // Device provenance, shown only once the sync has actually reported a watch.
   const provenance = device && [
     s.dataSource.garmin,
-    device.firmware && s.dataSource.firmware(device.firmware),
     device.since && s.dataSource.since(formatMonthYear(device.since)),
   ].filter(Boolean).join(' · ')
 

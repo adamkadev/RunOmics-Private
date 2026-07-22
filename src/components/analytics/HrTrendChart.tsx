@@ -6,7 +6,7 @@ import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { ChartExplain } from '@/components/ui/ChartExplain'
-import { WindowedChartCard, windowTickDate, windowTicks } from '@/components/ui/ChartWindowNav'
+import { WindowedChartCard, trendDots, windowTickDate, windowTicks } from '@/components/ui/ChartWindowNav'
 import { trendFromSeries } from '@/lib/chartTrend'
 import { t } from '@/i18n'
 
@@ -24,7 +24,7 @@ function CustomTooltip({ active, payload }: TooltipProps) {
           key={p.dataKey}
           color={p.stroke}
           name={p.dataKey === 'easyAvgHr' ? t.analytics.charts.paceTrend.easy : t.analytics.charts.paceTrend.workout}
-          value={`${p.value} ${t.units.bpm}`}
+          value={`${Math.round(p.value)} ${t.units.bpm}`}
         />
       ))}
     </TooltipCard>
@@ -67,8 +67,8 @@ export function HrTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
         const easyVals = visible.map((d) => d.easyAvgHr).filter((v): v is number => v !== null)
         const hardVals = visible.map((d) => d.hardAvgHr).filter((v): v is number => v !== null)
         const summaryParts: string[] = []
-        if (easyVals.length) summaryParts.push(`${t.analytics.charts.paceTrend.easy} ${Math.min(...easyVals)}–${Math.max(...easyVals)} ${t.units.bpm}`)
-        if (hardVals.length) summaryParts.push(`${t.analytics.charts.paceTrend.workout} ${Math.min(...hardVals)}–${Math.max(...hardVals)} ${t.units.bpm}`)
+        if (easyVals.length) summaryParts.push(`${t.analytics.charts.paceTrend.easy} ${Math.round(Math.min(...easyVals))}–${Math.round(Math.max(...easyVals))} ${t.units.bpm}`)
+        if (hardVals.length) summaryParts.push(`${t.analytics.charts.paceTrend.workout} ${Math.round(Math.min(...hardVals))}–${Math.round(Math.max(...hardVals))} ${t.units.bpm}`)
         const summary = `${t.analytics.charts.hrTrend.title}: ${summaryParts.join(', ')}`
 
         const r = t.analytics.charts.hrTrend.reading
@@ -102,8 +102,8 @@ export function HrTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
                     width={42}
                   />
                   <Tooltip content={<CustomTooltip />} />
-                  <Line type="monotone" dataKey="easyAvgHr" stroke={CHART_COLORS.hrEasy} strokeWidth={3} dot={false} connectNulls isAnimationActive={false} />
-                  <Line type="monotone" dataKey="hardAvgHr" stroke={CHART_COLORS.hr} strokeWidth={3} dot={false} connectNulls isAnimationActive={false} />
+                  <Line type="monotone" dataKey="easyAvgHr" stroke={CHART_COLORS.hrEasy} strokeWidth={3} {...trendDots(CHART_COLORS.hrEasy)} connectNulls isAnimationActive={false} />
+                  <Line type="monotone" dataKey="hardAvgHr" stroke={CHART_COLORS.hr} strokeWidth={3} {...trendDots(CHART_COLORS.hr)} connectNulls isAnimationActive={false} />
                 </LineChart>
               </ResponsiveContainer>
             </ChartFigure>

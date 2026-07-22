@@ -5,7 +5,7 @@ import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { ChartExplain } from '@/components/ui/ChartExplain'
-import { WindowedChartCard, windowTickDate, windowTicks } from '@/components/ui/ChartWindowNav'
+import { WindowedChartCard, trendDots, windowTickDate, windowTicks } from '@/components/ui/ChartWindowNav'
 import { trendFromSeries } from '@/lib/chartTrend'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { t } from '@/i18n'
@@ -86,7 +86,7 @@ export function EfficiencyChart({ points }: { points: WeeklyTrendPoint[] }) {
                     stroke={CHART_COLORS.efficiency}
                     strokeWidth={3}
                     fill="url(#efGradient)"
-                    dot={false}
+                    {...trendDots(CHART_COLORS.efficiency)}
                     connectNulls
                     isAnimationActive={false}
                   />

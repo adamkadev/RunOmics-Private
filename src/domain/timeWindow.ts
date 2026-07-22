@@ -48,16 +48,25 @@ export const TARGET_POINT_COUNT: Record<ChartRange, number> = {
 
 /**
  * Downsample a windowed points array to `TARGET_POINT_COUNT[range]` by
- * grouping into equal index-buckets and averaging each numeric field
- * (rounded to a whole number - these are smoothed trend reads, not exact
- * daily values). Non-numeric fields (date, label, status, ...) come from the
- * bucket's last point, so ticks and tooltips stay meaningful. A no-op when
- * there are already fewer points than the target.
+ * grouping into equal index-buckets and averaging each numeric field - these
+ * are smoothed trend reads, not exact daily values. Non-numeric fields (date,
+ * label, status, ...) come from the bucket's last point, so ticks and tooltips
+ * stay meaningful. A no-op when there are already fewer points than the target.
+ *
+ * `decimals` defaults to 2 because the same series carry whole-number loads
+ * (CTL ~50) and small fractional ones (stride length ~1.2 m, efficiency ~0.95);
+ * rounding everything to an integer would flatten the fractional ones. Charts
+ * whose values are only ever whole numbers pass 0.
  */
-export function sampleForRange<T extends { date: string }>(points: T[], range: ChartRange): T[] {
+export function sampleForRange<T extends { date: string }>(
+  points: T[],
+  range: ChartRange,
+  decimals = 2,
+): T[] {
   const target = TARGET_POINT_COUNT[range]
   if (points.length <= target) return points
 
+  const factor = 10 ** decimals
   const bucketSize = points.length / target
   const result: T[] = []
   for (let i = 0; i < target; i++) {
@@ -72,7 +81,7 @@ export function sampleForRange<T extends { date: string }>(points: T[], range: C
         .map((p) => (p as Record<string, unknown>)[key])
         .filter((v): v is number => typeof v === 'number')
       if (values.length > 0) {
-        sampled[key] = Math.round(values.reduce((s, v) => s + v, 0) / values.length)
+        sampled[key] = Math.round((values.reduce((s, v) => s + v, 0) / values.length) * factor) / factor
       }
     }
     result.push(sampled as T)

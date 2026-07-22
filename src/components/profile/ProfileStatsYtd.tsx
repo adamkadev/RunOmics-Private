@@ -32,8 +32,6 @@ export function ProfileStatsYtd({ ytd }: { ytd: ProfileYtdStats }) {
       <div className="mb-3 text-micro font-semibold uppercase tracking-wide text-muted-foreground">
         {t.profile.ytd.title}
       </div>
-      {/* Six figures read best as 3x2 - two tall columns would push calories
-          below the fold and leave the card lopsided when it is absent. */}
       <div className="grid grid-cols-3 gap-x-3 gap-y-3.5">
         {cells.map((cell, i) => (
           <div

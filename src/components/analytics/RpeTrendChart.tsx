@@ -6,7 +6,7 @@ import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { ChartExplain } from '@/components/ui/ChartExplain'
-import { WindowedChartCard, windowTickDate, windowTicks } from '@/components/ui/ChartWindowNav'
+import { WindowedChartCard, trendDots, windowTickDate, windowTicks } from '@/components/ui/ChartWindowNav'
 import { trendFromSeries } from '@/lib/chartTrend'
 import { t } from '@/i18n'
 
@@ -76,7 +76,7 @@ export function RpeTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
                     dataKey="avgRpe"
                     stroke={CHART_COLORS.hr}
                     strokeWidth={3}
-                    dot={false}
+                    {...trendDots(CHART_COLORS.hr)}
                     connectNulls
                     isAnimationActive={false}
                   />

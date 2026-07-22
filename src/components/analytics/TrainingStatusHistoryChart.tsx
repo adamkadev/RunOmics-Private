@@ -80,7 +80,7 @@ export function TrainingStatusHistoryChart({ data }: { data: TrainingStatusHisto
   const s = t.analytics.charts.trainingStatusHistory
 
   const { range, selectRange, bounds, visible, canGoBack, canGoForward, goBack, goForward } =
-    useChartWindow(data.points, '6m')
+    useChartWindow(data.points)
 
   // Ribbon, legend and reading all describe the visible window, not the whole
   // stored history - paging back re-tells that period's story. The ribbon

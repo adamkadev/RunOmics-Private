@@ -3,7 +3,8 @@
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import type { GarminRacePredictionsData } from '@/application/usecases/GetGarminRacePredictions'
 import { RACE_DISTANCE_KM, type RaceDistanceKey } from '@/domain/race/distances'
-import { bestTrend, downsamplePaces } from '@/domain/race/predictionWindow'
+import { bestTrend } from '@/domain/race/predictionWindow'
+import { sampleForRange } from '@/domain/timeWindow'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -112,9 +113,12 @@ export function RacePredictorChart({ data }: { data: GarminRacePredictionsData }
   const s = t.analytics.charts.racePredictor
 
   const { range, selectRange, bounds, visible, canGoBack, canGoForward, goBack, goForward } =
-    useChartWindow(data.points, '4w')
+    useChartWindow(data.points)
 
-  const plotted = downsamplePaces(visible, range)
+  // Same point budget as every other windowed chart (4w -> 4, 6m -> 6,
+  // 1y -> 12), so the four distance lines read as trends instead of spaghetti.
+  // Whole seconds per km: the tooltip renders these as finish times.
+  const plotted = sampleForRange(visible, range, 0)
 
   const distances = data.distances.filter((d) => plotted.some((p) => p[d] !== null))
   const paces = plotted.flatMap((p) => distances.map((d) => p[d])).filter((v): v is number => v !== null)

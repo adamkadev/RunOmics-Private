@@ -3,7 +3,6 @@
 import {
   LineChart,
   Line,
-  LabelList,
   XAxis,
   YAxis,
   Tooltip,
@@ -16,7 +15,7 @@ import { STATUS } from '@/lib/statusColors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
-import { ChartRangeChips, ChartWindowPager, useChartWindow } from '@/components/ui/ChartWindowNav'
+import { ChartRangeChips, ChartWindowPager, trendDots, useChartWindow } from '@/components/ui/ChartWindowNav'
 import { sampleForRange } from '@/domain/timeWindow'
 import { t } from '@/i18n'
 
@@ -41,20 +40,20 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   )
 }
 
-function EndLabel({ x, y, value, index, lastIndex, text, color }: {
-  x?: string | number
-  y?: string | number
-  value?: string | number | boolean | null
-  index?: number
-  lastIndex: number
-  text: string
+// The mockup reads the three current values off a legend above the plot, not
+// off labels trailing each line: no reserved right margin, and the numbers stay
+// legible when two lines converge.
+function LegendValue({ label, value, color, signed = false }: {
+  label: string
+  value: number
   color: string
+  /** Form is a balance, so it reads as +20 / -20 rather than a bare 20. */
+  signed?: boolean
 }) {
-  if (index !== lastIndex) return null
   return (
-    <text x={Number(x ?? 0) + 6} y={y} dy={4} fontSize={11} fontWeight={600} fill={color}>
-      {text} {value}
-    </text>
+    <span className="text-xs font-bold" style={{ color }}>
+      {label} {signed && value > 0 ? '+' : ''}{value}
+    </span>
   )
 }
 
@@ -69,19 +68,26 @@ function formStatus(tsb: number): { label: string; className: string } {
 export function TrainingLoadChart({ data }: Props) {
   const status = formStatus(data.tsb)
   const { range, selectRange, bounds, visible, canGoBack, canGoForward, goBack, goForward } =
-    useChartWindow(data.points, '6m')
-  // Uniform point budget per window (12/6/4) so a year of daily CTL/ATL/TSB
-  // reads as a clean trend line, not hundreds of jittery daily points.
-  const plotted = sampleForRange(visible, range)
-  const lastIndex = plotted.length - 1
+    useChartWindow(data.points)
+  // Uniform point budget per window (4/6/12) so a year of daily CTL/ATL/TSB
+  // reads as a clean trend line, not hundreds of jittery daily points. Whole
+  // numbers: the axis, legend and tooltip all print these raw.
+  const plotted = sampleForRange(visible, range, 0)
   const summary = `${t.dashboard.trainingLoad.title}: ${t.dashboard.trainingLoad.fitness} ${data.ctl}, ${t.dashboard.trainingLoad.fatigue} ${data.atl}, ${t.dashboard.trainingLoad.form} ${data.tsb} (${status.label})`
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-foreground/80">{t.dashboard.trainingLoad.title}</h3>
         <ChartRangeChips value={range} onChange={selectRange} />
       </div>
+
+      <div className="mb-3 flex flex-wrap gap-x-3.5 gap-y-1">
+        <LegendValue label={t.dashboard.trainingLoad.fitness} value={data.ctl} color={CHART_COLORS.ctl} />
+        <LegendValue label={t.dashboard.trainingLoad.fatigue} value={data.atl} color={CHART_COLORS.atl} />
+        <LegendValue label={t.dashboard.trainingLoad.form} value={data.tsb} color={CHART_COLORS.tsb} signed />
+      </div>
+
       <ChartWindowPager
         bounds={bounds}
         canGoBack={canGoBack}
@@ -94,7 +100,7 @@ export function TrainingLoadChart({ data }: Props) {
       ) : (
       <ChartFigure summary={summary}>
         <ResponsiveContainer width="100%" height={200}>
-          <LineChart data={plotted} margin={{ top: 4, right: 80, bottom: 0, left: -20 }}>
+          <LineChart data={plotted} margin={{ top: 4, right: 8, bottom: 0, left: -20 }}>
             <XAxis
               dataKey="label"
               tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
@@ -109,21 +115,9 @@ export function TrainingLoadChart({ data }: Props) {
             />
             <Tooltip content={<CustomTooltip />} />
             <ReferenceLine y={0} stroke={CHART_COLORS.referenceLine} strokeWidth={1} />
-            <Line type="monotone" dataKey="ctl" stroke={CHART_COLORS.ctl} strokeWidth={2} dot={false} isAnimationActive={false}>
-              <LabelList dataKey="ctl" content={(props: { x?: string | number; y?: string | number; value?: string | number | boolean | null; index?: number }) => (
-                <EndLabel x={props.x} y={props.y} value={props.value} index={props.index} lastIndex={lastIndex} text={t.dashboard.trainingLoad.fitness} color={CHART_COLORS.ctl} />
-              )} />
-            </Line>
-            <Line type="monotone" dataKey="atl" stroke={CHART_COLORS.atl} strokeWidth={1.5} dot={false} isAnimationActive={false}>
-              <LabelList dataKey="atl" content={(props: { x?: string | number; y?: string | number; value?: string | number | boolean | null; index?: number }) => (
-                <EndLabel x={props.x} y={props.y} value={props.value} index={props.index} lastIndex={lastIndex} text={t.dashboard.trainingLoad.fatigue} color={CHART_COLORS.atl} />
-              )} />
-            </Line>
-            <Line type="monotone" dataKey="tsb" stroke={CHART_COLORS.tsb} strokeWidth={1.5} dot={false} isAnimationActive={false}>
-              <LabelList dataKey="tsb" content={(props: { x?: string | number; y?: string | number; value?: string | number | boolean | null; index?: number }) => (
-                <EndLabel x={props.x} y={props.y} value={props.value} index={props.index} lastIndex={lastIndex} text={t.dashboard.trainingLoad.form} color={CHART_COLORS.tsb} />
-              )} />
-            </Line>
+            <Line type="monotone" dataKey="ctl" stroke={CHART_COLORS.ctl} strokeWidth={2.5} {...trendDots(CHART_COLORS.ctl)} isAnimationActive={false} />
+            <Line type="monotone" dataKey="atl" stroke={CHART_COLORS.atl} strokeWidth={2.5} {...trendDots(CHART_COLORS.atl)} isAnimationActive={false} />
+            <Line type="monotone" dataKey="tsb" stroke={CHART_COLORS.tsb} strokeWidth={2.5} {...trendDots(CHART_COLORS.tsb)} isAnimationActive={false} />
           </LineChart>
         </ResponsiveContainer>
       </ChartFigure>

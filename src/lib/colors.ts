@@ -59,7 +59,7 @@ export const TRAINING_STATUS_COLORS: Record<string, string> = {
   fresh:        c.roEmerald, // peak fitness, fatigue shed
   productive:   c.emerald400,
   maintaining:  c.sky500,
-  recovery:     c.blue400,
+  recovery:     c.blue600,
   unproductive: c.amber500,
   detraining:   c.zinc400,
   overreaching: c.red500,

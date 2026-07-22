@@ -7,7 +7,7 @@ import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { ChartExplain } from '@/components/ui/ChartExplain'
-import { WindowedChartCard, windowTickDate, windowTicks } from '@/components/ui/ChartWindowNav'
+import { WindowedChartCard, trendDots, windowTickDate, windowTicks } from '@/components/ui/ChartWindowNav'
 import { t } from '@/i18n'
 
 type Metric = 'cadence' | 'groundContact' | 'verticalOscillation' | 'verticalRatio' | 'strideLength'
@@ -57,14 +57,15 @@ const TICK_DECIMALS: Record<Metric, number> = {
 interface TooltipProps {
   active?: boolean
   payload?: Array<{ dataKey: string; value: number; payload?: { label?: string } }>
+  decimals: number
 }
 
-function CustomTooltip({ active, payload }: TooltipProps) {
+function CustomTooltip({ active, payload, decimals }: TooltipProps) {
   const p = payload?.[0]
   if (!active || !p) return null
   return (
     <TooltipCard label={p.payload?.label}>
-      <p className="text-sm font-semibold text-foreground">{p.value} {UNIT_BY_KEY[p.dataKey]}</p>
+      <p className="text-sm font-semibold text-foreground">{p.value.toFixed(decimals)} {UNIT_BY_KEY[p.dataKey]}</p>
     </TooltipCard>
   )
 }
@@ -87,8 +88,10 @@ export function RunningFormChart({ points }: { points: WeeklyTrendPoint[] }) {
         <button
           key={m}
           onClick={() => setMetric(m)}
-          className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${
-            m === active ? ACTIVE_PILL_CLASS[m] : 'border border-border bg-card text-muted-foreground hover:bg-muted'
+          className={`rounded-full px-2.5 py-1 text-xs font-medium transition-all active:scale-95 ${
+            m === active
+              ? `${ACTIVE_PILL_CLASS[m]} font-semibold shadow-sm`
+              : 'border border-foreground/[0.12] bg-foreground/[0.06] text-foreground/60 hover:bg-foreground/[0.10] hover:text-foreground'
           }`}
         >
           {t.analytics.charts.runningForm.metrics[m]}
@@ -136,13 +139,13 @@ export function RunningFormChart({ points }: { points: WeeklyTrendPoint[] }) {
                     tickLine={false}
                     width={42}
                   />
-                  <Tooltip content={<CustomTooltip />} />
+                  <Tooltip content={<CustomTooltip decimals={decimals} />} />
                   <Line
                     type="monotone"
                     dataKey={key}
                     stroke={color}
                     strokeWidth={3}
-                    dot={false}
+                    {...trendDots(color)}
                     connectNulls
                     isAnimationActive={false}
                   />

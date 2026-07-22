@@ -53,8 +53,10 @@ function CustomTooltip({ active, payload }: TooltipProps) {
 export function ZoneDistributionChart({ points }: { points: WeeklyTrendPoint[] }) {
   if (!points.some((p) => Object.keys(p.zoneSeconds).length > 0)) return null
 
+  // The donut sums the whole window rather than plotting it, so it needs every
+  // week's zone seconds - not the trend charts' 4/6/12-point sample.
   return (
-    <WindowedChartCard title={t.analytics.charts.zones.title} points={points}>
+    <WindowedChartCard title={t.analytics.charts.zones.title} points={points} sample={false}>
       {(visible) => {
         const data = zoneShares(visible)
         if (!data.length) return <p className="py-12 text-center text-sm text-subtle">{t.chartWindow.empty}</p>

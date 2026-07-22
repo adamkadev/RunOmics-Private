@@ -1,6 +1,7 @@
 'use client'
 
 import { Pill } from '@/components/ui/Pill'
+import { cn } from '@/lib/utils'
 
 interface PeriodOption {
   weeks: number
@@ -17,6 +18,8 @@ interface Props {
   onSelectPeriod?: (weeks: number) => void
   yearGroupLabel?: string
   windowGroupLabel?: string
+  /** Extra classes for the year row - e.g. `justify-end` in a header row. */
+  className?: string
 }
 
 function GroupLabel({ children }: { children: string }) {
@@ -24,7 +27,8 @@ function GroupLabel({ children }: { children: string }) {
 }
 
 // Horizontally scrollable pill row - scales to any number of years, unlike a
-// 2-button toggle that breaks down past 2-3 options.
+// 2-button toggle that breaks down past 2-3 options. The selected scope is a
+// filled accent chip, the same selection language as the tab strip below it.
 export function YearSelector({
   years,
   selected,
@@ -35,18 +39,24 @@ export function YearSelector({
   onSelectPeriod,
   yearGroupLabel,
   windowGroupLabel,
+  className,
 }: Props) {
   if (years.length <= 1 && !allTimeLabel && !periods?.length) return null
 
   const activePeriodOption = periods?.find((p) => p.weeks === activePeriod)
 
   const yearRow = (
-    <div className="flex gap-2 overflow-x-auto pb-1 pr-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div
+      className={cn(
+        'flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+        className,
+      )}
+    >
       {years.map((y) => (
         <Pill
           key={y}
           as="button"
-          variant={y === selected && !activePeriodOption ? 'active' : 'neutral'}
+          variant={y === selected && !activePeriodOption ? 'accent' : 'neutral'}
           onClick={() => onSelect(y)}
         >
           {y}
@@ -56,7 +66,7 @@ export function YearSelector({
       {allTimeLabel && (
         <Pill
           as="button"
-          variant={selected === null && !activePeriodOption ? 'active' : 'neutral'}
+          variant={selected === null && !activePeriodOption ? 'accent' : 'neutral'}
           onClick={() => onSelect(null)}
         >
           {allTimeLabel}
@@ -73,7 +83,7 @@ export function YearSelector({
         <Pill
           key={p.weeks}
           as="button"
-          variant={p.weeks === activePeriod ? 'active' : 'neutral'}
+          variant={p.weeks === activePeriod ? 'accent' : 'neutral'}
           onClick={() => onSelectPeriod?.(p.weeks)}
         >
           {p.label}

@@ -5,7 +5,7 @@ import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { ChartExplain } from '@/components/ui/ChartExplain'
-import { WindowedChartCard, windowTickDate, windowTicks } from '@/components/ui/ChartWindowNav'
+import { WindowedChartCard, trendDots, windowTickDate, windowTicks } from '@/components/ui/ChartWindowNav'
 import { trendFromSeries } from '@/lib/chartTrend'
 import { formatClock } from '@/lib/formatters'
 import { ChartFigure } from '@/components/ui/ChartFigure'
@@ -100,8 +100,8 @@ export function PaceTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
                     width={46}
                   />
                   <Tooltip content={<CustomTooltip />} />
-                  <Line type="monotone" dataKey="easyPace" stroke={CHART_COLORS.brand} strokeWidth={3} dot={false} connectNulls isAnimationActive={false} />
-                  <Line type="monotone" dataKey="hardPace" stroke={CHART_COLORS.atl} strokeWidth={3} dot={false} connectNulls isAnimationActive={false} />
+                  <Line type="monotone" dataKey="easyPace" stroke={CHART_COLORS.brand} strokeWidth={3} {...trendDots(CHART_COLORS.brand)} connectNulls isAnimationActive={false} />
+                  <Line type="monotone" dataKey="hardPace" stroke={CHART_COLORS.atl} strokeWidth={3} {...trendDots(CHART_COLORS.atl)} connectNulls isAnimationActive={false} />
                 </LineChart>
               </ResponsiveContainer>
             </ChartFigure>

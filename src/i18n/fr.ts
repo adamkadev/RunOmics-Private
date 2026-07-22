@@ -249,7 +249,6 @@ export const fr = {
       garmin: 'Garmin Connect',
       connected: (source: string) => `${source} connecté`,
       lastSync: 'Dernière synchro',
-      firmware: (version: string) => `Firmware ${version}`,
       since: (monthYear: string) => `appairée depuis ${monthYear}`,
     },
     dataExport: {
@@ -1030,6 +1029,8 @@ export const fr = {
       duration: 'Durée',
       sessions: 'Séances',
       elevation: 'Dénivelé',
+      avgPerWeek: 'Moy. / semaine',
+      calories: 'Calories',
     },
     records: {
       title: 'Records',

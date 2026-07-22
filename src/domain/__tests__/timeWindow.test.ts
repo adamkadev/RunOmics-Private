@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { hasEarlierPoints, pointsInWindow, windowBounds } from '../timeWindow'
+import { hasEarlierPoints, pointsInWindow, sampleForRange, windowBounds } from '../timeWindow'
 
 const point = (date: string) => ({ date })
 
@@ -49,5 +49,43 @@ describe('hasEarlierPoints', () => {
 
   it('is false once the window reaches the start of the history', () => {
     expect(hasEarlierPoints(points, { from: '2026-05-01', to: '2026-07-21' })).toBe(false)
+  })
+})
+
+describe('sampleForRange', () => {
+  const daily = (count: number, value: (i: number) => number) =>
+    Array.from({ length: count }, (_, i) => ({
+      date: `2026-01-${String(i + 1).padStart(2, '0')}`,
+      value: value(i),
+    }))
+
+  it('gives each range its point budget: 4 for 4w, 6 for 6m, 12 for 1y', () => {
+    const points = daily(60, (i) => i)
+
+    expect(sampleForRange(points, '4w')).toHaveLength(4)
+    expect(sampleForRange(points, '6m')).toHaveLength(6)
+    expect(sampleForRange(points, '1y')).toHaveLength(12)
+  })
+
+  it('averages each bucket and anchors it on the bucket last date', () => {
+    // 10, 20, ... 80 in pairs -> 15, 35, 55, 75.
+    const sampled = sampleForRange(daily(8, (i) => (i + 1) * 10), '4w')
+    expect(sampled).toHaveLength(4)
+    expect(sampled[0]).toEqual({ date: '2026-01-02', value: 15 })
+    expect(sampled[3]).toEqual({ date: '2026-01-08', value: 75 })
+  })
+
+  it('keeps fractional values by default so small metrics survive', () => {
+    // Stride length ~1.2 m would collapse to 1 under whole-number rounding.
+    const points = daily(8, (i) => 1.2 + i * 0.02)
+
+    expect(sampleForRange(points, '4w').map((p) => p.value)).toEqual([1.21, 1.25, 1.29, 1.33])
+    expect(sampleForRange(points, '4w', 0).map((p) => p.value)).toEqual([1, 1, 1, 1])
+  })
+
+  it('is a no-op when the window already holds fewer points than the budget', () => {
+    const points = daily(3, (i) => i)
+
+    expect(sampleForRange(points, '1y')).toBe(points)
   })
 })

@@ -3,12 +3,10 @@
 import { useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { cn } from '@/lib/utils'
-import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import type { AnalyticsPageData } from '@/application/usecases/GetAnalyticsData'
 import type { YearComparisonData } from '@/application/usecases/GetYearComparison'
 import type { SeasonHeadlineData } from '@/application/usecases/GetSeasonHeadline'
 import { SeasonHeadline } from '@/components/analytics/SeasonHeadline'
-import type { LifetimeStats } from '@/application/usecases/GetLifetimeStats'
 import { YearSelector } from '@/components/ui/YearSelector'
 import type { VO2maxSeries } from '@/application/usecases/GetVO2maxHistory'
 import type { TrainingLoadData } from '@/application/usecases/GetTrainingLoad'
@@ -18,14 +16,9 @@ import type { TrainingStatusHistory } from '@/application/usecases/GetTrainingSt
 import type { GarminRacePredictionsData } from '@/application/usecases/GetGarminRacePredictions'
 import type { ThresholdHistoryData } from '@/application/usecases/GetThresholdHistory'
 import type { FormProjection } from '@/application/usecases/GetFormProjection'
-import { formatDurationShort } from '@/lib/formatters'
-import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartCardSkeleton } from '@/components/ui/Skeleton'
 import { useSwipeNavigation } from '@/lib/useSwipeNavigation'
 import { t } from '@/i18n'
-
-import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
-import { AnimatedDuration } from '../ui/AnimatedDuration'
 
 // Each tab panel is code-split so the analytics page only parses/hydrates the
 // charts of the visible tab (~20 Recharts components across all tabs).
@@ -79,7 +72,6 @@ export function AnalyticsClient({
   comparison,
   seasonHeadline,
   vo2maxHistory,
-  lifetime,
   trainingLoad,
   loadRisk,
   loadBalance,
@@ -94,7 +86,6 @@ export function AnalyticsClient({
   comparison: YearComparisonData | null
   seasonHeadline: SeasonHeadlineData | null
   vo2maxHistory: VO2maxSeries
-  lifetime: LifetimeStats | null
   trainingLoad: TrainingLoadData | null
   loadRisk: LoadRiskPanelData | null
   loadBalance: LoadBalanceData | null
@@ -141,10 +132,6 @@ export function AnalyticsClient({
 
   const active = view.kind === 'year' ? byYear[view.year] : data.allTime
 
-  const totals = active?.totals ?? null
-
-  const periodLabel = isAll ? t.analytics.allTimeTitle : t.analytics.season(view.year)
-
   function selectAllTime() {
     setView({ kind: 'all' })
   }
@@ -172,57 +159,12 @@ export function AnalyticsClient({
 
   const { onTouchStart, onTouchEnd } = useSwipeNavigation(goPrevTab, goNextTab)
 
-  const metrics: Metric[] = totals
-    ? [
-        {
-          value: <AnimatedValue value={totals.distanceKm} />,
-          unit: t.units.km,
-          label: t.analytics.stats.distance,
-        },
-        {
-          value: totals.durationSeconds
-            ? <AnimatedDuration seconds={totals.durationSeconds} format={formatDurationShort} />
-            : formatDurationShort(0),
-          unit: t.units.hour,
-          label: t.analytics.stats.time,
-        },
-        {
-          value: <AnimatedValue value={totals.sessionCount} />,
-          label: t.analytics.stats.sessions,
-        },
-        {
-          value: <AnimatedValue value={totals.elevationM} />,
-          unit: t.units.m,
-          label: t.analytics.stats.elevation,
-        },
-        {
-          value: <AnimatedValue value={totals.avgKmPerWeek} decimals={1} />,
-          unit: t.units.km,
-          label: t.analytics.stats.avgPerWeek,
-        },
-        ...(isAll && lifetime
-          ? [
-              {
-                value: <AnimatedValue value={lifetime.yearsTracked} decimals={1} />,
-                label: t.analytics.stats.yearsTracked,
-              },
-            ]
-          : totals.calories > 0
-            ? [
-                {
-                  value: <AnimatedValue value={totals.calories / 1000} decimals={1} />,
-                  unit: `k ${t.units.kcal}`,
-                  label: t.analytics.stats.calories,
-                },
-              ]
-            : []),
-      ]
-    : []
-
   return (
     <div className="space-y-4">
-      <div className="space-y-2.5 px-1">
-        <h1 className="text-title1 font-extrabold leading-[1.1] tracking-tight text-foreground">
+      {/* Title left, season scope right on one line - the mockup's header.
+          The year row is the page's scope control, not a stack of its own. */}
+      <div className="flex items-center justify-between gap-3 px-1">
+        <h1 className="shrink-0 text-title1 font-extrabold leading-[1.1] tracking-tight text-foreground">
           {t.analytics.title}
         </h1>
 
@@ -231,18 +173,20 @@ export function AnalyticsClient({
           selected={isAll ? null : displayYear}
           onSelect={(y) => (y === null ? selectAllTime() : selectYear(y))}
           allTimeLabel={t.analytics.allTimeChip}
+          className="min-w-0 justify-end"
         />
       </div>
 
       {/* Group nav sits right under the header, above the season headline -
           it's the primary navigation for this screen, not a secondary control
-          buried below the stats. */}
+          buried below the stats. Four equal columns rather than a scroller, so
+          "Health" is never half-cropped at the right edge. */}
       {active && (
         <div
           ref={tabsRef}
           role="tablist"
           aria-label={t.analytics.title}
-          className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="grid grid-cols-4 gap-1.5 px-1"
         >
           {visibleTabs.map((item) => (
             <button
@@ -251,10 +195,11 @@ export function AnalyticsClient({
               aria-selected={tab === item.id}
               onClick={() => selectTab(item.id)}
               className={cn(
-                'shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-semibold transition-colors',
+                'truncate rounded-full px-2 py-2 text-center text-[13px] transition-all active:scale-95',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                 tab === item.id
-                  ? 'bg-accent text-accent-foreground'
-                  : 'border border-border bg-card text-muted-foreground hover:text-foreground',
+                  ? 'border border-transparent bg-accent font-semibold text-accent-foreground shadow-sm'
+                  : 'border border-foreground/[0.12] bg-foreground/[0.06] font-medium text-foreground/60 hover:bg-foreground/[0.10] hover:text-foreground',
               )}
             >
               {item.label}
@@ -263,19 +208,11 @@ export function AnalyticsClient({
         </div>
       )}
 
+      {/* The season totals card used to sit here. Distance/time/sessions/
+          elevation/avg-per-week/calories are the "how far have I come" read,
+          so they live on Progress' This year card - Analytics answers "why am
+          I improving?" and opens straight on the headline + charts. */}
       {seasonHeadline && <SeasonHeadline data={seasonHeadline} />}
-
-      {metrics.length > 0 && (
-        <GlassSurface variant="card">
-          <div className="border-b border-foreground/[0.08] px-5 py-3.5">
-            <span className="text-sm font-semibold text-foreground">{periodLabel}</span>
-          </div>
-
-          <div className="px-5 py-5">
-            <MetricGrid metrics={metrics} className={metrics.length <= 5 ? 'grid-cols-5' : 'grid-cols-3 lg:grid-cols-6'} />
-          </div>
-        </GlassSurface>
-      )}
 
       {active && (
         <>
