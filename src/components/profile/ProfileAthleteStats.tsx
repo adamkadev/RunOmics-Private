@@ -160,7 +160,14 @@ export function ProfileAthleteStats({ athlete, latestVo2max }: Props) {
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <h2 className="mb-3 text-sm font-bold text-foreground">{a.title}</h2>
+      <div className="mb-3 flex items-baseline justify-between gap-3">
+        <h2 className="text-sm font-bold text-foreground">{a.title}</h2>
+        {athlete.lastUpdate && (
+          <span className="shrink-0 text-[11px] text-subtle-2">
+            {t.pages.athlete.lastUpdated(formatRelativeAgo(athlete.lastUpdate))}
+          </span>
+        )}
+      </div>
 
       <div className="mb-3 flex w-full gap-1 rounded-full bg-foreground/[0.04] p-1">
         {CATEGORIES.map((value) => (
@@ -183,12 +190,6 @@ export function ProfileAthleteStats({ athlete, latestVo2max }: Props) {
           <Tile key={tile.label} {...tile} />
         ))}
       </div>
-
-      {athlete.lastUpdate && (
-        <div className="mt-4 border-t border-foreground/[0.06] pt-3.5 text-xs leading-snug text-muted-foreground">
-          {t.pages.athlete.lastUpdated(formatRelativeAgo(athlete.lastUpdate))}
-        </div>
-        )}
     </GlassSurface>
   )
 }

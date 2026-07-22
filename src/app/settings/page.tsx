@@ -11,13 +11,13 @@ export const metadata = {
 export default function SettingsPage() {
   const lastSyncedAt = getLastSyncedAt()
   const activityCount = getAllActivities().length
-  const { deviceName, deviceFirmware, deviceSince } = getAthleteProfile()
+  const { deviceName, deviceSince } = getAthleteProfile()
 
   return (
     <SettingsClient
       lastSyncedAt={lastSyncedAt}
       activityCount={activityCount}
-      device={deviceName ? { name: deviceName, firmware: deviceFirmware, since: deviceSince } : undefined}
+      device={deviceName ? { name: deviceName, since: deviceSince } : undefined}
     />
   )
 }

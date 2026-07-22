@@ -17,6 +17,14 @@ export function ProfileStatsYtd({ ytd }: { ytd: ProfileYtdStats }) {
     { value: <AnimatedValue value={Math.round(ytd.durationSeconds / 3600)} />, unit: t.units.hour, label: t.profile.ytd.duration },
     { value: <AnimatedValue value={ytd.sessionCount} />, label: t.profile.ytd.sessions },
     { value: <>+<AnimatedValue value={ytd.elevationGainM} /></>, unit: t.units.m, label: t.profile.ytd.elevation },
+    { value: <AnimatedValue value={ytd.avgKmPerWeek} decimals={1} />, unit: t.units.km, label: t.profile.ytd.avgPerWeek },
+    ...(ytd.calories > 0
+      ? [{
+          value: <AnimatedValue value={ytd.calories / 1000} decimals={1} />,
+          unit: `k ${t.units.kcal}`,
+          label: t.profile.ytd.calories,
+        }]
+      : []),
   ]
 
   return (
@@ -24,17 +32,20 @@ export function ProfileStatsYtd({ ytd }: { ytd: ProfileYtdStats }) {
       <div className="mb-3 text-micro font-semibold uppercase tracking-wide text-muted-foreground">
         {t.profile.ytd.title}
       </div>
-      <div className="grid grid-cols-2 gap-x-3.5 gap-y-3.5">
+      {/* Six figures read best as 3x2 - two tall columns would push calories
+          below the fold and leave the card lopsided when it is absent. */}
+      <div className="grid grid-cols-3 gap-x-3 gap-y-3.5">
         {cells.map((cell, i) => (
           <div
             key={cell.label}
             className={cn(
-              i < 2 && 'border-b border-foreground/[0.07] pb-3.5',
-              i % 2 === 1 && 'border-l border-foreground/[0.07] pl-3.5'
+              i < Math.floor((cells.length - 1) / 3) * 3 &&
+                'border-b border-foreground/[0.07] pb-3.5',
+              i % 3 !== 0 && 'border-l border-foreground/[0.07] pl-3'
             )}
           >
             <div className="flex items-baseline gap-1">
-              <span className="text-title2 font-extrabold tracking-tight text-foreground">{cell.value}</span>
+              <span className="text-lg font-extrabold leading-none tracking-tight text-foreground">{cell.value}</span>
               {cell.unit && <span className="text-caption font-semibold text-muted-foreground">{cell.unit}</span>}
             </div>
             <div className="mt-0.5 text-[10.5px] text-muted-foreground">{cell.label}</div>
