@@ -157,7 +157,7 @@ export function AnalyticsClient({
     if (next) selectTab(next.id)
   }
 
-  const { onTouchStart, onTouchEnd } = useSwipeNavigation(goPrevTab, goNextTab)
+  const swipeHandlers = useSwipeNavigation(goPrevTab, goNextTab)
 
   return (
     <div className="space-y-4">
@@ -186,7 +186,7 @@ export function AnalyticsClient({
           ref={tabsRef}
           role="tablist"
           aria-label={t.analytics.title}
-          className="grid grid-cols-4 gap-1.5 px-1"
+          className="sticky top-[max(var(--safe-top),8px)] z-20 -mx-4 grid grid-cols-4 gap-1.5 border-b border-foreground/[0.06] bg-background/80 px-4 py-2 backdrop-blur-xl sm:-mx-6 sm:px-6"
         >
           {visibleTabs.map((item) => (
             <button
@@ -216,7 +216,7 @@ export function AnalyticsClient({
 
       {active && (
         <>
-          <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+          <div {...swipeHandlers}>
             {tab === 'fitness' && (
               <FitnessGroup
                 trainingLoad={trainingLoad}

@@ -103,7 +103,7 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate
     setMode('week')
   }
 
-  const { onTouchStart, onTouchEnd } = useSwipeNavigation(
+  const swipeHandlers = useSwipeNavigation(
     () => shift(-1),
     () => { if (!atPresent) shift(1) }
   )
@@ -158,8 +158,7 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate
         key={animKey}
         className="overflow-hidden"
         style={{ animation: `var(--animate-cal-${direction})` }}
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
+        {...swipeHandlers}
       >
         {mode === 'week' ? (
           <WeekView
