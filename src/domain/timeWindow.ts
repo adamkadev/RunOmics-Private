@@ -36,3 +36,46 @@ export function pointsInWindow<T extends { date: string }>(points: T[], bounds: 
 export function hasEarlierPoints(points: { date: string }[], bounds: WindowBounds): boolean {
   return points.some((p) => p.date < bounds.from)
 }
+
+/** Uniform point budget per window, so every windowed numeric chart reads as
+ *  a clean trend rather than a dense wall of daily values: twelve points for
+ *  a year, six for six months, one per week for four weeks. */
+export const TARGET_POINT_COUNT: Record<ChartRange, number> = {
+  '4w': 4,
+  '6m': 6,
+  '1y': 12,
+}
+
+/**
+ * Downsample a windowed points array to `TARGET_POINT_COUNT[range]` by
+ * grouping into equal index-buckets and averaging each numeric field
+ * (rounded to a whole number - these are smoothed trend reads, not exact
+ * daily values). Non-numeric fields (date, label, status, ...) come from the
+ * bucket's last point, so ticks and tooltips stay meaningful. A no-op when
+ * there are already fewer points than the target.
+ */
+export function sampleForRange<T extends { date: string }>(points: T[], range: ChartRange): T[] {
+  const target = TARGET_POINT_COUNT[range]
+  if (points.length <= target) return points
+
+  const bucketSize = points.length / target
+  const result: T[] = []
+  for (let i = 0; i < target; i++) {
+    const start = Math.floor(i * bucketSize)
+    const end = i === target - 1 ? points.length : Math.floor((i + 1) * bucketSize)
+    const bucket = points.slice(start, end)
+    if (bucket.length === 0) continue
+    const last = bucket[bucket.length - 1] as T
+    const sampled: Record<string, unknown> = { ...last }
+    for (const key of Object.keys(last as object)) {
+      const values = bucket
+        .map((p) => (p as Record<string, unknown>)[key])
+        .filter((v): v is number => typeof v === 'number')
+      if (values.length > 0) {
+        sampled[key] = Math.round(values.reduce((s, v) => s + v, 0) / values.length)
+      }
+    }
+    result.push(sampled as T)
+  }
+  return result
+}

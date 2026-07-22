@@ -10,6 +10,7 @@ import { ProfileShoes } from './ProfileShoes'
 import { ProfileGoal } from './ProfileGoal'
 import { ProfileAthleteCard } from './ProfileAthleteCard'
 import { ActivityHeatmap } from '@/components/dashboard/ActivityHeatmap'
+import { t } from '@/i18n'
 
 interface Props {
   data: ProfileData
@@ -24,6 +25,9 @@ interface Props {
 export function ProfileClient({ data, heatmapDays, latestVo2max, recentZoneTime }: Props) {
   return (
     <div className="space-y-3.5">
+      <h1 className="px-1 font-display text-title1 font-bold tracking-tight text-foreground">
+        {t.nav.items.profile}
+      </h1>
       <ProfileHero hero={data.hero} displayName={data.athlete.displayName} age={data.athlete.age} sex={data.athlete.sex} />
       <ProfileStatsYtd ytd={data.ytd} />
       <ActivityHeatmap days={heatmapDays} />

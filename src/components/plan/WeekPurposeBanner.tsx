@@ -2,8 +2,9 @@ import { GlassSurface } from '@/components/ui/GlassSurface'
 import { cn } from '@/lib/utils'
 import type { PlannedWeek, WeekAdherence, WeekLoadLevel } from '@/domain/training/weekSummary'
 import type { TrainingStatusType } from '@/application/usecases/GetTrainingStatus'
-import type { TrainingPlanPhase } from '@/application/usecases/GetTrainingPlan'
+import type { PlanPhaseRange, TrainingPlanPhase } from '@/application/usecases/GetTrainingPlan'
 import { TRAINING_STATUS_COLORS, TRAINING_PLAN_PHASE_COLORS } from '@/lib/colors'
+import { PlanPhaseTrack } from './PlanPhaseTrack'
 import { t } from '@/i18n'
 
 const TONE_CLASS: Record<WeekLoadLevel, { border: string; text: string; from: string }> = {
@@ -30,6 +31,10 @@ interface Props {
   /** Garmin Coach's own phase for the week (build/peak/taper/race day), when a plan covers it. */
   planPhase: TrainingPlanPhase | null
   planned: PlannedWeek | null
+  /** The current Garmin Coach plan's phase ranges, rendered as a track inside
+   *  this same card - the block banner and its progress are one visual unit. */
+  planPhaseRanges: PlanPhaseRange[]
+  today: string
 }
 
 // A week gets named from what it is, in this order:
@@ -58,6 +63,8 @@ export function WeekPurposeBanner({
   garminStatus,
   planPhase,
   planned,
+  planPhaseRanges,
+  today,
 }: Props) {
   const verdict = over ? garminStatus : null
   const phase = over ? null : planPhase
@@ -82,7 +89,7 @@ export function WeekPurposeBanner({
     <GlassSurface
       variant="card"
       className={cn(
-        'flex items-center justify-between gap-3 rounded-card-sm bg-gradient-to-br to-transparent p-3.5',
+        'rounded-card-sm bg-gradient-to-br to-transparent p-3.5',
         !accentColor && tone.border,
         !accentColor && tone.from,
       )}
@@ -95,37 +102,43 @@ export function WeekPurposeBanner({
           : undefined
       }
     >
-      <div className="min-w-0">
-        <div
-          className={cn('text-[15px] font-bold leading-tight', !accentColor && tone.text)}
-          style={accentColor ? { color: accentColor } : undefined}
-        >
-          {title}
-        </div>
-        {/* A running week shows what is planned; a finished one, how its load
-            landed. The load percent is meaningless mid-week (partial total). */}
-        {!over && planned && (
-          <div className="mt-0.5 text-xs text-muted-foreground">
-            {t.plan.weekPurpose.plannedSessions(planned.total, planned.key)}
-          </div>
-        )}
-        {over && percent !== null && (
-          <div className="mt-0.5 text-xs text-muted-foreground">{t.plan.weekSummary.vsTypical(percent)}</div>
-        )}
-      </div>
-      {adherence && (
-        <div className="shrink-0 text-right">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
           <div
-            className={cn('text-base font-extrabold tabular-nums', !accentColor && tone.text)}
+            className={cn('text-[15px] font-bold leading-tight', !accentColor && tone.text)}
             style={accentColor ? { color: accentColor } : undefined}
           >
-            {adherence.percent}%
+            {title}
           </div>
-          <div className="text-[10px] text-muted-foreground">
-            {t.plan.weekPurpose.adherence(adherence.done, adherence.planned)}
-          </div>
+          {/* A running week shows what is planned; a finished one, how its load
+              landed. The load percent is meaningless mid-week (partial total). */}
+          {!over && planned && (
+            <div className="mt-0.5 text-xs text-muted-foreground">
+              {t.plan.weekPurpose.plannedSessions(planned.total, planned.key)}
+            </div>
+          )}
+          {over && percent !== null && (
+            <div className="mt-0.5 text-xs text-muted-foreground">{t.plan.weekSummary.vsTypical(percent)}</div>
+          )}
         </div>
-      )}
+        {adherence && (
+          <div className="shrink-0 text-right">
+            <div
+              className={cn('text-base font-extrabold tabular-nums', !accentColor && tone.text)}
+              style={accentColor ? { color: accentColor } : undefined}
+            >
+              {adherence.percent}%
+            </div>
+            <div className="text-[10px] text-muted-foreground">
+              {t.plan.weekPurpose.adherence(adherence.done, adherence.planned)}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Base->Build->Peak->Taper progress, inside the same card as the
+          banner - one visual unit, not two stacked cards. */}
+      <PlanPhaseTrack ranges={planPhaseRanges} today={today} />
     </GlassSurface>
   )
 }

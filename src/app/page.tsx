@@ -55,7 +55,7 @@ export default async function DashboardPage() {
 
       <div className="space-y-3">
         <FirstLaunchHint />
-        <DashboardGreeting name={athlete.displayName} />
+        <DashboardGreeting name={athlete.displayName} lastSyncedAt={lastSyncedAt} />
       </div>
 
       <TodayHero
@@ -63,7 +63,6 @@ export default async function DashboardPage() {
         plannedWorkout={todayPlannedWorkout}
         todayActivity={todayActivity}
         nextRace={nextRace}
-        lastSyncedAt={lastSyncedAt}
       />
 
       <FormFitnessFatigueTrio status={trainingStatus} load={trainingLoad} />

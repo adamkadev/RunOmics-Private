@@ -234,6 +234,35 @@ export function AnalyticsClient({
         />
       </div>
 
+      {/* Group nav sits right under the header, above the season headline -
+          it's the primary navigation for this screen, not a secondary control
+          buried below the stats. */}
+      {active && (
+        <div
+          ref={tabsRef}
+          role="tablist"
+          aria-label={t.analytics.title}
+          className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {visibleTabs.map((item) => (
+            <button
+              key={item.id}
+              role="tab"
+              aria-selected={tab === item.id}
+              onClick={() => selectTab(item.id)}
+              className={cn(
+                'shrink-0 whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-semibold transition-colors',
+                tab === item.id
+                  ? 'bg-accent text-accent-foreground'
+                  : 'border border-border bg-card text-muted-foreground hover:text-foreground',
+              )}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {seasonHeadline && <SeasonHeadline data={seasonHeadline} />}
 
       {metrics.length > 0 && (
@@ -250,33 +279,6 @@ export function AnalyticsClient({
 
       {active && (
         <>
-          <div
-            ref={tabsRef}
-            role="tablist"
-            aria-label={t.analytics.title}
-            className="sticky top-[max(var(--safe-top),8px)] z-10 -mx-4 flex gap-1 overflow-x-auto bg-background px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
-            {visibleTabs.map((item) => (
-              <button
-                key={item.id}
-                role="tab"
-                aria-selected={tab === item.id}
-                onClick={() => selectTab(item.id)}
-                className={cn(
-                  'relative min-w-fit flex-1 whitespace-nowrap px-2 py-2.5 text-sm font-medium transition-colors',
-                  tab === item.id
-                    ? 'text-accent'
-                    : 'text-muted-foreground hover:text-foreground',
-                )}
-              >
-                {item.label}
-                {tab === item.id && (
-                  <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-t-full bg-accent" />
-                )}
-              </button>
-            ))}
-          </div>
-
           <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
             {tab === 'fitness' && (
               <FitnessGroup

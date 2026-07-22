@@ -1,8 +1,9 @@
 'use client'
 
-import { TrendingDown, Minus } from 'lucide-react'
+import { TrendingDown, TrendingUp, Minus } from 'lucide-react'
 import type { GarminRacePredictionsData } from '@/application/usecases/GetGarminRacePredictions'
 import type { RaceDistanceKey } from '@/domain/race/distances'
+import { paceTrend } from '@/domain/race/predictionWindow'
 import { formatDurationShort } from '@/lib/formatters'
 import { t } from '@/i18n'
 
@@ -14,18 +15,10 @@ const SHORT_LABEL: Record<RaceDistanceKey, string> = {
   marathon: 'Mara',
 }
 
-// Improving if the latest predicted finish is meaningfully faster than the
-// earliest one on record for that distance (5s+ tighter).
-function isImproving(points: GarminRacePredictionsData['points'], key: RaceDistanceKey): boolean {
-  const paces = points.map((p) => p[key]).filter((v): v is number => v !== null)
-  const first = paces[0]
-  const last = paces[paces.length - 1]
-  if (first === undefined || last === undefined) return false
-  return first - last > 5
-}
-
 // The four race distances as legible time cards with a trend arrow each -
-// replaces the four-line predictor chart. Reads Garmin's own estimates.
+// replaces the four-line predictor chart. Reads Garmin's own estimates via the
+// same first-vs-last trend the Race Predictor chart itself uses, so the two
+// views never disagree about which way a distance is moving.
 export function RaceTimeCards({ data }: { data: GarminRacePredictionsData }) {
   const distances = ORDER.filter((d) => data.distances.includes(d) && data.latest[d] != null)
   if (distances.length === 0) return null
@@ -39,7 +32,7 @@ export function RaceTimeCards({ data }: { data: GarminRacePredictionsData }) {
       <div className="grid grid-cols-4 gap-2">
         {distances.map((key) => {
           const seconds = data.latest[key]!
-          const improving = isImproving(data.points, key)
+          const trend = paceTrend(data.points, key)
           return (
             <div key={key} className="rounded-[13px] border border-border bg-card px-2 py-[11px] text-center">
               <div className="text-[9.5px] font-semibold text-subtle">{SHORT_LABEL[key]}</div>
@@ -47,8 +40,10 @@ export function RaceTimeCards({ data }: { data: GarminRacePredictionsData }) {
                 {formatDurationShort(seconds)}
               </div>
               <div className="mt-[3px] flex justify-center">
-                {improving ? (
+                {trend && trend.improvementSec > 0 ? (
                   <TrendingDown size={14} strokeWidth={3} className="text-accent" />
+                ) : trend && trend.improvementSec < 0 ? (
+                  <TrendingUp size={14} strokeWidth={3} className="text-amber-500" />
                 ) : (
                   <Minus size={14} strokeWidth={3} className="text-subtle-2" />
                 )}

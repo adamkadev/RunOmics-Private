@@ -45,9 +45,9 @@ export const fr = {
 
   chartWindow: {
     ranges: {
-      '4w': '4 sem',
-      '6m': '6 mois',
-      '1y': '1 an',
+      '4w': '4s',
+      '6m': '6m',
+      '1y': '1a',
     },
     previous: 'Période précédente',
     next: 'Période suivante',
@@ -1188,6 +1188,7 @@ export const fr = {
     nextWeek: (n: number) => `Semaine prochaine - ${n} prévue${n > 1 ? 's' : ''}`,
     comingUp: 'À venir',
     comingUpBadge: 'NOUVEAU',
+    keyTag: 'clé',
     openPlanner: 'Ouvrir le planificateur',
     viewDetail: 'Voir le détail',
     type: 'Type',

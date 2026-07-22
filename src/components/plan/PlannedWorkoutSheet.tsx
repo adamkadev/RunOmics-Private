@@ -124,7 +124,10 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
               <p className="mb-2 text-caption font-semibold uppercase tracking-wide text-white/30">
                 {t.plan.structure.title}
               </p>
-              <WorkoutStructureBars steps={structure} className="mb-3 flex h-[26px] items-end gap-[3px]" />
+              {/* A single continuous block has no interval shape to show. */}
+              {structure.length > 1 && (
+                <WorkoutStructureBars steps={structure} className="mb-3 flex h-[26px] items-end gap-[3px]" />
+              )}
               <WorkoutStepList steps={structure} type={workout.type as ActivityType | undefined} />
             </div>
           )}

@@ -10,7 +10,7 @@ import { ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { ReadinessTone } from '@/domain/training/readiness'
 import { PlannedWorkoutSheet } from '@/components/plan/PlannedWorkoutSheet'
-import { formatRelativeAgo, formatDistance, formatDurationWords } from '@/lib/formatters'
+import { formatDistance, formatDurationWords } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 // Fixed hex, independent of the accent picker - a readiness verdict means the
@@ -21,12 +21,18 @@ const TONE_HEX: Record<ReadinessTone, string> = {
   hold: '#ef4444',
 }
 
+// A fixed near-black base (matching --bg) rather than the page background, so
+// the card stays a deliberately dark, always-legible panel in both themes -
+// the same pattern var(--hero-gradient) uses elsewhere (see ProfileHero).
+// A translucent tint here would let a light-mode page bleed through and wash
+// out the white text.
+const HERO_BASE = '#0a0f0c'
+
 interface Props {
   status: TrainingStatus | null
   plannedWorkout: PlannedWorkout | null
   todayActivity: Activity | null
   nextRace: UpcomingRace | null
-  lastSyncedAt: string | null
 }
 
 
@@ -45,10 +51,6 @@ function verdictTone(status: TrainingStatus): ReadinessTone {
   return tone
 }
 
-function formatSyncedAgo(lastSyncedAt: string): string {
-  return t.dashboard.syncStatus.synced(formatRelativeAgo(lastSyncedAt))
-}
-
 // Rules layer over the already-computed status/load - copy is keyed by the
 // same tone as the pastille, so the verdict sentence never contradicts it.
 function readinessCopy(status: TrainingStatus, tone: ReadinessTone): { headline: string; body: string } {
@@ -64,7 +66,7 @@ function readinessCopy(status: TrainingStatus, tone: ReadinessTone): { headline:
 }
 
 // Pure display + a rules-based readiness verdict over already-computed status/load data.
-export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, lastSyncedAt }: Props) {
+export function TodayHero({ status, plannedWorkout, todayActivity, nextRace }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false)
 
   if (!status && !plannedWorkout && !nextRace) return null
@@ -96,11 +98,13 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, las
 
   return (
     <div
-      className="rounded-[22px] border p-[18px] text-[#eef2f0] shadow-[0_10px_30px_-12px_rgba(0,0,0,0.5)]"
+      className="rounded-[22px] border p-[18px] text-white shadow-[0_10px_30px_-12px_rgba(0,0,0,0.5)]"
       style={{
         // Hero gradient tinted by the verdict tone (go/caution/hold), so the
-        // whole card reads the decision - not just the pastille.
-        background: `linear-gradient(158deg, ${toneHex}1f, ${toneHex}05)`,
+        // whole card reads the decision - not just the pastille. Blended into a
+        // fixed dark base (not the page background) so the card stays legible
+        // in light mode too - same idea as var(--hero-gradient) elsewhere.
+        background: `linear-gradient(158deg, color-mix(in srgb, ${toneHex} 20%, ${HERO_BASE}), color-mix(in srgb, ${toneHex} 5%, ${HERO_BASE}))`,
         borderColor: `${toneHex}59`,
       }}
     >
@@ -115,13 +119,13 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, las
           />
           {tone ? s.eyebrowByTone[tone] : s.eyebrowByTone.go}
         </span>
-        {formLine && <span className="text-[11px] text-[#8a978f]">{formLine}</span>}
+        {formLine && <span className="text-[11px] text-white/55">{formLine}</span>}
       </div>
 
       {verdict && (
         <div className="mt-3">
           <div className="font-display text-[22px] font-bold leading-[1.12] tracking-tight">{verdict.headline}</div>
-          <div className="mt-1.5 text-[13px] leading-snug text-[#a8b4ae]">{verdict.body}</div>
+          <div className="mt-1.5 text-[13px] leading-snug text-white/70">{verdict.body}</div>
         </div>
       )}
 
@@ -136,7 +140,7 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, las
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-semibold">{plannedWorkout.name}</div>
             {completedMeta && (
-              <div className="mt-0.5 truncate text-[11px] text-[#8a978f]">{completedMeta}</div>
+              <div className="mt-0.5 truncate text-[11px] text-white/55">{completedMeta}</div>
             )}
           </div>
           <span className="flex shrink-0 items-center gap-0.5 rounded-[10px] bg-accent px-3.5 py-2 text-[11px] font-bold text-accent-foreground">
@@ -156,7 +160,7 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, las
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-semibold">{plannedWorkout.name}</div>
             {plannedWorkoutMeta && (
-              <div className="mt-0.5 truncate text-[11px] text-[#8a978f]">{plannedWorkoutMeta}</div>
+              <div className="mt-0.5 truncate text-[11px] text-white/55">{plannedWorkoutMeta}</div>
             )}
           </div>
           <span className="flex shrink-0 items-center gap-0.5 rounded-[10px] bg-accent px-3.5 py-2 text-[11px] font-bold text-accent-foreground">
@@ -171,13 +175,9 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, las
           </div>
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-semibold">{s.restDay}</div>
-            <div className="mt-0.5 truncate text-[11px] text-[#8a978f]">{s.restDaySubtitle}</div>
+            <div className="mt-0.5 truncate text-[11px] text-white/55">{s.restDaySubtitle}</div>
           </div>
         </div>
-      )}
-
-      {lastSyncedAt && (
-        <div className="mt-3 text-[10px] text-[#6b7a74]">{formatSyncedAgo(lastSyncedAt)}</div>
       )}
 
       {sheetOpen && plannedWorkout && (
