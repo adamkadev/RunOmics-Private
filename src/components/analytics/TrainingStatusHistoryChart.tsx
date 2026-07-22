@@ -13,6 +13,7 @@ import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { ChartExplain } from '@/components/ui/ChartExplain'
 import { ChartRangeChips, ChartWindowPager, useChartWindow } from '@/components/ui/ChartWindowNav'
+import { sampleForRange } from '@/domain/timeWindow'
 import { t } from '@/i18n'
 
 const BAND_COLOR = CHART_COLORS.ctl
@@ -82,8 +83,11 @@ export function TrainingStatusHistoryChart({ data }: { data: TrainingStatusHisto
     useChartWindow(data.points, '6m')
 
   // Ribbon, legend and reading all describe the visible window, not the whole
-  // stored history - paging back re-tells that period's story.
+  // stored history - paging back re-tells that period's story. The ribbon
+  // needs every raw day to size its segments correctly; only the line/area
+  // plot below gets the uniform 12/6/4-point budget.
   const segments = buildSegments(visible)
+  const plotted = sampleForRange(visible, range)
   const ratedDays = segments.reduce((sum, segment) => sum + segment.days, 0)
 
   // Days present in the ribbon, ranked by how much of the window they cover -
@@ -107,8 +111,8 @@ export function TrainingStatusHistoryChart({ data }: { data: TrainingStatusHisto
         )
       : null
 
-  const step = Math.max(1, Math.floor(visible.length / 6))
-  const tickDates = new Set(visible.filter((_, i) => i % step === 0).map((p) => p.date))
+  const step = Math.max(1, Math.floor(plotted.length / 6))
+  const tickDates = new Set(plotted.filter((_, i) => i % step === 0).map((p) => p.date))
   const summary = `${s.title}: ${legend
     .map(([status, days]) => `${t.trainingStatus.status[status]} ${days} ${s.daysUnit}`)
     .join(', ')}`
@@ -148,7 +152,7 @@ export function TrainingStatusHistoryChart({ data }: { data: TrainingStatusHisto
         <>
           <ChartFigure summary={summary}>
             <ResponsiveContainer width="100%" height={200}>
-              <ComposedChart data={visible} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
+              <ComposedChart data={plotted} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
                 <XAxis
                   dataKey="date"
                   tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}

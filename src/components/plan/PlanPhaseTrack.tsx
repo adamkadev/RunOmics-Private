@@ -2,7 +2,10 @@ import type { PlanPhaseRange, TrainingPlanPhase } from '@/application/usecases/G
 import { TRAINING_PLAN_PHASE_COLORS } from '@/lib/colors'
 import { t } from '@/i18n'
 
-const TRACK = 'var(--surface3, #182420)'
+// Foreground-tinted, not a fixed dark hex - reads as a dim groove on a dark
+// card and a light-grey one on a light card (same trick as bg-foreground/[0.08]
+// elsewhere; --surface3 isn't a real token in this app's theme system).
+const TRACK = 'color-mix(in srgb, var(--foreground) 8%, transparent)'
 
 const PHASE_LABEL: Record<TrainingPlanPhase, string> = {
   build: t.plan.phaseTrack.build,

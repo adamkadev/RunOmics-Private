@@ -17,6 +17,7 @@ import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { ChartRangeChips, ChartWindowPager, useChartWindow } from '@/components/ui/ChartWindowNav'
+import { sampleForRange } from '@/domain/timeWindow'
 import { t } from '@/i18n'
 
 interface Props {
@@ -69,7 +70,10 @@ export function TrainingLoadChart({ data }: Props) {
   const status = formStatus(data.tsb)
   const { range, selectRange, bounds, visible, canGoBack, canGoForward, goBack, goForward } =
     useChartWindow(data.points, '6m')
-  const lastIndex = visible.length - 1
+  // Uniform point budget per window (12/6/4) so a year of daily CTL/ATL/TSB
+  // reads as a clean trend line, not hundreds of jittery daily points.
+  const plotted = sampleForRange(visible, range)
+  const lastIndex = plotted.length - 1
   const summary = `${t.dashboard.trainingLoad.title}: ${t.dashboard.trainingLoad.fitness} ${data.ctl}, ${t.dashboard.trainingLoad.fatigue} ${data.atl}, ${t.dashboard.trainingLoad.form} ${data.tsb} (${status.label})`
 
   return (
@@ -90,7 +94,7 @@ export function TrainingLoadChart({ data }: Props) {
       ) : (
       <ChartFigure summary={summary}>
         <ResponsiveContainer width="100%" height={200}>
-          <LineChart data={visible} margin={{ top: 4, right: 80, bottom: 0, left: -20 }}>
+          <LineChart data={plotted} margin={{ top: 4, right: 80, bottom: 0, left: -20 }}>
             <XAxis
               dataKey="label"
               tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}

@@ -53,9 +53,9 @@ export const en = {
 
   chartWindow: {
     ranges: {
-      '4w': '4 wk',
-      '6m': '6 mo',
-      '1y': '1 yr',
+      '4w': '4w',
+      '6m': '6m',
+      '1y': '1y',
     },
     previous: 'Previous period',
     next: 'Next period',
@@ -1195,6 +1195,7 @@ export const en = {
     nextWeek: (n: number) => `Next week - ${n} planned`,
     comingUp: 'Coming up',
     comingUpBadge: 'NEW',
+    keyTag: 'key',
     openPlanner: 'Open the weekly planner',
     viewDetail: 'View detail',
     type: 'Type',

@@ -8,8 +8,7 @@ import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 const MONTHS = t.dashboard.heatmap.months
-const GAP = 2
-const LABEL_W = 26 // matches paddingLeft of month labels row
+const GAP = 1
 
 // Intensity scale mixed from the active accent, so it follows the chosen palette.
 // Mixing toward --card (rather than fixed light/dark stops) adapts to dark mode
@@ -65,10 +64,11 @@ export function ActivityHeatmap({ days }: Props) {
     if (!el) return
     const compute = () => {
       const w = el.clientWidth
-      const size = Math.floor((w - LABEL_W - (weeks.length - 1) * GAP) / weeks.length)
-      // Small, dense cells so the full 12 months fit without scrolling (matches
-      // the mockup) instead of chunky squares that overflow and auto-scroll.
-      setCellSize(Math.max(4, Math.min(9, size)))
+      // No weekday-label gutter to reserve now, so the grid gets the full
+      // width - dense small cells so all 12 months fit on one line without
+      // scrolling (matches the mockup) instead of chunky squares that overflow.
+      const size = Math.floor((w - (weeks.length - 1) * GAP) / weeks.length)
+      setCellSize(Math.max(5, Math.min(11, size)))
     }
     compute()
     const obs = new ResizeObserver(compute)
@@ -76,7 +76,9 @@ export function ActivityHeatmap({ days }: Props) {
     return () => obs.disconnect()
   }, [weeks.length])
 
-  // Month labels: show label at the first week where a new month starts
+  // Month labels: show label at the first week where a new month starts, then
+  // keep only every other one - twelve months of labels crowd the small cells,
+  // and skipping alternates still reads fine since each spans ~4-5 weeks.
   const monthLabels: { label: string; col: number }[] = []
   let lastMonth = -1
   weeks.forEach((wk, col) => {
@@ -88,6 +90,7 @@ export function ActivityHeatmap({ days }: Props) {
       lastMonth = month
     }
   })
+  const shownMonthLabels = monthLabels.filter((_, i) => i % 2 === 0)
 
   const totalKm = days.reduce((s, d) => s + d.distanceKm, 0)
   const activeDays = days.filter(d => d.distanceKm > 0).length
@@ -106,34 +109,20 @@ export function ActivityHeatmap({ days }: Props) {
 
       <div ref={containerRef} className="w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <div style={{ minWidth: 'max-content' }}>
-          <div className="relative mb-1 h-3" style={{ paddingLeft: LABEL_W }}>
-            {monthLabels.map(({ label, col }) => (
+          <div className="relative mb-1 h-3">
+            {shownMonthLabels.map(({ label, col }) => (
               <span
                 key={`${label}-${col}`}
                 className="absolute text-micro text-subtle"
-                style={{ left: LABEL_W + col * (cellSize + GAP) }}
+                style={{ left: col * (cellSize + GAP) }}
               >
                 {label}
               </span>
             ))}
           </div>
 
-          {/* Day labels + grid */}
+          {/* Grid - no weekday-label gutter, so the full width goes to cells */}
           <div className="flex" style={{ gap: GAP }}>
-            {/* Mon / Wed / Fri labels */}
-            <div className="flex flex-col" style={{ gap: GAP, marginRight: 2 }}>
-              {t.dashboard.heatmap.weekdays.map((label, i) => (
-                <div
-                  key={i}
-                  className="text-right text-micro leading-none text-subtle"
-                  style={{ height: cellSize, lineHeight: `${cellSize}px`, width: 20 }}
-                >
-                  {label}
-                </div>
-              ))}
-            </div>
-
-            {/* Week columns */}
             {weeks.map((wk, col) => (
               <div key={col} className="flex flex-col" style={{ gap: GAP }}>
                 {wk.map((day, row) =>

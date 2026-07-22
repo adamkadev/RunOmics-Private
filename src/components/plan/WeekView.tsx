@@ -24,11 +24,10 @@ import { ActivitySheet } from './ActivitySheet'
 import { InlineJumpButton } from '@/components/ui/InlineJumpButton'
 import { PlannedWorkoutSheet } from './PlannedWorkoutSheet'
 import { WeekPurposeBanner } from './WeekPurposeBanner'
-import { PlanPhaseTrack } from './PlanPhaseTrack'
 import { RaceFooter } from './RaceFooter'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import { addDays, isoDate, isoWeekNumber } from '@/lib/calendarDate'
-import { formatDate, formatDateFull, formatDurationWords } from '@/lib/formatters'
+import { formatDateFull, formatDurationWords } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -103,24 +102,38 @@ function PlannedWorkoutRow({ plan, onTap }: { plan: PlannedWorkout; onTap: () =>
           style={typeColor ? { color: `${typeColor}66` } : undefined}
         />
       </div>
-      {structure && (
+      {/* A single continuous block (e.g. an easy run) has no interval shape to
+          show - one 100%-height bar would just be visual noise. */}
+      {structure && structure.length > 1 && (
         <WorkoutStructureBars steps={structure} className="mt-3 flex h-[18px] items-end gap-[2px]" />
       )}
     </button>
   )
 }
 
-/** Compact row for the next-week preview: a color dot instead of a type icon, date+time as the
- * primary line since several rows are listed together (the workout name doesn't fit the format). */
+const WEEKDAY_SHORT_INDEX: Record<number, string> = {
+  0: t.plan.weekdays[6] ?? 'Sun',
+  1: t.plan.weekdays[0] ?? 'Mon',
+  2: t.plan.weekdays[1] ?? 'Tue',
+  3: t.plan.weekdays[2] ?? 'Wed',
+  4: t.plan.weekdays[3] ?? 'Thu',
+  5: t.plan.weekdays[4] ?? 'Fri',
+  6: t.plan.weekdays[5] ?? 'Sat',
+}
+
+// Same easy/hard split the week's stat tiles use: anything but Base counts as
+// a key session, tagged accordingly instead of repeating its distance.
+const KEY_SESSION_TYPES = new Set<ActivityType>(['Threshold', 'Sprint', 'Tempo'])
+
+/** Compact row for the coming-up list: a color dot, the workout name, weekday +
+ * a short detail below it, and a right-aligned tag (key session, or distance). */
 function NextWeekPlanRow({ plan, onTap }: { plan: PlannedWorkout; onTap: () => void }) {
   const typeColor = plan.type ? ACTIVITY_TYPE_CONFIG[plan.type as ActivityType].chartColor : null
-  const meta =
-    [
-      plan.type ? t.activityTypes[plan.type as ActivityType] : null,
-      plan.durationSecs ? `${formatDurationWords(plan.durationSecs)}` : null,
-    ]
-      .filter(Boolean)
-      .join(' · ') || t.plan.planned
+  const weekday = WEEKDAY_SHORT_INDEX[new Date(plan.date + 'T00:00:00').getDay()]
+  const detail = plan.durationSecs ? formatDurationWords(plan.durationSecs) : plan.scheduledTime
+  const isKey = plan.type ? KEY_SESSION_TYPES.has(plan.type as ActivityType) : false
+  const distanceKm = plan.distanceM ? Math.round(plan.distanceM / 1000) : null
+  const tag = isKey ? t.plan.keyTag : distanceKm ? `~${distanceKm} ${t.units.km}` : null
 
   return (
     <button
@@ -133,13 +146,12 @@ function NextWeekPlanRow({ plan, onTap }: { plan: PlannedWorkout; onTap: () => v
         style={{ background: typeColor ?? 'var(--accent)' }}
       />
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-bold text-foreground">
-          {formatDate(plan.date)}
-          {plan.scheduledTime ? ` · ${plan.scheduledTime}` : ''}
+        <span className="block truncate text-sm font-bold text-foreground">{plan.name}</span>
+        <span className="mt-0.5 block text-xs text-muted-foreground">
+          {[weekday, detail].filter(Boolean).join(' · ')}
         </span>
-        <span className="mt-0.5 block text-xs text-muted-foreground">{meta}</span>
       </span>
-      <ChevronRight size={14} className="shrink-0 text-foreground/30" />
+      {tag && <span className="shrink-0 text-xs font-medium text-muted-foreground">{tag}</span>}
     </button>
   )
 }
@@ -276,19 +288,18 @@ export function WeekView({
 
   return (
     <div className="space-y-3">
-      <div>
-        <WeekPurposeBanner
-          over={weekOver}
-          current={isCurrentWeek}
-          level={comparison?.level ?? null}
-          percent={comparison?.percent ?? null}
-          adherence={adherence}
-          garminStatus={garminStatus}
-          planPhase={planPhase}
-          planned={planned}
-        />
-        <PlanPhaseTrack ranges={planPhaseRanges} today={today} />
-      </div>
+      <WeekPurposeBanner
+        over={weekOver}
+        current={isCurrentWeek}
+        level={comparison?.level ?? null}
+        percent={comparison?.percent ?? null}
+        adherence={adherence}
+        garminStatus={garminStatus}
+        planPhase={planPhase}
+        planned={planned}
+        planPhaseRanges={planPhaseRanges}
+        today={today}
+      />
 
       {/* Decisional header: easy/hard, load, climb - standalone dark tiles, not a card */}
       <div className="grid grid-cols-3 gap-2">
@@ -374,7 +385,7 @@ export function WeekView({
                       )}
 
                       <div
-                        className="relative flex h-11 w-full items-center justify-center rounded-[10px] border px-0.5 transition-colors sm:h-[52px]"
+                        className="relative flex h-[52px] w-full items-center justify-center rounded-[11px] border px-0.5 transition-colors"
                         style={
                           completed
                             ? { background: typeColor ? `${typeColor}33` : ACCENT_15, borderColor: typeColor ? `${typeColor}80` : ACCENT_30 }

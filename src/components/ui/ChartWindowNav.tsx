@@ -56,6 +56,8 @@ export function useChartWindow<T extends { date: string }>(
   }
 }
 
+// One segmented pill (shared background, no per-button borders) rather than
+// three separately-boxed buttons - matches the mockup's 6w/6m/1y control.
 export function ChartRangeChips({
   value,
   onChange,
@@ -64,16 +66,16 @@ export function ChartRangeChips({
   onChange: (range: ChartRange) => void
 }) {
   return (
-    <div className="flex gap-1">
+    <div className="flex gap-0.5 rounded-md bg-muted p-0.5">
       {CHART_RANGES.map((r) => (
         <button
           key={r}
           onClick={() => onChange(r)}
           className={cn(
-            'rounded-md px-2 py-1 text-xs font-medium transition-colors',
+            'rounded px-2 py-1 text-xs font-semibold transition-colors',
             r === value
-              ? 'bg-accent text-white'
-              : 'border border-border bg-card text-muted-foreground hover:bg-muted',
+              ? 'bg-accent text-accent-foreground'
+              : 'text-muted-foreground hover:text-foreground',
           )}
         >
           {t.chartWindow.ranges[r]}

@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import type { VO2maxSeries } from '@/application/usecases/GetVO2maxHistory'
 import type { ThresholdHistoryData } from '@/application/usecases/GetThresholdHistory'
-import { formatPace } from '@/lib/formatters'
+import { formatClock } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 const VIOLET = '#8b5cf6'
@@ -144,7 +144,7 @@ export function AnalyticsInsightCards({ vo2maxSeries, vo2maxTopPercent, weeklyTr
         <Card
           label={s.easyPace}
           chip={easyDelta < -1 ? s.faster(Math.abs(Math.round(easyDelta))) : easyDelta > 1 ? s.slower(Math.round(easyDelta)) : s.holding}
-          value={formatPace(easyLatest)}
+          value={formatClock(easyLatest)}
           unit={t.units.perKm}
         >
           <LineSpark values={easyPaces} color={ACCENT} invert />
@@ -156,7 +156,7 @@ export function AnalyticsInsightCards({ vo2maxSeries, vo2maxTopPercent, weeklyTr
           label={s.threshold}
           chip={s.holding}
           chipTone="muted"
-          value={formatPace(thrLatest)}
+          value={formatClock(thrLatest)}
           unit={t.units.perKm}
         >
           <LineSpark values={thrPaces.length >= 2 ? thrPaces : [thrLatest, thrLatest]} color={SKY} />
