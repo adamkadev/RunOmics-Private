@@ -102,7 +102,7 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace }: P
 
   return (
     <div
-      className="rounded-[22px] border p-[18px] text-white shadow-[var(--shadow-hero)]"
+      className="rounded-[22px] border p-[18px] text-white"
       style={{
         // Hero gradient tinted by the verdict tone (go/caution/hold), so the
         // whole card reads the decision - not just the pastille. Blended into a
@@ -110,6 +110,9 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace }: P
         // in light mode too - same idea as var(--hero-gradient) elsewhere.
         background: `linear-gradient(158deg, color-mix(in srgb, ${toneHex} 20%, ${HERO_BASE}), color-mix(in srgb, ${toneHex} 5%, ${HERO_BASE}))`,
         borderColor: withAlpha(toneHex, 0.35),
+        // The F2 bloom, but keyed to the verdict tone rather than the accent -
+        // this hero is tone-tinted, so its glow follows the same hue.
+        boxShadow: `var(--shadow-hero), 0 8px 40px -8px ${withAlpha(toneHex, 0.28)}`,
       }}
     >
       <div className="flex items-center justify-between gap-2">

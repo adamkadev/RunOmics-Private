@@ -359,6 +359,10 @@ export function WeekView({
                 const primaryType: ActivityType | null = (d.acts[0]?.type ?? plan?.type) ?? null
                 const typeColor = primaryType && !missed ? ACTIVITY_TYPE_CONFIG[primaryType].chartColor : null
                 const label = primaryType ? t.plan.typeShort[primaryType] : rest ? t.plan.restDay : null
+                // Today's ring/glow takes the session's own type color (Tempo amber,
+                // VO2 red, ...) rather than the theme accent - a rest day has no
+                // session, so it falls back to the accent.
+                const todayGlow = typeColor ?? 'var(--accent)'
 
                 return (
                   <button
@@ -398,9 +402,9 @@ export function WeekView({
                           // than only when it happens to be a rest day.
                           ...(isToday
                             ? {
-                                borderColor: 'var(--accent)',
+                                borderColor: todayGlow,
                                 borderWidth: 1.5,
-                                boxShadow: '0 0 14px color-mix(in srgb, var(--accent) 35%, transparent)',
+                                boxShadow: `0 0 14px color-mix(in srgb, ${todayGlow} 35%, transparent)`,
                               }
                             : null),
                         }}

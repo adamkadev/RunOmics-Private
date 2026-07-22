@@ -186,7 +186,11 @@ export function AnalyticsClient({
           ref={tabsRef}
           role="tablist"
           aria-label={t.analytics.title}
-          className="sticky top-[max(var(--safe-top),8px)] z-20 -mx-4 grid grid-cols-4 gap-1.5 border-b border-foreground/[0.06] bg-background/80 px-4 py-2 backdrop-blur-xl sm:-mx-6 sm:px-6"
+          // No fill and no bottom border - the bg-background/80 slab read as an
+          // opaque white band over the accent canvas. Just a backdrop blur so the
+          // charts scrolling under the pinned tabs stay legible; the canvas tint
+          // shows through untinted.
+          className="sticky top-[max(var(--safe-top),8px)] z-20 -mx-4 grid grid-cols-4 gap-1.5 px-4 py-2 backdrop-blur-xl sm:-mx-6 sm:px-6"
         >
           {visibleTabs.map((item) => (
             <button

@@ -37,8 +37,15 @@ function WeekDots({ weekDays, plannedDays, today }: { weekDays: boolean[]; plann
                     : isRest
                       ? 'bg-accent/15'
                       : 'bg-foreground/10',
-                isToday && !active && 'border-2 border-accent bg-transparent shadow-[0_0_12px_var(--brand-glow)]'
+                isToday && !active && 'border-2 border-accent bg-transparent'
               )}
+              // The "today" glow follows the accent (rose/blue/…), not the fixed
+              // brand green - the ring around it is already border-accent.
+              style={
+                isToday && !active
+                  ? { boxShadow: '0 0 12px color-mix(in srgb, var(--accent) 50%, transparent)' }
+                  : undefined
+              }
             >
               {active && <Check size={13} strokeWidth={3.2} className="text-accent-foreground" />}
               {isRest && !isToday && <Check size={13} strokeWidth={3.2} className="text-accent-text" />}

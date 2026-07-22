@@ -31,7 +31,15 @@ export function ProfileRecords({ records }: Props) {
       <div className="flex items-start justify-between">
         <h2 className="text-sm font-bold text-foreground">{t.profile.records.title}</h2>
         {best && recent && (
-          <span className="rounded-[5px] border border-emerald-500/25 bg-emerald-500/[0.14] px-[6px] py-px text-micro font-bold text-emerald-600 dark:text-emerald-400">
+          <span
+            className="rounded-[5px] border px-[6px] py-px text-micro font-bold text-accent-text"
+            style={{
+              // Accent-subtle, per the Progress mockup: a NEW badge shouldn't stay
+              // emerald when the athlete's theme is rose/blue/etc.
+              borderColor: 'color-mix(in srgb, var(--accent) 25%, transparent)',
+              background: 'color-mix(in srgb, var(--accent) 14%, transparent)',
+            }}
+          >
             {t.profile.records.newBadge}
           </span>
         )}
