@@ -1,5 +1,6 @@
 import type { TrainingLoadData } from '@/application/usecases/GetTrainingLoad'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 import { CHART_COLORS } from '@/lib/colors'
 import { HUE } from '@/lib/palette'
 import { t } from '@/i18n'
@@ -60,7 +61,9 @@ function Tile({
   lineColor: string
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-3">
+    // Same glass recipe as the other Today cards - `bg-card` read a shade
+    // darker than the hero/streak surfaces sitting either side of it.
+    <GlassSurface className="p-3">
       <div className="text-[10px] font-bold uppercase tracking-[0.06em] text-subtle">{label}</div>
       <div
         className="my-0.5 font-display text-2xl font-bold tracking-[-0.02em] tabular-nums"
@@ -69,7 +72,7 @@ function Tile({
         {value}
       </div>
       <Sparkline values={values} color={lineColor} />
-    </div>
+    </GlassSurface>
   )
 }
 
