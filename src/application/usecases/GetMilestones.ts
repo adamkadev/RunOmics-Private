@@ -1,5 +1,6 @@
 import type { Activity } from '@/domain/activity/types'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { getAllPlannedWorkouts } from '@/infrastructure/repositories/JsonPlannedWorkoutRepository'
 import { getRecords } from './GetRecords'
 import { computeWeekActivityDays } from './GetDashboardData'
 import { isoWeekNumber, startOfWeek, addDays, isoDate } from '@/lib/calendarDate'
@@ -154,6 +155,14 @@ export interface WeeklyStreakData {
   currentWeeks: number
   longestWeeks: number
   weekDays: boolean[] // Mon..Sun
+  plannedDays: boolean[] // Mon..Sun - a past day with no plan is rest, not missed
+}
+
+/** Days of the current week that carry a scheduled session (Mon..Sun). */
+export function computeWeekPlannedDays(planned: { date: string }[], now: Date): boolean[] {
+  const dateSet = new Set(planned.map((w) => w.date.slice(0, 10)))
+  const monday = startOfWeek(now)
+  return Array.from({ length: 7 }, (_, i) => dateSet.has(isoDate(addDays(monday, i))))
 }
 
 export function getWeeklyStreakData(now = new Date()): WeeklyStreakData | null {
@@ -164,6 +173,7 @@ export function getWeeklyStreakData(now = new Date()): WeeklyStreakData | null {
     currentWeeks: streak?.weeks ?? 0,
     longestWeeks: longestWeekStreak(activities),
     weekDays: computeWeekActivityDays(activities, now),
+    plannedDays: computeWeekPlannedDays(getAllPlannedWorkouts(), now),
   }
 }
 

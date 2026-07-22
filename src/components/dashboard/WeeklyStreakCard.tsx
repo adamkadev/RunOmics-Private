@@ -14,7 +14,7 @@ const RING_STROKE = 7
 const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS
 
-function WeekDots({ weekDays, today }: { weekDays: boolean[]; today: number }) {
+function WeekDots({ weekDays, plannedDays, today }: { weekDays: boolean[]; plannedDays: boolean[]; today: number }) {
   const labels = t.plan.weekdays
 
   return (
@@ -22,16 +22,26 @@ function WeekDots({ weekDays, today }: { weekDays: boolean[]; today: number }) {
       {weekDays.map((active, i) => {
         const isToday = i === today
         const isFuture = i > today
+        // A past day with nothing scheduled is a rest day, not a missed one:
+        // same filled dot + check as a done day, tinted rather than solid.
+        const isRest = !active && !isFuture && !plannedDays[i]
         return (
           <div key={i} className="text-center">
             <div
               className={cn(
                 'mx-auto flex h-[26px] w-[26px] items-center justify-center rounded-full',
-                active ? 'bg-accent' : isFuture ? 'border-[1.5px] border-dashed border-foreground/15' : 'bg-foreground/10',
+                active
+                  ? 'bg-accent'
+                  : isFuture
+                    ? 'border-[1.5px] border-dashed border-foreground/15'
+                    : isRest
+                      ? 'bg-accent/15'
+                      : 'bg-foreground/10',
                 isToday && !active && 'border-2 border-accent bg-transparent shadow-[0_0_12px_var(--brand-glow)]'
               )}
             >
               {active && <Check size={13} strokeWidth={3.2} className="text-accent-foreground" />}
+              {isRest && !isToday && <Check size={13} strokeWidth={3.2} className="text-accent-text" />}
             </div>
             <div className={cn('mt-1 text-micro', isToday ? 'font-semibold text-accent-text' : 'text-muted-foreground')}>
               {labels[i]?.slice(0, 1)}
@@ -110,7 +120,7 @@ export function WeeklyStreakCard({ data, goal, hardShareFact }: Props) {
       </div>
 
       <div className="mt-4">
-        <WeekDots weekDays={data.weekDays} today={today} />
+        <WeekDots weekDays={data.weekDays} plannedDays={data.plannedDays} today={today} />
       </div>
     </GlassSurface>
   )
