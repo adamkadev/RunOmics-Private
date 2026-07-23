@@ -28,6 +28,13 @@ export const metadata: Metadata = {
     title: 'RunOmics',
     startupImage: [...appleStartupImages],
   },
+  other: {
+    // Next 16's `appleWebApp.capable` now emits only the standardized
+    // `mobile-web-app-capable`. iOS still needs the legacy apple-prefixed meta
+    // to honour the apple-touch-startup-image launch screens - without it the
+    // installed PWA opens on a black screen instead of the splash.
+    'apple-mobile-web-app-capable': 'yes',
+  },
   icons: {
     icon: [{ url: '/icons/logo.svg', type: 'image/svg+xml' }],
     apple: { url: '/icons/apple-touch-icon.png', sizes: '180x180' },
