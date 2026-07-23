@@ -11,7 +11,7 @@ import { GlassSurface } from '@/components/ui/GlassSurface'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { BackButton } from '@/components/ui/BackButton'
 import { STATUS } from '@/lib/statusColors'
-import { formatCompactDate } from '@/lib/formatters'
+import { formatCompactMonthYear } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -112,7 +112,7 @@ export default async function ShoeDetailPage({
         <Stat value={<AnimatedValue value={shoe.totalKm} decimals={0} />} label={d.stats.distance} />
         <Stat value={<AnimatedValue value={shoe.activities.length} />} label={d.stats.activities} />
         <Stat value={<AnimatedValue value={shoe.kmPerWeek} decimals={0} />} label={d.stats.kmPerWeek} />
-        <Stat value={shoe.firstUsedDate ? formatCompactDate(shoe.firstUsedDate) : '-'} label={d.stats.firstUsed} />
+        <Stat value={shoe.firstUsedDate ? formatCompactMonthYear(shoe.firstUsedDate) : '-'} label={d.stats.firstUsed} />
       </div>
 
       <div className="space-y-3">

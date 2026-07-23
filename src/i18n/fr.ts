@@ -1001,7 +1001,7 @@ export const fr = {
       stats: {
         distance: 'Distance',
         activities: 'Activités',
-        firstUsed: 'Première sortie',
+        firstUsed: 'Depuis',
         kmPerWeek: 'km / sem.',
       },
       activitiesTitle: 'Activités suivies',

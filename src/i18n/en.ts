@@ -1007,7 +1007,7 @@ export const en = {
       stats: {
         distance: 'Distance',
         activities: 'Activities',
-        firstUsed: 'First worn',
+        firstUsed: 'Since',
         kmPerWeek: 'km / week',
       },
       activitiesTitle: 'Tracked Activities',
