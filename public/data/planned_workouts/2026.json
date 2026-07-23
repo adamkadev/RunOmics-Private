@@ -742,16 +742,12 @@
     {
       "date": "2026-07-23",
       "name": "Base",
-      "distanceM": 5708,
+      "distanceM": 276210,
       "durationSecs": 1860,
       "steps": [
         {
           "kind": "effort",
-          "minutes": 31,
-          "paceSecPerKm": [
-            308,
-            346
-          ]
+          "minutes": 31
         }
       ],
       "type": "Base",
@@ -759,26 +755,18 @@
     },
     {
       "date": "2026-07-25",
-      "name": "Sprint - 3x3x0:15@2:45/km",
-      "distanceM": 12077,
-      "durationSecs": 3300,
+      "name": "Sprint - 2x3x0:15@Maximal",
+      "distanceM": 429270,
+      "durationSecs": 2640,
       "steps": [
         {
           "kind": "warmup",
-          "minutes": 15,
-          "paceSecPerKm": [
-            308,
-            346
-          ]
+          "minutes": 15
         },
         {
           "kind": "effort",
           "minutes": 0,
-          "rep": 1,
-          "paceSecPerKm": [
-            154,
-            177
-          ]
+          "rep": 1
         },
         {
           "kind": "recovery",
@@ -788,11 +776,7 @@
         {
           "kind": "effort",
           "minutes": 0,
-          "rep": 2,
-          "paceSecPerKm": [
-            154,
-            177
-          ]
+          "rep": 2
         },
         {
           "kind": "recovery",
@@ -802,11 +786,7 @@
         {
           "kind": "effort",
           "minutes": 0,
-          "rep": 3,
-          "paceSecPerKm": [
-            154,
-            177
-          ]
+          "rep": 3
         },
         {
           "kind": "recovery",
@@ -816,20 +796,12 @@
         {
           "kind": "recovery",
           "minutes": 5,
-          "rep": 1,
-          "paceSecPerKm": [
-            346,
-            434
-          ]
+          "rep": 1
         },
         {
           "kind": "effort",
           "minutes": 0,
-          "rep": 1,
-          "paceSecPerKm": [
-            154,
-            177
-          ]
+          "rep": 1
         },
         {
           "kind": "recovery",
@@ -839,11 +811,7 @@
         {
           "kind": "effort",
           "minutes": 0,
-          "rep": 2,
-          "paceSecPerKm": [
-            154,
-            177
-          ]
+          "rep": 2
         },
         {
           "kind": "recovery",
@@ -853,11 +821,7 @@
         {
           "kind": "effort",
           "minutes": 0,
-          "rep": 3,
-          "paceSecPerKm": [
-            154,
-            177
-          ]
+          "rep": 3
         },
         {
           "kind": "recovery",
@@ -867,70 +831,11 @@
         {
           "kind": "recovery",
           "minutes": 5,
-          "rep": 2,
-          "paceSecPerKm": [
-            346,
-            434
-          ]
-        },
-        {
-          "kind": "effort",
-          "minutes": 0,
-          "rep": 1,
-          "paceSecPerKm": [
-            154,
-            177
-          ]
-        },
-        {
-          "kind": "recovery",
-          "minutes": 3,
-          "rep": 1
-        },
-        {
-          "kind": "effort",
-          "minutes": 0,
-          "rep": 2,
-          "paceSecPerKm": [
-            154,
-            177
-          ]
-        },
-        {
-          "kind": "recovery",
-          "minutes": 3,
           "rep": 2
-        },
-        {
-          "kind": "effort",
-          "minutes": 0,
-          "rep": 3,
-          "paceSecPerKm": [
-            154,
-            177
-          ]
-        },
-        {
-          "kind": "recovery",
-          "minutes": 3,
-          "rep": 3
-        },
-        {
-          "kind": "recovery",
-          "minutes": 5,
-          "rep": 3,
-          "paceSecPerKm": [
-            346,
-            434
-          ]
         },
         {
           "kind": "cooldown",
-          "minutes": 10,
-          "paceSecPerKm": [
-            308,
-            346
-          ]
+          "minutes": 10
         }
       ],
       "type": "Sprint",
@@ -939,16 +844,12 @@
     {
       "date": "2026-07-26",
       "name": "Longue course",
-      "distanceM": 15836,
+      "distanceM": 766260,
       "durationSecs": 5160,
       "steps": [
         {
           "kind": "effort",
-          "minutes": 86,
-          "paceSecPerKm": [
-            308,
-            346
-          ]
+          "minutes": 86
         }
       ],
       "type": "Base",
@@ -957,16 +858,12 @@
     {
       "date": "2026-07-28",
       "name": "Base",
-      "distanceM": 5524,
+      "distanceM": 267300,
       "durationSecs": 1800,
       "steps": [
         {
           "kind": "effort",
-          "minutes": 30,
-          "paceSecPerKm": [
-            308,
-            346
-          ]
+          "minutes": 30
         }
       ],
       "type": "Base",
@@ -974,33 +871,21 @@
     },
     {
       "date": "2026-07-29",
-      "name": "Seuil - 19:00@4:20/km",
-      "distanceM": 8084,
-      "durationSecs": 2340,
+      "name": "Seuil - 17:00@176bpm",
+      "distanceM": 357720,
+      "durationSecs": 2220,
       "steps": [
         {
           "kind": "warmup",
-          "minutes": 10,
-          "paceSecPerKm": [
-            308,
-            346
-          ]
+          "minutes": 10
         },
         {
           "kind": "effort",
-          "minutes": 19,
-          "paceSecPerKm": [
-            250,
-            269
-          ]
+          "minutes": 17
         },
         {
           "kind": "cooldown",
-          "minutes": 10,
-          "paceSecPerKm": [
-            308,
-            346
-          ]
+          "minutes": 10
         }
       ],
       "type": "Threshold",
