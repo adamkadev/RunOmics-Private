@@ -68,29 +68,24 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
 
   const toggleFullscreen = useCallback(() => setIsFullscreen(v => !v), [])
 
-  // After the fullscreen DOM reflow: resize, then re-fit on the route bounds.
-  // resize() alone keeps the small-map center/zoom, which leaves the trace
-  // off-screen once the viewport grows - the user had to pan to find it.
-  //
-  // Two frames, not one: a single rAF can run before the browser has laid out
-  // the `fixed inset-0` container, so resize() reads the old (small) size and
-  // fitBounds frames the trace for it - leaving it too zoomed in for the grown
-  // viewport. Waiting a second frame lets the new size settle first, so the
-  // whole trace is framed from the start with no manual zooming out.
+  // Re-fit the route whenever the map's container changes size - above all when
+  // it grows to (or shrinks from) fullscreen. A ResizeObserver fires only once
+  // the new box has actually been laid out, so it can't read a stale size the
+  // way a rAF-timed one-shot can - which is what left the trace too zoomed in,
+  // running off the bottom of the enlarged map. resize() syncs the GL canvas to
+  // the new box; fitBounds then frames the whole trace inside it.
   useEffect(() => {
-    let inner = 0
-    const outer = requestAnimationFrame(() => {
-      inner = requestAnimationFrame(() => {
-        const map = mapRef.current
-        if (!map) return
-        map.resize()
-        if (boundsRef.current) {
-          map.fitBounds(boundsRef.current, { padding: 48, maxZoom: 15, duration: 0 })
-        }
-      })
+    const el = containerRef.current
+    if (!el) return
+    const ro = new ResizeObserver(() => {
+      const map = mapRef.current
+      if (!map || !boundsRef.current) return
+      map.resize()
+      map.fitBounds(boundsRef.current, { padding: 40, maxZoom: 15, duration: 0 })
     })
-    return () => { cancelAnimationFrame(outer); cancelAnimationFrame(inner) }
-  }, [isFullscreen])
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   // Escape to exit fullscreen
   useEffect(() => {
