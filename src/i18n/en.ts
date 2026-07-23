@@ -1042,7 +1042,7 @@ export const en = {
     records: {
       title: 'Records',
       notYet: 'Not yet',
-      viewAll: 'View all records',
+      viewAll: 'View records',
       newBadge: 'NEW',
     },
     shoes: {
