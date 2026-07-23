@@ -17,12 +17,11 @@ function readLocalStorage(key: string, fallback: string): string {
  * the renderer and the pickers consume.
  */
 export function useShareCardPrefs(appTheme: ThemeMode) {
-  const [selectedDesign, setSelectedDesign] = useState<ShareDesign>(() => {
-    const stored = readLocalStorage('ro_shareTheme', 'aurora')
-    // `route` took `cadence`'s slot; keep those athletes on the new design.
-    if (stored === 'cadence') return 'route'
-    return (SHARE_DESIGNS as string[]).includes(stored) ? stored as ShareDesign : 'aurora'
-  })
+  // The design deliberately does NOT persist: every time the sheet opens it
+  // resets to the first card, so a design picked on a previous activity never
+  // carries over. Accent, custom color and light mode still persist below,
+  // since those are the athlete's styling, not a per-share choice.
+  const [selectedDesign, setSelectedDesign] = useState<ShareDesign>(SHARE_DESIGNS[0] ?? 'aurora')
   const [shareAccent, setShareAccent] = useState<ShareAccent>(() => {
     const stored = readLocalStorage('ro_shareAccent', DEFAULT_ACCENT)
     if (stored === 'custom') return 'custom'
@@ -35,7 +34,6 @@ export function useShareCardPrefs(appTheme: ThemeMode) {
     readLocalStorage('ro_shareLightMode', 'false') === 'true'
   )
 
-  useEffect(() => { try { localStorage.setItem('ro_shareTheme', selectedDesign) } catch { /* noop */ } }, [selectedDesign])
   useEffect(() => { try { localStorage.setItem('ro_shareAccent', shareAccent) } catch { /* noop */ } }, [shareAccent])
   useEffect(() => { try { localStorage.setItem('ro_shareCustomHex', customHex) } catch { /* noop */ } }, [customHex])
   useEffect(() => { try { localStorage.setItem('ro_shareLightMode', String(lightMode)) } catch { /* noop */ } }, [lightMode])

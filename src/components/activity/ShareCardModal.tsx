@@ -198,7 +198,8 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
 
           <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0 16px' }}>
             <div style={{
-              borderRadius: 18, overflow: 'hidden', width: 176, height: 380,
+              // 9:16, matching the exported story's aspect ratio.
+              borderRadius: 18, overflow: 'hidden', width: 176, height: 313,
               boxShadow: 'var(--shadow-modal)',
               flexShrink: 0,
             }}>

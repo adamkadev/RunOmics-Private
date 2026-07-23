@@ -271,6 +271,10 @@ export const SHARE_BACKDROPS = {
 export const SHARE_CARD_COLORS = {
   /** Start-of-route marker - green means "you began here" regardless of accent. */
   routeStart: c.green500,
+  /** Finish marker fallback: when the accent is itself green the accent-colored
+   *  finish dot would collide with the green start, so it flips to this red -
+   *  the start/finish convention Strava and Garmin use. */
+  routeFinish: c.red500,
   /** Grid-line label plates on the map design. */
   mapLabelPlateDark:  withAlpha(c.shareMapDark, 0.76),
   mapLabelPlateLight: withAlpha(c.shareMapLight, 0.76),

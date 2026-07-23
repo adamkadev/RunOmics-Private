@@ -4,7 +4,7 @@ import { shareCardTitle } from '@/lib/shareCardStats'
 import type { ShareDesign } from '@/lib/shareCardPalette'
 import { projectRoute, simplifyRoute, type LngLat } from '@/lib/shareCardMap'
 import { MAP_COLORS, SHARE_BACKDROPS, SHARE_CARD_COLORS as SHARE } from '@/lib/colors'
-import { ink, paper } from '@/lib/palette'
+import { ink, paper, rgbTriplet } from '@/lib/palette'
 import { t } from '@/i18n'
 
 // ── Canvas ink ───────────────────────────────────────────────────────────────
@@ -15,6 +15,18 @@ import { t } from '@/i18n'
 
 /** The accent at a given opacity. `a = 1` gives the solid fill. */
 const accent = (r: number, g: number, b: number, a: number): string => `rgba(${r},${g},${b},${a})`
+
+// The start dot is always green; the finish dot is the accent, except when the
+// accent is itself a green - then the two would read as the same marker, so the
+// finish flips to a contrasting red.
+const START_RGB = rgbTriplet(SHARE.routeStart)
+
+/** The finish-dot fill: the accent, or the red fallback when the accent sits
+ *  too close to the green start marker to be told apart from it. */
+function finishFill(r: number, g: number, b: number): string {
+  const dist = Math.hypot(r - START_RGB[0], g - START_RGB[1], b - START_RGB[2])
+  return dist < 90 ? SHARE.routeFinish : accent(r, g, b, 1)
+}
 
 /** Fully transparent stop, for gradients that fade to nothing. */
 const TRANSPARENT = ink(0)
@@ -410,7 +422,7 @@ function paintActivityTrace(ctx: Ctx, pts: [number, number][], r: number, g: num
   }
   const isLoop = Math.abs(last[0] - first[0]) < 4 && Math.abs(last[1] - first[1]) < 4
   dot(first, SHARE.routeStart)
-  if (!isLoop) dot(last, accent(r, g, b, 1))
+  if (!isLoop) dot(last, finishFill(r, g, b))
 }
 
 export function draw_route(
@@ -650,7 +662,7 @@ export function draw_map(
 
   // End dot
   ctx.beginPath(); ctx.arc(last[0], last[1], 7, 0, Math.PI * 2)
-  ctx.fillStyle = accent(r, g, b, 1); ctx.fill()
+  ctx.fillStyle = finishFill(r, g, b); ctx.fill()
   ctx.beginPath(); ctx.arc(last[0], last[1], 7, 0, Math.PI * 2)
   ctx.strokeStyle = paper(0.7); ctx.lineWidth = 2; ctx.stroke()
 
@@ -783,7 +795,7 @@ function paintRoute(
   ctx.strokeStyle = paper(0.7); ctx.lineWidth = 1.5; ctx.stroke()
 
   ctx.beginPath(); ctx.arc(last[0], last[1], 5.5, 0, Math.PI * 2)
-  ctx.fillStyle = accent(r, g, b, 1); ctx.fill()
+  ctx.fillStyle = finishFill(r, g, b); ctx.fill()
   ctx.strokeStyle = paper(0.7); ctx.lineWidth = 1.5; ctx.stroke()
 }
 

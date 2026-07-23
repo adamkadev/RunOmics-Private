@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { maptilerStyleUrl } from '@/lib/maptiler'
-import { routePaddingPx, simplifyRoute, type LngLat } from '@/lib/shareCardMap'
+import { routePadding, simplifyRoute, type LngLat } from '@/lib/shareCardMap'
 import type { ThemeMode } from '@/lib/shareCardPalette'
 
 export interface ShareCardMap {
@@ -85,8 +85,9 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
     style: maptilerStyleUrl(isDark, token),
     bounds,
     // maxZoom mirrors the activity map's fit: without it a short run zooms in
-    // past the level the tiles are designed for.
-    fitBoundsOptions: { padding: routePaddingPx(width, height), maxZoom: 15, duration: 0 },
+    // past the level the tiles are designed for. The per-side padding keeps the
+    // trace framed between the card's title and stats on the tall frame.
+    fitBoundsOptions: { padding: routePadding(width, height), maxZoom: 15, duration: 0 },
     // Reading pixels back out of a WebGL canvas needs the buffer kept around.
     canvasContextAttributes: { preserveDrawingBuffer: true },
     pixelRatio: PIXEL_RATIO,

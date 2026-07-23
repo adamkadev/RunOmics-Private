@@ -71,16 +71,25 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
   // After the fullscreen DOM reflow: resize, then re-fit on the route bounds.
   // resize() alone keeps the small-map center/zoom, which leaves the trace
   // off-screen once the viewport grows - the user had to pan to find it.
+  //
+  // Two frames, not one: a single rAF can run before the browser has laid out
+  // the `fixed inset-0` container, so resize() reads the old (small) size and
+  // fitBounds frames the trace for it - leaving it too zoomed in for the grown
+  // viewport. Waiting a second frame lets the new size settle first, so the
+  // whole trace is framed from the start with no manual zooming out.
   useEffect(() => {
-    const id = requestAnimationFrame(() => {
-      const map = mapRef.current
-      if (!map) return
-      map.resize()
-      if (boundsRef.current) {
-        map.fitBounds(boundsRef.current, { padding: 40, maxZoom: 15, duration: 0 })
-      }
+    let inner = 0
+    const outer = requestAnimationFrame(() => {
+      inner = requestAnimationFrame(() => {
+        const map = mapRef.current
+        if (!map) return
+        map.resize()
+        if (boundsRef.current) {
+          map.fitBounds(boundsRef.current, { padding: 48, maxZoom: 15, duration: 0 })
+        }
+      })
     })
-    return () => cancelAnimationFrame(id)
+    return () => { cancelAnimationFrame(outer); cancelAnimationFrame(inner) }
   }, [isFullscreen])
 
   // Escape to exit fullscreen
