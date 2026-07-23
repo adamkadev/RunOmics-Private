@@ -109,7 +109,7 @@ function PlannedWorkoutRow({
           <span className="mt-0.5 block truncate text-xs text-muted-foreground">
             {[
               plan.scheduledTime,
-              zone ? zone.label : plan.type ? t.activityTypes[plan.type as ActivityType] : null,
+              zone ? (zone.key === 'easy' ? t.plan.easyEffortLabel : zone.label) : plan.type ? t.activityTypes[plan.type as ActivityType] : null,
               zone ? formatPaceRange([zone.paceMinSecPerKm, zone.paceMaxSecPerKm]) : null,
             ]
               .filter(Boolean)
