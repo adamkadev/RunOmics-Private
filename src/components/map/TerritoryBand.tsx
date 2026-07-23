@@ -40,18 +40,18 @@ export function TerritoryBand({ territory }: Props) {
         <p className="font-mono text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: ACCENT_ON_DARK }}>
           {s.eyebrow}
         </p>
-        <p className="mt-2 text-base font-semibold leading-snug text-white">
+        <p className="mt-2 font-display text-base font-bold leading-snug text-white">
           {s.headline(territory.percentVolume, territory.medianRadiusKm)}
           {place && <span style={{ color: ACCENT_ON_DARK }}> {s.aroundPlace(place)}</span>}
         </p>
       </div>
       <div className="flex gap-6">
         <div>
-          <div className="text-lg font-extrabold tabular-nums text-white">{territory.routeCount}</div>
+          <div className="font-display text-lg font-bold tabular-nums text-white">{territory.routeCount}</div>
           <div className="text-micro text-white/60">{s.routesStat}</div>
         </div>
         <div>
-          <div className="text-lg font-extrabold tabular-nums text-white">
+          <div className="font-display text-lg font-bold tabular-nums text-white">
             {territory.medianRadiusKm} {t.units.km}
           </div>
           <div className="text-micro text-white/60">{s.radiusStat}</div>

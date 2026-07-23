@@ -164,7 +164,7 @@ export function AnalyticsClient({
       {/* Title left, season scope right on one line - the mockup's header.
           The year row is the page's scope control, not a stack of its own. */}
       <div className="flex items-center justify-between gap-3 px-1">
-        <h1 className="shrink-0 text-title1 font-extrabold leading-[1.1] tracking-tight text-foreground">
+        <h1 className="shrink-0 font-display text-title1 font-bold leading-[1.1] tracking-tight text-foreground">
           {t.analytics.title}
         </h1>
 
