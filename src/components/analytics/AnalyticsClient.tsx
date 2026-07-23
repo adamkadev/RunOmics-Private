@@ -118,20 +118,22 @@ export function AnalyticsClient({
 
   function selectTab(id: TabId) {
     setTab(id)
-    // Scroll to the tab strip (not the page top) so the charts start just
-    // below where the finger already is - the sticky offset keeps the tabs
-    // pinned at the top of the viewport.
+    // When switching tabs from deep in a long panel, bring the tab strip back
+    // up so the new panel starts from its top. Two rules keep this from ever
+    // nudging the page *downward* - the bug that made the view creep lower on
+    // each switch:
+    //  1. offsetTop (summed up the offsetParent chain) is the strip's stable
+    //     in-flow position; getBoundingClientRect().top reports the *pinned*
+    //     safe-area offset once the sticky strip is stuck, so `rect.top +
+    //     scrollY` overshot and drifted a little further down every time.
+    //  2. We only scroll when we're currently *below* that target, so switching
+    //     tabs while already at the top never yanks the header out of view.
     const el = tabsRef.current
     if (el) {
-      // The strip is `position: sticky`, so once it's pinned its
-      // getBoundingClientRect().top reports the *pinned* offset (the safe-area
-      // inset), not its place in the document. `rect.top + scrollY` therefore
-      // drifts down by that inset on every switch. offsetTop is the element's
-      // stable in-flow position, unaffected by the sticky shift, so summing the
-      // offsetParent chain gives a target that lands in the same spot each time.
       let docTop = 0
       for (let n: HTMLElement | null = el; n; n = n.offsetParent as HTMLElement | null) docTop += n.offsetTop
-      window.scrollTo({ top: Math.max(docTop - 12, 0), behavior: 'smooth' })
+      const target = Math.max(docTop - 12, 0)
+      if (window.scrollY > target) window.scrollTo({ top: target, behavior: 'smooth' })
     }
   }
 
