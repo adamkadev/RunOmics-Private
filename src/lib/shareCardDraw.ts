@@ -621,10 +621,12 @@ export function draw_map(
     ctx.restore()
   }
 
-  // GPS route
+  // GPS route. Projected exactly like the `route` design (projectRoute applies
+  // the same between-title-and-stats framing), so the drawn map's trace sits at
+  // the same size and place as the real basemap's.
   const simplified = gpsRoute && gpsRoute.length > 1 ? simplifyRoute(gpsRoute) : null
   const pts: [number, number][] = simplified
-    ? projectGPS(simplified, W, H)
+    ? projectRoute(gpsRoute!, W, H)
     : [
         [W * 0.22, H * 0.72], [W * 0.22, H * 0.58], [W * 0.3, H * 0.5], [W * 0.44, H * 0.5],
         [W * 0.44, H * 0.38], [W * 0.56, H * 0.3], [W * 0.68, H * 0.3], [W * 0.68, H * 0.42],

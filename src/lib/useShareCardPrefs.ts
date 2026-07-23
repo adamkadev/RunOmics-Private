@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { SHARE_DESIGNS, hexToRgb, type ShareDesign, type ThemeMode } from '@/lib/shareCard'
-import { ACCENT_SWATCHES, DEFAULT_ACCENT, isAccentId, type AccentId } from '@/lib/accent'
+import { ACCENT_SWATCHES, type AccentId } from '@/lib/accent'
+import { useAccent } from '@/lib/useAccent'
 import { HUE } from '@/lib/palette'
 
 export type ShareAccent = AccentId | 'custom'
@@ -19,14 +20,13 @@ function readLocalStorage(key: string, fallback: string): string {
 export function useShareCardPrefs(appTheme: ThemeMode) {
   // The design deliberately does NOT persist: every time the sheet opens it
   // resets to the first card, so a design picked on a previous activity never
-  // carries over. Accent, custom color and light mode still persist below,
-  // since those are the athlete's styling, not a per-share choice.
+  // carries over. The accent likewise defaults to the app's own theme accent
+  // (blue app -> blue pre-selected) rather than a separately remembered value,
+  // so the card opens matching the athlete's chosen colour. Only the custom hex
+  // and light mode persist below.
   const [selectedDesign, setSelectedDesign] = useState<ShareDesign>(SHARE_DESIGNS[0] ?? 'aurora')
-  const [shareAccent, setShareAccent] = useState<ShareAccent>(() => {
-    const stored = readLocalStorage('ro_shareAccent', DEFAULT_ACCENT)
-    if (stored === 'custom') return 'custom'
-    return isAccentId(stored) ? stored : DEFAULT_ACCENT
-  })
+  const appAccent = useAccent()
+  const [shareAccent, setShareAccent] = useState<ShareAccent>(appAccent)
   const [customHex, setCustomHex] = useState<string>(() =>
     readLocalStorage('ro_shareCustomHex', HUE.emerald500)
   )
@@ -34,7 +34,6 @@ export function useShareCardPrefs(appTheme: ThemeMode) {
     readLocalStorage('ro_shareLightMode', 'false') === 'true'
   )
 
-  useEffect(() => { try { localStorage.setItem('ro_shareAccent', shareAccent) } catch { /* noop */ } }, [shareAccent])
   useEffect(() => { try { localStorage.setItem('ro_shareCustomHex', customHex) } catch { /* noop */ } }, [customHex])
   useEffect(() => { try { localStorage.setItem('ro_shareLightMode', String(lightMode)) } catch { /* noop */ } }, [lightMode])
 
