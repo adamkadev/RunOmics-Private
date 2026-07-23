@@ -58,8 +58,6 @@ function VerdictIcon({ band }: { band: NonNullable<TileData['band']> }) {
   )
 }
 
-// Read-only tiles - values are hand-edited (or Garmin-synced) in public/data/athlete.json,
-// not editable from the app.
 function Tile({ label, unit, value, band }: TileData) {
   return (
     <div className="relative rounded-xl px-2.5 py-2.5 text-center" style={{ background: 'var(--scrim)' }}>

@@ -55,7 +55,7 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   return (
     <TooltipCard label={p.label}>
       <p className="text-sm" style={{ color: formColor }}>
-        {t.dashboard.trainingLoad.form} {value}
+        {t.dashboard.trainingLoad.form} {value.toFixed(1)}
         {p.projTsb !== undefined && p.histTsb === undefined ? ` (${t.dashboard.raceCockpit.projected})` : ''}
       </p>
     </TooltipCard>
@@ -69,7 +69,7 @@ export function RaceCockpit({ data }: { data: FormProjection }) {
   const animatedProjectedTsb = useCountUp(data.projectedTsb)
   const chartData = buildChartData(data)
   const title = data.isRaceTarget && data.raceName ? s.titleWithRace(data.raceName) : s.title
-  const summary = `${title}: ${s.projectedForm} ${data.projectedTsb} (${data.projectedTsbLow} to ${data.projectedTsbHigh}), ${s.verdict[data.verdict]}`
+  const summary = `${title}: ${s.projectedForm} ${data.projectedTsb.toFixed(1)} (${data.projectedTsbLow.toFixed(1)} to ${data.projectedTsbHigh.toFixed(1)}), ${s.verdict[data.verdict]}`
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -83,12 +83,12 @@ export function RaceCockpit({ data }: { data: FormProjection }) {
       <div className="mb-3 flex flex-wrap items-baseline gap-2">
         <span className="text-title2 font-extrabold tabular-nums text-foreground">
           {data.projectedTsb >= 0 ? '+' : ''}
-          {round1(animatedProjectedTsb)}
+          {round1(animatedProjectedTsb).toFixed(1)}
         </span>
         <span className="text-xs text-subtle">
           ({data.projectedTsbLow >= 0 ? '+' : ''}
-          {data.projectedTsbLow} – {data.projectedTsbHigh >= 0 ? '+' : ''}
-          {data.projectedTsbHigh})
+          {data.projectedTsbLow.toFixed(1)} – {data.projectedTsbHigh >= 0 ? '+' : ''}
+          {data.projectedTsbHigh.toFixed(1)})
         </span>
         <StatusPill tone={VERDICT_TONE[data.verdict]}>{s.verdict[data.verdict]}</StatusPill>
       </div>

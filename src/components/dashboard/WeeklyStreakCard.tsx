@@ -75,7 +75,9 @@ export function WeeklyStreakCard({ data, goal, hardShareFact }: Props) {
   const offset = RING_CIRCUMFERENCE * (1 - animatedPct)
   const animatedActualKm = useCountUp(goal?.actualKm ?? 0)
   const isFreshWeek = goal !== null && goal.actualKm === 0
-  const remaining = goal ? Math.max(0, Math.round((goal.targetKm - goal.actualKm) * 10) / 10) : 0
+  // Whole km on the dashboard tile - a decimal on a weekly-goal estimate
+  // (e.g. "22.7 km") reads as false precision for what is already a rough target.
+  const remaining = goal ? Math.max(0, Math.round(goal.targetKm - goal.actualKm)) : 0
 
   const headline = !goal
     ? s.weeksInARow(Math.round(data.currentWeeks))

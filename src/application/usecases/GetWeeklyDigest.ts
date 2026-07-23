@@ -9,6 +9,10 @@ import { formatDuration } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 const HARD_PCT_WATCH_THRESHOLD = 30
+// Below this much logged time, one session's mix swings the hard-share % too
+// far to mean anything (e.g. a single hard interval early in a taper week
+// reads as "50% hard" even though the week is intentionally light).
+const MIN_WEEKLY_SECONDS_FOR_HARD_SHARE = 90 * 60
 
 export type DigestSeverity = 'positive' | 'watch'
 
@@ -67,12 +71,14 @@ export async function getWeeklyDigest(): Promise<WeeklyDigest | null> {
 
   const currentWeekActs = activities.filter((a) => a.week === currentWeekNum)
   const { hardPct } = easyHardShare(currentWeekActs)
+  const weeklySeconds = currentWeekActs.reduce((s, a) => s + a.durationSeconds, 0)
+  const reliableHardPct = weeklySeconds >= MIN_WEEKLY_SECONDS_FOR_HARD_SHARE ? hardPct : null
 
   const review: DigestFact[] = [
     ...buildPrFacts(records, currentWeekNum),
     ...([buildStatusFact(status)].filter((f): f is DigestFact => f !== null)),
     ...buildLoadRiskFacts(loadRisk),
-    ...([buildHardShareFact(hardPct)].filter((f): f is DigestFact => f !== null)),
+    ...([buildHardShareFact(reliableHardPct)].filter((f): f is DigestFact => f !== null)),
   ]
 
   if (!review.length) return null

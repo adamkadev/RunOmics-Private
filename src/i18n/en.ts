@@ -214,7 +214,7 @@ export const en = {
       age: 'Age',
       lthr: 'LTHR',
       lthrHint: 'Lactate threshold heart rate',
-      thresholdPace: 'Threshold pace',
+      thresholdPace: 'Thresh. pace',
       thresholdPaceHint: 'min:ss per km, e.g. 4:14',
       vma: 'VMA',
       vmaHint: 'Maximal aerobic speed',
@@ -1042,7 +1042,7 @@ export const en = {
     records: {
       title: 'Records',
       notYet: 'Not yet',
-      viewAll: 'View records',
+      viewAll: 'View Records',
       newBadge: 'NEW',
     },
     shoes: {
