@@ -5,8 +5,11 @@ export type ThemeMode = 'light' | 'dark'
 export type ShareDesign = 'aurora' | 'pulse' | 'terrain' | 'prism' | 'route' | 'map' | 'memory'
 export const SHARE_DESIGNS: ShareDesign[] = ['aurora', 'pulse', 'terrain', 'prism', 'route', 'map', 'memory']
 
+// The card is a 9:16 story frame - the format Instagram, Strava and Garmin all
+// share to - rather than the full-height 9:19.5 phone screen it used to be, so
+// the exported PNG drops straight into a story without letterboxing or a crop.
 export const W = 390
-export const H = 844
+export const H = 693
 
 /**
  * The accent the canvas paints with, per theme mode. Dark reuses the picker's

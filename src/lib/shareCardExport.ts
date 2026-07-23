@@ -1,6 +1,12 @@
 import type { Activity } from '@/domain/activity/types'
-import { renderShareCard, shareCardFileName, type RenderOptions, type ShareDesign } from '@/lib/shareCard'
+import { renderShareCard, shareCardFileName, W, type RenderOptions, type ShareDesign } from '@/lib/shareCard'
 import { saveFileWithFallback } from '@/lib/fileExport'
+
+// Export at a 1080px-wide story - the resolution Instagram, Strava and Garmin
+// all target. Deriving the scale from the card width keeps the output at that
+// standard size (1080 x 1920) instead of the oversized 3x buffer it used to be.
+const EXPORT_WIDTH = 1080
+const EXPORT_SCALE = EXPORT_WIDTH / W
 
 function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) => {
@@ -10,10 +16,10 @@ function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   })
 }
 
-/** Renders the card at export resolution (3x) on an offscreen canvas. */
+/** Renders the card at export resolution on an offscreen canvas. */
 function renderHiResBlob(options: RenderOptions): Promise<Blob> {
   const canvas = document.createElement('canvas')
-  renderShareCard(canvas, options, 3)
+  renderShareCard(canvas, options, EXPORT_SCALE)
   return canvasToBlob(canvas)
 }
 
@@ -48,6 +54,6 @@ export async function saveCardPng(activity: Activity, design: ShareDesign, optio
  *  synchronously with a pending promise to keep Safari's user-gesture check. */
 export function copyCardPng(options: RenderOptions): Promise<void> {
   const canvas = document.createElement('canvas')
-  renderShareCard(canvas, options, 3)
+  renderShareCard(canvas, options, EXPORT_SCALE)
   return navigator.clipboard.write([new ClipboardItem({ 'image/png': canvasToBlob(canvas) })])
 }
