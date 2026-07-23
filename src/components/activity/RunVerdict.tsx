@@ -35,7 +35,7 @@ export function RunVerdict({ activity, heatAdjustSeconds }: Props) {
   return (
     <GlassSurface variant="card" className="p-5 text-center">
       <p className="widget-label text-accent-text">{v.title}</p>
-      <h2 className={cn('mt-1 text-lg font-bold leading-snug', TONE_TEXT_CLASS[tone])}>{headline}</h2>
+      <h2 className={cn('mt-1 font-display text-lg font-bold leading-snug', TONE_TEXT_CLASS[tone])}>{headline}</h2>
       {bodyParts.length > 0 && (
         <p className="mt-1 text-sm leading-snug text-muted-foreground">{bodyParts.join(' ')}</p>
       )}

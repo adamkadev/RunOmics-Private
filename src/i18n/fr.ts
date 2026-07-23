@@ -357,7 +357,7 @@ export const fr = {
       statusOverreaching: (tsb: number) => `Surcharge (Forme ${tsb}) - envisage de lever le pied`,
       acwrWatch: (acwr: number) => `Ratio charge aiguë/chronique à ${acwr.toFixed(2)} - hors de la zone sûre 0,8-1,3`,
       monotonyWatch: (monotony: number) => `Monotonie à ${monotony.toFixed(1)} - ta semaine manque de variété de charge`,
-      hardShareWatch: (hardPct: number) => `${Math.round(hardPct)}% de ton temps en effort dur - au-dessus de la règle 80/20`,
+      hardShareWatch: (hardPct: number) => `${Math.round(hardPct)}% de ton temps en effort dur`,
     },
     syncStatus: {
       synced: (relative: string) => `Synchronisé ${relative}`,
@@ -422,7 +422,7 @@ export const fr = {
       recovery: 'Récupération',
       detraining: 'Désentraînement',
       maintaining: 'Maintien',
-      unproductive: 'Improductif',
+      unproductive: 'Non productif',
     },
     loadTrend: {
       building: 'En progression',
@@ -1036,7 +1036,7 @@ export const fr = {
     records: {
       title: 'Records',
       notYet: 'Pas encore',
-      viewAll: 'Voir tous les records',
+      viewAll: 'Voir les records',
       newBadge: 'NOUVEAU',
     },
     shoes: {
