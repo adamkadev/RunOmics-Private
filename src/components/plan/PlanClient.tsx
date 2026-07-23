@@ -113,7 +113,7 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate
       <div className="px-1">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-title1 font-extrabold leading-[1.1] tracking-tight text-foreground">
+            <h1 className="font-display text-title1 font-bold leading-[1.1] tracking-tight text-foreground">
               {t.pages.plan.title}
             </h1>
             {/* Hidden on mobile - the week/month is changed by swiping there,

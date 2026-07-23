@@ -121,7 +121,7 @@ export function ActivityHeatmap({ days }: Props) {
   return (
     <GlassSurface variant="card" className="p-5">
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground/80">{t.dashboard.heatmap.title}</h3>
+        <h3 className="text-sm font-bold text-foreground">{t.dashboard.heatmap.title}</h3>
         <span className="text-sm font-semibold text-accent-text">
           {t.dashboard.heatmap.activeDays(activeDays)}
         </span>

@@ -203,7 +203,7 @@ export function ActivityListClient({
   return (
     <div className="space-y-4">
       <div className="px-1">
-        <h1 className="text-title1 font-extrabold leading-[1.1] tracking-tight text-foreground">
+        <h1 className="font-display text-title1 font-bold leading-[1.1] tracking-tight text-foreground">
           {t.pages.activities.title}
         </h1>
         <p className="mt-0.5 text-footnote font-medium text-muted-foreground">
