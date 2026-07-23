@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { MapPin, Maximize2, Minimize2, Thermometer } from 'lucide-react'
 import type { LngLatBounds, Map as MapLibreMap, Marker } from 'maplibre-gl'
 import { cn } from '@/lib/utils'
@@ -67,25 +68,6 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
   const [isFullscreen, setIsFullscreen] = useState(false)
 
   const toggleFullscreen = useCallback(() => setIsFullscreen(v => !v), [])
-
-  // Re-fit the route whenever the map's container changes size - above all when
-  // it grows to (or shrinks from) fullscreen. A ResizeObserver fires only once
-  // the new box has actually been laid out, so it can't read a stale size the
-  // way a rAF-timed one-shot can - which is what left the trace too zoomed in,
-  // running off the bottom of the enlarged map. resize() syncs the GL canvas to
-  // the new box; fitBounds then frames the whole trace inside it.
-  useEffect(() => {
-    const el = containerRef.current
-    if (!el) return
-    const ro = new ResizeObserver(() => {
-      const map = mapRef.current
-      if (!map || !boundsRef.current) return
-      map.resize()
-      map.fitBounds(boundsRef.current, { padding: 40, maxZoom: 15, duration: 0 })
-    })
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [])
 
   // Escape to exit fullscreen
   useEffect(() => {
@@ -217,7 +199,11 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
       mapRef.current = null
       hoverMarkerRef.current = null
     }
-  }, [route, paceSamples])
+    // isFullscreen is a dependency on purpose: toggling fullscreen re-mounts the
+    // container (it moves into / out of the body portal), so the map is rebuilt
+    // in the correctly-sized container and its fitBoundsOptions frames the whole
+    // trace - no stale-size zoom, and it works even inside a transformed ancestor.
+  }, [route, paceSamples, isFullscreen])
 
   // Sync hover marker with chart scrubbing
   useEffect(() => {
@@ -243,7 +229,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
     }
   }, [hoverFraction, route])
 
-  return (
+  const tree = (
     <div
       className={cn(
         'relative overflow-hidden rounded-xl',
@@ -309,6 +295,12 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
       )}
     </div>
   )
+
+  // In fullscreen the overlay is portaled to <body> so `fixed inset-0` is sized
+  // by the viewport, never trapped by a transformed/filtered ancestor that would
+  // clip it (leaving the tab bar showing and the trace running off-screen).
+  // Inline, it renders in place as usual.
+  return isFullscreen ? createPortal(tree, document.body) : tree
 }
 
 export function NoRouteMap({ className }: { className?: string }) {
