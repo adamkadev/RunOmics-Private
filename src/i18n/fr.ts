@@ -1180,7 +1180,7 @@ export const fr = {
     typeShort: {
       Sprint: 'Sprint',
       Anaerobic: 'Anaéro',
-      VO2Max: 'VO₂',
+      VO2Max: 'VO2',
       Threshold: 'Seuil',
       Tempo: 'Tempo',
       Base: 'Base',

@@ -123,8 +123,15 @@ export function AnalyticsClient({
     // pinned at the top of the viewport.
     const el = tabsRef.current
     if (el) {
-      const top = el.getBoundingClientRect().top + window.scrollY - 12
-      window.scrollTo({ top, behavior: 'smooth' })
+      // The strip is `position: sticky`, so once it's pinned its
+      // getBoundingClientRect().top reports the *pinned* offset (the safe-area
+      // inset), not its place in the document. `rect.top + scrollY` therefore
+      // drifts down by that inset on every switch. offsetTop is the element's
+      // stable in-flow position, unaffected by the sticky shift, so summing the
+      // offsetParent chain gives a target that lands in the same spot each time.
+      let docTop = 0
+      for (let n: HTMLElement | null = el; n; n = n.offsetParent as HTMLElement | null) docTop += n.offsetTop
+      window.scrollTo({ top: Math.max(docTop - 12, 0), behavior: 'smooth' })
     }
   }
 
@@ -161,20 +168,25 @@ export function AnalyticsClient({
 
   return (
     <div className="space-y-4">
-      {/* Title left, season scope right on one line - the mockup's header.
-          The year row is the page's scope control, not a stack of its own. */}
+      {/* Title left, season scope right on one line. The year selector only
+          scopes the Volume group's season-over-season comparison (the per-metric
+          trend charts page through their own windows, and the headline is
+          all-time), so it's shown only on that tab - everywhere else it would be
+          an inert control. */}
       <div className="flex items-center justify-between gap-3 px-1">
         <h1 className="shrink-0 font-display text-title1 font-bold leading-[1.1] tracking-tight text-foreground">
           {t.analytics.title}
         </h1>
 
-        <YearSelector
-          years={years}
-          selected={isAll ? null : displayYear}
-          onSelect={(y) => (y === null ? selectAllTime() : selectYear(y))}
-          allTimeLabel={t.analytics.allTimeChip}
-          className="min-w-0 justify-end"
-        />
+        {tab === 'volume' && (
+          <YearSelector
+            years={years}
+            selected={isAll ? null : displayYear}
+            onSelect={(y) => (y === null ? selectAllTime() : selectYear(y))}
+            allTimeLabel={t.analytics.allTimeChip}
+            className="min-w-0 justify-end"
+          />
+        )}
       </div>
 
       {/* Group nav sits right under the header, above the season headline -
