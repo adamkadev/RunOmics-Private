@@ -1007,7 +1007,7 @@ export const en = {
       stats: {
         distance: 'Distance',
         activities: 'Activities',
-        firstUsed: 'First worn',
+        firstUsed: 'Since',
         kmPerWeek: 'km / week',
       },
       activitiesTitle: 'Tracked Activities',
@@ -1193,6 +1193,8 @@ export const en = {
     } as Record<ActivityType, string>,
     restDay: 'Rest',
     planned: 'Planned',
+    // Shown in place of the raw "Easy" zone name on a planned Base run.
+    easyEffortLabel: 'Z2 easy',
     structure: {
       title: 'Structure',
       warmup: 'Warm-up',

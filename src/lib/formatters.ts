@@ -100,6 +100,17 @@ export function formatCompactDate(isoDate: string): string {
   )
 }
 
+/** Short month + full year, e.g. `Oct 2025` / `mars 2026`. One format that
+ *  reads the same whatever the year - unlike formatCompactDate, which drops the
+ *  year for the current year. For dates that span years, like a shoe's first
+ *  outing, so every shoe shows the same shape. */
+export function formatCompactMonthYear(isoDate: string): string {
+  return new Date(isoDate + 'T00:00:00').toLocaleDateString(t.locale, {
+    month: 'short',
+    year: 'numeric',
+  })
+}
+
 /** Month + year, e.g. `August 2025` - for spans where the exact day is noise. */
 export function formatMonthYear(isoDate: string): string {
   return new Date(isoDate + 'T00:00:00').toLocaleDateString(t.locale, {

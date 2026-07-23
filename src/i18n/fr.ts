@@ -910,7 +910,7 @@ export const fr = {
         interval_active:   'Intervalle',
         interval_rest:     'Repos',
         interval_recovery: 'Récupération',
-        interval_cooldown: 'Retour au calme',
+        interval_cooldown: 'Repos',
       } as Record<string, string>,
     },
     nav: {
@@ -1001,7 +1001,7 @@ export const fr = {
       stats: {
         distance: 'Distance',
         activities: 'Activités',
-        firstUsed: 'Première sortie',
+        firstUsed: 'Depuis',
         kmPerWeek: 'km / sem.',
       },
       activitiesTitle: 'Activités suivies',
@@ -1188,10 +1188,12 @@ export const fr = {
     } as Record<ActivityType, string>,
     restDay: 'Repos',
     planned: 'Prévu',
+    // Shown in place of the raw "Easy" zone name on a planned Base run.
+    easyEffortLabel: 'EF',
     structure: {
       title: 'Structure',
       warmup: 'Échauffement',
-      cooldown: 'Retour au calme',
+      cooldown: 'Repos',
       single: (min: number, zone: string) => `${min}' @ ${zone}`,
       reps: (n: number, effort: number, zone: string) => `${n} × ${effort}' @ ${zone}`,
       repsWithRecovery: (n: number, effort: number, recovery: number, zone: string) => `${n} × ${effort}' @ ${zone} / ${recovery}' facile`,
