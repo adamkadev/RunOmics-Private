@@ -15,6 +15,7 @@ export function FirstLaunchHint() {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time post-mount read from localStorage (avoids the hydration mismatch described above)
     if (!window.localStorage.getItem(STORAGE_KEY)) setVisible(true)
   }, [])
 
