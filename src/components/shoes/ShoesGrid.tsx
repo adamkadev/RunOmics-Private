@@ -44,7 +44,7 @@ function ShoeHeroCard({ shoe, insight }: { shoe: ShoeStats; insight: string | nu
       style={HERO_SURFACE[status]}
     >
       <div className="flex items-center justify-center gap-2">
-        <span className={cn('font-mono text-[10px] font-semibold uppercase tracking-[0.12em]', WEAR_TEXT[status])}>
+        <span className={cn('font-mono text-[10px] font-bold uppercase tracking-[0.1em]', WEAR_TEXT[status])}>
           {t.shoes.status[status]}
         </span>
         <span className={cn('text-[13px] font-bold tabular-nums', WEAR_TEXT[status])}>{shoe.wearPercent}%</span>

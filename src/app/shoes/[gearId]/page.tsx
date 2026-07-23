@@ -80,7 +80,7 @@ export default async function ShoeDetailPage({
 
       {!shoe.retired && status !== 'ok' && (
         <div className="rounded-2xl border p-4" style={HERO_SURFACE[status]}>
-          <p className={cn('font-mono text-[10px] font-semibold uppercase tracking-[0.12em]', style.text)}>
+          <p className={cn('font-mono text-[10px] font-bold uppercase tracking-[0.1em]', style.text)}>
             {d.verdict.eyebrow(t.shoes.status[status])}
           </p>
           <p className="mt-2 font-display text-[15px] font-bold leading-snug text-foreground">
