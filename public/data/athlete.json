@@ -7,7 +7,7 @@
   "deviceName": "Forerunner 255 Music",
   "deviceSince": "2025-08-04",
   "displayName": "Adam",
-  "fitnessAgeYrs": 21.8,
+  "fitnessAgeYrs": 21.6,
   "heightCm": 173.0,
   "hrZoneBoundsBpm": [
     118,
@@ -16,7 +16,7 @@
     172,
     180
   ],
-  "lastUpdate": "2026-07-26T21:37:50.368378+00:00",
+  "lastUpdate": "2026-07-28T02:29:22.113293+00:00",
   "lthrBpm": 180,
   "maxHrBpm": 196,
   "restingHrBpm": 45,

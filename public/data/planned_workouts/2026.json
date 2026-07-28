@@ -788,7 +788,7 @@
     {
       "date": "2026-07-28",
       "name": "Base",
-      "distanceM": 5524,
+      "distanceM": 5525,
       "durationSecs": 1800,
       "steps": [
         {
@@ -805,8 +805,8 @@
     },
     {
       "date": "2026-07-29",
-      "name": "Seuil - 17:00@4:20/km",
-      "distanceM": 7621,
+      "name": "Seuil - 4:20/km",
+      "distanceM": 7622,
       "durationSecs": 2220,
       "steps": [
         {
@@ -840,7 +840,7 @@
     {
       "date": "2026-07-30",
       "name": "Base",
-      "distanceM": 5524,
+      "distanceM": 5525,
       "durationSecs": 1800,
       "steps": [
         {
@@ -858,7 +858,7 @@
     {
       "date": "2026-08-01",
       "name": "Anaérobique - 7x1:00@3:45/km",
-      "distanceM": 9753,
+      "distanceM": 9288,
       "durationSecs": 3000,
       "steps": [
         {
@@ -1005,6 +1005,24 @@
         }
       ],
       "type": "Anaerobic",
+      "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-08-02",
+      "name": "Base",
+      "distanceM": 5893,
+      "durationSecs": 1920,
+      "steps": [
+        {
+          "kind": "effort",
+          "minutes": 32,
+          "paceSecPerKm": [
+            308,
+            346
+          ]
+        }
+      ],
+      "type": "Base",
       "scheduledTime": "19:00"
     }
   ]
