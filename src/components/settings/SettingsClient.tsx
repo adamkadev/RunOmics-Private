@@ -79,9 +79,16 @@ export function SettingsClient({ lastSyncedAt, activityCount, device }: Props) {
           <p className="mt-0.5 text-sm text-muted-foreground">{t.pages.settings.subtitle}</p>
         </div>
 
-        <GlassSurface variant="card" className="p-5">
-          <AccentPicker />
-        </GlassSurface>
+        <section className="space-y-2">
+          <h2 className="px-1 text-[10px] font-medium uppercase tracking-[0.08em] text-accent-text">
+            {t.settings.sections.appearance}
+          </h2>
+          <GlassSurface variant="card" className="p-5">
+            <AccentPicker />
+            <div className="my-5 h-px bg-foreground/[0.06]" />
+            <ThemeSegmented />
+          </GlassSurface>
+        </section>
 
         <div className="flex flex-col items-center gap-6 px-4 py-8">
           <button
