@@ -304,7 +304,7 @@ export function ActivityListClient({
                   >
                     <div className="min-w-0">
                       <div className="text-sm font-bold text-foreground">{g.label}</div>
-                      <div className="text-[10px] text-subtle">{g.range}</div>
+                      <div className="text-micro text-subtle">{g.range}</div>
                     </div>
                     <div className="flex shrink-0 items-end gap-4 text-right">
                       <WeekStat value={String(Math.round(g.totalKm))} label={t.activities.weekStat.km} />
@@ -327,7 +327,7 @@ export function ActivityListClient({
                   >
                     <div className="min-w-0">
                       <div className="text-sm font-semibold text-foreground">{g.label}</div>
-                      <div className="mt-0.5 text-[11px] text-subtle">
+                      <div className="mt-0.5 text-caption text-subtle">
                         {t.activities.weekGroupCompact(g.items.length, Math.round(g.totalKm))}
                       </div>
                     </div>

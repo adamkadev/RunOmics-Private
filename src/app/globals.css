@@ -22,13 +22,16 @@
   --font-sans:               var(--font-inter);
   --font-display:            var(--font-space-grotesk);
   --font-mono:               var(--font-jetbrains-mono);
-  --text-micro:              10px;
-  --text-caption:            11px;
-  --text-footnote:           13px;
-  --text-subhead:            15px;
-  --text-body:               17px;
-  --text-title2:             22px;
-  --text-title1:             28px;
+  /* rem, not px: these sizes must follow the browser/OS text-size setting the
+     same way Tailwind's own text-xs/text-sm do, otherwise half the UI scales
+     and half stays pinned. */
+  --text-micro:              0.625rem;
+  --text-caption:            0.6875rem;
+  --text-footnote:           0.8125rem;
+  --text-subhead:            0.9375rem;
+  --text-body:               1.0625rem;
+  --text-title2:             1.375rem;
+  --text-title1:             1.75rem;
   --radius-card:             22px;
   --radius-card-sm:          20px;
   --radius-control:          10px;
@@ -716,6 +719,17 @@ h1 {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
     border-radius: 4px;
+  }
+
+  /* Pinch-zoom is allowed (no maximum-scale), so iOS Safari auto-zooms into any
+     focused field smaller than 16px. Touch devices get the 16px floor; pointer
+     devices keep the designed size. */
+  @media (pointer: coarse) {
+    input,
+    textarea,
+    select {
+      font-size: max(16px, 1em);
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {

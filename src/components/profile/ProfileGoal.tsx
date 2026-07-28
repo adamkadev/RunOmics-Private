@@ -29,7 +29,7 @@ export function ProfileGoal({ goal }: Props) {
         <div className="flex items-baseline gap-1.5">
           <span className="text-lg font-extrabold tracking-tight text-foreground">{progressPercent}%</span>
           {projection && (
-            <span className={cn('text-[11px] font-semibold', projection.status === 'behind' ? STATUS.warning.text : STATUS.success.text)}>
+            <span className={cn('text-caption font-semibold', projection.status === 'behind' ? STATUS.warning.text : STATUS.success.text)}>
               {t.goals.projection.status[projection.status]}
             </span>
           )}

@@ -161,7 +161,7 @@ export function ProfileAthleteStats({ athlete, latestVo2max }: Props) {
       <div className="mb-3 flex items-baseline justify-between gap-3">
         <h2 className="text-sm font-bold text-foreground">{a.title}</h2>
         {athlete.lastUpdate && (
-          <span className="shrink-0 text-[11px] text-subtle-2">
+          <span className="shrink-0 text-caption text-subtle-2">
             {t.pages.athlete.lastUpdated(formatRelativeAgo(athlete.lastUpdate))}
           </span>
         )}

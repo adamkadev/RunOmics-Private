@@ -134,12 +134,12 @@ export function WeekPurposeBanner({
         {adherence && (
           <div className="shrink-0 text-right">
             <div
-              className={cn('font-display text-[22px] font-bold leading-none tabular-nums', !accentColor && tone.text)}
+              className={cn('font-display text-title2 font-bold leading-none tabular-nums', !accentColor && tone.text)}
               style={accentColor ? { color: accentColor } : undefined}
             >
               {adherence.percent}%
             </div>
-            <div className="text-[10px] text-muted-foreground">
+            <div className="text-micro text-muted-foreground">
               {t.plan.weekPurpose.adherence(adherence.done, adherence.planned)}
             </div>
           </div>

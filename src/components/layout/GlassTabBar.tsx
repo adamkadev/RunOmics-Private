@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LayoutDashboard, Activity, CalendarDays, BarChart2, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { activeNavHref } from '@/lib/navigation'
 import { t } from '@/i18n'
 import { useHaptic } from '@/lib/useHaptic'
 import { useFullscreenChromeHidden } from './FullscreenChromeContext'
@@ -18,18 +19,11 @@ const TABS = [
   { href: '/profile',    label: t.nav.items.profile,     icon: User },
 ] as const
 
-const PROFILE_ROUTES = ['/records', '/shoes', '/athlete', '/settings', '/goals']
-
-function isActive(pathname: string, href: string): boolean {
-  if (href === '/') return pathname === '/'
-  if (href === '/profile' && PROFILE_ROUTES.some((r) => pathname === r || pathname.startsWith(`${r}/`))) {
-    return true
-  }
-  return pathname === href || pathname.startsWith(`${href}/`)
-}
+const TAB_HREFS = TABS.map((tab) => tab.href)
 
 export function GlassTabBar() {
   const pathname = usePathname()
+  const currentHref = activeNavHref(pathname, TAB_HREFS)
   const hidden = useFullscreenChromeHidden()
   const haptic = useHaptic()
 
@@ -53,7 +47,7 @@ export function GlassTabBar() {
         style={{ paddingBottom: 'max(4px, calc(var(--safe-bottom) * 0.6))' }}
       >
         {TABS.map(({ href, label, icon: Icon }) => {
-        const active = isActive(pathname, href)
+        const active = currentHref === href
         return (
           <Link
             key={href}

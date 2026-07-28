@@ -44,22 +44,22 @@ function ShoeHeroCard({ shoe, insight }: { shoe: ShoeStats; insight: string | nu
       style={HERO_SURFACE[status]}
     >
       <div className="flex items-center justify-center gap-2">
-        <span className={cn('font-mono text-[10px] font-bold uppercase tracking-[0.1em]', WEAR_TEXT[status])}>
+        <span className={cn('font-mono text-micro font-bold uppercase tracking-[0.1em]', WEAR_TEXT[status])}>
           {t.shoes.status[status]}
         </span>
-        <span className={cn('text-[13px] font-bold tabular-nums', WEAR_TEXT[status])}>{shoe.wearPercent}%</span>
+        <span className={cn('text-footnote font-bold tabular-nums', WEAR_TEXT[status])}>{shoe.wearPercent}%</span>
       </div>
       <div className="mt-1.5 flex items-center justify-center gap-2">
         <BrandIcon brand={shoe.brand} size={16} />
-        <p className="font-display text-[17px] font-bold text-foreground">{shoe.name}</p>
+        <p className="font-display text-body font-bold text-foreground">{shoe.name}</p>
       </div>
-      <p className="mb-2.5 mt-0.5 text-[11px] text-muted-foreground">
+      <p className="mb-2.5 mt-0.5 text-caption text-muted-foreground">
         {t.shoes.kmOf(Math.round(shoe.totalKm), shoe.maxKm)} · {t.shoes.kmLeft(kmLeft)}
       </p>
       <div className="h-1.5 overflow-hidden rounded-full bg-foreground/[0.1]">
         <div className={cn('h-full rounded-full', WEAR_BAR[status])} style={{ width: `${shoe.wearPercent}%` }} />
       </div>
-      {insight && <p className="mx-auto mt-2.5 max-w-[46ch] text-[11px] leading-snug text-foreground/75">{insight}</p>}
+      {insight && <p className="mx-auto mt-2.5 max-w-[46ch] text-caption leading-snug text-foreground/75">{insight}</p>}
     </Link>
   )
 }
@@ -84,9 +84,9 @@ function ShoeRow({ shoe }: { shoe: ShoeStats }) {
         </span>
       </span>
       {shoe.retired ? (
-        <span className="shrink-0 text-[11px] font-medium text-subtle">{t.shoes.retired}</span>
+        <span className="shrink-0 text-caption font-medium text-subtle">{t.shoes.retired}</span>
       ) : (
-        <span className={cn('shrink-0 text-[11px] font-semibold tabular-nums', WEAR_TEXT[status])}>
+        <span className={cn('shrink-0 text-caption font-semibold tabular-nums', WEAR_TEXT[status])}>
           {shoe.wearPercent}%
         </span>
       )}
@@ -116,7 +116,7 @@ export function ShoesGrid({ shoes, heroInsight = null }: Props) {
     <div className="space-y-3">
       {hero && <ShoeHeroCard shoe={hero} insight={heroInsight} />}
       {hero && rest.length > 0 && (
-        <p className="px-1 text-[10px] font-medium uppercase tracking-[0.08em] text-subtle-2">
+        <p className="px-1 text-micro font-medium uppercase tracking-[0.08em] text-subtle-2">
           {t.shoes.hero.restOfRotation}
         </p>
       )}

@@ -80,14 +80,14 @@ function Card({
   return (
     <div className="glass-row rounded-[15px] p-[13px]">
       <div className="flex items-start justify-between">
-        <span className="text-[10px] font-bold uppercase tracking-[0.05em] text-subtle">{label}</span>
-        <span className={chipTone === 'accent' ? 'text-[10px] font-semibold text-accent-text' : 'text-[10px] font-semibold text-subtle'}>
+        <span className="text-micro font-bold uppercase tracking-[0.05em] text-subtle">{label}</span>
+        <span className={chipTone === 'accent' ? 'text-micro font-semibold text-accent-text' : 'text-micro font-semibold text-subtle'}>
           {chip}
         </span>
       </div>
-      <div className="my-[3px] font-display text-[22px] font-bold tabular-nums" style={valueColor ? { color: valueColor } : undefined}>
+      <div className="my-[3px] font-display text-title2 font-bold tabular-nums" style={valueColor ? { color: valueColor } : undefined}>
         {value}
-        {unit && <span className="text-[11px] font-medium text-subtle"> {unit}</span>}
+        {unit && <span className="text-caption font-medium text-subtle"> {unit}</span>}
       </div>
       {children}
     </div>

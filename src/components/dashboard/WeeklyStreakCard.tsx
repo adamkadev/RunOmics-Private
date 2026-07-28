@@ -120,7 +120,7 @@ export function WeeklyStreakCard({ data, goal, hardShareFact }: Props) {
             <p className="mt-0.5 text-xs text-muted-foreground">{s.freshWeekGoal(Math.round(goal.targetKm))}</p>
           )}
           {hardShareFact && (
-            <span className="mt-2 flex items-start gap-1.5 rounded-lg border border-amber-500/[0.28] bg-amber-500/[0.12] px-2 py-1 text-[11px] text-amber-600 dark:text-amber-400">
+            <span className="mt-2 flex items-start gap-1.5 rounded-lg border border-amber-500/[0.28] bg-amber-500/[0.12] px-2 py-1 text-caption text-amber-600 dark:text-amber-400">
               <AlertTriangle size={12} className="mt-px shrink-0" />
               <span className="min-w-0 leading-snug">{hardShareFact.text}</span>
             </span>

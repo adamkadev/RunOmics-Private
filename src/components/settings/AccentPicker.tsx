@@ -42,7 +42,7 @@ export function AccentPicker() {
           <div className="mb-1.5 h-[7px] w-3/5 rounded-full bg-accent" />
           <div className="h-1.5 w-[85%] rounded-full bg-foreground/10" />
         </div>
-        <span className="shrink-0 rounded-md bg-accent px-2.5 py-1 text-[10px] font-semibold text-accent-foreground">
+        <span className="shrink-0 rounded-md bg-accent px-2.5 py-1 text-micro font-semibold text-accent-foreground">
           {t.settings.accent.preview}
         </span>
       </div>

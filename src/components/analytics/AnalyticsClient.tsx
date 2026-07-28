@@ -213,7 +213,7 @@ export function AnalyticsClient({
               aria-selected={tab === item.id}
               onClick={() => selectTab(item.id)}
               className={cn(
-                'truncate rounded-full px-2 py-2 text-center text-[13px] transition-all active:scale-95',
+                'truncate rounded-full px-2 py-2 text-center text-footnote transition-all active:scale-95',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                 tab === item.id
                   ? 'border border-transparent bg-accent font-semibold text-accent-foreground shadow-sm'

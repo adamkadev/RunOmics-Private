@@ -30,7 +30,7 @@ export function TrainingStatusWeeksBar({ weeks }: Props) {
   return (
     <GlassSurface variant="card" className="p-4">
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{s.title}</h3>
+        <h3 className="text-caption font-medium uppercase tracking-wide text-muted-foreground">{s.title}</h3>
         {latest?.status && (
           <span className="text-xs font-semibold" style={{ color: TRAINING_STATUS_COLORS[latest.status] }}>
             {t.trainingStatus.status[latest.status]}
@@ -49,7 +49,7 @@ export function TrainingStatusWeeksBar({ weeks }: Props) {
         ))}
       </div>
 
-      <div className="mt-1.5 flex justify-between text-[10px] text-muted-foreground">
+      <div className="mt-1.5 flex justify-between text-micro text-muted-foreground">
         <span>{oldestLabel}</span>
         <span>{s.thisWeek}</span>
       </div>

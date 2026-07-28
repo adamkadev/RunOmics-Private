@@ -399,7 +399,7 @@ export function WeekView({
                       >
                         <span
                           className={cn(
-                            'truncate text-center text-[10px] font-bold leading-tight',
+                            'truncate text-center text-micro font-bold leading-tight',
                             rest && 'font-semibold opacity-40'
                           )}
                           style={{ color: missed ? MISSED : rest ? 'var(--color-foreground)' : (typeColor ?? 'var(--accent)') }}

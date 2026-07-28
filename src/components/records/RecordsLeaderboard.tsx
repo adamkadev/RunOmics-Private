@@ -109,17 +109,17 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null, 
                         {dotClass ? (
                           <span className={cn('h-2 w-2 shrink-0 rounded-full', dotClass)} />
                         ) : (
-                          <span className="w-2 shrink-0 text-center font-mono text-[11px] text-subtle">{i + 1}</span>
+                          <span className="w-2 shrink-0 text-center font-mono text-caption text-subtle">{i + 1}</span>
                         )}
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-semibold text-foreground">{formatDuration(e.seconds)}</p>
                           {e.eventName && (
-                            <p className="truncate text-[11px] text-subtle" title={e.eventName}>
+                            <p className="truncate text-caption text-subtle" title={e.eventName}>
                               {e.eventName}
                             </p>
                           )}
                         </div>
-                        <span className="shrink-0 text-[11px] text-subtle">
+                        <span className="shrink-0 text-caption text-subtle">
                           {formatPace(Math.round(e.seconds / e.distanceKm))}
                         </span>
                       </Link>

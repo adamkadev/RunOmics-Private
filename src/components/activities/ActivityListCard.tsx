@@ -38,7 +38,7 @@ export function ActivityListCard({ activity: a, qualifiedEfforts = [] }: Props) 
         <span className="mt-0.5 block truncate text-[9.5px] text-subtle">{subtitle}</span>
       </span>
       <span className="shrink-0 text-right">
-        <span className="font-display text-[13px] font-bold text-foreground">{formatDistance(a.distanceKm)}</span>
+        <span className="font-display text-footnote font-bold text-foreground">{formatDistance(a.distanceKm)}</span>
         <span className="ml-0.5 text-[8px] font-semibold text-muted-foreground">{t.units.km}</span>
       </span>
     </Link>

@@ -28,16 +28,16 @@ export function RaceFooter({
     >
       <div className="min-w-0">
         <div className="truncate text-[12.5px] font-semibold text-foreground">{race.name}</div>
-        <div className="text-[11px] text-subtle">
+        <div className="text-caption text-subtle">
           {race.distance} · {t.plan.raceFooter.inDays(days)}
         </div>
       </div>
       {weeks && (
         <div className="shrink-0 text-right">
-          <div className="font-display text-[15px] font-bold text-accent-text">
+          <div className="font-display text-subhead font-bold text-accent-text">
             {t.plan.raceFooter.weeksIn(weeks.done, weeks.total)}
           </div>
-          <div className="text-[10px] text-subtle-2">{t.plan.raceFooter.weeksInLabel}</div>
+          <div className="text-micro text-subtle-2">{t.plan.raceFooter.weeksInLabel}</div>
         </div>
       )}
     </div>

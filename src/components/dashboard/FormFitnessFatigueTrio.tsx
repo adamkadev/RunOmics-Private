@@ -67,7 +67,7 @@ function Tile({
     // Same glass recipe as the other Today cards - `bg-card` read a shade
     // darker than the hero/streak surfaces sitting either side of it.
     <GlassSurface className="p-3">
-      <div className="text-[10px] font-bold uppercase tracking-[0.06em] text-subtle">{label}</div>
+      <div className="text-micro font-bold uppercase tracking-[0.06em] text-subtle">{label}</div>
       <div
         className="my-0.5 font-display text-2xl font-bold tracking-[-0.02em] tabular-nums"
         style={{ color: valueColor }}

@@ -121,7 +121,7 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace }: P
     >
       <div className="flex items-center justify-between gap-2">
         <span
-          className="inline-flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.1em]"
+          className="inline-flex items-center gap-1.5 font-mono text-micro font-bold uppercase tracking-[0.1em]"
           style={{ color: toneHex }}
         >
           <span
@@ -130,13 +130,13 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace }: P
           />
           {tone ? s.eyebrowByTone[tone] : s.eyebrowByTone.go}
         </span>
-        {formLine && <span className="text-[11px] text-white/55">{formLine}</span>}
+        {formLine && <span className="text-caption text-white/55">{formLine}</span>}
       </div>
 
       {verdict && (
         <div className="mt-3">
-          <div className="font-display text-[22px] font-bold leading-[1.12] tracking-tight">{verdict.headline}</div>
-          <div className="mt-1.5 text-[13px] leading-snug text-white/70">{verdict.body}</div>
+          <div className="font-display text-title2 font-bold leading-[1.12] tracking-tight">{verdict.headline}</div>
+          <div className="mt-1.5 text-footnote leading-snug text-white/70">{verdict.body}</div>
         </div>
       )}
 
@@ -151,10 +151,10 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace }: P
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-semibold">{plannedWorkout.name}</div>
             {completedMeta && (
-              <div className="mt-0.5 truncate text-[11px] text-white/55">{completedMeta}</div>
+              <div className="mt-0.5 truncate text-caption text-white/55">{completedMeta}</div>
             )}
           </div>
-          <span className="flex shrink-0 items-center gap-0.5 rounded-[10px] bg-accent px-3.5 py-2 text-[11px] font-bold text-accent-foreground">
+          <span className="flex shrink-0 items-center gap-0.5 rounded-[10px] bg-accent px-3.5 py-2 text-caption font-bold text-accent-foreground">
             {s.viewCta}
             <ChevronRight size={13} strokeWidth={2.5} />
           </span>
@@ -171,10 +171,10 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace }: P
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-semibold">{plannedWorkout.name}</div>
             {plannedWorkoutMeta && (
-              <div className="mt-0.5 truncate text-[11px] text-white/55">{plannedWorkoutMeta}</div>
+              <div className="mt-0.5 truncate text-caption text-white/55">{plannedWorkoutMeta}</div>
             )}
           </div>
-          <span className="flex shrink-0 items-center gap-0.5 rounded-[10px] bg-accent px-3.5 py-2 text-[11px] font-bold text-accent-foreground">
+          <span className="flex shrink-0 items-center gap-0.5 rounded-[10px] bg-accent px-3.5 py-2 text-caption font-bold text-accent-foreground">
             {s.sessionCta}
             <ChevronRight size={13} strokeWidth={2.5} />
           </span>
@@ -186,7 +186,7 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace }: P
           </div>
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-semibold">{s.restDay}</div>
-            <div className="mt-0.5 truncate text-[11px] text-white/55">{s.restDaySubtitle}</div>
+            <div className="mt-0.5 truncate text-caption text-white/55">{s.restDaySubtitle}</div>
           </div>
         </div>
       )}

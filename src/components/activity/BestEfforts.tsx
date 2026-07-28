@@ -34,7 +34,7 @@ export function BestEfforts({ bestEfforts, qualifiedEfforts = [] }: Props) {
           return (
             <div key={key} className="relative rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
               {rank != null && (
-                <span className="absolute right-2 top-2 rounded-full bg-amber-100 px-1.5 py-[1px] text-[10px] font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+                <span className="absolute right-2 top-2 rounded-full bg-amber-100 px-1.5 py-[1px] text-micro font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
                   {rank === 1 ? s.prBadge : s.rankBadge(rank)}
                 </span>
               )}

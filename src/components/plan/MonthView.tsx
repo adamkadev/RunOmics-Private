@@ -49,7 +49,7 @@ function DayActivities({ activities }: { activities: Activity[] }) {
       </div>
       {totalKm > 0 && activities[0] && (
         <span
-          className="text-[10px] font-bold leading-none"
+          className="text-micro font-bold leading-none"
           style={{ color: ACTIVITY_TYPE_CONFIG[activities[0].type].chartColor }}
         >
           {totalKm.toFixed(1)} {t.units.km}

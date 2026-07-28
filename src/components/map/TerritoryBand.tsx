@@ -37,7 +37,7 @@ export function TerritoryBand({ territory }: Props) {
           on-dark, never text-foreground (which is dark in light and vanishes
           here) - same rule as TodayHero and ProfileHero. */}
       <div>
-        <p className="font-mono text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: ACCENT_ON_DARK }}>
+        <p className="font-mono text-micro font-bold uppercase tracking-[0.1em]" style={{ color: ACCENT_ON_DARK }}>
           {s.eyebrow}
         </p>
         <p className="mt-2 font-display text-base font-bold leading-snug text-white">

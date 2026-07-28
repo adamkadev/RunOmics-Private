@@ -88,7 +88,7 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device }: Props) {
               {s.dataSource.lastSync} {formatRelativeAgo(lastSyncedAt)} · {t.common.runs(activityCount)}
             </p>
             {device?.name && provenance && (
-              <p className="mt-0.5 truncate text-[11px] text-subtle-2">{provenance}</p>
+              <p className="mt-0.5 truncate text-caption text-subtle-2">{provenance}</p>
             )}
           </div>
         </div>

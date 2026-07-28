@@ -40,7 +40,7 @@ export function ProfileHero({ hero, displayName, age, sex }: Props) {
           </h1>
           {hero.rank && (
             <span
-              className="shrink-0 rounded-[6px] px-1.5 py-0.5 font-mono text-[10px] font-bold text-accent-text"
+              className="shrink-0 rounded-[6px] px-1.5 py-0.5 font-mono text-micro font-bold text-accent-text"
               style={{ background: 'color-mix(in srgb, var(--accent) 14%, transparent)' }}
             >
               {t.profile.hero.rankBadge(hero.rank.tier)}
@@ -48,7 +48,7 @@ export function ProfileHero({ hero, displayName, age, sex }: Props) {
           )}
         </div>
         {topPct !== null && (
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-caption text-muted-foreground">
             {t.profile.hero.topPctLine(topPct)}
           </p>
         )}

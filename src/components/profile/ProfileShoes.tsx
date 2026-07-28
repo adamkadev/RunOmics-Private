@@ -24,7 +24,7 @@ export function ProfileShoes({ shoes }: { shoes: ShoeStats[] }) {
       </span>
       <span className="min-w-0 flex-1">
         <span className="block text-[13.5px] font-semibold text-foreground">{t.profile.shoes.pairs(shoes.length)}</span>
-        <span className={`mt-0.5 block text-[11px] ${alertCount > 0 ? STATUS.warning.text : 'text-subtle'}`}>
+        <span className={`mt-0.5 block text-caption ${alertCount > 0 ? STATUS.warning.text : 'text-subtle'}`}>
           {alertCount > 0 ? t.profile.shoes.needsReplacing(alertCount) : t.profile.shoes.allGood}
         </span>
       </span>

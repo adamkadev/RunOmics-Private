@@ -80,7 +80,7 @@ export function SettingsClient({ lastSyncedAt, activityCount, device }: Props) {
         </div>
 
         <section className="space-y-2">
-          <h2 className="px-1 text-[10px] font-medium uppercase tracking-[0.08em] text-accent-text">
+          <h2 className="px-1 text-micro font-medium uppercase tracking-[0.08em] text-accent-text">
             {t.settings.sections.appearance}
           </h2>
           <GlassSurface variant="card" className="p-5">
@@ -129,7 +129,7 @@ export function SettingsClient({ lastSyncedAt, activityCount, device }: Props) {
       </div>
 
       <section className="space-y-2">
-        <h2 className="px-1 text-[10px] font-medium uppercase tracking-[0.08em] text-accent-text">
+        <h2 className="px-1 text-micro font-medium uppercase tracking-[0.08em] text-accent-text">
           {t.settings.sections.appearance}
         </h2>
         <GlassSurface variant="card" className="p-5">
@@ -140,7 +140,7 @@ export function SettingsClient({ lastSyncedAt, activityCount, device }: Props) {
       </section>
 
       <section className="space-y-2">
-        <h2 className="px-1 text-[10px] font-medium uppercase tracking-[0.08em] text-subtle-2">
+        <h2 className="px-1 text-micro font-medium uppercase tracking-[0.08em] text-subtle-2">
           {t.settings.sections.notificationsData}
         </h2>
         <NotificationsForm />
@@ -148,7 +148,7 @@ export function SettingsClient({ lastSyncedAt, activityCount, device }: Props) {
       </section>
 
       <section className="space-y-2">
-        <h2 className="px-1 text-[10px] font-medium uppercase tracking-[0.08em] text-subtle-2">
+        <h2 className="px-1 text-micro font-medium uppercase tracking-[0.08em] text-subtle-2">
           {t.settings.sections.account}
         </h2>
         <button

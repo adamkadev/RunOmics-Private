@@ -20,7 +20,7 @@ export function ShoeWearAlertLine({ shoes }: { shoes: ShoeStats[] }) {
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-amber-500/[0.18]">
             <AlertTriangle size={17} className="text-amber-600 dark:text-amber-400" aria-hidden="true" />
           </div>
-          <p className="min-w-0 flex-1 text-[13px] font-medium leading-snug text-amber-700 dark:text-amber-300">
+          <p className="min-w-0 flex-1 text-footnote font-medium leading-snug text-amber-700 dark:text-amber-300">
             {t.shoes.wearAlert(shoe.name, shoe.totalKm, shoe.alertThresholdKm)}
           </p>
           <ChevronRight size={16} className="shrink-0 text-amber-600/70 dark:text-amber-400/70" aria-hidden="true" />

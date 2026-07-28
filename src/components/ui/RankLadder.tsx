@@ -11,7 +11,7 @@ export function RankLadder({ current }: { current: RankTier }) {
           <span
             key={tier}
             className={cn(
-              'flex h-6 min-w-6 items-center justify-center gap-0.5 rounded-md px-1 text-[10px] font-bold',
+              'flex h-6 min-w-6 items-center justify-center gap-0.5 rounded-md px-1 text-micro font-bold',
               active ? 'bg-accent text-accent-foreground' : 'bg-foreground/[0.08] text-muted-foreground'
             )}
           >

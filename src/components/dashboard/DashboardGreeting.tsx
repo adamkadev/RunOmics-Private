@@ -45,7 +45,7 @@ export function DashboardGreeting({ name, lastSyncedAt }: Props) {
   return (
     <div className="flex items-center justify-between gap-3">
       <div>
-        <p className="text-[11px] text-subtle">
+        <p className="text-caption text-subtle">
           {/* capitalize scoped to the date only - applied to the whole line it
               would title-case "ago" in the synced text too. */}
           <span className="capitalize">{greeting?.dateLine ?? ' '}</span>

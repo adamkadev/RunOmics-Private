@@ -59,7 +59,6 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
   viewportFit: 'cover',
   // theme-color is set dynamically by ThemeSync (accent + light/dark aware);
   // a static value here would fight its updates.

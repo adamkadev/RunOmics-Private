@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LayoutDashboard, Activity, CalendarDays, BarChart2, Map, Settings, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { activeNavHref } from '@/lib/navigation'
 import { t } from '@/i18n'
 import { APP_VERSION } from '@/lib/version'
 import { ThemeToggle } from './ThemeToggle'
@@ -20,6 +21,10 @@ const NAV_ITEMS = [
   { href: '/map', label: t.nav.items.heatmap, icon: Map },
   { href: '/profile', label: t.nav.items.profile, icon: User },
 ]
+
+// Settings has no NAV_ITEMS row (it is the footer gear) but it is still a
+// destination the sidebar owns, so it must not light up Progress instead.
+const NAV_HREFS = [...NAV_ITEMS.map((item) => item.href), '/settings']
 
 // In-app brand mark: thin concentric rings inheriting the live accent color
 // (var(--accent) is set on <html> before paint, so it follows the theme without JS).
@@ -48,6 +53,7 @@ function HeaderMark({ size = 24 }: { size?: number }) {
 
 export function Sidebar() {
   const pathname = usePathname()
+  const currentHref = activeNavHref(pathname, NAV_HREFS)
 
   return (
     <>
@@ -69,7 +75,7 @@ export function Sidebar() {
 
         <nav className="flex-1 space-y-0.5 overflow-y-auto p-3">
           {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-            const active = pathname === href
+            const active = currentHref === href
             return (
               <Link
                 key={href}
@@ -99,7 +105,7 @@ export function Sidebar() {
               className={cn(
                 'rounded-md p-1 transition-colors',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                pathname === '/settings'
+                currentHref === '/settings'
                   ? 'text-accent-text'
                   : 'text-subtle hover:text-muted-foreground'
               )}

@@ -64,11 +64,11 @@ export function ProfileAthleteCard({ athlete, latestVo2max, recentZoneTime }: Pr
           const minutes = Math.round(seconds / 60)
           return (
             <div key={row.zone} className="flex items-center gap-2">
-              <span className="w-11 shrink-0 text-[10px] text-subtle">{row.label}</span>
+              <span className="w-11 shrink-0 text-micro text-subtle">{row.label}</span>
               <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-foreground/[0.08]">
                 <div className="h-full rounded-full" style={{ width: `${width}%`, background: row.color }} />
               </div>
-              <span className="w-9 shrink-0 text-right text-[10px] text-subtle">{minutes}m</span>
+              <span className="w-9 shrink-0 text-right text-micro text-subtle">{minutes}m</span>
             </div>
           )
         })}

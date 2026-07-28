@@ -43,7 +43,7 @@ export function ActivityAchievements({ bestEfforts, qualifiedEfforts }: Props) {
                   {formatDuration(Math.round(seconds))}{km ? ` · ${formatPace(Math.round(seconds / km))}` : ''}
                 </span>
               </div>
-              <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+              <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-caption font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
                 {effort.rank === 1 ? s.prBadge : s.rankBadge(effort.rank)}
               </span>
             </div>

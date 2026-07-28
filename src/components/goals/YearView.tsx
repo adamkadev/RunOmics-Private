@@ -111,7 +111,7 @@ export function YearView({ yearData }: Props) {
                     strokeDasharray="4 4"
                   />
                 </svg>
-                <p className="mt-1 text-[11px] text-subtle">
+                <p className="mt-1 text-caption text-subtle">
                   {t.goals.projection.rate(projection.weeklyRate)} - {t.goals.projection.projected(projection.projectedYearKm)}
                 </p>
               </>

@@ -31,7 +31,7 @@ function Tile({
     <div className="rounded-xl border border-foreground/[0.08] bg-foreground/[0.04] p-3.5">
       <div className="widget-label mb-1.5 flex items-center gap-1.5 text-muted-foreground">
         {label}
-        {source && <span className="rounded bg-foreground/[0.08] px-1 py-px text-[10px] font-medium normal-case">{source}</span>}
+        {source && <span className="rounded bg-foreground/[0.08] px-1 py-px text-micro font-medium normal-case">{source}</span>}
       </div>
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
         <span className="text-title2 font-extrabold tabular-nums text-foreground">{value}</span>
