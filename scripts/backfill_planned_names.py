@@ -2,11 +2,12 @@
 """One-off: apply prefer_planned_name() to every already-synced activity.
 
 Run once after backfill_planned_workout_history.py has seeded the durable
-planned-workout store. Only activities whose date has a matching planned
-entry - and whose own description is a strict, shorter prefix of that entry's
-name - get updated (see sync_workouts.prefer_planned_name). Most of the 263
-synced activities predate the planned-workout feature entirely and won't
-match anything: that's expected, not a bug.
+planned-workout store, and after any change to how planned names are built.
+Only activities whose date has a matching planned entry - and whose own
+description that entry describes better - get updated (see
+sync_workouts.prefer_planned_name). Most of the synced activities predate the
+planned-workout feature entirely and won't match anything: that's expected,
+not a bug.
 """
 
 from __future__ import annotations
@@ -36,7 +37,7 @@ def main() -> int:
         plan = planned_store.get(activity.get("date", ""))
         if not plan:
             continue
-        better = prefer_planned_name(activity.get("description", ""), plan.get("name"))
+        better = prefer_planned_name(activity.get("description", ""), plan)
         if not better:
             continue
 

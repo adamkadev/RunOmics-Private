@@ -52,6 +52,49 @@ _TRAINING_EFFECT_LABEL_TYPES: dict[str, str] = {
 }
 
 
+# Garmin Coach names each of its own sessions after the session type and
+# nothing else ("Base", "Seuil", "Anaérobique"), unlike third-party plans whose
+# names already spell the session out ("9 x 400m (R=1 min)"). Such a name says
+# nothing the type badge next to it doesn't already say, so it gets replaced by
+# the session's real structure - see garmin_workout.main_set_descriptor.
+_COACH_TYPE_WORDS: dict[str, str] = {
+    "base": "Base",
+    "endurance": "Base",
+    "footing": "Base",
+    "recuperation": "Base",
+    "recovery": "Base",
+    "tempo": "Tempo",
+    "seuil": "Threshold",
+    "threshold": "Threshold",
+    "vma": "VO2Max",
+    "vo2 max": "VO2Max",
+    "vo2max": "VO2Max",
+    "anaerobique": "Anaerobic",
+    "anaerobic": "Anaerobic",
+    "sprint": "Sprint",
+    "vitesse": "Sprint",
+}
+
+
+def coach_type_word(name: str) -> str | None:
+    """ActivityType when `name` is a Garmin Coach session-type word,
+    optionally followed by a structure descriptor ("Seuil" or "Seuil - 3x8'@4:20").
+    None for anything else, so a third-party plan's descriptive name or an
+    athlete's own rename is never treated as disposable.
+
+    Descriptor patterns (e.g. "Seuil - 3x8:00@4:20/km", "Sprint - 2x3x0:15@2:45/km")
+    are recognized and will be normalized, whether already folded into the name or
+    added later."""
+    normalized = _normalize(name)
+    # Check bare word first: "Base", "Seuil", etc.
+    if normalized in _COACH_TYPE_WORDS:
+        return _COACH_TYPE_WORDS[normalized]
+
+    # Check word + descriptor: "Seuil - 3x8@4:20" -> extract "Seuil"
+    head = normalized.split(" - ", 1)[0].strip()
+    return _COACH_TYPE_WORDS.get(head)
+
+
 def type_from_training_effect_label(label: str | None) -> str | None:
     """ActivityType for Garmin's own training-effect label, or None when there
     is no label or it isn't one we map - notably "INVALID", which Garmin Coach

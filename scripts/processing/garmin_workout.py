@@ -8,6 +8,8 @@ which detail to fetch and assembles the final entry from what's returned here.
 
 from __future__ import annotations
 
+import re
+
 
 def _flatten_executable_steps(steps: list[dict]) -> list[dict]:
     """Recursively expand RepeatGroupDTO steps into their repeated
@@ -212,35 +214,76 @@ def build_workout_steps(detail: dict) -> list[dict] | None:
 # descriptor that's already in the name would just duplicate it.
 _MAX_DESCRIPTOR_LEN = 40
 
+_REP_STRUCTURE_RE = re.compile(r"\d\s*[x×]\s*\d")
+
+
+def has_rep_structure(text: str) -> bool:
+    """Whether `text` states a repeated block ("3x8:00@4:20/km", "10x400m")
+    rather than a lone target pace ("4:20/km") or prose."""
+    return bool(_REP_STRUCTURE_RE.search(text))
+
 
 def main_set_descriptor(detail: dict, name: str, steps: list[dict] | None) -> str | None:
-    """Compact summary of a workout's main set, for folding into its title.
+    """Compact summary of a workout's main set, for use as its title.
 
-    Garmin's own `description` wins when it's there: it's authoritative about
-    reps expressed in seconds or in metres, which `_quality_descriptor` can't
-    represent (it renders every effort as whole minutes)."""
+    Garmin's own `description` wins when it states a rep structure: it's
+    authoritative about reps expressed in seconds or in metres, which
+    `steps_descriptor` can only render as whole minutes. A description that is
+    nothing but a target pace says strictly less than the steps do."""
     description = (detail.get("description") or "").strip()
-    if description and len(description) <= _MAX_DESCRIPTOR_LEN:
+    if has_rep_structure(description) and len(description) <= _MAX_DESCRIPTOR_LEN:
         if description.lower() not in name.lower():
-            return description
+            return normalize_descriptor(description)
         return None
 
-    return _quality_descriptor(steps) if steps else None
+    return steps_descriptor(steps) if steps else None
 
 
-def _quality_descriptor(steps: list[dict]) -> str | None:
-    """Compact "NxMM:SS@pace" summary of a workout's main interval block, e.g.
-    "3x8:00@4:20" for three 8-minute efforts at 4:20/km. None when the workout
-    has no repeated effort step (nothing to summarize)."""
-    effort_reps = [s for s in steps if s.get("kind") == "effort" and "rep" in s]
-    if not effort_reps:
+# A rep duration Garmin writes as M:SS. Never the pace, which is always written
+# right after an "@" - and would otherwise be mangled into "4'20".
+_REP_DURATION_RE = re.compile(r"(?<![@\d])(\d+):(\d{2})\b")
+
+
+def normalize_descriptor(description: str) -> str:
+    """Garmin's own descriptor in RunOmics' compact form: "3x8:00@4:20/km" ->
+    "3x8'@4:20". The unit is implied by the pace itself, and a bare "8:00"
+    reads as a clock time where a rep duration is meant."""
+    return _REP_DURATION_RE.sub(_rep_duration, description.replace("/km", "")).strip()
+
+
+def _rep_duration(match: re.Match[str]) -> str:
+    minutes, seconds = int(match.group(1)), int(match.group(2))
+    if seconds == 0:
+        return f"{minutes}'"
+    if minutes == 0:
+        return f'{seconds}"'
+    return f"{minutes}'{seconds:02d}"
+
+
+def steps_descriptor(steps: list[dict]) -> str | None:
+    """Compact summary of a workout's main effort: "3x8'@4:20" for three
+    8-minute reps at 4:20/km, "17'@4:20" for a single continuous block.
+    None for a lone effort without a target pace (duration is already a field),
+    or when there is no effort step at all."""
+    efforts = [s for s in steps if s.get("kind") == "effort"]
+    if not efforts:
         return None
 
-    reps = max(s["rep"] for s in effort_reps)
-    first = next(s for s in effort_reps if s["rep"] == 1)
-    pace = first.get("paceSecPerKm")
-    pace_str = f"@{_format_pace_mmss(pace)}" if pace else ""
-    return f"{reps}x{first['minutes']}:00{pace_str}"
+    reps = [s for s in efforts if "rep" in s]
+    if reps:
+        first = next(s for s in reps if s["rep"] == 1)
+        return f"{max(s['rep'] for s in reps)}x{_effort_descriptor(first)}"
+
+    # A lone steady block without a pace target has nothing to say beyond
+    # the duration field; the type badge alone (e.g. "Base") is enough.
+    if "paceSecPerKm" not in efforts[0]:
+        return None
+    return _effort_descriptor(efforts[0])
+
+
+def _effort_descriptor(step: dict) -> str:
+    pace = step.get("paceSecPerKm")
+    return f"{step['minutes']}'" + (f"@{_format_pace_mmss(pace)}" if pace else "")
 
 
 def _format_pace_mmss(pace_range: list[int]) -> str:

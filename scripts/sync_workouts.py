@@ -32,6 +32,7 @@ from processing.garmin_workout import (
 )
 from processing.mapper import ActivityData
 from processing.planned_workout_type import (
+    coach_type_word,
     infer_planned_type,
     type_from_training_effect_label,
 )
@@ -121,28 +122,33 @@ def write_planned_workouts(
     return store
 
 
-def prefer_planned_name(description: str, planned_name: str | None) -> str | None:
-    """Return planned_name if it's a strict, longer, same-prefix superset of
-    description (case-insensitive) - e.g. "Seuil" -> "Seuil - 3x8@4:20" - else
-    None. No locale-specific keyword list is needed: both names ultimately
-    derive from the same Garmin workoutName string, whatever language the
-    athlete's device uses. A genuinely custom rename never matches this (it
-    won't be a prefix), so it's never clobbered."""
-    if not planned_name or len(planned_name) <= len(description):
+def prefer_planned_name(description: str, plan: dict) -> str | None:
+    planned_name = (plan.get("name") or "").strip()
+    if not planned_name or planned_name == description:
         return None
-    if not planned_name.lower().startswith(description.lower()):
-        return None
-    return planned_name
+
+    if len(planned_name) > len(description) and planned_name.lower().startswith(description.lower()):
+        return planned_name
+
+    # Garmin Coach titles a completed run "<City> - Base", which the mapper
+    # trims to "Base": a title that names the session type and nothing else.
+    # The plan for that same day, being that same type, is the only place its
+    # actual structure survives. A custom rename matches neither branch.
+    described_type = coach_type_word(description)
+    if described_type and described_type == plan.get("type"):
+        return planned_name
+
+    return None
 
 
 def enrich_description_from_plan(activity: ActivityData, store: PlannedWorkoutStore) -> None:
     """Mutates activity.description in place if the workout planned for
-    activity.date is a richer version of the same name Garmin gave it -
+    activity.date describes the session better than the name Garmin gave it -
     so the detail survives permanently, independent of the store's window."""
     plan = store.get(activity.date)
     if not plan:
         return
-    better = prefer_planned_name(activity.description, plan.get("name"))
+    better = prefer_planned_name(activity.description, plan)
     if better:
         activity.description = better
 
@@ -337,14 +343,21 @@ def _build_entries(
         if workout_type:
             entry["type"] = workout_type
 
-        # Quality sessions (Threshold/Tempo/VO2Max/Anaerobic/Sprint) get their
-        # main interval block folded into the title, e.g. "Seuil - 3x8:00@4:20/km" -
-        # Garmin Coach's own workout names are terse ("Seuil") unlike third-party
-        # plans, which already spell out the structure in the name.
-        if (workout_type or infer_planned_type(name)) != "Base":
+        # Garmin Coach names a session after its type and nothing else ("Base",
+        # "Seuil"), which every view already shows as a badge right next to the
+        # title - so its structure replaces the name outright ("3x8'@4:20").
+        # Third-party plans name their sessions properly and keep that name; a
+        # quality one just gains the main interval block.
+        coach_type = coach_type_word(name)
+        if coach_type and not workout_type:
+            # Once the type word leaves the name, the name-based guess
+            # write_planned_workouts falls back to can't recover it.
+            entry["type"] = coach_type
+
+        if coach_type or (workout_type or infer_planned_type(name)) != "Base":
             main_set = main_set_descriptor(detail, name, workout_steps)
             if main_set:
-                entry["name"] = f"{name} - {main_set}"
+                entry["name"] = main_set if coach_type else f"{name} - {main_set}"
 
         planned.append(entry)
 

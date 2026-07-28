@@ -5,13 +5,14 @@ from garmin_step_fixtures import (
     repeat_group as _repeat_group,
 )
 from processing.garmin_workout import (
-    _quality_descriptor,
     build_workout_steps,
     collect_steps,
     estimate_from_steps,
     main_set_descriptor,
+    normalize_descriptor,
     resolve_adaptive_distance_duration,
     resolve_manual_distance_duration,
+    steps_descriptor,
 )
 
 
@@ -209,29 +210,62 @@ class TestMainSetDescriptor:
         # which the step-derived summary can only render as whole minutes.
         detail = {"description": "10x400m@3:45/km"}
 
-        assert main_set_descriptor(detail, "VMA", steps=None) == "10x400m@3:45/km"
+        assert main_set_descriptor(detail, "VMA", steps=None) == "10x400m@3:45"
 
     def test_ignores_a_description_the_name_already_spells_out(self):
         detail = {"description": "3x8:00"}
 
         assert main_set_descriptor(detail, "Seuil 3x8:00", steps=None) is None
 
-    def test_falls_back_to_quality_descriptor_when_no_usable_description(self):
+    def test_falls_back_to_steps_descriptor_when_no_usable_description(self):
         steps = [
             {"kind": "effort", "minutes": 8, "rep": 1, "paceSecPerKm": [247, 265]},
             {"kind": "effort", "minutes": 8, "rep": 2, "paceSecPerKm": [247, 265]},
         ]
 
-        assert main_set_descriptor({}, "Seuil", steps) == "2x8:00@4:16"
+        assert main_set_descriptor({}, "Seuil", steps) == "2x8'@4:16"
 
 
-class TestQualityDescriptor:
-    def test_no_descriptor_without_a_repeated_effort_step(self):
-        # A single continuous effort block (no RepeatGroupDTO) has nothing to
-        # summarize as "Nx...".
+class TestNormalizeDescriptor:
+    def test_drops_the_implied_pace_unit(self):
+        assert normalize_descriptor("3x8:00@4:20/km") == "3x8'@4:20"
+
+    def test_whole_minute_reps_lose_their_clock_seconds(self):
+        assert normalize_descriptor("7x1:00@3:45/km") == "7x1'@3:45"
+
+    def test_sub_minute_reps_are_written_in_seconds(self):
+        assert normalize_descriptor("3x3x0:15@2:45/km") == '3x3x15"@2:45'
+
+    def test_mixed_reps_keep_both_units(self):
+        assert normalize_descriptor("5x1:30@4:00/km") == "5x1'30@4:00"
+
+    def test_distance_reps_are_left_alone(self):
+        assert normalize_descriptor("10x400m@3:45/km") == "10x400m@3:45"
+
+
+class TestStepsDescriptor:
+    def test_summarizes_a_repeated_effort_block(self):
         steps = [
             {"kind": "warmup", "minutes": 10},
-            {"kind": "effort", "minutes": 20, "paceSecPerKm": [240, 250]},
+            {"kind": "effort", "minutes": 8, "rep": 1, "paceSecPerKm": [247, 265]},
+            {"kind": "recovery", "minutes": 2, "rep": 1},
+            {"kind": "effort", "minutes": 8, "rep": 2, "paceSecPerKm": [247, 265]},
+        ]
+        assert steps_descriptor(steps) == "2x8'@4:16"
+
+    def test_summarizes_a_single_continuous_effort(self):
+        steps = [
+            {"kind": "warmup", "minutes": 10},
+            {"kind": "effort", "minutes": 17, "paceSecPerKm": [250, 269]},
             {"kind": "cooldown", "minutes": 10},
         ]
-        assert _quality_descriptor(steps) is None
+        assert steps_descriptor(steps) == "17'@4:20"
+
+    def test_no_descriptor_for_a_steady_block_without_a_target_pace(self):
+        # Its duration is already a field of its own; the type badge alone is enough.
+        steps = [{"kind": "effort", "minutes": 31}]
+        assert steps_descriptor(steps) is None
+
+    def test_no_descriptor_without_an_effort_step(self):
+        steps = [{"kind": "warmup", "minutes": 10}, {"kind": "cooldown", "minutes": 10}]
+        assert steps_descriptor(steps) is None

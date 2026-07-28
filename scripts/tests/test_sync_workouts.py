@@ -355,7 +355,7 @@ class TestGarminSuppliedMetadata:
         entries = _build_entries(client, [("2026-07-23", "abc", "", True)])
 
         assert entries[0]["type"] == "Sprint"
-        assert entries[0]["name"] == "Sprint - 3x3x0:15@2:45/km"
+        assert entries[0]["name"] == '3x3x15"@2:45'
 
     def test_skips_rest_days(self, monkeypatch):
         # Garmin Coach schedules rest days as calendar items like any other
@@ -402,7 +402,7 @@ class TestGarminSuppliedMetadata:
 
         entries = _build_entries(client, [("2026-07-24", "def", "", True)])
 
-        assert entries[0]["name"] == "VMA - 10x400m@3:45/km"
+        assert entries[0]["name"] == "10x400m@3:45"
 
     def test_ignores_a_description_the_name_already_spells_out(self, monkeypatch):
         monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
@@ -443,18 +443,18 @@ class TestGarminSuppliedMetadata:
 
         entries = _build_entries(client, [("2026-07-26", "jkl", "", False)])
 
-        assert entries[0]["name"] == "Seuil - 3x8:00@4:16"
+        assert entries[0]["name"] == "3x8'@4:16"
 
 
-class TestMainSetDescriptorFoldedIntoTitle:
+class TestMainSetDescriptorInTitle:
     """Unit coverage for the descriptor logic itself lives in
     test_garmin_workout.py - these exercise the orchestration decision of
-    *when* _build_entries folds it into the title at all."""
+    *when* _build_entries puts it in the title, and whether it replaces the
+    Garmin name or is appended to it."""
 
-    def test_folds_main_interval_block_into_terse_coach_name(self, monkeypatch):
-        # Garmin Coach's own workout names are terse ("Seuil") unlike
-        # third-party plans, which already spell out the structure - so a
-        # quality session's title should gain the interval summary.
+    def test_replaces_a_coach_type_word_name_with_the_interval_block(self, monkeypatch):
+        # Garmin Coach names a session after its type ("Seuil"), which the UI
+        # already shows as a badge - so the structure takes the title over.
         monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
         detail = {
             "workoutName": "Seuil",
@@ -479,7 +479,7 @@ class TestMainSetDescriptorFoldedIntoTitle:
 
         entries = _build_entries(client, [("2026-07-21", "999", "", False)])
 
-        assert entries[0]["name"] == "Seuil - 3x8:00@4:16"
+        assert entries[0]["name"] == "3x8'@4:16"
 
     def test_no_descriptor_for_base_session_even_with_repeats(self, monkeypatch):
         # A repeated structure alone shouldn't grow a title for an easy/base
@@ -508,6 +508,58 @@ class TestMainSetDescriptorFoldedIntoTitle:
         entries = _build_entries(client, [("2026-07-22", "111", "", False)])
 
         assert entries[0]["name"] == "Footing fractionne"
+
+    def test_replaces_a_coach_base_name_with_its_steady_block(self, monkeypatch):
+        # "Base" as a title only repeats the type badge - the target pace of
+        # the run itself is what the athlete can't get anywhere else.
+        monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
+        detail = {
+            "workoutName": "Base",
+            "sportType": {"sportTypeKey": "running"},
+            "trainingEffectLabel": "BASE",
+            "workoutSegments": [
+                {"workoutSteps": [_pace_zone_step("interval", "time", 31 * 60, 308, 346)]}
+            ],
+        }
+        client = _FakeClient(detail)
+
+        entries = _build_entries(client, [("2026-07-28", "222", "", True)])
+
+        assert entries[0]["name"] == "31'@5:27"
+
+    def test_keeps_the_coach_name_when_the_steady_block_has_no_target_pace(self, monkeypatch):
+        # Without a pace target, the type badge alone is enough; the duration
+        # is already a field of its own.
+        monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
+        detail = {
+            "workoutName": "Base",
+            "sportType": {"sportTypeKey": "running"},
+            "trainingEffectLabel": "BASE",
+            "workoutSegments": [{"workoutSteps": [_open_time_step("interval", 31 * 60)]}],
+        }
+        client = _FakeClient(detail)
+
+        entries = _build_entries(client, [("2026-07-29", "333", "", True)])
+
+        assert entries[0]["name"] == "Base"
+
+    def test_keeps_the_type_a_coach_name_stated_before_dropping_the_word(self, monkeypatch):
+        # No trainingEffectLabel here, so once "Seuil" leaves the name nothing
+        # else could tell this apart from an easy run.
+        monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
+        detail = {
+            "workoutName": "Seuil",
+            "sportType": {"sportTypeKey": "running"},
+            "workoutSegments": [
+                {"workoutSteps": [_pace_zone_step("interval", "time", 17 * 60, 250, 269)]}
+            ],
+        }
+        client = _FakeClient(detail)
+
+        entries = _build_entries(client, [("2026-07-29", "444", "", True)])
+
+        assert entries[0]["name"] == "17'@4:20"
+        assert entries[0]["type"] == "Threshold"
 
 
 class TestWritePlannedWorkouts:
@@ -585,29 +637,47 @@ def _activity(date: str, description: str) -> ActivityData:
 
 class TestPreferPlannedName:
     def test_exact_match_is_unchanged(self):
-        assert prefer_planned_name("Seuil", "Seuil") is None
+        assert prefer_planned_name("Seuil", {"name": "Seuil"}) is None
 
     def test_longer_same_prefix_is_adopted(self):
-        assert prefer_planned_name("Seuil", "Seuil - 3x8@4:20") == "Seuil - 3x8@4:20"
+        plan = {"name": "Seuil - 3x8@4:20"}
+        assert prefer_planned_name("Seuil", plan) == "Seuil - 3x8@4:20"
 
     def test_case_insensitive_prefix_match(self):
-        assert prefer_planned_name("seuil", "Seuil - 3x8@4:20") == "Seuil - 3x8@4:20"
+        plan = {"name": "Seuil - 3x8@4:20"}
+        assert prefer_planned_name("seuil", plan) == "Seuil - 3x8@4:20"
 
     def test_shorter_planned_name_is_unchanged(self):
-        assert prefer_planned_name("Seuil - 3x8@4:20", "Seuil") is None
+        assert prefer_planned_name("Seuil - 3x8@4:20", {"name": "Seuil"}) is None
 
     def test_same_length_is_unchanged(self):
-        assert prefer_planned_name("Seuil!", "Seui1?") is None
+        assert prefer_planned_name("Seuil!", {"name": "Seui1?"}) is None
 
     def test_not_a_prefix_is_unchanged(self):
         # A genuine custom rename by the athlete - must never be clobbered.
-        assert prefer_planned_name("Course avec Paul", "Seuil - 3x8@4:20") is None
+        assert prefer_planned_name("Course avec Paul", {"name": "Seuil - 3x8@4:20"}) is None
 
     def test_empty_description_adopts_any_planned_name(self):
-        assert prefer_planned_name("", "Seuil - 3x8@4:20") == "Seuil - 3x8@4:20"
+        plan = {"name": "Seuil - 3x8@4:20"}
+        assert prefer_planned_name("", plan) == "Seuil - 3x8@4:20"
 
     def test_no_planned_name_is_unchanged(self):
-        assert prefer_planned_name("Seuil", None) is None
+        assert prefer_planned_name("Seuil", {}) is None
+
+    def test_type_word_title_adopts_the_plans_structure_name(self):
+        # Garmin Coach titles the completed run "<City> - Base", trimmed to
+        # "Base" by the mapper: the plan for that day says what it really was.
+        plan = {"name": "31'@5:27", "type": "Base"}
+        assert prefer_planned_name("Base", plan) == "31'@5:27"
+
+    def test_type_word_title_of_another_type_is_unchanged(self):
+        # The athlete ran an easy run on a threshold day - not that session.
+        plan = {"name": "3x8'@4:20", "type": "Threshold"}
+        assert prefer_planned_name("Base", plan) is None
+
+    def test_previously_enriched_title_follows_the_new_format(self):
+        plan = {"name": "7x1'@3:45", "type": "Anaerobic"}
+        assert prefer_planned_name("Anaerobique - 7x1:00@3:45/km", plan) == "7x1'@3:45"
 
 
 class TestEnrichDescriptionFromPlan:

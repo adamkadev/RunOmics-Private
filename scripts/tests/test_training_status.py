@@ -1,34 +1,58 @@
-from datetime import date
+from datetime import date, timedelta
 
 from garmin.training_status import (
     dates_to_fetch,
+    fetch_windows,
     normalize_load_balance,
-    normalize_training_status,
+    normalize_status_report,
 )
 
 # Trimmed from real Garmin responses.
 STATUS_PAYLOAD = {
     "userId": 133047860,
-    "latestTrainingStatusData": {
-        "3604810488": {
-            "calendarDate": "2026-07-21",
-            "trainingStatus": 5,
-            "deviceId": 3604810488,
-            "sport": "RUNNING",
-            "fitnessTrend": 2,
-            "trainingStatusFeedbackPhrase": "RECOVERY_2",
-            "trainingPaused": False,
-            "acuteTrainingLoadDTO": {
-                "acwrPercent": 12,
-                "acwrStatus": "LOW",
-                "dailyTrainingLoadAcute": 108,
-                "maxTrainingLoadChronic": 426.0,
-                "minTrainingLoadChronic": 227.20000000000002,
-                "dailyTrainingLoadChronic": 284,
-                "dailyAcuteChronicWorkloadRatio": 0.3,
+    "fromCalendarDate": "2026-07-20",
+    "toCalendarDate": "2026-07-21",
+    "reportData": {
+        "3604810488": [
+            {
+                "calendarDate": "2026-07-20",
+                "trainingStatus": 5,
+                "deviceId": 3604810488,
+                "sport": "RUNNING",
+                "fitnessTrend": 2,
+                "trainingStatusFeedbackPhrase": "RECOVERY_2",
+                "trainingPaused": False,
+                "acuteTrainingLoadDTO": {
+                    "acwrPercent": 12,
+                    "acwrStatus": "LOW",
+                    "dailyTrainingLoadAcute": 108,
+                    "maxTrainingLoadChronic": 426.0,
+                    "minTrainingLoadChronic": 227.20000000000002,
+                    "dailyTrainingLoadChronic": 284,
+                    "dailyAcuteChronicWorkloadRatio": 0.3,
+                },
+                "primaryTrainingDevice": True,
             },
-            "primaryTrainingDevice": True,
-        }
+            {
+                "calendarDate": "2026-07-21",
+                "trainingStatus": 2,
+                "deviceId": 3604810488,
+                "sport": "RUNNING",
+                "fitnessTrend": 1,
+                "trainingStatusFeedbackPhrase": "UNPRODUCTIVE_2",
+                "trainingPaused": False,
+                "acuteTrainingLoadDTO": {
+                    "acwrPercent": 47,
+                    "acwrStatus": "OPTIMAL",
+                    "dailyTrainingLoadAcute": 363,
+                    "maxTrainingLoadChronic": 495.0,
+                    "minTrainingLoadChronic": 264.0,
+                    "dailyTrainingLoadChronic": 330,
+                    "dailyAcuteChronicWorkloadRatio": 1.1,
+                },
+                "primaryTrainingDevice": True,
+            },
+        ]
     },
 }
 
@@ -54,10 +78,11 @@ BALANCE_PAYLOAD = {
 }
 
 
-class TestNormalizeTrainingStatus:
-    def test_flattens_the_primary_device_entry(self):
-        day = normalize_training_status(STATUS_PAYLOAD)
-        assert day == {
+class TestNormalizeStatusReport:
+    def test_keys_flattened_days_by_calendar_date(self):
+        days = normalize_status_report(STATUS_PAYLOAD)
+        assert list(days) == ["2026-07-20", "2026-07-21"]
+        assert days["2026-07-20"] == {
             "status": "recovery",
             "statusCode": 5,
             "feedback": "RECOVERY_2",
@@ -70,35 +95,55 @@ class TestNormalizeTrainingStatus:
             "chronicLoadMax": 426.0,
             "deviceId": 3604810488,
         }
+        assert days["2026-07-21"]["status"] == "unproductive"
 
     def test_prefers_the_primary_device_over_map_order(self):
         payload = {
-            "latestTrainingStatusData": {
-                "111": {"trainingStatusFeedbackPhrase": "PRODUCTIVE_1", "deviceId": 111},
-                "222": {
-                    "trainingStatusFeedbackPhrase": "RECOVERY_2",
-                    "deviceId": 222,
-                    "primaryTrainingDevice": True,
-                },
+            "reportData": {
+                "111": [
+                    {
+                        "calendarDate": "2026-07-21",
+                        "trainingStatusFeedbackPhrase": "PRODUCTIVE_1",
+                        "deviceId": 111,
+                    }
+                ],
+                "222": [
+                    {
+                        "calendarDate": "2026-07-21",
+                        "trainingStatusFeedbackPhrase": "RECOVERY_2",
+                        "deviceId": 222,
+                        "primaryTrainingDevice": True,
+                    }
+                ],
             }
         }
-        assert normalize_training_status(payload)["deviceId"] == 222
+        assert normalize_status_report(payload)["2026-07-21"]["deviceId"] == 222
 
     def test_status_label_strips_only_the_variant_number(self):
         payload = {
-            "latestTrainingStatusData": {
-                "1": {"trainingStatusFeedbackPhrase": "NO_STATUS", "primaryTrainingDevice": True}
+            "reportData": {
+                "1": [
+                    {
+                        "calendarDate": "2026-07-21",
+                        "trainingStatusFeedbackPhrase": "NO_STATUS",
+                        "primaryTrainingDevice": True,
+                    }
+                ]
             }
         }
-        assert normalize_training_status(payload)["status"] == "no_status"
+        assert normalize_status_report(payload)["2026-07-21"]["status"] == "no_status"
 
-    def test_returns_none_for_a_day_the_watch_was_not_worn(self):
-        assert normalize_training_status({"latestTrainingStatusData": {}}) is None
-        assert normalize_training_status({}) is None
+    def test_returns_nothing_when_the_watch_was_not_worn(self):
+        assert normalize_status_report({"reportData": {}}) == {}
+        assert normalize_status_report({}) == {}
 
-    def test_returns_none_when_neither_status_nor_load_was_recorded(self):
-        payload = {"latestTrainingStatusData": {"1": {"deviceId": 1, "trainingPaused": False}}}
-        assert normalize_training_status(payload) is None
+    def test_drops_days_with_neither_status_nor_load(self):
+        payload = {
+            "reportData": {
+                "1": [{"calendarDate": "2026-07-21", "deviceId": 1, "trainingPaused": False}]
+            }
+        }
+        assert normalize_status_report(payload) == {}
 
 
 class TestNormalizeLoadBalance:
@@ -129,3 +174,25 @@ class TestDatesToFetch:
         stored = {"2026-07-20": {}, "2026-07-21": {}}
         days = dates_to_fetch(date(2026, 7, 20), date(2026, 7, 21), stored)
         assert days == [date(2026, 7, 20), date(2026, 7, 21)]
+
+
+class TestFetchWindows:
+    def test_returns_nothing_when_there_is_nothing_to_fetch(self):
+        assert fetch_windows([]) == []
+
+    def test_caps_a_window_at_four_weeks(self):
+        days = [date(2026, 1, 1) + timedelta(days=i) for i in range(60)]
+        windows = fetch_windows(days)
+        assert windows == [
+            (date(2026, 1, 1), date(2026, 1, 28)),
+            (date(2026, 1, 29), date(2026, 2, 25)),
+            (date(2026, 2, 26), date(2026, 3, 1)),
+        ]
+
+    def test_lets_stored_days_ride_along_inside_a_window(self):
+        windows = fetch_windows([date(2026, 5, 1), date(2026, 5, 20)])
+        assert windows == [(date(2026, 5, 1), date(2026, 5, 20))]
+
+    def test_splits_days_further_apart_than_a_window(self):
+        windows = fetch_windows([date(2026, 5, 1), date(2026, 7, 1)])
+        assert windows == [(date(2026, 5, 1), date(2026, 5, 1)), (date(2026, 7, 1), date(2026, 7, 1))]
