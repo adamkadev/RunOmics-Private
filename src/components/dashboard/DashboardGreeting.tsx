@@ -51,7 +51,7 @@ export function DashboardGreeting({ name, lastSyncedAt }: Props) {
           <span className="capitalize">{greeting?.dateLine ?? ' '}</span>
           {syncedLine ? ` · ${syncedLine}` : ''}
         </p>
-        <h1 className="font-display text-[21px] font-bold tracking-tight text-foreground">
+        <h1 className="font-display text-title2 font-bold tracking-tight text-foreground">
           {greeting?.text ?? ' '}, {displayName}
         </h1>
       </div>

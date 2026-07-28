@@ -52,7 +52,7 @@ export function ProfileHero({ hero, displayName, age, sex }: Props) {
             {t.profile.hero.topPctLine(topPct)}
           </p>
         )}
-        <p className="mt-0.5 text-[10.5px] text-subtle">
+        <p className="mt-0.5 text-caption text-subtle">
           {t.profile.hero.lifetime(hero.lifetimeActivities, hero.lifetimeDistanceKm)}
         </p>
       </div>

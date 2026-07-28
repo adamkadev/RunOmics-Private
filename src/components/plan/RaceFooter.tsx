@@ -27,7 +27,7 @@ export function RaceFooter({
       style={{ background: BRAND_TINTS.footerFill }}
     >
       <div className="min-w-0">
-        <div className="truncate text-[12.5px] font-semibold text-foreground">{race.name}</div>
+        <div className="truncate text-footnote font-semibold text-foreground">{race.name}</div>
         <div className="text-caption text-subtle">
           {race.distance} · {t.plan.raceFooter.inDays(days)}
         </div>

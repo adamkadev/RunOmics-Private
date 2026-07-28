@@ -20,7 +20,7 @@ const ZONE_ROWS: { zone: number; label: string; color: string }[] = [
 function Tile({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
   return (
     <div className="rounded-xl bg-foreground/[0.04] p-2.5 text-center">
-      <div className="text-[9px] font-semibold uppercase tracking-[0.03em] text-subtle">{label}</div>
+      <div className="text-micro font-semibold uppercase tracking-[0.03em] text-subtle">{label}</div>
       <div className="mt-[3px] font-display text-lg font-bold tabular-nums" style={valueColor ? { color: valueColor } : undefined}>
         {value}
       </div>
@@ -45,7 +45,7 @@ export function ProfileAthleteCard({ athlete, latestVo2max, recentZoneTime }: Pr
     <GlassSurface variant="card" className="p-4">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-bold text-foreground">{a.title}</h2>
-        <Link href="/athlete" className="flex items-center gap-0.5 text-[11.5px] font-semibold text-accent-text active:scale-95">
+        <Link href="/athlete" className="flex items-center gap-0.5 text-xs font-semibold text-accent-text active:scale-95">
           {a.details}
           <ChevronRight size={14} />
         </Link>

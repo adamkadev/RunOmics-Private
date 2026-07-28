@@ -45,7 +45,7 @@ function WeekStat({ value, label }: { value: string; label: string }) {
   return (
     <div className="text-center">
       <div className="text-sm font-bold tabular-nums text-foreground">{value}</div>
-      <div className="text-[9px] uppercase tracking-wide text-subtle">{label}</div>
+      <div className="text-micro uppercase tracking-wide text-subtle">{label}</div>
     </div>
   )
 }

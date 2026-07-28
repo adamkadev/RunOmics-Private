@@ -46,7 +46,7 @@ export function ProfileStatsYtd({ ytd }: { ytd: ProfileYtdStats }) {
               <span className="text-lg font-extrabold leading-none tracking-tight text-foreground">{cell.value}</span>
               {cell.unit && <span className="text-caption font-semibold text-muted-foreground">{cell.unit}</span>}
             </div>
-            <div className="mt-0.5 text-[10.5px] text-muted-foreground">{cell.label}</div>
+            <div className="mt-0.5 text-caption text-muted-foreground">{cell.label}</div>
           </div>
         ))}
       </div>

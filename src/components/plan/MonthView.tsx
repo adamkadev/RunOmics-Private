@@ -42,7 +42,7 @@ function DayActivities({ activities }: { activities: Activity[] }) {
           />
         ))}
         {overflow > 0 && (
-          <span className="text-[9px] font-bold text-muted-foreground leading-none">
+          <span className="text-caption font-bold text-muted-foreground leading-none">
             +{overflow}
           </span>
         )}

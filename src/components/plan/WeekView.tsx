@@ -175,8 +175,8 @@ function NextWeekPlanRow({ plan, onTap }: { plan: PlannedWorkout; onTap: () => v
 function SummaryStat({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <GlassSurface variant="card" className="rounded-[14px] px-3 py-3">
-      <div className="text-[9.5px] font-bold uppercase tracking-[0.05em] text-muted-foreground">{label}</div>
-      <div className="mt-1 font-display text-[19px] font-bold tabular-nums text-foreground">{value}</div>
+      <div className="text-micro font-bold uppercase tracking-[0.05em] text-muted-foreground">{label}</div>
+      <div className="mt-1 font-display text-lg font-bold tabular-nums text-foreground">{value}</div>
     </GlassSurface>
   )
 }
@@ -505,7 +505,7 @@ export function WeekView({
         <div className="px-1">
           <p className="mb-2.5 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground">
             {t.plan.comingUp}
-            <span className="rounded-[5px] border border-accent/30 bg-accent/10 px-1.5 py-px font-mono text-[9px] font-bold text-accent-text">
+            <span className="rounded-[5px] border border-accent/30 bg-accent/10 px-1.5 py-px font-mono text-caption font-bold text-accent-text">
               {t.plan.comingUpBadge}
             </span>
           </p>

@@ -85,7 +85,7 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime }: Prop
           type="button"
           onClick={() => setManualView('recent')}
           className={cn(
-            'rounded-full px-3 py-1.5 text-[10.5px] font-bold uppercase tracking-wide transition-colors',
+            'rounded-full px-3 py-1.5 text-caption font-bold uppercase tracking-wide transition-colors',
             view === 'recent' ? 'bg-accent text-accent-foreground' : 'text-subtle'
           )}
         >
@@ -95,7 +95,7 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime }: Prop
           type="button"
           onClick={() => setManualView('week')}
           className={cn(
-            'rounded-full px-3 py-1.5 text-[10.5px] font-bold uppercase tracking-wide transition-colors',
+            'rounded-full px-3 py-1.5 text-caption font-bold uppercase tracking-wide transition-colors',
             view === 'week' ? 'bg-accent text-accent-foreground' : 'text-subtle'
           )}
         >

@@ -110,7 +110,7 @@ export function WeeklyStreakCard({ data, goal, hardShareFact }: Props) {
               <span className="text-sm font-extrabold leading-none tabular-nums text-foreground">
                 {Math.round(animatedActualKm)}
               </span>
-              <span className="text-[9px] leading-tight text-muted-foreground">/{Math.round(goal.targetKm)}{t.units.km}</span>
+              <span className="text-caption leading-tight text-muted-foreground">/{Math.round(goal.targetKm)}{t.units.km}</span>
             </div>
           </div>
         )}

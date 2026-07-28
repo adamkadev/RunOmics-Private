@@ -111,8 +111,8 @@ export function ActivityDetailClient({ activity, qualifiedEfforts }: Props) {
       <MetricGrid metrics={stats} className="grid-cols-4 px-1 text-center" />
 
       {!activity.avgHeartRate && (
-        <p className="flex items-center justify-center gap-2 text-[10.5px] text-subtle-2">
-          <span className="rounded-full border border-amber-500/30 bg-amber-500/[0.1] px-2 py-px font-mono text-[9px] font-semibold uppercase tracking-[0.1em] text-amber-600 dark:text-amber-400">
+        <p className="flex items-center justify-center gap-2 text-caption text-subtle-2">
+          <span className="rounded-full border border-amber-500/30 bg-amber-500/[0.1] px-2 py-px font-mono text-micro font-semibold uppercase tracking-[0.1em] text-amber-600 dark:text-amber-400">
             {t.activity.dataQuality.estimated}
           </span>
           {t.activity.dataQuality.noHr}

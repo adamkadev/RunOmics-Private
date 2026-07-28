@@ -77,8 +77,8 @@ function ShoeRow({ shoe }: { shoe: ShoeStats }) {
     >
       <BrandIcon brand={shoe.brand} size={14} />
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[12.5px] font-semibold text-foreground">{shoe.name}</span>
-        <span className="block text-[9.5px] text-subtle">
+        <span className="block truncate text-footnote font-semibold text-foreground">{shoe.name}</span>
+        <span className="block text-caption text-subtle">
           {t.shoes.kmOf(Math.round(shoe.totalKm), shoe.maxKm)}
           {shoe.lastUsedDate && ` · ${formatCompactDate(shoe.lastUsedDate)}`}
         </span>

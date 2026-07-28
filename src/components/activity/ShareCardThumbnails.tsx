@@ -83,7 +83,7 @@ export function ThemeCard({ design, accent, theme, selected, accentHex, onClick,
         )}
       </div>
       <span
-        className={cn('text-[10.5px] font-bold tracking-wide transition-colors uppercase', !selected && 'text-muted-foreground/60')}
+        className={cn('text-caption font-bold tracking-wide transition-colors uppercase', !selected && 'text-muted-foreground/60')}
         style={selected ? { color: accentHex } : undefined}
       >
         {t.activity.shareCard.designLabels[design]}
@@ -99,7 +99,7 @@ export function ThemeDivider({ label }: { label: string }) {
       <div className="flex items-center justify-center" style={{ height: THUMB_SIZE }}>
         <div style={{ width: 1, height: '100%', background: 'color-mix(in srgb, var(--ro-text) 14%, transparent)' }} />
       </div>
-      <span className="text-center text-[9px] font-semibold leading-tight tracking-wide text-muted-foreground/50">
+      <span className="text-center text-caption font-semibold leading-tight tracking-wide text-muted-foreground/50">
         {label}
       </span>
     </div>

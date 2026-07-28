@@ -84,7 +84,7 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device }: Props) {
             <p className="truncate text-sm font-semibold text-foreground">
               {device?.name ?? s.dataSource.connected(s.dataSource.garmin)}
             </p>
-            <p className="mt-0.5 truncate text-[11.5px] text-muted-foreground">
+            <p className="mt-0.5 truncate text-xs text-muted-foreground">
               {s.dataSource.lastSync} {formatRelativeAgo(lastSyncedAt)} · {t.common.runs(activityCount)}
             </p>
             {device?.name && provenance && (
@@ -101,7 +101,7 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device }: Props) {
           type="button"
           onClick={handleExport}
           disabled={loading}
-          className="flex w-full items-center justify-between gap-2 text-[12.5px] text-muted-foreground transition-opacity active:opacity-60 disabled:opacity-50"
+          className="flex w-full items-center justify-between gap-2 text-footnote text-muted-foreground transition-opacity active:opacity-60 disabled:opacity-50"
         >
           <span>{loading ? s.dataExport.exporting : s.dataExport.csv}</span>
           <span className="shrink-0 font-semibold text-accent-text">{s.rowAction.export}</span>
@@ -110,7 +110,7 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device }: Props) {
         <button
           type="button"
           onClick={handleClearCache}
-          className="flex w-full items-center justify-between gap-2 text-[12.5px] text-muted-foreground transition-opacity active:opacity-60"
+          className="flex w-full items-center justify-between gap-2 text-footnote text-muted-foreground transition-opacity active:opacity-60"
         >
           <span>{s.offlineCache.clear}</span>
           <span className="shrink-0 font-semibold text-accent-text">{s.rowAction.clear}</span>

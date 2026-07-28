@@ -49,17 +49,17 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null, 
               <div key={r.key} className="glass-card flex items-center gap-3 rounded-card-sm border-dashed px-3.5 py-2.5">
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-semibold text-foreground">{r.label}</p>
-                  <p className="mt-0.5 truncate text-[10.5px] text-subtle">{t.records.noRecordYet}</p>
+                  <p className="mt-0.5 truncate text-caption text-subtle">{t.records.noRecordYet}</p>
                 </div>
                 {prediction ? (
                   <Link href="/goals" className="shrink-0 text-right">
                     <span className="block text-xs font-semibold text-subtle">
                       {t.records.predictedFromFitness(formatDuration(prediction.predictedSeconds))}
                     </span>
-                    <span className="block text-[10.5px] font-semibold text-accent-text">{t.records.findRace(r.label)}</span>
+                    <span className="block text-caption font-semibold text-accent-text">{t.records.findRace(r.label)}</span>
                   </Link>
                 ) : (
-                  <span className="shrink-0 text-[10.5px] text-subtle">{t.records.notYetRun}</span>
+                  <span className="shrink-0 text-caption text-subtle">{t.records.notYetRun}</span>
                 )}
               </div>
             )
@@ -84,7 +84,7 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null, 
               >
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-xs font-semibold text-foreground">{r.label}</p>
-                  <p className="mt-0.5 truncate text-[10.5px] text-subtle">
+                  <p className="mt-0.5 truncate text-caption text-subtle">
                     {r.date && <span>{shortDate(r.date)}</span>}
                     {r.key === mostRecentKey && <span> · {t.records.mostRecent}</span>}
                     {r.official && <span> · {t.records.raceTag}</span>}

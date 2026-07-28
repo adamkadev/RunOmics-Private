@@ -110,7 +110,7 @@ export function WeekPurposeBanner({
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <div
-            className={cn('font-display text-[18px] font-bold leading-tight', !accentColor && tone.text)}
+            className={cn('font-display text-lg font-bold leading-tight', !accentColor && tone.text)}
             style={accentColor ? { color: accentColor } : undefined}
           >
             {title}
@@ -118,7 +118,7 @@ export function WeekPurposeBanner({
           {/* A running week shows what is planned; a finished one, how its load
               landed. The load percent is meaningless mid-week (partial total). */}
           {!over && planned && (
-            <div className="mt-0.5 text-[11.5px] text-muted-foreground">
+            <div className="mt-0.5 text-xs text-muted-foreground">
               {[
                 t.plan.weekPurpose.plannedSessions(planned.total, planned.key),
                 blockWeek ? t.plan.weekPurpose.weekOfBlock(blockWeek.done, blockWeek.total) : null,
