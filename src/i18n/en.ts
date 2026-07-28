@@ -87,7 +87,6 @@ export const en = {
     viewAll: 'View all',
     runs: (n: number) => `${n} run${n !== 1 ? 's' : ''}`,
     close: 'Close',
-    refreshing: 'Refreshing...',
   },
 
   pwa: {

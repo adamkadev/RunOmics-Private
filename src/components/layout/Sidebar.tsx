@@ -11,8 +11,6 @@ import { ThemeToggle } from './ThemeToggle'
 import { GlassTabBar } from './GlassTabBar'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 
-// Plan is a top-level destination again, matching the tab bar: Today keeps the
-// read-only week glance, Plan owns the editable calendar.
 const NAV_ITEMS = [
   { href: '/', label: t.nav.items.dashboard, icon: LayoutDashboard },
   { href: '/activities', label: t.nav.items.activities, icon: Activity },
@@ -22,12 +20,8 @@ const NAV_ITEMS = [
   { href: '/profile', label: t.nav.items.profile, icon: User },
 ]
 
-// Settings has no NAV_ITEMS row (it is the footer gear) but it is still a
-// destination the sidebar owns, so it must not light up Progress instead.
 const NAV_HREFS = [...NAV_ITEMS.map((item) => item.href), '/settings']
 
-// In-app brand mark: thin concentric rings inheriting the live accent color
-// (var(--accent) is set on <html> before paint, so it follows the theme without JS).
 function HeaderMark({ size = 24 }: { size?: number }) {
   return (
     <svg

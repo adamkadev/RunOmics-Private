@@ -79,7 +79,6 @@ export const fr = {
     viewAll: 'Tout voir',
     runs: (n: number) => `${n} sortie${n > 1 ? 's' : ''}`,
     close: 'Fermer',
-    refreshing: 'Actualisation...',
   },
 
   pwa: {

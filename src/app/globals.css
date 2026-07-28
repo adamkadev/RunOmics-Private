@@ -721,9 +721,6 @@ h1 {
     border-radius: 4px;
   }
 
-  /* Pinch-zoom is allowed (no maximum-scale), so iOS Safari auto-zooms into any
-     focused field smaller than 16px. Touch devices get the 16px floor; pointer
-     devices keep the designed size. */
   @media (pointer: coarse) {
     input,
     textarea,

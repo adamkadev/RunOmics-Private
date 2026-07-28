@@ -31,16 +31,6 @@ export function GlassTabBar() {
     <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-30 lg:hidden">
       <div
         className={cn(
-          // glass-nav, the same recipe as the Sidebar - the tab bar used to be
-          // near-opaque `bg-background/95` while every other chrome surface was glass.
-          // glass-nav draws a border on all four sides; only the top edge is on
-          // screen, so the other three are zeroed out.
-          //
-          // The show/hide slide is a transform on THIS inner wrapper, never on the
-          // fixed <nav> above: a transform on a position:fixed element makes iOS
-          // Safari resolve it against the document instead of the viewport, so the
-          // bar drifts up the page as you scroll ("remonte"). Keeping the fixed
-          // element transform-free is what stops that.
           'glass-nav flex items-center border-x-0 border-b-0 transition-transform duration-200 ease-out',
           hidden ? 'translate-y-full' : 'translate-y-0 pointer-events-auto'
         )}

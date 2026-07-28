@@ -1,15 +1,12 @@
 'use client'
 
 import { useLayoutEffect, useRef } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
-import { RefreshCw } from 'lucide-react'
+import { usePathname } from 'next/navigation'
 import { Sidebar } from './Sidebar'
 import { PageTransition } from './PageTransition'
 import { ThemeSync } from './ThemeSync'
 import { Aurora } from './Aurora'
-import { getPageAuroraKey, isPullToRefreshPage } from '@/lib/navigation'
-import { usePullToRefresh, PULL_THRESHOLD_PX } from '@/lib/usePullToRefresh'
-import { t } from '@/i18n'
+import { getPageAuroraKey } from '@/lib/navigation'
 
 const SCROLL_POSITIONS_KEY = 'scrollPositions'
 
@@ -23,9 +20,7 @@ function getScrollPositions(): Record<string, number> {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const router = useRouter()
   const isPopNavigation = useRef(false)
-  const { containerRef, pullPx, refreshing } = usePullToRefresh(() => router.refresh(), isPullToRefreshPage(pathname))
 
   useLayoutEffect(() => {
     const onPopState = () => {
@@ -59,10 +54,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen" data-page-aurora={getPageAuroraKey(pathname)}>
       <Aurora />
       <ThemeSync />
-      {/* Scrim under the iOS status bar: scrolling content used to run straight
-          under the clock and battery. A plain fade out of `--background` rather
-          than a blur - it already follows the theme, and costs no compositing.
-          Mobile only; the desktop layout has no status bar over it. */}
       <div
         aria-hidden
         className="pointer-events-none fixed inset-x-0 top-0 z-20 lg:hidden"
@@ -72,25 +63,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         }}
       />
       <Sidebar />
-      <main ref={containerRef} className="min-h-screen lg:ml-[248px]">
-        <div
-          className="flex justify-center overflow-hidden transition-[height] duration-200 lg:hidden"
-          style={{ height: refreshing ? 40 : pullPx }}
-        >
-          <div className="flex items-center gap-2 pt-2 text-xs font-semibold text-accent-text">
-            <RefreshCw
-              size={16}
-              className={refreshing ? 'animate-spin' : undefined}
-              style={refreshing ? undefined : { transform: `rotate(${(pullPx / PULL_THRESHOLD_PX) * 360}deg)` }}
-            />
-            {refreshing && <span>{t.common.refreshing}</span>}
-          </div>
-        </div>
+      <main className="min-h-screen lg:ml-[248px]">
         <div className="mx-auto max-w-5xl px-4 pb-28 pt-[max(env(safe-area-inset-top),20px)] sm:px-6 lg:pb-8 lg:pt-8">
           <PageTransition>{children}</PageTransition>
         </div>
       </main>
-
     </div>
   )
 }

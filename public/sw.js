@@ -28,8 +28,6 @@ self.addEventListener('install', (event) => {
   )
 })
 
-// The update banner in ServiceWorkerRegistration asks the waiting worker to
-// take over immediately instead of waiting for every tab to close.
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting()
 })
@@ -69,7 +67,6 @@ async function networkFirst(request, { isNavigation }) {
   } catch (err) {
     const cached = await caches.match(request)
     if (cached) return cached
-    // Deep links never visited before still get the cached dashboard shell.
     if (isNavigation) {
       const shell = await caches.match('/')
       if (shell) return shell
