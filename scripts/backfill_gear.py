@@ -40,8 +40,6 @@ def main() -> int:
 
     print(f"Backfilling gear for {len(pending)} activit{'y' if len(pending) == 1 else 'ies'}…")
 
-    seen_gear: dict[str, dict] = {}
-
     try:
         with GarminClient(secret) as client:
             updated = 0
@@ -64,14 +62,6 @@ def main() -> int:
                 print(f"gearId = {gear_id}")
                 updated += 1
 
-                if gear_id and gear_id not in seen_gear:
-                    item = raw_gear[0]
-                    seen_gear[gear_id] = {
-                        "customMakeModel": item.get("customMakeModel"),
-                        "maximumMeters": item.get("maximumMeters"),
-                        "dateEnd": item.get("dateEnd"),
-                    }
-
                 time.sleep(_RATE_LIMIT_PAUSE)
     except GarminAuthError as exc:
         print(f"Error: {exc}", file=sys.stderr)
@@ -83,12 +73,7 @@ def main() -> int:
     else:
         print(f"\nDry run: {updated} would be updated (not saved).")
 
-    if seen_gear:
-        print("\nDistinct gear seen (for SHOE_REGISTRY in src/domain/shoe/types.ts):")
-        for gear_id, info in seen_gear.items():
-            max_km = round(info["maximumMeters"] / 1000) if info["maximumMeters"] else None
-            retired = info["dateEnd"] is not None
-            print(f"  {gear_id}  {info['customMakeModel']!r}  maxKm={max_km}  retired={retired} (dateEnd={info['dateEnd']})")
+    print("\nTo (re)generate SHOE_REGISTRY in src/domain/shoe/types.ts, run scripts/sync_shoes.py.")
 
     return 0
 

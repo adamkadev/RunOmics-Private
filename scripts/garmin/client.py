@@ -118,6 +118,12 @@ class GarminClient:
                 raise
             return []
 
+    def get_gear_list(self, status: str, start: int = 0, limit: int = 100) -> list[dict[str, Any]]:
+        return self._get(
+            f"{self._base}/gear-service/gear/v2/list",
+            params={"start": start, "limit": limit, "gearStatuses": status, "sortOrder": "firstUseDate_desc"},
+        ).json()
+
     def download_fit(self, activity_id: str) -> bytes | None:
         try:
             content = self._get(
