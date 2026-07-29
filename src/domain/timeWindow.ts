@@ -89,16 +89,16 @@ export function sampleForRange<T extends { date: string }>(
   return result
 }
 
-export function pickForRange<T extends { date: string }>(points: T[], range: ChartRange): T[] {
-  const target = TARGET_POINT_COUNT[range]
-  if (points.length <= target) return points
+export const PLOT_STRIDE_DAYS: Record<ChartRange, number> = {
+  '4w': 1,
+  '6m': 7,
+  '1y': 7,
+}
 
-  const bucketSize = points.length / target
-  const result: T[] = []
-  for (let i = 0; i < target; i++) {
-    const end = i === target - 1 ? points.length : Math.floor((i + 1) * bucketSize)
-    const point = points[end - 1]
-    if (point) result.push(point)
-  }
-  return result
+export function pickForRange<T extends { date: string }>(points: T[], range: ChartRange): T[] {
+  const stride = PLOT_STRIDE_DAYS[range]
+  if (stride <= 1) return points
+
+  const offset = (points.length - 1) % stride
+  return points.filter((_, i) => i % stride === offset)
 }

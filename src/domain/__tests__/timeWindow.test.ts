@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { hasEarlierPoints, pointsInWindow, sampleForRange, windowBounds } from '../timeWindow'
+import {
+  hasEarlierPoints,
+  pickForRange,
+  pointsInWindow,
+  sampleForRange,
+  windowBounds,
+} from '../timeWindow'
 
 const point = (date: string) => ({ date })
 
@@ -87,5 +93,39 @@ describe('sampleForRange', () => {
     const points = daily(3, (i) => i)
 
     expect(sampleForRange(points, '1y')).toBe(points)
+  })
+})
+
+describe('pickForRange', () => {
+  const daily = (count: number) =>
+    Array.from({ length: count }, (_, i) => ({
+      date: `2026-01-${String(i + 1).padStart(2, '0')}`,
+    }))
+
+  it('keeps every day over four weeks', () => {
+    const points = daily(28)
+
+    expect(pickForRange(points, '4w')).toBe(points)
+  })
+
+  it('thins to one day a week over the longer windows', () => {
+    const picked = pickForRange(daily(28), '6m')
+
+    expect(picked.map((p) => p.date)).toEqual(['2026-01-07', '2026-01-14', '2026-01-21', '2026-01-28'])
+  })
+
+  it('always plots the freshest day, whatever the remainder', () => {
+    for (const count of [26, 27, 28, 29, 30]) {
+      const points = daily(count)
+      const picked = pickForRange(points, '1y')
+
+      expect(picked[picked.length - 1]).toBe(points[count - 1])
+    }
+  })
+
+  it('returns untouched points, so a tooltip reports the day it names', () => {
+    const points = daily(20)
+
+    expect(pickForRange(points, '1y').every((p) => points.includes(p))).toBe(true)
   })
 })
