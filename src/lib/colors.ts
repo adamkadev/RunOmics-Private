@@ -2,7 +2,7 @@
 // SVG (which need real strings in attributes), MapLibre paint properties, and
 // the share-card canvas.
 //
-// Every value here resolves through `@/lib/palette` — the one place raw hex
+// Every value here resolves through `@/lib/palette` - the one place raw hex
 // literals are allowed to exist. Anything a stylesheet *can* reach belongs in
 // `@/lib/themeTokens` instead, so it stays accent- and theme-aware.
 

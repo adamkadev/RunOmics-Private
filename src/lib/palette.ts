@@ -2,7 +2,7 @@
 //
 // Nothing else in the codebase may contain a hex literal. The CSS custom
 // properties in globals.css are *generated* from `src/lib/themeTokens.ts`
-// (which builds on this file) — run `npm run tokens` after any change here.
+// (which builds on this file) - run `npm run tokens` after any change here.
 // Every TS consumer that needs a real color string (Recharts, MapLibre, the
 // share-card canvas, the splash generator) imports from here too.
 //
@@ -116,7 +116,7 @@ export const HUE = {
   /** The dark-mode accent and the app's signature green. */
   roEmerald:      '#1ed787',
   roEmeraldHi:    '#4fe6a0',
-  /** The light-mode accent — same green, darkened for pale surfaces. */
+  /** The light-mode accent - same green, darkened for pale surfaces. */
   roEmeraldDeep:  '#0e9f6e',
   roEmeraldLift:  '#14b886',
   roEmeraldShade: '#0b8a5f',
@@ -161,12 +161,12 @@ export const HUE = {
   natureBgDark:      '#060a08',
   natureCanvasDark:  '#07100c',
   natureCardDark:    '#0d110f',
-  /** iOS theme-color for the dark nature theme — slightly lifted off natureBgDark. */
+  /** iOS theme-color for the dark nature theme - slightly lifted off natureBgDark. */
   natureStatusDark:  '#070f0c',
   natureHeroDeep:    '#0d2e1a',
   natureAurora1:     '#a7f3d6',
   natureAurora2:     '#bcd6ff',
-  /** Shadow tint for the light glass surfaces — a desaturated forest green. */
+  /** Shadow tint for the light glass surfaces - a desaturated forest green. */
   natureShadow:      '#08281c',
 
   performanceCanvasTop: '#f0f8ff',
@@ -255,8 +255,8 @@ export function withAlpha(hex: string, a: number): string {
   return `rgba(${r}, ${g}, ${b}, ${a})`
 }
 
-/** Translucent white — the highlight/track ink on dark surfaces. */
+/** Translucent white - the highlight/track ink on dark surfaces. */
 export const paper = (a: number): string => withAlpha(white, a)
 
-/** Translucent black — the scrim/shadow ink on light surfaces. */
+/** Translucent black - the scrim/shadow ink on light surfaces. */
 export const ink = (a: number): string => withAlpha(black, a)

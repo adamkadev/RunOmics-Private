@@ -19,7 +19,7 @@ interface Props {
   comparison: YearComparisonData | null
 }
 
-// "How much am I running?" — the single volume home: monthly volume, the 80/20
+// "How much am I running?" - the single volume home: monthly volume, the 80/20
 // split, long runs and distance mix, plus season-over-season context.
 export function VolumeGroup({ series, year, years, byYear, comparison }: Props) {
   const prevYear =

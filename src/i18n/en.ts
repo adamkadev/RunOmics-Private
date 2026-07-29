@@ -1,4 +1,4 @@
-// English UI strings — the reference locale. Sibling files (e.g. `fr.ts`) must
+// English UI strings - the reference locale. Sibling files (e.g. `fr.ts`) must
 // keep the same shape (`satisfies Strings`); the active locale is picked in
 // `index.ts` via NEXT_PUBLIC_LOCALE.
 //

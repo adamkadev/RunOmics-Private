@@ -1,11 +1,11 @@
 // The CSS custom properties of globals.css, expressed in TypeScript.
 //
 // `scripts/generate-tokens.mjs` renders this into the generated region of
-// `src/app/globals.css` — run `npm run tokens` after editing. Nothing here is
+// `src/app/globals.css` - run `npm run tokens` after editing. Nothing here is
 // read at runtime by the app; the browser only ever sees the generated CSS.
 //
 // Alias-free by necessity: the generator transpiles this file and its relative
-// imports on the fly, and that mini-resolver only follows `./` specifiers — not `@/`.
+// imports on the fly, and that mini-resolver only follows `./` specifiers - not `@/`.
 
 import { HUE, black, ink, paper, white, withAlpha } from './palette'
 
@@ -287,7 +287,7 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
   },
   {
     selector: ':root',
-    comment: 'Light tokens — Nature (emerald, default)',
+    comment: 'Light tokens - Nature (emerald, default)',
     tokens: {
       '--shadow-card': `0 1px 3px 0 ${ink(0.06)}, 0 4px 16px -4px ${ink(0.09)}`,
 
@@ -340,7 +340,7 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
   },
   {
     selector: '.dark',
-    comment: 'Dark tokens — Nature (emerald, default)',
+    comment: 'Dark tokens - Nature (emerald, default)',
     tokens: {
       '--shadow-card': `0 1px 2px 0 ${ink(0.35)}, 0 4px 16px -4px ${ink(0.7)}, inset 0 1px 0 0 ${paper(0.06)}`,
 

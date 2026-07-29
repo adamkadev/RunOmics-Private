@@ -38,7 +38,7 @@ export function useFocusTrap<T extends HTMLElement>() {
     container.tabIndex = -1
     // Focusing the container itself (when the dialog has no focusable
     // children) is a programmatic accessibility anchor, not a keyboard-driven
-    // focus — suppress its focus ring so it doesn't clash with the dialog's
+    // focus - suppress its focus ring so it doesn't clash with the dialog's
     // own border/corner radius.
     container.style.outline = 'none'
     ;(focusables()[0] ?? container).focus({ preventScroll: true })

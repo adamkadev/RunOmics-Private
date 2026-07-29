@@ -48,7 +48,7 @@ export function ProfileRecords({ records }: Props) {
       {best ? (
         <div>
           <span className="text-lg font-extrabold tracking-tight text-foreground">
-            {best.seconds !== null ? formatDuration(best.seconds) : '—'}
+            {best.seconds !== null ? formatDuration(best.seconds) : '–'}
           </span>
           <div className="mt-0.5 truncate text-micro text-muted-foreground">
             {best.label} · {formatDateWithYear(best.date)}

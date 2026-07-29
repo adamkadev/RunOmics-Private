@@ -12,7 +12,7 @@ interface Props {
   racePredictions: GarminRacePredictionsData | null
 }
 
-// "Am I getting faster?" — pace, race projections, aerobic efficiency and the
+// "Am I getting faster?" - pace, race projections, aerobic efficiency and the
 // perceived-effort read that pairs with them.
 export function PerformanceGroup({ weeklyTrends, racePredictions }: Props) {
   return (
