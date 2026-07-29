@@ -88,3 +88,17 @@ export function sampleForRange<T extends { date: string }>(
   }
   return result
 }
+
+export function pickForRange<T extends { date: string }>(points: T[], range: ChartRange): T[] {
+  const target = TARGET_POINT_COUNT[range]
+  if (points.length <= target) return points
+
+  const bucketSize = points.length / target
+  const result: T[] = []
+  for (let i = 0; i < target; i++) {
+    const end = i === target - 1 ? points.length : Math.floor((i + 1) * bucketSize)
+    const point = points[end - 1]
+    if (point) result.push(point)
+  }
+  return result
+}

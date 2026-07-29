@@ -13,7 +13,7 @@ import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { ChartExplain } from '@/components/ui/ChartExplain'
 import { ChartRangeChips, ChartWindowPager, useChartWindow } from '@/components/ui/ChartWindowNav'
-import { sampleForRange } from '@/domain/timeWindow'
+import { pickForRange } from '@/domain/timeWindow'
 import { t } from '@/i18n'
 
 const BAND_COLOR = CHART_COLORS.ctl
@@ -42,12 +42,6 @@ function CustomTooltip({ active, payload }: TooltipProps) {
       )}
       {point.acuteLoad !== null && (
         <TooltipRow color={CHART_COLORS.atl} name={s.acute} value={point.acuteLoad} />
-      )}
-      {point.targetBand && (
-        <TooltipRow
-          name={s.target}
-          value={`${point.targetBand[0]}–${point.targetBand[0] + point.targetBand[1]}`}
-        />
       )}
     </TooltipCard>
   )
@@ -87,7 +81,7 @@ export function TrainingStatusHistoryChart({ data }: { data: TrainingStatusHisto
   // needs every raw day to size its segments correctly; only the line/area
   // plot below gets the uniform 12/6/4-point budget.
   const segments = buildSegments(visible)
-  const plotted = sampleForRange(visible, range)
+  const plotted = pickForRange(visible, range)
   const ratedDays = segments.reduce((sum, segment) => sum + segment.days, 0)
 
   // Days present in the ribbon, ranked by how much of the window they cover -

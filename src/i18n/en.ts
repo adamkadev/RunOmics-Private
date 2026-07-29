@@ -676,7 +676,6 @@ export const en = {
         status: 'Status',
         chronic: 'Chronic load',
         acute: 'Acute load',
-        target: 'Garmin target',
         daysUnit: 'd',
         footnote: 'The watch\'s daily verdict, with the acute and chronic load Firstbeat measured. The blue band is the chronic load range Garmin personalises for you.',
         reading: (dominant: string, pct: number, latest: string | null) =>
@@ -806,9 +805,6 @@ export const en = {
         neutral: (type: string) => `${type} logged`,
         caution: (type: string) => `Tough ${type}`,
       },
-      heatSuffix: ' in tough heat',
-      heatClause: (pace: string, adjustSeconds: number, temperature: number) =>
-        `${pace}/km was ~${adjustSeconds}s slower than it would be in mild weather - expected at ${temperature}°C.`,
       effortClause: (rpeLabel: string, rpe: number) => `Perceived effort: ${rpeLabel} (RPE ${rpe}).`,
     },
     tabs: {

@@ -670,7 +670,6 @@ export const fr = {
         status: 'Statut',
         chronic: 'Charge chronique',
         acute: 'Charge aiguë',
-        target: 'Cible Garmin',
         daysUnit: 'j',
         footnote: 'Verdict quotidien de la montre, avec la charge aiguë et chronique mesurées par Firstbeat. La bande bleue est la plage de charge chronique que Garmin personnalise pour vous.',
         reading: (dominant: string, pct: number, latest: string | null) =>
@@ -800,9 +799,6 @@ export const fr = {
         neutral: (type: string) => `Sortie ${type} enregistrée`,
         caution: (type: string) => `Sortie ${type} exigeante`,
       },
-      heatSuffix: ' par forte chaleur',
-      heatClause: (pace: string, adjustSeconds: number, temperature: number) =>
-        `${pace}/km, soit ~${adjustSeconds}s/km plus lent qu'en météo clémente - attendu à ${temperature}°C.`,
       effortClause: (rpeLabel: string, rpe: number) => `Effort ressenti : ${rpeLabel} (RPE ${rpe}).`,
     },
     tabs: {
