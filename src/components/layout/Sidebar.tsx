@@ -111,7 +111,6 @@ export function Sidebar() {
           <ThemeToggle />
         </div>
       </GlassSurface>
-      <ThemeToggle className="glass-map-chip fixed right-3 top-[max(var(--safe-top),12px)] z-30 rounded-[10px] lg:hidden" />
       <GlassTabBar />
     </>
   )
