@@ -542,7 +542,7 @@
     },
     {
       "date": "2026-07-18",
-      "name": "4 x 1000m allure cible - 4x4:00@4:00",
+      "name": "4 x 1000m allure cible - 4x4'@4:00",
       "distanceM": 10213,
       "durationSecs": 3240,
       "steps": [
@@ -727,7 +727,7 @@
     },
     {
       "date": "2026-07-22",
-      "name": "32'@5:23",
+      "name": "Base",
       "distanceM": 5973,
       "durationSecs": 1920,
       "steps": [
@@ -1070,7 +1070,7 @@
     },
     {
       "date": "2026-07-28",
-      "name": "30'",
+      "name": "Base",
       "distanceM": 267300,
       "durationSecs": 1800,
       "steps": [
@@ -1084,7 +1084,7 @@
     },
     {
       "date": "2026-07-29",
-      "name": "30'@5:27",
+      "name": "Base",
       "distanceM": 5524,
       "durationSecs": 1800,
       "steps": [
@@ -1334,7 +1334,7 @@
     },
     {
       "date": "2026-08-02",
-      "name": "32'@5:27",
+      "name": "Base",
       "distanceM": 5892,
       "durationSecs": 1920,
       "steps": [
@@ -1352,7 +1352,7 @@
     },
     {
       "date": "2026-08-04",
-      "name": "61'@5:27",
+      "name": "Base",
       "distanceM": 11233,
       "durationSecs": 3660,
       "steps": [

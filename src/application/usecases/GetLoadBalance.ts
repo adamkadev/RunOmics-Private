@@ -75,9 +75,9 @@ export function getLoadBalance(): LoadBalanceData | null {
     if (load === undefined || min === undefined || max === undefined) continue
     buckets.push({
       id,
-      load: Math.round(load),
-      targetMin: Math.round(min),
-      targetMax: Math.round(max),
+      load,
+      targetMin: min,
+      targetMax: max,
       verdict: verdictFor(load, min, max),
       position: gaugePosition(load, min, max),
       targetStart: TARGET_START,

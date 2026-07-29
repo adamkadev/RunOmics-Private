@@ -1,4 +1,5 @@
 import json
+from datetime import date, timedelta
 
 from garmin.client import GarminAPIError
 from garmin_step_fixtures import (
@@ -11,9 +12,12 @@ from processing.mapper import ActivityData
 from repository.json_store import PlannedWorkoutStore
 from sync_workouts import (
     _DEFAULT_EASY_PACE_SEC_PER_KM,
+    _WINDOW_FUTURE_DAYS,
+    _WINDOW_PAST_DAYS,
     _build_entries,
     _load_easy_pace_sec_per_km,
     enrich_description_from_plan,
+    fetch_planned_workouts,
     prefer_planned_name,
     write_planned_workouts,
 )
@@ -78,6 +82,49 @@ class _FakeClient:
     def get_adaptive_workout_detail(self, workout_uuid):
         self.calls.append(("fbt-adaptive", workout_uuid))
         return self._detail
+
+
+class _CalendarRecordingClient:
+    """Records which calendar months fetch_planned_workouts asks for, so the
+    window it derives can be asserted without any workout detail round-trip."""
+
+    def __init__(self):
+        self.months: list[tuple[int, int]] = []
+
+    def get_calendar_month(self, year, month):
+        self.months.append((year, month))
+        return {"calendarItems": []}
+
+
+class TestFetchWindow:
+    def test_defaults_to_the_rolling_window(self):
+        client = _CalendarRecordingClient()
+
+        fetch_planned_workouts(client)
+
+        today = date.today()
+        expected_first = (today - timedelta(days=_WINDOW_PAST_DAYS)).replace(day=1)
+        expected_last = today + timedelta(days=_WINDOW_FUTURE_DAYS)
+        assert client.months[0] == (expected_first.year, expected_first.month)
+        assert client.months[-1] == (expected_last.year, expected_last.month)
+
+    def test_an_explicit_range_widens_the_window(self):
+        # The store keeps every date it's given, so a historical backfill is
+        # just a wider fetch - no separate one-off script needed.
+        client = _CalendarRecordingClient()
+
+        fetch_planned_workouts(
+            client, since=date(2025, 5, 1), until=date(2025, 8, 15)
+        )
+
+        assert client.months == [(2025, 5), (2025, 6), (2025, 7), (2025, 8)]
+
+    def test_each_bound_can_be_set_on_its_own(self):
+        client = _CalendarRecordingClient()
+
+        fetch_planned_workouts(client, since=date(2025, 11, 1), until=date(2026, 1, 3))
+
+        assert client.months == [(2025, 11), (2025, 12), (2026, 1)]
 
 
 class TestBuildEntriesPrefersStepSum:
@@ -509,9 +556,9 @@ class TestMainSetDescriptorInTitle:
 
         assert entries[0]["name"] == "Footing fractionne"
 
-    def test_replaces_a_coach_base_name_with_its_steady_block(self, monkeypatch):
-        # "Base" as a title only repeats the type badge - the target pace of
-        # the run itself is what the athlete can't get anywhere else.
+    def test_base_keeps_the_bare_type_word_even_with_a_target_pace(self, monkeypatch):
+        # An easy run has no structure worth surfacing - the type badge alone
+        # is enough, whether or not Garmin attached a target pace to it.
         monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
         detail = {
             "workoutName": "Base",
@@ -525,11 +572,9 @@ class TestMainSetDescriptorInTitle:
 
         entries = _build_entries(client, [("2026-07-28", "222", "", True)])
 
-        assert entries[0]["name"] == "31'@5:27"
+        assert entries[0]["name"] == "Base"
 
-    def test_keeps_the_coach_name_when_the_steady_block_has_no_target_pace(self, monkeypatch):
-        # Without a pace target, the type badge alone is enough; the duration
-        # is already a field of its own.
+    def test_base_keeps_the_bare_type_word_without_a_target_pace(self, monkeypatch):
         monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
         detail = {
             "workoutName": "Base",

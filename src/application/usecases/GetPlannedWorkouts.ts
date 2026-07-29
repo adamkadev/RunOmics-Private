@@ -11,6 +11,13 @@ import { round } from '@/lib/math'
 // history to fall back on either.
 const FALLBACK_DURATION_MINUTES = 40
 
+// Every planned workout crosses the server/client boundary into the plan
+// page's payload, and `steps` is roughly three quarters of an entry's weight.
+// Past that many days the completed activity is the real record of the
+// session, so the plan's block-by-block structure stays on disk rather than
+// being shipped; the sheet falls back to parseWorkoutStructure(name).
+const STEPS_RETENTION_DAYS = 90
+
 export interface TypeLoadStats {
   trimpPerMinute: number
   paceSecPerKm: number
@@ -80,6 +87,14 @@ export function estimatePlannedLoad(
   return { ...workout, estimatedLoad: round(stats.trimpPerMinute * minutes, 0), isEstimated: true }
 }
 
+/** Drops the block-by-block structure of a session older than the cutoff - see STEPS_RETENTION_DAYS. */
+export function withoutStaleSteps(workout: PlannedWorkout, cutoff: string): PlannedWorkout {
+  if (!workout.steps || workout.date >= cutoff) return workout
+  const slim = { ...workout }
+  delete slim.steps
+  return slim
+}
+
 export async function getPlannedWorkouts(): Promise<PlannedWorkout[]> {
   const planned = getAllPlannedWorkouts()
   if (!planned.length) return planned
@@ -92,7 +107,8 @@ export async function getPlannedWorkouts(): Promise<PlannedWorkout[]> {
       : undefined
 
   const { byType, overall } = buildTypeLoadStats(activities, hrBounds)
-  return planned.map((w) => estimatePlannedLoad(w, byType, overall))
+  const cutoff = isoDate(new Date(Date.now() - STEPS_RETENTION_DAYS * 24 * 60 * 60 * 1000))
+  return planned.map((w) => estimatePlannedLoad(withoutStaleSteps(w, cutoff), byType, overall))
 }
 
 /** Today's planned workout, if Garmin has one scheduled. */

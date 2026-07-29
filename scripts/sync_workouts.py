@@ -67,7 +67,7 @@ def main() -> int:
 
     try:
         with GarminClient(secret) as client:
-            planned = fetch_planned_workouts(client)
+            planned = fetch_planned_workouts(client, since=args.since, until=args.until)
     except GarminAuthError as exc:
         print(f"Auth error: {exc}", file=sys.stderr)
         return 1
@@ -167,11 +167,12 @@ def _load_easy_pace_sec_per_km(data_dir: Path = _DATA_DIR) -> float:
     return _DEFAULT_EASY_PACE_SEC_PER_KM
 
 
-def fetch_planned_workouts(client: GarminClient) -> list[dict]:
-    """Return a sorted list of planned workout entries for the rolling window."""
+def fetch_planned_workouts(
+    client: GarminClient, since: date | None = None, until: date | None = None
+) -> list[dict]:
     today = date.today()
-    start_date = today - timedelta(days=_WINDOW_PAST_DAYS)
-    end_date = today + timedelta(days=_WINDOW_FUTURE_DAYS)
+    start_date = since or today - timedelta(days=_WINDOW_PAST_DAYS)
+    end_date = until or today + timedelta(days=_WINDOW_FUTURE_DAYS)
 
     print(f"Syncing planned workouts {start_date} -> {end_date}…")
 
@@ -347,14 +348,18 @@ def _build_entries(
         # "Seuil"), which every view already shows as a badge right next to the
         # title - so its structure replaces the name outright ("3x8'@4:20").
         # Third-party plans name their sessions properly and keep that name; a
-        # quality one just gains the main interval block.
+        # quality one just gains the main interval block. Base never gets a
+        # structure - an easy run has none worth surfacing, so the canonical
+        # word alone stays the name.
         coach_type = coach_type_word(name)
         if coach_type and not workout_type:
             # Once the type word leaves the name, the name-based guess
             # write_planned_workouts falls back to can't recover it.
             entry["type"] = coach_type
 
-        if coach_type or (workout_type or infer_planned_type(name)) != "Base":
+        if coach_type == "Base":
+            entry["name"] = "Base"
+        elif coach_type or (workout_type or infer_planned_type(name)) != "Base":
             main_set = main_set_descriptor(detail, name, workout_steps)
             if main_set:
                 entry["name"] = main_set if coach_type else f"{name} - {main_set}"
@@ -381,6 +386,18 @@ def _parse_args() -> argparse.Namespace:
         description="Sync Garmin planned workouts into RunOmics"
     )
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument(
+        "--since",
+        type=date.fromisoformat,
+        metavar="YYYY-MM-DD",
+        help=f"first date to fetch (default: {_WINDOW_PAST_DAYS} days ago)",
+    )
+    parser.add_argument(
+        "--until",
+        type=date.fromisoformat,
+        metavar="YYYY-MM-DD",
+        help=f"last date to fetch (default: {_WINDOW_FUTURE_DAYS} days ahead)",
+    )
     return parser.parse_args()
 
 

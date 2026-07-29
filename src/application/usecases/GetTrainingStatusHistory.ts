@@ -34,7 +34,7 @@ export function getTrainingStatusHistory(): TrainingStatusHistory | null {
     chronicLoad: day.chronicLoad ?? null,
     targetBand:
       day.chronicLoadMin !== undefined && day.chronicLoadMax !== undefined
-        ? [Math.round(day.chronicLoadMin), Math.round(day.chronicLoadMax - day.chronicLoadMin)]
+        ? [day.chronicLoadMin, day.chronicLoadMax - day.chronicLoadMin]
         : null,
   }))
 

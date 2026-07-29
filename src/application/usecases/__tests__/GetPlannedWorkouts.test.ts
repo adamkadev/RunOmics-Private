@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { buildTypeLoadStats, estimatePlannedLoad } from '../GetPlannedWorkouts'
-import type { Activity, PlannedWorkout } from '@/domain/activity/types'
+import { buildTypeLoadStats, estimatePlannedLoad, withoutStaleSteps } from '../GetPlannedWorkouts'
+import type { Activity, PlannedWorkout, WorkoutStep } from '@/domain/activity/types'
 
 // Fixed HR bounds so trimp() math is deterministic regardless of athlete profile.
 const HR_BOUNDS = { maxHr: 190, restingHr: 50 }
@@ -70,5 +70,26 @@ describe('estimatePlannedLoad', () => {
   it('falls back to overall stats for an unknown/untracked type', () => {
     const w = estimatePlannedLoad(plan({ type: 'Race' }), byType, overall)
     expect(w.estimatedLoad).toBe(40)
+  })
+})
+
+describe('withoutStaleSteps', () => {
+  const steps: WorkoutStep[] = [{ kind: 'effort', minutes: 8, rep: 1, paceSecPerKm: [247, 265] }]
+  const plan = (date: string): PlannedWorkout => ({ date, name: "3x8'@4:20", steps })
+
+  it('keeps the structure of a session on or after the cutoff', () => {
+    expect(withoutStaleSteps(plan('2026-05-01'), '2026-05-01').steps).toEqual(steps)
+    expect(withoutStaleSteps(plan('2026-08-20'), '2026-05-01').steps).toEqual(steps)
+  })
+
+  it('drops the structure of a session older than the cutoff', () => {
+    const slim = withoutStaleSteps(plan('2026-04-30'), '2026-05-01')
+    expect(slim).not.toHaveProperty('steps')
+    expect(slim.name).toBe("3x8'@4:20")
+  })
+
+  it('returns the same object when there is no structure to drop', () => {
+    const w: PlannedWorkout = { date: '2025-01-01', name: 'Base' }
+    expect(withoutStaleSteps(w, '2026-05-01')).toBe(w)
   })
 })

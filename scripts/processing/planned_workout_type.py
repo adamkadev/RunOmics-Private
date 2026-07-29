@@ -76,6 +76,26 @@ _COACH_TYPE_WORDS: dict[str, str] = {
 }
 
 
+# Canonical Garmin Coach display word per ActivityType - the inverse of
+# _COACH_TYPE_WORDS, used to revert a name/description that was wrongly
+# reduced to a bare duration ("30'") back to the type word ("Base") when
+# there's no richer descriptor available to replace it with instead.
+_TYPE_TO_COACH_WORD: dict[str, str] = {
+    "Base": "Base",
+    "Tempo": "Tempo",
+    "Threshold": "Seuil",
+    "VO2Max": "VMA",
+    "Anaerobic": "Anaérobique",
+    "Sprint": "Sprint",
+}
+
+
+def coach_word_for_type(activity_type: str) -> str | None:
+    """The canonical Garmin Coach display word for an ActivityType, or None
+    for a type Garmin Coach never labels its own sessions with."""
+    return _TYPE_TO_COACH_WORD.get(activity_type)
+
+
 def coach_type_word(name: str) -> str | None:
     """ActivityType when `name` is a Garmin Coach session-type word,
     optionally followed by a structure descriptor ("Seuil" or "Seuil - 3x8'@4:20").

@@ -148,8 +148,20 @@ class GarminClient:
 
     # Garmin Connect's web front-end calls both of these under a /gc-api/ prefix
     # on connect.garmin.com; on connectapi.garmin.com the prefix does not exist.
-    def get_training_status(self, day: str) -> dict[str, Any]:
-        return self._get(f"{self._base}/metrics-service/metrics/trainingstatus/daily/{day}").json()
+    # `weekly` names the view, not the granularity: it is the four-week view and
+    # its records are daily. (`monthly` is the same series sampled once a week.)
+    def get_training_status_daily(self, start: str, end: str) -> dict[str, Any]:
+        return self._get(
+            f"{self._base}/metrics-service/metrics/trainingstatus/weekly/{self.get_profile_uuid()}",
+            params={"fromCalendarDate": start, "toCalendarDate": end},
+        ).json()
+
+    def get_training_status_weekly(self, start: str, end: str) -> dict[str, Any]:
+        """Garmin's own weekly rollup: the status at each week's close, same record shape."""
+        return self._get(
+            f"{self._base}/metrics-service/metrics/trainingstatus/monthly/{self.get_profile_uuid()}",
+            params={"fromCalendarDate": start, "toCalendarDate": end},
+        ).json()
 
     def get_training_load_balance(self, day: str) -> dict[str, Any]:
         return self._get(

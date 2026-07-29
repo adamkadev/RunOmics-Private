@@ -5,6 +5,7 @@ from garmin.training_status import (
     fetch_windows,
     normalize_load_balance,
     normalize_status_report,
+    weekly_windows,
 )
 
 # Trimmed from real Garmin responses.
@@ -91,8 +92,8 @@ class TestNormalizeStatusReport:
             "chronicLoad": 284,
             "acwr": 0.3,
             "acwrStatus": "LOW",
-            "chronicLoadMin": 227.20000000000002,
-            "chronicLoadMax": 426.0,
+            "chronicLoadMin": 227,
+            "chronicLoadMax": 426,
             "deviceId": 3604810488,
         }
         assert days["2026-07-21"]["status"] == "unproductive"
@@ -150,9 +151,14 @@ class TestNormalizeLoadBalance:
     def test_flattens_buckets_with_their_targets(self):
         balance = normalize_load_balance(BALANCE_PAYLOAD)
         assert balance["feedback"] == "BELOW_TARGETS"
-        assert balance["aerobicLow"] == 282.92175
         assert (balance["aerobicLowMin"], balance["aerobicLowMax"]) == (652, 1196)
         assert (balance["anaerobicMin"], balance["anaerobicMax"]) == (326, 652)
+
+    def test_stores_loads_as_whole_numbers(self):
+        balance = normalize_load_balance(BALANCE_PAYLOAD)
+        assert balance["aerobicLow"] == 283
+        assert balance["aerobicHigh"] == 734
+        assert balance["anaerobic"] == 26
 
     def test_returns_none_when_nothing_was_recorded(self):
         assert normalize_load_balance({"metricsTrainingLoadBalanceDTOMap": {}}) is None
@@ -196,3 +202,22 @@ class TestFetchWindows:
     def test_splits_days_further_apart_than_a_window(self):
         windows = fetch_windows([date(2026, 5, 1), date(2026, 7, 1)])
         assert windows == [(date(2026, 5, 1), date(2026, 5, 1)), (date(2026, 7, 1), date(2026, 7, 1))]
+
+
+class TestWeeklyWindows:
+    def test_walks_the_whole_span_in_six_month_windows_on_a_first_run(self):
+        windows = weekly_windows(date(2025, 5, 13), date(2026, 7, 29), {})
+        assert windows[0][0] == date(2025, 5, 13)
+        assert windows[-1][1] == date(2026, 7, 29)
+        assert all((end - start).days < 182 for start, end in windows)
+        assert len(windows) == 3
+
+    def test_refetches_only_the_tail_once_weeks_are_stored(self):
+        stored = {"2026-07-18": {}, "2026-07-25": {}}
+        windows = weekly_windows(date(2025, 5, 13), date(2026, 7, 29), stored)
+        assert windows == [(date(2026, 7, 18), date(2026, 7, 29))]
+
+    def test_never_reaches_back_before_the_first_activity(self):
+        stored = {"2025-05-17": {}}
+        windows = weekly_windows(date(2025, 5, 13), date(2025, 5, 20), stored)
+        assert windows == [(date(2025, 5, 13), date(2025, 5, 20))]
