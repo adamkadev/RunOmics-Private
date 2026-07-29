@@ -2,8 +2,8 @@ import fs from 'fs'
 import path from 'path'
 import type { Activity } from '@/domain/activity/types'
 
-// Yearly activity files total several MB of JSON; cache the parsed result per
-// server process instead of re-reading/re-parsing on every call.
+// The monthly activity files total several MB of JSON; cache the parsed result
+// per server process instead of re-reading/re-parsing on every call.
 let cache: Activity[] | null = null
 
 export function getAllActivities(): Activity[] {

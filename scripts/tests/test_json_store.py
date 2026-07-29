@@ -107,6 +107,48 @@ class TestJsonActivityStoreSmoke:
         store.upsert(activity)
         store.save()
 
-        written = json.loads((tmp_path / "2026.json").read_text())
+        written = json.loads((tmp_path / "2026-07.json").read_text())
         assert written["activities"][0]["id"] == "123"
-        assert json.loads((tmp_path / "index.json").read_text())["years"] == ["2026"]
+        assert json.loads((tmp_path / "index.json").read_text())["months"] == ["2026-07"]
+
+    def test_save_only_rewrites_dirty_months(self, tmp_path, activity_factory):
+        store = JsonActivityStore(tmp_path)
+        store.upsert(activity_factory("1", "2026-06-10"))
+        store.upsert(activity_factory("2", "2026-07-18"))
+        store.save()
+
+        june = tmp_path / "2026-06.json"
+        before = june.stat().st_mtime_ns
+
+        store.upsert(activity_factory("3", "2026-07-19"))
+        store.save()
+
+        assert june.stat().st_mtime_ns == before
+        assert json.loads((tmp_path / "2026-07.json").read_text())["activities"][0]["id"] == "3"
+
+    def test_months_of_the_same_year_land_in_separate_files(self, tmp_path, activity_factory):
+        store = JsonActivityStore(tmp_path)
+        store.upsert(activity_factory("1", "2026-01-05"))
+        store.upsert(activity_factory("2", "2026-12-31"))
+        store.save()
+
+        assert json.loads((tmp_path / "2026-01.json").read_text())["activities"][0]["id"] == "1"
+        assert json.loads((tmp_path / "2026-12.json").read_text())["activities"][0]["id"] == "2"
+        assert json.loads((tmp_path / "index.json").read_text())["months"] == ["2026-12", "2026-01"]
+
+    def test_reload_from_disk_round_trips(self, tmp_path, activity_factory):
+        store = JsonActivityStore(tmp_path)
+        store.upsert(activity_factory("1", "2026-01-05"))
+        store.upsert(activity_factory("2", "2026-07-18"))
+        store.save()
+
+        reloaded = JsonActivityStore(tmp_path)
+
+        assert reloaded.count() == 2
+        assert reloaded.get_existing_ids() == {"1", "2"}
+
+    def test_save_is_a_noop_when_nothing_changed(self, tmp_path):
+        store = JsonActivityStore(tmp_path)
+        store.save()
+
+        assert not (tmp_path / "index.json").exists()

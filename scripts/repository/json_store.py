@@ -15,6 +15,10 @@ def _year_of(date: str) -> str | None:
     return date[:4] if len(date) >= 4 else None
 
 
+def _month_of(date: str) -> str | None:
+    return date[:7] if len(date) >= 7 else None
+
+
 def _atomic_write_json(path: Path, data: dict[str, Any]) -> None:
     tmp = path.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -22,14 +26,18 @@ def _atomic_write_json(path: Path, data: dict[str, Any]) -> None:
 
 
 class JsonActivityStore:
-    """Activities are stored one JSON file per year (`<dir>/<year>.json`) plus an
-    `index.json` manifest of available years, so a sync only rewrites the file(s)
-    for the year(s) it actually touched instead of one ever-growing file."""
+    """Activities are stored one JSON file per month (`<dir>/<YYYY-MM>.json`) plus
+    an `index.json` manifest of available months, so a sync only rewrites the
+    file(s) for the month(s) it actually touched.
+
+    Monthly rather than yearly: activities carry downsampled sample arrays, so a
+    year file reaches ~7 MB by December and every sync rewrote it wholesale. A
+    month is ~600 KB and closed months never move again."""
 
     def __init__(self, dir_path: Path = _DEFAULT_DIR) -> None:
         self._dir = dir_path
         self._by_id: dict[str, dict[str, Any]] = {}
-        self._dirty_years: set[str] = set()
+        self._dirty_months: set[str] = set()
         self._load()
 
     def get_existing_ids(self) -> set[str]:
@@ -43,9 +51,9 @@ class JsonActivityStore:
         return list(self._by_id.values())
 
     def touch(self, activity_id: str) -> None:
-        year = _year_of(self._by_id[activity_id].get("date", ""))
-        if year:
-            self._dirty_years.add(year)
+        month = _month_of(self._by_id[activity_id].get("date", ""))
+        if month:
+            self._dirty_months.add(month)
 
     def update_gear(self, activity_id: str, gear_id: str | None) -> bool:
         activity = self._by_id.get(activity_id)
@@ -67,22 +75,22 @@ class JsonActivityStore:
         return existing is None
 
     def save(self) -> None:
-        if not self._dirty_years:
+        if not self._dirty_months:
             return
 
-        by_year: dict[str, list[dict[str, Any]]] = {}
+        by_month: dict[str, list[dict[str, Any]]] = {}
         for activity in self._by_id.values():
-            year = _year_of(activity.get("date", ""))
-            if year:
-                by_year.setdefault(year, []).append(activity)
+            month = _month_of(activity.get("date", ""))
+            if month:
+                by_month.setdefault(month, []).append(activity)
 
         self._dir.mkdir(parents=True, exist_ok=True)
-        for year in self._dirty_years:
-            activities = sorted(by_year.get(year, []), key=lambda a: a.get("date", ""), reverse=True)
-            _atomic_write_json(self._dir / f"{year}.json", {"activities": activities})
-        self._dirty_years.clear()
+        for month in self._dirty_months:
+            activities = sorted(by_month.get(month, []), key=lambda a: a.get("date", ""), reverse=True)
+            _atomic_write_json(self._dir / f"{month}.json", {"activities": activities})
+        self._dirty_months.clear()
 
-        _atomic_write_json(self._dir / "index.json", {"years": sorted(by_year.keys(), reverse=True)})
+        _atomic_write_json(self._dir / "index.json", {"months": sorted(by_month.keys(), reverse=True)})
 
     def count(self) -> int:
         return len(self._by_id)
@@ -103,10 +111,11 @@ class JsonActivityStore:
 
 class PlannedWorkoutStore:
     """Planned workouts, one JSON file per year (`<dir>/<year>.json`) plus an
-    `index.json` manifest, mirroring JsonActivityStore - but keyed by date (one
-    planned workout per day) instead of id, and sorted ascending (oldest first)
-    to match sync_workouts.py's existing order, the opposite of JsonActivityStore's
-    descending sort.
+    `index.json` manifest. Keyed by date (one planned workout per day) instead of
+    id, and sorted ascending (oldest first) to match sync_workouts.py's existing
+    order, the opposite of JsonActivityStore's descending sort. Yearly rather
+    than monthly like JsonActivityStore: a year of planned workouts is ~26 KB,
+    so there is no churn worth splitting further.
 
     Unlike the old flat planned_workouts.json (rewritten wholesale from a rolling
     ~7-day-past/90-day-future fetch window every sync), every date ever written
