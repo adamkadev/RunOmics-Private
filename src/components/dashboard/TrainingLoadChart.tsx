@@ -34,16 +34,13 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   if (!active || !p) return null
   return (
     <TooltipCard label={p.label}>
-      <p className="text-sm text-blue-500 dark:text-blue-400">{t.dashboard.trainingLoad.fitness} {p.ctl.toFixed(1)}</p>
-      <p className="text-sm text-orange-500 dark:text-orange-400">{t.dashboard.trainingLoad.fatigue} {p.atl.toFixed(1)}</p>
-      <p className="text-sm text-emerald-600 dark:text-emerald-400">{t.dashboard.trainingLoad.form} {p.tsb.toFixed(1)}</p>
+      <p className="text-sm text-blue-500 dark:text-blue-400">{t.dashboard.trainingLoad.fitness} {Math.round(p.ctl)}</p>
+      <p className="text-sm text-orange-500 dark:text-orange-400">{t.dashboard.trainingLoad.fatigue} {Math.round(p.atl)}</p>
+      <p className="text-sm text-emerald-600 dark:text-emerald-400">{t.dashboard.trainingLoad.form} {Math.round(p.tsb)}</p>
     </TooltipCard>
   )
 }
 
-// The mockup reads the three current values off a legend above the plot, not
-// off labels trailing each line: no reserved right margin, and the numbers stay
-// legible when two lines converge.
 function LegendValue({ label, value, color, signed = false }: {
   label: string
   value: number
@@ -51,12 +48,10 @@ function LegendValue({ label, value, color, signed = false }: {
   /** Form is a balance, so it reads as +20 / -20 rather than a bare 20. */
   signed?: boolean
 }) {
-  // Fixed to 1 decimal always - these are already rounded to 1 decimal at the
-  // source, but plain string coercion drops a trailing ".0" (e.g. Fatigue 35
-  // vs Condition 51.1), which reads as an inconsistent precision rule.
+  const rounded = Math.round(value)
   return (
     <span className="text-xs font-bold" style={{ color }}>
-      {label} {signed && value > 0 ? '+' : ''}{value.toFixed(1)}
+      {label} {signed && rounded > 0 ? '+' : ''}{rounded}
     </span>
   )
 }
@@ -70,23 +65,12 @@ function formStatus(tsb: number): { label: string; className: string } {
 }
 
 export function TrainingLoadChart({ data }: Props) {
-  // tsbNow, not tsb: tsb is the form at the START of today (before today's
-  // logged session), which is right for each historical point on the line but
-  // reads as a mismatch against the Dashboard's Form tile - that one already
-  // includes today's session. The "current" headline here has to use the same
-  // definition or the two screens show two different numbers for "Form".
   const status = formStatus(data.tsbNow)
-  // Form is the headline of this chart, so it follows the accent - but only when
-  // that accent stays clear of the fixed blue fitness / orange fatigue lines;
-  // red-adjacent accents fall back to the brand emerald (F13).
   const formColor = useHeadlineChartColor()
   const { range, selectRange, bounds, visible, canGoBack, canGoForward, goBack, goForward } =
     useChartWindow(data.points)
-  // Uniform point budget per window (4/6/12) so a year of daily CTL/ATL/TSB
-  // reads as a clean trend line, not hundreds of jittery daily points. Whole
-  // numbers: the axis, legend and tooltip all print these raw.
   const plotted = sampleForRange(visible, range, 0)
-  const summary = `${t.dashboard.trainingLoad.title}: ${t.dashboard.trainingLoad.fitness} ${data.ctl.toFixed(1)}, ${t.dashboard.trainingLoad.fatigue} ${data.atl.toFixed(1)}, ${t.dashboard.trainingLoad.form} ${data.tsbNow.toFixed(1)} (${status.label})`
+  const summary = `${t.dashboard.trainingLoad.title}: ${t.dashboard.trainingLoad.fitness} ${Math.round(data.ctl)}, ${t.dashboard.trainingLoad.fatigue} ${Math.round(data.atl)}, ${t.dashboard.trainingLoad.form} ${Math.round(data.tsbNow)} (${status.label})`
 
   return (
     <GlassSurface variant="card" className="p-5">
