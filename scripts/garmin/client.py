@@ -208,6 +208,16 @@ class GarminClient:
     def get_heart_rate_zones(self) -> list[dict[str, Any]]:
         return self._get(f"{self._base}/biometric-service/heartRateZones/").json()
 
+    def get_biometric_stat(self, metric: str, start: str, end: str) -> list[dict[str, Any]]:
+        return self._get(
+            f"{self._base}/biometric-service/stats/{metric}/range/{start}/{end}",
+            params={
+                "aggregation": "daily",
+                "aggregationStrategy": "LATEST",
+                "sport": "RUNNING",
+            },
+        ).json()
+
     def get_vo2max_norms(self) -> dict[str, Any]:
         return self._get(f"{_CONNECT_WEB}/web-data/vo2Max/VO2Max.json").json()
 

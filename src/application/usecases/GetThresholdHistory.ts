@@ -1,5 +1,9 @@
 import { t } from '@/i18n'
 import { getAthleteHistory } from '@/infrastructure/repositories/JsonAthleteHistoryRepository'
+import {
+  getThresholdSamples,
+  type ThresholdSample,
+} from '@/infrastructure/repositories/JsonThresholdHistoryRepository'
 
 export interface ThresholdPoint {
   date: string
@@ -19,17 +23,14 @@ export interface ThresholdHistoryData {
 const MIN_POINTS = 2
 
 /**
- * Lactate threshold over time.
- *
- * Garmin only exposes the current value, so this reads the snapshots the sync
- * records whenever the number moves (see scripts/garmin/athlete.py). The series
- * therefore starts at the first sync after this was added and thickens from
- * there - it is not backfillable.
+ * Lactate threshold over time, from Garmin's own biometric range endpoint (see
+ * scripts/garmin/threshold_history.py). Falls back to the change log the
+ * athlete sync snapshots, which is all there was before that endpoint was wired
+ * up and covers nothing earlier.
  */
 export function getThresholdHistory(): ThresholdHistoryData | null {
-  const entries = getAthleteHistory().filter(
-    (entry) => entry.lthrBpm !== undefined || entry.thresholdPaceSecPerKm !== undefined,
-  )
+  const samples = getThresholdSamples()
+  const entries: ThresholdSample[] = samples.length > 0 ? samples : athleteHistorySamples()
   if (entries.length < MIN_POINTS) return null
 
   const points: ThresholdPoint[] = entries.map((entry) => ({
@@ -53,4 +54,10 @@ export function getThresholdHistory(): ThresholdHistoryData | null {
         ? firstPace - lastPace
         : null,
   }
+}
+
+function athleteHistorySamples(): ThresholdSample[] {
+  return getAthleteHistory()
+    .filter((entry) => entry.lthrBpm !== undefined || entry.thresholdPaceSecPerKm !== undefined)
+    .map(({ date, lthrBpm, thresholdPaceSecPerKm }) => ({ date, lthrBpm, thresholdPaceSecPerKm }))
 }

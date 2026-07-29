@@ -9,7 +9,6 @@ import { getLoadBalance } from '@/application/usecases/GetLoadBalance'
 import { getTrainingStatusHistory } from '@/application/usecases/GetTrainingStatusHistory'
 import { getGarminRacePredictions } from '@/application/usecases/GetGarminRacePredictions'
 import { getThresholdHistory } from '@/application/usecases/GetThresholdHistory'
-import { getFormProjection } from '@/application/usecases/GetFormProjection'
 import { getHeatmapData } from '@/application/usecases/GetHeatmapData'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { vo2maxTopPercent } from '@/domain/athlete/vo2maxNorms'
@@ -30,7 +29,6 @@ export default async function AnalyticsPage() {
   const statusHistory = getTrainingStatusHistory()
   const racePredictions = getGarminRacePredictions()
   const threshold = getThresholdHistory()
-  const formProjection = await getFormProjection()
 
   const seasonHeadline = getSeasonHeadline(data, comparison)
   const seasonInsight = await getSeasonInsight(seasonHeadline)
@@ -60,7 +58,6 @@ export default async function AnalyticsPage() {
         threshold={threshold}
         vo2maxTopPercent={topPercent}
         activeDays={activeDays}
-        formProjection={formProjection}
       />
     </div>
   )

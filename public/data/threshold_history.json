@@ -1,0 +1,229 @@
+{
+  "days": {
+    "2025-05-13": {
+      "date": "2025-05-13",
+      "lthrBpm": 182,
+      "thresholdPaceSecPerKm": 321
+    },
+    "2025-05-15": {
+      "date": "2025-05-15",
+      "lthrBpm": 185,
+      "thresholdPaceSecPerKm": 321
+    },
+    "2025-05-18": {
+      "date": "2025-05-18",
+      "lthrBpm": 187,
+      "thresholdPaceSecPerKm": 324
+    },
+    "2025-05-20": {
+      "date": "2025-05-20",
+      "lthrBpm": 191,
+      "thresholdPaceSecPerKm": 327
+    },
+    "2025-05-23": {
+      "date": "2025-05-23",
+      "lthrBpm": 189,
+      "thresholdPaceSecPerKm": 324
+    },
+    "2025-05-28": {
+      "date": "2025-05-28",
+      "lthrBpm": 189,
+      "thresholdPaceSecPerKm": 319
+    },
+    "2025-06-01": {
+      "date": "2025-06-01",
+      "lthrBpm": 187,
+      "thresholdPaceSecPerKm": 316
+    },
+    "2025-06-04": {
+      "date": "2025-06-04",
+      "lthrBpm": 186,
+      "thresholdPaceSecPerKm": 310
+    },
+    "2025-06-11": {
+      "date": "2025-06-11",
+      "lthrBpm": 184,
+      "thresholdPaceSecPerKm": 310
+    },
+    "2025-06-30": {
+      "date": "2025-06-30",
+      "lthrBpm": 184,
+      "thresholdPaceSecPerKm": 310
+    },
+    "2025-07-01": {
+      "date": "2025-07-01",
+      "lthrBpm": 182,
+      "thresholdPaceSecPerKm": 308
+    },
+    "2025-07-09": {
+      "date": "2025-07-09",
+      "lthrBpm": 182,
+      "thresholdPaceSecPerKm": 303
+    },
+    "2025-07-19": {
+      "date": "2025-07-19",
+      "lthrBpm": 181,
+      "thresholdPaceSecPerKm": 298
+    },
+    "2025-08-03": {
+      "date": "2025-08-03",
+      "lthrBpm": 181,
+      "thresholdPaceSecPerKm": 293
+    },
+    "2025-08-05": {
+      "date": "2025-08-05",
+      "lthrBpm": 181,
+      "thresholdPaceSecPerKm": 293
+    },
+    "2025-08-08": {
+      "date": "2025-08-08",
+      "lthrBpm": 180,
+      "thresholdPaceSecPerKm": 288
+    },
+    "2025-08-20": {
+      "date": "2025-08-20",
+      "lthrBpm": 180,
+      "thresholdPaceSecPerKm": 283
+    },
+    "2025-08-27": {
+      "date": "2025-08-27",
+      "lthrBpm": 180,
+      "thresholdPaceSecPerKm": 279
+    },
+    "2025-09-04": {
+      "date": "2025-09-04",
+      "lthrBpm": 184,
+      "thresholdPaceSecPerKm": 279
+    },
+    "2025-09-14": {
+      "date": "2025-09-14",
+      "lthrBpm": 181,
+      "thresholdPaceSecPerKm": 275
+    },
+    "2025-09-28": {
+      "date": "2025-09-28",
+      "lthrBpm": 187,
+      "thresholdPaceSecPerKm": 265
+    },
+    "2025-09-30": {
+      "date": "2025-09-30",
+      "lthrBpm": 187,
+      "thresholdPaceSecPerKm": 265
+    },
+    "2025-10-02": {
+      "date": "2025-10-02",
+      "lthrBpm": 187,
+      "thresholdPaceSecPerKm": 265
+    },
+    "2025-10-05": {
+      "date": "2025-10-05",
+      "lthrBpm": 187,
+      "thresholdPaceSecPerKm": 265
+    },
+    "2025-10-07": {
+      "date": "2025-10-07",
+      "lthrBpm": 187,
+      "thresholdPaceSecPerKm": 265
+    },
+    "2025-10-08": {
+      "date": "2025-10-08",
+      "lthrBpm": 185,
+      "thresholdPaceSecPerKm": 265
+    },
+    "2025-11-05": {
+      "date": "2025-11-05",
+      "lthrBpm": 185,
+      "thresholdPaceSecPerKm": 265
+    },
+    "2025-11-16": {
+      "date": "2025-11-16",
+      "lthrBpm": 183,
+      "thresholdPaceSecPerKm": 261
+    },
+    "2025-11-21": {
+      "date": "2025-11-21",
+      "lthrBpm": 183,
+      "thresholdPaceSecPerKm": 257
+    },
+    "2026-01-20": {
+      "date": "2026-01-20",
+      "lthrBpm": 182,
+      "thresholdPaceSecPerKm": 263
+    },
+    "2026-01-23": {
+      "date": "2026-01-23",
+      "lthrBpm": 184,
+      "thresholdPaceSecPerKm": 261
+    },
+    "2026-02-04": {
+      "date": "2026-02-04",
+      "lthrBpm": 186,
+      "thresholdPaceSecPerKm": 261
+    },
+    "2026-03-01": {
+      "date": "2026-03-01",
+      "lthrBpm": 184,
+      "thresholdPaceSecPerKm": 261
+    },
+    "2026-03-06": {
+      "date": "2026-03-06",
+      "lthrBpm": 184,
+      "thresholdPaceSecPerKm": 257
+    },
+    "2026-03-07": {
+      "date": "2026-03-07",
+      "lthrBpm": 183,
+      "thresholdPaceSecPerKm": 261
+    },
+    "2026-03-10": {
+      "date": "2026-03-10",
+      "lthrBpm": 183,
+      "thresholdPaceSecPerKm": 257
+    },
+    "2026-03-15": {
+      "date": "2026-03-15",
+      "lthrBpm": 183,
+      "thresholdPaceSecPerKm": 254
+    },
+    "2026-03-28": {
+      "date": "2026-03-28",
+      "lthrBpm": 181,
+      "thresholdPaceSecPerKm": 254
+    },
+    "2026-04-04": {
+      "date": "2026-04-04",
+      "lthrBpm": 179,
+      "thresholdPaceSecPerKm": 252
+    },
+    "2026-05-17": {
+      "date": "2026-05-17",
+      "lthrBpm": 182,
+      "thresholdPaceSecPerKm": 252
+    },
+    "2026-05-30": {
+      "date": "2026-05-30",
+      "lthrBpm": 178,
+      "thresholdPaceSecPerKm": 255
+    },
+    "2026-06-02": {
+      "date": "2026-06-02",
+      "lthrBpm": 179,
+      "thresholdPaceSecPerKm": 252
+    },
+    "2026-06-09": {
+      "date": "2026-06-09",
+      "lthrBpm": 177,
+      "thresholdPaceSecPerKm": 254
+    },
+    "2026-06-15": {
+      "date": "2026-06-15",
+      "lthrBpm": 177,
+      "thresholdPaceSecPerKm": 254
+    },
+    "2026-07-14": {
+      "date": "2026-07-14",
+      "lthrBpm": 180,
+      "thresholdPaceSecPerKm": 257
+    }
+  }
+}

@@ -637,10 +637,10 @@ export const fr = {
         },
       },
       threshold: {
-        title: 'Seuil lactique',
+        title: 'Seuil lactique de course',
         pace: 'Allure au seuil',
         lthr: 'FC au seuil',
-        footnote: 'Seuil lactique estimé par la montre. Garmin n’expose que la valeur du jour : la série se construit à partir des relevés enregistrés à chaque sync, sans reprise de l’historique.',
+        footnote: 'L’effort tenable avant l’accumulation de lactate, tel que mesuré par la montre. Garmin le révise toutes les quelques semaines : la courbe avance par paliers.',
         reading: {
           faster: (sec: number) => `L’allure au seuil a gagné ${sec}s/km depuis le premier relevé.`,
           slower: (sec: number) => `L’allure au seuil a perdu ${sec}s/km depuis le premier relevé.`,

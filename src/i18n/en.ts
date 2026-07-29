@@ -643,10 +643,10 @@ export const en = {
         },
       },
       threshold: {
-        title: 'Lactate Threshold',
+        title: 'Running Lactate Threshold',
         pace: 'Threshold pace',
         lthr: 'Threshold HR',
-        footnote: 'Lactate threshold as the watch estimates it. Garmin only exposes today\'s value, so this series is built from the readings recorded at each sync - it cannot be backfilled.',
+        footnote: 'The effort you can hold before lactate builds up, as the watch measures it. Garmin revises it every few weeks, so the line steps rather than drifts.',
         reading: {
           faster: (sec: number) => `Threshold pace is ${sec}s/km faster than the first reading.`,
           slower: (sec: number) => `Threshold pace is ${sec}s/km slower than the first reading.`,

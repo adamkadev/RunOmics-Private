@@ -7,9 +7,8 @@ import type { LoadRiskPanel as LoadRiskPanelData } from '@/application/usecases/
 import type { TrainingStatusHistory } from '@/application/usecases/GetTrainingStatusHistory'
 import type { ThresholdHistoryData } from '@/application/usecases/GetThresholdHistory'
 import type { GarminRacePredictionsData } from '@/application/usecases/GetGarminRacePredictions'
-import type { FormProjection } from '@/application/usecases/GetFormProjection'
 import { TrainingLoadChart } from '@/components/dashboard/TrainingLoadChart'
-import { RaceCockpit } from '@/components/dashboard/RaceCockpit'
+import { ThresholdChart } from './ThresholdChart'
 import { TrainingStatusHistoryChart } from './TrainingStatusHistoryChart'
 import { LoadRiskPanel } from './LoadRiskPanel'
 import { AnalyticsInsightCards } from './AnalyticsInsightCards'
@@ -25,11 +24,10 @@ interface Props {
   threshold: ThresholdHistoryData | null
   activeDays: number
   racePredictions: GarminRacePredictionsData | null
-  formProjection: FormProjection | null
 }
 
 // The insight-first landing: the season's one hero chart, the four slow-moving
-// reads as cards, the race-time teaser, then the projection and the deeper
+// reads as cards, the race-time teaser, then the threshold trend and the deeper
 // load charts for anyone who wants them.
 export function FitnessGroup({
   trainingLoad,
@@ -41,7 +39,6 @@ export function FitnessGroup({
   threshold,
   activeDays,
   racePredictions,
-  formProjection,
 }: Props) {
   return (
     <div className="space-y-4">
@@ -57,7 +54,7 @@ export function FitnessGroup({
 
       {racePredictions && <RaceTimeCards data={racePredictions} />}
 
-      {formProjection && <RaceCockpit data={formProjection} />}
+      {threshold && <ThresholdChart data={threshold} />}
 
       {statusHistory && <TrainingStatusHistoryChart data={statusHistory} />}
       {loadRisk && <LoadRiskPanel data={loadRisk} />}

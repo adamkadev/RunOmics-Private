@@ -17,6 +17,7 @@ from garmin.client import GarminAuthError, GarminAPIError, GarminClient
 from garmin.retry import retry_transient
 from garmin.race_predictions import sync_race_predictions
 from garmin.training_plan import sync_training_plan
+from garmin.threshold_history import sync_threshold_history
 from garmin.training_status import sync_load_balance, sync_training_status
 from garmin.vo2max_history import sync_vo2max_history
 from garmin.vo2max_norms import fetch_vo2max_norms, write_vo2max_norms
@@ -168,6 +169,7 @@ def main() -> int:
             if first_day:
                 sync_training_status(client, first_day)
                 sync_vo2max_history(client, first_day)
+                sync_threshold_history(client, first_day)
             sync_race_predictions(client)
             sync_load_balance(client)
             sync_training_plan(client)

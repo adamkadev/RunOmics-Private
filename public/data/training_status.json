@@ -6560,6 +6560,19 @@
       "chronicLoadMax": 567,
       "deviceId": 3604810488
     },
+    "2026-07-28": {
+      "status": "productive",
+      "statusCode": 7,
+      "feedback": "PRODUCTIVE_7",
+      "fitnessTrend": 2,
+      "acuteLoad": 622,
+      "chronicLoad": 395,
+      "acwr": 1.5,
+      "acwrStatus": "HIGH",
+      "chronicLoadMin": 316,
+      "chronicLoadMax": 592,
+      "deviceId": 3604810488
+    },
     "2026-07-29": {
       "status": "productive",
       "statusCode": 7,
