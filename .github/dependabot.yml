@@ -2,19 +2,26 @@ version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 3
     schedule:
-      interval: monthly
+      interval: weekly
     commit-message:
       prefix: github-actions
+    groups:
+      actions:
+        patterns: ["*"]
 
   - package-ecosystem: npm
     directory: /
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 3
     schedule:
-      interval: monthly
+      interval: weekly
     commit-message:
       prefix: npm
+    groups:
+      minor-and-patch:
+        patterns: ["*"]
+        update-types: [minor, patch]
 
   - package-ecosystem: pip
     directory: /
