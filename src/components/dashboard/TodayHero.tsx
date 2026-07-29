@@ -51,15 +51,7 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiV
   const s = t.dashboard.todayHero
   const tone = status ? verdictTone(status) : null
   const toneHex = tone ? TONE_HEX[tone] : TONE_HEX.go
-  // Whole numbers here: the Form/Fitness/Fatigue trio right below reads the same
-  // tsbNow rounded to an integer, and the two must agree since they sit on the
-  // same screen.
-  const tsbRounded = status ? Math.round(status.tsbNow) : null
-  const tsbLabel = status && tsbRounded !== null ? `${tsbRounded >= 0 ? '+' : ''}${tsbRounded}` : null
   const verdict = aiVerdict ?? (status && tone ? readinessCopy(status, tone) : null)
-  const formLine = status && tsbLabel
-    ? `${t.dashboard.trainingLoad.form} ${tsbLabel} · ${t.trainingStatus.status[status.status]}`
-    : null
   const PlannedWorkoutIcon: LucideIcon = plannedWorkout?.type
     ? ACTIVITY_TYPE_ICONS[plannedWorkout.type as ActivityType]
     : Footprints
@@ -97,7 +89,6 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiV
           />
           {tone ? s.eyebrowByTone[tone] : s.eyebrowByTone.go}
         </span>
-        {formLine && <span className="text-caption text-white/55">{formLine}</span>}
       </div>
 
       {verdict && (

@@ -19,7 +19,7 @@ export interface TrainingStatusDay {
 }
 
 type StoredDays = Record<string, Omit<TrainingStatusDay, 'date'>>
-type StoredFile = { days?: StoredDays; weeks?: StoredDays }
+type StoredFile = { days?: StoredDays }
 
 function readFile(): StoredFile {
   const filePath = path.join(process.cwd(), 'public', 'data', 'training_status.json')
@@ -40,15 +40,6 @@ function toSeries(stored: StoredDays | undefined): TrainingStatusDay[] {
 
 export function getTrainingStatusDays(): TrainingStatusDay[] {
   return toSeries(readFile().days)
-}
-
-/**
- * Garmin's own weekly rollup, one record per week dated on the week's closing
- * day. Stored rather than derived: voting on the daily series reproduces only
- * 18 weeks out of 25.
- */
-export function getTrainingStatusWeekSamples(): TrainingStatusDay[] {
-  return toSeries(readFile().weeks)
 }
 
 /**

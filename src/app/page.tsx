@@ -4,7 +4,7 @@ import { getDashboardData } from '@/application/usecases/GetDashboardData'
 import { getLastSyncedAt } from '@/application/usecases/GetSyncStatus'
 import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
 import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
-import { getTrainingStatusWeeks } from '@/application/usecases/GetTrainingStatusWeeks'
+import { getTrainingStatusDaysBar } from '@/application/usecases/GetTrainingStatusDaysBar'
 import { getRecords, getQualifiedEffortsByActivityId, getMostRecentRecord } from '@/application/usecases/GetRecords'
 import { getNextRace } from '@/application/usecases/GetNextRace'
 import { getWeeklyDigest } from '@/application/usecases/GetWeeklyDigest'
@@ -17,7 +17,7 @@ import { RecentActivities } from '@/components/dashboard/RecentActivities'
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting'
 import { TodayHero } from '@/components/dashboard/TodayHero'
 import { FormFitnessFatigueTrio } from '@/components/dashboard/FormFitnessFatigueTrio'
-import { TrainingStatusWeeksBar } from '@/components/dashboard/TrainingStatusWeeksBar'
+import { TrainingStatusDaysBar } from '@/components/dashboard/TrainingStatusDaysBar'
 import { WeeklyStreakCard } from '@/components/dashboard/WeeklyStreakCard'
 import { CelebrationOverlay } from '@/components/dashboard/CelebrationOverlay'
 import { FirstLaunchHint } from '@/components/dashboard/FirstLaunchHint'
@@ -31,7 +31,7 @@ export default async function DashboardPage() {
   const lastSyncedAt = getLastSyncedAt()
   const trainingLoad = await getTrainingLoad()
   const trainingStatus = await getTrainingStatus()
-  const trainingStatusWeeks = getTrainingStatusWeeks()
+  const trainingStatusDays = getTrainingStatusDaysBar()
   const records = await getRecords()
   const qualifiedEffortsByActivityId = getQualifiedEffortsByActivityId(records)
   const mostRecentRecord = getMostRecentRecord(records)
@@ -64,7 +64,7 @@ export default async function DashboardPage() {
 
       <FormFitnessFatigueTrio status={trainingStatus} load={trainingLoad} />
 
-      <TrainingStatusWeeksBar weeks={trainingStatusWeeks} />
+      <TrainingStatusDaysBar days={trainingStatusDays} />
 
       {weeklyStreak && (
         <Link href="/plan" aria-label={t.plan.openPlanner} className="block active:scale-[0.99]">
