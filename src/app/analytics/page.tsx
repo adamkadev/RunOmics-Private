@@ -1,6 +1,7 @@
 import { getAnalyticsData } from '@/application/usecases/GetAnalyticsData'
 import { getYearComparison } from '@/application/usecases/GetYearComparison'
 import { getSeasonHeadline } from '@/application/usecases/GetSeasonHeadline'
+import { getSeasonInsight } from '@/application/usecases/GetSeasonInsight'
 import { getVO2maxSeries, getLatestVO2max } from '@/application/usecases/GetVO2maxHistory'
 import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
 import { getLoadRiskPanel } from '@/application/usecases/GetLoadRiskPanel'
@@ -32,6 +33,7 @@ export default async function AnalyticsPage() {
   const formProjection = await getFormProjection()
 
   const seasonHeadline = getSeasonHeadline(data, comparison)
+  const seasonInsight = await getSeasonInsight(seasonHeadline)
 
   // Insight-card context, all read from already-computed series:
   const athlete = getAthleteProfile()
@@ -48,6 +50,7 @@ export default async function AnalyticsPage() {
         data={data}
         comparison={comparison}
         seasonHeadline={seasonHeadline}
+        seasonInsight={seasonInsight}
         vo2maxHistory={vo2maxHistory}
         trainingLoad={trainingLoad}
         loadRisk={loadRisk}

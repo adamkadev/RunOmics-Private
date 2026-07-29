@@ -2,7 +2,7 @@ import type { Activity } from '@/domain/activity/types'
 import { runVerdictTone } from '@/domain/activity/runVerdict'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { STATUS } from '@/lib/statusColors'
-import { formatClock } from '@/lib/formatters'
+import type { Insight } from '@/lib/gemini'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -14,31 +14,24 @@ const TONE_TEXT_CLASS = {
 
 interface Props {
   activity: Activity
-  heatAdjustSeconds: number
+  /** Generated copy for the same tone; falls back to the rules-based copy when absent. */
+  aiVerdict: Insight | null
 }
 
-export function RunVerdict({ activity, heatAdjustSeconds }: Props) {
+export function RunVerdict({ activity, aiVerdict }: Props) {
   const v = t.activity.verdict
   const tone = runVerdictTone(activity.rpe, activity.aerTrainingEffect)
-  const typeLabel = t.activityTypes[activity.type]
-  const inHeat = heatAdjustSeconds > 0
 
-  const headline = v.headline[tone](typeLabel) + (inHeat ? v.heatSuffix : '')
-
-  const bodyParts = [
-    inHeat && activity.paceSecPerKm && activity.avgTemperature != null
-      ? v.heatClause(formatClock(activity.paceSecPerKm), heatAdjustSeconds, activity.avgTemperature)
-      : null,
-    activity.rpe !== null ? v.effortClause(t.rpeLabels[activity.rpe] ?? '', activity.rpe) : null,
-  ].filter((part): part is string => !!part)
+  const headline = aiVerdict?.headline ?? v.headline[tone](t.activityTypes[activity.type])
+  const body =
+    aiVerdict?.body ??
+    (activity.rpe !== null ? v.effortClause(t.rpeLabels[activity.rpe] ?? '', activity.rpe) : null)
 
   return (
     <GlassSurface variant="card" className="p-5 text-center">
       <p className="widget-label text-accent-text">{v.title}</p>
       <h2 className={cn('mt-1 font-display text-lg font-bold leading-snug', TONE_TEXT_CLASS[tone])}>{headline}</h2>
-      {bodyParts.length > 0 && (
-        <p className="mt-1 text-sm leading-snug text-muted-foreground">{bodyParts.join(' ')}</p>
-      )}
+      {body && <p className="mt-1 text-sm leading-snug text-muted-foreground">{body}</p>}
     </GlassSurface>
   )
 }

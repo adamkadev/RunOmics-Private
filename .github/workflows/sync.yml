@@ -139,3 +139,10 @@ jobs:
             -H "x-internal-secret: ${{ secrets.INTERNAL_NOTIFY_SECRET }}"
           curl -fsS -X POST "${{ secrets.APP_URL }}/api/internal/activity-sync-check" \
             -H "x-internal-secret: ${{ secrets.INTERNAL_NOTIFY_SECRET }}"
+          # Three passes: each one regenerates today's verdict only if the facts
+          # moved (cheap) and backfills another batch of run verdicts, without
+          # any single request outliving the serverless function budget.
+          for i in 1 2 3; do
+            curl -fsS -X POST "${{ secrets.APP_URL }}/api/internal/ai-insights" \
+              -H "x-internal-secret: ${{ secrets.INTERNAL_NOTIFY_SECRET }}"
+          done

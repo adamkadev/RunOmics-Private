@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import type { AnalyticsPageData } from '@/application/usecases/GetAnalyticsData'
 import type { YearComparisonData } from '@/application/usecases/GetYearComparison'
 import type { SeasonHeadlineData } from '@/application/usecases/GetSeasonHeadline'
+import type { Insight } from '@/lib/gemini'
 import { SeasonHeadline } from '@/components/analytics/SeasonHeadline'
 import { YearSelector } from '@/components/ui/YearSelector'
 import type { VO2maxSeries } from '@/application/usecases/GetVO2maxHistory'
@@ -71,6 +72,7 @@ export function AnalyticsClient({
   data,
   comparison,
   seasonHeadline,
+  seasonInsight,
   vo2maxHistory,
   trainingLoad,
   loadRisk,
@@ -85,6 +87,7 @@ export function AnalyticsClient({
   data: AnalyticsPageData
   comparison: YearComparisonData | null
   seasonHeadline: SeasonHeadlineData | null
+  seasonInsight: Insight | null
   vo2maxHistory: VO2maxSeries
   trainingLoad: TrainingLoadData | null
   loadRisk: LoadRiskPanelData | null
@@ -230,7 +233,7 @@ export function AnalyticsClient({
           elevation/avg-per-week/calories are the "how far have I come" read,
           so they live on Progress' This year card - Analytics answers "why am
           I improving?" and opens straight on the headline + charts. */}
-      {seasonHeadline && <SeasonHeadline data={seasonHeadline} />}
+      {seasonHeadline && <SeasonHeadline data={seasonHeadline} aiTake={seasonInsight} />}
 
       {active && (
         <>

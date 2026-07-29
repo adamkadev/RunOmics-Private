@@ -12,6 +12,7 @@ import { ActivityNotes } from '@/components/activity/ActivityNotes'
 import { ActivityAchievements } from '@/components/activity/ActivityAchievements'
 import { SimilarRuns } from '@/components/activity/SimilarRuns'
 import { getSimilarRuns } from '@/application/usecases/GetSimilarRuns'
+import { getRunVerdictInsight } from '@/application/usecases/GetRunVerdictInsight'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
 import { t } from '@/i18n'
 
@@ -58,6 +59,7 @@ export default async function ActivityDetailPage({
   const records = await getRecords()
   const qualifiedEfforts = getQualifiedEffortsByActivityId(records)[id] ?? []
   const similarRuns = getSimilarRuns(id)
+  const aiVerdict = await getRunVerdictInsight(activity)
   const athlete = getAthleteProfile()
   const hrBounds: HrBounds | undefined =
     athlete.maxHrBpm && athlete.restingHrBpm
@@ -90,7 +92,12 @@ export default async function ActivityDetailPage({
 
       {similarRuns && <SimilarRuns data={similarRuns} />}
 
-      <ActivityDetailClient activity={activity} hrBounds={hrBounds} qualifiedEfforts={qualifiedEfforts} />
+      <ActivityDetailClient
+        activity={activity}
+        hrBounds={hrBounds}
+        qualifiedEfforts={qualifiedEfforts}
+        aiVerdict={aiVerdict}
+      />
 
       <ActivityNav prev={prevActivity} next={nextActivity} />
     </div>

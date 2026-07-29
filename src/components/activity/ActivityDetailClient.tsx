@@ -4,7 +4,6 @@ import { useState } from 'react'
 import type { Activity } from '@/domain/activity/types'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import type { HrBounds } from '@/domain/training/trimp'
-import { heatAdjustmentSecondsPerKm, shouldAnnotateHeat } from '@/domain/training/heatAdjustment'
 import { ActivityMapClient } from './ActivityMapClient'
 import { NoRouteMap } from './ActivityMap'
 import { RunVerdict } from './RunVerdict'
@@ -19,6 +18,7 @@ import { BestEfforts } from './BestEfforts'
 import { RunningDynamics } from './RunningDynamics'
 import { formatClock, formatDistance, formatDurationShort } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import type { Insight } from '@/lib/gemini'
 import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -27,6 +27,7 @@ interface Props {
   activity: Activity
   hrBounds?: HrBounds
   qualifiedEfforts?: QualifiedEffort[]
+  aiVerdict: Insight | null
 }
 
 type TabId = 'overview' | 'splits' | 'charts' | 'dynamics'
@@ -65,7 +66,7 @@ function buildPrimaryStats(activity: Activity): Metric[] {
 }
 
 
-export function ActivityDetailClient({ activity, qualifiedEfforts }: Props) {
+export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict }: Props) {
   const [tab, setTab] = useState<TabId>('overview')
   const stats = buildPrimaryStats(activity)
   const hasSecondaryCharts = !!(activity.elevationProfile || activity.paceSamples || activity.cadenceSamples)
@@ -77,10 +78,6 @@ export function ActivityDetailClient({ activity, qualifiedEfforts }: Props) {
     activity.verticalOscillationMm != null ||
     activity.verticalRatioPct != null
   )
-  const heatAdjustSeconds =
-    activity.paceSecPerKm && shouldAnnotateHeat(activity.avgTemperature)
-      ? heatAdjustmentSecondsPerKm(activity.paceSecPerKm, activity.avgTemperature)
-      : 0
 
   const tabs = [
     { id: 'overview' as const, label: t.activity.tabs.overview, show: true },
@@ -106,7 +103,7 @@ export function ActivityDetailClient({ activity, qualifiedEfforts }: Props) {
         )}
       </div>
 
-      <RunVerdict activity={activity} heatAdjustSeconds={heatAdjustSeconds} />
+      <RunVerdict activity={activity} aiVerdict={aiVerdict} />
 
       <MetricGrid metrics={stats} className="grid-cols-4 px-1 text-center" />
 

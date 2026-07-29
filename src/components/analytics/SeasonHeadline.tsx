@@ -2,11 +2,18 @@ import { ArrowUpRight, ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { BRAND_TINTS } from '@/lib/colors'
 import type { SeasonHeadlineData } from '@/application/usecases/GetSeasonHeadline'
+import type { Insight } from '@/lib/gemini'
 import { t } from '@/i18n'
 
 // The insight-first opener: what the season says in one line, backed by up to
 // three reads. Centered green-gradient card, left-aligned bullets.
-export function SeasonHeadline({ data }: { data: SeasonHeadlineData }) {
+interface Props {
+  data: SeasonHeadlineData
+  /** Generated take on the same reads; falls back to the rules-based title when absent. */
+  aiTake: Insight | null
+}
+
+export function SeasonHeadline({ data, aiTake }: Props) {
   return (
     <div
       className="rounded-[20px] border p-4 text-center"
@@ -18,9 +25,12 @@ export function SeasonHeadline({ data }: { data: SeasonHeadlineData }) {
       <div className="mb-2 font-mono text-micro font-bold uppercase tracking-[0.14em] text-accent-text">
         {t.analytics.seasonHeadline.eyebrow}
       </div>
-      <p className="mb-3 font-display text-lg font-bold leading-[1.18] tracking-tight text-foreground">
-        {data.title}
-      </p>
+      <div className="mb-3">
+        <p className="font-display text-lg font-bold leading-[1.18] tracking-tight text-foreground">
+          {aiTake?.headline ?? data.title}
+        </p>
+        {aiTake && <p className="mt-1.5 text-footnote leading-snug text-muted-foreground">{aiTake.body}</p>}
+      </div>
       <ul className="flex flex-col gap-2 text-left">
         {data.bullets.map((bullet, i) => {
           const Icon = bullet.tone === 'positive' ? ArrowUpRight : ArrowRight

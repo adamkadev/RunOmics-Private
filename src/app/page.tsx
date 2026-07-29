@@ -9,6 +9,7 @@ import { getRecords, getQualifiedEffortsByActivityId, getMostRecentRecord } from
 import { getNextRace } from '@/application/usecases/GetNextRace'
 import { getWeeklyDigest } from '@/application/usecases/GetWeeklyDigest'
 import { getTodayPlannedWorkout } from '@/application/usecases/GetPlannedWorkouts'
+import { getTodayInsight } from '@/application/usecases/GetTodayInsight'
 import { isoDate } from '@/lib/calendarDate'
 import { getWeeklyStreakData } from '@/application/usecases/GetMilestones'
 import { getCurrentWeeklyGoal } from '@/application/usecases/GetGoalsData'
@@ -24,10 +25,6 @@ import { t } from '@/i18n'
 
 export const revalidate = 3600
 
-// Today answers one question - "what should I do today?" - in five blocks:
-// header, readiness hero, Form/Fitness/Fatigue trio, the 4-week training-status
-// strip, the week goal, and recent runs. Everything else (form-projection and
-// volume charts, VO2max, the 12-month heatmap) lives on Analytics and Progress.
 export default async function DashboardPage() {
   const data = getDashboardData()
   const athlete = getAthleteProfile()
@@ -44,10 +41,9 @@ export default async function DashboardPage() {
   const weeklyStreak = getWeeklyStreakData()
   const weeklyGoal = await getCurrentWeeklyGoal()
 
-  // recentActivities is newest-first, so today's run (if already synced) is
-  // whatever entry matches today's date - same date-only pairing WeekView uses.
   const today = isoDate(new Date())
   const todayActivity = data.recentActivities.find((a) => a.date === today) ?? null
+  const aiVerdict = await getTodayInsight(trainingStatus, todayPlannedWorkout)
 
   return (
     <div className="space-y-3.5">
@@ -63,6 +59,7 @@ export default async function DashboardPage() {
         plannedWorkout={todayPlannedWorkout}
         todayActivity={todayActivity}
         nextRace={nextRace}
+        aiVerdict={aiVerdict}
       />
 
       <FormFitnessFatigueTrio status={trainingStatus} load={trainingLoad} />
@@ -70,8 +67,6 @@ export default async function DashboardPage() {
       <TrainingStatusWeeksBar weeks={trainingStatusWeeks} />
 
       {weeklyStreak && (
-        // The week glance folds the retired Plan tab into Today: it taps
-        // through to the full planner.
         <Link href="/plan" aria-label={t.plan.openPlanner} className="block active:scale-[0.99]">
           <WeeklyStreakCard
             data={weeklyStreak}

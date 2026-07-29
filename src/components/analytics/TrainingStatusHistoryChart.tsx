@@ -77,9 +77,9 @@ export function TrainingStatusHistoryChart({ data }: { data: TrainingStatusHisto
     useChartWindow(data.points)
 
   // Ribbon, legend and reading all describe the visible window, not the whole
-  // stored history - paging back re-tells that period's story. The ribbon
-  // needs every raw day to size its segments correctly; only the line/area
-  // plot below gets the uniform 12/6/4-point budget.
+  // stored history - paging back re-tells that period's story. The ribbon needs
+  // every raw day to size its segments correctly; the plot thins to a real day
+  // per stride, which keeps the tooltip honest about the date it labels.
   const segments = buildSegments(visible)
   const plotted = pickForRange(visible, range)
   const ratedDays = segments.reduce((sum, segment) => sum + segment.days, 0)
@@ -106,7 +106,7 @@ export function TrainingStatusHistoryChart({ data }: { data: TrainingStatusHisto
       : null
 
   const step = Math.max(1, Math.floor(plotted.length / 6))
-  const tickDates = new Set(plotted.filter((_, i) => i % step === 0).map((p) => p.date))
+  const ticks = plotted.filter((_, i) => i % step === 0).map((p) => p.date)
   const summary = `${s.title}: ${legend
     .map(([status, days]) => `${t.trainingStatus.status[status]} ${days} ${s.daysUnit}`)
     .join(', ')}`
@@ -149,16 +149,16 @@ export function TrainingStatusHistoryChart({ data }: { data: TrainingStatusHisto
               <ComposedChart data={plotted} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
                 <XAxis
                   dataKey="date"
+                  ticks={ticks}
                   tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
                   axisLine={false}
                   tickLine={false}
-                  tickFormatter={(date: string) => {
-                    if (!tickDates.has(date)) return ''
-                    return new Date(date + 'T00:00:00').toLocaleDateString(t.locale, {
+                  tickFormatter={(date: string) =>
+                    new Date(date + 'T00:00:00').toLocaleDateString(t.locale, {
                       day: 'numeric',
                       month: 'short',
                     })
-                  }}
+                  }
                 />
                 <YAxis
                   tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}

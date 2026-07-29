@@ -53,7 +53,7 @@ export function LoadRiskPanel({ data }: { data: LoadRiskPanelData }) {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Tile
           label={s.acwr.label}
-          value={data.acwr !== null ? data.acwr.toFixed(2) : '–'}
+          value={data.acwr !== null ? data.acwr.toFixed(1) : '–'}
           description={data.acwrSource === 'garmin' ? s.acwr.descriptionGarmin : s.acwr.description}
           zone={data.acwrZone}
           source={data.acwrSource ? s.source[data.acwrSource] : undefined}

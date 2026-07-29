@@ -109,6 +109,18 @@ INTERNAL_NOTIFY_SECRET=any-random-string
 
 # UI language: 'en' (default) or 'fr'. Picked at build time.
 NEXT_PUBLIC_LOCALE=en
+
+# Gemini API key for the AI-written verdicts on Today, Analytics and each
+# activity (optional - without it every card falls back to its rules-based
+# copy). Get one at https://aistudio.google.com/apikey
+#
+# Each surface picks its own model (free-tier quotas are counted per model, so
+# the per-activity backfill runs on the lite model and never eats into the
+# dashboard hero's budget). GEMINI_MODEL overrides all three at once, for when
+# Google retires a model - check the live list first:
+# https://generativelanguage.googleapis.com/v1beta/models
+# GEMINI_API_KEY=...
+# GEMINI_MODEL=
 ```
 
 > `.env.local` is gitignored. Never commit your secrets.
@@ -302,6 +314,7 @@ from your `.env.local` *except* `GARMIN_SECRET`:
 | `NEXT_PUBLIC_OWNER_EMAIL` | Restricts settings/notes editing to your Google account |
 | `INTERNAL_NOTIFY_SECRET` | Authenticates the GitHub Actions cron calls to `/api/internal/*` |
 | `NEXT_PUBLIC_LOCALE` | UI language, `en` (default) or `fr` — applied at build time |
+| `GEMINI_API_KEY`, `GEMINI_MODEL` | Optional: AI-written verdicts on Today, Analytics and activity pages. Without a key the cards keep their rules-based copy |
 
 > `GARMIN_SECRET` is only used locally by the sync script - it never runs on Vercel.
 

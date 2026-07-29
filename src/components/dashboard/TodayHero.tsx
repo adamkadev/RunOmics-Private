@@ -8,27 +8,16 @@ import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import type { Activity, ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import { ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
-import type { ReadinessTone } from '@/domain/training/readiness'
+import { verdictTone, type ReadinessTone } from '@/domain/training/readiness'
 import { PlannedWorkoutSheet } from '@/components/plan/PlannedWorkoutSheet'
 import { formatDistance, formatDurationWords } from '@/lib/formatters'
 import { READINESS_TONE_COLORS } from '@/lib/colors'
 import { HUE, withAlpha } from '@/lib/palette'
+import type { Insight } from '@/lib/gemini'
 import { t } from '@/i18n'
 
 const TONE_HEX: Record<ReadinessTone, string> = READINESS_TONE_COLORS
-
-// A fixed near-black base (matching --bg) rather than the page background, so
-// the card stays a deliberately dark, always-legible panel in both themes -
-// the same pattern var(--hero-gradient) uses elsewhere (see ProfileHero).
-// A translucent tint here would let a light-mode page bleed through and wash
-// out the white text.
 const HERO_BASE = HUE.heroBase
-
-// The panel is dark in both themes, so its accent trim has to be too:
-// `--accent-text` drops to a 600 tone in light mode, calibrated for pale
-// surfaces, and goes near-invisible here. `--accent-on-dark` holds the dark
-// value in both themes. Any component painted on a fixed dark surface (or on
-// --hero-gradient) wants this token rather than text-accent-text.
 const ACCENT_ON_DARK = 'var(--accent-on-dark)'
 const ICON_WELL = { background: `color-mix(in srgb, ${ACCENT_ON_DARK} 18%, transparent)` }
 
@@ -37,26 +26,10 @@ interface Props {
   plannedWorkout: PlannedWorkout | null
   todayActivity: Activity | null
   nextRace: UpcomingRace | null
+  aiVerdict: Insight | null
 }
 
 
-function verdictTone(status: TrainingStatus): ReadinessTone {
-  const fatigueRising = status.atlDelta > 1
-  const fatigueFalling = status.atlDelta < -1
-  let tone: ReadinessTone
-  if (status.tsbNow < -10 || fatigueRising) tone = 'hold'
-  else if (status.tsbNow > 5 && fatigueFalling) tone = 'go'
-  else tone = 'caution'
-
-  if (status.status === 'overreaching') return 'hold'
-  if (tone === 'go' && (status.status === 'unproductive' || status.status === 'detraining' || status.status === 'recovery')) {
-    return 'caution'
-  }
-  return tone
-}
-
-// Rules layer over the already-computed status/load - copy is keyed by the
-// same tone as the pastille, so the verdict sentence never contradicts it.
 function readinessCopy(status: TrainingStatus, tone: ReadinessTone): { headline: string; body: string } {
   const r = t.dashboard.todayHero.readiness
   switch (tone) {
@@ -70,7 +43,7 @@ function readinessCopy(status: TrainingStatus, tone: ReadinessTone): { headline:
 }
 
 // Pure display + a rules-based readiness verdict over already-computed status/load data.
-export function TodayHero({ status, plannedWorkout, todayActivity, nextRace }: Props) {
+export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiVerdict }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false)
 
   if (!status && !plannedWorkout && !nextRace) return null
@@ -83,7 +56,7 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace }: P
   // same screen.
   const tsbRounded = status ? Math.round(status.tsbNow) : null
   const tsbLabel = status && tsbRounded !== null ? `${tsbRounded >= 0 ? '+' : ''}${tsbRounded}` : null
-  const verdict = status && tone ? readinessCopy(status, tone) : null
+  const verdict = aiVerdict ?? (status && tone ? readinessCopy(status, tone) : null)
   const formLine = status && tsbLabel
     ? `${t.dashboard.trainingLoad.form} ${tsbLabel} · ${t.trainingStatus.status[status.status]}`
     : null
@@ -108,14 +81,8 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace }: P
     <div
       className="rounded-[22px] border p-[18px] text-white"
       style={{
-        // Hero gradient tinted by the verdict tone (go/caution/hold), so the
-        // whole card reads the decision - not just the pastille. Blended into a
-        // fixed dark base (not the page background) so the card stays legible
-        // in light mode too - same idea as var(--hero-gradient) elsewhere.
         background: `linear-gradient(158deg, color-mix(in srgb, ${toneHex} 20%, ${HERO_BASE}), color-mix(in srgb, ${toneHex} 5%, ${HERO_BASE}))`,
         borderColor: withAlpha(toneHex, 0.35),
-        // The F2 bloom, but keyed to the verdict tone rather than the accent -
-        // this hero is tone-tinted, so its glow follows the same hue.
         boxShadow: `var(--shadow-hero), 0 8px 40px -8px ${withAlpha(toneHex, 0.28)}`,
       }}
     >
