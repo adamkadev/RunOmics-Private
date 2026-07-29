@@ -16,6 +16,13 @@ export interface InsightRequest {
   limits: Limits
 }
 
+/**
+ * Failures are reported rather than swallowed: this runs unattended from a
+ * GitHub Actions cron, where a silent null looks identical whether the quota
+ * ran out, the model was retired or the copy came back too long.
+ */
+export type InsightResult = { ok: true; insight: Insight } | { ok: false; reason: string }
+
 const RESPONSE_SCHEMA = {
   type: 'OBJECT',
   properties: {
@@ -25,23 +32,31 @@ const RESPONSE_SCHEMA = {
   required: ['headline', 'body'],
 } as const
 
-function parseInsight(raw: unknown, limits: Limits): Insight | null {
-  if (typeof raw !== 'object' || raw === null) return null
+function parseInsight(raw: unknown, limits: Limits): InsightResult {
+  if (typeof raw !== 'object' || raw === null) return { ok: false, reason: 'response was not an object' }
+
   const { headline, body } = raw as Record<string, unknown>
-  if (typeof headline !== 'string' || typeof body !== 'string') return null
+  if (typeof headline !== 'string' || typeof body !== 'string') {
+    return { ok: false, reason: 'headline or body missing' }
+  }
 
   const trimmedHeadline = headline.trim()
   const trimmedBody = body.trim()
-  if (!trimmedHeadline || !trimmedBody) return null
-  if (trimmedHeadline.length > limits.headline || trimmedBody.length > limits.body) return null
-  if (trimmedHeadline.includes('—') || trimmedBody.includes('—')) return null
+  if (!trimmedHeadline || !trimmedBody) return { ok: false, reason: 'headline or body empty' }
+  if (trimmedHeadline.length > limits.headline) {
+    return { ok: false, reason: `headline ${trimmedHeadline.length} > ${limits.headline} chars` }
+  }
+  if (trimmedBody.length > limits.body) {
+    return { ok: false, reason: `body ${trimmedBody.length} > ${limits.body} chars` }
+  }
+  if (trimmedHeadline.includes('—') || trimmedBody.includes('—')) return { ok: false, reason: 'em-dash' }
 
-  return { headline: trimmedHeadline, body: trimmedBody }
+  return { ok: true, insight: { headline: trimmedHeadline, body: trimmedBody } }
 }
 
-export async function generateInsight(request: InsightRequest): Promise<Insight | null> {
+export async function generateInsight(request: InsightRequest): Promise<InsightResult> {
   const apiKey = process.env.GEMINI_API_KEY
-  if (!apiKey) return null
+  if (!apiKey) return { ok: false, reason: 'no api key' }
 
   // Escape hatch: Google retires models and closes old ones to new keys with no
   // warning, so one env var can move every surface at once.
@@ -63,21 +78,19 @@ export async function generateInsight(request: InsightRequest): Promise<Insight 
       signal: AbortSignal.timeout(TIMEOUT_MS),
     })
 
-    if (!res.ok) {
-      console.error('[gemini]', res.status, await res.text())
-      return null
-    }
+    if (!res.ok) return { ok: false, reason: `http ${res.status}: ${(await res.text()).slice(0, 200)}` }
 
     const json = await res.json()
     // Thinking models put reasoning parts alongside the answer, and not always
     // last, so take the first part that actually carries text.
     const parts: { text?: unknown }[] = json?.candidates?.[0]?.content?.parts ?? []
     const text = parts.find((part) => typeof part.text === 'string')?.text
-    if (typeof text !== 'string') return null
+    if (typeof text !== 'string') {
+      return { ok: false, reason: `no text part (finish: ${json?.candidates?.[0]?.finishReason ?? 'none'})` }
+    }
 
     return parseInsight(JSON.parse(text), request.limits)
   } catch (error) {
-    console.error('[gemini]', error)
-    return null
+    return { ok: false, reason: `${error instanceof Error ? error.name : 'error'}: ${String(error).slice(0, 120)}` }
   }
 }

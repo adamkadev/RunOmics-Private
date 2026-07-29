@@ -1,6 +1,6 @@
 import type { Activity } from '@/domain/activity/types'
 import type { VerdictTone } from '@/domain/activity/runVerdict'
-import { runVerdictTone } from '@/domain/activity/runVerdict'
+import { expectedRpe, runVerdictTone } from '@/domain/activity/runVerdict'
 import { formatClock } from '@/lib/formatters'
 import { insightHash } from './insightHash'
 import { avoidClause, systemInstruction } from './prompt'
@@ -20,7 +20,7 @@ export function runVerdictSurface(activityId: string): string {
 
 function facts(activity: Activity) {
   return {
-    tone: runVerdictTone(activity.rpe, activity.aerTrainingEffect),
+    tone: runVerdictTone(activity),
     type: activity.type,
     distanceKm: activity.distanceKm,
     minutes: Math.round(activity.durationSeconds / 60),
@@ -37,10 +37,13 @@ export function runVerdictInsightHash(activity: Activity): string {
   return insightHash(facts(activity))
 }
 
+// Every tone is stated relative to what the session type called for, because
+// that is what the tone now measures: RPE 8 is the point of a threshold session
+// and a red flag on an easy day.
 const TONE_RULES: Record<VerdictTone, string> = {
-  positive: 'This run went well. Say what worked.',
-  neutral: 'This run was unremarkable. Describe it plainly, without forced praise.',
-  caution: 'This run was hard on the body. Flag the cost and the recovery it needs.',
+  positive: 'The effort landed where this session type calls for. Say what that earned.',
+  neutral: 'The effort drifted from what this session type calls for, without doing harm. Describe it plainly, without forced praise.',
+  caution: 'The effort overshot what this session type calls for. Flag the cost and the recovery it needs.',
 }
 
 export const RUN_VERDICT_SYSTEM_INSTRUCTION = [
@@ -53,6 +56,9 @@ export const RUN_VERDICT_SYSTEM_INSTRUCTION = [
   ),
   'Never contradict the tone you are given - it drives the color of the card.',
   'Talk about this run only, never about the training week or what to do next.',
+  // Heat and hills make a run feel harder than its type intends; without this
+  // the model reads any gap as a discipline problem, which is often unfair.
+  'When the effort sits outside the expected band, look for a cause in the other facts (heat, elevation) and name it rather than assuming the athlete misjudged the session.',
 ].join(' ')
 
 export function runVerdictInsightPrompt(activity: Activity, recentHeadlines: string[]): string {
@@ -66,7 +72,9 @@ export function runVerdictInsightPrompt(activity: Activity, recentHeadlines: str
     `- Distance: ${f.distanceKm} km in ${f.minutes} min`,
     f.pace ? `- Pace: ${formatClock(f.pace)} /km` : null,
     f.avgHr ? `- Average heart rate: ${f.avgHr} bpm` : null,
-    f.rpe !== null ? `- Perceived effort (RPE 1-10): ${f.rpe}` : null,
+    f.rpe !== null
+      ? `- Perceived effort (RPE 1-10): ${f.rpe}, against ${expectedRpe(activity).join(' to ')} expected for a ${f.type} of this length`
+      : null,
     f.aerTrainingEffect !== null ? `- Aerobic training effect (0-5): ${f.aerTrainingEffect}` : null,
     f.elevationGain ? `- Elevation gain: ${f.elevationGain} m` : null,
     f.temperature !== null ? `- Temperature: ${f.temperature}C` : null,

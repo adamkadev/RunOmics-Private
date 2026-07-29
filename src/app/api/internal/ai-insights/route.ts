@@ -78,16 +78,16 @@ async function generateToday() {
   const cached = await getCachedInsight(TODAY_SURFACE)
   if (cached?.hash === hash) return { generated: false, reason: 'unchanged' }
 
-  const insight = await generateInsight({
+  const result = await generateInsight({
     model: TODAY_MODEL,
     systemInstruction: TODAY_SYSTEM_INSTRUCTION,
     prompt: todayInsightPrompt(context, cached?.recentHeadlines ?? []),
     limits: TODAY_LIMITS,
   })
-  if (!insight) return { generated: false, reason: 'generation failed' }
+  if (!result.ok) return { generated: false, reason: result.reason }
 
-  await saveCachedInsight(TODAY_SURFACE, insight, hash, cached)
-  return { generated: true, insight }
+  await saveCachedInsight(TODAY_SURFACE, result.insight, hash, cached)
+  return { generated: true, insight: result.insight }
 }
 
 async function generateRunVerdicts(limit: number) {
@@ -100,23 +100,31 @@ async function generateRunVerdicts(limit: number) {
   // available is what this same batch already wrote - which is exactly where
   // near-identical easy runs would otherwise read as copy-paste.
   const written: string[] = []
+  const failures: string[] = []
 
   for (const [index, activity] of pending.entries()) {
     if (index > 0) await new Promise((resolve) => setTimeout(resolve, RATE_LIMIT_PAUSE_MS))
 
-    const insight = await generateInsight({
+    const result = await generateInsight({
       model: RUN_VERDICT_MODEL,
       systemInstruction: RUN_VERDICT_SYSTEM_INSTRUCTION,
       prompt: runVerdictInsightPrompt(activity, written),
       limits: RUN_VERDICT_LIMITS,
     })
-    if (!insight) continue
+    if (!result.ok) {
+      failures.push(`${activity.id}: ${result.reason}`)
+      // Once the quota window is shut every remaining candidate fails the same
+      // way, and each attempt still counts against the daily allowance. Stop
+      // and let the next pass pick the batch up.
+      if (result.reason.startsWith('http 429')) break
+      continue
+    }
 
-    await saveCachedInsight(runVerdictSurface(activity.id), insight, runVerdictInsightHash(activity), null)
-    written.push(insight.headline)
+    await saveCachedInsight(runVerdictSurface(activity.id), result.insight, runVerdictInsightHash(activity), null)
+    written.push(result.insight.headline)
   }
 
-  return { candidates: pending.length, generated: written.length }
+  return { candidates: pending.length, generated: written.length, failures }
 }
 
 async function generateSeason() {
@@ -127,14 +135,14 @@ async function generateSeason() {
   const cached = await getCachedInsight(SEASON_SURFACE)
   if (cached?.hash === hash) return { generated: false, reason: 'unchanged' }
 
-  const insight = await generateInsight({
+  const result = await generateInsight({
     model: SEASON_MODEL,
     systemInstruction: SEASON_SYSTEM_INSTRUCTION,
     prompt: seasonInsightPrompt(data, cached?.recentHeadlines ?? []),
     limits: SEASON_LIMITS,
   })
-  if (!insight) return { generated: false, reason: 'generation failed' }
+  if (!result.ok) return { generated: false, reason: result.reason }
 
-  await saveCachedInsight(SEASON_SURFACE, insight, hash, cached)
-  return { generated: true, insight }
+  await saveCachedInsight(SEASON_SURFACE, result.insight, hash, cached)
+  return { generated: true, insight: result.insight }
 }

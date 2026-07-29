@@ -22,6 +22,12 @@ function respondWith(payload: unknown) {
   respondWithParts([{ text: JSON.stringify(payload) }])
 }
 
+async function reasonFor(payload: unknown): Promise<string> {
+  respondWith(payload)
+  const result = await generateInsight(REQUEST)
+  return result.ok ? 'unexpectedly ok' : result.reason
+}
+
 beforeEach(() => {
   vi.stubEnv('GEMINI_API_KEY', 'test-key')
 })
@@ -36,15 +42,18 @@ describe('generateInsight', () => {
     respondWith({ headline: 'Fresh legs', body: 'Fatigue is down.' })
 
     expect(await generateInsight(REQUEST)).toEqual({
-      headline: 'Fresh legs',
-      body: 'Fatigue is down.',
+      ok: true,
+      insight: { headline: 'Fresh legs', body: 'Fatigue is down.' },
     })
   })
 
   it('skips the reasoning parts a thinking model emits alongside the answer', async () => {
     respondWithParts([{ thought: true }, { text: JSON.stringify({ headline: 'Fresh legs', body: 'Go.' }) }])
 
-    expect(await generateInsight(REQUEST)).toEqual({ headline: 'Fresh legs', body: 'Go.' })
+    expect(await generateInsight(REQUEST)).toEqual({
+      ok: true,
+      insight: { headline: 'Fresh legs', body: 'Go.' },
+    })
   })
 
   it('never calls the API without a key', async () => {
@@ -52,32 +61,35 @@ describe('generateInsight', () => {
     const fetchSpy = vi.fn()
     vi.stubGlobal('fetch', fetchSpy)
 
-    expect(await generateInsight(REQUEST)).toBeNull()
+    expect(await generateInsight(REQUEST)).toEqual({ ok: false, reason: 'no api key' })
     expect(fetchSpy).not.toHaveBeenCalled()
   })
 
-  it('rejects copy that overflows the card', async () => {
-    respondWith({ headline: 'A headline far too long for the slot', body: 'ok' })
-    expect(await generateInsight(REQUEST)).toBeNull()
+  it('reports which field overflowed the card', async () => {
+    expect(await reasonFor({ headline: 'A headline far too long for the slot', body: 'ok' })).toBe(
+      'headline 36 > 20 chars'
+    )
   })
 
-  it('rejects an em-dash the house style forbids', async () => {
-    respondWith({ headline: 'Fresh — go', body: 'Fatigue is down.' })
-    expect(await generateInsight(REQUEST)).toBeNull()
+  it('reports an em-dash the house style forbids', async () => {
+    expect(await reasonFor({ headline: 'Fresh — go', body: 'Fatigue is down.' })).toBe('em-dash')
   })
 
-  it('rejects an empty field', async () => {
-    respondWith({ headline: '   ', body: 'Fatigue is down.' })
-    expect(await generateInsight(REQUEST)).toBeNull()
+  it('reports an empty field', async () => {
+    expect(await reasonFor({ headline: '   ', body: 'Fatigue is down.' })).toBe('headline or body empty')
   })
 
-  it('returns null rather than throwing when the API errors', async () => {
+  it('reports the status and body when the API errors', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 429, text: async () => 'quota' }))
-    expect(await generateInsight(REQUEST)).toBeNull()
+
+    expect(await generateInsight(REQUEST)).toEqual({ ok: false, reason: 'http 429: quota' })
   })
 
-  it('returns null rather than throwing when the network fails', async () => {
+  it('reports the failure rather than throwing when the network fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
-    expect(await generateInsight(REQUEST)).toBeNull()
+
+    const result = await generateInsight(REQUEST)
+    expect(result.ok).toBe(false)
+    expect(result.ok === false && result.reason).toContain('offline')
   })
 })

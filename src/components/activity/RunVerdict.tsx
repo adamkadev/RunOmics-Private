@@ -20,7 +20,7 @@ interface Props {
 
 export function RunVerdict({ activity, aiVerdict }: Props) {
   const v = t.activity.verdict
-  const tone = runVerdictTone(activity.rpe, activity.aerTrainingEffect)
+  const tone = runVerdictTone(activity)
 
   const headline = aiVerdict?.headline ?? v.headline[tone](t.activityTypes[activity.type])
   const body =
