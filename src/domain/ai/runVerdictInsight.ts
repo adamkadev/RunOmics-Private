@@ -8,11 +8,12 @@ import { avoidClause, systemInstruction } from './prompt'
 export const RUN_VERDICT_PREFIX = 'runVerdict_'
 export const RUN_VERDICT_LIMITS = { headline: 56, body: 150 }
 
-// One verdict per activity means hundreds of calls to backfill, so this surface
-// takes the lite model instead: 15 RPM and 500/day on the free tier, against
-// 5 and 20 for the flash the other two use. Quotas are counted per model, so
-// the bulk work here never eats into the hero's budget.
-export const RUN_VERDICT_MODEL = 'gemini-3.5-flash-lite'
+// The history was backfilled on gemini-3.5-flash-lite, the only free-tier model
+// whose 500/day could absorb one call per activity. Steady state is a single new
+// run a day, which fits the stronger model's 20/day with room to spare.
+// Reverting to the lite model is the escape hatch if a change to the facts ever
+// invalidates the whole collection at once.
+export const RUN_VERDICT_MODEL = 'gemini-3.6-flash'
 
 export function runVerdictSurface(activityId: string): string {
   return `${RUN_VERDICT_PREFIX}${activityId}`

@@ -62,9 +62,10 @@ export async function POST(req: NextRequest) {
   })
 }
 
+// ?limit=0 reports how much backfill is left without spending any quota.
 function requestedLimit(req: NextRequest): number {
   const raw = Number(req.nextUrl.searchParams.get('limit'))
-  if (!Number.isInteger(raw) || raw < 1) return DEFAULT_RUN_VERDICTS_PER_RUN
+  if (!Number.isInteger(raw) || raw < 0) return DEFAULT_RUN_VERDICTS_PER_RUN
   return Math.min(raw, MAX_RUN_VERDICTS_PER_RUN)
 }
 
@@ -92,9 +93,10 @@ async function generateToday() {
 
 async function generateRunVerdicts(limit: number) {
   const cachedHashes = await listCachedHashes(RUN_VERDICT_PREFIX)
-  const pending = getActivities()
-    .filter((activity) => cachedHashes.get(runVerdictSurface(activity.id)) !== runVerdictInsightHash(activity))
-    .slice(0, limit)
+  const outstanding = getActivities().filter(
+    (activity) => cachedHashes.get(runVerdictSurface(activity.id)) !== runVerdictInsightHash(activity)
+  )
+  const pending = outstanding.slice(0, limit)
 
   // Each verdict lives in its own document, so the only anti-repetition signal
   // available is what this same batch already wrote - which is exactly where
@@ -124,7 +126,7 @@ async function generateRunVerdicts(limit: number) {
     written.push(result.insight.headline)
   }
 
-  return { candidates: pending.length, generated: written.length, failures }
+  return { outstanding: outstanding.length, generated: written.length, failures }
 }
 
 async function generateSeason() {
