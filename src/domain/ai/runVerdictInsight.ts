@@ -9,12 +9,12 @@ import { avoidClause, systemInstruction } from './prompt'
 export const RUN_VERDICT_PREFIX = 'runVerdict_'
 export const RUN_VERDICT_LIMITS = { headline: 56, body: 150 }
 
-// The history was backfilled on gemini-3.5-flash-lite, the only free-tier model
-// whose 500/day could absorb one call per activity. Steady state is a single new
-// run a day, which fits the stronger model's 20/day with room to spare.
-// Reverting to the lite model is the escape hatch if a change to the facts ever
-// invalidates the whole collection at once.
-export const RUN_VERDICT_MODEL = 'gemini-3.6-flash'
+// Back on the lite model: the execution-facts change (2026-07-29) invalidated
+// every cached verdict at once, and only the lite model's 500/day can absorb a
+// full re-backfill. Move this back to 'gemini-3.6-flash' once `?limit=0`
+// reports outstanding: 0 - steady state is one new run a day, which fits that
+// model's 20/day with room to spare.
+export const RUN_VERDICT_MODEL = 'gemini-3.5-flash-lite'
 
 export function runVerdictSurface(activityId: string): string {
   return `${RUN_VERDICT_PREFIX}${activityId}`
