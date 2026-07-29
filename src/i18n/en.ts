@@ -1202,7 +1202,6 @@ export const en = {
     },
     nextWeek: (n: number) => `Next week - ${n} planned`,
     comingUp: 'Coming up',
-    comingUpBadge: 'NEW',
     keyTag: 'key',
     openPlanner: 'Open the weekly planner',
     viewDetail: 'View detail',

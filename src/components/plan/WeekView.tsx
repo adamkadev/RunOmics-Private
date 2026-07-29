@@ -505,9 +505,6 @@ export function WeekView({
         <div className="px-1">
           <p className="mb-2.5 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground">
             {t.plan.comingUp}
-            <span className="rounded-[5px] border border-accent/30 bg-accent/10 px-1.5 py-px font-mono text-caption font-bold text-accent-text">
-              {t.plan.comingUpBadge}
-            </span>
           </p>
           <div className="space-y-2">
             {nextWeekPlans.map((plan) => (

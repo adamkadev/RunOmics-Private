@@ -1,6 +1,7 @@
 import type { Activity } from '@/domain/activity/types'
 import type { VerdictTone } from '@/domain/activity/runVerdict'
 import { expectedRpe, runVerdictTone } from '@/domain/activity/runVerdict'
+import { sessionExecution, type SessionExecution } from '@/domain/activity/sessionExecution'
 import { formatClock } from '@/lib/formatters'
 import { insightHash } from './insightHash'
 import { avoidClause, systemInstruction } from './prompt'
@@ -20,6 +21,8 @@ export function runVerdictSurface(activityId: string): string {
 }
 
 function facts(activity: Activity) {
+  const execution = sessionExecution(activity)
+
   return {
     tone: runVerdictTone(activity),
     type: activity.type,
@@ -31,7 +34,22 @@ function facts(activity: Activity) {
     aerTrainingEffect: activity.aerTrainingEffect,
     elevationGain: activity.elevationGain,
     temperature: activity.avgTemperature,
+    execution: execution ? executionLine(execution) : null,
   }
+}
+
+// The shape of the session in one line, because it is the only material the
+// model has that the stat grid under the card does not already show.
+function executionLine(execution: NonNullable<SessionExecution>): string {
+  const drift = execution.hrDriftBpm === null ? '' : `, heart rate ${signed(execution.hrDriftBpm)} bpm across it`
+  if (execution.kind === 'steady') {
+    return `${execution.spreadSecPerKm}s/km between the fastest and slowest kilometre${drift}`
+  }
+  return `${execution.reps} reps, ${signed(execution.fadeSecPerKm)}s/km from first to last, ${execution.spreadSecPerKm}s/km between the fastest and slowest${drift}`
+}
+
+function signed(value: number): string {
+  return value > 0 ? `+${value}` : String(value)
 }
 
 export function runVerdictInsightHash(activity: Activity): string {
@@ -52,11 +70,15 @@ export const RUN_VERDICT_SYSTEM_INSTRUCTION = [
     'You are a running coach writing the verdict card for a single run an athlete just finished.',
     // The stat grid sits directly under this card, so reciting distance, time
     // and pace back would add nothing the athlete cannot already see.
-    'one sentence on what the effort cost or produced, never a restatement of the distance, time and pace already shown beneath it',
+    'one sentence on how the session held together and what it earned',
     RUN_VERDICT_LIMITS
   ),
   'Never contradict the tone you are given - it drives the color of the card.',
   'Talk about this run only, never about the training week or what to do next.',
+  // Without this the model writes "you held 5:35/km over 7.03 km at 151 bpm",
+  // which is the three numbers printed immediately below the card.
+  'The distance, duration, average pace and average heart rate are already printed under your text: never state them. Build the sentence on how the effort held up instead - the fade between reps, the spread between kilometres, the heart rate drift.',
+  'When no execution detail is given, say what the effort produced rather than describing the run back.',
   // Heat and hills make a run feel harder than its type intends; without this
   // the model reads any gap as a discipline problem, which is often unfair.
   'When the effort sits outside the expected band, look for a cause in the other facts (heat, elevation) and name it rather than assuming the athlete misjudged the session.',
@@ -79,6 +101,7 @@ export function runVerdictInsightPrompt(activity: Activity, recentHeadlines: str
     f.aerTrainingEffect !== null ? `- Aerobic training effect (0-5): ${f.aerTrainingEffect}` : null,
     f.elevationGain ? `- Elevation gain: ${f.elevationGain} m` : null,
     f.temperature !== null ? `- Temperature: ${f.temperature}C` : null,
+    f.execution ? `- How it was held together: ${f.execution}` : null,
     avoidClause(recentHeadlines),
   ]
     .filter((line) => line !== null)
