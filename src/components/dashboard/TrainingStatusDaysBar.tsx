@@ -1,3 +1,6 @@
+'use client'
+
+import { useState } from 'react'
 import type { TrainingStatusDayBar } from '@/application/usecases/GetTrainingStatusDaysBar'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { TRAINING_STATUS_COLORS } from '@/lib/colors'
@@ -45,6 +48,8 @@ function groupLabel(group: DayGroup): string {
 }
 
 export function TrainingStatusDaysBar({ days }: Props) {
+  const [activeKey, setActiveKey] = useState<string | null>(null)
+
   if (days.length === 0) return null
 
   const s = t.dashboard.trainingStatusDays
@@ -52,6 +57,7 @@ export function TrainingStatusDaysBar({ days }: Props) {
   const oldest = days[0]
   const oldestLabel = oldest ? formatDate(oldest.date) : ''
   const groups = groupConsecutiveDays(days)
+  const active = groups.find((group) => group.from === activeKey) ?? null
 
   return (
     <GlassSurface variant="card" className="p-4">
@@ -66,22 +72,35 @@ export function TrainingStatusDaysBar({ days }: Props) {
 
       <div className="mt-2.5 flex h-4 overflow-hidden rounded-sm">
         {groups.map((group) => (
-          <div
+          <button
             key={group.from}
-            className="h-full"
+            type="button"
+            className="h-full cursor-pointer transition-opacity"
             style={{
               flexGrow: group.count,
               flexBasis: 0,
               background: group.status ? TRAINING_STATUS_COLORS[group.status] : EMPTY_SEGMENT,
+              opacity: active && active.from !== group.from ? 0.4 : 1,
             }}
-            title={groupLabel(group)}
+            aria-label={groupLabel(group)}
+            onClick={() => setActiveKey(group.from)}
+            onMouseEnter={() => setActiveKey(group.from)}
+            onMouseLeave={() => setActiveKey(null)}
+            onFocus={() => setActiveKey(group.from)}
+            onBlur={() => setActiveKey(null)}
           />
         ))}
       </div>
 
       <div className="mt-1.5 flex justify-between text-micro text-muted-foreground">
-        <span>{oldestLabel}</span>
-        <span>{s.today}</span>
+        {active ? (
+          <span className="text-foreground/80">{groupLabel(active)}</span>
+        ) : (
+          <>
+            <span>{oldestLabel}</span>
+            <span>{s.today}</span>
+          </>
+        )}
       </div>
     </GlassSurface>
   )

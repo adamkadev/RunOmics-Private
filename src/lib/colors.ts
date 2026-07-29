@@ -53,17 +53,15 @@ export const CHART_COLORS = {
 } as const
 
 // Garmin training status, keyed by the names in GetTrainingStatus's
-// TrainingStatusType. Read as a ladder rather than a categorical set: green =
-// the training is paying off, blue = deliberate rest, amber/red = the load is
-// no longer productive.
+// TrainingStatusType. Mirrors the watch's own ladder so the app and Garmin
+// Connect read the same: violet = peaking, green = paying off, yellow = holding,
+// blue = deliberate rest, grey = fading, orange/red = no longer productive.
 export const TRAINING_STATUS_COLORS: Record<string, string> = {
-  fresh:        c.roEmerald, // peak fitness, fatigue shed
+  fresh:        c.violet500, // Garmin's "Peaking"
   productive:   c.emerald400,
-  // Teal rather than a second blue: recovery already owns "blue = deliberate
-  // rest", and the two read as the same swatch in the dark legend.
-  maintaining:  c.teal500,
+  maintaining:  c.yellow500,
   recovery:     c.blue600,
-  unproductive: c.amber500,
+  unproductive: c.orange500,
   detraining:   c.zinc400,
   overreaching: c.red500,
 }

@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { ComposedChart, Area, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import type {
   TrainingStatusHistory,
@@ -47,26 +48,52 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   )
 }
 
+function formatDay(date: string): string {
+  return new Date(date + 'T00:00:00').toLocaleDateString(t.locale, { day: 'numeric', month: 'short' })
+}
+
+function segmentLabel(segment: TrainingStatusSegment): string {
+  const s = t.analytics.charts.trainingStatusHistory
+  const range =
+    segment.from === segment.to
+      ? formatDay(segment.from)
+      : `${formatDay(segment.from)} → ${formatDay(segment.to)}`
+  return `${t.trainingStatus.status[segment.status]} · ${range} · ${segment.days} ${s.daysUnit}`
+}
+
 /**
  * Proportional ribbon of the status runs across the window. Segments narrower
  * than a few percent still get a sliver of width so a one-day flip into
  * overreaching stays visible instead of collapsing to nothing.
  */
 function StatusRibbon({ segments }: { segments: TrainingStatusSegment[] }) {
+  const [activeKey, setActiveKey] = useState<string | null>(null)
+  const active = segments.find((segment) => segment.from === activeKey) ?? null
+
   return (
-    <div className="mt-3 flex h-2 gap-px overflow-hidden rounded-full">
-      {segments.map((segment) => (
-        <div
-          key={`${segment.status}-${segment.from}`}
-          className="min-w-[3px]"
-          style={{
-            flexGrow: segment.days,
-            backgroundColor: TRAINING_STATUS_COLORS[segment.status],
-          }}
-          title={`${t.trainingStatus.status[segment.status]} · ${segment.from} → ${segment.to}`}
-        />
-      ))}
-    </div>
+    <>
+      <div className="mt-3 flex h-2 gap-px overflow-hidden rounded-full">
+        {segments.map((segment) => (
+          <button
+            key={`${segment.status}-${segment.from}`}
+            type="button"
+            className="min-w-[3px] cursor-pointer transition-opacity"
+            style={{
+              flexGrow: segment.days,
+              backgroundColor: TRAINING_STATUS_COLORS[segment.status],
+              opacity: active && active.from !== segment.from ? 0.4 : 1,
+            }}
+            aria-label={segmentLabel(segment)}
+            onClick={() => setActiveKey(segment.from)}
+            onMouseEnter={() => setActiveKey(segment.from)}
+            onMouseLeave={() => setActiveKey(null)}
+            onFocus={() => setActiveKey(segment.from)}
+            onBlur={() => setActiveKey(null)}
+          />
+        ))}
+      </div>
+      <p className="mt-1.5 min-h-4 text-micro text-subtle">{active ? segmentLabel(active) : ''}</p>
+    </>
   )
 }
 
