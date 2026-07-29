@@ -16,6 +16,8 @@ import { getRunVerdictInsight } from '@/application/usecases/GetRunVerdictInsigh
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
 import { t } from '@/i18n'
 
+export const revalidate = 3600
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params
   const activity = getActivities().find((a) => a.id === id)
