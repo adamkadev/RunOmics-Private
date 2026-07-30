@@ -93,3 +93,48 @@ describe('generateInsight', () => {
     expect(result.ok === false && result.reason).toContain('offline')
   })
 })
+
+describe('generateInsight (French locale)', () => {
+  beforeEach(() => {
+    vi.stubEnv('GEMINI_API_KEY', 'test-key')
+    vi.stubEnv('NEXT_PUBLIC_LOCALE', 'fr')
+    vi.resetModules()
+  })
+
+  const FR_REQUEST = { ...REQUEST, limits: { headline: 60, body: 150 } }
+
+  async function reasonForFr(payload: unknown): Promise<string> {
+    respondWith(payload)
+    const { generateInsight: generate } = await import('@/lib/gemini')
+    const result = await generate(FR_REQUEST)
+    return result.ok ? 'unexpectedly ok' : result.reason
+  }
+
+  it('rejects a dropped elision apostrophe', async () => {
+    expect(
+      await reasonForFr({ headline: "L'effort a payé", body: 'La récupération sera longue après cet effort.' })
+    ).toBe('unexpectedly ok')
+
+    expect(
+      await reasonForFr({ headline: 'Effort réussi', body: 'L effort a bien payé pour cette séance de seuil.' })
+    ).toBe('french elision missing')
+  })
+
+  it('rejects French text with every accent stripped', async () => {
+    expect(
+      await reasonForFr({
+        headline: 'Seance solide',
+        body: "L'intensite a depasse la cible et impose une recuperation prolongee pour la suite.",
+      })
+    ).toBe('french text missing all accents')
+  })
+
+  it('accepts correct French with accents and elisions intact', async () => {
+    expect(
+      await reasonForFr({
+        headline: 'Séance solide et maîtrisée',
+        body: "L'intensité a dépassé la cible et impose une récupération prolongée pour la suite.",
+      })
+    ).toBe('unexpectedly ok')
+  })
+})

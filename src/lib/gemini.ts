@@ -1,7 +1,23 @@
 import type { Limits } from '@/domain/ai/prompt'
+import { activeLocale } from '@/i18n'
 
 const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models'
 const TIMEOUT_MS = 15_000
+
+// Some models drop French typography under constrained JSON output - seen in
+// the wild from gemini-3.5-flash-lite. Both checks reject rather than repair:
+// a rejected candidate just stays in the backfill queue for the next pass.
+//
+// A dropped elision ("L effort" instead of "L'effort") is unambiguous - these
+// function words always contract before a vowel, so the miss is easy to spot.
+const FRENCH_ELISION_MISSING = /\b(?:[LldDsScCnNjJtTmM]|[Qq]ue)\s+(?=[aeiouyàâäéèêëïîôöùûühAEIOUYÀÂÄÉÈÊËÏÎÔÖÙÛÜH])/
+// Accent restoration is not - "seance"/"séance" can't be told apart by regex -
+// but French this long virtually always contains at least one accented letter
+// (séance, récupération, développement...), so a total absence is a strong
+// signal the model dropped diacritics rather than a genuinely accent-free
+// sentence.
+const FRENCH_ACCENT = /[àâäéèêëïîôöùûüçÀÂÄÉÈÊËÏÎÔÖÙÛÜÇ]/
+const FRENCH_ACCENT_CHECK_MIN_LENGTH = 40
 
 export interface Insight {
   headline: string
@@ -50,6 +66,14 @@ function parseInsight(raw: unknown, limits: Limits): InsightResult {
     return { ok: false, reason: `body ${trimmedBody.length} > ${limits.body} chars` }
   }
   if (trimmedHeadline.includes('—') || trimmedBody.includes('—')) return { ok: false, reason: 'em-dash' }
+
+  if (activeLocale === 'fr') {
+    const combined = `${trimmedHeadline} ${trimmedBody}`
+    if (FRENCH_ELISION_MISSING.test(combined)) return { ok: false, reason: 'french elision missing' }
+    if (combined.length > FRENCH_ACCENT_CHECK_MIN_LENGTH && !FRENCH_ACCENT.test(combined)) {
+      return { ok: false, reason: 'french text missing all accents' }
+    }
+  }
 
   return { ok: true, insight: { headline: trimmedHeadline, body: trimmedBody } }
 }

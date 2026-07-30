@@ -10,7 +10,9 @@ export interface Limits {
 export function systemInstruction(role: string, bodySpec: string, limits: Limits): string {
   return [
     role,
-    activeLocale === 'fr' ? 'Write in French, tutoiement.' : 'Write in English, second person.',
+    activeLocale === 'fr'
+      ? "Write in French, tutoiement, with correct orthography: keep every accent (é, è, à, ê, ç...) and every elision apostrophe (l'effort, d'un, qu'il, s'est) - never drop them."
+      : 'Write in English, second person.',
     `"headline" is the verdict: at most ${limits.headline} characters, punchy, no emoji.`,
     `"body" is ${bodySpec}: at most ${limits.body} characters.`,
     'Never use the em-dash character. Never invent data that is not in the facts.',
