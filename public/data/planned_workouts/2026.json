@@ -1085,16 +1085,12 @@
     {
       "date": "2026-07-29",
       "name": "Base",
-      "distanceM": 5524,
+      "distanceM": 267300,
       "durationSecs": 1800,
       "steps": [
         {
           "kind": "effort",
-          "minutes": 30,
-          "paceSecPerKm": [
-            308,
-            346
-          ]
+          "minutes": 30
         }
       ],
       "type": "Base",
