@@ -1,5 +1,5 @@
 import type { WeeklyDigest } from '@/application/usecases/GetWeeklyDigest'
-import { HERO_MODEL } from './budget'
+import { HERO_POOL } from './budget'
 import { insightHash } from './insightHash'
 import { avoidClause, systemInstruction } from './prompt'
 
@@ -8,7 +8,7 @@ export const WEEKLY_REVIEW_LIMITS = { headline: 56, body: 150 }
 
 // The week's own verdict, read on the dashboard as often as today's hero. Its
 // facts move as the week accrues, so it costs at most one call a day.
-export const WEEKLY_REVIEW_MODEL = HERO_MODEL
+export const WEEKLY_REVIEW_POOL = HERO_POOL
 
 function facts(digest: WeeklyDigest) {
   return {

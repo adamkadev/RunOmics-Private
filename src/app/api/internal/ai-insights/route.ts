@@ -8,7 +8,7 @@ import { getYearComparison } from '@/application/usecases/GetYearComparison'
 import { getSeasonHeadline } from '@/application/usecases/GetSeasonHeadline'
 import { getWeeklyDigest } from '@/application/usecases/GetWeeklyDigest'
 import { getCurrentWeekPurpose } from '@/application/usecases/GetCurrentWeekPurpose'
-import { getRecords, getMostRecentRecord } from '@/application/usecases/GetRecords'
+import { getRecords, getMostRecentRecord, getQualifiedEffortsByActivityId } from '@/application/usecases/GetRecords'
 import { getRaceReadiness } from '@/application/usecases/GetRaceReadiness'
 import { getShoeStats } from '@/application/usecases/GetShoeStats'
 import { getShoeDetail } from '@/application/usecases/GetShoeDetail'
@@ -24,7 +24,7 @@ import { wearOutlook } from '@/domain/shoe/wearStatus'
 import type { Limits } from '@/domain/ai/prompt'
 import {
   TODAY_LIMITS,
-  TODAY_MODEL,
+  TODAY_POOL,
   TODAY_SURFACE,
   TODAY_SYSTEM_INSTRUCTION,
   todayInsightHash,
@@ -32,16 +32,17 @@ import {
 } from '@/domain/ai/todayInsight'
 import {
   RUN_VERDICT_LIMITS,
-  RUN_VERDICT_MODEL,
+  RUN_VERDICT_POOL,
   RUN_VERDICT_PREFIX,
   RUN_VERDICT_SYSTEM_INSTRUCTION,
+  deservesVerdict,
   runVerdictInsightHash,
   runVerdictInsightPrompt,
   runVerdictSurface,
 } from '@/domain/ai/runVerdictInsight'
 import {
   SEASON_LIMITS,
-  SEASON_MODEL,
+  SEASON_POOL,
   SEASON_SURFACE,
   SEASON_SYSTEM_INSTRUCTION,
   seasonInsightHash,
@@ -49,7 +50,7 @@ import {
 } from '@/domain/ai/seasonInsight'
 import {
   WEEKLY_REVIEW_LIMITS,
-  WEEKLY_REVIEW_MODEL,
+  WEEKLY_REVIEW_POOL,
   WEEKLY_REVIEW_SURFACE,
   WEEKLY_REVIEW_SYSTEM_INSTRUCTION,
   weeklyReviewInsightHash,
@@ -57,7 +58,7 @@ import {
 } from '@/domain/ai/weeklyReviewInsight'
 import {
   WEEK_PURPOSE_LIMITS,
-  WEEK_PURPOSE_MODEL,
+  WEEK_PURPOSE_POOL,
   WEEK_PURPOSE_SURFACE,
   WEEK_PURPOSE_SYSTEM_INSTRUCTION,
   weekPurposeInsightHash,
@@ -65,7 +66,7 @@ import {
 } from '@/domain/ai/weekPurposeInsight'
 import {
   PB_CELEBRATION_LIMITS,
-  PB_CELEBRATION_MODEL,
+  PB_CELEBRATION_POOL,
   PB_CELEBRATION_SURFACE,
   PB_CELEBRATION_SYSTEM_INSTRUCTION,
   celebratedRecord,
@@ -74,7 +75,7 @@ import {
 } from '@/domain/ai/pbCelebrationInsight'
 import {
   SHOE_VERDICT_LIMITS,
-  SHOE_VERDICT_MODEL,
+  SHOE_VERDICT_POOL,
   SHOE_VERDICT_SYSTEM_INSTRUCTION,
   shoeVerdictInsightHash,
   shoeVerdictInsightPrompt,
@@ -83,7 +84,7 @@ import {
 } from '@/domain/ai/shoeVerdictInsight'
 import {
   RACE_READINESS_LIMITS,
-  RACE_READINESS_MODEL,
+  RACE_READINESS_POOL,
   RACE_READINESS_SURFACE,
   RACE_READINESS_SYSTEM_INSTRUCTION,
   raceReadinessInsightHash,
@@ -92,7 +93,7 @@ import {
 import {
   ANALYTICS_TAB_IDS,
   ANALYTICS_TAB_LIMITS,
-  ANALYTICS_TAB_MODEL,
+  ANALYTICS_TAB_POOL,
   analyticsTabInsightHash,
   analyticsTabInsightPrompt,
   analyticsTabSurface,
@@ -106,21 +107,21 @@ import {
 import { openSpender, type Spender } from '@/lib/aiSpend'
 import { generateInsight } from '@/lib/gemini'
 
-// Pacing hero-model calls costs 13s each, so a batch needs room to breathe. The
-// spender stops the run well before this ceiling.
+// Rate limits are per model, so a pool of four spends its first four calls
+// back to back and only then starts pacing. The spender stops the run well
+// before this ceiling either way.
 export const maxDuration = 60
 
-// The daily quota and the run's own clock are the spender's business now, so
-// this only caps how many verdicts one invocation even attempts. A bulk pass is
-// several calls to this route rather than one large ?limit=N: at the hero
-// model's rate limit, sixty verdicts is a quarter of an hour of pacing that no
-// serverless invocation can hold open.
+// The daily quotas and the run's own clock are the spender's business now, so
+// this only caps how many verdicts one invocation even attempts. ?limit=N still
+// buys a bigger manual pass, but a full backfill is several calls to this route
+// rather than one: no serverless invocation can hold the pacing open that long.
 const DEFAULT_RUN_VERDICTS_PER_RUN = 6
 const MAX_RUN_VERDICTS_PER_RUN = 60
 
 interface SurfaceJob {
   surface: string
-  model: string
+  pool: string[]
   limits: Limits
   systemInstruction: string
   hash: string
@@ -132,25 +133,33 @@ interface SurfaceOutcome {
   reason?: string
 }
 
+// A model that answers 429 has spent its day, and one that answers 404 has been
+// retired out from under us. Both mean: stop asking, take the next in the pool.
+function isModelClosed(reason: string): boolean {
+  return reason.startsWith('http 429') || reason.startsWith('http 404')
+}
+
 /**
  * The whole life of one cached insight: skip it while its facts have not moved,
- * ask the spender before touching the API, and only then generate and store.
+ * ask the spender which model may serve it, and only then generate and store.
  * Every surface goes through here, so none of them can bypass the budget.
  */
 async function runSurface(spender: Spender, job: SurfaceJob): Promise<SurfaceOutcome> {
   const cached = await getCachedInsight(job.surface)
   if (cached?.hash === job.hash) return { generated: false, reason: 'unchanged' }
-  if (!(await spender.reserve(job.model))) return { generated: false, reason: 'no budget left' }
+
+  const model = await spender.reserve(job.pool)
+  if (!model) return { generated: false, reason: 'no budget left' }
 
   const result = await generateInsight({
-    model: job.model,
+    model,
     systemInstruction: job.systemInstruction,
     prompt: job.prompt(cached?.recentHeadlines ?? []),
     limits: job.limits,
   })
   if (!result.ok) {
-    if (result.reason.startsWith('http 429')) spender.exhaust(job.model)
-    return { generated: false, reason: result.reason }
+    if (isModelClosed(result.reason)) spender.exhaust(model)
+    return { generated: false, reason: `${model}: ${result.reason}` }
   }
 
   await saveCachedInsight(job.surface, result.insight, job.hash, cached)
@@ -165,11 +174,11 @@ export async function POST(req: NextRequest) {
 
     const spender = await openSpender()
 
-    // Order is priority order, alternating models on purpose: spacing is counted
-    // per model, so a lite call between two hero calls runs inside the wait the
-    // hero model owes anyway instead of adding to it. What the run budget cuts
-    // off is picked up by the next run, so the tail is the copy that can wait -
-    // and the run-verdict backfill, which has always caught up gradually.
+    // Order is priority order, alternating tiers on purpose: spacing is counted
+    // per model, so a supporting call between two hero calls runs inside a wait
+    // that was owed anyway instead of adding to it. What the run budget cuts off
+    // is picked up by the next run, so the tail is the copy that can wait - and
+    // the run-verdict backfill, which has always caught up gradually.
     return NextResponse.json({
       today: await generateToday(spender),
       weekPurpose: await generateWeekPurpose(spender),
@@ -200,7 +209,7 @@ async function generateToday(spender: Spender) {
 
   return runSurface(spender, {
     surface: TODAY_SURFACE,
-    model: TODAY_MODEL,
+    pool: TODAY_POOL,
     limits: TODAY_LIMITS,
     systemInstruction: TODAY_SYSTEM_INSTRUCTION,
     hash: todayInsightHash(context),
@@ -214,7 +223,7 @@ async function generateWeeklyReview(spender: Spender) {
 
   return runSurface(spender, {
     surface: WEEKLY_REVIEW_SURFACE,
-    model: WEEKLY_REVIEW_MODEL,
+    pool: WEEKLY_REVIEW_POOL,
     limits: WEEKLY_REVIEW_LIMITS,
     systemInstruction: WEEKLY_REVIEW_SYSTEM_INSTRUCTION,
     hash: weeklyReviewInsightHash(digest),
@@ -228,7 +237,7 @@ async function generateSeason(spender: Spender) {
 
   return runSurface(spender, {
     surface: SEASON_SURFACE,
-    model: SEASON_MODEL,
+    pool: SEASON_POOL,
     limits: SEASON_LIMITS,
     systemInstruction: SEASON_SYSTEM_INSTRUCTION,
     hash: seasonInsightHash(data),
@@ -242,7 +251,7 @@ async function generatePbCelebration(spender: Spender) {
 
   return runSurface(spender, {
     surface: PB_CELEBRATION_SURFACE,
-    model: PB_CELEBRATION_MODEL,
+    pool: PB_CELEBRATION_POOL,
     limits: PB_CELEBRATION_LIMITS,
     systemInstruction: PB_CELEBRATION_SYSTEM_INSTRUCTION,
     hash: pbCelebrationInsightHash(record),
@@ -256,7 +265,7 @@ async function generateWeekPurpose(spender: Spender) {
 
   return runSurface(spender, {
     surface: WEEK_PURPOSE_SURFACE,
-    model: WEEK_PURPOSE_MODEL,
+    pool: WEEK_PURPOSE_POOL,
     limits: WEEK_PURPOSE_LIMITS,
     systemInstruction: WEEK_PURPOSE_SYSTEM_INSTRUCTION,
     hash: weekPurposeInsightHash(week),
@@ -270,7 +279,7 @@ async function generateRaceReadiness(spender: Spender) {
 
   return runSurface(spender, {
     surface: RACE_READINESS_SURFACE,
-    model: RACE_READINESS_MODEL,
+    pool: RACE_READINESS_POOL,
     limits: RACE_READINESS_LIMITS,
     systemInstruction: RACE_READINESS_SYSTEM_INSTRUCTION,
     hash: raceReadinessInsightHash(readiness),
@@ -292,7 +301,7 @@ async function generateShoeVerdicts(spender: Spender) {
     const context: ShoeVerdictContext = { shoe, ...outlook, status: outlook.status }
     const outcome = await runSurface(spender, {
       surface: shoeVerdictSurface(shoe.gearId),
-      model: SHOE_VERDICT_MODEL,
+      pool: SHOE_VERDICT_POOL,
       limits: SHOE_VERDICT_LIMITS,
       systemInstruction: SHOE_VERDICT_SYSTEM_INSTRUCTION,
       hash: shoeVerdictInsightHash(context),
@@ -326,7 +335,7 @@ async function generateAnalyticsTabs(spender: Spender) {
 
     const outcome = await runSurface(spender, {
       surface: analyticsTabSurface(tab),
-      model: ANALYTICS_TAB_MODEL,
+      pool: ANALYTICS_TAB_POOL,
       limits: ANALYTICS_TAB_LIMITS,
       systemInstruction: analyticsTabSystemInstruction(tab),
       hash: analyticsTabInsightHash(tab, lines),
@@ -340,10 +349,18 @@ async function generateAnalyticsTabs(spender: Spender) {
 
 async function generateRunVerdicts(spender: Spender, limit: number) {
   const cachedHashes = await listCachedHashes(RUN_VERDICT_PREFIX)
+  // Every activity that holds a record or a top-three effort - the ones reached
+  // from /records months after the fact.
+  const recorded = new Set(Object.keys(getQualifiedEffortsByActivityId(await getRecords())))
+  const now = new Date()
+
+  // Activities come newest first, so the queue is already in the order they are
+  // most likely to be read.
   const outstanding = getActivities().filter(
     (activity) => cachedHashes.get(runVerdictSurface(activity.id)) !== runVerdictInsightHash(activity)
   )
-  const pending = outstanding.slice(0, limit)
+  const eligible = outstanding.filter((activity) => deservesVerdict(activity, recorded, now))
+  const pending = eligible.slice(0, limit)
 
   // Each verdict lives in its own document, so the only anti-repetition signal
   // available is what this same batch already wrote - which is exactly where
@@ -352,22 +369,23 @@ async function generateRunVerdicts(spender: Spender, limit: number) {
   const failures: string[] = []
 
   for (const activity of pending) {
-    // One call covers the daily ceiling, the per-minute spacing and the time
-    // left in this invocation. Whatever it refuses the next run picks up.
-    if (!(await spender.reserve(RUN_VERDICT_MODEL))) break
+    // One call covers every daily ceiling in the pool, the per-minute spacing
+    // and the time left in this invocation. What it refuses, the next run picks
+    // up - and with four models to draw from, it refuses far later than one.
+    const model = await spender.reserve(RUN_VERDICT_POOL)
+    if (!model) break
 
     const result = await generateInsight({
-      model: RUN_VERDICT_MODEL,
+      model,
       systemInstruction: RUN_VERDICT_SYSTEM_INSTRUCTION,
       prompt: runVerdictInsightPrompt(activity, written),
       limits: RUN_VERDICT_LIMITS,
     })
     if (!result.ok) {
-      failures.push(`${activity.id}: ${result.reason}`)
-      if (result.reason.startsWith('http 429')) {
-        spender.exhaust(RUN_VERDICT_MODEL)
-        break
-      }
+      failures.push(`${activity.id} (${model}): ${result.reason}`)
+      // Only this model is done, not the batch: the next reserve moves on to
+      // the next model in the pool.
+      if (isModelClosed(result.reason)) spender.exhaust(model)
       continue
     }
 
@@ -375,5 +393,5 @@ async function generateRunVerdicts(spender: Spender, limit: number) {
     written.push(result.insight.headline)
   }
 
-  return { outstanding: outstanding.length, generated: written.length, failures }
+  return { outstanding: outstanding.length, eligible: eligible.length, generated: written.length, failures }
 }

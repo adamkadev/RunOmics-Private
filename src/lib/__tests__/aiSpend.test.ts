@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { dailyBudget, spendField } from '@/domain/ai/budget'
+import { HERO_POOL, dailyBudget, spendField } from '@/domain/ai/budget'
 
 const ledger = vi.hoisted(() => ({ current: {} as Record<string, number> }))
 
@@ -13,49 +13,65 @@ vi.mock('@/infrastructure/repositories/FirestoreBudgetRepository', () => ({
 
 const { openSpender } = await import('../aiSpend')
 
-const MODEL = 'gemini-3.6-flash'
+const [BEST, SECOND] = HERO_POOL as [string, string]
+
+function fill(model: string) {
+  ledger.current[spendField(model)] = dailyBudget(model)
+}
 
 describe('openSpender', () => {
   beforeEach(() => {
     ledger.current = {}
   })
 
-  it('refuses once the day ceiling is already spent', async () => {
-    ledger.current[spendField(MODEL)] = dailyBudget(MODEL)
+  it('takes the best model in the pool first', async () => {
+    const spender = await openSpender()
+    expect(await spender.reserve(HERO_POOL)).toBe(BEST)
+  })
+
+  it('falls through to the next model once one has spent its day', async () => {
+    fill(BEST)
 
     const spender = await openSpender()
-    expect(await spender.reserve(MODEL)).toBe(false)
+    expect(await spender.reserve(HERO_POOL)).toBe(SECOND)
+  })
+
+  it('refuses only when every model in the pool is spent', async () => {
+    HERO_POOL.forEach(fill)
+
+    const spender = await openSpender()
+    expect(await spender.reserve(HERO_POOL)).toBeNull()
   })
 
   it('counts a reserved call in the ledger before the request is made', async () => {
     const spender = await openSpender()
 
-    expect(await spender.reserve(MODEL)).toBe(true)
-    expect(ledger.current[spendField(MODEL)]).toBe(1)
-    expect(spender.report()[spendField(MODEL)]).toBe(1)
+    expect(await spender.reserve(HERO_POOL)).toBe(BEST)
+    expect(ledger.current[spendField(BEST)]).toBe(1)
+    expect(spender.report()[spendField(BEST)]).toBe(1)
   })
 
   it('picks up what earlier runs of the same day already spent', async () => {
-    ledger.current[spendField(MODEL)] = dailyBudget(MODEL) - 1
+    ledger.current[spendField(BEST)] = dailyBudget(BEST) - 1
 
     const spender = await openSpender()
-    expect(await spender.reserve(MODEL)).toBe(true)
-    expect(await spender.reserve(MODEL)).toBe(false)
+    expect(await spender.reserve([BEST])).toBe(BEST)
+    expect(await spender.reserve([BEST])).toBeNull()
   })
 
-  it('stops spending on a model the API answered 429 to', async () => {
+  it('stops spending on a model the API refused', async () => {
     const spender = await openSpender()
-    spender.exhaust(MODEL)
+    spender.exhaust(BEST)
 
-    expect(await spender.reserve(MODEL)).toBe(false)
-    expect(ledger.current[spendField(MODEL)]).toBeUndefined()
+    expect(await spender.reserve(HERO_POOL)).toBe(SECOND)
+    expect(ledger.current[spendField(BEST)]).toBeUndefined()
   })
 
   it('keeps one model budget from eating another', async () => {
-    ledger.current[spendField(MODEL)] = dailyBudget(MODEL)
+    fill(BEST)
 
     const spender = await openSpender()
-    expect(await spender.reserve(MODEL)).toBe(false)
-    expect(await spender.reserve('gemini-3.6-flash-lite')).toBe(true)
+    expect(await spender.reserve([BEST])).toBeNull()
+    expect(await spender.reserve([SECOND])).toBe(SECOND)
   })
 })

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { runVerdictInsightHash } from '../runVerdictInsight'
+import { deservesVerdict, runVerdictInsightHash } from '../runVerdictInsight'
 import type { Activity, ActivityWeather } from '@/domain/activity/types'
 
 const weather: ActivityWeather = {
@@ -74,5 +74,22 @@ describe('runVerdictInsightHash weather cutoff', () => {
     expect(
       runVerdictInsightHash(run({ weather: { ...weather, apparentTempC: 14.2 } }))
     ).toBe(runVerdictInsightHash(run({ weather: { ...weather, apparentTempC: 14.4 } })))
+  })
+})
+
+describe('deservesVerdict', () => {
+  const now = new Date('2026-07-30T10:00:00')
+  const records = new Set(['pb-run'])
+
+  it('covers a run recent enough to still be opened', () => {
+    expect(deservesVerdict({ id: 'a', date: '2026-07-25' }, records, now)).toBe(true)
+  })
+
+  it('skips an old run nobody navigates back to', () => {
+    expect(deservesVerdict({ id: 'a', date: '2026-01-10' }, records, now)).toBe(false)
+  })
+
+  it('still covers an old run that holds a record, since /records links to it', () => {
+    expect(deservesVerdict({ id: 'pb-run', date: '2025-03-02' }, records, now)).toBe(true)
   })
 })

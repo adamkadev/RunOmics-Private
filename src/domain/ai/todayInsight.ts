@@ -1,7 +1,7 @@
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import type { PlannedWorkout } from '@/domain/activity/types'
 import type { ReadinessTone } from '@/domain/training/readiness'
-import { HERO_MODEL } from './budget'
+import { HERO_POOL } from './budget'
 import { insightHash } from './insightHash'
 import { avoidClause, systemInstruction } from './prompt'
 
@@ -10,7 +10,7 @@ export const TODAY_LIMITS = { headline: 52, body: 140 }
 
 // The hero is the one line the athlete reads every morning, and it costs one
 // call a day, so it gets the strongest model the free tier offers.
-export const TODAY_MODEL = HERO_MODEL
+export const TODAY_POOL = HERO_POOL
 
 interface TodayContext {
   status: TrainingStatus

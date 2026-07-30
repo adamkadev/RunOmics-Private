@@ -10,16 +10,27 @@ export interface ModelLimits {
 // GEMINI_MODEL must never widen the budget by accident.
 export const MODEL_LIMITS: Record<string, ModelLimits> = {
   'gemini-3.6-flash': { rpm: 5, rpd: 20 },
-  'gemini-3.6-flash-lite': { rpm: 15, rpd: 500 },
+  'gemini-3.5-flash': { rpm: 5, rpd: 20 },
+  'gemini-3-flash-preview': { rpm: 5, rpd: 20 },
+  'gemini-2.5-flash': { rpm: 5, rpd: 20 },
+  'gemini-3.5-flash-lite': { rpm: 15, rpd: 500 },
+  'gemini-3.1-flash-lite': { rpm: 15, rpd: 500 },
+  'gemini-2.5-flash-lite': { rpm: 10, rpd: 20 },
 }
 
 const UNKNOWN_MODEL_LIMITS: ModelLimits = { rpm: 5, rpd: 20 }
 
-// Surface tiering. The copy an athlete reads every day gets the stronger model;
-// supporting copy runs on the lite one, which is what keeps the 20/day pool
-// free for the run verdicts rather than spending it on a shoe card.
-export const HERO_MODEL = 'gemini-3.6-flash'
-export const SUPPORTING_MODEL = 'gemini-3.6-flash-lite'
+// Both quotas are counted per model, which makes a pool more than a fallback
+// list. Four flash-class models at 20 a day each is 80 calls of that quality,
+// and their per-minute limits are separate too - alternating between them
+// removes most of the waiting a single model would owe. Order is quality
+// order: the spender always takes the best one that is free right now.
+export const HERO_POOL = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3-flash-preview', 'gemini-2.5-flash']
+
+// 500 a day each, and no competition with the copy the athlete reads daily.
+// The lite models are also the ones caught dropping French typography (see
+// lib/gemini.ts), so they stay off the hero surfaces.
+export const SUPPORTING_POOL = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-2.5-flash-lite']
 
 // Requests held back from the daily ceiling so a manual backfill, or a retry
 // after a failed cron, never lands on an already exhausted quota.

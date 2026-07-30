@@ -1,5 +1,5 @@
 import type { RaceReadiness } from '@/application/usecases/GetRaceReadiness'
-import { SUPPORTING_MODEL } from './budget'
+import { SUPPORTING_POOL } from './budget'
 import { insightHash } from './insightHash'
 import { avoidClause, systemInstruction } from './prompt'
 import { formatClock } from '@/lib/formatters'
@@ -9,7 +9,7 @@ export const RACE_READINESS_LIMITS = { headline: 44, body: 140 }
 
 // Only the next race is ever shown, so this is one document that follows the
 // countdown down to race day.
-export const RACE_READINESS_MODEL = SUPPORTING_MODEL
+export const RACE_READINESS_POOL = SUPPORTING_POOL
 
 // Form is quantised so the copy tracks the phase rather than the daily wobble
 // of a TSB estimate: a projected +3.2 and +4.1 call for the same advice.

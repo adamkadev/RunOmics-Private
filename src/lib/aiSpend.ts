@@ -1,20 +1,21 @@
 import { dailyBudget, quotaDay, spacingMs, spendField } from '@/domain/ai/budget'
 import { getSpend, recordSpend } from '@/infrastructure/repositories/FirestoreBudgetRepository'
 
-// A serverless invocation is capped at 60s, and pacing a run of flash calls
-// costs 13s each, so a batch has to be able to stop mid-way. Every surface is
-// keyed by a hash of its own facts, so whatever this run does not reach is
-// simply picked up by the next one.
+// A serverless invocation is capped at 60s, and pacing a run of calls on one
+// model costs 13s each, so a batch has to be able to stop mid-way. Every
+// surface is keyed by a hash of its own facts, so whatever this run does not
+// reach is simply picked up by the next one.
 const RUN_BUDGET_MS = 45_000
 
 export interface Spender {
   /**
-   * Claims one request for `model`, waiting out the per-minute spacing first.
-   * False means the daily ceiling, the run's time budget or a 429 already
-   * closed the door - the caller must not call Gemini.
+   * Claims one request from `pool`, taking the best model that is free right
+   * now and waiting out the per-minute spacing only when none is. Returns the
+   * model to call, or null when the daily ceilings, the run's time budget or a
+   * 429 closed every door in the pool.
    */
-  reserve(model: string): Promise<boolean>
-  /** Marks a model as done for this run, after the API itself said 429. */
+  reserve(pool: string[]): Promise<string | null>
+  /** Marks a model as done for this run, after the API refused it. */
   exhaust(model: string): void
   report(): Record<string, number>
 }
@@ -36,21 +37,40 @@ export async function openSpender(now = new Date()): Promise<Spender> {
   const lastCallAt: Record<string, number> = {}
   const exhausted = new Set<string>()
 
+  // Escape hatch: Google retires models with little warning, so one env var can
+  // pin every surface to a single known-good one. It replaces the pool rather
+  // than the request, so what gets counted stays what gets called.
+  const override = process.env.GEMINI_MODEL
+
+  function waitFor(model: string, from: number): number {
+    const previous = lastCallAt[spendField(model)]
+    return previous ? Math.max(0, spacingMs(model) - (from - previous)) : 0
+  }
+
   return {
-    async reserve(model) {
-      const field = spendField(model)
-      if (exhausted.has(field)) return false
-      if ((spent[field] ?? 0) >= dailyBudget(model)) return false
+    async reserve(pool) {
+      const now = Date.now()
+      const candidates = (override ? [override] : pool)
+        .filter((model) => {
+          const field = spendField(model)
+          return !exhausted.has(field) && (spent[field] ?? 0) < dailyBudget(model)
+        })
+        .map((model) => ({ model, wait: waitFor(model, now) }))
 
-      const previous = lastCallAt[field]
-      const wait = previous ? Math.max(0, spacingMs(model) - (Date.now() - previous)) : 0
-      if (Date.now() + wait > deadline) return false
-      if (wait > 0) await sleep(wait)
+      if (!candidates.length) return null
 
+      // Pool order is quality order, so the first one that owes no wait is both
+      // the best available and the fastest; waiting only happens when the whole
+      // pool is still inside its per-minute window.
+      const chosen = candidates.find((c) => c.wait === 0) ?? candidates.reduce((a, b) => (b.wait < a.wait ? b : a))
+      if (now + chosen.wait > deadline) return null
+      if (chosen.wait > 0) await sleep(chosen.wait)
+
+      const field = spendField(chosen.model)
       spent[field] = (spent[field] ?? 0) + 1
       lastCallAt[field] = Date.now()
-      await recordSpend(day, model)
-      return true
+      await recordSpend(day, chosen.model)
+      return chosen.model
     },
 
     exhaust(model) {

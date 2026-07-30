@@ -3,7 +3,7 @@ import type { VerdictTone } from '@/domain/activity/runVerdict'
 import { expectedRpe, runVerdictTone } from '@/domain/activity/runVerdict'
 import { sessionExecution, type SessionExecution } from '@/domain/activity/sessionExecution'
 import { formatClock } from '@/lib/formatters'
-import { HERO_MODEL } from './budget'
+import { HERO_POOL } from './budget'
 import { insightHash } from './insightHash'
 import { avoidClause, systemInstruction } from './prompt'
 
@@ -15,10 +15,29 @@ export const RUN_VERDICT_LIMITS = { headline: 56, body: 150 }
 // (2026-07-30) deleted 164 old verdicts at once; most were re-backfilled on the
 // lite model before settling here, the rest fill in gradually through the daily
 // cron rather than forcing another bulk push on the lite model.
-export const RUN_VERDICT_MODEL = HERO_MODEL
+export const RUN_VERDICT_POOL = HERO_POOL
 
 export function runVerdictSurface(activityId: string): string {
   return `${RUN_VERDICT_PREFIX}${activityId}`
+}
+
+// How far back a run is still likely to be opened. Past a training block, a run
+// is only reached through the records list, so that is the other way in.
+const VERDICT_HORIZON_DAYS = 90
+
+/**
+ * Whether a run is worth a verdict at all. Generating one for every run ever
+ * synced spends the day's quota on pages nobody opens; a run that already has a
+ * cached verdict keeps it either way, this only gates writing new ones.
+ */
+export function deservesVerdict(
+  activity: { id: string; date: string },
+  recordActivityIds: ReadonlySet<string>,
+  now: Date
+): boolean {
+  if (recordActivityIds.has(activity.id)) return true
+  const days = (now.getTime() - new Date(activity.date.slice(0, 10) + 'T00:00:00').getTime()) / 86_400_000
+  return days <= VERDICT_HORIZON_DAYS
 }
 
 // The watch's own sensor rides on the wrist and reads ~6°C above the air it is

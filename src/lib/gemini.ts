@@ -82,12 +82,11 @@ export async function generateInsight(request: InsightRequest): Promise<InsightR
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) return { ok: false, reason: 'no api key' }
 
-  // Escape hatch: Google retires models and closes old ones to new keys with no
-  // warning, so one env var can move every surface at once.
-  const model = process.env.GEMINI_MODEL || request.model
-
+  // The model is whatever the spender reserved budget for - overriding it here
+  // would bill one model's ledger for another model's call. The GEMINI_MODEL
+  // escape hatch lives in lib/aiSpend, where it replaces the pool instead.
   try {
-    const res = await fetch(`${ENDPOINT}/${model}:generateContent`, {
+    const res = await fetch(`${ENDPOINT}/${request.model}:generateContent`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
       body: JSON.stringify({

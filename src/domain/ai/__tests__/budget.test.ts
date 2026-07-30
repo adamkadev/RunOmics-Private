@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dailyBudget, modelLimits, quotaDay, spacingMs, spendField } from '../budget'
+import { HERO_POOL, MODEL_LIMITS, SUPPORTING_POOL, dailyBudget, modelLimits, quotaDay, spacingMs, spendField } from '../budget'
 
 describe('budget', () => {
   it('keeps a reserve under the free-tier ceiling', () => {
@@ -11,7 +11,7 @@ describe('budget', () => {
   })
 
   it('spaces calls further apart on the model with the lower rate limit', () => {
-    expect(spacingMs('gemini-3.6-flash')).toBeGreaterThan(spacingMs('gemini-3.6-flash-lite'))
+    expect(spacingMs('gemini-3.6-flash')).toBeGreaterThan(spacingMs('gemini-3.5-flash-lite'))
   })
 
   it('paces slower than the rate limit itself', () => {
@@ -27,5 +27,16 @@ describe('budget', () => {
 
   it('flattens the dots Firestore would read as a field path', () => {
     expect(spendField('gemini-3.6-flash')).toBe('gemini-3_6-flash')
+  })
+
+  it('only pools models whose limits are known, so none of them is guessed', () => {
+    for (const model of [...HERO_POOL, ...SUPPORTING_POOL]) {
+      expect(MODEL_LIMITS[model], model).toBeDefined()
+    }
+  })
+
+  it('spreads a tier over several models, which is where the extra budget is', () => {
+    const heroBudget = HERO_POOL.reduce((sum, model) => sum + dailyBudget(model), 0)
+    expect(heroBudget).toBeGreaterThan(dailyBudget(HERO_POOL[0]!) * 3)
   })
 })

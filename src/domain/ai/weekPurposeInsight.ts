@@ -1,5 +1,5 @@
 import type { CurrentWeekPurpose } from '@/application/usecases/GetCurrentWeekPurpose'
-import { SUPPORTING_MODEL } from './budget'
+import { SUPPORTING_POOL } from './budget'
 import { insightHash } from './insightHash'
 import { avoidClause, systemInstruction } from './prompt'
 
@@ -9,7 +9,7 @@ export const WEEK_PURPOSE_LIMITS = { headline: 40, body: 120 }
 // Supporting copy on a page the athlete opens to plan, not to be told how they
 // are doing - the dashboard already answers that. Lite model, and the banner
 // keeps its rules-based title either way.
-export const WEEK_PURPOSE_MODEL = SUPPORTING_MODEL
+export const WEEK_PURPOSE_POOL = SUPPORTING_POOL
 
 function facts(week: CurrentWeekPurpose) {
   return {
