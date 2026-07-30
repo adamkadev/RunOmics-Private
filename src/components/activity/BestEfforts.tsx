@@ -29,10 +29,10 @@ export function BestEfforts({ bestEfforts, qualifiedEfforts = [] }: Props) {
   return (
     <GlassSurface variant="card" className="p-5">
       <h3 className="mb-3 text-sm font-semibold text-foreground/80">{s.title}</h3>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {entries.map(({ key, label, km, seconds, rank }) => {
           return (
-            <div key={key} className="relative rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
+            <div key={key} className="relative shrink-0 rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
               {rank != null && (
                 <span className="absolute right-2 top-2 rounded-full bg-amber-100 px-1.5 py-[1px] text-micro font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
                   {rank === 1 ? s.prBadge : s.rankBadge(rank)}

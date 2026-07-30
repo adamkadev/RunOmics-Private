@@ -912,8 +912,8 @@ export const fr = {
       cols: {
         step: '#',
         type: 'Type',
-        duration: 'Durée',
-        dist: 'Distance',
+        duration: 'Dur.',
+        dist: 'Dist.',
         pace: 'Allure',
         hr: 'FC',
         total: 'Total',

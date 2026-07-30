@@ -918,8 +918,8 @@ export const en = {
       cols: {
         step: '#',
         type: 'Type',
-        duration: 'Duration',
-        dist: 'Distance',
+        duration: 'Dur',
+        dist: 'Dist',
         pace: 'Pace',
         hr: 'HR',
         total: 'Total',

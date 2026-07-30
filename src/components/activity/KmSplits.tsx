@@ -15,9 +15,11 @@ const TYPE_COLORS: Record<string, string> = {
   interval_cooldown: 'text-violet-500 dark:text-violet-400',
 }
 
-// Two static strings so Tailwind JIT can detect both variants
-const ROW_NO_HR = 'grid w-full items-center gap-x-3 grid-cols-[1.5rem_1fr_4rem_3.5rem_3.5rem]'
-const ROW_HR = 'grid w-full items-center gap-x-3 grid-cols-[1.5rem_1fr_4rem_3.5rem_3.5rem] sm:grid-cols-[1.5rem_1fr_4.5rem_3.5rem_4rem_2.5rem]'
+// Two static strings so Tailwind JIT can detect both variants. Tight fixed
+// widths + gap-x-1.5 keep all columns, HR included, on one line without
+// horizontal scroll even on narrow phones.
+const ROW_NO_HR = 'grid w-full items-center gap-x-1.5 grid-cols-[1.1rem_1fr_3rem_2.5rem_2.75rem]'
+const ROW_HR = 'grid w-full items-center gap-x-1.5 grid-cols-[1.1rem_1fr_3rem_2.5rem_2.75rem_1.75rem]'
 
 function paceStr(avgSpeedMs: number): string {
   if (avgSpeedMs <= 0) return '-'
@@ -65,12 +67,12 @@ export function KmSplits({ activity }: Props) {
 
       <div className="w-full space-y-0.5">
         <div className={`${rowCls} pb-1.5 text-micro font-semibold uppercase tracking-wide text-subtle`}>
-          <span>{t.activity.splits.cols.step}</span>
-          <span>{t.activity.splits.cols.type}</span>
-          <span>{t.activity.splits.cols.duration}</span>
-          <span>{t.activity.splits.cols.dist}</span>
-          <span>{t.activity.splits.cols.pace}</span>
-          {showHr && <span className="hidden sm:block">{t.activity.splits.cols.hr}</span>}
+          <span className="truncate">{t.activity.splits.cols.step}</span>
+          <span className="truncate">{t.activity.splits.cols.type}</span>
+          <span className="truncate">{t.activity.splits.cols.duration}</span>
+          <span className="truncate">{t.activity.splits.cols.dist}</span>
+          <span className="truncate">{t.activity.splits.cols.pace}</span>
+          {showHr && <span className="truncate">{t.activity.splits.cols.hr}</span>}
         </div>
 
         {(() => {
@@ -87,11 +89,11 @@ export function KmSplits({ activity }: Props) {
               return (
                 <div key={i} className={`${rowCls} rounded-md px-1 py-1.5`}>
                   <span />
-                  <span className={`truncate text-sm font-semibold ${typeColor}`}>{typeLabel}</span>
-                  <span className="text-sm tabular-nums">{formatDuration(split.durationSec)}</span>
-                  <span className="text-sm tabular-nums">{distStr(split.distanceM)}</span>
-                  <span className="text-sm tabular-nums">{paceStr(split.avgSpeedMs)}</span>
-                  {showHr && <span className="hidden text-sm tabular-nums sm:block">{split.avgHr ?? '-'}</span>}
+                  <span className={`truncate text-xs font-semibold ${typeColor}`}>{typeLabel}</span>
+                  <span className="text-xs tabular-nums">{formatDuration(split.durationSec)}</span>
+                  <span className="text-xs tabular-nums">{distStr(split.distanceM)}</span>
+                  <span className="text-xs tabular-nums">{paceStr(split.avgSpeedMs)}</span>
+                  {showHr && <span className="text-xs tabular-nums">{split.avgHr ?? '-'}</span>}
                 </div>
               )
             }
@@ -102,7 +104,7 @@ export function KmSplits({ activity }: Props) {
                   className={`${rowCls} rounded-md px-1 py-1.5 transition-colors ${hasSubLaps ? 'cursor-pointer hover:bg-muted/50' : 'hover:bg-muted/40'}`}
                   onClick={hasSubLaps ? () => toggle(i) : undefined}
                 >
-                  <span className="flex items-center text-sm font-semibold tabular-nums text-foreground/60">
+                  <span className="flex items-center text-xs font-semibold tabular-nums text-foreground/60">
                     {splitNum}
                     {hasSubLaps && (
                       <ChevronRight
@@ -111,21 +113,21 @@ export function KmSplits({ activity }: Props) {
                       />
                     )}
                   </span>
-                  <span className={`truncate text-sm font-semibold ${typeColor}`}>{typeLabel}</span>
-                  <span className="text-sm tabular-nums">{formatDuration(split.durationSec)}</span>
-                  <span className="text-sm tabular-nums">{distStr(split.distanceM)}</span>
-                  <span className="text-sm tabular-nums">{paceStr(split.avgSpeedMs)}</span>
-                  {showHr && <span className="hidden text-sm tabular-nums sm:block">{split.avgHr ?? '-'}</span>}
+                  <span className={`truncate text-xs font-semibold ${typeColor}`}>{typeLabel}</span>
+                  <span className="text-xs tabular-nums">{formatDuration(split.durationSec)}</span>
+                  <span className="text-xs tabular-nums">{distStr(split.distanceM)}</span>
+                  <span className="text-xs tabular-nums">{paceStr(split.avgSpeedMs)}</span>
+                  {showHr && <span className="text-xs tabular-nums">{split.avgHr ?? '-'}</span>}
                 </div>
 
                 {hasSubLaps && isOpen && split.laps.map((lap: SplitLap, j: number) => (
                   <div key={j} className={`${rowCls} rounded-md px-1 py-1.5`}>
-                    <span className="pl-1 text-sm tabular-nums text-foreground/60">{j + 1}</span>
-                    <span className={`truncate text-sm font-semibold ${typeColor}`}>{typeLabel}</span>
-                    <span className="text-sm tabular-nums">{formatDuration(lap.durationSec)}</span>
-                    <span className="text-sm tabular-nums">{distStr(lap.distanceM)}</span>
-                    <span className="text-sm tabular-nums">{paceStr(lap.avgSpeedMs)}</span>
-                    {showHr && <span className="hidden text-sm tabular-nums sm:block">{lap.avgHr ?? '-'}</span>}
+                    <span className="pl-1 text-xs tabular-nums text-foreground/60">{j + 1}</span>
+                    <span className={`truncate text-xs font-semibold ${typeColor}`}>{typeLabel}</span>
+                    <span className="text-xs tabular-nums">{formatDuration(lap.durationSec)}</span>
+                    <span className="text-xs tabular-nums">{distStr(lap.distanceM)}</span>
+                    <span className="text-xs tabular-nums">{paceStr(lap.avgSpeedMs)}</span>
+                    {showHr && <span className="text-xs tabular-nums">{lap.avgHr ?? '-'}</span>}
                   </div>
                 ))}
               </div>
@@ -134,12 +136,12 @@ export function KmSplits({ activity }: Props) {
         })()}
 
         <div className={`${rowCls} border-t border-border px-1 pb-1 pt-2.5`}>
-          <span className="text-sm text-subtle">--</span>
-          <span className="text-sm font-semibold text-foreground/70">{t.activity.splits.cols.total}</span>
-          <span className="text-sm font-semibold tabular-nums">{formatDuration(totalDurationSec)}</span>
-          <span className="text-sm font-semibold tabular-nums">{distStr(totalDistanceM)}</span>
-          <span className="text-sm font-semibold tabular-nums">{paceStr(totalAvgSpeedMs)}</span>
-          {showHr && <span className="hidden text-sm font-semibold tabular-nums sm:block">{totalAvgHr ?? '-'}</span>}
+          <span className="text-xs text-subtle">--</span>
+          <span className="text-xs font-semibold text-foreground/70">{t.activity.splits.cols.total}</span>
+          <span className="text-xs font-semibold tabular-nums">{formatDuration(totalDurationSec)}</span>
+          <span className="text-xs font-semibold tabular-nums">{distStr(totalDistanceM)}</span>
+          <span className="text-xs font-semibold tabular-nums">{paceStr(totalAvgSpeedMs)}</span>
+          {showHr && <span className="text-xs font-semibold tabular-nums">{totalAvgHr ?? '-'}</span>}
         </div>
       </div>
     </GlassSurface>
