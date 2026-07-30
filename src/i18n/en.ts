@@ -1003,6 +1003,21 @@ export const en = {
       restOfRotation: 'Rest of rotation',
     },
     wearAlert: (name: string, totalKm: number, alertThresholdKm: number) => `${name} has ${totalKm} km - past its ${alertThresholdKm} km alert threshold`,
+    comparison: {
+      title: 'How each pair is used',
+      note: 'Pairs worn in different seasons are not a like-for-like test - the date range under each name says how far apart they ran.',
+      period: (from: string, to: string) => `${from} - ${to}`,
+      metrics: {
+        sessions: 'Sessions',
+        distance: 'Distance',
+        keyShare: 'Key sessions',
+        pace: 'Avg pace',
+        heartRate: 'Avg HR',
+        cadence: 'Cadence',
+        groundContact: 'Ground contact',
+        oscillation: 'Vert. oscillation',
+      },
+    },
     summary: {
       totalDistance: 'Total km',
       activePairs: 'Active',

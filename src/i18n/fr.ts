@@ -997,6 +997,21 @@ export const fr = {
       restOfRotation: 'Reste de la rotation',
     },
     wearAlert: (name: string, totalKm: number, alertThresholdKm: number) => `${name} affiche ${totalKm} km - au-delà de son seuil d’alerte de ${alertThresholdKm} km`,
+    comparison: {
+      title: 'À quoi sert chaque paire',
+      note: "Des paires portées à des saisons différentes ne se comparent pas à armes égales - la période sous chaque nom dit ce qui les sépare.",
+      period: (from: string, to: string) => `${from} - ${to}`,
+      metrics: {
+        sessions: 'Sorties',
+        distance: 'Distance',
+        keyShare: 'Séances qualité',
+        pace: 'Allure moy.',
+        heartRate: 'FC moy.',
+        cadence: 'Cadence',
+        groundContact: 'Contact au sol',
+        oscillation: 'Oscillation vert.',
+      },
+    },
     summary: {
       totalDistance: 'Km totaux',
       activePairs: 'Actives',

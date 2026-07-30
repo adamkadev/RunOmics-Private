@@ -1,8 +1,10 @@
 import { getShoeStats } from '@/application/usecases/GetShoeStats'
+import { getShoeComparison } from '@/application/usecases/GetShoeComparison'
 import { getNextRace } from '@/application/usecases/GetNextRace'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { ShoesGrid, pickHeroShoe } from '@/components/shoes/ShoesGrid'
 import { ShoesSummary } from '@/components/shoes/ShoesSummary'
+import { ShoeComparison } from '@/components/shoes/ShoeComparison'
 import { BackButton } from '@/components/ui/BackButton'
 import { formatDayMonth } from '@/lib/formatters'
 import { t } from '@/i18n'
@@ -39,6 +41,7 @@ export default async function ShoesPage() {
 
       <ShoesSummary shoes={shoes} />
       <ShoesGrid shoes={shoes} heroInsight={heroInsight} />
+      <ShoeComparison rows={getShoeComparison()} />
     </div>
   )
 }
