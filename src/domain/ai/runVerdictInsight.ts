@@ -100,7 +100,7 @@ export function runVerdictInsightPrompt(activity: Activity, recentHeadlines: str
       : null,
     f.aerTrainingEffect !== null ? `- Aerobic training effect (0-5): ${f.aerTrainingEffect}` : null,
     f.elevationGain ? `- Elevation gain: ${f.elevationGain} m` : null,
-    f.temperature !== null ? `- Temperature: ${f.temperature}C` : null,
+    f.temperature !== null ? `- Temperature: ${f.temperature}°C` : null,
     f.execution ? `- How it was held together: ${f.execution}` : null,
     avoidClause(recentHeadlines),
   ]

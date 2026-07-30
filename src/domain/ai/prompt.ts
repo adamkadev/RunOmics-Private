@@ -16,6 +16,7 @@ export function systemInstruction(role: string, bodySpec: string, limits: Limits
     `"headline" is the verdict: at most ${limits.headline} characters, punchy, no emoji.`,
     `"body" is ${bodySpec}: at most ${limits.body} characters.`,
     'Never use the em-dash character. Never invent data that is not in the facts.',
+    'Always write numbers as digits, never spelled out in words - "30°", "12 km", "45 min", not "thirty degrees" or "trente degrés".',
   ].join(' ')
 }
 
