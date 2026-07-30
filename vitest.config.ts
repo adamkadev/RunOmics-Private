@@ -21,7 +21,7 @@ export default defineConfig({
       reporter: ['text', 'lcov'],
       // Pure logic and tested UI only - app router pages/layouts are
       // exercised by the build, not by unit tests.
-      include: ['src/lib/**', 'src/application/**', 'src/domain/**', 'src/components/**'],
+      include: ['src/{lib,application,domain,components}/**/*.{ts,tsx}'],
     },
   },
 })
