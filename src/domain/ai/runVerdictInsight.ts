@@ -9,12 +9,13 @@ import { avoidClause, systemInstruction } from './prompt'
 export const RUN_VERDICT_PREFIX = 'runVerdict_'
 export const RUN_VERDICT_LIMITS = { headline: 56, body: 150 }
 
-// Full history backfilled (2026-07-30) on the lite model - 500/day was the
-// only free-tier quota that could absorb it. Steady state is one new run a
-// day, which fits this stronger model's 20/day (shared with Today and Season)
-// with room to spare. Drop back to 'gemini-3.5-flash-lite' if a future change
-// to the facts ever invalidates the whole collection again.
-export const RUN_VERDICT_MODEL = 'gemini-3.6-flash'
+// Back on the lite model: the French accent/elision fix (2026-07-30)
+// invalidated 164 verdicts at once by deleting them outright, and only the
+// lite model's 500/day can absorb re-generating that many in one day. Move
+// back to 'gemini-3.6-flash' once `?limit=0` reports outstanding: 0 - steady
+// state is one new run a day, which fits that model's 20/day with room to
+// spare.
+export const RUN_VERDICT_MODEL = 'gemini-3.5-flash-lite'
 
 export function runVerdictSurface(activityId: string): string {
   return `${RUN_VERDICT_PREFIX}${activityId}`
