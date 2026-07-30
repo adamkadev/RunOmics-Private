@@ -6,6 +6,7 @@ import { Sidebar } from './Sidebar'
 import { PageTransition } from './PageTransition'
 import { ThemeSync } from './ThemeSync'
 import { Aurora } from './Aurora'
+import { NavigationHistoryProvider } from './NavigationHistory'
 import { getPageAuroraKey } from '@/lib/navigation'
 
 const SCROLL_POSITIONS_KEY = 'scrollPositions'
@@ -51,23 +52,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [pathname])
 
   return (
-    <div className="min-h-screen" data-page-aurora={getPageAuroraKey(pathname)}>
-      <Aurora />
-      <ThemeSync />
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-x-0 top-0 z-20 lg:hidden"
-        style={{
-          height: 'calc(var(--safe-top) + 28px)',
-          background: 'linear-gradient(to bottom, var(--background) 30%, transparent)',
-        }}
-      />
-      <Sidebar />
-      <main className="min-h-screen lg:ml-[248px]">
-        <div className="mx-auto max-w-5xl px-4 pb-28 pt-[max(env(safe-area-inset-top),20px)] sm:px-6 lg:pb-8 lg:pt-8">
-          <PageTransition>{children}</PageTransition>
-        </div>
-      </main>
-    </div>
+    <NavigationHistoryProvider>
+      <div className="min-h-screen" data-page-aurora={getPageAuroraKey(pathname)}>
+        <Aurora />
+        <ThemeSync />
+        <div
+          aria-hidden
+          className="pointer-events-none fixed inset-x-0 top-0 z-20 lg:hidden"
+          style={{
+            height: 'calc(var(--safe-top) + 28px)',
+            background: 'linear-gradient(to bottom, var(--background) 30%, transparent)',
+          }}
+        />
+        <Sidebar />
+        <main className="min-h-screen lg:ml-[248px]">
+          <div className="mx-auto max-w-5xl px-4 pb-28 pt-[max(env(safe-area-inset-top),20px)] sm:px-6 lg:pb-8 lg:pt-8">
+            <PageTransition>{children}</PageTransition>
+          </div>
+        </main>
+      </div>
+    </NavigationHistoryProvider>
   )
 }

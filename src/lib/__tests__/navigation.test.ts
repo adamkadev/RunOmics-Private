@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { activeNavHref } from '../navigation'
+import { activeNavHref, findOrigin, sectionLabel } from '../navigation'
+import { t } from '@/i18n'
 
 const SIDEBAR = ['/', '/activities', '/plan', '/analytics', '/map', '/profile', '/settings']
 const TAB_BAR = ['/', '/activities', '/plan', '/analytics', '/profile']
@@ -31,5 +32,44 @@ describe('activeNavHref', () => {
 
   it('lights up nothing on a route no nav owns', () => {
     expect(activeNavHref('/login', SIDEBAR)).toBeNull()
+  })
+})
+
+describe('findOrigin', () => {
+  it('returns nothing when the section was entered directly', () => {
+    expect(findOrigin([], '/activities/123')).toBeNull()
+  })
+
+  it('points back at the page that opened the detail', () => {
+    expect(findOrigin(['/profile', '/records'], '/activities/123')).toEqual({
+      path: '/records',
+      isImmediate: true,
+    })
+  })
+
+  it('keeps the list as origin when walking between sibling details', () => {
+    expect(findOrigin(['/profile', '/records', '/activities/1'], '/activities/2')).toEqual({
+      path: '/records',
+      isImmediate: false,
+    })
+  })
+
+  it('treats a list and its detail as distinct steps', () => {
+    expect(findOrigin(['/profile', '/shoes'], '/shoes/abc')).toEqual({
+      path: '/shoes',
+      isImmediate: true,
+    })
+  })
+})
+
+describe('sectionLabel', () => {
+  it('names the section a path belongs to', () => {
+    expect(sectionLabel('/records')).toBe(t.pages.records.title)
+    expect(sectionLabel('/activities/123')).toBe(t.nav.items.activities)
+    expect(sectionLabel('/')).toBe(t.nav.items.dashboard)
+  })
+
+  it('returns nothing for a path no section owns', () => {
+    expect(sectionLabel('/login')).toBeNull()
   })
 })
