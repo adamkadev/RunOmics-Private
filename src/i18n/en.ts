@@ -822,6 +822,17 @@ export const en = {
     achievements: {
       title: 'Achievements from this run',
     },
+    decoupling: {
+      title: 'Aerobic decoupling',
+      stable: 'Held together',
+      drifting: 'Faded',
+      reading: {
+        stable: 'Pace cost the same effort at the end as at the start - the aerobic base covered the distance.',
+        drifting: 'Heart rate climbed while pace held - the aerobic base ran out before the distance did.',
+        negative: 'The second half was more efficient than the first, usually a long warm-up settling in.',
+      },
+      footnote: 'Pace-to-heart-rate ratio, second half vs first. Under 5% is the mark of a steady run.',
+    },
     dataQuality: {
       estimated: 'Estimated',
       noHr: 'No heart-rate data - zones and load are estimated from pace.',

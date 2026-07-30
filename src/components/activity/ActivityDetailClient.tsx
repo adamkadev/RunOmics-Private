@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import type { Activity } from '@/domain/activity/types'
+import { aerobicDecoupling } from '@/domain/activity/decoupling'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import type { HrBounds } from '@/domain/training/trimp'
 import { ActivityMapClient } from './ActivityMapClient'
@@ -14,6 +15,7 @@ import { PaceChart } from './PaceChart'
 import { CadenceChart } from './CadenceChart'
 import { KmSplits } from './KmSplits'
 import { TrainingEffect } from './TrainingEffect'
+import { AerobicDecoupling } from './AerobicDecoupling'
 import { BestEfforts } from './BestEfforts'
 import { RunningDynamics } from './RunningDynamics'
 import { formatClock, formatDistance, formatDurationShort } from '@/lib/formatters'
@@ -153,6 +155,7 @@ export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict }: 
             />
           )}
           <TrainingEffect aer={activity.aerTrainingEffect} ana={activity.anaTrainingEffect} />
+          <AerobicDecoupling decoupling={aerobicDecoupling(activity)} />
           {activity.bestEfforts && (
             <BestEfforts bestEfforts={activity.bestEfforts} qualifiedEfforts={qualifiedEfforts} />
           )}

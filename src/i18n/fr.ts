@@ -816,6 +816,17 @@ export const fr = {
     achievements: {
       title: 'Exploits de cette sortie',
     },
+    decoupling: {
+      title: 'Découplage aérobie',
+      stable: 'Tenu',
+      drifting: 'Dérive',
+      reading: {
+        stable: "L'allure a coûté le même effort à la fin qu'au départ - la base aérobie a tenu la distance.",
+        drifting: "La fréquence cardiaque est montée à allure constante - la base aérobie a lâché avant la distance.",
+        negative: "La seconde moitié a été plus efficace que la première, en général un échauffement qui se met en place.",
+      },
+      footnote: 'Rapport allure/FC, seconde moitié contre première. Sous 5%, la sortie est tenue.',
+    },
     dataQuality: {
       estimated: 'Estimé',
       noHr: 'Pas de fréquence cardiaque - zones et charge estimées depuis l’allure.',
