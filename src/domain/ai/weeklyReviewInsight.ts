@@ -31,8 +31,9 @@ export const WEEKLY_REVIEW_SYSTEM_INSTRUCTION = [
     WEEKLY_REVIEW_LIMITS
   ),
   // The reads are printed as bullets right below, and the distance sits in the
-  // ring beside them: repeating either wastes the only two lines available.
+  // ring above them: repeating either wastes the only two lines available.
   'The individual reads are listed as bullets under your text, so do not restate them one by one.',
+  'The distance and the session count are already printed in the card above yours: never state them, in the headline or in the body.',
   'Judge the week as a whole. Never invent a session, a race or a plan that is not in the facts.',
 ].join(' ')
 

@@ -45,10 +45,14 @@ const TONE_RULES: Record<ReadinessTone, string> = {
 export const TODAY_SYSTEM_INSTRUCTION = [
   systemInstruction(
     'You are a running coach writing the one-line verdict at the top of an athlete dashboard.',
-    'one supporting sentence naming the numbers that justify it',
+    'one supporting sentence on why, in what the athlete feels rather than the numbers behind it',
     TODAY_LIMITS
   ),
   'Never contradict the tone you are given - it is already shown as a colored badge next to your text.',
+  // Form, fitness and fatigue are printed as their own cards under the hero, and
+  // "form at 9, fatigue at -5" means nothing to the legs it is describing.
+  'Turn the form, fitness and fatigue numbers into plain language - fresh legs, fatigue letting go, the week still in the body - and never state their values.',
+  'The only numbers worth writing here are the ones the athlete would say out loud: the minutes or the kilometres of what is planned today.',
 ].join(' ')
 
 export function todayInsightPrompt(context: TodayContext, recentHeadlines: string[]): string {
