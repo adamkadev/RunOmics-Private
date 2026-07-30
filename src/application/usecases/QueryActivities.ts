@@ -1,4 +1,5 @@
 import { getActivities } from './GetActivities'
+import { toActivitySummary } from '@/domain/activity/summary'
 import type { Activity, ActivitySummary, ActivityType } from '@/domain/activity/types'
 
 export type ActivitySortKey = 'date' | 'distance' | 'duration' | 'pace' | 'avgHr'
@@ -17,23 +18,6 @@ export interface ActivityQueryResult {
   items: ActivitySummary[]
   total: number
   nextOffset: number | null
-}
-
-function toSummary(a: Activity): ActivitySummary {
-  return {
-    id: a.id,
-    date: a.date,
-    dayOfWeek: a.dayOfWeek,
-    type: a.type,
-    description: a.description,
-    comment: a.comment,
-    distanceKm: a.distanceKm,
-    durationSeconds: a.durationSeconds,
-    paceSecPerKm: a.paceSecPerKm,
-    avgHeartRate: a.avgHeartRate,
-    rpe: a.rpe,
-    hrZones: a.hrZones,
-  }
 }
 
 function sortValue(a: Activity, key: ActivitySortKey): number {
@@ -83,5 +67,5 @@ export function queryActivities({
   const page = sorted.slice(offset, offset + limit)
   const nextOffset = offset + limit < sorted.length ? offset + limit : null
 
-  return { items: page.map(toSummary), total: sorted.length, nextOffset }
+  return { items: page.map(toActivitySummary), total: sorted.length, nextOffset }
 }

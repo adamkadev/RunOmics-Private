@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { ChevronRight, Check, Footprints, BedDouble } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
-import type { Activity, ActivityType, PlannedWorkout } from '@/domain/activity/types'
+import type { ActivitySummary, ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import { ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import { verdictTone, type ReadinessTone } from '@/domain/training/readiness'
@@ -24,7 +24,7 @@ const ICON_WELL = { background: `color-mix(in srgb, ${ACCENT_ON_DARK} 18%, trans
 interface Props {
   status: TrainingStatus | null
   plannedWorkout: PlannedWorkout | null
-  todayActivity: Activity | null
+  todayActivity: ActivitySummary | null
   nextRace: UpcomingRace | null
   aiVerdict: Insight | null
 }

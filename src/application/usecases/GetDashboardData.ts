@@ -1,4 +1,5 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { toActivitySummary } from '@/domain/activity/summary'
 import { addDays, isoDate, isoWeekNumber, startOfWeek } from '@/lib/calendarDate'
 import { round } from '@/lib/math'
 import type {
@@ -10,6 +11,8 @@ import type {
   WeekSummary,
 } from '@/domain/activity/types'
 
+
+const RECENT_ACTIVITY_COUNT = 8
 
 export function buildWeekSummary(weekNumber: number, activities: Activity[]): WeekSummary {
   const totalDistanceKm = activities.reduce((s, a) => s + a.distanceKm, 0)
@@ -145,7 +148,7 @@ export function getDashboardData(): DashboardData {
     weeks,
     weeklyVolume,
     typeDistribution,
-    recentActivities: all.slice(0, 8),
+    recentActivities: all.slice(0, RECENT_ACTIVITY_COUNT).map(toActivitySummary),
     currentStreak: streaks.current,
     longestStreak: streaks.longest,
   }

@@ -140,7 +140,7 @@ export interface DashboardData {
   weeks: WeekSummary[]
   weeklyVolume: WeeklyVolume[]
   typeDistribution: TypeDistribution[]
-  recentActivities: Activity[]
+  recentActivities: ActivitySummary[]
   currentStreak: number
   longestStreak: number
 }
