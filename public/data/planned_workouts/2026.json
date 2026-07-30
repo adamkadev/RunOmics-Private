@@ -1363,6 +1363,24 @@
       ],
       "type": "Base",
       "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-08-05",
+      "name": "Base",
+      "distanceM": 5524,
+      "durationSecs": 1800,
+      "steps": [
+        {
+          "kind": "effort",
+          "minutes": 30,
+          "paceSecPerKm": [
+            308,
+            346
+          ]
+        }
+      ],
+      "type": "Base",
+      "scheduledTime": "19:00"
     }
   ]
 }

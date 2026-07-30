@@ -2597,7 +2597,15 @@
         }
       ],
       "gearId": "31632434996e484ea1d41eb9c5b20b11",
-      "weather": null
+      "weather": {
+        "tempC": 29.7,
+        "apparentTempC": 28.5,
+        "humidityPct": 28,
+        "windKph": 6.5,
+        "windDirDeg": 272,
+        "precipitationMm": 0.0,
+        "code": 0
+      }
     },
     {
       "id": "23768537954",
@@ -9326,7 +9334,15 @@
         }
       ],
       "gearId": "31632434996e484ea1d41eb9c5b20b11",
-      "weather": null
+      "weather": {
+        "tempC": 20.7,
+        "apparentTempC": 19.7,
+        "humidityPct": 67,
+        "windKph": 16.9,
+        "windDirDeg": 258,
+        "precipitationMm": 0.1,
+        "code": 51
+      }
     },
     {
       "id": "23732314926",
