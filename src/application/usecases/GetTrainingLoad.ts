@@ -4,11 +4,11 @@ import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepo
 import { round } from '@/lib/math'
 import type { Activity } from '@/domain/activity/types'
 import { trimp, DEFAULT_HR_BOUNDS, type HrBounds } from '@/domain/training/trimp'
+import { CTL_DAYS, ATL_DAYS, type LoadSnapshot } from '@/domain/training/taper'
 
 export { trimp, type HrBounds }
+export { ATL_DAYS, type LoadSnapshot }
 
-const CTL_DAYS = 42
-export const ATL_DAYS = 7
 const MAX_DAYS = 1095
 
 export interface TrainingLoadPoint {
@@ -25,12 +25,6 @@ export interface TrainingLoadData {
   atl: number
   tsb: number
   tsbNow: number
-}
-
-export interface LoadSnapshot {
-  ctl: number
-  atl: number
-  tsb: number
 }
 
 function isoDate(d: Date): string {
