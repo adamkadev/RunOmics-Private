@@ -12355,7 +12355,15 @@
         }
       ],
       "gearId": "7b9054faaffb4305a63ac38d2e72909b",
-      "weather": null
+      "weather": {
+        "tempC": 25.3,
+        "apparentTempC": 25.4,
+        "humidityPct": 44,
+        "windKph": 3.4,
+        "windDirDeg": 270,
+        "precipitationMm": 0.0,
+        "code": 1
+      }
     },
     {
       "id": "23708197866",
@@ -15880,7 +15888,15 @@
         }
       ],
       "gearId": "31632434996e484ea1d41eb9c5b20b11",
-      "weather": null
+      "weather": {
+        "tempC": 19.8,
+        "apparentTempC": 18.9,
+        "humidityPct": 54,
+        "windKph": 6.4,
+        "windDirDeg": 47,
+        "precipitationMm": 0.0,
+        "code": 0
+      }
     },
     {
       "id": "23694700691",
@@ -18611,7 +18627,15 @@
         }
       ],
       "gearId": "31632434996e484ea1d41eb9c5b20b11",
-      "weather": null
+      "weather": {
+        "tempC": 23.1,
+        "apparentTempC": 21.4,
+        "humidityPct": 46,
+        "windKph": 13.5,
+        "windDirDeg": 339,
+        "precipitationMm": 0.0,
+        "code": 3
+      }
     },
     {
       "id": "23682666824",
@@ -21906,7 +21930,15 @@
         }
       ],
       "gearId": "31632434996e484ea1d41eb9c5b20b11",
-      "weather": null
+      "weather": {
+        "tempC": 20.0,
+        "apparentTempC": 20.0,
+        "humidityPct": 62,
+        "windKph": 4.7,
+        "windDirDeg": 43,
+        "precipitationMm": 0.0,
+        "code": 0
+      }
     },
     {
       "id": "23617984673",
@@ -24141,7 +24173,15 @@
         }
       ],
       "gearId": "31632434996e484ea1d41eb9c5b20b11",
-      "weather": null
+      "weather": {
+        "tempC": 30.2,
+        "apparentTempC": 30.7,
+        "humidityPct": 30,
+        "windKph": 8.1,
+        "windDirDeg": 179,
+        "precipitationMm": 0.0,
+        "code": 1
+      }
     },
     {
       "id": "23599344898",
@@ -28187,7 +28227,15 @@
         }
       ],
       "gearId": "31632434996e484ea1d41eb9c5b20b11",
-      "weather": null
+      "weather": {
+        "tempC": 25.8,
+        "apparentTempC": 25.2,
+        "humidityPct": 52,
+        "windKph": 15.1,
+        "windDirDeg": 23,
+        "precipitationMm": 0.0,
+        "code": 3
+      }
     },
     {
       "id": "23565012767",
