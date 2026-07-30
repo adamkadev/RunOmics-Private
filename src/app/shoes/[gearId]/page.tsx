@@ -15,6 +15,8 @@ import { formatCompactMonthYear } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
+export const revalidate = 3600
+
 const WEAR_STYLE: Record<WearStatus, { bar: string; text: string }> = {
   ok:      { bar: STATUS.success.dot, text: STATUS.success.text },
   watch:   { bar: STATUS.warning.dot, text: STATUS.warning.text },

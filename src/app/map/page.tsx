@@ -11,6 +11,8 @@ export const metadata: Metadata = {
   title: t.nav.items.heatmap,
 }
 
+export const revalidate = 3600
+
 function Divider() {
   return <span aria-hidden className="h-3 w-px bg-border" />
 }
