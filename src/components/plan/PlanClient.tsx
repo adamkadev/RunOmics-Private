@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import type { Activity, PlannedWorkout } from '@/domain/activity/types'
+import type { ActivitySummary, PlannedWorkout } from '@/domain/activity/types'
 import type { HrBounds } from '@/domain/training/trimp'
 import type { TrainingStatusCalendar } from '@/application/usecases/GetTrainingStatusCalendar'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 interface Props {
-  activities: Activity[]
+  activities: ActivitySummary[]
   plannedWorkouts: PlannedWorkout[]
   hrBounds?: HrBounds
   statusByDate: TrainingStatusCalendar
@@ -45,7 +45,7 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate
   const [focusDate, setFocusDate] = useState<string | null>(null)
 
   const byDate = useMemo(() => {
-    const map = new Map<string, Activity[]>()
+    const map = new Map<string, ActivitySummary[]>()
     for (const a of activities) {
       const list = map.get(a.date) ?? []
       list.push(a)

@@ -1,4 +1,4 @@
-import type { Activity, ActivityType } from '@/domain/activity/types'
+import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
 import { trimp, type HrBounds } from './trimp'
 import { easyHardShare } from './easyHard'
 
@@ -12,7 +12,7 @@ export interface WeekSummary {
   hardPct: number | null
 }
 
-export function summarizeWeek(activities: Activity[], hrBounds?: HrBounds): WeekSummary {
+export function summarizeWeek(activities: ActivitySummary[], hrBounds?: HrBounds): WeekSummary {
   const totalTrimp = Math.round(activities.reduce((s, a) => s + trimp(a, hrBounds), 0))
   const elevationGainM = Math.round(activities.reduce((s, a) => s + (a.elevationGain ?? 0), 0))
   const keySessionsCount = activities.filter((a) => !EASY_TYPES.includes(a.type)).length
@@ -20,7 +20,7 @@ export function summarizeWeek(activities: Activity[], hrBounds?: HrBounds): Week
   return { totalTrimp, elevationGainM, keySessionsCount, easyPct, hardPct }
 }
 
-export function weeklyTrimpTotals(weekNumbers: number[], byWeek: Map<number, Activity[]>, hrBounds?: HrBounds): number[] {
+export function weeklyTrimpTotals(weekNumbers: number[], byWeek: Map<number, ActivitySummary[]>, hrBounds?: HrBounds): number[] {
   return weekNumbers.map((week) => Math.round((byWeek.get(week) ?? []).reduce((s, a) => s + trimp(a, hrBounds), 0)))
 }
 

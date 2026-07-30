@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { X } from 'lucide-react'
-import type { Activity } from '@/domain/activity/types'
+import type { ActivitySummary } from '@/domain/activity/types'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import { formatDuration, formatDate } from '@/lib/formatters'
 import { useDragToDismiss } from '@/lib/useDragToDismiss'
@@ -13,7 +13,7 @@ import { useScrollLock } from '@/lib/useScrollLock'
 import { t } from '@/i18n'
 
 interface Props {
-  activity: Activity
+  activity: ActivitySummary
   title?: string
   onClose: () => void
 }

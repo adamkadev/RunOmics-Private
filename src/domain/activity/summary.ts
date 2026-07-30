@@ -19,5 +19,7 @@ export function toActivitySummary(a: Activity): ActivitySummary {
     avgHeartRate: a.avgHeartRate,
     rpe: a.rpe,
     hrZones: a.hrZones,
+    week: a.week,
+    elevationGain: a.elevationGain,
   }
 }

@@ -85,6 +85,8 @@ export type ActivitySummary = Pick<
   | 'avgHeartRate'
   | 'rpe'
   | 'hrZones'
+  | 'week'
+  | 'elevationGain'
 >
 
 export type WorkoutStepKind = 'warmup' | 'effort' | 'recovery' | 'cooldown'

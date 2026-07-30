@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { Check, ChevronRight, Footprints, X } from 'lucide-react'
-import type { Activity, ActivityType, PlannedWorkout } from '@/domain/activity/types'
+import type { ActivitySummary, ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import { ACTIVITY_TYPE_CONFIG, ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
 import type { HrBounds } from '@/domain/training/trimp'
 import {
@@ -52,7 +52,7 @@ const TREND_WEEKS = 8
 interface Day {
   date: string
   day: number
-  acts: Activity[]
+  acts: ActivitySummary[]
 }
 
 // The card itself stays a neutral surface and only the icon tile carries the
@@ -183,8 +183,8 @@ function SummaryStat({ label, value }: { label: string; value: React.ReactNode }
 
 interface Props {
   weekStart: Date
-  activities: Activity[]
-  byDate: Map<string, Activity[]>
+  activities: ActivitySummary[]
+  byDate: Map<string, ActivitySummary[]>
   byDatePlanned: Map<string, PlannedWorkout>
   hrBounds?: HrBounds
   today: string
@@ -233,13 +233,13 @@ export function WeekView({
       days.find((d) => d.date === today)?.date ??
       firstDay.date
   )
-  const [sheetActivity, setSheetActivity] = useState<Activity | null>(null)
+  const [sheetActivity, setSheetActivity] = useState<ActivitySummary | null>(null)
   const [sheetPlan, setSheetPlan] = useState<PlannedWorkout | null>(null)
 
   const selected = days.find((d) => d.date === selectedDate) ?? firstDay
   const selectedPlan = byDatePlanned.get(selected.date)
 
-  function activityTitle(a: Activity): string {
+  function activityTitle(a: ActivitySummary): string {
     if (a.description && a.description !== t.activityTypes[a.type]) return a.description
     return selectedPlan?.name ?? a.description ?? t.activityTypes[a.type]
   }
@@ -258,7 +258,7 @@ export function WeekView({
   )
 
   const byWeekNumber = useMemo(() => {
-    const map = new Map<number, Activity[]>()
+    const map = new Map<number, ActivitySummary[]>()
     for (const a of activities) {
       const list = map.get(a.week) ?? []
       list.push(a)

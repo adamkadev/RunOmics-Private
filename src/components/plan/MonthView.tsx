@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
-import type { Activity, ActivityType, PlannedWorkout } from '@/domain/activity/types'
+import type { ActivitySummary, ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import { round } from '@/lib/math'
 import { formatDateFull } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -14,7 +14,7 @@ import { t } from '@/i18n'
 interface Props {
   year: number
   month: number
-  byDate: Map<string, Activity[]>
+  byDate: Map<string, ActivitySummary[]>
   byDatePlanned: Map<string, PlannedWorkout>
   today: string
   atPresent: boolean
@@ -27,7 +27,7 @@ const WEEKDAYS = t.plan.weekdays
 
 const MAX_DOTS = 3
 
-function DayActivities({ activities }: { activities: Activity[] }) {
+function DayActivities({ activities }: { activities: ActivitySummary[] }) {
   const visible = activities.slice(0, MAX_DOTS)
   const overflow = activities.length - MAX_DOTS
   const totalKm = activities.reduce((sum, a) => sum + a.distanceKm, 0)
@@ -110,7 +110,7 @@ export function MonthView({ year, month, byDate, byDatePlanned, today, atPresent
     const daysInMonth = new Date(year, month + 1, 0).getDate()
     const prefix = monthKey(year, month)
 
-    const cells: Array<{ day: number; date: string; acts: Activity[] } | null> = []
+    const cells: Array<{ day: number; date: string; acts: ActivitySummary[] } | null> = []
     for (let i = 0; i < startOffset; i++) cells.push(null)
     let totalKm = 0
     let sessionCount = 0
