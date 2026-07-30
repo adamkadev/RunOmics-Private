@@ -109,6 +109,16 @@ class TestMapActivity:
         data = map_activity(activity, None)
         assert data.rpe == 7
 
+    def test_weather_is_passed_through_to_the_json(self):
+        weather = {"tempC": 19.0, "humidityPct": 69, "code": 0}
+        data = map_activity(self._garmin_activity(), None, weather=weather)
+
+        assert data.weather == weather
+        assert data.to_dict()["weather"] == weather
+
+    def test_weather_defaults_to_none(self):
+        assert map_activity(self._garmin_activity(), None).to_dict()["weather"] is None
+
     def test_long_sample_arrays_are_decimated_for_charts(self):
         parsed = ParsedFit(
             duration_seconds=1800,

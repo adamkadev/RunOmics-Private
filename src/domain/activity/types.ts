@@ -27,6 +27,23 @@ export interface ActivitySplit {
   laps: SplitLap[]
 }
 
+/**
+ * Conditions at the middle of the run, from Open-Meteo (see
+ * scripts/processing/weather.py). Distinct from `avgTemperature`, which is what
+ * the watch's own sensor read on the wrist.
+ */
+export interface ActivityWeather {
+  tempC: number
+  apparentTempC: number
+  humidityPct: number
+  windKph: number
+  /** Direction the wind blows FROM, in degrees clockwise from north. */
+  windDirDeg: number
+  precipitationMm: number
+  /** WMO weather code - map it with `weatherCondition()`. */
+  code: number
+}
+
 export interface HrZone {
   zone: number
   seconds: number
@@ -69,6 +86,7 @@ export interface Activity {
   avgTemperature: number | null
   cadenceSamples: number[] | null
   gearId: string | null
+  weather: ActivityWeather | null
 }
 
 export type ActivitySummary = Pick<

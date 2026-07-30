@@ -8,6 +8,7 @@ from garmin_fit_sdk import Decoder, Stream
 
 _SEMICIRCLE_TO_DEG = 180.0 / 2**31
 _MAX_ROUTE_POINTS = 2000
+_FIT_EPOCH = datetime(1989, 12, 31)
 _EFFORT_TARGETS_M = {
     "1k": 1000.0,
     "1mile": 1609.34,
@@ -309,16 +310,27 @@ def _extract_splits(messages: dict) -> list[ActivitySplit]:
     return result
 
 
+def _naive_datetime(value: object) -> datetime | None:
+    """`timestamp` comes back decoded, but `local_timestamp` stays a raw FIT
+    timestamp (seconds since 1989-12-31) - comparing the two as datetimes
+    silently yields no offset at all."""
+    if isinstance(value, datetime):
+        return value.replace(tzinfo=None)
+    if isinstance(value, (int, float)):
+        return _FIT_EPOCH + timedelta(seconds=int(value))
+    return None
+
+
 def _local_start_time(session: dict, activities: list[dict]) -> datetime | None:
     start = session.get("start_time")
     if not isinstance(start, datetime):
         return None
 
     for act in activities:
-        ts = act.get("timestamp")
-        local_ts = act.get("local_timestamp")
-        if isinstance(ts, datetime) and isinstance(local_ts, datetime):
-            offset = local_ts.replace(tzinfo=None) - ts.replace(tzinfo=None)
+        ts = _naive_datetime(act.get("timestamp"))
+        local_ts = _naive_datetime(act.get("local_timestamp"))
+        if ts is not None and local_ts is not None:
+            offset = local_ts - ts
             if abs(offset) <= timedelta(hours=14):
                 return start.replace(tzinfo=None) + offset
 

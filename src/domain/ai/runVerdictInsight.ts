@@ -20,6 +20,23 @@ export function runVerdictSurface(activityId: string): string {
   return `${RUN_VERDICT_PREFIX}${activityId}`
 }
 
+// The watch's own sensor rides on the wrist and reads ~6°C above the air it is
+// meant to describe (+8.8°C near freezing, +2.3°C in the high twenties), so the
+// conditions now come from the weather - apparent rather than air temperature,
+// because it already folds in the wind and humidity the effort actually paid for.
+//
+// Runs before this date deliberately keep the old sensor reading: a verdict is
+// served only while its cached hash still matches these facts, so moving them
+// over would strip the copy they already have rather than improve it. A run
+// still waiting on its conditions holds its reading too, so it migrates once
+// when the weather lands instead of regenerating on the way there.
+const WEATHER_FACTS_FROM = '2026-05-08'
+
+function verdictTemperature(activity: Activity): number | null {
+  if (activity.date < WEATHER_FACTS_FROM || !activity.weather) return activity.avgTemperature
+  return Math.round(activity.weather.apparentTempC)
+}
+
 function facts(activity: Activity) {
   const execution = sessionExecution(activity)
 
@@ -33,7 +50,7 @@ function facts(activity: Activity) {
     rpe: activity.rpe,
     aerTrainingEffect: activity.aerTrainingEffect,
     elevationGain: activity.elevationGain,
-    temperature: activity.avgTemperature,
+    temperature: verdictTemperature(activity),
     execution: execution ? executionLine(execution) : null,
   }
 }
@@ -100,7 +117,7 @@ export function runVerdictInsightPrompt(activity: Activity, recentHeadlines: str
       : null,
     f.aerTrainingEffect !== null ? `- Aerobic training effect (0-5): ${f.aerTrainingEffect}` : null,
     f.elevationGain ? `- Elevation gain: ${f.elevationGain} m` : null,
-    f.temperature !== null ? `- Temperature: ${f.temperature}°C` : null,
+    f.temperature !== null ? `- Temperature it felt like: ${f.temperature}°C` : null,
     f.execution ? `- How it was held together: ${f.execution}` : null,
     avoidClause(recentHeadlines),
   ]

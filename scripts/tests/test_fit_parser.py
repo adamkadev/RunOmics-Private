@@ -207,6 +207,15 @@ class TestLocalStartTime:
         }]
         assert _local_start_time(session, activities) == datetime(2026, 7, 1, 10, 0, 0)
 
+    def test_raw_fit_epoch_local_timestamp(self):
+        start = datetime(2026, 7, 28, 19, 30, 0, tzinfo=timezone.utc)
+        session = {"start_time": start}
+        activities = [{
+            "timestamp": datetime(2026, 7, 28, 19, 55, 56, tzinfo=timezone.utc),
+            "local_timestamp": 1154210156,
+        }]
+        assert _local_start_time(session, activities) == datetime(2026, 7, 28, 21, 30, 0)
+
     def test_absurd_offset_is_ignored(self):
         session = {"start_time": datetime(2026, 7, 1, 8, 0, 0)}
         activities = [{

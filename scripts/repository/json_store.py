@@ -69,6 +69,8 @@ class JsonActivityStore:
         if existing is not None and not replace:
             new_dict["rpe"] = existing.get("rpe", new_dict["rpe"])
             new_dict["comment"] = existing.get("comment", "")
+            if new_dict.get("weather") is None:
+                new_dict["weather"] = existing.get("weather")
 
         self._by_id[activity.id] = new_dict
         self.touch(activity.id)

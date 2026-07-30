@@ -2,22 +2,23 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { MapPin, Maximize2, Minimize2, Thermometer } from 'lucide-react'
+import { MapPin, Maximize2, Minimize2 } from 'lucide-react'
 import type { LngLatBounds, Map as MapLibreMap, Marker } from 'maplibre-gl'
 import { cn } from '@/lib/utils'
 import { maptilerStyleUrl } from '@/lib/maptiler'
-import { CHART_COLORS, MAP_COLORS, PACE_ROUTE_COLORS, temperatureIconColor } from '@/lib/colors'
+import { CHART_COLORS, MAP_COLORS, PACE_ROUTE_COLORS } from '@/lib/colors'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
-import type { ActivityType } from '@/domain/activity/types'
+import type { ActivityType, ActivityWeather } from '@/domain/activity/types'
 import { ShoePairTag } from '@/components/activities/ShoePairTag'
+import { WeatherChips } from './WeatherChips'
 import { t } from '@/i18n'
 
 interface Props {
   route: [number, number][]
   paceSamples?: number[] | null
   hoverFraction?: number | null
-  avgTemperature?: number | null
-  /** Rendered as a colored badge next to the temperature chip, saving a header row. */
+  weather?: ActivityWeather | null
+  /** Rendered as a colored badge next to the conditions chips, saving a header row. */
   activityType?: ActivityType | null
   /** Rendered as a pill in the map's bottom-left, keeping activity metadata off the header. */
   gearId?: string | null
@@ -58,7 +59,7 @@ function mkMarker(bg: string, border = 'white', size = 13) {
   return el
 }
 
-export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemperature, activityType, gearId, className }: Props) {
+export default function ActivityMap({ route, paceSamples, hoverFraction, weather, activityType, gearId, className }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<MapLibreMap | null>(null)
   const mglRef = useRef<typeof import('maplibre-gl') | null>(null)
@@ -239,19 +240,16 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
     >
       <div ref={containerRef} role="img" aria-label={t.activity.map.routeMap} className="h-full w-full" />
 
-      {(avgTemperature != null || activityType) && (
+      {(weather || activityType) && (
         <div
           className={cn(
-            'absolute left-2 z-10 flex items-center gap-1.5',
+            // right-14 keeps the row clear of the fullscreen button, so a long
+            // wind reading wraps onto a second line instead of sliding under it.
+            'absolute left-2 right-14 z-10 flex flex-wrap items-center gap-1.5',
             isFullscreen ? 'top-[max(env(safe-area-inset-top),8px)]' : 'top-2'
           )}
         >
-          {avgTemperature != null && (
-            <div className="glass-map-chip flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold">
-              <Thermometer size={12} className={temperatureIconColor(avgTemperature)} />
-              {avgTemperature}{t.units.celsius}
-            </div>
-          )}
+          {weather && <WeatherChips weather={weather} />}
           {activityType && (
             <span
               className="rounded-[10px] px-2.5 py-1.5 text-xs font-bold uppercase tracking-wide"

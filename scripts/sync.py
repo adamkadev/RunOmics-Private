@@ -25,6 +25,7 @@ from sync_workouts import enrich_description_from_plan, fetch_planned_workouts, 
 from sync_upcoming_races import fetch_upcoming_races, write_upcoming_races
 from processing.fit_parser import ParsedFit, parse_fit
 from processing.mapper import HrZone, extract_gear_id, map_activity, parse_hr_zones
+from processing.weather import WeatherClient, weather_for_activity
 from repository.json_store import JsonActivityStore, PlannedWorkoutStore
 
 _FIT_DIR = Path(__file__).parent.parent / "public" / "fit"
@@ -48,6 +49,7 @@ def main() -> int:
     existing_ids = store.get_existing_ids()
     print(f"activities.json: {store.count()} existing activities")
     planned_store = PlannedWorkoutStore()
+    weather_client = WeatherClient()
 
     with GarminClient(secret) as client:
         # Fetched early (before the activity loop) so newly-synced activities can be
@@ -104,8 +106,11 @@ def main() -> int:
 
                     time.sleep(_RATE_LIMIT_PAUSE)
 
+                    weather = weather_for_activity(weather_client, parsed) if parsed else None
+
                     activity_data = map_activity(
-                        detail, parsed, hr_zones=hr_zones, file_name=file_name, gear=gear
+                        detail, parsed, hr_zones=hr_zones, file_name=file_name, gear=gear,
+                        weather=weather,
                     )
                     enrich_description_from_plan(activity_data, planned_store)
                 except Exception as exc:

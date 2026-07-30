@@ -63,6 +63,7 @@ class ActivityData:
     cadence_samples: list[float] | None
     splits: list[ActivitySplit] | None
     gear_id: str | None
+    weather: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -99,6 +100,7 @@ class ActivityData:
             "cadenceSamples": self.cadence_samples,
             "splits": [s.to_dict() for s in self.splits] if self.splits else None,
             "gearId": self.gear_id,
+            "weather": self.weather,
         }
 
 
@@ -142,6 +144,7 @@ def map_activity(
     hr_zones: list[HrZone] | None = None,
     file_name: str | None = None,
     gear: list[dict[str, Any]] | None = None,
+    weather: dict[str, Any] | None = None,
 ) -> ActivityData:
     summary: dict[str, Any] = garmin_activity.get("summaryDTO") or {}
 
@@ -254,6 +257,7 @@ def map_activity(
         cadence_samples=cadence_samples,
         splits=parsed.splits if parsed and parsed.splits else None,
         gear_id=extract_gear_id(gear),
+        weather=weather,
     )
 
 

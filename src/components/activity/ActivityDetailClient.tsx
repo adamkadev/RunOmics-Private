@@ -95,7 +95,7 @@ export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict }: 
           <ActivityMapClient
             route={activity.route}
             paceSamples={activity.paceSamples}
-            avgTemperature={activity.avgTemperature}
+            weather={activity.weather}
             activityType={activity.type}
             gearId={activity.gearId}
             className="h-full w-full"

@@ -4657,7 +4657,16 @@
           ]
         }
       ],
-      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f"
+      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f",
+      "weather": {
+        "tempC": 9.6,
+        "apparentTempC": 5.3,
+        "humidityPct": 47,
+        "windKph": 13.9,
+        "windDirDeg": 1,
+        "precipitationMm": 0.0,
+        "code": 2
+      }
     },
     {
       "id": "22341813217",
@@ -11308,7 +11317,16 @@
           ]
         }
       ],
-      "gearId": "31632434996e484ea1d41eb9c5b20b11"
+      "gearId": "31632434996e484ea1d41eb9c5b20b11",
+      "weather": {
+        "tempC": 8.0,
+        "apparentTempC": 4.6,
+        "humidityPct": 58,
+        "windKph": 9.2,
+        "windDirDeg": 264,
+        "precipitationMm": 0.0,
+        "code": 3
+      }
     },
     {
       "id": "22331217733",
@@ -14380,7 +14398,16 @@
           ]
         }
       ],
-      "gearId": "31632434996e484ea1d41eb9c5b20b11"
+      "gearId": "31632434996e484ea1d41eb9c5b20b11",
+      "weather": {
+        "tempC": 3.2,
+        "apparentTempC": -0.8,
+        "humidityPct": 69,
+        "windKph": 11.2,
+        "windDirDeg": 316,
+        "precipitationMm": 0.0,
+        "code": 0
+      }
     },
     {
       "id": "22319883522",
@@ -17658,7 +17685,16 @@
           ]
         }
       ],
-      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f"
+      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f",
+      "weather": {
+        "tempC": 3.6,
+        "apparentTempC": 0.6,
+        "humidityPct": 69,
+        "windKph": 4.3,
+        "windDirDeg": 138,
+        "precipitationMm": 0.0,
+        "code": 3
+      }
     },
     {
       "id": "22297641084",
@@ -20332,7 +20368,16 @@
           ]
         }
       ],
-      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f"
+      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f",
+      "weather": {
+        "tempC": 5.3,
+        "apparentTempC": 0.9,
+        "humidityPct": 82,
+        "windKph": 18.4,
+        "windDirDeg": 282,
+        "precipitationMm": 0.1,
+        "code": 51
+      }
     },
     {
       "id": "22288370797",
@@ -24032,7 +24077,16 @@
           ]
         }
       ],
-      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f"
+      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f",
+      "weather": {
+        "tempC": 10.4,
+        "apparentTempC": 7.2,
+        "humidityPct": 68,
+        "windKph": 13.0,
+        "windDirDeg": 218,
+        "precipitationMm": 0.0,
+        "code": 3
+      }
     },
     {
       "id": "22262377365",
@@ -28931,7 +28985,16 @@
           ]
         }
       ],
-      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f"
+      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f",
+      "weather": {
+        "tempC": 12.7,
+        "apparentTempC": 10.1,
+        "humidityPct": 52,
+        "windKph": 7.1,
+        "windDirDeg": 60,
+        "precipitationMm": 0.0,
+        "code": 1
+      }
     },
     {
       "id": "22252821140",
@@ -31261,7 +31324,16 @@
           ]
         }
       ],
-      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f"
+      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f",
+      "weather": {
+        "tempC": 10.5,
+        "apparentTempC": 7.2,
+        "humidityPct": 65,
+        "windKph": 12.5,
+        "windDirDeg": 51,
+        "precipitationMm": 0.0,
+        "code": 1
+      }
     },
     {
       "id": "22238670744",
@@ -35330,7 +35402,16 @@
           ]
         }
       ],
-      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f"
+      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f",
+      "weather": {
+        "tempC": 15.3,
+        "apparentTempC": 12.1,
+        "humidityPct": 40,
+        "windKph": 9.8,
+        "windDirDeg": 38,
+        "precipitationMm": 0.0,
+        "code": 0
+      }
     },
     {
       "id": "22215424468",
@@ -37708,7 +37789,16 @@
           ]
         }
       ],
-      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f"
+      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f",
+      "weather": {
+        "tempC": 13.3,
+        "apparentTempC": 8.2,
+        "humidityPct": 47,
+        "windKph": 23.6,
+        "windDirDeg": 52,
+        "precipitationMm": 0.0,
+        "code": 0
+      }
     },
     {
       "id": "22205516653",
@@ -42451,7 +42541,16 @@
           ]
         }
       ],
-      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f"
+      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f",
+      "weather": {
+        "tempC": 12.2,
+        "apparentTempC": 9.6,
+        "humidityPct": 59,
+        "windKph": 8.5,
+        "windDirDeg": 54,
+        "precipitationMm": 0.0,
+        "code": 3
+      }
     },
     {
       "id": "22182908217",
@@ -47246,7 +47345,16 @@
           ]
         }
       ],
-      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f"
+      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f",
+      "weather": {
+        "tempC": 7.6,
+        "apparentTempC": 5.0,
+        "humidityPct": 60,
+        "windKph": 3.6,
+        "windDirDeg": 357,
+        "precipitationMm": 0.0,
+        "code": 3
+      }
     },
     {
       "id": "22173128251",
@@ -50568,7 +50676,16 @@
           ]
         }
       ],
-      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f"
+      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f",
+      "weather": {
+        "tempC": 6.4,
+        "apparentTempC": 2.6,
+        "humidityPct": 62,
+        "windKph": 10.6,
+        "windDirDeg": 291,
+        "precipitationMm": 0.1,
+        "code": 51
+      }
     },
     {
       "id": "22161923747",
@@ -54065,7 +54182,16 @@
           ]
         }
       ],
-      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f"
+      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f",
+      "weather": {
+        "tempC": 11.1,
+        "apparentTempC": 7.7,
+        "humidityPct": 86,
+        "windKph": 20.8,
+        "windDirDeg": 206,
+        "precipitationMm": 0.5,
+        "code": 53
+      }
     },
     {
       "id": "22140588891",
@@ -57001,7 +57127,16 @@
           ]
         }
       ],
-      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f"
+      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f",
+      "weather": {
+        "tempC": 9.2,
+        "apparentTempC": 5.9,
+        "humidityPct": 93,
+        "windKph": 18.7,
+        "windDirDeg": 222,
+        "precipitationMm": 0.4,
+        "code": 51
+      }
     },
     {
       "id": "22127046218",
@@ -60664,7 +60799,16 @@
           ]
         }
       ],
-      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f"
+      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f",
+      "weather": {
+        "tempC": 13.5,
+        "apparentTempC": 11.1,
+        "humidityPct": 71,
+        "windKph": 13.4,
+        "windDirDeg": 223,
+        "precipitationMm": 0.1,
+        "code": 51
+      }
     },
     {
       "id": "22106972038",
@@ -66129,7 +66273,16 @@
           ]
         }
       ],
-      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f"
+      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f",
+      "weather": {
+        "tempC": 15.8,
+        "apparentTempC": 15.2,
+        "humidityPct": 66,
+        "windKph": 3.2,
+        "windDirDeg": 142,
+        "precipitationMm": 0.0,
+        "code": 3
+      }
     },
     {
       "id": "22094875400",
@@ -69117,7 +69270,16 @@
           ]
         }
       ],
-      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f"
+      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f",
+      "weather": {
+        "tempC": 15.9,
+        "apparentTempC": 14.4,
+        "humidityPct": 58,
+        "windKph": 5.8,
+        "windDirDeg": 60,
+        "precipitationMm": 0.0,
+        "code": 3
+      }
     },
     {
       "id": "22083452454",
@@ -72437,7 +72599,16 @@
           ]
         }
       ],
-      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f"
+      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f",
+      "weather": {
+        "tempC": 15.5,
+        "apparentTempC": 14.8,
+        "humidityPct": 65,
+        "windKph": 2.7,
+        "windDirDeg": 53,
+        "precipitationMm": 0.0,
+        "code": 3
+      }
     },
     {
       "id": "22060889784",
@@ -75423,7 +75594,16 @@
           ]
         }
       ],
-      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f"
+      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f",
+      "weather": {
+        "tempC": 14.0,
+        "apparentTempC": 11.4,
+        "humidityPct": 55,
+        "windKph": 9.5,
+        "windDirDeg": 99,
+        "precipitationMm": 0.0,
+        "code": 0
+      }
     },
     {
       "id": "22049020167",
@@ -79050,7 +79230,16 @@
           ]
         }
       ],
-      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f"
+      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f",
+      "weather": {
+        "tempC": 15.0,
+        "apparentTempC": 13.7,
+        "humidityPct": 62,
+        "windKph": 4.7,
+        "windDirDeg": 43,
+        "precipitationMm": 0.0,
+        "code": 0
+      }
     },
     {
       "id": "22025451726",
@@ -83721,7 +83910,16 @@
           ]
         }
       ],
-      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f"
+      "gearId": "e6aa89fbda0747059f5acbd4dfb5736f",
+      "weather": {
+        "tempC": 12.8,
+        "apparentTempC": 10.7,
+        "humidityPct": 59,
+        "windKph": 6.3,
+        "windDirDeg": 207,
+        "precipitationMm": 0.0,
+        "code": 1
+      }
     }
   ]
 }

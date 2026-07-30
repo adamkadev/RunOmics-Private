@@ -80,6 +80,13 @@ jobs:
         if: always()
         run: warp-cli --accept-tos disconnect || true
 
+      # Picks up any run whose conditions lookup failed during the sync itself.
+      # A no-op once every activity has weather, and never worth failing a sync for.
+      - name: Backfill missing weather
+        if: github.event.inputs.dry_run != 'true'
+        continue-on-error: true
+        run: python scripts/backfill_weather.py
+
       - name: Commit updated activities.json
         id: commit
         run: |
