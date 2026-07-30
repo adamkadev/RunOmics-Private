@@ -2,6 +2,9 @@ import { getAnalyticsData } from '@/application/usecases/GetAnalyticsData'
 import { getYearComparison } from '@/application/usecases/GetYearComparison'
 import { getSeasonHeadline } from '@/application/usecases/GetSeasonHeadline'
 import { getSeasonInsight } from '@/application/usecases/GetSeasonInsight'
+import { analyticsTabFacts } from '@/application/usecases/GetAnalyticsTabFacts'
+import { getAnalyticsTabInsights } from '@/application/usecases/GetAnalyticsTabInsights'
+import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { getVO2maxSeries, getLatestVO2max } from '@/application/usecases/GetVO2maxHistory'
 import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
 import { getLoadRiskPanel } from '@/application/usecases/GetLoadRiskPanel'
@@ -33,6 +36,19 @@ export default async function AnalyticsPage() {
   const seasonHeadline = getSeasonHeadline(data, comparison)
   const seasonInsight = await getSeasonInsight(seasonHeadline)
 
+  const tabInsights = await getAnalyticsTabInsights(
+    analyticsTabFacts({
+      data,
+      status: await getTrainingStatus(),
+      load: trainingLoad,
+      loadRisk,
+      loadBalance,
+      threshold,
+      racePredictions,
+      vo2max: getLatestVO2max(),
+    })
+  )
+
   // Insight-card context, all read from already-computed series:
   const athlete = getAthleteProfile()
   const latestVO2max = getLatestVO2max()
@@ -49,6 +65,7 @@ export default async function AnalyticsPage() {
         comparison={comparison}
         seasonHeadline={seasonHeadline}
         seasonInsight={seasonInsight}
+        tabInsights={tabInsights}
         vo2maxHistory={vo2maxHistory}
         trainingLoad={trainingLoad}
         loadRisk={loadRisk}

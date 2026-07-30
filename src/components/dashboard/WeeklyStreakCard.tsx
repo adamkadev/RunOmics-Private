@@ -1,9 +1,8 @@
 'use client'
 
-import { AlertTriangle, Check } from 'lucide-react'
+import { Check } from 'lucide-react'
 import type { WeeklyStreakData } from '@/application/usecases/GetMilestones'
 import type { WeeklyGoal } from '@/application/usecases/GetGoalsData'
-import type { DigestFact } from '@/application/usecases/GetWeeklyDigest'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { useCountUp } from '@/lib/useCountUp'
 import { cn } from '@/lib/utils'
@@ -63,10 +62,9 @@ function WeekDots({ weekDays, plannedDays, today }: { weekDays: boolean[]; plann
 interface Props {
   data: WeeklyStreakData
   goal: WeeklyGoal | null
-  hardShareFact: DigestFact | null
 }
 
-export function WeeklyStreakCard({ data, goal, hardShareFact }: Props) {
+export function WeeklyStreakCard({ data, goal }: Props) {
   const s = t.dashboard.weeklyStreak
   const today = (new Date().getDay() + 6) % 7 // Mon=0..Sun=6
 
@@ -118,12 +116,6 @@ export function WeeklyStreakCard({ data, goal, hardShareFact }: Props) {
           <p className="text-sm font-semibold text-foreground">{headline}</p>
           {isFreshWeek && (
             <p className="mt-0.5 text-xs text-muted-foreground">{s.freshWeekGoal(Math.round(goal.targetKm))}</p>
-          )}
-          {hardShareFact && (
-            <span className="mt-2 flex items-start gap-1.5 rounded-lg border border-amber-500/[0.28] bg-amber-500/[0.12] px-2 py-1 text-caption text-amber-600 dark:text-amber-400">
-              <AlertTriangle size={12} className="mt-px shrink-0" />
-              <span className="min-w-0 leading-snug">{hardShareFact.text}</span>
-            </span>
           )}
         </div>
       </div>

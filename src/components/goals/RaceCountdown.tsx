@@ -1,4 +1,5 @@
 import type { RaceReadiness } from '@/application/usecases/GetRaceReadiness'
+import type { Insight } from '@/lib/gemini'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { Badge } from '@/components/ui/Card'
 import { formatClock, formatDateFull, formatPace } from '@/lib/formatters'
@@ -8,6 +9,8 @@ import { t } from '@/i18n'
 
 interface Props {
   readiness: RaceReadiness | null
+  /** Generated note on the countdown phase; falls back to the phase's own copy. */
+  aiTake: Insight | null
 }
 
 const VERDICT_STATUS = {
@@ -30,7 +33,7 @@ function signed(tsb: number): string {
   return `${tsb > 0 ? '+' : ''}${tsb.toFixed(1)}`
 }
 
-export function RaceCountdown({ readiness }: Props) {
+export function RaceCountdown({ readiness, aiTake }: Props) {
   if (!readiness) return null
 
   const { race, daysUntil, phase, tsb, projectedTsb, projectedVerdict, predictedSeconds, targetPaceSecPerKm } = readiness
@@ -48,9 +51,14 @@ export function RaceCountdown({ readiness }: Props) {
         <Badge className="shrink-0 bg-accent/10 font-semibold text-accent-text">{r.countdown(daysUntil)}</Badge>
       </div>
 
+      {/* The phase name is a fact of the countdown, so it keeps its own line
+          whatever the generated copy says about it. */}
       <div>
-        <p className="text-sm font-semibold text-foreground">{r.phases[phase]}</p>
-        <p className="text-caption text-subtle">{r.phaseBody[phase]}</p>
+        <p className="text-micro font-semibold uppercase tracking-[0.08em] text-muted-foreground">{r.phases[phase]}</p>
+        <p className={cn('mt-0.5 text-sm text-foreground', aiTake && 'font-semibold')}>
+          {aiTake?.headline ?? r.phaseBody[phase]}
+        </p>
+        {aiTake && <p className="mt-0.5 text-caption text-subtle">{aiTake.body}</p>}
       </div>
 
       <div className="grid grid-cols-3 gap-2">

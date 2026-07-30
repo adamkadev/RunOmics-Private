@@ -5,13 +5,14 @@ import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { Trophy } from 'lucide-react'
 import type { RecordEntry } from '@/application/usecases/GetRecords'
+import type { Insight } from '@/lib/gemini'
+import { CELEBRATION_WINDOW_DAYS } from '@/domain/ai/pbCelebrationInsight'
 import { formatDuration, formatDistance } from '@/lib/formatters'
 import { useHaptic } from '@/lib/useHaptic'
 import { useFocusTrap } from '@/lib/useFocusTrap'
 import { CELEBRATION_COLORS } from '@/lib/colors'
 import { t } from '@/i18n'
 
-const CELEBRATION_WINDOW_DAYS = 3
 const STORAGE_PREFIX = 'ro-celebration-seen:'
 
 const [GREEN, AMBER, CYAN, PINK] = CELEBRATION_COLORS.confetti
@@ -30,7 +31,7 @@ function isRecent(date: string): boolean {
   return days >= 0 && days <= CELEBRATION_WINDOW_DAYS
 }
 
-export function CelebrationOverlay({ record }: { record: RecordEntry | null }) {
+export function CelebrationOverlay({ record, aiTake }: { record: RecordEntry | null; aiTake: Insight | null }) {
   const haptic = useHaptic()
   const trapRef = useFocusTrap<HTMLDivElement>()
 
@@ -92,6 +93,13 @@ export function CelebrationOverlay({ record }: { record: RecordEntry | null }) {
           {record.distanceKm ? `${formatDistance(record.distanceKm)} ${t.units.km}` : record.label}
         </div>
         <div className="text-4xl font-bold tabular-nums">{formatDuration(record.seconds)}</div>
+
+        {aiTake && (
+          <div className="mt-5 max-w-xs">
+            <p className="text-base font-semibold leading-snug">{aiTake.headline}</p>
+            <p className="mt-1 text-sm leading-snug text-white/70">{aiTake.body}</p>
+          </div>
+        )}
 
         <div className="mt-8 flex w-full max-w-xs gap-2.5">
           <button

@@ -358,6 +358,11 @@ export const fr = {
       monotonyWatch: (monotony: number) => `Monotonie à ${monotony.toFixed(1)} - ta semaine manque de variété de charge`,
       hardShareWatch: (hardPct: number) => `${Math.round(hardPct)}% de ton temps en effort dur`,
     },
+    weeklyReview: {
+      eyebrow: 'Bilan de la semaine',
+      fallbackTitle: (km: number, sessions: number) =>
+        `${km} km en ${sessions} séance${sessions !== 1 ? 's' : ''} pour l’instant`,
+    },
     syncStatus: {
       synced: (relative: string) => `Synchronisé ${relative}`,
       justNow: 'à l’instant',
@@ -562,13 +567,12 @@ export const fr = {
           verticalRatio: 'Oscillation verticale rapportée à la longueur de foulée. Plus bas = moins d’énergie perdue vers le haut à chaque mètre parcouru.',
           strideLength: 'Longueur de foulée moyenne pondérée par la durée.',
         } as Record<string, string>,
+        // The axis already carries the range, so the reading carries the trend.
         reading: {
-          cadence: (min: string, max: string) => `La cadence varie entre ${min} et ${max} pas/min sur la période.`,
-          groundContact: (min: string, max: string) => `Le contact au sol varie entre ${min} et ${max} ms sur la période - plus bas est généralement plus efficace.`,
-          verticalOscillation: (min: string, max: string) => `L'oscillation verticale varie entre ${min} et ${max} mm - plus bas signifie moins de rebond par foulée.`,
-          verticalRatio: (min: string, max: string) => `Le rapport vertical varie entre ${min} et ${max} % - plus bas signifie plus d’énergie dirigée vers l’avant.`,
-          strideLength: (min: string, max: string) => `La longueur de foulée varie entre ${min} et ${max} m sur la période.`,
-        } as Record<string, (min: string, max: string) => string>,
+          up: (metric: string, delta: string, unit: string) => `${metric} en hausse, +${delta} ${unit} sur la période.`,
+          down: (metric: string, delta: string, unit: string) => `${metric} en baisse, -${delta} ${unit} sur la période.`,
+          flat: (metric: string) => `${metric} stable sur la période.`,
+        },
       },
       longRuns: {
         title: 'Plus longue sortie par mois',
@@ -674,31 +678,6 @@ export const fr = {
         footnote: 'Verdict quotidien de la montre, avec la charge aiguë et chronique mesurées par Firstbeat. La bande bleue est la plage de charge chronique que Garmin personnalise pour vous.',
         reading: (dominant: string, pct: number, latest: string | null) =>
           `${dominant} domine la période (${pct}% des jours notés)${latest ? `, avec un statut actuel « ${latest} »` : ''}.`,
-      },
-      runningDynamicsRolling: {
-        title: 'Dynamique de course',
-        d7: '7 j',
-        d30: '30 j',
-        metrics: {
-          cadence: 'Cadence',
-          groundContact: 'Contact au sol',
-          verticalOscillation: 'Osc. verticale',
-        } as Record<string, string>,
-        unit: {
-          cadence: 'pas/min',
-          groundContact: 'ms',
-          verticalOscillation: 'mm',
-        } as Record<string, string>,
-        footnote: {
-          cadence: 'Cadence moyenne glissante sur la fenêtre affichée. 7 j capture la forme récente, 30 j montre la tendance de fond.',
-          groundContact: 'Temps de contact au sol moyen glissant sur la fenêtre affichée. Plus bas = foulée généralement plus efficace.',
-          verticalOscillation: 'Oscillation verticale moyenne glissante sur la fenêtre affichée. Plus bas = moins de rebond par foulée.',
-        } as Record<string, string>,
-        reading: {
-          cadence: (min: string, max: string) => `La cadence 30 j varie entre ${min} et ${max} pas/min sur la période.`,
-          groundContact: (min: string, max: string) => `Le contact au sol 30 j varie entre ${min} et ${max} ms - plus bas est généralement plus efficace.`,
-          verticalOscillation: (min: string, max: string) => `L'oscillation verticale 30 j varie entre ${min} et ${max} mm - plus bas signifie moins de rebond par foulée.`,
-        } as Record<string, (min: string, max: string) => string>,
       },
     },
     seasonHeadline: {

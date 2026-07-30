@@ -8,6 +8,7 @@ import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { PlanSpan } from '@/domain/training/planProgress'
+import type { Insight } from '@/lib/gemini'
 import { PeriodNav } from '@/components/ui/PeriodNav'
 import { WeekView } from './WeekView'
 import { MonthView } from './MonthView'
@@ -28,11 +29,13 @@ interface Props {
   trainingZones: TrainingZonesData | null
   /** The plan's own start/end, for the week-of-block count. */
   planSpan: PlanSpan | null
+  /** Generated line for the week in progress only - past and future weeks keep the banner's own copy. */
+  weekPurposeTake: Insight | null
 }
 
 type ViewMode = 'week' | 'month'
 
-export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate, planPhaseRanges, nextRace, trainingZones, planSpan }: Props) {
+export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate, planPhaseRanges, nextRace, trainingZones, planSpan, weekPurposeTake }: Props) {
   const now = new Date()
   const today = isoDate(now)
   const [mode, setMode] = useState<ViewMode>('week')
@@ -176,6 +179,7 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate
             trainingZones={trainingZones}
             planSpan={planSpan}
             initialSelectedDate={focusDate}
+            weekPurposeTake={weekPurposeTake}
           />
         ) : (
           <MonthView

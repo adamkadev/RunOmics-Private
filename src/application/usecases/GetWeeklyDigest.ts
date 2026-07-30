@@ -6,6 +6,7 @@ import { getRecords, type RecordEntry } from './GetRecords'
 import { easyHardShare } from '@/domain/training/easyHard'
 import { isoWeekNumber } from '@/lib/calendarDate'
 import { formatDuration } from '@/lib/formatters'
+import { round } from '@/lib/math'
 import { t } from '@/i18n'
 
 const HARD_PCT_WATCH_THRESHOLD = 30
@@ -22,7 +23,15 @@ export interface DigestFact {
   text: string
 }
 
+export interface WeeklyTotals {
+  weekNumber: number
+  distanceKm: number
+  sessions: number
+  hardPct: number | null
+}
+
 export interface WeeklyDigest {
+  totals: WeeklyTotals
   review: DigestFact[]
 }
 
@@ -81,6 +90,16 @@ export async function getWeeklyDigest(): Promise<WeeklyDigest | null> {
     ...([buildHardShareFact(reliableHardPct)].filter((f): f is DigestFact => f !== null)),
   ]
 
-  if (!review.length) return null
-  return { review }
+  // A week with nothing run and nothing flagged has no review to write.
+  if (!review.length && currentWeekActs.length === 0) return null
+
+  return {
+    totals: {
+      weekNumber: currentWeekNum,
+      distanceKm: round(currentWeekActs.reduce((sum, a) => sum + a.distanceKm, 0), 1),
+      sessions: currentWeekActs.length,
+      hardPct: reliableHardPct,
+    },
+    review,
+  }
 }

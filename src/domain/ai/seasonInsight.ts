@@ -1,12 +1,13 @@
 import type { SeasonHeadlineData } from '@/application/usecases/GetSeasonHeadline'
+import { HERO_MODEL } from './budget'
 import { insightHash } from './insightHash'
 import { avoidClause, systemInstruction } from './prompt'
 
 export const SEASON_SURFACE = 'seasonHeadline'
 export const SEASON_LIMITS = { headline: 64, body: 160 }
 
-// Also one call a day, and it shares the hero's 20/day budget comfortably.
-export const SEASON_MODEL = 'gemini-3.6-flash'
+// Also one call a day at most, and it shares the hero's daily budget comfortably.
+export const SEASON_MODEL = HERO_MODEL
 
 function facts(data: SeasonHeadlineData) {
   return Object.fromEntries(data.bullets.map((b, i) => [`bullet${i}`, `${b.tone}:${b.text}`]))

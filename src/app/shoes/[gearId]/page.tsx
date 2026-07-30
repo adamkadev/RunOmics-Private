@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getShoeDetail } from '@/application/usecases/GetShoeDetail'
+import { getShoeVerdictInsight } from '@/application/usecases/GetShoeVerdictInsight'
 import { SHOE_REGISTRY } from '@/domain/shoe/types'
-import { wearStatus, type WearStatus } from '@/domain/shoe/wearStatus'
+import { wearOutlook, type WearStatus } from '@/domain/shoe/wearStatus'
 import { ActivityListCard } from '@/components/activities/ActivityListCard'
 import { BrandIcon } from '@/components/shoes/BrandIcon'
 import { HERO_SURFACE } from '@/components/shoes/ShoesGrid'
@@ -63,10 +64,12 @@ export default async function ShoeDetailPage({
   if (!shoe) notFound()
 
   const d = t.shoes.detail
-  const status = wearStatus(shoe.wearPercent)
+  const { status, kmLeft, weeksRemaining } = wearOutlook(shoe)
   const style = WEAR_STYLE[status]
-  const kmLeft = Math.max(0, Math.round(shoe.maxKm - shoe.totalKm))
-  const weeksRemaining = shoe.kmPerWeek > 0 ? Math.max(0, Math.round(kmLeft / shoe.kmPerWeek)) : null
+  const aiTake =
+    status === 'ok' || shoe.retired
+      ? null
+      : await getShoeVerdictInsight({ shoe, status, kmLeft, weeksRemaining })
 
   return (
     <div className="space-y-6">
@@ -86,8 +89,9 @@ export default async function ShoeDetailPage({
             {d.verdict.eyebrow(t.shoes.status[status])}
           </p>
           <p className="mt-2 font-display text-subhead font-bold leading-snug text-foreground">
-            {verdictBody(status, weeksRemaining)}
+            {aiTake?.headline ?? verdictBody(status, weeksRemaining)}
           </p>
+          {aiTake && <p className="mt-1 text-footnote leading-snug text-muted-foreground">{aiTake.body}</p>}
         </div>
       )}
 

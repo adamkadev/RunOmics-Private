@@ -364,6 +364,11 @@ export const en = {
       monotonyWatch: (monotony: number) => `Monotony at ${monotony.toFixed(1)} - your week lacks variety in daily load`,
       hardShareWatch: (hardPct: number) => `${Math.round(hardPct)}% hard`,
     },
+    weeklyReview: {
+      eyebrow: 'Week review',
+      fallbackTitle: (km: number, sessions: number) =>
+        `${km} km over ${sessions} session${sessions !== 1 ? 's' : ''} so far`,
+    },
     syncStatus: {
       synced: (relative: string) => `Synced ${relative}`,
       justNow: 'just now',
@@ -568,13 +573,12 @@ export const en = {
           verticalRatio: 'Vertical oscillation as a share of stride length. Lower means less energy spent going up for every metre gained forward.',
           strideLength: 'Duration-weighted average stride length.',
         } as Record<string, string>,
+        // The axis already carries the range, so the reading carries the trend.
         reading: {
-          cadence: (min: string, max: string) => `Cadence ranges ${min}-${max} spm over this window.`,
-          groundContact: (min: string, max: string) => `Ground contact ranges ${min}-${max} ms over this window - lower is generally more efficient.`,
-          verticalOscillation: (min: string, max: string) => `Vertical oscillation ranges ${min}-${max} mm - lower means less bounce per stride.`,
-          verticalRatio: (min: string, max: string) => `Vertical ratio ranges ${min}-${max}% - lower means more of the effort goes forward.`,
-          strideLength: (min: string, max: string) => `Stride length ranges ${min}-${max} m over this window.`,
-        } as Record<string, (min: string, max: string) => string>,
+          up: (metric: string, delta: string, unit: string) => `${metric} is trending up, +${delta} ${unit} across this window.`,
+          down: (metric: string, delta: string, unit: string) => `${metric} is trending down, -${delta} ${unit} across this window.`,
+          flat: (metric: string) => `${metric} is holding steady across this window.`,
+        },
       },
       longRuns: {
         title: 'Longest Run per Month',
@@ -680,31 +684,6 @@ export const en = {
         footnote: 'The watch\'s daily verdict, with the acute and chronic load Firstbeat measured. The blue band is the chronic load range Garmin personalises for you.',
         reading: (dominant: string, pct: number, latest: string | null) =>
           `${dominant} dominates this window (${pct}% of rated days)${latest ? `, currently reading "${latest}"` : ''}.`,
-      },
-      runningDynamicsRolling: {
-        title: 'Running Dynamics',
-        d7: '7-day',
-        d30: '30-day',
-        metrics: {
-          cadence: 'Cadence',
-          groundContact: 'Ground Contact',
-          verticalOscillation: 'Vertical Osc.',
-        } as Record<string, string>,
-        unit: {
-          cadence: 'spm',
-          groundContact: 'ms',
-          verticalOscillation: 'mm',
-        } as Record<string, string>,
-        footnote: {
-          cadence: 'Rolling average cadence over the shown window. 7-day captures recent form, 30-day shows the underlying trend.',
-          groundContact: 'Rolling average ground contact time over the shown window. Lower generally means a more efficient stride.',
-          verticalOscillation: 'Rolling average vertical oscillation over the shown window. Lower means less bounce per stride.',
-        } as Record<string, string>,
-        reading: {
-          cadence: (min: string, max: string) => `30-day cadence ranges ${min}-${max} spm over this window.`,
-          groundContact: (min: string, max: string) => `30-day ground contact ranges ${min}-${max} ms - lower is generally more efficient.`,
-          verticalOscillation: (min: string, max: string) => `30-day vertical oscillation ranges ${min}-${max} mm - lower means less bounce per stride.`,
-        } as Record<string, (min: string, max: string) => string>,
       },
     },
     seasonHeadline: {

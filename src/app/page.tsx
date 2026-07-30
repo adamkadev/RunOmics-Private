@@ -10,6 +10,8 @@ import { getNextRace } from '@/application/usecases/GetNextRace'
 import { getWeeklyDigest } from '@/application/usecases/GetWeeklyDigest'
 import { getTodayPlannedWorkout } from '@/application/usecases/GetPlannedWorkouts'
 import { getTodayInsight } from '@/application/usecases/GetTodayInsight'
+import { getWeeklyReviewInsight } from '@/application/usecases/GetWeeklyReviewInsight'
+import { getPbCelebrationInsight } from '@/application/usecases/GetPbCelebrationInsight'
 import { isoDate } from '@/lib/calendarDate'
 import { getWeeklyStreakData } from '@/application/usecases/GetMilestones'
 import { getCurrentWeeklyGoal } from '@/application/usecases/GetGoalsData'
@@ -20,6 +22,7 @@ import { FormFitnessFatigueTrio } from '@/components/dashboard/FormFitnessFatigu
 import { TrainingStatusDaysBar } from '@/components/dashboard/TrainingStatusDaysBar'
 import { WeeklyStreakCard } from '@/components/dashboard/WeeklyStreakCard'
 import { CelebrationOverlay } from '@/components/dashboard/CelebrationOverlay'
+import { WeeklyReviewCard } from '@/components/dashboard/WeeklyReviewCard'
 import { FirstLaunchHint } from '@/components/dashboard/FirstLaunchHint'
 import { t } from '@/i18n'
 
@@ -44,10 +47,12 @@ export default async function DashboardPage() {
   const today = isoDate(new Date())
   const todayActivity = data.recentActivities.find((a) => a.date === today) ?? null
   const aiVerdict = await getTodayInsight(trainingStatus, todayPlannedWorkout)
+  const weeklyReview = await getWeeklyReviewInsight(weeklyDigest)
+  const celebrationTake = await getPbCelebrationInsight(mostRecentRecord)
 
   return (
     <div className="space-y-3.5">
-      <CelebrationOverlay record={mostRecentRecord} />
+      <CelebrationOverlay record={mostRecentRecord} aiTake={celebrationTake} />
 
       <div className="space-y-3">
         <FirstLaunchHint />
@@ -68,13 +73,11 @@ export default async function DashboardPage() {
 
       {weeklyStreak && (
         <Link href="/plan" aria-label={t.plan.openPlanner} className="block active:scale-[0.99]">
-          <WeeklyStreakCard
-            data={weeklyStreak}
-            goal={weeklyGoal}
-            hardShareFact={weeklyDigest?.review.find((f) => f.key === '8020') ?? null}
-          />
+          <WeeklyStreakCard data={weeklyStreak} goal={weeklyGoal} />
         </Link>
       )}
+
+      {weeklyDigest && <WeeklyReviewCard digest={weeklyDigest} aiTake={weeklyReview} />}
 
       <RecentActivities
         activities={data.recentActivities.slice(0, 3)}

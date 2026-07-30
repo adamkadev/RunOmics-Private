@@ -8,6 +8,8 @@ import type { YearComparisonData } from '@/application/usecases/GetYearCompariso
 import type { SeasonHeadlineData } from '@/application/usecases/GetSeasonHeadline'
 import type { Insight } from '@/lib/gemini'
 import { SeasonHeadline } from '@/components/analytics/SeasonHeadline'
+import { TabInsight } from '@/components/analytics/TabInsight'
+import type { AnalyticsTabInsights } from '@/application/usecases/GetAnalyticsTabInsights'
 import { YearSelector } from '@/components/ui/YearSelector'
 import type { VO2maxSeries } from '@/application/usecases/GetVO2maxHistory'
 import type { TrainingLoadData } from '@/application/usecases/GetTrainingLoad'
@@ -72,6 +74,7 @@ export function AnalyticsClient({
   comparison,
   seasonHeadline,
   seasonInsight,
+  tabInsights,
   vo2maxHistory,
   trainingLoad,
   loadRisk,
@@ -86,6 +89,7 @@ export function AnalyticsClient({
   comparison: YearComparisonData | null
   seasonHeadline: SeasonHeadlineData | null
   seasonInsight: Insight | null
+  tabInsights: AnalyticsTabInsights
   vo2maxHistory: VO2maxSeries
   trainingLoad: TrainingLoadData | null
   loadRisk: LoadRiskPanelData | null
@@ -235,6 +239,8 @@ export function AnalyticsClient({
       {active && (
         <>
           <div {...swipeHandlers}>
+            {tabInsights[tab] && <TabInsight insight={tabInsights[tab]!} />}
+
             {tab === 'fitness' && (
               <FitnessGroup
                 trainingLoad={trainingLoad}

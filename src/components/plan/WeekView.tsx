@@ -29,6 +29,7 @@ import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { paceZoneKeyFor } from '@/domain/training/typePaceZone'
 import type { PlanSpan } from '@/domain/training/planProgress'
+import type { Insight } from '@/lib/gemini'
 import { addDays, isoDate, isoWeekNumber } from '@/lib/calendarDate'
 import { formatDate, formatDateFull, formatDurationWords, formatPaceRange } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
@@ -202,6 +203,8 @@ interface Props {
   planSpan?: PlanSpan | null
   /** Pre-selects this day when landing from the month view (component remounts per navigation). */
   initialSelectedDate?: string | null
+  /** Generated line for the week in progress - only ever rendered on that week. */
+  weekPurposeTake?: Insight | null
 }
 
 export function WeekView({
@@ -219,6 +222,7 @@ export function WeekView({
   trainingZones = null,
   planSpan = null,
   initialSelectedDate,
+  weekPurposeTake = null,
 }: Props) {
   const days: Day[] = Array.from({ length: 7 }, (_, i) => {
     const date = isoDate(addDays(weekStart, i))
@@ -322,6 +326,7 @@ export function WeekView({
         planPhaseRanges={planPhaseRanges}
         planSpan={planSpan}
         today={today}
+        aiTake={isCurrentWeek ? (weekPurposeTake ?? null) : null}
       />
 
       {/* Week strip, bare on the background as in the mockup: the day tiles are

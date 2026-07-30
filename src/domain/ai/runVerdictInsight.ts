@@ -3,18 +3,19 @@ import type { VerdictTone } from '@/domain/activity/runVerdict'
 import { expectedRpe, runVerdictTone } from '@/domain/activity/runVerdict'
 import { sessionExecution, type SessionExecution } from '@/domain/activity/sessionExecution'
 import { formatClock } from '@/lib/formatters'
+import { HERO_MODEL } from './budget'
 import { insightHash } from './insightHash'
 import { avoidClause, systemInstruction } from './prompt'
 
 export const RUN_VERDICT_PREFIX = 'runVerdict_'
 export const RUN_VERDICT_LIMITS = { headline: 56, body: 150 }
 
-// Steady state: one new run a day fits comfortably in this model's 20/day
-// (shared with Today and Season). The French accent/elision fix (2026-07-30)
-// deleted 164 old verdicts at once; most were re-backfilled on the lite model
-// before settling here, the rest fill in gradually through the daily cron
-// rather than forcing another bulk push on the lite model.
-export const RUN_VERDICT_MODEL = 'gemini-3.6-flash'
+// Steady state: one new run a day fits comfortably in what the other hero
+// surfaces leave of this model's daily allowance. The French accent/elision fix
+// (2026-07-30) deleted 164 old verdicts at once; most were re-backfilled on the
+// lite model before settling here, the rest fill in gradually through the daily
+// cron rather than forcing another bulk push on the lite model.
+export const RUN_VERDICT_MODEL = HERO_MODEL
 
 export function runVerdictSurface(activityId: string): string {
   return `${RUN_VERDICT_PREFIX}${activityId}`

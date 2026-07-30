@@ -1,0 +1,52 @@
+import type { WeeklyDigest } from '@/application/usecases/GetWeeklyDigest'
+import { HERO_MODEL } from './budget'
+import { insightHash } from './insightHash'
+import { avoidClause, systemInstruction } from './prompt'
+
+export const WEEKLY_REVIEW_SURFACE = 'weeklyReview'
+export const WEEKLY_REVIEW_LIMITS = { headline: 56, body: 150 }
+
+// The week's own verdict, read on the dashboard as often as today's hero. Its
+// facts move as the week accrues, so it costs at most one call a day.
+export const WEEKLY_REVIEW_MODEL = HERO_MODEL
+
+function facts(digest: WeeklyDigest) {
+  return {
+    week: digest.totals.weekNumber,
+    km: digest.totals.distanceKm,
+    sessions: digest.totals.sessions,
+    hardPct: digest.totals.hardPct,
+    ...Object.fromEntries(digest.review.map((fact, i) => [`fact${i}`, `${fact.severity}:${fact.text}`])),
+  }
+}
+
+export function weeklyReviewInsightHash(digest: WeeklyDigest): string {
+  return insightHash(facts(digest))
+}
+
+export const WEEKLY_REVIEW_SYSTEM_INSTRUCTION = [
+  systemInstruction(
+    'You are a running coach writing the review of the week in progress, on an athlete dashboard.',
+    'one sentence on what the week amounts to and what it asks of the days left in it',
+    WEEKLY_REVIEW_LIMITS
+  ),
+  // The reads are printed as bullets right below, and the distance sits in the
+  // ring beside them: repeating either wastes the only two lines available.
+  'The individual reads are listed as bullets under your text, so do not restate them one by one.',
+  'Judge the week as a whole. Never invent a session, a race or a plan that is not in the facts.',
+].join(' ')
+
+export function weeklyReviewInsightPrompt(digest: WeeklyDigest, recentHeadlines: string[]): string {
+  const { totals, review } = digest
+
+  return [
+    `The week so far: ${totals.distanceKm} km over ${totals.sessions} session${totals.sessions === 1 ? '' : 's'}.`,
+    totals.hardPct !== null ? `Share of hard running: ${Math.round(totals.hardPct)}%.` : null,
+    review.length ? '' : null,
+    review.length ? 'Reads from this week, each tagged with whether it is a gain or a concern:' : null,
+    ...review.map((fact) => `- (${fact.severity}) ${fact.text}`),
+    avoidClause(recentHeadlines),
+  ]
+    .filter((line) => line !== null)
+    .join('\n')
+}

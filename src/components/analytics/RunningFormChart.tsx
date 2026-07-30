@@ -8,6 +8,7 @@ import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { ChartExplain } from '@/components/ui/ChartExplain'
 import { WindowedChartCard, trendDots, windowTickDate, windowTicks } from '@/components/ui/ChartWindowNav'
+import { trendFromSeries } from '@/lib/chartTrend'
 import { t } from '@/i18n'
 
 type Metric = 'cadence' | 'groundContact' | 'verticalOscillation' | 'verticalRatio' | 'strideLength'
@@ -44,6 +45,16 @@ const UNIT_BY_KEY: Record<string, string> = {
   verticalOscillationMm: t.analytics.charts.runningForm.unit.verticalOscillation ?? '',
   verticalRatioPct: t.analytics.charts.runningForm.unit.verticalRatio ?? '',
   strideLengthM: t.analytics.charts.runningForm.unit.strideLength ?? '',
+}
+
+// Below this much movement the metric is called steady rather than trending:
+// one weekly point of noise should not read as a change in form.
+const FLAT_THRESHOLD: Record<Metric, number> = {
+  cadence: 1,
+  groundContact: 3,
+  verticalOscillation: 0.3,
+  verticalRatio: 0.2,
+  strideLength: 0.02,
 }
 
 const TICK_DECIMALS: Record<Metric, number> = {
@@ -116,8 +127,14 @@ export function RunningFormChart({ points }: { points: WeeklyTrendPoint[] }) {
         const ticks = windowTicks(visible)
         const lo = Math.min(...values).toFixed(decimals)
         const hi = Math.max(...values).toFixed(decimals)
-        const summary = `${t.analytics.charts.runningForm.title}: ${t.analytics.charts.runningForm.metrics[active]} ${lo}–${hi} ${UNIT_BY_KEY[key]}`
-        const reading = t.analytics.charts.runningForm.reading[active]!(lo, hi)
+        const metric = t.analytics.charts.runningForm.metrics[active]!
+        const summary = `${t.analytics.charts.runningForm.title}: ${metric} ${lo}–${hi} ${UNIT_BY_KEY[key]}`
+        const trend = trendFromSeries(values, FLAT_THRESHOLD[active])
+        const r = t.analytics.charts.runningForm.reading
+        const reading =
+          !trend || trend.direction === 'flat'
+            ? r.flat(metric)
+            : r[trend.direction](metric, Math.abs(trend.delta).toFixed(decimals), UNIT_BY_KEY[key] ?? '')
 
         return (
           <>
