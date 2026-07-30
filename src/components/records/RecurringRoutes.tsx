@@ -77,7 +77,7 @@ export function RecurringRoutes({ routes }: Props) {
                   href={`/activities/${route.bestActivityId}`}
                   className="mt-0.5 block text-caption text-accent-text"
                 >
-                  {t.records.recurring.best} {formatPace(route.bestPaceSecPerKm)} {t.units.perKm} ·{' '}
+                  {t.records.recurring.best} {formatPace(route.bestPaceSecPerKm)} ·{' '}
                   {formatCompactDate(route.bestDate)}
                 </Link>
               </div>

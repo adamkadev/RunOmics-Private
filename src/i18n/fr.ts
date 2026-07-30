@@ -838,10 +838,10 @@ export const fr = {
         `Tu as couru ce parcours ${n} fois. Cette sortie : ${rank === 1 ? 'ta meilleure allure' : `ta ${rank}ᵉ meilleure allure`}.`,
       thisRun: 'Cette sortie',
       record: 'record',
-      recordLine: (pace: string) => `record ${pace}/km`,
+      recordLine: (pace: string) => `record ${pace}`,
       paceDelta: (seconds: number) => `+${seconds} s/km`,
       chartSummary: (n: number, best: string) =>
-        `Allure sur tes ${n} passages de ce parcours ; record ${best}/km.`,
+        `Allure sur tes ${n} passages de ce parcours ; record ${best}.`,
     },
     notes: {
       title: 'Notes',

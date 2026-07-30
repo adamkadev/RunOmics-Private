@@ -29,7 +29,7 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   return (
     <TooltipCard label={p.label}>
       <p className="text-sm" style={{ color: CHART_COLORS.pace }}>
-        {formatPace(p.pace)}/km
+        {formatPace(p.pace)}
       </p>
     </TooltipCard>
   )

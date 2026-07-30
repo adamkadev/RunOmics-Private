@@ -43,6 +43,7 @@ export function formatClock(seconds: number): string {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
+/** Formats sec/km as `5:48 /km` - unit included, never append one at the call site. */
 export function formatPace(secPerKm: number): string {
   return `${formatClock(secPerKm)} /km`
 }

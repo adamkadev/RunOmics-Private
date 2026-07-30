@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const stats = [
     formatDistance(activity.distanceKm),
     formatDuration(activity.durationSeconds),
-    activity.paceSecPerKm ? `${formatPace(activity.paceSecPerKm)}/km` : null,
+    activity.paceSecPerKm ? formatPace(activity.paceSecPerKm) : null,
     formatDate(activity.date),
   ].filter(Boolean).join(' · ')
 

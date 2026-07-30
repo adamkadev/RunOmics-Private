@@ -64,7 +64,7 @@ export function RaceCountdown({ readiness }: Props) {
         <Tile
           label={r.predictedTime}
           value={predictedSeconds ? formatClock(predictedSeconds) : '-'}
-          hint={targetPaceSecPerKm ? `${formatPace(targetPaceSecPerKm)} ${t.units.perKm}` : undefined}
+          hint={targetPaceSecPerKm ? formatPace(targetPaceSecPerKm) : undefined}
         />
       </div>
 
