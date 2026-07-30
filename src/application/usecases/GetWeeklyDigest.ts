@@ -1,10 +1,11 @@
 import type { Activity } from '@/domain/activity/types'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { getAllPlannedWorkouts } from '@/infrastructure/repositories/JsonPlannedWorkoutRepository'
 import { getTrainingStatus, type TrainingStatus } from './GetTrainingStatus'
 import { getLoadRiskPanel, type LoadRiskPanel } from './GetLoadRiskPanel'
 import { getRecords, type RecordEntry } from './GetRecords'
 import { easyHardShare } from '@/domain/training/easyHard'
-import { isoWeekNumber } from '@/lib/calendarDate'
+import { addDays, daysElapsedInWeek, isoDate, isoWeekNumber } from '@/lib/calendarDate'
 import { formatDuration } from '@/lib/formatters'
 import { round } from '@/lib/math'
 import { t } from '@/i18n'
@@ -30,9 +31,30 @@ export interface WeeklyTotals {
   hardPct: number | null
 }
 
+export interface WeekRemainder {
+  /** Days left before the week closes, today included. */
+  days: number
+  /** Planned sessions on those days that have not been run yet. */
+  plannedSessions: number
+}
+
 export interface WeeklyDigest {
   totals: WeeklyTotals
   review: DigestFact[]
+  remainder: WeekRemainder
+  /** What the previous week finished on, as the bar this one is measured against. */
+  lastWeek: Pick<WeeklyTotals, 'distanceKm' | 'sessions'> | null
+}
+
+export function weekRemainder(activities: Activity[], plannedDates: string[], now: Date): WeekRemainder {
+  const days = 8 - daysElapsedInWeek(now)
+  const remaining = new Set(Array.from({ length: days }, (_, i) => isoDate(addDays(now, i))))
+  const ranDates = new Set(activities.map((a) => a.date.slice(0, 10)))
+
+  return {
+    days,
+    plannedSessions: plannedDates.filter((date) => remaining.has(date) && !ranDates.has(date)).length,
+  }
 }
 
 export function buildPrFacts(records: RecordEntry[], currentWeekNum: number): DigestFact[] {
@@ -72,9 +94,10 @@ export function buildHardShareFact(hardPct: number | null): DigestFact | null {
   return { key: '8020', severity: 'watch', text: t.dashboard.weeklyDigest.hardShareWatch(hardPct) }
 }
 
-export async function getWeeklyDigest(): Promise<WeeklyDigest | null> {
+export async function getWeeklyDigest(now = new Date()): Promise<WeeklyDigest | null> {
   const activities: Activity[] = getAllActivities()
-  const currentWeekNum = isoWeekNumber(new Date())
+  const currentWeekNum = isoWeekNumber(now)
+  const lastWeekActs = activities.filter((a) => a.week === isoWeekNumber(addDays(now, -7)))
 
   const [records, status, loadRisk] = await Promise.all([getRecords(), getTrainingStatus(), getLoadRiskPanel()])
 
@@ -101,5 +124,12 @@ export async function getWeeklyDigest(): Promise<WeeklyDigest | null> {
       hardPct: reliableHardPct,
     },
     review,
+    remainder: weekRemainder(currentWeekActs, getAllPlannedWorkouts().map((w) => w.date), now),
+    lastWeek: lastWeekActs.length
+      ? {
+          distanceKm: round(lastWeekActs.reduce((sum, a) => sum + a.distanceKm, 0), 1),
+          sessions: lastWeekActs.length,
+        }
+      : null,
   }
 }

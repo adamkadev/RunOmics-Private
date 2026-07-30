@@ -1,6 +1,7 @@
-import type { Activity } from '@/domain/activity/types'
+import type { Activity, PlannedWorkout } from '@/domain/activity/types'
 import type { VerdictTone } from '@/domain/activity/runVerdict'
 import { expectedRpe, runVerdictTone } from '@/domain/activity/runVerdict'
+import type { RunHistory, TypeBaseline } from '@/domain/activity/runHistory'
 import { sessionExecution, type SessionExecution } from '@/domain/activity/sessionExecution'
 import { formatClock } from '@/lib/formatters'
 import { HERO_POOL } from './budget'
@@ -57,7 +58,15 @@ function verdictTemperature(activity: Activity): number | null {
   return Math.round(activity.weather.apparentTempC)
 }
 
-function facts(activity: Activity) {
+export interface RunVerdictContext {
+  activity: Activity
+  /** How this run stands against the ones that came before it. */
+  history: RunHistory
+  /** What the plan asked for that day, when Garmin held a session for it. */
+  planned: PlannedWorkout | null
+}
+
+function facts({ activity, history, planned }: RunVerdictContext) {
   const execution = sessionExecution(activity)
 
   return {
@@ -72,6 +81,17 @@ function facts(activity: Activity) {
     elevationGain: activity.elevationGain,
     temperature: verdictTemperature(activity),
     execution: execution ? executionLine(execution) : null,
+    planned: planned?.name ?? null,
+    plannedType: planned?.type ?? null,
+    plannedMinutes: planned?.durationSecs ? Math.round(planned.durationSecs / 60) : null,
+    baselineRuns: history.baseline?.runs ?? null,
+    baselinePace: history.baseline?.paceSecPerKm ?? null,
+    baselineHr: history.baseline?.avgHr ?? null,
+    standing: history.standing?.label ?? null,
+    standingDays: history.standing?.daysSinceBetter ?? null,
+    hardMinutes: history.hardMinutes,
+    runsInPast7Days: history.runsInPast7Days,
+    daysSinceLastRun: history.daysSinceLastRun,
   }
 }
 
@@ -89,8 +109,8 @@ function signed(value: number): string {
   return value > 0 ? `+${value}` : String(value)
 }
 
-export function runVerdictInsightHash(activity: Activity): string {
-  return insightHash(facts(activity))
+export function runVerdictInsightHash(context: RunVerdictContext): string {
+  return insightHash(facts(context))
 }
 
 // Every tone is stated relative to what the session type called for, because
@@ -111,7 +131,9 @@ export const RUN_VERDICT_SYSTEM_INSTRUCTION = [
     RUN_VERDICT_LIMITS
   ),
   'Never contradict the tone you are given - it drives the color of the card.',
-  'Talk about this run only, never about the training week or what to do next.',
+  // The days around the run explain it (a fifth run in a week reads differently
+  // from a first one back), but the card is not the place to plan the next one.
+  'Judge this run. The days around it are context for judging it, never the subject, and never advise what to do next.',
   // Without this the model writes "you held 5:35/km over 7.03 km at 151 bpm",
   // which is the three numbers printed immediately below the card.
   'The distance, duration, average pace and average heart rate are already printed under your text: never state them. Build the sentence on how the effort held up instead - the fade between reps, the spread between kilometres, the heart rate drift.',
@@ -119,10 +141,79 @@ export const RUN_VERDICT_SYSTEM_INSTRUCTION = [
   // Heat and hills make a run feel harder than its type intends; without this
   // the model reads any gap as a discipline problem, which is often unfair.
   'When the effort sits outside the expected band, look for a cause in the other facts (heat, elevation) and name it rather than assuming the athlete misjudged the session.',
+  // The one thing a coach has that a stat grid does not: everything the athlete
+  // ran before this. Same pace at a lower heart rate is the whole point.
+  'The comparison against what the athlete ran before is the most useful thing you can write: prefer it to any other angle when it is given.',
+  'You may state a difference against those past runs ("8s/km quicker", "5 bpm lower", "your best 10K in 6 months"); what is banned is repeating the numbers of this run back.',
+  'When a planned session is given, judge what was run against what was asked, and say so plainly if they differ.',
 ].join(' ')
 
-export function runVerdictInsightPrompt(activity: Activity, recentHeadlines: string[]): string {
-  const f = facts(activity)
+// Under these, a difference is day-to-day noise, and handing it to the model as
+// a number is how "1 bpm lower" ends up sold as progress.
+const PACE_NOISE_SEC_PER_KM = 3
+const HR_NOISE_BPM = 3
+
+// Deltas are computed here rather than left to the model: a coach who gets the
+// arithmetic wrong is worse than one who says nothing.
+function baselineLine(type: string, baseline: TypeBaseline, activity: Activity): string {
+  const paceDelta = activity.paceSecPerKm !== null ? Math.round(baseline.paceSecPerKm - activity.paceSecPerKm) : null
+  const hrDelta = baseline.avgHr !== null && activity.avgHeartRate !== null ? baseline.avgHr - activity.avgHeartRate : null
+
+  const reference = `your last ${baseline.runs} ${type} runs (${formatClock(baseline.paceSecPerKm)} /km${baseline.avgHr ? ` at ${baseline.avgHr} bpm` : ''})`
+  const pace =
+    paceDelta === null || Math.abs(paceDelta) < PACE_NOISE_SEC_PER_KM
+      ? 'the same pace'
+      : `${Math.abs(paceDelta)}s/km ${paceDelta > 0 ? 'quicker' : 'slower'}`
+  const heart =
+    hrDelta === null
+      ? null
+      : Math.abs(hrDelta) < HR_NOISE_BPM
+        ? 'the same heart rate'
+        : `${Math.abs(hrDelta)} bpm ${hrDelta > 0 ? 'lower' : 'higher'}`
+
+  return `- Against ${reference}: ${[pace, heart].filter((part) => part !== null).join(', ')}`
+}
+
+function plannedLine(planned: PlannedWorkout): string {
+  const minutes = planned.durationSecs ? `~${Math.round(planned.durationSecs / 60)} min` : null
+
+  // Garmin names a session after its own type when the plan holds no structure,
+  // and "the plan asked for a Base (Base)" reads like a bug.
+  if (!planned.name || planned.name === planned.type) {
+    const shape = [planned.type ? `a ${planned.type}` : 'a session', minutes ? `of ${minutes}` : null]
+      .filter((part) => part !== null)
+      .join(' ')
+    return `- The plan asked for ${shape} that day`
+  }
+
+  const detail = [planned.type, minutes].filter((part) => part !== null).join(', ')
+  return `- The plan asked for "${planned.name}" that day${detail ? ` (${detail})` : ''}`
+}
+
+const DAYS_PER_MONTH = 30.44
+
+function standingLine(label: string, daysSinceBetter: number | null): string {
+  if (daysSinceBetter === null) return `- No earlier run of yours went faster over ${label}`
+  return `- No run in the last ${Math.round(daysSinceBetter / DAYS_PER_MONTH)} months went faster over ${label}`
+}
+
+function cadenceLine(runs: number, daysSinceLastRun: number): string {
+  const gap =
+    daysSinceLastRun === 0
+      ? 'a second run on the same day'
+      : `${daysSinceLastRun} day${daysSinceLastRun === 1 ? '' : 's'} after the previous one`
+  return `- ${runs} run${runs === 1 ? '' : 's'} in the 7 days up to it, ${gap}`
+}
+
+export function runVerdictInsightPrompt(context: RunVerdictContext, recentHeadlines: string[]): string {
+  const { activity, history, planned } = context
+  const f = facts(context)
+
+  const past = [
+    history.baseline ? baselineLine(f.type, history.baseline, activity) : null,
+    history.standing ? standingLine(history.standing.label, history.standing.daysSinceBetter) : null,
+    history.daysSinceLastRun !== null ? cadenceLine(f.runsInPast7Days, history.daysSinceLastRun) : null,
+  ].filter((line) => line !== null)
 
   return [
     `Tone: ${f.tone}. ${TONE_RULES[f.tone]}`,
@@ -138,7 +229,10 @@ export function runVerdictInsightPrompt(activity: Activity, recentHeadlines: str
     f.aerTrainingEffect !== null ? `- Aerobic training effect (0-5): ${f.aerTrainingEffect}` : null,
     f.elevationGain ? `- Elevation gain: ${f.elevationGain} m` : null,
     f.temperature !== null ? `- Temperature it felt like: ${f.temperature}°C` : null,
+    f.hardMinutes !== null ? `- Time spent in zone 4 or 5: ${f.hardMinutes} min` : null,
     f.execution ? `- How it was held together: ${f.execution}` : null,
+    planned ? plannedLine(planned) : null,
+    ...(past.length ? ['', 'What came before it:', ...past] : []),
     avoidClause(recentHeadlines),
   ]
     .filter((line) => line !== null)

@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { deservesVerdict, runVerdictInsightHash } from '../runVerdictInsight'
+import { deservesVerdict, runVerdictInsightHash as hashContext } from '../runVerdictInsight'
+import { runHistory } from '@/domain/activity/runHistory'
 import type { Activity, ActivityWeather } from '@/domain/activity/types'
+
+// The weather cutoff is a property of the run alone, so these hash it with the
+// history a run with no past would carry.
+const runVerdictInsightHash = (activity: Activity) =>
+  hashContext({ activity, history: runHistory(activity, []), planned: null })
 
 const weather: ActivityWeather = {
   tempC: 16.4,
@@ -25,6 +31,7 @@ const run = (overrides: Partial<Activity>): Activity =>
     elevationGain: null,
     avgTemperature: 22,
     weather: null,
+    hrZones: [],
     hrSamples: null,
     paceSamples: null,
     splits: null,

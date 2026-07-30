@@ -32,11 +32,19 @@ describe('celebratedRecord', () => {
 })
 
 describe('pbCelebrationInsightHash', () => {
+  const hash = (entry: RecordEntry) => pbCelebrationInsightHash({ record: entry, previous: null })
+
   it('holds while the record does', () => {
-    expect(pbCelebrationInsightHash(record)).toBe(pbCelebrationInsightHash({ ...record, date: '2026-07-28' }))
+    expect(hash(record)).toBe(hash({ ...record, date: '2026-07-28' }))
   })
 
   it('moves when a faster time lands', () => {
-    expect(pbCelebrationInsightHash(record)).not.toBe(pbCelebrationInsightHash({ ...record, seconds: 1250 }))
+    expect(hash(record)).not.toBe(hash({ ...record, seconds: 1250 }))
+  })
+
+  it('moves when the mark it replaces is found', () => {
+    expect(hash(record)).not.toBe(
+      pbCelebrationInsightHash({ record, previous: { seconds: 1300, date: '2026-02-01' } })
+    )
   })
 })

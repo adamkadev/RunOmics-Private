@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { buildPrFacts, buildStatusFact, buildLoadRiskFacts, buildHardShareFact } from '../GetWeeklyDigest'
+import { buildPrFacts, buildStatusFact, buildLoadRiskFacts, buildHardShareFact, weekRemainder } from '../GetWeeklyDigest'
+import type { Activity } from '@/domain/activity/types'
 import type { RecordEntry } from '../GetRecords'
 import type { TrainingStatus } from '../GetTrainingStatus'
 import type { LoadRiskPanel } from '../GetLoadRiskPanel'
@@ -102,5 +103,26 @@ describe('buildHardShareFact', () => {
 
   it('watch fact above the threshold', () => {
     expect(buildHardShareFact(35)?.severity).toBe('watch')
+  })
+})
+
+describe('weekRemainder', () => {
+  // Wednesday 2026-07-29: Thursday through Sunday are still ahead.
+  const wednesday = new Date('2026-07-29T18:00:00')
+  const ran = (date: string) => ({ date }) as Activity
+
+  it('counts today and the days after it', () => {
+    expect(weekRemainder([], [], wednesday).days).toBe(5)
+    expect(weekRemainder([], [], new Date('2026-08-02T09:00:00')).days).toBe(1)
+  })
+
+  it('counts the planned sessions left in those days', () => {
+    const planned = ['2026-07-27', '2026-07-30', '2026-08-01', '2026-08-05']
+    expect(weekRemainder([], planned, wednesday).plannedSessions).toBe(2)
+  })
+
+  it('drops a planned day already run', () => {
+    const planned = ['2026-07-29', '2026-07-30']
+    expect(weekRemainder([ran('2026-07-29')], planned, wednesday).plannedSessions).toBe(1)
   })
 })

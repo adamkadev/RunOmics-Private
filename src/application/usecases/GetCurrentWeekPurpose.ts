@@ -13,12 +13,18 @@ import {
   type WeekLoadComparison,
 } from '@/domain/training/weekSummary'
 import { weekPlanPhase } from '@/domain/training/weekPlanPhase'
-import type { ActivitySummary } from '@/domain/activity/types'
+import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
 import type { HrBounds } from '@/domain/training/trimp'
 import { addDays, isoDate, isoWeekNumber, startOfWeek } from '@/lib/calendarDate'
 import { round } from '@/lib/math'
 
 const TREND_WEEKS = 8
+
+export interface RemainingSession {
+  date: string
+  name: string
+  type: ActivityType | null
+}
 
 export interface CurrentWeekPurpose {
   weekStart: string
@@ -30,6 +36,8 @@ export interface CurrentWeekPurpose {
   sessions: number
   keySessions: number
   hardPct: number | null
+  /** The sessions the plan still holds for the days left, in day order. */
+  remaining: RemainingSession[]
 }
 
 /**
@@ -91,5 +99,8 @@ export async function getCurrentWeekPurpose(now = new Date()): Promise<CurrentWe
     sessions: weekActivities.length,
     keySessions: summary.keySessionsCount,
     hardPct: summary.hardPct,
+    remaining: weekPlanned
+      .filter((workout) => workout.date >= isoDate(now) && !byDate.has(workout.date))
+      .map((workout) => ({ date: workout.date, name: workout.name, type: workout.type ?? null })),
   }
 }

@@ -1,11 +1,27 @@
-import type { RecordEntry } from './GetRecords'
+import { getTopEfforts, type RecordEntry } from './GetRecords'
 import {
   PB_CELEBRATION_SURFACE,
   celebratedRecord,
   pbCelebrationInsightHash,
+  type PbCelebrationContext,
 } from '@/domain/ai/pbCelebrationInsight'
 import { readVerifiedInsight } from '@/infrastructure/repositories/FirestoreInsightsRepository'
 import type { Insight } from '@/lib/gemini'
+
+/**
+ * The record and the mark it replaced. The leaderboard is read two deep because
+ * the new record sits at the top of it: what came before is the entry below.
+ */
+export function buildPbCelebrationContext(record: RecordEntry): PbCelebrationContext {
+  const previous = (getTopEfforts(undefined, 2)[record.key] ?? []).find(
+    (effort) => effort.activityId !== record.activityId
+  )
+
+  return {
+    record,
+    previous: previous ? { seconds: previous.seconds, date: previous.date } : null,
+  }
+}
 
 /** The AI word on a fresh record, or null so the overlay shows the record alone. */
 export async function getPbCelebrationInsight(
@@ -14,5 +30,5 @@ export async function getPbCelebrationInsight(
 ): Promise<Insight | null> {
   const celebrated = celebratedRecord(record, now)
   if (!celebrated) return null
-  return readVerifiedInsight(PB_CELEBRATION_SURFACE, pbCelebrationInsightHash(celebrated))
+  return readVerifiedInsight(PB_CELEBRATION_SURFACE, pbCelebrationInsightHash(buildPbCelebrationContext(celebrated)))
 }

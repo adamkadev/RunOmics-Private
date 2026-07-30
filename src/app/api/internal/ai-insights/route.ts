@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { handleInternalRoute } from '@/lib/internalRoute'
 import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { getTodayPlannedWorkout } from '@/application/usecases/GetPlannedWorkouts'
-import { getActivities } from '@/application/usecases/GetActivities'
+import { getRunVerdictContexts } from '@/application/usecases/GetRunVerdictInsight'
 import { getAnalyticsData } from '@/application/usecases/GetAnalyticsData'
 import { getYearComparison } from '@/application/usecases/GetYearComparison'
 import { getSeasonHeadline } from '@/application/usecases/GetSeasonHeadline'
@@ -18,7 +18,8 @@ import { getThresholdHistory } from '@/application/usecases/GetThresholdHistory'
 import { getGarminRacePredictions } from '@/application/usecases/GetGarminRacePredictions'
 import { getLatestVO2max } from '@/application/usecases/GetVO2maxHistory'
 import { analyticsTabFacts } from '@/application/usecases/GetAnalyticsTabFacts'
-import { verdictTone } from '@/domain/training/readiness'
+import { buildTodayContext } from '@/application/usecases/GetTodayInsight'
+import { buildPbCelebrationContext } from '@/application/usecases/GetPbCelebrationInsight'
 import { wearOutlook } from '@/domain/shoe/wearStatus'
 import type { Limits } from '@/domain/ai/prompt'
 import {
@@ -195,7 +196,7 @@ async function generateToday(spender: Spender) {
   const status = await getTrainingStatus()
   if (!status) return { generated: false, reason: 'no training status' }
 
-  const context = { status, tone: verdictTone(status), plannedWorkout: await getTodayPlannedWorkout() }
+  const context = buildTodayContext(status, await getTodayPlannedWorkout())
 
   return runSurface(spender, {
     surface: TODAY_SURFACE,
@@ -239,13 +240,15 @@ async function generatePbCelebration(spender: Spender) {
   const record = celebratedRecord(getMostRecentRecord(await getRecords()), new Date())
   if (!record) return { generated: false, reason: 'no fresh record' }
 
+  const context = buildPbCelebrationContext(record)
+
   return runSurface(spender, {
     surface: PB_CELEBRATION_SURFACE,
     pool: PB_CELEBRATION_POOL,
     limits: PB_CELEBRATION_LIMITS,
     systemInstruction: PB_CELEBRATION_SYSTEM_INSTRUCTION,
-    hash: pbCelebrationInsightHash(record),
-    prompt: (recent) => pbCelebrationInsightPrompt(record, recent),
+    hash: pbCelebrationInsightHash(context),
+    prompt: (recent) => pbCelebrationInsightPrompt(context, recent),
   })
 }
 
@@ -332,10 +335,10 @@ async function generateRunVerdicts(spender: Spender, limit: number) {
 
   // Activities come newest first, so the queue is already in the order they are
   // most likely to be read.
-  const outstanding = getActivities().filter(
-    (activity) => cachedHashes.get(runVerdictSurface(activity.id)) !== runVerdictInsightHash(activity)
+  const outstanding = getRunVerdictContexts().filter(
+    (context) => cachedHashes.get(runVerdictSurface(context.activity.id)) !== runVerdictInsightHash(context)
   )
-  const eligible = outstanding.filter((activity) => deservesVerdict(activity, recorded, now))
+  const eligible = outstanding.filter((context) => deservesVerdict(context.activity, recorded, now))
   const pending = eligible.slice(0, limit)
 
   // Each verdict lives in its own document, so the only anti-repetition signal
@@ -344,7 +347,7 @@ async function generateRunVerdicts(spender: Spender, limit: number) {
   const written: string[] = []
   const failures: string[] = []
 
-  for (const activity of pending) {
+  for (const context of pending) {
     // One call covers every daily ceiling in the pool, the per-minute spacing
     // and the time left in this invocation. What it refuses, the next run picks
     // up - and with four models to draw from, it refuses far later than one.
@@ -354,18 +357,23 @@ async function generateRunVerdicts(spender: Spender, limit: number) {
     const result = await generateInsight({
       model,
       systemInstruction: RUN_VERDICT_SYSTEM_INSTRUCTION,
-      prompt: runVerdictInsightPrompt(activity, written),
+      prompt: runVerdictInsightPrompt(context, written),
       limits: RUN_VERDICT_LIMITS,
     })
     if (!result.ok) {
-      failures.push(`${activity.id} (${model}): ${result.reason}`)
+      failures.push(`${context.activity.id} (${model}): ${result.reason}`)
       // Only this model is done, not the batch: the next reserve moves on to
       // the next model in the pool.
       if (isModelClosed(result.reason)) spender.exhaust(model)
       continue
     }
 
-    await saveCachedInsight(runVerdictSurface(activity.id), result.insight, runVerdictInsightHash(activity), null)
+    await saveCachedInsight(
+      runVerdictSurface(context.activity.id),
+      result.insight,
+      runVerdictInsightHash(context),
+      null
+    )
     written.push(result.insight.headline)
   }
 
