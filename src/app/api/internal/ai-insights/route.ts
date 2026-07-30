@@ -9,7 +9,6 @@ import { getSeasonHeadline } from '@/application/usecases/GetSeasonHeadline'
 import { getWeeklyDigest } from '@/application/usecases/GetWeeklyDigest'
 import { getCurrentWeekPurpose } from '@/application/usecases/GetCurrentWeekPurpose'
 import { getRecords, getMostRecentRecord, getQualifiedEffortsByActivityId } from '@/application/usecases/GetRecords'
-import { getRaceReadiness } from '@/application/usecases/GetRaceReadiness'
 import { getShoeStats } from '@/application/usecases/GetShoeStats'
 import { getShoeDetail } from '@/application/usecases/GetShoeDetail'
 import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
@@ -82,14 +81,6 @@ import {
   shoeVerdictSurface,
   type ShoeVerdictContext,
 } from '@/domain/ai/shoeVerdictInsight'
-import {
-  RACE_READINESS_LIMITS,
-  RACE_READINESS_POOL,
-  RACE_READINESS_SURFACE,
-  RACE_READINESS_SYSTEM_INSTRUCTION,
-  raceReadinessInsightHash,
-  raceReadinessInsightPrompt,
-} from '@/domain/ai/raceReadinessInsight'
 import {
   ANALYTICS_TAB_IDS,
   ANALYTICS_TAB_LIMITS,
@@ -183,7 +174,6 @@ export async function POST(req: NextRequest) {
       today: await generateToday(spender),
       weekPurpose: await generateWeekPurpose(spender),
       weeklyReview: await generateWeeklyReview(spender),
-      raceReadiness: await generateRaceReadiness(spender),
       season: await generateSeason(spender),
       analyticsTabs: await generateAnalyticsTabs(spender),
       pbCelebration: await generatePbCelebration(spender),
@@ -270,20 +260,6 @@ async function generateWeekPurpose(spender: Spender) {
     systemInstruction: WEEK_PURPOSE_SYSTEM_INSTRUCTION,
     hash: weekPurposeInsightHash(week),
     prompt: (recent) => weekPurposeInsightPrompt(week, recent),
-  })
-}
-
-async function generateRaceReadiness(spender: Spender) {
-  const readiness = await getRaceReadiness()
-  if (!readiness) return { generated: false, reason: 'no upcoming race' }
-
-  return runSurface(spender, {
-    surface: RACE_READINESS_SURFACE,
-    pool: RACE_READINESS_POOL,
-    limits: RACE_READINESS_LIMITS,
-    systemInstruction: RACE_READINESS_SYSTEM_INSTRUCTION,
-    hash: raceReadinessInsightHash(readiness),
-    prompt: (recent) => raceReadinessInsightPrompt(readiness, recent),
   })
 }
 
