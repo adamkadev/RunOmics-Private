@@ -142,6 +142,14 @@ class PlannedWorkoutStore:
         if year:
             self._dirty_years.add(year)
 
+    def delete(self, date: str) -> None:
+        if date not in self._by_date:
+            return
+        del self._by_date[date]
+        year = _year_of(date)
+        if year:
+            self._dirty_years.add(year)
+
     def count(self) -> int:
         return len(self._by_date)
 

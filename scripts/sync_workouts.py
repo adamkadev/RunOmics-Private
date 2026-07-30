@@ -67,7 +67,7 @@ def main() -> int:
 
     try:
         with GarminClient(secret) as client:
-            planned = fetch_planned_workouts(client, since=args.since, until=args.until)
+            planned, stale_candidates = fetch_planned_workouts(client, since=args.since, until=args.until)
     except GarminAuthError as exc:
         print(f"Auth error: {exc}", file=sys.stderr)
         return 1
@@ -81,12 +81,14 @@ def main() -> int:
             print(f"  {p['date']}  {p['name']}" + (f"  ({extra})" if extra else ""))
         return 0
 
-    write_planned_workouts(planned)
+    write_planned_workouts(planned, stale_candidates=stale_candidates)
     return 0
 
 
 def write_planned_workouts(
-    planned: list[dict], store: PlannedWorkoutStore | None = None
+    planned: list[dict],
+    store: PlannedWorkoutStore | None = None,
+    stale_candidates: set[str] | None = None,
 ) -> PlannedWorkoutStore:
     """Upsert this sync's fetch window into the durable per-year planned-workout
     store, preserving manually-edited type/scheduledTime.
@@ -102,7 +104,12 @@ def write_planned_workouts(
 
     Unlike the old flat-file version, dates outside this sync's fetch window
     are left untouched in the store rather than dropped - the store is a
-    growing history, not a rolling snapshot.
+    growing history, not a rolling snapshot. But a date *inside* the window
+    whose calendar month fetched cleanly and which no longer yields a running
+    workout (rescheduled to another date, deleted, or turned into a rest day)
+    is pruned via `stale_candidates` - otherwise a rescheduled session leaves
+    a phantom entry on its old date forever (shown as a missed workout once
+    that date is past).
     """
     store = store if store is not None else PlannedWorkoutStore()
 
@@ -117,8 +124,17 @@ def write_planned_workouts(
         entry["scheduledTime"] = prior.get("scheduledTime", _DEFAULT_SCHEDULED_TIME)
         store.upsert(entry)
 
+    pruned = 0
+    for stale_date in stale_candidates or ():
+        if store.get(stale_date) is not None:
+            store.delete(stale_date)
+            pruned += 1
+
     store.save()
-    print(f"  {len(planned)} planned workout(s) upserted ({store.count()} total in store)")
+    summary = f"  {len(planned)} planned workout(s) upserted ({store.count()} total in store)"
+    if pruned:
+        summary += f", {pruned} stale entr{'y' if pruned == 1 else 'ies'} removed"
+    print(summary)
     return store
 
 
@@ -169,29 +185,51 @@ def _load_easy_pace_sec_per_km(data_dir: Path = _DATA_DIR) -> float:
 
 def fetch_planned_workouts(
     client: GarminClient, since: date | None = None, until: date | None = None
-) -> list[dict]:
+) -> tuple[list[dict], set[str]]:
+    """Returns the planned entries plus `stale_candidates`: dates inside the
+    fetch window, whose calendar month fetched successfully, that no longer
+    have a running workout - i.e. safe for `write_planned_workouts` to prune
+    from the store if it still holds an entry for them."""
     today = date.today()
     start_date = since or today - timedelta(days=_WINDOW_PAST_DAYS)
     end_date = until or today + timedelta(days=_WINDOW_FUTURE_DAYS)
 
     print(f"Syncing planned workouts {start_date} -> {end_date}…")
 
-    scheduled = _collect_scheduled(client, start_date, end_date)
+    scheduled, fetched_months = _collect_scheduled(client, start_date, end_date)
 
     if not scheduled:
         print("  No running workouts found in calendar.")
-        return []
+        planned: list[dict] = []
+    else:
+        print(f"  Found {len(scheduled)} scheduled running workout(s), fetching details…")
+        planned = _build_entries(client, scheduled)
 
-    print(f"  Found {len(scheduled)} scheduled running workout(s), fetching details…")
+    covered = _dates_in_months(fetched_months, start_date, end_date)
+    stale_candidates = covered - {entry["date"] for entry in planned}
 
-    return _build_entries(client, scheduled)
+    return planned, stale_candidates
+
+
+def _dates_in_months(
+    months: set[tuple[int, int]], start_date: date, end_date: date
+) -> set[str]:
+    dates: set[str] = set()
+    cur = start_date
+    while cur <= end_date:
+        if (cur.year, cur.month) in months:
+            dates.add(cur.isoformat())
+        cur += timedelta(days=1)
+    return dates
 
 
 def _collect_scheduled(
     client: GarminClient, start_date: date, end_date: date
-) -> list[tuple[str, str, str, bool]]:
+) -> tuple[list[tuple[str, str, str, bool]], set[tuple[int, int]]]:
     """Return (date, workoutId, fallbackTitle, isAdaptive) tuples from the
-    calendar for the given window. fallbackTitle is the calendar item's own name
+    calendar for the given window, plus the set of (year, month) that fetched
+    successfully (used by the caller to know which dates are safe to prune a
+    stale store entry from). fallbackTitle is the calendar item's own name
     - used when a workout's detail can't be fetched (see _build_entries).
     isAdaptive marks Garmin Coach items, whose detail comes from a different
     endpoint (see GarminClient.get_adaptive_workout_detail)."""
@@ -203,6 +241,7 @@ def _collect_scheduled(
 
     seen: set[tuple[str, str]] = set()
     scheduled: list[tuple[str, str, str, bool]] = []
+    fetched_months: set[tuple[int, int]] = set()
     # Diagnostics only (don't affect filtering) - surfaces in the sync's Actions
     # log why a calendar item was excluded, since e.g. Garmin Coach entries have
     # been reported missing from the synced plan with no other visible cause.
@@ -218,6 +257,8 @@ def _collect_scheduled(
         except GarminAPIError as exc:
             print(f"  Warning: calendar {year}-{month:02d} failed: {exc}")
             continue
+
+        fetched_months.add((year, month))
 
         for item in data.get("calendarItems", []):
             sched_date = item.get("date", "")
@@ -260,7 +301,7 @@ def _collect_scheduled(
     if skipped_no_workout_id:
         print(f"  Skipped {skipped_no_workout_id} workout(s) with no workoutId")
 
-    return scheduled
+    return scheduled, fetched_months
 
 
 def _build_entries(

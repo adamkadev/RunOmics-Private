@@ -58,8 +58,8 @@ def main() -> int:
         # already on disk rather than aborting the whole run.
         if not args.dry_run and not args.id:
             try:
-                planned = fetch_planned_workouts(client)
-                write_planned_workouts(planned, store=planned_store)
+                planned, stale_candidates = fetch_planned_workouts(client)
+                write_planned_workouts(planned, store=planned_store, stale_candidates=stale_candidates)
             except Exception as exc:
                 print(f"Warning: planned workouts sync failed ({type(exc).__name__}: {exc}), continuing with existing data.")
 
