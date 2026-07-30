@@ -33,8 +33,10 @@ function Tile({
         {label}
         {source && <span className="rounded bg-foreground/[0.08] px-1 py-px text-micro font-medium normal-case">{source}</span>}
       </div>
-      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+      <div className="flex items-center gap-2">
         <span className="text-title2 font-extrabold tabular-nums text-foreground">{value}</span>
+      </div>
+      <div className="mt-1.5">
         <StatusPill tone={tone}>{zoneLabel}</StatusPill>
       </div>
       <p className="mt-1.5 text-xs leading-snug text-muted-foreground">{description}</p>

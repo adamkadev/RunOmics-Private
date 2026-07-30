@@ -16,8 +16,10 @@ function Gauge({ bucket }: { bucket: LoadBalanceBucket }) {
   return (
     <div className="rounded-xl border border-foreground/[0.08] bg-foreground/[0.04] p-3.5">
       <div className="widget-label mb-1.5 text-muted-foreground">{s.buckets[bucket.id]}</div>
-      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+      <div className="flex items-center gap-2">
         <span className="text-title2 font-extrabold tabular-nums text-foreground">{bucket.load}</span>
+      </div>
+      <div className="mt-1.5">
         <StatusPill tone={VERDICT_TONE[bucket.verdict]}>{s.verdict[bucket.verdict]}</StatusPill>
       </div>
 

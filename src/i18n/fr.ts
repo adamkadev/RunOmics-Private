@@ -1175,6 +1175,7 @@ export const fr = {
       LACKING_HIGH_AEROBIC: 'Manque d’aérobie haute',
       LACKING_LOW_AEROBIC: 'Manque d’aérobie basse',
       LACKING_ANAEROBIC: 'Manque d’anaérobie',
+      ANAEROBIC_SHORTAGE: 'Manque d’anaérobie',
       NO_DATA: 'Pas assez de données',
     } as Record<string, string | undefined>,
     footnote: 'Charge Firstbeat des 4 dernières semaines par intensité, face aux plages que Garmin personnalise à partir de votre historique. Le repère indique où vous vous situez ; la zone verte est la cible.',

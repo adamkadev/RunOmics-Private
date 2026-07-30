@@ -1181,6 +1181,7 @@ export const en = {
       LACKING_HIGH_AEROBIC: 'Lacking high aerobic',
       LACKING_LOW_AEROBIC: 'Lacking low aerobic',
       LACKING_ANAEROBIC: 'Lacking anaerobic',
+      ANAEROBIC_SHORTAGE: 'Lacking anaerobic',
       NO_DATA: 'Not enough data',
     } as Record<string, string | undefined>,
     footnote: 'Firstbeat load over the last 4 weeks split by intensity, against the ranges Garmin personalises from your history. The marker is where you sit; the green zone is the target.',
