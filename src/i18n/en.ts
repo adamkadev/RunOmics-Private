@@ -714,7 +714,8 @@ export const en = {
       titleCaution: 'A tougher stretch than early season.',
       titleMixed: 'A mixed season - gains in some areas, dips in others.',
       efficiency: (d: number) => `Aerobic efficiency ${d > 0 ? '+' : ''}${d} - ${d > 0 ? 'more' : 'less'} speed per heartbeat`,
-      easyPace: (s: number) => `Easy pace ${Math.abs(s)}s/km ${s < 0 ? 'faster' : 'slower'} than early season`,
+      easyPace: (to: string, from: string, weeks: number) =>
+        `Easy pace ${to}, against ${from} averaged over the season's first ${weeks} weeks`,
       volume: (pct: number, year: number) =>
         `Volume ${pct > 0 ? 'up' : 'down'} ${Math.abs(pct)}% vs ${year}${pct < 0 ? ' - watch consistency' : ''}`,
     },
@@ -1212,20 +1213,16 @@ export const en = {
   loadRisk: {
     title: 'Load Risk',
     insufficientData: 'Not enough data',
-    zone: {
-      low: 'Reduced load',
-      safe: 'Safe zone',
-      caution: 'Caution',
-      risk: 'High risk',
+    summary: {
+      clear: (total: number) => `${total} markers, none in the alert zone`,
+      flagged: (count: number) => `${count} marker${count !== 1 ? 's' : ''} to watch`,
     },
-    source: { garmin: 'Garmin', local: 'estimated' },
     acwr: {
       label: 'ACWR',
       description: 'Acute:chronic load ratio estimated from km · target 0.8–1.3',
-      descriptionGarmin: 'Acute:chronic load ratio measured by the watch · Garmin verdict',
+      descriptionGarmin: 'Acute:chronic load ratio measured by the watch',
     },
     monotony: { label: 'Monotony', description: 'Day-to-day load variety · alert above 2.0' },
-    strain: { label: 'Strain', description: 'Weekly load × monotony (Foster)' },
     rampRate: { label: 'Ramp rate', description: 'Δ CTL over 7 days' },
   },
 

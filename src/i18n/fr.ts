@@ -708,7 +708,8 @@ export const fr = {
       titleCaution: 'Un passage plus difficile qu\'en début de saison.',
       titleMixed: 'Une saison en demi-teinte - des progrès par endroits, des baisses ailleurs.',
       efficiency: (d: number) => `Efficacité aérobie ${d > 0 ? '+' : ''}${d} - ${d > 0 ? 'plus' : 'moins'} de vitesse par battement`,
-      easyPace: (s: number) => `Allure facile ${Math.abs(s)}s/km ${s < 0 ? 'plus rapide' : 'plus lente'} qu\'en début de saison`,
+      easyPace: (to: string, from: string, weeks: number) =>
+        `Allure facile ${to}, contre ${from} en moyenne sur les ${weeks} premières semaines de saison`,
       volume: (pct: number, year: number) =>
         `Volume ${pct > 0 ? 'en hausse de' : 'en baisse de'} ${Math.abs(pct)}% vs ${year}${pct < 0 ? ' - attention à la régularité' : ''}`,
     },
@@ -1206,20 +1207,16 @@ export const fr = {
   loadRisk: {
     title: 'Risque de charge',
     insufficientData: 'Données insuffisantes',
-    zone: {
-      low: 'Sous-charge',
-      safe: 'Zone sûre',
-      caution: 'Prudence',
-      risk: 'Risque élevé',
+    summary: {
+      clear: (total: number) => `${total} marqueurs, aucun en alerte`,
+      flagged: (count: number) => `${count} marqueur${count !== 1 ? 's' : ''} à surveiller`,
     },
-    source: { garmin: 'Garmin', local: 'estimé' },
     acwr: {
       label: 'ACWR',
       description: 'Charge aiguë/chronique estimée sur les km · cible 0,8–1,3',
-      descriptionGarmin: 'Charge aiguë/chronique mesurée par la montre · verdict Garmin',
+      descriptionGarmin: 'Charge aiguë/chronique mesurée par la montre',
     },
     monotony: { label: 'Monotonie', description: 'Variété de charge au quotidien · alerte au-delà de 2,0' },
-    strain: { label: 'Strain', description: 'Charge hebdo × monotonie (Foster)' },
     rampRate: { label: 'Ramp rate', description: 'Δ CTL sur 7 jours' },
   },
 
