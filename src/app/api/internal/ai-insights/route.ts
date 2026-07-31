@@ -96,6 +96,7 @@ import {
   listCachedHashes,
   saveCachedInsight,
 } from '@/infrastructure/repositories/FirestoreInsightsRepository'
+import { SUPPORTING_POOL } from '@/domain/ai/budget'
 import { openSpender, type Spender } from '@/lib/aiSpend'
 import { generateInsight } from '@/lib/gemini'
 
@@ -110,6 +111,16 @@ export const maxDuration = 60
 // rather than one: no serverless invocation can hold the pacing open that long.
 const DEFAULT_RUN_VERDICTS_PER_RUN = 6
 const MAX_RUN_VERDICTS_PER_RUN = 60
+
+// Manual backfill switches, off unless the URL asks for them: the daily cron
+// sends neither, so the steady state stays hero models on the runs still likely
+// to be opened. ?pool=supporting moves a bulk pass onto the lite quota (500 a
+// day against 20), ?all=1 lifts the recency horizon so the archive can be
+// filled in without the daily runs having to compete with it.
+interface BackfillOptions {
+  pool: string[]
+  ignoreHorizon: boolean
+}
 
 interface SurfaceJob {
   surface: string
@@ -181,7 +192,7 @@ export async function POST(req: NextRequest) {
       analyticsTabs: await generateAnalyticsTabs(spender),
       pbCelebration: await generatePbCelebration(spender),
       shoeVerdicts: await generateShoeVerdicts(spender),
-      runVerdicts: await generateRunVerdicts(spender, requestedLimit(req)),
+      runVerdicts: await generateRunVerdicts(spender, requestedLimit(req), backfillOptions(req)),
       spend: spender.report(),
     })
   })
@@ -192,6 +203,14 @@ function requestedLimit(req: NextRequest): number {
   const raw = Number(req.nextUrl.searchParams.get('limit'))
   if (!Number.isInteger(raw) || raw < 0) return DEFAULT_RUN_VERDICTS_PER_RUN
   return Math.min(raw, MAX_RUN_VERDICTS_PER_RUN)
+}
+
+function backfillOptions(req: NextRequest): BackfillOptions {
+  const params = req.nextUrl.searchParams
+  return {
+    pool: params.get('pool') === 'supporting' ? SUPPORTING_POOL : RUN_VERDICT_POOL,
+    ignoreHorizon: params.get('all') === '1',
+  }
 }
 
 async function generateToday(spender: Spender) {
@@ -329,7 +348,7 @@ async function generateAnalyticsTabs(spender: Spender) {
   return results
 }
 
-async function generateRunVerdicts(spender: Spender, limit: number) {
+async function generateRunVerdicts(spender: Spender, limit: number, options: BackfillOptions) {
   const cachedHashes = await listCachedHashes(RUN_VERDICT_PREFIX)
   // Every activity that holds a record or a top-three effort - the ones reached
   // from /records months after the fact.
@@ -341,7 +360,9 @@ async function generateRunVerdicts(spender: Spender, limit: number) {
   const outstanding = getRunVerdictContexts().filter(
     (context) => cachedHashes.get(runVerdictSurface(context.activity.id)) !== runVerdictInsightHash(context)
   )
-  const eligible = outstanding.filter((context) => deservesVerdict(context.activity, recorded, now))
+  const eligible = options.ignoreHorizon
+    ? outstanding
+    : outstanding.filter((context) => deservesVerdict(context.activity, recorded, now))
   const pending = eligible.slice(0, limit)
 
   // Each verdict lives in its own document, so the only anti-repetition signal
@@ -354,7 +375,7 @@ async function generateRunVerdicts(spender: Spender, limit: number) {
     // One call covers every daily ceiling in the pool, the per-minute spacing
     // and the time left in this invocation. What it refuses, the next run picks
     // up - and with four models to draw from, it refuses far later than one.
-    const model = await spender.reserve(RUN_VERDICT_POOL)
+    const model = await spender.reserve(options.pool)
     if (!model) break
 
     const result = await generateInsight({
