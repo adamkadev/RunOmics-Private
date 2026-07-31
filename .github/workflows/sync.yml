@@ -104,6 +104,23 @@ jobs:
 
           git add public/data/sync_meta.json
 
+          # Garmin-derived metric series. sync.py re-fetches these every run and
+          # Garmin revises the recent days as new activities land, so they change
+          # without a new activity landing. Stage them here - not in the
+          # activities group above - so they're committed whenever they move
+          # without tripping the activity-only post-sync checks. Without this the
+          # files were regenerated each run but never committed, leaving the app
+          # stuck on whatever was last committed by hand.
+          git add \
+            public/data/race_predictions.json \
+            public/data/vo2max_history.json \
+            public/data/vo2max_norms.json \
+            public/data/threshold_history.json \
+            public/data/training_status.json \
+            public/data/training_load_balance.json \
+            public/data/training_plan.json \
+            public/data/athlete_history.json
+
           if git diff --cached --quiet; then
             echo "Nothing to commit."
             echo "committed=false" >> "$GITHUB_OUTPUT"
@@ -121,7 +138,7 @@ jobs:
           )
               git commit -m "sync: update activities (${ACTIVITY_COUNT} total) [skip ci]"
             else
-              git commit -m "sync: refresh last-synced timestamp [skip ci]"
+              git commit -m "sync: refresh Garmin metrics and timestamp [skip ci]"
             fi
             git push
             echo "committed=true" >> "$GITHUB_OUTPUT"
