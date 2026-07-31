@@ -1,18 +1,21 @@
 'use client'
 
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import type { SimilarRun, SimilarRunsData } from '@/application/usecases/GetSimilarRuns'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { CHART_COLORS } from '@/lib/colors'
-import { formatDateWithYear, formatDurationShort, formatPace } from '@/lib/formatters'
+import { formatClock, formatDateWithYear, formatDurationShort, formatPace } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 const LIST_MAX_ROWS = 4
 
 interface ChartPoint {
+  id: string
   label: string
   pace: number
   isCurrent: boolean
@@ -39,12 +42,14 @@ interface DotProps {
   cx?: number
   cy?: number
   payload?: ChartPoint
+  onSelect?: (id: string) => void
 }
 
 // The run being viewed gets a filled, larger dot so it's findable in the trend.
-function RunDot({ cx, cy, payload }: DotProps) {
-  if (cx === undefined || cy === undefined) return null
-  const isCurrent = payload?.isCurrent ?? false
+// Every other dot is a shortcut to that run's own activity page.
+function RunDot({ cx, cy, payload, onSelect }: DotProps) {
+  if (cx === undefined || cy === undefined || !payload) return null
+  const { isCurrent, id } = payload
   return (
     <circle
       cx={cx}
@@ -53,6 +58,8 @@ function RunDot({ cx, cy, payload }: DotProps) {
       fill={isCurrent ? CHART_COLORS.pace : 'var(--card)'}
       stroke={CHART_COLORS.pace}
       strokeWidth={2}
+      onClick={isCurrent ? undefined : () => onSelect?.(id)}
+      style={isCurrent ? undefined : { cursor: 'pointer' }}
     />
   )
 }
@@ -61,13 +68,8 @@ function RunRow({ run, bestPace }: { run: SimilarRun; bestPace: number }) {
   const s = t.activity.similarRuns
   const deltaSec = Math.round(run.paceSecPerKm - bestPace)
 
-  return (
-    <li
-      className={cn(
-        'flex items-center gap-2.5 rounded-control px-2 py-1.5',
-        run.isCurrent && 'bg-accent-subtle'
-      )}
-    >
+  const content = (
+    <>
       <span className="w-6 shrink-0 text-center text-xs font-bold tabular-nums text-muted-foreground">
         {run.rank === 1 ? '🥇' : `#${run.rank}`}
       </span>
@@ -80,15 +82,32 @@ function RunRow({ run, bestPace }: { run: SimilarRun; bestPace: number }) {
       <span className="w-16 shrink-0 text-right text-xs tabular-nums text-subtle">
         {deltaSec <= 0 ? s.record : s.paceDelta(deltaSec)}
       </span>
+    </>
+  )
+
+  if (run.isCurrent) {
+    return <li className="flex items-center gap-2.5 rounded-control bg-accent-subtle px-2 py-1.5">{content}</li>
+  }
+
+  return (
+    <li>
+      <Link
+        href={`/activities/${run.id}`}
+        className="flex items-center gap-2.5 rounded-control px-2 py-1.5 transition-colors hover:bg-foreground/[0.04]"
+      >
+        {content}
+      </Link>
     </li>
   )
 }
 
 export function SimilarRuns({ data }: { data: SimilarRunsData }) {
   const s = t.activity.similarRuns
+  const router = useRouter()
   const bestPaceLabel = formatPace(data.bestPaceSecPerKm)
 
   const chartData: ChartPoint[] = data.runs.map((run) => ({
+    id: run.id,
     label: formatDateWithYear(run.date),
     pace: run.paceSecPerKm,
     isCurrent: run.isCurrent,
@@ -115,7 +134,7 @@ export function SimilarRuns({ data }: { data: SimilarRunsData }) {
 
       <ChartFigure summary={s.chartSummary(data.count, bestPaceLabel)}>
         <ResponsiveContainer width="100%" height={120}>
-          <LineChart data={chartData} margin={{ top: 8, right: 8, bottom: 0, left: -18 }}>
+          <LineChart data={chartData} margin={{ top: 8, right: 8, bottom: 0, left: -4 }}>
             <XAxis
               dataKey="label"
               tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
@@ -128,29 +147,19 @@ export function SimilarRuns({ data }: { data: SimilarRunsData }) {
               axisLine={false}
               tickLine={false}
               domain={['dataMin - 5', 'dataMax + 5']}
-              tickFormatter={(v: number) => formatPace(v)}
-              width={52}
+              tickFormatter={formatClock}
+              width={46}
             />
             <Tooltip content={<CustomTooltip />} cursor={{ stroke: CHART_COLORS.tooltipCursor }} />
-            <ReferenceLine
-              y={data.bestPaceSecPerKm}
-              stroke={CHART_COLORS.referenceTarget}
-              strokeDasharray="3 4"
-              label={{
-                value: s.recordLine(bestPaceLabel),
-                position: 'insideBottomRight',
-                fontSize: 10,
-                fill: CHART_COLORS.axisTick,
-              }}
-            />
             <Line
               type="monotone"
               dataKey="pace"
               stroke={CHART_COLORS.pace}
               strokeWidth={2.5}
-              dot={<RunDot />}
+              dot={<RunDot onSelect={(id) => router.push(`/activities/${id}`)} />}
               isAnimationActive={false}
             />
+            <ReferenceLine y={data.bestPaceSecPerKm} stroke={CHART_COLORS.referenceTarget} strokeDasharray="3 4" />
           </LineChart>
         </ResponsiveContainer>
       </ChartFigure>

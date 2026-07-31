@@ -846,7 +846,6 @@ export const en = {
         `You've run this route ${n} times. This run: ${rank === 1 ? 'your best pace' : `your ${ordinal(rank)}-best pace`}.`,
       thisRun: 'This run',
       record: 'record',
-      recordLine: (pace: string) => `record ${pace}`,
       paceDelta: (seconds: number) => `+${seconds}s/km`,
       chartSummary: (n: number, best: string) =>
         `Pace across your ${n} runs on this route; record ${best}.`,
