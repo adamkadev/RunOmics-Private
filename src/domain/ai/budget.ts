@@ -34,7 +34,12 @@ export const HERO_POOL = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3-flas
 // "no longer available to new users" for it. A retired model still costs a
 // reserved slot and a ledger entry on the first call of every invocation
 // before the 404 closes it, so it is dropped rather than kept as a fallback.
-export const SUPPORTING_POOL = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite']
+//
+// Unlike the hero pool, this one is not in release order: over 190 calls of the
+// 2026-07-31 backfill, gemini-3.5-flash-lite had about a third of its answers
+// rejected for dropped accents while gemini-3.1-flash-lite almost never did.
+// A rejected verdict is worth nothing, so the older model goes first.
+export const SUPPORTING_POOL = ['gemini-3.1-flash-lite', 'gemini-3.5-flash-lite']
 
 // Requests held back from the daily ceiling so a manual backfill, or a retry
 // after a failed cron, never lands on an already exhausted quota.
