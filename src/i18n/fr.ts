@@ -517,12 +517,34 @@ export const fr = {
       efficiency: {
         title: 'Efficacité aérobie',
         unit: 'm/min·bpm',
-        footnote: 'Vitesse par battement sur les sorties faciles (m/min ÷ FC moy.). Plus haut = meilleure forme aérobie.',
+        measured: 'Mesurée',
+        adjusted: 'Corrigée chaleur',
+        felt: (deg: number) => `${deg}°C ressentis`,
+        footnote: 'Vitesse par battement sur les sorties faciles (m/min ÷ FC moy.). Plus haut = meilleure forme aérobie. La courbe corrigée retire le coût de la chaleur de chaque sortie : un épisode chaud ne se lit plus comme une perte de forme.',
         explains: {
           improving: (d: string) => `En progrès +${d} - vous produisez plus de vitesse par battement`,
           stable: 'Efficacité aérobie stable',
           declining: 'En baisse - ajoutez des sorties faciles ou surveillez une fatigue accumulée',
+          heatGap: (d: string) => `la chaleur maintient la courbe mesurée ${d} sous votre forme réelle`,
         },
+      },
+      heatImpact: {
+        title: 'Allure selon la température',
+        unit: 's/km',
+        bands: {
+          cold: '< 5°C',
+          cool: '5-15°C',
+          mild: '15-20°C',
+          warm: '20-25°C',
+          hot: '25°C+',
+        } as Record<string, string>,
+        paceAtRefHr: (hr: number) => `Allure à ${hr} bpm`,
+        cost: 'Coût',
+        reference: 'Tes meilleures conditions',
+        footnote: (hr: number) =>
+          `Sorties faciles regroupées par température ressentie, chaque groupe ramené à l'allure qu'il tient à ${hr} bpm : les barres comparent donc à effort égal. Les tranches mélangent toutes les saisons, la plus froide porte aussi la forme de début de saison.`,
+        reading: (band: string, sec: number) => `À ${band} ressentis, tu perds environ ${sec} s/km à fréquence cardiaque égale.`,
+        readingFlat: 'La température ne change pas mesurablement ton allure facile à FC égale.',
       },
       zones: {
         title: 'Temps en zones',

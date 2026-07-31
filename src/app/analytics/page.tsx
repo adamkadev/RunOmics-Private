@@ -13,6 +13,7 @@ import { getTrainingStatusHistory } from '@/application/usecases/GetTrainingStat
 import { getGarminRacePredictions } from '@/application/usecases/GetGarminRacePredictions'
 import { getThresholdHistory } from '@/application/usecases/GetThresholdHistory'
 import { getHeatmapData } from '@/application/usecases/GetHeatmapData'
+import { getHeatImpact } from '@/application/usecases/GetHeatImpact'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { vo2maxTopPercent } from '@/domain/athlete/vo2maxNorms'
 import { AnalyticsClient } from '@/components/analytics/AnalyticsClient'
@@ -57,6 +58,7 @@ export default async function AnalyticsPage() {
       ? vo2maxTopPercent(latestVO2max, athlete.age, athlete.sex)
       : null
   const activeDays = getHeatmapData().filter((d) => d.distanceKm > 0).length
+  const heatImpact = getHeatImpact()
 
   return (
     <div className="space-y-6">
@@ -75,6 +77,7 @@ export default async function AnalyticsPage() {
         threshold={threshold}
         vo2maxTopPercent={topPercent}
         activeDays={activeDays}
+        heatImpact={heatImpact}
       />
     </div>
   )

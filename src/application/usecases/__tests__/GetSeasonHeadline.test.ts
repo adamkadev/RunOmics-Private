@@ -12,6 +12,8 @@ function week(index: number, values: Partial<WeeklyTrendPoint>): WeeklyTrendPoin
     easyPace: null,
     hardPace: null,
     ef: null,
+    efAdjusted: null,
+    apparentTempC: null,
     easyAvgHr: null,
     hardAvgHr: null,
     cadenceSpm: null,

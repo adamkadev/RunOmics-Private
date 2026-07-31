@@ -1,6 +1,7 @@
 import { t } from '@/i18n'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
-import type { Activity, ActivityType } from '@/domain/activity/types'
+import type { Activity, ActivityType, ActivityWeather } from '@/domain/activity/types'
+import { heatAdjustedEf } from '@/domain/activity/heat'
 import { easyHardShare } from '@/domain/training/easyHard'
 import { sumDistanceKm } from '@/domain/activity/distance'
 import { monthLabel } from '@/lib/formatters'
@@ -43,6 +44,8 @@ export interface WeeklyTrendPoint {
   easyPace: number | null
   hardPace: number | null
   ef: number | null
+  efAdjusted: number | null
+  apparentTempC: number | null
   easyAvgHr: number | null
   hardAvgHr: number | null
   cadenceSpm: number | null
@@ -172,13 +175,22 @@ export function recentZoneDistribution(activities: Activity[], days: number, now
 }
 
 
+function efSamples(activities: Activity[]): { ef: number; weather: ActivityWeather | null }[] {
+  return activities
+    .filter((a) => a.paceSecPerKm !== null && a.avgHeartRate !== null && a.distanceKm >= 3)
+    .map((a) => ({ ef: (1000 / a.paceSecPerKm!) * 60 / a.avgHeartRate!, weather: a.weather }))
+}
+
+function meanEf(efs: number[]): number | null {
+  return efs.length ? round(efs.reduce((s, v) => s + v, 0) / efs.length, 2) : null
+}
+
 export function efficiencyFactor(activities: Activity[]): number | null {
-  const valid = activities.filter(
-    (a) => a.paceSecPerKm !== null && a.avgHeartRate !== null && a.distanceKm >= 3
-  )
-  if (!valid.length) return null
-  const efs = valid.map((a) => (1000 / a.paceSecPerKm!) * 60 / a.avgHeartRate!)
-  return round((efs.reduce((s, v) => s + v, 0) / efs.length), 2)
+  return meanEf(efSamples(activities).map((s) => s.ef))
+}
+
+export function adjustedEfficiencyFactor(activities: Activity[]): number | null {
+  return meanEf(efSamples(activities).map((s) => heatAdjustedEf(s.ef, s.weather)))
 }
 
 const DISTANCE_BRACKETS = [
@@ -270,6 +282,8 @@ export function buildWeeklyTrends(all: Activity[]): WeeklyTrendPoint[] {
         easyPace: weightedPace(easy),
         hardPace: weightedPace(hard),
         ef: efficiencyFactor(easy),
+        efAdjusted: adjustedEfficiencyFactor(easy),
+        apparentTempC: avgField(easy, (a) => a.weather?.apparentTempC ?? null),
         easyAvgHr: weightedHr(easy),
         hardAvgHr: weightedHr(hard),
         cadenceSpm: weightedCadence(acts),

@@ -523,12 +523,34 @@ export const en = {
       efficiency: {
         title: 'Aerobic Efficiency',
         unit: 'm/min·bpm',
-        footnote: 'Speed per heartbeat on easy runs (m/min ÷ avg HR). Higher means better aerobic fitness.',
+        measured: 'Measured',
+        adjusted: 'Heat-adjusted',
+        felt: (deg: number) => `${deg}°C felt`,
+        footnote: 'Speed per heartbeat on easy runs (m/min ÷ avg HR). Higher means better aerobic fitness. The adjusted line takes each run\'s heat cost back out, so a warm spell does not read as lost fitness.',
         explains: {
           improving: (d: string) => `Improving +${d} - you're generating more speed per heartbeat`,
           stable: 'Aerobic efficiency stable',
           declining: 'Declining - consider more easy running or check for accumulated fatigue',
+          heatGap: (d: string) => `heat is holding the measured line ${d} below your actual fitness`,
         },
+      },
+      heatImpact: {
+        title: 'Pace vs Temperature',
+        unit: 's/km',
+        bands: {
+          cold: '< 5°C',
+          cool: '5-15°C',
+          mild: '15-20°C',
+          warm: '20-25°C',
+          hot: '25°C+',
+        } as Record<string, string>,
+        paceAtRefHr: (hr: number) => `Pace at ${hr} bpm`,
+        cost: 'Cost',
+        reference: 'Your best conditions',
+        footnote: (hr: number) =>
+          `Easy runs grouped by apparent temperature, each group converted to the pace it holds at ${hr} bpm, so the bars compare like for like. Bands pool every season, so the coldest one also carries early-season fitness.`,
+        reading: (band: string, sec: number) => `At ${band} felt you give up about ${sec}s/km at the same heart rate.`,
+        readingFlat: 'Temperature is not measurably changing your easy pace at equal heart rate.',
       },
       zones: {
         title: 'Time in Zones',

@@ -48,6 +48,8 @@ function week(over: Partial<WeeklyTrendPoint>): WeeklyTrendPoint {
     easyPace: null,
     hardPace: null,
     ef: null,
+    efAdjusted: null,
+    apparentTempC: null,
     easyAvgHr: null,
     hardAvgHr: null,
     cadenceSpm: null,

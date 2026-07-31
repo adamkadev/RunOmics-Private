@@ -18,6 +18,7 @@ import type { LoadBalanceData } from '@/application/usecases/GetLoadBalance'
 import type { TrainingStatusHistory } from '@/application/usecases/GetTrainingStatusHistory'
 import type { GarminRacePredictionsData } from '@/application/usecases/GetGarminRacePredictions'
 import type { ThresholdHistoryData } from '@/application/usecases/GetThresholdHistory'
+import type { HeatImpactData } from '@/application/usecases/GetHeatImpact'
 import { ChartCardSkeleton } from '@/components/ui/Skeleton'
 import { useSwipeNavigation } from '@/lib/useSwipeNavigation'
 import { t } from '@/i18n'
@@ -84,6 +85,7 @@ export function AnalyticsClient({
   threshold,
   vo2maxTopPercent,
   activeDays,
+  heatImpact,
 }: {
   data: AnalyticsPageData
   comparison: YearComparisonData | null
@@ -99,6 +101,7 @@ export function AnalyticsClient({
   threshold: ThresholdHistoryData | null
   vo2maxTopPercent: number | null
   activeDays: number
+  heatImpact: HeatImpactData | null
 }) {
   const { years, byYear } = data
 
@@ -259,6 +262,7 @@ export function AnalyticsClient({
               <PerformanceGroup
                 weeklyTrends={data.weeklyTrends}
                 racePredictions={racePredictions}
+                heatImpact={heatImpact}
               />
             )}
 
