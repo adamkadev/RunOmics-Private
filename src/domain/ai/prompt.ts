@@ -3,6 +3,8 @@ import { activeLocale } from '@/i18n'
 export interface Limits {
   headline: number
   body: number
+  /** Only for surfaces that ask the model to phrase their reads as bullets. */
+  bullet?: number
 }
 
 // Shared by every surface: the same voice, the same house style, the same

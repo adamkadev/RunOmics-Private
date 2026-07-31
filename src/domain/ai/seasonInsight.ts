@@ -4,7 +4,7 @@ import { insightHash } from './insightHash'
 import { avoidClause, systemInstruction } from './prompt'
 
 export const SEASON_SURFACE = 'seasonHeadline'
-export const SEASON_LIMITS = { headline: 64, body: 160 }
+export const SEASON_LIMITS = { headline: 64, body: 160, bullet: 90 }
 
 // Also one call a day at most, and it shares the hero's daily budget comfortably.
 export const SEASON_POOL = HERO_POOL
@@ -23,7 +23,10 @@ export const SEASON_SYSTEM_INSTRUCTION = [
     'one sentence tying the reads together into a single takeaway',
     SEASON_LIMITS
   ),
-  'The individual reads are already listed as bullets under your text, so do not restate them one by one.',
+  `"bullets" is one line per read, in the order they are listed, each at most ${SEASON_LIMITS.bullet} characters.`,
+  'A bullet says what its read means for the athlete, in the voice of a coach rather than a metric readout.',
+  'Keep the figures the read is built on, and keep the period they cover: a pace measured over the first weeks of the season is an average of that block, never a single run, so never phrase it as one.',
+  'The body must not repeat the bullets: it is what they add up to.',
 ].join(' ')
 
 export function seasonInsightPrompt(data: SeasonHeadlineData, recentHeadlines: string[]): string {

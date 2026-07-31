@@ -79,6 +79,37 @@ describe('generateInsight', () => {
     expect(await reasonFor({ headline: '   ', body: 'Fatigue is down.' })).toBe('headline or body empty')
   })
 
+  it('returns the bullets a surface asked the model to phrase', async () => {
+    respondWith({ headline: 'Fresh legs', body: 'Fatigue is down.', bullets: ['Faster', 'Fitter'] })
+
+    expect(await generateInsight({ ...REQUEST, bulletCount: 2 })).toEqual({
+      ok: true,
+      insight: { headline: 'Fresh legs', body: 'Fatigue is down.', bullets: ['Faster', 'Fitter'] },
+    })
+  })
+
+  it('drops a response whose bullets do not match the reads one for one', async () => {
+    respondWith({ headline: 'Fresh legs', body: 'Fatigue is down.', bullets: ['Faster'] })
+    const result = await generateInsight({ ...REQUEST, bulletCount: 2 })
+
+    expect(result).toEqual({ ok: false, reason: '1 bullets, expected 2' })
+  })
+
+  it('holds bullets to the house style too', async () => {
+    respondWith({ headline: 'Fresh legs', body: 'Fatigue is down.', bullets: ['Faster — much', 'Fitter'] })
+    const result = await generateInsight({ ...REQUEST, bulletCount: 2 })
+
+    expect(result).toEqual({ ok: false, reason: 'em-dash' })
+  })
+
+  it('never asks for bullets when the surface does not want any', async () => {
+    respondWith({ headline: 'Fresh legs', body: 'Fatigue is down.' })
+    await generateInsight(REQUEST)
+
+    const body = JSON.parse((vi.mocked(fetch).mock.calls[0]?.[1] as { body: string }).body)
+    expect(body.generationConfig.responseSchema.properties).not.toHaveProperty('bullets')
+  })
+
   it('reports the status and body when the API errors', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 429, text: async () => 'quota' }))
 

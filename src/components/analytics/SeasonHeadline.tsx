@@ -9,7 +9,7 @@ import { t } from '@/i18n'
 // three reads. Centered green-gradient card, left-aligned bullets.
 interface Props {
   data: SeasonHeadlineData
-  /** Generated take on the same reads; falls back to the rules-based title when absent. */
+  /** Generated take on the same reads; falls back to the rules-based copy when absent. */
   aiTake: Insight | null
 }
 
@@ -41,7 +41,7 @@ export function SeasonHeadline({ data, aiTake }: Props) {
                 strokeWidth={2.4}
                 className={cn('shrink-0', bullet.tone === 'positive' ? 'text-accent' : 'text-amber-500')}
               />
-              {bullet.text}
+              {aiTake?.bullets?.[i] ?? bullet.text}
             </li>
           )
         })}

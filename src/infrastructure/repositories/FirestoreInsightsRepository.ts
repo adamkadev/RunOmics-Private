@@ -40,7 +40,7 @@ export async function readVerifiedInsight(surface: string, expectedHash: string)
       new Promise<null>((resolve) => setTimeout(() => resolve(null), READ_TIMEOUT_MS)),
     ])
     if (!cached || cached.hash !== expectedHash) return null
-    return { headline: cached.headline, body: cached.body }
+    return { headline: cached.headline, body: cached.body, bullets: cached.bullets }
   } catch {
     return null
   }

@@ -118,6 +118,7 @@ interface SurfaceJob {
   systemInstruction: string
   hash: string
   prompt: (recentHeadlines: string[]) => string
+  bulletCount?: number
 }
 
 interface SurfaceOutcome {
@@ -148,6 +149,7 @@ async function runSurface(spender: Spender, job: SurfaceJob): Promise<SurfaceOut
     systemInstruction: job.systemInstruction,
     prompt: job.prompt(cached?.recentHeadlines ?? []),
     limits: job.limits,
+    bulletCount: job.bulletCount,
   })
   if (!result.ok) {
     if (isModelClosed(result.reason)) spender.exhaust(model)
@@ -233,6 +235,7 @@ async function generateSeason(spender: Spender) {
     systemInstruction: SEASON_SYSTEM_INSTRUCTION,
     hash: seasonInsightHash(data),
     prompt: (recent) => seasonInsightPrompt(data, recent),
+    bulletCount: data.bullets.length,
   })
 }
 

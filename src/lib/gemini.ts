@@ -22,6 +22,8 @@ const FRENCH_ACCENT_CHECK_MIN_LENGTH = 40
 export interface Insight {
   headline: string
   body: string
+  /** One line per read the surface asked for, in the order it listed them. */
+  bullets?: string[]
 }
 
 export interface InsightRequest {
@@ -30,6 +32,8 @@ export interface InsightRequest {
   systemInstruction: string
   prompt: string
   limits: Limits
+  /** Number of reads the model must phrase; omit for headline + body only. */
+  bulletCount?: number
 }
 
 /**
@@ -39,19 +43,46 @@ export interface InsightRequest {
  */
 export type InsightResult = { ok: true; insight: Insight } | { ok: false; reason: string }
 
-const RESPONSE_SCHEMA = {
-  type: 'OBJECT',
-  properties: {
-    headline: { type: 'STRING' },
-    body: { type: 'STRING' },
-  },
-  required: ['headline', 'body'],
-} as const
+function responseSchema(bulletCount: number | undefined) {
+  const headlineAndBody = {
+    type: 'OBJECT',
+    properties: {
+      headline: { type: 'STRING' },
+      body: { type: 'STRING' },
+    },
+    required: ['headline', 'body'],
+  }
+  if (bulletCount === undefined) return headlineAndBody
 
-function parseInsight(raw: unknown, limits: Limits): InsightResult {
+  return {
+    ...headlineAndBody,
+    properties: {
+      ...headlineAndBody.properties,
+      bullets: { type: 'ARRAY', items: { type: 'STRING' }, minItems: bulletCount, maxItems: bulletCount },
+    },
+    required: [...headlineAndBody.required, 'bullets'],
+  }
+}
+
+type BulletsResult = { ok: true; bullets: string[] } | { ok: false; reason: string }
+
+function parseBullets(raw: unknown, count: number, limit: number): BulletsResult {
+  if (!Array.isArray(raw)) return { ok: false, reason: 'bullets missing' }
+  if (raw.length !== count) return { ok: false, reason: `${raw.length} bullets, expected ${count}` }
+
+  const bullets = raw.map((b) => (typeof b === 'string' ? b.trim() : ''))
+  if (bullets.some((b) => !b)) return { ok: false, reason: 'empty bullet' }
+
+  const overflow = bullets.find((b) => b.length > limit)
+  if (overflow) return { ok: false, reason: `bullet ${overflow.length} > ${limit} chars` }
+
+  return { ok: true, bullets }
+}
+
+function parseInsight(raw: unknown, limits: Limits, bulletCount?: number): InsightResult {
   if (typeof raw !== 'object' || raw === null) return { ok: false, reason: 'response was not an object' }
 
-  const { headline, body } = raw as Record<string, unknown>
+  const { headline, body, bullets } = raw as Record<string, unknown>
   if (typeof headline !== 'string' || typeof body !== 'string') {
     return { ok: false, reason: 'headline or body missing' }
   }
@@ -65,17 +96,25 @@ function parseInsight(raw: unknown, limits: Limits): InsightResult {
   if (trimmedBody.length > limits.body) {
     return { ok: false, reason: `body ${trimmedBody.length} > ${limits.body} chars` }
   }
-  if (trimmedHeadline.includes('—') || trimmedBody.includes('—')) return { ok: false, reason: 'em-dash' }
+
+  const parsedBullets = bulletCount === undefined
+    ? null
+    : parseBullets(bullets, bulletCount, limits.bullet ?? limits.body)
+  if (parsedBullets && !parsedBullets.ok) return parsedBullets
+
+  const lines = [trimmedHeadline, trimmedBody, ...(parsedBullets?.bullets ?? [])]
+  const combined = lines.join(' ')
+  if (combined.includes('—')) return { ok: false, reason: 'em-dash' }
 
   if (activeLocale === 'fr') {
-    const combined = `${trimmedHeadline} ${trimmedBody}`
     if (FRENCH_ELISION_MISSING.test(combined)) return { ok: false, reason: 'french elision missing' }
     if (combined.length > FRENCH_ACCENT_CHECK_MIN_LENGTH && !FRENCH_ACCENT.test(combined)) {
       return { ok: false, reason: 'french text missing all accents' }
     }
   }
 
-  return { ok: true, insight: { headline: trimmedHeadline, body: trimmedBody } }
+  const insight = { headline: trimmedHeadline, body: trimmedBody }
+  return { ok: true, insight: parsedBullets ? { ...insight, bullets: parsedBullets.bullets } : insight }
 }
 
 export async function generateInsight(request: InsightRequest): Promise<InsightResult> {
@@ -94,7 +133,7 @@ export async function generateInsight(request: InsightRequest): Promise<InsightR
         contents: [{ parts: [{ text: request.prompt }] }],
         generationConfig: {
           responseMimeType: 'application/json',
-          responseSchema: RESPONSE_SCHEMA,
+          responseSchema: responseSchema(request.bulletCount),
           temperature: 1.1,
         },
       }),
@@ -112,7 +151,7 @@ export async function generateInsight(request: InsightRequest): Promise<InsightR
       return { ok: false, reason: `no text part (finish: ${json?.candidates?.[0]?.finishReason ?? 'none'})` }
     }
 
-    return parseInsight(JSON.parse(text), request.limits)
+    return parseInsight(JSON.parse(text), request.limits, request.bulletCount)
   } catch (error) {
     return { ok: false, reason: `${error instanceof Error ? error.name : 'error'}: ${String(error).slice(0, 120)}` }
   }
