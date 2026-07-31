@@ -5754,16 +5754,16 @@
       "deviceId": 3604810488
     },
     "2026-07-31": {
-      "status": "maintaining",
-      "statusCode": 4,
-      "feedback": "MAINTAINING_2",
+      "status": "productive",
+      "statusCode": 7,
+      "feedback": "PRODUCTIVE_2",
       "fitnessTrend": 2,
-      "acuteLoad": 393,
-      "chronicLoad": 405,
-      "acwr": 0.9,
+      "acuteLoad": 655,
+      "chronicLoad": 452,
+      "acwr": 1.4,
       "acwrStatus": "OPTIMAL",
-      "chronicLoadMin": 324,
-      "chronicLoadMax": 608,
+      "chronicLoadMin": 362,
+      "chronicLoadMax": 678,
       "deviceId": 3604810488
     }
   },
@@ -6626,16 +6626,16 @@
       "deviceId": 3604810488
     },
     "2026-07-31": {
-      "status": "maintaining",
-      "statusCode": 4,
-      "feedback": "MAINTAINING_2",
+      "status": "productive",
+      "statusCode": 7,
+      "feedback": "PRODUCTIVE_2",
       "fitnessTrend": 2,
-      "acuteLoad": 393,
-      "chronicLoad": 405,
-      "acwr": 0.9,
+      "acuteLoad": 655,
+      "chronicLoad": 452,
+      "acwr": 1.4,
       "acwrStatus": "OPTIMAL",
-      "chronicLoadMin": 324,
-      "chronicLoadMax": 608,
+      "chronicLoadMin": 362,
+      "chronicLoadMax": 678,
       "deviceId": 3604810488
     }
   }
