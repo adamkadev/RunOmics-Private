@@ -26,23 +26,36 @@ export interface ChartWindow<T extends { date: string }> {
   goForward: () => void
 }
 
+// Local midnight today, as a primitive so it stays referentially stable across
+// same-day re-renders (a fresh Date object would re-run every dependent memo).
+function startOfTodayMs(): number {
+  const d = new Date()
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+}
+
 // 4w is the default everywhere: the range lives in component state only, so
 // leaving the page and coming back always lands back on the recent window
 // rather than whatever was last inspected.
 export function useChartWindow<T extends { date: string }>(
   points: T[],
   initialRange: ChartRange = '4w',
+  anchor?: Date,
 ): ChartWindow<T> {
   const [range, setRange] = useState<ChartRange>(initialRange)
   // 0 is the window ending on the anchor; each step back is one window earlier.
   const [offset, setOffset] = useState(0)
 
-  const anchor = useMemo(() => {
-    const last = points[points.length - 1]?.date
-    return last ? new Date(last + 'T00:00:00') : new Date()
-  }, [points])
+  // Anchor every chart on *today*, not on its own last data point, so all cards
+  // show the same calendar window (the real last 4 weeks / 6 months / year up to
+  // today) - the way the watch reports its ranges. Anchoring on each series' last
+  // reading made windows end on different days (a metric last recorded on the
+  // 14th ended two weeks before one recorded on the 29th) and drift out of sync.
+  // A metric with no recent value now simply shows a shorter curve inside the
+  // shared window instead of shifting the whole window backwards.
+  const anchorMs = anchor ? anchor.getTime() : startOfTodayMs()
+  const anchorDate = useMemo(() => new Date(anchorMs), [anchorMs])
 
-  const bounds = useMemo(() => windowBounds(range, offset, anchor), [range, offset, anchor])
+  const bounds = useMemo(() => windowBounds(range, offset, anchorDate), [range, offset, anchorDate])
   const visible = useMemo(() => pointsInWindow(points, bounds), [points, bounds])
 
   return {
