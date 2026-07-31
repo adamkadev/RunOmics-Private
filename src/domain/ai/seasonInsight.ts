@@ -1,13 +1,9 @@
 import type { SeasonHeadlineData } from '@/application/usecases/GetSeasonHeadline'
-import { HERO_POOL } from './budget'
 import { insightHash } from './insightHash'
 import { avoidClause, systemInstruction } from './prompt'
 
 export const SEASON_SURFACE = 'seasonHeadline'
 export const SEASON_LIMITS = { headline: 64, body: 160, bullet: 90 }
-
-// Also one call a day at most, and it shares the hero's daily budget comfortably.
-export const SEASON_POOL = HERO_POOL
 
 function facts(data: SeasonHeadlineData) {
   return Object.fromEntries(data.bullets.map((b, i) => [`bullet${i}`, `${b.tone}:${b.text}`]))

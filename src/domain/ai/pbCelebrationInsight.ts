@@ -1,15 +1,10 @@
 import type { RecordEntry } from '@/application/usecases/GetRecords'
-import { HERO_POOL } from './budget'
 import { insightHash } from './insightHash'
 import { avoidClause, systemInstruction } from './prompt'
 import { formatClock } from '@/lib/formatters'
 
 export const PB_CELEBRATION_SURFACE = 'pbCelebration'
 export const PB_CELEBRATION_LIMITS = { headline: 48, body: 130 }
-
-// A handful of calls a year, on the one screen that takes over the whole app:
-// the strongest model, and the cheapest surface in the budget by far.
-export const PB_CELEBRATION_POOL = HERO_POOL
 
 /** How long a record stays worth celebrating - shared with the overlay's own check. */
 export const CELEBRATION_WINDOW_DAYS = 3

@@ -24,7 +24,6 @@ import { wearOutlook } from '@/domain/shoe/wearStatus'
 import type { Limits } from '@/domain/ai/prompt'
 import {
   TODAY_LIMITS,
-  TODAY_POOL,
   TODAY_SURFACE,
   TODAY_SYSTEM_INSTRUCTION,
   todayInsightHash,
@@ -32,7 +31,6 @@ import {
 } from '@/domain/ai/todayInsight'
 import {
   RUN_VERDICT_LIMITS,
-  RUN_VERDICT_POOL,
   RUN_VERDICT_PREFIX,
   RUN_VERDICT_SYSTEM_INSTRUCTION,
   deservesVerdict,
@@ -42,7 +40,6 @@ import {
 } from '@/domain/ai/runVerdictInsight'
 import {
   SEASON_LIMITS,
-  SEASON_POOL,
   SEASON_SURFACE,
   SEASON_SYSTEM_INSTRUCTION,
   seasonInsightHash,
@@ -50,7 +47,6 @@ import {
 } from '@/domain/ai/seasonInsight'
 import {
   WEEKLY_REVIEW_LIMITS,
-  WEEKLY_REVIEW_POOL,
   WEEKLY_REVIEW_SURFACE,
   WEEKLY_REVIEW_SYSTEM_INSTRUCTION,
   weeklyReviewInsightHash,
@@ -58,7 +54,6 @@ import {
 } from '@/domain/ai/weeklyReviewInsight'
 import {
   WEEK_PURPOSE_LIMITS,
-  WEEK_PURPOSE_POOL,
   WEEK_PURPOSE_SURFACE,
   WEEK_PURPOSE_SYSTEM_INSTRUCTION,
   weekPurposeInsightHash,
@@ -66,7 +61,6 @@ import {
 } from '@/domain/ai/weekPurposeInsight'
 import {
   PB_CELEBRATION_LIMITS,
-  PB_CELEBRATION_POOL,
   PB_CELEBRATION_SURFACE,
   PB_CELEBRATION_SYSTEM_INSTRUCTION,
   celebratedRecord,
@@ -75,7 +69,6 @@ import {
 } from '@/domain/ai/pbCelebrationInsight'
 import {
   SHOE_VERDICT_LIMITS,
-  SHOE_VERDICT_POOL,
   SHOE_VERDICT_SYSTEM_INSTRUCTION,
   shoeVerdictInsightHash,
   shoeVerdictInsightPrompt,
@@ -85,7 +78,6 @@ import {
 import {
   ANALYTICS_TAB_IDS,
   ANALYTICS_TAB_LIMITS,
-  ANALYTICS_TAB_POOL,
   analyticsTabInsightHash,
   analyticsTabInsightPrompt,
   analyticsTabSurface,
@@ -96,7 +88,7 @@ import {
   listCachedHashes,
   saveCachedInsight,
 } from '@/infrastructure/repositories/FirestoreInsightsRepository'
-import { SUPPORTING_POOL } from '@/domain/ai/budget'
+import { MODEL_POOL } from '@/domain/ai/budget'
 import { openSpender, type Spender } from '@/lib/aiSpend'
 import { generateInsight } from '@/lib/gemini'
 
@@ -112,19 +104,8 @@ export const maxDuration = 60
 const DEFAULT_RUN_VERDICTS_PER_RUN = 6
 const MAX_RUN_VERDICTS_PER_RUN = 60
 
-// Manual backfill switches, off unless the URL asks for them: the daily cron
-// sends neither, so the steady state stays hero models on the runs still likely
-// to be opened. ?pool=supporting moves a bulk pass onto the lite quota (500 a
-// day against 20), ?all=1 lifts the recency horizon so the archive can be
-// filled in without the daily runs having to compete with it.
-interface BackfillOptions {
-  pool: string[]
-  ignoreHorizon: boolean
-}
-
 interface SurfaceJob {
   surface: string
-  pool: string[]
   limits: Limits
   systemInstruction: string
   hash: string
@@ -152,7 +133,7 @@ async function runSurface(spender: Spender, job: SurfaceJob): Promise<SurfaceOut
   const cached = await getCachedInsight(job.surface)
   if (cached?.hash === job.hash) return { generated: false, reason: 'unchanged' }
 
-  const model = await spender.reserve(job.pool)
+  const model = await spender.reserve(MODEL_POOL)
   if (!model) return { generated: false, reason: 'no budget left' }
 
   const result = await generateInsight({
@@ -179,11 +160,9 @@ export async function POST(req: NextRequest) {
 
     const spender = await openSpender()
 
-    // Order is priority order, alternating tiers on purpose: spacing is counted
-    // per model, so a supporting call between two hero calls runs inside a wait
-    // that was owed anyway instead of adding to it. What the run budget cuts off
-    // is picked up by the next run, so the tail is the copy that can wait - and
-    // the run-verdict backfill, which has always caught up gradually.
+    // Order is priority order: what the run budget cuts off is picked up by the
+    // next run, so the tail is the copy that can wait - and the run-verdict
+    // backfill, which has always caught up gradually.
     return NextResponse.json({
       today: await generateToday(spender),
       weekPurpose: await generateWeekPurpose(spender),
@@ -192,7 +171,7 @@ export async function POST(req: NextRequest) {
       analyticsTabs: await generateAnalyticsTabs(spender),
       pbCelebration: await generatePbCelebration(spender),
       shoeVerdicts: await generateShoeVerdicts(spender),
-      runVerdicts: await generateRunVerdicts(spender, requestedLimit(req), backfillOptions(req)),
+      runVerdicts: await generateRunVerdicts(spender, requestedLimit(req), ignoresHorizon(req)),
       spend: spender.report(),
     })
   })
@@ -205,12 +184,12 @@ function requestedLimit(req: NextRequest): number {
   return Math.min(raw, MAX_RUN_VERDICTS_PER_RUN)
 }
 
-function backfillOptions(req: NextRequest): BackfillOptions {
-  const params = req.nextUrl.searchParams
-  return {
-    pool: params.get('pool') === 'supporting' ? SUPPORTING_POOL : RUN_VERDICT_POOL,
-    ignoreHorizon: params.get('all') === '1',
-  }
+// ?all=1 lifts the recency horizon, for a manual pass over the archive after a
+// reprocess moved the facts under verdicts nobody would open next week. The
+// daily cron never sends it, so the steady state stays the runs still worth a
+// call - at 20 requests a day per model, an archive pass is not a cron's job.
+function ignoresHorizon(req: NextRequest): boolean {
+  return req.nextUrl.searchParams.get('all') === '1'
 }
 
 async function generateToday(spender: Spender) {
@@ -221,7 +200,6 @@ async function generateToday(spender: Spender) {
 
   return runSurface(spender, {
     surface: TODAY_SURFACE,
-    pool: TODAY_POOL,
     limits: TODAY_LIMITS,
     systemInstruction: TODAY_SYSTEM_INSTRUCTION,
     hash: todayInsightHash(context),
@@ -235,7 +213,6 @@ async function generateWeeklyReview(spender: Spender) {
 
   return runSurface(spender, {
     surface: WEEKLY_REVIEW_SURFACE,
-    pool: WEEKLY_REVIEW_POOL,
     limits: WEEKLY_REVIEW_LIMITS,
     systemInstruction: WEEKLY_REVIEW_SYSTEM_INSTRUCTION,
     hash: weeklyReviewInsightHash(digest),
@@ -249,7 +226,6 @@ async function generateSeason(spender: Spender) {
 
   return runSurface(spender, {
     surface: SEASON_SURFACE,
-    pool: SEASON_POOL,
     limits: SEASON_LIMITS,
     systemInstruction: SEASON_SYSTEM_INSTRUCTION,
     hash: seasonInsightHash(data),
@@ -266,7 +242,6 @@ async function generatePbCelebration(spender: Spender) {
 
   return runSurface(spender, {
     surface: PB_CELEBRATION_SURFACE,
-    pool: PB_CELEBRATION_POOL,
     limits: PB_CELEBRATION_LIMITS,
     systemInstruction: PB_CELEBRATION_SYSTEM_INSTRUCTION,
     hash: pbCelebrationInsightHash(context),
@@ -280,7 +255,6 @@ async function generateWeekPurpose(spender: Spender) {
 
   return runSurface(spender, {
     surface: WEEK_PURPOSE_SURFACE,
-    pool: WEEK_PURPOSE_POOL,
     limits: WEEK_PURPOSE_LIMITS,
     systemInstruction: WEEK_PURPOSE_SYSTEM_INSTRUCTION,
     hash: weekPurposeInsightHash(week),
@@ -302,8 +276,7 @@ async function generateShoeVerdicts(spender: Spender) {
     const context: ShoeVerdictContext = { shoe, ...outlook, status: outlook.status }
     const outcome = await runSurface(spender, {
       surface: shoeVerdictSurface(shoe.gearId),
-      pool: SHOE_VERDICT_POOL,
-      limits: SHOE_VERDICT_LIMITS,
+        limits: SHOE_VERDICT_LIMITS,
       systemInstruction: SHOE_VERDICT_SYSTEM_INSTRUCTION,
       hash: shoeVerdictInsightHash(context),
       prompt: (recent) => shoeVerdictInsightPrompt(context, recent),
@@ -336,8 +309,7 @@ async function generateAnalyticsTabs(spender: Spender) {
 
     const outcome = await runSurface(spender, {
       surface: analyticsTabSurface(tab),
-      pool: ANALYTICS_TAB_POOL,
-      limits: ANALYTICS_TAB_LIMITS,
+        limits: ANALYTICS_TAB_LIMITS,
       systemInstruction: analyticsTabSystemInstruction(tab),
       hash: analyticsTabInsightHash(tab, lines),
       prompt: (recent) => analyticsTabInsightPrompt(lines, recent),
@@ -348,7 +320,7 @@ async function generateAnalyticsTabs(spender: Spender) {
   return results
 }
 
-async function generateRunVerdicts(spender: Spender, limit: number, options: BackfillOptions) {
+async function generateRunVerdicts(spender: Spender, limit: number, ignoreHorizon: boolean) {
   const cachedHashes = await listCachedHashes(RUN_VERDICT_PREFIX)
   // Every activity that holds a record or a top-three effort - the ones reached
   // from /records months after the fact.
@@ -360,7 +332,7 @@ async function generateRunVerdicts(spender: Spender, limit: number, options: Bac
   const outstanding = getRunVerdictContexts().filter(
     (context) => cachedHashes.get(runVerdictSurface(context.activity.id)) !== runVerdictInsightHash(context)
   )
-  const eligible = options.ignoreHorizon
+  const eligible = ignoreHorizon
     ? outstanding
     : outstanding.filter((context) => deservesVerdict(context.activity, recorded, now))
   const pending = eligible.slice(0, limit)
@@ -375,7 +347,7 @@ async function generateRunVerdicts(spender: Spender, limit: number, options: Bac
     // One call covers every daily ceiling in the pool, the per-minute spacing
     // and the time left in this invocation. What it refuses, the next run picks
     // up - and with four models to draw from, it refuses far later than one.
-    const model = await spender.reserve(options.pool)
+    const model = await spender.reserve(MODEL_POOL)
     if (!model) break
 
     const result = await generateInsight({

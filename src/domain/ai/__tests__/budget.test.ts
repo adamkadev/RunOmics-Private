@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { HERO_POOL, MODEL_LIMITS, SUPPORTING_POOL, dailyBudget, modelLimits, quotaDay, spacingMs, spendField } from '../budget'
+import { MODEL_LIMITS, MODEL_POOL, dailyBudget, modelLimits, quotaDay, spacingMs, spendField } from '../budget'
 
 describe('budget', () => {
   it('keeps a reserve under the free-tier ceiling', () => {
@@ -10,8 +10,8 @@ describe('budget', () => {
     expect(dailyBudget('some-future-model')).toBe(dailyBudget('gemini-3.6-flash'))
   })
 
-  it('spaces calls further apart on the model with the lower rate limit', () => {
-    expect(spacingMs('gemini-3.6-flash')).toBeGreaterThan(spacingMs('gemini-3.5-flash-lite'))
+  it('paces an unknown model as tightly as the most constrained one', () => {
+    expect(spacingMs('some-future-model')).toBe(spacingMs('gemini-3.6-flash'))
   })
 
   it('paces slower than the rate limit itself', () => {
@@ -30,13 +30,13 @@ describe('budget', () => {
   })
 
   it('only pools models whose limits are known, so none of them is guessed', () => {
-    for (const model of [...HERO_POOL, ...SUPPORTING_POOL]) {
+    for (const model of MODEL_POOL) {
       expect(MODEL_LIMITS[model], model).toBeDefined()
     }
   })
 
-  it('spreads a tier over several models, which is where the extra budget is', () => {
-    const heroBudget = HERO_POOL.reduce((sum, model) => sum + dailyBudget(model), 0)
-    expect(heroBudget).toBeGreaterThan(dailyBudget(HERO_POOL[0]!) * 3)
+  it('spreads the pool over several models, which is where the extra budget is', () => {
+    const poolBudget = MODEL_POOL.reduce((sum, model) => sum + dailyBudget(model), 0)
+    expect(poolBudget).toBeGreaterThan(dailyBudget(MODEL_POOL[0]!) * 3)
   })
 })

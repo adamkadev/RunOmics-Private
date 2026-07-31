@@ -1,15 +1,10 @@
 import type { ShoeDetail } from '@/application/usecases/GetShoeDetail'
 import type { WearStatus } from '@/domain/shoe/wearStatus'
-import { SUPPORTING_POOL } from './budget'
 import { insightHash } from './insightHash'
 import { avoidClause, systemInstruction } from './prompt'
 
 export const SHOE_VERDICT_PREFIX = 'shoeVerdict_'
 export const SHOE_VERDICT_LIMITS = { headline: 44, body: 130 }
-
-// One card per worn-out pair, and a pair crosses a wear bucket a few times a
-// year: cheap, but nowhere near the daily read the dashboard gets.
-export const SHOE_VERDICT_POOL = SUPPORTING_POOL
 
 export function shoeVerdictSurface(gearId: string): string {
   return `${SHOE_VERDICT_PREFIX}${gearId}`

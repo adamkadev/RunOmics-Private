@@ -13,8 +13,6 @@ export const MODEL_LIMITS: Record<string, ModelLimits> = {
   'gemini-3.5-flash': { rpm: 5, rpd: 20 },
   'gemini-3-flash-preview': { rpm: 5, rpd: 20 },
   'gemini-2.5-flash': { rpm: 5, rpd: 20 },
-  'gemini-3.5-flash-lite': { rpm: 15, rpd: 500 },
-  'gemini-3.1-flash-lite': { rpm: 15, rpd: 500 },
 }
 
 const UNKNOWN_MODEL_LIMITS: ModelLimits = { rpm: 5, rpd: 20 }
@@ -24,22 +22,14 @@ const UNKNOWN_MODEL_LIMITS: ModelLimits = { rpm: 5, rpd: 20 }
 // and their per-minute limits are separate too - alternating between them
 // removes most of the waiting a single model would owe. Order is quality
 // order: the spender always takes the best one that is free right now.
-export const HERO_POOL = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3-flash-preview', 'gemini-2.5-flash']
-
-// 500 a day each, and no competition with the copy the athlete reads daily.
-// The lite models are also the ones caught dropping French typography (see
-// lib/gemini.ts), so they stay off the hero surfaces.
 //
-// gemini-2.5-flash-lite left the pool on 2026-07-31: Google now answers 404
-// "no longer available to new users" for it. A retired model still costs a
-// reserved slot and a ledger entry on the first call of every invocation
-// before the 404 closes it, so it is dropped rather than kept as a fallback.
-//
-// Unlike the hero pool, this one is not in release order: over 190 calls of the
-// 2026-07-31 backfill, gemini-3.5-flash-lite had about a third of its answers
-// rejected for dropped accents while gemini-3.1-flash-lite almost never did.
-// A rejected verdict is worth nothing, so the older model goes first.
-export const SUPPORTING_POOL = ['gemini-3.1-flash-lite', 'gemini-3.5-flash-lite']
+// One pool, for every surface. A cheaper tier existed until 2026-07-31 to keep
+// the archive backfill off this budget; with the archive written, steady state
+// is around a dozen calls a day against these 80, so there is nothing left to
+// protect. The lite models also had about a third of their answers rejected for
+// dropped French accents (see lib/gemini.ts), which made them expensive in the
+// only currency that mattered.
+export const MODEL_POOL = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3-flash-preview', 'gemini-2.5-flash']
 
 // Requests held back from the daily ceiling so a manual backfill, or a retry
 // after a failed cron, never lands on an already exhausted quota.

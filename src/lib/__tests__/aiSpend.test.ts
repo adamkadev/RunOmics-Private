@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { HERO_POOL, dailyBudget, spendField } from '@/domain/ai/budget'
+import { MODEL_POOL, dailyBudget, spendField } from '@/domain/ai/budget'
 
 const ledger = vi.hoisted(() => ({ current: {} as Record<string, number> }))
 
@@ -13,7 +13,7 @@ vi.mock('@/infrastructure/repositories/FirestoreBudgetRepository', () => ({
 
 const { openSpender } = await import('../aiSpend')
 
-const [BEST, SECOND] = HERO_POOL as [string, string]
+const [BEST, SECOND] = MODEL_POOL as [string, string]
 
 function fill(model: string) {
   ledger.current[spendField(model)] = dailyBudget(model)
@@ -26,27 +26,27 @@ describe('openSpender', () => {
 
   it('takes the best model in the pool first', async () => {
     const spender = await openSpender()
-    expect(await spender.reserve(HERO_POOL)).toBe(BEST)
+    expect(await spender.reserve(MODEL_POOL)).toBe(BEST)
   })
 
   it('falls through to the next model once one has spent its day', async () => {
     fill(BEST)
 
     const spender = await openSpender()
-    expect(await spender.reserve(HERO_POOL)).toBe(SECOND)
+    expect(await spender.reserve(MODEL_POOL)).toBe(SECOND)
   })
 
   it('refuses only when every model in the pool is spent', async () => {
-    HERO_POOL.forEach(fill)
+    MODEL_POOL.forEach(fill)
 
     const spender = await openSpender()
-    expect(await spender.reserve(HERO_POOL)).toBeNull()
+    expect(await spender.reserve(MODEL_POOL)).toBeNull()
   })
 
   it('counts a reserved call in the ledger before the request is made', async () => {
     const spender = await openSpender()
 
-    expect(await spender.reserve(HERO_POOL)).toBe(BEST)
+    expect(await spender.reserve(MODEL_POOL)).toBe(BEST)
     expect(ledger.current[spendField(BEST)]).toBe(1)
     expect(spender.report()[spendField(BEST)]).toBe(1)
   })
@@ -63,7 +63,7 @@ describe('openSpender', () => {
     const spender = await openSpender()
     spender.exhaust(BEST)
 
-    expect(await spender.reserve(HERO_POOL)).toBe(SECOND)
+    expect(await spender.reserve(MODEL_POOL)).toBe(SECOND)
     expect(ledger.current[spendField(BEST)]).toBeUndefined()
   })
 

@@ -1,4 +1,3 @@
-import { SUPPORTING_POOL } from './budget'
 import { insightHash } from './insightHash'
 import { avoidClause, systemInstruction } from './prompt'
 
@@ -7,10 +6,6 @@ export type AnalyticsTabId = (typeof ANALYTICS_TAB_IDS)[number]
 
 export const ANALYTICS_TAB_PREFIX = 'analyticsTab_'
 export const ANALYTICS_TAB_LIMITS = { headline: 52, body: 150 }
-
-// Four documents, refreshed when the reads behind them move. Supporting copy on
-// a page the athlete opens to dig, so it stays off the hero model's budget.
-export const ANALYTICS_TAB_POOL = SUPPORTING_POOL
 
 export function analyticsTabSurface(tab: AnalyticsTabId): string {
   return `${ANALYTICS_TAB_PREFIX}${tab}`
