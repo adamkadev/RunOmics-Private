@@ -15,7 +15,6 @@ export const MODEL_LIMITS: Record<string, ModelLimits> = {
   'gemini-2.5-flash': { rpm: 5, rpd: 20 },
   'gemini-3.5-flash-lite': { rpm: 15, rpd: 500 },
   'gemini-3.1-flash-lite': { rpm: 15, rpd: 500 },
-  'gemini-2.5-flash-lite': { rpm: 10, rpd: 20 },
 }
 
 const UNKNOWN_MODEL_LIMITS: ModelLimits = { rpm: 5, rpd: 20 }
@@ -30,7 +29,12 @@ export const HERO_POOL = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3-flas
 // 500 a day each, and no competition with the copy the athlete reads daily.
 // The lite models are also the ones caught dropping French typography (see
 // lib/gemini.ts), so they stay off the hero surfaces.
-export const SUPPORTING_POOL = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-2.5-flash-lite']
+//
+// gemini-2.5-flash-lite left the pool on 2026-07-31: Google now answers 404
+// "no longer available to new users" for it. A retired model still costs a
+// reserved slot and a ledger entry on the first call of every invocation
+// before the 404 closes it, so it is dropped rather than kept as a fallback.
+export const SUPPORTING_POOL = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite']
 
 // Requests held back from the daily ceiling so a manual backfill, or a retry
 // after a failed cron, never lands on an already exhausted quota.
