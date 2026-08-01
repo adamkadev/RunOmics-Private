@@ -34,9 +34,11 @@ import {
   RUN_VERDICT_PREFIX,
   RUN_VERDICT_SYSTEM_INSTRUCTION,
   deservesVerdict,
+  isFreshRun,
   runVerdictInsightHash,
   runVerdictInsightPrompt,
   runVerdictSurface,
+  type RunVerdictContext,
 } from '@/domain/ai/runVerdictInsight'
 import {
   SEASON_LIMITS,
@@ -104,6 +106,13 @@ export const maxDuration = 60
 const DEFAULT_RUN_VERDICTS_PER_RUN = 6
 const MAX_RUN_VERDICTS_PER_RUN = 60
 
+// Verdicts for runs that just landed are written before any other surface. They
+// used to sit at the very end of the run, behind ten surfaces that could spend
+// the day's quota or the invocation's clock first - so the one insight the
+// athlete was actually waiting for was the first thing dropped. Small on
+// purpose: it is a handful of runs a week, not a backfill.
+const FRESH_RUN_VERDICTS_PER_RUN = 3
+
 interface SurfaceJob {
   surface: string
   limits: Limits
@@ -159,11 +168,23 @@ export async function POST(req: NextRequest) {
     }
 
     const spender = await openSpender()
+    const limit = requestedLimit(req)
+    const queue = await runVerdictQueue(ignoresHorizon(req))
 
-    // Order is priority order: what the run budget cuts off is picked up by the
-    // next run, so the tail is the copy that can wait - and the run-verdict
+    // Headlines written anywhere in this invocation, shared by both verdict
+    // phases: each verdict lives in its own document, so what this batch has
+    // already said is the only anti-repetition signal there is.
+    const written: string[] = []
+
+    // The run that just synced comes first. ?limit=0 still buys a report with
+    // no spend at all, so it holds this phase back too.
+    const fresh = limit === 0 ? [] : queue.fresh.slice(0, FRESH_RUN_VERDICTS_PER_RUN)
+
+    // Then order is priority order: what the run budget cuts off is picked up by
+    // the next run, so the tail is the copy that can wait - and the run-verdict
     // backfill, which has always caught up gradually.
     return NextResponse.json({
+      freshVerdicts: await writeVerdicts(spender, fresh, written),
       today: await generateToday(spender),
       weekPurpose: await generateWeekPurpose(spender),
       weeklyReview: await generateWeeklyReview(spender),
@@ -171,7 +192,17 @@ export async function POST(req: NextRequest) {
       analyticsTabs: await generateAnalyticsTabs(spender),
       pbCelebration: await generatePbCelebration(spender),
       shoeVerdicts: await generateShoeVerdicts(spender),
-      runVerdicts: await generateRunVerdicts(spender, requestedLimit(req), ignoresHorizon(req)),
+      runVerdicts: {
+        outstanding: queue.outstanding,
+        eligible: queue.eligible,
+        // Fresh runs left over from the cap above lead the backfill rather than
+        // waiting behind the archive for it.
+        ...(await writeVerdicts(
+          spender,
+          [...queue.fresh.slice(fresh.length), ...queue.rest].slice(0, limit),
+          written
+        )),
+      },
       spend: spender.report(),
     })
   })
@@ -320,7 +351,17 @@ async function generateAnalyticsTabs(spender: Spender) {
   return results
 }
 
-async function generateRunVerdicts(spender: Spender, limit: number, ignoreHorizon: boolean) {
+interface VerdictQueue {
+  /** Runs recent enough to be written before the other surfaces. */
+  fresh: RunVerdictContext[]
+  /** Everything else still owed a verdict, newest first. */
+  rest: RunVerdictContext[]
+  outstanding: number
+  eligible: number
+}
+
+/** Every run still owed a verdict, split into what is urgent and what can wait. */
+async function runVerdictQueue(ignoreHorizon: boolean): Promise<VerdictQueue> {
   const cachedHashes = await listCachedHashes(RUN_VERDICT_PREFIX)
   // Every activity that holds a record or a top-three effort - the ones reached
   // from /records months after the fact.
@@ -335,12 +376,22 @@ async function generateRunVerdicts(spender: Spender, limit: number, ignoreHorizo
   const eligible = ignoreHorizon
     ? outstanding
     : outstanding.filter((context) => deservesVerdict(context.activity, recorded, now))
-  const pending = eligible.slice(0, limit)
 
-  // Each verdict lives in its own document, so the only anti-repetition signal
-  // available is what this same batch already wrote - which is exactly where
-  // near-identical easy runs would otherwise read as copy-paste.
-  const written: string[] = []
+  return {
+    fresh: eligible.filter((context) => isFreshRun(context.activity, now)),
+    rest: eligible.filter((context) => !isFreshRun(context.activity, now)),
+    outstanding: outstanding.length,
+    eligible: eligible.length,
+  }
+}
+
+/**
+ * Generates and stores one batch of verdicts, appending each headline it writes
+ * to `written` so the next prompt - in this batch or the one after it - can be
+ * told what it must not say again.
+ */
+async function writeVerdicts(spender: Spender, pending: RunVerdictContext[], written: string[]) {
+  const before = written.length
   const failures: string[] = []
 
   for (const context of pending) {
@@ -373,5 +424,5 @@ async function generateRunVerdicts(spender: Spender, limit: number, ignoreHorizo
     written.push(result.insight.headline)
   }
 
-  return { outstanding: outstanding.length, eligible: eligible.length, generated: written.length, failures }
+  return { generated: written.length - before, failures }
 }

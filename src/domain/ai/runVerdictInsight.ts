@@ -18,6 +18,17 @@ export function runVerdictSurface(activityId: string): string {
 // is only reached through the records list, so that is the other way in.
 const VERDICT_HORIZON_DAYS = 90
 
+// A run this recent is the one the athlete just finished and is about to open,
+// so its verdict is generated ahead of the rest of the copy rather than behind
+// it. Wider than a day because a sync can land days late, and because the
+// verdict for a run only becomes reachable once the deployment carrying it is
+// live - which is the run after the one that synced it.
+const FRESH_VERDICT_DAYS = 3
+
+function daysSince(date: string, now: Date): number {
+  return (now.getTime() - new Date(date.slice(0, 10) + 'T00:00:00').getTime()) / 86_400_000
+}
+
 /**
  * Whether a run is worth a verdict at all. Generating one for every run ever
  * synced spends the day's quota on pages nobody opens; a run that already has a
@@ -29,8 +40,12 @@ export function deservesVerdict(
   now: Date
 ): boolean {
   if (recordActivityIds.has(activity.id)) return true
-  const days = (now.getTime() - new Date(activity.date.slice(0, 10) + 'T00:00:00').getTime()) / 86_400_000
-  return days <= VERDICT_HORIZON_DAYS
+  return daysSince(activity.date, now) <= VERDICT_HORIZON_DAYS
+}
+
+/** Whether this run is recent enough to be generated before the other surfaces. */
+export function isFreshRun(activity: { date: string }, now: Date): boolean {
+  return daysSince(activity.date, now) <= FRESH_VERDICT_DAYS
 }
 
 // The watch's own sensor rides on the wrist and reads ~6°C above the air it is
