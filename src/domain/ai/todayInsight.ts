@@ -16,6 +16,13 @@ export interface TodayContext {
   recent: RecentTraining
 }
 
+// A planned session stops being something to approach the moment the athlete
+// has already run today - the hero's own checkbox already shows it done, so
+// copy that still tells them how to pace it reads as if it never saw today.
+function completedToday(plannedWorkout: PlannedWorkout | null, recent: RecentTraining): boolean {
+  return plannedWorkout !== null && recent.lastRun?.daysAgo === 0
+}
+
 function facts({ status, tone, plannedWorkout, recent }: TodayContext) {
   return {
     tone,
@@ -28,6 +35,7 @@ function facts({ status, tone, plannedWorkout, recent }: TodayContext) {
     planned: plannedWorkout ? (plannedWorkout.name ?? plannedWorkout.type) : 'rest',
     plannedType: plannedWorkout?.type ?? null,
     plannedMinutes: plannedWorkout?.durationSecs ? Math.round(plannedWorkout.durationSecs / 60) : null,
+    completedToday: completedToday(plannedWorkout, recent),
     weekRuns: recent.runs,
     weekKm: recent.km,
     lastRunType: recent.lastRun?.type ?? null,
@@ -46,6 +54,15 @@ const TONE_RULES: Record<ReadinessTone, string> = {
   hold: 'Fatigue is elevated. Advise easing off, going easy or resting.',
 }
 
+// Same tone, but the session it was written to precede has already happened -
+// so the advice on how to approach it has nothing left to attach to. Judge
+// what was run instead of instructing a session that is already behind them.
+const COMPLETED_TONE_RULES: Record<ReadinessTone, string> = {
+  go: 'The athlete was fresh and already ran today. Affirm that was the window to use it.',
+  caution: 'The athlete had little room to spare and already ran today. Say how carrying that landed, not what to watch going in.',
+  hold: 'Fatigue was elevated and the athlete already ran today anyway. Acknowledge it is done and turn to what recovering from it now looks like.',
+}
+
 export const TODAY_SYSTEM_INSTRUCTION = [
   systemInstruction(
     'You are a running coach writing the one-line verdict at the top of an athlete dashboard.',
@@ -60,6 +77,9 @@ export const TODAY_SYSTEM_INSTRUCTION = [
   // "You are fresh" is a gauge reading; "you are fresh because you have not run
   // since Thursday" is a coach who watched the week.
   'Ground the verdict in what the last 7 days actually held - the session yesterday, the days off, what is waiting today - rather than in the state alone.',
+  // Without this the model tells the athlete how to pace a session the facts
+  // already show as run - the hero's own checkbox already marks it done.
+  "When the facts show today's planned session as already completed, write about it in the past tense - what it earned or cost - never as instructions for approaching it.",
 ].join(' ')
 
 function lastRunLine(lastRun: NonNullable<RecentTraining['lastRun']>): string {
@@ -74,9 +94,10 @@ function lastRunLine(lastRun: NonNullable<RecentTraining['lastRun']>): string {
 
 export function todayInsightPrompt(context: TodayContext, recentHeadlines: string[]): string {
   const f = facts(context)
+  const toneRules = f.completedToday ? COMPLETED_TONE_RULES : TONE_RULES
 
   return [
-    `Tone: ${f.tone}. ${TONE_RULES[context.tone]}`,
+    `Tone: ${f.tone}. ${toneRules[context.tone]}`,
     '',
     'Facts:',
     `- Form (TSB, positive = fresh): ${f.form}`,
@@ -88,6 +109,9 @@ export function todayInsightPrompt(context: TodayContext, recentHeadlines: strin
     `- Last 7 days: ${f.weekRuns} run${f.weekRuns === 1 ? '' : 's'}, ${f.weekKm} km`,
     context.recent.lastRun ? lastRunLine(context.recent.lastRun) : '- No run logged yet',
     `- Planned today: ${f.planned}${f.plannedType && f.plannedType !== f.planned ? ` (${f.plannedType})` : ''}${f.plannedMinutes ? `, ~${f.plannedMinutes} min` : ''}`,
+    f.completedToday ? '- This session has already been completed today' : null,
     avoidClause(recentHeadlines),
-  ].join('\n')
+  ]
+    .filter((line) => line !== null)
+    .join('\n')
 }
