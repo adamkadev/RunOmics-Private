@@ -67,6 +67,26 @@ describe('openSpender', () => {
     expect(ledger.current[spendField(BEST)]).toBeUndefined()
   })
 
+  // The invocation is killed at 60s by the platform, and a killed invocation
+  // answers 504 to the workflow that called it instead of the partial result it
+  // had already earned. A call the run has no room to finish must not start.
+  it('refuses a call the invocation has no room left to finish', async () => {
+    vi.useFakeTimers()
+    try {
+      const spender = await openSpender()
+
+      vi.advanceTimersByTime(20_000)
+      expect(await spender.reserve(MODEL_POOL)).toBe(BEST)
+
+      // Still inside the run budget, but not by enough to absorb a request that
+      // runs its full timeout.
+      vi.advanceTimersByTime(20_000)
+      expect(await spender.reserve(MODEL_POOL)).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('keeps one model budget from eating another', async () => {
     fill(BEST)
 

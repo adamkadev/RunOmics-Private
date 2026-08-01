@@ -2,7 +2,10 @@ import type { Limits } from '@/domain/ai/prompt'
 import { activeLocale } from '@/i18n'
 
 const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models'
-const TIMEOUT_MS = 15_000
+// Exported because the spender has to reserve this much room before it lets a
+// call start: a generation that begins inside the run budget but runs its full
+// timeout is what pushes the whole invocation past the serverless ceiling.
+export const CALL_TIMEOUT_MS = 15_000
 
 // Some models drop French typography under constrained JSON output - seen in
 // the wild from gemini-3.5-flash-lite. Both checks reject rather than repair:
@@ -137,7 +140,7 @@ export async function generateInsight(request: InsightRequest): Promise<InsightR
           temperature: 1.1,
         },
       }),
-      signal: AbortSignal.timeout(TIMEOUT_MS),
+      signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
     })
 
     if (!res.ok) return { ok: false, reason: `http ${res.status}: ${(await res.text()).slice(0, 200)}` }
