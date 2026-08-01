@@ -102,13 +102,10 @@ jobs:
           fi
           echo "activities_changed=$ACTIVITIES_CHANGED" >> "$GITHUB_OUTPUT"
 
-          git add public/data/sync_meta.json
-
           # Garmin-derived metric series. sync.py re-fetches these every run and
           # Garmin revises the recent days as new activities land, so they change
-          # without a new activity landing. Stage them here - not in the
-          # activities group above - so they're committed whenever they move
-          # without tripping the activity-only post-sync checks. Without this the
+          # without a new activity landing. Staged separately from the activities
+          # above so the commit message can tell the two apart. Without this the
           # files were regenerated each run but never committed, leaving the app
           # stuck on whatever was last committed by hand.
           git add \
@@ -120,6 +117,26 @@ jobs:
             public/data/training_load_balance.json \
             public/data/training_plan.json \
             public/data/athlete_history.json
+
+          # Anything the app renders, activities or metrics. The post-sync checks
+          # hang off this rather than off activities alone: today's insight is
+          # built from training_status.json, so a day where the status moved
+          # without a run landing used to leave it stale until the next activity.
+          if git diff --cached --quiet; then
+            DATA_CHANGED=false
+          else
+            DATA_CHANGED=true
+          fi
+          echo "data_changed=$DATA_CHANGED" >> "$GITHUB_OUTPUT"
+
+          # Last, so it never counts as a data change of its own: sync.py rewrites
+          # it every run, and a commit carrying only a new timestamp has nothing
+          # for the checks to look at.
+          git add public/data/sync_meta.json
+
+          # The deployment marker the post-sync step waits for. Unique per run,
+          # and part of every commit this step makes.
+          python -c "import json; print('last_synced_at=' + json.load(open('public/data/sync_meta.json'))['lastSyncedAt'])" >> "$GITHUB_OUTPUT"
 
           if git diff --cached --quiet; then
             echo "Nothing to commit."
@@ -137,36 +154,65 @@ jobs:
           EOF
           )
               git commit -m "sync: update activities (${ACTIVITY_COUNT} total) [skip ci]"
-            else
+            elif [ "$DATA_CHANGED" = "true" ]; then
               git commit -m "sync: refresh Garmin metrics and timestamp [skip ci]"
+            else
+              git commit -m "sync: refresh last-synced timestamp [skip ci]"
             fi
             git push
             echo "committed=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Trigger post-sync checks
-        if: steps.commit.outputs.activities_changed == 'true'
+        if: steps.commit.outputs.data_changed == 'true'
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}
+          EXPECTED_SYNC: ${{ steps.commit.outputs.last_synced_at }}
         run: |
-          # Poll until the app responds before checking for new PRs (Vercel needs time to redeploy).
-          for i in $(seq 1 20); do
-            if curl -fsS -o /dev/null "${{ secrets.APP_URL }}/"; then
+          # Everything these endpoints read comes off the build's own filesystem,
+          # so they answer for whatever deployment is live - and the previous one
+          # answers 200 within a second of the push above, while Vercel is still
+          # building this one. Waiting on a bare 200 therefore ran every check
+          # against the data as it was *before* this sync: the insight generator
+          # saw no new activity, reported "outstanding: 0", and the run it had
+          # just synced had to wait for the next night to get its verdict.
+          #
+          # Wait for the deployment carrying this run's own sync timestamp.
+          DEPLOYED=false
+          for i in $(seq 1 24); do
+            LIVE=$(curl -fsS --max-time 20 "$APP_URL/api/internal/health" -H "x-internal-secret: $SECRET" \
+              | python -c "import json,sys; print(json.load(sys.stdin).get('lastSyncedAt') or '')" 2>/dev/null || true)
+            if [ -n "$EXPECTED_SYNC" ] && [ "$LIVE" = "$EXPECTED_SYNC" ]; then
+              DEPLOYED=true
+              echo "Deployment carrying $EXPECTED_SYNC is live after $(((i - 1) * 15))s."
               break
             fi
             sleep 15
           done
+          if [ "$DEPLOYED" != "true" ]; then
+            echo "::warning::App still serving pre-sync data after 6 min (live: ${LIVE:-none}, expected: $EXPECTED_SYNC). Running the checks anyway."
+          fi
 
-          curl -fsS -X POST "${{ secrets.APP_URL }}/api/internal/pr-check" \
-            -H "x-internal-secret: ${{ secrets.INTERNAL_NOTIFY_SECRET }}"
-          curl -fsS -X POST "${{ secrets.APP_URL }}/api/internal/shoe-wear-check" \
-            -H "x-internal-secret: ${{ secrets.INTERNAL_NOTIFY_SECRET }}"
-          curl -fsS -X POST "${{ secrets.APP_URL }}/api/internal/overreaching-check" \
-            -H "x-internal-secret: ${{ secrets.INTERNAL_NOTIFY_SECRET }}"
-          curl -fsS -X POST "${{ secrets.APP_URL }}/api/internal/activity-sync-check" \
-            -H "x-internal-secret: ${{ secrets.INTERNAL_NOTIFY_SECRET }}"
+          # No check may take another one down with it. They are independent, and
+          # a 504 on one of these used to abort the step under `bash -e` - which
+          # is how a slow ai-insights pass silently cancelled the two passes
+          # queued behind it. Every endpoint here is idempotent: what a failed
+          # call leaves undone, the next run picks up.
+          check() {
+            curl -fsS --max-time 90 -X POST "$APP_URL/api/internal/$1" -H "x-internal-secret: $SECRET" \
+              || echo "::warning::$1 failed"
+            echo
+          }
+
+          check pr-check
+          check shoe-wear-check
+          check overreaching-check
+          check activity-sync-check
+
           # Three passes: each one regenerates today's verdict only if the facts
           # moved (cheap) and backfills another batch of run verdicts, without
           # any single request outliving the serverless function budget.
           for i in 1 2 3; do
-            curl -fsS -X POST "${{ secrets.APP_URL }}/api/internal/ai-insights" \
-              -H "x-internal-secret: ${{ secrets.INTERNAL_NOTIFY_SECRET }}"
+            check ai-insights
           done
