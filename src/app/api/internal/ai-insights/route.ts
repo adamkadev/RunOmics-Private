@@ -91,7 +91,7 @@ import {
   listCachedHashes,
   saveCachedInsight,
 } from '@/infrastructure/repositories/FirestoreInsightsRepository'
-import { MODEL_POOL } from '@/domain/ai/budget'
+import { MODEL_POOL, dailyBudget, spendField } from '@/domain/ai/budget'
 import { openSpender, type Spender } from '@/lib/aiSpend'
 import { generateInsight } from '@/lib/gemini'
 
@@ -143,6 +143,16 @@ function isModelClosed(reason: string): boolean {
   return reason.startsWith('http 429') || reason.startsWith('http 404')
 }
 
+// reserve() returning null used to be a dead end nobody could read back: was
+// the pool actually spent for the day, or did this invocation just run out of
+// its own clock? Same daily ledger the spender itself checks, read back after
+// the fact so a stuck verdict says which one instead of leaving both plausible.
+function noReserveReason(spender: Spender): string {
+  const spent = spender.report()
+  const budgetSpent = MODEL_POOL.every((model) => (spent[spendField(model)] ?? 0) >= dailyBudget(model))
+  return budgetSpent ? 'no budget left' : 'no time left in this invocation'
+}
+
 /**
  * The whole life of one cached insight: skip it while its facts have not moved,
  * ask the spender which model may serve it, and only then generate and store.
@@ -153,7 +163,7 @@ async function runSurface(spender: Spender, job: SurfaceJob): Promise<SurfaceOut
   if (cached?.hash === job.hash) return { generated: false, reason: 'unchanged' }
 
   const model = await spender.reserve(MODEL_POOL)
-  if (!model) return { generated: false, reason: 'no budget left' }
+  if (!model) return { generated: false, reason: noReserveReason(spender) }
 
   const result = await generateInsight({
     model,
@@ -206,6 +216,12 @@ export async function POST(req: NextRequest) {
       runVerdicts: {
         outstanding: queue.outstanding,
         eligible: queue.eligible,
+        // Split out so a stuck verdict is diagnosable from this response alone:
+        // fresh going in already 0 says the run isn't within the priority
+        // window: freshVerdicts.generated staying 0 with fresh > 0 says it was
+        // there but never got a reserve.
+        fresh: queue.fresh.length,
+        rest: queue.rest.length,
         // Fresh runs left over from the cap above lead the backfill rather than
         // waiting behind the archive for it.
         ...(await writeVerdicts(
@@ -417,7 +433,10 @@ async function writeVerdicts(spender: Spender, pending: RunVerdictContext[], wri
     // and the time left in this invocation. What it refuses, the next run picks
     // up - and with four models to draw from, it refuses far later than one.
     const model = await spender.reserve(MODEL_POOL)
-    if (!model) break
+    if (!model) {
+      failures.push(`${context.activity.id}: ${noReserveReason(spender)}`)
+      break
+    }
 
     const result = await generateInsight({
       model,
