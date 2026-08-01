@@ -5771,12 +5771,12 @@
       "statusCode": 7,
       "feedback": "PRODUCTIVE_2",
       "fitnessTrend": 2,
-      "acuteLoad": 538,
-      "chronicLoad": 448,
-      "acwr": 1.2,
+      "acuteLoad": 630,
+      "chronicLoad": 464,
+      "acwr": 1.3,
       "acwrStatus": "OPTIMAL",
-      "chronicLoadMin": 358,
-      "chronicLoadMax": 672,
+      "chronicLoadMin": 371,
+      "chronicLoadMax": 696,
       "deviceId": 3604810488
     }
   },
@@ -6656,12 +6656,12 @@
       "statusCode": 7,
       "feedback": "PRODUCTIVE_2",
       "fitnessTrend": 2,
-      "acuteLoad": 538,
-      "chronicLoad": 448,
-      "acwr": 1.2,
+      "acuteLoad": 630,
+      "chronicLoad": 464,
+      "acwr": 1.3,
       "acwrStatus": "OPTIMAL",
-      "chronicLoadMin": 358,
-      "chronicLoadMax": 672,
+      "chronicLoadMin": 371,
+      "chronicLoadMax": 696,
       "deviceId": 3604810488
     }
   }
