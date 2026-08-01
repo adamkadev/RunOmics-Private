@@ -235,9 +235,17 @@ export async function POST(req: NextRequest) {
   })
 }
 
-// ?limit=0 reports how much backfill is left without spending any quota.
-function requestedLimit(req: NextRequest): number {
-  const raw = Number(req.nextUrl.searchParams.get('limit'))
+// ?limit=0 reports how much backfill is left without spending any quota - but
+// Number(null) is 0, and URLSearchParams.get returns null for a param that was
+// never sent, not undefined. The cron and every workflow_dispatch call this
+// route with no ?limit= at all, so this used to coerce straight to the
+// explicit-opt-out value: every automated run silently generated zero run
+// verdicts, fresh or backfilled, no matter how many were owed.
+export function requestedLimit(req: NextRequest): number {
+  const param = req.nextUrl.searchParams.get('limit')
+  if (param === null) return DEFAULT_RUN_VERDICTS_PER_RUN
+
+  const raw = Number(param)
   if (!Number.isInteger(raw) || raw < 0) return DEFAULT_RUN_VERDICTS_PER_RUN
   return Math.min(raw, MAX_RUN_VERDICTS_PER_RUN)
 }
