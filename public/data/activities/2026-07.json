@@ -6,7 +6,7 @@
       "date": "2026-07-31",
       "dayOfWeek": "Friday",
       "type": "Threshold",
-      "description": "Seuil",
+      "description": "2x15'@4:20",
       "durationSeconds": 3302,
       "distanceKm": 10.39,
       "paceSecPerKm": 317.8,
