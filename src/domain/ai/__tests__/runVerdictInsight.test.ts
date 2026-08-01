@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { deservesVerdict, runVerdictInsightHash as hashContext } from '../runVerdictInsight'
+import { deservesVerdict, isFreshRun, runVerdictInsightHash as hashContext } from '../runVerdictInsight'
 import { runHistory } from '@/domain/activity/runHistory'
 import type { Activity, ActivityWeather } from '@/domain/activity/types'
 
@@ -98,5 +98,23 @@ describe('deservesVerdict', () => {
 
   it('still covers an old run that holds a record, since /records links to it', () => {
     expect(deservesVerdict({ id: 'pb-run', date: '2025-03-02' }, records, now)).toBe(true)
+  })
+})
+
+describe('isFreshRun', () => {
+  const now = new Date('2026-07-30T10:00:00')
+
+  it('covers the run that just synced', () => {
+    expect(isFreshRun({ date: '2026-07-30T06:12:00' }, now)).toBe(true)
+  })
+
+  // A run synced on one night only becomes generatable on the next, once the
+  // deployment carrying it is live, so the window has to outlast a single day.
+  it('still covers a run the sync only made visible the day after', () => {
+    expect(isFreshRun({ date: '2026-07-28T06:12:00' }, now)).toBe(true)
+  })
+
+  it('leaves an older run to the backfill', () => {
+    expect(isFreshRun({ date: '2026-07-20' }, now)).toBe(false)
   })
 })

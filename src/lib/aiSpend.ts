@@ -1,11 +1,23 @@
 import { dailyBudget, quotaDay, spacingMs, spendField } from '@/domain/ai/budget'
 import { getSpend, recordSpend } from '@/infrastructure/repositories/FirestoreBudgetRepository'
+import { CALL_TIMEOUT_MS } from '@/lib/gemini'
 
 // A serverless invocation is capped at 60s, and pacing a run of calls on one
 // model costs 13s each, so a batch has to be able to stop mid-way. Every
 // surface is keyed by a hash of its own facts, so whatever this run does not
 // reach is simply picked up by the next one.
-const RUN_BUDGET_MS = 45_000
+//
+// This is the whole invocation's wall clock, not the time left for generating:
+// see CALL_COST_MS, which is held back from it.
+const RUN_BUDGET_MS = 50_000
+
+// What a call can still cost after reserve() hands the model back: its own
+// timeout, plus the Firestore write that stores the answer. Held back from the
+// budget because the deadline used to be checked against the pacing wait alone
+// - so a call reserved at 44s could run until 59s and take the invocation past
+// the 60s ceiling, where Vercel kills it and the caller sees a 504 instead of
+// the partial result it had already earned.
+const CALL_COST_MS = CALL_TIMEOUT_MS + 3_000
 
 export interface Spender {
   /**
@@ -63,7 +75,7 @@ export async function openSpender(now = new Date()): Promise<Spender> {
       // the best available and the fastest; waiting only happens when the whole
       // pool is still inside its per-minute window.
       const chosen = candidates.find((c) => c.wait === 0) ?? candidates.reduce((a, b) => (b.wait < a.wait ? b : a))
-      if (now + chosen.wait > deadline) return null
+      if (now + chosen.wait + CALL_COST_MS > deadline) return null
       if (chosen.wait > 0) await sleep(chosen.wait)
 
       const field = spendField(chosen.model)
