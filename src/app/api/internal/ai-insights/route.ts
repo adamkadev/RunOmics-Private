@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { handleInternalRoute } from '@/lib/internalRoute'
 import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { getTodayPlannedWorkout } from '@/application/usecases/GetPlannedWorkouts'
@@ -120,6 +121,15 @@ interface SurfaceJob {
   hash: string
   prompt: (recentHeadlines: string[]) => string
   bulletCount?: number
+  /**
+   * Pages that render this surface. These are static (ISR, revalidate = 3600),
+   * built once at deploy time - before this route ever runs, since the deploy
+   * has to be live before the sync workflow calls it. Left alone, a fresh
+   * insight would sit correct in Firestore for up to an hour while every page
+   * kept serving the pre-generation snapshot. Revalidating on a successful
+   * write is what makes it show up on the next request instead.
+   */
+  paths: string[]
 }
 
 interface SurfaceOutcome {
@@ -158,6 +168,7 @@ async function runSurface(spender: Spender, job: SurfaceJob): Promise<SurfaceOut
   }
 
   await saveCachedInsight(job.surface, result.insight, job.hash, cached)
+  job.paths.forEach((path) => revalidatePath(path))
   return { generated: true }
 }
 
@@ -235,6 +246,7 @@ async function generateToday(spender: Spender) {
     systemInstruction: TODAY_SYSTEM_INSTRUCTION,
     hash: todayInsightHash(context),
     prompt: (recent) => todayInsightPrompt(context, recent),
+    paths: ['/'],
   })
 }
 
@@ -248,6 +260,7 @@ async function generateWeeklyReview(spender: Spender) {
     systemInstruction: WEEKLY_REVIEW_SYSTEM_INSTRUCTION,
     hash: weeklyReviewInsightHash(digest),
     prompt: (recent) => weeklyReviewInsightPrompt(digest, recent),
+    paths: ['/'],
   })
 }
 
@@ -262,6 +275,7 @@ async function generateSeason(spender: Spender) {
     hash: seasonInsightHash(data),
     prompt: (recent) => seasonInsightPrompt(data, recent),
     bulletCount: data.bullets.length,
+    paths: ['/analytics'],
   })
 }
 
@@ -277,6 +291,7 @@ async function generatePbCelebration(spender: Spender) {
     systemInstruction: PB_CELEBRATION_SYSTEM_INSTRUCTION,
     hash: pbCelebrationInsightHash(context),
     prompt: (recent) => pbCelebrationInsightPrompt(context, recent),
+    paths: ['/'],
   })
 }
 
@@ -290,6 +305,7 @@ async function generateWeekPurpose(spender: Spender) {
     systemInstruction: WEEK_PURPOSE_SYSTEM_INSTRUCTION,
     hash: weekPurposeInsightHash(week),
     prompt: (recent) => weekPurposeInsightPrompt(week, recent),
+    paths: ['/plan'],
   })
 }
 
@@ -311,6 +327,7 @@ async function generateShoeVerdicts(spender: Spender) {
       systemInstruction: SHOE_VERDICT_SYSTEM_INSTRUCTION,
       hash: shoeVerdictInsightHash(context),
       prompt: (recent) => shoeVerdictInsightPrompt(context, recent),
+      paths: [`/shoes/${shoe.gearId}`],
     })
     results[shoe.gearId] = outcome.generated ? 'generated' : (outcome.reason ?? 'skipped')
   }
@@ -344,6 +361,7 @@ async function generateAnalyticsTabs(spender: Spender) {
       systemInstruction: analyticsTabSystemInstruction(tab),
       hash: analyticsTabInsightHash(tab, lines),
       prompt: (recent) => analyticsTabInsightPrompt(lines, recent),
+      paths: ['/analytics'],
     })
     results[tab] = outcome.generated ? 'generated' : (outcome.reason ?? 'skipped')
   }
@@ -421,6 +439,7 @@ async function writeVerdicts(spender: Spender, pending: RunVerdictContext[], wri
       runVerdictInsightHash(context),
       null
     )
+    revalidatePath(`/activities/${context.activity.id}`)
     written.push(result.insight.headline)
   }
 
