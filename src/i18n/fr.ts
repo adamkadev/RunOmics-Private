@@ -300,10 +300,15 @@ export const fr = {
     },
     weeklyVolume: {
       title: 'Volume hebdo',
-    },
-    trainingMix: {
-      title: 'Mix d’entraînement',
-      other: 'Autre',
+      sessions: 'Séances',
+      weekOf: (label: string) => `Semaine du ${label}`,
+      weekOfInProgress: (label: string) => `Semaine du ${label} (en cours)`,
+      footnote: 'Chaque barre est une semaine complète, du lundi au dimanche. La ligne pointillée est la moyenne de la période, la semaine en cours est en clair et n’y compte pas.',
+      explains: {
+        up: (km: number, avg: number) => `Dernière semaine ${km} km au-dessus de ta moyenne de ${avg} km`,
+        down: (km: number, avg: number) => `Dernière semaine ${km} km sous ta moyenne de ${avg} km`,
+        steady: (avg: number) => `Volume régulier autour de ${avg} km par semaine`,
+      },
     },
     trainingLoad: {
       title: 'Charge d’entraînement',

@@ -9,6 +9,8 @@ function week(index: number, values: Partial<WeeklyTrendPoint>): WeeklyTrendPoin
   return {
     date: monday,
     label: `W${index + 1}`,
+    distanceKm: 0,
+    sessionCount: 0,
     easyPace: null,
     hardPace: null,
     ef: null,

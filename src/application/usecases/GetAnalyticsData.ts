@@ -41,6 +41,9 @@ export interface ZoneShare {
 export interface WeeklyTrendPoint {
   date: string
   label: string
+  /** Everything run that week. Summed, not averaged like the reads below it. */
+  distanceKm: number
+  sessionCount: number
   easyPace: number | null
   hardPace: number | null
   ef: number | null
@@ -279,6 +282,8 @@ export function buildWeeklyTrends(all: Activity[]): WeeklyTrendPoint[] {
       return {
         date: monday,
         label: new Date(monday + 'T00:00:00').toLocaleDateString(t.locale, { day: 'numeric', month: 'short' }),
+        distanceKm: sumDistanceKm(acts),
+        sessionCount: acts.length,
         easyPace: weightedPace(easy),
         hardPace: weightedPace(hard),
         ef: efficiencyFactor(easy),
