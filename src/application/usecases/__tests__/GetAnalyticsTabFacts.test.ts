@@ -45,6 +45,8 @@ function week(over: Partial<WeeklyTrendPoint>): WeeklyTrendPoint {
   return {
     date: '2026-01-05',
     label: 'W1',
+    distanceKm: 0,
+    sessionCount: 0,
     easyPace: null,
     hardPace: null,
     ef: null,

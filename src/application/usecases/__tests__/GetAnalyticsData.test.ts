@@ -216,6 +216,21 @@ describe('buildWeeklyTrends', () => {
     expect(points[0]?.hardPace).toBe(240)
   })
 
+  // Summed, unlike every other read on the point, which are averages: the
+  // weekly volume chart plots these as the week's actual total.
+  it('sums the distance and session count of the week', () => {
+    const points = buildWeeklyTrends([
+      act({ date: '2024-06-03', distanceKm: 10.4 }),
+      act({ date: '2024-06-06', distanceKm: 8.2 }),
+      act({ date: '2024-06-10', distanceKm: 5 }),
+    ])
+
+    expect(points[0]?.distanceKm).toBe(19)
+    expect(points[0]?.sessionCount).toBe(2)
+    expect(points[1]?.distanceKm).toBe(5)
+    expect(points[1]?.sessionCount).toBe(1)
+  })
+
   it('is empty when there are no activities', () => {
     expect(buildWeeklyTrends([])).toEqual([])
   })

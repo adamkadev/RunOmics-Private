@@ -1,124 +1,140 @@
 'use client'
 
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  ReferenceLine,
-} from 'recharts'
-import type { WeeklyVolume } from '@/domain/activity/types'
+import { Bar, BarChart, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import type { WeeklyVolumePoint } from '@/application/usecases/GetWeeklyVolume'
 import { CHART_COLORS } from '@/lib/colors'
 import { useAccentUiColor } from '@/lib/useAccent'
-import { TooltipCard } from '@/components/ui/ChartTooltip'
-import { GlassSurface } from '@/components/ui/GlassSurface'
+import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
+import { ChartExplain } from '@/components/ui/ChartExplain'
 import { ChartFigure } from '@/components/ui/ChartFigure'
+import { WindowedChartCard, windowTickDate, windowTicks } from '@/components/ui/ChartWindowNav'
+import { withAlpha } from '@/lib/palette'
+import { isoDate, startOfWeek } from '@/lib/calendarDate'
 import { t } from '@/i18n'
-
-interface Props {
-  data: WeeklyVolume[]
-  currentWeek: number
-}
 
 interface TooltipProps {
   active?: boolean
-  payload?: Array<{ value: number; payload: ChartEntry }>
+  payload?: Array<{ value: number; payload: WeeklyVolumePoint }>
 }
 
-interface ChartEntry extends WeeklyVolume {
-  idx: number
-  monthLabel: string
-}
-
-function weekToMonthAbbr(weekNum: number): string {
-  const year = Math.floor(weekNum / 100)
-  const week = weekNum % 100
-  const jan4 = new Date(year, 0, 4)
-  const dow = jan4.getDay() || 7
-  const monday = new Date(jan4)
-  monday.setDate(jan4.getDate() - (dow - 1) + (week - 1) * 7)
-  return monday.toLocaleString(t.locale, { month: 'short' }).toUpperCase().slice(0, 3)
-}
-
-function CustomTooltip({ active, payload }: TooltipProps) {
+function CustomTooltip({ active, payload, currentWeekDate }: TooltipProps & { currentWeekDate: string }) {
   const first = payload?.[0]
   if (!active || !first) return null
-  const { value, payload: entry } = first
+
+  const week = first.payload
+  const c = t.dashboard.weeklyVolume
   return (
-    <TooltipCard label={`W${entry.week % 100} · ${weekToMonthAbbr(entry.week)}`}>
-      <p className="text-sm font-semibold text-foreground">{value.toFixed(1)} km</p>
+    <TooltipCard label={week.date === currentWeekDate ? c.weekOfInProgress(week.label) : c.weekOf(week.label)}>
+      <p className="text-sm font-semibold text-foreground">
+        {week.distanceKm} {t.units.km}
+      </p>
+      <TooltipRow name={c.sessions} value={week.sessionCount} />
     </TooltipCard>
   )
 }
 
-export function WeeklyVolumeChart({ data, currentWeek }: Props) {
+export function WeeklyVolumeChart({ points }: { points: WeeklyVolumePoint[] }) {
   const accentColor = useAccentUiColor()
-  const chartData: ChartEntry[] = data.map((entry, i) => {
-    const month = weekToMonthAbbr(entry.week)
-    const prevEntry = data[i - 1]
-    const prev = prevEntry ? weekToMonthAbbr(prevEntry.week) : null
-    return { ...entry, idx: i, monthLabel: month !== prev ? month : '' }
-  })
 
-  const monthTicks = chartData.filter((d) => d.monthLabel !== '').map((d) => d.idx)
-  const currentWeekIdx = chartData.findIndex((d) => d.week === currentWeek)
+  if (!points.some((p) => p.distanceKm > 0)) return null
 
-  const distances = chartData.map((d) => d.distanceKm)
-  const summary = `${t.dashboard.weeklyVolume.title}: ${Math.min(...distances).toFixed(1)}–${Math.max(...distances).toFixed(1)} ${t.units.km}`
+  // The week in progress is a partial total, so it is drawn hollow and left out
+  // of the average: counting a Tuesday against seven full weeks would drag the
+  // reference line down every Monday and read as a drop that has not happened.
+  const currentWeekDate = isoDate(startOfWeek(new Date()))
 
   return (
-    <GlassSurface variant="card" className="p-5">
-      <h3 className="mb-4 text-sm font-semibold text-foreground/80">
-        {t.dashboard.weeklyVolume.title}
-      </h3>
-      <ChartFigure summary={summary}>
-        <ResponsiveContainer width="100%" height={180}>
-          <AreaChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
-            <defs>
-              <linearGradient id="volumeGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={accentColor} stopOpacity={0.3} />
-                <stop offset="95%" stopColor={accentColor} stopOpacity={0.02} />
-              </linearGradient>
-            </defs>
-            <XAxis
-              dataKey="idx"
-              type="number"
-              domain={[0, data.length - 1]}
-              ticks={monthTicks}
-              tickFormatter={(i: number) => chartData[i]?.monthLabel ?? ''}
-              tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-              axisLine={false}
-              tickLine={false}
-            />
-            <YAxis
-              tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-              axisLine={false}
-              tickLine={false}
-              unit={` ${t.units.km}`}
-            />
-            <Tooltip content={<CustomTooltip />} cursor={{ stroke: accentColor, strokeWidth: 1, strokeDasharray: '4 3' }} />
-            {currentWeekIdx >= 0 && (
-              <ReferenceLine
-                x={currentWeekIdx}
-                stroke={accentColor}
-                strokeWidth={1.5}
-                strokeDasharray="4 3"
-              />
-            )}
-            <Area
-              type="monotone"
-              dataKey="distanceKm"
-              stroke={accentColor}
-              strokeWidth={2}
-              fill="url(#volumeGradient)"
-              dot={false}
-              activeDot={{ r: 4, fill: accentColor, strokeWidth: 0 }}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-      </ChartFigure>
-    </GlassSurface>
+    <WindowedChartCard
+      title={t.dashboard.weeklyVolume.title}
+      points={points}
+      // Every bar is one week, and the point of this chart is the week-to-week
+      // shape: bucketing a six-month window into six averaged bars would erase
+      // exactly the down weeks and spikes it exists to show.
+      sample={false}
+      footnote={t.dashboard.weeklyVolume.footnote}
+    >
+      {(visible) => {
+        const complete = visible.filter((w) => w.date !== currentWeekDate)
+        const ticks = windowTicks(visible)
+        const c = t.dashboard.weeklyVolume
+
+        // One average for the whole card - the dashed line and the reading below
+        // it are the same number. Computing the reading against "every week
+        // except the last" instead put two different averages on one chart.
+        const average = complete.length
+          ? Math.round(complete.reduce((sum, w) => sum + w.distanceKm, 0) / complete.length)
+          : 0
+
+        // Read the last finished week against that line - "how does my week
+        // compare" is the question this chart is opened with.
+        const last = complete[complete.length - 1]
+        const delta = last && complete.length > 1 ? last.distanceKm - average : null
+        const explain =
+          delta === null
+            ? null
+            : Math.abs(delta) < 3
+              ? c.explains.steady(average)
+              : delta > 0
+                ? c.explains.up(delta, average)
+                : c.explains.down(Math.abs(delta), average)
+
+        const totals = visible.map((w) => w.distanceKm)
+        const summary = `${c.title}: ${Math.min(...totals)}-${Math.max(...totals)} ${t.units.km}${explain ? `. ${explain}` : ''}`
+
+        return (
+          <>
+            <ChartFigure summary={summary}>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={visible} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+                    axisLine={false}
+                    tickLine={false}
+                    // Every category reaches the formatter, which blanks all but
+                    // the spaced-out dates. Left to its own interval Recharts
+                    // picks a subset of the 52 weekly bars first, and a year
+                    // window can land on nothing but blanked ones - no labels.
+                    interval={0}
+                    tickFormatter={(date: string) => (ticks.has(date) ? windowTickDate(date) : '')}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+                    axisLine={false}
+                    tickLine={false}
+                    unit={` ${t.units.km}`}
+                  />
+                  <Tooltip
+                    content={<CustomTooltip currentWeekDate={currentWeekDate} />}
+                    cursor={{ fill: CHART_COLORS.tooltipCursor }}
+                  />
+                  {/* Deliberately unlabelled: an inline "avg 41 km" sits exactly
+                      where the most recent bars are and collides with them on a
+                      phone. The footnote names the line, the reading gives the
+                      number. */}
+                  {average > 0 && (
+                    <ReferenceLine
+                      y={average}
+                      stroke={CHART_COLORS.referenceTarget}
+                      strokeDasharray="4 3"
+                      strokeWidth={1}
+                    />
+                  )}
+                  <Bar dataKey="distanceKm" radius={[3, 3, 0, 0]} isAnimationActive={false}>
+                    {visible.map((week) => (
+                      <Cell
+                        key={week.date}
+                        fill={week.date === currentWeekDate ? withAlpha(accentColor, 0.35) : accentColor}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartFigure>
+            {explain && <ChartExplain text={explain} />}
+          </>
+        )
+      }}
+    </WindowedChartCard>
   )
 }

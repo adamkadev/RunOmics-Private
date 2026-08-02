@@ -306,10 +306,15 @@ export const en = {
     },
     weeklyVolume: {
       title: 'Weekly Volume',
-    },
-    trainingMix: {
-      title: 'Training Mix',
-      other: 'Other',
+      sessions: 'Sessions',
+      weekOf: (label: string) => `Week of ${label}`,
+      weekOfInProgress: (label: string) => `Week of ${label} (in progress)`,
+      footnote: 'Each bar is one full week, Monday to Sunday. The dashed line is the average over the window; the week in progress is faded and left out of it.',
+      explains: {
+        up: (km: number, avg: number) => `Last week ran ${km} km above your ${avg} km average`,
+        down: (km: number, avg: number) => `Last week ran ${km} km below your ${avg} km average`,
+        steady: (avg: number) => `Volume steady around ${avg} km a week`,
+      },
     },
     trainingLoad: {
       title: 'Training Load',
