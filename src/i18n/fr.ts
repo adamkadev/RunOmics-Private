@@ -298,18 +298,6 @@ export const fr = {
       months: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'],
       weekdays: ['Lun', '', 'Mer', '', 'Ven', '', ''],
     },
-    weeklyVolume: {
-      title: 'Volume hebdo',
-      sessions: 'Séances',
-      weekOf: (label: string) => `Semaine du ${label}`,
-      weekOfInProgress: (label: string) => `Semaine du ${label} (en cours)`,
-      footnote: 'Chaque barre est une semaine complète, du lundi au dimanche. La ligne pointillée est la moyenne de la période, la semaine en cours est en clair et n’y compte pas.',
-      explains: {
-        up: (km: number, avg: number) => `Dernière semaine ${km} km au-dessus de ta moyenne de ${avg} km`,
-        down: (km: number, avg: number) => `Dernière semaine ${km} km sous ta moyenne de ${avg} km`,
-        steady: (avg: number) => `Volume régulier autour de ${avg} km par semaine`,
-      },
-    },
     trainingLoad: {
       title: 'Charge d’entraînement',
       fitness: 'Condition',
@@ -504,6 +492,18 @@ export const fr = {
       elevationValue: (m: number) => `+${m} m`,
     },
     charts: {
+      weeklyVolume: {
+        title: 'Volume hebdo',
+        sessions: 'Séances',
+        weekOf: (label: string) => `Semaine du ${label}`,
+        weekOfInProgress: (label: string) => `Semaine du ${label} (en cours)`,
+        footnote: 'Chaque point est une semaine complète, du lundi au dimanche. La ligne pointillée horizontale est la moyenne de la période ; la verticale marque la semaine en cours, encore partielle et exclue de cette moyenne.',
+        explains: {
+          up: (km: number, avg: number) => `Dernière semaine ${km} km au-dessus de ta moyenne de ${avg} km`,
+          down: (km: number, avg: number) => `Dernière semaine ${km} km sous ta moyenne de ${avg} km`,
+          steady: (avg: number) => `Volume régulier autour de ${avg} km par semaine`,
+        },
+      },
       monthlyVolume: {
         title: 'Volume',
         reading: (topType: string, pct: number) => `${topType} représente la plus grosse part du volume mensuel (~${pct}%).`,

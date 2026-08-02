@@ -1,20 +1,23 @@
 'use client'
 
-import { Bar, BarChart, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import type { WeeklyVolumePoint } from '@/application/usecases/GetWeeklyVolume'
+import { Area, AreaChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { useAccentUiColor } from '@/lib/useAccent'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { ChartExplain } from '@/components/ui/ChartExplain'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { WindowedChartCard, windowTickDate, windowTicks } from '@/components/ui/ChartWindowNav'
-import { withAlpha } from '@/lib/palette'
 import { isoDate, startOfWeek } from '@/lib/calendarDate'
 import { t } from '@/i18n'
 
+// Past this many points the per-week dots stop marking readings and start
+// reading as a dotted band: a year is 52 of them on a phone-width card.
+const MAX_DOTTED_POINTS = 14
+
 interface TooltipProps {
   active?: boolean
-  payload?: Array<{ value: number; payload: WeeklyVolumePoint }>
+  payload?: Array<{ value: number; payload: WeeklyTrendPoint }>
 }
 
 function CustomTooltip({ active, payload, currentWeekDate }: TooltipProps & { currentWeekDate: string }) {
@@ -22,7 +25,7 @@ function CustomTooltip({ active, payload, currentWeekDate }: TooltipProps & { cu
   if (!active || !first) return null
 
   const week = first.payload
-  const c = t.dashboard.weeklyVolume
+  const c = t.analytics.charts.weeklyVolume
   return (
     <TooltipCard label={week.date === currentWeekDate ? c.weekOfInProgress(week.label) : c.weekOf(week.label)}>
       <p className="text-sm font-semibold text-foreground">
@@ -33,30 +36,30 @@ function CustomTooltip({ active, payload, currentWeekDate }: TooltipProps & { cu
   )
 }
 
-export function WeeklyVolumeChart({ points }: { points: WeeklyVolumePoint[] }) {
+export function WeeklyVolumeChart({ points }: { points: WeeklyTrendPoint[] }) {
   const accentColor = useAccentUiColor()
 
   if (!points.some((p) => p.distanceKm > 0)) return null
 
-  // The week in progress is a partial total, so it is drawn hollow and left out
-  // of the average: counting a Tuesday against seven full weeks would drag the
+  // A partial week is a partial total, so it is marked and left out of the
+  // average: counting a Tuesday against seven full weeks would drag the
   // reference line down every Monday and read as a drop that has not happened.
   const currentWeekDate = isoDate(startOfWeek(new Date()))
 
   return (
     <WindowedChartCard
-      title={t.dashboard.weeklyVolume.title}
+      title={t.analytics.charts.weeklyVolume.title}
       points={points}
-      // Every bar is one week, and the point of this chart is the week-to-week
-      // shape: bucketing a six-month window into six averaged bars would erase
+      // Every point is one week, and the point of this chart is the week-to-week
+      // shape: bucketing a six-month window into six averaged points would erase
       // exactly the down weeks and spikes it exists to show.
       sample={false}
-      footnote={t.dashboard.weeklyVolume.footnote}
+      footnote={t.analytics.charts.weeklyVolume.footnote}
     >
       {(visible) => {
         const complete = visible.filter((w) => w.date !== currentWeekDate)
         const ticks = windowTicks(visible)
-        const c = t.dashboard.weeklyVolume
+        const c = t.analytics.charts.weeklyVolume
 
         // One average for the whole card - the dashed line and the reading below
         // it are the same number. Computing the reading against "every week
@@ -80,12 +83,22 @@ export function WeeklyVolumeChart({ points }: { points: WeeklyVolumePoint[] }) {
 
         const totals = visible.map((w) => w.distanceKm)
         const summary = `${c.title}: ${Math.min(...totals)}-${Math.max(...totals)} ${t.units.km}${explain ? `. ${explain}` : ''}`
+        const dotted = visible.length <= MAX_DOTTED_POINTS
 
         return (
           <>
             <ChartFigure summary={summary}>
               <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={visible} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>
+                {/* Wider right margin than the sibling charts: their ticks are
+                    three-letter months, these are "27 juil." on the window's
+                    last point, and half of it hangs off the card at 4w. */}
+                <AreaChart data={visible} margin={{ top: 4, right: 18, bottom: 0, left: -8 }}>
+                  <defs>
+                    <linearGradient id="weeklyVolumeGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={accentColor} stopOpacity={0.3} />
+                      <stop offset="95%" stopColor={accentColor} stopOpacity={0.02} />
+                    </linearGradient>
+                  </defs>
                   <XAxis
                     dataKey="date"
                     tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
@@ -93,7 +106,7 @@ export function WeeklyVolumeChart({ points }: { points: WeeklyVolumePoint[] }) {
                     tickLine={false}
                     // Every category reaches the formatter, which blanks all but
                     // the spaced-out dates. Left to its own interval Recharts
-                    // picks a subset of the 52 weekly bars first, and a year
+                    // picks a subset of the 52 weekly points first, and a year
                     // window can land on nothing but blanked ones - no labels.
                     interval={0}
                     tickFormatter={(date: string) => (ticks.has(date) ? windowTickDate(date) : '')}
@@ -106,12 +119,12 @@ export function WeeklyVolumeChart({ points }: { points: WeeklyVolumePoint[] }) {
                   />
                   <Tooltip
                     content={<CustomTooltip currentWeekDate={currentWeekDate} />}
-                    cursor={{ fill: CHART_COLORS.tooltipCursor }}
+                    cursor={{ stroke: accentColor, strokeWidth: 1, strokeDasharray: '4 3' }}
                   />
                   {/* Deliberately unlabelled: an inline "avg 41 km" sits exactly
-                      where the most recent bars are and collides with them on a
-                      phone. The footnote names the line, the reading gives the
-                      number. */}
+                      where the most recent weeks are and collides with the curve
+                      on a phone. The footnote names the line, the reading gives
+                      the number. */}
                   {average > 0 && (
                     <ReferenceLine
                       y={average}
@@ -120,15 +133,28 @@ export function WeeklyVolumeChart({ points }: { points: WeeklyVolumePoint[] }) {
                       strokeWidth={1}
                     />
                   )}
-                  <Bar dataKey="distanceKm" radius={[3, 3, 0, 0]} isAnimationActive={false}>
-                    {visible.map((week) => (
-                      <Cell
-                        key={week.date}
-                        fill={week.date === currentWeekDate ? withAlpha(accentColor, 0.35) : accentColor}
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
+                  {/* The curve's last point is a week still being run, so the
+                      dip into it is not a real drop. Mark where "so far" starts
+                      rather than letting the line imply a finished week. */}
+                  {visible.some((w) => w.date === currentWeekDate) && (
+                    <ReferenceLine
+                      x={currentWeekDate}
+                      stroke={accentColor}
+                      strokeDasharray="4 3"
+                      strokeWidth={1.5}
+                    />
+                  )}
+                  <Area
+                    type="monotone"
+                    dataKey="distanceKm"
+                    stroke={accentColor}
+                    strokeWidth={3}
+                    fill="url(#weeklyVolumeGradient)"
+                    dot={dotted ? { r: 3, fill: accentColor, strokeWidth: 0 } : false}
+                    activeDot={{ r: 4, fill: accentColor, strokeWidth: 0 }}
+                    isAnimationActive={false}
+                  />
+                </AreaChart>
               </ResponsiveContainer>
             </ChartFigure>
             {explain && <ChartExplain text={explain} />}
