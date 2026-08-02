@@ -304,18 +304,6 @@ export const en = {
       months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
       weekdays: ['Mon', '', 'Wed', '', 'Fri', '', ''],
     },
-    weeklyVolume: {
-      title: 'Weekly Volume',
-      sessions: 'Sessions',
-      weekOf: (label: string) => `Week of ${label}`,
-      weekOfInProgress: (label: string) => `Week of ${label} (in progress)`,
-      footnote: 'Each bar is one full week, Monday to Sunday. The dashed line is the average over the window; the week in progress is faded and left out of it.',
-      explains: {
-        up: (km: number, avg: number) => `Last week ran ${km} km above your ${avg} km average`,
-        down: (km: number, avg: number) => `Last week ran ${km} km below your ${avg} km average`,
-        steady: (avg: number) => `Volume steady around ${avg} km a week`,
-      },
-    },
     trainingLoad: {
       title: 'Training Load',
       fitness: 'Fitness',
@@ -510,6 +498,18 @@ export const en = {
       elevationValue: (m: number) => `+${m} m`,
     },
     charts: {
+      weeklyVolume: {
+        title: 'Weekly Volume',
+        sessions: 'Sessions',
+        weekOf: (label: string) => `Week of ${label}`,
+        weekOfInProgress: (label: string) => `Week of ${label} (in progress)`,
+        footnote: 'Each point is one full week, Monday to Sunday. The horizontal dashed line is the average over the window; the vertical one marks the week in progress, still partial and left out of that average.',
+        explains: {
+          up: (km: number, avg: number) => `Last week ran ${km} km above your ${avg} km average`,
+          down: (km: number, avg: number) => `Last week ran ${km} km below your ${avg} km average`,
+          steady: (avg: number) => `Volume steady around ${avg} km a week`,
+        },
+      },
       monthlyVolume: {
         title: 'Volume',
         reading: (topType: string, pct: number) => `${topType} makes up the largest share of monthly volume (~${pct}%).`,

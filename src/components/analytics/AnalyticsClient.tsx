@@ -269,6 +269,7 @@ export function AnalyticsClient({
             {tab === 'volume' && (
               <VolumeGroup
                 series={active}
+                weeklyTrends={data.weeklyTrends}
                 year={view.kind === 'year' ? view.year : null}
                 years={years}
                 byYear={byYear}

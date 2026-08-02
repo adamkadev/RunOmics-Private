@@ -15,14 +15,12 @@ import { getPbCelebrationInsight } from '@/application/usecases/GetPbCelebration
 import { isoDate } from '@/lib/calendarDate'
 import { getWeeklyStreakData } from '@/application/usecases/GetMilestones'
 import { getCurrentWeeklyGoal } from '@/application/usecases/GetGoalsData'
-import { getWeeklyVolume } from '@/application/usecases/GetWeeklyVolume'
 import { RecentActivities } from '@/components/dashboard/RecentActivities'
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting'
 import { TodayHero } from '@/components/dashboard/TodayHero'
 import { FormFitnessFatigueTrio } from '@/components/dashboard/FormFitnessFatigueTrio'
 import { TrainingStatusDaysBar } from '@/components/dashboard/TrainingStatusDaysBar'
 import { WeeklyStreakCard } from '@/components/dashboard/WeeklyStreakCard'
-import { WeeklyVolumeCard } from '@/components/dashboard/WeeklyVolumeCard'
 import { CelebrationOverlay } from '@/components/dashboard/CelebrationOverlay'
 import { WeeklyReviewCard } from '@/components/dashboard/WeeklyReviewCard'
 import { FirstLaunchHint } from '@/components/dashboard/FirstLaunchHint'
@@ -45,7 +43,6 @@ export default async function DashboardPage() {
   const todayPlannedWorkout = await getTodayPlannedWorkout()
   const weeklyStreak = getWeeklyStreakData()
   const weeklyGoal = await getCurrentWeeklyGoal()
-  const weeklyVolume = getWeeklyVolume()
 
   const today = isoDate(new Date())
   const todayActivity = data.recentActivities.find((a) => a.date === today) ?? null
@@ -79,11 +76,6 @@ export default async function DashboardPage() {
           <WeeklyStreakCard data={weeklyStreak} goal={weeklyGoal} />
         </Link>
       )}
-
-      {/* Directly under the ring, which answers "how far this week" - this
-          answers the question that raises: how that week sits against the ones
-          before it. */}
-      <WeeklyVolumeCard points={weeklyVolume} />
 
       {weeklyDigest && <WeeklyReviewCard digest={weeklyDigest} aiTake={weeklyReview} />}
 
