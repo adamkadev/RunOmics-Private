@@ -227,6 +227,14 @@ export function windowTickDate(date: string): string {
   return shortDate(date)
 }
 
+/**
+ * Short "Jun" label, for a window wide enough that the day is noise - pair with
+ * monthStartTicks, which picks the dates these land on.
+ */
+export function windowTickMonth(date: string): string {
+  return new Date(date + 'T00:00:00').toLocaleDateString(t.locale, { month: 'short' })
+}
+
 /** Dates to keep as X-axis ticks so a dense window shows ~`count` labels. */
 export function windowTicks<T extends { date: string }>(points: T[], count = 6): Set<string> {
   const step = Math.max(1, Math.floor(points.length / count))

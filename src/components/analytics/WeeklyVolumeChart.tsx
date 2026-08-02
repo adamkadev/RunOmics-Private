@@ -7,13 +7,43 @@ import { useAccentUiColor } from '@/lib/useAccent'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { ChartExplain } from '@/components/ui/ChartExplain'
 import { ChartFigure } from '@/components/ui/ChartFigure'
-import { WindowedChartCard, windowTickDate, windowTicks } from '@/components/ui/ChartWindowNav'
+import { WindowedChartCard, windowTickDate, windowTickMonth, windowTicks } from '@/components/ui/ChartWindowNav'
+import { fillWeeklyGaps, monthStartTicks } from '@/domain/timeWindow'
 import { isoDate, startOfWeek } from '@/lib/calendarDate'
 import { t } from '@/i18n'
 
 // Past this many points the per-week dots stop marking readings and start
 // reading as a dotted band: a year is 52 of them on a phone-width card.
 const MAX_DOTTED_POINTS = 14
+
+// Past roughly two months of weeks, "6 juil." stops being a useful landmark and
+// the axis wants months instead. 4w (4 points) keeps dates - there the day is
+// the whole point; 6m and 1y switch over.
+const MAX_DATE_LABELLED_POINTS = 10
+
+// A week nothing was run. Only the volume fields carry a real zero: there is no
+// pace or heart rate to average over no runs, so the rest stay null exactly as
+// they would on a week the athlete did not record them.
+const BLANK_WEEK: Omit<WeeklyTrendPoint, 'date' | 'label'> = {
+  distanceKm: 0,
+  sessionCount: 0,
+  easyPace: null,
+  hardPace: null,
+  ef: null,
+  efAdjusted: null,
+  apparentTempC: null,
+  easyAvgHr: null,
+  hardAvgHr: null,
+  cadenceSpm: null,
+  groundContactMs: null,
+  verticalOscillationMm: null,
+  verticalRatioPct: null,
+  strideLengthM: null,
+  avgRpe: null,
+  aer: null,
+  ana: null,
+  zoneSeconds: {},
+}
 
 interface TooltipProps {
   active?: boolean
@@ -41,6 +71,15 @@ export function WeeklyVolumeChart({ points }: { points: WeeklyTrendPoint[] }) {
 
   if (!points.some((p) => p.distanceKm > 0)) return null
 
+  // A week off never reaches the series, so without this a layoff is drawn as
+  // one step between the weeks either side of it and the average is taken over
+  // the weeks that happened rather than the weeks that passed.
+  const weeks = fillWeeklyGaps(points, (monday) => ({
+    ...BLANK_WEEK,
+    date: monday,
+    label: new Date(monday + 'T00:00:00').toLocaleDateString(t.locale, { day: 'numeric', month: 'short' }),
+  }))
+
   // A partial week is a partial total, so it is marked and left out of the
   // average: counting a Tuesday against seven full weeks would drag the
   // reference line down every Monday and read as a drop that has not happened.
@@ -49,7 +88,7 @@ export function WeeklyVolumeChart({ points }: { points: WeeklyTrendPoint[] }) {
   return (
     <WindowedChartCard
       title={t.analytics.charts.weeklyVolume.title}
-      points={points}
+      points={weeks}
       // Every point is one week, and the point of this chart is the week-to-week
       // shape: bucketing a six-month window into six averaged points would erase
       // exactly the down weeks and spikes it exists to show.
@@ -58,8 +97,14 @@ export function WeeklyVolumeChart({ points }: { points: WeeklyTrendPoint[] }) {
     >
       {(visible) => {
         const complete = visible.filter((w) => w.date !== currentWeekDate)
-        const ticks = windowTicks(visible)
         const c = t.analytics.charts.weeklyVolume
+
+        // Wide windows are labelled by month, which is what makes a year of
+        // weeks scannable: month starts are landmarks, evenly-spaced week dates
+        // ("4 Aug · 29 Sep · 24 Nov") mark nothing.
+        const byMonth = visible.length > MAX_DATE_LABELLED_POINTS
+        const ticks = byMonth ? monthStartTicks(visible) : windowTicks(visible)
+        const tickLabel = byMonth ? windowTickMonth : windowTickDate
 
         // One average for the whole card - the dashed line and the reading below
         // it are the same number. Computing the reading against "every week
@@ -109,7 +154,7 @@ export function WeeklyVolumeChart({ points }: { points: WeeklyTrendPoint[] }) {
                     // picks a subset of the 52 weekly points first, and a year
                     // window can land on nothing but blanked ones - no labels.
                     interval={0}
-                    tickFormatter={(date: string) => (ticks.has(date) ? windowTickDate(date) : '')}
+                    tickFormatter={(date: string) => (ticks.has(date) ? tickLabel(date) : '')}
                   />
                   <YAxis
                     tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
