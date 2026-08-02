@@ -923,32 +923,14 @@
       "scheduledTime": "19:00"
     },
     {
-      "date": "2026-08-01",
-      "name": "Base",
-      "distanceM": 267300,
-      "durationSecs": 1800,
-      "steps": [
-        {
-          "kind": "effort",
-          "minutes": 30
-        }
-      ],
-      "type": "Base",
-      "scheduledTime": "19:00"
-    },
-    {
       "date": "2026-08-02",
       "name": "Base",
-      "distanceM": 5892,
+      "distanceM": 285120,
       "durationSecs": 1920,
       "steps": [
         {
           "kind": "effort",
-          "minutes": 32,
-          "paceSecPerKm": [
-            308,
-            346
-          ]
+          "minutes": 32
         }
       ],
       "type": "Base",
@@ -1109,12 +1091,12 @@
     {
       "date": "2026-08-05",
       "name": "Base",
-      "distanceM": 11233,
-      "durationSecs": 3660,
+      "distanceM": 9575,
+      "durationSecs": 3120,
       "steps": [
         {
           "kind": "effort",
-          "minutes": 61,
+          "minutes": 52,
           "paceSecPerKm": [
             308,
             346
@@ -1127,12 +1109,30 @@
     {
       "date": "2026-08-07",
       "name": "Base",
-      "distanceM": 10680,
-      "durationSecs": 3480,
+      "distanceM": 10864,
+      "durationSecs": 3540,
       "steps": [
         {
           "kind": "effort",
-          "minutes": 58,
+          "minutes": 59,
+          "paceSecPerKm": [
+            308,
+            346
+          ]
+        }
+      ],
+      "type": "Base",
+      "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-08-08",
+      "name": "Base",
+      "distanceM": 5524,
+      "durationSecs": 1800,
+      "steps": [
+        {
+          "kind": "effort",
+          "minutes": 30,
           "paceSecPerKm": [
             308,
             346
