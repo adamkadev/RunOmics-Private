@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import {
+  fillWeeklyGaps,
   hasEarlierPoints,
+  monthStartTicks,
   pickForRange,
   pointsInWindow,
   sampleForRange,
@@ -127,5 +129,100 @@ describe('pickForRange', () => {
     const points = daily(20)
 
     expect(pickForRange(points, '1y').every((p) => points.includes(p))).toBe(true)
+  })
+})
+
+describe('monthStartTicks', () => {
+  // Consecutive Mondays, which is what the weekly volume chart plots.
+  const mondays = (count: number, from = '2026-01-05') => {
+    const start = new Date(from + 'T00:00:00')
+    return Array.from({ length: count }, (_, i) => {
+      const d = new Date(start)
+      d.setDate(d.getDate() + i * 7)
+      return { date: d.toISOString().slice(0, 10) }
+    })
+  }
+
+  it('marks the first point of each month, not every nth point', () => {
+    const ticks = monthStartTicks(mondays(13))
+
+    // Jan 5, Feb 2, Mar 2 - the first Monday to land in each month.
+    expect([...ticks]).toEqual(['2026-01-05', '2026-02-02', '2026-03-02'])
+  })
+
+  it('marks the window edge even when it opens mid-month', () => {
+    expect(monthStartTicks(mondays(3, '2026-01-19')).has('2026-01-19')).toBe(true)
+  })
+
+  it('thins to the label budget so a year does not collide on a phone', () => {
+    const ticks = monthStartTicks(mondays(53))
+
+    expect(ticks.size).toBeLessThanOrEqual(7)
+  })
+
+  it('keeps every month when they already fit', () => {
+    // Six months of weeks: six labels, no thinning.
+    expect(monthStartTicks(mondays(26)).size).toBe(6)
+  })
+
+  it('is empty for no points', () => {
+    expect(monthStartTicks([]).size).toBe(0)
+  })
+})
+
+describe('fillWeeklyGaps', () => {
+  const blank = (monday: string) => ({ date: monday, km: 0 })
+  const week = (date: string, km: number) => ({ date, km })
+
+  it('inserts the weeks that carry no run at all', () => {
+    // 8 Dec ran, then nothing until 12 Jan: four weeks off, absent from the series.
+    const filled = fillWeeklyGaps([week('2025-12-08', 40), week('2026-01-12', 30)], blank)
+
+    expect(filled.map((w) => w.date)).toEqual([
+      '2025-12-08',
+      '2025-12-15',
+      '2025-12-22',
+      '2025-12-29',
+      '2026-01-05',
+      '2026-01-12',
+    ])
+    expect(filled.filter((w) => w.km === 0)).toHaveLength(4)
+  })
+
+  it('leaves a series with no gap untouched', () => {
+    const points = [week('2026-01-05', 10), week('2026-01-12', 20), week('2026-01-19', 30)]
+
+    expect(fillWeeklyGaps(points, blank)).toEqual(points)
+  })
+
+  // A gap before the first run is history the athlete never had, and one after
+  // the last is a week that has not happened yet.
+  it('does not pad outside the recorded span', () => {
+    expect(fillWeeklyGaps([week('2026-03-02', 25)], blank)).toEqual([week('2026-03-02', 25)])
+    expect(fillWeeklyGaps([], blank)).toEqual([])
+  })
+
+  it('keeps the real weeks as they were, not copies', () => {
+    const first = week('2026-01-05', 10)
+    const second = week('2026-01-26', 20)
+
+    const filled = fillWeeklyGaps([first, second], blank)
+
+    expect(filled[0]).toBe(first)
+    expect(filled[filled.length - 1]).toBe(second)
+  })
+
+  it('crosses a DST boundary without drifting off Monday', () => {
+    // Europe springs forward on 29 Mar 2026; stepping in local time would slide
+    // the inserted weeks to Sunday.
+    const filled = fillWeeklyGaps([week('2026-03-16', 30), week('2026-04-13', 30)], blank)
+
+    expect(filled.map((w) => w.date)).toEqual([
+      '2026-03-16',
+      '2026-03-23',
+      '2026-03-30',
+      '2026-04-06',
+      '2026-04-13',
+    ])
   })
 })
