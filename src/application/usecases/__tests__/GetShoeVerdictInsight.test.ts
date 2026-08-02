@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { ShoeVerdictContext } from '@/domain/ai/shoeVerdictInsight'
-import { shoeVerdictInsightHash, shoeVerdictSurface } from '@/domain/ai/shoeVerdictInsight'
+import { shoeVerdictInsightGuard, shoeVerdictInsightHash, shoeVerdictSurface } from '@/domain/ai/shoeVerdictInsight'
 
 const { readVerifiedInsight } = vi.hoisted(() => ({ readVerifiedInsight: vi.fn() }))
 vi.mock('@/infrastructure/repositories/FirestoreInsightsRepository', () => ({ readVerifiedInsight }))
@@ -40,7 +40,7 @@ describe('getShoeVerdictInsight', () => {
     readVerifiedInsight.mockResolvedValue(null)
     await getShoeVerdictInsight(context())
 
-    expect(readVerifiedInsight).toHaveBeenCalledWith('shoeVerdict_daily', expect.any(String))
+    expect(readVerifiedInsight).toHaveBeenCalledWith('shoeVerdict_daily', expect.objectContaining({ hash: expect.any(String) }))
   })
 
   it('keys the verdict on the wear it was written from', async () => {
@@ -48,7 +48,10 @@ describe('getShoeVerdictInsight', () => {
     const worn = context()
     await getShoeVerdictInsight(worn)
 
-    expect(readVerifiedInsight).toHaveBeenCalledWith(shoeVerdictSurface('daily'), shoeVerdictInsightHash(worn))
+    expect(readVerifiedInsight).toHaveBeenCalledWith(shoeVerdictSurface('daily'), {
+      hash: shoeVerdictInsightHash(worn),
+      guard: shoeVerdictInsightGuard(worn),
+    })
   })
 
   it('keeps the same verdict while wear moves inside its band', async () => {
@@ -57,7 +60,7 @@ describe('getShoeVerdictInsight', () => {
     await getShoeVerdictInsight(context({ shoe: { ...context().shoe, wearPercent: 82 } }))
 
     const [first, second] = readVerifiedInsight.mock.calls
-    expect(first?.[1]).toBe(second?.[1])
+    expect(first?.[1]).toEqual(second?.[1])
   })
 
   it('asks for a different verdict once the pair crosses into replace', async () => {
@@ -66,6 +69,19 @@ describe('getShoeVerdictInsight', () => {
     await getShoeVerdictInsight(context({ status: 'replace', kmLeft: 12, weeksRemaining: 0 }))
 
     const [first, second] = readVerifiedInsight.mock.calls
-    expect(first?.[1]).not.toBe(second?.[1])
+    expect(first?.[1].hash).not.toBe(second?.[1].hash)
+    // The status badge is on the same screen, so crossing into replace also has
+    // to stop the previous verdict being served through the grace window.
+    expect(first?.[1].guard).not.toBe(second?.[1].guard)
+  })
+
+  it('holds the guard while the pair only wears deeper into the same status', async () => {
+    readVerifiedInsight.mockResolvedValue(null)
+    await getShoeVerdictInsight(context({ kmLeft: 120, weeksRemaining: 6 }))
+    await getShoeVerdictInsight(context({ kmLeft: 84, weeksRemaining: 4 }))
+
+    const [first, second] = readVerifiedInsight.mock.calls
+    expect(first?.[1].hash).not.toBe(second?.[1].hash)
+    expect(first?.[1].guard).toBe(second?.[1].guard)
   })
 })

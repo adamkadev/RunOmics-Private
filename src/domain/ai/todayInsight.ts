@@ -48,6 +48,19 @@ export function todayInsightHash(context: TodayContext): string {
   return insightHash(facts(context))
 }
 
+/**
+ * The two facts the hero renders around the verdict rather than inside it: the
+ * colored tone badge, and the checkbox marking today's session done. The rest of
+ * the facts move overnight on their own - a day passes, the rolling week shifts -
+ * and copy written before that still reads true. These two do not: a `go` line
+ * under a red badge, or "that was the window to use it" before the athlete has
+ * run, contradicts the card around it. So they gate what the grace window serves.
+ */
+export function todayInsightGuard(context: TodayContext): string {
+  const { tone, completedToday } = facts(context)
+  return insightHash({ tone, completedToday })
+}
+
 const TONE_RULES: Record<ReadinessTone, string> = {
   go: 'The athlete is fresh and recovered. Encourage the session planned today, or say what that freshness is being saved for when the day is a rest day.',
   caution: 'The athlete is neither fresh nor cooked. Advise staying honest and moderate.',

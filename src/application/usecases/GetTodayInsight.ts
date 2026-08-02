@@ -3,7 +3,7 @@ import { getActivitySummaries } from './GetActivities'
 import type { PlannedWorkout } from '@/domain/activity/types'
 import { verdictTone } from '@/domain/training/readiness'
 import { recentTraining } from '@/domain/training/recentTraining'
-import { TODAY_SURFACE, todayInsightHash, type TodayContext } from '@/domain/ai/todayInsight'
+import { TODAY_SURFACE, todayInsightGuard, todayInsightHash, type TodayContext } from '@/domain/ai/todayInsight'
 import { readVerifiedInsight } from '@/infrastructure/repositories/FirestoreInsightsRepository'
 import { isoDate } from '@/lib/calendarDate'
 import type { Insight } from '@/lib/gemini'
@@ -28,5 +28,10 @@ export async function getTodayInsight(
   plannedWorkout: PlannedWorkout | null
 ): Promise<Insight | null> {
   if (!status) return null
-  return readVerifiedInsight(TODAY_SURFACE, todayInsightHash(buildTodayContext(status, plannedWorkout)))
+
+  const context = buildTodayContext(status, plannedWorkout)
+  return readVerifiedInsight(TODAY_SURFACE, {
+    hash: todayInsightHash(context),
+    guard: todayInsightGuard(context),
+  })
 }
