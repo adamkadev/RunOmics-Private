@@ -210,9 +210,17 @@ jobs:
           check overreaching-check
           check activity-sync-check
 
-          # Three passes: each one regenerates today's verdict only if the facts
-          # moved (cheap) and backfills another batch of run verdicts, without
+          # Each pass regenerates a surface only if its facts moved (a Firestore
+          # read, no spend) and backfills another batch of run verdicts, without
           # any single request outliving the serverless function budget.
-          for i in 1 2 3; do
+          #
+          # Five rather than three because a pass only fits three or four Gemini
+          # calls: one call that hits its 15s timeout eats half the invocation's
+          # reservation window on its own. On 2026-08-02 the four analytics tabs
+          # were refused "no time left in this invocation" on passes 1 and 2, got
+          # reached on pass 3, and the performance tab drew a TimeoutError there -
+          # with no pass 4 to retry it, that tab rendered nothing all day. A pass
+          # where everything is already current costs a handful of reads.
+          for i in 1 2 3 4 5; do
             check ai-insights
           done

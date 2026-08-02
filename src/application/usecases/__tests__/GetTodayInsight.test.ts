@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { TrainingStatus } from '../GetTrainingStatus'
 import type { ActivitySummary, PlannedWorkout } from '@/domain/activity/types'
-import { TODAY_SURFACE, todayInsightHash } from '@/domain/ai/todayInsight'
+import { TODAY_SURFACE, todayInsightGuard, todayInsightHash } from '@/domain/ai/todayInsight'
+import { isoDate } from '@/lib/calendarDate'
 
 const { getActivitySummaries, readVerifiedInsight } = vi.hoisted(() => ({
   getActivitySummaries: vi.fn(),
@@ -104,7 +105,11 @@ describe('getTodayInsight', () => {
     readVerifiedInsight.mockResolvedValue(null)
     await getTodayInsight(status(), WORKOUT)
 
-    expect(readVerifiedInsight).toHaveBeenCalledWith(TODAY_SURFACE, todayInsightHash(buildTodayContext(status(), WORKOUT)))
+    const context = buildTodayContext(status(), WORKOUT)
+    expect(readVerifiedInsight).toHaveBeenCalledWith(TODAY_SURFACE, {
+      hash: todayInsightHash(context),
+      guard: todayInsightGuard(context),
+    })
   })
 
   it('asks for a different verdict once the form moves', async () => {
@@ -113,7 +118,7 @@ describe('getTodayInsight', () => {
     await getTodayInsight(status({ tsbNow: -22, status: 'overreaching', risk: 'high' }), WORKOUT)
 
     const [first, second] = readVerifiedInsight.mock.calls
-    expect(first?.[1]).not.toBe(second?.[1])
+    expect(first?.[1].hash).not.toBe(second?.[1].hash)
   })
 
   it('asks for a different verdict once the day plans a different session', async () => {
@@ -122,6 +127,39 @@ describe('getTodayInsight', () => {
     await getTodayInsight(status(), null)
 
     const [first, second] = readVerifiedInsight.mock.calls
-    expect(first?.[1]).not.toBe(second?.[1])
+    expect(first?.[1].hash).not.toBe(second?.[1].hash)
+  })
+
+  // The hash moves overnight on its own - a day passes, the rolling week shifts -
+  // and the guard is what decides whether yesterday's line may still be served.
+  it('holds the guard while the form only drifts, so overnight copy survives', async () => {
+    readVerifiedInsight.mockResolvedValue(null)
+    await getTodayInsight(status(), WORKOUT)
+    await getTodayInsight(status({ tsbNow: 12, ctlDelta: 3.1 }), WORKOUT)
+
+    const [first, second] = readVerifiedInsight.mock.calls
+    expect(first?.[1].hash).not.toBe(second?.[1].hash)
+    expect(first?.[1].guard).toBe(second?.[1].guard)
+  })
+
+  it('moves the guard once the tone badge would contradict the copy', async () => {
+    readVerifiedInsight.mockResolvedValue(null)
+    await getTodayInsight(status(), WORKOUT)
+    await getTodayInsight(status({ status: 'overreaching', tsbNow: -22, risk: 'high' }), WORKOUT)
+
+    const [go, hold] = readVerifiedInsight.mock.calls
+    expect(go?.[1].guard).not.toBe(hold?.[1].guard)
+  })
+
+  it('moves the guard once the session the copy was written for has been run', async () => {
+    readVerifiedInsight.mockResolvedValue(null)
+    await getTodayInsight(status(), WORKOUT)
+    // getTodayInsight builds its context against the real clock, so "already
+    // run today" has to be dated off the same one.
+    withHistory([summary(isoDate(new Date()))])
+    await getTodayInsight(status(), WORKOUT)
+
+    const [upcoming, completed] = readVerifiedInsight.mock.calls
+    expect(upcoming?.[1].guard).not.toBe(completed?.[1].guard)
   })
 })

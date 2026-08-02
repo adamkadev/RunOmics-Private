@@ -27,6 +27,7 @@ import {
   TODAY_LIMITS,
   TODAY_SURFACE,
   TODAY_SYSTEM_INSTRUCTION,
+  todayInsightGuard,
   todayInsightHash,
   todayInsightPrompt,
 } from '@/domain/ai/todayInsight'
@@ -45,6 +46,7 @@ import {
   SEASON_LIMITS,
   SEASON_SURFACE,
   SEASON_SYSTEM_INSTRUCTION,
+  seasonInsightGuard,
   seasonInsightHash,
   seasonInsightPrompt,
 } from '@/domain/ai/seasonInsight'
@@ -73,6 +75,7 @@ import {
 import {
   SHOE_VERDICT_LIMITS,
   SHOE_VERDICT_SYSTEM_INSTRUCTION,
+  shoeVerdictInsightGuard,
   shoeVerdictInsightHash,
   shoeVerdictInsightPrompt,
   shoeVerdictSurface,
@@ -119,6 +122,12 @@ interface SurfaceJob {
   limits: Limits
   systemInstruction: string
   hash: string
+  /**
+   * Stored beside the copy so a reader can tell, once the facts have moved,
+   * whether yesterday's line would now contradict what is rendered around it.
+   * See InsightKey.guard; surfaces with nothing beside them leave it unset.
+   */
+  guard?: string
   prompt: (recentHeadlines: string[]) => string
   bulletCount?: number
   /**
@@ -177,7 +186,7 @@ async function runSurface(spender: Spender, job: SurfaceJob): Promise<SurfaceOut
     return { generated: false, reason: `${model}: ${result.reason}` }
   }
 
-  await saveCachedInsight(job.surface, result.insight, job.hash, cached)
+  await saveCachedInsight(job.surface, result.insight, job.hash, cached, job.guard)
   job.paths.forEach((path) => revalidatePath(path))
   return { generated: true }
 }
@@ -269,6 +278,7 @@ async function generateToday(spender: Spender) {
     limits: TODAY_LIMITS,
     systemInstruction: TODAY_SYSTEM_INSTRUCTION,
     hash: todayInsightHash(context),
+    guard: todayInsightGuard(context),
     prompt: (recent) => todayInsightPrompt(context, recent),
     paths: ['/'],
   })
@@ -297,6 +307,7 @@ async function generateSeason(spender: Spender) {
     limits: SEASON_LIMITS,
     systemInstruction: SEASON_SYSTEM_INSTRUCTION,
     hash: seasonInsightHash(data),
+    guard: seasonInsightGuard(data),
     prompt: (recent) => seasonInsightPrompt(data, recent),
     bulletCount: data.bullets.length,
     paths: ['/analytics'],
@@ -350,6 +361,7 @@ async function generateShoeVerdicts(spender: Spender) {
         limits: SHOE_VERDICT_LIMITS,
       systemInstruction: SHOE_VERDICT_SYSTEM_INSTRUCTION,
       hash: shoeVerdictInsightHash(context),
+      guard: shoeVerdictInsightGuard(context),
       prompt: (recent) => shoeVerdictInsightPrompt(context, recent),
       paths: [`/shoes/${shoe.gearId}`],
     })

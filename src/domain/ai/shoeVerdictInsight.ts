@@ -36,6 +36,16 @@ export function shoeVerdictInsightHash(context: ShoeVerdictContext): string {
   return insightHash(facts(context))
 }
 
+/**
+ * The status badge sits on the same screen as this copy. A pair drifting a few
+ * kilometres deeper into the same status reads the same either way, but one that
+ * has crossed into "replace" cannot keep yesterday's "they have a block left in
+ * them" under a red badge - so the status gates the grace window.
+ */
+export function shoeVerdictInsightGuard(context: ShoeVerdictContext): string {
+  return insightHash({ status: context.status })
+}
+
 export const SHOE_VERDICT_SYSTEM_INSTRUCTION = [
   systemInstruction(
     'You are a running coach writing the wear verdict at the top of a shoe page, for a pair getting close to the end of its life.',
