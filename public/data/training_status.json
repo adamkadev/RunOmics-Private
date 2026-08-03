@@ -5791,6 +5791,19 @@
       "chronicLoadMin": 386,
       "chronicLoadMax": 724,
       "deviceId": 3604810488
+    },
+    "2026-08-03": {
+      "status": "productive",
+      "statusCode": 7,
+      "feedback": "PRODUCTIVE_2",
+      "fitnessTrend": 2,
+      "acuteLoad": 535,
+      "chronicLoad": 477,
+      "acwr": 1.1,
+      "acwrStatus": "OPTIMAL",
+      "chronicLoadMin": 382,
+      "chronicLoadMax": 716,
+      "deviceId": 3604810488
     }
   },
   "weeks": {
@@ -6688,6 +6701,19 @@
       "acwrStatus": "OPTIMAL",
       "chronicLoadMin": 386,
       "chronicLoadMax": 724,
+      "deviceId": 3604810488
+    },
+    "2026-08-03": {
+      "status": "productive",
+      "statusCode": 7,
+      "feedback": "PRODUCTIVE_2",
+      "fitnessTrend": 2,
+      "acuteLoad": 535,
+      "chronicLoad": 477,
+      "acwr": 1.1,
+      "acwrStatus": "OPTIMAL",
+      "chronicLoadMin": 382,
+      "chronicLoadMax": 716,
       "deviceId": 3604810488
     }
   }
