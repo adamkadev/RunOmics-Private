@@ -1,17 +1,20 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import type { CachedInsight } from '../FirestoreInsightsRepository'
 
-const { get, set, collection } = vi.hoisted(() => {
+const { get, set, collectionGet, collection } = vi.hoisted(() => {
   const get = vi.fn()
   const set = vi.fn()
+  const collectionGet = vi.fn()
   const doc = vi.fn(() => ({ get, set }))
   const select = vi.fn(() => ({ get: vi.fn() }))
-  return { get, set, collection: vi.fn(() => ({ doc, select })) }
+  return { get, set, collectionGet, collection: vi.fn(() => ({ doc, select, get: collectionGet })) }
 })
 
 vi.mock('@/lib/firebase-admin', () => ({ getAdminFirestore: () => ({ collection }) }))
 
-const { readVerifiedInsight, saveCachedInsight } = await import('../FirestoreInsightsRepository')
+const { readVerifiedInsight, saveCachedInsight, getCachedInsightsByPrefix, servableInsight } = await import(
+  '../FirestoreInsightsRepository'
+)
 
 const NOW = new Date('2026-08-02T09:00:00Z')
 const HOURS = 60 * 60 * 1000
@@ -111,6 +114,57 @@ describe('readVerifiedInsight', () => {
     get.mockRejectedValue(new Error('unreachable'))
 
     expect(await readVerifiedInsight('todayHero', 'facts-as-generated')).toBeNull()
+  })
+})
+
+describe('getCachedInsightsByPrefix', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  function snapshotDoc(id: string, data: CachedInsight) {
+    return { id, data: () => data }
+  }
+
+  it('keeps only the documents under the requested prefix and locale, keyed without either', async () => {
+    collectionGet.mockResolvedValue({
+      docs: [
+        snapshotDoc('runVerdict_a_en', stored({ headline: 'Run a' })),
+        snapshotDoc('runVerdict_b_en', stored({ headline: 'Run b' })),
+        snapshotDoc('runVerdict_a_fr', stored({ headline: 'Course a' })),
+        snapshotDoc('todayHero_en', stored({ headline: 'Today' })),
+      ],
+    })
+
+    const cache = await getCachedInsightsByPrefix('runVerdict_')
+
+    expect([...cache.keys()]).toEqual(['runVerdict_a', 'runVerdict_b'])
+    expect(cache.get('runVerdict_a')?.headline).toBe('Run a')
+  })
+
+  it('one query however many documents exist', async () => {
+    collectionGet.mockResolvedValue({ docs: [] })
+
+    await getCachedInsightsByPrefix('runVerdict_')
+
+    expect(collectionGet).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('servableInsight', () => {
+  it('null with nothing on record', () => {
+    expect(servableInsight(undefined, 'facts-as-of-today')).toBeNull()
+  })
+
+  it('the insight once the record matches the hash asked for', () => {
+    expect(servableInsight(stored(), 'facts-as-generated')).toEqual({
+      headline: 'Jambes fraiches',
+      body: 'La semaine est legere, le tempo peut etre honnete.',
+      bullets: undefined,
+    })
+  })
+
+  it('null once the record no longer matches and its grace window has passed', () => {
+    const now = new Date('2026-08-04T09:00:00Z').getTime()
+    expect(servableInsight(stored(), 'facts-as-of-today', now)).toBeNull()
   })
 })
 

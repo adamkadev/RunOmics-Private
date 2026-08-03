@@ -1,16 +1,20 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import type { Activity, PlannedWorkout } from '@/domain/activity/types'
 import { runVerdictInsightHash } from '@/domain/ai/runVerdictInsight'
 
-const { getAllActivities, getAllPlannedWorkouts, readVerifiedInsight } = vi.hoisted(() => ({
+const { getAllActivities, getAllPlannedWorkouts, readVerifiedInsight, getCachedInsightsByPrefix } = vi.hoisted(() => ({
   getAllActivities: vi.fn(),
   getAllPlannedWorkouts: vi.fn(),
   readVerifiedInsight: vi.fn(),
+  getCachedInsightsByPrefix: vi.fn(),
 }))
 
 vi.mock('@/infrastructure/repositories/JsonActivityRepository', () => ({ getAllActivities }))
 vi.mock('@/infrastructure/repositories/JsonPlannedWorkoutRepository', () => ({ getAllPlannedWorkouts }))
-vi.mock('@/infrastructure/repositories/FirestoreInsightsRepository', () => ({ readVerifiedInsight }))
+vi.mock('@/infrastructure/repositories/FirestoreInsightsRepository', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/infrastructure/repositories/FirestoreInsightsRepository')>()
+  return { ...actual, readVerifiedInsight, getCachedInsightsByPrefix }
+})
 
 const { getRunVerdictContexts, getRunVerdictInsight } = await import('../GetRunVerdictInsight')
 
@@ -146,5 +150,65 @@ describe('getRunVerdictInsight', () => {
 
     const [first, second] = readVerifiedInsight.mock.calls
     expect(first?.[1]).not.toBe(second?.[1])
+  })
+})
+
+// generateStaticParams pre-renders one page per run in the same build process,
+// so this is the one path that has to survive hundreds of calls without hitting
+// Firestore hundreds of times - see getRunVerdictInsight's isProductionBuild
+// branch. Reimports the module fresh each time so the build-lifetime cache
+// inside it doesn't leak between cases.
+describe('getRunVerdictInsight during a production build', () => {
+  const PROJECT_ID = 'runomics-test'
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.resetModules()
+    withHistory([activity('a', '2026-07-20'), activity('b', '2026-07-18')])
+    process.env.NEXT_PHASE = 'phase-production-build'
+    process.env.FIREBASE_PROJECT_ID = PROJECT_ID
+  })
+
+  afterEach(() => {
+    delete process.env.NEXT_PHASE
+    delete process.env.FIREBASE_PROJECT_ID
+  })
+
+  it('fetches every run verdict once and reuses it for the rest of the build', async () => {
+    const fresh = await import('../GetRunVerdictInsight')
+    const hash = runVerdictInsightHash(fresh.getRunVerdictContexts()[0]!)
+    getCachedInsightsByPrefix.mockResolvedValue(new Map([['runVerdict_a', { ...INSIGHT, hash }]]))
+
+    await fresh.getRunVerdictInsight(activity('a', '2026-07-20'))
+    await fresh.getRunVerdictInsight(activity('b', '2026-07-18'))
+
+    expect(getCachedInsightsByPrefix).toHaveBeenCalledTimes(1)
+    expect(readVerifiedInsight).not.toHaveBeenCalled()
+  })
+
+  it('serves the cached verdict for the run it belongs to', async () => {
+    const fresh = await import('../GetRunVerdictInsight')
+    const hash = runVerdictInsightHash(fresh.getRunVerdictContexts()[0]!)
+    getCachedInsightsByPrefix.mockResolvedValue(new Map([['runVerdict_a', { ...INSIGHT, hash }]]))
+
+    expect(await fresh.getRunVerdictInsight(activity('a', '2026-07-20'))).toEqual(INSIGHT)
+    expect(await fresh.getRunVerdictInsight(activity('b', '2026-07-18'))).toBeNull()
+  })
+
+  it('falls back quietly when the batch fetch fails', async () => {
+    getCachedInsightsByPrefix.mockRejectedValue(new Error('unreachable'))
+
+    const fresh = await import('../GetRunVerdictInsight')
+
+    expect(await fresh.getRunVerdictInsight(activity('a', '2026-07-20'))).toBeNull()
+  })
+
+  it('never touches Firestore without admin credentials', async () => {
+    delete process.env.FIREBASE_PROJECT_ID
+
+    const fresh = await import('../GetRunVerdictInsight')
+
+    expect(await fresh.getRunVerdictInsight(activity('a', '2026-07-20'))).toBeNull()
+    expect(getCachedInsightsByPrefix).not.toHaveBeenCalled()
   })
 })
