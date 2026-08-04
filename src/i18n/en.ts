@@ -486,6 +486,13 @@ export const en = {
     },
     raceTimes: {
       trend: 'Race times ↓',
+      // Abbreviated to fit four cards across a phone.
+      shortLabels: {
+        '5k': '5K',
+        '10k': '10K',
+        half: 'Half',
+        marathon: 'Mara',
+      } as Record<string, string>,
     },
     stats: {
       distance: 'Distance',
@@ -1141,6 +1148,11 @@ export const en = {
       notSet: 'Not set',
       viewAthlete: 'View Athlete',
       details: 'Details',
+      zoneRows: {
+        5: 'Z5 Max',
+        4: 'Z4 Thr',
+        2: 'Z2 Easy',
+      } as Record<number, string>,
       vo2maxShort: 'VO₂MAX',
       vmaShort: 'VMA',
       lthrShort: 'LTHR',
@@ -1154,6 +1166,16 @@ export const en = {
 
   records: {
     title: 'Top Times',
+    // Display names for the fixed record distances (see @/domain/activity/effort).
+    distances: {
+      '1k': '1K',
+      '1mile': '1 Mile',
+      '5k': '5K',
+      '10k': '10K',
+      half: 'Half',
+      marathon: 'Marathon',
+      longest: 'Longest Run',
+    } as Record<string, string>,
     mostRecent: 'most recent',
     raceTag: 'race',
     notYetRun: 'Not yet run',

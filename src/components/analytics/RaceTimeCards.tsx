@@ -8,12 +8,7 @@ import { formatDurationShort } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 const ORDER: RaceDistanceKey[] = ['5k', '10k', 'half', 'marathon']
-const SHORT_LABEL: Record<RaceDistanceKey, string> = {
-  '5k': '5K',
-  '10k': '10K',
-  half: 'Half',
-  marathon: 'Mara',
-}
+const SHORT_LABEL = t.analytics.raceTimes.shortLabels
 
 // The four race distances as legible time cards with a trend arrow each -
 // replaces the four-line predictor chart. Reads Garmin's own estimates via the

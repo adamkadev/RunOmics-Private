@@ -125,16 +125,16 @@ export function monthLabel(month: number): string {
   return new Date(2000, month - 1, 1).toLocaleString(t.locale, { month: 'short' }).toUpperCase()
 }
 
-/** "Jul 6 - 12" (or "Jun 29 - Jul 5" across a month boundary), for a Monday-Sunday week group header. */
+/**
+ * "Jul 6 - 12" (or "Jun 29 - Jul 5" across a month boundary), for a Monday-
+ * Sunday week group header. `formatRange` picks the locale's own order and
+ * elision, so fr reads "6-12 juil." rather than the month-first "juil. 6 - 12"
+ * that hand-assembling the parts produced.
+ */
 export function weekRangeLabel(startIso: string, endIso: string): string {
   const start = new Date(startIso + 'T00:00:00')
   const end = new Date(endIso + 'T00:00:00')
-  const sameMonth = start.getMonth() === end.getMonth()
-  const endLabel = end.toLocaleDateString(t.locale, { month: 'short', day: 'numeric' })
-  if (sameMonth) {
-    return `${end.toLocaleDateString(t.locale, { month: 'short' })} ${start.getDate()} - ${end.getDate()}`
-  }
-  return `${start.toLocaleDateString(t.locale, { month: 'short', day: 'numeric' })} - ${endLabel}`
+  return new Intl.DateTimeFormat(t.locale, { month: 'short', day: 'numeric' }).formatRange(start, end)
 }
 
 export type RelativeTimeUnit = 'now' | 'minutes' | 'hours' | 'days'
