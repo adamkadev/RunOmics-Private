@@ -1185,6 +1185,28 @@ export const en = {
     title: 'Training Zones',
     thresholdLabel: (pace: string) => `Threshold ${pace}`,
     perKm: '/km',
+    zones: {
+      easy: {
+        label: 'Easy',
+        shortDesc: 'Aerobic base & recovery',
+        example: 'Long runs, warm-up, cool-down',
+      },
+      marathon: {
+        label: 'Marathon',
+        shortDesc: 'Aerobic power & race pace',
+        example: 'Tempo long runs, M-pace workouts',
+      },
+      threshold: {
+        label: 'Threshold',
+        shortDesc: 'Comfortably hard - T pace',
+        example: 'Cruise intervals, tempo runs 20-40 min',
+      },
+      vo2max: {
+        label: 'VO2max',
+        shortDesc: '5K race effort - I pace',
+        example: '3-5 min intervals, track workouts',
+      },
+    },
   },
 
   loadBalance: {

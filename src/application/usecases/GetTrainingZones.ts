@@ -1,4 +1,5 @@
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
+import { t } from '@/i18n'
 
 export interface TrainingZone {
   key: string
@@ -15,50 +16,22 @@ export interface TrainingZonesData {
 }
 
 // Each zone's pace range as a multiplier of threshold pace (threshold = 1.00).
+// Names and descriptions live in i18n, keyed by `key`, so the zone card follows
+// the app locale instead of being pinned to English.
 const ZONE_DEFS = [
-  {
-    key: 'easy',
-    label: 'Easy',
-    shortDesc: 'Aerobic base & recovery',
-    example: 'Long runs, warm-up, cool-down',
-    paceMultMin: 1.17,
-    paceMultMax: 1.46,
-  },
-  {
-    key: 'marathon',
-    label: 'Marathon',
-    shortDesc: 'Aerobic power & race pace',
-    example: 'Tempo long runs, M-pace workouts',
-    paceMultMin: 1.03,
-    paceMultMax: 1.15,
-  },
-  {
-    key: 'threshold',
-    label: 'Threshold',
-    shortDesc: 'Comfortably hard - T pace',
-    example: 'Cruise intervals, tempo runs 20-40 min',
-    paceMultMin: 0.98,
-    paceMultMax: 1.02,
-  },
-  {
-    key: 'vo2max',
-    label: 'VO2max',
-    shortDesc: '5K race effort - I pace',
-    example: '3-5 min intervals, track workouts',
-    paceMultMin: 0.86,
-    paceMultMax: 0.91,
-  },
+  { key: 'easy', paceMultMin: 1.17, paceMultMax: 1.46 },
+  { key: 'marathon', paceMultMin: 1.03, paceMultMax: 1.15 },
+  { key: 'threshold', paceMultMin: 0.98, paceMultMax: 1.02 },
+  { key: 'vo2max', paceMultMin: 0.86, paceMultMax: 0.91 },
 ] as const
 
 export async function getTrainingZones(): Promise<TrainingZonesData | null> {
   const { thresholdPaceSecPerKm } = getAthleteProfile()
   if (!thresholdPaceSecPerKm) return null
 
-  const zones: TrainingZone[] = ZONE_DEFS.map(({ key, label, shortDesc, example, paceMultMin, paceMultMax }) => ({
+  const zones: TrainingZone[] = ZONE_DEFS.map(({ key, paceMultMin, paceMultMax }) => ({
     key,
-    label,
-    shortDesc,
-    example,
+    ...t.trainingZones.zones[key],
     paceMinSecPerKm: Math.round(thresholdPaceSecPerKm * paceMultMin),
     paceMaxSecPerKm: Math.round(thresholdPaceSecPerKm * paceMultMax),
   }))
