@@ -45,7 +45,7 @@ export function ProfileAthleteCard({ athlete, latestVo2max, recentZoneTime }: Pr
     <GlassSurface variant="card" className="p-4">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-bold text-foreground">{a.title}</h2>
-        <Link href="/athlete" className="flex items-center gap-0.5 text-xs font-semibold text-accent-text active:scale-95">
+        <Link href="/athlete" className="flex min-h-6 items-center gap-0.5 text-xs font-semibold text-accent-text active:scale-95">
           {a.details}
           <ChevronRight size={14} />
         </Link>

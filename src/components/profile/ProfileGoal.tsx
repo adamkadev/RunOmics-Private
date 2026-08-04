@@ -44,7 +44,7 @@ export function ProfileGoal({ goal }: Props) {
 
       <Link
         href="/goals"
-        className="mt-auto flex items-center gap-1.5 text-sm font-semibold text-accent-text active:scale-95"
+        className="mt-auto flex min-h-6 items-center gap-1.5 text-sm font-semibold text-accent-text active:scale-95"
       >
         {t.profile.goal.viewGoals} <ArrowRight size={16} />
       </Link>
