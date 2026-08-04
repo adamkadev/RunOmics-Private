@@ -923,23 +923,9 @@
       "scheduledTime": "19:00"
     },
     {
-      "date": "2026-08-02",
-      "name": "Base",
-      "distanceM": 285120,
-      "durationSecs": 1920,
-      "steps": [
-        {
-          "kind": "effort",
-          "minutes": 32
-        }
-      ],
-      "type": "Base",
-      "scheduledTime": "19:00"
-    },
-    {
       "date": "2026-08-04",
       "name": "7x1'@3:45",
-      "distanceM": 9753,
+      "distanceM": 9288,
       "durationSecs": 3000,
       "steps": [
         {
@@ -1091,7 +1077,7 @@
     {
       "date": "2026-08-05",
       "name": "Base",
-      "distanceM": 9575,
+      "distanceM": 9577,
       "durationSecs": 3120,
       "steps": [
         {
@@ -1109,7 +1095,7 @@
     {
       "date": "2026-08-07",
       "name": "Base",
-      "distanceM": 10864,
+      "distanceM": 10866,
       "durationSecs": 3540,
       "steps": [
         {
@@ -1127,12 +1113,30 @@
     {
       "date": "2026-08-08",
       "name": "Base",
-      "distanceM": 5524,
+      "distanceM": 5525,
       "durationSecs": 1800,
       "steps": [
         {
           "kind": "effort",
           "minutes": 30,
+          "paceSecPerKm": [
+            308,
+            346
+          ]
+        }
+      ],
+      "type": "Base",
+      "scheduledTime": "19:00"
+    },
+    {
+      "date": "2026-08-09",
+      "name": "Longue course",
+      "distanceM": 13628,
+      "durationSecs": 4440,
+      "steps": [
+        {
+          "kind": "effort",
+          "minutes": 74,
           "paceSecPerKm": [
             308,
             346
