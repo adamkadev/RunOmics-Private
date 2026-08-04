@@ -89,6 +89,39 @@ function groupByWeek(items: ActivitySummary[]): WeekGroup[] {
   })
 }
 
+// PageTransition (src/components/layout/PageTransition.tsx) keys the route
+// subtree by pathname, so this component fully unmounts when navigating to an
+// activity's detail page and remounts fresh on the way back. sessionStorage
+// (cleared per-tab, mirrors AppShell's scroll-position cache) survives that
+// remount so filters/sort/expanded weeks aren't lost on back navigation.
+const FILTERS_STORAGE_KEY = 'activities:filters'
+
+interface StoredFilters {
+  search: string
+  selectedType: ActivityType | null
+  sortBy: ActivitySortKey
+  sortOrder: ActivitySortOrder
+  expandedWeeks: string[]
+}
+
+function readStoredFilters(): StoredFilters | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = sessionStorage.getItem(FILTERS_STORAGE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as Partial<StoredFilters>
+    return {
+      search: typeof parsed.search === 'string' ? parsed.search : '',
+      selectedType: ALL_TYPES.includes(parsed.selectedType as ActivityType) ? (parsed.selectedType as ActivityType) : null,
+      sortBy: SORT_OPTIONS.some((o) => o.value === parsed.sortBy) ? (parsed.sortBy as ActivitySortKey) : 'date',
+      sortOrder: parsed.sortOrder === 'asc' || parsed.sortOrder === 'desc' ? parsed.sortOrder : 'desc',
+      expandedWeeks: Array.isArray(parsed.expandedWeeks) ? parsed.expandedWeeks.filter((k) => typeof k === 'string') : [],
+    }
+  } catch {
+    return null
+  }
+}
+
 async function fetchActivities(params: {
   type: ActivityType | null
   search: string
@@ -141,6 +174,32 @@ export function ActivityListClient({
     const id = setTimeout(() => setDebouncedSearch(search), SEARCH_DEBOUNCE_MS)
     return () => clearTimeout(id)
   }, [search])
+
+  // Restore after mount, not in the initializer, to avoid a hydration mismatch.
+  useEffect(() => {
+    const stored = readStoredFilters()
+    if (!stored) return
+    /* eslint-disable react-hooks/set-state-in-effect -- one-time restore from sessionStorage after mount */
+    setSearch(stored.search)
+    setDebouncedSearch(stored.search)
+    setSelectedType(stored.selectedType)
+    setSortBy(stored.sortBy)
+    setSortOrder(stored.sortOrder)
+    setExpandedWeeks(new Set(stored.expandedWeeks))
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const toStore: StoredFilters = {
+      search,
+      selectedType,
+      sortBy,
+      sortOrder,
+      expandedWeeks: Array.from(expandedWeeks),
+    }
+    sessionStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(toStore))
+  }, [search, selectedType, sortBy, sortOrder, expandedWeeks])
 
   // Re-query from offset 0 whenever a filter changes. Guards against a stale
   // response from a previous filter combo landing after a newer one.
