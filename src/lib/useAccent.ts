@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useTheme } from 'next-themes'
-import { ACCENT_CHANGE_EVENT, ACCENT_STORAGE_KEY, ACCENT_SWATCHES, ACCENT_SWATCHES_LIGHT, ACCENT_UI, DEFAULT_ACCENT, HEADLINE_CHART_COLOR, isAccentId, type AccentId } from '@/lib/accent'
+import { ACCENT_CHANGE_EVENT, ACCENT_STORAGE_KEY, ACCENT_UI, DEFAULT_ACCENT, HEADLINE_CHART_COLOR, isAccentId, type AccentId } from '@/lib/accent'
 
 function readAccent(): AccentId {
   if (typeof window === 'undefined') return DEFAULT_ACCENT
@@ -27,17 +27,6 @@ export function useAccent(): AccentId {
   }, [])
 
   return accent
-}
-
-// Resolved hex for the active accent - for Recharts/SVG props that can't take a CSS var.
-export function useAccentColor(): string {
-  return ACCENT_SWATCHES[useAccent()]
-}
-
-// Darker variant for use on light backgrounds (e.g. the light map style) where the
-// raw accent swatch doesn't have enough contrast.
-export function useAccentColorLight(): string {
-  return ACCENT_SWATCHES_LIGHT[useAccent()]
 }
 
 /**

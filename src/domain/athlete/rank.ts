@@ -10,11 +10,3 @@ export function tierFromScore(score: number, thresholds: number[]): RankTier {
   return RANK_LADDER[Math.min(index, RANK_LADDER.length - 1)] ?? 'D'
 }
 
-// Same percentile anchors as GetAthleteRank's tierThresholds() (40th/60th/80th/95th),
-// reused directly for any score that is already on a 0-100 percentile-like scale
-// (e.g. the consistency score) so the badge ladder stays consistent app-wide.
-const PERCENTILE_BREAKPOINTS = [0, 40, 60, 80, 95]
-
-export function tierFromPercentile(percentile: number): RankTier {
-  return tierFromScore(percentile, PERCENTILE_BREAKPOINTS)
-}
