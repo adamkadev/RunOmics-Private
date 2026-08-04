@@ -1,11 +1,11 @@
 {
-  "aerobicHigh": 821,
+  "aerobicHigh": 950,
   "aerobicHighMax": 1039,
   "aerobicHighMin": 606,
   "aerobicLow": 885,
   "aerobicLowMax": 952,
   "aerobicLowMin": 519,
-  "anaerobic": 100,
+  "anaerobic": 156,
   "anaerobicMax": 519,
   "anaerobicMin": 259,
   "date": "2026-08-04",

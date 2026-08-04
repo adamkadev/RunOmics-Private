@@ -5810,12 +5810,12 @@
       "statusCode": 4,
       "feedback": "MAINTAINING_2",
       "fitnessTrend": 2,
-      "acuteLoad": 424,
-      "chronicLoad": 471,
-      "acwr": 0.8,
+      "acuteLoad": 660,
+      "chronicLoad": 514,
+      "acwr": 1.2,
       "acwrStatus": "OPTIMAL",
-      "chronicLoadMin": 377,
-      "chronicLoadMax": 706,
+      "chronicLoadMin": 411,
+      "chronicLoadMax": 771,
       "deviceId": 3604810488
     }
   },
@@ -6734,12 +6734,12 @@
       "statusCode": 4,
       "feedback": "MAINTAINING_2",
       "fitnessTrend": 2,
-      "acuteLoad": 424,
-      "chronicLoad": 471,
-      "acwr": 0.8,
+      "acuteLoad": 660,
+      "chronicLoad": 514,
+      "acwr": 1.2,
       "acwrStatus": "OPTIMAL",
-      "chronicLoadMin": 377,
-      "chronicLoadMax": 706,
+      "chronicLoadMin": 411,
+      "chronicLoadMax": 771,
       "deviceId": 3604810488
     }
   }
