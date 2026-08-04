@@ -55,7 +55,7 @@ export function ProfileStatsYtd({ ytd, allTime }: Props) {
             key={p.id}
             as="button"
             variant={p.id === period ? 'active' : 'neutral'}
-            className="px-3 py-1 text-micro font-semibold uppercase tracking-wide"
+            className="px-3 py-1.5 text-micro font-semibold uppercase tracking-wide"
             aria-pressed={p.id === period}
             onClick={() => setPeriod(p.id)}
           >
