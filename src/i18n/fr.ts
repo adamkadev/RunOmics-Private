@@ -9,7 +9,6 @@
 //   words and units live here.
 
 import type { ActivityType } from '@/domain/activity/types'
-import type { RankTier } from '@/domain/athlete/rank'
 import type { Strings } from './index'
 
 export const fr = {
@@ -462,7 +461,9 @@ export const fr = {
     },
     tabs: {
       fitness: 'Forme',
-      performance: 'Performance',
+      // Abbreviated so all four tabs fit the strip without scrolling; the
+      // section heading above the race cards carries the full word.
+      performance: 'Perf.',
       volume: 'Volume',
       health: 'Santé',
     },
@@ -479,6 +480,7 @@ export const fr = {
       slower: (s: number) => `↑ ${s} s`,
     },
     raceTimes: {
+      title: 'Performance',
       trend: 'Chronos ↓',
       // Abbreviated to fit four cards across a phone.
       shortLabels: {
@@ -1375,14 +1377,4 @@ export const fr = {
     9: 'Quasi maximal',
     10: 'Maximal',
   } as Record<number, string>,
-
-  // Shared by the consistency grade ring and the profile rank badge, both of which
-  // place a value on the same 9-tier percentile ladder (see domain/athlete/rank.ts).
-  rankTierLabels: {
-    D: 'Sous la moyenne',
-    C: 'Dans la moyenne',
-    B: 'Au-dessus de la moyenne',
-    A: 'Excellent',
-    S: 'Élite',
-  } as Record<RankTier, string>,
 } satisfies Strings

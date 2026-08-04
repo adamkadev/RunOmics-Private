@@ -9,7 +9,6 @@
 //   words and units live here.
 
 import type { ActivityType } from '@/domain/activity/types'
-import type { RankTier } from '@/domain/athlete/rank'
 
 function ordinal(n: number): string {
   const rem10 = n % 10
@@ -468,7 +467,9 @@ export const en = {
     },
     tabs: {
       fitness: 'Fitness',
-      performance: 'Performance',
+      // Abbreviated so all four tabs fit the strip without scrolling; the
+      // section heading above the race cards carries the full word.
+      performance: 'Perf.',
       volume: 'Volume',
       health: 'Health',
     },
@@ -485,6 +486,7 @@ export const en = {
       slower: (s: number) => `↑ ${s} s`,
     },
     raceTimes: {
+      title: 'Performance',
       trend: 'Race times ↓',
       // Abbreviated to fit four cards across a phone.
       shortLabels: {
@@ -1380,14 +1382,4 @@ export const en = {
     9: 'Near Maximal',
     10: 'Maximal',
   } as Record<number, string>,
-
-  // Shared by the consistency grade ring and the profile rank badge, both of which
-  // place a value on the same 9-tier percentile ladder (see domain/athlete/rank.ts).
-  rankTierLabels: {
-    D: 'Below average',
-    C: 'Average',
-    B: 'Above average',
-    A: 'Excellent',
-    S: 'Elite',
-  } as Record<RankTier, string>,
 }
