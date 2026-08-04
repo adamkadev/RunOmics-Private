@@ -29,7 +29,7 @@ export function ProfileClient({ data, heatmapDays, latestVo2max, recentZoneTime 
         {t.nav.items.profile}
       </h1>
       <ProfileHero hero={data.hero} displayName={data.athlete.displayName} age={data.athlete.age} sex={data.athlete.sex} />
-      <ProfileStatsYtd ytd={data.ytd} />
+      <ProfileStatsYtd ytd={data.ytd} allTime={data.allTime} />
       <ActivityHeatmap days={heatmapDays} />
       <div className="grid grid-cols-2 gap-3">
         <ProfileGoal goal={data.goal} />

@@ -1080,7 +1080,8 @@ export const fr = {
       namePlaceholder: 'Votre nom',
     },
     ytd: {
-      title: 'Cette année',
+      thisYearChip: 'Cette année',
+      allTimeChip: 'Tout',
       distance: 'Distance',
       duration: 'Durée',
       sessions: 'Séances',

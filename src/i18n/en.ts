@@ -1086,7 +1086,8 @@ export const en = {
       namePlaceholder: 'Your name',
     },
     ytd: {
-      title: 'This year',
+      thisYearChip: 'This year',
+      allTimeChip: 'All',
       distance: 'Distance',
       duration: 'Duration',
       sessions: 'Sessions',
