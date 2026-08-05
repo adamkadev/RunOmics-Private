@@ -37,6 +37,6 @@ describe('budget', () => {
 
   it('spreads the pool over several models, which is where the extra budget is', () => {
     const poolBudget = MODEL_POOL.reduce((sum, model) => sum + dailyBudget(model), 0)
-    expect(poolBudget).toBeGreaterThan(dailyBudget(MODEL_POOL[0]!) * 3)
+    expect(poolBudget).toBeGreaterThan(dailyBudget(MODEL_POOL[0]!))
   })
 })

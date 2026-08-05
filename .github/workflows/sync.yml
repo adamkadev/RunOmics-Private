@@ -200,7 +200,7 @@ jobs:
           # queued behind it. Every endpoint here is idempotent: what a failed
           # call leaves undone, the next run picks up.
           check() {
-            curl -fsS --max-time 90 -X POST "$APP_URL/api/internal/$1" -H "x-internal-secret: $SECRET" \
+            curl -fsS --max-time "${2:-90}" -X POST "$APP_URL/api/internal/$1" -H "x-internal-secret: $SECRET" \
               || echo "::warning::$1 failed"
             echo
           }
@@ -212,15 +212,16 @@ jobs:
 
           # Each pass regenerates a surface only if its facts moved (a Firestore
           # read, no spend) and backfills another batch of run verdicts, without
-          # any single request outliving the serverless function budget.
+          # any single request outliving the serverless function budget (300s,
+          # Hobby + Fluid Compute - see maxDuration in the route). curl gets more
+          # rope than that ceiling, or the connection closes before the function
+          # does and the response - and its "no time left" diagnostics - never
+          # comes back.
           #
-          # Five rather than three because a pass only fits three or four Gemini
-          # calls: one call that hits its 15s timeout eats half the invocation's
-          # reservation window on its own. On 2026-08-02 the four analytics tabs
-          # were refused "no time left in this invocation" on passes 1 and 2, got
-          # reached on pass 3, and the performance tab drew a TimeoutError there -
-          # with no pass 4 to retry it, that tab rendered nothing all day. A pass
-          # where everything is already current costs a handful of reads.
+          # Five passes rather than one: a single 503 (Google-side capacity) or a
+          # slow model still costs a pass without progress, and a big run-verdict
+          # backfill can span more than one pass on its own. A pass where
+          # everything is already current costs a handful of reads.
           for i in 1 2 3 4 5; do
-            check ai-insights
+            check ai-insights 310
           done

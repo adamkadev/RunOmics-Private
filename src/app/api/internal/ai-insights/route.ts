@@ -98,10 +98,11 @@ import { MODEL_POOL, dailyBudget, spendField } from '@/domain/ai/budget'
 import { openSpender, type Spender } from '@/lib/aiSpend'
 import { generateInsight } from '@/lib/gemini'
 
-// Rate limits are per model, so a pool of four spends its first four calls
-// back to back and only then starts pacing. The spender stops the run well
-// before this ceiling either way.
-export const maxDuration = 60
+// Rate limits are per model, so the pool spends its first few calls back to
+// back and only then starts pacing. The spender stops the run well before this
+// ceiling either way - see RUN_BUDGET_MS. 300s is the max on Hobby with Fluid
+// Compute, confirmed on this deployment 2026-08-05.
+export const maxDuration = 300
 
 // The daily quotas and the run's own clock are the spender's business now, so
 // this only caps how many verdicts one invocation even attempts. ?limit=N still

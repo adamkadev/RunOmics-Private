@@ -12,24 +12,27 @@ export const MODEL_LIMITS: Record<string, ModelLimits> = {
   'gemini-3.6-flash': { rpm: 5, rpd: 20 },
   'gemini-3.5-flash': { rpm: 5, rpd: 20 },
   'gemini-3-flash-preview': { rpm: 5, rpd: 20 },
-  'gemini-2.5-flash': { rpm: 5, rpd: 20 },
 }
 
 const UNKNOWN_MODEL_LIMITS: ModelLimits = { rpm: 5, rpd: 20 }
 
 // Both quotas are counted per model, which makes a pool more than a fallback
-// list. Four flash-class models at 20 a day each is 80 calls of that quality,
+// list. Three flash-class models at 20 a day each is 60 calls of that quality,
 // and their per-minute limits are separate too - alternating between them
 // removes most of the waiting a single model would owe. Order is quality
 // order: the spender always takes the best one that is free right now.
+// gemini-2.5-flash used to round out the pool but was retired by Google (404:
+// "no longer available to new users", confirmed 2026-08-05) - left in, every
+// reserve() that reached it would have burned a reservation and a call for a
+// guaranteed failure.
 //
 // One pool, for every surface. A cheaper tier existed until 2026-07-31 to keep
 // the archive backfill off this budget; with the archive written, steady state
-// is around a dozen calls a day against these 80, so there is nothing left to
+// is around a dozen calls a day against these 60, so there is nothing left to
 // protect. The lite models also had about a third of their answers rejected for
 // dropped French accents (see lib/gemini.ts), which made them expensive in the
 // only currency that mattered.
-export const MODEL_POOL = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3-flash-preview', 'gemini-2.5-flash']
+export const MODEL_POOL = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3-flash-preview']
 
 // Requests held back from the daily ceiling so a manual backfill, or a retry
 // after a failed cron, never lands on an already exhausted quota.

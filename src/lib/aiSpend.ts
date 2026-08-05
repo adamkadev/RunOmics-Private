@@ -2,14 +2,16 @@ import { dailyBudget, quotaDay, spacingMs, spendField } from '@/domain/ai/budget
 import { getSpend, recordSpend } from '@/infrastructure/repositories/FirestoreBudgetRepository'
 import { CALL_TIMEOUT_MS } from '@/lib/gemini'
 
-// A serverless invocation is capped at 60s, and pacing a run of calls on one
-// model costs 13s each, so a batch has to be able to stop mid-way. Every
-// surface is keyed by a hash of its own facts, so whatever this run does not
-// reach is simply picked up by the next one.
+// The invocation is capped at 300s (maxDuration in the route - Hobby plan with
+// Fluid Compute). Pacing a run of calls on one model still costs 13s each, so a
+// batch has to be able to stop mid-way regardless of the ceiling. Every surface
+// is keyed by a hash of its own facts, so whatever this run does not reach is
+// simply picked up by the next one.
 //
 // This is the whole invocation's wall clock, not the time left for generating:
-// see CALL_COST_MS, which is held back from it.
-const RUN_BUDGET_MS = 50_000
+// see CALL_COST_MS, which is held back from it. The remaining 20s covers cold
+// start and the final response write, which fall outside this clock.
+const RUN_BUDGET_MS = 280_000
 
 // What a call can still cost after reserve() hands the model back: its own
 // timeout, plus the Firestore write that stores the answer. Held back from the

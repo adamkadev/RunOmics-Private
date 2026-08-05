@@ -5,7 +5,10 @@ const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models'
 // Exported because the spender has to reserve this much room before it lets a
 // call start: a generation that begins inside the run budget but runs its full
 // timeout is what pushes the whole invocation past the serverless ceiling.
-export const CALL_TIMEOUT_MS = 15_000
+// Even at generationConfig.thinkingConfig.thinkingLevel: 'low' below, a
+// schema-constrained French answer measured 23s live (360 thinking tokens) -
+// 15s was aborting calls that would have succeeded a few seconds later.
+export const CALL_TIMEOUT_MS = 30_000
 
 // Some models drop French typography under constrained JSON output - seen in
 // the wild from gemini-3.5-flash-lite. Both checks reject rather than repair:
@@ -138,6 +141,11 @@ export async function generateInsight(request: InsightRequest): Promise<InsightR
           responseMimeType: 'application/json',
           responseSchema: responseSchema(request.bulletCount),
           temperature: 1.1,
+          // Gemini 3.x has no way to turn thinking off (2.5's thinkingBudget: 0
+          // does not apply to this family) - 'low' is the floor, and it still
+          // spends real tokens on a schema-constrained answer. See
+          // CALL_TIMEOUT_MS for why the timeout still has headroom above it.
+          thinkingConfig: { thinkingLevel: 'low' },
         },
       }),
       signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
