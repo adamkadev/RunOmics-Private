@@ -103,6 +103,9 @@ export function Sidebar() {
                   ? 'text-accent-text'
                   : 'text-subtle hover:text-muted-foreground'
               )}
+              // title alone is a last-resort accessible name and shows nothing
+              // on touch, so the icon-only link carries an explicit label.
+              aria-label={t.nav.items.settings}
               title={t.nav.items.settings}
             >
               <Settings size={16} />

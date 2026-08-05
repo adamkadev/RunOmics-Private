@@ -1,15 +1,12 @@
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
+import { EFFORTS as ALL_EFFORTS } from '@/domain/activity/effort'
 import { formatDuration, formatPace } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
-const EFFORTS = [
-  { key: '1k',       label: '1K',       km: 1        },
-  { key: '5k',       label: '5K',       km: 5        },
-  { key: '10k',      label: '10K',      km: 10       },
-  { key: 'half',     label: 'Half',     km: 21.0975  },
-  { key: 'marathon', label: 'Marathon', km: 42.195   },
-]
+// Same distances as the Records page, minus the mile: Garmin only reports it
+// sporadically, so it would leave a gap in an otherwise dense row.
+const EFFORTS = ALL_EFFORTS.filter((e) => e.key !== '1mile')
 
 interface Props {
   bestEfforts: Record<string, number>

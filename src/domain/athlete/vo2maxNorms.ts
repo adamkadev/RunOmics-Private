@@ -37,13 +37,6 @@ export function vo2maxBand(vo2max: number, age: number, sex: 'male' | 'female'):
   return 'building'
 }
 
-// Fraction of the way to this age/sex bracket's superior (95th pct) anchor,
-// clamped to [0,1] - used to size a reference-band fill bar under the raw number.
-export function vo2maxProgressToSuperior(vo2max: number, age: number, sex: 'male' | 'female'): number {
-  const t = VO2MAX_NORMS[sex][bracketForAge(age)]
-  return Math.max(0, Math.min(1, vo2max / t.superior))
-}
-
 // Interpolates a percentile (1-99) between the fair/good/excellent/superior
 // anchors (40th/60th/80th/95th pct) for the "· top X%" band suffix - reuses
 // the same norms table as vo2maxBand, no separate lookup.

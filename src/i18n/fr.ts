@@ -9,7 +9,6 @@
 //   words and units live here.
 
 import type { ActivityType } from '@/domain/activity/types'
-import type { RankTier } from '@/domain/athlete/rank'
 import type { Strings } from './index'
 
 export const fr = {
@@ -313,7 +312,7 @@ export const fr = {
         'Condition = charge moyenne sur 42 j (CTL) · Fatigue = 7 j (ATL) · Forme = Condition - Fatigue (TSB).',
     },
     trainingStatusDays: {
-      title: 'Training Status',
+      title: 'Statut d’entraînement',
       today: "Aujourd'hui",
       noReading: 'Pas de lecture',
     },
@@ -462,7 +461,9 @@ export const fr = {
     },
     tabs: {
       fitness: 'Forme',
-      performance: 'Performance',
+      // Abbreviated so all four tabs fit the strip without scrolling; the
+      // section heading above the race cards carries the full word.
+      performance: 'Perf.',
       volume: 'Volume',
       health: 'Santé',
     },
@@ -479,7 +480,15 @@ export const fr = {
       slower: (s: number) => `↑ ${s} s`,
     },
     raceTimes: {
+      title: 'Performance',
       trend: 'Chronos ↓',
+      // Abbreviated to fit four cards across a phone.
+      shortLabels: {
+        '5k': '5K',
+        '10k': '10K',
+        half: 'Semi',
+        marathon: 'Mara',
+      } as Record<string, string>,
     },
     stats: {
       distance: 'Distance',
@@ -638,7 +647,7 @@ export const fr = {
         },
       },
       trainingEffect: {
-        title: 'Training Effect',
+        title: 'Effet d’entraînement',
         aerobic: 'Aérobie',
         anaerobic: 'Anaérobie',
         footnote: 'Training effect aérobie et anaérobie moyen (1–5).',
@@ -1080,7 +1089,8 @@ export const fr = {
       namePlaceholder: 'Votre nom',
     },
     ytd: {
-      title: 'Cette année',
+      thisYearChip: 'Cette année',
+      allTimeChip: 'Tout',
       distance: 'Distance',
       duration: 'Durée',
       sessions: 'Séances',
@@ -1134,6 +1144,11 @@ export const fr = {
       notSet: 'Non défini',
       viewAthlete: 'Voir le profil athlète',
       details: 'Détails',
+      zoneRows: {
+        5: 'Z5 Max',
+        4: 'Z4 Seuil',
+        2: 'Z2 Facile',
+      } as Record<number, string>,
       vo2maxShort: 'VO₂MAX',
       vmaShort: 'VMA',
       lthrShort: 'LTHR',
@@ -1147,6 +1162,16 @@ export const fr = {
 
   records: {
     title: 'Meilleurs temps',
+    // Display names for the fixed record distances (see @/domain/activity/effort).
+    distances: {
+      '1k': '1K',
+      '1mile': '1 mile',
+      '5k': '5K',
+      '10k': '10K',
+      half: 'Semi',
+      marathon: 'Marathon',
+      longest: 'Plus longue sortie',
+    } as Record<string, string>,
     mostRecent: 'plus récent',
     raceTag: 'course',
     notYetRun: 'Pas encore couru',
@@ -1178,6 +1203,28 @@ export const fr = {
     title: 'Zones d’entraînement',
     thresholdLabel: (pace: string) => `Seuil ${pace}`,
     perKm: '/km',
+    zones: {
+      easy: {
+        label: 'Facile',
+        shortDesc: 'Base aérobie & récupération',
+        example: 'Sorties longues, échauffement, retour au calme',
+      },
+      marathon: {
+        label: 'Marathon',
+        shortDesc: 'Puissance aérobie & allure course',
+        example: 'Sorties longues en tempo, séances à allure marathon',
+      },
+      threshold: {
+        label: 'Seuil',
+        shortDesc: 'Confortablement dur - allure seuil',
+        example: 'Intervalles cruise, tempo de 20 à 40 min',
+      },
+      vo2max: {
+        label: 'VO2max',
+        shortDesc: 'Effort course 5 km - allure I',
+        example: 'Intervalles de 3 à 5 min, séances sur piste',
+      },
+    },
   },
 
   loadBalance: {
@@ -1221,7 +1268,7 @@ export const fr = {
       descriptionGarmin: 'Charge aiguë/chronique mesurée par la montre',
     },
     monotony: { label: 'Monotonie', description: 'Variété de charge au quotidien · alerte au-delà de 2,0' },
-    rampRate: { label: 'Ramp rate', description: 'Δ CTL sur 7 jours' },
+    rampRate: { label: 'Progression', description: 'Δ CTL sur 7 jours' },
   },
 
   plan: {
@@ -1279,9 +1326,9 @@ export const fr = {
     },
     phaseTrack: {
       base: 'Base',
-      build: 'Build',
-      peak: 'Peak',
-      taper: 'Taper',
+      build: 'Dévelop.',
+      peak: 'Pic',
+      taper: 'Affûtage',
       raceDay: 'Course',
     },
     weekPurpose: {
@@ -1330,14 +1377,4 @@ export const fr = {
     9: 'Quasi maximal',
     10: 'Maximal',
   } as Record<number, string>,
-
-  // Shared by the consistency grade ring and the profile rank badge, both of which
-  // place a value on the same 9-tier percentile ladder (see domain/athlete/rank.ts).
-  rankTierLabels: {
-    D: 'Sous la moyenne',
-    C: 'Dans la moyenne',
-    B: 'Au-dessus de la moyenne',
-    A: 'Excellent',
-    S: 'Élite',
-  } as Record<RankTier, string>,
 } satisfies Strings

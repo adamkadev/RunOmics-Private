@@ -60,7 +60,7 @@ export function ProfileRecords({ records }: Props) {
 
       <Link
         href="/records"
-        className="mt-auto flex items-center gap-1.5 text-sm font-semibold text-accent-text active:scale-95"
+        className="mt-auto flex min-h-6 items-center gap-1.5 text-sm font-semibold text-accent-text active:scale-95"
       >
         {t.profile.records.viewAll} <ArrowRight size={16} />
       </Link>

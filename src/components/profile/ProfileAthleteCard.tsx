@@ -12,9 +12,9 @@ const VIOLET = CHART_COLORS.efficiency
 // Athlete detail. Accent-independent so Z5/Z4/Z2 keep their heat/threshold/easy
 // meaning.
 const ZONE_ROWS: { zone: number; label: string; color: string }[] = [
-  { zone: 5, label: 'Z5 Max', color: ZONE_HEADLINE_COLORS[5] },
-  { zone: 4, label: 'Z4 Thr', color: ZONE_HEADLINE_COLORS[4] },
-  { zone: 2, label: 'Z2 Easy', color: ZONE_HEADLINE_COLORS[2] },
+  { zone: 5, label: t.profile.athlete.zoneRows[5]!, color: ZONE_HEADLINE_COLORS[5] },
+  { zone: 4, label: t.profile.athlete.zoneRows[4]!, color: ZONE_HEADLINE_COLORS[4] },
+  { zone: 2, label: t.profile.athlete.zoneRows[2]!, color: ZONE_HEADLINE_COLORS[2] },
 ]
 
 function Tile({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
@@ -45,7 +45,7 @@ export function ProfileAthleteCard({ athlete, latestVo2max, recentZoneTime }: Pr
     <GlassSurface variant="card" className="p-4">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-bold text-foreground">{a.title}</h2>
-        <Link href="/athlete" className="flex items-center gap-0.5 text-xs font-semibold text-accent-text active:scale-95">
+        <Link href="/athlete" className="flex min-h-6 items-center gap-0.5 text-xs font-semibold text-accent-text active:scale-95">
           {a.details}
           <ChevronRight size={14} />
         </Link>

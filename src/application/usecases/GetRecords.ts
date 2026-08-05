@@ -2,6 +2,7 @@ import type { Activity } from '@/domain/activity/types'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getPbYears } from '@/infrastructure/repositories/JsonPbRepository'
 import { EFFORTS, DISTANCE_KEY } from '@/domain/activity/effort'
+import { t } from '@/i18n'
 
 // Pure (no fs dependency) - re-exported here for existing importers, but client
 // components should import from the domain module directly so they don't pull
@@ -110,7 +111,7 @@ export async function getRecords(): Promise<RecordEntry[]> {
   const longestRecord: RecordEntry = longestActivity
     ? {
         key: 'longest',
-        label: 'Longest Run',
+        label: t.records.distances.longest!,
         seconds: longestActivity.durationSeconds,
         paceSecPerKm: longestActivity.paceSecPerKm ?? Math.round(longestActivity.durationSeconds / longestActivity.distanceKm),
         distanceKm: longestActivity.distanceKm,
@@ -121,7 +122,7 @@ export async function getRecords(): Promise<RecordEntry[]> {
       }
     : {
         key: 'longest',
-        label: 'Longest Run',
+        label: t.records.distances.longest!,
         seconds: null,
         paceSecPerKm: null,
         activityId: null,

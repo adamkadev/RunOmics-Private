@@ -9,7 +9,6 @@
 //   words and units live here.
 
 import type { ActivityType } from '@/domain/activity/types'
-import type { RankTier } from '@/domain/athlete/rank'
 
 function ordinal(n: number): string {
   const rem10 = n % 10
@@ -468,7 +467,9 @@ export const en = {
     },
     tabs: {
       fitness: 'Fitness',
-      performance: 'Performance',
+      // Abbreviated so all four tabs fit the strip without scrolling; the
+      // section heading above the race cards carries the full word.
+      performance: 'Perf.',
       volume: 'Volume',
       health: 'Health',
     },
@@ -485,7 +486,15 @@ export const en = {
       slower: (s: number) => `↑ ${s} s`,
     },
     raceTimes: {
+      title: 'Performance',
       trend: 'Race times ↓',
+      // Abbreviated to fit four cards across a phone.
+      shortLabels: {
+        '5k': '5K',
+        '10k': '10K',
+        half: 'Half',
+        marathon: 'Mara',
+      } as Record<string, string>,
     },
     stats: {
       distance: 'Distance',
@@ -1086,7 +1095,8 @@ export const en = {
       namePlaceholder: 'Your name',
     },
     ytd: {
-      title: 'This year',
+      thisYearChip: 'This year',
+      allTimeChip: 'All',
       distance: 'Distance',
       duration: 'Duration',
       sessions: 'Sessions',
@@ -1140,6 +1150,11 @@ export const en = {
       notSet: 'Not set',
       viewAthlete: 'View Athlete',
       details: 'Details',
+      zoneRows: {
+        5: 'Z5 Max',
+        4: 'Z4 Thr',
+        2: 'Z2 Easy',
+      } as Record<number, string>,
       vo2maxShort: 'VO₂MAX',
       vmaShort: 'VMA',
       lthrShort: 'LTHR',
@@ -1153,6 +1168,16 @@ export const en = {
 
   records: {
     title: 'Top Times',
+    // Display names for the fixed record distances (see @/domain/activity/effort).
+    distances: {
+      '1k': '1K',
+      '1mile': '1 Mile',
+      '5k': '5K',
+      '10k': '10K',
+      half: 'Half',
+      marathon: 'Marathon',
+      longest: 'Longest Run',
+    } as Record<string, string>,
     mostRecent: 'most recent',
     raceTag: 'race',
     notYetRun: 'Not yet run',
@@ -1184,6 +1209,28 @@ export const en = {
     title: 'Training Zones',
     thresholdLabel: (pace: string) => `Threshold ${pace}`,
     perKm: '/km',
+    zones: {
+      easy: {
+        label: 'Easy',
+        shortDesc: 'Aerobic base & recovery',
+        example: 'Long runs, warm-up, cool-down',
+      },
+      marathon: {
+        label: 'Marathon',
+        shortDesc: 'Aerobic power & race pace',
+        example: 'Tempo long runs, M-pace workouts',
+      },
+      threshold: {
+        label: 'Threshold',
+        shortDesc: 'Comfortably hard - T pace',
+        example: 'Cruise intervals, tempo runs 20-40 min',
+      },
+      vo2max: {
+        label: 'VO2max',
+        shortDesc: '5K race effort - I pace',
+        example: '3-5 min intervals, track workouts',
+      },
+    },
   },
 
   loadBalance: {
@@ -1335,14 +1382,4 @@ export const en = {
     9: 'Near Maximal',
     10: 'Maximal',
   } as Record<number, string>,
-
-  // Shared by the consistency grade ring and the profile rank badge, both of which
-  // place a value on the same 9-tier percentile ladder (see domain/athlete/rank.ts).
-  rankTierLabels: {
-    D: 'Below average',
-    C: 'Average',
-    B: 'Above average',
-    A: 'Excellent',
-    S: 'Elite',
-  } as Record<RankTier, string>,
 }

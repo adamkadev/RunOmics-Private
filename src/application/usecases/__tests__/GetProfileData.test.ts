@@ -100,6 +100,24 @@ describe('getProfileData', () => {
     expect(data.ytd.avgKmPerWeek).toBe(7)
   })
 
+  it('spans every year in the all-time block', async () => {
+    const data = await run({
+      activities: [activity('2025-12-31', { distanceKm: 42 }), activity('2026-01-05'), activity('2026-01-06')],
+    })
+
+    expect(data.allTime.sessionCount).toBe(3)
+    expect(data.allTime.distanceKm).toBe(62)
+  })
+
+  it('averages all-time from the first activity, not from Jan 1', async () => {
+    // 33 days elapsed since the first activity (2025-12-31) through 2026-02-01.
+    const data = await run({ activities: [activity('2025-12-31', { distanceKm: 33 })] })
+
+    expect(data.allTime.avgKmPerWeek).toBe(7)
+    // The same activity falls outside the current year entirely.
+    expect(data.ytd.distanceKm).toBe(0)
+  })
+
   it('treats missing elevation and calories as zero rather than NaN', async () => {
     const data = await run({
       activities: [activity('2026-01-05', { elevationGain: 120, calories: 500 }), activity('2026-01-06')],

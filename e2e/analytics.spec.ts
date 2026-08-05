@@ -8,6 +8,7 @@ test('analytics page renders lifetime stats and switches tabs', async ({ page })
   // and the charts, so the tab strip is what must be there.
   await expect(page.getByRole('tab', { name: 'Fitness' })).toHaveAttribute('aria-selected', 'true')
 
-  await page.getByRole('tab', { name: 'Performance' }).click()
-  await expect(page.getByRole('tab', { name: 'Performance' })).toHaveAttribute('aria-selected', 'true')
+  // 'Perf.' - the label is abbreviated so all four tabs fit without scrolling.
+  await page.getByRole('tab', { name: 'Perf.' }).click()
+  await expect(page.getByRole('tab', { name: 'Perf.' })).toHaveAttribute('aria-selected', 'true')
 })

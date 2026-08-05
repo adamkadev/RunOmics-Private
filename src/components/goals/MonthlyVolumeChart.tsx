@@ -41,7 +41,7 @@ export function MonthlyVolumeChart({ monthlyGoals }: { monthlyGoals: MonthGoal[]
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="flex w-full items-center justify-between gap-2"
+        className="flex min-h-6 w-full items-center justify-between gap-2"
       >
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           {t.goals.monthlyVolume.title}

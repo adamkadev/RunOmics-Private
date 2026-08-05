@@ -8,12 +8,7 @@ import { formatDurationShort } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 const ORDER: RaceDistanceKey[] = ['5k', '10k', 'half', 'marathon']
-const SHORT_LABEL: Record<RaceDistanceKey, string> = {
-  '5k': '5K',
-  '10k': '10K',
-  half: 'Half',
-  marathon: 'Mara',
-}
+const SHORT_LABEL = t.analytics.raceTimes.shortLabels
 
 // The four race distances as legible time cards with a trend arrow each -
 // replaces the four-line predictor chart. Reads Garmin's own estimates via the
@@ -26,7 +21,7 @@ export function RaceTimeCards({ data }: { data: GarminRacePredictionsData }) {
   return (
     <>
       <div className="mb-2.5 mt-1 flex items-center justify-between px-0.5">
-        <span className="text-subhead font-semibold text-foreground">{t.analytics.tabs.performance}</span>
+        <span className="text-subhead font-semibold text-foreground">{t.analytics.raceTimes.title}</span>
         <span className="text-xs text-subtle">{t.analytics.raceTimes.trend}</span>
       </div>
       <div className="grid grid-cols-4 gap-2">
