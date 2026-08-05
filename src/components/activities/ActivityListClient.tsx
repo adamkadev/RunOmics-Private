@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { Search, SearchX, ChevronDown } from 'lucide-react'
 import { ActivityListCard } from './ActivityListCard'
@@ -175,17 +175,27 @@ export function ActivityListClient({
     return () => clearTimeout(id)
   }, [search])
 
-  // Restore after mount, not in the initializer, to avoid a hydration mismatch.
-  useEffect(() => {
+  // Restore from storage rather than a state initializer, which would differ from
+  // the server-rendered markup and trip hydration. It runs as a *layout* effect
+  // (the pattern AppShell already uses for scroll restoration) so it lands in
+  // the same commit as hydration: a passive effect can be deferred long enough
+  // for a keystroke to slip in first, and restoring over it would silently
+  // wipe what was typed.
+  const hasRestored = useRef(false)
+  useLayoutEffect(() => {
+    if (hasRestored.current) return
+    hasRestored.current = true
     const stored = readStoredFilters()
     if (!stored) return
-    /* eslint-disable react-hooks/set-state-in-effect -- one-time restore from sessionStorage after mount */
-    setSearch(stored.search)
-    setDebouncedSearch(stored.search)
-    setSelectedType(stored.selectedType)
-    setSortBy(stored.sortBy)
-    setSortOrder(stored.sortOrder)
-    setExpandedWeeks(new Set(stored.expandedWeeks))
+    /* eslint-disable react-hooks/set-state-in-effect -- one-time restore from sessionStorage on hydration */
+    // Each field only fills a slot the user has not already changed, so a late
+    // restore can never fight an interaction that beat it.
+    setSearch((cur) => (cur === '' ? stored.search : cur))
+    setDebouncedSearch((cur) => (cur === '' ? stored.search : cur))
+    setSelectedType((cur) => (cur === null ? stored.selectedType : cur))
+    setSortBy((cur) => (cur === 'date' ? stored.sortBy : cur))
+    setSortOrder((cur) => (cur === 'desc' ? stored.sortOrder : cur))
+    setExpandedWeeks((cur) => (cur.size === 0 ? new Set(stored.expandedWeeks) : cur))
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [])
 
