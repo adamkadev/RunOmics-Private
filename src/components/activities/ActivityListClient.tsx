@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { Search, SearchX, ChevronDown } from 'lucide-react'
 import { ActivityListCard } from './ActivityListCard'
@@ -89,39 +89,6 @@ function groupByWeek(items: ActivitySummary[]): WeekGroup[] {
   })
 }
 
-// PageTransition (src/components/layout/PageTransition.tsx) keys the route
-// subtree by pathname, so this component fully unmounts when navigating to an
-// activity's detail page and remounts fresh on the way back. sessionStorage
-// (cleared per-tab, mirrors AppShell's scroll-position cache) survives that
-// remount so filters/sort/expanded weeks aren't lost on back navigation.
-const FILTERS_STORAGE_KEY = 'activities:filters'
-
-interface StoredFilters {
-  search: string
-  selectedType: ActivityType | null
-  sortBy: ActivitySortKey
-  sortOrder: ActivitySortOrder
-  expandedWeeks: string[]
-}
-
-function readStoredFilters(): StoredFilters | null {
-  if (typeof window === 'undefined') return null
-  try {
-    const raw = sessionStorage.getItem(FILTERS_STORAGE_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw) as Partial<StoredFilters>
-    return {
-      search: typeof parsed.search === 'string' ? parsed.search : '',
-      selectedType: ALL_TYPES.includes(parsed.selectedType as ActivityType) ? (parsed.selectedType as ActivityType) : null,
-      sortBy: SORT_OPTIONS.some((o) => o.value === parsed.sortBy) ? (parsed.sortBy as ActivitySortKey) : 'date',
-      sortOrder: parsed.sortOrder === 'asc' || parsed.sortOrder === 'desc' ? parsed.sortOrder : 'desc',
-      expandedWeeks: Array.isArray(parsed.expandedWeeks) ? parsed.expandedWeeks.filter((k) => typeof k === 'string') : [],
-    }
-  } catch {
-    return null
-  }
-}
-
 async function fetchActivities(params: {
   type: ActivityType | null
   search: string
@@ -175,49 +142,6 @@ export function ActivityListClient({
     return () => clearTimeout(id)
   }, [search])
 
-  // Restore from storage rather than a state initializer, which would differ from
-  // the server-rendered markup and trip hydration. It runs as a *layout* effect
-  // (the pattern AppShell already uses for scroll restoration) so it lands in
-  // the same commit as hydration: a passive effect can be deferred long enough
-  // for a keystroke to slip in first, and restoring over it would silently
-  // wipe what was typed.
-  const hasRestored = useRef(false)
-  useLayoutEffect(() => {
-    if (hasRestored.current) return
-    hasRestored.current = true
-    const stored = readStoredFilters()
-    if (!stored) return
-    /* eslint-disable react-hooks/set-state-in-effect -- one-time restore from sessionStorage on hydration */
-    // Each field only fills a slot the user has not already changed, so a late
-    // restore can never fight an interaction that beat it.
-    setSearch((cur) => (cur === '' ? stored.search : cur))
-    setDebouncedSearch((cur) => (cur === '' ? stored.search : cur))
-    setSelectedType((cur) => (cur === null ? stored.selectedType : cur))
-    setSortBy((cur) => (cur === 'date' ? stored.sortBy : cur))
-    setSortOrder((cur) => (cur === 'desc' ? stored.sortOrder : cur))
-    setExpandedWeeks((cur) => (cur.size === 0 ? new Set(stored.expandedWeeks) : cur))
-    /* eslint-enable react-hooks/set-state-in-effect */
-  }, [])
-
-  // Persist the *settled* search, not every keystroke: one write per query
-  // rather than one per character, and it keeps the stored value consistent
-  // with what `debouncedSearch` is restored to on the way back.
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const toStore: StoredFilters = {
-      search: debouncedSearch,
-      selectedType,
-      sortBy,
-      sortOrder,
-      expandedWeeks: Array.from(expandedWeeks),
-    }
-    try {
-      sessionStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(toStore))
-    } catch {
-      // Private mode or a full quota - the filters just won't survive the trip.
-    }
-  }, [debouncedSearch, selectedType, sortBy, sortOrder, expandedWeeks])
-
   // Re-query from offset 0 whenever a filter changes. Guards against a stale
   // response from a previous filter combo landing after a newer one.
   const requestSeq = useRef(0)
@@ -229,19 +153,12 @@ export function ActivityListClient({
     }
     const seq = ++requestSeq.current
     setIsPending(true)
-    fetchActivities({ type: selectedType, search: debouncedSearch, sortBy, sortOrder, offset: 0 })
-      .then((result) => {
-        if (seq !== requestSeq.current) return
-        setIsPending(false)
-        setItems(result.items)
-        setNextOffset(result.nextOffset)
-      })
-      // Without this a failed request leaves the spinner up forever, hiding
-      // both the list and the empty state.
-      .catch(() => {
-        if (seq !== requestSeq.current) return
-        setIsPending(false)
-      })
+    fetchActivities({ type: selectedType, search: debouncedSearch, sortBy, sortOrder, offset: 0 }).then((result) => {
+      if (seq !== requestSeq.current) return
+      setIsPending(false)
+      setItems(result.items)
+      setNextOffset(result.nextOffset)
+    })
   }, [selectedType, debouncedSearch, sortBy, sortOrder])
 
   const hasMore = nextOffset !== null
@@ -253,15 +170,14 @@ export function ActivityListClient({
     if (nextOffset === null || loadingMore) return
     setLoadingMore(true)
     const seq = requestSeq.current
-    fetchActivities({ type: selectedType, search: debouncedSearch, sortBy, sortOrder, offset: nextOffset })
-      .then((result) => {
+    fetchActivities({ type: selectedType, search: debouncedSearch, sortBy, sortOrder, offset: nextOffset }).then(
+      (result) => {
         setLoadingMore(false)
         if (seq !== requestSeq.current) return
         setItems((prev) => [...prev, ...result.items])
         setNextOffset(result.nextOffset)
-      })
-      // A failed page must release the guard, or infinite scroll wedges.
-      .catch(() => setLoadingMore(false))
+      }
+    )
   }, [nextOffset, loadingMore, selectedType, debouncedSearch, sortBy, sortOrder])
 
   const sentinelRef = useRef<HTMLDivElement>(null)
