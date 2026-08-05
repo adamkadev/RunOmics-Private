@@ -28,16 +28,6 @@ jobs:
       - name: Run Playwright tests
         run: npm run test:e2e
 
-      # TEMPORARY: prints the page snapshot Playwright captures at failure, to
-      # diagnose an activities-list failure that does not reproduce locally.
-      - name: Dump failure context
-        if: failure()
-        run: |
-          for f in test-results/*/error-context.md; do
-            echo "===== $f"
-            cat "$f"
-          done
-
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
