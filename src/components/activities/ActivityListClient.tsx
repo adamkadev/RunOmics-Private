@@ -189,17 +189,24 @@ export function ActivityListClient({
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [])
 
+  // Persist the *settled* search, not every keystroke: one write per query
+  // rather than one per character, and it keeps the stored value consistent
+  // with what `debouncedSearch` is restored to on the way back.
   useEffect(() => {
     if (typeof window === 'undefined') return
     const toStore: StoredFilters = {
-      search,
+      search: debouncedSearch,
       selectedType,
       sortBy,
       sortOrder,
       expandedWeeks: Array.from(expandedWeeks),
     }
-    sessionStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(toStore))
-  }, [search, selectedType, sortBy, sortOrder, expandedWeeks])
+    try {
+      sessionStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(toStore))
+    } catch {
+      // Private mode or a full quota - the filters just won't survive the trip.
+    }
+  }, [debouncedSearch, selectedType, sortBy, sortOrder, expandedWeeks])
 
   // Re-query from offset 0 whenever a filter changes. Guards against a stale
   // response from a previous filter combo landing after a newer one.
@@ -212,12 +219,19 @@ export function ActivityListClient({
     }
     const seq = ++requestSeq.current
     setIsPending(true)
-    fetchActivities({ type: selectedType, search: debouncedSearch, sortBy, sortOrder, offset: 0 }).then((result) => {
-      if (seq !== requestSeq.current) return
-      setIsPending(false)
-      setItems(result.items)
-      setNextOffset(result.nextOffset)
-    })
+    fetchActivities({ type: selectedType, search: debouncedSearch, sortBy, sortOrder, offset: 0 })
+      .then((result) => {
+        if (seq !== requestSeq.current) return
+        setIsPending(false)
+        setItems(result.items)
+        setNextOffset(result.nextOffset)
+      })
+      // Without this a failed request leaves the spinner up forever, hiding
+      // both the list and the empty state.
+      .catch(() => {
+        if (seq !== requestSeq.current) return
+        setIsPending(false)
+      })
   }, [selectedType, debouncedSearch, sortBy, sortOrder])
 
   const hasMore = nextOffset !== null
@@ -229,14 +243,15 @@ export function ActivityListClient({
     if (nextOffset === null || loadingMore) return
     setLoadingMore(true)
     const seq = requestSeq.current
-    fetchActivities({ type: selectedType, search: debouncedSearch, sortBy, sortOrder, offset: nextOffset }).then(
-      (result) => {
+    fetchActivities({ type: selectedType, search: debouncedSearch, sortBy, sortOrder, offset: nextOffset })
+      .then((result) => {
         setLoadingMore(false)
         if (seq !== requestSeq.current) return
         setItems((prev) => [...prev, ...result.items])
         setNextOffset(result.nextOffset)
-      }
-    )
+      })
+      // A failed page must release the guard, or infinite scroll wedges.
+      .catch(() => setLoadingMore(false))
   }, [nextOffset, loadingMore, selectedType, debouncedSearch, sortBy, sortOrder])
 
   const sentinelRef = useRef<HTMLDivElement>(null)
