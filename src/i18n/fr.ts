@@ -310,6 +310,9 @@ export const fr = {
       },
       footnote:
         'Condition = charge moyenne sur 42 j (CTL) · Fatigue = 7 j (ATL) · Forme = Condition - Fatigue (TSB).',
+      trendUp: (delta: number) => `+${delta}`,
+      trendDown: (delta: number) => `${delta}`,
+      trendSteady: '~0',
     },
     trainingStatusDays: {
       title: 'Statut d’entraînement',
@@ -354,6 +357,9 @@ export const fr = {
       eyebrow: 'Bilan de la semaine',
       fallbackTitle: (km: number, sessions: number) =>
         `${km} km en ${sessions} séance${sessions !== 1 ? 's' : ''} pour l’instant`,
+      vsLastWeek: (pct: number) => `${pct >= 0 ? '+' : ''}${pct} % vs semaine dern.`,
+      plannedAhead: (sessions: number, days: number) =>
+        `${sessions} séance${sessions !== 1 ? 's' : ''} sur ${days} jour${days !== 1 ? 's' : ''} restant${days !== 1 ? 's' : ''}`,
     },
     syncStatus: {
       synced: (relative: string) => `Synchronisé ${relative}`,
@@ -399,6 +405,7 @@ export const fr = {
       freshWeek: 'Nouvelle semaine.',
       freshWeekGoal: (km: number) => `Objectif ${km} km - un premier run lance la série.`,
       streakSummary: (longest: number, current: number) => `Meilleure série : ${longest} semaines - en cours : ${current}`,
+      vsLastWeek: (pct: number) => `${pct >= 0 ? '+' : ''}${pct} % vs sem. dern.`,
     },
     celebration: {
       eyebrow: 'Nouveau record personnel',
