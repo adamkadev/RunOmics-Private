@@ -4,20 +4,14 @@ import { GlassSurface } from '@/components/ui/GlassSurface'
 import { CHART_COLORS } from '@/lib/colors'
 import { t } from '@/i18n'
 
-// Form is the headline metric, so it wears the live accent - a server component,
-// hence the CSS variables rather than `useAccentUiColor()`. Fitness and fatigue
-// stay fixed: the blue/orange pairing has to hold for the reading to work, and
-// they mean the same thing whichever accent the athlete has chosen. Same hues
-// the training-load chart uses.
 const FORM_VALUE = 'var(--accent-text)'
 const FORM_LINE = 'var(--accent)'
 const FITNESS = CHART_COLORS.ctl
 const FATIGUE = CHART_COLORS.atl
 
 const SPARK_POINTS = 30
+const TREND_THRESHOLD = 1
 
-// Normalise the tail of a load series into a 70x20 polyline (y inverted so a
-// rising metric climbs). Flat/short series collapse to a mid-line.
 function sparkPoints(values: number[]): string {
   const tail = values.slice(-SPARK_POINTS)
   if (tail.length < 2) return '0,10 70,10'
@@ -39,8 +33,6 @@ function Sparkline({ values, color }: { values: number[]; color: string }) {
       <polyline
         points={sparkPoints(values)}
         fill="none"
-        // `style`, not the `stroke` attribute: presentation attributes do not
-        // accept `var()`, and the form line is passed one.
         style={{ stroke: color }}
         strokeWidth="2"
         strokeLinecap="round"
@@ -50,24 +42,38 @@ function Sparkline({ values, color }: { values: number[]; color: string }) {
   )
 }
 
+function trendLabel(delta: number): string {
+  const s = t.dashboard.trainingLoad
+  if (delta > TREND_THRESHOLD) return s.trendUp(Math.round(delta))
+  if (delta < -TREND_THRESHOLD) return s.trendDown(Math.round(delta))
+  return s.trendSteady
+}
+
 function Tile({
   label,
   value,
   valueColor,
   values,
   lineColor,
+  delta,
 }: {
   label: string
   value: string
   valueColor: string
   values: number[]
   lineColor: string
+  delta?: number
 }) {
   return (
-    // Same glass recipe as the other Today cards - `bg-card` read a shade
-    // darker than the hero/streak surfaces sitting either side of it.
     <GlassSurface className="p-3">
-      <div className="text-micro font-bold uppercase tracking-[0.06em] text-subtle">{label}</div>
+      <div className="flex items-center justify-between gap-1">
+        <div className="text-micro font-bold uppercase tracking-[0.06em] text-subtle">{label}</div>
+        {delta !== undefined && (
+          <div className="text-micro tabular-nums text-subtle">
+            {trendLabel(delta)}
+          </div>
+        )}
+      </div>
       <div
         className="my-0.5 font-display text-2xl font-bold tracking-[-0.02em] tabular-nums"
         style={{ color: valueColor }}
@@ -79,9 +85,6 @@ function Tile({
   )
 }
 
-// The Form / Fitness / Fatigue read at a glance: current value + a sparkline of
-// where it has been. Replaces the old three-metric card + the duplicated load
-// chart with one glanceable row. Reads already-computed TSB/CTL/ATL - no maths.
 export function FormFitnessFatigueTrio({
   status,
   load,
@@ -94,6 +97,7 @@ export function FormFitnessFatigueTrio({
   const points = load.points
   const form = Math.round(status.tsbNow)
   const formLabel = `${form >= 0 ? '+' : ''}${form}`
+  const formDelta = status.tsbNow - (points.length >= 8 ? (points[points.length - 8]?.tsb ?? status.tsbNow) : status.tsbNow)
 
   return (
     <div className="grid grid-cols-3 gap-[9px]">
@@ -103,6 +107,7 @@ export function FormFitnessFatigueTrio({
         valueColor={FORM_VALUE}
         values={points.map((p) => p.tsb)}
         lineColor={FORM_LINE}
+        delta={formDelta}
       />
       <Tile
         label={t.trainingStatus.metrics.fitness}
@@ -110,6 +115,7 @@ export function FormFitnessFatigueTrio({
         valueColor={FITNESS}
         values={points.map((p) => p.ctl)}
         lineColor={FITNESS}
+        delta={status.ctlDelta}
       />
       <Tile
         label={t.dashboard.trainingLoad.fatigue}
@@ -117,6 +123,7 @@ export function FormFitnessFatigueTrio({
         valueColor={FATIGUE}
         values={points.map((p) => p.atl)}
         lineColor={FATIGUE}
+        delta={status.atlDelta}
       />
     </div>
   )

@@ -21,8 +21,6 @@ function WeekDots({ weekDays, plannedDays, today }: { weekDays: boolean[]; plann
       {weekDays.map((active, i) => {
         const isToday = i === today
         const isFuture = i > today
-        // A past day with nothing scheduled is a rest day, not a missed one:
-        // same filled dot + check as a done day, tinted rather than solid.
         const isRest = !active && !isFuture && !plannedDays[i]
         return (
           <div key={i} className="text-center">
@@ -38,8 +36,6 @@ function WeekDots({ weekDays, plannedDays, today }: { weekDays: boolean[]; plann
                       : 'bg-foreground/10',
                 isToday && !active && 'border-2 border-accent bg-transparent'
               )}
-              // The "today" glow follows the accent (rose/blue/…), not the fixed
-              // brand green - the ring around it is already border-accent.
               style={
                 isToday && !active
                   ? { boxShadow: '0 0 12px color-mix(in srgb, var(--accent) 50%, transparent)' }
@@ -62,9 +58,10 @@ function WeekDots({ weekDays, plannedDays, today }: { weekDays: boolean[]; plann
 interface Props {
   data: WeeklyStreakData
   goal: WeeklyGoal | null
+  lastWeekKm?: number | null
 }
 
-export function WeeklyStreakCard({ data, goal }: Props) {
+export function WeeklyStreakCard({ data, goal, lastWeekKm }: Props) {
   const s = t.dashboard.weeklyStreak
   const today = (new Date().getDay() + 6) % 7 // Mon=0..Sun=6
 
@@ -73,9 +70,12 @@ export function WeeklyStreakCard({ data, goal }: Props) {
   const offset = RING_CIRCUMFERENCE * (1 - animatedPct)
   const animatedActualKm = useCountUp(goal?.actualKm ?? 0)
   const isFreshWeek = goal !== null && goal.actualKm === 0
-  // Whole km on the dashboard tile - a decimal on a weekly-goal estimate
-  // (e.g. "22.7 km") reads as false precision for what is already a rough target.
   const remaining = goal ? Math.max(0, Math.round(goal.targetKm - goal.actualKm)) : 0
+
+  const vsLastWeekPct =
+    lastWeekKm && lastWeekKm > 0 && goal && goal.actualKm > 0
+      ? Math.round(((goal.actualKm - lastWeekKm) / lastWeekKm) * 100)
+      : null
 
   const headline = !goal
     ? s.weeksInARow(Math.round(data.currentWeeks))
@@ -116,6 +116,9 @@ export function WeeklyStreakCard({ data, goal }: Props) {
           <p className="text-sm font-semibold text-foreground">{headline}</p>
           {isFreshWeek && (
             <p className="mt-0.5 text-xs text-muted-foreground">{s.freshWeekGoal(Math.round(goal.targetKm))}</p>
+          )}
+          {vsLastWeekPct !== null && !isFreshWeek && (
+            <p className="mt-0.5 text-xs text-muted-foreground">{s.vsLastWeek(vsLastWeekPct)}</p>
           )}
         </div>
       </div>

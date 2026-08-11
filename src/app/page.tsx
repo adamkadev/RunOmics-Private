@@ -73,7 +73,7 @@ export default async function DashboardPage() {
 
       {weeklyStreak && (
         <Link href="/plan" aria-label={t.plan.openPlanner} className="block active:scale-[0.99]">
-          <WeeklyStreakCard data={weeklyStreak} goal={weeklyGoal} />
+          <WeeklyStreakCard data={weeklyStreak} goal={weeklyGoal} lastWeekKm={data.lastWeek.totalDistanceKm} />
         </Link>
       )}
 

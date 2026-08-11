@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ChevronRight, Check, Footprints, BedDouble } from 'lucide-react'
+import { ChevronRight, Check, Footprints, BedDouble, Flag } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import type { ActivitySummary, ActivityType, PlannedWorkout } from '@/domain/activity/types'
@@ -45,6 +45,11 @@ function readinessCopy(status: TrainingStatus, tone: ReadinessTone): { headline:
 // Pure display + a rules-based readiness verdict over already-computed status/load data.
 export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiVerdict }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [daysToRace] = useState(() =>
+    nextRace
+      ? Math.ceil((new Date(nextRace.date + 'T00:00:00').getTime() - Date.now()) / 86_400_000)
+      : null
+  )
 
   if (!status && !plannedWorkout && !nextRace) return null
 
@@ -89,6 +94,12 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiV
           />
           {tone ? s.eyebrowByTone[tone] : s.eyebrowByTone.go}
         </span>
+        {daysToRace !== null && daysToRace > 0 && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-0.5 font-mono text-micro font-bold text-white/80">
+            <Flag size={10} />
+            {s.daysToRace(daysToRace)} · {nextRace!.name}
+          </span>
+        )}
       </div>
 
       {verdict && (
