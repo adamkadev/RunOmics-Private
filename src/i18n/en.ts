@@ -363,9 +363,6 @@ export const en = {
       eyebrow: 'Week review',
       fallbackTitle: (km: number, sessions: number) =>
         `${km} km over ${sessions} session${sessions !== 1 ? 's' : ''} so far`,
-      vsLastWeek: (pct: number) => `${pct >= 0 ? '+' : ''}${pct}% vs last week`,
-      plannedAhead: (sessions: number, days: number) =>
-        `${sessions} session${sessions !== 1 ? 's' : ''} planned in ${days} remaining day${days !== 1 ? 's' : ''}`,
     },
     syncStatus: {
       synced: (relative: string) => `Synced ${relative}`,
@@ -411,7 +408,6 @@ export const en = {
       freshWeek: 'New week.',
       freshWeekGoal: (km: number) => `Goal ${km} km - a first run kicks off the streak.`,
       streakSummary: (longest: number, current: number) => `Best streak: ${longest} weeks - current: ${current}`,
-      vsLastWeek: (pct: number) => `${pct >= 0 ? '+' : ''}${pct}% vs last week`,
     },
     celebration: {
       eyebrow: 'New personal record',

@@ -58,10 +58,9 @@ function WeekDots({ weekDays, plannedDays, today }: { weekDays: boolean[]; plann
 interface Props {
   data: WeeklyStreakData
   goal: WeeklyGoal | null
-  lastWeekKm?: number | null
 }
 
-export function WeeklyStreakCard({ data, goal, lastWeekKm }: Props) {
+export function WeeklyStreakCard({ data, goal }: Props) {
   const s = t.dashboard.weeklyStreak
   const today = (new Date().getDay() + 6) % 7 // Mon=0..Sun=6
 
@@ -71,11 +70,6 @@ export function WeeklyStreakCard({ data, goal, lastWeekKm }: Props) {
   const animatedActualKm = useCountUp(goal?.actualKm ?? 0)
   const isFreshWeek = goal !== null && goal.actualKm === 0
   const remaining = goal ? Math.max(0, Math.round(goal.targetKm - goal.actualKm)) : 0
-
-  const vsLastWeekPct =
-    lastWeekKm && lastWeekKm > 0 && goal && goal.actualKm > 0
-      ? Math.round(((goal.actualKm - lastWeekKm) / lastWeekKm) * 100)
-      : null
 
   const headline = !goal
     ? s.weeksInARow(Math.round(data.currentWeeks))
@@ -116,9 +110,6 @@ export function WeeklyStreakCard({ data, goal, lastWeekKm }: Props) {
           <p className="text-sm font-semibold text-foreground">{headline}</p>
           {isFreshWeek && (
             <p className="mt-0.5 text-xs text-muted-foreground">{s.freshWeekGoal(Math.round(goal.targetKm))}</p>
-          )}
-          {vsLastWeekPct !== null && !isFreshWeek && (
-            <p className="mt-0.5 text-xs text-muted-foreground">{s.vsLastWeek(vsLastWeekPct)}</p>
           )}
         </div>
       </div>
