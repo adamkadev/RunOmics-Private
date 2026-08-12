@@ -923,54 +923,6 @@
       "scheduledTime": "19:00"
     },
     {
-      "date": "2026-08-12",
-      "name": "3x7'@176bpm",
-      "distanceM": 400919,
-      "durationSecs": 2700,
-      "steps": [
-        {
-          "kind": "warmup",
-          "minutes": 10
-        },
-        {
-          "kind": "effort",
-          "minutes": 7,
-          "rep": 1
-        },
-        {
-          "kind": "recovery",
-          "minutes": 2,
-          "rep": 1
-        },
-        {
-          "kind": "effort",
-          "minutes": 7,
-          "rep": 2
-        },
-        {
-          "kind": "recovery",
-          "minutes": 2,
-          "rep": 2
-        },
-        {
-          "kind": "effort",
-          "minutes": 7,
-          "rep": 3
-        },
-        {
-          "kind": "recovery",
-          "minutes": 2,
-          "rep": 3
-        },
-        {
-          "kind": "cooldown",
-          "minutes": 10
-        }
-      ],
-      "type": "Threshold",
-      "scheduledTime": "19:00"
-    },
-    {
       "date": "2026-08-14",
       "name": "Base",
       "distanceM": 10496,
