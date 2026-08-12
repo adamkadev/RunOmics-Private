@@ -1,5 +1,5 @@
 {
-  "aerobicHigh": 833,
+  "aerobicHigh": 1011,
   "aerobicHighMax": 1039,
   "aerobicHighMin": 606,
   "aerobicLow": 986,
@@ -8,7 +8,7 @@
   "anaerobic": 251,
   "anaerobicMax": 606,
   "anaerobicMin": 346,
-  "date": "2026-08-11",
+  "date": "2026-08-12",
   "deviceId": 3604810488,
   "feedback": "ANAEROBIC_SHORTAGE"
 }
