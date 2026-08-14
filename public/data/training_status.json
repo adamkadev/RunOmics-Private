@@ -5482,12 +5482,12 @@
       "statusCode": 4,
       "feedback": "MAINTAINING_2",
       "fitnessTrend": 2,
-      "acuteLoad": 392,
-      "chronicLoad": 561,
-      "acwr": 0.6,
-      "acwrStatus": "LOW",
-      "chronicLoadMin": 449,
-      "chronicLoadMax": 842
+      "acuteLoad": 553,
+      "chronicLoad": 590,
+      "acwr": 0.9,
+      "acwrStatus": "OPTIMAL",
+      "chronicLoadMin": 472,
+      "chronicLoadMax": 885
     }
   },
   "weeks": {
@@ -6455,12 +6455,12 @@
       "statusCode": 4,
       "feedback": "MAINTAINING_2",
       "fitnessTrend": 2,
-      "acuteLoad": 392,
-      "chronicLoad": 561,
-      "acwr": 0.6,
-      "acwrStatus": "LOW",
-      "chronicLoadMin": 449,
-      "chronicLoadMax": 842
+      "acuteLoad": 553,
+      "chronicLoad": 590,
+      "acwr": 0.9,
+      "acwrStatus": "OPTIMAL",
+      "chronicLoadMin": 472,
+      "chronicLoadMax": 885
     }
   }
 }
