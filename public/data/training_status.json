@@ -5464,6 +5464,18 @@
       "acwrStatus": "OPTIMAL",
       "chronicLoadMin": 471,
       "chronicLoadMax": 884
+    },
+    "2026-08-13": {
+      "status": "maintaining",
+      "statusCode": 4,
+      "feedback": "MAINTAINING_2",
+      "fitnessTrend": 2,
+      "acuteLoad": 507,
+      "chronicLoad": 574,
+      "acwr": 0.8,
+      "acwrStatus": "OPTIMAL",
+      "chronicLoadMin": 459,
+      "chronicLoadMax": 861
     }
   },
   "weeks": {
@@ -6413,6 +6425,18 @@
       "acwrStatus": "OPTIMAL",
       "chronicLoadMin": 471,
       "chronicLoadMax": 884
+    },
+    "2026-08-13": {
+      "status": "maintaining",
+      "statusCode": 4,
+      "feedback": "MAINTAINING_2",
+      "fitnessTrend": 2,
+      "acuteLoad": 507,
+      "chronicLoad": 574,
+      "acwr": 0.8,
+      "acwrStatus": "OPTIMAL",
+      "chronicLoadMin": 459,
+      "chronicLoadMax": 861
     }
   }
 }
