@@ -1,18 +1,33 @@
 rules_version = '2';
 
-// RunOmics Firestore security rules — source of truth, versioned in the repo.
+// RunOmics Firestore security rules - source of truth, versioned in the repo.
 // Deploy with: firebase deploy --only firestore:rules
 //
-// Model: the whole dashboard is publicly readable (the app itself is a
-// personal, read-only site for visitors), but every write (activity notes,
-// goals, pbs, athlete profile, notification tokens) is restricted to the
-// owner's Google account. The NEXT_PUBLIC_OWNER_EMAIL check in the UI is
-// only a display gate — this file is the actual enforcement.
+// Model: activityNotes is the only collection ever read through the client
+// SDK - every other page is server-rendered, its data already resolved
+// (via the Admin SDK, which is not subject to these rules at all) before it
+// reaches the browser. So activityNotes is the only public read; everything
+// else gets no rule, which is a default deny for client access.
+//
+// Every write is gated on a custom Firebase Auth claim rather than an email
+// literal: rules cannot read this app's environment variables, and a claim
+// on the account survives an email change without touching this file. Set
+// it once with `npm run set-owner-claim` (scripts/set_owner_claim.mjs).
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
+    // Shown on every activity detail page to any visitor; only the owner edits.
+    match /activityNotes/{activityId} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.token.email == 'adam.elkadaoui@gmail.com';
+      allow write: if request.auth != null && request.auth.token.owner == true;
     }
+
+    // Written from the browser only while signed in as the owner (Settings is
+    // gated in the UI too) - never read back through the client SDK.
+    match /pushTokens/{token} {
+      allow write: if request.auth != null && request.auth.token.owner == true;
+    }
+
+    // aiInsights, notifications and aiBudget are read/written exclusively via
+    // the Admin SDK from internal cron routes - no rule needed or wanted here.
   }
 }
