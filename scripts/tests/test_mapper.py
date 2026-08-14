@@ -60,7 +60,7 @@ class TestMapActivity:
     def _garmin_activity(self):
         return {
             "activityId": 12345,
-            "activityName": "Strasbourg - Morning Run",
+            "activityName": "Fictionville - Morning Run",
             "summaryDTO": {
                 "startTimeLocal": "2026-07-01 08:30:00",
                 "duration": 1800.0,

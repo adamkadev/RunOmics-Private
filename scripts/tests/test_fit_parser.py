@@ -101,7 +101,7 @@ class TestPaceSamples:
 class TestDecimate:
     def test_straight_line_collapses_to_endpoints(self):
         # 500 collinear points: RDP should drop everything in between.
-        coords = [[7.75 + i * 0.0001, 48.58] for i in range(500)]
+        coords = [[20.50 + i * 0.0001, 10.11] for i in range(500)]
         out = _decimate(coords, max_points=100)
 
         assert out[0] == coords[0]
@@ -110,9 +110,9 @@ class TestDecimate:
 
     def test_corners_are_kept(self):
         # A right angle: the corner point must survive simplification.
-        leg1 = [[7.75 + i * 0.0001, 48.58] for i in range(100)]
-        corner = [7.76, 48.58]
-        leg2 = [[7.76, 48.58 + i * 0.0001] for i in range(1, 100)]
+        leg1 = [[20.50 + i * 0.0001, 10.11] for i in range(100)]
+        corner = [20.51, 10.11]
+        leg2 = [[20.51, 10.11 + i * 0.0001] for i in range(1, 100)]
         coords = leg1 + [corner] + leg2
         out = _decimate(coords, max_points=100)
 
@@ -121,13 +121,13 @@ class TestDecimate:
     def test_respects_max_points(self):
         # Jittered path that RDP can't simplify below max_points at the base
         # epsilon - the epsilon escalation loop must still enforce the cap.
-        coords = [[7.75 + i * 0.0001, 48.58 + (0.0002 if i % 2 else -0.0002)] for i in range(2000)]
+        coords = [[20.50 + i * 0.0001, 10.11 + (0.0002 if i % 2 else -0.0002)] for i in range(2000)]
         out = _decimate(coords, max_points=150)
 
         assert len(out) <= 150
 
     def test_short_routes_untouched(self):
-        coords = [[7.75, 48.58], [7.76, 48.59]]
+        coords = [[20.50, 10.11], [20.51, 10.12]]
         assert _decimate(coords, max_points=100) == coords
 
 

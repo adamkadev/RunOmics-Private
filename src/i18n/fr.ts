@@ -121,6 +121,7 @@ export const fr = {
       less: 'Rare',
       more: 'Fréquent',
       noRoutes: 'Aucun parcours pour ce filtre',
+      mapUnavailable: 'Carte indisponible - aucune clé de carte configurée',
       territory: {
         // Camp de base de toujours, indépendant du sélecteur de zone plus bas -
         // le texte le dit clairement pour ne pas être lu comme la zone choisie.
@@ -944,6 +945,8 @@ export const fr = {
       escToExit: 'Échap pour quitter',
       noTrace: 'Tracé GPS indisponible',
       noTraceHint: 'Disponible après synchronisation Garmin',
+      mapUnavailable: 'Carte indisponible',
+      mapUnavailableHint: 'Aucune clé de carte configurée',
       routeMap: 'Carte du parcours de l’activité',
     },
     splits: {

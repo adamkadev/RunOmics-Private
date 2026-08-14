@@ -33,6 +33,24 @@
 # garmin FIT binaries - cached by GitHub Actions, not tracked in git
 /public/fit/
 
+# race-day cover photos (README > public/events/) - none tracked today, but
+# guard against a future `git add .` picking one up by accident.
+/public/events/
+
+# real Garmin-derived data (Phase 2): inert today - this repo still tracks
+# public/data/ itself, and gitignore never untracks an already-tracked file.
+# Only takes effect once that data moves to the private data repository and
+# is deliberately untracked here (`git rm --cached -r public/data`).
+/public/data/
+
+# Firebase service-account key files, if one is ever downloaded locally -
+# Admin SDK credentials here are env-var based (see firebase-admin.ts), so
+# none should exist, but this is cheap insurance against the common mistake.
+*serviceAccountKey*.json
+firebase-adminsdk-*.json
+firebase-debug.log
+firestore-debug.log
+
 # claude memory
 /.claude/
 CLAUDE.md

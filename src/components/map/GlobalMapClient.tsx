@@ -177,6 +177,14 @@ export function GlobalMapClient({ data }: Props) {
         </div>
       </div>
 
+      {!process.env.NEXT_PUBLIC_MAPTILER_TOKEN && (
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+          <span className="glass-map-chip px-4 py-2 text-xs font-medium text-subtle">
+            {t.pages.map.mapUnavailable}
+          </span>
+        </div>
+      )}
+
       {!worldView && visibleIndices.length === 0 && (
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
           <span className="glass-map-chip px-4 py-2 text-xs font-medium text-subtle">

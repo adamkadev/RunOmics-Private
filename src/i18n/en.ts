@@ -129,6 +129,7 @@ export const en = {
       less: 'Rare',
       more: 'Frequent',
       noRoutes: 'No routes for this filter',
+      mapUnavailable: 'Map unavailable - no map token configured',
       territory: {
         eyebrow: 'Home base · all-time',
         headline: (percent: number, radius: number) => `${percent}% of all your running sits within a ${radius} km radius.`,
@@ -950,6 +951,8 @@ export const en = {
       escToExit: 'Esc to exit',
       noTrace: 'GPS trace unavailable',
       noTraceHint: 'Available after Garmin sync',
+      mapUnavailable: 'Map unavailable',
+      mapUnavailableHint: 'No map token configured',
       routeMap: 'Activity route map',
     },
     splits: {

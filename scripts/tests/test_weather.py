@@ -49,8 +49,8 @@ class TestWeatherClientBatching:
 
         client = WeatherClient(fetch=fetch, today=date(2026, 7, 30))
 
-        first = client.snapshot(48.5734, 7.7521, "2026-07-29T07:00")
-        second = client.snapshot(48.5801, 7.7605, "2026-07-30T18:00")
+        first = client.snapshot(10.1234, 20.5321, "2026-07-29T07:00")
+        second = client.snapshot(10.1301, 20.5405, "2026-07-30T18:00")
 
         assert len(calls) == 1
         assert first is not None and second is not None
@@ -64,8 +64,8 @@ class TestWeatherClientBatching:
             return _hourly(["2026-07-29T07:00", "2026-06-29T07:00"])
 
         client = WeatherClient(fetch=fetch, today=date(2026, 7, 30))
-        client.snapshot(48.57, 7.75, "2026-07-29T07:00")
-        client.snapshot(48.57, 7.75, "2026-06-29T07:00")
+        client.snapshot(10.10, 20.50, "2026-07-29T07:00")
+        client.snapshot(10.10, 20.50, "2026-06-29T07:00")
         client.snapshot(43.29, 5.37, "2026-07-29T07:00")
 
         assert len(calls) == 3
@@ -78,7 +78,7 @@ class TestWeatherClientBatching:
             return _hourly(["2026-08-01T00:00"])
 
         client = WeatherClient(fetch=fetch, today=date(2026, 8, 5))
-        client.snapshot(48.57, 7.75, "2026-07-31T23:00")
+        client.snapshot(10.10, 20.50, "2026-07-31T23:00")
 
         assert "start_date=2026-06-30" in calls[0]
         assert "end_date=2026-08-01" in calls[0]
@@ -91,7 +91,7 @@ class TestWeatherClientBatching:
             return _hourly(["2026-07-29T07:00"])
 
         client = WeatherClient(fetch=fetch, today=date(2026, 7, 30))
-        client.snapshot(48.57, 7.75, "2026-07-29T07:00")
+        client.snapshot(10.10, 20.50, "2026-07-29T07:00")
 
         assert "end_date=2026-07-30" in calls[0]
 
@@ -103,7 +103,7 @@ class TestWeatherClientBatching:
             return _hourly([])
 
         client = WeatherClient(fetch=fetch, today=date(2026, 7, 30))
-        client.snapshot(48.57, 7.75, "2026-09-10T07:00")
+        client.snapshot(10.10, 20.50, "2026-09-10T07:00")
 
         assert not any("archive" in url for url in calls)
 
@@ -115,10 +115,10 @@ class TestWeatherClientBatching:
             return _hourly([])
 
         client = WeatherClient(fetch=fetch, today=date(2026, 7, 30))
-        client.snapshot(48.5734, 7.7521, "2026-07-29T07:00")
+        client.snapshot(10.1234, 20.5321, "2026-07-29T07:00")
 
-        assert "latitude=48.6" in calls[0]
-        assert "longitude=7.8" in calls[0]
+        assert "latitude=10.1" in calls[0]
+        assert "longitude=20.5" in calls[0]
 
 
 class TestArchiveFallback:
@@ -132,7 +132,7 @@ class TestArchiveFallback:
             return _hourly(["2026-07-29T07:00"], temperature_2m=[21.5])
 
         client = WeatherClient(fetch=fetch, today=date(2026, 7, 30))
-        snapshot = client.snapshot(48.57, 7.75, "2026-07-29T07:00")
+        snapshot = client.snapshot(10.10, 20.50, "2026-07-29T07:00")
 
         assert len(calls) == 2
         assert "archive" in calls[0]
@@ -147,7 +147,7 @@ class TestArchiveFallback:
             return _hourly([])
 
         client = WeatherClient(fetch=fetch, today=date(2026, 7, 30))
-        assert client.snapshot(48.57, 7.75, "2025-05-12T07:00") is None
+        assert client.snapshot(10.10, 20.50, "2025-05-12T07:00") is None
         assert len(calls) == 1  # archive only
 
     def test_forecast_is_skipped_when_the_archive_already_answered(self):
@@ -158,7 +158,7 @@ class TestArchiveFallback:
             return _hourly(["2026-07-29T07:00"])
 
         client = WeatherClient(fetch=fetch, today=date(2026, 7, 30))
-        assert client.snapshot(48.57, 7.75, "2026-07-29T07:00") is not None
+        assert client.snapshot(10.10, 20.50, "2026-07-29T07:00") is not None
         assert len(calls) == 1
 
 
@@ -168,7 +168,7 @@ class TestGracefulFailure:
             raise OSError("connection reset")
 
         client = WeatherClient(fetch=fetch, today=date(2026, 7, 30))
-        assert client.snapshot(48.57, 7.75, "2026-07-29T07:00") is None
+        assert client.snapshot(10.10, 20.50, "2026-07-29T07:00") is None
         assert client.failures == 2  # archive, then forecast
 
     def test_an_api_error_payload_yields_no_weather(self):
@@ -176,7 +176,7 @@ class TestGracefulFailure:
             fetch=lambda url: {"error": True, "reason": "start_date is out of range"},
             today=date(2026, 7, 30),
         )
-        assert client.snapshot(48.57, 7.75, "2026-07-29T07:00") is None
+        assert client.snapshot(10.10, 20.50, "2026-07-29T07:00") is None
 
     def test_a_failed_group_is_not_retried_for_a_second_lookup(self):
         calls: list[str] = []
@@ -186,8 +186,8 @@ class TestGracefulFailure:
             raise OSError("connection reset")
 
         client = WeatherClient(fetch=fetch, today=date(2026, 7, 30))
-        client.snapshot(48.57, 7.75, "2026-07-29T07:00")
-        client.snapshot(48.57, 7.75, "2026-07-29T18:00")
+        client.snapshot(10.10, 20.50, "2026-07-29T07:00")
+        client.snapshot(10.10, 20.50, "2026-07-29T18:00")
 
         assert len(calls) == 2  # archive + forecast, once each
 
@@ -195,7 +195,7 @@ class TestGracefulFailure:
 class TestWeatherForActivity:
     def _parsed(self, **overrides) -> ParsedFit:
         defaults = {
-            "route": [[7.7521, 48.5734], [7.7530, 48.5740]],
+            "route": [[20.5321, 10.1234], [20.5030, 10.1040]],
             "start_time_local": datetime(2026, 7, 29, 7, 10),
             "duration_seconds": 3000,
         }
@@ -226,8 +226,8 @@ class TestWeatherForActivity:
         client = WeatherClient(fetch=fetch, today=date(2026, 7, 30))
         weather_for_activity(client, self._parsed())
 
-        assert "latitude=48.6" in calls[0]
-        assert "longitude=7.8" in calls[0]
+        assert "latitude=10.1" in calls[0]
+        assert "longitude=20.5" in calls[0]
 
     def test_no_route_means_no_lookup(self):
         calls: list[str] = []

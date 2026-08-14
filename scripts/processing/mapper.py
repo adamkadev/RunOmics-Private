@@ -160,7 +160,7 @@ def map_activity(
 
     activity_id = str(garmin_activity.get("activityId", ""))
     name: str = garmin_activity.get("activityName", "") or ""
-    # Garmin auto-names: "Strasbourg - Morning Run" → "Morning Run"
+    # Garmin auto-names: "<City> - Morning Run" → "Morning Run"
     if " - " in name:
         name = name.split(" - ", 1)[1]
     # Drop trailing extras: "40 min footing + renforcement" → "40 min footing"

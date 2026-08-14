@@ -61,6 +61,7 @@ function mkMarker(bg: string, border = 'white', size = 13) {
 
 export default function ActivityMap({ route, paceSamples, hoverFraction, weather, activityType, gearId, className }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const hasToken = !!process.env.NEXT_PUBLIC_MAPTILER_TOKEN
   const mapRef = useRef<MapLibreMap | null>(null)
   const mglRef = useRef<typeof import('maplibre-gl') | null>(null)
   const hoverMarkerRef = useRef<Marker | null>(null)
@@ -230,6 +231,8 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
     }
   }, [hoverFraction, route])
 
+  if (!hasToken) return <MapUnavailable className={className} />
+
   const tree = (
     <div
       className={cn(
@@ -312,6 +315,21 @@ export function NoRouteMap({ className }: { className?: string }) {
       <MapPin size={24} className="text-subtle" />
       <p className="text-sm text-subtle">{t.activity.map.noTrace}</p>
       <p className="text-xs text-subtle">{t.activity.map.noTraceHint}</p>
+    </div>
+  )
+}
+
+function MapUnavailable({ className }: { className?: string }) {
+  return (
+    <div
+      className={cn(
+        'flex min-h-[280px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-muted',
+        className
+      )}
+    >
+      <MapPin size={24} className="text-subtle" />
+      <p className="text-sm text-subtle">{t.activity.map.mapUnavailable}</p>
+      <p className="text-xs text-subtle">{t.activity.map.mapUnavailableHint}</p>
     </div>
   )
 }

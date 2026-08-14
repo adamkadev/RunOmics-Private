@@ -46,6 +46,14 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r scripts/requirements.txt
 
+      # Only used by scripts/push_private_data.mjs, once RUNOMICS_DATA_REPO_URL
+      # is configured (see the "Commit updated data" step below) - harmless to
+      # always set up.
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
       - name: Install Cloudflare WARP
         run: |
           curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --dearmor -o /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
@@ -89,63 +97,93 @@ jobs:
         continue-on-error: true
         run: python scripts/backfill_weather.py
 
-      - name: Commit updated activities.json
+      # Two destinations, chosen at run time - not two workflows - so this
+      # stays correct whichever side of the RunOmics-data migration a given
+      # run happens to be on:
+      #   RUNOMICS_DATA_REPO_URL unset (today): commit straight to this app
+      #     repo, exactly as before.
+      #   RUNOMICS_DATA_REPO_URL set (after the migration's step 5): push to
+      #     the private RunOmics-data repository instead via
+      #     scripts/push_private_data.mjs, and this app repo receives no data
+      #     commit at all. See that script for how the token is handled.
+      - name: Commit updated data
         id: commit
+        env:
+          RUNOMICS_DATA_REPO_URL: ${{ secrets.RUNOMICS_DATA_REPO_URL }}
+          RUNOMICS_DATA_REPO_TOKEN: ${{ secrets.RUNOMICS_DATA_REPO_TOKEN }}
         run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          git add public/data/activities/ public/data/planned_workouts/ public/data/upcoming_races.json public/data/athlete.json
-
-          if git diff --cached --quiet; then
-            ACTIVITIES_CHANGED=false
-          else
-            ACTIVITIES_CHANGED=true
-          fi
-          echo "activities_changed=$ACTIVITIES_CHANGED" >> "$GITHUB_OUTPUT"
-
-          # Garmin-derived metric series. sync.py re-fetches these every run and
-          # Garmin revises the recent days as new activities land, so they change
-          # without a new activity landing. Staged separately from the activities
-          # above so the commit message can tell the two apart. Without this the
-          # files were regenerated each run but never committed, leaving the app
-          # stuck on whatever was last committed by hand.
-          git add \
-            public/data/race_predictions.json \
-            public/data/vo2max_history.json \
-            public/data/vo2max_norms.json \
-            public/data/threshold_history.json \
-            public/data/training_status.json \
-            public/data/training_load_balance.json \
-            public/data/training_plan.json \
-            public/data/athlete_history.json
-
-          # Anything the app renders, activities or metrics. The post-sync checks
-          # hang off this rather than off activities alone: today's insight is
-          # built from training_status.json, so a day where the status moved
-          # without a run landing used to leave it stale until the next activity.
-          if git diff --cached --quiet; then
-            DATA_CHANGED=false
-          else
-            DATA_CHANGED=true
-          fi
-          echo "data_changed=$DATA_CHANGED" >> "$GITHUB_OUTPUT"
-
-          # Last, so it never counts as a data change of its own: sync.py rewrites
-          # it every run, and a commit carrying only a new timestamp has nothing
-          # for the checks to look at.
-          git add public/data/sync_meta.json
-
-          # The deployment marker the post-sync step waits for. Unique per run,
-          # and part of every commit this step makes.
+          # The deployment marker the post-sync step waits for. Read locally
+          # regardless of destination - sync.py always rewrites this file.
           python -c "import json; print('last_synced_at=' + json.load(open('public/data/sync_meta.json'))['lastSyncedAt'])" >> "$GITHUB_OUTPUT"
 
-          if git diff --cached --quiet; then
-            echo "Nothing to commit."
-            echo "committed=false" >> "$GITHUB_OUTPUT"
+          if [ -n "$RUNOMICS_DATA_REPO_URL" ]; then
+            echo "used_data_repo=true" >> "$GITHUB_OUTPUT"
+            OUTPUT=$(node scripts/push_private_data.mjs public/data)
+            echo "$OUTPUT"
+
+            if echo "$OUTPUT" | grep -q "No data changes"; then
+              echo "committed=false" >> "$GITHUB_OUTPUT"
+              echo "data_changed=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "committed=true" >> "$GITHUB_OUTPUT"
+              if echo "$OUTPUT" | grep -q "refresh last-synced timestamp"; then
+                echo "data_changed=false" >> "$GITHUB_OUTPUT"
+              else
+                echo "data_changed=true" >> "$GITHUB_OUTPUT"
+              fi
+            fi
           else
-            if [ "$ACTIVITIES_CHANGED" = "true" ]; then
-              ACTIVITY_COUNT=$(python - <<'EOF'
+            echo "used_data_repo=false" >> "$GITHUB_OUTPUT"
+            git config user.name  "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+
+            git add public/data/activities/ public/data/planned_workouts/ public/data/upcoming_races.json public/data/athlete.json
+
+            if git diff --cached --quiet; then
+              ACTIVITIES_CHANGED=false
+            else
+              ACTIVITIES_CHANGED=true
+            fi
+            echo "activities_changed=$ACTIVITIES_CHANGED" >> "$GITHUB_OUTPUT"
+
+            # Garmin-derived metric series. sync.py re-fetches these every run and
+            # Garmin revises the recent days as new activities land, so they change
+            # without a new activity landing. Staged separately from the activities
+            # above so the commit message can tell the two apart. Without this the
+            # files were regenerated each run but never committed, leaving the app
+            # stuck on whatever was last committed by hand.
+            git add \
+              public/data/race_predictions.json \
+              public/data/vo2max_history.json \
+              public/data/vo2max_norms.json \
+              public/data/threshold_history.json \
+              public/data/training_status.json \
+              public/data/training_load_balance.json \
+              public/data/training_plan.json \
+              public/data/athlete_history.json
+
+            # Anything the app renders, activities or metrics. The post-sync checks
+            # hang off this rather than off activities alone: today's insight is
+            # built from training_status.json, so a day where the status moved
+            # without a run landing used to leave it stale until the next activity.
+            if git diff --cached --quiet; then
+              DATA_CHANGED=false
+            else
+              DATA_CHANGED=true
+            fi
+            echo "data_changed=$DATA_CHANGED" >> "$GITHUB_OUTPUT"
+
+            # Last, so it never counts as a data change of its own: sync.py rewrites
+            # it every run, and a commit carrying only a new timestamp has nothing
+            # for the checks to look at.
+            git add public/data/sync_meta.json
+
+            if git diff --cached --quiet; then
+              echo "Nothing to commit."
+              echo "committed=false" >> "$GITHUB_OUTPUT"
+            else
+              if [ "$ACTIVITIES_CHANGED" = "true" ]; then
+                ACTIVITY_COUNT=$(python - <<'EOF'
           import json, pathlib
           total = 0
           for path in pathlib.Path("public/data/activities").glob("*.json"):
@@ -155,15 +193,28 @@ jobs:
           print(total)
           EOF
           )
-              git commit -m "sync: update activities (${ACTIVITY_COUNT} total) [skip ci]"
-            elif [ "$DATA_CHANGED" = "true" ]; then
-              git commit -m "sync: refresh Garmin metrics and timestamp [skip ci]"
-            else
-              git commit -m "sync: refresh last-synced timestamp [skip ci]"
+                git commit -m "sync: update activities (${ACTIVITY_COUNT} total) [skip ci]"
+              elif [ "$DATA_CHANGED" = "true" ]; then
+                git commit -m "sync: refresh Garmin metrics and timestamp [skip ci]"
+              else
+                git commit -m "sync: refresh last-synced timestamp [skip ci]"
+              fi
+              git push
+              echo "committed=true" >> "$GITHUB_OUTPUT"
             fi
-            git push
-            echo "committed=true" >> "$GITHUB_OUTPUT"
           fi
+
+      # Only fires once RUNOMICS_DATA_REPO_URL is configured: pushing to the
+      # data repo doesn't touch this app repo, so Vercel's normal "push to
+      # main redeploys" trigger never fires for a sync anymore. A deploy hook
+      # is the direct replacement - same effect (rebuild, which re-fetches
+      # the data repo via scripts/prepare-data.mjs), no git push involved.
+      - name: Trigger Vercel redeploy (private data repo path only)
+        if: steps.commit.outputs.used_data_repo == 'true' && steps.commit.outputs.committed == 'true'
+        continue-on-error: true
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"
 
       - name: Trigger post-sync checks
         if: steps.commit.outputs.data_changed == 'true'
