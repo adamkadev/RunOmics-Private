@@ -63,6 +63,8 @@ jobs:
       - name: Run sync
         env:
           GARMIN_SECRET: ${{ secrets.GARMIN_SECRET }}
+          PRIVACY_ZONES: ${{ secrets.PRIVACY_ZONES }}
+          PRIVACY_RADIUS_M: ${{ secrets.PRIVACY_RADIUS_M }}
         run: |
           ARGS=""
           if [ -n "${{ github.event.inputs.limit }}" ]; then
