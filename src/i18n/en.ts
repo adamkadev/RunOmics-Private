@@ -8,7 +8,7 @@
 // - Pure number/date formatting stays in `@/lib/formatters`; only human-readable
 //   words and units live here.
 
-import type { ActivityType } from '@/domain/activity/types'
+import type { ActivityType, ScheduledTimeOfDay } from '@/domain/activity/types'
 
 function ordinal(n: number): string {
   const rem10 = n % 10
@@ -1316,6 +1316,12 @@ export const en = {
     },
     nextWeek: (n: number) => `Next week - ${n} planned`,
     comingUp: 'Coming up',
+    timeOfDay: {
+      Morning: 'Morning',
+      Afternoon: 'Afternoon',
+      Evening: 'Evening',
+      Night: 'Night',
+    } as Record<ScheduledTimeOfDay, string>,
     keyTag: 'key',
     openPlanner: 'Open the weekly planner',
     viewDetail: 'View detail',

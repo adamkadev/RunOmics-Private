@@ -20,7 +20,7 @@
         }
       ],
       "type": "Base",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2025-07-09",
@@ -54,7 +54,7 @@
         }
       ],
       "type": "Threshold",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2025-07-11",
@@ -88,7 +88,7 @@
         }
       ],
       "type": "Base",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2025-07-13",
@@ -122,7 +122,7 @@
         }
       ],
       "type": "Base",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2025-07-15",
@@ -156,7 +156,7 @@
         }
       ],
       "type": "Base",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2025-07-17",
@@ -210,7 +210,7 @@
         }
       ],
       "type": "Threshold",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2025-07-19",
@@ -244,7 +244,7 @@
         }
       ],
       "type": "Base",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2025-07-20",
@@ -262,7 +262,7 @@
         }
       ],
       "type": "Base",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2025-07-22",
@@ -296,7 +296,7 @@
         }
       ],
       "type": "Base",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2025-07-23",
@@ -398,7 +398,7 @@
         }
       ],
       "type": "Base",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2025-07-27",
@@ -432,7 +432,7 @@
         }
       ],
       "type": "Base",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2025-07-29",
@@ -466,7 +466,7 @@
         }
       ],
       "type": "Base",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2025-07-30",
@@ -564,7 +564,7 @@
         }
       ],
       "type": "Base",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2025-08-01",
@@ -598,7 +598,7 @@
         }
       ],
       "type": "Base",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     }
   ]
 }

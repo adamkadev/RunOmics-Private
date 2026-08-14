@@ -109,7 +109,7 @@ function PlannedWorkoutRow({
           <span className="block truncate text-sm font-bold text-foreground">{title}</span>
           <span className="mt-0.5 block truncate text-xs text-muted-foreground">
             {[
-              plan.scheduledTime,
+              plan.scheduledTime ? t.plan.timeOfDay[plan.scheduledTime] : null,
               zone ? (zone.key === 'easy' ? t.plan.easyEffortLabel : zone.label) : plan.type ? t.activityTypes[plan.type as ActivityType] : null,
               zone ? formatPaceRange([zone.paceMinSecPerKm, zone.paceMaxSecPerKm]) : null,
             ]
@@ -147,7 +147,11 @@ const KEY_SESSION_TYPES = new Set<ActivityType>(['Threshold', 'Sprint', 'Tempo']
 function NextWeekPlanRow({ plan, onTap }: { plan: PlannedWorkout; onTap: () => void }) {
   const typeColor = plan.type ? ACTIVITY_TYPE_CONFIG[plan.type as ActivityType].chartColor : null
   const weekday = WEEKDAY_SHORT_INDEX[new Date(plan.date + 'T00:00:00').getDay()]
-  const detail = plan.durationSecs ? formatDurationWords(plan.durationSecs) : plan.scheduledTime
+  const detail = plan.durationSecs
+    ? formatDurationWords(plan.durationSecs)
+    : plan.scheduledTime
+      ? t.plan.timeOfDay[plan.scheduledTime]
+      : undefined
   const isKey = plan.type ? KEY_SESSION_TYPES.has(plan.type as ActivityType) : false
   const distanceKm = plan.distanceM ? Math.round(plan.distanceM / 1000) : null
   const tag = isKey ? t.plan.keyTag : distanceKm ? `~${distanceKm} ${t.units.km}` : null

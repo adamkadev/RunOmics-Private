@@ -43,7 +43,27 @@ _RATE_LIMIT_PAUSE = 1.0
 _RETRY_PAUSE = 60.0
 _WINDOW_PAST_DAYS = 7
 _WINDOW_FUTURE_DAYS = 90
-_DEFAULT_SCHEDULED_TIME = "19:00"
+_DEFAULT_SCHEDULED_TIME = "Evening"
+_SCHEDULED_TIME_BUCKETS = ("Night", "Morning", "Afternoon", "Evening")
+
+
+def _bucket_scheduled_time(value: str) -> str:
+    """Coarsens an 'HH:MM' clock time to a time-of-day label, so the exact
+    minute a future run is scheduled is never persisted or served publicly.
+    Idempotent: an already-bucketed label passes through unchanged."""
+    if value in _SCHEDULED_TIME_BUCKETS:
+        return value
+    try:
+        hour = int(value.split(":", 1)[0])
+    except (ValueError, IndexError):
+        return _DEFAULT_SCHEDULED_TIME
+    if 5 <= hour < 12:
+        return "Morning"
+    if 12 <= hour < 17:
+        return "Afternoon"
+    if 17 <= hour < 22:
+        return "Evening"
+    return "Night"
 
 # Slow end of the "easy" training zone as a multiplier of threshold pace -
 # mirrors ZONE_DEFS.easy.paceMultMax in src/application/usecases/GetTrainingZones.ts
@@ -121,7 +141,7 @@ def write_planned_workouts(
         if not entry.get("type"):
             prior_type = prior.get("type") if prior.get("name") == entry["name"] else None
             entry["type"] = prior_type or infer_planned_type(entry["name"])
-        entry["scheduledTime"] = prior.get("scheduledTime", _DEFAULT_SCHEDULED_TIME)
+        entry["scheduledTime"] = _bucket_scheduled_time(prior.get("scheduledTime", _DEFAULT_SCHEDULED_TIME))
         store.upsert(entry)
 
     pruned = 0

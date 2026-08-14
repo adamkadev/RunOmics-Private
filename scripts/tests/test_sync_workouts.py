@@ -722,7 +722,7 @@ class TestWritePlannedWorkouts:
         # workout name survives the resync even though it disagrees with
         # what infer_planned_type would guess from the name alone.
         assert written["planned"][0]["type"] == "Tempo"
-        assert written["planned"][0]["scheduledTime"] == "07:00"
+        assert written["planned"][0]["scheduledTime"] == "Morning"
 
 
 def _activity(date: str, description: str) -> ActivityData:

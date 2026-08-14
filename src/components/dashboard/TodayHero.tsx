@@ -64,7 +64,7 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiV
     ? [
         plannedWorkout.type ? t.activityTypes[plannedWorkout.type as ActivityType] : null,
         plannedWorkout.durationSecs ? `~${formatDurationWords(plannedWorkout.durationSecs)}` : null,
-        plannedWorkout.scheduledTime,
+        plannedWorkout.scheduledTime ? t.plan.timeOfDay[plannedWorkout.scheduledTime] : null,
       ].filter(Boolean).join(' · ')
     : null
   const completedMeta = todayActivity

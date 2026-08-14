@@ -8,7 +8,7 @@
 // - Pure number/date formatting stays in `@/lib/formatters`; only human-readable
 //   words and units live here.
 
-import type { ActivityType } from '@/domain/activity/types'
+import type { ActivityType, ScheduledTimeOfDay } from '@/domain/activity/types'
 import type { Strings } from './index'
 
 export const fr = {
@@ -1311,6 +1311,12 @@ export const fr = {
     },
     nextWeek: (n: number) => `Semaine prochaine - ${n} prévue${n > 1 ? 's' : ''}`,
     comingUp: 'À venir',
+    timeOfDay: {
+      Morning: 'Matin',
+      Afternoon: 'Après-midi',
+      Evening: 'Soir',
+      Night: 'Nuit',
+    } as Record<ScheduledTimeOfDay, string>,
     keyTag: 'clé',
     openPlanner: 'Ouvrir le planificateur',
     viewDetail: 'Voir le détail',

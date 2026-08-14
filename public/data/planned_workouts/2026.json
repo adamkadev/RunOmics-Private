@@ -26,7 +26,7 @@
       "type": "Threshold",
       "distanceM": 11920,
       "durationSecs": 3775,
-      "scheduledTime": "18:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2026-06-24",
@@ -34,74 +34,74 @@
       "distanceM": 7200,
       "durationSecs": 2400,
       "type": "Base",
-      "scheduledTime": "18:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2026-06-25",
       "name": "40 min endurance",
       "durationSecs": 2400,
       "type": "Base",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2026-06-26",
       "name": "2 x 2000m allure de course",
       "type": "Threshold",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2026-06-27",
       "name": "15' progressives",
       "durationSecs": 3300,
       "type": "Tempo",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2026-06-28",
       "name": "8km endurance",
       "distanceM": 8000,
       "type": "Base",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2026-06-30",
       "name": "3 x 1500m allure spé",
       "type": "Threshold",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2026-07-01",
       "name": "50 min endurance",
       "durationSecs": 3000,
       "type": "Base",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2026-07-02",
       "name": "45 min endurance",
       "durationSecs": 2700,
       "type": "Base",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2026-07-03",
       "name": "6 x 1000m allure spé",
       "type": "Threshold",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2026-07-04",
       "name": "1h dont 30' actives",
       "durationSecs": 3600,
       "type": "Base",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2026-07-05",
       "name": "8km endurance",
       "distanceM": 8000,
       "type": "Base",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2026-07-07",
@@ -143,21 +143,21 @@
         }
       ],
       "type": "Base",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2026-07-08",
       "name": "2 x 10' tempo",
       "durationSecs": 3540,
       "type": "Tempo",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2026-07-09",
       "name": "1 h endurance",
       "durationSecs": 3600,
       "type": "Base",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2026-07-10",
@@ -165,14 +165,14 @@
       "distanceM": 6400,
       "durationSecs": 2400,
       "type": "Base",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2026-07-11",
       "name": "7km endurance",
       "distanceM": 7000,
       "type": "Tempo",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2026-07-12",
@@ -234,7 +234,7 @@
         }
       ],
       "type": "Base",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2026-07-14",
@@ -252,7 +252,7 @@
         }
       ],
       "type": "Base",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2026-07-15",
@@ -440,7 +440,7 @@
         }
       ],
       "type": "VO2Max",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2026-07-16",
@@ -458,7 +458,7 @@
         }
       ],
       "type": "Base",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2026-07-17",
@@ -538,7 +538,7 @@
         }
       ],
       "type": "Threshold",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2026-07-18",
@@ -636,14 +636,14 @@
         }
       ],
       "type": "Threshold",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2026-07-19",
       "name": "8km endurance",
       "distanceM": 8000,
       "type": "Base",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2026-07-21",
@@ -723,7 +723,7 @@
         }
       ],
       "type": "Threshold",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2026-07-22",
@@ -741,7 +741,7 @@
         }
       ],
       "type": "Base",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2026-07-23",
@@ -920,7 +920,7 @@
         }
       ],
       "type": "Sprint",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2026-08-14",
@@ -938,7 +938,7 @@
         }
       ],
       "type": "Base",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2026-08-15",
@@ -956,7 +956,7 @@
         }
       ],
       "type": "Base",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2026-08-16",
@@ -974,7 +974,7 @@
         }
       ],
       "type": "Base",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     },
     {
       "date": "2026-08-18",
@@ -1162,7 +1162,7 @@
         }
       ],
       "type": "Anaerobic",
-      "scheduledTime": "19:00"
+      "scheduledTime": "Evening"
     }
   ]
 }

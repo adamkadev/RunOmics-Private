@@ -93,7 +93,7 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
             <div className="mb-4 flex flex-wrap gap-2">
               {workout.scheduledTime && (
                 <span className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-xs font-semibold text-white/70">
-                  {workout.scheduledTime}
+                  {t.plan.timeOfDay[workout.scheduledTime]}
                 </span>
               )}
               {workout.type && typeColor && (

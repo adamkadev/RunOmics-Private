@@ -118,13 +118,17 @@ export interface WorkoutStep {
   paceSecPerKm?: [number, number]
 }
 
+export type ScheduledTimeOfDay = 'Morning' | 'Afternoon' | 'Evening' | 'Night'
+
 export interface PlannedWorkout {
   date: string
   name: string
   type?: ActivityType
   distanceM?: number
   durationSecs?: number
-  scheduledTime?: string
+  /** Coarse time-of-day only (see scripts/sync_workouts.py) - the exact scheduled
+   * minute of a future run is never persisted or served. */
+  scheduledTime?: ScheduledTimeOfDay
   estimatedLoad?: number
   isEstimated?: boolean
   steps?: WorkoutStep[]
