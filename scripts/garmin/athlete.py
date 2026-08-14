@@ -79,8 +79,8 @@ def extract_primary_device(payload: dict[str, Any]) -> dict[str, Any]:
 
     Garmin returns every device ever registered; only the primary training one
     is the source of the numbers we display, so the rest is dropped. The serial
-    number it also carries is deliberately not kept - athlete.json is served
-    publicly and a hardware id buys us nothing.
+    number and Garmin's own numeric deviceId are deliberately not kept -
+    athlete.json is served publicly and a hardware id buys us nothing.
     """
     registered = payload.get("RegisteredDevices") or []
     if not registered:
@@ -93,10 +93,6 @@ def extract_primary_device(payload: dict[str, Any]) -> dict[str, Any]:
     )
 
     info: dict[str, Any] = {}
-
-    device_id = device.get("deviceId")
-    if device_id:
-        info["deviceId"] = device_id
 
     name = device.get("displayName") or device.get("productDisplayName")
     if name:
