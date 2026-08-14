@@ -28,6 +28,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Fetch current private data
+        env:
+          RUNOMICS_DATA_REPO_URL: ${{ secrets.RUNOMICS_DATA_REPO_URL }}
+          RUNOMICS_DATA_REPO_TOKEN: ${{ secrets.RUNOMICS_DATA_REPO_TOKEN }}
+        run: |
+          if [ -n "$RUNOMICS_DATA_REPO_URL" ]; then
+            node scripts/fetch_private_data.mjs public/data
+          else
+            echo "RUNOMICS_DATA_REPO_URL not set - syncing against this repo's own public/data."
+          fi
+
       - name: Restore FIT cache
         uses: actions/cache@v5
         with:
@@ -45,14 +61,6 @@ jobs:
 
       - name: Install Python dependencies
         run: pip install -r scripts/requirements.txt
-
-      # Only used by scripts/push_private_data.mjs, once RUNOMICS_DATA_REPO_URL
-      # is configured (see the "Commit updated data" step below) - harmless to
-      # always set up.
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
 
       - name: Install Cloudflare WARP
         run: |
@@ -90,22 +98,11 @@ jobs:
         if: always()
         run: warp-cli --accept-tos disconnect || true
 
-      # Picks up any run whose conditions lookup failed during the sync itself.
-      # A no-op once every activity has weather, and never worth failing a sync for.
       - name: Backfill missing weather
         if: github.event.inputs.dry_run != 'true'
         continue-on-error: true
         run: python scripts/backfill_weather.py
 
-      # Two destinations, chosen at run time - not two workflows - so this
-      # stays correct whichever side of the RunOmics-data migration a given
-      # run happens to be on:
-      #   RUNOMICS_DATA_REPO_URL unset (today): commit straight to this app
-      #     repo, exactly as before.
-      #   RUNOMICS_DATA_REPO_URL set (after the migration's step 5): push to
-      #     the private RunOmics-data repository instead via
-      #     scripts/push_private_data.mjs, and this app repo receives no data
-      #     commit at all. See that script for how the token is handled.
       - name: Commit updated data
         id: commit
         env:
@@ -204,11 +201,6 @@ jobs:
             fi
           fi
 
-      # Only fires once RUNOMICS_DATA_REPO_URL is configured: pushing to the
-      # data repo doesn't touch this app repo, so Vercel's normal "push to
-      # main redeploys" trigger never fires for a sync anymore. A deploy hook
-      # is the direct replacement - same effect (rebuild, which re-fetches
-      # the data repo via scripts/prepare-data.mjs), no git push involved.
       - name: Trigger Vercel redeploy (private data repo path only)
         if: steps.commit.outputs.used_data_repo == 'true' && steps.commit.outputs.committed == 'true'
         continue-on-error: true
