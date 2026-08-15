@@ -20,14 +20,16 @@ Garmin Connect API
        │
   scripts/sync.py          ← Python pipeline (garth + garmin-fit-sdk)
        │
-  public/data/activities/  ← static data store committed to repo (one JSON file per year)
+  RunOmics-data            ← private repository holding the real dataset
        │
-  Next.js (SSG)            ← reads JSON at build time, no database
+  data/                    ← fetched before dev/build, outside public/
+       │
+  Next.js (SSG + ISR)      ← reads JSON server-side, no database
        │
   Vercel                   ← deploy & host
 ```
 
-All data is stored as one JSON file per year under `public/data/activities/` and read at build time - no database, no API routes. A new Vercel deployment is triggered automatically after each push.
+Activities are stored one JSON file per month under `data/activities/`, fetched from the private `RunOmics-data` repository by `scripts/prepare-data.mjs` before every dev/build. `data/` sits outside `public/` on purpose: nothing in it is reachable over HTTP, only server-side code reads it. A clone with no private data source configured generates a deterministic demo dataset there instead, so `npm install && npm run dev` just works. No database, no real data committed to this repository.
 
 ---
 
@@ -134,7 +136,7 @@ hand-edited JSON files these features read from.
 python scripts/sync.py
 ```
 
-This fetches all your running activities from Garmin Connect, downloads the FIT files, parses them, and writes the per-year files under `public/data/activities/`. On first run this may take several minutes depending on your activity count.
+This fetches all your running activities from Garmin Connect, downloads the FIT files, parses them, and writes the per-month files under `public/data/activities/` - the sync pipeline's own workspace. The next `npm run dev` / `npm run build` moves that into the server-only `data/` directory the app reads. On first run this may take several minutes depending on your activity count.
 
 Options:
 
@@ -157,15 +159,15 @@ Open [http://localhost:3000](http://localhost:3000).
 ## Configuration: goals, PBs, athlete profile {#goals-pbs-athlete-profile}
 
 Annual goals, official personal bests, and your athlete profile (HR zones, threshold
-pace, etc.) are **not** in Firestore - they're hand-edited JSON files committed to the
-repo, read server-side at build time. Editing one takes effect on the next deploy
-(push to `main`, or wait for the daily Garmin sync to push its own commit).
+pace, etc.) are **not** in Firestore - they're hand-edited JSON files in the private
+`RunOmics-data` repository, fetched into `data/` and read server-side. Editing one
+takes effect on the next deploy.
 (Upcoming races are the similar exception: synced from Garmin Connect into
-`public/data/upcoming_races.json` by `scripts/sync_upcoming_races.py` - see that
-file's docstring.)
+`upcoming_races.json` by `scripts/sync_upcoming_races.py` - see that file's
+docstring.)
 
 ```json
-// public/data/goals.json
+// data/goals.json
 {
   "years": [
     {
@@ -185,7 +187,7 @@ file's docstring.)
 `target` is `"mm:ss"` or `"h:mm:ss"` (`null` = no target set).
 
 ```json
-// public/data/pbs.json - official race times (chip time), take priority over
+// data/pbs.json - official race times (chip time), take priority over
 // auto-detected best efforts in the Records section
 {
   "years": [
@@ -204,7 +206,7 @@ Valid `distance` values: `"1K"`, `"5K"`, `"10K"`, `"Half-Marathon"`, `"Marathon"
 `activityId` links the card to the activity detail page (optional).
 
 ```json
-// public/data/athlete.json - training zones used across Analytics and Profile
+// data/athlete.json - training zones used across Analytics and Profile
 {
   "displayName": "Adam",
   "thresholdPowerWatts": null,
@@ -238,9 +240,13 @@ Drop a photo named `{activityId}.jpg` (or `.png`, `.webp`) into `public/events/`
 npm test               # Vitest: usecases, lib helpers, component tests (RTL), a11y smoke (axe-core)
 npm run test:coverage  # same suite with a v8 coverage report (text + lcov)
 npm run lint           # ESLint (next/core-web-vitals + TS)
-npx tsc --noEmit       # typecheck
+npm run typecheck      # tsc --noEmit
 npm run analyze        # production build with @next/bundle-analyzer treemaps
 ```
+
+Each of these populates `data/` first through `npm run prepare:data` (an npm lifecycle
+hook, and a no-op once the directory exists), so a fresh clone can lint, typecheck and
+test straight after `npm ci` with no private-data configuration.
 
 CI (`.github/workflows/ci.yml`) runs lint, typecheck, tests, a production-dependency
 audit (`npm audit --omit=dev --audit-level=high`) and the build on every push/PR.
@@ -253,8 +259,8 @@ The improvement backlog lives in
 Playwright drives a real production build (`next build && next start`). No Firebase
 project or secrets are needed: every page the current specs cover (dashboard,
 activities list → detail, analytics, calendar, records, goals, map, shoes, plan) is
-built from the real, committed `public/data/*.json` files - read-only, no risk of
-touching anything.
+built from `data/*.json` - your real data locally, the generated demo dataset in CI.
+Read-only, no risk of touching anything.
 
 **Running:**
 
@@ -325,16 +331,19 @@ Secrets and variables → Actions - separate from the Vercel env vars above.
 
 ### 4. Sync and deploy
 
-After each sync, commit the updated data file and push:
+The nightly `sync.yml` workflow does this on its own: it hydrates a runner workspace
+from `RunOmics-data`, syncs Garmin, pushes the changed files back to that private
+repository and triggers the Vercel deploy hook. After a manual local sync, push the
+result the same way:
 
 ```bash
+node scripts/fetch_private_data.mjs public/data   # hydrate the sync workspace first
 python scripts/sync.py
-git add public/data/activities/
-git commit -m "sync: $(date +%Y-%m-%d)"
-git push
+node scripts/push_private_data.mjs public/data
 ```
 
-Vercel picks up the new commit and redeploys within ~30 seconds.
+Vercel picks up the redeploy within ~30 seconds. Nothing real is ever committed to
+this repository.
 
 ---
 
