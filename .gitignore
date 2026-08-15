@@ -37,10 +37,11 @@
 # guard against a future `git add .` picking one up by accident.
 /public/events/
 
-# real Garmin-derived data (Phase 2): inert today - this repo still tracks
-# public/data/ itself, and gitignore never untracks an already-tracked file.
-# Only takes effect once that data moves to the private data repository and
-# is deliberately untracked here (`git rm --cached -r public/data`).
+# real Garmin-derived data: lives in the private RunOmics-data repository, fetched
+# into /data/ before every dev/build (scripts/prepare-data.mjs) where only
+# server-side code reads it. /public/data/ is the pre-server-only location, kept
+# only as the sync workspace inside the GitHub Actions runner checkout.
+/data/
 /public/data/
 
 # Firebase service-account key files, if one is ever downloaded locally -

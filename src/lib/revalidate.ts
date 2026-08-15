@@ -1,6 +1,6 @@
 export const PAGE_REVALIDATE_SECONDS = 3600
 
-// Every page backed by public/data. A sync commit redeploys Vercel and would
+// Every page backed by data/. A sync commit redeploys Vercel and would
 // rebuild them anyway, but ISR is what keeps them correct when a sync fails
 // and the day rolls over regardless.
 export const PAGE_PATHS_REQUIRING_REVALIDATE = [

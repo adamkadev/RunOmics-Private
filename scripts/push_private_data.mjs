@@ -1,10 +1,9 @@
 #!/usr/bin/env node
 /**
- * Pushes freshly-synced public/data/ into the private RunOmics-data
- * repository. Used by .github/workflows/sync.yml once RUNOMICS_DATA_REPO_URL
- * is configured - until then, sync.yml keeps committing straight to this
- * app repo as it does today (see that workflow's own comments for the
- * cutover condition).
+ * Pushes a freshly-synced data directory into the private RunOmics-data
+ * repository. Used by .github/workflows/sync.yml, which passes its own
+ * throwaway public/data/ sync workspace inside the runner checkout - that
+ * directory never reaches a deployment, unlike the app's own data/.
  *
  * Same token handling as fetch_private_data.mjs, and for the same reasons:
  * RUNOMICS_DATA_REPO_TOKEN never touches argv, the clone URL, .git/config,
@@ -63,9 +62,8 @@ function countActivities(sourceDataDir) {
   return total
 }
 
-// activities > other metrics > timestamp-only - same three tiers as today's
-// inline commit step, computed from the data repo clone's own diff so this
-// works whether or not public/data is still *also* tracked in the app repo.
+// activities > other metrics > timestamp-only - same three tiers the app repo's
+// own sync commits used, computed from the data repo clone's own diff.
 function classifyChanges(cloneDir) {
   const status = execFileSync('git', ['-C', cloneDir, 'status', '--porcelain'], { stdio: 'pipe' })
     .toString()
@@ -130,7 +128,7 @@ export function pushPrivateData(sourceDataDir) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const sourceDataDir = process.argv[2] ?? path.join(process.cwd(), 'public', 'data')
+  const sourceDataDir = process.argv[2] ?? path.join(process.cwd(), 'data')
   const result = pushPrivateData(sourceDataDir)
   if (!result.pushed) process.exitCode = 0
 }

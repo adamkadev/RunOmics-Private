@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import fs from 'fs'
+import path from 'path'
 
 vi.mock('fs', () => ({
   default: { existsSync: vi.fn(), readFileSync: vi.fn() },
@@ -39,10 +40,10 @@ describe('getLastSyncedAt', () => {
     expect(getLastSyncedAt()).toBeNull()
   })
 
-  it('reads the metadata beside the rest of the synced data', () => {
+  it('reads the metadata from the server-only data directory', () => {
     withFile(JSON.stringify({ lastSyncedAt: '2026-07-20T05:04:00Z' }))
     getLastSyncedAt()
 
-    expect(readFileSync).toHaveBeenCalledWith(expect.stringContaining('public/data/sync_meta.json'), 'utf-8')
+    expect(readFileSync).toHaveBeenCalledWith(path.join(process.cwd(), 'data', 'sync_meta.json'), 'utf-8')
   })
 })

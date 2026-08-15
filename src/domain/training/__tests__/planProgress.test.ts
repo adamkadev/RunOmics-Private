@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { weeksInPlan } from '../planProgress'
 
-// The athlete's real Garmin Coach plan (public/data/training_plan.json), which
+// The athlete's real Garmin Coach plan (data/training_plan.json), which
 // Garmin Connect itself reports as "semaine 5 sur 11" on 22 July 2026.
 const ESCHER = { startDate: '2026-06-27', endDate: '2026-09-05' }
 

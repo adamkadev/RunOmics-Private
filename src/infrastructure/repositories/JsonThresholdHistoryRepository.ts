@@ -1,5 +1,5 @@
 import fs from 'fs'
-import path from 'path'
+import { dataPath } from '../dataPath'
 
 /**
  * One lactate-threshold reading, as written by scripts/garmin/threshold_history.py.
@@ -13,7 +13,7 @@ export interface ThresholdSample {
 }
 
 export function getThresholdSamples(): ThresholdSample[] {
-  const filePath = path.join(process.cwd(), 'public', 'data', 'threshold_history.json')
+  const filePath = dataPath('threshold_history.json')
   if (!fs.existsSync(filePath)) return []
 
   try {

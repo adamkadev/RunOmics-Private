@@ -39,25 +39,30 @@ export async function reverseGeocode(
     const name = extractName(features);
     if (!name) return writeCache(key, name);
 
-    const overrides = await getNameOverrides();
-    return writeCache(key, overrides[name] ?? name);
+    return writeCache(key, await applyOverride(name));
   } catch {
     return null;
   }
 }
 
 // MapTiler sometimes resolves a cluster center to a small commune/street rather than
-// the recognizable city it belongs to. Add an entry to public/data/location-overrides.json
-// when a new location shows up wrong in the map dropdown.
-let overridesPromise: Promise<Record<string, string>> | null = null;
+// the recognizable city it belongs to. The override table is part of the private
+// dataset and stays server-side, hence one lookup per name instead of fetching the
+// mapping. Add an entry to the data repository's location-overrides.json when a new
+// location shows up wrong in the map dropdown.
+const overrides = new Map<string, Promise<string>>();
 
-function getNameOverrides(): Promise<Record<string, string>> {
-  if (!overridesPromise) {
-    overridesPromise = fetch("/data/location-overrides.json")
-      .then((res) => (res.ok ? res.json() : {}))
-      .catch(() => ({}));
-  }
-  return overridesPromise;
+function applyOverride(name: string): Promise<string> {
+  const cached = overrides.get(name);
+  if (cached) return cached;
+
+  const pending = fetch(`/api/location-override?name=${encodeURIComponent(name)}`)
+    .then((res) => (res.ok ? (res.json() as Promise<{ name: string | null }>) : null))
+    .then((json) => json?.name ?? name)
+    .catch(() => name);
+
+  overrides.set(name, pending);
+  return pending;
 }
 
 function readCache(key: string): string | null | undefined {

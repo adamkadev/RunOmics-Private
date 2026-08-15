@@ -40,6 +40,12 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_APP_VERSION: version,
   },
+  // data/ is read from the filesystem at request time (ISR revalidation, the
+  // API routes), but its paths are built at runtime, so nothing links it into
+  // the traced module graph and the server bundle would deploy without it.
+  outputFileTracingIncludes: {
+    "/**": ["./data/**/*"],
+  },
   async headers() {
     return [
       {

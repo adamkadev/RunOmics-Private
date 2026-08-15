@@ -1,5 +1,5 @@
 import fs from 'fs'
-import path from 'path'
+import { dataPath } from '../dataPath'
 
 /**
  * One VO2max sample, as written by scripts/garmin/vo2max_history.py. This is
@@ -22,7 +22,7 @@ export interface Vo2maxSamples {
 type Stored = { months?: Record<string, Vo2maxSample>; days?: Record<string, Vo2maxSample> }
 
 export function getVo2maxSamples(): Vo2maxSamples {
-  const filePath = path.join(process.cwd(), 'public', 'data', 'vo2max_history.json')
+  const filePath = dataPath('vo2max_history.json')
   if (!fs.existsSync(filePath)) return { months: [], days: [] }
 
   try {

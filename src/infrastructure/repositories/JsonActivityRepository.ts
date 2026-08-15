@@ -1,8 +1,9 @@
 import fs from 'fs'
 import path from 'path'
+import { dataPath } from '../dataPath'
 import type { Activity } from '@/domain/activity/types'
 
-const DEFAULT_DIR = path.join(process.cwd(), 'public', 'data', 'activities')
+const DEFAULT_DIR = dataPath('activities')
 
 // The monthly activity files total several MB of JSON; cache the parsed result
 // per server process instead of re-reading/re-parsing on every call.

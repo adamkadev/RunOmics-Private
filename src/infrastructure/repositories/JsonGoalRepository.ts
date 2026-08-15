@@ -1,5 +1,5 @@
 import fs from 'fs'
-import path from 'path'
+import { dataPath } from '../dataPath'
 import type { GoalYear } from '@/application/usecases/GetGoalsData'
 import { parseTimeInput } from '@/lib/formatters'
 
@@ -15,7 +15,7 @@ interface RawGoalYear {
 }
 
 export function getGoalYears(): GoalYear[] {
-  const filePath = path.join(process.cwd(), 'public', 'data', 'goals.json')
+  const filePath = dataPath('goals.json')
   if (!fs.existsSync(filePath)) return []
 
   const raw = fs.readFileSync(filePath, 'utf-8')

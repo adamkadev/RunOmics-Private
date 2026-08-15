@@ -1,5 +1,5 @@
 import fs from 'fs'
-import path from 'path'
+import { dataPath } from '../dataPath'
 
 /** One phase of the athlete's current Garmin Coach plan, as written by scripts/garmin/training_plan.py. */
 export interface TrainingPlanPhaseRaw {
@@ -18,7 +18,7 @@ export interface TrainingPlanRaw {
 
 /** The current Garmin Coach plan, or null when the athlete has none active (or never synced one). */
 export function getTrainingPlan(): TrainingPlanRaw | null {
-  const filePath = path.join(process.cwd(), 'public', 'data', 'training_plan.json')
+  const filePath = dataPath('training_plan.json')
   if (!fs.existsSync(filePath)) return null
 
   try {

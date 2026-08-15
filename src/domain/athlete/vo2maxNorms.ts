@@ -1,4 +1,4 @@
-import norms from '../../../public/data/vo2max_norms.json'
+import norms from '../../../data/vo2max_norms.json'
 
 export type AgeBracket = '20-29' | '30-39' | '40-49' | '50-59' | '60-69' | '70-79'
 

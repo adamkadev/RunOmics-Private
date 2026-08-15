@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import { dataPath } from '../dataPath'
 import type { PlannedWorkout } from '@/domain/activity/types'
 
 // Per-year files, mirroring JsonActivityRepository.ts; cache the parsed result
@@ -12,7 +13,7 @@ export function getAllPlannedWorkouts(dirPath?: string): PlannedWorkout[] {
   const usingDefaultDir = dirPath === undefined
   if (usingDefaultDir && cache) return cache
 
-  const dir = dirPath ?? path.join(process.cwd(), 'public', 'data', 'planned_workouts')
+  const dir = dirPath ?? dataPath('planned_workouts')
   // Guards a fresh checkout before any sync has ever run and written the directory.
   if (!fs.existsSync(dir)) {
     if (usingDefaultDir) cache = []

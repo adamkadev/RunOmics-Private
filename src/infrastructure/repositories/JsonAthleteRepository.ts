@@ -1,5 +1,5 @@
 import fs from 'fs'
-import path from 'path'
+import { dataPath } from '../dataPath'
 
 export interface AthleteProfile {
   lthrBpm?: number
@@ -28,7 +28,7 @@ export interface AthleteProfile {
 }
 
 export function getAthleteProfile(): AthleteProfile {
-  const filePath = path.join(process.cwd(), 'public', 'data', 'athlete.json')
+  const filePath = dataPath('athlete.json')
   if (!fs.existsSync(filePath)) return {}
 
   const raw = JSON.parse(fs.readFileSync(filePath, 'utf-8')) as Record<string, unknown>

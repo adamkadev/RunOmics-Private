@@ -17,7 +17,7 @@
  * output is byte-identical.
  *
  * Usage:
- *   node scripts/generate_demo_data.mjs [output-dir]   # defaults to public/data
+ *   node scripts/generate_demo_data.mjs [output-dir]   # defaults to data/
  */
 import fs from 'node:fs'
 import path from 'node:path'
@@ -56,9 +56,6 @@ function pad(n, width) {
   return String(n).padStart(width, '0')
 }
 
-// ---------------------------------------------------------------------------
-// Dates
-// ---------------------------------------------------------------------------
 function isoDate(d) {
   return d.toISOString().slice(0, 10)
 }
@@ -79,9 +76,6 @@ function isoWeek(d) {
   return target.getUTCFullYear() * 100 + week
 }
 
-// ---------------------------------------------------------------------------
-// Athlete profile
-// ---------------------------------------------------------------------------
 const ATHLETE = {
   displayName: 'Demo Runner',
   age: 32,
@@ -170,9 +164,6 @@ function generateRoute(rng, distanceKm) {
   return points
 }
 
-// ---------------------------------------------------------------------------
-// Sample-array helpers (HR/pace/elevation/cadence "charts")
-// ---------------------------------------------------------------------------
 function smoothSeries(rng, length, base, spread) {
   const out = []
   let prev = base
@@ -184,9 +175,6 @@ function smoothSeries(rng, length, base, spread) {
   return out
 }
 
-// ---------------------------------------------------------------------------
-// Activities
-// ---------------------------------------------------------------------------
 function buildActivities(rng, endDate) {
   const activities = []
   let id = 90000001
@@ -552,9 +540,6 @@ function buildSyncMeta(endDate) {
   return { lastSyncedAt: endDate.toISOString() }
 }
 
-// ---------------------------------------------------------------------------
-// Assemble the full dataset
-// ---------------------------------------------------------------------------
 export function generateDemoDataset({ now = new Date() } = {}) {
   const rng = makeRng(SEED)
   const endDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
@@ -605,9 +590,6 @@ export function generateDemoDataset({ now = new Date() } = {}) {
   return files
 }
 
-// ---------------------------------------------------------------------------
-// Write to disk (used by prepare-data.mjs and the CLI entry below)
-// ---------------------------------------------------------------------------
 export function writeDemoDataset(baseDir, dataset = generateDemoDataset()) {
   for (const [relativePath, value] of Object.entries(dataset)) {
     const fullPath = path.join(baseDir, relativePath)
@@ -639,11 +621,8 @@ const GENERIC_VO2MAX_NORMS = {
   },
 }
 
-// ---------------------------------------------------------------------------
-// CLI entry point: `node scripts/generate_demo_data.mjs [output-dir]`
-// ---------------------------------------------------------------------------
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const outDir = process.argv[2] ?? path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'public', 'data')
+  const outDir = process.argv[2] ?? path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data')
   writeDemoDataset(outDir)
   console.log(`Demo dataset written to ${outDir}`)
 }

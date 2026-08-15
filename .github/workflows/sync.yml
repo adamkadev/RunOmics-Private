@@ -33,6 +33,9 @@ jobs:
         with:
           node-version: 20
 
+      # public/data is this runner's throwaway sync workspace, not the app's
+      # data directory: the checkout is discarded at the end of the job and
+      # never deployed. The app reads data/ (see scripts/prepare-data.mjs).
       - name: Fetch current private data
         env:
           RUNOMICS_DATA_REPO_URL: ${{ secrets.RUNOMICS_DATA_REPO_URL }}

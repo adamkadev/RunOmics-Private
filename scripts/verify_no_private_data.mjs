@@ -52,13 +52,24 @@ function warn(title, detail) {
 const files = trackedFiles()
 
 // --- Structural: directories that must never ship in a public repo -------
-const dataFiles = trackedUnder(files, 'public/data')
-if (dataFiles.length) {
+for (const prefix of ['data', 'public/data']) {
+  const dataFiles = trackedUnder(files, prefix)
+  if (dataFiles.length) {
+    critical(
+      `${prefix}/ is tracked`,
+      `${dataFiles.length} file(s) - real Garmin data belongs in the private data repo, not here. ` +
+        `First hit: ${dataFiles[0]}`
+    )
+  }
+}
+
+// Untracked is not enough here: Next.js serves everything under public/ as a
+// static asset, so a copy left in a deployed tree republishes the dataset.
+if (fs.existsSync('public/data')) {
   critical(
-    'public/data/ is tracked',
-    `${dataFiles.length} file(s) - real Garmin data belongs in the private data repo, not here. ` +
-      `Expected today in the still-private app repo; must be empty before anything built from this ` +
-      `tree is published. First hit: ${dataFiles[0]}`
+    'public/data/ exists on disk',
+    'Everything under public/ is served as a static asset. The app reads data/ - ' +
+      'scripts/prepare-data.mjs moves a leftover public/data/ there on the next dev/build.'
   )
 }
 
@@ -92,7 +103,7 @@ for (const { name, pattern, exclude } of secretChecks) {
 
 // --- .gitignore sanity: the protections this project relies on -----------
 const gitignore = fs.existsSync('.gitignore') ? fs.readFileSync('.gitignore', 'utf-8') : ''
-const expectedPatterns = ['/public/fit/', '/public/data/', '.env*']
+const expectedPatterns = ['/public/fit/', '/public/data/', '/data/', '.env*']
 for (const pattern of expectedPatterns) {
   if (!gitignore.includes(pattern)) warn('.gitignore is missing an expected pattern', pattern)
 }

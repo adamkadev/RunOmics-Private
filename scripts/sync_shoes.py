@@ -51,7 +51,7 @@ def main() -> int:
         return 0
 
     if write_shoes_json(shoes):
-        print("\npublic/data/shoes.json updated - review the diff and commit.")
+        print("\npublic/data/shoes.json updated - review it, then push it with scripts/push_private_data.mjs.")
     else:
         print("\npublic/data/shoes.json already up to date.")
 

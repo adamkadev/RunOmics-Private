@@ -5,7 +5,13 @@ import path from 'path'
 export default defineConfig({
   plugins: [react()],
   resolve: {
-    alias: { '@': path.resolve(__dirname, './src') },
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+      // 'server-only' throws unless it is resolved through a react-server
+      // bundle - which is the point in the app, and useless here: the modules
+      // marked with it are exactly the ones these tests exercise directly.
+      'server-only': path.resolve(__dirname, './node_modules/server-only/empty.js'),
+    },
   },
   test: {
     environment: 'jsdom',

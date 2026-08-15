@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 /**
  * Pulls real Garmin-derived data from the private RunOmics-data repository
- * into public/data/, for the personal deployment (see .env.example). Only
- * runs when RUNOMICS_DATA_REPO_URL is set (scripts/prepare-data.mjs decides
- * that); a failure here must stop the build rather than silently falling
- * back to demo data for what's supposed to be the real personal deployment.
+ * into a target directory - data/ for the personal deployment (see
+ * .env.example), the throwaway public/data/ workspace when the sync workflow
+ * hydrates a runner. Only runs when RUNOMICS_DATA_REPO_URL is set
+ * (scripts/prepare-data.mjs decides that); a failure here must stop the build
+ * rather than silently falling back to demo data for what's supposed to be
+ * the real personal deployment.
  *
  * RUNOMICS_DATA_REPO_TOKEN never touches process argv, the cloned repo's
  * .git/config, or an error message:
@@ -87,7 +89,7 @@ export function fetchPrivateData(targetDir) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const targetDir = process.argv[2] ?? path.join(process.cwd(), 'public', 'data')
+  const targetDir = process.argv[2] ?? path.join(process.cwd(), 'data')
   fetchPrivateData(targetDir)
   console.log(`Private data fetched into ${targetDir}`)
 }

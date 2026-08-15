@@ -1,5 +1,5 @@
 import fs from 'fs'
-import path from 'path'
+import { dataPath } from '../dataPath'
 import type { PbYear } from '@/application/usecases/GetGoalsData'
 import { parseTimeInput } from '@/lib/formatters'
 
@@ -15,7 +15,7 @@ interface RawPbYear {
 }
 
 export function getPbYears(): PbYear[] {
-  const filePath = path.join(process.cwd(), 'public', 'data', 'pbs.json')
+  const filePath = dataPath('pbs.json')
   if (!fs.existsSync(filePath)) return []
 
   const raw = fs.readFileSync(filePath, 'utf-8')

@@ -1,5 +1,5 @@
 import fs from 'fs'
-import path from 'path'
+import { dataPath } from '../dataPath'
 
 /**
  * Garmin's rolling 4-week load split across intensity buckets, as written by
@@ -21,7 +21,7 @@ export interface TrainingLoadBalance {
 }
 
 export function getTrainingLoadBalance(): TrainingLoadBalance | null {
-  const filePath = path.join(process.cwd(), 'public', 'data', 'training_load_balance.json')
+  const filePath = dataPath('training_load_balance.json')
   if (!fs.existsSync(filePath)) return null
 
   try {

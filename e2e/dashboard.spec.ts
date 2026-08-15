@@ -6,7 +6,7 @@ test('dashboard renders the weekly snapshot and recent activities', async ({ pag
   // Greeting + weekly stats grid load without a client-side data fetch (SSG).
   await expect(page.getByRole('heading', { name: /good (morning|afternoon|evening)/i })).toBeVisible()
 
-  // public/data/activities/*.json always has activities (real or demo), so
+  // data/activities/*.json always has activities (real or demo), so
   // there is always at least one recent activity card linking into
   // /activities/{id}.
   const firstActivityLink = page.locator('a[href^="/activities/"]').first()

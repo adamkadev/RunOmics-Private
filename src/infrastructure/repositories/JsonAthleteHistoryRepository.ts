@@ -1,5 +1,5 @@
 import fs from 'fs'
-import path from 'path'
+import { dataPath } from '../dataPath'
 
 /**
  * One snapshot of the athlete's threshold metrics, as written by
@@ -17,7 +17,7 @@ export interface AthleteHistoryEntry {
 type StoredDays = Record<string, Omit<AthleteHistoryEntry, 'date'>>
 
 export function getAthleteHistory(): AthleteHistoryEntry[] {
-  const filePath = path.join(process.cwd(), 'public', 'data', 'athlete_history.json')
+  const filePath = dataPath('athlete_history.json')
   if (!fs.existsSync(filePath)) return []
 
   try {

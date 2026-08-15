@@ -22,7 +22,7 @@ export interface RouteSpec {
 
 // Real IDs pulled from committed data so the detail pages prerender with
 // content instead of a 404:
-//   - activity: public/data/activities/2026.json
+//   - activity: data/activities/<YYYY-MM>.json
 //   - shoe:     src/domain/shoe/types.ts (SHOE_REGISTRY)
 const SAMPLE_ACTIVITY_ID = '23400726979'
 const SAMPLE_SHOE_ID = 'e6aa89fbda0747059f5acbd4dfb5736f'

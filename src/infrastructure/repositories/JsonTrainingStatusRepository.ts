@@ -1,5 +1,5 @@
 import fs from 'fs'
-import path from 'path'
+import { dataPath } from '../dataPath'
 
 /** One day of Garmin's own training status, as written by scripts/garmin/training_status.py. */
 export interface TrainingStatusDay {
@@ -22,7 +22,7 @@ type StoredDays = Record<string, Omit<TrainingStatusDay, 'date'>>
 type StoredFile = { days?: StoredDays }
 
 function readFile(): StoredFile {
-  const filePath = path.join(process.cwd(), 'public', 'data', 'training_status.json')
+  const filePath = dataPath('training_status.json')
   if (!fs.existsSync(filePath)) return {}
 
   try {
