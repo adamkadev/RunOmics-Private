@@ -62,17 +62,14 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   const { close, handleProps, sheetStyle } = useDragToDismiss(onClose)
   const trapRef = useFocusTrap<HTMLDivElement>()
 
-  // Escape key
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') close() }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [close])
 
-  // Body scroll lock
   useScrollLock()
 
-  // Revoke photo object URL on unmount
   useEffect(() => () => {
     if (photoUrlRef.current) URL.revokeObjectURL(photoUrlRef.current)
   }, [])
@@ -94,7 +91,6 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     mapFailed,
   }), [activity, design, effectiveAccent, customAccentHex, shareTheme, photoImage, locationName, streetLabels, mapImage, mapPoints, mapFailed])
 
-  // Redraw preview canvas whenever options change
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return

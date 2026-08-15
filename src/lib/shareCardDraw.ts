@@ -506,14 +506,13 @@ function drawMapCompass(ctx: Ctx, W: number, H: number, r: number, g: number, b:
   const size = 13
   ctx.save()
 
-  // Glass circle background
   ctx.beginPath(); ctx.arc(cx, cy, size + 6, 0, Math.PI * 2)
   ctx.fillStyle = dark ? ink(0.62) : paper(0.72)
   ctx.fill()
   ctx.strokeStyle = dark ? paper(0.2) : ink(0.12)
   ctx.lineWidth = 1; ctx.stroke()
 
-  // North arrow (accent color, filled)
+  // North arrow
   ctx.beginPath()
   ctx.moveTo(cx, cy - size)
   ctx.lineTo(cx - 4.5, cy + 1)
@@ -522,7 +521,7 @@ function drawMapCompass(ctx: Ctx, W: number, H: number, r: number, g: number, b:
   ctx.closePath()
   ctx.fillStyle = accent(r, g, b, 1); ctx.fill()
 
-  // South arrow (muted)
+  // South arrow
   ctx.beginPath()
   ctx.moveTo(cx, cy + size)
   ctx.lineTo(cx + 4.5, cy - 1)
@@ -537,7 +536,6 @@ function drawMapCompass(ctx: Ctx, W: number, H: number, r: number, g: number, b:
   ctx.beginPath(); ctx.moveTo(cx - size, cy); ctx.lineTo(cx - 5, cy); ctx.stroke()
   ctx.beginPath(); ctx.moveTo(cx + size, cy); ctx.lineTo(cx + 5, cy); ctx.stroke()
 
-  // "N" label
   ctx.font = '800 7px Inter,system-ui,sans-serif'
   ctx.fillStyle = dark ? paper(0.88) : ink(0.78)
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
@@ -589,7 +587,6 @@ export function draw_map(
   distanceKm?: number,
   streetLabels?: string[] | null,
 ) {
-  // Background + grid
   ctx.fillStyle = backdrop('map', dark); ctx.fillRect(0, 0, W, H)
   ctx.strokeStyle = dark ? paper(0.055) : ink(0.07); ctx.lineWidth = 0.8
   for (let x = 0; x < W; x += 28) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke() }
@@ -598,12 +595,10 @@ export function draw_map(
   for (let x = 0; x < W; x += 112) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke() }
   for (let y = 0; y < H; y += 112) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke() }
 
-  // Street labels on major grid lines
   if (streetLabels?.length) drawMapStreetLabels(ctx, W, H, dark, streetLabels)
 
   glow(ctx, W, H, W * 0.5, H * 0.52, W * 0.55, r, g, b, dark ? 0.22 : 0.14)
 
-  // Watermark city name (very subtle, behind route)
   if (locationName) {
     const watermarkText = (locationName.split(',')[0] ?? locationName).toUpperCase()
     let fontSize = Math.round(W * 0.19)
@@ -650,25 +645,21 @@ export function draw_map(
   drawRoute(18, dark ? 0.7 : 0.45, 14)
   drawRoute(3.5, dark ? 0.95 : 0.82)
 
-  // Km pills
   if (simplified && distanceKm && distanceKm > 0) {
     getKmMarkers(pts, distanceKm).forEach(({ pt, label }) => drawKmPill(ctx, pt, label, r, g, b, dark))
   }
 
-  // Start dot + "Départ" label
   ctx.beginPath(); ctx.arc(first[0], first[1], 7, 0, Math.PI * 2)
   ctx.fillStyle = SHARE.routeStart; ctx.fill()
   ctx.beginPath(); ctx.arc(first[0], first[1], 7, 0, Math.PI * 2)
   ctx.strokeStyle = paper(0.7); ctx.lineWidth = 2; ctx.stroke()
   drawDepartLabel(ctx, first)
 
-  // End dot
   ctx.beginPath(); ctx.arc(last[0], last[1], 7, 0, Math.PI * 2)
   ctx.fillStyle = finishFill(r, g, b); ctx.fill()
   ctx.beginPath(); ctx.arc(last[0], last[1], 7, 0, Math.PI * 2)
   ctx.strokeStyle = paper(0.7); ctx.lineWidth = 2; ctx.stroke()
 
-  // Compass rose (top of stats card area, bottom right)
   drawMapCompass(ctx, W, H, r, g, b, dark)
 }
 
@@ -683,7 +674,6 @@ export function draw_memory(ctx: Ctx, W: number, H: number, r: number, g: number
     ctx.fillStyle = botScrim; ctx.fillRect(0, H * 0.52, W, H * 0.48)
     return
   }
-  // Full-bleed photo placeholder (warm golden hour gradient)
   const bg = ctx.createLinearGradient(0, 0, 0, H)
   if (dark) {
     memoryStops(bg, SHARE.memoryDark)
@@ -692,10 +682,10 @@ export function draw_memory(ctx: Ctx, W: number, H: number, r: number, g: number
   }
   ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H)
 
-  // Sun glow (upper-right)
+  // Sun glow
   glow(ctx, W, H, W * 0.68, H * 0.22, W * 0.65, r, g, b, dark ? 0.38 : 0.28)
 
-  // Horizon silhouette (lower third)
+  // Horizon silhouette
   ctx.fillStyle = dark ? ink(0.72) : SHARE.memoryHorizonLight
   const hzY = H * 0.62
   const trees = [{ x: W * 0.08, h: 0.12, w: 0.1 }, { x: W * 0.22, h: 0.09, w: 0.08 }, { x: W * 0.48, h: 0.15, w: 0.12 }, { x: W * 0.72, h: 0.11, w: 0.09 }, { x: W * 0.88, h: 0.13, w: 0.11 }]
@@ -706,12 +696,10 @@ export function draw_memory(ctx: Ctx, W: number, H: number, r: number, g: number
     ctx.closePath(); ctx.fill()
   })
 
-  // Subtle grid hint
   ctx.strokeStyle = dark ? paper(0.025) : ink(0.03); ctx.lineWidth = 0.8
   for (let x = 0; x < W; x += 44) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke() }
   for (let y = 0; y < H; y += 44) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke() }
 
-  // Center "Add photo" indicator
   const icW = 72, icH = 58, icX = (W - icW) / 2, icY = H * 0.38 - icH / 2
   ctx.save()
   rrect(ctx, icX - 8, icY - 8, icW + 16, icH + 16, 20)
@@ -725,14 +713,12 @@ export function draw_memory(ctx: Ctx, W: number, H: number, r: number, g: number
   ctx.beginPath(); ctx.arc(icX + icW / 2, icY + icH / 2 + 2, 10, 0, Math.PI * 2); ctx.stroke()
   // Viewfinder bump
   ctx.beginPath(); ctx.moveTo(icX + icW / 2 - 10, icY + 16); ctx.lineTo(icX + icW / 2 - 6, icY + 8); ctx.lineTo(icX + icW / 2 + 6, icY + 8); ctx.lineTo(icX + icW / 2 + 10, icY + 16); ctx.stroke()
-  // Label
   ctx.font = '600 11px Inter,system-ui,sans-serif'
   ctx.fillStyle = dark ? paper(0.65) : paper(0.9)
   ctx.textAlign = 'center'; ctx.textBaseline = 'top'
   ctx.fillText('Ajouter une photo', W / 2, icY + icH + 10)
   ctx.restore()
 
-  // Bottom vignette + specular line (frosted overlay, stays on top of photo)
   const panY = H * 0.65
   ctx.save()
   const vig = ctx.createLinearGradient(0, panY - 60, 0, H)

@@ -39,7 +39,6 @@ export function buildMetrics(year: number, activities: ReturnType<typeof getAllA
   const durationSeconds = activities.reduce((s, a) => s + a.durationSeconds, 0)
   const elevationM = activities.reduce((s, a) => s + (a.elevationGain ?? 0), 0)
 
-  // Weeks with at least one activity
   const weeks = new Set(activities.map((a) => a.week)).size
   const avgKmPerWeek = weeks > 0 ? round(distanceKm / weeks) : 0
 

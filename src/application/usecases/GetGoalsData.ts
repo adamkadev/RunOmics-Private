@@ -113,8 +113,6 @@ export interface GoalsPageData {
   history: YearOutcome[]
 }
 
-// Uses last 8 calendar weeks (cross-year safe) for a stable rate.
-// Requires >= 4 weeks elapsed in the current year before projecting.
 export function computeProjection(
   activities: Activity[],
   year: number,
@@ -191,10 +189,6 @@ export function computeMonthlyGoals(activities: Activity[], year: number, goals:
   })
 }
 
-// Predicted time comes straight from Garmin's own race predictor (GetGarminRacePredictions),
-// matched to the race's distance via the same DISTANCE_KEY map GetRecords uses for PBs,
-// then capped at the PR already set at that exact distance (never predict a race slower
-// than a result the athlete has already run).
 export function computeNextRaceSpotlight(
   upcomingRaces: UpcomingRace[],
   predictions: GoalRacePrediction[],
@@ -230,9 +224,6 @@ export function computeNextRaceSpotlight(
   }
 }
 
-// A year is only included in the history if it has goals set.
-// Annual distance is achieved when total km reaches the target; race targets
-// are achieved when a PB exists at or under the target time.
 export function computeYearOutcome(yearData: YearData): YearOutcome | null {
   const { year, goals, totalDistanceKm, pbs } = yearData
   if (!goals) return null
@@ -260,7 +251,6 @@ export interface WeeklyGoal {
   actualKm: number
 }
 
-// Prorates the annual goal to a week the same way computeMonthlyGoals prorates it to a month.
 export function computeWeeklyGoal(activities: Activity[], year: number, goals: GoalYear, now = new Date()): WeeklyGoal | null {
   if (goals.annualDistanceKm <= 0) return null
 

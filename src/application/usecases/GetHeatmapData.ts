@@ -23,7 +23,6 @@ export function getHeatmapData(): HeatmapDay[] {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
-  // Start 364 days ago, aligned to Monday
   const from = new Date(today)
   from.setDate(from.getDate() - 364)
   const dayOfWeek = from.getDay() // 0=Sun … 6=Sat

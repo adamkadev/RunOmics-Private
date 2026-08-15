@@ -7,8 +7,6 @@ const act = (date: string, km: number): Activity => ({ date, distanceKm: km }) a
 
 const goal = (annualDistanceKm: number): GoalYear => ({ year: 2024, annualDistanceKm, targets: [] })
 
-// ---------- computeProjection ----------
-
 describe('computeProjection', () => {
   beforeEach(() => {
     vi.setSystemTime(new Date('2024-07-01T00:00:00'))
@@ -66,8 +64,6 @@ describe('computeProjection', () => {
     expect(result?.weeklyRate).toBe(0)
   })
 })
-
-// ---------- computeYearOutcome ----------
 
 const yearData = (overrides: Partial<YearData> = {}): YearData => ({
   year: 2024,
@@ -139,8 +135,6 @@ describe('computeYearOutcome', () => {
     expect(outcome?.targets[0]).toEqual({ distance: '10K', targetSeconds: 2400, pbSeconds: null, achieved: null })
   })
 })
-
-// ---------- computeNextRaceSpotlight ----------
 
 const race = (overrides: Partial<UpcomingRace> = {}): UpcomingRace => ({
   date: '2024-09-05',

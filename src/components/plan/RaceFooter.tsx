@@ -7,8 +7,6 @@ function daysBetween(from: string, to: string): number {
   return Math.round((new Date(to + 'T00:00:00').getTime() - new Date(from + 'T00:00:00').getTime()) / 86_400_000)
 }
 
-// The race the whole block builds toward - name, distance and countdown, plus
-// how far through the plan we are.
 export function RaceFooter({
   race,
   planSpan,

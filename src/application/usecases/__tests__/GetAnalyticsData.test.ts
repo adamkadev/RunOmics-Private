@@ -28,8 +28,6 @@ const act = (overrides: Partial<Activity> = {}): Activity =>
 const zone = (zoneNum: number, seconds: number): HrZone =>
   ({ zone: zoneNum, seconds, percent: 0, minBpm: 0, maxBpm: null }) as HrZone
 
-// ---------- weightedAvg ----------
-
 describe('weightedAvg', () => {
   it('returns null when no value is present', () => {
     const acts = [act({ paceSecPerKm: null, distanceKm: 10 })]
@@ -53,8 +51,6 @@ describe('weightedAvg', () => {
   })
 })
 
-// ---------- avgField ----------
-
 describe('avgField', () => {
   it('returns null when no activity has the field set', () => {
     expect(avgField([act({ rpe: null })], (a) => a.rpe)).toBeNull()
@@ -65,8 +61,6 @@ describe('avgField', () => {
     expect(avgField(acts, (a) => a.rpe)).toBe(5)
   })
 })
-
-// ---------- easyHardShare ----------
 
 describe('easyHardShare', () => {
   it('returns nulls when there is no zone data', () => {
@@ -84,8 +78,6 @@ describe('easyHardShare', () => {
     expect(easyHardShare(acts)).toEqual({ easyPct: 50, hardPct: 50 })
   })
 })
-
-// ---------- efficiencyFactor ----------
 
 describe('efficiencyFactor', () => {
   it('returns null when no activity qualifies (needs pace, HR and >= 3km)', () => {
@@ -107,8 +99,6 @@ describe('efficiencyFactor', () => {
   })
 })
 
-// ---------- adjustedEfficiencyFactor ----------
-
 describe('adjustedEfficiencyFactor', () => {
   const weather = (apparentTempC: number) =>
     ({ tempC: apparentTempC, apparentTempC, humidityPct: 60, windKph: 5, windDirDeg: 180, precipitationMm: 0, code: 0 })
@@ -129,8 +119,6 @@ describe('adjustedEfficiencyFactor', () => {
   })
 })
 
-// ---------- zoneDistribution ----------
-
 describe('zoneDistribution', () => {
   it('returns an empty array when there is no zone data', () => {
     expect(zoneDistribution([act({ hrZones: [] })])).toEqual([])
@@ -144,8 +132,6 @@ describe('zoneDistribution', () => {
     expect(result[1]).toEqual({ zone: 2, seconds: 300, percent: 30 })
   })
 })
-
-// ---------- distanceDistribution ----------
 
 describe('distanceDistribution', () => {
   it('buckets activities into distance brackets and drops empty brackets', () => {
@@ -164,8 +150,6 @@ describe('distanceDistribution', () => {
     expect(result.find((b) => b.label === '42+ km')?.count).toBe(1)
   })
 })
-
-// ---------- buildWeeklyTrends ----------
 
 describe('buildWeeklyTrends', () => {
   it('groups activities into ISO weeks keyed on the Monday, oldest first', () => {
@@ -235,8 +219,6 @@ describe('buildWeeklyTrends', () => {
     expect(buildWeeklyTrends([])).toEqual([])
   })
 })
-
-// ---------- computeTotals ----------
 
 describe('computeTotals', () => {
   it('sums distance, duration, elevation and calories', () => {

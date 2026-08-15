@@ -46,7 +46,6 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
 
 export function MonthlyComparisonChart({ currentYear, currentData, prevYear, prevData }: Props) {
   const accentColor = useAccentUiColor()
-  // Merge into a unified 12-month array by month index
   const merged = MONTH_LABELS.map((label, i) => {
     const monthStr = String(i + 1).padStart(2, '0')
     const curr = currentData.find((d) => d.month.endsWith(`-${monthStr}`))

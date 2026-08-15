@@ -47,8 +47,7 @@ export function renderShareCard(canvas: HTMLCanvasElement, options: RenderOption
 
   const [r, g, b] = customAccentHex ? rgbTriplet(customAccentHex) : ACCENT_RGB[accent][dark ? 'dark' : 'light']
 
-  // For the map design, only pass the real route when showMap is on. The route
-  // design is the trace itself, so showMap never applies to it.
+  // The route design is the trace itself, so showMap never applies to it.
   const routeForTheme = design === 'map' ? (showMap ? gpsRoute : null) : gpsRoute
   drawTheme(ctx, design, W, H, r, g, b, dark, {
     gpsRoute: routeForTheme,
@@ -61,7 +60,6 @@ export function renderShareCard(canvas: HTMLCanvasElement, options: RenderOption
     mapFailed,
   })
 
-  // For the memory design, overlay the GPS trace on top when showMap is on.
   if (showMap && design === 'memory' && gpsRoute && gpsRoute.length > 1) {
     drawRouteOverlay(ctx, W, H, gpsRoute, r, g, b, dark)
   }

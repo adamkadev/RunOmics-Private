@@ -458,7 +458,6 @@ export function WeekView({
         />
       </div>
 
-      {/* Selected day panel */}
       <div className="space-y-3 px-1">
         {/* Left-aligned section eyebrow, "Today · Wed, Jul 22" - the mockup
             leads with what the day is, then dates it. */}

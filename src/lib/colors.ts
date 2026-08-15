@@ -21,11 +21,9 @@ export const CHART_COLORS = {
   // metric: the map's route/start marker and the pace ramp's easy end.
   brand:     c.roEmerald,
 
-  // Training load
   ctl:       c.blue500,   // fitness (chronic)
   atl:       c.orange500, // fatigue (acute)
 
-  // Activity metrics
   hr:            c.red500,
   hrEasy:        c.red300,
   pace:          c.blue500,
@@ -33,13 +31,11 @@ export const CHART_COLORS = {
   cadence:       c.sky500,
   efficiency:    c.violet500,
 
-  // Running form
   groundContact:       c.amber500,
   verticalOscillation: c.rose500,
   verticalRatio:       c.fuchsia500, // oscillation normalised by stride, so kept adjacent to rose
   strideLength:        c.teal500,
 
-  // Easy / Hard split
   easy:      c.emerald400,
   hard:      c.orange400,
 
@@ -328,7 +324,6 @@ export function raceDistanceTint(distance: string): { overlay: string; text: str
 
 // ── Temperature ─────────────────────────────────────────────────────────────
 
-// Cold -> hot icon color scale for temperature readings
 export function temperatureIconColor(celsius: number): string {
   if (celsius < 5)  return 'text-blue-500 dark:text-blue-400'
   if (celsius < 12) return 'text-cyan-500 dark:text-cyan-400'

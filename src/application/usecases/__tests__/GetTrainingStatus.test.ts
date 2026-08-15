@@ -2,8 +2,6 @@ import { describe, it, expect } from 'vitest'
 import { acwr, loadTrend, classify, riskFromGarmin } from '../GetTrainingStatus'
 import type { Activity } from '@/domain/activity/types'
 
-// ---------- helpers ----------
-
 const REF = new Date('2024-06-15T00:00:00')
 const DAY_MS = 86_400_000
 
@@ -14,8 +12,6 @@ function daysAgo(n: number): string {
 
 const act = (date: string, km: number): Activity =>
   ({ date, distanceKm: km }) as Activity
-
-// ---------- acwr ----------
 
 describe('acwr', () => {
   it('returns null when chronic load is too low (< 5 km/week)', () => {
@@ -68,8 +64,6 @@ describe('acwr', () => {
   })
 })
 
-// ---------- loadTrend ----------
-
 describe('loadTrend', () => {
   it('building when ctlDelta > 1.5', () => {
     expect(loadTrend(2, 0)).toBe('building')
@@ -96,8 +90,6 @@ describe('loadTrend', () => {
     expect(loadTrend(-1, -5)).toBe('maintaining')
   })
 })
-
-// ---------- classify ----------
 
 describe('classify', () => {
   it('overreaching/high when tsb < -30', () => {
@@ -141,8 +133,6 @@ describe('classify', () => {
     expect(classify(-5, 0, 1.0)).toEqual({ status: 'productive', risk: 'low' })
   })
 })
-
-// ---------- riskFromGarmin ----------
 
 describe('riskFromGarmin', () => {
   it('high when the watch reports overreaching', () => {

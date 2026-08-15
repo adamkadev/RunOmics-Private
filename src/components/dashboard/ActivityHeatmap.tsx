@@ -59,7 +59,6 @@ export function ActivityHeatmap({ days }: Props) {
   const gap = gapFor(cellSize)
   const themeVersion = useThemeVersion()
 
-  // Group into weeks (Mon-Sun columns)
   const weeks: HeatmapDay[][] = []
   for (let i = 0; i < days.length; i += 7) {
     const week = days.slice(i, i + 7)

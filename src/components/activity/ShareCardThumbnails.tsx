@@ -11,7 +11,6 @@ import { withAlpha } from '@/lib/palette'
 import { t } from '@/i18n'
 
 // Thumbnails render at 390x390 (square crop of the design) and display at THUMB_SIZE via CSS.
-// Each canvas re-renders whenever accent, theme, or design changes.
 const THUMB_CANVAS = 390
 export const THUMB_SIZE = 104
 
@@ -30,7 +29,6 @@ interface ThemeCardProps {
 
 export function ThemeCard({ design, accent, theme, selected, accentHex, onClick, gpsRoute, photoUrl, customRgb }: ThemeCardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  // Memory shows the chosen photo once picked, otherwise the camera placeholder canvas.
   const showPhoto = design === 'memory' && !!photoUrl
   // The square thumbnail gets its own render rather than a crop of the tall
   // one: the fit is per aspect ratio, and so is the projected trace.

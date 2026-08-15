@@ -50,7 +50,6 @@ export default async function AnalyticsPage() {
     })
   )
 
-  // Insight-card context, all read from already-computed series:
   const athlete = getAthleteProfile()
   const latestVO2max = getLatestVO2max()
   const topPercent =

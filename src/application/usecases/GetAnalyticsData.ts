@@ -381,7 +381,6 @@ function buildEfficiencyDaily(activities: Activity[], now: Date): DailyEfficienc
   const easy = activities.filter((a) => EASY_TYPES_SET.has(a.type))
   const nowMs = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
 
-  // Pre-compute timestamps once
   const stamped = easy.map((a) => ({ a, ms: new Date(a.date + 'T00:00:00').getTime() }))
 
   const points = Array.from({ length: ROLLING_DAYS }, (_, i) => {

@@ -14,8 +14,6 @@ const act = (overrides: Partial<Activity> = {}): Activity =>
     ...overrides,
   }) as Activity
 
-// ---------- avgWeightedPace ----------
-
 describe('avgWeightedPace', () => {
   it('returns null when no activity has a pace', () => {
     expect(avgWeightedPace([act({ paceSecPerKm: null, distanceKm: 10 })])).toBeNull()
@@ -36,8 +34,6 @@ describe('avgWeightedPace', () => {
   })
 })
 
-// ---------- avgWeightedHR ----------
-
 describe('avgWeightedHR', () => {
   it('returns null when no activity has HR', () => {
     expect(avgWeightedHR([act({ avgHeartRate: null, durationSeconds: 1800 })])).toBeNull()
@@ -53,8 +49,6 @@ describe('avgWeightedHR', () => {
     expect(avgWeightedHR(acts)).toBe(147)
   })
 })
-
-// ---------- buildMetrics ----------
 
 describe('buildMetrics', () => {
   it('sums distance, duration, elevation and counts sessions', () => {
@@ -91,8 +85,6 @@ describe('buildMetrics', () => {
     expect(buildMetrics(2024, []).avgHeartRate).toBeNull()
   })
 })
-
-// ---------- getYearComparison ----------
 
 vi.mock('@/infrastructure/repositories/JsonActivityRepository', () => ({
   getAllActivities: vi.fn(),

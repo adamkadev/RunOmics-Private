@@ -88,7 +88,6 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
             </div>
           </div>
 
-          {/* Stats chips: time | type | duration | distance */}
           {(workout.scheduledTime || workout.type || durationLabel || distanceKm) && (
             <div className="mb-4 flex flex-wrap gap-2">
               {workout.scheduledTime && (

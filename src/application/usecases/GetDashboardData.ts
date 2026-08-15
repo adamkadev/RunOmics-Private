@@ -61,7 +61,7 @@ export function computeStreaks(activities: Activity[]): { current: number; longe
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
-  // Current streak - count back from today, or from yesterday if today is rest
+  // A rest day today does not break the streak: fall back to counting from yesterday.
   let current = 0
   const cursor = new Date(today)
   while (dateSet.has(fmt(cursor))) {
@@ -76,7 +76,6 @@ export function computeStreaks(activities: Activity[]): { current: number; longe
     }
   }
 
-  // Longest streak over all history
   const sortedDays = Array.from(dateSet).sort()
   let longest = 0
   let run = 0
