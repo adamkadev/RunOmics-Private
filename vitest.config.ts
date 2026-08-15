@@ -21,7 +21,7 @@ export default defineConfig({
     setupFiles: ['./vitest.setup.ts'],
     // e2e and screenshots specs are Playwright tests (own runner, own `test`/`expect`) -
     // Vitest's default include pattern would otherwise pick them up too.
-    exclude: ['**/node_modules/**', '**/dist/**', 'e2e/**', 'screenshots/**'],
+    exclude: ['**/node_modules/**', '**/dist/**', 'e2e/**', 'screenshots/**', '.claude/**',],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],

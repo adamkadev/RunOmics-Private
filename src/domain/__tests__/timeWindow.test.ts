@@ -135,12 +135,10 @@ describe('pickForRange', () => {
 describe('monthStartTicks', () => {
   // Consecutive Mondays, which is what the weekly volume chart plots.
   const mondays = (count: number, from = '2026-01-05') => {
-    const start = new Date(from + 'T00:00:00')
-    return Array.from({ length: count }, (_, i) => {
-      const d = new Date(start)
-      d.setDate(d.getDate() + i * 7)
-      return { date: d.toISOString().slice(0, 10) }
-    })
+    const start = Date.parse(from + 'T00:00:00Z')
+    return Array.from({ length: count }, (_, i) => ({
+      date: new Date(start + i * 7 * 86_400_000).toISOString().slice(0, 10),
+    }))
   }
 
   it('marks the first point of each month, not every nth point', () => {
