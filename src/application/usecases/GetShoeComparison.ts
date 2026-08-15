@@ -1,5 +1,5 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
-import { SHOE_REGISTRY } from '@/domain/shoe/types'
+import { getShoeRegistry } from '@/infrastructure/repositories/JsonShoeRepository'
 import type { Activity } from '@/domain/activity/types'
 import { round } from '@/lib/math'
 
@@ -33,7 +33,7 @@ function mean(values: (number | null)[]): number | null {
 }
 
 function buildRow(gearId: string, runs: Activity[]): ShoeComparisonRow | null {
-  const info = SHOE_REGISTRY[gearId]
+  const info = getShoeRegistry()[gearId]
   if (!info || runs.length < MIN_SESSIONS) return null
 
   const cadence = mean(runs.map((a) => a.cadenceSpm))

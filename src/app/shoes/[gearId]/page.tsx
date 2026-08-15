@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getShoeDetail } from '@/application/usecases/GetShoeDetail'
 import { getShoeVerdictInsight } from '@/application/usecases/GetShoeVerdictInsight'
-import { SHOE_REGISTRY } from '@/domain/shoe/types'
+import { getShoeRegistry } from '@/infrastructure/repositories/JsonShoeRepository'
 import { wearOutlook, type WearStatus } from '@/domain/shoe/wearStatus'
 import { ActivityListCard } from '@/components/activities/ActivityListCard'
 import { BrandIcon } from '@/components/shoes/BrandIcon'
@@ -51,7 +51,7 @@ export async function generateMetadata({
 }
 
 export async function generateStaticParams() {
-  return Object.keys(SHOE_REGISTRY).map((gearId) => ({ gearId }))
+  return Object.keys(getShoeRegistry()).map((gearId) => ({ gearId }))
 }
 
 export default async function ShoeDetailPage({

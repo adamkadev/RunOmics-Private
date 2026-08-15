@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { Activity } from '@/domain/activity/types'
 
-vi.mock('@/domain/shoe/types', () => ({
-  SHOE_REGISTRY: {
+vi.mock('@/infrastructure/repositories/JsonShoeRepository', () => ({
+  getShoeRegistry: () => ({
     daily: { name: 'Pegasus', brand: 'Nike', maxKm: 800, alertThresholdKm: 640, retired: false, dotColor: '#111' },
     tempo: { name: 'Endorphin', brand: 'Saucony', maxKm: 600, alertThresholdKm: 480, retired: false, dotColor: '#222' },
     old: { name: 'Clifton', brand: 'Hoka', maxKm: 700, alertThresholdKm: 560, retired: true, dotColor: '#333' },
-  },
+  }),
 }))
 
 const { getAllActivities } = vi.hoisted(() => ({ getAllActivities: vi.fn() }))

@@ -1,5 +1,5 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
-import { SHOE_REGISTRY } from '@/domain/shoe/types'
+import { getShoeRegistry } from '@/infrastructure/repositories/JsonShoeRepository'
 import { round } from '@/lib/math'
 
 export interface ShoeStats {
@@ -30,7 +30,7 @@ export function getShoeStats(): ShoeStats[] {
     if (!lastUsedByGear.has(a.gearId)) lastUsedByGear.set(a.gearId, a.date)
   }
 
-  return Object.entries(SHOE_REGISTRY)
+  return Object.entries(getShoeRegistry())
     .map(([gearId, info]) => {
       const totalKm = round(byGear.get(gearId) ?? 0, 1)
       return {

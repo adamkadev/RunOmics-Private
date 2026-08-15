@@ -5,6 +5,7 @@ import type { Activity } from '@/domain/activity/types'
 import { aerobicDecoupling } from '@/domain/activity/decoupling'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import type { HrBounds } from '@/domain/training/trimp'
+import type { ShoeTag } from '@/domain/shoe/types'
 import { ActivityMapClient } from './ActivityMapClient'
 import { NoRouteMap } from './ActivityMap'
 import { RunVerdict } from './RunVerdict'
@@ -30,6 +31,7 @@ interface Props {
   hrBounds?: HrBounds
   qualifiedEfforts?: QualifiedEffort[]
   aiVerdict: Insight | null
+  shoe: ShoeTag | null
 }
 
 type TabId = 'overview' | 'splits' | 'charts' | 'dynamics'
@@ -68,7 +70,7 @@ function buildPrimaryStats(activity: Activity): Metric[] {
 }
 
 
-export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict }: Props) {
+export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, shoe }: Props) {
   const [tab, setTab] = useState<TabId>('overview')
   const stats = buildPrimaryStats(activity)
   const hasSecondaryCharts = !!(activity.elevationProfile || activity.paceSamples || activity.cadenceSamples)
@@ -97,7 +99,7 @@ export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict }: 
             paceSamples={activity.paceSamples}
             weather={activity.weather}
             activityType={activity.type}
-            gearId={activity.gearId}
+            shoe={shoe}
             className="h-full w-full"
           />
         ) : (

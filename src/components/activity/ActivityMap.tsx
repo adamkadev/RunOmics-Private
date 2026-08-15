@@ -9,6 +9,7 @@ import { maptilerStyleUrl } from '@/lib/maptiler'
 import { CHART_COLORS, MAP_COLORS, PACE_ROUTE_COLORS } from '@/lib/colors'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import type { ActivityType, ActivityWeather } from '@/domain/activity/types'
+import type { ShoeTag } from '@/domain/shoe/types'
 import { ShoePairTag } from '@/components/activities/ShoePairTag'
 import { WeatherChips } from './WeatherChips'
 import { t } from '@/i18n'
@@ -21,7 +22,7 @@ interface Props {
   /** Rendered as a colored badge next to the conditions chips, saving a header row. */
   activityType?: ActivityType | null
   /** Rendered as a pill in the map's bottom-left, keeping activity metadata off the header. */
-  gearId?: string | null
+  shoe?: ShoeTag | null
   className?: string
 }
 
@@ -59,7 +60,7 @@ function mkMarker(bg: string, border = 'white', size = 13) {
   return el
 }
 
-export default function ActivityMap({ route, paceSamples, hoverFraction, weather, activityType, gearId, className }: Props) {
+export default function ActivityMap({ route, paceSamples, hoverFraction, weather, activityType, shoe, className }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const hasToken = !!process.env.NEXT_PUBLIC_MAPTILER_TOKEN
   const mapRef = useRef<MapLibreMap | null>(null)
@@ -71,7 +72,6 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
 
   const toggleFullscreen = useCallback(() => setIsFullscreen(v => !v), [])
 
-  // Escape to exit fullscreen
   useEffect(() => {
     if (!isFullscreen) return
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setIsFullscreen(false) }
@@ -207,7 +207,6 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
     // trace - no stale-size zoom, and it works even inside a transformed ancestor.
   }, [route, paceSamples, isFullscreen])
 
-  // Sync hover marker with chart scrubbing
   useEffect(() => {
     const map = mapRef.current
     const mgl = mglRef.current
@@ -278,14 +277,14 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
         {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
       </button>
 
-      {gearId && (
+      {shoe && (
         <div
           className={cn(
             'pointer-events-none absolute left-2 z-10',
             isFullscreen ? 'bottom-[max(env(safe-area-inset-bottom),8px)]' : 'bottom-2'
           )}
         >
-          <ShoePairTag gearId={gearId} />
+          <ShoePairTag shoe={shoe} />
         </div>
       )}
 

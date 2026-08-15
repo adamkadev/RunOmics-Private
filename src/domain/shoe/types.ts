@@ -1,5 +1,4 @@
 import { HUE } from '@/lib/palette'
-import data from '../../../public/data/shoes.json'
 
 export interface ShoeInfo {
   name: string
@@ -10,7 +9,8 @@ export interface ShoeInfo {
   dotColor: string
 }
 
-interface ShoeRecord {
+/** One entry of data/shoes.json, as written by scripts/garmin/gear.py. */
+export interface ShoeRecord {
   gearId: string
   brand: string
   model: string
@@ -19,9 +19,15 @@ interface ShoeRecord {
   firstUseDate: string | null
 }
 
+/** All a client component is ever given about a pair: what to draw, nothing else. */
+export interface ShoeTag {
+  name: string
+  dotColor: string
+}
+
 const DOT_PALETTE = [HUE.sky500, HUE.roOrange, HUE.roViolet, HUE.roAmber, HUE.roPink, HUE.roBlue, HUE.roRust, HUE.roSage]
 
-function buildRegistry(records: ShoeRecord[]): Record<string, ShoeInfo> {
+export function buildShoeRegistry(records: ShoeRecord[]): Record<string, ShoeInfo> {
   const registry: Record<string, ShoeInfo> = {}
   records.forEach((r, i) => {
     registry[r.gearId] = {
@@ -35,5 +41,3 @@ function buildRegistry(records: ShoeRecord[]): Record<string, ShoeInfo> {
   })
   return registry
 }
-
-export const SHOE_REGISTRY: Record<string, ShoeInfo> = buildRegistry((data as { shoes: ShoeRecord[] }).shoes)

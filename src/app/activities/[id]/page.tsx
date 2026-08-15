@@ -4,6 +4,7 @@ import { BackButton } from '@/components/ui/BackButton'
 import { getActivities } from '@/application/usecases/GetActivities'
 import { getRecords, getQualifiedEffortsByActivityId } from '@/application/usecases/GetRecords'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
+import { getShoeRegistry } from '@/infrastructure/repositories/JsonShoeRepository'
 import type { HrBounds } from '@/domain/training/trimp'
 import { ActivityDetailClient } from '@/components/activity/ActivityDetailClient'
 import { ActivityNav } from '@/components/activity/ActivityNav'
@@ -62,6 +63,9 @@ export default async function ActivityDetailPage({
   const qualifiedEfforts = getQualifiedEffortsByActivityId(records)[id] ?? []
   const similarRuns = getSimilarRuns(id)
   const aiVerdict = await getRunVerdictInsight(activity)
+  const info = activity.gearId ? getShoeRegistry()[activity.gearId] : undefined
+  const shoe = info ? { name: info.name, dotColor: info.dotColor } : null
+
   const athlete = getAthleteProfile()
   const hrBounds: HrBounds | undefined =
     athlete.maxHrBpm && athlete.restingHrBpm
@@ -99,6 +103,7 @@ export default async function ActivityDetailPage({
         hrBounds={hrBounds}
         qualifiedEfforts={qualifiedEfforts}
         aiVerdict={aiVerdict}
+        shoe={shoe}
       />
 
       <ActivityNav prev={prevActivity} next={nextActivity} />

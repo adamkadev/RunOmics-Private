@@ -1,5 +1,5 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
-import { SHOE_REGISTRY } from '@/domain/shoe/types'
+import { getShoeRegistry } from '@/infrastructure/repositories/JsonShoeRepository'
 import type { Activity } from '@/domain/activity/types'
 import { round } from '@/lib/math'
 
@@ -18,7 +18,7 @@ export interface ShoeDetail {
 }
 
 export function getShoeDetail(gearId: string): ShoeDetail | null {
-  const info = SHOE_REGISTRY[gearId]
+  const info = getShoeRegistry()[gearId]
   if (!info) return null
 
   const activities = getAllActivities()

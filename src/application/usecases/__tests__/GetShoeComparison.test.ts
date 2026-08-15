@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from 'vitest'
 import type { Activity } from '@/domain/activity/types'
 
-vi.mock('@/domain/shoe/types', () => ({
-  SHOE_REGISTRY: {
+vi.mock('@/infrastructure/repositories/JsonShoeRepository', () => ({
+  getShoeRegistry: () => ({
     daily: { name: 'Daily', brand: 'Nike', maxKm: 1000, alertThresholdKm: 800, retired: false, dotColor: '#111' },
     race: { name: 'Race', brand: 'Adidas', maxKm: 800, alertThresholdKm: 640, retired: true, dotColor: '#222' },
-  },
+  }),
 }))
 
 const { getAllActivities } = vi.hoisted(() => ({ getAllActivities: vi.fn() }))
