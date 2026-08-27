@@ -20,7 +20,7 @@ on:
       profile:
         description: "Which deployment to sync"
         type: choice
-        options: [all, adam, wife]
+        options: [all, adam, lamiaa]
         default: all
 
 jobs:
@@ -37,7 +37,7 @@ jobs:
           REQUESTED: ${{ inputs.profile }}
         run: |
           if [ -z "$REQUESTED" ] || [ "$REQUESTED" = "all" ]; then
-            echo 'matrix=["adam","wife"]' >> "$GITHUB_OUTPUT"
+            echo 'matrix=["adam","lamiaa"]' >> "$GITHUB_OUTPUT"
           else
             echo "matrix=[\"$REQUESTED\"]" >> "$GITHUB_OUTPUT"
           fi

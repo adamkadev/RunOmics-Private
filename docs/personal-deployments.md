@@ -17,7 +17,7 @@ between two athletes already lives outside the repository.
 | Firestore   | -                             | a Firebase project                            |
 | Automation  | the workflows in `.github/`   | a GitHub Environment holding that athlete's secrets |
 
-Each athlete is a **profile**: a name (`adam`, `wife`) that is simultaneously the
+Each athlete is a **profile**: a name (`adam`, `lamiaa`) that is simultaneously the
 GitHub Environment name and the matrix entry in the scheduled workflows.
 
 ---
@@ -44,9 +44,10 @@ Four of these five steps happen in a browser. Only step 5 touches the repository
 
 ### 1. The data repository
 
-Create an empty **private** repository, e.g. `runomics-data-wife`. Nothing is
-committed by hand: `scripts/sync.py` fills it on the first run, and
-`scripts/prepare-data.mjs` fetches it back at every build.
+Create an empty **private** repository, one per athlete - `runomics-data-wife`
+holds Lamiaa's. The profile name and the repository name need not match; the URL
+is a secret either way. Nothing is committed by hand: `scripts/sync.py` fills it
+on the first run, and `scripts/prepare-data.mjs` fetches it back at every build.
 
 Mint a fine-grained GitHub PAT scoped to *only* that repository, with
 **Contents: Read and write**. Set an expiration and diarise the rotation.
@@ -111,7 +112,7 @@ workflow calls it once new data has been pushed.
 ### 5. The GitHub Environment
 
 Under **Settings → Environments**, create an environment named after the profile
-(`wife`) and add these secrets to it:
+(`lamiaa`) and add these secrets to it:
 
 | Secret | From |
 |--------|------|

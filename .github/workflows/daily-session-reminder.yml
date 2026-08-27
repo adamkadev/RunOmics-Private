@@ -14,7 +14,7 @@ jobs:
       # One deployment being unreachable must not cancel the other's reminder.
       fail-fast: false
       matrix:
-        profile: [adam, wife]
+        profile: [adam, lamiaa]
 
     # APP_URL and INTERNAL_NOTIFY_SECRET below resolve to this profile's own
     # deployment. See docs/personal-deployments.md.
