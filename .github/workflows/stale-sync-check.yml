@@ -9,8 +9,31 @@ on:
 jobs:
   notify:
     runs-on: ubuntu-latest
+
+    strategy:
+      # One deployment being unreachable must not cancel the other's reminder.
+      fail-fast: false
+      matrix:
+        profile: [adam, lamiaa]
+
+    # APP_URL and INTERNAL_NOTIFY_SECRET below resolve to this profile's own
+    # deployment. See docs/personal-deployments.md.
+    environment: ${{ matrix.profile }}
+
     steps:
-      - name: Trigger stale sync check
+      # Repository secrets stay visible to a job that names an environment, so an
+      # unpopulated one would aim this profile's reminder at another profile's
+      # deployment. The variable proves the environment is really configured.
+      - name: Check the profile environment
+        env:
+          DECLARED_PROFILE: ${{ vars.PROFILE }}
+        run: |
+          if [ "$DECLARED_PROFILE" != "${{ matrix.profile }}" ]; then
+            echo "::error::Environment '${{ matrix.profile }}' does not declare PROFILE=${{ matrix.profile }} (got '${DECLARED_PROFILE:-unset}'). See docs/personal-deployments.md."
+            exit 1
+          fi
+
+      - name: Trigger stale sync check (${{ matrix.profile }})
         run: |
           curl -fsS -X POST "${{ secrets.APP_URL }}/api/internal/stale-sync-check" \
             -H "x-internal-secret: ${{ secrets.INTERNAL_NOTIFY_SECRET }}"

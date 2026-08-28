@@ -17,16 +17,95 @@ on:
         description: "Re-sync all activities (rebuilds every record)"
         type: boolean
         default: false
+      profile:
+        description: "Which deployment to sync"
+        type: choice
+        options: [all, adam, lamiaa]
+        default: all
 
 jobs:
+  # Which profiles this run covers. A manual dispatch carries options that only
+  # ever make sense for one dataset (--force rebuilds every record), so it can
+  # target a single profile; the nightly schedule always runs them all.
+  profiles:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.pick.outputs.matrix }}
+    steps:
+      - id: pick
+        env:
+          REQUESTED: ${{ inputs.profile }}
+        run: |
+          if [ -z "$REQUESTED" ] || [ "$REQUESTED" = "all" ]; then
+            echo 'matrix=["adam","lamiaa"]' >> "$GITHUB_OUTPUT"
+          else
+            echo "matrix=[\"$REQUESTED\"]" >> "$GITHUB_OUTPUT"
+          fi
+
   sync:
+    needs: profiles
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
+
+    strategy:
+      # One profile's Garmin login expiring must not cancel everyone else's sync.
+      fail-fast: false
+      matrix:
+        profile: ${{ fromJSON(needs.profiles.outputs.matrix) }}
+
+    # Per-profile secrets live in a GitHub Environment of the same name, so every
+    # `secrets.*` below resolves to that profile's own value with no renaming.
+    # See docs/personal-deployments.md.
+    environment: ${{ matrix.profile }}
+
+    # A manual run must never overlap the nightly one for the same profile: both
+    # push to that profile's data repository. Different profiles are independent.
+    concurrency:
+      group: sync-${{ matrix.profile }}
+      cancel-in-progress: false
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      # Two failure modes worth stopping before Garmin is ever contacted.
+      #
+      # First: naming an environment does NOT hide the repository-level secrets.
+      # An environment that doesn't exist yet, or that was created but never
+      # populated, therefore falls back to whatever is set repository-wide - so a
+      # half-configured profile would sync someone else's Garmin account into
+      # someone else's data repository. Every environment must declare a variable
+      # PROFILE matching its own name; nothing inherited can satisfy that for more
+      # than one profile.
+      #
+      # Second: without the data repository configured, sync.py writes to
+      # public/data and the commit step would push a real dataset into this
+      # repository.
+      - name: Check the sync configuration
+        env:
+          DECLARED_PROFILE: ${{ vars.PROFILE }}
+          RUNOMICS_DATA_REPO_URL: ${{ secrets.RUNOMICS_DATA_REPO_URL }}
+          RUNOMICS_DATA_REPO_TOKEN: ${{ secrets.RUNOMICS_DATA_REPO_TOKEN }}
+          GARMIN_SECRET: ${{ secrets.GARMIN_SECRET }}
+        run: |
+          if [ "$DECLARED_PROFILE" != "${{ matrix.profile }}" ]; then
+            echo "::error::Environment '${{ matrix.profile }}' does not declare PROFILE=${{ matrix.profile }} (got '${DECLARED_PROFILE:-unset}')."
+            echo "Its secrets are unset or inherited from the repository, which would sync"
+            echo "the wrong athlete. See docs/personal-deployments.md."
+            exit 1
+          fi
+
+          MISSING=""
+          [ -n "$RUNOMICS_DATA_REPO_URL" ]   || MISSING="$MISSING RUNOMICS_DATA_REPO_URL"
+          [ -n "$RUNOMICS_DATA_REPO_TOKEN" ] || MISSING="$MISSING RUNOMICS_DATA_REPO_TOKEN"
+          [ -n "$GARMIN_SECRET" ]            || MISSING="$MISSING GARMIN_SECRET"
+          if [ -n "$MISSING" ]; then
+            echo "::error::Environment '${{ matrix.profile }}' is missing secret(s):$MISSING"
+            echo "Every profile syncs into its own private data repository and never"
+            echo "commits anything back here. See docs/personal-deployments.md."
+            exit 1
+          fi
 
       - name: Set up Node
         uses: actions/setup-node@v4
@@ -37,20 +116,15 @@ jobs:
         env:
           RUNOMICS_DATA_REPO_URL: ${{ secrets.RUNOMICS_DATA_REPO_URL }}
           RUNOMICS_DATA_REPO_TOKEN: ${{ secrets.RUNOMICS_DATA_REPO_TOKEN }}
-        run: |
-          if [ -n "$RUNOMICS_DATA_REPO_URL" ]; then
-            node scripts/fetch_private_data.mjs public/data
-          else
-            echo "RUNOMICS_DATA_REPO_URL not set - syncing against this repo's own public/data."
-          fi
+        run: node scripts/fetch_private_data.mjs public/data
 
       - name: Restore FIT cache
         uses: actions/cache@v5
         with:
           path: public/fit
-          key: fit-${{ hashFiles('public/data/activities/**') }}
+          key: fit-${{ matrix.profile }}-${{ hashFiles('public/data/activities/**') }}
           restore-keys: |
-            fit-
+            fit-${{ matrix.profile }}-
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -109,100 +183,29 @@ jobs:
           RUNOMICS_DATA_REPO_URL: ${{ secrets.RUNOMICS_DATA_REPO_URL }}
           RUNOMICS_DATA_REPO_TOKEN: ${{ secrets.RUNOMICS_DATA_REPO_TOKEN }}
         run: |
-          # The deployment marker the post-sync step waits for. Read locally
-          # regardless of destination - sync.py always rewrites this file.
+          # The deployment marker the post-sync step waits for - sync.py always
+          # rewrites this file, so it is read from the workspace, not the push.
           python -c "import json; print('last_synced_at=' + json.load(open('public/data/sync_meta.json'))['lastSyncedAt'])" >> "$GITHUB_OUTPUT"
 
-          if [ -n "$RUNOMICS_DATA_REPO_URL" ]; then
-            echo "used_data_repo=true" >> "$GITHUB_OUTPUT"
-            OUTPUT=$(node scripts/push_private_data.mjs public/data)
-            echo "$OUTPUT"
+          OUTPUT=$(node scripts/push_private_data.mjs public/data)
+          echo "$OUTPUT"
 
-            if echo "$OUTPUT" | grep -q "No data changes"; then
-              echo "committed=false" >> "$GITHUB_OUTPUT"
+          if echo "$OUTPUT" | grep -q "No data changes"; then
+            echo "committed=false" >> "$GITHUB_OUTPUT"
+            echo "data_changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "committed=true" >> "$GITHUB_OUTPUT"
+            # A commit carrying only a new timestamp has nothing for the
+            # post-sync checks to look at.
+            if echo "$OUTPUT" | grep -q "refresh last-synced timestamp"; then
               echo "data_changed=false" >> "$GITHUB_OUTPUT"
             else
-              echo "committed=true" >> "$GITHUB_OUTPUT"
-              if echo "$OUTPUT" | grep -q "refresh last-synced timestamp"; then
-                echo "data_changed=false" >> "$GITHUB_OUTPUT"
-              else
-                echo "data_changed=true" >> "$GITHUB_OUTPUT"
-              fi
-            fi
-          else
-            echo "used_data_repo=false" >> "$GITHUB_OUTPUT"
-            git config user.name  "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-
-            git add public/data/activities/ public/data/planned_workouts/ public/data/upcoming_races.json public/data/athlete.json
-
-            if git diff --cached --quiet; then
-              ACTIVITIES_CHANGED=false
-            else
-              ACTIVITIES_CHANGED=true
-            fi
-            echo "activities_changed=$ACTIVITIES_CHANGED" >> "$GITHUB_OUTPUT"
-
-            # Garmin-derived metric series. sync.py re-fetches these every run and
-            # Garmin revises the recent days as new activities land, so they change
-            # without a new activity landing. Staged separately from the activities
-            # above so the commit message can tell the two apart. Without this the
-            # files were regenerated each run but never committed, leaving the app
-            # stuck on whatever was last committed by hand.
-            git add \
-              public/data/race_predictions.json \
-              public/data/vo2max_history.json \
-              public/data/vo2max_norms.json \
-              public/data/threshold_history.json \
-              public/data/training_status.json \
-              public/data/training_load_balance.json \
-              public/data/training_plan.json \
-              public/data/athlete_history.json
-
-            # Anything the app renders, activities or metrics. The post-sync checks
-            # hang off this rather than off activities alone: today's insight is
-            # built from training_status.json, so a day where the status moved
-            # without a run landing used to leave it stale until the next activity.
-            if git diff --cached --quiet; then
-              DATA_CHANGED=false
-            else
-              DATA_CHANGED=true
-            fi
-            echo "data_changed=$DATA_CHANGED" >> "$GITHUB_OUTPUT"
-
-            # Last, so it never counts as a data change of its own: sync.py rewrites
-            # it every run, and a commit carrying only a new timestamp has nothing
-            # for the checks to look at.
-            git add public/data/sync_meta.json
-
-            if git diff --cached --quiet; then
-              echo "Nothing to commit."
-              echo "committed=false" >> "$GITHUB_OUTPUT"
-            else
-              if [ "$ACTIVITIES_CHANGED" = "true" ]; then
-                ACTIVITY_COUNT=$(python - <<'EOF'
-          import json, pathlib
-          total = 0
-          for path in pathlib.Path("public/data/activities").glob("*.json"):
-              if path.name == "index.json":
-                  continue
-              total += len(json.loads(path.read_text()).get("activities", []))
-          print(total)
-          EOF
-          )
-                git commit -m "sync: update activities (${ACTIVITY_COUNT} total) [skip ci]"
-              elif [ "$DATA_CHANGED" = "true" ]; then
-                git commit -m "sync: refresh Garmin metrics and timestamp [skip ci]"
-              else
-                git commit -m "sync: refresh last-synced timestamp [skip ci]"
-              fi
-              git push
-              echo "committed=true" >> "$GITHUB_OUTPUT"
+              echo "data_changed=true" >> "$GITHUB_OUTPUT"
             fi
           fi
 
-      - name: Trigger Vercel redeploy (private data repo path only)
-        if: steps.commit.outputs.used_data_repo == 'true' && steps.commit.outputs.committed == 'true'
+      - name: Trigger Vercel redeploy
+        if: steps.commit.outputs.committed == 'true'
         continue-on-error: true
         env:
           VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}

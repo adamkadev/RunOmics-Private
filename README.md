@@ -324,16 +324,25 @@ from your `.env.local` *except* `GARMIN_SECRET`:
 
 > `GARMIN_SECRET` is only used locally by the sync script - it never runs on Vercel.
 
-For the scheduled GitHub Actions (`sync.yml`, `weekly-reminder.yml`) to reach those
-internal endpoints, also add `APP_URL` (your deployed domain) and
-`INTERNAL_NOTIFY_SECRET` as **repository secrets** under GitHub → Settings →
-Secrets and variables → Actions - separate from the Vercel env vars above.
+The scheduled workflows read their secrets from a **GitHub Environment** named
+after the deployment's profile (GitHub → Settings → Environments), not from
+repository secrets: `GARMIN_SECRET`, `RUNOMICS_DATA_REPO_URL`,
+`RUNOMICS_DATA_REPO_TOKEN`, `APP_URL` (your deployed domain, no trailing slash),
+`INTERNAL_NOTIFY_SECRET`, `VERCEL_DEPLOY_HOOK_URL` and the optional
+`PRIVACY_ZONES` / `PRIVACY_RADIUS_M`, plus an environment *variable* `PROFILE`
+holding the environment's own name. These are separate from the Vercel env vars
+above, and `INTERNAL_NOTIFY_SECRET` must match on both sides.
+
+That indirection is what lets one repository drive several deployments - one per
+athlete, each with its own data repository, Firebase project, domain and UI
+language. See [Running more than one deployment](docs/personal-deployments.md);
+with a single profile it is just a place to keep the secrets.
 
 ### 4. Sync and deploy
 
-The nightly `sync.yml` workflow does this on its own: it hydrates a runner workspace
-from `RunOmics-data`, syncs Garmin, pushes the changed files back to that private
-repository and triggers the Vercel deploy hook. After a manual local sync, push the
+The nightly `sync.yml` workflow does this on its own, once per profile in its
+matrix: it hydrates a runner workspace from that profile's data repository, syncs
+Garmin, pushes the changed files back and triggers the matching Vercel deploy hook. After a manual local sync, push the
 result the same way:
 
 ```bash
