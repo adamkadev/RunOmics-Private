@@ -44,10 +44,9 @@ Four of these five steps happen in a browser. Only step 5 touches the repository
 
 ### 1. The data repository
 
-Create an empty **private** repository, one per athlete - `runomics-data-wife`
-holds Lamiaa's. The profile name and the repository name need not match; the URL
-is a secret either way. Nothing is committed by hand: `scripts/sync.py` fills it
-on the first run, and `scripts/prepare-data.mjs` fetches it back at every build.
+Create an empty **private** repository, one per athlete - `runomics-data-lamiaa`
+holds hers. Nothing is committed by hand: `scripts/sync.py` fills it on the first
+run, and `scripts/prepare-data.mjs` fetches it back at every build.
 
 Mint a fine-grained GitHub PAT scoped to *only* that repository, with
 **Contents: Read and write**. Set an expiration and diarise the rotation.
@@ -143,7 +142,7 @@ Then add the profile to the matrices in `.github/workflows/`:
 
 > **If your plan doesn't offer environment secrets on private repositories**, keep
 > the same matrix and swap the lookup for suffixed repository secrets
-> (`GARMIN_SECRET_WIFE`, ...) selected through `matrix.include`. Uglier names,
+> (`GARMIN_SECRET_LAMIAA`, ...) selected through `matrix.include`. Uglier names,
 > identical behaviour.
 
 ---
