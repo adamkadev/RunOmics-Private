@@ -97,24 +97,31 @@ class GarminClient:
             f"{self._base}/activity-service/activity/{activity_id}"
         ).json()
 
-    def get_hr_zones(self, activity_id: str) -> list[dict[str, Any]]:
+    def get_hr_zones(
+        self, activity_id: str, *, strict_errors: bool = False
+    ) -> list[dict[str, Any]]:
         try:
             return self._get(
                 f"{self._base}/activity-service/activity/{activity_id}/hrTimeInZones"
             ).json()
         except GarminAPIError as exc:
-            if exc.status_code == 429:
+            # Production has always treated a missing per-activity optional
+            # resource as empty. Diagnostics opt into strict propagation so a
+            # 5xx cannot masquerade as an unsupported/empty feature.
+            if strict_errors or exc.status_code == 429:
                 raise
             return []
 
-    def get_activity_gear(self, activity_id: str) -> list[dict[str, Any]]:
+    def get_activity_gear(
+        self, activity_id: str, *, strict_errors: bool = False
+    ) -> list[dict[str, Any]]:
         try:
             return self._get(
                 f"{self._base}/gear-service/gear/filterGear",
                 params={"activityId": activity_id},
             ).json()
         except GarminAPIError as exc:
-            if exc.status_code == 429:
+            if strict_errors or exc.status_code == 429:
                 raise
             return []
 
@@ -124,13 +131,13 @@ class GarminClient:
             params={"start": start, "limit": limit, "gearStatuses": status, "sortOrder": "firstUseDate_desc"},
         ).json()
 
-    def download_fit(self, activity_id: str) -> bytes | None:
+    def download_fit(self, activity_id: str, *, strict_errors: bool = False) -> bytes | None:
         try:
             content = self._get(
                 f"{self._base}/download-service/files/activity/{activity_id}"
             ).content
         except GarminAPIError as exc:
-            if exc.status_code == 429:
+            if strict_errors or exc.status_code == 429:
                 raise
             return None
 
