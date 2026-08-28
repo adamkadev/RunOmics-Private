@@ -40,7 +40,8 @@ permanent code path; it isn't worth it.
 
 ## Adding a profile
 
-Four of these five steps happen in a browser. Only step 5 touches the repository.
+Steps 1-3 fill the data repository, steps 4-5 stand the deployment up, step 6
+hands it to the automation. Only the last one touches this repository.
 
 ### 1. The data repository
 
@@ -58,6 +59,17 @@ Seed the three hand-edited files once the first sync has landed - see the README
 - `goals.json` - annual distance and race targets
 - `pbs.json` - official chip times
 
+An empty repository is not enough. `fetch_private_data.mjs` clones it and fails
+if there is no top-level `data/`, and `push_private_data.mjs` pushes from that
+same clone, which has no branch to push to until the repository has one commit.
+Give it one:
+
+```bash
+git clone https://github.com/<you>/runomics-data-<profile>.git seed && cd seed
+mkdir -p data && touch data/.gitkeep
+git add -A && git commit -m "chore: initial data directory" && git push
+```
+
 ### 2. The Garmin token
 
 On your machine, signed out of your own Garmin session:
@@ -70,21 +82,47 @@ Keep the printed `GARMIN_SECRET`. It never reaches Vercel - only the sync workfl
 uses it. The underlying OAuth1 token lasts about a year; see the README's note on
 `garth` before it expires.
 
-### 3. The Firebase project
+### 3. The first sync
+
+The nightly workflow syncs *changes*; the first run for a new athlete pulls their
+whole Garmin history and is worth doing by hand, in a scratch clone so your own
+`data/` and `.env.local` stay untouched:
+
+```bash
+git clone https://github.com/<you>/RunOmics-Private.git /tmp/first-sync
+cd /tmp/first-sync && npm ci && pip install -r scripts/requirements.txt
+
+export GARMIN_SECRET="<from step 2>"
+python scripts/sync.py                       # several minutes, writes public/data/
+
+export RUNOMICS_DATA_REPO_URL="https://github.com/<you>/runomics-data-<profile>.git"
+export RUNOMICS_DATA_REPO_TOKEN="<from step 1>"
+node scripts/push_private_data.mjs public/data
+```
+
+This has to precede the Vercel project's first build: `prepare-data.mjs` fetches
+the data repository at build time and fails loudly rather than falling back to
+demo data. Every later sync is the nightly workflow's job.
+
+### 4. The Firebase project
 
 Create a second project in the Firebase console, then:
 
 - **Authentication** → enable the Google provider, and add the Vercel domain from
-  step 4 under *Authorized domains*
+  step 5 under *Authorized domains* once it exists
 - **Firestore** → create the database, then deploy this repository's rules to it:
   `firebase deploy --only firestore:rules --project <her-project-id>`
 - **Cloud Messaging** → generate a Web Push certificate for the VAPID key
 - **Project settings → Service accounts** → generate a private key for the
   `FIREBASE_*` admin variables
-- Grant her the owner claim, with her values in `.env.local`:
-  `npm run set-owner-claim`
+- Grant the owner claim **after** step 5, once she has signed in to the deployed
+  app at least once: the script looks her up by email, so the Firebase Auth user
+  has to exist. Put her values in their own env file rather than overwriting
+  yours, then
+  `npx dotenv -e .env.lamiaa -- node scripts/set_owner_claim.mjs`.
+  She signs out and back in afterwards to pick up a token carrying the claim
 
-### 4. The Vercel project
+### 5. The Vercel project
 
 Import **this same repository** into a new Vercel project on the same branch -
 Vercel supports any number of projects per repository. Give it its own domain.
@@ -93,7 +131,7 @@ Vercel supports any number of projects per repository. Give it its own domain.
 |----------|------------------------|
 | `NEXT_PUBLIC_LOCALE` | `fr` for a French UI, `en` (or unset) for English |
 | `NEXT_PUBLIC_OWNER_EMAIL` | her Google account - gates notes and Settings in the UI |
-| `NEXT_PUBLIC_FIREBASE_*` | from her Firebase project (step 3) |
+| `NEXT_PUBLIC_FIREBASE_*` | from her Firebase project (step 4) |
 | `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` | her service account |
 | `RUNOMICS_DATA_REPO_URL`, `RUNOMICS_DATA_REPO_TOKEN` | her data repository and its PAT (step 1) |
 | `INTERNAL_NOTIFY_SECRET` | a fresh random string, **not** the one used by another profile |
@@ -108,7 +146,7 @@ same locale, so the AI verdicts come out in French too.
 Finally, create a **Deploy Hook** on the project (Settings → Git) - the sync
 workflow calls it once new data has been pushed.
 
-### 5. The GitHub Environment
+### 6. The GitHub Environment
 
 Under **Settings → Environments**, create an environment named after the profile
 (`lamiaa`) and add these secrets to it:
@@ -118,8 +156,8 @@ Under **Settings → Environments**, create an environment named after the profi
 | `GARMIN_SECRET` | step 2 |
 | `RUNOMICS_DATA_REPO_URL`, `RUNOMICS_DATA_REPO_TOKEN` | step 1 |
 | `APP_URL` | her Vercel domain, no trailing slash |
-| `INTERNAL_NOTIFY_SECRET` | must match the Vercel value from step 4 |
-| `VERCEL_DEPLOY_HOOK_URL` | step 4 |
+| `INTERNAL_NOTIFY_SECRET` | must match the Vercel value from step 5 |
+| `VERCEL_DEPLOY_HOOK_URL` | step 5 |
 | `PRIVACY_ZONES`, `PRIVACY_RADIUS_M` | optional, per athlete |
 
 Add one environment **variable** as well - `PROFILE`, set to the environment's own
