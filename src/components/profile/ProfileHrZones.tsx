@@ -12,7 +12,6 @@ import { t } from '@/i18n'
 type Bounds = [number, number, number, number, number]
 type View = 'week' | 'recent'
 
-const DEFAULT_LTHR = 170
 const ZONE_PERCENTS = [0.65, 0.80, 0.89, 0.95, 1.00]
 
 function defaultBounds(lthr: number): Bounds {
@@ -31,10 +30,12 @@ interface Props {
 
 export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime }: Props) {
   const s = t.profile.hrZones
-  const lthr = athlete.lthrBpm ?? DEFAULT_LTHR
-  const bounds = athlete.hrZoneBoundsBpm ?? defaultBounds(lthr)
-
   const [manualView, setManualView] = useState<View | null>(null)
+  const lthr = athlete.lthrBpm
+  const bounds = athlete.hrZoneBoundsBpm ?? (lthr !== undefined ? defaultBounds(lthr) : null)
+
+  if (bounds === null) return null
+
   const weekHasData = totalSeconds(weeklyZoneTime) > 0
   const view = manualView ?? (weekHasData ? 'week' : 'recent')
   const isAutoFallback = manualView === null && !weekHasData
@@ -74,10 +75,12 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime }: Prop
     <GlassSurface variant="card" className="p-5">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-sm font-bold text-foreground">{s.title}</h2>
-        <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-          <span>{s.lthr}</span>
-          <span className="text-xs font-bold text-accent-text">{lthr}</span>
-        </div>
+        {lthr !== undefined ? (
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+            <span>{s.lthr}</span>
+            <span className="text-xs font-bold text-accent-text">{lthr}</span>
+          </div>
+        ) : null}
       </div>
 
       <div className="mb-4 flex items-center gap-3">

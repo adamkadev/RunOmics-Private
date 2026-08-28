@@ -209,6 +209,16 @@ class GarminClient:
     def get_fitness_age(self, start: str, end: str) -> list[dict[str, Any]]:
         return self._get(f"{self._base}/fitnessage-service/stats/daily/{start}/{end}").json()
 
+    def get_current_fitness_age(self, day: str) -> dict[str, Any]:
+        return self._get(f"{self._base}/fitnessage-service/fitnessage/{day}").json()
+
+    def get_fitness_age_weekly(
+        self, day: str, weeks: int = 52
+    ) -> list[dict[str, Any]]:
+        return self._get(
+            f"{self._base}/fitnessage-service/stats/weekly/{day}/{weeks}"
+        ).json()
+
     def get_primary_training_device(self) -> dict[str, Any]:
         return self._get(f"{self._base}/web-gateway/device-info/primary-training-device").json()
 

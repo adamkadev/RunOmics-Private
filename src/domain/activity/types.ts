@@ -58,6 +58,8 @@ export interface Activity {
   date: string
   dayOfWeek: string
   type: ActivityType
+  /** Optional for activity JSON written before classification provenance existed. */
+  typeSource?: 'garmin' | 'runomics'
   description: string
   durationSeconds: number
   distanceKm: number

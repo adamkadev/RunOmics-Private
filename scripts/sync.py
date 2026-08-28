@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from garmin.athlete import fetch_athlete_metrics, record_athlete_history
 from garmin.client import GarminAuthError, GarminAPIError, GarminClient
+from garmin.fitness_age_history import sync_fitness_age_history
 from garmin.retry import retry_transient
 from garmin.race_predictions import sync_race_predictions
 from garmin.training_plan import sync_training_plan
@@ -167,6 +168,7 @@ def main() -> int:
             if record_athlete_history(metrics):
                 print("Athlete threshold metrics changed - recorded a history entry.")
             _merge_athlete_metrics(metrics)
+            sync_fitness_age_history(client)
 
             write_vo2max_norms(fetch_vo2max_norms(client))
 

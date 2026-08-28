@@ -9,7 +9,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from processing.fit_parser import parse_fit
-from processing.activity_type import infer_type
+from processing.activity_type import infer_type_with_source
 from processing.mapper import _decimate_list, _MAX_CHART_POINTS
 from processing.privacy import crop_privacy_zone
 from repository.json_store import JsonActivityStore
@@ -36,7 +36,14 @@ def main() -> int:
         if not parsed.has_data:
             continue
 
-        a["type"] = infer_type(a.get("description", ""), parsed)
+        type_inference = infer_type_with_source(
+            a.get("description", ""),
+            parsed,
+            hr_zones=a.get("hrZones") or [],
+            duration_seconds=a.get("durationSeconds"),
+        )
+        a["type"] = type_inference.activity_type
+        a["typeSource"] = type_inference.source
         if parsed.route:
             a["route"] = crop_privacy_zone(parsed.route)
         a["aerTrainingEffect"] = round(parsed.aer_training_effect, 1) if parsed.aer_training_effect is not None else None

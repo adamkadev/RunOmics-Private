@@ -14,15 +14,14 @@ export interface AthleteProfile {
   restingHrBpm?: number
   age?: number
   sex?: 'male' | 'female'
-  /** Garmin's fitness age, and the floor it says the current training can reach. */
   fitnessAgeYrs?: number
   achievableFitnessAgeYrs?: number
   bmi?: number
-  /** Primary training device the Garmin metrics above are measured by. */
+  fitnessAgeLastUpdated?: string
+  bmiMeasurementDate?: string
   deviceId?: number
   deviceName?: string
   deviceFirmware?: string
-  /** ISO date the device was registered on Garmin Connect. */
   deviceSince?: string
   lastUpdate?: string
 }

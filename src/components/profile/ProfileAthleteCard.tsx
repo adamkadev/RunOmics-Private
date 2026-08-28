@@ -8,6 +8,12 @@ import { t } from '@/i18n'
 
 const VIOLET = CHART_COLORS.efficiency
 
+interface HeadlineMetric {
+  label: string
+  value: string
+  valueColor?: string
+}
+
 // The three headline zones the mockup surfaces - the full ladder lives on the
 // Athlete detail. Accent-independent so Z5/Z4/Z2 keep their heat/threshold/easy
 // meaning.
@@ -40,6 +46,17 @@ export function ProfileAthleteCard({ athlete, latestVo2max, recentZoneTime }: Pr
   const a = t.profile.athlete
   const byZone = new Map(recentZoneTime.map((z) => [z.zone, z.seconds]))
   const maxSeconds = Math.max(1, ...ZONE_ROWS.map((r) => byZone.get(r.zone) ?? 0))
+  const metrics: HeadlineMetric[] = []
+  if (latestVo2max !== null) {
+    metrics.push({ label: a.vo2maxShort, value: String(Math.round(latestVo2max)), valueColor: VIOLET })
+  }
+  if (athlete.vmaKmh !== undefined) {
+    metrics.push({ label: a.vmaShort, value: String(athlete.vmaKmh) })
+  }
+  if (athlete.lthrBpm !== undefined) {
+    metrics.push({ label: a.lthrShort, value: String(athlete.lthrBpm) })
+  }
+  const metricColumns = metrics.length === 1 ? 'grid-cols-1' : metrics.length === 2 ? 'grid-cols-2' : 'grid-cols-3'
 
   return (
     <GlassSurface variant="card" className="p-4">
@@ -51,11 +68,11 @@ export function ProfileAthleteCard({ athlete, latestVo2max, recentZoneTime }: Pr
         </Link>
       </div>
 
-      <div className="mb-3.5 grid grid-cols-3 gap-2.5">
-        <Tile label={a.vo2maxShort} value={latestVo2max !== null ? String(Math.round(latestVo2max)) : a.notSet} valueColor={VIOLET} />
-        <Tile label={a.vmaShort} value={athlete.vmaKmh !== undefined ? String(athlete.vmaKmh) : a.notSet} />
-        <Tile label={a.lthrShort} value={athlete.lthrBpm !== undefined ? String(athlete.lthrBpm) : a.notSet} />
-      </div>
+      {metrics.length > 0 ? (
+        <div className={`mb-3.5 grid gap-2.5 ${metricColumns}`}>
+          {metrics.map((metric) => <Tile key={metric.label} {...metric} />)}
+        </div>
+      ) : null}
 
       <div className="flex flex-col gap-[7px]">
         {ZONE_ROWS.map((row) => {

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -65,10 +66,78 @@ def extract_fitness_age(days: list[dict[str, Any]]) -> dict[str, Any]:
     return {}
 
 
+def extract_current_fitness_age(payload: dict[str, Any]) -> dict[str, Any]:
+    """Allowlisted current Fitness Age values and their Garmin freshness dates."""
+    if not isinstance(payload, dict):
+        return {}
+    metrics: dict[str, Any] = {}
+
+    fitness_age = payload.get("fitnessAge")
+    if isinstance(fitness_age, (int, float)) and not isinstance(fitness_age, bool):
+        metrics["fitnessAgeYrs"] = round(fitness_age, 1)
+
+    achievable = payload.get("achievableFitnessAge")
+    if isinstance(achievable, (int, float)) and not isinstance(achievable, bool):
+        metrics["achievableFitnessAgeYrs"] = round(achievable, 1)
+
+    components = payload.get("components")
+    bmi_component = components.get("bmi") if isinstance(components, dict) else None
+    if isinstance(bmi_component, dict):
+        bmi = bmi_component.get("value")
+        if isinstance(bmi, (int, float)) and not isinstance(bmi, bool):
+            metrics["bmi"] = round(bmi, 1)
+        if "bmi" in metrics:
+            measured_at = _normalized_date(bmi_component.get("lastMeasurementDate"))
+            if measured_at:
+                metrics["bmiMeasurementDate"] = measured_at
+
+    # Do not persist metadata without a metric for it to describe.
+    last_updated = _normalized_datetime(payload.get("lastUpdated"))
+    if metrics and last_updated:
+        metrics["fitnessAgeLastUpdated"] = last_updated
+
+    return metrics
+
+
+def _normalized_date(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    try:
+        return date.fromisoformat(value[:10]).isoformat()
+    except ValueError:
+        return None
+
+
+def _normalized_datetime(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    candidate = value.replace("Z", "+00:00")
+    candidate = re.sub(
+        r"\.(\d{1,6})(?=(?:[+-]\d{2}:\d{2})?$)",
+        lambda match: "." + match.group(1).ljust(6, "0"),
+        candidate,
+    )
+    try:
+        return datetime.fromisoformat(candidate).isoformat()
+    except ValueError:
+        return None
+
+
 def _fetch_fitness_age(client: GarminClient) -> dict[str, Any]:
     today = date.today()
     try:
-        days = client.get_fitness_age((today - timedelta(days=6)).isoformat(), today.isoformat())
+        current = extract_current_fitness_age(client.get_current_fitness_age(today.isoformat()))
+    except GarminAPIError:
+        current = {}
+    if current:
+        return current
+
+    # The daily endpoint remains a valid fallback. A successful [] is simply
+    # an empty result and must not be treated as an error or unsupported data.
+    try:
+        days = client.get_fitness_age(
+            (today - timedelta(days=6)).isoformat(), today.isoformat()
+        )
     except GarminAPIError:
         return {}
     return extract_fitness_age(days)

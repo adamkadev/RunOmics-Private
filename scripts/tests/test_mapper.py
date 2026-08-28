@@ -1,8 +1,9 @@
 from datetime import datetime
 
-from processing.activity_type import infer_type
-from processing.fit_parser import ParsedFit
+from processing.activity_type import TypeInference, infer_type, infer_type_with_source
+from processing.fit_parser import ActivitySplit, ParsedFit, SplitLap
 from processing.mapper import (
+    HrZone,
     _decimate_list,
     _parse_datetime,
     extract_gear_id,
@@ -26,6 +27,69 @@ class TestInferType:
     def test_defaults_to_base(self):
         assert infer_type("Morning Run", None) == "Base"
         assert infer_type("", ParsedFit(primary_benefit=99)) == "Base"
+
+    def test_garmin_primary_benefit_takes_precedence_over_local_evidence(self):
+        parsed = ParsedFit(primary_benefit=3, splits=_intervals(30, 45, 6))
+
+        assert infer_type_with_source("", parsed) == type_inference("Tempo", "garmin")
+
+    def test_easy_run_is_base(self):
+        result = infer_type_with_source(
+            "",
+            ParsedFit(duration_seconds=3_600),
+            hr_zones=_zones(z1=35, z2=55, z3=8, z4=2),
+        )
+
+        assert result == type_inference("Base", "runomics")
+
+    def test_sustained_tempo_pattern(self):
+        result = infer_type_with_source(
+            "",
+            ParsedFit(duration_seconds=2_700),
+            hr_zones=_zones(z1=10, z2=25, z3=50, z4=12, z5=3),
+        )
+
+        assert result == type_inference("Tempo", "runomics")
+
+    def test_threshold_interval_pattern(self):
+        result = infer_type_with_source(
+            "", ParsedFit(splits=_intervals(600, 120, 3))
+        )
+
+        assert result == type_inference("Threshold", "runomics")
+
+    def test_vo2_interval_pattern(self):
+        result = infer_type_with_source(
+            "", ParsedFit(splits=_intervals(240, 120, 5))
+        )
+
+        assert result == type_inference("VO2Max", "runomics")
+
+    def test_short_hard_interval_pattern(self):
+        result = infer_type_with_source(
+            "", ParsedFit(splits=_intervals(90, 60, 6))
+        )
+
+        assert result == type_inference("Anaerobic", "runomics")
+
+    def test_sprint_repetitions(self):
+        result = infer_type_with_source(
+            "", ParsedFit(splits=_intervals(30, 45, 8))
+        )
+
+        assert result == type_inference("Sprint", "runomics")
+
+    def test_uncertain_partial_evidence_remains_base(self):
+        result = infer_type_with_source(
+            "", ParsedFit(duration_seconds=1_800, splits=_intervals(180, 30, 1))
+        )
+
+        assert result == type_inference("Base", "runomics")
+
+    def test_race_remains_highest_priority_and_reports_garmin_source(self):
+        parsed = ParsedFit(is_race=True, primary_benefit=1, splits=_intervals(30, 45, 8))
+
+        assert infer_type_with_source("", parsed) == type_inference("Race", "garmin")
 
 
 class TestParseHrZones:
@@ -83,6 +147,8 @@ class TestMapActivity:
         assert data.pace_sec_per_km == 300.0
         assert data.avg_heart_rate == 152
         assert data.type == "Base"
+        assert data.type_source == "runomics"
+        assert data.to_dict()["typeSource"] == "runomics"
         assert data.route is None
 
     def test_fit_values_take_priority_over_api(self):
@@ -102,6 +168,20 @@ class TestMapActivity:
         assert data.date == "2026-07-02"
         assert data.elevation_gain == 42.5
         assert data.rpe == 7
+
+    def test_local_type_inference_does_not_fabricate_training_effect(self):
+        parsed = ParsedFit(
+            duration_seconds=2_400,
+            distance_m=8_000,
+            splits=_intervals(240, 120, 5),
+        )
+
+        data = map_activity(self._garmin_activity(), parsed)
+
+        assert data.type == "VO2Max"
+        assert data.type_source == "runomics"
+        assert data.aer_training_effect is None
+        assert data.ana_training_effect is None
 
     def test_api_rpe_is_rescaled_from_percent(self):
         activity = self._garmin_activity()
@@ -150,3 +230,41 @@ class TestParseDatetime:
 
     def test_garbage_falls_back_to_epoch(self):
         assert _parse_datetime("not a date") == datetime(1970, 1, 1)
+
+
+def type_inference(activity_type, source):
+    return TypeInference(activity_type, source)
+
+
+def _intervals(effort_seconds, recovery_seconds, repetitions):
+    laps = [SplitLap(effort_seconds, 400.0, 4.0, 170) for _ in range(repetitions)]
+    return [
+        ActivitySplit(
+            "interval_active",
+            effort_seconds * repetitions,
+            400.0 * repetitions,
+            4.0,
+            170,
+            laps,
+        ),
+        ActivitySplit(
+            "interval_recovery",
+            recovery_seconds * repetitions,
+            100.0 * repetitions,
+            2.0,
+            130,
+        ),
+    ]
+
+
+def _zones(**shares):
+    return [
+        HrZone(
+            zone=int(key[1:]),
+            seconds=round(percent * 36),
+            percent=float(percent),
+            min_bpm=100 + int(key[1:]) * 10,
+            max_bpm=None,
+        )
+        for key, percent in shares.items()
+    ]

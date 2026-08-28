@@ -32,6 +32,8 @@ interface TileData {
   band?: { label: string; tone: VerdictTone }
 }
 
+type AvailableTileData = TileData & { value: string | number }
+
 // Shape carries the meaning, color reinforces it - a check and a triangle stay
 // distinguishable where two tinted dots would not (color vision deficiency).
 const TONE_ICON: Record<VerdictTone, { Icon: LucideIcon; className: string }> = {
@@ -58,20 +60,14 @@ function VerdictIcon({ band }: { band: NonNullable<TileData['band']> }) {
   )
 }
 
-function Tile({ label, unit, value, band }: TileData) {
+function Tile({ label, unit, value, band }: AvailableTileData) {
   return (
     <div className="relative rounded-xl bg-foreground/[0.04] px-2.5 py-2.5 text-center">
-      {value !== undefined && band && <VerdictIcon band={band} />}
+      {band ? <VerdictIcon band={band} /> : null}
       <div className="text-micro font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
       <div className="mt-1 text-base font-extrabold tabular-nums text-foreground">
-        {value !== undefined ? (
-          <>
-            {value}
-            <span className="block text-caption font-medium text-subtle">{unit}</span>
-          </>
-        ) : (
-          <span className="block text-caption font-medium text-subtle">{t.profile.athlete.notSet}</span>
-        )}
+        {value}
+        <span className="block text-caption font-medium text-subtle">{unit}</span>
       </div>
     </div>
   )
@@ -155,6 +151,22 @@ function tilesFor(category: Category, athlete: AthleteProfile, latestVo2max: num
 export function ProfileAthleteStats({ athlete, latestVo2max }: Props) {
   const a = t.settings.athlete
   const [category, setCategory] = useState<Category>('performance')
+  const availableByCategory = Object.fromEntries(
+    CATEGORIES.map((value) => [
+      value,
+      tilesFor(value, athlete, latestVo2max).filter(
+        (tile): tile is AvailableTileData => tile.value !== undefined
+      ),
+    ])
+  ) as Record<Category, AvailableTileData[]>
+  const availableCategories = CATEGORIES.filter((value) => availableByCategory[value].length > 0)
+  const selectedCategory = availableCategories.includes(category)
+    ? category
+    : (availableCategories[0] ?? 'performance')
+  const tiles = availableByCategory[selectedCategory]
+  const gridColumns = tiles.length === 1 ? 'grid-cols-1' : tiles.length === 2 ? 'grid-cols-2' : 'grid-cols-3'
+
+  if (availableCategories.length === 0) return null
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -168,14 +180,14 @@ export function ProfileAthleteStats({ athlete, latestVo2max }: Props) {
       </div>
 
       <div className="mb-3 flex w-full gap-1 rounded-full bg-foreground/[0.04] p-1">
-        {CATEGORIES.map((value) => (
+        {availableCategories.map((value) => (
           <button
             key={value}
             type="button"
             onClick={() => setCategory(value)}
             className={cn(
               'flex-1 min-h-[44px] rounded-full py-1.5 text-xs font-semibold transition-colors',
-              category === value ? 'bg-accent text-accent-foreground' : 'text-foreground/55'
+              selectedCategory === value ? 'bg-accent text-accent-foreground' : 'text-foreground/55'
             )}
           >
             {a.categories[value]}
@@ -183,8 +195,8 @@ export function ProfileAthleteStats({ athlete, latestVo2max }: Props) {
         ))}
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
-        {tilesFor(category, athlete, latestVo2max).map((tile) => (
+      <div className={cn('grid gap-2', gridColumns)}>
+        {tiles.map((tile) => (
           <Tile key={tile.label} {...tile} />
         ))}
       </div>
