@@ -259,8 +259,9 @@ export const en = {
       since: (monthYear: string) => `paired ${monthYear}`,
     },
     dataExport: {
-      csv: 'Export activities (.csv)',
+      workbook: 'Export training data (.xlsx)',
       exporting: 'Exporting...',
+      failed: 'Could not export the training data.',
     },
     offlineCache: {
       clear: 'Clear offline cache',

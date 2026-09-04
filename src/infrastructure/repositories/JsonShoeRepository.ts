@@ -2,16 +2,22 @@ import fs from 'fs'
 import { dataPath } from '../dataPath'
 import { buildShoeRegistry, type ShoeInfo, type ShoeRecord } from '@/domain/shoe/types'
 
-let cache: Record<string, ShoeInfo> | null = null
+let recordsCache: ShoeRecord[] | null = null
+let registryCache: Record<string, ShoeInfo> | null = null
 
-export function getShoeRegistry(): Record<string, ShoeInfo> {
-  if (cache) return cache
+export function getShoeRecords(): ShoeRecord[] {
+  if (recordsCache) return recordsCache
 
   try {
     const { shoes } = JSON.parse(fs.readFileSync(dataPath('shoes.json'), 'utf-8')) as { shoes: ShoeRecord[] }
-    cache = buildShoeRegistry(shoes)
+    recordsCache = shoes
   } catch {
-    cache = {}
+    recordsCache = []
   }
-  return cache
+  return recordsCache
+}
+
+export function getShoeRegistry(): Record<string, ShoeInfo> {
+  if (!registryCache) registryCache = buildShoeRegistry(getShoeRecords())
+  return registryCache
 }

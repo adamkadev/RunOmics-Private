@@ -41,13 +41,16 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device }: Props) {
     setLoading(true)
     try {
       const res = await fetch('/api/activities/export')
-      const csv = await res.text()
+      if (!res.ok) throw new Error(`Export failed with ${res.status}`)
+      const workbook = await res.blob()
       const stamp = new Date().toISOString().slice(0, 10)
       // Share sheet on iOS PWAs (no downloads UI there), download elsewhere.
-      const file = new File([csv], `runomics-activities-${stamp}.csv`, { type: 'text/csv' })
+      const file = new File([workbook], `runomics-training-data-${stamp}.xlsx`, {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      })
       await saveFileWithFallback(file)
     } catch {
-      showToast(s.dataExport.exporting, false)
+      showToast(s.dataExport.failed, false)
     } finally {
       setLoading(false)
     }
@@ -103,7 +106,7 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device }: Props) {
           disabled={loading}
           className="flex w-full items-center justify-between gap-2 text-footnote text-muted-foreground transition-opacity active:opacity-60 disabled:opacity-50"
         >
-          <span>{loading ? s.dataExport.exporting : s.dataExport.csv}</span>
+          <span>{loading ? s.dataExport.exporting : s.dataExport.workbook}</span>
           <span className="shrink-0 font-semibold text-accent-text">{s.rowAction.export}</span>
         </button>
 

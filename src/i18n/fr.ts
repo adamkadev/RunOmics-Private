@@ -253,8 +253,9 @@ export const fr = {
       since: (monthYear: string) => `appairée depuis ${monthYear}`,
     },
     dataExport: {
-      csv: 'Exporter les activités (.csv)',
+      workbook: 'Exporter les données d’entraînement (.xlsx)',
       exporting: 'Export en cours...',
+      failed: 'Impossible d’exporter les données d’entraînement.',
     },
     offlineCache: {
       clear: 'Vider le cache hors ligne',

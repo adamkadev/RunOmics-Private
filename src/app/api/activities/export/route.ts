@@ -1,12 +1,14 @@
-import { NextResponse } from 'next/server'
-import { getActivitiesCsv } from '@/application/usecases/GetActivitiesCsv'
+import { getTrainingWorkbook, TRAINING_WORKBOOK_MIME } from '@/application/usecases/GetTrainingWorkbook'
+
+export const runtime = 'nodejs'
 
 export async function GET() {
-  const csv = getActivitiesCsv()
-  return new NextResponse(csv, {
+  const workbook = await getTrainingWorkbook()
+  return new Response(new Uint8Array(workbook), {
     headers: {
-      'Content-Type': 'text/csv; charset=utf-8',
-      'Content-Disposition': 'attachment; filename="runomics-activities.csv"',
+      'Content-Type': TRAINING_WORKBOOK_MIME,
+      'Content-Disposition': 'attachment; filename="runomics-training-data.xlsx"',
+      'Cache-Control': 'private, no-store',
     },
   })
 }
