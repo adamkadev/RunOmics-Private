@@ -33,6 +33,7 @@ export interface GoalYear {
 }
 
 export interface UpcomingRace {
+  garminEventUuid?: string
   date: string
   name: string
   distance: string

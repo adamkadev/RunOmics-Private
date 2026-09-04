@@ -9,6 +9,8 @@ import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { PlanSpan } from '@/domain/training/planProgress'
 import type { Insight } from '@/lib/gemini'
+import type { CoachingOverview } from '@/application/coaching/GetCoachingView'
+import { CoachPlanOverview } from '@/components/coaching/CoachPlanOverview'
 import { PeriodNav } from '@/components/ui/PeriodNav'
 import { WeekView } from './WeekView'
 import { MonthView } from './MonthView'
@@ -31,11 +33,12 @@ interface Props {
   planSpan: PlanSpan | null
   /** Generated line for the week in progress only - past and future weeks keep the banner's own copy. */
   weekPurposeTake: Insight | null
+  coaching: CoachingOverview | null
 }
 
 type ViewMode = 'week' | 'month'
 
-export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate, planPhaseRanges, nextRace, trainingZones, planSpan, weekPurposeTake }: Props) {
+export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate, planPhaseRanges, nextRace, trainingZones, planSpan, weekPurposeTake, coaching }: Props) {
   const now = new Date()
   const today = isoDate(now)
   const [mode, setMode] = useState<ViewMode>('week')
@@ -113,6 +116,7 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate
 
   return (
     <div className="space-y-4">
+      {coaching && <CoachPlanOverview coaching={coaching} />}
       <div className="px-1">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">

@@ -49,6 +49,16 @@ export interface InsightRequest {
  */
 export type InsightResult = { ok: true; insight: Insight } | { ok: false; reason: string }
 
+export type StructuredResult<T> = { ok: true; value: T } | { ok: false; reason: string }
+
+export interface StructuredRequest {
+  model: string
+  systemInstruction: string
+  prompt: string
+  responseSchema: Record<string, unknown>
+  temperature?: number
+}
+
 function responseSchema(bulletCount: number | undefined) {
   const headlineAndBody = {
     type: 'OBJECT',
@@ -124,6 +134,24 @@ function parseInsight(raw: unknown, limits: Limits, bulletCount?: number): Insig
 }
 
 export async function generateInsight(request: InsightRequest): Promise<InsightResult> {
+  const result = await generateStructuredJson({
+    model: request.model,
+    systemInstruction: request.systemInstruction,
+    prompt: request.prompt,
+    responseSchema: responseSchema(request.bulletCount),
+    temperature: 1.1,
+  })
+  if (!result.ok) return result
+
+  try {
+    return parseInsight(result.value, request.limits, request.bulletCount)
+  } catch (error) {
+    return { ok: false, reason: `parse error: ${String(error).slice(0, 120)}` }
+  }
+}
+
+/** Shared schema-constrained Gemini transport. Domain-specific validation stays in each adapter. */
+export async function generateStructuredJson(request: StructuredRequest): Promise<StructuredResult<unknown>> {
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) return { ok: false, reason: 'no api key' }
 
@@ -139,8 +167,8 @@ export async function generateInsight(request: InsightRequest): Promise<InsightR
         contents: [{ parts: [{ text: request.prompt }] }],
         generationConfig: {
           responseMimeType: 'application/json',
-          responseSchema: responseSchema(request.bulletCount),
-          temperature: 1.1,
+          responseSchema: request.responseSchema,
+          temperature: request.temperature ?? 0.4,
           // Gemini 3.x has no way to turn thinking off (2.5's thinkingBudget: 0
           // does not apply to this family) - 'low' is the floor, and it still
           // spends real tokens on a schema-constrained answer. See
@@ -162,7 +190,7 @@ export async function generateInsight(request: InsightRequest): Promise<InsightR
       return { ok: false, reason: `no text part (finish: ${json?.candidates?.[0]?.finishReason ?? 'none'})` }
     }
 
-    return parseInsight(JSON.parse(text), request.limits, request.bulletCount)
+    return { ok: true, value: JSON.parse(text) as unknown }
   } catch (error) {
     return { ok: false, reason: `${error instanceof Error ? error.name : 'error'}: ${String(error).slice(0, 120)}` }
   }

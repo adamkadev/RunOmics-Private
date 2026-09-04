@@ -123,6 +123,7 @@ NEXT_PUBLIC_LOCALE=en
 # https://generativelanguage.googleapis.com/v1beta/models
 # GEMINI_API_KEY=...
 # GEMINI_MODEL=
+# GEMINI_COACH_MODEL= # optional coaching-specific override
 ```
 
 > `.env.local` is gitignored. Never commit your secrets.
@@ -232,6 +233,43 @@ default where one exists, e.g. training load).
 
 Drop a photo named `{activityId}.jpg` (or `.png`, `.webp`) into `public/events/` and it will appear as the cover image on the PB card for that activity.
 
+## Adaptive coach
+
+The optional coach keeps its reviewed prescriptions under the private `data/coaching/`
+tree. Garmin-scheduled sessions under `data/planned_workouts/` remain a separate,
+observed schedule signal; applying a coach proposal does not publish anything to
+Garmin or trigger a deployment.
+
+```text
+data/coaching/
+  current_plan.json
+  coach_state.json
+  decisions/index.json
+  decisions/YYYY.json
+  evaluations/index.json
+  evaluations/YYYY-MM.json
+```
+
+Every command creates a private preview first. Review its structured decision and
+diff, then apply that exact file:
+
+```bash
+npm run coach -- bootstrap --days tue,thu,sat,sun
+npm run coach -- bootstrap --days tue,thu,sat,sun --race "Harbor Lights 10K"
+npm run coach -- evaluate --activity latest
+npm run coach -- weekly-review
+npm run coach -- --apply .coach-previews/<proposal>.json
+```
+
+With private-repository credentials configured, apply fetches the latest data into a
+temporary workspace, rejects stale context or plan revisions, writes the coaching
+files atomically, and pushes only the private data repository. `--data-dir
+public/data` instead operates on an already-hydrated sync workspace and leaves its
+existing push step to the caller. Missing coaching files are valid and leave the
+existing Plan, Today, and activity UI unchanged. Demo data includes a deterministic
+fictional coaching lifecycle; it never derives a personal plan from another
+athlete's Garmin data.
+
 ---
 
 ## Tests & quality
@@ -320,7 +358,7 @@ from your `.env.local` *except* `GARMIN_SECRET`:
 | `NEXT_PUBLIC_OWNER_EMAIL` | Restricts settings/notes editing to your Google account |
 | `INTERNAL_NOTIFY_SECRET` | Authenticates the GitHub Actions cron calls to `/api/internal/*` |
 | `NEXT_PUBLIC_LOCALE` | UI language, `en` (default) or `fr` — applied at build time |
-| `GEMINI_API_KEY`, `GEMINI_MODEL` | Optional: AI-written verdicts on Today, Analytics and activity pages. Without a key the cards keep their rules-based copy |
+| `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_COACH_MODEL` | Optional: AI-written verdicts and preview-only coaching recommendations. The coaching model can be overridden independently |
 
 > `GARMIN_SECRET` is only used locally by the sync script - it never runs on Vercel.
 
@@ -369,4 +407,3 @@ this repository.
 | Dark mode | [next-themes](https://github.com/pacocoursey/next-themes) |
 | Garmin auth | [garth](https://github.com/matin/garth) |
 | FIT parsing | [garmin-fit-sdk](https://pypi.org/project/garmin-fit-sdk/) |
-

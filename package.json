@@ -25,7 +25,8 @@
     "test:e2e": "dotenv -e .env.e2e -- playwright test",
     "screenshots": "dotenv -e .env.e2e -- playwright test --config playwright.screenshots.config.ts",
     "screenshots:clean": "rm -rf screenshots/output screenshots/.pw-artifacts",
-    "set-owner-claim": "dotenv -e .env.local -- node scripts/set_owner_claim.mjs"
+    "set-owner-claim": "dotenv -e .env.local -- node scripts/set_owner_claim.mjs",
+    "coach": "dotenv -e .env.local -- node --conditions=react-server --import tsx scripts/coaching.ts"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
@@ -63,6 +64,7 @@
     "eslint-config-next": "16.2.11",
     "jsdom": "^29.1.1",
     "tailwindcss": "^4",
+    "tsx": "^4.23.13",
     "typescript": "^5",
     "vitest": "^4.1.9",
     "vitest-axe": "^0.1.0"

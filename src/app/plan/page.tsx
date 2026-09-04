@@ -6,6 +6,7 @@ import { getNextRace } from '@/application/usecases/GetNextRace'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
 import { getCurrentWeekPurpose } from '@/application/usecases/GetCurrentWeekPurpose'
 import { getWeekPurposeInsight } from '@/application/usecases/GetWeekPurposeInsight'
+import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { PlanClient } from '@/components/plan/PlanClient'
 import type { HrBounds } from '@/domain/training/trimp'
@@ -35,6 +36,7 @@ export default async function PlanPage() {
       nextRace={nextRace}
       trainingZones={trainingZones}
       weekPurposeTake={await getWeekPurposeInsight(await getCurrentWeekPurpose())}
+      coaching={getCoachingOverview()}
     />
   )
 }

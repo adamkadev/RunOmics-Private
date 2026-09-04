@@ -14,6 +14,7 @@ import { ActivityAchievements } from '@/components/activity/ActivityAchievements
 import { SimilarRuns } from '@/components/activity/SimilarRuns'
 import { getSimilarRuns } from '@/application/usecases/GetSimilarRuns'
 import { getRunVerdictInsight } from '@/application/usecases/GetRunVerdictInsight'
+import { getActivityCoachingView } from '@/application/coaching/GetCoachingView'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
 import { t } from '@/i18n'
 
@@ -63,6 +64,7 @@ export default async function ActivityDetailPage({
   const qualifiedEfforts = getQualifiedEffortsByActivityId(records)[id] ?? []
   const similarRuns = getSimilarRuns(id)
   const aiVerdict = await getRunVerdictInsight(activity)
+  const coaching = getActivityCoachingView(activity.id)
   const info = activity.gearId ? getShoeRegistry()[activity.gearId] : undefined
   const shoe = info ? { name: info.name, dotColor: info.dotColor } : null
 
@@ -104,6 +106,7 @@ export default async function ActivityDetailPage({
         qualifiedEfforts={qualifiedEfforts}
         aiVerdict={aiVerdict}
         shoe={shoe}
+        coaching={coaching}
       />
 
       <ActivityNav prev={prevActivity} next={nextActivity} />

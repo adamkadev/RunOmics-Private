@@ -12,6 +12,7 @@ import { getTodayPlannedWorkout } from '@/application/usecases/GetPlannedWorkout
 import { getTodayInsight } from '@/application/usecases/GetTodayInsight'
 import { getWeeklyReviewInsight } from '@/application/usecases/GetWeeklyReviewInsight'
 import { getPbCelebrationInsight } from '@/application/usecases/GetPbCelebrationInsight'
+import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { isoDate } from '@/lib/calendarDate'
 import { getWeeklyStreakData } from '@/application/usecases/GetMilestones'
 import { getCurrentWeeklyGoal } from '@/application/usecases/GetGoalsData'
@@ -24,6 +25,7 @@ import { WeeklyStreakCard } from '@/components/dashboard/WeeklyStreakCard'
 import { CelebrationOverlay } from '@/components/dashboard/CelebrationOverlay'
 import { WeeklyReviewCard } from '@/components/dashboard/WeeklyReviewCard'
 import { FirstLaunchHint } from '@/components/dashboard/FirstLaunchHint'
+import { CoachBrief } from '@/components/coaching/CoachBrief'
 import { t } from '@/i18n'
 
 export const revalidate = 3600
@@ -43,10 +45,12 @@ export default async function DashboardPage() {
   const todayPlannedWorkout = await getTodayPlannedWorkout()
   const weeklyStreak = getWeeklyStreakData()
   const weeklyGoal = await getCurrentWeeklyGoal()
+  const coaching = getCoachingOverview()
 
   const today = isoDate(new Date())
   const todayActivity = data.recentActivities.find((a) => a.date === today) ?? null
-  const aiVerdict = await getTodayInsight(trainingStatus, todayPlannedWorkout)
+  const todayCoachWorkout = coaching?.workouts.find((workout) => workout.prescription.date === today && workout.prescription.status !== 'cancelled') ?? null
+  const aiVerdict = todayCoachWorkout ? null : await getTodayInsight(trainingStatus, todayPlannedWorkout)
   const weeklyReview = await getWeeklyReviewInsight(weeklyDigest)
   const celebrationTake = await getPbCelebrationInsight(mostRecentRecord)
 
@@ -62,10 +66,13 @@ export default async function DashboardPage() {
       <TodayHero
         status={trainingStatus}
         plannedWorkout={todayPlannedWorkout}
+        coachWorkout={todayCoachWorkout}
         todayActivity={todayActivity}
         nextRace={nextRace}
         aiVerdict={aiVerdict}
       />
+
+      {coaching && <CoachBrief coaching={coaching} />}
 
       <FormFitnessFatigueTrio status={trainingStatus} load={trainingLoad} />
 

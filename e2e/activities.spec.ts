@@ -25,6 +25,9 @@ test('activities list renders and links into a detail page', async ({ page }) =>
   // structure rather than exact text since it depends on which activity was
   // clicked.
   await expect(page.locator('h1')).toBeVisible()
+  await expect(page.getByText('Coach evaluation')).toBeVisible()
+  await expect(page.getByText('No plan change', { exact: true })).toBeVisible()
+  await expect(page.locator('[data-nextjs-dialog]')).toHaveCount(0)
 })
 
 test('activities list search narrows results', async ({ page }) => {

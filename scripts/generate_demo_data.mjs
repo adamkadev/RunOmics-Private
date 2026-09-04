@@ -487,6 +487,158 @@ function buildPlannedWorkouts(rng, endDate) {
   return byYear
 }
 
+function buildCoachingData(endDate, activities) {
+  const latest = activities[activities.length - 1]
+  const start = latest ? new Date(latest.date + 'T00:00:00Z') : endDate
+  const createdAt = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate(), 8)).toISOString()
+  const evaluationCreatedAt = new Date(new Date(createdAt).getTime() + 60 * 60 * 1_000).toISOString()
+  const planId = 'demo-coaching-plan'
+  const provenance = { source: 'demo', trigger: 'bootstrap', createdAt }
+  const workout = (id, date, type, title, blocks, totalDurationSeconds, totalDistanceMeters) => ({
+    id,
+    revision: 1,
+    date: isoDate(date),
+    type,
+    title,
+    description: title,
+    status: 'prescribed',
+    ...(totalDurationSeconds ? { totalDurationSeconds } : {}),
+    ...(totalDistanceMeters ? { totalDistanceMeters } : {}),
+    blocks,
+    provenance,
+  })
+  const easyBlocks = (distanceMeters) => [{ kind: 'effort', target: { distanceMeters, paceSecPerKm: { min: 300, max: 340 }, hrZone: 2 } }]
+  const thresholdBlocks = [
+    { kind: 'warmup', target: { distanceMeters: 2_000 } },
+    {
+      kind: 'repeat',
+      repetitions: 3,
+      steps: [
+        { kind: 'effort', target: { durationSeconds: 480, paceSecPerKm: { min: 265, max: 270 } } },
+        { kind: 'recovery', target: { durationSeconds: 120 } },
+      ],
+    },
+    { kind: 'cooldown', target: { durationSeconds: 600 } },
+  ]
+  const weeks = Array.from({ length: 4 }, (_, index) => {
+    const weekStart = addDays(start, index * 7)
+    const weekEnd = addDays(weekStart, 6)
+    const first = index === 0 && latest
+      ? workout('demo-prescription-completed', new Date(latest.date + 'T00:00:00Z'), latest.type === 'Threshold' ? 'threshold' : 'easy', latest.description || 'Completed session', easyBlocks(Math.round(latest.distanceKm * 1_000)), latest.durationSeconds, Math.round(latest.distanceKm * 1_000))
+      : workout(`demo-easy-${index}`, addDays(weekStart, 1), 'easy', 'Easy Run', easyBlocks(8_000), 2_700, 8_000)
+    return {
+      id: `demo-coaching-week-${index + 1}`,
+      index: index + 1,
+      startDate: isoDate(weekStart),
+      endDate: isoDate(weekEnd),
+      focus: index === 0 ? 'Settle into the block' : index === 3 ? 'Absorb the work' : 'Build threshold durability',
+      workouts: [
+        first,
+        workout(`demo-threshold-${index}`, addDays(weekStart, 3), 'threshold', '3 × 8 min threshold', thresholdBlocks, 3_600),
+        workout(`demo-long-${index}`, addDays(weekStart, 6), 'long_run', 'Long easy run', easyBlocks(14_000 + index * 1_000), undefined, 14_000 + index * 1_000),
+      ],
+    }
+  })
+  const plan = {
+    schemaVersion: 1,
+    id: planId,
+    revision: 1,
+    status: 'active',
+    block: {
+      id: 'demo-coaching-block',
+      name: 'Autumn 10K build',
+      startDate: isoDate(start),
+      endDate: isoDate(addDays(start, 27)),
+      focus: 'Threshold durability',
+    },
+    targetEvent: {
+      id: 'demo-race-0000000000000001',
+      name: 'Harbor Lights 10K',
+      date: isoDate(addDays(endDate, 21)),
+      distanceLabel: '10K',
+      distanceMeters: 10_000,
+      location: 'Fictional Bay',
+    },
+    goal: { kind: 'time', targetSeconds: 2_430, description: 'Run 10K in 40:30.' },
+    weeks,
+    provenance,
+  }
+  const bootstrapDecision = {
+    schemaVersion: 1,
+    id: 'demo-coaching-bootstrap',
+    outcome: 'REPLAN',
+    trigger: 'bootstrap',
+    createdAt,
+    effectiveDate: isoDate(start),
+    planId,
+    basePlanRevision: null,
+    resultPlanRevision: 1,
+    reasonCodes: ['INITIAL_PLAN'],
+    summary: 'Created a focused four-week block for Harbor Lights 10K.',
+    evidence: [],
+    changes: [{ kind: 'replace_future', effectiveDate: isoDate(start), beforeWeeks: [], afterWeeks: weeks }],
+    provenance,
+  }
+  const evaluationDecision = {
+    schemaVersion: 1,
+    id: 'demo-coaching-evaluation-decision',
+    outcome: 'KEEP',
+    trigger: 'post_activity',
+    createdAt: evaluationCreatedAt,
+    effectiveDate: isoDate(addDays(start, 1)),
+    planId,
+    basePlanRevision: 1,
+    resultPlanRevision: 1,
+    reasonCodes: ['SESSION_COMPLETED'],
+    summary: 'Session completed as intended. No plan change.',
+    evidence: [{ code: 'SESSION_COMPLETE', message: 'The completed run matched the prescribed session type.' }],
+    changes: [],
+    provenance: { ...provenance, trigger: 'post_activity', createdAt: evaluationCreatedAt },
+  }
+  const evaluation = latest ? {
+    schemaVersion: 1,
+    id: 'demo-coaching-evaluation',
+    activityId: latest.id,
+    activityDate: latest.date,
+    prescriptionId: 'demo-prescription-completed',
+    planId,
+    planRevision: 1,
+    matchStatus: 'matched',
+    comparison: {
+      plannedDistanceMeters: Math.round(latest.distanceKm * 1_000),
+      actualDistanceMeters: Math.round(latest.distanceKm * 1_000),
+      plannedDurationSeconds: latest.durationSeconds,
+      actualDurationSeconds: latest.durationSeconds,
+      ...(latest.paceSecPerKm ? { actualPaceSecPerKm: Math.round(latest.paceSecPerKm) } : {}),
+      ...(latest.avgHeartRate ? { actualAvgHrBpm: latest.avgHeartRate } : {}),
+    },
+    decisionId: evaluationDecision.id,
+    summary: evaluationDecision.summary,
+    createdAt: evaluationCreatedAt,
+    contextHash: 'demo-context',
+    provenance: { ...provenance, trigger: 'post_activity', createdAt: evaluationCreatedAt, decisionId: evaluationDecision.id },
+  } : null
+  const year = createdAt.slice(0, 4)
+  const month = latest?.date.slice(0, 7) ?? createdAt.slice(0, 7)
+  return {
+    'coaching/current_plan.json': plan,
+    'coaching/coach_state.json': {
+      schemaVersion: 1,
+      activePlanId: planId,
+      activePlanRevision: 1,
+      lastDecisionId: evaluationDecision.id,
+      lastBootstrapAt: createdAt,
+      lastPostActivityAt: createdAt,
+      lastWeeklyReviewAt: null,
+      updatedAt: createdAt,
+    },
+    'coaching/decisions/index.json': { keys: [year] },
+    [`coaching/decisions/${year}.json`]: { decisions: [bootstrapDecision, evaluationDecision] },
+    'coaching/evaluations/index.json': { keys: evaluation ? [month] : [] },
+    ...(evaluation ? { [`coaching/evaluations/${month}.json`]: { evaluations: [evaluation] } } : {}),
+  }
+}
+
 function buildLocationOverrides() {
   return {}
 }
@@ -534,6 +686,7 @@ export function generateDemoDataset({ now = new Date() } = {}) {
     'sync_meta.json': buildSyncMeta(endDate),
     'activities/index.json': { months: monthKeys },
     'planned_workouts/index.json': { years: plannedYears },
+    ...buildCoachingData(endDate, activities),
   }
   for (const [month, acts] of Object.entries(months)) {
     files[`activities/${month}.json`] = { activities: acts.sort((a, b) => b.date.localeCompare(a.date)) }

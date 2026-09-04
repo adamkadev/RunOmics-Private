@@ -14,6 +14,8 @@ import { formatDistance, formatDurationWords } from '@/lib/formatters'
 import { READINESS_TONE_COLORS } from '@/lib/colors'
 import { HUE, withAlpha } from '@/lib/palette'
 import type { Insight } from '@/lib/gemini'
+import type { PrescriptionView } from '@/application/coaching/GetCoachingView'
+import { COACHING_TO_ACTIVITY_TYPE } from '@/domain/coaching/types'
 import { t } from '@/i18n'
 
 const TONE_HEX: Record<ReadinessTone, string> = READINESS_TONE_COLORS
@@ -24,6 +26,7 @@ const ICON_WELL = { background: `color-mix(in srgb, ${ACCENT_ON_DARK} 18%, trans
 interface Props {
   status: TrainingStatus | null
   plannedWorkout: PlannedWorkout | null
+  coachWorkout: PrescriptionView | null
   todayActivity: ActivitySummary | null
   nextRace: UpcomingRace | null
   aiVerdict: Insight | null
@@ -43,7 +46,7 @@ function readinessCopy(status: TrainingStatus, tone: ReadinessTone): { headline:
 }
 
 // Pure display + a rules-based readiness verdict over already-computed status/load data.
-export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiVerdict }: Props) {
+export function TodayHero({ status, plannedWorkout, coachWorkout, todayActivity, nextRace, aiVerdict }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false)
   const [daysToRace] = useState(() =>
     nextRace
@@ -51,22 +54,34 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiV
       : null
   )
 
-  if (!status && !plannedWorkout && !nextRace) return null
+  if (!status && !plannedWorkout && !coachWorkout && !nextRace) return null
 
   const s = t.dashboard.todayHero
   const tone = status ? verdictTone(status) : null
   const toneHex = tone ? TONE_HEX[tone] : TONE_HEX.go
   const verdict = aiVerdict ?? (status && tone ? readinessCopy(status, tone) : null)
-  const PlannedWorkoutIcon: LucideIcon = plannedWorkout?.type
-    ? ACTIVITY_TYPE_ICONS[plannedWorkout.type as ActivityType]
+  const displayedType = coachWorkout
+    ? COACHING_TO_ACTIVITY_TYPE[coachWorkout.prescription.type]
+    : plannedWorkout?.type
+  const PlannedWorkoutIcon: LucideIcon = displayedType
+    ? ACTIVITY_TYPE_ICONS[displayedType as ActivityType]
     : Footprints
-  const plannedWorkoutMeta = plannedWorkout
+  const coachTarget = coachWorkout?.prescription.totalDurationSeconds
+    ? `~${formatDurationWords(coachWorkout.prescription.totalDurationSeconds)}`
+    : coachWorkout?.prescription.totalDistanceMeters
+      ? `${formatDistance(coachWorkout.prescription.totalDistanceMeters / 1_000)} ${t.units.km}`
+      : null
+  const plannedWorkoutMeta = coachWorkout
+    ? [t.activityTypes[displayedType as ActivityType], coachTarget].filter(Boolean).join(' · ')
+    : plannedWorkout
     ? [
         plannedWorkout.type ? t.activityTypes[plannedWorkout.type as ActivityType] : null,
         plannedWorkout.durationSecs ? `~${formatDurationWords(plannedWorkout.durationSecs)}` : null,
         plannedWorkout.scheduledTime ? t.plan.timeOfDay[plannedWorkout.scheduledTime] : null,
       ].filter(Boolean).join(' · ')
     : null
+  const workoutTitle = coachWorkout?.prescription.title ?? plannedWorkout?.name
+  const linkedActivityId = coachWorkout?.activityId ?? todayActivity?.id ?? null
   const completedMeta = todayActivity
     ? [
         `${formatDistance(todayActivity.distanceKm)} ${t.units.km}`,
@@ -109,22 +124,41 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiV
         </div>
       )}
 
-      {plannedWorkout && todayActivity ? (
+      {(coachWorkout || plannedWorkout) && linkedActivityId ? (
         <Link
-          href={`/activities/${todayActivity.id}`}
+          href={`/activities/${linkedActivityId}`}
           className="mt-3.5 flex w-full items-center gap-3 rounded-[14px] bg-black/25 px-3.5 py-3 text-left transition-colors active:opacity-80"
         >
           <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px]" style={ICON_WELL}>
             <Check size={17} style={{ color: ACCENT_ON_DARK }} />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-semibold">{plannedWorkout.name}</div>
+            <div className="truncate text-sm font-semibold">{workoutTitle}</div>
             {completedMeta && (
               <div className="mt-0.5 truncate text-caption text-white/55">{completedMeta}</div>
             )}
           </div>
           <span className="flex shrink-0 items-center gap-0.5 rounded-[10px] bg-accent px-3.5 py-2 text-caption font-bold text-accent-foreground">
             {s.viewCta}
+            <ChevronRight size={13} strokeWidth={2.5} />
+          </span>
+        </Link>
+      ) : coachWorkout ? (
+        <Link
+          href="/plan"
+          className="mt-3.5 flex w-full items-center gap-3 rounded-[14px] bg-black/25 px-3.5 py-3 text-left transition-colors active:opacity-80"
+        >
+          <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px]" style={ICON_WELL}>
+            <PlannedWorkoutIcon size={17} style={{ color: ACCENT_ON_DARK }} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-semibold">{workoutTitle}</div>
+            {plannedWorkoutMeta && (
+              <div className="mt-0.5 truncate text-caption text-white/55">{plannedWorkoutMeta}</div>
+            )}
+          </div>
+          <span className="flex shrink-0 items-center gap-0.5 rounded-[10px] bg-accent px-3.5 py-2 text-caption font-bold text-accent-foreground">
+            {s.sessionCta}
             <ChevronRight size={13} strokeWidth={2.5} />
           </span>
         </Link>
@@ -138,10 +172,8 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiV
             <PlannedWorkoutIcon size={17} style={{ color: ACCENT_ON_DARK }} />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-semibold">{plannedWorkout.name}</div>
-            {plannedWorkoutMeta && (
-              <div className="mt-0.5 truncate text-caption text-white/55">{plannedWorkoutMeta}</div>
-            )}
+            <div className="truncate text-sm font-semibold">{workoutTitle}</div>
+            {plannedWorkoutMeta && <div className="mt-0.5 truncate text-caption text-white/55">{plannedWorkoutMeta}</div>}
           </div>
           <span className="flex shrink-0 items-center gap-0.5 rounded-[10px] bg-accent px-3.5 py-2 text-caption font-bold text-accent-foreground">
             {s.sessionCta}

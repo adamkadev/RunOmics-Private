@@ -1371,6 +1371,46 @@ export const en = {
     },
   },
 
+  coaching: {
+    coach: 'Coach',
+    target: 'Target',
+    currentBlock: 'Current block',
+    thisWeek: 'This week',
+    nextKeySession: 'Next key session',
+    latestDecision: 'Latest adjustment',
+    noPlanChange: 'No plan change',
+    states: {
+      prescribed: 'Prescribed',
+      adjusted: 'Adjusted',
+      completed: 'Completed',
+      missed: 'Missed',
+      cancelled: 'Cancelled',
+    },
+    garmin: {
+      scheduled_match: 'Scheduled in Garmin',
+      scheduled_different: 'Garmin differs',
+      scheduled_unknown: 'Garmin session on this day',
+      not_scheduled: 'Not scheduled in Garmin',
+    },
+    outcomes: { KEEP: 'Keep', ADJUST: 'Adjust', REPLAN: 'Replan' },
+    planned: 'Planned',
+    actual: 'Actual',
+    evaluation: 'Coach evaluation',
+    distance: 'Distance',
+    pace: 'Pace',
+    heartRate: 'Heart rate',
+    updatedSession: (title: string) => `Updated future session: ${title}`,
+    cancelledSession: (title: string) => `Cancelled future session: ${title}`,
+    futureSessionsChanged: (count: number) => `Replanned ${count} future session${count === 1 ? '' : 's'}`,
+    segments: {
+      warmup: 'warm-up',
+      effort: 'effort',
+      recovery: 'recovery',
+      cooldown: 'cooldown',
+      strides: 'strides',
+    },
+  },
+
   // Display labels for domain enums. Styling (colors, badge classes) stays in
   // the domain config; only the human-readable text lives here.
   activityTypes: {

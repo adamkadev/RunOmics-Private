@@ -1366,6 +1366,46 @@ export const fr = {
     },
   },
 
+  coaching: {
+    coach: 'Coach',
+    target: 'Objectif',
+    currentBlock: 'Bloc actuel',
+    thisWeek: 'Cette semaine',
+    nextKeySession: 'Prochaine séance clé',
+    latestDecision: 'Dernier ajustement',
+    noPlanChange: 'Aucun changement du plan',
+    states: {
+      prescribed: 'Prescrite',
+      adjusted: 'Ajustée',
+      completed: 'Terminée',
+      missed: 'Manquée',
+      cancelled: 'Annulée',
+    },
+    garmin: {
+      scheduled_match: 'Planifiée dans Garmin',
+      scheduled_different: 'Garmin diffère',
+      scheduled_unknown: 'Séance Garmin ce jour',
+      not_scheduled: 'Non planifiée dans Garmin',
+    },
+    outcomes: { KEEP: 'Maintenir', ADJUST: 'Ajuster', REPLAN: 'Replanifier' },
+    planned: 'Prévu',
+    actual: 'Réalisé',
+    evaluation: 'Évaluation du coach',
+    distance: 'Distance',
+    pace: 'Allure',
+    heartRate: 'Fréquence cardiaque',
+    updatedSession: (title: string) => `Séance future ajustée : ${title}`,
+    cancelledSession: (title: string) => `Séance future annulée : ${title}`,
+    futureSessionsChanged: (count: number) => `${count} séance${count > 1 ? 's' : ''} future${count > 1 ? 's' : ''} replanifiée${count > 1 ? 's' : ''}`,
+    segments: {
+      warmup: 'échauffement',
+      effort: 'effort',
+      recovery: 'récupération',
+      cooldown: 'retour au calme',
+      strides: 'lignes droites',
+    },
+  },
+
   // Display labels for domain enums. Styling (colors, badge classes) stays in
   // the domain config; only the human-readable text lives here.
   activityTypes: {

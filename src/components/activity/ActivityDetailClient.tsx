@@ -22,6 +22,7 @@ import { RunningDynamics } from './RunningDynamics'
 import { formatClock, formatDistance, formatDurationShort } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import type { Insight } from '@/lib/gemini'
+import type { ActivityCoachingView } from '@/application/coaching/GetCoachingView'
 import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -32,6 +33,7 @@ interface Props {
   qualifiedEfforts?: QualifiedEffort[]
   aiVerdict: Insight | null
   shoe: ShoeTag | null
+  coaching: ActivityCoachingView | null
 }
 
 type TabId = 'overview' | 'splits' | 'charts' | 'dynamics'
@@ -70,7 +72,7 @@ function buildPrimaryStats(activity: Activity): Metric[] {
 }
 
 
-export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, shoe }: Props) {
+export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, shoe, coaching }: Props) {
   const [tab, setTab] = useState<TabId>('overview')
   const stats = buildPrimaryStats(activity)
   const hasSecondaryCharts = !!(activity.elevationProfile || activity.paceSamples || activity.cadenceSamples)
@@ -107,7 +109,7 @@ export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, sh
         )}
       </div>
 
-      <RunVerdict activity={activity} aiVerdict={aiVerdict} />
+      <RunVerdict activity={activity} aiVerdict={aiVerdict} coaching={coaching} />
 
       <MetricGrid metrics={stats} className="grid-cols-4 px-1 text-center" />
 
