@@ -283,12 +283,35 @@ export function raceEventFor(plan: CoachingPlan, workout: WorkoutPrescription): 
   return [plan.targetEvent, ...(plan.tuneUpEvents ?? [])].find((event) => event.date === workout.date) ?? null
 }
 
-/**
- * A race whose event carries course context is paced on the watch by the
- * athlete's own PacePro strategy. Pushing a structured workout for it would put
- * a rigid constant-pace target on the same date, so it is never synced.
- */
+/** A race whose event carries the athlete's own course/PacePro strategy. */
 export function isCourseAwareRace(plan: CoachingPlan, workout: WorkoutPrescription): boolean {
   const event = raceEventFor(plan, workout)
   return event !== null && hasCoursePacing(event)
+}
+
+/**
+ * A course-aware race is paced on the watch by the athlete's own PacePro
+ * strategy, so its race effort must reach Garmin with no pace target: a
+ * structured range over the same kilometres would compete with PacePro instead
+ * of supporting it. Only the full-distance effort is stripped - warmup and
+ * cooldown keep their easy ranges, which PacePro does not cover.
+ *
+ * The coach normally strips that target already (see `withCourseAwareRacePacing`);
+ * this is the guarantee at the Garmin boundary, so no future plan revision can
+ * push a constant race pace onto a PacePro course by accident.
+ */
+export function withoutCourseAwarePaceTarget(
+  workout: WorkoutPrescription,
+  event: TargetEvent,
+): { workout: WorkoutPrescription; stripped: boolean } {
+  let stripped = false
+  const blocks = workout.blocks.map((block) => {
+    if (block.kind === 'repeat' || block.kind !== 'effort') return block
+    if (block.target.distanceMeters !== event.distanceMeters || !block.target.paceSecPerKm) return block
+    stripped = true
+    const target = { ...block.target }
+    delete target.paceSecPerKm
+    return { ...block, target }
+  })
+  return { workout: stripped ? { ...workout, blocks } : workout, stripped }
 }

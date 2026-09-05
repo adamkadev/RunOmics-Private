@@ -267,20 +267,41 @@ describe('verification', () => {
 })
 
 describe('result rendering', () => {
-  it('marks each line and counts the failures', async () => {
-    const race = workout({ id: 'race', date: '2026-10-03', type: 'race', title: 'Broschtkriibslaf 5K Race' })
-    const withCourse = plan([workout({ id: 'a', date: '2026-09-08', title: 'Aerobic Easy Run' }), race])
-    withCourse.tuneUpEvents = [
+  const race = workout({
+    id: 'race',
+    date: '2026-10-03',
+    type: 'race',
+    title: 'Broschtkriibslaf 5K Race',
+    blocks: [{ kind: 'effort', target: { distanceMeters: 5_000 } }],
+  })
+
+  function courseAwarePlan(): CoachingPlan {
+    const coachingPlan = plan([workout({ id: 'a', date: '2026-09-08', title: 'Aerobic Easy Run' }), race])
+    coachingPlan.tuneUpEvents = [
       { id: 'tune', name: 'Broschtkriibslaf', date: '2026-10-03', distanceMeters: 5_000, courseContext: { pacingNotes: ['hilly'] } },
     ]
+    return coachingPlan
+  }
+
+  it('marks each line and counts the failures', async () => {
     const gateway = new FakeGarmin()
-    const report = await verifyGarminSync(await apply(build(withCourse, null), null, gateway), gateway)
+    const report = await verifyGarminSync(await apply(build(courseAwarePlan(), null), null, gateway), gateway)
 
     const output = formatGarminSyncResults(report)
 
     expect(output).toContain('CREATE ✓ 2026-09-08 Aerobic Easy Run')
+    expect(output).toContain('CREATE ✓ 2026-10-03 Broschtkriibslaf 5K Race')
+    expect(output).toContain('2 Garmin workout(s) synchronized.')
+    expect(output).toContain('0 failure(s).')
+  })
+
+  it('renders the skip line when course-aware races are excluded', async () => {
+    const syncPlan = buildGarminSyncPlan(courseAwarePlan(), [], null, { today: TODAY }, { skipCourseAwareRaces: true })
+    const gateway = new FakeGarmin()
+
+    const output = formatGarminSyncResults(await apply(syncPlan, null, gateway))
+
     expect(output).toContain('SKIP   - 2026-10-03 Broschtkriibslaf 5K Race (Course-aware race - use Garmin PacePro)')
     expect(output).toContain('1 Garmin workout(s) synchronized.')
-    expect(output).toContain('0 failure(s).')
   })
 })

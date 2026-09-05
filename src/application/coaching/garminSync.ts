@@ -1,6 +1,12 @@
 import type { CoachingPlan, WorkoutEvaluation, WorkoutPrescription } from '@/domain/coaching/types'
 import { selectGarminExportWorkouts, type GarminExportWindow } from './garminExport'
-import { isCourseAwareRace, toGarminWorkoutPayload, type GarminWorkoutPayload } from './garminWorkoutMapping'
+import {
+  isCourseAwareRace,
+  raceEventFor,
+  toGarminWorkoutPayload,
+  withoutCourseAwarePaceTarget,
+  type GarminWorkoutPayload,
+} from './garminWorkoutMapping'
 import {
   emptyGarminSyncState,
   garminContentHash,
@@ -42,6 +48,13 @@ export interface GarminSyncPlan {
 }
 
 export const COURSE_AWARE_RACE_REASON = 'Course-aware race - use Garmin PacePro'
+/** Shown on a course-aware race that is synced, so the preview says what reaches the watch. */
+export const COURSE_AWARE_RACE_NOTE = 'Course-aware race - race effort left unpaced for PacePro'
+
+export interface GarminSyncOptions {
+  /** Leave course-aware races off Garmin entirely, rather than syncing them unpaced. */
+  skipCourseAwareRaces?: boolean
+}
 
 function entriesByPrescription(state: GarminSyncState): Map<string, GarminSyncEntry> {
   return new Map(state.entries.map((entry) => [entry.prescriptionId, entry]))
@@ -51,17 +64,25 @@ function operationFor(
   workout: WorkoutPrescription,
   plan: CoachingPlan,
   existing: GarminSyncEntry | null,
+  options: GarminSyncOptions,
 ): GarminSyncOperation {
   const base = { date: workout.date, title: workout.title, prescriptionId: workout.id, existing }
+  const courseAware = isCourseAwareRace(plan, workout)
 
-  if (isCourseAwareRace(plan, workout)) {
+  if (courseAware && options.skipCourseAwareRaces) {
     return { ...base, action: 'skip', payload: null, contentHash: null, reason: COURSE_AWARE_RACE_REASON }
   }
 
-  const payload = toGarminWorkoutPayload(workout)
+  // The race effort is stripped of any pace target before it is mapped, so the
+  // hash below describes exactly what Garmin will hold.
+  const event = courseAware ? raceEventFor(plan, workout) : null
+  const source = event ? withoutCourseAwarePaceTarget(workout, event).workout : workout
+  const note = courseAware ? COURSE_AWARE_RACE_NOTE : null
+
+  const payload = toGarminWorkoutPayload(source)
   const contentHash = garminContentHash(payload, workout.date)
 
-  if (!existing) return { ...base, action: 'create', payload, contentHash, reason: null }
+  if (!existing) return { ...base, action: 'create', payload, contentHash, reason: note }
 
   // A create that landed but whose scheduling failed: the workout is already on
   // Garmin, so this run finishes the job rather than creating a second copy.
@@ -124,6 +145,7 @@ export function buildGarminSyncPlan(
   evaluations: WorkoutEvaluation[],
   state: GarminSyncState | null,
   window: GarminExportWindow,
+  options: GarminSyncOptions = {},
 ): GarminSyncPlan {
   const current = state ?? emptyGarminSyncState()
   // A sync state written for a different plan describes workouts this plan no
@@ -131,7 +153,7 @@ export function buildGarminSyncPlan(
   const known = current.planId === null || current.planId === plan.id ? entriesByPrescription(current) : new Map()
 
   const workouts = selectGarminExportWorkouts(plan, evaluations, window)
-  const operations = workouts.map((workout) => operationFor(workout, plan, known.get(workout.id) ?? null))
+  const operations = workouts.map((workout) => operationFor(workout, plan, known.get(workout.id) ?? null, options))
   const syncedIds = new Set(workouts.map((workout) => workout.id))
 
   const all = [...operations, ...deletions(current, syncedIds, window.today)].sort(

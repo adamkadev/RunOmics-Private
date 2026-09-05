@@ -226,17 +226,63 @@ describe('course-aware races', () => {
     date: '2026-10-03',
     type: 'race',
     title: 'Broschtkriibslaf 5K Race',
-    blocks: [{ kind: 'effort', target: { distanceMeters: 5_000 } }],
+    blocks: [
+      { kind: 'warmup', target: { distanceMeters: 2_000, paceSecPerKm: { min: 310, max: 387 } } },
+      { kind: 'effort', target: { distanceMeters: 5_000 }, notes: ['Follow the PacePro strategy.'] },
+      { kind: 'cooldown', target: { distanceMeters: 2_000, paceSecPerKm: { min: 310, max: 387 } } },
+    ],
   })
 
-  it('skips the race and says why', () => {
-    const operations = build(plan([workout({ id: 'a', date: '2026-09-08' }), race]), null).operations
-    const skipped = operations.find((operation) => operation.prescriptionId === 'race')
+  const raceOperation = (operations: ReturnType<typeof build>['operations']) =>
+    operations.find((operation) => operation.prescriptionId === 'race')
 
-    expect(skipped?.action).toBe('skip')
-    expect(skipped?.reason).toBe('Course-aware race - use Garmin PacePro')
-    expect(skipped?.payload).toBeNull()
-    expect(countOperations(operations)).toEqual({ create: 1, update: 0, delete: 0, skip: 1 })
+  it('syncs the race and says the effort is left to PacePro', () => {
+    const operations = build(plan([workout({ id: 'a', date: '2026-09-08' }), race]), null).operations
+
+    expect(raceOperation(operations)?.action).toBe('create')
+    expect(raceOperation(operations)?.reason).toBe('Course-aware race - race effort left unpaced for PacePro')
+    expect(countOperations(operations)).toEqual({ create: 2, update: 0, delete: 0, skip: 0 })
+  })
+
+  it('sends the race effort with no pace target so PacePro owns the pacing', () => {
+    const operations = build(plan([race]), null).operations
+    const steps = raceOperation(operations)?.payload?.workoutSegments[0]!.workoutSteps
+
+    const effort = steps?.[1] as { targetType: { workoutTargetTypeKey: string }; endConditionValue: number | null }
+    expect(effort.endConditionValue).toBe(5_000)
+    expect(effort.targetType.workoutTargetTypeKey).toBe('no.target')
+  })
+
+  it('keeps the warmup and cooldown paced, which PacePro does not cover', () => {
+    const operations = build(plan([race]), null).operations
+    const steps = raceOperation(operations)?.payload?.workoutSegments[0]!.workoutSteps
+
+    const warmup = steps?.[0] as { targetType: { workoutTargetTypeKey: string } }
+    const cooldown = steps?.[2] as { targetType: { workoutTargetTypeKey: string } }
+    expect(warmup.targetType.workoutTargetTypeKey).toBe('pace.zone')
+    expect(cooldown.targetType.workoutTargetTypeKey).toBe('pace.zone')
+  })
+
+  it('strips a pace target a future plan revision put on the race effort', () => {
+    const paced = workout({
+      ...race,
+      blocks: [{ kind: 'effort', target: { distanceMeters: 5_000, paceSecPerKm: { min: 235, max: 245 } } }],
+    })
+    const operations = build(plan([paced]), null).operations
+    const effort = raceOperation(operations)?.payload?.workoutSegments[0]!.workoutSteps[0] as {
+      targetType: { workoutTargetTypeKey: string }
+    }
+
+    // A constant 4:00/km range would compete with PacePro over the same kilometres.
+    expect(effort.targetType.workoutTargetTypeKey).toBe('no.target')
+  })
+
+  it('skips the race only when explicitly asked to', () => {
+    const syncPlan = buildGarminSyncPlan(plan([race]), [], null, { today: TODAY }, { skipCourseAwareRaces: true })
+
+    expect(raceOperation(syncPlan.operations)?.action).toBe('skip')
+    expect(raceOperation(syncPlan.operations)?.reason).toBe('Course-aware race - use Garmin PacePro')
+    expect(raceOperation(syncPlan.operations)?.payload).toBeNull()
   })
 
   it('syncs a race with no course context like any other session', () => {
@@ -282,8 +328,8 @@ describe('preview rendering', () => {
 
     expect(preview).toContain('Garmin sync preview')
     expect(preview).toContain('CREATE  2026-09-08  Aerobic Easy Run')
-    expect(preview).toContain('SKIP    2026-10-03  Broschtkriibslaf 5K Race  Course-aware race - use Garmin PacePro')
-    expect(preview).toContain('Create: 1')
-    expect(preview).toContain('Skip: 1')
+    expect(preview).toContain('CREATE  2026-10-03  Broschtkriibslaf 5K Race  Course-aware race - race effort left unpaced for PacePro')
+    expect(preview).toContain('Create: 2')
+    expect(preview).toContain('Skip: 0')
   })
 })
