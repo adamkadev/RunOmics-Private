@@ -16,6 +16,9 @@
 /test-results/
 /.coach-previews/
 
+# personal coaching exports (regenerated on demand via `npm run coach:export-garmin`)
+/.coach-exports/
+
 # generated screenshot audit output (regenerated on demand via `npm run screenshots`)
 /screenshots/output/
 /screenshots/.pw-artifacts/

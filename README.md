@@ -292,6 +292,29 @@ Missing coaching files are valid and leave the existing Plan, Today, and activit
 unchanged. Demo data includes a deterministic fictional coaching lifecycle; it
 never derives a personal plan from another athlete's Garmin data.
 
+### Exporting the plan to Garmin
+
+A read-only companion command renders the active plan's still-to-come sessions as
+one plain-text file that [ImportMyWorkout](https://importmyworkout.com) splits into
+separate dated Garmin workouts. It only reads the selected data workspace - the plan
+is never modified, and nothing is fetched, pushed or scheduled on Garmin.
+
+```bash
+npm run coach:export-garmin
+npm run coach:export-garmin -- --from 2026-09-08 --to 2026-10-03
+npm run coach:export-garmin -- --out <file-or-directory>
+npm run coach:export-garmin -- --stdout
+```
+
+Completed, missed and cancelled prescriptions are left out; the default lower bound
+is today, and the file lands in the ignored `.coach-exports/` directory as
+`importmyworkout-<start>-to-<end>.txt`. Rendering lives in
+`application/coaching/garminExport.ts` and only restates what the prescription
+already holds: paces, heart-rate targets, repeats, strides and recoveries are
+reproduced, never inferred. A race keeps its plan goal time, and a course-aware race
+keeps its goal labelled `Average goal pace` next to the supplied PacePro guidance, so
+it is never read back as a constant-pace session.
+
 ---
 
 ## Tests & quality
