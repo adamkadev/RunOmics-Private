@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Sync upcoming Garmin race events into public/data/upcoming_races.json.
+"""Sync upcoming Garmin race events into the private data workspace.
 
 Uses Garmin's dedicated upcoming-events endpoint so RunOmics can retain richer
 race metadata such as:
@@ -27,8 +27,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from garmin.client import GarminAPIError, GarminAuthError, GarminClient
+from data_directory import get_data_dir
 
-_DATA_DIR = Path(__file__).parent.parent / "public" / "data"
 _FUTURE_DAYS = 365
 _EVENT_LIMIT = 100
 _RETRY_PAUSE = 60.0
@@ -89,22 +89,26 @@ def fetch_upcoming_races(client: GarminClient) -> list[dict]:
         )
     )
 
-    seen: set[str] = set()
+    seen: set[tuple[str, str]] = set()
     races: list[dict] = []
 
-    for item in events:
+    # Process richer identities first so duplicate payloads cannot cause an
+    # id-only representation to hide an available shareable UUID.
+    ordered_events = sorted(events, key=_event_identity_rank)
+
+    for item in ordered_events:
         if not item.get("race"):
             continue
 
-        uuid = item.get("shareableEventUuid")
-        if not uuid or uuid in seen:
+        identity_keys = _event_identity_keys(item)
+        if not identity_keys or any(key in seen for key in identity_keys):
             continue
 
         event_date = item.get("date")
         if not event_date:
             continue
 
-        seen.add(uuid)
+        seen.update(identity_keys)
         races.append(_map_race(item))
 
     races.sort(key=lambda race: race["date"])
@@ -113,30 +117,46 @@ def fetch_upcoming_races(client: GarminClient) -> list[dict]:
     return races
 
 
-def write_upcoming_races(races: list[dict]) -> None:
+def write_upcoming_races(
+    races: list[dict],
+    *,
+    data_dir: Path | None = None,
+) -> None:
     """Persist races while retaining local values only when Garmin omits them."""
 
-    _DATA_DIR.mkdir(parents=True, exist_ok=True)
+    selected_data_dir = data_dir or get_data_dir()
+    selected_data_dir.mkdir(parents=True, exist_ok=True)
 
-    out_path = _DATA_DIR / "upcoming_races.json"
+    out_path = selected_data_dir / "upcoming_races.json"
 
-    existing: dict[str, dict] = {}
+    existing: dict[tuple[str, str], dict] = {}
 
     if out_path.exists():
         try:
             raw = json.loads(out_path.read_text())
 
             for entry in raw.get("races", []):
-                key = entry.get("garminEventUuid")
-
-                if key:
-                    existing[key] = entry
+                for key in _event_identity_keys(
+                    entry,
+                    include_fallback=True,
+                ):
+                    existing.setdefault(key, entry)
 
         except (json.JSONDecodeError, OSError):
             pass
 
     for entry in races:
-        prior = existing.get(entry["garminEventUuid"])
+        prior = next(
+            (
+                existing[key]
+                for key in _event_identity_keys(
+                    entry,
+                    include_fallback=True,
+                )
+                if key in existing
+            ),
+            None,
+        )
 
         if not prior:
             continue
@@ -182,7 +202,6 @@ def _map_race(item: dict) -> dict:
     customization = item.get("eventCustomization") or {}
 
     entry: dict = {
-        "garminEventUuid": item["shareableEventUuid"],
         "date": item["date"],
         "name": _strip_distance_suffix(
             (item.get("eventName") or "").strip(),
@@ -190,6 +209,14 @@ def _map_race(item: dict) -> dict:
         ),
         "distance": distance,
     }
+
+    event_uuid = _event_uuid(item)
+    if event_uuid is not None:
+        entry["garminEventUuid"] = event_uuid
+
+    event_id = _numeric_event_id(item)
+    if event_id is not None:
+        entry["garminEventId"] = event_id
 
     if item.get("location"):
         entry["location"] = _simplify_location(item["location"])
@@ -214,6 +241,84 @@ def _map_race(item: dict) -> dict:
         entry["targetSeconds"] = target_seconds
 
     return entry
+
+
+def _event_uuid(item: dict) -> str | None:
+    """Return a real Garmin shareable UUID, never a synthesized fallback."""
+
+    value = item.get("garminEventUuid")
+    if value is None:
+        value = item.get("shareableEventUuid")
+    if not isinstance(value, str):
+        return None
+    normalized = value.strip()
+    return normalized or None
+
+
+def _numeric_event_id(item: dict) -> int | None:
+    """Normalize Garmin's numeric event id from API or persisted data."""
+
+    value = item.get("garminEventId")
+    if value is None:
+        value = item.get("id")
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value if value > 0 else None
+    if isinstance(value, float):
+        return int(value) if value > 0 and value.is_integer() else None
+    if isinstance(value, str):
+        normalized = value.strip()
+        if normalized.isdigit() and int(normalized) > 0:
+            return int(normalized)
+    return None
+
+
+def _event_identity_keys(
+    item: dict,
+    *,
+    include_fallback: bool = False,
+) -> list[tuple[str, str]]:
+    """Return event identities in Garmin-preferred lookup order.
+
+    UUID and numeric id are both retained as aliases when both are present, so
+    differently shaped copies of the same Garmin event still deduplicate. The
+    date/name identity is used as the primary identity only when Garmin supplied
+    neither stable identifier. Persistence lookup may opt into it as a final
+    compatibility fallback for older files.
+    """
+
+    keys: list[tuple[str, str]] = []
+    event_uuid = _event_uuid(item)
+    event_id = _numeric_event_id(item)
+
+    if event_uuid is not None:
+        keys.append(("uuid", event_uuid))
+    if event_id is not None:
+        keys.append(("id", str(event_id)))
+
+    if include_fallback or not keys:
+        event_date = item.get("date")
+        event_name = item.get("name") or item.get("eventName")
+        if isinstance(event_date, str) and isinstance(event_name, str):
+            normalized_date = event_date.strip()
+            normalized_name = event_name.strip().casefold()
+            if normalized_date and normalized_name:
+                keys.append(
+                    ("date_name", f"{normalized_date}:{normalized_name}")
+                )
+
+    return keys
+
+
+def _event_identity_rank(item: dict) -> int:
+    """Rank identities so deduplication retains the strongest representation."""
+
+    if _event_uuid(item) is not None:
+        return 0
+    if _numeric_event_id(item) is not None:
+        return 1
+    return 2
 
 
 def _extract_target_seconds(custom_goal: dict | None) -> int | None:

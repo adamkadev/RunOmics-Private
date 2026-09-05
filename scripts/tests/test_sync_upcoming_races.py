@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 
 from garmin.client import GarminClient
@@ -13,25 +15,36 @@ class _Response:
 
 
 def _event(
-    event_uuid: str,
+    event_uuid: str | None,
     event_date: str,
     *,
+    event_id: int | None = None,
     primary: bool = False,
+    training: bool | None = None,
     goal: object = None,
+    distance: float = 10,
+    name: str | None = None,
 ) -> dict:
-    return {
+    event = {
         "shareableEventUuid": event_uuid,
         "date": event_date,
-        "eventName": f"Race {event_uuid} (10K)",
+        "eventName": name or f"Race {event_uuid} (10K)",
         "location": "Luxembourg, Luxembourg",
         "race": True,
-        "completionTarget": {"value": 10, "unit": "kilometer"},
+        "completionTarget": {
+            "value": distance,
+            "unit": "kilometer",
+            "unitType": "distance",
+        },
         "eventCustomization": {
             "isPrimaryEvent": primary,
-            "isTrainingEvent": not primary,
+            "isTrainingEvent": not primary if training is None else training,
             "customGoal": goal,
         },
     }
+    if event_id is not None:
+        event["id"] = event_id
+    return event
 
 
 def test_client_requests_dedicated_upcoming_events_endpoint():
@@ -74,6 +87,33 @@ def test_maps_primary_training_event_and_custom_time_goal():
         "isTrainingEvent": False,
         "targetSeconds": 2400,
     }
+
+
+def test_maps_private_race_with_numeric_id_and_all_customization_metadata():
+    mapped = sync_races._map_race(
+        _event(
+            None,
+            "2026-10-03",
+            event_id=29837036,
+            primary=False,
+            training=True,
+            goal={"unitType": "time", "unit": "second", "value": 1200.0},
+            distance=4.97,
+            name="Broschtkriibslaf",
+        )
+    )
+
+    assert mapped == {
+        "garminEventId": 29837036,
+        "date": "2026-10-03",
+        "name": "Broschtkriibslaf",
+        "distance": "5K",
+        "location": "Luxembourg",
+        "isPrimaryEvent": False,
+        "isTrainingEvent": True,
+        "targetSeconds": 1200,
+    }
+    assert "garminEventUuid" not in mapped
 
 
 def test_non_second_or_non_time_custom_goals_are_not_mapped():
@@ -124,10 +164,68 @@ def test_fetch_uses_a_multi_event_limit_and_keeps_all_returned_races(monkeypatch
     ]
 
 
+def test_fetch_keeps_private_races_and_deduplicates_by_identity_hierarchy():
+    events = [
+        # The weaker copy arrives first; UUID preference must be order-independent.
+        _event(None, "2026-09-20", event_id=101, name="Shareable Race (10K)"),
+        _event(
+            "shareable-race",
+            "2026-09-20",
+            event_id=101,
+            name="Shareable Race (10K)",
+        ),
+        _event(
+            None,
+            "2026-10-03",
+            event_id=29837036,
+            primary=False,
+            training=True,
+            goal={"unitType": "time", "unit": "second", "value": 1200.0},
+            distance=4.97,
+            name="Broschtkriibslaf",
+        ),
+        # No Garmin identifier: date/name is the final deterministic fallback.
+        _event(None, "2026-10-10", name="Fallback Race"),
+        _event(None, "2026-10-10", name=" fallback race "),
+    ]
+
+    class Client:
+        def get_upcoming_events(self, *, num_days_forward, limit):
+            return events
+
+    races = sync_races.fetch_upcoming_races(Client())
+
+    assert len(races) == 3
+    assert races[0]["garminEventUuid"] == "shareable-race"
+    assert races[0]["garminEventId"] == 101
+    private_race = next(
+        race for race in races if race.get("garminEventId") == 29837036
+    )
+    assert private_race["targetSeconds"] == 1200
+    assert private_race["isPrimaryEvent"] is False
+    assert private_race["isTrainingEvent"] is True
+    assert private_race["distance"] == "5K"
+    assert "garminEventUuid" not in private_race
+
+
+def test_distinct_numeric_events_on_same_date_and_name_are_not_deduplicated():
+    events = [
+        _event(None, "2026-10-03", event_id=1, name="Club Race"),
+        _event(None, "2026-10-03", event_id=2, name="Club Race"),
+    ]
+
+    class Client:
+        def get_upcoming_events(self, *, num_days_forward, limit):
+            return events
+
+    races = sync_races.fetch_upcoming_races(Client())
+
+    assert [race["garminEventId"] for race in races] == [1, 2]
+
+
 def test_write_preserves_omitted_metadata_but_accepts_new_garmin_values(
-    monkeypatch, tmp_path
+    tmp_path
 ):
-    monkeypatch.setattr(sync_races, "_DATA_DIR", tmp_path)
     path = tmp_path / "upcoming_races.json"
     path.write_text(
         json.dumps(
@@ -177,7 +275,8 @@ def test_write_preserves_omitted_metadata_but_accepts_new_garmin_values(
                 "targetSeconds": 2350,
                 "isPrimaryEvent": False,
             },
-        ]
+        ],
+        data_dir=tmp_path,
     )
 
     races = json.loads(path.read_text())["races"]
@@ -188,3 +287,57 @@ def test_write_preserves_omitted_metadata_but_accepts_new_garmin_values(
     assert "targetSeconds" not in by_id["legacy"]
     assert by_id["updated"]["targetSeconds"] == 2350
     assert by_id["updated"]["isPrimaryEvent"] is False
+
+
+def test_write_preserves_metadata_for_numeric_and_legacy_date_name_identity(
+    tmp_path
+):
+    path = tmp_path / "upcoming_races.json"
+    path.write_text(
+        json.dumps(
+            {
+                "races": [
+                    {
+                        "garminEventId": 29837036,
+                        "date": "2026-10-03",
+                        "name": "Broschtkriibslaf",
+                        "distance": "5K",
+                        "targetSeconds": 1200,
+                        "isPrimaryEvent": False,
+                        "isTrainingEvent": True,
+                    },
+                    {
+                        "date": "2026-10-10",
+                        "name": "Legacy Race",
+                        "distance": "10K",
+                        "targetSeconds": 2500,
+                    },
+                ]
+            }
+        )
+    )
+
+    sync_races.write_upcoming_races(
+        [
+            {
+                "garminEventId": 29837036,
+                "date": "2026-10-03",
+                "name": "Broschtkriibslaf",
+                "distance": "5K",
+            },
+            {
+                "garminEventId": 400,
+                "date": "2026-10-10",
+                "name": "Legacy Race",
+                "distance": "10K",
+            },
+        ],
+        data_dir=tmp_path,
+    )
+
+    races = json.loads(path.read_text())["races"]
+    by_id = {race["garminEventId"]: race for race in races}
+    assert by_id[29837036]["targetSeconds"] == 1200
+    assert by_id[29837036]["isPrimaryEvent"] is False
+    assert by_id[29837036]["isTrainingEvent"] is True
+    assert by_id[400]["targetSeconds"] == 2500
