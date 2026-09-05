@@ -37,6 +37,9 @@ interface Props {
   planPhaseRanges: PlanPhaseRange[]
   /** The plan's own start/end - the phases omit the base weeks. */
   planSpan: PlanSpan | null
+  /** Where today sits in the coaching block, when one is active - it counts the
+   *  plan's own weeks rather than the Monday rows a span happens to touch. */
+  blockWeek?: { done: number; total: number } | null
   today: string
 }
 
@@ -68,6 +71,7 @@ export function WeekPurposeBanner({
   planned,
   planPhaseRanges,
   planSpan,
+  blockWeek: blockWeekOverride = null,
   today,
 }: Props) {
   const verdict = over ? garminStatus : null
@@ -79,7 +83,7 @@ export function WeekPurposeBanner({
   }
 
   const tone = TONE_CLASS[level ?? 'normal']
-  const blockWeek = weeksInPlan(planSpan, today)
+  const blockWeek = blockWeekOverride ?? weeksInPlan(planSpan, today)
   const accentColor = verdict ? TRAINING_STATUS_COLORS[verdict] : phase ? TRAINING_PLAN_PHASE_COLORS[phase] : null
   const title = verdict
     ? t.trainingStatus.status[verdict]
@@ -120,10 +124,10 @@ export function WeekPurposeBanner({
           </div>
           {/* A running week shows what is planned; a finished one, how its load
               landed. The load percent is meaningless mid-week (partial total). */}
-          {!over && planned && (
+          {!over && (planned || blockWeek) && (
             <div className="mt-0.5 text-xs text-muted-foreground">
               {[
-                t.plan.weekPurpose.plannedSessions(planned.total, planned.key),
+                planned ? t.plan.weekPurpose.plannedSessions(planned.total, planned.key) : null,
                 blockWeek ? t.plan.weekPurpose.weekOfBlock(blockWeek.done, blockWeek.total) : null,
               ]
                 .filter(Boolean)
@@ -152,6 +156,7 @@ export function WeekPurposeBanner({
       {/* Base->Build->Peak->Taper progress, inside the same card as the
           banner - one visual unit, not two stacked cards. */}
       <PlanPhaseTrack ranges={planPhaseRanges} today={today} />
+
     </GlassSurface>
   )
 }

@@ -123,6 +123,14 @@ export interface CoachingPlan {
   revision: number
   status: CoachingPlanStatus
   block: TrainingBlock
+  /**
+   * When training toward `targetEvent` began. The macrocycle outlives the
+   * rolling block, so this is carried across replans; without it the phase bar
+   * and week count would restart every time a new 4-week block is generated.
+   * Absent on plans written before this field existed - readers fall back to
+   * the current block's start.
+   */
+  macrocycleStartDate?: string
   targetEvent: TargetEvent
   tuneUpEvents?: TargetEvent[]
   goal: TrainingGoal

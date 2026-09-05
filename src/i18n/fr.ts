@@ -1335,6 +1335,8 @@ export const fr = {
     raceFooter: {
       inDays: (days: number) => (days === 0 ? "aujourd'hui" : days === 1 ? 'dans 1 jour' : `dans ${days} jours`),
       weeksIn: (done: number, total: number) => `${done}/${total}`,
+      blockEndsHere: 'Fin du bloc actuel',
+      daysAway: (days: number) => `${days} jours`,
       weeksInLabel: 'semaines',
     },
     phaseTrack: {
@@ -1361,6 +1363,8 @@ export const fr = {
         key > 0
           ? `${total} séance${total > 1 ? 's' : ''} · ${key} qualité`
           : `${total} séance${total > 1 ? 's' : ''}`,
+      weekOfTarget: (done: number, total: number) => `semaine ${done} sur ${total} avant l'objectif`,
+      currentBlock: (from: string, to: string) => `Bloc actuel · ${from} – ${to}`,
       weekOfBlock: (done: number, total: number) => `semaine ${done} sur ${total}`,
       adherence: (done: number, due: number) => `${done} / ${due} faites`,
     },

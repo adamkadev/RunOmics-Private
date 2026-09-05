@@ -6,7 +6,7 @@ import type { ActivitySummary, PlannedWorkout } from '@/domain/activity/types'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { CoachingPlan } from '@/domain/coaching/types'
-import { plan, workout } from '@/domain/coaching/__tests__/fixtures'
+import { plan } from '@/domain/coaching/__tests__/fixtures'
 import { t } from '@/i18n'
 import { WeekView } from '../WeekView'
 
@@ -36,25 +36,16 @@ function activity(overrides: Partial<ActivitySummary> & Pick<ActivitySummary, 'i
 const TEMPO = activity({ id: 'a-tempo', date: '2026-09-07', type: 'Tempo', distanceKm: 4.79, durationSeconds: 1_756, avgHeartRate: 160, elevationGain: 7 })
 const RACE = activity({ id: 'a-race', date: '2026-09-08', type: 'Race', distanceKm: 5.25, durationSeconds: 1_310, avgHeartRate: 196, elevationGain: 19 })
 
-/** A block whose weekly focus text spans Base -> Build -> Peak -> Taper. */
+/**
+ * A rolling 4-week block inside a 12-week macrocycle: training starts Sep 7 and
+ * the primary target is Nov 29, well beyond the block's own Oct 4 end.
+ */
 function blockPlan(): CoachingPlan {
   const base = plan()
-  const focuses = [
-    'Post-race recovery, resuming aerobic base work',
-    'Aerobic volume building and threshold development',
-    'Aerobic volume with a controlled 5K tune-up workout',
-    'Taper week for the tune-up race',
-  ]
   return {
     ...base,
-    weeks: focuses.map((focus, i) => ({
-      id: `week-${i + 1}`,
-      index: i + 1,
-      startDate: `2026-09-${String(7 + i * 7).padStart(2, '0')}`,
-      endDate: `2026-09-${String(13 + i * 7).padStart(2, '0')}`,
-      focus,
-      workouts: [workout({ id: `workout-${i + 1}`, date: `2026-09-${String(9 + i * 7).padStart(2, '0')}` })],
-    })),
+    macrocycleStartDate: '2026-09-07',
+    targetEvent: { ...base.targetEvent, date: '2026-11-29' },
   }
 }
 
@@ -127,20 +118,25 @@ describe('WeekView weekly metrics', () => {
   it('shows the completed activities and the coach prescription side by side', () => {
     renderWeek({ activities: [TEMPO, RACE], coaching: overview() })
 
-    expect(screen.getByTestId('coach-calendar-workout-threshold')).toBeInTheDocument()
+    expect(screen.getByLabelText(/3 × 8 min threshold/)).toBeInTheDocument()
     expect(screen.getByLabelText(/September 7/)).toBeInTheDocument()
     expect(screen.getByLabelText(/September 8/)).toBeInTheDocument()
   })
 })
 
 describe('WeekView progression card', () => {
-  it('draws the block phases from the coaching plan', () => {
+  it('spans the macrocycle to the primary target, not the four block weeks', () => {
     renderWeek({ coaching: overview({ coachingPlan: blockPlan() }) })
 
-    // Derived from each week's focus, in the Plan's own phase vocabulary.
-    for (const label of [t.plan.phaseTrack.base, t.plan.phaseTrack.build, t.plan.phaseTrack.peak, t.plan.phaseTrack.taper]) {
+    for (const label of [t.plan.phaseTrack.base, t.plan.phaseTrack.build, t.plan.phaseTrack.peak, t.plan.phaseTrack.raceDay]) {
       expect(screen.getByText(label)).toBeInTheDocument()
     }
+  })
+
+  it('keeps the block out of the banner copy', () => {
+    renderWeek({ coaching: overview({ coachingPlan: blockPlan() }) })
+
+    expect(screen.queryByText(/Current block/)).not.toBeInTheDocument()
   })
 
   it('keeps the Garmin phase track when there is no coaching', () => {
@@ -169,9 +165,11 @@ describe('WeekView coaching day cells and Today', () => {
   it('represents each coach workout once, in the day it falls on', () => {
     renderWeek({ coaching: overview() })
 
-    // One tile per prescription, one detail for the selected day - no list above the strip.
-    expect(screen.getAllByTestId('coach-calendar-workout-threshold')).toHaveLength(1)
+    // The day cell carries it via its type tile and label; the detail is the
+    // only place the session is spelled out. No third copy anywhere.
+    expect(screen.getAllByTestId('coach-calendar-2026-09-09')).toHaveLength(1)
     expect(screen.getAllByTestId('coach-prescription-detail')).toHaveLength(1)
+    expect(screen.getAllByText('3 × 8 min threshold')).toHaveLength(1)
   })
 
   it('uses todays prescription for the Today card', () => {
@@ -241,6 +239,20 @@ describe('WeekView target race', () => {
     expect(screen.getByText('Autumn 10K')).toBeInTheDocument()
   })
 
+  it('counts the week toward the primary target in the race card', () => {
+    renderWeek({ coaching: overview({ coachingPlan: blockPlan() }) })
+
+    // Sep 7 -> Nov 29 is 12 weeks; today (Sep 9) is in the first of them.
+    expect(screen.getByText(t.plan.raceFooter.weeksIn(1, 12))).toBeInTheDocument()
+    expect(screen.getByText(t.plan.raceFooter.weeksInLabel)).toBeInTheDocument()
+  })
+
+  it('counts days, not block progress, for each listed race', () => {
+    renderWeek({ coaching: overview() })
+
+    expect(screen.getByText(t.plan.raceFooter.daysAway(39))).toBeInTheDocument()
+  })
+
   it('keeps the Garmin race when there is no coaching', () => {
     renderWeek({ nextRace: { date: '2026-10-18', name: 'City Half', distance: '21K' } })
 
@@ -255,7 +267,7 @@ describe('WeekView without coaching', () => {
     expect(screen.getByText(t.plan.weekSummary.easyHard)).toBeInTheDocument()
     expect(screen.queryByTestId('coach-prescription-detail')).not.toBeInTheDocument()
     expect(screen.queryByTestId('coach-decision-row')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('coach-calendar-workout-threshold')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('coach-calendar-2026-09-09')).not.toBeInTheDocument()
   })
 
   it('still shows the Garmin planned workout on the selected day', () => {

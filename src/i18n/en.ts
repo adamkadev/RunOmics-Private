@@ -1340,6 +1340,8 @@ export const en = {
     raceFooter: {
       inDays: (days: number) => (days === 0 ? 'today' : days === 1 ? 'in 1 day' : `in ${days} days`),
       weeksIn: (done: number, total: number) => `${done}/${total}`,
+      blockEndsHere: 'Current block ends here',
+      daysAway: (days: number) => `${days} days`,
       weeksInLabel: 'weeks in',
     },
     phaseTrack: {
@@ -1366,6 +1368,8 @@ export const en = {
         key > 0
           ? `${total} session${total > 1 ? 's' : ''} · ${key} key`
           : `${total} session${total > 1 ? 's' : ''}`,
+      weekOfTarget: (done: number, total: number) => `week ${done} of ${total} to primary target`,
+      currentBlock: (from: string, to: string) => `Current block · ${from} – ${to}`,
       weekOfBlock: (done: number, total: number) => `week ${done} of ${total}`,
       adherence: (done: number, due: number) => `${done} / ${due} done`,
     },

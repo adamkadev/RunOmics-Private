@@ -1,49 +1,78 @@
 import type { PlanPhaseRange, TrainingPlanPhase } from '@/application/usecases/GetTrainingPlan'
-import type { CoachingPlan, TrainingWeek, WorkoutPrescription, WorkoutTarget } from '@/domain/coaching/types'
+import type { CoachingPlan, WorkoutPrescription, WorkoutTarget } from '@/domain/coaching/types'
 import { formatClock, formatDurationWords } from '@/lib/formatters'
-import { t } from '@/i18n'
 
-/**
- * Coaching weeks are placed in the Plan's own phase vocabulary
- * (Base/Build/Peak/Taper/Race) rather than a second set of names, so the
- * progression track reads identically whether it is driven by Garmin Coach or
- * by the adaptive block.
- */
-function weekPhase(week: TrainingWeek): TrainingPlanPhase | null {
-  const focus = week.focus.toLowerCase()
-  if (week.workouts.some(w => w.type === 'race' && w.status !== 'cancelled')) return 'raceDay'
-  if (/taper|affût|affut/.test(focus)) return 'taper'
-  if (/recovery|post.race|récup|recup/.test(focus)) return 'base'
-  if (/sharpen|specific|spécifi|tune.up|5k|5 km/.test(focus)) return 'peak'
-  if (/build|threshold|aerobic|aérobie|seuil|endur|volume/.test(focus)) return 'build'
-  return null
+const DAY_MS = 86_400_000
+
+// UTC throughout: a macrocycle spans a DST change, and local-midnight maths
+// drifts a day either side of it.
+function utc(date: string): number {
+  return Date.parse(date + 'T00:00:00Z')
 }
 
-/** The week's phase name, falling back to its own focus text when none is recognised. */
-export function coachingPhase(week: TrainingWeek): string {
-  const phase = weekPhase(week)
-  return phase ? t.plan.phaseTrack[phase] : week.focus
+function daysBetween(from: string, to: string): number {
+  return Math.round((utc(to) - utc(from)) / DAY_MS)
+}
+
+function addDays(date: string, days: number): string {
+  return new Date(utc(date) + days * DAY_MS).toISOString().slice(0, 10)
 }
 
 /**
- * The block's weeks collapsed into consecutive phase segments, so the existing
- * progression track can render Base -> Build -> Peak -> Taper from the plan's
- * own weekly focus rather than from a second hardcoded training model. Weeks
- * whose focus names no known phase are folded into the run before them, which
- * keeps the track continuous instead of sprouting one segment per week.
+ * Shape of the macrocycle running from the start of training to the primary
+ * target. Configured here at macrocycle level: the closing week is race week,
+ * and the run-up splits base-heavy. These are deliberately NOT read from the
+ * rolling block's TrainingWeek entries - a week's focus describes that one
+ * generated week, while these four phases span the whole journey to the target.
  */
-export function coachingPhaseRanges(plan: CoachingPlan): PlanPhaseRange[] {
-  const ranges: PlanPhaseRange[] = []
-  for (const week of plan.weeks) {
-    const phase = weekPhase(week)
-    const previous = ranges[ranges.length - 1]
-    if (!phase || (previous && previous.phase === phase)) {
-      if (previous) previous.endDate = week.endDate
-      continue
-    }
-    ranges.push({ phase, startDate: week.startDate, endDate: week.endDate })
-  }
-  return ranges
+const MACROCYCLE_SHAPE = { raceWeekDays: 7, base: 0.45, build: 0.35 } as const
+
+/** Training start for the primary target: the macrocycle anchor, or today's block. */
+export function macrocycleStart(plan: CoachingPlan): string {
+  return plan.macrocycleStartDate ?? plan.block.startDate
+}
+
+/**
+ * Base -> Build -> Peak -> Race across the whole run-up to the primary target,
+ * derived from dates rather than from the four weeks of the current block.
+ */
+export function macrocyclePhaseRanges(plan: CoachingPlan): PlanPhaseRange[] {
+  const start = macrocycleStart(plan)
+  const end = plan.targetEvent.date
+  const total = daysBetween(start, end) + 1
+  if (total < 14) return []
+
+  // The bar ends on race day itself, so the closing week is carved off first.
+  const runUp = total - MACROCYCLE_SHAPE.raceWeekDays
+  const baseDays = Math.max(1, Math.round(runUp * MACROCYCLE_SHAPE.base))
+  const buildDays = Math.max(1, Math.round(runUp * MACROCYCLE_SHAPE.build))
+  const peakDays = runUp - baseDays - buildDays
+  if (peakDays < 1) return []
+
+  const phases: { phase: TrainingPlanPhase; days: number }[] = [
+    { phase: 'base', days: baseDays },
+    { phase: 'build', days: buildDays },
+    { phase: 'peak', days: peakDays },
+    { phase: 'raceDay', days: MACROCYCLE_SHAPE.raceWeekDays },
+  ]
+
+  let cursor = start
+  return phases.map(({ phase, days }, i) => {
+    // The final segment is pinned to race day so rounding never lands short.
+    const endDate = i === phases.length - 1 ? end : addDays(cursor, days - 1)
+    const range = { phase, startDate: cursor, endDate }
+    cursor = addDays(cursor, days)
+    return range
+  })
+}
+
+/** Week X of Y toward the primary target, counted from the macrocycle dates. */
+export function macrocycleWeek(plan: CoachingPlan, today: string): { done: number; total: number } | null {
+  const start = macrocycleStart(plan)
+  // Race day closes the final week rather than opening a new one.
+  const total = Math.max(1, Math.round(daysBetween(start, plan.targetEvent.date) / 7))
+  const done = Math.floor(daysBetween(start, today) / 7) + 1
+  return { done: Math.min(Math.max(done, 1), total), total }
 }
 
 /** Prefer explicit distance; estimate timed paced segments, never unpaced effort. */

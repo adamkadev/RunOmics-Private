@@ -24,7 +24,7 @@ import { ActivitySheet } from './ActivitySheet'
 import { InlineJumpButton } from '@/components/ui/InlineJumpButton'
 import { PlannedWorkoutSheet } from './PlannedWorkoutSheet'
 import { WeekPurposeBanner } from './WeekPurposeBanner'
-import { RaceFooter } from './RaceFooter'
+import { RaceFooter, type FooterRace } from './RaceFooter'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { paceZoneKeyFor } from '@/domain/training/typePaceZone'
@@ -37,7 +37,7 @@ import type { CoachingOverview, PrescriptionView } from '@/application/coaching/
 import { COACHING_TO_ACTIVITY_TYPE } from '@/domain/coaching/types'
 import { CoachPrescriptionDetail } from '@/components/coaching/CoachPrescriptionDetail'
 import { CoachComingUpRow } from '@/components/coaching/CoachComingUpRow'
-import { coachingPhaseRanges } from '@/components/coaching/presentation'
+import { macrocyclePhaseRanges, macrocycleWeek } from '@/components/coaching/presentation'
 
 const MISSED = 'var(--color-missed)'
 // alpha variants via color-mix (supported Safari 16.2+, all modern browsers)
@@ -321,10 +321,11 @@ export function WeekView({
     return workouts.length ? summarizePlannedWeek(workouts.map((p) => p.type)) : null
   }, [days, byDatePlanned])
 
-  // The block's own phases, in the Plan's Base/Build/Peak/Taper vocabulary, so
-  // the progression card is populated by coaching rather than replaced by it.
+  // Base -> Build -> Peak -> Race spans the whole run-up to the primary target,
+  // not the four weeks of the current block: the rolling block is one adaptive
+  // slice inside this macrocycle, and the two are not the same thing.
   const coachPhaseRanges = useMemo(
-    () => (coaching ? coachingPhaseRanges(coaching.plan) : []),
+    () => (coaching ? macrocyclePhaseRanges(coaching.plan) : []),
     [coaching]
   )
 
@@ -339,27 +340,27 @@ export function WeekView({
   )
 
   // The target race card keeps its place at the foot of the plan; coaching only
-  // supplies a better event for it (the block's own target, plus any tune-up).
-  const { targetRace, supportingRace, coachSpan } = useMemo(() => {
-    if (!coaching) return { targetRace: nextRace ?? null, supportingRace: null, coachSpan: null }
-    const { targetEvent, tuneUpEvents, block } = coaching.plan
-    const toRace = (event: typeof targetEvent): UpcomingRace => ({
-      date: event.date,
-      name: event.name,
-      distance: event.distanceLabel ?? '',
-      location: event.location,
-      targetSeconds: event.targetSeconds ?? null,
-    })
-    // The soonest tune-up still ahead is the one worth naming.
-    const tuneUp = (tuneUpEvents ?? [])
-      .filter((event) => event.date >= today)
-      .sort((a, b) => a.date.localeCompare(b.date))[0]
-    return {
-      targetRace: toRace(targetEvent),
-      supportingRace: tuneUp ? toRace(tuneUp) : null,
-      coachSpan: { startDate: block.startDate, endDate: block.endDate },
+  // supplies the events for it. The block is a rolling ~4-week horizon, so it
+  // ends on the tune-up while the primary target sits beyond it - that target
+  // gets a countdown, never a progress fraction the block cannot yet support.
+  const { footerRaces, footerSpan } = useMemo(() => {
+    if (!coaching) {
+      return { footerRaces: nextRace ? [{ race: nextRace }] : [], footerSpan: planSpan ?? null }
     }
-  }, [coaching, nextRace, today])
+    const { targetEvent, tuneUpEvents, block } = coaching.plan
+    const toRace = (event: typeof targetEvent): FooterRace => ({
+      race: {
+        date: event.date,
+        name: event.name,
+        distance: event.distanceLabel ?? '',
+        location: event.location,
+        targetSeconds: event.targetSeconds ?? null,
+      },
+      blockEndsHere: event.date === block.endDate,
+    })
+    const upcoming = [targetEvent, ...(tuneUpEvents ?? [])].filter((event) => event.date >= today)
+    return { footerRaces: upcoming.map(toRace), footerSpan: null }
+  }, [coaching, nextRace, planSpan, today])
 
   // days[6] exists (fixed-length 7 array); the last day gone means the week is judgeable.
   const weekOver = days[days.length - 1]!.date < today
@@ -418,6 +419,7 @@ export function WeekView({
                     onClick={() => { setSelectedDate(d.date); onSelectDate?.(d.date) }}
                     aria-label={`${formatDateFull(d.date)}${coach.length ? ` · ${coach.map(view => `${view.prescription.title} · ${t.coaching.states[view.state]}`).join(', ')}` : ''}`}
                     aria-pressed={d.date === selectedDate}
+                    {...(coach.length ? { 'data-testid': `coach-calendar-${d.date}` } : {})}
                     className={cn(
                       'min-w-0 flex flex-col items-center gap-1 rounded-lg py-0.5 transition-transform active:scale-95',
                       d.date === selectedDate && 'bg-foreground/[0.06]'
@@ -476,19 +478,6 @@ export function WeekView({
                         {missed && <X size={11} strokeWidth={3.4} style={{ color: MISSED }} />}
                       </div>
                     </div>
-                    {coach.map(view => (
-                      <span
-                        key={view.prescription.id}
-                        data-testid={`coach-calendar-${view.prescription.id}`}
-                        title={`${view.prescription.title} · ${t.coaching.states[view.state]}`}
-                        className={cn(
-                          'hidden w-full truncate px-0.5 text-center text-micro font-semibold leading-tight text-muted-foreground sm:block',
-                          view.state === 'cancelled' && 'line-through opacity-50'
-                        )}
-                      >
-                        {view.prescription.title}
-                      </span>
-                    ))}
                   </button>
                 )
               })}
@@ -597,8 +586,13 @@ export function WeekView({
         </div>
       )}
 
-      {targetRace && atPresent && (
-        <RaceFooter race={targetRace} planSpan={coachSpan ?? planSpan} today={today} supporting={supportingRace} />
+      {footerRaces.length > 0 && atPresent && (
+        <RaceFooter
+          races={footerRaces}
+          planSpan={footerSpan}
+          weeks={coaching ? macrocycleWeek(coaching.plan, today) : null}
+          today={today}
+        />
       )}
 
       {sheetActivity && (
