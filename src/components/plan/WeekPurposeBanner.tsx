@@ -3,7 +3,6 @@ import { cn } from '@/lib/utils'
 import type { PlannedWeek, WeekAdherence, WeekLoadLevel } from '@/domain/training/weekSummary'
 import type { TrainingStatusType } from '@/application/usecases/GetTrainingStatus'
 import type { PlanPhaseRange, TrainingPlanPhase } from '@/application/usecases/GetTrainingPlan'
-import type { Insight } from '@/lib/gemini'
 import { TRAINING_STATUS_COLORS, TRAINING_PLAN_PHASE_COLORS } from '@/lib/colors'
 import { PlanPhaseTrack } from './PlanPhaseTrack'
 import { weeksInPlan, type PlanSpan } from '@/domain/training/planProgress'
@@ -39,8 +38,6 @@ interface Props {
   /** The plan's own start/end - the phases omit the base weeks. */
   planSpan: PlanSpan | null
   today: string
-  /** Generated line on how to run the rest of the week, when there is a fresh one. */
-  aiTake: Insight | null
 }
 
 // A week gets named from what it is, in this order:
@@ -72,12 +69,14 @@ export function WeekPurposeBanner({
   planPhaseRanges,
   planSpan,
   today,
-  aiTake,
 }: Props) {
   const verdict = over ? garminStatus : null
   const phase = over ? null : planPhase
-  if (!over && !phase && !planned && adherence === null) return null
-  if (over && level === null && adherence === null && verdict === null) return null
+  // A block with published phases always has its track to show.
+  if (planPhaseRanges.length < 2) {
+    if (!over && !phase && !planned && adherence === null) return null
+    if (over && level === null && adherence === null && verdict === null) return null
+  }
 
   const tone = TONE_CLASS[level ?? 'normal']
   const blockWeek = weeksInPlan(planSpan, today)
@@ -149,15 +148,6 @@ export function WeekPurposeBanner({
           </div>
         )}
       </div>
-
-      {/* The title stays the week's stated intent (Garmin's phase or verdict);
-          the generated pair below says how to run what is left of it. */}
-      {aiTake && (
-        <div className="mt-2.5 border-t border-foreground/[0.08] pt-2.5">
-          <p className="text-footnote font-semibold leading-snug text-foreground">{aiTake.headline}</p>
-          <p className="mt-0.5 text-caption leading-snug text-muted-foreground">{aiTake.body}</p>
-        </div>
-      )}
 
       {/* Base->Build->Peak->Taper progress, inside the same card as the
           banner - one visual unit, not two stacked cards. */}

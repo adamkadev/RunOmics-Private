@@ -4,8 +4,6 @@ import { getTrainingStatusCalendar } from '@/application/usecases/GetTrainingSta
 import { getTrainingPlan } from '@/application/usecases/GetTrainingPlan'
 import { getNextRace } from '@/application/usecases/GetNextRace'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
-import { getCurrentWeekPurpose } from '@/application/usecases/GetCurrentWeekPurpose'
-import { getWeekPurposeInsight } from '@/application/usecases/GetWeekPurposeInsight'
 import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { PlanClient } from '@/components/plan/PlanClient'
@@ -35,7 +33,6 @@ export default async function PlanPage() {
       planSpan={trainingPlan}
       nextRace={nextRace}
       trainingZones={trainingZones}
-      weekPurposeTake={await getWeekPurposeInsight(await getCurrentWeekPurpose())}
       coaching={getCoachingOverview()}
     />
   )

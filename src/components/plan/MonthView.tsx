@@ -10,12 +10,15 @@ import { InlineJumpButton } from '@/components/ui/InlineJumpButton'
 import { PlannedWorkoutSheet } from './PlannedWorkoutSheet'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
+import type { PrescriptionView } from '@/application/coaching/GetCoachingView'
+import { prescriptionSize } from '@/components/coaching/presentation'
 
 interface Props {
   year: number
   month: number
   byDate: Map<string, ActivitySummary[]>
   byDatePlanned: Map<string, PlannedWorkout>
+  byDateCoach?: ReadonlyMap<string, PrescriptionView[]>
   today: string
   atPresent: boolean
   onToday: () => void
@@ -102,7 +105,7 @@ function monthKey(year: number, month: number): string {
   return `${year}-${String(month + 1).padStart(2, '0')}`
 }
 
-export function MonthView({ year, month, byDate, byDatePlanned, today, atPresent, onToday, onSelectDay }: Props) {
+export function MonthView({ year, month, byDate, byDatePlanned, byDateCoach, today, atPresent, onToday, onSelectDay }: Props) {
   const [sheetPlan, setSheetPlan] = useState<PlannedWorkout | null>(null)
   const { cells, totalKm, sessionCount } = useMemo(() => {
     const firstDay = new Date(year, month, 1)
@@ -163,6 +166,12 @@ export function MonthView({ year, month, byDate, byDatePlanned, today, atPresent
                       >
                         {cell.day}
                       </p>
+                      {byDateCoach?.has(cell.date) && <button type="button" onClick={() => onSelectDay(cell.date)} aria-label={`${formatDateFull(cell.date)} · ${byDateCoach.get(cell.date)!.map(view => view.prescription.title).join(', ')}`} className="mb-1 block w-full min-w-0 rounded border-l-2 border-accent/60 bg-accent/[0.06] px-1 py-1 text-left">
+                        {byDateCoach.get(cell.date)!.map(view => <span key={view.prescription.id} data-testid={`coach-calendar-${view.prescription.id}`} className="block">
+                          <span className={cn('line-clamp-2 break-words text-micro font-semibold text-foreground', view.state === 'cancelled' && 'line-through opacity-50')}>{view.prescription.title}</span>
+                          <span className="block text-micro text-muted-foreground">{prescriptionSize(view.prescription)}</span>
+                        </span>)}
+                      </button>}
                       {cell.acts.length > 0 ? (
                         <button
                           type="button"
@@ -172,7 +181,7 @@ export function MonthView({ year, month, byDate, byDatePlanned, today, atPresent
                         >
                           <DayActivities activities={cell.acts} />
                         </button>
-                      ) : byDatePlanned.has(cell.date) ? (
+                      ) : !byDateCoach?.has(cell.date) && byDatePlanned.has(cell.date) ? (
                         <PlannedBadge
                           workout={byDatePlanned.get(cell.date)!}
                           onTap={() => setSheetPlan(byDatePlanned.get(cell.date)!)}

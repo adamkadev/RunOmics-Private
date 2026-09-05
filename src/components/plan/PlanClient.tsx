@@ -8,9 +8,7 @@ import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { PlanSpan } from '@/domain/training/planProgress'
-import type { Insight } from '@/lib/gemini'
-import type { CoachingOverview } from '@/application/coaching/GetCoachingView'
-import { CoachPlanOverview } from '@/components/coaching/CoachPlanOverview'
+import type { PrescriptionView, CoachingOverview } from '@/application/coaching/GetCoachingView'
 import { PeriodNav } from '@/components/ui/PeriodNav'
 import { WeekView } from './WeekView'
 import { MonthView } from './MonthView'
@@ -31,14 +29,12 @@ interface Props {
   trainingZones: TrainingZonesData | null
   /** The plan's own start/end, for the week-of-block count. */
   planSpan: PlanSpan | null
-  /** Generated line for the week in progress only - past and future weeks keep the banner's own copy. */
-  weekPurposeTake: Insight | null
   coaching: CoachingOverview | null
 }
 
 type ViewMode = 'week' | 'month'
 
-export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate, planPhaseRanges, nextRace, trainingZones, planSpan, weekPurposeTake, coaching }: Props) {
+export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate, planPhaseRanges, nextRace, trainingZones, planSpan, coaching }: Props) {
   const now = new Date()
   const today = isoDate(now)
   const [mode, setMode] = useState<ViewMode>('week')
@@ -65,6 +61,16 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate
     for (const p of plannedWorkouts) map.set(p.date, p)
     return map
   }, [plannedWorkouts])
+
+  const byDateCoach = useMemo(() => {
+    const map = new Map<string, PrescriptionView[]>()
+    for (const view of coaching?.workouts ?? []) map.set(view.prescription.date, [...(map.get(view.prescription.date) ?? []), view])
+    return map
+  }, [coaching])
+
+  const canGoForward = coaching
+    ? (mode === 'week' ? isoDate(addDays(weekStart, 6)) < coaching.plan.block.endDate : `${year}-${String(month + 1).padStart(2, '0')}` < coaching.plan.block.endDate.slice(0, 7))
+    : false
 
   const atPresent =
     mode === 'week'
@@ -111,12 +117,11 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate
 
   const swipeHandlers = useSwipeNavigation(
     () => shift(-1),
-    () => { if (!atPresent) shift(1) }
+    () => { if (!atPresent || canGoForward) shift(1) }
   )
 
   return (
     <div className="space-y-4">
-      {coaching && <CoachPlanOverview coaching={coaching} />}
       <div className="px-1">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
@@ -129,7 +134,7 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate
               label={<span className="text-footnote font-medium text-muted-foreground">{subtitle}</span>}
               onPrev={() => shift(-1)}
               onNext={() => shift(1)}
-              nextDisabled={atPresent}
+              nextDisabled={atPresent && !canGoForward}
               prevLabel={t.plan.prevPeriod}
               nextLabel={t.plan.nextPeriod}
               size="sm"
@@ -173,6 +178,7 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate
             activities={activities}
             byDate={byDate}
             byDatePlanned={byDatePlanned}
+            byDateCoach={byDateCoach}
             hrBounds={hrBounds}
             today={today}
             atPresent={atPresent}
@@ -183,7 +189,8 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate
             trainingZones={trainingZones}
             planSpan={planSpan}
             initialSelectedDate={focusDate}
-            weekPurposeTake={weekPurposeTake}
+            coaching={coaching}
+            onSelectDate={setFocusDate}
           />
         ) : (
           <MonthView
@@ -191,6 +198,7 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate
             month={month}
             byDate={byDate}
             byDatePlanned={byDatePlanned}
+            byDateCoach={byDateCoach}
             today={today}
             atPresent={atPresent}
             onToday={goToday}

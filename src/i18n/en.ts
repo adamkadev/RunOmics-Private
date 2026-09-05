@@ -1372,6 +1372,10 @@ export const en = {
   },
 
   coaching: {
+    showStructure: 'Show structure',
+    prescription: 'Coach prescription',
+    repetitions: 'repetitions',
+    garminSession: (name: string) => `Garmin · ${name}`,
     coach: 'Coach',
     target: 'Target',
     currentBlock: 'Current block',

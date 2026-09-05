@@ -29,11 +29,15 @@ import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { paceZoneKeyFor } from '@/domain/training/typePaceZone'
 import type { PlanSpan } from '@/domain/training/planProgress'
-import type { Insight } from '@/lib/gemini'
 import { addDays, isoDate, isoWeekNumber } from '@/lib/calendarDate'
 import { formatDate, formatDateFull, formatDurationWords, formatPaceRange } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
+import type { CoachingOverview, PrescriptionView } from '@/application/coaching/GetCoachingView'
+import { COACHING_TO_ACTIVITY_TYPE } from '@/domain/coaching/types'
+import { CoachPrescriptionDetail } from '@/components/coaching/CoachPrescriptionDetail'
+import { CoachComingUpRow } from '@/components/coaching/CoachComingUpRow'
+import { coachingPhaseRanges } from '@/components/coaching/presentation'
 
 const MISSED = 'var(--color-missed)'
 // alpha variants via color-mix (supported Safari 16.2+, all modern browsers)
@@ -191,6 +195,10 @@ interface Props {
   activities: ActivitySummary[]
   byDate: Map<string, ActivitySummary[]>
   byDatePlanned: Map<string, PlannedWorkout>
+  byDateCoach?: ReadonlyMap<string, PrescriptionView[]>
+  /** The active coaching block, when one exists - it enriches this view, never replaces it. */
+  coaching?: CoachingOverview | null
+  onSelectDate?: (date: string) => void
   hrBounds?: HrBounds
   today: string
   atPresent: boolean
@@ -207,8 +215,6 @@ interface Props {
   planSpan?: PlanSpan | null
   /** Pre-selects this day when landing from the month view (component remounts per navigation). */
   initialSelectedDate?: string | null
-  /** Generated line for the week in progress - only ever rendered on that week. */
-  weekPurposeTake?: Insight | null
 }
 
 export function WeekView({
@@ -216,6 +222,9 @@ export function WeekView({
   activities,
   byDate,
   byDatePlanned,
+  byDateCoach,
+  coaching = null,
+  onSelectDate,
   hrBounds,
   today,
   atPresent,
@@ -226,7 +235,6 @@ export function WeekView({
   trainingZones = null,
   planSpan = null,
   initialSelectedDate,
-  weekPurposeTake = null,
 }: Props) {
   const days: Day[] = Array.from({ length: 7 }, (_, i) => {
     const date = isoDate(addDays(weekStart, i))
@@ -246,6 +254,7 @@ export function WeekView({
 
   const selected = days.find((d) => d.date === selectedDate) ?? firstDay
   const selectedPlan = byDatePlanned.get(selected.date)
+  const selectedCoach = byDateCoach?.get(selected.date) ?? []
 
   function activityTitle(a: ActivitySummary): string {
     if (a.description && a.description !== t.activityTypes[a.type]) return a.description
@@ -260,9 +269,9 @@ export function WeekView({
     () =>
       Array.from({ length: 14 }, (_, i) => isoDate(addDays(new Date(today + 'T00:00:00'), i + 1)))
         .map((date) => byDatePlanned.get(date))
-        .filter((p): p is PlannedWorkout => !!p)
+        .filter((p): p is PlannedWorkout => !!p && !byDateCoach?.has(p.date))
         .slice(0, 3),
-    [today, byDatePlanned]
+    [today, byDatePlanned, byDateCoach]
   )
 
   const byWeekNumber = useMemo(() => {
@@ -312,6 +321,46 @@ export function WeekView({
     return workouts.length ? summarizePlannedWeek(workouts.map((p) => p.type)) : null
   }, [days, byDatePlanned])
 
+  // The block's own phases, in the Plan's Base/Build/Peak/Taper vocabulary, so
+  // the progression card is populated by coaching rather than replaced by it.
+  const coachPhaseRanges = useMemo(
+    () => (coaching ? coachingPhaseRanges(coaching.plan) : []),
+    [coaching]
+  )
+
+  // Coming up, coach-first: the next prescriptions after today, today's own
+  // session excluded - it is already the Today card directly above.
+  const comingUpCoach = useMemo(
+    () =>
+      (coaching?.workouts ?? [])
+        .filter((v) => v.prescription.date > today && v.state !== 'cancelled')
+        .slice(0, 3),
+    [coaching, today]
+  )
+
+  // The target race card keeps its place at the foot of the plan; coaching only
+  // supplies a better event for it (the block's own target, plus any tune-up).
+  const { targetRace, supportingRace, coachSpan } = useMemo(() => {
+    if (!coaching) return { targetRace: nextRace ?? null, supportingRace: null, coachSpan: null }
+    const { targetEvent, tuneUpEvents, block } = coaching.plan
+    const toRace = (event: typeof targetEvent): UpcomingRace => ({
+      date: event.date,
+      name: event.name,
+      distance: event.distanceLabel ?? '',
+      location: event.location,
+      targetSeconds: event.targetSeconds ?? null,
+    })
+    // The soonest tune-up still ahead is the one worth naming.
+    const tuneUp = (tuneUpEvents ?? [])
+      .filter((event) => event.date >= today)
+      .sort((a, b) => a.date.localeCompare(b.date))[0]
+    return {
+      targetRace: toRace(targetEvent),
+      supportingRace: tuneUp ? toRace(tuneUp) : null,
+      coachSpan: { startDate: block.startDate, endDate: block.endDate },
+    }
+  }, [coaching, nextRace, today])
+
   // days[6] exists (fixed-length 7 array); the last day gone means the week is judgeable.
   const weekOver = days[days.length - 1]!.date < today
   const isCurrentWeek = !weekOver && firstDay.date <= today
@@ -327,10 +376,9 @@ export function WeekView({
         garminStatus={garminStatus}
         planPhase={planPhase}
         planned={planned}
-        planPhaseRanges={planPhaseRanges}
+        planPhaseRanges={coaching ? coachPhaseRanges : planPhaseRanges}
         planSpan={planSpan}
         today={today}
-        aiTake={isCurrentWeek ? (weekPurposeTake ?? null) : null}
       />
 
       {/* Week strip, bare on the background as in the mockup: the day tiles are
@@ -350,10 +398,12 @@ export function WeekView({
                 const isPast = d.date < today
                 const completed = d.acts.length > 0
                 const plan = byDatePlanned.get(d.date)
-                const planned = !completed && !!plan
+                const coach = byDateCoach?.get(d.date) ?? []
+                const activeCoach = coach.find(view => view.state !== 'cancelled')
+                const planned = !completed && (!!activeCoach || !!plan)
                 const missed = isPast && planned
                 const rest = !completed && !planned
-                const primaryType: ActivityType | null = (d.acts[0]?.type ?? plan?.type) ?? null
+                const primaryType: ActivityType | null = (d.acts[0]?.type ?? (activeCoach ? COACHING_TO_ACTIVITY_TYPE[activeCoach.prescription.type] : plan?.type)) ?? null
                 const typeColor = primaryType && !missed ? ACTIVITY_TYPE_CONFIG[primaryType].chartColor : null
                 const label = primaryType ? t.plan.typeShort[primaryType] : rest ? t.plan.restDay : null
                 // Today's ring/glow takes the session's own type color (Tempo amber,
@@ -365,9 +415,11 @@ export function WeekView({
                   <button
                     key={d.date}
                     type="button"
-                    onClick={() => setSelectedDate(d.date)}
+                    onClick={() => { setSelectedDate(d.date); onSelectDate?.(d.date) }}
+                    aria-label={`${formatDateFull(d.date)}${coach.length ? ` · ${coach.map(view => `${view.prescription.title} · ${t.coaching.states[view.state]}`).join(', ')}` : ''}`}
+                    aria-pressed={d.date === selectedDate}
                     className={cn(
-                      'flex flex-col items-center gap-1 rounded-lg py-0.5 transition-transform active:scale-95',
+                      'min-w-0 flex flex-col items-center gap-1 rounded-lg py-0.5 transition-transform active:scale-95',
                       d.date === selectedDate && 'bg-foreground/[0.06]'
                     )}
                   >
@@ -424,6 +476,19 @@ export function WeekView({
                         {missed && <X size={11} strokeWidth={3.4} style={{ color: MISSED }} />}
                       </div>
                     </div>
+                    {coach.map(view => (
+                      <span
+                        key={view.prescription.id}
+                        data-testid={`coach-calendar-${view.prescription.id}`}
+                        title={`${view.prescription.title} · ${t.coaching.states[view.state]}`}
+                        className={cn(
+                          'hidden w-full truncate px-0.5 text-center text-micro font-semibold leading-tight text-muted-foreground sm:block',
+                          view.state === 'cancelled' && 'line-through opacity-50'
+                        )}
+                      >
+                        {view.prescription.title}
+                      </span>
+                    ))}
                   </button>
                 )
               })}
@@ -467,6 +532,8 @@ export function WeekView({
             : formatDateFull(selected.date)}
         </p>
 
+        {selectedCoach.map(view => <CoachPrescriptionDetail key={view.prescription.id} view={view} />)}
+        {selectedCoach.length > 0 && selectedPlan && <button type="button" onClick={() => setSheetPlan(selectedPlan)} className="flex w-full items-center justify-between gap-2 rounded-lg border border-foreground/[0.08] px-3 py-2 text-left text-xs text-muted-foreground"><span>{t.coaching.garminSession(selectedPlan.name)}</span><ChevronRight size={14} aria-hidden="true" /></button>}
         {selected.acts.length > 0 ? (
           <div className="space-y-2">
             {selected.acts.map((a) => {
@@ -500,7 +567,7 @@ export function WeekView({
               )
             })}
           </div>
-        ) : selectedPlan ? (
+        ) : selectedCoach.length > 0 ? null : selectedPlan ? (
           <PlannedWorkoutRow plan={selectedPlan} zones={trainingZones} onTap={() => setSheetPlan(selectedPlan)} />
         ) : (
           <p className="text-center text-sm text-subtle">{t.plan.restDay}</p>
@@ -509,21 +576,29 @@ export function WeekView({
 
       {/* A section, not a card: the rows are already surfaces, so boxing them
           again nests a card inside a card. Muted eyebrow like the mockup. */}
-      {atPresent && nextWeekPlans.length > 0 && (
+      {atPresent && (comingUpCoach.length > 0 || nextWeekPlans.length > 0) && (
         <div className="px-1">
           <p className="mb-2.5 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground">
             {t.plan.comingUp}
           </p>
           <div className="space-y-2">
-            {nextWeekPlans.map((plan) => (
-              <NextWeekPlanRow key={plan.date} plan={plan} onTap={() => setSheetPlan(plan)} />
-            ))}
+            {comingUpCoach.length > 0
+              ? comingUpCoach.map((view) => (
+                  <CoachComingUpRow
+                    key={view.prescription.id}
+                    view={view}
+                    onTap={() => setSelectedDate(view.prescription.date)}
+                  />
+                ))
+              : nextWeekPlans.map((plan) => (
+                  <NextWeekPlanRow key={plan.date} plan={plan} onTap={() => setSheetPlan(plan)} />
+                ))}
           </div>
         </div>
       )}
 
-      {nextRace && atPresent && (
-        <RaceFooter race={nextRace} planSpan={planSpan} today={today} />
+      {targetRace && atPresent && (
+        <RaceFooter race={targetRace} planSpan={coachSpan ?? planSpan} today={today} supporting={supportingRace} />
       )}
 
       {sheetActivity && (
