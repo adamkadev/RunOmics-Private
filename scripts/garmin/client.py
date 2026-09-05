@@ -47,17 +47,28 @@ class GarminClient:
             "User-Agent": _USER_AGENT,
         }
 
-    def _get(self, url: str, **kwargs: Any) -> httpx.Response:
-        resp = self._http.get(url, headers=self._headers(), **kwargs)
+    def _request(self, method: str, url: str, **kwargs: Any) -> httpx.Response:
+        resp = self._http.request(method, url, headers=self._headers(), **kwargs)
 
         if resp.status_code == 401:
             garth.client.refresh_oauth2()
-            resp = self._http.get(url, headers=self._headers(), **kwargs)
+            resp = self._http.request(method, url, headers=self._headers(), **kwargs)
 
         if resp.status_code >= 400:
             raise GarminAPIError(resp.status_code, url)
 
         return resp
+
+    def _get(self, url: str, **kwargs: Any) -> httpx.Response:
+        return self._request("GET", url, **kwargs)
+
+    # Write verbs. Every caller is an explicit, single-resource mutation - there
+    # is deliberately no bulk/list-wide variant of either.
+    def _post(self, url: str, **kwargs: Any) -> httpx.Response:
+        return self._request("POST", url, **kwargs)
+
+    def _delete(self, url: str, **kwargs: Any) -> httpx.Response:
+        return self._request("DELETE", url, **kwargs)
 
     def get_activities(
         self,
@@ -273,6 +284,32 @@ class GarminClient:
     def get_training_plan_detail(self, plan_id: int | str) -> dict[str, Any]:
         url = f"{self._base}/trainingplan-service/trainingplan/fbt-adaptive/{plan_id}"
         return self._get(url).json()
+
+    # --- workout writes -------------------------------------------------
+    # Garmin's private workout-service. Creating and scheduling are two calls:
+    # the first stores a workout template in the library, the second puts that
+    # template on a calendar date. Deleting mirrors it in reverse.
+
+    def create_workout(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """Create one workout template. Returns Garmin's saved workout, which
+        carries the assigned `workoutId`."""
+        return self._post(f"{self._base}/workout-service/workout", json=payload).json()
+
+    def schedule_workout(self, workout_id: str, day: str) -> dict[str, Any]:
+        """Put an existing workout template on `day` (YYYY-MM-DD). Returns the
+        calendar entry, which carries `workoutScheduleId`."""
+        return self._post(
+            f"{self._base}/workout-service/schedule/{workout_id}",
+            json={"date": day},
+        ).json()
+
+    def unschedule_workout(self, schedule_id: str) -> None:
+        """Remove one calendar entry, leaving its workout template in place."""
+        self._delete(f"{self._base}/workout-service/schedule/{schedule_id}")
+
+    def delete_workout(self, workout_id: str) -> None:
+        """Delete one workout template from the library."""
+        self._delete(f"{self._base}/workout-service/workout/{workout_id}")
 
     def close(self) -> None:
         self._http.close()
