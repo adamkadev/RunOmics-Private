@@ -2,6 +2,7 @@ import { createHash } from 'crypto'
 import type { Activity } from '@/domain/activity/types'
 import { sessionExecution, type SessionExecution } from '@/domain/activity/sessionExecution'
 import { COACHING_TO_ACTIVITY_TYPE, type CoachingPlan } from '@/domain/coaching/types'
+import { raceDistanceMeters } from '@/domain/coaching/raceTarget'
 import type { AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import type { GoalYear, PbYear, UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
@@ -11,6 +12,7 @@ import type { GarminRacePredictionsData } from '@/application/usecases/GetGarmin
 
 const DAY_MS = 86_400_000
 const RECENT_DAYS = 28
+const RACE_DISTANCE_TOLERANCE = 0.1
 
 export interface CompactActivity {
   id: string
@@ -24,6 +26,11 @@ export interface CompactActivity {
   aerobicTrainingEffect: number | null
   anaerobicTrainingEffect: number | null
   execution: SessionExecution
+}
+
+export type CoachingUpcomingRace = Omit<UpcomingRace, 'targetSeconds'> & {
+  /** Present only when this specific Garmin event has an explicit time goal. */
+  targetSeconds?: number
 }
 
 export interface CoachingContext {
@@ -58,7 +65,7 @@ export interface CoachingContext {
   }
   goals: GoalYear[]
   personalBests: PbYear[]
-  upcomingRaces: UpcomingRace[]
+  upcomingRaces: CoachingUpcomingRace[]
   racePredictions: GarminRacePredictionsData['latest'] | null
   adherence: { prescribed: number; completed: number; percent: number } | null
   currentPlan: CoachingPlan | null
@@ -94,6 +101,21 @@ function recentActivities(activities: Activity[], referenceDate: string): Activi
       return age >= 0 && age < RECENT_DAYS
     })
     .sort((a, b) => b.date.localeCompare(a.date))
+}
+
+function isCompletedRaceOnReferenceDate(
+  race: UpcomingRace,
+  activities: Activity[],
+  referenceDate: string,
+): boolean {
+  if (race.date !== referenceDate) return false
+  const expectedMeters = raceDistanceMeters(race.distance)
+  if (expectedMeters === undefined) return false
+  return activities.some((activity) => {
+    if (activity.date.slice(0, 10) !== referenceDate || activity.type !== 'Race') return false
+    const actualMeters = activity.distanceKm * 1_000
+    return Math.abs(actualMeters - expectedMeters) / expectedMeters <= RACE_DISTANCE_TOLERANCE
+  })
 }
 
 function gapSummary(activities: Activity[], referenceDate: string): CoachingContext['gaps'] {
@@ -177,7 +199,13 @@ export function buildCoachingContext(input: CoachingContextInput, referenceDate:
     },
     goals: input.goals,
     personalBests: input.personalBests,
-    upcomingRaces: input.upcomingRaces.filter((race) => race.date >= referenceDate).sort((a, b) => a.date.localeCompare(b.date)),
+    upcomingRaces: input.upcomingRaces
+      .filter((race) => race.date >= referenceDate && !isCompletedRaceOnReferenceDate(race, input.activities, referenceDate))
+      .map((race) => {
+        const { targetSeconds, ...rest } = race
+        return targetSeconds == null ? rest : { ...rest, targetSeconds }
+      })
+      .sort((a, b) => a.date.localeCompare(b.date)),
     racePredictions: input.racePredictions?.latest ?? null,
     adherence: adherence(input.plan, input.activities, referenceDate),
     currentPlan: input.plan,

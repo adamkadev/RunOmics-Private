@@ -212,6 +212,7 @@ function targetEvent(value: unknown, path: string): CoachingPlan['targetEvent'] 
     ...(raw.distanceLabel === undefined ? {} : { distanceLabel: string(raw.distanceLabel, `${path}.distanceLabel`) }),
     ...(raw.distanceMeters === undefined ? {} : { distanceMeters: integer(raw.distanceMeters, `${path}.distanceMeters`, 1) }),
     ...(raw.location === undefined ? {} : { location: string(raw.location, `${path}.location`) }),
+    ...(raw.targetSeconds === undefined ? {} : { targetSeconds: integer(raw.targetSeconds, `${path}.targetSeconds`, 1) }),
   }
 }
 

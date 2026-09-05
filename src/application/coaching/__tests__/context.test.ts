@@ -64,4 +64,64 @@ describe('buildCoachingContext', () => {
     expect(context.athlete.thresholdPaceSecPerKm).toBeNull()
     expect(context.adherence).toBeNull()
   })
+
+  it('keeps each upcoming race goal independent', () => {
+    const context = buildCoachingContext({
+      ...input([]),
+      upcomingRaces: [
+        { date: '2026-09-27', name: 'Tune-up 10K', distance: '10K', targetSeconds: null },
+        { date: '2026-11-29', name: 'Primary 10K', distance: '10K', targetSeconds: 2_400, isPrimaryEvent: true },
+      ],
+    }, '2026-09-20')
+
+    expect(context.upcomingRaces[0]).not.toHaveProperty('targetSeconds')
+    expect(context.upcomingRaces[1]?.targetSeconds).toBe(2_400)
+    const changedGoal = structuredClone(context)
+    changedGoal.upcomingRaces[1]!.targetSeconds = 2_390
+    expect(coachingContextHash(changedGoal)).not.toBe(coachingContextHash(context))
+  })
+
+  it('removes a completed same-day race using race-type and distance evidence', () => {
+    const context = buildCoachingContext({
+      ...input([activity('completed-5k', '2026-09-05', 5.03, 'Race')]),
+      upcomingRaces: [
+        { date: '2026-09-05', name: 'Completed 5K', distance: '5K', targetSeconds: 1_200 },
+        { date: '2026-09-05', name: 'Different same-day race', distance: '10K' },
+        { date: '2026-10-03', name: 'Future 5K', distance: '5K' },
+      ],
+    }, '2026-09-05')
+
+    expect(context.upcomingRaces.map((race) => race.name)).toEqual([
+      'Different same-day race',
+      'Future 5K',
+    ])
+  })
+
+  it('keeps a same-day race when there is no completed matching race activity', () => {
+    const context = buildCoachingContext({
+      ...input([activity('morning-run', '2026-09-05', 3, 'Base')]),
+      upcomingRaces: [
+        { date: '2026-09-05', name: 'Later today 5K', distance: '5K' },
+      ],
+    }, '2026-09-05')
+
+    expect(context.upcomingRaces).toMatchObject([
+      { date: '2026-09-05', name: 'Later today 5K' },
+    ])
+  })
+
+  it('preserves Garmin LTHR-based HR bounds without deriving them from max HR', () => {
+    const context = buildCoachingContext({
+      ...input([]),
+      athlete: {
+        lthrBpm: 187,
+        maxHrBpm: 202,
+        hrZoneBoundsBpm: [125, 150, 168, 178, 188],
+      },
+    }, '2026-09-05')
+
+    expect(context.athlete.lthrBpm).toBe(187)
+    expect(context.athlete.hrZoneBoundsBpm).toEqual([125, 150, 168, 178, 188])
+    expect(context.athlete).not.toHaveProperty('maxHrBpm')
+  })
 })

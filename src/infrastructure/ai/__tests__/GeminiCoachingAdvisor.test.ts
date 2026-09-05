@@ -1,9 +1,17 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { CoachingRepository } from '@/application/ports/CoachingRepository'
 import type { CoachingAdvisor } from '@/application/ports/CoachingAdvisor'
 import { buildCoachingContext } from '@/application/coaching/context'
 import { createBootstrapProposal } from '@/application/coaching/workflows'
-import { BOOTSTRAP_PLAN_RESPONSE_SCHEMA, parseBootstrapPlanDraft } from '../GeminiCoachingAdvisor'
+import {
+  BOOTSTRAP_PLAN_RESPONSE_SCHEMA,
+  GeminiCoachingAdvisor,
+  bootstrapEventPrompt,
+  parseBootstrapPlanDraft,
+} from '../GeminiCoachingAdvisor'
+
+const gemini = vi.hoisted(() => ({ generateStructuredJson: vi.fn() }))
+vi.mock('@/lib/gemini', () => gemini)
 
 const repository: CoachingRepository = {
   getCurrentPlan: () => null,
@@ -70,6 +78,8 @@ describe('Gemini bootstrap draft boundary', () => {
     expect(workout.properties).not.toHaveProperty('id')
     expect(workout.properties).not.toHaveProperty('totalDurationSeconds')
     expect(workout.properties).not.toHaveProperty('totalDistanceMeters')
+    expect(workout.properties.blocks.items.properties.kind.enum).not.toContain('strides')
+    expect(workout.properties.blocks.items.properties.steps.items.properties.kind.enum).toContain('strides')
   })
 
   it.each([
@@ -101,5 +111,189 @@ describe('Gemini bootstrap draft boundary', () => {
     ])
     expect(workouts.every((workout) => workout.revision === 1)).toBe(true)
     expect(workouts.every((workout) => workout.totalDistanceMeters === 5_000)).toBe(true)
+  })
+
+  it('exposes independent explicit-goal facts for each prompt event', () => {
+    expect(bootstrapEventPrompt({
+      id: 'primary', name: 'Primary 10K', date: '2026-11-29', role: 'primary',
+      distanceLabel: '10K', distanceMeters: 10_000, targetSeconds: 2_400,
+    })).toMatchObject({
+      role: 'primary', hasExplicitGoal: true, targetSeconds: 2_400,
+      targetFinishTime: '40:00', targetPaceSecPerKm: 240, targetPace: '4:00/km',
+    })
+    const tuneUpPrompt = bootstrapEventPrompt({
+      id: 'tune-up', name: 'Tune-up 10K', date: '2026-09-27', role: 'tune_up',
+      distanceLabel: '10K', distanceMeters: 10_000,
+    })
+    expect(tuneUpPrompt).toMatchObject({ role: 'tune_up', hasExplicitGoal: false })
+    expect(tuneUpPrompt).not.toHaveProperty('targetSeconds')
+    expect(tuneUpPrompt).not.toHaveProperty('targetFinishTime')
+    expect(tuneUpPrompt).not.toHaveProperty('targetPaceSecPerKm')
+  })
+
+  it('labels primary and tune-up goals independently in the Gemini request', async () => {
+    gemini.generateStructuredJson.mockResolvedValueOnce({ ok: true, value: rawBootstrap(false) })
+    const coachingContext = context()
+    coachingContext.athlete.lthrBpm = 187
+    coachingContext.athlete.hrZoneBoundsBpm = [125, 150, 168, 178, 188]
+    coachingContext.recentActivities = [{
+      id: 'completed-race',
+      date: '2026-09-06',
+      type: 'Race',
+      distanceKm: 5,
+      durationSeconds: 1_200,
+      paceSecPerKm: 240,
+      avgHeartRate: 190,
+      rpe: 10,
+      aerobicTrainingEffect: 4.5,
+      anaerobicTrainingEffect: 2.5,
+      execution: null,
+    }]
+    coachingContext.volume.runs28Days = 4
+    coachingContext.gaps.longestGap28Days = 8
+    coachingContext.load.garminAcuteLoad = 650
+    coachingContext.load.garminChronicLoad = 300
+    coachingContext.load.garminLoadStatus = 'HIGH'
+    await new GeminiCoachingAdvisor().bootstrap({
+      context: coachingContext,
+      availableWeekdays: [2],
+      planningStartDate: '2026-09-07',
+      primaryTargetEvent: {
+        id: 'primary', name: 'Primary 10K', date: '2026-10-18', role: 'primary',
+        distanceLabel: '10K', distanceMeters: 10_000, targetSeconds: 2_400,
+      },
+      tuneUpEvents: [{
+        id: 'tune-up', name: 'Tune-up 10K', date: '2026-09-27', role: 'tune_up',
+        distanceLabel: '10K', distanceMeters: 10_000,
+      }],
+      horizonEndDate: '2026-10-04',
+    })
+
+    const request = gemini.generateStructuredJson.mock.calls.at(-1)?.[0] as {
+      systemInstruction: string
+      prompt: string
+    }
+    expect(request.systemInstruction).toContain('Never copy a primary goal to a tune-up')
+    expect(request.systemInstruction).toContain('Include every tune-up inside the planning period as a race workout')
+    expect(request.systemInstruction).toContain('Treat supplied hrZoneBoundsBpm as authoritative Garmin zone boundaries')
+    expect(request.systemInstruction).toContain('every prescribed session through recoveryThroughDate must be easy or recovery only')
+    expect(request.systemInstruction).toContain('Hill repetitions must use effort/RPE or form guidance')
+    expect(request.systemInstruction).toContain('Do not assign hrZone or hrBpm to strides')
+    expect(request.prompt).toContain('PRIMARY_TARGET:')
+    expect(request.prompt).toContain('POST_RACE_RECOVERY:')
+    expect(request.prompt).toContain('"required":true')
+    expect(request.prompt).toContain('"completedRaceDate":"2026-09-06"')
+    expect(request.prompt).toContain('"recoveryThroughDate":"2026-09-09"')
+    expect(request.prompt).toContain('"recentRuns28Days":4')
+    expect(request.prompt).toContain('"garminAcuteLoad":650')
+    expect(request.prompt).toContain('Plan starts: 2026-09-07')
+    expect(request.prompt).toContain('"lthrBpm":187')
+    expect(request.prompt).toContain('"hrZoneBoundsBpm":[125,150,168,178,188]')
+    expect(request.prompt).toContain('"role":"primary"')
+    expect(request.prompt).toContain('"targetSeconds":2400')
+    expect(request.prompt).toContain('"targetFinishTime":"40:00"')
+    expect(request.prompt).toContain('TUNE_UP_EVENTS (each goal is independent):')
+    expect(request.prompt).toContain('"role":"tune_up"')
+    expect(request.prompt).toContain('"hasExplicitGoal":false')
+    const tuneUpLine = request.prompt.split('\n').find((line) => line.startsWith('TUNE_UP_EVENTS'))!
+    const tuneUpEvents = JSON.parse(tuneUpLine.slice(tuneUpLine.indexOf(':') + 1)) as Array<Record<string, unknown>>
+    expect(tuneUpEvents).toHaveLength(1)
+    expect(tuneUpEvents[0]).toMatchObject({ id: 'tune-up', role: 'tune_up', hasExplicitGoal: false })
+    expect(tuneUpEvents[0]).not.toHaveProperty('targetSeconds')
+  })
+
+  it('requires strides to retain model-prescribed repetitions and recovery', () => {
+    const raw = rawBootstrap(false)
+    const firstWorkout = raw.weeks[0]!.workouts[0]! as {
+      title: string
+      blocks: unknown[]
+    }
+    firstWorkout.title = 'Easy Run with Strides'
+    firstWorkout.blocks = [
+      { kind: 'effort', target: { distanceMeters: 5_000 } },
+      {
+        kind: 'repeat',
+        repetitions: 6,
+        steps: [
+          { kind: 'strides', target: { durationSeconds: 20 } },
+          { kind: 'recovery', target: { durationSeconds: 60 } },
+        ],
+      },
+    ]
+
+    const parsed = parseBootstrapPlanDraft(raw)
+    expect(parsed.weeks[0]!.workouts[0]!.blocks[1]).toMatchObject({
+      kind: 'repeat',
+      repetitions: 6,
+      steps: [
+        { kind: 'strides', target: { durationSeconds: 20 } },
+        { kind: 'recovery', target: { durationSeconds: 60 } },
+      ],
+    })
+
+    const strideStep = (firstWorkout.blocks[1] as {
+      steps: Array<{ kind: string; target: Record<string, unknown> }>
+    }).steps[0]!
+    strideStep.target.hrZone = 5
+    expect(() => parseBootstrapPlanDraft(raw)).toThrow(/strides must use pace, effort, or form guidance rather than an HR target/)
+    delete strideStep.target.hrZone
+
+    firstWorkout.blocks = [{ kind: 'strides', target: { durationSeconds: 20 } }]
+    expect(() => parseBootstrapPlanDraft(raw)).toThrow(/standalone strides are not supported/)
+  })
+
+  it('rejects rigid pace targets on hill repetitions', () => {
+    const raw = rawBootstrap(false)
+    const workout = raw.weeks[0]!.workouts[0]! as {
+      type: string
+      title: string
+      description: string
+      blocks: unknown[]
+    }
+    workout.type = 'vo2max'
+    workout.title = 'Hill intervals'
+    workout.description = 'Run six uphill repetitions at controlled effort.'
+    workout.blocks = [{
+      kind: 'repeat',
+      repetitions: 6,
+      steps: [
+        { kind: 'effort', target: { durationSeconds: 60, paceSecPerKm: { min: 220, max: 230 } } },
+        { kind: 'recovery', target: { durationSeconds: 90 } },
+      ],
+    }]
+
+    expect(() => parseBootstrapPlanDraft(raw)).toThrow(/hill efforts must use effort\/RPE guidance/)
+
+    workout.blocks = [{
+      kind: 'repeat',
+      repetitions: 6,
+      steps: [
+        { kind: 'effort', target: { durationSeconds: 60, hrBpm: { min: 175, max: 185 } }, notes: ['Strong uphill RPE; tall form.'] },
+        { kind: 'recovery', target: { durationSeconds: 90 } },
+      ],
+    }]
+    expect(() => parseBootstrapPlanDraft(raw)).not.toThrow()
+  })
+
+  it('requires a claimed progressive workout to contain structured progression', () => {
+    const raw = rawBootstrap(false)
+    const workout = raw.weeks[0]!.workouts[0]! as {
+      type: string
+      title: string
+      description: string
+      blocks: unknown[]
+    }
+    workout.type = 'long_run'
+    workout.title = 'Progressive Long Run'
+    workout.description = 'Build gradually through the run.'
+    workout.blocks = [{ kind: 'effort', target: { durationSeconds: 3_600, hrZone: 2 } }]
+
+    expect(() => parseBootstrapPlanDraft(raw)).toThrow(/must contain an actual structured intensity progression/)
+
+    workout.blocks = [
+      { kind: 'effort', target: { durationSeconds: 2_400, hrZone: 2 } },
+      { kind: 'effort', target: { durationSeconds: 1_200, hrZone: 3 } },
+    ]
+    expect(() => parseBootstrapPlanDraft(raw)).not.toThrow()
   })
 })

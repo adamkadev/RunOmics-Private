@@ -104,7 +104,7 @@ function addDays(date: string, days: number): string {
 
 function draftThrough(request: BootstrapRequest): CoachingPlanDraft {
   const weeks: CoachingPlanDraft['weeks'] = []
-  let startDate = request.context.referenceDate
+  let startDate = request.planningStartDate
   let index = 1
   while (startDate <= request.horizonEndDate) {
     const sevenDayEnd = addDays(startDate, 6)
@@ -128,7 +128,19 @@ function targetAdvisor(requests: BootstrapRequest[]): CoachingAdvisor {
   return {
     bootstrap: async (request) => {
       requests.push(request)
-      return draftThrough(request)
+      const draft = draftThrough(request)
+      for (const event of request.tuneUpEvents) {
+        const week = draft.weeks.find((candidate) => candidate.startDate <= event.date && candidate.endDate >= event.date)
+        if (!week) throw new Error(`No draft week contains ${event.date}`)
+        week.workouts.push({
+          date: event.date,
+          type: 'race',
+          title: event.name,
+          description: 'Run the structured supporting event.',
+          blocks: [{ kind: 'effort', target: { distanceMeters: event.distanceMeters ?? 1_000 } }],
+        })
+      }
+      return draft
     },
     evaluateActivity: async () => { throw new Error('not called') },
     reviewWeek: async () => { throw new Error('not called') },
@@ -184,6 +196,41 @@ describe('coaching workflows', () => {
     })
   })
 
+  it('uses UUID, numeric id, then date/name for coaching event identity', async () => {
+    const requests: BootstrapRequest[] = []
+    const proposal = await createBootstrapProposal(targetContext([
+      { date: '2026-09-05', name: 'Fallback 5K', distance: '5K' },
+      { garminEventId: 29837036, date: '2026-09-12', name: 'Private 5K', distance: '5K' },
+      {
+        garminEventUuid: 'primary-uuid',
+        garminEventId: 400,
+        date: '2026-09-27',
+        name: 'Primary 10K',
+        distance: '10K',
+        isPrimaryEvent: true,
+      },
+    ]), [0, 2, 4, 6], {
+      repository: new MemoryRepository(),
+      advisor: targetAdvisor(requests),
+      id: ids(),
+    })
+
+    expect(requests[0]).toMatchObject({
+      primaryTargetEvent: { id: 'primary-uuid' },
+      tuneUpEvents: [
+        { id: '2026-09-05:Fallback 5K' },
+        { id: '29837036' },
+      ],
+    })
+    expect(proposal.proposedPlan).toMatchObject({
+      targetEvent: { id: 'primary-uuid' },
+      tuneUpEvents: [
+        { id: '2026-09-05:Fallback 5K' },
+        { id: '29837036' },
+      ],
+    })
+  })
+
   it('uses Garmin primary-event metadata even when the target is outside the rolling horizon', async () => {
     const requests: BootstrapRequest[] = []
     const proposal = await createBootstrapProposal(targetContext([
@@ -205,6 +252,360 @@ describe('coaching workflows', () => {
       block: { endDate: '2026-10-01' },
       goal: { kind: 'time', targetSeconds: 10_800 },
     })
+  })
+
+  it('plans four weeks after a completed same-day race, includes day 28, and enforces recovery', async () => {
+    const requests: BootstrapRequest[] = []
+    const completedRace = {
+      ...latestActivity,
+      id: 'completed-escher',
+      date: '2026-09-05',
+      type: 'Race',
+      distanceKm: 5.02,
+      durationSeconds: 1_198,
+      paceSecPerKm: 239,
+    } as Activity
+    const context = buildCoachingContext({
+      ...contextInput(null),
+      activities: [completedRace],
+      athlete: {
+        thresholdPaceSecPerKm: 263,
+        lthrBpm: 187,
+        maxHrBpm: 202,
+        hrZoneBoundsBpm: [125, 150, 168, 178, 188],
+      },
+      upcomingRaces: [
+        {
+          garminEventUuid: 'escher-5k',
+          date: '2026-09-05',
+          name: 'Escher Kulturlaf 5K',
+          distance: '5K',
+          targetSeconds: 1_200,
+          isPrimaryEvent: false,
+        },
+        {
+          garminEventId: 29837036,
+          date: '2026-10-03',
+          name: 'Broschtkriibslaf',
+          distance: '5K',
+          targetSeconds: 1_200,
+          isPrimaryEvent: false,
+          isTrainingEvent: true,
+        },
+        {
+          garminEventUuid: 'november-primary-10k',
+          date: '2026-11-29',
+          name: '10K Wintzenheim',
+          distance: '10K',
+          targetSeconds: 2_400,
+          isPrimaryEvent: true,
+        },
+      ],
+    }, '2026-09-05')
+    const availableWeekdays = [0, 2, 4, 6]
+    const proposal = await createBootstrapProposal(context, availableWeekdays, {
+      repository: new MemoryRepository(),
+      advisor: targetAdvisor(requests),
+      id: ids(),
+      now: () => new Date('2026-09-05T18:00:00Z'),
+    })
+
+    expect(requests[0]).toMatchObject({
+      planningStartDate: '2026-09-06',
+      horizonEndDate: '2026-10-03',
+      primaryTargetEvent: {
+        id: 'november-primary-10k',
+        role: 'primary',
+        targetSeconds: 2_400,
+      },
+      tuneUpEvents: [{
+        id: '29837036',
+        name: 'Broschtkriibslaf',
+        date: '2026-10-03',
+        role: 'tune_up',
+        distanceLabel: '5K',
+        distanceMeters: 5_000,
+        targetSeconds: 1_200,
+      }],
+    })
+    expect(requests[0]?.context.upcomingRaces.map((race) => race.name)).toEqual([
+      'Broschtkriibslaf',
+      '10K Wintzenheim',
+    ])
+
+    const plan = proposal.proposedPlan!
+    expect(plan.block).toMatchObject({ startDate: '2026-09-06', endDate: '2026-10-03' })
+    expect(plan.weeks).toHaveLength(4)
+    expect(plan.weeks.at(-1)).toMatchObject({ startDate: '2026-09-27', endDate: '2026-10-03' })
+    expect(plan.targetEvent).toMatchObject({
+      id: 'november-primary-10k', role: 'primary', targetSeconds: 2_400,
+    })
+    expect(plan.tuneUpEvents).toMatchObject([{
+      id: '29837036', role: 'tune_up', targetSeconds: 1_200,
+    }])
+    const workouts = plan.weeks.flatMap((week) => week.workouts)
+    expect(workouts).toContainEqual(expect.objectContaining({
+      date: '2026-10-03', type: 'race', title: 'Broschtkriibslaf',
+    }))
+    expect(workouts.every((workout) => availableWeekdays.includes(new Date(`${workout.date}T00:00:00Z`).getUTCDay()))).toBe(true)
+    expect(workouts.every((workout) => workout.date >= '2026-09-06' && workout.date <= '2026-10-03')).toBe(true)
+    expect(proposal.decision).toMatchObject({
+      effectiveDate: '2026-09-06',
+      changes: [{ effectiveDate: '2026-09-06' }],
+    })
+
+    const baseAdvisor = targetAdvisor([])
+    const aggressiveAdvisor: CoachingAdvisor = {
+      ...baseAdvisor,
+      bootstrap: async (request) => {
+        const draft = await baseAdvisor.bootstrap(request)
+        draft.weeks[0]!.workouts.push({
+          date: '2026-09-08',
+          type: 'threshold',
+          title: '3x10 min threshold',
+          description: 'Threshold repetitions too soon after the race.',
+          blocks: [{
+            kind: 'repeat',
+            repetitions: 3,
+            steps: [
+              { kind: 'effort', target: { durationSeconds: 600 } },
+              { kind: 'recovery', target: { durationSeconds: 120 } },
+            ],
+          }],
+        })
+        return draft
+      },
+    }
+    await expect(createBootstrapProposal(context, availableWeekdays, {
+      repository: new MemoryRepository(),
+      advisor: aggressiveAdvisor,
+      id: ids(),
+      now: () => new Date('2026-09-05T18:00:00Z'),
+    })).rejects.toThrow(/violates post-race recovery through 2026-09-08/)
+
+    const conservativeBase = targetAdvisor([])
+    const conservativeAdvisor: CoachingAdvisor = {
+      ...conservativeBase,
+      bootstrap: async (request) => {
+        const draft = await conservativeBase.bootstrap(request)
+        draft.weeks[0]!.workouts.push(
+          {
+            date: '2026-09-06',
+            type: 'recovery',
+            title: 'Post-race recovery run',
+            description: 'Very relaxed running after the race.',
+            blocks: [{ kind: 'effort', target: { durationSeconds: 1_800, hrZone: 1 } }],
+          },
+          {
+            date: '2026-09-08',
+            type: 'easy',
+            title: 'Easy aerobic run',
+            description: 'Keep the final recovery day easy.',
+            blocks: [{ kind: 'effort', target: { durationSeconds: 2_100, hrZone: 2 } }],
+          },
+          {
+            date: '2026-09-10',
+            type: 'threshold',
+            title: 'Controlled threshold intervals',
+            description: 'Resume quality after the protected recovery window.',
+            blocks: [{
+              kind: 'repeat',
+              repetitions: 3,
+              steps: [
+                { kind: 'effort', target: { durationSeconds: 480, paceSecPerKm: { min: 260, max: 270 } } },
+                { kind: 'recovery', target: { durationSeconds: 120 } },
+              ],
+            }],
+          },
+        )
+        return draft
+      },
+    }
+    await expect(createBootstrapProposal(context, availableWeekdays, {
+      repository: new MemoryRepository(),
+      advisor: conservativeAdvisor,
+      id: ids(),
+      now: () => new Date('2026-09-05T18:00:00Z'),
+    })).resolves.toBeDefined()
+  })
+
+  it('can still bootstrap for an uncompleted race later on the reference date', async () => {
+    const requests: BootstrapRequest[] = []
+    const morningRun = {
+      ...latestActivity,
+      id: 'morning-shakeout',
+      date: '2026-09-05',
+      type: 'Base',
+      distanceKm: 3,
+    } as Activity
+    const context = buildCoachingContext({
+      ...contextInput(null),
+      activities: [morningRun],
+      upcomingRaces: [
+        { garminEventUuid: 'later-today-5k', date: '2026-09-05', name: 'Later Today 5K', distance: '5K' },
+        { garminEventUuid: 'primary-10k', date: '2026-11-29', name: 'Primary 10K', distance: '10K', isPrimaryEvent: true },
+      ],
+    }, '2026-09-05')
+    const proposal = await createBootstrapProposal(context, [6], {
+      repository: new MemoryRepository(),
+      advisor: targetAdvisor(requests),
+      id: ids(),
+    })
+
+    expect(requests[0]).toMatchObject({
+      planningStartDate: '2026-09-05',
+      horizonEndDate: '2026-10-02',
+      tuneUpEvents: [{ id: 'later-today-5k', date: '2026-09-05', role: 'tune_up' }],
+    })
+    expect(proposal.proposedPlan).toMatchObject({
+      block: { startDate: '2026-09-05', endDate: '2026-10-02' },
+      tuneUpEvents: [{ id: 'later-today-5k' }],
+    })
+  })
+
+  it('rejects a normal hard session within two days of a supporting race', async () => {
+    const requests: BootstrapRequest[] = []
+    const context = targetContext([
+      { garminEventId: 29837036, date: '2026-09-27', name: 'Supporting 5K', distance: '5K' },
+      { garminEventUuid: 'primary-10k', date: '2026-11-29', name: 'Primary 10K', distance: '10K', isPrimaryEvent: true },
+    ])
+    const baseAdvisor = targetAdvisor(requests)
+    const advisor: CoachingAdvisor = {
+      ...baseAdvisor,
+      bootstrap: async (request) => {
+        const draft = await baseAdvisor.bootstrap(request)
+        const week = draft.weeks.find((candidate) => candidate.startDate <= '2026-09-25' && candidate.endDate >= '2026-09-25')!
+        week.workouts.push({
+          date: '2026-09-25',
+          type: 'threshold',
+          title: 'Normal 4x4min threshold session',
+          description: 'A full threshold workout.',
+          blocks: [{
+            kind: 'repeat',
+            repetitions: 4,
+            steps: [
+              { kind: 'effort', target: { durationSeconds: 240 } },
+              { kind: 'recovery', target: { durationSeconds: 120 } },
+            ],
+          }],
+        })
+        return draft
+      },
+    }
+
+    await expect(createBootstrapProposal(context, [0, 2, 4, 5, 6], {
+      repository: new MemoryRepository(),
+      advisor,
+      id: ids(),
+    })).rejects.toThrow(/too close to the Supporting 5K tune-up race/)
+  })
+
+  it('keeps primary and tune-up race goals scoped to their own events', async () => {
+    const requests: BootstrapRequest[] = []
+    const proposal = await createBootstrapProposal(targetContext([
+      { garminEventUuid: 'escher-5k', date: '2026-09-05', name: 'Escher Kulturlaf 5km', distance: '5K', targetSeconds: 1_200, isPrimaryEvent: false },
+      { garminEventUuid: 'wine-route-10k', date: '2026-09-27', name: 'Wine Route - Luxemburg', distance: '10K', isPrimaryEvent: false },
+      { garminEventUuid: 'november-10k', date: '2026-11-29', name: '10 km', distance: '10K', targetSeconds: 2_400, isPrimaryEvent: true },
+    ]), [0, 2, 4, 6], {
+      repository: new MemoryRepository(),
+      advisor: targetAdvisor(requests),
+      id: ids(),
+    })
+
+    expect(requests[0]?.primaryTargetEvent).toMatchObject({
+      id: 'november-10k', role: 'primary', targetSeconds: 2_400,
+    })
+    expect(requests[0]?.tuneUpEvents).toHaveLength(2)
+    expect(requests[0]?.tuneUpEvents[0]).toMatchObject({
+      id: 'escher-5k', role: 'tune_up', targetSeconds: 1_200,
+    })
+    expect(requests[0]?.tuneUpEvents[1]).toMatchObject({
+      id: 'wine-route-10k', role: 'tune_up',
+    })
+    expect(requests[0]?.tuneUpEvents[1]).not.toHaveProperty('targetSeconds')
+    expect(proposal.proposedPlan?.tuneUpEvents?.[0]?.targetSeconds).toBe(1_200)
+    expect(proposal.proposedPlan?.tuneUpEvents?.[1]).not.toHaveProperty('targetSeconds')
+  })
+
+  it('rejects an invented finish-time goal for a tune-up without an explicit goal', async () => {
+    const context = targetContext([
+      { garminEventUuid: 'wine-route-10k', date: '2026-09-27', name: 'Wine Route - Luxemburg', distance: '10K', isPrimaryEvent: false },
+      { garminEventUuid: 'november-10k', date: '2026-11-29', name: '10 km', distance: '10K', targetSeconds: 2_400, isPrimaryEvent: true },
+    ])
+    const advisor = (description: string): CoachingAdvisor => ({
+      bootstrap: async (request) => {
+        const draft = draftThrough(request)
+        draft.weeks[3]!.workouts.push({
+          date: '2026-09-27',
+          type: 'race',
+          title: '10K Tune-up race',
+          description,
+          blocks: [{ kind: 'effort', target: { distanceMeters: 10_000, paceSecPerKm: { min: 245, max: 255 } } }],
+        })
+        return draft
+      },
+      evaluateActivity: async () => { throw new Error('not called') },
+      reviewWeek: async () => { throw new Error('not called') },
+    })
+
+    await expect(createBootstrapProposal(context, [0, 2, 4, 6], {
+      repository: new MemoryRepository(), advisor: advisor('Target goal is 40:00.'), id: ids(),
+    })).rejects.toThrow(/has no explicit time goal/)
+
+    await expect(createBootstrapProposal(context, [0, 2, 4, 6], {
+      repository: new MemoryRepository(), advisor: advisor('Recommended pacing strategy: 4:05/km to 4:15/km.'), id: ids(),
+    })).resolves.toBeDefined()
+
+    await expect(createBootstrapProposal(context, [0, 2, 4, 6], {
+      repository: new MemoryRepository(),
+      advisor: {
+        ...advisor('Recommended pacing strategy: 4:05/km.'),
+        bootstrap: async (request) => {
+          const draft = draftThrough(request)
+          draft.weeks[3]!.focus = 'Wine Route 40:00 target'
+          return draft
+        },
+      },
+      id: ids(),
+    })).rejects.toThrow(/must not narrate numeric race targets/)
+  })
+
+  it('rejects finish-time prose that contradicts a tune-up explicit goal', async () => {
+    const context = targetContext([
+      { garminEventUuid: 'escher-5k', date: '2026-09-05', name: 'Escher Kulturlaf 5km', distance: '5K', targetSeconds: 1_200, isPrimaryEvent: false },
+      { garminEventUuid: 'november-10k', date: '2026-11-29', name: '10 km', distance: '10K', targetSeconds: 2_400, isPrimaryEvent: true },
+    ])
+    const advisor = (description: string, paceSecPerKm = 249): CoachingAdvisor => ({
+      bootstrap: async (request) => {
+        const draft = draftThrough(request)
+        draft.weeks[0]!.workouts.push({
+          date: '2026-09-05',
+          type: 'race',
+          title: '5K tune-up',
+          description,
+          blocks: [{ kind: 'effort', target: { distanceMeters: 5_000, paceSecPerKm: { min: paceSecPerKm, max: paceSecPerKm } } }],
+        })
+        return draft
+      },
+      evaluateActivity: async () => { throw new Error('not called') },
+      reviewWeek: async () => { throw new Error('not called') },
+    })
+
+    await expect(createBootstrapProposal(context, [0, 2, 4, 6], {
+      repository: new MemoryRepository(), advisor: advisor('Run 249 sec/km for a 24:55 finish.'), id: ids(),
+    })).rejects.toThrow(/contradicts its explicit 20:00 goal/)
+
+    await expect(createBootstrapProposal(context, [0, 2, 4, 6], {
+      repository: new MemoryRepository(), advisor: advisor('Target pace is 4:09/km for a 20:00 finish.'), id: ids(),
+    })).rejects.toThrow(/contradicts its deterministic target pace/)
+
+    await expect(createBootstrapProposal(context, [0, 2, 4, 6], {
+      repository: new MemoryRepository(), advisor: advisor('Target goal is 20:00.'), id: ids(),
+    })).rejects.toThrow(/finish-time prose contradicts its structured race pace/)
+
+    await expect(createBootstrapProposal(context, [0, 2, 4, 6], {
+      repository: new MemoryRepository(), advisor: advisor('Target goal is 20:00 at 4:00/km.', 240), id: ids(),
+    })).resolves.toBeDefined()
   })
 
   it('stops at a sole race tomorrow', async () => {
@@ -265,6 +666,26 @@ describe('coaching workflows', () => {
       targetEvent: { id: 'escher-5k', role: 'primary' },
       block: { endDate: '2026-09-05' },
     })
+  })
+
+  it('accepts a numeric Garmin event id as an explicit race override', async () => {
+    const requests: BootstrapRequest[] = []
+    const context = targetContext([
+      { garminEventId: 29837036, date: '2026-09-05', name: 'Private 5K', distance: '5K' },
+      { garminEventUuid: 'primary-10k', date: '2026-09-27', name: 'Primary 10K', distance: '10K', isPrimaryEvent: true },
+    ])
+    const proposal = await createBootstrapProposal(context, [6], {
+      repository: new MemoryRepository(),
+      advisor: targetAdvisor(requests),
+      id: ids(),
+    }, '29837036')
+
+    expect(requests[0]).toMatchObject({
+      targetEventId: '29837036',
+      primaryTargetEvent: { id: '29837036', name: 'Private 5K' },
+      horizonEndDate: '2026-09-05',
+    })
+    expect(proposal.proposedPlan?.targetEvent.id).toBe('29837036')
   })
 
   it('records a KEEP evaluation without changing the plan revision', async () => {

@@ -100,6 +100,8 @@ export interface TargetEvent {
   distanceLabel?: string
   distanceMeters?: number
   location?: string
+  /** This event's own explicit goal from the event source, never inherited. */
+  targetSeconds?: number
 }
 
 export type TrainingGoal =

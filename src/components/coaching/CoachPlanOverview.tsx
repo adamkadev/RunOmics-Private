@@ -22,19 +22,25 @@ const GARMIN_TONE: Record<GarminScheduleStatus, StatusTone> = {
   not_scheduled: 'zinc',
 }
 
+function segmentDuration(seconds: number): string {
+  return seconds < 60 ? `${seconds}s` : formatDurationWords(seconds)
+}
+
 function targetText(block: WorkoutBlock): string {
   if (block.kind === 'repeat') {
     const effort = block.steps.find((step) => step.kind === 'effort')
+      ?? block.steps.find((step) => step.kind === 'strides')
     const recovery = block.steps.find((step) => step.kind === 'recovery')
     const effortText = effort?.target.durationSeconds
-      ? formatDurationWords(effort.target.durationSeconds)
+      ? segmentDuration(effort.target.durationSeconds)
       : effort?.target.distanceMeters
         ? `${effort.target.distanceMeters} m`
         : ''
     const pace = effort?.target.paceSecPerKm
     const paceText = pace ? ` @ ${formatClock(pace.min)}-${formatClock(pace.max)} /km` : ''
-    const recoveryText = recovery?.target.durationSeconds ? ` · ${formatDurationWords(recovery.target.durationSeconds)} ${t.coaching.segments.recovery}` : ''
-    return `${block.repetitions} × ${effortText}${paceText}${recoveryText}`
+    const kindText = effort?.kind === 'strides' ? ` ${t.coaching.segments.strides}` : ''
+    const recoveryText = recovery?.target.durationSeconds ? ` · ${segmentDuration(recovery.target.durationSeconds)} ${t.coaching.segments.recovery}` : ''
+    return `${block.repetitions} × ${effortText}${kindText}${paceText}${recoveryText}`
   }
   if (block.target.distanceMeters) return `${(block.target.distanceMeters / 1_000).toFixed(1)} km ${t.coaching.segments[block.kind]}`
   return `${formatDurationWords(block.target.durationSeconds ?? 0)} ${t.coaching.segments[block.kind]}`

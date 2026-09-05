@@ -461,8 +461,8 @@ function buildTrainingPlan(endDate) {
 function buildUpcomingRaces(endDate) {
   return {
     races: [
-      { garminEventUuid: 'demo-race-0000000000000001', date: isoDate(addDays(endDate, 21)), name: 'Harbor Lights 10K', distance: '10K', location: 'Fictional Bay' },
-      { garminEventUuid: 'demo-race-0000000000000002', date: isoDate(addDays(endDate, 63)), name: 'Autumn Trail Half', distance: 'Half-Marathon', location: 'Fictional Bay' },
+      { garminEventUuid: 'demo-race-0000000000000001', date: isoDate(addDays(endDate, 21)), name: 'Harbor Lights 10K', distance: '10K', location: 'Fictional Bay', isPrimaryEvent: true, targetSeconds: 2_430 },
+      { garminEventUuid: 'demo-race-0000000000000002', date: isoDate(addDays(endDate, 63)), name: 'Autumn Trail Half', distance: 'Half-Marathon', location: 'Fictional Bay', isPrimaryEvent: false },
     ],
   }
 }
@@ -556,9 +556,11 @@ function buildCoachingData(endDate, activities) {
       id: 'demo-race-0000000000000001',
       name: 'Harbor Lights 10K',
       date: isoDate(targetDate),
+      role: 'primary',
       distanceLabel: '10K',
       distanceMeters: 10_000,
       location: 'Fictional Bay',
+      targetSeconds: 2_430,
     },
     goal: { kind: 'time', targetSeconds: 2_430, description: 'Run 10K in 40:30.' },
     weeks,

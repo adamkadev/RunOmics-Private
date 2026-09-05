@@ -13,6 +13,7 @@ import type { CoachingContext } from '@/application/coaching/context'
 export interface BootstrapRequest {
   context: CoachingContext
   availableWeekdays: number[]
+  planningStartDate: string
   primaryTargetEvent: TargetEvent
   tuneUpEvents: TargetEvent[]
   horizonEndDate: string

@@ -1,5 +1,13 @@
 import type { Activity } from '@/domain/activity/types'
-import { COACHING_SCHEMA_VERSION, type CoachEvidence, type TrainingWeek, type WorkoutPrescription } from '@/domain/coaching/types'
+import {
+  COACHING_SCHEMA_VERSION,
+  type CoachEvidence,
+  type TrainingWeek,
+  type WorkoutPrescription,
+  type WorkoutRepeatBlock,
+  type WorkoutSegment,
+} from '@/domain/coaching/types'
+import { raceTargetFacts } from '@/domain/coaching/raceTarget'
 import { parseCoachingPlan, parseWorkoutPrescription } from '@/domain/coaching/validation'
 import type {
   AdvisorPlanChange,
@@ -10,6 +18,7 @@ import type {
   CoachingPlanDraft,
 } from '@/application/ports/CoachingAdvisor'
 import type { CoachingContext } from '@/application/coaching/context'
+import { bootstrapRecoveryFacts } from '@/application/coaching/bootstrapValidation'
 import { MODEL_POOL } from '@/domain/ai/budget'
 import { generateStructuredJson } from '@/lib/gemini'
 
@@ -56,6 +65,14 @@ const BLOCK_SCHEMA = {
   required: ['kind'],
 }
 
+const BOOTSTRAP_BLOCK_SCHEMA = {
+  ...BLOCK_SCHEMA,
+  properties: {
+    ...BLOCK_SCHEMA.properties,
+    kind: { type: 'STRING', enum: ['warmup', 'effort', 'recovery', 'cooldown', 'repeat'] },
+  },
+}
+
 const BOOTSTRAP_WORKOUT_SCHEMA = {
   type: 'OBJECT',
   properties: {
@@ -63,7 +80,7 @@ const BOOTSTRAP_WORKOUT_SCHEMA = {
     type: { type: 'STRING', enum: ['easy', 'recovery', 'long_run', 'tempo', 'threshold', 'vo2max', 'anaerobic', 'sprint', 'race'] },
     title: { type: 'STRING' },
     description: { type: 'STRING' },
-    blocks: { type: 'ARRAY', items: BLOCK_SCHEMA },
+    blocks: { type: 'ARRAY', items: BOOTSTRAP_BLOCK_SCHEMA },
     notes: { type: 'ARRAY', items: { type: 'STRING' } },
   },
   required: ['date', 'type', 'title', 'description', 'blocks'],
@@ -76,6 +93,7 @@ const ADAPTATION_WORKOUT_SCHEMA = {
     id: { type: 'STRING' },
     totalDurationSeconds: { type: 'INTEGER' },
     totalDistanceMeters: { type: 'INTEGER' },
+    blocks: { type: 'ARRAY', items: BLOCK_SCHEMA },
   },
 }
 
@@ -168,6 +186,30 @@ function date(value: unknown, label: string): string {
   return result
 }
 
+function flattenedSegments(blocks: WorkoutPrescription['blocks']): WorkoutSegment[] {
+  return blocks.flatMap((block) => block.kind === 'repeat' ? block.steps : [block])
+}
+
+function hasStructuredProgression(segments: WorkoutSegment[]): boolean {
+  const efforts = segments.filter((segment) => segment.kind === 'effort')
+  for (let index = 1; index < efforts.length; index++) {
+    const previous = efforts[index - 1]!.target
+    const current = efforts[index]!.target
+    if (
+      previous.paceSecPerKm && current.paceSecPerKm
+      && current.paceSecPerKm.min < previous.paceSecPerKm.min
+      && current.paceSecPerKm.max < previous.paceSecPerKm.max
+    ) return true
+    if (previous.hrZone !== undefined && current.hrZone !== undefined && current.hrZone > previous.hrZone) return true
+    if (
+      previous.hrBpm && current.hrBpm
+      && current.hrBpm.min > previous.hrBpm.min
+      && current.hrBpm.max > previous.hrBpm.max
+    ) return true
+  }
+  return false
+}
+
 function bootstrapWorkoutDraft(value: unknown, label: string): BootstrapWorkoutDraft {
   const raw = record(value, label)
   // Reuse the segment/range/date validator on one workout at a time. The
@@ -185,6 +227,54 @@ function bootstrapWorkoutDraft(value: unknown, label: string): BootstrapWorkoutD
     ...(raw.notes === undefined ? {} : { notes: raw.notes }),
     provenance: PLACEHOLDER_PROVENANCE,
   }, label)
+  const mentionsStrides = /\bstrides?\b/i.test([
+    parsed.title,
+    parsed.description,
+    ...(parsed.notes ?? []),
+  ].join('\n'))
+  const strideRepeats = parsed.blocks.filter((block): block is WorkoutRepeatBlock =>
+    block.kind === 'repeat' && block.steps.some((step) => step.kind === 'strides')
+  )
+  const segments = flattenedSegments(parsed.blocks)
+  const hasStandaloneStrides = parsed.blocks.some((block) => block.kind === 'strides')
+  if (hasStandaloneStrides) {
+    throw new Error(`${label}.blocks: standalone strides are not supported; use a repeat group`)
+  }
+  if (mentionsStrides && strideRepeats.length === 0) {
+    throw new Error(`${label}.blocks: strides must be prescribed as a repeat group`)
+  }
+  for (const block of strideRepeats) {
+    if (block.repetitions < 2) throw new Error(`${label}.blocks: strides repeat group must contain multiple repetitions`)
+    if (!block.steps.some((step) => step.kind === 'recovery')) {
+      throw new Error(`${label}.blocks: strides repeat group must include recovery`)
+    }
+    if (block.steps.some((step) => step.kind === 'strides' && step.target.durationSeconds === undefined)) {
+      throw new Error(`${label}.blocks: each strides step must have a durationSeconds target`)
+    }
+    if (block.steps.some((step) => step.kind === 'strides' && (step.target.hrBpm !== undefined || step.target.hrZone !== undefined))) {
+      throw new Error(`${label}.blocks: short strides must use pace, effort, or form guidance rather than an HR target`)
+    }
+  }
+
+  const workoutProse = [
+    parsed.title,
+    parsed.description,
+    ...(parsed.notes ?? []),
+    ...segments.flatMap((segment) => segment.notes ?? []),
+  ].join('\n')
+  const isHillWorkout = parsed.type !== 'race'
+    && /\b(?:hill|hills|uphill|incline)\b|(?:côte|côtes|montee|montée|montées)/i.test(workoutProse)
+  if (isHillWorkout && segments.some((segment) =>
+    (segment.kind === 'effort' || segment.kind === 'strides')
+    && segment.target.paceSecPerKm !== undefined
+  )) {
+    throw new Error(`${label}.blocks: hill efforts must use effort/RPE guidance, not a rigid pace target`)
+  }
+
+  const claimsProgression = /\bprogress(?:ive|ion|if|ifs|ives?|ivement)\b/i.test(workoutProse)
+  if (claimsProgression && !hasStructuredProgression(segments)) {
+    throw new Error(`${label}.blocks: a progressive workout must contain an actual structured intensity progression`)
+  }
   return {
     date: parsed.date,
     type: parsed.type,
@@ -301,6 +391,10 @@ function contextPrompt(context: CoachingContext): string {
   return `Structured coaching context:\n${JSON.stringify(context)}`
 }
 
+export function bootstrapEventPrompt(event: BootstrapRequest['primaryTargetEvent']): Record<string, unknown> {
+  return { ...event, ...raceTargetFacts(event) }
+}
+
 async function request(schema: Record<string, unknown>, systemInstruction: string, prompt: string): Promise<unknown> {
   const result = await generateStructuredJson({ model: MODEL(), systemInstruction, prompt, responseSchema: schema, temperature: 0.2 })
   if (!result.ok) throw new Error(`Gemini coaching request failed: ${result.reason}`)
@@ -311,13 +405,14 @@ export class GeminiCoachingAdvisor implements CoachingAdvisor {
   async bootstrap(input: BootstrapRequest): Promise<CoachingPlanDraft> {
     const horizonDays = Math.round((
       new Date(`${input.horizonEndDate}T00:00:00Z`).getTime()
-      - new Date(`${input.context.referenceDate}T00:00:00Z`).getTime()
+      - new Date(`${input.planningStartDate}T00:00:00Z`).getTime()
     ) / 86_400_000) + 1
     const weekCount = Math.ceil(horizonDays / 7)
+    const recovery = bootstrapRecoveryFacts(input.context, input.planningStartDate)
     const raw = await request(
       BOOTSTRAP_PLAN_RESPONSE_SCHEMA,
-      'Create a conservative running prescription ending on the supplied horizon date. The supplied primary event is the block target; supplied tune-up events are secondary evaluation races, not alternate targets. Do not schedule anything after the horizon. Use only supplied dates, athlete metrics, goal, target ranges, and available weekdays. Workout names must match their actual intensity: do not call threshold work race intensity unless the description explicitly explains that intent, and do not label broad mixed-pace work marathon pace. A race-pace prescription must reflect the explicit event goal when one exists; if a deliberately conservative target differs, say so clearly in its description. Return structured workouts, not prose-only sessions. Do not calculate new physiological metrics.',
-      `${contextPrompt(input.context)}\nAvailable UTC weekdays (0=Sun): ${input.availableWeekdays.join(',')}\nPrimary target event: ${JSON.stringify(input.primaryTargetEvent)}\nTune-up events: ${JSON.stringify(input.tuneUpEvents)}\nPlan horizon ends: ${input.horizonEndDate}\nReturn exactly ${weekCount} week${weekCount === 1 ? '' : 's'}, with no week or workout extending past the horizon.\nUser target override: ${input.targetEventId ?? 'none'}`,
+      'Create a conservative running prescription for the supplied planning period. PRIMARY_TARGET is the only block target; TUNE_UP_EVENTS are independent secondary races that support it. Include every tune-up inside the planning period as a race workout on its event date, and taper or sharpen appropriately beforehand; do not place a normal tempo, threshold, VO2max, anaerobic, sprint, or long-run session within two days of a tune-up race. When POST_RACE_RECOVERY.required is true, every prescribed session through recoveryThroughDate must be easy or recovery only: no tempo, threshold, VO2max, anaerobic, sprint, race, or long run. Recent consistency, gaps, acute/chronic load, ACWR, load status, and TSB must inform how cautiously quality and volume resume; the first quality session may move into the following week. For a 10K PRIMARY_TARGET, emphasize aerobic consistency, threshold development, and long-run durability, with at most one separate faster 5K-specific/VO2 stimulus in this rolling block; a 5K tune-up can itself provide that faster stimulus. For every event, hasExplicitGoal and targetSeconds apply only to that event. Never copy a primary goal to a tune-up. When hasExplicitGoal is false, do not call any finish time an event goal; an AI-recommended pace must be described as a recommendation and encoded in paceSecPerKm. Pace and finish-time conversions are deterministic inputs: never calculate, infer, or narrate a finish time from a pace. You may repeat supplied targetFinishTime and targetPace values verbatim for that same event only. Keep plan names, plan focus, and week focus free of numeric pace or finish-time targets. Race workouts must occur on a supplied event date. Do not schedule anything outside the planning period. Use only supplied dates, athlete metrics, goals, target ranges, and available weekdays. Treat supplied hrZoneBoundsBpm as authoritative Garmin zone boundaries; do not recalculate HR zones from max HR or LTHR. Workout names and descriptions must match their blocks: call a workout progressive only when multiple blocks encode an actual rise in intensity. Hill repetitions must use effort/RPE or form guidance (with HR only as secondary guidance), never a rigid flat-ground pace target; use a normal flat interval workout if pace is the execution target, and encode qualitative effort/RPE/form guidance in segment notes. If a workout includes strides, encode every intended repetition as a repeat block containing a timed strides step and a recovery step (normally 4–6 × 20 seconds when appropriate); never emit a single standalone strides block and never omit or invent the repetition count. Do not assign hrZone or hrBpm to strides because HR response lags; guide them by pace or encode effort, relaxed speed, and form in segment notes. Return structured workouts, not prose-only sessions. Do not calculate new physiological metrics.',
+      `${contextPrompt(input.context)}\nPOST_RACE_RECOVERY: ${JSON.stringify(recovery)}\nPRIMARY_TARGET: ${JSON.stringify(bootstrapEventPrompt(input.primaryTargetEvent))}\nTUNE_UP_EVENTS (each goal is independent): ${JSON.stringify(input.tuneUpEvents.map(bootstrapEventPrompt))}\nAvailable UTC weekdays (0=Sun): ${input.availableWeekdays.join(',')}\nPlan starts: ${input.planningStartDate}\nPlan horizon ends: ${input.horizonEndDate}\nReturn exactly ${weekCount} week${weekCount === 1 ? '' : 's'}, with no week or workout extending outside the planning period.\nUser target override: ${input.targetEventId ?? 'none'}`,
     )
     return parseBootstrapPlanDraft(raw)
   }

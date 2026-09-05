@@ -40,16 +40,22 @@ describe('coaching validation', () => {
 
   it('validates explicit primary and tune-up event roles', () => {
     const parsed = parseCoachingPlan(plan({
-      targetEvent: { id: 'race-primary', name: 'Autumn 10K', date: '2026-10-18', role: 'primary' },
-      tuneUpEvents: [{ id: 'race-tune-up', name: 'Tune-up 5K', date: '2026-09-20', role: 'tune_up' }],
+      targetEvent: { id: 'race-primary', name: 'Autumn 10K', date: '2026-10-18', role: 'primary', targetSeconds: 2_400 },
+      tuneUpEvents: [{ id: 'race-tune-up', name: 'Tune-up 5K', date: '2026-09-20', role: 'tune_up', targetSeconds: 1_200 }],
     }))
     expect(parsed.tuneUpEvents?.[0]?.role).toBe('tune_up')
+    expect(parsed.targetEvent.targetSeconds).toBe(2_400)
+    expect(parsed.tuneUpEvents?.[0]?.targetSeconds).toBe(1_200)
 
     const invalid = plan({
       targetEvent: { id: 'race-primary', name: 'Autumn 10K', date: '2026-10-18', role: 'primary' },
       tuneUpEvents: [{ id: 'race-tune-up', name: 'Tune-up 5K', date: '2026-09-20', role: 'primary' }],
     })
     expect(() => parseCoachingPlan(invalid)).toThrow(/must be tune_up/)
+
+    expect(() => parseCoachingPlan(plan({
+      targetEvent: { id: 'race-primary', name: 'Autumn 10K', date: '2026-10-18', role: 'primary', targetSeconds: 0 },
+    }))).toThrow(/targetSeconds/)
   })
 
   it('rejects unsupported schema versions', () => {
