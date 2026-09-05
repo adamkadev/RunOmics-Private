@@ -22,7 +22,13 @@ import {
  * that follows compute the same plan from the same inputs.
  */
 
-export type GarminSyncAction = 'create' | 'schedule' | 'replace' | 'delete' | 'skip'
+/**
+ * `keep` and `skip` both leave Garmin untouched, but for opposite reasons:
+ * `keep` is a workout already synchronised and unchanged, `skip` is one
+ * deliberately excluded from structured-workout sync. Reporting both as "skip"
+ * hid that difference.
+ */
+export type GarminSyncAction = 'create' | 'schedule' | 'replace' | 'delete' | 'keep' | 'skip'
 
 export interface GarminSyncOperation {
   action: GarminSyncAction
@@ -55,7 +61,7 @@ export interface GarminSyncPlan {
  * athlete's own PacePro strategy paces it.
  */
 export const RACE_ON_CALENDAR_REASON = 'Race already on the Garmin calendar'
-export const COURSE_AWARE_RACE_REASON = 'Course-aware race already on the Garmin calendar - use Garmin PacePro'
+export const COURSE_AWARE_RACE_REASON = 'Course-aware race already on Garmin calendar - use Garmin PacePro'
 /** Shown on a course-aware race synced through `syncRaces`, so the preview says what reaches the watch. */
 export const COURSE_AWARE_RACE_NOTE = 'Course-aware race - race effort left unpaced for PacePro'
 
@@ -110,7 +116,7 @@ function operationFor(
     }
   }
 
-  return { ...base, action: 'skip', payload, contentHash, reason: null }
+  return { ...base, action: 'keep', payload, contentHash, reason: null }
 }
 
 /**
@@ -138,7 +144,7 @@ function deletions(
 }
 
 /** Order is the preview's order and the apply's order: by date, then by action. */
-const ACTION_ORDER: Record<GarminSyncAction, number> = { delete: 0, replace: 1, create: 2, schedule: 3, skip: 4 }
+const ACTION_ORDER: Record<GarminSyncAction, number> = { delete: 0, replace: 1, create: 2, schedule: 3, keep: 4, skip: 5 }
 
 function fingerprint(operations: GarminSyncOperation[], planId: string, revision: number): string {
   return stableHash({
@@ -185,6 +191,7 @@ export interface GarminSyncCounts {
   create: number
   update: number
   delete: number
+  keep: number
   skip: number
 }
 
@@ -194,6 +201,7 @@ export function countOperations(operations: GarminSyncOperation[]): GarminSyncCo
     create: operations.filter((operation) => operation.action === 'create' || operation.action === 'schedule').length,
     update: operations.filter((operation) => operation.action === 'replace').length,
     delete: operations.filter((operation) => operation.action === 'delete').length,
+    keep: operations.filter((operation) => operation.action === 'keep').length,
     skip: operations.filter((operation) => operation.action === 'skip').length,
   }
 }
@@ -203,7 +211,13 @@ const PREVIEW_LABEL: Record<GarminSyncAction, string> = {
   schedule: 'CREATE',
   replace: 'UPDATE',
   delete: 'DELETE',
+  keep: 'KEEP',
   skip: 'SKIP',
+}
+
+/** Create, update and delete are the only actions that touch Garmin. */
+export function hasGarminMutations(counts: GarminSyncCounts): boolean {
+  return counts.create + counts.update + counts.delete > 0
 }
 
 /** Every mutation the apply would make, in the order it would make them. */
@@ -213,7 +227,9 @@ export function formatGarminSyncPreview(syncPlan: GarminSyncPlan): string {
 
   for (const operation of syncPlan.operations) {
     const label = PREVIEW_LABEL[operation.action].padEnd(7)
-    lines.push(`${label} ${operation.date}  ${operation.title}${operation.reason ? `  ${operation.reason}` : ''}`)
+    lines.push(`${label} ${operation.date}  ${operation.title}`)
+    // A reason gets its own indented line, so it never reads as part of the title.
+    if (operation.reason) lines.push(`        ${operation.reason}`)
   }
   if (!syncPlan.operations.length) lines.push('Nothing to synchronize.')
 
@@ -223,6 +239,7 @@ export function formatGarminSyncPreview(syncPlan: GarminSyncPlan): string {
     `Create: ${counts.create}`,
     `Update: ${counts.update}`,
     `Delete: ${counts.delete}`,
+    `Keep: ${counts.keep}`,
     `Skip: ${counts.skip}`,
   )
   return lines.join('\n')

@@ -126,8 +126,16 @@ export async function applyGarminSyncPlan(
   for (const operation of syncPlan.operations) {
     if (rateLimited) break
 
-    if (operation.action === 'skip') {
-      results.push({ operation, outcome: 'skipped', garminWorkoutId: null, garminWorkoutScheduleId: null, verified: false, error: null })
+    if (operation.action === 'keep' || operation.action === 'skip') {
+      const entry = operation.existing
+      results.push({
+        operation,
+        outcome: 'skipped',
+        garminWorkoutId: entry?.garminWorkoutId ?? null,
+        garminWorkoutScheduleId: entry?.garminWorkoutScheduleId ?? null,
+        verified: false,
+        error: null,
+      })
       continue
     }
 
@@ -233,6 +241,7 @@ export function formatGarminSyncResults(report: GarminSyncReport): string {
     schedule: 'CREATE',
     replace: 'UPDATE',
     delete: 'DELETE',
+    keep: 'KEEP  ',
     skip: 'SKIP  ',
   }
   const marks: Record<GarminSyncOutcome, string> = { applied: '✓', skipped: '-', failed: '✗' }

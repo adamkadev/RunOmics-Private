@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { CoachingPlan, WorkoutEvaluation, WorkoutPrescription } from '@/domain/coaching/types'
-import { buildGarminSyncPlan, countOperations, formatGarminSyncPreview } from '../garminSync'
+import { buildGarminSyncPlan, countOperations, formatGarminSyncPreview, hasGarminMutations } from '../garminSync'
 import { emptyGarminSyncState, garminContentHash, type GarminSyncState } from '../garminSyncState'
 import { toGarminWorkoutPayload } from '../garminWorkoutMapping'
 
@@ -74,7 +74,7 @@ describe('first sync', () => {
       ['create', '2026-09-08'],
       ['create', '2026-09-09'],
     ])
-    expect(countOperations(operations)).toEqual({ create: 2, update: 0, delete: 0, skip: 0 })
+    expect(countOperations(operations)).toEqual({ create: 2, update: 0, delete: 0, keep: 0, skip: 0 })
   })
 
   it('carries the Garmin payload on every create', () => {
@@ -86,14 +86,17 @@ describe('first sync', () => {
 })
 
 describe('idempotency', () => {
-  it('makes no Garmin mutation on a second unchanged run', () => {
+  it('reports an unchanged second run as KEEP, not as a skip', () => {
     const workouts = [workout({ id: 'a', date: '2026-09-08' }), workout({ id: 'b', date: '2026-09-09' })]
     const state = syncedState(workouts.map((each) => ({ id: each.id, date: each.date, workout: each })))
 
     const operations = build(plan(workouts), state).operations
 
-    expect(operations.every((operation) => operation.action === 'skip')).toBe(true)
-    expect(countOperations(operations)).toEqual({ create: 0, update: 0, delete: 0, skip: 2 })
+    // An already-synchronised workout and a deliberately excluded one are both
+    // no-ops on Garmin, but they must not read the same way.
+    expect(operations.every((operation) => operation.action === 'keep')).toBe(true)
+    expect(countOperations(operations)).toEqual({ create: 0, update: 0, delete: 0, keep: 2, skip: 0 })
+    expect(hasGarminMutations(countOperations(operations))).toBe(false)
   })
 
   it('computes the same fingerprint for the same inputs', () => {
@@ -125,7 +128,7 @@ describe('changed prescriptions', () => {
     expect(operations).toHaveLength(1)
     expect(operations[0]!.action).toBe('replace')
     expect(operations[0]!.existing?.garminWorkoutId).toBe('9000')
-    expect(countOperations(operations)).toEqual({ create: 0, update: 1, delete: 0, skip: 0 })
+    expect(countOperations(operations)).toEqual({ create: 0, update: 1, delete: 0, keep: 0, skip: 0 })
   })
 
   it('replaces on the new date when a prescription moved', () => {
@@ -145,7 +148,7 @@ describe('changed prescriptions', () => {
 
     const operations = build(plan([workout({ id: 'a', date: '2026-09-08', revision: 7 })]), state).operations
 
-    expect(operations[0]!.action).toBe('skip')
+    expect(operations[0]!.action).toBe('keep')
   })
 })
 
@@ -244,10 +247,10 @@ describe('course-aware races', () => {
 
     expect(raceOperation(operations)?.action).toBe('skip')
     expect(raceOperation(operations)?.reason).toBe(
-      'Course-aware race already on the Garmin calendar - use Garmin PacePro',
+      'Course-aware race already on Garmin calendar - use Garmin PacePro',
     )
     expect(raceOperation(operations)?.payload).toBeNull()
-    expect(countOperations(operations)).toEqual({ create: 1, update: 0, delete: 0, skip: 1 })
+    expect(countOperations(operations)).toEqual({ create: 1, update: 0, delete: 0, keep: 0, skip: 1 })
   })
 
   it('skips a race with no course context for the same reason', () => {
@@ -320,21 +323,75 @@ describe('partial failure recovery', () => {
     expect(operations[0]!.action).toBe('schedule')
     expect(operations[0]!.existing?.garminWorkoutId).toBe('9000')
     // The retry counts as finishing the create, never as a second workout.
-    expect(countOperations(operations)).toEqual({ create: 1, update: 0, delete: 0, skip: 0 })
+    expect(countOperations(operations)).toEqual({ create: 1, update: 0, delete: 0, keep: 0, skip: 0 })
   })
 })
 
 describe('preview rendering', () => {
-  it('lists every mutation and the skip reason', () => {
-    const race = workout({ id: 'race', date: '2026-10-03', type: 'race', title: 'Broschtkriibslaf 5K Race' })
-    const preview = formatGarminSyncPreview(
-      build(plan([workout({ id: 'a', date: '2026-09-08', title: 'Aerobic Easy Run' }), race]), null),
-    )
+  const race = workout({ id: 'race', date: '2026-10-03', type: 'race', title: 'Broschtkriibslaf 5K Race' })
+  const easy = workout({ id: 'a', date: '2026-09-08', title: 'Aerobic Easy Run' })
+
+  it('lists every mutation and puts a reason on its own line', () => {
+    const preview = formatGarminSyncPreview(build(plan([easy, race]), null))
 
     expect(preview).toContain('Garmin sync preview')
     expect(preview).toContain('CREATE  2026-09-08  Aerobic Easy Run')
-    expect(preview).toContain('SKIP    2026-10-03  Broschtkriibslaf 5K Race  Course-aware race already on the Garmin calendar - use Garmin PacePro')
-    expect(preview).toContain('Create: 1')
+    expect(preview).toContain('SKIP    2026-10-03  Broschtkriibslaf 5K Race')
+    expect(preview).toContain('\n        Course-aware race already on Garmin calendar - use Garmin PacePro')
+  })
+
+  it('distinguishes a kept workout from a skipped one', () => {
+    const state = syncedState([{ id: 'a', date: '2026-09-08', workout: easy }])
+
+    const preview = formatGarminSyncPreview(build(plan([easy, race]), state))
+
+    expect(preview).toContain('KEEP    2026-09-08  Aerobic Easy Run')
+    expect(preview).toContain('SKIP    2026-10-03  Broschtkriibslaf 5K Race')
+    expect(preview).toContain('Create: 0')
+    expect(preview).toContain('Update: 0')
+    expect(preview).toContain('Delete: 0')
+    expect(preview).toContain('Keep: 1')
     expect(preview).toContain('Skip: 1')
+  })
+
+  it('never labels a kept workout with a reason', () => {
+    const state = syncedState([{ id: 'a', date: '2026-09-08', workout: easy }])
+
+    const preview = formatGarminSyncPreview(build(plan([easy]), state))
+
+    expect(preview).toContain('KEEP    2026-09-08  Aerobic Easy Run')
+    expect(preview.split('\n').filter((line) => line.startsWith('        '))).toEqual([])
+  })
+
+  it('renders identically for identical inputs', () => {
+    const state = syncedState([{ id: 'a', date: '2026-09-08', workout: easy }])
+
+    expect(formatGarminSyncPreview(build(plan([easy, race]), state))).toBe(
+      formatGarminSyncPreview(build(plan([easy, race]), state)),
+    )
+  })
+})
+
+describe('mutation detection', () => {
+  const easyRun = workout({ id: 'a', date: '2026-09-08' })
+  const raceRun = workout({ id: 'race', date: '2026-10-03', type: 'race', title: 'Broschtkriibslaf 5K Race' })
+  const synced = syncedState([{ id: 'a', date: '2026-09-08', workout: easyRun }])
+
+  it('reports no mutation when everything is kept or skipped', () => {
+    const operations = build(plan([easyRun, raceRun]), synced).operations
+
+    expect(hasGarminMutations(countOperations(operations))).toBe(false)
+  })
+
+  it('reports a mutation for a create', () => {
+    const operations = build(plan([workout({ id: 'new', date: '2026-09-09' })]), null).operations
+
+    expect(hasGarminMutations(countOperations(operations))).toBe(true)
+  })
+
+  it('reports a mutation for a delete', () => {
+    const operations = build(plan([]), synced).operations
+
+    expect(hasGarminMutations(countOperations(operations))).toBe(true)
   })
 })

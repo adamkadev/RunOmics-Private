@@ -67,7 +67,9 @@ async function main(): Promise<void> {
 
   const { JsonCoachingRepository } = await import('@/infrastructure/repositories/JsonCoachingRepository')
   const { JsonGarminSyncStore } = await import('@/infrastructure/repositories/JsonGarminSyncStore')
-  const { buildGarminSyncPlan, formatGarminSyncPreview } = await import('@/application/coaching/garminSync')
+  const { buildGarminSyncPlan, countOperations, formatGarminSyncPreview, hasGarminMutations } = await import(
+    '@/application/coaching/garminSync'
+  )
   const { toGarminWorkoutPayload } = await import('@/application/coaching/garminWorkoutMapping')
 
   const repository = new JsonCoachingRepository(root)
@@ -93,12 +95,17 @@ async function main(): Promise<void> {
   })
 
   if (!args.includes('--apply')) {
+    const mutating = hasGarminMutations(countOperations(syncPlan.operations))
     console.log(formatGarminSyncPreview(syncPlan))
     console.log('')
     console.log(`Plan ${plan.id} revision ${plan.revision} (${plan.status}); mapping at ${store.location}`)
     console.log(`Fingerprint: ${syncPlan.fingerprint}`)
     console.log('')
-    console.log('Preview only. Re-run with --apply to perform these Garmin mutations.')
+    console.log(
+      mutating
+        ? 'Preview only. Re-run with --apply to perform these Garmin mutations.'
+        : 'Garmin is already in sync. No changes to apply.',
+    )
     return
   }
 

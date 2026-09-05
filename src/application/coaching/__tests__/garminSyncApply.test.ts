@@ -137,6 +137,7 @@ describe('applying a first sync', () => {
     expect(gateway.created).toHaveLength(1)
     expect(gateway.scheduled).toHaveLength(1)
     expect(second.results.every((result) => result.outcome === 'skipped')).toBe(true)
+    expect(second.results.every((result) => result.operation.action === 'keep')).toBe(true)
   })
 })
 
@@ -291,7 +292,7 @@ describe('result rendering', () => {
 
     expect(output).toContain('CREATE ✓ 2026-09-08 Aerobic Easy Run')
     expect(output).toContain(
-      'SKIP   - 2026-10-03 Broschtkriibslaf 5K Race (Course-aware race already on the Garmin calendar - use Garmin PacePro)',
+      'SKIP   - 2026-10-03 Broschtkriibslaf 5K Race (Course-aware race already on Garmin calendar - use Garmin PacePro)',
     )
     expect(output).toContain('1 Garmin workout(s) synchronized.')
     expect(output).toContain('0 failure(s).')
