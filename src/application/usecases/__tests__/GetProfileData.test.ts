@@ -6,6 +6,7 @@ import type { GoalYear } from '../GetGoalsData'
 
 vi.mock('@/infrastructure/repositories/JsonActivityRepository', () => ({ getAllActivities: vi.fn() }))
 vi.mock('@/infrastructure/repositories/JsonAthleteRepository', () => ({ getAthleteProfile: vi.fn() }))
+vi.mock('@/infrastructure/repositories/JsonVo2maxNormsRepository', () => ({ getVo2maxNorms: vi.fn() }))
 vi.mock('@/infrastructure/repositories/JsonGoalRepository', () => ({ getGoalYears: vi.fn() }))
 vi.mock('@/application/usecases/GetLifetimeStats', () => ({ getLifetimeStats: vi.fn() }))
 vi.mock('@/application/usecases/GetRecords', () => ({ getRecords: vi.fn() }))
@@ -40,6 +41,7 @@ interface Options {
 async function run(options: Options = {}) {
   const { getAllActivities } = await import('@/infrastructure/repositories/JsonActivityRepository')
   const { getAthleteProfile } = await import('@/infrastructure/repositories/JsonAthleteRepository')
+  const { getVo2maxNorms } = await import('@/infrastructure/repositories/JsonVo2maxNormsRepository')
   const { getGoalYears } = await import('@/infrastructure/repositories/JsonGoalRepository')
   const { getLifetimeStats } = await import('@/application/usecases/GetLifetimeStats')
   const { getRecords } = await import('@/application/usecases/GetRecords')
@@ -49,6 +51,7 @@ async function run(options: Options = {}) {
 
   vi.mocked(getAllActivities).mockReturnValue(options.activities ?? [])
   vi.mocked(getAthleteProfile).mockReturnValue({ age: 34, sex: 'male' })
+  vi.mocked(getVo2maxNorms).mockReturnValue({} as ReturnType<typeof getVo2maxNorms>)
   vi.mocked(getGoalYears).mockReturnValue(options.goalYears ?? [])
   vi.mocked(getLifetimeStats).mockReturnValue(options.lifetime === undefined ? null : options.lifetime)
   vi.mocked(getRecords).mockResolvedValue(options.records ?? [])

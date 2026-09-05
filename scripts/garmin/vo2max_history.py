@@ -1,4 +1,4 @@
-"""Sync Garmin's own VO2max series to public/data/vo2max_history.json.
+"""Sync Garmin's own VO2max series to the private data workspace.
 
   metrics-service/metrics/maxmet/monthly/{start}/{end}
   metrics-service/metrics/maxmet/daily/{start}/{end}
@@ -26,10 +26,11 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
+from data_directory import get_data_dir
 from .client import GarminAPIError, GarminClient
 from .retry import retry_transient
 
-_OUT_PATH = Path(__file__).parent.parent.parent / "public" / "data" / "vo2max_history.json"
+_OUT_PATH = get_data_dir() / "vo2max_history.json"
 
 _WINDOW_MONTHS = 12
 # Only the four-week view plots daily samples, so nothing older is worth a request.

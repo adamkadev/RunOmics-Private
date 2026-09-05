@@ -93,11 +93,12 @@ git clone https://github.com/<you>/RunOmics-Private.git /tmp/first-sync
 cd /tmp/first-sync && npm ci && pip install -r scripts/requirements.txt
 
 export GARMIN_SECRET="<from step 2>"
-python scripts/sync.py                       # several minutes, writes public/data/
+export RUNOMICS_DATA_DIR="$PWD/data"          # server-only scratch workspace
+python scripts/sync.py                       # several minutes, writes data/
 
 export RUNOMICS_DATA_REPO_URL="https://github.com/<you>/runomics-data-<profile>.git"
 export RUNOMICS_DATA_REPO_TOKEN="<from step 1>"
-node scripts/push_private_data.mjs public/data
+node scripts/push_private_data.mjs data
 ```
 
 This has to precede the Vercel project's first build: `prepare-data.mjs` fetches
@@ -192,9 +193,9 @@ Then add the profile to the matrices in `.github/workflows/`:
 - **Guarded.** Every workflow fails before doing anything if the environment
   doesn't declare `PROFILE`, and `sync.yml` additionally requires `GARMIN_SECRET`
   and both `RUNOMICS_DATA_REPO_*` values - checked before Garmin is contacted.
-  Without the second check a typo'd secret name would send `sync.py` to
-  `public/data` and commit a real dataset into this repository, so the data
-  repository is now the only destination the workflow knows.
+  Without the second check a typo'd secret name would start from an incomplete
+  default workspace. The workflow now hydrates the complete private dataset into
+  server-only `data/`, syncs it in place, and pushes that same complete workspace.
 - **Cached separately.** The FIT cache key is prefixed with the profile;
   a shared key had each profile restoring, then re-uploading, the other's files.
 - **Serialised per profile.** `concurrency: sync-<profile>` stops a manual run

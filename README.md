@@ -29,7 +29,13 @@ Garmin Connect API
   Vercel                   ← deploy & host
 ```
 
-Activities are stored one JSON file per month under `data/activities/`, fetched from the private `RunOmics-data` repository by `scripts/prepare-data.mjs` before every dev/build. `data/` sits outside `public/` on purpose: nothing in it is reachable over HTTP, only server-side code reads it. A clone with no private data source configured generates a deterministic demo dataset there instead, so `npm install && npm run dev` just works. No database, no real data committed to this repository.
+Activities are stored one JSON file per month under `data/activities/`. For personal
+development, the canonical dataset is a separate private checkout selected with
+`RUNOMICS_DATA_DIR`; the app and Python sync read and write that directory directly.
+The app repository's own `data/` is only the default runtime/build workspace. It is
+populated from the private repository during a personal deployment, or with a
+deterministic demo dataset in an unconfigured clone. Both locations sit outside
+`public/`, so the JSON dataset is never exposed as static files.
 
 ---
 
@@ -83,6 +89,9 @@ Create a `.env.local` file at the root:
 # Garmin Connect auth token (from get_secret.py) - used only by scripts/sync.py, never on Vercel
 GARMIN_SECRET=eyJ...
 
+# Canonical local dataset (a sibling private checkout)
+RUNOMICS_DATA_DIR=../runomics-data-adam/data
+
 # MapTiler API key (for route maps)
 NEXT_PUBLIC_MAPTILER_TOKEN=your_maptiler_key
 
@@ -134,23 +143,36 @@ hand-edited JSON files these features read from.
 ### 4. Run the initial sync
 
 ```bash
-python scripts/sync.py
+npx dotenv -e .env.local -- python3 scripts/sync.py
 ```
 
-This fetches all your running activities from Garmin Connect, downloads the FIT files, parses them, and writes the per-month files under `public/data/activities/` - the sync pipeline's own workspace. The next `npm run dev` / `npm run build` moves that into the server-only `data/` directory the app reads. On first run this may take several minutes depending on your activity count.
+This fetches all running activities from Garmin Connect, downloads the FIT files,
+parses them, and writes JSON directly into the selected private dataset. A typical
+local layout is:
+
+```text
+parent/
+  runomics-private/
+  runomics-data-adam/
+    data/
+```
+
+The same `RUNOMICS_DATA_DIR` must be used for sync, app, and coaching commands. No
+copy through `public/data` or the app's root `data/` is needed. On first run this may
+take several minutes depending on activity count.
 
 Options:
 
 ```bash
-python scripts/sync.py --limit 10     # sync only the last 10 new activities
-python scripts/sync.py --force        # re-sync all activities
-python scripts/sync.py --all-types    # include non-running activities
+npx dotenv -e .env.local -- python3 scripts/sync.py --limit 10
+npx dotenv -e .env.local -- python3 scripts/sync.py --force
+npx dotenv -e .env.local -- python3 scripts/sync.py --all-types
 ```
 
 ### 5. Start the dev server
 
 ```bash
-npm run dev
+RUNOMICS_DATA_DIR=../runomics-data-adam/data npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
@@ -263,12 +285,12 @@ npm run coach -- --apply .coach-previews/<proposal>.json
 
 With private-repository credentials configured, apply fetches the latest data into a
 temporary workspace, rejects stale context or plan revisions, writes the coaching
-files atomically, and pushes only the private data repository. `--data-dir
-public/data` instead operates on an already-hydrated sync workspace and leaves its
-existing push step to the caller. Missing coaching files are valid and leave the
-existing Plan, Today, and activity UI unchanged. Demo data includes a deterministic
-fictional coaching lifecycle; it never derives a personal plan from another
-athlete's Garmin data.
+files atomically, and pushes only the private data repository. For local work,
+`RUNOMICS_DATA_DIR=../runomics-data-adam/data npm run coach -- ...` operates on the
+canonical sibling checkout directly (equivalent to `--data-dir` with that path).
+Missing coaching files are valid and leave the existing Plan, Today, and activity UI
+unchanged. Demo data includes a deterministic fictional coaching lifecycle; it
+never derives a personal plan from another athlete's Garmin data.
 
 ---
 
@@ -384,10 +406,13 @@ Garmin, pushes the changed files back and triggers the matching Vercel deploy ho
 result the same way:
 
 ```bash
-node scripts/fetch_private_data.mjs public/data   # hydrate the sync workspace first
-python scripts/sync.py
-node scripts/push_private_data.mjs public/data
+node scripts/fetch_private_data.mjs data
+RUNOMICS_DATA_DIR=data python3 scripts/sync.py
+node scripts/push_private_data.mjs data
 ```
+
+The source passed to `push_private_data.mjs` must be a complete hydrated dataset;
+the command refuses a workspace that could erase existing coaching state.
 
 Vercel picks up the redeploy within ~30 seconds. Nothing real is ever committed to
 this repository.

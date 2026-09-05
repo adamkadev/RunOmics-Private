@@ -6,9 +6,10 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+from data_directory import get_data_dir
 from .client import GarminAPIError, GarminClient
 
-_HISTORY_PATH = Path(__file__).parent.parent.parent / "public" / "data" / "athlete_history.json"
+_HISTORY_PATH = get_data_dir() / "athlete_history.json"
 
 # Threshold and capacity metrics worth a trend line. Garmin exposes only the
 # current value of each - there is no history endpoint - so the series is built

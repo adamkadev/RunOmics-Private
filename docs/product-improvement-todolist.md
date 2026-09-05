@@ -57,7 +57,7 @@ priorité, 🟡 moyenne, 🟢 confort/nice-to-have).
       dépasse quelques centaines de lignes" — au rythme d'un coureur régulier
       (300-500 activités/an), c'est probablement déjà pertinent après 2-3 ans
       d'historique. Ajouter `react-window` ou équivalent sur la vue liste. *(✅ fait en 3.2 via `content-visibility: auto` sur les cartes — les cartes hors écran ne coûtent plus ni layout ni paint ; react-window reste une option si le DOM lui-même devient trop gros.)*
-- [x] 🟡 Vérifier la taille des JSON par année sous `public/data/activities/` —
+- [x] 🟡 Vérifier la taille des JSON par année sous le répertoire privé `data/activities/` —
       avec les traces GPS complètes, ces fichiers peuvent grossir vite. Mesurer
       le poids réel et envisager un split "métadonnées légères" (dashboard/liste)
       vs "détail complet avec trace GPS" (page activité), pour ne charger la

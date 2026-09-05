@@ -13,6 +13,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from garmin.athlete import fetch_athlete_metrics, record_athlete_history
+from data_directory import get_data_dir
 from garmin.client import GarminAuthError, GarminAPIError, GarminClient
 from garmin.fitness_age_history import sync_fitness_age_history
 from garmin.retry import retry_transient
@@ -30,8 +31,9 @@ from processing.weather import WeatherClient, weather_for_activity
 from repository.json_store import JsonActivityStore, PlannedWorkoutStore
 
 _FIT_DIR = Path(__file__).parent.parent / "public" / "fit"
-_SYNC_META_PATH = Path(__file__).parent.parent / "public" / "data" / "sync_meta.json"
-_ATHLETE_PATH = Path(__file__).parent.parent / "public" / "data" / "athlete.json"
+_DATA_DIR = get_data_dir()
+_SYNC_META_PATH = _DATA_DIR / "sync_meta.json"
+_ATHLETE_PATH = _DATA_DIR / "athlete.json"
 _RATE_LIMIT_PAUSE = 1.0
 _REGEAR_WINDOW_DAYS = 10
 

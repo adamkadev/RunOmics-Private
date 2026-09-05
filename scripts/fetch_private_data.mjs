@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 /**
  * Pulls real Garmin-derived data from the private RunOmics-data repository
- * into a target directory - data/ for the personal deployment (see
- * .env.example), the throwaway public/data/ workspace when the sync workflow
- * hydrates a runner. Only runs when RUNOMICS_DATA_REPO_URL is set
+ * into a target directory - normally the server-only data/ workspace used by
+ * a personal deployment or sync runner. Only runs when RUNOMICS_DATA_REPO_URL is set
  * (scripts/prepare-data.mjs decides that); a failure here must stop the build
  * rather than silently falling back to demo data for what's supposed to be
  * the real personal deployment.

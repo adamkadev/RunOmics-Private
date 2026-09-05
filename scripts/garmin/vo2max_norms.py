@@ -1,4 +1,4 @@
-"""Sync Garmin's VO2max reference table to public/data/vo2max_norms.json.
+"""Sync Garmin's VO2max reference table to the private data workspace.
 
 Garmin serves the Cooper Institute age/sex percentile anchors as a static JSON
 table. It is the source of truth for the athlete rank badge and the "top X%"
@@ -22,9 +22,10 @@ import json
 from pathlib import Path
 from typing import Any
 
+from data_directory import get_data_dir
 from .client import GarminAPIError, GarminClient
 
-_OUT_PATH = Path(__file__).parent.parent.parent / "public" / "data" / "vo2max_norms.json"
+_OUT_PATH = get_data_dir() / "vo2max_norms.json"
 
 _SEXES = {"MALE": "male", "FEMALE": "female"}
 _BRACKETS = ("20-29", "30-39", "40-49", "50-59", "60-69", "70-79")

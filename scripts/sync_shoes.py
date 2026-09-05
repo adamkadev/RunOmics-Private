@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Sync shoe gear from Garmin Connect into public/data/shoes.json.
+"""Sync shoe gear from Garmin Connect into the private data workspace.
 
 Run this whenever a shoe is added or retired in Garmin Connect. Unlike
 sync.py it is not run on a schedule, since shoes only change a few times a
@@ -16,6 +16,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
+from data_directory import get_data_dir
 from garmin.client import GarminAuthError, GarminClient
 from garmin.gear import fetch_shoe_gear, write_shoes_json
 
@@ -50,10 +51,11 @@ def main() -> int:
         print(json.dumps({"shoes": [shoe.to_dict() for shoe in shoes]}, indent=2))
         return 0
 
+    output_path = get_data_dir() / "shoes.json"
     if write_shoes_json(shoes):
-        print("\npublic/data/shoes.json updated - review it, then push it with scripts/push_private_data.mjs.")
+        print(f"\n{output_path} updated - review it before pushing private data.")
     else:
-        print("\npublic/data/shoes.json already up to date.")
+        print(f"\n{output_path} already up to date.")
 
     return 0
 

@@ -19,9 +19,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
+from data_directory import get_data_dir
 from processing.privacy import crop_privacy_zone
 
-_LOCAL_DIR = Path(__file__).parent.parent / "public" / "data" / "activities"
+_LOCAL_DIR = get_data_dir() / "activities"
 
 
 def _months_and_loader(base_url: str | None):

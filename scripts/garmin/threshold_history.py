@@ -1,4 +1,4 @@
-"""Sync Garmin's lactate-threshold series to public/data/threshold_history.json.
+"""Sync Garmin's lactate-threshold series to the private data workspace.
 
   biometric-service/stats/lactateThresholdHeartRate/range/{start}/{end}
   biometric-service/stats/lactateThresholdSpeed/range/{start}/{end}
@@ -19,11 +19,12 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
+from data_directory import get_data_dir
 from .client import GarminAPIError, GarminClient
 from .retry import retry_transient
 from .vo2max_history import monthly_windows
 
-_OUT_PATH = Path(__file__).parent.parent.parent / "public" / "data" / "threshold_history.json"
+_OUT_PATH = get_data_dir() / "threshold_history.json"
 
 _HR_METRIC = "lactateThresholdHeartRate"
 _SPEED_METRIC = "lactateThresholdSpeed"

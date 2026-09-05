@@ -18,6 +18,9 @@
  *                                         demo data silently)
  *   absent, otherwise                  -> generate the deterministic demo
  *                                         dataset (fresh clone, no config)
+ *
+ * An explicit RUNOMICS_DATA_DIR is authoritative and is never populated here.
+ * It must already contain a complete activity dataset.
  */
 import fs from 'node:fs'
 import path from 'node:path'
@@ -26,38 +29,44 @@ import { fetchPrivateData } from './fetch_private_data.mjs'
 import { writeDemoDataset } from './generate_demo_data.mjs'
 
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
-const dataDir = path.join(repoRoot, 'data')
-const legacyDir = path.join(repoRoot, 'public', 'data')
 
-// public/data/ is where the Python sync pipeline writes and where the dataset
-// itself used to live, so whatever is there is the fresher copy - and leaving it
-// in place would serve the whole dataset as a static asset.
-function absorbSyncWorkspace() {
-  if (!fs.existsSync(legacyDir)) return
+export function prepareData({
+  root = repoRoot,
+  env = process.env,
+  fetchData = fetchPrivateData,
+  writeDemo = writeDemoDataset,
+} = {}) {
+  const explicitDataDir = env.RUNOMICS_DATA_DIR?.trim()
+  if (explicitDataDir) {
+    const selected = path.resolve(explicitDataDir)
+    if (!fs.existsSync(path.join(selected, 'activities', 'index.json'))) {
+      throw new Error(
+        `RUNOMICS_DATA_DIR points to ${selected}, but activities/index.json is missing. ` +
+        'Explicit data workspaces are never generated, fetched, or overwritten implicitly.'
+      )
+    }
+    console.log(`[prepare-data] using explicit data workspace ${selected} unchanged.`)
+    return { mode: 'explicit', dataDir: selected }
+  }
 
-  console.log('[prepare-data] moving public/data/ into the server-only data/ directory.')
-  fs.rmSync(dataDir, { recursive: true, force: true })
-  fs.renameSync(legacyDir, dataDir)
-}
-
-function main() {
-  absorbSyncWorkspace()
+  const dataDir = path.join(root, 'data')
 
   if (fs.existsSync(path.join(dataDir, 'activities', 'index.json'))) {
     console.log('[prepare-data] data/ already populated - leaving it as-is.')
-    return
+    return { mode: 'existing', dataDir }
   }
 
-  if (process.env.RUNOMICS_DATA_REPO_URL) {
+  if (env.RUNOMICS_DATA_REPO_URL) {
     console.log('[prepare-data] fetching real data from the private data repository...')
-    fetchPrivateData(dataDir)
+    fetchData(dataDir)
     console.log('[prepare-data] private data ready.')
-    return
+    return { mode: 'private', dataDir }
   }
 
   console.log('[prepare-data] no private data source configured - generating the demo dataset.')
-  writeDemoDataset(dataDir)
+  writeDemo(dataDir)
   console.log('[prepare-data] demo dataset ready.')
+  return { mode: 'demo', dataDir }
 }
 
-main()
+if (process.argv[1] === fileURLToPath(import.meta.url)) prepareData()

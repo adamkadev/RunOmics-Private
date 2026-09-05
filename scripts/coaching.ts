@@ -51,7 +51,7 @@ interface DataWorkspace {
 }
 
 async function dataWorkspace(args: string[], applying: boolean): Promise<DataWorkspace> {
-  const explicit = option(args, '--data-dir')
+  const explicit = option(args, '--data-dir') ?? process.env.RUNOMICS_DATA_DIR?.trim()
   if (explicit) return { root: path.resolve(explicit), shouldPush: false }
 
   if (process.env.RUNOMICS_DATA_REPO_URL) {

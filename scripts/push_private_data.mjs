@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 /**
  * Pushes a freshly-synced data directory into the private RunOmics-data
- * repository. Used by .github/workflows/sync.yml, which passes its own
- * throwaway public/data/ sync workspace inside the runner checkout - that
- * directory never reaches a deployment, unlike the app's own data/.
+ * repository. Used by .github/workflows/sync.yml after it hydrates the complete
+ * private dataset into the server-only data/ workspace and syncs in place.
  *
  * Same token handling as fetch_private_data.mjs, and for the same reasons:
  * RUNOMICS_DATA_REPO_TOKEN never touches argv, the clone URL, .git/config,
@@ -76,6 +75,23 @@ function classifyChanges(cloneDir) {
   return 'metrics'
 }
 
+export function assertCompleteDataWorkspace(sourceDataDir, existingDataDir) {
+  const activityIndex = path.join(sourceDataDir, 'activities', 'index.json')
+  if (!fs.existsSync(activityIndex)) {
+    throw new Error(
+      `Refusing to push incomplete data workspace ${sourceDataDir}: activities/index.json is missing.`
+    )
+  }
+
+  const existingCoaching = path.join(existingDataDir, 'coaching')
+  const sourceCoaching = path.join(sourceDataDir, 'coaching')
+  if (fs.existsSync(existingCoaching) && !fs.existsSync(sourceCoaching)) {
+    throw new Error(
+      'Refusing to push an incomplete workspace: the private repository contains data/coaching but the source does not.'
+    )
+  }
+}
+
 export function pushPrivateData(sourceDataDir) {
   const url = process.env.RUNOMICS_DATA_REPO_URL
   const token = process.env.RUNOMICS_DATA_REPO_TOKEN
@@ -90,6 +106,7 @@ export function pushPrivateData(sourceDataDir) {
     git(['clone', '--depth', '1', url, cloneDir], { env }, token)
 
     const targetDataDir = path.join(cloneDir, 'data')
+    assertCompleteDataWorkspace(sourceDataDir, targetDataDir)
     fs.rmSync(targetDataDir, { recursive: true, force: true })
     fs.mkdirSync(targetDataDir, { recursive: true })
     fs.cpSync(sourceDataDir, targetDataDir, { recursive: true })

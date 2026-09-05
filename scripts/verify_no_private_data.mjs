@@ -68,8 +68,7 @@ for (const prefix of ['data', 'public/data']) {
 if (fs.existsSync('public/data')) {
   critical(
     'public/data/ exists on disk',
-    'Everything under public/ is served as a static asset. The app reads data/ - ' +
-      'scripts/prepare-data.mjs moves a leftover public/data/ there on the next dev/build.'
+    'Everything under public/ is served as a static asset. Move any needed files into the selected private data workspace, then delete public/data/.'
   )
 }
 

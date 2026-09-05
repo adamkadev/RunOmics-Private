@@ -65,6 +65,10 @@ jobs:
       group: sync-${{ matrix.profile }}
       cancel-in-progress: false
 
+    env:
+      # One complete, server-only workspace for fetch -> Garmin sync -> push.
+      RUNOMICS_DATA_DIR: data
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -79,9 +83,8 @@ jobs:
       # PROFILE matching its own name; nothing inherited can satisfy that for more
       # than one profile.
       #
-      # Second: without the data repository configured, sync.py writes to
-      # public/data and the commit step would push a real dataset into this
-      # repository.
+      # Second: without the data repository configured, the sync would start
+      # from an incomplete workspace instead of the canonical private dataset.
       - name: Check the sync configuration
         env:
           DECLARED_PROFILE: ${{ vars.PROFILE }}
@@ -116,13 +119,13 @@ jobs:
         env:
           RUNOMICS_DATA_REPO_URL: ${{ secrets.RUNOMICS_DATA_REPO_URL }}
           RUNOMICS_DATA_REPO_TOKEN: ${{ secrets.RUNOMICS_DATA_REPO_TOKEN }}
-        run: node scripts/fetch_private_data.mjs public/data
+        run: node scripts/fetch_private_data.mjs data
 
       - name: Restore FIT cache
         uses: actions/cache@v5
         with:
           path: public/fit
-          key: fit-${{ matrix.profile }}-${{ hashFiles('public/data/activities/**') }}
+          key: fit-${{ matrix.profile }}-${{ hashFiles('data/activities/**') }}
           restore-keys: |
             fit-${{ matrix.profile }}-
 
@@ -185,9 +188,9 @@ jobs:
         run: |
           # The deployment marker the post-sync step waits for - sync.py always
           # rewrites this file, so it is read from the workspace, not the push.
-          python -c "import json; print('last_synced_at=' + json.load(open('public/data/sync_meta.json'))['lastSyncedAt'])" >> "$GITHUB_OUTPUT"
+          python -c "import json; print('last_synced_at=' + json.load(open('data/sync_meta.json'))['lastSyncedAt'])" >> "$GITHUB_OUTPUT"
 
-          OUTPUT=$(node scripts/push_private_data.mjs public/data)
+          OUTPUT=$(node scripts/push_private_data.mjs data)
           echo "$OUTPUT"
 
           if echo "$OUTPUT" | grep -q "No data changes"; then

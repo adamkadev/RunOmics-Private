@@ -9,10 +9,11 @@ from typing import Any
 
 import httpx
 
+from data_directory import get_data_dir
 from .client import GarminAPIError, GarminClient
 from .retry import retry_transient
 
-_PATH = Path(__file__).parent.parent.parent / "public" / "data" / "fitness_age_history.json"
+_PATH = get_data_dir() / "fitness_age_history.json"
 _WEEKS = 52
 
 

@@ -1,5 +1,6 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getAthleteProfile, type AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
+import { getVo2maxNorms } from '@/infrastructure/repositories/JsonVo2maxNormsRepository'
 import { getGoalYears } from '@/infrastructure/repositories/JsonGoalRepository'
 import { getLifetimeStats } from '@/application/usecases/GetLifetimeStats'
 import { getRecords, type RecordEntry } from '@/application/usecases/GetRecords'
@@ -8,6 +9,7 @@ import { computeProjection, type GoalYear, type GoalProjection } from '@/applica
 import { getAthleteRank, type AthleteRank } from '@/application/usecases/GetAthleteRank'
 import { sumDistanceKm, yearDistanceKm } from '@/domain/activity/distance'
 import { round } from '@/lib/math'
+import { vo2maxTopPercent } from '@/domain/athlete/vo2maxNorms'
 
 const PROFILE_RECORD_KEYS = ['5k', '10k', 'half', 'marathon']
 
@@ -16,6 +18,7 @@ export interface ProfileHero {
   lifetimeActivities: number
   lifetimeDistanceKm: number
   rank: AthleteRank | null
+  vo2maxTopPercent: number | null
 }
 
 /** Same six headline stats, computed over any date window (this year, all time). */
@@ -75,6 +78,8 @@ export async function getProfileData(): Promise<ProfileData> {
   const allRecords = await getRecords()
   const goalYears = getGoalYears()
   const athlete = getAthleteProfile()
+  const vo2maxNorms = getVo2maxNorms()
+  const rank = getAthleteRank(allRecords, athlete, vo2maxNorms)
 
   const firstActivity = activities[0]
   const sinceDate = firstActivity
@@ -116,7 +121,10 @@ export async function getProfileData(): Promise<ProfileData> {
       sinceDate,
       lifetimeActivities: lifetime?.totalActivities ?? 0,
       lifetimeDistanceKm: lifetime ? round(lifetime.totalDistanceKm, 0) : 0,
-      rank: getAthleteRank(allRecords, athlete),
+      rank,
+      vo2maxTopPercent: rank?.vo2maxGarmin != null && athlete.age !== undefined && athlete.sex
+        ? vo2maxTopPercent(rank.vo2maxGarmin, athlete.age, athlete.sex, vo2maxNorms)
+        : null,
     },
     ytd: periodStats(ytdActivities, ytdDistanceKmRounded, elapsedDaysThisYear),
     allTime: periodStats(activities, sumDistanceKm(activities), elapsedDaysAllTime),

@@ -31,10 +31,11 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
+from data_directory import get_data_dir
 from .client import GarminAPIError, GarminClient
 from .retry import retry_transient
 
-_DATA_DIR = Path(__file__).parent.parent.parent / "public" / "data"
+_DATA_DIR = get_data_dir()
 _STATUS_PATH = _DATA_DIR / "training_status.json"
 _BALANCE_PATH = _DATA_DIR / "training_load_balance.json"
 

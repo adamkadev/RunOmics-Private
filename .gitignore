@@ -38,10 +38,10 @@
 # guard against a future `git add .` picking one up by accident.
 /public/events/
 
-# real Garmin-derived data: lives in the private RunOmics-data repository, fetched
-# into /data/ before every dev/build (scripts/prepare-data.mjs) where only
-# server-side code reads it. /public/data/ is the pre-server-only location, kept
-# only as the sync workspace inside the GitHub Actions runner checkout.
+# real Garmin-derived data: the canonical local copy lives in a separate private
+# checkout selected by RUNOMICS_DATA_DIR. /data/ is only this repository's ignored,
+# server-only default/runtime workspace. /public/data/ is a retired legacy path;
+# it remains ignored as defense-in-depth because public/ is served statically.
 /data/
 /public/data/
 
