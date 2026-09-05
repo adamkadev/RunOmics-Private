@@ -5,19 +5,36 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { createBootstrapProposal } from '../workflows'
 import { buildCoachingContext } from '../context'
 import { readProposalPreview, writeProposalPreview } from '../preview'
-import type { CoachingAdvisor } from '@/application/ports/CoachingAdvisor'
+import type { CoachingAdvisor, CoachingPlanDraft } from '@/application/ports/CoachingAdvisor'
 import type { CoachingRepository } from '@/application/ports/CoachingRepository'
 import { plan } from '@/domain/coaching/__tests__/fixtures'
 
-function fourWeekPlan() {
+function fourWeekPlan(): CoachingPlanDraft {
   const draft = plan()
-  return {
+  const persistent = {
     ...draft,
     weeks: [
       ...draft.weeks,
       { id: 'week-3', index: 3, startDate: '2026-09-21', endDate: '2026-09-27', focus: 'Specific endurance', workouts: [{ ...draft.weeks[1]!.workouts[0]!, id: 'workout-3', date: '2026-09-22' }] },
       { id: 'week-4', index: 4, startDate: '2026-09-28', endDate: '2026-10-04', focus: 'Absorb', workouts: [{ ...draft.weeks[1]!.workouts[0]!, id: 'workout-4', date: '2026-09-29' }] },
     ],
+  }
+  return {
+    name: persistent.block.name,
+    focus: persistent.block.focus,
+    weeks: persistent.weeks.map((week) => ({
+      startDate: week.startDate,
+      endDate: week.endDate,
+      focus: week.focus,
+      workouts: week.workouts.map((workout) => ({
+        date: workout.date,
+        type: workout.type,
+        title: workout.title,
+        description: workout.description,
+        blocks: workout.blocks,
+        ...(workout.notes ? { notes: workout.notes } : {}),
+      })),
+    })),
   }
 }
 

@@ -90,10 +90,13 @@ export interface TrainingBlock {
   focus: string
 }
 
+export type CoachingEventRole = 'primary' | 'tune_up'
+
 export interface TargetEvent {
   id: string
   name: string
   date: string
+  role?: CoachingEventRole
   distanceLabel?: string
   distanceMeters?: number
   location?: string
@@ -111,6 +114,7 @@ export interface CoachingPlan {
   status: CoachingPlanStatus
   block: TrainingBlock
   targetEvent: TargetEvent
+  tuneUpEvents?: TargetEvent[]
   goal: TrainingGoal
   weeks: TrainingWeek[]
   provenance: CoachingProvenance

@@ -4,6 +4,7 @@ import path from 'path'
 import { execFileSync, spawnSync } from 'child_process'
 import { afterEach, describe, expect, it } from 'vitest'
 import { JsonCoachingRepository } from '@/infrastructure/repositories/JsonCoachingRepository'
+import { plan } from '@/domain/coaching/__tests__/fixtures'
 
 const projectRoot = process.cwd()
 const cli = path.join(projectRoot, 'scripts/coaching.ts')
@@ -13,6 +14,8 @@ function workspace(): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'runomics-coach-cli-'))
   temporaryRoots.push(root)
   fs.cpSync(path.join(projectRoot, 'data'), root, { recursive: true })
+  const repository = new JsonCoachingRepository(root)
+  if (!repository.getCurrentPlan()) repository.saveCurrentPlan(plan())
   return root
 }
 

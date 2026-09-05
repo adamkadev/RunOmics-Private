@@ -31,6 +31,27 @@ describe('coaching validation', () => {
     expect(() => parseCoachingPlan(duplicateIndex)).toThrow(/duplicate week index/)
   })
 
+  it('rejects a training block that continues beyond its primary target', () => {
+    const invalid = plan({
+      targetEvent: { id: 'race-1', name: 'Early 10K', date: '2026-09-27', role: 'primary' },
+    })
+    expect(() => parseCoachingPlan(invalid)).toThrow(/cannot extend beyond the primary target event/)
+  })
+
+  it('validates explicit primary and tune-up event roles', () => {
+    const parsed = parseCoachingPlan(plan({
+      targetEvent: { id: 'race-primary', name: 'Autumn 10K', date: '2026-10-18', role: 'primary' },
+      tuneUpEvents: [{ id: 'race-tune-up', name: 'Tune-up 5K', date: '2026-09-20', role: 'tune_up' }],
+    }))
+    expect(parsed.tuneUpEvents?.[0]?.role).toBe('tune_up')
+
+    const invalid = plan({
+      targetEvent: { id: 'race-primary', name: 'Autumn 10K', date: '2026-10-18', role: 'primary' },
+      tuneUpEvents: [{ id: 'race-tune-up', name: 'Tune-up 5K', date: '2026-09-20', role: 'primary' }],
+    })
+    expect(() => parseCoachingPlan(invalid)).toThrow(/must be tune_up/)
+  })
+
   it('rejects unsupported schema versions', () => {
     expect(() => parseCoachingPlan({ ...plan(), schemaVersion: 2 })).toThrow(/unsupported schema version/)
   })

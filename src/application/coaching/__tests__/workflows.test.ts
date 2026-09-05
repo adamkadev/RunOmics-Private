@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import type { Activity } from '@/domain/activity/types'
 import type { CoachingRepository } from '@/application/ports/CoachingRepository'
-import type { CoachingAdvisor } from '@/application/ports/CoachingAdvisor'
+import type { BootstrapRequest, CoachingAdvisor, CoachingPlanDraft } from '@/application/ports/CoachingAdvisor'
 import type { CoachDecision, CoachState, CoachingPlan, WorkoutEvaluation } from '@/domain/coaching/types'
+import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import { buildCoachingContext, coachingContextHash, type CoachingContextInput } from '../context'
 import { applyCoachingProposal, createBootstrapProposal, createPostActivityProposal, createWeeklyReviewProposal } from '../workflows'
 import { plan } from '@/domain/coaching/__tests__/fixtures'
@@ -59,9 +60,9 @@ function ids() {
   return () => `generated-${++value}`
 }
 
-function fourWeekPlan(): CoachingPlan {
+function fourWeekPlan(): CoachingPlanDraft {
   const draft = plan()
-  return {
+  const persistent = {
     ...draft,
     block: { ...draft.block, endDate: '2026-10-04' },
     weeks: [
@@ -75,6 +76,62 @@ function fourWeekPlan(): CoachingPlan {
         workouts: [{ ...draft.weeks[1]!.workouts[0]!, id: 'workout-week-4', date: '2026-09-29' }],
       },
     ],
+  }
+  return {
+    name: persistent.block.name,
+    focus: persistent.block.focus,
+    weeks: persistent.weeks.map((week) => ({
+      startDate: week.startDate,
+      endDate: week.endDate,
+      focus: week.focus,
+      workouts: week.workouts.map((workout) => ({
+        date: workout.date,
+        type: workout.type,
+        title: workout.title,
+        description: workout.description,
+        blocks: workout.blocks,
+        ...(workout.notes ? { notes: workout.notes } : {}),
+      })),
+    })),
+  }
+}
+
+function addDays(date: string, days: number): string {
+  const value = new Date(`${date}T00:00:00Z`)
+  value.setUTCDate(value.getUTCDate() + days)
+  return value.toISOString().slice(0, 10)
+}
+
+function draftThrough(request: BootstrapRequest): CoachingPlanDraft {
+  const weeks: CoachingPlanDraft['weeks'] = []
+  let startDate = request.context.referenceDate
+  let index = 1
+  while (startDate <= request.horizonEndDate) {
+    const sevenDayEnd = addDays(startDate, 6)
+    weeks.push({
+      startDate,
+      endDate: sevenDayEnd < request.horizonEndDate ? sevenDayEnd : request.horizonEndDate,
+      focus: `Week ${index}`,
+      workouts: [],
+    })
+    startDate = addDays(startDate, 7)
+    index += 1
+  }
+  return { name: 'Target race block', focus: 'Prepare for the primary event', weeks }
+}
+
+function targetContext(upcomingRaces: UpcomingRace[]) {
+  return buildCoachingContext({ ...contextInput(null), activities: [], upcomingRaces }, '2026-09-04')
+}
+
+function targetAdvisor(requests: BootstrapRequest[]): CoachingAdvisor {
+  return {
+    bootstrap: async (request) => {
+      requests.push(request)
+      return draftThrough(request)
+    },
+    evaluateActivity: async () => { throw new Error('not called') },
+    reviewWeek: async () => { throw new Error('not called') },
   }
 }
 
@@ -99,6 +156,115 @@ describe('coaching workflows', () => {
     applyCoachingProposal(proposal, repository, coachingContextHash(context))
     expect(repository.getCurrentPlan()?.revision).toBe(1)
     expect(repository.getState()?.lastBootstrapAt).toBe(proposal.createdAt)
+  })
+
+  it('falls back to the near-term heuristic when Garmin has no primary event', async () => {
+    const requests: BootstrapRequest[] = []
+    const context = targetContext([
+      { garminEventUuid: 'escher-5k', date: '2026-09-05', name: 'Escher Kulturlaf 5km', distance: '5K', isPrimaryEvent: false },
+      { garminEventUuid: 'wine-route-10k', date: '2026-09-27', name: 'Wine Route - Luxemburg 10K', distance: '10K', isPrimaryEvent: false },
+    ])
+    const proposal = await createBootstrapProposal(context, [0, 2, 4, 6], {
+      repository: new MemoryRepository(),
+      advisor: targetAdvisor(requests),
+      id: ids(),
+      now: () => new Date('2026-09-04T08:00:00Z'),
+    })
+
+    expect(requests[0]).toMatchObject({
+      primaryTargetEvent: { id: 'wine-route-10k', role: 'primary' },
+      tuneUpEvents: [{ id: 'escher-5k', role: 'tune_up' }],
+      horizonEndDate: '2026-09-27',
+    })
+    expect(proposal.proposedPlan).toMatchObject({
+      targetEvent: { id: 'wine-route-10k', role: 'primary' },
+      tuneUpEvents: [{ id: 'escher-5k', role: 'tune_up' }],
+      block: { endDate: '2026-09-27' },
+      goal: { kind: 'time', targetSeconds: 2_400 },
+    })
+  })
+
+  it('uses Garmin primary-event metadata even when the target is outside the rolling horizon', async () => {
+    const requests: BootstrapRequest[] = []
+    const proposal = await createBootstrapProposal(targetContext([
+      { garminEventUuid: 'tune-up-5k', date: '2026-09-05', name: 'Tune-up 5K', distance: '5K', isPrimaryEvent: false },
+      { garminEventUuid: 'primary-marathon', date: '2026-10-18', name: 'Primary Marathon', distance: 'Marathon', targetSeconds: 10_800, isPrimaryEvent: true },
+    ]), [0, 2, 4, 6], {
+      repository: new MemoryRepository(),
+      advisor: targetAdvisor(requests),
+      id: ids(),
+    })
+
+    expect(requests[0]).toMatchObject({
+      primaryTargetEvent: { id: 'primary-marathon', role: 'primary' },
+      tuneUpEvents: [{ id: 'tune-up-5k', role: 'tune_up' }],
+      horizonEndDate: '2026-10-01',
+    })
+    expect(proposal.proposedPlan).toMatchObject({
+      targetEvent: { id: 'primary-marathon', date: '2026-10-18', role: 'primary' },
+      block: { endDate: '2026-10-01' },
+      goal: { kind: 'time', targetSeconds: 10_800 },
+    })
+  })
+
+  it('stops at a sole race tomorrow', async () => {
+    const requests: BootstrapRequest[] = []
+    const proposal = await createBootstrapProposal(targetContext([
+      { garminEventUuid: 'escher-5k', date: '2026-09-05', name: 'Escher Kulturlaf 5km', distance: '5K' },
+    ]), [6], {
+      repository: new MemoryRepository(),
+      advisor: targetAdvisor(requests),
+      id: ids(),
+    })
+
+    expect(requests[0]?.horizonEndDate).toBe('2026-09-05')
+    expect(proposal.proposedPlan).toMatchObject({
+      targetEvent: { id: 'escher-5k', role: 'primary' },
+      block: { endDate: '2026-09-05' },
+      weeks: [{ startDate: '2026-09-04', endDate: '2026-09-05' }],
+    })
+    expect(proposal.proposedPlan?.tuneUpEvents).toBeUndefined()
+  })
+
+  it('stops at a single primary race three weeks away', async () => {
+    const requests: BootstrapRequest[] = []
+    const proposal = await createBootstrapProposal(targetContext([
+      { garminEventUuid: 'autumn-10k', date: '2026-09-25', name: 'Autumn 10K', distance: '10K' },
+    ]), [0, 2, 4, 6], {
+      repository: new MemoryRepository(),
+      advisor: targetAdvisor(requests),
+      id: ids(),
+    })
+
+    expect(requests[0]).toMatchObject({
+      primaryTargetEvent: { id: 'autumn-10k', role: 'primary' },
+      horizonEndDate: '2026-09-25',
+    })
+    expect(proposal.proposedPlan?.block.endDate).toBe('2026-09-25')
+  })
+
+  it('honors an explicit race override instead of Garmin primary metadata', async () => {
+    const requests: BootstrapRequest[] = []
+    const context = targetContext([
+      { garminEventUuid: 'escher-5k', date: '2026-09-05', name: 'Escher Kulturlaf 5km', distance: '5K' },
+      { garminEventUuid: 'wine-route-10k', date: '2026-09-27', name: 'Wine Route - Luxemburg 10K', distance: '10K', isPrimaryEvent: true },
+    ])
+    const proposal = await createBootstrapProposal(context, [6], {
+      repository: new MemoryRepository(),
+      advisor: targetAdvisor(requests),
+      id: ids(),
+    }, 'escher-5k')
+
+    expect(requests[0]).toMatchObject({
+      targetEventId: 'escher-5k',
+      primaryTargetEvent: { id: 'escher-5k', role: 'primary' },
+      tuneUpEvents: [],
+      horizonEndDate: '2026-09-05',
+    })
+    expect(proposal.proposedPlan).toMatchObject({
+      targetEvent: { id: 'escher-5k', role: 'primary' },
+      block: { endDate: '2026-09-05' },
+    })
   })
 
   it('records a KEEP evaluation without changing the plan revision', async () => {

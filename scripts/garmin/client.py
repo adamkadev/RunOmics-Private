@@ -242,6 +242,20 @@ class GarminClient:
         url = f"{self._base}/calendar-service/year/{year}/month/{month - 1}"
         return self._get(url).json()
 
+    def get_upcoming_events(
+        self,
+        *,
+        num_days_forward: int = 365,
+        limit: int = 100,
+    ) -> list[dict[str, Any]]:
+        return self._get(
+            f"{self._base}/calendar-service/events/upcoming",
+            params={
+                "numDaysForward": num_days_forward,
+                "limit": limit,
+            },
+        ).json()
+
     def get_workout_detail(self, workout_id: str) -> dict[str, Any]:
         url = f"{self._base}/workout-service/workout/{workout_id}"
         return self._get(url).json()

@@ -1,11 +1,13 @@
 import type { Activity } from '@/domain/activity/types'
-import { COACHING_SCHEMA_VERSION, type CoachEvidence, type CoachingPlan, type TrainingWeek, type WorkoutPrescription } from '@/domain/coaching/types'
+import { COACHING_SCHEMA_VERSION, type CoachEvidence, type TrainingWeek, type WorkoutPrescription } from '@/domain/coaching/types'
 import { parseCoachingPlan, parseWorkoutPrescription } from '@/domain/coaching/validation'
 import type {
   AdvisorPlanChange,
   AdvisorRecommendation,
+  BootstrapWorkoutDraft,
   BootstrapRequest,
   CoachingAdvisor,
+  CoachingPlanDraft,
 } from '@/application/ports/CoachingAdvisor'
 import type { CoachingContext } from '@/application/coaching/context'
 import { MODEL_POOL } from '@/domain/ai/budget'
@@ -54,40 +56,55 @@ const BLOCK_SCHEMA = {
   required: ['kind'],
 }
 
-const WORKOUT_SCHEMA = {
+const BOOTSTRAP_WORKOUT_SCHEMA = {
   type: 'OBJECT',
   properties: {
-    id: { type: 'STRING' },
     date: { type: 'STRING' },
     type: { type: 'STRING', enum: ['easy', 'recovery', 'long_run', 'tempo', 'threshold', 'vo2max', 'anaerobic', 'sprint', 'race'] },
     title: { type: 'STRING' },
     description: { type: 'STRING' },
-    totalDurationSeconds: { type: 'INTEGER' },
-    totalDistanceMeters: { type: 'INTEGER' },
     blocks: { type: 'ARRAY', items: BLOCK_SCHEMA },
     notes: { type: 'ARRAY', items: { type: 'STRING' } },
   },
   required: ['date', 'type', 'title', 'description', 'blocks'],
 }
 
-const WEEK_SCHEMA = {
+const ADAPTATION_WORKOUT_SCHEMA = {
+  ...BOOTSTRAP_WORKOUT_SCHEMA,
+  properties: {
+    ...BOOTSTRAP_WORKOUT_SCHEMA.properties,
+    id: { type: 'STRING' },
+    totalDurationSeconds: { type: 'INTEGER' },
+    totalDistanceMeters: { type: 'INTEGER' },
+  },
+}
+
+const BOOTSTRAP_WEEK_SCHEMA = {
   type: 'OBJECT',
   properties: {
-    id: { type: 'STRING' },
     startDate: { type: 'STRING' },
     endDate: { type: 'STRING' },
     focus: { type: 'STRING' },
-    workouts: { type: 'ARRAY', items: WORKOUT_SCHEMA },
+    workouts: { type: 'ARRAY', items: BOOTSTRAP_WORKOUT_SCHEMA },
   },
   required: ['startDate', 'endDate', 'focus', 'workouts'],
 }
 
-const PLAN_SCHEMA = {
+const ADAPTATION_WEEK_SCHEMA = {
+  ...BOOTSTRAP_WEEK_SCHEMA,
+  properties: {
+    ...BOOTSTRAP_WEEK_SCHEMA.properties,
+    id: { type: 'STRING' },
+    workouts: { type: 'ARRAY', items: ADAPTATION_WORKOUT_SCHEMA },
+  },
+}
+
+export const BOOTSTRAP_PLAN_RESPONSE_SCHEMA = {
   type: 'OBJECT',
   properties: {
     name: { type: 'STRING' },
     focus: { type: 'STRING' },
-    weeks: { type: 'ARRAY', items: WEEK_SCHEMA, minItems: 1, maxItems: 4 },
+    weeks: { type: 'ARRAY', items: BOOTSTRAP_WEEK_SCHEMA, minItems: 1, maxItems: 4 },
   },
   required: ['name', 'focus', 'weeks'],
 }
@@ -108,9 +125,9 @@ const CHANGE_SCHEMA = {
   properties: {
     kind: { type: 'STRING', enum: ['upsert_workout', 'cancel_workout', 'replace_future'] },
     workoutId: { type: 'STRING' },
-    workout: WORKOUT_SCHEMA,
+    workout: ADAPTATION_WORKOUT_SCHEMA,
     effectiveDate: { type: 'STRING' },
-    weeks: { type: 'ARRAY', items: WEEK_SCHEMA },
+    weeks: { type: 'ARRAY', items: ADAPTATION_WEEK_SCHEMA },
   },
   required: ['kind'],
 }
@@ -140,6 +157,62 @@ function text(value: unknown, label: string): string {
 function list(value: unknown, label: string): unknown[] {
   if (!Array.isArray(value)) throw new Error(`${label} must be an array`)
   return value
+}
+
+function date(value: unknown, label: string): string {
+  const result = text(value, label)
+  const parsed = new Date(`${result}T00:00:00Z`)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(result) || Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== result) {
+    throw new Error(`${label} must be a valid YYYY-MM-DD date`)
+  }
+  return result
+}
+
+function bootstrapWorkoutDraft(value: unknown, label: string): BootstrapWorkoutDraft {
+  const raw = record(value, label)
+  // Reuse the segment/range/date validator on one workout at a time. The
+  // synthetic metadata exists only for structural parsing and is discarded;
+  // model-supplied IDs and totals are intentionally ignored.
+  const parsed = parseWorkoutPrescription({
+    id: 'structural-draft',
+    revision: 1,
+    date: raw.date,
+    type: raw.type,
+    title: raw.title,
+    description: raw.description,
+    status: 'prescribed',
+    blocks: raw.blocks,
+    ...(raw.notes === undefined ? {} : { notes: raw.notes }),
+    provenance: PLACEHOLDER_PROVENANCE,
+  }, label)
+  return {
+    date: parsed.date,
+    type: parsed.type,
+    title: parsed.title,
+    description: parsed.description,
+    blocks: parsed.blocks,
+    ...(parsed.notes ? { notes: parsed.notes } : {}),
+  }
+}
+
+export function parseBootstrapPlanDraft(value: unknown): CoachingPlanDraft {
+  const raw = record(value, 'plan')
+  const weeks = list(raw.weeks, 'plan.weeks').map((value, index) => {
+    const label = `plan.weeks[${index}]`
+    const week = record(value, label)
+    const startDate = date(week.startDate, `${label}.startDate`)
+    const endDate = date(week.endDate, `${label}.endDate`)
+    if (startDate > endDate) throw new Error(`${label}: startDate must be <= endDate`)
+    const workouts = list(week.workouts, `${label}.workouts`).map((workout, workoutIndex) =>
+      bootstrapWorkoutDraft(workout, `${label}.workouts[${workoutIndex}]`)
+    )
+    for (const workout of workouts) {
+      if (workout.date < startDate || workout.date > endDate) throw new Error(`${label}: workout ${workout.date} falls outside its week`)
+    }
+    return { startDate, endDate, focus: text(week.focus, `${label}.focus`), workouts }
+  })
+  if (weeks.length === 0 || weeks.length > 4) throw new Error('plan.weeks must contain 1 to 4 weeks')
+  return { name: text(raw.name, 'plan.name'), focus: text(raw.focus, 'plan.focus'), weeks }
 }
 
 function draftWorkout(value: unknown, trigger: 'bootstrap' | 'post_activity' | 'weekly_review'): WorkoutPrescription {
@@ -182,28 +255,6 @@ function draftWeeks(value: unknown, trigger: 'bootstrap' | 'weekly_review' | 'po
     weeks: rawWeeks,
     provenance: { ...PLACEHOLDER_PROVENANCE, trigger },
   }).weeks
-}
-
-function parsePlanDraft(value: unknown, request: BootstrapRequest): CoachingPlan {
-  const raw = record(value, 'plan')
-  const weeks = draftWeeks(raw.weeks, 'bootstrap')
-  return parseCoachingPlan({
-    schemaVersion: COACHING_SCHEMA_VERSION,
-    id: 'draft-plan',
-    revision: 1,
-    status: 'active',
-    block: {
-      id: 'draft-block',
-      name: text(raw.name, 'plan.name'),
-      startDate: weeks[0]!.startDate,
-      endDate: weeks[weeks.length - 1]!.endDate,
-      focus: text(raw.focus, 'plan.focus'),
-    },
-    targetEvent: { id: 'draft-event', name: 'Draft event', date: request.context.upcomingRaces[0]?.date ?? '2099-01-01' },
-    goal: { kind: 'finish', description: 'Draft goal' },
-    weeks,
-    provenance: PLACEHOLDER_PROVENANCE,
-  })
 }
 
 function parseEvidence(value: unknown): CoachEvidence {
@@ -257,13 +308,18 @@ async function request(schema: Record<string, unknown>, systemInstruction: strin
 }
 
 export class GeminiCoachingAdvisor implements CoachingAdvisor {
-  async bootstrap(input: BootstrapRequest): Promise<CoachingPlan> {
+  async bootstrap(input: BootstrapRequest): Promise<CoachingPlanDraft> {
+    const horizonDays = Math.round((
+      new Date(`${input.horizonEndDate}T00:00:00Z`).getTime()
+      - new Date(`${input.context.referenceDate}T00:00:00Z`).getTime()
+    ) / 86_400_000) + 1
+    const weekCount = Math.ceil(horizonDays / 7)
     const raw = await request(
-      PLAN_SCHEMA,
-      'Create a conservative four-week running prescription. Use only the supplied dates, athlete metrics, target ranges and available weekdays. Return structured workouts, not prose-only sessions. Do not calculate new physiological metrics.',
-      `${contextPrompt(input.context)}\nAvailable UTC weekdays (0=Sun): ${input.availableWeekdays.join(',')}\nTarget event override: ${input.targetEventId ?? 'nearest upcoming race'}`,
+      BOOTSTRAP_PLAN_RESPONSE_SCHEMA,
+      'Create a conservative running prescription ending on the supplied horizon date. The supplied primary event is the block target; supplied tune-up events are secondary evaluation races, not alternate targets. Do not schedule anything after the horizon. Use only supplied dates, athlete metrics, goal, target ranges, and available weekdays. Workout names must match their actual intensity: do not call threshold work race intensity unless the description explicitly explains that intent, and do not label broad mixed-pace work marathon pace. A race-pace prescription must reflect the explicit event goal when one exists; if a deliberately conservative target differs, say so clearly in its description. Return structured workouts, not prose-only sessions. Do not calculate new physiological metrics.',
+      `${contextPrompt(input.context)}\nAvailable UTC weekdays (0=Sun): ${input.availableWeekdays.join(',')}\nPrimary target event: ${JSON.stringify(input.primaryTargetEvent)}\nTune-up events: ${JSON.stringify(input.tuneUpEvents)}\nPlan horizon ends: ${input.horizonEndDate}\nReturn exactly ${weekCount} week${weekCount === 1 ? '' : 's'}, with no week or workout extending past the horizon.\nUser target override: ${input.targetEventId ?? 'none'}`,
     )
-    return parsePlanDraft(raw, input)
+    return parseBootstrapPlanDraft(raw)
   }
 
   async evaluateActivity(input: { context: CoachingContext; activity: Activity; prescription: WorkoutPrescription | null }): Promise<AdvisorRecommendation> {

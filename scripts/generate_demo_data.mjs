@@ -490,6 +490,7 @@ function buildPlannedWorkouts(rng, endDate) {
 function buildCoachingData(endDate, activities) {
   const latest = activities[activities.length - 1]
   const start = latest ? new Date(latest.date + 'T00:00:00Z') : endDate
+  const targetDate = addDays(endDate, 21)
   const createdAt = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate(), 8)).toISOString()
   const evaluationCreatedAt = new Date(new Date(createdAt).getTime() + 60 * 60 * 1_000).toISOString()
   const planId = 'demo-coaching-plan'
@@ -522,7 +523,7 @@ function buildCoachingData(endDate, activities) {
   ]
   const weeks = Array.from({ length: 4 }, (_, index) => {
     const weekStart = addDays(start, index * 7)
-    const weekEnd = addDays(weekStart, 6)
+    const weekEnd = addDays(weekStart, 6) < targetDate ? addDays(weekStart, 6) : targetDate
     const first = index === 0 && latest
       ? workout('demo-prescription-completed', new Date(latest.date + 'T00:00:00Z'), latest.type === 'Threshold' ? 'threshold' : 'easy', latest.description || 'Completed session', easyBlocks(Math.round(latest.distanceKm * 1_000)), latest.durationSeconds, Math.round(latest.distanceKm * 1_000))
       : workout(`demo-easy-${index}`, addDays(weekStart, 1), 'easy', 'Easy Run', easyBlocks(8_000), 2_700, 8_000)
@@ -536,7 +537,7 @@ function buildCoachingData(endDate, activities) {
         first,
         workout(`demo-threshold-${index}`, addDays(weekStart, 3), 'threshold', '3 × 8 min threshold', thresholdBlocks, 3_600),
         workout(`demo-long-${index}`, addDays(weekStart, 6), 'long_run', 'Long easy run', easyBlocks(14_000 + index * 1_000), undefined, 14_000 + index * 1_000),
-      ],
+      ].filter((entry) => entry.date <= isoDate(targetDate)),
     }
   })
   const plan = {
@@ -548,13 +549,13 @@ function buildCoachingData(endDate, activities) {
       id: 'demo-coaching-block',
       name: 'Autumn 10K build',
       startDate: isoDate(start),
-      endDate: isoDate(addDays(start, 27)),
+      endDate: isoDate(targetDate),
       focus: 'Threshold durability',
     },
     targetEvent: {
       id: 'demo-race-0000000000000001',
       name: 'Harbor Lights 10K',
-      date: isoDate(addDays(endDate, 21)),
+      date: isoDate(targetDate),
       distanceLabel: '10K',
       distanceMeters: 10_000,
       location: 'Fictional Bay',

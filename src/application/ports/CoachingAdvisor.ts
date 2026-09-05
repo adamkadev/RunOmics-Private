@@ -2,8 +2,10 @@ import type { Activity } from '@/domain/activity/types'
 import type {
   CoachDecisionOutcome,
   CoachEvidence,
-  CoachingPlan,
+  CoachingWorkoutType,
+  TargetEvent,
   TrainingWeek,
+  WorkoutBlock,
   WorkoutPrescription,
 } from '@/domain/coaching/types'
 import type { CoachingContext } from '@/application/coaching/context'
@@ -11,7 +13,33 @@ import type { CoachingContext } from '@/application/coaching/context'
 export interface BootstrapRequest {
   context: CoachingContext
   availableWeekdays: number[]
+  primaryTargetEvent: TargetEvent
+  tuneUpEvents: TargetEvent[]
+  horizonEndDate: string
   targetEventId?: string
+}
+
+
+export interface BootstrapWorkoutDraft {
+  date: string
+  type: CoachingWorkoutType
+  title: string
+  description: string
+  blocks: WorkoutBlock[]
+  notes?: string[]
+}
+
+export interface BootstrapWeekDraft {
+  startDate: string
+  endDate: string
+  focus: string
+  workouts: BootstrapWorkoutDraft[]
+}
+
+export interface CoachingPlanDraft {
+  name: string
+  focus: string
+  weeks: BootstrapWeekDraft[]
 }
 
 export type AdvisorPlanChange =
@@ -28,7 +56,7 @@ export interface AdvisorRecommendation {
 }
 
 export interface CoachingAdvisor {
-  bootstrap(request: BootstrapRequest): Promise<CoachingPlan>
+  bootstrap(request: BootstrapRequest): Promise<CoachingPlanDraft>
   evaluateActivity(input: {
     context: CoachingContext
     activity: Activity

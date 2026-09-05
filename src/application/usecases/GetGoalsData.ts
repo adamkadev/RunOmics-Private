@@ -39,6 +39,8 @@ export interface UpcomingRace {
   distance: string
   location?: string
   targetSeconds?: number | null
+  isPrimaryEvent?: boolean
+  isTrainingEvent?: boolean
 }
 
 export interface UpcomingRaceYear {

@@ -4,6 +4,7 @@ import {
   type CoachEvidence,
   type CoachPlanChange,
   type CoachState,
+  type CoachingEventRole,
   type CoachingPlan,
   type CoachingProvenance,
   type NumberRange,
@@ -201,11 +202,23 @@ function trainingGoal(value: unknown, path: string): TrainingGoal {
     : { kind, description }
 }
 
+function targetEvent(value: unknown, path: string): CoachingPlan['targetEvent'] {
+  const raw = object(value, path)
+  return {
+    id: string(raw.id, `${path}.id`),
+    name: string(raw.name, `${path}.name`),
+    date: isoDate(raw.date, `${path}.date`),
+    ...(raw.role === undefined ? {} : { role: enumeration<CoachingEventRole>(raw.role, ['primary', 'tune_up'], `${path}.role`) }),
+    ...(raw.distanceLabel === undefined ? {} : { distanceLabel: string(raw.distanceLabel, `${path}.distanceLabel`) }),
+    ...(raw.distanceMeters === undefined ? {} : { distanceMeters: integer(raw.distanceMeters, `${path}.distanceMeters`, 1) }),
+    ...(raw.location === undefined ? {} : { location: string(raw.location, `${path}.location`) }),
+  }
+}
+
 export function parseCoachingPlan(value: unknown, path = 'plan'): CoachingPlan {
   const raw = object(value, path)
   schemaVersion(raw.schemaVersion, `${path}.schemaVersion`)
   const blockRaw = object(raw.block, `${path}.block`)
-  const eventRaw = object(raw.targetEvent, `${path}.targetEvent`)
   const plan: CoachingPlan = {
     schemaVersion: COACHING_SCHEMA_VERSION,
     id: string(raw.id, `${path}.id`),
@@ -218,22 +231,24 @@ export function parseCoachingPlan(value: unknown, path = 'plan'): CoachingPlan {
       endDate: isoDate(blockRaw.endDate, `${path}.block.endDate`),
       focus: string(blockRaw.focus, `${path}.block.focus`),
     },
-    targetEvent: {
-      id: string(eventRaw.id, `${path}.targetEvent.id`),
-      name: string(eventRaw.name, `${path}.targetEvent.name`),
-      date: isoDate(eventRaw.date, `${path}.targetEvent.date`),
-      ...(eventRaw.distanceLabel === undefined ? {} : { distanceLabel: string(eventRaw.distanceLabel, `${path}.targetEvent.distanceLabel`) }),
-      ...(eventRaw.distanceMeters === undefined ? {} : { distanceMeters: integer(eventRaw.distanceMeters, `${path}.targetEvent.distanceMeters`, 1) }),
-      ...(eventRaw.location === undefined ? {} : { location: string(eventRaw.location, `${path}.targetEvent.location`) }),
-    },
+    targetEvent: targetEvent(raw.targetEvent, `${path}.targetEvent`),
+    ...(raw.tuneUpEvents === undefined ? {} : { tuneUpEvents: array(raw.tuneUpEvents, `${path}.tuneUpEvents`, targetEvent) }),
     goal: trainingGoal(raw.goal, `${path}.goal`),
     weeks: array(raw.weeks, `${path}.weeks`, trainingWeek),
     provenance: provenance(raw.provenance, `${path}.provenance`),
   }
 
   if (plan.block.startDate > plan.block.endDate) throw new CoachingValidationError(`${path}.block`, 'startDate must be <= endDate')
+  if (plan.block.endDate > plan.targetEvent.date) throw new CoachingValidationError(`${path}.block.endDate`, 'training block cannot extend beyond the primary target event')
+  if (plan.targetEvent.role !== undefined && plan.targetEvent.role !== 'primary') throw new CoachingValidationError(`${path}.targetEvent.role`, 'targetEvent must be primary')
   if (plan.weeks.length === 0 || plan.weeks.length > 4) throw new CoachingValidationError(`${path}.weeks`, 'must contain 1 to 4 weeks')
   const ids = new Set<string>([plan.id, plan.block.id, plan.targetEvent.id])
+  for (const [index, event] of (plan.tuneUpEvents ?? []).entries()) {
+    if (event.role !== 'tune_up') throw new CoachingValidationError(`${path}.tuneUpEvents[${index}].role`, 'must be tune_up')
+    if (event.date < plan.block.startDate || event.date > plan.targetEvent.date) throw new CoachingValidationError(`${path}.tuneUpEvents[${index}].date`, 'must fall inside the block before the primary target')
+    if (ids.has(event.id)) throw new CoachingValidationError(`${path}.tuneUpEvents`, `duplicate id ${event.id}`)
+    ids.add(event.id)
+  }
   const weekIndexes = new Set<number>()
   for (const week of plan.weeks) {
     if (ids.has(week.id)) throw new CoachingValidationError(`${path}.weeks`, `duplicate id ${week.id}`)

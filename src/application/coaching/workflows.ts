@@ -5,6 +5,7 @@ import {
   type CoachDecision,
   type CoachPlanChange,
   type CoachState,
+  type CoachingEventRole,
   type CoachingPlan,
   type CoachingProvenance,
   type AggregateWorkoutComparison,
@@ -18,13 +19,14 @@ import {
 import { applyCoachDecision, getFutureSnapshot } from '@/domain/coaching/lifecycle'
 import { parseCoachDecision, parseCoachingPlan, parseWorkoutEvaluation } from '@/domain/coaching/validation'
 import type { CoachingRepository } from '@/application/ports/CoachingRepository'
-import type { AdvisorRecommendation, CoachingAdvisor } from '@/application/ports/CoachingAdvisor'
+import type { AdvisorRecommendation, CoachingAdvisor, CoachingPlanDraft } from '@/application/ports/CoachingAdvisor'
 import { coachingContextHash, type CoachingContext } from './context'
 import type { CoachingProposal } from './proposal'
 import { parseCoachingProposal } from './proposal'
 
 const PROMPT_VERSION = 'coaching-v1'
 const DAY_MS = 86_400_000
+const NEAR_TERM_RACE_DAYS = 7
 
 export interface WorkflowServices {
   advisor: CoachingAdvisor
@@ -47,78 +49,129 @@ function provenance(trigger: CoachingProvenance['trigger'], createdAt: string, d
   }
 }
 
-function selectTargetEvent(context: CoachingContext, targetEventId?: string): TargetEvent {
-  const race = targetEventId
-    ? context.upcomingRaces.find((candidate) => {
-        const identity = `${candidate.date}:${candidate.name}`
-        return candidate.garminEventUuid === targetEventId || identity === targetEventId || candidate.name === targetEventId
-      })
-    : context.upcomingRaces[0]
-  if (!race) throw new Error(targetEventId ? `Upcoming race not found: ${targetEventId}` : 'No upcoming race is available for bootstrap')
+function eventFromRace(race: CoachingContext['upcomingRaces'][number], role: CoachingEventRole): TargetEvent {
   return {
     id: race.garminEventUuid ?? `${race.date}:${race.name}`,
     name: race.name,
     date: race.date,
+    role,
     distanceLabel: race.distance,
     ...(race.location ? { location: race.location } : {}),
   }
 }
 
+interface BootstrapTargetStrategy {
+  primary: TargetEvent
+  tuneUps: TargetEvent[]
+  horizonEndDate: string
+}
+
+function selectBootstrapTarget(context: CoachingContext, targetEventId?: string): BootstrapTargetStrategy {
+  const reference = new Date(`${context.referenceDate}T00:00:00Z`)
+  const fullHorizonEnd = new Date(reference.getTime() + 27 * DAY_MS).toISOString().slice(0, 10)
+  const races = context.upcomingRaces
+    .filter((race) => race.date >= context.referenceDate)
+    .sort((left, right) => left.date.localeCompare(right.date))
+  const overridden = targetEventId
+    ? races.find((candidate) => {
+        const identity = `${candidate.date}:${candidate.name}`
+        return candidate.garminEventUuid === targetEventId || identity === targetEventId || candidate.name === targetEventId
+      })
+    : undefined
+  if (targetEventId && !overridden) throw new Error(`Upcoming race not found: ${targetEventId}`)
+  const nearest = races[0]
+  if (!nearest) throw new Error('No upcoming race is available for bootstrap')
+
+  const garminPrimary = races.find((race) => race.isPrimaryEvent === true)
+  let primaryRace = overridden ?? garminPrimary ?? nearest
+  if (!targetEventId && !garminPrimary) {
+    const daysToNearest = Math.round((new Date(`${nearest.date}T00:00:00Z`).getTime() - reference.getTime()) / DAY_MS)
+    const laterWithinHorizon = races.filter((race) => race.date > nearest.date && race.date <= fullHorizonEnd)
+    if (daysToNearest <= NEAR_TERM_RACE_DAYS && laterWithinHorizon.length > 0) primaryRace = laterWithinHorizon.at(-1)!
+  }
+
+  const horizonEndDate = primaryRace.date < fullHorizonEnd ? primaryRace.date : fullHorizonEnd
+  const tuneUps = races
+    .filter((race) => race.date < primaryRace.date && race.date <= horizonEndDate)
+    .map((race) => eventFromRace(race, 'tune_up'))
+  return { primary: eventFromRace(primaryRace, 'primary'), tuneUps, horizonEndDate }
+}
+
 function selectGoal(context: CoachingContext, event: TargetEvent): TrainingGoal {
   const eventYear = Number(event.date.slice(0, 4))
-  const target = context.goals.find((year) => year.year === eventYear)?.targets.find((candidate) => candidate.distance === event.distanceLabel)
-  return target?.targetSeconds
-    ? { kind: 'time', targetSeconds: target.targetSeconds, description: `Run ${event.distanceLabel} in the target time.` }
+  const garminRace = context.upcomingRaces.find((race) => (race.garminEventUuid ?? `${race.date}:${race.name}`) === event.id)
+  const annualTarget = context.goals.find((year) => year.year === eventYear)?.targets.find((candidate) => candidate.distance === event.distanceLabel)
+  const targetSeconds = garminRace?.targetSeconds ?? annualTarget?.targetSeconds
+  return targetSeconds
+    ? { kind: 'time', targetSeconds, description: `Run ${event.distanceLabel} in the target time.` }
     : { kind: 'finish', description: `Complete ${event.name}.` }
 }
 
 function normalizeBootstrapPlan(
-  draft: CoachingPlan,
+  draft: CoachingPlanDraft,
   context: CoachingContext,
   availableWeekdays: number[],
-  targetEventId: string | undefined,
+  strategy: BootstrapTargetStrategy,
   createdAt: string,
   id: () => string,
 ): CoachingPlan {
-  if (draft.weeks.length !== 4) throw new Error('Bootstrap must produce exactly four weeks')
-  const event = selectTargetEvent(context, targetEventId)
   const reference = new Date(`${context.referenceDate}T00:00:00Z`)
-  const horizonEnd = new Date(reference.getTime() + 27 * DAY_MS).toISOString().slice(0, 10)
-  const normalizedWeeks = draft.weeks.slice(0, 4).map((week, weekIndex) => ({
-    ...week,
-    id: id(),
+  const horizonEnd = strategy.horizonEndDate
+  const horizonDays = Math.round((new Date(`${horizonEnd}T00:00:00Z`).getTime() - reference.getTime()) / DAY_MS) + 1
+  const expectedWeeks = Math.ceil(horizonDays / 7)
+  if (draft.weeks.length !== expectedWeeks) throw new Error(`Bootstrap must produce exactly ${expectedWeeks} week${expectedWeeks === 1 ? '' : 's'} for the selected target horizon`)
+  const planId = id()
+  const calculatedTotals = (blocks: WorkoutBlock[]) => {
+    const segments = blocks.flatMap((block) => block.kind === 'repeat'
+      ? block.steps.map((step) => ({ segment: step, multiplier: block.repetitions }))
+      : [{ segment: block, multiplier: 1 }])
+    const allDuration = segments.every(({ segment }) => segment.target.durationSeconds !== undefined)
+    const allDistance = segments.every(({ segment }) => segment.target.distanceMeters !== undefined)
+    return {
+      ...(allDuration ? { totalDurationSeconds: segments.reduce((sum, { segment, multiplier }) => sum + segment.target.durationSeconds! * multiplier, 0) } : {}),
+      ...(allDistance ? { totalDistanceMeters: segments.reduce((sum, { segment, multiplier }) => sum + segment.target.distanceMeters! * multiplier, 0) } : {}),
+    }
+  }
+  const normalizedWeeks = draft.weeks.map((week, weekIndex) => ({
+    id: `${planId}:week:${weekIndex + 1}`,
     index: weekIndex + 1,
-    workouts: week.workouts.map((workout) => ({
+    startDate: week.startDate,
+    endDate: week.endDate,
+    focus: week.focus,
+    workouts: week.workouts.map((workout, workoutIndex) => ({
       ...workout,
-      id: id(),
+      ...calculatedTotals(workout.blocks),
+      id: `${planId}:workout:${weekIndex + 1}:${workoutIndex + 1}`,
       revision: 1,
       status: 'prescribed' as const,
       provenance: provenance('bootstrap', createdAt),
     })),
   }))
   for (const week of normalizedWeeks) {
+    if (week.startDate < context.referenceDate || week.endDate > horizonEnd) throw new Error(`${week.id} extends outside the selected target horizon`)
     for (const workout of week.workouts) {
       if (!availableWeekdays.includes(new Date(`${workout.date}T00:00:00Z`).getUTCDay())) {
         throw new Error(`${workout.date} is outside the available weekdays`)
       }
       if (workout.date < context.referenceDate || workout.date > horizonEnd) {
-        throw new Error(`${workout.date} is outside the four-week rolling horizon`)
+        throw new Error(`${workout.date} is outside the selected target horizon`)
       }
     }
   }
   return parseCoachingPlan({
-    ...draft,
     schemaVersion: COACHING_SCHEMA_VERSION,
-    id: id(),
+    id: planId,
     revision: 1,
     status: 'active',
-    targetEvent: event,
-    goal: selectGoal(context, event),
+    targetEvent: strategy.primary,
+    ...(strategy.tuneUps.length ? { tuneUpEvents: strategy.tuneUps } : {}),
+    goal: selectGoal(context, strategy.primary),
     block: {
-      ...draft.block,
-      id: id(),
+      id: `${planId}:block`,
+      name: draft.name,
       startDate: context.referenceDate,
       endDate: horizonEnd,
+      focus: draft.focus,
     },
     weeks: normalizedWeeks,
     provenance: provenance('bootstrap', createdAt),
@@ -326,8 +379,16 @@ export async function createBootstrapProposal(
   const now = services.now?.() ?? new Date()
   const id = services.id ?? defaultId
   const createdAt = now.toISOString()
-  const draft = await services.advisor.bootstrap({ context, availableWeekdays, targetEventId })
-  const proposedPlan = normalizeBootstrapPlan(draft, context, availableWeekdays, targetEventId, createdAt, id)
+  const strategy = selectBootstrapTarget(context, targetEventId)
+  const draft = await services.advisor.bootstrap({
+    context,
+    availableWeekdays,
+    primaryTargetEvent: strategy.primary,
+    tuneUpEvents: strategy.tuneUps,
+    horizonEndDate: strategy.horizonEndDate,
+    ...(targetEventId ? { targetEventId } : {}),
+  })
+  const proposedPlan = normalizeBootstrapPlan(draft, context, availableWeekdays, strategy, createdAt, id)
   const decisionId = id()
   const decision = parseCoachDecision({
     schemaVersion: COACHING_SCHEMA_VERSION,
@@ -340,7 +401,7 @@ export async function createBootstrapProposal(
     basePlanRevision: null,
     resultPlanRevision: 1,
     reasonCodes: ['INITIAL_PLAN'],
-    summary: `Created the initial four-week block for ${proposedPlan.targetEvent.name}.`,
+    summary: `Created the initial training block for ${proposedPlan.targetEvent.name}.`,
     evidence: [],
     changes: [{ kind: 'replace_future', effectiveDate: context.referenceDate, beforeWeeks: [], afterWeeks: proposedPlan.weeks }],
     provenance: provenance('bootstrap', createdAt),
