@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import type { CoachingPlan, WorkoutEvaluation, WorkoutPrescription } from '@/domain/coaching/types'
-import { buildGarminSyncPlan, countOperations, formatGarminSyncPreview, hasGarminMutations } from '../garminSync'
+import {
+  buildGarminSyncPlan,
+  countOperations,
+  formatGarminSyncPreview,
+  hasGarminMutations,
+  selectSyncableWorkouts,
+} from '../garminSync'
 import { emptyGarminSyncState, garminContentHash, type GarminSyncState } from '../garminSyncState'
 import { toGarminWorkoutPayload } from '../garminWorkoutMapping'
 
@@ -192,6 +198,41 @@ describe('never touching what RunOmics does not own', () => {
     const operations = build(plan([workout({ id: 'a', date: '2026-09-08' })]), state).operations
 
     expect(operations.find((operation) => operation.prescriptionId === 'a')?.action).toBe('create')
+  })
+})
+
+describe('selecting what is syncable', () => {
+  const evaluation = (prescriptionId: string, matchStatus = 'matched') =>
+    ({ prescriptionId, matchStatus }) as unknown as WorkoutEvaluation
+
+  const source = plan([
+    workout({ id: 'past', date: '2026-09-01' }),
+    workout({ id: 'cancelled', date: '2026-09-16', status: 'cancelled' }),
+    workout({ id: 'done', date: '2026-09-12' }),
+    workout({ id: 'later', date: '2026-09-15' }),
+    workout({ id: 'soon', date: '2026-09-08' }),
+  ])
+
+  it('keeps only future prescribed and adjusted sessions, in chronological order', () => {
+    const selected = selectSyncableWorkouts(source, [evaluation('done')], { today: TODAY })
+
+    expect(selected.map((each) => each.date)).toEqual(['2026-09-08', '2026-09-15'])
+  })
+
+  it('ignores an unmatched evaluation, so a date-only guess never drops a session', () => {
+    const selected = selectSyncableWorkouts(source, [evaluation('done', 'date_only')], { today: TODAY })
+
+    expect(selected.map((each) => each.id)).toContain('done')
+  })
+
+  it('applies from and to, and never reaches back before today', () => {
+    const dates = (window: Parameters<typeof selectSyncableWorkouts>[2]) =>
+      selectSyncableWorkouts(source, [], window).map((each) => each.date)
+
+    expect(dates({ today: TODAY, from: '2026-09-15' })).toEqual(['2026-09-15'])
+    expect(dates({ today: TODAY, to: '2026-09-12' })).toEqual(['2026-09-08', '2026-09-12'])
+    // A `from` before today is ignored rather than pulling history back in.
+    expect(dates({ today: TODAY, from: '2026-01-01' })).toEqual(['2026-09-08', '2026-09-12', '2026-09-15'])
   })
 })
 

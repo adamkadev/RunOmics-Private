@@ -1,5 +1,4 @@
 import type { CoachingPlan, WorkoutEvaluation, WorkoutPrescription } from '@/domain/coaching/types'
-import { selectGarminExportWorkouts, type GarminExportWindow } from './garminExport'
 import {
   isCourseAwareRace,
   raceEventFor,
@@ -28,6 +27,43 @@ import {
  * deliberately excluded from structured-workout sync. Reporting both as "skip"
  * hid that difference.
  */
+export interface GarminSyncWindow {
+  /** Prescriptions before this date are already in the past, so never synced. */
+  today: string
+  /** Inclusive lower bound; defaults to `today`. */
+  from?: string
+  /** Inclusive upper bound; unbounded when omitted. */
+  to?: string
+}
+
+function completedPrescriptionIds(evaluations: WorkoutEvaluation[]): Set<string> {
+  return new Set(
+    evaluations
+      .filter((evaluation) => evaluation.matchStatus === 'matched' && evaluation.prescriptionId)
+      .map((evaluation) => evaluation.prescriptionId as string),
+  )
+}
+
+/**
+ * Future prescribed/adjusted sessions only: completed, missed and cancelled ones
+ * are dropped, and the window never reaches back before today, so a sync can
+ * never rewrite Garmin history.
+ */
+export function selectSyncableWorkouts(
+  plan: CoachingPlan,
+  evaluations: WorkoutEvaluation[],
+  window: GarminSyncWindow,
+): WorkoutPrescription[] {
+  const completed = completedPrescriptionIds(evaluations)
+  const from = window.from && window.from > window.today ? window.from : window.today
+  return plan.weeks
+    .flatMap((week) => week.workouts)
+    .filter((workout) => workout.status === 'prescribed' || workout.status === 'adjusted')
+    .filter((workout) => !completed.has(workout.id))
+    .filter((workout) => workout.date >= from && (!window.to || workout.date <= window.to))
+    .sort((left, right) => left.date.localeCompare(right.date) || left.id.localeCompare(right.id))
+}
+
 export type GarminSyncAction = 'create' | 'schedule' | 'replace' | 'delete' | 'keep' | 'skip'
 
 export interface GarminSyncOperation {
@@ -159,7 +195,7 @@ export function buildGarminSyncPlan(
   plan: CoachingPlan,
   evaluations: WorkoutEvaluation[],
   state: GarminSyncState | null,
-  window: GarminExportWindow,
+  window: GarminSyncWindow,
   options: GarminSyncOptions = {},
 ): GarminSyncPlan {
   const current = state ?? emptyGarminSyncState()
@@ -167,7 +203,7 @@ export function buildGarminSyncPlan(
   // longer owns; its entries stay eligible for cleanup but never for reuse.
   const known = current.planId === null || current.planId === plan.id ? entriesByPrescription(current) : new Map()
 
-  const workouts = selectGarminExportWorkouts(plan, evaluations, window)
+  const workouts = selectSyncableWorkouts(plan, evaluations, window)
   const operations = workouts.map((workout) => operationFor(workout, plan, known.get(workout.id) ?? null, options))
   const syncedIds = new Set(workouts.map((workout) => workout.id))
 
