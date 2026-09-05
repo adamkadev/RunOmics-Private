@@ -33,6 +33,7 @@ export interface GoalYear {
 }
 
 export interface UpcomingRace {
+  courseContext?: import('@/domain/coaching/types').RaceCourseContext
   garminEventUuid?: string
   garminEventId?: number
   date: string

@@ -1,3 +1,4 @@
+import { hasCoursePacing } from '@/domain/coaching/coursePacing'
 import type { CoachingPlanDraft } from '@/application/ports/CoachingAdvisor'
 import type { CoachingContext } from '@/application/coaching/context'
 import type { TargetEvent } from '@/domain/coaching/types'
@@ -129,6 +130,16 @@ function validateWorkoutForEvent(
   event: TargetEvent,
   prose: string,
 ): void {
+  if (workout.type === 'race' && hasCoursePacing(event)) {
+    const efforts = workout.blocks.flatMap(block => block.kind === 'repeat'
+      ? Array.from({ length: block.repetitions }, () => block.steps).flat()
+      : [block]).filter(segment => segment.kind === 'effort')
+    const firstPace = efforts[0]?.target.paceSecPerKm
+    if (firstPace && firstPace.min === firstPace.max
+      && efforts.every(segment => segment.target.paceSecPerKm?.min === firstPace.min && segment.target.paceSecPerKm?.max === firstPace.max)) {
+      throw new Error(`${event.name}: course-aware race pacing must not impose a constant exact pace throughout`)
+    }
+  }
   const claims = finishTimeClaims(prose)
   const claimedPaces = paceClaims(prose)
   const hasGoalLanguage = /\b(?:goal|target)\b/i.test(prose)
@@ -169,6 +180,7 @@ export function validateBootstrapDraftSemantics(
   validateFocusProse(draft)
   const events = [strategy.primary, ...strategy.tuneUps]
   const workouts = draft.weeks.flatMap((week) => week.workouts)
+  validateRacePreparation(draft, strategy)
   const recovery = bootstrapRecoveryFacts(context, strategy.planningStartDate)
   if (recovery.required && recovery.recoveryThroughDate) {
     for (const workout of workouts) {
@@ -209,6 +221,41 @@ export function validateBootstrapDraftSemantics(
         throw new Error(`${workout.date} race workout does not match a structured event`)
       }
       for (const event of associatedEvents) validateWorkoutForEvent(workout, event, prose)
+    }
+  }
+}
+
+/** Protect taper spacing independently of the normal frequency preference. */
+function validateRacePreparation(draft: CoachingPlanDraft, strategy: BootstrapEvents): void {
+  const workouts = draft.weeks.flatMap(week => week.workouts)
+  const dates = new Set(workouts.map(workout => workout.date))
+  for (const event of [strategy.primary, ...strategy.tuneUps]) {
+    if (event.targetSeconds === undefined) continue
+    for (const start of [-4, -3]) {
+      if ([0, 1, 2].every(offset => dates.has(addDays(event.date, start + offset)))) {
+        throw new Error(`${event.name}: avoid three consecutive runs in the final four pre-race days; reduce taper frequency with an explicit reason`)
+      }
+    }
+  }
+  if (strategy.primary.distanceMeters !== 10_000) return
+  const faster = workouts.filter(workout => ['vo2max', 'anaerobic', 'sprint'].includes(workout.type))
+  if (faster.length > 1) throw new Error('A 10K block permits at most one separate 5K-specific/VO2 stimulus')
+  for (const stimulus of faster) {
+    for (const workout of workouts) {
+      if (workout.type !== 'long_run' || workout.date <= stimulus.date || workout.date > addDays(stimulus.date, 3)) continue
+      const segments = workout.blocks.flatMap(block => block.kind === 'repeat' ? block.steps : [block])
+      const efforts = segments.filter(segment => segment.kind === 'effort')
+      const rises = efforts.some((segment, index) => {
+        if (index === 0) return false
+        const previous = efforts[index - 1]!.target
+        const current = segment.target
+        return (current.hrZone !== undefined && previous.hrZone !== undefined && current.hrZone > previous.hrZone)
+          || (current.hrBpm !== undefined && previous.hrBpm !== undefined && current.hrBpm.max > previous.hrBpm.max)
+          || (current.paceSecPerKm !== undefined && previous.paceSecPerKm !== undefined && current.paceSecPerKm.min < previous.paceSecPerKm.min)
+      })
+      if (rises || efforts.some(segment => (segment.target.hrZone ?? 0) > 2)) {
+        throw new Error('Long run within three days after the 5K-specific stimulus must remain easy without a progression or faster finish')
+      }
     }
   }
 }

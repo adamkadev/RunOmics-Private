@@ -53,6 +53,7 @@ export interface HrZone {
 }
 
 export interface Activity {
+  sport?: string
   id: string
   week: number
   date: string

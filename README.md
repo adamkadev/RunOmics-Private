@@ -276,8 +276,8 @@ Every command creates a private preview first. Review its structured decision an
 diff, then apply that exact file:
 
 ```bash
-npm run coach -- bootstrap --days tue,thu,sat,sun
-npm run coach -- bootstrap --days tue,thu,sat,sun --race "Harbor Lights 10K"
+npm run coach -- bootstrap --days tue,wed,thu,sat,sun --runs-per-week 5
+npm run coach -- bootstrap --days tue,wed,thu,sat,sun --runs-per-week 5 --race "Harbor Lights 10K"
 npm run coach -- evaluate --activity latest
 npm run coach -- weekly-review
 npm run coach -- --apply .coach-previews/<proposal>.json
@@ -432,3 +432,52 @@ this repository.
 | Dark mode | [next-themes](https://github.com/pacocoursey/next-themes) |
 | Garmin auth | [garth](https://github.com/matin/garth) |
 | FIT parsing | [garmin-fit-sdk](https://pypi.org/project/garmin-fit-sdk/) |
+
+### Coaching frequency and training history
+
+`--days` specifies scheduling availability; `--runs-per-week` separately specifies
+normal desired frequency and is required by bootstrap. The saved plan retains both
+for subsequent reviews. Full weeks with fewer runs must explicitly explain the
+recovery/taper/fatigue/illness/injury reason in their focus. Race runs count toward
+frequency. `--reference-date YYYY-MM-DD` reproduces a historical context (for example,
+`2026-09-05` for the Sep 6–Oct 3 block). `--context-out <path>` saves the
+compact bootstrap context for inspection.
+
+`CoachingContext.trainingHistory` is computed locally from the canonical activity
+index, using UTC date-only ISO Monday–Sunday weeks. Missing weeks count as zero;
+rolling averages require complete N-week calendar spans, including the current
+partial week. Insufficient spans return zero. Peak-week runs refer to the highest
+mileage week (earliest on ties). Typical peak frequency is mean runs/week in the
+best 12-week mileage window, or all available weeks for shorter histories.
+Recent 7/28-day windows include the reference date, exclude future records, and
+weekly recent averages divide the 28-day totals by four. Gaps count consecutive
+non-running days, including both edges of the recent window. Distances are rounded
+to two decimals only after aggregation.
+
+Explicit sport metadata excludes non-running activities; legacy canonical records
+without sport retain their running classification. Sync now preserves Garmin sport
+metadata. Only the compact historical summary is sent to Gemini, alongside the
+existing compact recent 28-day activity details. History is evidence of previously
+tolerated volume, never a mandatory immediate mileage target. Recent load sets the
+starting point; progressive rebuilding depends on recovery and adaptation.
+
+For a 10K primary target with an explicitly targeted 5K tune-up, bootstrap may
+include one controlled 5K-specific session 7–10 days before the tune-up when
+recovery and load permit. Any long run within three days afterward stays easy.
+Normal desired frequency is not a taper quota: an explicitly targeted race must
+not be preceded by three consecutive runs within its final four pre-race days.
+Use fewer runs with an explicit taper reason when that produces better spacing.
+
+Bootstrap accepts `--guidance-file <path>` for case-specific athlete instructions,
+including accepted workouts to preserve and nonmandatory volume ranges. These
+instructions reach Gemini separately from deterministic training-history facts.
+A limited tune-up-specific session does not automatically make its week a cutback:
+additional appropriate volume comes from easy running, never extra quality.
+
+Race events may carry optional `courseContext.pacingNotes` and supplied
+`paceProSplits` (segment distance and target seconds). Course-aware goals retain
+`targetSeconds`; the derived pace is a whole-course average. The race effort uses
+distance and course/effort notes rather than a rigid exact pace throughout.
+Supplied splits are retained without inventing missing course data. Flat races
+without course context retain their existing behavior. A targeted race-pacing
+refinement can preserve every other workout and the race warmup/cooldown exactly.

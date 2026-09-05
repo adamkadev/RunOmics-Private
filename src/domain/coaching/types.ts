@@ -92,7 +92,14 @@ export interface TrainingBlock {
 
 export type CoachingEventRole = 'primary' | 'tune_up'
 
+export interface RaceCourseContext {
+  /** Supplied course/elevation/PacePro guidance; never inferred from the race name. */
+  pacingNotes: string[]
+  paceProSplits?: { distanceMeters: number; targetSeconds: number }[]
+}
+
 export interface TargetEvent {
+  courseContext?: RaceCourseContext
   id: string
   name: string
   date: string
@@ -110,6 +117,7 @@ export type TrainingGoal =
   | { kind: 'performance'; description: string }
 
 export interface CoachingPlan {
+  trainingPreferences?: { availableWeekdays: number[]; runsPerWeek?: number }
   schemaVersion: typeof COACHING_SCHEMA_VERSION
   id: string
   revision: number

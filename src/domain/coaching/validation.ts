@@ -212,6 +212,7 @@ function targetEvent(value: unknown, path: string): CoachingPlan['targetEvent'] 
     ...(raw.distanceLabel === undefined ? {} : { distanceLabel: string(raw.distanceLabel, `${path}.distanceLabel`) }),
     ...(raw.distanceMeters === undefined ? {} : { distanceMeters: integer(raw.distanceMeters, `${path}.distanceMeters`, 1) }),
     ...(raw.location === undefined ? {} : { location: string(raw.location, `${path}.location`) }),
+    ...(raw.courseContext === undefined ? {} : { courseContext: raceCourseContext(raw.courseContext, `${path}.courseContext`) }),
     ...(raw.targetSeconds === undefined ? {} : { targetSeconds: integer(raw.targetSeconds, `${path}.targetSeconds`, 1) }),
   }
 }
@@ -232,6 +233,7 @@ export function parseCoachingPlan(value: unknown, path = 'plan'): CoachingPlan {
       endDate: isoDate(blockRaw.endDate, `${path}.block.endDate`),
       focus: string(blockRaw.focus, `${path}.block.focus`),
     },
+    ...(raw.trainingPreferences === undefined ? {} : { trainingPreferences: trainingPreferences(raw.trainingPreferences) }),
     targetEvent: targetEvent(raw.targetEvent, `${path}.targetEvent`),
     ...(raw.tuneUpEvents === undefined ? {} : { tuneUpEvents: array(raw.tuneUpEvents, `${path}.tuneUpEvents`, targetEvent) }),
     goal: trainingGoal(raw.goal, `${path}.goal`),
@@ -398,5 +400,25 @@ export function parseCoachState(value: unknown, path = 'state'): CoachState {
     lastPostActivityAt: raw.lastPostActivityAt === null ? null : timestamp(raw.lastPostActivityAt, `${path}.lastPostActivityAt`),
     lastWeeklyReviewAt: raw.lastWeeklyReviewAt === null ? null : timestamp(raw.lastWeeklyReviewAt, `${path}.lastWeeklyReviewAt`),
     updatedAt: timestamp(raw.updatedAt, `${path}.updatedAt`),
+  }
+}
+
+function trainingPreferences(value: unknown): NonNullable<CoachingPlan['trainingPreferences']> {
+  const raw = object(value, 'trainingPreferences')
+  const days = array(raw.availableWeekdays, 'availableWeekdays', (v, p) => integer(v, p, 0))
+  if (!days.length || days.some(d => d > 6) || new Set(days).size !== days.length) throw new Error('Invalid availableWeekdays')
+  const runs = raw.runsPerWeek === undefined ? undefined : integer(raw.runsPerWeek, 'runsPerWeek', 1)
+  if (runs !== undefined && runs > days.length) throw new Error('runsPerWeek exceeds available weekdays')
+  return { availableWeekdays: days, ...(runs === undefined ? {} : { runsPerWeek: runs }) }
+}
+
+function raceCourseContext(value: unknown, path: string): NonNullable<CoachingPlan['targetEvent']['courseContext']> {
+  const raw = object(value, path)
+  return {
+    pacingNotes: array(raw.pacingNotes, `${path}.pacingNotes`, string),
+    ...(raw.paceProSplits === undefined ? {} : { paceProSplits: array(raw.paceProSplits, `${path}.paceProSplits`, (value, path) => {
+      const split = object(value, path)
+      return { distanceMeters: integer(split.distanceMeters, `${path}.distanceMeters`, 1), targetSeconds: integer(split.targetSeconds, `${path}.targetSeconds`, 1) }
+    }) }),
   }
 }

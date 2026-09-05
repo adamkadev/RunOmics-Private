@@ -1,3 +1,4 @@
+import { validateTrainingFrequency, validateDraftFrequency } from './frequency'
 import type { Activity } from '@/domain/activity/types'
 import {
   COACHING_SCHEMA_VERSION,
@@ -66,6 +67,7 @@ function eventFromRace(race: CoachingContext['upcomingRaces'][number], role: Coa
     distanceLabel: race.distance,
     ...(distanceMeters === undefined ? {} : { distanceMeters }),
     ...(race.location ? { location: race.location } : {}),
+    ...(race.courseContext ? { courseContext: race.courseContext } : {}),
     ...(race.targetSeconds === undefined ? {} : { targetSeconds: race.targetSeconds }),
   }
 }
@@ -391,9 +393,12 @@ export async function createBootstrapProposal(
   availableWeekdays: number[],
   services: WorkflowServices,
   targetEventId?: string,
+  runsPerWeek?: number,
+  guidance?: string,
 ): Promise<CoachingProposal> {
   if (services.repository.getCurrentPlan()) throw new Error('A current coaching plan already exists')
   if (availableWeekdays.length === 0) throw new Error('At least one available weekday is required')
+  validateTrainingFrequency(availableWeekdays, runsPerWeek)
   const now = services.now?.() ?? new Date()
   const id = services.id ?? defaultId
   const createdAt = now.toISOString()
@@ -401,13 +406,17 @@ export async function createBootstrapProposal(
   const draft = await services.advisor.bootstrap({
     context,
     availableWeekdays,
+    runsPerWeek,
+    ...(guidance ? { guidance } : {}),
     planningStartDate: strategy.planningStartDate,
     primaryTargetEvent: strategy.primary,
     tuneUpEvents: strategy.tuneUps,
     horizonEndDate: strategy.horizonEndDate,
     ...(targetEventId ? { targetEventId } : {}),
   })
+  validateDraftFrequency(draft, runsPerWeek)
   const proposedPlan = normalizeBootstrapPlan(draft, context, availableWeekdays, strategy, createdAt, id)
+  proposedPlan.trainingPreferences = { availableWeekdays, ...(runsPerWeek === undefined ? {} : { runsPerWeek }) }
   const decisionId = id()
   const decision = parseCoachDecision({
     schemaVersion: COACHING_SCHEMA_VERSION,

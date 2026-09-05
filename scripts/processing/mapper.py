@@ -66,6 +66,7 @@ class ActivityData:
     gear_id: str | None
     weather: dict[str, Any] | None = None
     type_source: str = "runomics"
+    sport: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -75,6 +76,7 @@ class ActivityData:
             "dayOfWeek": self.day_of_week,
             "type": self.type,
             "typeSource": self.type_source,
+            **({"sport": self.sport} if self.sport is not None else {}),
             "description": self.description,
             "durationSeconds": self.duration_seconds,
             "distanceKm": self.distance_km,
@@ -232,6 +234,7 @@ def map_activity(
             cadence_samples = _decimate_list(parsed.cadence_samples, _MAX_CHART_POINTS)
 
     return ActivityData(
+        sport=(api("activityType", "activityTypeDTO") or {}).get("typeKey"),
         id=activity_id,
         week=iso_week,
         date=date_str,

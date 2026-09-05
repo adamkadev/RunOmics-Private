@@ -18,13 +18,17 @@ function usage(): string {
   return [
     'RunOmics coaching preview/apply',
     '',
-    '  npm run coach -- bootstrap --days tue,thu,sat,sun [--race <id|name>]',
+    '  npm run coach -- bootstrap --days tue,wed,thu,sat,sun --runs-per-week 5 [--race <id|name>]',
     '  npm run coach -- evaluate --activity <id|latest>',
     '  npm run coach -- weekly-review',
     '  npm run coach -- --apply .coach-previews/<proposal>.json',
     '',
     'Options:',
     '  --data-dir <path>  Read/write an existing workspace without fetching or pushing it.',
+    '  --runs-per-week <n> Normal desired runs, independently of available --days.',
+    '  --guidance-file <path> Additional athlete instructions for bootstrap.',
+    '  --context-out <path> Save the compact bootstrap context for inspection.',
+    '  --reference-date <YYYY-MM-DD> Reproduce coaching at a specified date.',
     '  --out <path>       Directory for preview files (default: .coach-previews).',
   ].join('\n')
 }
@@ -42,6 +46,12 @@ function availableDays(raw: string | undefined): number[] {
     return value
   })
   return [...new Set(parsed)]
+}
+
+function requestedRuns(args: string[]): number {
+  const raw = option(args, '--runs-per-week')
+  if (!raw) throw new Error('bootstrap requires --runs-per-week independently of --days')
+  return Number(raw)
 }
 
 interface DataWorkspace {
@@ -86,9 +96,11 @@ async function createProposal(command: string, args: string[]) {
   const currentPlan = repository.getCurrentPlan()
 
   if (command === 'bootstrap') {
-    const referenceDate = new Date().toISOString().slice(0, 10)
+    const referenceDate = option(args, '--reference-date') ?? new Date().toISOString().slice(0, 10)
     const context = await getCoachingContext(currentPlan, referenceDate)
-    return createBootstrapProposal(context, availableDays(option(args, '--days')), { advisor, repository }, option(args, '--race'))
+    const contextOutput = option(args, '--context-out')
+    if (contextOutput) fs.writeFileSync(path.resolve(contextOutput), JSON.stringify(context, null, 2) + '\n')
+    return createBootstrapProposal(context, availableDays(option(args, '--days')), { advisor, repository }, option(args, '--race'), requestedRuns(args), option(args, '--guidance-file') ? fs.readFileSync(path.resolve(option(args, '--guidance-file')!), 'utf-8') : undefined)
   }
 
   if (command === 'evaluate') {
@@ -102,7 +114,7 @@ async function createProposal(command: string, args: string[]) {
   }
 
   if (command === 'weekly-review') {
-    const referenceDate = new Date().toISOString().slice(0, 10)
+    const referenceDate = option(args, '--reference-date') ?? new Date().toISOString().slice(0, 10)
     const context = await getCoachingContext(currentPlan, referenceDate)
     return createWeeklyReviewProposal(context, { advisor, repository })
   }

@@ -63,7 +63,7 @@ describe('coaching CLI', () => {
     fs.rmSync(path.join(root, 'coaching'), { recursive: true, force: true })
     const output = path.join(root, 'previews')
 
-    const result = spawnSync(process.execPath, nodeArgs('bootstrap', '--days', 'tue,thu,sat,sun', '--data-dir', root, '--out', output), {
+    const result = spawnSync(process.execPath, nodeArgs('bootstrap', '--days', 'tue,thu,sat,sun', '--runs-per-week', '4', '--data-dir', root, '--out', output), {
       cwd: projectRoot,
       encoding: 'utf-8',
       env: { ...process.env, GEMINI_API_KEY: '', RUNOMICS_DATA_REPO_URL: '' },

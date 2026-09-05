@@ -11,7 +11,10 @@ import type {
 import type { CoachingContext } from '@/application/coaching/context'
 
 export interface BootstrapRequest {
+  /** Optional case-specific athlete instructions, separate from historical facts. */
+  guidance?: string
   context: CoachingContext
+  runsPerWeek?: number
   availableWeekdays: number[]
   planningStartDate: string
   primaryTargetEvent: TargetEvent

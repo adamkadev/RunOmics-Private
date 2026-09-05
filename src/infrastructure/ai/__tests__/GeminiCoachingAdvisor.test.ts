@@ -156,7 +156,9 @@ describe('Gemini bootstrap draft boundary', () => {
     coachingContext.load.garminLoadStatus = 'HIGH'
     await new GeminiCoachingAdvisor().bootstrap({
       context: coachingContext,
-      availableWeekdays: [2],
+      availableWeekdays: [0, 2, 3, 4, 6],
+      runsPerWeek: 5,
+      guidance: 'Preserve the accepted sessions; add only easy aerobic volume.',
       planningStartDate: '2026-09-07',
       primaryTargetEvent: {
         id: 'primary', name: 'Primary 10K', date: '2026-10-18', role: 'primary',
@@ -179,6 +181,18 @@ describe('Gemini bootstrap draft boundary', () => {
     expect(request.systemInstruction).toContain('every prescribed session through recoveryThroughDate must be easy or recovery only')
     expect(request.systemInstruction).toContain('Hill repetitions must use effort/RPE or form guidance')
     expect(request.systemInstruction).toContain('Do not assign hrZone or hrBpm to strides')
+    expect(request.prompt).toContain('NOT a safe immediate target or mandatory next-week mileage')
+    expect(request.prompt).toContain('"trainingHistory":')
+    expect(request.prompt).toContain('runsPerWeek (normal desired frequency): 5')
+    expect(request.systemInstruction).toContain('never a frequency setting')
+    expect(request.systemInstruction).toContain('preference, never a mandatory quota')
+    expect(request.systemInstruction).toContain('must not automatically turn its whole week into a cutback')
+    expect(request.systemInstruction).toContain('never another quality workout or a faster long-run finish')
+    expect(request.prompt).toContain('Preserve the accepted sessions; add only easy aerobic volume.')
+    expect(request.systemInstruction).toContain('4–5 x 800m or equivalent 3-minute repetitions')
+    expect(request.systemInstruction).toContain('Wednesday rest')
+    expect(request.systemInstruction).toContain('entirely easy with no progression or faster finish')
+    expect(request.prompt).not.toContain('paceSamples')
     expect(request.prompt).toContain('PRIMARY_TARGET:')
     expect(request.prompt).toContain('POST_RACE_RECOVERY:')
     expect(request.prompt).toContain('"required":true')
@@ -296,4 +310,10 @@ describe('Gemini bootstrap draft boundary', () => {
     ]
     expect(() => parseBootstrapPlanDraft(raw)).not.toThrow()
   })
+})
+
+it('labels course-aware target pace as an average without changing flat-race facts', () => {
+  const event = { id: 'course', name: 'Hilly race', date: '2026-10-03', distanceMeters: 5000, targetSeconds: 1200 }
+  expect(bootstrapEventPrompt(event)).not.toHaveProperty('pacingMode')
+  expect(bootstrapEventPrompt({ ...event, courseContext: { pacingNotes: ['Follow supplied PacePro.'] } })).toMatchObject({ targetSeconds: 1200, targetPaceSecPerKm: 240, pacingMode: 'course_aware', goalPaceMeaning: 'average_over_entire_course_not_constant_pace' })
 })

@@ -1,3 +1,4 @@
+import { trainingHistory, isRunningActivity, type TrainingHistory } from '@/domain/training/trainingHistory'
 import { createHash } from 'crypto'
 import type { Activity } from '@/domain/activity/types'
 import { sessionExecution, type SessionExecution } from '@/domain/activity/sessionExecution'
@@ -35,6 +36,7 @@ export type CoachingUpcomingRace = Omit<UpcomingRace, 'targetSeconds'> & {
 
 export interface CoachingContext {
   schemaVersion: 1
+  trainingHistory: TrainingHistory
   referenceDate: string
   recentActivities: CompactActivity[]
   volume: {
@@ -100,7 +102,7 @@ function recentActivities(activities: Activity[], referenceDate: string): Activi
       const age = reference - dayNumber(activity.date)
       return age >= 0 && age < RECENT_DAYS
     })
-    .sort((a, b) => b.date.localeCompare(a.date))
+    .sort((a, b) => b.date.localeCompare(a.date) || a.id.localeCompare(b.id))
 }
 
 function isCompletedRaceOnReferenceDate(
@@ -147,7 +149,7 @@ function adherence(plan: CoachingPlan | null, activities: Activity[], referenceD
 }
 
 export function buildCoachingContext(input: CoachingContextInput, referenceDate: string): CoachingContext {
-  const recent = recentActivities(input.activities, referenceDate)
+  const recent = recentActivities(input.activities.filter(isRunningActivity), referenceDate)
   const reference = dayNumber(referenceDate)
   const within = (days: number) => recent.filter((activity) => reference - dayNumber(activity.date) < days)
   const last7 = within(7)
@@ -156,6 +158,7 @@ export function buildCoachingContext(input: CoachingContextInput, referenceDate:
   return {
     schemaVersion: 1,
     referenceDate,
+    trainingHistory: trainingHistory(input.activities, referenceDate),
     recentActivities: recent.map((activity) => ({
       id: activity.id,
       date: activity.date.slice(0, 10),

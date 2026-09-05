@@ -125,3 +125,15 @@ describe('buildCoachingContext', () => {
     expect(context.athlete).not.toHaveProperty('maxHrBpm')
   })
 })
+
+it('includes recent running volume and old capacity without transmitting old activities', () => {
+  const context = buildCoachingContext(input([
+    activity('old-capacity', '2025-01-06', 60),
+    activity('recent-run', '2026-09-20', 5),
+    { ...activity('bike', '2026-09-20', 100), sport: 'cycling' },
+  ]), '2026-09-20')
+  expect(context.trainingHistory).toMatchObject({ historicalPeakWeekKm: 60, recent28DaysKm: 5, recent28DaysRuns: 1 })
+  expect(context.volume.distance28DaysKm).toBe(5)
+  expect(JSON.stringify(context)).not.toContain('old-capacity')
+  expect(JSON.stringify(context)).not.toContain('bike')
+})

@@ -815,3 +815,30 @@ describe('coaching workflows', () => {
     expect(repository.decisions).toEqual([])
   })
 })
+
+it('passes and persists five-run preference independently of availability through bootstrap and apply', async () => {
+  const repository = new MemoryRepository()
+  const context = buildCoachingContext(contextInput(null), '2026-09-07')
+  const advisor: CoachingAdvisor = {
+    ...targetAdvisor([]),
+    bootstrap: async request => {
+      expect(request.runsPerWeek).toBe(5)
+      expect(request.guidance).toBe('Preserve accepted workouts')
+      expect(request.availableWeekdays).toEqual([0, 2, 3, 4, 6])
+      expect(request.context.trainingHistory).toBeDefined()
+      const draft = draftThrough(request)
+      for (const week of draft.weeks) {
+        for (let offset = 0; offset < 7; offset++) {
+          const date = addDays(week.startDate, offset)
+          if (!request.availableWeekdays.includes(new Date(`${date}T00:00:00Z`).getUTCDay())) continue
+          week.workouts.push({ date, type: 'easy', title: 'Easy run', description: 'Comfortable aerobic effort', blocks: [{ kind: 'effort', target: { distanceMeters: 5000 } }] })
+        }
+      }
+      return draft
+    },
+  }
+  const proposal = await createBootstrapProposal(context, [0, 2, 3, 4, 6], { repository, advisor, id: ids() }, undefined, 5, 'Preserve accepted workouts')
+  expect(proposal.proposedPlan?.weeks.map(w => w.workouts.length)).toEqual([5, 5, 5, 5])
+  applyCoachingProposal(proposal, repository, coachingContextHash(context))
+  expect(repository.plan?.trainingPreferences).toEqual({ availableWeekdays: [0, 2, 3, 4, 6], runsPerWeek: 5 })
+})
