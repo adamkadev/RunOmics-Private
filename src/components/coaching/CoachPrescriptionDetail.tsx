@@ -2,11 +2,10 @@ import Link from 'next/link'
 import type { PrescriptionView } from '@/application/coaching/GetCoachingView'
 import type { WorkoutSegment } from '@/domain/coaching/types'
 import { StatusPill, type StatusTone } from '@/components/ui/StatusPill'
-import { prescriptionSummary, prescriptionTarget } from './presentation'
+import { garminAlert, prescriptionSummary, prescriptionTarget } from './presentation'
 import { t } from '@/i18n'
 
 const STATE_TONE: Record<PrescriptionView['state'], StatusTone> = { prescribed: 'blue', adjusted: 'amber', completed: 'emerald', missed: 'red', cancelled: 'zinc' }
-const GARMIN_TONE: Record<PrescriptionView['garminStatus'], StatusTone> = { scheduled_match: 'emerald', scheduled_different: 'amber', scheduled_unknown: 'zinc', not_scheduled: 'zinc' }
 
 function Segment({ segment }: { segment: WorkoutSegment }) {
   return <div>
@@ -23,6 +22,7 @@ function Segment({ segment }: { segment: WorkoutSegment }) {
 export function CoachPrescriptionDetail({ view }: { view: PrescriptionView }) {
   const workout = view.prescription
   const summary = prescriptionSummary(workout)
+  const alert = garminAlert(view)
   return (
     <section
       aria-label={t.coaching.prescription}
@@ -56,10 +56,12 @@ export function CoachPrescriptionDetail({ view }: { view: PrescriptionView }) {
         {workout.notes?.map((note, i) => <p key={i} className="mt-2 text-xs leading-relaxed text-muted-foreground">{note}</p>)}
       </details>
 
-      <div className="mt-2.5 flex flex-wrap items-center gap-2 border-t border-foreground/[0.08] pt-2.5">
-        <StatusPill tone={GARMIN_TONE[view.garminStatus]}>{t.coaching.garmin[view.garminStatus]}</StatusPill>
-        {view.activityId && <Link className="text-xs font-semibold text-accent-text underline" href={`/activities/${view.activityId}`}>{t.coaching.actual}</Link>}
-      </div>
+      {(alert || view.activityId) && (
+        <div className="mt-2.5 flex flex-wrap items-center gap-2 border-t border-foreground/[0.08] pt-2.5">
+          {alert && <StatusPill tone="amber">{alert}</StatusPill>}
+          {view.activityId && <Link className="text-xs font-semibold text-accent-text underline" href={`/activities/${view.activityId}`}>{t.coaching.actual}</Link>}
+        </div>
+      )}
     </section>
   )
 }

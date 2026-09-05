@@ -63,8 +63,14 @@ describe('CoachPrescriptionDetail', () => {
     expect(screen.getByText('Hold the last rep.')).toBeInTheDocument()
   })
 
-  it('shows the prescription state and the Garmin scheduling status', () => {
-    render(
+  it('shows the prescription state', () => {
+    render(<CoachPrescriptionDetail view={viewOf(plan())} />)
+
+    expect(screen.getByText(t.coaching.states.prescribed)).toBeInTheDocument()
+  })
+
+  it('says nothing about Garmin when the session is synced as prescribed', () => {
+    const { container } = render(
       <CoachPrescriptionDetail
         view={viewOf(plan(), '2026-09-09', [
           { date: '2026-09-09', name: 'Track session', type: 'Threshold', durationSecs: 3_600 },
@@ -72,13 +78,24 @@ describe('CoachPrescriptionDetail', () => {
       />
     )
 
-    expect(screen.getByText(t.coaching.states.prescribed)).toBeInTheDocument()
-    expect(screen.getByText(t.coaching.garmin.scheduled_match)).toBeInTheDocument()
+    expect(container.textContent).not.toMatch(/Garmin/i)
   })
 
-  it('reports a prescription with no Garmin counterpart as unscheduled', () => {
-    render(<CoachPrescriptionDetail view={viewOf(plan())} />)
+  it('says nothing about Garmin when nothing is scheduled there yet', () => {
+    const { container } = render(<CoachPrescriptionDetail view={viewOf(plan())} />)
 
-    expect(screen.getByText(t.coaching.garmin.not_scheduled)).toBeInTheDocument()
+    expect(container.textContent).not.toMatch(/Garmin/i)
+  })
+
+  it('surfaces Garmin only when it holds a session that no longer matches', () => {
+    render(
+      <CoachPrescriptionDetail
+        view={viewOf(plan(), '2026-09-09', [
+          { date: '2026-09-09', name: 'Easy jog', type: 'Base', durationSecs: 3_600 },
+        ])}
+      />
+    )
+
+    expect(screen.getByText(t.coaching.garminOutOfDate)).toBeInTheDocument()
   })
 })

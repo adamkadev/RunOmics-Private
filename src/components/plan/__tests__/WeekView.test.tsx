@@ -45,7 +45,7 @@ function blockPlan(): CoachingPlan {
   return {
     ...base,
     macrocycleStartDate: '2026-09-07',
-    targetEvent: { ...base.targetEvent, date: '2026-11-29' },
+    targetEvent: { ...base.targetEvent, date: '2026-11-29', role: 'primary' },
   }
 }
 
@@ -133,10 +133,19 @@ describe('WeekView progression card', () => {
     }
   })
 
-  it('keeps the block out of the banner copy', () => {
+  it('counts the week toward the primary target in the macrocycle card', () => {
     renderWeek({ coaching: overview({ coachingPlan: blockPlan() }) })
 
-    expect(screen.queryByText(/Current block/)).not.toBeInTheDocument()
+    // Sep 7 -> Nov 29 is 12 weeks; today (Sep 9) is in the first of them.
+    expect(screen.getByText(t.plan.weekPurpose.weekOfTarget(1, 12))).toBeInTheDocument()
+  })
+
+  it('leaves the macrocycle progress out of the race card', () => {
+    renderWeek({ coaching: overview({ coachingPlan: blockPlan() }) })
+
+    const footer = screen.getByTestId('race-footer')
+    expect(footer.textContent).not.toContain(t.plan.weekPurpose.weekOfTarget(1, 12))
+    expect(footer.textContent).not.toContain(t.plan.raceFooter.weeksInLabel)
   })
 
   it('keeps the Garmin phase track when there is no coaching', () => {
@@ -190,12 +199,20 @@ describe('WeekView coaching day cells and Today', () => {
     expect(within(detail.parentElement!).queryByText(t.plan.restDay)).not.toBeInTheDocument()
   })
 
-  it('keeps the Garmin scheduling status visible', () => {
+  it('keeps Garmin out of the card while the session is synced as prescribed', () => {
     renderWeek({
       coaching: overview({ garminPlanned: [{ date: TODAY, name: 'Track session', type: 'Threshold', durationSecs: 3_600 }] }),
     })
 
-    expect(within(screen.getByTestId('coach-prescription-detail')).getByText(t.coaching.garmin.scheduled_match)).toBeInTheDocument()
+    expect(screen.getByTestId('coach-prescription-detail').textContent).not.toMatch(/Garmin out of date/i)
+  })
+
+  it('surfaces an out-of-date Garmin session, which the athlete must act on', () => {
+    renderWeek({
+      coaching: overview({ garminPlanned: [{ date: TODAY, name: 'Easy jog', type: 'Base', durationSecs: 3_600 }] }),
+    })
+
+    expect(within(screen.getByTestId('coach-prescription-detail')).getByText(t.coaching.garminOutOfDate)).toBeInTheDocument()
   })
 
   it('still distinguishes the Garmin planned workout sharing the day', () => {
@@ -239,12 +256,12 @@ describe('WeekView target race', () => {
     expect(screen.getByText('Autumn 10K')).toBeInTheDocument()
   })
 
-  it('counts the week toward the primary target in the race card', () => {
-    renderWeek({ coaching: overview({ coachingPlan: blockPlan() }) })
+  it('names each race by its role, keeping the primary target clear', () => {
+    const coaching = overview({ coachingPlan: blockPlan() })
+    renderWeek({ coaching })
 
-    // Sep 7 -> Nov 29 is 12 weeks; today (Sep 9) is in the first of them.
-    expect(screen.getByText(t.plan.raceFooter.weeksIn(1, 12))).toBeInTheDocument()
-    expect(screen.getByText(t.plan.raceFooter.weeksInLabel)).toBeInTheDocument()
+    const footer = screen.getByTestId('race-footer')
+    expect(footer.textContent).toContain(t.plan.raceFooter.primaryTarget)
   })
 
   it('counts days, not block progress, for each listed race', () => {

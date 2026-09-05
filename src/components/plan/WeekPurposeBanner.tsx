@@ -40,6 +40,8 @@ interface Props {
   /** Where today sits in the coaching block, when one is active - it counts the
    *  plan's own weeks rather than the Monday rows a span happens to touch. */
   blockWeek?: { done: number; total: number } | null
+  /** Position in the macrocycle toward the primary target, when coaching is active. */
+  targetWeek?: { done: number; total: number } | null
   today: string
 }
 
@@ -72,6 +74,7 @@ export function WeekPurposeBanner({
   planPhaseRanges,
   planSpan,
   blockWeek: blockWeekOverride = null,
+  targetWeek = null,
   today,
 }: Props) {
   const verdict = over ? garminStatus : null
@@ -138,7 +141,13 @@ export function WeekPurposeBanner({
             <div className="mt-0.5 text-xs text-muted-foreground">{t.plan.weekSummary.vsTypical(percent)}</div>
           )}
         </div>
-        {adherence && (
+        {targetWeek ? (
+          <div className="shrink-0 text-right">
+            <div className="font-display text-subhead font-bold leading-none text-accent-text">
+              {t.plan.weekPurpose.weekOfTarget(targetWeek.done, targetWeek.total)}
+            </div>
+          </div>
+        ) : adherence && (
           <div className="shrink-0 text-right">
             <div
               className={cn('font-display text-title2 font-bold leading-none tabular-nums', !accentColor && tone.text)}

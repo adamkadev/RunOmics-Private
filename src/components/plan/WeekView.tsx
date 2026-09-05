@@ -356,6 +356,7 @@ export function WeekView({
         location: event.location,
         targetSeconds: event.targetSeconds ?? null,
       },
+      role: event.role,
       blockEndsHere: event.date === block.endDate,
     })
     const upcoming = [targetEvent, ...(tuneUpEvents ?? [])].filter((event) => event.date >= today)
@@ -379,6 +380,7 @@ export function WeekView({
         planned={planned}
         planPhaseRanges={coaching ? coachPhaseRanges : planPhaseRanges}
         planSpan={planSpan}
+        targetWeek={coaching ? macrocycleWeek(coaching.plan, today) : null}
         today={today}
       />
 
@@ -587,12 +589,7 @@ export function WeekView({
       )}
 
       {footerRaces.length > 0 && atPresent && (
-        <RaceFooter
-          races={footerRaces}
-          planSpan={footerSpan}
-          weeks={coaching ? macrocycleWeek(coaching.plan, today) : null}
-          today={today}
-        />
+        <RaceFooter races={footerRaces} planSpan={footerSpan} today={today} />
       )}
 
       {sheetActivity && (

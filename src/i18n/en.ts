@@ -1340,6 +1340,8 @@ export const en = {
     raceFooter: {
       inDays: (days: number) => (days === 0 ? 'today' : days === 1 ? 'in 1 day' : `in ${days} days`),
       weeksIn: (done: number, total: number) => `${done}/${total}`,
+      primaryTarget: 'Primary target',
+      tuneUp: 'Tune-up',
       blockEndsHere: 'Current block ends here',
       daysAway: (days: number) => `${days} days`,
       weeksInLabel: 'weeks in',
@@ -1368,7 +1370,7 @@ export const en = {
         key > 0
           ? `${total} session${total > 1 ? 's' : ''} · ${key} key`
           : `${total} session${total > 1 ? 's' : ''}`,
-      weekOfTarget: (done: number, total: number) => `week ${done} of ${total} to primary target`,
+      weekOfTarget: (done: number, total: number) => `Week ${done} of ${total}`,
       currentBlock: (from: string, to: string) => `Current block · ${from} – ${to}`,
       weekOfBlock: (done: number, total: number) => `week ${done} of ${total}`,
       adherence: (done: number, due: number) => `${done} / ${due} done`,
@@ -1376,6 +1378,7 @@ export const en = {
   },
 
   coaching: {
+    garminOutOfDate: 'Garmin out of date',
     showStructure: 'Show structure',
     prescription: 'Coach prescription',
     repetitions: 'repetitions',
@@ -1393,12 +1396,6 @@ export const en = {
       completed: 'Completed',
       missed: 'Missed',
       cancelled: 'Cancelled',
-    },
-    garmin: {
-      scheduled_match: 'Scheduled in Garmin',
-      scheduled_different: 'Garmin differs',
-      scheduled_unknown: 'Garmin session on this day',
-      not_scheduled: 'Not scheduled in Garmin',
     },
     outcomes: { KEEP: 'Keep', ADJUST: 'Adjust', REPLAN: 'Replan' },
     planned: 'Planned',

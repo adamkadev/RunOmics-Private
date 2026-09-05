@@ -1,6 +1,8 @@
+import type { PrescriptionView } from '@/application/coaching/GetCoachingView'
 import type { PlanPhaseRange, TrainingPlanPhase } from '@/application/usecases/GetTrainingPlan'
 import type { CoachingPlan, WorkoutPrescription, WorkoutTarget } from '@/domain/coaching/types'
 import { formatClock, formatDurationWords } from '@/lib/formatters'
+import { t } from '@/i18n'
 
 const DAY_MS = 86_400_000
 
@@ -73,6 +75,17 @@ export function macrocycleWeek(plan: CoachingPlan, today: string): { done: numbe
   const total = Math.max(1, Math.round(daysBetween(start, plan.targetEvent.date) / 7))
   const done = Math.floor(daysBetween(start, today) / 7) + 1
   return { done: Math.min(Math.max(done, 1), total), total }
+}
+
+/**
+ * Coach workouts are expected to reach Garmin, so a healthy sync says nothing at
+ * all. Only a state the athlete has to act on is worth a line on the Plan page -
+ * today that means Garmin holding a session that no longer matches the
+ * prescription. The sync state itself is untouched and still kept in full for
+ * idempotency and diagnostics.
+ */
+export function garminAlert(view: PrescriptionView): string | null {
+  return view.garminStatus === 'scheduled_different' ? t.coaching.garminOutOfDate : null
 }
 
 /** Prefer explicit distance; estimate timed paced segments, never unpaced effort. */
