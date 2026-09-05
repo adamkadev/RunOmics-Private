@@ -290,18 +290,28 @@ describe('result rendering', () => {
     const output = formatGarminSyncResults(report)
 
     expect(output).toContain('CREATE ✓ 2026-09-08 Aerobic Easy Run')
-    expect(output).toContain('CREATE ✓ 2026-10-03 Broschtkriibslaf 5K Race')
-    expect(output).toContain('2 Garmin workout(s) synchronized.')
+    expect(output).toContain(
+      'SKIP   - 2026-10-03 Broschtkriibslaf 5K Race (Course-aware race already on the Garmin calendar - use Garmin PacePro)',
+    )
+    expect(output).toContain('1 Garmin workout(s) synchronized.')
     expect(output).toContain('0 failure(s).')
   })
 
-  it('renders the skip line when course-aware races are excluded', async () => {
-    const syncPlan = buildGarminSyncPlan(courseAwarePlan(), [], null, { today: TODAY }, { skipCourseAwareRaces: true })
+  it('creates nothing on the race date, so the calendar event stands alone', async () => {
+    const gateway = new FakeGarmin()
+
+    await apply(build(courseAwarePlan(), null), null, gateway)
+
+    expect(gateway.scheduled.map(([, date]) => date)).toEqual(['2026-09-08'])
+  })
+
+  it('renders the race as a create when races are explicitly synced', async () => {
+    const syncPlan = buildGarminSyncPlan(courseAwarePlan(), [], null, { today: TODAY }, { syncRaces: true })
     const gateway = new FakeGarmin()
 
     const output = formatGarminSyncResults(await apply(syncPlan, null, gateway))
 
-    expect(output).toContain('SKIP   - 2026-10-03 Broschtkriibslaf 5K Race (Course-aware race - use Garmin PacePro)')
-    expect(output).toContain('1 Garmin workout(s) synchronized.')
+    expect(output).toContain('CREATE ✓ 2026-10-03 Broschtkriibslaf 5K Race')
+    expect(output).toContain('2 Garmin workout(s) synchronized.')
   })
 })

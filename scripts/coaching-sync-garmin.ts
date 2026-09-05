@@ -26,9 +26,10 @@ function usage(): string {
     '  --from <YYYY-MM-DD>  Inclusive lower bound (default: today; never earlier).',
     '  --to <YYYY-MM-DD>    Inclusive upper bound (default: the end of the plan).',
     '  --reference-date <YYYY-MM-DD>  Treat this date as today.',
-    '  --skip-course-aware-races      Leave races that have a PacePro strategy off',
-    '                       Garmin entirely. By default they are synced with the race',
-    '                       effort left unpaced, so PacePro still owns the pacing.',
+    '  --sync-races         Also push races as structured workouts. Off by default:',
+    '                       a race is already on the Garmin calendar as an event. A',
+    '                       course-aware race still goes out with its race effort',
+    '                       unpaced, so PacePro keeps the pacing.',
     '  --print-payload <YYYY-MM-DD>   Print the Garmin JSON for that date and exit.',
     '  --data-dir <path>    Data workspace to use (default: RUNOMICS_DATA_DIR).',
     '',
@@ -88,7 +89,7 @@ async function main(): Promise<void> {
 
   const store = new JsonGarminSyncStore(root)
   const syncPlan = buildGarminSyncPlan(plan, repository.getEvaluations(), store.read(), { today, from, to }, {
-    skipCourseAwareRaces: args.includes('--skip-course-aware-races'),
+    syncRaces: args.includes('--sync-races'),
   })
 
   if (!args.includes('--apply')) {

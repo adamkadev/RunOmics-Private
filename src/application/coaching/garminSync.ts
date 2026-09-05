@@ -47,13 +47,21 @@ export interface GarminSyncPlan {
   fingerprint: string
 }
 
-export const COURSE_AWARE_RACE_REASON = 'Course-aware race - use Garmin PacePro'
-/** Shown on a course-aware race that is synced, so the preview says what reaches the watch. */
+/**
+ * Races are not pushed as structured workouts: the race is already on the
+ * Garmin calendar as an event - RunOmics reads those events from Garmin in the
+ * first place (see scripts/sync_upcoming_races.py) - so a workout on the same
+ * date would only duplicate it. A course-aware race has a second reason: the
+ * athlete's own PacePro strategy paces it.
+ */
+export const RACE_ON_CALENDAR_REASON = 'Race already on the Garmin calendar'
+export const COURSE_AWARE_RACE_REASON = 'Course-aware race already on the Garmin calendar - use Garmin PacePro'
+/** Shown on a course-aware race synced through `syncRaces`, so the preview says what reaches the watch. */
 export const COURSE_AWARE_RACE_NOTE = 'Course-aware race - race effort left unpaced for PacePro'
 
 export interface GarminSyncOptions {
-  /** Leave course-aware races off Garmin entirely, rather than syncing them unpaced. */
-  skipCourseAwareRaces?: boolean
+  /** Push race prescriptions as structured workouts too. Off by default. */
+  syncRaces?: boolean
 }
 
 function entriesByPrescription(state: GarminSyncState): Map<string, GarminSyncEntry> {
@@ -69,8 +77,9 @@ function operationFor(
   const base = { date: workout.date, title: workout.title, prescriptionId: workout.id, existing }
   const courseAware = isCourseAwareRace(plan, workout)
 
-  if (courseAware && options.skipCourseAwareRaces) {
-    return { ...base, action: 'skip', payload: null, contentHash: null, reason: COURSE_AWARE_RACE_REASON }
+  if (workout.type === 'race' && !options.syncRaces) {
+    const reason = courseAware ? COURSE_AWARE_RACE_REASON : RACE_ON_CALENDAR_REASON
+    return { ...base, action: 'skip', payload: null, contentHash: null, reason }
   }
 
   // The race effort is stripped of any pace target before it is mapped, so the
