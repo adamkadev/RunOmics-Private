@@ -922,7 +922,9 @@ export const fr = {
         behind: 'En retard',
       },
       rate: (current: number) => `rythme ${current} km/sem`,
-      projected: (km: number) => `Projection ${km.toLocaleString()} km`,
+      // Locale explicite, jamais celle du runtime - voir en.ts : sinon le rendu
+      // serveur et le rendu client divergent (erreur d'hydratation).
+      projected: (km: number) => `Projection ${km.toLocaleString('fr-FR')} km`,
     },
     monthlyVolume: {
       title: 'Volume mensuel',

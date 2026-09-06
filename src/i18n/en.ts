@@ -928,7 +928,11 @@ export const en = {
         behind: 'Behind',
       },
       rate: (current: number) => `${current} km/wk pace`,
-      projected: (km: number) => `Projected ${km.toLocaleString()} km`,
+      // Explicit locale, never the runtime default: Node resolves that from the
+      // server's environment and the browser from the user's, so a bare
+      // toLocaleString() renders "1 663 km" on one side and "1,663 km" on the
+      // other - a hydration mismatch.
+      projected: (km: number) => `Projected ${km.toLocaleString('en-US')} km`,
     },
     monthlyVolume: {
       title: 'Monthly Volume',
