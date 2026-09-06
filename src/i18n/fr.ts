@@ -320,14 +320,6 @@ export const fr = {
       today: "Aujourd'hui",
       noReading: 'Pas de lecture',
     },
-    weeklyDigest: {
-      newPr: (label: string, time: string) => `Nouveau record ${label} : ${time}`,
-      statusFresh: (tsb: number) => `Zone fraîche (Forme +${tsb}) - bonne fenêtre pour une séance dure`,
-      statusOverreaching: (tsb: number) => `Surcharge (Forme ${tsb}) - envisage de lever le pied`,
-      acwrWatch: (acwr: number) => `Ratio charge aiguë/chronique à ${acwr.toFixed(2)} - hors de la zone sûre 0,8-1,3`,
-      monotonyWatch: (monotony: number) => `Monotonie à ${monotony.toFixed(1)} - ta semaine manque de variété de charge`,
-      hardShareWatch: (hardPct: number) => `${Math.round(hardPct)}% de ton temps en effort dur`,
-    },
     syncStatus: {
       synced: (relative: string) => `Synchronisé ${relative}`,
       justNow: 'à l’instant',

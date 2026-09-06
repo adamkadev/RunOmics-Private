@@ -7,7 +7,6 @@ import { getRunVerdictContexts } from '@/application/usecases/GetRunVerdictInsig
 import { getAnalyticsData } from '@/application/usecases/GetAnalyticsData'
 import { getYearComparison } from '@/application/usecases/GetYearComparison'
 import { getSeasonHeadline } from '@/application/usecases/GetSeasonHeadline'
-import { getWeeklyDigest } from '@/application/usecases/GetWeeklyDigest'
 import { getCurrentWeekPurpose } from '@/application/usecases/GetCurrentWeekPurpose'
 import { getRecords, getMostRecentRecord, getQualifiedEffortsByActivityId } from '@/application/usecases/GetRecords'
 import { getShoeStats } from '@/application/usecases/GetShoeStats'
@@ -50,13 +49,6 @@ import {
   seasonInsightHash,
   seasonInsightPrompt,
 } from '@/domain/ai/seasonInsight'
-import {
-  WEEKLY_REVIEW_LIMITS,
-  WEEKLY_REVIEW_SURFACE,
-  WEEKLY_REVIEW_SYSTEM_INSTRUCTION,
-  weeklyReviewInsightHash,
-  weeklyReviewInsightPrompt,
-} from '@/domain/ai/weeklyReviewInsight'
 import {
   WEEK_PURPOSE_LIMITS,
   WEEK_PURPOSE_SURFACE,
@@ -218,7 +210,6 @@ export async function POST(req: NextRequest) {
       freshVerdicts: await writeVerdicts(spender, fresh, written),
       today: await generateToday(spender),
       weekPurpose: await generateWeekPurpose(spender),
-      weeklyReview: await generateWeeklyReview(spender),
       season: await generateSeason(spender),
       analyticsTabs: await generateAnalyticsTabs(spender),
       pbCelebration: await generatePbCelebration(spender),
@@ -281,20 +272,6 @@ async function generateToday(spender: Spender) {
     hash: todayInsightHash(context),
     guard: todayInsightGuard(context),
     prompt: (recent) => todayInsightPrompt(context, recent),
-    paths: ['/'],
-  })
-}
-
-async function generateWeeklyReview(spender: Spender) {
-  const digest = await getWeeklyDigest()
-  if (!digest) return { generated: false, reason: 'no week to review' }
-
-  return runSurface(spender, {
-    surface: WEEKLY_REVIEW_SURFACE,
-    limits: WEEKLY_REVIEW_LIMITS,
-    systemInstruction: WEEKLY_REVIEW_SYSTEM_INSTRUCTION,
-    hash: weeklyReviewInsightHash(digest),
-    prompt: (recent) => weeklyReviewInsightPrompt(digest, recent),
     paths: ['/'],
   })
 }
