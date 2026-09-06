@@ -225,6 +225,25 @@ function normalizeWorkout(
   }
 }
 
+/**
+ * The session the coach actually asked for, with identity and lifecycle fields
+ * stripped. Two drafts that compare equal here are the same prescription
+ * restated, so the stored one keeps its id, revision and provenance rather than
+ * being bumped as if the athlete had been given something new.
+ */
+function prescribedContent(prescription: WorkoutPrescription): Partial<WorkoutPrescription> {
+  const content: Partial<WorkoutPrescription> = { ...prescription }
+  delete content.id
+  delete content.revision
+  delete content.status
+  delete content.provenance
+  return content
+}
+
+function samePrescription(draft: WorkoutPrescription, prior: WorkoutPrescription): boolean {
+  return JSON.stringify(prescribedContent(draft)) === JSON.stringify(prescribedContent(prior))
+}
+
 function normalizeWeeks(
   weeks: TrainingWeek[],
   plan: CoachingPlan,
@@ -234,28 +253,24 @@ function normalizeWeeks(
   id: () => string,
 ): TrainingWeek[] {
   const existing = new Map(plan.weeks.flatMap((week) => week.workouts).map((workout) => [workout.id, workout]))
-  const samePrescription = (draft: WorkoutPrescription, prior: WorkoutPrescription) => {
-    const comparable = (prescription: WorkoutPrescription) => {
-      const value: Partial<WorkoutPrescription> = { ...prescription }
-      delete value.id
-      delete value.revision
-      delete value.status
-      delete value.provenance
-      return value
+
+  return weeks.map((week) => {
+    const priorWeek = plan.weeks.find((candidate) => candidate.startDate === week.startDate)
+    const weeksIntoBlock = Math.floor(
+      (new Date(`${week.startDate}T00:00:00Z`).getTime() - new Date(`${plan.block.startDate}T00:00:00Z`).getTime()) / (7 * DAY_MS)
+    ) + 1
+
+    return {
+      ...week,
+      id: priorWeek?.id ?? id(),
+      index: priorWeek?.index ?? weeksIntoBlock,
+      workouts: week.workouts.map((draft) => {
+        const prior = existing.get(draft.id)
+        if (prior && samePrescription(draft, prior)) return prior
+        return normalizeWorkout(draft, trigger, createdAt, decisionId, prior?.id ?? id(), (prior?.revision ?? 0) + 1, prior ? 'adjusted' : 'prescribed')
+      }),
     }
-    return JSON.stringify(comparable(draft)) === JSON.stringify(comparable(prior))
-  }
-  return weeks.map((week) => ({
-    ...week,
-    id: plan.weeks.find((candidate) => candidate.startDate === week.startDate)?.id ?? id(),
-    index: plan.weeks.find((candidate) => candidate.startDate === week.startDate)?.index
-      ?? Math.floor((new Date(`${week.startDate}T00:00:00Z`).getTime() - new Date(`${plan.block.startDate}T00:00:00Z`).getTime()) / (7 * DAY_MS)) + 1,
-    workouts: week.workouts.map((draft) => {
-      const prior = existing.get(draft.id)
-      if (prior && samePrescription(draft, prior)) return prior
-      return normalizeWorkout(draft, trigger, createdAt, decisionId, prior?.id ?? id(), (prior?.revision ?? 0) + 1, prior ? 'adjusted' : 'prescribed')
-    }),
-  }))
+  })
 }
 
 function materializeChanges(

@@ -1,3 +1,5 @@
+import { isoDate } from '@/lib/calendarDate'
+
 export type ChartRange = '4w' | '6m' | '1y'
 
 export const CHART_RANGES: ChartRange[] = ['4w', '6m', '1y']
@@ -12,11 +14,6 @@ export interface WindowBounds {
   from: string
   to: string
 }
-
-function isoDate(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
 
 export function windowBounds(range: ChartRange, offset: number, anchor: Date): WindowBounds {
   const days = RANGE_DAYS[range]
@@ -68,7 +65,7 @@ export function sampleForRange<T extends { date: string }>(
 
   const factor = 10 ** decimals
   const bucketSize = points.length / target
-  const result: T[] = []
+  const downsampled: T[] = []
   for (let i = 0; i < target; i++) {
     const start = Math.floor(i * bucketSize)
     const end = i === target - 1 ? points.length : Math.floor((i + 1) * bucketSize)
@@ -84,9 +81,9 @@ export function sampleForRange<T extends { date: string }>(
         sampled[key] = Math.round((values.reduce((s, v) => s + v, 0) / values.length) * factor) / factor
       }
     }
-    result.push(sampled as T)
+    downsampled.push(sampled as T)
   }
-  return result
+  return downsampled
 }
 
 export const PLOT_STRIDE_DAYS: Record<ChartRange, number> = {
@@ -154,7 +151,7 @@ export function fillWeeklyGaps<T extends { date: string }>(
   points: T[],
   blank: (monday: string) => T
 ): T[] {
-  const out: T[] = []
+  const filled: T[] = []
 
   for (const [i, point] of points.entries()) {
     const previous = points[i - 1]
@@ -162,12 +159,12 @@ export function fillWeeklyGaps<T extends { date: string }>(
       let cursor = Date.parse(previous.date + 'T00:00:00Z') + WEEK_MS
       const until = Date.parse(point.date + 'T00:00:00Z')
       while (cursor < until) {
-        out.push(blank(new Date(cursor).toISOString().slice(0, 10)))
+        filled.push(blank(new Date(cursor).toISOString().slice(0, 10)))
         cursor += WEEK_MS
       }
     }
-    out.push(point)
+    filled.push(point)
   }
 
-  return out
+  return filled
 }

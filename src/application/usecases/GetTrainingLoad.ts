@@ -5,6 +5,7 @@ import { round } from '@/lib/math'
 import type { Activity } from '@/domain/activity/types'
 import { trimp, DEFAULT_HR_BOUNDS, type HrBounds } from '@/domain/training/trimp'
 import { CTL_DAYS, ATL_DAYS, type LoadSnapshot } from '@/domain/training/taper'
+import { isoDate } from '@/lib/calendarDate'
 
 export { trimp, type HrBounds }
 export { ATL_DAYS, type LoadSnapshot }
@@ -25,10 +26,6 @@ export interface TrainingLoadData {
   atl: number
   tsb: number
   tsbNow: number
-}
-
-function isoDate(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 // Exposed separately from buildTimeSeries because monotony/strain need the raw daily series, not CTL/ATL.

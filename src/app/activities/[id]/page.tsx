@@ -65,8 +65,8 @@ export default async function ActivityDetailPage({
   const similarRuns = getSimilarRuns(id)
   const aiVerdict = await getRunVerdictInsight(activity)
   const coaching = getActivityCoachingView(activity.id)
-  const info = activity.gearId ? getShoeRegistry()[activity.gearId] : undefined
-  const shoe = info ? { name: info.name, dotColor: info.dotColor } : null
+  const registeredShoe = activity.gearId ? getShoeRegistry()[activity.gearId] : undefined
+  const shoe = registeredShoe ? { name: registeredShoe.name, dotColor: registeredShoe.dotColor } : null
 
   const athlete = getAthleteProfile()
   const hrBounds: HrBounds | undefined =

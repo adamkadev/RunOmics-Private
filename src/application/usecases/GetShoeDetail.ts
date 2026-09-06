@@ -18,8 +18,8 @@ export interface ShoeDetail {
 }
 
 export function getShoeDetail(gearId: string): ShoeDetail | null {
-  const info = getShoeRegistry()[gearId]
-  if (!info) return null
+  const registered = getShoeRegistry()[gearId]
+  if (!registered) return null
 
   const activities = getAllActivities()
     .filter((a) => a.gearId === gearId)
@@ -34,13 +34,13 @@ export function getShoeDetail(gearId: string): ShoeDetail | null {
 
   return {
     gearId,
-    name: info.name,
-    brand: info.brand,
-    maxKm: info.maxKm,
-    alertThresholdKm: info.alertThresholdKm,
-    retired: info.retired,
+    name: registered.name,
+    brand: registered.brand,
+    maxKm: registered.maxKm,
+    alertThresholdKm: registered.alertThresholdKm,
+    retired: registered.retired,
     totalKm,
-    wearPercent: info.retired ? 100 : Math.min(100, round((totalKm / info.maxKm) * 100, 0)),
+    wearPercent: registered.retired ? 100 : Math.min(100, round((totalKm / registered.maxKm) * 100, 0)),
     firstUsedDate,
     kmPerWeek,
     activities,

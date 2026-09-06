@@ -15,6 +15,7 @@ import { GlassSurface } from '@/components/ui/GlassSurface'
 import { SingleSeriesTooltip } from '@/components/ui/ChartTooltip'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { t } from '@/i18n'
+import { kmTicks } from './chartAxis'
 
 interface Props {
   samples: number[]
@@ -32,11 +33,6 @@ function formatPaceTick(v: number): string {
 
 function formatPaceTooltip(sec: number): string {
   return sec >= PACE_CAP ? `>8:15 /${t.units.km}` : `${formatClock(sec)}/${t.units.km}`
-}
-
-function kmTicks(distanceKm: number): number[] {
-  const step = distanceKm <= 3 ? 1 : distanceKm <= 20 ? 2 : distanceKm <= 50 ? 5 : 10
-  return Array.from({ length: Math.floor(distanceKm / step) + 1 }, (_, i) => i * step)
 }
 
 export const PaceChart = memo(function PaceChart({ samples, avgPaceSecPerKm, distanceKm, onHoverFraction }: Props) {

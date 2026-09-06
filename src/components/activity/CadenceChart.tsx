@@ -14,17 +14,13 @@ import { GlassSurface } from '@/components/ui/GlassSurface'
 import { SingleSeriesTooltip } from '@/components/ui/ChartTooltip'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { t } from '@/i18n'
+import { kmTicks } from './chartAxis'
 
 interface Props {
   samples: number[]
   avgCadence?: number | null
   distanceKm?: number
   onHoverFraction?: (fraction: number | null) => void
-}
-
-function kmTicks(distanceKm: number): number[] {
-  const step = distanceKm <= 3 ? 1 : distanceKm <= 20 ? 2 : distanceKm <= 50 ? 5 : 10
-  return Array.from({ length: Math.floor(distanceKm / step) + 1 }, (_, i) => i * step)
 }
 
 const CADENCE_CAP = 100

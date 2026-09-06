@@ -6,6 +6,7 @@ import { easyHardShare } from '@/domain/training/easyHard'
 import { sumDistanceKm } from '@/domain/activity/distance'
 import { monthLabel } from '@/lib/formatters'
 import { round } from '@/lib/math'
+import { isoDate } from '@/lib/calendarDate'
 
 export { easyHardShare }
 
@@ -171,12 +172,10 @@ export function zoneDistribution(activities: Activity[]): ZoneShare[] {
     }))
 }
 
-
 export function recentZoneDistribution(activities: Activity[], days: number, now: Date = new Date()): ZoneShare[] {
   const cutoff = new Date(now.getTime() - days * 86_400_000)
   return zoneDistribution(activities.filter((a) => new Date(a.date + 'T00:00:00') >= cutoff))
 }
-
 
 function efSamples(activities: Activity[]): { ef: number; weather: ActivityWeather | null }[] {
   return activities
@@ -351,11 +350,6 @@ function startOfWeek(d: Date): Date {
   x.setDate(x.getDate() - ((x.getDay() + 6) % 7)) // back to Monday
   return x
 }
-
-function isoDate(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
 
 function buildAllTimeAnalytics(byYearMap: Map<number, Activity[]>, all: Activity[], now: Date): AllTimeAnalytics {
   const buckets: Bucket[] = Array.from(byYearMap.keys())

@@ -33,8 +33,8 @@ function mean(values: (number | null)[]): number | null {
 }
 
 function buildRow(gearId: string, runs: Activity[]): ShoeComparisonRow | null {
-  const info = getShoeRegistry()[gearId]
-  if (!info || runs.length < MIN_SESSIONS) return null
+  const registered = getShoeRegistry()[gearId]
+  if (!registered || runs.length < MIN_SESSIONS) return null
 
   const cadence = mean(runs.map((a) => a.cadenceSpm))
   const groundContact = mean(runs.map((a) => a.groundContactMs))
@@ -47,10 +47,10 @@ function buildRow(gearId: string, runs: Activity[]): ShoeComparisonRow | null {
 
   return {
     gearId,
-    name: info.name,
-    brand: info.brand,
-    dotColor: info.dotColor,
-    retired: info.retired,
+    name: registered.name,
+    brand: registered.brand,
+    dotColor: registered.dotColor,
+    retired: registered.retired,
     sessionCount: runs.length,
     totalKm: round(runs.reduce((sum, a) => sum + a.distanceKm, 0), 1),
     firstUsed: dates[dates.length - 1]!,

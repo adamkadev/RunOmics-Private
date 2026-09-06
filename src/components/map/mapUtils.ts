@@ -1,7 +1,9 @@
 import type { ActivityType } from "@/domain/activity/types";
 import type { RouteMeta, RouteCluster } from "@/application/usecases/GetAllRoutes";
 import { HEAT_ROUTE_COLORS } from "@/lib/colors";
-import { ROUTE_GRID, routeCellKey } from "@/lib/routeMatch";
+// Binning only - never moves a coordinate. Shared with route matching (similar
+// runs, personal segments) so "same street" means the same thing everywhere.
+import { routeCellKey } from "@/lib/routeMatch";
 
 export interface HeatFilters {
   year: string | null;
@@ -20,11 +22,6 @@ export function coordLabel(c: RouteCluster): string {
   const lon = `${Math.abs(c.center[0]).toFixed(1)}${c.center[0] >= 0 ? "°E" : "°W"}`;
   return `${lat} ${lon}`;
 }
-
-// Binning only - never moves a coordinate. Shared with route matching (similar
-// runs, personal segments) so "same street" means the same thing everywhere.
-export const HEAT_GRID = ROUTE_GRID;
-const cellKey = routeCellKey;
 
 /**
  * Aggregate all visible routes into a heat-coloured trace. Frequency is counted per
@@ -47,7 +44,7 @@ export function buildHeatGeoJSON(
     const coords = routes[i];
     if (!coords || coords.length < 2) continue;
     const seen = new Set<string>();
-    for (const [lon, lat] of coords) seen.add(cellKey(lon, lat));
+    for (const [lon, lat] of coords) seen.add(routeCellKey(lon, lat));
     for (const key of seen) cellCounts.set(key, (cellCounts.get(key) ?? 0) + 1);
   }
 
@@ -62,11 +59,11 @@ export function buildHeatGeoJSON(
     if (!coords || coords.length < 2) continue;
 
     let runCoords: [number, number][] = [coords[0]!];
-    let runCount = cellCounts.get(cellKey(coords[0]![0], coords[0]![1])) ?? 1;
+    let runCount = cellCounts.get(routeCellKey(coords[0]![0], coords[0]![1])) ?? 1;
 
     for (let p = 1; p < coords.length; p++) {
       const point = coords[p]!;
-      const count = cellCounts.get(cellKey(point[0], point[1])) ?? 1;
+      const count = cellCounts.get(routeCellKey(point[0], point[1])) ?? 1;
       if (count !== runCount) {
         // Close the old run on this same point (so the two features touch, no gap),
         // then start the new run from it too.

@@ -47,22 +47,18 @@ const HERO_OPACITY: Partial<Record<ShareDesign, number>> = {
   aurora: 0.12, pulse: 0.10, terrain: 0.14, prism: 0.11,
 }
 
-function getHeroMetric(design: ShareDesign, activity: Activity): { value: string; unit: string } | null {
+/** Each design leads on its own metric, falling back to distance when the run did not record it. */
+function heroMetric(design: ShareDesign, activity: Activity): { value: string; unit: string } | null {
+  const distance = { value: activity.distanceKm.toFixed(1), unit: 'km' }
   switch (design) {
     case 'aurora':
-      return { value: activity.distanceKm.toFixed(1), unit: 'km' }
+      return distance
     case 'pulse':
-      return activity.avgHeartRate
-        ? { value: String(activity.avgHeartRate), unit: 'bpm' }
-        : { value: activity.distanceKm.toFixed(1), unit: 'km' }
+      return activity.avgHeartRate ? { value: String(activity.avgHeartRate), unit: 'bpm' } : distance
     case 'prism':
-      return activity.paceSecPerKm
-        ? { value: formatClock(activity.paceSecPerKm), unit: '/km' }
-        : { value: activity.distanceKm.toFixed(1), unit: 'km' }
+      return activity.paceSecPerKm ? { value: formatClock(activity.paceSecPerKm), unit: '/km' } : distance
     case 'terrain':
-      return activity.elevationGain
-        ? { value: `+${activity.elevationGain}`, unit: 'm' }
-        : { value: activity.distanceKm.toFixed(1), unit: 'km' }
+      return activity.elevationGain ? { value: `+${activity.elevationGain}`, unit: 'm' } : distance
     default:
       return null
   }
@@ -77,7 +73,7 @@ function drawHeroMetric(
   design: ShareDesign,
   activity: Activity,
 ) {
-  const metric = getHeroMetric(design, activity)
+  const metric = heroMetric(design, activity)
   if (!metric) return
 
   const base = HERO_OPACITY[design] ?? 0
@@ -240,6 +236,23 @@ function getKmMarkers(
 
 // Route points are [lng, lat] (Garmin/GeoJSON order). Apply cosine correction so
 // the projection is isometric despite varying latitude.
+/**
+ * One stroke pass over the whole trace. The route line is built from several:
+ * wide blurred passes lay down the glow, the last thin one is the line itself.
+ */
+function routeStroker(ctx: Ctx, pts: [number, number][], r: number, g: number, b: number) {
+  const [startX, startY] = pts[0]!
+  return (lineWidth: number, alpha: number, blur?: number) => {
+    if (blur) { strokeGlow(ctx, pts, lineWidth, alpha, r, g, b, blur); return }
+    ctx.save()
+    ctx.beginPath(); ctx.moveTo(startX, startY)
+    pts.forEach(([px, py]) => ctx.lineTo(px, py))
+    ctx.strokeStyle = accent(r, g, b, alpha); ctx.lineWidth = lineWidth
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke()
+    ctx.restore()
+  }
+}
+
 function projectGPS(coords: [number, number][], W: number, H: number): [number, number][] {
   const lngs = coords.map(([lng]) => lng)
   const lats = coords.map(([, lat]) => lat)
@@ -260,7 +273,7 @@ function projectGPS(coords: [number, number][], W: number, H: number): [number, 
 
 // ── Theme background functions (ported from DC HTML) ────────────────────────
 
-export function draw_aurora(ctx: Ctx, W: number, H: number, r: number, g: number, b: number, dark: boolean) {
+function drawAurora(ctx: Ctx, W: number, H: number, r: number, g: number, b: number, dark: boolean) {
   ctx.fillStyle = backdrop('aurora', dark); ctx.fillRect(0, 0, W, H)
   glow(ctx, W, H, -W * 0.22, H * 0.12, W * 0.95, r, g, b, dark ? 0.55 : 0.18)
   glow(ctx, W, H, W * 1.18, H * 0.52, W * 0.78, r, g, b, dark ? 0.38 : 0.13)
@@ -269,7 +282,7 @@ export function draw_aurora(ctx: Ctx, W: number, H: number, r: number, g: number
   glass(ctx, -W * 0.08, H * 0.76, W * 0.65, H * 0.62, 0.18, r, g, b, dark, dark ? 0.07 : 0.28)
 }
 
-export function draw_pulse(ctx: Ctx, W: number, H: number, r: number, g: number, b: number, dark: boolean) {
+function drawPulse(ctx: Ctx, W: number, H: number, r: number, g: number, b: number, dark: boolean) {
   ctx.fillStyle = backdrop('pulse', dark); ctx.fillRect(0, 0, W, H)
   glow(ctx, W, H, W * 0.5, H * 0.5, W * 0.7, r, g, b, dark ? 0.18 : 0.07)
   const midY = H * 0.5, amp = H * 0.17, SEGS = 80, T = 15
@@ -293,7 +306,7 @@ export function draw_pulse(ctx: Ctx, W: number, H: number, r: number, g: number,
   glass(ctx, W * 0.5, H * 0.84, W * 0.84, H * 0.09, 0, r, g, b, dark, dark ? 0.09 : 0.36)
 }
 
-export function draw_terrain(ctx: Ctx, W: number, H: number, r: number, g: number, b: number, dark: boolean) {
+function drawTerrain(ctx: Ctx, W: number, H: number, r: number, g: number, b: number, dark: boolean) {
   ctx.fillStyle = backdrop('terrain', dark); ctx.fillRect(0, 0, W, H)
   glow(ctx, W, H, W * 0.5, H * 0.92, W * 0.9, r, g, b, dark ? 0.4 : 0.16)
   const layers = [
@@ -327,7 +340,7 @@ export function draw_terrain(ctx: Ctx, W: number, H: number, r: number, g: numbe
   })
 }
 
-export function draw_prism(ctx: Ctx, W: number, H: number, r: number, g: number, b: number, dark: boolean) {
+function drawPrism(ctx: Ctx, W: number, H: number, r: number, g: number, b: number, dark: boolean) {
   ctx.fillStyle = backdrop('prism', dark); ctx.fillRect(0, 0, W, H)
   glow(ctx, W, H, W * 0.62, H * 0.38, W * 0.72, r, g, b, dark ? 0.28 : 0.11)
   const shapes = [
@@ -425,7 +438,7 @@ function paintActivityTrace(ctx: Ctx, pts: [number, number][], r: number, g: num
   if (!isLoop) dot(last, finishFill(r, g, b))
 }
 
-export function draw_route(
+function drawRoute(
   ctx: Ctx, W: number, H: number,
   r: number, g: number, b: number,
   dark: boolean,
@@ -437,7 +450,7 @@ export function draw_route(
   // No usable trace, or the map never rendered: the stylized map design is the
   // graceful degradation, not a blank card.
   if (!gpsRoute || gpsRoute.length < 2 || mapFailed) {
-    draw_map(ctx, W, H, r, g, b, dark, gpsRoute, null, undefined, null)
+    drawMap(ctx, W, H, r, g, b, dark, gpsRoute, null, undefined, null)
     return
   }
 
@@ -578,7 +591,7 @@ function drawDepartLabel(ctx: Ctx, pt: [number, number]) {
   ctx.restore()
 }
 
-export function draw_map(
+function drawMap(
   ctx: Ctx, W: number, H: number,
   r: number, g: number, b: number,
   dark: boolean,
@@ -633,17 +646,9 @@ export function draw_map(
   const last = pts[pts.length - 1]
   if (!first || !last) return
 
-  const drawRoute = (lw: number, a: number, blur?: number) => {
-    if (blur) { strokeGlow(ctx, pts, lw, a, r, g, b, blur); return }
-    ctx.save()
-    ctx.beginPath(); ctx.moveTo(first[0], first[1])
-    pts.forEach(([px, py]) => ctx.lineTo(px, py))
-    ctx.strokeStyle = accent(r, g, b, a); ctx.lineWidth = lw
-    ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke()
-    ctx.restore()
-  }
-  drawRoute(18, dark ? 0.7 : 0.45, 14)
-  drawRoute(3.5, dark ? 0.95 : 0.82)
+  const strokePass = routeStroker(ctx, pts, r, g, b)
+  strokePass(18, dark ? 0.7 : 0.45, 14)
+  strokePass(3.5, dark ? 0.95 : 0.82)
 
   if (simplified && distanceKm && distanceKm > 0) {
     getKmMarkers(pts, distanceKm).forEach(({ pt, label }) => drawKmPill(ctx, pt, label, r, g, b, dark))
@@ -663,7 +668,7 @@ export function draw_map(
   drawMapCompass(ctx, W, H, r, g, b, dark)
 }
 
-export function draw_memory(ctx: Ctx, W: number, H: number, r: number, g: number, b: number, dark: boolean, photoImg?: HTMLImageElement | null) {
+function drawMemory(ctx: Ctx, W: number, H: number, r: number, g: number, b: number, dark: boolean, photoImg?: HTMLImageElement | null) {
   if (photoImg) {
     drawCover(ctx, photoImg, 0, 0, W, H)
     const topScrim = ctx.createLinearGradient(0, 0, 0, H * 0.32)
@@ -759,19 +764,11 @@ function paintRoute(
   const last = pts[pts.length - 1]
   if (!first || !last) return
 
-  const drawRoute = (lw: number, a: number, blur?: number) => {
-    if (blur) { strokeGlow(ctx, pts, lw, a, r, g, b, blur); return }
-    ctx.save()
-    ctx.beginPath(); ctx.moveTo(first[0], first[1])
-    pts.forEach(([px, py]) => ctx.lineTo(px, py))
-    ctx.strokeStyle = accent(r, g, b, a); ctx.lineWidth = lw
-    ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke()
-    ctx.restore()
-  }
+  const strokePass = routeStroker(ctx, pts, r, g, b)
 
-  drawRoute(36, dark ? 0.45 : 0.28, 24)
-  drawRoute(16, dark ? 0.75 : 0.48, 10)
-  drawRoute(3.5, dark ? 0.98 : 0.85)
+  strokePass(36, dark ? 0.45 : 0.28, 24)
+  strokePass(16, dark ? 0.75 : 0.48, 10)
+  strokePass(3.5, dark ? 0.98 : 0.85)
 
   ctx.beginPath(); ctx.moveTo(first[0], first[1])
   pts.forEach(([px, py]) => ctx.lineTo(px, py))
@@ -909,12 +906,12 @@ export function drawTheme(
 ): void {
   const { gpsRoute, photoImg, locationName, distanceKm, streetLabels, mapImage, mapPoints, mapFailed } = data
   switch (theme) {
-    case 'aurora':  draw_aurora(ctx, W, H, r, g, b, dark); break
-    case 'pulse':   draw_pulse(ctx, W, H, r, g, b, dark); break
-    case 'terrain': draw_terrain(ctx, W, H, r, g, b, dark); break
-    case 'prism':   draw_prism(ctx, W, H, r, g, b, dark); break
-    case 'route':   draw_route(ctx, W, H, r, g, b, dark, gpsRoute, mapImage, mapPoints, mapFailed); break
-    case 'map':     draw_map(ctx, W, H, r, g, b, dark, gpsRoute, locationName, distanceKm, streetLabels); break
-    case 'memory':  draw_memory(ctx, W, H, r, g, b, dark, photoImg ?? null); break
+    case 'aurora':  drawAurora(ctx, W, H, r, g, b, dark); break
+    case 'pulse':   drawPulse(ctx, W, H, r, g, b, dark); break
+    case 'terrain': drawTerrain(ctx, W, H, r, g, b, dark); break
+    case 'prism':   drawPrism(ctx, W, H, r, g, b, dark); break
+    case 'route':   drawRoute(ctx, W, H, r, g, b, dark, gpsRoute, mapImage, mapPoints, mapFailed); break
+    case 'map':     drawMap(ctx, W, H, r, g, b, dark, gpsRoute, locationName, distanceKm, streetLabels); break
+    case 'memory':  drawMemory(ctx, W, H, r, g, b, dark, photoImg ?? null); break
   }
 }

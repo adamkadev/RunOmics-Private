@@ -95,64 +95,18 @@ export function garminAlert(view: PrescriptionView): string | null {
   return view.garminStatus === 'scheduled_different' ? t.coaching.garminOutOfDate : null
 }
 
-/** Prefer explicit distance; estimate timed paced segments, never unpaced effort. */
-export function prescriptionSize(workout: WorkoutPrescription): string {
-  let meters = 0, unpacedSeconds = 0, estimated = false
-  for (const block of workout.blocks) {
-    const count = block.kind === 'repeat' ? block.repetitions : 1
-    for (const segment of block.kind === 'repeat' ? block.steps : [block]) {
-      const target = segment.target
-      if (target.distanceMeters !== undefined) meters += target.distanceMeters * count
-      else if (target.durationSeconds && target.paceSecPerKm) {
-        meters += target.durationSeconds / ((target.paceSecPerKm.min + target.paceSecPerKm.max) / 2) * 1000 * count
-        estimated = true
-      } else unpacedSeconds += (target.durationSeconds ?? 0) * count
-    }
-  }
-  return [meters ? `${estimated ? '~' : ''}${Number((meters / 1000).toFixed(1))} km` : '', unpacedSeconds ? formatDurationWords(unpacedSeconds) : ''].filter(Boolean).join(' + ')
-}
-
-/** The widest pace band the session asks for, for the one-line summary. */
-export function prescriptionPace(workout: WorkoutPrescription): string | null {
-  let min: number | undefined, max: number | undefined
-  for (const block of workout.blocks) {
-    for (const segment of block.kind === 'repeat' ? block.steps : [block]) {
-      const pace = segment.target.paceSecPerKm
-      if (!pace) continue
-      min = min === undefined ? pace.min : Math.min(min, pace.min)
-      max = max === undefined ? pace.max : Math.max(max, pace.max)
-    }
-  }
-  return min !== undefined && max !== undefined ? `${formatClock(min)}–${formatClock(max)}/km` : null
-}
-
-/** Title line under a day: what the session is and how big it is. */
-export function prescriptionSummary(workout: WorkoutPrescription): string {
-  return [prescriptionSize(workout), prescriptionPace(workout)].filter(Boolean).join(' · ')
-}
-
 /** Easy and recovery runs fill the week; everything else is what the week is built around. */
 export function isKeyPrescription(workout: WorkoutPrescription): boolean {
   return !['easy', 'recovery'].includes(workout.type)
-}
-
-export function prescriptionTarget(target: WorkoutTarget): string {
-  return [
-    target.distanceMeters !== undefined ? `${Number((target.distanceMeters / 1000).toFixed(2))} km` : '',
-    target.durationSeconds !== undefined ? (target.durationSeconds < 60 ? `${target.durationSeconds}s` : formatDurationWords(target.durationSeconds)) : '',
-    target.paceSecPerKm ? `${formatClock(target.paceSecPerKm.min)}–${formatClock(target.paceSecPerKm.max)}/km` : '',
-    target.hrBpm ? `${target.hrBpm.min}–${target.hrBpm.max} bpm` : '',
-    target.hrZone !== undefined ? `Z${target.hrZone}` : '',
-  ].filter(Boolean).join(' · ')
 }
 
 // --- Deriving the numbers the Plan UI shows ---------------------------------
 //
 // A prescription states what the athlete should do, not how long it takes: the
 // coach gives "4 km @ 5:50-6:27/km" and the Plan row has to say "~25 min". The
-// three functions below are that derivation, and they share one rule - a value
-// is either computed from what the prescription actually states or it is not
-// shown at all. Nothing here guesses at a pace, a distance or a duration.
+// functions below are that derivation, and they share one rule - a value is
+// either computed from what the prescription actually states or it is not shown
+// at all. Nothing here guesses at a pace, a distance or a duration.
 
 /**
  * A segment's duration: stated outright, or implied by a distance run at a
@@ -183,6 +137,44 @@ function eachSegment(
     }
   }
   return true
+}
+
+/** Prefer explicit distance; estimate timed paced segments, never unpaced effort. */
+export function prescriptionSize(workout: WorkoutPrescription): string {
+  let meters = 0
+  let unpacedSeconds = 0
+  let estimated = false
+
+  eachSegment(workout, (target) => {
+    if (target.distanceMeters !== undefined) {
+      meters += target.distanceMeters
+    } else if (target.durationSeconds && target.paceSecPerKm) {
+      const midpoint = (target.paceSecPerKm.min + target.paceSecPerKm.max) / 2
+      meters += (target.durationSeconds / midpoint) * 1_000
+      estimated = true
+    } else {
+      unpacedSeconds += target.durationSeconds ?? 0
+    }
+  })
+
+  return [
+    meters ? `${estimated ? '~' : ''}${Number((meters / 1000).toFixed(1))} km` : '',
+    unpacedSeconds ? formatDurationWords(unpacedSeconds) : '',
+  ].filter(Boolean).join(' + ')
+}
+
+/** The widest pace band the session asks for, for the one-line summary. */
+export function prescriptionPace(workout: WorkoutPrescription): string | null {
+  let min: number | undefined
+  let max: number | undefined
+
+  eachSegment(workout, ({ paceSecPerKm }) => {
+    if (!paceSecPerKm) return
+    min = min === undefined ? paceSecPerKm.min : Math.min(min, paceSecPerKm.min)
+    max = max === undefined ? paceSecPerKm.max : Math.max(max, paceSecPerKm.max)
+  })
+
+  return min !== undefined && max !== undefined ? `${formatClock(min)}–${formatClock(max)}/km` : null
 }
 
 /**

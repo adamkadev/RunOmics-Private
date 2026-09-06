@@ -96,18 +96,17 @@ import { generateInsight } from '@/lib/gemini'
 // Compute, confirmed on this deployment 2026-08-05.
 export const maxDuration = 300
 
-// The daily quotas and the run's own clock are the spender's business now, so
-// this only caps how many verdicts one invocation even attempts. ?limit=N still
-// buys a bigger manual pass, but a full backfill is several calls to this route
-// rather than one: no serverless invocation can hold the pacing open that long.
+// Daily quotas and the run's own clock belong to the spender; this only caps how
+// many verdicts one invocation even attempts. ?limit=N buys a bigger manual pass,
+// but a full backfill is several calls to this route rather than one - no
+// serverless invocation can hold the pacing open that long.
 const DEFAULT_RUN_VERDICTS_PER_RUN = 6
 const MAX_RUN_VERDICTS_PER_RUN = 60
 
-// Verdicts for runs that just landed are written before any other surface. They
-// used to sit at the very end of the run, behind ten surfaces that could spend
-// the day's quota or the invocation's clock first - so the one insight the
-// athlete was actually waiting for was the first thing dropped. Small on
-// purpose: it is a handful of runs a week, not a backfill.
+// Verdicts for runs that just landed are written before any other surface:
+// behind the other ten, the one insight the athlete is actually waiting for is
+// the first thing the day's quota or the invocation's clock drops. Small on
+// purpose - it is a handful of runs a week, not a backfill.
 const FRESH_RUN_VERDICTS_PER_RUN = 3
 
 interface SurfaceJob {
@@ -145,10 +144,9 @@ function isModelClosed(reason: string): boolean {
   return reason.startsWith('http 429') || reason.startsWith('http 404')
 }
 
-// reserve() returning null used to be a dead end nobody could read back: was
-// the pool actually spent for the day, or did this invocation just run out of
-// its own clock? Same daily ledger the spender itself checks, read back after
-// the fact so a stuck verdict says which one instead of leaving both plausible.
+// reserve() returning null is ambiguous on its own: the pool may be spent for the
+// day, or this invocation may just have run out of its own clock. Reading back the
+// same daily ledger the spender checks lets a stuck verdict name which one.
 function noReserveReason(spender: Spender): string {
   const spent = spender.report()
   const budgetSpent = MODEL_POOL.every((model) => (spent[spendField(model)] ?? 0) >= dailyBudget(model))
@@ -236,12 +234,10 @@ export async function POST(req: NextRequest) {
   })
 }
 
-// ?limit=0 reports how much backfill is left without spending any quota - but
-// Number(null) is 0, and URLSearchParams.get returns null for a param that was
-// never sent, not undefined. The cron and every workflow_dispatch call this
-// route with no ?limit= at all, so this used to coerce straight to the
-// explicit-opt-out value: every automated run silently generated zero run
-// verdicts, fresh or backfilled, no matter how many were owed.
+// ?limit=0 means "report the backlog, spend nothing". An absent ?limit= must not
+// collapse into it: the cron and every workflow_dispatch omit the param, and
+// Number(null) is 0, so coercing would silently zero out every automated run.
+// Hence the explicit null check before any numeric conversion.
 export function requestedLimit(req: NextRequest): number {
   const param = req.nextUrl.searchParams.get('limit')
   if (param === null) return DEFAULT_RUN_VERDICTS_PER_RUN
@@ -336,7 +332,7 @@ async function generateShoeVerdicts(spender: Spender) {
     const context: ShoeVerdictContext = { shoe, ...outlook, status: outlook.status }
     const outcome = await runSurface(spender, {
       surface: shoeVerdictSurface(shoe.gearId),
-        limits: SHOE_VERDICT_LIMITS,
+      limits: SHOE_VERDICT_LIMITS,
       systemInstruction: SHOE_VERDICT_SYSTEM_INSTRUCTION,
       hash: shoeVerdictInsightHash(context),
       guard: shoeVerdictInsightGuard(context),
@@ -371,7 +367,7 @@ async function generateAnalyticsTabs(spender: Spender) {
 
     const outcome = await runSurface(spender, {
       surface: analyticsTabSurface(tab),
-        limits: ANALYTICS_TAB_LIMITS,
+      limits: ANALYTICS_TAB_LIMITS,
       systemInstruction: analyticsTabSystemInstruction(tab),
       hash: analyticsTabInsightHash(tab, lines),
       prompt: (recent) => analyticsTabInsightPrompt(lines, recent),

@@ -93,7 +93,9 @@ function excelDate(date: string | null | undefined): Date | null {
   return Number.isNaN(parsed.getTime()) ? null : parsed
 }
 
-function isoDate(date: Date): string {
+/** UTC `YYYY-MM-DD`. The workbook's dates are computed from UTC timestamps
+ *  throughout; the local-time `isoDate` in @/lib/calendarDate would shift them. */
+function utcDate(date: Date): string {
   return date.toISOString().slice(0, 10)
 }
 
@@ -102,7 +104,7 @@ function dateRange(from: string, to: string): string[] {
   const end = new Date(`${to}T00:00:00.000Z`).getTime()
   if (!Number.isFinite(start) || !Number.isFinite(end) || start > end) return []
   const dates: string[] = []
-  for (let value = start; value <= end; value += DAY_MS) dates.push(isoDate(new Date(value)))
+  for (let timestamp = start; timestamp <= end; timestamp += DAY_MS) dates.push(utcDate(new Date(timestamp)))
   return dates
 }
 
@@ -197,8 +199,8 @@ function currentPrediction(
   const key = raceKeyForDistance(distance)
   if (!key) return null
   for (let index = predictions.length - 1; index >= 0; index--) {
-    const value = predictions[index]?.[key]
-    if (value !== undefined) return value
+    const predictedSeconds = predictions[index]?.[key]
+    if (predictedSeconds !== undefined) return predictedSeconds
   }
   return null
 }
@@ -344,7 +346,7 @@ function activityRows(data: TrainingWorkbookData, hrBounds: HrBounds): RowData[]
 }
 
 function dailyRows(data: TrainingWorkbookData, generatedAt: Date, hrBounds: HrBounds): RowData[] {
-  const today = isoDate(generatedAt)
+  const today = utcDate(generatedAt)
   const calendarRaces = data.upcomingRaces.flatMap((year) => year.races)
   const candidateDates = [
     ...data.activities.map((item) => item.date),
@@ -469,7 +471,7 @@ function recordRows(data: TrainingWorkbookData): RowData[] {
 }
 
 function raceRows(data: TrainingWorkbookData, generatedAt: Date): RowData[] {
-  const today = isoDate(generatedAt)
+  const today = utcDate(generatedAt)
   const raceActivities = data.activities.filter((activity) => activity.type === 'Race')
   const matchedActivities = new Set<string>()
   const rows: RowData[] = []

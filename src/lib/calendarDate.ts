@@ -25,10 +25,3 @@ export function isoWeekNumber(d: Date): number {
   const isoWeek = Math.ceil(((date.getTime() - yearStart.getTime()) / 86400000 + 1) / 7)
   return isoYear * 100 + isoWeek
 }
-
-/** 1 (Monday) through 7 (Sunday) - how far into its week `now` falls. */
-export function daysElapsedInWeek(now: Date): number {
-  const midnightToday = new Date(isoDate(now) + 'T00:00:00')
-  const monday = startOfWeek(midnightToday)
-  return Math.round((midnightToday.getTime() - monday.getTime()) / 86_400_000) + 1
-}

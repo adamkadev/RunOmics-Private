@@ -48,8 +48,8 @@ const MISSED_10 = 'color-mix(in srgb, var(--color-missed) 10%, transparent)'
 const MISSED_25 = 'color-mix(in srgb, var(--color-missed) 25%, transparent)'
 const ACCENT_15 = 'color-mix(in srgb, var(--accent) 15%, transparent)'
 const ACCENT_30 = 'color-mix(in srgb, var(--accent) 30%, transparent)'
-// foreground-tinted neutrals so planned/rest cells stay visible in light mode
-// (previously hardcoded rgba(255,255,255,...) - white on white in light)
+// Foreground-tinted rather than a fixed white wash, so planned/rest cells stay
+// visible in light mode instead of going white-on-white.
 const FG_05 = 'color-mix(in srgb, var(--color-foreground) 5%, transparent)'
 const FG_07 = 'color-mix(in srgb, var(--color-foreground) 7%, transparent)'
 const FG_18 = 'color-mix(in srgb, var(--color-foreground) 18%, transparent)'
