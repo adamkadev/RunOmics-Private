@@ -3,6 +3,7 @@ import type { VerdictTone } from '@/domain/activity/runVerdict'
 import { expectedRpe, runVerdictTone } from '@/domain/activity/runVerdict'
 import type { RunHistory, TypeBaseline } from '@/domain/activity/runHistory'
 import { sessionExecution, type SessionExecution } from '@/domain/activity/sessionExecution'
+import { resolvePerformance, type OfficialRaceResult } from '@/domain/activity/raceResult'
 import { formatClock } from '@/lib/formatters'
 import { insightHash } from './insightHash'
 import { avoidClause, systemInstruction } from './prompt'
@@ -46,17 +47,28 @@ export interface RunVerdictContext {
   activity: Activity
   history: RunHistory
   planned: PlannedWorkout | null
+  official?: OfficialRaceResult | null
 }
 
-function facts({ activity, history, planned }: RunVerdictContext) {
+function facts({ activity, history, planned, official }: RunVerdictContext) {
   const execution = sessionExecution(activity)
+  const performance = resolvePerformance(activity, official ?? null)
+  const certified = performance.source === 'official'
 
   return {
     tone: runVerdictTone(activity),
     type: activity.type,
-    distanceKm: activity.distanceKm,
-    minutes: Math.round(activity.durationSeconds / 60),
-    pace: activity.paceSecPerKm,
+    distanceKm: Math.round(performance.distanceKm * 100) / 100,
+    minutes: Math.round(performance.durationSeconds / 60),
+    pace: performance.paceSecPerKm,
+    ...(certified
+      ? {
+          performanceSource: performance.source,
+          chipTimeSeconds: performance.durationSeconds,
+          overallPlace: performance.overallPlace ?? null,
+          finisherCount: performance.finisherCount ?? null,
+        }
+      : {}),
     avgHr: activity.avgHeartRate,
     rpe: activity.rpe,
     aerTrainingEffect: activity.aerTrainingEffect,
@@ -158,6 +170,12 @@ function standingLine(label: string, daysSinceBetter: number | null): string {
   return `- No run in the last ${Math.round(daysSinceBetter / DAYS_PER_MONTH)} months went faster over ${label}`
 }
 
+function placingLine(official: OfficialRaceResult | null | undefined): string | null {
+  if (!official?.overallPlace) return null
+  const field = official.finisherCount ? ` of ${official.finisherCount}` : ''
+  return `- Finished ${official.overallPlace}${field}`
+}
+
 function cadenceLine(runs: number, daysSinceLastRun: number): string {
   const gap =
     daysSinceLastRun === 0
@@ -181,8 +199,11 @@ export function runVerdictInsightPrompt(context: RunVerdictContext, recentHeadli
     '',
     'Facts:',
     `- Session type: ${f.type}`,
-    `- Distance: ${f.distanceKm} km in ${f.minutes} min`,
+    context.official
+      ? `- Official result over the certified course: ${f.distanceKm} km in ${f.minutes} min (chip time)`
+      : `- Distance: ${f.distanceKm} km in ${f.minutes} min`,
     f.pace ? `- Pace: ${formatClock(f.pace)} /km` : null,
+    placingLine(context.official),
     f.avgHr ? `- Average heart rate: ${f.avgHr} bpm` : null,
     f.rpe !== null
       ? `- Perceived effort (RPE 1-10): ${f.rpe}, against ${expectedRpe(activity).join(' to ')} expected for a ${f.type} of this length`

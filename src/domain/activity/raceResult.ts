@@ -76,3 +76,14 @@ export function matchesEffortDistance(result: OfficialRaceResult, km: number): b
   const meters = km * 1_000
   return Math.abs(result.distanceMeters - meters) <= meters * CERTIFIED_DISTANCE_TOLERANCE_RATIO
 }
+
+export function creditedEffortSeconds(
+  activity: Pick<Activity, 'id' | 'bestEfforts'>,
+  key: string,
+  km: number,
+  officialByActivityId: Map<string, OfficialRaceResult>,
+): number | null {
+  const official = officialByActivityId.get(activity.id)
+  if (official && matchesEffortDistance(official, km)) return official.chipTimeSeconds
+  return activity.bestEfforts?.[key] ?? null
+}

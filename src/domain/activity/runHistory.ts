@@ -1,5 +1,6 @@
 import type { Activity } from './types'
 import { EFFORTS } from './effort'
+import { creditedEffortSeconds, officialResultsByActivityId, type OfficialRaceResult } from './raceResult'
 
 const DAY_MS = 86_400_000
 
@@ -55,15 +56,20 @@ function typeBaseline(activity: Activity, before: Activity[], day: number): Type
 
 const ALL_TIME = Number.MAX_SAFE_INTEGER
 
-function effortStanding(activity: Activity, before: Activity[], day: number): EffortStanding | null {
+function effortStanding(
+  activity: Activity,
+  before: Activity[],
+  day: number,
+  official: Map<string, OfficialRaceResult>,
+): EffortStanding | null {
   const candidates = [...EFFORTS]
     .reverse()
-    .flatMap(({ key, label }) => {
-      const seconds = activity.bestEfforts?.[key]
+    .flatMap(({ key, label, km }) => {
+      const seconds = creditedEffortSeconds(activity, key, km, official)
       if (seconds == null) return []
-      if (!before.some((a) => a.bestEfforts?.[key] != null)) return []
+      if (!before.some((a) => creditedEffortSeconds(a, key, km, official) != null)) return []
 
-      const better = before.find((a) => (a.bestEfforts?.[key] ?? Infinity) < seconds)
+      const better = before.find((a) => (creditedEffortSeconds(a, key, km, official) ?? Infinity) < seconds)
       const daysSinceBetter = better ? day - dayNumber(better.date) : null
       if (daysSinceBetter !== null && daysSinceBetter < STANDING_MIN_DAYS) return []
       return [{ label, daysSinceBetter }]
@@ -79,8 +85,9 @@ function hardMinutes(activity: Activity): number | null {
   return Math.round(seconds / 60)
 }
 
-export function runHistory(activity: Activity, activities: Activity[]): RunHistory {
+export function runHistory(activity: Activity, activities: Activity[], officialResults: OfficialRaceResult[] = []): RunHistory {
   const day = dayNumber(activity.date)
+  const official = officialResultsByActivityId(officialResults)
   const before = activities
     .filter((a) => a.id !== activity.id && dayNumber(a.date) <= day)
     .sort((a, b) => b.date.localeCompare(a.date))
@@ -88,7 +95,7 @@ export function runHistory(activity: Activity, activities: Activity[]): RunHisto
 
   return {
     baseline: typeBaseline(activity, before, day),
-    standing: effortStanding(activity, before, day),
+    standing: effortStanding(activity, before, day, official),
     hardMinutes: hardMinutes(activity),
     runsInPast7Days: before.filter((a) => day - dayNumber(a.date) < 7).length + 1,
     daysSinceLastRun: last ? day - dayNumber(last.date) : null,

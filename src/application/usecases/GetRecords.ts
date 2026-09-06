@@ -2,7 +2,7 @@ import type { Activity } from '@/domain/activity/types'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getPbYears } from '@/infrastructure/repositories/JsonPbRepository'
 import { getOfficialRaceResults } from '@/infrastructure/repositories/JsonRaceResultRepository'
-import { matchesEffortDistance, officialResultsByActivityId, type OfficialRaceResult } from '@/domain/activity/raceResult'
+import { creditedEffortSeconds, officialResultsByActivityId, type OfficialRaceResult } from '@/domain/activity/raceResult'
 import { EFFORTS, DISTANCE_KEY } from '@/domain/activity/effort'
 import { t } from '@/i18n'
 
@@ -35,17 +35,6 @@ export interface BestEffort {
   activityId: string
   date: string
   description: string
-}
-
-function creditedEffortSeconds(
-  activity: Activity,
-  key: string,
-  km: number,
-  officialByActivityId: Map<string, OfficialRaceResult>,
-): number | null {
-  const official = officialByActivityId.get(activity.id)
-  if (official && matchesEffortDistance(official, km)) return official.chipTimeSeconds
-  return activity.bestEfforts?.[key] ?? null
 }
 
 export function computeBestEfforts(

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { deservesVerdict, isFreshRun, runVerdictInsightHash as hashContext } from '../runVerdictInsight'
+import { deservesVerdict, isFreshRun, runVerdictInsightHash as hashContext, runVerdictInsightPrompt } from '../runVerdictInsight'
 import { runHistory } from '@/domain/activity/runHistory'
 import type { Activity, ActivityWeather } from '@/domain/activity/types'
 
@@ -112,5 +112,91 @@ describe('isFreshRun', () => {
 
   it('leaves an older run to the backfill', () => {
     expect(isFreshRun({ date: '2026-07-20' }, now)).toBe(false)
+  })
+})
+
+describe('official race performance in the verdict', () => {
+  const escherOfficial = {
+    activityId: 'escher', eventName: 'Escher Kulturlaf', date: '2026-09-05',
+    distanceMeters: 5_000, chipTimeSeconds: 1_292, gunTimeSeconds: 1_293, overallPlace: 28, finisherCount: 188,
+  }
+
+  const escher = {
+    id: 'escher',
+    date: '2026-09-05',
+    type: 'Race',
+    description: 'Escher Kulturlaf',
+    distanceKm: 5.25,
+    durationSeconds: 1_310,
+    paceSecPerKm: 249.5,
+    avgHeartRate: 196,
+    rpe: 10,
+    aerTrainingEffect: 5,
+    elevationGain: 19,
+    hrZones: [],
+    splits: [],
+    bestEfforts: { '5k': 1237.6 },
+  } as unknown as Activity
+
+  const context = (official: typeof escherOfficial | null) => ({
+    activity: escher,
+    history: runHistory(escher, [escher], official ? [official] : []),
+    planned: null,
+    official,
+  })
+
+  const promptFacts = (official: typeof escherOfficial | null) =>
+    runVerdictInsightPrompt(context(official), [])
+
+  it('states the certified distance and chip time, not the GPS reading', () => {
+    const prompt = promptFacts(escherOfficial)
+
+    expect(prompt).toContain('5 km in 22 min')
+    expect(prompt).not.toContain('5.25 km')
+  })
+
+  it('gives the official pace rather than the over-read one', () => {
+    expect(promptFacts(escherOfficial)).toContain('4:18 /km')
+    expect(promptFacts(escherOfficial)).not.toContain('4:09 /km')
+  })
+
+  it('reads the placing against the field it was run in', () => {
+    expect(promptFacts(escherOfficial)).toContain('Finished 28 of 188')
+  })
+
+  it('never offers the device best effort as the race performance', () => {
+    expect(promptFacts(escherOfficial)).not.toContain('20:38')
+    expect(promptFacts(escherOfficial)).not.toContain('20:37')
+  })
+
+  it('keeps the raw device shape when no official result is linked', () => {
+    const prompt = promptFacts(null)
+
+    expect(prompt).toContain('5.25 km')
+    expect(prompt).not.toContain('certified course')
+  })
+
+  it('changes the hash when an official result arrives over unchanged Garmin data', () => {
+    expect(hashContext(context(escherOfficial))).not.toBe(hashContext(context(null)))
+  })
+
+  it('changes the hash again when the certified time itself is corrected', () => {
+    const corrected = { ...escherOfficial, chipTimeSeconds: 1_290 }
+
+    expect(hashContext(context(corrected))).not.toBe(hashContext(context(escherOfficial)))
+  })
+
+  it('changes the hash when only the placing is corrected', () => {
+    const corrected = { ...escherOfficial, overallPlace: 27 }
+
+    expect(hashContext(context(corrected))).not.toBe(hashContext(context(escherOfficial)))
+  })
+
+  it('leaves a run without an official result hashing exactly as before', () => {
+    const tempo = { ...escher, id: 'tempo', type: 'Tempo', bestEfforts: {} } as Activity
+    const withResults = { activity: tempo, history: runHistory(tempo, [tempo], [escherOfficial]), planned: null, official: null }
+    const withoutResults = { activity: tempo, history: runHistory(tempo, [tempo]), planned: null }
+
+    expect(hashContext(withResults)).toBe(hashContext(withoutResults))
   })
 })

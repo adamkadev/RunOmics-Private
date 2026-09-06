@@ -712,6 +712,16 @@ credited seconds change. A placing is stored with the field size it came from, b
 of 188 and 982nd of 11036 are not the same result; `topPercentile` rounds the pair up so the
 displayed share of the field is never better than the one actually finished.
 
+**The run verdict reads the certified result too.** `effortStanding` compared device best
+efforts directly, so Escher's over-read 20:37.6 outranked the standing 20:42 and the card
+announced a benchmark for a race run in 21:32. It now credits the same `creditedEffortSeconds`
+the records path uses — one resolver, in the domain, rather than a second precedence rule — and
+the verdict facts carry the resolved performance, so the prompt states 5.00 km in 21:32 at
+4:18/km with its placing. The certified fields only enter the facts when an official result
+exists, which keeps the hash of every ordinary run byte-identical: adding the overlay
+invalidates the races it describes and nothing else. A corrected chip time or placing moves the
+hash again, so a verdict written from a superseded result stops being served.
+
 **Race laps are not intervals.** `sessionExecution` reads `interval_active` splits and
 describes repetitions, so a race of plain auto-lap splits resolved to `null` and the coach
 never saw the pacing. `raceExecution` reads the real `lap` splits instead and reports the
