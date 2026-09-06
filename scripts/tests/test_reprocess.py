@@ -65,7 +65,6 @@ def reprocess_run(tmp_path, activity_factory, monkeypatch):
         before = json.loads((activities_dir / "2026-09.json").read_text("utf-8"))["activities"][0]
         assert before["splits"] == overrides.get("splits")
         assert before["vo2maxGarmin"] == overrides.get("vo2maxGarmin")
-        assert before["route"] == overrides.get("route")
 
         store = JsonActivityStore(activities_dir)
         monkeypatch.setattr(reprocess, "_FIT_DIR", fit_dir)
@@ -132,35 +131,6 @@ class TestReprocessSplits:
         )
 
         assert activity["splits"] is None
-
-
-class TestReprocessRoutePrivacy:
-    """Reprocessing must reach the same privacy decision as the sync that first
-    wrote the activity, or a race kept whole on sync would be cropped later."""
-
-    ROUTE = [[0.0, 0.0], [1.0, 1.0], [2.0, 2.0], [0.0, 0.0]]
-
-    def test_a_normal_activity_is_still_cropped(self, reprocess_run):
-        activity = reprocess_run(ParsedFit(duration_seconds=1_800, route=self.ROUTE))
-
-        assert activity["route"] == [[1.0, 1.0], [2.0, 2.0]]
-
-    def test_a_garmin_confirmed_race_keeps_its_whole_course(self, reprocess_run):
-        activity = reprocess_run(
-            ParsedFit(is_race=True, duration_seconds=1_800, route=self.ROUTE)
-        )
-
-        assert activity["type"] == "Race"
-        assert activity["typeSource"] == "garmin"
-        assert activity["route"] == self.ROUTE
-
-    def test_a_race_cropped_by_an_older_sync_is_restored(self, reprocess_run):
-        activity = reprocess_run(
-            ParsedFit(is_race=True, duration_seconds=1_800, route=self.ROUTE),
-            stored={"route": [[1.0, 1.0], [2.0, 2.0]]},
-        )
-
-        assert activity["route"] == self.ROUTE
 
 
 class TestReprocessVo2max:

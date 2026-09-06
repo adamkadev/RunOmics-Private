@@ -224,47 +224,6 @@ class TestMapActivity:
 
         assert data.to_dict()["splits"] is None
 
-    def test_a_normal_activity_route_is_cropped_to_the_privacy_zone(self):
-        parsed = ParsedFit(
-            duration_seconds=1_800,
-            distance_m=6_000.0,
-            route=[[0.0, 0.0], [1.0, 1.0], [2.0, 2.0], [0.0, 0.0]],
-        )
-
-        data = map_activity(self._garmin_activity(), parsed)
-
-        assert data.type != "Race"
-        assert data.route == [[1.0, 1.0], [2.0, 2.0]]
-
-    def test_a_garmin_confirmed_race_keeps_its_whole_course(self):
-        parsed = ParsedFit(
-            is_race=True,
-            duration_seconds=1_800,
-            distance_m=6_000.0,
-            route=[[0.0, 0.0], [1.0, 1.0], [2.0, 2.0], [0.0, 0.0]],
-        )
-
-        data = map_activity(self._garmin_activity(), parsed)
-
-        assert data.type == "Race"
-        assert data.type_source == "garmin"
-        assert data.route == [[0.0, 0.0], [1.0, 1.0], [2.0, 2.0], [0.0, 0.0]]
-
-    def test_a_race_in_the_name_alone_is_still_cropped(self):
-        activity = self._garmin_activity()
-        activity["activityName"] = "Fictionville - Race the sunset"
-        parsed = ParsedFit(
-            duration_seconds=1_800,
-            distance_m=6_000.0,
-            route=[[0.0, 0.0], [1.0, 1.0], [2.0, 2.0], [0.0, 0.0]],
-        )
-
-        data = map_activity(activity, parsed)
-
-        assert data.description == "Race the sunset"
-        assert data.type != "Race"
-        assert data.route == [[1.0, 1.0], [2.0, 2.0]]
-
     def test_long_sample_arrays_are_decimated_for_charts(self):
         parsed = ParsedFit(
             duration_seconds=1800,

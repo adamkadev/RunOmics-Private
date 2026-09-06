@@ -6,7 +6,7 @@ from typing import Any
 
 from processing.activity_type import infer_type_with_source
 from processing.fit_parser import ActivitySplit, ParsedFit, SplitLap  # noqa: F401
-from processing.privacy import route_for_storage
+from processing.privacy import crop_privacy_zone
 
 _MAX_CHART_POINTS = 150
 
@@ -202,7 +202,7 @@ def map_activity(
     avg_hr_raw = (parsed.avg_heart_rate if parsed else None) or api("averageHR", "avgHr")
     avg_heart_rate: int | None = int(avg_hr_raw) if avg_hr_raw else None
 
-    route = route_for_storage(parsed.route, is_race=parsed.is_race) if parsed else None
+    route = crop_privacy_zone(parsed.route) if parsed and parsed.route else None
 
     elevation_gain: float | None = None
     if parsed and parsed.elevation_gain_m > 0:
