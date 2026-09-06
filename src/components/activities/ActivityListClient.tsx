@@ -51,23 +51,23 @@ function WeekStat({ value, label }: { value: string; label: string }) {
 }
 
 // Groups are built from an already date-sorted list, so same-week items are
-// always contiguous - a single linear pass is enough (B3). Weeks are Monday-
+// always contiguous - a single linear pass is enough. Weeks are Monday-
 // Sunday, matching the Plan page's week convention.
 function groupByWeek(items: ActivitySummary[]): WeekGroup[] {
-  const raw: { key: string; items: ActivitySummary[] }[] = []
+  const weeks: { key: string; items: ActivitySummary[] }[] = []
   for (const a of items) {
     const key = isoDate(startOfWeek(new Date(a.date + 'T00:00:00')))
-    const last = raw[raw.length - 1]
-    if (last && last.key === key) {
-      last.items.push(a)
+    const openWeek = weeks[weeks.length - 1]
+    if (openWeek && openWeek.key === key) {
+      openWeek.items.push(a)
     } else {
-      raw.push({ key, items: [a] })
+      weeks.push({ key, items: [a] })
     }
   }
 
   const currentWeekStart = isoDate(startOfWeek(new Date()))
 
-  return raw.map(({ key, items: weekItems }) => {
+  return weeks.map(({ key, items: weekItems }) => {
     const totalKm = weekItems.reduce((s, a) => s + a.distanceKm, 0)
     // Same source as Today and Plan (time in HR zones 1-2 vs 3+) so the E/H
     // ratio can't diverge between screens.

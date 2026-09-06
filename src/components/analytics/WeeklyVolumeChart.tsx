@@ -7,7 +7,7 @@ import { useAccentUiColor } from '@/lib/useAccent'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { ChartExplain } from '@/components/ui/ChartExplain'
 import { ChartFigure } from '@/components/ui/ChartFigure'
-import { WindowedChartCard, windowTickDate, windowTickMonth, windowTicks } from '@/components/ui/ChartWindowNav'
+import { WindowedChartCard, windowDateAxis, windowTickDate, windowTickMonth, windowTicks } from '@/components/ui/ChartWindowNav'
 import { fillWeeklyGaps, monthStartTicks } from '@/domain/timeWindow'
 import { isoDate, startOfWeek } from '@/lib/calendarDate'
 import { t } from '@/i18n'
@@ -144,18 +144,10 @@ export function WeeklyVolumeChart({ points }: { points: WeeklyTrendPoint[] }) {
                       <stop offset="95%" stopColor={accentColor} stopOpacity={0.02} />
                     </linearGradient>
                   </defs>
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-                    axisLine={false}
-                    tickLine={false}
-                    // Every category reaches the formatter, which blanks all but
-                    // the spaced-out dates. Left to its own interval Recharts
-                    // picks a subset of the 52 weekly points first, and a year
-                    // window can land on nothing but blanked ones - no labels.
-                    interval={0}
-                    tickFormatter={(date: string) => (ticks.has(date) ? tickLabel(date) : '')}
-                  />
+                  {/* interval=0 so every category reaches the formatter. Left to
+                      its own interval Recharts thins the 52 weekly points first,
+                      and a year window can land on nothing but blanked ones. */}
+                  <XAxis {...windowDateAxis(ticks, tickLabel)} interval={0} />
                   <YAxis
                     tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
                     axisLine={false}

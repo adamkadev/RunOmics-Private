@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CoachingRepository } from '@/application/ports/CoachingRepository'
 import type { CoachingAdvisor } from '@/application/ports/CoachingAdvisor'
 import { buildCoachingContext } from '@/application/coaching/context'
@@ -12,6 +12,18 @@ import {
 
 const gemini = vi.hoisted(() => ({ generateStructuredJson: vi.fn() }))
 vi.mock('@/lib/gemini', () => gemini)
+
+const COACH_KEY = 'coach-key'
+
+beforeEach(() => {
+  // Coaching reads its own credential; see geminiCredentials.test.ts for the
+  // isolation from GEMINI_API_KEY this stub takes for granted.
+  vi.stubEnv('GEMINI_COACH_API_KEY', COACH_KEY)
+})
+
+afterEach(() => {
+  vi.unstubAllEnvs()
+})
 
 const repository: CoachingRepository = {
   getCurrentPlan: () => null,
@@ -172,9 +184,11 @@ describe('Gemini bootstrap draft boundary', () => {
     })
 
     const request = gemini.generateStructuredJson.mock.calls.at(-1)?.[0] as {
+      apiKey: string
       systemInstruction: string
       prompt: string
     }
+    expect(request.apiKey).toBe(COACH_KEY)
     expect(request.systemInstruction).toContain('Never copy a primary goal to a tune-up')
     expect(request.systemInstruction).toContain('Include every tune-up inside the planning period as a race workout')
     expect(request.systemInstruction).toContain('Treat supplied hrZoneBoundsBpm as authoritative Garmin zone boundaries')

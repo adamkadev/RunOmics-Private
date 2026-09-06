@@ -6,7 +6,7 @@ type PillVariant = 'active' | 'accent' | 'neutral' | 'highlight'
 // `highlight` carries its tint via className (semantic, semi-transparent).
 // Pills are rendered in long scrollable rows, so they stay solid - no
 // backdrop-filter (the blur budget is reserved for chrome + key cards).
-// `active`/`neutral` are the segmented-chip recipe (C2): a translucent,
+// `active`/`neutral` are the segmented-chip recipe: a translucent,
 // foreground-tinted overlay so the chip reads as glass on top of a card
 // while still adapting automatically between light and dark.
 // `accent` is the stronger selection state used by the period selectors,

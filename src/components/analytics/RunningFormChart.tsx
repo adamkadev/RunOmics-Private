@@ -7,7 +7,7 @@ import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { ChartExplain } from '@/components/ui/ChartExplain'
-import { WindowedChartCard, trendDots, windowTickDate, windowTicks } from '@/components/ui/ChartWindowNav'
+import { WindowedChartCard, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
 import { trendFromSeries } from '@/lib/chartTrend'
 import { t } from '@/i18n'
 
@@ -141,13 +141,7 @@ export function RunningFormChart({ points }: { points: WeeklyTrendPoint[] }) {
             <ChartFigure summary={summary}>
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={visible} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-                    axisLine={false}
-                    tickLine={false}
-                    tickFormatter={(date: string) => (ticks.has(date) ? windowTickDate(date) : '')}
-                  />
+                  <XAxis {...windowDateAxis(ticks)} />
                   <YAxis
                     domain={[min, max]}
                     tickFormatter={(v: number) => v.toFixed(decimals)}

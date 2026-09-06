@@ -15,10 +15,10 @@ const RUN_BUDGET_MS = 280_000
 
 // What a call can still cost after reserve() hands the model back: its own
 // timeout, plus the Firestore write that stores the answer. Held back from the
-// budget because the deadline used to be checked against the pacing wait alone
-// - so a call reserved at 44s could run until 59s and take the invocation past
-// the 60s ceiling, where Vercel kills it and the caller sees a 504 instead of
-// the partial result it had already earned.
+// budget so the deadline is checked against the whole cost of the call, not just
+// the pacing wait before it - a call reserved just inside the ceiling would
+// otherwise run past it, and Vercel kills the invocation, turning the partial
+// result the caller had already earned into a 504.
 const CALL_COST_MS = CALL_TIMEOUT_MS + 3_000
 
 export interface Spender {

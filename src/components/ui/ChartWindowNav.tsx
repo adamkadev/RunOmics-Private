@@ -14,6 +14,7 @@ import {
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
+import { CHART_COLORS } from '@/lib/colors'
 
 export interface ChartWindow<T extends { date: string }> {
   range: ChartRange
@@ -225,6 +226,22 @@ export function trendDots(color: string) {
 /** Short "24 Jun" label for a chart's date-keyed X axis. */
 export function windowTickDate(date: string): string {
   return shortDate(date)
+}
+
+/**
+ * The date-keyed X axis every windowed trend chart draws, spread into `<XAxis>`.
+ * `ticks` are the dates that keep a label; the rest are blanked to space them
+ * out, which is why the formatter has to see every category rather than letting
+ * Recharts thin them first.
+ */
+export function windowDateAxis(ticks: Set<string>, label: (date: string) => string = windowTickDate) {
+  return {
+    dataKey: 'date',
+    tick: { fontSize: 11, fill: CHART_COLORS.axisTick },
+    axisLine: false,
+    tickLine: false,
+    tickFormatter: (date: string) => (ticks.has(date) ? label(date) : ''),
+  }
 }
 
 /**

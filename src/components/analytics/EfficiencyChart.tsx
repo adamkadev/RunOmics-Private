@@ -5,7 +5,7 @@ import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { ChartExplain } from '@/components/ui/ChartExplain'
-import { WindowedChartCard, trendDots, windowTickDate, windowTicks } from '@/components/ui/ChartWindowNav'
+import { WindowedChartCard, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
 import { trendFromSeries } from '@/lib/chartTrend'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { t } from '@/i18n'
@@ -98,13 +98,7 @@ export function EfficiencyChart({ points }: { points: WeeklyTrendPoint[] }) {
                       <stop offset="95%" stopColor={CHART_COLORS.efficiency} stopOpacity={0.02} />
                     </linearGradient>
                   </defs>
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-                    axisLine={false}
-                    tickLine={false}
-                    tickFormatter={(date: string) => (ticks.has(date) ? windowTickDate(date) : '')}
-                  />
+                  <XAxis {...windowDateAxis(ticks)} />
                   <YAxis
                     domain={[min, max]}
                     tickFormatter={(v: number) => v.toFixed(1)}

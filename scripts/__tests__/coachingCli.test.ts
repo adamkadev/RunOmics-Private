@@ -66,11 +66,13 @@ describe('coaching CLI', () => {
     const result = spawnSync(process.execPath, nodeArgs('bootstrap', '--days', 'tue,thu,sat,sun', '--runs-per-week', '4', '--data-dir', root, '--out', output), {
       cwd: projectRoot,
       encoding: 'utf-8',
-      env: { ...process.env, GEMINI_API_KEY: '', RUNOMICS_DATA_REPO_URL: '' },
+      // The general key stays configured on purpose: coaching must fail on its
+      // own missing credential rather than borrowing the general quota.
+      env: { ...process.env, GEMINI_API_KEY: 'general-key', GEMINI_COACH_API_KEY: '', RUNOMICS_DATA_REPO_URL: '' },
     })
 
     expect(result.status).toBe(1)
-    expect(result.stderr).toContain('no api key')
+    expect(result.stderr).toContain('GEMINI_COACH_API_KEY is not configured')
     expect(fs.existsSync(path.join(root, 'coaching'))).toBe(false)
     expect(fs.existsSync(output)).toBe(false)
   })

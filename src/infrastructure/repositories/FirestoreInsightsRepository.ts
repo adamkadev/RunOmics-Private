@@ -44,6 +44,16 @@ function docId(surface: string): string {
   return `${surface}_${activeLocale}`
 }
 
+/** The inverse of docId over a whole query: active-locale documents under `prefix`, keyed by bare surface. */
+function bySurface<D extends { id: string }, T>(docs: D[], prefix: string, read: (doc: D) => T): Map<string, T> {
+  const suffix = `_${activeLocale}`
+  return new Map(
+    docs
+      .filter((doc) => doc.id.startsWith(prefix) && doc.id.endsWith(suffix))
+      .map((doc) => [doc.id.slice(0, -suffix.length), read(doc)])
+  )
+}
+
 function servable(cached: CachedInsight, key: InsightKey, now: number): boolean {
   if (cached.hash === key.hash) return true
 
@@ -61,13 +71,6 @@ export async function getCachedInsight(surface: string): Promise<CachedInsight |
   return doc.exists ? (doc.data() as CachedInsight) : null
 }
 
-/**
- * A cached insight, while it is still safe to show: written from exactly the
- * facts the caller just computed, or - once those have moved - recent enough
- * and still guarded against contradicting what is rendered beside it.
- * Null also covers no admin credentials (local dev, e2e build) and a Firestore
- * that is slow or unreachable, so callers can always fall back quietly.
- */
 /** The insight itself, once a caller already holds the document - the part of readVerifiedInsight after the fetch. */
 export function servableInsight(cached: CachedInsight | undefined, key: string | InsightKey, now = Date.now()): Insight | null {
   if (!cached) return null
@@ -75,6 +78,13 @@ export function servableInsight(cached: CachedInsight | undefined, key: string |
   return servable(cached, wanted, now) ? { headline: cached.headline, body: cached.body, bullets: cached.bullets } : null
 }
 
+/**
+ * A cached insight, while it is still safe to show: written from exactly the
+ * facts the caller just computed, or - once those have moved - recent enough
+ * and still guarded against contradicting what is rendered beside it.
+ * Null also covers no admin credentials (local dev, e2e build) and a Firestore
+ * that is slow or unreachable, so callers can always fall back quietly.
+ */
 export async function readVerifiedInsight(surface: string, key: string | InsightKey): Promise<Insight | null> {
   if (!process.env.FIREBASE_PROJECT_ID) return null
 
@@ -91,22 +101,15 @@ export async function readVerifiedInsight(surface: string, key: string | Insight
 
 /**
  * Every cached insight under one surface prefix, in a single query. A static
- * build pre-renders one page per run - a few hundred of them - and each used to
- * read its own verdict from Firestore individually via readVerifiedInsight,
- * racing its own two-second timeout. One slow connection anywhere in a build
- * that large silently dropped that page's verdict even though the cache held a
- * perfectly good one, with nothing after the fact to notice or fix it. Read
- * every document once instead and let callers look theirs up in memory.
+ * build pre-renders a few hundred pages, and one readVerifiedInsight per page
+ * makes each race its own two-second timeout: a single slow connection anywhere
+ * in the build silently drops that page's verdict even though the cache holds a
+ * good one, with nothing after the fact to notice it. Read every document once
+ * and let callers look theirs up in memory.
  */
 export async function getCachedInsightsByPrefix(prefix: string): Promise<Map<string, CachedInsight>> {
   const snapshot = await getAdminFirestore().collection(COLLECTION).get()
-  const suffix = `_${activeLocale}`
-
-  return new Map(
-    snapshot.docs
-      .filter((doc) => doc.id.startsWith(prefix) && doc.id.endsWith(suffix))
-      .map((doc) => [doc.id.slice(0, -suffix.length), doc.data() as CachedInsight])
-  )
+  return bySurface(snapshot.docs, prefix, (doc) => doc.data() as CachedInsight)
 }
 
 /**
@@ -118,13 +121,7 @@ export async function getCachedInsightsByPrefix(prefix: string): Promise<Map<str
  */
 export async function listCachedHashes(prefix: string): Promise<Map<string, string>> {
   const snapshot = await getAdminFirestore().collection(COLLECTION).select('hash').get()
-  const suffix = `_${activeLocale}`
-
-  return new Map(
-    snapshot.docs
-      .filter((doc) => doc.id.startsWith(prefix) && doc.id.endsWith(suffix))
-      .map((doc) => [doc.id.slice(0, -suffix.length), doc.get('hash') as string])
-  )
+  return bySurface(snapshot.docs, prefix, (doc) => doc.get('hash') as string)
 }
 
 export async function saveCachedInsight(

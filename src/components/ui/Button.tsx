@@ -9,11 +9,11 @@ type ButtonVariant = 'primary' | 'secondary' | 'ghost'
 const VARIANT_CLASS: Record<ButtonVariant, string> = {
   primary:
     'bg-accent text-accent-foreground shadow-[0_8px_20px_-8px_var(--accent)] hover:brightness-105 active:scale-[0.96]',
-  // No backdrop-filter here (C6): secondary buttons are typically nested
+  // No backdrop-filter here: secondary buttons are typically nested
   // inside an already-blurred GlassSurface card, so a second blur would be
   // redundant GPU cost for no visible gain - same call as Pill's neutral
   // variant. Foreground-tinted (not literal white) so the overlay stays
-  // visible once the glass card itself turns near-white in light mode (C4).
+  // visible once the glass card itself turns near-white in light mode.
   secondary:
     'border border-foreground/[0.16] bg-foreground/10 text-foreground hover:bg-foreground/[0.14] active:scale-[0.96]',
   ghost:

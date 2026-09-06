@@ -1,3 +1,8 @@
+// Turns the active plan plus the athlete's Garmin sync state into an explicit,
+// ordered list of Garmin mutations. Pure: nothing here performs I/O, and Garmin
+// is reached only through the operations returned, so a preview and the apply
+// that follows compute the same plan from the same inputs.
+
 import type { CoachingPlan, WorkoutEvaluation, WorkoutPrescription } from '@/domain/coaching/types'
 import {
   isCourseAwareRace,
@@ -14,19 +19,6 @@ import {
   type GarminSyncState,
 } from './garminSyncState'
 
-/**
- * Turns the active plan plus the athlete's Garmin sync state into an explicit,
- * ordered list of Garmin mutations. Pure: it performs no I/O and reaches
- * Garmin only through the operations it returns, so a preview and the apply
- * that follows compute the same plan from the same inputs.
- */
-
-/**
- * `keep` and `skip` both leave Garmin untouched, but for opposite reasons:
- * `keep` is a workout already synchronised and unchanged, `skip` is one
- * deliberately excluded from structured-workout sync. Reporting both as "skip"
- * hid that difference.
- */
 export interface GarminSyncWindow {
   /** Prescriptions before this date are already in the past, so never synced. */
   today: string
@@ -64,6 +56,12 @@ export function selectSyncableWorkouts(
     .sort((left, right) => left.date.localeCompare(right.date) || left.id.localeCompare(right.id))
 }
 
+/**
+ * `keep` and `skip` both leave Garmin untouched, but for opposite reasons:
+ * `keep` is a workout already synchronised and unchanged, `skip` is one
+ * deliberately excluded from structured-workout sync. They stay distinct so a
+ * preview says which of the two a missing write was.
+ */
 export type GarminSyncAction = 'create' | 'schedule' | 'replace' | 'delete' | 'keep' | 'skip'
 
 export interface GarminSyncOperation {

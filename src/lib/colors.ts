@@ -12,10 +12,10 @@ const c = HUE
 
 // ── Charts ──────────────────────────────────────────────────────────────────
 
-// Form (TSB), weekly volume and the long-run bar used to live here as fixed
-// emerald. They are the "this is your headline number" marks, so they now come
-// from `useAccentUiColor()` and repaint with the accent picker; everything left
-// below is either categorical or semantic and stays put.
+// Form (TSB), weekly volume and the long-run bar are deliberately absent: they
+// are the "this is your headline number" marks, so they come from
+// `useAccentUiColor()` and repaint with the accent picker. Everything below is
+// either categorical or semantic, and stays put whatever the accent.
 export const CHART_COLORS = {
   // Brand green, for the marks that are the app's own voice rather than a
   // metric: the map's route/start marker and the pace ramp's easy end.

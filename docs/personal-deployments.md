@@ -141,7 +141,8 @@ Vercel supports any number of projects per repository. Give it its own domain.
 | `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` | her service account |
 | `RUNOMICS_DATA_REPO_URL`, `RUNOMICS_DATA_REPO_TOKEN` | her data repository and its PAT (step 1) |
 | `INTERNAL_NOTIFY_SECRET` | a fresh random string, **not** the one used by another profile |
-| `GEMINI_API_KEY` | her own key - the free-tier quota is per key, so a shared one has the two deployments starving each other |
+| `GEMINI_API_KEY` | her own key for the general AI surfaces - the free-tier quota is per key, so a shared one has the two deployments starving each other |
+| `GEMINI_COACH_API_KEY` | her own key for adaptive coaching, from a separate Google project - coaching never falls back to `GEMINI_API_KEY` |
 | `NEXT_PUBLIC_MAPTILER_TOKEN` | may be shared, subject to the plan's request quota |
 
 `NEXT_PUBLIC_LOCALE` is read at build time (`src/i18n/index.ts`), so changing it
