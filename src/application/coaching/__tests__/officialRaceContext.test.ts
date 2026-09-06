@@ -129,6 +129,38 @@ describe('official race performance coaching context', () => {
     expect(compact).not.toHaveProperty('garmin')
   })
 
+  it('keeps an ordinary activity without an overlay in the legacy compact shape', () => {
+    const activity = {
+      ...escher(),
+      id: 'easy-run',
+      type: 'Base' as const,
+      description: 'Easy run',
+      distanceKm: 8.04,
+      durationSeconds: 2400,
+      paceSecPerKm: 298.5,
+      avgHeartRate: 145,
+      rpe: 3,
+      aerTrainingEffect: 2.1,
+      anaTrainingEffect: 0,
+      splits: null,
+    }
+    const compact = buildCoachingContext(input(activity), '2026-09-05').recentActivities[0]!
+
+    expect(compact).toEqual({
+      id: 'easy-run',
+      date: '2026-09-05',
+      type: 'Base',
+      distanceKm: 8,
+      durationSeconds: 2400,
+      paceSecPerKm: 299,
+      avgHeartRate: 145,
+      rpe: 3,
+      aerobicTrainingEffect: 2.1,
+      anaerobicTrainingEffect: 0,
+      execution: null,
+    })
+  })
+
   it('keeps interval execution semantics untouched and exposes real race laps separately', () => {
     const activity = escher()
 
