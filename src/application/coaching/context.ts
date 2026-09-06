@@ -2,6 +2,8 @@ import { trainingHistory, isRunningActivity, type TrainingHistory } from '@/doma
 import { createHash } from 'crypto'
 import type { Activity } from '@/domain/activity/types'
 import { sessionExecution, type SessionExecution } from '@/domain/activity/sessionExecution'
+import { raceExecution, type RaceExecution } from '@/domain/activity/raceExecution'
+import type { OfficialRaceResult } from '@/domain/race/officialRaceResult'
 import { COACHING_TO_ACTIVITY_TYPE, type CoachingPlan } from '@/domain/coaching/types'
 import { raceDistanceMeters } from '@/domain/coaching/raceTarget'
 import type { AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
@@ -15,6 +17,27 @@ const DAY_MS = 86_400_000
 const RECENT_DAYS = 28
 const RACE_DISTANCE_TOLERANCE = 0.1
 
+export interface CompactOfficialPerformance {
+  source: 'official'
+  eventName: string
+  distanceKm: number
+  durationSeconds: number
+  paceSecPerKm: number
+  gunTimeSeconds?: number
+  overallPlace?: number
+  provenance?: string
+}
+
+export interface CompactGarminPerformance {
+  distanceKm: number
+  durationSeconds: number
+  paceSecPerKm: number | null
+  avgHeartRate: number | null
+  rpe: number | null
+  aerobicTrainingEffect: number | null
+  anaerobicTrainingEffect: number | null
+}
+
 export interface CompactActivity {
   id: string
   date: string
@@ -27,6 +50,9 @@ export interface CompactActivity {
   aerobicTrainingEffect: number | null
   anaerobicTrainingEffect: number | null
   execution: SessionExecution
+  performance?: CompactOfficialPerformance
+  garmin?: CompactGarminPerformance
+  raceExecution?: RaceExecution
 }
 
 export type CoachingUpcomingRace = Omit<UpcomingRace, 'targetSeconds'> & {
@@ -84,6 +110,7 @@ export interface CoachingContextInput {
   goals: GoalYear[]
   personalBests: PbYear[]
   upcomingRaces: UpcomingRace[]
+  officialRaceResults?: OfficialRaceResult[]
 }
 
 function dayNumber(date: string): number {
@@ -92,6 +119,11 @@ function dayNumber(date: string): number {
 
 function rounded(value: number): number {
   return Math.round(value * 10) / 10
+}
+
+function roundedTo(value: number, digits: number): number {
+  const scale = 10 ** digits
+  return Math.round(value * scale) / scale
 }
 
 function recentActivities(activities: Activity[], referenceDate: string): Activity[] {
@@ -147,30 +179,77 @@ function adherence(plan: CoachingPlan | null, activities: Activity[], referenceD
   return { prescribed: prescribed.length, completed, percent: Math.round((completed / prescribed.length) * 100) }
 }
 
+function compactActivity(
+  activity: Activity,
+  officialByActivityId: Map<string, OfficialRaceResult>,
+): CompactActivity {
+  const official = officialByActivityId.get(activity.id)
+  const rawPace = activity.paceSecPerKm === null ? null : Math.round(activity.paceSecPerKm)
+  const raw: CompactActivity = {
+    id: activity.id,
+    date: activity.date.slice(0, 10),
+    type: activity.type,
+    distanceKm: rounded(activity.distanceKm),
+    durationSeconds: activity.durationSeconds,
+    paceSecPerKm: rawPace,
+    avgHeartRate: activity.avgHeartRate,
+    rpe: activity.rpe,
+    aerobicTrainingEffect: activity.aerTrainingEffect,
+    anaerobicTrainingEffect: activity.anaTrainingEffect,
+    execution: sessionExecution(activity),
+  }
+
+  const race = raceExecution(activity)
+  if (race) raw.raceExecution = race
+  if (!official) return raw
+
+  const officialDistanceKm = official.distanceMeters / 1_000
+  const officialPace = officialDistanceKm > 0
+    ? roundedTo(official.chipTimeSeconds / officialDistanceKm, 1)
+    : 0
+
+  return {
+    ...raw,
+    distanceKm: officialDistanceKm,
+    durationSeconds: official.chipTimeSeconds,
+    paceSecPerKm: officialPace,
+    performance: {
+      source: 'official',
+      eventName: official.eventName,
+      distanceKm: officialDistanceKm,
+      durationSeconds: official.chipTimeSeconds,
+      paceSecPerKm: officialPace,
+      ...(official.gunTimeSeconds === undefined ? {} : { gunTimeSeconds: official.gunTimeSeconds }),
+      ...(official.overallPlace === undefined ? {} : { overallPlace: official.overallPlace }),
+      ...(official.source === undefined ? {} : { provenance: official.source }),
+    },
+    garmin: {
+      distanceKm: roundedTo(activity.distanceKm, 3),
+      durationSeconds: activity.durationSeconds,
+      paceSecPerKm: activity.paceSecPerKm === null ? null : roundedTo(activity.paceSecPerKm, 1),
+      avgHeartRate: activity.avgHeartRate,
+      rpe: activity.rpe,
+      aerobicTrainingEffect: activity.aerTrainingEffect,
+      anaerobicTrainingEffect: activity.anaTrainingEffect,
+    },
+  }
+}
+
 export function buildCoachingContext(input: CoachingContextInput, referenceDate: string): CoachingContext {
   const recent = recentActivities(input.activities.filter(isRunningActivity), referenceDate)
   const reference = dayNumber(referenceDate)
   const within = (days: number) => recent.filter((activity) => reference - dayNumber(activity.date) < days)
   const last7 = within(7)
   const garmin = input.trainingStatus
+  const officialByActivityId = new Map(
+    (input.officialRaceResults ?? []).map((result) => [result.activityId, result]),
+  )
 
   return {
     schemaVersion: 1,
     referenceDate,
     trainingHistory: trainingHistory(input.activities, referenceDate),
-    recentActivities: recent.map((activity) => ({
-      id: activity.id,
-      date: activity.date.slice(0, 10),
-      type: activity.type,
-      distanceKm: rounded(activity.distanceKm),
-      durationSeconds: activity.durationSeconds,
-      paceSecPerKm: activity.paceSecPerKm === null ? null : Math.round(activity.paceSecPerKm),
-      avgHeartRate: activity.avgHeartRate,
-      rpe: activity.rpe,
-      aerobicTrainingEffect: activity.aerTrainingEffect,
-      anaerobicTrainingEffect: activity.anaTrainingEffect,
-      execution: sessionExecution(activity),
-    })),
+    recentActivities: recent.map((activity) => compactActivity(activity, officialByActivityId)),
     volume: {
       distance7DaysKm: rounded(last7.reduce((sum, activity) => sum + activity.distanceKm, 0)),
       distance28DaysKm: rounded(recent.reduce((sum, activity) => sum + activity.distanceKm, 0)),
