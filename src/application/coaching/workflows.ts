@@ -19,6 +19,7 @@ import {
 } from '@/domain/coaching/types'
 import { applyCoachDecision, getFutureSnapshot } from '@/domain/coaching/lifecycle'
 import { raceDistanceMeters } from '@/domain/coaching/raceTarget'
+import { macrocycleOf, resolveMacrocycleStart } from '@/domain/coaching/macrocycle'
 import { parseCoachDecision, parseCoachingPlan, parseWorkoutEvaluation } from '@/domain/coaching/validation'
 import type { CoachingRepository } from '@/application/ports/CoachingRepository'
 import type { AdvisorRecommendation, CoachingAdvisor, CoachingPlanDraft } from '@/application/ports/CoachingAdvisor'
@@ -133,6 +134,7 @@ function normalizeBootstrapPlan(
   strategy: BootstrapTargetStrategy,
   createdAt: string,
   id: () => string,
+  macrocycleStartDate: string,
 ): CoachingPlan {
   validateBootstrapDraftSemantics(draft, strategy, context)
   const planningStart = new Date(`${strategy.planningStartDate}T00:00:00Z`)
@@ -183,6 +185,7 @@ function normalizeBootstrapPlan(
     id: planId,
     revision: 1,
     status: 'active',
+    macrocycleStartDate,
     targetEvent: strategy.primary,
     ...(strategy.tuneUps.length ? { tuneUpEvents: strategy.tuneUps } : {}),
     goal: selectGoal(context, strategy.primary),
@@ -415,7 +418,14 @@ export async function createBootstrapProposal(
     ...(targetEventId ? { targetEventId } : {}),
   })
   validateDraftFrequency(draft, runsPerWeek)
-  const proposedPlan = normalizeBootstrapPlan(draft, context, availableWeekdays, strategy, createdAt, id)
+  // A new rolling block is not a new journey: only a different primary target
+  // starts the macrocycle over.
+  const macrocycleStartDate = resolveMacrocycleStart(
+    services.repository.getState(),
+    strategy.primary.id,
+    strategy.planningStartDate,
+  )
+  const proposedPlan = normalizeBootstrapPlan(draft, context, availableWeekdays, strategy, createdAt, id, macrocycleStartDate)
   proposedPlan.trainingPreferences = { availableWeekdays, ...(runsPerWeek === undefined ? {} : { runsPerWeek }) }
   const decisionId = id()
   const decision = parseCoachDecision({
@@ -512,6 +522,7 @@ function nextState(previous: CoachState | null, proposal: CoachingProposal, plan
     lastBootstrapAt: proposal.kind === 'bootstrap' ? createdAt : previous?.lastBootstrapAt ?? null,
     lastPostActivityAt: proposal.kind === 'post_activity' ? createdAt : previous?.lastPostActivityAt ?? null,
     lastWeeklyReviewAt: proposal.kind === 'weekly_review' ? createdAt : previous?.lastWeeklyReviewAt ?? null,
+    macrocycle: macrocycleOf(plan),
     updatedAt: createdAt,
   }
 }

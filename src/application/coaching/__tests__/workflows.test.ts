@@ -170,6 +170,49 @@ describe('coaching workflows', () => {
     expect(repository.getState()?.lastBootstrapAt).toBe(proposal.createdAt)
   })
 
+  it('opens a new macrocycle when there is no journey toward the target yet', async () => {
+    const repository = new MemoryRepository()
+    const advisor: CoachingAdvisor = {
+      bootstrap: async () => fourWeekPlan(),
+      evaluateActivity: async () => { throw new Error('not called') },
+      reviewWeek: async () => { throw new Error('not called') },
+    }
+    const context = buildCoachingContext(contextInput(null), '2026-09-07')
+    const proposal = await createBootstrapProposal(context, [2, 3], {
+      repository, advisor, id: ids(), now: () => new Date('2026-09-07T08:00:00Z'),
+    })
+    const result = applyCoachingProposal(proposal, repository, coachingContextHash(context))
+
+    expect(result.macrocycleStartDate).toBe(result.block.startDate)
+    expect(repository.getState()?.macrocycle).toEqual({
+      targetEventId: result.targetEvent.id,
+      startDate: result.block.startDate,
+    })
+  })
+
+  it('keeps the macrocycle start when the next rolling block bootstraps on the same target', async () => {
+    const repository = new MemoryRepository()
+    const advisor: CoachingAdvisor = {
+      bootstrap: async () => fourWeekPlan(),
+      evaluateActivity: async () => { throw new Error('not called') },
+      reviewWeek: async () => { throw new Error('not called') },
+    }
+    const context = buildCoachingContext(contextInput(null), '2026-09-07')
+    const first = applyCoachingProposal(
+      await createBootstrapProposal(context, [2, 3], { repository, advisor, id: ids(), now: () => new Date('2026-09-07T08:00:00Z') }),
+      repository,
+      coachingContextHash(context),
+    )
+
+    // The block finished; the next one is generated toward the same target.
+    repository.plan = null
+    const next = await createBootstrapProposal(context, [2, 3], {
+      repository, advisor, id: ids(), now: () => new Date('2026-10-05T08:00:00Z'),
+    })
+
+    expect(next.proposedPlan?.macrocycleStartDate).toBe(first.macrocycleStartDate)
+  })
+
   it('falls back to the near-term heuristic when Garmin has no primary event', async () => {
     const requests: BootstrapRequest[] = []
     const context = targetContext([
@@ -774,6 +817,42 @@ describe('coaching workflows', () => {
     expect(result.weeks[0]!.workouts[0]).toEqual(plan().weeks[0]!.workouts[0])
     expect(result.weeks[1]!.workouts[0]).toEqual(existingFuture)
     expect(repository.state?.lastWeeklyReviewAt).toBe(proposal.createdAt)
+  })
+
+  it('keeps the macrocycle anchored across a weekly-review replan', async () => {
+    const repository = new MemoryRepository()
+    repository.plan = { ...plan(), macrocycleStartDate: '2026-08-03' }
+    const existingFuture = repository.plan.weeks[1]!.workouts[0]!
+    const advisor: CoachingAdvisor = {
+      bootstrap: async () => { throw new Error('not called') },
+      evaluateActivity: async () => { throw new Error('not called') },
+      reviewWeek: async () => ({
+        outcome: 'REPLAN', reasonCodes: ['ROLLING_HORIZON'], summary: 'Extend the rolling horizon.', evidence: [],
+        changes: [{ kind: 'replace_future', effectiveDate: '2026-09-14', weeks: [{ ...repository.plan!.weeks[1]!, workouts: [existingFuture] }] }],
+      }),
+    }
+    const context = buildCoachingContext(contextInput(repository.plan), '2026-09-14')
+    const proposal = await createWeeklyReviewProposal(context, { repository, advisor, id: ids() })
+    const result = applyCoachingProposal(proposal, repository, coachingContextHash(context))
+
+    // A replan rewrites the horizon; it does not restart the journey.
+    expect(result.macrocycleStartDate).toBe('2026-08-03')
+    expect(repository.state?.macrocycle).toEqual({ targetEventId: result.targetEvent.id, startDate: '2026-08-03' })
+  })
+
+  it('records the macrocycle for a plan written before the field existed', async () => {
+    const repository = new MemoryRepository()
+    repository.plan = plan()
+    const advisor: CoachingAdvisor = {
+      bootstrap: async () => { throw new Error('not called') },
+      evaluateActivity: async () => ({ outcome: 'KEEP', reasonCodes: ['SESSION_COMPLETED'], summary: 'As intended.', evidence: [], changes: [] }),
+      reviewWeek: async () => { throw new Error('not called') },
+    }
+    const context = buildCoachingContext(contextInput(repository.plan), '2026-09-09')
+    const proposal = await createPostActivityProposal(context, latestActivity, { repository, advisor, id: ids() })
+    applyCoachingProposal(proposal, repository, coachingContextHash(context))
+
+    expect(repository.state?.macrocycle).toEqual({ targetEventId: 'race-1', startDate: plan().block.startDate })
   })
 
   it('does not write when advisor output is invalid', async () => {

@@ -218,6 +218,12 @@ export interface CoachState {
   lastBootstrapAt: string | null
   lastPostActivityAt: string | null
   lastWeeklyReviewAt: string | null
+  /**
+   * The macrocycle the rolling blocks sit inside. Kept on the state rather than
+   * only on the plan because a plan is replaced whenever a new block is
+   * generated, while the journey toward the same primary target continues.
+   */
+  macrocycle?: { targetEventId: string; startDate: string }
   updatedAt: string
 }
 

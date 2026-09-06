@@ -234,6 +234,9 @@ export function parseCoachingPlan(value: unknown, path = 'plan'): CoachingPlan {
       focus: string(blockRaw.focus, `${path}.block.focus`),
     },
     ...(raw.trainingPreferences === undefined ? {} : { trainingPreferences: trainingPreferences(raw.trainingPreferences) }),
+    ...(raw.macrocycleStartDate === undefined
+      ? {}
+      : { macrocycleStartDate: isoDate(raw.macrocycleStartDate, `${path}.macrocycleStartDate`) }),
     targetEvent: targetEvent(raw.targetEvent, `${path}.targetEvent`),
     ...(raw.tuneUpEvents === undefined ? {} : { tuneUpEvents: array(raw.tuneUpEvents, `${path}.tuneUpEvents`, targetEvent) }),
     goal: trainingGoal(raw.goal, `${path}.goal`),
@@ -242,6 +245,10 @@ export function parseCoachingPlan(value: unknown, path = 'plan'): CoachingPlan {
   }
 
   if (plan.block.startDate > plan.block.endDate) throw new CoachingValidationError(`${path}.block`, 'startDate must be <= endDate')
+  // The block is one slice of the macrocycle, so the journey cannot start after it.
+  if (plan.macrocycleStartDate !== undefined && plan.macrocycleStartDate > plan.block.startDate) {
+    throw new CoachingValidationError(`${path}.macrocycleStartDate`, 'must not start after the training block')
+  }
   if (plan.block.endDate > plan.targetEvent.date) throw new CoachingValidationError(`${path}.block.endDate`, 'training block cannot extend beyond the primary target event')
   if (plan.targetEvent.role !== undefined && plan.targetEvent.role !== 'primary') throw new CoachingValidationError(`${path}.targetEvent.role`, 'targetEvent must be primary')
   if (plan.weeks.length === 0 || plan.weeks.length > 4) throw new CoachingValidationError(`${path}.weeks`, 'must contain 1 to 4 weeks')
@@ -399,7 +406,18 @@ export function parseCoachState(value: unknown, path = 'state'): CoachState {
     lastBootstrapAt: raw.lastBootstrapAt === null ? null : timestamp(raw.lastBootstrapAt, `${path}.lastBootstrapAt`),
     lastPostActivityAt: raw.lastPostActivityAt === null ? null : timestamp(raw.lastPostActivityAt, `${path}.lastPostActivityAt`),
     lastWeeklyReviewAt: raw.lastWeeklyReviewAt === null ? null : timestamp(raw.lastWeeklyReviewAt, `${path}.lastWeeklyReviewAt`),
+    ...(raw.macrocycle === undefined || raw.macrocycle === null
+      ? {}
+      : { macrocycle: macrocycleState(raw.macrocycle, `${path}.macrocycle`) }),
     updatedAt: timestamp(raw.updatedAt, `${path}.updatedAt`),
+  }
+}
+
+function macrocycleState(value: unknown, path: string): NonNullable<CoachState['macrocycle']> {
+  const raw = object(value, path)
+  return {
+    targetEventId: string(raw.targetEventId, `${path}.targetEventId`),
+    startDate: isoDate(raw.startDate, `${path}.startDate`),
   }
 }
 
