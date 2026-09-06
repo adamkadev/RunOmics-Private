@@ -102,7 +102,12 @@ export function AnalyticsClient({
 
   useEffect(() => {
     const stored = readStoredView(years)
+    // Restored from localStorage once, on mount. A state initializer would read
+    // it during the server render too and trip a hydration mismatch, and
+    // re-running it on a later `years` would overwrite the year the user picked.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (stored) setView(stored)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {

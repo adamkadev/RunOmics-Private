@@ -1139,21 +1139,34 @@ ESLint's config re-declares `eslint-config-next`'s default ignores because overr
 replaces the list wholesale. Beyond the defaults it skips `scripts/**` (Node utilities, not
 part of the linted Next.js app) and `coverage/**`.
 
-Rule suppressions live in `eslint.config.mjs` as file-scoped overrides rather than as
-inline directives, so the source stays comment-free while each rule remains on everywhere
-else. What each override is for:
+The two React hook rules are suppressed **per effect**, with a one-line
+`eslint-disable-next-line` carrying its reason, never per file. A file-wide override also
+exempts every hook written in that file later, which is exactly the code most worth
+linting; the directive expires with the line it is attached to, and ESLint reports it as
+an unused directive once the effect no longer needs it.
 
-- **`react-hooks/set-state-in-effect`** — `ActivityListClient`, `AnalyticsClient`,
-  `FirstLaunchHint`, `ThemeToggle`, `AccentPicker`, `ThemeSegmented` each restore state
-  from `localStorage`/`sessionStorage` once after mount. It has to be an effect rather than
-  a state initializer: an initializer would differ from the server-rendered markup and trip
-  a hydration mismatch. `ActivityListClient` additionally guards with a `hasRestored` ref
-  and merges only into still-default values, so a restore can never clobber a user edit.
+- **`react-hooks/set-state-in-effect`** — `ActivityListClient`, `AnalyticsClient` and
+  `FirstLaunchHint` restore state from `localStorage`/`sessionStorage` once after mount. It
+  has to be an effect rather than a state initializer: an initializer would differ from the
+  server-rendered markup and trip a hydration mismatch. `ActivityListClient` additionally
+  guards with a `hasRestored` ref and merges only into still-default values, so a restore
+  can never clobber a user edit.
 - **`react-hooks/exhaustive-deps`** — `AnalyticsClient` (one-time mount effect),
   `CelebrationOverlay`, `useMapRoutes` and `useShareCardMap` deliberately narrow their
   dependency arrays. These effects own imperative MapLibre/canvas resources whose teardown
   and rebuild is expensive; re-running them on every referenced value would recreate the map
   or the render on each parent render.
+
+`ThemeToggle`, `AccentPicker` and `ThemeSegmented` needed no suppression at all: their
+"have we hydrated yet?" flag is `useMounted` (`src/lib/useMounted.ts`), a
+`useSyncExternalStore` whose server snapshot is `false` and whose client snapshot is `true`.
+Same two-pass render as the `useEffect(() => setMounted(true))` it replaces — false through
+the server render and the hydration render, true immediately after — but React's own idiom
+for reading something outside React, so the rule has nothing to object to.
+
+File-scoped overrides remain in `eslint.config.mjs` for two rules that really are about a
+whole file:
+
 - **`@typescript-eslint/no-explicit-any`** — `ActivityMap` builds MapLibre `interpolate`
   paint expressions, which are heterogeneous nested arrays that MapLibre's own types do not
   express usefully.

@@ -1,18 +1,14 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { useTheme } from 'next-themes'
 import { Sun, Moon } from 'lucide-react'
+import { useMounted } from '@/lib/useMounted'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 export function ThemeToggle({ className }: { className?: string }) {
   const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  const mounted = useMounted()
 
   if (!mounted) {
     return <div className={cn('h-8 w-8 rounded-md', className)} />

@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { useTheme } from 'next-themes'
+import { useMounted } from '@/lib/useMounted'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -13,12 +13,8 @@ const OPTIONS = [
 
 export function ThemeSegmented() {
   const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
+  const mounted = useMounted()
   const s = t.settings.appearance
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
   const current = mounted ? theme : undefined
 

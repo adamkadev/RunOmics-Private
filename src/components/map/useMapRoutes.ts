@@ -182,6 +182,10 @@ export function useMapRoutes(
       mapRef.current = null;
       setMapReady(false);
     };
+    // Building the map tears down and recreates the MapLibre instance, so it
+    // keys off `data` alone; the routes, clusters and marker cleanup it reads
+    // are all derived from that same `data`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
   useEffect(() => {
@@ -227,6 +231,9 @@ export function useMapRoutes(
       ],
       { padding: 60, maxZoom: 14, duration: 800 },
     );
+    // `selected` is `routes[selectedIdx]`: keying off the index avoids
+    // re-flying the camera whenever the routes array is rebuilt unchanged.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedIdx, mapReady, worldView]);
 
   useEffect(() => {
@@ -278,6 +285,9 @@ export function useMapRoutes(
         map.fitBounds(bounds, { padding: 70, maxZoom: 11, duration: 800 });
       }
     }
+    // clearClusterMarkers is stable for the life of the hook and is called
+    // here as teardown, not as an input.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [worldView, mapReady, clusters, clusterCounts, clusterNames]);
 
   const resize = useCallback(() => {

@@ -14,26 +14,6 @@ const eslintConfig = defineConfig([
     "coverage/**",
   ]),
   {
-    files: [
-      "src/components/activities/ActivityListClient.tsx",
-      "src/components/analytics/AnalyticsClient.tsx",
-      "src/components/dashboard/FirstLaunchHint.tsx",
-      "src/components/layout/ThemeToggle.tsx",
-      "src/components/settings/AccentPicker.tsx",
-      "src/components/settings/ThemeSegmented.tsx",
-    ],
-    rules: { "react-hooks/set-state-in-effect": "off" },
-  },
-  {
-    files: [
-      "src/components/analytics/AnalyticsClient.tsx",
-      "src/components/dashboard/CelebrationOverlay.tsx",
-      "src/components/map/useMapRoutes.ts",
-      "src/lib/useShareCardMap.ts",
-    ],
-    rules: { "react-hooks/exhaustive-deps": "off" },
-  },
-  {
     files: ["src/components/activity/ActivityMap.tsx"],
     rules: { "@typescript-eslint/no-explicit-any": "off" },
   },

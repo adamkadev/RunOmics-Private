@@ -165,6 +165,10 @@ export function ActivityListClient({
     hasRestored.current = true
     const stored = readStoredFilters()
     if (!stored) return
+    // Restored from sessionStorage once, behind hasRestored, and merged only
+    // into still-default values, so it can never clobber a user edit. It cannot
+    // be a state initializer: the server render has no sessionStorage.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSearch((cur) => (cur === '' ? stored.search : cur))
     setDebouncedSearch((cur) => (cur === '' ? stored.search : cur))
     setSelectedType((cur) => (cur === null ? stored.selectedType : cur))

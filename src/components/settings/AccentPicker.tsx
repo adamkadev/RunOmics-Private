@@ -1,18 +1,14 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { Check } from 'lucide-react'
 import { t } from '@/i18n'
 import { ACCENT_IDS, ACCENT_SWATCHES, persistAccent, type AccentId } from '@/lib/accent'
 import { useAccent } from '@/lib/useAccent'
+import { useMounted } from '@/lib/useMounted'
 
 export function AccentPicker() {
   const accent = useAccent()
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  const mounted = useMounted()
 
   function selectAccent(id: AccentId) {
     persistAccent(id)

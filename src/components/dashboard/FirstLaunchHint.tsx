@@ -11,6 +11,9 @@ export function FirstLaunchHint() {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
+    // A state initializer would read localStorage during the server render too
+    // and trip a hydration mismatch; this hint only exists after mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!window.localStorage.getItem(STORAGE_KEY)) setVisible(true)
   }, [])
 

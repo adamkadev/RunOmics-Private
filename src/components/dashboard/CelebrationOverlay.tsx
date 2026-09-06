@@ -43,7 +43,10 @@ export function CelebrationOverlay({ record, aiTake }: { record: RecordEntry | n
   )
 
   useEffect(() => {
+    // Fires once, on the mount that reveals the overlay - re-running it on a
+    // later render would buzz again for a celebration already seen.
     if (visible) haptic('celebration')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   if (!visible || !record || record.seconds === null) return null

@@ -126,6 +126,9 @@ export function useShareCardMap({
       .catch(() => { failed.add(key); if (alive) bump(n => n + 1) })
       .finally(() => inFlight.delete(key))
     return () => { alive = false }
+    // key already encodes route, theme, width and height - listing them again
+    // would re-render the map on every parent render that rebuilds the array.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key])
 
   const hit = key ? rendered.get(key) : undefined
