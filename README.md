@@ -327,17 +327,26 @@ The improvement backlog lives in
 Playwright drives a real production build (`next build && next start`). No Firebase
 project or secrets are needed: every page the current specs cover (dashboard,
 activities list → detail, analytics, calendar, records, goals, map, shoes, plan) is
-built from `data/*.json` - your real data locally, the generated demo dataset in CI.
-Read-only, no risk of touching anything.
+built from the generated demo dataset. Read-only, no risk of touching anything.
 
 **Running:**
 
 ```bash
-npm run test:e2e    # builds, starts, and runs the Playwright specs in e2e/
+npm run test:e2e    # regenerates the demo dataset, builds, starts, runs the specs in e2e/
 ```
 
-`.env.e2e` carries the non-secret Firebase client config (still needed for the app
-to boot, even though these specs don't exercise sign-in-gated flows).
+The suite has its own dataset. `npm run e2e:data` wipes and regenerates `.e2e-data/`
+before every build, and `.env.e2e` points `RUNOMICS_DATA_DIR` at it, so a local run and a
+CI run see exactly the same data. Without that, `.env.local` selected a real athlete
+checkout for the build while CI generated demo data - the same specs, two different
+datasets. `scripts/prepare-e2e-data.mjs` ignores `RUNOMICS_DATA_DIR` entirely and only
+ever writes to `.e2e-data/`, so no configured workspace can be reset by accident; the
+`prepare-data` run that follows then sees a populated explicit workspace and leaves it
+alone, exactly as it would a real one. `.e2e-data/` is gitignored.
+
+`.env.e2e` also carries the non-secret Firebase client config (still needed for the app
+to boot, even though these specs don't exercise sign-in-gated flows) and pins `PORT` to
+3100, so a dev server on 3000 does not collide with the suite's own.
 
 The first e2e batch covers read-only golden paths. Sign-in-gated flows (Settings,
 activity notes editing) aren't covered yet - Google's OAuth popup isn't something
@@ -1180,8 +1189,9 @@ globals are disabled, so it is called explicitly — without it, renders leak ac
 Playwright runs against a real production build (`next start`), not `next dev`: ISR/SSG
 timing and cache headers differ enough to matter, and this matches what is deployed. The
 server needs Firebase Admin credentials for the `runomics-dev` project to prerender
-Firestore-backed pages. `PORT` is overridable because a personal dev server left running on
-3000 would collide with the suite's own build.
+Firestore-backed pages. `PORT` comes from `.env.e2e` (3100) so a personal dev server left
+running on 3000 does not collide with the suite's own build; both Playwright configs read
+it, and the screenshot run can still be pointed elsewhere with `SCREENSHOT_BASE_URL`.
 
 The screenshot audit has its own config so it never runs as part of the e2e suite, or vice
 versa. It captures through an iPhone 13 viewport (390×844 @3×) because the app is designed

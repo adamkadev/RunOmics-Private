@@ -6,7 +6,7 @@ const executablePath =
   process.env.PLAYWRIGHT_CHROMIUM_PATH ??
   (fs.existsSync(PROVISIONED_CHROMIUM) ? PROVISIONED_CHROMIUM : undefined)
 
-const baseURL = process.env.SCREENSHOT_BASE_URL ?? 'http://localhost:3000'
+const baseURL = process.env.SCREENSHOT_BASE_URL ?? `http://localhost:${process.env.PORT ?? '3000'}`
 
 export default defineConfig({
   testDir: './screenshots',
