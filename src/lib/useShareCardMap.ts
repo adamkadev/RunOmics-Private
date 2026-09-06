@@ -126,7 +126,6 @@ export function useShareCardMap({
       .catch(() => { failed.add(key); if (alive) bump(n => n + 1) })
       .finally(() => inFlight.delete(key))
     return () => { alive = false }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key])
 
   const hit = key ? rendered.get(key) : undefined

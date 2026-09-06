@@ -1,12 +1,5 @@
 import { defineConfig, devices } from '@playwright/test'
 
-// Runs against a real build (`next start`), not `next dev` - ISR/SSG timing
-// and cache headers differ enough to matter, and matches what's deployed.
-// The server needs Firebase Admin credentials for the runomics-dev project
-// (see README > "End-to-end tests") to prerender Firestore-backed pages.
-//
-// PORT overridable (default 3000): a personal dev server left running on
-// 3000 would otherwise collide with this suite's own build/start.
 const PORT = process.env.PORT ?? '3000'
 
 export default defineConfig({

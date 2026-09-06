@@ -65,7 +65,6 @@ export function ThemeCard({ design, accent, theme, selected, accentHex, onClick,
         }}
       >
         {showPhoto ? (
-          // eslint-disable-next-line @next/next/no-img-element
           <img src={photoUrl!} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
         ) : (
           <canvas

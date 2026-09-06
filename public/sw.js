@@ -1,17 +1,3 @@
-/* RunOmics service worker: offline app shell + push notifications.
- *
- * Caching strategy:
- * - Hashed build assets (/_next/static) and icons: cache-first (immutable).
- * - Pages, RSC payloads and /data JSON: network-first with cache fallback,
- *   so the app opens with the last-seen content when offline.
- * - /api and cross-origin requests (map tiles, analytics) are never cached.
- *
- * Push events display FCM webpush payloads ({ notification: { title, body } })
- * so a separate firebase-messaging-sw.js is not needed.
- *
- * Bump VERSION to invalidate all caches on deploy of a breaking change.
- */
-
 const VERSION = 'v1'
 const STATIC_CACHE = `runomics-static-${VERSION}`
 const PAGE_CACHE = `runomics-pages-${VERSION}`
@@ -95,9 +81,7 @@ self.addEventListener('push', (event) => {
   let payload = {}
   try {
     payload = event.data ? event.data.json() : {}
-  } catch {
-    /* non-JSON push: show the generic notification below */
-  }
+  } catch {}
   const notification = payload.notification ?? {}
   const url = payload.fcmOptions?.link ?? '/'
   event.waitUntil(

@@ -17,7 +17,6 @@ export function ThemeSegmented() {
   const s = t.settings.appearance
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true)
   }, [])
 

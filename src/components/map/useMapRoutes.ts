@@ -182,7 +182,7 @@ export function useMapRoutes(
       mapRef.current = null;
       setMapReady(false);
     };
-  }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [data]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -227,7 +227,7 @@ export function useMapRoutes(
       ],
       { padding: 60, maxZoom: 14, duration: 800 },
     );
-  }, [selectedIdx, mapReady, worldView]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedIdx, mapReady, worldView]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -278,7 +278,7 @@ export function useMapRoutes(
         map.fitBounds(bounds, { padding: 70, maxZoom: 11, duration: 800 });
       }
     }
-  }, [worldView, mapReady, clusters, clusterCounts, clusterNames]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [worldView, mapReady, clusters, clusterCounts, clusterNames]);
 
   const resize = useCallback(() => {
     mapRef.current?.resize();

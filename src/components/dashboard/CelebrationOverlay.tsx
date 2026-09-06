@@ -44,7 +44,6 @@ export function CelebrationOverlay({ record, aiTake }: { record: RecordEntry | n
 
   useEffect(() => {
     if (visible) haptic('celebration')
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   if (!visible || !record || record.seconds === null) return null

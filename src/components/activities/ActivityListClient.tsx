@@ -165,14 +165,12 @@ export function ActivityListClient({
     hasRestored.current = true
     const stored = readStoredFilters()
     if (!stored) return
-    /* eslint-disable react-hooks/set-state-in-effect -- one-time restore from sessionStorage on hydration */
     setSearch((cur) => (cur === '' ? stored.search : cur))
     setDebouncedSearch((cur) => (cur === '' ? stored.search : cur))
     setSelectedType((cur) => (cur === null ? stored.selectedType : cur))
     setSortBy((cur) => (cur === 'date' ? stored.sortBy : cur))
     setSortOrder((cur) => (cur === 'desc' ? stored.sortOrder : cur))
     setExpandedWeeks((cur) => (cur.size === 0 ? new Set(stored.expandedWeeks) : cur))
-    /* eslint-enable react-hooks/set-state-in-effect */
   }, [])
 
   useEffect(() => {

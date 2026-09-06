@@ -102,9 +102,7 @@ export function AnalyticsClient({
 
   useEffect(() => {
     const stored = readStoredView(years)
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore from localStorage after mount
     if (stored) setView(stored)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {

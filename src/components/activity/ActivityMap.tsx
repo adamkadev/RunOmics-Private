@@ -117,7 +117,6 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
       const segments = buildSegmentFeatures(route, paceSamples)
       const hasPace = !!(paceSamples && paceSamples.length > 1)
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const lineColor: any = hasPace
         ? ['interpolate', ['linear'], ['get', 'pace'],
             255, PACE_ROUTE_COLORS.fast,
@@ -163,7 +162,6 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
           const eased = 1 - Math.pow(1 - progress, 3)
           const count = Math.floor(eased * total)
 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           ;(map.getSource('route') as any)?.setData({ type: 'FeatureCollection', features: segments.slice(0, count) })
 
           if (progress < 1) {
