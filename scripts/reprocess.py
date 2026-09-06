@@ -58,6 +58,7 @@ def main() -> int:
         a["strideLengthM"] = parsed.stride_length_m
         a["bestEfforts"] = parsed.best_efforts or None
         a["paceSamples"] = _decimate_list(parsed.pace_samples, _MAX_CHART_POINTS) if parsed.pace_samples else None
+        a["vo2maxGarmin"] = parsed.vo2max_garmin
         a["avgTemperature"] = parsed.avg_temperature
         a["cadenceSamples"] = _decimate_list(parsed.cadence_samples, _MAX_CHART_POINTS) if parsed.cadence_samples else None
         a["splits"] = [s.to_dict() for s in parsed.splits] if parsed.splits else None

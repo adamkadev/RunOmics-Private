@@ -54,15 +54,17 @@ def reprocess_run(tmp_path, activity_factory, monkeypatch):
     fit_dir.mkdir()
     (fit_dir / f"{ACTIVITY_ID}.fit").write_bytes(b"stubbed - parse_fit is patched")
 
-    def run(parsed, *, stored_splits=None, argv=("reprocess.py",)):
+    def run(parsed, *, stored=None, argv=("reprocess.py",)):
+        overrides = stored or {}
         seed = JsonActivityStore(activities_dir)
         seed.upsert(activity_factory(ACTIVITY_ID, ACTIVITY_DATE))
-        if stored_splits is not None:
-            seed.all_activities()[0]["splits"] = stored_splits
+        seed.all_activities()[0].update(overrides)
         seed.save()
 
-        stored = json.loads((activities_dir / "2026-09.json").read_text("utf-8"))
-        assert stored["activities"][0]["splits"] == stored_splits
+        # The precondition each test is about: what sat on disk before the run.
+        before = json.loads((activities_dir / "2026-09.json").read_text("utf-8"))["activities"][0]
+        assert before["splits"] == overrides.get("splits")
+        assert before["vo2maxGarmin"] == overrides.get("vo2maxGarmin")
 
         store = JsonActivityStore(activities_dir)
         monkeypatch.setattr(reprocess, "_FIT_DIR", fit_dir)
@@ -117,7 +119,7 @@ class TestReprocessSplits:
     def test_splits_that_disappear_from_the_fit_are_cleared(self, reprocess_run):
         activity = reprocess_run(
             ParsedFit(duration_seconds=1_800, distance_m=5_250.0),
-            stored_splits=[s.to_dict() for s in lap_splits()],
+            stored={"splits": [s.to_dict() for s in lap_splits()]},
         )
 
         assert activity["splits"] is None
@@ -129,3 +131,38 @@ class TestReprocessSplits:
         )
 
         assert activity["splits"] is None
+
+
+class TestReprocessVo2max:
+    """vo2maxGarmin reaches an activity only through the FIT parser, so a
+    reparse is authoritative for it in both directions."""
+
+    def test_a_missing_value_is_populated(self, reprocess_run):
+        activity = reprocess_run(ParsedFit(duration_seconds=1_800, vo2max_garmin=52.0))
+
+        assert activity["vo2maxGarmin"] == 52.0
+
+    def test_a_stale_value_is_updated(self, reprocess_run):
+        activity = reprocess_run(
+            ParsedFit(duration_seconds=1_800, vo2max_garmin=54.0),
+            stored={"vo2maxGarmin": 48.0},
+        )
+
+        assert activity["vo2maxGarmin"] == 54.0
+
+    def test_a_stale_value_is_cleared_when_the_fit_no_longer_carries_one(self, reprocess_run):
+        activity = reprocess_run(
+            ParsedFit(duration_seconds=1_800),
+            stored={"vo2maxGarmin": 48.0},
+        )
+
+        assert activity["vo2maxGarmin"] is None
+
+    def test_dry_run_writes_nothing(self, reprocess_run):
+        activity = reprocess_run(
+            ParsedFit(duration_seconds=1_800, vo2max_garmin=52.0),
+            stored={"vo2maxGarmin": 48.0},
+            argv=("reprocess.py", "--dry-run"),
+        )
+
+        assert activity["vo2maxGarmin"] == 48.0
