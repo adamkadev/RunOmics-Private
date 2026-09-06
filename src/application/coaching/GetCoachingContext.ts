@@ -5,6 +5,7 @@ import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepo
 import { getGoalYears } from '@/infrastructure/repositories/JsonGoalRepository'
 import { getPbYears } from '@/infrastructure/repositories/JsonPbRepository'
 import { getUpcomingRaceYears } from '@/infrastructure/repositories/JsonUpcomingRaceRepository'
+import { getOfficialRaceResults } from '@/infrastructure/repositories/JsonOfficialRaceResultRepository'
 import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { getLoadBalance } from '@/application/usecases/GetLoadBalance'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
@@ -25,5 +26,6 @@ export async function getCoachingContext(plan: CoachingPlan | null, referenceDat
     goals: getGoalYears(),
     personalBests: getPbYears(),
     upcomingRaces: getUpcomingRaceYears().flatMap((year) => year.races),
+    officialRaceResults: getOfficialRaceResults(),
   }, referenceDate)
 }
