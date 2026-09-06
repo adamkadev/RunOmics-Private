@@ -6,6 +6,10 @@ already-clean data is a no-op, so any change here means an endpoint is still
 exposed. Never duplicates the real zone coordinates: needs PRIVACY_ZONES /
 PRIVACY_RADIUS_M set in the environment, same as sync.py and reprocess.py.
 
+Garmin-confirmed races store their full course on purpose, so they are exempt
+rather than failures. They are reported as a count: an exemption nobody can see
+is one nobody re-checks.
+
     python scripts/verify_privacy_zone.py
     python scripts/verify_privacy_zone.py --base-url https://your-domain
 """
@@ -20,7 +24,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from data_directory import get_data_dir
-from processing.privacy import crop_privacy_zone
+from processing.privacy import crop_privacy_zone, is_confirmed_race
 
 _LOCAL_DIR = get_data_dir() / "activities"
 
@@ -50,15 +54,24 @@ def main() -> int:
     months, load = _months_and_loader(args.base_url)
 
     checked = 0
+    races = 0
     exposed: list[tuple[str, str]] = []
     for month in months:
         for activity in load(month)["activities"]:
             route = activity.get("route")
             if not route:
                 continue
+            # Exempt by policy, not an oversight - counted and reported rather
+            # than skipped silently, so the exemption stays visible in an audit.
+            if is_confirmed_race(activity):
+                races += 1
+                continue
             checked += 1
             if crop_privacy_zone(route) != route:
                 exposed.append((month, activity["id"]))
+
+    if races:
+        print(f"{races} Garmin-confirmed race route(s) exempt from cropping by policy (public race courses).")
 
     if exposed:
         print(f"STILL EXPOSED: {len(exposed)} of {checked} activities have an endpoint inside a privacy zone:")

@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from processing.fit_parser import parse_fit
 from processing.activity_type import infer_type_with_source
 from processing.mapper import _decimate_list, _MAX_CHART_POINTS
-from processing.privacy import crop_privacy_zone
+from processing.privacy import route_for_storage
 from repository.json_store import JsonActivityStore
 
 _FIT_DIR = Path(__file__).parent.parent / "public" / "fit"
@@ -45,7 +45,7 @@ def main() -> int:
         a["type"] = type_inference.activity_type
         a["typeSource"] = type_inference.source
         if parsed.route:
-            a["route"] = crop_privacy_zone(parsed.route)
+            a["route"] = route_for_storage(parsed.route, is_race=parsed.is_race)
         a["aerTrainingEffect"] = round(parsed.aer_training_effect, 1) if parsed.aer_training_effect is not None else None
         a["anaTrainingEffect"] = round(parsed.ana_training_effect, 1) if parsed.ana_training_effect is not None else None
         a["hrSamples"] = _decimate_list(parsed.heart_rates, _MAX_CHART_POINTS) if parsed.heart_rates else None

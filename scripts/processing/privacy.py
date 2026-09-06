@@ -15,6 +15,10 @@ tooling that never pass real route data don't need it either.
 Mirrors how GPS platforms (Strava, Garmin Connect) implement a "privacy
 zone": only the start and finish are hidden, not the whole route, so the
 map/recurring-routes/territory features keep working on real route shape.
+
+Races are the one exemption: a race course, start and finish are published
+event information, and cropping them leaves the race map incomplete. The
+exemption rides on Garmin's own race evidence only - see is_confirmed_race.
 """
 from __future__ import annotations
 
@@ -67,6 +71,38 @@ def _haversine_m(a: tuple[float, float], b: tuple[float, float]) -> float:
 def _in_zone(point: Coord, zones: list[tuple[float, float]], radius: float) -> bool:
     lon, lat = point[0], point[1]
     return any(_haversine_m((lon, lat), zone) < radius for zone in zones)
+
+
+_GARMIN_RACE_TYPE = "Race"
+_GARMIN_TYPE_SOURCE = "garmin"
+
+
+def is_confirmed_race(activity: dict) -> bool:
+    """Whether a *stored* activity was identified as a race by Garmin itself.
+
+    An activity's type reaches "Race" from exactly one place - ParsedFit.is_race,
+    which is the presence of FIT message 310 - and only ever with typeSource
+    "garmin" (processing/activity_type.py). No other classification branch
+    returns it, and nothing in the app writes either field back. Requiring both
+    fields means an activity name, a hand-edited label, or a record predating
+    typeSource can never claim the exemption; anything unrecognised is cropped.
+    """
+    return (
+        activity.get("type") == _GARMIN_RACE_TYPE
+        and activity.get("typeSource") == _GARMIN_TYPE_SOURCE
+    )
+
+
+def route_for_storage(route: list[Coord] | None, *, is_race: bool) -> list[Coord] | None:
+    """The route to persist for an activity: complete for a Garmin-confirmed
+    race, cropped to the privacy zone for everything else.
+
+    The single policy both the sync mapper and the reprocessor call, so a
+    reprocess can never re-crop a race the sync deliberately kept whole.
+    """
+    if not route:
+        return None
+    return route if is_race else crop_privacy_zone(route)
 
 
 def crop_privacy_zone(route: list[Coord] | None) -> list[Coord] | None:
