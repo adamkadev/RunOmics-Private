@@ -126,9 +126,11 @@ NEXT_PUBLIC_LOCALE=en
 #
 # GEMINI_API_KEY writes the verdicts and insight cards on Today, Analytics and
 # each activity - without it every card falls back to its rules-based copy.
-# GEMINI_COACH_API_KEY is used only by the adaptive coach, from a separate
-# Google project: coaching never falls back to GEMINI_API_KEY, so the two
-# free-tier quotas stay independent.
+# GEMINI_COACH_API_KEY is used only by the adaptive coach - a local CLI
+# (`npm run coach`) for now - from a separate Google project: coaching never
+# falls back to GEMINI_API_KEY and GEMINI_API_KEY never falls back to it, so the
+# two free-tier quotas stay independent. Nothing deployed reads the coach key,
+# so it goes in .env.local only, not into Vercel or GitHub Actions.
 #
 # Each surface picks its own model (free-tier quotas are counted per model, so
 # the per-activity backfill runs on the lite model and never eats into the
@@ -263,9 +265,11 @@ Drop a photo named `{activityId}.jpg` (or `.png`, `.webp`) into `public/events/`
 
 ## Adaptive coach
 
-The optional coach keeps its reviewed prescriptions under the private `data/coaching/`
-tree. Every coaching generation reads `GEMINI_COACH_API_KEY` and nothing else: without
-it the command fails rather than borrowing the general `GEMINI_API_KEY` quota.
+The optional coach runs locally, from the CLI (`npm run coach`), and keeps its reviewed
+prescriptions under the private `data/coaching/` tree. Every coaching generation reads
+`GEMINI_COACH_API_KEY` and nothing else: without it the command fails rather than
+borrowing the general `GEMINI_API_KEY` quota. Nothing deployed calls it, so the key stays
+in `.env.local` and is needed neither on Vercel nor in GitHub Actions.
 Garmin-scheduled sessions under `data/planned_workouts/` remain a separate,
 observed schedule signal; applying a coach proposal does not publish anything to
 Garmin or trigger a deployment.
@@ -316,8 +320,13 @@ Each of these populates `data/` first through `npm run prepare:data` (an npm lif
 hook, and a no-op once the directory exists), so a fresh clone can lint, typecheck and
 test straight after `npm ci` with no private-data configuration.
 
-CI (`.github/workflows/ci.yml`) runs lint, typecheck, tests, a production-dependency
-audit (`npm audit --omit=dev --audit-level=high`) and the build on every push/PR.
+CI (`.github/workflows/ci.yml`) runs a production-dependency audit
+(`npm audit --omit=dev --audit-level=high`), lint, typecheck and the Vitest suite on every
+push/PR, plus the Python suite (`pytest scripts/tests/`) as a separate job. It does **not**
+run `next build`. The production build is exercised by the E2E workflow
+(`.github/workflows/e2e.yml`), which runs `npm run test:e2e` — Playwright's `webServer`
+runs `e2e:build` (`next build`) and serves it with `e2e:start`. So a change that only
+breaks the build fails E2E, not CI.
 
 The improvement backlog lives in
 [`docs/product-improvement-todolist.md`](docs/product-improvement-todolist.md).
@@ -387,7 +396,7 @@ Go to [vercel.com/new](https://vercel.com/new), import your GitHub repo, and kee
 ### 3. Set environment variables
 
 In your Vercel project → **Settings** → **Environment Variables**, add every variable
-from your `.env.local` *except* `GARMIN_SECRET`:
+from your `.env.local` *except* `GARMIN_SECRET` and `GEMINI_COACH_API_KEY`:
 
 | Variable | Used for |
 |----------|----------|
@@ -398,9 +407,13 @@ from your `.env.local` *except* `GARMIN_SECRET`:
 | `INTERNAL_NOTIFY_SECRET` | Authenticates the GitHub Actions cron calls to `/api/internal/*` |
 | `NEXT_PUBLIC_LOCALE` | UI language, `en` (default) or `fr` — applied at build time |
 | `GEMINI_API_KEY`, `GEMINI_MODEL` | Optional: the AI-written verdicts and insight cards - Today, Week Purpose, Season, Analytics, run verdicts, PB celebration, shoe verdicts |
-| `GEMINI_COACH_API_KEY`, `GEMINI_COACH_MODEL` | Optional: preview-only adaptive coaching. A separate key so coaching and the general surfaces never share a free-tier quota - coaching never falls back to `GEMINI_API_KEY`. The coaching model can be overridden independently |
 
 > `GARMIN_SECRET` is only used locally by the sync script - it never runs on Vercel.
+> `GEMINI_COACH_API_KEY` / `GEMINI_COACH_MODEL` are the same: the adaptive coach is a local
+> CLI (`npm run coach`) for now, so nothing deployed reads them. Add them here only if a
+> server-side coaching route ever ships. No workflow runs a coaching generation either, so
+> they belong in no GitHub Environment yet. See
+> [AI insight generation](#ai-insight-generation) for the full split.
 
 The scheduled workflows read their secrets from a **GitHub Environment** named
 after the deployment's profile (GitHub → Settings → Environments), not from
@@ -791,6 +804,21 @@ surfaces' free-tier quota on a coaching generation, merging two quotas that are 
 on purpose. The key is therefore *passed into* the shared transport rather than read from
 the environment by it — a transport that picked its own key would quietly merge them again.
 Credential resolution stays with each adapter, alongside its domain-specific validation.
+There is no fallback in either direction: neither key ever stands in for the other.
+
+**Where each key has to exist** follows from where its code runs:
+
+| | `GEMINI_API_KEY` | `GEMINI_COACH_API_KEY` |
+|---|---|---|
+| What it powers | The deployed AI surfaces — Today, Week Purpose, Season, Analytics, run verdicts, PB celebration, shoe verdicts | The adaptive coaching CLI (`npm run coach`), which runs locally today |
+| `.env.local` | yes | yes |
+| Vercel | **yes** — the surfaces are server-rendered and the cron routes call Gemini | **no** — nothing deployed calls the coach |
+| GitHub Actions | not directly: the workflows only `curl` the deployed `/api/internal/*` routes, which use the deployment's own key | **no** — no workflow runs a coaching generation |
+
+The coach stays local on purpose for now: its output is reviewed before anything is applied.
+Add `GEMINI_COACH_API_KEY` to Vercel only if a server-side coaching route ever ships, and to
+GitHub Actions only if a workflow ever automates a coaching generation. Until then it would
+be an unused secret in two more places.
 
 **Every surface goes through one budget gate,** so none can bypass it. Spend is reserved
 *before* the request and counted whatever the outcome: a 429, a timeout and a rejected

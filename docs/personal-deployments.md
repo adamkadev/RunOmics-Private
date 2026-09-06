@@ -142,8 +142,12 @@ Vercel supports any number of projects per repository. Give it its own domain.
 | `RUNOMICS_DATA_REPO_URL`, `RUNOMICS_DATA_REPO_TOKEN` | her data repository and its PAT (step 1) |
 | `INTERNAL_NOTIFY_SECRET` | a fresh random string, **not** the one used by another profile |
 | `GEMINI_API_KEY` | her own key for the general AI surfaces - the free-tier quota is per key, so a shared one has the two deployments starving each other |
-| `GEMINI_COACH_API_KEY` | her own key for adaptive coaching, from a separate Google project - coaching never falls back to `GEMINI_API_KEY` |
 | `NEXT_PUBLIC_MAPTILER_TOKEN` | may be shared, subject to the plan's request quota |
+
+`GEMINI_COACH_API_KEY` is deliberately absent: the adaptive coach is a local CLI
+(`npm run coach`) for now, so no deployment and no workflow reads it. It lives in
+her local `.env.local` only, and moves here if a server-side coaching route ever
+ships.
 
 `NEXT_PUBLIC_LOCALE` is read at build time (`src/i18n/index.ts`), so changing it
 needs a redeploy. The French translation is complete and kept at parity with
