@@ -708,7 +708,9 @@ rank 1 to the holding activity rendered the certified 20:42 record as `5K 20:38 
 official record is therefore represented on the Official Result card, beside the time it was
 actually set with, and the holding activity earns no device badge for that distance. The
 raw device best efforts still render on the activity page as a device statistic; only the
-credited seconds change.
+credited seconds change. A placing is stored with the field size it came from, because 28th
+of 188 and 982nd of 11036 are not the same result; `topPercentile` rounds the pair up so the
+displayed share of the field is never better than the one actually finished.
 
 **Race laps are not intervals.** `sessionExecution` reads `interval_active` splits and
 describes repetitions, so a race of plain auto-lap splits resolved to `null` and the coach

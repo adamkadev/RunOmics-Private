@@ -724,6 +724,15 @@ export const fr = {
     achievements: {
       title: 'Exploits de cette sortie',
     },
+    officialResult: {
+      title: 'Résultat officiel',
+      chip: 'Puce',
+      gun: 'Pistolet',
+      placing: (place: number, count: number) => `${place}e sur ${count}`,
+      placingWithoutField: (place: number) => `${place}${place === 1 ? 're' : 'e'}`,
+      topPercent: (percent: number) => `Top ${percent} %`,
+      deviceNote: (distance: string, duration: string) => `Montre : ${distance} en ${duration}`,
+    },
     decoupling: {
       title: 'Découplage aérobie',
       stable: 'Tenu',

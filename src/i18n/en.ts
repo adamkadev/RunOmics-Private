@@ -732,6 +732,15 @@ export const en = {
     achievements: {
       title: 'Achievements from this run',
     },
+    officialResult: {
+      title: 'Official result',
+      chip: 'Chip',
+      gun: 'Gun',
+      placing: (place: number, count: number) => `${place} of ${count}`,
+      placingWithoutField: (place: number) => `${place}${place % 10 === 1 && place % 100 !== 11 ? 'st' : place % 10 === 2 && place % 100 !== 12 ? 'nd' : place % 10 === 3 && place % 100 !== 13 ? 'rd' : 'th'}`,
+      topPercent: (percent: number) => `Top ${percent}%`,
+      deviceNote: (distance: string, duration: string) => `Watch recorded ${distance} in ${duration}`,
+    },
     decoupling: {
       title: 'Aerobic decoupling',
       stable: 'Held together',

@@ -5,12 +5,15 @@ import { getActivities } from '@/application/usecases/GetActivities'
 import { getRecords, getQualifiedEffortsByActivityId } from '@/application/usecases/GetRecords'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { getShoeRegistry } from '@/infrastructure/repositories/JsonShoeRepository'
+import { getOfficialRaceResults } from '@/infrastructure/repositories/JsonRaceResultRepository'
+import { officialResultsByActivityId } from '@/domain/activity/raceResult'
 import type { HrBounds } from '@/domain/training/trimp'
 import { ActivityDetailClient } from '@/components/activity/ActivityDetailClient'
 import { ActivityNav } from '@/components/activity/ActivityNav'
 import { ShareButton } from '@/components/activity/ShareButton'
 import { ActivityNotes } from '@/components/activity/ActivityNotes'
 import { ActivityAchievements } from '@/components/activity/ActivityAchievements'
+import { OfficialResult } from '@/components/activity/OfficialResult'
 import { SimilarRuns } from '@/components/activity/SimilarRuns'
 import { getSimilarRuns } from '@/application/usecases/GetSimilarRuns'
 import { getRunVerdictInsight } from '@/application/usecases/GetRunVerdictInsight'
@@ -65,6 +68,8 @@ export default async function ActivityDetailPage({
   const similarRuns = getSimilarRuns(id)
   const aiVerdict = await getRunVerdictInsight(activity)
   const coaching = getActivityCoachingView(activity.id)
+  const officialResult = officialResultsByActivityId(getOfficialRaceResults()).get(id) ?? null
+  const holdsOfficialRecord = records.some((record) => record.official && record.activityId === id)
   const registeredShoe = activity.gearId ? getShoeRegistry()[activity.gearId] : undefined
   const shoe = registeredShoe ? { name: registeredShoe.name, dotColor: registeredShoe.dotColor } : null
 
@@ -93,6 +98,15 @@ export default async function ActivityDetailPage({
           <p className="mt-1 text-sm text-muted-foreground">{activity.comment}</p>
         )}
       </div>
+
+      {officialResult && (
+        <OfficialResult
+          result={officialResult}
+          garminDistanceKm={activity.distanceKm}
+          garminDurationSeconds={activity.durationSeconds}
+          isPersonalBest={holdsOfficialRecord}
+        />
+      )}
 
       {activity.bestEfforts && (
         <ActivityAchievements bestEfforts={activity.bestEfforts} qualifiedEfforts={qualifiedEfforts} />

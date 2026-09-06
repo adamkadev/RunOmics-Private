@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   garminMeasured,
+  topPercentile,
   matchesEffortDistance,
   officialResultsByActivityId,
   resolvePerformance,
@@ -90,5 +91,29 @@ describe('officialResultsByActivityId', () => {
 
   it('is empty when no results are recorded', () => {
     expect(officialResultsByActivityId([]).size).toBe(0)
+  })
+})
+
+describe('topPercentile', () => {
+  it('reports the finishing position as a top percentage', () => {
+    expect(topPercentile(28, 188)).toBe(15)
+    expect(topPercentile(982, 11_036)).toBe(9)
+    expect(topPercentile(63, 512)).toBe(13)
+  })
+
+  it('rounds up so a placing is never overstated', () => {
+    expect(topPercentile(82, 1_000)).toBe(9)
+  })
+
+  it('keeps a win inside the range rather than reporting top 0%', () => {
+    expect(topPercentile(1, 11_036)).toBe(1)
+    expect(topPercentile(188, 188)).toBe(100)
+  })
+
+  it('reports nothing when the field size is unknown or inconsistent', () => {
+    expect(topPercentile(28, undefined)).toBeNull()
+    expect(topPercentile(undefined, 188)).toBeNull()
+    expect(topPercentile(200, 188)).toBeNull()
+    expect(topPercentile(0, 188)).toBeNull()
   })
 })

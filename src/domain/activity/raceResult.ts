@@ -62,6 +62,12 @@ export function resolvePerformance(
   }
 }
 
+export function topPercentile(overallPlace: number | undefined, finisherCount: number | undefined): number | null {
+  if (overallPlace === undefined || finisherCount === undefined) return null
+  if (overallPlace < 1 || finisherCount < 1 || overallPlace > finisherCount) return null
+  return Math.min(100, Math.max(1, Math.ceil((overallPlace / finisherCount) * 100)))
+}
+
 export function officialResultsByActivityId(results: OfficialRaceResult[]): Map<string, OfficialRaceResult> {
   return new Map(results.map((result) => [result.activityId, result]))
 }
