@@ -692,6 +692,24 @@ any prompt is built, never left to the model: the coaching context carries the r
 still come from the device. Without an overlay entry an activity resolves to its Garmin
 figures and behaves exactly as it did before.
 
+**The overlay also decides which times may claim a record.** A device best effort is a
+rolling window over an over-read track, so on a certified course it reports a split the
+athlete did not run: Escher banked a 5k best effort of 1237.6 s against a standing 20:38 PB.
+Both round to 1238, `getAllActivities` returns newest first, and a stable sort therefore put
+the newer activity at rank 1 — a PR badge for a race actually run in 21:32. The guard in
+`getQualifiedEffortsByActivityId` only skips the record holder's own entry, so it could not
+catch this. `creditedEffortSeconds` now credits an activity with its certified time whenever
+an official result matches the effort distance, which removes the tie at its source. Ranking is
+otherwise left alone on purpose: a device best effort that no certified result contradicts
+is a real effort, so a training run may legitimately hold rank 1 over a slower race PB. What
+an official PB does not do is lend its badge to a device number, because the Best Efforts
+card takes its time from `bestEfforts` and its badge from the qualified efforts: pinning
+rank 1 to the holding activity rendered the certified 20:42 record as `5K 20:38 · PR`. An
+official record is therefore represented on the Official Result card, beside the time it was
+actually set with, and the holding activity earns no device badge for that distance. The
+raw device best efforts still render on the activity page as a device statistic; only the
+credited seconds change.
+
 **Race laps are not intervals.** `sessionExecution` reads `interval_active` splits and
 describes repetitions, so a race of plain auto-lap splits resolved to `null` and the coach
 never saw the pacing. `raceExecution` reads the real `lap` splits instead and reports the
