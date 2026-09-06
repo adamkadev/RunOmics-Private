@@ -101,6 +101,7 @@ describe('prepare-data workspace selection', () => {
     const fetchData = vi.fn((dataDir: string) => {
       writeActivityIndex(dataDir)
       fs.mkdirSync(path.join(dataDir, 'coaching'), { recursive: true })
+      return { commit: 'abc123', url: 'https://example.test/private.git' }
     })
 
     const result = prepareData({

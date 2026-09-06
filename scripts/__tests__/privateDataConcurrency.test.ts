@@ -20,6 +20,8 @@ function temporaryRoot(): string {
   return root
 }
 
+const env = (vars: Record<string, string> = {}): NodeJS.ProcessEnv => ({ NODE_ENV: 'test', ...vars })
+
 function write(file: string, content: string): void {
   fs.mkdirSync(path.dirname(file), { recursive: true })
   fs.writeFileSync(file, content)
@@ -194,7 +196,7 @@ describe('assertBaseRevisionCurrent', () => {
     const workspace = path.join(root, 'data')
     fs.mkdirSync(workspace, { recursive: true })
 
-    expect(() => assertBaseRevisionCurrent(workspace, 'abc123', 'https://example.test/private.git', {})).toThrow(
+    expect(() => assertBaseRevisionCurrent(workspace, 'abc123', 'https://example.test/private.git', env())).toThrow(
       /No base revision recorded/
     )
   })
@@ -205,9 +207,7 @@ describe('assertBaseRevisionCurrent', () => {
     fs.mkdirSync(workspace, { recursive: true })
 
     expect(() =>
-      assertBaseRevisionCurrent(workspace, 'abc123', 'https://example.test/private.git', {
-        RUNOMICS_DATA_BASE_REVISION: 'abc123',
-      })
+      assertBaseRevisionCurrent(workspace, 'abc123', 'https://example.test/private.git', env({ RUNOMICS_DATA_BASE_REVISION: 'abc123' }))
     ).not.toThrow()
   })
 
@@ -218,10 +218,10 @@ describe('assertBaseRevisionCurrent', () => {
     const workspace = path.join(root, 'workspace', 'data')
     const fetched = fetchPrivateData(workspace)
 
-    expect(() => assertBaseRevisionCurrent(workspace, fetched.commit, 'https://example.test/other.git', {})).toThrow(
+    expect(() => assertBaseRevisionCurrent(workspace, fetched.commit, 'https://example.test/other.git', env())).toThrow(
       /different private data repository/
     )
-    expect(() => assertBaseRevisionCurrent(workspace, fetched.commit, `${remote.url}/`, {})).not.toThrow()
+    expect(() => assertBaseRevisionCurrent(workspace, fetched.commit, `${remote.url}/`, env())).not.toThrow()
   })
 
   it('treats cosmetic URL differences as the same repository', () => {

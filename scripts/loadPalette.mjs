@@ -6,10 +6,6 @@ import ts from 'typescript'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 
-/**
- * @param {string} entry
- * @param {string[]} modules
- */
 export async function loadLibModules(entry, modules) {
   const stage = mkdtempSync(join(tmpdir(), 'runomics-lib-'))
   try {

@@ -24,7 +24,6 @@ export function recordBaseRevision(dataDir, { commit, url }) {
   return marker
 }
 
-/** @param {Record<string, string | undefined>} [env] */
 export function readBaseRevision(dataDir, env = process.env) {
   const override = env[BASE_REVISION_ENV]?.trim()
   if (override) return { commit: override, url: null, source: `${BASE_REVISION_ENV}` }

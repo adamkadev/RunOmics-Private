@@ -74,7 +74,6 @@ export function assertCompleteDataWorkspace(sourceDataDir, existingDataDir) {
   }
 }
 
-/** @param {Record<string, string | undefined>} [env] */
 export function assertBaseRevisionCurrent(sourceDataDir, remoteCommit, url, env = process.env) {
   const recorded = readBaseRevision(sourceDataDir, env)
 
