@@ -1,8 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import type { Activity } from '@/domain/activity/types'
-import { COACHING_SCHEMA_VERSION, type WorkoutEvaluation } from '@/domain/coaching/types'
-import { keepDecision, provenance, workout } from '@/domain/coaching/__tests__/fixtures'
 import { t } from '@/i18n'
 import { RunVerdict } from '../RunVerdict'
 
@@ -17,53 +15,27 @@ const activity = {
   aerTrainingEffect: 3.5,
 } as Activity
 
-const evaluation: WorkoutEvaluation = {
-  schemaVersion: COACHING_SCHEMA_VERSION,
-  id: 'evaluation-1',
-  activityId: activity.id,
-  activityDate: '2026-09-09',
-  prescriptionId: 'workout-threshold',
-  planId: 'plan-1',
-  planRevision: 1,
-  matchStatus: 'matched',
-  comparison: {
-    plannedDistanceMeters: 10_000,
-    actualDistanceMeters: 10_000,
-    plannedPaceSecPerKm: { min: 265, max: 270 },
-    actualPaceSecPerKm: 270,
-  },
-  decisionId: 'decision-keep',
-  summary: 'Threshold target met with controlled effort.',
-  createdAt: '2026-09-09T08:00:00.000Z',
-  contextHash: 'context-hash',
-  provenance: provenance('post_activity'),
-}
+describe('RunVerdict', () => {
+  it('falls back to the derived verdict when no AI insight exists', () => {
+    render(<RunVerdict activity={activity} aiVerdict={null} />)
 
-describe('RunVerdict coaching integration', () => {
-  it('shows the persisted evaluation, lifecycle outcome, and reliable aggregate comparison', () => {
-    render(
-      <RunVerdict
-        activity={activity}
-        aiVerdict={null}
-        coaching={{ evaluation, decision: keepDecision(), prescription: workout() }}
-      />,
-    )
-
-    expect(screen.getByText(t.coaching.evaluation)).toBeInTheDocument()
-    expect(screen.getByText('Threshold target met with controlled effort.')).toBeInTheDocument()
-    expect(screen.getByText(t.coaching.outcomes.KEEP)).toBeInTheDocument()
-    expect(screen.getByText('10.0 / 10.0 km')).toBeInTheDocument()
+    expect(screen.getByText(t.activity.verdict.title)).toBeInTheDocument()
+    expect(screen.getByText(t.activity.verdict.effortClause(t.rpeLabels[7] ?? '', 7))).toBeInTheDocument()
   })
 
-  it('omits aggregate facts when matching is only date-based', () => {
-    render(
-      <RunVerdict
-        activity={activity}
-        aiVerdict={null}
-        coaching={{ evaluation: { ...evaluation, matchStatus: 'date_only' }, decision: keepDecision(), prescription: workout() }}
-      />,
-    )
+  it('prefers the AI headline and body when one exists', () => {
+    render(<RunVerdict activity={activity} aiVerdict={{ headline: 'Strong threshold', body: 'Held the range.' }} />)
 
-    expect(screen.queryByText('10.0 / 10.0 km')).not.toBeInTheDocument()
+    expect(screen.getByText('Strong threshold')).toBeInTheDocument()
+    expect(screen.getByText('Held the range.')).toBeInTheDocument()
+  })
+
+  it('carries no coach evaluation, outcome or planned-versus-actual comparison', () => {
+    render(<RunVerdict activity={activity} aiVerdict={null} />)
+
+    expect(screen.queryByText(t.coaching.evaluation)).not.toBeInTheDocument()
+    expect(screen.queryByText(t.coaching.outcomes.KEEP)).not.toBeInTheDocument()
+    expect(screen.queryByText(t.coaching.planned)).not.toBeInTheDocument()
+    expect(screen.queryByText(t.coaching.actual)).not.toBeInTheDocument()
   })
 })
