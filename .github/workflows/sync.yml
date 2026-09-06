@@ -190,7 +190,13 @@ jobs:
           # rewrites this file, so it is read from the workspace, not the push.
           python -c "import json; print('last_synced_at=' + json.load(open('data/sync_meta.json'))['lastSyncedAt'])" >> "$GITHUB_OUTPUT"
 
-          OUTPUT=$(node scripts/push_private_data.mjs data)
+          # A refusal here means the data repository was committed to while this
+          # run was syncing (see docs/personal-deployments.md > Concurrent
+          # writes). Failing is the point: the next run starts from fresh data.
+          if ! OUTPUT=$(node scripts/push_private_data.mjs data); then
+            echo "::error::Refused to push: the private data repository changed during this run. Re-run the sync to start from fresh data."
+            exit 1
+          fi
           echo "$OUTPUT"
 
           if echo "$OUTPUT" | grep -q "No data changes"; then

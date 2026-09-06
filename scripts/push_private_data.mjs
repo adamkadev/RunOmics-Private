@@ -15,12 +15,21 @@
  * Mirrors sync.yml's own commit-message convention (today's inline step)
  * so the data repo's history reads the same way this app repo's did:
  * activities > other metrics > timestamp-only, each "[skip ci]".
+ *
+ * Pushing is a wholesale replacement of the repository's data/ - `rm -rf` then
+ * copy - so it is only ever safe against the exact commit the workspace was
+ * hydrated from. Optimistic concurrency enforces that: fetch_private_data.mjs
+ * records that commit beside the workspace, and this script refuses to touch
+ * anything if the remote has moved on. There is no automatic merge; the caller
+ * re-fetches and retries, which is the only way to be sure a concurrent commit
+ * is preserved rather than guessed at.
  */
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { BASE_REVISION_ENV, readBaseRevision, recordBaseRevision, sameRepository } from './private_data_revision.mjs'
 
 function redact(text, secret) {
   if (!secret || !text) return text ?? ''
@@ -92,6 +101,44 @@ export function assertCompleteDataWorkspace(sourceDataDir, existingDataDir) {
   }
 }
 
+/**
+ * The optimistic-concurrency check. Runs before the workspace replaces the
+ * clone's data/, so a refusal leaves both the clone and the remote untouched.
+ *
+ * @param {Record<string, string | undefined>} [env]
+ */
+export function assertBaseRevisionCurrent(sourceDataDir, remoteCommit, url, env = process.env) {
+  const recorded = readBaseRevision(sourceDataDir, env)
+
+  if (!recorded) {
+    throw new Error(
+      `No base revision recorded for ${sourceDataDir}, so it is unknown which private data this ` +
+        'workspace was built from and whether pushing it would delete newer data.\n' +
+        'Re-hydrate it with scripts/fetch_private_data.mjs, or set ' +
+        `${BASE_REVISION_ENV} to the commit it was built from.`
+    )
+  }
+
+  if (recorded.url && !sameRepository(recorded.url, url)) {
+    throw new Error(
+      'This workspace was fetched from a different private data repository than the one being ' +
+        `pushed to.\nFetched from: ${recorded.url}\nPushing to:   ${url}\n` +
+        'Refusing to overwrite an unrelated repository.'
+    )
+  }
+
+  if (recorded.commit !== remoteCommit) {
+    throw new Error(
+      'Private data changed since this workspace was fetched.\n' +
+        `Expected base: ${recorded.commit}\n` +
+        `Current remote: ${remoteCommit}\n` +
+        'Refusing to overwrite newer data. Re-fetch and retry.'
+    )
+  }
+
+  return recorded
+}
+
 export function pushPrivateData(sourceDataDir) {
   const url = process.env.RUNOMICS_DATA_REPO_URL
   const token = process.env.RUNOMICS_DATA_REPO_TOKEN
@@ -104,8 +151,12 @@ export function pushPrivateData(sourceDataDir) {
     if (token) env.GIT_ASKPASS = writeAskpassScript(tmpDir)
 
     git(['clone', '--depth', '1', url, cloneDir], { env }, token)
+    const remoteCommit = git(['-C', cloneDir, 'rev-parse', 'HEAD'], { env }, token).trim()
 
     const targetDataDir = path.join(cloneDir, 'data')
+    // Both guards run before anything is deleted: a refusal leaves the clone,
+    // the workspace and the remote exactly as they were.
+    assertBaseRevisionCurrent(sourceDataDir, remoteCommit, url)
     assertCompleteDataWorkspace(sourceDataDir, targetDataDir)
     fs.rmSync(targetDataDir, { recursive: true, force: true })
     fs.mkdirSync(targetDataDir, { recursive: true })
@@ -135,10 +186,17 @@ export function pushPrivateData(sourceDataDir) {
       {},
       token
     )
+    // A non-fast-forward push is rejected by git rather than forced, so even a
+    // commit landing between the clone above and this push cannot be lost.
     git(['-C', cloneDir, 'push'], { env }, token)
 
+    // The workspace's base is now what it just pushed, so a second push from
+    // the same workspace is still checked - against the right commit.
+    const pushedCommit = git(['-C', cloneDir, 'rev-parse', 'HEAD'], { env }, token).trim()
+    recordBaseRevision(sourceDataDir, { commit: pushedCommit, url })
+
     console.log(message)
-    return { pushed: true, kind, message }
+    return { pushed: true, kind, message, commit: pushedCommit }
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true })
   }

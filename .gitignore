@@ -45,6 +45,11 @@
 /data/
 /public/data/
 
+# the optimistic-concurrency marker fetch_private_data.mjs writes beside a data
+# workspace (see scripts/private_data_revision.mjs) - workspace state, never
+# tracked, and deliberately outside data/ so it is not pushed as athlete data.
+/.data.base-revision.json
+
 # Firebase service-account key files, if one is ever downloaded locally -
 # Admin SDK credentials here are env-var based (see firebase-admin.ts), so
 # none should exist, but this is cheap insurance against the common mistake.

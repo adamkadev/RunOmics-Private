@@ -30,6 +30,14 @@ import { writeDemoDataset } from './generate_demo_data.mjs'
 
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 
+/**
+ * @param {{
+ *   root?: string,
+ *   env?: Record<string, string | undefined>,
+ *   fetchData?: (dataDir: string) => unknown,
+ *   writeDemo?: (dataDir: string) => unknown,
+ * }} [options]
+ */
 export function prepareData({
   root = repoRoot,
   env = process.env,

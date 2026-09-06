@@ -94,12 +94,17 @@ cd /tmp/first-sync && npm ci && pip install -r scripts/requirements.txt
 
 export GARMIN_SECRET="<from step 2>"
 export RUNOMICS_DATA_DIR="$PWD/data"          # server-only scratch workspace
-python scripts/sync.py                       # several minutes, writes data/
-
 export RUNOMICS_DATA_REPO_URL="https://github.com/<you>/runomics-data-<profile>.git"
 export RUNOMICS_DATA_REPO_TOKEN="<from step 1>"
+
+node scripts/fetch_private_data.mjs data     # records the commit it hydrated from
+python scripts/sync.py                       # several minutes, writes data/
 node scripts/push_private_data.mjs data
 ```
+
+The fetch is not optional even on a repository that holds nothing yet: pushing
+replaces `data/` wholesale, so it is only allowed against the exact commit the
+workspace was fetched from. See [Concurrent writes](#concurrent-writes-to-a-data-repository).
 
 This has to precede the Vercel project's first build: `prepare-data.mjs` fetches
 the data repository at build time and fails loudly rather than falling back to
@@ -203,6 +208,42 @@ Then add the profile to the matrices in `.github/workflows/`:
   profiles still run in parallel.
 - **Targetable.** A manual `sync.yml` dispatch takes a `profile` input, because
   `--force` and `--limit` only ever mean something for one dataset.
+
+---
+
+## Concurrent writes to a data repository
+
+`concurrency: sync-<profile>` serialises the *workflows*, but nothing stops a
+human - or `npm run coach -- --apply` - from committing to a data repository
+while a sync is running. That matters because pushing is a wholesale
+replacement: `push_private_data.mjs` deletes the clone's `data/` and copies the
+workspace over it. A sync takes minutes between its fetch and its push, so
+without a guard anything committed in that window is deleted rather than merged.
+
+The guard is optimistic concurrency:
+
+- `fetch_private_data.mjs` records the exact commit it hydrated the workspace
+  from, in `.<workspace>.base-revision.json` **beside** the workspace. It is
+  never written inside `data/`, which is copied verbatim into the data
+  repository and must hold athlete data only.
+- `push_private_data.mjs` clones, compares the remote head with that recorded
+  commit and, if they differ, refuses before touching anything:
+
+  ```
+  Private data changed since this workspace was fetched.
+  Expected base: <sha>
+  Current remote: <sha>
+  Refusing to overwrite newer data. Re-fetch and retry.
+  ```
+
+There is deliberately no automatic merge - the two sides are arbitrary JSON
+state, and guessing at a resolution is how data goes missing quietly. Re-run the
+operation from fresh data instead; a nightly sync that refuses simply syncs the
+same activities again on the next run.
+
+A workspace with no recorded base is refused too, since it is unknown what it
+was built from. Hydrate it with `fetch_private_data.mjs`, or set
+`RUNOMICS_DATA_BASE_REVISION` to the commit it was built from if you know it.
 
 ---
 

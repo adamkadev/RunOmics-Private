@@ -412,7 +412,10 @@ node scripts/push_private_data.mjs data
 ```
 
 The source passed to `push_private_data.mjs` must be a complete hydrated dataset;
-the command refuses a workspace that could erase existing coaching state.
+the command refuses a workspace that could erase existing coaching state. The
+fetch is what makes the push safe: it records the commit the workspace came
+from, and the push refuses if the data repository has moved on since - see
+[Concurrent writes](docs/personal-deployments.md#concurrent-writes-to-a-data-repository).
 
 Vercel picks up the redeploy within ~30 seconds. Nothing real is ever committed to
 this repository.

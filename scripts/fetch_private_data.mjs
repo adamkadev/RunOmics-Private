@@ -24,12 +24,18 @@
  *
  * GIT_ASKPASS needs an HTTPS remote (RUNOMICS_DATA_REPO_URL must be
  * https://..., not git@/ssh://) - see .env.example.
+ *
+ * The exact commit the workspace was hydrated from is recorded beside it (see
+ * private_data_revision.mjs). push_private_data.mjs refuses to push unless the
+ * remote is still on that commit, so a workspace that has gone stale during a
+ * long sync can never overwrite newer private data.
  */
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { recordBaseRevision } from './private_data_revision.mjs'
 
 function redact(text, secret) {
   if (!secret || !text) return text ?? ''
@@ -67,8 +73,12 @@ export function fetchPrivateData(targetDir) {
     const env = { ...process.env, GIT_TERMINAL_PROMPT: '0' }
     if (token) env.GIT_ASKPASS = writeAskpassScript(tmpDir)
 
+    let baseRevision
     try {
       execFileSync('git', ['clone', '--depth', '1', url, cloneDir], { stdio: 'pipe', env })
+      baseRevision = execFileSync('git', ['-C', cloneDir, 'rev-parse', 'HEAD'], { stdio: 'pipe', env })
+        .toString()
+        .trim()
     } catch (err) {
       const raw = [err?.message, err?.stderr?.toString?.(), err?.stdout?.toString?.()].filter(Boolean).join('\n')
       throw new Error(`git clone of the private data repository failed: ${redact(raw, token)}`)
@@ -82,6 +92,11 @@ export function fetchPrivateData(targetDir) {
     fs.rmSync(targetDir, { recursive: true, force: true })
     fs.mkdirSync(path.dirname(targetDir), { recursive: true })
     fs.cpSync(sourceDataDir, targetDir, { recursive: true })
+
+    // Written only once the workspace is complete, so a marker never claims a
+    // base for data that was not actually hydrated from it.
+    recordBaseRevision(targetDir, { commit: baseRevision, url })
+    return { commit: baseRevision, url }
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true })
   }
@@ -89,6 +104,6 @@ export function fetchPrivateData(targetDir) {
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const targetDir = process.argv[2] ?? path.join(process.cwd(), 'data')
-  fetchPrivateData(targetDir)
-  console.log(`Private data fetched into ${targetDir}`)
+  const { commit } = fetchPrivateData(targetDir)
+  console.log(`Private data fetched into ${targetDir} at ${commit}`)
 }
