@@ -52,6 +52,12 @@ export type InsightResult = { ok: true; insight: Insight } | { ok: false; reason
 export type StructuredResult<T> = { ok: true; value: T } | { ok: false; reason: string }
 
 export interface StructuredRequest {
+  /**
+   * Passed in rather than read from the environment: the general AI surfaces
+   * and the adaptive coach bill separate Google projects, and a transport that
+   * picked its own key would quietly merge the two quotas again.
+   */
+  apiKey: string
   model: string
   systemInstruction: string
   prompt: string
@@ -134,7 +140,11 @@ function parseInsight(raw: unknown, limits: Limits, bulletCount?: number): Insig
 }
 
 export async function generateInsight(request: InsightRequest): Promise<InsightResult> {
+  const apiKey = process.env.GEMINI_API_KEY
+  if (!apiKey) return { ok: false, reason: 'no api key' }
+
   const result = await generateStructuredJson({
+    apiKey,
     model: request.model,
     systemInstruction: request.systemInstruction,
     prompt: request.prompt,
@@ -150,18 +160,18 @@ export async function generateInsight(request: InsightRequest): Promise<InsightR
   }
 }
 
-/** Shared schema-constrained Gemini transport. Domain-specific validation stays in each adapter. */
+/**
+ * Shared schema-constrained Gemini transport. Domain-specific validation stays
+ * in each adapter, and so does credential resolution: see StructuredRequest.
+ */
 export async function generateStructuredJson(request: StructuredRequest): Promise<StructuredResult<unknown>> {
-  const apiKey = process.env.GEMINI_API_KEY
-  if (!apiKey) return { ok: false, reason: 'no api key' }
-
   // The model is whatever the spender reserved budget for - overriding it here
   // would bill one model's ledger for another model's call. The GEMINI_MODEL
   // escape hatch lives in lib/aiSpend, where it replaces the pool instead.
   try {
     const res = await fetch(`${ENDPOINT}/${request.model}:generateContent`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
+      headers: { 'content-type': 'application/json', 'x-goog-api-key': request.apiKey },
       body: JSON.stringify({
         system_instruction: { parts: [{ text: request.systemInstruction }] },
         contents: [{ parts: [{ text: request.prompt }] }],

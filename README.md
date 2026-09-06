@@ -264,7 +264,8 @@ Drop a photo named `{activityId}.jpg` (or `.png`, `.webp`) into `public/events/`
 
 The optional coach keeps its reviewed prescriptions under the private `data/coaching/`
 tree. Every coaching generation reads `GEMINI_COACH_API_KEY` and nothing else: without
-it the command fails rather than borrowing the general `GEMINI_API_KEY` quota. Garmin-scheduled sessions under `data/planned_workouts/` remain a separate,
+it the command fails rather than borrowing the general `GEMINI_API_KEY` quota.
+Garmin-scheduled sessions under `data/planned_workouts/` remain a separate,
 observed schedule signal; applying a coach proposal does not publish anything to
 Garmin or trigger a deployment.
 

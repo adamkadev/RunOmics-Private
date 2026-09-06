@@ -24,6 +24,10 @@ import { MODEL_POOL } from '@/domain/ai/budget'
 import { generateStructuredJson } from '@/lib/gemini'
 
 const MODEL = () => process.env.GEMINI_COACH_MODEL || process.env.GEMINI_MODEL || MODEL_POOL[0]!
+// The adaptive coach bills its own Google project, so it reads its own key and
+// never falls back to GEMINI_API_KEY: a fallback would silently spend the
+// general AI surfaces' free-tier quota on a coaching generation.
+const API_KEY = () => process.env.GEMINI_COACH_API_KEY
 const PLACEHOLDER_TIME = '2000-01-01T00:00:00.000Z'
 const PLACEHOLDER_PROVENANCE = { source: 'gemini' as const, trigger: 'bootstrap' as const, createdAt: PLACEHOLDER_TIME }
 
@@ -398,7 +402,10 @@ export function bootstrapEventPrompt(event: BootstrapRequest['primaryTargetEvent
 }
 
 async function request(schema: Record<string, unknown>, systemInstruction: string, prompt: string): Promise<unknown> {
-  const result = await generateStructuredJson({ model: MODEL(), systemInstruction, prompt, responseSchema: schema, temperature: 0.2 })
+  const apiKey = API_KEY()
+  if (!apiKey) throw new Error('Gemini coaching request failed: GEMINI_COACH_API_KEY is not configured')
+
+  const result = await generateStructuredJson({ apiKey, model: MODEL(), systemInstruction, prompt, responseSchema: schema, temperature: 0.2 })
   if (!result.ok) throw new Error(`Gemini coaching request failed: ${result.reason}`)
   return result.value
 }
