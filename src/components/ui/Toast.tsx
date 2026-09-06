@@ -5,7 +5,6 @@ import { cn } from '@/lib/utils'
 
 type ToastData = { msg: string; ok: boolean } | null
 
-// Kept in sync with the fade-out transition duration below.
 const EXIT_MS = 200
 
 export function useToast() {
@@ -23,10 +22,6 @@ export function useToast() {
   return { toast, leaving, showToast }
 }
 
-/**
- * Renders at the top of the screen (below the notch/status bar) so it's
- * never hidden behind the bottom tab bar, then fades out on its own.
- */
 export function Toast({ toast, leaving }: { toast: ToastData; leaving?: boolean }) {
   if (!toast) return null
 

@@ -14,12 +14,8 @@ function load(): Record<string, unknown> {
   return cache
 }
 
-/** The canonical display name for `name`, or null when no override applies. */
 export function getLocationOverride(name: string): string | null {
   const overrides = load()
-  // hasOwn, not a bare lookup: 'constructor' and friends would otherwise
-  // resolve up the prototype chain and answer with something that is no
-  // override at all.
   if (!Object.hasOwn(overrides, name)) return null
 
   const override = overrides[name]

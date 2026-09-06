@@ -44,9 +44,6 @@ export function HrTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
 
   const legend = (
     <>
-      {/* The easy/hard pair, not two reds: hrEasy (red300) and hr (red500) are
-          the same hue family and were indistinguishable in dark mode. Red stays
-          reserved for absolute HR readouts. */}
       <LegendDot color={CHART_COLORS.easy} label={t.analytics.charts.paceTrend.easy} />
       <LegendDot color={CHART_COLORS.hard} label={t.analytics.charts.paceTrend.workout} />
     </>
@@ -75,7 +72,6 @@ export function HrTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
         const summary = `${t.analytics.charts.hrTrend.title}: ${summaryParts.join(', ')}`
 
         const r = t.analytics.charts.hrTrend.reading
-        // Lower easy-run HR for the same effort reads as improving fitness, so "down" is positive here.
         const trend = trendFromSeries(easyVals, 2)
         const reading = trend
           ? trend.direction === 'down'

@@ -4,7 +4,6 @@ import { join, relative } from 'node:path'
 
 const SRC = join(process.cwd(), 'src')
 const CALL = /formatPace(Range)?\(/g
-// `formatPace()` already ends with `/km`, so a unit right after the call duplicates it.
 const TRAILING_UNIT = /^\}?\s*(\/km|\$?\{\s*t\.units\.(perKm|minPerKm))/
 
 function sourceFiles(dir: string): string[] {

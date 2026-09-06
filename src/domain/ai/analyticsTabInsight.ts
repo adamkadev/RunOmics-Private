@@ -11,7 +11,6 @@ export function analyticsTabSurface(tab: AnalyticsTabId): string {
   return `${ANALYTICS_TAB_PREFIX}${tab}`
 }
 
-// The question each tab exists to answer - the same one the tab label promises.
 const TAB_QUESTION: Record<AnalyticsTabId, string> = {
   fitness: 'Am I fit?',
   performance: 'Am I getting faster?',
@@ -31,8 +30,6 @@ export function analyticsTabSystemInstruction(tab: AnalyticsTabId): string {
       ANALYTICS_TAB_LIMITS
     ),
     'Answer that question and nothing else. The charts below hold every other detail.',
-    // Fifteen charts sit under this line: naming one of them back is the one
-    // thing the reader can already see for themselves.
     'Do not describe a chart or restate a series. Say what the numbers mean for the athlete.',
   ].join(' ')
 }

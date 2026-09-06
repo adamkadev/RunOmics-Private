@@ -28,7 +28,6 @@ export interface NumberRange {
 export interface WorkoutTarget {
   durationSeconds?: number
   distanceMeters?: number
-  /** Faster bound first, slower bound second, both in seconds per kilometre. */
   paceSecPerKm?: NumberRange
   hrBpm?: NumberRange
   hrZone?: number
@@ -93,7 +92,6 @@ export interface TrainingBlock {
 export type CoachingEventRole = 'primary' | 'tune_up'
 
 export interface RaceCourseContext {
-  /** Supplied course/elevation/PacePro guidance; never inferred from the race name. */
   pacingNotes: string[]
   paceProSplits?: { distanceMeters: number; targetSeconds: number }[]
 }
@@ -107,7 +105,6 @@ export interface TargetEvent {
   distanceLabel?: string
   distanceMeters?: number
   location?: string
-  /** This event's own explicit goal from the event source, never inherited. */
   targetSeconds?: number
 }
 
@@ -123,13 +120,6 @@ export interface CoachingPlan {
   revision: number
   status: CoachingPlanStatus
   block: TrainingBlock
-  /**
-   * When training toward `targetEvent` began. The macrocycle outlives the
-   * rolling block, so this is carried across replans; without it the phase bar
-   * and week count would restart every time a new 4-week block is generated.
-   * Absent on plans written before this field existed - readers fall back to
-   * the current block's start.
-   */
   macrocycleStartDate?: string
   targetEvent: TargetEvent
   tuneUpEvents?: TargetEvent[]
@@ -218,11 +208,6 @@ export interface CoachState {
   lastBootstrapAt: string | null
   lastPostActivityAt: string | null
   lastWeeklyReviewAt: string | null
-  /**
-   * The macrocycle the rolling blocks sit inside. Kept on the state rather than
-   * only on the plan because a plan is replaced whenever a new block is
-   * generated, while the journey toward the same primary target continues.
-   */
   macrocycle?: { targetEventId: string; startDate: string }
   updatedAt: string
 }

@@ -7,13 +7,6 @@ import {
 } from '@/application/coaching/garminSyncState'
 import { dataPath } from '../dataPath'
 
-/**
- * Persists the Garmin sync mapping in the athlete's own data workspace
- * (RUNOMICS_DATA_DIR), alongside the coaching plan it describes.
- *
- * It holds Garmin workout and schedule ids for one person, so it must never be
- * written into this repository: `dataRoot` is always the configured workspace.
- */
 export class JsonGarminSyncStore {
   private readonly filePath: string
 

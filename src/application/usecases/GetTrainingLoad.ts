@@ -28,7 +28,6 @@ export interface TrainingLoadData {
   tsbNow: number
 }
 
-// Exposed separately from buildTimeSeries because monotony/strain need the raw daily series, not CTL/ATL.
 export function dailyTrimpByDate(activities: Activity[], hrBounds: HrBounds = DEFAULT_HR_BOUNDS): Map<string, number> {
   const dailyLoad = new Map<string, number>()
   for (const a of activities) {
@@ -37,8 +36,6 @@ export function dailyTrimpByDate(activities: Activity[], hrBounds: HrBounds = DE
   return dailyLoad
 }
 
-// Full TRIMP time series from first activity to today.
-// TSB is the form at the START of each day (before that day's load).
 export function buildTimeSeries(activities: Activity[], hrBounds: HrBounds = DEFAULT_HR_BOUNDS): Map<string, LoadSnapshot> {
   const dailyLoad = dailyTrimpByDate(activities, hrBounds)
 

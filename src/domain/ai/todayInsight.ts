@@ -12,13 +12,9 @@ export interface TodayContext {
   status: TrainingStatus
   tone: ReadinessTone
   plannedWorkout: PlannedWorkout | null
-  /** The seven days behind the verdict - what makes it specific to this athlete. */
   recent: RecentTraining
 }
 
-// A planned session stops being something to approach the moment the athlete
-// has already run today - the hero's own checkbox already shows it done, so
-// copy that still tells them how to pace it reads as if it never saw today.
 function completedToday(plannedWorkout: PlannedWorkout | null, recent: RecentTraining): boolean {
   return plannedWorkout !== null && recent.lastRun?.daysAgo === 0
 }
@@ -48,14 +44,6 @@ export function todayInsightHash(context: TodayContext): string {
   return insightHash(facts(context))
 }
 
-/**
- * The two facts the hero renders around the verdict rather than inside it: the
- * colored tone badge, and the checkbox marking today's session done. The rest of
- * the facts move overnight on their own - a day passes, the rolling week shifts -
- * and copy written before that still reads true. These two do not: a `go` line
- * under a red badge, or "that was the window to use it" before the athlete has
- * run, contradicts the card around it. So they gate what the grace window serves.
- */
 export function todayInsightGuard(context: TodayContext): string {
   const { tone, completedToday } = facts(context)
   return insightHash({ tone, completedToday })
@@ -67,9 +55,6 @@ const TONE_RULES: Record<ReadinessTone, string> = {
   hold: 'Fatigue is elevated. Advise easing off, going easy or resting.',
 }
 
-// Same tone, but the session it was written to precede has already happened -
-// so the advice on how to approach it has nothing left to attach to. Judge
-// what was run instead of instructing a session that is already behind them.
 const COMPLETED_TONE_RULES: Record<ReadinessTone, string> = {
   go: 'The athlete was fresh and already ran today. Affirm that was the window to use it.',
   caution: 'The athlete had little room to spare and already ran today. Say how carrying that landed, not what to watch going in.',
@@ -83,15 +68,9 @@ export const TODAY_SYSTEM_INSTRUCTION = [
     TODAY_LIMITS
   ),
   'Never contradict the tone you are given - it is already shown as a colored badge next to your text.',
-  // Form, fitness and fatigue are printed as their own cards under the hero, and
-  // "form at 9, fatigue at -5" means nothing to the legs it is describing.
   'Turn the form, fitness and fatigue numbers into plain language - fresh legs, fatigue letting go, the week still in the body - and never state their values.',
   'The only numbers worth writing here are the ones the athlete would say out loud: the minutes or kilometres of the session planned today, the days since the last run, the week kilometres.',
-  // "You are fresh" is a gauge reading; "you are fresh because you have not run
-  // since Thursday" is a coach who watched the week.
   'Ground the verdict in what the last 7 days actually held - the session yesterday, the days off, what is waiting today - rather than in the state alone.',
-  // Without this the model tells the athlete how to pace a session the facts
-  // already show as run - the hero's own checkbox already marks it done.
   "When the facts show today's planned session as already completed, write about it in the past tense - what it earned or cost - never as instructions for approaching it.",
 ].join(' ')
 

@@ -93,8 +93,6 @@ function excelDate(date: string | null | undefined): Date | null {
   return Number.isNaN(parsed.getTime()) ? null : parsed
 }
 
-/** UTC `YYYY-MM-DD`. The workbook's dates are computed from UTC timestamps
- *  throughout; the local-time `isoDate` in @/lib/calendarDate would shift them. */
 function utcDate(date: Date): string {
   return date.toISOString().slice(0, 10)
 }

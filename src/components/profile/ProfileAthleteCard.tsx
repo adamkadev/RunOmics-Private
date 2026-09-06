@@ -14,9 +14,6 @@ interface HeadlineMetric {
   valueColor?: string
 }
 
-// The three headline zones the mockup surfaces - the full ladder lives on the
-// Athlete detail. Accent-independent so Z5/Z4/Z2 keep their heat/threshold/easy
-// meaning.
 const ZONE_ROWS: { zone: number; label: string; color: string }[] = [
   { zone: 5, label: t.profile.athlete.zoneRows[5]!, color: ZONE_HEADLINE_COLORS[5] },
   { zone: 4, label: t.profile.athlete.zoneRows[4]!, color: ZONE_HEADLINE_COLORS[4] },
@@ -40,8 +37,6 @@ interface Props {
   recentZoneTime: ZoneShare[]
 }
 
-// The merged Athlete reference: VO2max / VMA / LTHR at a glance, the three key
-// HR zones as bars, tapping through to the full sheet. Read-only display.
 export function ProfileAthleteCard({ athlete, latestVo2max, recentZoneTime }: Props) {
   const a = t.profile.athlete
   const byZone = new Map(recentZoneTime.map((z) => [z.zone, z.seconds]))

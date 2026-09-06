@@ -24,8 +24,8 @@ interface Props {
   onHoverFraction?: (fraction: number | null) => void
 }
 
-const PACE_CAP = 8 * 60 + 15 // 8:15/km
-const PACE_TICKS = [480, 420, 360, 300, 240] // 8:00, 7:00, 6:00, 5:00, 4:00
+const PACE_CAP = 8 * 60 + 15
+const PACE_TICKS = [480, 420, 360, 300, 240]
 
 function formatPaceTick(v: number): string {
   return v === PACE_CAP ? '>8:15' : formatClock(v)

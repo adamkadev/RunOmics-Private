@@ -19,8 +19,6 @@ describe('budget', () => {
   })
 
   it('counts the quota day in Google reset zone, not UTC', () => {
-    // 00:30 UTC is still the previous afternoon in Pacific time, and Google has
-    // not reset the counter yet.
     expect(quotaDay(new Date('2026-07-30T00:30:00Z'))).toBe('2026-07-29')
     expect(quotaDay(new Date('2026-07-30T08:30:00Z'))).toBe('2026-07-30')
   })

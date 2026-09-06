@@ -9,17 +9,6 @@ const SOURCES = ['en.ts', 'fr.ts'].map((file) => ({
   source: fs.readFileSync(path.join(process.cwd(), 'src/i18n', file), 'utf-8'),
 }))
 
-/**
- * Formatting that resolves its own locale at runtime, rather than being told
- * which one to use.
- *
- * These are the calls that differ between the server and the browser: Node
- * takes its default from the machine's environment, the browser from the
- * user's settings. A number formatted through one of them renders
- * "Projected 1 663 km" in the prerendered HTML and "Projected 1,663 km" once
- * React hydrates, which React reports as a hydration mismatch and recovers
- * from by throwing the whole tree away and re-rendering on the client.
- */
 const AMBIENT_LOCALE = [
   { name: 'toLocaleString() with no locale', pattern: /\.toLocaleString\(\s*\)/g },
   { name: 'toLocaleDateString() with no locale', pattern: /\.toLocaleDateString\(\s*\)/g },
@@ -39,12 +28,8 @@ describe('locale strings never depend on the ambient locale', () => {
     }
   }
 
-  // The instance that actually shipped: /goals prerendered French grouping
-  // against an English client. Both locales pin their own separator now.
   it('formats the annual projection identically wherever it renders', () => {
     expect(en.goals.projection.projected(1663)).toBe('Projected 1,663 km')
-    // fr-FR groups with a narrow no-break space (U+202F), en-US with a comma -
-    // exactly the pair that produced the mismatch.
     expect(fr.goals.projection.projected(1663)).toBe('Projection 1\u202f663 km')
   })
 })

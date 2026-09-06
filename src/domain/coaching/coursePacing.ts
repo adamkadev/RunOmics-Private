@@ -5,7 +5,6 @@ export function hasCoursePacing(event: Pick<TargetEvent, 'courseContext'>): bool
   return Boolean(event.courseContext?.pacingNotes.length || event.courseContext?.paceProSplits?.length)
 }
 
-/** Refine a full-distance race effort only; retain all other prescription fields. */
 export function withCourseAwareRacePacing(workout: WorkoutPrescription, event: TargetEvent): WorkoutPrescription {
   if (!hasCoursePacing(event)) return structuredClone(workout)
   if (workout.type !== 'race' || workout.date !== event.date) throw new Error('Course pacing requires the matching race workout')

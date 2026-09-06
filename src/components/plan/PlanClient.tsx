@@ -25,9 +25,7 @@ interface Props {
   statusByDate: TrainingStatusCalendar
   planPhaseRanges: PlanPhaseRange[]
   nextRace: UpcomingRace | null
-  /** Athlete pace zones, so a planned session can state its target pace. */
   trainingZones: TrainingZonesData | null
-  /** The plan's own start/end, for the week-of-block count. */
   planSpan: PlanSpan | null
   coaching: CoachingOverview | null
 }
@@ -43,7 +41,6 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate
   const [month, setMonth] = useState(now.getMonth())
   const [animKey, setAnimKey] = useState(0)
   const [direction, setDirection] = useState<'forward' | 'backward'>('forward')
-  // Set when jumping from a month cell into the week view, so the right day is pre-selected.
   const [focusDate, setFocusDate] = useState<string | null>(null)
 
   const byDate = useMemo(() => {
@@ -104,7 +101,6 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate
     setMonth(now.getMonth())
   }
 
-  /** Month view day tap: switch to the week view with that day pre-selected. */
   function openWeekAt(date: string) {
     const [y, m, d] = date.split('-').map(Number)
     if (y === undefined || m === undefined || d === undefined) return
@@ -128,8 +124,6 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate
             <h1 className="font-display text-title1 font-bold leading-[1.1] tracking-tight text-foreground">
               {t.pages.plan.title}
             </h1>
-            {/* Hidden on mobile - the week/month is changed by swiping there,
-                so the label + arrows are redundant. Shown from sm up. */}
             <PeriodNav
               label={<span className="text-footnote font-medium text-muted-foreground">{subtitle}</span>}
               onPrev={() => shift(-1)}

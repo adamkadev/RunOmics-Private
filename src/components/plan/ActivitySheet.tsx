@@ -18,7 +18,6 @@ interface Props {
   onClose: () => void
 }
 
-/** Bottom sheet glass quick-view, opened by tapping a day's session in the agenda week view. */
 export function ActivitySheet({ activity, title, onClose }: Props) {
   const { close, handleProps, sheetStyle } = useDragToDismiss(onClose)
   const trapRef = useFocusTrap<HTMLDivElement>()

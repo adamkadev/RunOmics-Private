@@ -492,3 +492,567 @@ distance and course/effort notes rather than a rigid exact pace throughout.
 Supplied splits are retained without inventing missing course data. Flat races
 without course context retain their existing behavior. A targeted race-pacing
 refinement can preserve every other workout and the race warmup/cooldown exactly.
+
+---
+
+## Implementation notes
+
+The source tree carries no explanatory comments: naming and structure are meant to
+carry *what* the code does. This section is where the *why* lives — the constraints,
+external-API quirks, and deliberate decisions that the code cannot state about itself.
+Read it before changing behaviour in the areas it covers.
+
+### Private data and the sync pipeline
+
+**`data/` sits at the repository root, deliberately outside `public/`.** Everything
+under `public/` is served as a static asset, so a dataset there would put real
+Garmin-derived data back on the open web.
+
+**`scripts/prepare-data.mjs` only ever fills a gap.** If `data/activities/index.json`
+already exists it is a no-op, so it can never clobber a dataset fetched or synced
+earlier. Absent, with `RUNOMICS_DATA_REPO_URL` set, it fetches the private data repo
+and fails loudly on any error — never silently falling back to demo data for what is
+supposed to be a real personal deployment. Absent and unconfigured, it generates the
+deterministic demo dataset. An explicit `RUNOMICS_DATA_DIR` is authoritative and is
+never populated here; it must already hold a complete activity dataset.
+
+**`RUNOMICS_DATA_REPO_TOKEN` never touches argv, the clone URL, `.git/config`, or an
+error message.** It reaches `git` only through `GIT_ASKPASS`, a helper git invokes as
+its own subprocess which reads the token from *its* inherited environment — environment
+variables are not visible via `ps` the way argv is. The helper file itself contains only
+the env var *name*, never the value, and lives in a temp dir removed in `finally`.
+Anything git prints on failure is redacted before an `Error` is ever constructed, so a
+caller that logs the exception (Vercel or GitHub Actions build logs, an uncaught-exception
+handler) cannot leak the token indirectly. `GIT_ASKPASS` requires an HTTPS remote, so
+`RUNOMICS_DATA_REPO_URL` must be `https://…`, never `git@`/`ssh://`.
+
+**Optimistic concurrency guards the data repository.** Pushing is a wholesale
+replacement — `rm -rf data/` then copy — so it is only ever safe against the exact commit
+the workspace was hydrated from. `fetch_private_data.mjs` records that commit;
+`push_private_data.mjs` refuses to push if the remote has moved. Without this, the
+nightly sync (minutes between its fetch and its push) silently deletes whatever landed
+in that window — this is how a manually committed `coaching/garmin-sync.json` was once
+lost. There is no automatic merge: the caller re-fetches and retries, the only way to be
+sure a concurrent commit is preserved rather than guessed at.
+
+The marker deliberately lives **next to** the data directory, never inside it: `data/`
+is copied verbatim into the private repository, so a base-revision file under it would
+become persisted user data and be pushed back as part of the dataset. For a workspace at
+`<dir>/data` the marker is `<dir>/.data.base-revision.json`, so it travels with the
+workspace across processes (GitHub Actions fetches in one step and pushes in another)
+and is discarded with the workspace's temporary root. Only the commit SHA is recorded,
+never the token; the URL is recorded to catch a workspace being pushed at a different
+repository than it came from, where comparing SHAs would be meaningless.
+
+`push_private_data.mjs` duplicates `fetch_private_data.mjs`'s small token helper rather
+than sharing a module, on purpose — each script stays independently readable and
+auditable.
+
+The concurrency check runs *before* the workspace replaces the clone's `data/`, so a
+refusal leaves both the clone and the remote untouched.
+
+`scripts/loadPalette.mjs` stages `src/lib/<entry>.ts` for use from plain Node. Every
+module it is asked to load must be alias-free (`./x`, never `@/x`), and dependencies
+must be listed before the modules that import them.
+
+The concurrency check runs *before* the workspace replaces the clone's `data/`, so a
+refusal leaves both the clone and the remote untouched.
+
+`scripts/loadPalette.mjs` stages `src/lib/<entry>.ts` for use from plain Node. Every
+module it is asked to load must be alias-free (`./x`, never `@/x`), and dependencies
+must be listed before the modules that import them.
+
+### Garmin write path (coaching sync)
+
+**The sync state is the only thing that authorises a mutation.** A Garmin workout absent
+from it was created by someone else — by hand, by Garmin Suggested Workouts, by another
+service — and is never touched. It holds Garmin ids for one athlete, so it lives in that
+athlete's private workspace (`RUNOMICS_DATA_DIR`), never in this repository.
+
+- `scheduled` is the only complete state. `workout_created` records a create that
+  succeeded while its scheduling failed; it exists so the next run retries the schedule
+  against the workout already on Garmin instead of creating a second copy.
+- State is returned after **every** operation, including a failed one, for the same reason.
+- The content hash covers the Garmin payload and the scheduled date — what was pushed,
+  not what the coach wrote. A prescription edit that changes neither (a provenance field,
+  a revision bump) leaves Garmin alone.
+- Only future `prescribed`/`adjusted` sessions are syncable, and the window never reaches
+  back before today, so a sync can never rewrite Garmin history. Past entries are never
+  deletion candidates either.
+- `keep` and `skip` both leave Garmin untouched but mean opposite things — `keep` is
+  already synchronised and unchanged, `skip` is deliberately excluded — and stay distinct
+  so a preview says which of the two a missing write was.
+- The plan computation is pure: no I/O, Garmin reached only through the operations
+  returned, so a preview and the apply that follows compute the same plan.
+- After the writes, Garmin is read back: every workout the run claims to have created
+  must exist, on the date it was scheduled for.
+- `GarminWorkoutGateway` deliberately exposes no bulk or list-wide operation — every
+  mutation names exactly one workout or one calendar entry.
+
+**Payload mapping quirks.** Garmin stores a pace target as speed in m/s, so the conversion
+inverts: the *faster* bound of a `paceSecPerKm` range (the smaller number of seconds)
+becomes the *higher* speed. Garmin orders the pair low-to-high, so the slower pace lands
+in `targetValueOne` and the faster in `targetValueTwo`. Garmin has no dedicated strides
+step, so strides ride on `interval`, which preserves their repetition count, duration and
+form cues where the plain `other` bucket would lose them. One target per step: a
+prescription carrying both pace and heart rate keeps pace as the executed target and
+preserves the HR bound in the step description. A segment with no pace and no HR target
+maps to Garmin's explicit `no.target`, never to an invented range. Garmin's estimates are
+only ever the prescription's own totals — an absent total stays absent and Garmin computes
+its own.
+
+**Races are never pushed as structured workouts.** The race is already on the Garmin
+calendar as an event (RunOmics reads those events from Garmin in the first place), so a
+workout on the same date would only duplicate it. A **course-aware** race has a second
+reason: it is paced on the watch by the athlete's own PacePro strategy, so its race effort
+must reach Garmin with no pace target — a structured range over the same kilometres would
+compete with PacePro rather than support it. Only the full-distance effort is stripped;
+warmup and cooldown keep their easy ranges, which PacePro does not cover. The coach
+normally strips that target already; the check at the Garmin boundary is the guarantee, so
+no future plan revision can push a constant race pace onto a PacePro course by accident.
+
+**`PythonGarminGateway` does not authenticate.** The authenticated Garmin session lives in
+Python (`scripts/garmin/client.py`, the one the whole sync pipeline already uses), so the
+gateway runs `scripts/garmin/sync_bridge.py` as a long-lived child and speaks
+newline-delimited JSON to it. `GARMIN_SECRET` is inherited by the child from the
+environment and is never read, logged, or passed on the command line.
+
+Isolation guards keep shared code free of one athlete's ids: nothing under `src/` or
+`scripts/` may name a real Garmin workout, schedule entry, or coaching plan, and no
+default may point the mapping file at this repository.
+
+### Coaching model
+
+**The macrocycle is the whole journey toward the primary target race.** Rolling adaptive
+blocks live inside it: a new block moves `block.startDate` forward, but the journey — and
+so "week X of Y" — carries on from where training toward that target actually began. A
+macrocycle is restarted only when the primary target itself changes. `macrocycleStartDate`
+is carried across replans and kept on the *state* as well as the plan, because a plan is
+replaced whenever a new block is generated. It is absent on plans written before the field
+existed; readers fall back to the current block's start.
+
+The four macrocycle phases (base 45% / build 35% / peak / race week) are configured at
+macrocycle level and are deliberately **not** read from the rolling block's `TrainingWeek`
+entries: a week's focus describes that one generated week, while these phases span the
+whole journey.
+
+**Two drafts that compare equal ignoring identity and lifecycle fields are the same
+prescription restated**, so the stored one keeps its id, revision and provenance rather
+than being bumped as if the athlete had been given something new.
+
+**Derived session numbers never guess.** A value is either computed from what the
+prescription actually states or it is not shown. A segment's duration is stated outright or
+implied by a distance at a stated pace (its midpoint); a distance with no pace is neither.
+One segment that can be neither timed nor paced makes the total a guess, so no duration is
+offered at all. `estimated` is true as soon as any part came from distance and pace, and
+the UI marks such a value with `~`. Only the bookends may be left open: a warm-up given as
+"2 km" is run at whatever pace the rest of the session leaves it, and `bookends()` splits
+that remainder exactly the way it does for a parsed Garmin session — one shared rule, not
+two that drift.
+
+**Garmin sync status is silent when healthy.** Coach workouts are expected to reach
+Garmin, so only a state the athlete must act on earns a line on the Plan page: today that
+means Garmin holding a session that no longer matches the prescription. The full sync state
+is still kept for idempotency and diagnostics.
+
+### The Plan's single workout shape
+
+The Plan has exactly one workout presentation (`PlannedWorkoutRow` and
+`PlannedWorkoutSheet`) and it must not care where a session came from. A Garmin planned
+workout, a coach prescription, and a coach prescription already synchronised to Garmin are
+the same thing to an athlete looking at their week, so all three are normalised through
+`planWorkoutView` and rendered identically.
+
+The coach stays the source of truth for what was prescribed; Garmin stays sync and
+read-back data that can *enrich* it — a time of day it was scheduled at, or an alert when
+the two have drifted apart. Neither owns a view. Where coaching has a session for a day,
+the Garmin planned workout is not a second row: it is the same session read back. That
+pairing is only unambiguous when the day holds a single prescription.
+
+A single continuous block returns no structure bar — the row and the sheet's chips already
+state its distance, duration and pace, and one full-height bar repeating them is noise.
+
+**How a week gets named**, in order: a week that is over *and* rated by the watch takes
+Garmin's own verdict outright (a reading of what happened beats any intent, and updates the
+moment Garmin revises it); a week not over yet but covered by a Garmin Coach plan takes the
+plan's phase name (a fact from Garmin, not a guess); a week not over with no known phase
+falls back to a plain "this/upcoming week", because judging a week on the load logged so far
+always reads low against a full 8-week typical and would fabricate a "recovery week"; a week
+over, unrated and phaseless takes our TRIMP load level. Nothing invents a mesocycle position
+("3 of 4") — only what Garmin itself states.
+
+Where a boundary falls mid-week, the phase or status covering the most days wins, ties going
+to the one the week ends on, since that is the reading still standing. Days the watch
+declined to rate are left out.
+
+### Training metrics
+
+- **Distance totals round once.** `sumDistanceKm` rounds the sum, not the parts — this is
+  what keeps Progress, Goals and Analytics from disagreeing by a kilometre.
+- **Easy/hard split** has one implementation, accepting anything carrying `hrZones`
+  (`Activity` or the lighter `ActivitySummary`), so Today, Plan and Activities cannot diverge.
+- **Plan progress is counted the way Garmin Connect counts it**: whole calendar weeks over
+  the plan's own start-to-end span. It deliberately does not measure the phase ranges (Garmin
+  publishes phases only from BUILD onward, so the base weeks that open a plan are absent and
+  the count would start weeks late), and does not divide a day span by 7 (a plan starting
+  mid-week belongs to the week it falls in, so both ends snap to their Monday). Null when
+  there is no dated plan.
+- **Aerobic decoupling (Pa:HR)** returns null whenever the number would mislead: interval
+  sessions where pace is meant to swing, runs too short to drift, or too few clean samples.
+- **Riegel predictions** are damped by VO₂max trend, but only *half* the VO₂max change is
+  reflected — VO₂max is not perfectly linear with race time. The reference point is found by
+  date, not by counting entries back: the series is sampled monthly and a sample is missing
+  for any month with no reading, so its index says nothing about how long ago it was.
+- **Load risk.** Foster monotony = mean(daily load, 7d) / stdev(daily load, 7d), null when
+  undefined. Strain has no direction of its own and inherits the worse of ACWR/monotony.
+  Garmin's own verdict on its ratio beats re-testing the number against our generic
+  thresholds, because the watch grades against a band it personalises per athlete;
+  unrecognised phrasing falls back to ours.
+- **Load balance gauges** are each anchored on their own target band (the middle half,
+  25–75). The buckets differ by an order of magnitude, so a shared axis would squash the
+  small ones flat; anchoring per gauge makes "inside the range" mean the same visual thing
+  across all three. Outside the band the value compresses asymptotically, so an extreme
+  reading pins near the end rather than running off it.
+- **Taper projections hold today's load flat.** That is an assumption, not a plan, and the
+  UI has to say so — the honest answer to "what will my form be" depends on training that
+  has not happened yet.
+- **`typePaceZone` omits Sprint, Anaerobic and Race** on purpose: those efforts are
+  prescribed per-interval or by the race itself, and quoting a single steady range for them
+  would be wrong rather than merely vague.
+- **Route similarity uses coverage of the smaller trace, not Jaccard**: the same loop with an
+  extra out-and-back tacked on is still the same route, and Jaccard would score it as a
+  different one.
+- **Run verdicts look strictly backwards**, so a verdict stays true forever: a faster run next
+  month cannot turn today's copy into a lie, and the cached insight never has to be redone.
+- **Alert use-cases return `[]` on their first call** (`GetNewPrs`, `GetNewActivities`,
+  `GetShoeWearAlerts`, `GetOverreachingAlerts`, `GetStaleSyncAlert`) — there is nothing to
+  compare against yet, so the first call only bootstraps the stored state.
+- **`QueryActivities` maps down to `ActivitySummary`** so neither the SSR page nor the
+  paginated API response ever ships per-sample arrays to the client. `activitySummary()` drops
+  the route, sample and split arrays that make up most of an activity's weight; anything
+  crossing the server/client boundary for a list row or card should go through it first.
+- **`raceDistances` lives in the domain**, not beside its use case, because the charts need
+  the kilometre table at render time and importing it from the use case would drag the
+  `fs`-backed repository into the client bundle.
+
+### Garmin-sourced series
+
+Several repositories exist only to read what the Python sync writes, and each carries a
+caveat worth knowing:
+
+- **Athlete history** entries exist only for days a value actually moved — a change log, not
+  a daily reading. Same for **threshold history**, where either field can be absent from a day.
+- **Training status**: days before the watch had enough history come back as `no_status` with
+  no ratio. They are not a reading, and returning one would make the app show a status Garmin
+  itself declined to give.
+- **VO₂max history** is Garmin's own series and keeps the decimal the per-activity readings
+  round away — the difference between a trend line and a staircase. The per-activity readings
+  are the fallback until `vo2max_history.json` has been synced. The four-week daily view is
+  anchored on the freshest sample rather than on today, so a lagging sync does not empty the
+  chart.
+- **Garmin race predictions** are a daily Firstbeat series recomputed from VO₂max and recent
+  training — "is my race potential moving?" — distinct from `GetRacePredictions`, which derives
+  a single current estimate per distance from our records via Riegel. They are charted as
+  pace, not finish time, so all four distances share one readable axis; a marathon estimate is
+  eight times a 5 km one and would flatten the short distances into a line.
+- **Training load balance** target bounds are personalised by the watch from the athlete's own
+  history; there is no local equivalent.
+- **Garmin Coach plans** publish no base phase, so the plan's own first day is earlier than
+  its first phase (which starts at BUILD).
+- **Weather** on an activity is Open-Meteo conditions at the middle of the run, distinct from
+  `avgTemperature`, which is what the watch's wrist sensor read.
+- **Planned-workout times of day are coarse only** — the exact scheduled minute of a future run
+  is never persisted or served.
+
+### AI insight generation
+
+**The adaptive coach bills its own Google project.** It reads `GEMINI_COACH_API_KEY`
+and never falls back to `GEMINI_API_KEY`: a fallback would silently spend the general AI
+surfaces' free-tier quota on a coaching generation, merging two quotas that are kept apart
+on purpose. The key is therefore *passed into* the shared transport rather than read from
+the environment by it — a transport that picked its own key would quietly merge them again.
+Credential resolution stays with each adapter, alongside its domain-specific validation.
+
+**Every surface goes through one budget gate,** so none can bypass it. Spend is reserved
+*before* the request and counted whatever the outcome: a 429, a timeout and a rejected
+candidate all consume the same quota as a usable answer, so counting successes only would
+drift under real usage. The ledger lives in Firestore and survives across cron runs — the
+daily ceiling is shared by every invocation, not by every process.
+
+**Timing.** The invocation is capped at 300s (`maxDuration`; Hobby plan with Fluid Compute,
+confirmed on this deployment 2026-08-05). `RUN_BUDGET_MS` is 280s of that — the whole
+invocation's wall clock, with the remaining 20s covering cold start and the final response
+write. `CALL_COST_MS` (a call's own timeout plus the Firestore write) is held back from the
+budget so the deadline is checked against the whole cost of a call, not just the pacing wait
+before it; otherwise a call reserved just inside the ceiling runs past it, Vercel kills the
+invocation, and the partial result the caller had already earned becomes a 504.
+
+`CALL_TIMEOUT_MS` is 30s. Gemini 3.x cannot turn thinking off (2.5's `thinkingBudget: 0` does
+not apply to this family), `'low'` is the floor, and it still spends real tokens on a
+schema-constrained answer: a French one measured 23s live at 360 thinking tokens, where 15s
+was aborting calls that would have succeeded seconds later.
+
+**Model pool.** A model answering 429 has spent its day; one answering 404 has been retired
+out from under us. Both mean stop asking and take the next in the pool. `reserve()` returning
+null is ambiguous on its own — spent for the day, or out of this invocation's clock — so the
+daily ledger is read back to let a stuck verdict name which. `GEMINI_MODEL` replaces the
+*pool*, not the request, so what gets counted stays what gets called; overriding at the
+transport layer would bill one model's ledger for another's call.
+
+**Ordering.** Verdicts for runs that just landed are written before any other surface — behind
+the other ten, the one insight the athlete is waiting for is the first thing the quota or the
+clock drops. The rest is priority order, tail last, since what one run cuts off the next picks
+up. `?limit=0` reports the backlog without spending; an *absent* `?limit=` must not collapse
+into that, because the cron and every `workflow_dispatch` omit the param and `Number(null)` is
+0 — hence the explicit null check before any numeric conversion. `?all=1` lifts the recency
+horizon for a manual pass over the archive after a reprocess; the daily cron never sends it.
+
+**Staleness and the grace window.** An insight is keyed on every fact it was written from, and
+some of those move on their own overnight (days since the last run, the rolling week, Garmin's
+nightly race predictions). On exact-match reads alone the copy would blank itself at midnight
+and stay blank all day whenever a generation pass failed. So a stale insight is still served
+for 48h — *provided* its **guard** still holds. The guard hashes the facts the copy is rendered
+*beside* and must never contradict:
+
+- **Today's hero**: the tone badge and the "session done" checkbox. A `go` line under a red
+  badge, or "that was the window to use it" before the athlete has run, contradicts the card
+  around it.
+- **Season headline**: the bullet tones in order. Copy can outlive a drifted figure, but not a
+  list that changed shape or flipped sign under it — that pairs "you are gaining" with a caution
+  colour, or drops a bullet off the end.
+- **Shoe verdict**: the wear status. A pair drifting a few km deeper into the same status reads
+  the same; one that has crossed into "replace" cannot keep yesterday's "they have a block left
+  in them" under a red badge.
+
+A document written before its surface had a guard cannot be checked and is not served; the next
+generation stores one and it heals itself.
+
+**Batch reads.** A static build pre-renders a few hundred pages. One `readVerifiedInsight` per
+page makes each race its own 2s timeout, so a single slow connection anywhere silently drops
+that page's verdict even though the cache holds a good one — with nothing after the fact to
+notice. `getCachedInsightsByPrefix` reads every document once instead. `listCachedHashes` needs
+the hash rather than mere presence: an entry written from facts that have since changed is one
+the pages already ignore, so the backfill must pick it up again rather than skip it forever.
+
+**Revalidation.** Pages rendering these surfaces are static (ISR, `revalidate = 3600`) and built
+at deploy time — before this route ever runs, since the deploy must be live before the sync
+workflow calls it. Left alone, a fresh insight would sit correct in Firestore for up to an hour
+while every page served the pre-generation snapshot; revalidating on a successful write is what
+makes it appear on the next request.
+
+**Output validation rejects rather than repairs** — a rejected candidate just stays in the
+backfill queue for the next pass. Some models drop French typography under constrained JSON
+output (seen from `gemini-3.5-flash-lite`). A dropped elision ("L effort" for "L'effort") is
+unambiguous, since those function words always contract before a vowel. Accent restoration is
+not — "seance"/"séance" cannot be told apart by regex — but French of any length virtually
+always contains an accented letter, so a total absence past 40 characters is a strong signal
+the model dropped diacritics.
+
+Failures are reported, never swallowed: this runs unattended from a GitHub Actions cron, where
+a silent null looks identical whether the quota ran out, the model was retired, or the copy came
+back too long. The same reasoning covers `/api/internal/*` generally — every throw is logged with
+the route name and returned as a 500 the workflow run can surface, and the guard rate-limits
+*before* checking the shared secret so failed auth attempts are throttled too.
+
+Thinking models put reasoning parts alongside the answer and not always last, so the response
+parser takes the first part that actually carries text.
+
+Insight surfaces are keyed per **analytics tab**, not per chart: one paragraph per theme is four
+cached documents, where one per chart and window would be dozens regenerated on every sync. Run
+verdicts are gated by `deservesVerdict` — generating one for every run ever synced spends the
+day's quota on pages nobody opens. A run that already has a cached verdict keeps it either way.
+
+### Charts and windowing
+
+**Every windowed chart shares one point budget** — 12 points for a year, 6 for six months, one
+per week for four weeks — so they all read at the same density as the Fitness group's load chart.
+`sampleForRange` groups into equal index-buckets and averages each numeric field; non-numeric
+fields (date, label, status) come from the bucket's last point so ticks and tooltips stay
+meaningful. `decimals` defaults to 2 because the same series carry whole-number loads (CTL ~50)
+and small fractional ones (stride length ~1.2 m, efficiency ~0.95), and rounding everything to an
+integer would flatten the fractional ones. Charts that aggregate the whole window rather than
+plotting it (the zone donut) opt out with `sample={false}`.
+
+**Axis labels.** A phone-width chart card carries about six labels before they collide: the plot
+is ~270px inside the card and a short month label ("juil.") is ~30px at the 11px tick size. For
+wide windows, ticks are placed on **month starts** — spacing them evenly through the array lands
+them on whatever week happens to fall there, giving "4 Aug · 29 Sep · 24 Nov", dates that mark
+nothing and cannot be scanned as a calendar. `windowDateAxis` blanks the non-tick labels rather
+than letting Recharts thin the categories, which is why `interval={0}` is needed on the dense
+weekly chart: left to its own interval Recharts picks a subset of the 52 points first, and a year
+window can land on nothing but blanked ones.
+
+**Weeks with no running are absent from a weekly series**, so a categorical axis draws a
+three-week break as a single step and the curve joins across it as if training never stopped.
+`fillWeeklyGaps` inserts explicit blank weeks — for a volume chart a week at 0 km is a reading,
+not a missing value, and usually the most informative one on the chart. Only the interior is
+filled: before the first week there is no history to claim, and after the last there is nothing
+recorded yet.
+
+Other chart decisions worth keeping:
+
+- The last point of a weekly volume curve is a week still being run, so the dip into it is not a
+  real drop and is marked as "so far" rather than left to imply a finished week.
+- The average line is deliberately unlabelled: an inline "avg 41 km" sits exactly where the most
+  recent weeks are and collides with the curve on a phone. The footnote names the line and the
+  reading gives the number.
+- `WeeklyVolumeChart` needs a wider right margin than its siblings — their ticks are three-letter
+  months, its are "27 juil." on the window's last point, half of which hangs off the card at 4w.
+- HR trend uses the easy/hard pair (`hrEasy` red300 / `hr` red500) rather than two reds, which
+  were indistinguishable in dark mode. Lower easy-run HR for the same effort reads as improving
+  fitness, so "down" is positive there.
+- The training-status ribbon gives segments narrower than a few percent a sliver of width, so a
+  one-day flip into overreaching stays visible instead of collapsing to nothing.
+- `trendDots` marks every point: at 4–12 values per window each reading is worth marking, and a
+  bare line hides where the actual measurements are.
+- **`ChartFigure` is required for accessibility.** Recharts renders plain SVG with no semantics,
+  so a screen reader announces nothing or reads scattered tick/tooltip nodes piecemeal. It exposes
+  the chart as a single `img`-role element with one summarising sentence (the WCAG text-alternative
+  pattern) and hides the SVG itself from assistive tech.
+
+### Colour system
+
+`lib/palette` is the one place raw hex literals may exist. `lib/themeTokens` holds anything a
+stylesheet can reach, so it stays accent- and theme-aware; `lib/colors` holds the semantic sets
+CSS cannot reach — Recharts and inline SVG (which need real strings in attributes), MapLibre paint
+properties, and the share-card canvas.
+
+**What follows the accent picker and what does not.** Form (TSB), weekly volume and the long-run
+bar come from `useAccentUiColor()` — they are the "this is your headline number" marks. Everything
+in `CHART_COLORS` is categorical or semantic and stays put. Readiness tone, pace-route, heat-route
+and temperature ramps are all deliberately accent-independent: how often a stretch was run, or how
+hot it was, is a property of the data, not a theme choice, so the map must not repaint when the
+accent changes. Brand tints (season headline, race footer) stay emerald so they remain the brand's
+voice rather than the athlete's chosen tint.
+
+- `useAccentUiColor()` is for marks that must repaint with accent-coloured chrome around them.
+  `useAccentChartColor()` is its multi-series variant: red-adjacent accents that would collide with
+  Fitness/Fatigue/HR fall back to brand emerald. The picker's own swatch hue is neither.
+- Three HR-zone ramps exist because they answer different questions against different backdrops.
+  Z4 orange500 and Z5 red500 collapse into one hue at donut-slice size on the near-black canvas, so
+  the dark ramp lifts them apart. The Athlete card's headline zones sit a step more saturated
+  because they are small text on a near-opaque tile rather than filled chart marks.
+- Training *status* and training *plan phase* have separate ramps on purpose: one is a reading of
+  what happened, the other is intent.
+- `BOOT_COLORS` serves surfaces that render before, or entirely without, `globals.css` — the PWA
+  launch screens and the root error boundary — so they carry their own deep-navy scheme.
+- The iOS `theme-color` meta tag and `accent.ts` read `PAGE_BACKGROUNDS` from `themeTokens`, the
+  same table `globals.css` was generated from, so the status bar can never drift from the canvas.
+- `statusColors` is for statuses with universal meaning (success, in-progress, pending, warning,
+  danger). Accent-coloured elements — nav, CTAs, progress bars — stay in accent.
+- Elevation uses `roRust` rather than stone-500, which read as grey in the categorical set.
+
+### Maps
+
+**The heat layer counts frequency per grid cell but renders the original, unsnapped GPS trace,**
+so the line follows the real road instead of zig-zagging between grid nodes, matching the
+single-activity map. A route splits into a new feature only where it crosses into a cell with a
+different count, so colour and width follow real density instead of alternating between overlapping
+"rare" and "frequent" copies of the same street. Counting dedups within a route first, so a slow,
+densely-sampled stretch of one run cannot inflate its own count. The grid is shared with route
+matching (similar runs, personal segments) so "same street" means the same thing everywhere — it
+only bins, and never moves a coordinate.
+
+Breakpoints are spaced **geometrically** (a log scale). Run frequency is heavily right-skewed — a
+handful of home streets are run 100+ times while most stretches are run once or twice — so a linear
+scale would pin almost everything at the cool end.
+
+World-view bubbles scale radius with `sqrt(count)`, because humans read bubble charts by **area**: a
+zone with 4× the runs should look 4× the weight, not 4× the diameter. A floor keeps single-route
+zones tappable, and markers are added smallest-first so busier zones stack on top instead of being
+buried under one-off bubbles.
+
+### Share card
+
+The canvas cannot read CSS variables, so the card names its own surfaces. It is painted in three
+inks: the athlete's accent (passed as an r/g/b triple, since it can be a custom colour the palette
+never sees) plus `paper` and `ink` for the white and black washes that build the glass. Alphas stay
+inline at the call site — they are composition, not colour.
+
+- The start dot is always green; the finish dot is the accent, unless the accent sits within a
+  distance of 90 in RGB space of the green start, where it flips to red — the start/finish convention
+  Strava and Garmin use.
+- Only the **basemap** is rendered through MapLibre; the trace is painted on afterwards in the
+  athlete's accent. That is what makes changing accent free — the cached render does not depend on it.
+- Before the basemap arrives, `projectRoute` frames the trace the way MapLibre's `fitBounds` will, so
+  the trace barely moves when the map lands; afterwards `map.project()` is used, which is exact by
+  construction. The `route` design opens up top and bottom padding so the trace sits between the title
+  and the stats panel rather than running full-bleed under both; square thumbnails stay symmetric.
+- Route thinning always keeps the last point so the finish marker stays put, and is deterministic so
+  every caller thins alike.
+- The light-mode accent needs a deeper tone to survive the pale backdrops, but not the same deepening
+  `ACCENT_SWATCHES_LIGHT` applies: nature and silver sit one step brighter so the route line does not
+  go muddy against the map design.
+- Export is a 1080px-wide story frame — the resolution Instagram, Strava and Garmin expect.
+- Clipboard copy must construct the `ClipboardItem` synchronously with a pending promise to keep
+  Safari's user-gesture check.
+- Reverse-geocode results are cached in `sessionStorage` so re-opening a card does not re-hit the
+  geocoder. MapTiler sometimes resolves a cluster centre to a small commune or street rather than the
+  town, and it expects an ISO 639-1 code where `t.locale` may be a fuller tag.
+
+### Platform and browser workarounds
+
+- **`useScrollLock`.** In a regular browser tab, plain `overflow: hidden` does not stop iOS Safari's
+  touch-driven rubber-band scroll of the page underneath, and that residual scroll triggers the
+  browser toolbar's show/hide animation — which drags every `position: fixed` element (the bottom tab
+  bar) along with it. There, the body is pinned at its current scroll offset. In a standalone PWA there
+  is no dynamic toolbar to fight, and pinning actively breaks layout: `top: -scrollY` + `bottom: 0`
+  inflates the body taller than the viewport once scrolled, and portalled fixed sheets end up sized
+  against that inflated box, leaving a gap under the sheet and shifting the tab bar (both intermittent,
+  since they need `scrollY > 0`). A plain `overflow: hidden` lock, paired with the global
+  `overscroll-behavior-y: none`, is enough there.
+- **`FullscreenChromeContext`.** The global bottom tab bar and a fullscreen map overlay are both
+  `position: fixed` siblings at different points in the tree. In practice — confirmed on-device and in
+  headless Chromium — the tab bar can still paint and receive taps on top of a higher-z-index fullscreen
+  overlay. Rather than fight that stacking behaviour, fullscreen views ask the tab bar to hide itself.
+- **`fileExport`.** iOS PWAs in standalone mode have no downloads UI: a blob download either fails
+  silently or opens an awkward preview, so the native share sheet is used there instead.
+- **`useFocusTrap`** marks everything else on the page `inert` for the dialog's lifetime, cycles Tab
+  within it, and restores focus on close. Attach the ref to the dialog panel, not the scrim.
+- **`useDragToDismiss`** binds to the drag handle, not the whole sheet, so scrollable content keeps
+  native scrolling. Past the threshold the sheet finishes sliding off under a real CSS transition
+  before `onDismiss` fires, instead of vanishing when the finger lifts.
+- **Service worker** registers in production only — a SW serving cached pages during development would
+  mask live code changes. It also owns the update flow: a waiting version offers a banner, posts
+  `SKIP_WAITING`, and reloads once the new worker takes control; otherwise users keep the old version
+  until they close every tab.
+- **`color-mix` alpha variants** are used for token tints (Safari 16.2+). Plan cells are
+  foreground-tinted rather than a fixed white wash, so they stay visible in light mode instead of going
+  white-on-white.
+- **`GlassSurface`** should stay under roughly six blurred surfaces per viewport — `backdrop-filter` is
+  GPU-costly. `Button`'s secondary variant deliberately omits `backdrop-filter` because those buttons are
+  typically nested inside a glass card already.
+- **Toast** renders at the top of the screen, below the notch, so it is never hidden behind the bottom
+  tab bar.
+- **`ActivityHeatmap`** cells are keyed on `themeVersion` so `color-mix` values remount and re-resolve on
+  a theme or accent switch.
+
+### Internationalisation
+
+**`t.locale` must be passed explicitly to anything that formats.** `Intl` APIs and
+`toLocaleDateString`/`toLocaleString` that resolve their own locale differ between server and browser:
+Node takes its default from the machine's environment, the browser from the user's settings. A number
+formatted through one renders "Projected 1 663 km" in prerendered HTML and "Projected 1,663 km" after
+hydration, which React reports as a hydration mismatch and recovers from by throwing away the whole tree
+and re-rendering on the client. `src/i18n/__tests__/localeIndependence.test.ts` guards this.
+
+Locale parity is checked in both directions as `path:type`. The type is part of the key because shapes
+must match too: a plain string where the other locale holds an interpolating function renders
+"[object Object]" at the callsite. `satisfies Strings` only checks fr against en, so it says nothing
+about keys fr carries that en has since dropped.
+
+`formatRange` is used for week headers so the locale picks its own order and elision — fr reads
+"6-12 juil." rather than the month-first "juil. 6 - 12" that hand-assembling the parts produced.
+
+### Date handling
+
+Two `YYYY-MM-DD` conventions coexist and must not be confused:
+
+- `isoDate` in `lib/calendarDate` is **local time**, matching the `date` field stored on activities.
+  It is the default.
+- `utcDate` in `GetTrainingWorkbook` is **UTC**, because the workbook computes its dates from UTC
+  timestamps throughout.
+
+Coaching presentation does its date maths in UTC on purpose: a macrocycle spans a DST change, and
+local-midnight arithmetic drifts a day either side of it. `isoWeekNumber` returns `isoYear * 100 + isoWeek`,
+matching the sync pipeline's `week` field.

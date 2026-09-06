@@ -130,8 +130,6 @@ describe('getTodayInsight', () => {
     expect(first?.[1].hash).not.toBe(second?.[1].hash)
   })
 
-  // The hash moves overnight on its own - a day passes, the rolling week shifts -
-  // and the guard is what decides whether yesterday's line may still be served.
   it('holds the guard while the form only drifts, so overnight copy survives', async () => {
     readVerifiedInsight.mockResolvedValue(null)
     await getTodayInsight(status(), WORKOUT)
@@ -154,8 +152,6 @@ describe('getTodayInsight', () => {
   it('moves the guard once the session the copy was written for has been run', async () => {
     readVerifiedInsight.mockResolvedValue(null)
     await getTodayInsight(status(), WORKOUT)
-    // getTodayInsight builds its context against the real clock, so "already
-    // run today" has to be dated off the same one.
     withHistory([summary(isoDate(new Date()))])
     await getTodayInsight(status(), WORKOUT)
 

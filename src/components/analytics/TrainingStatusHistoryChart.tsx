@@ -61,11 +61,6 @@ function segmentLabel(segment: TrainingStatusSegment): string {
   return `${t.trainingStatus.status[segment.status]} · ${range} · ${segment.days} ${s.daysUnit}`
 }
 
-/**
- * Proportional ribbon of the status runs across the window. Segments narrower
- * than a few percent still get a sliver of width so a one-day flip into
- * overreaching stays visible instead of collapsing to nothing.
- */
 function StatusRibbon({ segments }: { segments: TrainingStatusSegment[] }) {
   const [activeKey, setActiveKey] = useState<string | null>(null)
   const active = segments.find((segment) => segment.from === activeKey) ?? null
@@ -103,16 +98,10 @@ export function TrainingStatusHistoryChart({ data }: { data: TrainingStatusHisto
   const { range, selectRange, bounds, visible, canGoBack, canGoForward, goBack, goForward } =
     useChartWindow(data.points)
 
-  // Ribbon, legend and reading all describe the visible window, not the whole
-  // stored history - paging back re-tells that period's story. The ribbon needs
-  // every raw day to size its segments correctly; the plot thins to a real day
-  // per stride, which keeps the tooltip honest about the date it labels.
   const segments = buildSegments(visible)
   const plotted = pickForRange(visible, range)
   const ratedDays = segments.reduce((sum, segment) => sum + segment.days, 0)
 
-  // Days present in the ribbon, ranked by how much of the window they cover -
-  // the legend reads as "what this block of training actually was".
   const daysByStatus = new Map<TrainingStatusType, number>()
   for (const segment of segments) {
     daysByStatus.set(segment.status, (daysByStatus.get(segment.status) ?? 0) + segment.days)
@@ -120,8 +109,6 @@ export function TrainingStatusHistoryChart({ data }: { data: TrainingStatusHisto
   const legend = Array.from(daysByStatus.entries()).sort(([, a], [, b]) => b - a)
 
   const [dominantStatus, dominantDays] = legend[0] ?? []
-  // The current status stays anchored on the freshest reading while paging back,
-  // so an older window is always read against today's verdict.
   const latest = data.points[data.points.length - 1]
   const reading =
     dominantStatus && dominantDays && ratedDays
@@ -194,7 +181,6 @@ export function TrainingStatusHistoryChart({ data }: { data: TrainingStatusHisto
                   width={42}
                 />
                 <Tooltip content={<CustomTooltip />} />
-                {/* Stacked pair: an invisible riser to the band floor, then the band itself. */}
                 <Area
                   dataKey={(point: TrainingStatusHistoryPoint) => point.targetBand?.[0] ?? null}
                   stackId="target"

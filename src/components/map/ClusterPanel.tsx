@@ -45,8 +45,6 @@ export function ClusterPanel({ clusters, names, stats, selectedIdx, onSelect }: 
         title={names[selectedIdx]}
         className="glass-map-chip flex min-w-0 items-center gap-2 px-3 py-2.5 transition-colors hover:bg-muted"
       >
-        {/* Truncates only when the row is too tight, so the name shrinks before
-            it can push the Types / year pickers off the right edge. */}
         <span className="min-w-0 truncate text-xs font-semibold text-accent-text">{names[selectedIdx]}</span>
         <span className="shrink-0 text-caption text-subtle">
           {t.common.runs(stats[selectedIdx]?.routeCount ?? 0)}

@@ -11,12 +11,10 @@ import { plan } from '@/domain/coaching/__tests__/fixtures'
 import { t } from '@/i18n'
 import { WeekView } from '../WeekView'
 
-// The grid week runs Mon 2026-09-07 -> Sun 2026-09-13, with today on the Wednesday.
 const TODAY = '2026-09-09'
 const WEEK_START = new Date(2026, 8, 7)
 const HR_BOUNDS = { maxHr: 202, restingHr: 45 }
 
-/** Shaped like the real September activities: HR, duration and climb all present. */
 function activity(overrides: Partial<ActivitySummary> & Pick<ActivitySummary, 'id' | 'date' | 'type'>): ActivitySummary {
   return {
     dayOfWeek: 'Monday',
@@ -37,10 +35,6 @@ function activity(overrides: Partial<ActivitySummary> & Pick<ActivitySummary, 'i
 const TEMPO = activity({ id: 'a-tempo', date: '2026-09-07', type: 'Tempo', distanceKm: 4.79, durationSeconds: 1_756, avgHeartRate: 160, elevationGain: 7 })
 const RACE = activity({ id: 'a-race', date: '2026-09-08', type: 'Race', distanceKm: 5.25, durationSeconds: 1_310, avgHeartRate: 196, elevationGain: 19 })
 
-/**
- * A rolling 4-week block inside a 12-week macrocycle: training starts Sep 7 and
- * the primary target is Nov 29, well beyond the block's own Oct 4 end.
- */
 function blockPlan(): CoachingPlan {
   const base = plan()
   return {
@@ -60,7 +54,6 @@ function byDateCoach(coaching: CoachingOverview): Map<string, PrescriptionView[]
   return map
 }
 
-/** The athlete's own threshold-derived bands, as the Plan page passes them in. */
 const ZONES: TrainingZonesData = {
   thresholdPaceSecPerKm: 265,
   zones: [
@@ -101,7 +94,6 @@ function renderWeek(options: {
   )
 }
 
-/** The three stat tiles, once their count-up animation has settled. */
 async function expectStats(easyHard: string, load: string, climb: string) {
   const read = (label: string) =>
     screen.getByText(label).parentElement!.textContent!.replace(label, '').trim()
@@ -112,8 +104,6 @@ async function expectStats(easyHard: string, load: string, climb: string) {
 }
 
 describe('WeekView weekly metrics', () => {
-  // The fixture activities carry no hrZones, so the easy/hard split is unknown -
-  // load and climb still come straight off what was run.
   it('reports Garmin activity metrics for a week with no coaching', async () => {
     renderWeek({ activities: [TEMPO, RACE] })
 
@@ -123,7 +113,6 @@ describe('WeekView weekly metrics', () => {
   it('keeps those same metrics when a coaching block covers the week', async () => {
     renderWeek({ activities: [TEMPO, RACE], coaching: overview() })
 
-    // Coach prescriptions must not displace what the athlete actually ran.
     await expectStats('–', '141', `26 ${t.units.m}`)
   })
 
@@ -148,7 +137,6 @@ describe('WeekView progression card', () => {
   it('counts the week toward the primary target in the macrocycle card', () => {
     renderWeek({ coaching: overview({ coachingPlan: blockPlan() }) })
 
-    // Sep 7 -> Nov 29 is 12 weeks; today (Sep 9) is in the first of them.
     expect(screen.getByText(t.plan.weekPurpose.weekOfTarget(1, 12))).toBeInTheDocument()
   })
 
@@ -186,8 +174,6 @@ describe('WeekView coaching day cells and Today', () => {
   it('represents each coach workout once, in the day it falls on', () => {
     renderWeek({ coaching: overview() })
 
-    // The day cell carries it via its type tile and label; the session row is
-    // the only place it is spelled out. No third copy anywhere.
     expect(screen.getAllByTestId('coach-calendar-2026-09-09')).toHaveLength(1)
     expect(screen.getAllByTestId('plan-workout-row-workout-threshold')).toHaveLength(1)
     expect(screen.getAllByText(/3 × 8 min threshold/)).toHaveLength(1)
@@ -201,8 +187,6 @@ describe('WeekView coaching day cells and Today', () => {
     renderWeek({ planned: [{ date: TODAY, name: 'Track session', type: 'Threshold', durationSecs: 3_600 }] })
     const garminRow = screen.getByTestId(/^plan-workout-row-garmin:/)
 
-    // Same component, so the same element shape and the same classes - the row
-    // has no idea which source it is showing.
     expect(coachRow.tagName).toBe(garminRow.tagName)
     expect(coachRow.className).toBe(garminRow.className)
   })
@@ -211,8 +195,6 @@ describe('WeekView coaching day cells and Today', () => {
     renderWeek({ coaching: overview(), trainingZones: ZONES })
 
     const row = screen.getByTestId('plan-workout-row-workout-threshold')
-    // Size on the title line, band and pace below it - the row the Plan has
-    // always had, filled in from the prescription instead of from Garmin.
     expect(row.textContent).toContain('3 × 8 min threshold · 1h00')
     expect(row.textContent).toContain('Threshold · 4:25–4:30/km')
   })
@@ -251,7 +233,6 @@ describe('WeekView coaching day cells and Today', () => {
     const garmin: PlannedWorkout = { date: TODAY, name: 'Track session', type: 'Threshold', durationSecs: 3_600 }
     renderWeek({ coaching: overview({ garminPlanned: [garmin] }), planned: [garmin] })
 
-    // The Garmin copy is the same session read back, not a second one to list.
     expect(screen.getAllByTestId(/^plan-workout-row-/)).toHaveLength(1)
     expect(screen.queryByText(/^Garmin ·/)).not.toBeInTheDocument()
   })

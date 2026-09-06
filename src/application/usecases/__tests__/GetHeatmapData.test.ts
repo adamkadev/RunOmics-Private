@@ -13,8 +13,6 @@ function grid(activities: Activity[] = []) {
   return getHeatmapData()
 }
 
-// The calendar the use case emits, so the assertions below can target a real
-// cell of it without re-deriving the window boundaries here.
 const CALENDAR = grid()
 const A_DAY_IN_WINDOW = CALENDAR[100]!.date
 

@@ -68,7 +68,6 @@ export function EfficiencyChart({ points }: { points: WeeklyTrendPoint[] }) {
         const ticks = windowTicks(visible)
 
         const ex = c.explains
-        // The trend reads the adjusted series: a warm month is not a fitness loss.
         const trend = trendFromSeries(visible.map((d) => d.efAdjusted), 0.03)
         const explain = trend
           ? trend.direction === 'up'

@@ -10,7 +10,6 @@ import { ChartFigure } from '@/components/ui/ChartFigure'
 import { ChartExplain } from '@/components/ui/ChartExplain'
 import { t } from '@/i18n'
 
-// Below this the gap is inside the noise of week-to-week easy-pace variation.
 const MEANINGFUL_COST_SEC = 3
 
 interface TooltipProps {

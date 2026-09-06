@@ -1,35 +1,4 @@
 #!/usr/bin/env node
-/**
- * Pulls real Garmin-derived data from the private RunOmics-data repository
- * into a target directory - normally the server-only data/ workspace used by
- * a personal deployment or sync runner. Only runs when RUNOMICS_DATA_REPO_URL is set
- * (scripts/prepare-data.mjs decides that); a failure here must stop the build
- * rather than silently falling back to demo data for what's supposed to be
- * the real personal deployment.
- *
- * RUNOMICS_DATA_REPO_TOKEN never touches process argv, the cloned repo's
- * .git/config, or an error message:
- *  - it is never embedded in the clone URL, so git never writes it into
- *    .git/config, and it never appears in `ps`/`/proc/<pid>/cmdline`;
- *  - it reaches `git` only via GIT_ASKPASS, a helper script git invokes as
- *    its own subprocess and that reads the token from ITS inherited
- *    environment - env vars aren't visible via `ps` the way argv is;
- *  - the helper script file itself contains only a reference to the env
- *    var name, never the token value, and lives in a temp dir removed in
- *    `finally`;
- *  - anything git prints on failure is redacted before this function ever
- *    constructs or throws an Error, so a caller that logs the exception
- *    (Vercel/GitHub Actions build logs, an uncaught-exception handler)
- *    cannot leak the token even indirectly.
- *
- * GIT_ASKPASS needs an HTTPS remote (RUNOMICS_DATA_REPO_URL must be
- * https://..., not git@/ssh://) - see .env.example.
- *
- * The exact commit the workspace was hydrated from is recorded beside it (see
- * private_data_revision.mjs). push_private_data.mjs refuses to push unless the
- * remote is still on that commit, so a workspace that has gone stale during a
- * long sync can never overwrite newer private data.
- */
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
@@ -42,10 +11,6 @@ function redact(text, secret) {
   return text.split(secret).join('***REDACTED***')
 }
 
-// Git calls "$GIT_ASKPASS '<prompt>'" once for the username, once for the
-// password, and reads the answer from stdout. The token is read here from
-// process.env at the moment git invokes this script - never written into
-// the script file, never passed as an argument to `git` itself.
 function writeAskpassScript(tmpDir) {
   const scriptPath = path.join(tmpDir, 'askpass.mjs')
   fs.writeFileSync(
@@ -93,8 +58,6 @@ export function fetchPrivateData(targetDir) {
     fs.mkdirSync(path.dirname(targetDir), { recursive: true })
     fs.cpSync(sourceDataDir, targetDir, { recursive: true })
 
-    // Written only once the workspace is complete, so a marker never claims a
-    // base for data that was not actually hydrated from it.
     recordBaseRevision(targetDir, { commit: baseRevision, url })
     return { commit: baseRevision, url }
   } finally {

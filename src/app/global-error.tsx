@@ -3,10 +3,6 @@
 import { BOOT_COLORS } from '@/lib/colors'
 import { t } from '@/i18n'
 
-// Last-resort boundary: only renders if the root layout itself throws.
-// It replaces the whole document, so the app's CSS is not guaranteed to be
-// loaded - style inline. BOOT_COLORS is a plain constants module, so this
-// stays free of any runtime that could itself be the thing that broke.
 export default function GlobalError({
   error,
   reset,

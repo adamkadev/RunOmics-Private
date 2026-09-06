@@ -27,32 +27,19 @@ export interface ChartWindow<T extends { date: string }> {
   goForward: () => void
 }
 
-// Local midnight today, as a primitive so it stays referentially stable across
-// same-day re-renders (a fresh Date object would re-run every dependent memo).
 function startOfTodayMs(): number {
   const d = new Date()
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
 }
 
-// 4w is the default everywhere: the range lives in component state only, so
-// leaving the page and coming back always lands back on the recent window
-// rather than whatever was last inspected.
 export function useChartWindow<T extends { date: string }>(
   points: T[],
   initialRange: ChartRange = '4w',
   anchor?: Date,
 ): ChartWindow<T> {
   const [range, setRange] = useState<ChartRange>(initialRange)
-  // 0 is the window ending on the anchor; each step back is one window earlier.
   const [offset, setOffset] = useState(0)
 
-  // Anchor every chart on *today*, not on its own last data point, so all cards
-  // show the same calendar window (the real last 4 weeks / 6 months / year up to
-  // today) - the way the watch reports its ranges. Anchoring on each series' last
-  // reading made windows end on different days (a metric last recorded on the
-  // 14th ended two weeks before one recorded on the 29th) and drift out of sync.
-  // A metric with no recent value now simply shows a shorter curve inside the
-  // shared window instead of shifting the whole window backwards.
   const anchorMs = anchor ? anchor.getTime() : startOfTodayMs()
   const anchorDate = useMemo(() => new Date(anchorMs), [anchorMs])
 
@@ -74,8 +61,6 @@ export function useChartWindow<T extends { date: string }>(
   }
 }
 
-// One segmented pill (shared background, no per-button borders) rather than
-// three separately-boxed buttons - matches the mockup's 6w/6m/1y control.
 export function ChartRangeChips({
   value,
   onChange,
@@ -146,18 +131,6 @@ export function ChartWindowPager({
   )
 }
 
-/**
- * Card frame for a self-windowing trend chart: title, optional extra header
- * controls and legend, the range chips, the pager, an empty state, and the
- * footnote. The chart body is a render-prop given the visible slice, so every
- * windowed chart shares one layout and only supplies its own plot.
- *
- * The slice handed to `children` is downsampled to the window's point budget
- * (4w -> 4, 6m -> 6, 1y -> 12) so every trend chart in the app reads at the
- * same density as the Fitness group's load chart. Charts that aggregate the
- * whole window instead of plotting it (the zone donut) opt out with
- * `sample={false}`.
- */
 export function WindowedChartCard<T extends { date: string }>({
   title,
   controls,
@@ -211,11 +184,6 @@ export function WindowedChartCard<T extends { date: string }>({
   )
 }
 
-/**
- * Dot props for a windowed trend line. The point budget leaves 4-12 values per
- * window, so each reading is worth marking - at that density a bare line hides
- * where the actual measurements are.
- */
 export function trendDots(color: string) {
   return {
     dot: { r: 3, fill: color, stroke: 'none' },
@@ -223,17 +191,10 @@ export function trendDots(color: string) {
   }
 }
 
-/** Short "24 Jun" label for a chart's date-keyed X axis. */
 export function windowTickDate(date: string): string {
   return shortDate(date)
 }
 
-/**
- * The date-keyed X axis every windowed trend chart draws, spread into `<XAxis>`.
- * `ticks` are the dates that keep a label; the rest are blanked to space them
- * out, which is why the formatter has to see every category rather than letting
- * Recharts thin them first.
- */
 export function windowDateAxis(ticks: Set<string>, label: (date: string) => string = windowTickDate) {
   return {
     dataKey: 'date',
@@ -244,15 +205,10 @@ export function windowDateAxis(ticks: Set<string>, label: (date: string) => stri
   }
 }
 
-/**
- * Short "Jun" label, for a window wide enough that the day is noise - pair with
- * monthStartTicks, which picks the dates these land on.
- */
 export function windowTickMonth(date: string): string {
   return new Date(date + 'T00:00:00').toLocaleDateString(t.locale, { month: 'short' })
 }
 
-/** Dates to keep as X-axis ticks so a dense window shows ~`count` labels. */
 export function windowTicks<T extends { date: string }>(points: T[], count = 6): Set<string> {
   const step = Math.max(1, Math.floor(points.length / count))
   return new Set(points.filter((_, i) => i % step === 0).map((p) => p.date))

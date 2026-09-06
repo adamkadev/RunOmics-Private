@@ -39,9 +39,7 @@ describe('confidenceBandSeconds', () => {
   })
 
   it('scales with the coefficient of variation of recent times', () => {
-    // mean=1200, stdev=0 (identical times) -> 0 band
     expect(confidenceBandSeconds(1200, [1200, 1200, 1200])).toBe(0)
-    // some real variance produces a non-zero band
     expect(confidenceBandSeconds(1200, [1150, 1200, 1250])).toBeGreaterThan(0)
   })
 })
@@ -54,7 +52,6 @@ describe('vo2maxFormFactor', () => {
     expect(vo2maxFormFactor([point('2026-01-01', 50)], 8)).toBe(1)
   })
 
-  // Ten monthly samples, Jan through Oct.
   const monthly = (value: (i: number) => number) =>
     Array.from({ length: 10 }, (_, i) => point(`2026-${String(i + 1).padStart(2, '0')}-28`, value(i)))
 
@@ -67,8 +64,6 @@ describe('vo2maxFormFactor', () => {
   })
 
   it('compares against the window, not against a fixed number of entries back', () => {
-    // Latest is 2026-10-28, so an 8-week window reaches back to ~2026-08-28:
-    // the August sample (57), not the first one.
     expect(vo2maxFormFactor(monthly((i) => 50 + i), 8)).toBeCloseTo(59 / 57)
   })
 
@@ -85,7 +80,6 @@ describe('applyFormWeighting', () => {
 
   it('predicts a faster time when form has improved (damped)', () => {
     const adjusted = applyFormWeighting(1200, 1.1, 0.5)
-    // 1200 * (1 - 0.5*0.1) = 1140
     expect(adjusted).toBe(1140)
   })
 

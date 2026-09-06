@@ -6,16 +6,8 @@ import { trimp, type HrBounds } from './GetTrainingLoad'
 import { isoDate } from '@/lib/calendarDate'
 import { round } from '@/lib/math'
 
-// Flat duration assumed for a planned workout that has neither a duration nor
-// a distance (e.g. interval sessions like "6 x 1000m") and whose type has no
-// history to fall back on either.
 const FALLBACK_DURATION_MINUTES = 40
 
-// Every planned workout crosses the server/client boundary into the plan
-// page's payload, and `steps` is roughly three quarters of an entry's weight.
-// Past that many days the completed activity is the real record of the
-// session, so the plan's block-by-block structure stays on disk rather than
-// being shipped; the sheet falls back to parseWorkoutStructure(name).
 const STEPS_RETENTION_DAYS = 90
 
 export interface TypeLoadStats {
@@ -50,7 +42,6 @@ function computeStats(activities: Activity[], hrBounds?: HrBounds): TypeLoadStat
   }
 }
 
-/** Per-type TRIMP/minute, pace and average duration derived from completed activities, plus an all-type fallback. */
 export function buildTypeLoadStats(
   activities: Activity[],
   hrBounds?: HrBounds,
@@ -76,7 +67,6 @@ function estimateMinutes(workout: PlannedWorkout, stats: TypeLoadStats): number 
   return stats.avgDurationMinutes || FALLBACK_DURATION_MINUTES
 }
 
-/** Estimates a planned (not-yet-run) workout's TRIMP from historical load for its type - always marked `isEstimated`. */
 export function estimatePlannedLoad(
   workout: PlannedWorkout,
   byType: Partial<Record<ActivityType, TypeLoadStats>>,
@@ -87,7 +77,6 @@ export function estimatePlannedLoad(
   return { ...workout, estimatedLoad: round(stats.trimpPerMinute * minutes, 0), isEstimated: true }
 }
 
-/** Drops the block-by-block structure of a session older than the cutoff - see STEPS_RETENTION_DAYS. */
 export function withoutStaleSteps(workout: PlannedWorkout, cutoff: string): PlannedWorkout {
   if (!workout.steps || workout.date >= cutoff) return workout
   const slim = { ...workout }
@@ -111,7 +100,6 @@ export async function getPlannedWorkouts(): Promise<PlannedWorkout[]> {
   return planned.map((w) => estimatePlannedLoad(withoutStaleSteps(w, cutoff), byType, overall))
 }
 
-/** Today's planned workout, if Garmin has one scheduled. */
 export async function getTodayPlannedWorkout(): Promise<PlannedWorkout | null> {
   const planned = await getPlannedWorkouts()
   const today = isoDate(new Date())

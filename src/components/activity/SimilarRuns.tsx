@@ -45,8 +45,6 @@ interface DotProps {
   onSelect?: (id: string) => void
 }
 
-// The run being viewed gets a filled, larger dot so it's findable in the trend.
-// Every other dot is a shortcut to that run's own activity page.
 function RunDot({ cx, cy, payload, onSelect }: DotProps) {
   if (cx === undefined || cy === undefined || !payload) return null
   const { isCurrent, id } = payload

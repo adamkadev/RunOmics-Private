@@ -19,7 +19,6 @@ interface DayGroup {
   count: number
 }
 
-/** Merges consecutive days sharing the same status into one wider segment. */
 function groupConsecutiveDays(days: TrainingStatusDayBar[]): DayGroup[] {
   const groups: DayGroup[] = []
 

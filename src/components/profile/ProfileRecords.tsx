@@ -34,8 +34,6 @@ export function ProfileRecords({ records }: Props) {
           <span
             className="rounded-[5px] border px-[6px] py-px text-micro font-bold text-accent-text"
             style={{
-              // Accent-subtle, per the Progress mockup: a NEW badge shouldn't stay
-              // emerald when the athlete's theme is rose/blue/etc.
               borderColor: 'color-mix(in srgb, var(--accent) 25%, transparent)',
               background: 'color-mix(in srgb, var(--accent) 14%, transparent)',
             }}

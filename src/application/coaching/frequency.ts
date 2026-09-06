@@ -8,7 +8,7 @@ export function validateTrainingFrequency(days: number[], runs?: number): void {
 }
 
 export function validateDraftFrequency(draft: CoachingPlanDraft, runs?: number): void {
-  if (runs === undefined) return // Legacy callers have no explicit preference.
+  if (runs === undefined) return
   for (const week of draft.weeks) {
     const count = week.workouts.length
     if (new Set(week.workouts.map(w => w.date)).size !== count) throw new Error('Bootstrap permits one run per day')

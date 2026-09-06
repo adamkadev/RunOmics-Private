@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest'
 import { buildTypeLoadStats, estimatePlannedLoad, withoutStaleSteps } from '../GetPlannedWorkouts'
 import type { Activity, PlannedWorkout, WorkoutStep } from '@/domain/activity/types'
 
-// Fixed HR bounds so trimp() math is deterministic regardless of athlete profile.
 const HR_BOUNDS = { maxHr: 190, restingHr: 50 }
 
 const act = (type: Activity['type'], durationSeconds: number, distanceKm: number, avgHeartRate = 150): Activity =>

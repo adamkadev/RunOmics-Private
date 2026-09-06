@@ -17,7 +17,6 @@ const ZONE_STYLE: Record<string, ZoneStyle> = {
 export function TrainingZones({ data }: { data: TrainingZonesData }) {
   const { thresholdPaceSecPerKm, zones } = data
 
-  // True fastest / slowest across every zone (data order is not guaranteed).
   const paces = zones.flatMap((z) => [z.paceMinSecPerKm, z.paceMaxSecPerKm])
   const fastest = Math.min(...paces)
   const slowest = Math.max(...paces)
@@ -35,7 +34,6 @@ export function TrainingZones({ data }: { data: TrainingZonesData }) {
       <div className="space-y-2">
         {zones.map((zone) => {
           const style = ZONE_STYLE[zone.key] ?? DEFAULT_ZONE_STYLE
-          // Slow on the left, fast on the right: map slowest pace to 0%.
           const left = ((slowest - zone.paceMaxSecPerKm) / range) * 100
           const width = ((zone.paceMaxSecPerKm - zone.paceMinSecPerKm) / range) * 100
 

@@ -1,25 +1,12 @@
-// French UI strings. Mirrors the shape of `en.ts` (the reference locale) and is
-// type-checked against it via `satisfies Strings`. Activated with
-// NEXT_PUBLIC_LOCALE=fr (see `index.ts`).
-//
-// Conventions:
-// - Plain strings for static copy.
-// - Functions for interpolated / pluralized copy (French: 0 and 1 are singular).
-// - Pure number/date formatting stays in `@/lib/formatters`; only human-readable
-//   words and units live here.
-
 import type { ActivityType, ScheduledTimeOfDay } from '@/domain/activity/types'
 import type { Strings } from './index'
 
 export const fr = {
-  // Locale tag used by Intl-based formatters (dates, numbers).
   locale: 'fr-FR',
 
   brand: {
     namePrefix: 'Run',
     nameSuffix: 'Omics',
-    // Version number is injected from package.json (see @/lib/version); only the
-    // display format lives here so it isn't duplicated across translation files.
     version: (v: string) => `v${v}`,
   },
 
@@ -123,8 +110,6 @@ export const fr = {
       noRoutes: 'Aucun parcours pour ce filtre',
       mapUnavailable: 'Carte indisponible - aucune clé de carte configurée',
       territory: {
-        // Camp de base de toujours, indépendant du sélecteur de zone plus bas -
-        // le texte le dit clairement pour ne pas être lu comme la zone choisie.
         eyebrow: 'Camp de base · depuis toujours',
         headline: (percent: number, radius: number) => `${percent}% de toutes tes sorties tiennent dans un rayon de ${radius} km.`,
         aroundPlace: (place: string) => `Centré sur ${place}, là où tu cours le plus.`,
@@ -219,7 +204,6 @@ export const fr = {
       fitnessAge: 'Âge de forme',
       achievableFitnessAge: 'Potentiel',
       bmi: 'IMC',
-      // Kept to a single short token - the tiles are a third of a phone wide.
       fitnessAgeBand: {
         younger: (years: number) => `−${years} ans`,
         onPar: 'à niveau',
@@ -403,8 +387,6 @@ export const fr = {
     allTimeChip: 'Tout',
     tabs: {
       fitness: 'Forme',
-      // Abbreviated so all four tabs fit the strip without scrolling; the
-      // section heading above the race cards carries the full word.
       performance: 'Perf.',
       volume: 'Volume',
       health: 'Santé',
@@ -424,7 +406,6 @@ export const fr = {
     raceTimes: {
       title: 'Performance',
       trend: 'Chronos ↓',
-      // Abbreviated to fit four cards across a phone.
       shortLabels: {
         '5k': '5K',
         '10k': '10K',
@@ -538,7 +519,6 @@ export const fr = {
           verticalRatio: 'Oscillation verticale rapportée à la longueur de foulée. Plus bas = moins d’énergie perdue vers le haut à chaque mètre parcouru.',
           strideLength: 'Longueur de foulée moyenne pondérée par la durée.',
         } as Record<string, string>,
-        // The axis already carries the range, so the reading carries the trend.
         reading: {
           up: (metric: string, delta: string, unit: string) => `${metric} en hausse, +${delta} ${unit} sur la période.`,
           down: (metric: string, delta: string, unit: string) => `${metric} en baisse, -${delta} ${unit} sur la période.`,
@@ -914,8 +894,6 @@ export const fr = {
         behind: 'En retard',
       },
       rate: (current: number) => `rythme ${current} km/sem`,
-      // Locale explicite, jamais celle du runtime - voir en.ts : sinon le rendu
-      // serveur et le rendu client divergent (erreur d'hydratation).
       projected: (km: number) => `Projection ${km.toLocaleString('fr-FR')} km`,
     },
     monthlyVolume: {
@@ -1075,7 +1053,6 @@ export const fr = {
 
   records: {
     title: 'Meilleurs temps',
-    // Display names for the fixed record distances (see @/domain/activity/effort).
     distances: {
       '1k': '1K',
       '1mile': '1 mile',
@@ -1154,7 +1131,6 @@ export const fr = {
       above: 'Au-dessus',
     },
     range: (min: number, max: number) => `Cible ${min}–${max}`,
-    // Garmin's own phrases; anything it adds later falls back to the raw code.
     feedback: {
       BELOW_TARGETS: 'Sous les cibles',
       ABOVE_TARGETS: 'Au-dessus des cibles',
@@ -1192,10 +1168,7 @@ export const fr = {
       `${sessions} séance${sessions > 1 ? 's' : ''} · ${km} km`,
     weekdays: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
     switcher: { week: 'Semaine', month: 'Mois' },
-    // Abbreviated: sits between the period chevrons, where the full word wraps.
     weekOf: (label: string) => `Sem. du ${label}`,
-    // Abréviations calibrées pour une case de 44px : les noms complets y sont
-    // tronqués en charabia.
     typeShort: {
       Sprint: 'Sprint',
       Anaerobic: 'Anaéro',
@@ -1207,7 +1180,6 @@ export const fr = {
     } as Record<ActivityType, string>,
     restDay: 'Repos',
     planned: 'Prévu',
-    // Shown in place of the raw "Easy" zone name on a planned Base run.
     easyEffortLabel: 'EF',
     structure: {
       title: 'Structure',
@@ -1296,8 +1268,6 @@ export const fr = {
     futureSessionsChanged: (count: number) => `${count} séance${count > 1 ? 's' : ''} future${count > 1 ? 's' : ''} replanifiée${count > 1 ? 's' : ''}`,
   },
 
-  // Display labels for domain enums. Styling (colors, badge classes) stays in
-  // the domain config; only the human-readable text lives here.
   activityTypes: {
     Sprint: 'Sprint',
     Anaerobic: 'Anaérobie',

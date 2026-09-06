@@ -55,8 +55,6 @@ function MilestoneRow({ items }: { items: Milestone[] }) {
     setActiveIndex(Math.min(items.length - 1, Math.round(el.scrollLeft / itemWidth)))
   }, [items.length])
 
-  // Corrects the optimistic initial fade once the row's actual width is known -
-  // short rows that fit without scrolling shouldn't show a "more to scroll" fade.
   useLayoutEffect(() => {
     handleScroll()
   }, [handleScroll])

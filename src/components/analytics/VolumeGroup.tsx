@@ -12,21 +12,13 @@ import { YearComparisonSection } from './YearComparisonSection'
 
 interface Props {
   series: AnalyticsSeries
-  // Week-by-week volume, which is the grain training is actually planned in -
-  // the monthly charts below it smooth over exactly the build/recover cycle it
-  // shows. Unscoped by year, like every other windowed trend chart.
   weeklyTrends: WeeklyTrendPoint[]
-  // Season-over-season context, shown only for a specific year that has a
-  // comparable previous season.
   year: number | null
   years: number[]
   byYear: Record<number, YearAnalytics>
   comparison: YearComparisonData | null
 }
 
-// "How much am I running?" - the single volume home: week-to-week volume, then
-// monthly volume, the 80/20 split, long runs and distance mix, plus
-// season-over-season context.
 export function VolumeGroup({ series, weeklyTrends, year, years, byYear, comparison }: Props) {
   const prevYear =
     year !== null ? (years.find((y) => y < year) ?? years.find((y) => y !== year)) : undefined

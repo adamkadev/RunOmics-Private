@@ -98,8 +98,6 @@ describe('idempotency', () => {
 
     const operations = build(plan(workouts), state).operations
 
-    // An already-synchronised workout and a deliberately excluded one are both
-    // no-ops on Garmin, but they must not read the same way.
     expect(operations.every((operation) => operation.action === 'keep')).toBe(true)
     expect(countOperations(operations)).toEqual({ create: 0, update: 0, delete: 0, keep: 2, skip: 0 })
     expect(hasGarminMutations(countOperations(operations))).toBe(false)
@@ -185,7 +183,6 @@ describe('removed prescriptions', () => {
 
 describe('never touching what RunOmics does not own', () => {
   it('emits no operation for a Garmin workout absent from the mapping', () => {
-    // An unrelated Garmin workout simply has no entry here, so nothing can name it.
     const operations = build(plan([workout({ id: 'a', date: '2026-09-08' })]), emptyGarminSyncState()).operations
 
     expect(operations.every((operation) => operation.existing === null)).toBe(true)
@@ -231,7 +228,6 @@ describe('selecting what is syncable', () => {
 
     expect(dates({ today: TODAY, from: '2026-09-15' })).toEqual(['2026-09-15'])
     expect(dates({ today: TODAY, to: '2026-09-12' })).toEqual(['2026-09-08', '2026-09-12'])
-    // A `from` before today is ignored rather than pulling history back in.
     expect(dates({ today: TODAY, from: '2026-01-01' })).toEqual(['2026-09-08', '2026-09-12', '2026-09-15'])
   })
 })
@@ -335,7 +331,6 @@ describe('course-aware races', () => {
         targetType: { workoutTargetTypeKey: string }
       }
 
-      // A constant 4:00/km range would compete with PacePro over the same kilometres.
       expect(effort.targetType.workoutTargetTypeKey).toBe('no.target')
     })
   })
@@ -363,7 +358,6 @@ describe('partial failure recovery', () => {
 
     expect(operations[0]!.action).toBe('schedule')
     expect(operations[0]!.existing?.garminWorkoutId).toBe('9000')
-    // The retry counts as finishing the create, never as a second workout.
     expect(countOperations(operations)).toEqual({ create: 1, update: 0, delete: 0, keep: 0, skip: 0 })
   })
 })

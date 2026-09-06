@@ -4,8 +4,6 @@ import { formatDuration, formatPace } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
-// Same distances as the Records page, minus the mile: Garmin only reports it
-// sporadically, so it would leave a gap in an otherwise dense row.
 const EFFORTS = ALL_EFFORTS.filter((e) => e.key !== '1mile')
 
 interface Props {

@@ -8,10 +8,6 @@ import {
 import { readVerifiedInsight } from '@/infrastructure/repositories/FirestoreInsightsRepository'
 import type { Insight } from '@/lib/gemini'
 
-/**
- * The record and the mark it replaced. The leaderboard is read two deep because
- * the new record sits at the top of it: what came before is the entry below.
- */
 export function buildPbCelebrationContext(record: RecordEntry): PbCelebrationContext {
   const previous = (getTopEfforts(undefined, 2)[record.key] ?? []).find(
     (effort) => effort.activityId !== record.activityId
@@ -23,7 +19,6 @@ export function buildPbCelebrationContext(record: RecordEntry): PbCelebrationCon
   }
 }
 
-/** The AI word on a fresh record, or null so the overlay shows the record alone. */
 export async function getPbCelebrationInsight(
   record: RecordEntry | null,
   now = new Date()

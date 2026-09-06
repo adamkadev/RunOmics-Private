@@ -16,7 +16,6 @@ const LEVELS = [
 ]
 
 function getLevel(value: number) {
-  // LEVELS is a fixed non-empty literal, so the last element always exists.
   return LEVELS.find((l) => value < l.max) ?? LEVELS[LEVELS.length - 1]!
 }
 

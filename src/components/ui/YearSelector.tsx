@@ -10,7 +10,7 @@ interface PeriodOption {
 
 interface Props {
   years: number[]
-  selected: number | null       // active year (null = all-time/period active)
+  selected: number | null
   onSelect: (year: number | null) => void
   allTimeLabel?: string
   periods?: PeriodOption[]
@@ -18,7 +18,6 @@ interface Props {
   onSelectPeriod?: (weeks: number) => void
   yearGroupLabel?: string
   windowGroupLabel?: string
-  /** Extra classes for the year row - e.g. `justify-end` in a header row. */
   className?: string
 }
 
@@ -26,9 +25,6 @@ function GroupLabel({ children }: { children: string }) {
   return <span className="text-micro font-semibold uppercase tracking-wide text-muted-foreground">{children}</span>
 }
 
-// Horizontally scrollable pill row - scales to any number of years, unlike a
-// 2-button toggle that breaks down past 2-3 options. The selected scope is a
-// filled accent chip, the same selection language as the tab strip below it.
 export function YearSelector({
   years,
   selected,

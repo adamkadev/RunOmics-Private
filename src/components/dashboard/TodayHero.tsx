@@ -24,18 +24,11 @@ const ICON_WELL = { background: `color-mix(in srgb, ${ACCENT_ON_DARK} 18%, trans
 
 interface Props {
   status: TrainingStatus | null
-  /**
-   * Today's session in the Plan's one normalised shape, whoever prescribed it.
-   * The hero has a single session row and a single sheet - a coached day is
-   * not a different kind of card here, just a different source of the same
-   * title, size and target.
-   */
   plannedWorkout: PlanWorkoutView | null
   todayActivity: ActivitySummary | null
   nextRace: UpcomingRace | null
   aiVerdict: Insight | null
 }
-
 
 function readinessCopy(status: TrainingStatus, tone: ReadinessTone): { headline: string; body: string } {
   const r = t.dashboard.todayHero.readiness
@@ -49,7 +42,6 @@ function readinessCopy(status: TrainingStatus, tone: ReadinessTone): { headline:
   }
 }
 
-// Pure display + a rules-based readiness verdict over already-computed status/load data.
 export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiVerdict }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false)
   const [daysToRace] = useState(() =>

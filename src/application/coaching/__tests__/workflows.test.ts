@@ -204,7 +204,6 @@ describe('coaching workflows', () => {
       coachingContextHash(context),
     )
 
-    // The block finished; the next one is generated toward the same target.
     repository.plan = null
     const next = await createBootstrapProposal(context, [2, 3], {
       repository, advisor, id: ids(), now: () => new Date('2026-10-05T08:00:00Z'),
@@ -835,7 +834,6 @@ describe('coaching workflows', () => {
     const proposal = await createWeeklyReviewProposal(context, { repository, advisor, id: ids() })
     const result = applyCoachingProposal(proposal, repository, coachingContextHash(context))
 
-    // A replan rewrites the horizon; it does not restart the journey.
     expect(result.macrocycleStartDate).toBe('2026-08-03')
     expect(repository.state?.macrocycle).toEqual({ targetEventId: result.targetEvent.id, startDate: '2026-08-03' })
   })

@@ -27,20 +27,13 @@ export interface ActivitySplit {
   laps: SplitLap[]
 }
 
-/**
- * Conditions at the middle of the run, from Open-Meteo (see
- * scripts/processing/weather.py). Distinct from `avgTemperature`, which is what
- * the watch's own sensor read on the wrist.
- */
 export interface ActivityWeather {
   tempC: number
   apparentTempC: number
   humidityPct: number
   windKph: number
-  /** Direction the wind blows FROM, in degrees clockwise from north. */
   windDirDeg: number
   precipitationMm: number
-  /** WMO weather code - map it with `weatherCondition()`. */
   code: number
 }
 
@@ -49,7 +42,7 @@ export interface HrZone {
   seconds: number
   percent: number
   minBpm: number
-  maxBpm: number | null  // null for zone 5 (no upper bound)
+  maxBpm: number | null
 }
 
 export interface Activity {
@@ -59,7 +52,6 @@ export interface Activity {
   date: string
   dayOfWeek: string
   type: ActivityType
-  /** Optional for activity JSON written before classification provenance existed. */
   typeSource?: 'garmin' | 'runomics'
   description: string
   durationSeconds: number
@@ -115,9 +107,7 @@ export type WorkoutStepKind = 'warmup' | 'effort' | 'recovery' | 'cooldown'
 export interface WorkoutStep {
   kind: WorkoutStepKind
   minutes: number
-  /** Repetition index for interval steps (1-based), for "2 × 10'" style labels. */
   rep?: number
-  /** Real target pace range [fast, slow] in sec/km, from Garmin's pace.zone target - see sync_workouts.py. */
   paceSecPerKm?: [number, number]
 }
 
@@ -129,8 +119,6 @@ export interface PlannedWorkout {
   type?: ActivityType
   distanceM?: number
   durationSecs?: number
-  /** Coarse time-of-day only (see scripts/sync_workouts.py) - the exact scheduled
-   * minute of a future run is never persisted or served. */
   scheduledTime?: ScheduledTimeOfDay
   estimatedLoad?: number
   isEstimated?: boolean
@@ -172,10 +160,6 @@ export interface DashboardData {
   longestStreak: number
 }
 
-// Visual styling per activity type. Human-readable labels live in i18n
-// (`t.activityTypes`); only colors / badge classes belong here.
-// `chartColor` is the canonical "type" color: used both for charts and for the
-// "type = pastille" dots/badges (liquid glass design) - one color per type.
 export const ACTIVITY_TYPE_CONFIG: Record<
   ActivityType,
   { badgeClass: string; chartColor: string }

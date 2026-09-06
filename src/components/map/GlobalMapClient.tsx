@@ -14,7 +14,6 @@ import { HeatLegend } from "./HeatLegend";
 import { useMapRoutes } from "./useMapRoutes";
 import { coordLabel, matchesFilters, type HeatFilters } from "./mapUtils";
 
-// Canonical order for the type filter (fastest -> easiest), matching the rest of the app.
 const TYPE_ORDER: ActivityType[] = [
   "Sprint",
   "Anaerobic",
@@ -38,10 +37,6 @@ export function GlobalMapClient({ data }: Props) {
   const [worldView, setWorldView] = useState(false);
   const [names, setNames] = useState<string[]>(() => clusters.map(coordLabel));
 
-  // GPS coordinates, sparse and keyed by absolute activity index - populated lazily
-  // per zone (see effect below) so the world view and an unvisited zone never pay
-  // for coordinate data they don't render. Undefined entries are already handled
-  // throughout mapUtils.ts (buildGeoJSON/buildHeatGeoJSON skip missing routes).
   const [routes, setRoutes] = useState<[number, number][][]>([]);
   const loadedClusterIds = useRef<Set<string>>(new Set());
 
@@ -64,8 +59,6 @@ export function GlobalMapClient({ data }: Props) {
         });
       })
       .catch(() => {
-        // Best-effort: the zone just renders with no heat trace until a retry
-        // (e.g. a re-select) succeeds.
       });
 
     return () => {
@@ -101,8 +94,6 @@ export function GlobalMapClient({ data }: Props) {
     [clusters, selectedIdx, routeMeta, filters],
   );
 
-  // Shared by the zone dropdown and the world-view bubbles, so either path exits
-  // world view the same way and hands the camera back to the per-zone effect.
   const handleSelectCluster = useCallback((idx: number) => {
     setSelectedIdx(idx);
     setWorldView(false);

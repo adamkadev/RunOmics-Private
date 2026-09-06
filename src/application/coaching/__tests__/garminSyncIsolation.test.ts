@@ -2,13 +2,6 @@ import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
 
-/**
- * The Garmin sync is shared code; the ids it manipulates belong to one athlete.
- * These guards keep that separation from eroding: nothing under src/ or
- * scripts/ may name a real Garmin workout, a real schedule entry, or a real
- * coaching plan, and no default may point the mapping file at this repository.
- */
-
 const SYNC_SOURCES = [
   'src/application/coaching/garminSync.ts',
   'src/application/coaching/garminSyncApply.ts',
@@ -26,8 +19,6 @@ const read = (file: string) => fs.readFileSync(path.join(process.cwd(), file), '
 describe('athlete data stays out of this repository', () => {
   it.each(SYNC_SOURCES)('%s contains no Garmin id literal', (file) => {
     const source = read(file)
-    // Garmin workout and schedule ids are 9-11 digit numbers; the sync code has
-    // no reason to name one. Type ids and dates are far shorter.
     expect(source.match(/\b\d{9,}\b/g)).toBeNull()
   })
 
@@ -46,7 +37,6 @@ describe('athlete data stays out of this repository', () => {
     const bridge = read('scripts/garmin/sync_bridge.py')
 
     expect(bridge).toContain('os.environ.get("GARMIN_SECRET"')
-    // No credential handling and no second login flow.
     expect(bridge).not.toMatch(/garth\.login|password|getpass/)
   })
 

@@ -1,13 +1,8 @@
 import { t } from "@/i18n";
 
 const TTL_MS = 1000 * 60 * 60 * 24 * 30;
-// Bumped because entries cached before language-locking would carry
-// MapTiler's default-language names, not t.locale's.
 const CACHE_VERSION = "v3";
 
-// MapTiler expects an ISO 639-1 code (e.g. 'en', 'fr'), while t.locale is a
-// BCP 47 tag (e.g. 'en-US', 'fr-FR'). Keeps the dropdown in sync with the
-// map, which is localized the same way in maptiler.ts.
 const GEOCODE_LANGUAGE = t.locale.split("-")[0];
 
 type GeoFeature = {
@@ -45,11 +40,6 @@ export async function reverseGeocode(
   }
 }
 
-// MapTiler sometimes resolves a cluster center to a small commune/street rather than
-// the recognizable city it belongs to. The override table is part of the private
-// dataset and stays server-side, hence one lookup per name instead of fetching the
-// mapping. Add an entry to the data repository's location-overrides.json when a new
-// location shows up wrong in the map dropdown.
 const overrides = new Map<string, Promise<string>>();
 
 function applyOverride(name: string): Promise<string> {

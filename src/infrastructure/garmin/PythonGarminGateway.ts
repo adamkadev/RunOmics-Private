@@ -4,19 +4,7 @@ import readline from 'readline'
 import { GarminRateLimitError, type GarminWorkoutGateway } from '@/application/ports/GarminWorkoutGateway'
 import type { GarminWorkoutPayload } from '@/application/coaching/garminWorkoutMapping'
 
-/** stderr is inherited so Python tracebacks reach the operator's terminal directly. */
 type BridgeProcess = ChildProcessByStdio<Writable, Readable, null>
-
-/**
- * Garmin transport for the coaching sync.
- *
- * The authenticated Garmin session lives in Python (scripts/garmin/client.py,
- * the one the whole sync pipeline already uses), so this gateway does not
- * authenticate at all: it runs scripts/garmin/sync_bridge.py as a long-lived
- * child and speaks newline-delimited JSON to it. GARMIN_SECRET is inherited by
- * the child from the environment and never read, logged or passed on the
- * command line here.
- */
 
 interface BridgeResponse {
   ok: boolean
@@ -31,7 +19,6 @@ interface BridgeResponse {
 export class PythonGarminGateway implements GarminWorkoutGateway {
   private child: BridgeProcess | null = null
   private lines: AsyncIterator<string> | null = null
-  /** Requests are serialised: the bridge answers in order, one line per line. */
   private queue: Promise<unknown> = Promise.resolve()
 
   constructor(
@@ -65,7 +52,6 @@ export class PythonGarminGateway implements GarminWorkoutGateway {
       }
       return response
     })
-    // Keep the chain alive after a rejection so later operations still run in order.
     this.queue = run.catch(() => undefined)
     return run
   }

@@ -22,15 +22,6 @@ function computeGreeting(): Greeting {
   return { text, dateLine }
 }
 
-// Mockup header: small muted date line first, then the greeting title, with a
-// 34px gradient avatar on the right. The sync status rides on the date line
-// (date - Synced Xh ago) instead of the time - the clock time isn't useful
-// once sync freshness is shown there instead.
-//
-// This is time-of-day dependent, but the app is statically built - the server-rendered
-// HTML is frozen at build time, while a user can hydrate hours or days later. Computing
-// `now` during render (rather than after mount) would hydrate-mismatch on every visit
-// that lands in a different hour than the build. Rendered client-only instead.
 export function DashboardGreeting({ name, lastSyncedAt }: Props) {
   const displayName = name ?? t.profile.hero.namePlaceholder
   const [greeting, setGreeting] = useState<Greeting | null>(null)
@@ -46,8 +37,6 @@ export function DashboardGreeting({ name, lastSyncedAt }: Props) {
     <div className="flex items-center justify-between gap-3">
       <div>
         <p className="text-caption text-subtle">
-          {/* capitalize scoped to the date only - applied to the whole line it
-              would title-case "ago" in the synced text too. */}
           <span className="capitalize">{greeting?.dateLine ?? ' '}</span>
           {syncedLine ? ` · ${syncedLine}` : ''}
         </p>

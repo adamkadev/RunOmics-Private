@@ -15,8 +15,6 @@ interface Props {
   heatImpact: HeatImpactData | null
 }
 
-// "Am I getting faster?" - pace, race projections, aerobic efficiency and the
-// perceived-effort read that pairs with them.
 export function PerformanceGroup({ weeklyTrends, racePredictions, heatImpact }: Props) {
   return (
     <div className="space-y-4">

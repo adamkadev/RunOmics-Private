@@ -8,7 +8,6 @@ const { getTrainingStatusDaysBar } = await import('../GetTrainingStatusDaysBar')
 
 const day = (date: string, status?: string): TrainingStatusDay => ({ date, status })
 
-// The repository hands its days back oldest first.
 const series = (count: number, status = 'productive') =>
   Array.from({ length: count }, (_, i) => day(`2026-07-${String(i + 1).padStart(2, '0')}`, status))
 

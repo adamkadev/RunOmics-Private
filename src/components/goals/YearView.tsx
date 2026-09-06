@@ -16,18 +16,12 @@ import { t } from '@/i18n'
 const DIST_SHORT: Record<string, string> = { 'Half-Marathon': 'HM' }
 export function shortDist(d: string) { return DIST_SHORT[d] ?? d }
 
-// Text-only status indicator for the annual-goal header (no chip background,
-// no icon): green ahead, blue on track, amber behind.
 const PROJECTION_STATUS_CLASS: Record<GoalProjection['status'], string> = {
   ahead:    STATUS.success.text,
   on_track: STATUS.progress.text,
   behind:   STATUS.warning.text,
 }
 
-// Two-segment trend line for the annual-goal hero: solid from Jan 1 to today's
-// actual progress, dashed from today to the year-end projection. Purely
-// presentational - the underlying numbers all come from computeProjection.
-// Runs edge-to-edge (x: 0-300) so the card's full width is used.
 function projectionSparkline(year: number, annualDistanceKm: number, annualProgress: number, projection: GoalProjection) {
   const yearStart = new Date(year, 0, 1).getTime()
   const yearEnd = new Date(year + 1, 0, 1).getTime()

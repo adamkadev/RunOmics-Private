@@ -1,10 +1,3 @@
-// Renders src/lib/themeTokens.ts into the generated region of src/app/globals.css.
-// Run: npm run tokens
-//
-// src/lib/palette.ts is the single source of every color literal in the app.
-// This script is what keeps the CSS side of the house honest: the custom
-// properties the browser sees are derived from the palette, never typed twice.
-
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { ROOT, loadLibModules } from './loadPalette.mjs'

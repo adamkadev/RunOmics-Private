@@ -1,19 +1,12 @@
 import fs from 'fs'
 import { dataPath } from '../dataPath'
 
-/**
- * One VO2max sample, as written by scripts/garmin/vo2max_history.py. This is
- * Garmin's own series, which carries the decimal the per-activity readings
- * round away.
- */
 export interface Vo2maxSample {
-  /** Day Garmin took the sample on. */
   date: string
   vo2max: number
   fitnessAge?: number
 }
 
-/** Monthly samples for the long views, daily ones for the recent window. */
 export interface Vo2maxSamples {
   months: Vo2maxSample[]
   days: Vo2maxSample[]

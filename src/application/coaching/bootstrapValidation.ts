@@ -46,8 +46,6 @@ export function bootstrapRecoveryFacts(
     ...(completedRace
       ? {
           completedRaceDate: completedRace.date,
-          // Date-only activity data cannot establish the exact finish time, so
-          // reserve all three following calendar days for rest/easy running.
           recoveryThroughDate: addDays(completedRace.date, 3),
         }
       : {}),
@@ -225,7 +223,6 @@ export function validateBootstrapDraftSemantics(
   }
 }
 
-/** Protect taper spacing independently of the normal frequency preference. */
 function validateRacePreparation(draft: CoachingPlanDraft, strategy: BootstrapEvents): void {
   const workouts = draft.weeks.flatMap(week => week.workouts)
   const dates = new Set(workouts.map(workout => workout.date))

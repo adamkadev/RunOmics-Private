@@ -13,22 +13,17 @@ export interface RecurringRoute {
   id: string
   runCount: number
   distanceKm: number
-  /** SVG path in a 100x100 box, for the thumbnail. */
   outline: string
-  /** Every pass, oldest first, so the pace over time can be read as a series. */
   runs: RouteRun[]
   bestPaceSecPerKm: number
   bestActivityId: string
   bestDate: string
 }
 
-// Same ground, allowing for an extra loop at the end.
 const MIN_OVERLAP = 0.7
 
-// Two runs of the same route rarely differ by more than a corner cut.
 const MAX_DISTANCE_DRIFT = 0.15
 
-// Below three passes there is no trend to read, only two runs side by side.
 const MIN_RUNS = 3
 
 interface Cluster {
@@ -78,19 +73,11 @@ function toRecurringRoute(cluster: Cluster, index: number): RecurringRoute | nul
   }
 }
 
-// Clustering compares every trace against every cluster, so cache it per server
-// process the way getAllRoutes does.
 let cache: RecurringRoute[] | null = null
 
-/**
- * Routes run at least three times, with how the pace on them has moved. Same
- * ground means same hills and same distance, which is the only setting where
- * comparing raw pace across months says something about the runner.
- */
 export function getRecurringRoutes(): RecurringRoute[] {
   if (cache) return cache
 
-  // Newest first, so every cluster's first run is its most recent one.
   const withRoutes = getAllActivities().filter((a) => a.route && a.route.length > 1)
 
   cache = clusterByRoute(withRoutes)

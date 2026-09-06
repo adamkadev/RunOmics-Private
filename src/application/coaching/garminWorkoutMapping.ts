@@ -10,15 +10,6 @@ import type {
 } from '@/domain/coaching/types'
 import { hasCoursePacing } from '@/domain/coaching/coursePacing'
 
-/**
- * Deterministic translation of a coach prescription into the JSON that Garmin's
- * private workout-service accepts (POST /workout-service/workout).
- *
- * Every field is derived from the prescription itself. A segment with no pace
- * and no heart-rate target maps to Garmin's explicit `no.target`, never to an
- * invented range - the same rule the plain-text export follows.
- */
-
 interface GarminTypeRef {
   readonly displayOrder: number
 }
@@ -101,11 +92,6 @@ const STEP_TYPES = {
   repeat: { stepTypeId: 6, stepTypeKey: 'repeat', displayOrder: 6 },
 } as const satisfies Record<string, GarminStepType>
 
-/**
- * Garmin has no dedicated strides step, so strides ride on `interval` - their
- * repetition count, duration and form cues all survive, which the plain
- * `other` bucket would lose.
- */
 const STEP_TYPE_BY_KIND: Record<WorkoutSegmentKind, GarminStepType> = {
   warmup: STEP_TYPES.warmup,
   cooldown: STEP_TYPES.cooldown,
@@ -127,14 +113,6 @@ const TARGET_TYPES = {
   pace: { workoutTargetTypeId: 6, workoutTargetTypeKey: 'pace.zone', displayOrder: 6 },
 } as const satisfies Record<string, GarminTargetType>
 
-/**
- * Garmin stores a pace target as speed in metres per second, so the conversion
- * inverts: the *faster* bound of a `paceSecPerKm` range (the smaller number of
- * seconds) becomes the *higher* speed. Garmin orders the pair low-to-high, so
- * the slower pace lands in `targetValueOne` and the faster one in
- * `targetValueTwo` - the same layout the Garmin-sourced step fixtures in
- * scripts/tests/garmin_step_fixtures.py record.
- */
 export function paceRangeToSpeedRange(pace: NumberRange): { targetValueOne: number; targetValueTwo: number } {
   if (pace.min <= 0 || pace.max <= 0) throw new Error('Pace bounds must be positive seconds per kilometre')
   const slower = Math.max(pace.min, pace.max)
@@ -142,17 +120,10 @@ export function paceRangeToSpeedRange(pace: NumberRange): { targetValueOne: numb
   return { targetValueOne: metresPerSecond(slower), targetValueTwo: metresPerSecond(faster) }
 }
 
-/** Six decimals: enough to round-trip a one-second-per-km pace difference. */
 function metresPerSecond(secPerKm: number): number {
   return Math.round((1_000 / secPerKm) * 1e6) / 1e6
 }
 
-/**
- * One target per Garmin step. A prescription carrying both pace and heart rate
- * keeps pace as the executed target - it is the one the session is written
- * around - and the heart-rate bound is preserved in the step description rather
- * than dropped.
- */
 function applyTarget(step: GarminExecutableStep, target: WorkoutTarget): void {
   if (target.paceSecPerKm) {
     const { targetValueOne, targetValueTwo } = paceRangeToSpeedRange(target.paceSecPerKm)
@@ -177,7 +148,6 @@ function applyTarget(step: GarminExecutableStep, target: WorkoutTarget): void {
   step.targetType = TARGET_TYPES.none
 }
 
-/** Distance leads when a segment prescribes both, matching the plain-text export. */
 function applyEndCondition(step: GarminExecutableStep, target: WorkoutTarget): void {
   if (target.distanceMeters !== undefined) {
     step.endCondition = END_CONDITIONS.distance
@@ -195,7 +165,6 @@ function applyEndCondition(step: GarminExecutableStep, target: WorkoutTarget): v
 
 function stepDescription(segment: WorkoutSegment): string {
   const notes = [...(segment.notes ?? [])]
-  // Only surfaced when heart rate lost the target slot to pace above.
   if (segment.target.paceSecPerKm && segment.target.hrBpm) {
     notes.push(`HR ${segment.target.hrBpm.min}-${segment.target.hrBpm.max} bpm`)
   }
@@ -249,11 +218,6 @@ function workoutDescription(workout: WorkoutPrescription): string | null {
   return lines.length ? [...new Set(lines)].join('\n') : null
 }
 
-/**
- * Garmin's own estimates are only ever the prescription's own totals. Nothing
- * is reconstructed from step pace midpoints here: an absent total stays absent
- * and Garmin computes its own.
- */
 export function toGarminWorkoutPayload(workout: WorkoutPrescription): GarminWorkoutPayload {
   const steps: GarminWorkoutStep[] = []
   let order = 1
@@ -277,29 +241,16 @@ export function toGarminWorkoutPayload(workout: WorkoutPrescription): GarminWork
   }
 }
 
-/** The plan event raced on this prescription's date, if the prescription is a race. */
 export function raceEventFor(plan: CoachingPlan, workout: WorkoutPrescription): TargetEvent | null {
   if (workout.type !== 'race') return null
   return [plan.targetEvent, ...(plan.tuneUpEvents ?? [])].find((event) => event.date === workout.date) ?? null
 }
 
-/** A race whose event carries the athlete's own course/PacePro strategy. */
 export function isCourseAwareRace(plan: CoachingPlan, workout: WorkoutPrescription): boolean {
   const event = raceEventFor(plan, workout)
   return event !== null && hasCoursePacing(event)
 }
 
-/**
- * A course-aware race is paced on the watch by the athlete's own PacePro
- * strategy, so its race effort must reach Garmin with no pace target: a
- * structured range over the same kilometres would compete with PacePro instead
- * of supporting it. Only the full-distance effort is stripped - warmup and
- * cooldown keep their easy ranges, which PacePro does not cover.
- *
- * The coach normally strips that target already (see `withCourseAwareRacePacing`);
- * this is the guarantee at the Garmin boundary, so no future plan revision can
- * push a constant race pace onto a PacePro course by accident.
- */
 export function withoutCourseAwarePaceTarget(
   workout: WorkoutPrescription,
   event: TargetEvent,

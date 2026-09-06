@@ -115,9 +115,6 @@ export function RacePredictorChart({ data }: { data: GarminRacePredictionsData }
   const { range, selectRange, bounds, visible, canGoBack, canGoForward, goBack, goForward } =
     useChartWindow(data.points)
 
-  // Same point budget as every other windowed chart (4w -> 4, 6m -> 6,
-  // 1y -> 12), so the four distance lines read as trends instead of spaghetti.
-  // Whole seconds per km: the tooltip renders these as finish times.
   const plotted = sampleForRange(visible, range, 0)
 
   const distances = data.distances.filter((d) => plotted.some((p) => p[d] !== null))

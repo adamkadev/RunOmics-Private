@@ -22,7 +22,6 @@ export default function GoalsLoading() {
         <Skeleton className="h-7 w-14 rounded-lg" />
       </div>
 
-      {/* Annual goal */}
       <div className="space-y-3">
         <Skeleton className="h-4 w-32" />
         <div className={cardClass({ padding: 'lg' })}>
@@ -34,14 +33,12 @@ export default function GoalsLoading() {
         </div>
       </div>
 
-      {/* Race targets */}
       <div className="space-y-3">
         <Skeleton className="h-4 w-28" />
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => <CardSkeleton key={i} />)}
         </div>
       </div>
-
 
     </div>
   )

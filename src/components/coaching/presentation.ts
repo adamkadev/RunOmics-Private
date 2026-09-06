@@ -13,8 +13,6 @@ import { t } from '@/i18n'
 
 const DAY_MS = 86_400_000
 
-// UTC throughout: a macrocycle spans a DST change, and local-midnight maths
-// drifts a day either side of it.
 function utc(date: string): number {
   return Date.parse(date + 'T00:00:00Z')
 }
@@ -27,31 +25,18 @@ function addDays(date: string, days: number): string {
   return new Date(utc(date) + days * DAY_MS).toISOString().slice(0, 10)
 }
 
-/**
- * Shape of the macrocycle running from the start of training to the primary
- * target. Configured here at macrocycle level: the closing week is race week,
- * and the run-up splits base-heavy. These are deliberately NOT read from the
- * rolling block's TrainingWeek entries - a week's focus describes that one
- * generated week, while these four phases span the whole journey to the target.
- */
 const MACROCYCLE_SHAPE = { raceWeekDays: 7, base: 0.45, build: 0.35 } as const
 
-/** Training start for the primary target: the macrocycle anchor, or today's block. */
 export function macrocycleStart(plan: CoachingPlan): string {
   return plan.macrocycleStartDate ?? plan.block.startDate
 }
 
-/**
- * Base -> Build -> Peak -> Race across the whole run-up to the primary target,
- * derived from dates rather than from the four weeks of the current block.
- */
 export function macrocyclePhaseRanges(plan: CoachingPlan): PlanPhaseRange[] {
   const start = macrocycleStart(plan)
   const end = plan.targetEvent.date
   const total = daysBetween(start, end) + 1
   if (total < 14) return []
 
-  // The bar ends on race day itself, so the closing week is carved off first.
   const runUp = total - MACROCYCLE_SHAPE.raceWeekDays
   const baseDays = Math.max(1, Math.round(runUp * MACROCYCLE_SHAPE.base))
   const buildDays = Math.max(1, Math.round(runUp * MACROCYCLE_SHAPE.build))
@@ -67,7 +52,6 @@ export function macrocyclePhaseRanges(plan: CoachingPlan): PlanPhaseRange[] {
 
   let cursor = start
   return phases.map(({ phase, days }, i) => {
-    // The final segment is pinned to race day so rounding never lands short.
     const endDate = i === phases.length - 1 ? end : addDays(cursor, days - 1)
     const range = { phase, startDate: cursor, endDate }
     cursor = addDays(cursor, days)
@@ -75,44 +59,21 @@ export function macrocyclePhaseRanges(plan: CoachingPlan): PlanPhaseRange[] {
   })
 }
 
-/** Week X of Y toward the primary target, counted from the macrocycle dates. */
 export function macrocycleWeek(plan: CoachingPlan, today: string): { done: number; total: number } | null {
   const start = macrocycleStart(plan)
-  // Race day closes the final week rather than opening a new one.
   const total = Math.max(1, Math.round(daysBetween(start, plan.targetEvent.date) / 7))
   const done = Math.floor(daysBetween(start, today) / 7) + 1
   return { done: Math.min(Math.max(done, 1), total), total }
 }
 
-/**
- * Coach workouts are expected to reach Garmin, so a healthy sync says nothing at
- * all. Only a state the athlete has to act on is worth a line on the Plan page -
- * today that means Garmin holding a session that no longer matches the
- * prescription. The sync state itself is untouched and still kept in full for
- * idempotency and diagnostics.
- */
 export function garminAlert(view: PrescriptionView): string | null {
   return view.garminStatus === 'scheduled_different' ? t.coaching.garminOutOfDate : null
 }
 
-/** Easy and recovery runs fill the week; everything else is what the week is built around. */
 export function isKeyPrescription(workout: WorkoutPrescription): boolean {
   return !['easy', 'recovery'].includes(workout.type)
 }
 
-// --- Deriving the numbers the Plan UI shows ---------------------------------
-//
-// A prescription states what the athlete should do, not how long it takes: the
-// coach gives "4 km @ 5:50-6:27/km" and the Plan row has to say "~25 min". The
-// functions below are that derivation, and they share one rule - a value is
-// either computed from what the prescription actually states or it is not shown
-// at all. Nothing here guesses at a pace, a distance or a duration.
-
-/**
- * A segment's duration: stated outright, or implied by a distance run at a
- * stated pace (its midpoint). A distance with no pace is neither, and the
- * caller decides what to do about it.
- */
 function segmentSeconds(target: WorkoutTarget): { seconds: number; estimated: boolean } | null {
   if (target.durationSeconds !== undefined) return { seconds: target.durationSeconds, estimated: false }
   if (target.distanceMeters !== undefined && target.paceSecPerKm) {
@@ -122,7 +83,6 @@ function segmentSeconds(target: WorkoutTarget): { seconds: number; estimated: bo
   return null
 }
 
-/** Every segment in running order, with repeat blocks expanded into their reps. */
 function eachSegment(
   workout: WorkoutPrescription,
   visit: (target: WorkoutTarget, kind: WorkoutSegmentKind, rep: number | undefined) => boolean | void
@@ -139,7 +99,6 @@ function eachSegment(
   return true
 }
 
-/** Prefer explicit distance; estimate timed paced segments, never unpaced effort. */
 export function prescriptionSize(workout: WorkoutPrescription): string {
   let meters = 0
   let unpacedSeconds = 0
@@ -163,7 +122,6 @@ export function prescriptionSize(workout: WorkoutPrescription): string {
   ].filter(Boolean).join(' + ')
 }
 
-/** The widest pace band the session asks for, for the one-line summary. */
 export function prescriptionPace(workout: WorkoutPrescription): string | null {
   let min: number | undefined
   let max: number | undefined
@@ -177,13 +135,6 @@ export function prescriptionPace(workout: WorkoutPrescription): string | null {
   return min !== undefined && max !== undefined ? `${formatClock(min)}–${formatClock(max)}/km` : null
 }
 
-/**
- * How long the session takes. An explicit total wins; otherwise every segment
- * is added up, repeats multiplied and timed recoveries and strides included.
- * `estimated` is true as soon as any part of it came from distance and pace,
- * and the UI marks such a value with a "~". One segment that can be neither
- * timed nor paced makes the total a guess, so no duration is offered at all.
- */
 export function prescriptionDuration(workout: WorkoutPrescription): { seconds: number; estimated: boolean } | null {
   if (workout.totalDurationSeconds !== undefined) {
     return { seconds: workout.totalDurationSeconds, estimated: false }
@@ -203,7 +154,6 @@ export function prescriptionDuration(workout: WorkoutPrescription): { seconds: n
   return { seconds: Math.round(seconds), estimated }
 }
 
-/** How far the session goes, from an explicit total or the stated distances. */
 export function prescriptionDistanceMeters(workout: WorkoutPrescription): number | null {
   if (workout.totalDistanceMeters !== undefined) return workout.totalDistanceMeters
 
@@ -214,8 +164,6 @@ export function prescriptionDistanceMeters(workout: WorkoutPrescription): number
   return meters || null
 }
 
-// A structure bar has four intensities; strides are short accelerations run
-// inside the session's own effort, so they share that one.
 const STEP_KIND: Record<WorkoutSegmentKind, WorkoutStepKind> = {
   warmup: 'warmup',
   effort: 'effort',
@@ -224,26 +172,12 @@ const STEP_KIND: Record<WorkoutSegmentKind, WorkoutStepKind> = {
   strides: 'effort',
 }
 
-/**
- * The prescription as the steps the Plan's own WorkoutStructureBars and
- * WorkoutStepList already draw, so a coached session and a Garmin one render
- * through exactly the same structure UI.
- *
- * Returns null for a single continuous block: the row and the sheet's chips
- * already state its distance, duration and pace, and one full-height bar over
- * one line repeating those numbers is noise, not structure.
- */
 export function prescriptionStructure(workout: WorkoutPrescription): WorkoutStep[] | null {
   const steps: { kind: WorkoutStepKind; minutes: number | null; rep?: number; paceSecPerKm?: [number, number] }[] = []
 
   const drawable = eachSegment(workout, (target, kind, rep) => {
     const stepKind = STEP_KIND[kind]
     const timed = segmentSeconds(target)
-    // Only the bookends may be left open. A warm-up given as "2 km" is run at
-    // whatever pace the rest of the session leaves it, and bookends() splits
-    // that remainder the same way it does for a parsed Garmin session. An
-    // untimed, unpaced effort or recovery has no such fallback, so rather than
-    // invent a width for it the shape is not drawn at all.
     if (!timed && stepKind !== 'warmup' && stepKind !== 'cooldown') return false
     steps.push({
       kind: stepKind,

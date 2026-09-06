@@ -24,9 +24,6 @@ import { MODEL_POOL } from '@/domain/ai/budget'
 import { generateStructuredJson } from '@/lib/gemini'
 
 const MODEL = () => process.env.GEMINI_COACH_MODEL || process.env.GEMINI_MODEL || MODEL_POOL[0]!
-// The adaptive coach bills its own Google project, so it reads its own key and
-// never falls back to GEMINI_API_KEY: a fallback would silently spend the
-// general AI surfaces' free-tier quota on a coaching generation.
 const API_KEY = () => process.env.GEMINI_COACH_API_KEY
 const PLACEHOLDER_TIME = '2000-01-01T00:00:00.000Z'
 const PLACEHOLDER_PROVENANCE = { source: 'gemini' as const, trigger: 'bootstrap' as const, createdAt: PLACEHOLDER_TIME }
@@ -217,9 +214,6 @@ function hasStructuredProgression(segments: WorkoutSegment[]): boolean {
 
 function bootstrapWorkoutDraft(value: unknown, label: string): BootstrapWorkoutDraft {
   const raw = record(value, label)
-  // Reuse the segment/range/date validator on one workout at a time. The
-  // synthetic metadata exists only for structural parsing and is discarded;
-  // model-supplied IDs and totals are intentionally ignored.
   const parsed = parseWorkoutPrescription({
     id: 'structural-draft',
     revision: 1,

@@ -9,7 +9,6 @@ const PREDICTED_KEYS = ['5k', '10k', 'half', 'marathon'] as const
 const KM_BY_KEY = Object.fromEntries(EFFORTS.map((e) => [e.key, e.km])) as Record<string, number>
 const TREND_WEEKS = 12
 const FORM_WINDOW_WEEKS = 8
-// Only half of the VO2max change is reflected in the prediction - VO2max isn't perfectly linear with race time.
 const FORM_DAMPING = 0.5
 const RECENT_EFFORTS_COUNT = 5
 
@@ -33,7 +32,6 @@ function stdev(values: number[]): number {
   return Math.sqrt(variance)
 }
 
-/** Individual recorded times for `key` (not just the best), most recent first. */
 export function recentEffortTimes(activities: Activity[], key: string, n: number): number[] {
   return activities
     .filter((a) => a.bestEfforts?.[key] != null)
@@ -42,7 +40,6 @@ export function recentEffortTimes(activities: Activity[], key: string, n: number
     .map((a) => a.bestEfforts![key] as number)
 }
 
-/** +/- seconds around a prediction, from the coefficient of variation of recent same-distance efforts. */
 export function confidenceBandSeconds(predictedSeconds: number, recentTimes: number[]): number {
   if (recentTimes.length < 2) return 0
   const mean = recentTimes.reduce((s, v) => s + v, 0) / recentTimes.length
@@ -50,13 +47,6 @@ export function confidenceBandSeconds(predictedSeconds: number, recentTimes: num
   return Math.round(predictedSeconds * (stdev(recentTimes) / mean))
 }
 
-/**
- * Ratio of current VO2max to its value ~`windowWeeks` ago (1 = unchanged, >1 = improved).
- *
- * The reference point is found by date rather than by counting entries back:
- * the series is sampled monthly, and a sample is missing for any month with no
- * reading, so its index says nothing about how long ago it was.
- */
 export function vo2maxFormFactor(history: VO2maxPoint[], windowWeeks: number): number {
   if (history.length < 2) return 1
   const latest = history[history.length - 1]
@@ -68,7 +58,6 @@ export function vo2maxFormFactor(history: VO2maxPoint[], windowWeeks: number): n
   return latest.value / past.value
 }
 
-/** Damps a Riegel prediction by recent VO2max trend - improving fitness predicts a faster time. */
 export function applyFormWeighting(predictedSeconds: number, formFactor: number, damping = FORM_DAMPING): number {
   return Math.round(predictedSeconds * (1 - damping * (formFactor - 1)))
 }

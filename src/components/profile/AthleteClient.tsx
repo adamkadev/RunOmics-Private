@@ -14,7 +14,6 @@ interface Props {
   latestVo2max: number | null
   weeklyZoneTime: ZoneShare[]
   recentZoneTime: ZoneShare[]
-  /** Pace zones, moved here from Analytics - reference data, next to the HR zones. */
   paceZones: TrainingZonesData | null
 }
 

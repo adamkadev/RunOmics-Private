@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest'
 import { ACCENT_IDS, ACCENT_SWATCHES, ACCENT_SWATCHES_LIGHT } from '@/lib/accent'
 import { HUE, white } from '@/lib/palette'
 
-// WCAG 2.1 relative luminance + contrast ratio.
 function luminance(hex: string): number {
   const [r, g, b] = [1, 3, 5].map((i) => {
     const c = parseInt(hex.slice(i, i + 2), 16) / 255
@@ -16,11 +15,6 @@ function contrast(fg: string, bg: string): number {
   return ((l1 ?? 0) + 0.05) / ((l2 ?? 0) + 0.05)
 }
 
-// The accent palette is fixed, so contrast can be guaranteed by test instead
-// of a runtime picker validation: every accent must stay readable as a UI
-// color (WCAG 1.4.11 non-text contrast, ratio >= 3:1) on its theme background.
-// The darkest background any accent ships with, and the lightest surface a
-// light-mode accent can land on (a card).
 const DARK_BG = HUE.performanceBgDark
 const LIGHT_BG = white
 

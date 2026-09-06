@@ -70,8 +70,6 @@ describe('getShoeVerdictInsight', () => {
 
     const [first, second] = readVerifiedInsight.mock.calls
     expect(first?.[1].hash).not.toBe(second?.[1].hash)
-    // The status badge is on the same screen, so crossing into replace also has
-    // to stop the previous verdict being served through the grace window.
     expect(first?.[1].guard).not.toBe(second?.[1].guard)
   })
 

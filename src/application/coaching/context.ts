@@ -30,7 +30,6 @@ export interface CompactActivity {
 }
 
 export type CoachingUpcomingRace = Omit<UpcomingRace, 'targetSeconds'> & {
-  /** Present only when this specific Garmin event has an explicit time goal. */
   targetSeconds?: number
 }
 

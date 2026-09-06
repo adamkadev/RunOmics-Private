@@ -9,7 +9,6 @@ export function wearStatus(pct: number): WearStatus {
 export interface WearOutlook {
   status: WearStatus
   kmLeft: number
-  /** How long the remaining kilometres last at the recent rate, or null with no rate to project from. */
   weeksRemaining: number | null
 }
 

@@ -74,7 +74,7 @@ describe('computeWeekAdherence', () => {
   it('counts every session planned in the week, including the ones still to come', () => {
     const days = [
       day('2026-07-06', true, true),
-      day('2026-07-08', true, false), // later in the week
+      day('2026-07-08', true, false),
     ]
     expect(computeWeekAdherence(days)).toEqual({ planned: 2, done: 1, percent: 50 })
   })

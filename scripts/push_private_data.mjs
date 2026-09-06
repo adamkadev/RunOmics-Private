@@ -1,29 +1,4 @@
 #!/usr/bin/env node
-/**
- * Pushes a freshly-synced data directory into the private RunOmics-data
- * repository. Used by .github/workflows/sync.yml after it hydrates the complete
- * private dataset into the server-only data/ workspace and syncs in place.
- *
- * Same token handling as fetch_private_data.mjs, and for the same reasons:
- * RUNOMICS_DATA_REPO_TOKEN never touches argv, the clone URL, .git/config,
- * or an error message - only GIT_ASKPASS ever sees it, reading it from its
- * own inherited environment. See fetch_private_data.mjs's header for the
- * full rationale; this script deliberately duplicates the small helper
- * rather than sharing a module, so each script stays independently readable
- * and auditable.
- *
- * Mirrors sync.yml's own commit-message convention (today's inline step)
- * so the data repo's history reads the same way this app repo's did:
- * activities > other metrics > timestamp-only, each "[skip ci]".
- *
- * Pushing is a wholesale replacement of the repository's data/ - `rm -rf` then
- * copy - so it is only ever safe against the exact commit the workspace was
- * hydrated from. Optimistic concurrency enforces that: fetch_private_data.mjs
- * records that commit beside the workspace, and this script refuses to touch
- * anything if the remote has moved on. There is no automatic merge; the caller
- * re-fetches and retries, which is the only way to be sure a concurrent commit
- * is preserved rather than guessed at.
- */
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
@@ -70,8 +45,6 @@ function countActivities(sourceDataDir) {
   return total
 }
 
-// activities > other metrics > timestamp-only - same three tiers the app repo's
-// own sync commits used, computed from the data repo clone's own diff.
 function classifyChanges(cloneDir) {
   const status = execFileSync('git', ['-C', cloneDir, 'status', '--porcelain'], { stdio: 'pipe' })
     .toString()
@@ -101,12 +74,7 @@ export function assertCompleteDataWorkspace(sourceDataDir, existingDataDir) {
   }
 }
 
-/**
- * The optimistic-concurrency check. Runs before the workspace replaces the
- * clone's data/, so a refusal leaves both the clone and the remote untouched.
- *
- * @param {Record<string, string | undefined>} [env]
- */
+/** @param {Record<string, string | undefined>} [env] */
 export function assertBaseRevisionCurrent(sourceDataDir, remoteCommit, url, env = process.env) {
   const recorded = readBaseRevision(sourceDataDir, env)
 
@@ -154,8 +122,6 @@ export function pushPrivateData(sourceDataDir) {
     const remoteCommit = git(['-C', cloneDir, 'rev-parse', 'HEAD'], { env }, token).trim()
 
     const targetDataDir = path.join(cloneDir, 'data')
-    // Both guards run before anything is deleted: a refusal leaves the clone,
-    // the workspace and the remote exactly as they were.
     assertBaseRevisionCurrent(sourceDataDir, remoteCommit, url)
     assertCompleteDataWorkspace(sourceDataDir, targetDataDir)
     fs.rmSync(targetDataDir, { recursive: true, force: true })
@@ -186,12 +152,8 @@ export function pushPrivateData(sourceDataDir) {
       {},
       token
     )
-    // A non-fast-forward push is rejected by git rather than forced, so even a
-    // commit landing between the clone above and this push cannot be lost.
     git(['-C', cloneDir, 'push'], { env }, token)
 
-    // The workspace's base is now what it just pushed, so a second push from
-    // the same workspace is still checked - against the right commit.
     const pushedCommit = git(['-C', cloneDir, 'rev-parse', 'HEAD'], { env }, token).trim()
     recordBaseRevision(sourceDataDir, { commit: pushedCommit, url })
 

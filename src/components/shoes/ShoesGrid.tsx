@@ -9,7 +9,6 @@ import { formatCompactDate } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
-/** The single pair most in need of action, or null when the rotation is healthy. */
 export function pickHeroShoe(shoes: ShoeStats[]): ShoeStats | null {
   return (
     shoes
@@ -30,7 +29,6 @@ const WEAR_BAR: Record<WearStatus, string> = {
   replace: STATUS.danger.dot,
 }
 
-// Hero gradient per state, mirroring NextRaceSpotlight's orange treatment.
 export const HERO_SURFACE: Record<'watch' | 'replace', { background: string; borderColor: string }> = SHOE_WEAR_TINTS
 
 function ShoeHeroCard({ shoe, insight }: { shoe: ShoeStats; insight: string | null }) {
@@ -96,7 +94,6 @@ function ShoeRow({ shoe }: { shoe: ShoeStats }) {
 
 interface Props {
   shoes: ShoeStats[]
-  /** Deterministic usage/rotation sentence for the hero pair, computed server-side. */
   heroInsight?: string | null
 }
 

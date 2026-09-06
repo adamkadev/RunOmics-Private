@@ -12,18 +12,10 @@ import { fillWeeklyGaps, monthStartTicks } from '@/domain/timeWindow'
 import { isoDate, startOfWeek } from '@/lib/calendarDate'
 import { t } from '@/i18n'
 
-// Past this many points the per-week dots stop marking readings and start
-// reading as a dotted band: a year is 52 of them on a phone-width card.
 const MAX_DOTTED_POINTS = 14
 
-// Past roughly two months of weeks, "6 juil." stops being a useful landmark and
-// the axis wants months instead. 4w (4 points) keeps dates - there the day is
-// the whole point; 6m and 1y switch over.
 const MAX_DATE_LABELLED_POINTS = 10
 
-// A week nothing was run. Only the volume fields carry a real zero: there is no
-// pace or heart rate to average over no runs, so the rest stay null exactly as
-// they would on a week the athlete did not record them.
 const BLANK_WEEK: Omit<WeeklyTrendPoint, 'date' | 'label'> = {
   distanceKm: 0,
   sessionCount: 0,
@@ -71,27 +63,18 @@ export function WeeklyVolumeChart({ points }: { points: WeeklyTrendPoint[] }) {
 
   if (!points.some((p) => p.distanceKm > 0)) return null
 
-  // A week off never reaches the series, so without this a layoff is drawn as
-  // one step between the weeks either side of it and the average is taken over
-  // the weeks that happened rather than the weeks that passed.
   const weeks = fillWeeklyGaps(points, (monday) => ({
     ...BLANK_WEEK,
     date: monday,
     label: new Date(monday + 'T00:00:00').toLocaleDateString(t.locale, { day: 'numeric', month: 'short' }),
   }))
 
-  // A partial week is a partial total, so it is marked and left out of the
-  // average: counting a Tuesday against seven full weeks would drag the
-  // reference line down every Monday and read as a drop that has not happened.
   const currentWeekDate = isoDate(startOfWeek(new Date()))
 
   return (
     <WindowedChartCard
       title={t.analytics.charts.weeklyVolume.title}
       points={weeks}
-      // Every point is one week, and the point of this chart is the week-to-week
-      // shape: bucketing a six-month window into six averaged points would erase
-      // exactly the down weeks and spikes it exists to show.
       sample={false}
       footnote={t.analytics.charts.weeklyVolume.footnote}
     >
@@ -99,22 +82,14 @@ export function WeeklyVolumeChart({ points }: { points: WeeklyTrendPoint[] }) {
         const complete = visible.filter((w) => w.date !== currentWeekDate)
         const c = t.analytics.charts.weeklyVolume
 
-        // Wide windows are labelled by month, which is what makes a year of
-        // weeks scannable: month starts are landmarks, evenly-spaced week dates
-        // ("4 Aug · 29 Sep · 24 Nov") mark nothing.
         const byMonth = visible.length > MAX_DATE_LABELLED_POINTS
         const ticks = byMonth ? monthStartTicks(visible) : windowTicks(visible)
         const tickLabel = byMonth ? windowTickMonth : windowTickDate
 
-        // One average for the whole card - the dashed line and the reading below
-        // it are the same number. Computing the reading against "every week
-        // except the last" instead put two different averages on one chart.
         const average = complete.length
           ? Math.round(complete.reduce((sum, w) => sum + w.distanceKm, 0) / complete.length)
           : 0
 
-        // Read the last finished week against that line - "how does my week
-        // compare" is the question this chart is opened with.
         const last = complete[complete.length - 1]
         const delta = last && complete.length > 1 ? last.distanceKm - average : null
         const explain =
@@ -134,9 +109,6 @@ export function WeeklyVolumeChart({ points }: { points: WeeklyTrendPoint[] }) {
           <>
             <ChartFigure summary={summary}>
               <ResponsiveContainer width="100%" height={200}>
-                {/* Wider right margin than the sibling charts: their ticks are
-                    three-letter months, these are "27 juil." on the window's
-                    last point, and half of it hangs off the card at 4w. */}
                 <AreaChart data={visible} margin={{ top: 4, right: 18, bottom: 0, left: -8 }}>
                   <defs>
                     <linearGradient id="weeklyVolumeGradient" x1="0" y1="0" x2="0" y2="1">
@@ -144,9 +116,6 @@ export function WeeklyVolumeChart({ points }: { points: WeeklyTrendPoint[] }) {
                       <stop offset="95%" stopColor={accentColor} stopOpacity={0.02} />
                     </linearGradient>
                   </defs>
-                  {/* interval=0 so every category reaches the formatter. Left to
-                      its own interval Recharts thins the 52 weekly points first,
-                      and a year window can land on nothing but blanked ones. */}
                   <XAxis {...windowDateAxis(ticks, tickLabel)} interval={0} />
                   <YAxis
                     tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
@@ -158,10 +127,6 @@ export function WeeklyVolumeChart({ points }: { points: WeeklyTrendPoint[] }) {
                     content={<CustomTooltip currentWeekDate={currentWeekDate} />}
                     cursor={{ stroke: accentColor, strokeWidth: 1, strokeDasharray: '4 3' }}
                   />
-                  {/* Deliberately unlabelled: an inline "avg 41 km" sits exactly
-                      where the most recent weeks are and collides with the curve
-                      on a phone. The footnote names the line, the reading gives
-                      the number. */}
                   {average > 0 && (
                     <ReferenceLine
                       y={average}
@@ -170,9 +135,6 @@ export function WeeklyVolumeChart({ points }: { points: WeeklyTrendPoint[] }) {
                       strokeWidth={1}
                     />
                   )}
-                  {/* The curve's last point is a week still being run, so the
-                      dip into it is not a real drop. Mark where "so far" starts
-                      rather than letting the line imply a finished week. */}
                   {visible.some((w) => w.date === currentWeekDate) && (
                     <ReferenceLine
                       x={currentWeekDate}

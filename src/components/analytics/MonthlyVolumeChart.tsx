@@ -11,7 +11,6 @@ import { ChartFigure } from '@/components/ui/ChartFigure'
 import { ChartExplain } from '@/components/ui/ChartExplain'
 import { t } from '@/i18n'
 
-// Base at the bottom (training pyramid), high-intensity and races at the top
 const VOLUME_STACK_ORDER: ActivityType[] = ['Base', 'Tempo', 'Threshold', 'VO2Max', 'Anaerobic', 'Sprint', 'Race']
 
 interface Props {

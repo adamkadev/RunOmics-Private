@@ -1,27 +1,4 @@
 #!/usr/bin/env node
-/**
- * Populates data/ before dev/build - the one place that decides which data
- * source powers this build. Runs via predev/prebuild (see package.json).
- *
- * data/ sits at the repository root, deliberately outside public/: everything
- * under public/ is served as a static asset, so a dataset there would put the
- * real Garmin-derived data back on the open web.
- *
- * Deliberately conservative: this only ever fills a *gap*. If
- * data/activities/index.json already exists it is a no-op, so it cannot
- * clobber a dataset fetched or synced earlier.
- *
- *   index.json present                 -> no-op
- *   absent, RUNOMICS_DATA_REPO_URL set -> fetch the private data repo
- *                                         (personal use; fails loudly on
- *                                         any error - never falls back to
- *                                         demo data silently)
- *   absent, otherwise                  -> generate the deterministic demo
- *                                         dataset (fresh clone, no config)
- *
- * An explicit RUNOMICS_DATA_DIR is authoritative and is never populated here.
- * It must already contain a complete activity dataset.
- */
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'

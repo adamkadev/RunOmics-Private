@@ -22,11 +22,6 @@ export function racePhase(daysUntil: number): RacePhase {
   return 'build'
 }
 
-/**
- * Rolls CTL/ATL forward under a fixed daily load. Holding today's load flat is
- * an assumption, not a plan - the UI has to say so, because the honest answer
- * to "what will my form be" depends on training that hasn't happened yet.
- */
 export function projectLoad(from: LoadSnapshot, dailyLoad: number, days: number): LoadSnapshot {
   let { ctl, atl } = from
   for (let day = 0; day < days; day++) {
@@ -36,8 +31,6 @@ export function projectLoad(from: LoadSnapshot, dailyLoad: number, days: number)
   return { ctl: round(ctl), atl: round(atl), tsb: round(ctl - atl) }
 }
 
-// Coggan's race-ready band: rested enough to perform, not so rested that
-// fitness has started to slide.
 const PEAK_TSB_MIN = 5
 const PEAK_TSB_MAX = 25
 

@@ -15,9 +15,6 @@ const TYPE_COLORS: Record<string, string> = {
   interval_cooldown: 'text-violet-500 dark:text-violet-400',
 }
 
-// Two static strings so Tailwind JIT can detect both variants. Tight fixed
-// widths + gap-x-1.5 keep all columns, HR included, on one line without
-// horizontal scroll even on narrow phones.
 const ROW_NO_HR = 'grid w-full items-center gap-x-1.5 grid-cols-[1.1rem_1fr_3rem_2.5rem_2.75rem]'
 const ROW_HR = 'grid w-full items-center gap-x-1.5 grid-cols-[1.1rem_1fr_3rem_2.5rem_2.75rem_1.75rem]'
 

@@ -1,6 +1,3 @@
-// Semantic status colors: fixed, independent of the accent/brand picker.
-// Use these everywhere a status has universal meaning (success, in-progress, pending, warning, danger).
-// Accent-colored elements (nav, CTAs, progress bars) stay in accent - only STATUS indicators go here.
 export const STATUS = {
   success: {
     text:  'text-emerald-600 dark:text-emerald-400',

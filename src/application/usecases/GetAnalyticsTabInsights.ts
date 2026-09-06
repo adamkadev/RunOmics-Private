@@ -10,7 +10,6 @@ import type { Insight } from '@/lib/gemini'
 
 export type AnalyticsTabInsights = Partial<Record<AnalyticsTabId, Insight>>
 
-/** The AI answer to each tab's question, for whichever tabs have a fresh one. */
 export async function getAnalyticsTabInsights(facts: AnalyticsTabFacts): Promise<AnalyticsTabInsights> {
   const entries = await Promise.all(
     ANALYTICS_TAB_IDS.map(async (tab) => {

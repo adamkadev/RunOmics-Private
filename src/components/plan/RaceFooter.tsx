@@ -7,15 +7,12 @@ import { t } from '@/i18n'
 
 export interface FooterRace {
   race: UpcomingRace
-  /** 'primary' is what the macrocycle targets; 'tune_up' is a race on the way. */
   role?: 'primary' | 'tune_up'
-  /** Marks the race the current rolling block runs out to. */
   blockEndsHere?: boolean
 }
 
 const ROLE_LABEL = { primary: t.plan.raceFooter.primaryTarget, tune_up: t.plan.raceFooter.tuneUp } as const
 
-// "10 km" names a distance, not a race - such an event is known by where it is run.
 const DISTANCE_ONLY = /^\s*\d+(?:[.,]\d+)?\s*(?:k|km|m|mi|miles?)\s*$/i
 
 function daysBetween(from: string, to: string): number {
@@ -27,12 +24,6 @@ function raceTitle({ race, role }: FooterRace): string {
   return role ? `${name} · ${ROLE_LABEL[role]}` : name
 }
 
-/**
- * The plan's target races, soonest first. `planSpan` is only supplied when a
- * span really describes progress toward the race (a Garmin plan); a rolling
- * coaching horizon that stops short of the primary target passes none, so no
- * denominator is invented for an event the block does not yet reach.
- */
 export function RaceFooter({
   races,
   planSpan,
@@ -42,8 +33,6 @@ export function RaceFooter({
   planSpan: PlanSpan | null
   today: string
 }) {
-  // Progress toward the primary target belongs to the macrocycle card; this one
-  // keeps only race facts. A Garmin plan span still counts its own weeks here.
   const weeks = weeksInPlan(planSpan, today)
   const ordered = [...races].sort((a, b) => a.race.date.localeCompare(b.race.date))
   if (!ordered.length) return null
@@ -54,8 +43,6 @@ export function RaceFooter({
       className="mt-4 flex items-start justify-between gap-3 rounded-[14px] border border-border px-3.5 py-3.5"
       style={{ background: BRAND_TINTS.footerFill }}
     >
-      {/* Side by side once there is room; stacked on a phone, where two
-          columns of race metadata would each be too narrow to read. */}
       <div className={cn('grid min-w-0 flex-1 gap-x-4 gap-y-3', ordered.length > 1 && 'sm:grid-cols-2')}>
         {ordered.map((entry) => {
           const { race, blockEndsHere } = entry

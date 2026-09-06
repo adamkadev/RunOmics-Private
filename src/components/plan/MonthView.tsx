@@ -23,7 +23,6 @@ interface Props {
   today: string
   atPresent: boolean
   onToday: () => void
-  /** Tap on a day with sessions: jump to the week view with that day selected. */
   onSelectDay: (date: string) => void
 }
 
@@ -63,7 +62,6 @@ function DayActivities({ activities }: { activities: ActivitySummary[] }) {
   )
 }
 
-// "45'" below the hour mark (matches the day cell's tight width), "1h30" above it.
 function formatDurationTickCompact(durationSecs: number): string {
   const totalMin = Math.round(durationSecs / 60)
   const h = Math.floor(totalMin / 60)

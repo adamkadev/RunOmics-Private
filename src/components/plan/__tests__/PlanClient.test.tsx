@@ -6,7 +6,6 @@ import { plan } from '@/domain/coaching/__tests__/fixtures'
 import { t } from '@/i18n'
 import { PlanClient } from '../PlanClient'
 
-// Pinned inside the fixture block's first week so both views have data to show.
 const NOW = new Date(2026, 8, 9, 12)
 
 function renderPlan(coaching: CoachingOverview | null = null) {
@@ -44,7 +43,6 @@ describe('PlanClient week/month switching', () => {
 
     await user.click(screen.getByRole('tab', { name: t.plan.switcher.month }))
     expect(screen.getByRole('tab', { name: t.plan.switcher.month }).getAttribute('aria-selected')).toBe('true')
-    // The week-only stat tiles go away with it.
     expect(screen.queryByText(t.plan.weekSummary.easyHard)).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('tab', { name: t.plan.switcher.week }))

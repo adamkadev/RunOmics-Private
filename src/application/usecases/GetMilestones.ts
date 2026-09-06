@@ -9,11 +9,8 @@ import { t } from '@/i18n'
 
 const DISTANCE_TIERS_KM = [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 5000]
 const MIN_STREAK_WEEKS = 8
-const MAX_STREAK_WEEKS_TO_CHECK = 208 // 4 years
+const MAX_STREAK_WEEKS_TO_CHECK = 208
 
-// Never reset (unlike DISTANCE_TIERS_KM, which is per calendar year) - this
-// is the "since day 1" lifetime odometer. Tops out at Earth's equatorial
-// circumference, a fitting final tier for a distance that only ever grows.
 const LIFETIME_DISTANCE_TIERS_KM = [500, 1000, 1500, 2000, 3000, 4000, 5000, 7500, 10_000, 15_000, 20_000, 30_000, 40_075]
 const EARTH_CIRCUMFERENCE_KM = 40_075
 const MARATHON_KM = 42.195
@@ -35,7 +32,6 @@ export interface DistanceTierCrossing {
   date: string
 }
 
-/** Annual cumulative distance tier crossings, in the order they happened. Resets each calendar year. */
 export function findDistanceTierMilestones(
   activitiesAscByDate: { date: string; distanceKm: number }[],
   tiers: number[] = DISTANCE_TIERS_KM,
@@ -68,7 +64,6 @@ export interface LifetimeDistanceCrossing {
   cumulativeKm: number
 }
 
-/** All-time cumulative distance tier crossings, in the order they happened. Unlike findDistanceTierMilestones, never resets. */
 export function findLifetimeDistanceMilestones(
   activitiesAscByDate: { date: string; distanceKm: number }[],
   tiers: number[] = LIFETIME_DISTANCE_TIERS_KM,
@@ -94,7 +89,6 @@ export interface ActivityCountCrossing {
   cumulativeKm: number
 }
 
-/** Every-Nth-session milestones ("100th run"), in the order they happened. */
 export function findActivityCountMilestones(
   activitiesAscByDate: { date: string; distanceKm: number }[],
   tiers: number[] = ACTIVITY_COUNT_TIERS,
@@ -154,11 +148,10 @@ export function longestWeekStreak(activities: Activity[]): number {
 export interface WeeklyStreakData {
   currentWeeks: number
   longestWeeks: number
-  weekDays: boolean[] // Mon..Sun
-  plannedDays: boolean[] // Mon..Sun - a past day with no plan is rest, not missed
+  weekDays: boolean[]
+  plannedDays: boolean[]
 }
 
-/** Days of the current week that carry a scheduled session (Mon..Sun). */
 export function computeWeekPlannedDays(planned: { date: string }[], now: Date): boolean[] {
   const dateSet = new Set(planned.map((w) => w.date.slice(0, 10)))
   const monday = startOfWeek(now)
@@ -178,7 +171,7 @@ export function getWeeklyStreakData(now = new Date()): WeeklyStreakData | null {
 }
 
 export async function getMilestones(): Promise<Milestone[]> {
-  const activities = getAllActivities() // newest first
+  const activities = getAllActivities()
   const ascending = [...activities].sort((a, b) => a.date.localeCompare(b.date))
 
   const milestones: Milestone[] = []

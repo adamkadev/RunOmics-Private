@@ -48,8 +48,6 @@ export function SeasonTimeline({ yearData }: { yearData: YearData }) {
       const achieved = !!pb && target.targetSeconds !== null && pb.entry.seconds <= target.targetSeconds
       const rawPredicted = predictions.find((p) => p.key === DISTANCE_KEY[target.distance])?.predictedSeconds ?? null
 
-      // Every scheduled race gets the same "never predict slower than a
-      // proven PR" treatment as the NEXT RACE hero - not just the closest one.
       const predictedSeconds = isSpotlight
         ? nextRaceSpotlight!.predictedSeconds
         : rawPredicted !== null && pb

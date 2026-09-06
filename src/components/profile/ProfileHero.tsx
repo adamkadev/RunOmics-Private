@@ -10,11 +10,6 @@ interface Props {
   displayName?: string
 }
 
-// The Progress mockup's athlete card is a glass card, not a deep --hero-gradient
-// panel: the accent shows through the avatar's --accent-gradient tile and the
-// RANK pill, while the text stays theme-foreground so it reads on the glass in
-// both modes. (This is the one member of the "hero" family the mockup renders as
-// glass; TodayHero/CelebrationOverlay stay gradient panels.)
 export function ProfileHero({ hero, displayName }: Props) {
   return (
     <GlassSurface variant="card" className="flex items-center gap-3.5 p-4">

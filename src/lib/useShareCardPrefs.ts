@@ -12,18 +12,7 @@ function readLocalStorage(key: string, fallback: string): string {
   try { return localStorage.getItem(key) ?? fallback } catch { return fallback }
 }
 
-/**
- * Share-card appearance preferences (design, accent, custom color, light
- * mode), persisted to localStorage, plus the values derived from them that
- * the renderer and the pickers consume.
- */
 export function useShareCardPrefs(appTheme: ThemeMode) {
-  // The design deliberately does NOT persist: every time the sheet opens it
-  // resets to the first card, so a design picked on a previous activity never
-  // carries over. The accent likewise defaults to the app's own theme accent
-  // (blue app -> blue pre-selected) rather than a separately remembered value,
-  // so the card opens matching the athlete's chosen colour. Only the custom hex
-  // and light mode persist below.
   const [selectedDesign, setSelectedDesign] = useState<ShareDesign>(SHARE_DESIGNS[0] ?? 'aurora')
   const appAccent = useAccent()
   const [shareAccent, setShareAccent] = useState<ShareAccent>(appAccent)
@@ -34,8 +23,8 @@ export function useShareCardPrefs(appTheme: ThemeMode) {
     readLocalStorage('ro_shareLightMode', 'false') === 'true'
   )
 
-  useEffect(() => { try { localStorage.setItem('ro_shareCustomHex', customHex) } catch { /* noop */ } }, [customHex])
-  useEffect(() => { try { localStorage.setItem('ro_shareLightMode', String(lightMode)) } catch { /* noop */ } }, [lightMode])
+  useEffect(() => { try { localStorage.setItem('ro_shareCustomHex', customHex) } catch {} }, [customHex])
+  useEffect(() => { try { localStorage.setItem('ro_shareLightMode', String(lightMode)) } catch {} }, [lightMode])
 
   const effectiveAccent: AccentId = shareAccent === 'custom' ? 'nature' : shareAccent
   const customAccentHex: string | undefined = shareAccent === 'custom' ? customHex : undefined

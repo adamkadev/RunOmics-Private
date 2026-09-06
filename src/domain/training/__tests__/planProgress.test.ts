@@ -1,8 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { weeksInPlan } from '../planProgress'
 
-// The athlete's real Garmin Coach plan (data/training_plan.json), which
-// Garmin Connect itself reports as "semaine 5 sur 11" on 22 July 2026.
 const ESCHER = { startDate: '2026-06-27', endDate: '2026-09-05' }
 
 describe('weeksInPlan', () => {
@@ -11,7 +9,6 @@ describe('weeksInPlan', () => {
   })
 
   it('counts the week the plan opens in as week 1, even mid-week', () => {
-    // 27 June 2026 is a Saturday: its week is the week of Monday 22 June.
     expect(weeksInPlan(ESCHER, '2026-06-27')).toEqual({ done: 1, total: 11 })
     expect(weeksInPlan(ESCHER, '2026-06-29')).toEqual({ done: 2, total: 11 })
   })

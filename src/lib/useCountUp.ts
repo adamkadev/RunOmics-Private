@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react'
 
 const DURATION = 700
 
-/** Eased count-up from 0 to `target` over 700ms, re-triggered whenever `target` changes. */
 export function useCountUp(target: number): number {
   const [display, setDisplay] = useState(0)
   const rafRef = useRef<number | null>(null)

@@ -62,7 +62,7 @@ interface Props {
 
 export function WeeklyStreakCard({ data, goal }: Props) {
   const s = t.dashboard.weeklyStreak
-  const today = (new Date().getDay() + 6) % 7 // Mon=0..Sun=6
+  const today = (new Date().getDay() + 6) % 7
 
   const pct = goal && goal.targetKm > 0 ? Math.min(1, goal.actualKm / goal.targetKm) : 0
   const animatedPct = useCountUp(pct * 100) / 100

@@ -17,8 +17,6 @@ interface TooltipProps {
   payload?: Array<{ dataKey: string; value: number; stroke: string; payload?: { label?: string } }>
 }
 
-// The X axis is keyed on the ISO date, so the header reads the point's own
-// human label rather than Recharts' raw category value.
 function CustomTooltip({ active, payload }: TooltipProps) {
   if (!active || !payload?.length) return null
   return (
@@ -44,8 +42,6 @@ function LegendDot({ color, label }: { color: string; label: string }) {
 }
 
 export function PaceTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
-  // Easy pace is the chart's primary series, so it follows the accent; the
-  // workout line keeps CHART_COLORS.atl so hard efforts stay orange.
   const easyColor = useAccentUiColor()
 
   if (!points.some((p) => p.easyPace !== null || p.hardPace !== null)) return null

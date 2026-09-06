@@ -4,9 +4,6 @@ import { getPbYears } from '@/infrastructure/repositories/JsonPbRepository'
 import { EFFORTS, DISTANCE_KEY } from '@/domain/activity/effort'
 import { t } from '@/i18n'
 
-// Pure (no fs dependency) - re-exported here for existing importers, but client
-// components should import from the domain module directly so they don't pull
-// this file's server-only fs import into the browser bundle.
 export { EFFORTS, DISTANCE_KEY }
 
 export interface RecordEntry {
@@ -142,17 +139,9 @@ export function getMostRecentRecord(records: RecordEntry[]): RecordEntry | null 
 export interface QualifiedEffort {
   key: string
   label: string
-  /** 1 = the current all-time record for this distance; 2/3 = next-best all-time. */
   rank: number
 }
 
-/**
- * Every activity that ranks in the top `topN` all-time for at least one
- * distance, grouped by activityId. Rank 1 comes from `records` (which is
- * official-PB-aware); ranks 2..topN come from the locally-recorded
- * leaderboard (`getTopEfforts`), skipping whichever activity already holds
- * rank 1 for that distance so it isn't double-labeled.
- */
 export function getQualifiedEffortsByActivityId(
   records: RecordEntry[],
   activities: Activity[] = getAllActivities(),

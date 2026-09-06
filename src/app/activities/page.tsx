@@ -5,7 +5,6 @@ import { ActivityListClient } from '@/components/activities/ActivityListClient'
 export const revalidate = 3600
 
 export default async function ActivitiesPage() {
-  // Load all activities upfront so scroll position is fully restorable on back navigation.
   const { items, total, nextOffset } = queryActivities({ limit: 9999 })
   const records = await getRecords()
   const qualifiedEffortsByActivityId = getQualifiedEffortsByActivityId(records)

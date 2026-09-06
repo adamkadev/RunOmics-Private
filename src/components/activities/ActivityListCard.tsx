@@ -11,7 +11,6 @@ interface Props {
   qualifiedEfforts?: QualifiedEffort[]
 }
 
-/** Compact row: type dot, title + type/RPE/date subtitle, distance + pace on the right. */
 export function ActivityListCard({ activity: a, qualifiedEfforts = [] }: Props) {
   const { chartColor } = ACTIVITY_TYPE_CONFIG[a.type]
   const title = a.description || t.activity.runTitle(a.dayOfWeek)

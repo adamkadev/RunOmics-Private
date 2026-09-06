@@ -29,10 +29,6 @@ export const metadata: Metadata = {
     startupImage: [...appleStartupImages],
   },
   other: {
-    // Next 16's `appleWebApp.capable` now emits only the standardized
-    // `mobile-web-app-capable`. iOS still needs the legacy apple-prefixed meta
-    // to honour the apple-touch-startup-image launch screens - without it the
-    // installed PWA opens on a black screen instead of the splash.
     'apple-mobile-web-app-capable': 'yes',
   },
   icons: {
@@ -60,8 +56,6 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  // theme-color is set dynamically by ThemeSync (accent + light/dark aware);
-  // a static value here would fight its updates.
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

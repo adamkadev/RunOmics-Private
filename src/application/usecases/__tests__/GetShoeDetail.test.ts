@@ -74,7 +74,6 @@ describe('getShoeDetail', () => {
   it('averages the weekly mileage over the days since that first outing', () => {
     getAllActivities.mockReturnValue([run('daily', '2026-07-01', 60)])
 
-    // 60 km over the 30 days since 1 July.
     expect(getShoeDetail('daily')?.kmPerWeek).toBe(14)
   })
 

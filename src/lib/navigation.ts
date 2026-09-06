@@ -34,12 +34,9 @@ export function sectionLabel(pathname: string): string | null {
 
 export interface NavigationOrigin {
   path: string
-  /** True when `path` is the entry right below the current one in the history stack. */
   isImmediate: boolean
 }
 
-// Sibling detail pages (activity 1 -> activity 2, shoe A -> shoe B) share a shape,
-// so going back from one lands on the list that opened the first of them.
 function routeShape(pathname: string): string {
   const segments = pathname.split('/').filter(Boolean)
   return `${segments[0] ?? ''}:${segments.length}`

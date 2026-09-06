@@ -26,7 +26,7 @@ describe('computeProjection', () => {
   })
 
   it('returns null before 4 weeks have elapsed in the year', () => {
-    vi.setSystemTime(new Date('2024-01-15T00:00:00')) // ~2 weeks in
+    vi.setSystemTime(new Date('2024-01-15T00:00:00'))
     expect(computeProjection([], 2024, 0, goal(1000))).toBeNull()
   })
 
@@ -35,8 +35,6 @@ describe('computeProjection', () => {
   })
 
   it('projects ahead when the recent weekly rate beats what is needed by >10%', () => {
-    // 8 activities @ 40km within the 56-day cutoff → weeklyRate = 320/8 = 40
-    // remaining goal = 300km over ~26.3 weeks → weeklyNeeded ≈ 11.4, well under 40
     const activities = Array.from({ length: 8 }, () => act('2024-06-01', 40))
     const result = computeProjection(activities, 2024, 500, goal(800))
     expect(result?.weeklyRate).toBe(40)
@@ -44,22 +42,19 @@ describe('computeProjection', () => {
   })
 
   it('marks status behind when the weekly rate is well under what is needed', () => {
-    // No recent activity at all → weeklyRate = 0, goal still far away
     const result = computeProjection([], 2024, 100, goal(2000))
     expect(result?.weeklyRate).toBe(0)
     expect(result?.status).toBe('behind')
   })
 
   it('marks status on_track when the rate roughly matches what is needed', () => {
-    // remainingWeeks from 2024-07-01 to 2025-01-01 ≈ 26.14
-    // need (1000-100)/26.14 ≈ 34.4 km/week; provide ~34.4 km/week over last 8 weeks
     const activities = Array.from({ length: 8 }, () => act('2024-06-20', 34.4))
     const result = computeProjection(activities, 2024, 100, goal(1000))
     expect(result?.status).toBe('on_track')
   })
 
   it('only counts activities within the last 8 weeks for the rate', () => {
-    const old = act('2023-01-01', 1000) // way outside the 56-day cutoff
+    const old = act('2023-01-01', 1000)
     const result = computeProjection([old], 2024, 100, goal(2000))
     expect(result?.weeklyRate).toBe(0)
   })

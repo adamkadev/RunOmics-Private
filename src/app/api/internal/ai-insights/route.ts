@@ -90,23 +90,11 @@ import { MODEL_POOL, dailyBudget, spendField } from '@/domain/ai/budget'
 import { openSpender, type Spender } from '@/lib/aiSpend'
 import { generateInsight } from '@/lib/gemini'
 
-// Rate limits are per model, so the pool spends its first few calls back to
-// back and only then starts pacing. The spender stops the run well before this
-// ceiling either way - see RUN_BUDGET_MS. 300s is the max on Hobby with Fluid
-// Compute, confirmed on this deployment 2026-08-05.
 export const maxDuration = 300
 
-// Daily quotas and the run's own clock belong to the spender; this only caps how
-// many verdicts one invocation even attempts. ?limit=N buys a bigger manual pass,
-// but a full backfill is several calls to this route rather than one - no
-// serverless invocation can hold the pacing open that long.
 const DEFAULT_RUN_VERDICTS_PER_RUN = 6
 const MAX_RUN_VERDICTS_PER_RUN = 60
 
-// Verdicts for runs that just landed are written before any other surface:
-// behind the other ten, the one insight the athlete is actually waiting for is
-// the first thing the day's quota or the invocation's clock drops. Small on
-// purpose - it is a handful of runs a week, not a backfill.
 const FRESH_RUN_VERDICTS_PER_RUN = 3
 
 interface SurfaceJob {
@@ -114,22 +102,9 @@ interface SurfaceJob {
   limits: Limits
   systemInstruction: string
   hash: string
-  /**
-   * Stored beside the copy so a reader can tell, once the facts have moved,
-   * whether yesterday's line would now contradict what is rendered around it.
-   * See InsightKey.guard; surfaces with nothing beside them leave it unset.
-   */
   guard?: string
   prompt: (recentHeadlines: string[]) => string
   bulletCount?: number
-  /**
-   * Pages that render this surface. These are static (ISR, revalidate = 3600),
-   * built once at deploy time - before this route ever runs, since the deploy
-   * has to be live before the sync workflow calls it. Left alone, a fresh
-   * insight would sit correct in Firestore for up to an hour while every page
-   * kept serving the pre-generation snapshot. Revalidating on a successful
-   * write is what makes it show up on the next request instead.
-   */
   paths: string[]
 }
 
@@ -138,26 +113,16 @@ interface SurfaceOutcome {
   reason?: string
 }
 
-// A model that answers 429 has spent its day, and one that answers 404 has been
-// retired out from under us. Both mean: stop asking, take the next in the pool.
 function isModelClosed(reason: string): boolean {
   return reason.startsWith('http 429') || reason.startsWith('http 404')
 }
 
-// reserve() returning null is ambiguous on its own: the pool may be spent for the
-// day, or this invocation may just have run out of its own clock. Reading back the
-// same daily ledger the spender checks lets a stuck verdict name which one.
 function noReserveReason(spender: Spender): string {
   const spent = spender.report()
   const budgetSpent = MODEL_POOL.every((model) => (spent[spendField(model)] ?? 0) >= dailyBudget(model))
   return budgetSpent ? 'no budget left' : 'no time left in this invocation'
 }
 
-/**
- * The whole life of one cached insight: skip it while its facts have not moved,
- * ask the spender which model may serve it, and only then generate and store.
- * Every surface goes through here, so none of them can bypass the budget.
- */
 async function runSurface(spender: Spender, job: SurfaceJob): Promise<SurfaceOutcome> {
   const cached = await getCachedInsight(job.surface)
   if (cached?.hash === job.hash) return { generated: false, reason: 'unchanged' }
@@ -192,18 +157,10 @@ export async function POST(req: NextRequest) {
     const limit = requestedLimit(req)
     const queue = await runVerdictQueue(ignoresHorizon(req))
 
-    // Headlines written anywhere in this invocation, shared by both verdict
-    // phases: each verdict lives in its own document, so what this batch has
-    // already said is the only anti-repetition signal there is.
     const written: string[] = []
 
-    // The run that just synced comes first. ?limit=0 still buys a report with
-    // no spend at all, so it holds this phase back too.
     const fresh = limit === 0 ? [] : queue.fresh.slice(0, FRESH_RUN_VERDICTS_PER_RUN)
 
-    // Then order is priority order: what the run budget cuts off is picked up by
-    // the next run, so the tail is the copy that can wait - and the run-verdict
-    // backfill, which has always caught up gradually.
     return NextResponse.json({
       freshVerdicts: await writeVerdicts(spender, fresh, written),
       today: await generateToday(spender),
@@ -215,14 +172,8 @@ export async function POST(req: NextRequest) {
       runVerdicts: {
         outstanding: queue.outstanding,
         eligible: queue.eligible,
-        // Split out so a stuck verdict is diagnosable from this response alone:
-        // fresh going in already 0 says the run isn't within the priority
-        // window: freshVerdicts.generated staying 0 with fresh > 0 says it was
-        // there but never got a reserve.
         fresh: queue.fresh.length,
         rest: queue.rest.length,
-        // Fresh runs left over from the cap above lead the backfill rather than
-        // waiting behind the archive for it.
         ...(await writeVerdicts(
           spender,
           [...queue.fresh.slice(fresh.length), ...queue.rest].slice(0, limit),
@@ -234,10 +185,6 @@ export async function POST(req: NextRequest) {
   })
 }
 
-// ?limit=0 means "report the backlog, spend nothing". An absent ?limit= must not
-// collapse into it: the cron and every workflow_dispatch omit the param, and
-// Number(null) is 0, so coercing would silently zero out every automated run.
-// Hence the explicit null check before any numeric conversion.
 export function requestedLimit(req: NextRequest): number {
   const param = req.nextUrl.searchParams.get('limit')
   if (param === null) return DEFAULT_RUN_VERDICTS_PER_RUN
@@ -247,10 +194,6 @@ export function requestedLimit(req: NextRequest): number {
   return Math.min(raw, MAX_RUN_VERDICTS_PER_RUN)
 }
 
-// ?all=1 lifts the recency horizon, for a manual pass over the archive after a
-// reprocess moved the facts under verdicts nobody would open next week. The
-// daily cron never sends it, so the steady state stays the runs still worth a
-// call - at 20 requests a day per model, an archive pass is not a cron's job.
 function ignoresHorizon(req: NextRequest): boolean {
   return req.nextUrl.searchParams.get('all') === '1'
 }
@@ -380,24 +323,17 @@ async function generateAnalyticsTabs(spender: Spender) {
 }
 
 interface VerdictQueue {
-  /** Runs recent enough to be written before the other surfaces. */
   fresh: RunVerdictContext[]
-  /** Everything else still owed a verdict, newest first. */
   rest: RunVerdictContext[]
   outstanding: number
   eligible: number
 }
 
-/** Every run still owed a verdict, split into what is urgent and what can wait. */
 async function runVerdictQueue(ignoreHorizon: boolean): Promise<VerdictQueue> {
   const cachedHashes = await listCachedHashes(RUN_VERDICT_PREFIX)
-  // Every activity that holds a record or a top-three effort - the ones reached
-  // from /records months after the fact.
   const recorded = new Set(Object.keys(getQualifiedEffortsByActivityId(await getRecords())))
   const now = new Date()
 
-  // Activities come newest first, so the queue is already in the order they are
-  // most likely to be read.
   const outstanding = getRunVerdictContexts().filter(
     (context) => cachedHashes.get(runVerdictSurface(context.activity.id)) !== runVerdictInsightHash(context)
   )
@@ -413,19 +349,11 @@ async function runVerdictQueue(ignoreHorizon: boolean): Promise<VerdictQueue> {
   }
 }
 
-/**
- * Generates and stores one batch of verdicts, appending each headline it writes
- * to `written` so the next prompt - in this batch or the one after it - can be
- * told what it must not say again.
- */
 async function writeVerdicts(spender: Spender, pending: RunVerdictContext[], written: string[]) {
   const before = written.length
   const failures: string[] = []
 
   for (const context of pending) {
-    // One call covers every daily ceiling in the pool, the per-minute spacing
-    // and the time left in this invocation. What it refuses, the next run picks
-    // up - and with four models to draw from, it refuses far later than one.
     const model = await spender.reserve(MODEL_POOL)
     if (!model) {
       failures.push(`${context.activity.id}: ${noReserveReason(spender)}`)
@@ -440,8 +368,6 @@ async function writeVerdicts(spender: Spender, pending: RunVerdictContext[], wri
     })
     if (!result.ok) {
       failures.push(`${context.activity.id} (${model}): ${result.reason}`)
-      // Only this model is done, not the batch: the next reserve moves on to
-      // the next model in the pool.
       if (isModelClosed(result.reason)) spender.exhaust(model)
       continue
     }

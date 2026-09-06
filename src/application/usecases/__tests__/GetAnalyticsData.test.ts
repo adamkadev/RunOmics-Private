@@ -41,7 +41,6 @@ describe('weightedAvg', () => {
 
   it('weights the average by the given weight function', () => {
     const acts = [act({ paceSecPerKm: 200, distanceKm: 1 }), act({ paceSecPerKm: 400, distanceKm: 3 })]
-    // (200*1 + 400*3) / 4 = 350
     expect(weightedAvg(acts, (a) => a.paceSecPerKm, (a) => a.distanceKm, 0)).toBe(350)
   })
 
@@ -69,7 +68,6 @@ describe('easyHardShare', () => {
 
   it('classifies zones 1-2 as easy, 3+ as hard', () => {
     const acts = [act({ hrZones: [zone(1, 600), zone(2, 600), zone(3, 800)] })]
-    // easy = 1200, total = 2000 → 60%
     expect(easyHardShare(acts)).toEqual({ easyPct: 60, hardPct: 40 })
   })
 
@@ -85,7 +83,6 @@ describe('efficiencyFactor', () => {
   })
 
   it('computes (speed in m/min) / HR averaged across qualifying activities', () => {
-    // pace 300 s/km → speed = 1000/300 * 60 = 200 m/min; ef = 200/140 ≈ 1.43
     const acts = [act({ paceSecPerKm: 300, avgHeartRate: 140, distanceKm: 5 })]
     expect(efficiencyFactor(acts)).toBeCloseTo(1.43, 2)
   })
@@ -153,7 +150,6 @@ describe('distanceDistribution', () => {
 
 describe('buildWeeklyTrends', () => {
   it('groups activities into ISO weeks keyed on the Monday, oldest first', () => {
-    // 2024-06-01 is a Saturday (week of Mon 27 May); 2024-06-05 a Wednesday.
     const points = buildWeeklyTrends([
       act({ date: '2024-06-05', type: 'Base' }),
       act({ date: '2024-06-01', type: 'Base' }),
@@ -200,8 +196,6 @@ describe('buildWeeklyTrends', () => {
     expect(points[0]?.hardPace).toBe(240)
   })
 
-  // Summed, unlike every other read on the point, which are averages: the
-  // weekly volume chart plots these as the week's actual total.
   it('sums the distance and session count of the week', () => {
     const points = buildWeeklyTrends([
       act({ date: '2024-06-03', distanceKm: 10.4 }),
@@ -235,7 +229,6 @@ describe('computeTotals', () => {
   })
 
   it('extrapolates avgKmPerWeek and caloriesPerWeek from elapsed days', () => {
-    // 14km over 7 elapsed days → 14 km/week
     const totals = computeTotals([act({ distanceKm: 14, calories: 700 })], 7)
     expect(totals.avgKmPerWeek).toBe(14)
     expect(totals.caloriesPerWeek).toBe(700)

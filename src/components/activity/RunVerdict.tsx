@@ -17,7 +17,6 @@ const TONE_TEXT_CLASS = {
 
 interface Props {
   activity: Activity
-  /** Generated copy for the same tone; falls back to the rules-based copy when absent. */
   aiVerdict: Insight | null
   coaching: ActivityCoachingView | null
 }

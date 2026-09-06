@@ -18,12 +18,9 @@ interface Props {
   onSelect: (design: ShareDesign) => void
 }
 
-/** Horizontal carousel of share-card design thumbnails. */
 export function ShareThemePicker({
   selectedDesign, accent, theme, accentHex, customRgb, gpsRoute, photoUrl, onSelect,
 }: Props) {
-  // `route` is the activity's own trace on a real basemap: with no GPS there is
-  // nothing to show, so it drops out the way any missing datum would.
   const designs = SHARE_DESIGNS.filter((d) => d !== 'route' || (gpsRoute?.length ?? 0) > 1)
 
   return (

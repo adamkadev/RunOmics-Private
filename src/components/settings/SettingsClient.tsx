@@ -22,8 +22,6 @@ interface Props {
 }
 
 export function SettingsClient({ lastSyncedAt, activityCount, device }: Props) {
-  // Without the public Firebase config, start signed-out (theme/accent
-  // settings still work) instead of spinning forever waiting for auth.
   const [user, setUser] = useState<User | null | 'loading'>(
     isClientFirebaseConfigured ? 'loading' : null
   )
@@ -47,7 +45,6 @@ export function SettingsClient({ lastSyncedAt, activityCount, device }: Props) {
       provider.setCustomParameters({ prompt: 'select_account' })
       await signInWithPopup(getClientAuth(), provider)
     } catch (err) {
-      // Ignore the user closing/cancelling the popup themselves.
       const code = (err as { code?: string }).code
       if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
         console.error('Google sign-in failed:', err)

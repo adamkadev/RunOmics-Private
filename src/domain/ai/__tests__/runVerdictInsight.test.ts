@@ -3,8 +3,6 @@ import { deservesVerdict, isFreshRun, runVerdictInsightHash as hashContext } fro
 import { runHistory } from '@/domain/activity/runHistory'
 import type { Activity, ActivityWeather } from '@/domain/activity/types'
 
-// The weather cutoff is a property of the run alone, so these hash it with the
-// history a run with no past would carry.
 const runVerdictInsightHash = (activity: Activity) =>
   hashContext({ activity, history: runHistory(activity, []), planned: null })
 
@@ -108,8 +106,6 @@ describe('isFreshRun', () => {
     expect(isFreshRun({ date: '2026-07-30T06:12:00' }, now)).toBe(true)
   })
 
-  // A run synced on one night only becomes generatable on the next, once the
-  // deployment carrying it is live, so the window has to outlast a single day.
   it('still covers a run the sync only made visible the day after', () => {
     expect(isFreshRun({ date: '2026-07-28T06:12:00' }, now)).toBe(true)
   })

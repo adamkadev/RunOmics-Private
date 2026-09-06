@@ -21,7 +21,6 @@ export interface ProfileHero {
   vo2maxTopPercent: number | null
 }
 
-/** Same six headline stats, computed over any date window (this year, all time). */
 export interface ProfilePeriodStats {
   distanceKm: number
   durationSeconds: number
@@ -54,9 +53,6 @@ type StatsActivity = {
   calories?: number | null
 }
 
-// `distanceKm` comes in pre-rounded from the shared whole-km selector so the
-// card can't disagree with Goals/Analytics; `elapsedDays` is what turns the
-// total into a rate (season-to-date for the year, full history for all time).
 function periodStats(
   activities: ReadonlyArray<StatsActivity>,
   distanceKm: number,
@@ -88,18 +84,14 @@ export async function getProfileData(): Promise<ProfileData> {
 
   const now = new Date()
   const currentYear = now.getFullYear()
-  // Days elapsed since Jan 1, so "avg / week" is the season's real rate rather
-  // than a year-to-date total spread over 52 weeks.
   const elapsedDaysThisYear = Math.max(
     1,
     Math.floor((now.getTime() - new Date(currentYear, 0, 1).getTime()) / 86400000) + 1,
   )
   const ytdActivities = activities.filter((a) => a.date.startsWith(String(currentYear)))
   const ytdDistanceKm = ytdActivities.reduce((s, a) => s + a.distanceKm, 0)
-  // Shared selector so Progress/Goals/Analytics show the exact same whole-km total.
   const ytdDistanceKmRounded = yearDistanceKm(activities, currentYear)
 
-  // All-time rates run from the very first logged activity, not from Jan 1.
   const elapsedDaysAllTime = Math.max(
     1,
     sinceDate

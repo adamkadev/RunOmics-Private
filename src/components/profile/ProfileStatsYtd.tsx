@@ -47,8 +47,6 @@ export function ProfileStatsYtd({ ytd, allTime }: Props) {
 
   return (
     <GlassSurface variant="card" className="p-5">
-      {/* The scope chip replaces the old static "This year" heading - one filled
-          chip carries the active window, same selection language as Analytics. */}
       <div className="mb-3 flex items-center gap-1.5">
         {PERIODS.map((p) => (
           <Pill

@@ -58,10 +58,6 @@ describe('getSeasonInsight', () => {
     expect(first?.[1].hash).not.toBe(second?.[1].hash)
   })
 
-  // The reads drift with every sync, so the take has to outlive its own figures.
-  // What it cannot outlive is a list that changed shape or flipped sign: the card
-  // pairs each generated bullet with the read at that index and colors it from
-  // that read's tone.
   it('holds the guard while a read only drifts', async () => {
     readVerifiedInsight.mockResolvedValue(null)
     await getSeasonInsight(SEASON)

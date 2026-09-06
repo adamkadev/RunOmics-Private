@@ -2,15 +2,6 @@ import { GarminRateLimitError, type GarminWorkoutGateway } from '@/application/p
 import type { GarminSyncOperation, GarminSyncPlan } from './garminSync'
 import { emptyGarminSyncState, GARMIN_SYNC_SCHEMA_VERSION, type GarminSyncEntry, type GarminSyncState } from './garminSyncState'
 
-/**
- * Executes a computed sync plan against Garmin, one operation at a time, and
- * hands back the sync state to persist.
- *
- * The state is returned after every operation - including a failed one - so a
- * create whose scheduling then failed is still recorded. That record is what
- * stops the next run from creating a second copy of the same workout.
- */
-
 export type GarminSyncOutcome = 'applied' | 'skipped' | 'failed'
 
 export interface GarminSyncResult {
@@ -18,7 +9,6 @@ export interface GarminSyncResult {
   outcome: GarminSyncOutcome
   garminWorkoutId: string | null
   garminWorkoutScheduleId: string | null
-  /** Set when the post-apply read-back confirmed the workout and its date. */
   verified: boolean
   error: string | null
 }
@@ -26,13 +16,11 @@ export interface GarminSyncResult {
 export interface GarminSyncReport {
   results: GarminSyncResult[]
   state: GarminSyncState
-  /** True when a Garmin 429 stopped the run before every operation was attempted. */
   rateLimited: boolean
 }
 
 export interface GarminApplyOptions {
   now: () => string
-  /** Awaited between Garmin writes, so a run never hammers the private API. */
   pause?: (ms: number) => Promise<void>
   pauseMs?: number
 }
@@ -50,10 +38,6 @@ function message(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
 
-/**
- * Create-then-schedule, the pair validated by scripts/garmin/test_workout_write.py.
- * A failure between the two leaves `workout_created` behind on purpose.
- */
 async function createAndSchedule(
   gateway: GarminWorkoutGateway,
   operation: GarminSyncOperation,
@@ -91,7 +75,6 @@ async function createAndSchedule(
     }
   } catch (error) {
     if (error instanceof GarminRateLimitError) throw error
-    // The workout exists on Garmin; recording it is what makes the retry safe.
     return {
       entry: partial,
       result: {
@@ -106,7 +89,6 @@ async function createAndSchedule(
   }
 }
 
-/** Removes only what this sync state proves RunOmics created. */
 async function removeManaged(gateway: GarminWorkoutGateway, entry: GarminSyncEntry): Promise<void> {
   if (entry.garminWorkoutScheduleId) await gateway.unscheduleWorkout(entry.garminWorkoutScheduleId)
   await gateway.deleteWorkout(entry.garminWorkoutId)
@@ -160,9 +142,6 @@ export async function applyGarminSyncPlan(
         continue
       }
 
-      // A changed prescription is replaced rather than edited in place: the
-      // create/schedule pair is the validated write path, and removing the old
-      // one first guarantees the date never ends up holding both versions.
       if (operation.action === 'replace' && operation.existing) {
         await removeManaged(gateway, operation.existing)
         entries = remove(entries, operation.existing.prescriptionId)
@@ -197,10 +176,6 @@ export async function applyGarminSyncPlan(
   }
 }
 
-/**
- * Reads Garmin back after the writes: every workout this run claims to have
- * created must exist, and must sit on the date it was scheduled for.
- */
 export async function verifyGarminSync(
   report: GarminSyncReport,
   gateway: GarminWorkoutGateway,
@@ -234,7 +209,6 @@ export async function verifyGarminSync(
   return { ...report, results }
 }
 
-/** `CREATE ✓ Sep 08 Aerobic Easy Run` - one line per operation, failures included. */
 export function formatGarminSyncResults(report: GarminSyncReport): string {
   const labels: Record<GarminSyncOperation['action'], string> = {
     create: 'CREATE',

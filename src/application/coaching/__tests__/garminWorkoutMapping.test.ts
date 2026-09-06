@@ -28,7 +28,6 @@ const executable = (step: unknown) => step as GarminExecutableStep
 
 describe('pace to speed conversion', () => {
   it('turns the faster pace bound into the higher speed', () => {
-    // 4:20/km is faster than 4:30/km, so it must come out as more metres per second.
     const { targetValueOne, targetValueTwo } = paceRangeToSpeedRange({ min: 260, max: 270 })
 
     expect(targetValueOne).toBeCloseTo(1_000 / 270, 6)
@@ -264,7 +263,6 @@ describe('repeats', () => {
     const repeat = steps(workout)[1]! as GarminRepeatStep
 
     expect(repeat.numberOfIterations).toBe(4)
-    // Garmin has no strides step type; the repetitions and form cues survive on interval.
     expect(repeat.workoutSteps[0]!.stepType.stepTypeKey).toBe('interval')
     expect(repeat.workoutSteps[0]!.endConditionValue).toBe(20)
     expect(repeat.workoutSteps[0]!.targetType.workoutTargetTypeKey).toBe('no.target')

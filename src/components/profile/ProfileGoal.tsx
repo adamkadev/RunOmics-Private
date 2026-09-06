@@ -10,9 +10,6 @@ interface Props {
   goal: ProfileGoalData | null
 }
 
-// A teaser into the Goals page, not a second copy of it: one headline number
-// (percent complete) and a status word - the actual progress bar, projection
-// curve, and editable target all live on /goals, their one home.
 export function ProfileGoal({ goal }: Props) {
   if (!goal) return null
 

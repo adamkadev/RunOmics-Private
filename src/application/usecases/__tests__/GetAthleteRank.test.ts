@@ -55,7 +55,6 @@ describe('getAthleteRank', () => {
   })
 
   it('ranks off a race record alone when Garmin has no reading', async () => {
-    // 20:00 over 5k is a solidly trained VDOT, well clear of the D floor.
     const result = await rank(null, [record('5k', 20 * 60)], MALE_30)
 
     expect(result?.vo2maxGarmin).toBeNull()
@@ -64,8 +63,6 @@ describe('getAthleteRank', () => {
   })
 
   it('averages the Garmin reading and the best VDOT rather than taking either alone', async () => {
-    // 20:00 over 5k is a VDOT just under 50, an A on its own. Pairing it with a
-    // superior-anchor Garmin reading has to land between the two, not on S.
     const vdotOnly = await rank(null, [record('5k', 20 * 60)], MALE_30)
     expect(vdotOnly?.tier).toBe('A')
     expect(await rank(MALE_30_NORMS.superior, [], MALE_30)).toMatchObject({ tier: 'S' })

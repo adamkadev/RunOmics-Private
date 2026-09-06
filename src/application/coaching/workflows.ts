@@ -225,12 +225,6 @@ function normalizeWorkout(
   }
 }
 
-/**
- * The session the coach actually asked for, with identity and lifecycle fields
- * stripped. Two drafts that compare equal here are the same prescription
- * restated, so the stored one keeps its id, revision and provenance rather than
- * being bumped as if the athlete had been given something new.
- */
 function prescribedContent(prescription: WorkoutPrescription): Partial<WorkoutPrescription> {
   const content: Partial<WorkoutPrescription> = { ...prescription }
   delete content.id
@@ -433,8 +427,6 @@ export async function createBootstrapProposal(
     ...(targetEventId ? { targetEventId } : {}),
   })
   validateDraftFrequency(draft, runsPerWeek)
-  // A new rolling block is not a new journey: only a different primary target
-  // starts the macrocycle over.
   const macrocycleStartDate = resolveMacrocycleStart(
     services.repository.getState(),
     strategy.primary.id,
@@ -495,9 +487,6 @@ async function createAdaptationProposal(
     ? await services.advisor.evaluateActivity({ context, activity, prescription: matched })
     : await services.advisor.reviewWeek({ context })
   const decision = decisionFromAdvice(advice, plan, kind, effectiveDate, createdAt, id(), id)
-  // Dry-run the lifecycle before a preview can be written. This catches stale
-  // snapshots, past edits, bad workout revisions, and invalid replacement
-  // horizons without mutating the repository.
   applyCoachDecision(plan, decision)
   const hash = coachingContextHash(context)
   const evaluation = activity ? evaluationFor(plan, activity, decision, hash, createdAt, id) : undefined

@@ -15,11 +15,6 @@ import { withAlpha } from '@/lib/palette'
 import { t } from '@/i18n'
 
 interface Props {
-  /**
-   * The session in the Plan's one normalised shape - a Garmin planned workout
-   * and a coach prescription arrive here identical, and this sheet neither
-   * knows nor cares which it is rendering.
-   */
   workout: PlanWorkoutView
   onClose: () => void
 }
@@ -70,7 +65,6 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
           ...sheetStyle,
         }}
       >
-        {/* Handle - drag down to dismiss */}
         <div className="flex justify-center pt-3 pb-1" {...handleProps}>
           <div
             className="h-1 w-9 rounded-full"
@@ -145,7 +139,6 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
               <p className="mb-2 text-caption font-semibold uppercase tracking-wide text-white/30">
                 {t.plan.structure.title}
               </p>
-              {/* A single continuous block has no interval shape to show. */}
               {structure.length > 1 && (
                 <WorkoutStructureBars steps={structure} className="mb-3 flex h-[26px] items-end gap-[3px]" />
               )}

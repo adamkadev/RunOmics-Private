@@ -9,7 +9,6 @@ describe('parseWorkoutStructure', () => {
     expect(kinds).toEqual(['warmup', 'effort', 'recovery', 'effort', 'cooldown'])
     expect(steps![1]!.minutes).toBe(10)
     expect(steps![2]!.minutes).toBe(2)
-    // Bookends absorb the rest of the 59 min budget
     const total = steps!.reduce((s, step) => s + step.minutes, 0)
     expect(total).toBe(59)
   })

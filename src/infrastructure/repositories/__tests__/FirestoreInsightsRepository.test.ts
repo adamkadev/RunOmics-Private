@@ -70,8 +70,6 @@ describe('readVerifiedInsight', () => {
     expect(get).not.toHaveBeenCalled()
   })
 
-  // The whole point of the grace window: these hashes move at midnight on their
-  // own, and a generation pass that fails used to blank the surface all day.
   it('still serves copy whose facts have moved, while it is recent', async () => {
     onDisk(stored({ generatedAt: new Date(NOW.getTime() - 30 * HOURS).toISOString() }))
 
@@ -96,8 +94,6 @@ describe('readVerifiedInsight', () => {
     expect(await readVerifiedInsight('todayHero', { hash: 'facts-as-of-today', guard: 'tone-hold' })).toBeNull()
   })
 
-  // An exact hash match is the copy the caller asked for; nothing about it can
-  // be out of step with what is rendered beside it.
   it('serves an exact match even when the guard has moved under it', async () => {
     onDisk(stored({ guard: 'tone-go' }))
 
@@ -186,7 +182,6 @@ describe('saveCachedInsight', () => {
     expect(set).toHaveBeenCalledWith(expect.objectContaining({ hash: 'facts', guard: 'tone-go' }))
   })
 
-  // Firestore rejects an undefined field outright.
   it('leaves the field out entirely for a surface with no guard', async () => {
     await saveCachedInsight('analyticsTab_volume', insight, 'facts', null)
 

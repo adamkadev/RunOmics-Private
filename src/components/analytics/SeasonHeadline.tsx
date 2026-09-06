@@ -5,11 +5,8 @@ import type { SeasonHeadlineData } from '@/application/usecases/GetSeasonHeadlin
 import type { Insight } from '@/lib/gemini'
 import { t } from '@/i18n'
 
-// The insight-first opener: what the season says in one line, backed by up to
-// three reads. Centered green-gradient card, left-aligned bullets.
 interface Props {
   data: SeasonHeadlineData
-  /** Generated take on the same reads; falls back to the rules-based copy when absent. */
   aiTake: Insight | null
 }
 

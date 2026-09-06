@@ -26,8 +26,6 @@ interface Props {
   recurringRoutes: RecurringRoute[]
 }
 
-// Records and Milestones used to be two separate routes - merged here behind
-// a segmented control so "personal bests" has one screen, not two.
 export function RecordsClient({ records, topEfforts, mostRecentKey, predictions, pbAlerts, milestones, recurringRoutes }: Props) {
   const [tab, setTab] = useState<Tab>('prs')
   const s = t.records.segmented

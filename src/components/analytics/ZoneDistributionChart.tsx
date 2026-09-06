@@ -14,7 +14,6 @@ import { t } from '@/i18n'
 
 const ZONE_LABELS = t.analytics.charts.zones.labels
 
-/** Sum each week's zone seconds across the window, then turn them into shares. */
 function zoneShares(weeks: WeeklyTrendPoint[]): ZoneShare[] {
   const seconds = new Map<number, number>()
   for (const week of weeks) {
@@ -52,16 +51,11 @@ function CustomTooltip({ active, payload }: TooltipProps) {
 }
 
 export function ZoneDistributionChart({ points }: { points: WeeklyTrendPoint[] }) {
-  // Read before the empty-data bail so the hook order never changes. Undefined
-  // on the first client render (next-themes resolves `system` late), and the
-  // dark ramp is the safer stand-in - it also reads on the light canvas.
   const { resolvedTheme } = useTheme()
   const zoneColors = resolvedTheme === 'light' ? ZONE_COLORS : ZONE_COLORS_DARK
 
   if (!points.some((p) => Object.keys(p.zoneSeconds).length > 0)) return null
 
-  // The donut sums the whole window rather than plotting it, so it needs every
-  // week's zone seconds - not the trend charts' 4/6/12-point sample.
   return (
     <WindowedChartCard title={t.analytics.charts.zones.title} points={points} sample={false}>
       {(visible) => {

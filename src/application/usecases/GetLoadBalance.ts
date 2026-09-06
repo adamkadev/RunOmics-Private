@@ -11,7 +11,6 @@ export interface LoadBalanceBucket {
   targetMin: number
   targetMax: number
   verdict: LoadBalanceVerdict
-  /** Where the load sits on the gauge, 0-100, with the target band spanning 25-75. */
   position: number
   targetStart: number
   targetEnd: number
@@ -19,7 +18,6 @@ export interface LoadBalanceBucket {
 
 export interface LoadBalanceData {
   date: string | null
-  /** Garmin's own phrase for the overall split, e.g. `BELOW_TARGETS`. */
   feedback: string | null
   buckets: LoadBalanceBucket[]
 }
@@ -30,16 +28,6 @@ export function verdictFor(load: number, min: number, max: number): LoadBalanceV
   return 'onTarget'
 }
 
-/**
- * Place a load on a 0-100 gauge whose middle half (25-75) is the target band.
- *
- * The buckets have wildly different scales - anaerobic targets sit an order of
- * magnitude below aerobic ones - so a shared axis would squash the small ones
- * flat. Anchoring every gauge on its own band instead makes "inside the range"
- * mean the same visual thing across all three. Outside the band the value
- * compresses asymptotically, so an extreme reading pins near the end rather
- * than running off it.
- */
 export function gaugePosition(load: number, min: number, max: number): number {
   const span = max - min
   if (span <= 0) return 50
@@ -70,8 +58,6 @@ export function getLoadBalance(): LoadBalanceData | null {
 
   const buckets: LoadBalanceBucket[] = []
   for (const { id, load, min, max } of source) {
-    // A bucket without its personalised band is the one thing this panel is for;
-    // rendering it against invented bounds would be worse than leaving it out.
     if (load === undefined || min === undefined || max === undefined) continue
     buckets.push({
       id,

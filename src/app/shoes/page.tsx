@@ -16,8 +16,6 @@ export const revalidate = 3600
 export default async function ShoesPage() {
   const shoes = getShoeStats()
 
-  // Deterministic rotation insight for the at-risk pair: how often it carried
-  // the recent quality sessions, and whether a race is close enough to matter.
   const hero = pickHeroShoe(shoes)
   let heroInsight: string | null = null
   if (hero) {

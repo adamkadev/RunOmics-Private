@@ -42,7 +42,6 @@ export interface ZoneShare {
 export interface WeeklyTrendPoint {
   date: string
   label: string
-  /** Everything run that week. Summed, not averaged like the reads below it. */
   distanceKm: number
   sessionCount: number
   easyPace: number | null
@@ -99,8 +98,8 @@ export interface AllTimeAnalytics extends AnalyticsSeries {
 export interface DailyEfficiency {
   date: string
   label: string
-  ef7: number | null    // 7-day rolling average
-  ef30: number | null   // 30-day rolling average
+  ef7: number | null
+  ef30: number | null
 }
 
 export interface DailyRunningDynamics {
@@ -304,8 +303,6 @@ export function buildWeeklyTrends(all: Activity[]): WeeklyTrendPoint[] {
 }
 
 export function computeTotals(activities: Activity[], elapsedDays: number): YearTotals {
-  // Round once to a whole km (shared selector) - not round(…, 1) then round
-  // again at display, which pushed Analytics 1 km above Progress/Goals.
   const distanceKm = sumDistanceKm(activities)
   const calories = activities.reduce((s, a) => s + (a.calories ?? 0), 0)
   const days = Math.max(elapsedDays, 1)
@@ -347,7 +344,7 @@ function buildYearAnalytics(year: number, activities: Activity[], now: Date): Ye
 
 function startOfWeek(d: Date): Date {
   const x = new Date(d.getFullYear(), d.getMonth(), d.getDate())
-  x.setDate(x.getDate() - ((x.getDay() + 6) % 7)) // back to Monday
+  x.setDate(x.getDate() - ((x.getDay() + 6) % 7))
   return x
 }
 

@@ -3,7 +3,6 @@ import { getFirestore } from 'firebase-admin/firestore'
 
 export function getAdminApp() {
   if (getApps().length > 0) return getApps()[0]!
-  // Local dev against the Firestore emulator needs no service account.
   if (process.env.FIRESTORE_EMULATOR_HOST) {
     return initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID })
   }

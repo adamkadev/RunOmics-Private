@@ -1,4 +1,3 @@
-/** Local-time `YYYY-MM-DD`, matching the `date` field stored on activities. */
 export function isoDate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
@@ -9,13 +8,11 @@ export function addDays(d: Date, n: number): Date {
   return copy
 }
 
-/** Monday-based start of the week containing `d`. */
 export function startOfWeek(d: Date): Date {
   const mondayOffset = (d.getDay() || 7) - 1
   return addDays(d, -mondayOffset)
 }
 
-/** ISO 8601 week number as `isoYear * 100 + isoWeek`, matching the sync pipeline's `week` field. */
 export function isoWeekNumber(d: Date): number {
   const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))
   const dayNum = date.getUTCDay() || 7

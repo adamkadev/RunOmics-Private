@@ -1,23 +1,6 @@
-// THE single source of every raw color literal in RunOmics.
-//
-// Nothing else in the codebase may contain a hex literal. The CSS custom
-// properties in globals.css are *generated* from `src/lib/themeTokens.ts`
-// (which builds on this file) - run `npm run tokens` after any change here.
-// Every TS consumer that needs a real color string (Recharts, MapLibre, the
-// share-card canvas, the splash generator) imports from here too.
-//
-// Keys follow Tailwind's palette names where the value is a Tailwind value,
-// so `blue500` reads the same as the `blue-500` the old inline comments used.
-// Values that are ours rather than Tailwind's live under the `RO` groups.
-//
-// This module must stay dependency-free and alias-free: `scripts/generate-tokens.mjs`
-// imports it directly with Node's type stripping, which cannot resolve `@/`.
-
-// ── Neutrals ────────────────────────────────────────────────────────────────
 export const white = '#ffffff'
 export const black = '#000000'
 
-// ── Tailwind ramps (only the steps actually used) ───────────────────────────
 export const HUE = {
   white,
   black,
@@ -112,21 +95,14 @@ export const HUE = {
   purple200: '#e9d5ff',
   purple700: '#7e22ce',
 
-  // ── RunOmics brand hues (not Tailwind) ────────────────────────────────────
-  /** The dark-mode accent and the app's signature green. */
   roEmerald:      '#1ed787',
   roEmeraldHi:    '#4fe6a0',
-  /** The light-mode accent - same green, darkened for pale surfaces. */
   roEmeraldDeep:  '#0e9f6e',
   roEmeraldLift:  '#14b886',
   roEmeraldShade: '#0b8a5f',
   roEmeraldShadeDark: '#0b9c63',
-  /** Text/icon color that sits on top of the emerald accent in dark mode. */
   roEmeraldInk:   '#052015',
 
-  // Ink that sits on top of each *dark* accent fill. One per hue: a shared ink
-  // would tint every primary button toward whichever hue it was cut from (the
-  // emerald ink used to green out the blue/rose/orange/violet/silver themes).
   performanceInk: '#04122b',
   impactInk:      '#2b040c',
   motivationInk:  '#2b1203',
@@ -145,7 +121,6 @@ export const HUE = {
   roRust:    '#a1662f',
   roSage:    '#a7b1aa',
 
-  // ── RunOmics ink (foreground ramp) ────────────────────────────────────────
   roInk:      '#0b1f17',
   roInk2:     '#48564e',
   roInk3:     '#7c8a82',
@@ -155,18 +130,15 @@ export const HUE = {
   roInkInv4:  '#6b7a74',
   roSteel:    '#b0bec5',
 
-  // ── Surfaces, per accent theme ────────────────────────────────────────────
   natureBg:          '#eef3f0',
   natureCanvasTop:   '#f5f9f7',
   natureBgDark:      '#060a08',
   natureCanvasDark:  '#07100c',
   natureCardDark:    '#0d110f',
-  /** iOS theme-color for the dark nature theme - slightly lifted off natureBgDark. */
   natureStatusDark:  '#070f0c',
   natureHeroDeep:    '#0d2e1a',
   natureAurora1:     '#a7f3d6',
   natureAurora2:     '#bcd6ff',
-  /** Shadow tint for the light glass surfaces - a desaturated forest green. */
   natureShadow:      '#08281c',
 
   performanceCanvasTop: '#f0f8ff',
@@ -177,8 +149,6 @@ export const HUE = {
   impactCanvasTop:  '#fff5f6',
   impactBgDark:     '#130608',
   impactCanvasDark: '#190a0d',
-  // Light hero stops mixed toward ink: the raw rose ramp read as a saturated
-  // "destructive/error" wash rather than branding (F14).
   impactHeroFrom:   '#2b0712',
   impactHeroVia:    '#6f1030',
   impactHeroTo:     '#9f1239',
@@ -186,7 +156,6 @@ export const HUE = {
   motivationCanvasTop:  '#fffaf3',
   motivationBgDark:     '#130a04',
   motivationCanvasDark: '#1a1007',
-  // Same softening as impact: burnt-orange toward ink instead of an alert orange.
   motivationHeroFrom:   '#33110a',
   motivationHeroVia:    '#5f2510',
   motivationHeroTo:     '#983811',
@@ -200,19 +169,12 @@ export const HUE = {
   silverBgDark:     '#080c10',
   silverCanvasDark: '#0d1117',
 
-  // ── One-off surfaces ──────────────────────────────────────────────────────
-  /** TodayHero's near-black base, kept off natureCardDark so the hero reads deeper. */
   heroBase:      '#0a0f0c',
-  /** Ink on the amber "caution" chip in the activity map legend. */
   mapChipInk:    '#1a1400',
-  /** Marker outline on dark map tiles. */
   mapMarkerRing: '#0b1220',
-  /** Base of the always-dark workout sheet, tinted toward the forest green. */
   sheetInk:      '#0e1612',
-  /** iOS system fill, used for the share-card toggle track in its off state. */
   iosFill:       '#787880',
 
-  // ── Share-card canvas backdrops (paired light / dark per design) ──────────
   shareAuroraDark:   '#050d0a',
   shareAuroraLight:  '#f0fdf8',
   sharePulseDark:    '#040810',
@@ -224,7 +186,6 @@ export const HUE = {
   shareMapDark:      '#09101a',
   shareMapLight:     '#edf1f7',
 
-  // Golden-hour placeholder gradient for the `memory` design.
   shareMemoryDark1:  '#1c0c06',
   shareMemoryDark2:  '#2e1610',
   shareMemoryDark3:  '#12160a',
@@ -233,15 +194,11 @@ export const HUE = {
   shareMemoryLight2: '#ffcba4',
   shareMemoryLight3: '#a8c88a',
   shareMemoryLight4: '#5c7a48',
-  /** Tree-line silhouette over the light golden-hour placeholder. */
   shareMemoryHorizon: '#121c0a',
 } as const
 
 export type Hue = keyof typeof HUE
 
-// ── Helpers ─────────────────────────────────────────────────────────────────
-
-/** `'#3b82f6'` -> `[59, 130, 246]`. Accepts 3- and 6-digit hex. */
 export function rgbTriplet(hex: string): [number, number, number] {
   const h = hex.replace('#', '')
   const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h
@@ -249,14 +206,11 @@ export function rgbTriplet(hex: string): [number, number, number] {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255]
 }
 
-/** `withAlpha('#3b82f6', 0.35)` -> `'rgba(59, 130, 246, 0.35)'`. */
 export function withAlpha(hex: string, a: number): string {
   const [r, g, b] = rgbTriplet(hex)
   return `rgba(${r}, ${g}, ${b}, ${a})`
 }
 
-/** Translucent white - the highlight/track ink on dark surfaces. */
 export const paper = (a: number): string => withAlpha(white, a)
 
-/** Translucent black - the scrim/shadow ink on light surfaces. */
 export const ink = (a: number): string => withAlpha(black, a)

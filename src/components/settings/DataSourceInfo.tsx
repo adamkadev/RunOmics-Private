@@ -10,7 +10,6 @@ import { formatMonthYear, formatRelativeAgo } from '@/lib/formatters'
 
 export interface SyncDevice {
   name?: string
-  /** ISO date the watch was paired with Garmin Connect. */
   since?: string
 }
 
@@ -25,8 +24,6 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device }: Props) {
   const { toast, leaving, showToast } = useToast()
   const s = t.settings
 
-  // Escape hatch for stale offline content: drop every SW cache. The service
-  // worker repopulates them on the next loads.
   async function handleClearCache() {
     try {
       const keys = await caches.keys()
@@ -44,7 +41,6 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device }: Props) {
       if (!res.ok) throw new Error(`Export failed with ${res.status}`)
       const workbook = await res.blob()
       const stamp = new Date().toISOString().slice(0, 10)
-      // Share sheet on iOS PWAs (no downloads UI there), download elsewhere.
       const file = new File([workbook], `runomics-training-data-${stamp}.xlsx`, {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       })
@@ -56,7 +52,6 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device }: Props) {
     }
   }
 
-  // Device provenance, shown only once the sync has actually reported a watch.
   const provenance = device && [
     s.dataSource.garmin,
     device.since && s.dataSource.since(formatMonthYear(device.since)),

@@ -1,26 +1,12 @@
-// The CSS custom properties of globals.css, expressed in TypeScript.
-//
-// `scripts/generate-tokens.mjs` renders this into the generated region of
-// `src/app/globals.css` - run `npm run tokens` after editing. Nothing here is
-// read at runtime by the app; the browser only ever sees the generated CSS.
-//
-// Alias-free by necessity: the generator transpiles this file and its relative
-// imports on the fly, and that mini-resolver only follows `./` specifiers - not `@/`.
-
 import { HUE, black, ink, paper, white, withAlpha } from './palette'
 
 export type TokenBlock = {
   selector: string
-  /** Section banner emitted above the block. */
   comment?: string
   tokens: Record<string, string>
 }
 
 const c = HUE
-
-// ── Glass surface sets ──────────────────────────────────────────────────────
-// The frosted chrome (cards, nav, sheets). Light glass is white-on-white with a
-// forest-tinted shadow; dark glass is white-alpha on the near-black canvas.
 
 const glassLight = {
   '--glass-sat': '1.4',
@@ -48,10 +34,6 @@ const glassDark = {
   '--glass-bg-sheet': withAlpha(c.natureBgDark, 0.92),
 }
 
-// ── Accent variants ─────────────────────────────────────────────────────────
-// Every non-default accent overrides the same shape, so it is described once
-// here rather than repeated as two near-identical CSS blocks per theme.
-
 type AccentVariant = {
   id: string
   light: {
@@ -69,14 +51,12 @@ type AccentVariant = {
     aurora2: string
     background: string
     canvasTop: string
-    /** Defaults to `background`; silver deliberately lands a step darker. */
     canvasBottom?: string
   }
   dark: {
     accent: string
     accentHover: string
     accentText: string
-    /** `--accent-foreground`: ink that reads on this hue's vivid fill. */
     accentInk: string
     ring: string
     aurora1: string
@@ -164,15 +144,7 @@ const ACCENT_VARIANTS: AccentVariant[] = [
   },
 ]
 
-/**
- * The light `--background` / dark `--background` pair for each accent, which is
- * also what the iOS `theme-color` meta tag must match. Exported so `accent.ts`
- * and `ThemeColorUpdater` read the same values the CSS was generated from
- * instead of keeping their own copies.
- */
 export const ACCENT_BACKGROUNDS: Record<string, [light: string, dark: string]> = {
-  // Dark nature uses a lifted variant so the iOS status bar does not read as a
-  // seam against the canvas gradient's top stop.
   nature: [c.natureBg, c.natureStatusDark],
   ...Object.fromEntries(
     ACCENT_VARIANTS.map((v) => [v.id, [v.light.background, v.dark.background] as [string, string]]),
@@ -227,12 +199,6 @@ function accentBlocks(v: AccentVariant): TokenBlock[] {
   ]
 }
 
-// ── Per-page aurora tints ───────────────────────────────────────────────────
-
-// Each page keeps its two tints but carries an opacity pair per theme: the
-// values are calibrated for the surface behind them, and the light canvas needs
-// roughly triple the alpha the near-black one does before the wash reads at all.
-// [tint1, tint2, lightOpacity1, lightOpacity2, darkOpacity1, darkOpacity2]
 const PAGE_AURORAS: Record<string, [string, string, number, number, number, number]> = {
   goals:     [c.roEmeraldDeep, c.roViolet,      0.45, 0.32, 0.2,  0.14],
   records:   [c.roViolet,      c.roEmeraldDeep, 0.42, 0.34, 0.18, 0.15],
@@ -240,8 +206,6 @@ const PAGE_AURORAS: Record<string, [string, string, number, number, number, numb
   settings:  [c.roPink,        c.roViolet,      0.34, 0.28, 0.14, 0.12],
   analytics: [c.roBlue,        c.roEmeraldDeep, 0.42, 0.32, 0.18, 0.14],
 }
-
-// ── The generated stylesheet ────────────────────────────────────────────────
 
 export const TOKEN_BLOCKS: TokenBlock[] = [
   {
@@ -252,35 +216,20 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--blur-md': '18px',
       '--blur-lg': '28px',
       '--saturate': '1.6',
-      // Calendar status colors - intentionally fixed, not accent-dependent.
       '--color-today': c.roOrange,
       '--color-missed': c.roPink,
-      // iOS safe area insets (viewport-fit: cover required in metadata viewport)
-      // Rule: every position:sticky uses top: var(--safe-top);
-      //       every position:fixed bottom edge uses padding-bottom: max(Npx, var(--safe-bottom))
       '--safe-top': 'env(safe-area-inset-top, 0px)',
       '--safe-bottom': 'env(safe-area-inset-bottom, 0px)',
-      // Utility inks. `--scrim` darkens a surface regardless of theme; the
-      // `--track-*` pair is the empty half of a progress bar or segmented meter.
       '--scrim': ink(0.25),
       '--scrim-strong': ink(0.6),
       '--track-on-dark': paper(0.08),
       '--track-on-dark-strong': paper(0.18),
-      // The accent, deepened toward black - the avatar/logo tile gradient shared
-      // by ProfileHero and DashboardGreeting.
       '--accent-gradient': `linear-gradient(140deg, var(--accent), color-mix(in srgb, var(--accent) 74%, ${black}))`,
-      // Elevation for the share-card chrome, which floats over a dimmed backdrop
-      // in both themes and so keeps a single fixed shadow.
       '--shadow-toggle': `0 2px 6px ${ink(0.28)}`,
       '--shadow-modal': `0 8px 32px ${ink(0.55)}, 0 2px 8px ${ink(0.35)}`,
       '--shadow-thumb': `0 4px 12px ${ink(0.45)}`,
-      // TodayHero's panel, which is a fixed dark surface in both themes.
       '--shadow-hero': `0 10px 30px -12px ${ink(0.5)}`,
-      // Fixed brand-green glow. Unlike --ring this does *not* follow the accent
-      // picker; it marks "today" on the streak card in every theme.
       '--brand-glow': withAlpha(c.roEmerald, 0.5),
-      // MapLibre's attribution control renders over satellite/dark tiles in both
-      // themes, so it gets fixed inks rather than theme-aware ones.
       '--map-attrib-bg': ink(0.5),
       '--map-attrib-fg': paper(0.75),
     },
@@ -310,8 +259,6 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--ring': withAlpha(c.roEmeraldDeep, 0.35),
       '--track': withAlpha(c.roInk, 0.07),
 
-      // HR zone bars. Deeper than the chart ramp (ZONE_COLORS) because these are
-      // wide filled bars on a pale card rather than thin marks on a plot.
       '--zone-1': c.roSage,
       '--zone-2': c.blue500,
       '--zone-3': c.roEmeraldDeep,

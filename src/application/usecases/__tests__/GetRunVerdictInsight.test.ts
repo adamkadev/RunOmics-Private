@@ -153,11 +153,6 @@ describe('getRunVerdictInsight', () => {
   })
 })
 
-// generateStaticParams pre-renders one page per run in the same build process,
-// so this is the one path that has to survive hundreds of calls without hitting
-// Firestore hundreds of times - see getRunVerdictInsight's isProductionBuild
-// branch. Reimports the module fresh each time so the build-lifetime cache
-// inside it doesn't leak between cases.
 describe('getRunVerdictInsight during a production build', () => {
   const PROJECT_ID = 'runomics-test'
 

@@ -33,7 +33,6 @@ const SORT_OPTIONS: { value: ActivitySortKey; label: string }[] = [
 interface WeekGroup {
   key: string
   label: string
-  /** Always the "Jul 6 - 12" range, shown as a subtitle even under "This week". */
   range: string
   items: ActivitySummary[]
   totalKm: number
@@ -50,9 +49,6 @@ function WeekStat({ value, label }: { value: string; label: string }) {
   )
 }
 
-// Groups are built from an already date-sorted list, so same-week items are
-// always contiguous - a single linear pass is enough. Weeks are Monday-
-// Sunday, matching the Plan page's week convention.
 function groupByWeek(items: ActivitySummary[]): WeekGroup[] {
   const weeks: { key: string; items: ActivitySummary[] }[] = []
   for (const a of items) {
@@ -69,11 +65,7 @@ function groupByWeek(items: ActivitySummary[]): WeekGroup[] {
 
   return weeks.map(({ key, items: weekItems }) => {
     const totalKm = weekItems.reduce((s, a) => s + a.distanceKm, 0)
-    // Same source as Today and Plan (time in HR zones 1-2 vs 3+) so the E/H
-    // ratio can't diverge between screens.
     const { hardPct } = easyHardShare(weekItems)
-    // Derive easy from the rounded hard so the two always sum to 100 and match
-    // Today's "N% hard".
     const hard = hardPct === null ? null : Math.round(hardPct)
     const range = weekRangeLabel(key, isoDate(addDays(new Date(key + 'T00:00:00'), 6)))
     const label = key === currentWeekStart ? t.activities.thisWeek : range
@@ -89,11 +81,6 @@ function groupByWeek(items: ActivitySummary[]): WeekGroup[] {
   })
 }
 
-// PageTransition (src/components/layout/PageTransition.tsx) keys the route
-// subtree by pathname, so this component fully unmounts when navigating to an
-// activity's detail page and remounts fresh on the way back. sessionStorage
-// (cleared per-tab, mirrors AppShell's scroll-position cache) survives that
-// remount so filters/sort/expanded weeks aren't lost on back navigation.
 const FILTERS_STORAGE_KEY = 'activities:filters'
 
 interface StoredFilters {
@@ -164,23 +151,14 @@ export function ActivityListClient({
   const [nextOffset, setNextOffset] = useState(initialNextOffset)
   const [loadingMore, setLoadingMore] = useState(false)
   const [isPending, setIsPending] = useState(false)
-  // Past weeks start collapsed - only the first (most recent) week group reads
-  // as a training block by default; older weeks are a tap away.
   const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(new Set())
 
-  // Debounce the search box before it hits the query (server round-trip).
   const [debouncedSearch, setDebouncedSearch] = useState('')
   useEffect(() => {
     const id = setTimeout(() => setDebouncedSearch(search), SEARCH_DEBOUNCE_MS)
     return () => clearTimeout(id)
   }, [search])
 
-  // Restore from storage rather than a state initializer, which would differ from
-  // the server-rendered markup and trip hydration. It runs as a *layout* effect
-  // (the pattern AppShell already uses for scroll restoration) so it lands in
-  // the same commit as hydration: a passive effect can be deferred long enough
-  // for a keystroke to slip in first, and restoring over it would silently
-  // wipe what was typed.
   const hasRestored = useRef(false)
   useLayoutEffect(() => {
     if (hasRestored.current) return
@@ -188,8 +166,6 @@ export function ActivityListClient({
     const stored = readStoredFilters()
     if (!stored) return
     /* eslint-disable react-hooks/set-state-in-effect -- one-time restore from sessionStorage on hydration */
-    // Each field only fills a slot the user has not already changed, so a late
-    // restore can never fight an interaction that beat it.
     setSearch((cur) => (cur === '' ? stored.search : cur))
     setDebouncedSearch((cur) => (cur === '' ? stored.search : cur))
     setSelectedType((cur) => (cur === null ? stored.selectedType : cur))
@@ -199,9 +175,6 @@ export function ActivityListClient({
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [])
 
-  // Persist the *settled* search, not every keystroke: one write per query
-  // rather than one per character, and it keeps the stored value consistent
-  // with what `debouncedSearch` is restored to on the way back.
   useEffect(() => {
     if (typeof window === 'undefined') return
     const toStore: StoredFilters = {
@@ -214,12 +187,9 @@ export function ActivityListClient({
     try {
       sessionStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(toStore))
     } catch {
-      // Private mode or a full quota - the filters just won't survive the trip.
     }
   }, [debouncedSearch, selectedType, sortBy, sortOrder, expandedWeeks])
 
-  // Re-query from offset 0 whenever a filter changes. Guards against a stale
-  // response from a previous filter combo landing after a newer one.
   const requestSeq = useRef(0)
   const isFirstRender = useRef(true)
   useEffect(() => {
@@ -236,8 +206,6 @@ export function ActivityListClient({
         setItems(result.items)
         setNextOffset(result.nextOffset)
       })
-      // Without this a failed request leaves the spinner up forever, hiding
-      // both the list and the empty state.
       .catch(() => {
         if (seq !== requestSeq.current) return
         setIsPending(false)
@@ -246,7 +214,6 @@ export function ActivityListClient({
 
   const hasMore = nextOffset !== null
   const hasActiveFilter = selectedType !== null || search.trim() !== ''
-  // Week separators only make sense when browsing in chronological order.
   const groups = sortBy === 'date' ? groupByWeek(items) : null
 
   const loadMore = useCallback(() => {
@@ -260,7 +227,6 @@ export function ActivityListClient({
         setItems((prev) => [...prev, ...result.items])
         setNextOffset(result.nextOffset)
       })
-      // A failed page must release the guard, or infinite scroll wedges.
       .catch(() => setLoadingMore(false))
   }, [nextOffset, loadingMore, selectedType, debouncedSearch, sortBy, sortOrder])
 
@@ -332,7 +298,6 @@ export function ActivityListClient({
         })}
       </div>
 
-      {/* Secondary controls: heatmap link + sort - not in the visual spec, kept from the existing feature set */}
       <div className="flex items-center justify-end gap-2">
         <Link
           href="/map"
@@ -437,7 +402,6 @@ export function ActivityListClient({
         </div>
       )}
 
-      {/* B6 - infinite scroll sentinel / end of list */}
       {hasMore && <div ref={sentinelRef} aria-hidden="true" className="h-1" />}
       {!hasMore && items.length > 0 && (
         <p className="py-2 text-center text-xs text-subtle">{t.activities.endOfList}</p>

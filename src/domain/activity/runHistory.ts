@@ -3,14 +3,10 @@ import { EFFORTS } from './effort'
 
 const DAY_MS = 86_400_000
 
-// A baseline is the athlete's own recent form at this session type: enough runs
-// to average out a bad day, close enough in time to still describe them.
 const BASELINE_LOOKBACK_DAYS = 90
 const BASELINE_RUNS = 5
 const BASELINE_MIN_RUNS = 3
 
-// Below this, "your best since..." is last month's run, which the athlete
-// remembers perfectly well without being told.
 const STANDING_MIN_DAYS = 60
 
 const HARD_ZONE = 4
@@ -23,19 +19,12 @@ export interface TypeBaseline {
 
 export interface EffortStanding {
   label: string
-  /** Days since a run went faster over this distance; null when none ever did. */
   daysSinceBetter: number | null
 }
 
-/**
- * What the athlete's own past says about one run. Every read looks strictly
- * backwards, so a verdict stays true forever: a faster run next month cannot
- * turn today's copy into a lie, and the cached insight never has to be redone.
- */
 export interface RunHistory {
   baseline: TypeBaseline | null
   standing: EffortStanding | null
-  /** Minutes spent in zone 4 or 5 - the part of the session that was actually hard. */
   hardMinutes: number | null
   runsInPast7Days: number
   daysSinceLastRun: number | null
@@ -67,15 +56,11 @@ function typeBaseline(activity: Activity, before: Activity[], day: number): Type
 const ALL_TIME = Number.MAX_SAFE_INTEGER
 
 function effortStanding(activity: Activity, before: Activity[], day: number): EffortStanding | null {
-  // Longest distance first, so a stable sort keeps the 10K story ahead of the
-  // 1K one that is buried inside it.
   const candidates = [...EFFORTS]
     .reverse()
     .flatMap(({ key, label }) => {
       const seconds = activity.bestEfforts?.[key]
       if (seconds == null) return []
-      // Nothing to stand against: the first ever run over that distance is a
-      // fact about the dataset, not about the athlete.
       if (!before.some((a) => a.bestEfforts?.[key] != null)) return []
 
       const better = before.find((a) => (a.bestEfforts?.[key] ?? Infinity) < seconds)

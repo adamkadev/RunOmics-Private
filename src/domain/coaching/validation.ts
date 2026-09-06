@@ -245,7 +245,6 @@ export function parseCoachingPlan(value: unknown, path = 'plan'): CoachingPlan {
   }
 
   if (plan.block.startDate > plan.block.endDate) throw new CoachingValidationError(`${path}.block`, 'startDate must be <= endDate')
-  // The block is one slice of the macrocycle, so the journey cannot start after it.
   if (plan.macrocycleStartDate !== undefined && plan.macrocycleStartDate > plan.block.startDate) {
     throw new CoachingValidationError(`${path}.macrocycleStartDate`, 'must not start after the training block')
   }

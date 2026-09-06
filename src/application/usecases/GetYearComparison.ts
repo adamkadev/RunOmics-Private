@@ -13,7 +13,7 @@ export interface YearMetrics {
 }
 
 export interface YearComparisonData {
-  years: [number, number]   // [newer, older]
+  years: [number, number]
   newer: YearMetrics
   older: YearMetrics
 }

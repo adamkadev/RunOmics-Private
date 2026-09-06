@@ -9,8 +9,6 @@ import type { AnalyticsTabId } from '@/domain/ai/analyticsTabInsight'
 import { formatClock } from '@/lib/formatters'
 import { round } from '@/lib/math'
 
-// How far back a "this is where you are heading" read looks. Short enough that
-// a block of training shows through, long enough to survive one bad week.
 const TREND_WEEKS = 12
 
 export interface AnalyticsTabInputs {
@@ -99,12 +97,6 @@ function healthFacts({ data, loadRisk, loadBalance }: AnalyticsTabInputs): strin
   ].filter((line): line is string => line !== null)
 }
 
-/**
- * The reads behind each analytics tab, as plain lines the model can be asked to
- * tie together. Tab-scoped rather than chart-scoped on purpose: one paragraph
- * per theme is four cached documents, where one per chart and window would be
- * dozens regenerated on every sync.
- */
 export function analyticsTabFacts(inputs: AnalyticsTabInputs): AnalyticsTabFacts {
   return {
     fitness: fitnessFacts(inputs),

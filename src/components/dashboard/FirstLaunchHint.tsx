@@ -7,10 +7,6 @@ import { t } from '@/i18n'
 
 const STORAGE_KEY = 'ro-onboarding-seen'
 
-// Whether the hint was already dismissed lives in localStorage, which the server
-// can't see - reading it during render would hydrate-mismatch for everyone who
-// dismissed it. Render nothing until mounted, then show the hint only if unseen,
-// so a returning user never gets a flash of the card they already closed.
 export function FirstLaunchHint() {
   const [visible, setVisible] = useState(false)
 

@@ -41,8 +41,6 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime }: Prop
   const isAutoFallback = manualView === null && !weekHasData
   const zoneTime = view === 'week' ? weeklyZoneTime : recentZoneTime
 
-  // Garmin gives us a floor per zone and ends each range one bpm below the next
-  // floor; zone 5 stays open-ended.
   const zones = [
     { zone: 5, min: bounds[4], max: null },
     { zone: 4, min: bounds[3], max: bounds[4] - 1 },

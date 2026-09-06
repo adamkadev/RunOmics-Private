@@ -6,8 +6,8 @@ export interface TrainingZone {
   label: string
   shortDesc: string
   example: string
-  paceMinSecPerKm: number // faster end
-  paceMaxSecPerKm: number // slower end
+  paceMinSecPerKm: number
+  paceMaxSecPerKm: number
 }
 
 export interface TrainingZonesData {
@@ -15,9 +15,6 @@ export interface TrainingZonesData {
   zones: TrainingZone[]
 }
 
-// Each zone's pace range as a multiplier of threshold pace (threshold = 1.00).
-// Names and descriptions live in i18n, keyed by `key`, so the zone card follows
-// the app locale instead of being pinned to English.
 const ZONE_DEFS = [
   { key: 'easy', paceMultMin: 1.17, paceMultMax: 1.46 },
   { key: 'marathon', paceMultMin: 1.03, paceMultMax: 1.15 },

@@ -67,7 +67,6 @@ describe('getProfileData', () => {
   beforeEach(() => {
     vi.resetModules()
     vi.useFakeTimers()
-    // Day 32 of 2026, so the weekly rate has a known denominator.
     vi.setSystemTime(new Date(2026, 1, 1, 12))
   })
 
@@ -99,7 +98,6 @@ describe('getProfileData', () => {
   it('averages over the days elapsed this year, not a full 52 weeks', async () => {
     const data = await run({ activities: [activity('2026-01-05', { distanceKm: 32 })] })
 
-    // 32 km over the 32 elapsed days of 2026 is exactly 7 km/week.
     expect(data.ytd.avgKmPerWeek).toBe(7)
   })
 
@@ -113,11 +111,9 @@ describe('getProfileData', () => {
   })
 
   it('averages all-time from the first activity, not from Jan 1', async () => {
-    // 33 days elapsed since the first activity (2025-12-31) through 2026-02-01.
     const data = await run({ activities: [activity('2025-12-31', { distanceKm: 33 })] })
 
     expect(data.allTime.avgKmPerWeek).toBe(7)
-    // The same activity falls outside the current year entirely.
     expect(data.ytd.distanceKm).toBe(0)
   })
 

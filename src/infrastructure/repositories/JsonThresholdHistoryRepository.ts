@@ -1,11 +1,6 @@
 import fs from 'fs'
 import { dataPath } from '../dataPath'
 
-/**
- * One lactate-threshold reading, as written by scripts/garmin/threshold_history.py.
- * Garmin revises these every few weeks, so entries are revisions rather than
- * daily readings and either field can be absent from a given day.
- */
 export interface ThresholdSample {
   date: string
   lthrBpm?: number

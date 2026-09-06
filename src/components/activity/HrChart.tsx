@@ -26,8 +26,6 @@ interface Props {
   hrZones?: HrZone[]
 }
 
-// `zones` must already be sorted ascending by minBpm - sorting here would
-// re-sort on every sample point instead of once per chart render.
 function getZoneForBpm(hr: number, sortedZones: HrZone[]): number {
   let zone = sortedZones[0]?.zone ?? 1
   for (const z of sortedZones) {
@@ -122,7 +120,6 @@ export const HrChart = memo(function HrChart({ samples, avgHr, distanceKm, onHov
                 />
               }
             />
-            {/* Base area - dimmed when filtering by zone */}
             <Area
               type="monotone"
               dataKey="bpm"
@@ -133,7 +130,6 @@ export const HrChart = memo(function HrChart({ samples, avgHr, distanceKm, onHov
               dot={false}
               isAnimationActive={false}
             />
-            {/* Highlighted zone overlay */}
             {isFiltering && (
               <Area
                 type="monotone"

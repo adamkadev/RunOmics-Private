@@ -1,11 +1,6 @@
 import fs from 'fs'
 import { dataPath } from '../dataPath'
 
-/**
- * One snapshot of the athlete's threshold metrics, as written by
- * scripts/garmin/athlete.py. Entries exist only for days a value actually
- * moved, so the series is a change log rather than a daily reading.
- */
 export interface AthleteHistoryEntry {
   date: string
   lthrBpm?: number

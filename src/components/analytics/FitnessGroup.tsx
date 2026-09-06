@@ -26,9 +26,6 @@ interface Props {
   racePredictions: GarminRacePredictionsData | null
 }
 
-// The insight-first landing: the season's one hero chart, the four slow-moving
-// reads as cards, the race-time teaser, then the threshold trend and the deeper
-// load charts for anyone who wants them.
 export function FitnessGroup({
   trainingLoad,
   statusHistory,

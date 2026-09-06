@@ -9,7 +9,6 @@ import { t } from '@/i18n'
 import { PlannedWorkoutSheet } from '../PlannedWorkoutSheet'
 import { coachWorkoutView, plannedWorkoutView } from '../planWorkoutView'
 
-/** The athlete's own threshold-derived bands, as the Plan page passes them in. */
 const ZONES: TrainingZonesData = {
   thresholdPaceSecPerKm: 265,
   zones: [
@@ -18,10 +17,6 @@ const ZONES: TrainingZonesData = {
   ],
 }
 
-/**
- * The real September 6 prescription: 4 km at 5:50-6:27/km, stated as one
- * continuous block with no duration of its own.
- */
 function recovery(overrides: Partial<WorkoutPrescription> = {}): WorkoutPrescription {
   return workout({
     id: 'workout-recovery',
@@ -46,7 +41,6 @@ function viewOf(prescription: WorkoutPrescription, garminPlanned: PlannedWorkout
 
 describe('coach prescriptions normalised into the Plan session view', () => {
   it('derives the duration of a session stated only as distance and pace', () => {
-    // 4 km at the 5:50-6:27 midpoint (6:08.5/km) is 24.6 min - shown as ~25.
     const view = coachWorkoutView(viewOf(recovery()), ZONES)
 
     expect(view.duration).toEqual({ seconds: 1_474, estimated: true })
@@ -64,7 +58,6 @@ describe('coach prescriptions normalised into the Plan session view', () => {
   it('names the effort band from the athletes own zones', () => {
     const view = coachWorkoutView(viewOf(recovery()), ZONES)
 
-    // recovery -> Base -> the easy zone, which the Plan calls "Z2 easy".
     expect(view.type).toBe('Base')
     expect(view.effort).toContain(t.plan.easyEffortLabel)
   })
@@ -72,8 +65,6 @@ describe('coach prescriptions normalised into the Plan session view', () => {
   it('keeps the pace the coach prescribed rather than the zone band', () => {
     const view = coachWorkoutView(viewOf(recovery()), ZONES)
 
-    // 350-387 s/km is the prescription; the easy zone is 310-387 and must not
-    // stand in for it - the coach asked for the narrower band.
     expect(view.effort).toContain('5:50–6:27/km')
     expect(view.effort).not.toContain('5:10')
     expect(view.target).toBe(view.effort)
@@ -103,7 +94,6 @@ describe('coach prescriptions normalised into the Plan session view', () => {
     ]
     const view = coachWorkoutView(viewOf(recovery({ totalDurationSeconds: undefined, blocks })), ZONES)
 
-    // 600 + 3 × (480 + 120) + 600 = 3000.
     expect(view.duration).toEqual({ seconds: 3_000, estimated: false })
   })
 
@@ -138,7 +128,6 @@ describe('coach prescriptions normalised into the Plan session view', () => {
     const view = coachWorkoutView(viewOf(recovery(), [garmin]), ZONES, garmin)
 
     expect(view.scheduledTime).toBe('Evening')
-    // Everything else still comes from the coach.
     expect(view.title).toBe('Post-Race Recovery Run')
   })
 
@@ -174,7 +163,6 @@ describe('structure, only where there is structure to show', () => {
     expect(view.structure!.filter((step) => step.kind === 'recovery')).toHaveLength(3)
     expect(view.structure![0]!.kind).toBe('warmup')
     expect(view.structure!.at(-1)!.kind).toBe('cooldown')
-    // Each effort carries the pace the coach asked for, for the step list.
     expect(view.structure!.find((step) => step.kind === 'effort')!.paceSecPerKm).toEqual([260, 270])
   })
 
@@ -193,8 +181,6 @@ describe('structure, only where there is structure to show', () => {
     ]
     const view = coachWorkoutView(viewOf(recovery({ totalDurationSeconds: 3_600, blocks })), ZONES)
 
-    // 60 min total, 40 min of work and cool-down accounted for: the warm-up
-    // takes what is left rather than a number nobody stated.
     expect(view.structure!.find((step) => step.kind === 'warmup')!.minutes).toBeGreaterThan(0)
   })
 
@@ -229,8 +215,6 @@ describe('the sheet renders whichever source it is given', () => {
 
     const sheet = screen.getByRole('dialog')
     expect(within(sheet).queryByText(t.plan.structure.title)).not.toBeInTheDocument()
-    // The redundant "1. effort · 4 km · 5:50-6:27/km" line goes with it: the
-    // distance is already a chip ("4.0 km") and the pace already the target.
     expect(sheet.textContent).not.toContain('4 km ·')
     expect(within(sheet).queryByText(t.plan.structure.warmup)).not.toBeInTheDocument()
   })
@@ -284,10 +268,7 @@ describe('a Garmin planned workout is untouched by any of this', () => {
     expect(view.description).toBeNull()
     expect(view.notes).toEqual([])
     expect(view.alert).toBeNull()
-    // The zone pace is this app's inference, so the sheet does not quote it
-    // back as a target the session asked for.
     expect(view.target).toBeNull()
-    // The row's effort line is still the zone band, in the Plan's own format.
     expect(view.effort).toBe('Threshold · 4:20-4:30 /km')
   })
 
@@ -299,7 +280,6 @@ describe('a Garmin planned workout is untouched by any of this', () => {
     expect(sheet.textContent).not.toContain('≈')
     expect(within(sheet).getByText(t.plan.planned)).toBeInTheDocument()
     expect(within(sheet).getByText(t.plan.timeOfDay.Morning)).toBeInTheDocument()
-    // No target line, no intent block, no alert - Garmin states none of them.
     expect(sheet.textContent).not.toContain('/km')
   })
 })

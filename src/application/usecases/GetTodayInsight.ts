@@ -8,7 +8,6 @@ import { readVerifiedInsight } from '@/infrastructure/repositories/FirestoreInsi
 import { isoDate } from '@/lib/calendarDate'
 import type { Insight } from '@/lib/gemini'
 
-/** The facts the hero is written from, built the same way for the reader and the generator. */
 export function buildTodayContext(
   status: TrainingStatus,
   plannedWorkout: PlannedWorkout | null,
@@ -22,7 +21,6 @@ export function buildTodayContext(
   }
 }
 
-/** The AI verdict for today, or null so the hero keeps its rules-based copy. */
 export async function getTodayInsight(
   status: TrainingStatus | null,
   plannedWorkout: PlannedWorkout | null

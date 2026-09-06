@@ -9,16 +9,10 @@ import { t } from '@/i18n'
 
 const MONTHS = t.dashboard.heatmap.months
 
-// Cells stay square and fill the card width, so the gap has to grow with them -
-// a fixed 1px between 20px cells reads as one solid block rather than a grid.
 function gapFor(cellSize: number): number {
   return cellSize >= 16 ? 3 : cellSize >= 11 ? 2 : 1
 }
 
-// Intensity scale mixed from the active accent, so it follows the chosen palette.
-// Mixing toward --card (rather than fixed light/dark stops) adapts to dark mode
-// for free. Level 0 keeps a faint green tint (like the mockup's empty cells) and
-// the ramp climbs steeply so busy weeks read as a vivid, saturated accent.
 const LEVEL_MIX_PCT = [10, 45, 72, 100] as const
 
 function levelStyle(level: number) {
@@ -78,10 +72,6 @@ export function ActivityHeatmap({ days }: Props) {
     if (!el) return
     const compute = () => {
       const w = el.clientWidth
-      // All 12 months fit on one line without scrolling. No upper cap on the
-      // cell size: on desktop the cells grow so the grid spans the whole card
-      // instead of stopping at ~640px and leaving dead space to the right.
-      // Two passes, since the gap tier depends on the size it helps determine.
       const solve = (gap: number) => Math.floor((w - (weeks.length - 1) * gap) / weeks.length)
       setCellSize(Math.max(5, solve(gapFor(solve(1)))))
     }
@@ -91,9 +81,6 @@ export function ActivityHeatmap({ days }: Props) {
     return () => obs.disconnect()
   }, [weeks.length])
 
-  // Month labels: show label at the first week where a new month starts, then
-  // keep only every other one - twelve months of labels crowd the small cells,
-  // and skipping alternates still reads fine since each spans ~4-5 weeks.
   const monthLabels: { label: string; col: number }[] = []
   let lastMonth = -1
   weeks.forEach((wk, col) => {
@@ -106,10 +93,6 @@ export function ActivityHeatmap({ days }: Props) {
     }
   })
 
-  // A 12-month window straddles 13 calendar months (it opens mid-month and
-  // closes in that same month a year later), and alternating over 13 leaves 7
-  // labels with the same month at both ends. Drop the leading sliver so the
-  // scale is 12 whole months and alternating yields 6.
   const firstDay = days.find(d => d.date)?.date
   const opensMidMonth = firstDay ? new Date(firstDay + 'T12:00:00').getDate() !== 1 : false
   const wholeMonths = opensMidMonth ? monthLabels.slice(1) : monthLabels
@@ -128,8 +111,6 @@ export function ActivityHeatmap({ days }: Props) {
 
       <div ref={containerRef} className="w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <div style={{ minWidth: 'max-content' }}>
-          {/* Grid - no weekday-label gutter, so the full width goes to cells */}
-          {/* keyed on themeVersion so the color-mix cells remount and re-resolve on a theme/accent switch */}
           <div key={themeVersion} className="flex" style={{ gap: gap }}>
             {weeks.map((wk, col) => (
               <div key={col} className="flex flex-col" style={{ gap: gap }}>
@@ -159,10 +140,6 @@ export function ActivityHeatmap({ days }: Props) {
             ))}
           </div>
 
-          {/* Month scale sits under the grid, like an x-axis */}
-          {/* Spread rather than absolutely positioned per column: the labels
-              mark evenly spaced months anyway, and justify-between pins the
-              first flush left and the last flush right across the full grid. */}
           <div className="mt-2 flex justify-between leading-4 text-micro text-subtle">
             {shownMonthLabels.map(({ label, col }) => (
               <span key={`${label}-${col}`}>{label}</span>
@@ -179,7 +156,6 @@ export function ActivityHeatmap({ days }: Props) {
         <span className="text-micro text-subtle">{t.dashboard.heatmap.more}</span>
       </div>
 
-      {/* Floating tooltip */}
       {tooltip && (
         <div
           className={cn(tooltipSurfaceClass, 'pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-full')}

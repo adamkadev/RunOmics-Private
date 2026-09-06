@@ -36,14 +36,12 @@ function plan(workouts: WorkoutPrescription[]): CoachingPlan {
   }
 }
 
-/** Stands in for Garmin, recording every call so a test can assert exactly what was touched. */
 class FakeGarmin implements GarminWorkoutGateway {
   readonly created: GarminWorkoutPayload[] = []
   readonly scheduled: [string, string][] = []
   readonly unscheduled: string[] = []
   readonly deleted: string[] = []
   private nextId = 1
-  /** Garmin ids that exist but were never created by RunOmics. */
   readonly foreign = new Map<string, string>([['555', 'My own tempo workout']])
   private readonly library = new Map<string, string>()
   private readonly calendar = new Map<string, { scheduleId: string; date: string }>()
@@ -159,7 +157,6 @@ describe('partial failure', () => {
     const partial = await apply(build(plan(workouts), null), null, failing)
 
     const gateway = new FakeGarmin()
-    // The workout id from the failed run is reused rather than created again.
     const report = await apply(build(plan(workouts), partial.state), partial.state, gateway)
 
     expect(gateway.created).toHaveLength(0)
@@ -193,7 +190,6 @@ describe('rate limiting', () => {
     expect(report.rateLimited).toBe(true)
     expect(report.results).toHaveLength(2)
     expect(report.results[1]!.outcome).toBe('failed')
-    // The one that did land is still recorded, so the retry does not duplicate it.
     expect(report.state.entries).toHaveLength(1)
   })
 })
@@ -237,7 +233,6 @@ describe('replacing and deleting', () => {
 
     await apply(build(plan([kept, workout({ id: 'b', date: '2026-09-09' })]), state), state, gateway)
 
-    // '555' is a workout the athlete made by hand; nothing in this run refers to it.
     expect(gateway.deleted).not.toContain('555')
     expect(gateway.unscheduled).not.toContain('555')
     expect(gateway.deleted).toEqual([])

@@ -47,8 +47,6 @@ const UNIT_BY_KEY: Record<string, string> = {
   strideLengthM: t.analytics.charts.runningForm.unit.strideLength ?? '',
 }
 
-// Below this much movement the metric is called steady rather than trending:
-// one weekly point of noise should not read as a change in form.
 const FLAT_THRESHOLD: Record<Metric, number> = {
   cadence: 1,
   groundContact: 3,
@@ -82,8 +80,6 @@ function CustomTooltip({ active, payload, decimals }: TooltipProps) {
 }
 
 export function RunningFormChart({ points }: { points: WeeklyTrendPoint[] }) {
-  // Availability is judged over the whole history, not the visible window, so
-  // the metric pills stay stable while paging.
   const available = METRICS.filter((m) => points.some((p) => p[DATA_KEY[m]] !== null))
   const [metric, setMetric] = useState<Metric>(available[0] ?? 'cadence')
   if (!available.length) return null

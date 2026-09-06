@@ -9,8 +9,6 @@ import { t } from '@/i18n'
 import { useHaptic } from '@/lib/useHaptic'
 import { useFullscreenChromeHidden } from './FullscreenChromeContext'
 
-// Five tabs, in the mockup's order. Plan is a top-level destination again:
-// Today keeps the read-only week glance, Plan owns the editable calendar.
 const TABS = [
   { href: '/',           label: t.nav.items.dashboard,   icon: LayoutDashboard },
   { href: '/activities', label: t.nav.items.activities,  icon: Activity },

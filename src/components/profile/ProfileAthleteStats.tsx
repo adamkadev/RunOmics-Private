@@ -27,15 +27,11 @@ interface TileData {
   label: string
   unit: string
   value: string | number | undefined
-  /** Qualitative verdict on the value: a corner icon, with the verdict itself
-   *  as its accessible name - no extra line of text. */
   band?: { label: string; tone: VerdictTone }
 }
 
 type AvailableTileData = TileData & { value: string | number }
 
-// Shape carries the meaning, color reinforces it - a check and a triangle stay
-// distinguishable where two tinted dots would not (color vision deficiency).
 const TONE_ICON: Record<VerdictTone, { Icon: LucideIcon; className: string }> = {
   success: { Icon: CircleCheck, className: STATUS.success.text },
   neutral: { Icon: Minus, className: STATUS.pending.text },
@@ -45,8 +41,6 @@ const TONE_ICON: Record<VerdictTone, { Icon: LucideIcon; className: string }> = 
 
 function VerdictIcon({ band }: { band: NonNullable<TileData['band']> }) {
   const { Icon, className } = TONE_ICON[band.tone]
-  // The verdict text itself is the icon's accessible name, so nothing is lost
-  // for screen readers by dropping the caption.
   return (
     <Icon
       size={12}
@@ -77,8 +71,6 @@ type Category = 'performance' | 'cardio' | 'body'
 
 const CATEGORIES = ['performance', 'cardio', 'body'] as const
 
-// Garmin's fitness age only means something read against the real one, and the
-// BMI only against the WHO bands - both carry their verdict as a corner dot.
 function fitnessAgeTileBand(athlete: AthleteProfile): TileData['band'] {
   const { fitnessAgeYrs, age } = athlete
   if (fitnessAgeYrs === undefined || age === undefined) return undefined
@@ -102,8 +94,6 @@ function bmiTileBand(bmi: number | undefined): TileData['band'] {
 function tilesFor(category: Category, athlete: AthleteProfile, latestVo2max: number | null): TileData[] {
   const a = t.settings.athlete
 
-  // Each category reads left to right in its own natural order: rising heart
-  // rates for cardio, aerobic engine down to the pace it yields for performance.
   if (category === 'cardio') {
     return [
       { label: a.restingHr, unit: t.units.bpm, value: athlete.restingHrBpm },
@@ -112,8 +102,6 @@ function tilesFor(category: Category, athlete: AthleteProfile, latestVo2max: num
     ]
   }
 
-  // Two rows that each read as a pair: the ages Garmin grades you on, then the
-  // measurements the BMI is derived from.
   if (category === 'body') {
     return [
       { label: a.age, unit: t.units.yrs, value: athlete.age },

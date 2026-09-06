@@ -16,18 +16,11 @@ export interface ThresholdHistoryData {
   points: ThresholdPoint[]
   latestLthr: number | null
   latestPace: number | null
-  /** Seconds per km shaved off threshold pace across the window; negative = slower. */
   paceGainSec: number | null
 }
 
 const MIN_POINTS = 2
 
-/**
- * Lactate threshold over time, from Garmin's own biometric range endpoint (see
- * scripts/garmin/threshold_history.py). Falls back to the change log the
- * athlete sync snapshots, which is all there was before that endpoint was wired
- * up and covers nothing earlier.
- */
 export function getThresholdHistory(): ThresholdHistoryData | null {
   const samples = getThresholdSamples()
   const entries: ThresholdSample[] = samples.length > 0 ? samples : athleteHistorySamples()

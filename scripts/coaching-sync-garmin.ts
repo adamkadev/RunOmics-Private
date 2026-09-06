@@ -1,12 +1,4 @@
 #!/usr/bin/env node
-/**
- * Synchronizes the active coaching plan's future prescriptions directly to
- * Garmin Connect as structured workouts on the Garmin calendar.
- *
- * Preview by default: nothing reaches Garmin without `--apply`. The mapping of
- * RunOmics prescriptions to Garmin ids lives in the athlete's own data
- * workspace, which is what makes repeated runs idempotent.
- */
 import path from 'path'
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
@@ -130,8 +122,6 @@ async function main(): Promise<void> {
       now: () => new Date().toISOString(),
       pause: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
     })
-    // Persisted before verification so a create whose schedule failed is
-    // recorded even if the read-back itself then fails.
     store.write(applied.state)
 
     const verified = await verifyGarminSync(applied, gateway)

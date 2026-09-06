@@ -47,9 +47,6 @@ export default async function DashboardPage() {
   const today = isoDate(new Date())
   const todayActivity = data.recentActivities.find((a) => a.date === today) ?? null
   const todayCoachWorkout = coaching?.workouts.find((workout) => workout.prescription.date === today && workout.prescription.status !== 'cancelled') ?? null
-  // One session row, whoever prescribed it: the coach owns the training, the
-  // Garmin planned workout is the same session read back and only fills in
-  // what the coach never states.
   const trainingZones = await getTrainingZones()
   const todayWorkout = todayCoachWorkout
     ? coachWorkoutView(todayCoachWorkout, trainingZones, todayPlannedWorkout)

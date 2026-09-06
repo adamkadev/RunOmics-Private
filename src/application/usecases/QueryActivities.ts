@@ -35,11 +35,6 @@ function sortValue(a: Activity, key: ActivitySortKey): number {
   }
 }
 
-/**
- * Filters, sorts and paginates over the full activity history server-side,
- * mapping down to `ActivitySummary` so neither the SSR page nor the
- * paginated API response ever ship per-sample arrays to the client.
- */
 export function queryActivities({
   type = null,
   search = '',

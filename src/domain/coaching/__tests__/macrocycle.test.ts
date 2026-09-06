@@ -25,7 +25,6 @@ function state(overrides: Partial<CoachState> = {}): CoachState {
   }
 }
 
-/** A block of the given span, inside a macrocycle running to the primary target. */
 function blockPlan(startDate: string, endDate: string, weekStarts: string[]): CoachingPlan {
   const base = plan()
   return parseCoachingPlan({
@@ -49,14 +48,12 @@ const NEXT_BLOCK = () => blockPlan('2026-10-04', '2026-10-31', ['2026-10-04', '2
 
 describe('macrocycle progress', () => {
   it('counts the first block from the start of training toward the target', () => {
-    // Sep 6 -> Nov 29 is 12 weeks, and the block's own first week opens them.
     expect(macrocycleWeek(FIRST_BLOCK(), '2026-09-06')).toEqual({ done: 1, total: 12 })
   })
 
   it('does not reset when the next rolling block begins', () => {
     const next = NEXT_BLOCK()
 
-    // The block restarted at Oct 4, the journey did not.
     expect(next.block.startDate).toBe('2026-10-04')
     expect(macrocycleWeek(next, '2026-10-04')).toEqual({ done: 5, total: 12 })
   })
@@ -119,7 +116,6 @@ describe('macrocycle persistence', () => {
 
     const parsed = parseCoachingPlan(legacy)
     expect(parsed.macrocycleStartDate).toBeUndefined()
-    // The UI falls back to the block, so the counter still reads.
     expect(macrocycleWeek(parsed, parsed.block.startDate)?.done).toBe(1)
   })
 })

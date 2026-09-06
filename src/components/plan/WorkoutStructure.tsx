@@ -4,8 +4,6 @@ import { formatPaceRange } from '@/lib/formatters'
 import { WORKOUT_SEGMENT_COLORS } from '@/lib/colors'
 import { t } from '@/i18n'
 
-// SPECS §4: effort yellow / recovery blue, warmup-cooldown muted. Accent-
-// independent - step intensity is data, not a theme choice.
 const STEP_COLOR: Record<WorkoutStep['kind'], string> = WORKOUT_SEGMENT_COLORS
 
 const STEP_HEIGHT: Record<WorkoutStep['kind'], string> = {
@@ -15,7 +13,6 @@ const STEP_HEIGHT: Record<WorkoutStep['kind'], string> = {
   cooldown: '35%',
 }
 
-/** Mini vertical-bar preview of a parsed workout: width ∝ minutes, height ∝ intensity. */
 export function WorkoutStructureBars({ steps, className }: { steps: WorkoutStep[]; className?: string }) {
   return (
     <div className={className ?? 'flex h-[22px] items-end gap-[3px]'} aria-hidden>
@@ -35,7 +32,6 @@ export function WorkoutStructureBars({ steps, className }: { steps: WorkoutStep[
   )
 }
 
-/** Compact step list: warm-up / one summarized interval row / cool-down. */
 export function WorkoutStepList({ steps, type }: { steps: WorkoutStep[]; type?: ActivityType }) {
   const s = t.plan.structure
   const efforts = steps.filter((st) => st.kind === 'effort')
@@ -58,10 +54,6 @@ export function WorkoutStepList({ steps, type }: { steps: WorkoutStep[]; type?: 
   if (warmup) rows.push({ label: s.warmup, minutes: warmup.minutes, zone: s.easyZone, accent: false })
   rows.push({
     label: intervalLabel,
-    // A single effort already states its own duration in the label ("85' @
-    // pace") - repeating it on the right would just echo the same number.
-    // With reps (label is "N × effort'"), the right side adds real info: the
-    // block's total duration including recoveries, which the label doesn't sum.
     minutes:
       efforts.length === 1
         ? null

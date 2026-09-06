@@ -18,12 +18,9 @@ export interface ShoeComparisonRow {
   verticalOscillationMm: number | null
   paceSecPerKm: number | null
   avgHeartRate: number | null
-  /** Share of the pair's runs that were not easy base runs. */
   keySessionPercent: number
 }
 
-// Under this a pair's averages are anecdote, not signal, and the one-run pair
-// would sit next to a 130-run pair as if the two were comparable.
 const MIN_SESSIONS = 5
 
 function mean(values: (number | null)[]): number | null {
@@ -42,7 +39,6 @@ function buildRow(gearId: string, runs: Activity[]): ShoeComparisonRow | null {
   const pace = mean(runs.map((a) => a.paceSecPerKm))
   const hr = mean(runs.map((a) => a.avgHeartRate))
 
-  // Runs arrive newest-first.
   const dates = runs.map((a) => a.date.slice(0, 10))
 
   return {
@@ -64,11 +60,6 @@ function buildRow(gearId: string, runs: Activity[]): ShoeComparisonRow | null {
   }
 }
 
-/**
- * Per-pair averages, for reading what each pair is actually used for and how
- * the athlete runs in it. Pairs worn over different seasons are not a
- * controlled comparison, which is why each row carries its own date range.
- */
 export function getShoeComparison(): ShoeComparisonRow[] {
   const byGear = new Map<string, Activity[]>()
   for (const a of getAllActivities()) {

@@ -27,7 +27,6 @@ function linePoints(values: number[]): string {
 }
 
 function LineSpark({ values, color, invert = false }: { values: number[]; color: string; invert?: boolean }) {
-  // `invert` for metrics where lower is better (pace): flip so improvement rises.
   const series = invert ? values.map((v) => -v) : values
   return (
     <svg width="100%" height="18" viewBox="0 0 80 18" preserveAspectRatio="none" aria-hidden="true">
@@ -102,13 +101,8 @@ interface Props {
   activeDays: number
 }
 
-// The four slow-moving reads that say more as a number + sparkline than as a
-// full chart: VO2max, easy pace, threshold and consistency. Derives from the
-// already-computed series - no new physiology.
 export function AnalyticsInsightCards({ vo2maxSeries, vo2maxTopPercent, weeklyTrends, threshold, activeDays }: Props) {
   const s = t.analytics.insightCards
-  // Easy pace and consistency are the app's own headline reads, so their sparks
-  // follow the accent; VO2max and threshold keep their fixed violet/sky.
   const accent = useAccentUiColor()
 
   const vo2Points = vo2maxSeries['1y'].length >= 2 ? vo2maxSeries['1y'] : vo2maxSeries['6m']
@@ -123,7 +117,6 @@ export function AnalyticsInsightCards({ vo2maxSeries, vo2maxTopPercent, weeklyTr
   const thrPaces = threshold?.points.map((p) => p.thresholdPaceSecPerKm).filter((v): v is number => v !== null) ?? []
   const thrLatest = threshold?.latestPace ?? thrPaces[thrPaces.length - 1] ?? null
 
-  // A coarse 9-bucket activity histogram for the consistency bar-sparkline.
   const buckets = 9
   const perBucket = Math.max(1, Math.ceil(weeklyTrends.length / buckets))
   const consistencyBars = Array.from({ length: buckets }, (_, b) => {

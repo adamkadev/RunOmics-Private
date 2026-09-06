@@ -19,9 +19,6 @@ interface Props {
   recentZoneTime: ZoneShare[]
 }
 
-// Progress answers "how far have I come?" - the season at arm's length, in one
-// column: profile, this year, the consistency heatmap (moved here from Today),
-// Goal + PR, the merged Athlete reference, and the shoes strip.
 export function ProfileClient({ data, heatmapDays, latestVo2max, recentZoneTime }: Props) {
   return (
     <div className="space-y-3.5">

@@ -5,17 +5,10 @@ export interface Metric {
   value: ReactNode
   unit?: string
   label: string
-  /** Render the value in the accent color (e.g. a form/status highlight). */
   accent?: boolean
-  /** Override the value's color entirely (e.g. a multi-tone semantic like RPE). */
   valueClassName?: string
 }
 
-/**
- * Clean grid of numeric metrics: bold value + muted unit + muted label.
- * No colored borders or per-cell icons - the data carries the weight, a
- * single accent only where a value is genuinely a highlight.
- */
 export function MetricGrid({
   metrics,
   className,

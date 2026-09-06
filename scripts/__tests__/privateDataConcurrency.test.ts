@@ -1,14 +1,3 @@
-/**
- * Reproduces the data-loss race the optimistic-concurrency guard exists for:
- * a workspace fetched from commit A, a commit B landing in the private data
- * repository while the (minutes-long) sync runs, and the stale workspace then
- * replacing data/ wholesale - which silently deleted a manually committed
- * coaching/garmin-sync.json.
- *
- * These tests drive real git repositories over file:// rather than mocking
- * git, because the property under test is exactly how the clone/replace/push
- * sequence behaves against a remote that moved.
- */
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
@@ -39,11 +28,9 @@ function write(file: string, content: string): void {
 interface Remote {
   url: string
   bare: string
-  /** A separate clone standing in for whoever else commits to the data repo. */
   other: string
 }
 
-/** A private data repository holding a minimal but complete dataset. */
 function createRemote(root: string): Remote {
   const bare = path.join(root, 'remote.git')
   execFileSync('git', ['init', '--bare', '-b', 'main', bare], { stdio: 'pipe' })
@@ -60,7 +47,6 @@ function createRemote(root: string): Remote {
   return { url, bare, other }
 }
 
-/** Someone else committing to the data repo - the manual garmin-sync.json commit. */
 function commitToRemote(remote: Remote, file: string, content: string, message: string): string {
   git(remote.other, 'pull', '--ff-only')
   write(path.join(remote.other, file), content)
@@ -101,18 +87,13 @@ describe('private data optimistic concurrency', () => {
     process.env.RUNOMICS_DATA_REPO_URL = remote.url
     const workspace = path.join(root, 'workspace', 'data')
 
-    // A: the commit the long-running sync job hydrated its workspace from.
     const fetched = fetchPrivateData(workspace)
     expect(fetched.commit).toBe(remoteHead(remote))
 
-    // B: the mapping for already-created Garmin workouts, committed by hand
-    // while the sync was still running.
     const mapping = '{"workouts":{"2026-09-07":{"garminId":123}}}\n'
     const commitB = commitToRemote(remote, 'data/coaching/garmin-sync.json', mapping, 'Persist Garmin coaching sync state')
     expect(commitB).not.toBe(fetched.commit)
 
-    // The workspace has real work in it, and would otherwise happily push it
-    // over B - the workspace never had garmin-sync.json at all.
     write(path.join(workspace, 'sync_meta.json'), '{"lastSyncedAt":"2026-09-06T02:00:00Z"}\n')
     expect(fs.existsSync(path.join(workspace, 'coaching', 'garmin-sync.json'))).toBe(false)
 
@@ -121,11 +102,9 @@ describe('private data optimistic concurrency', () => {
       new RegExp(`Expected base: ${fetched.commit}[\\s\\S]*Current remote: ${commitB}`)
     )
 
-    // Nothing was committed, nothing was pushed, and B is untouched.
     expect(remoteHead(remote)).toBe(commitB)
     expect(remoteFile(remote, 'data/coaching/garmin-sync.json')).toBe(mapping)
     expect(remoteFiles(remote)).not.toContain('data/sync_meta.json')
-    // The workspace itself is left alone, so the caller can re-fetch and retry.
     expect(readBaseRevision(workspace)?.commit).toBe(fetched.commit)
   })
 
@@ -143,8 +122,6 @@ describe('private data optimistic concurrency', () => {
     expect(result.pushed).toBe(true)
     expect(remoteHead(remote)).not.toBe(fetched.commit)
     expect(remoteFile(remote, 'data/coaching/current_plan.json')).toBe('{"revision":2}\n')
-    // The workspace's base moves to what it just pushed, so a follow-up push
-    // is still checked - against the right commit.
     expect(readBaseRevision(workspace)?.commit).toBe(remoteHead(remote))
   })
 
@@ -159,7 +136,6 @@ describe('private data optimistic concurrency', () => {
     commitToRemote(remote, 'data/coaching/garmin-sync.json', mapping, 'Persist Garmin coaching sync state')
     expect(() => pushPrivateData(workspace)).toThrow(/Refusing to overwrite newer data/)
 
-    // The documented recovery: re-fetch from the new head, redo the work, push.
     fetchPrivateData(workspace)
     write(path.join(workspace, 'sync_meta.json'), '{"lastSyncedAt":"2026-09-06T02:00:00Z"}\n')
     expect(pushPrivateData(workspace).pushed).toBe(true)
@@ -200,7 +176,6 @@ describe('private data optimistic concurrency', () => {
 
     fetchPrivateData(workspace)
 
-    // Beside the workspace, never inside it.
     expect(baseRevisionPath(workspace)).toBe(path.join(root, 'workspace', '.data.base-revision.json'))
     expect(fs.existsSync(baseRevisionPath(workspace))).toBe(true)
     const inside = fs.readdirSync(workspace).filter((entry) => entry.includes('base-revision'))
@@ -246,7 +221,6 @@ describe('assertBaseRevisionCurrent', () => {
     expect(() => assertBaseRevisionCurrent(workspace, fetched.commit, 'https://example.test/other.git', {})).toThrow(
       /different private data repository/
     )
-    // A cosmetic trailing slash is not a different repository.
     expect(() => assertBaseRevisionCurrent(workspace, fetched.commit, `${remote.url}/`, {})).not.toThrow()
   })
 

@@ -4,19 +4,12 @@ const DAY = 86_400_000
 const day = (date: string) => Math.floor(Date.parse(`${date.slice(0, 10)}T00:00:00Z`) / DAY)
 const round = (n: number) => Math.round(n * 100) / 100
 const RUN_TYPES = new Set(['Base', 'Tempo', 'Threshold', 'VO2Max', 'Anaerobic', 'Sprint', 'Race'])
-/** Canonical legacy records are running-only; explicit sport metadata takes precedence. */
 export function isRunningActivity(activity: Activity): boolean {
   return activity.sport !== undefined
     ? ['running', 'trail_running', 'treadmill_running', 'track_running'].includes(activity.sport.toLowerCase())
     : RUN_TYPES.has(activity.type)
 }
 
-/** ISO Monday–Sunday weeks in UTC date-only time; missing weeks count as zero.
- * Windows require N observed calendar weeks (including the current partial week).
- * Recent windows include referenceDate; future activities never contribute.
- * Peak frequency is the mean runs/week in the best 12-week window, or all
- * available weeks when fewer than 12 exist. Ties select the earliest window.
- */
 export function trainingHistory(activities: Activity[], referenceDate: string) {
   const reference = day(referenceDate)
   const runs = activities.filter(isRunningActivity).filter(a => day(a.date) <= reference)

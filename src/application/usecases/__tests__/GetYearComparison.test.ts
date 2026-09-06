@@ -28,7 +28,6 @@ describe('avgWeightedPace', () => {
   })
 
   it('weights pace by distance', () => {
-    // 10km @ 300s/km + 5km @ 360s/km → (3000+1800)/15 = 320
     const acts = [act({ paceSecPerKm: 300, distanceKm: 10 }), act({ paceSecPerKm: 360, distanceKm: 5 })]
     expect(avgWeightedPace(acts)).toBe(320)
   })
@@ -44,7 +43,6 @@ describe('avgWeightedHR', () => {
   })
 
   it('weights HR by duration', () => {
-    // 3600s @ 140 + 1800s @ 160 → (504000+288000)/5400 = 146.67 → rounds to 147
     const acts = [act({ avgHeartRate: 140, durationSeconds: 3600 }), act({ avgHeartRate: 160, durationSeconds: 1800 })]
     expect(avgWeightedHR(acts)).toBe(147)
   })
@@ -70,7 +68,6 @@ describe('buildMetrics', () => {
   })
 
   it('computes avgKmPerWeek over distinct weeks with activity', () => {
-    // 30km spread over 2 distinct weeks → 15/week
     const acts = [
       act({ week: 1, distanceKm: 10 }),
       act({ week: 1, distanceKm: 5 }),

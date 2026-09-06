@@ -9,7 +9,6 @@ export interface ShoeInfo {
   dotColor: string
 }
 
-/** One entry of data/shoes.json, as written by scripts/garmin/gear.py. */
 export interface ShoeRecord {
   gearId: string
   brand: string
@@ -19,7 +18,6 @@ export interface ShoeRecord {
   firstUseDate: string | null
 }
 
-/** All a client component is ever given about a pair: what to draw, nothing else. */
 export interface ShoeTag {
   name: string
   dotColor: string

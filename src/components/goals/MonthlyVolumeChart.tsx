@@ -25,7 +25,6 @@ const MONTH_CELL_TINT: Record<MonthGoal['status'], { bg: string; border: string;
   pending:  { ...GOAL_PACE_COLORS.pending, dashed: true },
 }
 
-// Clamped to a visible minimum so a near-zero month still renders a sliver.
 function barHeightPercent(mg: MonthGoal): number {
   const pct = mg.targetKm > 0 ? Math.min((mg.actualKm / mg.targetKm) * 100, 100) : 0
   return Math.max(pct, 6)

@@ -1,11 +1,6 @@
 import fs from 'fs'
 import { dataPath } from '../dataPath'
 
-/**
- * Garmin's rolling 4-week load split across intensity buckets, as written by
- * scripts/garmin/training_status.py. The target bounds are personalised by the
- * watch from the athlete's own history - there is no local equivalent.
- */
 export interface TrainingLoadBalance {
   date?: string
   feedback?: string

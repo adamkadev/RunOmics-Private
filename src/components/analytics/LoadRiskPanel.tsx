@@ -21,8 +21,6 @@ const ZONE_TEXT: Record<RiskZone, string> = {
   risk: 'text-red-600 dark:text-red-400',
 }
 
-// The band holding the value carries full colour; the rest stay faint so the
-// eye lands on where the athlete actually sits, not on the whole ladder.
 const BAND_ACTIVE: Record<RiskZone, string> = {
   low: 'bg-blue-500',
   safe: 'bg-green-500',

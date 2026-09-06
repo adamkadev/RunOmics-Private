@@ -6,10 +6,8 @@ import { formatClock } from '@/lib/formatters'
 export const PB_CELEBRATION_SURFACE = 'pbCelebration'
 export const PB_CELEBRATION_LIMITS = { headline: 48, body: 130 }
 
-/** How long a record stays worth celebrating - shared with the overlay's own check. */
 export const CELEBRATION_WINDOW_DAYS = 3
 
-/** The record the overlay would raise, or null when there is nothing to celebrate. */
 export function celebratedRecord(record: RecordEntry | null, now: Date): RecordEntry | null {
   if (!record?.activityId || !record.date || record.seconds === null) return null
   const days = (now.getTime() - new Date(record.date + 'T00:00:00').getTime()) / 86_400_000
@@ -18,7 +16,6 @@ export function celebratedRecord(record: RecordEntry | null, now: Date): RecordE
 
 export interface PbCelebrationContext {
   record: RecordEntry
-  /** The mark this one replaced - the whole reason the moment counts. */
   previous: { seconds: number; date: string } | null
 }
 
@@ -45,8 +42,6 @@ export const PB_CELEBRATION_SYSTEM_INSTRUCTION = [
     'one sentence on what the record says about their running',
     PB_CELEBRATION_LIMITS
   ),
-  // The distance and the finish time are set in huge type right under this
-  // text, which is the whole design of the card.
   'The distance and the time are already printed in large type under your text: never state them.',
   'The mark it replaced is not printed anywhere, so naming it - and how long it stood - is the one number worth writing.',
   'Be warm and direct, never breathless. No exclamation marks stacked up, no emoji.',

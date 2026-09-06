@@ -19,9 +19,6 @@ export function bracketForAge(age: number): AgeBracket {
 
 export type Vo2maxBand = 'building' | 'solid' | 'strong' | 'elite'
 
-// Maps a raw VO2max value onto the same 40th/60th/80th/95th percentile anchors
-// used for the athlete rank badge, as a standalone qualitative read (no blending
-// with VDOT) - for surfacing "is this number good?" next to the raw metric.
 export function vo2maxBand(vo2max: number, age: number, sex: 'male' | 'female', norms: Vo2maxNorms): Vo2maxBand {
   const t = norms[sex][bracketForAge(age)]
   if (vo2max >= t.superior) return 'elite'
@@ -30,9 +27,6 @@ export function vo2maxBand(vo2max: number, age: number, sex: 'male' | 'female', 
   return 'building'
 }
 
-// Interpolates a percentile (1-99) between the fair/good/excellent/superior
-// anchors (40th/60th/80th/95th pct) for the "· top X%" band suffix - reuses
-// the same norms table as vo2maxBand, no separate lookup.
 export function vo2maxTopPercent(vo2max: number, age: number, sex: 'male' | 'female', norms: Vo2maxNorms): number {
   const t = norms[sex][bracketForAge(age)]
   const anchors: [number, number][] = [[0, 1], [40, t.fair], [60, t.good], [80, t.excellent], [95, t.superior]]

@@ -11,12 +11,6 @@ const REPS_WITH_RECOVERY = /(\d+)\s*[x×]\s*\(\s*(\d+)\s*['’]\s*\/\s*(\d+)\s*[
 const REPS_SIMPLE = /(\d+)\s*[x×]\s*(\d+)\s*['’]/i
 const TOTAL_WITH_ACTIVE = /(\d+)\s*['’]\s*dont\s+(\d+)\s*['’]/i
 
-/**
- * Splits whatever time is left after the work itself into a warm-up and a
- * cool-down. Exported because a coach prescription states its bookends by
- * distance as often as by time, and it must divide the remainder exactly the
- * way a parsed Garmin session does - one shared rule, not two that drift.
- */
 export function bookends(totalMin: number | null, workMin: number): { warmup: number; cooldown: number } {
   if (totalMin === null || totalMin <= workMin + 2 * MIN_BOOKEND_MIN) {
     return { warmup: DEFAULT_WARMUP_MIN, cooldown: DEFAULT_COOLDOWN_MIN }

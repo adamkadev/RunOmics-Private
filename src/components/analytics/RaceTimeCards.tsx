@@ -10,10 +10,6 @@ import { t } from '@/i18n'
 const ORDER: RaceDistanceKey[] = ['5k', '10k', 'half', 'marathon']
 const SHORT_LABEL = t.analytics.raceTimes.shortLabels
 
-// The four race distances as legible time cards with a trend arrow each -
-// replaces the four-line predictor chart. Reads Garmin's own estimates via the
-// same first-vs-last trend the Race Predictor chart itself uses, so the two
-// views never disagree about which way a distance is moving.
 export function RaceTimeCards({ data }: { data: GarminRacePredictionsData }) {
   const distances = ORDER.filter((d) => data.distances.includes(d) && data.latest[d] != null)
   if (distances.length === 0) return null

@@ -4,8 +4,6 @@ import userEvent from '@testing-library/user-event'
 import { ActivityNotes } from '@/components/activity/ActivityNotes'
 import { t } from '@/i18n'
 
-// The component reads NEXT_PUBLIC_OWNER_EMAIL at module load, so it must be
-// set before the import graph is evaluated - vi.hoisted runs first.
 const OWNER_EMAIL = vi.hoisted(() => {
   process.env.NEXT_PUBLIC_OWNER_EMAIL = 'owner@test.dev'
   return 'owner@test.dev'
@@ -44,7 +42,6 @@ describe('ActivityNotes owner gate', () => {
 
   it('renders nothing for a visitor when the activity has no note', async () => {
     const { container } = render(<ActivityNotes activityId="a1" />)
-    // Wait for the auth + note effects to settle.
     await vi.waitFor(() => expect(container.firstChild).toBeNull())
   })
 
@@ -56,7 +53,6 @@ describe('ActivityNotes owner gate', () => {
     await userEvent.click(toggle)
 
     expect(await screen.findByText('Great tempo run')).toBeInTheDocument()
-    // Visitors never get the editor.
     expect(screen.queryByPlaceholderText(t.activity.notes.notePlaceholder)).not.toBeInTheDocument()
   })
 

@@ -11,7 +11,6 @@ import type {
   WeekSummary,
 } from '@/domain/activity/types'
 
-
 const RECENT_ACTIVITY_COUNT = 8
 
 export function buildWeekSummary(weekNumber: number, activities: Activity[]): WeekSummary {
@@ -52,8 +51,6 @@ export function buildTypeDistribution(activities: Activity[]): TypeDistribution[
 export function computeStreaks(activities: Activity[]): { current: number; longest: number } {
   const dateSet = new Set(activities.map((a) => a.date.slice(0, 10)))
 
-  // Local date components, not toISOString() - the latter converts to UTC and
-  // shifts local midnight back a calendar day in UTC+ timezones, undercounting streaks.
   function fmt(d: Date) {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
   }
@@ -61,7 +58,6 @@ export function computeStreaks(activities: Activity[]): { current: number; longe
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
-  // A rest day today does not break the streak: fall back to counting from yesterday.
   let current = 0
   const cursor = new Date(today)
   while (dateSet.has(fmt(cursor))) {
@@ -69,7 +65,7 @@ export function computeStreaks(activities: Activity[]): { current: number; longe
     cursor.setDate(cursor.getDate() - 1)
   }
   if (current === 0) {
-    cursor.setDate(cursor.getDate() - 1) // cursor is already today-1 after while loop miss
+    cursor.setDate(cursor.getDate() - 1)
     while (dateSet.has(fmt(cursor))) {
       current++
       cursor.setDate(cursor.getDate() - 1)
@@ -96,7 +92,6 @@ export function computeStreaks(activities: Activity[]): { current: number; longe
   return { current, longest }
 }
 
-/** Whether each day (Mon..Sun) of the week containing `now` has an activity. */
 export function computeWeekActivityDays(activities: Activity[], now: Date): boolean[] {
   const dateSet = new Set(activities.map((a) => a.date.slice(0, 10)))
   const monday = startOfWeek(now)
@@ -120,7 +115,6 @@ export function getDashboardData(): DashboardData {
   const sortedWeeks = Array.from(byWeek.keys()).sort((a, b) => a - b)
   const weeks = sortedWeeks.map((w) => buildWeekSummary(w, byWeek.get(w)!))
 
-  // weeks is non-empty: today's week is always seeded into byWeek above.
   const currentWeek = weeks[weeks.length - 1]!
   const lastWeekSummary = weeks[weeks.length - 2] ?? currentWeek
 

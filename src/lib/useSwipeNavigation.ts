@@ -3,22 +3,12 @@
 import { useRef } from 'react'
 
 const SWIPE_THRESHOLD_PX = 56
-// A swipe must be clearly horizontal: a vertical scroll that drifts sideways
-// should never page. Requiring |dx| to beat |dy| by this factor is what keeps
-// scrolling a long page (analytics) from changing tabs under the finger.
 const HORIZONTAL_RATIO = 2
 
-/**
- * Horizontal swipe left/right to page through periods (weeks, months...).
- * Returns touch handlers to spread on the swipeable container. Chevron
- * buttons stay alongside as the visible/accessible affordance (desktop,
- * screen readers, discoverability); swipe is the fast path on touch.
- */
 export function useSwipeNavigation(onPrev: () => void, onNext: () => void) {
   const start = useRef<{ x: number; y: number } | null>(null)
 
   const onTouchStart = (e: React.TouchEvent) => {
-    // Pinch/multi-touch is never a page swipe.
     if (e.touches.length > 1) {
       start.current = null
       return

@@ -1,16 +1,4 @@
 #!/usr/bin/env node
-// One-time (re-runnable) setup: grants the owner's Firebase Auth user the
-// custom claim firestore.rules checks, instead of comparing a hardcoded
-// email. Run once per Firebase project - dev and prod each need this run
-// against their own project's credentials - and again if the owner ever
-// signs in with a different Google account.
-//
-//   npm run set-owner-claim              # uses .env.local
-//
-// Needs FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY (the
-// same Admin SDK credential the app already uses) and NEXT_PUBLIC_OWNER_EMAIL
-// in the environment. This mutates live Firebase Auth state - review the
-// target project before running.
 
 import { initializeApp, cert } from 'firebase-admin/app'
 import { getAuth } from 'firebase-admin/auth'

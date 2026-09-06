@@ -5,13 +5,9 @@ import { wearStatus } from '@/domain/shoe/wearStatus'
 import { STATUS } from '@/lib/statusColors'
 import { t } from '@/i18n'
 
-// Slim strip, not a card tile: one line - how many pairs are active, whether any
-// needs replacing - tapping through to the shoes page.
 export function ProfileShoes({ shoes }: { shoes: ShoeStats[] }) {
   if (shoes.length === 0) return null
 
-  // Same watch/replace threshold as the Shoes page hero, so this strip never
-  // says "all good" while /shoes is flagging a pair.
   const alertCount = shoes.filter((s) => !s.retired && wearStatus(s.wearPercent) !== 'ok').length
 
   return (

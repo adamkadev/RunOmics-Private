@@ -19,9 +19,7 @@ interface Props {
   paceSamples?: number[] | null
   hoverFraction?: number | null
   weather?: ActivityWeather | null
-  /** Rendered as a colored badge next to the conditions chips, saving a header row. */
   activityType?: ActivityType | null
-  /** Rendered as a pill in the map's bottom-left, keeping activity metadata off the header. */
   shoe?: ShoeTag | null
   className?: string
 }
@@ -37,7 +35,6 @@ function buildSegmentFeatures(route: [number, number][], paceSamples: number[] |
       const t = sampleIdx - low
       pace = (paceSamples[low] ?? pace) * (1 - t) + (paceSamples[high] ?? pace) * t
     }
-    // slice(0, -1) guarantees route[i + 1] exists.
     const next = route[i + 1]!
     return {
       type: 'Feature' as const,
@@ -201,10 +198,6 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
       mapRef.current = null
       hoverMarkerRef.current = null
     }
-    // isFullscreen is a dependency on purpose: toggling fullscreen re-mounts the
-    // container (it moves into / out of the body portal), so the map is rebuilt
-    // in the correctly-sized container and its fitBoundsOptions frames the whole
-    // trace - no stale-size zoom, and it works even inside a transformed ancestor.
   }, [route, paceSamples, isFullscreen])
 
   useEffect(() => {
@@ -245,8 +238,6 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
       {(weather || activityType) && (
         <div
           className={cn(
-            // right-14 keeps the row clear of the fullscreen button, so a long
-            // wind reading wraps onto a second line instead of sliding under it.
             'absolute left-2 right-14 z-10 flex flex-wrap items-center gap-1.5',
             isFullscreen ? 'top-[max(env(safe-area-inset-top),8px)]' : 'top-2'
           )}
@@ -296,10 +287,6 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
     </div>
   )
 
-  // In fullscreen the overlay is portaled to <body> so `fixed inset-0` is sized
-  // by the viewport, never trapped by a transformed/filtered ancestor that would
-  // clip it (leaving the tab bar showing and the trace running off-screen).
-  // Inline, it renders in place as usual.
   return isFullscreen ? createPortal(tree, document.body) : tree
 }
 

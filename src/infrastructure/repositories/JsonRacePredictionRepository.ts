@@ -2,7 +2,6 @@ import fs from 'fs'
 import { dataPath } from '../dataPath'
 import type { RaceDistanceKey } from '@/domain/race/distances'
 
-/** One day of Garmin race predictions, in seconds, as written by scripts/garmin/race_predictions.py. */
 export type RacePredictionDay = Partial<Record<RaceDistanceKey, number>> & { date: string }
 
 type StoredDays = Record<string, Partial<Record<RaceDistanceKey, number>>>

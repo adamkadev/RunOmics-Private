@@ -3,11 +3,6 @@ import type { ReactNode } from 'react'
 
 export type StatusTone = 'accent' | 'blue' | 'amber' | 'red' | 'zinc' | 'green' | 'emerald'
 
-// C3: single recipe for every status pastille (training status trend,
-// consistency rating, week load level...) - translucent tinted background,
-// bright tinted text, tight radius/padding. Only the tint varies by tone.
-// Use 'emerald' (not 'accent') for semantic success states - emerald is fixed,
-// 'accent' follows the user's accent picker.
 const TONE_CLASS: Record<StatusTone, string> = {
   accent:  'bg-accent/[0.14] text-accent-text',
   blue:    'bg-blue-500/[0.14] text-blue-600 dark:text-blue-400',

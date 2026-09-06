@@ -29,7 +29,6 @@ function Outline({ path }: { path: string }) {
   )
 }
 
-/** One dot per pass, fastest at the top, so a trend shows without a chart library. */
 function PaceTrail({ route }: { route: RecurringRoute }) {
   const paces = route.runs.map((r) => r.paceSecPerKm)
   const fastest = Math.min(...paces)

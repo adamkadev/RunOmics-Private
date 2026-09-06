@@ -42,14 +42,11 @@ import {
 } from './planWorkoutView'
 
 const MISSED = 'var(--color-missed)'
-// alpha variants via color-mix (supported Safari 16.2+, all modern browsers)
 const TODAY_38 = 'color-mix(in srgb, var(--color-today) 38%, transparent)'
 const MISSED_10 = 'color-mix(in srgb, var(--color-missed) 10%, transparent)'
 const MISSED_25 = 'color-mix(in srgb, var(--color-missed) 25%, transparent)'
 const ACCENT_15 = 'color-mix(in srgb, var(--accent) 15%, transparent)'
 const ACCENT_30 = 'color-mix(in srgb, var(--accent) 30%, transparent)'
-// Foreground-tinted rather than a fixed white wash, so planned/rest cells stay
-// visible in light mode instead of going white-on-white.
 const FG_05 = 'color-mix(in srgb, var(--color-foreground) 5%, transparent)'
 const FG_07 = 'color-mix(in srgb, var(--color-foreground) 7%, transparent)'
 const FG_18 = 'color-mix(in srgb, var(--color-foreground) 18%, transparent)'
@@ -62,9 +59,6 @@ interface Day {
   acts: ActivitySummary[]
 }
 
-// The card itself stays a neutral surface and only the icon tile carries the
-// session's colour - a fully tinted card competes with the week strip above it,
-// where colour is what distinguishes the days.
 function PlannedWorkoutRow({
   workout,
   onTap,
@@ -108,8 +102,6 @@ function PlannedWorkoutRow({
         </span>
         <ChevronRight size={18} className="shrink-0 text-muted-foreground" />
       </div>
-      {/* A single continuous block (e.g. an easy run) has no interval shape to
-          show - one 100%-height bar would just be visual noise. */}
       {workout.structure && workout.structure.length > 1 && (
         <WorkoutStructureBars steps={workout.structure} className="mt-3 flex h-[18px] items-end gap-[2px]" />
       )}
@@ -127,9 +119,6 @@ const WEEKDAY_SHORT_INDEX: Record<number, string> = {
   6: t.plan.weekdays[5] ?? 'Sat',
 }
 
-/** Compact row for the coming-up list: a color dot, the workout name, weekday +
- * a short detail below it, and a right-aligned tag (key session, or distance).
- * Shared by coached and Garmin sessions - the list has one row, like the day. */
 function ComingUpRow({ workout, onTap }: { workout: PlanWorkoutView; onTap: () => void }) {
   const typeColor = workout.type ? ACTIVITY_TYPE_CONFIG[workout.type].chartColor : null
   const weekday = WEEKDAY_SHORT_INDEX[new Date(workout.date + 'T00:00:00').getDay()]
@@ -176,24 +165,17 @@ interface Props {
   byDate: Map<string, ActivitySummary[]>
   byDatePlanned: Map<string, PlannedWorkout>
   byDateCoach?: ReadonlyMap<string, PrescriptionView[]>
-  /** The active coaching block, when one exists - it enriches this view, never replaces it. */
   coaching?: CoachingOverview | null
   onSelectDate?: (date: string) => void
   hrBounds?: HrBounds
   today: string
   atPresent: boolean
   onToday: () => void
-  /** Garmin's daily training status, keyed by date - empty when the watch has never synced it. */
   statusByDate: TrainingStatusCalendar
-  /** The current Garmin Coach plan's phases - empty when the athlete has none active. */
   planPhaseRanges: PlanPhaseRange[]
-  /** The next upcoming race, for the plan's build-toward footer. */
   nextRace?: UpcomingRace | null
-  /** Athlete pace zones, so a planned session can state its target pace. */
   trainingZones?: TrainingZonesData | null
-  /** The plan's own start/end, for the week-of-block count. */
   planSpan?: PlanSpan | null
-  /** Pre-selects this day when landing from the month view (component remounts per navigation). */
   initialSelectedDate?: string | null
 }
 
@@ -220,7 +202,6 @@ export function WeekView({
     const date = isoDate(addDays(weekStart, i))
     return { date, day: Number(date.slice(8)), acts: byDate.get(date) ?? [] }
   })
-  // Array.from({ length: 7 }) is always non-empty.
   const firstDay = days[0]!
 
   const [selectedDate, setSelectedDate] = useState(
@@ -240,13 +221,6 @@ export function WeekView({
     return selectedPlan?.name ?? a.description ?? t.activityTypes[a.type]
   }
 
-  /**
-   * The selected day's sessions in the Plan's one shape. Coaching is the source
-   * of truth for what was prescribed, so where it has a session for the day the
-   * Garmin planned workout is not a second row - it is the same session read
-   * back, and only lends the time of day it was scheduled at. That pairing is
-   * only unambiguous when the day holds a single prescription.
-   */
   const selectedWorkouts = useMemo<PlanWorkoutView[]>(() => {
     const plan = byDatePlanned.get(selected.date) ?? null
     const coach = byDateCoach?.get(selected.date) ?? []
@@ -257,10 +231,6 @@ export function WeekView({
     return plan ? [plannedWorkoutView(plan, trainingZones)] : []
   }, [byDatePlanned, byDateCoach, selected.date, trainingZones])
 
-  // "Coming up" is the next sessions from now, not just next week - it catches
-  // this week's remaining key days too (the mockup's Thu/Sun). Scans the two
-  // weeks after today and keeps the soonest few; only meaningful on the present
-  // week, so the render gates on atPresent.
   const nextWeekPlans = useMemo(
     () =>
       Array.from({ length: 14 }, (_, i) => isoDate(addDays(new Date(today + 'T00:00:00'), i + 1)))
@@ -312,21 +282,15 @@ export function WeekView({
   )
 
   const planned = useMemo(() => {
-    // Untyped planned sessions still count, so map the workouts, not the types.
     const workouts = days.map((d) => byDatePlanned.get(d.date)).filter((p) => p !== undefined)
     return workouts.length ? summarizePlannedWeek(workouts.map((p) => p.type)) : null
   }, [days, byDatePlanned])
 
-  // Base -> Build -> Peak -> Race spans the whole run-up to the primary target,
-  // not the four weeks of the current block: the rolling block is one adaptive
-  // slice inside this macrocycle, and the two are not the same thing.
   const coachPhaseRanges = useMemo(
     () => (coaching ? macrocyclePhaseRanges(coaching.plan) : []),
     [coaching]
   )
 
-  // Coming up, coach-first: the next prescriptions after today, today's own
-  // session excluded - it is already the Today card directly above.
   const comingUp = useMemo<PlanWorkoutView[]>(() => {
     const coach = (coaching?.workouts ?? [])
       .filter((v) => v.prescription.date > today && v.state !== 'cancelled')
@@ -337,10 +301,6 @@ export function WeekView({
     return nextWeekPlans.map((plan) => plannedWorkoutView(plan, trainingZones))
   }, [coaching, today, trainingZones, byDatePlanned, nextWeekPlans])
 
-  // The target race card keeps its place at the foot of the plan; coaching only
-  // supplies the events for it. The block is a rolling ~4-week horizon, so it
-  // ends on the tune-up while the primary target sits beyond it - that target
-  // gets a countdown, never a progress fraction the block cannot yet support.
   const { footerRaces, footerSpan } = useMemo(() => {
     if (!coaching) {
       return { footerRaces: nextRace ? [{ race: nextRace }] : [], footerSpan: planSpan ?? null }
@@ -361,7 +321,6 @@ export function WeekView({
     return { footerRaces: upcoming.map(toRace), footerSpan: null }
   }, [coaching, nextRace, planSpan, today])
 
-  // days[6] exists (fixed-length 7 array); the last day gone means the week is judgeable.
   const weekOver = days[days.length - 1]!.date < today
   const isCurrentWeek = !weekOver && firstDay.date <= today
 
@@ -382,8 +341,6 @@ export function WeekView({
         today={today}
       />
 
-      {/* Week strip, bare on the background as in the mockup: the day tiles are
-          themselves the framed objects, so a card around them double-frames. */}
       <div className="px-0.5">
         {!atPresent && (
           <div className="mb-2.5 flex items-center justify-end gap-2">
@@ -392,7 +349,6 @@ export function WeekView({
         )}
 
         <div>
-          {/* Day cells: colored, type-labeled blocks (rest/missed keep a distinct, non-typed look) */}
           <div className="grid grid-cols-7 gap-1">
             {days.map((d) => {
                 const isToday = d.date === today
@@ -407,9 +363,6 @@ export function WeekView({
                 const primaryType: ActivityType | null = (d.acts[0]?.type ?? (activeCoach ? COACHING_TO_ACTIVITY_TYPE[activeCoach.prescription.type] : plan?.type)) ?? null
                 const typeColor = primaryType && !missed ? ACTIVITY_TYPE_CONFIG[primaryType].chartColor : null
                 const label = primaryType ? t.plan.typeShort[primaryType] : rest ? t.plan.restDay : null
-                // Today's ring/glow takes the session's own type color (Tempo amber,
-                // VO2 red, ...) rather than the theme accent - a rest day has no
-                // session, so it falls back to the accent.
                 const todayGlow = typeColor ?? 'var(--accent)'
 
                 return (
@@ -426,7 +379,6 @@ export function WeekView({
                     )}
                   >
                     <div className="relative w-full">
-                      {/* Pulse ring for today: opacity-only animation, not scale+fade */}
                       {isToday && rest && (
                         <div
                           className="pointer-events-none absolute -inset-0.5 rounded-[10px] border"
@@ -440,8 +392,6 @@ export function WeekView({
                       <div
                         className="relative flex h-[52px] w-full flex-col items-center justify-center gap-0.5 rounded-[11px] border px-0.5 transition-colors"
                         style={{
-                          // Solid borders everywhere, as in the mockup - the
-                          // dashed planned/missed cells read as broken tiles.
                           ...(completed
                             ? { background: typeColor ? `${typeColor}33` : ACCENT_15, borderColor: typeColor ? `${typeColor}80` : ACCENT_30 }
                             : missed
@@ -449,8 +399,6 @@ export function WeekView({
                               : planned
                                 ? { background: typeColor ? `${typeColor}14` : FG_05, borderColor: typeColor ? `${typeColor}59` : FG_18 }
                                 : { background: FG_05, borderColor: FG_07 }),
-                          // Today is ringed and lit whatever it holds, rather
-                          // than only when it happens to be a rest day.
                           ...(isToday
                             ? {
                                 borderColor: todayGlow,
@@ -470,8 +418,6 @@ export function WeekView({
                           {label}
                         </span>
 
-                        {/* Stacked under the type, not pinned to the corner:
-                            the mockup reads type-then-outcome top to bottom. */}
                         {completed && (
                           <Check size={11} strokeWidth={3.4} style={{ color: typeColor ?? 'var(--accent)' }} />
                         )}
@@ -485,14 +431,12 @@ export function WeekView({
           </div>
       </div>
 
-      {/* Decisional header: easy/hard, load, climb - standalone dark tiles, not a card */}
       <div className="grid grid-cols-3 gap-2">
         <SummaryStat
           label={t.plan.weekSummary.easyHard}
           value={
             summary.hardPct !== null ? (
               <>
-                {/* Easy derived from rounded hard so they sum to 100 and match Today/Activities. */}
                 <AnimatedValue value={100 - Math.round(summary.hardPct)} />/
                 <AnimatedValue value={Math.round(summary.hardPct)} />
               </>
@@ -513,8 +457,6 @@ export function WeekView({
       </div>
 
       <div className="space-y-3 px-1">
-        {/* Left-aligned section eyebrow, "Today · Wed, Jul 22" - the mockup
-            leads with what the day is, then dates it. */}
         <p className="text-xs font-bold uppercase tracking-wide text-accent-text">
           {selected.date === today
             ? `${t.plan.today} · ${formatDate(selected.date)}`
@@ -565,8 +507,6 @@ export function WeekView({
         )}
       </div>
 
-      {/* A section, not a card: the rows are already surfaces, so boxing them
-          again nests a card inside a card. Muted eyebrow like the mockup. */}
       {atPresent && comingUp.length > 0 && (
         <div className="px-1">
           <p className="mb-2.5 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground">

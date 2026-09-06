@@ -64,8 +64,6 @@ export function ThresholdChart({ data }: { data: ThresholdHistoryData }) {
       title={s.title}
       legend={legend}
       points={data.points}
-      // Revisions are weeks apart, so there is never a wall of points to thin -
-      // and averaging them into buckets would report thresholds Garmin never set.
       sample={false}
       footnote={s.footnote}
     >

@@ -45,7 +45,6 @@ function LegendValue({ label, value, color, signed = false }: {
   label: string
   value: number
   color: string
-  /** Form is a balance, so it reads as +20 / -20 rather than a bare 20. */
   signed?: boolean
 }) {
   const rounded = Math.round(value)

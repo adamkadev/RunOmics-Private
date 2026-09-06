@@ -3,8 +3,6 @@ import { getTrainingStatusDays } from '@/infrastructure/repositories/JsonTrainin
 import { buildSegments } from '@/domain/training/statusHistory'
 import { garminStatusType, type TrainingStatusType } from './GetTrainingStatus'
 
-// Caps how much history is shipped to the client - the chart pages through it
-// window by window, so a few years is plenty and keeps the payload flat.
 const MAX_DAYS = 1095
 
 export interface TrainingStatusHistoryPoint {
@@ -13,12 +11,10 @@ export interface TrainingStatusHistoryPoint {
   status: TrainingStatusType | null
   acuteLoad: number | null
   chronicLoad: number | null
-  /** Garmin's personalised optimal band for chronic load, as [min, height] so Recharts can stack it. */
   targetBand: [number, number] | null
 }
 
 export interface TrainingStatusHistory {
-  /** The whole stored history: the chart windows and segments it client-side. */
   points: TrainingStatusHistoryPoint[]
 }
 

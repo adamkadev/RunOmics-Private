@@ -4,8 +4,6 @@ import type { Activity } from '@/domain/activity/types'
 import { generateInsight } from '@/lib/gemini'
 import { GeminiCoachingAdvisor } from '../GeminiCoachingAdvisor'
 
-// Deliberately distinctive so an assertion can prove a value never leaked into
-// an error string, and that one path never reached for the other's key.
 const GENERAL_KEY = 'general-project-key-0001'
 const COACH_KEY = 'coach-project-key-0002'
 

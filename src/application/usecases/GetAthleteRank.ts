@@ -14,12 +14,10 @@ export interface AthleteRank {
   vdot: number | null
 }
 
-// Daniels VDOT formula: estimates VO2max from a single race performance
-// (distance + time), independent of the Garmin on-watch estimate.
 const VDOT_EFFORT_KM: Record<string, number> = { '5k': 5, '10k': 10, half: 21.0975, marathon: 42.195 }
 
 function vdotFromEffort(distanceKm: number, seconds: number): number {
-  const velocity = (distanceKm * 1000) / (seconds / 60) // meters per minute
+  const velocity = (distanceKm * 1000) / (seconds / 60)
   const vo2 = -4.6 + 0.182258 * velocity + 0.000104 * velocity * velocity
   const minutes = seconds / 60
   const percentMax = 0.8 + 0.1894393 * Math.exp(-0.012778 * minutes) + 0.2989558 * Math.exp(-0.1932605 * minutes)
@@ -37,8 +35,6 @@ function bestVdot(records: RecordEntry[]): number | null {
   return best
 }
 
-// Maps the 4 VO2max percentile anchors directly onto the D/C/B/A/S ladder:
-// D is the catch-all below fair (40th pct), C/B/A/S start at fair/good/excellent/superior.
 function tierThresholds(t: Vo2maxThresholds): number[] {
   return [0, t.fair, t.good, t.excellent, t.superior]
 }

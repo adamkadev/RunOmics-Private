@@ -44,7 +44,6 @@ export function CelebrationOverlay({ record, aiTake }: { record: RecordEntry | n
 
   useEffect(() => {
     if (visible) haptic('celebration')
-    // Fire once for the initial mount only - not on every `visible` toggle (e.g. dismiss).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

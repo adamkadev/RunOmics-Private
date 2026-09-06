@@ -38,10 +38,6 @@ interface Props {
 
 type TabId = 'overview' | 'splits' | 'charts' | 'dynamics'
 
-
-// The primary stat row is capped at the 4 numbers the mockup specifies
-// (distance/time/pace/HR) - everything else becomes secondary stats inside
-// the Overview tab instead of wrapping the header row onto a second line.
 function buildPrimaryStats(activity: Activity): Metric[] {
   const stats: Metric[] = [
     {
@@ -70,7 +66,6 @@ function buildPrimaryStats(activity: Activity): Metric[] {
 
   return stats
 }
-
 
 export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, shoe, coaching }: Props) {
   const [tab, setTab] = useState<TabId>('overview')

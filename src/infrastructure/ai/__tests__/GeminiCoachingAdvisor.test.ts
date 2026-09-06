@@ -16,8 +16,6 @@ vi.mock('@/lib/gemini', () => gemini)
 const COACH_KEY = 'coach-key'
 
 beforeEach(() => {
-  // Coaching reads its own credential; see geminiCredentials.test.ts for the
-  // isolation from GEMINI_API_KEY this stub takes for granted.
   vi.stubEnv('GEMINI_COACH_API_KEY', COACH_KEY)
 })
 
