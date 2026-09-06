@@ -297,7 +297,6 @@ export const fr = {
       day: (km: number, runs: number) =>
         `${km} km · ${runs} sortie${runs > 1 ? 's' : ''}`,
       months: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'],
-      weekdays: ['Lun', '', 'Mer', '', 'Ven', '', ''],
     },
     trainingLoad: {
       title: 'Charge d’entraînement',
@@ -321,32 +320,6 @@ export const fr = {
       today: "Aujourd'hui",
       noReading: 'Pas de lecture',
     },
-    vo2maxChart: {
-      title: 'VO₂max',
-      unit: 'ml/kg/min',
-      footnote: 'Estimation VO₂max Garmin',
-      ranges: { '4w': '4 sem.', '6m': '6 mois', '1y': '1 an' },
-      reading: {
-        up: (avg: number) => `En hausse, moyenne de ${avg} sur cette période.`,
-        down: (avg: number) => `En baisse, moyenne de ${avg} sur cette période.`,
-        flat: (avg: number) => `Stable autour de ${avg}.`,
-      },
-    },
-    raceCockpit: {
-      title: 'Projection de forme',
-      titleWithRace: (name: string) => `Projection de forme · ${name}`,
-      daysToTarget: (days: number) => `J+${days}`,
-      projectedForm: 'Forme projetée',
-      today: 'Aujourd’hui',
-      projected: 'Projeté',
-      verdict: {
-        'on-track': 'Sur les rails',
-        'ease-off': 'Fatigue résiduelle - allège',
-        'peak-ready': 'En bonne voie pour un pic de forme',
-        'build-more': 'Risque de sous-affûtage - continue de construire',
-      },
-      footnote: 'Estimé à partir des séances planifiées - la forme réelle dépendra de ce que tu cours vraiment.',
-    },
     weeklyDigest: {
       newPr: (label: string, time: string) => `Nouveau record ${label} : ${time}`,
       statusFresh: (tsb: number) => `Zone fraîche (Forme +${tsb}) - bonne fenêtre pour une séance dure`,
@@ -354,11 +327,6 @@ export const fr = {
       acwrWatch: (acwr: number) => `Ratio charge aiguë/chronique à ${acwr.toFixed(2)} - hors de la zone sûre 0,8-1,3`,
       monotonyWatch: (monotony: number) => `Monotonie à ${monotony.toFixed(1)} - ta semaine manque de variété de charge`,
       hardShareWatch: (hardPct: number) => `${Math.round(hardPct)}% de ton temps en effort dur`,
-    },
-    weeklyReview: {
-      eyebrow: 'Bilan de la semaine',
-      fallbackTitle: (km: number, sessions: number) =>
-        `${km} km en ${sessions} séance${sessions !== 1 ? 's' : ''} pour l’instant`,
     },
     syncStatus: {
       synced: (relative: string) => `Synchronisé ${relative}`,
@@ -433,18 +401,6 @@ export const fr = {
     },
     metrics: {
       fitness: 'Condition',
-      vo2maxBand: {
-        building: 'En construction',
-        solid: 'Solide',
-        strong: 'Forte',
-        elite: 'Élite',
-      },
-      topPercent: (pct: number) => `top ${pct}%`,
-      fitnessBand: {
-        peak: 'Pic de forme',
-        nearPeak: 'Proche du pic',
-        building: 'En construction',
-      },
     },
   },
 
@@ -453,17 +409,6 @@ export const fr = {
     readingLabel: 'Lecture :',
     season: (year: number) => `Saison ${year}`,
     allTimeChip: 'Tout',
-    allTimeTitle: 'Historique complet',
-    yearGroupLabel: 'Année',
-    windowGroupLabel: 'Fenêtre',
-    period: {
-      chip: (n: number) => `${n} sem`,
-      title: (n: number) => (n === 1 ? 'Cette semaine' : `${n} dernières semaines`),
-      distancePct: (p: number) => `${p >= 0 ? '+' : ''}${p}% km`,
-      sessionsPct: (p: number) => `${p >= 0 ? '+' : ''}${p}% sorties`,
-      paceFaster: (s: number) => `allure facile -${s}s/km`,
-      paceSlower: (s: number) => `allure facile +${s}s/km`,
-    },
     tabs: {
       fitness: 'Forme',
       // Abbreviated so all four tabs fit the strip without scrolling; the
@@ -496,13 +441,6 @@ export const fr = {
       } as Record<string, string>,
     },
     stats: {
-      distance: 'Distance',
-      time: 'Temps',
-      sessions: 'Séances',
-      elevation: 'Dénivelé',
-      avgPerWeek: 'Moy. / semaine',
-      yearsTracked: 'Années suivies',
-      calories: 'Calories',
       elevationValue: (m: number) => `+${m} m`,
     },
     charts: {
@@ -651,35 +589,12 @@ export const fr = {
           flat: (avg: string) => `L'effort perçu est stable autour de RPE ${avg}.`,
         },
       },
-      trainingEffect: {
-        title: 'Effet d’entraînement',
-        aerobic: 'Aérobie',
-        anaerobic: 'Anaérobie',
-        footnote: 'Training effect aérobie et anaérobie moyen (1–5).',
-        reading: {
-          aerobicLed: "Le training effect aérobie dépasse l'anaérobie - la plupart des séances construisent l'endurance plutôt que la haute intensité.",
-          anaerobicLed: "Le training effect anaérobie dépasse l'aérobie - la plupart des séances penchent vers la haute intensité.",
-          balanced: 'Le training effect aérobie et anaérobie sont à peu près équilibrés.',
-        },
-      },
       monthlyComparison: {
         title: 'Mois par mois',
         reading: (curYear: number, deltaPct: number) =>
           deltaPct >= 0
             ? `Le volume ${curYear} devance l'an dernier de ${deltaPct}%.`
             : `Le volume ${curYear} accuse un retard de ${Math.abs(deltaPct)}% sur l'an dernier.`,
-      },
-      efficiencyRolling: {
-        title: 'Efficacité aérobie',
-        ef7: '7 j',
-        ef30: '30 j',
-        unit: 'm/min·bpm',
-        footnote: 'Efficacité aérobie glissante sur la fenêtre affichée. 7 j capture la forme récente, 30 j montre la tendance de fond.',
-        reading: {
-          up: (d: string) => `La tendance 30 j progresse, +${d} m/min·bpm - plus de vitesse par battement.`,
-          down: 'La tendance 30 j baisse - ajoute des sorties faciles ou surveille une fatigue accumulée.',
-          flat: 'La tendance 30 j reste stable.',
-        },
       },
       threshold: {
         title: 'Seuil lactique de course',
@@ -1090,7 +1005,6 @@ export const fr = {
   profile: {
     hero: {
       lifetime: (runs: number, km: number) => `${runs} sorties · ${km.toLocaleString('fr')} km au total`,
-      rankLine: (tier: string, pct: number) => `Rang ${tier} · top ${pct}% de VO₂max pour ton âge`,
       rankBadge: (tier: string) => `RANG ${tier}`,
       topPctLine: (pct: number) => `Top ${pct}% de VO₂max pour ton âge`,
       namePlaceholder: 'Votre nom',
@@ -1112,11 +1026,9 @@ export const fr = {
       newBadge: 'NOUVEAU',
     },
     shoes: {
-      title: 'Chaussures',
       pairs: (n: number) => `${n} paire${n !== 1 ? 's' : ''} active${n !== 1 ? 's' : ''}`,
       allGood: 'Tout va bien',
       needsReplacing: (n: number) => n === 1 ? '1 paire à remplacer' : `${n} paires à remplacer`,
-      viewShoes: 'Voir les chaussures',
     },
     milestones: {
       distanceTier: (km: number) => `${km} km cette année`,
@@ -1313,7 +1225,6 @@ export const fr = {
       easyZone: 'Z1-Z2',
       min: (m: number) => `${m}'`,
     },
-    nextWeek: (n: number) => `Semaine prochaine - ${n} prévue${n > 1 ? 's' : ''}`,
     comingUp: 'À venir',
     timeOfDay: {
       Morning: 'Matin',
@@ -1329,11 +1240,9 @@ export const fr = {
       load: 'Charge',
       vsTypical: (percent: number) => `${percent - 100 >= 0 ? '+' : ''}${percent - 100}% vs type`,
       easyHard: 'Facile / Dur',
-      elevation: 'D+',
       climb: 'D+',
     },
     raceFooter: {
-      inDays: (days: number) => (days === 0 ? "aujourd'hui" : days === 1 ? 'dans 1 jour' : `dans ${days} jours`),
       weeksIn: (done: number, total: number) => `${done}/${total}`,
       primaryTarget: 'Objectif principal',
       tuneUp: "Course d'appui",
@@ -1366,7 +1275,6 @@ export const fr = {
           ? `${total} séance${total > 1 ? 's' : ''} · ${key} qualité`
           : `${total} séance${total > 1 ? 's' : ''}`,
       weekOfTarget: (done: number, total: number) => `Semaine ${done} sur ${total}`,
-      currentBlock: (from: string, to: string) => `Bloc actuel · ${from} – ${to}`,
       weekOfBlock: (done: number, total: number) => `semaine ${done} sur ${total}`,
       adherence: (done: number, due: number) => `${done} / ${due} faites`,
     },
@@ -1374,16 +1282,6 @@ export const fr = {
 
   coaching: {
     garminOutOfDate: 'Garmin obsolète',
-    showStructure: 'Voir la structure',
-    prescription: 'Prescription du coach',
-    repetitions: 'répétitions',
-    garminSession: (name: string) => `Garmin · ${name}`,
-    coach: 'Coach',
-    target: 'Objectif',
-    currentBlock: 'Bloc actuel',
-    thisWeek: 'Cette semaine',
-    nextKeySession: 'Prochaine séance clé',
-    latestDecision: 'Dernier ajustement',
     noPlanChange: 'Aucun changement du plan',
     states: {
       prescribed: 'Prescrite',
@@ -1402,13 +1300,6 @@ export const fr = {
     updatedSession: (title: string) => `Séance future ajustée : ${title}`,
     cancelledSession: (title: string) => `Séance future annulée : ${title}`,
     futureSessionsChanged: (count: number) => `${count} séance${count > 1 ? 's' : ''} future${count > 1 ? 's' : ''} replanifiée${count > 1 ? 's' : ''}`,
-    segments: {
-      warmup: 'échauffement',
-      effort: 'effort',
-      recovery: 'récupération',
-      cooldown: 'retour au calme',
-      strides: 'lignes droites',
-    },
   },
 
   // Display labels for domain enums. Styling (colors, badge classes) stays in

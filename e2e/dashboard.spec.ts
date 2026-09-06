@@ -5,8 +5,6 @@ test('dashboard renders the weekly snapshot and recent activities', async ({ pag
 
   // Greeting + weekly stats grid load without a client-side data fetch (SSG).
   await expect(page.getByRole('heading', { name: /good (morning|afternoon|evening)/i })).toBeVisible()
-  await expect(page.getByText('Coach', { exact: true }).first()).toBeVisible()
-  await expect(page.getByText('Next key session')).toBeVisible()
 
   // data/activities/*.json always has activities (real or demo), so
   // there is always at least one recent activity card linking into

@@ -16,7 +16,6 @@ import { weekTrainingStatus } from '@/domain/training/weekStatus'
 import { weekPlanPhase } from '@/domain/training/weekPlanPhase'
 import type { TrainingStatusCalendar } from '@/application/usecases/GetTrainingStatusCalendar'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
-import { parseWorkoutStructure } from '@/domain/training/workoutStructure'
 import { WorkoutStructureBars } from './WorkoutStructure'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -27,17 +26,20 @@ import { WeekPurposeBanner } from './WeekPurposeBanner'
 import { RaceFooter, type FooterRace } from './RaceFooter'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
-import { paceZoneKeyFor } from '@/domain/training/typePaceZone'
 import type { PlanSpan } from '@/domain/training/planProgress'
 import { addDays, isoDate, isoWeekNumber } from '@/lib/calendarDate'
-import { formatDate, formatDateFull, formatDurationWords, formatPaceRange } from '@/lib/formatters'
+import { formatDate, formatDateFull } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { CoachingOverview, PrescriptionView } from '@/application/coaching/GetCoachingView'
 import { COACHING_TO_ACTIVITY_TYPE } from '@/domain/coaching/types'
-import { CoachPrescriptionDetail } from '@/components/coaching/CoachPrescriptionDetail'
-import { CoachComingUpRow } from '@/components/coaching/CoachComingUpRow'
 import { macrocyclePhaseRanges, macrocycleWeek } from '@/components/coaching/presentation'
+import {
+  coachWorkoutView,
+  formatPlanDuration,
+  plannedWorkoutView,
+  type PlanWorkoutView,
+} from './planWorkoutView'
 
 const MISSED = 'var(--color-missed)'
 // alpha variants via color-mix (supported Safari 16.2+, all modern browsers)
@@ -64,34 +66,21 @@ interface Day {
 // session's colour - a fully tinted card competes with the week strip above it,
 // where colour is what distinguishes the days.
 function PlannedWorkoutRow({
-  plan,
-  zones,
+  workout,
   onTap,
 }: {
-  plan: PlannedWorkout
-  zones: TrainingZonesData | null
+  workout: PlanWorkoutView
   onTap: () => void
 }) {
-  const typeColor = plan.type ? ACTIVITY_TYPE_CONFIG[plan.type as ActivityType].chartColor : null
-  const Icon = plan.type ? ACTIVITY_TYPE_ICONS[plan.type as ActivityType] : Footprints
-  const structure = plan.steps ?? parseWorkoutStructure(plan.name, plan.durationSecs)
-
-  // Target pace for the steady-effort types, straight off the athlete's own
-  // threshold-derived zones. Interval types have no single range, so they
-  // simply keep the type name.
-  const zoneKey = paceZoneKeyFor(plan.type as ActivityType | undefined)
-  const zone = zoneKey ? zones?.zones.find((z) => z.key === zoneKey) ?? null : null
-  const title = [
-    plan.name,
-    plan.durationSecs ? formatDurationWords(plan.durationSecs) : null,
-  ]
-    .filter(Boolean)
-    .join(' · ')
+  const typeColor = workout.type ? ACTIVITY_TYPE_CONFIG[workout.type].chartColor : null
+  const Icon = workout.type ? ACTIVITY_TYPE_ICONS[workout.type] : Footprints
+  const title = [workout.title, formatPlanDuration(workout.duration)].filter(Boolean).join(' · ')
 
   return (
     <button
       type="button"
       onClick={onTap}
+      data-testid={`plan-workout-row-${workout.key}`}
       className="w-full rounded-2xl border border-foreground/[0.08] bg-foreground/[0.04] p-3.5 text-left transition-colors hover:bg-foreground/[0.07]"
     >
       <div className="flex items-center gap-3">
@@ -112,11 +101,7 @@ function PlannedWorkoutRow({
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-bold text-foreground">{title}</span>
           <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-            {[
-              plan.scheduledTime ? t.plan.timeOfDay[plan.scheduledTime] : null,
-              zone ? (zone.key === 'easy' ? t.plan.easyEffortLabel : zone.label) : plan.type ? t.activityTypes[plan.type as ActivityType] : null,
-              zone ? formatPaceRange([zone.paceMinSecPerKm, zone.paceMaxSecPerKm]) : null,
-            ]
+            {[workout.scheduledTime ? t.plan.timeOfDay[workout.scheduledTime] : null, workout.effort]
               .filter(Boolean)
               .join(' · ') || t.plan.planned}
           </span>
@@ -125,8 +110,8 @@ function PlannedWorkoutRow({
       </div>
       {/* A single continuous block (e.g. an easy run) has no interval shape to
           show - one 100%-height bar would just be visual noise. */}
-      {structure && structure.length > 1 && (
-        <WorkoutStructureBars steps={structure} className="mt-3 flex h-[18px] items-end gap-[2px]" />
+      {workout.structure && workout.structure.length > 1 && (
+        <WorkoutStructureBars steps={workout.structure} className="mt-3 flex h-[18px] items-end gap-[2px]" />
       )}
     </button>
   )
@@ -142,28 +127,23 @@ const WEEKDAY_SHORT_INDEX: Record<number, string> = {
   6: t.plan.weekdays[5] ?? 'Sat',
 }
 
-// Same easy/hard split the week's stat tiles use: anything but Base counts as
-// a key session, tagged accordingly instead of repeating its distance.
-const KEY_SESSION_TYPES = new Set<ActivityType>(['Threshold', 'Sprint', 'Tempo'])
-
 /** Compact row for the coming-up list: a color dot, the workout name, weekday +
- * a short detail below it, and a right-aligned tag (key session, or distance). */
-function NextWeekPlanRow({ plan, onTap }: { plan: PlannedWorkout; onTap: () => void }) {
-  const typeColor = plan.type ? ACTIVITY_TYPE_CONFIG[plan.type as ActivityType].chartColor : null
-  const weekday = WEEKDAY_SHORT_INDEX[new Date(plan.date + 'T00:00:00').getDay()]
-  const detail = plan.durationSecs
-    ? formatDurationWords(plan.durationSecs)
-    : plan.scheduledTime
-      ? t.plan.timeOfDay[plan.scheduledTime]
-      : undefined
-  const isKey = plan.type ? KEY_SESSION_TYPES.has(plan.type as ActivityType) : false
-  const distanceKm = plan.distanceM ? Math.round(plan.distanceM / 1000) : null
-  const tag = isKey ? t.plan.keyTag : distanceKm ? `~${distanceKm} ${t.units.km}` : null
+ * a short detail below it, and a right-aligned tag (key session, or distance).
+ * Shared by coached and Garmin sessions - the list has one row, like the day. */
+function ComingUpRow({ workout, onTap }: { workout: PlanWorkoutView; onTap: () => void }) {
+  const typeColor = workout.type ? ACTIVITY_TYPE_CONFIG[workout.type].chartColor : null
+  const weekday = WEEKDAY_SHORT_INDEX[new Date(workout.date + 'T00:00:00').getDay()]
+  const detail =
+    formatPlanDuration(workout.duration) ??
+    (workout.scheduledTime ? t.plan.timeOfDay[workout.scheduledTime] : undefined)
+  const distanceKm = workout.distanceM ? Math.round(workout.distanceM / 1000) : null
+  const tag = workout.isKey ? t.plan.keyTag : distanceKm ? `~${distanceKm} ${t.units.km}` : null
 
   return (
     <button
       type="button"
       onClick={onTap}
+      data-testid={`coming-up-${workout.key}`}
       className="flex w-full items-center gap-2.5 rounded-xl border border-foreground/[0.08] bg-foreground/[0.04] p-2.5 text-left transition-colors hover:bg-foreground/[0.07]"
     >
       <span
@@ -171,7 +151,7 @@ function NextWeekPlanRow({ plan, onTap }: { plan: PlannedWorkout; onTap: () => v
         style={{ background: typeColor ?? 'var(--accent)' }}
       />
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-bold text-foreground">{plan.name}</span>
+        <span className="block truncate text-sm font-bold text-foreground">{workout.title}</span>
         <span className="mt-0.5 block text-xs text-muted-foreground">
           {[weekday, detail].filter(Boolean).join(' · ')}
         </span>
@@ -250,16 +230,32 @@ export function WeekView({
       firstDay.date
   )
   const [sheetActivity, setSheetActivity] = useState<ActivitySummary | null>(null)
-  const [sheetPlan, setSheetPlan] = useState<PlannedWorkout | null>(null)
+  const [sheetWorkout, setSheetWorkout] = useState<PlanWorkoutView | null>(null)
 
   const selected = days.find((d) => d.date === selectedDate) ?? firstDay
   const selectedPlan = byDatePlanned.get(selected.date)
-  const selectedCoach = byDateCoach?.get(selected.date) ?? []
 
   function activityTitle(a: ActivitySummary): string {
     if (a.description && a.description !== t.activityTypes[a.type]) return a.description
     return selectedPlan?.name ?? a.description ?? t.activityTypes[a.type]
   }
+
+  /**
+   * The selected day's sessions in the Plan's one shape. Coaching is the source
+   * of truth for what was prescribed, so where it has a session for the day the
+   * Garmin planned workout is not a second row - it is the same session read
+   * back, and only lends the time of day it was scheduled at. That pairing is
+   * only unambiguous when the day holds a single prescription.
+   */
+  const selectedWorkouts = useMemo<PlanWorkoutView[]>(() => {
+    const plan = byDatePlanned.get(selected.date) ?? null
+    const coach = byDateCoach?.get(selected.date) ?? []
+    if (coach.length > 0) {
+      const garmin = coach.length === 1 ? plan : null
+      return coach.map((view) => coachWorkoutView(view, trainingZones, garmin))
+    }
+    return plan ? [plannedWorkoutView(plan, trainingZones)] : []
+  }, [byDatePlanned, byDateCoach, selected.date, trainingZones])
 
   // "Coming up" is the next sessions from now, not just next week - it catches
   // this week's remaining key days too (the mockup's Thu/Sun). Scans the two
@@ -331,13 +327,15 @@ export function WeekView({
 
   // Coming up, coach-first: the next prescriptions after today, today's own
   // session excluded - it is already the Today card directly above.
-  const comingUpCoach = useMemo(
-    () =>
-      (coaching?.workouts ?? [])
-        .filter((v) => v.prescription.date > today && v.state !== 'cancelled')
-        .slice(0, 3),
-    [coaching, today]
-  )
+  const comingUp = useMemo<PlanWorkoutView[]>(() => {
+    const coach = (coaching?.workouts ?? [])
+      .filter((v) => v.prescription.date > today && v.state !== 'cancelled')
+      .slice(0, 3)
+    if (coach.length > 0) {
+      return coach.map((view) => coachWorkoutView(view, trainingZones, byDatePlanned.get(view.prescription.date) ?? null))
+    }
+    return nextWeekPlans.map((plan) => plannedWorkoutView(plan, trainingZones))
+  }, [coaching, today, trainingZones, byDatePlanned, nextWeekPlans])
 
   // The target race card keeps its place at the foot of the plan; coaching only
   // supplies the events for it. The block is a rolling ~4-week horizon, so it
@@ -523,8 +521,6 @@ export function WeekView({
             : formatDateFull(selected.date)}
         </p>
 
-        {selectedCoach.map(view => <CoachPrescriptionDetail key={view.prescription.id} view={view} />)}
-        {selectedCoach.length > 0 && selectedPlan && <button type="button" onClick={() => setSheetPlan(selectedPlan)} className="flex w-full items-center justify-between gap-2 rounded-lg border border-foreground/[0.08] px-3 py-2 text-left text-xs text-muted-foreground"><span>{t.coaching.garminSession(selectedPlan.name)}</span><ChevronRight size={14} aria-hidden="true" /></button>}
         {selected.acts.length > 0 ? (
           <div className="space-y-2">
             {selected.acts.map((a) => {
@@ -558,8 +554,12 @@ export function WeekView({
               )
             })}
           </div>
-        ) : selectedCoach.length > 0 ? null : selectedPlan ? (
-          <PlannedWorkoutRow plan={selectedPlan} zones={trainingZones} onTap={() => setSheetPlan(selectedPlan)} />
+        ) : selectedWorkouts.length > 0 ? (
+          <div className="space-y-2">
+            {selectedWorkouts.map((workout) => (
+              <PlannedWorkoutRow key={workout.key} workout={workout} onTap={() => setSheetWorkout(workout)} />
+            ))}
+          </div>
         ) : (
           <p className="text-center text-sm text-subtle">{t.plan.restDay}</p>
         )}
@@ -567,23 +567,19 @@ export function WeekView({
 
       {/* A section, not a card: the rows are already surfaces, so boxing them
           again nests a card inside a card. Muted eyebrow like the mockup. */}
-      {atPresent && (comingUpCoach.length > 0 || nextWeekPlans.length > 0) && (
+      {atPresent && comingUp.length > 0 && (
         <div className="px-1">
           <p className="mb-2.5 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground">
             {t.plan.comingUp}
           </p>
           <div className="space-y-2">
-            {comingUpCoach.length > 0
-              ? comingUpCoach.map((view) => (
-                  <CoachComingUpRow
-                    key={view.prescription.id}
-                    view={view}
-                    onTap={() => setSelectedDate(view.prescription.date)}
-                  />
-                ))
-              : nextWeekPlans.map((plan) => (
-                  <NextWeekPlanRow key={plan.date} plan={plan} onTap={() => setSheetPlan(plan)} />
-                ))}
+            {comingUp.map((workout) => (
+              <ComingUpRow
+                key={workout.key}
+                workout={workout}
+                onTap={() => setSelectedDate(workout.date)}
+              />
+            ))}
           </div>
         </div>
       )}
@@ -599,7 +595,7 @@ export function WeekView({
           onClose={() => setSheetActivity(null)}
         />
       )}
-      {sheetPlan && <PlannedWorkoutSheet workout={sheetPlan} onClose={() => setSheetPlan(null)} />}
+      {sheetWorkout && <PlannedWorkoutSheet workout={sheetWorkout} onClose={() => setSheetWorkout(null)} />}
     </div>
   )
 }

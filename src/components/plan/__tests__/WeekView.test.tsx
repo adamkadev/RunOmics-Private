@@ -5,6 +5,7 @@ import { buildCoachingOverview, type CoachingOverview, type PrescriptionView } f
 import type { ActivitySummary, PlannedWorkout } from '@/domain/activity/types'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
+import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { CoachingPlan } from '@/domain/coaching/types'
 import { plan } from '@/domain/coaching/__tests__/fixtures'
 import { t } from '@/i18n'
@@ -59,12 +60,22 @@ function byDateCoach(coaching: CoachingOverview): Map<string, PrescriptionView[]
   return map
 }
 
+/** The athlete's own threshold-derived bands, as the Plan page passes them in. */
+const ZONES: TrainingZonesData = {
+  thresholdPaceSecPerKm: 265,
+  zones: [
+    { key: 'easy', label: 'Easy', shortDesc: '', example: '', paceMinSecPerKm: 310, paceMaxSecPerKm: 387 },
+    { key: 'threshold', label: 'Threshold', shortDesc: '', example: '', paceMinSecPerKm: 260, paceMaxSecPerKm: 270 },
+  ],
+}
+
 function renderWeek(options: {
   coaching?: CoachingOverview
   planned?: PlannedWorkout[]
   activities?: ActivitySummary[]
   nextRace?: UpcomingRace | null
   planPhaseRanges?: PlanPhaseRange[]
+  trainingZones?: TrainingZonesData | null
 } = {}) {
   const activities = options.activities ?? []
   const byDate = new Map<string, ActivitySummary[]>()
@@ -85,6 +96,7 @@ function renderWeek(options: {
       statusByDate={{}}
       planPhaseRanges={options.planPhaseRanges ?? []}
       nextRace={options.nextRace ?? null}
+      trainingZones={options.trainingZones ?? null}
     />
   )
 }
@@ -174,78 +186,104 @@ describe('WeekView coaching day cells and Today', () => {
   it('represents each coach workout once, in the day it falls on', () => {
     renderWeek({ coaching: overview() })
 
-    // The day cell carries it via its type tile and label; the detail is the
-    // only place the session is spelled out. No third copy anywhere.
+    // The day cell carries it via its type tile and label; the session row is
+    // the only place it is spelled out. No third copy anywhere.
     expect(screen.getAllByTestId('coach-calendar-2026-09-09')).toHaveLength(1)
-    expect(screen.getAllByTestId('coach-prescription-detail')).toHaveLength(1)
-    expect(screen.getAllByText('3 × 8 min threshold')).toHaveLength(1)
+    expect(screen.getAllByTestId('plan-workout-row-workout-threshold')).toHaveLength(1)
+    expect(screen.getAllByText(/3 × 8 min threshold/)).toHaveLength(1)
   })
 
-  it('uses todays prescription for the Today card', () => {
+  it('renders a coached session through the same row a Garmin session uses', () => {
+    const coached = renderWeek({ coaching: overview() })
+    const coachRow = screen.getByTestId('plan-workout-row-workout-threshold')
+    coached.unmount()
+
+    renderWeek({ planned: [{ date: TODAY, name: 'Track session', type: 'Threshold', durationSecs: 3_600 }] })
+    const garminRow = screen.getByTestId(/^plan-workout-row-garmin:/)
+
+    // Same component, so the same element shape and the same classes - the row
+    // has no idea which source it is showing.
+    expect(coachRow.tagName).toBe(garminRow.tagName)
+    expect(coachRow.className).toBe(garminRow.className)
+  })
+
+  it('states the effort band and the pace the coach prescribed', () => {
+    renderWeek({ coaching: overview(), trainingZones: ZONES })
+
+    const row = screen.getByTestId('plan-workout-row-workout-threshold')
+    // Size on the title line, band and pace below it - the row the Plan has
+    // always had, filled in from the prescription instead of from Garmin.
+    expect(row.textContent).toContain('3 × 8 min threshold · 1h00')
+    expect(row.textContent).toContain('Threshold · 4:25–4:30/km')
+  })
+
+  it('opens the same planned-workout sheet when a coached session is tapped', async () => {
+    const user = userEvent.setup()
     renderWeek({ coaching: overview() })
 
-    const detail = screen.getByTestId('coach-prescription-detail')
-    expect(within(detail).getByText('3 × 8 min threshold')).toBeInTheDocument()
-    expect(within(detail).getByText(t.coaching.states.prescribed)).toBeInTheDocument()
-    expect(detail.textContent).toContain('4:25–4:30/km')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await user.click(screen.getByTestId('plan-workout-row-workout-threshold'))
+
+    const sheet = screen.getByRole('dialog')
+    expect(within(sheet).getByRole('heading', { name: '3 × 8 min threshold' })).toBeInTheDocument()
   })
 
-  it('keeps the structure collapsed so the Today card stays short', () => {
+  it('surfaces the prescription state in that sheet', async () => {
+    const user = userEvent.setup()
     renderWeek({ coaching: overview() })
 
-    const detail = screen.getByTestId('coach-prescription-detail')
-    expect(within(detail).getByText(t.coaching.showStructure).closest('details')!.open).toBe(false)
-    // The Today slot shows the session, not the rest-day fallback.
-    expect(within(detail.parentElement!).queryByText(t.plan.restDay)).not.toBeInTheDocument()
+    await user.click(screen.getByTestId('plan-workout-row-workout-threshold'))
+
+    expect(within(screen.getByRole('dialog')).getByText(t.coaching.states.prescribed)).toBeInTheDocument()
   })
 
-  it('keeps Garmin out of the card while the session is synced as prescribed', () => {
+  it('lets a matching Garmin session fill in the time of day the coach never states', () => {
+    renderWeek({
+      coaching: overview({ garminPlanned: [{ date: TODAY, name: 'Track session', type: 'Threshold', durationSecs: 3_600 }] }),
+      planned: [{ date: TODAY, name: 'Track session', type: 'Threshold', durationSecs: 3_600, scheduledTime: 'Evening' }],
+    })
+
+    expect(screen.getByTestId('plan-workout-row-workout-threshold').textContent)
+      .toContain(t.plan.timeOfDay.Evening)
+  })
+
+  it('shows one row for a session the coach prescribed and Garmin already holds', () => {
+    const garmin: PlannedWorkout = { date: TODAY, name: 'Track session', type: 'Threshold', durationSecs: 3_600 }
+    renderWeek({ coaching: overview({ garminPlanned: [garmin] }), planned: [garmin] })
+
+    // The Garmin copy is the same session read back, not a second one to list.
+    expect(screen.getAllByTestId(/^plan-workout-row-/)).toHaveLength(1)
+    expect(screen.queryByText(/^Garmin ·/)).not.toBeInTheDocument()
+  })
+
+  it('keeps Garmin quiet in the sheet while the session is synced as prescribed', async () => {
+    const user = userEvent.setup()
     renderWeek({
       coaching: overview({ garminPlanned: [{ date: TODAY, name: 'Track session', type: 'Threshold', durationSecs: 3_600 }] }),
     })
 
-    expect(screen.getByTestId('coach-prescription-detail').textContent).not.toMatch(/Garmin out of date/i)
+    await user.click(screen.getByTestId('plan-workout-row-workout-threshold'))
+
+    expect(screen.getByRole('dialog').textContent).not.toMatch(/Garmin/i)
   })
 
-  it('surfaces an out-of-date Garmin session, which the athlete must act on', () => {
+  it('surfaces an out-of-date Garmin session, which the athlete must act on', async () => {
+    const user = userEvent.setup()
     renderWeek({
       coaching: overview({ garminPlanned: [{ date: TODAY, name: 'Easy jog', type: 'Base', durationSecs: 3_600 }] }),
     })
 
-    expect(within(screen.getByTestId('coach-prescription-detail')).getByText(t.coaching.garminOutOfDate)).toBeInTheDocument()
+    await user.click(screen.getByTestId('plan-workout-row-workout-threshold'))
+
+    expect(within(screen.getByRole('dialog')).getByText(t.coaching.garminOutOfDate)).toBeInTheDocument()
   })
 
-  it('still distinguishes the Garmin planned workout sharing the day', () => {
-    const garmin: PlannedWorkout = { date: TODAY, name: 'Track session', type: 'Threshold', durationSecs: 3_600 }
-    renderWeek({ coaching: overview({ garminPlanned: [garmin] }), planned: [garmin] })
-
-    expect(screen.getByText(t.coaching.garminSession('Track session'))).toBeInTheDocument()
-  })
-
-  it('drops the prescription card on a day that has none', async () => {
+  it('drops the session row on a day that has none', async () => {
     const user = userEvent.setup()
     renderWeek({ coaching: overview() })
 
     await user.click(screen.getByLabelText(/September 10/))
-    expect(screen.queryByTestId('coach-prescription-detail')).not.toBeInTheDocument()
-  })
-})
-
-describe('WeekView Coming Up', () => {
-  it('lists future prescriptions without repeating todays', () => {
-    renderWeek({ coaching: overview() })
-
-    expect(screen.getByText(t.plan.comingUp)).toBeInTheDocument()
-    expect(screen.getByTestId('coach-coming-up-workout-easy')).toBeInTheDocument()
-    // Today's threshold session is the Today card, so it must not reappear here.
-    expect(screen.queryByTestId('coach-coming-up-workout-threshold')).not.toBeInTheDocument()
-  })
-
-  it('falls back to Garmin planned workouts when there is no coaching', () => {
-    renderWeek({ planned: [{ date: '2026-09-11', name: 'Long run', type: 'Base' }] })
-
-    expect(screen.getByText(t.plan.comingUp)).toBeInTheDocument()
-    expect(screen.getByText('Long run')).toBeInTheDocument()
+    expect(screen.queryByTestId(/^plan-workout-row-/)).not.toBeInTheDocument()
   })
 })
 
@@ -282,7 +320,6 @@ describe('WeekView without coaching', () => {
     renderWeek({ activities: [TEMPO, RACE], planned: [{ date: TODAY, name: 'Track session', type: 'Threshold', durationSecs: 3_600 }] })
 
     expect(screen.getByText(t.plan.weekSummary.easyHard)).toBeInTheDocument()
-    expect(screen.queryByTestId('coach-prescription-detail')).not.toBeInTheDocument()
     expect(screen.queryByTestId('coach-decision-row')).not.toBeInTheDocument()
     expect(screen.queryByTestId('coach-calendar-2026-09-09')).not.toBeInTheDocument()
   })

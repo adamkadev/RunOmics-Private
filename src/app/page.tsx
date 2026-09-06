@@ -7,12 +7,12 @@ import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { getTrainingStatusDaysBar } from '@/application/usecases/GetTrainingStatusDaysBar'
 import { getRecords, getQualifiedEffortsByActivityId, getMostRecentRecord } from '@/application/usecases/GetRecords'
 import { getNextRace } from '@/application/usecases/GetNextRace'
-import { getWeeklyDigest } from '@/application/usecases/GetWeeklyDigest'
 import { getTodayPlannedWorkout } from '@/application/usecases/GetPlannedWorkouts'
 import { getTodayInsight } from '@/application/usecases/GetTodayInsight'
-import { getWeeklyReviewInsight } from '@/application/usecases/GetWeeklyReviewInsight'
 import { getPbCelebrationInsight } from '@/application/usecases/GetPbCelebrationInsight'
 import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
+import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
+import { coachWorkoutView, plannedWorkoutView } from '@/components/plan/planWorkoutView'
 import { isoDate } from '@/lib/calendarDate'
 import { getWeeklyStreakData } from '@/application/usecases/GetMilestones'
 import { getCurrentWeeklyGoal } from '@/application/usecases/GetGoalsData'
@@ -23,9 +23,7 @@ import { FormFitnessFatigueTrio } from '@/components/dashboard/FormFitnessFatigu
 import { TrainingStatusDaysBar } from '@/components/dashboard/TrainingStatusDaysBar'
 import { WeeklyStreakCard } from '@/components/dashboard/WeeklyStreakCard'
 import { CelebrationOverlay } from '@/components/dashboard/CelebrationOverlay'
-import { WeeklyReviewCard } from '@/components/dashboard/WeeklyReviewCard'
 import { FirstLaunchHint } from '@/components/dashboard/FirstLaunchHint'
-import { CoachBrief } from '@/components/coaching/CoachBrief'
 import { t } from '@/i18n'
 
 export const revalidate = 3600
@@ -41,7 +39,6 @@ export default async function DashboardPage() {
   const qualifiedEffortsByActivityId = getQualifiedEffortsByActivityId(records)
   const mostRecentRecord = getMostRecentRecord(records)
   const nextRace = await getNextRace()
-  const weeklyDigest = await getWeeklyDigest()
   const todayPlannedWorkout = await getTodayPlannedWorkout()
   const weeklyStreak = getWeeklyStreakData()
   const weeklyGoal = await getCurrentWeeklyGoal()
@@ -50,8 +47,16 @@ export default async function DashboardPage() {
   const today = isoDate(new Date())
   const todayActivity = data.recentActivities.find((a) => a.date === today) ?? null
   const todayCoachWorkout = coaching?.workouts.find((workout) => workout.prescription.date === today && workout.prescription.status !== 'cancelled') ?? null
+  // One session row, whoever prescribed it: the coach owns the training, the
+  // Garmin planned workout is the same session read back and only fills in
+  // what the coach never states.
+  const trainingZones = await getTrainingZones()
+  const todayWorkout = todayCoachWorkout
+    ? coachWorkoutView(todayCoachWorkout, trainingZones, todayPlannedWorkout)
+    : todayPlannedWorkout
+      ? plannedWorkoutView(todayPlannedWorkout, trainingZones)
+      : null
   const aiVerdict = todayCoachWorkout ? null : await getTodayInsight(trainingStatus, todayPlannedWorkout)
-  const weeklyReview = await getWeeklyReviewInsight(weeklyDigest)
   const celebrationTake = await getPbCelebrationInsight(mostRecentRecord)
 
   return (
@@ -65,14 +70,11 @@ export default async function DashboardPage() {
 
       <TodayHero
         status={trainingStatus}
-        plannedWorkout={todayPlannedWorkout}
-        coachWorkout={todayCoachWorkout}
+        plannedWorkout={todayWorkout}
         todayActivity={todayActivity}
         nextRace={nextRace}
         aiVerdict={aiVerdict}
       />
-
-      {coaching && <CoachBrief coaching={coaching} />}
 
       <FormFitnessFatigueTrio status={trainingStatus} load={trainingLoad} />
 
@@ -83,8 +85,6 @@ export default async function DashboardPage() {
           <WeeklyStreakCard data={weeklyStreak} goal={weeklyGoal} />
         </Link>
       )}
-
-      {weeklyDigest && <WeeklyReviewCard digest={weeklyDigest} aiTake={weeklyReview} />}
 
       <RecentActivities
         activities={data.recentActivities.slice(0, 3)}

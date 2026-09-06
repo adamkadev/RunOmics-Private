@@ -2,10 +2,10 @@
 
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import type { ActivityType, PlannedWorkout } from '@/domain/activity/types'
+import type { ActivityType } from '@/domain/activity/types'
 import { ACTIVITY_TYPE_CONFIG, ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
-import { parseWorkoutStructure } from '@/domain/training/workoutStructure'
-import { formatDurationWords } from '@/lib/formatters'
+import { StatusPill } from '@/components/ui/StatusPill'
+import { formatPlanDuration, type PlanWorkoutView } from './planWorkoutView'
 import { WorkoutStructureBars, WorkoutStepList } from './WorkoutStructure'
 import { useDragToDismiss } from '@/lib/useDragToDismiss'
 import { useFocusTrap } from '@/lib/useFocusTrap'
@@ -15,7 +15,12 @@ import { withAlpha } from '@/lib/palette'
 import { t } from '@/i18n'
 
 interface Props {
-  workout: PlannedWorkout
+  /**
+   * The session in the Plan's one normalised shape - a Garmin planned workout
+   * and a coach prescription arrive here identical, and this sheet neither
+   * knows nor cares which it is rendering.
+   */
+  workout: PlanWorkoutView
   onClose: () => void
 }
 
@@ -31,9 +36,9 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
 
   useScrollLock()
 
-  const durationLabel = workout.durationSecs ? formatDurationWords(workout.durationSecs) : null
+  const durationLabel = formatPlanDuration(workout.duration)
   const distanceKm = workout.distanceM ? (workout.distanceM / 1000).toFixed(1) : null
-  const structure = workout.steps ?? parseWorkoutStructure(workout.name, workout.durationSecs)
+  const structure = workout.structure
   const typeColor = workout.type
     ? ACTIVITY_TYPE_CONFIG[workout.type as ActivityType].chartColor
     : null
@@ -83,7 +88,7 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
             </span>
             <div className="min-w-0 flex-1">
               <h2 className="text-base font-bold leading-snug text-white">
-                {workout.name}
+                {workout.title}
               </h2>
             </div>
           </div>
@@ -120,6 +125,21 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
             </div>
           )}
 
+          {workout.target && (
+            <p className="mb-3 text-sm font-semibold tabular-nums text-white/85">{workout.target}</p>
+          )}
+
+          {(workout.description || workout.notes.length > 0) && (
+            <div className="mb-4 space-y-1.5">
+              {workout.description && (
+                <p className="text-xs leading-relaxed text-white/60">{workout.description}</p>
+              )}
+              {workout.notes.map((note, i) => (
+                <p key={i} className="text-xs leading-relaxed text-white/60">{note}</p>
+              ))}
+            </div>
+          )}
+
           {structure && (
             <div className="mb-4">
               <p className="mb-2 text-caption font-semibold uppercase tracking-wide text-white/30">
@@ -133,8 +153,14 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
             </div>
           )}
 
+          {workout.alert && (
+            <div className="mb-3">
+              <StatusPill tone="amber">{workout.alert}</StatusPill>
+            </div>
+          )}
+
           <p className="text-caption font-semibold uppercase tracking-wide text-white/30">
-            {t.plan.planned}
+            {workout.statusLabel}
           </p>
         </div>
       </div>

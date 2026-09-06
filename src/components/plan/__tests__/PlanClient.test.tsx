@@ -66,7 +66,6 @@ describe('PlanClient week/month switching', () => {
     const { container } = renderPlan()
 
     expect(container.textContent).not.toMatch(/Garmin out of date/i)
-    expect(screen.queryByTestId('coach-prescription-detail')).not.toBeInTheDocument()
     expect(screen.queryByTestId('race-footer')).not.toBeInTheDocument()
   })
 })

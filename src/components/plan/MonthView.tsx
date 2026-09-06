@@ -8,6 +8,7 @@ import { formatDateFull } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { InlineJumpButton } from '@/components/ui/InlineJumpButton'
 import { PlannedWorkoutSheet } from './PlannedWorkoutSheet'
+import { plannedWorkoutView, type PlanWorkoutView } from './planWorkoutView'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { PrescriptionView } from '@/application/coaching/GetCoachingView'
@@ -106,7 +107,7 @@ function monthKey(year: number, month: number): string {
 }
 
 export function MonthView({ year, month, byDate, byDatePlanned, byDateCoach, today, atPresent, onToday, onSelectDay }: Props) {
-  const [sheetPlan, setSheetPlan] = useState<PlannedWorkout | null>(null)
+  const [sheetWorkout, setSheetWorkout] = useState<PlanWorkoutView | null>(null)
   const { cells, totalKm, sessionCount } = useMemo(() => {
     const firstDay = new Date(year, month, 1)
     const startOffset = (firstDay.getDay() || 7) - 1
@@ -184,7 +185,7 @@ export function MonthView({ year, month, byDate, byDatePlanned, byDateCoach, tod
                       ) : !byDateCoach?.has(cell.date) && byDatePlanned.has(cell.date) ? (
                         <PlannedBadge
                           workout={byDatePlanned.get(cell.date)!}
-                          onTap={() => setSheetPlan(byDatePlanned.get(cell.date)!)}
+                          onTap={() => setSheetWorkout(plannedWorkoutView(byDatePlanned.get(cell.date)!))}
                         />
                       ) : null}
                     </>
@@ -207,7 +208,7 @@ export function MonthView({ year, month, byDate, byDatePlanned, byDateCoach, tod
         <p className="font-mono">{t.plan.summary(sessionCount, totalKm)}</p>
       </div>
 
-      {sheetPlan && <PlannedWorkoutSheet workout={sheetPlan} onClose={() => setSheetPlan(null)} />}
+      {sheetWorkout && <PlannedWorkoutSheet workout={sheetWorkout} onClose={() => setSheetWorkout(null)} />}
     </div>
   )
 }

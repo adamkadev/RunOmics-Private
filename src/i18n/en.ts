@@ -303,7 +303,6 @@ export const en = {
       day: (km: number, runs: number) =>
         `${km} km · ${runs} run${runs !== 1 ? 's' : ''}`,
       months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-      weekdays: ['Mon', '', 'Wed', '', 'Fri', '', ''],
     },
     trainingLoad: {
       title: 'Training Load',
@@ -327,32 +326,6 @@ export const en = {
       today: 'Today',
       noReading: 'No reading',
     },
-    vo2maxChart: {
-      title: 'VO₂max',
-      unit: 'ml/kg/min',
-      footnote: 'Garmin VO₂max estimate',
-      ranges: { '4w': '4 wk', '6m': '6 mo', '1y': '1 yr' },
-      reading: {
-        up: (avg: number) => `Trending up, averaging ${avg} over this window.`,
-        down: (avg: number) => `Trending down, averaging ${avg} over this window.`,
-        flat: (avg: number) => `Holding steady around ${avg}.`,
-      },
-    },
-    raceCockpit: {
-      title: 'Form Projection',
-      titleWithRace: (name: string) => `Form Projection · ${name}`,
-      daysToTarget: (days: number) => `+${days} d`,
-      projectedForm: 'Projected form',
-      today: 'Today',
-      projected: 'Projected',
-      verdict: {
-        'on-track': 'On track',
-        'ease-off': 'Residual fatigue - ease off',
-        'peak-ready': 'On track for a fresh peak',
-        'build-more': 'Undertaper risk - keep building',
-      },
-      footnote: 'Estimated from planned sessions - actual form will vary with what you actually run.',
-    },
     weeklyDigest: {
       newPr: (label: string, time: string) => `New ${label} best: ${time}`,
       statusFresh: (tsb: number) => `Fresh zone (Form +${tsb}) - a good window to train hard`,
@@ -360,11 +333,6 @@ export const en = {
       acwrWatch: (acwr: number) => `Acute:chronic load ratio at ${acwr.toFixed(2)} - outside the safe 0.8-1.3 range`,
       monotonyWatch: (monotony: number) => `Monotony at ${monotony.toFixed(1)} - your week lacks variety in daily load`,
       hardShareWatch: (hardPct: number) => `${Math.round(hardPct)}% hard`,
-    },
-    weeklyReview: {
-      eyebrow: 'Week review',
-      fallbackTitle: (km: number, sessions: number) =>
-        `${km} km over ${sessions} session${sessions !== 1 ? 's' : ''} so far`,
     },
     syncStatus: {
       synced: (relative: string) => `Synced ${relative}`,
@@ -439,18 +407,6 @@ export const en = {
     },
     metrics: {
       fitness: 'Fitness',
-      vo2maxBand: {
-        building: 'Building',
-        solid: 'Solid',
-        strong: 'Strong',
-        elite: 'Elite',
-      },
-      topPercent: (pct: number) => `top ${pct}%`,
-      fitnessBand: {
-        peak: 'Peak fitness',
-        nearPeak: 'Near peak',
-        building: 'Building',
-      },
     },
   },
 
@@ -459,17 +415,6 @@ export const en = {
     readingLabel: 'Reading:',
     season: (year: number) => `${year} season`,
     allTimeChip: 'All',
-    allTimeTitle: 'All-time',
-    yearGroupLabel: 'Year',
-    windowGroupLabel: 'Window',
-    period: {
-      chip: (n: number) => `${n} wk`,
-      title: (n: number) => (n === 1 ? 'This week' : `Last ${n} weeks`),
-      distancePct: (p: number) => `${p >= 0 ? '+' : ''}${p}% km`,
-      sessionsPct: (p: number) => `${p >= 0 ? '+' : ''}${p}% runs`,
-      paceFaster: (s: number) => `easy pace -${s}s/km`,
-      paceSlower: (s: number) => `easy pace +${s}s/km`,
-    },
     tabs: {
       fitness: 'Fitness',
       // Abbreviated so all four tabs fit the strip without scrolling; the
@@ -502,13 +447,6 @@ export const en = {
       } as Record<string, string>,
     },
     stats: {
-      distance: 'Distance',
-      time: 'Time',
-      sessions: 'Sessions',
-      elevation: 'Elevation',
-      avgPerWeek: 'Avg / week',
-      yearsTracked: 'Years tracked',
-      calories: 'Calories',
       elevationValue: (m: number) => `+${m} m`,
     },
     charts: {
@@ -657,35 +595,12 @@ export const en = {
           flat: (avg: string) => `Perceived effort is steady around RPE ${avg}.`,
         },
       },
-      trainingEffect: {
-        title: 'Training Effect',
-        aerobic: 'Aerobic',
-        anaerobic: 'Anaerobic',
-        footnote: 'Avg aerobic & anaerobic training effect (1–5).',
-        reading: {
-          aerobicLed: 'Aerobic training effect runs higher than anaerobic - most sessions build endurance rather than high-intensity capacity.',
-          anaerobicLed: 'Anaerobic training effect runs higher than aerobic - most sessions lean toward high-intensity work.',
-          balanced: 'Aerobic and anaerobic training effect are roughly balanced.',
-        },
-      },
       monthlyComparison: {
         title: 'Month by Month',
         reading: (curYear: number, deltaPct: number) =>
           deltaPct >= 0
             ? `${curYear} volume is running ${deltaPct}% ahead of last year.`
             : `${curYear} volume is running ${Math.abs(deltaPct)}% behind last year.`,
-      },
-      efficiencyRolling: {
-        title: 'Aerobic Efficiency',
-        ef7: '7-day',
-        ef30: '30-day',
-        unit: 'm/min·bpm',
-        footnote: 'Rolling aerobic efficiency over the shown window. 7-day captures recent form, 30-day shows the underlying trend.',
-        reading: {
-          up: (d: string) => `The 30-day trend is climbing, +${d} m/min·bpm - more speed per heartbeat.`,
-          down: 'The 30-day trend is declining - consider more easy running or check for accumulated fatigue.',
-          flat: 'The 30-day trend is holding steady.',
-        },
       },
       threshold: {
         title: 'Running Lactate Threshold',
@@ -1096,7 +1011,6 @@ export const en = {
   profile: {
     hero: {
       lifetime: (runs: number, km: number) => `${runs} runs · ${km.toLocaleString('en')} km lifetime`,
-      rankLine: (tier: string, pct: number) => `Rank ${tier} · top ${pct}% of VO₂max for your age`,
       rankBadge: (tier: string) => `RANK ${tier}`,
       topPctLine: (pct: number) => `Top ${pct}% VO₂max for your age`,
       namePlaceholder: 'Your name',
@@ -1118,11 +1032,9 @@ export const en = {
       newBadge: 'NEW',
     },
     shoes: {
-      title: 'Shoes',
       pairs: (n: number) => `${n} pair${n !== 1 ? 's' : ''} active`,
       allGood: 'All good',
       needsReplacing: (n: number) => n === 1 ? '1 pair needs replacing' : `${n} pairs need replacing`,
-      viewShoes: 'View Shoes',
     },
     milestones: {
       distanceTier: (km: number) => `${km} km this year`,
@@ -1318,7 +1230,6 @@ export const en = {
       easyZone: 'Z1-Z2',
       min: (m: number) => `${m}'`,
     },
-    nextWeek: (n: number) => `Next week - ${n} planned`,
     comingUp: 'Coming up',
     timeOfDay: {
       Morning: 'Morning',
@@ -1334,11 +1245,9 @@ export const en = {
       load: 'Load',
       vsTypical: (percent: number) => `${percent - 100 >= 0 ? '+' : ''}${percent - 100}% vs typical`,
       easyHard: 'Easy / Hard',
-      elevation: 'Elevation',
       climb: 'Climb',
     },
     raceFooter: {
-      inDays: (days: number) => (days === 0 ? 'today' : days === 1 ? 'in 1 day' : `in ${days} days`),
       weeksIn: (done: number, total: number) => `${done}/${total}`,
       primaryTarget: 'Primary target',
       tuneUp: 'Tune-up',
@@ -1371,7 +1280,6 @@ export const en = {
           ? `${total} session${total > 1 ? 's' : ''} · ${key} key`
           : `${total} session${total > 1 ? 's' : ''}`,
       weekOfTarget: (done: number, total: number) => `Week ${done} of ${total}`,
-      currentBlock: (from: string, to: string) => `Current block · ${from} – ${to}`,
       weekOfBlock: (done: number, total: number) => `week ${done} of ${total}`,
       adherence: (done: number, due: number) => `${done} / ${due} done`,
     },
@@ -1379,16 +1287,6 @@ export const en = {
 
   coaching: {
     garminOutOfDate: 'Garmin out of date',
-    showStructure: 'Show structure',
-    prescription: 'Coach prescription',
-    repetitions: 'repetitions',
-    garminSession: (name: string) => `Garmin · ${name}`,
-    coach: 'Coach',
-    target: 'Target',
-    currentBlock: 'Current block',
-    thisWeek: 'This week',
-    nextKeySession: 'Next key session',
-    latestDecision: 'Latest adjustment',
     noPlanChange: 'No plan change',
     states: {
       prescribed: 'Prescribed',
@@ -1407,13 +1305,6 @@ export const en = {
     updatedSession: (title: string) => `Updated future session: ${title}`,
     cancelledSession: (title: string) => `Cancelled future session: ${title}`,
     futureSessionsChanged: (count: number) => `Replanned ${count} future session${count === 1 ? '' : 's'}`,
-    segments: {
-      warmup: 'warm-up',
-      effort: 'effort',
-      recovery: 'recovery',
-      cooldown: 'cooldown',
-      strides: 'strides',
-    },
   },
 
   // Display labels for domain enums. Styling (colors, badge classes) stays in
