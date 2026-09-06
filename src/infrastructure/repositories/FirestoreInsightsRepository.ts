@@ -1,3 +1,4 @@
+import { FieldPath } from 'firebase-admin/firestore'
 import { getAdminFirestore } from '@/lib/firebase-admin'
 import { activeLocale } from '@/i18n'
 import type { Insight } from '@/lib/gemini'
@@ -8,6 +9,8 @@ const HISTORY_SIZE = 5
 const READ_TIMEOUT_MS = 2000
 
 const STALE_GRACE_MS = 48 * 60 * 60 * 1000
+
+const ID_RANGE_END = '\uf8ff'
 
 export interface CachedInsight extends Insight {
   hash: string
@@ -68,13 +71,16 @@ export async function readVerifiedInsight(surface: string, key: string | Insight
   }
 }
 
-export async function getCachedInsightsByPrefix(prefix: string): Promise<Map<string, CachedInsight>> {
-  const snapshot = await getAdminFirestore().collection(COLLECTION).get()
-  return bySurface(snapshot.docs, prefix, (doc) => doc.data() as CachedInsight)
+function surfaceRange(prefix: string) {
+  return getAdminFirestore()
+    .collection(COLLECTION)
+    .orderBy(FieldPath.documentId())
+    .startAt(prefix)
+    .endAt(`${prefix}${ID_RANGE_END}`)
 }
 
 export async function listCachedHashes(prefix: string): Promise<Map<string, string>> {
-  const snapshot = await getAdminFirestore().collection(COLLECTION).select('hash').get()
+  const snapshot = await surfaceRange(prefix).select('hash').get()
   return bySurface(snapshot.docs, prefix, (doc) => doc.get('hash') as string)
 }
 

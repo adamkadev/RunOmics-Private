@@ -916,12 +916,20 @@ for 48h — *provided* its **guard** still holds. The guard hashes the facts the
 A document written before its surface had a guard cannot be checked and is not served; the next
 generation stores one and it heals itself.
 
-**Batch reads.** A static build pre-renders a few hundred pages. One `readVerifiedInsight` per
-page makes each race its own 2s timeout, so a single slow connection anywhere silently drops
-that page's verdict even though the cache holds a good one — with nothing after the fact to
-notice. `getCachedInsightsByPrefix` reads every document once instead. `listCachedHashes` needs
-the hash rather than mere presence: an entry written from facts that have since changed is one
-the pages already ignore, so the backfill must pick it up again rather than skip it forever.
+**One document per read, never a collection scan.** A static build pre-renders a few hundred
+pages, and each reads the one document its surface owns. Batching them behind a module-level
+promise looked cheaper and was not: `next build` generates pages across several worker
+processes, each with its own module instance, so the "read every document once" promise was
+kept once *per worker per build* — and Query Insights recorded 163 executions of an unbounded
+`collection("aiInsights").get()`, about 360 documents each, roughly 59k reads against a 50k/day
+free tier. A direct `doc(id).get()` costs one read per page instead of the whole collection per
+worker, and correctness no longer depends on memory being shared by processes that do not share
+it. `listCachedHashes` needs the hash rather than mere presence — an entry written from facts
+that have since changed is one the pages already ignore, so the backfill must pick it up again
+rather than skip it forever — and scopes itself to a document-ID range over the surface prefix,
+since document IDs are `<surface>_<locale>` and already indexed. The locale sits at the end, so
+the range covers every locale's copy of a surface; with one locale configured that is the same
+set of documents.
 
 **Revalidation.** Pages rendering these surfaces are static (ISR, `revalidate = 3600`) and built
 at deploy time — before this route ever runs, since the deploy must be live before the sync

@@ -1,18 +1,26 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import type { CachedInsight } from '../FirestoreInsightsRepository'
 
-const { get, set, collectionGet, collection } = vi.hoisted(() => {
+const { get, set, doc, collectionGet, collection, orderBy, startAt, endAt, select, rangeGet } = vi.hoisted(() => {
   const get = vi.fn()
   const set = vi.fn()
   const collectionGet = vi.fn()
+  const rangeGet = vi.fn()
   const doc = vi.fn(() => ({ get, set }))
-  const select = vi.fn(() => ({ get: vi.fn() }))
-  return { get, set, collectionGet, collection: vi.fn(() => ({ doc, select, get: collectionGet })) }
+  const select = vi.fn(() => ({ get: rangeGet }))
+  const endAt = vi.fn(() => ({ select }))
+  const startAt = vi.fn(() => ({ endAt }))
+  const orderBy = vi.fn(() => ({ startAt }))
+  return {
+    get, set, doc, collectionGet, rangeGet, orderBy, startAt, endAt, select,
+    collection: vi.fn(() => ({ doc, orderBy, get: collectionGet })),
+  }
 })
 
+vi.mock('firebase-admin/firestore', () => ({ FieldPath: { documentId: () => '__name__' } }))
 vi.mock('@/lib/firebase-admin', () => ({ getAdminFirestore: () => ({ collection }) }))
 
-const { readVerifiedInsight, saveCachedInsight, getCachedInsightsByPrefix, servableInsight } = await import(
+const { readVerifiedInsight, saveCachedInsight, listCachedHashes, servableInsight } = await import(
   '../FirestoreInsightsRepository'
 )
 
@@ -113,35 +121,76 @@ describe('readVerifiedInsight', () => {
   })
 })
 
-describe('getCachedInsightsByPrefix', () => {
-  beforeEach(() => vi.clearAllMocks())
+describe('listCachedHashes', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    rangeGet.mockResolvedValue({ docs: [] })
+  })
 
-  function snapshotDoc(id: string, data: CachedInsight) {
-    return { id, data: () => data }
+  function hashDoc(id: string, hash: string) {
+    return { id, get: () => hash }
   }
 
-  it('keeps only the documents under the requested prefix and locale, keyed without either', async () => {
-    collectionGet.mockResolvedValue({
+  it('asks Firestore only for the document-ID range the prefix covers', async () => {
+    await listCachedHashes('runVerdict_')
+
+    expect(orderBy).toHaveBeenCalledWith('__name__')
+    expect(startAt).toHaveBeenCalledWith('runVerdict_')
+    expect(endAt).toHaveBeenCalledWith('runVerdict_\uf8ff')
+  })
+
+  it('never falls back to scanning the whole collection', async () => {
+    await listCachedHashes('runVerdict_')
+
+    expect(collectionGet).not.toHaveBeenCalled()
+  })
+
+  it('reads the hash field alone rather than whole documents', async () => {
+    await listCachedHashes('runVerdict_')
+
+    expect(select).toHaveBeenCalledWith('hash')
+  })
+
+  it('keys the surfaces of the active locale without their prefix or suffix', async () => {
+    rangeGet.mockResolvedValue({
       docs: [
-        snapshotDoc('runVerdict_a_en', stored({ headline: 'Run a' })),
-        snapshotDoc('runVerdict_b_en', stored({ headline: 'Run b' })),
-        snapshotDoc('runVerdict_a_fr', stored({ headline: 'Course a' })),
-        snapshotDoc('todayHero_en', stored({ headline: 'Today' })),
+        hashDoc('runVerdict_a_en', 'hash-a'),
+        hashDoc('runVerdict_b_en', 'hash-b'),
+        hashDoc('runVerdict_a_fr', 'hash-a-fr'),
       ],
     })
 
-    const cache = await getCachedInsightsByPrefix('runVerdict_')
+    const hashes = await listCachedHashes('runVerdict_')
 
-    expect([...cache.keys()]).toEqual(['runVerdict_a', 'runVerdict_b'])
-    expect(cache.get('runVerdict_a')?.headline).toBe('Run a')
+    expect([...hashes.keys()]).toEqual(['runVerdict_a', 'runVerdict_b'])
+    expect(hashes.get('runVerdict_a')).toBe('hash-a')
+  })
+})
+
+describe('read amplification', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    process.env.FIREBASE_PROJECT_ID = 'runomics-test'
+    onDisk(stored())
   })
 
-  it('one query however many documents exist', async () => {
-    collectionGet.mockResolvedValue({ docs: [] })
+  afterEach(() => {
+    delete process.env.FIREBASE_PROJECT_ID
+  })
 
-    await getCachedInsightsByPrefix('runVerdict_')
+  it('serves one surface with one document read and no collection scan', async () => {
+    await readVerifiedInsight('runVerdict_a', 'facts-as-generated')
 
-    expect(collectionGet).toHaveBeenCalledTimes(1)
+    expect(doc).toHaveBeenCalledWith('runVerdict_a_en')
+    expect(get).toHaveBeenCalledTimes(1)
+    expect(collectionGet).not.toHaveBeenCalled()
+  })
+
+  it('costs one read per surface asked for, whatever the collection holds', async () => {
+    for (const id of ['a', 'b', 'c', 'd']) await readVerifiedInsight(`runVerdict_${id}`, 'facts-as-generated')
+
+    expect(get).toHaveBeenCalledTimes(4)
+    expect(collectionGet).not.toHaveBeenCalled()
   })
 })
 
