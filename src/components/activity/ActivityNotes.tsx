@@ -2,17 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
-import { onAuthStateChanged } from 'firebase/auth'
-import type { User } from 'firebase/auth'
 import { NotebookPen, X } from 'lucide-react'
-import { getClientFirestore, getClientAuth, isClientFirebaseConfigured } from '@/lib/firebase'
+import { getClientFirestore, isClientFirebaseConfigured } from '@/lib/firebase'
+import { useOwnerAuth } from '@/lib/useOwnerAuth'
 import { inputCls } from '@/lib/formStyles'
 import { Badge } from '@/components/ui/Card'
 import { SaveButton, type SaveState } from '@/components/ui/SaveButton'
 import { Toast, useToast } from '@/components/ui/Toast'
 import { t } from '@/i18n'
-
-const OWNER_EMAIL = process.env.NEXT_PUBLIC_OWNER_EMAIL ?? ''
 
 const NOTE_MAX_LENGTH = 500
 const TAG_MAX_LENGTH = 24
@@ -26,7 +23,7 @@ interface ActivityNote {
 const EMPTY: ActivityNote = { note: '', tags: [] }
 
 export function ActivityNotes({ activityId }: { activityId: string }) {
-  const [user, setUser] = useState<User | null | 'loading'>('loading')
+  const { isOwner } = useOwnerAuth()
   const [saved, setSaved] = useState<ActivityNote>(EMPTY)
   const [draft, setDraft] = useState<ActivityNote>(EMPTY)
   const [tagInput, setTagInput] = useState('')
@@ -34,11 +31,6 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
   const [open, setOpen] = useState(false)
   const { toast, leaving, showToast } = useToast()
   const containerRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!isClientFirebaseConfigured) return
-    return onAuthStateChanged(getClientAuth(), setUser)
-  }, [])
 
   useEffect(() => {
     if (!isClientFirebaseConfigured) return
@@ -59,7 +51,6 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
     return () => document.removeEventListener('mousedown', onClickOutside)
   }, [open])
 
-  const isOwner = user !== 'loading' && user?.email === OWNER_EMAIL
   const hasNote = saved.note !== '' || saved.tags.length > 0
 
   function addTag() {

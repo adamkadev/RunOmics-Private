@@ -136,7 +136,7 @@ Vercel supports any number of projects per repository. Give it its own domain.
 | Variable | Value for this profile |
 |----------|------------------------|
 | `NEXT_PUBLIC_LOCALE` | `fr` for a French UI, `en` (or unset) for English |
-| `NEXT_PUBLIC_OWNER_EMAIL` | her Google account - gates notes and Settings in the UI |
+| `NEXT_PUBLIC_OWNER_EMAIL` | her Google account - the account `set-owner-claim` grants the `owner` claim to, not itself an authorization check |
 | `NEXT_PUBLIC_FIREBASE_*` | from her Firebase project (step 4) |
 | `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` | her service account |
 | `RUNOMICS_DATA_REPO_URL`, `RUNOMICS_DATA_REPO_TOKEN` | her data repository and its PAT (step 1) |

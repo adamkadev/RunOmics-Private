@@ -9,8 +9,17 @@ const OWNER_EMAIL = vi.hoisted(() => {
   return 'owner@test.dev'
 })
 
-let mockUser: { email: string } | null = null
+interface MockUser {
+  email: string
+  getIdTokenResult: () => Promise<{ claims: Record<string, unknown> }>
+}
+
+let mockUser: MockUser | null = null
 let mockStoredNote: { note: string; tags: string[] } | null = null
+
+function signedIn(email: string, claims: Record<string, unknown> = {}): MockUser {
+  return { email, getIdTokenResult: () => Promise.resolve({ claims }) }
+}
 
 vi.mock('@/lib/firebase', () => ({
   isClientFirebaseConfigured: true,
@@ -19,7 +28,7 @@ vi.mock('@/lib/firebase', () => ({
 }))
 
 vi.mock('firebase/auth', () => ({
-  onAuthStateChanged: (_auth: unknown, cb: (u: unknown) => void) => {
+  onIdTokenChanged: (_auth: unknown, cb: (u: unknown) => void) => {
     cb(mockUser)
     return () => {}
   },
@@ -34,13 +43,18 @@ vi.mock('firebase/firestore', () => ({
   setDoc: async () => {},
 }))
 
+async function openNotes() {
+  const toggle = await screen.findByRole('button', { name: new RegExp(t.activity.notes.title) })
+  await userEvent.click(toggle)
+}
+
 describe('ActivityNotes owner gate', () => {
   beforeEach(() => {
     mockUser = null
     mockStoredNote = null
   })
 
-  it('renders nothing for a visitor when the activity has no note', async () => {
+  it('renders nothing for a signed-out visitor when the activity has no note', async () => {
     const { container } = render(<ActivityNotes activityId="a1" />)
     await vi.waitFor(() => expect(container.firstChild).toBeNull())
   })
@@ -48,27 +62,33 @@ describe('ActivityNotes owner gate', () => {
   it('shows the read-only note to a visitor when one exists', async () => {
     mockStoredNote = { note: 'Great tempo run', tags: ['tempo'] }
     render(<ActivityNotes activityId="a1" />)
-
-    const toggle = await screen.findByRole('button', { name: new RegExp(t.activity.notes.title) })
-    await userEvent.click(toggle)
+    await openNotes()
 
     expect(await screen.findByText('Great tempo run')).toBeInTheDocument()
     expect(screen.queryByPlaceholderText(t.activity.notes.notePlaceholder)).not.toBeInTheDocument()
   })
 
-  it('shows the editor only to the owner account', async () => {
-    mockUser = { email: OWNER_EMAIL }
+  it('shows the editor to an account carrying the owner claim', async () => {
+    mockUser = signedIn('anything@example.com', { owner: true })
     render(<ActivityNotes activityId="a1" />)
-
-    const toggle = await screen.findByRole('button', { name: new RegExp(t.activity.notes.title) })
-    await userEvent.click(toggle)
+    await openNotes()
 
     expect(await screen.findByPlaceholderText(t.activity.notes.notePlaceholder)).toBeInTheDocument()
   })
 
-  it('treats a signed-in non-owner like a visitor', async () => {
-    mockUser = { email: 'someone-else@example.com' }
+  it('treats a signed-in account without the owner claim like a visitor', async () => {
+    mockUser = signedIn('someone-else@example.com')
     const { container } = render(<ActivityNotes activityId="a1" />)
     await vi.waitFor(() => expect(container.firstChild).toBeNull())
+  })
+
+  it('does not grant the editor on a matching email alone', async () => {
+    mockUser = signedIn(OWNER_EMAIL)
+    mockStoredNote = { note: 'Great tempo run', tags: [] }
+    render(<ActivityNotes activityId="a1" />)
+    await openNotes()
+
+    expect(await screen.findByText('Great tempo run')).toBeInTheDocument()
+    expect(screen.queryByPlaceholderText(t.activity.notes.notePlaceholder)).not.toBeInTheDocument()
   })
 })

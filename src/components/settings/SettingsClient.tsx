@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { onAuthStateChanged, signInWithPopup, signOut, GoogleAuthProvider } from 'firebase/auth'
-import type { User } from 'firebase/auth'
+import { useState } from 'react'
+import { signInWithPopup, signOut, GoogleAuthProvider } from 'firebase/auth'
 import { getClientAuth, isClientFirebaseConfigured } from '@/lib/firebase'
+import { useOwnerAuth } from '@/lib/useOwnerAuth'
 import { t } from '@/i18n'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { BackButton } from '@/components/ui/BackButton'
@@ -13,8 +13,6 @@ import { ThemeSegmented } from './ThemeSegmented'
 import { DataSourceInfo, type SyncDevice } from './DataSourceInfo'
 import { NotificationsForm } from './NotificationsForm'
 
-const OWNER_EMAIL = process.env.NEXT_PUBLIC_OWNER_EMAIL ?? ''
-
 interface Props {
   lastSyncedAt: string | null
   activityCount: number
@@ -22,17 +20,9 @@ interface Props {
 }
 
 export function SettingsClient({ lastSyncedAt, activityCount, device }: Props) {
-  const [user, setUser] = useState<User | null | 'loading'>(
-    isClientFirebaseConfigured ? 'loading' : null
-  )
+  const { user, isOwner, loading } = useOwnerAuth()
   const [signingIn, setSigningIn] = useState(false)
   const { toast, leaving, showToast } = useToast()
-
-  useEffect(() => {
-    if (!isClientFirebaseConfigured) return
-    const auth = getClientAuth()
-    return onAuthStateChanged(auth, (u) => setUser(u))
-  }, [])
 
   async function handleSignIn() {
     if (!isClientFirebaseConfigured) {
@@ -59,7 +49,7 @@ export function SettingsClient({ lastSyncedAt, activityCount, device }: Props) {
     await signOut(getClientAuth())
   }
 
-  if (user === 'loading') {
+  if (loading) {
     return (
       <div className="flex min-h-64 items-center justify-center">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground border-t-accent" />
@@ -102,7 +92,7 @@ export function SettingsClient({ lastSyncedAt, activityCount, device }: Props) {
     )
   }
 
-  if (user.email !== OWNER_EMAIL) {
+  if (!isOwner) {
     return (
       <div className="flex min-h-64 flex-col items-center justify-center gap-4 px-4">
         <BackButton label={t.pages.settings.back} fallbackHref="/profile" />

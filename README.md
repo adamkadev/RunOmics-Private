@@ -108,10 +108,11 @@ NEXT_PUBLIC_FIREBASE_APP_ID=...
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
 NEXT_PUBLIC_FIREBASE_VAPID_KEY=...
 
-# Google account allowed to sign in and edit notes/settings (everyone else is read-only)
-# NOTE: this only gates the UI. The actual write authorization is enforced by
-# the Firestore security rules (firestore.rules at the repo root) - keep the
-# email there in sync with this one, and deploy rule changes with
+# Google account granted the "owner" custom claim by `npm run set-owner-claim`.
+# NOTE: this is provisioning input only. Both the UI gate and the Firestore
+# security rules (firestore.rules at the repo root) authorize on the claim
+# itself, never on this email, so changing it here grants nothing until the
+# script is re-run. Deploy rule changes with
 # `firebase deploy --only firestore:rules`.
 NEXT_PUBLIC_OWNER_EMAIL=you@example.com
 
@@ -384,7 +385,7 @@ from your `.env.local` *except* `GARMIN_SECRET`:
 | `NEXT_PUBLIC_MAPTILER_TOKEN` | Route maps |
 | `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` | Server-side notification dedup state and push notifications |
 | `NEXT_PUBLIC_FIREBASE_*` | Client-side auth, activity notes, push notification tokens |
-| `NEXT_PUBLIC_OWNER_EMAIL` | Restricts settings/notes editing to your Google account |
+| `NEXT_PUBLIC_OWNER_EMAIL` | Which account `npm run set-owner-claim` grants the `owner` claim to - not itself an authorization check |
 | `INTERNAL_NOTIFY_SECRET` | Authenticates the GitHub Actions cron calls to `/api/internal/*` |
 | `NEXT_PUBLIC_LOCALE` | UI language, `en` (default) or `fr` — applied at build time |
 | `GEMINI_API_KEY`, `GEMINI_MODEL` | Optional: the AI-written verdicts and insight cards - Today, Week Purpose, Season, Analytics, run verdicts, PB celebration, shoe verdicts |
@@ -1065,6 +1066,27 @@ Two `YYYY-MM-DD` conventions coexist and must not be confused:
 Coaching presentation does its date maths in UTC on purpose: a macrocycle spans a DST change, and
 local-midnight arithmetic drifts a day either side of it. `isoWeekNumber` returns `isoYear * 100 + isoWeek`,
 matching the sync pipeline's `week` field.
+
+### Owner authorization
+
+There is one authorization fact, the Firebase Auth custom claim `owner`, and both sides
+read it:
+
+- **Firestore** (`firestore.rules`) allows a write only on
+  `request.auth.token.owner == true`.
+- **The client** resolves the same claim through `useOwnerAuth` (`src/lib/useOwnerAuth.ts`),
+  which `ActivityNotes` and `SettingsClient` both consume. It subscribes with
+  `onIdTokenChanged` rather than `onAuthStateChanged`, so a token refresh that changes the
+  claim is picked up, and it reads `getIdTokenResult()` without forcing a refresh — the
+  callback only fires when there is a genuinely new token, so the cached one is always the
+  current one.
+
+`NEXT_PUBLIC_OWNER_EMAIL` is not part of that decision. It is provisioning input for
+`npm run set-owner-claim`, which is what actually grants the claim. Comparing the email in
+the browser was the previous UI gate and it drifted from the rules: an account whose email
+matched but whose token carried no claim was shown the editor and then refused by Firestore
+with a 403. An email is also not something the rules can read, and a claim survives an email
+change, so the claim is the side that wins.
 
 ### Content Security Policy
 
