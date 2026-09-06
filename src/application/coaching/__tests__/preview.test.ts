@@ -66,7 +66,7 @@ describe('coaching preview files', () => {
     const context = buildCoachingContext({
       activities: [], plan: null, athlete: {}, trainingStatus: null, loadBalance: null,
       trainingZones: null, latestVo2max: null, racePredictions: null, personalBests: [],
-      goals: [], upcomingRaces: [{ date: '2026-10-18', name: 'Autumn 10K', distance: '10K' }],
+      goals: [], upcomingRaces: [{ date: '2026-10-18', name: 'Autumn 10K', distance: '10K' }], officialResults: [],
     }, '2026-09-07')
     let id = 0
     const proposal = await createBootstrapProposal(context, [2, 3], {
@@ -91,6 +91,7 @@ describe('coaching preview files', () => {
       activities: [], plan: null, athlete: {}, trainingStatus: null, loadBalance: null, trainingZones: null,
       latestVo2max: null, racePredictions: null, personalBests: [], goals: [],
       upcomingRaces: [{ date: '2026-10-18', name: 'Autumn 10K', distance: '10K' }],
+      officialResults: [],
     }, '2026-09-07')
     let id = 0
     const proposal = await createBootstrapProposal(context, [2, 3], {

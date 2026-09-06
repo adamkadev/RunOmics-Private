@@ -19,6 +19,7 @@ import type {
   CoachingPlanDraft,
 } from '@/application/ports/CoachingAdvisor'
 import type { CoachingContext } from '@/application/coaching/context'
+import { garminMeasured } from '@/domain/activity/raceResult'
 import { bootstrapRecoveryFacts } from '@/application/coaching/bootstrapValidation'
 import { MODEL_POOL } from '@/domain/ai/budget'
 import { generateStructuredJson } from '@/lib/gemini'
@@ -386,9 +387,39 @@ function parseRecommendation(value: unknown, trigger: 'post_activity' | 'weekly_
   }
 }
 
+export function completedActivityPrompt(context: CoachingContext, activity: Activity): Record<string, unknown> {
+  const compact = context.recentActivities.find((entry) => entry.id === activity.id)
+  const raceExecution = compact?.raceExecution ? { raceExecution: compact.raceExecution } : {}
+
+  if (compact?.performance?.source === 'official') {
+    return {
+      id: activity.id,
+      date: activity.date,
+      type: activity.type,
+      performance: compact.performance,
+      garminMeasured: compact.garminMeasured ?? garminMeasured(activity),
+      ...raceExecution,
+      avgHeartRate: activity.avgHeartRate,
+      rpe: activity.rpe,
+    }
+  }
+
+  return {
+    id: activity.id,
+    date: activity.date,
+    type: activity.type,
+    distanceKm: activity.distanceKm,
+    durationSeconds: activity.durationSeconds,
+    paceSecPerKm: activity.paceSecPerKm,
+    ...raceExecution,
+    avgHeartRate: activity.avgHeartRate,
+    rpe: activity.rpe,
+  }
+}
+
 function contextPrompt(context: CoachingContext): string {
   return `When currentPlan.trainingPreferences is present, preserve its runsPerWeek as normal desired frequency and availableWeekdays as scheduling opportunities. Explain exceptional frequency reductions without resetting the normal preference. Historical capacity is previously tolerated training, NOT a safe immediate target or mandatory next-week mileage. Recent volume, frequency, gaps and load determine the starting point. Rebuild progressively toward demonstrated sustained capacity only if recovery and adaptation are good. Do not turn recent inconsistency into a permanent volume or frequency ceiling: an athlete who sustained around 50–55 km/week on five runs need not be capped at 30–35 km/week on four runs. Historical peaks are not immediate prescriptions.
-Structured coaching context:\n${JSON.stringify(context)}`
+When an activity carries a performance object, source precedence is already resolved: those figures are the race performance and garminMeasured holds the raw device reading, which must never be quoted as the race result. Structured coaching context:\n${JSON.stringify(context)}`
 }
 
 export function bootstrapEventPrompt(event: BootstrapRequest['primaryTargetEvent']): Record<string, unknown> {
@@ -424,7 +455,7 @@ export class GeminiCoachingAdvisor implements CoachingAdvisor {
     const raw = await request(
       RECOMMENDATION_SCHEMA,
       'Evaluate the completed run and choose KEEP, ADJUST, or REPLAN. Normal runs should usually be KEEP. Use ADJUST only for small future workout changes and REPLAN only for meaningful events. Never alter completed or past sessions. Reasons and evidence must cite supplied facts.',
-      `${contextPrompt(input.context)}\nCompleted activity: ${JSON.stringify({ id: input.activity.id, date: input.activity.date, type: input.activity.type, distanceKm: input.activity.distanceKm, durationSeconds: input.activity.durationSeconds, paceSecPerKm: input.activity.paceSecPerKm, avgHeartRate: input.activity.avgHeartRate, rpe: input.activity.rpe })}\nMatched prescription: ${JSON.stringify(input.prescription)}`,
+      `${contextPrompt(input.context)}\nCompleted activity: ${JSON.stringify(completedActivityPrompt(input.context, input.activity))}\nMatched prescription: ${JSON.stringify(input.prescription)}`,
     )
     return parseRecommendation(raw, 'post_activity')
   }

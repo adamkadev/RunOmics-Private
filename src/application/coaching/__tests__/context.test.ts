@@ -34,6 +34,7 @@ function input(activities: Activity[]): CoachingContextInput {
     goals: [],
     personalBests: [],
     upcomingRaces: [],
+    officialResults: [],
   }
 }
 
@@ -136,4 +137,107 @@ it('includes recent running volume and old capacity without transmitting old act
   expect(context.volume.distance28DaysKm).toBe(5)
   expect(JSON.stringify(context)).not.toContain('old-capacity')
   expect(JSON.stringify(context)).not.toContain('bike')
+})
+
+describe('official race result overlay', () => {
+  const lap = (durationSec: number, distanceM: number, avgHr: number) => ({
+    type: 'lap' as const,
+    durationSec,
+    distanceM,
+    avgSpeedMs: distanceM / durationSec,
+    avgHr,
+    laps: [],
+  })
+
+  const escher = {
+    id: 'escher',
+    date: '2026-09-05',
+    type: 'Race',
+    distanceKm: 5.25,
+    durationSeconds: 1_310,
+    paceSecPerKm: 249.5,
+    avgHeartRate: 196,
+    rpe: 10,
+    aerTrainingEffect: 5,
+    anaTrainingEffect: 3.1,
+    splits: [
+      lap(236, 1_000, 191),
+      lap(245, 1_000, 196),
+      lap(249, 1_000, 199),
+      lap(253, 1_000, 197),
+      lap(255, 1_000, 198),
+      lap(71, 248.6, 197),
+    ],
+  } as unknown as Activity
+
+  const officialResult = {
+    activityId: 'escher',
+    eventName: 'Escher Kulturlaf',
+    date: '2026-09-05',
+    distanceMeters: 5_000,
+    chipTimeSeconds: 1_292,
+    gunTimeSeconds: 1_293,
+    overallPlace: 28,
+  }
+
+  const build = (officialResults: typeof officialResult[]) =>
+    buildCoachingContext({ ...input([escher]), officialResults }, '2026-09-05').recentActivities[0]!
+
+  it('resolves performance to the official result before the prompt is built', () => {
+    expect(build([officialResult]).performance).toEqual({
+      source: 'official',
+      distanceKm: 5,
+      durationSeconds: 1_292,
+      paceSecPerKm: 258.4,
+      eventName: 'Escher Kulturlaf',
+      overallPlace: 28,
+    })
+  })
+
+  it('keeps the raw Garmin measurement available separately', () => {
+    const compact = build([officialResult])
+
+    expect(compact.garminMeasured).toEqual({ distanceKm: 5.25, durationSeconds: 1_310, paceSecPerKm: 249.5 })
+    expect(compact.distanceKm).toBe(5.3)
+    expect(compact.durationSeconds).toBe(1_310)
+    expect(compact.avgHeartRate).toBe(196)
+    expect(compact.aerobicTrainingEffect).toBe(5)
+  })
+
+  it('falls back to Garmin measurements when no official result is linked', () => {
+    const compact = build([])
+
+    expect(compact.performance).toEqual({ source: 'garmin', distanceKm: 5.25, durationSeconds: 1_310, paceSecPerKm: 249.5 })
+    expect(compact).not.toHaveProperty('garminMeasured')
+  })
+
+  it('ignores an official result linked to a different activity', () => {
+    expect(build([{ ...officialResult, activityId: 'someone-else' }]).performance?.source).toBe('garmin')
+  })
+
+  it('exposes race pacing from the real laps without an official result present', () => {
+    expect(build([]).raceExecution?.trend).toMatchObject({
+      firstFullLapPaceSecPerKm: 236,
+      lastFullLapPaceSecPerKm: 255,
+      positiveSplitSecPerKm: 19,
+      hrDriftBpm: 7,
+    })
+    expect(build([]).raceExecution?.partialLap?.distanceMeters).toBe(248.6)
+  })
+
+  it('leaves non-race activities exactly as before', () => {
+    const compact = buildCoachingContext(
+      { ...input([activity('easy', '2026-09-05', 10)]), officialResults: [officialResult] },
+      '2026-09-05',
+    ).recentActivities[0]!
+
+    expect(compact).not.toHaveProperty('performance')
+    expect(compact).not.toHaveProperty('garminMeasured')
+    expect(compact).not.toHaveProperty('raceExecution')
+    expect(compact.distanceKm).toBe(10)
+  })
+
+  it('does not classify race laps as an interval session', () => {
+    expect(build([officialResult]).execution).toBeNull()
+  })
 })

@@ -52,6 +52,7 @@ function contextInput(currentPlan: CoachingPlan | null): CoachingContextInput {
     goals: [{ year: 2026, annualDistanceKm: 1_500, targets: [{ distance: '10K', targetSeconds: 2_400 }] }],
     personalBests: [],
     upcomingRaces: [{ date: '2026-10-18', name: 'Autumn 10K', distance: '10K' }],
+    officialResults: [],
   }
 }
 

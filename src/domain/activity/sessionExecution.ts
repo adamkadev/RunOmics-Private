@@ -15,7 +15,7 @@ export type SessionExecution =
     }
   | null
 
-const MIN_FULL_LAP_METRES = 900
+export const MIN_FULL_LAP_METRES = 900
 
 const MIN_LAPS_FOR_STEADY = 4
 

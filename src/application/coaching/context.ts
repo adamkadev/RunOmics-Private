@@ -2,6 +2,15 @@ import { trainingHistory, isRunningActivity, type TrainingHistory } from '@/doma
 import { createHash } from 'crypto'
 import type { Activity } from '@/domain/activity/types'
 import { sessionExecution, type SessionExecution } from '@/domain/activity/sessionExecution'
+import { raceExecution, type RaceExecution } from '@/domain/activity/raceExecution'
+import {
+  garminMeasured,
+  officialResultsByActivityId,
+  resolvePerformance,
+  type GarminMeasured,
+  type OfficialRaceResult,
+  type ResolvedPerformance,
+} from '@/domain/activity/raceResult'
 import { COACHING_TO_ACTIVITY_TYPE, type CoachingPlan } from '@/domain/coaching/types'
 import { raceDistanceMeters } from '@/domain/coaching/raceTarget'
 import type { AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
@@ -27,6 +36,9 @@ export interface CompactActivity {
   aerobicTrainingEffect: number | null
   anaerobicTrainingEffect: number | null
   execution: SessionExecution
+  performance?: ResolvedPerformance
+  garminMeasured?: GarminMeasured
+  raceExecution?: RaceExecution
 }
 
 export type CoachingUpcomingRace = Omit<UpcomingRace, 'targetSeconds'> & {
@@ -84,6 +96,7 @@ export interface CoachingContextInput {
   goals: GoalYear[]
   personalBests: PbYear[]
   upcomingRaces: UpcomingRace[]
+  officialResults: OfficialRaceResult[]
 }
 
 function dayNumber(date: string): number {
@@ -147,12 +160,24 @@ function adherence(plan: CoachingPlan | null, activities: Activity[], referenceD
   return { prescribed: prescribed.length, completed, percent: Math.round((completed / prescribed.length) * 100) }
 }
 
+function raceFacts(activity: Activity, official: OfficialRaceResult | undefined): Partial<CompactActivity> {
+  if (activity.type !== 'Race') return {}
+  const performance = resolvePerformance(activity, official ?? null)
+  const execution = raceExecution(activity)
+  return {
+    performance,
+    ...(performance.source === 'official' ? { garminMeasured: garminMeasured(activity) } : {}),
+    ...(execution ? { raceExecution: execution } : {}),
+  }
+}
+
 export function buildCoachingContext(input: CoachingContextInput, referenceDate: string): CoachingContext {
   const recent = recentActivities(input.activities.filter(isRunningActivity), referenceDate)
   const reference = dayNumber(referenceDate)
   const within = (days: number) => recent.filter((activity) => reference - dayNumber(activity.date) < days)
   const last7 = within(7)
   const garmin = input.trainingStatus
+  const officialResults = officialResultsByActivityId(input.officialResults)
 
   return {
     schemaVersion: 1,
@@ -170,6 +195,7 @@ export function buildCoachingContext(input: CoachingContextInput, referenceDate:
       aerobicTrainingEffect: activity.aerTrainingEffect,
       anaerobicTrainingEffect: activity.anaTrainingEffect,
       execution: sessionExecution(activity),
+      ...raceFacts(activity, officialResults.get(activity.id)),
     })),
     volume: {
       distance7DaysKm: rounded(last7.reduce((sum, activity) => sum + activity.distanceKm, 0)),

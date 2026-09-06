@@ -4,7 +4,7 @@ import { buildCoachingContext } from '../context'
 import { validateBootstrapDraftSemantics } from '../bootstrapValidation'
 import { validateDraftFrequency } from '../frequency'
 
-const context = buildCoachingContext({ activities: [], plan: null, athlete: {}, trainingStatus: null, loadBalance: null, trainingZones: null, latestVo2max: null, racePredictions: null, goals: [], personalBests: [], upcomingRaces: [] }, '2026-09-05')
+const context = buildCoachingContext({ activities: [], plan: null, athlete: {}, trainingStatus: null, loadBalance: null, trainingZones: null, latestVo2max: null, racePredictions: null, goals: [], personalBests: [], upcomingRaces: [], officialResults: [] }, '2026-09-05')
 const strategy = {
   planningStartDate: '2026-09-06',
   primary: { id: 'primary', name: 'Wintzenheim', date: '2026-11-29', distanceMeters: 10_000, targetSeconds: 2400 },

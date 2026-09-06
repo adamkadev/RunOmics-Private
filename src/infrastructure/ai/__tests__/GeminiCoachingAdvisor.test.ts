@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { Activity } from '@/domain/activity/types'
 import type { CoachingRepository } from '@/application/ports/CoachingRepository'
 import type { CoachingAdvisor } from '@/application/ports/CoachingAdvisor'
 import { buildCoachingContext } from '@/application/coaching/context'
@@ -7,6 +8,7 @@ import {
   BOOTSTRAP_PLAN_RESPONSE_SCHEMA,
   GeminiCoachingAdvisor,
   bootstrapEventPrompt,
+  completedActivityPrompt,
   parseBootstrapPlanDraft,
 } from '../GeminiCoachingAdvisor'
 
@@ -76,6 +78,7 @@ function context() {
     goals: [],
     personalBests: [],
     upcomingRaces: [{ date: '2026-10-18', name: 'Autumn 10K', distance: '10K' }],
+    officialResults: [],
   }, '2026-09-07')
 }
 
@@ -328,4 +331,91 @@ it('labels course-aware target pace as an average without changing flat-race fac
   const event = { id: 'course', name: 'Hilly race', date: '2026-10-03', distanceMeters: 5000, targetSeconds: 1200 }
   expect(bootstrapEventPrompt(event)).not.toHaveProperty('pacingMode')
   expect(bootstrapEventPrompt({ ...event, courseContext: { pacingNotes: ['Follow supplied PacePro.'] } })).toMatchObject({ targetSeconds: 1200, targetPaceSecPerKm: 240, pacingMode: 'course_aware', goalPaceMeaning: 'average_over_entire_course_not_constant_pace' })
+})
+
+describe('completed activity prompt', () => {
+  const lap = (durationSec: number, distanceM: number, avgHr: number) => ({
+    type: 'lap' as const,
+    durationSec,
+    distanceM,
+    avgSpeedMs: distanceM / durationSec,
+    avgHr,
+    laps: [],
+  })
+
+  const escher = {
+    id: 'escher',
+    date: '2026-09-05',
+    type: 'Race',
+    distanceKm: 5.25,
+    durationSeconds: 1_310,
+    paceSecPerKm: 249.5,
+    avgHeartRate: 196,
+    rpe: 10,
+    aerTrainingEffect: 5,
+    anaTrainingEffect: 3.1,
+    splits: [lap(236, 1_000, 191), lap(245, 1_000, 196), lap(249, 1_000, 199), lap(253, 1_000, 197), lap(255, 1_000, 198), lap(71, 248.6, 197)],
+  } as unknown as Activity
+
+  const officialResult = {
+    activityId: 'escher',
+    eventName: 'Escher Kulturlaf',
+    date: '2026-09-05',
+    distanceMeters: 5_000,
+    chipTimeSeconds: 1_292,
+    gunTimeSeconds: 1_293,
+    overallPlace: 28,
+  }
+
+  const raceContext = (officialResults: typeof officialResult[]) =>
+    buildCoachingContext({
+      activities: [escher],
+      plan: null,
+      athlete: {},
+      trainingStatus: null,
+      loadBalance: null,
+      trainingZones: null,
+      latestVo2max: null,
+      racePredictions: null,
+      goals: [],
+      personalBests: [],
+      upcomingRaces: [],
+      officialResults,
+    }, '2026-09-05')
+
+  it('hands Gemini the official performance rather than the GPS reading', () => {
+    const prompt = completedActivityPrompt(raceContext([officialResult]), escher)
+
+    expect(prompt.performance).toMatchObject({ source: 'official', distanceKm: 5, durationSeconds: 1_292, paceSecPerKm: 258.4, overallPlace: 28 })
+    expect(prompt).not.toHaveProperty('distanceKm')
+    expect(prompt).not.toHaveProperty('paceSecPerKm')
+  })
+
+  it('keeps the Garmin measurement available for load analysis', () => {
+    const prompt = completedActivityPrompt(raceContext([officialResult]), escher)
+
+    expect(prompt.garminMeasured).toEqual({ distanceKm: 5.25, durationSeconds: 1_310, paceSecPerKm: 249.5 })
+    expect(prompt.avgHeartRate).toBe(196)
+  })
+
+  it('includes the race pacing trend computed from real laps', () => {
+    const prompt = completedActivityPrompt(raceContext([officialResult]), escher) as { raceExecution?: { trend: Record<string, number> } }
+
+    expect(prompt.raceExecution?.trend).toMatchObject({ firstFullLapPaceSecPerKm: 236, lastFullLapPaceSecPerKm: 255, positiveSplitSecPerKm: 19 })
+  })
+
+  it('keeps the original flat shape when no official result is linked', () => {
+    const prompt = completedActivityPrompt(raceContext([]), escher)
+
+    expect(prompt).toMatchObject({ id: 'escher', date: '2026-09-05', type: 'Race', distanceKm: 5.25, durationSeconds: 1_310, paceSecPerKm: 249.5, avgHeartRate: 196, rpe: 10 })
+    expect(prompt).not.toHaveProperty('performance')
+    expect(prompt).not.toHaveProperty('garminMeasured')
+  })
+
+  it('needs no free-text note parsing to resolve the source', () => {
+    const prompt = completedActivityPrompt(raceContext([officialResult]), escher)
+
+    expect(JSON.stringify(prompt)).not.toContain('comment')
+    expect((prompt.performance as { source: string }).source).toBe('official')
+  })
 })

@@ -65,6 +65,7 @@ function context() {
     goals: [],
     personalBests: [],
     upcomingRaces: [],
+    officialResults: [],
   }, '2026-09-07')
 }
 

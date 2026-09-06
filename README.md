@@ -678,6 +678,28 @@ Garmin, so only a state the athlete must act on earns a line on the Plan page: t
 means Garmin holding a session that no longer matches the prescription. The full sync state
 is still kept for idempotency and diagnostics.
 
+### Official race results
+
+**A certified result and a Garmin activity are two different measurements of the same
+effort, and the certified one is the performance.** `data/race_results.json` is an optional
+hand-maintained overlay keyed by `activityId`; the activity JSON stays exactly as the device
+recorded it. Race courses are measured along the shortest legal line, so GPS almost always
+over-reads them: Escher recorded 5.25 km in 21:50 for a certified 5.00 km in 21:32. Deriving
+a time from that over-read — rescaling GPS distance against device time — invents a race the
+athlete never ran, so nothing does it. Precedence is resolved in `resolvePerformance` before
+any prompt is built, never left to the model: the coaching context carries the resolved
+`performance` alongside the untouched `garminMeasured`, because load, HR and training effect
+still come from the device. Without an overlay entry an activity resolves to its Garmin
+figures and behaves exactly as it did before.
+
+**Race laps are not intervals.** `sessionExecution` reads `interval_active` splits and
+describes repetitions, so a race of plain auto-lap splits resolved to `null` and the coach
+never saw the pacing. `raceExecution` reads the real `lap` splits instead and reports the
+progression and its trend, computed here rather than left to the model to derive from an
+array. Laps shorter than a full lap are reported separately: a closing part-lap has a
+per-km pace but comparing it with a full kilometre would read as a collapse that never
+happened.
+
 ### The Plan's single workout shape
 
 The Plan has exactly one workout presentation (`PlannedWorkoutRow` and
