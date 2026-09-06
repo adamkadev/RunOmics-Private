@@ -763,6 +763,15 @@ caveat worth knowing:
   `avgTemperature`, which is what the watch's wrist sensor read.
 - **Planned-workout times of day are coarse only** — the exact scheduled minute of a future run
   is never persisted or served.
+- **Splits** come from two different FIT messages. A structured workout carries `split_mesgs`
+  with the interval types (`interval_warmup`/`interval_active`/`interval_rest`/
+  `interval_recovery`/`interval_cooldown`), and those stay the primary source, each interval
+  keeping its own `lap_mesgs` as expandable sub-laps. An ordinary run or a race has no interval
+  splits at all, only `lap_mesgs` — the watch's own kilometre (or manual) laps — so those become
+  splits of type `lap`, with no sub-laps. Nothing is ever synthesised from GPS samples: a lap
+  with no duration or no distance is dropped, and a single lap is only the activity total
+  restated, so it is not a split either. Lap splits are execution data for display only; they
+  never feed activity-type inference, session-execution analysis, or an official race distance.
 
 ### AI insight generation
 

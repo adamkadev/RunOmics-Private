@@ -13,7 +13,10 @@ const TYPE_COLORS: Record<string, string> = {
   interval_rest:     'text-muted-foreground',
   interval_recovery: 'text-muted-foreground',
   interval_cooldown: 'text-violet-500 dark:text-violet-400',
+  lap:               'text-accent-text',
 }
+
+const NUMBERED_TYPES = new Set(['interval_active', 'lap'])
 
 const ROW_NO_HR = 'grid w-full items-center gap-x-1.5 grid-cols-[1.1rem_1fr_3rem_2.5rem_2.75rem]'
 const ROW_HR = 'grid w-full items-center gap-x-1.5 grid-cols-[1.1rem_1fr_3rem_2.5rem_2.75rem_1.75rem]'
@@ -39,6 +42,7 @@ export function KmSplits({ activity }: Props) {
 
   const showHr = splits.some((s) => s.avgHr !== null)
   const rowCls = showHr ? ROW_HR : ROW_NO_HR
+  const lapsOnly = splits.every((s) => s.type === 'lap')
 
   function toggle(i: number) {
     setExpanded((prev) => {
@@ -59,7 +63,9 @@ export function KmSplits({ activity }: Props) {
     <GlassSurface variant="card" className="p-5">
       <div className="mb-4 flex items-center gap-2">
         <Timer size={16} className="text-accent-text" />
-        <h3 className="text-sm font-semibold text-foreground/80">{t.activity.splits.title}</h3>
+        <h3 className="text-sm font-semibold text-foreground/80">
+          {lapsOnly ? t.activity.splits.lapTitle : t.activity.splits.title}
+        </h3>
       </div>
 
       <div className="w-full space-y-0.5">
@@ -75,14 +81,14 @@ export function KmSplits({ activity }: Props) {
         {(() => {
           let splitNum = 0
           return splits.map((split: ActivitySplit, i: number) => {
-            const isActive = split.type === 'interval_active'
-            if (isActive) splitNum++
+            const isNumbered = NUMBERED_TYPES.has(split.type)
+            if (isNumbered) splitNum++
             const typeLabel = t.activity.splits.intervalTypes[split.type] ?? split.type
             const typeColor = TYPE_COLORS[split.type] ?? 'text-foreground'
-            const hasSubLaps = isActive && split.laps.length >= 2
+            const hasSubLaps = isNumbered && split.laps.length >= 2
             const isOpen = expanded.has(i)
 
-            if (!isActive) {
+            if (!isNumbered) {
               return (
                 <div key={i} className={`${rowCls} rounded-md px-1 py-1.5`}>
                   <span />

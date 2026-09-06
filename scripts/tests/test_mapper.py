@@ -199,6 +199,31 @@ class TestMapActivity:
     def test_weather_defaults_to_none(self):
         assert map_activity(self._garmin_activity(), None).to_dict()["weather"] is None
 
+    def test_lap_splits_are_persisted_rather_than_null(self):
+        parsed = ParsedFit(
+            duration_seconds=1_800,
+            distance_m=6_000.0,
+            splits=_laps(300, 1000.0, 6),
+        )
+
+        data = map_activity(self._garmin_activity(), parsed)
+
+        assert data.splits is not None
+        assert len(data.splits) == 6
+        assert data.to_dict()["splits"][0] == {
+            "type": "lap",
+            "durationSec": 300,
+            "distanceM": 1000.0,
+            "avgSpeedMs": 3.3333,
+            "avgHr": 150,
+            "laps": [],
+        }
+
+    def test_no_splits_still_serialises_as_null(self):
+        data = map_activity(self._garmin_activity(), ParsedFit(duration_seconds=1_800))
+
+        assert data.to_dict()["splits"] is None
+
     def test_long_sample_arrays_are_decimated_for_charts(self):
         parsed = ParsedFit(
             duration_seconds=1800,
@@ -254,6 +279,13 @@ def _intervals(effort_seconds, recovery_seconds, repetitions):
             2.0,
             130,
         ),
+    ]
+
+
+def _laps(duration_seconds, distance_m, count):
+    return [
+        ActivitySplit("lap", duration_seconds, distance_m, distance_m / duration_seconds, 150)
+        for _ in range(count)
     ]
 
 

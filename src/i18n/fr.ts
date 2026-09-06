@@ -839,6 +839,7 @@ export const fr = {
     },
     splits: {
       title: 'Intervalles',
+      lapTitle: 'Tours',
       cols: {
         step: '#',
         type: 'Type',
@@ -854,6 +855,7 @@ export const fr = {
         interval_rest:     'Repos',
         interval_recovery: 'Récupération',
         interval_cooldown: 'Repos',
+        lap:               'Tour',
       } as Record<string, string>,
     },
     nav: {

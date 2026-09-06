@@ -847,6 +847,7 @@ export const en = {
     },
     splits: {
       title: 'Intervals',
+      lapTitle: 'Laps',
       cols: {
         step: '#',
         type: 'Type',
@@ -862,6 +863,7 @@ export const en = {
         interval_rest:     'Rest',
         interval_recovery: 'Recovery',
         interval_cooldown: 'Cooldown',
+        lap:               'Lap',
       } as Record<string, string>,
     },
     nav: {

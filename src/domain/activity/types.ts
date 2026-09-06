@@ -19,7 +19,7 @@ export interface SplitLap {
 }
 
 export interface ActivitySplit {
-  type: 'interval_warmup' | 'interval_active' | 'interval_rest' | 'interval_recovery' | 'interval_cooldown'
+  type: 'interval_warmup' | 'interval_active' | 'interval_rest' | 'interval_recovery' | 'interval_cooldown' | 'lap'
   durationSec: number
   distanceM: number
   avgSpeedMs: number

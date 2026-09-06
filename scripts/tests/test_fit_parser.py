@@ -179,9 +179,86 @@ class TestExtractSplits:
         assert s.laps[0].avg_hr == 180
         assert s.laps[0].avg_speed_ms == 400.0 / 96.0
 
-    def test_no_interval_splits_returns_empty(self):
+    def test_interval_splits_win_over_plain_laps(self):
+        # The same messages also carry laps; a structured workout still reports
+        # its interval splits, never the raw laps.
+        splits = _extract_splits(self._messages())
+
+        assert [s.type for s in splits] == ["interval_active"]
+
+    def test_no_split_or_lap_data_returns_empty(self):
         assert _extract_splits({"split_mesgs": [{"split_type": "rwd_run", "total_timer_time": 60.0}]}) == []
         assert _extract_splits({}) == []
+
+
+def lap_mesg(minute, distance_m=1000.0, timer=300.0, hr=None):
+    """A FIT lap message as Garmin records one per kilometre on an ordinary run."""
+    lap = {
+        "start_time": datetime(2026, 7, 1, 10, minute, 0),
+        "total_distance": distance_m,
+        "total_timer_time": timer,
+    }
+    if hr is not None:
+        lap["avg_heart_rate"] = hr
+    return lap
+
+
+class TestLapFallbackSplits:
+    """Ordinary runs and races carry lap_mesgs but no interval split_mesgs -
+    those laps are what Garmin itself shows as the run's splits."""
+
+    def test_normal_run_laps_become_splits(self):
+        splits = _extract_splits({
+            "lap_mesgs": [lap_mesg(0, 1000.0, 300.0, 152), lap_mesg(5, 1000.0, 290.0, 158)],
+        })
+
+        assert [s.type for s in splits] == ["lap", "lap"]
+        assert [s.duration_sec for s in splits] == [300, 290]
+        assert [s.distance_m for s in splits] == [1000.0, 1000.0]
+        assert splits[0].avg_speed_ms == 1000.0 / 300.0
+        assert [s.avg_hr for s in splits] == [152, 158]
+        # A plain lap has no sub-laps of its own.
+        assert all(s.laps == [] for s in splits)
+
+    def test_race_laps_become_splits_without_heart_rate(self):
+        splits = _extract_splits({
+            "lap_mesgs": [lap_mesg(0), lap_mesg(5), lap_mesg(10, 1097.5, 320.0)],
+        })
+
+        assert len(splits) == 3
+        assert [s.avg_hr for s in splits] == [None, None, None]
+        assert splits[2].distance_m == 1097.5
+
+    def test_non_interval_split_mesgs_do_not_block_the_lap_fallback(self):
+        splits = _extract_splits({
+            "split_mesgs": [{"split_type": "rwd_run", "total_timer_time": 600.0}],
+            "lap_mesgs": [lap_mesg(0), lap_mesg(5)],
+        })
+
+        assert [s.type for s in splits] == ["lap", "lap"]
+
+    def test_malformed_laps_are_ignored(self):
+        splits = _extract_splits({
+            "lap_mesgs": [
+                lap_mesg(0),
+                {"total_distance": 1000.0, "total_timer_time": 300.0},   # no start_time
+                lap_mesg(5, 1000.0, 0.0),                                 # zero duration
+                lap_mesg(10, 1000.0, None),                               # no duration at all
+                lap_mesg(15, 0.0, 300.0),                                 # no distance
+                lap_mesg(20),
+            ],
+        })
+
+        assert len(splits) == 2
+        assert [s.duration_sec for s in splits] == [300, 300]
+
+    def test_a_single_lap_is_not_a_split(self):
+        # One lap is the activity total restated - nothing to show.
+        assert _extract_splits({"lap_mesgs": [lap_mesg(0)]}) == []
+
+    def test_no_usable_laps_yields_no_splits(self):
+        assert _extract_splits({"lap_mesgs": [lap_mesg(0, 1000.0, 0.0)]}) == []
+        assert _extract_splits({"lap_mesgs": []}) == []
 
 
 class TestExtractVo2max:
