@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { maptilerStyleUrl } from '@/lib/maptiler'
 import { routePadding, simplifyRoute, type LngLat } from '@/lib/shareCardMap'
 import type { ThemeMode } from '@/lib/shareCardPalette'
-import { loadMapLibre } from '@/lib/maplibre'
+import { loadMapLibre, showPlaceLabelsAtAnyZoom } from '@/lib/maplibre'
 
 export interface ShareCardMap {
   image: HTMLCanvasElement | null
@@ -73,6 +73,8 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
     attributionControl: false,
     fadeDuration: 0,
   })
+
+  map.on('load', () => showPlaceLabelsAtAnyZoom(map))
 
   const timeout = new Promise<never>((_, reject) =>
     setTimeout(() => reject(new Error('basemap render timed out')), RENDER_TIMEOUT_MS))
