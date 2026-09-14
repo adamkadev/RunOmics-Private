@@ -33,7 +33,6 @@ describe('RunVerdict', () => {
   it('carries no coach evaluation, outcome or planned-versus-actual comparison', () => {
     render(<RunVerdict activity={activity} aiVerdict={null} />)
 
-    expect(screen.queryByText(t.coaching.evaluation)).not.toBeInTheDocument()
     expect(screen.queryByText(t.coaching.outcomes.KEEP)).not.toBeInTheDocument()
     expect(screen.queryByText(t.coaching.planned)).not.toBeInTheDocument()
     expect(screen.queryByText(t.coaching.actual)).not.toBeInTheDocument()

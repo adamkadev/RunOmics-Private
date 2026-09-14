@@ -1259,7 +1259,6 @@ export const fr = {
 
   coaching: {
     garminOutOfDate: 'Garmin obsolète',
-    noPlanChange: 'Aucun changement du plan',
     states: {
       prescribed: 'Prescrite',
       adjusted: 'Ajustée',
@@ -1270,7 +1269,6 @@ export const fr = {
     outcomes: { KEEP: 'Maintenir', ADJUST: 'Ajuster', REPLAN: 'Replanifier' },
     planned: 'Prévu',
     actual: 'Réalisé',
-    evaluation: 'Évaluation du coach',
     distance: 'Distance',
     pace: 'Allure',
     heartRate: 'Fréquence cardiaque',

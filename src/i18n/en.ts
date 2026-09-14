@@ -1267,7 +1267,6 @@ export const en = {
 
   coaching: {
     garminOutOfDate: 'Garmin out of date',
-    noPlanChange: 'No plan change',
     states: {
       prescribed: 'Prescribed',
       adjusted: 'Adjusted',
@@ -1278,7 +1277,6 @@ export const en = {
     outcomes: { KEEP: 'Keep', ADJUST: 'Adjust', REPLAN: 'Replan' },
     planned: 'Planned',
     actual: 'Actual',
-    evaluation: 'Coach evaluation',
     distance: 'Distance',
     pace: 'Pace',
     heartRate: 'Heart rate',
