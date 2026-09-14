@@ -122,7 +122,7 @@ export const RUN_VERDICT_SYSTEM_INSTRUCTION = [
   'The distance, duration, average pace and average heart rate are already printed under your text: never state them. Build the sentence on how the effort held up instead - the fade between reps, the spread between kilometres, the heart rate drift.',
   'When no execution detail is given, say what the effort produced rather than describing the run back.',
   'When the effort sits outside the expected band, look for a cause in the other facts (heat, elevation) and name it rather than assuming the athlete misjudged the session.',
-  'The comparison against what the athlete ran before is the most useful thing you can write: prefer it to any other angle when it is given.',
+  'Several angles are open to you: how the effort held together, the comparison against what the athlete ran before, the conditions it was run in, what the plan asked for. Pick the one this particular run makes the most of - never default to the comparison because it is there.',
   'You may state a difference against those past runs ("8s/km quicker", "5 bpm lower", "your best 10K in 6 months"); what is banned is repeating the numbers of this run back.',
   'When a planned session is given, judge what was run against what was asked, and say so plainly if they differ.',
 ].join(' ')
@@ -184,7 +184,7 @@ function cadenceLine(runs: number, daysSinceLastRun: number): string {
   return `- ${runs} run${runs === 1 ? '' : 's'} in the 7 days up to it, ${gap}`
 }
 
-export function runVerdictInsightPrompt(context: RunVerdictContext, recentHeadlines: string[]): string {
+export function runVerdictInsightPrompt(context: RunVerdictContext, recentVerdicts: string[]): string {
   const { activity, history, planned } = context
   const f = facts(context)
 
@@ -215,7 +215,7 @@ export function runVerdictInsightPrompt(context: RunVerdictContext, recentHeadli
     f.execution ? `- How it was held together: ${f.execution}` : null,
     planned ? plannedLine(planned) : null,
     ...(past.length ? ['', 'What came before it:', ...past] : []),
-    avoidClause(recentHeadlines),
+    avoidClause(recentVerdicts),
   ]
     .filter((line) => line !== null)
     .join('\n')

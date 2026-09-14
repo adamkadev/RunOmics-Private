@@ -132,10 +132,11 @@ NEXT_PUBLIC_LOCALE=en
 # two free-tier quotas stay independent. Nothing deployed reads the coach key,
 # so it goes in .env.local only, not into Vercel or GitHub Actions.
 #
-# Each surface picks its own model (free-tier quotas are counted per model, so
-# the per-activity backfill runs on the lite model and never eats into the
-# dashboard hero's budget). GEMINI_MODEL overrides all three at once, for when
-# Google retires a model - check the live list first:
+# Free-tier quotas are counted per model, so there are two pools: the read
+# surfaces draw from the Flash pool, and the per-activity verdict backfill from
+# the Flash Lite pool, which never eats into the dashboard hero's budget.
+# GEMINI_MODEL replaces whichever pool is being drawn from, for when Google
+# retires a model - check the live list first:
 # https://generativelanguage.googleapis.com/v1beta/models
 # GEMINI_API_KEY=...          # general AI surfaces
 # GEMINI_COACH_API_KEY=...    # adaptive coaching only, separate project
@@ -898,6 +899,24 @@ daily ledger is read back to let a stuck verdict name which. `GEMINI_MODEL` repl
 *pool*, not the request, so what gets counted stays what gets called; overriding at the
 transport layer would bill one model's ledger for another's call.
 
+**Two pools, sized from the demand.** Free-tier quotas are per model, and Flash and Flash Lite
+are not in the same league: Flash allows 20 requests a day, Lite 500. `MODEL_POOL` carries the
+surfaces a reader actually looks at — `today`, the week purpose, the season headline, the four
+analytics tabs, a PB celebration, a shoe verdict or two, and the verdicts for runs that just
+landed — which is about 8 calls a night and 14 at its worst. The five passes per night do not
+multiply that: once a surface's hash matches, the pass reports `unchanged` and spends nothing.
+Three Flash models give it 54, so it still runs at 2.6x its worst night after one of them is
+retired out from under us.
+
+`BACKFILL_POOL` carries the per-activity verdict queue, whose demand is not the one run a day
+but the whole eligible history at once: any change to `runHistory` or the verdict facts moves
+every hash, and the 90-day horizon plus the record holders is around 100 verdicts. Two Lite
+models give it 996. What actually caps a pass there is the invocation clock rather than the
+quota — `reserve()` stops handing out models 33s before the 280s ceiling, and at Lite's 5s
+spacing that is roughly 24 verdicts, which is what `DEFAULT_RUN_VERDICTS_PER_RUN` is set to.
+Five passes clear the 100 with room to spare. The pools share one ledger and one spender, so a
+verdict backfill can never starve the dashboard even when it is churning through a rebuild.
+
 **Ordering.** Verdicts for runs that just landed are written before any other surface — behind
 the other ten, the one insight the athlete is waiting for is the first thing the quota or the
 clock drops. The rest is priority order, tail last, since what one run cuts off the next picks
@@ -905,6 +924,23 @@ up. `?limit=0` reports the backlog without spending; an *absent* `?limit=` must 
 into that, because the cron and every `workflow_dispatch` omit the param and `Number(null)` is
 0 — hence the explicit null check before any numeric conversion. `?all=1` lifts the recency
 horizon for a manual pass over the archive after a reprocess; the daily cron never sends it.
+
+**Variety is a prompt problem, not a model problem.** A run verdict has several angles open to
+it — how the effort held together, the comparison against past runs of the same type, the
+conditions, what the plan asked for. The baseline comparison used to be ranked above all of
+them, and since `baselineLine()` is supplied for any run with three same-type peers inside 90
+days, it was supplied essentially always: a block of similar easy runs collapsed onto one
+sentence, "Xs/km quicker at the same heart rate", however the copy was worded. The instruction
+now lists the angles and tells the model to pick what this run makes the most of instead of
+defaulting to the one that is always there.
+
+`avoidClause()` is the other half, and it is fed the previous *verdicts* — headline and body
+both — not the headlines alone. Headlines were already varied while the bodies underneath them
+repeated, which is what an avoid list over headlines cannot see. Its reach is one invocation:
+`written` accumulates across both `writeVerdicts()` passes of a single request and resets with
+the next, so a backfill spread over the night's five passes still repeats itself across them.
+Closing that needs a phrasing history shared between activities — the per-activity
+`recentHeadlines` cannot carry it, since each run owns its own document.
 
 **Staleness and the grace window.** An insight is keyed on every fact it was written from, and
 some of those move on their own overnight (days since the last run, the rolling week, Garmin's

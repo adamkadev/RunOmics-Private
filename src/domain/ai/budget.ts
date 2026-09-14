@@ -4,14 +4,18 @@ export interface ModelLimits {
 }
 
 export const MODEL_LIMITS: Record<string, ModelLimits> = {
+  'gemini-3.8-flash': { rpm: 5, rpd: 20 },
+  'gemini-3.7-flash': { rpm: 5, rpd: 20 },
   'gemini-3.6-flash': { rpm: 5, rpd: 20 },
-  'gemini-3.5-flash': { rpm: 5, rpd: 20 },
-  'gemini-3-flash-preview': { rpm: 5, rpd: 20 },
+  'gemini-3.5-flash-lite': { rpm: 15, rpd: 500 },
+  'gemini-3.1-flash-lite': { rpm: 15, rpd: 500 },
 }
 
 const UNKNOWN_MODEL_LIMITS: ModelLimits = { rpm: 5, rpd: 20 }
 
-export const MODEL_POOL = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3-flash-preview']
+export const MODEL_POOL = ['gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.6-flash']
+
+export const BACKFILL_POOL = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite']
 
 const RESERVE = 2
 

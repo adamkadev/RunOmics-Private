@@ -86,13 +86,13 @@ import {
   listCachedHashes,
   saveCachedInsight,
 } from '@/infrastructure/repositories/FirestoreInsightsRepository'
-import { MODEL_POOL, dailyBudget, spendField } from '@/domain/ai/budget'
+import { BACKFILL_POOL, MODEL_POOL, dailyBudget, spendField } from '@/domain/ai/budget'
 import { openSpender, type Spender } from '@/lib/aiSpend'
 import { generateInsight } from '@/lib/gemini'
 
 export const maxDuration = 300
 
-const DEFAULT_RUN_VERDICTS_PER_RUN = 6
+const DEFAULT_RUN_VERDICTS_PER_RUN = 24
 const MAX_RUN_VERDICTS_PER_RUN = 60
 
 const FRESH_RUN_VERDICTS_PER_RUN = 3
@@ -117,9 +117,9 @@ function isModelClosed(reason: string): boolean {
   return reason.startsWith('http 429') || reason.startsWith('http 404')
 }
 
-function noReserveReason(spender: Spender): string {
+function noReserveReason(spender: Spender, pool: string[]): string {
   const spent = spender.report()
-  const budgetSpent = MODEL_POOL.every((model) => (spent[spendField(model)] ?? 0) >= dailyBudget(model))
+  const budgetSpent = pool.every((model) => (spent[spendField(model)] ?? 0) >= dailyBudget(model))
   return budgetSpent ? 'no budget left' : 'no time left in this invocation'
 }
 
@@ -128,7 +128,7 @@ async function runSurface(spender: Spender, job: SurfaceJob): Promise<SurfaceOut
   if (cached?.hash === job.hash) return { generated: false, reason: 'unchanged' }
 
   const model = await spender.reserve(MODEL_POOL)
-  if (!model) return { generated: false, reason: noReserveReason(spender) }
+  if (!model) return { generated: false, reason: noReserveReason(spender, MODEL_POOL) }
 
   const result = await generateInsight({
     model,
@@ -162,7 +162,7 @@ export async function POST(req: NextRequest) {
     const fresh = limit === 0 ? [] : queue.fresh.slice(0, FRESH_RUN_VERDICTS_PER_RUN)
 
     return NextResponse.json({
-      freshVerdicts: await writeVerdicts(spender, fresh, written),
+      freshVerdicts: await writeVerdicts(spender, fresh, written, MODEL_POOL),
       today: await generateToday(spender),
       weekPurpose: await generateWeekPurpose(spender),
       season: await generateSeason(spender),
@@ -177,7 +177,8 @@ export async function POST(req: NextRequest) {
         ...(await writeVerdicts(
           spender,
           [...queue.fresh.slice(fresh.length), ...queue.rest].slice(0, limit),
-          written
+          written,
+          BACKFILL_POOL
         )),
       },
       spend: spender.report(),
@@ -349,14 +350,19 @@ async function runVerdictQueue(ignoreHorizon: boolean): Promise<VerdictQueue> {
   }
 }
 
-async function writeVerdicts(spender: Spender, pending: RunVerdictContext[], written: string[]) {
+async function writeVerdicts(
+  spender: Spender,
+  pending: RunVerdictContext[],
+  written: string[],
+  pool: string[]
+) {
   const before = written.length
   const failures: string[] = []
 
   for (const context of pending) {
-    const model = await spender.reserve(MODEL_POOL)
+    const model = await spender.reserve(pool)
     if (!model) {
-      failures.push(`${context.activity.id}: ${noReserveReason(spender)}`)
+      failures.push(`${context.activity.id}: ${noReserveReason(spender, pool)}`)
       break
     }
 
@@ -379,7 +385,7 @@ async function writeVerdicts(spender: Spender, pending: RunVerdictContext[], wri
       null
     )
     revalidatePath(`/activities/${context.activity.id}`)
-    written.push(result.insight.headline)
+    written.push(`${result.insight.headline} / ${result.insight.body}`)
   }
 
   return { generated: written.length - before, failures }

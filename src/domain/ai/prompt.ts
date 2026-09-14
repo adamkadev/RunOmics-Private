@@ -22,9 +22,9 @@ export function systemInstruction(role: string, bodySpec: string, limits: Limits
   ].join(' ')
 }
 
-export function avoidClause(recentHeadlines: string[]): string {
-  if (recentHeadlines.length === 0) return ''
-  return `\nAvoid re-using the phrasing of these previous headlines: ${recentHeadlines
-    .map((h) => `"${h}"`)
+export function avoidClause(recent: string[]): string {
+  if (recent.length === 0) return ''
+  return `\nCopy already written for the cards around this one, none of whose phrasing, angle or sentence shape you may re-use: ${recent
+    .map((line) => `"${line}"`)
     .join(', ')}.`
 }
