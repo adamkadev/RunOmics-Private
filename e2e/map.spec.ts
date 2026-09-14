@@ -40,3 +40,24 @@ test('heatmap zone dropdown switches the selected zone', async ({ page }) => {
 
   await expect(async () => expect(await zoneName()).not.toBe(before)).toPass()
 })
+
+test('heatmap actually initialises a MapLibre canvas', async ({ page }) => {
+  test.skip(
+    !process.env.NEXT_PUBLIC_MAPTILER_TOKEN,
+    'needs NEXT_PUBLIC_MAPTILER_TOKEN: without it the map components return before constructing a Map'
+  )
+
+  const errors: string[] = []
+  page.on('pageerror', (error) => errors.push(error.message))
+
+  const workerRequested = page.waitForRequest(/maplibre-gl-worker/)
+  const styleRequested = page.waitForRequest(/api\.maptiler\.com\/maps\/.*style\.json/)
+
+  await page.goto('/map')
+
+  await expect(page.locator('canvas.maplibregl-canvas')).toBeAttached({ timeout: 30_000 })
+  await workerRequested
+  await styleRequested
+
+  expect(errors).toEqual([])
+})

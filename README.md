@@ -1126,6 +1126,29 @@ inline at the call site — they are composition, not colour.
 - The start dot is always green; the finish dot is the accent, unless the accent sits within a
   distance of 90 in RGB space of the green start, where it flips to red — the start/finish convention
   Strava and Garmin use.
+**MapLibre's worker is served from `public/`, not from the bundle.** MapLibre 6 is ESM-only and
+no longer inlines its web worker: it spawns `maplibre-gl-worker.mjs` as a module worker, resolving
+that name against `import.meta.url`. Bundled into a Turbopack chunk, that resolves to a path under
+`/_next/static/` which the bundler never emits, Next answers with its HTML 404 page, and the worker
+dies on strict MIME checking - leaving a map container with no canvas and no error anyone would
+connect to the map. So `npm run maplibre:worker` copies `maplibre-gl-worker.mjs` and the
+`maplibre-gl-shared.mjs` it imports out of `node_modules` into `public/maplibre/` (a `prebuild`,
+`predev` and `e2e:build` step, so they cannot drift from the installed version, and gitignored
+because they are build output), and `loadMapLibre()` in `lib/maplibre` points `setWorkerUrl()` at
+them. Every map goes through that one loader so the worker URL is set exactly once, before the
+first `Map` is constructed.
+
+The cost is a second copy of the shared module - the main thread has its own inside the bundle -
+which is what an ESM-only library spawning a module worker requires.
+
+**A map that cannot render is invisible to the test suite.** `.env.e2e` carries no
+`NEXT_PUBLIC_MAPTILER_TOKEN`, and both map components return before constructing a `Map` without
+one, so nothing in the E2E run ever instantiated MapLibre; the map specs assert the page shell
+because the shell is all they could reach. That is how the worker breakage above shipped. The
+canvas spec in `map.spec.ts` closes it: given a token it waits for the worker request, the style
+request and an attached `canvas.maplibregl-canvas`, and it skips when no token is set, so CI
+behaves as before until a token is added as a secret.
+
 - Only the **basemap** is rendered through MapLibre; the trace is painted on afterwards in the
   athlete's accent. That is what makes changing accent free — the cached render does not depend on it.
 - Before the basemap arrives, `projectRoute` frames the trace the way MapLibre's `fitBounds` will, so

@@ -13,6 +13,7 @@ import type { ShoeTag } from '@/domain/shoe/types'
 import { ShoePairTag } from '@/components/activities/ShoePairTag'
 import { WeatherChips } from './WeatherChips'
 import { t } from '@/i18n'
+import { loadMapLibre } from '@/lib/maplibre'
 
 interface Props {
   route: [number, number][]
@@ -81,8 +82,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
     let cancelled = false
 
     async function initMap(isDark: boolean) {
-      const mgl = await import('maplibre-gl')
-      await import('maplibre-gl/dist/maplibre-gl.css')
+      const mgl = await loadMapLibre()
       if (cancelled) return
 
       const token = process.env.NEXT_PUBLIC_MAPTILER_TOKEN

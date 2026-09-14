@@ -11,6 +11,7 @@ import {
   heatWidthExpression,
 } from "./mapUtils";
 import { MAP_COLORS } from "@/lib/colors";
+import { loadMapLibre } from "@/lib/maplibre";
 
 const LABELED_BUBBLE_SIZE = 44;
 
@@ -99,8 +100,7 @@ export function useMapRoutes(
     let cancelled = false;
 
     async function initMap(isDark: boolean) {
-      const mgl = await import("maplibre-gl");
-      await import("maplibre-gl/dist/maplibre-gl.css");
+      const mgl = await loadMapLibre();
       if (cancelled) return;
 
       const token = process.env.NEXT_PUBLIC_MAPTILER_TOKEN;

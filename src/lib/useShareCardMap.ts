@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { maptilerStyleUrl } from '@/lib/maptiler'
 import { routePadding, simplifyRoute, type LngLat } from '@/lib/shareCardMap'
 import type { ThemeMode } from '@/lib/shareCardPalette'
+import { loadMapLibre } from '@/lib/maplibre'
 
 export interface ShareCardMap {
   image: HTMLCanvasElement | null
@@ -47,7 +48,7 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
   const token = process.env.NEXT_PUBLIC_MAPTILER_TOKEN
   if (!token) throw new Error('NEXT_PUBLIC_MAPTILER_TOKEN not set')
 
-  const mgl = await import('maplibre-gl')
+  const mgl = await loadMapLibre()
   const points = simplifyRoute(route)
   const first = points[0]
   if (!first) throw new Error('empty route')
