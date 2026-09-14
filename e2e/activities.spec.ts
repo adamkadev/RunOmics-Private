@@ -13,8 +13,7 @@ test('activities list renders and links into a detail page', async ({ page }) =>
   }).toPass({ timeout: 30_000 })
 
   await expect(page.locator('h1')).toBeVisible()
-  await expect(page.getByText('Coach evaluation')).toBeVisible()
-  await expect(page.getByText('No plan change', { exact: true })).toBeVisible()
+  await expect(page.getByText('Run Verdict', { exact: true })).toBeVisible()
   await expect(page.locator('[data-nextjs-dialog]')).toHaveCount(0)
 })
 
