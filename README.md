@@ -1373,3 +1373,5 @@ no separate `firebase-messaging-sw.js` is needed. A non-JSON push falls through 
 generic notification.
 
 Bump `VERSION` to invalidate every cache on deploy of a breaking change.
+
+Made with love
