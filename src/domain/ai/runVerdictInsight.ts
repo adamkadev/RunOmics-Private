@@ -105,6 +105,24 @@ export function runVerdictInsightHash(context: RunVerdictContext): string {
   return insightHash(facts(context))
 }
 
+type WrittenVerdict = { headline: string; body: string }
+
+export function verdictLines(written: WrittenVerdict[]): string[] {
+  return written.map((verdict) => `${verdict.headline} / ${verdict.body}`)
+}
+
+function headlineKey(headline: string): string {
+  return headline.trim().toLowerCase().replace(/[.!?]+$/, '')
+}
+
+export function repeatsEarlierVerdict(
+  candidate: Pick<WrittenVerdict, 'headline'>,
+  written: Pick<WrittenVerdict, 'headline'>[]
+): boolean {
+  const key = headlineKey(candidate.headline)
+  return written.some((earlier) => headlineKey(earlier.headline) === key)
+}
+
 const TONE_RULES: Record<VerdictTone, string> = {
   positive: 'The effort landed where this session type calls for. Say what that earned.',
   neutral: 'The effort drifted from what this session type calls for, without doing harm. Describe it plainly, without forced praise.',

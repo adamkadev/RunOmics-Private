@@ -936,11 +936,22 @@ defaulting to the one that is always there.
 
 `avoidClause()` is the other half, and it is fed the previous *verdicts* — headline and body
 both — not the headlines alone. Headlines were already varied while the bodies underneath them
-repeated, which is what an avoid list over headlines cannot see. Its reach is one invocation:
-`written` accumulates across both `writeVerdicts()` passes of a single request and resets with
-the next, so a backfill spread over the night's five passes still repeats itself across them.
-Closing that needs a phrasing history shared between activities — the per-activity
-`recentHeadlines` cannot carry it, since each run owns its own document.
+repeated, which is what an avoid list over headlines cannot see.
+
+**A repeat is rejected, not requested.** The avoid list is an instruction, and a Flash Lite
+model under schema-constrained output does not reliably follow it: two verdicts in one batch
+came back under the identical headline, the second having been shown the first in full. So
+`repeatsEarlierVerdict()` compares the candidate against what this request already wrote — on
+a key that ignores casing, surrounding space and end punctuation — and a match is pushed to
+`failures` before anything is saved, which leaves the run in the queue for the next pass exactly
+as an over-length headline does. The check is on the headline alone: that is the repeat actually
+observed, and matching bodies by substring would reject copy that merely shares a clause.
+
+The reach of both is one invocation. `written` accumulates across the two `writeVerdicts()`
+passes of a single request and resets with the next, so a backfill spread over the night's five
+passes can still repeat itself between them. Closing that needs a phrasing history shared
+between activities — the per-activity `recentHeadlines` cannot carry it, since each run owns its
+own document.
 
 **Staleness and the grace window.** An insight is keyed on every fact it was written from, and
 some of those move on their own overnight (days since the last run, the rolling week, Garmin's

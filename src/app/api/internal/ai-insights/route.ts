@@ -36,9 +36,11 @@ import {
   RUN_VERDICT_SYSTEM_INSTRUCTION,
   deservesVerdict,
   isFreshRun,
+  repeatsEarlierVerdict,
   runVerdictInsightHash,
   runVerdictInsightPrompt,
   runVerdictSurface,
+  verdictLines,
   type RunVerdictContext,
 } from '@/domain/ai/runVerdictInsight'
 import {
@@ -88,7 +90,7 @@ import {
 } from '@/infrastructure/repositories/FirestoreInsightsRepository'
 import { BACKFILL_POOL, MODEL_POOL, dailyBudget, spendField } from '@/domain/ai/budget'
 import { openSpender, type Spender } from '@/lib/aiSpend'
-import { generateInsight } from '@/lib/gemini'
+import { generateInsight, type Insight } from '@/lib/gemini'
 
 export const maxDuration = 300
 
@@ -157,7 +159,7 @@ export async function POST(req: NextRequest) {
     const limit = requestedLimit(req)
     const queue = await runVerdictQueue(ignoresHorizon(req))
 
-    const written: string[] = []
+    const written: Insight[] = []
 
     const fresh = limit === 0 ? [] : queue.fresh.slice(0, FRESH_RUN_VERDICTS_PER_RUN)
 
@@ -353,7 +355,7 @@ async function runVerdictQueue(ignoreHorizon: boolean): Promise<VerdictQueue> {
 async function writeVerdicts(
   spender: Spender,
   pending: RunVerdictContext[],
-  written: string[],
+  written: Insight[],
   pool: string[]
 ) {
   const before = written.length
@@ -369,12 +371,16 @@ async function writeVerdicts(
     const result = await generateInsight({
       model,
       systemInstruction: RUN_VERDICT_SYSTEM_INSTRUCTION,
-      prompt: runVerdictInsightPrompt(context, written),
+      prompt: runVerdictInsightPrompt(context, verdictLines(written)),
       limits: RUN_VERDICT_LIMITS,
     })
     if (!result.ok) {
       failures.push(`${context.activity.id} (${model}): ${result.reason}`)
       if (isModelClosed(result.reason)) spender.exhaust(model)
+      continue
+    }
+    if (repeatsEarlierVerdict(result.insight, written)) {
+      failures.push(`${context.activity.id} (${model}): repeated the headline "${result.insight.headline}"`)
       continue
     }
 
@@ -385,7 +391,7 @@ async function writeVerdicts(
       null
     )
     revalidatePath(`/activities/${context.activity.id}`)
-    written.push(`${result.insight.headline} / ${result.insight.body}`)
+    written.push(result.insight)
   }
 
   return { generated: written.length - before, failures }

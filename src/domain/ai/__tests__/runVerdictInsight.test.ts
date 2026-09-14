@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { deservesVerdict, isFreshRun, runVerdictInsightHash as hashContext, runVerdictInsightPrompt } from '../runVerdictInsight'
+import {
+  deservesVerdict,
+  isFreshRun,
+  repeatsEarlierVerdict,
+  runVerdictInsightHash as hashContext,
+  runVerdictInsightPrompt,
+  verdictLines,
+} from '../runVerdictInsight'
 import { runHistory } from '@/domain/activity/runHistory'
 import type { Activity, ActivityWeather } from '@/domain/activity/types'
 
@@ -198,5 +205,33 @@ describe('official race performance in the verdict', () => {
     const withoutResults = { activity: tempo, history: runHistory(tempo, [tempo]), planned: null }
 
     expect(hashContext(withResults)).toBe(hashContext(withoutResults))
+  })
+})
+
+describe('repeatsEarlierVerdict', () => {
+  const written = [{ headline: 'Target base effort mastered', body: 'Splits packed tight.' }]
+
+  it('rejects the headline a lite model handed back verbatim despite the avoid list', () => {
+    expect(repeatsEarlierVerdict({ headline: 'Target base effort mastered' }, written)).toBe(true)
+  })
+
+  it('rejects a repeat dressed up in different casing, spacing or end punctuation', () => {
+    expect(repeatsEarlierVerdict({ headline: '  target base effort MASTERED.  ' }, written)).toBe(true)
+  })
+
+  it('passes a verdict that found its own angle', () => {
+    expect(repeatsEarlierVerdict({ headline: 'Controlled aerobic building' }, written)).toBe(false)
+  })
+
+  it('passes the first verdict of a batch, which has nothing to repeat', () => {
+    expect(repeatsEarlierVerdict({ headline: 'Faster aerobic engine' }, [])).toBe(false)
+  })
+})
+
+describe('verdictLines', () => {
+  it('hands the avoid clause the body as well, since that is what repeated', () => {
+    expect(verdictLines([{ headline: 'Faster aerobic engine', body: 'Held drift to 8 bpm.' }])).toEqual([
+      'Faster aerobic engine / Held drift to 8 bpm.',
+    ])
   })
 })
