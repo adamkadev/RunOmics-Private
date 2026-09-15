@@ -21,24 +21,32 @@ test('heatmap zone dropdown switches the selected zone', async ({ page }) => {
   await page.goto('/map')
 
   const zoneChip = page.getByRole('button', { name: /runs?$/ })
-  const zoneName = async () => (await zoneChip.innerText()).split('\n')[0] ?? ''
-  const before = await zoneName()
-
   await zoneChip.click()
+
   const options = page.locator('ul li button')
   await expect(options.first()).toBeVisible()
 
   const optionCount = await options.count()
   expect(optionCount).toBeGreaterThan(1)
-  for (let i = 0; i < optionCount; i++) {
-    const text = await options.nth(i).innerText()
-    if (!text.startsWith(before)) {
-      await options.nth(i).click()
-      break
+
+  // Zones are compared by their selected state, not their label: every cluster in the
+  // demo dataset sits near 0,0 and so resolves to the same place name.
+  const selectedIndex = async () => {
+    for (let i = 0; i < optionCount; i++) {
+      if ((await options.nth(i).getAttribute('aria-current')) === 'true') return i
     }
+    return -1
   }
 
-  await expect(async () => expect(await zoneName()).not.toBe(before)).toPass()
+  const before = await selectedIndex()
+  expect(before).toBeGreaterThanOrEqual(0)
+
+  const target = before === 0 ? 1 : 0
+  await options.nth(target).click()
+
+  await zoneChip.click()
+  await expect(page.locator('ul li button').nth(target)).toHaveAttribute('aria-current', 'true')
+  await expect(page.locator('ul li button').nth(before)).toHaveAttribute('aria-current', 'false')
 })
 
 test('heatmap actually initialises a MapLibre canvas', async ({ page }) => {

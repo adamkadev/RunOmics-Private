@@ -72,6 +72,7 @@ export function ClusterPanel({ clusters, names, stats, selectedIdx, onSelect }: 
               <li key={c.id}>
                 <button
                   onClick={() => { onSelect(i); setOpen(false); }}
+                  aria-current={i === selectedIdx}
                   className={[
                     "flex w-full flex-col gap-0.5 px-3 py-3 text-left transition-colors hover:bg-muted",
                     i === selectedIdx ? "bg-accent/10" : "",
