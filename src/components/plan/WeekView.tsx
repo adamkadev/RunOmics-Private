@@ -43,7 +43,6 @@ import {
 } from './planWorkoutView'
 
 const MISSED = 'var(--color-missed)'
-const TODAY_38 = 'color-mix(in srgb, var(--color-today) 38%, transparent)'
 const MISSED_10 = 'color-mix(in srgb, var(--color-missed) 10%, transparent)'
 const MISSED_25 = 'color-mix(in srgb, var(--color-missed) 25%, transparent)'
 const ACCENT_15 = 'color-mix(in srgb, var(--accent) 15%, transparent)'
@@ -361,7 +360,7 @@ export function WeekView({
                 const primaryType: ActivityType | null = (d.acts[0]?.type ?? (activeCoach ? COACHING_TO_ACTIVITY_TYPE[activeCoach.prescription.type] : plan?.type)) ?? null
                 const typeColor = primaryType && !missed ? ACTIVITY_TYPE_CONFIG[primaryType].chartColor : null
                 const label = primaryType ? t.plan.typeShort[primaryType] : rest ? t.plan.restDay : null
-                const todayGlow = typeColor ?? 'var(--accent)'
+                const weekday = WEEKDAY_SHORT_INDEX[new Date(d.date + 'T00:00:00').getDay()]
 
                 return (
                   <button
@@ -376,33 +375,28 @@ export function WeekView({
                       d.date === selectedDate && 'bg-foreground/[0.06]'
                     )}
                   >
-                    <div className="relative w-full">
-                      {isToday && rest && (
-                        <div
-                          className="pointer-events-none absolute -inset-0.5 rounded-[10px] border"
-                          style={{
-                            borderColor: TODAY_38,
-                            animation: 'pulse-ring 2s ease-in-out infinite',
-                          }}
-                        />
+                    <span
+                      className={cn(
+                        'text-micro leading-none',
+                        isToday ? 'font-bold text-foreground' : 'text-subtle'
                       )}
+                    >
+                      {weekday}
+                    </span>
 
+                    <div className="relative w-full">
                       <div
                         className="relative flex h-[52px] w-full flex-col items-center justify-center gap-0.5 rounded-[11px] border px-0.5 transition-colors"
                         style={{
                           ...(completed
-                            ? { background: typeColor ? `${typeColor}33` : ACCENT_15, borderColor: typeColor ? `${typeColor}80` : ACCENT_30 }
+                            ? { background: ACCENT_15, borderColor: ACCENT_30 }
                             : missed
                               ? { background: MISSED_10, borderColor: MISSED_25 }
                               : planned
-                                ? { background: typeColor ? `${typeColor}14` : FG_05, borderColor: typeColor ? `${typeColor}59` : FG_18 }
+                                ? { background: FG_05, borderColor: FG_18 }
                                 : { background: FG_05, borderColor: FG_07 }),
                           ...(isToday
-                            ? {
-                                borderColor: todayGlow,
-                                borderWidth: 1.5,
-                                boxShadow: `0 0 14px color-mix(in srgb, ${todayGlow} 35%, transparent)`,
-                              }
+                            ? { borderColor: 'var(--color-today)', borderWidth: 2 }
                             : null),
                         }}
                       >
