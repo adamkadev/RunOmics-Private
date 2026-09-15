@@ -131,7 +131,7 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiV
           className="mt-3.5 flex w-full items-center gap-3 rounded-[14px] bg-black/25 px-3.5 py-3 text-left transition-colors active:opacity-80"
         >
           <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px]" style={ICON_WELL}>
-            <Check size={17} style={{ color: ACCENT_ON_DARK }} />
+            <Check size={17} className="text-white" />
           </div>
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-semibold">{workoutTitle}</div>
@@ -151,7 +151,7 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiV
           className="mt-3.5 flex w-full items-center gap-3 rounded-[14px] bg-black/25 px-3.5 py-3 text-left transition-colors active:opacity-80"
         >
           <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px]" style={ICON_WELL}>
-            <PlannedWorkoutIcon size={17} style={{ color: ACCENT_ON_DARK }} />
+            <PlannedWorkoutIcon size={17} className="text-white" />
           </div>
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-semibold">{workoutTitle}</div>
@@ -165,7 +165,7 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiV
       ) : (
         <div className="mt-3.5 flex items-center gap-3 rounded-[14px] bg-black/25 px-3.5 py-3">
           <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px]" style={ICON_WELL}>
-            <BedDouble size={17} style={{ color: ACCENT_ON_DARK }} />
+            <BedDouble size={17} className="text-white" />
           </div>
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-semibold">{s.restDay}</div>

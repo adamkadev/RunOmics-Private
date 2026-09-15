@@ -4,10 +4,26 @@ import { GlassSurface } from '@/components/ui/GlassSurface'
 import { StatusPill, type StatusTone } from '@/components/ui/StatusPill'
 import { t } from '@/i18n'
 
+// A low ACWR is genuinely benign, which is why LoadRiskPanel's "low" is blue.
+// A below-target intensity band is not benign - it is a gap in the training that
+// wants action - so it carries the same caution tone as overshooting one.
 const VERDICT_TONE: Record<LoadBalanceBucket['verdict'], StatusTone> = {
-  below: 'blue',
+  below: 'amber',
   onTarget: 'green',
   above: 'amber',
+}
+
+// The header chip carries the card's actual finding, so it should not be the one
+// neutral element on it.
+const FEEDBACK_TONE: Record<string, StatusTone> = {
+  ON_TARGET: 'green',
+  BELOW_TARGETS: 'amber',
+  ABOVE_TARGETS: 'amber',
+  LACKING_HIGH_AEROBIC: 'amber',
+  LACKING_LOW_AEROBIC: 'amber',
+  LACKING_ANAEROBIC: 'amber',
+  ANAEROBIC_SHORTAGE: 'amber',
+  NO_DATA: 'zinc',
 }
 
 function Gauge({ bucket }: { bucket: LoadBalanceBucket }) {
@@ -51,7 +67,11 @@ export function LoadBalancePanel({ data }: { data: LoadBalanceData }) {
         <h2 className="text-sm font-semibold text-foreground/80">
           {s.title} <span className="font-normal text-subtle">{s.window}</span>
         </h2>
-        {data.feedback && <StatusPill tone="zinc">{s.feedback[data.feedback] ?? data.feedback}</StatusPill>}
+        {data.feedback && (
+          <StatusPill tone={FEEDBACK_TONE[data.feedback] ?? 'zinc'}>
+            {s.feedback[data.feedback] ?? data.feedback}
+          </StatusPill>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">

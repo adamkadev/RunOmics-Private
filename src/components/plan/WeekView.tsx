@@ -86,12 +86,7 @@ function PlannedWorkoutRow({
           )}
           style={typeColor ? { background: `${typeColor}1f` } : undefined}
         >
-          <Icon
-            size={19}
-            strokeWidth={2.2}
-            style={typeColor ? { color: typeColor } : undefined}
-            className={!typeColor ? 'text-accent' : undefined}
-          />
+          <Icon size={19} strokeWidth={2.2} className="text-foreground" />
         </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-bold text-foreground">{title}</span>

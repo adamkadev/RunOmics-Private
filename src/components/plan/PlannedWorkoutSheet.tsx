@@ -78,7 +78,7 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
               className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
               style={{ background: typeColor ? withAlpha(typeColor, SHEET.tint.iconWell) : SHEET.iconWell }}
             >
-              <WorkoutIcon size={20} strokeWidth={2.2} style={{ color: typeColor ?? SHEET.iconFallback }} />
+              <WorkoutIcon size={20} strokeWidth={2.2} style={{ color: SHEET.iconFallback }} />
             </span>
             <div className="min-w-0 flex-1">
               <h2 className="text-base font-bold leading-snug text-white">
