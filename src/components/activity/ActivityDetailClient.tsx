@@ -116,7 +116,7 @@ export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, sh
       )}
 
       {tabs.length > 1 && (
-        <div className="sticky top-[max(var(--safe-top),8px)] z-10 -mx-4 mb-3 px-4 pb-1 sm:-mx-6 sm:px-6">
+        <div className="sticky top-[var(--top-scrim)] z-30 -mx-4 mb-3 px-4 pb-1 sm:-mx-6 sm:px-6">
           <GlassSurface
             as="div"
             variant="card"

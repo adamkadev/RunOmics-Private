@@ -276,11 +276,6 @@ export function WeekView({
     [days, statusByDate]
   )
 
-  const planPhase = useMemo(
-    () => weekPlanPhase(days.map((d) => d.date), planPhaseRanges),
-    [days, planPhaseRanges]
-  )
-
   const planned = useMemo(() => {
     const workouts = days.map((d) => byDatePlanned.get(d.date)).filter((p) => p !== undefined)
     return workouts.length ? summarizePlannedWeek(workouts.map((p) => p.type)) : null
@@ -289,6 +284,13 @@ export function WeekView({
   const coachPhaseRanges = useMemo(
     () => (coaching ? macrocyclePhaseRanges(coaching.plan) : []),
     [coaching]
+  )
+
+  // The title used to read Garmin's phase ranges while the track below it read the
+  // coaching plan's, so a known Base week still degraded to the "This week" fallback.
+  const planPhase = useMemo(
+    () => weekPlanPhase(days.map((d) => d.date), coachPhaseRanges.length ? coachPhaseRanges : planPhaseRanges),
+    [days, coachPhaseRanges, planPhaseRanges]
   )
 
   const comingUp = useMemo<PlanWorkoutView[]>(() => {

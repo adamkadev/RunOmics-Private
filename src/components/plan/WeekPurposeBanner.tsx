@@ -114,7 +114,7 @@ export function WeekPurposeBanner({
         </div>
         {targetWeek ? (
           <div className="shrink-0 text-right">
-            <div className="font-display text-subhead font-bold leading-none text-accent-text">
+            <div className="font-display text-subhead font-bold leading-none text-muted-foreground">
               {t.plan.weekPurpose.weekOfTarget(targetWeek.done, targetWeek.total)}
             </div>
           </div>
