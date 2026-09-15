@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import type { CSSProperties } from 'react'
 import Link from 'next/link'
 import { ChevronRight, Check, Footprints, BedDouble, Flag } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -21,6 +22,19 @@ const TONE_HEX: Record<ReadinessTone, string> = READINESS_TONE_COLORS
 const HERO_BASE = HUE.heroBase
 const ACCENT_ON_DARK = 'var(--accent-on-dark)'
 const ICON_WELL = { background: `color-mix(in srgb, ${ACCENT_ON_DARK} 18%, transparent)` }
+const CTA_BASE = 'flex shrink-0 items-center gap-0.5 rounded-[10px] px-3.5 py-2 text-caption font-bold'
+
+// A filled accent-green button inside an amber or red card tells the athlete to go
+// while the verdict above it tells them to hold. Off-green tones get an outline.
+function ctaAppearance(tone: ReadinessTone | null): { className: string; style?: CSSProperties } {
+  if (tone !== 'caution' && tone !== 'hold') return { className: `${CTA_BASE} bg-accent text-accent-foreground` }
+
+  const hex = TONE_HEX[tone]
+  return {
+    className: `${CTA_BASE} border text-white`,
+    style: { borderColor: withAlpha(hex, 0.55), background: withAlpha(hex, 0.12) },
+  }
+}
 
 interface Props {
   status: TrainingStatus | null
@@ -68,6 +82,7 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiV
     : null
   const workoutTitle = plannedWorkout?.title
   const linkedActivityId = plannedWorkout?.activityId ?? todayActivity?.id ?? null
+  const cta = ctaAppearance(tone)
   const completedMeta = todayActivity
     ? [
         `${formatDistance(todayActivity.distanceKm)} ${t.units.km}`,
@@ -124,7 +139,7 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiV
               <div className="mt-0.5 truncate text-caption text-white/55">{completedMeta}</div>
             )}
           </div>
-          <span className="flex shrink-0 items-center gap-0.5 rounded-[10px] bg-accent px-3.5 py-2 text-caption font-bold text-accent-foreground">
+          <span className={cta.className} style={cta.style}>
             {s.viewCta}
             <ChevronRight size={13} strokeWidth={2.5} />
           </span>
@@ -142,7 +157,7 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiV
             <div className="truncate text-sm font-semibold">{workoutTitle}</div>
             {plannedWorkoutMeta && <div className="mt-0.5 truncate text-caption text-white/55">{plannedWorkoutMeta}</div>}
           </div>
-          <span className="flex shrink-0 items-center gap-0.5 rounded-[10px] bg-accent px-3.5 py-2 text-caption font-bold text-accent-foreground">
+          <span className={cta.className} style={cta.style}>
             {s.sessionCta}
             <ChevronRight size={13} strokeWidth={2.5} />
           </span>
@@ -157,6 +172,10 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiV
             <div className="mt-0.5 truncate text-caption text-white/55">{s.restDaySubtitle}</div>
           </div>
         </div>
+      )}
+
+      {tone === 'hold' && plannedWorkout && !linkedActivityId && (
+        <div className="mt-2 text-caption text-white/55">{s.holdNote}</div>
       )}
 
       {sheetOpen && plannedWorkout && (

@@ -23,7 +23,6 @@ import { FormFitnessFatigueTrio } from '@/components/dashboard/FormFitnessFatigu
 import { TrainingStatusDaysBar } from '@/components/dashboard/TrainingStatusDaysBar'
 import { WeeklyStreakCard } from '@/components/dashboard/WeeklyStreakCard'
 import { CelebrationOverlay } from '@/components/dashboard/CelebrationOverlay'
-import { FirstLaunchHint } from '@/components/dashboard/FirstLaunchHint'
 import { t } from '@/i18n'
 
 export const revalidate = 3600
@@ -60,10 +59,7 @@ export default async function DashboardPage() {
     <div className="space-y-3.5">
       <CelebrationOverlay record={mostRecentRecord} aiTake={celebrationTake} />
 
-      <div className="space-y-3">
-        <FirstLaunchHint />
-        <DashboardGreeting name={athlete.displayName} lastSyncedAt={lastSyncedAt} />
-      </div>
+      <DashboardGreeting name={athlete.displayName} lastSyncedAt={lastSyncedAt} />
 
       <TodayHero
         status={trainingStatus}

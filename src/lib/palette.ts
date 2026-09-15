@@ -127,7 +127,7 @@ export const HUE = {
   roInkInv:   '#eef2f0',
   roInkInv2:  '#a8b4ae',
   roInkInv3:  '#8a978f',
-  roInkInv4:  '#6b7a74',
+  roInkInv4:  '#6f7f79',
   roSteel:    '#b0bec5',
 
   natureBg:          '#eef3f0',

@@ -14,7 +14,7 @@ export const ROUTES: RouteSpec[] = [
   { path: '/', name: 'dashboard' },
   { path: '/activities', name: 'activities' },
   { path: `/activities/${SAMPLE_ACTIVITY_ID}`, name: 'activity-detail' },
-  { path: '/calendar', name: 'calendar', hasTabs: true },
+  { path: '/plan', name: 'plan', hasTabs: true },
   { path: '/analytics', name: 'analytics', hasTabs: true },
   { path: '/map', name: 'map' },
   { path: '/goals', name: 'goals' },

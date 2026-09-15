@@ -141,6 +141,8 @@
   --muted-foreground:    #64748b;
   --subtle:              #94a3b8;
   --subtle-2:            #b0bec5;
+  --delta-good:          #059669;
+  --delta-warn:          #c2410c;
   --accent:              #0e9f6e;
   --accent-hover:        #14b886;
   --accent-dark:         #0b8a5f;
@@ -193,7 +195,9 @@
   --foreground:          #eef2f0;
   --muted-foreground:    #a8b4ae;
   --subtle:              #8a978f;
-  --subtle-2:            #6b7a74;
+  --subtle-2:            #6f7f79;
+  --delta-good:          #34d399;
+  --delta-warn:          #fb923c;
   --accent:              #1ed787;
   --accent-hover:        #4fe6a0;
   --accent-dark:         #0b9c63;

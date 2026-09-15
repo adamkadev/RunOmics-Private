@@ -12,6 +12,7 @@ import { GlassSurface } from '@/components/ui/GlassSurface'
 import { Pill } from '@/components/ui/Pill'
 import { SortDropdown } from '@/components/ui/SortDropdown'
 import { easyHardShare } from '@/domain/training/easyHard'
+import { CHART_COLORS } from '@/lib/colors'
 import { weekRangeLabel } from '@/lib/formatters'
 import { isoDate, addDays, startOfWeek } from '@/lib/calendarDate'
 import { cn } from '@/lib/utils'
@@ -38,6 +39,7 @@ interface WeekGroup {
   totalKm: number
   easyPct: number | null
   hardPct: number | null
+  isRelativeLabel: boolean
 }
 
 function WeekStat({ value, label }: { value: string; label: string }) {
@@ -45,6 +47,20 @@ function WeekStat({ value, label }: { value: string; label: string }) {
     <div className="text-center">
       <div className="text-sm font-bold tabular-nums text-foreground">{value}</div>
       <div className="text-micro uppercase tracking-wide text-subtle">{label}</div>
+    </div>
+  )
+}
+
+// A ratio in a slot shaped like "37 KM" reads as a quantity. The shape of the
+// week is the point here, so show it as a shape.
+function EasyHardSplit({ easyPct, hardPct }: { easyPct: number; hardPct: number }) {
+  return (
+    <div className="w-[56px]">
+      <div className="flex h-1.5 overflow-hidden rounded-full" style={{ background: 'var(--track)' }}>
+        <div style={{ width: `${easyPct}%`, background: CHART_COLORS.easy }} />
+        <div style={{ width: `${hardPct}%`, background: CHART_COLORS.hard }} />
+      </div>
+      <div className="mt-1 text-micro tabular-nums text-subtle">{t.activities.easyShare(easyPct)}</div>
     </div>
   )
 }
@@ -62,21 +78,24 @@ function groupByWeek(items: ActivitySummary[]): WeekGroup[] {
   }
 
   const currentWeekStart = isoDate(startOfWeek(new Date()))
+  const lastWeekStart = isoDate(addDays(new Date(currentWeekStart + 'T00:00:00'), -7))
 
   return weeks.map(({ key, items: weekItems }) => {
     const totalKm = weekItems.reduce((s, a) => s + a.distanceKm, 0)
     const { hardPct } = easyHardShare(weekItems)
     const hard = hardPct === null ? null : Math.round(hardPct)
     const range = weekRangeLabel(key, isoDate(addDays(new Date(key + 'T00:00:00'), 6)))
-    const label = key === currentWeekStart ? t.activities.thisWeek : range
+    const relativeLabel =
+      key === currentWeekStart ? t.activities.thisWeek : key === lastWeekStart ? t.activities.lastWeek : null
     return {
       key,
-      label,
+      label: relativeLabel ?? range,
       range,
       items: weekItems,
       totalKm,
       easyPct: hard === null ? null : 100 - hard,
       hardPct: hard,
+      isRelativeLabel: relativeLabel !== null,
     }
   })
 }
@@ -355,12 +374,14 @@ export function ActivityListClient({
                   >
                     <div className="min-w-0">
                       <div className="text-sm font-bold text-foreground">{g.label}</div>
-                      <div className="text-micro text-subtle">{g.range}</div>
+                      {g.isRelativeLabel && <div className="text-micro text-subtle">{g.range}</div>}
                     </div>
                     <div className="flex shrink-0 items-end gap-4 text-right">
                       <WeekStat value={String(Math.round(g.totalKm))} label={t.activities.weekStat.km} />
                       <WeekStat value={String(g.items.length)} label={t.activities.weekStat.runs} />
-                      <WeekStat value={g.easyPct !== null ? `${g.easyPct}/${g.hardPct}` : '–'} label={t.activities.weekStat.easyHard} />
+                      {g.easyPct !== null && g.hardPct !== null && (
+                        <EasyHardSplit easyPct={g.easyPct} hardPct={g.hardPct} />
+                      )}
                     </div>
                   </div>
                 ) : (

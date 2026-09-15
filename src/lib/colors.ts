@@ -77,6 +77,22 @@ export const ZONE_HEADLINE_COLORS: Record<2 | 4 | 5, string> = {
   5: c.red500,
 }
 
+// A rising metric is not automatically good news: fatigue climbing is a warning,
+// fitness climbing is not. Each tile says which direction it wants.
+export const METRIC_DELTA_COLORS = {
+  good: 'var(--delta-good)',
+  warn: 'var(--delta-warn)',
+  flat: 'var(--subtle)',
+} as const
+
+export type MetricDeltaPolarity = 'up' | 'down'
+
+export function metricDeltaColor(delta: number, goodWhen: MetricDeltaPolarity, threshold: number): string {
+  if (Math.abs(delta) <= threshold) return METRIC_DELTA_COLORS.flat
+  const rising = delta > 0
+  return rising === (goodWhen === 'up') ? METRIC_DELTA_COLORS.good : METRIC_DELTA_COLORS.warn
+}
+
 export const READINESS_TONE_COLORS = {
   go:      c.roEmerald,
   caution: c.roAmber,

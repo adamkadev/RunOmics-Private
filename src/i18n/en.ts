@@ -341,6 +341,7 @@ export const en = {
       },
       sessionCta: 'Start',
       viewCta: 'View',
+      holdNote: "Still on the plan - today it's your call.",
       restDay: 'Rest day',
       restDaySubtitle: 'No session scheduled',
       race: 'Race',
@@ -361,9 +362,6 @@ export const en = {
       eyebrow: 'New personal record',
       later: 'Later',
       viewAndShare: 'View & share',
-    },
-    onboarding: {
-      message: "Today's decision lives in the card above - your readiness verdict and the one session to run next.",
     },
   },
 
@@ -651,11 +649,12 @@ export const en = {
     resetFilters: 'Reset filters',
     endOfList: 'That\'s all',
     thisWeek: 'This week',
+    lastWeek: 'Last week',
     weekStat: {
       km: 'km',
       runs: 'runs',
-      easyHard: 'E/H',
     },
+    easyShare: (pct: number) => `${pct}% easy`,
     weekGroupCompact: (runs: number, km: number) => `${runs} run${runs !== 1 ? 's' : ''} · ${km} km`,
     sort: {
       label: 'Sort',

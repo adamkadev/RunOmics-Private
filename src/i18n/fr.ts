@@ -333,6 +333,7 @@ export const fr = {
       },
       sessionCta: 'Démarrer',
       viewCta: 'Voir',
+      holdNote: 'Toujours au programme - aujourd’hui, c’est toi qui décides.',
       restDay: 'Jour de repos',
       restDaySubtitle: 'Aucune séance prévue',
       race: 'Course',
@@ -353,9 +354,6 @@ export const fr = {
       eyebrow: 'Nouveau record personnel',
       later: 'Plus tard',
       viewAndShare: 'Voir et partager',
-    },
-    onboarding: {
-      message: 'La décision du jour est dans la carte ci-dessus - ton verdict de forme et la séance à courir ensuite.',
     },
   },
 
@@ -643,11 +641,12 @@ export const fr = {
     resetFilters: 'Réinitialiser les filtres',
     endOfList: 'C’est tout',
     thisWeek: 'Cette semaine',
+    lastWeek: 'Semaine dernière',
     weekStat: {
       km: 'km',
       runs: 'sorties',
-      easyHard: 'F/D',
     },
+    easyShare: (pct: number) => `${pct} % facile`,
     weekGroupCompact: (runs: number, km: number) => `${runs} sortie${runs > 1 ? 's' : ''} · ${km} km`,
     sort: {
       label: 'Trier',
