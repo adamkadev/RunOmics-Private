@@ -44,6 +44,28 @@ export function formatPace(secPerKm: number): string {
   return `${formatClock(secPerKm)} /km`
 }
 
+export const MINUS = '−'
+
+/**
+ * The one shape every delta in the app takes: sign, value, unit. A real minus
+ * rather than a hyphen, because a hyphen at 10px next to a digit reads as part
+ * of the number.
+ */
+export function formatDelta(value: number, unit?: string): string {
+  const rounded = Math.round(value * 100) / 100
+  const sign = rounded > 0 ? '+' : rounded < 0 ? MINUS : ''
+  const body = `${sign}${Math.abs(rounded)}`
+  return unit ? `${body} ${unit}` : body
+}
+
+/** A signed time delta, in m:ss or h:mm:ss - never a bare count of seconds. */
+export function formatSignedDuration(seconds: number, unit?: string): string {
+  const rounded = Math.round(seconds)
+  const sign = rounded > 0 ? '+' : rounded < 0 ? MINUS : ''
+  const body = `${sign}${formatDuration(Math.abs(rounded))}`
+  return unit ? `${body} ${unit}` : body
+}
+
 export function formatPaceRange([fast, slow]: [number, number]): string {
   return `${formatClock(fast)}-${formatClock(slow)} /km`
 }

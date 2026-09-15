@@ -8,7 +8,7 @@ import { ChartExplain } from '@/components/ui/ChartExplain'
 import { SparseSeries, sparseRow, type SparseRow } from '@/components/ui/SparseSeries'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { WindowedChartCard, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
-import { formatClock } from '@/lib/formatters'
+import { formatClock, formatDelta } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 const HR_COLOR = CHART_COLORS.hr
@@ -89,9 +89,7 @@ export function ThresholdChart({ data }: { data: ThresholdHistoryData }) {
             ? null
             : Math.abs(gain) < 1
               ? s.reading.flat
-              : gain > 0
-                ? s.reading.faster(Math.round(gain))
-                : s.reading.slower(Math.round(-gain))
+              : s.reading.change(formatDelta(-Math.round(gain), `s/${t.units.km}`))
         const summary = explain ? `${s.title}: ${explain}` : s.title
 
         return (

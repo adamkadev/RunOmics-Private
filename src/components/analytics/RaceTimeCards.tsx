@@ -4,7 +4,8 @@ import { TrendingDown, TrendingUp, Minus } from 'lucide-react'
 import type { GarminRacePredictionsData } from '@/application/usecases/GetGarminRacePredictions'
 import type { RaceDistanceKey } from '@/domain/race/distances'
 import { paceTrend } from '@/domain/race/predictionWindow'
-import { formatDurationShort } from '@/lib/formatters'
+import { formatDurationShort, formatSignedDuration } from '@/lib/formatters'
+import { metricDeltaColor } from '@/lib/colors'
 import { t } from '@/i18n'
 
 const ORDER: RaceDistanceKey[] = ['5k', '10k', 'half', 'marathon']
@@ -31,12 +32,20 @@ export function RaceTimeCards({ data }: { data: GarminRacePredictionsData }) {
                 {formatDurationShort(seconds)}
               </div>
               <div className="mt-[3px] flex justify-center">
-                {trend && trend.improvementSec > 0 ? (
-                  <TrendingDown size={14} strokeWidth={3} className="text-accent" />
-                ) : trend && trend.improvementSec < 0 ? (
-                  <TrendingUp size={14} strokeWidth={3} className="text-amber-500" />
+                {trend && trend.improvementSec !== 0 ? (
+                  <span
+                    className="flex items-center gap-0.5 text-caption font-semibold tabular-nums"
+                    style={{ color: metricDeltaColor(-trend.improvementSec, 'down', 0) }}
+                  >
+                    {trend.improvementSec > 0 ? (
+                      <TrendingDown size={11} strokeWidth={3} />
+                    ) : (
+                      <TrendingUp size={11} strokeWidth={3} />
+                    )}
+                    {formatSignedDuration(-trend.improvementSec)}
+                  </span>
                 ) : (
-                  <Minus size={14} strokeWidth={3} className="text-subtle-2" />
+                  <Minus size={14} strokeWidth={3} className="text-subtle" />
                 )}
               </div>
             </div>

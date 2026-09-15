@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { LoadRiskPanel as LoadRiskPanelData, RiskZone } from '@/application/usecases/GetLoadRiskPanel'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { StatusPill, type StatusTone } from '@/components/ui/StatusPill'
+import { formatDelta } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { cn } from '@/lib/utils'
 
@@ -229,7 +230,7 @@ export function LoadRiskPanel({ data }: { data: LoadRiskPanelData }) {
         />
         <Row
           label={s.rampRate.label}
-          value={data.rampRate !== null ? `${data.rampRate >= 0 ? '+' : ''}${data.rampRate}` : '–'}
+          value={data.rampRate !== null ? formatDelta(data.rampRate) : '–'}
           description={s.rampRate.description}
           zone={data.rampRateZone}
           scale={RAMP_SCALE}

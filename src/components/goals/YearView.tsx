@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { Trophy, ArrowRight, Calendar } from 'lucide-react'
 import type { YearData, GoalProjection } from '@/application/usecases/GetGoalsData'
-import { formatDuration, formatDate, formatPace } from '@/lib/formatters'
+import { formatDuration, formatDate, formatDelta, formatPace } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { MonthlyVolumeChart } from './MonthlyVolumeChart'
@@ -60,7 +60,8 @@ export function YearView({ yearData }: Props) {
               {projection && (
                 <span className={cn('shrink-0 text-xs font-semibold', PROJECTION_STATUS_CLASS[projection.status])}>
                   {t.goals.projection.status[projection.status]}
-                  {projection.deltaKm !== 0 && ` ${projection.status === 'ahead' ? '+' : '-'}${Math.abs(projection.deltaKm)} km`}
+                  {projection.deltaKm !== 0 &&
+                    ` ${formatDelta(projection.status === 'ahead' ? Math.abs(projection.deltaKm) : -Math.abs(projection.deltaKm), t.units.km)}`}
                 </span>
               )}
             </div>

@@ -2,6 +2,7 @@ import type { TrainingLoadData } from '@/application/usecases/GetTrainingLoad'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { CHART_COLORS, metricDeltaColor, type MetricDeltaPolarity } from '@/lib/colors'
+import { formatDelta } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 const FORM_VALUE = 'var(--accent-text)'
@@ -75,11 +76,10 @@ function Sparkline({ values, color }: { values: number[]; color: string }) {
   )
 }
 
+// The value stays honest at every size; TREND_THRESHOLD gates the colour, not
+// the number, so a delta of 1 reads as +1 in the flat tone rather than as ~0.
 function trendLabel(delta: number): string {
-  const s = t.dashboard.trainingLoad
-  if (delta > TREND_THRESHOLD) return s.trendUp(Math.round(delta))
-  if (delta < -TREND_THRESHOLD) return s.trendDown(Math.round(delta))
-  return s.trendSteady
+  return formatDelta(Math.round(delta))
 }
 
 function Tile({

@@ -304,9 +304,6 @@ export const en = {
       },
       footnote:
         'Fitness = 42-day load average (CTL) · Fatigue = 7-day (ATL) · Form = Fitness - Fatigue (TSB).',
-      trendUp: (delta: number) => `+${delta}`,
-      trendDown: (delta: number) => `${delta}`,
-      trendSteady: '~0',
     },
     trainingStatusDays: {
       title: 'Training Status',
@@ -407,8 +404,6 @@ export const en = {
       holding: 'holding',
       excellent: 'excellent',
       topPercent: (p: number) => `top ${p}%`,
-      faster: (s: number) => `↓ ${s} s`,
-      slower: (s: number) => `↑ ${s} s`,
     },
     raceTimes: {
       title: 'Performance',
@@ -446,9 +441,9 @@ export const en = {
         workout: 'Workout',
         footnote: 'Distance-weighted average pace. Lower is faster.',
         explains: {
-          improving: (sec: number) => `Easy pace improving - ${sec}s/km faster than earlier in the period`,
+          improving: (delta: string) => `Easy pace improving - ${delta} vs earlier in the period`,
           stable: 'Easy pace stable throughout the period',
-          slowing: (sec: number) => `Easy pace slowing by ${sec}s/km - may reflect fatigue or high volume`,
+          slowing: (delta: string) => `Easy pace slowing ${delta} - may reflect fatigue or high volume`,
         },
       },
       efficiency: {
@@ -581,8 +576,7 @@ export const en = {
         lthr: 'Threshold HR',
         footnote: 'The effort you can hold before lactate builds up, as the watch measures it. Garmin revises it every few weeks, so the line steps rather than drifts.',
         reading: {
-          faster: (sec: number) => `Threshold pace is ${sec}s/km faster than the first reading.`,
-          slower: (sec: number) => `Threshold pace is ${sec}s/km slower than the first reading.`,
+          change: (delta: string) => `Threshold pace is ${delta} since the first reading in this window.`,
           flat: 'Threshold pace is unchanged since the first reading.',
         },
       },

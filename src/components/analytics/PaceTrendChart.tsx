@@ -8,7 +8,7 @@ import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { ChartExplain } from '@/components/ui/ChartExplain'
 import { WindowedChartCard, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
 import { trendFromSeries } from '@/lib/chartTrend'
-import { formatClock } from '@/lib/formatters'
+import { formatClock, formatDelta } from '@/lib/formatters'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { t } from '@/i18n'
 
@@ -72,9 +72,9 @@ export function PaceTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
         const trend = trendFromSeries(visible.map((d) => d.easyPace), 8)
         const explain = trend
           ? trend.direction === 'down'
-            ? ex.improving(Math.abs(Math.round(trend.delta)))
+            ? ex.improving(formatDelta(Math.round(trend.delta), `s/${t.units.km}`))
             : trend.direction === 'up'
-              ? ex.slowing(Math.round(trend.delta))
+              ? ex.slowing(formatDelta(Math.round(trend.delta), `s/${t.units.km}`))
               : ex.stable
           : null
         const summary = `${t.analytics.charts.paceTrend.title}${explain ? `: ${explain}` : ''}`

@@ -296,9 +296,6 @@ export const fr = {
       },
       footnote:
         'Condition = charge moyenne sur 42 j (CTL) · Fatigue = 7 j (ATL) · Forme = Condition - Fatigue (TSB).',
-      trendUp: (delta: number) => `+${delta}`,
-      trendDown: (delta: number) => `${delta}`,
-      trendSteady: '~0',
     },
     trainingStatusDays: {
       title: 'Statut d’entraînement',
@@ -399,8 +396,6 @@ export const fr = {
       holding: 'stable',
       excellent: 'excellent',
       topPercent: (p: number) => `top ${p}%`,
-      faster: (s: number) => `↓ ${s} s`,
-      slower: (s: number) => `↑ ${s} s`,
     },
     raceTimes: {
       title: 'Performance',
@@ -438,9 +433,9 @@ export const fr = {
         workout: 'Qualité',
         footnote: 'Allure moyenne pondérée par la distance. Plus bas = plus rapide.',
         explains: {
-          improving: (sec: number) => `Allure facile en progrès - ${sec}s/km plus rapide qu’en début de période`,
+          improving: (delta: string) => `Allure facile en progrès - ${delta} par rapport au début de période`,
           stable: 'Allure facile stable sur la période',
-          slowing: (sec: number) => `Allure facile en recul de ${sec}s/km - possible fatigue ou gros volume`,
+          slowing: (delta: string) => `Allure facile en recul de ${delta} - possible fatigue ou gros volume`,
         },
       },
       efficiency: {
@@ -573,8 +568,7 @@ export const fr = {
         lthr: 'FC au seuil',
         footnote: 'L’effort tenable avant l’accumulation de lactate, tel que mesuré par la montre. Garmin le révise toutes les quelques semaines : la courbe avance par paliers.',
         reading: {
-          faster: (sec: number) => `L’allure au seuil a gagné ${sec}s/km depuis le premier relevé.`,
-          slower: (sec: number) => `L’allure au seuil a perdu ${sec}s/km depuis le premier relevé.`,
+          change: (delta: string) => `L’allure au seuil a évolué de ${delta} depuis le premier relevé de cette période.`,
           flat: 'L’allure au seuil est stable depuis le premier relevé.',
         },
       },

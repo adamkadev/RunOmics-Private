@@ -3,6 +3,7 @@
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import type { YearComparisonData } from '@/application/usecases/GetYearComparison'
 import { formatDuration, formatPace } from '@/lib/formatters'
+import { METRIC_DELTA_COLORS } from '@/lib/colors'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
@@ -23,9 +24,8 @@ function DeltaBadge({ pct, lowerIsBetter = false }: { pct: number; lowerIsBetter
 
   return (
     <span
-      className={`inline-flex items-center gap-0.5 text-xs font-medium ${
-        improved ? 'text-emerald-500 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'
-      }`}
+      className="inline-flex items-center gap-0.5 text-xs font-medium"
+      style={{ color: improved ? METRIC_DELTA_COLORS.good : METRIC_DELTA_COLORS.warn }}
     >
       {improved ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
       {Math.abs(pct)}%
