@@ -13,7 +13,7 @@ function week(overrides: Partial<CurrentWeekPurpose> = {}): CurrentWeekPurpose {
   return {
     weekStart: '2026-07-20',
     planPhase: 'build',
-    planned: { total: 5, key: 2 },
+    planned: { total: 5, key: 2, estimatedLoad: 320 },
     adherence: { planned: 5, done: 3, percent: 60 },
     comparison: { percent: 112, level: 'normal' },
     distanceKm: 42.5,

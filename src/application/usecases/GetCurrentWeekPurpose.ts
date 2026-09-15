@@ -80,7 +80,7 @@ export async function getCurrentWeekPurpose(now = new Date()): Promise<CurrentWe
   return {
     weekStart: days[0]!,
     planPhase: weekPlanPhase(days, getTrainingPlan()?.ranges ?? []),
-    planned: weekPlanned.length ? summarizePlannedWeek(weekPlanned.map((workout) => workout.type)) : null,
+    planned: weekPlanned.length ? summarizePlannedWeek(weekPlanned) : null,
     adherence: computeWeekAdherence(
       days.map((date) => ({
         date,

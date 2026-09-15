@@ -1,4 +1,4 @@
-import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
+import type { ActivitySummary, ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import { trimp, type HrBounds } from './trimp'
 import { easyHardShare } from './easyHard'
 
@@ -48,11 +48,14 @@ export function compareWeekLoad(currentTrimp: number, priorWeeksTrimp: number[])
 export interface PlannedWeek {
   total: number
   key: number
+  /** Sum of per-workout TRIMP estimates - the same scale summarizeWeek reports. */
+  estimatedLoad: number
 }
 
-export function summarizePlannedWeek(plannedTypes: (string | null | undefined)[]): PlannedWeek {
-  const key = plannedTypes.filter((type) => !!type && !EASY_TYPES.includes(type as ActivityType)).length
-  return { total: plannedTypes.length, key }
+export function summarizePlannedWeek(planned: PlannedWorkout[]): PlannedWeek {
+  const key = planned.filter((w) => !!w.type && !EASY_TYPES.includes(w.type)).length
+  const estimatedLoad = Math.round(planned.reduce((sum, w) => sum + (w.estimatedLoad ?? 0), 0))
+  return { total: planned.length, key, estimatedLoad }
 }
 
 export interface WeekAdherence {

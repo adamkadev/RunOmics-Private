@@ -13,6 +13,7 @@ import {
   computeWeekAdherence,
   summarizePlannedWeek,
 } from '@/domain/training/weekSummary'
+import type { PlannedWeek, WeekSummary } from '@/domain/training/weekSummary'
 import { weekTrainingStatus } from '@/domain/training/weekStatus'
 import { weekPlanPhase } from '@/domain/training/weekPlanPhase'
 import type { TrainingStatusCalendar } from '@/application/usecases/GetTrainingStatusCalendar'
@@ -154,6 +155,46 @@ function SummaryStat({ label, value }: { label: string; value: React.ReactNode }
   )
 }
 
+// Mid-week the three tiles read "–", 0 and 0 m - an empty state shaped like a
+// failure state, sitting directly above the one thing the screen is for. Load is
+// the only one of the three with a planned counterpart in the domain, so it gets
+// the comparison and the other two collapse to a single line.
+function WeekLoadSummary({ summary, planned }: { summary: WeekSummary; planned: PlannedWeek | null }) {
+  const s = t.plan.weekSummary
+  const target = planned?.estimatedLoad ?? 0
+  const pct = target > 0 ? Math.min(100, Math.round((summary.totalTrimp / target) * 100)) : null
+
+  return (
+    <GlassSurface variant="card" className="rounded-[14px] px-3.5 py-3">
+      <div className="flex items-baseline justify-between gap-2">
+        <SectionDivider>{s.load}</SectionDivider>
+        <div className="font-display text-lg font-bold tabular-nums text-foreground">
+          <AnimatedValue value={summary.totalTrimp} />
+          {target > 0 && <span className="text-muted-foreground"> / {target}</span>}
+        </div>
+      </div>
+
+      {pct !== null && (
+        <div className="mt-2 h-[3px] overflow-hidden rounded-full" style={{ background: 'var(--track)' }}>
+          <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${pct}%` }} />
+        </div>
+      )}
+
+      <div className="mt-2 flex flex-wrap gap-x-3 text-footnote tabular-nums text-muted-foreground">
+        <span>
+          <span>{s.climb}</span> {summary.elevationGainM} {t.units.m}
+        </span>
+        <span>
+          <span>{s.easyHard}</span>{' '}
+          {summary.hardPct !== null
+            ? `${100 - Math.round(summary.hardPct)}/${Math.round(summary.hardPct)}`
+            : '–'}
+        </span>
+      </div>
+    </GlassSurface>
+  )
+}
+
 interface Props {
   weekStart: Date
   activities: ActivitySummary[]
@@ -273,7 +314,7 @@ export function WeekView({
 
   const planned = useMemo(() => {
     const workouts = days.map((d) => byDatePlanned.get(d.date)).filter((p) => p !== undefined)
-    return workouts.length ? summarizePlannedWeek(workouts.map((p) => p.type)) : null
+    return workouts.length ? summarizePlannedWeek(workouts) : null
   }, [days, byDatePlanned])
 
   const coachPhaseRanges = useMemo(
@@ -423,30 +464,7 @@ export function WeekView({
           </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
-        <SummaryStat
-          label={t.plan.weekSummary.easyHard}
-          value={
-            summary.hardPct !== null ? (
-              <>
-                <AnimatedValue value={100 - Math.round(summary.hardPct)} />/
-                <AnimatedValue value={Math.round(summary.hardPct)} />
-              </>
-            ) : (
-              '–'
-            )
-          }
-        />
-        <SummaryStat label={t.plan.weekSummary.load} value={<AnimatedValue value={summary.totalTrimp} />} />
-        <SummaryStat
-          label={t.plan.weekSummary.climb}
-          value={
-            <>
-              <AnimatedValue value={summary.elevationGainM} /> {t.units.m}
-            </>
-          }
-        />
-      </div>
+      <WeekLoadSummary summary={summary} planned={planned} />
 
       <div className="space-y-3 px-1">
         <p className="text-xs font-bold uppercase tracking-wide text-accent-text">

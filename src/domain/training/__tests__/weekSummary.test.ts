@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { summarizeWeek, weeklyTrimpTotals, classifyWeekLoadLevel, compareWeekLoad, computeWeekAdherence, summarizePlannedWeek } from '../weekSummary'
+import type { ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import type { Activity } from '@/domain/activity/types'
 
 const HR_BOUNDS = { maxHr: 190, restingHr: 50 }
@@ -89,11 +90,24 @@ describe('computeWeekAdherence', () => {
 })
 
 describe('summarizePlannedWeek', () => {
+  const planned = (type: ActivityType | undefined, estimatedLoad?: number): PlannedWorkout =>
+    ({ date: '2026-01-01', name: 'w', type, estimatedLoad }) as PlannedWorkout
+
   it('counts every planned session, and the non-easy ones as key', () => {
-    expect(summarizePlannedWeek(['Base', 'VO2Max', 'Threshold', 'Base'])).toEqual({ total: 4, key: 2 })
+    expect(summarizePlannedWeek([planned('Base'), planned('VO2Max'), planned('Threshold'), planned('Base')]))
+      .toEqual({ total: 4, key: 2, estimatedLoad: 0 })
   })
 
   it('counts an untyped planned session in the total but never as key', () => {
-    expect(summarizePlannedWeek(['Base', null, undefined])).toEqual({ total: 3, key: 0 })
+    expect(summarizePlannedWeek([planned('Base'), planned(undefined), planned(undefined)]))
+      .toEqual({ total: 3, key: 0, estimatedLoad: 0 })
+  })
+
+  it('totals the per-workout load estimates, which are already in the TRIMP scale', () => {
+    expect(summarizePlannedWeek([planned('Base', 60), planned('Threshold', 95)]).estimatedLoad).toBe(155)
+  })
+
+  it('treats a workout with no estimate as contributing nothing, not as NaN', () => {
+    expect(summarizePlannedWeek([planned('Base', 60), planned('Base')]).estimatedLoad).toBe(60)
   })
 })
