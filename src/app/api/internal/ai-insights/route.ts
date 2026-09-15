@@ -86,11 +86,14 @@ import {
 import {
   getCachedInsight,
   listCachedHashes,
+  readVerdictPhrasing,
   saveCachedInsight,
+  saveVerdictPhrasing,
+  type VerdictPhrasing,
 } from '@/infrastructure/repositories/FirestoreInsightsRepository'
 import { BACKFILL_POOL, MODEL_POOL, dailyBudget, spendField } from '@/domain/ai/budget'
 import { openSpender, type Spender } from '@/lib/aiSpend'
-import { generateInsight, type Insight } from '@/lib/gemini'
+import { generateInsight, type Insight, type InsightRequest } from '@/lib/gemini'
 
 export const maxDuration = 300
 
@@ -98,6 +101,8 @@ const DEFAULT_RUN_VERDICTS_PER_RUN = 24
 const MAX_RUN_VERDICTS_PER_RUN = 60
 
 const FRESH_RUN_VERDICTS_PER_RUN = 3
+
+const MAX_ATTEMPTS_PER_SURFACE = 3
 
 interface SurfaceJob {
   surface: string
@@ -119,32 +124,62 @@ function isModelClosed(reason: string): boolean {
   return reason.startsWith('http 429') || reason.startsWith('http 404')
 }
 
+function isTransient(reason: string): boolean {
+  return reason.startsWith('http 500') || reason.startsWith('http 503')
+}
+
+export function shouldTryAnotherModel(reason: string): boolean {
+  return isModelClosed(reason) || isTransient(reason)
+}
+
 function noReserveReason(spender: Spender, pool: string[]): string {
   const spent = spender.report()
   const budgetSpent = pool.every((model) => (spent[spendField(model)] ?? 0) >= dailyBudget(model))
   return budgetSpent ? 'no budget left' : 'no time left in this invocation'
 }
 
+type PoolAttempt =
+  | { ok: true; model: string; insight: Insight }
+  | { ok: false; reason: string; reserved: boolean }
+
+async function generateFromPool(
+  spender: Spender,
+  pool: string[],
+  request: Omit<InsightRequest, 'model'>
+): Promise<PoolAttempt> {
+  const attempts: string[] = []
+
+  for (let attempt = 0; attempt < MAX_ATTEMPTS_PER_SURFACE; attempt += 1) {
+    const model = await spender.reserve(pool)
+    if (!model) {
+      attempts.push(noReserveReason(spender, pool))
+      return { ok: false, reason: attempts.join(' | '), reserved: false }
+    }
+
+    const result = await generateInsight({ ...request, model })
+    if (result.ok) return { ok: true, model, insight: result.insight }
+
+    attempts.push(`${model}: ${result.reason}`)
+    if (isModelClosed(result.reason)) spender.exhaust(model)
+    if (!shouldTryAnotherModel(result.reason)) break
+  }
+
+  return { ok: false, reason: attempts.join(' | '), reserved: true }
+}
+
 async function runSurface(spender: Spender, job: SurfaceJob): Promise<SurfaceOutcome> {
   const cached = await getCachedInsight(job.surface)
   if (cached?.hash === job.hash) return { generated: false, reason: 'unchanged' }
 
-  const model = await spender.reserve(MODEL_POOL)
-  if (!model) return { generated: false, reason: noReserveReason(spender, MODEL_POOL) }
-
-  const result = await generateInsight({
-    model,
+  const attempt = await generateFromPool(spender, MODEL_POOL, {
     systemInstruction: job.systemInstruction,
     prompt: job.prompt(cached?.recentHeadlines ?? []),
     limits: job.limits,
-    bulletCount: job.bulletCount,
+    ...(job.bulletCount === undefined ? {} : { bulletCount: job.bulletCount }),
   })
-  if (!result.ok) {
-    if (isModelClosed(result.reason)) spender.exhaust(model)
-    return { generated: false, reason: `${model}: ${result.reason}` }
-  }
+  if (!attempt.ok) return { generated: false, reason: attempt.reason }
 
-  await saveCachedInsight(job.surface, result.insight, job.hash, cached, job.guard)
+  await saveCachedInsight(job.surface, attempt.insight, job.hash, cached, job.guard)
   job.paths.forEach((path) => revalidatePath(path))
   return { generated: true }
 }
@@ -158,30 +193,45 @@ export async function POST(req: NextRequest) {
     const spender = await openSpender()
     const limit = requestedLimit(req)
     const queue = await runVerdictQueue(ignoresHorizon(req))
+    const phrasing = await readVerdictPhrasing()
 
     const written: Insight[] = []
 
     const fresh = limit === 0 ? [] : queue.fresh.slice(0, FRESH_RUN_VERDICTS_PER_RUN)
 
+    const freshVerdicts = await writeVerdicts(spender, fresh, written, phrasing, MODEL_POOL)
+    const today = await generateToday(spender)
+    const weekPurpose = await generateWeekPurpose(spender)
+    const season = await generateSeason(spender)
+    const analyticsTabs = await generateAnalyticsTabs(spender)
+    const pbCelebration = await generatePbCelebration(spender)
+    const shoeVerdicts = await generateShoeVerdicts(spender)
+    const backfill = await writeVerdicts(
+      spender,
+      [...queue.fresh.slice(fresh.length), ...queue.rest].slice(0, limit),
+      written,
+      phrasing,
+      BACKFILL_POOL
+    )
+
+    if (written.length) {
+      await saveVerdictPhrasing([...written, ...phrasing].map(({ headline, body }) => ({ headline, body })))
+    }
+
     return NextResponse.json({
-      freshVerdicts: await writeVerdicts(spender, fresh, written, MODEL_POOL),
-      today: await generateToday(spender),
-      weekPurpose: await generateWeekPurpose(spender),
-      season: await generateSeason(spender),
-      analyticsTabs: await generateAnalyticsTabs(spender),
-      pbCelebration: await generatePbCelebration(spender),
-      shoeVerdicts: await generateShoeVerdicts(spender),
+      freshVerdicts,
+      today,
+      weekPurpose,
+      season,
+      analyticsTabs,
+      pbCelebration,
+      shoeVerdicts,
       runVerdicts: {
         outstanding: queue.outstanding,
         eligible: queue.eligible,
         fresh: queue.fresh.length,
         rest: queue.rest.length,
-        ...(await writeVerdicts(
-          spender,
-          [...queue.fresh.slice(fresh.length), ...queue.rest].slice(0, limit),
-          written,
-          BACKFILL_POOL
-        )),
+        ...backfill,
       },
       spend: spender.report(),
     })
@@ -356,42 +406,37 @@ async function writeVerdicts(
   spender: Spender,
   pending: RunVerdictContext[],
   written: Insight[],
+  phrasing: VerdictPhrasing[],
   pool: string[]
 ) {
   const before = written.length
   const failures: string[] = []
 
   for (const context of pending) {
-    const model = await spender.reserve(pool)
-    if (!model) {
-      failures.push(`${context.activity.id}: ${noReserveReason(spender, pool)}`)
-      break
-    }
-
-    const result = await generateInsight({
-      model,
+    const avoid = [...written, ...phrasing]
+    const attempt = await generateFromPool(spender, pool, {
       systemInstruction: RUN_VERDICT_SYSTEM_INSTRUCTION,
-      prompt: runVerdictInsightPrompt(context, verdictLines(written)),
+      prompt: runVerdictInsightPrompt(context, verdictLines(avoid)),
       limits: RUN_VERDICT_LIMITS,
     })
-    if (!result.ok) {
-      failures.push(`${context.activity.id} (${model}): ${result.reason}`)
-      if (isModelClosed(result.reason)) spender.exhaust(model)
+    if (!attempt.ok) {
+      failures.push(`${context.activity.id}: ${attempt.reason}`)
+      if (!attempt.reserved) break
       continue
     }
-    if (repeatsEarlierVerdict(result.insight, written)) {
-      failures.push(`${context.activity.id} (${model}): repeated the headline "${result.insight.headline}"`)
+    if (repeatsEarlierVerdict(attempt.insight, avoid)) {
+      failures.push(`${context.activity.id} (${attempt.model}): repeated the headline "${attempt.insight.headline}"`)
       continue
     }
 
     await saveCachedInsight(
       runVerdictSurface(context.activity.id),
-      result.insight,
+      attempt.insight,
       runVerdictInsightHash(context),
       null
     )
     revalidatePath(`/activities/${context.activity.id}`)
-    written.push(result.insight)
+    written.push(attempt.insight)
   }
 
   return { generated: written.length - before, failures }

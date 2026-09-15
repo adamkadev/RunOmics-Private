@@ -917,6 +917,17 @@ not apply to this family), `'low'` is the floor, and it still spends real tokens
 schema-constrained answer: a French one measured 23s live at 360 thinking tokens, where 15s
 was aborting calls that would have succeeded seconds later.
 
+**A transient failure moves to the next model, not the next surface.** 429 and 404 mean that
+model is done for the day, and the pool exists so the work can continue — but the loop used to
+abandon the item and carry that recovery only as far as the *next* item's `reserve()`. With one
+verdict pending, a single Google-side 503 therefore wasted an entire pass; two passes in a row
+went that way before a run verdict finally landed. `generateFromPool()` now retries the same
+request on a different pool member, up to three attempts, for anything transient (500, 503) or
+closed (429, 404). Copy the validator rejected is not retried: that is the documented
+reject-and-requeue path, and spending a second model on it would buy nothing. Failing to
+reserve at all is reported separately from a model failing, because only the former means the
+caller should stop looping.
+
 **Model pool.** A model answering 429 has spent its day; one answering 404 has been retired
 out from under us. Both mean stop asking and take the next in the pool. `reserve()` returning
 null is ambiguous on its own — spent for the day, or out of this invocation's clock — so the
@@ -972,11 +983,17 @@ a key that ignores casing, surrounding space and end punctuation — and a match
 as an over-length headline does. The check is on the headline alone: that is the repeat actually
 observed, and matching bodies by substring would reject copy that merely shares a clause.
 
-The reach of both is one invocation. `written` accumulates across the two `writeVerdicts()`
-passes of a single request and resets with the next, so a backfill spread over the night's five
-passes can still repeat itself between them. Closing that needs a phrasing history shared
-between activities — the per-activity `recentHeadlines` cannot carry it, since each run owns its
-own document.
+**The phrasing history is one shared document, not per activity.** `written` only accumulates
+across the two `writeVerdicts()` passes of a single request, so on its own it let a backfill
+spread over the night's five passes repeat itself between them. The per-activity
+`recentHeadlines` cannot close that: each run owns its own document, and `writeVerdicts()`
+passes `previous = null`, so every verdict's document holds nothing but its own headline.
+`verdictPhrasing_<locale>` holds the last ten verdicts instead, read once at the top of a
+request and written back after both batches, so the avoid list and the duplicate check both
+span passes and nights. Entries that are not a headline and a body are dropped on read rather
+than fed to a prompt, and every failure path returns an empty history: a missing document, an
+unconfigured project, a read that throws or times out. Variety is worth a Firestore read, never
+a failed generation.
 
 **Staleness and the grace window.** An insight is keyed on every fact it was written from, and
 some of those move on their own overnight (days since the last run, the rolling week, Garmin's

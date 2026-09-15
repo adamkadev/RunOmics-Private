@@ -84,6 +84,41 @@ export async function listCachedHashes(prefix: string): Promise<Map<string, stri
   return bySurface(snapshot.docs, prefix, (doc) => doc.get('hash') as string)
 }
 
+const PHRASING_SURFACE = 'verdictPhrasing'
+const PHRASING_SIZE = 10
+
+export interface VerdictPhrasing {
+  headline: string
+  body: string
+}
+
+function isPhrasing(value: unknown): value is VerdictPhrasing {
+  const entry = value as Partial<VerdictPhrasing> | null
+  return !!entry && typeof entry.headline === 'string' && typeof entry.body === 'string'
+}
+
+export async function readVerdictPhrasing(): Promise<VerdictPhrasing[]> {
+  if (!process.env.FIREBASE_PROJECT_ID) return []
+
+  try {
+    const doc = await Promise.race([
+      getAdminFirestore().collection(COLLECTION).doc(docId(PHRASING_SURFACE)).get(),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), READ_TIMEOUT_MS)),
+    ])
+    const recent = doc?.exists ? (doc.data() as { recent?: unknown }).recent : undefined
+    return Array.isArray(recent) ? recent.filter(isPhrasing) : []
+  } catch {
+    return []
+  }
+}
+
+export async function saveVerdictPhrasing(recent: VerdictPhrasing[]): Promise<void> {
+  await getAdminFirestore()
+    .collection(COLLECTION)
+    .doc(docId(PHRASING_SURFACE))
+    .set({ recent: recent.slice(0, PHRASING_SIZE), updatedAt: new Date().toISOString() })
+}
+
 export async function saveCachedInsight(
   surface: string,
   insight: Insight,

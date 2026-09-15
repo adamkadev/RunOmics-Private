@@ -20,7 +20,7 @@ const { get, set, doc, collectionGet, collection, orderBy, startAt, endAt, selec
 vi.mock('firebase-admin/firestore', () => ({ FieldPath: { documentId: () => '__name__' } }))
 vi.mock('@/lib/firebase-admin', () => ({ getAdminFirestore: () => ({ collection }) }))
 
-const { readVerifiedInsight, saveCachedInsight, listCachedHashes, servableInsight } = await import(
+const { readVerifiedInsight, saveCachedInsight, listCachedHashes, servableInsight, readVerdictPhrasing, saveVerdictPhrasing } = await import(
   '../FirestoreInsightsRepository'
 )
 
@@ -250,3 +250,63 @@ describe('saveCachedInsight', () => {
     })
   })
 })
+
+describe('verdict phrasing history', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    process.env.FIREBASE_PROJECT_ID = 'runomics-test'
+  })
+
+  afterEach(() => {
+    delete process.env.FIREBASE_PROJECT_ID
+  })
+
+  it('keeps one shared document so phrasing carries between activities', async () => {
+    await saveVerdictPhrasing([{ headline: 'Faster aerobic engine', body: 'Held drift to 8 bpm.' }])
+
+    expect(doc).toHaveBeenCalledWith('verdictPhrasing_en')
+  })
+
+  it('caps what it stores so the avoid clause cannot grow without bound', async () => {
+    const many = Array.from({ length: 14 }, (_, i) => ({ headline: `H${i}`, body: `B${i}` }))
+
+    await saveVerdictPhrasing(many)
+
+    expect((set.mock.calls[0]![0] as { recent: unknown[] }).recent).toHaveLength(10)
+  })
+
+  it('reads back what a previous invocation wrote', async () => {
+    const recent = [{ headline: 'Controlled aerobic building', body: 'Drift held at 8 bpm.' }]
+    get.mockResolvedValue({ exists: true, data: () => ({ recent }) })
+
+    expect(await readVerdictPhrasing()).toEqual(recent)
+  })
+
+  it('drops entries that are not a headline and body rather than feeding junk to the prompt', async () => {
+    get.mockResolvedValue({
+      exists: true,
+      data: () => ({ recent: [{ headline: 'Real', body: 'Copy.' }, { headline: 'No body' }, null, 'string'] }),
+    })
+
+    expect(await readVerdictPhrasing()).toEqual([{ headline: 'Real', body: 'Copy.' }])
+  })
+
+  it('starts empty on a first run, a missing field, or a read that throws', async () => {
+    get.mockResolvedValue({ exists: false, data: () => undefined })
+    expect(await readVerdictPhrasing()).toEqual([])
+
+    get.mockResolvedValue({ exists: true, data: () => ({}) })
+    expect(await readVerdictPhrasing()).toEqual([])
+
+    get.mockRejectedValue(new Error('firestore unavailable'))
+    expect(await readVerdictPhrasing()).toEqual([])
+  })
+
+  it('stays silent when the project is not configured, like every other read here', async () => {
+    delete process.env.FIREBASE_PROJECT_ID
+
+    expect(await readVerdictPhrasing()).toEqual([])
+    expect(get).not.toHaveBeenCalled()
+  })
+})
+
