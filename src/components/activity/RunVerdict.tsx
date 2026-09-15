@@ -1,3 +1,4 @@
+import { SectionDivider } from '@/components/ui/SectionLabel'
 import type { Activity } from '@/domain/activity/types'
 import { runVerdictTone } from '@/domain/activity/runVerdict'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -28,7 +29,7 @@ export function RunVerdict({ activity, aiVerdict }: Props) {
 
   return (
     <GlassSurface variant="card" className="p-5 text-center">
-      <p className="widget-label text-accent-text">{v.title}</p>
+      <SectionDivider className="text-accent-text">{v.title}</SectionDivider>
       <h2 className={cn('mt-1 font-display text-lg font-bold leading-snug', TONE_TEXT_CLASS[tone])}>{headline}</h2>
       {body && <p className="mt-1 text-sm leading-snug text-muted-foreground">{body}</p>}
     </GlassSurface>

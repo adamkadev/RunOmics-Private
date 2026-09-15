@@ -1,6 +1,7 @@
 'use client'
 
 import type { ReactNode } from 'react'
+import { CardTitle } from '@/components/ui/SectionLabel'
 import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import type { VO2maxSeries } from '@/application/usecases/GetVO2maxHistory'
 import type { ThresholdHistoryData } from '@/application/usecases/GetThresholdHistory'
@@ -79,7 +80,7 @@ function Card({
   return (
     <div className="glass-row rounded-[15px] p-[13px]">
       <div className="flex items-start justify-between">
-        <span className="text-micro font-bold uppercase tracking-[0.05em] text-subtle">{label}</span>
+        <CardTitle as="span">{label}</CardTitle>
         <span className={chipTone === 'accent' ? 'text-micro font-semibold text-accent-text' : 'text-micro font-semibold text-subtle'}>
           {chip}
         </span>

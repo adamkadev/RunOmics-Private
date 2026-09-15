@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { signInWithPopup, signOut, GoogleAuthProvider } from 'firebase/auth'
+import { SectionDivider } from '@/components/ui/SectionLabel'
 import { getClientAuth, isClientFirebaseConfigured } from '@/lib/firebase'
 import { useOwnerAuth } from '@/lib/useOwnerAuth'
 import { t } from '@/i18n'
@@ -67,9 +68,9 @@ export function SettingsClient({ lastSyncedAt, activityCount, device }: Props) {
         </div>
 
         <section className="space-y-2">
-          <h2 className="px-1 text-micro font-medium uppercase tracking-[0.08em] text-accent-text">
+          <SectionDivider as="h2" className="px-1">
             {t.settings.sections.appearance}
-          </h2>
+          </SectionDivider>
           <GlassSurface variant="card" className="p-5">
             <AccentPicker />
             <div className="my-5 h-px bg-foreground/[0.06]" />
@@ -116,9 +117,9 @@ export function SettingsClient({ lastSyncedAt, activityCount, device }: Props) {
       </div>
 
       <section className="space-y-2">
-        <h2 className="px-1 text-micro font-medium uppercase tracking-[0.08em] text-accent-text">
+        <SectionDivider as="h2" className="px-1">
           {t.settings.sections.appearance}
-        </h2>
+        </SectionDivider>
         <GlassSurface variant="card" className="p-5">
           <AccentPicker />
           <div className="my-5 h-px bg-foreground/[0.06]" />
@@ -127,17 +128,17 @@ export function SettingsClient({ lastSyncedAt, activityCount, device }: Props) {
       </section>
 
       <section className="space-y-2">
-        <h2 className="px-1 text-micro font-medium uppercase tracking-[0.08em] text-subtle-2">
+        <SectionDivider as="h2" className="px-1">
           {t.settings.sections.notificationsData}
-        </h2>
+        </SectionDivider>
         <NotificationsForm />
         <DataSourceInfo lastSyncedAt={lastSyncedAt} activityCount={activityCount} device={device} />
       </section>
 
       <section className="space-y-2">
-        <h2 className="px-1 text-micro font-medium uppercase tracking-[0.08em] text-subtle-2">
+        <SectionDivider as="h2" className="px-1">
           {t.settings.sections.account}
-        </h2>
+        </SectionDivider>
         <button
           onClick={handleSignOut}
           className="w-full rounded-card-sm border border-destructive/40 py-3.5 text-sm font-semibold

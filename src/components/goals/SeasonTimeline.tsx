@@ -1,6 +1,7 @@
 'use client'
 
 import { Check } from 'lucide-react'
+import { SectionDivider } from '@/components/ui/SectionLabel'
 import type { GoalTarget, YearData } from '@/application/usecases/GetGoalsData'
 import { DISTANCE_KEY } from '@/domain/activity/effort'
 import { formatDayMonth, formatDuration } from '@/lib/formatters'
@@ -138,7 +139,7 @@ export function SeasonTimeline({ yearData }: { yearData: YearData }) {
 
   return (
     <section className="space-y-3">
-      <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">{s.seasonTimeline}</h2>
+      <SectionDivider as="h2">{s.seasonTimeline}</SectionDivider>
       <div className="relative space-y-5 pl-6">
         <div className="absolute bottom-1 left-[5px] top-1 w-0.5 rounded-full bg-foreground/10" />
         {entries.map((entry) => (

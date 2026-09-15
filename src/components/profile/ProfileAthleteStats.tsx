@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { CircleCheck, Minus, OctagonAlert, TriangleAlert, type LucideIcon } from 'lucide-react'
+import { CardTitle } from '@/components/ui/SectionLabel'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { formatDuration } from '@/lib/formatters'
 import type { AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
@@ -159,7 +160,7 @@ export function ProfileAthleteStats({ athlete, latestVo2max }: Props) {
   return (
     <GlassSurface variant="card" className="p-5">
       <div className="mb-3 flex items-baseline justify-between gap-3">
-        <h2 className="text-sm font-bold text-foreground">{a.title}</h2>
+        <CardTitle as="h2">{a.title}</CardTitle>
         {athlete.lastUpdate && (
           <span className="shrink-0 text-caption text-subtle-2">
             {t.pages.athlete.lastUpdated(formatRelativeAgo(athlete.lastUpdate))}

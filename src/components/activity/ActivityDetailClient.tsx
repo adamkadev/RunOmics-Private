@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { SectionDivider } from '@/components/ui/SectionLabel'
 import type { Activity } from '@/domain/activity/types'
 import { aerobicDecoupling } from '@/domain/activity/decoupling'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
@@ -165,13 +166,13 @@ export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, sh
         <>
           {activity.hrSamples && (
             <>
-              <p className="widget-label text-muted-foreground">{t.activity.charts.sectionPhysiology}</p>
+              <SectionDivider>{t.activity.charts.sectionPhysiology}</SectionDivider>
               <HrChart samples={activity.hrSamples} avgHr={activity.avgHeartRate} distanceKm={activity.distanceKm} />
             </>
           )}
           {hasSecondaryCharts && (
             <>
-              <p className="widget-label text-muted-foreground">{t.activity.charts.sectionPerformance}</p>
+              <SectionDivider>{t.activity.charts.sectionPerformance}</SectionDivider>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {activity.paceSamples && (
                   <PaceChart

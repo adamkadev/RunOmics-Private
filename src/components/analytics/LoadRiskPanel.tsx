@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { SectionDivider } from '@/components/ui/SectionLabel'
 import type { LoadRiskPanel as LoadRiskPanelData, RiskZone } from '@/application/usecases/GetLoadRiskPanel'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { StatusPill, type StatusTone } from '@/components/ui/StatusPill'
@@ -167,7 +168,7 @@ function Row({
         className="w-full py-3 text-left transition-opacity active:opacity-70"
       >
         <div className="flex items-baseline justify-between gap-3">
-          <span className="widget-label text-muted-foreground">{label}</span>
+          <SectionDivider as="span">{label}</SectionDivider>
           <span className={cn('text-title2 font-extrabold tabular-nums', zone ? ZONE_TEXT[zone] : 'text-muted-foreground')}>
             {value}
           </span>

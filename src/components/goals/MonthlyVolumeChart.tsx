@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { ChevronDown, ArrowRight, ArrowDown, Check, Minus } from 'lucide-react'
+import { SectionDivider } from '@/components/ui/SectionLabel'
 import type { MonthGoal } from '@/application/usecases/GetGoalsData'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
@@ -42,9 +43,9 @@ export function MonthlyVolumeChart({ monthlyGoals }: { monthlyGoals: MonthGoal[]
         onClick={() => setExpanded((v) => !v)}
         className="flex min-h-6 w-full items-center justify-between gap-2"
       >
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+        <SectionDivider as="h2">
           {t.goals.monthlyVolume.title}
-        </h2>
+        </SectionDivider>
         <span className="flex items-center gap-1 text-xs font-medium text-accent-text">
           {expanded ? t.goals.monthlyVolume.collapse : t.goals.monthlyVolume.expand}
           <ChevronDown size={14} className={cn('transition-transform', expanded && 'rotate-180')} />

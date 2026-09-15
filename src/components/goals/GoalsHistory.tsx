@@ -1,4 +1,5 @@
 import { History, CheckCircle2, XCircle } from 'lucide-react'
+import { SectionDivider } from '@/components/ui/SectionLabel'
 import type { YearOutcome } from '@/application/usecases/GetGoalsData'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { STATUS } from '@/lib/statusColors'
@@ -24,10 +25,10 @@ export function GoalsHistory({ history }: { history: YearOutcome[] }) {
 
   return (
     <section className="space-y-3">
-      <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+      <SectionDivider as="h2" className="flex items-center gap-2">
         <History size={16} className="text-subtle" />
         {t.goals.history.title}
-      </h2>
+      </SectionDivider>
       <div className="space-y-2">
         {history.map((outcome) => {
           const targetsWithResult = outcome.targets.filter((target) => target.achieved !== null)

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { CardTitle } from '@/components/ui/SectionLabel'
 import type { TrainingStatusDayBar } from '@/application/usecases/GetTrainingStatusDaysBar'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { TRAINING_STATUS_COLORS } from '@/lib/colors'
@@ -61,7 +62,7 @@ export function TrainingStatusDaysBar({ days }: Props) {
   return (
     <GlassSurface variant="card" className="p-4">
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-caption font-medium uppercase tracking-wide text-muted-foreground">{s.title}</h3>
+        <CardTitle>{s.title}</CardTitle>
         {latest?.status && (
           <span className="text-xs font-semibold" style={{ color: TRAINING_STATUS_COLORS[latest.status] }}>
             {t.trainingStatus.status[latest.status]}

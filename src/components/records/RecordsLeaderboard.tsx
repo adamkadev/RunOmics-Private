@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { ChevronDown } from 'lucide-react'
+import { SectionDivider } from '@/components/ui/SectionLabel'
 import type { RecordEntry, TopEfforts } from '@/application/usecases/GetRecords'
 import type { RacePrediction } from '@/application/usecases/GetRacePredictions'
 import { formatDuration, formatDistance, formatPace } from '@/lib/formatters'
@@ -36,9 +37,9 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null, 
 
   return (
     <section className="space-y-3">
-      <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+      <SectionDivider as="h2">
         {t.records.title}
-      </h2>
+      </SectionDivider>
 
       <div className="space-y-2">
         {records.filter((r) => r.key !== 'longest').map((r) => {

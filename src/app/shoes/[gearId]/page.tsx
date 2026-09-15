@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import { SectionDivider } from '@/components/ui/SectionLabel'
 import { getShoeDetail } from '@/application/usecases/GetShoeDetail'
 import { getShoeVerdictInsight } from '@/application/usecases/GetShoeVerdictInsight'
 import { getShoeRegistry } from '@/infrastructure/repositories/JsonShoeRepository'
@@ -77,7 +78,7 @@ export default async function ShoeDetailPage({
         <BackButton label={d.back} fallbackHref="/shoes" />
         <div className="flex items-center gap-2">
           <BrandIcon brand={shoe.brand} size={16} />
-          <p className="widget-label text-muted-foreground">{shoe.brand}</p>
+          <SectionDivider>{shoe.brand}</SectionDivider>
           {shoe.retired && <Badge className={STATUS.pending.badge}>{t.shoes.retired}</Badge>}
         </div>
         <h1 className="text-display text-foreground">{shoe.name}</h1>
@@ -122,7 +123,7 @@ export default async function ShoeDetailPage({
       </div>
 
       <div className="space-y-3">
-        <h2 className="widget-label text-muted-foreground">{d.activitiesTitle}</h2>
+        <SectionDivider>{d.activitiesTitle}</SectionDivider>
         {shoe.activities.length === 0 ? (
           <GlassSurface variant="card" className="rounded-card-sm border-dashed py-10 text-center">
             <p className="text-sm text-subtle">{d.empty}</p>

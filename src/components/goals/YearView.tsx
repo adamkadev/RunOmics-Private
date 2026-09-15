@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { Trophy, ArrowRight, Calendar } from 'lucide-react'
+import { SectionDivider } from '@/components/ui/SectionLabel'
 import type { YearData, GoalProjection } from '@/application/usecases/GetGoalsData'
 import { formatDuration, formatDate, formatDelta, formatPace } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -54,9 +55,9 @@ export function YearView({ yearData }: Props) {
         <section className="space-y-3">
           <GlassSurface variant="card" className="p-5">
             <div className="mb-3 flex items-center justify-between gap-2">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              <SectionDivider as="h2">
                 {t.goals.annualGoal}
-              </h2>
+              </SectionDivider>
               {projection && (
                 <span className={cn('shrink-0 text-xs font-semibold', PROJECTION_STATUS_CLASS[projection.status])}>
                   {t.goals.projection.status[projection.status]}
@@ -122,9 +123,9 @@ export function YearView({ yearData }: Props) {
       {!hasRaceDistanceCards && (
         pbs.length > 0 ? (
           <section className="space-y-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            <SectionDivider as="h2">
               {t.goals.seasonRaces}
-            </h2>
+            </SectionDivider>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {pbs.map(({ entry, activity }) => {
                 const tint = raceDistanceTint(entry.distance)

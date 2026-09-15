@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { Check, ChevronRight, Footprints, X } from 'lucide-react'
+import { SectionDivider } from '@/components/ui/SectionLabel'
 import type { ActivitySummary, ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import { ACTIVITY_TYPE_CONFIG, ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
 import type { HrBounds } from '@/domain/training/trimp'
@@ -153,7 +154,7 @@ function ComingUpRow({ workout, onTap }: { workout: PlanWorkoutView; onTap: () =
 function SummaryStat({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <GlassSurface variant="card" className="rounded-[14px] px-3 py-3">
-      <div className="text-micro font-bold uppercase tracking-[0.05em] text-muted-foreground">{label}</div>
+      <SectionDivider>{label}</SectionDivider>
       <div className="mt-1 font-display text-lg font-bold tabular-nums text-foreground">{value}</div>
     </GlassSurface>
   )
@@ -511,9 +512,9 @@ export function WeekView({
 
       {atPresent && comingUp.length > 0 && (
         <div className="px-1">
-          <p className="mb-2.5 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground">
+          <SectionDivider as="p" className="mb-2.5 flex items-center gap-2">
             {t.plan.comingUp}
-          </p>
+          </SectionDivider>
           <div className="space-y-2">
             {comingUp.map((workout) => (
               <ComingUpRow

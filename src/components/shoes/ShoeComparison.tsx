@@ -1,3 +1,4 @@
+import { SectionDivider } from '@/components/ui/SectionLabel'
 import type { ShoeComparisonRow } from '@/application/usecases/GetShoeComparison'
 import { formatCompactMonthYear, formatDistance, formatPace } from '@/lib/formatters'
 import { t } from '@/i18n'
@@ -24,7 +25,7 @@ export function ShoeComparison({ rows }: Props) {
 
   return (
     <section className="space-y-2.5">
-      <h2 className="widget-label text-muted-foreground">{t.shoes.comparison.title}</h2>
+      <SectionDivider>{t.shoes.comparison.title}</SectionDivider>
 
       <div className="overflow-x-auto rounded-card border border-border">
         <table className="w-full min-w-max border-collapse text-sm">
