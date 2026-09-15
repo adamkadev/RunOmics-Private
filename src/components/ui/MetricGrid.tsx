@@ -22,7 +22,7 @@ export function MetricGrid({
         <div key={label} className="min-w-0">
           <div
             className={cn(
-              'text-lg font-extrabold leading-none tracking-tight',
+              'text-title1 font-bold leading-none tracking-tight',
               valueClassName ?? (accent ? 'text-accent-text' : 'text-foreground')
             )}
           >

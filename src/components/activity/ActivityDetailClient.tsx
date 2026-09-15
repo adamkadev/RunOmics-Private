@@ -108,9 +108,9 @@ export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, sh
         )}
       </div>
 
-      <RunVerdict activity={activity} aiVerdict={aiVerdict} />
-
       <MetricGrid metrics={stats} className="grid-cols-4 px-1 text-center" />
+
+      <RunVerdict activity={activity} aiVerdict={aiVerdict} />
 
       {!activity.avgHeartRate && (
         <p className="flex items-center justify-center gap-2 text-caption text-subtle-2">
