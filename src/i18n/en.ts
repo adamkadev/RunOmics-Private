@@ -180,7 +180,6 @@ export const en = {
       options: {
         nature:      { label: 'Nature', description: 'Calm trail green' },
         performance: { label: 'Performance', description: 'Electric race blue' },
-        impact:      { label: 'Impact', description: 'Bold finish-line red' },
         motivation:  { label: 'Motivation', description: 'Energetic orange' },
         endurance:   { label: 'Endurance', description: 'Deep ultra violet' },
         silver:      { label: 'Silver', description: 'Pure data monochrome' },

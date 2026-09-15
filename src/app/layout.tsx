@@ -8,7 +8,7 @@ import { Providers } from './providers'
 import { AppShell } from '@/components/layout/AppShell'
 import { ServiceWorkerRegistration } from '@/components/layout/ServiceWorkerRegistration'
 import { t } from '@/i18n'
-import { ACCENT_STORAGE_KEY } from '@/lib/accent'
+import { ACCENT_IDS, ACCENT_STORAGE_KEY } from '@/lib/accent'
 import { appleStartupImages } from '@/lib/splashScreens'
 
 const inter = Inter({ variable: '--font-inter', subsets: ['latin'] })
@@ -70,7 +70,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Script id="accent-init" strategy="beforeInteractive">
           {`try{
             var a=localStorage.getItem('${ACCENT_STORAGE_KEY}');
-            if(a&&a!=='nature'){
+            if(${JSON.stringify(ACCENT_IDS)}.indexOf(a)>0){
               document.documentElement.setAttribute('data-accent',a);
             }
           }catch(e){}`}

@@ -27,8 +27,8 @@ describe('persistAccent', () => {
   })
 
   it('stores the accent in localStorage', () => {
-    persistAccent('impact')
-    expect(localStorage.getItem(ACCENT_STORAGE_KEY)).toBe('impact')
+    persistAccent('motivation')
+    expect(localStorage.getItem(ACCENT_STORAGE_KEY)).toBe('motivation')
   })
 
   it('sets the data-accent attribute on the document root', () => {

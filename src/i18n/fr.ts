@@ -172,7 +172,6 @@ export const fr = {
       options: {
         nature:      { label: 'Nature', description: 'Vert sentier apaisant' },
         performance: { label: 'Performance', description: 'Bleu course électrique' },
-        impact:      { label: 'Impact', description: 'Rouge ligne d’arrivée' },
         motivation:  { label: 'Motivation', description: 'Orange plein d’énergie' },
         endurance:   { label: 'Endurance', description: 'Violet ultra profond' },
         silver:      { label: 'Argent', description: 'Monochrome data pur' },

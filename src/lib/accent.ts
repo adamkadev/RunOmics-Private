@@ -1,7 +1,7 @@
 import { HUE } from '@/lib/palette'
 import { ACCENT_BACKGROUNDS } from '@/lib/themeTokens'
 
-export type AccentId = 'nature' | 'performance' | 'impact' | 'motivation' | 'endurance' | 'silver'
+export type AccentId = 'nature' | 'performance' | 'motivation' | 'endurance' | 'silver'
 
 export const ACCENT_STORAGE_KEY = 'runomics-accent'
 
@@ -10,7 +10,6 @@ export const DEFAULT_ACCENT: AccentId = 'nature'
 export const ACCENT_SWATCHES: Record<AccentId, string> = {
   nature:      HUE.emerald500,
   performance: HUE.blue500,
-  impact:      HUE.rose500,
   motivation:  HUE.orange500,
   endurance:   HUE.violet500,
   silver:      HUE.slate400,
@@ -19,7 +18,6 @@ export const ACCENT_SWATCHES: Record<AccentId, string> = {
 export const ACCENT_SWATCHES_LIGHT: Record<AccentId, string> = {
   nature:      HUE.emerald600,
   performance: HUE.blue600,
-  impact:      HUE.rose600,
   motivation:  HUE.orange600,
   endurance:   HUE.violet600,
   silver:      HUE.slate600,
@@ -28,7 +26,6 @@ export const ACCENT_SWATCHES_LIGHT: Record<AccentId, string> = {
 export const ACCENT_UI: Record<AccentId, [light: string, dark: string]> = {
   nature:      [HUE.roEmeraldDeep, HUE.roEmerald],
   performance: [HUE.blue500,       HUE.blue400],
-  impact:      [HUE.rose500,       HUE.rose400],
   motivation:  [HUE.orange500,     HUE.orange400],
   endurance:   [HUE.violet500,     HUE.violet400],
   silver:      [HUE.slate500,      HUE.slate400],
@@ -40,10 +37,9 @@ export const HEADLINE_CHART_COLOR: Record<AccentId, [light: string, dark: string
   silver:      [HUE.slate500,      HUE.slate400],
   performance: [HUE.roEmeraldDeep, HUE.roEmerald],
   motivation:  [HUE.roEmeraldDeep, HUE.roEmerald],
-  impact:      [HUE.roEmeraldDeep, HUE.roEmerald],
 }
 
-export const ACCENT_IDS: AccentId[] =['nature', 'performance', 'impact', 'motivation', 'endurance', 'silver']
+export const ACCENT_IDS: AccentId[] = ['nature', 'performance', 'motivation', 'endurance', 'silver']
 
 export function isAccentId(value: string | null): value is AccentId {
   return value !== null && (ACCENT_IDS as string[]).includes(value)

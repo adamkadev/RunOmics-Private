@@ -154,7 +154,6 @@ export const MAP_COLORS = {
   markerLabel:      white,
   markerShadow:     `0 2px 8px ${ink(0.35)}`,
   chipShadow:       `0 1px 4px ${ink(0.35)}`,
-  chipInkOnAmber:   c.mapChipInk,
 } as const
 
 export const PACE_ROUTE_COLORS = {

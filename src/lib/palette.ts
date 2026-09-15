@@ -104,7 +104,6 @@ export const HUE = {
   roEmeraldInk:   '#052015',
 
   performanceInk: '#04122b',
-  impactInk:      '#2b040c',
   motivationInk:  '#2b1203',
   enduranceInk:   '#170b2e',
   silverInk:      '#0b1220',
@@ -128,7 +127,12 @@ export const HUE = {
   roInkInv2:  '#a8b4ae',
   roInkInv3:  '#8a978f',
   roInkInv4:  '#6f7f79',
-  roSteel:    '#b0bec5',
+  // The light muted scale. Every tier clears 4.5:1 on the darkest light ground
+  // (--background #eef3f0); the old slate400/slate500/#b0bec5 set sat at
+  // 2.28, 4.24 and 1.70 respectively.
+  roMuted:    '#3a4757',
+  roSubtle:   '#4e5a6b',
+  roSubtle2:  '#606e82',
 
   natureBg:          '#eef3f0',
   natureCanvasTop:   '#f5f9f7',
@@ -145,13 +149,6 @@ export const HUE = {
   performanceBgDark:    '#06091a',
   performanceCanvasDark:'#070d20',
   performanceHeroDeep:  '#0c1f3f',
-
-  impactCanvasTop:  '#fff5f6',
-  impactBgDark:     '#130608',
-  impactCanvasDark: '#190a0d',
-  impactHeroFrom:   '#2b0712',
-  impactHeroVia:    '#6f1030',
-  impactHeroTo:     '#9f1239',
 
   motivationCanvasTop:  '#fffaf3',
   motivationBgDark:     '#130a04',
@@ -170,7 +167,6 @@ export const HUE = {
   silverCanvasDark: '#0d1117',
 
   heroBase:      '#0a0f0c',
-  mapChipInk:    '#1a1400',
   mapMarkerRing: '#0b1220',
   sheetInk:      '#0e1612',
   iosFill:       '#787880',

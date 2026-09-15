@@ -84,21 +84,6 @@ const ACCENT_VARIANTS: AccentVariant[] = [
     },
   },
   {
-    id: 'impact',
-    light: {
-      accent: c.rose500, accentHover: c.rose400, accentDark: c.rose600, accentSubtle: c.rose50, accentText: c.rose600, ring: withAlpha(c.rose500, 0.35),
-      destructive: c.red600,
-      heroFrom: c.impactHeroFrom, heroVia: c.impactHeroVia, heroTo: c.impactHeroTo,
-      aurora1: c.rose300, aurora2: c.pink200,
-      background: c.rose50, canvasTop: c.impactCanvasTop,
-    },
-    dark: {
-      accent: c.rose400, accentHover: c.rose300, accentText: c.rose300, accentInk: c.impactInk, ring: withAlpha(c.rose400, 0.7),
-      aurora1: c.pink700, aurora2: c.pink800,
-      background: c.impactBgDark, canvasTop: c.impactCanvasDark,
-    },
-  },
-  {
     id: 'motivation',
     light: {
       accent: c.orange500, accentHover: c.orange400, accentDark: c.orange600, accentSubtle: c.orange50, accentText: c.orange600, ring: withAlpha(c.orange500, 0.35),
@@ -247,9 +232,9 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--muted': c.slate100,
       '--border': c.slate200,
       '--foreground': c.slate900,
-      '--muted-foreground': c.slate500,
-      '--subtle': c.slate400,
-      '--subtle-2': c.roSteel,
+      '--muted-foreground': c.roMuted,
+      '--subtle': c.roSubtle,
+      '--subtle-2': c.roSubtle2,
       '--delta-good': c.emerald600,
       '--delta-warn': c.orange700,
       '--accent': c.roEmeraldDeep,

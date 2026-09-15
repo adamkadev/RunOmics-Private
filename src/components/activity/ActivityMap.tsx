@@ -11,7 +11,7 @@ import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import type { ActivityType, ActivityWeather } from '@/domain/activity/types'
 import type { ShoeTag } from '@/domain/shoe/types'
 import { ShoePairTag } from '@/components/activities/ShoePairTag'
-import { WeatherChips } from './WeatherChips'
+import { MAP_CHIP_CLASS, WeatherChips } from './WeatherChips'
 import { t } from '@/i18n'
 import { loadMapLibre, showPlaceLabelsAtAnyZoom } from '@/lib/maplibre'
 
@@ -244,13 +244,12 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
         >
           {weather && <WeatherChips weather={weather} />}
           {activityType && (
-            <span
-              className="rounded-[10px] px-2.5 py-1.5 text-xs font-bold uppercase tracking-wide"
-              style={{
-                background: ACTIVITY_TYPE_CONFIG[activityType].chartColor,
-                color: MAP_COLORS.chipInkOnAmber,
-              }}
-            >
+            <span className={cn(MAP_CHIP_CLASS, 'uppercase tracking-wide')}>
+              <span
+                aria-hidden
+                className="h-[7px] w-[7px] shrink-0 rounded-full"
+                style={{ background: ACTIVITY_TYPE_CONFIG[activityType].chartColor }}
+              />
               {t.activityTypes[activityType]}
             </span>
           )}

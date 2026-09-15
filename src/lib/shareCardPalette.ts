@@ -11,7 +11,6 @@ export const H = 693
 const CANVAS_ACCENT_HEX: Record<AccentId, { dark: string; light: string }> = {
   nature:      { dark: ACCENT_SWATCHES.nature,      light: HUE.roEmeraldDeep },
   performance: { dark: ACCENT_SWATCHES.performance, light: HUE.blue600 },
-  impact:      { dark: ACCENT_SWATCHES.impact,      light: HUE.rose600 },
   motivation:  { dark: ACCENT_SWATCHES.motivation,  light: HUE.orange600 },
   endurance:   { dark: ACCENT_SWATCHES.endurance,   light: HUE.violet600 },
   silver:      { dark: ACCENT_SWATCHES.silver,      light: HUE.slate500 },
