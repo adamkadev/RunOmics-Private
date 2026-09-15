@@ -219,6 +219,8 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--color-today': c.roOrange,
       '--color-missed': c.roPink,
       '--safe-top': 'env(safe-area-inset-top, 0px)',
+      '--safe-top-min': 'max(var(--safe-top), 20px)',
+      '--top-scrim': 'calc(var(--safe-top-min) + 28px)',
       '--safe-bottom': 'env(safe-area-inset-bottom, 0px)',
       '--scrim': ink(0.25),
       '--scrim-strong': ink(0.6),

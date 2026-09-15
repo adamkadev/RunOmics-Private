@@ -60,13 +60,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           aria-hidden
           className="pointer-events-none fixed inset-x-0 top-0 z-20 lg:hidden"
           style={{
-            height: 'calc(var(--safe-top) + 28px)',
+            height: 'var(--top-scrim)',
             background: 'linear-gradient(to bottom, var(--background) 30%, transparent)',
           }}
         />
         <Sidebar />
         <main className="min-h-screen lg:ml-[248px]">
-          <div className="mx-auto max-w-5xl px-4 pb-28 pt-[max(env(safe-area-inset-top),20px)] sm:px-6 lg:pb-8 lg:pt-8">
+          <div className="mx-auto max-w-5xl px-4 pb-28 pt-[var(--top-scrim)] sm:px-6 lg:pb-8 lg:pt-8">
             <PageTransition>{children}</PageTransition>
           </div>
         </main>

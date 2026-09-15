@@ -113,6 +113,8 @@
   --color-today:           #f1761f;
   --color-missed:          #e5396b;
   --safe-top:              env(safe-area-inset-top, 0px);
+  --safe-top-min:          max(var(--safe-top), 20px);
+  --top-scrim:             calc(var(--safe-top-min) + 28px);
   --safe-bottom:           env(safe-area-inset-bottom, 0px);
   --scrim:                 rgba(0, 0, 0, 0.25);
   --scrim-strong:          rgba(0, 0, 0, 0.6);
