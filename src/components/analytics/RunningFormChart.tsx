@@ -127,8 +127,9 @@ export function RunningFormChart({ points }: { points: WeeklyTrendPoint[] }) {
         const summary = `${t.analytics.charts.runningForm.title}: ${metric} ${lo}–${hi} ${UNIT_BY_KEY[key]}`
         const trend = trendFromSeries(values, FLAT_THRESHOLD[active])
         const r = t.analytics.charts.runningForm.reading
-        const reading =
-          !trend || trend.direction === 'flat'
+        const reading = !trend
+          ? null
+          : trend.direction === 'flat'
             ? r.flat(metric)
             : r[trend.direction](metric, Math.abs(trend.delta).toFixed(decimals), UNIT_BY_KEY[key] ?? '')
 
@@ -159,7 +160,7 @@ export function RunningFormChart({ points }: { points: WeeklyTrendPoint[] }) {
                 </LineChart>
               </ResponsiveContainer>
             </ChartFigure>
-            <ChartExplain text={reading} />
+            {reading && <ChartExplain text={reading} />}
           </>
         )
       }}

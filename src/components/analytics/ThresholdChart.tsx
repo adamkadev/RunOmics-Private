@@ -42,15 +42,17 @@ function LegendDot({ color, label }: { color: string; label: string }) {
   )
 }
 
+// Pace drops as the athlete gets faster, so a positive gain is an improvement.
+// Mirrors getThresholdHistory's convention, but over the visible window.
+export function windowPaceGain(points: ThresholdPoint[]): number | null {
+  const paces = points.map((p) => p.thresholdPaceSecPerKm).filter((v): v is number => v !== null)
+  const first = paces[0]
+  const last = paces[paces.length - 1]
+  return paces.length >= 2 && first !== undefined && last !== undefined ? first - last : null
+}
+
 export function ThresholdChart({ data }: { data: ThresholdHistoryData }) {
   const s = t.analytics.charts.threshold
-  const gain = data.paceGainSec
-  const explain =
-    gain === null || Math.abs(gain) < 1
-      ? s.reading.flat
-      : gain > 0
-        ? s.reading.faster(Math.round(gain))
-        : s.reading.slower(Math.round(-gain))
 
   const legend = (
     <>
@@ -69,7 +71,16 @@ export function ThresholdChart({ data }: { data: ThresholdHistoryData }) {
     >
       {(visible) => {
         const ticks = windowTicks(visible)
-        const summary = `${s.title}: ${explain}`
+        const gain = windowPaceGain(visible)
+        const explain =
+          gain === null
+            ? null
+            : Math.abs(gain) < 1
+              ? s.reading.flat
+              : gain > 0
+                ? s.reading.faster(Math.round(gain))
+                : s.reading.slower(Math.round(-gain))
+        const summary = explain ? `${s.title}: ${explain}` : s.title
 
         return (
           <>
@@ -102,7 +113,7 @@ export function ThresholdChart({ data }: { data: ThresholdHistoryData }) {
                 </LineChart>
               </ResponsiveContainer>
             </ChartFigure>
-            <ChartExplain text={explain} />
+            {explain && <ChartExplain text={explain} />}
           </>
         )
       }}
