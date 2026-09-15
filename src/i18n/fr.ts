@@ -692,7 +692,10 @@ export const fr = {
       browsePhoto: 'Parcourir...',
     },
     stats: {
+      distance: 'Distance',
       duration: 'Durée',
+      pace: 'Allure',
+      avgHr: 'FC moy',
     },
     verdict: {
       title: 'Verdict de la sortie',

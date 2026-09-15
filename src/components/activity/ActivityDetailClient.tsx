@@ -38,10 +38,13 @@ interface Props {
 type TabId = 'overview' | 'splits' | 'charts' | 'dynamics'
 
 function buildPrimaryStats(activity: Activity): Metric[] {
+  // MetricGrid has had a dedicated unit slot all along; this call site put the
+  // unit in the label instead, which is why duration was the one stat with none.
   const stats: Metric[] = [
     {
       value: formatDistance(activity.distanceKm),
-      label: t.units.km,
+      unit: t.units.km,
+      label: t.activity.stats.distance,
     },
     {
       value: formatDurationShort(activity.durationSeconds),
@@ -52,14 +55,16 @@ function buildPrimaryStats(activity: Activity): Metric[] {
   if (activity.paceSecPerKm) {
     stats.push({
       value: formatClock(activity.paceSecPerKm),
-      label: t.units.perKm,
+      unit: t.units.perKm,
+      label: t.activity.stats.pace,
     })
   }
 
   if (activity.avgHeartRate) {
     stats.push({
       value: `${activity.avgHeartRate}`,
-      label: t.units.bpm,
+      unit: t.units.bpm,
+      label: t.activity.stats.avgHr,
     })
   }
 

@@ -700,7 +700,10 @@ export const en = {
       browsePhoto: 'Browse...',
     },
     stats: {
+      distance: 'Distance',
       duration: 'Duration',
+      pace: 'Pace',
+      avgHr: 'Avg HR',
     },
     verdict: {
       title: 'Run Verdict',
