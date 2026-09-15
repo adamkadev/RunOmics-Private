@@ -131,6 +131,10 @@ export function ChartWindowPager({
   )
 }
 
+// trendFromSeries refuses to call anything a trend below this many points; a
+// chart drawn from fewer should not imply one either.
+export const SPARSE_POINTS = 4
+
 export function WindowedChartCard<T extends { date: string }>({
   title,
   controls,
@@ -139,6 +143,7 @@ export function WindowedChartCard<T extends { date: string }>({
   initialRange = '4w',
   sample = true,
   footnote,
+  sparse,
   children,
 }: {
   title: ReactNode
@@ -148,6 +153,7 @@ export function WindowedChartCard<T extends { date: string }>({
   initialRange?: ChartRange
   sample?: boolean
   footnote?: ReactNode
+  sparse?: (visible: T[]) => ReactNode
   children: (visible: T[]) => ReactNode
 }) {
   const w = useChartWindow(points, initialRange)
@@ -175,6 +181,8 @@ export function WindowedChartCard<T extends { date: string }>({
 
       {plotted.length === 0 ? (
         <p className="py-12 text-center text-sm text-subtle">{t.chartWindow.empty}</p>
+      ) : sparse && plotted.length < SPARSE_POINTS ? (
+        sparse(plotted)
       ) : (
         children(plotted)
       )}

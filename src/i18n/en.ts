@@ -46,6 +46,8 @@ export const en = {
     previous: 'Previous period',
     next: 'Next period',
     empty: 'No data recorded for this period.',
+    sparse: (count: number) =>
+      `${count} reading${count === 1 ? '' : 's'} in this window - too few to read as a trend, so this shows first and latest.`,
   },
 
   units: {

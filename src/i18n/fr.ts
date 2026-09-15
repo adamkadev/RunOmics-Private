@@ -38,6 +38,8 @@ export const fr = {
     previous: 'Période précédente',
     next: 'Période suivante',
     empty: 'Aucune donnée enregistrée sur cette période.',
+    sparse: (count: number) =>
+      `${count} relevé${count === 1 ? '' : 's'} sur cette période - trop peu pour une tendance, voici le premier et le dernier.`,
   },
 
   units: {

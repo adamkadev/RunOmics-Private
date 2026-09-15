@@ -7,6 +7,7 @@ import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { ChartExplain } from '@/components/ui/ChartExplain'
+import { SparseSeries, sparseRow, type SparseRow } from '@/components/ui/SparseSeries'
 import { WindowedChartCard, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
 import { trendFromSeries } from '@/lib/chartTrend'
 import { t } from '@/i18n'
@@ -113,6 +114,20 @@ export function RunningFormChart({ points }: { points: WeeklyTrendPoint[] }) {
       controls={controls}
       points={points}
       footnote={t.analytics.charts.runningForm.footnote[active]}
+      sparse={(visible) => (
+        <SparseSeries
+          count={visible.length}
+          rows={
+            [
+              sparseRow(
+                t.analytics.charts.runningForm.metrics[active]!,
+                visible.map((d) => d[key]),
+                (v) => `${v.toFixed(decimals)} ${UNIT_BY_KEY[key] ?? ''}`.trim(),
+              ),
+            ].filter((row): row is SparseRow => row !== null)
+          }
+        />
+      )}
     >
       {(visible) => {
         const values = visible.map((d) => d[key]).filter((v): v is number => typeof v === 'number')

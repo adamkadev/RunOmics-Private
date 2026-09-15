@@ -6,6 +6,7 @@ import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { ChartExplain } from '@/components/ui/ChartExplain'
+import { SparseSeries, sparseRow, type SparseRow } from '@/components/ui/SparseSeries'
 import { WindowedChartCard, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
 import { trendFromSeries } from '@/lib/chartTrend'
 import { t } from '@/i18n'
@@ -55,6 +56,17 @@ export function HrTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
       legend={legend}
       points={points}
       footnote={t.analytics.charts.hrTrend.footnote}
+      sparse={(visible) => (
+        <SparseSeries
+          count={visible.length}
+          rows={
+            [
+              sparseRow(t.analytics.charts.paceTrend.easy, visible.map((d) => d.easyAvgHr), (v) => `${Math.round(v)} ${t.units.bpm}`),
+              sparseRow(t.analytics.charts.paceTrend.workout, visible.map((d) => d.hardAvgHr), (v) => `${Math.round(v)} ${t.units.bpm}`),
+            ].filter((row): row is SparseRow => row !== null)
+          }
+        />
+      )}
     >
       {(visible) => {
         const values = visible.flatMap((d) => [d.easyAvgHr, d.hardAvgHr]).filter((v): v is number => v !== null)

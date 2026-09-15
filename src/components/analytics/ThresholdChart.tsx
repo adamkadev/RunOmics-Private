@@ -5,6 +5,7 @@ import type { ThresholdHistoryData, ThresholdPoint } from '@/application/usecase
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { ChartExplain } from '@/components/ui/ChartExplain'
+import { SparseSeries, sparseRow, type SparseRow } from '@/components/ui/SparseSeries'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { WindowedChartCard, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
 import { formatClock } from '@/lib/formatters'
@@ -68,6 +69,17 @@ export function ThresholdChart({ data }: { data: ThresholdHistoryData }) {
       points={data.points}
       sample={false}
       footnote={s.footnote}
+      sparse={(visible) => (
+        <SparseSeries
+          count={visible.length}
+          rows={
+            [
+              sparseRow(s.lthr, visible.map((p) => p.lthrBpm), (v) => `${Math.round(v)} ${t.units.bpm}`),
+              sparseRow(s.pace, visible.map((p) => p.thresholdPaceSecPerKm), (v) => `${formatClock(v)} /${t.units.km}`),
+            ].filter((row): row is SparseRow => row !== null)
+          }
+        />
+      )}
     >
       {(visible) => {
         const ticks = windowTicks(visible)
