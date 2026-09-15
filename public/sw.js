@@ -1,4 +1,4 @@
-const VERSION = 'v1'
+const VERSION = new URL(self.location.href).searchParams.get('v') || 'v1'
 const STATIC_CACHE = `runomics-static-${VERSION}`
 const PAGE_CACHE = `runomics-pages-${VERSION}`
 const CURRENT_CACHES = [STATIC_CACHE, PAGE_CACHE]

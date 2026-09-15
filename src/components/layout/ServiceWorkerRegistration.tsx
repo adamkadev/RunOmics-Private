@@ -14,7 +14,7 @@ export function ServiceWorkerRegistration() {
     let cancelled = false
 
     navigator.serviceWorker
-      .register('/sw.js')
+      .register(`/sw.js?v=${encodeURIComponent(process.env.NEXT_PUBLIC_APP_VERSION ?? 'dev')}`)
       .then((reg) => {
         if (cancelled) return
         if (reg.waiting) setWaitingWorker(reg.waiting)
