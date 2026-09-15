@@ -18,6 +18,7 @@ import {
   type WorkoutPrescription,
 } from '@/domain/coaching/types'
 import { applyCoachDecision, getFutureSnapshot } from '@/domain/coaching/lifecycle'
+import { isoWeekWindows, weekWindowIndex } from '@/domain/coaching/weekWindows'
 import { raceDistanceMeters } from '@/domain/coaching/raceTarget'
 import { macrocycleOf, resolveMacrocycleStart } from '@/domain/coaching/macrocycle'
 import { parseCoachDecision, parseCoachingPlan, parseWorkoutEvaluation } from '@/domain/coaching/validation'
@@ -137,11 +138,15 @@ function normalizeBootstrapPlan(
   macrocycleStartDate: string,
 ): CoachingPlan {
   validateBootstrapDraftSemantics(draft, strategy, context)
-  const planningStart = new Date(`${strategy.planningStartDate}T00:00:00Z`)
   const horizonEnd = strategy.horizonEndDate
-  const horizonDays = Math.round((new Date(`${horizonEnd}T00:00:00Z`).getTime() - planningStart.getTime()) / DAY_MS) + 1
-  const expectedWeeks = Math.ceil(horizonDays / 7)
-  if (draft.weeks.length !== expectedWeeks) throw new Error(`Bootstrap must produce exactly ${expectedWeeks} week${expectedWeeks === 1 ? '' : 's'} for the selected target horizon`)
+  const windows = isoWeekWindows(strategy.planningStartDate, horizonEnd)
+  if (draft.weeks.length !== windows.length) throw new Error(`Bootstrap must produce exactly ${windows.length} week${windows.length === 1 ? '' : 's'} for the selected target horizon`)
+  draft.weeks.forEach((week, index) => {
+    const expected = windows[index]!
+    if (week.startDate !== expected.startDate || week.endDate !== expected.endDate) {
+      throw new Error(`Bootstrap week ${index + 1} must run ${expected.startDate} to ${expected.endDate}, not ${week.startDate} to ${week.endDate}`)
+    }
+  })
   const planId = id()
   const calculatedTotals = (blocks: WorkoutBlock[]) => {
     const segments = blocks.flatMap((block) => block.kind === 'repeat'
@@ -250,9 +255,8 @@ function normalizeWeeks(
 
   return weeks.map((week) => {
     const priorWeek = plan.weeks.find((candidate) => candidate.startDate === week.startDate)
-    const weeksIntoBlock = Math.floor(
-      (new Date(`${week.startDate}T00:00:00Z`).getTime() - new Date(`${plan.block.startDate}T00:00:00Z`).getTime()) / (7 * DAY_MS)
-    ) + 1
+    const weeksIntoBlock = weekWindowIndex(isoWeekWindows(plan.block.startDate, plan.block.endDate), week.startDate)
+      ?? plan.weeks.length + 1
 
     return {
       ...week,

@@ -660,6 +660,31 @@ macrocycle level and are deliberately **not** read from the rolling block's `Tra
 entries: a week's focus describes that one generated week, while these phases span the
 whole journey.
 
+**Plan weeks are Monday to Sunday, with a short first week.** A block starts on
+`planningStartDate` — the reference date, or the day after when a race was completed that day
+— which is whatever weekday the athlete happened to bootstrap on. Laying weeks out as seven
+days from there gave the plan its own private calendar: a block bootstrapped the day after a
+Saturday race ran Sunday to Saturday, so a Sunday long run landed in the *next* plan week
+while the app, whose `startOfWeek` and `isoWeekNumber` are both ISO, showed it as the last day
+of the current one. Every plan week then straddled two weeks of the planner it is rendered in.
+
+`isoWeekWindows()` lays the block out instead: the first window runs from the planning start
+to the coming Sunday, every later one is a full Monday-to-Sunday week, and the last is clipped
+at the horizon, which is usually a race date. The 28-day horizon is unchanged — a mid-week
+start simply adds a short lead-in, so a block spans four windows when it starts on a Monday
+and five otherwise, which is why the bootstrap schema, its parser and `parseCoachingPlan` all
+cap weeks at `MAX_BOOTSTRAP_WEEKS`. The windows are handed to the model as explicit
+startDate/endDate pairs rather than a count, and the boundaries it returns are checked against
+them, because a week count alone is exactly what let the old private calendar through.
+
+A planning start that is itself a Sunday gets a one-day first week. That is deliberate: it
+keeps the post-race recovery day that motivated the `planningStartDate` shift without bending
+the calendar for every week after it.
+
+**Week numbering counts windows, not elapsed days.** `weekWindowIndex()` finds a week by its
+start date in the block's own layout; dividing days-since-block-start by seven silently
+mis-numbers every week once the first one is short.
+
 **Two drafts that compare equal ignoring identity and lifecycle fields are the same
 prescription restated**, so the stored one keeps its id, revision and provenance rather
 than being bumped as if the athlete had been given something new.

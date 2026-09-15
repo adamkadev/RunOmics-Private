@@ -7,6 +7,7 @@ import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import { buildCoachingContext, coachingContextHash, type CoachingContextInput } from '../context'
 import { applyCoachingProposal, createBootstrapProposal, createPostActivityProposal, createWeeklyReviewProposal } from '../workflows'
 import { plan } from '@/domain/coaching/__tests__/fixtures'
+import { isoWeekWindows } from '@/domain/coaching/weekWindows'
 
 class MemoryRepository implements CoachingRepository {
   plan: CoachingPlan | null = null
@@ -103,21 +104,23 @@ function addDays(date: string, days: number): string {
   return value.toISOString().slice(0, 10)
 }
 
-function draftThrough(request: BootstrapRequest): CoachingPlanDraft {
-  const weeks: CoachingPlanDraft['weeks'] = []
-  let startDate = request.planningStartDate
-  let index = 1
-  while (startDate <= request.horizonEndDate) {
-    const sevenDayEnd = addDays(startDate, 6)
-    weeks.push({
-      startDate,
-      endDate: sevenDayEnd < request.horizonEndDate ? sevenDayEnd : request.horizonEndDate,
-      focus: `Week ${index}`,
-      workouts: [],
-    })
-    startDate = addDays(startDate, 7)
-    index += 1
+function pushWorkout(
+  draft: CoachingPlanDraft,
+  ...workouts: CoachingPlanDraft['weeks'][number]['workouts']
+): void {
+  for (const workout of workouts) {
+    const week = draft.weeks.find((candidate) => workout.date >= candidate.startDate && workout.date <= candidate.endDate)
+    if (!week) throw new Error(`No draft week contains ${workout.date}`)
+    week.workouts.push(workout)
   }
+}
+
+function draftThrough(request: BootstrapRequest): CoachingPlanDraft {
+  const weeks = isoWeekWindows(request.planningStartDate, request.horizonEndDate).map((window, index) => ({
+    ...window,
+    focus: `Week ${index + 1}`,
+    workouts: [],
+  }))
   return { name: 'Target race block', focus: 'Prepare for the primary event', weeks }
 }
 
@@ -297,7 +300,7 @@ describe('coaching workflows', () => {
     })
   })
 
-  it('plans four weeks after a completed same-day race, includes day 28, and enforces recovery', async () => {
+  it('covers the 28 days after a completed same-day race as Monday-Sunday weeks, and enforces recovery', async () => {
     const requests: BootstrapRequest[] = []
     const completedRace = {
       ...latestActivity,
@@ -378,8 +381,12 @@ describe('coaching workflows', () => {
 
     const plan = proposal.proposedPlan!
     expect(plan.block).toMatchObject({ startDate: '2026-09-06', endDate: '2026-10-03' })
-    expect(plan.weeks).toHaveLength(4)
-    expect(plan.weeks.at(-1)).toMatchObject({ startDate: '2026-09-27', endDate: '2026-10-03' })
+    expect(plan.weeks).toHaveLength(5)
+    expect(plan.weeks[0]).toMatchObject({ startDate: '2026-09-06', endDate: '2026-09-06' })
+    expect(plan.weeks.slice(1).map((week) => week.startDate)).toEqual([
+      '2026-09-07', '2026-09-14', '2026-09-21', '2026-09-28',
+    ])
+    expect(plan.weeks.at(-1)).toMatchObject({ startDate: '2026-09-28', endDate: '2026-10-03' })
     expect(plan.targetEvent).toMatchObject({
       id: 'november-primary-10k', role: 'primary', targetSeconds: 2_400,
     })
@@ -402,7 +409,7 @@ describe('coaching workflows', () => {
       ...baseAdvisor,
       bootstrap: async (request) => {
         const draft = await baseAdvisor.bootstrap(request)
-        draft.weeks[0]!.workouts.push({
+        pushWorkout(draft, {
           date: '2026-09-08',
           type: 'threshold',
           title: '3x10 min threshold',
@@ -431,7 +438,8 @@ describe('coaching workflows', () => {
       ...conservativeBase,
       bootstrap: async (request) => {
         const draft = await conservativeBase.bootstrap(request)
-        draft.weeks[0]!.workouts.push(
+        pushWorkout(
+          draft,
           {
             date: '2026-09-06',
             type: 'recovery',

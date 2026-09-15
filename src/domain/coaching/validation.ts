@@ -1,3 +1,4 @@
+import { MAX_BOOTSTRAP_WEEKS } from './weekWindows'
 import {
   COACHING_SCHEMA_VERSION,
   type CoachDecision,
@@ -250,7 +251,7 @@ export function parseCoachingPlan(value: unknown, path = 'plan'): CoachingPlan {
   }
   if (plan.block.endDate > plan.targetEvent.date) throw new CoachingValidationError(`${path}.block.endDate`, 'training block cannot extend beyond the primary target event')
   if (plan.targetEvent.role !== undefined && plan.targetEvent.role !== 'primary') throw new CoachingValidationError(`${path}.targetEvent.role`, 'targetEvent must be primary')
-  if (plan.weeks.length === 0 || plan.weeks.length > 4) throw new CoachingValidationError(`${path}.weeks`, 'must contain 1 to 4 weeks')
+  if (plan.weeks.length === 0 || plan.weeks.length > MAX_BOOTSTRAP_WEEKS) throw new CoachingValidationError(`${path}.weeks`, `must contain 1 to ${MAX_BOOTSTRAP_WEEKS} weeks`)
   const ids = new Set<string>([plan.id, plan.block.id, plan.targetEvent.id])
   for (const [index, event] of (plan.tuneUpEvents ?? []).entries()) {
     if (event.role !== 'tune_up') throw new CoachingValidationError(`${path}.tuneUpEvents[${index}].role`, 'must be tune_up')
