@@ -71,12 +71,6 @@ export const ZONE_COLOR_CLASSES: Record<number, { bg: string; text: string }> = 
   5: { bg: 'bg-[var(--zone-5)]', text: 'text-[var(--zone-5)]' },
 }
 
-export const ZONE_HEADLINE_COLORS: Record<2 | 4 | 5, string> = {
-  2: c.blue500,
-  4: c.orange500,
-  5: c.red500,
-}
-
 // A rising metric is not automatically good news: fatigue climbing is a warning,
 // fitness climbing is not. Each tile says which direction it wants.
 export const METRIC_DELTA_COLORS = {

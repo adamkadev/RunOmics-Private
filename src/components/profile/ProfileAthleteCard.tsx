@@ -4,7 +4,9 @@ import { CardTitle } from '@/components/ui/SectionLabel'
 import type { AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import type { ZoneShare } from '@/application/usecases/GetAnalyticsData'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { CHART_COLORS, ZONE_HEADLINE_COLORS } from '@/lib/colors'
+import { CHART_COLORS, ZONE_COLOR_CLASSES } from '@/lib/colors'
+import { formatDurationWords } from '@/lib/formatters'
+import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 const VIOLET = CHART_COLORS.efficiency
@@ -15,11 +17,14 @@ interface HeadlineMetric {
   valueColor?: string
 }
 
-const ZONE_ROWS: { zone: number; label: string; color: string }[] = [
-  { zone: 5, label: t.profile.athlete.zoneRows[5]!, color: ZONE_HEADLINE_COLORS[5] },
-  { zone: 4, label: t.profile.athlete.zoneRows[4]!, color: ZONE_HEADLINE_COLORS[4] },
-  { zone: 2, label: t.profile.athlete.zoneRows[2]!, color: ZONE_HEADLINE_COLORS[2] },
-]
+// Z1 and Z3 arrive in recentZoneTime and used to be dropped on the floor, so the
+// bars never summed to the time actually run. The ramp is the theme-aware one
+// every other zone surface uses.
+const ZONE_ROWS: { zone: number; label: string; barClass: string }[] = [5, 4, 3, 2, 1].map((zone) => ({
+  zone,
+  label: t.profile.athlete.zoneRows[zone]!,
+  barClass: ZONE_COLOR_CLASSES[zone]!.bg,
+}))
 
 function Tile({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
   return (
@@ -74,14 +79,15 @@ export function ProfileAthleteCard({ athlete, latestVo2max, recentZoneTime }: Pr
         {ZONE_ROWS.map((row) => {
           const seconds = byZone.get(row.zone) ?? 0
           const width = Math.round((seconds / maxSeconds) * 100)
-          const minutes = Math.round(seconds / 60)
+          // A bare "m" sat two cards away from metres of elevation on the same page.
+          const minutes = formatDurationWords(seconds)
           return (
             <div key={row.zone} className="flex items-center gap-2">
               <span className="w-11 shrink-0 text-micro text-subtle">{row.label}</span>
               <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-foreground/[0.08]">
-                <div className="h-full rounded-full" style={{ width: `${width}%`, background: row.color }} />
+                <div className={cn('h-full rounded-full', row.barClass)} style={{ width: `${width}%` }} />
               </div>
-              <span className="w-9 shrink-0 text-right text-micro text-subtle">{minutes}m</span>
+              <span className="w-12 shrink-0 text-right text-micro tabular-nums text-subtle">{minutes}</span>
             </div>
           )
         })}

@@ -1046,7 +1046,9 @@ export const fr = {
       zoneRows: {
         5: 'Z5 Max',
         4: 'Z4 Seuil',
+        3: 'Z3 Tempo',
         2: 'Z2 Facile',
+        1: 'Z1 Récup',
       } as Record<number, string>,
       vo2maxShort: 'VO₂MAX',
       vmaShort: 'VMA',
