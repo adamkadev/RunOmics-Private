@@ -1167,23 +1167,19 @@ export const en = {
     zones: {
       easy: {
         label: 'Easy',
-        shortDesc: 'Aerobic base & recovery',
-        example: 'Long runs, warm-up, cool-down',
+        shortDesc: 'Aerobic base & recovery',
       },
       marathon: {
         label: 'Marathon',
-        shortDesc: 'Aerobic power & race pace',
-        example: 'Tempo long runs, M-pace workouts',
+        shortDesc: 'Aerobic power & race pace',
       },
       threshold: {
         label: 'Threshold',
-        shortDesc: 'Comfortably hard - T pace',
-        example: 'Cruise intervals, tempo runs 20-40 min',
+        shortDesc: 'Comfortably hard - T pace',
       },
       vo2max: {
         label: 'VO2max',
-        shortDesc: '5K race effort - I pace',
-        example: '3-5 min intervals, track workouts',
+        shortDesc: '5K race effort - I pace',
       },
     },
   },

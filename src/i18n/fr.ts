@@ -1156,23 +1156,19 @@ export const fr = {
     zones: {
       easy: {
         label: 'Facile',
-        shortDesc: 'Base aérobie & récupération',
-        example: 'Sorties longues, échauffement, retour au calme',
+        shortDesc: 'Base aérobie & récupération',
       },
       marathon: {
         label: 'Marathon',
-        shortDesc: 'Puissance aérobie & allure course',
-        example: 'Sorties longues en tempo, séances à allure marathon',
+        shortDesc: 'Puissance aérobie & allure course',
       },
       threshold: {
         label: 'Seuil',
-        shortDesc: 'Confortablement dur - allure seuil',
-        example: 'Intervalles cruise, tempo de 20 à 40 min',
+        shortDesc: 'Confortablement dur - allure seuil',
       },
       vo2max: {
         label: 'VO2max',
-        shortDesc: 'Effort course 5 km - allure I',
-        example: 'Intervalles de 3 à 5 min, séances sur piste',
+        shortDesc: 'Effort course 5 km - allure I',
       },
     },
   },

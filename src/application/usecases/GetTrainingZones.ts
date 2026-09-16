@@ -5,7 +5,6 @@ export interface TrainingZone {
   key: string
   label: string
   shortDesc: string
-  example: string
   hrZone: number
   paceMinSecPerKm: number
   paceMaxSecPerKm: number
