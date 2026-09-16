@@ -94,12 +94,11 @@ function renderWeek(options: {
   )
 }
 
-async function expectStats(easyHard: string, load: string, climb: string) {
-  const read = (label: string) =>
-    screen.getByText(label).parentElement!.textContent!.replace(label, '').trim()
+async function expectStats(easyHardValue: string, load: string, climb: string) {
   await waitFor(() => {
-    expect([screen.getByText(easyHard).textContent, read(t.plan.weekSummary.load), read(t.plan.weekSummary.climb)])
-      .toEqual([easyHard, load, climb])
+    expect(screen.getByTestId('stat-load').textContent).toContain(load)
+    expect(screen.getByTestId('stat-climb').textContent).toContain(climb)
+    expect(screen.getByTestId('stat-easy-hard').textContent).toContain(easyHardValue)
   })
 }
 
@@ -107,13 +106,13 @@ describe('WeekView weekly metrics', () => {
   it('reports Garmin activity metrics for a week with no coaching', async () => {
     renderWeek({ activities: [TEMPO, RACE] })
 
-    await expectStats(t.plan.weekSummary.noSplit, '141', `26 ${t.units.m}`)
+    await expectStats('–', '141', `26${t.units.m}`)
   })
 
   it('keeps those same metrics when a coaching block covers the week', async () => {
     renderWeek({ activities: [TEMPO, RACE], coaching: overview() })
 
-    await expectStats(t.plan.weekSummary.noSplit, '141', `26 ${t.units.m}`)
+    await expectStats('–', '141', `26${t.units.m}`)
   })
 
   it('shows the completed activities and the coach prescription side by side', () => {
@@ -195,32 +194,24 @@ describe('WeekView coaching day cells and Today', () => {
     renderWeek({ coaching: overview(), trainingZones: ZONES })
 
     const row = screen.getByTestId('plan-workout-row-workout-threshold')
-    expect(row.textContent).toContain('3 × 8 min threshold · 1h00')
-    expect(row.textContent).toContain('Threshold · 4:25–4:30/km')
+    expect(row.textContent).toContain('3 × 8 min threshold')
+    expect(row.textContent).toContain('1h00')
+    expect(row.textContent).toContain('Threshold')
+    expect(row.textContent).toContain(t.plan.targetPace('4:25–4:30/km'))
   })
 
-  it('opens the same planned-workout sheet when a coached session is tapped', async () => {
+  it('is a read-only card, not a control - no sheet opens on tap', async () => {
     const user = userEvent.setup()
     renderWeek({ coaching: overview() })
 
+    const row = screen.getByTestId('plan-workout-row-workout-threshold')
+    expect(row.tagName).toBe('DIV')
+
+    await user.click(row)
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    await user.click(screen.getByTestId('plan-workout-row-workout-threshold'))
-
-    const sheet = screen.getByRole('dialog')
-    expect(within(sheet).getByRole('heading', { name: '3 × 8 min threshold' })).toBeInTheDocument()
   })
 
-  it('surfaces the prescription state in that sheet', async () => {
-    const user = userEvent.setup()
-    renderWeek({ coaching: overview() })
-
-    await user.click(screen.getByTestId('plan-workout-row-workout-threshold'))
-
-    expect(within(screen.getByRole('dialog')).getByText(t.coaching.states.prescribed)).toBeInTheDocument()
-  })
-
-  it('keeps the time of day off the row and shows it in the sheet instead', async () => {
-    const user = userEvent.setup()
+  it('keeps time of day off the detail line - it is not a plan instruction and it costs the pace range a line', () => {
     renderWeek({
       coaching: overview({ garminPlanned: [{ date: TODAY, name: 'Track session', type: 'Threshold', durationSecs: 3_600 }] }),
       planned: [{ date: TODAY, name: 'Track session', type: 'Threshold', durationSecs: 3_600, scheduledTime: 'Evening' }],
@@ -228,9 +219,6 @@ describe('WeekView coaching day cells and Today', () => {
 
     const row = screen.getByTestId('plan-workout-row-workout-threshold')
     expect(row.textContent).not.toContain(t.plan.timeOfDay.Evening)
-
-    await user.click(row)
-    expect(within(screen.getByRole('dialog')).getByText(t.plan.timeOfDay.Evening)).toBeInTheDocument()
   })
 
   it('labels the effort blocks and names the recovery on the row', () => {
@@ -238,7 +226,9 @@ describe('WeekView coaching day cells and Today', () => {
 
     const row = screen.getByTestId('plan-workout-row-workout-threshold')
     expect(within(row).getAllByText(t.plan.structure.min(8))).toHaveLength(3)
-    expect(row.textContent).toContain(t.plan.structure.rec(2))
+    // The caption reads clock notation (2:00 rec), consistent with the pace
+    // ranges elsewhere - only the inline block labels keep the 8' shorthand.
+    expect(row.textContent).toContain('2:00 rec')
   })
 
   it('shows one row for a session the coach prescribed and Garmin already holds', () => {
@@ -247,28 +237,6 @@ describe('WeekView coaching day cells and Today', () => {
 
     expect(screen.getAllByTestId(/^plan-workout-row-/)).toHaveLength(1)
     expect(screen.queryByText(/^Garmin ·/)).not.toBeInTheDocument()
-  })
-
-  it('keeps Garmin quiet in the sheet while the session is synced as prescribed', async () => {
-    const user = userEvent.setup()
-    renderWeek({
-      coaching: overview({ garminPlanned: [{ date: TODAY, name: 'Track session', type: 'Threshold', durationSecs: 3_600 }] }),
-    })
-
-    await user.click(screen.getByTestId('plan-workout-row-workout-threshold'))
-
-    expect(screen.getByRole('dialog').textContent).not.toMatch(/Garmin/i)
-  })
-
-  it('surfaces an out-of-date Garmin session, which the athlete must act on', async () => {
-    const user = userEvent.setup()
-    renderWeek({
-      coaching: overview({ garminPlanned: [{ date: TODAY, name: 'Easy jog', type: 'Base', durationSecs: 3_600 }] }),
-    })
-
-    await user.click(screen.getByTestId('plan-workout-row-workout-threshold'))
-
-    expect(within(screen.getByRole('dialog')).getByText(t.coaching.garminOutOfDate)).toBeInTheDocument()
   })
 
   it('drops the session row on a day that has none', async () => {
@@ -308,7 +276,7 @@ describe('WeekView target race', () => {
 
     // 2026-09-09 -> 2026-10-04.
     const countdown = screen.getByText(t.nextRace.countdown(25))
-    expect(countdown.className).toContain('text-body')
+    expect(countdown.className).toContain('rounded-full')
     // The block status is a separate fact from the countdown, so both render.
     expect(screen.getByTestId('race-footer').textContent).toContain(t.plan.raceFooter.blockEndsHere)
   })
@@ -316,7 +284,7 @@ describe('WeekView target race', () => {
   it('keeps the Garmin race when there is no coaching', () => {
     renderWeek({ nextRace: { date: '2026-10-18', name: 'City Half', distance: '21K' } })
 
-    expect(screen.getByText('City Half')).toBeInTheDocument()
+    expect(screen.getByText(/City Half/)).toBeInTheDocument()
   })
 })
 

@@ -1,6 +1,6 @@
 import type { ActivityType, WorkoutStep } from '@/domain/activity/types'
 import { EFFORT_ZONE_BY_TYPE } from '@/domain/training/workoutStructure'
-import { formatPaceRange } from '@/lib/formatters'
+import { formatDurationWords, formatPaceRange } from '@/lib/formatters'
 import { WORKOUT_SEGMENT_COLORS, WORKOUT_SEGMENT_INK } from '@/lib/colors'
 import { t } from '@/i18n'
 
@@ -76,6 +76,153 @@ export function WorkoutStructureBars({
 export function recoveryLabel(steps: WorkoutStep[] | null | undefined): string | null {
   const recovery = steps?.find((step) => step.kind === 'recovery')
   return recovery ? t.plan.structure.rec(recovery.minutes) : null
+}
+
+const CONTINUOUS_FILL = 'rgba(52,211,153,.7)'
+const CONTINUOUS_INK = '#06231a'
+const DONE_FILL = 'rgba(90,151,245,.55)'
+const DONE_INK = '#0a1628'
+const WORK_FILL = '#fb8a3c'
+const WORK_INK = '#2a1405'
+const RECOVERY_FILL = 'rgba(90,151,245,.5)'
+const EASE_FILL = 'rgba(148,178,220,.18)'
+
+// A block this many times longer than the reps around it is the run's easy
+// body, not a work interval - "3 x 8min" (all equal) never qualifies, but a
+// 38-minute base pace ahead of five 20-second strides does.
+const BODY_RATIO = 3
+
+function findBody(efforts: WorkoutStep[]): WorkoutStep | null {
+  if (efforts.length < 2) return null
+  const sorted = [...efforts].sort((a, b) => b.minutes - a.minutes)
+  const longest = sorted[0]!
+  const restAvg = sorted.slice(1).reduce((sum, e) => sum + e.minutes, 0) / (sorted.length - 1)
+  return longest.minutes >= Math.max(restAvg * BODY_RATIO, restAvg + 3) ? longest : null
+}
+
+/**
+ * The day card's own structure bar - continuous, or interval, drawn only from
+ * steps the plan actually carries. `variant` is the only thing that tells a
+ * prescribed session from a logged one: green is "this is prescribed", blue
+ * ("done") is "this happened" - completed activities have no logged interval
+ * breakdown in this domain, so they always take the continuous path.
+ */
+export function SessionStructureBar({
+  steps,
+  zoneWord,
+  totalSeconds,
+  variant = 'planned',
+}: {
+  steps: WorkoutStep[]
+  zoneWord: string | null
+  totalSeconds: number
+  variant?: 'planned' | 'done'
+}) {
+  const efforts = steps.filter((st) => st.kind === 'effort')
+  const fill = variant === 'done' ? DONE_FILL : CONTINUOUS_FILL
+  const ink = variant === 'done' ? DONE_INK : CONTINUOUS_INK
+
+  if (efforts.length <= 1) {
+    const label = [formatDurationWords(totalSeconds), [zoneWord, t.plan.continuous].filter(Boolean).join(' ')]
+      .filter(Boolean)
+      .join(' · ')
+    return (
+      <div
+        className="flex items-center justify-center overflow-hidden rounded-[5px]"
+        style={{ height: '22px', background: fill }}
+      >
+        <span className="font-bold leading-none" style={{ fontSize: '11.5px', color: ink }}>
+          {label}
+        </span>
+      </div>
+    )
+  }
+
+  // A session shouldn't finish mid-recovery: a rest jog tacked onto the very
+  // end (no cool-down follows it) reads as an accident, not a plan, so it's
+  // dropped rather than drawn as the bar's last block.
+  const trimmedSteps = steps.length > 0 && steps[steps.length - 1]!.kind === 'recovery' ? steps.slice(0, -1) : steps
+
+  const body = findBody(efforts)
+  const reps = body ? efforts.filter((e) => e !== body) : efforts
+  const recoveries = trimmedSteps.filter((st) => st.kind === 'recovery')
+  const warmup = trimmedSteps.find((st) => st.kind === 'warmup')
+  const cooldown = trimmedSteps.find((st) => st.kind === 'cooldown')
+
+  // Every block's width is its own rounded duration except the body: that one
+  // absorbs whatever's left of the session total instead of carrying its own
+  // independently-rounded minutes, so the bar always closes on the header's
+  // duration rather than drifting from rounding several short reps up to a
+  // full minute apiece.
+  const totalMinutes = Math.max(1, Math.round(totalSeconds / 60))
+  const otherMinutes = trimmedSteps
+    .filter((st) => st !== body)
+    .reduce((sum, st) => sum + Math.max(st.minutes, 1), 0)
+  const bodyWeight = body ? Math.max(1, totalMinutes - otherMinutes) : null
+
+  const weights = trimmedSteps.map((step) => (step === body ? bodyWeight! : Math.max(step.minutes, 1)))
+  const s = t.plan.structure
+  const clock = (min: number) => `${min}:00`
+  const centerCaption =
+    reps.length > 0
+      ? recoveries.length > 0
+        ? `${reps.length} × ${clock(reps[0]!.minutes)} · ${clock(recoveries[0]!.minutes)} rec`
+        : `${reps.length} × ${clock(reps[0]!.minutes)}`
+      : ''
+
+  return (
+    <div>
+      <div className="flex items-end" style={{ gap: '3px' }}>
+        {trimmedSteps.map((step, i) => {
+          const isBody = step === body
+          const isWork = step.kind === 'effort' && !isBody
+          const share = weights[i]! / totalMinutes
+          const labelled = isWork && share >= LABEL_MIN_SHARE
+
+          if (isBody) {
+            const bodyLabel = `${formatDurationWords(bodyWeight! * 60)}${zoneWord ? ` · ${zoneWord}` : ''}`
+            return (
+              <div
+                key={i}
+                className="flex items-center justify-center overflow-hidden rounded-[4px]"
+                style={{ flexGrow: weights[i], flexBasis: 0, height: '22px', background: fill }}
+              >
+                <span className="truncate font-bold leading-none" style={{ fontSize: '11px', color: ink }}>
+                  {bodyLabel}
+                </span>
+              </div>
+            )
+          }
+
+          return (
+            <div
+              key={i}
+              className="flex items-center justify-center overflow-hidden rounded-[4px]"
+              style={{
+                flexGrow: weights[i],
+                flexBasis: 0,
+                height: isWork ? '22px' : '16px',
+                background: isWork ? WORK_FILL : step.kind === 'recovery' ? RECOVERY_FILL : EASE_FILL,
+              }}
+            >
+              {labelled && (
+                <span className="font-bold leading-none" style={{ fontSize: '10px', color: WORK_INK }}>
+                  {s.min(step.minutes)}
+                </span>
+              )}
+            </div>
+          )
+        })}
+      </div>
+      {(warmup || cooldown || centerCaption) && (
+        <div className="mt-1.5 grid grid-cols-3 items-center" style={{ fontSize: '10.5px', color: '#7d8896' }}>
+          <span className="text-left">{warmup ? s.warmup : ''}</span>
+          <span className="text-center">{centerCaption}</span>
+          <span className="text-right">{cooldown ? s.cooldown : ''}</span>
+        </div>
+      )}
+    </div>
+  )
 }
 
 export function WorkoutStepList({ steps, type }: { steps: WorkoutStep[]; type?: ActivityType }) {

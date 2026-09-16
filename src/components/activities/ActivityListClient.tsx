@@ -13,6 +13,7 @@ import { GlassSurface } from '@/components/ui/GlassSurface'
 import { Pill } from '@/components/ui/Pill'
 import { SortDropdown } from '@/components/ui/SortDropdown'
 import { easyHardShare } from '@/domain/training/easyHard'
+import { INTENSITY_DOT_COLORS, intensityDotColor } from '@/lib/colors'
 
 import { formatDateRange, formatKm } from '@/lib/formatters'
 import { isoDate, addDays, startOfWeek } from '@/lib/calendarDate'
@@ -92,14 +93,6 @@ function WeekSummary({ group, variant = 'card' }: { group: WeekGroup; variant?: 
   )
 }
 
-// Same bucketing the run rows draw their own dot from (ACTIVITY_TYPE_CONFIG),
-// minus the reds: red stays reserved for injury/risk grade, never intensity.
-function intensityDotColor(type: ActivityType): string {
-  if (type === 'Base') return '#34d399'
-  if (type === 'Tempo' || type === 'Threshold') return '#f5b13d'
-  return '#fb8a3c' // VO2Max, Anaerobic, Sprint
-}
-
 const DOT_CAP = 8
 
 function WeekCompositionDots({ items, label }: { items: ActivitySummary[]; label: string }) {
@@ -115,7 +108,7 @@ function WeekCompositionDots({ items, label }: { items: ActivitySummary[]; label
             <span
               key={a.id}
               className="shrink-0 rounded-[4px]"
-              style={{ width: '7px', height: '7px', border: '1.5px solid #6aa4ff' }}
+              style={{ width: '7px', height: '7px', border: `1.5px solid ${INTENSITY_DOT_COLORS.long}` }}
             />
           ) : (
             <span

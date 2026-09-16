@@ -1,10 +1,10 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Check, ChevronRight, Footprints, X } from 'lucide-react'
+import Link from 'next/link'
+import { ChevronRight, X } from 'lucide-react'
 import { SectionDivider } from '@/components/ui/SectionLabel'
 import type { ActivitySummary, ActivityType, PlannedWorkout } from '@/domain/activity/types'
-import { ACTIVITY_TYPE_CONFIG, ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
 import type { HrBounds } from '@/domain/training/trimp'
 import {
   summarizeWeek,
@@ -16,21 +16,21 @@ import {
 import type { PlannedWeek, WeekSummary } from '@/domain/training/weekSummary'
 import { weekTrainingStatus } from '@/domain/training/weekStatus'
 import { weekPlanPhase } from '@/domain/training/weekPlanPhase'
+import { EFFORT_ZONE_BY_TYPE } from '@/domain/training/workoutStructure'
 import type { TrainingStatusCalendar } from '@/application/usecases/GetTrainingStatusCalendar'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
-import { WorkoutStructureBars, recoveryLabel } from './WorkoutStructure'
+import { SessionStructureBar } from './WorkoutStructure'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { ActivitySheet } from './ActivitySheet'
 import { InlineJumpButton } from '@/components/ui/InlineJumpButton'
-import { PlannedWorkoutSheet } from './PlannedWorkoutSheet'
 import { WeekPurposeBanner } from './WeekPurposeBanner'
 import { RaceFooter, type FooterRace } from './RaceFooter'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
-import type { PlanSpan } from '@/domain/training/planProgress'
+import { weeksInPlan, type PlanSpan } from '@/domain/training/planProgress'
 import { addDays, isoDate, isoWeekNumber } from '@/lib/calendarDate'
-import { formatDate } from '@/lib/formatters'
+import { formatDate, formatPace } from '@/lib/formatters'
+import { INTENSITY_DOT_COLORS, intensityDotColor } from '@/lib/colors'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { CoachingOverview, PrescriptionView } from '@/application/coaching/GetCoachingView'
@@ -46,11 +46,19 @@ import {
 const MISSED = 'var(--color-missed)'
 const MISSED_10 = 'color-mix(in srgb, var(--color-missed) 10%, transparent)'
 const MISSED_25 = 'color-mix(in srgb, var(--color-missed) 25%, transparent)'
-const ACCENT_15 = 'color-mix(in srgb, var(--accent) 15%, transparent)'
-const ACCENT_30 = 'color-mix(in srgb, var(--accent) 30%, transparent)'
 const FG_05 = 'color-mix(in srgb, var(--color-foreground) 5%, transparent)'
 const FG_07 = 'color-mix(in srgb, var(--color-foreground) 7%, transparent)'
 const FG_18 = 'color-mix(in srgb, var(--color-foreground) 18%, transparent)'
+
+// Day-chip states: done and planned each get one fixed colour now instead of
+// borrowing the session's own type colour, so a week of mixed session types
+// still reads as one consistent legend (see the strip's caption row).
+const DONE_FILL = 'rgba(90,151,245,.14)'
+const DONE_BORDER = 'rgba(90,151,245,.32)'
+const DONE_TEXT = '#9cc4ff'
+const TODAY_BORDER = '#34d399'
+const PLANNED_FILL = 'rgba(148,178,220,.07)'
+const PLANNED_TEXT = '#c3ccd6'
 
 const TREND_WEEKS = 8
 
@@ -59,52 +67,96 @@ interface Day {
   acts: ActivitySummary[]
 }
 
-function PlannedWorkoutRow({
-  workout,
-  onTap,
-}: {
-  workout: PlanWorkoutView
-  onTap: () => void
-}) {
-  const typeColor = workout.type ? ACTIVITY_TYPE_CONFIG[workout.type].chartColor : null
-  const Icon = workout.type ? ACTIVITY_TYPE_ICONS[workout.type] : Footprints
-  const title = [workout.title, formatPlanDuration(workout.duration)].filter(Boolean).join(' · ')
+// effort already reads "Z2 easy · 5:10-6:27 /km" for the sheet and the old
+// subtitle - split off the pace range here, display-only, so this card alone
+// can put "target" in front of it without reshaping that shared string.
+const EFFORT_PACE = /^(.*?)\s*·\s*(\d{1,2}:\d{2}[-–]\d{1,2}:\d{2}\s*\/km)$/
+
+function splitEffort(effort: string | null): { band: string | null; pace: string | null } {
+  if (!effort) return { band: null, pace: null }
+  const match = effort.match(EFFORT_PACE)
+  return match ? { band: match[1] ?? null, pace: match[2] ?? null } : { band: effort, pace: null }
+}
+
+// The 42px shoe glyph said "this is a run" on a screen where everything is a
+// run, and it cost the structure bar its width. The session name carries the
+// card now; everything else - duration, zone, pace - moved down into one
+// detail line. Time of day is dropped from it entirely: it isn't a plan
+// instruction, and on a narrow card it was the reason the pace range (the one
+// number worth reading) got truncated.
+//
+// A planned session with no logged activity is a read-only statement of what
+// is prescribed, not a control - there is nowhere for a tap to go, so this is
+// a plain div: no onClick, no chevron, no hover/press state.
+function PlannedWorkoutRow({ workout }: { workout: PlanWorkoutView }) {
+  const { band, pace } = splitEffort(workout.effort)
+  const detail = [formatPlanDuration(workout.duration), band, pace ? t.plan.targetPace(pace) : null]
+    .filter(Boolean)
+    .join(' · ') || t.plan.planned
+  const zoneWord = band?.split(' ')[0] ?? null
 
   return (
-    <button
-      type="button"
-      onClick={onTap}
+    <div
       data-testid={`plan-workout-row-${workout.key}`}
-      className="w-full rounded-2xl border border-foreground/[0.08] bg-foreground/[0.04] p-3.5 text-left transition-colors hover:bg-foreground/[0.07]"
+      className="w-full rounded-2xl border border-foreground/[0.08] bg-foreground/[0.04] p-3.5"
     >
       <div className="flex items-center gap-3">
-        <span
-          className={cn(
-            'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl',
-            !typeColor && 'bg-accent/10'
-          )}
-          style={typeColor ? { background: `${typeColor}1f` } : undefined}
-        >
-          <Icon size={19} strokeWidth={2.2} className="text-foreground" />
-        </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-bold text-foreground">{title}</span>
-          <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-            {[workout.effort, recoveryLabel(workout.structure)].filter(Boolean).join(' · ') ||
-              t.plan.planned}
+          <span className="block truncate font-bold text-foreground" style={{ fontSize: '19px' }}>
+            {workout.title}
+          </span>
+          <span className="block" style={{ fontSize: '13.5px', color: '#97a3b0', marginTop: '6px', lineHeight: 1.5 }}>
+            {detail}
           </span>
         </span>
-        <ChevronRight size={18} className="shrink-0 text-muted-foreground" />
       </div>
-      {workout.structure && workout.structure.length > 1 && (
-        <WorkoutStructureBars
-          steps={workout.structure}
-          labels
-          className="mt-3 flex h-[22px] items-end gap-[3px]"
-        />
+      {workout.duration && (
+        <div className="mt-3.5">
+          <SessionStructureBar
+            steps={workout.structure ?? []}
+            zoneWord={zoneWord}
+            totalSeconds={workout.duration.seconds}
+          />
+        </div>
       )}
-    </button>
+    </div>
   )
+}
+
+// Rest is a prescribed state, not a missing render - it gets the same shell
+// as any other day (just dashed, and unfilled) instead of a bare line of text
+// floating in whatever space is left.
+function RestDayCard({ next }: { next: { weekday: string; title: string } | null }) {
+  return (
+    <div
+      className="w-full rounded-2xl p-3.5"
+      style={{ border: '1px dashed rgba(148,178,220,.2)' }}
+    >
+      <div className="font-bold" style={{ fontSize: '16px', color: '#c3ccd6' }}>{t.plan.restCard.title}</div>
+      <div className="mt-1" style={{ fontSize: '13px', color: '#8d99a6' }}>
+        {next ? t.plan.restCard.next(next.weekday, next.title) : t.plan.restCard.noSession}
+      </div>
+    </div>
+  )
+}
+
+function findNextPlanned(
+  days: Day[],
+  fromDate: string,
+  byDatePlanned: Map<string, PlannedWorkout>,
+  byDateCoach?: ReadonlyMap<string, PrescriptionView[]>
+): { weekday: string; title: string } | null {
+  const fromIndex = days.findIndex((d) => d.date === fromDate)
+  if (fromIndex === -1) return null
+
+  for (let i = fromIndex + 1; i < days.length; i++) {
+    const d = days[i]!
+    const coach = byDateCoach?.get(d.date)?.find((v) => v.state !== 'cancelled')
+    const plan = byDatePlanned.get(d.date)
+    const title = coach?.prescription.title ?? plan?.name ?? null
+    if (title) return { weekday: WEEKDAY_SHORT_INDEX[new Date(d.date + 'T00:00:00').getDay()]!, title }
+  }
+  return null
 }
 
 const WEEKDAY_SHORT_INDEX: Record<number, string> = {
@@ -117,8 +169,11 @@ const WEEKDAY_SHORT_INDEX: Record<number, string> = {
   6: t.plan.weekdays[5] ?? 'Sat',
 }
 
-function ComingUpRow({ workout, onTap }: { workout: PlanWorkoutView; onTap: () => void }) {
-  const typeColor = workout.type ? ACTIVITY_TYPE_CONFIG[workout.type].chartColor : null
+// One row per session, divider-separated like the Activities list rather than
+// a stack of two-line cards - three sessions used to cost ~190px and their
+// distances never lined up. The dot reuses A6's intensity bucketing so the two
+// screens read as the same vocabulary.
+function ComingUpRow({ workout, onTap, isLast }: { workout: PlanWorkoutView; onTap: () => void; isLast: boolean }) {
   const weekday = WEEKDAY_SHORT_INDEX[new Date(workout.date + 'T00:00:00').getDay()]
   const detail =
     formatPlanDuration(workout.duration) ??
@@ -130,67 +185,140 @@ function ComingUpRow({ workout, onTap }: { workout: PlanWorkoutView; onTap: () =
       type="button"
       onClick={onTap}
       data-testid={`coming-up-${workout.key}`}
-      className="flex w-full items-center gap-2.5 rounded-xl border border-foreground/[0.08] bg-foreground/[0.04] px-2.5 py-1.5 text-left transition-colors hover:bg-foreground/[0.07]"
+      className="flex w-full items-center justify-between gap-3 text-left"
+      style={{ padding: '13px 2px', borderBottom: isLast ? undefined : '1px solid rgba(148,178,220,.1)' }}
     >
-      <span
-        className="h-2 w-2 shrink-0 rounded-full"
-        style={{ background: typeColor ?? 'var(--accent)' }}
-      />
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-semibold leading-tight text-foreground">
+      <span className="flex min-w-0 items-center gap-2.5">
+        <span
+          className="shrink-0 rounded-[4px]"
+          style={
+            workout.type === 'Race'
+              ? { width: '8px', height: '8px', border: `1.5px solid ${INTENSITY_DOT_COLORS.long}` }
+              : { width: '8px', height: '8px', background: workout.type ? intensityDotColor(workout.type) : 'var(--accent)' }
+          }
+        />
+        <span className="truncate font-bold text-foreground" style={{ fontSize: '15px' }}>
           {[weekday, workout.title].filter(Boolean).join(' · ')}
         </span>
-        <span className="mt-0.5 block truncate text-caption leading-tight text-muted-foreground">
-          {[distanceKm ? `~${distanceKm} ${t.units.km}` : null, detail].filter(Boolean).join(' · ')}
-        </span>
       </span>
-      {workout.isKey && (
-        <span className="shrink-0 text-caption font-medium text-muted-foreground">{t.plan.keyTag}</span>
-      )}
+      <span className="shrink-0" style={{ fontSize: '13px', color: '#8d99a6' }}>
+        {[distanceKm ? `~${distanceKm} ${t.units.km}` : null, detail].filter(Boolean).join(' · ')}
+      </span>
     </button>
   )
 }
 
-// Mid-week the three tiles read "–", 0 and 0 m - an empty state shaped like a
-// failure state, sitting directly above the one thing the screen is for. Load is
-// the only one of the three with a planned counterpart in the domain, so it gets
-// the comparison and the other two collapse to a single line.
-function WeekLoadSummary({ summary, planned }: { summary: WeekSummary; planned: PlannedWeek | null }) {
-  const s = t.plan.weekSummary
-  const target = planned?.estimatedLoad ?? 0
-  const pct = target > 0 ? Math.min(100, Math.round((summary.totalTrimp / target) * 100)) : null
+const LEGEND_INK = '#7d8896'
 
+// done · today · planned km - the only three states the strip needs a key for.
+// Rest carries its own label already, so it isn't listed here.
+function DayChipLegend() {
+  const s = t.plan.dayChipLegend
   return (
-    <GlassSurface variant="card" className="rounded-[14px] px-3.5 py-3">
-      <div className="flex items-baseline justify-between gap-2">
-        <SectionDivider>{s.load}</SectionDivider>
-        <div className="font-display text-lg font-bold tabular-nums text-foreground">
-          <AnimatedValue value={summary.totalTrimp} />
-          {target > 0 && (
-            <span className="ml-1 text-footnote font-medium text-muted-foreground">
-              {s.ofPlanned(target)}
-            </span>
-          )}
-        </div>
-      </div>
+    <div
+      className="flex items-center justify-center"
+      style={{ marginTop: '8px', gap: '14px', fontSize: '11px', color: LEGEND_INK }}
+    >
+      <span className="flex items-center gap-1.5">
+        <span style={{ width: '9px', height: '9px', borderRadius: '3px', background: 'rgba(90,151,245,.32)' }} />
+        {s.done}
+      </span>
+      <span className="flex items-center gap-1.5">
+        <span style={{ width: '9px', height: '9px', borderRadius: '3px', border: `1.5px solid ${TODAY_BORDER}` }} />
+        {s.today}
+      </span>
+      <span className="flex items-center gap-1.5">
+        <span style={{ width: '9px', height: '9px', borderRadius: '3px', background: 'rgba(148,178,220,.18)' }} />
+        {s.plannedKm}
+      </span>
+    </div>
+  )
+}
 
-      {pct !== null && (
-        <div className="mt-2 h-[3px] overflow-hidden rounded-full" style={{ background: 'var(--track)' }}>
-          <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${pct}%` }} />
+function StatTile({
+  label,
+  value,
+  denominator,
+  unit,
+  footnote,
+  testId,
+}: {
+  label: string
+  value: number | null
+  denominator?: number | null
+  unit?: string
+  footnote?: string
+  testId?: string
+}) {
+  return (
+    <GlassSurface variant="card" className="rounded-[16px] p-3" data-testid={testId}>
+      <div className="truncate font-bold uppercase" style={{ fontSize: '10px', letterSpacing: '.14em', color: '#8d99a6' }}>
+        {label}
+      </div>
+      <div className="mt-1 flex items-baseline gap-1">
+        <span className="font-display font-bold tabular-nums text-foreground" style={{ fontSize: '21px' }}>
+          {value !== null ? <AnimatedValue value={value} /> : '–'}
+        </span>
+        {denominator !== undefined && denominator !== null && (
+          <span className="tabular-nums" style={{ fontSize: '13px', color: '#8d99a6' }}>
+            / {denominator}
+          </span>
+        )}
+        {unit && (
+          <span style={{ fontSize: '10.5px', color: '#7d8896' }}>{unit}</span>
+        )}
+      </div>
+      {footnote && (
+        <div className="mt-0.5 truncate" style={{ fontSize: '10px', color: '#7d8896' }}>
+          {footnote}
         </div>
       )}
-
-      <div className="mt-2 flex flex-wrap gap-x-3 text-footnote tabular-nums text-muted-foreground">
-        <span>
-          <span>{s.climb}</span> {summary.elevationGainM} {t.units.m}
-        </span>
-        <span>
-          {summary.hardPct !== null
-            ? s.easyHardSplit(100 - Math.round(summary.hardPct), Math.round(summary.hardPct))
-            : s.noSplit}
-        </span>
-      </div>
     </GlassSurface>
+  )
+}
+
+// Load, climb and easy/hard are the same class of fact - three totals for the
+// week - so they read as one row of equal tiles instead of one full-width
+// card (load, with its own progress bar) plus two numbers tacked on below it.
+function WeekStatsTiles({
+  summary,
+  planned,
+  typicalClimbM,
+}: {
+  summary: WeekSummary
+  planned: PlannedWeek | null
+  typicalClimbM: number | null
+}) {
+  const s = t.plan.weekSummary
+  const target = planned?.estimatedLoad ?? 0
+  const hardPct = summary.hardPct !== null ? Math.round(summary.hardPct) : null
+  const easyPct = hardPct !== null ? 100 - hardPct : null
+
+  return (
+    <div className="grid grid-cols-3" style={{ gap: '8px' }}>
+      <StatTile
+        label={s.load}
+        value={summary.totalTrimp}
+        denominator={target > 0 ? target : null}
+        unit={s.loadUnit}
+        testId="stat-load"
+      />
+      <StatTile
+        label={s.climb}
+        value={summary.elevationGainM}
+        denominator={typicalClimbM}
+        unit={t.units.m}
+        testId="stat-climb"
+      />
+      <StatTile
+        label={s.easyHard}
+        value={easyPct}
+        denominator={hardPct}
+        unit="%"
+        footnote={s.easyHardTarget}
+        testId="stat-easy-hard"
+      />
+    </div>
   )
 }
 
@@ -245,9 +373,6 @@ export function WeekView({
       days.find((d) => d.date === today)?.date ??
       firstDay.date
   )
-  const [sheetActivity, setSheetActivity] = useState<ActivitySummary | null>(null)
-  const [sheetWorkout, setSheetWorkout] = useState<PlanWorkoutView | null>(null)
-
   const selected = days.find((d) => d.date === selectedDate) ?? firstDay
   const selectedPlan = byDatePlanned.get(selected.date)
 
@@ -297,6 +422,17 @@ export function WeekView({
     [trendWeekNumbers, byWeekNumber, hrBounds]
   )
   const comparison = useMemo(() => compareWeekLoad(summary.totalTrimp, trendTotals.slice(0, -1)), [summary.totalTrimp, trendTotals])
+
+  // Climb has no planned counterpart in the domain the way load does, so its
+  // tile compares against the same trailing-8-week baseline the purpose
+  // banner already uses for load, rather than inventing a "planned climb".
+  const typicalClimbM = useMemo(() => {
+    const priorWeeks = trendWeekNumbers.slice(0, -1)
+    const totals = priorWeeks.map((week) => (byWeekNumber.get(week) ?? []).reduce((s, a) => s + (a.elevationGain ?? 0), 0))
+    if (totals.filter((v) => v > 0).length < 3) return null
+    const average = Math.round(totals.reduce((s, v) => s + v, 0) / totals.length)
+    return average > 0 ? average : null
+  }, [trendWeekNumbers, byWeekNumber])
 
   const adherence = useMemo(
     () =>
@@ -358,6 +494,8 @@ export function WeekView({
     return { footerRaces: upcoming.map(toRace), footerSpan: null }
   }, [coaching, nextRace, planSpan, today])
 
+  const footerWeeks = useMemo(() => weeksInPlan(footerSpan, today), [footerSpan, today])
+
   const weekOver = days[days.length - 1]!.date < today
   const isCurrentWeek = !weekOver && firstDay.date <= today
 
@@ -398,7 +536,6 @@ export function WeekView({
                 const missed = isPast && planned
                 const rest = !completed && !planned
                 const primaryType: ActivityType | null = (d.acts[0]?.type ?? (activeCoach ? COACHING_TO_ACTIVITY_TYPE[activeCoach.prescription.type] : plan?.type)) ?? null
-                const typeColor = primaryType && !missed ? ACTIVITY_TYPE_CONFIG[primaryType].chartColor : null
                 const doneKm = d.acts.reduce((sum, a) => sum + a.distanceKm, 0)
                 const plannedMeters = activeCoach
                   ? prescriptionDistanceMeters(activeCoach.prescription)
@@ -428,10 +565,8 @@ export function WeekView({
                     )}
                   >
                     <span
-                      className={cn(
-                        'text-micro leading-none',
-                        isToday ? 'font-bold text-foreground' : 'text-subtle'
-                      )}
+                      className="text-micro font-bold leading-none"
+                      style={{ color: isToday ? TODAY_BORDER : 'var(--subtle)' }}
                     >
                       {weekday}
                     </span>
@@ -441,20 +576,16 @@ export function WeekView({
                         className="relative flex h-[52px] w-full flex-col items-center justify-center gap-0.5 rounded-[11px] border px-0.5 transition-colors"
                         style={{
                           ...(completed
-                            ? { background: ACCENT_15, borderColor: ACCENT_30 }
+                            ? { background: DONE_FILL, borderColor: DONE_BORDER }
                             : missed
                               ? { background: MISSED_10, borderColor: MISSED_25 }
                               : planned
-                                ? { background: FG_05, borderColor: FG_18 }
+                                ? { background: PLANNED_FILL, borderColor: FG_18 }
                                 : { background: FG_05, borderColor: FG_07 }),
                           // Only today gets a ring, so the ring's existence marks the
-                          // day and its colour is free to name the session. That
-                          // works because the fill is state now, not type - a
-                          // type-coloured ring no longer merges into the chip
-                          // underneath it the way the old glow did.
-                          ...(isToday
-                            ? { borderColor: typeColor ?? 'var(--accent)', borderWidth: 2 }
-                            : null),
+                          // day and it is always the same green, regardless of the
+                          // session underneath - the fill already carries that state.
+                          ...(isToday ? { borderColor: TODAY_BORDER, borderWidth: 2 } : null),
                         }}
                       >
                         <span
@@ -462,14 +593,21 @@ export function WeekView({
                             'truncate text-center text-micro font-bold leading-tight',
                             rest && 'font-semibold opacity-40'
                           )}
-                          style={{ color: missed ? MISSED : rest ? 'var(--color-foreground)' : (typeColor ?? 'var(--accent)') }}
+                          style={{
+                            color: missed
+                              ? MISSED
+                              : rest
+                                ? 'var(--color-foreground)'
+                                : completed
+                                  ? DONE_TEXT
+                                  : planned
+                                    ? PLANNED_TEXT
+                                    : 'var(--accent)',
+                          }}
                         >
                           {label}
                         </span>
 
-                        {completed && (
-                          <Check size={11} strokeWidth={3.4} style={{ color: typeColor ?? 'var(--accent)' }} />
-                        )}
                         {missed && <X size={11} strokeWidth={3.4} style={{ color: MISSED }} />}
                       </div>
                     </div>
@@ -478,9 +616,10 @@ export function WeekView({
               })}
             </div>
           </div>
+        <DayChipLegend />
       </div>
 
-      <WeekLoadSummary summary={summary} planned={planned} />
+      <WeekStatsTiles summary={summary} planned={planned} typicalClimbM={typicalClimbM} />
 
       <div className="space-y-3 px-1">
         <p className="text-xs font-bold uppercase tracking-wide text-accent-text">
@@ -492,44 +631,76 @@ export function WeekView({
         {selected.acts.length > 0 ? (
           <div className="space-y-2">
             {selected.acts.map((a) => {
-              const ActIcon = ACTIVITY_TYPE_ICONS[a.type]
+              // A coach prescription is only this activity's plan when it is
+              // actually linked to it (activityId). Otherwise it may describe
+              // a session that was swapped or skipped, and Garmin's own plan -
+              // which tracks what was actually suggested for the day - is the
+              // honest comparison.
+              const coach = byDateCoach?.get(a.date)?.find((v) => v.state !== 'cancelled' && v.activityId === a.id)
+              const plan = byDatePlanned.get(a.date)
+              const plannedMeters = coach ? prescriptionDistanceMeters(coach.prescription) : (plan?.distanceM ?? null)
+              const plannedKm = plannedMeters !== null ? Math.round(plannedMeters / 1000) : null
+              const detail = [
+                t.plan.ranKm(a.distanceKm.toFixed(1)),
+                plannedKm !== null ? t.plan.plannedKmLabel(plannedKm) : null,
+                a.paceSecPerKm !== null ? formatPace(a.paceSecPerKm) : null,
+                a.rpe !== null ? t.activities.row.rpeValue(a.rpe) : null,
+              ]
+                .filter(Boolean)
+                .join(' · ')
+              const zoneWord = EFFORT_ZONE_BY_TYPE[a.type] ?? null
+
               return (
-              <button
+              <Link
                 key={a.id}
-                type="button"
-                onClick={() => setSheetActivity(a)}
-                className="flex w-full items-center gap-3 rounded-xl border border-foreground/[0.08] bg-foreground/[0.04] p-3 text-left transition-colors hover:bg-foreground/[0.07]"
+                href={`/activities/${a.id}`}
+                aria-label={`${activityTitle(a)}, ${formatDate(a.date)}, ${t.plan.viewActivity}`}
+                className="block w-full rounded-2xl border border-foreground/[0.08] bg-foreground/[0.04] p-3.5"
               >
-                <span
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border"
-                  style={{
-                    background: `${ACTIVITY_TYPE_CONFIG[a.type].chartColor}1a`,
-                    borderColor: `${ACTIVITY_TYPE_CONFIG[a.type].chartColor}44`,
-                  }}
-                >
-                  <ActIcon size={16} strokeWidth={2.2} style={{ color: ACTIVITY_TYPE_CONFIG[a.type].chartColor }} />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-semibold text-foreground">
+                <div className="flex items-start justify-between gap-3">
+                  <span className="min-w-0 flex-1 truncate font-bold text-foreground" style={{ fontSize: '19px' }}>
                     {activityTitle(a)}
                   </span>
-                  <span className="text-xs text-muted-foreground">
-                    {t.activityTypes[a.type]} · {a.distanceKm.toFixed(1)} {t.units.km}
+                  <span className="flex shrink-0 items-center" style={{ gap: '8px' }}>
+                    <span
+                      className="font-bold uppercase"
+                      style={{
+                        fontSize: '11px',
+                        letterSpacing: '.06em',
+                        color: '#9cc4ff',
+                        background: 'rgba(90,151,245,.16)',
+                        borderRadius: '6px',
+                        padding: '4px 8px',
+                      }}
+                    >
+                      {t.plan.doneChip}
+                    </span>
+                    <ChevronRight size={19} style={{ color: '#6f7d8b' }} aria-hidden="true" />
                   </span>
-                </span>
-                <ChevronRight size={16} className="shrink-0 text-foreground/30" />
-              </button>
+                </div>
+                <div className="block" style={{ fontSize: '13.5px', color: '#97a3b0', marginTop: '6px', lineHeight: 1.5 }}>
+                  {detail}
+                </div>
+                <div className="mt-3.5">
+                  <SessionStructureBar
+                    steps={[]}
+                    zoneWord={zoneWord}
+                    totalSeconds={a.durationSeconds}
+                    variant="done"
+                  />
+                </div>
+              </Link>
               )
             })}
           </div>
         ) : selectedWorkouts.length > 0 ? (
           <div className="space-y-2">
             {selectedWorkouts.map((workout) => (
-              <PlannedWorkoutRow key={workout.key} workout={workout} onTap={() => setSheetWorkout(workout)} />
+              <PlannedWorkoutRow key={workout.key} workout={workout} />
             ))}
           </div>
         ) : (
-          <p className="text-center text-sm text-subtle">{t.plan.restDay}</p>
+          <RestDayCard next={findNextPlanned(days, selected.date, byDatePlanned, byDateCoach)} />
         )}
       </div>
 
@@ -538,12 +709,13 @@ export function WeekView({
           <SectionDivider as="p" className="mb-2.5 flex items-center gap-2">
             {t.plan.comingUp}
           </SectionDivider>
-          <div className="space-y-2">
-            {comingUp.map((workout) => (
+          <div>
+            {comingUp.map((workout, i) => (
               <ComingUpRow
                 key={workout.key}
                 workout={workout}
                 onTap={() => setSelectedDate(workout.date)}
+                isLast={i === comingUp.length - 1}
               />
             ))}
           </div>
@@ -551,17 +723,17 @@ export function WeekView({
       )}
 
       {footerRaces.length > 0 && atPresent && (
-        <RaceFooter races={footerRaces} planSpan={footerSpan} today={today} />
+        <div className="px-1">
+          <SectionDivider as="p" className="mb-2.5 flex items-center justify-between gap-2">
+            <span>{t.plan.races}</span>
+            {footerWeeks && (
+              <span>{t.plan.raceFooter.weeksIn(footerWeeks.done, footerWeeks.total)} {t.plan.raceFooter.weeksInLabel}</span>
+            )}
+          </SectionDivider>
+          <RaceFooter races={footerRaces} today={today} />
+        </div>
       )}
 
-      {sheetActivity && (
-        <ActivitySheet
-          activity={sheetActivity}
-          title={activityTitle(sheetActivity)}
-          onClose={() => setSheetActivity(null)}
-        />
-      )}
-      {sheetWorkout && <PlannedWorkoutSheet workout={sheetWorkout} onClose={() => setSheetWorkout(null)} />}
     </div>
   )
 }
