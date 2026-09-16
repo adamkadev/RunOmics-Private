@@ -52,6 +52,10 @@ export const en = {
     tooFewToPlot: 'Too few points to draw a trend',
   },
 
+  dates: {
+    monthShortYear: (month: string, year2: string) => `${month} ’${year2}`,
+  },
+
   units: {
     km: 'km',
     bpm: 'bpm',

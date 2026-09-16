@@ -44,6 +44,10 @@ export const fr = {
     tooFewToPlot: 'Trop peu de points pour tracer une tendance',
   },
 
+  dates: {
+    monthShortYear: (month: string, year2: string) => `${month} ${year2}`,
+  },
+
   units: {
     km: 'km',
     bpm: 'bpm',

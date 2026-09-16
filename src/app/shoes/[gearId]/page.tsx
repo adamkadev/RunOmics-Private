@@ -12,8 +12,9 @@ import { StatusPill } from '@/components/ui/StatusPill'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { BackButton } from '@/components/ui/BackButton'
+import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
 import { STATUS } from '@/lib/statusColors'
-import { formatDate, formatDistance } from '@/lib/formatters'
+import { formatDistance, formatMonthShortYear } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -34,14 +35,10 @@ function verdictBody(status: 'watch' | 'replace', weeksRemaining: number | null)
   return `${v.weeksLeft(weeksRemaining)} ${action}`
 }
 
-function Stat({ value, label }: { value: React.ReactNode; label: string }) {
-  return (
-    <div className="rounded-xl bg-foreground/[0.04] px-2.5 py-2.5 text-center">
-      <div className="text-micro font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className="mt-1 text-base font-extrabold tabular-nums text-foreground">{value}</div>
-    </div>
-  )
-}
+// Five cells on a 375 pt screen leave 67 px each, and the strip carries two
+// dates: `text-subhead` is the step at which "May '25" still fits on one line,
+// applied to every cell so the row keeps one size.
+const STAT_VALUE_CLASS = 'text-subhead font-bold text-foreground'
 
 export async function generateMetadata({
   params,
@@ -83,6 +80,32 @@ export default async function ShoeDetailPage({
     : 0
   const avgRunKm = shoe.activities.length > 0 ? shoe.totalKm / shoe.activities.length : null
   const style = WEAR_STYLE[status]
+  const stats: Metric[] = [
+    { value: <AnimatedValue value={shoe.activities.length} />, label: d.stats.activities, valueClassName: STAT_VALUE_CLASS },
+    { value: <AnimatedValue value={weeksInRotation} />, label: d.stats.weeks, valueClassName: STAT_VALUE_CLASS },
+    {
+      value: avgRunKm !== null ? formatDistance(avgRunKm) : '-',
+      unit: avgRunKm !== null ? t.units.km : undefined,
+      label: d.stats.avgRun,
+      valueClassName: STAT_VALUE_CLASS,
+    },
+    shoe.retired
+      ? {
+          value: lastWornDate ? formatMonthShortYear(lastWornDate) : '-',
+          label: d.stats.lastWorn,
+          valueClassName: STAT_VALUE_CLASS,
+        }
+      : {
+          value: <AnimatedValue value={shoe.kmPerWeek} decimals={0} />,
+          label: d.stats.kmPerWeek,
+          valueClassName: STAT_VALUE_CLASS,
+        },
+    {
+      value: shoe.firstUsedDate ? formatMonthShortYear(shoe.firstUsedDate) : '-',
+      label: d.stats.firstUsed,
+      valueClassName: STAT_VALUE_CLASS,
+    },
+  ]
   const aiTake =
     status === 'ok' || shoe.retired
       ? null
@@ -131,23 +154,7 @@ export default async function ShoeDetailPage({
         </div>
       )}
 
-      <div className="grid grid-cols-4 gap-2">
-        <Stat value={<AnimatedValue value={shoe.activities.length} />} label={d.stats.activities} />
-        <Stat value={<AnimatedValue value={weeksInRotation} />} label={d.stats.weeks} />
-        <Stat
-          value={avgRunKm !== null ? `${formatDistance(avgRunKm)} ${t.units.km}` : '-'}
-          label={d.stats.avgRun}
-        />
-        {shoe.retired ? (
-          <Stat
-            value={lastWornDate ? formatDate(lastWornDate, { precision: 'month', year: 'always' }) : '-'}
-            label={d.stats.lastWorn}
-          />
-        ) : (
-          <Stat value={<AnimatedValue value={shoe.kmPerWeek} decimals={0} />} label={d.stats.kmPerWeek} />
-        )}
-        <Stat value={shoe.firstUsedDate ? formatDate(shoe.firstUsedDate, { precision: 'month' }) : '-'} label={d.stats.firstUsed} />
-      </div>
+      <MetricGrid metrics={stats} className="grid-cols-5 px-1 text-center" />
 
       <div className="space-y-3">
         <SectionDivider>{d.activitiesTitle}</SectionDivider>

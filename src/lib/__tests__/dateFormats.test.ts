@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatCountdown, formatDate, formatDateRange } from '@/lib/formatters'
+import { formatCountdown, formatDate, formatDateRange, formatMonthShortYear } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 const now = new Date('2026-09-16T00:00:00')
@@ -80,5 +80,20 @@ describe('formatCountdown', () => {
 
   it('clamps a race already run, so no call site has to', () => {
     expect(formatCountdown(-4)).toBe(t.nextRace.today)
+  })
+})
+
+describe('formatMonthShortYear', () => {
+  it('fits a month and a year into a narrow cell', () => {
+    expect(formatMonthShortYear('2025-05-14')).toBe('May ’25')
+    expect(formatMonthShortYear('2025-12-01')).toBe('Dec ’25')
+  })
+
+  it('prints the year whatever year it is read in, unlike the auto rule', () => {
+    expect(formatMonthShortYear('2026-09-16', { now })).toBe('Sep ’26')
+  })
+
+  it('never renders as a day of the month', () => {
+    expect(formatMonthShortYear('2025-03-04')).not.toMatch(/^[A-Za-z]+ \d/)
   })
 })
