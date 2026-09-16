@@ -10,6 +10,7 @@ import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
 import { ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import { verdictTone, type ReadinessTone } from '@/domain/training/readiness'
+import { Pill } from '@/components/ui/Pill'
 import { PlannedWorkoutSheet } from '@/components/plan/PlannedWorkoutSheet'
 import type { PlanWorkoutView } from '@/components/plan/planWorkoutView'
 import { formatCountdown, formatDistance, formatDurationWords } from '@/lib/formatters'
@@ -111,10 +112,10 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiV
           {tone ? s.eyebrowByTone[tone] : s.eyebrowByTone.go}
         </span>
         {daysToRace !== null && daysToRace > 0 && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-0.5 font-mono text-micro font-bold text-white/80">
+          <Pill variant="onDark" className="gap-1 px-2.5 py-0.5 font-mono text-micro font-bold">
             <Flag size={10} />
             {formatCountdown(daysToRace)} · {nextRace!.name}
-          </span>
+          </Pill>
         )}
       </div>
 

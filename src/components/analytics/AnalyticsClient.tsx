@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
-import { cn } from '@/lib/utils'
 import type { AnalyticsPageData } from '@/application/usecases/GetAnalyticsData'
 import type { YearComparisonData } from '@/application/usecases/GetYearComparison'
 import type { SeasonHeadlineData } from '@/application/usecases/GetSeasonHeadline'
@@ -10,6 +9,7 @@ import type { Insight } from '@/lib/gemini'
 import { SeasonHeadline } from '@/components/analytics/SeasonHeadline'
 import { TabInsight } from '@/components/analytics/TabInsight'
 import type { AnalyticsTabInsights } from '@/application/usecases/GetAnalyticsTabInsights'
+import { Pill } from '@/components/ui/Pill'
 import { YearSelector } from '@/components/ui/YearSelector'
 import type { VO2maxSeries } from '@/application/usecases/GetVO2maxHistory'
 import type { TrainingLoadData } from '@/application/usecases/GetTrainingLoad'
@@ -185,21 +185,19 @@ export function AnalyticsClient({
           className="sticky top-[max(var(--safe-top),8px)] z-20 -mx-4 grid grid-cols-4 gap-1.5 px-4 py-2 backdrop-blur-xl sm:-mx-6 sm:px-6"
         >
           {visibleTabs.map((item) => (
-            <button
+            <Pill
               key={item.id}
+              as="button"
               role="tab"
               aria-selected={tab === item.id}
               onClick={() => selectTab(item.id)}
-              className={cn(
-                'truncate rounded-full px-1 py-2 text-center text-footnote transition-all active:scale-95',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                tab === item.id
-                  ? 'border border-transparent bg-accent font-semibold text-accent-foreground shadow-sm'
-                  : 'border border-foreground/[0.12] bg-foreground/[0.06] font-medium text-foreground/60 hover:bg-foreground/[0.10] hover:text-foreground',
-              )}
+              variant={tab === item.id ? 'accent' : 'neutral'}
+              className="min-w-0 justify-center px-1 py-2 text-footnote"
             >
-              {item.label}
-            </button>
+              {/* min-w-0 so the label can shrink inside the pill's flex row and
+                  actually ellipsise - four tabs share ~85 px each at 390 px. */}
+              <span className="min-w-0 truncate">{item.label}</span>
+            </Pill>
           ))}
         </div>
       )}

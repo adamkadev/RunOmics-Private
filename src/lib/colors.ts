@@ -156,7 +156,10 @@ export const WORKOUT_SHEET_COLORS = {
   handle: paper(0.2),
   iconWell: paper(0.07),
   iconFallback: c.gray400,
-  tint: { fill: 0.12, border: 0.27, handle: 0.33, iconWell: 0.1 },
+  // `chipFill` is the type chip's tint. It replaces a `${typeColor}22` hex
+  // append (0x22/255 = 13 %) so the whole sheet states its alphas one way;
+  // `border` (0.27) is the same value the old `${typeColor}44` produced.
+  tint: { fill: 0.12, border: 0.27, handle: 0.33, iconWell: 0.1, chipFill: 0.13 },
 } as const
 
 export const CELEBRATION_COLORS = {

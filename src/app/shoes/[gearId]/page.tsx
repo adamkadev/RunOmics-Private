@@ -8,7 +8,7 @@ import { wearOutlook, type WearStatus } from '@/domain/shoe/wearStatus'
 import { ActivityListCard } from '@/components/activities/ActivityListCard'
 import { BrandIcon } from '@/components/shoes/BrandIcon'
 import { HERO_SURFACE } from '@/components/shoes/ShoesGrid'
-import { Badge } from '@/components/ui/Card'
+import { StatusPill } from '@/components/ui/StatusPill'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { BackButton } from '@/components/ui/BackButton'
@@ -81,7 +81,7 @@ export default async function ShoeDetailPage({
         <div className="flex items-center gap-2">
           <BrandIcon brand={shoe.brand} size={16} />
           <SectionDivider>{shoe.brand}</SectionDivider>
-          {shoe.retired && <Badge className={STATUS.pending.badge}>{t.shoes.retired}</Badge>}
+          {shoe.retired && <StatusPill tone="zinc">{t.shoes.retired}</StatusPill>}
         </div>
         <h1 className="text-display text-foreground">{shoe.name}</h1>
       </div>

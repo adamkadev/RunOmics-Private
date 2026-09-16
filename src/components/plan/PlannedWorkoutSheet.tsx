@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import type { ActivityType } from '@/domain/activity/types'
 import { ACTIVITY_TYPE_CONFIG, ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
+import { Pill } from '@/components/ui/Pill'
 import { StatusPill } from '@/components/ui/StatusPill'
 import { formatPlanDuration, type PlanWorkoutView } from './planWorkoutView'
 import { WorkoutStructureBars, WorkoutStepList } from './WorkoutStructure'
@@ -90,32 +91,25 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
           {(workout.scheduledTime || workout.type || durationLabel || distanceKm) && (
             <div className="mb-4 flex flex-wrap gap-2">
               {workout.scheduledTime && (
-                <span className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-xs font-semibold text-white/70">
-                  {t.plan.timeOfDay[workout.scheduledTime]}
-                </span>
+                <Pill variant="onDark">{t.plan.timeOfDay[workout.scheduledTime]}</Pill>
               )}
               {workout.type && typeColor && (
-                <span
-                  className="rounded-full px-3 py-1 text-xs font-semibold"
+                // The type chip is the one chip in the row where the hue is the
+                // message and not decoration, so it keeps the identity colour
+                // as ink over the shared geometry.
+                <Pill
+                  variant="onDark"
                   style={{
-                    background: `${typeColor}22`,
+                    background: withAlpha(typeColor, SHEET.tint.chipFill),
                     color: typeColor,
-                    border: `1px solid ${typeColor}44`,
+                    borderColor: withAlpha(typeColor, SHEET.tint.border),
                   }}
                 >
                   {t.activityTypes[workout.type as ActivityType]}
-                </span>
+                </Pill>
               )}
-              {durationLabel && (
-                <span className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-xs font-semibold text-white/70">
-                  {durationLabel}
-                </span>
-              )}
-              {distanceKm && (
-                <span className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-xs font-semibold text-white/70">
-                  {distanceKm} {t.units.km}
-                </span>
-              )}
+              {durationLabel && <Pill variant="onDark">{durationLabel}</Pill>}
+              {distanceKm && <Pill variant="onDark">{distanceKm} {t.units.km}</Pill>}
             </div>
           )}
 

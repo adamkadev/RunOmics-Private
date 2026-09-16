@@ -21,7 +21,6 @@ import { t } from '@/i18n'
 const ALL_TYPES = Object.keys(ACTIVITY_TYPE_CONFIG) as ActivityType[]
 const PAGE_SIZE = 20
 const SEARCH_DEBOUNCE_MS = 300
-const ACTIVE_CHIP_SHADOW = 'shadow-[0_4px_12px_-4px_var(--ring)]'
 
 const SORT_OPTIONS: { value: ActivitySortKey; label: string }[] = [
   { value: 'date', label: t.activities.sort.date },
@@ -296,8 +295,8 @@ export function ActivityListClient({
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <Pill
           as="button"
-          variant={selectedType === null ? 'active' : 'neutral'}
-          className={cn('text-footnote font-semibold', selectedType === null && ACTIVE_CHIP_SHADOW)}
+          variant={selectedType === null ? 'accent' : 'neutral'}
+          className="text-footnote font-semibold"
           onClick={() => setSelectedType(null)}
         >
           {t.activities.all}
@@ -308,9 +307,9 @@ export function ActivityListClient({
             <Pill
               key={type}
               as="button"
-              variant={active ? 'active' : 'neutral'}
+              variant={active ? 'accent' : 'neutral'}
               dotColor={active ? undefined : ACTIVITY_TYPE_CONFIG[type].chartColor}
-              className={cn('text-footnote font-semibold', active && ACTIVE_CHIP_SHADOW)}
+              className="text-footnote font-semibold"
               onClick={() => setSelectedType(active ? null : type)}
             >
               {t.activityTypes[type]}

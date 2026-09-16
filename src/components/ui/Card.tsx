@@ -37,11 +37,3 @@ export function Card({ children, ...opts }: CardProps) {
 }
 
 export const tooltipSurfaceClass = 'rounded-lg border border-border bg-card px-2.5 py-2 text-xs shadow-md'
-
-export function Badge({ className, children }: { className?: string; children: ReactNode }) {
-  return (
-    <span className={cn('inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', className)}>
-      {children}
-    </span>
-  )
-}

@@ -6,7 +6,7 @@ import { NotebookPen, X } from 'lucide-react'
 import { getClientFirestore, isClientFirebaseConfigured } from '@/lib/firebase'
 import { useOwnerAuth } from '@/lib/useOwnerAuth'
 import { inputCls } from '@/lib/formStyles'
-import { Badge } from '@/components/ui/Card'
+import { StatusPill } from '@/components/ui/StatusPill'
 import { SaveButton, type SaveState } from '@/components/ui/SaveButton'
 import { Toast, useToast } from '@/components/ui/Toast'
 import { t } from '@/i18n'
@@ -153,7 +153,7 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
               {saved.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                   {saved.tags.map((tag) => (
-                    <Badge key={tag} className="bg-accent/10 text-accent-text">{tag}</Badge>
+                    <StatusPill key={tag} tone="accent">{tag}</StatusPill>
                   ))}
                 </div>
               )}

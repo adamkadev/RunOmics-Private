@@ -66,7 +66,7 @@ export function ProfileStatsYtd({ ytd, allTime, prevYearDistanceKm }: Props) {
           <Pill
             key={p.id}
             as="button"
-            variant={p.id === period ? 'active' : 'neutral'}
+            variant={p.id === period ? 'accent' : 'neutral'}
             className="px-3 py-1.5 text-micro font-semibold uppercase tracking-wide"
             aria-pressed={p.id === period}
             onClick={() => setPeriod(p.id)}
