@@ -631,6 +631,7 @@ export const en = {
     searchPlaceholder: 'Search...',
     all: 'All',
     count: (n: number) => `${n} activit${n !== 1 ? 'ies' : 'y'}`,
+    countWithDistance: (runs: number, km: string) => `${runs} run${runs === 1 ? '' : 's'} · ${km} km`,
     empty: 'No activities found',
     emptyFiltered: 'No sessions of this type',
     resetFilters: 'Reset filters',
@@ -639,7 +640,7 @@ export const en = {
     lastWeek: 'Last week',
     weekStat: {
       km: 'km',
-      runs: 'runs',
+      runs: (n: number): string => (n === 1 ? 'run' : 'runs'),
     },
     easyShare: (pct: number) => `${pct}% easy`,
     weekGroupCompact: (runs: number, km: number) => `${runs} run${runs !== 1 ? 's' : ''} · ${km} km`,

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Search, SearchX, ChevronDown, Map as MapIcon } from 'lucide-react'
 import { ActivityListCard } from './ActivityListCard'
@@ -13,12 +13,23 @@ import { Pill } from '@/components/ui/Pill'
 import { SortDropdown } from '@/components/ui/SortDropdown'
 import { easyHardShare } from '@/domain/training/easyHard'
 import { CHART_COLORS } from '@/lib/colors'
-import { formatDateRange } from '@/lib/formatters'
+import { formatDateRange, formatKm } from '@/lib/formatters'
 import { isoDate, addDays, startOfWeek } from '@/lib/calendarDate'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 const ALL_TYPES = Object.keys(ACTIVITY_TYPE_CONFIG) as ActivityType[]
+
+// Registry order is the intensity ramp, which puts Sprint and Anaerobic - the
+// two rarest - in the first two chip slots. Order the filter by how much of the
+// archive each type actually accounts for, commonest first.
+function chipOrder(items: ActivitySummary[]): ActivityType[] {
+  const counts = new Map<ActivityType, number>()
+  for (const a of items) counts.set(a.type, (counts.get(a.type) ?? 0) + 1)
+  return [...ALL_TYPES].sort(
+    (a, b) => (counts.get(b) ?? 0) - (counts.get(a) ?? 0) || ALL_TYPES.indexOf(a) - ALL_TYPES.indexOf(b)
+  )
+}
 const PAGE_SIZE = 20
 const SEARCH_DEBOUNCE_MS = 300
 
@@ -209,6 +220,11 @@ export function ActivityListClient({
   const [isPending, setIsPending] = useState(false)
   const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(new Set())
 
+  // Derived from the unfiltered set the page handed us, so the header keeps
+  // describing the archive rather than the current filter.
+  const totalKm = useMemo(() => initialItems.reduce((sum, a) => sum + a.distanceKm, 0), [initialItems])
+  const chipTypes = useMemo(() => chipOrder(initialItems), [initialItems])
+
   const [debouncedSearch, setDebouncedSearch] = useState('')
   useEffect(() => {
     const id = setTimeout(() => setDebouncedSearch(search), SEARCH_DEBOUNCE_MS)
@@ -317,7 +333,7 @@ export function ActivityListClient({
               {t.pages.activities.title}
             </h1>
             <p className="mt-0.5 text-footnote font-medium text-muted-foreground">
-              {t.activities.count(totalCount)}
+              {totalKm > 0 ? t.activities.countWithDistance(totalCount, formatKm(totalKm)) : t.activities.count(totalCount)}
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2 pt-1">
@@ -362,7 +378,7 @@ export function ActivityListClient({
         >
           {t.activities.all}
         </Pill>
-        {ALL_TYPES.map((type) => {
+        {chipTypes.map((type) => {
           const active = selectedType === type
           return (
             <Pill
@@ -418,7 +434,7 @@ export function ActivityListClient({
                     </div>
                     <div className="flex shrink-0 items-end gap-4 text-right">
                       <WeekStat value={String(Math.round(g.totalKm))} label={t.activities.weekStat.km} />
-                      <WeekStat value={String(g.items.length)} label={t.activities.weekStat.runs} />
+                      <WeekStat value={String(g.items.length)} label={t.activities.weekStat.runs(g.items.length)} />
                       {g.easyPct !== null && g.hardPct !== null && (
                         <EasyHardSplit easyPct={g.easyPct} hardPct={g.hardPct} />
                       )}
