@@ -12,7 +12,7 @@ import {
   type WindowBounds,
 } from '@/domain/timeWindow'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { CardTitle } from '@/components/ui/SectionLabel'
+import { ChartCardHead, ChartReading } from '@/components/ui/ChartCard'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { CHART_COLORS } from '@/lib/colors'
@@ -145,6 +145,7 @@ export function WindowedChartCard<T extends { date: string }>({
   initialRange = '4w',
   sample = true,
   footnote,
+  reading,
   sparse,
   children,
 }: {
@@ -158,24 +159,32 @@ export function WindowedChartCard<T extends { date: string }>({
   initialRange?: ChartRange
   sample?: boolean
   footnote?: ReactNode
+  /** The card's takeaway, rendered above the chart. It takes the window that is
+   *  actually on screen - not the whole series - so a card can never lead with
+   *  a number the reader cannot find in the picture below it. */
+  reading?: (visible: T[]) => ReactNode
   sparse?: (visible: T[]) => ReactNode
   children: (visible: T[]) => ReactNode
 }) {
   const w = useChartWindow(points, initialRange)
   const plotted = sample ? sampleForRange(w.visible, w.range) : w.visible
+  const takeaway = plotted.length > 0 && reading ? reading(plotted) : null
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <CardTitle>
-          {title}
-          {unit && <span className="ml-1.5 text-caption font-medium text-subtle">· {unit}</span>}
-        </CardTitle>
-        <div className="flex flex-wrap items-center gap-2">
-          {controls}
-          <ChartRangeChips value={w.range} onChange={w.selectRange} />
-        </div>
-      </div>
+      <ChartCardHead
+        title={title}
+        unit={unit}
+        footnote={footnote}
+        controls={
+          <>
+            {controls}
+            <ChartRangeChips value={w.range} onChange={w.selectRange} />
+          </>
+        }
+      />
+
+      {takeaway && <ChartReading>{takeaway}</ChartReading>}
 
       {legend && <div className="mb-3 flex flex-wrap gap-x-3 gap-y-1">{legend}</div>}
 
@@ -194,8 +203,6 @@ export function WindowedChartCard<T extends { date: string }>({
       ) : (
         children(plotted)
       )}
-
-      {footnote && <p className="mt-2 text-xs text-subtle">{footnote}</p>}
     </GlassSurface>
   )
 }

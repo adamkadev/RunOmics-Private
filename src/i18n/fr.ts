@@ -379,6 +379,7 @@ export const fr = {
   analytics: {
     title: 'Analyses',
     readingLabel: 'Lecture :',
+    aboutChart: 'Ce que mesure ce graphique',
     season: (year: number) => `Saison ${year}`,
     allTimeChip: 'Tout',
     tabs: {
@@ -544,6 +545,7 @@ export const fr = {
         runs: (n: number) => `${n} sorties`,
         kmTotal: (km: number) => `${km} km au total`,
         reading: (bracket: string, pct: number) => `La majorité des sorties (${pct}%) se situe dans la tranche ${bracket}.`,
+        footnote: 'Toutes les sorties de la saison, regroupées par distance. L’intensité de la couleur reflète la fréquence relative.',
       },
       rpe: {
         title: 'Tendance RPE',

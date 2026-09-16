@@ -10,7 +10,7 @@ import { useAccentUiColor } from '@/lib/useAccent'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
-import { ChartExplain } from '@/components/ui/ChartExplain'
+import { ChartCardHead, ChartReading } from '@/components/ui/ChartCard'
 import { t } from '@/i18n'
 
 const MONTH_LABELS = t.dashboard.heatmap.months.map((m) => m.toUpperCase())
@@ -65,19 +65,24 @@ export function MonthlyComparisonChart({ currentYear, currentData, prevYear, pre
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground/80">{t.analytics.charts.monthlyComparison.title}</h3>
-        <div className="flex items-center gap-4 text-xs text-subtle">
-          <span className="flex items-center gap-1">
-            <span className="inline-block h-2 w-3 rounded-sm" style={{ background: accentColor }} />
-            {currentYear}
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="inline-block h-2 w-3 rounded-sm" style={{ background: CHART_COLORS.axisTick }} />
-            {prevYear}
-          </span>
-        </div>
-      </div>
+      <ChartCardHead
+        title={t.analytics.charts.monthlyComparison.title}
+        controls={
+          <div className="flex items-center gap-4 text-xs text-subtle">
+            <span className="flex items-center gap-1">
+              <span className="inline-block h-2 w-3 rounded-sm" style={{ background: accentColor }} />
+              {currentYear}
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="inline-block h-2 w-3 rounded-sm" style={{ background: CHART_COLORS.axisTick }} />
+              {prevYear}
+            </span>
+          </div>
+        }
+      />
+
+      {reading && <ChartReading>{reading}</ChartReading>}
+
       <ChartFigure summary={summary}>
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={merged} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>
@@ -116,7 +121,6 @@ export function MonthlyComparisonChart({ currentYear, currentData, prevYear, pre
           </LineChart>
         </ResponsiveContainer>
       </ChartFigure>
-      {reading && <ChartExplain text={reading} />}
     </GlassSurface>
   )
 }

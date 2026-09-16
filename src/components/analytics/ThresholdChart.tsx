@@ -4,7 +4,6 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 import type { ThresholdHistoryData, ThresholdPoint } from '@/application/usecases/GetThresholdHistory'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
-import { ChartExplain } from '@/components/ui/ChartExplain'
 import { SparseSeries, sparseRow, type SparseRow } from '@/components/ui/SparseSeries'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { WindowedChartCard, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
@@ -58,6 +57,15 @@ export function windowPaceGain(points: ThresholdPoint[]): number | null {
   return paces.length >= 2 && first !== undefined && last !== undefined ? first - last : null
 }
 
+// Derived from the window on screen, and rendered above the chart rather than
+// under it - see ChartReading.
+function thresholdReading(visible: ThresholdPoint[]): string | null {
+  const s = t.analytics.charts.threshold
+  const gain = windowPaceGain(visible)
+  if (gain === null) return null
+  return Math.abs(gain) < 1 ? s.reading.flat : s.reading.change(formatDelta(-Math.round(gain), `s/${t.units.km}`))
+}
+
 export function ThresholdChart({ data }: { data: ThresholdHistoryData }) {
   const s = t.analytics.charts.threshold
 
@@ -75,6 +83,7 @@ export function ThresholdChart({ data }: { data: ThresholdHistoryData }) {
       points={data.points}
       sample={false}
       footnote={s.footnote}
+      reading={thresholdReading}
       sparse={(visible) => (
         <SparseSeries
           count={visible.length}
@@ -91,52 +100,43 @@ export function ThresholdChart({ data }: { data: ThresholdHistoryData }) {
         const ticks = windowTicks(visible)
         const hrAxis = roundAxis(visible.map((p) => p.lthrBpm), BPM_STEP)
         const paceAxis = roundAxis(visible.map((p) => p.thresholdPaceSecPerKm), PACE_STEP)
-        const gain = windowPaceGain(visible)
-        const explain =
-          gain === null
-            ? null
-            : Math.abs(gain) < 1
-              ? s.reading.flat
-              : s.reading.change(formatDelta(-Math.round(gain), `s/${t.units.km}`))
+        const explain = thresholdReading(visible)
         const summary = explain ? `${s.title}: ${explain}` : s.title
 
         return (
-          <>
-            <ChartFigure summary={summary}>
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={visible} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
-                  <XAxis {...windowDateAxis(ticks)} />
-                  <YAxis
-                    yAxisId="hr"
-                    domain={hrAxis?.domain}
-                    ticks={hrAxis?.ticks}
-                    interval={0}
-                    tick={{ fontSize: 11, fill: HR_COLOR }}
-                    axisLine={false}
-                    tickLine={false}
-                    width={34}
-                  />
-                  <YAxis
-                    yAxisId="pace"
-                    orientation="right"
-                    reversed
-                    domain={paceAxis?.domain}
-                    ticks={paceAxis?.ticks}
-                    interval={0}
-                    tickFormatter={formatClock}
-                    tick={{ fontSize: 11, fill: PACE_COLOR }}
-                    axisLine={false}
-                    tickLine={false}
-                    width={46}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Line yAxisId="hr" type="monotone" dataKey="lthrBpm" stroke={HR_COLOR} strokeWidth={2.5} {...trendDots(HR_COLOR)} connectNulls isAnimationActive={false} />
-                  <Line yAxisId="pace" type="monotone" dataKey="thresholdPaceSecPerKm" stroke={PACE_COLOR} strokeWidth={2.5} {...trendDots(PACE_COLOR)} connectNulls isAnimationActive={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartFigure>
-            {explain && <ChartExplain text={explain} />}
-          </>
+          <ChartFigure summary={summary}>
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={visible} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
+                <XAxis {...windowDateAxis(ticks)} />
+                <YAxis
+                  yAxisId="hr"
+                  domain={hrAxis?.domain}
+                  ticks={hrAxis?.ticks}
+                  interval={0}
+                  tick={{ fontSize: 11, fill: HR_COLOR }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={34}
+                />
+                <YAxis
+                  yAxisId="pace"
+                  orientation="right"
+                  reversed
+                  domain={paceAxis?.domain}
+                  ticks={paceAxis?.ticks}
+                  interval={0}
+                  tickFormatter={formatClock}
+                  tick={{ fontSize: 11, fill: PACE_COLOR }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={46}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Line yAxisId="hr" type="monotone" dataKey="lthrBpm" stroke={HR_COLOR} strokeWidth={2.5} {...trendDots(HR_COLOR)} connectNulls isAnimationActive={false} />
+                <Line yAxisId="pace" type="monotone" dataKey="thresholdPaceSecPerKm" stroke={PACE_COLOR} strokeWidth={2.5} {...trendDots(PACE_COLOR)} connectNulls isAnimationActive={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </ChartFigure>
         )
       }}
     </WindowedChartCard>

@@ -7,7 +7,7 @@ import { formatPace } from '@/lib/formatters'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
-import { ChartExplain } from '@/components/ui/ChartExplain'
+import { ChartCardHead, ChartReading } from '@/components/ui/ChartCard'
 import { t } from '@/i18n'
 
 const MEANINGFUL_COST_SEC = 3
@@ -43,10 +43,14 @@ export function HeatImpactChart({ data }: { data: HeatImpactData }) {
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h3 className="text-sm font-semibold text-foreground/80">{c.title}</h3>
-        <span className="shrink-0 text-xs text-subtle">{c.paceAtRefHr(refHeartRate)}</span>
-      </div>
+      <ChartCardHead
+        title={c.title}
+        footnote={c.footnote(refHeartRate)}
+        controls={<span className="shrink-0 text-xs text-subtle">{c.paceAtRefHr(refHeartRate)}</span>}
+      />
+
+      <ChartReading>{reading}</ChartReading>
+
       <ChartFigure summary={summary}>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={bands} layout="vertical" margin={{ top: 4, right: 56, bottom: 0, left: 4 }}>
@@ -81,8 +85,6 @@ export function HeatImpactChart({ data }: { data: HeatImpactData }) {
           </BarChart>
         </ResponsiveContainer>
       </ChartFigure>
-      <ChartExplain text={reading} />
-      <p className="mt-2 text-xs text-subtle">{c.footnote(refHeartRate)}</p>
     </GlassSurface>
   )
 }

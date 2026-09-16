@@ -5,7 +5,6 @@ import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { useAccentUiColor } from '@/lib/useAccent'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
-import { ChartExplain } from '@/components/ui/ChartExplain'
 import { WindowedChartCard, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
 import { trendFromSeries } from '@/lib/chartTrend'
 import { formatClock, formatDelta } from '@/lib/formatters'
@@ -45,6 +44,19 @@ function LegendDot({ color, label }: { color: string; label: string }) {
   )
 }
 
+// Derived from the window on screen, and rendered above the chart rather than
+// under it - see ChartReading.
+function paceTrendReading(visible: WeeklyTrendPoint[]): string | null {
+  const ex = t.analytics.charts.paceTrend.explains
+  const trend = trendFromSeries(visible.map((d) => d.easyPace), 8)
+  if (!trend) return null
+  return trend.direction === 'down'
+    ? ex.improving(formatDelta(Math.round(trend.delta), `s/${t.units.km}`))
+    : trend.direction === 'up'
+      ? ex.slowing(formatDelta(Math.round(trend.delta), `s/${t.units.km}`))
+      : ex.stable
+}
+
 export function PaceTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
   const easyColor = useAccentUiColor()
 
@@ -63,6 +75,7 @@ export function PaceTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
       legend={legend}
       points={points}
       footnote={t.analytics.charts.paceTrend.footnote}
+      reading={paceTrendReading}
     >
       {(visible) => {
         const paces = visible.flatMap((d) => [d.easyPace, d.hardPace]).filter((p): p is number => p !== null)
@@ -71,42 +84,31 @@ export function PaceTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
         const axis = roundAxis(paces, PACE_STEP)
         const ticks = windowTicks(visible)
 
-        const ex = t.analytics.charts.paceTrend.explains
-        const trend = trendFromSeries(visible.map((d) => d.easyPace), 8)
-        const explain = trend
-          ? trend.direction === 'down'
-            ? ex.improving(formatDelta(Math.round(trend.delta), `s/${t.units.km}`))
-            : trend.direction === 'up'
-              ? ex.slowing(formatDelta(Math.round(trend.delta), `s/${t.units.km}`))
-              : ex.stable
-          : null
+        const explain = paceTrendReading(visible)
         const summary = `${t.analytics.charts.paceTrend.title}${explain ? `: ${explain}` : ''}`
 
         return (
-          <>
-            <ChartFigure summary={summary}>
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={visible} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
-                  <XAxis {...windowDateAxis(ticks)} />
-                  <YAxis
-                    domain={axis?.domain}
-                    ticks={axis?.ticks}
-                    interval={0}
-                    reversed
-                    tickFormatter={formatClock}
-                    tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-                    axisLine={false}
-                    tickLine={false}
-                    width={46}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Line type="monotone" dataKey="easyPace" stroke={easyColor} strokeWidth={3} {...trendDots(easyColor)} connectNulls isAnimationActive={false} />
-                  <Line type="monotone" dataKey="hardPace" stroke={CHART_COLORS.atl} strokeWidth={3} {...trendDots(CHART_COLORS.atl)} connectNulls isAnimationActive={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartFigure>
-            {explain && <ChartExplain text={explain} />}
-          </>
+          <ChartFigure summary={summary}>
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={visible} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
+                <XAxis {...windowDateAxis(ticks)} />
+                <YAxis
+                  domain={axis?.domain}
+                  ticks={axis?.ticks}
+                  interval={0}
+                  reversed
+                  tickFormatter={formatClock}
+                  tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={46}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Line type="monotone" dataKey="easyPace" stroke={easyColor} strokeWidth={3} {...trendDots(easyColor)} connectNulls isAnimationActive={false} />
+                <Line type="monotone" dataKey="hardPace" stroke={CHART_COLORS.atl} strokeWidth={3} {...trendDots(CHART_COLORS.atl)} connectNulls isAnimationActive={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </ChartFigure>
         )
       }}
     </WindowedChartCard>

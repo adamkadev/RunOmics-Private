@@ -387,6 +387,7 @@ export const en = {
   analytics: {
     title: 'Analytics',
     readingLabel: 'Reading:',
+    aboutChart: 'What this chart measures',
     season: (year: number) => `${year} season`,
     allTimeChip: 'All',
     tabs: {
@@ -552,6 +553,7 @@ export const en = {
         runs: (n: number) => `${n} runs`,
         kmTotal: (km: number) => `${km} km total`,
         reading: (bracket: string, pct: number) => `Most runs (${pct}%) land in the ${bracket} bracket.`,
+        footnote: 'Every run of the season, grouped by distance. Colour intensity reflects relative frequency.',
       },
       rpe: {
         title: 'RPE Trend',

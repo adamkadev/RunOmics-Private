@@ -5,7 +5,6 @@ import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { ChartFigure } from '@/components/ui/ChartFigure'
-import { ChartExplain } from '@/components/ui/ChartExplain'
 import { SparseSeries, sparseRow, type SparseRow } from '@/components/ui/SparseSeries'
 import { WindowedChartCard, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
 import { trendFromSeries } from '@/lib/chartTrend'
@@ -44,6 +43,20 @@ function LegendDot({ color, label }: { color: string; label: string }) {
   )
 }
 
+// Derived from the window on screen, and rendered above the chart rather than
+// under it - see ChartReading.
+function hrTrendReading(visible: WeeklyTrendPoint[]): string | null {
+  const easyVals = visible.map((d) => d.easyAvgHr).filter((v): v is number => v !== null)
+  const r = t.analytics.charts.hrTrend.reading
+  const trend = trendFromSeries(easyVals, 2)
+  if (!trend) return null
+  return trend.direction === 'down'
+    ? r.down(Math.round(Math.abs(trend.delta)))
+    : trend.direction === 'up'
+      ? r.up(Math.round(trend.delta))
+      : r.flat
+}
+
 export function HrTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
   if (!points.some((p) => p.easyAvgHr !== null || p.hardAvgHr !== null)) return null
 
@@ -61,6 +74,7 @@ export function HrTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
       legend={legend}
       points={points}
       footnote={t.analytics.charts.hrTrend.footnote}
+      reading={hrTrendReading}
       sparse={(visible) => (
         <SparseSeries
           count={visible.length}
@@ -87,39 +101,26 @@ export function HrTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
         if (hardVals.length) summaryParts.push(`${t.analytics.charts.paceTrend.workout} ${Math.round(Math.min(...hardVals))}–${Math.round(Math.max(...hardVals))} ${t.units.bpm}`)
         const summary = `${t.analytics.charts.hrTrend.title}: ${summaryParts.join(', ')}`
 
-        const r = t.analytics.charts.hrTrend.reading
-        const trend = trendFromSeries(easyVals, 2)
-        const reading = trend
-          ? trend.direction === 'down'
-            ? r.down(Math.round(Math.abs(trend.delta)))
-            : trend.direction === 'up'
-              ? r.up(Math.round(trend.delta))
-              : r.flat
-          : null
-
         return (
-          <>
-            <ChartFigure summary={summary}>
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={visible} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
-                  <XAxis {...windowDateAxis(ticks)} />
-                  <YAxis
-                    domain={axis?.domain}
-                    ticks={axis?.ticks}
-                    interval={0}
-                    tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-                    axisLine={false}
-                    tickLine={false}
-                    width={42}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Line type="monotone" dataKey="easyAvgHr" stroke={CHART_COLORS.easy} strokeWidth={3} {...trendDots(CHART_COLORS.easy)} connectNulls isAnimationActive={false} />
-                  <Line type="monotone" dataKey="hardAvgHr" stroke={CHART_COLORS.hard} strokeWidth={3} {...trendDots(CHART_COLORS.hard)} connectNulls isAnimationActive={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartFigure>
-            {reading && <ChartExplain text={reading} />}
-          </>
+          <ChartFigure summary={summary}>
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={visible} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
+                <XAxis {...windowDateAxis(ticks)} />
+                <YAxis
+                  domain={axis?.domain}
+                  ticks={axis?.ticks}
+                  interval={0}
+                  tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={42}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Line type="monotone" dataKey="easyAvgHr" stroke={CHART_COLORS.easy} strokeWidth={3} {...trendDots(CHART_COLORS.easy)} connectNulls isAnimationActive={false} />
+                <Line type="monotone" dataKey="hardAvgHr" stroke={CHART_COLORS.hard} strokeWidth={3} {...trendDots(CHART_COLORS.hard)} connectNulls isAnimationActive={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </ChartFigure>
         )
       }}
     </WindowedChartCard>

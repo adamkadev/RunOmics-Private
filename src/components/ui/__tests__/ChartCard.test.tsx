@@ -1,0 +1,101 @@
+import { describe, it, expect } from 'vitest'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { isoDate } from '@/lib/calendarDate'
+import { WindowedChartCard } from '@/components/ui/ChartWindowNav'
+import { t } from '@/i18n'
+
+function daysAgo(n: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() - n)
+  return isoDate(d)
+}
+
+describe('WindowedChartCard: reading and footnote', () => {
+  it('leads with the reading and keeps the definition behind the (i)', async () => {
+    const user = userEvent.setup()
+
+    render(
+      <WindowedChartCard
+        title="Avg Heart Rate"
+        points={[{ date: daysAgo(1) }]}
+        footnote="Duration-weighted average HR."
+        reading={() => 'Easy HR is drifting down.'}
+      >
+        {() => <div data-testid="chart" />}
+      </WindowedChartCard>
+    )
+
+    // The takeaway is body-size ink, not a caption, and it precedes the chart:
+    // the card used to print it at 11px underneath, below a 12px definition.
+    const reading = screen.getByText(/Easy HR is drifting down\./)
+    expect(reading.tagName).toBe('P')
+    expect(reading.className).toContain('text-body')
+    expect(reading.textContent).toContain(t.analytics.readingLabel)
+    expect(reading.compareDocumentPosition(screen.getByTestId('chart'))).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    )
+
+    // The definition is reference material: it is not ink until it is asked for.
+    expect(screen.queryByText('Duration-weighted average HR.')).not.toBeInTheDocument()
+
+    const disclosure = screen.getByRole('button', { name: t.analytics.aboutChart })
+    expect(disclosure).toHaveAttribute('aria-expanded', 'false')
+
+    await user.click(disclosure)
+    expect(disclosure).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByText('Duration-weighted average HR.')).toBeInTheDocument()
+
+    await user.click(disclosure)
+    expect(screen.queryByText('Duration-weighted average HR.')).not.toBeInTheDocument()
+  })
+
+  it('offers no disclosure when the card has no definition to disclose', () => {
+    render(
+      <WindowedChartCard title="Zone Distribution" points={[{ date: daysAgo(1) }]}>
+        {() => <div data-testid="chart" />}
+      </WindowedChartCard>
+    )
+
+    expect(screen.queryByRole('button', { name: t.analytics.aboutChart })).not.toBeInTheDocument()
+  })
+
+  it('reads the visible window, not the whole series', () => {
+    const seen: string[][] = []
+
+    render(
+      <WindowedChartCard
+        title="Weekly Volume"
+        points={[{ date: daysAgo(200) }, { date: daysAgo(3) }]}
+        sample={false}
+        reading={(visible) => {
+          seen.push(visible.map((p) => p.date))
+          return `${visible.length} weeks`
+        }}
+      >
+        {() => <div data-testid="chart" />}
+      </WindowedChartCard>
+    )
+
+    // The default window is 4 weeks, so a point 200 days old must not reach the
+    // reading - promoting a whole-series number to the top of the card would
+    // make it contradict the chart under it.
+    expect(seen.at(-1)).toEqual([daysAgo(3)])
+    expect(screen.getByText('1 weeks')).toBeInTheDocument()
+  })
+
+  it('says nothing rather than reading an empty window', () => {
+    render(
+      <WindowedChartCard
+        title="Weekly Volume"
+        points={[{ date: daysAgo(200) }]}
+        reading={() => 'this should never render'}
+      >
+        {() => <div data-testid="chart" />}
+      </WindowedChartCard>
+    )
+
+    expect(screen.queryByText(/this should never render/)).not.toBeInTheDocument()
+    expect(screen.getByText(t.chartWindow.empty)).toBeInTheDocument()
+  })
+})

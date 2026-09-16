@@ -9,7 +9,7 @@ import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
-import { ChartExplain } from '@/components/ui/ChartExplain'
+import { ChartCardHead, ChartReading } from '@/components/ui/ChartCard'
 import { ChartRangeChips, ChartWindowPager, useChartWindow } from '@/components/ui/ChartWindowNav'
 import { formatDuration, formatPace } from '@/lib/formatters'
 import { roundAxis } from '@/lib/chartAxis'
@@ -144,10 +144,13 @@ export function RacePredictorChart({ data }: { data: GarminRacePredictionsData }
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-foreground/80">{s.title}</h3>
-        <ChartRangeChips value={range} onChange={selectRange} />
-      </div>
+      <ChartCardHead
+        title={s.title}
+        footnote={s.footnote}
+        controls={<ChartRangeChips value={range} onChange={selectRange} />}
+      />
+
+      {reading && <ChartReading>{reading}</ChartReading>}
 
       <div className="mb-3 flex flex-wrap gap-x-3 gap-y-1">
         {data.distances.map((distance) => (
@@ -211,9 +214,6 @@ export function RacePredictorChart({ data }: { data: GarminRacePredictionsData }
           </ResponsiveContainer>
         </ChartFigure>
       )}
-
-      {reading && <ChartExplain text={reading} />}
-      <p className="mt-2 text-xs text-subtle">{s.footnote}</p>
     </GlassSurface>
   )
 }

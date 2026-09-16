@@ -4,7 +4,6 @@ import { ComposedChart, Area, Line, XAxis, YAxis, Tooltip, ResponsiveContainer }
 import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
-import { ChartExplain } from '@/components/ui/ChartExplain'
 import { WindowedChartCard, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
 import { trendFromSeries } from '@/lib/chartTrend'
 import { ChartFigure } from '@/components/ui/ChartFigure'
@@ -53,6 +52,34 @@ function LegendMark({ label, dashed }: { label: string; dashed?: boolean }) {
   )
 }
 
+// The reading is derived from the window on screen and is now rendered above
+// the chart, so it lives outside the render callback - the callback still needs
+// it for the figure's text alternative.
+function efficiencyReading(visible: WeeklyTrendPoint[]): string | null {
+  const ex = t.analytics.charts.efficiency.explains
+  const trend = trendFromSeries(visible.map((d) => d.efAdjusted), 0.03)
+  const explain = trend
+    ? trend.direction === 'up'
+      ? ex.improving(Math.abs(trend.delta).toFixed(2))
+      : trend.direction === 'down'
+        ? ex.declining
+        : ex.stable
+    : null
+
+  const gaps = visible
+    .filter((d) => d.ef !== null && d.efAdjusted !== null)
+    .map((d) => d.efAdjusted! - d.ef!)
+  const avgGap = gaps.length ? gaps.reduce((s, v) => s + v, 0) / gaps.length : 0
+  const heatGap = avgGap >= HEAT_GAP_MIN ? ex.heatGap(avgGap.toFixed(2)) : null
+
+  // heatGap is written as a trailing clause, so on a window with no trend it
+  // ends up leading the sentence. It is the card's headline now, not a caption
+  // under the chart; sentence-case it where it is assembled rather than
+  // duplicating the clause in i18n just to get one capital letter.
+  const reading = [explain, heatGap].filter(Boolean).join('. ')
+  return reading ? reading.charAt(0).toUpperCase() + reading.slice(1) : null
+}
+
 export function EfficiencyChart({ points }: { points: WeeklyTrendPoint[] }) {
   if (!points.some((p) => p.ef !== null)) return null
 
@@ -65,7 +92,14 @@ export function EfficiencyChart({ points }: { points: WeeklyTrendPoint[] }) {
   )
 
   return (
-    <WindowedChartCard title={c.title} unit={c.unit} legend={legend} points={points} footnote={c.footnote}>
+    <WindowedChartCard
+      title={c.title}
+      unit={c.unit}
+      legend={legend}
+      points={points}
+      footnote={c.footnote}
+      reading={efficiencyReading}
+    >
       {(visible) => {
         const values = visible.flatMap((d) => [d.ef, d.efAdjusted]).filter((v): v is number => v !== null)
         if (!values.length) return <p className="py-12 text-center text-sm text-subtle">{t.chartWindow.empty}</p>
@@ -73,75 +107,56 @@ export function EfficiencyChart({ points }: { points: WeeklyTrendPoint[] }) {
         const axis = roundAxis(values, EF_STEP)
         const ticks = windowTicks(visible)
 
-        const ex = c.explains
-        const trend = trendFromSeries(visible.map((d) => d.efAdjusted), 0.03)
-        const explain = trend
-          ? trend.direction === 'up'
-            ? ex.improving(Math.abs(trend.delta).toFixed(2))
-            : trend.direction === 'down'
-              ? ex.declining
-              : ex.stable
-          : null
-
-        const gaps = visible
-          .filter((d) => d.ef !== null && d.efAdjusted !== null)
-          .map((d) => d.efAdjusted! - d.ef!)
-        const avgGap = gaps.length ? gaps.reduce((s, v) => s + v, 0) / gaps.length : 0
-        const heatGap = avgGap >= HEAT_GAP_MIN ? ex.heatGap(avgGap.toFixed(2)) : null
-        const reading = [explain, heatGap].filter(Boolean).join('. ')
-
+        const reading = efficiencyReading(visible)
         const summary = `${c.title}${reading ? `: ${reading}` : ''}`
 
         return (
-          <>
-            <ChartFigure summary={summary}>
-              <ResponsiveContainer width="100%" height={200}>
-                <ComposedChart data={visible} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
-                  <defs>
-                    <linearGradient id="efGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={CHART_COLORS.efficiency} stopOpacity={0.25} />
-                      <stop offset="95%" stopColor={CHART_COLORS.efficiency} stopOpacity={0.02} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis {...windowDateAxis(ticks)} />
-                  <YAxis
-                    domain={axis?.domain}
-                    ticks={axis?.ticks}
-                    interval={0}
-                    tickFormatter={(v: number) => v.toFixed(axis?.decimals ?? 2)}
-                    tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-                    axisLine={false}
-                    tickLine={false}
-                    width={42}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Area
-                    type="monotone"
-                    dataKey="efAdjusted"
-                    stroke={CHART_COLORS.efficiency}
-                    strokeWidth={3}
-                    fill="url(#efGradient)"
-                    {...trendDots(CHART_COLORS.efficiency)}
-                    connectNulls
-                    isAnimationActive={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="ef"
-                    stroke={CHART_COLORS.efficiency}
-                    strokeWidth={1.5}
-                    strokeDasharray="4 3"
-                    strokeOpacity={0.65}
-                    dot={false}
-                    activeDot={false}
-                    connectNulls
-                    isAnimationActive={false}
-                  />
-                </ComposedChart>
-              </ResponsiveContainer>
-            </ChartFigure>
-            {reading && <ChartExplain text={reading} />}
-          </>
+          <ChartFigure summary={summary}>
+            <ResponsiveContainer width="100%" height={200}>
+              <ComposedChart data={visible} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
+                <defs>
+                  <linearGradient id="efGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={CHART_COLORS.efficiency} stopOpacity={0.25} />
+                    <stop offset="95%" stopColor={CHART_COLORS.efficiency} stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
+                <XAxis {...windowDateAxis(ticks)} />
+                <YAxis
+                  domain={axis?.domain}
+                  ticks={axis?.ticks}
+                  interval={0}
+                  tickFormatter={(v: number) => v.toFixed(axis?.decimals ?? 2)}
+                  tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={42}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Area
+                  type="monotone"
+                  dataKey="efAdjusted"
+                  stroke={CHART_COLORS.efficiency}
+                  strokeWidth={3}
+                  fill="url(#efGradient)"
+                  {...trendDots(CHART_COLORS.efficiency)}
+                  connectNulls
+                  isAnimationActive={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="ef"
+                  stroke={CHART_COLORS.efficiency}
+                  strokeWidth={1.5}
+                  strokeDasharray="4 3"
+                  strokeOpacity={0.65}
+                  dot={false}
+                  activeDot={false}
+                  connectNulls
+                  isAnimationActive={false}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </ChartFigure>
         )
       }}
     </WindowedChartCard>

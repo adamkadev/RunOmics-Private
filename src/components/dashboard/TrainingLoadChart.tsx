@@ -15,6 +15,7 @@ import { useHeadlineChartColor } from '@/lib/useAccent'
 import { STATUS } from '@/lib/statusColors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { ChartCardHead } from '@/components/ui/ChartCard'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { ChartRangeChips, ChartWindowPager, trendDots, useChartWindow } from '@/components/ui/ChartWindowNav'
 import { sampleForRange } from '@/domain/timeWindow'
@@ -73,10 +74,11 @@ export function TrainingLoadChart({ data }: Props) {
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-foreground/80">{t.dashboard.trainingLoad.title}</h3>
-        <ChartRangeChips value={range} onChange={selectRange} />
-      </div>
+      <ChartCardHead
+        title={t.dashboard.trainingLoad.title}
+        footnote={t.dashboard.trainingLoad.footnote}
+        controls={<ChartRangeChips value={range} onChange={selectRange} />}
+      />
 
       <div className="mb-3 flex flex-wrap gap-x-3.5 gap-y-1">
         <LegendValue label={t.dashboard.trainingLoad.fitness} value={data.ctl} color={CHART_COLORS.ctl} />
@@ -118,9 +120,6 @@ export function TrainingLoadChart({ data }: Props) {
         </ResponsiveContainer>
       </ChartFigure>
       )}
-      <p className="mt-2 text-xs text-subtle">
-        {t.dashboard.trainingLoad.footnote}
-      </p>
     </GlassSurface>
   )
 }

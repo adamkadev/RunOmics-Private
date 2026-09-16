@@ -8,7 +8,7 @@ import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
-import { ChartExplain } from '@/components/ui/ChartExplain'
+import { ChartCardHead, ChartReading } from '@/components/ui/ChartCard'
 import { t } from '@/i18n'
 
 const VOLUME_STACK_ORDER: ActivityType[] = ['Base', 'Tempo', 'Threshold', 'VO2Max', 'Anaerobic', 'Sprint', 'Race']
@@ -67,9 +67,10 @@ export function MonthlyVolumeChart({ data, typesPresent }: Props) {
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <h3 className="mb-4 text-sm font-semibold text-foreground/80">
-        {t.analytics.charts.monthlyVolume.title}
-      </h3>
+      <ChartCardHead title={t.analytics.charts.monthlyVolume.title} />
+
+      {reading && <ChartReading>{reading}</ChartReading>}
+
       <ChartFigure summary={summary}>
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>
@@ -110,7 +111,6 @@ export function MonthlyVolumeChart({ data, typesPresent }: Props) {
           </span>
         ))}
       </div>
-      {reading && <ChartExplain text={reading} />}
     </GlassSurface>
   )
 }

@@ -12,7 +12,7 @@ import { CHART_COLORS, TRAINING_STATUS_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
-import { ChartExplain } from '@/components/ui/ChartExplain'
+import { ChartCardHead, ChartReading } from '@/components/ui/ChartCard'
 import { ChartRangeChips, ChartWindowPager, useChartWindow } from '@/components/ui/ChartWindowNav'
 import { pickForRange } from '@/domain/timeWindow'
 import { t } from '@/i18n'
@@ -127,10 +127,13 @@ export function TrainingStatusHistoryChart({ data }: { data: TrainingStatusHisto
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-foreground/80">{s.title}</h3>
-        <ChartRangeChips value={range} onChange={selectRange} />
-      </div>
+      <ChartCardHead
+        title={s.title}
+        footnote={s.footnote}
+        controls={<ChartRangeChips value={range} onChange={selectRange} />}
+      />
+
+      {reading && <ChartReading>{reading}</ChartReading>}
 
       {/* The legend named only the statuses, so the two series actually plotted -
           the chronic and acute load lines - went unidentified. */}
@@ -229,9 +232,6 @@ export function TrainingStatusHistoryChart({ data }: { data: TrainingStatusHisto
           {segments.length > 0 && <StatusRibbon segments={segments} />}
         </>
       )}
-
-      {reading && <ChartExplain text={reading} />}
-      <p className="mt-2 text-xs text-subtle">{s.footnote}</p>
     </GlassSurface>
   )
 }

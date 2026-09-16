@@ -7,7 +7,6 @@ import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { CHART_COLORS, ZONE_COLORS, ZONE_COLORS_DARK } from '@/lib/colors'
 import { useTheme } from 'next-themes'
 import { ChartFigure } from '@/components/ui/ChartFigure'
-import { ChartExplain } from '@/components/ui/ChartExplain'
 import { WindowedChartCard } from '@/components/ui/ChartWindowNav'
 import { round } from '@/lib/math'
 import { t } from '@/i18n'
@@ -50,6 +49,15 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   )
 }
 
+// Derived from the window on screen, and rendered above the chart rather than
+// under it - see ChartReading.
+function zoneReading(visible: WeeklyTrendPoint[]): string | null {
+  const data = zoneShares(visible)
+  if (!data.length) return null
+  const top = data.reduce((a, b) => (b.percent > a.percent ? b : a))
+  return t.analytics.charts.zones.reading(top.percent, `Z${top.zone} · ${ZONE_LABELS[top.zone]}`)
+}
+
 export function ZoneDistributionChart({ points }: { points: WeeklyTrendPoint[] }) {
   const { resolvedTheme } = useTheme()
   const zoneColors = resolvedTheme === 'light' ? ZONE_COLORS : ZONE_COLORS_DARK
@@ -57,56 +65,56 @@ export function ZoneDistributionChart({ points }: { points: WeeklyTrendPoint[] }
   if (!points.some((p) => Object.keys(p.zoneSeconds).length > 0)) return null
 
   return (
-    <WindowedChartCard title={t.analytics.charts.zones.title} points={points} sample={false}>
+    <WindowedChartCard
+      title={t.analytics.charts.zones.title}
+      points={points}
+      sample={false}
+      reading={zoneReading}
+    >
       {(visible) => {
         const data = zoneShares(visible)
         if (!data.length) return <p className="py-12 text-center text-sm text-subtle">{t.chartWindow.empty}</p>
 
         const summary = `${t.analytics.charts.zones.title}: ${data.map((z) => `Z${z.zone} ${z.percent}%`).join(', ')}`
-        const top = data.reduce((a, b) => (b.percent > a.percent ? b : a))
-        const reading = t.analytics.charts.zones.reading(top.percent, `Z${top.zone} · ${ZONE_LABELS[top.zone]}`)
 
         return (
-          <>
-            <div className="flex items-center gap-4">
-              <ChartFigure summary={summary}>
-                <ResponsiveContainer width={140} height={140}>
-                  <PieChart>
-                    <Pie
-                      data={data}
-                      dataKey="seconds"
-                      nameKey="zone"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={42}
-                      outerRadius={64}
-                      paddingAngle={2}
-                      isAnimationActive={false}
-                    >
-                      {data.map((z) => (
-                        <Cell key={z.zone} fill={zoneColors[z.zone] ?? CHART_COLORS.axisTick} />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<CustomTooltip />} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </ChartFigure>
-              <ul className="flex-1 space-y-2">
-                {data.map((z) => (
-                  <li key={z.zone} className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: zoneColors[z.zone] }} />
-                      <span className="text-muted-foreground">
-                        Z{z.zone} {ZONE_LABELS[z.zone]}
-                      </span>
-                    </div>
-                    <span className="font-medium text-foreground">{z.percent}%</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <ChartExplain text={reading} />
-          </>
+          <div className="flex items-center gap-4">
+            <ChartFigure summary={summary}>
+              <ResponsiveContainer width={140} height={140}>
+                <PieChart>
+                  <Pie
+                    data={data}
+                    dataKey="seconds"
+                    nameKey="zone"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={42}
+                    outerRadius={64}
+                    paddingAngle={2}
+                    isAnimationActive={false}
+                  >
+                    {data.map((z) => (
+                      <Cell key={z.zone} fill={zoneColors[z.zone] ?? CHART_COLORS.axisTick} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
+            </ChartFigure>
+            <ul className="flex-1 space-y-2">
+              {data.map((z) => (
+                <li key={z.zone} className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full" style={{ backgroundColor: zoneColors[z.zone] }} />
+                    <span className="text-muted-foreground">
+                      Z{z.zone} {ZONE_LABELS[z.zone]}
+                    </span>
+                  </div>
+                  <span className="font-medium text-foreground">{z.percent}%</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         )
       }}
     </WindowedChartCard>

@@ -5,7 +5,6 @@ import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { useAccentUiColor } from '@/lib/useAccent'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
-import { ChartExplain } from '@/components/ui/ChartExplain'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { WindowedChartCard, windowDateAxis, windowTickDate, windowTickMonth, windowTicks } from '@/components/ui/ChartWindowNav'
 import { fillWeeklyGaps, monthStartTicks } from '@/domain/timeWindow'
@@ -58,6 +57,37 @@ function CustomTooltip({ active, payload, currentWeekDate }: TooltipProps & { cu
   )
 }
 
+// The week in progress is still partial, so it is the thing being compared and
+// never part of the baseline it is compared against. Both the reading and the
+// chart's reference line read the same average from here.
+function completedWeeks(visible: WeeklyTrendPoint[], currentWeekDate: string): WeeklyTrendPoint[] {
+  return visible.filter((w) => w.date !== currentWeekDate)
+}
+
+function weekAverage(complete: WeeklyTrendPoint[]): number {
+  return complete.length
+    ? Math.round(complete.reduce((sum, w) => sum + w.distanceKm, 0) / complete.length)
+    : 0
+}
+
+// Derived from the window on screen, and rendered above the chart rather than
+// under it - see ChartReading.
+function weeklyVolumeReading(visible: WeeklyTrendPoint[], currentWeekDate: string): string | null {
+  const c = t.analytics.charts.weeklyVolume
+  const complete = completedWeeks(visible, currentWeekDate)
+  const average = weekAverage(complete)
+
+  const last = complete[complete.length - 1]
+  const delta = last && complete.length > 1 ? last.distanceKm - average : null
+  if (delta === null) return null
+
+  return Math.abs(delta) < 3
+    ? c.explains.steady(average)
+    : delta > 0
+      ? c.explains.up(delta, average)
+      : c.explains.down(Math.abs(delta), average)
+}
+
 export function WeeklyVolumeChart({ points }: { points: WeeklyTrendPoint[] }) {
   const accentColor = useAccentUiColor()
 
@@ -77,87 +107,72 @@ export function WeeklyVolumeChart({ points }: { points: WeeklyTrendPoint[] }) {
       points={weeks}
       sample={false}
       footnote={t.analytics.charts.weeklyVolume.footnote}
+      reading={(visible) => weeklyVolumeReading(visible, currentWeekDate)}
     >
       {(visible) => {
-        const complete = visible.filter((w) => w.date !== currentWeekDate)
         const c = t.analytics.charts.weeklyVolume
 
         const byMonth = visible.length > MAX_DATE_LABELLED_POINTS
         const ticks = byMonth ? monthStartTicks(visible) : windowTicks(visible)
         const tickLabel = byMonth ? windowTickMonth : windowTickDate
 
-        const average = complete.length
-          ? Math.round(complete.reduce((sum, w) => sum + w.distanceKm, 0) / complete.length)
-          : 0
-
-        const last = complete[complete.length - 1]
-        const delta = last && complete.length > 1 ? last.distanceKm - average : null
-        const explain =
-          delta === null
-            ? null
-            : Math.abs(delta) < 3
-              ? c.explains.steady(average)
-              : delta > 0
-                ? c.explains.up(delta, average)
-                : c.explains.down(Math.abs(delta), average)
+        const average = weekAverage(completedWeeks(visible, currentWeekDate))
+        const explain = weeklyVolumeReading(visible, currentWeekDate)
 
         const totals = visible.map((w) => w.distanceKm)
         const summary = `${c.title}: ${Math.min(...totals)}-${Math.max(...totals)} ${t.units.km}${explain ? `. ${explain}` : ''}`
         const dotted = visible.length <= MAX_DOTTED_POINTS
 
         return (
-          <>
-            <ChartFigure summary={summary}>
-              <ResponsiveContainer width="100%" height={200}>
-                <AreaChart data={visible} margin={{ top: 4, right: 18, bottom: 0, left: -8 }}>
-                  <defs>
-                    <linearGradient id="weeklyVolumeGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={accentColor} stopOpacity={0.3} />
-                      <stop offset="95%" stopColor={accentColor} stopOpacity={0.02} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis {...windowDateAxis(ticks, tickLabel)} interval={0} />
-                  <YAxis
-                    tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-                    axisLine={false}
-                    tickLine={false}
-                    unit={` ${t.units.km}`}
+          <ChartFigure summary={summary}>
+            <ResponsiveContainer width="100%" height={200}>
+              <AreaChart data={visible} margin={{ top: 4, right: 18, bottom: 0, left: -8 }}>
+                <defs>
+                  <linearGradient id="weeklyVolumeGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={accentColor} stopOpacity={0.3} />
+                    <stop offset="95%" stopColor={accentColor} stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
+                <XAxis {...windowDateAxis(ticks, tickLabel)} interval={0} />
+                <YAxis
+                  tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+                  axisLine={false}
+                  tickLine={false}
+                  unit={` ${t.units.km}`}
+                />
+                <Tooltip
+                  content={<CustomTooltip currentWeekDate={currentWeekDate} />}
+                  cursor={{ stroke: accentColor, strokeWidth: 1, strokeDasharray: '4 3' }}
+                />
+                {average > 0 && (
+                  <ReferenceLine
+                    y={average}
+                    stroke={CHART_COLORS.referenceTarget}
+                    strokeDasharray="4 3"
+                    strokeWidth={1}
                   />
-                  <Tooltip
-                    content={<CustomTooltip currentWeekDate={currentWeekDate} />}
-                    cursor={{ stroke: accentColor, strokeWidth: 1, strokeDasharray: '4 3' }}
-                  />
-                  {average > 0 && (
-                    <ReferenceLine
-                      y={average}
-                      stroke={CHART_COLORS.referenceTarget}
-                      strokeDasharray="4 3"
-                      strokeWidth={1}
-                    />
-                  )}
-                  {visible.some((w) => w.date === currentWeekDate) && (
-                    <ReferenceLine
-                      x={currentWeekDate}
-                      stroke={accentColor}
-                      strokeDasharray="4 3"
-                      strokeWidth={1.5}
-                    />
-                  )}
-                  <Area
-                    type="monotone"
-                    dataKey="distanceKm"
+                )}
+                {visible.some((w) => w.date === currentWeekDate) && (
+                  <ReferenceLine
+                    x={currentWeekDate}
                     stroke={accentColor}
-                    strokeWidth={3}
-                    fill="url(#weeklyVolumeGradient)"
-                    dot={dotted ? { r: 3, fill: accentColor, strokeWidth: 0 } : false}
-                    activeDot={{ r: 4, fill: accentColor, strokeWidth: 0 }}
-                    isAnimationActive={false}
+                    strokeDasharray="4 3"
+                    strokeWidth={1.5}
                   />
-                </AreaChart>
-              </ResponsiveContainer>
-            </ChartFigure>
-            {explain && <ChartExplain text={explain} />}
-          </>
+                )}
+                <Area
+                  type="monotone"
+                  dataKey="distanceKm"
+                  stroke={accentColor}
+                  strokeWidth={3}
+                  fill="url(#weeklyVolumeGradient)"
+                  dot={dotted ? { r: 3, fill: accentColor, strokeWidth: 0 } : false}
+                  activeDot={{ r: 4, fill: accentColor, strokeWidth: 0 }}
+                  isAnimationActive={false}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </ChartFigure>
         )
       }}
     </WindowedChartCard>
