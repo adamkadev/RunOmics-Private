@@ -12,8 +12,8 @@ import { coachWorkoutView, plannedWorkoutView } from '../planWorkoutView'
 const ZONES: TrainingZonesData = {
   thresholdPaceSecPerKm: 265,
   zones: [
-    { key: 'easy', label: 'Easy', shortDesc: '', example: '', paceMinSecPerKm: 310, paceMaxSecPerKm: 387 },
-    { key: 'threshold', label: 'Threshold', shortDesc: '', example: '', paceMinSecPerKm: 260, paceMaxSecPerKm: 270 },
+    { key: 'easy', label: 'Easy', shortDesc: '', example: '', hrZone: 2, paceMinSecPerKm: 310, paceMaxSecPerKm: 387 },
+    { key: 'threshold', label: 'Threshold', shortDesc: '', example: '', hrZone: 4, paceMinSecPerKm: 260, paceMaxSecPerKm: 270 },
   ],
 }
 

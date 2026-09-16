@@ -1132,6 +1132,7 @@ export const fr = {
 
   trainingZones: {
     title: 'Zones d’entraînement',
+    zoneNumber: (n: number) => `Z${n}`,
     thresholdLabel: (pace: string) => `Seuil ${pace}`,
     perKm: '/km',
     zones: {
