@@ -70,10 +70,12 @@ export function formatDistance(km: number): string {
  * here now; the i18n keys take an already-formatted string.
  */
 export function formatKm(km: number, decimals = 0): string {
-  return km.toLocaleString(t.locale, {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  })
+  return stableSpaces(
+    km.toLocaleString(t.locale, {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    })
+  )
 }
 
 /*
@@ -122,6 +124,24 @@ export interface DateFormatOptions {
   now?: Date
 }
 
+/**
+ * Node's ICU and the browser's ICU do not agree on which space character to put
+ * around a range dash: Node emits U+2009 THIN SPACE, Chrome emits U+0020. The
+ * two render identically and compare unequal, so the same formatter call made on
+ * the server and again on hydration tears the tree down. The same split shows up
+ * around NBSP in other locales.
+ *
+ * Normalising every Unicode space separator to U+0020 makes the output depend on
+ * the options we passed and nothing else. It keeps formatRange's real value - it
+ * still collapses "Sep 3 - 6" to one month and adds the year only where asked -
+ * without letting the ICU build decide the bytes.
+ */
+const UNICODE_SPACE_SEPARATORS = /[   -   　]/g
+
+function stableSpaces(text: string): string {
+  return text.replace(UNICODE_SPACE_SEPARATORS, ' ')
+}
+
 function atMidnight(isoDate: string): Date {
   return new Date(isoDate + 'T00:00:00')
 }
@@ -155,7 +175,7 @@ export function formatDate(isoDate: string, options: DateFormatOptions = {}): st
   const date = atMidnight(isoDate)
   const showYear =
     year === 'always' || (year === 'auto' && date.getFullYear() !== now.getFullYear())
-  return date.toLocaleDateString(t.locale, dateFields(options, showYear))
+  return stableSpaces(date.toLocaleDateString(t.locale, dateFields(options, showYear)))
 }
 
 /**
@@ -176,7 +196,9 @@ export function formatDateRange(startIso: string, endIso: string, options: DateF
     year === 'always' ||
     (year === 'auto' &&
       (start.getFullYear() !== now.getFullYear() || end.getFullYear() !== now.getFullYear()))
-  return new Intl.DateTimeFormat(t.locale, dateFields(options, showYear, true)).formatRange(start, end)
+  return stableSpaces(
+    new Intl.DateTimeFormat(t.locale, dateFields(options, showYear, true)).formatRange(start, end)
+  )
 }
 
 /**
