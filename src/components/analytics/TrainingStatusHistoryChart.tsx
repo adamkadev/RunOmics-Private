@@ -132,19 +132,27 @@ export function TrainingStatusHistoryChart({ data }: { data: TrainingStatusHisto
         <ChartRangeChips value={range} onChange={selectRange} />
       </div>
 
-      {legend.length > 0 && (
-        <div className="mb-3 flex flex-wrap gap-x-3 gap-y-1">
-          {legend.map(([status, days]) => (
-            <span key={status} className="flex items-center gap-1 text-xs text-subtle">
-              <span
-                className="h-2 w-2 rounded-full"
-                style={{ backgroundColor: TRAINING_STATUS_COLORS[status] }}
-              />
-              {t.trainingStatus.status[status]} · {days}
-            </span>
-          ))}
-        </div>
-      )}
+      {/* The legend named only the statuses, so the two series actually plotted -
+          the chronic and acute load lines - went unidentified. */}
+      <div className="mb-3 flex flex-wrap gap-x-3 gap-y-1">
+        <span className="flex items-center gap-1 text-xs text-subtle">
+          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: CHART_COLORS.ctl }} />
+          {s.chronic}
+        </span>
+        <span className="flex items-center gap-1 text-xs text-subtle">
+          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: CHART_COLORS.atl }} />
+          {s.acute}
+        </span>
+        {legend.map(([status, days]) => (
+          <span key={status} className="flex items-center gap-1 text-xs text-subtle">
+            <span
+              className="h-2 w-2 rounded-full"
+              style={{ backgroundColor: TRAINING_STATUS_COLORS[status] }}
+            />
+            {t.trainingStatus.status[status]} · {days}
+          </span>
+        ))}
+      </div>
 
       <ChartWindowPager
         bounds={bounds}

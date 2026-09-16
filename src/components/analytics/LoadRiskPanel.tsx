@@ -98,7 +98,12 @@ function pct(value: number, scale: Scale): number {
   return Math.min(100, Math.max(0, ((value - scale.min) / (scale.max - scale.min)) * 100))
 }
 
-function ZoneTrack({ scale, value }: { scale: Scale; value: number }) {
+// The track used to decide the live band from the number alone, using a rule that
+// did not match acwrZone: at exactly 1.5 the verdict said caution and the track
+// lit risk. On the Garmin path the verdict comes from a status string and could
+// disagree with the number entirely. Light the band that belongs to the zone the
+// card is actually reporting.
+function ZoneTrack({ scale, value, zone }: { scale: Scale; value: number; zone: RiskZone | null }) {
   const clamped = Math.min(scale.max, Math.max(scale.min, value))
 
   return (
@@ -110,7 +115,7 @@ function ZoneTrack({ scale, value }: { scale: Scale; value: number }) {
               key={band.to}
               className={cn(
                 'absolute inset-y-0',
-                clamped >= band.from && (clamped < band.to || band.to === scale.max)
+                band.zone === zone && clamped >= band.from && clamped <= band.to
                   ? BAND_ACTIVE[band.zone]
                   : BAND_DIM[band.zone]
               )}
@@ -174,7 +179,7 @@ function Row({
           </span>
         </div>
         {rawValue !== null ? (
-          <ZoneTrack scale={scale} value={rawValue} />
+          <ZoneTrack scale={scale} value={rawValue} zone={zone} />
         ) : (
           <p className="mt-1 text-micro text-muted-foreground">{s.insufficientData}</p>
         )}
