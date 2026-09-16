@@ -2,20 +2,19 @@
 
 import { useEffect, useState } from 'react'
 import { useTheme } from 'next-themes'
-import { ACCENT_CHANGE_EVENT, ACCENT_STORAGE_KEY, ACCENT_UI, DEFAULT_ACCENT, HEADLINE_CHART_COLOR, isAccentId, type AccentId } from '@/lib/accent'
+import {
+  ACCENT_CHANGE_EVENT,
+  accentColor,
+  readAccentPreference,
+  type AccentPreference,
+} from '@/lib/accent'
 
-function readAccent(): AccentId {
-  if (typeof window === 'undefined') return DEFAULT_ACCENT
-  const stored = localStorage.getItem(ACCENT_STORAGE_KEY)
-  return isAccentId(stored) ? stored : DEFAULT_ACCENT
-}
-
-export function useAccent(): AccentId {
-  const [accent, setAccent] = useState<AccentId>(readAccent)
+export function useAccent(): AccentPreference {
+  const [accent, setAccent] = useState<AccentPreference>(readAccentPreference)
 
   useEffect(() => {
     function onChange() {
-      setAccent(readAccent())
+      setAccent(readAccentPreference())
     }
 
     window.addEventListener(ACCENT_CHANGE_EVENT, onChange)
@@ -32,11 +31,5 @@ export function useAccent(): AccentId {
 export function useAccentUiColor(): string {
   const accent = useAccent()
   const { resolvedTheme } = useTheme()
-  return ACCENT_UI[accent][resolvedTheme === 'light' ? 0 : 1]
-}
-
-export function useHeadlineChartColor(): string {
-  const accent = useAccent()
-  const { resolvedTheme } = useTheme()
-  return HEADLINE_CHART_COLOR[accent][resolvedTheme === 'light' ? 0 : 1]
+  return accentColor(accent, resolvedTheme === 'light' ? 'light' : 'dark')
 }

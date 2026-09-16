@@ -5,7 +5,7 @@ import { getVO2maxHistory, type VO2maxPoint } from './GetVO2maxHistory'
 import { riegel, bestSourceFromMap } from '@/domain/training/riegel'
 import { addDays, isoDate } from '@/lib/calendarDate'
 
-const PREDICTED_KEYS = ['5k', '10k', 'half', 'marathon'] as const
+const PREDICTED_KEYS = EFFORTS.map((e) => e.key)
 const KM_BY_KEY = Object.fromEntries(EFFORTS.map((e) => [e.key, e.km])) as Record<string, number>
 const TREND_WEEKS = 12
 const FORM_WINDOW_WEEKS = 8

@@ -11,6 +11,13 @@ export interface RouteRun {
 
 export interface RecurringRoute {
   id: string
+  /**
+   * Where the route starts, for naming it after a place. The runs' own titles
+   * name the session - "Seuil", "1 h endurance" - so two routes that share a
+   * workout type end up sharing a name while two names for one route are a
+   * coin toss.
+   */
+  start: Coord | null
   runCount: number
   distanceKm: number
   outline: string
@@ -59,6 +66,7 @@ function toRecurringRoute(cluster: Cluster, index: number): RecurringRoute | nul
 
   return {
     id: `${index}`,
+    start: (latest.route as Coord[])[0] ?? null,
     runCount: timed.length,
     distanceKm: round(timed.reduce((sum, a) => sum + a.distanceKm, 0) / timed.length, 1),
     outline: routeOutline(latest.route as Coord[]),

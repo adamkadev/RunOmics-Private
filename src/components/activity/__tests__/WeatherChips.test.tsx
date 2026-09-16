@@ -29,9 +29,10 @@ describe('WeatherChips', () => {
     expect(screen.getByText('8°C').className).toContain('text-cyan-600')
   })
 
-  it('leaves the temperate range on the neutral accent ink', () => {
+  it('keeps the temperate range off the accent, which the user can change', () => {
     render(<WeatherChips weather={weather(15)} />)
-    expect(screen.getByText('15°C').className).toContain('text-accent-text')
+    expect(screen.getByText('15°C').className).toContain('text-emerald-600')
+    expect(screen.getByText('15°C').className).not.toContain('accent')
   })
 
   it('keeps the wind chip out of the temperature ramp', () => {

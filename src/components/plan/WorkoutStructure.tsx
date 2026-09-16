@@ -82,7 +82,7 @@ const CONTINUOUS_FILL = 'rgba(52,211,153,.7)'
 const CONTINUOUS_INK = '#06231a'
 const DONE_FILL = 'rgba(90,151,245,.55)'
 const DONE_INK = '#0a1628'
-const WORK_FILL = '#fb8a3c'
+const WORK_FILL = 'var(--delta-warn)'
 const WORK_INK = '#2a1405'
 const RECOVERY_FILL = 'rgba(90,151,245,.5)'
 const EASE_FILL = 'rgba(148,178,220,.18)'
@@ -215,7 +215,7 @@ export function SessionStructureBar({
         })}
       </div>
       {(warmup || cooldown || centerCaption) && (
-        <div className="mt-1.5 grid grid-cols-3 items-center" style={{ fontSize: '10.5px', color: '#7d8896' }}>
+        <div className="mt-1.5 grid grid-cols-3 items-center" style={{ fontSize: '10.5px', color: 'var(--subtle-2)' }}>
           <span className="text-left">{warmup ? s.warmup : ''}</span>
           <span className="text-center">{centerCaption}</span>
           <span className="text-right">{cooldown ? s.cooldown : ''}</span>

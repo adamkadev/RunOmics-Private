@@ -1,4 +1,4 @@
-import { getRecords, getTopEfforts, getMostRecentRecord } from '@/application/usecases/GetRecords'
+import { getRecords, getTopEfforts } from '@/application/usecases/GetRecords'
 import { getPbAlerts } from '@/application/usecases/GetPbAlerts'
 import { getRacePredictions } from '@/application/usecases/GetRacePredictions'
 import { getMilestones } from '@/application/usecases/GetMilestones'
@@ -13,7 +13,6 @@ export default async function RecordsPage() {
   const records = await getRecords()
   const topEfforts = getTopEfforts()
   const pbAlerts = await getPbAlerts()
-  const mostRecentRecord = getMostRecentRecord(records)
   const predictions = await getRacePredictions()
   const milestones = await getMilestones()
   const recurringRoutes = getRecurringRoutes()
@@ -30,7 +29,6 @@ export default async function RecordsPage() {
       <RecordsClient
         records={records}
         topEfforts={topEfforts}
-        mostRecentKey={mostRecentRecord?.key ?? null}
         predictions={predictions}
         pbAlerts={pbAlerts}
         milestones={milestones}

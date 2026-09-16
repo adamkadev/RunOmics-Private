@@ -5,7 +5,7 @@ import { GlassSurface } from '@/components/ui/GlassSurface'
 import type { AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import type { ZoneShare } from '@/application/usecases/GetAnalyticsData'
 import { collapseUnusedZones, zoneRangeLabel } from '@/domain/activity/zoneRows'
-import { formatDurationWords } from '@/lib/formatters'
+import { formatDurationCompact } from '@/lib/formatters'
 import { ZONE_COLOR_CLASSES } from '@/lib/colors'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -54,11 +54,6 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime }: Prop
   const windowTotal = totalSeconds(zoneTime)
   const maxZoneSeconds = Math.max(0, ...zoneTime.map((z) => z.seconds))
 
-  const dominant = zoneTime.reduce<ZoneShare | null>(
-    (best, z) => (best === null || z.seconds > best.seconds ? z : best),
-    null
-  )
-
   const rows = collapseUnusedZones(
     zones.map((z) => ({ zone: z.zone, used: (timeByZone.get(z.zone)?.seconds ?? 0) > 0, data: z })),
   )
@@ -70,14 +65,16 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime }: Prop
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-sm font-bold text-foreground">{s.title}</h2>
-        {lthr !== undefined ? (
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-            <span>{s.lthr}</span>
-            <span className="text-xs font-bold text-accent-text">{lthr}</span>
-          </div>
-        ) : null}
+      <div className="mb-4 flex items-start justify-between gap-2">
+        <div>
+          <h2 className="text-sm font-bold text-foreground">{s.title}</h2>
+          {lthr !== undefined && <p className="mt-0.5 text-xs text-subtle">{s.subline(lthr)}</p>}
+        </div>
+        {windowTotal > 0 && (
+          <span className="shrink-0 text-xs font-semibold text-muted-foreground">
+            {s.total(formatDurationCompact(windowTotal))}
+          </span>
+        )}
       </div>
 
       <div className="mb-4 flex items-center gap-3">
@@ -116,7 +113,6 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime }: Prop
           const { zone, min, max } = row.data
           const time = timeByZone.get(zone)
           const barPercent = time && maxZoneSeconds > 0 ? Math.max(4, Math.round((time.seconds / maxZoneSeconds) * 100)) : 0
-          const isDominant = dominant?.zone === zone
 
           return (
             <div key={zone}>
@@ -126,11 +122,11 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime }: Prop
                   {' · '}
                   {max === null ? <>&ge; {min}</> : <>{min}–{max}</>}
                 </span>
-                <span className={isDominant ? 'font-semibold text-foreground' : 'tabular-nums text-muted-foreground'}>
-                  {time ? formatDurationWords(time.seconds) : `0 ${t.units.min}`}
+                <span className="tabular-nums text-muted-foreground">
+                  {time ? formatDurationCompact(time.seconds) : `0${t.units.hour}00`}
                 </span>
               </div>
-              <div className="h-2 overflow-hidden rounded-full bg-foreground/[0.06]">
+              <div className="h-2 overflow-hidden rounded-full" style={{ background: 'rgba(148, 178, 220, 0.12)' }}>
                 <div
                   className={cn('h-full rounded-full transition-all', ZONE_COLOR_CLASSES[zone]?.bg)}
                   style={{ width: `${barPercent}%` }}

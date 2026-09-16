@@ -33,9 +33,9 @@ const WEEKDAYS = t.plan.weekdays
 const ROW_HEIGHT = 58
 const PAD_BG = 'rgba(148,178,220,.02)'
 const RULE_BORDER = 'rgba(148,178,220,.18)'
-const PLANNED_INK = '#8d99a6'
-const RAN_INK = '#e9eff7'
-const EXTRA_INK = '#7d8896'
+const PLANNED_INK = 'var(--subtle)'
+const RAN_INK = 'var(--foreground)'
+const EXTRA_INK = 'var(--subtle-2)'
 const GRID_COLUMNS = 'repeat(7,1fr) 30px'
 
 interface DayCellData {
@@ -132,7 +132,7 @@ function DayCell({
   const dayNumber = (
     <p
       className="text-xs leading-none"
-      style={{ color: isToday ? '#34d399' : 'var(--muted-foreground)', fontWeight: isToday ? 700 : 400 }}
+      style={{ color: isToday ? 'var(--delta-good)' : 'var(--muted-foreground)', fontWeight: isToday ? 700 : 400 }}
     >
       {cell.day}
     </p>
@@ -273,14 +273,14 @@ export function MonthView({
             <div
               key={d}
               className="py-2 text-center font-mono font-semibold uppercase"
-              style={{ fontSize: '10px', color: i >= 5 ? '#6f7d8b' : '#8d99a6' }}
+              style={{ fontSize: '10px', color: i >= 5 ? 'var(--subtle-2)' : 'var(--subtle)' }}
             >
               {d}
             </div>
           ))}
           <div
             className="py-2 text-right font-mono font-semibold uppercase"
-            style={{ fontSize: '9px', color: '#6f7d8b', paddingRight: '4px' }}
+            style={{ fontSize: '9px', color: 'var(--subtle-2)', paddingRight: '4px' }}
           >
             {t.plan.weekGutter}
           </div>
@@ -334,7 +334,7 @@ export function MonthView({
                 <div className="flex items-center justify-end pr-1" style={{ background: PAD_BG }}>
                   <span
                     className="font-mono tabular-nums"
-                    style={{ fontSize: '11px', fontWeight: 700, color: containsToday ? '#c3ccd6' : '#8d99a6' }}
+                    style={{ fontSize: '11px', fontWeight: 700, color: containsToday ? '#c3ccd6' : 'var(--subtle)' }}
                   >
                     {weekValue === null ? t.plan.weekGutterEmpty : weekValue}
                   </span>

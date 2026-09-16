@@ -2,6 +2,7 @@ import { History, CheckCircle2, XCircle } from 'lucide-react'
 import { SectionDivider } from '@/components/ui/SectionLabel'
 import type { YearOutcome } from '@/application/usecases/GetGoalsData'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { formatKm } from '@/lib/formatters'
 import { STATUS } from '@/lib/statusColors'
 import { t } from '@/i18n'
 
@@ -46,8 +47,8 @@ export function GoalsHistory({ history }: { history: YearOutcome[] }) {
                   <>
                     <span className="text-xs text-subtle">
                       {t.goals.history.annualKm(
-                        Math.round(outcome.annualGoal.actualKm),
-                        Math.round(outcome.annualGoal.targetKm)
+                        formatKm(outcome.annualGoal.actualKm),
+                        formatKm(outcome.annualGoal.targetKm)
                       )}
                     </span>
                     <OutcomeBadge achieved={outcome.annualGoal.achieved} />

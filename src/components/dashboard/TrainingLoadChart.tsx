@@ -10,8 +10,7 @@ import {
   ReferenceLine,
 } from 'recharts'
 import type { TrainingLoadData, TrainingLoadPoint } from '@/application/usecases/GetTrainingLoad'
-import { CHART_COLORS } from '@/lib/colors'
-import { useHeadlineChartColor } from '@/lib/useAccent'
+import { CHART_COLORS, TRAINING_METRIC_COLORS } from '@/lib/colors'
 import { STATUS } from '@/lib/statusColors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -52,7 +51,10 @@ function formStatus(tsb: number): { label: string; className: string } {
 
 export function TrainingLoadChart({ data }: Props) {
   const status = formStatus(data.tsbNow)
-  const formColor = useHeadlineChartColor()
+  // Form is a metric, not a highlight: it takes its own token, the way Fitness
+  // and Fatigue beside it do. Drawn in the accent it moved whenever the user
+  // changed theme, and on a blue accent it was Fitness twice.
+  const formColor = TRAINING_METRIC_COLORS.form
   const { range, selectRange, bounds, visible, canGoBack, canGoForward, goBack, goForward } =
     useChartWindow(data.points)
   const plotted = sampleForRange(visible, range, 0)

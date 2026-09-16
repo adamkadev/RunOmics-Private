@@ -2,7 +2,7 @@ import type { Milestone } from '@/application/usecases/GetMilestones'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { formatDate } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
-import { MILESTONE_ICON, MILESTONE_ICON_CLASS, MILESTONE_NODE_CLASS } from './milestoneVisuals'
+import { milestoneDotClass } from './milestoneVisuals'
 
 function groupByYear(milestones: Milestone[]): [string, Milestone[]][] {
   const groups = new Map<string, Milestone[]>()
@@ -16,23 +16,19 @@ function groupByYear(milestones: Milestone[]): [string, Milestone[]][] {
 }
 
 function MilestoneRow({ milestone }: { milestone: Milestone }) {
-  const Icon = MILESTONE_ICON[milestone.type]
-
+  const dotClass = milestoneDotClass(milestone.type)
   return (
     <li className="flex items-center gap-3 px-2 py-2.5">
-      <span
-        className={cn(
-          'flex h-9 w-9 shrink-0 items-center justify-center rounded-full border',
-          MILESTONE_NODE_CLASS[milestone.type],
-        )}
-      >
-        <Icon size={15} className={MILESTONE_ICON_CLASS[milestone.type]} />
-      </span>
+      {/* The column stays whether or not the row earns a mark, so the labels
+          keep one left edge down the year. */}
+      <span className={cn('h-2 w-2 shrink-0 rounded-full', dotClass ?? 'bg-transparent')} />
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-bold leading-tight text-foreground">{milestone.label}</span>
-        <span className="mt-0.5 block truncate text-caption leading-tight text-muted-foreground">
-          {milestone.detail}
-        </span>
+        {milestone.detail && (
+          <span className="mt-0.5 block truncate text-caption leading-tight text-muted-foreground">
+            {milestone.detail}
+          </span>
+        )}
       </span>
       <time className="shrink-0 text-caption tabular-nums text-subtle">
         {formatDate(milestone.date, { style: 'bare', year: 'never' })}
@@ -48,7 +44,7 @@ export function MilestonesTimeline({ milestones }: { milestones: Milestone[] }) 
     <div className="space-y-6">
       {groupByYear(milestones).map(([year, items]) => (
         <div key={year}>
-          <h2 className="mb-2 px-1 text-sm font-bold text-muted-foreground">{year}</h2>
+          <h2 className="mb-2 px-1 text-[10.5px] font-bold uppercase tracking-[0.16em] text-subtle">{year}</h2>
           <GlassSurface variant="card" className="p-2 sm:p-3">
             <ol className="divide-y divide-foreground/[0.06]">
               {items.map((m, i) => (

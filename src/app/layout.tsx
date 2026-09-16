@@ -8,7 +8,13 @@ import { Providers } from './providers'
 import { AppShell } from '@/components/layout/AppShell'
 import { ServiceWorkerRegistration } from '@/components/layout/ServiceWorkerRegistration'
 import { t } from '@/i18n'
-import { ACCENT_IDS, ACCENT_STORAGE_KEY } from '@/lib/accent'
+import {
+  ACCENT_CSS_STORAGE_KEY,
+  ACCENT_IDS,
+  ACCENT_STORAGE_KEY,
+  CUSTOM_ACCENT_ID,
+  CUSTOM_ACCENT_STYLE_ID,
+} from '@/lib/accent'
 import { appleStartupImages } from '@/lib/splashScreens'
 
 const inter = Inter({ variable: '--font-inter', subsets: ['latin'] })
@@ -67,11 +73,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="h-full">
+        {/* A custom accent has no block in globals.css, so its generated CSS
+            rides along in storage and is injected here - before first paint,
+            and without shipping the OKLCH maths to the document head. */}
         <Script id="accent-init" strategy="beforeInteractive">
           {`try{
             var a=localStorage.getItem('${ACCENT_STORAGE_KEY}');
             if(${JSON.stringify(ACCENT_IDS)}.indexOf(a)>0){
               document.documentElement.setAttribute('data-accent',a);
+            }else if(a&&a.indexOf('${CUSTOM_ACCENT_ID}:')===0){
+              var css=localStorage.getItem('${ACCENT_CSS_STORAGE_KEY}');
+              if(css){
+                var s=document.createElement('style');
+                s.id='${CUSTOM_ACCENT_STYLE_ID}';
+                s.textContent=css;
+                document.head.appendChild(s);
+                document.documentElement.setAttribute('data-accent','${CUSTOM_ACCENT_ID}');
+              }
             }
           }catch(e){}`}
         </Script>

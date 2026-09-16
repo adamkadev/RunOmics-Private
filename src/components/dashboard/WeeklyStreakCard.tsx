@@ -107,7 +107,7 @@ export function WeeklyStreakCard({ data, goal }: Props) {
               <span className="font-extrabold leading-none tabular-nums text-foreground" style={{ fontSize: '22px' }}>
                 {Math.round(animatedActualKm)}
               </span>
-              <span className="leading-tight" style={{ fontSize: '10.5px', color: '#97a3b0' }}>
+              <span className="leading-tight" style={{ fontSize: '10.5px', color: 'var(--muted-foreground)' }}>
                 {s.ringOf(Math.round(goal.targetKm))}
               </span>
             </div>

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import type { GoalsPageData } from '@/application/usecases/GetGoalsData'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { YearSelector } from '@/components/ui/YearSelector'
+import { cn } from '@/lib/utils'
 import { YearView } from './YearView'
 import { GoalsHistory } from './GoalsHistory'
 import { t } from '@/i18n'
@@ -19,14 +19,38 @@ export function GoalsClient({ data }: Props) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-display text-foreground">{t.goals.title}</h1>
-        {selectedYear !== undefined && (
-          <p className="mt-0.5 text-sm text-muted-foreground">{t.analytics.season(selectedYear)}</p>
+      <div className="flex items-center justify-between gap-3">
+        {/* The year itself is redundant here - the 2026/2025 toggle right next
+            to it already says which season is showing. */}
+        <h1 className="min-w-0 text-display text-foreground">{t.goals.title}</h1>
+
+        {years.length > 1 && (
+          // Two mutually exclusive scopes on the whole screen, not a filter -
+          // the segmented control Plan uses for its week/month switch, not
+          // free-standing pills.
+          <div
+            role="tablist"
+            aria-label={t.goals.title}
+            className="flex shrink-0 gap-1 rounded-full border border-foreground/10 bg-foreground/[0.07] p-1"
+          >
+            {years.map((y) => (
+              <button
+                key={y}
+                type="button"
+                role="tab"
+                aria-selected={y === selectedYear}
+                onClick={() => setSelectedYear(y)}
+                className={cn(
+                  'whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-semibold transition-colors',
+                  y === selectedYear ? 'bg-accent text-accent-foreground' : 'text-subtle hover:text-foreground'
+                )}
+              >
+                {y}
+              </button>
+            ))}
+          </div>
         )}
       </div>
-
-      <YearSelector years={years} selected={selectedYear ?? null} onSelect={(y) => y !== null && setSelectedYear(y)} />
 
       {yearData ? (
         <YearView key={yearData.year} yearData={yearData} />

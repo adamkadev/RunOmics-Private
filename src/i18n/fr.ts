@@ -133,7 +133,7 @@ export const fr = {
     },
     athlete: {
       title: 'Athlète',
-      subtitle: 'Seuils et zones de fréquence cardiaque',
+      subtitle: 'Corps, seuils et zones d’entraînement',
       back: 'Progression',
       lastUpdated: (when: string) => `Mis à jour ${when}`,
     },
@@ -177,12 +177,21 @@ export const fr = {
     accent: {
       title: 'Couleur d’accent',
       preview: 'Aperçu',
+      caption: 'Les teintes se décalent pour éviter tout conflit — le rouge reste la blessure, l’orange la prudence.',
       options: {
-        nature:      { label: 'Nature', description: 'Vert sentier apaisant' },
-        performance: { label: 'Performance', description: 'Bleu course électrique' },
-        motivation:  { label: 'Motivation', description: 'Orange plein d’énergie' },
-        endurance:   { label: 'Endurance', description: 'Violet ultra profond' },
-        silver:      { label: 'Argent', description: 'Monochrome data pur' },
+        nature:      { label: 'Vert' },
+        teal:        { label: 'Turquoise' },
+        performance: { label: 'Bleu' },
+        endurance:   { label: 'Violet' },
+        silver:      { label: 'Argent' },
+      },
+      custom: {
+        label: 'Personnalisé',
+        open: 'Teinte personnalisée',
+        close: 'Terminé',
+        reserved: 'Réservé aux blessures et aux alertes.',
+        hue: (degrees: number) => `Personnalisé · ${Math.round(degrees)}°`,
+        stop: (degrees: number) => `Teinte ${Math.round(degrees)} degrés`,
       },
     },
     auth: {
@@ -257,8 +266,6 @@ export const fr = {
     },
     notifications: {
       title: 'Notifications push',
-      denied: 'Les notifications sont bloquées - autorisez-les dans les réglages de votre navigateur.',
-      unsupported: 'Les notifications push ne sont pas prises en charge par ce navigateur.',
       error: 'Impossible de mettre à jour les réglages de notification, réessayez.',
       types: {
         training: {
@@ -934,24 +941,22 @@ export const fr = {
         on_track: 'Sur la bonne voie',
         behind: 'En retard',
       },
-      rate: (km: string) => `rythme ${km} km/sem`,
       projected: (km: string) => `Projection ${km} km`,
-      projectedBy: (km: string, date: string) => `projection ${km} km au ${date}`,
-      projectionMarker: (km: string) => `projection d’arrivée à ${km} km`,
       projectedValue: (km: string) => `${km} km`,
       projectedLabel: 'projection',
+      projectedTick: 'proj.',
       shortBy: (km: string) => `${km} de retard`,
       overBy: (km: string) => `${km} d’avance`,
-      needsWeekly: (km: string) => `besoin de ${km} km/sem`,
+      needsWeeklyDetail: (needed: string, current: string) => `Besoin de ${needed} km/sem — rythme actuel ${current}`,
     },
     monthlyVolume: {
       title: 'Volume mensuel',
       expand: 'Détailler',
       collapse: 'Réduire',
       status: {
-        ahead: 'En avance',
+        ahead: 'Atteint',
         on_track: 'Sur la bonne voie',
-        behind: 'En retard',
+        behind: 'Manqué',
         pending: 'À venir',
       },
       km: (actual: number, target: number) => `${actual} / ${target}`,
@@ -959,13 +964,13 @@ export const fr = {
       inProgress: 'en cours',
       daysIn: (month: string, days: number) => `${month} compte ${days} jour${days === 1 ? '' : 's'}`,
       proRata: (actual: number, target: number) => `${actual} sur un objectif au prorata de ${target} km`,
-      proRataTarget: (target: number) => `prorata ${target}`,
+      proRataCaption: (days: number) => `prorata · ${days} jour${days === 1 ? '' : 's'}`,
     },
     history: {
       title: 'Années passées',
       achieved: 'Atteint',
       missed: 'Manqué',
-      annualKm: (actual: number, target: number) => `${actual} / ${target} km`,
+      annualKm: (actual: string, target: string) => `${actual} / ${target} km`,
       targetsCount: (achieved: number, total: number) => `${achieved}/${total} objectifs de course`,
     },
   },
@@ -1045,7 +1050,7 @@ export const fr = {
   profile: {
     hero: {
       lifetime: (runs: number, km: string) => `${runs} sorties · ${km} km au total`,
-      recency: (lastRun: string, activeDays: number) => `Dernière sortie ${lastRun} · ${activeDays} jours actifs`,
+      recency: (lastRun: string, activeDays: number) => `Dernière sortie ${lastRun} · ${activeDays} jours actifs au total`,
       rankBadge: (tier: string) => `RANG ${tier}`,
       topPctLine: (pct: number) => `Top ${pct}% de VO₂max pour ton âge`,
       namePlaceholder: 'Votre nom',
@@ -1071,6 +1076,9 @@ export const fr = {
     shoes: {
       pairs: (n: number) => `${n} paire${n !== 1 ? 's' : ''} active${n !== 1 ? 's' : ''}`,
       needsReplacing: (n: number) => n === 1 ? '1 paire à remplacer' : `${n} paires à remplacer`,
+      namedMileage: (name1: string, km1: string, name2: string, km2: string, max: string) =>
+        `${name1} ${km1} km · ${name2} ${km2} km · ${max} chacune`,
+      mileageOfMax: (km1: string, km2: string, max: string) => `${km1} et ${km2} km sur ${max}`,
     },
     milestones: {
       distanceTier: (km: string) => `${km} km cette année`,
@@ -1089,6 +1097,8 @@ export const fr = {
     hrZones: {
       title: 'Zones cardiaques',
       lthr: 'LTHR',
+      subline: (lthr: number) => `bpm · LTHR ${lthr}`,
+      total: (duration: string) => `${duration} au total`,
       thisWeek: 'Cette semaine',
       recentWeeks: '4 dernières semaines',
       noSessionsThisWeek: 'Aucune séance enregistrée pour le moment.',
@@ -1149,7 +1159,8 @@ export const fr = {
     },
     noRecordYet: 'Pas encore de record',
     predictedFromFitness: (time: string) => `Prédit à ${time}`,
-    predictedShort: (time: string) => `${time} prév.`,
+    predictedHeader: 'record · prédit',
+    medalLegend: ['1er', '2e', '3e'] as [string, string, string],
     findRace: (distance: string) => `Trouver un ${distance.toLowerCase()} ›`,
   },
 
@@ -1164,11 +1175,16 @@ export const fr = {
   },
 
   trainingZones: {
-    title: 'Zones d’entraînement',
+    title: 'Zones d’allure',
     zoneNumber: (n: number) => `Z${n}`,
     thresholdLabel: (pace: string) => `Seuil ${pace}`,
+    subline: (pace: string) => `min/km · à partir du seuil ${pace}`,
     perKm: '/km',
     zones: {
+      warmup: {
+        label: 'Échauffement',
+        shortDesc: 'Récupération & mise en jambes',
+      },
       easy: {
         label: 'Facile',
         shortDesc: 'Base aérobie & récupération',

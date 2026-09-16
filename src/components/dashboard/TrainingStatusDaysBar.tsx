@@ -49,8 +49,11 @@ function groupLabel(group: DayGroup): string {
 }
 
 const COMPOSITION_MAX = 1
-const FOOTER_INK = '#b9c4cf'
-const EYEBROW_INK = '#8d99a6'
+// The ink ramp, which is per theme - these were the dark-mode greys, hard-coded,
+// so on white they landed at 1.9:1 and the captions disappeared.
+const FOOTER_INK = 'var(--muted-foreground)'
+const EYEBROW_INK = 'var(--subtle)'
+const HINT_INK = 'var(--subtle-2)'
 
 type RatedStatus = NonNullable<TrainingStatusDayBar['status']>
 
@@ -123,8 +126,10 @@ export function TrainingStatusDaysBar({ days }: Props) {
           <span className="text-foreground/80">{groupLabel(active)}</span>
         ) : (
           <>
+            {/* Window and composition are one reading, left and right of the
+                same line. */}
             <span className="min-w-0 truncate" style={{ color: EYEBROW_INK }}>
-              {s.window(days.length)} · {s.tapHint}
+              {s.window(days.length)}
             </span>
             {composition[0] && (
               <span className="shrink-0 font-normal tabular-nums" style={{ color: FOOTER_INK }}>
@@ -134,6 +139,14 @@ export function TrainingStatusDaysBar({ days }: Props) {
           </>
         )}
       </div>
+
+      {/* The hint is an instruction, not a statistic, so it sits under the pair
+          rather than sharing a line with one half of it. */}
+      {!active && (
+        <p className="mt-1 text-[11px] leading-snug" style={{ color: HINT_INK }}>
+          {s.tapHint}
+        </p>
+      )}
     </GlassSurface>
   )
 }

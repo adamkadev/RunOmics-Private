@@ -4,7 +4,6 @@ import { useState, type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
-import { Pill } from '@/components/ui/Pill'
 import type { ProfilePeriodStats } from '@/application/usecases/GetProfileData'
 import { metricDeltaColor } from '@/lib/colors'
 import { formatDelta } from '@/lib/formatters'
@@ -47,14 +46,14 @@ export function ProfileStatsYtd({ ytd, allTime, prevYear }: Props) {
     baseline ? pick(stats) - pick(baseline) : undefined
 
   const cells: Cell[] = [
-    { value: <AnimatedValue value={stats.distanceKm} />, unit: t.units.km, label: t.profile.ytd.distance, delta: delta((s) => s.distanceKm), noise: 1 },
-    { value: <AnimatedValue value={HOURS(stats)} />, unit: t.units.hour, label: t.profile.ytd.duration, delta: delta(HOURS), noise: 1 },
-    { value: <AnimatedValue value={stats.sessionCount} />, label: t.profile.ytd.sessions, delta: delta((s) => s.sessionCount), noise: 0 },
-    { value: <>+<AnimatedValue value={stats.elevationGainM} /></>, unit: t.units.m, label: t.profile.ytd.elevation, delta: delta((s) => s.elevationGainM), noise: 10 },
-    { value: <AnimatedValue value={stats.avgKmPerWeek} decimals={1} />, unit: t.units.km, label: t.profile.ytd.avgPerWeek, delta: delta((s) => s.avgKmPerWeek), noise: 0.5 },
+    { value: <AnimatedValue value={stats.distanceKm} grouped />, unit: t.units.km, label: t.profile.ytd.distance, delta: delta((s) => s.distanceKm), noise: 1 },
+    { value: <AnimatedValue value={HOURS(stats)} grouped />, unit: t.units.hour, label: t.profile.ytd.duration, delta: delta(HOURS), noise: 1 },
+    { value: <AnimatedValue value={stats.sessionCount} grouped />, label: t.profile.ytd.sessions, delta: delta((s) => s.sessionCount), noise: 0 },
+    { value: <AnimatedValue value={stats.elevationGainM} grouped />, unit: t.units.m, label: t.profile.ytd.elevation, delta: delta((s) => s.elevationGainM), noise: 10 },
+    { value: <AnimatedValue value={stats.avgKmPerWeek} decimals={1} grouped />, unit: t.units.km, label: t.profile.ytd.avgPerWeek, delta: delta((s) => s.avgKmPerWeek), noise: 0.5 },
     ...(stats.calories > 0
       ? [{
-          value: <AnimatedValue value={THOUSAND_KCAL(stats)} decimals={1} />,
+          value: <AnimatedValue value={THOUSAND_KCAL(stats)} decimals={1} grouped />,
           unit: `k ${t.units.kcal}`,
           label: t.profile.ytd.calories,
           delta: delta(THOUSAND_KCAL_SHOWN),
@@ -65,18 +64,25 @@ export function ProfileStatsYtd({ ytd, allTime, prevYear }: Props) {
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <div className="mb-3 flex items-center gap-1.5">
+      <div
+        role="tablist"
+        aria-label={t.profile.ytd.thisYearChip}
+        className="mb-3 flex w-fit gap-1 rounded-full border border-foreground/10 bg-foreground/[0.07] p-1"
+      >
         {PERIODS.map((p) => (
-          <Pill
+          <button
             key={p.id}
-            as="button"
-            variant={p.id === period ? 'accent' : 'neutral'}
-            className="px-3 py-1.5 text-micro font-semibold uppercase tracking-wide"
-            aria-pressed={p.id === period}
+            type="button"
+            role="tab"
+            aria-selected={p.id === period}
             onClick={() => setPeriod(p.id)}
+            className={cn(
+              'whitespace-nowrap rounded-full px-[18px] py-[7px] text-[13.5px] font-semibold transition-colors',
+              p.id === period ? 'bg-accent text-accent-foreground' : 'text-subtle hover:text-foreground'
+            )}
           >
             {p.chip}
-          </Pill>
+          </button>
         ))}
       </div>
       <div className="grid grid-cols-3 gap-x-3 gap-y-3.5">

@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { SHARE_DESIGNS, hexToRgb, type ShareDesign, type ThemeMode } from '@/lib/shareCard'
-import { ACCENT_SWATCHES, type AccentId } from '@/lib/accent'
+import { ACCENT_SWATCHES, accentSwatchColor, type AccentId } from '@/lib/accent'
 import { useAccent } from '@/lib/useAccent'
-import { HUE } from '@/lib/palette'
 
 export type ShareAccent = AccentId | 'custom'
 
@@ -15,9 +14,13 @@ function readLocalStorage(key: string, fallback: string): string {
 export function useShareCardPrefs(appTheme: ThemeMode) {
   const [selectedDesign, setSelectedDesign] = useState<ShareDesign>(SHARE_DESIGNS[0] ?? 'aurora')
   const appAccent = useAccent()
-  const [shareAccent, setShareAccent] = useState<ShareAccent>(appAccent)
+  const [shareAccent, setShareAccent] = useState<ShareAccent>(() =>
+    appAccent.kind === 'custom' ? 'custom' : appAccent.id
+  )
+  // A custom app accent seeds the share sheet's own custom slot with its hue,
+  // so the card opens on the colour the app is already wearing.
   const [customHex, setCustomHex] = useState<string>(() =>
-    readLocalStorage('ro_shareCustomHex', HUE.emerald500)
+    readLocalStorage('ro_shareCustomHex', accentSwatchColor(appAccent))
   )
   const [lightMode, setLightMode] = useState<boolean>(() =>
     readLocalStorage('ro_shareLightMode', 'false') === 'true'

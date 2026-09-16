@@ -5,15 +5,8 @@ export const HUE = {
   white,
   black,
 
-  slate50:  '#f8fafc',
   slate100: '#f1f5f9',
   slate200: '#e2e8f0',
-  slate300: '#cbd5e1',
-  slate400: '#94a3b8',
-  slate500: '#64748b',
-  slate600: '#475569',
-  slate700: '#334155',
-  slate800: '#1e293b',
   slate900: '#0f172a',
 
   gray200: '#e5e7eb',
@@ -21,20 +14,14 @@ export const HUE = {
   gray800: '#1f2937',
   zinc400: '#a1a1aa',
 
-  blue50:  '#eff6ff',
-  blue300: '#93c5fd',
   blue400: '#60a5fa',
   blue500: '#3b82f6',
   blue600: '#2563eb',
-  blue700: '#1d4ed8',
-  blue900: '#1e3a8a',
 
-  sky200: '#bae6fd',
   sky500: '#0ea5e9',
   sky600: '#0284c7',
   cyan300: '#67e8f9',
 
-  emerald50:  '#ecfdf5',
   emerald400: '#34d399',
   emerald500: '#10b981',
   emerald600: '#059669',
@@ -42,19 +29,14 @@ export const HUE = {
   green400: '#4ade80',
   green500: '#22c55e',
   green700: '#15803d',
-  green800: '#166534',
-  green900: '#14532d',
 
   lime500: '#84cc16',
 
   yellow500: '#eab308',
-  amber200: '#fde68a',
   amber400: '#fbbf24',
   amber500: '#f59e0b',
   amber700: '#b45309',
 
-  orange50:  '#fff7ed',
-  orange300: '#fdba74',
   orange400: '#fb923c',
   orange500: '#f97316',
   orange600: '#ea580c',
@@ -81,29 +63,22 @@ export const HUE = {
   pink700: '#be185d',
   pink800: '#9d174d',
 
-  violet50:  '#f5f3ff',
-  violet300: '#c4b5fd',
-  violet400: '#a78bfa',
   violet500: '#8b5cf6',
-  violet600: '#7c3aed',
-  violet700: '#6d28d9',
-  violet900: '#4c1d95',
-
-  purple200: '#e9d5ff',
-  purple700: '#7e22ce',
 
   roEmerald:      '#1ed787',
   roEmeraldHi:    '#4fe6a0',
   roEmeraldDeep:  '#0e9f6e',
   roEmeraldLift:  '#14b886',
-  roEmeraldShade: '#0b8a5f',
-  roEmeraldShadeDark: '#0b9c63',
-  roEmeraldInk:   '#052015',
 
-  performanceInk: '#04122b',
-  motivationInk:  '#2b1203',
-  enduranceInk:   '#170b2e',
-  silverInk:      '#0b1220',
+  /**
+   * Semantic hues at text grade on a light ground. The dark-mode values are
+   * tuned for a dark card and fail as text on white - #34d399 is 1.8:1 - so the
+   * light theme takes the same hue, darkened. Fills keep the dark values.
+   */
+  semGreenLight:  '#0f7a52',
+  semOrangeLight: '#c2560f',
+  semBlueLight:   '#2563eb',
+  semRedLight:    '#d1453f',
 
   roAmber:   '#f5b700',
   roOrange:  '#f1761f',
@@ -116,6 +91,27 @@ export const HUE = {
   roRed:     '#ff7676',
   roRust:    '#a1662f',
   roSage:    '#a7b1aa',
+  // Zone 1 (warmup) used to share the grey the app reserves for "no time
+  // logged", so a dominant Z1 read as an empty bar. A desaturated step below
+  // Z2's blue keeps the Z1→Z5 ramp reading as rising intensity in both themes.
+  roZone1:   '#7fb2c9',
+
+  /**
+   * The ink ramp, one per theme rather than one inverted. Dark-mode greys read
+   * as near-white on white: #b9c4cf on #ffffff is 1.9:1, so a caption drawn in
+   * it was invisible in light mode. Each step is its own colour, matched in hue
+   * and re-darkened for the ground it sits on.
+   */
+  inkLight:  '#111b28',
+  inkLight2: '#3c4a59',
+  inkLight3: '#5c6773',
+  // Spec said #76828f, which measures 3.92:1 on white - under the 4.5 this
+  // ramp exists to reach. Same hue, one step down: 4.69:1.
+  inkLight4: '#6a7581',
+  inkDark:   '#e9eff7',
+  inkDark2:  '#b9c4cf',
+  inkDark3:  '#8d99a6',
+  inkDark4:  '#7d8896',
 
   roInk:      '#0b1f17',
   roInk2:     '#48564e',
@@ -131,37 +127,11 @@ export const HUE = {
   roSubtle:   '#4e5a6b',
   roSubtle2:  '#606e82',
 
-  natureBg:          '#eef3f0',
-  natureCanvasTop:   '#f5f9f7',
   natureBgDark:      '#060a08',
-  natureCanvasDark:  '#07100c',
   natureCardDark:    '#0d110f',
-  natureStatusDark:  '#070f0c',
-  natureHeroDeep:    '#0d2e1a',
-  natureAurora1:     '#a7f3d6',
-  natureAurora2:     '#bcd6ff',
   natureShadow:      '#08281c',
 
-  performanceCanvasTop: '#f0f8ff',
   performanceBgDark:    '#06091a',
-  performanceCanvasDark:'#070d20',
-  performanceHeroDeep:  '#0c1f3f',
-
-  motivationCanvasTop:  '#fffaf3',
-  motivationBgDark:     '#130a04',
-  motivationCanvasDark: '#1a1007',
-  motivationHeroFrom:   '#33110a',
-  motivationHeroVia:    '#5f2510',
-  motivationHeroTo:     '#983811',
-
-  enduranceCanvasTop:  '#faf8ff',
-  enduranceBgDark:     '#0d0a1a',
-  enduranceCanvasDark: '#120f21',
-  enduranceHeroDeep:   '#1e1038',
-
-  silverCanvasTop:  '#fafbfc',
-  silverBgDark:     '#080c10',
-  silverCanvasDark: '#0d1117',
 
   heroBase:      '#0a0f0c',
   mapMarkerRing: '#0b1220',

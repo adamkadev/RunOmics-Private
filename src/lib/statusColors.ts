@@ -29,9 +29,9 @@ export const STATUS = {
     dot:   'bg-red-500',
     badge: 'bg-red-50 text-red-800 dark:bg-red-900/30 dark:text-red-300',
   },
-  gold:   { text: 'text-amber-500 dark:text-amber-400', dot: 'bg-amber-400 dark:bg-amber-400' },
-  silver: { text: 'text-slate-400 dark:text-slate-300', dot: 'bg-slate-300 dark:bg-slate-300' },
-  bronze: { text: 'text-amber-700 dark:text-amber-600', dot: 'bg-amber-700 dark:bg-amber-600' },
+  gold:   { text: 'text-[#f5b13d]', dot: 'bg-[#f5b13d]' },
+  silver: { text: 'text-[#c3ccd6]', dot: 'bg-[#c3ccd6]' },
+  bronze: { text: 'text-[#b06a3b]', dot: 'bg-[#b06a3b]' },
 } as const
 
 export const PROJECTION_TONE: Record<'ahead' | 'on_track' | 'behind', string> = {

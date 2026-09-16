@@ -11,14 +11,14 @@ import { t } from '@/i18n'
 
 const MONTHS = Array.from({ length: 12 }, (_, month) => monthName(month + 1))
 
-function gapFor(cellSize: number): number {
-  return cellSize >= 16 ? 3 : cellSize >= 11 ? 2 : 1
-}
+const GRID_GAP = 2
+const MIN_CELL_PX = 3
 
-const LEVEL_MIX_PCT = [10, 45, 72, 100] as const
+const EMPTY_CELL_COLOR = 'rgba(148,178,220,.09)'
+const LEVEL_COLORS = ['rgba(90,151,245,.35)', 'rgba(90,151,245,.62)', '#5a97f5']
 
 function levelStyle(level: number) {
-  return { backgroundColor: `color-mix(in oklab, var(--accent) ${LEVEL_MIX_PCT[level]}%, var(--card))` }
+  return { backgroundColor: level === 0 ? EMPTY_CELL_COLOR : LEVEL_COLORS[level - 1] }
 }
 
 function getLevel(km: number): number {
@@ -26,16 +26,6 @@ function getLevel(km: number): number {
   if (km < 8)  return 1
   if (km < 16) return 2
   return 3
-}
-
-function useThemeVersion(): number {
-  const [version, setVersion] = useState(0)
-  useEffect(() => {
-    const obs = new MutationObserver(() => setVersion(v => v + 1))
-    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-accent'] })
-    return () => obs.disconnect()
-  }, [])
-  return version
 }
 
 // The window is a rolling 364 days, so a tooltip on the far end of the strip
@@ -51,9 +41,10 @@ interface Props {
 export function ActivityHeatmap({ days }: Props) {
   const [tooltip, setTooltip] = useState<{ day: HeatmapDay; x: number; y: number } | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const [cellSize, setCellSize] = useState(11)
-  const gap = gapFor(cellSize)
-  const themeVersion = useThemeVersion()
+  // Purely for the month-label overlay's pixel math - the grid itself is laid
+  // out in CSS (flex + aspect-ratio) and never waits on this measurement, so a
+  // stale or zero reading can only misplace a label, never break the grid.
+  const [measuredCellSize, setMeasuredCellSize] = useState(11)
 
   const weeks: HeatmapDay[][] = []
   for (let i = 0; i < days.length; i += 7) {
@@ -74,8 +65,7 @@ export function ActivityHeatmap({ days }: Props) {
     if (!el) return
     const compute = () => {
       const w = el.clientWidth
-      const solve = (gap: number) => Math.floor((w - (weeks.length - 1) * gap) / weeks.length)
-      setCellSize(Math.max(5, solve(gapFor(solve(1)))))
+      setMeasuredCellSize(Math.max(MIN_CELL_PX, Math.floor((w - (weeks.length - 1) * GRID_GAP) / weeks.length)))
     }
     compute()
     const obs = new ResizeObserver(compute)
@@ -95,8 +85,9 @@ export function ActivityHeatmap({ days }: Props) {
     }
   })
 
-  const shownMonthLabels = positionMonthLabels(monthStarts, weeks.length, cellSize, gap)
-  const gridWidth = Math.max(0, weeks.length * (cellSize + gap) - gap)
+  const shownMonthLabels = positionMonthLabels(monthStarts, weeks.length, measuredCellSize, GRID_GAP)
+  const gridWidth = Math.max(0, weeks.length * (measuredCellSize + GRID_GAP) - GRID_GAP)
+  const minGridWidth = weeks.length * MIN_CELL_PX + (weeks.length - 1) * GRID_GAP
 
   const dated = days.filter(d => d.date)
   const opensOn = dated[0]?.date
@@ -122,21 +113,20 @@ export function ActivityHeatmap({ days }: Props) {
       </div>
 
       <div ref={containerRef} className="w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div style={{ minWidth: 'max-content' }}>
-          <div key={themeVersion} className="flex" style={{ gap: gap }}>
+        <div style={{ minWidth: minGridWidth }}>
+          <div className="flex" style={{ gap: GRID_GAP }}>
             {weeks.map((wk, col) => (
-              <div key={col} className="flex flex-col" style={{ gap: gap }}>
+              <div key={col} className="flex min-w-0 flex-1 flex-col" style={{ gap: GRID_GAP }}>
                 {wk.map((day, row) =>
                   !day.date ? (
-                    <div key={row} style={{ width: cellSize, height: cellSize }} />
+                    <div key={row} style={{ aspectRatio: '1' }} />
                   ) : (
                     <div
                       key={row}
                       className="transition-opacity hover:opacity-70"
                       style={{
-                        width: cellSize,
-                        height: cellSize,
-                        borderRadius: Math.max(1.5, cellSize * 0.18),
+                        aspectRatio: '1',
+                        borderRadius: 1.5,
                         cursor: 'default',
                         ...levelStyle(getLevel(day.distanceKm)),
                       }}
@@ -165,10 +155,10 @@ export function ActivityHeatmap({ days }: Props) {
         </div>
       </div>
 
-      <div key={themeVersion} className="mt-1 flex items-center justify-end gap-1.5">
+      <div className="mt-1 flex items-center justify-end gap-1.5">
         <span className="text-micro text-subtle">{t.dashboard.heatmap.less}</span>
-        {LEVEL_MIX_PCT.map((_, i) => (
-          <div key={i} className="rounded-[2px]" style={{ width: 10, height: 10, ...levelStyle(i) }} />
+        {[0, 1, 2, 3].map((level) => (
+          <div key={level} className="rounded-[2px]" style={{ width: 10, height: 10, ...levelStyle(level) }} />
         ))}
         <span className="text-micro text-subtle">{t.dashboard.heatmap.more}</span>
       </div>

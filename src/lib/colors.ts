@@ -137,15 +137,16 @@ export function intensityDotColor(type: ActivityType): string {
   return INTENSITY_DOT_COLORS.hard // VO2Max, Anaerobic, Sprint
 }
 
+// Fixed hues, not the user's accent theme: a month that hit or missed its
+// target is a volume verdict, not a brand colour, so both bar and icon read
+// the same regardless of which accent the user has picked. `behind` used to
+// be accent-independent red, which put it a severity grade above the annual
+// projection's amber "Behind" - the same shortfall read as two different
+// levels of alarm 400px apart on the same screen.
 export const GOAL_PACE_COLORS = {
-  ahead:   { bg: 'color-mix(in srgb, var(--accent) 6%, transparent)', border: 'color-mix(in srgb, var(--accent) 25%, transparent)', bar: 'var(--accent)' },
+  ahead:   { bg: withAlpha(c.emerald400, 0.06), border: withAlpha(c.emerald400, 0.25), bar: c.emerald400 },
   onTrack: { bg: withAlpha(c.roBlueMid, 0.1),   border: withAlpha(c.roBlueMid, 0.28), bar: c.roBlueHi },
-  // Amber, not pink: the behind state is also drawn as an amber icon and an amber
-  // label in the same card, and `--color-missed` pink is Plan's missed-session hue.
-  // Not amber: the motivation accent is orange and `ahead` is the accent, so both
-  // verdicts drew the same bar on that theme. No accent theme is red now that
-  // impact is cut, so red is free and it is what a missed target means.
-  behind:  { bg: withAlpha(c.red500, 0.06),     border: withAlpha(c.red500, 0.25),    bar: c.red500 },
+  behind:  { bg: withAlpha('#f5b13d', 0.06),    border: withAlpha('#f5b13d', 0.25),   bar: '#f5b13d' },
   pending: { bg: '',                            border: '',                           bar: 'var(--track-on-dark)' },
 } as const
 
@@ -297,7 +298,9 @@ export function raceDistanceTint(distance: string): { overlay: string; text: str
 export function temperatureColor(celsius: number): string {
   if (celsius < 5)  return 'text-blue-600 dark:text-blue-400'
   if (celsius < 12) return 'text-cyan-600 dark:text-cyan-400'
-  if (celsius < 18) return 'text-accent-text'
+  // Not the accent: this band sits mid-ramp between cyan and amber, so on a
+  // violet or teal accent the ramp stopped reading as one scale.
+  if (celsius < 18) return 'text-emerald-600 dark:text-emerald-400'
   if (celsius < 24) return 'text-amber-600 dark:text-amber-400'
   if (celsius < 30) return 'text-orange-600 dark:text-orange-400'
   return 'text-red-600 dark:text-red-400'

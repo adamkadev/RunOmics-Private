@@ -15,7 +15,9 @@ import { t } from '@/i18n'
 const STATUS_ICON: Record<MonthGoal['status'], { Icon: typeof Check; className: string }> = {
   ahead:    { Icon: Check,       className: STATUS.success.text },
   on_track: { Icon: ArrowRight,  className: STATUS.progress.text },
-  behind:   { Icon: ArrowDown,   className: STATUS.danger.text },
+  // Amber, matching GOAL_PACE_COLORS.behind: a missed volume target is caution,
+  // not the red severity the app reserves for injury risk.
+  behind:   { Icon: ArrowDown,   className: STATUS.warning.text },
   pending:  { Icon: Minus,       className: 'text-subtle/40' },
 }
 
@@ -59,6 +61,13 @@ export function MonthlyVolumeChart({ monthlyGoals, year }: { monthlyGoals: Month
 
   const scaleMax = volumePlotMaxKm(elapsedMonths)
   const current = inProgressMonth(elapsedMonths, year)
+  // The dashed rule per bar already varies with days-in-month, but that leaves
+  // every month's target unlabelled - there's no way to tell what a bar missed
+  // by. The rules cluster tightly enough that one axis figure for their
+  // average height reads as "the" monthly target without cluttering each bar.
+  const typicalTargetKm = Math.round(
+    elapsedMonths.reduce((sum, mg) => sum + mg.targetKm, 0) / elapsedMonths.length,
+  )
 
   return (
     <section className="space-y-3">
@@ -81,10 +90,8 @@ export function MonthlyVolumeChart({ monthlyGoals, year }: { monthlyGoals: Month
           {monthlyGoals.map((mg) => {
             const denominator = mg.progress ? mg.progress.proRataTargetKm : mg.targetKm
             const progress = denominator > 0 ? Math.min((mg.actualKm / denominator) * 100, 100) : 0
-            const { Icon: StatusIcon, className: statusClassName } = mg.progress
-              ? { Icon: Minus, className: 'text-subtle' }
-              : STATUS_ICON[mg.status]
             const tint = monthTint(mg)
+            const statusIcon = mg.progress ? null : STATUS_ICON[mg.status]
             return (
               <GlassSurface
                 key={mg.month}
@@ -94,29 +101,47 @@ export function MonthlyVolumeChart({ monthlyGoals, year }: { monthlyGoals: Month
               >
                 <div className="flex items-center justify-between gap-1">
                   <span className="text-xs font-semibold text-subtle">{monthLabel(mg.month)}</span>
-                  <StatusIcon
-                    size={12}
-                    strokeWidth={3}
-                    className={statusClassName}
-                    aria-label={mg.progress ? t.goals.monthlyVolume.inProgress : t.goals.monthlyVolume.status[mg.status]}
-                  />
+                  {/* The running month gets no status mark at all, rather than
+                      sharing pending's dash - the caption below already says
+                      it's in progress, and a shared glyph read as one more
+                      "hasn't happened" month next to three real ones. */}
+                  {statusIcon && (
+                    <statusIcon.Icon
+                      size={12}
+                      strokeWidth={3}
+                      className={statusIcon.className}
+                      aria-label={t.goals.monthlyVolume.status[mg.status]}
+                    />
+                  )}
                 </div>
                 <p className="mt-1.5 text-xs font-medium text-foreground">
                   <AnimatedValue value={Math.round(mg.actualKm)} /> /{' '}
-                  {mg.progress
-                    ? t.goals.monthlyVolume.proRataTarget(Math.round(mg.progress.proRataTargetKm))
-                    : Math.round(mg.targetKm)}
+                  {Math.round(mg.progress ? mg.progress.proRataTargetKm : mg.targetKm)}
                 </p>
                 {mg.progress && (
-                  <p className="mt-0.5 text-micro text-subtle">
-                    {t.goals.monthlyVolume.daysIn(monthLabel(mg.month), mg.progress.daysElapsed)}
+                  <p className="mt-0.5 truncate text-micro text-subtle">
+                    {t.goals.monthlyVolume.proRataCaption(mg.progress.daysElapsed)}
                   </p>
                 )}
-                <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-foreground/[0.08]">
+                <div className="relative mt-1.5 h-2 overflow-hidden rounded-full bg-foreground/[0.08]">
                   <div
-                    className="h-full rounded-full transition-all"
-                    style={{ width: `${progress}%`, background: tint.bar }}
+                    className="absolute inset-y-0 left-0 rounded-full transition-all"
+                    style={{
+                      width: `${progress}%`,
+                      // Neutral, not tint.bar's grey-on-grey dashed rule colour:
+                      // this much of the month is real, covered ground - not yet
+                      // a verdict either way, so it takes its own solid ink.
+                      background: mg.progress ? 'var(--subtle)' : tint.bar,
+                    }}
                   />
+                  {mg.progress && (
+                    // Only the days still ahead are provisional, so the dash
+                    // sits on the remaining track, never over the solid fill.
+                    <div
+                      className="absolute inset-y-0 rounded-full border border-dashed"
+                      style={{ left: `${progress}%`, right: 0, borderColor: tint.bar }}
+                    />
+                  )}
                 </div>
               </GlassSurface>
             )
@@ -124,7 +149,14 @@ export function MonthlyVolumeChart({ monthlyGoals, year }: { monthlyGoals: Month
         </div>
       ) : (
         <GlassSurface variant="card" className="rounded-card-sm p-4">
-          <div className="flex h-20 items-stretch gap-2">
+          <div className="relative flex h-20 items-stretch gap-2 pl-6">
+            <span
+              aria-hidden
+              className="pointer-events-none absolute left-0 -translate-y-1/2 text-[10px] font-medium text-subtle"
+              style={{ bottom: `${Math.min((typicalTargetKm / scaleMax) * 100, 100)}%` }}
+            >
+              {typicalTargetKm}
+            </span>
             {elapsedMonths.map((mg) => {
               const bar = monthTint(mg).bar
               const isCurrent = current?.month === mg.month
@@ -158,7 +190,7 @@ export function MonthlyVolumeChart({ monthlyGoals, year }: { monthlyGoals: Month
             })}
           </div>
 
-          <div className="mt-1.5 flex gap-2">
+          <div className="mt-1.5 flex gap-2 pl-6">
             {elapsedMonths.map((mg, i) => (
               <span
                 key={mg.month}

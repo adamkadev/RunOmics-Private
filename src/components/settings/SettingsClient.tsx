@@ -141,8 +141,13 @@ export function SettingsClient({ lastSyncedAt, activityCount, device }: Props) {
         </SectionDivider>
         <button
           onClick={handleSignOut}
-          className="w-full rounded-card-sm border border-destructive/40 py-3.5 text-sm font-semibold
-                     text-destructive transition-colors hover:bg-destructive/[0.06] active:scale-[0.98]"
+          className="w-full py-3.5 text-sm font-semibold transition-colors active:scale-[0.98]"
+          style={{
+            color: 'var(--muted-foreground)',
+            border: '1px solid rgba(148,178,220,.2)',
+            background: 'rgba(148,178,220,.04)',
+            borderRadius: 16,
+          }}
         >
           {t.settings.auth.signOut}
         </button>

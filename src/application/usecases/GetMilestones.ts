@@ -4,7 +4,7 @@ import { getAllPlannedWorkouts } from '@/infrastructure/repositories/JsonPlanned
 import { getRecords } from './GetRecords'
 import { computeWeekActivityDays } from './GetDashboardData'
 import { isoWeekNumber, startOfWeek, addDays, isoDate } from '@/lib/calendarDate'
-import { formatDuration, formatKm } from '@/lib/formatters'
+import { formatDistance, formatDuration, formatKm } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 const DISTANCE_TIERS_KM = [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 5000]
@@ -23,7 +23,8 @@ export interface Milestone {
   type: MilestoneType
   date: string
   label: string
-  detail: string
+  /** Omitted when the row's own label and date already say everything there is. */
+  detail?: string
 }
 
 export interface DistanceTierCrossing {
@@ -180,8 +181,9 @@ export async function getMilestones(): Promise<Milestone[]> {
     milestones.push({
       type: 'distance-tier',
       date: crossing.date,
+      // No detail: the row sits under its year heading and carries its own
+      // date, so "Crossed in 2026" was the third telling of the same fact.
       label: t.profile.milestones.distanceTier(formatKm(crossing.tierKm)),
-      detail: t.profile.milestones.distanceTierDetail(crossing.year),
     })
   }
 
@@ -233,7 +235,12 @@ export async function getMilestones(): Promise<Milestone[]> {
         type: 'record',
         date: r.date,
         label: t.profile.milestones.record(r.label),
-        detail: formatDuration(r.seconds),
+        // Longest Run is a distance record: its headline is how far, not how
+        // long, so a duration here read as a time four seconds off the Half.
+        detail:
+          r.distanceKm != null
+            ? `${formatDistance(r.distanceKm)} ${t.units.km}`
+            : formatDuration(r.seconds),
       })
     }
   }

@@ -123,7 +123,15 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
     if (!el) return;
     const obs = new ResizeObserver(updateChipFade);
     obs.observe(el);
-    return () => obs.disconnect();
+    // A viewport resize (rotation, browser chrome show/hide) changes the
+    // rail's width via layout, but not always in a single reflow the
+    // ResizeObserver's own callback batches before paint - a plain window
+    // listener catches it as a fallback.
+    window.addEventListener("resize", updateChipFade);
+    return () => {
+      obs.disconnect();
+      window.removeEventListener("resize", updateChipFade);
+    };
   }, [updateChipFade]);
   // The scroller's own box never changes size when a chip's label does (a
   // longer area name, a type getting picked) - only its scrollWidth does,
@@ -266,7 +274,7 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
             onClick={() => setIsFullscreen(false)}
             aria-label={t.pages.map.exitFullscreen}
             className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[12px] transition-colors hover:bg-white/10"
-            style={{ background: "rgba(148,178,220,.07)", border: "1px solid rgba(148,178,220,.14)", color: "#b9c4cf" }}
+            style={{ background: "rgba(148,178,220,.07)", border: "1px solid rgba(148,178,220,.14)", color: "var(--muted-foreground)" }}
           >
             <Minimize size={16} />
           </button>
@@ -339,7 +347,7 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
           padding: "7px 11px",
         }}
       >
-        <span style={{ fontSize: "9.5px", color: "#7d8896" }}>{t.pages.map.attribution}</span>
+        <span style={{ fontSize: "9.5px", color: "var(--subtle-2)" }}>{t.pages.map.attribution}</span>
       </div>
     </div>
   );

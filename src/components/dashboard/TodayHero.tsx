@@ -7,7 +7,6 @@ import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import type { ActivitySummary } from '@/domain/activity/types'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import { verdictTone, type ReadinessTone } from '@/domain/training/readiness'
-import { PlannedWorkoutSheet } from '@/components/plan/PlannedWorkoutSheet'
 import type { PlanWorkoutView } from '@/components/plan/planWorkoutView'
 import { formatCountdown, formatDelta, formatDistance, formatDurationWords } from '@/lib/formatters'
 import { READINESS_TONE_COLORS } from '@/lib/colors'
@@ -25,7 +24,7 @@ const CARD_SURFACE = '#101a2c'
 const CARD_BORDER = 'rgba(148,178,220,.14)'
 const AMBER_RULE = '#f5b13d'
 const CHIP_BORDER = 'rgba(148,178,220,.22)'
-const CHIP_TEXT = '#b9c4cf'
+const CHIP_TEXT = 'var(--muted-foreground)'
 const FOOTER_BG = 'rgba(148,178,220,.035)'
 const FOOTER_DIVIDER = 'rgba(148,178,220,.12)'
 interface Props {
@@ -67,7 +66,6 @@ function readinessCopy(status: TrainingStatus, tone: ReadinessTone): { headline:
 }
 
 export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiVerdict }: Props) {
-  const [sheetOpen, setSheetOpen] = useState(false)
   const [daysToRace] = useState(() =>
     nextRace
       ? Math.ceil((new Date(nextRace.date + 'T00:00:00').getTime() - Date.now()) / 86_400_000)
@@ -146,9 +144,11 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiV
           <ChevronRight size={16} strokeWidth={2.5} className="shrink-0 text-white/40" />
         </Link>
       ) : plannedWorkout ? (
-        <button
-          type="button"
-          onClick={() => setSheetOpen(true)}
+        // The session is on the plan, so the chevron goes to the plan. A sheet
+        // here showed the same prescription in a layer you then had to dismiss
+        // to get anywhere near the week it belongs to.
+        <Link
+          href="/plan"
           className="-mx-[18px] -mb-[18px] mt-3.5 flex w-[calc(100%+36px)] items-center gap-3 border-t px-[18px] py-3 text-left transition-opacity active:opacity-70"
           style={{ borderColor: FOOTER_DIVIDER, background: FOOTER_BG }}
         >
@@ -157,7 +157,7 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiV
             {plannedWorkoutMeta && <div className="mt-0.5 truncate text-caption text-white/55">{plannedWorkoutMeta}</div>}
           </div>
           <ChevronRight size={16} strokeWidth={2.5} className="shrink-0 text-white/40" />
-        </button>
+        </Link>
       ) : (
         <div
           className="-mx-[18px] -mb-[18px] mt-3.5 flex w-[calc(100%+36px)] items-center gap-3 border-t px-[18px] py-3"
@@ -174,9 +174,6 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiV
       )}
 
 
-      {sheetOpen && plannedWorkout && (
-        <PlannedWorkoutSheet workout={plannedWorkout} onClose={() => setSheetOpen(false)} />
-      )}
     </div>
   )
 }

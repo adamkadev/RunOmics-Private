@@ -56,6 +56,8 @@ const FG_18 = 'color-mix(in srgb, var(--color-foreground) 18%, transparent)'
 const DONE_FILL = 'rgba(90,151,245,.14)'
 const DONE_BORDER = 'rgba(90,151,245,.32)'
 const DONE_TEXT = '#9cc4ff'
+// A marker fill, not ink: it keeps the dark-mode green on both themes, the way
+// the done-day border in MonthView does.
 const TODAY_BORDER = '#34d399'
 const PLANNED_FILL = 'rgba(148,178,220,.07)'
 const PLANNED_TEXT = '#c3ccd6'
@@ -105,7 +107,7 @@ function PlannedWorkoutRow({ workout }: { workout: PlanWorkoutView }) {
           <span className="block truncate font-bold text-foreground" style={{ fontSize: '19px' }}>
             {workout.title}
           </span>
-          <span className="block" style={{ fontSize: '13.5px', color: '#97a3b0', marginTop: '6px', lineHeight: 1.5 }}>
+          <span className="block" style={{ fontSize: '13.5px', color: 'var(--muted-foreground)', marginTop: '6px', lineHeight: 1.5 }}>
             {detail}
           </span>
         </span>
@@ -133,7 +135,7 @@ function RestDayCard({ next }: { next: { weekday: string; title: string } | null
       style={{ border: '1px dashed rgba(148,178,220,.2)' }}
     >
       <div className="font-bold" style={{ fontSize: '16px', color: '#c3ccd6' }}>{t.plan.restCard.title}</div>
-      <div className="mt-1" style={{ fontSize: '13px', color: '#8d99a6' }}>
+      <div className="mt-1" style={{ fontSize: '13px', color: 'var(--subtle)' }}>
         {next ? t.plan.restCard.next(next.weekday, next.title) : t.plan.restCard.noSession}
       </div>
     </div>
@@ -201,14 +203,14 @@ function ComingUpRow({ workout, onTap, isLast }: { workout: PlanWorkoutView; onT
           {[weekday, workout.title].filter(Boolean).join(' · ')}
         </span>
       </span>
-      <span className="shrink-0" style={{ fontSize: '13px', color: '#8d99a6' }}>
+      <span className="shrink-0" style={{ fontSize: '13px', color: 'var(--subtle)' }}>
         {[distanceKm ? `~${distanceKm} ${t.units.km}` : null, detail].filter(Boolean).join(' · ')}
       </span>
     </button>
   )
 }
 
-const LEGEND_INK = '#7d8896'
+const LEGEND_INK = 'var(--subtle-2)'
 
 // done · today · planned km - the only three states the strip needs a key for.
 // Rest carries its own label already, so it isn't listed here.
@@ -252,7 +254,7 @@ function StatTile({
 }) {
   return (
     <GlassSurface variant="card" className="rounded-[16px] p-3" data-testid={testId}>
-      <div className="truncate font-bold uppercase" style={{ fontSize: '10px', letterSpacing: '.14em', color: '#8d99a6' }}>
+      <div className="truncate font-bold uppercase" style={{ fontSize: '10px', letterSpacing: '.14em', color: 'var(--subtle)' }}>
         {label}
       </div>
       <div className="mt-1 flex items-baseline gap-1">
@@ -260,16 +262,16 @@ function StatTile({
           {value !== null ? <AnimatedValue value={value} /> : '–'}
         </span>
         {denominator !== undefined && denominator !== null && (
-          <span className="tabular-nums" style={{ fontSize: '13px', color: '#8d99a6' }}>
+          <span className="tabular-nums" style={{ fontSize: '13px', color: 'var(--subtle)' }}>
             / {denominator}
           </span>
         )}
         {unit && (
-          <span style={{ fontSize: '10.5px', color: '#7d8896' }}>{unit}</span>
+          <span style={{ fontSize: '10.5px', color: 'var(--subtle-2)' }}>{unit}</span>
         )}
       </div>
       {footnote && (
-        <div className="mt-0.5 truncate" style={{ fontSize: '10px', color: '#7d8896' }}>
+        <div className="mt-0.5 truncate" style={{ fontSize: '10px', color: 'var(--subtle-2)' }}>
           {footnote}
         </div>
       )}
@@ -675,10 +677,10 @@ export function WeekView({
                     >
                       {t.plan.doneChip}
                     </span>
-                    <ChevronRight size={19} style={{ color: '#6f7d8b' }} aria-hidden="true" />
+                    <ChevronRight size={19} style={{ color: 'var(--subtle-2)' }} aria-hidden="true" />
                   </span>
                 </div>
-                <div className="block" style={{ fontSize: '13.5px', color: '#97a3b0', marginTop: '6px', lineHeight: 1.5 }}>
+                <div className="block" style={{ fontSize: '13.5px', color: 'var(--muted-foreground)', marginTop: '6px', lineHeight: 1.5 }}>
                   {detail}
                 </div>
                 <div className="mt-3.5">

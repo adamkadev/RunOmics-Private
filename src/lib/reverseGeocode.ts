@@ -11,12 +11,20 @@ type GeoFeature = {
   context?: Array<{ id: string; text: string }>;
 };
 
+/**
+ * "place" answers which town this is, which is what a map cluster wants.
+ * "street" answers which corner, which is what two routes starting in the same
+ * town need before they can be told apart.
+ */
+export type GeocodeGrain = "place" | "street";
+
 export async function reverseGeocode(
   lon: number,
   lat: number,
   token: string,
+  grain: GeocodeGrain = "place",
 ): Promise<string | null> {
-  const key = `reverse_geocode:${CACHE_VERSION}:${lon.toFixed(4)},${lat.toFixed(4)}`;
+  const key = `reverse_geocode:${CACHE_VERSION}:${grain}:${lon.toFixed(4)},${lat.toFixed(4)}`;
 
   const cached = readCache(key);
   if (cached !== undefined) return cached;
@@ -31,7 +39,7 @@ export async function reverseGeocode(
     const features: GeoFeature[] = json.features ?? [];
     if (!features.length) return writeCache(key, null);
 
-    const name = extractName(features);
+    const name = grain === "street" ? extractStreet(features) : extractName(features);
     if (!name) return writeCache(key, name);
 
     return writeCache(key, await applyOverride(name));
@@ -71,6 +79,18 @@ function writeCache(key: string, value: string | null): string | null {
     localStorage.setItem(key, JSON.stringify({ ts: Date.now(), value }));
   } catch {}
   return value;
+}
+
+/**
+ * The nearest named thing - a street, a park, an address - falling back to the
+ * town when the point sits somewhere with no name of its own.
+ */
+function extractStreet(features: GeoFeature[]): string | null {
+  for (const type of ["street", "address", "poi"]) {
+    const match = features.find((f) => f.place_type?.includes(type));
+    if (match) return match.text;
+  }
+  return extractName(features);
 }
 
 function extractName(features: GeoFeature[]): string | null {

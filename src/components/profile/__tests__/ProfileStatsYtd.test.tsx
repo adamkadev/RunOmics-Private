@@ -51,7 +51,7 @@ describe('ProfileStatsYtd', () => {
     expect(screen.getByText('+205')).toBeInTheDocument()
     expect(screen.getByText('+11')).toBeInTheDocument()
     expect(screen.getByText('+20')).toBeInTheDocument()
-    expect(screen.getByText('+1200')).toBeInTheDocument()
+    expect(screen.getByText('+1,200')).toBeInTheDocument()
     expect(screen.getByText('+4.3')).toBeInTheDocument()
   })
 
@@ -60,7 +60,7 @@ describe('ProfileStatsYtd', () => {
       <ProfileStatsYtd ytd={ytd} allTime={allTime} prevYear={prevYear} />
     )
 
-    await userEvent.click(screen.getByRole('button', { name: t.profile.ytd.allTimeChip }))
+    await userEvent.click(screen.getByRole('tab', { name: t.profile.ytd.allTimeChip }))
 
     expect(screen.queryByText(t.profile.ytd.vsLastYear(PREV_YEAR))).not.toBeInTheDocument()
     expect(screen.getAllByText(t.profile.ytd.noComparison)).toHaveLength(6)

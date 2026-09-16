@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { Trophy, ArrowRight, Calendar } from 'lucide-react'
 import { SectionDivider } from '@/components/ui/SectionLabel'
 import type { YearData } from '@/application/usecases/GetGoalsData'
-import { formatDuration, formatDate, formatDelta, formatKm, formatPace } from '@/lib/formatters'
+import { formatDuration, formatDate, formatKm, formatPace } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { MonthlyVolumeChart } from './MonthlyVolumeChart'
@@ -35,10 +35,20 @@ export function YearView({ yearData }: Props) {
   const projectedPercent = projection && annualDistanceKm > 0
     ? Math.min((projection.projectedYearKm / annualDistanceKm) * 100, 100)
     : null
+  // Colour encodes state, weight encodes certainty - amber is reserved for the
+  // verdict (the projection line and the next-race countdown) and appears
+  // nowhere else. This bar states how far training has come, not a grade, so
+  // it stays this fixed blue regardless of projection status or accent theme.
+  const BAR_COLOR = '#5a97f5'
   // deltaKm arrives absolute, so the sign has to be recomputed from the
   // projection itself. Reading it off `status` renders an on-track projection
   // that lands above the goal as "On track −30 km" - a minus on a surplus.
   const signedDeltaKm = projection ? projection.projectedYearKm - annualDistanceKm : 0
+  const outcome = projection && signedDeltaKm !== 0
+    ? signedDeltaKm < 0
+      ? t.goals.projection.shortBy(formatKm(Math.abs(signedDeltaKm)))
+      : t.goals.projection.overBy(formatKm(signedDeltaKm))
+    : null
   const hasRaceDistanceCards = !!goals && (goals.targets.length > 0 || upcomingRaces.length > 0)
 
   return (
@@ -46,17 +56,9 @@ export function YearView({ yearData }: Props) {
       {goals && (
         <section className="space-y-3">
           <GlassSurface variant="card" className="p-5">
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <SectionDivider as="h2">
-                {t.goals.annualGoal}
-              </SectionDivider>
-              {projection && (
-                <span className={cn('shrink-0 text-xs font-semibold', PROJECTION_TONE[projection.status])}>
-                  {t.goals.projection.status[projection.status]}
-                  {signedDeltaKm !== 0 && ` ${formatDelta(signedDeltaKm, t.units.km)}`}
-                </span>
-              )}
-            </div>
+            <SectionDivider as="h2" className="mb-3">
+              {t.goals.annualGoal}
+            </SectionDivider>
             <div className="mb-3">
               <span className="text-3xl font-bold tracking-tight text-foreground">
                 <AnimatedValue value={totalDistanceKm} grouped />
@@ -68,33 +70,42 @@ export function YearView({ yearData }: Props) {
             <div className="relative h-2 rounded-full bg-foreground/[0.08]">
               <div
                 className="h-full rounded-full transition-all"
-                style={{
-                  width: `${annualProgress}%`,
-                  background: 'linear-gradient(90deg, var(--accent), var(--accent-text))',
-                }}
+                style={{ width: `${annualProgress}%`, background: BAR_COLOR }}
               />
               {projectedPercent !== null && projection && (
-                <span
-                  role="img"
-                  aria-label={t.goals.projection.projectionMarker(formatKm(projection.projectedYearKm))}
-                  className="absolute top-1/2 h-4 w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground"
-                  style={{ left: `${projectedPercent}%` }}
-                />
+                <>
+                  <span
+                    role="img"
+                    aria-label={t.goals.projection.projected(formatKm(projection.projectedYearKm))}
+                    className="absolute top-1/2 h-4 w-[2px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+                    style={{ left: `${projectedPercent}%`, background: 'var(--foreground)' }}
+                  />
+                  <span
+                    aria-hidden
+                    className="absolute top-full mt-0.5 -translate-x-1/2 whitespace-nowrap text-[9.5px] leading-none"
+                    style={{ left: `${projectedPercent}%`, color: 'var(--subtle-2)' }}
+                  >
+                    {t.goals.projection.projectedTick}
+                  </span>
+                </>
               )}
             </div>
             {projection && (
-              <p className="mt-2 text-caption text-subtle">
-                <span className={cn('font-semibold', PROJECTION_TONE[projection.status])}>
-                  {t.goals.projection.projectedBy(
-                    formatKm(projection.projectedYearKm),
-                    formatDate(`${yearData.year}-12-31`, { style: 'bare', year: 'never' }),
+              <>
+                {/* The projection is the answer this card exists to give, so it is
+                    the headline under the bar, not a small top-right chip - the
+                    same shortfall no longer reads as two different severities. */}
+                <p className={cn('mt-2 text-[17px] font-bold', PROJECTION_TONE[projection.status])}>
+                  {t.goals.projection.projected(formatKm(projection.projectedYearKm))}
+                  {outcome && ` · ${outcome}`}
+                </p>
+                <p className="mt-0.5 text-caption text-subtle">
+                  {t.goals.projection.needsWeeklyDetail(
+                    formatKm(projection.weeklyNeeded),
+                    formatKm(projection.weeklyRate),
                   )}
-                </span>
-                {' · '}
-                {t.goals.projection.rate(formatKm(projection.weeklyRate))}
-                {' · '}
-                {t.goals.projection.needsWeekly(formatKm(projection.weeklyNeeded))}
-              </p>
+                </p>
+              </>
             )}
           </GlassSurface>
         </section>

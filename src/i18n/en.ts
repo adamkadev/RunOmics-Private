@@ -141,7 +141,7 @@ export const en = {
     },
     athlete: {
       title: 'Athlete',
-      subtitle: 'Thresholds and heart rate zones',
+      subtitle: 'Body, thresholds and training zones',
       back: 'Progress',
       lastUpdated: (when: string) => `Updated ${when}`,
     },
@@ -185,12 +185,21 @@ export const en = {
     accent: {
       title: 'Accent color',
       preview: 'Preview',
+      caption: 'Semantic hues shift to avoid a clash — red stays injury, amber stays caution.',
       options: {
-        nature:      { label: 'Nature', description: 'Calm trail green' },
-        performance: { label: 'Performance', description: 'Electric race blue' },
-        motivation:  { label: 'Motivation', description: 'Energetic orange' },
-        endurance:   { label: 'Endurance', description: 'Deep ultra violet' },
-        silver:      { label: 'Silver', description: 'Pure data monochrome' },
+        nature:      { label: 'Green' },
+        teal:        { label: 'Teal' },
+        performance: { label: 'Blue' },
+        endurance:   { label: 'Violet' },
+        silver:      { label: 'Silver' },
+      },
+      custom: {
+        label: 'Custom',
+        open: 'Custom accent hue',
+        close: 'Done',
+        reserved: 'Reserved for injury and caution.',
+        hue: (degrees: number) => `Custom · ${Math.round(degrees)}°`,
+        stop: (degrees: number) => `Hue ${Math.round(degrees)} degrees`,
       },
     },
     auth: {
@@ -265,8 +274,6 @@ export const en = {
     },
     notifications: {
       title: 'Push notifications',
-      denied: 'Notifications are blocked - allow them in your browser settings.',
-      unsupported: 'Push notifications are not supported in this browser.',
       error: 'Could not update notification settings, please retry.',
       types: {
         training: {
@@ -942,24 +949,22 @@ export const en = {
         on_track: 'On track',
         behind: 'Behind',
       },
-      rate: (km: string) => `${km} km/wk pace`,
       projected: (km: string) => `Projected ${km} km`,
-      projectedBy: (km: string, date: string) => `projected ${km} km by ${date}`,
-      projectionMarker: (km: string) => `projected to land at ${km} km`,
       projectedValue: (km: string) => `${km} km`,
       projectedLabel: 'projected',
+      projectedTick: 'proj.',
       shortBy: (km: string) => `${km} short`,
       overBy: (km: string) => `${km} over`,
-      needsWeekly: (km: string) => `needs ${km} km/wk`,
+      needsWeeklyDetail: (needed: string, current: string) => `Needs ${needed} km/wk — currently running ${current}`,
     },
     monthlyVolume: {
       title: 'Monthly Volume',
       expand: 'Expand',
       collapse: 'Collapse',
       status: {
-        ahead: 'Ahead',
+        ahead: 'Hit',
         on_track: 'On track',
-        behind: 'Behind',
+        behind: 'Short',
         pending: 'Upcoming',
       },
       km: (actual: number, target: number) => `${actual} / ${target}`,
@@ -967,13 +972,13 @@ export const en = {
       inProgress: 'in progress',
       daysIn: (month: string, days: number) => `${month} is ${days} day${days === 1 ? '' : 's'} in`,
       proRata: (actual: number, target: number) => `${actual} of a pro-rata ${target} km`,
-      proRataTarget: (target: number) => `pro-rata ${target}`,
+      proRataCaption: (days: number) => `pro-rata · ${days} day${days === 1 ? '' : 's'} in`,
     },
     history: {
       title: 'Past Years',
       achieved: 'Achieved',
       missed: 'Missed',
-      annualKm: (actual: number, target: number) => `${actual} / ${target} km`,
+      annualKm: (actual: string, target: string) => `${actual} / ${target} km`,
       targetsCount: (achieved: number, total: number) => `${achieved}/${total} race targets`,
     },
   },
@@ -1056,7 +1061,7 @@ export const en = {
   profile: {
     hero: {
       lifetime: (runs: number, km: string) => `${runs} runs · ${km} km lifetime`,
-      recency: (lastRun: string, activeDays: number) => `Last run ${lastRun} · ${activeDays} active days`,
+      recency: (lastRun: string, activeDays: number) => `Last run ${lastRun} · ${activeDays} active days lifetime`,
       rankBadge: (tier: string) => `RANK ${tier}`,
       topPctLine: (pct: number) => `Top ${pct}% VO₂max for your age`,
       namePlaceholder: 'Your name',
@@ -1082,6 +1087,9 @@ export const en = {
     shoes: {
       pairs: (n: number) => `${n} pair${n !== 1 ? 's' : ''} active`,
       needsReplacing: (n: number) => n === 1 ? '1 pair needs replacing' : `${n} pairs need replacing`,
+      namedMileage: (name1: string, km1: string, name2: string, km2: string, max: string) =>
+        `${name1} ${km1} km · ${name2} ${km2} km · both of ${max}`,
+      mileageOfMax: (km1: string, km2: string, max: string) => `${km1} and ${km2} km of ${max}`,
     },
     milestones: {
       distanceTier: (km: string) => `${km} km this year`,
@@ -1100,6 +1108,8 @@ export const en = {
     hrZones: {
       title: 'Heart rate zones',
       lthr: 'LTHR',
+      subline: (lthr: number) => `bpm · LTHR ${lthr}`,
+      total: (duration: string) => `${duration} total`,
       thisWeek: 'This week',
       recentWeeks: 'Last 4 weeks',
       noSessionsThisWeek: 'No sessions logged yet.',
@@ -1160,7 +1170,8 @@ export const en = {
     },
     noRecordYet: 'No record yet',
     predictedFromFitness: (time: string) => `Predicted ${time}`,
-    predictedShort: (time: string) => `${time} pred`,
+    predictedHeader: 'best · predicted',
+    medalLegend: ['1st', '2nd', '3rd'] as [string, string, string],
     findRace: (distance: string) => `Find a ${distance.toLowerCase()} ›`,
   },
 
@@ -1175,11 +1186,16 @@ export const en = {
   },
 
   trainingZones: {
-    title: 'Training Zones',
+    title: 'Pace zones',
     zoneNumber: (n: number) => `Z${n}`,
     thresholdLabel: (pace: string) => `Threshold ${pace}`,
+    subline: (pace: string) => `min/km · from threshold ${pace}`,
     perKm: '/km',
     zones: {
+      warmup: {
+        label: 'Warmup',
+        shortDesc: 'Recovery & pre-run shakeout',
+      },
       easy: {
         label: 'Easy',
         shortDesc: 'Aerobic base & recovery',

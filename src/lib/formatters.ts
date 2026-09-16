@@ -21,6 +21,18 @@ export function formatDurationWords(seconds: number): string {
   return h > 0 ? `${h}${t.units.hour}${String(m).padStart(2, '0')}` : `${m} ${t.units.min}`
 }
 
+/**
+ * Same breakdown as `formatDurationWords`, but always carries the hour digit
+ * (`0h22`, not `22 min`) - a list mixing both is two duration formats fighting
+ * for the reader's attention, not one dominant number and a bunch of context.
+ */
+export function formatDurationCompact(seconds: number): string {
+  const totalMinutes = Math.round(seconds / 60)
+  const h = Math.floor(totalMinutes / 60)
+  const m = totalMinutes % 60
+  return `${h}${t.units.hour}${String(m).padStart(2, '0')}`
+}
+
 export function formatClock(seconds: number): string {
   const total = Math.round(seconds)
   const m = Math.floor(total / 60)
@@ -42,7 +54,8 @@ export const PLUS_MINUS = '±'
  */
 export function formatDelta(value: number, unit?: string): string {
   const rounded = Math.round(value * 100) / 100
-  const body = rounded === 0 ? `${PLUS_MINUS}0` : `${rounded > 0 ? '+' : MINUS}${Math.abs(rounded)}`
+  const magnitude = stableSpaces(Math.abs(rounded).toLocaleString(t.locale, { maximumFractionDigits: 2 }))
+  const body = rounded === 0 ? `${PLUS_MINUS}0` : `${rounded > 0 ? '+' : MINUS}${magnitude}`
   return unit ? `${body} ${unit}` : body
 }
 

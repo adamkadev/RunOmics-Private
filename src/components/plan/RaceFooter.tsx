@@ -15,7 +15,7 @@ const DISTANCE_ONLY = /^\s*\d+(?:[.,]\d+)?\s*(?:k|km|m|mi|miles?)\s*$/i
 const NEXT_CHIP_FILL = '#f5b13d'
 const NEXT_CHIP_INK = '#091020'
 const LATER_CHIP_BORDER = 'rgba(148,178,220,.22)'
-const LATER_CHIP_TEXT = '#b9c4cf'
+const LATER_CHIP_TEXT = 'var(--muted-foreground)'
 
 function daysBetween(from: string, to: string): number {
   return Math.round((new Date(to + 'T00:00:00').getTime() - new Date(from + 'T00:00:00').getTime()) / 86_400_000)

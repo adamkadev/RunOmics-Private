@@ -65,7 +65,7 @@ function WeekStat({ value, label, variant }: { value: string; label: string; var
     return (
       <div className="text-right">
         <div className="font-bold tabular-nums text-foreground" style={{ fontSize: '15px' }}>{value}</div>
-        <div className="uppercase tracking-wide" style={{ fontSize: '9.5px', color: '#7d8896' }}>{label}</div>
+        <div className="uppercase tracking-wide" style={{ fontSize: '9.5px', color: 'var(--subtle-2)' }}>{label}</div>
       </div>
     )
   }
@@ -120,7 +120,7 @@ function WeekCompositionDots({ items, label }: { items: ActivitySummary[]; label
         )}
       </div>
       {overflow > 0 && (
-        <span aria-hidden="true" style={{ marginLeft: '3px', fontSize: '11.5px', color: '#7d8896' }}>
+        <span aria-hidden="true" style={{ marginLeft: '3px', fontSize: '11.5px', color: 'var(--subtle-2)' }}>
           +{overflow}
         </span>
       )}
@@ -500,26 +500,28 @@ export function ActivityListClient({
               <div key={g.key}>
                 {isCurrent ? (
                   <div
-                    className="sticky top-[max(var(--safe-top),8px)] z-10 flex items-start gap-3 rounded-xl border py-2.5 pl-3.5"
+                    className="sticky top-[max(var(--safe-top),8px)] z-10 rounded-xl border py-2.5 pl-3.5"
                     style={{
                       background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
                       borderColor: 'color-mix(in srgb, var(--accent) 22%, transparent)',
                       paddingRight: '16px',
                     }}
                   >
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-bold text-foreground">{g.label}</div>
-                      <WeekCompositionDots items={g.items} label={g.shape} />
-                      {weeklyGoal && weeklyGoal.targetKm > 0 && (
-                        <PlannedProgress actualKm={g.totalKm} targetKm={weeklyGoal.targetKm} />
-                      )}
+                    <div className="flex items-start gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-bold text-foreground">{g.label}</div>
+                        <WeekCompositionDots items={g.items} label={g.shape} />
+                      </div>
+                      <div className="flex items-center" style={{ gap: '16px' }}>
+                        <WeekSummary group={g} />
+                        {/* No chevron on the current week - an equal-width spacer keeps its
+                            stat grid flush with the collapsible rows below, which do have one. */}
+                        <span aria-hidden="true" style={{ width: '14px', flex: '0 0 auto' }} />
+                      </div>
                     </div>
-                    <div className="flex items-center" style={{ gap: '16px' }}>
-                      <WeekSummary group={g} />
-                      {/* No chevron on the current week - an equal-width spacer keeps its
-                          stat grid flush with the collapsible rows below, which do have one. */}
-                      <span aria-hidden="true" style={{ width: '14px', flex: '0 0 auto' }} />
-                    </div>
+                    {weeklyGoal && weeklyGoal.targetKm > 0 && (
+                      <PlannedProgress actualKm={g.totalKm} targetKm={weeklyGoal.targetKm} />
+                    )}
                   </div>
                 ) : (
                   <button

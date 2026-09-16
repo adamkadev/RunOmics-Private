@@ -6,8 +6,12 @@ describe('temperatureColor', () => {
     expect(temperatureColor(0)).toBe('text-blue-600 dark:text-blue-400')
   })
 
-  it('returns the neutral accent color in the temperate range', () => {
-    expect(temperatureColor(15)).toBe('text-accent-text')
+  // The band used to be the accent. A temperature is a fixed reading, and this
+  // ramp runs cold-blue to hot-red through it, so on a violet or teal accent
+  // the middle of the scale stopped belonging to the scale.
+  it('returns a fixed green in the temperate range, not the accent', () => {
+    expect(temperatureColor(15)).toBe('text-emerald-600 dark:text-emerald-400')
+    expect(temperatureColor(15)).not.toContain('accent')
   })
 
   it('returns the hot color at and above 30 degrees', () => {
@@ -16,7 +20,7 @@ describe('temperatureColor', () => {
 
   it('treats range boundaries as belonging to the upper bucket', () => {
     expect(temperatureColor(5)).toBe('text-cyan-600 dark:text-cyan-400')
-    expect(temperatureColor(12)).toBe('text-accent-text')
+    expect(temperatureColor(12)).toBe('text-emerald-600 dark:text-emerald-400')
     expect(temperatureColor(18)).toBe('text-amber-600 dark:text-amber-400')
     expect(temperatureColor(24)).toBe('text-orange-600 dark:text-orange-400')
   })

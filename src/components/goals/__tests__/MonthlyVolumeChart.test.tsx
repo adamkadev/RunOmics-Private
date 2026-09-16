@@ -118,7 +118,7 @@ describe('MonthlyVolumeChart collapsed axis', () => {
     expect(finished.style.border).toBe('')
   })
 
-  it('draws behind in one hue the bar, the icon and the label all share', () => {
+  it('draws behind in one hue the bar and the label share, and it is amber not red', () => {
     const { container } = render(
       <MonthlyVolumeChart
         monthlyGoals={[{ month: 1, targetKm: 165, actualKm: 40, status: 'behind', progress: null }]}
@@ -126,13 +126,21 @@ describe('MonthlyVolumeChart collapsed axis', () => {
       />,
     )
     const bar = container.querySelector<HTMLElement>('[title]')!
-    // red-500, matching STATUS.danger which the behind icon and label now use.
-    expect(bar.style.background).toBe('rgb(239, 68, 68)')
-    // Not roPink #e5396b, and not Plan's missed-session token.
-    expect(bar.style.background).not.toContain('229, 57, 107')
-    expect(bar.style.background).not.toContain('color-missed')
-    // Not amber: `ahead` is var(--accent), and the motivation accent is orange,
-    // so an amber `behind` and an `ahead` drew the same bar on that theme.
-    expect(bar.style.background).not.toBe('rgb(245, 158, 11)')
+    // #f5b13d, matching STATUS.warning which the behind icon and label now use -
+    // a missed volume target is caution, the same severity as the annual
+    // projection's amber "Behind", not the red the app reserves for injury risk.
+    expect(bar.style.background).toBe('rgb(245, 177, 61)')
+    expect(bar.style.background).not.toBe('rgb(239, 68, 68)')
+  })
+
+  it('draws a hit month in a fixed green, not the user\'s accent theme', () => {
+    const { container } = render(
+      <MonthlyVolumeChart
+        monthlyGoals={[{ month: 1, targetKm: 165, actualKm: 220, status: 'ahead', progress: null }]}
+        year={THIS_YEAR - 1}
+      />,
+    )
+    const bar = container.querySelector<HTMLElement>('[title]')!
+    expect(bar.style.background).toBe('rgb(52, 211, 153)')
   })
 })

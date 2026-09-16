@@ -1,5 +1,5 @@
-import { ACCENT_SWATCHES, type AccentId } from '@/lib/accent'
-import { HUE, rgbTriplet } from '@/lib/palette'
+import { ACCENT_SWATCHES, ACCENT_SWATCHES_LIGHT, type AccentId } from '@/lib/accent'
+import { rgbTriplet } from '@/lib/palette'
 
 export type ThemeMode = 'light' | 'dark'
 export type ShareDesign = 'aurora' | 'pulse' | 'terrain' | 'prism' | 'route' | 'map' | 'memory'
@@ -8,13 +8,14 @@ export const SHARE_DESIGNS: ShareDesign[] = ['aurora', 'pulse', 'terrain', 'pris
 export const W = 390
 export const H = 693
 
-const CANVAS_ACCENT_HEX: Record<AccentId, { dark: string; light: string }> = {
-  nature:      { dark: ACCENT_SWATCHES.nature,      light: HUE.roEmeraldDeep },
-  performance: { dark: ACCENT_SWATCHES.performance, light: HUE.blue600 },
-  motivation:  { dark: ACCENT_SWATCHES.motivation,  light: HUE.orange600 },
-  endurance:   { dark: ACCENT_SWATCHES.endurance,   light: HUE.violet600 },
-  silver:      { dark: ACCENT_SWATCHES.silver,      light: HUE.slate500 },
-}
+// A card on a dark canvas takes the accent's fill; on a light canvas it takes
+// the deeper text tone, which is the relationship the hand-built table had.
+const CANVAS_ACCENT_HEX: Record<AccentId, { dark: string; light: string }> = Object.fromEntries(
+  (Object.keys(ACCENT_SWATCHES) as AccentId[]).map((id) => [
+    id,
+    { dark: ACCENT_SWATCHES[id], light: ACCENT_SWATCHES_LIGHT[id] },
+  ]),
+) as Record<AccentId, { dark: string; light: string }>
 
 export const ACCENT_RGB = Object.fromEntries(
   Object.entries(CANVAS_ACCENT_HEX).map(([id, { dark, light }]) => [

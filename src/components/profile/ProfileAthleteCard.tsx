@@ -26,6 +26,9 @@ const ZONE_ROWS: { zone: number; label: string; barClass: string }[] = [5, 4, 3,
   barClass: ZONE_COLOR_CLASSES[zone]!.bg,
 }))
 
+const ZONE_LABEL_COLOR = 'var(--muted-foreground)'
+const ZONE_TRACK_COLOR = 'rgba(148,178,220,.12)'
+
 function Tile({ label, value, unit, valueColor }: HeadlineMetric) {
   return (
     <div className="rounded-xl bg-foreground/[0.04] p-2.5 text-center">
@@ -85,7 +88,7 @@ export function ProfileAthleteCard({ athlete, latestVo2max, recentZoneTime }: Pr
         {`${t.profile.hrZones.title} · ${t.profile.hrZones.recentWeeks}`}
       </SectionDivider>
 
-      <div className="flex flex-col gap-[7px]">
+      <div className="flex flex-col gap-[9px]">
         {ZONE_ROWS.map((row) => {
           const seconds = byZone.get(row.zone) ?? 0
           const width = Math.round((seconds / maxSeconds) * 100)
@@ -93,11 +96,13 @@ export function ProfileAthleteCard({ athlete, latestVo2max, recentZoneTime }: Pr
           const minutes = formatDurationWords(seconds)
           return (
             <div key={row.zone} className="flex items-center gap-2">
-              <span className="w-11 shrink-0 text-micro text-subtle">{row.label}</span>
-              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-foreground/[0.08]">
-                <div className={cn('h-full rounded-full', row.barClass)} style={{ width: `${width}%` }} />
+              <span className="w-[62px] shrink-0 whitespace-nowrap text-[12px]" style={{ color: ZONE_LABEL_COLOR }}>
+                {row.label}
+              </span>
+              <div className="h-[7px] flex-1 overflow-hidden rounded-[4px]" style={{ background: ZONE_TRACK_COLOR }}>
+                <div className={cn('h-full rounded-[4px]', row.barClass)} style={{ width: `${width}%` }} />
               </div>
-              <span className="w-12 shrink-0 text-right text-micro tabular-nums text-subtle">{minutes}</span>
+              <span className="w-[46px] shrink-0 text-right text-micro tabular-nums text-subtle">{minutes}</span>
             </div>
           )
         })}

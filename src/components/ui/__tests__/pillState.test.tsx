@@ -36,11 +36,11 @@ describe('the selected chip speaks one language', () => {
   it('fills the selected profile period with the accent, not a neutral tint', () => {
     render(<ProfileStatsYtd ytd={stats} allTime={stats} prevYear={stats} />)
 
-    const selected = screen.getByRole('button', { name: t.profile.ytd.thisYearChip })
+    const selected = screen.getByRole('tab', { name: t.profile.ytd.thisYearChip })
     expect(selected.className).toContain('bg-accent')
     expect(selected.className).not.toContain(RETIRED_ACTIVE_TINT)
 
-    const unselected = screen.getByRole('button', { name: t.profile.ytd.allTimeChip })
+    const unselected = screen.getByRole('tab', { name: t.profile.ytd.allTimeChip })
     expect(unselected.className).not.toContain('bg-accent')
   })
 
