@@ -243,6 +243,8 @@ export const fr = {
     },
     offlineCache: {
       clear: 'Vider le cache hors ligne',
+      cost: 'Les pages et les cartes seront rechargées depuis le réseau à la prochaine visite.',
+      confirm: 'Vider ?',
       cleared: 'Cache hors ligne vidé.',
       failed: 'Impossible de vider le cache hors ligne.',
     },

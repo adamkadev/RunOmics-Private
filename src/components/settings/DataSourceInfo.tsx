@@ -21,10 +21,12 @@ interface Props {
 
 export function DataSourceInfo({ lastSyncedAt, activityCount, device }: Props) {
   const [loading, setLoading] = useState(false)
+  const [confirmingClear, setConfirmingClear] = useState(false)
   const { toast, leaving, showToast } = useToast()
   const s = t.settings
 
   async function handleClearCache() {
+    setConfirmingClear(false)
     try {
       const keys = await caches.keys()
       await Promise.all(keys.map((key) => caches.delete(key)))
@@ -105,14 +107,43 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device }: Props) {
           <span className="shrink-0 font-semibold text-accent-text">{s.rowAction.export}</span>
         </button>
 
-        <button
-          type="button"
-          onClick={handleClearCache}
-          className="flex w-full items-center justify-between gap-2 text-footnote text-muted-foreground transition-opacity active:opacity-60"
-        >
-          <span>{s.offlineCache.clear}</span>
-          <span className="shrink-0 font-semibold text-accent-text">{s.rowAction.clear}</span>
-        </button>
+        {/* Export adds a file; this throws one away. They used to be the same
+            row in the same accent, which reads as "tap this" rather than as
+            "this is the destructive one". */}
+        <div>
+          <div className="flex w-full items-center justify-between gap-2 text-footnote text-muted-foreground">
+            <span>{s.offlineCache.clear}</span>
+            {confirmingClear ? (
+              <span className="flex shrink-0 items-center gap-3 font-semibold">
+                <button
+                  type="button"
+                  onClick={() => setConfirmingClear(false)}
+                  className="text-muted-foreground transition-opacity active:opacity-60"
+                >
+                  {s.actions.confirmCancel}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClearCache}
+                  className="text-destructive transition-opacity active:opacity-60"
+                >
+                  {s.actions.confirmYes}
+                </button>
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirmingClear(true)}
+                className="shrink-0 font-semibold text-destructive transition-opacity active:opacity-60"
+              >
+                {s.rowAction.clear}
+              </button>
+            )}
+          </div>
+          <p className="mt-0.5 text-caption leading-snug text-subtle">
+            {confirmingClear ? s.offlineCache.confirm : s.offlineCache.cost}
+          </p>
+        </div>
       </div>
 
       <Toast toast={toast} leaving={leaving} />

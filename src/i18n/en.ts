@@ -251,6 +251,8 @@ export const en = {
     },
     offlineCache: {
       clear: 'Clear offline cache',
+      cost: 'Pages and maps reload from the network until you visit them again.',
+      confirm: 'Clear it?',
       cleared: 'Offline cache cleared.',
       failed: 'Could not clear the offline cache.',
     },
