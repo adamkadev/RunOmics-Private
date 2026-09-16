@@ -666,6 +666,7 @@ export const en = {
       easy: 'easy',
       noSplit: '—',
     },
+    weekPlanned: (done: number, planned: number) => `${done} of ${planned} km planned`,
     easyShare: (pct: number) => `${pct}% easy`,
     weekGroupCompact: (runs: number, km: number) => `${runs} run${runs !== 1 ? 's' : ''} · ${km} km`,
     sort: {

@@ -8,11 +8,12 @@ import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
 import type { ActivityQueryResult, ActivitySortKey, ActivitySortOrder } from '@/application/usecases/QueryActivities'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
+import type { WeeklyGoal } from '@/application/usecases/GetGoalsData'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { Pill } from '@/components/ui/Pill'
 import { SortDropdown } from '@/components/ui/SortDropdown'
 import { easyHardShare } from '@/domain/training/easyHard'
-import { CHART_COLORS } from '@/lib/colors'
+
 import { formatDateRange, formatKm } from '@/lib/formatters'
 import { isoDate, addDays, startOfWeek } from '@/lib/calendarDate'
 import { cn } from '@/lib/utils'
@@ -62,33 +63,38 @@ function WeekStat({ value, label }: { value: string; label: string }) {
   )
 }
 
-// A ratio in a slot shaped like "37 KM" reads as a quantity. The shape of the
-// week is the point here, so show it as a shape.
-function EasyHardSplit({ easyPct, hardPct }: { easyPct: number; hardPct: number }) {
-  return (
-    <div className="w-[56px]">
-      <div className="flex h-1.5 overflow-hidden rounded-full" style={{ background: 'var(--track)' }}>
-        <div style={{ width: `${easyPct}%`, background: CHART_COLORS.easy }} />
-        <div style={{ width: `${hardPct}%`, background: CHART_COLORS.hard }} />
-      </div>
-      <div className="mt-1 text-micro tabular-nums text-subtle">{t.activities.easyShare(easyPct)}</div>
-    </div>
-  )
-}
-
 // The same three numbers on every row, current week or not: past weeks used to
 // give runs and km as a caption beside an unlabelled sparkline, so no two rows
 // in the column carried the same facts in the same places.
+//
+// The easy share is a number rather than a bar. The bar printed the percentage
+// underneath itself, so it drew what the label already said - and the one thing
+// the row was missing, how the week stands against its planned distance, had
+// nowhere to go. That is the bar below, on the only row that has a target.
 function WeekSummary({ group }: { group: WeekGroup }) {
   return (
     <div className="flex shrink-0 items-end gap-4 text-right">
       <WeekStat value={String(Math.round(group.totalKm))} label={t.activities.weekStat.km} />
       <WeekStat value={String(group.items.length)} label={t.activities.weekStat.runs(group.items.length)} />
-      {group.easyPct !== null && group.hardPct !== null ? (
-        <EasyHardSplit easyPct={group.easyPct} hardPct={group.hardPct} />
-      ) : (
-        <WeekStat value={t.activities.weekStat.noSplit} label={t.activities.weekStat.easy} />
-      )}
+      <WeekStat
+        value={group.easyPct !== null ? `${group.easyPct}%` : t.activities.weekStat.noSplit}
+        label={t.activities.weekStat.easy}
+      />
+    </div>
+  )
+}
+
+function PlannedProgress({ actualKm, targetKm }: { actualKm: number; targetKm: number }) {
+  const pct = Math.min(100, Math.round((actualKm / targetKm) * 100))
+
+  return (
+    <div className="mt-2">
+      <div className="h-1.5 overflow-hidden rounded-full" style={{ background: 'var(--track)' }}>
+        <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${pct}%` }} />
+      </div>
+      <p className="mt-1 text-micro tabular-nums text-subtle">
+        {t.activities.weekPlanned(Math.round(actualKm), Math.round(targetKm))}
+      </p>
     </div>
   )
 }
@@ -192,6 +198,7 @@ async function fetchActivities(params: {
 }
 
 interface Props {
+  weeklyGoal: WeeklyGoal | null
   initialItems: ActivitySummary[]
   initialNextOffset: number | null
   totalCount: number
@@ -199,6 +206,7 @@ interface Props {
 }
 
 export function ActivityListClient({
+  weeklyGoal,
   initialItems,
   initialNextOffset,
   totalCount,
@@ -445,15 +453,18 @@ export function ActivityListClient({
               <div key={g.key}>
                 {isCurrent ? (
                   <div
-                    className="sticky top-[max(var(--safe-top),8px)] z-10 flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5"
+                    className="sticky top-[max(var(--safe-top),8px)] z-10 flex items-start justify-between gap-3 rounded-xl border px-3.5 py-2.5"
                     style={{
                       background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
                       borderColor: 'color-mix(in srgb, var(--accent) 22%, transparent)',
                     }}
                   >
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <div className="text-sm font-bold text-foreground">{g.label}</div>
                       <div className="truncate text-micro text-subtle">{g.shape}</div>
+                      {weeklyGoal && weeklyGoal.targetKm > 0 && (
+                        <PlannedProgress actualKm={g.totalKm} targetKm={weeklyGoal.targetKm} />
+                      )}
                     </div>
                     <WeekSummary group={g} />
                   </div>

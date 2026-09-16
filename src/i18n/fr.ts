@@ -658,6 +658,7 @@ export const fr = {
       easy: 'facile',
       noSplit: '—',
     },
+    weekPlanned: (done: number, planned: number) => `${done} sur ${planned} km prévus`,
     easyShare: (pct: number) => `${pct} % facile`,
     weekGroupCompact: (runs: number, km: number) => `${runs} sortie${runs > 1 ? 's' : ''} · ${km} km`,
     sort: {

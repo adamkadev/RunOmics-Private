@@ -45,7 +45,7 @@ describe('the selected chip speaks one language', () => {
   })
 
   it('fills the selected activity-type filter with the accent, not a neutral tint', async () => {
-    render(<ActivityListClient initialItems={[]} initialNextOffset={null} totalCount={0} />)
+    render(<ActivityListClient weeklyGoal={null} initialItems={[]} initialNextOffset={null} totalCount={0} />)
 
     const all = screen.getByRole('button', { name: t.activities.all })
     expect(all.className).toContain('bg-accent')

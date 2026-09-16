@@ -1,5 +1,6 @@
 import { queryActivities } from '@/application/usecases/QueryActivities'
 import { getRecords, getQualifiedEffortsByActivityId } from '@/application/usecases/GetRecords'
+import { getCurrentWeeklyGoal } from '@/application/usecases/GetGoalsData'
 import { ActivityListClient } from '@/components/activities/ActivityListClient'
 
 export const revalidate = 3600
@@ -11,6 +12,7 @@ export default async function ActivitiesPage() {
 
   return (
     <ActivityListClient
+      weeklyGoal={await getCurrentWeeklyGoal()}
       initialItems={items}
       initialNextOffset={nextOffset}
       totalCount={total}
