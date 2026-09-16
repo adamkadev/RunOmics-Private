@@ -59,7 +59,7 @@ export default async function DashboardPage() {
     <div className="space-y-3.5">
       <CelebrationOverlay record={mostRecentRecord} aiTake={celebrationTake} />
 
-      <DashboardGreeting name={athlete.displayName} lastSyncedAt={lastSyncedAt} nextRace={nextRace} />
+      <DashboardGreeting name={athlete.displayName} lastSyncedAt={lastSyncedAt} />
 
       <TodayHero
         status={trainingStatus}

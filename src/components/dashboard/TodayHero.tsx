@@ -2,14 +2,14 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ChevronRight, BedDouble } from 'lucide-react'
+import { ChevronRight, BedDouble, Flag } from 'lucide-react'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import type { ActivitySummary } from '@/domain/activity/types'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import { verdictTone, type ReadinessTone } from '@/domain/training/readiness'
 import { PlannedWorkoutSheet } from '@/components/plan/PlannedWorkoutSheet'
 import type { PlanWorkoutView } from '@/components/plan/planWorkoutView'
-import { formatDelta, formatDistance, formatDurationWords } from '@/lib/formatters'
+import { formatCountdown, formatDelta, formatDistance, formatDurationWords } from '@/lib/formatters'
 import { READINESS_TONE_COLORS } from '@/lib/colors'
 import { HUE, withAlpha } from '@/lib/palette'
 import type { Insight } from '@/lib/gemini'
@@ -59,6 +59,11 @@ function readinessCopy(status: TrainingStatus, tone: ReadinessTone): { headline:
 
 export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiVerdict }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [daysToRace] = useState(() =>
+    nextRace
+      ? Math.ceil((new Date(nextRace.date + 'T00:00:00').getTime() - Date.now()) / 86_400_000)
+      : null
+  )
 
   if (!status && !plannedWorkout && !nextRace) return null
 
@@ -92,7 +97,7 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiV
         boxShadow: `var(--shadow-hero), 0 8px 40px -8px ${withAlpha(toneHex, 0.2)}`,
       }}
     >
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-start justify-between gap-3">
         <span
           className="inline-flex items-center gap-1.5 font-mono text-micro font-bold uppercase tracking-[0.1em]"
           style={{ color: toneHex }}
@@ -103,6 +108,15 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiV
           />
           {tone ? s.eyebrowByTone[tone] : s.eyebrowByTone.go}
         </span>
+        {nextRace && daysToRace !== null && daysToRace > 0 && (
+          <div className="min-w-0 max-w-[45%] text-right">
+            <div className="flex items-center justify-end gap-1 font-mono text-micro font-bold text-white/85">
+              <Flag size={10} className="shrink-0" />
+              {formatCountdown(daysToRace)}
+            </div>
+            <div className="truncate text-caption leading-tight text-white/55">{nextRace.name}</div>
+          </div>
+        )}
       </div>
 
       {verdict && (

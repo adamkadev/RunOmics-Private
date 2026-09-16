@@ -1,11 +1,12 @@
 import type { Insight } from '@/lib/gemini'
-import { GlassSurface } from '@/components/ui/GlassSurface'
 
+/**
+ * The tab's own take, as a subhead rather than a second prose card. On Fitness
+ * it sat directly under the season headline and made the same point in more
+ * words - "you are running faster with less physical effort", then "yes, your
+ * training is paying off" - so it keeps the line that is the finding and drops
+ * the paragraph that restated the card above it.
+ */
 export function TabInsight({ insight }: { insight: Insight }) {
-  return (
-    <GlassSurface variant="card" className="mb-4 rounded-card-sm p-3.5">
-      <p className="font-display text-subhead font-bold leading-snug text-foreground">{insight.headline}</p>
-      <p className="mt-1 text-footnote leading-snug text-muted-foreground">{insight.body}</p>
-    </GlassSurface>
-  )
+  return <p className="mb-4 text-footnote leading-snug text-muted-foreground">{insight.headline}</p>
 }

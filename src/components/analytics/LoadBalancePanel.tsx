@@ -1,16 +1,22 @@
-import { SectionDivider } from '@/components/ui/SectionLabel'
 import type { LoadBalanceBucket, LoadBalanceData } from '@/application/usecases/GetLoadBalance'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { StatusPill, type StatusTone } from '@/components/ui/StatusPill'
+import { STATUS } from '@/lib/statusColors'
+import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 // A low ACWR is genuinely benign, which is why LoadRiskPanel's "low" is blue.
 // A below-target intensity band is not benign - it is a gap in the training that
 // wants action - so it carries the same caution tone as overshooting one.
-const VERDICT_TONE: Record<LoadBalanceBucket['verdict'], StatusTone> = {
-  below: 'amber',
-  onTarget: 'green',
-  above: 'amber',
+//
+// The row has no verdict chip any more - the marker against the band is the
+// verdict, and three chips down a column repeated what three markers already
+// showed. The value keeps the tone, so an off-target row is visible without
+// reading the band.
+const VERDICT_INK: Record<LoadBalanceBucket['verdict'], string> = {
+  below: STATUS.warning.text,
+  onTarget: 'text-foreground',
+  above: STATUS.warning.text,
 }
 
 // The header chip carries the card's actual finding, so it should not be the one
@@ -26,21 +32,21 @@ const FEEDBACK_TONE: Record<string, StatusTone> = {
   NO_DATA: 'zinc',
 }
 
-function Gauge({ bucket }: { bucket: LoadBalanceBucket }) {
+function GaugeRow({ bucket }: { bucket: LoadBalanceBucket }) {
   const s = t.loadBalance
   const { targetStart, targetEnd, position } = bucket
+  const rangeLabel = `${s.buckets[bucket.id]} ${bucket.load} · ${s.range(bucket.targetMin, bucket.targetMax)} · ${s.verdict[bucket.verdict]}`
 
   return (
-    <div className="rounded-xl border border-foreground/[0.08] bg-foreground/[0.04] p-3.5">
-      <SectionDivider className="mb-1.5">{s.buckets[bucket.id]}</SectionDivider>
-      <div className="flex items-center gap-2">
-        <span className="text-title2 font-extrabold tabular-nums text-foreground">{bucket.load}</span>
-      </div>
-      <div className="mt-1.5">
-        <StatusPill tone={VERDICT_TONE[bucket.verdict]}>{s.verdict[bucket.verdict]}</StatusPill>
-      </div>
+    <div className="grid grid-cols-[minmax(0,5.5rem)_1fr_auto] items-center gap-3 py-2">
+      <span className="min-w-0 truncate text-xs font-medium text-muted-foreground">{s.buckets[bucket.id]}</span>
 
-      <div className="relative mt-3 h-1.5 rounded-full bg-foreground/[0.10]">
+      <div
+        className="relative h-1.5 rounded-full bg-foreground/[0.10]"
+        role="img"
+        aria-label={rangeLabel}
+        title={rangeLabel}
+      >
         <div
           className="absolute inset-y-0 rounded-full bg-emerald-500/35"
           style={{ left: `${targetStart}%`, width: `${targetEnd - targetStart}%` }}
@@ -51,9 +57,9 @@ function Gauge({ bucket }: { bucket: LoadBalanceBucket }) {
         />
       </div>
 
-      <p className="mt-1.5 text-xs leading-snug text-muted-foreground">
-        {s.range(bucket.targetMin, bucket.targetMax)}
-      </p>
+      <span className={cn('text-subhead font-bold tabular-nums', VERDICT_INK[bucket.verdict])}>
+        {bucket.load}
+      </span>
     </div>
   )
 }
@@ -74,9 +80,9 @@ export function LoadBalancePanel({ data }: { data: LoadBalanceData }) {
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="divide-y divide-foreground/[0.06]">
         {data.buckets.map((bucket) => (
-          <Gauge key={bucket.id} bucket={bucket} />
+          <GaugeRow key={bucket.id} bucket={bucket} />
         ))}
       </div>
 
