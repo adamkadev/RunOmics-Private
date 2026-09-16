@@ -110,7 +110,6 @@
   --blur-md:               18px;
   --blur-lg:               28px;
   --saturate:              1.6;
-  --color-today:           #f1761f;
   --color-missed:          #e5396b;
   --safe-top:              env(safe-area-inset-top, 0px);
   --safe-top-min:          max(var(--safe-top), 20px);

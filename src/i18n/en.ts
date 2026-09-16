@@ -1257,10 +1257,14 @@ export const en = {
         taper: 'Taper week',
         raceDay: 'Race day',
       },
-      plannedSessions: (total: number, key: number) =>
-        key > 0
-          ? `${total} session${total > 1 ? 's' : ''} · ${key} key`
-          : `${total} session${total > 1 ? 's' : ''}`,
+      plannedSessions: (total: number, key: number, km: number) =>
+        [
+          `${total} session${total > 1 ? 's' : ''}`,
+          km > 0 ? `${km} km planned` : null,
+          key > 0 ? `${key} key` : null,
+        ]
+          .filter(Boolean)
+          .join(' · '),
       weekOfTarget: (done: number, total: number) => `Week ${done} of ${total}`,
       weekOfBlock: (done: number, total: number) => `week ${done} of ${total}`,
       adherence: (done: number, due: number) => `${done} / ${due} done`,

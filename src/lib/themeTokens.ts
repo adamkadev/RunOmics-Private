@@ -201,7 +201,6 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--blur-md': '18px',
       '--blur-lg': '28px',
       '--saturate': '1.6',
-      '--color-today': c.roOrange,
       '--color-missed': c.roPink,
       '--safe-top': 'env(safe-area-inset-top, 0px)',
       '--safe-top-min': 'max(var(--safe-top), 20px)',

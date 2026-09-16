@@ -140,7 +140,7 @@ describe('getCurrentWeekPurpose', () => {
       planned: [workout(MONDAY), workout('2026-07-22', { type: 'Threshold' }), workout('2026-07-25', { type: 'Race' })],
     })
 
-    expect(week?.planned).toEqual({ total: 3, key: 2, estimatedLoad: 0 })
+    expect(week?.planned).toEqual({ total: 3, key: 2, estimatedLoad: 0, distanceKm: 0 })
   })
 
   it('null adherence when nothing was planned to adhere to', async () => {

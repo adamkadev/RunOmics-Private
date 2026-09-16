@@ -1246,10 +1246,14 @@ export const fr = {
         taper: 'Semaine d’affûtage',
         raceDay: 'Jour de course',
       },
-      plannedSessions: (total: number, key: number) =>
-        key > 0
-          ? `${total} séance${total > 1 ? 's' : ''} · ${key} qualité`
-          : `${total} séance${total > 1 ? 's' : ''}`,
+      plannedSessions: (total: number, key: number, km: number) =>
+        [
+          `${total} séance${total > 1 ? 's' : ''}`,
+          km > 0 ? `${km} km prévus` : null,
+          key > 0 ? `${key} qualité` : null,
+        ]
+          .filter(Boolean)
+          .join(' · '),
       weekOfTarget: (done: number, total: number) => `Semaine ${done} sur ${total}`,
       weekOfBlock: (done: number, total: number) => `semaine ${done} sur ${total}`,
       adherence: (done: number, due: number) => `${done} / ${due} faites`,

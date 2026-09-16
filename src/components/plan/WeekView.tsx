@@ -124,26 +124,29 @@ function ComingUpRow({ workout, onTap }: { workout: PlanWorkoutView; onTap: () =
     formatPlanDuration(workout.duration) ??
     (workout.scheduledTime ? t.plan.timeOfDay[workout.scheduledTime] : undefined)
   const distanceKm = workout.distanceM ? Math.round(workout.distanceM / 1000) : null
-  const tag = workout.isKey ? t.plan.keyTag : distanceKm ? `~${distanceKm} ${t.units.km}` : null
 
   return (
     <button
       type="button"
       onClick={onTap}
       data-testid={`coming-up-${workout.key}`}
-      className="flex w-full items-center gap-2.5 rounded-xl border border-foreground/[0.08] bg-foreground/[0.04] p-2.5 text-left transition-colors hover:bg-foreground/[0.07]"
+      className="flex w-full items-center gap-2.5 rounded-xl border border-foreground/[0.08] bg-foreground/[0.04] px-2.5 py-1.5 text-left transition-colors hover:bg-foreground/[0.07]"
     >
       <span
         className="h-2 w-2 shrink-0 rounded-full"
         style={{ background: typeColor ?? 'var(--accent)' }}
       />
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-bold text-foreground">{workout.title}</span>
-        <span className="mt-0.5 block text-xs text-muted-foreground">
-          {[weekday, detail].filter(Boolean).join(' · ')}
+        <span className="block truncate text-sm font-semibold leading-tight text-foreground">
+          {[weekday, workout.title].filter(Boolean).join(' · ')}
+        </span>
+        <span className="mt-0.5 block truncate text-caption leading-tight text-muted-foreground">
+          {[distanceKm ? `~${distanceKm} ${t.units.km}` : null, detail].filter(Boolean).join(' · ')}
         </span>
       </span>
-      {tag && <span className="shrink-0 text-xs font-medium text-muted-foreground">{tag}</span>}
+      {workout.isKey && (
+        <span className="shrink-0 text-caption font-medium text-muted-foreground">{t.plan.keyTag}</span>
+      )}
     </button>
   )
 }
@@ -429,8 +432,13 @@ export function WeekView({
                               : planned
                                 ? { background: FG_05, borderColor: FG_18 }
                                 : { background: FG_05, borderColor: FG_07 }),
+                          // Only today gets a ring, so the ring's existence marks the
+                          // day and its colour is free to name the session. That
+                          // works because the fill is state now, not type - a
+                          // type-coloured ring no longer merges into the chip
+                          // underneath it the way the old glow did.
                           ...(isToday
-                            ? { borderColor: 'var(--color-today)', borderWidth: 2 }
+                            ? { borderColor: typeColor ?? 'var(--accent)', borderWidth: 2 }
                             : null),
                         }}
                       >

@@ -95,16 +95,25 @@ describe('summarizePlannedWeek', () => {
 
   it('counts every planned session, and the non-easy ones as key', () => {
     expect(summarizePlannedWeek([planned('Base'), planned('VO2Max'), planned('Threshold'), planned('Base')]))
-      .toEqual({ total: 4, key: 2, estimatedLoad: 0 })
+      .toEqual({ total: 4, key: 2, estimatedLoad: 0, distanceKm: 0 })
   })
 
   it('counts an untyped planned session in the total but never as key', () => {
     expect(summarizePlannedWeek([planned('Base'), planned(undefined), planned(undefined)]))
-      .toEqual({ total: 3, key: 0, estimatedLoad: 0 })
+      .toEqual({ total: 3, key: 0, estimatedLoad: 0, distanceKm: 0 })
   })
 
   it('totals the per-workout load estimates, which are already in the TRIMP scale', () => {
     expect(summarizePlannedWeek([planned('Base', 60), planned('Threshold', 95)]).estimatedLoad).toBe(155)
+  })
+
+  it('totals the planned distance, so the week header can say how far it adds up to', () => {
+    const withKm = (m: number) => ({ date: '2026-01-01', name: 'w', type: 'Base', distanceM: m }) as PlannedWorkout
+    expect(summarizePlannedWeek([withKm(12_700), withKm(7_010), withKm(5_010)]).distanceKm).toBe(25)
+  })
+
+  it('counts a planned session with no distance as zero km, not as NaN', () => {
+    expect(summarizePlannedWeek([planned('Base'), planned('Tempo')]).distanceKm).toBe(0)
   })
 
   it('treats a workout with no estimate as contributing nothing, not as NaN', () => {

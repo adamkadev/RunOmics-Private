@@ -101,7 +101,7 @@ export function WeekPurposeBanner({
           {!over && (planned || blockWeek) && (
             <div className="mt-0.5 text-xs text-muted-foreground">
               {[
-                planned ? t.plan.weekPurpose.plannedSessions(planned.total, planned.key) : null,
+                planned ? t.plan.weekPurpose.plannedSessions(planned.total, planned.key, planned.distanceKm) : null,
                 blockWeek ? t.plan.weekPurpose.weekOfBlock(blockWeek.done, blockWeek.total) : null,
               ]
                 .filter(Boolean)

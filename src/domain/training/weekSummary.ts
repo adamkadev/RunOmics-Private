@@ -50,12 +50,14 @@ export interface PlannedWeek {
   key: number
   /** Sum of per-workout TRIMP estimates - the same scale summarizeWeek reports. */
   estimatedLoad: number
+  distanceKm: number
 }
 
 export function summarizePlannedWeek(planned: PlannedWorkout[]): PlannedWeek {
   const key = planned.filter((w) => !!w.type && !EASY_TYPES.includes(w.type)).length
   const estimatedLoad = Math.round(planned.reduce((sum, w) => sum + (w.estimatedLoad ?? 0), 0))
-  return { total: planned.length, key, estimatedLoad }
+  const distanceKm = Math.round(planned.reduce((sum, w) => sum + (w.distanceM ?? 0), 0) / 1000)
+  return { total: planned.length, key, estimatedLoad, distanceKm }
 }
 
 export interface WeekAdherence {
