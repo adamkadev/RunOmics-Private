@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from 'react'
 import type { HeatmapDay } from '@/application/usecases/GetHeatmapData'
 import { tooltipSurfaceClass } from '@/components/ui/Card'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { monthRangeLabel } from '@/lib/formatters'
+import { positionMonthLabels, type MonthStart } from '@/lib/heatmapMonths'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -81,30 +83,38 @@ export function ActivityHeatmap({ days }: Props) {
     return () => obs.disconnect()
   }, [weeks.length])
 
-  const monthLabels: { label: string; col: number }[] = []
+  const monthStarts: MonthStart[] = []
   let lastMonth = -1
   weeks.forEach((wk, col) => {
     const firstDate = wk.find(d => d.date)?.date
     if (!firstDate) return
     const month = new Date(firstDate + 'T12:00:00').getMonth()
     if (month !== lastMonth) {
-      monthLabels.push({ label: MONTHS[month] ?? '', col })
+      monthStarts.push({ label: MONTHS[month] ?? '', col })
       lastMonth = month
     }
   })
 
-  const firstDay = days.find(d => d.date)?.date
-  const opensMidMonth = firstDay ? new Date(firstDay + 'T12:00:00').getDate() !== 1 : false
-  const wholeMonths = opensMidMonth ? monthLabels.slice(1) : monthLabels
-  const shownMonthLabels = wholeMonths.filter((_, i) => i % 2 === 0)
+  const shownMonthLabels = positionMonthLabels(monthStarts, weeks.length, cellSize, gap)
+  const gridWidth = Math.max(0, weeks.length * (cellSize + gap) - gap)
+
+  const dated = days.filter(d => d.date)
+  const opensOn = dated[0]?.date
+  const closesOn = dated[dated.length - 1]?.date
+  const windowRange = opensOn && closesOn ? monthRangeLabel(opensOn, closesOn) : null
 
   const activeDays = days.filter(d => d.distanceKm > 0).length
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-bold text-foreground">{t.dashboard.heatmap.title}</h3>
-        <span className="text-sm font-semibold text-accent-text">
+      <div className="mb-4 flex items-baseline justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="text-sm font-bold text-foreground">{t.dashboard.heatmap.title}</h3>
+          {windowRange && (
+            <p className="mt-0.5 text-micro text-subtle">{windowRange}</p>
+          )}
+        </div>
+        <span className="shrink-0 text-sm font-semibold text-accent-text">
           {t.dashboard.heatmap.activeDays(activeDays)}
         </span>
       </div>
@@ -140,9 +150,14 @@ export function ActivityHeatmap({ days }: Props) {
             ))}
           </div>
 
-          <div className="mt-2 flex justify-between leading-4 text-micro text-subtle">
-            {shownMonthLabels.map(({ label, col }) => (
-              <span key={`${label}-${col}`}>{label}</span>
+          <div
+            className="relative mt-2 h-4 leading-4 text-micro text-subtle"
+            style={{ width: gridWidth }}
+          >
+            {shownMonthLabels.map(({ label, col, left }) => (
+              <span key={col} className="absolute top-0 whitespace-nowrap" style={{ left }}>
+                {label}
+              </span>
             ))}
           </div>
         </div>

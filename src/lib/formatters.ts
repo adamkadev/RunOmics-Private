@@ -161,6 +161,16 @@ export function weekRangeLabel(startIso: string, endIso: string): string {
   return new Intl.DateTimeFormat(t.locale, { month: 'short', day: 'numeric' }).formatRange(start, end)
 }
 
+/**
+ * Names a window that can straddle new year, so both ends carry their year.
+ * formatRange collapses the two sides itself when they share a month.
+ */
+export function monthRangeLabel(startIso: string, endIso: string): string {
+  const start = new Date(startIso + 'T00:00:00')
+  const end = new Date(endIso + 'T00:00:00')
+  return new Intl.DateTimeFormat(t.locale, { month: 'short', year: 'numeric' }).formatRange(start, end)
+}
+
 export type RelativeTimeUnit = 'now' | 'minutes' | 'hours' | 'days'
 
 export function relativeTimeParts(iso: string, now: Date = new Date()): { unit: RelativeTimeUnit; value: number } {
