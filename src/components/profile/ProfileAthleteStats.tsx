@@ -48,7 +48,7 @@ function VerdictIcon({ band }: { band: NonNullable<TileData['band']> }) {
       strokeWidth={2.5}
       role="img"
       aria-label={band.label}
-      className={cn('shrink-0', className)}
+      className={cn('ml-1 inline align-[0.05em]', className)}
     >
       <title>{band.label}</title>
     </Icon>
@@ -58,12 +58,10 @@ function VerdictIcon({ band }: { band: NonNullable<TileData['band']> }) {
 function Tile({ label, unit, value, band }: AvailableTileData) {
   return (
     <div className="rounded-xl bg-foreground/[0.04] px-2.5 py-2.5 text-center">
-      <div className="flex items-center justify-center gap-1 text-micro font-semibold uppercase tracking-wide text-muted-foreground">
-        <span className="min-w-0 truncate">{label}</span>
-        {band ? <VerdictIcon band={band} /> : null}
-      </div>
+      <div className="text-micro font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
       <div className="mt-1 text-base font-extrabold tabular-nums text-foreground">
         {value}
+        {band ? <VerdictIcon band={band} /> : null}
         <span className="block text-caption font-medium text-subtle">{unit}</span>
       </div>
     </div>
