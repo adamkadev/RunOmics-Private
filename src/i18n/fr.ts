@@ -1002,8 +1002,9 @@ export const fr = {
       duration: 'Durée',
       sessions: 'Séances',
       elevation: 'Dénivelé',
-      avgPerWeek: 'Moy. / semaine',
+      avgPerWeek: 'Moy. / sem.',
       calories: 'Calories',
+      vsLastYear: (year: number) => `vs ${year}`,
     },
     records: {
       title: 'Records',

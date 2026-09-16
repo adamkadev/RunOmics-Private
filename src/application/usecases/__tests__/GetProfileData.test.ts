@@ -110,6 +110,27 @@ describe('getProfileData', () => {
     expect(data.allTime.distanceKm).toBe(62)
   })
 
+  it('compares last year only as far into the calendar as this year has run', async () => {
+    const data = await run({
+      activities: [
+        activity('2024-01-20', { distanceKm: 50 }),
+        activity('2025-01-15', { distanceKm: 12 }),
+        activity('2025-02-01', { distanceKm: 8 }),
+        activity('2025-06-30', { distanceKm: 100 }),
+        activity('2026-01-20', { distanceKm: 30 }),
+      ],
+    })
+
+    expect(data.prevYearDistanceKm).toBe(20)
+    expect(data.ytd.distanceKm).toBe(30)
+  })
+
+  it('has no prior year to compare against in a first season', async () => {
+    const data = await run({ activities: [activity('2026-01-20', { distanceKm: 30 })] })
+
+    expect(data.prevYearDistanceKm).toBe(0)
+  })
+
   it('averages all-time from the first activity, not from Jan 1', async () => {
     const data = await run({ activities: [activity('2025-12-31', { distanceKm: 33 })] })
 

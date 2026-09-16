@@ -1012,6 +1012,7 @@ export const en = {
       elevation: 'Elevation',
       avgPerWeek: 'Avg / week',
       calories: 'Calories',
+      vsLastYear: (year: number) => `vs ${year}`,
     },
     records: {
       title: 'Records',
