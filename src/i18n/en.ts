@@ -606,6 +606,7 @@ export const en = {
         chronic: 'Chronic load',
         acute: 'Acute load',
         daysUnit: 'd',
+        distribution: 'Days at each status',
         footnote: 'The watch\'s daily verdict, with the acute and chronic load Firstbeat measured. The blue band is the chronic load range Garmin personalises for you.',
         reading: (dominant: string, pct: number, latest: string | null) =>
           `${dominant} dominates this window (${pct}% of rated days)${latest ? `, currently reading "${latest}"` : ''}.`,

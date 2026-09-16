@@ -15,7 +15,7 @@ import { useHeadlineChartColor } from '@/lib/useAccent'
 import { STATUS } from '@/lib/statusColors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { ChartCardHead } from '@/components/ui/ChartCard'
+import { ChartCardHead, LegendValue } from '@/components/ui/ChartCard'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { ChartRangeChips, ChartWindowPager, trendDots, useChartWindow } from '@/components/ui/ChartWindowNav'
 import { sampleForRange } from '@/domain/timeWindow'
@@ -39,20 +39,6 @@ function CustomTooltip({ active, payload }: TooltipProps) {
       <p className="text-sm text-orange-500 dark:text-orange-400">{t.dashboard.trainingLoad.fatigue} {Math.round(p.atl)}</p>
       <p className="text-sm text-emerald-600 dark:text-emerald-400">{t.dashboard.trainingLoad.form} {Math.round(p.tsb)}</p>
     </TooltipCard>
-  )
-}
-
-function LegendValue({ label, value, color, signed = false }: {
-  label: string
-  value: number
-  color: string
-  signed?: boolean
-}) {
-  const rounded = Math.round(value)
-  return (
-    <span className="text-xs font-bold" style={{ color }}>
-      {label} {signed && rounded > 0 ? '+' : ''}{rounded}
-    </span>
   )
 }
 

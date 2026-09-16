@@ -25,6 +25,31 @@ export function ChartReading({ children, className }: { children: ReactNode; cla
 }
 
 /**
+ * One plotted series named in the legend, carrying its current value in the
+ * series' own colour. Lived in TrainingLoadChart until Training Status needed
+ * the same thing to name its chronic and acute lines.
+ */
+export function LegendValue({
+  label,
+  value,
+  color,
+  signed = false,
+}: {
+  label: string
+  value?: number | null
+  color: string
+  signed?: boolean
+}) {
+  const rounded = value === null || value === undefined ? null : Math.round(value)
+  return (
+    <span className="text-xs font-bold" style={{ color }}>
+      {label}
+      {rounded !== null && ` ${signed && rounded > 0 ? '+' : ''}${rounded}`}
+    </span>
+  )
+}
+
+/**
  * One chart card's header: its name, what its values are counted in, its own
  * controls, and - behind an (i) - the definition of what is being plotted.
  *
