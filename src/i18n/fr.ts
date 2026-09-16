@@ -1271,7 +1271,9 @@ export const fr = {
     weekSummary: {
       load: 'Charge',
       vsTypical: (percent: number) => `${percent - 100 >= 0 ? '+' : ''}${percent - 100}% vs type`,
-      easyHard: 'Facile / Dur',
+      ofPlanned: (planned: number) => `sur ${planned} prévus`,
+      easyHardSplit: (easy: number, hard: number) => `${easy} % facile · ${hard} % dur`,
+      noSplit: 'pas encore de répartition',
       climb: 'D+',
     },
     raceFooter: {

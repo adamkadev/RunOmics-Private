@@ -1281,8 +1281,10 @@ export const en = {
     type: 'Type',
     weekSummary: {
       load: 'Load',
+      ofPlanned: (planned: number) => `of ${planned} planned`,
       vsTypical: (percent: number) => `${percent - 100 >= 0 ? '+' : ''}${percent - 100}% vs typical`,
-      easyHard: 'Easy / Hard',
+      easyHardSplit: (easy: number, hard: number) => `${easy}% easy · ${hard}% hard`,
+      noSplit: 'no split yet',
       climb: 'Climb',
     },
     raceFooter: {

@@ -35,7 +35,7 @@ import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { CoachingOverview, PrescriptionView } from '@/application/coaching/GetCoachingView'
 import { COACHING_TO_ACTIVITY_TYPE } from '@/domain/coaching/types'
-import { macrocyclePhaseRanges, macrocycleWeek } from '@/components/coaching/presentation'
+import { macrocyclePhaseRanges, macrocycleWeek, prescriptionDistanceMeters } from '@/components/coaching/presentation'
 import {
   coachWorkoutView,
   formatPlanDuration,
@@ -164,9 +164,16 @@ function WeekLoadSummary({ summary, planned }: { summary: WeekSummary; planned: 
     <GlassSurface variant="card" className="rounded-[14px] px-3.5 py-3">
       <div className="flex items-baseline justify-between gap-2">
         <SectionDivider>{s.load}</SectionDivider>
+        {/* "67 / 368" says neither what the denominator is nor which side is
+            which, and "100/0" beside a "Easy / Hard" label made the reader map
+            two numbers onto two words by position. Both spell themselves out. */}
         <div className="font-display text-lg font-bold tabular-nums text-foreground">
           <AnimatedValue value={summary.totalTrimp} />
-          {target > 0 && <span className="text-muted-foreground"> / {target}</span>}
+          {target > 0 && (
+            <span className="ml-1 text-footnote font-medium text-muted-foreground">
+              {s.ofPlanned(target)}
+            </span>
+          )}
         </div>
       </div>
 
@@ -181,10 +188,9 @@ function WeekLoadSummary({ summary, planned }: { summary: WeekSummary; planned: 
           <span>{s.climb}</span> {summary.elevationGainM} {t.units.m}
         </span>
         <span>
-          <span>{s.easyHard}</span>{' '}
           {summary.hardPct !== null
-            ? `${100 - Math.round(summary.hardPct)}/${Math.round(summary.hardPct)}`
-            : '–'}
+            ? s.easyHardSplit(100 - Math.round(summary.hardPct), Math.round(summary.hardPct))
+            : s.noSplit}
         </span>
       </div>
     </GlassSurface>
@@ -396,7 +402,22 @@ export function WeekView({
                 const rest = !completed && !planned
                 const primaryType: ActivityType | null = (d.acts[0]?.type ?? (activeCoach ? COACHING_TO_ACTIVITY_TYPE[activeCoach.prescription.type] : plan?.type)) ?? null
                 const typeColor = primaryType && !missed ? ACTIVITY_TYPE_CONFIG[primaryType].chartColor : null
-                const label = primaryType ? t.plan.typeShort[primaryType] : rest ? t.plan.restDay : null
+                // The phase card above already says "Base week", so five chips
+                // reading "Base" carried nothing. The day's distance goes here
+                // and the session stays identifiable by the chip's colour.
+                const doneKm = d.acts.reduce((sum, a) => sum + a.distanceKm, 0)
+                const plannedMeters = activeCoach
+                  ? prescriptionDistanceMeters(activeCoach.prescription)
+                  : (plan?.distanceM ?? null)
+                const plannedKm = plannedMeters === null ? null : plannedMeters / 1000
+                const chipKm = completed ? doneKm : plannedKm
+                const label = rest
+                  ? t.plan.restDay
+                  : chipKm !== null && chipKm > 0
+                    ? String(Math.round(chipKm))
+                    : primaryType
+                      ? t.plan.typeShort[primaryType]
+                      : null
                 const weekday = WEEKDAY_SHORT_INDEX[new Date(d.date + 'T00:00:00').getDay()]
 
                 return (

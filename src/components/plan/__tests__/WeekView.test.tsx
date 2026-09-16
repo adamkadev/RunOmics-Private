@@ -98,7 +98,7 @@ async function expectStats(easyHard: string, load: string, climb: string) {
   const read = (label: string) =>
     screen.getByText(label).parentElement!.textContent!.replace(label, '').trim()
   await waitFor(() => {
-    expect([read(t.plan.weekSummary.easyHard), read(t.plan.weekSummary.load), read(t.plan.weekSummary.climb)])
+    expect([screen.getByText(easyHard).textContent, read(t.plan.weekSummary.load), read(t.plan.weekSummary.climb)])
       .toEqual([easyHard, load, climb])
   })
 }
@@ -107,13 +107,13 @@ describe('WeekView weekly metrics', () => {
   it('reports Garmin activity metrics for a week with no coaching', async () => {
     renderWeek({ activities: [TEMPO, RACE] })
 
-    await expectStats('–', '141', `26 ${t.units.m}`)
+    await expectStats(t.plan.weekSummary.noSplit, '141', `26 ${t.units.m}`)
   })
 
   it('keeps those same metrics when a coaching block covers the week', async () => {
     renderWeek({ activities: [TEMPO, RACE], coaching: overview() })
 
-    await expectStats('–', '141', `26 ${t.units.m}`)
+    await expectStats(t.plan.weekSummary.noSplit, '141', `26 ${t.units.m}`)
   })
 
   it('shows the completed activities and the coach prescription side by side', () => {
@@ -324,7 +324,7 @@ describe('WeekView without coaching', () => {
   it('keeps the original layout and adds no coaching placeholders', () => {
     renderWeek({ activities: [TEMPO, RACE], planned: [{ date: TODAY, name: 'Track session', type: 'Threshold', durationSecs: 3_600 }] })
 
-    expect(screen.getByText(t.plan.weekSummary.easyHard)).toBeInTheDocument()
+    expect(screen.getByText(t.plan.weekSummary.load)).toBeInTheDocument()
     expect(screen.queryByTestId('coach-decision-row')).not.toBeInTheDocument()
     expect(screen.queryByTestId('coach-calendar-2026-09-09')).not.toBeInTheDocument()
   })
