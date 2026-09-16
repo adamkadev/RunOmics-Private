@@ -3,10 +3,9 @@ import { getShoeComparison } from '@/application/usecases/GetShoeComparison'
 import { getNextRace } from '@/application/usecases/GetNextRace'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { ShoesGrid, pickHeroShoe } from '@/components/shoes/ShoesGrid'
-import { ShoesSummary } from '@/components/shoes/ShoesSummary'
 import { ShoeComparison } from '@/components/shoes/ShoeComparison'
 import { BackButton } from '@/components/ui/BackButton'
-import { formatDate } from '@/lib/formatters'
+import { formatDate, formatKm } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 const QUALITY_RUNS_WINDOW = 6
@@ -34,10 +33,15 @@ export default async function ShoesPage() {
       <div>
         <BackButton label={t.pages.shoes.back} fallbackHref="/profile" />
         <h1 className="text-display text-foreground">{t.pages.shoes.title}</h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">{t.pages.shoes.subtitle}</p>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          {t.shoes.rotationSummary(
+            shoes.filter((shoe) => !shoe.retired).length,
+            formatKm(shoes.reduce((sum, shoe) => sum + shoe.totalKm, 0)),
+            shoes.reduce((sum, shoe) => sum + shoe.sessionCount, 0)
+          )}
+        </p>
       </div>
 
-      <ShoesSummary shoes={shoes} />
       <ShoesGrid shoes={shoes} heroInsight={heroInsight} />
       <ShoeComparison rows={getShoeComparison()} />
     </div>

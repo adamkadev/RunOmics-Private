@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { SectionDivider } from '@/components/ui/SectionLabel'
 import type { ShoeStats } from '@/application/usecases/GetShoeStats'
 import { wearStatus, type WearStatus } from '@/domain/shoe/wearStatus'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -111,9 +112,12 @@ function ShoeRow({ shoe }: { shoe: ShoeStats }) {
           {lastOuting && ` · ${lastOuting}`}
         </span>
       </span>
+      {/* No per-row "Retired" chip: the group heading above these rows already
+          says it, and repeating it left the row with two labels and no wear
+          figure. A retired pair still shows how worn it got. */}
       {shoe.retired ? (
-        <span className="shrink-0 rounded-full border border-border px-2 py-0.5 text-caption font-medium text-subtle">
-          {t.shoes.retired}
+        <span className="shrink-0 text-caption font-semibold tabular-nums text-subtle">
+          {shoe.wearPercent}%
         </span>
       ) : (
         <span className={cn('shrink-0 text-caption font-semibold tabular-nums', WEAR_TEXT[status])}>
@@ -141,19 +145,56 @@ export function ShoesGrid({ shoes, heroInsight = null }: Props) {
   const hero = pickHeroShoe(shoes)
   const rest = shoes.filter((s) => s !== hero)
 
+  // Two pairs can carry the same name a year apart, so the list says which are
+  // in rotation and which are done rather than leaving the reader to infer it
+  // from a chip halfway down a row.
+  const active = rest.filter((shoe) => !shoe.retired)
+  const retired = rest.filter((shoe) => shoe.retired)
+
   return (
     <div className="space-y-3">
       {hero && <ShoeHeroCard shoe={hero} insight={heroInsight} />}
-      {hero && rest.length > 0 && (
-        <p className="px-1 text-micro font-medium uppercase tracking-[0.08em] text-subtle-2">
-          {t.shoes.hero.restOfRotation}
-        </p>
+
+      {active.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-baseline justify-between gap-2 px-1">
+            <SectionDivider>{t.shoes.active}</SectionDivider>
+            <WearLegend />
+          </div>
+          {active.map((shoe) => (
+            <ShoeRow key={shoe.gearId} shoe={shoe} />
+          ))}
+        </div>
       )}
-      <div className="space-y-2">
-        {rest.map((shoe) => (
-          <ShoeRow key={shoe.gearId} shoe={shoe} />
-        ))}
-      </div>
+
+      {retired.length > 0 && (
+        <div className="space-y-2 pt-1">
+          <SectionDivider className="px-1">{t.shoes.retired}</SectionDivider>
+          {retired.map((shoe) => (
+            <ShoeRow key={shoe.gearId} shoe={shoe} />
+          ))}
+        </div>
+      )}
     </div>
+  )
+}
+
+/** The bands the bar and the percentage are now coloured by. */
+function WearLegend() {
+  const bands: { key: 'ok' | 'watch' | 'replace'; dot: string }[] = [
+    { key: 'ok', dot: STATUS.success.dot },
+    { key: 'watch', dot: STATUS.warning.dot },
+    { key: 'replace', dot: STATUS.danger.dot },
+  ]
+
+  return (
+    <span className="flex shrink-0 items-center gap-2 text-micro tabular-nums text-subtle">
+      {bands.map(({ key, dot }) => (
+        <span key={key} className="flex items-center gap-1">
+          <span aria-hidden className={cn('h-2 w-2 rounded-[2px]', dot)} />
+          {t.shoes.wearLegend[key]}
+        </span>
+      ))}
+    </span>
   )
 }

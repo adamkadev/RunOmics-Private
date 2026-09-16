@@ -119,15 +119,30 @@ describe('ShoesGrid rows', () => {
     expect(container.textContent).toContain('786 / 1000 km')
   })
 
-  it('states retirement in a chip rather than dimming the row below AA contrast', () => {
+  it('groups retired pairs under a heading rather than dimming each row below AA contrast', () => {
     const { container } = render(<ShoesGrid shoes={[shoe({ retired: true, wearPercent: 100 })]} />)
 
     // opacity-65 composited the AA-compliant text-subtle down to ~3.2:1.
     expect(container.querySelector('a')?.className).not.toContain('opacity')
 
-    const chip = screen.getByText('Retired')
-    expect(chip.className).toContain('rounded-full')
-    expect(chip.className).toContain('border-border')
+    // The heading carries retirement once, so the row does not repeat it - and
+    // the slot it used to occupy shows how worn the pair actually got.
+    expect(screen.getAllByText('Retired')).toHaveLength(1)
+    expect(container.textContent).toContain('100%')
+  })
+
+  it('splits the rotation into labelled groups, so two pairs of the same name cannot be confused', () => {
+    render(
+      <ShoesGrid
+        shoes={[
+          shoe({ gearId: 'a', name: 'Adizero EVO SL', retired: false, wearPercent: 40 }),
+          shoe({ gearId: 'b', name: 'Adizero EVO SL', retired: true, wearPercent: 100 }),
+        ]}
+      />,
+    )
+
+    expect(screen.getByText('Active')).toBeInTheDocument()
+    expect(screen.getByText('Retired')).toBeInTheDocument()
   })
 
   it('draws no bar for a retired pair, whose wear is forced to 100', () => {

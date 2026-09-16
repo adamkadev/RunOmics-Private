@@ -917,6 +917,7 @@ export const en = {
       },
       km: (actual: number, target: number) => `${actual} / ${target}`,
       targetRule: 'monthly target',
+      inProgress: 'in progress',
     },
     history: {
       title: 'Past Years',
@@ -931,6 +932,10 @@ export const en = {
     neverUsed: 'Never used',
     kmOf: (total: number, max: number) => `${total} / ${max} km`,
     retired: 'Retired',
+    active: 'Active',
+    rotationSummary: (activePairs: number, km: string, sessions: number) =>
+      `${activePairs} active · ${km} km · ${sessions} sessions`,
+    wearLegend: { ok: '<70%', watch: '70-90', replace: '90+' },
     // The rotation row used to print a bare `Sep 13` next to the mileage, with
     // nothing saying which date it was. Both keys take an already-formatted
     // date because i18n can never import the formatters.
@@ -977,6 +982,8 @@ export const en = {
         firstUsed: 'Since',
         kmPerWeek: 'km / week',
         lastWorn: 'Last worn',
+        weeks: 'Weeks',
+        avgRun: 'Avg run',
       },
       activitiesTitle: 'Tracked Activities',
       empty: 'No activities recorded with this pair yet.',
@@ -993,6 +1000,7 @@ export const en = {
   profile: {
     hero: {
       lifetime: (runs: number, km: string) => `${runs} runs · ${km} km lifetime`,
+      recency: (lastRun: string, activeDays: number) => `Last run ${lastRun} · ${activeDays} active days`,
       rankBadge: (tier: string) => `RANK ${tier}`,
       topPctLine: (pct: number) => `Top ${pct}% VO₂max for your age`,
       namePlaceholder: 'Your name',
@@ -1097,6 +1105,7 @@ export const en = {
     },
     noRecordYet: 'No record yet',
     predictedFromFitness: (time: string) => `Predicted ${time}`,
+    predictedShort: (time: string) => `${time} pred`,
     findRace: (distance: string) => `Find a ${distance.toLowerCase()} ›`,
   },
 

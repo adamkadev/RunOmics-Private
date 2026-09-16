@@ -93,7 +93,7 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null, 
                   </span>
                   {prediction && (
                     <span className="block text-caption tabular-nums text-subtle">
-                      {t.records.predictedFromFitness(formatDuration(prediction.predictedSeconds))}
+                      {t.records.predictedShort(formatDuration(prediction.predictedSeconds))}
                     </span>
                   )}
                 </span>

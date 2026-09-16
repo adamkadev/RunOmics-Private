@@ -24,7 +24,6 @@ export default async function RecordsPage() {
         <BackButton label={t.pages.records.back} fallbackHref="/profile" />
         <div>
           <h1 className="text-display text-foreground">{t.pages.records.title}</h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">{t.pages.records.subtitle}</p>
         </div>
       </div>
 

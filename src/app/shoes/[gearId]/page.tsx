@@ -13,7 +13,7 @@ import { GlassSurface } from '@/components/ui/GlassSurface'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { BackButton } from '@/components/ui/BackButton'
 import { STATUS } from '@/lib/statusColors'
-import { formatDate } from '@/lib/formatters'
+import { formatDate, formatDistance } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -71,6 +71,17 @@ export default async function ShoeDetailPage({
   // km/week says nothing about a pair that is no longer worn, so a retired pair
   // spends that cell on the date it was last run in instead.
   const lastWornDate = shoe.activities[0]?.date ?? null
+  const weeksInRotation = shoe.firstUsedDate
+    ? Math.max(
+        1,
+        Math.round(
+          (new Date((lastWornDate ?? shoe.firstUsedDate) + 'T00:00:00').getTime() -
+            new Date(shoe.firstUsedDate + 'T00:00:00').getTime()) /
+            (7 * 86_400_000)
+        )
+      )
+    : 0
+  const avgRunKm = shoe.activities.length > 0 ? shoe.totalKm / shoe.activities.length : null
   const style = WEAR_STYLE[status]
   const aiTake =
     status === 'ok' || shoe.retired
@@ -121,8 +132,12 @@ export default async function ShoeDetailPage({
       )}
 
       <div className="grid grid-cols-4 gap-2">
-        <Stat value={<AnimatedValue value={shoe.totalKm} decimals={0} />} label={d.stats.distance} />
         <Stat value={<AnimatedValue value={shoe.activities.length} />} label={d.stats.activities} />
+        <Stat value={<AnimatedValue value={weeksInRotation} />} label={d.stats.weeks} />
+        <Stat
+          value={avgRunKm !== null ? `${formatDistance(avgRunKm)} ${t.units.km}` : '-'}
+          label={d.stats.avgRun}
+        />
         {shoe.retired ? (
           <Stat
             value={lastWornDate ? formatDate(lastWornDate, { precision: 'month', year: 'always' }) : '-'}

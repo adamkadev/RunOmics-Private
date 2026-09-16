@@ -19,6 +19,8 @@ export interface ProfileHero {
   lifetimeDistanceKm: number
   rank: AthleteRank | null
   vo2maxTopPercent: number | null
+  lastRunDate: string | null
+  activeDays: number
 }
 
 export interface ProfilePeriodStats {
@@ -132,6 +134,8 @@ export async function getProfileData(): Promise<ProfileData> {
       vo2maxTopPercent: rank?.vo2maxGarmin != null && athlete.age !== undefined && athlete.sex
         ? vo2maxTopPercent(rank.vo2maxGarmin, athlete.age, athlete.sex, vo2maxNorms)
         : null,
+      lastRunDate: activities[0]?.date ?? null,
+      activeDays: new Set(activities.map((a) => a.date)).size,
     },
     ytd: periodStats(ytdActivities, ytdDistanceKmRounded, elapsedDaysThisYear),
     allTime: periodStats(activities, sumDistanceKm(activities), elapsedDaysAllTime),

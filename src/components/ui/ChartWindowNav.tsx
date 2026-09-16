@@ -150,7 +150,7 @@ export function WindowedChartCard<T extends { date: string }>({
    *  axis numbers are not the only place the reader can look for it. */
   unit?: string
   controls?: ReactNode
-  legend?: ReactNode
+  legend?: ReactNode | ((visible: T[]) => ReactNode)
   points: T[]
   initialRange?: ChartRange
   sample?: boolean
@@ -181,7 +181,11 @@ export function WindowedChartCard<T extends { date: string }>({
 
       {takeaway && <ChartReading>{takeaway}</ChartReading>}
 
-      {legend && <div className="mb-3 flex flex-wrap gap-x-3 gap-y-1">{legend}</div>}
+      {legend && (
+        <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          {typeof legend === 'function' ? legend(plotted) : legend}
+        </div>
+      )}
 
       <ChartWindowPager
         bounds={w.bounds}

@@ -152,8 +152,10 @@ export function MonthlyVolumeChart({ monthlyGoals, year }: { monthlyGoals: Month
             ))}
           </div>
 
-          <div className="mt-2 flex items-center justify-between gap-2 text-micro">
-            <span className="flex items-center gap-1.5 text-subtle">
+          {/* Three fills and a rule, so a reader can tell which bar is which
+              without tapping into the expanded grid. */}
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-micro text-subtle">
+            <span className="flex items-center gap-1.5">
               <span
                 aria-hidden
                 className="w-4 shrink-0 border-t border-dashed"
@@ -161,8 +163,26 @@ export function MonthlyVolumeChart({ monthlyGoals, year }: { monthlyGoals: Month
               />
               {t.goals.monthlyVolume.targetRule}
             </span>
+            {(['ahead', 'behind'] as const).map((status) => (
+              <span key={status} className="flex items-center gap-1.5">
+                <span
+                  aria-hidden
+                  className="h-2 w-2 shrink-0 rounded-[2px]"
+                  style={{ background: MONTH_CELL_TINT[status].bar }}
+                />
+                {t.goals.monthlyVolume.status[status]}
+              </span>
+            ))}
+            <span className="flex items-center gap-1.5">
+              <span
+                aria-hidden
+                className="h-2 w-2 shrink-0 rounded-[2px] border border-dashed"
+                style={{ borderColor: TARGET_RULE_COLOR }}
+              />
+              {t.goals.monthlyVolume.inProgress}
+            </span>
             {current && (
-              <span className={cn('font-semibold', STATUS_ICON[current.status].className)}>
+              <span className={cn('ml-auto font-semibold', STATUS_ICON[current.status].className)}>
                 {monthLabel(current.month)} · {t.goals.monthlyVolume.status[current.status]}
               </span>
             )}

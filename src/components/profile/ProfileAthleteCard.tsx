@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
-import { CardTitle } from '@/components/ui/SectionLabel'
+import { CardTitle, SectionDivider } from '@/components/ui/SectionLabel'
 import type { AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import type { ZoneShare } from '@/application/usecases/GetAnalyticsData'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -80,6 +80,10 @@ export function ProfileAthleteCard({ athlete, latestVo2max, recentZoneTime }: Pr
           {metrics.map((metric) => <Tile key={metric.label} {...metric} />)}
         </div>
       ) : null}
+
+      <SectionDivider className="mb-2">
+        {`${t.profile.hrZones.title} · ${t.profile.hrZones.recentWeeks}`}
+      </SectionDivider>
 
       <div className="flex flex-col gap-[7px]">
         {ZONE_ROWS.map((row) => {

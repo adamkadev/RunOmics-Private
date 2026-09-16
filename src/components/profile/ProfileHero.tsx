@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { User, Settings } from 'lucide-react'
 import type { ProfileHero as ProfileHeroData } from '@/application/usecases/GetProfileData'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { formatKm, initials } from '@/lib/formatters'
+import { formatDate, formatKm, initials } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 interface Props {
@@ -38,6 +38,15 @@ export function ProfileHero({ hero, displayName }: Props) {
         {hero.vo2maxTopPercent !== null && (
           <p className="text-caption text-muted-foreground">
             {t.profile.hero.topPctLine(hero.vo2maxTopPercent)}
+          </p>
+        )}
+        {hero.lastRunDate && (
+          <p className="mt-0.5 text-caption text-muted-foreground">
+            {/* An absolute date, not "2 d ago": this renders inside a client
+                boundary, so a clock-relative string is computed twice - once on
+                the server, once on hydration - and the two disagree the moment
+                the reading rolls over. */}
+            {t.profile.hero.recency(formatDate(hero.lastRunDate, { style: 'bare' }), hero.activeDays)}
           </p>
         )}
         <p className="mt-0.5 text-caption text-subtle">

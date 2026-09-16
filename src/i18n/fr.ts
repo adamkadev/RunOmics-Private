@@ -909,6 +909,7 @@ export const fr = {
       },
       km: (actual: number, target: number) => `${actual} / ${target}`,
       targetRule: 'objectif mensuel',
+      inProgress: 'en cours',
     },
     history: {
       title: 'Années passées',
@@ -923,6 +924,10 @@ export const fr = {
     neverUsed: 'Jamais utilisée',
     kmOf: (total: number, max: number) => `${total} / ${max} km`,
     retired: 'Retraitée',
+    active: 'En rotation',
+    rotationSummary: (activePairs: number, km: string, sessions: number) =>
+      `${activePairs} en rotation · ${km} km · ${sessions} séances`,
+    wearLegend: { ok: '<70 %', watch: '70-90', replace: '90+' },
     lastRun: (date: string) => `dernière sortie le ${date}`,
     lastWorn: (year: number) => `portée jusqu’en ${year}`,
     status: {
@@ -966,6 +971,8 @@ export const fr = {
         firstUsed: 'Depuis',
         kmPerWeek: 'km / sem.',
         lastWorn: 'Dernier port',
+        weeks: 'Semaines',
+        avgRun: 'Sortie moy',
       },
       activitiesTitle: 'Activités suivies',
       empty: 'Aucune activité enregistrée avec cette paire pour le moment.',
@@ -982,6 +989,7 @@ export const fr = {
   profile: {
     hero: {
       lifetime: (runs: number, km: string) => `${runs} sorties · ${km} km au total`,
+      recency: (lastRun: string, activeDays: number) => `Dernière sortie ${lastRun} · ${activeDays} jours actifs`,
       rankBadge: (tier: string) => `RANG ${tier}`,
       topPctLine: (pct: number) => `Top ${pct}% de VO₂max pour ton âge`,
       namePlaceholder: 'Votre nom',
@@ -1086,6 +1094,7 @@ export const fr = {
     },
     noRecordYet: 'Pas encore de record',
     predictedFromFitness: (time: string) => `Prédit à ${time}`,
+    predictedShort: (time: string) => `${time} prév.`,
     findRace: (distance: string) => `Trouver un ${distance.toLowerCase()} ›`,
   },
 

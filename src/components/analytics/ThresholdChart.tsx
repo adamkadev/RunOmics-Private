@@ -68,12 +68,41 @@ function thresholdReading(visible: ThresholdPoint[]): string | null {
 export function ThresholdChart({ data }: { data: ThresholdHistoryData }) {
   const s = t.analytics.charts.threshold
 
-  const legend = (
-    <>
-      <LegendDot color={HR_COLOR} label={s.lthr} />
-      <LegendDot color={PACE_COLOR} label={s.pace} />
-    </>
-  )
+  // Derived from the window drawn, not the whole series - the same trap the
+  // reading fell into before it measured what the chart shows.
+  const legend = (visible: ThresholdPoint[]) => {
+    const lthrs = visible.map((p) => p.lthrBpm).filter((v): v is number => v !== null)
+    const paces = visible.map((p) => p.thresholdPaceSecPerKm).filter((v): v is number => v !== null)
+    const latestLthr = lthrs[lthrs.length - 1]
+    const latestPace = paces[paces.length - 1]
+    const lthrDelta = lthrs.length >= 2 ? latestLthr! - lthrs[0]! : null
+    const gain = windowPaceGain(visible)
+
+    return (
+      <>
+        <LegendDot
+          color={HR_COLOR}
+          label={[
+            s.lthr,
+            latestLthr !== undefined ? `${latestLthr} ${t.units.bpm}` : null,
+            lthrDelta !== null && Math.abs(lthrDelta) >= 1 ? formatDelta(Math.round(lthrDelta)) : null,
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        />
+        <LegendDot
+          color={PACE_COLOR}
+          label={[
+            s.pace,
+            latestPace !== undefined ? `${formatClock(latestPace)} /${t.units.km}` : null,
+            gain !== null && Math.abs(gain) >= 1 ? formatDelta(-Math.round(gain), 's') : null,
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        />
+      </>
+    )
+  }
 
   return (
     <WindowedChartCard
