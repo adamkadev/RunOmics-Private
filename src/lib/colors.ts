@@ -88,6 +88,20 @@ export const ZONE_COLOR_CLASSES: Record<number, { bg: string; text: string }> = 
   5: { bg: 'bg-[var(--zone-5)]', text: 'text-[var(--zone-5)]' },
 }
 
+/**
+ * Form, Fitness and Fatigue are one reading in three parts, so the value ink is
+ * metric identity rather than status: green, blue, orange, fixed. Form used to
+ * print `--accent-text`, which on the performance accent is the same blue as
+ * Fitness - two of the three headline numbers rendered identically and the
+ * small-caps label was the only thing telling them apart. The delta above each
+ * value keeps its own semantic colour; identity is the value's job.
+ */
+export const TRAINING_METRIC_COLORS = {
+  form:    'var(--metric-form)',
+  fitness: 'var(--metric-fitness)',
+  fatigue: 'var(--metric-fatigue)',
+} as const
+
 // A rising metric is not automatically good news: fatigue climbing is a warning,
 // fitness climbing is not. Each tile says which direction it wants.
 export const METRIC_DELTA_COLORS = {

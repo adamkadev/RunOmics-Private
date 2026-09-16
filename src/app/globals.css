@@ -142,6 +142,9 @@
   --subtle-2:            #606e82;
   --delta-good:          #059669;
   --delta-warn:          #c2410c;
+  --metric-form:         #0e9f6e;
+  --metric-fitness:      #2563eb;
+  --metric-fatigue:      #ea580c;
   --accent:              #0e9f6e;
   --accent-hover:        #14b886;
   --accent-dark:         #0b8a5f;
@@ -197,6 +200,9 @@
   --subtle-2:            #6f7f79;
   --delta-good:          #34d399;
   --delta-warn:          #fb923c;
+  --metric-form:         #4fe6a0;
+  --metric-fitness:      #7db8ff;
+  --metric-fatigue:      #ff9a5a;
   --accent:              #1ed787;
   --accent-hover:        #4fe6a0;
   --accent-dark:         #0b9c63;

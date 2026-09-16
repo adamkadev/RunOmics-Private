@@ -1,14 +1,16 @@
 import type { TrainingLoadData } from '@/application/usecases/GetTrainingLoad'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { CHART_COLORS, metricDeltaColor, type MetricDeltaPolarity } from '@/lib/colors'
+import { TRAINING_METRIC_COLORS, metricDeltaColor, type MetricDeltaPolarity } from '@/lib/colors'
 import { formatDelta } from '@/lib/formatters'
 import { t } from '@/i18n'
 
-const FORM_VALUE = 'var(--accent-text)'
-const FORM_LINE = 'var(--accent)'
-const FITNESS = CHART_COLORS.ctl
-const FATIGUE = CHART_COLORS.atl
+// One hue per metric, value and sparkline alike, so the tile is identifiable
+// before the label is read. See TRAINING_METRIC_COLORS for why Form no longer
+// borrows the accent.
+const FORM = TRAINING_METRIC_COLORS.form
+const FITNESS = TRAINING_METRIC_COLORS.fitness
+const FATIGUE = TRAINING_METRIC_COLORS.fatigue
 
 const SPARK_POINTS = 30
 const TREND_THRESHOLD = 1
@@ -142,9 +144,9 @@ export function FormFitnessFatigueTrio({
       <Tile
         label={t.dashboard.trainingLoad.form}
         value={formLabel}
-        valueColor={FORM_VALUE}
+        valueColor={FORM}
         values={points.map((p) => p.tsb)}
-        lineColor={FORM_LINE}
+        lineColor={FORM}
         delta={formDelta}
         deltaGoodWhen="up"
       />
