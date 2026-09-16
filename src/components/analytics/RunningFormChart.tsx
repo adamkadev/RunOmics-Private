@@ -140,7 +140,6 @@ export function RunningFormChart({ points }: { points: WeeklyTrendPoint[] }) {
   return (
     <WindowedChartCard
       title={t.analytics.charts.runningForm.title}
-      unit={UNIT_BY_KEY[key]}
       controls={controls}
       points={points}
       footnote={t.analytics.charts.runningForm.footnote[active]}
@@ -163,7 +162,12 @@ export function RunningFormChart({ points }: { points: WeeklyTrendPoint[] }) {
 
         return (
           <ChartFigure summary={summary}>
-            <ResponsiveContainer width="100%" height={200}>
+            {/* The unit belongs to the axis the numbers are drawn against, not
+                to the card title, and it has to follow the metric the chips
+                select. Above the axis column rather than appended to every
+                tick, where it wrapped and collided with the top one. */}
+            <p className="text-micro leading-none text-subtle">{UNIT_BY_KEY[key]}</p>
+            <ResponsiveContainer width="100%" height={196}>
               <LineChart data={visible} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
                 <XAxis {...windowDateAxis(ticks)} />
                 <YAxis

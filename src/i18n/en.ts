@@ -550,6 +550,7 @@ export const en = {
       },
       easyHard: {
         title: 'Easy / Hard Split',
+        targetLine: '80% easy',
         easy: (pct: number) => `Easy (Z1–Z2): ${pct}%`,
         hard: (pct: number) => `Hard (Z3+): ${pct}%`,
         footnote: 'Share of time in Z1–Z2 vs Z3+. Dashed line = 80/20 target.',

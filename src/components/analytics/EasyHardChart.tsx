@@ -101,7 +101,23 @@ export function EasyHardChart({ data }: Props) {
               isAnimationActive={false}
               connectNulls
             />
-            <ReferenceLine y={80} stroke={CHART_COLORS.referenceTarget} strokeDasharray="4 3" strokeWidth={1} />
+            {/* The hard band sits on top, so the orange region occupies the top
+                fifth of a tall card and reads heavier than the 19% it is. The
+                anchor is this line: labelled, it says where the top of the easy
+                band is meant to reach, and the eye has something to measure the
+                band against instead of judging it by area. */}
+            <ReferenceLine
+              y={80}
+              stroke={CHART_COLORS.referenceTarget}
+              strokeDasharray="4 3"
+              strokeWidth={1}
+              label={{
+                value: t.analytics.charts.easyHard.targetLine,
+                position: 'insideTopLeft',
+                fill: CHART_COLORS.axisTick,
+                fontSize: 10,
+              }}
+            />
           </AreaChart>
         </ResponsiveContainer>
       </ChartFigure>

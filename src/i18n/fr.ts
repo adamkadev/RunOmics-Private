@@ -542,6 +542,7 @@ export const fr = {
       },
       easyHard: {
         title: 'Répartition facile / difficile',
+        targetLine: '80 % facile',
         easy: (pct: number) => `Facile (Z1–Z2) : ${pct}%`,
         hard: (pct: number) => `Difficile (Z3+) : ${pct}%`,
         footnote: 'Part du temps en Z1–Z2 vs Z3+. Ligne pointillée = cible 80/20.',
