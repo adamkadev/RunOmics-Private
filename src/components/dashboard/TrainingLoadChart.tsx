@@ -18,7 +18,7 @@ import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartCardHead, LegendValue } from '@/components/ui/ChartCard'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { ChartRangeChips, ChartWindowPager, trendDots, useChartWindow } from '@/components/ui/ChartWindowNav'
-import { sampleForRange } from '@/domain/timeWindow'
+import { lineInterpolation, sampleForRange } from '@/domain/timeWindow'
 import { t } from '@/i18n'
 
 interface Props {
@@ -99,9 +99,9 @@ export function TrainingLoadChart({ data }: Props) {
             />
             <Tooltip content={<CustomTooltip />} />
             <ReferenceLine y={0} stroke={CHART_COLORS.referenceLine} strokeWidth={1} />
-            <Line type="monotone" dataKey="ctl" stroke={CHART_COLORS.ctl} strokeWidth={2.5} {...trendDots(CHART_COLORS.ctl)} isAnimationActive={false} />
-            <Line type="monotone" dataKey="atl" stroke={CHART_COLORS.atl} strokeWidth={2.5} {...trendDots(CHART_COLORS.atl)} isAnimationActive={false} />
-            <Line type="monotone" dataKey="tsb" stroke={formColor} strokeWidth={2.5} {...trendDots(formColor)} isAnimationActive={false} />
+            <Line type={lineInterpolation(plotted.length)} dataKey="ctl" stroke={CHART_COLORS.ctl} strokeWidth={2.5} {...trendDots(CHART_COLORS.ctl)} isAnimationActive={false} />
+            <Line type={lineInterpolation(plotted.length)} dataKey="atl" stroke={CHART_COLORS.atl} strokeWidth={2.5} {...trendDots(CHART_COLORS.atl)} isAnimationActive={false} />
+            <Line type={lineInterpolation(plotted.length)} dataKey="tsb" stroke={formColor} strokeWidth={2.5} {...trendDots(formColor)} isAnimationActive={false} />
           </LineChart>
         </ResponsiveContainer>
       </ChartFigure>

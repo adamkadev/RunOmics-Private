@@ -5,7 +5,8 @@ import type { ThresholdHistoryData, ThresholdPoint } from '@/application/usecase
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { ChartFigure } from '@/components/ui/ChartFigure'
-import { WindowedChartCard, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
+import { WindowedChartCard, latestOf, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
+import { lineInterpolation } from '@/domain/timeWindow'
 import { formatClock, formatDelta } from '@/lib/formatters'
 import { roundAxis } from '@/lib/chartAxis'
 import { t } from '@/i18n'
@@ -116,6 +117,15 @@ export function ThresholdChart({ data }: { data: ThresholdHistoryData }) {
       initialRange="6m"
       footnote={s.footnote}
       reading={thresholdReading}
+      value={(visible) => {
+        const hr = latestOf(visible, (p) => p.lthrBpm)
+        const pace = latestOf(visible, (p) => p.thresholdPaceSecPerKm)
+        const parts = [
+          hr !== null ? `${Math.round(hr)} ${t.units.bpm}` : null,
+          pace !== null ? `${formatClock(pace)} ${t.units.perKm}` : null,
+        ].filter(Boolean)
+        return parts.length ? parts.join(' · ') : null
+      }}
     >
       {(visible) => {
         const ticks = windowTicks(visible)
@@ -153,8 +163,8 @@ export function ThresholdChart({ data }: { data: ThresholdHistoryData }) {
                   width={46}
                 />
                 <Tooltip content={<CustomTooltip />} />
-                <Line yAxisId="hr" type="monotone" dataKey="lthrBpm" stroke={HR_COLOR} strokeWidth={2.5} {...trendDots(HR_COLOR)} connectNulls isAnimationActive={false} />
-                <Line yAxisId="pace" type="monotone" dataKey="thresholdPaceSecPerKm" stroke={PACE_COLOR} strokeWidth={2.5} {...trendDots(PACE_COLOR)} connectNulls isAnimationActive={false} />
+                <Line yAxisId="hr" type={lineInterpolation(visible.length)} dataKey="lthrBpm" stroke={HR_COLOR} strokeWidth={2.5} {...trendDots(HR_COLOR)} connectNulls isAnimationActive={false} />
+                <Line yAxisId="pace" type={lineInterpolation(visible.length)} dataKey="thresholdPaceSecPerKm" stroke={PACE_COLOR} strokeWidth={2.5} {...trendDots(PACE_COLOR)} connectNulls isAnimationActive={false} />
               </LineChart>
             </ResponsiveContainer>
           </ChartFigure>

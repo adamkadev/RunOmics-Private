@@ -5,9 +5,6 @@ import { TRAINING_METRIC_COLORS, metricDeltaColor, type MetricDeltaPolarity } fr
 import { formatDelta } from '@/lib/formatters'
 import { t } from '@/i18n'
 
-// One hue per metric, value and sparkline alike, so the tile is identifiable
-// before the label is read. See TRAINING_METRIC_COLORS for why Form no longer
-// borrows the accent.
 const FORM = TRAINING_METRIC_COLORS.form
 const FITNESS = TRAINING_METRIC_COLORS.fitness
 const FATIGUE = TRAINING_METRIC_COLORS.fatigue

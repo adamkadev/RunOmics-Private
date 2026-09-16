@@ -71,6 +71,36 @@ export function sampleForRange<T extends { date: string }>(
   return downsampled
 }
 
+export const SPARSE_SERIES_MAX = 6
+export const MIN_CURVE_POINTS = 3
+
+export type SeriesShape = 'curve' | 'sparse' | 'tooFew'
+
+export function seriesShape(count: number): SeriesShape {
+  if (count < MIN_CURVE_POINTS) return 'tooFew'
+  return count <= SPARSE_SERIES_MAX ? 'sparse' : 'curve'
+}
+
+export function lineInterpolation(count: number): 'monotone' | 'linear' {
+  return seriesShape(count) === 'curve' ? 'monotone' : 'linear'
+}
+
+export function seriesCadence(points: { date: string }[]): 'weekly' | 'daily' | null {
+  if (points.length < 2) return null
+
+  const gaps: number[] = []
+  for (let i = 1; i < points.length; i++) {
+    const a = Date.parse(points[i - 1]!.date + 'T00:00:00Z')
+    const b = Date.parse(points[i]!.date + 'T00:00:00Z')
+    gaps.push(Math.round((b - a) / 86_400_000))
+  }
+  gaps.sort((x, y) => x - y)
+  const median = gaps[Math.floor(gaps.length / 2)]!
+
+  if (median >= 5) return 'weekly'
+  return median <= 2 ? 'daily' : null
+}
+
 export const PLOT_STRIDE_DAYS: Record<ChartRange, number> = {
   '4w': 1,
   '6m': 7,

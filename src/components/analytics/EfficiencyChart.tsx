@@ -4,7 +4,8 @@ import { ComposedChart, Area, Line, XAxis, YAxis, Tooltip, ResponsiveContainer }
 import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
-import { WindowedChartCard, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
+import { WindowedChartCard, latestOf, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
+import { lineInterpolation } from '@/domain/timeWindow'
 import { trendFromSeries } from '@/lib/chartTrend'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { roundAxis } from '@/lib/chartAxis'
@@ -99,6 +100,10 @@ export function EfficiencyChart({ points }: { points: WeeklyTrendPoint[] }) {
       points={points}
       footnote={c.footnote}
       reading={efficiencyReading}
+      value={(visible) => {
+        const ef = latestOf(visible, (d) => d.efAdjusted ?? d.ef)
+        return ef !== null ? ef.toFixed(2) : null
+      }}
     >
       {(visible) => {
         const values = visible.flatMap((d) => [d.ef, d.efAdjusted]).filter((v): v is number => v !== null)
@@ -133,7 +138,7 @@ export function EfficiencyChart({ points }: { points: WeeklyTrendPoint[] }) {
                 />
                 <Tooltip content={<CustomTooltip />} />
                 <Area
-                  type="monotone"
+                  type={lineInterpolation(visible.length)}
                   dataKey="efAdjusted"
                   stroke={CHART_COLORS.efficiency}
                   strokeWidth={3}
@@ -143,7 +148,7 @@ export function EfficiencyChart({ points }: { points: WeeklyTrendPoint[] }) {
                   isAnimationActive={false}
                 />
                 <Line
-                  type="monotone"
+                  type={lineInterpolation(visible.length)}
                   dataKey="ef"
                   stroke={CHART_COLORS.efficiency}
                   strokeWidth={1.5}

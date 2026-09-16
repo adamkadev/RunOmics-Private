@@ -5,7 +5,8 @@ import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { ChartFigure } from '@/components/ui/ChartFigure'
-import { WindowedChartCard, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
+import { WindowedChartCard, latestOf, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
+import { lineInterpolation } from '@/domain/timeWindow'
 import { trendFromSeries } from '@/lib/chartTrend'
 import { t } from '@/i18n'
 
@@ -47,6 +48,10 @@ export function RpeTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
       points={points}
       footnote={t.analytics.charts.rpe.footnote}
       reading={rpeReading}
+      value={(visible) => {
+        const rpe = latestOf(visible, (d) => d.avgRpe)
+        return rpe !== null ? rpe.toFixed(1) : null
+      }}
     >
       {(visible) => {
         const values = visible.map((d) => d.avgRpe).filter((v): v is number => v !== null)
@@ -71,7 +76,7 @@ export function RpeTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
                 <ReferenceLine y={3.5} stroke={CHART_COLORS.referenceLine} strokeDasharray="3 3" />
                 <Tooltip content={<CustomTooltip />} />
                 <Line
-                  type="monotone"
+                  type={lineInterpolation(visible.length)}
                   dataKey="avgRpe"
                   stroke={CHART_COLORS.hr}
                   strokeWidth={3}

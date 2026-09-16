@@ -7,7 +7,7 @@ import { useAccentUiColor } from '@/lib/useAccent'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { WindowedChartCard, windowDateAxis, windowTickDate, windowTickMonth, windowTicks } from '@/components/ui/ChartWindowNav'
-import { fillWeeklyGaps, monthStartTicks } from '@/domain/timeWindow'
+import { fillWeeklyGaps, lineInterpolation, monthStartTicks } from '@/domain/timeWindow'
 import { isoDate, startOfWeek } from '@/lib/calendarDate'
 import { AXIS_TICK_DATE, formatDate } from '@/lib/formatters'
 import { t } from '@/i18n'
@@ -109,6 +109,10 @@ export function WeeklyVolumeChart({ points }: { points: WeeklyTrendPoint[] }) {
       sample={false}
       footnote={t.analytics.charts.weeklyVolume.footnote}
       reading={(visible) => weeklyVolumeReading(visible, currentWeekDate)}
+      value={(visible) => {
+        const last = visible[visible.length - 1]
+        return last ? `${last.distanceKm} ${t.units.km}` : null
+      }}
     >
       {(visible) => {
         const c = t.analytics.charts.weeklyVolume
@@ -162,7 +166,7 @@ export function WeeklyVolumeChart({ points }: { points: WeeklyTrendPoint[] }) {
                   />
                 )}
                 <Area
-                  type="monotone"
+                  type={lineInterpolation(visible.length)}
                   dataKey="distanceKm"
                   stroke={accentColor}
                   strokeWidth={3}

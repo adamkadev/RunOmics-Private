@@ -7,8 +7,11 @@ import {
   hasEarlierPoints,
   pointsInWindow,
   sampleForRange,
+  seriesCadence,
+  seriesShape,
   windowBounds,
   type ChartRange,
+  type SeriesShape,
   type WindowBounds,
 } from '@/domain/timeWindow'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -133,6 +136,15 @@ export function ChartWindowPager({
   )
 }
 
+function CadenceNote({ plotted }: { plotted: { date: string }[] }) {
+  const note =
+    seriesCadence(plotted) === 'weekly'
+      ? t.chartWindow.weeklyMeans(plotted.length)
+      : t.chartWindow.pointsInWindow(plotted.length)
+
+  return <p className="mt-2 text-caption text-subtle">{note}</p>
+}
+
 export function WindowedChartCard<T extends { date: string }>({
   title,
   unit,
@@ -143,6 +155,7 @@ export function WindowedChartCard<T extends { date: string }>({
   sample = true,
   footnote,
   reading,
+  value,
   children,
 }: {
   title: ReactNode
@@ -159,11 +172,13 @@ export function WindowedChartCard<T extends { date: string }>({
    *  actually on screen - not the whole series - so a card can never lead with
    *  a number the reader cannot find in the picture below it. */
   reading?: (visible: T[]) => ReactNode
-  children: (visible: T[]) => ReactNode
+  value?: (visible: T[]) => ReactNode
+  children: (visible: T[], shape: SeriesShape) => ReactNode
 }) {
   const w = useChartWindow(points, initialRange)
   const plotted = sample ? sampleForRange(w.visible, w.range) : w.visible
-  const takeaway = plotted.length > 0 && reading ? reading(plotted) : null
+  const shape = seriesShape(plotted.length)
+  const takeaway = shape !== 'tooFew' && reading ? reading(plotted) : null
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -197,11 +212,26 @@ export function WindowedChartCard<T extends { date: string }>({
 
       {plotted.length === 0 ? (
         <p className="py-12 text-center text-sm text-subtle">{t.chartWindow.empty}</p>
+      ) : shape === 'tooFew' ? (
+        <div className="py-6 text-center">
+          {value && <div className="font-display text-title2 font-bold tabular-nums">{value(plotted)}</div>}
+          <p className="mt-1 text-sm text-subtle">{t.chartWindow.tooFewToPlot}</p>
+        </div>
       ) : (
-        children(plotted)
+        children(plotted, shape)
       )}
+
+      {shape !== 'curve' && plotted.length > 0 && <CadenceNote plotted={plotted} />}
     </GlassSurface>
   )
+}
+
+export function latestOf<T>(points: T[], pick: (p: T) => number | null | undefined): number | null {
+  for (let i = points.length - 1; i >= 0; i--) {
+    const v = pick(points[i]!)
+    if (typeof v === 'number') return v
+  }
+  return null
 }
 
 export function trendDots(color: string) {

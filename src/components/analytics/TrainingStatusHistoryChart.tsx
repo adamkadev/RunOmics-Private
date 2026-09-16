@@ -15,7 +15,7 @@ import { ChartFigure } from '@/components/ui/ChartFigure'
 import { ChartCardHead, ChartReading, LegendValue } from '@/components/ui/ChartCard'
 import { SectionDivider } from '@/components/ui/SectionLabel'
 import { ChartRangeChips, ChartWindowPager, useChartWindow } from '@/components/ui/ChartWindowNav'
-import { pickForRange } from '@/domain/timeWindow'
+import { lineInterpolation, pickForRange } from '@/domain/timeWindow'
 import { AXIS_TICK_DATE, formatDate } from '@/lib/formatters'
 import { t } from '@/i18n'
 
@@ -280,7 +280,7 @@ export function TrainingStatusHistoryChart({ data }: { data: TrainingStatusHisto
                   isAnimationActive={false}
                 />
                 <Line
-                  type="monotone"
+                  type={lineInterpolation(plotted.length)}
                   dataKey="chronicLoad"
                   stroke={BAND_COLOR}
                   strokeWidth={3}
@@ -289,7 +289,7 @@ export function TrainingStatusHistoryChart({ data }: { data: TrainingStatusHisto
                   isAnimationActive={false}
                 />
                 <Line
-                  type="monotone"
+                  type={lineInterpolation(plotted.length)}
                   dataKey="acuteLoad"
                   stroke={CHART_COLORS.atl}
                   strokeWidth={1.5}

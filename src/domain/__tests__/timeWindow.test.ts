@@ -2,10 +2,13 @@ import { describe, it, expect } from 'vitest'
 import {
   fillWeeklyGaps,
   hasEarlierPoints,
+  lineInterpolation,
   monthStartTicks,
   pickForRange,
   pointsInWindow,
   sampleForRange,
+  seriesCadence,
+  seriesShape,
   windowBounds,
 } from '../timeWindow'
 
@@ -209,5 +212,49 @@ describe('fillWeeklyGaps', () => {
       '2026-04-06',
       '2026-04-13',
     ])
+  })
+})
+
+describe('seriesShape', () => {
+  it('refuses to plot a series of fewer than three points', () => {
+    expect(seriesShape(0)).toBe('tooFew')
+    expect(seriesShape(2)).toBe('tooFew')
+  })
+
+  it('treats everything up to six points as sparse', () => {
+    expect(seriesShape(3)).toBe('sparse')
+    expect(seriesShape(6)).toBe('sparse')
+  })
+
+  it('earns a curve past six points', () => {
+    expect(seriesShape(7)).toBe('curve')
+  })
+})
+
+describe('lineInterpolation', () => {
+  it('keeps straight segments for the four points a 4w window resolves to', () => {
+    expect(lineInterpolation(4)).toBe('linear')
+  })
+
+  it('splines only a series dense enough to justify one', () => {
+    expect(lineInterpolation(28)).toBe('monotone')
+  })
+})
+
+describe('seriesCadence', () => {
+  it('reads weekly points as weeks', () => {
+    expect(seriesCadence([point('2026-07-06'), point('2026-07-13'), point('2026-07-20')])).toBe('weekly')
+  })
+
+  it('reads consecutive days as days', () => {
+    expect(seriesCadence([point('2026-07-18'), point('2026-07-19'), point('2026-07-20')])).toBe('daily')
+  })
+
+  it('survives a missing week', () => {
+    expect(seriesCadence([point('2026-07-06'), point('2026-07-13'), point('2026-07-27')])).toBe('weekly')
+  })
+
+  it('has nothing to say about a single point', () => {
+    expect(seriesCadence([point('2026-07-20')])).toBeNull()
   })
 })

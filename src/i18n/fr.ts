@@ -37,7 +37,12 @@ export const fr = {
     },
     previous: 'Période précédente',
     next: 'Période suivante',
-    empty: 'Aucune donnée enregistrée sur cette période.',  },
+    empty: 'Aucune donnée enregistrée sur cette période.',
+    weeklyMeans: (weeks: number) =>
+      `${weeks} semaine${weeks === 1 ? '' : 's'} complète${weeks === 1 ? '' : 's'} sur cette fenêtre · moyennes hebdomadaires`,
+    pointsInWindow: (points: number) => `${points} point${points === 1 ? '' : 's'} sur cette fenêtre`,
+    tooFewToPlot: 'Trop peu de points pour tracer une tendance',
+  },
 
   units: {
     km: 'km',

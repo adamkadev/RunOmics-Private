@@ -45,7 +45,12 @@ export const en = {
     },
     previous: 'Previous period',
     next: 'Next period',
-    empty: 'No data recorded for this period.',  },
+    empty: 'No data recorded for this period.',
+    weeklyMeans: (weeks: number) =>
+      `${weeks} complete week${weeks === 1 ? '' : 's'} in this window · weekly means`,
+    pointsInWindow: (points: number) => `${points} point${points === 1 ? '' : 's'} in this window`,
+    tooFewToPlot: 'Too few points to draw a trend',
+  },
 
   units: {
     km: 'km',

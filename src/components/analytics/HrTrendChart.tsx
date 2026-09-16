@@ -5,7 +5,8 @@ import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { ChartFigure } from '@/components/ui/ChartFigure'
-import { WindowedChartCard, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
+import { WindowedChartCard, latestOf, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
+import { lineInterpolation } from '@/domain/timeWindow'
 import { trendFromSeries } from '@/lib/chartTrend'
 import { roundAxis } from '@/lib/chartAxis'
 import { t } from '@/i18n'
@@ -74,6 +75,15 @@ export function HrTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
       points={points}
       footnote={t.analytics.charts.hrTrend.footnote}
       reading={hrTrendReading}
+      value={(visible) => {
+        const easy = latestOf(visible, (d) => d.easyAvgHr)
+        const hard = latestOf(visible, (d) => d.hardAvgHr)
+        const parts = [
+          easy !== null ? `${t.analytics.charts.paceTrend.easy} ${Math.round(easy)}` : null,
+          hard !== null ? `${t.analytics.charts.paceTrend.workout} ${Math.round(hard)}` : null,
+        ].filter(Boolean)
+        return parts.length ? `${parts.join(' · ')} ${t.units.bpm}` : null
+      }}
     >
       {(visible) => {
         const values = visible.flatMap((d) => [d.easyAvgHr, d.hardAvgHr]).filter((v): v is number => v !== null)
@@ -104,8 +114,8 @@ export function HrTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
                   width={42}
                 />
                 <Tooltip content={<CustomTooltip />} />
-                <Line type="monotone" dataKey="easyAvgHr" stroke={CHART_COLORS.easy} strokeWidth={3} {...trendDots(CHART_COLORS.easy)} connectNulls isAnimationActive={false} />
-                <Line type="monotone" dataKey="hardAvgHr" stroke={CHART_COLORS.hard} strokeWidth={3} {...trendDots(CHART_COLORS.hard)} connectNulls isAnimationActive={false} />
+                <Line type={lineInterpolation(visible.length)} dataKey="easyAvgHr" stroke={CHART_COLORS.easy} strokeWidth={3} {...trendDots(CHART_COLORS.easy)} connectNulls isAnimationActive={false} />
+                <Line type={lineInterpolation(visible.length)} dataKey="hardAvgHr" stroke={CHART_COLORS.hard} strokeWidth={3} {...trendDots(CHART_COLORS.hard)} connectNulls isAnimationActive={false} />
               </LineChart>
             </ResponsiveContainer>
           </ChartFigure>

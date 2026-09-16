@@ -7,6 +7,7 @@ import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { WindowedChartCard, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
+import { lineInterpolation } from '@/domain/timeWindow'
 import { trendFromSeries } from '@/lib/chartTrend'
 import { roundAxis } from '@/lib/chartAxis'
 import { t } from '@/i18n'
@@ -144,6 +145,10 @@ export function RunningFormChart({ points }: { points: WeeklyTrendPoint[] }) {
       points={points}
       footnote={t.analytics.charts.runningForm.footnote[active]}
       reading={(visible) => formReading(visible, active)}
+      value={(visible) => {
+        const last = [...visible].reverse().find((d) => typeof d[key] === 'number')
+        return last ? `${(last[key] as number).toFixed(decimals)} ${UNIT_BY_KEY[key] ?? ''}` : null
+      }}
     >
       {(visible) => {
         const values = visible.map((d) => d[key]).filter((v): v is number => typeof v === 'number')
@@ -173,7 +178,7 @@ export function RunningFormChart({ points }: { points: WeeklyTrendPoint[] }) {
                 />
                 <Tooltip content={<CustomTooltip decimals={decimals} />} />
                 <Line
-                  type="monotone"
+                  type={lineInterpolation(visible.length)}
                   dataKey={key}
                   stroke={color}
                   strokeWidth={3}

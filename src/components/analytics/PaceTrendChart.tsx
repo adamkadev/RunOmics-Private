@@ -5,7 +5,8 @@ import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { useAccentUiColor } from '@/lib/useAccent'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
-import { WindowedChartCard, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
+import { WindowedChartCard, latestOf, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
+import { lineInterpolation } from '@/domain/timeWindow'
 import { trendFromSeries } from '@/lib/chartTrend'
 import { formatClock, formatDelta } from '@/lib/formatters'
 import { roundAxis } from '@/lib/chartAxis'
@@ -76,6 +77,10 @@ export function PaceTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
       points={points}
       footnote={t.analytics.charts.paceTrend.footnote}
       reading={paceTrendReading}
+      value={(visible) => {
+        const easy = latestOf(visible, (d) => d.easyPace)
+        return easy !== null ? `${formatClock(easy)} ${t.units.perKm}` : null
+      }}
     >
       {(visible) => {
         const paces = visible.flatMap((d) => [d.easyPace, d.hardPace]).filter((p): p is number => p !== null)
@@ -104,8 +109,8 @@ export function PaceTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
                   width={46}
                 />
                 <Tooltip content={<CustomTooltip />} />
-                <Line type="monotone" dataKey="easyPace" stroke={easyColor} strokeWidth={3} {...trendDots(easyColor)} connectNulls isAnimationActive={false} />
-                <Line type="monotone" dataKey="hardPace" stroke={CHART_COLORS.atl} strokeWidth={3} {...trendDots(CHART_COLORS.atl)} connectNulls isAnimationActive={false} />
+                <Line type={lineInterpolation(visible.length)} dataKey="easyPace" stroke={easyColor} strokeWidth={3} {...trendDots(easyColor)} connectNulls isAnimationActive={false} />
+                <Line type={lineInterpolation(visible.length)} dataKey="hardPace" stroke={CHART_COLORS.atl} strokeWidth={3} {...trendDots(CHART_COLORS.atl)} connectNulls isAnimationActive={false} />
               </LineChart>
             </ResponsiveContainer>
           </ChartFigure>
