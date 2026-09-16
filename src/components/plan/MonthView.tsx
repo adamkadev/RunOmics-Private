@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { PrescriptionView } from '@/application/coaching/GetCoachingView'
 import { prescriptionSize } from '@/components/coaching/presentation'
-import { COACHING_TO_ACTIVITY_TYPE } from '@/domain/coaching/types'
+import { COACHING_TO_ACTIVITY_TYPE, type WorkoutPrescription } from '@/domain/coaching/types'
 
 interface Props {
   year: number
@@ -36,7 +36,7 @@ function DayActivities({ activities }: { activities: ActivitySummary[] }) {
   const overflow = activities.length - MAX_DOTS
   const totalKm = activities.reduce((sum, a) => sum + a.distanceKm, 0)
   return (
-    <div className="flex flex-col items-start gap-0.5">
+    <div className="flex flex-col items-start gap-0.5 border-l-2 border-accent/60 pl-1">
       <div className="flex items-center gap-[3px]">
         {visible.map((a) => (
           <span
@@ -56,7 +56,7 @@ function DayActivities({ activities }: { activities: ActivitySummary[] }) {
           className="block w-full truncate break-normal text-micro font-bold leading-none"
           style={{ color: ACTIVITY_TYPE_CONFIG[activities[0].type].chartColor }}
         >
-          {t.plan.did(totalKm.toFixed(1))}
+          {t.plan.did(gridDistance(totalKm))}
         </span>
       )}
     </div>
@@ -99,6 +99,15 @@ function PlannedBadge({ workout, onTap }: { workout: PlannedWorkout; onTap: () =
       )}
     </button>
   )
+}
+
+function gridSize(workout: WorkoutPrescription): string {
+  const first = prescriptionSize(workout).split(' + ')[0] ?? ''
+  return first.replace('~', '').replace(/\d+\.\d+/, (n) => String(Math.round(Number(n))))
+}
+
+function gridDistance(km: number): string {
+  return km.toFixed(km >= 10 ? 0 : 1)
 }
 
 function monthKey(year: number, month: number): string {
@@ -166,12 +175,20 @@ export function MonthView({ year, month, byDate, byDatePlanned, byDateCoach, tod
                       >
                         {cell.day}
                       </p>
-                      {byDateCoach?.has(cell.date) && <button type="button" onClick={() => onSelectDay(cell.date)} aria-label={`${formatDate(cell.date, { style: 'full' })} · ${byDateCoach.get(cell.date)!.map(view => view.prescription.title).join(', ')}`} className="mb-1 block w-full min-w-0 rounded border-l-2 border-dashed border-accent/60 bg-accent/[0.06] px-1 py-1 text-left">
-                        {byDateCoach.get(cell.date)!.map(view => <span key={view.prescription.id} data-testid={`coach-calendar-${view.prescription.id}`} className="block min-w-0">
-                          <span className={cn('block truncate break-normal text-micro font-semibold text-foreground', view.state === 'cancelled' && 'line-through opacity-50')}>
-                            {[t.plan.typeShort[COACHING_TO_ACTIVITY_TYPE[view.prescription.type]], prescriptionSize(view.prescription)].filter(Boolean).join(' ')}
-                          </span>
-                        </span>)}
+                      {byDateCoach?.has(cell.date) && <button type="button" onClick={() => onSelectDay(cell.date)} aria-label={`${formatDate(cell.date, { style: 'full' })} · ${byDateCoach.get(cell.date)!.map(view => view.prescription.title).join(', ')}`} className="mb-1 block w-full min-w-0 rounded border-l-2 border-dashed border-accent/60 bg-accent/[0.06] pl-1 pr-0.5 py-1 text-left">
+                        {byDateCoach.get(cell.date)!.map(view => {
+                          const dotColor = ACTIVITY_TYPE_CONFIG[COACHING_TO_ACTIVITY_TYPE[view.prescription.type]].chartColor
+                          return (
+                            <span
+                              key={view.prescription.id}
+                              data-testid={`coach-calendar-${view.prescription.id}`}
+                              className={cn('block truncate break-normal text-micro font-semibold tabular-nums', view.state === 'cancelled' && 'line-through opacity-50')}
+                              style={{ color: dotColor }}
+                            >
+                              {gridSize(view.prescription)}
+                            </span>
+                          )
+                        })}
                       </button>}
                       {cell.acts.length > 0 ? (
                         <button
@@ -205,11 +222,11 @@ export function MonthView({ year, month, byDate, byDatePlanned, byDateCoach, tod
             </span>
           ))}
           <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-subtle" />
+            <span className="h-3 w-0 border-l-2 border-accent/60" />
             {t.plan.legend.did}
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full border border-subtle" />
+            <span className="h-3 w-0 border-l-2 border-dashed border-accent/60" />
             {t.plan.legend.planned}
           </span>
         </div>
