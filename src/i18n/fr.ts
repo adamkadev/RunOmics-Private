@@ -905,8 +905,9 @@ export const fr = {
         on_track: 'Sur la bonne voie',
         behind: 'En retard',
       },
-      rate: (current: number) => `rythme ${current} km/sem`,
-      projected: (km: number) => `Projection ${km.toLocaleString('fr-FR')} km`,
+      rate: (km: string) => `rythme ${km} km/sem`,
+      projected: (km: string) => `Projection ${km} km`,
+      needsWeekly: (km: string) => `besoin de ${km} km/sem`,
     },
     monthlyVolume: {
       title: 'Volume mensuel',
@@ -989,7 +990,7 @@ export const fr = {
 
   profile: {
     hero: {
-      lifetime: (runs: number, km: number) => `${runs} sorties · ${km.toLocaleString('fr')} km au total`,
+      lifetime: (runs: number, km: string) => `${runs} sorties · ${km} km au total`,
       rankBadge: (tier: string) => `RANG ${tier}`,
       topPctLine: (pct: number) => `Top ${pct}% de VO₂max pour ton âge`,
       namePlaceholder: 'Votre nom',
@@ -1016,18 +1017,18 @@ export const fr = {
       needsReplacing: (n: number) => n === 1 ? '1 paire à remplacer' : `${n} paires à remplacer`,
     },
     milestones: {
-      distanceTier: (km: number) => `${km} km cette année`,
+      distanceTier: (km: string) => `${km} km cette année`,
       distanceTierDetail: (year: number) => `Franchi en ${year}`,
       streak: (weeks: number) => `${weeks} semaines d’affilée`,
       streakDetail: 'Toujours en cours - une sortie chaque semaine depuis',
       record: (label: string) => `Record ${label}`,
       firstActivity: 'Premier pas',
       firstActivityDetail: (km: number) => `Le début de l’aventure - ${km.toFixed(1)} km`,
-      lifetimeDistance: (km: number) => `${km.toLocaleString('fr-FR')} km au total`,
-      lifetimeDistanceDetail: (marathons: number) => `≈ ${marathons.toLocaleString('fr-FR')} marathons courus`,
+      lifetimeDistance: (km: string) => `${km} km au total`,
+      lifetimeDistanceDetail: (marathons: number) => `≈ ${marathons} marathons courus`,
       lifetimeDistanceWorldTour: '🌍 Le tour du monde à l’équateur',
       activityCount: (n: number) => `${n}ᵉ sortie`,
-      activityCountDetail: (km: number) => `${km.toLocaleString('fr-FR')} km parcourus au total`,
+      activityCountDetail: (km: string) => `${km} km parcourus au total`,
     },
     hrZones: {
       title: 'Zones cardiaques',
@@ -1061,7 +1062,7 @@ export const fr = {
     },
     goal: {
       title: (year: number) => `Objectif ${year}`,
-      progress: (total: number, target: number) => `${total} / ${target} km`,
+      progress: (total: string, target: string) => `${total} / ${target} km`,
       viewGoals: 'Voir les objectifs',
     },
   },

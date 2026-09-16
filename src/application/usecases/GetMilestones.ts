@@ -4,7 +4,7 @@ import { getAllPlannedWorkouts } from '@/infrastructure/repositories/JsonPlanned
 import { getRecords } from './GetRecords'
 import { computeWeekActivityDays } from './GetDashboardData'
 import { isoWeekNumber, startOfWeek, addDays, isoDate } from '@/lib/calendarDate'
-import { formatDuration } from '@/lib/formatters'
+import { formatDuration, formatKm } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 const DISTANCE_TIERS_KM = [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 5000]
@@ -180,7 +180,7 @@ export async function getMilestones(): Promise<Milestone[]> {
     milestones.push({
       type: 'distance-tier',
       date: crossing.date,
-      label: t.profile.milestones.distanceTier(crossing.tierKm),
+      label: t.profile.milestones.distanceTier(formatKm(crossing.tierKm)),
       detail: t.profile.milestones.distanceTierDetail(crossing.year),
     })
   }
@@ -199,7 +199,7 @@ export async function getMilestones(): Promise<Milestone[]> {
     milestones.push({
       type: 'lifetime-distance',
       date: crossing.date,
-      label: t.profile.milestones.lifetimeDistance(crossing.tierKm),
+      label: t.profile.milestones.lifetimeDistance(formatKm(crossing.tierKm)),
       detail:
         crossing.tierKm >= EARTH_CIRCUMFERENCE_KM
           ? t.profile.milestones.lifetimeDistanceWorldTour
@@ -212,7 +212,7 @@ export async function getMilestones(): Promise<Milestone[]> {
       type: 'activity-count',
       date: crossing.date,
       label: t.profile.milestones.activityCount(crossing.count),
-      detail: t.profile.milestones.activityCountDetail(Math.round(crossing.cumulativeKm)),
+      detail: t.profile.milestones.activityCountDetail(formatKm(crossing.cumulativeKm)),
     })
   }
 

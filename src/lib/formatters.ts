@@ -75,6 +75,20 @@ export function formatDistance(km: number): string {
 }
 
 /**
+ * The one thousands convention for kilometre totals. The annual-goal card used
+ * to show `1321`, `2000` and `1,705` side by side because each number was
+ * grouped (or not) at its own call site, and the i18n strings that did group
+ * hardcoded 'en-US' / 'fr-FR' instead of following t.locale. Grouping lives
+ * here now; the i18n keys take an already-formatted string.
+ */
+export function formatKm(km: number, decimals = 0): string {
+  return km.toLocaleString(t.locale, {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  })
+}
+
+/**
  * Year appears only when the date is not in the current one. The archive spans
  * more than a year, so "Sat, Jun 27" alone cannot say which June it was.
  *

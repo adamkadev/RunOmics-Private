@@ -5,6 +5,7 @@ import {
   formatDateWithYear,
   formatDistance,
   formatDuration,
+  formatKm,
   formatPace,
   monthLabel,
   parseTimeInput,
@@ -21,6 +22,24 @@ describe('formatDuration', () => {
 
   it('pads minutes and seconds under 10', () => {
     expect(formatDuration(3605)).toBe('1:00:05')
+  })
+})
+
+describe('formatKm', () => {
+  it('groups thousands so 1705 never renders as 1705', () => {
+    expect(formatKm(1705)).toBe('1,705')
+  })
+
+  it('rounds to whole kilometres by default', () => {
+    expect(formatKm(29.4)).toBe('29')
+  })
+
+  it('keeps the requested decimals, grouped', () => {
+    expect(formatKm(1234.56, 1)).toBe('1,234.6')
+  })
+
+  it('leaves values under a thousand ungrouped', () => {
+    expect(formatKm(295)).toBe('295')
   })
 })
 

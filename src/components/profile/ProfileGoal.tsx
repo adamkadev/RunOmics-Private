@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { formatKm } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import type { ProfileGoal as ProfileGoalData } from '@/application/usecases/GetProfileData'
 import { STATUS } from '@/lib/statusColors'
@@ -35,7 +36,7 @@ export function ProfileGoal({ goal }: Props) {
           <div className="h-full rounded-full bg-accent" style={{ width: `${progressPercent}%` }} />
         </div>
         <div className="mt-1.5 truncate text-micro text-muted-foreground">
-          {t.profile.goal.progress(totalDistanceKm, goalYear.annualDistanceKm)}
+          {t.profile.goal.progress(formatKm(totalDistanceKm), formatKm(goalYear.annualDistanceKm))}
         </div>
       </div>
 

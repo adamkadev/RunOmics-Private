@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { Trophy, ArrowRight, Calendar } from 'lucide-react'
 import { SectionDivider } from '@/components/ui/SectionLabel'
 import type { YearData, GoalProjection } from '@/application/usecases/GetGoalsData'
-import { formatDuration, formatDate, formatDelta, formatPace } from '@/lib/formatters'
+import { formatDuration, formatDate, formatDelta, formatKm, formatPace } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { MonthlyVolumeChart } from './MonthlyVolumeChart'
@@ -47,6 +47,10 @@ export function YearView({ yearData }: Props) {
   const sparkline = projection && annualDistanceKm > 0
     ? projectionSparkline(yearData.year, annualDistanceKm, annualProgress, projection)
     : null
+  // deltaKm arrives absolute, so the sign has to be recomputed from the
+  // projection itself. Reading it off `status` renders an on-track projection
+  // that lands above the goal as "On track −30 km" - a minus on a surplus.
+  const signedDeltaKm = projection ? projection.projectedYearKm - annualDistanceKm : 0
   const hasRaceDistanceCards = !!goals && (goals.targets.length > 0 || upcomingRaces.length > 0)
 
   return (
@@ -61,22 +65,16 @@ export function YearView({ yearData }: Props) {
               {projection && (
                 <span className={cn('shrink-0 text-xs font-semibold', PROJECTION_STATUS_CLASS[projection.status])}>
                   {t.goals.projection.status[projection.status]}
-                  {projection.deltaKm !== 0 &&
-                    ` ${formatDelta(projection.status === 'ahead' ? Math.abs(projection.deltaKm) : -Math.abs(projection.deltaKm), t.units.km)}`}
+                  {signedDeltaKm !== 0 && ` ${formatDelta(signedDeltaKm, t.units.km)}`}
                 </span>
               )}
             </div>
-            <div className="mb-3 flex items-end justify-between">
-              <div>
-                <span className="text-3xl font-bold tracking-tight text-foreground">
-                  <AnimatedValue value={totalDistanceKm} />
-                </span>
-                <span className="ml-1 text-sm text-subtle">
-                  {'/ '}{annualDistanceKm}{' '}{t.units.km}
-                </span>
-              </div>
-              <span className="text-sm font-semibold text-accent-text">
-                <AnimatedValue value={annualProgress} />%
+            <div className="mb-3">
+              <span className="text-3xl font-bold tracking-tight text-foreground">
+                <AnimatedValue value={totalDistanceKm} grouped />
+              </span>
+              <span className="ml-1 text-sm text-subtle">
+                {'/ '}{formatKm(annualDistanceKm)}{' '}{t.units.km}
               </span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-foreground/[0.08]">
@@ -107,8 +105,13 @@ export function YearView({ yearData }: Props) {
                     strokeDasharray="4 4"
                   />
                 </svg>
-                <p className="mt-1 text-caption text-subtle">
-                  {t.goals.projection.rate(projection.weeklyRate)} - {t.goals.projection.projected(projection.projectedYearKm)}
+                <p className={cn('mt-1 text-body font-semibold leading-tight', PROJECTION_STATUS_CLASS[projection.status])}>
+                  {t.goals.projection.projected(formatKm(projection.projectedYearKm))}
+                </p>
+                <p className="text-caption text-subtle">
+                  {t.goals.projection.rate(formatKm(projection.weeklyRate))}
+                  {' · '}
+                  {t.goals.projection.needsWeekly(formatKm(projection.weeklyNeeded))}
                 </p>
               </>
             )}

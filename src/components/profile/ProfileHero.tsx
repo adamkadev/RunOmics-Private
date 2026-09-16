@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { User, Settings } from 'lucide-react'
 import type { ProfileHero as ProfileHeroData } from '@/application/usecases/GetProfileData'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { initials } from '@/lib/formatters'
+import { formatKm, initials } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 interface Props {
@@ -41,7 +41,7 @@ export function ProfileHero({ hero, displayName }: Props) {
           </p>
         )}
         <p className="mt-0.5 text-caption text-subtle">
-          {t.profile.hero.lifetime(hero.lifetimeActivities, hero.lifetimeDistanceKm)}
+          {t.profile.hero.lifetime(hero.lifetimeActivities, formatKm(hero.lifetimeDistanceKm))}
         </p>
       </div>
 

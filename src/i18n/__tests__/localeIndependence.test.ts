@@ -28,8 +28,21 @@ describe('locale strings never depend on the ambient locale', () => {
     }
   }
 
-  it('formats the annual projection identically wherever it renders', () => {
-    expect(en.goals.projection.projected(1663)).toBe('Projected 1,663 km')
-    expect(fr.goals.projection.projected(1663)).toBe('Projection 1\u202f663 km')
+  // The projection used to group its own thousands, with 'en-US' hardcoded in
+  // en.ts and 'fr-FR' in fr.ts. Grouping now happens once, in formatKm, and the
+  // strings take the formatted value - so the guarantee to lock in is that no
+  // locale file formats a number itself any more.
+  it('leaves every number format to src/lib/formatters', () => {
+    for (const { file, source } of SOURCES) {
+      const hits = [...source.matchAll(/\.toLocaleString\(/g)].map(
+        (match) => `${file}:${source.slice(0, match.index).split('\n').length}`
+      )
+      expect(hits).toEqual([])
+    }
+  })
+
+  it('wraps an already-grouped projection without reformatting it', () => {
+    expect(en.goals.projection.projected('1,663')).toBe('Projected 1,663 km')
+    expect(fr.goals.projection.projected('1\u202f663')).toBe('Projection 1\u202f663 km')
   })
 })
