@@ -118,7 +118,9 @@ export function YearView({ yearData }: Props) {
 
       {hasRaceDistanceCards && <SeasonTimeline yearData={yearData} />}
 
-      {goals && monthlyGoals.length > 0 && <MonthlyVolumeChart monthlyGoals={monthlyGoals} />}
+      {goals && monthlyGoals.length > 0 && (
+        <MonthlyVolumeChart monthlyGoals={monthlyGoals} year={yearData.year} />
+      )}
 
       {!hasRaceDistanceCards && (
         pbs.length > 0 ? (

@@ -26,15 +26,34 @@ const MONTH_CELL_TINT: Record<MonthGoal['status'], { bg: string; border: string;
   pending:  { ...GOAL_PACE_COLORS.pending, dashed: true },
 }
 
-function barHeightPercent(mg: MonthGoal): number {
-  const pct = mg.targetKm > 0 ? Math.min((mg.actualKm / mg.targetKm) * 100, 100) : 0
-  return Math.max(pct, 6)
+/** Neutral ink, so the rule reads over both the card ground and a coloured bar. */
+const TARGET_RULE_COLOR = 'color-mix(in srgb, var(--foreground) 40%, transparent)'
+
+/**
+ * One vertical scale for every bar in the collapsed chart, so heights are
+ * comparable month to month. Normalising each bar to its own target instead
+ * makes a month that beat its target indistinguishable from one that met it.
+ */
+export function volumePlotMaxKm(months: MonthGoal[]): number {
+  const peak = months.reduce((max, mg) => Math.max(max, mg.actualKm, mg.targetKm), 0)
+  return peak > 0 ? peak * 1.08 : 1
 }
 
-export function MonthlyVolumeChart({ monthlyGoals }: { monthlyGoals: MonthGoal[] }) {
+/** The month still being run, or null when the chart shows a year that is over. */
+export function inProgressMonth(months: MonthGoal[], year: number, now = new Date()): MonthGoal | null {
+  if (year !== now.getFullYear()) return null
+  return months.find((mg) => mg.month === now.getMonth() + 1) ?? null
+}
+
+export function MonthlyVolumeChart({ monthlyGoals, year }: { monthlyGoals: MonthGoal[]; year: number }) {
   const [expanded, setExpanded] = useState(false)
   const elapsedMonths = monthlyGoals.filter((mg) => mg.status !== 'pending')
-  if (elapsedMonths.length === 0) return null
+  const lastMonth = elapsedMonths[elapsedMonths.length - 1]
+  if (!lastMonth) return null
+
+  const scaleMax = volumePlotMaxKm(elapsedMonths)
+  const current = inProgressMonth(elapsedMonths, year)
+  const ruleMonth = current ?? lastMonth
 
   return (
     <section className="space-y-3">
@@ -88,18 +107,67 @@ export function MonthlyVolumeChart({ monthlyGoals }: { monthlyGoals: MonthGoal[]
           })}
         </div>
       ) : (
-        <GlassSurface variant="card" className="flex h-24 items-end gap-2 rounded-card-sm p-4">
-          {elapsedMonths.map((mg) => (
-            <div
-              key={mg.month}
-              className="w-3 rounded-sm transition-all"
-              title={`${monthLabel(mg.month)}: ${mg.actualKm} / ${mg.targetKm} km`}
-              style={{
-                height: `${barHeightPercent(mg)}%`,
-                background: mg.status === 'behind' ? 'var(--color-missed)' : 'var(--accent)',
-              }}
-            />
-          ))}
+        <GlassSurface variant="card" className="rounded-card-sm p-4">
+          <div className="flex h-20 items-stretch gap-2">
+            {elapsedMonths.map((mg) => {
+              const bar = MONTH_CELL_TINT[mg.status].bar
+              const isCurrent = current?.month === mg.month
+              return (
+                <div key={mg.month} className="relative flex-1">
+                  <div
+                    className="absolute inset-x-0 bottom-0 rounded-sm transition-all"
+                    title={`${monthLabel(mg.month)}: ${t.goals.monthlyVolume.km(Math.round(mg.actualKm), Math.round(mg.targetKm))} ${t.units.km}`}
+                    style={{
+                      height: `${(mg.actualKm / scaleMax) * 100}%`,
+                      minHeight: mg.actualKm > 0 ? 2 : 0,
+                      // The month in progress is outlined, not filled: its bar is
+                      // short because the month is unfinished, not because it failed.
+                      background: isCurrent ? `color-mix(in srgb, ${bar} 14%, transparent)` : bar,
+                      border: isCurrent ? `1px solid ${bar}` : undefined,
+                    }}
+                  />
+                  {mg.targetKm > 0 && (
+                    <span
+                      aria-hidden
+                      data-testid="target-rule"
+                      className="absolute inset-x-0 border-t border-dashed"
+                      style={{ bottom: `${(mg.targetKm / scaleMax) * 100}%`, borderColor: TARGET_RULE_COLOR }}
+                    />
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          <div className="mt-1.5 flex gap-2">
+            {elapsedMonths.map((mg) => (
+              <span
+                key={mg.month}
+                className={cn(
+                  'flex-1 text-center text-micro font-medium',
+                  current?.month === mg.month ? 'text-foreground' : 'text-subtle',
+                )}
+              >
+                {monthLabel(mg.month).slice(0, 1)}
+              </span>
+            ))}
+          </div>
+
+          <div className="mt-2 flex items-center justify-between gap-2 text-micro">
+            <span className="flex items-center gap-1.5 text-subtle">
+              <span
+                aria-hidden
+                className="w-4 shrink-0 border-t border-dashed"
+                style={{ borderColor: TARGET_RULE_COLOR }}
+              />
+              {t.goals.monthlyVolume.targetRule(String(Math.round(ruleMonth.targetKm)))}
+            </span>
+            {current && (
+              <span className={cn('font-semibold', STATUS_ICON[current.status].className)}>
+                {monthLabel(current.month)} · {t.goals.monthlyVolume.status[current.status]}
+              </span>
+            )}
+          </div>
         </GlassSurface>
       )}
     </section>

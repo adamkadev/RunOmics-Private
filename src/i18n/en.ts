@@ -927,6 +927,7 @@ export const en = {
         pending: 'Upcoming',
       },
       km: (actual: number, target: number) => `${actual} / ${target}`,
+      targetRule: (km: string) => `target ${km} km/mo`,
     },
     history: {
       title: 'Past Years',

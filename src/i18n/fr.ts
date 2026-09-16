@@ -919,6 +919,7 @@ export const fr = {
         pending: 'À venir',
       },
       km: (actual: number, target: number) => `${actual} / ${target}`,
+      targetRule: (km: string) => `objectif ${km} km/mois`,
     },
     history: {
       title: 'Années passées',

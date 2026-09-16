@@ -96,7 +96,9 @@ export const READINESS_TONE_COLORS = {
 export const GOAL_PACE_COLORS = {
   ahead:   { bg: 'color-mix(in srgb, var(--accent) 6%, transparent)', border: 'color-mix(in srgb, var(--accent) 25%, transparent)', bar: 'var(--accent)' },
   onTrack: { bg: withAlpha(c.roBlueMid, 0.1),   border: withAlpha(c.roBlueMid, 0.28), bar: c.roBlueHi },
-  behind:  { bg: withAlpha(c.roPink, 0.06),     border: withAlpha(c.roPink, 0.25),    bar: c.roPink },
+  // Amber, not pink: the behind state is also drawn as an amber icon and an amber
+  // label in the same card, and `--color-missed` pink is Plan's missed-session hue.
+  behind:  { bg: withAlpha(c.amber500, 0.06),   border: withAlpha(c.amber500, 0.25),  bar: c.amber500 },
   pending: { bg: '',                            border: '',                           bar: 'var(--track-on-dark)' },
 } as const
 
