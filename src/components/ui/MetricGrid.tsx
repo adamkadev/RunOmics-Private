@@ -22,7 +22,12 @@ export function MetricGrid({
         <div key={label} className="min-w-0">
           <div
             className={cn(
-              'text-title1 font-bold leading-none tracking-tight',
+              // 22px, not 28: measured against an 82px cell at 390px, `1:11:23`
+              // needs 91px at 28 and 71 at 22. The review argued for 28 on the
+              // arithmetic of `55:01`, which was formatDurationShort's h:mm -
+              // and that formatter is gone, so the strip renders h:mm:ss now.
+              // truncate so a 10-hour ultra clips instead of spilling.
+              'truncate text-title2 font-bold leading-none tracking-tight',
               valueClassName ?? (accent ? 'text-accent-text' : 'text-foreground')
             )}
           >
