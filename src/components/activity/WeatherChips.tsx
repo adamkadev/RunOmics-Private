@@ -13,7 +13,8 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import type { ActivityWeather } from '@/domain/activity/types'
 import { compassPoint, weatherCondition, type WeatherCondition } from '@/domain/activity/weather'
-import { temperatureIconColor } from '@/lib/colors'
+import { temperatureColor } from '@/lib/colors'
+import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 const CONDITION_ICONS: Record<WeatherCondition, LucideIcon> = {
@@ -44,10 +45,10 @@ export function WeatherChips({ weather }: { weather: ActivityWeather }) {
   return (
     <>
       <div
-        className={MAP_CHIP_CLASS}
+        className={cn(MAP_CHIP_CLASS, temperatureColor(weather.tempC))}
         aria-label={condition ? `${w.conditions[condition]}, ${temperature}` : undefined}
       >
-        <Icon size={12} className={temperatureIconColor(weather.tempC)} />
+        <Icon size={12} />
         {temperature}
       </div>
       <div className={MAP_CHIP_CLASS} aria-label={w.wind}>

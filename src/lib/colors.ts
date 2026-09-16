@@ -241,13 +241,16 @@ export function raceDistanceTint(distance: string): { overlay: string; text: str
   return found ?? { overlay: 'from-accent/35', text: 'text-accent-text' }
 }
 
-export function temperatureIconColor(celsius: number): string {
-  if (celsius < 5)  return 'text-blue-500 dark:text-blue-400'
-  if (celsius < 12) return 'text-cyan-500 dark:text-cyan-400'
+/** Bands a temperature onto the text-grade `600 / dark:400` ramp the rest of the
+ *  app uses for semantic ink (see STATUS in statusColors.ts). It colours the
+ *  reading itself, not just a glyph, so the levels have to survive light mode. */
+export function temperatureColor(celsius: number): string {
+  if (celsius < 5)  return 'text-blue-600 dark:text-blue-400'
+  if (celsius < 12) return 'text-cyan-600 dark:text-cyan-400'
   if (celsius < 18) return 'text-accent-text'
-  if (celsius < 24) return 'text-amber-500 dark:text-amber-400'
-  if (celsius < 30) return 'text-orange-500 dark:text-orange-400'
-  return 'text-red-500 dark:text-red-400'
+  if (celsius < 24) return 'text-amber-600 dark:text-amber-400'
+  if (celsius < 30) return 'text-orange-600 dark:text-orange-400'
+  return 'text-red-600 dark:text-red-400'
 }
 
 export const TEMP_BAND_COLORS = {
