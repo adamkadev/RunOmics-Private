@@ -74,11 +74,20 @@ export function formatDistance(km: number): string {
   return `${km.toFixed(km >= 10 ? 1 : 2)}`
 }
 
-export function formatDate(isoDate: string): string {
-  return new Date(isoDate + 'T00:00:00').toLocaleDateString(t.locale, {
+/**
+ * Year appears only when the date is not in the current one. The archive spans
+ * more than a year, so "Sat, Jun 27" alone cannot say which June it was.
+ *
+ * Specify the option set, never the field order - the locale decides the order,
+ * and hard-coding it breaks French.
+ */
+export function formatDate(isoDate: string, now = new Date()): string {
+  const date = new Date(isoDate + 'T00:00:00')
+  return date.toLocaleDateString(t.locale, {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
+    ...(date.getFullYear() === now.getFullYear() ? {} : { year: 'numeric' }),
   })
 }
 

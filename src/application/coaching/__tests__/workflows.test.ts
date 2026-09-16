@@ -796,7 +796,12 @@ describe('coaching workflows', () => {
       reviewWeek: async () => { throw new Error('not called') },
     }
     const context = buildCoachingContext(contextInput(repository.plan), '2026-09-09')
-    const proposal = await createPostActivityProposal(context, latestActivity, { repository, advisor, id: ids() })
+    // Pin the clock like every other case in this file: the workout being adjusted
+    // is dated 2026-09-15, so on the real clock this test started throwing
+    // "past prescriptions are immutable" the day the calendar passed it.
+    const proposal = await createPostActivityProposal(context, latestActivity, {
+      repository, advisor, id: ids(), now: () => new Date('2026-09-09T08:00:00Z'),
+    })
 
     const result = applyCoachingProposal(proposal, repository, coachingContextHash(context))
     const adjusted = result.weeks.flatMap((week) => week.workouts).find((item) => item.id === changed.id)

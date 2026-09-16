@@ -27,7 +27,7 @@ function NavLink({ activity, direction }: { activity: AdjacentActivity | null; d
     <Link
       href={`/activities/${activity.id}`}
       className={cn(
-        'flex flex-1 items-center gap-2 px-4 py-3 text-sm transition-colors hover:bg-foreground/[0.04]',
+        'flex min-w-0 flex-1 items-center gap-2 px-4 py-3 text-sm transition-colors hover:bg-foreground/[0.04]',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         isPrev ? 'justify-start' : 'justify-end text-right'
       )}
