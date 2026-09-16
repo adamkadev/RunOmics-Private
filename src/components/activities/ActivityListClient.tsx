@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
-import { Search, SearchX, ChevronDown } from 'lucide-react'
+import { Search, SearchX, ChevronDown, Map as MapIcon } from 'lucide-react'
 import { ActivityListCard } from './ActivityListCard'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
@@ -39,6 +39,7 @@ interface WeekGroup {
   easyPct: number | null
   hardPct: number | null
   isRelativeLabel: boolean
+  shape: string
 }
 
 function WeekStat({ value, label }: { value: string; label: string }) {
@@ -60,6 +61,42 @@ function EasyHardSplit({ easyPct, hardPct }: { easyPct: number; hardPct: number 
         <div style={{ width: `${hardPct}%`, background: CHART_COLORS.hard }} />
       </div>
       <div className="mt-1 text-micro tabular-nums text-subtle">{t.activities.easyShare(easyPct)}</div>
+    </div>
+  )
+}
+
+// "3 base · 1 threshold · 1 tempo" - the seven real ActivityTypes, in descending
+// count. There is no "long" type, whatever the review's example said.
+function weekShape(items: ActivitySummary[]): string {
+  const counts = new Map<ActivityType, number>()
+  for (const a of items) counts.set(a.type, (counts.get(a.type) ?? 0) + 1)
+
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || ALL_TYPES.indexOf(a[0]) - ALL_TYPES.indexOf(b[0]))
+    .map(([type, count]) => `${count} ${t.activityTypes[type].toLowerCase()}`)
+    .join(' · ')
+}
+
+// One bar per weekday, height by distance - the shape of the week at a glance,
+// which is what a collapsed row could never say with two numbers.
+function WeekSparkbar({ items, weekStart }: { items: ActivitySummary[]; weekStart: string }) {
+  const byDay = new Array<number>(7).fill(0)
+  const start = new Date(weekStart + 'T00:00:00').getTime()
+  for (const a of items) {
+    const day = Math.round((new Date(a.date + 'T00:00:00').getTime() - start) / 86_400_000)
+    if (day >= 0 && day < 7) byDay[day] = (byDay[day] ?? 0) + a.distanceKm
+  }
+  const peak = Math.max(...byDay, 1)
+
+  return (
+    <div aria-hidden className="flex h-5 shrink-0 items-end gap-[3px]">
+      {byDay.map((km, day) => (
+        <span
+          key={day}
+          className={cn('w-[3px] rounded-full', km > 0 ? 'bg-accent' : 'bg-foreground/[0.12]')}
+          style={{ height: km > 0 ? `${Math.max(18, (km / peak) * 100)}%` : '18%' }}
+        />
+      ))}
     </div>
   )
 }
@@ -95,6 +132,7 @@ function groupByWeek(items: ActivitySummary[]): WeekGroup[] {
       easyPct: hard === null ? null : 100 - hard,
       hardPct: hard,
       isRelativeLabel: relativeLabel !== null,
+      shape: weekShape(weekItems),
     }
   })
 }
@@ -273,12 +311,35 @@ export function ActivityListClient({
   return (
     <div className="space-y-4">
       <div className="px-1">
-        <h1 className="font-display text-title1 font-bold leading-[1.1] tracking-tight text-foreground">
-          {t.pages.activities.title}
-        </h1>
-        <p className="mt-0.5 text-footnote font-medium text-muted-foreground">
-          {t.activities.count(totalCount)}
-        </p>
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <h1 className="font-display text-title1 font-bold leading-[1.1] tracking-tight text-foreground">
+              {t.pages.activities.title}
+            </h1>
+            <p className="mt-0.5 text-footnote font-medium text-muted-foreground">
+              {t.activities.count(totalCount)}
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2 pt-1">
+            <Link
+              href="/map"
+              aria-label={t.nav.items.heatmap}
+              className="flex h-9 w-9 items-center justify-center rounded-control border border-foreground/[0.12] bg-foreground/[0.06] text-foreground/70 transition-colors hover:bg-foreground/[0.10]"
+            >
+              <MapIcon size={16} />
+            </Link>
+            <SortDropdown
+              options={SORT_OPTIONS}
+              sortBy={sortBy}
+              order={sortOrder}
+              onChange={(value, order) => {
+                setSortBy(value)
+                setSortOrder(order)
+              }}
+              label={t.activities.sort.label}
+            />
+          </div>
+        </div>
 
         <div className="relative mt-3">
           <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-subtle-2" />
@@ -308,7 +369,6 @@ export function ActivityListClient({
               key={type}
               as="button"
               variant={active ? 'accent' : 'neutral'}
-              dotColor={active ? undefined : ACTIVITY_TYPE_CONFIG[type].chartColor}
               className="text-footnote font-semibold"
               onClick={() => setSelectedType(active ? null : type)}
             >
@@ -316,25 +376,6 @@ export function ActivityListClient({
             </Pill>
           )
         })}
-      </div>
-
-      <div className="flex items-center justify-end gap-2">
-        <Link
-          href="/map"
-          className="rounded-control border border-foreground/[0.12] bg-foreground/[0.06] px-2.5 py-1 text-xs font-medium text-foreground/70 transition-colors hover:bg-foreground/[0.10]"
-        >
-          {t.nav.items.heatmap}
-        </Link>
-        <SortDropdown
-          options={SORT_OPTIONS}
-          sortBy={sortBy}
-          order={sortOrder}
-          onChange={(value, order) => {
-            setSortBy(value)
-            setSortOrder(order)
-          }}
-          label={t.activities.sort.label}
-        />
       </div>
 
       {isPending ? (
@@ -373,7 +414,7 @@ export function ActivityListClient({
                   >
                     <div className="min-w-0">
                       <div className="text-sm font-bold text-foreground">{g.label}</div>
-                      {g.isRelativeLabel && <div className="text-micro text-subtle">{g.range}</div>}
+                      <div className="truncate text-micro text-subtle">{g.shape}</div>
                     </div>
                     <div className="flex shrink-0 items-end gap-4 text-right">
                       <WeekStat value={String(Math.round(g.totalKm))} label={t.activities.weekStat.km} />
@@ -398,10 +439,11 @@ export function ActivityListClient({
                   >
                     <div className="min-w-0">
                       <div className="text-sm font-semibold text-foreground">{g.label}</div>
-                      <div className="mt-0.5 text-caption text-subtle">
+                      <div className="mt-0.5 truncate text-caption text-subtle">
                         {t.activities.weekGroupCompact(g.items.length, Math.round(g.totalKm))}
                       </div>
                     </div>
+                    <WeekSparkbar items={g.items} weekStart={g.key} />
                     <ChevronDown size={16} className={cn('shrink-0 text-subtle transition-transform', isExpanded && 'rotate-180')} />
                   </button>
                 )}
