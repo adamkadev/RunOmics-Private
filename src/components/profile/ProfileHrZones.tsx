@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import type { AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import type { ZoneShare } from '@/application/usecases/GetAnalyticsData'
+import { collapseUnusedZones, zoneRangeLabel } from '@/domain/activity/zoneRows'
 import { formatDurationWords } from '@/lib/formatters'
 import { ZONE_COLOR_CLASSES } from '@/lib/colors'
 import { cn } from '@/lib/utils'
@@ -58,16 +59,14 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime }: Prop
     null
   )
 
-  const insight =
-    windowTotal === 0
-      ? s.noSessionsThisWeek
-      : isAutoFallback
-        ? s.emptyWeekFallback
-        : dominant === null
-          ? s.noSessionsThisWeek
-          : dominant.percent >= 70 && (timeByZone.get(4)?.percent ?? 0) < 12
-            ? s.insight.polarized(dominant.percent, t.activity.zones.labels[dominant.zone] ?? '')
-            : s.insight.dominant(dominant.percent, t.activity.zones.labels[dominant.zone] ?? '')
+  const rows = collapseUnusedZones(
+    zones.map((z) => ({ zone: z.zone, used: (timeByZone.get(z.zone)?.seconds ?? 0) > 0, data: z })),
+  )
+
+  const unusedLabel = view === 'week' ? s.unusedThisWeek : s.unusedRecent
+
+  const note =
+    windowTotal === 0 ? s.noSessionsThisWeek : isAutoFallback ? s.emptyWeekFallback : null
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -105,7 +104,16 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime }: Prop
       </div>
 
       <div className="flex flex-col gap-3.5">
-        {zones.map(({ zone, min, max }) => {
+        {rows.map((row) => {
+          if (row.kind === 'unused') {
+            return (
+              <p key={`unused-${row.zones.join('-')}`} className="text-xs text-subtle">
+                {unusedLabel(zoneRangeLabel(row.zones))}
+              </p>
+            )
+          }
+
+          const { zone, min, max } = row.data
           const time = timeByZone.get(zone)
           const barPercent = time && maxZoneSeconds > 0 ? Math.max(4, Math.round((time.seconds / maxZoneSeconds) * 100)) : 0
           const isDominant = dominant?.zone === zone
@@ -133,9 +141,11 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime }: Prop
         })}
       </div>
 
-      <div className="mt-4 border-t border-foreground/[0.06] pt-3.5 text-xs leading-snug text-muted-foreground">
-        {insight}
-      </div>
+      {note && (
+        <div className="mt-4 border-t border-foreground/[0.06] pt-3.5 text-xs leading-snug text-muted-foreground">
+          {note}
+        </div>
+      )}
     </GlassSurface>
   )
 }

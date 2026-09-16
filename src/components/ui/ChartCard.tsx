@@ -12,13 +12,11 @@ import { t } from '@/i18n'
  * It used to render at text-caption (11px) *under* the chart, and under it sat
  * the definition footnote at text-xs (12px), so every card set its
  * documentation larger than the conclusion that documentation was burying. The
- * reading now leads the card at text-body, the same size as the app's other
- * read-this-first copy.
+ * reading leads the card now, as the subhead under its title.
  */
 export function ChartReading({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <p className={cn('mb-3 text-body leading-snug text-foreground', className)}>
-      <span className="font-semibold">{t.analytics.readingLabel} </span>
+    <p className={cn('mb-3 text-footnote leading-snug text-muted-foreground', className)}>
       {children}
     </p>
   )

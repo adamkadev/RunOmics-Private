@@ -371,7 +371,7 @@ export const fr = {
 
   analytics: {
     title: 'Analyses',
-    readingLabel: 'Lecture :',
+
     aboutChart: 'Ce que mesure ce graphique',
     season: (year: number) => `Saison ${year}`,
     allTimeChip: 'Tout',
@@ -767,6 +767,7 @@ export const fr = {
     zones: {
       title: 'Temps en zones',
       noData: 'Pas de données de zones FC',
+      unused: (range: string) => `${range} non utilisées sur cette sortie`,
       labels: {
         1: 'Z1 · Échauffement',
         2: 'Z2 · Facile',
@@ -1062,11 +1063,8 @@ export const fr = {
       recentWeeks: '4 dernières semaines',
       noSessionsThisWeek: 'Aucune séance enregistrée pour le moment.',
       emptyWeekFallback: 'Pas encore de séance cette semaine - affichage des 4 dernières semaines.',
-      insight: {
-        polarized: (pct: number, zoneLabel: string) =>
-          `Très polarisé : ${pct}% en ${zoneLabel}, peu de travail au seuil. Cohérent avec une phase de base.`,
-        dominant: (pct: number, zoneLabel: string) => `${pct}% du temps se passe en ${zoneLabel}.`,
-      },
+      unusedThisWeek: (range: string) => `${range} non utilisées`,
+      unusedRecent: (range: string) => `${range} non utilisées sur ces 4 semaines`,
     },
     athlete: {
       title: 'Athlète',

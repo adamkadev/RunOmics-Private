@@ -1,4 +1,5 @@
 import type { HrZone } from '@/domain/activity/types'
+import { collapseUnusedZones, zoneRangeLabel } from '@/domain/activity/zoneRows'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 import { ZONE_COLOR_CLASSES } from '@/lib/colors'
@@ -62,6 +63,9 @@ export function ZoneBar({ hrZones, avgHr, maxHr }: Props) {
   }
 
   const sorted = [...hrZones].sort((a, b) => b.zone - a.zone)
+  const rows = collapseUnusedZones(
+    sorted.map((zone) => ({ zone: zone.zone, used: zone.percent > 0, data: zone })),
+  )
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -82,9 +86,15 @@ export function ZoneBar({ hrZones, avgHr, maxHr }: Props) {
       </div>
 
       <div className="space-y-1">
-        {sorted.map((z) => (
-          <ZoneRow key={z.zone} zone={z} />
-        ))}
+        {rows.map((row) =>
+          row.kind === 'zone' ? (
+            <ZoneRow key={row.zone} zone={row.data} />
+          ) : (
+            <p key={`unused-${row.zones.join('-')}`} className="px-2 py-0.5 text-caption text-subtle">
+              {t.activity.zones.unused(zoneRangeLabel(row.zones))}
+            </p>
+          ),
+        )}
       </div>
     </GlassSurface>
   )

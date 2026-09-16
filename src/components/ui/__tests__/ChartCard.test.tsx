@@ -26,12 +26,13 @@ describe('WindowedChartCard: reading and footnote', () => {
       </WindowedChartCard>
     )
 
-    // The takeaway is body-size ink, not a caption, and it precedes the chart:
-    // the card used to print it at 11px underneath, below a 12px definition.
+    // The takeaway is the card's subhead and it precedes the chart: the card
+    // used to print it at 11px underneath, below a 12px definition, behind a
+    // bold "Reading:" that competed with the title.
     const reading = screen.getByText(/Easy HR is drifting down\./)
     expect(reading.tagName).toBe('P')
-    expect(reading.className).toContain('text-body')
-    expect(reading.textContent).toContain(t.analytics.readingLabel)
+    expect(reading.className).toContain('text-footnote')
+    expect(reading.textContent).toBe('Easy HR is drifting down.')
     expect(reading.compareDocumentPosition(screen.getByTestId('chart'))).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING
     )

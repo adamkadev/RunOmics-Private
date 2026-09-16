@@ -379,7 +379,7 @@ export const en = {
 
   analytics: {
     title: 'Analytics',
-    readingLabel: 'Reading:',
+
     aboutChart: 'What this chart measures',
     season: (year: number) => `${year} season`,
     allTimeChip: 'All',
@@ -775,6 +775,7 @@ export const en = {
     zones: {
       title: 'Time in Zones',
       noData: 'No HR zone data',
+      unused: (range: string) => `${range} unused on this run`,
       labels: {
         1: 'Z1 · Warmup',
         2: 'Z2 · Easy',
@@ -1073,11 +1074,8 @@ export const en = {
       recentWeeks: 'Last 4 weeks',
       noSessionsThisWeek: 'No sessions logged yet.',
       emptyWeekFallback: 'This week has no sessions yet - showing your last 4 weeks instead.',
-      insight: {
-        polarized: (pct: number, zoneLabel: string) =>
-          `Very polarized: ${pct}% in ${zoneLabel}, little threshold work. Consistent with a base phase.`,
-        dominant: (pct: number, zoneLabel: string) => `${pct}% of the time sits in ${zoneLabel}.`,
-      },
+      unusedThisWeek: (range: string) => `${range} unused`,
+      unusedRecent: (range: string) => `${range} unused in these 4 weeks`,
     },
     athlete: {
       title: 'Athlete',
