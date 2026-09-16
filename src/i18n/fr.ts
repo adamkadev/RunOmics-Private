@@ -924,6 +924,8 @@ export const fr = {
       },
       rate: (km: string) => `rythme ${km} km/sem`,
       projected: (km: string) => `Projection ${km} km`,
+      projectedBy: (km: string, date: string) => `projection ${km} km au ${date}`,
+      projectionMarker: (km: string) => `projection d’arrivée à ${km} km`,
       projectedValue: (km: string) => `${km} km`,
       projectedLabel: 'projection',
       shortBy: (km: string) => `${km} de retard`,

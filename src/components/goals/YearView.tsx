@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { Trophy, ArrowRight, Calendar } from 'lucide-react'
 import { SectionDivider } from '@/components/ui/SectionLabel'
-import type { YearData, GoalProjection } from '@/application/usecases/GetGoalsData'
+import type { YearData } from '@/application/usecases/GetGoalsData'
 import { formatDuration, formatDate, formatDelta, formatKm, formatPace } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
@@ -19,15 +19,7 @@ export function shortDist(d: string) { return DIST_SHORT[d] ?? d }
 
 
 
-function projectionSparkline(year: number, annualDistanceKm: number, annualProgress: number, projection: GoalProjection) {
-  const yearStart = new Date(year, 0, 1).getTime()
-  const yearEnd = new Date(year + 1, 0, 1).getTime()
-  const elapsedFraction = Math.min(Math.max((Date.now() - yearStart) / (yearEnd - yearStart), 0), 1)
-  const projectedPercent = (projection.projectedYearKm / annualDistanceKm) * 100
-  const domainMax = Math.max(100, projectedPercent) * 1.08
-  const yFor = (pct: number) => 40 - (Math.min(Math.max(pct, 0), domainMax) / domainMax) * 34
-  return { nowX: elapsedFraction * 300, nowY: yFor(annualProgress), endY: yFor(projectedPercent) }
-}
+
 
 interface Props {
   yearData: YearData
@@ -40,8 +32,11 @@ export function YearView({ yearData }: Props) {
   const annualProgress = annualDistanceKm > 0
     ? Math.min((totalDistanceKm / annualDistanceKm) * 100, 100)
     : 0
-  const sparkline = projection && annualDistanceKm > 0
-    ? projectionSparkline(yearData.year, annualDistanceKm, annualProgress, projection)
+  // The projection is a mark on the bar the progress is already drawn on, not a
+  // second picture of the same year: a line into a dashed line, unlabelled,
+  // under a bar showing the same thing, said nothing twice.
+  const projectedPercent = projection && annualDistanceKm > 0
+    ? Math.min((projection.projectedYearKm / annualDistanceKm) * 100, 100)
     : null
   // deltaKm arrives absolute, so the sign has to be recomputed from the
   // projection itself. Reading it off `status` renders an on-track projection
@@ -73,7 +68,7 @@ export function YearView({ yearData }: Props) {
                 {'/ '}{formatKm(annualDistanceKm)}{' '}{t.units.km}
               </span>
             </div>
-            <div className="h-2 overflow-hidden rounded-full bg-foreground/[0.08]">
+            <div className="relative h-2 rounded-full bg-foreground/[0.08]">
               <div
                 className="h-full rounded-full transition-all"
                 style={{
@@ -81,35 +76,28 @@ export function YearView({ yearData }: Props) {
                   background: 'linear-gradient(90deg, var(--accent), var(--accent-text))',
                 }}
               />
+              {projectedPercent !== null && projection && (
+                <span
+                  role="img"
+                  aria-label={t.goals.projection.projectionMarker(formatKm(projection.projectedYearKm))}
+                  className="absolute top-1/2 h-4 w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground"
+                  style={{ left: `${projectedPercent}%` }}
+                />
+              )}
             </div>
-            {sparkline && projection && (
-              <>
-                <svg viewBox="0 0 300 44" preserveAspectRatio="none" className="mt-3 h-9 w-full">
-                  <path
-                    d={`M0 40 L${sparkline.nowX.toFixed(1)} ${sparkline.nowY.toFixed(1)}`}
-                    fill="none"
-                    stroke="var(--accent)"
-                    strokeWidth={2.5}
-                    strokeLinecap="round"
-                  />
-                  <path
-                    d={`M${sparkline.nowX.toFixed(1)} ${sparkline.nowY.toFixed(1)} L300 ${sparkline.endY.toFixed(1)}`}
-                    fill="none"
-                    className="text-subtle"
-                    stroke="currentColor"
-                    strokeWidth={1.5}
-                    strokeDasharray="4 4"
-                  />
-                </svg>
-                <p className={cn('mt-1 text-body font-semibold leading-tight', PROJECTION_TONE[projection.status])}>
-                  {t.goals.projection.projected(formatKm(projection.projectedYearKm))}
-                </p>
-                <p className="text-caption text-subtle">
-                  {t.goals.projection.rate(formatKm(projection.weeklyRate))}
-                  {' · '}
-                  {t.goals.projection.needsWeekly(formatKm(projection.weeklyNeeded))}
-                </p>
-              </>
+            {projection && (
+              <p className="mt-2 text-caption text-subtle">
+                <span className={cn('font-semibold', PROJECTION_TONE[projection.status])}>
+                  {t.goals.projection.projectedBy(
+                    formatKm(projection.projectedYearKm),
+                    formatDate(`${yearData.year}-12-31`, { style: 'bare', year: 'never' }),
+                  )}
+                </span>
+                {' · '}
+                {t.goals.projection.rate(formatKm(projection.weeklyRate))}
+                {' · '}
+                {t.goals.projection.needsWeekly(formatKm(projection.weeklyNeeded))}
+              </p>
             )}
           </GlassSurface>
         </section>

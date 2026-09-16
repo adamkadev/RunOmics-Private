@@ -36,13 +36,24 @@ const BEHIND: GoalProjection = {
 }
 
 describe('YearView annual goal card', () => {
-  it('renders the projection as the card answer, not as its smallest line', () => {
-    render(<YearView yearData={yearData(BEHIND)} />)
-    const projected = screen.getByText(p.projected('1,705'))
-    // text-body (17px), one step under the running total - it used to be
-    // text-caption (11px), the smallest type on the card.
-    expect(projected.className).toContain('text-body')
+  it('marks the projection on the bar the progress is drawn on', () => {
+    const { container } = render(<YearView yearData={yearData(BEHIND)} />)
+
+    const marker = container.querySelector<HTMLElement>('[aria-label*="1,705"]')
+    expect(marker).not.toBeNull()
+    // 1,705 of 2,000 is 85.25% of the way along the same track as the fill.
+    expect(marker!.style.left).toBe('85.25%')
+
+    // No second picture of the year: the dashed projection sparkline is gone.
+    expect(container.querySelector('path[stroke-dasharray]')).toBeNull()
+  })
+
+  it('names the projection once, in the shortfall tone, with the date it lands', () => {
+    const { container } = render(<YearView yearData={yearData(BEHIND)} />)
+
+    const projected = screen.getByText(p.projectedBy('1,705', 'Dec 31'))
     expect(projected.className).toContain(STATUS.warning.text)
+    expect(container.textContent).not.toContain(p.projected('1,705'))
   })
 
   it('states what the goal still needs per week, muted beneath the projection', () => {
