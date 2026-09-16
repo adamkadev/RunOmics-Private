@@ -1,5 +1,5 @@
-import { t } from '@/i18n'
 import { getAthleteHistory } from '@/infrastructure/repositories/JsonAthleteHistoryRepository'
+import { AXIS_TICK_DATE, formatDate } from '@/lib/formatters'
 import {
   getThresholdSamples,
   type ThresholdSample,
@@ -28,7 +28,7 @@ export function getThresholdHistory(): ThresholdHistoryData | null {
 
   const points: ThresholdPoint[] = entries.map((entry) => ({
     date: entry.date,
-    label: new Date(entry.date + 'T00:00:00').toLocaleDateString(t.locale, { day: 'numeric', month: 'short' }),
+    label: formatDate(entry.date, AXIS_TICK_DATE),
     lthrBpm: entry.lthrBpm ?? null,
     thresholdPaceSecPerKm: entry.thresholdPaceSecPerKm ?? null,
   }))

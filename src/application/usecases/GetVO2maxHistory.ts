@@ -1,4 +1,3 @@
-import { t } from '@/i18n'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import {
@@ -6,6 +5,7 @@ import {
   type Vo2maxSample,
 } from '@/infrastructure/repositories/JsonVo2maxHistoryRepository'
 import { addDays, isoDate } from '@/lib/calendarDate'
+import { AXIS_TICK_DATE, formatDate } from '@/lib/formatters'
 import type { VO2maxRange } from '@/domain/training/vo2maxRanges'
 
 export interface VO2maxPoint {
@@ -49,7 +49,7 @@ function monthlyPoints(months: Vo2maxSample[], count: number): VO2maxPoint[] {
   const source = months.length > 0 ? months : monthlyFromActivities()
   return source.slice(-count).map(({ date, vo2max }) => ({
     date,
-    label: format(date, { month: 'short', year: '2-digit' }),
+    label: formatDate(date, { precision: 'month', year: 'always' }),
     value: vo2max,
   }))
 }
@@ -64,13 +64,9 @@ function recentPoints(days: Vo2maxSample[]): VO2maxPoint[] {
     .filter((s) => s.date >= from)
     .map(({ date, vo2max }) => ({
       date,
-      label: format(date, { month: 'short', day: 'numeric' }),
+      label: formatDate(date, AXIS_TICK_DATE),
       value: vo2max,
     }))
-}
-
-function format(date: string, options: Intl.DateTimeFormatOptions): string {
-  return new Date(date + 'T00:00:00').toLocaleDateString(t.locale, options)
 }
 
 function dailyFromActivities(): Vo2maxSample[] {

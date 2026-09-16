@@ -6,7 +6,7 @@ import { ShoesGrid, pickHeroShoe } from '@/components/shoes/ShoesGrid'
 import { ShoesSummary } from '@/components/shoes/ShoesSummary'
 import { ShoeComparison } from '@/components/shoes/ShoeComparison'
 import { BackButton } from '@/components/ui/BackButton'
-import { formatDayMonth } from '@/lib/formatters'
+import { formatDate } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 const QUALITY_RUNS_WINDOW = 6
@@ -26,7 +26,7 @@ export default async function ShoesPage() {
     const nextRace = await getNextRace()
     heroInsight =
       t.shoes.hero.usage(usedCount, qualityRuns.length) +
-      (nextRace ? t.shoes.hero.rotateBeforeRace(formatDayMonth(nextRace.date)) : t.shoes.hero.rotate)
+      (nextRace ? t.shoes.hero.rotateBeforeRace(formatDate(nextRace.date, { style: 'bare' })) : t.shoes.hero.rotate)
   }
 
   return (

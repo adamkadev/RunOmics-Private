@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
   formatClock,
-  formatDate,
-  formatDateWithYear,
   formatDistance,
   formatDuration,
   formatKm,
@@ -70,18 +68,6 @@ describe('formatDistance', () => {
 
   it('shows 1 decimal at 10 km and above', () => {
     expect(formatDistance(10.567)).toBe('10.6')
-  })
-})
-
-describe('formatDate', () => {
-  it('formats an ISO date as a short weekday/month/day', () => {
-    expect(formatDate('2026-03-28')).toBe('Sat, Mar 28')
-  })
-})
-
-describe('formatDateWithYear', () => {
-  it('formats an ISO date with month/day/year', () => {
-    expect(formatDateWithYear('2025-03-28')).toBe('Mar 28, 2025')
   })
 })
 

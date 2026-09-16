@@ -91,8 +91,8 @@ describe('ShoesGrid rows', () => {
     const lastYear = new Date().getFullYear() - 1
     const { container } = render(<ShoesGrid shoes={[shoe({ lastUsedDate: `${lastYear}-12-12` })]} />)
 
-    // formatCompactDate dropped the day for older dates and printed `Dec 25`,
-    // which reads as the 25th of December rather than December 2025.
+    // The formatter this row used to call dropped the day for older dates and
+    // printed `Dec 25`, which reads as the 25th of December, not December 2025.
     expect(container.textContent).toContain(`last run Dec 12, ${lastYear}`)
   })
 

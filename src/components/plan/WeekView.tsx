@@ -30,7 +30,7 @@ import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { PlanSpan } from '@/domain/training/planProgress'
 import { addDays, isoDate, isoWeekNumber } from '@/lib/calendarDate'
-import { formatDate, formatDateFull } from '@/lib/formatters'
+import { formatDate } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { CoachingOverview, PrescriptionView } from '@/application/coaching/GetCoachingView'
@@ -410,7 +410,7 @@ export function WeekView({
                     key={d.date}
                     type="button"
                     onClick={() => { setSelectedDate(d.date); onSelectDate?.(d.date) }}
-                    aria-label={`${formatDateFull(d.date)}${coach.length ? ` · ${coach.map(view => `${view.prescription.title} · ${t.coaching.states[view.state]}`).join(', ')}` : ''}`}
+                    aria-label={`${formatDate(d.date, { style: 'full' })}${coach.length ? ` · ${coach.map(view => `${view.prescription.title} · ${t.coaching.states[view.state]}`).join(', ')}` : ''}`}
                     aria-pressed={d.date === selectedDate}
                     {...(coach.length ? { 'data-testid': `coach-calendar-${d.date}` } : {})}
                     className={cn(
@@ -472,7 +472,7 @@ export function WeekView({
         <p className="text-xs font-bold uppercase tracking-wide text-accent-text">
           {selected.date === today
             ? `${t.plan.today} · ${formatDate(selected.date)}`
-            : formatDateFull(selected.date)}
+            : formatDate(selected.date)}
         </p>
 
         {selected.acts.length > 0 ? (

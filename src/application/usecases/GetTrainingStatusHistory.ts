@@ -1,6 +1,6 @@
-import { t } from '@/i18n'
 import { getTrainingStatusDays } from '@/infrastructure/repositories/JsonTrainingStatusRepository'
 import { buildSegments } from '@/domain/training/statusHistory'
+import { AXIS_TICK_DATE, formatDate } from '@/lib/formatters'
 import { garminStatusType, type TrainingStatusType } from './GetTrainingStatus'
 
 const MAX_DAYS = 1095
@@ -24,7 +24,7 @@ export function getTrainingStatusHistory(): TrainingStatusHistory | null {
 
   const points: TrainingStatusHistoryPoint[] = days.map((day) => ({
     date: day.date,
-    label: new Date(day.date + 'T00:00:00').toLocaleDateString(t.locale, { day: 'numeric', month: 'short' }),
+    label: formatDate(day.date, AXIS_TICK_DATE),
     status: garminStatusType(day.status),
     acuteLoad: day.acuteLoad ?? null,
     chronicLoad: day.chronicLoad ?? null,

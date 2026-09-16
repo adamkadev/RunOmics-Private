@@ -1,6 +1,6 @@
 import { SectionDivider } from '@/components/ui/SectionLabel'
 import type { ShoeComparisonRow } from '@/application/usecases/GetShoeComparison'
-import { formatCompactMonthYear, formatDistance, formatPace } from '@/lib/formatters'
+import { formatDate, formatDistance, formatPace } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 interface Props {
@@ -40,8 +40,8 @@ export function ShoeComparison({ rows }: Props) {
                   </span>
                   <span className="mt-0.5 block text-micro font-normal text-subtle-2">
                     {t.shoes.comparison.period(
-                      formatCompactMonthYear(row.firstUsed),
-                      formatCompactMonthYear(row.lastUsed),
+                      formatDate(row.firstUsed, { precision: 'month' }),
+                      formatDate(row.lastUsed, { precision: 'month' }),
                     )}
                   </span>
                 </th>

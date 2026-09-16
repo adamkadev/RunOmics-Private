@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import type { RecordEntry } from '@/application/usecases/GetRecords'
-import { formatDuration, formatDateWithYear } from '@/lib/formatters'
+import { formatDuration, formatDate } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 const RECENT_PR_DAYS = 90
@@ -49,7 +49,7 @@ export function ProfileRecords({ records }: Props) {
             {best.seconds !== null ? formatDuration(best.seconds) : '–'}
           </span>
           <div className="mt-0.5 truncate text-micro text-muted-foreground">
-            {best.label} · {formatDateWithYear(best.date)}
+            {best.label} · {formatDate(best.date, { style: 'bare' })}
           </div>
         </div>
       ) : (

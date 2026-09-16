@@ -1,7 +1,7 @@
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import { weeksInPlan, type PlanSpan } from '@/domain/training/planProgress'
 import { BRAND_TINTS } from '@/lib/colors'
-import { formatClock, formatDayMonth } from '@/lib/formatters'
+import { formatClock, formatCountdown, formatDate } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 export interface FooterRace {
@@ -53,7 +53,7 @@ export function RaceFooter({
               <div className="min-w-0">
                 <div className="truncate text-footnote font-semibold text-foreground">{raceTitle(entry)}</div>
                 <div className="truncate text-caption text-subtle">
-                  {[formatDayMonth(race.date), race.distance, race.targetSeconds ? formatClock(race.targetSeconds) : null]
+                  {[formatDate(race.date, { style: 'bare' }), race.distance, race.targetSeconds ? formatClock(race.targetSeconds) : null]
                     .filter(Boolean)
                     .join(' · ')}
                 </div>
@@ -62,7 +62,7 @@ export function RaceFooter({
                 )}
               </div>
               <div className="shrink-0 font-display text-body font-bold tabular-nums text-foreground">
-                {t.nextRace.countdown(Math.max(0, daysBetween(today, race.date)))}
+                {formatCountdown(daysBetween(today, race.date))}
               </div>
             </div>
           )

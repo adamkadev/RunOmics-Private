@@ -4,7 +4,7 @@ import type { Activity, ActivityType, ActivityWeather } from '@/domain/activity/
 import { heatAdjustedEf } from '@/domain/activity/heat'
 import { easyHardShare } from '@/domain/training/easyHard'
 import { sumDistanceKm } from '@/domain/activity/distance'
-import { monthLabel } from '@/lib/formatters'
+import { AXIS_TICK_DATE, formatDate, monthLabel } from '@/lib/formatters'
 import { round } from '@/lib/math'
 import { isoDate } from '@/lib/calendarDate'
 
@@ -279,7 +279,7 @@ export function buildWeeklyTrends(all: Activity[]): WeeklyTrendPoint[] {
 
       return {
         date: monday,
-        label: new Date(monday + 'T00:00:00').toLocaleDateString(t.locale, { day: 'numeric', month: 'short' }),
+        label: formatDate(monday, AXIS_TICK_DATE),
         distanceKm: sumDistanceKm(acts),
         sessionCount: acts.length,
         easyPace: weightedPace(easy),
@@ -376,9 +376,8 @@ function buildEfficiencyDaily(activities: Activity[], now: Date): DailyEfficienc
 
   const points = Array.from({ length: ROLLING_DAYS }, (_, i) => {
     const dayMs = nowMs - (ROLLING_DAYS - 1 - i) * DAY_MS
-    const day = new Date(dayMs)
-    const label = day.toLocaleDateString(t.locale, { day: 'numeric', month: 'short' })
-    const date = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`
+    const date = isoDate(new Date(dayMs))
+    const label = formatDate(date, AXIS_TICK_DATE)
 
     const in7  = stamped.filter((x) => x.ms >= dayMs - 6 * DAY_MS && x.ms <= dayMs).map((x) => x.a)
     const in30 = stamped.filter((x) => x.ms >= dayMs - 29 * DAY_MS && x.ms <= dayMs).map((x) => x.a)
@@ -401,9 +400,8 @@ function buildRunningDynamicsDaily(activities: Activity[], now: Date): DailyRunn
 
   const points = Array.from({ length: ROLLING_DAYS }, (_, i) => {
     const dayMs = nowMs - (ROLLING_DAYS - 1 - i) * DAY_MS
-    const day = new Date(dayMs)
-    const label = day.toLocaleDateString(t.locale, { day: 'numeric', month: 'short' })
-    const date = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`
+    const date = isoDate(new Date(dayMs))
+    const label = formatDate(date, AXIS_TICK_DATE)
 
     const in7  = stamped.filter((x) => x.ms >= dayMs - 6 * DAY_MS && x.ms <= dayMs).map((x) => x.a)
     const in30 = stamped.filter((x) => x.ms >= dayMs - 29 * DAY_MS && x.ms <= dayMs).map((x) => x.a)

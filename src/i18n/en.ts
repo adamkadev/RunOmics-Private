@@ -904,7 +904,6 @@ export const en = {
     raceAlt: (distance: string) => `${distance} race`,
     emptyPbs: (year: number) => `No PBs for ${year} yet - add them in Settings.`,
     noPhoto: 'No photo',
-    daysUntil: (n: number) => n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : `${n}d`,
     registrationLink: 'Registration',
     projection: {
       status: {
@@ -1116,6 +1115,8 @@ export const en = {
 
   nextRace: {
     countdown: (days: number) => `D-${days}`,
+    today: 'Today',
+    tomorrow: 'Tomorrow',
   },
 
   trainingZones: {

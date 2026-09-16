@@ -5,6 +5,7 @@ import { CardTitle } from '@/components/ui/SectionLabel'
 import type { TrainingStatusDayBar } from '@/application/usecases/GetTrainingStatusDaysBar'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { TRAINING_STATUS_COLORS } from '@/lib/colors'
+import { formatDate, formatDateRange, type DateFormatOptions } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 interface Props {
@@ -36,14 +37,15 @@ function groupConsecutiveDays(days: TrainingStatusDayBar[]): DayGroup[] {
   return groups
 }
 
-function formatDate(date: string): string {
-  return new Date(date + 'T00:00:00').toLocaleDateString(t.locale, { day: 'numeric', month: 'short' })
-}
+// A fortnight of segments, so every date here is a caption: no weekday, and
+// the dash between the two ends of a group is Intl's, not one we type.
+const DENSE: DateFormatOptions = { style: 'bare' }
 
 function groupLabel(group: DayGroup): string {
   const s = t.dashboard.trainingStatusDays
   const status = group.status ? t.trainingStatus.status[group.status] : s.noReading
-  const range = group.count === 1 ? formatDate(group.from) : `${formatDate(group.from)} – ${formatDate(group.to)}`
+  const range =
+    group.count === 1 ? formatDate(group.from, DENSE) : formatDateRange(group.from, group.to, DENSE)
   return `${status} · ${range}`
 }
 
@@ -55,7 +57,7 @@ export function TrainingStatusDaysBar({ days }: Props) {
   const s = t.dashboard.trainingStatusDays
   const latest = days[days.length - 1]
   const oldest = days[0]
-  const oldestLabel = oldest ? formatDate(oldest.date) : ''
+  const oldestLabel = oldest ? formatDate(oldest.date, DENSE) : ''
   const groups = groupConsecutiveDays(days)
   const active = groups.find((group) => group.from === activeKey) ?? null
 

@@ -1,5 +1,5 @@
 import type { Activity } from '@/domain/activity/types'
-import { formatClock, formatDistance, formatDurationShort } from '@/lib/formatters'
+import { formatClock, formatDistance, formatDuration } from '@/lib/formatters'
 import { shareCardTitle } from '@/lib/shareCardStats'
 import type { ShareDesign } from '@/lib/shareCardPalette'
 import { projectRoute, simplifyRoute, type LngLat } from '@/lib/shareCardMap'
@@ -772,7 +772,7 @@ export function drawDataOverlay(ctx: Ctx, W: number, H: number, dark: boolean, r
     { label: t.activity.shareCard.distance, value: formatDistance(activity.distanceKm), unit: t.units.km },
     { label: t.activity.shareCard.pace, value: activity.paceSecPerKm ? formatClock(activity.paceSecPerKm) : '-', unit: '/km' },
     { label: t.activity.shareCard.avgHr, value: activity.avgHeartRate ? `${activity.avgHeartRate}` : '-', unit: t.units.bpm },
-    { label: t.activity.shareCard.time, value: formatDurationShort(activity.durationSeconds), unit: durationH ? 'h' : 'min' },
+    { label: t.activity.shareCard.time, value: formatDuration(activity.durationSeconds), unit: durationH ? 'h' : 'min' },
   ]
 
   const cellW = cw / 4

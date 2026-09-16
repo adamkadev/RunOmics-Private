@@ -12,7 +12,7 @@ import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import { verdictTone, type ReadinessTone } from '@/domain/training/readiness'
 import { PlannedWorkoutSheet } from '@/components/plan/PlannedWorkoutSheet'
 import type { PlanWorkoutView } from '@/components/plan/planWorkoutView'
-import { formatDistance, formatDurationWords } from '@/lib/formatters'
+import { formatCountdown, formatDistance, formatDurationWords } from '@/lib/formatters'
 import { READINESS_TONE_COLORS } from '@/lib/colors'
 import { HUE, withAlpha } from '@/lib/palette'
 import type { Insight } from '@/lib/gemini'
@@ -113,7 +113,7 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiV
         {daysToRace !== null && daysToRace > 0 && (
           <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-0.5 font-mono text-micro font-bold text-white/80">
             <Flag size={10} />
-            {t.nextRace.countdown(daysToRace)} · {nextRace!.name}
+            {formatCountdown(daysToRace)} · {nextRace!.name}
           </span>
         )}
       </div>

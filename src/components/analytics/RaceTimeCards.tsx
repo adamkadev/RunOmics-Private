@@ -5,7 +5,7 @@ import { CardTitle } from '@/components/ui/SectionLabel'
 import type { GarminRacePredictionsData } from '@/application/usecases/GetGarminRacePredictions'
 import type { RaceDistanceKey } from '@/domain/race/distances'
 import { paceTrend } from '@/domain/race/predictionWindow'
-import { formatDurationShort, formatSignedDuration } from '@/lib/formatters'
+import { formatDuration, formatSignedDuration } from '@/lib/formatters'
 import { metricDeltaColor } from '@/lib/colors'
 import { t } from '@/i18n'
 
@@ -30,7 +30,7 @@ export function RaceTimeCards({ data }: { data: GarminRacePredictionsData }) {
             <div key={key} className="glass-row rounded-[13px] px-2 py-[11px] text-center">
               <div className="text-caption font-semibold text-subtle">{SHORT_LABEL[key]}</div>
               <div className="mt-[3px] font-display text-footnote font-bold tabular-nums text-foreground">
-                {formatDurationShort(seconds)}
+                {formatDuration(seconds)}
               </div>
               <div className="mt-[3px] flex justify-center">
                 {trend && trend.improvementSec !== 0 ? (

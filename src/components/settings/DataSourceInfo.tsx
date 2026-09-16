@@ -6,7 +6,7 @@ import { t } from '@/i18n'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { Toast, useToast } from '@/components/ui/Toast'
 import { saveFileWithFallback } from '@/lib/fileExport'
-import { formatMonthYear, formatRelativeAgo } from '@/lib/formatters'
+import { formatDate, formatRelativeAgo } from '@/lib/formatters'
 
 export interface SyncDevice {
   name?: string
@@ -54,7 +54,7 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device }: Props) {
 
   const provenance = device && [
     s.dataSource.garmin,
-    device.since && s.dataSource.since(formatMonthYear(device.since)),
+    device.since && s.dataSource.since(formatDate(device.since, { precision: 'month' })),
   ].filter(Boolean).join(' · ')
 
   return (

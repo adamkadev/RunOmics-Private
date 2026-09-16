@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { Flame } from 'lucide-react'
-import { formatClock, formatDateWithYear } from '@/lib/formatters'
+import { formatClock, formatDate } from '@/lib/formatters'
 import { t } from '@/i18n'
 import type { PbAlert } from '@/application/usecases/GetPbAlerts'
 
@@ -15,7 +15,7 @@ export function PbAlertLine({ alerts }: { alerts: PbAlert[] }) {
       {alerts.map((a, i) => (
         <span key={a.key} className="flex items-center gap-1.5">
           <Link href={`/activities/${a.activityId}`} className="underline-offset-2 hover:underline">
-            {a.label} {s.off(formatClock(a.diffSeconds))} ({formatDateWithYear(a.date)})
+            {a.label} {s.off(formatClock(a.diffSeconds))} ({formatDate(a.date, { style: 'bare' })})
           </Link>
           {i < alerts.length - 1 && <span aria-hidden="true">·</span>}
         </span>

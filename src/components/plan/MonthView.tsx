@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import type { ActivitySummary, ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import { round } from '@/lib/math'
-import { formatDateFull } from '@/lib/formatters'
+import { formatDate } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { InlineJumpButton } from '@/components/ui/InlineJumpButton'
 import { PlannedWorkoutSheet } from './PlannedWorkoutSheet'
@@ -165,7 +165,7 @@ export function MonthView({ year, month, byDate, byDatePlanned, byDateCoach, tod
                       >
                         {cell.day}
                       </p>
-                      {byDateCoach?.has(cell.date) && <button type="button" onClick={() => onSelectDay(cell.date)} aria-label={`${formatDateFull(cell.date)} · ${byDateCoach.get(cell.date)!.map(view => view.prescription.title).join(', ')}`} className="mb-1 block w-full min-w-0 rounded border-l-2 border-accent/60 bg-accent/[0.06] px-1 py-1 text-left">
+                      {byDateCoach?.has(cell.date) && <button type="button" onClick={() => onSelectDay(cell.date)} aria-label={`${formatDate(cell.date, { style: 'full' })} · ${byDateCoach.get(cell.date)!.map(view => view.prescription.title).join(', ')}`} className="mb-1 block w-full min-w-0 rounded border-l-2 border-accent/60 bg-accent/[0.06] px-1 py-1 text-left">
                         {byDateCoach.get(cell.date)!.map(view => <span key={view.prescription.id} data-testid={`coach-calendar-${view.prescription.id}`} className="block">
                           <span className={cn('line-clamp-2 break-words text-micro font-semibold text-foreground', view.state === 'cancelled' && 'line-through opacity-50')}>{view.prescription.title}</span>
                           <span className="block text-micro text-muted-foreground">{prescriptionSize(view.prescription)}</span>
@@ -175,7 +175,7 @@ export function MonthView({ year, month, byDate, byDatePlanned, byDateCoach, tod
                         <button
                           type="button"
                           onClick={() => onSelectDay(cell.date)}
-                          aria-label={formatDateFull(cell.date)}
+                          aria-label={formatDate(cell.date, { style: 'full' })}
                           className="-m-1 block w-[calc(100%+8px)] rounded p-1 text-left transition-colors hover:bg-foreground/[0.06]"
                         >
                           <DayActivities activities={cell.acts} />

@@ -896,7 +896,6 @@ export const fr = {
     raceAlt: (distance: string) => `course de ${distance}`,
     emptyPbs: (year: number) => `Pas encore de RP pour ${year} - ajoutez-les dans les Réglages.`,
     noPhoto: 'Pas de photo',
-    daysUntil: (n: number) => n === 0 ? 'Aujourd’hui' : n === 1 ? 'Demain' : `${n}j`,
     registrationLink: 'Inscription',
     projection: {
       status: {
@@ -1105,6 +1104,8 @@ export const fr = {
 
   nextRace: {
     countdown: (days: number) => `J-${days}`,
+    today: 'Aujourd’hui',
+    tomorrow: 'Demain',
   },
 
   trainingZones: {

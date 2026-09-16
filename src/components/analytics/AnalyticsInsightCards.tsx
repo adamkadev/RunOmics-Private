@@ -5,7 +5,7 @@ import { CardTitle } from '@/components/ui/SectionLabel'
 import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import type { VO2maxSeries } from '@/application/usecases/GetVO2maxHistory'
 import type { ThresholdHistoryData } from '@/application/usecases/GetThresholdHistory'
-import { formatClock, formatCompactMonthYear, formatSignedDuration } from '@/lib/formatters'
+import { formatClock, formatDate, formatSignedDuration } from '@/lib/formatters'
 import { CHART_COLORS, metricDeltaColor } from '@/lib/colors'
 import { useAccentUiColor } from '@/lib/useAccent'
 import { t } from '@/i18n'
@@ -189,7 +189,7 @@ export function AnalyticsInsightCards({
           label={s.easyPace}
           chip={easyDelta !== null ? formatSignedDuration(easyDelta) : undefined}
           chipColor={easyDelta !== null ? metricDeltaColor(easyDelta, 'down', PACE_NOISE_SEC) : undefined}
-          note={easyBaseline ? s.since(formatCompactMonthYear(easyBaseline.date)) : undefined}
+          note={easyBaseline ? s.since(formatDate(easyBaseline.date, { precision: 'month' })) : undefined}
           value={formatClock(easyLatest)}
           unit={t.units.perKm}
         >
@@ -202,7 +202,7 @@ export function AnalyticsInsightCards({
           label={s.threshold}
           chip={thrDelta !== null ? formatSignedDuration(thrDelta) : undefined}
           chipColor={thrDelta !== null ? metricDeltaColor(thrDelta, 'down', PACE_NOISE_SEC) : undefined}
-          note={thrBaseline ? s.since(formatCompactMonthYear(thrBaseline.date)) : undefined}
+          note={thrBaseline ? s.since(formatDate(thrBaseline.date, { precision: 'month' })) : undefined}
           value={formatClock(thrLatest)}
           unit={t.units.perKm}
         >

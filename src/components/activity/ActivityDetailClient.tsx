@@ -20,7 +20,7 @@ import { TrainingEffect } from './TrainingEffect'
 import { AerobicDecoupling } from './AerobicDecoupling'
 import { BestEfforts } from './BestEfforts'
 import { RunningDynamics } from './RunningDynamics'
-import { formatClock, formatDistance, formatDurationShort } from '@/lib/formatters'
+import { formatClock, formatDistance, formatDuration } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import type { Insight } from '@/lib/gemini'
 import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
@@ -47,7 +47,7 @@ function buildPrimaryStats(activity: Activity): Metric[] {
       label: t.activity.stats.distance,
     },
     {
-      value: formatDurationShort(activity.durationSeconds),
+      value: formatDuration(activity.durationSeconds),
       label: t.activity.stats.duration,
     },
   ]

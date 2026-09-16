@@ -6,15 +6,10 @@ import { ChevronDown } from 'lucide-react'
 import { SectionDivider } from '@/components/ui/SectionLabel'
 import type { RecordEntry, TopEfforts } from '@/application/usecases/GetRecords'
 import type { RacePrediction } from '@/application/usecases/GetRacePredictions'
-import { formatDuration, formatDistance, formatPace } from '@/lib/formatters'
+import { formatDate, formatDuration, formatDistance, formatPace } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { STATUS } from '@/lib/statusColors'
 import { t } from '@/i18n'
-
-// A 2-digit year with no day reads as a day: "Jun 25" looks like 25 June.
-function shortDate(iso: string): string {
-  return new Date(iso + 'T00:00:00').toLocaleDateString(t.locale, { month: 'short', year: 'numeric' })
-}
 
 function medalDotClass(i: number): string | null {
   if (i === 0) return STATUS.gold.dot
@@ -87,7 +82,7 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null, 
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-xs font-semibold text-foreground">{r.label}</p>
                   <p className="mt-0.5 truncate text-caption text-subtle">
-                    {r.date && <span>{shortDate(r.date)}</span>}
+                    {r.date && <span>{formatDate(r.date, { style: 'bare' })}</span>}
                     {r.key === mostRecentKey && <span> · {t.records.mostRecent}</span>}
                     <span> · {r.official ? t.records.raceTag : t.records.trainingTag}</span>
                   </p>

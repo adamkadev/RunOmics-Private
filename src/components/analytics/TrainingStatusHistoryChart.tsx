@@ -16,6 +16,7 @@ import { ChartCardHead, ChartReading, LegendValue } from '@/components/ui/ChartC
 import { SectionDivider } from '@/components/ui/SectionLabel'
 import { ChartRangeChips, ChartWindowPager, useChartWindow } from '@/components/ui/ChartWindowNav'
 import { pickForRange } from '@/domain/timeWindow'
+import { AXIS_TICK_DATE, formatDate } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 const BAND_COLOR = CHART_COLORS.ctl
@@ -50,7 +51,7 @@ function CustomTooltip({ active, payload }: TooltipProps) {
 }
 
 function formatDay(date: string): string {
-  return new Date(date + 'T00:00:00').toLocaleDateString(t.locale, { day: 'numeric', month: 'short' })
+  return formatDate(date, AXIS_TICK_DATE)
 }
 
 function segmentLabel(segment: TrainingStatusSegment): string {
@@ -254,12 +255,7 @@ export function TrainingStatusHistoryChart({ data }: { data: TrainingStatusHisto
                   tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
                   axisLine={false}
                   tickLine={false}
-                  tickFormatter={(date: string) =>
-                    new Date(date + 'T00:00:00').toLocaleDateString(t.locale, {
-                      day: 'numeric',
-                      month: 'short',
-                    })
-                  }
+                  tickFormatter={(date: string) => formatDate(date, AXIS_TICK_DATE)}
                 />
                 <YAxis
                   tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}

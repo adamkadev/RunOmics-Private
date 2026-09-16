@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import type { HeatmapDay } from '@/application/usecases/GetHeatmapData'
 import { tooltipSurfaceClass } from '@/components/ui/Card'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { monthRangeLabel } from '@/lib/formatters'
+import { formatDate, formatDateRange } from '@/lib/formatters'
 import { positionMonthLabels, type MonthStart } from '@/lib/heatmapMonths'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -38,10 +38,10 @@ function useThemeVersion(): number {
   return version
 }
 
+// The window is a rolling 364 days, so a tooltip on the far end of the strip
+// falls in last year - hence the date, not a bare `Sep 13`.
 function formatTooltipDate(dateStr: string) {
-  return new Date(dateStr + 'T12:00:00').toLocaleDateString(t.locale, {
-    weekday: 'short', month: 'short', day: 'numeric',
-  })
+  return formatDate(dateStr)
 }
 
 interface Props {
@@ -101,7 +101,7 @@ export function ActivityHeatmap({ days }: Props) {
   const dated = days.filter(d => d.date)
   const opensOn = dated[0]?.date
   const closesOn = dated[dated.length - 1]?.date
-  const windowRange = opensOn && closesOn ? monthRangeLabel(opensOn, closesOn) : null
+  const windowRange = opensOn && closesOn ? formatDateRange(opensOn, closesOn, { precision: 'month' }) : null
 
   const activeDays = days.filter(d => d.distanceKm > 0).length
 

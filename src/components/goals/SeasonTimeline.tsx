@@ -4,7 +4,7 @@ import { Check } from 'lucide-react'
 import { SectionDivider } from '@/components/ui/SectionLabel'
 import type { GoalTarget, YearData } from '@/application/usecases/GetGoalsData'
 import { DISTANCE_KEY } from '@/domain/activity/effort'
-import { formatDayMonth, formatDuration } from '@/lib/formatters'
+import { formatCountdown, formatDate, formatDuration } from '@/lib/formatters'
 import { STATUS } from '@/lib/statusColors'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -62,6 +62,7 @@ export function SeasonTimeline({ yearData }: { yearData: YearData }) {
           : null
 
       if (scheduledRace) {
+        const raceDate = formatDate(scheduledRace.date, { style: 'bare' })
         const hasPassed = scheduledRace.date < today
         const raceResult = hasPassed
           ? pbs.find((p) => p.entry.distance === target.distance && p.activity.date === scheduledRace.date) ?? null
@@ -76,10 +77,10 @@ export function SeasonTimeline({ yearData }: { yearData: YearData }) {
           sortKey: scheduledRace.date,
           kind: hasPassed ? 'done' : 'scheduled',
           dateLabel: hasPassed
-            ? `${formatDayMonth(scheduledRace.date)} · ${s.done}`
+            ? `${raceDate} · ${s.done}`
             : daysUntil !== null && daysUntil >= 0
-              ? `${formatDayMonth(scheduledRace.date)} · ${t.nextRace.countdown(daysUntil)}`
-              : formatDayMonth(scheduledRace.date),
+              ? `${raceDate} · ${formatCountdown(daysUntil)}`
+              : raceDate,
           title: `${shortDist(target.distance)} · ${scheduledRace.name}`,
           timeLabel: hasPassed
             ? raceResult !== null ? formatDuration(raceResult.entry.seconds) : '-'
@@ -106,7 +107,7 @@ export function SeasonTimeline({ yearData }: { yearData: YearData }) {
           distance: target.distance,
           sortKey: pb.activity.date,
           kind: 'done',
-          dateLabel: `${formatDayMonth(pb.activity.date)} · ${s.done}`,
+          dateLabel: `${formatDate(pb.activity.date, { style: 'bare' })} · ${s.done}`,
           title: pb.activity.description
             ? `${shortDist(target.distance)} · ${pb.activity.description}`
             : shortDist(target.distance),

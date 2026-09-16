@@ -11,7 +11,7 @@ import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { ChartCardHead, ChartReading } from '@/components/ui/ChartCard'
 import { ChartRangeChips, ChartWindowPager, useChartWindow } from '@/components/ui/ChartWindowNav'
-import { formatDuration, formatPace } from '@/lib/formatters'
+import { AXIS_TICK_DATE, formatDate, formatDuration, formatPace } from '@/lib/formatters'
 import { roundAxis } from '@/lib/chartAxis'
 import { t } from '@/i18n'
 
@@ -85,7 +85,7 @@ function clock(seconds: number): string {
 }
 
 function shortDate(date: string): string {
-  return new Date(date + 'T00:00:00').toLocaleDateString(t.locale, { day: 'numeric', month: 'short' })
+  return formatDate(date, AXIS_TICK_DATE)
 }
 
 interface TooltipProps {

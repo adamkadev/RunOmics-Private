@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import type { RecurringRoute } from '@/application/usecases/GetRecurringRoutes'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { formatCompactDate, formatDistance, formatPace } from '@/lib/formatters'
+import { formatDate, formatDistance, formatPace } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 interface Props {
@@ -77,7 +77,7 @@ export function RecurringRoutes({ routes }: Props) {
                   className="mt-0.5 block text-caption text-accent-text"
                 >
                   {t.records.recurring.best} {formatPace(route.bestPaceSecPerKm)} ·{' '}
-                  {formatCompactDate(route.bestDate)}
+                  {formatDate(route.bestDate, { style: 'bare' })}
                 </Link>
               </div>
 

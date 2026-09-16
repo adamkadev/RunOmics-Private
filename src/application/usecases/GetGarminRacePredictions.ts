@@ -1,7 +1,7 @@
-import { t } from '@/i18n'
 import { getRacePredictionDays } from '@/infrastructure/repositories/JsonRacePredictionRepository'
 import { RACE_DISTANCES, RACE_DISTANCE_KM, type RaceDistanceKey } from '@/domain/race/distances'
 import type { DatedPaces } from '@/domain/race/predictionWindow'
+import { AXIS_TICK_DATE, formatDate } from '@/lib/formatters'
 
 export interface GarminRacePredictionPoint extends DatedPaces {
   date: string
@@ -27,7 +27,7 @@ export function getGarminRacePredictions(): GarminRacePredictionsData | null {
 
   const points: GarminRacePredictionPoint[] = days.map((day) => ({
     date: day.date,
-    label: new Date(day.date + 'T00:00:00').toLocaleDateString(t.locale, { day: 'numeric', month: 'short' }),
+    label: formatDate(day.date, AXIS_TICK_DATE),
     '5k': paceOf(day['5k'], '5k'),
     '10k': paceOf(day['10k'], '10k'),
     half: paceOf(day.half, 'half'),

@@ -9,6 +9,7 @@ import { ChartFigure } from '@/components/ui/ChartFigure'
 import { WindowedChartCard, windowDateAxis, windowTickDate, windowTickMonth, windowTicks } from '@/components/ui/ChartWindowNav'
 import { fillWeeklyGaps, monthStartTicks } from '@/domain/timeWindow'
 import { isoDate, startOfWeek } from '@/lib/calendarDate'
+import { AXIS_TICK_DATE, formatDate } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 const MAX_DOTTED_POINTS = 14
@@ -96,7 +97,7 @@ export function WeeklyVolumeChart({ points }: { points: WeeklyTrendPoint[] }) {
   const weeks = fillWeeklyGaps(points, (monday) => ({
     ...BLANK_WEEK,
     date: monday,
-    label: new Date(monday + 'T00:00:00').toLocaleDateString(t.locale, { day: 'numeric', month: 'short' }),
+    label: formatDate(monday, AXIS_TICK_DATE),
   }))
 
   const currentWeekDate = isoDate(startOfWeek(new Date()))

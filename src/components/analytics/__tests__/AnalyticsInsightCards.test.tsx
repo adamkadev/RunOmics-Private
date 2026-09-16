@@ -4,7 +4,7 @@ import { AnalyticsInsightCards } from '@/components/analytics/AnalyticsInsightCa
 import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import type { VO2maxSeries } from '@/application/usecases/GetVO2maxHistory'
 import type { ThresholdHistoryData } from '@/application/usecases/GetThresholdHistory'
-import { MINUS, formatCompactMonthYear } from '@/lib/formatters'
+import { MINUS, formatDate } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 const s = t.analytics.insightCards
@@ -91,7 +91,7 @@ describe('Analytics insight chips carry numbers', () => {
     expect(screen.getByText(`${MINUS}0:56`)).toBeTruthy()
 
     // Both baselines are May 2025, so the label appears once per pace tile.
-    expect(screen.getAllByText(s.since(formatCompactMonthYear('2025-05-13')))).toHaveLength(2)
+    expect(screen.getAllByText(s.since(formatDate('2025-05-13', { precision: 'month' })))).toHaveLength(2)
   })
 
   it('leaves no chip at all when a series has only one reading', () => {

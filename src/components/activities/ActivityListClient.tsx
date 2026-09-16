@@ -13,7 +13,7 @@ import { Pill } from '@/components/ui/Pill'
 import { SortDropdown } from '@/components/ui/SortDropdown'
 import { easyHardShare } from '@/domain/training/easyHard'
 import { CHART_COLORS } from '@/lib/colors'
-import { weekRangeLabel } from '@/lib/formatters'
+import { formatDateRange } from '@/lib/formatters'
 import { isoDate, addDays, startOfWeek } from '@/lib/calendarDate'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -84,7 +84,7 @@ function groupByWeek(items: ActivitySummary[]): WeekGroup[] {
     const totalKm = weekItems.reduce((s, a) => s + a.distanceKm, 0)
     const { hardPct } = easyHardShare(weekItems)
     const hard = hardPct === null ? null : Math.round(hardPct)
-    const range = weekRangeLabel(key, isoDate(addDays(new Date(key + 'T00:00:00'), 6)))
+    const range = formatDateRange(key, isoDate(addDays(new Date(key + 'T00:00:00'), 6)))
     const relativeLabel =
       key === currentWeekStart ? t.activities.thisWeek : key === lastWeekStart ? t.activities.lastWeek : null
     return {

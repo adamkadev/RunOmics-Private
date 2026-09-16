@@ -5,7 +5,7 @@ import { GlassSurface } from '@/components/ui/GlassSurface'
 import { BrandIcon } from '@/components/shoes/BrandIcon'
 import { STATUS } from '@/lib/statusColors'
 import { SHOE_WEAR_TINTS } from '@/lib/colors'
-import { formatDateWithYear, formatDayMonth } from '@/lib/formatters'
+import { formatDate } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -66,24 +66,19 @@ function ShoeHeroCard({ shoe, insight }: { shoe: ShoeStats; insight: string | nu
 }
 
 /**
- * Says what the date is instead of leaving a bare `Sep 13` next to the mileage,
- * and never renders a prior-year date the way `formatCompactDate` did: that
- * formatter drops the day for older dates ({month, year:'2-digit'}), so the
- * retired pair's "Dec 25" meant December 2025 and read as 25 December.
+ * Says what the date is instead of leaving a bare `Sep 13` next to the mileage.
+ * The year rule it used to spell out by hand is formatDate's now.
  *
  * A retired pair only needs its era - the registry has no retirement date, so
  * the year is the last one it actually ran, hence "last worn", not "retired".
  * That era is also what separates two pairs sharing a model name.
  */
-function lastOutingLabel(shoe: ShoeStats, now = new Date()): string | null {
+function lastOutingLabel(shoe: ShoeStats): string | null {
   if (!shoe.lastUsedDate) return null
 
-  const year = new Date(shoe.lastUsedDate + 'T00:00:00').getFullYear()
-  if (shoe.retired) return t.shoes.lastWorn(year)
+  if (shoe.retired) return t.shoes.lastWorn(new Date(shoe.lastUsedDate + 'T00:00:00').getFullYear())
 
-  return t.shoes.lastRun(
-    year === now.getFullYear() ? formatDayMonth(shoe.lastUsedDate) : formatDateWithYear(shoe.lastUsedDate)
-  )
+  return t.shoes.lastRun(formatDate(shoe.lastUsedDate, { style: 'bare' }))
 }
 
 function ShoeRow({ shoe }: { shoe: ShoeStats }) {

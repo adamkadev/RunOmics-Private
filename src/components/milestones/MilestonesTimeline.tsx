@@ -3,7 +3,7 @@
 import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 import type { Milestone } from '@/application/usecases/GetMilestones'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { formatDayMonth } from '@/lib/formatters'
+import { formatDate } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { MILESTONE_ICON, MILESTONE_ICON_CLASS, MILESTONE_NODE_CLASS } from './milestoneVisuals'
 
@@ -37,7 +37,7 @@ function MilestoneColumn({ milestone }: { milestone: Milestone }) {
           <Icon size={15} className={MILESTONE_ICON_CLASS[milestone.type]} />
         </span>
       </div>
-      <time className="mt-1.5 text-caption tabular-nums text-subtle">{formatDayMonth(milestone.date)}</time>
+      <time className="mt-1.5 text-caption tabular-nums text-subtle">{formatDate(milestone.date, { style: 'bare', year: 'never' })}</time>
     </li>
   )
 }

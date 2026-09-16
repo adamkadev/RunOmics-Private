@@ -14,7 +14,7 @@ import { WeekView } from './WeekView'
 import { MonthView } from './MonthView'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
 import { useSwipeNavigation } from '@/lib/useSwipeNavigation'
-import { formatDayMonth } from '@/lib/formatters'
+import { formatDate } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -76,8 +76,8 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate
 
   const subtitle =
     mode === 'week'
-      ? t.plan.weekOf(formatDayMonth(isoDate(weekStart)))
-      : new Date(year, month, 1).toLocaleString(t.locale, { month: 'long', year: 'numeric' })
+      ? t.plan.weekOf(formatDate(isoDate(weekStart), { style: 'bare' }))
+      : formatDate(isoDate(new Date(year, month, 1)), { precision: 'month', style: 'full' })
 
   function shift(delta: number) {
     setFocusDate(null)

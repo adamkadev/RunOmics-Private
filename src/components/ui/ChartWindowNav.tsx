@@ -16,6 +16,7 @@ import { ChartCardHead, ChartReading } from '@/components/ui/ChartCard'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { CHART_COLORS } from '@/lib/colors'
+import { AXIS_TICK_DATE, formatDate } from '@/lib/formatters'
 
 export interface ChartWindow<T extends { date: string }> {
   range: ChartRange
@@ -91,7 +92,7 @@ export function ChartRangeChips({
 }
 
 function shortDate(date: string): string {
-  return new Date(date + 'T00:00:00').toLocaleDateString(t.locale, { day: 'numeric', month: 'short' })
+  return formatDate(date, AXIS_TICK_DATE)
 }
 
 export function ChartWindowPager({
@@ -229,7 +230,7 @@ export function windowDateAxis(ticks: Set<string>, label: (date: string) => stri
 }
 
 export function windowTickMonth(date: string): string {
-  return new Date(date + 'T00:00:00').toLocaleDateString(t.locale, { month: 'short' })
+  return formatDate(date, { precision: 'month', year: 'never' })
 }
 
 export function windowTicks<T extends { date: string }>(points: T[], count = 6): Set<string> {
