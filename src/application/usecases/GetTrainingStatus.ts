@@ -26,6 +26,7 @@ export interface TrainingStatus {
   acwr: number | null
   ctlDelta: number
   atlDelta: number
+  tsbDelta: number
   ctlPeak: number
   source: 'garmin' | 'local'
   acwrStatus: string | null
@@ -99,6 +100,9 @@ export async function getTrainingStatus(): Promise<TrainingStatus | null> {
   if (!atlPrevPoint) return null
   const atlDelta = round(atl - atlPrevPoint.atl, 1)
 
+  const weekAgo = points.length >= 8 ? points[points.length - 8] : points[0]
+  const tsbDelta = round(tsbNow - (weekAgo?.tsb ?? tsbNow), 1)
+
   const activities = getAllActivities()
   const firstActivity = activities[0]
   if (!firstActivity) return null
@@ -127,6 +131,7 @@ export async function getTrainingStatus(): Promise<TrainingStatus | null> {
     acwr: ratio,
     ctlDelta,
     atlDelta,
+    tsbDelta,
     ctlPeak,
     source: useGarmin ? 'garmin' : 'local',
     acwrStatus: garmin?.acwrStatus ?? null,

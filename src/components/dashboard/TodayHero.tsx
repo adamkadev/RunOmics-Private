@@ -2,15 +2,14 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ChevronRight, BedDouble, Flag } from 'lucide-react'
+import { ChevronRight, BedDouble } from 'lucide-react'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import type { ActivitySummary } from '@/domain/activity/types'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import { verdictTone, type ReadinessTone } from '@/domain/training/readiness'
-import { Pill } from '@/components/ui/Pill'
 import { PlannedWorkoutSheet } from '@/components/plan/PlannedWorkoutSheet'
 import type { PlanWorkoutView } from '@/components/plan/planWorkoutView'
-import { formatCountdown, formatDistance, formatDurationWords } from '@/lib/formatters'
+import { formatDelta, formatDistance, formatDurationWords } from '@/lib/formatters'
 import { READINESS_TONE_COLORS } from '@/lib/colors'
 import { HUE, withAlpha } from '@/lib/palette'
 import type { Insight } from '@/lib/gemini'
@@ -28,13 +27,31 @@ interface Props {
   aiVerdict: Insight | null
 }
 
+function holdCopy(status: TrainingStatus): { headline: string; body: string } {
+  const r = t.dashboard.todayHero.readiness.hold
+  const fatigue = Math.round(status.atl)
+  const fitness = Math.round(status.ctl)
+  const form = Math.round(status.tsbNow)
+  const weekDelta = Math.round(status.tsbDelta)
+
+  return {
+    headline: fatigue > fitness ? r.headline : r.headlineFormDown,
+    body: r.body(
+      fatigue,
+      fitness,
+      formatDelta(form),
+      weekDelta < 0 ? r.weekDown(Math.abs(weekDelta)) : weekDelta > 0 ? r.weekUp(weekDelta) : r.weekFlat,
+    ),
+  }
+}
+
 function readinessCopy(status: TrainingStatus, tone: ReadinessTone): { headline: string; body: string } {
   const r = t.dashboard.todayHero.readiness
   switch (tone) {
     case 'go':
       return { headline: r.go.headline, body: r.go.body() }
     case 'hold':
-      return { headline: r.hold.headline, body: r.hold.body() }
+      return holdCopy(status)
     case 'caution':
       return { headline: r.caution.headline, body: r.caution.body(t.trainingStatus.loadTrend[status.loadTrend]) }
   }
@@ -42,11 +59,6 @@ function readinessCopy(status: TrainingStatus, tone: ReadinessTone): { headline:
 
 export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiVerdict }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false)
-  const [daysToRace] = useState(() =>
-    nextRace
-      ? Math.ceil((new Date(nextRace.date + 'T00:00:00').getTime() - Date.now()) / 86_400_000)
-      : null
-  )
 
   if (!status && !plannedWorkout && !nextRace) return null
 
@@ -72,11 +84,12 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiV
 
   return (
     <div
-      className="rounded-[22px] border p-[18px] text-white"
+      className="rounded-[22px] border border-l-[3px] p-[18px] text-white"
       style={{
-        background: `linear-gradient(158deg, color-mix(in srgb, ${toneHex} 20%, ${HERO_BASE}), color-mix(in srgb, ${toneHex} 5%, ${HERO_BASE}))`,
-        borderColor: withAlpha(toneHex, 0.35),
-        boxShadow: `var(--shadow-hero), 0 8px 40px -8px ${withAlpha(toneHex, 0.28)}`,
+        background: `linear-gradient(158deg, color-mix(in srgb, ${toneHex} 14%, ${HERO_BASE}), color-mix(in srgb, ${toneHex} 4%, ${HERO_BASE}))`,
+        borderColor: withAlpha(toneHex, 0.26),
+        borderLeftColor: toneHex,
+        boxShadow: `var(--shadow-hero), 0 8px 40px -8px ${withAlpha(toneHex, 0.2)}`,
       }}
     >
       <div className="flex items-center justify-between gap-2">
@@ -90,12 +103,6 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiV
           />
           {tone ? s.eyebrowByTone[tone] : s.eyebrowByTone.go}
         </span>
-        {daysToRace !== null && daysToRace > 0 && (
-          <Pill variant="onDark" className="gap-1 px-2.5 py-0.5 font-mono text-micro font-bold">
-            <Flag size={10} />
-            {formatCountdown(daysToRace)}
-          </Pill>
-        )}
       </div>
 
       {verdict && (

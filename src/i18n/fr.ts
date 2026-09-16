@@ -325,8 +325,13 @@ export const fr = {
           body: (loadTrendLabel: string) => `La charge est en ${loadTrendLabel.toLowerCase()} et la forme est neutre - reste honnête sur les jours faciles.`,
         },
         hold: {
-          headline: 'Lève le pied aujourd’hui.',
-          body: () => `La fatigue est élevée - une journée facile ou du repos aiderait.`,
+          headline: 'La fatigue dépasse la forme.',
+          headlineFormDown: 'La forme est sous ta plage habituelle.',
+          body: (fatigue: number, fitness: number, form: string, weekDelta: string) =>
+            `Fatigue ${fatigue} vs fitness ${fitness} · forme ${form}, ${weekDelta} cette semaine.`,
+          weekDown: (points: number) => `en baisse de ${points}`,
+          weekUp: (points: number) => `en hausse de ${points}`,
+          weekFlat: 'stable',
         },
       },
       restDay: 'Jour de repos',

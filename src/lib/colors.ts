@@ -113,7 +113,7 @@ export function metricDeltaColor(delta: number, goodWhen: MetricDeltaPolarity, t
 export const READINESS_TONE_COLORS = {
   go:      c.roEmerald,
   caution: c.roAmber,
-  hold:    c.red500,
+  hold:    c.roOrange,
 } as const
 
 export const GOAL_PACE_COLORS = {

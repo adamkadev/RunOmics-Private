@@ -333,8 +333,13 @@ export const en = {
           body: (loadTrendLabel: string) => `Load is ${loadTrendLabel.toLowerCase()} and form is holding neutral - stay honest on easy days.`,
         },
         hold: {
-          headline: 'Dial it back today.',
-          body: () => `Fatigue is elevated - an easy day or rest would help.`,
+          headline: 'Fatigue is ahead of fitness.',
+          headlineFormDown: 'Form is below your usual range.',
+          body: (fatigue: number, fitness: number, form: string, weekDelta: string) =>
+            `Fatigue ${fatigue} vs fitness ${fitness} · form ${form}, ${weekDelta} this week.`,
+          weekDown: (points: number) => `down ${points}`,
+          weekUp: (points: number) => `up ${points}`,
+          weekFlat: 'flat',
         },
       },
       restDay: 'Rest day',

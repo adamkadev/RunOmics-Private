@@ -134,7 +134,6 @@ export function FormFitnessFatigueTrio({
   const points = load.points
   const form = Math.round(status.tsbNow)
   const formLabel = `${form >= 0 ? '+' : ''}${form}`
-  const formDelta = status.tsbNow - (points.length >= 8 ? (points[points.length - 8]?.tsb ?? status.tsbNow) : status.tsbNow)
 
   return (
     <div className="grid grid-cols-3 gap-[9px]">
@@ -144,7 +143,7 @@ export function FormFitnessFatigueTrio({
         valueColor={FORM}
         values={points.map((p) => p.tsb)}
         lineColor={FORM}
-        delta={formDelta}
+        delta={status.tsbDelta}
         deltaGoodWhen="up"
       />
       <Tile
