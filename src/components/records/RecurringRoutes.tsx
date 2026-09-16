@@ -65,16 +65,20 @@ export function RecurringRoutes({ routes }: Props) {
               <Outline path={route.outline} />
 
               <div className="min-w-0 flex-1">
-                <p className="font-display text-subhead font-bold text-foreground">
+                {/* Both lines truncate rather than wrap: a wrapped second line
+                    made the row taller than its neighbours and pushed the pace
+                    trail off centre, so no two rows lined up. */}
+                <p className="truncate font-display text-subhead font-bold text-foreground">
                   {formatDistance(route.distanceKm)} {t.units.km}
-                  <span className="ml-1.5 text-caption font-medium text-subtle">
+                  <span className="text-caption font-medium text-subtle">
+                    {' · '}
                     {t.records.recurring.runCount(route.runCount)}
                   </span>
                 </p>
 
                 <Link
                   href={`/activities/${route.bestActivityId}`}
-                  className="mt-0.5 block text-caption text-accent-text"
+                  className="mt-0.5 block truncate text-caption text-accent-text"
                 >
                   {t.records.recurring.best} {formatPace(route.bestPaceSecPerKm)} ·{' '}
                   {formatDate(route.bestDate, { style: 'bare' })}
@@ -86,6 +90,11 @@ export function RecurringRoutes({ routes }: Props) {
           </li>
         ))}
       </ul>
+
+      {/* One key for the trail column rather than one per row: bars of pace can
+          mean faster up or faster down, and a caption inside the first row
+          would make that row taller than the ones under it. */}
+      <p className="px-1 text-right text-micro text-subtle">{t.records.recurring.trailKey}</p>
     </section>
   )
 }

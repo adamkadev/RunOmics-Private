@@ -661,6 +661,8 @@ export const en = {
     weekStat: {
       km: 'km',
       runs: (n: number): string => (n === 1 ? 'run' : 'runs'),
+      easy: 'easy',
+      noSplit: '—',
     },
     easyShare: (pct: number) => `${pct}% easy`,
     weekGroupCompact: (runs: number, km: number) => `${runs} run${runs !== 1 ? 's' : ''} · ${km} km`,
@@ -1144,6 +1146,7 @@ export const en = {
       subtitle: 'Same ground, same hills - the one place raw pace compares across months.',
       runCount: (n: number) => `${n} times`,
       best: 'Best',
+      trailKey: 'taller = faster',
     },
     noRecordYet: 'No record yet',
     predictedFromFitness: (time: string) => `Predicted ${time}`,
@@ -1241,8 +1244,8 @@ export const en = {
     typeShort: {
       Sprint: 'Sprint',
       Anaerobic: 'Anaero',
-      VO2Max: 'VO2',
-      Threshold: 'Thresh',
+      VO2Max: 'VO₂',
+      Threshold: 'Thresh.',
       Tempo: 'Tempo',
       Base: 'Base',
       Race: 'Race',

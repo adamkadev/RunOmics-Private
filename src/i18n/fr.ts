@@ -653,6 +653,8 @@ export const fr = {
     weekStat: {
       km: 'km',
       runs: (n: number): string => (n === 1 ? 'sortie' : 'sorties'),
+      easy: 'facile',
+      noSplit: '—',
     },
     easyShare: (pct: number) => `${pct} % facile`,
     weekGroupCompact: (runs: number, km: number) => `${runs} sortie${runs > 1 ? 's' : ''} · ${km} km`,
@@ -1133,6 +1135,7 @@ export const fr = {
       subtitle: 'Même terrain, mêmes bosses - le seul cas où l’allure brute se compare d’un mois à l’autre.',
       runCount: (n: number) => `${n} fois`,
       best: 'Record',
+      trailKey: 'plus haut = plus rapide',
     },
     noRecordYet: 'Pas encore de record',
     predictedFromFitness: (time: string) => `Prédit à ${time}`,
@@ -1230,7 +1233,7 @@ export const fr = {
     typeShort: {
       Sprint: 'Sprint',
       Anaerobic: 'Anaéro',
-      VO2Max: 'VO2',
+      VO2Max: 'VO₂',
       Threshold: 'Seuil',
       Tempo: 'Tempo',
       Base: 'Base',

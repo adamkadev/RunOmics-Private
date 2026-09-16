@@ -76,6 +76,23 @@ function EasyHardSplit({ easyPct, hardPct }: { easyPct: number; hardPct: number 
   )
 }
 
+// The same three numbers on every row, current week or not: past weeks used to
+// give runs and km as a caption beside an unlabelled sparkline, so no two rows
+// in the column carried the same facts in the same places.
+function WeekSummary({ group }: { group: WeekGroup }) {
+  return (
+    <div className="flex shrink-0 items-end gap-4 text-right">
+      <WeekStat value={String(Math.round(group.totalKm))} label={t.activities.weekStat.km} />
+      <WeekStat value={String(group.items.length)} label={t.activities.weekStat.runs(group.items.length)} />
+      {group.easyPct !== null && group.hardPct !== null ? (
+        <EasyHardSplit easyPct={group.easyPct} hardPct={group.hardPct} />
+      ) : (
+        <WeekStat value={t.activities.weekStat.noSplit} label={t.activities.weekStat.easy} />
+      )}
+    </div>
+  )
+}
+
 // "3 base · 1 threshold · 1 tempo" - the seven real ActivityTypes, in descending
 // count. There is no "long" type, whatever the review's example said.
 function weekShape(items: ActivitySummary[]): string {
@@ -88,29 +105,7 @@ function weekShape(items: ActivitySummary[]): string {
     .join(' · ')
 }
 
-// One bar per weekday, height by distance - the shape of the week at a glance,
-// which is what a collapsed row could never say with two numbers.
-function WeekSparkbar({ items, weekStart }: { items: ActivitySummary[]; weekStart: string }) {
-  const byDay = new Array<number>(7).fill(0)
-  const start = new Date(weekStart + 'T00:00:00').getTime()
-  for (const a of items) {
-    const day = Math.round((new Date(a.date + 'T00:00:00').getTime() - start) / 86_400_000)
-    if (day >= 0 && day < 7) byDay[day] = (byDay[day] ?? 0) + a.distanceKm
-  }
-  const peak = Math.max(...byDay, 1)
 
-  return (
-    <div aria-hidden className="flex h-5 shrink-0 items-end gap-[3px]">
-      {byDay.map((km, day) => (
-        <span
-          key={day}
-          className={cn('w-[3px] rounded-full', km > 0 ? 'bg-accent' : 'bg-foreground/[0.12]')}
-          style={{ height: km > 0 ? `${Math.max(18, (km / peak) * 100)}%` : '18%' }}
-        />
-      ))}
-    </div>
-  )
-}
 
 function groupByWeek(items: ActivitySummary[]): WeekGroup[] {
   const weeks: { key: string; items: ActivitySummary[] }[] = []
@@ -219,6 +214,23 @@ export function ActivityListClient({
   const [loadingMore, setLoadingMore] = useState(false)
   const [isPending, setIsPending] = useState(false)
   const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(new Set())
+
+  const chipRailRef = useRef<HTMLDivElement>(null)
+  const [chipFade, setChipFade] = useState(false)
+  const updateChipFade = useCallback(() => {
+    const el = chipRailRef.current
+    if (!el) return
+    setChipFade(el.scrollLeft < el.scrollWidth - el.clientWidth - 4)
+  }, [])
+
+  useLayoutEffect(() => {
+    updateChipFade()
+    const el = chipRailRef.current
+    if (!el) return
+    const obs = new ResizeObserver(updateChipFade)
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [updateChipFade])
 
   // Derived from the unfiltered set the page handed us, so the header keeps
   // describing the archive rather than the current filter.
@@ -369,11 +381,22 @@ export function ActivityListClient({
         </div>
       </div>
 
-      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {/* The rail always overflows at 375 pt, and the last chip used to be cut
+          mid-word by the viewport with nothing saying it could scroll. The fade
+          only appears while there is more to the right, so a row that fits is
+          not dimmed for no reason. */}
+      <div
+        ref={chipRailRef}
+        onScroll={updateChipFade}
+        className={cn(
+          '-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+          chipFade && '[mask-image:linear-gradient(to_right,black_calc(100%-2rem),transparent)]',
+        )}
+      >
         <Pill
           as="button"
           variant={selectedType === null ? 'accent' : 'neutral'}
-          className="text-footnote font-semibold"
+          className="px-2.5 text-footnote font-semibold"
           onClick={() => setSelectedType(null)}
         >
           {t.activities.all}
@@ -385,10 +408,10 @@ export function ActivityListClient({
               key={type}
               as="button"
               variant={active ? 'accent' : 'neutral'}
-              className="text-footnote font-semibold"
+              className="px-2.5 text-footnote font-semibold"
               onClick={() => setSelectedType(active ? null : type)}
             >
-              {t.activityTypes[type]}
+              {t.plan.typeShort[type]}
             </Pill>
           )
         })}
@@ -432,13 +455,7 @@ export function ActivityListClient({
                       <div className="text-sm font-bold text-foreground">{g.label}</div>
                       <div className="truncate text-micro text-subtle">{g.shape}</div>
                     </div>
-                    <div className="flex shrink-0 items-end gap-4 text-right">
-                      <WeekStat value={String(Math.round(g.totalKm))} label={t.activities.weekStat.km} />
-                      <WeekStat value={String(g.items.length)} label={t.activities.weekStat.runs(g.items.length)} />
-                      {g.easyPct !== null && g.hardPct !== null && (
-                        <EasyHardSplit easyPct={g.easyPct} hardPct={g.hardPct} />
-                      )}
-                    </div>
+                    <WeekSummary group={g} />
                   </div>
                 ) : (
                   <button
@@ -455,11 +472,9 @@ export function ActivityListClient({
                   >
                     <div className="min-w-0">
                       <div className="text-sm font-semibold text-foreground">{g.label}</div>
-                      <div className="mt-0.5 truncate text-caption text-subtle">
-                        {t.activities.weekGroupCompact(g.items.length, Math.round(g.totalKm))}
-                      </div>
+                      <div className="mt-0.5 truncate text-caption text-subtle">{g.shape}</div>
                     </div>
-                    <WeekSparkbar items={g.items} weekStart={g.key} />
+                    <WeekSummary group={g} />
                     <ChevronDown size={16} className={cn('shrink-0 text-subtle transition-transform', isExpanded && 'rotate-180')} />
                   </button>
                 )}
