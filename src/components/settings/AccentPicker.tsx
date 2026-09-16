@@ -42,7 +42,15 @@ export function AccentPicker() {
         </span>
       </div>
 
-      <div className="mt-4 flex flex-wrap justify-center gap-3">
+      {/* One row, never wrapped: `flex-wrap` used to orphan the last swatch onto a
+          second row, centred under the other five. Five 44px targets and four 8px
+          gaps need 252px; the narrowest device we ship a splash for is 375px wide
+          (scripts/generate-splash.mjs), which leaves 301px inside main's px-4 and
+          the card's p-5 + 1px border. A sixth accent would need 304px and no
+          longer fit, so adding one means revisiting this row, not letting it wrap.
+          A grid is wrong here: its tracks fill the container, so on desktop (a
+          ~934px card) five circles would scatter across 180px columns. */}
+      <div className="mt-4 flex flex-nowrap items-center justify-center gap-2">
         {ACCENT_IDS.map((id) => {
           const { label } = t.settings.accent.options[id]
           const color = ACCENT_SWATCHES[id]
