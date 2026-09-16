@@ -74,6 +74,32 @@ describe('KmSplits', () => {
     expect(within(totalRow as HTMLElement).getByText('10:00')).toBeInTheDocument()
   })
 
+  it('colours the segment labels the way the plan structure bar does', () => {
+    // The two surfaces disagreed: blue meant warm-up here and recovery on the
+    // structure bar, and cool-down spent a violet nothing else in the app
+    // uses. The structure bar draws the two bookends as one neutral, so they
+    // match here, and the cool tone belongs to the segments it names.
+    render(
+      <KmSplits
+        activity={activityWith([
+          split('interval_warmup', 600, 2000, 120),
+          split('interval_active', 240, 1000, 175),
+          split('interval_recovery', 120, 300, 140),
+          split('interval_cooldown', 300, 1000, 118),
+        ])}
+      />,
+    )
+
+    const ink = (key: string) =>
+      screen.getByText(t.activity.splits.intervalTypes[key]!).className
+
+    expect(ink('interval_warmup')).toBe(ink('interval_cooldown'))
+    expect(ink('interval_recovery')).toContain('blue')
+    expect(ink('interval_warmup')).not.toContain('blue')
+    for (const key of ['interval_warmup', 'interval_active', 'interval_recovery', 'interval_cooldown'])
+      expect(ink(key), key).not.toContain('violet')
+  })
+
   it('renders nothing without splits', () => {
     const { container } = render(<KmSplits activity={activityWith(null)} />)
     expect(container.firstChild).toBeNull()

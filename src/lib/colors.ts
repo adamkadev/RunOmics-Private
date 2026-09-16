@@ -15,10 +15,15 @@ export const CHART_COLORS = {
   cadence:       c.sky500,
   efficiency:    c.violet500,
 
+  // The five running-form metrics are never drawn together - RunningFormChart
+  // renders one series at a time - so each derived metric shares its parent's
+  // family instead of buying a new one: vertical ratio is oscillation over
+  // stride, and stride length is the other half of cadence. That retires
+  // fuchsia and teal from the app, and both fills carry white text better.
   groundContact:       c.amber500,
   verticalOscillation: c.rose500,
-  verticalRatio:       c.fuchsia500,
-  strideLength:        c.teal500,
+  verticalRatio:       c.rose600,
+  strideLength:        c.sky600,
 
   easy:      c.emerald400,
   hard:      c.orange400,
@@ -32,17 +37,29 @@ export const CHART_COLORS = {
 export const TRAINING_STATUS_COLORS: Record<string, string> = {
   fresh:        c.violet500,
   productive:   c.emerald400,
-  maintaining:  c.yellow500,
+  // Holding fitness is good news, so it takes the deep step of `productive`'s
+  // green rather than the amber the rest of the app reserves for caution.
+  // `fresh` keeps violet: the only other rest-coloured tone in this map is
+  // `recovery`'s blue600, and any second blue lands within a few dE of it -
+  // that would trade one hue family for a distinction the legend needs.
+  maintaining:  c.emerald600,
   recovery:     c.blue600,
   unproductive: c.orange500,
   detraining:   c.zinc400,
   overreaching: c.red500,
 }
 
+/**
+ * `peak` was `violet500`, the same hex as `TRAINING_STATUS_COLORS.fresh`, and
+ * WeekPurposeBanner paints its headline from whichever of the two maps applies
+ * - so one violet meant "fresh" above a phase track that used it for "peak".
+ * Bronze keeps peak inside `taper`'s amber family a clear 25 dE away, and is
+ * the best-contrasting entry in the map on both grounds.
+ */
 export const TRAINING_PLAN_PHASE_COLORS: Record<string, string> = {
   base:    c.roEmerald,
   build:   c.blue500,
-  peak:    c.violet500,
+  peak:    c.amber700,
   taper:   c.amber500,
   raceDay: c.red500,
 }

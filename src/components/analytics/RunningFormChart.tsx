@@ -36,8 +36,8 @@ const ACTIVE_PILL_CLASS: Record<Metric, string> = {
   cadence: 'bg-sky-500 text-white',
   groundContact: 'bg-amber-500 text-white',
   verticalOscillation: 'bg-rose-500 text-white',
-  verticalRatio: 'bg-fuchsia-500 text-white',
-  strideLength: 'bg-teal-500 text-white',
+  verticalRatio: 'bg-rose-600 text-white',
+  strideLength: 'bg-sky-600 text-white',
 }
 
 const UNIT_BY_KEY: Record<string, string> = {

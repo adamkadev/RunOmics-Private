@@ -7,12 +7,21 @@ import { formatDuration, formatClock } from '@/lib/formatters'
 import { t } from '@/i18n'
 import type { Activity, ActivitySplit, SplitLap } from '@/domain/activity/types'
 
+/**
+ * The same four segment kinds are coloured by WORKOUT_SEGMENT_COLORS on the
+ * plan's structure bar, and the two disagreed: blue meant "warm-up" here and
+ * "recovery" there, two taps apart on one activity, while cool-down spent a
+ * violet nothing else in the app uses. The structure bar draws warm-up and
+ * cool-down as the same neutral, so they share one here too, and the cool tone
+ * goes back to the segments it names. Each row prints its own segment label,
+ * so the ink ranks the segments rather than identifying them.
+ */
 const TYPE_COLORS: Record<string, string> = {
-  interval_warmup:   'text-blue-500 dark:text-blue-400',
+  interval_warmup:   'text-subtle',
   interval_active:   'text-accent-text',
-  interval_rest:     'text-muted-foreground',
-  interval_recovery: 'text-muted-foreground',
-  interval_cooldown: 'text-violet-500 dark:text-violet-400',
+  interval_rest:     'text-blue-600 dark:text-blue-400',
+  interval_recovery: 'text-blue-600 dark:text-blue-400',
+  interval_cooldown: 'text-subtle',
   lap:               'text-accent-text',
 }
 

@@ -160,10 +160,24 @@ export interface DashboardData {
   longestStreak: number
 }
 
+/**
+ * One ramp, five hue families instead of seven: green for the aerobic base,
+ * then yellow, orange and red as the effort rises. Sprint and Anaerobic used
+ * to sit in fuchsia and violet, two families the app spent on nothing else -
+ * and `violet600` is the literal `--accent-text` of the endurance theme, so on
+ * that theme an Anaerobic dot was the accent.
+ *
+ * The red family now holds exactly the three types EFFORT_ZONE_BY_TYPE puts in
+ * Z5, at three depths that follow their intensity, and the lightest of them is
+ * the `--zone-5` token itself - so a VO2Max dot and a zone-5 segment agree
+ * rather than competing. Declared hardest first, so the object reads top to
+ * bottom as the ramp; Race is last because it is an event rather than an
+ * effort level, which is also why it keeps the gold end.
+ */
 export const ACTIVITY_TYPE_CONFIG: Record<ActivityType, { chartColor: string }> = {
-  Sprint:    { chartColor: HUE.fuchsia500 },
-  Anaerobic: { chartColor: HUE.violet600 },
-  VO2Max:    { chartColor: HUE.red500 },
+  Sprint:    { chartColor: HUE.red600 },
+  Anaerobic: { chartColor: HUE.red500 },
+  VO2Max:    { chartColor: HUE.roRed },
   Threshold: { chartColor: HUE.orange500 },
   Tempo:     { chartColor: HUE.yellow500 },
   Base:      { chartColor: HUE.green500 },

@@ -45,7 +45,6 @@ export const HUE = {
   green800: '#166534',
   green900: '#14532d',
 
-  teal500: '#14b8a6',
   lime500: '#84cc16',
 
   yellow500: '#eab308',
@@ -81,8 +80,6 @@ export const HUE = {
   pink400: '#f472b6',
   pink700: '#be185d',
   pink800: '#9d174d',
-
-  fuchsia500: '#d946ef',
 
   violet50:  '#f5f3ff',
   violet300: '#c4b5fd',
