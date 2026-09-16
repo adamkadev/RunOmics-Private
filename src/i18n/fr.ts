@@ -99,9 +99,11 @@ export const fr = {
       back: 'Activités',
       routes: (n: number) => `${n} parcours`,
       zones: 'Zones',
+      allAreas: 'Toutes les zones',
+      areasCount: (n: number) => `${n} zones`,
+      areasRemainder: (name: string, extra: number) => `${name} +${extra} zone${extra === 1 ? '' : 's'}`,
       allYears: 'Toutes les années',
       allTypes: 'Tous les types',
-      types: 'Types',
       fullscreen: 'Plein écran',
       exitFullscreen: 'Quitter le plein écran',
       worldView: 'Vue monde',
@@ -111,12 +113,17 @@ export const fr = {
       more: 'Fréquent',
       noRoutes: 'Aucun parcours pour ce filtre',
       mapUnavailable: 'Carte indisponible - aucune clé de carte configurée',
+      attribution: '© MapTiler · © OpenStreetMap contributors',
       territory: {
-        eyebrow: 'Camp de base · depuis toujours',
-        headline: (percent: number, radius: number) => `${percent}% de toutes tes sorties tiennent dans un rayon de ${radius} km.`,
-        aroundPlace: (place: string) => `Centré sur ${place}, là où tu cours le plus.`,
+        eyebrowFor: (place: string) => `${place} · depuis toujours`,
+        headline: (percent: number, radius: number, place: string) =>
+          `${percent}% de toutes tes sorties à ${place} tiennent dans un rayon de ${radius} km.`,
         routesStat: 'routes distinctes',
         radiusStat: 'rayon médian',
+        eyebrowWorld: 'Toutes les zones · depuis toujours',
+        headlineWorld: (areaCount: number, percent: number, place: string) =>
+          `Tes sorties couvrent ${areaCount} zone${areaCount === 1 ? '' : 's'} — ${percent}% à ${place}.`,
+        areasStat: 'zones',
       },
     },
     shoes: {

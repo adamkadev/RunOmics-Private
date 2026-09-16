@@ -107,9 +107,11 @@ export const en = {
       back: 'Activities',
       routes: (n: number) => `${n} routes`,
       zones: 'Zones',
+      allAreas: 'All areas',
+      areasCount: (n: number) => `${n} areas`,
+      areasRemainder: (name: string, extra: number) => `${name} +${extra} area${extra === 1 ? '' : 's'}`,
       allYears: 'All years',
       allTypes: 'All types',
-      types: 'Types',
       fullscreen: 'Fullscreen',
       exitFullscreen: 'Exit fullscreen',
       worldView: 'World view',
@@ -119,12 +121,17 @@ export const en = {
       more: 'Frequent',
       noRoutes: 'No routes for this filter',
       mapUnavailable: 'Map unavailable - no map token configured',
+      attribution: '© MapTiler · © OpenStreetMap contributors',
       territory: {
-        eyebrow: 'Home base · all-time',
-        headline: (percent: number, radius: number) => `${percent}% of all your running sits within a ${radius} km radius.`,
-        aroundPlace: (place: string) => `Centered on ${place}, where you run most.`,
+        eyebrowFor: (place: string) => `${place} · all-time`,
+        headline: (percent: number, radius: number, place: string) =>
+          `${percent}% of all your ${place} running sits within a ${radius} km radius.`,
         routesStat: 'distinct routes',
         radiusStat: 'median radius',
+        eyebrowWorld: 'All areas · all-time',
+        headlineWorld: (areaCount: number, percent: number, place: string) =>
+          `Your running spreads across ${areaCount} area${areaCount === 1 ? '' : 's'} — ${percent}% of it in ${place}.`,
+        areasStat: 'areas',
       },
     },
     shoes: {

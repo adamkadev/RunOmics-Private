@@ -4,6 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronDown, X } from "lucide-react";
 import type { RouteCluster } from "@/application/usecases/GetAllRoutes";
 import { t } from "@/i18n";
+import {
+  MAP_CHIP_ACTIVE,
+  MAP_CHIP_CARET_INK,
+  MAP_CHIP_COUNT_INK,
+  MAP_CHIP_GEOMETRY,
+  MAP_CHIP_STYLE,
+} from "./mapUtils";
 
 interface ClusterStat {
   routeCount: number;
@@ -16,9 +23,13 @@ interface Props {
   stats: ClusterStat[];
   selectedIdx: number;
   onSelect: (idx: number) => void;
+  /** World view has no single selected area - the chip states the whole
+   * picture instead of naming a place the map isn't showing. */
+  worldView?: boolean;
+  totalCount?: number;
 }
 
-export function ClusterPanel({ clusters, names, stats, selectedIdx, onSelect }: Props) {
+export function ClusterPanel({ clusters, names, stats, selectedIdx, onSelect, worldView = false, totalCount = 0 }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -39,19 +50,23 @@ export function ClusterPanel({ clusters, names, stats, selectedIdx, onSelect }: 
   }, [open]);
 
   return (
-    <div ref={ref} className="relative min-w-0">
+    <div ref={ref} className="relative min-w-0 shrink-0">
       <button
         onClick={() => setOpen((o) => !o)}
-        title={names[selectedIdx]}
-        className="glass-map-chip flex min-w-0 items-center gap-2 px-3 py-2.5 transition-colors hover:bg-muted"
+        title={worldView ? t.pages.map.allAreas : names[selectedIdx]}
+        className={[MAP_CHIP_GEOMETRY, "min-w-0 max-w-[170px] gap-2"].join(" ")}
+        style={{ ...MAP_CHIP_STYLE, ...MAP_CHIP_ACTIVE }}
       >
-        <span className="min-w-0 flex-1 truncate text-xs font-semibold text-accent-text">{names[selectedIdx]}</span>
-        <span className="min-w-0 shrink truncate text-caption tabular-nums text-subtle">
-          {stats[selectedIdx]?.routeCount ?? 0}
+        <span className="min-w-0 flex-1 truncate font-semibold" style={{ color: MAP_CHIP_ACTIVE.color }}>
+          {worldView ? t.pages.map.allAreas : names[selectedIdx]}
+        </span>
+        <span className="min-w-0 shrink truncate tabular-nums" style={{ fontSize: "12px", color: MAP_CHIP_COUNT_INK }}>
+          {worldView ? totalCount : (stats[selectedIdx]?.routeCount ?? 0)}
         </span>
         <ChevronDown
-          size={16}
-          className={["shrink-0 text-muted-foreground transition-transform", open ? "rotate-180" : ""].join(" ")}
+          size={10}
+          style={{ color: MAP_CHIP_CARET_INK }}
+          className={["shrink-0 transition-transform", open ? "rotate-180" : ""].join(" ")}
         />
       </button>
 

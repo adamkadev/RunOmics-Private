@@ -12,58 +12,67 @@ import {
 } from "./mapUtils";
 import { MAP_COLORS } from "@/lib/colors";
 import { loadMapLibre } from "@/lib/maplibre";
-
-const LABELED_BUBBLE_SIZE = 44;
+import { t } from "@/i18n";
 
 const REVEAL_STEPS = 16;
 const REVEAL_STEP_MS = 45;
 
-function mkClusterMarker(count: number, radius: number, name: string, label: string, isDark: boolean): HTMLDivElement {
+// Every cluster gets its name now, not just the ones whose bubble happens to
+// be wide enough to hold it inline - the small ones used to look unresolved
+// next to Metz's labelled circle. The name sits below the circle instead, so
+// it fits at any bubble size. One fixed treatment regardless of map theme:
+// world zoom always sits on dark tiles.
+function mkClusterMarker(count: number, radius: number, name: string, label: string): HTMLDivElement {
   const size = radius * 2;
-  const el = document.createElement("div");
-  el.setAttribute("role", "button");
-  el.setAttribute("tabindex", "0");
-  el.setAttribute("aria-label", label);
-  el.title = label;
-  Object.assign(el.style, {
+  const wrapper = document.createElement("div");
+  wrapper.setAttribute("role", "button");
+  wrapper.setAttribute("tabindex", "0");
+  wrapper.setAttribute("aria-label", label);
+  wrapper.title = label;
+  Object.assign(wrapper.style, {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: "3px",
+    cursor: "pointer",
+  });
+
+  const circle = document.createElement("div");
+  Object.assign(circle.style, {
     width: `${size}px`,
     height: `${size}px`,
     borderRadius: "50%",
-    backgroundColor: "color-mix(in srgb, var(--accent) 80%, transparent)",
-    border: `2px solid ${isDark ? MAP_COLORS.markerRingDark : MAP_COLORS.markerRingLight}`,
+    backgroundColor: "#3b82f6",
+    border: "2px solid rgba(255,255,255,.28)",
     boxShadow: MAP_COLORS.markerShadow,
     display: "flex",
-    flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
     color: MAP_COLORS.markerLabel,
     fontWeight: "700",
-    fontSize: size > LABELED_BUBBLE_SIZE ? "14px" : "12px",
-    cursor: "pointer",
-    textAlign: "center",
-    lineHeight: "1.1",
+    fontSize: size > 44 ? "14px" : "12px",
   });
+  circle.textContent = String(count);
+  wrapper.appendChild(circle);
 
-  const countEl = document.createElement("span");
-  countEl.textContent = String(count);
-  el.appendChild(countEl);
-
-  if (size > LABELED_BUBBLE_SIZE && name) {
+  if (name) {
     const nameEl = document.createElement("span");
     nameEl.textContent = name;
     Object.assign(nameEl.style, {
-      fontSize: "9px",
-      fontWeight: "500",
-      opacity: "0.85",
-      maxWidth: `${size - 8}px`,
+      fontSize: "11px",
+      fontWeight: "700",
+      lineHeight: "1.1",
+      color: "#e9eff7",
+      textShadow: "0 1px 3px #05090f",
+      maxWidth: `${Math.max(size + 24, 64)}px`,
       overflow: "hidden",
       textOverflow: "ellipsis",
       whiteSpace: "nowrap",
     });
-    el.appendChild(nameEl);
+    wrapper.appendChild(nameEl);
   }
 
-  return el;
+  return wrapper;
 }
 
 export function useMapRoutes(
@@ -124,12 +133,11 @@ export function useMapRoutes(
           [first.bounds.maxLon, first.bounds.maxLat],
         ],
         fitBoundsOptions: { padding: 60, maxZoom: 14 },
+        // The licence-required attribution now lives in its own row below the
+        // map (GlobalMapClient), not as an in-map control - drawing both
+        // printed "© MapTiler" twice.
         attributionControl: false,
       });
-      map.addControl(
-        new mgl.AttributionControl({ compact: true, customAttribution: "© MapTiler · OSM" }),
-        "bottom-left",
-      );
       mapRef.current = map;
       mglRef.current = mgl;
 
@@ -245,46 +253,100 @@ export function useMapRoutes(
       map.setLayoutProperty("heat-line", "visibility", worldView ? "none" : "visible");
     }
 
+    // The bubbles are the labels at world zoom - the basemap's own city names
+    // would just print underneath them and on top of each other. Bring the
+    // style's own labels back below world zoom.
+    const style = map.getStyle() as (StyleSpecification & { layers: { id: string; type: string }[] }) | undefined;
+    for (const layer of style?.layers ?? []) {
+      if (layer.type === "symbol" && map.getLayer(layer.id)) {
+        map.setLayoutProperty(layer.id, "visibility", worldView ? "none" : "visible");
+      }
+    }
+
     clearClusterMarkers();
+    if (!worldView) return;
 
-    if (worldView) {
-      const isDark = document.documentElement.classList.contains("dark");
-      const maxCount = Math.max(1, ...clusterCounts);
-      let bounds: InstanceType<typeof mgl.LngLatBounds> | null = null;
+    const maxCount = Math.max(1, ...clusterCounts);
 
-      const zOrder = clusters.map((_, i) => i).sort((a, b) => (clusterCounts[a] ?? 0) - (clusterCounts[b] ?? 0));
+    let bounds: InstanceType<typeof mgl.LngLatBounds> | null = null;
+    for (const c of clusters) {
+      const cb: [[number, number], [number, number]] = [
+        [c.bounds.minLon, c.bounds.minLat],
+        [c.bounds.maxLon, c.bounds.maxLat],
+      ];
+      bounds = bounds ? bounds.extend(cb) : new mgl.LngLatBounds(cb[0], cb[1]);
+    }
+    if (bounds) {
+      map.fitBounds(bounds, { padding: 40, maxZoom: 11, duration: 800 });
+    }
 
-      for (const i of zOrder) {
-        const c = clusters[i];
-        const count = clusterCounts[i] ?? 0;
-        if (!c || count <= 0) continue;
+    // Two bubbles that would overlap on screen merge into one instead of
+    // stacking - the merge is recomputed on every pan/zoom because whether
+    // two clusters' bubbles overlap depends on the current projection, not a
+    // fixed geographic distance. The collision check pads each circle's
+    // radius by the name label's footprint (it hangs below the circle, wider
+    // than the circle itself), so a label can't visually clash with a
+    // neighbouring bubble even when the bare circles wouldn't touch.
+    const LABEL_BUFFER = 20;
+    function renderMarkers() {
+      if (!map) return;
+      clearClusterMarkers();
 
-        const radius = clusterBubbleRadius(count, maxCount);
-        const name = clusterNames[i] ?? "";
-        const label = `${name} · ${count}`.trim();
-        const el = mkClusterMarker(count, radius, name, label, isDark);
-        el.addEventListener("click", () => onSelectClusterRef.current(i));
+      type Group = { indices: number[]; count: number; center: [number, number]; anchorName: string };
+      const candidates: Group[] = clusters
+        .map((c, i) => ({ c, i, count: clusterCounts[i] ?? 0 }))
+        .filter((g) => g.count > 0)
+        .sort((a, b) => b.count - a.count)
+        .map(({ c, i, count }) => ({ indices: [i], count, center: c.center, anchorName: clusterNames[i] ?? "" }));
+
+      const placed: (Group & { radius: number; point: { x: number; y: number } })[] = [];
+      for (const group of candidates) {
+        const point = map.project(group.center);
+        const radius = clusterBubbleRadius(group.count, maxCount);
+        const overlap = placed.find((p) => {
+          const dx = p.point.x - point.x;
+          const dy = p.point.y - point.y;
+          return Math.hypot(dx, dy) < p.radius + LABEL_BUFFER + radius + LABEL_BUFFER;
+        });
+        if (overlap) {
+          overlap.count += group.count;
+          overlap.indices.push(...group.indices);
+        } else {
+          placed.push({ ...group, radius, point });
+        }
+      }
+
+      for (const group of placed) {
+        const radius = clusterBubbleRadius(group.count, maxCount);
+        const extra = group.indices.length - 1;
+        const name = extra > 0 ? t.pages.map.areasRemainder(group.anchorName, extra) : group.anchorName;
+        const label = `${name} · ${group.count}`.trim();
+        const el = mkClusterMarker(group.count, radius, name, label);
+        const primaryIdx = group.indices[0]!;
+        el.addEventListener("click", () => onSelectClusterRef.current(primaryIdx));
         el.addEventListener("keydown", (e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            onSelectClusterRef.current(i);
+            onSelectClusterRef.current(primaryIdx);
           }
         });
 
-        const marker = new mgl.Marker({ element: el }).setLngLat(c.center).addTo(map);
+        // The label now hangs below the circle, so the wrapper's own centre
+        // is no longer the circle's centre - anchor the marker to the top of
+        // the wrapper and pull it up by the circle's radius so the circle
+        // itself, not the label-extended box, sits over the cluster's point.
+        const marker = new mgl!.Marker({ element: el, anchor: "top", offset: [0, -radius] })
+          .setLngLat(group.center)
+          .addTo(map);
         clusterMarkersRef.current.push(marker);
-
-        const cb: [[number, number], [number, number]] = [
-          [c.bounds.minLon, c.bounds.minLat],
-          [c.bounds.maxLon, c.bounds.maxLat],
-        ];
-        bounds = bounds ? bounds.extend(cb) : new mgl.LngLatBounds(cb[0], cb[1]);
-      }
-
-      if (bounds) {
-        map.fitBounds(bounds, { padding: 70, maxZoom: 11, duration: 800 });
       }
     }
+
+    renderMarkers();
+    map.on("moveend", renderMarkers);
+    return () => {
+      map.off("moveend", renderMarkers);
+    };
     // clearClusterMarkers is stable for the life of the hook and is called
     // here as teardown, not as an input.
     // eslint-disable-next-line react-hooks/exhaustive-deps

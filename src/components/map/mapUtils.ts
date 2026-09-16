@@ -1,7 +1,9 @@
 import type { ActivityType } from "@/domain/activity/types";
 import type { RouteMeta, RouteCluster } from "@/application/usecases/GetAllRoutes";
+import type { MapTerritory } from "@/application/usecases/GetMapTerritory";
 import { HEAT_ROUTE_COLORS } from "@/lib/colors";
 import { routeCellKey } from "@/lib/routeMatch";
+import { distanceKm, median, round } from "@/lib/math";
 
 export interface HeatFilters {
   year: string | null;
@@ -14,6 +16,96 @@ export function matchesFilters(meta: RouteMeta | undefined, filters: HeatFilters
   if (filters.type && meta.type !== filters.type) return false;
   return true;
 }
+
+// The territory card follows whichever area is on the map, not a fixed
+// all-time home base - so it recomputes from the same filtered route set the
+// heatmap itself is drawing, scoped to the one cluster in view.
+export function computeAreaTerritory(
+  cluster: RouteCluster,
+  routeMeta: RouteMeta[],
+  routes: [number, number][][],
+  filters: HeatFilters
+): MapTerritory | null {
+  const clusterIndices = cluster.routeIndices.filter((i) => matchesFilters(routeMeta[i], filters));
+  if (clusterIndices.length === 0) return null;
+
+  const clusterKm = clusterIndices.reduce((sum, i) => sum + (routeMeta[i]?.distanceKm ?? 0), 0);
+  const totalKm = routeMeta.reduce((sum, m) => sum + (matchesFilters(m, filters) ? m.distanceKm : 0), 0);
+  if (totalKm <= 0) return null;
+
+  const radii = clusterIndices
+    .map((i) => routes[i])
+    .filter((coords): coords is [number, number][] => !!coords && coords.length > 0)
+    .map((coords) => {
+      const lons = coords.map((c) => c[0]);
+      const lats = coords.map((c) => c[1]);
+      const cLon = (Math.min(...lons) + Math.max(...lons)) / 2;
+      const cLat = (Math.min(...lats) + Math.max(...lats)) / 2;
+      return distanceKm(cLon, cLat, cluster.center[0], cluster.center[1]);
+    });
+  if (!radii.length) return null;
+
+  return {
+    center: cluster.center,
+    percentVolume: round((clusterKm / totalKm) * 100, 0),
+    medianRadiusKm: round(median(radii), 1),
+    routeCount: clusterIndices.length,
+  };
+}
+
+export interface WorldTerritory {
+  routeCount: number;
+  areaCount: number;
+  topAreaName: string;
+  topSharePercent: number;
+}
+
+// At world zoom there is no single selected area, so the card states a fact
+// true of the whole filtered set instead - the top area's share stands in for
+// "median radius", which has no meaning once the map isn't centred on a place.
+export function computeWorldTerritory(
+  clusters: RouteCluster[],
+  names: string[],
+  routeMeta: RouteMeta[],
+  filters: HeatFilters
+): WorldTerritory | null {
+  const perCluster = clusters.map((c, i) => ({
+    name: names[i] ?? coordLabel(c),
+    count: c.routeIndices.filter((idx) => matchesFilters(routeMeta[idx], filters)).length,
+  }));
+  const routeCount = perCluster.reduce((sum, c) => sum + c.count, 0);
+  if (routeCount === 0) return null;
+
+  const areaCount = perCluster.filter((c) => c.count > 0).length;
+  const top = perCluster.reduce((a, b) => (b.count > a.count ? b : a));
+
+  return {
+    routeCount,
+    areaCount,
+    topAreaName: top.name,
+    topSharePercent: round((top.count / routeCount) * 100, 0),
+  };
+}
+
+// The area, type and year chips are one component in three states: the area
+// is always "active" (some area is always selected), type/year start neutral
+// and switch to the same active treatment once the athlete picks a value -
+// never a lighter, bare-text style for the filter that's actually doing
+// something.
+export const MAP_CHIP_GEOMETRY = "flex h-[38px] items-center rounded-[12px] transition-colors";
+export const MAP_CHIP_STYLE = { padding: "0 11px", fontSize: "13.5px" } as const;
+export const MAP_CHIP_NEUTRAL = {
+  background: "rgba(148,178,220,.07)",
+  border: "1px solid rgba(148,178,220,.14)",
+  color: "#b9c4cf",
+} as const;
+export const MAP_CHIP_ACTIVE = {
+  background: "rgba(90,151,245,.16)",
+  border: "1px solid rgba(90,151,245,.32)",
+  color: "#9cc4ff",
+} as const;
+export const MAP_CHIP_COUNT_INK = "#7d8896";
+export const MAP_CHIP_CARET_INK = "#7d8896";
 
 export function coordLabel(c: RouteCluster): string {
   const lat = `${Math.abs(c.center[1]).toFixed(1)}${c.center[1] >= 0 ? "°N" : "°S"}`;
