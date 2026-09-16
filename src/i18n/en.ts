@@ -1082,6 +1082,7 @@ export const en = {
     } as Record<string, string>,
     mostRecent: 'most recent',
     raceTag: 'race',
+    trainingTag: 'training run',
     notYetRun: 'Not yet run',
     segmented: {
       prs: 'Records',

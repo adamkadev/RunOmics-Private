@@ -11,8 +11,9 @@ import { cn } from '@/lib/utils'
 import { STATUS } from '@/lib/statusColors'
 import { t } from '@/i18n'
 
+// A 2-digit year with no day reads as a day: "Jun 25" looks like 25 June.
 function shortDate(iso: string): string {
-  return new Date(iso + 'T00:00:00').toLocaleDateString(t.locale, { month: 'short', year: '2-digit' })
+  return new Date(iso + 'T00:00:00').toLocaleDateString(t.locale, { month: 'short', year: 'numeric' })
 }
 
 function medalDotClass(i: number): string | null {
@@ -88,11 +89,18 @@ export function RecordsLeaderboard({ records, topEfforts, mostRecentKey = null, 
                   <p className="mt-0.5 truncate text-caption text-subtle">
                     {r.date && <span>{shortDate(r.date)}</span>}
                     {r.key === mostRecentKey && <span> · {t.records.mostRecent}</span>}
-                    {r.official && <span> · {t.records.raceTag}</span>}
+                    <span> · {r.official ? t.records.raceTag : t.records.trainingTag}</span>
                   </p>
                 </div>
-                <span className="shrink-0 font-display text-sm font-bold tabular-nums text-foreground">
-                  {mainStat}
+                <span className="shrink-0 text-right">
+                  <span className="block font-display text-sm font-bold tabular-nums text-foreground">
+                    {mainStat}
+                  </span>
+                  {prediction && (
+                    <span className="block text-caption tabular-nums text-subtle">
+                      {t.records.predictedFromFitness(formatDuration(prediction.predictedSeconds))}
+                    </span>
+                  )}
                 </span>
                 <ChevronDown size={14} className={cn('shrink-0 text-subtle transition-transform', isExpanded && 'rotate-180')} />
               </button>

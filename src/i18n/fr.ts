@@ -1074,6 +1074,7 @@ export const fr = {
     } as Record<string, string>,
     mostRecent: 'plus récent',
     raceTag: 'course',
+    trainingTag: 'sortie d’entraînement',
     notYetRun: 'Pas encore couru',
     segmented: {
       prs: 'Records',

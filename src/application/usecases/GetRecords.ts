@@ -2,7 +2,7 @@ import type { Activity } from '@/domain/activity/types'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getPbYears } from '@/infrastructure/repositories/JsonPbRepository'
 import { getOfficialRaceResults } from '@/infrastructure/repositories/JsonRaceResultRepository'
-import { creditedEffortSeconds, officialResultsByActivityId, type OfficialRaceResult } from '@/domain/activity/raceResult'
+import { creditedEffortSeconds, matchesEffortDistance, officialResultsByActivityId, type OfficialRaceResult } from '@/domain/activity/raceResult'
 import { EFFORTS, DISTANCE_KEY } from '@/domain/activity/effort'
 import { t } from '@/i18n'
 
@@ -61,6 +61,7 @@ export async function getRecords(): Promise<RecordEntry[]> {
   const pbYears = getPbYears()
   const activityMap = new Map(activities.map((a) => [a.id, a]))
   const computed = computeBestEfforts(activities)
+  const officialByActivityId = officialResultsByActivityId(getOfficialRaceResults())
 
   const officialPbs = new Map<string, { seconds: number; activityId: string | null }>()
   for (const year of pbYears) {
@@ -92,6 +93,10 @@ export async function getRecords(): Promise<RecordEntry[]> {
     }
 
     const best = computed.get(key) ?? null
+    // creditedEffortSeconds already credits a chip time into the computed set, so
+    // the winning effort can itself be official. Hardcoding false here labelled
+    // real races as training runs.
+    const bestResult = best?.activityId ? officialByActivityId.get(best.activityId) : undefined
     return {
       key,
       label,
@@ -99,7 +104,7 @@ export async function getRecords(): Promise<RecordEntry[]> {
       paceSecPerKm: best ? Math.round(best.seconds / km) : null,
       activityId: best?.activityId ?? null,
       date: best?.date ?? null,
-      official: false,
+      official: !!bestResult && matchesEffortDistance(bestResult, km),
       eventName: best?.description || undefined,
     }
   })
