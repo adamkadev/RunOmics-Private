@@ -1,4 +1,5 @@
 import type { AerobicDecoupling as Decoupling } from '@/domain/activity/decoupling'
+import { ChartCardHead } from '@/components/ui/ChartCard'
 import { STATUS } from '@/lib/statusColors'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -21,14 +22,20 @@ export function AerobicDecoupling({ decoupling }: Props) {
 
   return (
     <div className="rounded-xl border border-foreground/[0.08] bg-foreground/[0.04] p-3.5">
-      <div className="flex items-baseline justify-between gap-3">
-        <p className="text-xs font-medium text-muted-foreground">{t.activity.decoupling.title}</p>
-        <p className={cn('text-base font-extrabold tabular-nums', status.text)}>
-          {percent > 0 ? '+' : ''}{percent.toFixed(1)}% · {t.activity.decoupling[drift]}
-        </p>
-      </div>
-      <p className="mt-1.5 text-caption text-subtle">{reading(percent, drift)}</p>
-      <p className="mt-1 text-micro text-subtle-2">{t.activity.decoupling.footnote}</p>
+      {/* The card used to explain itself twice: a line on what happened, then a
+          line on how the ratio is computed. The method is reference material,
+          so it goes behind the same disclosure the chart cards use for theirs. */}
+      <ChartCardHead
+        className="mb-1.5"
+        title={t.activity.decoupling.title}
+        footnote={t.activity.decoupling.footnote}
+        controls={
+          <p className={cn('text-base font-extrabold tabular-nums', status.text)}>
+            {percent > 0 ? '+' : ''}{percent.toFixed(1)}% · {t.activity.decoupling[drift]}
+          </p>
+        }
+      />
+      <p className="text-caption text-subtle">{reading(percent, drift)}</p>
     </div>
   )
 }

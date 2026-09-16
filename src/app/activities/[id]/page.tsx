@@ -16,6 +16,7 @@ import { ActivityAchievements } from '@/components/activity/ActivityAchievements
 import { OfficialResult } from '@/components/activity/OfficialResult'
 import { SimilarRuns } from '@/components/activity/SimilarRuns'
 import { getSimilarRuns } from '@/application/usecases/GetSimilarRuns'
+import { getDynamicsBaseline } from '@/application/usecases/GetDynamicsBaseline'
 import { getRunVerdictInsight } from '@/application/usecases/GetRunVerdictInsight'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
 import { t } from '@/i18n'
@@ -118,6 +119,7 @@ export default async function ActivityDetailPage({
         qualifiedEfforts={qualifiedEfforts}
         aiVerdict={aiVerdict}
         shoe={shoe}
+        dynamicsBaseline={getDynamicsBaseline(activity)}
       />
 
       <ActivityNav prev={prevActivity} next={nextActivity} />

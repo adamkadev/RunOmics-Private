@@ -844,6 +844,8 @@ export const en = {
       },
     },
     dynamics: {
+      vsBaseline: (delta: string, weeks: number) => `${delta} vs ${weeks}-wk`,
+      atBaseline: (weeks: number) => `≈ ${weeks}-wk median`,
       title: 'Running Dynamics',
       cadence: 'Cadence',
       strideLength: 'Stride Length',

@@ -836,6 +836,8 @@ export const fr = {
       },
     },
     dynamics: {
+      vsBaseline: (delta: string, weeks: number) => `${delta} vs ${weeks} sem.`,
+      atBaseline: (weeks: number) => `≈ médiane ${weeks} sem.`,
       title: 'Dynamique de course',
       cadence: 'Cadence',
       strideLength: 'Longueur de foulée',

@@ -5,6 +5,7 @@ import { SectionDivider } from '@/components/ui/SectionLabel'
 import type { Activity } from '@/domain/activity/types'
 import { aerobicDecoupling } from '@/domain/activity/decoupling'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
+import type { DynamicsBaseline } from '@/application/usecases/GetDynamicsBaseline'
 import type { HrBounds } from '@/domain/training/trimp'
 import type { ShoeTag } from '@/domain/shoe/types'
 import { ActivityMapClient } from './ActivityMapClient'
@@ -33,6 +34,7 @@ interface Props {
   qualifiedEfforts?: QualifiedEffort[]
   aiVerdict: Insight | null
   shoe: ShoeTag | null
+  dynamicsBaseline: DynamicsBaseline | null
 }
 
 type TabId = 'overview' | 'splits' | 'charts' | 'dynamics'
@@ -71,7 +73,7 @@ function buildPrimaryStats(activity: Activity): Metric[] {
   return stats
 }
 
-export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, shoe }: Props) {
+export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, shoe, dynamicsBaseline }: Props) {
   const [tab, setTab] = useState<TabId>('overview')
   const stats = buildPrimaryStats(activity)
   const hasSecondaryCharts = !!(activity.elevationProfile || activity.paceSamples || activity.cadenceSamples)
@@ -207,7 +209,7 @@ export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, sh
         </>
       )}
 
-      {tab === 'dynamics' && <RunningDynamics activity={activity} />}
+      {tab === 'dynamics' && <RunningDynamics activity={activity} baseline={dynamicsBaseline} />}
     </>
   )
 }
