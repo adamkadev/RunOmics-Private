@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Timer, ChevronRight } from 'lucide-react'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { formatDuration, formatClock } from '@/lib/formatters'
+import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { Activity, ActivitySplit, SplitLap } from '@/domain/activity/types'
 import { kmSplitsFromSamples, type KmSplit } from '@/domain/activity/kmSplits'
@@ -40,8 +41,8 @@ function distStr(distanceM: number): string {
   return (distanceM / 1000).toFixed(2)
 }
 
-const PER_KM_ROW_NO_HR = 'grid w-full items-center gap-x-1.5 grid-cols-[3.5rem_1fr_3rem]'
-const PER_KM_ROW_HR = 'grid w-full items-center gap-x-1.5 grid-cols-[3.5rem_1fr_3rem_2.5rem]'
+const PER_KM_ROW_NO_HR = 'grid w-full items-center gap-x-1.5 grid-cols-[1fr_3.5rem]'
+const PER_KM_ROW_HR = 'grid w-full items-center gap-x-1.5 grid-cols-[1fr_3.5rem_3rem]'
 
 interface Props {
   activity: Activity
@@ -52,6 +53,7 @@ function PerKmSplits({ activity, splits }: { activity: Activity; splits: KmSplit
   const rowCls = showHr ? PER_KM_ROW_HR : PER_KM_ROW_NO_HR
   const totalDistanceKm = splits.reduce((s, sp) => s + sp.distanceKm, 0)
   const totalDurationSec = splits.reduce((s, sp) => s + sp.durationSec, 0)
+  const fastest = Math.min(...splits.map((s) => s.paceSecPerKm))
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -64,7 +66,6 @@ function PerKmSplits({ activity, splits }: { activity: Activity; splits: KmSplit
       <div className="w-full space-y-0.5">
         <div className={`${rowCls} pb-1.5 text-micro font-semibold uppercase tracking-wide text-subtle`}>
           <span className="truncate">{t.activity.splits.cols.km}</span>
-          <span className="truncate">{t.activity.splits.cols.duration}</span>
           <span className="truncate">{t.activity.splits.cols.pace}</span>
           {showHr && <span className="truncate">{t.activity.splits.cols.hr}</span>}
         </div>
@@ -76,8 +77,14 @@ function PerKmSplits({ activity, splits }: { activity: Activity; splits: KmSplit
                 ? t.activity.splits.partialKm(split.distanceKm.toFixed(2))
                 : split.km}
             </span>
-            <span className="text-xs tabular-nums">{formatDuration(split.durationSec)}</span>
-            <span className="text-xs tabular-nums">{formatClock(split.paceSecPerKm)}</span>
+            <span
+              className={cn(
+                'text-xs tabular-nums',
+                split.paceSecPerKm === fastest && 'font-semibold text-accent-text',
+              )}
+            >
+              {formatClock(split.paceSecPerKm)}
+            </span>
             {showHr && <span className="text-xs tabular-nums">{split.avgHr ?? '-'}</span>}
           </div>
         ))}
@@ -86,9 +93,8 @@ function PerKmSplits({ activity, splits }: { activity: Activity; splits: KmSplit
           <span className="truncate text-xs font-semibold text-foreground/70">
             {t.activity.splits.cols.total}
           </span>
-          <span className="text-xs font-semibold tabular-nums">{formatDuration(totalDurationSec)}</span>
           <span className="text-xs font-semibold tabular-nums">
-            {formatClock(Math.round(totalDurationSec / totalDistanceKm))}
+            {formatClock(activity.paceSecPerKm ?? Math.round(totalDurationSec / totalDistanceKm))}
           </span>
           {showHr && (
             <span className="text-xs font-semibold tabular-nums">{activity.avgHeartRate ?? '-'}</span>
@@ -108,6 +114,7 @@ export function KmSplits({ activity }: Props) {
   if (splits.length <= 1) {
     const perKm = kmSplitsFromSamples({
       distanceKm: activity.distanceKm,
+      durationSec: activity.durationSeconds,
       paceSamples: activity.paceSamples,
       hrSamples: activity.hrSamples,
       avgPaceSecPerKm: activity.paceSecPerKm,

@@ -8,6 +8,7 @@ export interface KmSplit {
 
 export interface KmSplitInput {
   distanceKm: number
+  durationSec?: number | null
   paceSamples: number[] | null
   hrSamples: number[] | null
   avgPaceSecPerKm: number | null
@@ -35,6 +36,7 @@ function meanHrOver(hrSamples: number[] | null, fromFraction: number, toFraction
 
 export function kmSplitsFromSamples({
   distanceKm,
+  durationSec,
   paceSamples,
   hrSamples,
   avgPaceSecPerKm,
@@ -66,8 +68,11 @@ export function kmSplitsFromSamples({
     }
   }
 
+  const derivedSec = buckets.reduce((sum, bucket) => sum + (bucket?.durationSec ?? 0), 0)
+  const calibration = durationSec && derivedSec > 0 ? durationSec / derivedSec : 1
+
   return buckets
-    .map((bucket, index) => ({ index, ...bucket }))
+    .map((bucket, index) => ({ index, ...bucket, durationSec: bucket.durationSec * calibration }))
     .filter((bucket) => bucket.distanceKm >= MIN_PARTIAL_KM && bucket.durationSec > 0)
     .map(({ index, distanceKm: km, durationSec }) => ({
       km: index + 1,

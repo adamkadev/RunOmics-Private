@@ -93,3 +93,31 @@ describe('kmSplitsFromSamples', () => {
     expect(kmSplitsFromSamples({ distanceKm: 0, paceSamples: evenSamples(10, 300), hrSamples: null, avgPaceSecPerKm: 300 })).toEqual([])
   })
 })
+
+describe('kmSplitsFromSamples calibration', () => {
+  it('scales the derived splits so they add up to the run that was actually run', () => {
+    const samples = Array.from({ length: 101 }, () => 300)
+    const splits = kmSplitsFromSamples({
+      distanceKm: 5,
+      durationSec: 1550,
+      paceSamples: samples,
+      hrSamples: null,
+      avgPaceSecPerKm: 310,
+    })
+
+    const total = splits.reduce((sum, s) => sum + s.durationSec, 0)
+    expect(total).toBe(1550)
+    expect(splits.every((s) => s.paceSecPerKm === 310)).toBe(true)
+  })
+
+  it('leaves the samples alone when the run has no duration to calibrate against', () => {
+    const splits = kmSplitsFromSamples({
+      distanceKm: 5,
+      paceSamples: Array.from({ length: 101 }, () => 300),
+      hrSamples: null,
+      avgPaceSecPerKm: 300,
+    })
+
+    expect(splits.reduce((sum, s) => sum + s.durationSec, 0)).toBe(1500)
+  })
+})

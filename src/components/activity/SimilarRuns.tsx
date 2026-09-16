@@ -7,6 +7,7 @@ import type { SimilarRun, SimilarRunsData } from '@/application/usecases/GetSimi
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
+import { lineInterpolation } from '@/domain/timeWindow'
 import { CHART_COLORS } from '@/lib/colors'
 import { formatClock, formatDate, formatDuration, formatPace } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
@@ -151,7 +152,7 @@ export function SimilarRuns({ data }: { data: SimilarRunsData }) {
             />
             <Tooltip content={<CustomTooltip />} cursor={{ stroke: CHART_COLORS.tooltipCursor }} />
             <Line
-              type="monotone"
+              type={lineInterpolation(chartData.length)}
               dataKey="pace"
               stroke={CHART_COLORS.pace}
               strokeWidth={2.5}
