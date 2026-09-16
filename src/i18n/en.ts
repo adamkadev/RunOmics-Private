@@ -1022,7 +1022,6 @@ export const en = {
     },
     shoes: {
       pairs: (n: number) => `${n} pair${n !== 1 ? 's' : ''} active`,
-      allGood: 'All good',
       needsReplacing: (n: number) => n === 1 ? '1 pair needs replacing' : `${n} pairs need replacing`,
     },
     milestones: {

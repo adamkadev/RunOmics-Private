@@ -9,6 +9,9 @@ export function ProfileShoes({ shoes }: { shoes: ShoeStats[] }) {
   if (shoes.length === 0) return null
 
   const alertCount = shoes.filter((s) => !s.retired && wearStatus(s.wearPercent) !== 'ok').length
+  // Most-worn first: GetProfileData hands these over sorted by totalKm descending,
+  // so the pair closest to its limit is the first number read.
+  const mileage = shoes.map((s) => t.shoes.kmOf(Math.round(s.totalKm), s.maxKm)).join(' · ')
 
   return (
     <Link
@@ -20,8 +23,10 @@ export function ProfileShoes({ shoes }: { shoes: ShoeStats[] }) {
       </span>
       <span className="min-w-0 flex-1">
         <span className="block text-footnote font-semibold text-foreground">{t.profile.shoes.pairs(shoes.length)}</span>
-        <span className={`mt-0.5 block text-caption ${alertCount > 0 ? STATUS.warning.text : 'text-subtle'}`}>
-          {alertCount > 0 ? t.profile.shoes.needsReplacing(alertCount) : t.profile.shoes.allGood}
+        <span
+          className={`mt-0.5 block text-caption leading-snug ${alertCount > 0 ? STATUS.warning.text : 'text-subtle'}`}
+        >
+          {alertCount > 0 ? t.profile.shoes.needsReplacing(alertCount) : mileage}
         </span>
       </span>
       <ChevronRight size={16} className="shrink-0 text-subtle-2" />

@@ -1014,7 +1014,6 @@ export const fr = {
     },
     shoes: {
       pairs: (n: number) => `${n} paire${n !== 1 ? 's' : ''} active${n !== 1 ? 's' : ''}`,
-      allGood: 'Tout va bien',
       needsReplacing: (n: number) => n === 1 ? '1 paire à remplacer' : `${n} paires à remplacer`,
     },
     milestones: {
