@@ -842,9 +842,13 @@ export const fr = {
       routeMap: 'Carte du parcours de l’activité',
     },
     splits: {
+      perKmTitle: 'Splits',
+      continuous: 'Course continue — aucune structure d’intervalles enregistrée.',
+      partialKm: (km: string) => `${km} final`,
       title: 'Intervalles',
       lapTitle: 'Tours',
       cols: {
+        km: 'Km',
         step: '#',
         type: 'Type',
         duration: 'Dur.',

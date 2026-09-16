@@ -6,6 +6,7 @@ import { GlassSurface } from '@/components/ui/GlassSurface'
 import { formatDuration, formatClock } from '@/lib/formatters'
 import { t } from '@/i18n'
 import type { Activity, ActivitySplit, SplitLap } from '@/domain/activity/types'
+import { kmSplitsFromSamples, type KmSplit } from '@/domain/activity/kmSplits'
 
 /**
  * The same four segment kinds are coloured by WORKOUT_SEGMENT_COLORS on the
@@ -39,8 +40,63 @@ function distStr(distanceM: number): string {
   return (distanceM / 1000).toFixed(2)
 }
 
+const PER_KM_ROW_NO_HR = 'grid w-full items-center gap-x-1.5 grid-cols-[3.5rem_1fr_3rem]'
+const PER_KM_ROW_HR = 'grid w-full items-center gap-x-1.5 grid-cols-[3.5rem_1fr_3rem_2.5rem]'
+
 interface Props {
   activity: Activity
+}
+
+function PerKmSplits({ activity, splits }: { activity: Activity; splits: KmSplit[] }) {
+  const showHr = splits.some((s) => s.avgHr !== null)
+  const rowCls = showHr ? PER_KM_ROW_HR : PER_KM_ROW_NO_HR
+  const totalDistanceKm = splits.reduce((s, sp) => s + sp.distanceKm, 0)
+  const totalDurationSec = splits.reduce((s, sp) => s + sp.durationSec, 0)
+
+  return (
+    <GlassSurface variant="card" className="p-5">
+      <div className="mb-1 flex items-center gap-2">
+        <Timer size={16} className="text-accent-text" />
+        <h3 className="text-sm font-semibold text-foreground/80">{t.activity.splits.perKmTitle}</h3>
+      </div>
+      <p className="mb-4 text-caption text-subtle">{t.activity.splits.continuous}</p>
+
+      <div className="w-full space-y-0.5">
+        <div className={`${rowCls} pb-1.5 text-micro font-semibold uppercase tracking-wide text-subtle`}>
+          <span className="truncate">{t.activity.splits.cols.km}</span>
+          <span className="truncate">{t.activity.splits.cols.duration}</span>
+          <span className="truncate">{t.activity.splits.cols.pace}</span>
+          {showHr && <span className="truncate">{t.activity.splits.cols.hr}</span>}
+        </div>
+
+        {splits.map((split) => (
+          <div key={split.km} className={`${rowCls} rounded-md px-1 py-1.5`}>
+            <span className="truncate text-xs font-semibold tabular-nums text-foreground/60">
+              {split.distanceKm < 1
+                ? t.activity.splits.partialKm(split.distanceKm.toFixed(2))
+                : split.km}
+            </span>
+            <span className="text-xs tabular-nums">{formatDuration(split.durationSec)}</span>
+            <span className="text-xs tabular-nums">{formatClock(split.paceSecPerKm)}</span>
+            {showHr && <span className="text-xs tabular-nums">{split.avgHr ?? '-'}</span>}
+          </div>
+        ))}
+
+        <div className={`${rowCls} border-t border-border px-1 pb-1 pt-2.5`}>
+          <span className="truncate text-xs font-semibold text-foreground/70">
+            {t.activity.splits.cols.total}
+          </span>
+          <span className="text-xs font-semibold tabular-nums">{formatDuration(totalDurationSec)}</span>
+          <span className="text-xs font-semibold tabular-nums">
+            {formatClock(Math.round(totalDurationSec / totalDistanceKm))}
+          </span>
+          {showHr && (
+            <span className="text-xs font-semibold tabular-nums">{activity.avgHeartRate ?? '-'}</span>
+          )}
+        </div>
+      </div>
+    </GlassSurface>
+  )
 }
 
 export function KmSplits({ activity }: Props) {
@@ -48,6 +104,16 @@ export function KmSplits({ activity }: Props) {
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
 
   if (!splits || splits.length === 0) return null
+
+  if (splits.length <= 1) {
+    const perKm = kmSplitsFromSamples({
+      distanceKm: activity.distanceKm,
+      paceSamples: activity.paceSamples,
+      hrSamples: activity.hrSamples,
+      avgPaceSecPerKm: activity.paceSecPerKm,
+    })
+    if (perKm.length > 1) return <PerKmSplits activity={activity} splits={perKm} />
+  }
 
   const showHr = splits.some((s) => s.avgHr !== null)
   const rowCls = showHr ? ROW_HR : ROW_NO_HR

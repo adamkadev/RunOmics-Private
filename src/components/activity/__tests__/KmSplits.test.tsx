@@ -105,3 +105,35 @@ describe('KmSplits', () => {
     expect(container.firstChild).toBeNull()
   })
 })
+
+describe('KmSplits on a continuous run', () => {
+  const continuous = {
+    distanceKm: 5,
+    paceSecPerKm: 300,
+    avgHeartRate: 150,
+    paceSamples: Array.from({ length: 101 }, () => 300),
+    hrSamples: Array.from({ length: 101 }, () => 150),
+    splits: [split('lap', 1500, 5000, 150)],
+  } as unknown as Activity
+
+  it('derives per-kilometre splits instead of one interval row that restates the total', () => {
+    render(<KmSplits activity={continuous} />)
+
+    expect(screen.getByText(t.activity.splits.continuous)).toBeInTheDocument()
+    expect(screen.getByText(t.activity.splits.perKmTitle)).toBeInTheDocument()
+    expect(screen.queryByText(t.activity.splits.intervalTypes.lap!)).not.toBeInTheDocument()
+    expect(screen.getByText('5')).toBeInTheDocument()
+  })
+
+  it('keeps the interval table when the run actually has a structure', () => {
+    const structured = {
+      ...continuous,
+      splits: [split('interval_warmup', 600, 2000, 130), split('interval_active', 300, 1200, 170)],
+    } as unknown as Activity
+
+    render(<KmSplits activity={structured} />)
+
+    expect(screen.queryByText(t.activity.splits.continuous)).not.toBeInTheDocument()
+    expect(screen.getByText(t.activity.splits.intervalTypes.interval_active!)).toBeInTheDocument()
+  })
+})

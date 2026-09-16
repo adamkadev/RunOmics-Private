@@ -852,7 +852,11 @@ export const en = {
     splits: {
       title: 'Intervals',
       lapTitle: 'Laps',
+      perKmTitle: 'Splits',
+      continuous: 'Continuous run — no interval structure recorded.',
+      partialKm: (km: string) => `final ${km}`,
       cols: {
+        km: 'Km',
         step: '#',
         type: 'Type',
         duration: 'Dur',
