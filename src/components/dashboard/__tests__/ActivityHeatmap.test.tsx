@@ -34,11 +34,6 @@ let clientWidth: PropertyDescriptor | undefined
 beforeAll(() => {
   clientWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth')
   Object.defineProperty(HTMLElement.prototype, 'clientWidth', { configurable: true, get: () => WIDTH })
-  globalThis.ResizeObserver ??= class {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  } as unknown as typeof ResizeObserver
 })
 
 afterAll(() => {

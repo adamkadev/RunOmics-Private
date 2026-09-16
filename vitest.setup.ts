@@ -10,6 +10,15 @@ Object.defineProperty(globalThis, 'localStorage', {
   configurable: true,
 })
 
+// jsdom ships neither of these, and several components measure themselves to
+// decide a layout. Stubbed here rather than in each test that happens to render
+// one of them.
+globalThis.ResizeObserver ??= class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+} as unknown as typeof ResizeObserver
+
 Object.defineProperty(window, 'matchMedia', {
   value: (query: string) => ({
     matches: false,
