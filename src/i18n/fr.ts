@@ -935,6 +935,8 @@ export const fr = {
     neverUsed: 'Jamais utilisée',
     kmOf: (total: number, max: number) => `${total} / ${max} km`,
     retired: 'Retraitée',
+    lastRun: (date: string) => `dernière sortie le ${date}`,
+    lastWorn: (year: number) => `portée jusqu’en ${year}`,
     status: {
       ok: 'Bon état',
       watch: 'À remplacer bientôt',

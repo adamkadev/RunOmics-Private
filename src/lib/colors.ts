@@ -102,6 +102,24 @@ export const GOAL_PACE_COLORS = {
   pending: { bg: '',                            border: '',                           bar: 'var(--track-on-dark)' },
 } as const
 
+/**
+ * The shoe dots are pair identity, not state: they say which column of the
+ * comparison table a number belongs to, and which pair ran an activity. The old
+ * ramp spent roAmber, roViolet and roPink on that, which read as status the dot
+ * never carried, so the ramp is neutral.
+ *
+ * Built from the muted text scale rather than `paper()` because the dots also
+ * render on light surfaces, where white would vanish - these four tokens are
+ * already tuned for both themes. Four steps because the registry holds four
+ * pairs; a fifth would collide with the first.
+ */
+export const SHOE_DOT_RAMP = [
+  'var(--foreground)',
+  'var(--muted-foreground)',
+  'var(--subtle)',
+  'var(--subtle-2)',
+] as const
+
 export const SHOE_WEAR_TINTS = {
   watch: {
     background: `linear-gradient(150deg, ${withAlpha(c.amber500, 0.16)}, ${withAlpha(c.amber500, 0.02)})`,

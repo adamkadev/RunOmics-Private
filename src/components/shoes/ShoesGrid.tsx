@@ -5,7 +5,7 @@ import { GlassSurface } from '@/components/ui/GlassSurface'
 import { BrandIcon } from '@/components/shoes/BrandIcon'
 import { STATUS } from '@/lib/statusColors'
 import { SHOE_WEAR_TINTS } from '@/lib/colors'
-import { formatCompactDate } from '@/lib/formatters'
+import { formatDateWithYear, formatDayMonth } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -65,16 +65,38 @@ function ShoeHeroCard({ shoe, insight }: { shoe: ShoeStats; insight: string | nu
   )
 }
 
+/**
+ * Says what the date is instead of leaving a bare `Sep 13` next to the mileage,
+ * and never renders a prior-year date the way `formatCompactDate` did: that
+ * formatter drops the day for older dates ({month, year:'2-digit'}), so the
+ * retired pair's "Dec 25" meant December 2025 and read as 25 December.
+ *
+ * A retired pair only needs its era - the registry has no retirement date, so
+ * the year is the last one it actually ran, hence "last worn", not "retired".
+ * That era is also what separates two pairs sharing a model name.
+ */
+function lastOutingLabel(shoe: ShoeStats, now = new Date()): string | null {
+  if (!shoe.lastUsedDate) return null
+
+  const year = new Date(shoe.lastUsedDate + 'T00:00:00').getFullYear()
+  if (shoe.retired) return t.shoes.lastWorn(year)
+
+  return t.shoes.lastRun(
+    year === now.getFullYear() ? formatDayMonth(shoe.lastUsedDate) : formatDateWithYear(shoe.lastUsedDate)
+  )
+}
+
 function ShoeRow({ shoe }: { shoe: ShoeStats }) {
   const status = wearStatus(shoe.wearPercent)
+  const lastOuting = lastOutingLabel(shoe)
 
+  // No opacity on the retired row: dimming the whole row composited the
+  // AA-compliant `text-subtle` down to ~3.2:1, and faded the brand mark and the
+  // mileage along with it. Retirement is a label, so it gets a chip instead.
   return (
     <Link
       href={`/shoes/${shoe.gearId}`}
-      className={cn(
-        'glass-card flex items-center gap-3 rounded-xl px-3.5 py-2.5 transition-transform active:scale-[0.99]',
-        shoe.retired && 'opacity-65'
-      )}
+      className="glass-card flex items-center gap-3 rounded-xl px-3.5 py-2.5 transition-transform active:scale-[0.99]"
     >
       <BrandIcon brand={shoe.brand} size={14} />
       <span className="min-w-0 flex-1">
@@ -91,11 +113,13 @@ function ShoeRow({ shoe }: { shoe: ShoeStats }) {
         )}
         <span className="block text-caption text-subtle">
           {t.shoes.kmOf(Math.round(shoe.totalKm), shoe.maxKm)}
-          {shoe.lastUsedDate && ` · ${formatCompactDate(shoe.lastUsedDate)}`}
+          {lastOuting && ` · ${lastOuting}`}
         </span>
       </span>
       {shoe.retired ? (
-        <span className="shrink-0 text-caption font-medium text-subtle">{t.shoes.retired}</span>
+        <span className="shrink-0 rounded-full border border-border px-2 py-0.5 text-caption font-medium text-subtle">
+          {t.shoes.retired}
+        </span>
       ) : (
         <span className={cn('shrink-0 text-caption font-semibold tabular-nums', WEAR_TEXT[status])}>
           {shoe.wearPercent}%

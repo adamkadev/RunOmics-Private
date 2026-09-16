@@ -943,6 +943,11 @@ export const en = {
     neverUsed: 'Never used',
     kmOf: (total: number, max: number) => `${total} / ${max} km`,
     retired: 'Retired',
+    // The rotation row used to print a bare `Sep 13` next to the mileage, with
+    // nothing saying which date it was. Both keys take an already-formatted
+    // date because i18n can never import the formatters.
+    lastRun: (date: string) => `last run ${date}`,
+    lastWorn: (year: number) => `last worn ${year}`,
     status: {
       ok: 'Good',
       watch: 'Replace soon',

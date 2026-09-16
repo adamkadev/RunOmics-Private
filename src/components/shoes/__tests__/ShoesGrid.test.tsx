@@ -80,6 +80,56 @@ describe('ShoesGrid rows', () => {
     expect(track?.className).toContain('h-1.5')
   })
 
+  it('says what the date is, instead of leaving a bare day beside the mileage', () => {
+    const thisYear = new Date().getFullYear()
+    const { container } = render(<ShoesGrid shoes={[shoe({ lastUsedDate: `${thisYear}-09-10` })]} />)
+
+    expect(container.textContent).toContain('last run Sep 10')
+  })
+
+  it('spells the year out when the pair last ran in an earlier one', () => {
+    const lastYear = new Date().getFullYear() - 1
+    const { container } = render(<ShoesGrid shoes={[shoe({ lastUsedDate: `${lastYear}-12-12` })]} />)
+
+    // formatCompactDate dropped the day for older dates and printed `Dec 25`,
+    // which reads as the 25th of December rather than December 2025.
+    expect(container.textContent).toContain(`last run Dec 12, ${lastYear}`)
+  })
+
+  it('separates two pairs sharing a model name by the era each one ran in', () => {
+    const { container } = render(
+      <ShoesGrid
+        shoes={[
+          shoe({ gearId: 'a', name: 'Adizero EVO SL', totalKm: 53, wearPercent: 7 }),
+          shoe({
+            gearId: 'b',
+            name: 'Adizero EVO SL',
+            totalKm: 786,
+            retired: true,
+            wearPercent: 100,
+            lastUsedDate: '2025-12-12',
+          }),
+        ]}
+      />
+    )
+
+    // The registry carries no retirement date, so the year is the last one the
+    // pair actually ran - "last worn", never "retired 2025".
+    expect(container.textContent).toContain('last worn 2025')
+    expect(container.textContent).toContain('786 / 1000 km')
+  })
+
+  it('states retirement in a chip rather than dimming the row below AA contrast', () => {
+    const { container } = render(<ShoesGrid shoes={[shoe({ retired: true, wearPercent: 100 })]} />)
+
+    // opacity-65 composited the AA-compliant text-subtle down to ~3.2:1.
+    expect(container.querySelector('a')?.className).not.toContain('opacity')
+
+    const chip = screen.getByText('Retired')
+    expect(chip.className).toContain('rounded-full')
+    expect(chip.className).toContain('border-border')
+  })
+
   it('draws no bar for a retired pair, whose wear is forced to 100', () => {
     const { container } = render(
       <ShoesGrid
