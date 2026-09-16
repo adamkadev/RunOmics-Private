@@ -756,9 +756,13 @@ export const fr = {
     },
     notes: {
       title: 'Notes',
+      sheetTitle: 'Notes de sortie',
       notePlaceholder: 'Comment c’était ? Météo, terrain, sensations...',
-      tagPlaceholder: 'Ajouter un tag (ex. pluie, trail, fatigué)... Entrée pour valider',
+      tagPlaceholder: 'Nouveau tag',
+      tagHint: 'Entrée pour ajouter',
+      usedBefore: 'Déjà utilisés',
       removeTag: (tag: string) => `Supprimer le tag ${tag}`,
+      addTag: (tag: string) => `Ajouter le tag ${tag}`,
     },
     zones: {
       title: 'Temps en zones',

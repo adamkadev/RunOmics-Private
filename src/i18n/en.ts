@@ -764,9 +764,13 @@ export const en = {
     },
     notes: {
       title: 'Notes',
+      sheetTitle: 'Run notes',
       notePlaceholder: 'How did it feel? Weather, terrain, sensations...',
-      tagPlaceholder: 'Add a tag (e.g. rain, trail, tired)... press Enter',
+      tagPlaceholder: 'New tag',
+      tagHint: 'Press Enter to add',
+      usedBefore: 'Used before',
       removeTag: (tag: string) => `Remove tag ${tag}`,
+      addTag: (tag: string) => `Add tag ${tag}`,
     },
     zones: {
       title: 'Time in Zones',
