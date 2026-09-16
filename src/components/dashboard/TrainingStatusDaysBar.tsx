@@ -49,6 +49,26 @@ function groupLabel(group: DayGroup): string {
   return `${status} · ${range}`
 }
 
+const COMPOSITION_MAX = 2
+
+// Days per status across the whole window, which is what the ribbon's
+// composition is - not the longest consecutive stretch, which said nothing the
+// segments did not already show.
+type RatedStatus = NonNullable<TrainingStatusDayBar['status']>
+
+function statusComposition(days: TrainingStatusDayBar[]): { status: RatedStatus; count: number }[] {
+  const counts = new Map<RatedStatus, number>()
+  for (const day of days) {
+    if (!day.status) continue
+    counts.set(day.status, (counts.get(day.status) ?? 0) + 1)
+  }
+
+  return [...counts.entries()]
+    .map(([status, count]) => ({ status, count }))
+    .sort((a, b) => b.count - a.count || a.status.localeCompare(b.status))
+    .slice(0, COMPOSITION_MAX)
+}
+
 export function TrainingStatusDaysBar({ days }: Props) {
   const [activeKey, setActiveKey] = useState<string | null>(null)
 
@@ -59,23 +79,19 @@ export function TrainingStatusDaysBar({ days }: Props) {
   const groups = groupConsecutiveDays(days)
   const active = groups.find((group) => group.from === activeKey) ?? null
 
-  // The finding, not the furniture: the longest rated stretch is the one fact a
-  // reader takes from a 28-segment ribbon at a glance, and printing the two end
-  // dates instead said nothing the segments did not already show.
-  const dominant = groups
-    .filter((group) => group.status !== null)
-    .reduce((best, group) => (best === null || group.count > best.count ? group : best), null as DayGroup | null)
+  const composition = statusComposition(days)
 
   return (
     <GlassSurface variant="card" className="p-4">
-      <div className="flex items-center justify-between gap-2">
-        <CardTitle>{s.title}</CardTitle>
-        {latest?.status && (
-          <span className="text-xs font-semibold" style={{ color: TRAINING_STATUS_COLORS[latest.status] }}>
-            {t.trainingStatus.status[latest.status]}
-          </span>
-        )}
-      </div>
+      <CardTitle>{s.titleToday(s.title)}</CardTitle>
+      {latest?.status && (
+        <p
+          className="mt-1 font-display text-title2 font-bold leading-tight tracking-tight"
+          style={{ color: TRAINING_STATUS_COLORS[latest.status] }}
+        >
+          {t.trainingStatus.status[latest.status]}
+        </p>
+      )}
 
       <div className="mt-2.5 flex h-4 overflow-hidden rounded-sm">
         {groups.map((group) => (
@@ -104,15 +120,18 @@ export function TrainingStatusDaysBar({ days }: Props) {
           <span className="text-foreground/80">{groupLabel(active)}</span>
         ) : (
           <>
-            <span className="truncate">{s.window(days.length)}</span>
-            {dominant?.status && (
-              <span
-                className="shrink-0 font-semibold tabular-nums"
-                style={{ color: TRAINING_STATUS_COLORS[dominant.status] }}
-              >
-                {s.dominant(dominant.count, t.trainingStatus.status[dominant.status])}
-              </span>
-            )}
+            <span className="min-w-0 truncate">
+              {s.window(days.length)}
+              {composition.map((part) => (
+                <span key={part.status}>
+                  {' · '}
+                  <span className="font-semibold tabular-nums" style={{ color: TRAINING_STATUS_COLORS[part.status] }}>
+                    {s.dominant(part.count, t.trainingStatus.status[part.status])}
+                  </span>
+                </span>
+              ))}
+            </span>
+            <span className="shrink-0">{s.tapHint}</span>
           </>
         )}
       </div>

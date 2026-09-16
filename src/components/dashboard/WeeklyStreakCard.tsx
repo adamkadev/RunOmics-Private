@@ -77,15 +77,19 @@ export function WeeklyStreakCard({ data, goal }: Props) {
   const perDay = remaining > 0 && daysLeft > 0 ? remaining / daysLeft : 0
   const sessionsPlanned = data.plannedDays.filter(Boolean).length
 
+  const spreadOverSessions = remaining > 0 && daysLeft > 0 && sessionsPlanned > 0
+
   const headline = !goal
     ? s.weeksInARow(Math.round(data.currentWeeks))
-    : remaining > 0 && daysLeft > 0
-      ? s.perDayToGoal(formatKm(perDay, 1), formatKm(goal.targetKm))
-      : remaining > 0
-        ? s.kmRemaining(remaining)
-        : s.goalReached
+    : spreadOverSessions
+      ? s.perDayAcrossSessions(formatKm(perDay, 1), sessionsPlanned)
+      : remaining > 0 && daysLeft > 0
+        ? s.perDayToGoal(formatKm(perDay, 1), formatKm(goal.targetKm))
+        : remaining > 0
+          ? s.kmRemaining(remaining)
+          : s.goalReached
 
-  const subline = goal && remaining > 0 ? s.daysLeftPlanned(daysLeft, sessionsPlanned) : null
+  const subline = goal && spreadOverSessions ? s.toFinishOnTarget : null
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -110,7 +114,9 @@ export function WeeklyStreakCard({ data, goal }: Props) {
               <span className="text-sm font-extrabold leading-none tabular-nums text-foreground">
                 {Math.round(animatedActualKm)}
               </span>
-              <span className="text-caption leading-tight text-muted-foreground">/{Math.round(goal.targetKm)}{t.units.km}</span>
+              <span className="text-caption leading-tight text-muted-foreground">
+                {s.ringOf(Math.round(goal.targetKm))}
+              </span>
             </div>
           </div>
         )}

@@ -305,9 +305,11 @@ export const en = {
     },
     trainingStatusDays: {
       title: 'Training Status',
+      titleToday: (title: string) => `${title} · today`,
       today: 'Today',
       noReading: 'No reading',
-      window: (days: number) => `Last ${days} days · tap a segment`,
+      window: (days: number) => `Past ${days} d`,
+      tapHint: 'tap a band',
       dominant: (days: number, status: string) => `${days} d ${status.toLowerCase()}`,
     },
     syncStatus: {
@@ -353,8 +355,11 @@ export const en = {
       weeksInARow: (weeks: number) => `${weeks} week streak`,
       kmRemaining: (km: number) => `${km} km to this week's goal`,
       perDayToGoal: (perDay: string, target: string) => `${perDay} km/day to hit ${target}`,
-      daysLeftPlanned: (days: number, sessions: number) =>
-        `${days} day${days === 1 ? '' : 's'} left · ${sessions} session${sessions === 1 ? '' : 's'} planned`,
+      perDayAcrossSessions: (perDay: string, sessions: number) =>
+        `${perDay} km/day across ${sessions} session${sessions === 1 ? '' : 's'}`,
+      toFinishOnTarget: `to finish the week on the plan’s target`,
+      ringOf: (target: number) => `of ${target} km`,
+
       goalReached: 'Weekly goal reached',
       streakSummary: (longest: number, current: number) => `Best streak: ${longest} weeks - current: ${current}`,
     },
