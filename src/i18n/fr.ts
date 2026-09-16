@@ -169,7 +169,6 @@ export const fr = {
     },
     accent: {
       title: 'Couleur d’accent',
-      subtitle: 'Choisissez l’ambiance - appliqué instantanément, sans compte.',
       preview: 'Aperçu',
       options: {
         nature:      { label: 'Nature', description: 'Vert sentier apaisant' },
@@ -977,6 +976,7 @@ export const fr = {
         activities: 'Activités',
         firstUsed: 'Depuis',
         kmPerWeek: 'km / sem.',
+        lastWorn: 'Dernier port',
       },
       activitiesTitle: 'Activités suivies',
       empty: 'Aucune activité enregistrée avec cette paire pour le moment.',

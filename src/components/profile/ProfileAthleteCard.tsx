@@ -4,16 +4,16 @@ import { CardTitle } from '@/components/ui/SectionLabel'
 import type { AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import type { ZoneShare } from '@/application/usecases/GetAnalyticsData'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { CHART_COLORS, ZONE_COLOR_CLASSES } from '@/lib/colors'
+import { ZONE_COLOR_CLASSES } from '@/lib/colors'
 import { formatDurationWords } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
-const VIOLET = CHART_COLORS.efficiency
 
 interface HeadlineMetric {
   label: string
   value: string
+  unit?: string
   valueColor?: string
 }
 
@@ -26,12 +26,16 @@ const ZONE_ROWS: { zone: number; label: string; barClass: string }[] = [5, 4, 3,
   barClass: ZONE_COLOR_CLASSES[zone]!.bg,
 }))
 
-function Tile({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
+function Tile({ label, value, unit, valueColor }: HeadlineMetric) {
   return (
     <div className="rounded-xl bg-foreground/[0.04] p-2.5 text-center">
       <div className="text-micro font-semibold uppercase tracking-[0.03em] text-subtle">{label}</div>
-      <div className="mt-[3px] font-display text-lg font-bold tabular-nums" style={valueColor ? { color: valueColor } : undefined}>
+      <div
+        className="mt-[3px] font-display text-lg font-bold tabular-nums"
+        style={valueColor ? { color: valueColor } : undefined}
+      >
         {value}
+        {unit && <span className="ml-0.5 text-caption font-semibold text-muted-foreground">{unit}</span>}
       </div>
     </div>
   )
@@ -51,13 +55,13 @@ export function ProfileAthleteCard({ athlete, latestVo2max, recentZoneTime }: Pr
   if (latestVo2max !== null) {
     // One decimal everywhere VO₂max is printed - Analytics already shows one,
     // and rounding to a whole number here made the same metric look like two.
-    metrics.push({ label: a.vo2maxShort, value: latestVo2max.toFixed(1), valueColor: VIOLET })
+    metrics.push({ label: a.vo2maxShort, value: latestVo2max.toFixed(1), unit: t.units.mlKgMin })
   }
   if (athlete.vmaKmh !== undefined) {
-    metrics.push({ label: a.vmaShort, value: String(athlete.vmaKmh) })
+    metrics.push({ label: a.vmaShort, value: String(athlete.vmaKmh), unit: t.units.kmh })
   }
   if (athlete.lthrBpm !== undefined) {
-    metrics.push({ label: a.lthrShort, value: String(athlete.lthrBpm) })
+    metrics.push({ label: a.lthrShort, value: String(athlete.lthrBpm), unit: t.units.bpm })
   }
   const metricColumns = metrics.length === 1 ? 'grid-cols-1' : metrics.length === 2 ? 'grid-cols-2' : 'grid-cols-3'
 

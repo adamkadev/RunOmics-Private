@@ -177,7 +177,6 @@ export const en = {
     },
     accent: {
       title: 'Accent color',
-      subtitle: 'Pick the vibe - this applies instantly, no account needed.',
       preview: 'Preview',
       options: {
         nature:      { label: 'Nature', description: 'Calm trail green' },
@@ -988,6 +987,7 @@ export const en = {
         activities: 'Activities',
         firstUsed: 'Since',
         kmPerWeek: 'km / week',
+        lastWorn: 'Last worn',
       },
       activitiesTitle: 'Tracked Activities',
       empty: 'No activities recorded with this pair yet.',

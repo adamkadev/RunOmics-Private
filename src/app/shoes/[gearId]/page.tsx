@@ -68,6 +68,9 @@ export default async function ShoeDetailPage({
 
   const d = t.shoes.detail
   const { status, kmLeft, weeksRemaining } = wearOutlook(shoe)
+  // km/week says nothing about a pair that is no longer worn, so a retired pair
+  // spends that cell on the date it was last run in instead.
+  const lastWornDate = shoe.activities[0]?.date ?? null
   const style = WEAR_STYLE[status]
   const aiTake =
     status === 'ok' || shoe.retired
@@ -85,18 +88,6 @@ export default async function ShoeDetailPage({
         </div>
         <h1 className="text-display text-foreground">{shoe.name}</h1>
       </div>
-
-      {!shoe.retired && status !== 'ok' && (
-        <div className="rounded-2xl border p-4" style={HERO_SURFACE[status]}>
-          <p className={cn('font-mono text-micro font-bold uppercase tracking-[0.1em]', style.text)}>
-            {d.verdict.eyebrow(t.shoes.status[status])}
-          </p>
-          <p className="mt-2 font-display text-subhead font-bold leading-snug text-foreground">
-            {aiTake?.headline ?? verdictBody(status, weeksRemaining)}
-          </p>
-          {aiTake && <p className="mt-1 text-footnote leading-snug text-muted-foreground">{aiTake.body}</p>}
-        </div>
-      )}
 
       {!shoe.retired && (
         <GlassSurface variant="card" className="p-5">
@@ -117,10 +108,29 @@ export default async function ShoeDetailPage({
         </GlassSurface>
       )}
 
+      {!shoe.retired && status !== 'ok' && (
+        <div className="rounded-2xl border p-4" style={HERO_SURFACE[status]}>
+          <p className={cn('font-mono text-micro font-bold uppercase tracking-[0.1em]', style.text)}>
+            {d.verdict.eyebrow(t.shoes.status[status])}
+          </p>
+          <p className="mt-2 font-display text-subhead font-bold leading-snug text-foreground">
+            {aiTake?.headline ?? verdictBody(status, weeksRemaining)}
+          </p>
+          {aiTake && <p className="mt-1 text-footnote leading-snug text-muted-foreground">{aiTake.body}</p>}
+        </div>
+      )}
+
       <div className="grid grid-cols-4 gap-2">
         <Stat value={<AnimatedValue value={shoe.totalKm} decimals={0} />} label={d.stats.distance} />
         <Stat value={<AnimatedValue value={shoe.activities.length} />} label={d.stats.activities} />
-        <Stat value={<AnimatedValue value={shoe.kmPerWeek} decimals={0} />} label={d.stats.kmPerWeek} />
+        {shoe.retired ? (
+          <Stat
+            value={lastWornDate ? formatDate(lastWornDate, { precision: 'month', year: 'always' }) : '-'}
+            label={d.stats.lastWorn}
+          />
+        ) : (
+          <Stat value={<AnimatedValue value={shoe.kmPerWeek} decimals={0} />} label={d.stats.kmPerWeek} />
+        )}
         <Stat value={shoe.firstUsedDate ? formatDate(shoe.firstUsedDate, { precision: 'month' }) : '-'} label={d.stats.firstUsed} />
       </div>
 

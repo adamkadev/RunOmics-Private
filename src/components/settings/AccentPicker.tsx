@@ -17,7 +17,6 @@ export function AccentPicker() {
   return (
     <div>
       <h2 className="text-sm font-bold text-foreground">{t.settings.accent.title}</h2>
-      <p className="mt-0.5 text-xs text-muted-foreground">{t.settings.accent.subtitle}</p>
 
       <div
         className="mt-4 flex items-center gap-3 rounded-xl border p-3.5"
