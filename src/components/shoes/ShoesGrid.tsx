@@ -117,7 +117,7 @@ function ShoeRow({ shoe }: { shoe: ShoeStats }) {
           figure. A retired pair still shows how worn it got. */}
       {shoe.retired ? (
         <span className="shrink-0 text-caption font-semibold tabular-nums text-subtle">
-          {shoe.wearPercent}%
+          {t.shoes.wornOut(shoe.wearPercent)}
         </span>
       ) : (
         <span className={cn('shrink-0 text-caption font-semibold tabular-nums', WEAR_TEXT[status])}>
@@ -179,7 +179,6 @@ export function ShoesGrid({ shoes, heroInsight = null }: Props) {
   )
 }
 
-/** The bands the bar and the percentage are now coloured by. */
 function WearLegend() {
   const bands: { key: 'ok' | 'watch' | 'replace'; dot: string }[] = [
     { key: 'ok', dot: STATUS.success.dot },
@@ -195,6 +194,7 @@ function WearLegend() {
           {t.shoes.wearLegend[key]}
         </span>
       ))}
+      <span className="normal-nums">{t.shoes.wearLegendScope}</span>
     </span>
   )
 }

@@ -948,6 +948,8 @@ export const en = {
     rotationSummary: (activePairs: number, km: string, sessions: number) =>
       `${activePairs} active · ${km} km · ${sessions} sessions`,
     wearLegend: { ok: '<70%', watch: '70-90', replace: '90+' },
+    wearLegendScope: 'in rotation',
+    wornOut: (percent: number) => `${percent}% worn`,
     // The rotation row used to print a bare `Sep 13` next to the mileage, with
     // nothing saying which date it was. Both keys take an already-formatted
     // date because i18n can never import the formatters.
@@ -968,6 +970,10 @@ export const en = {
     wearAlert: (name: string, totalKm: number, alertThresholdKm: number) => `${name} has ${totalKm} km - past its ${alertThresholdKm} km alert threshold`,
     comparison: {
       title: 'How each pair is used',
+      change: 'Change',
+      changeLabel: 'Change which pairs are compared',
+      pickHint: 'Pick two pairs — a new pick replaces the older one',
+      comparing: 'comparing',
       note: 'Pairs worn in different seasons are not a like-for-like test - the date range under each name says how far apart they ran.',
       period: (from: string, to: string) => `${from} - ${to}`,
       metrics: {

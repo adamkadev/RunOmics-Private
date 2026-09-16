@@ -940,6 +940,8 @@ export const fr = {
     rotationSummary: (activePairs: number, km: string, sessions: number) =>
       `${activePairs} en rotation · ${km} km · ${sessions} séances`,
     wearLegend: { ok: '<70 %', watch: '70-90', replace: '90+' },
+    wearLegendScope: 'en rotation',
+    wornOut: (percent: number) => `usée à ${percent} %`,
     lastRun: (date: string) => `dernière sortie le ${date}`,
     lastWorn: (year: number) => `portée jusqu’en ${year}`,
     status: {
@@ -957,6 +959,10 @@ export const fr = {
     wearAlert: (name: string, totalKm: number, alertThresholdKm: number) => `${name} affiche ${totalKm} km - au-delà de son seuil d’alerte de ${alertThresholdKm} km`,
     comparison: {
       title: 'À quoi sert chaque paire',
+      change: 'Changer',
+      changeLabel: 'Changer les paires comparées',
+      pickHint: 'Choisis deux paires — un nouveau choix remplace le plus ancien',
+      comparing: 'comparaison',
       note: "Des paires portées à des saisons différentes ne se comparent pas à armes égales - la période sous chaque nom dit ce qui les sépare.",
       period: (from: string, to: string) => `${from} - ${to}`,
       metrics: {
