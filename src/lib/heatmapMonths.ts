@@ -24,8 +24,12 @@
  *   even when all twelve fitted.
  */
 
-/** Room for a 3-4 character abbreviated month at --text-micro (10px), plus a gutter. */
-export const MONTH_LABEL_PX = 26
+/**
+ * Room for an abbreviated month at --text-micro (10px), plus a gutter. Sized for
+ * the longest Intl short month across the shipped locales - French runs to five
+ * characters ("FEVR.", "SEPT.") where English stops at three.
+ */
+export const MONTH_LABEL_PX = 34
 
 export interface MonthStart {
   /** Abbreviated month name, already localised. */

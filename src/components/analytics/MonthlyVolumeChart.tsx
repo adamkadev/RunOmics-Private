@@ -93,6 +93,10 @@ export function MonthlyVolumeChart({ data, typesPresent }: Props) {
                 dataKey={type}
                 stackId="volume"
                 fill={ACTIVITY_TYPE_CONFIG[type].chartColor}
+                // The three zone-5 types are three depths of one red, so stacked
+                // adjacently they need a seam to stay countable.
+                stroke="var(--card)"
+                strokeWidth={0.75}
                 radius={i === orderedTypes.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
                 isAnimationActive={false}
               />

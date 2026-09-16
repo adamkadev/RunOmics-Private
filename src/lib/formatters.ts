@@ -191,13 +191,20 @@ export function formatCountdown(days: number): string {
 }
 
 /**
- * Not a fourth date format - an axis label for charts that bucket by calendar
- * month and hold a month number rather than a date. It goes through formatDate
- * so it cannot drift away from `{ precision: 'month' }`.
+ * Not a fourth date format - the abbreviated month for anything that buckets by
+ * calendar month and holds a month number rather than a date. Goes through
+ * formatDate so it cannot drift away from `{ precision: 'month' }`, which is
+ * also what keeps a locale from spelling the same month two ways on adjacent
+ * cards.
  */
-export function monthLabel(month: number): string {
+export function monthName(month: number): string {
   const iso = `2000-${String(month).padStart(2, '0')}-01`
-  return formatDate(iso, { precision: 'month', year: 'never' }).toUpperCase()
+  return formatDate(iso, { precision: 'month', year: 'never' })
+}
+
+/** monthName in the uppercase a chart axis wants. */
+export function monthLabel(month: number): string {
+  return monthName(month).toUpperCase()
 }
 
 export type RelativeTimeUnit = 'now' | 'minutes' | 'hours' | 'days'

@@ -49,7 +49,7 @@ export function ProfileRecords({ records }: Props) {
             {best.seconds !== null ? formatDuration(best.seconds) : '–'}
           </span>
           <div className="mt-0.5 truncate text-micro text-muted-foreground">
-            {best.label} · {formatDate(best.date, { style: 'bare' })}
+            {best.label} · {formatDate(best.date, { style: 'bare', year: 'always' })}
           </div>
         </div>
       ) : (

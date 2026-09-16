@@ -1,4 +1,3 @@
-import { t } from '@/i18n'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import type { Activity, ActivityType, ActivityWeather } from '@/domain/activity/types'
 import { heatAdjustedEf } from '@/domain/activity/heat'

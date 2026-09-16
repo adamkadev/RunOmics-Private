@@ -59,13 +59,21 @@ describe('inProgressMonth', () => {
 })
 
 describe('MonthlyVolumeChart collapsed axis', () => {
-  it('labels every elapsed month and none of the pending ones', () => {
+  it('names its months in full, and thins the axis rather than truncating it', () => {
     render(<MonthlyVolumeChart monthlyGoals={goalsForThisYear()} year={THIS_YEAR} />)
-    const initials = Array.from({ length: THIS_MONTH }, (_, i) => monthLabel(i + 1).slice(0, 1))
-    for (const initial of initials) {
-      expect(screen.getAllByText(initial).length).toBeGreaterThan(0)
-    }
-    // One label per elapsed month, plus the bar titles - never a 13th column.
+
+    // A single initial cannot name the month it sits under: J is January, June
+    // and July. So the axis prints the whole abbreviation and drops every other
+    // label once the row is too narrow to carry them all.
+    const shown = Array.from({ length: THIS_MONTH }, (_, i) => monthLabel(i + 1))
+      .filter((label) => screen.queryAllByText(label).length > 0)
+
+    expect(shown.length).toBeGreaterThan(0)
+    for (const label of shown) expect(label.length).toBeGreaterThan(1)
+    if (THIS_MONTH > 6) expect(shown.length).toBeLessThan(THIS_MONTH)
+    else expect(shown).toHaveLength(THIS_MONTH)
+
+    // Every elapsed month still has its own bar, labelled or not - never a 13th.
     expect(screen.getAllByTitle(/:/)).toHaveLength(THIS_MONTH)
   })
 
@@ -73,7 +81,7 @@ describe('MonthlyVolumeChart collapsed axis', () => {
     const { container } = render(
       <MonthlyVolumeChart monthlyGoals={goalsForThisYear()} year={THIS_YEAR} />,
     )
-    expect(screen.getByText(s.targetRule('165'))).toBeInTheDocument()
+    expect(screen.getByText(s.targetRule)).toBeInTheDocument()
     expect(container.querySelectorAll('[data-testid="target-rule"]')).toHaveLength(THIS_MONTH)
   })
 
@@ -92,7 +100,7 @@ describe('MonthlyVolumeChart collapsed axis', () => {
     expect(finished.style.border).toBe('')
   })
 
-  it('does not spend pink on the behind state, which is amber everywhere else in the card', () => {
+  it('draws behind in one hue the bar, the icon and the label all share', () => {
     const { container } = render(
       <MonthlyVolumeChart
         monthlyGoals={[{ month: 1, targetKm: 165, actualKm: 40, status: 'behind' }]}
@@ -100,10 +108,13 @@ describe('MonthlyVolumeChart collapsed axis', () => {
       />,
     )
     const bar = container.querySelector<HTMLElement>('[title]')!
-    // amber-500, the same hue as the behind icon and the behind label.
-    expect(bar.style.background).toBe('rgb(245, 158, 11)')
+    // red-500, matching STATUS.danger which the behind icon and label now use.
+    expect(bar.style.background).toBe('rgb(239, 68, 68)')
     // Not roPink #e5396b, and not Plan's missed-session token.
     expect(bar.style.background).not.toContain('229, 57, 107')
     expect(bar.style.background).not.toContain('color-missed')
+    // Not amber: `ahead` is var(--accent), and the motivation accent is orange,
+    // so an amber `behind` and an `ahead` drew the same bar on that theme.
+    expect(bar.style.background).not.toBe('rgb(245, 158, 11)')
   })
 })

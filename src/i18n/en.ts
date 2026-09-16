@@ -289,7 +289,6 @@ export const en = {
       restDay: 'Rest day',
       day: (km: number, runs: number) =>
         `${km} km · ${runs} run${runs !== 1 ? 's' : ''}`,
-      months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
     },
     trainingLoad: {
       title: 'Training Load',
@@ -926,7 +925,7 @@ export const en = {
         pending: 'Upcoming',
       },
       km: (actual: number, target: number) => `${actual} / ${target}`,
-      targetRule: (km: string) => `target ${km} km/mo`,
+      targetRule: 'monthly target',
     },
     history: {
       title: 'Past Years',

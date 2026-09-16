@@ -115,7 +115,10 @@ export const GOAL_PACE_COLORS = {
   onTrack: { bg: withAlpha(c.roBlueMid, 0.1),   border: withAlpha(c.roBlueMid, 0.28), bar: c.roBlueHi },
   // Amber, not pink: the behind state is also drawn as an amber icon and an amber
   // label in the same card, and `--color-missed` pink is Plan's missed-session hue.
-  behind:  { bg: withAlpha(c.amber500, 0.06),   border: withAlpha(c.amber500, 0.25),  bar: c.amber500 },
+  // Not amber: the motivation accent is orange and `ahead` is the accent, so both
+  // verdicts drew the same bar on that theme. No accent theme is red now that
+  // impact is cut, so red is free and it is what a missed target means.
+  behind:  { bg: withAlpha(c.red500, 0.06),     border: withAlpha(c.red500, 0.25),    bar: c.red500 },
   pending: { bg: '',                            border: '',                           bar: 'var(--track-on-dark)' },
 } as const
 

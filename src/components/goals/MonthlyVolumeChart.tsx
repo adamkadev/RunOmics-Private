@@ -15,7 +15,7 @@ import { t } from '@/i18n'
 const STATUS_ICON: Record<MonthGoal['status'], { Icon: typeof Check; className: string }> = {
   ahead:    { Icon: Check,       className: STATUS.success.text },
   on_track: { Icon: ArrowRight,  className: STATUS.progress.text },
-  behind:   { Icon: ArrowDown,   className: STATUS.warning.text },
+  behind:   { Icon: ArrowDown,   className: STATUS.danger.text },
   pending:  { Icon: Minus,       className: 'text-subtle/40' },
 }
 
@@ -53,7 +53,6 @@ export function MonthlyVolumeChart({ monthlyGoals, year }: { monthlyGoals: Month
 
   const scaleMax = volumePlotMaxKm(elapsedMonths)
   const current = inProgressMonth(elapsedMonths, year)
-  const ruleMonth = current ?? lastMonth
 
   return (
     <section className="space-y-3">
@@ -140,15 +139,15 @@ export function MonthlyVolumeChart({ monthlyGoals, year }: { monthlyGoals: Month
           </div>
 
           <div className="mt-1.5 flex gap-2">
-            {elapsedMonths.map((mg) => (
+            {elapsedMonths.map((mg, i) => (
               <span
                 key={mg.month}
                 className={cn(
-                  'flex-1 text-center text-micro font-medium',
+                  'flex-1 truncate text-center text-micro font-medium',
                   current?.month === mg.month ? 'text-foreground' : 'text-subtle',
                 )}
               >
-                {monthLabel(mg.month).slice(0, 1)}
+                {elapsedMonths.length > 6 && i % 2 === 1 ? '' : monthLabel(mg.month)}
               </span>
             ))}
           </div>
@@ -160,7 +159,7 @@ export function MonthlyVolumeChart({ monthlyGoals, year }: { monthlyGoals: Month
                 className="w-4 shrink-0 border-t border-dashed"
                 style={{ borderColor: TARGET_RULE_COLOR }}
               />
-              {t.goals.monthlyVolume.targetRule(String(Math.round(ruleMonth.targetKm)))}
+              {t.goals.monthlyVolume.targetRule}
             </span>
             {current && (
               <span className={cn('font-semibold', STATUS_ICON[current.status].className)}>

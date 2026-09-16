@@ -767,12 +767,13 @@ export function drawDataOverlay(ctx: Ctx, W: number, H: number, dark: boolean, r
   ctx.lineWidth = 1; ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0
   ctx.stroke(); ctx.restore()
 
-  const durationH = Math.floor(activity.durationSeconds / 3600) > 0
+  // formatDuration is self-describing (h:mm:ss / m:ss), so a trailing "h" or
+   // "min" would label a field the value already names.
   const stats: { label: string; value: string; unit: string }[] = [
     { label: t.activity.shareCard.distance, value: formatDistance(activity.distanceKm), unit: t.units.km },
     { label: t.activity.shareCard.pace, value: activity.paceSecPerKm ? formatClock(activity.paceSecPerKm) : '-', unit: '/km' },
     { label: t.activity.shareCard.avgHr, value: activity.avgHeartRate ? `${activity.avgHeartRate}` : '-', unit: t.units.bpm },
-    { label: t.activity.shareCard.time, value: formatDuration(activity.durationSeconds), unit: durationH ? 'h' : 'min' },
+    { label: t.activity.shareCard.time, value: formatDuration(activity.durationSeconds), unit: '' },
   ]
 
   const cellW = cw / 4

@@ -72,7 +72,7 @@ function RunRow({ run, bestPace }: { run: SimilarRun; bestPace: number }) {
         {run.rank === 1 ? '🥇' : `#${run.rank}`}
       </span>
       <span className={cn('min-w-0 flex-1 truncate text-sm', run.isCurrent ? 'font-semibold text-foreground' : 'text-foreground/80')}>
-        {run.isCurrent ? s.thisRun : formatDate(run.date)}
+        {run.isCurrent ? s.thisRun : formatDate(run.date, { year: 'always' })}
       </span>
       <span className="text-sm font-semibold tabular-nums text-foreground">
         {formatDuration(run.durationSeconds)}
@@ -107,7 +107,7 @@ export function SimilarRuns({ data }: { data: SimilarRunsData }) {
   const chartData: ChartPoint[] = data.runs.map((run) => ({
     id: run.id,
     // An 11px axis tick has no room for a weekday.
-    label: formatDate(run.date, { style: 'bare' }),
+    label: formatDate(run.date, { style: 'bare', year: 'always' }),
     pace: run.paceSecPerKm,
     isCurrent: run.isCurrent,
   }))

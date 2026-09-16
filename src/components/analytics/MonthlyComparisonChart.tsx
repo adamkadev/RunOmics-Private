@@ -4,6 +4,7 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip,
   ResponsiveContainer,
 } from 'recharts'
+import { monthLabel } from '@/lib/formatters'
 import type { MonthlyVolume } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { useAccentUiColor } from '@/lib/useAccent'
@@ -13,7 +14,7 @@ import { ChartFigure } from '@/components/ui/ChartFigure'
 import { ChartCardHead, ChartReading } from '@/components/ui/ChartCard'
 import { t } from '@/i18n'
 
-const MONTH_LABELS = t.dashboard.heatmap.months.map((m) => m.toUpperCase())
+const MONTH_LABELS = Array.from({ length: 12 }, (_, i) => monthLabel(i + 1))
 
 interface Props {
   currentYear: number

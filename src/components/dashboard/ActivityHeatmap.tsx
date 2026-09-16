@@ -4,12 +4,12 @@ import { useState, useRef, useEffect } from 'react'
 import type { HeatmapDay } from '@/application/usecases/GetHeatmapData'
 import { tooltipSurfaceClass } from '@/components/ui/Card'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { formatDate, formatDateRange } from '@/lib/formatters'
+import { formatDate, formatDateRange, monthName } from '@/lib/formatters'
 import { positionMonthLabels, type MonthStart } from '@/lib/heatmapMonths'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
-const MONTHS = t.dashboard.heatmap.months
+const MONTHS = Array.from({ length: 12 }, (_, month) => monthName(month + 1))
 
 function gapFor(cellSize: number): number {
   return cellSize >= 16 ? 3 : cellSize >= 11 ? 2 : 1

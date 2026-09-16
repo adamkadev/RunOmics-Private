@@ -148,15 +148,6 @@ function ComingUpRow({ workout, onTap }: { workout: PlanWorkoutView; onTap: () =
   )
 }
 
-function SummaryStat({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <GlassSurface variant="card" className="rounded-[14px] px-3 py-3">
-      <SectionDivider>{label}</SectionDivider>
-      <div className="mt-1 font-display text-lg font-bold tabular-nums text-foreground">{value}</div>
-    </GlassSurface>
-  )
-}
-
 // Mid-week the three tiles read "–", 0 and 0 m - an empty state shaped like a
 // failure state, sitting directly above the one thing the screen is for. Load is
 // the only one of the three with a planned counterpart in the domain, so it gets
