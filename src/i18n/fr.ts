@@ -904,6 +904,10 @@ export const fr = {
       },
       rate: (km: string) => `rythme ${km} km/sem`,
       projected: (km: string) => `Projection ${km} km`,
+      projectedValue: (km: string) => `${km} km`,
+      projectedLabel: 'projection',
+      shortBy: (km: string) => `${km} de retard`,
+      overBy: (km: string) => `${km} d’avance`,
       needsWeekly: (km: string) => `besoin de ${km} km/sem`,
     },
     monthlyVolume: {

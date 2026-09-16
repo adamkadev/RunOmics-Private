@@ -10,18 +10,14 @@ import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { MonthlyVolumeChart } from './MonthlyVolumeChart'
 import { SeasonTimeline } from './SeasonTimeline'
 import { raceDistanceTint } from '@/lib/colors'
-import { STATUS } from '@/lib/statusColors'
+import { PROJECTION_TONE } from '@/lib/statusColors'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 const DIST_SHORT: Record<string, string> = { 'Half-Marathon': 'HM' }
 export function shortDist(d: string) { return DIST_SHORT[d] ?? d }
 
-const PROJECTION_STATUS_CLASS: Record<GoalProjection['status'], string> = {
-  ahead:    STATUS.success.text,
-  on_track: STATUS.progress.text,
-  behind:   STATUS.warning.text,
-}
+
 
 function projectionSparkline(year: number, annualDistanceKm: number, annualProgress: number, projection: GoalProjection) {
   const yearStart = new Date(year, 0, 1).getTime()
@@ -63,7 +59,7 @@ export function YearView({ yearData }: Props) {
                 {t.goals.annualGoal}
               </SectionDivider>
               {projection && (
-                <span className={cn('shrink-0 text-xs font-semibold', PROJECTION_STATUS_CLASS[projection.status])}>
+                <span className={cn('shrink-0 text-xs font-semibold', PROJECTION_TONE[projection.status])}>
                   {t.goals.projection.status[projection.status]}
                   {signedDeltaKm !== 0 && ` ${formatDelta(signedDeltaKm, t.units.km)}`}
                 </span>
@@ -105,7 +101,7 @@ export function YearView({ yearData }: Props) {
                     strokeDasharray="4 4"
                   />
                 </svg>
-                <p className={cn('mt-1 text-body font-semibold leading-tight', PROJECTION_STATUS_CLASS[projection.status])}>
+                <p className={cn('mt-1 text-body font-semibold leading-tight', PROJECTION_TONE[projection.status])}>
                   {t.goals.projection.projected(formatKm(projection.projectedYearKm))}
                 </p>
                 <p className="text-caption text-subtle">

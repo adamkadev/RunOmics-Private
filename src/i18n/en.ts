@@ -912,6 +912,10 @@ export const en = {
       },
       rate: (km: string) => `${km} km/wk pace`,
       projected: (km: string) => `Projected ${km} km`,
+      projectedValue: (km: string) => `${km} km`,
+      projectedLabel: 'projected',
+      shortBy: (km: string) => `${km} short`,
+      overBy: (km: string) => `${km} over`,
       needsWeekly: (km: string) => `needs ${km} km/wk`,
     },
     monthlyVolume: {
