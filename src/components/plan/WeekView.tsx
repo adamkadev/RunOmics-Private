@@ -56,7 +56,6 @@ const TREND_WEEKS = 8
 
 interface Day {
   date: string
-  day: number
   acts: ActivitySummary[]
 }
 
@@ -239,7 +238,7 @@ export function WeekView({
 }: Props) {
   const days: Day[] = Array.from({ length: 7 }, (_, i) => {
     const date = isoDate(addDays(weekStart, i))
-    return { date, day: Number(date.slice(8)), acts: byDate.get(date) ?? [] }
+    return { date, acts: byDate.get(date) ?? [] }
   })
   const firstDay = days[0]!
 

@@ -1,13 +1,12 @@
 import { cn } from '@/lib/utils'
 import type { ElementType, HTMLAttributes, ReactNode } from 'react'
 
-type PillVariant = 'active' | 'accent' | 'neutral' | 'highlight'
+type PillVariant = 'active' | 'accent' | 'neutral'
 
 const VARIANT_CLASS: Record<PillVariant, string> = {
-  active:    'border border-foreground/[0.20] bg-foreground/[0.14] text-foreground font-semibold',
-  accent:    'border border-transparent bg-accent text-accent-foreground font-semibold shadow-sm',
-  neutral:   'border border-foreground/[0.12] bg-foreground/[0.06] text-foreground/60 hover:bg-foreground/[0.10]',
-  highlight: 'border font-semibold',
+  active:  'border border-foreground/[0.20] bg-foreground/[0.14] text-foreground font-semibold',
+  accent:  'border border-transparent bg-accent text-accent-foreground font-semibold shadow-sm',
+  neutral: 'border border-foreground/[0.12] bg-foreground/[0.06] text-foreground/60 hover:bg-foreground/[0.10]',
 }
 
 interface PillProps extends HTMLAttributes<HTMLElement> {

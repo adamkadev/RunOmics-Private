@@ -160,44 +160,14 @@ export interface DashboardData {
   longestStreak: number
 }
 
-export const ACTIVITY_TYPE_CONFIG: Record<
-  ActivityType,
-  { badgeClass: string; chartColor: string }
-> = {
-  Sprint: {
-    badgeClass: 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/30 dark:text-fuchsia-400',
-    chartColor: HUE.fuchsia500,
-  },
-
-  Anaerobic: {
-    badgeClass: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
-    chartColor: HUE.violet600,
-  },
-
-  VO2Max: {
-    badgeClass: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-    chartColor: HUE.red500,
-  },
-
-  Threshold: {
-    badgeClass: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-    chartColor: HUE.orange500,
-  },
-
-  Tempo: {
-    badgeClass: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-    chartColor: HUE.yellow500,
-  },
-
-  Base: {
-    badgeClass: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-    chartColor: HUE.green500,
-  },
-
-  Race: {
-    badgeClass: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-    chartColor: HUE.amber500,
-  },
+export const ACTIVITY_TYPE_CONFIG: Record<ActivityType, { chartColor: string }> = {
+  Sprint:    { chartColor: HUE.fuchsia500 },
+  Anaerobic: { chartColor: HUE.violet600 },
+  VO2Max:    { chartColor: HUE.red500 },
+  Threshold: { chartColor: HUE.orange500 },
+  Tempo:     { chartColor: HUE.yellow500 },
+  Base:      { chartColor: HUE.green500 },
+  Race:      { chartColor: HUE.amber500 },
 }
 
 export const ACTIVITY_TYPE_ICONS: Record<ActivityType, LucideIcon> = {
