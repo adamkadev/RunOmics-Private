@@ -292,7 +292,7 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--subtle-2': c.roInkInv4,
       '--delta-good': c.emerald400,
       '--delta-warn': c.orange400,
-      '--metric-form': c.roEmeraldHi,
+      '--metric-form': c.emerald400,
       '--metric-fitness': c.roBlueHi,
       '--metric-fatigue': c.roOrangeHi,
       '--accent': c.roEmerald,

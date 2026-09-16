@@ -75,21 +75,14 @@ export function WeeklyStreakCard({ data, goal }: Props) {
   // the days left to run it in, is the number that decides today.
   const daysLeft = 7 - today
   const perDay = remaining > 0 && daysLeft > 0 ? remaining / daysLeft : 0
-  const sessionsPlanned = data.plannedDays.filter(Boolean).length
-
-  const spreadOverSessions = remaining > 0 && daysLeft > 0 && sessionsPlanned > 0
 
   const headline = !goal
     ? s.weeksInARow(Math.round(data.currentWeeks))
-    : spreadOverSessions
-      ? s.perDayAcrossSessions(formatKm(perDay, 1), sessionsPlanned)
-      : remaining > 0 && daysLeft > 0
-        ? s.perDayToGoal(formatKm(perDay, 1), formatKm(goal.targetKm))
-        : remaining > 0
-          ? s.kmRemaining(remaining)
-          : s.goalReached
-
-  const subline = goal && spreadOverSessions ? s.toFinishOnTarget : null
+    : remaining > 0 && daysLeft > 0
+      ? s.perDayToGoal(formatKm(perDay, 1), formatKm(goal.targetKm))
+      : remaining > 0
+        ? s.kmRemaining(remaining)
+        : s.goalReached
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -111,10 +104,10 @@ export function WeeklyStreakCard({ data, goal }: Props) {
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center px-1">
-              <span className="text-sm font-extrabold leading-none tabular-nums text-foreground">
+              <span className="font-extrabold leading-none tabular-nums text-foreground" style={{ fontSize: '22px' }}>
                 {Math.round(animatedActualKm)}
               </span>
-              <span className="text-caption leading-tight text-muted-foreground">
+              <span className="leading-tight" style={{ fontSize: '10.5px', color: '#97a3b0' }}>
                 {s.ringOf(Math.round(goal.targetKm))}
               </span>
             </div>
@@ -122,7 +115,6 @@ export function WeeklyStreakCard({ data, goal }: Props) {
         )}
         <div className="min-w-0 flex-1 text-left">
           <p className="text-sm font-semibold text-foreground">{headline}</p>
-          {subline && <p className="mt-0.5 text-xs text-muted-foreground">{subline}</p>}
         </div>
       </div>
 

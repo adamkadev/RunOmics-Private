@@ -304,7 +304,7 @@ export const fr = {
       noReading: 'Pas de lecture',
       titleToday: (title: string) => `${title} · aujourd’hui`,
       window: (days: number) => `${days} derniers jours`,
-      tapHint: 'touchez une bande',
+      tapHint: 'touchez un segment',
       dominant: (days: number, status: string) => `${days} j ${status.toLowerCase()}`,
     },
     syncStatus: {
@@ -350,9 +350,6 @@ export const fr = {
       weeksInARow: (weeks: number) => `${weeks} semaines d’affilée`,
       kmRemaining: (km: number) => `Plus que ${km} km pour boucler la semaine`,
       perDayToGoal: (perDay: string, target: string) => `${perDay} km/jour pour atteindre ${target}`,
-      perDayAcrossSessions: (perDay: string, sessions: number) =>
-        `${perDay} km/jour sur ${sessions} séance${sessions === 1 ? '' : 's'}`,
-      toFinishOnTarget: 'pour finir la semaine sur l’objectif du plan',
       ringOf: (target: number) => `sur ${target} km`,
 
       goalReached: 'Objectif hebdomadaire atteint',
@@ -1167,19 +1164,19 @@ export const fr = {
     zones: {
       easy: {
         label: 'Facile',
-        shortDesc: 'Base aérobie & récupération',
+        shortDesc: 'Base aérobie & récupération',
       },
       marathon: {
         label: 'Marathon',
-        shortDesc: 'Puissance aérobie & allure course',
+        shortDesc: 'Puissance aérobie & allure course',
       },
       threshold: {
         label: 'Seuil',
-        shortDesc: 'Confortablement dur - allure seuil',
+        shortDesc: 'Confortablement dur - allure seuil',
       },
       vo2max: {
         label: 'VO2max',
-        shortDesc: 'Effort course 5 km - allure I',
+        shortDesc: 'Effort course 5 km - allure I',
       },
     },
   },

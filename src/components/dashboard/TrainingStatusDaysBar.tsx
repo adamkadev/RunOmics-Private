@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { CardTitle } from '@/components/ui/SectionLabel'
 import type { TrainingStatusDayBar } from '@/application/usecases/GetTrainingStatusDaysBar'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { TRAINING_STATUS_COLORS } from '@/lib/colors'
@@ -49,7 +48,9 @@ function groupLabel(group: DayGroup): string {
   return `${status} · ${range}`
 }
 
-const COMPOSITION_MAX = 2
+const COMPOSITION_MAX = 1
+const FOOTER_INK = '#b9c4cf'
+const EYEBROW_INK = '#8d99a6'
 
 type RatedStatus = NonNullable<TrainingStatusDayBar['status']>
 
@@ -80,11 +81,16 @@ export function TrainingStatusDaysBar({ days }: Props) {
 
   return (
     <GlassSurface variant="card" className="p-4">
-      <CardTitle>{s.titleToday(s.title)}</CardTitle>
+      <p
+        className="font-bold uppercase leading-tight"
+        style={{ fontSize: '10.5px', letterSpacing: '0.16em', color: EYEBROW_INK }}
+      >
+        {s.titleToday(s.title)}
+      </p>
       {latest?.status && (
         <p
-          className="mt-1 font-display text-title2 font-bold leading-tight tracking-tight"
-          style={{ color: TRAINING_STATUS_COLORS[latest.status] }}
+          className="mt-1 font-display font-bold leading-tight tracking-tight"
+          style={{ fontSize: '24px', color: TRAINING_STATUS_COLORS[latest.status] }}
         >
           {t.trainingStatus.status[latest.status]}
         </p>
@@ -112,23 +118,19 @@ export function TrainingStatusDaysBar({ days }: Props) {
         ))}
       </div>
 
-      <div className="mt-1.5 flex items-baseline justify-between gap-2 text-micro text-muted-foreground">
+      <div className="mt-1.5 flex items-baseline justify-between gap-2" style={{ fontSize: '12.5px' }}>
         {active ? (
           <span className="text-foreground/80">{groupLabel(active)}</span>
         ) : (
           <>
-            <span className="min-w-0 truncate">
-              {s.window(days.length)}
-              {composition.map((part) => (
-                <span key={part.status}>
-                  {' · '}
-                  <span className="font-semibold tabular-nums" style={{ color: TRAINING_STATUS_COLORS[part.status] }}>
-                    {s.dominant(part.count, t.trainingStatus.status[part.status])}
-                  </span>
-                </span>
-              ))}
+            <span className="min-w-0 truncate" style={{ color: EYEBROW_INK }}>
+              {s.window(days.length)} · {s.tapHint}
             </span>
-            <span className="shrink-0">{s.tapHint}</span>
+            {composition[0] && (
+              <span className="shrink-0 font-normal tabular-nums" style={{ color: FOOTER_INK }}>
+                {s.dominant(composition[0].count, t.trainingStatus.status[composition[0].status])}
+              </span>
+            )}
           </>
         )}
       </div>

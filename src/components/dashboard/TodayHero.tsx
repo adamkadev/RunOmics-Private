@@ -11,14 +11,23 @@ import { PlannedWorkoutSheet } from '@/components/plan/PlannedWorkoutSheet'
 import type { PlanWorkoutView } from '@/components/plan/planWorkoutView'
 import { formatCountdown, formatDelta, formatDistance, formatDurationWords } from '@/lib/formatters'
 import { READINESS_TONE_COLORS } from '@/lib/colors'
-import { HUE, withAlpha } from '@/lib/palette'
 import type { Insight } from '@/lib/gemini'
 import { t } from '@/i18n'
 
 const TONE_HEX: Record<ReadinessTone, string> = READINESS_TONE_COLORS
-const HERO_BASE = HUE.heroBase
 const ACCENT_ON_DARK = 'var(--accent-on-dark)'
 const ICON_WELL = { background: `color-mix(in srgb, ${ACCENT_ON_DARK} 18%, transparent)` }
+
+// The card is now the standard dark surface everywhere - only the left rule
+// still carries an accent, and it no longer follows the readiness tone: it is
+// a fixed amber so an ordinary elevated-fatigue day doesn't read as an alarm.
+const CARD_SURFACE = '#101a2c'
+const CARD_BORDER = 'rgba(148,178,220,.14)'
+const AMBER_RULE = '#f5b13d'
+const CHIP_BORDER = 'rgba(148,178,220,.22)'
+const CHIP_TEXT = '#b9c4cf'
+const FOOTER_BG = 'rgba(148,178,220,.035)'
+const FOOTER_DIVIDER = 'rgba(148,178,220,.12)'
 interface Props {
   status: TrainingStatus | null
   plannedWorkout: PlanWorkoutView | null
@@ -89,32 +98,28 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiV
 
   return (
     <div
-      className="rounded-[22px] border border-l-[3px] p-[18px] text-white"
+      className="overflow-hidden rounded-[20px] border border-l-[3px] p-[18px] text-white"
       style={{
-        background: `linear-gradient(158deg, color-mix(in srgb, ${toneHex} 14%, ${HERO_BASE}), color-mix(in srgb, ${toneHex} 4%, ${HERO_BASE}))`,
-        borderColor: withAlpha(toneHex, 0.26),
-        borderLeftColor: toneHex,
-        boxShadow: `var(--shadow-hero), 0 8px 40px -8px ${withAlpha(toneHex, 0.2)}`,
+        background: CARD_SURFACE,
+        borderColor: CARD_BORDER,
+        borderLeftColor: AMBER_RULE,
+        boxShadow: 'var(--shadow-card)',
       }}
     >
       <div className="flex items-start justify-between gap-3">
         <span
-          className="inline-flex items-center gap-1.5 font-mono text-micro font-bold uppercase tracking-[0.1em]"
+          className="inline-flex items-center font-mono text-caption font-bold uppercase tracking-[0.18em]"
           style={{ color: toneHex }}
         >
-          <span
-            className="h-[9px] w-[9px] shrink-0 rounded-full"
-            style={{ background: toneHex, boxShadow: `0 0 10px ${toneHex}` }}
-          />
           {tone ? s.eyebrowByTone[tone] : s.eyebrowByTone.go}
         </span>
         {nextRace && daysToRace !== null && daysToRace > 0 && (
-          <div className="min-w-0 max-w-[45%] text-right">
-            <div className="flex items-center justify-end gap-1 font-mono text-micro font-bold text-white/85">
-              <Flag size={10} className="shrink-0" />
-              {formatCountdown(daysToRace)}
-            </div>
-            <div className="truncate text-caption leading-tight text-white/55">{nextRace.name}</div>
+          <div
+            className="inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[12px]"
+            style={{ border: `1px solid ${CHIP_BORDER}`, color: CHIP_TEXT }}
+          >
+            <Flag size={10} className="shrink-0" />
+            {formatCountdown(daysToRace)}
           </div>
         )}
       </div>
@@ -129,7 +134,8 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiV
       {plannedWorkout && linkedActivityId ? (
         <Link
           href={`/activities/${linkedActivityId}`}
-          className="mt-3.5 flex w-full items-center gap-3 border-t border-white/[0.12] pt-3 text-left transition-opacity active:opacity-70"
+          className="-mx-[18px] -mb-[18px] mt-3.5 flex w-[calc(100%+36px)] items-center gap-3 border-t px-[18px] py-3 text-left transition-opacity active:opacity-70"
+          style={{ borderColor: FOOTER_DIVIDER, background: FOOTER_BG }}
         >
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-bold">{workoutTitle}</div>
@@ -143,7 +149,8 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiV
         <button
           type="button"
           onClick={() => setSheetOpen(true)}
-          className="mt-3.5 flex w-full items-center gap-3 border-t border-white/[0.12] pt-3 text-left transition-opacity active:opacity-70"
+          className="-mx-[18px] -mb-[18px] mt-3.5 flex w-[calc(100%+36px)] items-center gap-3 border-t px-[18px] py-3 text-left transition-opacity active:opacity-70"
+          style={{ borderColor: FOOTER_DIVIDER, background: FOOTER_BG }}
         >
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-bold">{workoutTitle}</div>
@@ -152,7 +159,10 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiV
           <ChevronRight size={16} strokeWidth={2.5} className="shrink-0 text-white/40" />
         </button>
       ) : (
-        <div className="mt-3.5 flex items-center gap-3 rounded-[14px] bg-black/25 px-3.5 py-3">
+        <div
+          className="-mx-[18px] -mb-[18px] mt-3.5 flex w-[calc(100%+36px)] items-center gap-3 border-t px-[18px] py-3"
+          style={{ borderColor: FOOTER_DIVIDER, background: FOOTER_BG }}
+        >
           <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px]" style={ICON_WELL}>
             <BedDouble size={17} className="text-white" />
           </div>

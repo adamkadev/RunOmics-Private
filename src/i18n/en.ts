@@ -311,8 +311,8 @@ export const en = {
       titleToday: (title: string) => `${title} · today`,
       today: 'Today',
       noReading: 'No reading',
-      window: (days: number) => `Past ${days} d`,
-      tapHint: 'tap a band',
+      window: (days: number) => `Last ${days} days`,
+      tapHint: 'tap a segment',
       dominant: (days: number, status: string) => `${days} d ${status.toLowerCase()}`,
     },
     syncStatus: {
@@ -358,9 +358,6 @@ export const en = {
       weeksInARow: (weeks: number) => `${weeks} week streak`,
       kmRemaining: (km: number) => `${km} km to this week's goal`,
       perDayToGoal: (perDay: string, target: string) => `${perDay} km/day to hit ${target}`,
-      perDayAcrossSessions: (perDay: string, sessions: number) =>
-        `${perDay} km/day across ${sessions} session${sessions === 1 ? '' : 's'}`,
-      toFinishOnTarget: `to finish the week on the plan’s target`,
       ringOf: (target: number) => `of ${target} km`,
 
       goalReached: 'Weekly goal reached',
@@ -1178,19 +1175,19 @@ export const en = {
     zones: {
       easy: {
         label: 'Easy',
-        shortDesc: 'Aerobic base & recovery',
+        shortDesc: 'Aerobic base & recovery',
       },
       marathon: {
         label: 'Marathon',
-        shortDesc: 'Aerobic power & race pace',
+        shortDesc: 'Aerobic power & race pace',
       },
       threshold: {
         label: 'Threshold',
-        shortDesc: 'Comfortably hard - T pace',
+        shortDesc: 'Comfortably hard - T pace',
       },
       vo2max: {
         label: 'VO2max',
-        shortDesc: '5K race effort - I pace',
+        shortDesc: '5K race effort - I pace',
       },
     },
   },
