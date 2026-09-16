@@ -43,14 +43,15 @@ export interface ProfileData {
   ytd: ProfilePeriodStats
   allTime: ProfilePeriodStats
   /**
-   * Last year's distance over the same slice of the calendar - Jan 1 up to
-   * today's month and day - so the year-on-year delta compares like with like.
-   * Measured against last year's *finished* total, a mid-September reading
-   * would print a large negative purely because this year is not over yet.
-   * Rounded the same way `ytd.distanceKm` is, so the delta is exactly the
-   * difference of the two numbers on screen.
+   * Last year over the same slice of the calendar - Jan 1 up to today's month
+   * and day - so every year-on-year delta compares like with like. Measured
+   * against last year's *finished* totals, a mid-September reading would print
+   * a large negative purely because this year is not over yet. Distance is
+   * rounded the same way `ytd.distanceKm` is, and the weekly average divides by
+   * the same elapsed days, so each delta is exactly the difference of the two
+   * numbers on screen. Null in a first year of training, which has no baseline.
    */
-  prevYearDistanceKm: number
+  prevYear: ProfilePeriodStats | null
   records: RecordEntry[]
   shoes: ShoeStats[]
   goal: ProfileGoal | null
@@ -105,9 +106,13 @@ export async function getProfileData(): Promise<ProfileData> {
 
   const prevYear = currentYear - 1
   const sameDayLastYear = `${prevYear}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-  const prevYearDistanceKm = sumDistanceKm(
-    activities.filter((a) => a.date.startsWith(String(prevYear)) && a.date <= sameDayLastYear),
+  const prevYearActivities = activities.filter(
+    (a) => a.date.startsWith(String(prevYear)) && a.date <= sameDayLastYear,
   )
+  const prevYearStats =
+    prevYearActivities.length > 0
+      ? periodStats(prevYearActivities, sumDistanceKm(prevYearActivities), elapsedDaysThisYear)
+      : null
 
   const elapsedDaysAllTime = Math.max(
     1,
@@ -139,7 +144,7 @@ export async function getProfileData(): Promise<ProfileData> {
     },
     ytd: periodStats(ytdActivities, ytdDistanceKmRounded, elapsedDaysThisYear),
     allTime: periodStats(activities, sumDistanceKm(activities), elapsedDaysAllTime),
-    prevYearDistanceKm,
+    prevYear: prevYearStats,
     records: PROFILE_RECORD_KEYS.map((key) => allRecords.find((r) => r.key === key)).filter(
       (r): r is RecordEntry => r !== undefined
     ),

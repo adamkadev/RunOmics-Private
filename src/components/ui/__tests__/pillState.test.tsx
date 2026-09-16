@@ -34,7 +34,7 @@ describe('the selected chip speaks one language', () => {
   })
 
   it('fills the selected profile period with the accent, not a neutral tint', () => {
-    render(<ProfileStatsYtd ytd={stats} allTime={stats} prevYearDistanceKm={1000} />)
+    render(<ProfileStatsYtd ytd={stats} allTime={stats} prevYear={stats} />)
 
     const selected = screen.getByRole('button', { name: t.profile.ytd.thisYearChip })
     expect(selected.className).toContain('bg-accent')

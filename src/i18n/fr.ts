@@ -274,7 +274,8 @@ export const fr = {
     },
     heatmap: {
       title: 'Régularité',
-      activeDays: (n: number) => `${n} jours actifs`,
+      activeDaysUnit: 'jours actifs',
+      rollingWindow: '12 mois glissants',
       less: 'Moins',
       more: 'Plus',
       restDay: 'Repos',
@@ -1045,6 +1046,7 @@ export const fr = {
       avgPerWeek: 'Moy. / sem.',
       calories: 'Calories',
       vsLastYear: (year: number) => `vs ${year}`,
+      noComparison: '—',
     },
     records: {
       title: 'Records',

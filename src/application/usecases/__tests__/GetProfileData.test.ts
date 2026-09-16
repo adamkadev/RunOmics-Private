@@ -121,14 +121,27 @@ describe('getProfileData', () => {
       ],
     })
 
-    expect(data.prevYearDistanceKm).toBe(20)
+    expect(data.prevYear?.distanceKm).toBe(20)
     expect(data.ytd.distanceKm).toBe(30)
+  })
+
+  it('measures last year over the same elapsed days, so the weekly average compares', async () => {
+    const data = await run({
+      activities: [
+        activity('2025-01-15', { distanceKm: 12 }),
+        activity('2025-02-01', { distanceKm: 8 }),
+        activity('2026-01-20', { distanceKm: 30 }),
+      ],
+    })
+
+    expect(data.prevYear?.sessionCount).toBe(2)
+    expect(data.prevYear?.avgKmPerWeek).toBeGreaterThan(0)
   })
 
   it('has no prior year to compare against in a first season', async () => {
     const data = await run({ activities: [activity('2026-01-20', { distanceKm: 30 })] })
 
-    expect(data.prevYearDistanceKm).toBe(0)
+    expect(data.prevYear).toBeNull()
   })
 
   it('averages all-time from the first activity, not from Jan 1', async () => {

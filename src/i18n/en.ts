@@ -282,7 +282,8 @@ export const en = {
     },
     heatmap: {
       title: 'Consistency',
-      activeDays: (n: number) => `${n} active days`,
+      activeDaysUnit: 'active days',
+      rollingWindow: 'rolling 12 months',
       less: 'Less',
       more: 'More',
       restDay: 'Rest day',
@@ -1056,6 +1057,7 @@ export const en = {
       avgPerWeek: 'Avg / week',
       calories: 'Calories',
       vsLastYear: (year: number) => `vs ${year}`,
+      noComparison: '—',
     },
     records: {
       title: 'Records',
