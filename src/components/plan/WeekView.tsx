@@ -18,7 +18,7 @@ import { weekTrainingStatus } from '@/domain/training/weekStatus'
 import { weekPlanPhase } from '@/domain/training/weekPlanPhase'
 import type { TrainingStatusCalendar } from '@/application/usecases/GetTrainingStatusCalendar'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
-import { WorkoutStructureBars } from './WorkoutStructure'
+import { WorkoutStructureBars, recoveryLabel } from './WorkoutStructure'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ActivitySheet } from './ActivitySheet'
@@ -91,15 +91,18 @@ function PlannedWorkoutRow({
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-bold text-foreground">{title}</span>
           <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-            {[workout.scheduledTime ? t.plan.timeOfDay[workout.scheduledTime] : null, workout.effort]
-              .filter(Boolean)
-              .join(' · ') || t.plan.planned}
+            {[workout.effort, recoveryLabel(workout.structure)].filter(Boolean).join(' · ') ||
+              t.plan.planned}
           </span>
         </span>
         <ChevronRight size={18} className="shrink-0 text-muted-foreground" />
       </div>
       {workout.structure && workout.structure.length > 1 && (
-        <WorkoutStructureBars steps={workout.structure} className="mt-3 flex h-[18px] items-end gap-[2px]" />
+        <WorkoutStructureBars
+          steps={workout.structure}
+          labels
+          className="mt-3 flex h-[22px] items-end gap-[3px]"
+        />
       )}
     </button>
   )

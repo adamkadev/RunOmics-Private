@@ -1220,6 +1220,7 @@ export const en = {
       repsWithRecovery: (n: number, effort: number, recovery: number, zone: string) => `${n} × ${effort}' @ ${zone} / ${recovery}' easy`,
       easyZone: 'Z1-Z2',
       min: (m: number) => `${m}'`,
+      rec: (m: number) => `${m}' rec`,
     },
     comingUp: 'Coming up',
     timeOfDay: {

@@ -219,14 +219,26 @@ describe('WeekView coaching day cells and Today', () => {
     expect(within(screen.getByRole('dialog')).getByText(t.coaching.states.prescribed)).toBeInTheDocument()
   })
 
-  it('lets a matching Garmin session fill in the time of day the coach never states', () => {
+  it('keeps the time of day off the row and shows it in the sheet instead', async () => {
+    const user = userEvent.setup()
     renderWeek({
       coaching: overview({ garminPlanned: [{ date: TODAY, name: 'Track session', type: 'Threshold', durationSecs: 3_600 }] }),
       planned: [{ date: TODAY, name: 'Track session', type: 'Threshold', durationSecs: 3_600, scheduledTime: 'Evening' }],
     })
 
-    expect(screen.getByTestId('plan-workout-row-workout-threshold').textContent)
-      .toContain(t.plan.timeOfDay.Evening)
+    const row = screen.getByTestId('plan-workout-row-workout-threshold')
+    expect(row.textContent).not.toContain(t.plan.timeOfDay.Evening)
+
+    await user.click(row)
+    expect(within(screen.getByRole('dialog')).getByText(t.plan.timeOfDay.Evening)).toBeInTheDocument()
+  })
+
+  it('labels the effort blocks and names the recovery on the row', () => {
+    renderWeek({ coaching: overview(), trainingZones: ZONES })
+
+    const row = screen.getByTestId('plan-workout-row-workout-threshold')
+    expect(within(row).getAllByText(t.plan.structure.min(8))).toHaveLength(3)
+    expect(row.textContent).toContain(t.plan.structure.rec(2))
   })
 
   it('shows one row for a session the coach prescribed and Garmin already holds', () => {

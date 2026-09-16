@@ -122,17 +122,44 @@ export function prescriptionSize(workout: WorkoutPrescription): string {
   ].filter(Boolean).join(' + ')
 }
 
-export function prescriptionPace(workout: WorkoutPrescription): string | null {
+const STEP_KIND: Record<WorkoutSegmentKind, WorkoutStepKind> = {
+  warmup: 'warmup',
+  effort: 'effort',
+  recovery: 'recovery',
+  cooldown: 'cooldown',
+  strides: 'effort',
+}
+
+function paceSpan(
+  workout: WorkoutPrescription,
+  include: (kind: WorkoutSegmentKind) => boolean
+): string | null {
   let min: number | undefined
   let max: number | undefined
 
-  eachSegment(workout, ({ paceSecPerKm }) => {
-    if (!paceSecPerKm) return
+  eachSegment(workout, ({ paceSecPerKm }, kind) => {
+    if (!paceSecPerKm || !include(kind)) return
     min = min === undefined ? paceSecPerKm.min : Math.min(min, paceSecPerKm.min)
     max = max === undefined ? paceSecPerKm.max : Math.max(max, paceSecPerKm.max)
   })
 
   return min !== undefined && max !== undefined ? `${formatClock(min)}–${formatClock(max)}/km` : null
+}
+
+/** The pace envelope of the whole session, warm-up and cool-down included. */
+export function prescriptionPace(workout: WorkoutPrescription): string | null {
+  return paceSpan(workout, () => true)
+}
+
+/**
+ * The pace of the work only. Collapsing every segment into one span turns a
+ * threshold session into `4:20-6:27/km`, a range so wide it prescribes nothing:
+ * the slow end is the warm-up and the fast end the reps. On a glanceable row
+ * the reps are the session, so the bookends are dropped. Returns null when the
+ * coach paced no effort segment, leaving the caller on its zone-band fallback.
+ */
+export function prescriptionEffortPace(workout: WorkoutPrescription): string | null {
+  return paceSpan(workout, (kind) => STEP_KIND[kind] === 'effort')
 }
 
 export function prescriptionDuration(workout: WorkoutPrescription): { seconds: number; estimated: boolean } | null {
@@ -162,14 +189,6 @@ export function prescriptionDistanceMeters(workout: WorkoutPrescription): number
     if (target.distanceMeters !== undefined) meters += target.distanceMeters
   })
   return meters || null
-}
-
-const STEP_KIND: Record<WorkoutSegmentKind, WorkoutStepKind> = {
-  warmup: 'warmup',
-  effort: 'effort',
-  recovery: 'recovery',
-  cooldown: 'cooldown',
-  strides: 'effort',
 }
 
 export function prescriptionStructure(workout: WorkoutPrescription): WorkoutStep[] | null {

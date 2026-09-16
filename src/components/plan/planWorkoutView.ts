@@ -14,6 +14,7 @@ import {
   isKeyPrescription,
   prescriptionDistanceMeters,
   prescriptionDuration,
+  prescriptionEffortPace,
   prescriptionPace,
   prescriptionStructure,
 } from '@/components/coaching/presentation'
@@ -97,14 +98,17 @@ export function coachWorkoutView(
   const workout = view.prescription
   const type = COACHING_TO_ACTIVITY_TYPE[workout.type]
   const zone = zoneFor(type, zones)
-  const pace = prescriptionPace(workout)
-  const effort =
-    [
-      effortBand(type, zone),
-      pace ?? (zone ? formatPaceRange([zone.paceMinSecPerKm, zone.paceMaxSecPerKm]) : null),
-    ]
-      .filter(Boolean)
-      .join(' · ') || null
+  const band = effortBand(type, zone)
+  const zoneBand = zone ? formatPaceRange([zone.paceMinSecPerKm, zone.paceMaxSecPerKm]) : null
+  const label = (pace: string | null) =>
+    [band, pace ?? zoneBand].filter(Boolean).join(' · ') || null
+
+  // Two readings of the same session. The row gets the work pace, because a
+  // range that also spans the warm-up prescribes nothing; the sheet gets the
+  // whole envelope, because there the warm-up is listed and the span explains
+  // it. For a continuous run the two are the same string.
+  const effort = label(prescriptionEffortPace(workout))
+  const target = label(prescriptionPace(workout))
 
   return {
     key: workout.id,
@@ -115,7 +119,7 @@ export function coachWorkoutView(
     duration: prescriptionDuration(workout),
     distanceM: prescriptionDistanceMeters(workout),
     effort,
-    target: effort,
+    target,
     description: workout.description || null,
     notes: workout.notes ?? [],
     structure: prescriptionStructure(workout),

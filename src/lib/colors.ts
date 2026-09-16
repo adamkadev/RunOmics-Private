@@ -138,6 +138,17 @@ export const WORKOUT_SEGMENT_COLORS = {
   cooldown: paper(0.18),
 } as const
 
+/**
+ * Ink for the duration labels that sit inside the structure bar. Only `effort`
+ * is drawn at full height, so it is the only segment wide and tall enough to
+ * carry text. `roAmber` is a light fill: white ink on it measures 1.80:1 where
+ * `roInk` clears 9.5:1, and because the fill is a fixed hex rather than a theme
+ * token the same ink holds in both themes.
+ */
+export const WORKOUT_SEGMENT_INK = {
+  effort: c.roInk,
+} as const
+
 export const WORKOUT_SHEET_COLORS = {
   base: withAlpha(c.sheetInk, 0.82),
   baseTinted: withAlpha(c.sheetInk, 0.88),

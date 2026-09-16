@@ -70,6 +70,38 @@ describe('coach prescriptions normalised into the Plan session view', () => {
     expect(view.target).toBe(view.effort)
   })
 
+  it('paces the row by the work and the sheet by the whole session', () => {
+    const blocks: WorkoutBlock[] = [
+      { kind: 'warmup', target: { durationSeconds: 900, paceSecPerKm: { min: 350, max: 387 } } },
+      {
+        kind: 'repeat',
+        repetitions: 3,
+        steps: [
+          { kind: 'effort', target: { durationSeconds: 480, paceSecPerKm: { min: 260, max: 270 } } },
+          { kind: 'recovery', target: { durationSeconds: 120, paceSecPerKm: { min: 380, max: 420 } } },
+        ],
+      },
+      { kind: 'cooldown', target: { durationSeconds: 600, paceSecPerKm: { min: 350, max: 387 } } },
+    ]
+    const view = coachWorkoutView(viewOf(recovery({ title: 'Threshold 3 × 8 min', blocks })), ZONES)
+
+    expect(view.effort).toContain('4:20–4:30/km')
+    expect(view.effort).not.toContain('7:00')
+    expect(view.target).toContain('4:20–7:00/km')
+  })
+
+  it('keeps the row on its zone band when only the bookends are paced', () => {
+    const blocks: WorkoutBlock[] = [
+      { kind: 'warmup', target: { durationSeconds: 900, paceSecPerKm: { min: 350, max: 387 } } },
+      { kind: 'effort', target: { durationSeconds: 1_800 } },
+      { kind: 'cooldown', target: { durationSeconds: 600, paceSecPerKm: { min: 350, max: 387 } } },
+    ]
+    const view = coachWorkoutView(viewOf(recovery({ blocks })), ZONES)
+
+    expect(view.effort).toContain('5:10')
+    expect(view.target).toContain('5:50–6:27/km')
+  })
+
   it('falls back to the zone band only when the coach states no pace', () => {
     const view = coachWorkoutView(
       viewOf(recovery({ blocks: [{ kind: 'effort', target: { distanceMeters: 4_000, durationSeconds: 1_500 } }] })),
