@@ -915,6 +915,9 @@ export const fr = {
       km: (actual: number, target: number) => `${actual} / ${target}`,
       targetRule: 'objectif mensuel',
       inProgress: 'en cours',
+      daysIn: (month: string, days: number) => `${month} compte ${days} jour${days === 1 ? '' : 's'}`,
+      proRata: (actual: number, target: number) => `${actual} sur un objectif au prorata de ${target} km`,
+      proRataTarget: (target: number) => `prorata ${target}`,
     },
     history: {
       title: 'Années passées',

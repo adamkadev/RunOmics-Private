@@ -15,6 +15,9 @@ const NOW = new Date()
 const THIS_YEAR = NOW.getFullYear()
 const THIS_MONTH = NOW.getMonth() + 1
 
+const DAYS_ELAPSED = NOW.getDate()
+const PRO_RATA_KM = 87
+
 /**
  * Every elapsed month up to and including the running one, plus the rest of the
  * year as `pending`. The first elapsed month beat its target, the running month
@@ -23,17 +26,25 @@ const THIS_MONTH = NOW.getMonth() + 1
 function goalsForThisYear(): MonthGoal[] {
   return Array.from({ length: 12 }, (_, i) => {
     const month = i + 1
-    if (month > THIS_MONTH) return { month, targetKm: 165, actualKm: 0, status: 'pending' as const }
-    if (month === THIS_MONTH) return { month, targetKm: 165, actualKm: 40, status: 'behind' as const }
-    return { month, targetKm: 165, actualKm: 220, status: 'ahead' as const }
+    if (month > THIS_MONTH) return { month, targetKm: 165, actualKm: 0, status: 'pending' as const, progress: null }
+    if (month === THIS_MONTH) {
+      return {
+        month,
+        targetKm: 165,
+        actualKm: 40,
+        status: 'behind' as const,
+        progress: { daysElapsed: DAYS_ELAPSED, daysInMonth: 30, proRataTargetKm: PRO_RATA_KM },
+      }
+    }
+    return { month, targetKm: 165, actualKm: 220, status: 'ahead' as const, progress: null }
   })
 }
 
 describe('volumePlotMaxKm', () => {
   it('spans the tallest thing drawn, so a month over target is not clipped to its target', () => {
     const months: MonthGoal[] = [
-      { month: 1, targetKm: 100, actualKm: 160, status: 'ahead' },
-      { month: 2, targetKm: 100, actualKm: 100, status: 'ahead' },
+      { month: 1, targetKm: 100, actualKm: 160, status: 'ahead', progress: null },
+      { month: 2, targetKm: 100, actualKm: 100, status: 'ahead', progress: null },
     ]
     const max = volumePlotMaxKm(months)
     expect(max).toBeGreaterThanOrEqual(160)
@@ -41,7 +52,7 @@ describe('volumePlotMaxKm', () => {
   })
 
   it('never divides by zero when no target and no volume exist', () => {
-    expect(volumePlotMaxKm([{ month: 1, targetKm: 0, actualKm: 0, status: 'behind' }])).toBe(1)
+    expect(volumePlotMaxKm([{ month: 1, targetKm: 0, actualKm: 0, status: 'behind', progress: null }])).toBe(1)
     expect(volumePlotMaxKm([])).toBe(1)
   })
 })
@@ -85,11 +96,18 @@ describe('MonthlyVolumeChart collapsed axis', () => {
     expect(container.querySelectorAll('[data-testid="target-rule"]')).toHaveLength(THIS_MONTH)
   })
 
-  it('outlines the running month instead of filling it, and names its pro-rated status', () => {
+  it('outlines the running month instead of filling it, and states how far into it we are', () => {
     const { container } = render(
       <MonthlyVolumeChart monthlyGoals={goalsForThisYear()} year={THIS_YEAR} />,
     )
-    expect(screen.getByText(`${monthLabel(THIS_MONTH)} · ${s.status.behind}`)).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        `${s.daysIn(monthLabel(THIS_MONTH), DAYS_ELAPSED)} · ${s.proRata(40, PRO_RATA_KM)}`,
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText(`${monthLabel(THIS_MONTH)} · ${s.status.behind}`),
+    ).not.toBeInTheDocument()
 
     const bars = Array.from(container.querySelectorAll<HTMLElement>('[title]'))
     const running = bars[bars.length - 1]!
@@ -103,7 +121,7 @@ describe('MonthlyVolumeChart collapsed axis', () => {
   it('draws behind in one hue the bar, the icon and the label all share', () => {
     const { container } = render(
       <MonthlyVolumeChart
-        monthlyGoals={[{ month: 1, targetKm: 165, actualKm: 40, status: 'behind' }]}
+        monthlyGoals={[{ month: 1, targetKm: 165, actualKm: 40, status: 'behind', progress: null }]}
         year={THIS_YEAR - 1}
       />,
     )

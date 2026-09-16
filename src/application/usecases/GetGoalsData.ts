@@ -63,11 +63,18 @@ export interface GoalProjection {
   deltaKm: number
 }
 
+export interface MonthProgress {
+  daysElapsed: number
+  daysInMonth: number
+  proRataTargetKm: number
+}
+
 export interface MonthGoal {
   month: number
   targetKm: number
   actualKm: number
   status: 'ahead' | 'on_track' | 'behind' | 'pending'
+  progress: MonthProgress | null
 }
 
 export interface NextRaceSpotlight {
@@ -160,7 +167,7 @@ export function computeMonthlyGoals(activities: Activity[], year: number, goals:
     const month = i + 1
     const monthStart = new Date(year, month - 1, 1)
     const monthEnd = new Date(year, month, 1)
-    const daysInMonth = (monthEnd.getTime() - monthStart.getTime()) / 86_400_000
+    const daysInMonth = Math.round((monthEnd.getTime() - monthStart.getTime()) / 86_400_000)
     const targetKm = round((annualKm * daysInMonth) / daysInYear, 1)
 
     const actualKm = round(
@@ -174,19 +181,26 @@ export function computeMonthlyGoals(activities: Activity[], year: number, goals:
     )
 
     let status: MonthGoal['status']
+    let progress: MonthProgress | null = null
     if (monthStart > now) {
       status = 'pending'
     } else if (monthEnd <= now) {
       status = actualKm >= targetKm ? 'ahead' : 'behind'
     } else {
-      const expectedFraction = (now.getTime() - monthStart.getTime()) / 86_400_000 / daysInMonth
+      const daysElapsed = now.getDate()
+      const expectedFraction = daysElapsed / daysInMonth
       const actualFraction = targetKm > 0 ? actualKm / targetKm : 0
       status =
         actualFraction > expectedFraction * 1.1 ? 'ahead' :
         actualFraction < expectedFraction * 0.9 ? 'behind' : 'on_track'
+      progress = {
+        daysElapsed,
+        daysInMonth,
+        proRataTargetKm: round(targetKm * expectedFraction, 1),
+      }
     }
 
-    return { month, targetKm, actualKm, status }
+    return { month, targetKm, actualKm, status, progress }
   })
 }
 

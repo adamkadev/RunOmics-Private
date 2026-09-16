@@ -29,6 +29,12 @@ const MONTH_CELL_TINT: Record<MonthGoal['status'], { bg: string; border: string;
 /** Neutral ink, so the rule reads over both the card ground and a coloured bar. */
 const TARGET_RULE_COLOR = 'color-mix(in srgb, var(--foreground) 40%, transparent)'
 
+const IN_PROGRESS_TINT = { bg: '', border: TARGET_RULE_COLOR, bar: TARGET_RULE_COLOR, dashed: true }
+
+function monthTint(mg: MonthGoal) {
+  return mg.progress ? IN_PROGRESS_TINT : MONTH_CELL_TINT[mg.status]
+}
+
 /**
  * One vertical scale for every bar in the collapsed chart, so heights are
  * comparable month to month. Normalising each bar to its own target instead
@@ -73,9 +79,12 @@ export function MonthlyVolumeChart({ monthlyGoals, year }: { monthlyGoals: Month
       {expanded ? (
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
           {monthlyGoals.map((mg) => {
-            const progress = mg.targetKm > 0 ? Math.min((mg.actualKm / mg.targetKm) * 100, 100) : 0
-            const { Icon: StatusIcon, className: statusClassName } = STATUS_ICON[mg.status]
-            const tint = MONTH_CELL_TINT[mg.status]
+            const denominator = mg.progress ? mg.progress.proRataTargetKm : mg.targetKm
+            const progress = denominator > 0 ? Math.min((mg.actualKm / denominator) * 100, 100) : 0
+            const { Icon: StatusIcon, className: statusClassName } = mg.progress
+              ? { Icon: Minus, className: 'text-subtle' }
+              : STATUS_ICON[mg.status]
+            const tint = monthTint(mg)
             return (
               <GlassSurface
                 key={mg.month}
@@ -89,12 +98,20 @@ export function MonthlyVolumeChart({ monthlyGoals, year }: { monthlyGoals: Month
                     size={12}
                     strokeWidth={3}
                     className={statusClassName}
-                    aria-label={t.goals.monthlyVolume.status[mg.status]}
+                    aria-label={mg.progress ? t.goals.monthlyVolume.inProgress : t.goals.monthlyVolume.status[mg.status]}
                   />
                 </div>
                 <p className="mt-1.5 text-xs font-medium text-foreground">
-                  <AnimatedValue value={Math.round(mg.actualKm)} /> / {Math.round(mg.targetKm)}
+                  <AnimatedValue value={Math.round(mg.actualKm)} /> /{' '}
+                  {mg.progress
+                    ? t.goals.monthlyVolume.proRataTarget(Math.round(mg.progress.proRataTargetKm))
+                    : Math.round(mg.targetKm)}
                 </p>
+                {mg.progress && (
+                  <p className="mt-0.5 text-micro text-subtle">
+                    {t.goals.monthlyVolume.daysIn(monthLabel(mg.month), mg.progress.daysElapsed)}
+                  </p>
+                )}
                 <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-foreground/[0.08]">
                   <div
                     className="h-full rounded-full transition-all"
@@ -109,13 +126,16 @@ export function MonthlyVolumeChart({ monthlyGoals, year }: { monthlyGoals: Month
         <GlassSurface variant="card" className="rounded-card-sm p-4">
           <div className="flex h-20 items-stretch gap-2">
             {elapsedMonths.map((mg) => {
-              const bar = MONTH_CELL_TINT[mg.status].bar
+              const bar = monthTint(mg).bar
               const isCurrent = current?.month === mg.month
               return (
                 <div key={mg.month} className="relative flex-1">
                   <div
                     className="absolute inset-x-0 bottom-0 rounded-sm transition-all"
-                    title={`${monthLabel(mg.month)}: ${t.goals.monthlyVolume.km(Math.round(mg.actualKm), Math.round(mg.targetKm))} ${t.units.km}`}
+                    title={`${monthLabel(mg.month)}: ${t.goals.monthlyVolume.km(
+                      Math.round(mg.actualKm),
+                      Math.round(mg.progress ? mg.progress.proRataTargetKm : mg.targetKm),
+                    )} ${t.units.km}`}
                     style={{
                       height: `${(mg.actualKm / scaleMax) * 100}%`,
                       minHeight: mg.actualKm > 0 ? 2 : 0,
@@ -181,9 +201,13 @@ export function MonthlyVolumeChart({ monthlyGoals, year }: { monthlyGoals: Month
               />
               {t.goals.monthlyVolume.inProgress}
             </span>
-            {current && (
-              <span className={cn('ml-auto font-semibold', STATUS_ICON[current.status].className)}>
-                {monthLabel(current.month)} · {t.goals.monthlyVolume.status[current.status]}
+            {current?.progress && (
+              <span className="ml-auto text-subtle">
+                {t.goals.monthlyVolume.daysIn(monthLabel(current.month), current.progress.daysElapsed)} ·{' '}
+                {t.goals.monthlyVolume.proRata(
+                  Math.round(current.actualKm),
+                  Math.round(current.progress.proRataTargetKm),
+                )}
               </span>
             )}
           </div>

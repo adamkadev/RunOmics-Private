@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { computeProjection, computeYearOutcome, computeNextRaceSpotlight } from '../GetGoalsData'
+import {
+  computeProjection,
+  computeYearOutcome,
+  computeNextRaceSpotlight,
+  computeMonthlyGoals,
+} from '../GetGoalsData'
 import type { Activity } from '@/domain/activity/types'
 import type { GoalYear, YearData, UpcomingRace, GoalRacePrediction } from '../GetGoalsData'
 
@@ -196,5 +201,51 @@ describe('computeNextRaceSpotlight', () => {
       '2024-07-01'
     )
     expect(result?.predictedSeconds).toBe(1210)
+  })
+})
+
+describe('computeMonthlyGoals', () => {
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2024-09-16T12:00:00'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('carries a pro-rata target for the month still being run', () => {
+    const months = computeMonthlyGoals([act('2024-09-05', 58)], 2024, goal(2000))
+    const september = months[8]!
+
+    expect(september.progress).not.toBeNull()
+    expect(september.progress!.daysElapsed).toBe(16)
+    expect(september.progress!.daysInMonth).toBe(30)
+    expect(september.progress!.proRataTargetKm).toBeLessThan(september.targetKm)
+    expect(Math.round(september.progress!.proRataTargetKm)).toBe(87)
+  })
+
+  it('leaves finished and future months with nothing to pro-rate', () => {
+    const months = computeMonthlyGoals([act('2024-08-05', 100)], 2024, goal(2000))
+
+    expect(months[7]!.progress).toBeNull()
+    expect(months[9]!.progress).toBeNull()
+    expect(months[9]!.status).toBe('pending')
+  })
+})
+
+describe('computeMonthlyGoals across a DST boundary', () => {
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2024-03-20T12:00:00'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('counts whole days in a month that loses an hour', () => {
+    const march = computeMonthlyGoals([act('2024-03-02', 40)], 2024, goal(2000))[2]!
+
+    expect(march.progress!.daysInMonth).toBe(31)
+    expect(march.progress!.daysElapsed).toBe(20)
   })
 })
