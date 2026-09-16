@@ -42,15 +42,6 @@ export interface ProfileData {
   hero: ProfileHero
   ytd: ProfilePeriodStats
   allTime: ProfilePeriodStats
-  /**
-   * Last year over the same slice of the calendar - Jan 1 up to today's month
-   * and day - so every year-on-year delta compares like with like. Measured
-   * against last year's *finished* totals, a mid-September reading would print
-   * a large negative purely because this year is not over yet. Distance is
-   * rounded the same way `ytd.distanceKm` is, and the weekly average divides by
-   * the same elapsed days, so each delta is exactly the difference of the two
-   * numbers on screen. Null in a first year of training, which has no baseline.
-   */
   prevYear: ProfilePeriodStats | null
   records: RecordEntry[]
   shoes: ShoeStats[]

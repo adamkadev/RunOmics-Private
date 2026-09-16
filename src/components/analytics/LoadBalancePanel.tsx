@@ -9,10 +9,6 @@ import { t } from '@/i18n'
 // A below-target intensity band is not benign - it is a gap in the training that
 // wants action - so it carries the same caution tone as overshooting one.
 //
-// The row has no verdict chip any more - the marker against the band is the
-// verdict, and three chips down a column repeated what three markers already
-// showed. The value keeps the tone, so an off-target row is visible without
-// reading the band.
 const VERDICT_INK: Record<LoadBalanceBucket['verdict'], string> = {
   below: STATUS.warning.text,
   onTarget: 'text-foreground',

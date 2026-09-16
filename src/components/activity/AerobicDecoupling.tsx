@@ -22,9 +22,6 @@ export function AerobicDecoupling({ decoupling }: Props) {
 
   return (
     <div className="rounded-xl border border-foreground/[0.08] bg-foreground/[0.04] p-3.5">
-      {/* The card used to explain itself twice: a line on what happened, then a
-          line on how the ratio is computed. The method is reference material,
-          so it goes behind the same disclosure the chart cards use for theirs. */}
       <ChartCardHead
         className="mb-1.5"
         title={t.activity.decoupling.title}

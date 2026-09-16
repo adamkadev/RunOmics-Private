@@ -178,11 +178,6 @@ export function formatDate(isoDate: string, options: DateFormatOptions = {}): st
   return stableSpaces(date.toLocaleDateString(t.locale, dateFields(options, showYear)))
 }
 
-/**
- * A month and a two-digit year, for a cell too narrow to carry "May 2025" on
- * one line. The separator is the locale's: English writes "May '25", French
- * does not use the apostrophe, so the pattern lives in i18n rather than here.
- */
 export function formatMonthShortYear(isoDate: string, options: DateFormatOptions = {}): string {
   const month = formatDate(isoDate, { ...options, precision: 'month', year: 'never' })
   return t.dates.monthShortYear(month, isoDate.slice(2, 4))

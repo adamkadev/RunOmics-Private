@@ -32,9 +32,6 @@ export function YearView({ yearData }: Props) {
   const annualProgress = annualDistanceKm > 0
     ? Math.min((totalDistanceKm / annualDistanceKm) * 100, 100)
     : 0
-  // The projection is a mark on the bar the progress is already drawn on, not a
-  // second picture of the same year: a line into a dashed line, unlabelled,
-  // under a bar showing the same thing, said nothing twice.
   const projectedPercent = projection && annualDistanceKm > 0
     ? Math.min((projection.projectedYearKm / annualDistanceKm) * 100, 100)
     : null

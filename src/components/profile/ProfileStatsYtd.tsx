@@ -17,7 +17,6 @@ interface Cell {
   label: string
   /** Signed change against the same point last year, in the cell's own unit. */
   delta?: number
-  /** Below this, the change is rounding rather than news, so it stays neutral. */
   noise: number
 }
 
@@ -36,8 +35,6 @@ interface Props {
 
 const HOURS = (stats: ProfilePeriodStats) => Math.round(stats.durationSeconds / 3600)
 const THOUSAND_KCAL = (stats: ProfilePeriodStats) => stats.calories / 1000
-// Each side is rounded before subtracting, so a delta is exactly the difference
-// of the two numbers on screen rather than of the two behind them.
 const THOUSAND_KCAL_SHOWN = (stats: ProfilePeriodStats) => round(THOUSAND_KCAL(stats), 1)
 
 export function ProfileStatsYtd({ ytd, allTime, prevYear }: Props) {
@@ -45,8 +42,6 @@ export function ProfileStatsYtd({ ytd, allTime, prevYear }: Props) {
   const stats = period === 'year' ? ytd : allTime
   const prevYearLabel = new Date().getFullYear() - 1
 
-  // All-time has nothing to compare against, and a first year of training has
-  // no baseline - a delta off a zero prior year is just the total again.
   const baseline = period === 'year' ? prevYear : null
   const delta = (pick: (stats: ProfilePeriodStats) => number) =>
     baseline ? pick(stats) - pick(baseline) : undefined

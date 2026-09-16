@@ -110,18 +110,12 @@ export function ActivityHeatmap({ days }: Props) {
       <div className="mb-4 flex items-baseline justify-between gap-3">
         <div className="min-w-0">
           <h3 className="text-sm font-bold text-foreground">{t.dashboard.heatmap.title}</h3>
-          {/* The strip is a rolling year, which the Progress toggle above it does
-              not change - so it says which window it is, rather than leaving
-              "205 active days" to read as the same scope as "1,328 km this
-              year" two cards up. */}
           <p className="mt-0.5 text-micro text-subtle">
             {windowRange ? `${windowRange} · ` : ''}
             {t.dashboard.heatmap.rollingWindow}
           </p>
         </div>
         <span className="shrink-0 text-sm">
-          {/* A value, not a destination: the count is ink and the unit is muted,
-              where both used to render in the accent that means "tap this". */}
           <span className="font-semibold text-foreground">{activeDays}</span>{' '}
           <span className="font-medium text-muted-foreground">{t.dashboard.heatmap.activeDaysUnit}</span>
         </span>

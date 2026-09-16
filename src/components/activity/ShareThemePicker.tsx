@@ -26,7 +26,7 @@ export function ShareThemePicker({
   return (
     <div
       className="flex gap-2.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      style={{ padding: '4px 14px 12px' }}
+      style={{ padding: '8px 16px 14px', scrollPaddingInline: 16 }}
     >
       {designs.map((d) => (
         <Fragment key={d}>

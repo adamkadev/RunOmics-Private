@@ -51,9 +51,6 @@ function groupLabel(group: DayGroup): string {
 
 const COMPOSITION_MAX = 2
 
-// Days per status across the whole window, which is what the ribbon's
-// composition is - not the longest consecutive stretch, which said nothing the
-// segments did not already show.
 type RatedStatus = NonNullable<TrainingStatusDayBar['status']>
 
 function statusComposition(days: TrainingStatusDayBar[]): { status: RatedStatus; count: number }[] {

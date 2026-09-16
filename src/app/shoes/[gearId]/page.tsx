@@ -35,9 +35,6 @@ function verdictBody(status: 'watch' | 'replace', weeksRemaining: number | null)
   return `${v.weeksLeft(weeksRemaining)} ${action}`
 }
 
-// Five cells on a 375 pt screen leave 67 px each, and the strip carries two
-// dates: `text-subhead` is the step at which "May '25" still fits on one line,
-// applied to every cell so the row keeps one size.
 const STAT_VALUE_CLASS = 'text-subhead font-bold text-foreground'
 
 export async function generateMetadata({

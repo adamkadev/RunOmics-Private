@@ -117,9 +117,6 @@ export function RacePredictorChart({ data }: { data: GarminRacePredictionsData }
   const s = t.analytics.charts.racePredictor
 
   const { range, selectRange, bounds, visible, canGoBack, canGoForward, goBack, goForward } =
-    // At 4w the four series resolve to four near-flat points each, and the
-    // legend above them already prints every value - the chart added nothing.
-    // Six months is the shortest window where the trend is real.
     useChartWindow(data.points, '6m')
 
   const plotted = sampleForRange(visible, range, 0)

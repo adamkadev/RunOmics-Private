@@ -164,9 +164,6 @@ function WeekLoadSummary({ summary, planned }: { summary: WeekSummary; planned: 
     <GlassSurface variant="card" className="rounded-[14px] px-3.5 py-3">
       <div className="flex items-baseline justify-between gap-2">
         <SectionDivider>{s.load}</SectionDivider>
-        {/* "67 / 368" says neither what the denominator is nor which side is
-            which, and "100/0" beside a "Easy / Hard" label made the reader map
-            two numbers onto two words by position. Both spell themselves out. */}
         <div className="font-display text-lg font-bold tabular-nums text-foreground">
           <AnimatedValue value={summary.totalTrimp} />
           {target > 0 && (
@@ -402,9 +399,6 @@ export function WeekView({
                 const rest = !completed && !planned
                 const primaryType: ActivityType | null = (d.acts[0]?.type ?? (activeCoach ? COACHING_TO_ACTIVITY_TYPE[activeCoach.prescription.type] : plan?.type)) ?? null
                 const typeColor = primaryType && !missed ? ACTIVITY_TYPE_CONFIG[primaryType].chartColor : null
-                // The phase card above already says "Base week", so five chips
-                // reading "Base" carried nothing. The day's distance goes here
-                // and the session stays identifiable by the chip's colour.
                 const doneKm = d.acts.reduce((sum, a) => sum + a.distanceKm, 0)
                 const plannedMeters = activeCoach
                   ? prescriptionDistanceMeters(activeCoach.prescription)

@@ -8,7 +8,6 @@ interface Metric {
   label: string
   value: string
   unit: string
-  /** Signed change against the metric's own 8-week median, in its own unit. */
   delta: number | null
 }
 
@@ -64,10 +63,6 @@ export function RunningDynamics({ activity: a, baseline }: Props) {
       <h3 className="mb-4 text-sm font-semibold text-foreground/80">
         {t.activity.dynamics.title}
       </h3>
-      {/* A raw 269 ms means nothing without something to read it against, so
-          each metric carries its own median over the eight weeks before the
-          run. No verdict on the sign: whether more bounce or less is better
-          depends on the metric and on the runner. */}
       <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
         {metrics.map((m) => (
           <div key={m.label}>

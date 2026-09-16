@@ -26,9 +26,6 @@ describe('WindowedChartCard: reading and footnote', () => {
       </WindowedChartCard>
     )
 
-    // The takeaway is the card's subhead and it precedes the chart: the card
-    // used to print it at 11px underneath, below a 12px definition, behind a
-    // bold "Reading:" that competed with the title.
     const reading = screen.getByText(/Easy HR is drifting down\./)
     expect(reading.tagName).toBe('P')
     expect(reading.className).toContain('text-footnote')

@@ -41,10 +41,8 @@ describe('YearView annual goal card', () => {
 
     const marker = container.querySelector<HTMLElement>('[aria-label*="1,705"]')
     expect(marker).not.toBeNull()
-    // 1,705 of 2,000 is 85.25% of the way along the same track as the fill.
     expect(marker!.style.left).toBe('85.25%')
 
-    // No second picture of the year: the dashed projection sparkline is gone.
     expect(container.querySelector('path[stroke-dasharray]')).toBeNull()
   })
 

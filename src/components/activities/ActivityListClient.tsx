@@ -63,14 +63,6 @@ function WeekStat({ value, label }: { value: string; label: string }) {
   )
 }
 
-// The same three numbers on every row, current week or not: past weeks used to
-// give runs and km as a caption beside an unlabelled sparkline, so no two rows
-// in the column carried the same facts in the same places.
-//
-// The easy share is a number rather than a bar. The bar printed the percentage
-// underneath itself, so it drew what the label already said - and the one thing
-// the row was missing, how the week stands against its planned distance, had
-// nowhere to go. That is the bar below, on the only row that has a target.
 function WeekSummary({ group }: { group: WeekGroup }) {
   return (
     <div className="flex shrink-0 items-end gap-4 text-right">
@@ -389,10 +381,6 @@ export function ActivityListClient({
         </div>
       </div>
 
-      {/* The rail always overflows at 375 pt, and the last chip used to be cut
-          mid-word by the viewport with nothing saying it could scroll. The fade
-          only appears while there is more to the right, so a row that fits is
-          not dimmed for no reason. */}
       <div
         ref={chipRailRef}
         onScroll={updateChipFade}

@@ -107,9 +107,6 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device }: Props) {
           <span className="shrink-0 font-semibold text-accent-text">{s.rowAction.export}</span>
         </button>
 
-        {/* Export adds a file; this throws one away. They used to be the same
-            row in the same accent, which reads as "tap this" rather than as
-            "this is the destructive one". */}
         <div>
           <div className="flex w-full items-center justify-between gap-2 text-footnote text-muted-foreground">
             <span>{s.offlineCache.clear}</span>

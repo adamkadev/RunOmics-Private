@@ -20,14 +20,6 @@ function medianOf(runs: Activity[], pick: (a: Activity) => number | null | undef
   return values.length >= MIN_RUNS ? round(median(values), decimals) : null
 }
 
-/**
- * What the last eight weeks of running looked like, for the run detail's
- * dynamics values to be read against - 269 ms of ground contact says nothing
- * on its own. The window ends the day before the run so a run cannot be part
- * of its own baseline, and each metric needs its own three readings: a watch
- * reports these only on some runs, so one metric can be present where another
- * is not.
- */
 export function getDynamicsBaseline(activity: Activity): DynamicsBaseline | null {
   const end = Date.parse(activity.date + 'T00:00:00')
   const start = end - BASELINE_WEEKS * 7 * DAY_MS

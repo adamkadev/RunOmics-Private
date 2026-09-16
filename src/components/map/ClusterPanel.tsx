@@ -45,9 +45,9 @@ export function ClusterPanel({ clusters, names, stats, selectedIdx, onSelect }: 
         title={names[selectedIdx]}
         className="glass-map-chip flex min-w-0 items-center gap-2 px-3 py-2.5 transition-colors hover:bg-muted"
       >
-        <span className="min-w-0 truncate text-xs font-semibold text-accent-text">{names[selectedIdx]}</span>
-        <span className="shrink-0 text-caption text-subtle">
-          {t.common.runs(stats[selectedIdx]?.routeCount ?? 0)}
+        <span className="min-w-0 flex-1 truncate text-xs font-semibold text-accent-text">{names[selectedIdx]}</span>
+        <span className="min-w-0 shrink truncate text-caption tabular-nums text-subtle">
+          {stats[selectedIdx]?.routeCount ?? 0}
         </span>
         <ChevronDown
           size={16}
