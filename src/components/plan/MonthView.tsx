@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { PrescriptionView } from '@/application/coaching/GetCoachingView'
 import { prescriptionSize } from '@/components/coaching/presentation'
+import { COACHING_TO_ACTIVITY_TYPE } from '@/domain/coaching/types'
 
 interface Props {
   year: number
@@ -52,10 +53,10 @@ function DayActivities({ activities }: { activities: ActivitySummary[] }) {
       </div>
       {totalKm > 0 && activities[0] && (
         <span
-          className="text-micro font-bold leading-none"
+          className="block w-full truncate break-normal text-micro font-bold leading-none"
           style={{ color: ACTIVITY_TYPE_CONFIG[activities[0].type].chartColor }}
         >
-          {totalKm.toFixed(1)} {t.units.km}
+          {t.plan.did(totalKm.toFixed(1))}
         </span>
       )}
     </div>
@@ -84,13 +85,13 @@ function PlannedBadge({ workout, onTap }: { workout: PlannedWorkout; onTap: () =
       className="flex items-center gap-1 rounded px-1 py-0.5 transition-colors hover:bg-foreground/[0.06]"
     >
       <span
-        className={cn('h-1.5 w-1.5 shrink-0 rounded-full', !dotColor && 'bg-accent/50')}
-        style={dotColor ? { background: dotColor, opacity: 0.7 } : undefined}
+        className={cn('h-1.5 w-1.5 shrink-0 rounded-full border', !dotColor && 'border-accent/50')}
+        style={dotColor ? { borderColor: dotColor } : undefined}
         aria-hidden="true"
       />
       {label && (
         <span
-          className={cn('text-micro font-bold', !dotColor && 'text-accent-text/70')}
+          className={cn('min-w-0 truncate break-normal text-micro font-bold', !dotColor && 'text-accent-text/70')}
           style={dotColor ? { color: dotColor } : undefined}
         >
           {label}
@@ -165,10 +166,11 @@ export function MonthView({ year, month, byDate, byDatePlanned, byDateCoach, tod
                       >
                         {cell.day}
                       </p>
-                      {byDateCoach?.has(cell.date) && <button type="button" onClick={() => onSelectDay(cell.date)} aria-label={`${formatDate(cell.date, { style: 'full' })} · ${byDateCoach.get(cell.date)!.map(view => view.prescription.title).join(', ')}`} className="mb-1 block w-full min-w-0 rounded border-l-2 border-accent/60 bg-accent/[0.06] px-1 py-1 text-left">
-                        {byDateCoach.get(cell.date)!.map(view => <span key={view.prescription.id} data-testid={`coach-calendar-${view.prescription.id}`} className="block">
-                          <span className={cn('line-clamp-2 break-words text-micro font-semibold text-foreground', view.state === 'cancelled' && 'line-through opacity-50')}>{view.prescription.title}</span>
-                          <span className="block text-micro text-muted-foreground">{prescriptionSize(view.prescription)}</span>
+                      {byDateCoach?.has(cell.date) && <button type="button" onClick={() => onSelectDay(cell.date)} aria-label={`${formatDate(cell.date, { style: 'full' })} · ${byDateCoach.get(cell.date)!.map(view => view.prescription.title).join(', ')}`} className="mb-1 block w-full min-w-0 rounded border-l-2 border-dashed border-accent/60 bg-accent/[0.06] px-1 py-1 text-left">
+                        {byDateCoach.get(cell.date)!.map(view => <span key={view.prescription.id} data-testid={`coach-calendar-${view.prescription.id}`} className="block min-w-0">
+                          <span className={cn('block truncate break-normal text-micro font-semibold text-foreground', view.state === 'cancelled' && 'line-through opacity-50')}>
+                            {[t.plan.typeShort[COACHING_TO_ACTIVITY_TYPE[view.prescription.type]], prescriptionSize(view.prescription)].filter(Boolean).join(' ')}
+                          </span>
                         </span>)}
                       </button>}
                       {cell.acts.length > 0 ? (
@@ -202,6 +204,14 @@ export function MonthView({ year, month, byDate, byDatePlanned, byDateCoach, tod
               {t.activityTypes[type as ActivityType]}
             </span>
           ))}
+          <span className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-subtle" />
+            {t.plan.legend.did}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full border border-subtle" />
+            {t.plan.legend.planned}
+          </span>
         </div>
         <p className="font-mono">{t.plan.summary(sessionCount, totalKm)}</p>
       </div>

@@ -1204,6 +1204,8 @@ export const fr = {
     } as Record<ActivityType, string>,
     restDay: 'Repos',
     planned: 'Prévu',
+    did: (km: string) => `fait ${km}`,
+    legend: { did: 'fait', planned: 'prévu' },
     easyEffortLabel: 'EF',
     structure: {
       title: 'Structure',

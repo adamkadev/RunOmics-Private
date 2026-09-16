@@ -1215,6 +1215,8 @@ export const en = {
     } as Record<ActivityType, string>,
     restDay: 'Rest',
     planned: 'Planned',
+    did: (km: string) => `did ${km}`,
+    legend: { did: 'did', planned: 'planned' },
     easyEffortLabel: 'Z2 easy',
     structure: {
       title: 'Structure',
