@@ -12,6 +12,7 @@ import {
   type WindowBounds,
 } from '@/domain/timeWindow'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { CardTitle } from '@/components/ui/SectionLabel'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { CHART_COLORS } from '@/lib/colors'
@@ -137,6 +138,7 @@ export const SPARSE_POINTS = 4
 
 export function WindowedChartCard<T extends { date: string }>({
   title,
+  unit,
   controls,
   legend,
   points,
@@ -147,6 +149,9 @@ export function WindowedChartCard<T extends { date: string }>({
   children,
 }: {
   title: ReactNode
+  /** What the plotted values are counted in, shown beside the title so the
+   *  axis numbers are not the only place the reader can look for it. */
+  unit?: string
   controls?: ReactNode
   legend?: ReactNode
   points: T[]
@@ -162,7 +167,10 @@ export function WindowedChartCard<T extends { date: string }>({
   return (
     <GlassSurface variant="card" className="p-5">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-foreground/80">{title}</h3>
+        <CardTitle>
+          {title}
+          {unit && <span className="ml-1.5 text-caption font-medium text-subtle">· {unit}</span>}
+        </CardTitle>
         <div className="flex flex-wrap items-center gap-2">
           {controls}
           <ChartRangeChips value={w.range} onChange={w.selectRange} />

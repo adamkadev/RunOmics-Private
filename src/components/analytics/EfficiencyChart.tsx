@@ -8,9 +8,16 @@ import { ChartExplain } from '@/components/ui/ChartExplain'
 import { WindowedChartCard, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
 import { trendFromSeries } from '@/lib/chartTrend'
 import { ChartFigure } from '@/components/ui/ChartFigure'
+import { roundAxis } from '@/lib/chartAxis'
 import { t } from '@/i18n'
 
 const HEAT_GAP_MIN = 0.02
+
+// Efficiency moves in hundredths - the card's own heat gap is stated as 0.03 -
+// so a tenth of a unit is the whole plausible span of a window. The axis steps
+// by 0.05 and prints the decimals that step needs; the old domain stepped by
+// 0.05 too but formatted to one decimal, so it labelled two ticks "1.1".
+const EF_STEP = 0.05
 
 interface TooltipProps {
   active?: boolean
@@ -58,13 +65,12 @@ export function EfficiencyChart({ points }: { points: WeeklyTrendPoint[] }) {
   )
 
   return (
-    <WindowedChartCard title={c.title} legend={legend} points={points} footnote={c.footnote}>
+    <WindowedChartCard title={c.title} unit={c.unit} legend={legend} points={points} footnote={c.footnote}>
       {(visible) => {
         const values = visible.flatMap((d) => [d.ef, d.efAdjusted]).filter((v): v is number => v !== null)
         if (!values.length) return <p className="py-12 text-center text-sm text-subtle">{t.chartWindow.empty}</p>
 
-        const min = Math.floor(Math.min(...values) * 10) / 10 - 0.05
-        const max = Math.ceil(Math.max(...values) * 10) / 10 + 0.05
+        const axis = roundAxis(values, EF_STEP)
         const ticks = windowTicks(visible)
 
         const ex = c.explains
@@ -99,8 +105,10 @@ export function EfficiencyChart({ points }: { points: WeeklyTrendPoint[] }) {
                   </defs>
                   <XAxis {...windowDateAxis(ticks)} />
                   <YAxis
-                    domain={[min, max]}
-                    tickFormatter={(v: number) => v.toFixed(1)}
+                    domain={axis?.domain}
+                    ticks={axis?.ticks}
+                    interval={0}
+                    tickFormatter={(v: number) => v.toFixed(axis?.decimals ?? 2)}
                     tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
                     axisLine={false}
                     tickLine={false}

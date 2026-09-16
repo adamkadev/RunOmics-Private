@@ -9,10 +9,16 @@ import { SparseSeries, sparseRow, type SparseRow } from '@/components/ui/SparseS
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { WindowedChartCard, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
 import { formatClock, formatDelta } from '@/lib/formatters'
+import { roundAxis } from '@/lib/chartAxis'
 import { t } from '@/i18n'
 
 const HR_COLOR = CHART_COLORS.hr
 const PACE_COLOR = CHART_COLORS.pace
+
+// Heart rate reads in fives; a clock-formatted pace axis reads in quarter
+// minutes, so its ticks land on 4:15 / 4:30 / 4:45 rather than 4:22 / 4:29.
+const BPM_STEP = 5
+const PACE_STEP = 15
 
 interface TooltipProps {
   active?: boolean
@@ -83,6 +89,8 @@ export function ThresholdChart({ data }: { data: ThresholdHistoryData }) {
     >
       {(visible) => {
         const ticks = windowTicks(visible)
+        const hrAxis = roundAxis(visible.map((p) => p.lthrBpm), BPM_STEP)
+        const paceAxis = roundAxis(visible.map((p) => p.thresholdPaceSecPerKm), PACE_STEP)
         const gain = windowPaceGain(visible)
         const explain =
           gain === null
@@ -100,7 +108,9 @@ export function ThresholdChart({ data }: { data: ThresholdHistoryData }) {
                   <XAxis {...windowDateAxis(ticks)} />
                   <YAxis
                     yAxisId="hr"
-                    domain={['dataMin - 3', 'dataMax + 3']}
+                    domain={hrAxis?.domain}
+                    ticks={hrAxis?.ticks}
+                    interval={0}
                     tick={{ fontSize: 11, fill: HR_COLOR }}
                     axisLine={false}
                     tickLine={false}
@@ -110,7 +120,9 @@ export function ThresholdChart({ data }: { data: ThresholdHistoryData }) {
                     yAxisId="pace"
                     orientation="right"
                     reversed
-                    domain={['dataMin - 8', 'dataMax + 8']}
+                    domain={paceAxis?.domain}
+                    ticks={paceAxis?.ticks}
+                    interval={0}
                     tickFormatter={formatClock}
                     tick={{ fontSize: 11, fill: PACE_COLOR }}
                     axisLine={false}

@@ -12,7 +12,11 @@ import { ChartFigure } from '@/components/ui/ChartFigure'
 import { ChartExplain } from '@/components/ui/ChartExplain'
 import { ChartRangeChips, ChartWindowPager, useChartWindow } from '@/components/ui/ChartWindowNav'
 import { formatDuration, formatPace } from '@/lib/formatters'
+import { roundAxis } from '@/lib/chartAxis'
 import { t } from '@/i18n'
+
+// A clock-formatted axis reads in quarter minutes: 4:30, 4:45, 5:00.
+const PACE_STEP = 15
 
 const COLOR: Record<RaceDistanceKey, string> = {
   '5k': CHART_COLORS.efficiency,
@@ -129,8 +133,7 @@ export function RacePredictorChart({ data }: { data: GarminRacePredictionsData }
         : s.reading.flat
     : null
 
-  const min = paces.length ? Math.floor(Math.min(...paces)) - 5 : 0
-  const max = paces.length ? Math.ceil(Math.max(...paces)) + 5 : 0
+  const axis = roundAxis(paces, PACE_STEP)
 
   const step = Math.max(1, Math.floor(plotted.length / 6))
   const tickDates = new Set(plotted.filter((_, i) => i % step === 0).map((p) => p.date))
@@ -180,7 +183,9 @@ export function RacePredictorChart({ data }: { data: GarminRacePredictionsData }
                 tickFormatter={(date: string) => (tickDates.has(date) ? shortDate(date) : '')}
               />
               <YAxis
-                domain={[min, max]}
+                domain={axis?.domain}
+                ticks={axis?.ticks}
+                interval={0}
                 reversed
                 tickFormatter={clock}
                 tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}

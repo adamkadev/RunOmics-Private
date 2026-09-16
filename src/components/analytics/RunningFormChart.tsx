@@ -10,6 +10,7 @@ import { ChartExplain } from '@/components/ui/ChartExplain'
 import { SparseSeries, sparseRow, type SparseRow } from '@/components/ui/SparseSeries'
 import { WindowedChartCard, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
 import { trendFromSeries } from '@/lib/chartTrend'
+import { roundAxis } from '@/lib/chartAxis'
 import { t } from '@/i18n'
 
 type Metric = 'cadence' | 'groundContact' | 'verticalOscillation' | 'verticalRatio' | 'strideLength'
@@ -64,6 +65,17 @@ const TICK_DECIMALS: Record<Metric, number> = {
   strideLength: 2,
 }
 
+// The five metrics share one axis but not one scale, so each names the round
+// number its own readers count in: two steps per minute, five milliseconds of
+// ground contact, half a millimetre of bounce, a centimetre of stride.
+const AXIS_STEP: Record<Metric, number> = {
+  cadence: 2,
+  groundContact: 5,
+  verticalOscillation: 0.5,
+  verticalRatio: 0.5,
+  strideLength: 0.05,
+}
+
 interface TooltipProps {
   active?: boolean
   payload?: Array<{ dataKey: string; value: number; payload?: { label?: string } }>
@@ -111,6 +123,7 @@ export function RunningFormChart({ points }: { points: WeeklyTrendPoint[] }) {
   return (
     <WindowedChartCard
       title={t.analytics.charts.runningForm.title}
+      unit={UNIT_BY_KEY[key]}
       controls={controls}
       points={points}
       footnote={t.analytics.charts.runningForm.footnote[active]}
@@ -133,8 +146,7 @@ export function RunningFormChart({ points }: { points: WeeklyTrendPoint[] }) {
         const values = visible.map((d) => d[key]).filter((v): v is number => typeof v === 'number')
         if (!values.length) return <p className="py-12 text-center text-sm text-subtle">{t.chartWindow.empty}</p>
 
-        const min = Math.min(...values) * 0.97
-        const max = Math.max(...values) * 1.03
+        const axis = roundAxis(values, AXIS_STEP[active])
         const ticks = windowTicks(visible)
         const lo = Math.min(...values).toFixed(decimals)
         const hi = Math.max(...values).toFixed(decimals)
@@ -155,7 +167,9 @@ export function RunningFormChart({ points }: { points: WeeklyTrendPoint[] }) {
                 <LineChart data={visible} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
                   <XAxis {...windowDateAxis(ticks)} />
                   <YAxis
-                    domain={[min, max]}
+                    domain={axis?.domain}
+                    ticks={axis?.ticks}
+                    interval={0}
                     tickFormatter={(v: number) => v.toFixed(decimals)}
                     tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
                     axisLine={false}

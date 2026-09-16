@@ -9,8 +9,12 @@ import { ChartExplain } from '@/components/ui/ChartExplain'
 import { WindowedChartCard, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
 import { trendFromSeries } from '@/lib/chartTrend'
 import { formatClock, formatDelta } from '@/lib/formatters'
+import { roundAxis } from '@/lib/chartAxis'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { t } from '@/i18n'
+
+// A clock-formatted axis reads in quarter minutes: 4:30, 4:45, 5:00.
+const PACE_STEP = 15
 
 interface TooltipProps {
   active?: boolean
@@ -64,8 +68,7 @@ export function PaceTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
         const paces = visible.flatMap((d) => [d.easyPace, d.hardPace]).filter((p): p is number => p !== null)
         if (!paces.length) return <p className="py-12 text-center text-sm text-subtle">{t.chartWindow.empty}</p>
 
-        const min = Math.min(...paces) - 10
-        const max = Math.max(...paces) + 10
+        const axis = roundAxis(paces, PACE_STEP)
         const ticks = windowTicks(visible)
 
         const ex = t.analytics.charts.paceTrend.explains
@@ -86,7 +89,9 @@ export function PaceTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
                 <LineChart data={visible} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
                   <XAxis {...windowDateAxis(ticks)} />
                   <YAxis
-                    domain={[min, max]}
+                    domain={axis?.domain}
+                    ticks={axis?.ticks}
+                    interval={0}
                     reversed
                     tickFormatter={formatClock}
                     tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}

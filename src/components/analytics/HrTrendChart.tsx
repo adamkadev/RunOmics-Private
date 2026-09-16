@@ -9,7 +9,11 @@ import { ChartExplain } from '@/components/ui/ChartExplain'
 import { SparseSeries, sparseRow, type SparseRow } from '@/components/ui/SparseSeries'
 import { WindowedChartCard, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
 import { trendFromSeries } from '@/lib/chartTrend'
+import { roundAxis } from '@/lib/chartAxis'
 import { t } from '@/i18n'
+
+// Heart rate reads in fives.
+const BPM_STEP = 5
 
 interface TooltipProps {
   active?: boolean
@@ -53,6 +57,7 @@ export function HrTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
   return (
     <WindowedChartCard
       title={t.analytics.charts.hrTrend.title}
+      unit={t.units.bpm}
       legend={legend}
       points={points}
       footnote={t.analytics.charts.hrTrend.footnote}
@@ -72,8 +77,7 @@ export function HrTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
         const values = visible.flatMap((d) => [d.easyAvgHr, d.hardAvgHr]).filter((v): v is number => v !== null)
         if (!values.length) return <p className="py-12 text-center text-sm text-subtle">{t.chartWindow.empty}</p>
 
-        const min = Math.min(...values) - 5
-        const max = Math.max(...values) + 5
+        const axis = roundAxis(values, BPM_STEP)
         const ticks = windowTicks(visible)
 
         const easyVals = visible.map((d) => d.easyAvgHr).filter((v): v is number => v !== null)
@@ -100,7 +104,9 @@ export function HrTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
                 <LineChart data={visible} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
                   <XAxis {...windowDateAxis(ticks)} />
                   <YAxis
-                    domain={[min, max]}
+                    domain={axis?.domain}
+                    ticks={axis?.ticks}
+                    interval={0}
                     tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
                     axisLine={false}
                     tickLine={false}
