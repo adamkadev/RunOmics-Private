@@ -110,6 +110,8 @@ export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, sh
 
       <MetricGrid metrics={stats} className="grid-cols-4 px-1 text-center" />
 
+      <TrainingEffect aer={activity.aerTrainingEffect} ana={activity.anaTrainingEffect} />
+
       <RunVerdict activity={activity} aiVerdict={aiVerdict} />
 
       {!activity.avgHeartRate && (
@@ -157,7 +159,6 @@ export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, sh
               maxHr={activity.hrSamples ? Math.max(...activity.hrSamples) : null}
             />
           )}
-          <TrainingEffect aer={activity.aerTrainingEffect} ana={activity.anaTrainingEffect} />
           <AerobicDecoupling decoupling={aerobicDecoupling(activity)} />
           {activity.bestEfforts && (
             <BestEfforts bestEfforts={activity.bestEfforts} qualifiedEfforts={qualifiedEfforts} />
