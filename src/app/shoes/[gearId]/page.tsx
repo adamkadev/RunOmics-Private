@@ -19,8 +19,10 @@ import { t } from '@/i18n'
 
 export const revalidate = 3600
 
+// Mirrors WEAR_TEXT in ShoesGrid: `ok` reads neutral in text, while the filled
+// bar keeps the healthy green so the graphic still says "plenty left".
 const WEAR_STYLE: Record<WearStatus, { bar: string; text: string }> = {
-  ok:      { bar: STATUS.success.dot, text: STATUS.success.text },
+  ok:      { bar: STATUS.success.dot, text: 'text-muted-foreground' },
   watch:   { bar: STATUS.warning.dot, text: STATUS.warning.text },
   replace: { bar: STATUS.danger.dot,  text: STATUS.danger.text },
 }

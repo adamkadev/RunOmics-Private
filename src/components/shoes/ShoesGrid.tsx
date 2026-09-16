@@ -17,8 +17,11 @@ export function pickHeroShoe(shoes: ShoeStats[]): ShoeStats | null {
   )
 }
 
+// `ok` is a non-event, so it stays neutral rather than spending a status hue —
+// same call ProfileShoes makes when nothing needs replacing. Only watch and
+// replace, the two states that ask for a decision, get colour.
 const WEAR_TEXT: Record<WearStatus, string> = {
-  ok:      STATUS.success.text,
+  ok:      'text-muted-foreground',
   watch:   STATUS.warning.text,
   replace: STATUS.danger.text,
 }
@@ -76,6 +79,16 @@ function ShoeRow({ shoe }: { shoe: ShoeStats }) {
       <BrandIcon brand={shoe.brand} size={14} />
       <span className="min-w-0 flex-1">
         <span className="block truncate text-footnote font-semibold text-foreground">{shoe.name}</span>
+        {/* Retired pairs are forced to wearPercent 100 (GetShoeStats), so a bar there
+            would claim a full-red rotation shoe that is already out of service. */}
+        {!shoe.retired && (
+          <span className="my-1 block h-1.5 overflow-hidden rounded-full bg-foreground/[0.1]">
+            <span
+              className={cn('block h-full rounded-full', WEAR_BAR[status])}
+              style={{ width: `${shoe.wearPercent}%` }}
+            />
+          </span>
+        )}
         <span className="block text-caption text-subtle">
           {t.shoes.kmOf(Math.round(shoe.totalKm), shoe.maxKm)}
           {shoe.lastUsedDate && ` · ${formatCompactDate(shoe.lastUsedDate)}`}
