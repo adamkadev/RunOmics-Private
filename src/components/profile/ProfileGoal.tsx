@@ -24,12 +24,26 @@ export function ProfileGoal({ goal }: Props) {
       <h2 className="text-sm font-bold text-foreground">{t.profile.goal.title(goalYear.year)}</h2>
 
       <div>
+        {/* A percentage of the year beside a word about the projection read as a
+            contradiction - 66% next to "Behind". The bar already says the
+            percentage, so the one number here is the projection itself. */}
         <div className="flex items-baseline gap-1.5">
-          <span className="text-lg font-extrabold tracking-tight text-foreground">{progressPercent}%</span>
-          {projection && (
-            <span className={cn('text-caption font-semibold', projection.status === 'behind' ? STATUS.warning.text : STATUS.success.text)}>
-              {t.goals.projection.status[projection.status]}
-            </span>
+          {projection ? (
+            <>
+              <span
+                className={cn(
+                  'text-lg font-extrabold tracking-tight',
+                  projection.status === 'behind' ? STATUS.danger.text : STATUS.success.text,
+                )}
+              >
+                {t.goals.projection.projected(formatKm(projection.projectedYearKm))}
+              </span>
+              <span className="text-caption font-semibold text-muted-foreground">
+                {t.goals.projection.status[projection.status]}
+              </span>
+            </>
+          ) : (
+            <span className="text-lg font-extrabold tracking-tight text-foreground">{progressPercent}%</span>
           )}
         </div>
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-foreground/[0.08]">

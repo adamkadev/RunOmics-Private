@@ -56,10 +56,15 @@ export function TrainingStatusDaysBar({ days }: Props) {
 
   const s = t.dashboard.trainingStatusDays
   const latest = days[days.length - 1]
-  const oldest = days[0]
-  const oldestLabel = oldest ? formatDate(oldest.date, DENSE) : ''
   const groups = groupConsecutiveDays(days)
   const active = groups.find((group) => group.from === activeKey) ?? null
+
+  // The finding, not the furniture: the longest rated stretch is the one fact a
+  // reader takes from a 28-segment ribbon at a glance, and printing the two end
+  // dates instead said nothing the segments did not already show.
+  const dominant = groups
+    .filter((group) => group.status !== null)
+    .reduce((best, group) => (best === null || group.count > best.count ? group : best), null as DayGroup | null)
 
   return (
     <GlassSurface variant="card" className="p-4">
@@ -94,13 +99,20 @@ export function TrainingStatusDaysBar({ days }: Props) {
         ))}
       </div>
 
-      <div className="mt-1.5 flex justify-between text-micro text-muted-foreground">
+      <div className="mt-1.5 flex items-baseline justify-between gap-2 text-micro text-muted-foreground">
         {active ? (
           <span className="text-foreground/80">{groupLabel(active)}</span>
         ) : (
           <>
-            <span>{oldestLabel}</span>
-            <span>{s.today}</span>
+            <span className="truncate">{s.window(days.length)}</span>
+            {dominant?.status && (
+              <span
+                className="shrink-0 font-semibold tabular-nums"
+                style={{ color: TRAINING_STATUS_COLORS[dominant.status] }}
+              >
+                {s.dominant(dominant.count, t.trainingStatus.status[dominant.status])}
+              </span>
+            )}
           </>
         )}
       </div>
