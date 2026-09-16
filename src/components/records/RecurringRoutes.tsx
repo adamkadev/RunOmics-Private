@@ -36,11 +36,11 @@ function PaceTrail({ route }: { route: RecurringRoute }) {
   const span = slowest - fastest || 1
 
   return (
-    <div className="flex h-8 items-end gap-1" aria-hidden="true">
+    <div className="flex h-8 w-16 shrink-0 items-end gap-px" aria-hidden="true">
       {route.runs.map((run) => (
         <span
           key={run.activityId}
-          className="w-1.5 rounded-full bg-accent/70"
+          className="min-w-px flex-1 rounded-full bg-accent/70"
           style={{ height: `${20 + ((slowest - run.paceSecPerKm) / span) * 80}%` }}
         />
       ))}
