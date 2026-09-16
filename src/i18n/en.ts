@@ -1246,7 +1246,7 @@ export const en = {
     weekOf: (label: string) => `Week of ${label}`,
     typeShort: {
       Sprint: 'Sprint',
-      Anaerobic: 'Anaero',
+      Anaerobic: 'Anaer.',
       VO2Max: 'VO₂',
       Threshold: 'Thresh.',
       Tempo: 'Tempo',

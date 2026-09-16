@@ -54,24 +54,83 @@ interface WeekGroup {
   shape: string
 }
 
-function WeekStat({ value, label }: { value: string; label: string }) {
+type WeekRowVariant = 'card' | 'header'
+
+// "This week" keeps the tinted card it always had - it is the one row that is
+// not just a header. Every other week row is now a plain divider between the
+// runs it groups, not a sibling of them, so its stats read quieter.
+function WeekStat({ value, label, variant }: { value: string; label: string; variant: WeekRowVariant }) {
+  if (variant === 'header') {
+    return (
+      <div className="text-right">
+        <div className="font-bold tabular-nums text-foreground" style={{ fontSize: '15px' }}>{value}</div>
+        <div className="uppercase tracking-wide" style={{ fontSize: '9.5px', color: '#7d8896' }}>{label}</div>
+      </div>
+    )
+  }
   return (
-    <div className="text-center">
+    <div className="text-right">
       <div className="text-sm font-bold tabular-nums text-foreground">{value}</div>
       <div className="text-micro uppercase tracking-wide text-subtle">{label}</div>
     </div>
   )
 }
 
-function WeekSummary({ group }: { group: WeekGroup }) {
+// Fixed columns, not a flex gap, so km/runs/easy line up from one week row to
+// the next instead of drifting with each value's own width.
+function WeekSummary({ group, variant = 'card' }: { group: WeekGroup; variant?: WeekRowVariant }) {
   return (
-    <div className="flex shrink-0 items-end gap-4 text-right">
-      <WeekStat value={String(Math.round(group.totalKm))} label={t.activities.weekStat.km} />
-      <WeekStat value={String(group.items.length)} label={t.activities.weekStat.runs(group.items.length)} />
+    <div className="grid shrink-0" style={{ gridTemplateColumns: '38px 32px 46px', gap: '14px' }}>
+      <WeekStat value={String(Math.round(group.totalKm))} label={t.activities.weekStat.km} variant={variant} />
+      <WeekStat value={String(group.items.length)} label={t.activities.weekStat.runs(group.items.length)} variant={variant} />
       <WeekStat
         value={group.easyPct !== null ? `${group.easyPct}%` : t.activities.weekStat.noSplit}
         label={t.activities.weekStat.easy}
+        variant={variant}
       />
+    </div>
+  )
+}
+
+// Same bucketing the run rows draw their own dot from (ACTIVITY_TYPE_CONFIG),
+// minus the reds: red stays reserved for injury/risk grade, never intensity.
+function intensityDotColor(type: ActivityType): string {
+  if (type === 'Base') return '#34d399'
+  if (type === 'Tempo' || type === 'Threshold') return '#f5b13d'
+  return '#fb8a3c' // VO2Max, Anaerobic, Sprint
+}
+
+const DOT_CAP = 8
+
+function WeekCompositionDots({ items, label }: { items: ActivitySummary[]; label: string }) {
+  const chronological = [...items].sort((a, b) => a.date.localeCompare(b.date))
+  const shown = chronological.slice(0, DOT_CAP)
+  const overflow = chronological.length - shown.length
+
+  return (
+    <div className="mt-1.5 flex items-center" role="img" aria-label={label}>
+      <div className="flex items-center" style={{ gap: '4px' }} aria-hidden="true">
+        {shown.map((a) =>
+          a.type === 'Race' ? (
+            <span
+              key={a.id}
+              className="shrink-0 rounded-[4px]"
+              style={{ width: '7px', height: '7px', border: '1.5px solid #6aa4ff' }}
+            />
+          ) : (
+            <span
+              key={a.id}
+              className="shrink-0 rounded-[4px]"
+              style={{ width: '7px', height: '7px', background: intensityDotColor(a.type) }}
+            />
+          )
+        )}
+      </div>
+      {overflow > 0 && (
+        <span aria-hidden="true" style={{ marginLeft: '3px', fontSize: '11.5px', color: '#7d8896' }}>
+          +{overflow}
+        </span>
+      )}
     </div>
   )
 }
@@ -381,36 +440,43 @@ export function ActivityListClient({
         </div>
       </div>
 
-      <div
-        ref={chipRailRef}
-        onScroll={updateChipFade}
-        className={cn(
-          '-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
-          chipFade && '[mask-image:linear-gradient(to_right,black_calc(100%-2rem),transparent)]',
-        )}
-      >
-        <Pill
-          as="button"
-          variant={selectedType === null ? 'accent' : 'neutral'}
-          className="px-2.5 text-footnote font-semibold"
-          onClick={() => setSelectedType(null)}
+      <div className="relative -mx-4 sm:mx-0">
+        <div
+          ref={chipRailRef}
+          onScroll={updateChipFade}
+          className="flex gap-2 overflow-x-auto px-4 pb-1 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          style={{ scrollPaddingInline: '16px' }}
         >
-          {t.activities.all}
-        </Pill>
-        {chipTypes.map((type) => {
-          const active = selectedType === type
-          return (
-            <Pill
-              key={type}
-              as="button"
-              variant={active ? 'accent' : 'neutral'}
-              className="px-2.5 text-footnote font-semibold"
-              onClick={() => setSelectedType(active ? null : type)}
-            >
-              {t.plan.typeShort[type]}
-            </Pill>
-          )
-        })}
+          <Pill
+            as="button"
+            variant={selectedType === null ? 'accent' : 'neutral'}
+            className={cn('h-9 py-0 text-footnote font-semibold', selectedType === null ? 'px-4' : 'px-2.5')}
+            onClick={() => setSelectedType(null)}
+          >
+            {t.activities.all}
+          </Pill>
+          {chipTypes.map((type) => {
+            const active = selectedType === type
+            return (
+              <Pill
+                key={type}
+                as="button"
+                variant={active ? 'accent' : 'neutral'}
+                className={cn('h-9 py-0 text-footnote font-semibold', active ? 'px-4' : 'px-2.5')}
+                onClick={() => setSelectedType(active ? null : type)}
+              >
+                {t.plan.typeShort[type]}
+              </Pill>
+            )
+          })}
+        </div>
+        {chipFade && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute right-0 top-0 w-[30px]"
+            style={{ height: '36px', background: 'linear-gradient(90deg, rgba(9,16,32,0), #091020 85%)' }}
+          />
+        )}
       </div>
 
       {isPending ? (
@@ -441,20 +507,26 @@ export function ActivityListClient({
               <div key={g.key}>
                 {isCurrent ? (
                   <div
-                    className="sticky top-[max(var(--safe-top),8px)] z-10 flex items-start justify-between gap-3 rounded-xl border px-3.5 py-2.5"
+                    className="sticky top-[max(var(--safe-top),8px)] z-10 flex items-start gap-3 rounded-xl border py-2.5 pl-3.5"
                     style={{
                       background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
                       borderColor: 'color-mix(in srgb, var(--accent) 22%, transparent)',
+                      paddingRight: '16px',
                     }}
                   >
                     <div className="min-w-0 flex-1">
                       <div className="text-sm font-bold text-foreground">{g.label}</div>
-                      <div className="truncate text-micro text-subtle">{g.shape}</div>
+                      <WeekCompositionDots items={g.items} label={g.shape} />
                       {weeklyGoal && weeklyGoal.targetKm > 0 && (
                         <PlannedProgress actualKm={g.totalKm} targetKm={weeklyGoal.targetKm} />
                       )}
                     </div>
-                    <WeekSummary group={g} />
+                    <div className="flex items-center" style={{ gap: '16px' }}>
+                      <WeekSummary group={g} />
+                      {/* No chevron on the current week - an equal-width spacer keeps its
+                          stat grid flush with the collapsible rows below, which do have one. */}
+                      <span aria-hidden="true" style={{ width: '14px', flex: '0 0 auto' }} />
+                    </div>
                   </div>
                 ) : (
                   <button
@@ -467,18 +539,23 @@ export function ActivityListClient({
                         return next
                       })
                     }
-                    className="glass-card flex w-full items-center justify-between gap-3 rounded-xl px-3.5 py-2.5 text-left"
+                    className="flex w-full items-center gap-3 text-left"
+                    style={{ borderTop: '1px solid rgba(148,178,220,.14)', padding: '11px 16px 10px' }}
                   >
-                    <div className="min-w-0">
-                      <div className="text-sm font-semibold text-foreground">{g.label}</div>
-                      <div className="mt-0.5 truncate text-caption text-subtle">{g.shape}</div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-bold" style={{ fontSize: '15px', color: '#c3ccd6' }}>{g.label}</div>
+                      <WeekCompositionDots items={g.items} label={g.shape} />
                     </div>
-                    <WeekSummary group={g} />
-                    <ChevronDown size={16} className={cn('shrink-0 text-subtle transition-transform', isExpanded && 'rotate-180')} />
+                    <div className="flex items-center" style={{ gap: '16px' }}>
+                      <WeekSummary group={g} variant="header" />
+                      <span className="flex items-center justify-center" style={{ width: '14px', flex: '0 0 auto' }}>
+                        <ChevronDown size={14} className={cn('shrink-0 text-subtle transition-transform', isExpanded && 'rotate-180')} />
+                      </span>
+                    </div>
                   </button>
                 )}
                 {isExpanded && (
-                  <div className="mt-2 space-y-2">
+                  <div className="mt-2 space-y-2" style={{ marginLeft: '10px' }}>
                     {g.items.map((a) => (
                       <ActivityListCard key={a.id} activity={a} qualifiedEfforts={qualifiedEffortsByActivityId[a.id]} />
                     ))}
