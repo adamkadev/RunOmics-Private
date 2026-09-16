@@ -127,7 +127,7 @@ function tilesFor(category: Category, athlete: AthleteProfile, latestVo2max: num
   }
 
   return [
-    { label: a.vo2max, unit: t.units.mlKgMin, value: latestVo2max ?? undefined },
+    { label: a.vo2max, unit: t.units.mlKgMin, value: latestVo2max !== null ? latestVo2max.toFixed(1) : undefined },
     { label: a.vma, unit: t.units.kmh, value: athlete.vmaKmh },
     {
       label: a.thresholdPace,

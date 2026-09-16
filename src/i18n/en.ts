@@ -402,9 +402,10 @@ export const en = {
       threshold: 'Threshold',
       consistency: 'Consistency',
       days: 'days',
-      holding: 'holding',
-      excellent: 'excellent',
       topPercent: (p: number) => `top ${p}%`,
+      vsNorms: 'vs age & sex norms',
+      since: (when: string) => `vs ${when}`,
+      ofDays: (days: string) => `of ${days} days`,
     },
     raceTimes: {
       title: 'Performance',

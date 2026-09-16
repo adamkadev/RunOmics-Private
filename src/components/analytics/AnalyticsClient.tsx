@@ -77,6 +77,7 @@ export function AnalyticsClient({
   threshold,
   vo2maxTopPercent,
   activeDays,
+  heatmapDays,
   heatImpact,
 }: {
   data: AnalyticsPageData
@@ -93,6 +94,7 @@ export function AnalyticsClient({
   threshold: ThresholdHistoryData | null
   vo2maxTopPercent: number | null
   activeDays: number
+  heatmapDays: number
   heatImpact: HeatImpactData | null
 }) {
   const { years, byYear } = data
@@ -219,6 +221,7 @@ export function AnalyticsClient({
                 weeklyTrends={data.weeklyTrends}
                 threshold={threshold}
                 activeDays={activeDays}
+                heatmapDays={heatmapDays}
                 racePredictions={racePredictions}
               />
             )}

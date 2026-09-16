@@ -23,6 +23,7 @@ interface Props {
   weeklyTrends: WeeklyTrendPoint[]
   threshold: ThresholdHistoryData | null
   activeDays: number
+  heatmapDays: number
   racePredictions: GarminRacePredictionsData | null
 }
 
@@ -35,6 +36,7 @@ export function FitnessGroup({
   weeklyTrends,
   threshold,
   activeDays,
+  heatmapDays,
   racePredictions,
 }: Props) {
   return (
@@ -47,6 +49,7 @@ export function FitnessGroup({
         weeklyTrends={weeklyTrends}
         threshold={threshold}
         activeDays={activeDays}
+        heatmapDays={heatmapDays}
       />
 
       {racePredictions && <RaceTimeCards data={racePredictions} />}

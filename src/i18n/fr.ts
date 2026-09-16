@@ -394,9 +394,10 @@ export const fr = {
       threshold: 'Seuil',
       consistency: 'Régularité',
       days: 'jours',
-      holding: 'stable',
-      excellent: 'excellent',
       topPercent: (p: number) => `top ${p}%`,
+      vsNorms: 'vs normes âge et sexe',
+      since: (when: string) => `depuis ${when}`,
+      ofDays: (days: string) => `sur ${days} jours`,
     },
     raceTimes: {
       title: 'Performance',

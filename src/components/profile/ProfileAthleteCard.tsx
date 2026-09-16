@@ -49,7 +49,9 @@ export function ProfileAthleteCard({ athlete, latestVo2max, recentZoneTime }: Pr
   const maxSeconds = Math.max(1, ...ZONE_ROWS.map((r) => byZone.get(r.zone) ?? 0))
   const metrics: HeadlineMetric[] = []
   if (latestVo2max !== null) {
-    metrics.push({ label: a.vo2maxShort, value: String(Math.round(latestVo2max)), valueColor: VIOLET })
+    // One decimal everywhere VO₂max is printed - Analytics already shows one,
+    // and rounding to a whole number here made the same metric look like two.
+    metrics.push({ label: a.vo2maxShort, value: latestVo2max.toFixed(1), valueColor: VIOLET })
   }
   if (athlete.vmaKmh !== undefined) {
     metrics.push({ label: a.vmaShort, value: String(athlete.vmaKmh) })
