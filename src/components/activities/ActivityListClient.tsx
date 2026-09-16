@@ -336,7 +336,7 @@ export function ActivityListClient({
               {totalKm > 0 ? t.activities.countWithDistance(totalCount, formatKm(totalKm)) : t.activities.count(totalCount)}
             </p>
           </div>
-          <div className="flex shrink-0 items-center gap-2 pt-1">
+          <div className="flex shrink-0 items-start gap-2 pt-1">
             <Link
               href="/map"
               aria-label={t.nav.items.heatmap}

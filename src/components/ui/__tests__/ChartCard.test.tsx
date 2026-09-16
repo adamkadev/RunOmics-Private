@@ -18,7 +18,7 @@ describe('WindowedChartCard: reading and footnote', () => {
     render(
       <WindowedChartCard
         title="Avg Heart Rate"
-        points={[{ date: daysAgo(1) }]}
+        points={[{ date: daysAgo(3) }, { date: daysAgo(2) }, { date: daysAgo(1) }]}
         footnote="Duration-weighted average HR."
         reading={() => 'Easy HR is drifting down.'}
       >
@@ -66,7 +66,7 @@ describe('WindowedChartCard: reading and footnote', () => {
     render(
       <WindowedChartCard
         title="Weekly Volume"
-        points={[{ date: daysAgo(200) }, { date: daysAgo(3) }]}
+        points={[{ date: daysAgo(200) }, { date: daysAgo(5) }, { date: daysAgo(4) }, { date: daysAgo(3) }]}
         sample={false}
         reading={(visible) => {
           seen.push(visible.map((p) => p.date))
@@ -80,8 +80,8 @@ describe('WindowedChartCard: reading and footnote', () => {
     // The default window is 4 weeks, so a point 200 days old must not reach the
     // reading - promoting a whole-series number to the top of the card would
     // make it contradict the chart under it.
-    expect(seen.at(-1)).toEqual([daysAgo(3)])
-    expect(screen.getByText('1 weeks')).toBeInTheDocument()
+    expect(seen.at(-1)).toEqual([daysAgo(5), daysAgo(4), daysAgo(3)])
+    expect(screen.getByText('3 weeks')).toBeInTheDocument()
   })
 
   it('says nothing rather than reading an empty window', () => {
@@ -97,5 +97,57 @@ describe('WindowedChartCard: reading and footnote', () => {
 
     expect(screen.queryByText(/this should never render/)).not.toBeInTheDocument()
     expect(screen.getByText(t.chartWindow.empty)).toBeInTheDocument()
+  })
+})
+
+describe('WindowedChartCard: sparse windows', () => {
+  it('prints the value instead of plotting a two-point trend', () => {
+    render(
+      <WindowedChartCard
+        title="Running Form"
+        points={[{ date: daysAgo(8) }, { date: daysAgo(1) }]}
+        sample={false}
+        reading={() => 'cadence is climbing'}
+        value={() => '176 spm'}
+      >
+        {() => <div data-testid="chart" />}
+      </WindowedChartCard>
+    )
+
+    expect(screen.queryByTestId('chart')).not.toBeInTheDocument()
+    expect(screen.getByText('176 spm')).toBeInTheDocument()
+    expect(screen.getByText(t.chartWindow.tooFewToPlot)).toBeInTheDocument()
+    expect(screen.queryByText(/cadence is climbing/)).not.toBeInTheDocument()
+  })
+
+  it('plots a sparse window, and says each point is a weekly mean', () => {
+    render(
+      <WindowedChartCard
+        title="Running Form"
+        points={[{ date: daysAgo(21) }, { date: daysAgo(14) }, { date: daysAgo(7) }]}
+        sample={false}
+      >
+        {(visible, shape) => <div data-testid="chart" data-shape={shape} data-points={visible.length} />}
+      </WindowedChartCard>
+    )
+
+    const chart = screen.getByTestId('chart')
+    expect(chart).toHaveAttribute('data-shape', 'sparse')
+    expect(screen.getByText(t.chartWindow.weeklyMeans(3))).toBeInTheDocument()
+  })
+
+  it('drops the cadence footnote once the window is dense enough to draw', () => {
+    render(
+      <WindowedChartCard
+        title="Training Load"
+        points={Array.from({ length: 14 }, (_, i) => ({ date: daysAgo(14 - i) }))}
+        sample={false}
+      >
+        {(_visible, shape) => <div data-testid="chart" data-shape={shape} />}
+      </WindowedChartCard>
+    )
+
+    expect(screen.getByTestId('chart')).toHaveAttribute('data-shape', 'curve')
+    expect(screen.queryByText(t.chartWindow.pointsInWindow(14))).not.toBeInTheDocument()
   })
 })
