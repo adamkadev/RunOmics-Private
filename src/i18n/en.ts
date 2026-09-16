@@ -1239,11 +1239,19 @@ export const en = {
     today: 'Today',
     prevPeriod: 'Previous',
     nextPeriod: 'Next',
-    summary: (sessions: number, km: number) =>
-      `${sessions} session${sessions !== 1 ? 's' : ''} · ${km} km`,
+    summary: (sessions: number, ranKm: number, plannedKm: number) =>
+      `${sessions} session${sessions !== 1 ? 's' : ''} · ${ranKm} of ${plannedKm} km planned`,
     weekdays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     switcher: { week: 'Week', month: 'Month' },
     weekOf: (label: string) => `Week of ${label}`,
+    weekGutter: 'WK',
+    weekGutterEmpty: '—',
+    extra: 'extra',
+    monthLegend: {
+      plannedKm: 'planned km',
+      ran: 'ran',
+      unplanned: 'unplanned',
+    },
     typeShort: {
       Sprint: 'Sprint',
       Anaerobic: 'Anaer.',
@@ -1255,8 +1263,6 @@ export const en = {
     } as Record<ActivityType, string>,
     restDay: 'Rest',
     planned: 'Planned',
-    did: (km: string) => `did ${km}`,
-    legend: { did: 'did', planned: 'planned' },
     easyEffortLabel: 'Z2 easy',
     structure: {
       title: 'Structure',

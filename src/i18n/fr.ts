@@ -1228,11 +1228,19 @@ export const fr = {
     today: 'Aujourd’hui',
     prevPeriod: 'Précédent',
     nextPeriod: 'Suivant',
-    summary: (sessions: number, km: number) =>
-      `${sessions} séance${sessions > 1 ? 's' : ''} · ${km} km`,
+    summary: (sessions: number, ranKm: number, plannedKm: number) =>
+      `${sessions} séance${sessions > 1 ? 's' : ''} · ${ranKm} sur ${plannedKm} km prévus`,
     weekdays: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
     switcher: { week: 'Semaine', month: 'Mois' },
     weekOf: (label: string) => `Sem. du ${label}`,
+    weekGutter: 'SEM',
+    weekGutterEmpty: '—',
+    extra: 'extra',
+    monthLegend: {
+      plannedKm: 'km prévus',
+      ran: 'parcourus',
+      unplanned: 'non prévu',
+    },
     typeShort: {
       Sprint: 'Sprint',
       Anaerobic: 'Anaér.',
@@ -1244,8 +1252,6 @@ export const fr = {
     } as Record<ActivityType, string>,
     restDay: 'Repos',
     planned: 'Prévu',
-    did: (km: string) => `fait ${km}`,
-    legend: { did: 'fait', planned: 'prévu' },
     easyEffortLabel: 'EF',
     structure: {
       title: 'Structure',

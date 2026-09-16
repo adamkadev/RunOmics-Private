@@ -124,16 +124,18 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate
             <h1 className="font-display text-title1 font-bold leading-[1.1] tracking-tight text-foreground">
               {t.pages.plan.title}
             </h1>
-            <PeriodNav
-              label={<span className="text-footnote font-medium text-muted-foreground">{subtitle}</span>}
-              onPrev={() => shift(-1)}
-              onNext={() => shift(1)}
-              nextDisabled={atPresent && !canGoForward}
-              prevLabel={t.plan.prevPeriod}
-              nextLabel={t.plan.nextPeriod}
-              size="sm"
-              className="mt-0.5 hidden sm:flex"
-            />
+            {mode === 'week' && (
+              <PeriodNav
+                label={<span className="text-footnote font-medium text-muted-foreground">{subtitle}</span>}
+                onPrev={() => shift(-1)}
+                onNext={() => shift(1)}
+                nextDisabled={atPresent && !canGoForward}
+                prevLabel={t.plan.prevPeriod}
+                nextLabel={t.plan.nextPeriod}
+                size="sm"
+                className="mt-0.5 hidden sm:flex"
+              />
+            )}
           </div>
 
           <div
@@ -197,6 +199,9 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate
             atPresent={atPresent}
             onToday={goToday}
             onSelectDay={openWeekAt}
+            onPrev={() => shift(-1)}
+            onNext={() => shift(1)}
+            canGoForward={canGoForward}
           />
         )}
       </div>
