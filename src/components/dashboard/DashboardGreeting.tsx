@@ -9,25 +9,18 @@ interface Props {
   lastSyncedAt?: string | null
 }
 
-interface Greeting {
-  text: string
-  dateLine: string
-}
-
-function computeGreeting(): Greeting {
-  const now = new Date()
-  const g = t.pages.dashboard.greeting
-  const text = now.getHours() < 12 ? g.morning : now.getHours() < 18 ? g.afternoon : g.evening
-  const dateLine = now.toLocaleDateString(t.locale, { weekday: 'short', month: 'short', day: 'numeric' })
-  return { text, dateLine }
+// Read after mount, not during render: the date depends on the reader's clock,
+// and the page is served from an ISR cache that can be an hour old.
+function todayLine(): string {
+  return new Date().toLocaleDateString(t.locale, { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
 export function DashboardGreeting({ name, lastSyncedAt }: Props) {
   const displayName = name ?? t.profile.hero.namePlaceholder
-  const [greeting, setGreeting] = useState<Greeting | null>(null)
+  const [dateLine, setDateLine] = useState<string | null>(null)
 
   useEffect(() => {
-    const raf = requestAnimationFrame(() => setGreeting(computeGreeting()))
+    const raf = requestAnimationFrame(() => setDateLine(todayLine()))
     return () => cancelAnimationFrame(raf)
   }, [])
 
@@ -35,15 +28,19 @@ export function DashboardGreeting({ name, lastSyncedAt }: Props) {
 
   return (
     <div className="flex items-center justify-between gap-3">
-      <div>
-        <p className="text-caption text-subtle">
-          <span className="capitalize">{greeting?.dateLine ?? ' '}</span>
-          {syncedLine ? ` · ${syncedLine}` : ''}
-        </p>
-        <h1 className="font-display text-title2 font-bold tracking-tight text-foreground">
-          {greeting?.text ?? ' '}, {displayName}
-        </h1>
-      </div>
+      {/* The greeting was the largest type on the screen and the only thing on it
+          that is not about the running. What the date and the sync age say is
+          worth one muted line; the verdict below is the headline. */}
+      <p className="min-w-0 truncate text-footnote text-muted-foreground">
+        {/* The date only exists after mount, so join the two parts rather than
+            printing a separator with nothing in front of it. */}
+        {/* capitalize only the date - applied to the whole line it turned
+            "synced 13h ago" into "Synced 13h Ago". */}
+        {dateLine ? <span className="capitalize">{dateLine}</span> : null}
+        {dateLine && syncedLine ? ' · ' : null}
+        {syncedLine ?? null}
+        {!dateLine && !syncedLine ? ' ' : null}
+      </p>
       <div
         className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full text-sm font-bold text-accent-foreground"
         style={{ background: 'var(--accent-gradient)' }}

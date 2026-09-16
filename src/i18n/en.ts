@@ -45,10 +45,7 @@ export const en = {
     },
     previous: 'Previous period',
     next: 'Next period',
-    empty: 'No data recorded for this period.',
-    sparse: (count: number) =>
-      `${count} reading${count === 1 ? '' : 's'} in this window - too few to read as a trend, so this shows first and latest.`,
-  },
+    empty: 'No data recorded for this period.',  },
 
   units: {
     km: 'km',
@@ -84,12 +81,6 @@ export const en = {
 
   pages: {
     dashboard: {
-      greeting: {
-        morning:   'Good morning',
-        afternoon: 'Good afternoon',
-        evening:   'Good evening',
-        weekDate:  (week: number, date: string) => `Week ${week} · ${date}`,
-      },
     },
     activities: {
       title: 'Activities',
@@ -337,9 +328,6 @@ export const en = {
           body: () => `Fatigue is elevated - an easy day or rest would help.`,
         },
       },
-      sessionCta: 'Start',
-      viewCta: 'View',
-      holdNote: "Still on the plan - today it's your call.",
       restDay: 'Rest day',
       restDaySubtitle: 'No session scheduled',
       race: 'Race',

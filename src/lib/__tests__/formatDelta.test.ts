@@ -11,8 +11,9 @@ describe('formatDelta', () => {
     expect(formatDelta(6)).toBe('+6')
   })
 
-  it('leaves zero unsigned', () => {
-    expect(formatDelta(0)).toBe('0')
+  it('marks a measured-but-flat reading, so it cannot read as "no data"', () => {
+    expect(formatDelta(0)).toBe('±0')
+    expect(formatDelta(0, 'bpm')).toBe('±0 bpm')
   })
 
   it('puts one space before a unit', () => {

@@ -4,7 +4,6 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 import type { ThresholdHistoryData, ThresholdPoint } from '@/application/usecases/GetThresholdHistory'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
-import { SparseSeries, sparseRow, type SparseRow } from '@/components/ui/SparseSeries'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { WindowedChartCard, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
 import { formatClock, formatDelta } from '@/lib/formatters'
@@ -82,19 +81,12 @@ export function ThresholdChart({ data }: { data: ThresholdHistoryData }) {
       legend={legend}
       points={data.points}
       sample={false}
+      // Garmin revises the threshold every few weeks, so a 4-week window holds
+      // two readings. Open on the window that has data rather than drawing a
+      // two-point line - the chart is the point of this card.
+      initialRange="6m"
       footnote={s.footnote}
       reading={thresholdReading}
-      sparse={(visible) => (
-        <SparseSeries
-          count={visible.length}
-          rows={
-            [
-              sparseRow(s.lthr, visible.map((p) => p.lthrBpm), (v) => `${Math.round(v)} ${t.units.bpm}`),
-              sparseRow(s.pace, visible.map((p) => p.thresholdPaceSecPerKm), (v) => `${formatClock(v)} /${t.units.km}`),
-            ].filter((row): row is SparseRow => row !== null)
-          }
-        />
-      )}
     >
       {(visible) => {
         const ticks = windowTicks(visible)

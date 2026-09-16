@@ -5,7 +5,6 @@ import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { ChartFigure } from '@/components/ui/ChartFigure'
-import { SparseSeries, sparseRow, type SparseRow } from '@/components/ui/SparseSeries'
 import { WindowedChartCard, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
 import { trendFromSeries } from '@/lib/chartTrend'
 import { roundAxis } from '@/lib/chartAxis'
@@ -75,17 +74,6 @@ export function HrTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
       points={points}
       footnote={t.analytics.charts.hrTrend.footnote}
       reading={hrTrendReading}
-      sparse={(visible) => (
-        <SparseSeries
-          count={visible.length}
-          rows={
-            [
-              sparseRow(t.analytics.charts.paceTrend.easy, visible.map((d) => d.easyAvgHr), (v) => `${Math.round(v)} ${t.units.bpm}`),
-              sparseRow(t.analytics.charts.paceTrend.workout, visible.map((d) => d.hardAvgHr), (v) => `${Math.round(v)} ${t.units.bpm}`),
-            ].filter((row): row is SparseRow => row !== null)
-          }
-        />
-      )}
     >
       {(visible) => {
         const values = visible.flatMap((d) => [d.easyAvgHr, d.hardAvgHr]).filter((v): v is number => v !== null)

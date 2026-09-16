@@ -33,6 +33,7 @@ export function formatPace(secPerKm: number): string {
 }
 
 export const MINUS = '−'
+export const PLUS_MINUS = '±'
 
 /**
  * The one shape every delta in the app takes: sign, value, unit. A real minus
@@ -41,8 +42,7 @@ export const MINUS = '−'
  */
 export function formatDelta(value: number, unit?: string): string {
   const rounded = Math.round(value * 100) / 100
-  const sign = rounded > 0 ? '+' : rounded < 0 ? MINUS : ''
-  const body = `${sign}${Math.abs(rounded)}`
+  const body = rounded === 0 ? `${PLUS_MINUS}0` : `${rounded > 0 ? '+' : MINUS}${Math.abs(rounded)}`
   return unit ? `${body} ${unit}` : body
 }
 

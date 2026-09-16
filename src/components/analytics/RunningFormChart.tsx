@@ -6,7 +6,6 @@ import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { ChartFigure } from '@/components/ui/ChartFigure'
-import { SparseSeries, sparseRow, type SparseRow } from '@/components/ui/SparseSeries'
 import { WindowedChartCard, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
 import { trendFromSeries } from '@/lib/chartTrend'
 import { roundAxis } from '@/lib/chartAxis'
@@ -145,20 +144,6 @@ export function RunningFormChart({ points }: { points: WeeklyTrendPoint[] }) {
       points={points}
       footnote={t.analytics.charts.runningForm.footnote[active]}
       reading={(visible) => formReading(visible, active)}
-      sparse={(visible) => (
-        <SparseSeries
-          count={visible.length}
-          rows={
-            [
-              sparseRow(
-                t.analytics.charts.runningForm.metrics[active]!,
-                visible.map((d) => d[key]),
-                (v) => `${v.toFixed(decimals)} ${UNIT_BY_KEY[key] ?? ''}`.trim(),
-              ),
-            ].filter((row): row is SparseRow => row !== null)
-          }
-        />
-      )}
     >
       {(visible) => {
         const values = visible.map((d) => d[key]).filter((v): v is number => typeof v === 'number')

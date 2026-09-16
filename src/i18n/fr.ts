@@ -37,10 +37,7 @@ export const fr = {
     },
     previous: 'Période précédente',
     next: 'Période suivante',
-    empty: 'Aucune donnée enregistrée sur cette période.',
-    sparse: (count: number) =>
-      `${count} relevé${count === 1 ? '' : 's'} sur cette période - trop peu pour une tendance, voici le premier et le dernier.`,
-  },
+    empty: 'Aucune donnée enregistrée sur cette période.',  },
 
   units: {
     km: 'km',
@@ -76,12 +73,6 @@ export const fr = {
 
   pages: {
     dashboard: {
-      greeting: {
-        morning:   'Bonjour',
-        afternoon: 'Bon après-midi',
-        evening:   'Bonsoir',
-        weekDate:  (week: number, date: string) => `Semaine ${week} · ${date}`,
-      },
     },
     activities: {
       title: 'Activités',
@@ -329,9 +320,6 @@ export const fr = {
           body: () => `La fatigue est élevée - une journée facile ou du repos aiderait.`,
         },
       },
-      sessionCta: 'Démarrer',
-      viewCta: 'Voir',
-      holdNote: 'Toujours au programme - aujourd’hui, c’est toi qui décides.',
       restDay: 'Jour de repos',
       restDaySubtitle: 'Aucune séance prévue',
       race: 'Course',

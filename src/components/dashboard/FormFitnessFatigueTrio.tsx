@@ -105,7 +105,7 @@ function Tile({
         <div className="text-micro font-bold uppercase tracking-[0.06em] text-subtle">{label}</div>
         {delta !== undefined && (
           <div
-            className="text-footnote font-semibold leading-none tabular-nums"
+            className="text-sm font-bold leading-none tabular-nums"
             style={{ color: metricDeltaColor(delta, deltaGoodWhen, TREND_THRESHOLD) }}
           >
             {trendLabel(delta)}

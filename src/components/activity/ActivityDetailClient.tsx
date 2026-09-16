@@ -110,8 +110,6 @@ export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, sh
 
       <MetricGrid metrics={stats} className="grid-cols-4 px-1 text-center" />
 
-      <TrainingEffect aer={activity.aerTrainingEffect} ana={activity.anaTrainingEffect} />
-
       <RunVerdict activity={activity} aiVerdict={aiVerdict} />
 
       {!activity.avgHeartRate && (
@@ -152,6 +150,8 @@ export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, sh
 
       {tab === 'overview' && (
         <>
+          <TrainingEffect aer={activity.aerTrainingEffect} ana={activity.anaTrainingEffect} />
+
           {activity.hrZones.length > 0 && (
             <ZoneBar
               hrZones={activity.hrZones}

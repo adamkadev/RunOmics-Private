@@ -46,21 +46,25 @@ function TECell({ value, label }: { value: number; label: string }) {
         <span className={cn('text-body font-bold tabular-nums', earned ? STATUS.success.text : 'text-muted-foreground')}>
           {value.toFixed(1)}
         </span>
-        <span className="truncate text-caption text-subtle">{level.label}</span>
+        <span className="truncate text-caption font-semibold text-subtle">{level.label}</span>
       </p>
     </div>
   )
 }
 
+// A zero is a reading, but it is not a finding: an axis the run did not touch
+// costs half the row to say nothing. Show the axes the run actually scored on.
+function scored(value: number | null): boolean {
+  return value != null && value > 0
+}
+
 export function TrainingEffect({ aer, ana }: Props) {
-  // null is "the device never reported it"; 0.0 is a reading, and it is the one
-  // the muted treatment exists for.
-  if (aer == null && ana == null) return null
+  if (!scored(aer) && !scored(ana)) return null
 
   return (
     <GlassSurface variant="card" className="flex items-stretch divide-x divide-border p-0">
-      {aer != null && <TECell value={aer} label={t.activity.trainingEffect.aerobic} />}
-      {ana != null && <TECell value={ana} label={t.activity.trainingEffect.anaerobic} />}
+      {scored(aer) && <TECell value={aer!} label={t.activity.trainingEffect.aerobic} />}
+      {scored(ana) && <TECell value={ana!} label={t.activity.trainingEffect.anaerobic} />}
     </GlassSurface>
   )
 }
