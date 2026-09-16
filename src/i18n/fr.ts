@@ -300,6 +300,8 @@ export const fr = {
       title: 'Statut d’entraînement',
       today: "Aujourd'hui",
       noReading: 'Pas de lecture',
+      window: (days: number) => `${days} derniers jours · touchez un segment`,
+      dominant: (days: number, status: string) => `${days} j ${status.toLowerCase()}`,
     },
     syncStatus: {
       synced: (relative: string) => `Synchronisé ${relative}`,
@@ -341,9 +343,10 @@ export const fr = {
     weeklyStreak: {
       weeksInARow: (weeks: number) => `${weeks} semaines d’affilée`,
       kmRemaining: (km: number) => `Plus que ${km} km pour boucler la semaine`,
+      perDayToGoal: (perDay: string, target: string) => `${perDay} km/jour pour atteindre ${target}`,
+      daysLeftPlanned: (days: number, sessions: number) =>
+        `${days} jour${days === 1 ? '' : 's'} restant${days === 1 ? '' : 's'} · ${sessions} séance${sessions === 1 ? '' : 's'} prévue${sessions === 1 ? '' : 's'}`,
       goalReached: 'Objectif hebdomadaire atteint',
-      freshWeek: 'Nouvelle semaine.',
-      freshWeekGoal: (km: number) => `Objectif ${km} km - un premier run lance la série.`,
       streakSummary: (longest: number, current: number) => `Meilleure série : ${longest} semaines - en cours : ${current}`,
     },
     celebration: {

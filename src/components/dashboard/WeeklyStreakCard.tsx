@@ -1,6 +1,7 @@
 'use client'
 
 import { Check } from 'lucide-react'
+import { formatKm } from '@/lib/formatters'
 import type { WeeklyStreakData } from '@/application/usecases/GetMilestones'
 import type { WeeklyGoal } from '@/application/usecases/GetGoalsData'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -68,16 +69,23 @@ export function WeeklyStreakCard({ data, goal }: Props) {
   const animatedPct = useCountUp(pct * 100) / 100
   const offset = RING_CIRCUMFERENCE * (1 - animatedPct)
   const animatedActualKm = useCountUp(goal?.actualKm ?? 0)
-  const isFreshWeek = goal !== null && goal.actualKm === 0
   const remaining = goal ? Math.max(0, Math.round(goal.targetKm - goal.actualKm)) : 0
+
+  // A sentence about the week is not the week. What is left to run, spread over
+  // the days left to run it in, is the number that decides today.
+  const daysLeft = 7 - today
+  const perDay = remaining > 0 && daysLeft > 0 ? remaining / daysLeft : 0
+  const sessionsPlanned = data.plannedDays.filter(Boolean).length
 
   const headline = !goal
     ? s.weeksInARow(Math.round(data.currentWeeks))
-    : isFreshWeek
-      ? s.freshWeek
+    : remaining > 0 && daysLeft > 0
+      ? s.perDayToGoal(formatKm(perDay, 1), formatKm(goal.targetKm))
       : remaining > 0
         ? s.kmRemaining(remaining)
         : s.goalReached
+
+  const subline = goal && remaining > 0 ? s.daysLeftPlanned(daysLeft, sessionsPlanned) : null
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -108,9 +116,7 @@ export function WeeklyStreakCard({ data, goal }: Props) {
         )}
         <div className="min-w-0 flex-1 text-left">
           <p className="text-sm font-semibold text-foreground">{headline}</p>
-          {isFreshWeek && (
-            <p className="mt-0.5 text-xs text-muted-foreground">{s.freshWeekGoal(Math.round(goal.targetKm))}</p>
-          )}
+          {subline && <p className="mt-0.5 text-xs text-muted-foreground">{subline}</p>}
         </div>
       </div>
 
