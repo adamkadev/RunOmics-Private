@@ -295,10 +295,22 @@ describe('WeekView target race', () => {
     expect(footer.textContent).toContain(t.plan.raceFooter.primaryTarget)
   })
 
-  it('counts days, not block progress, for each listed race', () => {
+  it('counts days, not block progress, for each listed race, in the same shape Today uses', () => {
     renderWeek({ coaching: overview() })
 
-    expect(screen.getByText(t.plan.raceFooter.daysAway(39))).toBeInTheDocument()
+    expect(screen.getByText(t.nextRace.countdown(39))).toBeInTheDocument()
+  })
+
+  it('keeps the countdown in its own tier instead of letting the block status replace it', () => {
+    const base = plan()
+    const onBlockEnd: CoachingPlan = { ...base, targetEvent: { ...base.targetEvent, date: base.block.endDate } }
+    renderWeek({ coaching: overview({ coachingPlan: onBlockEnd }) })
+
+    // 2026-09-09 -> 2026-10-04.
+    const countdown = screen.getByText(t.nextRace.countdown(25))
+    expect(countdown.className).toContain('text-body')
+    // The block status is a separate fact from the countdown, so both render.
+    expect(screen.getByTestId('race-footer').textContent).toContain(t.plan.raceFooter.blockEndsHere)
   })
 
   it('keeps the Garmin race when there is no coaching', () => {

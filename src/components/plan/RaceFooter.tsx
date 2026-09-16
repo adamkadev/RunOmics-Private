@@ -1,7 +1,6 @@
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import { weeksInPlan, type PlanSpan } from '@/domain/training/planProgress'
 import { BRAND_TINTS } from '@/lib/colors'
-import { cn } from '@/lib/utils'
 import { formatClock, formatDayMonth } from '@/lib/formatters'
 import { t } from '@/i18n'
 
@@ -43,23 +42,29 @@ export function RaceFooter({
       className="mt-4 flex items-start justify-between gap-3 rounded-[14px] border border-border px-3.5 py-3.5"
       style={{ background: BRAND_TINTS.footerFill }}
     >
-      <div className={cn('grid min-w-0 flex-1 gap-x-4 gap-y-3', ordered.length > 1 && 'sm:grid-cols-2')}>
+      <div className="min-w-0 flex-1 divide-y divide-border">
         {ordered.map((entry) => {
           const { race, blockEndsHere } = entry
           return (
-          <div key={`${race.date}-${race.name}`} className="min-w-0">
-            <div className="truncate text-footnote font-semibold text-foreground">{raceTitle(entry)}</div>
-            <div className="truncate text-caption text-subtle">
-              {[formatDayMonth(race.date), race.distance, race.targetSeconds ? formatClock(race.targetSeconds) : null]
-                .filter(Boolean)
-                .join(' · ')}
+            <div
+              key={`${race.date}-${race.name}`}
+              className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
+            >
+              <div className="min-w-0">
+                <div className="truncate text-footnote font-semibold text-foreground">{raceTitle(entry)}</div>
+                <div className="truncate text-caption text-subtle">
+                  {[formatDayMonth(race.date), race.distance, race.targetSeconds ? formatClock(race.targetSeconds) : null]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </div>
+                {blockEndsHere && (
+                  <div className="truncate text-caption text-muted-foreground">{t.plan.raceFooter.blockEndsHere}</div>
+                )}
+              </div>
+              <div className="shrink-0 font-display text-body font-bold tabular-nums text-foreground">
+                {t.nextRace.countdown(Math.max(0, daysBetween(today, race.date)))}
+              </div>
             </div>
-            <div className="truncate text-micro text-subtle-2">
-              {blockEndsHere
-                ? t.plan.raceFooter.blockEndsHere
-                : t.plan.raceFooter.daysAway(Math.max(0, daysBetween(today, race.date)))}
-            </div>
-          </div>
           )
         })}
       </div>

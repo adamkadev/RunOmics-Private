@@ -343,7 +343,6 @@ export const en = {
       restDay: 'Rest day',
       restDaySubtitle: 'No session scheduled',
       race: 'Race',
-      daysToRace: (days: number) => `D-${days}`,
       chargeOptimal: 'Optimal',
       chargeHigh: 'High',
       chargeLow: 'Low',
@@ -1244,7 +1243,6 @@ export const en = {
       primaryTarget: 'Primary target',
       tuneUp: 'Tune-up',
       blockEndsHere: 'Current block ends here',
-      daysAway: (days: number) => `${days} days`,
       weeksInLabel: 'weeks in',
     },
     phaseTrack: {

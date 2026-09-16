@@ -335,7 +335,6 @@ export const fr = {
       restDay: 'Jour de repos',
       restDaySubtitle: 'Aucune séance prévue',
       race: 'Course',
-      daysToRace: (days: number) => `J-${days}`,
       chargeOptimal: 'Optimale',
       chargeHigh: 'Élevée',
       chargeLow: 'Faible',
@@ -1233,7 +1232,6 @@ export const fr = {
       primaryTarget: 'Objectif principal',
       tuneUp: "Course d'appui",
       blockEndsHere: 'Fin du bloc actuel',
-      daysAway: (days: number) => `${days} jours`,
       weeksInLabel: 'semaines',
     },
     phaseTrack: {

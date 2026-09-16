@@ -113,7 +113,7 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiV
         {daysToRace !== null && daysToRace > 0 && (
           <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-0.5 font-mono text-micro font-bold text-white/80">
             <Flag size={10} />
-            {s.daysToRace(daysToRace)} · {nextRace!.name}
+            {t.nextRace.countdown(daysToRace)} · {nextRace!.name}
           </span>
         )}
       </div>
