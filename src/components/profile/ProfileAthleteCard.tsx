@@ -38,8 +38,8 @@ function Tile({ label, value, unit, valueColor }: HeadlineMetric) {
         style={valueColor ? { color: valueColor } : undefined}
       >
         {value}
-        {unit && <span className="ml-0.5 text-caption font-semibold text-muted-foreground">{unit}</span>}
       </div>
+      {unit && <div className="whitespace-nowrap text-caption font-semibold text-muted-foreground">{unit}</div>}
     </div>
   )
 }
