@@ -17,8 +17,8 @@ describe('capability-driven athlete metrics', () => {
     )
 
     expect(screen.getByText(/100–119/)).toBeInTheDocument()
-    expect(screen.queryByText(t.profile.hrZones.lthr)).not.toBeInTheDocument()
-    expect(screen.queryByText('170')).not.toBeInTheDocument()
+    expect(screen.queryByText(new RegExp(t.profile.trainingZones.lthr))).not.toBeInTheDocument()
+    expect(screen.queryByText(/170/)).not.toBeInTheDocument()
   })
 
   it('still displays a real LTHR and can derive zone boundaries from it', () => {
@@ -30,8 +30,7 @@ describe('capability-driven athlete metrics', () => {
       />
     )
 
-    expect(screen.getByText(t.profile.hrZones.lthr)).toBeInTheDocument()
-    expect(screen.getByText('172')).toBeInTheDocument()
+    expect(screen.getByText(t.profile.trainingZones.subline(172))).toBeInTheDocument()
   })
 
   it('omits an unavailable LT pace tile instead of rendering a placeholder', () => {

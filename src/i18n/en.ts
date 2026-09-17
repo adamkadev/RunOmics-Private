@@ -144,7 +144,8 @@ export const en = {
       title: 'Athlete',
       subtitle: 'Body, thresholds and training zones',
       back: 'Progress',
-      lastUpdated: (when: string) => `Updated ${when}`,
+      source: 'Garmin',
+      lastUpdated: (source: string, when: string) => `${source} · ${when}`,
     },
     notFound: {
       code: '404',
@@ -1225,17 +1226,32 @@ export const en = {
       activityCount: (n: number) => `${ordinal(n)} run`,
       activityCountDetail: (km: string) => `${km} km covered so far`,
     },
-    hrZones: {
-      title: 'Heart rate zones',
+    trainingZones: {
+      title: 'Training zones',
       lthr: 'LTHR',
-      subline: (lthr: number) => `bpm · LTHR ${lthr}`,
+      subline: (lthr: number) => `LTHR ${lthr} bpm`,
+      sublineWithThreshold: (lthr: number, pace: string) => `LTHR ${lthr} bpm · threshold ${pace} /km`,
       total: (duration: string) => `${duration} total`,
       thisWeek: 'This week',
+      thisWeekCaption: 'this week',
       recentWeeks: 'Last 4 weeks',
+      avgPerWeek: 'avg / week',
+      columnZone: 'Zone',
+      columnPace: 'Pace /km',
+      columnThisWeek: 'This wk',
+      columnAvgWeek: 'Avg / wk',
+      zoneNames: {
+        5: 'Max',
+        4: 'Threshold',
+        3: 'Aerobic',
+        2: 'Easy',
+        1: 'Warmup',
+      } as Record<number, string>,
       noSessionsThisWeek: 'No sessions logged yet.',
+      noSessionsRecent: 'No sessions logged in these 4 weeks.',
       emptyWeekFallback: 'This week has no sessions yet - showing your last 4 weeks instead.',
-      unusedThisWeek: (range: string) => `${range} unused`,
-      unusedRecent: (range: string) => `${range} unused in these 4 weeks`,
+      highIntensityNote: (pct: number) =>
+        `${pct}% of your time was Z4–Z5, against the 10–15% a build block usually asks for.`,
     },
     athlete: {
       title: 'Athlete',
@@ -1246,7 +1262,7 @@ export const en = {
       zoneRows: {
         5: 'Z5 Max',
         4: 'Z4 Thr',
-        3: 'Z3 Tempo',
+        3: 'Z3 Aerobic',
         2: 'Z2 Easy',
         1: 'Z1 Rec',
       } as Record<number, string>,
@@ -1321,7 +1337,7 @@ export const en = {
         shortDesc: 'Aerobic base & recovery',
       },
       marathon: {
-        label: 'Marathon',
+        label: 'Aerobic',
         shortDesc: 'Aerobic power & race pace',
       },
       threshold: {

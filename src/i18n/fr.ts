@@ -136,7 +136,8 @@ export const fr = {
       title: 'Athlète',
       subtitle: 'Corps, seuils et zones d’entraînement',
       back: 'Progression',
-      lastUpdated: (when: string) => `Mis à jour ${when}`,
+      source: 'Garmin',
+      lastUpdated: (source: string, when: string) => `${source} · ${when}`,
     },
     notFound: {
       code: '404',
@@ -1187,17 +1188,32 @@ export const fr = {
       activityCount: (n: number) => `${n}ᵉ sortie`,
       activityCountDetail: (km: string) => `${km} km parcourus au total`,
     },
-    hrZones: {
-      title: 'Zones cardiaques',
+    trainingZones: {
+      title: 'Zones d’entraînement',
       lthr: 'LTHR',
-      subline: (lthr: number) => `bpm · LTHR ${lthr}`,
+      subline: (lthr: number) => `LTHR ${lthr} bpm`,
+      sublineWithThreshold: (lthr: number, pace: string) => `LTHR ${lthr} bpm · seuil ${pace} /km`,
       total: (duration: string) => `${duration} au total`,
       thisWeek: 'Cette semaine',
+      thisWeekCaption: 'cette semaine',
       recentWeeks: '4 dernières semaines',
+      avgPerWeek: 'moy. / semaine',
+      columnZone: 'Zone',
+      columnPace: 'Allure /km',
+      columnThisWeek: 'Cette sem.',
+      columnAvgWeek: 'Moy. / sem.',
+      zoneNames: {
+        5: 'Max',
+        4: 'Seuil',
+        3: 'Aérobie',
+        2: 'Facile',
+        1: 'Échauffement',
+      } as Record<number, string>,
       noSessionsThisWeek: 'Aucune séance enregistrée pour le moment.',
+      noSessionsRecent: 'Aucune séance enregistrée sur ces 4 semaines.',
       emptyWeekFallback: 'Pas encore de séance cette semaine - affichage des 4 dernières semaines.',
-      unusedThisWeek: (range: string) => `${range} non utilisées`,
-      unusedRecent: (range: string) => `${range} non utilisées sur ces 4 semaines`,
+      highIntensityNote: (pct: number) =>
+        `${pct}% de ton temps était en Z4–Z5, contre les 10–15% qu’un bloc de développement demande en général.`,
     },
     athlete: {
       title: 'Athlète',
@@ -1208,7 +1224,7 @@ export const fr = {
       zoneRows: {
         5: 'Z5 Max',
         4: 'Z4 Seuil',
-        3: 'Z3 Tempo',
+        3: 'Z3 Aérobie',
         2: 'Z2 Facile',
         1: 'Z1 Récup',
       } as Record<number, string>,
@@ -1283,7 +1299,7 @@ export const fr = {
         shortDesc: 'Base aérobie & récupération',
       },
       marathon: {
-        label: 'Marathon',
+        label: 'Aérobie',
         shortDesc: 'Puissance aérobie & allure course',
       },
       threshold: {

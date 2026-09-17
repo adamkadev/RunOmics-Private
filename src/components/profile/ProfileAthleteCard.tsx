@@ -85,7 +85,7 @@ export function ProfileAthleteCard({ athlete, latestVo2max, recentZoneTime }: Pr
       ) : null}
 
       <SectionDivider className="mb-2">
-        {`${t.profile.hrZones.title} · ${t.profile.hrZones.recentWeeks}`}
+        {`${t.profile.trainingZones.title} · ${t.profile.trainingZones.recentWeeks}`}
       </SectionDivider>
 
       <div className="flex flex-col gap-[9px]">

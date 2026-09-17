@@ -92,6 +92,16 @@ function bmiTileBand(bmi: number | undefined): TileData['band'] {
   return { label: t.settings.athlete.bmiBand[band], tone: BMI_BAND_TONE[band] }
 }
 
+// One sync a day is the normal cadence, so the dot only needs to distinguish
+// "as expected" from "a sync was missed" from "several were missed" -
+// mirrors the 72h threshold GetStaleSyncAlert uses to flag a stale device.
+function syncFreshnessTone(iso: string): 'success' | 'warning' | 'danger' {
+  const hoursSinceSync = (Date.now() - new Date(iso).getTime()) / 3_600_000
+  if (hoursSinceSync < 24) return 'success'
+  if (hoursSinceSync < 72) return 'warning'
+  return 'danger'
+}
+
 function tilesFor(category: Category, athlete: AthleteProfile, latestVo2max: number | null): TileData[] {
   const a = t.settings.athlete
 
@@ -162,8 +172,9 @@ export function ProfileAthleteStats({ athlete, latestVo2max }: Props) {
       <div className="mb-3 flex items-baseline justify-between gap-3">
         <CardTitle as="h2">{a.title}</CardTitle>
         {athlete.lastUpdate && (
-          <span className="shrink-0 text-caption text-subtle-2">
-            {t.pages.athlete.lastUpdated(formatRelativeAgo(athlete.lastUpdate))}
+          <span className="flex shrink-0 items-center gap-1.5 text-caption text-subtle-2">
+            <span className={cn('h-1.5 w-1.5 rounded-full', STATUS[syncFreshnessTone(athlete.lastUpdate)].dot)} />
+            {t.pages.athlete.lastUpdated(t.pages.athlete.source, formatRelativeAgo(athlete.lastUpdate))}
           </span>
         )}
       </div>
