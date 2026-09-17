@@ -1037,11 +1037,8 @@ export const en = {
     kmOf: (total: number, max: number) => `${total} / ${max} km`,
     retired: 'Retired',
     active: 'Active',
-    rotationSummary: (activePairs: number, km: string, sessions: number) =>
-      `${activePairs} active · ${km} km · ${sessions} sessions`,
-    wearLegend: { ok: '<70%', watch: '70-90', replace: '90+' },
-    wearLegendScope: 'in rotation',
-    wornOut: (percent: number) => `${percent}% worn`,
+    rotationSummary: (activePairs: number, retiredPairs: number, km: string) =>
+      `${activePairs} in rotation · ${retiredPairs} retired · ${km} km tracked`,
     // The rotation row used to print a bare `Sep 13` next to the mileage, with
     // nothing saying which date it was. Both keys take an already-formatted
     // date because i18n can never import the formatters.
@@ -1053,30 +1050,62 @@ export const en = {
       replace: 'Replace',
     },
     kmLeft: (km: number) => `~${km} km left`,
+    // No tilde on the detail hero: promoting a number to 34px and then
+    // hedging it with "~" undercuts the very thing that made it the hero.
+    // The list row keeps the tilde - there, it's one line among several, not
+    // the headline.
+    kmLeftExact: (km: number) => `${km} km left`,
+    kmPerWeek: (km: number) => `${km} km/wk`,
+    retiredLife: (era: string, runs: number, weeks: number) => `${era} · ${runs} runs · ${weeks} weeks`,
     hero: {
       usage: (n: number, total: number) => `Used in ${n} of your last ${total} tempo/threshold runs`,
-      rotateBeforeRace: (date: string) => ` - rotate in a backup before your ${date} race.`,
-      rotate: ' - rotate in a backup.',
+      rotateBeforeRace: (date: string) => ` – rotate in a backup before your ${date} race.`,
+      rotate: ' – rotate in a backup.',
       restOfRotation: 'Rest of rotation',
     },
-    wearAlert: (name: string, totalKm: number, alertThresholdKm: number) => `${name} has ${totalKm} km - past its ${alertThresholdKm} km alert threshold`,
+    wearAlert: (name: string, totalKm: number, alertThresholdKm: number) => `${name} has ${totalKm} km – past its ${alertThresholdKm} km alert threshold`,
     comparison: {
-      title: 'How each pair is used',
+      title: 'Compare two pairs',
       change: 'Change',
       changeLabel: 'Change which pairs are compared',
       pickHint: 'Pick two pairs — a new pick replaces the older one',
       comparing: 'comparing',
-      note: 'Pairs worn in different seasons are not a like-for-like test - the date range under each name says how far apart they ran.',
-      period: (from: string, to: string) => `${from} - ${to}`,
+      // The two clauses read as one sentence now instead of two stacked
+      // captions - what's real, then why it's still not a fair fight. Only
+      // shown alongside an actual averages claim - with too few runs there's
+      // no averages difference for this caveat to qualify.
+      note: 'Both ran in different blocks – read the difference as the season, not the shoe.',
+      delta: 'Δ',
+      same: 'same',
+      beyondNoise: (metrics: string) => `${metrics} differ beyond measurement noise; the rest is the same runner.`,
+      noneBeyondNoise: 'Nothing here differs beyond measurement noise - the rest is the same runner.',
+      // Names which pair(s) fall short, not just the fact that some do - "too
+      // few runs" alone leaves the reader guessing which of two columns it
+      // means.
+      tooFewRunsShoe: (name: string, count: number) => `${name} has ${count} run${count === 1 ? '' : 's'}`,
+      tooFewRuns: (shoes: string, minRuns: number) => `${shoes} – form averages need about ${minRuns}.`,
+      groups: {
+        howMuch: 'How much',
+        howItRan: 'How it ran',
+      },
+      // The unit lives in the label, not a second span next to every value -
+      // a 78px label column has no room to also print "km"/"bpm" per row.
       metrics: {
-        sessions: 'Sessions',
-        distance: 'Distance',
+        sessions: 'Runs',
+        distance: 'Distance km',
         keyShare: 'Key sessions',
-        pace: 'Avg pace',
-        heartRate: 'Avg HR',
-        cadence: 'Cadence',
-        groundContact: 'Ground contact',
-        oscillation: 'Vert. oscillation',
+        pace: 'Pace /km',
+        heartRate: 'HR bpm',
+        cadence: 'Cadence spm',
+        groundContact: 'Contact ms',
+        oscillation: 'Bounce mm',
+      },
+      metricNames: {
+        pace: 'pace',
+        heartRate: 'heart rate',
+        cadence: 'cadence',
+        groundContact: 'ground contact',
+        oscillation: 'vertical oscillation',
       },
     },
     summary: {
@@ -1088,21 +1117,63 @@ export const en = {
       back: 'Shoes',
       stats: {
         distance: 'Distance',
-        activities: 'Activities',
-        firstUsed: 'Since',
+        activities: 'Runs',
+        firstRun: 'First run',
         kmPerWeek: 'km / week',
         lastWorn: 'Last worn',
+        avgPace: 'Avg pace',
         weeks: 'Weeks',
         avgRun: 'Avg run',
       },
-      activitiesTitle: 'Tracked Activities',
+      activitiesTitleActive: 'Recent runs',
+      activitiesTitleRetired: 'Last runs before retiring',
+      allActivitiesCount: (count: number) => `All ${count}`,
       empty: 'No activities recorded with this pair yet.',
+      projectedRunOut: (weeklyKm: number, maxKm: number, targetDate: string, weeksRemaining: number) =>
+        `At ${weeklyKm} km a week you'll hit ${maxKm} km around ${targetDate} – about ${weeksRemaining} more week${weeksRemaining === 1 ? '' : 's'}.`,
+      // A three-year forecast off six runs is noise, not information - past a
+      // year out, the sentence drops the date and says only what's true: it's
+      // a long way off at this rate.
+      projectedRunOutFar: (weeklyKm: number, maxKm: number) =>
+        `At ${weeklyKm} km a week, ${maxKm} km is more than a year away.`,
       verdict: {
         eyebrow: (statusLabel: string) => `Verdict · ${statusLabel}`,
         weeksLeft: (weeks: number) => `About ${weeks} more weeks at your pace.`,
         planReplacement: 'Plan the replacement this month.',
         replaceNow: 'Line up the replacement now.',
         noPaceData: 'Not enough recent mileage to project a timeline yet.',
+      },
+      typeShareLabels: {
+        intervals: 'Intervals',
+      },
+      // The bar folds seven activity types into three buckets silently
+      // otherwise - a shoe with Race or Anaerobic runs in it never shows
+      // those words anywhere, so the caption says what each bucket holds.
+      typeShareGrouped: 'Tempo groups threshold; Intervals groups sprint, anaerobic, VO2max and races.',
+      whatYouRunIn: {
+        title: 'What you run in it',
+        summary: (pace: string, hr: number) => `${pace} · ${hr} bpm`,
+      },
+      whatItWasFor: {
+        title: 'What it was for',
+        // No pace here: a retired pair's stat row already has "Avg pace" - this
+        // line only earns its place by adding the one figure the row doesn't.
+        summary: (hr: number) => `${hr} bpm avg`,
+        // No "your key-session pair" branding - that possessive reads as a
+        // superlative ("the one pair that's for quality work"), and two
+        // retired pairs can land on the same side of this same 50% line.
+        keySessionPair: (percent: number) => `${percent}% of its distance was tempo or intervals.`,
+        easyPair: (percent: number) => `${percent}% of its distance was base running.`,
+      },
+      retiredHero: {
+        // "Ran out" only means something for a pair that actually reached the
+        // end of its life - one that was swapped out early gets the honest
+        // percentage instead of a life it never finished.
+        ranOut: (maxKm: number, weeks: number) => `Ran nearly all of a ${maxKm} km life in ${weeks} weeks.`,
+        ranOutFastest: (maxKm: number, weeks: number) =>
+          `Ran nearly all of a ${maxKm} km life in ${weeks} weeks – the fastest you've worn a pair through.`,
+        retiredEarly: (percent: number, maxKm: number, weeks: number) =>
+          `Retired at ${percent}% of a ${maxKm} km life, after ${weeks} weeks.`,
       },
     },
   },

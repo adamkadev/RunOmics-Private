@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { ChevronDown, Check } from 'lucide-react'
 import { SectionDivider } from '@/components/ui/SectionLabel'
 import type { ShoeComparisonRow } from '@/application/usecases/GetShoeComparison'
 import { BrandIcon } from '@/components/shoes/BrandIcon'
-import { formatDate, formatDistance, formatPace } from '@/lib/formatters'
+import { formatClock, formatEraRange, MINUS, PLUS_MINUS } from '@/lib/formatters'
 import { shortShoeName } from '@/domain/shoe/shortName'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -14,23 +14,150 @@ interface Props {
   rows: ShoeComparisonRow[]
 }
 
-type MetricRow = { label: string; value: (row: ShoeComparisonRow) => string }
+type MetricGroup = 'howMuch' | 'howItRan'
+type NoiseMetric = 'pace' | 'heartRate' | 'cadence' | 'groundContact' | 'oscillation'
+
+type MetricRow = {
+  key: string
+  group: MetricGroup
+  label: string
+  value: (row: ShoeComparisonRow) => string
+  raw: (row: ShoeComparisonRow) => number | null
+  formatDelta: (diff: number) => string
+  // Only "how it ran" metrics get a noise floor - counts are exact, so any
+  // gap between them is a real difference, never a rounding artefact.
+  noise?: { key: NoiseMetric; threshold: number }
+}
 
 const COMPARED_PAIRS = 2
 
+// Below this many runs, an average is six or seven data points pretending to
+// be a rate - real enough to display, not solid enough to call a difference.
+// Counts don't need this floor: 130 vs 87 is a fact regardless of sample size.
+const MIN_SESSIONS_FOR_AVERAGES = 15
+
+function fmtSigned(n: number, unit = ''): string {
+  if (n === 0) return `${PLUS_MINUS}0${unit}`
+  return `${n > 0 ? '+' : MINUS}${Math.abs(n)}${unit}`
+}
+
+// The unit lives in the row label (see i18n `comparison.metrics`), not a
+// second span next to every value - a 78px label column has no room to also
+// print "km"/"bpm" per row.
 const METRICS: MetricRow[] = [
-  { label: t.shoes.comparison.metrics.sessions, value: (r) => `${r.sessionCount}` },
-  { label: t.shoes.comparison.metrics.distance, value: (r) => `${formatDistance(r.totalKm)} ${t.units.km}` },
-  { label: t.shoes.comparison.metrics.keyShare, value: (r) => `${r.keySessionPercent}${t.units.percent}` },
-  { label: t.shoes.comparison.metrics.pace, value: (r) => (r.paceSecPerKm ? formatPace(r.paceSecPerKm) : '-') },
-  { label: t.shoes.comparison.metrics.heartRate, value: (r) => (r.avgHeartRate ? `${r.avgHeartRate} ${t.units.bpm}` : '-') },
-  { label: t.shoes.comparison.metrics.cadence, value: (r) => (r.cadenceSpm ? `${r.cadenceSpm} ${t.units.spm}` : '-') },
-  { label: t.shoes.comparison.metrics.groundContact, value: (r) => (r.groundContactMs ? `${r.groundContactMs} ${t.units.ms}` : '-') },
-  { label: t.shoes.comparison.metrics.oscillation, value: (r) => (r.verticalOscillationMm ? `${r.verticalOscillationMm} ${t.units.mm}` : '-') },
+  {
+    key: 'sessions',
+    group: 'howMuch',
+    label: t.shoes.comparison.metrics.sessions,
+    value: (r) => `${r.sessionCount}`,
+    raw: (r) => r.sessionCount,
+    formatDelta: (d) => fmtSigned(Math.round(d)),
+  },
+  {
+    key: 'distance',
+    group: 'howMuch',
+    label: t.shoes.comparison.metrics.distance,
+    // Whole kilometres here, not the one-decimal `formatDistance` used for a
+    // single run's own distance - a 620.1 km lifetime total is one rounding
+    // step of false precision past what anyone reads off this row.
+    value: (r) => `${Math.round(r.totalKm)}`,
+    raw: (r) => r.totalKm,
+    formatDelta: (d) => fmtSigned(Math.round(d)),
+  },
+  {
+    key: 'keyShare',
+    group: 'howMuch',
+    label: t.shoes.comparison.metrics.keyShare,
+    value: (r) => `${r.keySessionPercent}${t.units.percent}`,
+    raw: (r) => r.keySessionPercent,
+    formatDelta: (d) => fmtSigned(Math.round(d)),
+  },
+  {
+    key: 'pace',
+    group: 'howItRan',
+    label: t.shoes.comparison.metrics.pace,
+    value: (r) => (r.paceSecPerKm ? formatClock(r.paceSecPerKm) : '-'),
+    raw: (r) => r.paceSecPerKm,
+    formatDelta: (d) => fmtSigned(Math.round(d), 's'),
+    noise: { key: 'pace', threshold: 5 },
+  },
+  {
+    key: 'heartRate',
+    group: 'howItRan',
+    label: t.shoes.comparison.metrics.heartRate,
+    value: (r) => (r.avgHeartRate ? `${r.avgHeartRate}` : '-'),
+    raw: (r) => r.avgHeartRate,
+    formatDelta: (d) => fmtSigned(Math.round(d)),
+    noise: { key: 'heartRate', threshold: 3 },
+  },
+  {
+    key: 'cadence',
+    group: 'howItRan',
+    label: t.shoes.comparison.metrics.cadence,
+    value: (r) => (r.cadenceSpm ? `${r.cadenceSpm}` : '-'),
+    raw: (r) => r.cadenceSpm,
+    formatDelta: (d) => fmtSigned(Math.round(d * 10) / 10),
+    noise: { key: 'cadence', threshold: 2 },
+  },
+  {
+    key: 'groundContact',
+    group: 'howItRan',
+    label: t.shoes.comparison.metrics.groundContact,
+    value: (r) => (r.groundContactMs ? `${r.groundContactMs}` : '-'),
+    raw: (r) => r.groundContactMs,
+    formatDelta: (d) => fmtSigned(Math.round(d)),
+    noise: { key: 'groundContact', threshold: 5 },
+  },
+  {
+    key: 'oscillation',
+    group: 'howItRan',
+    label: t.shoes.comparison.metrics.oscillation,
+    value: (r) => (r.verticalOscillationMm ? `${r.verticalOscillationMm}` : '-'),
+    raw: (r) => r.verticalOscillationMm,
+    formatDelta: (d) => fmtSigned(Math.round(d * 10) / 10),
+    noise: { key: 'oscillation', threshold: 2 },
+  },
 ]
 
+const METRIC_GROUPS: MetricGroup[] = ['howMuch', 'howItRan']
+
+// 78px label / 1fr / 1fr / 48px delta, 6px gaps - fixed so the table never
+// scrolls. A value that would clip at this width is the table's problem to
+// fix (shorten the label, drop the unit), never the viewport's.
+const GRID_COLS = 'grid-cols-[78px_1fr_1fr_48px]'
+
+function metricDelta(
+  metric: MetricRow,
+  a: ShoeComparisonRow,
+  b: ShoeComparisonRow,
+  enoughForAverages: boolean
+): { text: string; beyond: boolean } | null {
+  if (metric.group === 'howItRan' && !enoughForAverages) return null
+  const va = metric.raw(a)
+  const vb = metric.raw(b)
+  if (va == null || vb == null) return null
+  // First column minus second, not the other way round - the column order
+  // reads left to right as the reference, so a bigger first-column number
+  // shows positive rather than a "the bigger pair reads negative" reversal.
+  const diff = va - vb
+  if (!metric.noise) return { text: metric.formatDelta(diff), beyond: true }
+  // Strictly greater than, not "at least": a gap that lands exactly on the
+  // threshold is still within it, not past it.
+  const beyond = Math.abs(diff) > metric.noise.threshold
+  return { text: beyond ? metric.formatDelta(diff) : t.shoes.comparison.same, beyond }
+}
+
+// The pairs still in rotation are the ones a runner is actually deciding
+// between - a retired pair only belongs in the default pick when there
+// aren't two active ones to fill it with.
+function defaultPicks(rows: ShoeComparisonRow[]): string[] {
+  const active = rows.filter((r) => !r.retired)
+  const retired = rows.filter((r) => r.retired)
+  return [...active, ...retired].slice(0, COMPARED_PAIRS).map((r) => r.gearId)
+}
+
 export function ShoeComparison({ rows }: Props) {
-  const [picked, setPicked] = useState<string[]>(() => rows.slice(0, COMPARED_PAIRS).map((r) => r.gearId))
+  const [picked, setPicked] = useState<string[]>(() => defaultPicks(rows))
   const [pickerOpen, setPickerOpen] = useState(false)
 
   if (rows.length < COMPARED_PAIRS) return null
@@ -45,6 +172,31 @@ export function ShoeComparison({ rows }: Props) {
       current.includes(gearId) ? current : [...current.slice(1 - COMPARED_PAIRS), gearId],
     )
   }
+
+  const enoughForAverages =
+    compared[0]!.sessionCount >= MIN_SESSIONS_FOR_AVERAGES && compared[1]!.sessionCount >= MIN_SESSIONS_FOR_AVERAGES
+  const tooFewRunsSentence = enoughForAverages
+    ? null
+    : t.shoes.comparison.tooFewRuns(
+        new Intl.ListFormat(t.locale, { style: 'long', type: 'conjunction' }).format(
+          compared
+            .filter((row) => row.sessionCount < MIN_SESSIONS_FOR_AVERAGES)
+            .map((row) => t.shoes.comparison.tooFewRunsShoe(shortShoeName(row.name, row.brand), row.sessionCount))
+        ),
+        MIN_SESSIONS_FOR_AVERAGES
+      )
+
+  const beyondNoiseNames = METRICS
+    .filter((m): m is MetricRow & { noise: NonNullable<MetricRow['noise']> } => m.noise !== undefined)
+    .filter((m) => metricDelta(m, compared[0]!, compared[1]!, enoughForAverages)?.beyond)
+    .map((m) => t.shoes.comparison.metricNames[m.noise.key])
+  // With too few runs, no averages claim is safe to make at all - the season
+  // caveat still applies, but it's the only sentence left standing.
+  const averagesSentence = !enoughForAverages
+    ? null
+    : beyondNoiseNames.length > 0
+      ? t.shoes.comparison.beyondNoise(new Intl.ListFormat(t.locale, { style: 'long', type: 'conjunction' }).format(beyondNoiseNames))
+      : t.shoes.comparison.noneBeyondNoise
 
   return (
     <section className="space-y-2.5">
@@ -84,56 +236,63 @@ export function ShoeComparison({ rows }: Props) {
         </div>
       )}
 
-      <div className="relative">
-        <div className="overflow-x-auto rounded-card border border-border">
-          <table className="w-full min-w-max border-collapse text-sm">
-            <thead>
-              <tr>
-                <th scope="col" className="sticky left-0 bg-background px-3 py-2.5 text-left" />
-                {compared.map((row) => (
-                  <th key={row.gearId} scope="col" className="px-3 py-2.5 text-left align-bottom">
-                    <span className="flex items-center gap-1.5">
-                      <span
-                        className="h-2 w-2 shrink-0 rounded-full"
-                        style={{ backgroundColor: row.dotColor }}
-                      />
-                      <span className="max-w-[9ch] truncate font-semibold text-foreground" title={row.name}>
-                        {shortShoeName(row.name, row.brand)}
-                      </span>
-                    </span>
-                    <span className="mt-0.5 block text-micro font-normal text-subtle-2">
-                      {t.shoes.comparison.period(
-                        formatDate(row.firstUsed, { precision: 'month', year: 'never' }),
-                        formatDate(row.lastUsed, { precision: 'month', year: 'never' }),
-                      )}
-                    </span>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {METRICS.map((metric) => (
-                <tr key={metric.label} className="border-t border-border">
-                  <th scope="row" className="sticky left-0 bg-background px-3 py-2 text-left text-xs font-medium text-muted-foreground">
-                    {metric.label}
-                  </th>
+      <div className={cn('grid gap-x-1.5 gap-y-2 rounded-card border border-border p-3', GRID_COLS)}>
+        <div />
+        {compared.map((row) => (
+          <div key={row.gearId} className="min-w-0">
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: row.dotColor }} />
+              <span className="min-w-0 truncate text-sm font-semibold text-foreground" title={row.name}>
+                {shortShoeName(row.name, row.brand)}
+              </span>
+            </span>
+            <span className="mt-0.5 block truncate text-micro font-normal text-subtle-2">
+              {formatEraRange(row.firstUsed, row.lastUsed)}
+            </span>
+          </div>
+        ))}
+        <span className="self-end pb-1 text-right text-micro font-medium text-subtle-2">{t.shoes.comparison.delta}</span>
+
+        {METRIC_GROUPS.map((group) => (
+          <Fragment key={group}>
+            <div className="col-span-4 pb-0.5 pt-1.5 text-micro font-semibold uppercase tracking-[0.06em] text-subtle-2">
+              {t.shoes.comparison.groups[group]}
+            </div>
+            {METRICS.filter((metric) => metric.group === group).map((metric) => {
+              const delta = metricDelta(metric, compared[0]!, compared[1]!, enoughForAverages)
+              return (
+                <Fragment key={metric.key}>
+                  <span className="border-t border-border pt-2 text-xs font-medium text-muted-foreground">{metric.label}</span>
                   {compared.map((row) => (
-                    <td key={row.gearId} className="px-3 py-2 tabular-nums text-foreground">
+                    <span key={row.gearId} className="truncate border-t border-border pt-2 tabular-nums text-foreground">
                       {metric.value(row)}
-                    </td>
+                    </span>
                   ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-y-0 right-0 w-8 rounded-r-card bg-gradient-to-l from-background to-transparent"
-        />
+                  <span
+                    className={cn(
+                      'truncate border-t border-border pt-2 text-right tabular-nums',
+                      delta?.beyond ? 'font-semibold text-foreground' : 'text-subtle-2'
+                    )}
+                  >
+                    {delta ? delta.text : '-'}
+                  </span>
+                </Fragment>
+              )
+            })}
+            {group === 'howItRan' && tooFewRunsSentence && (
+              <div className="col-span-4 pt-1 text-caption italic text-subtle-2">{tooFewRunsSentence}</div>
+            )}
+          </Fragment>
+        ))}
       </div>
 
-      <p className="px-1 text-caption text-subtle-2">{t.shoes.comparison.note}</p>
+      {/* The season caveat only qualifies an averages claim - with too few
+          runs there's no such claim on screen for it to hedge. */}
+      {averagesSentence && (
+        <p className="px-1 text-caption text-subtle-2">
+          {averagesSentence} {t.shoes.comparison.note}
+        </p>
+      )}
     </section>
   )
 }

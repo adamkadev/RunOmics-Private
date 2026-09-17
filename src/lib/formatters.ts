@@ -197,6 +197,21 @@ export function formatMonthShortYear(isoDate: string, options: DateFormatOptions
 }
 
 /**
+ * A window's two bare months, each carrying its own apostrophe-year only when
+ * that end's year differs from the other's - "May - Dec '25" for a range that
+ * stays inside one year, "Oct '25 - Jul '26" for one that crosses into the
+ * next. Built from `formatMonthShortYear` rather than `formatDateRange`
+ * because a table header this narrow needs the same compact `'25` the rest of
+ * the app already uses for a bare month, not `Intl`'s four-digit year.
+ */
+export function formatEraRange(startIso: string, endIso: string): string {
+  const startMonth = formatDate(startIso, { precision: 'month', year: 'never' })
+  const sameYear = startIso.slice(2, 4) === endIso.slice(2, 4)
+  const start = sameYear ? startMonth : formatMonthShortYear(startIso)
+  return `${start} - ${formatMonthShortYear(endIso)}`
+}
+
+/**
  * The one window. `Intl.formatRange` collapses whatever the two sides share, so
  * a week inside one month reads `Sep 7 - 13` rather than `Sep 7 - Sep 13`.
  *

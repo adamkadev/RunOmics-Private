@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { ShoesGrid } from '@/components/shoes/ShoesGrid'
 import type { ShoeStats } from '@/application/usecases/GetShoeStats'
+import { t } from '@/i18n'
 
 function shoe(over: Partial<ShoeStats>): ShoeStats {
   return {
@@ -14,6 +15,8 @@ function shoe(over: Partial<ShoeStats>): ShoeStats {
     totalKm: 150,
     sessionCount: 12,
     lastUsedDate: '2026-09-10',
+    firstUsedDate: '2026-01-01',
+    kmPerWeek: 10,
     wearPercent: 15,
     nearingLimit: false,
     ...over,
@@ -39,8 +42,8 @@ describe('ShoesGrid rows', () => {
       />
     )
 
-    for (const pct of ['60%', '5%']) {
-      const label = screen.getByText(pct)
+    for (const km of [Math.round(1000 - 604), Math.round(1000 - 53)]) {
+      const label = screen.getByText(t.shoes.kmLeft(km))
       expect(label.className).toContain('text-muted-foreground')
       expect(label.className).not.toContain('emerald')
     }
@@ -57,7 +60,14 @@ describe('ShoesGrid rows', () => {
       />
     )
 
-    expect(screen.getByText('75%').className).toContain('amber')
+    expect(screen.getByText(t.shoes.kmLeft(250)).className).toContain('amber')
+  })
+
+  it('leads the row with kilometres left rather than a percentage', () => {
+    render(<ShoesGrid shoes={[shoe({ totalKm: 604, maxKm: 1000, wearPercent: 60 })]} />)
+
+    expect(screen.getByText(t.shoes.kmLeft(396))).toBeInTheDocument()
+    expect(screen.queryByText('60%')).not.toBeInTheDocument()
   })
 
   it('gives every active row a bar sized to its wear, so the digits are not the only signal', () => {
@@ -96,7 +106,7 @@ describe('ShoesGrid rows', () => {
     expect(container.textContent).toContain(`last run Dec 12, ${lastYear}`)
   })
 
-  it('separates two pairs sharing a model name by the era each one ran in', () => {
+  it('gives a retired pair its life instead of a percentage: an era, its runs, and its weeks', () => {
     const { container } = render(
       <ShoesGrid
         shoes={[
@@ -107,16 +117,20 @@ describe('ShoesGrid rows', () => {
             totalKm: 786,
             retired: true,
             wearPercent: 100,
+            sessionCount: 90,
+            firstUsedDate: '2025-05-01',
             lastUsedDate: '2025-12-12',
           }),
         ]}
       />
     )
 
-    // The registry carries no retirement date, so the year is the last one the
-    // pair actually ran - "last worn", never "retired 2025".
-    expect(container.textContent).toContain('last worn 2025')
-    expect(container.textContent).toContain('786 / 1000 km')
+    // Total km trails the row instead of a percentage, and the subline swaps
+    // "worn" for the shape of the pair's life - no bare "94% worn" left over.
+    expect(container.textContent).toContain('786')
+    expect(container.textContent).toContain('90')
+    expect(screen.queryByText('100%')).not.toBeInTheDocument()
+    expect(container.textContent).not.toMatch(/worn/)
   })
 
   it('groups retired pairs under a heading rather than dimming each row below AA contrast', () => {
@@ -125,10 +139,8 @@ describe('ShoesGrid rows', () => {
     // opacity-65 composited the AA-compliant text-subtle down to ~3.2:1.
     expect(container.querySelector('a')?.className).not.toContain('opacity')
 
-    // The heading carries retirement once, so the row does not repeat it - and
-    // the slot it used to occupy shows how worn the pair actually got.
+    // The heading carries retirement once, so the row does not repeat it.
     expect(screen.getAllByText('Retired')).toHaveLength(1)
-    expect(container.textContent).toContain('100%')
   })
 
   it('splits the rotation into labelled groups, so two pairs of the same name cannot be confused', () => {

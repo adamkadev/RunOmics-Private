@@ -26,6 +26,7 @@ function shoe(gearId: string, retired = false): ShoeStats {
   return {
     gearId, name: gearId, brand: 'B', maxKm: 800, alertThresholdKm: 700,
     retired, totalKm: 100, sessionCount: 10, lastUsedDate: '2026-01-01',
+    firstUsedDate: '2025-01-01', kmPerWeek: 10,
     wearPercent: 13, nearingLimit: false,
   }
 }

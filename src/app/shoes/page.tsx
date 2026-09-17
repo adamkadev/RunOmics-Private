@@ -36,8 +36,8 @@ export default async function ShoesPage() {
         <p className="mt-0.5 text-sm text-muted-foreground">
           {t.shoes.rotationSummary(
             shoes.filter((shoe) => !shoe.retired).length,
-            formatKm(shoes.reduce((sum, shoe) => sum + shoe.totalKm, 0)),
-            shoes.reduce((sum, shoe) => sum + shoe.sessionCount, 0)
+            shoes.filter((shoe) => shoe.retired).length,
+            formatKm(shoes.reduce((sum, shoe) => sum + shoe.totalKm, 0))
           )}
         </p>
       </div>

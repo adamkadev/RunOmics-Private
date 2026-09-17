@@ -15,6 +15,8 @@ function shoe(over: Partial<ShoeStats>): ShoeStats {
     totalKm: 120,
     sessionCount: 12,
     lastUsedDate: '2026-09-10',
+    firstUsedDate: '2026-01-01',
+    kmPerWeek: 10,
     wearPercent: 15,
     nearingLimit: false,
     ...over,

@@ -71,16 +71,18 @@ describe('getShoeDetail', () => {
     expect(getShoeDetail('daily')?.firstUsedDate).toBe('2026-01-05')
   })
 
-  it('averages the weekly mileage over the days since that first outing', () => {
-    getAllActivities.mockReturnValue([run('daily', '2026-07-01', 60)])
+  it('averages the weekly mileage over the weeks between the first and most recent run, not weeks to today', () => {
+    getAllActivities.mockReturnValue([run('daily', '2026-06-03', 10), run('daily', '2026-07-01', 50)])
 
-    expect(getShoeDetail('daily')?.kmPerWeek).toBe(14)
+    // 28 days between the two runs = 4 weeks, over 60 km total - regardless of
+    // how long ago '2026-07-01' was relative to the mocked "now".
+    expect(getShoeDetail('daily')?.kmPerWeek).toBe(15)
   })
 
-  it('counts a pair worn today as a full day old rather than dividing by zero', () => {
+  it('counts a pair worn only once as a full week old rather than dividing by zero', () => {
     getAllActivities.mockReturnValue([run('daily', '2026-07-31', 10)])
 
-    expect(getShoeDetail('daily')?.kmPerWeek).toBe(70)
+    expect(getShoeDetail('daily')?.kmPerWeek).toBe(10)
   })
 
   it('reports an unworn pair at zero rather than as missing', () => {
