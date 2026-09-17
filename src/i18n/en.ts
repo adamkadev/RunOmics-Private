@@ -67,6 +67,7 @@ export const en = {
     kcal: 'kcal',
     perKm: '/km',
     minPerKm: 'min/km',
+    sec: 's',
     celsius: '°C',
     hour: 'h',
     min: 'min',
@@ -747,7 +748,7 @@ export const en = {
     tabs: {
       groupLabel: 'Activity sections',
       overview: 'Overview',
-      splits: 'Splits',
+      intervals: 'Intervals',
       charts: 'Charts',
       dynamics: 'Dynamics',
     },
@@ -778,6 +779,7 @@ export const en = {
         negative: 'The second half was more efficient than the first, usually a long warm-up settling in.',
       },
       footnote: 'Pace-to-heart-rate ratio, second half vs first. Under 5% is the mark of a steady run.',
+      seeInCharts: 'See it in Charts ›',
     },
     dataQuality: {
       estimated: 'Estimated',
@@ -858,25 +860,47 @@ export const en = {
     },
     dynamics: {
       vsBaseline: (delta: string, weeks: number) => `${delta} vs ${weeks}-wk`,
-      atBaseline: (weeks: number) => `${weeks}-wk median`,
       title: 'Running Dynamics',
       cadence: 'Cadence',
       strideLength: 'Stride Length',
       groundContact: 'Ground Contact',
       vertOscillation: 'Vert. Oscillation',
       vertRatio: 'Vert. Ratio',
+      band: (weeks: number) => `band = your ${weeks}-week range`,
+      verdict: {
+        longer: 'longer',
+        shorter: 'shorter',
+        quicker: 'quicker',
+        slower: 'slower',
+        bouncier: 'bouncier',
+        tighter: 'tighter',
+        costlier: 'costlier',
+        flatter: 'flatter',
+        level: 'level',
+      },
+      form: {
+        title: 'Form through the run',
+        faded: (km: string) => `faded after ${km} km`,
+        held: 'held to the finish',
+        readingFaded: (km: string) =>
+          `Cadence dropped over the last ${km} km and stayed down - the fade the decoupling figure reports, in your mechanics.`,
+        readingHeld:
+          'Cadence held its level from the first kilometre to the last - nothing in the mechanics slipped.',
+        summary: 'Cadence over the run, marked where it dropped away.',
+      },
     },
     charts: {
       heartRate: 'Heart Rate',
       hr: 'HR',
       avg: 'avg',
       max: 'max',
+      best: 'best',
       pace: 'Pace',
       altitude: 'Altitude',
       elevation: 'Elevation',
       cadence: 'Cadence',
-      sectionPhysiology: 'Physiology',
-      sectionPerformance: 'Pace & Cadence',
+      elevationGain: (m: number) => `+${m} m gain`,
+      scrubHint: 'Tap or drag anywhere on the stack to read every metric at one point.',
     },
     map: {
       fullscreen: 'Fullscreen',
@@ -891,9 +915,34 @@ export const en = {
     splits: {
       title: 'Intervals',
       lapTitle: 'Laps',
-      perKmTitle: 'Splits',
+      perKmTitle: 'Kilometre splits',
       continuous: 'Continuous run — no interval structure recorded.',
       partialKm: (km: string) => `final ${km}`,
+      repSetLabel: (reps: number, duration: string) => `${reps} × ${duration}`,
+      bandLabel: (range: string) => `band ${range}/km`,
+      colFaster: 'faster →',
+      recoveryLine: (duration: string, km: string) => `rec ${duration} · ${km} km`,
+      acrossTheSet: 'Across the set',
+      drift: {
+        down: (bpm: number) => `heart rate came down ${bpm} bpm`,
+        flat: 'heart rate sat flat',
+        up: (bpm: number) => `heart rate climbed ${bpm} bpm`,
+        unknown: 'heart rate went unrecorded',
+      },
+      spread: 'pace spread',
+      inBand: (inBand: number, total: number) => `${inBand}/${total} in band`,
+      repHrDrift: 'Rep HR drift',
+      recoveryPace: 'Recovery pace',
+      reading: {
+        repsBuilt: (total: number, first: string, last: string, drift: string) =>
+          `${total} reps tightening from ${first} to ${last}/km, and ${drift} across the set - this one was built, not held.`,
+        repsHeld: (inBand: number, total: number, drift: string) =>
+          `${inBand} of ${total} reps landed inside the band and ${drift} across the set - this was a repeatable effort.`,
+        repsHeldRecoveriesSlowed: (inBand: number, total: number, first: string, last: string) =>
+          `${inBand} of ${total} reps stayed in the band while the recoveries slowed from ${first} to ${last}/km - the fatigue landed between the reps, not inside them.`,
+        repsFaded: (inBand: number, total: number, spread: number) =>
+          `Only ${inBand} of ${total} reps landed inside the band, ${spread}s apart from fastest to slowest - the work drifted as the set went on.`,
+      },
       cols: {
         km: 'Km',
         step: '#',

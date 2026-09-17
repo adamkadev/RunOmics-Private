@@ -25,7 +25,7 @@ describe('getDynamicsBaseline', () => {
       run('2026-08-15', { groundContactMs: 280 }),
     )
 
-    expect(getDynamicsBaseline(run('2026-09-01'))?.groundContactMs).toBe(270)
+    expect(getDynamicsBaseline(run('2026-09-01'))?.groundContactMs?.median).toBe(270)
   })
 
   it('excludes the run itself, so a run is never its own baseline', () => {
@@ -37,7 +37,7 @@ describe('getDynamicsBaseline', () => {
       subject,
     )
 
-    expect(getDynamicsBaseline(subject)?.groundContactMs).toBe(270)
+    expect(getDynamicsBaseline(subject)?.groundContactMs?.median).toBe(270)
   })
 
   it('ignores runs older than the window', () => {
@@ -48,7 +48,7 @@ describe('getDynamicsBaseline', () => {
       run('2026-08-15', { groundContactMs: 280 }),
     )
 
-    expect(getDynamicsBaseline(run('2026-09-01'))?.groundContactMs).toBe(270)
+    expect(getDynamicsBaseline(run('2026-09-01'))?.groundContactMs?.median).toBe(270)
   })
 
   it('reports a metric only once three runs carry it', () => {
@@ -59,8 +59,22 @@ describe('getDynamicsBaseline', () => {
     )
 
     const baseline = getDynamicsBaseline(run('2026-09-01'))
-    expect(baseline?.groundContactMs).toBe(270)
+    expect(baseline?.groundContactMs?.median).toBe(270)
     expect(baseline?.verticalRatioPct).toBeNull()
+  })
+
+  it('carries each metric\'s own range alongside its median', () => {
+    activities.push(
+      run('2026-08-01', { groundContactMs: 260 }),
+      run('2026-08-08', { groundContactMs: 270 }),
+      run('2026-08-15', { groundContactMs: 280 }),
+    )
+
+    expect(getDynamicsBaseline(run('2026-09-01'))?.groundContactMs).toEqual({
+      median: 270,
+      min: 260,
+      max: 280,
+    })
   })
 
   it('has no baseline at all from fewer than three runs', () => {

@@ -4,10 +4,11 @@ import { useState } from 'react'
 import { Timer, ChevronRight } from 'lucide-react'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { formatDuration, formatClock } from '@/lib/formatters'
-import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { Activity, ActivitySplit, SplitLap } from '@/domain/activity/types'
 import { kmSplitsFromSamples, type KmSplit } from '@/domain/activity/kmSplits'
+import { repSet } from '@/domain/activity/repSet'
+import { IntervalSet } from './IntervalSet'
 
 /**
  * The same four segment kinds are coloured by WORKOUT_SEGMENT_COLORS on the
@@ -53,7 +54,6 @@ function PerKmSplits({ activity, splits }: { activity: Activity; splits: KmSplit
   const rowCls = showHr ? PER_KM_ROW_HR : PER_KM_ROW_NO_HR
   const totalDistanceKm = splits.reduce((s, sp) => s + sp.distanceKm, 0)
   const totalDurationSec = splits.reduce((s, sp) => s + sp.durationSec, 0)
-  const fastest = Math.min(...splits.map((s) => s.paceSecPerKm))
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -77,14 +77,7 @@ function PerKmSplits({ activity, splits }: { activity: Activity; splits: KmSplit
                 ? t.activity.splits.partialKm(split.distanceKm.toFixed(2))
                 : split.km}
             </span>
-            <span
-              className={cn(
-                'text-xs tabular-nums',
-                split.paceSecPerKm === fastest && 'font-semibold text-accent-text',
-              )}
-            >
-              {formatClock(split.paceSecPerKm)}
-            </span>
+            <span className="text-xs tabular-nums">{formatClock(split.paceSecPerKm)}</span>
             {showHr && <span className="text-xs tabular-nums">{split.avgHr ?? '-'}</span>}
           </div>
         ))}
@@ -110,6 +103,9 @@ export function KmSplits({ activity }: Props) {
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
 
   if (!splits || splits.length === 0) return null
+
+  const set = repSet(splits)
+  if (set) return <IntervalSet set={set} />
 
   if (splits.length <= 1) {
     const perKm = kmSplitsFromSamples({

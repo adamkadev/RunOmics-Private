@@ -59,6 +59,7 @@ export const fr = {
     kcal: 'kcal',
     perKm: '/km',
     minPerKm: 'min/km',
+    sec: 's',
     celsius: '°C',
     hour: 'h',
     min: 'min',
@@ -739,7 +740,7 @@ export const fr = {
     tabs: {
       groupLabel: 'Sections de la sortie',
       overview: 'Aperçu',
-      splits: 'Intervalles',
+      intervals: 'Intervalles',
       charts: 'Graphiques',
       dynamics: 'Dynamique',
     },
@@ -770,6 +771,7 @@ export const fr = {
         negative: "La seconde moitié a été plus efficace que la première, en général un échauffement qui se met en place.",
       },
       footnote: 'Rapport allure/FC, seconde moitié contre première. Sous 5%, la sortie est tenue.',
+      seeInCharts: 'Voir dans Graphiques ›',
     },
     dataQuality: {
       estimated: 'Estimé',
@@ -850,25 +852,47 @@ export const fr = {
     },
     dynamics: {
       vsBaseline: (delta: string, weeks: number) => `${delta} vs ${weeks} sem.`,
-      atBaseline: (weeks: number) => `médiane ${weeks} sem.`,
       title: 'Dynamique de course',
       cadence: 'Cadence',
       strideLength: 'Longueur de foulée',
       groundContact: 'Contact au sol',
       vertOscillation: 'Oscillation vert.',
       vertRatio: 'Ratio vertical',
+      band: (weeks: number) => `plage = vos ${weeks} dernières semaines`,
+      verdict: {
+        longer: 'plus longue',
+        shorter: 'plus courte',
+        quicker: 'plus bref',
+        slower: 'plus long',
+        bouncier: 'plus rebondi',
+        tighter: 'plus resserré',
+        costlier: 'plus coûteux',
+        flatter: 'plus plat',
+        level: 'au niveau',
+      },
+      form: {
+        title: 'La forme au fil de la sortie',
+        faded: (km: string) => `a lâché après ${km} km`,
+        held: "a tenu jusqu'au bout",
+        readingFaded: (km: string) =>
+          `La cadence a baissé sur les ${km} derniers km sans remonter - la dérive que signale le découplage, dans votre mécanique.`,
+        readingHeld:
+          'La cadence a gardé son niveau du premier au dernier kilomètre - rien ne bouge dans la mécanique.',
+        summary: 'Cadence sur la sortie, avec le point où elle a baissé.',
+      },
     },
     charts: {
       heartRate: 'Fréquence cardiaque',
       hr: 'FC',
       avg: 'moy',
       max: 'max',
+      best: 'meilleure',
       pace: 'Allure',
       altitude: 'Altitude',
       elevation: 'Dénivelé',
       cadence: 'Cadence',
-      sectionPhysiology: 'Physiologie',
-      sectionPerformance: 'Allure & cadence',
+      elevationGain: (m: number) => `+${m} m D+`,
+      scrubHint: 'Touchez ou faites glisser sur la pile pour lire chaque métrique au même point.',
     },
     map: {
       fullscreen: 'Plein écran',
@@ -881,9 +905,34 @@ export const fr = {
       routeMap: 'Carte du parcours de l’activité',
     },
     splits: {
-      perKmTitle: 'Splits',
+      perKmTitle: 'Splits par kilomètre',
       continuous: 'Course continue — aucune structure d’intervalles enregistrée.',
       partialKm: (km: string) => `${km} final`,
+      repSetLabel: (reps: number, duration: string) => `${reps} × ${duration}`,
+      bandLabel: (range: string) => `plage ${range}/km`,
+      colFaster: 'plus rapide →',
+      recoveryLine: (duration: string, km: string) => `récup ${duration} · ${km} km`,
+      acrossTheSet: 'Sur la série',
+      drift: {
+        down: (bpm: number) => `la FC a baissé de ${bpm} bpm`,
+        flat: 'la FC est restée stable',
+        up: (bpm: number) => `la FC a grimpé de ${bpm} bpm`,
+        unknown: "la FC n'a pas été enregistrée",
+      },
+      spread: "écart d'allure",
+      inBand: (inBand: number, total: number) => `${inBand}/${total} dans la plage`,
+      repHrDrift: 'Dérive FC',
+      recoveryPace: 'Allure de récup',
+      reading: {
+        repsBuilt: (total: number, first: string, last: string, drift: string) =>
+          `${total} répétitions qui accélèrent de ${first} à ${last}/km, et ${drift} sur la série - elle a monté en puissance plutôt que tenu.`,
+        repsHeld: (inBand: number, total: number, drift: string) =>
+          `${inBand} répétitions sur ${total} sont tombées dans la plage et ${drift} sur la série - un effort reproductible.`,
+        repsHeldRecoveriesSlowed: (inBand: number, total: number, first: string, last: string) =>
+          `${inBand} répétitions sur ${total} sont restées dans la plage pendant que les récupérations ralentissaient de ${first} à ${last}/km - la fatigue est passée entre les répétitions, pas dedans.`,
+        repsFaded: (inBand: number, total: number, spread: number) =>
+          `Seulement ${inBand} répétitions sur ${total} dans la plage, ${spread}s d'écart entre la plus rapide et la plus lente - le travail a dérivé au fil de la série.`,
+      },
       title: 'Intervalles',
       lapTitle: 'Tours',
       cols: {

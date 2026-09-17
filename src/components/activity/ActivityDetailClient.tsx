@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { SectionDivider } from '@/components/ui/SectionLabel'
 import type { Activity } from '@/domain/activity/types'
 import { aerobicDecoupling } from '@/domain/activity/decoupling'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
@@ -12,10 +11,7 @@ import { ActivityMapClient } from './ActivityMapClient'
 import { NoRouteMap } from './ActivityMap'
 import { RunVerdict } from './RunVerdict'
 import { ZoneBar } from './ZoneBar'
-import { HrChart } from './HrChart'
-import { ElevationChart } from './ElevationChart'
-import { PaceChart } from './PaceChart'
-import { CadenceChart } from './CadenceChart'
+import { ChartStack } from './ChartStack'
 import { KmSplits } from './KmSplits'
 import { TrainingEffect } from './TrainingEffect'
 import { AerobicDecoupling } from './AerobicDecoupling'
@@ -37,7 +33,7 @@ interface Props {
   dynamicsBaseline: DynamicsBaseline | null
 }
 
-type TabId = 'overview' | 'splits' | 'charts' | 'dynamics'
+type TabId = 'overview' | 'intervals' | 'charts' | 'dynamics'
 
 function buildPrimaryStats(activity: Activity): Metric[] {
   // MetricGrid has had a dedicated unit slot all along; this call site put the
@@ -88,7 +84,7 @@ export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, sh
 
   const tabs = [
     { id: 'overview' as const, label: t.activity.tabs.overview, show: true },
-    { id: 'splits' as const, label: t.activity.tabs.splits, show: hasSplits },
+    { id: 'intervals' as const, label: t.activity.tabs.intervals, show: hasSplits },
     { id: 'charts' as const, label: t.activity.tabs.charts, show: hasCharts },
     { id: 'dynamics' as const, label: t.activity.tabs.dynamics, show: hasDynamics },
   ].filter((item) => item.show)
@@ -161,52 +157,30 @@ export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, sh
               maxHr={activity.hrSamples ? Math.max(...activity.hrSamples) : null}
             />
           )}
-          <AerobicDecoupling decoupling={aerobicDecoupling(activity)} />
+          <AerobicDecoupling
+            decoupling={aerobicDecoupling(activity)}
+            onShowCharts={hasCharts ? () => setTab('charts') : undefined}
+          />
           {activity.bestEfforts && (
             <BestEfforts bestEfforts={activity.bestEfforts} qualifiedEfforts={qualifiedEfforts} />
           )}
         </>
       )}
 
-      {tab === 'splits' && <KmSplits activity={activity} />}
+      {tab === 'intervals' && <KmSplits activity={activity} />}
 
       {tab === 'charts' && (
-        <>
-          {activity.hrSamples && (
-            <>
-              <SectionDivider>{t.activity.charts.sectionPhysiology}</SectionDivider>
-              <HrChart samples={activity.hrSamples} avgHr={activity.avgHeartRate} distanceKm={activity.distanceKm} />
-            </>
-          )}
-          {hasSecondaryCharts && (
-            <>
-              <SectionDivider>{t.activity.charts.sectionPerformance}</SectionDivider>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {activity.paceSamples && (
-                  <PaceChart
-                    samples={activity.paceSamples}
-                    avgPaceSecPerKm={activity.paceSecPerKm}
-                    distanceKm={activity.distanceKm}
-                  />
-                )}
-                {activity.cadenceSamples && (
-                  <CadenceChart
-                    samples={activity.cadenceSamples}
-                    avgCadence={activity.cadenceSpm}
-                    distanceKm={activity.distanceKm}
-                  />
-                )}
-                {activity.elevationProfile && (
-                  <ElevationChart
-                    samples={activity.elevationProfile}
-                    distanceKm={activity.distanceKm}
-                    elevationGain={activity.elevationGain}
-                  />
-                )}
-              </div>
-            </>
-          )}
-        </>
+        <ChartStack
+          distanceKm={activity.distanceKm}
+          hrSamples={activity.hrSamples}
+          avgHr={activity.avgHeartRate}
+          paceSamples={activity.paceSamples}
+          avgPaceSecPerKm={activity.paceSecPerKm}
+          cadenceSamples={activity.cadenceSamples}
+          avgCadence={activity.cadenceSpm}
+          elevationProfile={activity.elevationProfile}
+          elevationGain={activity.elevationGain}
+        />
       )}
 
       {tab === 'dynamics' && <RunningDynamics activity={activity} baseline={dynamicsBaseline} />}
