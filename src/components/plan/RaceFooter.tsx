@@ -1,4 +1,5 @@
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
+import { GlassSurface } from '@/components/ui/GlassSurface'
 import { formatClock, formatCountdown, formatDate } from '@/lib/formatters'
 import { t } from '@/i18n'
 
@@ -14,8 +15,12 @@ const DISTANCE_ONLY = /^\s*\d+(?:[.,]\d+)?\s*(?:k|km|m|mi|miles?)\s*$/i
 
 const NEXT_CHIP_FILL = '#f5b13d'
 const NEXT_CHIP_INK = '#091020'
-const LATER_CHIP_BORDER = 'rgba(148,178,220,.22)'
-const LATER_CHIP_TEXT = 'var(--muted-foreground)'
+// Derived straight from --foreground rather than the muted/subtle tokens -
+// on white this chip was a pale-grey outline around pale-grey text, quiet
+// enough to disappear; it can stay quieter than the amber "next" chip
+// without going invisible.
+const LATER_CHIP_BORDER = 'color-mix(in srgb, var(--foreground) 30%, transparent)'
+const LATER_CHIP_TEXT = 'color-mix(in srgb, var(--foreground) 65%, transparent)'
 
 function daysBetween(from: string, to: string): number {
   return Math.round((new Date(to + 'T00:00:00').getTime() - new Date(from + 'T00:00:00').getTime()) / 86_400_000)
@@ -52,19 +57,15 @@ export function RaceFooter({ races, today }: { races: FooterRace[]; today: strin
         const { race } = entry
         const isNext = i === 0
         return (
-          <div
+          <GlassSurface
+            variant="card"
             key={`${race.date}-${race.name}`}
-            className="flex items-center justify-between gap-3"
-            style={{
-              background: '#101a2c',
-              border: '1px solid rgba(148,178,220,.12)',
-              borderRadius: '16px',
-              padding: '13px 14px',
-            }}
+            className="flex items-center justify-between gap-3 rounded-2xl"
+            style={{ padding: '13px 14px' }}
           >
             <div className="min-w-0">
               <div className="truncate text-footnote font-semibold text-foreground">{raceTitle(entry)}</div>
-              <div className="truncate text-caption text-subtle">{raceDetail(entry)}</div>
+              <div className="truncate text-caption text-muted-foreground">{raceDetail(entry)}</div>
             </div>
             <span
               className="shrink-0 rounded-full px-2.5 py-1 text-[12px] font-bold tabular-nums"
@@ -77,7 +78,7 @@ export function RaceFooter({ races, today }: { races: FooterRace[]; today: strin
             >
               {formatCountdown(daysBetween(today, race.date))}
             </span>
-          </div>
+          </GlassSurface>
         )
       })}
     </div>

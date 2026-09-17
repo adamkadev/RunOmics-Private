@@ -6,6 +6,11 @@ const CURRENT_CACHES = [STATIC_CACHE, PAGE_CACHE]
 const SHELL_URLS = ['/', '/manifest.json', '/icons/logo.svg', '/icons/apple-touch-icon.png']
 
 self.addEventListener('install', (event) => {
+  if (isLocalDev) {
+    event.waitUntil(self.skipWaiting())
+    return
+  }
+
   event.waitUntil(
     caches
       .open(PAGE_CACHE)
@@ -19,6 +24,19 @@ self.addEventListener('message', (event) => {
 })
 
 self.addEventListener('activate', (event) => {
+  // A worker left behind on localhost by an earlier local production build
+  // drops everything it cached and retires itself, so a dev server is never
+  // shadowed by chunks from a build that no longer exists.
+  if (isLocalDev) {
+    event.waitUntil(
+      caches
+        .keys()
+        .then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
+        .then(() => self.registration.unregister())
+    )
+    return
+  }
+
   event.waitUntil(
     caches
       .keys()
@@ -26,6 +44,14 @@ self.addEventListener('activate', (event) => {
       .then(() => self.clients.claim())
   )
 })
+
+// Dev builds reuse the same /_next/static/chunks/... URLs across rebuilds, so
+// the cache-first branch below would pin whatever chunk this worker saw first
+// and keep serving it past every rebuild, restart and refresh. Registration is
+// already production-only, but a worker registered once by a local production
+// build outlives it and keeps controlling localhost - so it steps aside here.
+const LOCAL_HOSTS = ['localhost', '127.0.0.1', '[::1]']
+const isLocalDev = LOCAL_HOSTS.includes(self.location.hostname)
 
 function isImmutableAsset(url) {
   return url.pathname.startsWith('/_next/static/') || url.pathname.startsWith('/icons/')
@@ -63,6 +89,7 @@ async function networkFirst(request, { isNavigation }) {
 
 self.addEventListener('fetch', (event) => {
   const { request } = event
+  if (isLocalDev) return
   if (request.method !== 'GET') return
 
   const url = new URL(request.url)

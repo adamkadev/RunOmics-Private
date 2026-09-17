@@ -13,7 +13,6 @@ import { GlassSurface } from '@/components/ui/GlassSurface'
 import { Pill } from '@/components/ui/Pill'
 import { SortDropdown } from '@/components/ui/SortDropdown'
 import { easyHardShare } from '@/domain/training/easyHard'
-import { INTENSITY_DOT_COLORS, intensityDotColor } from '@/lib/colors'
 
 import { formatDateRange, formatKm } from '@/lib/formatters'
 import { isoDate, addDays, startOfWeek } from '@/lib/calendarDate'
@@ -108,13 +107,13 @@ function WeekCompositionDots({ items, label }: { items: ActivitySummary[]; label
             <span
               key={a.id}
               className="shrink-0 rounded-[4px]"
-              style={{ width: '7px', height: '7px', border: `1.5px solid ${INTENSITY_DOT_COLORS.long}` }}
+              style={{ width: '7px', height: '7px', border: `1.5px solid ${ACTIVITY_TYPE_CONFIG.Race.chartColor}` }}
             />
           ) : (
             <span
               key={a.id}
               className="shrink-0 rounded-[4px]"
-              style={{ width: '7px', height: '7px', background: intensityDotColor(a.type) }}
+              style={{ width: '7px', height: '7px', background: ACTIVITY_TYPE_CONFIG[a.type].chartColor }}
             />
           )
         )}

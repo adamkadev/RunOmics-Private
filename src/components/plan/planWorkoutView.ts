@@ -54,7 +54,7 @@ function effortBand(type: ActivityType | undefined, zone: TrainingZone | null): 
 
 export function formatPlanDuration(duration: PlanWorkoutView['duration']): string | null {
   if (!duration) return null
-  return `${duration.estimated ? '≈' : ''}${formatDurationWords(duration.seconds)}`
+  return formatDurationWords(duration.seconds)
 }
 
 export function plannedWorkoutView(

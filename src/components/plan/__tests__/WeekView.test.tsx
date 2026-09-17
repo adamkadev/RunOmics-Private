@@ -77,7 +77,6 @@ function renderWeek(options: {
   return render(
     <WeekView
       weekStart={WEEK_START}
-      activities={activities}
       byDate={byDate}
       byDatePlanned={new Map((options.planned ?? []).map((p) => [p.date, p]))}
       byDateCoach={options.coaching ? byDateCoach(options.coaching) : undefined}
@@ -86,7 +85,6 @@ function renderWeek(options: {
       today={TODAY}
       atPresent
       onToday={() => {}}
-      statusByDate={{}}
       planPhaseRanges={options.planPhaseRanges ?? []}
       nextRace={options.nextRace ?? null}
       trainingZones={options.trainingZones ?? null}
@@ -94,11 +92,9 @@ function renderWeek(options: {
   )
 }
 
-async function expectStats(easyHardValue: string, load: string, climb: string) {
+async function expectLoad(load: string) {
   await waitFor(() => {
-    expect(screen.getByTestId('stat-load').textContent).toContain(load)
-    expect(screen.getByTestId('stat-climb').textContent).toContain(climb)
-    expect(screen.getByTestId('stat-easy-hard').textContent).toContain(easyHardValue)
+    expect(screen.getByTestId('week-summary').textContent).toContain(load)
   })
 }
 
@@ -106,13 +102,13 @@ describe('WeekView weekly metrics', () => {
   it('reports Garmin activity metrics for a week with no coaching', async () => {
     renderWeek({ activities: [TEMPO, RACE] })
 
-    await expectStats('–', '141', `26${t.units.m}`)
+    await expectLoad('141')
   })
 
   it('keeps those same metrics when a coaching block covers the week', async () => {
     renderWeek({ activities: [TEMPO, RACE], coaching: overview() })
 
-    await expectStats('–', '141', `26${t.units.m}`)
+    await expectLoad('141')
   })
 
   it('shows the completed activities and the coach prescription side by side', () => {
@@ -174,8 +170,11 @@ describe('WeekView coaching day cells and Today', () => {
     renderWeek({ coaching: overview() })
 
     expect(screen.getAllByTestId('coach-calendar-2026-09-09')).toHaveLength(1)
+    // The detail pane (today's own session) and the "this week" list (every
+    // day, today included) each show it exactly once - two sections, not a
+    // duplicate within either one.
     expect(screen.getAllByTestId('plan-workout-row-workout-threshold')).toHaveLength(1)
-    expect(screen.getAllByText(/3 × 8 min threshold/)).toHaveLength(1)
+    expect(screen.getAllByTestId('week-session-workout-threshold')).toHaveLength(1)
   })
 
   it('renders a coached session through the same row a Garmin session uses', () => {
@@ -196,7 +195,9 @@ describe('WeekView coaching day cells and Today', () => {
     const row = screen.getByTestId('plan-workout-row-workout-threshold')
     expect(row.textContent).toContain('3 × 8 min threshold')
     expect(row.textContent).toContain('1h00')
-    expect(row.textContent).toContain('Threshold')
+    // The zone/type word ("Threshold") is deliberately left out of the meta
+    // line - the title already names the session, so repeating it there was
+    // the same fact stated twice on one card.
     expect(row.textContent).toContain(t.plan.targetPace('4:25–4:30/km'))
   })
 
@@ -300,12 +301,14 @@ describe('WeekView without coaching', () => {
   it('still shows the Garmin planned workout on the selected day', () => {
     renderWeek({ planned: [{ date: TODAY, name: 'Track session', type: 'Threshold', durationSecs: 3_600 }] })
 
-    expect(screen.getByText(/Track session/)).toBeInTheDocument()
+    // It appears twice by design: once in the detail pane for the selected
+    // day, once in the "this week" list a few sections down.
+    expect(screen.getAllByText(/Track session/).length).toBeGreaterThan(0)
   })
 
   it('falls back to the rest-day copy on an empty day', () => {
     renderWeek()
 
-    expect(screen.getAllByText(t.plan.restDay).length).toBeGreaterThan(0)
+    expect(screen.getByText(t.plan.restCard.title)).toBeInTheDocument()
   })
 })

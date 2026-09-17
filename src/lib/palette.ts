@@ -14,6 +14,7 @@ export const HUE = {
   gray800: '#1f2937',
   zinc400: '#a1a1aa',
 
+  blue300: '#93c5fd',
   blue400: '#60a5fa',
   blue500: '#3b82f6',
   blue600: '#2563eb',
@@ -28,6 +29,7 @@ export const HUE = {
 
   green400: '#4ade80',
   green500: '#22c55e',
+  green600: '#16a34a',
   green700: '#15803d',
 
   lime500: '#84cc16',

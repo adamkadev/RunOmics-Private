@@ -19,7 +19,16 @@ function days(from: string, to: string): number {
   )
 }
 
-export function PlanPhaseTrack({ ranges, today }: { ranges: PlanPhaseRange[]; today: string }) {
+/**
+ * Whether the week reads as "current" for this phase is a question about the
+ * whole displayed week, not one reference date - a phase that starts mid-week
+ * (say Tuesday) still made the week's own header call that week "Base," so a
+ * track anchored to Monday alone disagreed with its own header. A range is
+ * current here if it overlaps the week at all; progress reads through to the
+ * end of the displayed week, since that's the furthest point this view knows
+ * the plan has reached.
+ */
+export function PlanPhaseTrack({ ranges, weekStart, weekEnd }: { ranges: PlanPhaseRange[]; weekStart: string; weekEnd: string }) {
   if (ranges.length < 2) return null
 
   return (
@@ -27,10 +36,10 @@ export function PlanPhaseTrack({ ranges, today }: { ranges: PlanPhaseRange[]; to
       <div className="flex items-center gap-1">
         {ranges.map((r) => {
           const color = TRAINING_PLAN_PHASE_COLORS[r.phase] ?? 'var(--accent)'
-          const isPast = r.endDate < today
-          const isCurrent = r.startDate <= today && today <= r.endDate
+          const isPast = r.endDate < weekStart
+          const isCurrent = !isPast && r.startDate <= weekEnd
           const progress = isCurrent
-            ? Math.min(100, Math.max(0, (days(r.startDate, today) / days(r.startDate, r.endDate)) * 100))
+            ? Math.min(100, Math.max(0, (days(r.startDate, weekEnd) / days(r.startDate, r.endDate)) * 100))
             : 0
           const background = isPast
             ? color
@@ -49,12 +58,12 @@ export function PlanPhaseTrack({ ranges, today }: { ranges: PlanPhaseRange[]; to
       <div className="mt-1.5 flex justify-between font-mono text-micro font-semibold uppercase tracking-[0.04em]">
         {ranges.map((r) => {
           const color = TRAINING_PLAN_PHASE_COLORS[r.phase] ?? 'var(--accent)'
-          const active = r.endDate >= today && r.startDate <= today
-          const done = r.endDate < today
+          const isPast = r.endDate < weekStart
+          const isCurrent = !isPast && r.startDate <= weekEnd
           return (
             <span
               key={r.startDate}
-              style={{ color: active || done ? color : 'var(--subtle)' }}
+              style={{ color: isCurrent || isPast ? color : 'var(--subtle)' }}
             >
               {PHASE_LABEL[r.phase]}
             </span>

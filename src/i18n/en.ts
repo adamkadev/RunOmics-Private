@@ -858,7 +858,7 @@ export const en = {
     },
     dynamics: {
       vsBaseline: (delta: string, weeks: number) => `${delta} vs ${weeks}-wk`,
-      atBaseline: (weeks: number) => `≈ ${weeks}-wk median`,
+      atBaseline: (weeks: number) => `${weeks}-wk median`,
       title: 'Running Dynamics',
       cadence: 'Cadence',
       strideLength: 'Stride Length',
@@ -1100,7 +1100,7 @@ export const en = {
       firstActivity: 'First step',
       firstActivityDetail: (km: number) => `Where it all began - ${km.toFixed(1)} km`,
       lifetimeDistance: (km: string) => `${km} km lifetime`,
-      lifetimeDistanceDetail: (marathons: number) => `≈ ${marathons} marathons run`,
+      lifetimeDistanceDetail: (marathons: number) => `${marathons} marathons run`,
       lifetimeDistanceWorldTour: '🌍 A full trip around the Earth',
       activityCount: (n: number) => `${ordinal(n)} run`,
       activityCountDetail: (km: string) => `${km} km covered so far`,
@@ -1266,7 +1266,6 @@ export const en = {
       `${sessions} session${sessions !== 1 ? 's' : ''} · ${ranKm} of ${plannedKm} km planned`,
     weekdays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     switcher: { week: 'Week', month: 'Month' },
-    weekOf: (label: string) => `Week of ${label}`,
     weekGutter: 'WK',
     weekGutterEmpty: '—',
     extra: 'extra',
@@ -1298,7 +1297,6 @@ export const en = {
       min: (m: number) => `${m}'`,
       rec: (m: number) => `${m}' rec`,
     },
-    comingUp: 'Coming up',
     timeOfDay: {
       Morning: 'Morning',
       Afternoon: 'Afternoon',
@@ -1320,22 +1318,14 @@ export const en = {
       noSession: 'No session planned',
       next: (weekday: string, title: string) => `No session planned · next is ${weekday}, ${title}`,
     },
-    dayChipLegend: {
-      done: 'done',
-      today: 'today',
-      plannedKm: 'planned km',
-    },
     weekSummary: {
       load: 'Load',
       loadUnit: 'pts',
-      ofPlanned: (planned: number) => `of ${planned} planned`,
-      vsTypical: (percent: number) => `${percent - 100 >= 0 ? '+' : ''}${percent - 100}% vs typical`,
-      easyHardSplit: (easy: number, hard: number) => `${easy}% easy · ${hard}% hard`,
-      noSplit: 'no split yet',
-      climb: 'Climb',
-      easyHard: 'Easy / Hard',
-      easyHardTarget: 'target 80/20',
+      sessionsCount: (n: number) => `${n} session${n !== 1 ? 's' : ''}`,
+      easyHardRatio: (easy: number, hard: number) => `${easy}/${hard} easy`,
+      loadPlanned: 'planned',
     },
+    plannedVsRecorded: (planned: string, recorded: string) => `planned ${planned} · recorded ${recorded}`,
     raceFooter: {
       weeksIn: (done: number, total: number) => `${done}/${total}`,
       targetTime: (clock: string) => `target ${clock}`,
@@ -1352,11 +1342,9 @@ export const en = {
       raceDay: 'Race',
     },
     weekPurpose: {
-      recovery: 'Recovery week',
-      steady: 'Steady week',
-      build: 'Build week',
       thisWeek: 'This week',
       upcoming: 'Upcoming week',
+      prePlan: 'Pre-plan',
       planPhase: {
         base: 'Base week',
         build: 'Build week',
@@ -1364,17 +1352,7 @@ export const en = {
         taper: 'Taper week',
         raceDay: 'Race day',
       },
-      plannedSessions: (total: number, key: number, km: number) =>
-        [
-          `${total} session${total > 1 ? 's' : ''}`,
-          km > 0 ? `${km} km planned` : null,
-          key > 0 ? `${key} key` : null,
-        ]
-          .filter(Boolean)
-          .join(' · '),
-      weekOfTarget: (done: number, total: number) => `Week ${done} of ${total}`,
-      weekOfBlock: (done: number, total: number) => `week ${done} of ${total}`,
-      adherence: (done: number, due: number) => `${done} / ${due} done`,
+      weekOfTarget: (done: number, total: number) => `${done} of ${total}`,
     },
   },
 

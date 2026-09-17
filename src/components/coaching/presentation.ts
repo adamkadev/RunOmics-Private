@@ -1,11 +1,12 @@
 import type { PrescriptionView } from '@/application/coaching/GetCoachingView'
 import type { PlanPhaseRange, TrainingPlanPhase } from '@/application/usecases/GetTrainingPlan'
 import type { WorkoutStep, WorkoutStepKind } from '@/domain/activity/types'
-import type {
-  CoachingPlan,
-  WorkoutPrescription,
-  WorkoutSegmentKind,
-  WorkoutTarget,
+import {
+  COACHING_TO_ACTIVITY_TYPE,
+  type CoachingPlan,
+  type WorkoutPrescription,
+  type WorkoutSegmentKind,
+  type WorkoutTarget,
 } from '@/domain/coaching/types'
 import { bookends } from '@/domain/training/workoutStructure'
 import { formatClock, formatDurationWords } from '@/lib/formatters'
@@ -70,8 +71,12 @@ export function garminAlert(view: PrescriptionView): string | null {
   return view.garminStatus === 'scheduled_different' ? t.coaching.garminOutOfDate : null
 }
 
+// A literal ['easy', 'recovery'] exclusion list here missed 'long_run' -
+// COACHING_TO_ACTIVITY_TYPE already maps every easy-effort prescription type
+// (easy, recovery, long_run) to the 'Base' activity type, so reusing it keeps
+// this in sync with that map instead of drifting from it again.
 export function isKeyPrescription(workout: WorkoutPrescription): boolean {
-  return !['easy', 'recovery'].includes(workout.type)
+  return COACHING_TO_ACTIVITY_TYPE[workout.type] !== 'Base'
 }
 
 function segmentSeconds(target: WorkoutTarget): { seconds: number; estimated: boolean } | null {

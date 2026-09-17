@@ -40,7 +40,7 @@ const typeHue = (type: ActivityType) => ACTIVITY_TYPE_CONFIG[type].chartColor
 describe('activity type hue budget', () => {
   it('spends at most five hue families across the seven types', () => {
     const families = new Set(TYPES.map((type) => hueFamily(typeHue(type))))
-    expect([...families].sort()).toEqual(['amber', 'green', 'orange', 'red', 'yellow'])
+    expect([...families].sort()).toEqual(['amber', 'blue', 'green', 'orange', 'red'])
   })
 
   it('stays out of the families that exist only as accent themes', () => {

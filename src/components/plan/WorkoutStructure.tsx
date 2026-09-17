@@ -85,7 +85,9 @@ const DONE_INK = '#0a1628'
 const WORK_FILL = 'var(--delta-warn)'
 const WORK_INK = '#2a1405'
 const RECOVERY_FILL = 'rgba(90,151,245,.5)'
-const EASE_FILL = 'rgba(148,178,220,.18)'
+// Warm-up/cool-down need to read as segments, not gaps - .18 sat close
+// enough to the card's own light-mode tint that they blended into it.
+const EASE_FILL = 'rgba(148,178,220,.32)'
 
 // A block this many times longer than the reps around it is the run's easy
 // body, not a work interval - "3 x 8min" (all equal) never qualifies, but a

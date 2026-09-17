@@ -850,7 +850,7 @@ export const fr = {
     },
     dynamics: {
       vsBaseline: (delta: string, weeks: number) => `${delta} vs ${weeks} sem.`,
-      atBaseline: (weeks: number) => `≈ médiane ${weeks} sem.`,
+      atBaseline: (weeks: number) => `médiane ${weeks} sem.`,
       title: 'Dynamique de course',
       cadence: 'Cadence',
       strideLength: 'Longueur de foulée',
@@ -1089,7 +1089,7 @@ export const fr = {
       firstActivity: 'Premier pas',
       firstActivityDetail: (km: number) => `Le début de l’aventure - ${km.toFixed(1)} km`,
       lifetimeDistance: (km: string) => `${km} km au total`,
-      lifetimeDistanceDetail: (marathons: number) => `≈ ${marathons} marathons courus`,
+      lifetimeDistanceDetail: (marathons: number) => `${marathons} marathons courus`,
       lifetimeDistanceWorldTour: '🌍 Le tour du monde à l’équateur',
       activityCount: (n: number) => `${n}ᵉ sortie`,
       activityCountDetail: (km: string) => `${km} km parcourus au total`,
@@ -1255,7 +1255,6 @@ export const fr = {
       `${sessions} séance${sessions > 1 ? 's' : ''} · ${ranKm} sur ${plannedKm} km prévus`,
     weekdays: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
     switcher: { week: 'Semaine', month: 'Mois' },
-    weekOf: (label: string) => `Sem. du ${label}`,
     weekGutter: 'SEM',
     weekGutterEmpty: '—',
     extra: 'extra',
@@ -1287,7 +1286,6 @@ export const fr = {
       min: (m: number) => `${m}'`,
       rec: (m: number) => `${m}' récup`,
     },
-    comingUp: 'À venir',
     timeOfDay: {
       Morning: 'Matin',
       Afternoon: 'Après-midi',
@@ -1309,22 +1307,14 @@ export const fr = {
       noSession: 'Aucune séance prévue',
       next: (weekday: string, title: string) => `Aucune séance prévue · prochaine : ${weekday}, ${title}`,
     },
-    dayChipLegend: {
-      done: 'fait',
-      today: "aujourd'hui",
-      plannedKm: 'km prévus',
-    },
     weekSummary: {
       load: 'Charge',
       loadUnit: 'pts',
-      vsTypical: (percent: number) => `${percent - 100 >= 0 ? '+' : ''}${percent - 100}% vs type`,
-      ofPlanned: (planned: number) => `sur ${planned} prévus`,
-      easyHardSplit: (easy: number, hard: number) => `${easy} % facile · ${hard} % dur`,
-      noSplit: 'pas encore de répartition',
-      climb: 'D+',
-      easyHard: 'Facile / Dur',
-      easyHardTarget: 'cible 80/20',
+      sessionsCount: (n: number) => `${n} séance${n > 1 ? 's' : ''}`,
+      easyHardRatio: (easy: number, hard: number) => `${easy}/${hard} facile`,
+      loadPlanned: 'prévu',
     },
+    plannedVsRecorded: (planned: string, recorded: string) => `prévu ${planned} · réalisé ${recorded}`,
     raceFooter: {
       weeksIn: (done: number, total: number) => `${done}/${total}`,
       targetTime: (clock: string) => `cible ${clock}`,
@@ -1341,11 +1331,9 @@ export const fr = {
       raceDay: 'Course',
     },
     weekPurpose: {
-      recovery: 'Semaine de récupération',
-      steady: 'Semaine stable',
-      build: 'Semaine de développement',
       thisWeek: 'Cette semaine',
       upcoming: 'Semaine à venir',
+      prePlan: 'Avant le plan',
       planPhase: {
         base: 'Semaine de base',
         build: 'Semaine de développement',
@@ -1353,17 +1341,7 @@ export const fr = {
         taper: 'Semaine d’affûtage',
         raceDay: 'Jour de course',
       },
-      plannedSessions: (total: number, key: number, km: number) =>
-        [
-          `${total} séance${total > 1 ? 's' : ''}`,
-          km > 0 ? `${km} km prévus` : null,
-          key > 0 ? `${key} qualité` : null,
-        ]
-          .filter(Boolean)
-          .join(' · '),
-      weekOfTarget: (done: number, total: number) => `Semaine ${done} sur ${total}`,
-      weekOfBlock: (done: number, total: number) => `semaine ${done} sur ${total}`,
-      adherence: (done: number, due: number) => `${done} / ${due} faites`,
+      weekOfTarget: (done: number, total: number) => `${done} sur ${total}`,
     },
   },
 

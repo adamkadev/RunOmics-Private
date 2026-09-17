@@ -3,13 +3,11 @@
 import { useMemo, useState } from 'react'
 import type { ActivitySummary, PlannedWorkout } from '@/domain/activity/types'
 import type { HrBounds } from '@/domain/training/trimp'
-import type { TrainingStatusCalendar } from '@/application/usecases/GetTrainingStatusCalendar'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { PlanSpan } from '@/domain/training/planProgress'
 import type { PrescriptionView, CoachingOverview } from '@/application/coaching/GetCoachingView'
-import { PeriodNav } from '@/components/ui/PeriodNav'
 import { WeekView } from './WeekView'
 import { MonthView } from './MonthView'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
@@ -22,7 +20,6 @@ interface Props {
   activities: ActivitySummary[]
   plannedWorkouts: PlannedWorkout[]
   hrBounds?: HrBounds
-  statusByDate: TrainingStatusCalendar
   planPhaseRanges: PlanPhaseRange[]
   nextRace: UpcomingRace | null
   trainingZones: TrainingZonesData | null
@@ -32,7 +29,7 @@ interface Props {
 
 type ViewMode = 'week' | 'month'
 
-export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate, planPhaseRanges, nextRace, trainingZones, planSpan, coaching }: Props) {
+export function PlanClient({ activities, plannedWorkouts, hrBounds, planPhaseRanges, nextRace, trainingZones, planSpan, coaching }: Props) {
   const now = new Date()
   const today = isoDate(now)
   const [mode, setMode] = useState<ViewMode>('week')
@@ -75,9 +72,7 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate
       : year === now.getFullYear() && month === now.getMonth()
 
   const subtitle =
-    mode === 'week'
-      ? t.plan.weekOf(formatDate(isoDate(weekStart), { style: 'bare' }))
-      : formatDate(isoDate(new Date(year, month, 1)), { precision: 'month', style: 'full' })
+    mode === 'month' ? formatDate(isoDate(new Date(year, month, 1)), { precision: 'month', style: 'full' }) : null
 
   function shift(delta: number) {
     setFocusDate(null)
@@ -124,17 +119,8 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate
             <h1 className="font-display text-title1 font-bold leading-[1.1] tracking-tight text-foreground">
               {t.pages.plan.title}
             </h1>
-            {mode === 'week' && (
-              <PeriodNav
-                label={<span className="text-footnote font-medium text-muted-foreground">{subtitle}</span>}
-                onPrev={() => shift(-1)}
-                onNext={() => shift(1)}
-                nextDisabled={atPresent && !canGoForward}
-                prevLabel={t.plan.prevPeriod}
-                nextLabel={t.plan.nextPeriod}
-                size="sm"
-                className="mt-0.5 hidden sm:flex"
-              />
+            {subtitle && (
+              <p className="mt-0.5 text-footnote font-medium text-muted-foreground">{subtitle}</p>
             )}
           </div>
 
@@ -171,7 +157,6 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate
         {mode === 'week' ? (
           <WeekView
             weekStart={weekStart}
-            activities={activities}
             byDate={byDate}
             byDatePlanned={byDatePlanned}
             byDateCoach={byDateCoach}
@@ -179,7 +164,9 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, statusByDate
             today={today}
             atPresent={atPresent}
             onToday={goToday}
-            statusByDate={statusByDate}
+            onPrevWeek={() => shift(-1)}
+            onNextWeek={() => shift(1)}
+            canGoForward={canGoForward}
             planPhaseRanges={planPhaseRanges}
             nextRace={nextRace}
             trainingZones={trainingZones}

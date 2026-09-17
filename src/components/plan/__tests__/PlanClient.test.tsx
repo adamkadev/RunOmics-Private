@@ -13,7 +13,6 @@ function renderPlan(coaching: CoachingOverview | null = null) {
     <PlanClient
       activities={[]}
       plannedWorkouts={[]}
-      statusByDate={{}}
       planPhaseRanges={[]}
       nextRace={null}
       trainingZones={null}

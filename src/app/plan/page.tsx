@@ -1,6 +1,5 @@
 import { getActivitySummaries } from '@/application/usecases/GetActivities'
 import { getPlannedWorkouts } from '@/application/usecases/GetPlannedWorkouts'
-import { getTrainingStatusCalendar } from '@/application/usecases/GetTrainingStatusCalendar'
 import { getTrainingPlan } from '@/application/usecases/GetTrainingPlan'
 import { getNextRace } from '@/application/usecases/GetNextRace'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
@@ -28,7 +27,6 @@ export default async function PlanPage() {
       activities={activities}
       plannedWorkouts={plannedWorkouts}
       hrBounds={hrBounds}
-      statusByDate={getTrainingStatusCalendar()}
       planPhaseRanges={trainingPlan?.ranges ?? []}
       planSpan={trainingPlan}
       nextRace={nextRace}

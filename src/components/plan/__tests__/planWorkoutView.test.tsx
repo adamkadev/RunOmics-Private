@@ -233,7 +233,7 @@ describe('the sheet renders whichever source it is given', () => {
 
     const sheet = screen.getByRole('dialog')
     expect(within(sheet).getByRole('heading', { name: 'Post-Race Recovery Run' })).toBeInTheDocument()
-    expect(sheet.textContent).toContain('≈25 min')
+    expect(sheet.textContent).toContain('25 min')
     expect(sheet.textContent).toContain('4.0')
     expect(sheet.textContent).toContain(t.plan.easyEffortLabel)
     expect(sheet.textContent).toContain('5:50–6:27/km')

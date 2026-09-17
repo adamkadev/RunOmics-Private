@@ -1,5 +1,4 @@
 import { HUE, ink, paper, white, withAlpha } from '@/lib/palette'
-import type { ActivityType } from '@/domain/activity/types'
 
 const c = HUE
 
@@ -117,25 +116,6 @@ export const READINESS_TONE_COLORS = {
   hold:    c.roOrange,
 } as const
 
-/**
- * The intensity dot every run gets, wherever it's drawn small and without a
- * legend - the Activities week composition (A6) and the Plan "Coming up" rows
- * (P8). Bucketed rather than one colour per ActivityType so it stays readable
- * at 7-8px, and red is never one of the buckets: red stays reserved for
- * injury/risk grade, never for intensity.
- */
-export const INTENSITY_DOT_COLORS = {
-  easy:   '#34d399',
-  long:   '#6aa4ff',
-  tempo:  '#f5b13d',
-  hard:   '#fb8a3c',
-} as const
-
-export function intensityDotColor(type: ActivityType): string {
-  if (type === 'Base') return INTENSITY_DOT_COLORS.easy
-  if (type === 'Tempo' || type === 'Threshold') return INTENSITY_DOT_COLORS.tempo
-  return INTENSITY_DOT_COLORS.hard // VO2Max, Anaerobic, Sprint
-}
 
 // Fixed hues, not the user's accent theme: a month that hit or missed its
 // target is a volume verdict, not a brand colour, so both bar and icon read
