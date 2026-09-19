@@ -1,6 +1,5 @@
-import { getAuth } from 'firebase-admin/auth'
 import { NextResponse, type NextRequest } from 'next/server'
-import { getAdminApp } from '@/lib/firebase-admin'
+import { verifyFirebaseIdToken } from '@/lib/verifyFirebaseIdToken'
 
 /**
  * The browser-side counterpart to `guardInternalRequest`.
@@ -11,9 +10,13 @@ import { getAdminApp } from '@/lib/firebase-admin'
  * against the same `owner` custom claim `firestore.rules` enforces, so the
  * answer to "is this the owner" is the one claim set once by
  * `npm run set-owner-claim` rather than a second notion of who is privileged.
+ *
+ * Verified by hand rather than through firebase-admin/auth - see
+ * verifyFirebaseIdToken for why that import broke this route in production.
  */
 export async function requireOwner(req: NextRequest): Promise<NextResponse | null> {
-  if (!process.env.FIREBASE_PROJECT_ID) {
+  const projectId = process.env.FIREBASE_PROJECT_ID
+  if (!projectId) {
     return NextResponse.json({ error: 'Auth is not configured' }, { status: 503 })
   }
 
@@ -21,7 +24,7 @@ export async function requireOwner(req: NextRequest): Promise<NextResponse | nul
   if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    const claims = await getAuth(getAdminApp()).verifyIdToken(token)
+    const claims = await verifyFirebaseIdToken(token, projectId)
     if (claims.owner !== true) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     return null
   } catch {
