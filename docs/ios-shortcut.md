@@ -1,13 +1,40 @@
-# Syncing from an iOS shortcut
+# Syncing on demand
 
-A shortcut that dispatches `sync.yml` is the fastest way to pull a run in without
-waiting for the nightly schedule. What it cannot do is show you the verdict
-straight away: pressing the button starts a chain that takes about five minutes,
-and for the first three of those the app on your phone is still the deployment
-that existed before you pressed it.
+Pulling a run in without waiting for the nightly schedule means dispatching
+`sync.yml` yourself. What neither way of doing that can do is show you the
+verdict straight away: the dispatch starts a chain that takes about five
+minutes, and for the first three of those the app on your phone is still the
+deployment that existed before you pressed anything.
 
-This page explains the wait and gives the shortcut a way to sit through it and
-notify you when the card is actually there.
+Two ways to press it, both of which sit through the wait:
+
+- **Settings → Garmin sync → Sync now**, in the app, signed in as the owner.
+  Nothing to build and no token on the phone. Start here.
+- **An iOS shortcut**, which works from the home screen or a widget without
+  opening the app, and keeps its own GitHub token.
+
+This page explains the wait, then covers both.
+
+---
+
+## The Sync button in Settings
+
+`SyncNowCard` appears in the owner-only branch of Settings. It posts to
+`/api/sync/dispatch`, which verifies the Firebase ID token carries `owner: true`
+(the same claim `firestore.rules` enforces, set once by `npm run set-owner-claim`)
+and then dispatches the workflow with a PAT that lives only in the server's
+environment. It then polls `/api/sync/status` every 10 seconds for up to 12
+minutes and shows the verdict in the card when it lands.
+
+It needs two env vars, `GITHUB_SYNC_TOKEN` and `GITHUB_SYNC_REPO`; without them
+the button answers 503 naming the missing one. `.env.example` documents those
+and the three optional ones. A fine-grained PAT with **Actions: Read and write**
+on this repository is the whole permission set a `workflow_dispatch` needs.
+
+The card distinguishes the two ways a wait ends: a verdict written since you
+pressed the button, or "already up to date" when the sync found no new run (the
+app is live on your sync, and the newest run still holds a card written before
+it — see `verdict predates this sync` below).
 
 ---
 
@@ -49,7 +76,9 @@ the same reason.
 
 Guarded by `x-internal-secret: $INTERNAL_NOTIFY_SECRET`, like every other
 `/api/internal/*` route, and rate limited to 20 requests per minute per IP - a
-15-second poll uses four.
+15-second poll uses four. `/api/sync/status` answers exactly the same thing to
+the owner's ID token instead of the shared secret; both call `verdictStatus` in
+`src/lib/verdictStatus.ts`, so the two cannot drift about what "done" means.
 
 `since` is the point the shortcut started waiting. Without it the endpoint would
 answer `ready` on the first poll: the pre-redeploy app happily serves the
@@ -193,12 +222,12 @@ curl -s "$APP_URL/api/internal/latest-verdict?since=$(date -u +%Y-%m-%dT%H:%M:%S
 
 ---
 
-## If you would rather not poll at all
+## If you would rather not wait in the foreground at all
 
-The app already pushes to every registered device: `activity-sync-check` sends
-the "New activity" notification you get after each sync, through
-`sendPushToAllDevices`. Sending a second push from the `ai-insights` route the
-moment a fresh verdict is written would remove the shortcut's waiting entirely -
-press the button, lock the phone, get the verdict when it exists. It is a handful
-of lines next to the `freshVerdicts` pass, and it is the better answer if the
-foreground wait turns out to annoy you.
+Both the shortcut and the Settings card have to stay open to see the verdict
+land. The app already pushes to every registered device, though:
+`activity-sync-check` sends the "New activity" notification you get after each
+sync, through `sendPushToAllDevices`. Sending a second push from the
+`ai-insights` route the moment a fresh verdict is written would remove the
+waiting entirely - press the button, lock the phone, get the verdict when it
+exists. It is a handful of lines next to the `freshVerdicts` pass.

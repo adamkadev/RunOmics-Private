@@ -1,31 +1,26 @@
 import { describe, expect, it } from 'vitest'
-import { NextRequest } from 'next/server'
-import { sinceParam, verdictReadiness } from '../route'
-
-function request(query = ''): NextRequest {
-  return new NextRequest(`https://example.com/api/internal/latest-verdict${query}`)
-}
+import { parseSince, verdictReadiness } from '../verdictStatus'
 
 const DISPATCHED_AT = Date.parse('2026-09-19T21:04:07Z')
 
-describe('sinceParam', () => {
+describe('parseSince', () => {
   it('reads the dispatch time the shortcut stamps onto every poll', () => {
-    expect(sinceParam(request('?since=2026-09-19T21:04:07Z'))).toBe(DISPATCHED_AT)
+    expect(parseSince('2026-09-19T21:04:07Z')).toBe(DISPATCHED_AT)
   })
 
   it('treats an absent since as no baseline rather than as zero', () => {
-    expect(sinceParam(request())).toBeNull()
+    expect(parseSince(null)).toBeNull()
   })
 
   it('survives the unencoded + Shortcuts puts in a local-time offset', () => {
     // `...T23:04:07+02:00` reaches the query parser as `...T23:04:07 02:00`.
-    expect(sinceParam(request('?since=2026-09-19T23:04:07 02:00'))).toBe(DISPATCHED_AT)
-    expect(sinceParam(request('?since=2026-09-19T23:04:07 0200'))).toBe(DISPATCHED_AT)
+    expect(parseSince('2026-09-19T23:04:07 02:00')).toBe(DISPATCHED_AT)
+    expect(parseSince('2026-09-19T23:04:07 0200')).toBe(DISPATCHED_AT)
   })
 
   it('rejects a since it cannot compare, instead of silently answering ready', () => {
-    expect(sinceParam(request('?since=yesterday'))).toBe('invalid')
-    expect(sinceParam(request('?since='))).toBe('invalid')
+    expect(parseSince('yesterday')).toBe('invalid')
+    expect(parseSince('')).toBe('invalid')
   })
 })
 
