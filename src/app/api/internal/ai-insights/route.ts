@@ -2,7 +2,6 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { handleInternalRoute } from '@/lib/internalRoute'
 import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
-import { getTodayPlannedWorkout } from '@/application/usecases/GetPlannedWorkouts'
 import { getRunVerdictContexts } from '@/application/usecases/GetRunVerdictInsight'
 import { getAnalyticsData } from '@/application/usecases/GetAnalyticsData'
 import { getYearComparison } from '@/application/usecases/GetYearComparison'
@@ -18,7 +17,7 @@ import { getThresholdHistory } from '@/application/usecases/GetThresholdHistory'
 import { getGarminRacePredictions } from '@/application/usecases/GetGarminRacePredictions'
 import { getLatestVO2max } from '@/application/usecases/GetVO2maxHistory'
 import { analyticsTabFacts } from '@/application/usecases/GetAnalyticsTabFacts'
-import { buildTodayContext } from '@/application/usecases/GetTodayInsight'
+import { buildTodayContext, todayInsightSession } from '@/application/usecases/GetTodayInsight'
 import { buildPbCelebrationContext } from '@/application/usecases/GetPbCelebrationInsight'
 import { wearOutlook } from '@/domain/shoe/wearStatus'
 import type { Limits } from '@/domain/ai/prompt'
@@ -255,7 +254,7 @@ async function generateToday(spender: Spender) {
   const status = await getTrainingStatus()
   if (!status) return { generated: false, reason: 'no training status' }
 
-  const context = buildTodayContext(status, await getTodayPlannedWorkout())
+  const context = buildTodayContext(status, await todayInsightSession())
 
   return runSurface(spender, {
     surface: TODAY_SURFACE,

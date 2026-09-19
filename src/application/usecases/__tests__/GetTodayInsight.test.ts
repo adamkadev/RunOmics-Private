@@ -4,15 +4,19 @@ import type { ActivitySummary, PlannedWorkout } from '@/domain/activity/types'
 import { TODAY_SURFACE, todayInsightGuard, todayInsightHash } from '@/domain/ai/todayInsight'
 import { isoDate } from '@/lib/calendarDate'
 
-const { getActivitySummaries, readVerifiedInsight } = vi.hoisted(() => ({
+const { getActivitySummaries, readVerifiedInsight, getTodayPlannedWorkout, getTodayPrescription } = vi.hoisted(() => ({
   getActivitySummaries: vi.fn(),
   readVerifiedInsight: vi.fn(),
+  getTodayPlannedWorkout: vi.fn(),
+  getTodayPrescription: vi.fn(),
 }))
 
 vi.mock('../GetActivities', () => ({ getActivitySummaries }))
+vi.mock('../GetPlannedWorkouts', () => ({ getTodayPlannedWorkout }))
+vi.mock('@/application/coaching/GetCoachingView', () => ({ getTodayPrescription }))
 vi.mock('@/infrastructure/repositories/FirestoreInsightsRepository', () => ({ readVerifiedInsight }))
 
-const { buildTodayContext, getTodayInsight } = await import('../GetTodayInsight')
+const { buildTodayContext, getTodayInsight, todayInsightSession } = await import('../GetTodayInsight')
 
 const NOW = new Date('2026-07-20T09:00:00')
 const INSIGHT = { headline: 'Fresh legs today', body: 'Form is back above zero, so the tempo can be honest.' }
@@ -158,5 +162,84 @@ describe('getTodayInsight', () => {
 
     const [upcoming, completed] = readVerifiedInsight.mock.calls
     expect(upcoming?.[1].guard).not.toBe(completed?.[1].guard)
+  })
+})
+
+describe('todayInsightSession', () => {
+  const PRESCRIPTION = {
+    id: 'w-42',
+    revision: 1,
+    date: '2026-07-20',
+    type: 'threshold' as const,
+    title: 'Threshold 3 x 1600m',
+    description: 'Three by a mile at threshold.',
+    status: 'prescribed' as const,
+    totalDurationSeconds: 3060,
+    totalDistanceMeters: 9700,
+    blocks: [],
+    provenance: { source: 'gemini' as const, trigger: 'weekly' as const, createdAt: '2026-07-19T06:00:00Z' },
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    getTodayPrescription.mockReturnValue(null)
+    getTodayPlannedWorkout.mockResolvedValue(null)
+  })
+
+  it('names the session the plan prescribed, not what the watch called it', async () => {
+    getTodayPrescription.mockReturnValue(PRESCRIPTION)
+    getTodayPlannedWorkout.mockResolvedValue({ date: '2026-07-20', name: 'RUNOMICS-W3-THU' })
+
+    expect(await todayInsightSession(NOW)).toEqual({
+      date: '2026-07-20',
+      name: 'Threshold 3 x 1600m',
+      type: 'Threshold',
+      durationSecs: 3060,
+      distanceM: 9700,
+    })
+  })
+
+  it('leaves out a duration and distance the prescription never set', async () => {
+    const open = { ...PRESCRIPTION }
+    delete (open as Partial<typeof PRESCRIPTION>).totalDurationSeconds
+    delete (open as Partial<typeof PRESCRIPTION>).totalDistanceMeters
+    getTodayPrescription.mockReturnValue(open)
+
+    const session = await todayInsightSession(NOW)
+    expect(session).not.toHaveProperty('durationSecs')
+    expect(session).not.toHaveProperty('distanceM')
+  })
+
+  it('falls back to the Garmin entry when no plan prescribes today', async () => {
+    getTodayPlannedWorkout.mockResolvedValue(WORKOUT)
+    expect(await todayInsightSession(NOW)).toBe(WORKOUT)
+  })
+
+  it('is null on a day with neither, so the verdict speaks to a rest day', async () => {
+    expect(await todayInsightSession(NOW)).toBeNull()
+  })
+
+  it('asks for the prescription on the local date, not a UTC one', async () => {
+    await todayInsightSession(new Date('2026-07-20T23:30:00'))
+    expect(getTodayPrescription).toHaveBeenCalledWith('2026-07-20')
+  })
+
+  it('hashes the same context the generator wrote, so a prescribed day still resolves', async () => {
+    // The bug this replaced: the page suppressed the card outright on a
+    // prescribed day and fell back to deterministic copy, discarding an insight
+    // the generator had already paid Gemini for.
+    getTodayPrescription.mockReturnValue(PRESCRIPTION)
+    withHistory([summary('2026-07-18')])
+    readVerifiedInsight.mockResolvedValue(INSIGHT)
+
+    const session = await todayInsightSession(NOW)
+    expect(await getTodayInsight(status(), session)).toEqual(INSIGHT)
+
+    // Both sides default `now`, exactly as the page and the generator do.
+    const context = buildTodayContext(status(), session)
+    expect(readVerifiedInsight).toHaveBeenCalledWith(TODAY_SURFACE, {
+      hash: todayInsightHash(context),
+      guard: todayInsightGuard(context),
+    })
   })
 })

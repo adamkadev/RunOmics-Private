@@ -7,6 +7,7 @@ import type {
   WorkoutPrescription,
 } from '@/domain/coaching/types'
 import { garminScheduleStatus } from '@/domain/coaching/matching'
+import { isoDate } from '@/lib/calendarDate'
 import { JsonCoachingRepository } from '@/infrastructure/repositories/JsonCoachingRepository'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getAllPlannedWorkouts } from '@/infrastructure/repositories/JsonPlannedWorkoutRepository'
@@ -91,6 +92,25 @@ export function getCoachingOverview(today = new Date().toISOString().slice(0, 10
     getAllActivities(),
     getAllPlannedWorkouts(),
     today,
+  )
+}
+
+/**
+ * Today's live prescription, read straight off the plan.
+ *
+ * The overview above answers a screen's worth of questions - display state,
+ * Garmin scheduling, the matched activity - by walking every week against every
+ * evaluation. A caller that only wants to know what today asks for pays all of
+ * that for one row, so this reads the plan and nothing else.
+ */
+export function getTodayPrescription(today = isoDate(new Date())): WorkoutPrescription | null {
+  const plan = new JsonCoachingRepository().getCurrentPlan()
+  if (!plan) return null
+
+  return (
+    plan.weeks
+      .flatMap((week) => week.workouts)
+      .find((workout) => workout.date === today && workout.status !== 'cancelled') ?? null
   )
 }
 
