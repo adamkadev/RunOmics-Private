@@ -20,7 +20,9 @@ test('heatmap page renders its shell and toggles world view', async ({ page }) =
 test('heatmap zone dropdown switches the selected zone', async ({ page }) => {
   await page.goto('/map')
 
-  const zoneChip = page.getByRole('button', { name: /runs?$/ })
+  // By its purpose, not its contents: the chip shows the selected zone and its
+  // route count, both of which are data, and the count lost its "runs" suffix.
+  const zoneChip = page.getByRole('button', { name: /^Zones:/ })
   await zoneChip.click()
 
   const options = page.locator('ul li button')

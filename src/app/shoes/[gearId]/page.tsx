@@ -17,6 +17,7 @@ import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
 import { STATUS } from '@/lib/statusColors'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import { formatDateRange, formatKm, formatMonthShortYear, formatPace } from '@/lib/formatters'
+import { addDays, isoDate } from '@/lib/calendarDate'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -69,6 +70,20 @@ export async function generateStaticParams() {
   return Object.keys(getShoeRegistry()).map((gearId) => ({ gearId }))
 }
 
+/**
+ * The month this pair runs out at the current rate.
+ *
+ * The clock is read here rather than in the component body. The page is ISR, so
+ * the answer is baked once per regeneration either way and the month label is
+ * stable for far longer than that - but a render that asks what time it is has
+ * no fixed output, which is what react-hooks/purity objects to, and a date
+ * computed during render is also the one that drifts between a prerender and a
+ * rehydrate.
+ */
+function projectedRunOutMonth(weeksRemaining: number, now = new Date()): string {
+  return formatMonthShortYear(isoDate(addDays(now, weeksRemaining * 7)))
+}
+
 export default async function ShoeDetailPage({
   params,
 }: {
@@ -96,7 +111,7 @@ export default async function ShoeDetailPage({
         : d.projectedRunOut(
             Math.round(shoe.kmPerWeek),
             shoe.maxKm,
-            formatMonthShortYear(new Date(Date.now() + weeksRemaining * 7 * 86_400_000).toISOString().slice(0, 10)),
+            projectedRunOutMonth(weeksRemaining),
             weeksRemaining
           )
       : null
