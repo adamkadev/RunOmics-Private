@@ -49,16 +49,23 @@ export function ClusterPanel({ clusters, names, stats, selectedIdx, onSelect, wo
     };
   }, [open]);
 
+  const selectedName = worldView ? t.pages.map.allAreas : names[selectedIdx]
+
   return (
     <div ref={ref} className="relative min-w-0 shrink-0">
       <button
         onClick={() => setOpen((o) => !o)}
-        title={worldView ? t.pages.map.allAreas : names[selectedIdx]}
+        title={selectedName}
+        /* Without this the button announces itself as its own contents - "Robertsau 12" -
+           which names the current zone and the route count but never says the control
+           picks a zone. */
+        aria-label={`${t.pages.map.zones}: ${selectedName}`}
+        aria-expanded={open}
         className={[MAP_CHIP_GEOMETRY, "min-w-0 max-w-[170px] gap-2"].join(" ")}
         style={{ ...MAP_CHIP_STYLE, ...MAP_CHIP_ACTIVE }}
       >
         <span className="min-w-0 flex-1 truncate font-semibold" style={{ color: MAP_CHIP_ACTIVE.color }}>
-          {worldView ? t.pages.map.allAreas : names[selectedIdx]}
+          {selectedName}
         </span>
         <span className="min-w-0 shrink truncate tabular-nums" style={{ fontSize: "12px", color: MAP_CHIP_COUNT_INK }}>
           {worldView ? totalCount : (stats[selectedIdx]?.routeCount ?? 0)}
