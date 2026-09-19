@@ -8,7 +8,7 @@ import { getTrainingStatusDaysBar } from '@/application/usecases/GetTrainingStat
 import { getRecords, getQualifiedEffortsByActivityId, getMostRecentRecord } from '@/application/usecases/GetRecords'
 import { getNextRace } from '@/application/usecases/GetNextRace'
 import { getTodayPlannedWorkout } from '@/application/usecases/GetPlannedWorkouts'
-import { getTodayInsight } from '@/application/usecases/GetTodayInsight'
+import { getTodayInsight, todayInsightSession } from '@/application/usecases/GetTodayInsight'
 import { getPbCelebrationInsight } from '@/application/usecases/GetPbCelebrationInsight'
 import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
@@ -52,7 +52,11 @@ export default async function DashboardPage() {
     : todayPlannedWorkout
       ? plannedWorkoutView(todayPlannedWorkout, trainingZones)
       : null
-  const aiVerdict = todayCoachWorkout ? null : await getTodayInsight(trainingStatus, todayPlannedWorkout)
+  // A prescribed day used to suppress the verdict outright, which discarded a
+  // card the generator had already written and paid for, and left the hero on
+  // deterministic copy on exactly the days there was most to say. The session
+  // goes into the insight instead of cancelling it.
+  const aiVerdict = await getTodayInsight(trainingStatus, await todayInsightSession())
   const celebrationTake = await getPbCelebrationInsight(mostRecentRecord)
 
   return (

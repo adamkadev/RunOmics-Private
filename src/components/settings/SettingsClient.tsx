@@ -13,6 +13,7 @@ import { AccentPicker } from './AccentPicker'
 import { ThemeSegmented } from './ThemeSegmented'
 import { DataSourceInfo, type SyncDevice } from './DataSourceInfo'
 import { NotificationsForm } from './NotificationsForm'
+import { SyncNowCard } from './SyncNowCard'
 
 interface Props {
   lastSyncedAt: string | null
@@ -133,6 +134,7 @@ export function SettingsClient({ lastSyncedAt, activityCount, device }: Props) {
         </SectionDivider>
         <NotificationsForm />
         <DataSourceInfo lastSyncedAt={lastSyncedAt} activityCount={activityCount} device={device} />
+        <SyncNowCard user={user} />
       </section>
 
       <section className="space-y-2">

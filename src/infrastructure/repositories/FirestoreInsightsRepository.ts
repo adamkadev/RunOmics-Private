@@ -57,7 +57,15 @@ export function servableInsight(cached: CachedInsight | undefined, key: string |
   return servable(cached, wanted, now) ? { headline: cached.headline, body: cached.body, bullets: cached.bullets } : null
 }
 
-export async function readVerifiedInsight(surface: string, key: string | InsightKey): Promise<Insight | null> {
+/**
+ * The whole stored document, not just the three fields a card renders - callers
+ * that need to know *when* a surface was last written (and not only what it
+ * says) would otherwise have to read it a second time.
+ */
+export async function readVerifiedCachedInsight(
+  surface: string,
+  key: string | InsightKey
+): Promise<CachedInsight | null> {
   if (!process.env.FIREBASE_PROJECT_ID) return null
 
   try {
@@ -65,10 +73,17 @@ export async function readVerifiedInsight(surface: string, key: string | Insight
       getCachedInsight(surface),
       new Promise<null>((resolve) => setTimeout(() => resolve(null), READ_TIMEOUT_MS)),
     ])
-    return cached ? servableInsight(cached, key) : null
+    if (!cached) return null
+    const wanted = typeof key === 'string' ? { hash: key } : key
+    return servable(cached, wanted, Date.now()) ? cached : null
   } catch {
     return null
   }
+}
+
+export async function readVerifiedInsight(surface: string, key: string | InsightKey): Promise<Insight | null> {
+  const cached = await readVerifiedCachedInsight(surface, key)
+  return cached ? { headline: cached.headline, body: cached.body, bullets: cached.bullets } : null
 }
 
 function surfaceRange(prefix: string) {
