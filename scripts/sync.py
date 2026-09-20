@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import sys
 import time
@@ -29,8 +28,19 @@ from processing.fit_parser import ParsedFit, parse_fit
 from processing.mapper import HrZone, extract_gear_id, map_activity, parse_hr_zones
 from processing.weather import WeatherClient, weather_for_activity
 from repository.json_store import JsonActivityStore, PlannedWorkoutStore
+from repository.history_file import read_history, write_history
 
-_FIT_DIR = Path(__file__).parent.parent / "public" / "fit"
+# The raw FIT downloads, kept only so a reprocess or a weather backfill does not
+# have to ask Garmin for them again.
+#
+# Deliberately NOT under public/: these are the *source* binaries, holding every
+# GPS sample including the ones inside the privacy zone. crop_privacy_zone runs
+# on the derived route written into data/*.json, never on these. Everything
+# under public/ is served as a static asset, so while they lived at public/fit/
+# any dev server or preview started from a synced workspace published the
+# unredacted GPS history at /fit/<activityId>.fit - and the activity ids are
+# handed out by /api/activities.
+_FIT_DIR = Path(__file__).parent.parent / ".fit-cache"
 _DATA_DIR = get_data_dir()
 _SYNC_META_PATH = _DATA_DIR / "sync_meta.json"
 _ATHLETE_PATH = _DATA_DIR / "athlete.json"
@@ -196,19 +206,14 @@ def _first_activity_date(store: JsonActivityStore) -> date | None:
 
 
 def _write_sync_meta() -> None:
-    _SYNC_META_PATH.parent.mkdir(parents=True, exist_ok=True)
-    _SYNC_META_PATH.write_text(
-        json.dumps({"lastSyncedAt": datetime.now(timezone.utc).isoformat()}) + "\n"
-    )
+    write_history(_SYNC_META_PATH, {"lastSyncedAt": datetime.now(timezone.utc).isoformat()})
 
 
 def _merge_athlete_metrics(metrics: dict) -> None:
     if not metrics:
         return
 
-    existing: dict = {}
-    if _ATHLETE_PATH.exists():
-        existing = json.loads(_ATHLETE_PATH.read_text())
+    existing: dict = read_history(_ATHLETE_PATH)
 
     fetched_at = metrics.pop("lastUpdate", None)
 
@@ -218,8 +223,7 @@ def _merge_athlete_metrics(metrics: dict) -> None:
     if changed and fetched_at:
         merged["lastUpdate"] = fetched_at
 
-    _ATHLETE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    _ATHLETE_PATH.write_text(json.dumps(merged, indent=2, sort_keys=True) + "\n")
+    write_history(_ATHLETE_PATH, dict(sorted(merged.items())))
 
 
 

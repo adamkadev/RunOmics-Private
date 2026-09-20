@@ -17,6 +17,10 @@ interface MockUser {
 let mockUser: MockUser | null = null
 let mockStoredNote: { note: string; tags: string[] } | null = null
 let mockAllNotes: { note: string; tags: string[] }[] = []
+// Keyed by activity id, for the navigation tests: the default mock ignores the
+// id entirely, which is exactly what hid the cross-activity bleed below.
+let mockNotesById: Record<string, { note: string; tags: string[] }> | null = null
+let mockLastRequestedId = ''
 
 function signedIn(email: string, claims: Record<string, unknown> = {}): MockUser {
   return { email, getIdTokenResult: () => Promise.resolve({ claims }) }
@@ -36,12 +40,15 @@ vi.mock('firebase/auth', () => ({
 }))
 
 vi.mock('firebase/firestore', () => ({
-  doc: () => ({}),
+  doc: (_db: unknown, _collection: string, id: string) => {
+    mockLastRequestedId = id
+    return { id }
+  },
   collection: () => ({}),
-  getDoc: async () => ({
-    exists: () => mockStoredNote !== null,
-    data: () => mockStoredNote,
-  }),
+  getDoc: async (ref: { id: string }) => {
+    const stored = mockNotesById ? (mockNotesById[ref.id] ?? null) : mockStoredNote
+    return { exists: () => stored !== null, data: () => stored }
+  },
   getDocs: async () => ({ docs: mockAllNotes.map((note) => ({ data: () => note })) }),
   setDoc: async () => {},
 }))
@@ -56,6 +63,8 @@ describe('ActivityNotes owner gate', () => {
     mockUser = null
     mockStoredNote = null
     mockAllNotes = []
+    mockNotesById = null
+    mockLastRequestedId = ''
   })
 
   it('renders nothing for a signed-out visitor when the activity has no note', async () => {
@@ -141,5 +150,46 @@ describe('ActivityNotes sheet', () => {
     expect(screen.getByRole('button', { name: t.activity.notes.removeTag('rain') })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: t.activity.notes.addTag('rain') })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: t.activity.notes.addTag('trail') })).toBeInTheDocument()
+  })
+})
+
+describe('ActivityNotes across a client-side navigation', () => {
+  beforeEach(() => {
+    mockUser = signedIn(OWNER_EMAIL, { owner: true })
+    mockStoredNote = null
+    mockAllNotes = []
+    mockNotesById = null
+    mockLastRequestedId = ''
+  })
+
+  it('does not carry one activity\'s note onto the next one', async () => {
+    // ActivityNav navigates with a <Link>, so the component stays mounted and
+    // only activityId changes. It used to `return` early on a missing note,
+    // leaving the previous activity's text on screen - and saving would then
+    // write it to the new activity's document.
+    mockNotesById = { a1: { note: 'legs were dead', tags: ['tired'] } }
+    const { rerender } = render(<ActivityNotes activityId="a1" />)
+
+    await openNotes()
+    expect(await screen.findByPlaceholderText(t.activity.notes.notePlaceholder)).toHaveValue('legs were dead')
+
+    rerender(<ActivityNotes activityId="a2" />)
+
+    await openNotes()
+    expect(await screen.findByPlaceholderText(t.activity.notes.notePlaceholder)).toHaveValue('')
+    expect(screen.queryByText('legs were dead')).not.toBeInTheDocument()
+  })
+
+  it('reads the note for the activity it is actually showing', async () => {
+    mockNotesById = { a1: { note: 'one', tags: [] }, a2: { note: 'two', tags: [] } }
+    const { rerender } = render(<ActivityNotes activityId="a1" />)
+    await openNotes()
+    expect(await screen.findByPlaceholderText(t.activity.notes.notePlaceholder)).toHaveValue('one')
+
+    rerender(<ActivityNotes activityId="a2" />)
+    await openNotes()
+
+    expect(mockLastRequestedId).toBe('a2')
+    expect(await screen.findByPlaceholderText(t.activity.notes.notePlaceholder)).toHaveValue('two')
   })
 })

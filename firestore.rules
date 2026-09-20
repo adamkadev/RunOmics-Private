@@ -15,16 +15,41 @@ rules_version = '2';
 // it once with `npm run set-owner-claim` (scripts/set_owner_claim.mjs).
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Shown on every activity detail page to any visitor; only the owner edits.
+    function isOwner() {
+      return request.auth != null && request.auth.token.owner == true;
+    }
+
+    // Mirrors the client's own limits (ActivityNotes.tsx: NOTE_MAX_LENGTH,
+    // TAGS_MAX_COUNT). Rules are the only thing standing between a bug, or a
+    // stolen owner session, and a note that every visitor then downloads.
+    function isWellFormedNote() {
+      return request.resource.data.keys().hasOnly(['note', 'tags'])
+        && request.resource.data.note is string
+        && request.resource.data.note.size() <= 500
+        && request.resource.data.tags is list
+        && request.resource.data.tags.size() <= 10;
+    }
+
     match /activityNotes/{activityId} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.token.owner == true;
+      // `get`, not `read`. Each activity page shows its own note to any
+      // visitor, and that is one document fetched by id.
+      //
+      // `read` also grants `list`, and `list` is a very different thing: it
+      // let anyone enumerate the whole collection and walk off with every
+      // private training note in the app. The only caller that needs it is
+      // the owner's own tag autocomplete, which is already gated behind
+      // `isOwner` in the UI - so the rule now says the same thing.
+      allow get: if true;
+      allow list: if isOwner();
+
+      allow create, update: if isOwner() && isWellFormedNote();
+      allow delete: if isOwner();
     }
 
     // Written from the browser only while signed in as the owner (Settings is
     // gated in the UI too) - never read back through the client SDK.
     match /pushTokens/{token} {
-      allow write: if request.auth != null && request.auth.token.owner == true;
+      allow write: if isOwner();
     }
 
     // aiInsights, notifications and aiBudget are read/written exclusively via

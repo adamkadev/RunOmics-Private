@@ -36,15 +36,40 @@ function cacheTtlMs(response: Response): number {
   return maxAge ? Number(maxAge) * 1000 : DEFAULT_CERT_TTL_MS
 }
 
-async function googleCerts(now: number): Promise<Record<string, string>> {
-  if (cached && cached.expiresAt > now) return cached.certs
-
+async function fetchCerts(now: number): Promise<Record<string, string>> {
   const response = await fetch(CERTS_URL)
   if (!response.ok) throw new Error(`fetching Google certs failed with ${response.status}`)
 
   const certs = (await response.json()) as Record<string, string>
   cached = { certs, expiresAt: now + cacheTtlMs(response) }
   return certs
+}
+
+async function googleCerts(now: number): Promise<Record<string, string>> {
+  if (cached && cached.expiresAt > now) return cached.certs
+  return fetchCerts(now)
+}
+
+/**
+ * The cert for this token's key id, refetching once if the cache has never
+ * heard of it.
+ *
+ * Google rotates these keys on its own schedule, and a token signed with a new
+ * one arrives before the cached map expires - which is the whole point of the
+ * rotation overlap. Trusting the cache blindly turned that routine event into
+ * "no matching Google certificate", i.e. the owner locked out of their own
+ * Settings page for up to the remaining TTL, with nothing to do but wait.
+ *
+ * An unknown kid is also what a forged token looks like, so the refetch happens
+ * at most once per unknown kid per cache generation: the second lookup is
+ * against a map that was just fetched, and failing it is a real answer.
+ */
+async function certFor(kid: string, now: number): Promise<string | undefined> {
+  const certs = await googleCerts(now)
+  if (certs[kid]) return certs[kid]
+
+  if (cached && cached.expiresAt > now) return (await fetchCerts(now))[kid]
+  return undefined
 }
 
 export interface FirebaseIdTokenClaims extends jwt.JwtPayload {
@@ -61,7 +86,7 @@ export async function verifyFirebaseIdToken(
   const kid = decoded && typeof decoded !== 'string' ? decoded.header.kid : undefined
   if (!kid) throw new Error('token has no key id')
 
-  const cert = (await googleCerts(Date.now()))[kid]
+  const cert = await certFor(kid, Date.now())
   if (!cert) throw new Error('no matching Google certificate for this key id')
 
   const payload = jwt.verify(idToken, cert, {

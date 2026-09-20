@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Trophy } from 'lucide-react'
 import type { RecordEntry } from '@/application/usecases/GetRecords'
 import type { Insight } from '@/lib/gemini'
-import { CELEBRATION_WINDOW_DAYS } from '@/domain/ai/pbCelebrationInsight'
+import { daysSinceRecordDate, isWithinCelebrationWindow } from '@/domain/ai/celebrationWindow'
 import { formatDuration, formatDistance } from '@/lib/formatters'
 import { useHaptic } from '@/lib/useHaptic'
 import { useFocusTrap } from '@/lib/useFocusTrap'
@@ -27,8 +27,7 @@ const CONFETTI = [
 ] as const
 
 function isRecent(date: string): boolean {
-  const days = (Date.now() - new Date(date + 'T00:00:00').getTime()) / 86_400_000
-  return days >= 0 && days <= CELEBRATION_WINDOW_DAYS
+  return isWithinCelebrationWindow(daysSinceRecordDate(date, new Date()))
 }
 
 export function CelebrationOverlay({ record, aiTake }: { record: RecordEntry | null; aiTake: Insight | null }) {

@@ -15,6 +15,7 @@
     "start": "next start",
     "prelint": "npm run prepare:data",
     "lint": "eslint",
+    "verify:private-data": "node scripts/verify_no_private_data.mjs",
     "pretypecheck": "npm run prepare:data",
     "typecheck": "tsc --noEmit",
     "tokens": "node scripts/generate-tokens.mjs",

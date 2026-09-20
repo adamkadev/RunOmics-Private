@@ -171,6 +171,59 @@ describe('removed prescriptions', () => {
     expect(operations.find((operation) => operation.action === 'delete')?.existing?.garminWorkoutId).toBe('9001')
   })
 
+  it('never deletes outside the requested window', () => {
+    // `--to` reads as "only push up to this date". It used to mean "push up to
+    // this date and wipe everything after it": the window filtered the
+    // prescriptions that counted as synced, but not the mapping entries
+    // considered for deletion, so every already-pushed workout beyond `to`
+    // looked like one that had left the plan.
+    const inside = workout({ id: 'a', date: '2026-09-08' })
+    const beyond = workout({ id: 'b', date: '2026-09-15' })
+    const state = syncedState([
+      { id: 'a', date: '2026-09-08', workout: inside },
+      { id: 'b', date: '2026-09-15', workout: beyond },
+    ])
+
+    const operations = buildGarminSyncPlan(plan([inside, beyond]), [], state, {
+      today: TODAY,
+      to: '2026-09-12',
+    }).operations
+
+    expect(operations.filter((operation) => operation.action === 'delete')).toEqual([])
+    expect(operations.map((operation) => operation.date)).toEqual(['2026-09-08'])
+  })
+
+  it('never deletes before the requested window either', () => {
+    const early = workout({ id: 'a', date: '2026-09-08' })
+    const late = workout({ id: 'b', date: '2026-09-15' })
+    const state = syncedState([
+      { id: 'a', date: '2026-09-08', workout: early },
+      { id: 'b', date: '2026-09-15', workout: late },
+    ])
+
+    const operations = buildGarminSyncPlan(plan([early, late]), [], state, {
+      today: TODAY,
+      from: '2026-09-14',
+    }).operations
+
+    expect(operations.filter((operation) => operation.action === 'delete')).toEqual([])
+  })
+
+  it('still deletes inside the window when the prescription really is gone', () => {
+    const kept = workout({ id: 'a', date: '2026-09-08' })
+    const removed = workout({ id: 'gone', date: '2026-09-09' })
+    const state = syncedState([
+      { id: 'a', date: '2026-09-08', workout: kept },
+      { id: 'gone', date: '2026-09-09', workout: removed },
+    ])
+
+    const operations = buildGarminSyncPlan(plan([kept]), [], state, { today: TODAY, to: '2026-09-12' }).operations
+
+    expect(operations.filter((operation) => operation.action === 'delete').map((o) => o.date)).toEqual([
+      '2026-09-09',
+    ])
+  })
+
   it('deletes a cancelled prescription that is still in the plan', () => {
     const cancelled = workout({ id: 'a', date: '2026-09-08', status: 'cancelled' })
     const state = syncedState([{ id: 'a', date: '2026-09-08', workout: workout({ id: 'a', date: '2026-09-08' }) }])

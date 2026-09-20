@@ -162,4 +162,57 @@ describe('verifyFirebaseIdToken', () => {
 
     await expect(verifyFirebaseIdToken(sign(validPayload()), PROJECT_ID)).rejects.toThrow('503')
   })
+
+  it('refetches the certs when a token arrives signed by a key it has never seen', async () => {
+    // Google rotates signing keys on its own schedule, and a token signed with
+    // the new one arrives while the old cert map is still inside its TTL -
+    // that overlap is the point of the rotation. Trusting the cache blindly
+    // turned it into "no matching Google certificate" and locked the owner out
+    // of their own Settings until the TTL ran down.
+    const rotated = generateKeyPairSync('rsa', { modulusLength: 2048 })
+    const rotatedPublic = rotated.publicKey.export({ type: 'spki', format: 'pem' }).toString()
+    const rotatedPrivate = rotated.privateKey.export({ type: 'pkcs8', format: 'pem' }).toString()
+
+    let generation = 0
+    const fetchSpy = vi.fn().mockImplementation(async () => ({
+      ok: true,
+      // Second call is after the rotation: Google now serves both keys.
+      json: async () =>
+        ++generation === 1 ? { [KID]: PUBLIC_PEM } : { [KID]: PUBLIC_PEM, 'rotated-kid': rotatedPublic },
+      headers: { get: () => 'max-age=3600' },
+    }))
+    vi.stubGlobal('fetch', fetchSpy)
+    const { verifyFirebaseIdToken } = await subject()
+
+    // Warms the cache with the pre-rotation map, well inside its hour.
+    await verifyFirebaseIdToken(sign(validPayload()), PROJECT_ID)
+
+    const rotatedToken = jwt.sign(validPayload(), rotatedPrivate, {
+      algorithm: 'RS256',
+      keyid: 'rotated-kid',
+    })
+    const claims = await verifyFirebaseIdToken(rotatedToken, PROJECT_ID)
+
+    expect(claims.sub).toBe('user-123')
+    expect(fetchSpy).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not refetch on every unknown kid, so a forged token cannot drive traffic at Google', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ [KID]: PUBLIC_PEM }),
+      headers: { get: () => 'max-age=3600' },
+    })
+    vi.stubGlobal('fetch', fetchSpy)
+    const { verifyFirebaseIdToken } = await subject()
+
+    await verifyFirebaseIdToken(sign(validPayload()), PROJECT_ID)
+    fetchSpy.mockClear()
+
+    // One refetch to be sure, then the freshly-fetched map is the answer.
+    await expect(
+      verifyFirebaseIdToken(sign(validPayload(), 'forged-kid'), PROJECT_ID)
+    ).rejects.toThrow('no matching Google certificate')
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+  })
 })

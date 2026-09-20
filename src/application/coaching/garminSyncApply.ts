@@ -23,6 +23,23 @@ export interface GarminApplyOptions {
   now: () => string
   pause?: (ms: number) => Promise<void>
   pauseMs?: number
+  /**
+   * Called after every mutation that changed the mapping, before the next one
+   * is attempted.
+   *
+   * Without it the whole mapping was returned once, at the end, and written
+   * once by the caller - so a run interrupted after it had already created and
+   * scheduled four of a week's five workouts left no record of any of them.
+   * The next `--apply` saw no mapping entry, created all five again, and the
+   * athlete's calendar ended up with duplicates that RunOmics could no longer
+   * delete: the orphaned first copies have no entry, and `deletions()` only
+   * ever removes what the mapping knows about. With the one-second pause
+   * between operations, that window is seconds wide on every real run.
+   *
+   * `JsonGarminSyncStore.write` is a tmp-file rename, so writing per operation
+   * is safe to interrupt.
+   */
+  persist?: (state: GarminSyncState) => void
 }
 
 function upsert(entries: GarminSyncEntry[], entry: GarminSyncEntry): GarminSyncEntry[] {
@@ -105,6 +122,15 @@ export async function applyGarminSyncPlan(
   const results: GarminSyncResult[] = []
   let rateLimited = false
 
+  const snapshot = (): GarminSyncState => ({
+    schemaVersion: GARMIN_SYNC_SCHEMA_VERSION,
+    planId: syncPlan.planId,
+    updatedAt: options.now(),
+    entries,
+  })
+
+  const checkpoint = () => options.persist?.(snapshot())
+
   for (const operation of syncPlan.operations) {
     if (rateLimited) break
 
@@ -131,6 +157,7 @@ export async function applyGarminSyncPlan(
         if (!entry) throw new Error('Delete without a mapping entry')
         await removeManaged(gateway, entry)
         entries = remove(entries, entry.prescriptionId)
+        checkpoint()
         results.push({
           operation,
           outcome: 'applied',
@@ -145,11 +172,13 @@ export async function applyGarminSyncPlan(
       if (operation.action === 'replace' && operation.existing) {
         await removeManaged(gateway, operation.existing)
         entries = remove(entries, operation.existing.prescriptionId)
+        checkpoint()
       }
 
       const reuseWorkoutId = operation.action === 'schedule' ? (operation.existing?.garminWorkoutId ?? null) : null
       const { entry, result } = await createAndSchedule(gateway, operation, options.now(), reuseWorkoutId)
       entries = upsert(entries, entry)
+      checkpoint()
       results.push(result)
     } catch (error) {
       if (error instanceof GarminRateLimitError) rateLimited = true
@@ -164,16 +193,7 @@ export async function applyGarminSyncPlan(
     }
   }
 
-  return {
-    results,
-    rateLimited,
-    state: {
-      schemaVersion: GARMIN_SYNC_SCHEMA_VERSION,
-      planId: syncPlan.planId,
-      updatedAt: options.now(),
-      entries,
-    },
-  }
+  return { results, rateLimited, state: snapshot() }
 }
 
 export async function verifyGarminSync(

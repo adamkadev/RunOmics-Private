@@ -14,7 +14,8 @@ from processing.mapper import _decimate_list, _MAX_CHART_POINTS
 from processing.privacy import crop_privacy_zone
 from repository.json_store import JsonActivityStore
 
-_FIT_DIR = Path(__file__).parent.parent / "public" / "fit"
+# Not under public/: raw FIT holds the un-cropped GPS. See scripts/sync.py.
+_FIT_DIR = Path(__file__).parent.parent / ".fit-cache"
 
 
 def main() -> int:

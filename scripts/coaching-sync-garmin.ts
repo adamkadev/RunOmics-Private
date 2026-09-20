@@ -120,6 +120,9 @@ async function main(): Promise<void> {
     const applied = await applyGarminSyncPlan(syncPlan, store.read(), gateway, {
       now: () => new Date().toISOString(),
       pause: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+      // After every workout, not just at the end: a Ctrl-C halfway through a
+      // week used to lose the record of everything already pushed to Garmin.
+      persist: (state) => store.write(state),
     })
     store.write(applied.state)
 

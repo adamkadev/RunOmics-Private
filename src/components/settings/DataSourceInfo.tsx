@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import type { User } from 'firebase/auth'
 import { siGarmin } from 'simple-icons'
 import { t } from '@/i18n'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -17,9 +18,11 @@ interface Props {
   lastSyncedAt: string | null
   activityCount: number
   device?: SyncDevice
+  /** Needed for the export's ID token - the route is owner-only. */
+  user: User
 }
 
-export function DataSourceInfo({ lastSyncedAt, activityCount, device }: Props) {
+export function DataSourceInfo({ lastSyncedAt, activityCount, device, user }: Props) {
   const [loading, setLoading] = useState(false)
   const [confirmingClear, setConfirmingClear] = useState(false)
   const { toast, leaving, showToast } = useToast()
@@ -39,7 +42,9 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device }: Props) {
   async function handleExport() {
     setLoading(true)
     try {
-      const res = await fetch('/api/activities/export')
+      const res = await fetch('/api/activities/export', {
+        headers: { authorization: `Bearer ${await user.getIdToken()}` },
+      })
       if (!res.ok) throw new Error(`Export failed with ${res.status}`)
       const workbook = await res.blob()
       const stamp = new Date().toISOString().slice(0, 10)

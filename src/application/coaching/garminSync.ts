@@ -28,18 +28,33 @@ function completedPrescriptionIds(evaluations: WorkoutEvaluation[]): Set<string>
   )
 }
 
+/**
+ * The dates this run is allowed to touch.
+ *
+ * `--from` never reaches back before today: the past is already run, and
+ * rewriting it on someone's watch is not what a bound is for.
+ */
+function syncRange(window: GarminSyncWindow): { from: string; to?: string } {
+  const from = window.from && window.from > window.today ? window.from : window.today
+  return window.to === undefined ? { from } : { from, to: window.to }
+}
+
+function withinRange(date: string, range: { from: string; to?: string }): boolean {
+  return date >= range.from && (range.to === undefined || date <= range.to)
+}
+
 export function selectSyncableWorkouts(
   plan: CoachingPlan,
   evaluations: WorkoutEvaluation[],
   window: GarminSyncWindow,
 ): WorkoutPrescription[] {
   const completed = completedPrescriptionIds(evaluations)
-  const from = window.from && window.from > window.today ? window.from : window.today
+  const range = syncRange(window)
   return plan.weeks
     .flatMap((week) => week.workouts)
     .filter((workout) => workout.status === 'prescribed' || workout.status === 'adjusted')
     .filter((workout) => !completed.has(workout.id))
-    .filter((workout) => workout.date >= from && (!window.to || workout.date <= window.to))
+    .filter((workout) => withinRange(workout.date, range))
     .sort((left, right) => left.date.localeCompare(right.date) || left.id.localeCompare(right.id))
 }
 
@@ -117,14 +132,24 @@ function operationFor(
   return { ...base, action: 'keep', payload, contentHash, reason: null }
 }
 
+/**
+ * A deletion is "this prescription is gone from the plan" - so it may only ever
+ * be concluded about dates this run actually looked at.
+ *
+ * `syncedIds` holds the prescriptions inside the window, so without the same
+ * range applied here every already-synced workout OUTSIDE it looked like a
+ * prescription that had disappeared. `--to 2026-09-12`, read by anyone as
+ * "only push up to the 12th", unscheduled and deleted the entire rest of the
+ * plan from the athlete's Garmin calendar.
+ */
 function deletions(
   state: GarminSyncState,
   syncedIds: Set<string>,
-  today: string,
+  range: { from: string; to?: string },
 ): GarminSyncOperation[] {
   return state.entries
     .filter((entry) => !syncedIds.has(entry.prescriptionId))
-    .filter((entry) => entry.date >= today)
+    .filter((entry) => withinRange(entry.date, range))
     .map((entry) => ({
       action: 'delete' as const,
       date: entry.date,
@@ -162,7 +187,7 @@ export function buildGarminSyncPlan(
   const operations = workouts.map((workout) => operationFor(workout, plan, known.get(workout.id) ?? null, options))
   const syncedIds = new Set(workouts.map((workout) => workout.id))
 
-  const all = [...operations, ...deletions(current, syncedIds, window.today)].sort(
+  const all = [...operations, ...deletions(current, syncedIds, syncRange(window))].sort(
     (left, right) =>
       left.date.localeCompare(right.date) ||
       ACTION_ORDER[left.action] - ACTION_ORDER[right.action] ||

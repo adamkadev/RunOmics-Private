@@ -45,16 +45,49 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
   const [knownTags, setKnownTags] = useState<string[] | null>(null)
   const [saveState, setSaveState] = useState<SaveState>('idle')
   const [open, setOpen] = useState(false)
+  const [loadedFor, setLoadedFor] = useState(activityId)
   const { toast, leaving, showToast } = useToast()
+
+  // ActivityNav moves between activity pages with a <Link>, so this component
+  // stays mounted and only the prop changes. The read below used to `return`
+  // early when the new activity had no note, which left the PREVIOUS
+  // activity's note in state - shown under the new run's header, and written
+  // to the new activity's document by the next save.
+  //
+  // Reset during render rather than in an effect: React re-renders with the
+  // new state before committing anything, so the stale note is never painted.
+  // An effect would paint it first and then correct it, and `knownTags` is
+  // deliberately kept - tags are shared across every note.
+  if (loadedFor !== activityId) {
+    setLoadedFor(activityId)
+    setSaved(EMPTY)
+    setDraft(EMPTY)
+    setTagInput('')
+    setSaveState('idle')
+    setOpen(false)
+  }
 
   useEffect(() => {
     if (!isClientFirebaseConfigured) return
-    getDoc(doc(getClientFirestore(), 'activityNotes', activityId)).then((snap) => {
-      if (!snap.exists()) return
-      const data = snap.data() as ActivityNote
-      setSaved(data)
-      setDraft(data)
-    })
+
+    // Two reads can be in flight at once when navigation outruns Firestore.
+    // Without the guard the slower one wins, which is whichever activity you
+    // are no longer looking at.
+    let current = true
+    getDoc(doc(getClientFirestore(), 'activityNotes', activityId))
+      .then((snap) => {
+        if (!current || !snap.exists()) return
+        const data = snap.data() as ActivityNote
+        setSaved(data)
+        setDraft(data)
+      })
+      // Offline, or rules refusing the read: the note stays empty rather than
+      // rejecting unhandled. The owner still sees the editor.
+      .catch(() => {})
+
+    return () => {
+      current = false
+    }
   }, [activityId])
 
   useEffect(() => {

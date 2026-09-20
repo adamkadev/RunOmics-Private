@@ -13,7 +13,8 @@ from processing.fit_parser import parse_fit
 from processing.weather import WeatherClient, weather_for_activity
 from repository.json_store import JsonActivityStore
 
-_FIT_DIR = Path(__file__).parent.parent / "public" / "fit"
+# Not under public/: raw FIT holds the un-cropped GPS. See scripts/sync.py.
+_FIT_DIR = Path(__file__).parent.parent / ".fit-cache"
 
 
 def main() -> int:

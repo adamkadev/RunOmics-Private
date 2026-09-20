@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import re
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -8,6 +7,7 @@ from typing import Any
 
 from data_directory import get_data_dir
 from .client import GarminAPIError, GarminClient
+from repository.history_file import read_history_section, write_history
 
 _HISTORY_PATH = get_data_dir() / "athlete_history.json"
 
@@ -203,20 +203,14 @@ def record_athlete_history(metrics: dict[str, Any], today: date | None = None) -
     if not snapshot:
         return False
 
-    days: dict[str, Any] = {}
-    if _HISTORY_PATH.exists():
-        try:
-            days = json.loads(_HISTORY_PATH.read_text()).get("days") or {}
-        except Exception:
-            days = {}
+    days: dict[str, Any] = read_history_section(_HISTORY_PATH, "days")
 
     latest = days[max(days)] if days else None
     if latest == snapshot:
         return False
 
     days[(today or date.today()).isoformat()] = snapshot
-    _HISTORY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    _HISTORY_PATH.write_text(json.dumps({"days": dict(sorted(days.items()))}, indent=2) + "\n")
+    write_history(_HISTORY_PATH, {"days": dict(sorted(days.items()))})
     return True
 
 

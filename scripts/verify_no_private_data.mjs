@@ -58,8 +58,23 @@ if (fs.existsSync('public/data')) {
   )
 }
 
-const fitFiles = trackedUnder(files, 'public/fit')
-if (fitFiles.length) critical('public/fit/ is tracked', `${fitFiles.length} file(s) - raw FIT binaries must never be committed.`)
+for (const prefix of ['public/fit', '.fit-cache']) {
+  const fitFiles = trackedUnder(files, prefix)
+  if (fitFiles.length) critical(`${prefix}/ is tracked`, `${fitFiles.length} file(s) - raw FIT binaries must never be committed.`)
+}
+
+// The FIT downloads are the un-cropped source: crop_privacy_zone only ever
+// touches the route derived from them. They used to live at public/fit/, where
+// `next start` published every one of them at /fit/<activityId>.fit - ids that
+// /api/activities hands out. The cache moved to .fit-cache/; this catches a
+// checkout still carrying the old one, whether tracked or not.
+if (fs.existsSync('public/fit')) {
+  critical(
+    'public/fit/ exists on disk',
+    'Everything under public/ is served as a static asset, and these hold the GPS the privacy zone is meant to hide. ' +
+      'The cache now lives in .fit-cache/ - move it there and delete public/fit/.'
+  )
+}
 
 const eventFiles = trackedUnder(files, 'public/events')
 if (eventFiles.length) warn('public/events/ is tracked', `${eventFiles.length} file(s) - race-day photos, if real, must not ship.`)
@@ -85,7 +100,7 @@ for (const { name, pattern, exclude } of secretChecks) {
 }
 
 const gitignore = fs.existsSync('.gitignore') ? fs.readFileSync('.gitignore', 'utf-8') : ''
-const expectedPatterns = ['/public/fit/', '/public/data/', '/data/', '.env*']
+const expectedPatterns = ['/public/fit/', '/.fit-cache/', '/public/data/', '/data/', '.env*']
 for (const pattern of expectedPatterns) {
   if (!gitignore.includes(pattern)) warn('.gitignore is missing an expected pattern', pattern)
 }

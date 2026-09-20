@@ -124,10 +124,10 @@ jobs:
       - name: Restore FIT cache
         uses: actions/cache@v5
         with:
-          path: public/fit
-          key: fit-${{ matrix.profile }}-${{ hashFiles('data/activities/**') }}
+          path: .fit-cache
+          key: fit-cache-${{ matrix.profile }}-${{ hashFiles('data/activities/**') }}
           restore-keys: |
-            fit-${{ matrix.profile }}-
+            fit-cache-${{ matrix.profile }}-
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -161,6 +161,7 @@ jobs:
       # instead, is checked against a digits-only pattern, and is carried in an
       # array so the shell never re-splits it.
       - name: Run sync
+        id: sync
         env:
           GARMIN_SECRET: ${{ secrets.GARMIN_SECRET }}
           PRIVACY_ZONES: ${{ secrets.PRIVACY_ZONES }}
@@ -186,7 +187,24 @@ jobs:
           if [ "${SYNC_FORCE:-}" = "true" ]; then
             ARGS+=(--force)
           fi
+
+          # Exit 2 is sync.py's "some activities failed, the rest are already
+          # written to disk". Letting that fail the step skipped every step
+          # below it - including the commit - so a single permanently broken
+          # activity quietly stopped the dataset from ever being published
+          # again, one red scheduled run a night, forever. The good activities
+          # get committed; the run is still marked failed, at the end.
+          set +e
           python scripts/sync.py "${ARGS[@]}"
+          STATUS=$?
+          set -e
+          echo "status=$STATUS" >> "$GITHUB_OUTPUT"
+
+          if [ "$STATUS" -eq 2 ]; then
+            echo "::warning::Some activities failed to sync. Committing the ones that succeeded."
+          elif [ "$STATUS" -ne 0 ]; then
+            exit "$STATUS"
+          fi
 
       - name: Disconnect Cloudflare WARP
         if: always()
@@ -299,3 +317,11 @@ jobs:
           for i in 1 2 3 4 5; do
             check ai-insights 310
           done
+
+      # Last, so that a partial sync still reaches the data repository, the
+      # deployment and the post-sync checks before the run goes red.
+      - name: Report failed activities
+        if: always() && steps.sync.outputs.status == '2'
+        run: |
+          echo "::error::sync.py reported failed activities. Whatever synced successfully was committed and deployed; see the 'Run sync' log for the failures."
+          exit 1
