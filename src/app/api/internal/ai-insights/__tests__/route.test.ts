@@ -1,6 +1,10 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { NextRequest } from 'next/server'
-import { requestedLimit, shouldTryAnotherModel } from '../route'
+
+const { sendPushToAllDevices } = vi.hoisted(() => ({ sendPushToAllDevices: vi.fn() }))
+vi.mock('@/lib/sendPushNotification', () => ({ sendPushToAllDevices }))
+
+const { notifyFreshVerdict, requestedLimit, shouldTryAnotherModel } = await import('../route')
 
 function request(query = ''): NextRequest {
   return new NextRequest(`https://example.com/api/internal/ai-insights${query}`, { method: 'POST' })
@@ -49,5 +53,27 @@ describe('shouldTryAnotherModel', () => {
   it('does not retry a request the API rejected outright', () => {
     expect(shouldTryAnotherModel('http 400: invalid argument')).toBe(false)
     expect(shouldTryAnotherModel('http 403: permission denied')).toBe(false)
+  })
+})
+
+describe('notifyFreshVerdict', () => {
+  it('sends the verdict itself as the push, not a generic "sync done" line', async () => {
+    sendPushToAllDevices.mockClear()
+    await notifyFreshVerdict({
+      headline: 'Held together to the last rep',
+      body: 'Only two seconds a kilometre of fade.',
+    })
+
+    expect(sendPushToAllDevices).toHaveBeenCalledWith(
+      'Held together to the last rep',
+      'Only two seconds a kilometre of fade.'
+    )
+  })
+
+  it('swallows a push failure rather than letting it fail the sync it is reporting on', async () => {
+    sendPushToAllDevices.mockClear()
+    sendPushToAllDevices.mockRejectedValueOnce(new Error('FCM is down'))
+
+    await expect(notifyFreshVerdict({ headline: 'h', body: 'b' })).resolves.toBeUndefined()
   })
 })
