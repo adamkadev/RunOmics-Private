@@ -26,7 +26,10 @@ describe('getLocationOverride', () => {
 
   it('answers null when the dataset carries no overrides file', async () => {
     vi.mocked(fs.readFileSync).mockImplementation(() => {
-      throw new Error('ENOENT')
+      // Shaped like the real thing: readJsonFile tells absence apart from a
+      // genuine read failure by the `code`, and only the latter is worth a log
+      // line - an overrides file is optional.
+      throw Object.assign(new Error('ENOENT: no such file'), { code: 'ENOENT' })
     })
     vi.resetModules()
     const { getLocationOverride: withoutFile } = await import('../JsonLocationOverrideRepository')

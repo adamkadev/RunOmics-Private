@@ -1,5 +1,5 @@
-import fs from 'fs'
 import { dataPath } from '../dataPath'
+import { readJsonFile } from '../readJsonFile'
 
 export interface AthleteHistoryEntry {
   date: string
@@ -12,15 +12,9 @@ export interface AthleteHistoryEntry {
 type StoredDays = Record<string, Omit<AthleteHistoryEntry, 'date'>>
 
 export function getAthleteHistory(): AthleteHistoryEntry[] {
-  const filePath = dataPath('athlete_history.json')
-  if (!fs.existsSync(filePath)) return []
+  const { days } = readJsonFile<{ days?: StoredDays }>(dataPath('athlete_history.json'), {})
 
-  try {
-    const days = (JSON.parse(fs.readFileSync(filePath, 'utf-8')) as { days?: StoredDays }).days ?? {}
-    return Object.entries(days)
-      .map(([date, values]) => ({ date, ...values }))
-      .sort((a, b) => a.date.localeCompare(b.date))
-  } catch {
-    return []
-  }
+  return Object.entries(days ?? {})
+    .map(([date, values]) => ({ date, ...values }))
+    .sort((a, b) => a.date.localeCompare(b.date))
 }

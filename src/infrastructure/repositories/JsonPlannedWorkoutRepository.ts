@@ -1,6 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { dataPath } from '../dataPath'
+import { readJsonFile } from '../readJsonFile'
 import type { PlannedWorkout } from '@/domain/activity/types'
 
 let cache: PlannedWorkout[] | null = null
@@ -17,12 +18,10 @@ export function getAllPlannedWorkouts(dirPath?: string): PlannedWorkout[] {
 
   const files = fs.readdirSync(dir).filter((f) => f.endsWith('.json') && f !== 'index.json')
 
+  // Per file, not per directory: one month the sync left half-written should
+  // cost the plan that month, not every month.
   const planned = files
-    .flatMap((file) => {
-      const raw = fs.readFileSync(path.join(dir, file), 'utf-8')
-      const parsed = JSON.parse(raw) as { planned: PlannedWorkout[] }
-      return parsed.planned
-    })
+    .flatMap((file) => readJsonFile<{ planned?: PlannedWorkout[] }>(path.join(dir, file), {}).planned ?? [])
     .sort((a, b) => a.date.localeCompare(b.date))
 
   if (usingDefaultDir) cache = planned

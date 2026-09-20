@@ -7,6 +7,13 @@ const DEFAULT_DIR = dataPath('activities')
 
 let cache: Activity[] | null = null
 
+/**
+ * Deliberately not `readJsonFile`: every other repository backs a section of a
+ * page and degrades to an empty one, but the activity index IS the dataset.
+ * Falling back to zero activities here would render a complete, confident,
+ * entirely wrong app - an empty dashboard, no records, no PBs - instead of
+ * failing the build that has no data to publish.
+ */
 function readJson<T>(filePath: string): T {
   return JSON.parse(fs.readFileSync(filePath, 'utf-8')) as T
 }

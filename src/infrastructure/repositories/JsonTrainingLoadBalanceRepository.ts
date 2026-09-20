@@ -1,5 +1,5 @@
-import fs from 'fs'
 import { dataPath } from '../dataPath'
+import { readJsonFile } from '../readJsonFile'
 
 export interface TrainingLoadBalance {
   date?: string
@@ -16,12 +16,5 @@ export interface TrainingLoadBalance {
 }
 
 export function getTrainingLoadBalance(): TrainingLoadBalance | null {
-  const filePath = dataPath('training_load_balance.json')
-  if (!fs.existsSync(filePath)) return null
-
-  try {
-    return JSON.parse(fs.readFileSync(filePath, 'utf-8')) as TrainingLoadBalance
-  } catch {
-    return null
-  }
+  return readJsonFile<TrainingLoadBalance | null>(dataPath('training_load_balance.json'), null)
 }
