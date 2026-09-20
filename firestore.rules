@@ -1,27 +1,11 @@
 rules_version = '2';
 
-// RunOmics Firestore security rules - source of truth, versioned in the repo.
-// Deploy with: firebase deploy --only firestore:rules
-//
-// Model: activityNotes is the only collection ever read through the client
-// SDK - every other page is server-rendered, its data already resolved
-// (via the Admin SDK, which is not subject to these rules at all) before it
-// reaches the browser. So activityNotes is the only public read; everything
-// else gets no rule, which is a default deny for client access.
-//
-// Every write is gated on a custom Firebase Auth claim rather than an email
-// literal: rules cannot read this app's environment variables, and a claim
-// on the account survives an email change without touching this file. Set
-// it once with `npm run set-owner-claim` (scripts/set_owner_claim.mjs).
 service cloud.firestore {
   match /databases/{database}/documents {
     function isOwner() {
       return request.auth != null && request.auth.token.owner == true;
     }
 
-    // Mirrors the client's own limits (ActivityNotes.tsx: NOTE_MAX_LENGTH,
-    // TAGS_MAX_COUNT). Rules are the only thing standing between a bug, or a
-    // stolen owner session, and a note that every visitor then downloads.
     function isWellFormedNote() {
       return request.resource.data.keys().hasOnly(['note', 'tags'])
         && request.resource.data.note is string
@@ -31,9 +15,6 @@ service cloud.firestore {
     }
 
     match /activityNotes/{activityId} {
-      // `read` would also grant `list`, i.e. enumerate every private note in
-      // the collection. Visitors fetch one note by id; only the owner's tag
-      // autocomplete lists them.
       allow get: if true;
       allow list: if isOwner();
 
@@ -41,13 +22,8 @@ service cloud.firestore {
       allow delete: if isOwner();
     }
 
-    // Written from the browser only while signed in as the owner (Settings is
-    // gated in the UI too) - never read back through the client SDK.
     match /pushTokens/{token} {
       allow write: if isOwner();
     }
-
-    // aiInsights, notifications and aiBudget are read/written exclusively via
-    // the Admin SDK from internal cron routes - no rule needed or wanted here.
   }
 }
