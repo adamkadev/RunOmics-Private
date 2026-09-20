@@ -9,11 +9,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
+from data_directory import get_fit_cache_dir
 from processing.fit_parser import parse_fit
 from processing.weather import WeatherClient, weather_for_activity
 from repository.json_store import JsonActivityStore
 
-_FIT_DIR = Path(__file__).parent.parent / "public" / "fit"
+_FIT_DIR = get_fit_cache_dir()
 
 
 def main() -> int:

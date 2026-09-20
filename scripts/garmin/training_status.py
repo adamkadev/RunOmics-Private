@@ -24,7 +24,6 @@ request count.
 
 from __future__ import annotations
 
-import json
 import re
 import time
 from datetime import date, timedelta
@@ -34,6 +33,7 @@ from typing import Any
 from data_directory import get_data_dir
 from .client import GarminAPIError, GarminClient
 from .retry import retry_transient
+from repository.history_file import read_history, write_history
 
 _DATA_DIR = get_data_dir()
 _STATUS_PATH = _DATA_DIR / "training_status.json"
@@ -161,12 +161,7 @@ def normalize_load_balance(payload: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def _load_stored() -> tuple[dict[str, Any], dict[str, Any]]:
-    if not _STATUS_PATH.exists():
-        return {}, {}
-    try:
-        stored = json.loads(_STATUS_PATH.read_text())
-    except Exception:
-        return {}, {}
+    stored = read_history(_STATUS_PATH)
     return stored.get("days") or {}, stored.get("weeks") or {}
 
 
@@ -286,14 +281,7 @@ def sync_training_status(client: GarminClient, start: date, today: date | None =
     days = {**stored_days, **fetched_days}
     weeks = {**stored_weeks, **fetched_weeks}
 
-    _DATA_DIR.mkdir(parents=True, exist_ok=True)
-    _STATUS_PATH.write_text(
-        json.dumps(
-            {"days": dict(sorted(days.items())), "weeks": dict(sorted(weeks.items()))},
-            indent=2,
-        )
-        + "\n"
-    )
+    write_history(_STATUS_PATH, {"days": dict(sorted(days.items())), "weeks": dict(sorted(weeks.items()))})
     print(
         f"  {len(fetched_days)} day(s) and {len(fetched_weeks)} week(s) recorded, "
         f"{len(days)} day(s) total."
@@ -316,7 +304,6 @@ def sync_load_balance(client: GarminClient, today: date | None = None) -> bool:
         print("  No load balance recorded for today.")
         return False
 
-    _DATA_DIR.mkdir(parents=True, exist_ok=True)
-    _BALANCE_PATH.write_text(json.dumps(balance, indent=2, sort_keys=True) + "\n")
+    write_history(_BALANCE_PATH, dict(sorted(balance.items())))
     print(f"  {balance.get('feedback', 'written')}")
     return True

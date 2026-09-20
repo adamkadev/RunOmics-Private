@@ -45,16 +45,41 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
   const [knownTags, setKnownTags] = useState<string[] | null>(null)
   const [saveState, setSaveState] = useState<SaveState>('idle')
   const [open, setOpen] = useState(false)
+  const [activityInState, setActivityInState] = useState(activityId)
   const { toast, leaving, showToast } = useToast()
+
+  // ActivityNav navigates with a <Link>, so this stays mounted and only the
+  // prop changes. Resetting during render rather than in an effect means the
+  // previous activity's note is never painted under the new run's header.
+  function showNewActivity() {
+    setActivityInState(activityId)
+    setSaved(EMPTY)
+    setDraft(EMPTY)
+    setTagInput('')
+    setSaveState('idle')
+    setOpen(false)
+    // knownTags deliberately survives: tags are shared across every note.
+  }
+
+  if (activityInState !== activityId) showNewActivity()
 
   useEffect(() => {
     if (!isClientFirebaseConfigured) return
-    getDoc(doc(getClientFirestore(), 'activityNotes', activityId)).then((snap) => {
-      if (!snap.exists()) return
-      const data = snap.data() as ActivityNote
-      setSaved(data)
-      setDraft(data)
-    })
+
+    // Navigation can outrun Firestore; without this the slower read wins.
+    let cancelled = false
+    getDoc(doc(getClientFirestore(), 'activityNotes', activityId))
+      .then((snap) => {
+        if (cancelled || !snap.exists()) return
+        const data = snap.data() as ActivityNote
+        setSaved(data)
+        setDraft(data)
+      })
+      .catch(() => {})
+
+    return () => {
+      cancelled = true
+    }
   }, [activityId])
 
   useEffect(() => {

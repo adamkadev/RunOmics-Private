@@ -38,6 +38,8 @@ function warn(title, detail) {
   findings.push({ severity: 'WARN', title, detail })
 }
 
+const FIT_CACHE_DIR = '.fit-cache'
+
 const files = trackedFiles()
 
 for (const prefix of ['data', 'public/data']) {
@@ -51,15 +53,27 @@ for (const prefix of ['data', 'public/data']) {
   }
 }
 
-if (fs.existsSync('public/data')) {
-  critical(
-    'public/data/ exists on disk',
-    'Everything under public/ is served as a static asset. Move any needed files into the selected private data workspace, then delete public/data/.'
-  )
+// Everything under public/ is served as a static asset, so neither of these may
+// exist there at all - not merely be untracked.
+const servedDirsThatMustNotExist = [
+  {
+    dir: 'public/data',
+    detail: 'Move any needed files into the selected private data workspace, then delete public/data/.',
+  },
+  {
+    dir: 'public/fit',
+    detail: `Raw FIT holds the GPS the privacy zone hides. The cache lives in ${FIT_CACHE_DIR}/ - move it there and delete public/fit/.`,
+  },
+]
+for (const { dir, detail } of servedDirsThatMustNotExist) {
+  if (fs.existsSync(dir)) critical(`${dir}/ exists on disk`, detail)
 }
 
-const fitFiles = trackedUnder(files, 'public/fit')
-if (fitFiles.length) critical('public/fit/ is tracked', `${fitFiles.length} file(s) - raw FIT binaries must never be committed.`)
+for (const prefix of ['public/fit', FIT_CACHE_DIR]) {
+  const fitFiles = trackedUnder(files, prefix)
+  if (fitFiles.length) critical(`${prefix}/ is tracked`, `${fitFiles.length} file(s) - raw FIT binaries must never be committed.`)
+}
+
 
 const eventFiles = trackedUnder(files, 'public/events')
 if (eventFiles.length) warn('public/events/ is tracked', `${eventFiles.length} file(s) - race-day photos, if real, must not ship.`)
@@ -85,7 +99,7 @@ for (const { name, pattern, exclude } of secretChecks) {
 }
 
 const gitignore = fs.existsSync('.gitignore') ? fs.readFileSync('.gitignore', 'utf-8') : ''
-const expectedPatterns = ['/public/fit/', '/public/data/', '/data/', '.env*']
+const expectedPatterns = ['/public/fit/', `/${FIT_CACHE_DIR}/`, '/public/data/', '/data/', '.env*']
 for (const pattern of expectedPatterns) {
   if (!gitignore.includes(pattern)) warn('.gitignore is missing an expected pattern', pattern)
 }

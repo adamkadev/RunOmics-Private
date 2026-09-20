@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { RefreshCw } from 'lucide-react'
 import type { User } from 'firebase/auth'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { authorizedFetch } from '@/lib/ownerFetch'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -93,11 +94,7 @@ export function SyncNowCard({ user }: { user: User }) {
   const cancelled = useRef(false)
 
   const authorized = useCallback(
-    async (path: string, init?: RequestInit) =>
-      fetch(path, {
-        ...init,
-        headers: { ...init?.headers, authorization: `Bearer ${await user.getIdToken()}` },
-      }),
+    (path: string, init?: RequestInit) => authorizedFetch(user, path, init),
     [user]
   )
 

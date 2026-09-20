@@ -14,7 +14,6 @@ returns one entry per revision, keyed here on the day it took effect.
 
 from __future__ import annotations
 
-import json
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -23,6 +22,7 @@ from data_directory import get_data_dir
 from .client import GarminAPIError, GarminClient
 from .retry import retry_transient
 from .vo2max_history import monthly_windows
+from repository.history_file import read_history_section, write_history
 
 _OUT_PATH = get_data_dir() / "threshold_history.json"
 
@@ -81,12 +81,7 @@ def build_days(hr: dict[str, float], speed: dict[str, float]) -> dict[str, dict[
 
 
 def _load_stored() -> dict[str, dict[str, Any]]:
-    if not _OUT_PATH.exists():
-        return {}
-    try:
-        return json.loads(_OUT_PATH.read_text()).get("days") or {}
-    except Exception:
-        return {}
+    return read_history_section(_OUT_PATH, "days")
 
 
 def sync_threshold_history(client: GarminClient, start: date, today: date | None = None) -> int:
@@ -108,8 +103,7 @@ def sync_threshold_history(client: GarminClient, start: date, today: date | None
         print("  No threshold samples returned.")
         return 0
 
-    _OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    _OUT_PATH.write_text(json.dumps({"days": dict(sorted(days.items()))}, indent=2) + "\n")
+    write_history(_OUT_PATH, {"days": dict(sorted(days.items()))})
 
     latest = days[max(days)]
     print(

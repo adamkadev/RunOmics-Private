@@ -1,5 +1,5 @@
-import fs from 'fs'
 import { dataPath } from '../dataPath'
+import { readJsonFile } from '../readJsonFile'
 import type { RaceDistanceKey } from '@/domain/race/distances'
 
 export type RacePredictionDay = Partial<Record<RaceDistanceKey, number>> & { date: string }
@@ -7,15 +7,9 @@ export type RacePredictionDay = Partial<Record<RaceDistanceKey, number>> & { dat
 type StoredDays = Record<string, Partial<Record<RaceDistanceKey, number>>>
 
 export function getRacePredictionDays(): RacePredictionDay[] {
-  const filePath = dataPath('race_predictions.json')
-  if (!fs.existsSync(filePath)) return []
+  const { days } = readJsonFile<{ days?: StoredDays }>(dataPath('race_predictions.json'), {})
 
-  try {
-    const days = (JSON.parse(fs.readFileSync(filePath, 'utf-8')) as { days?: StoredDays }).days ?? {}
-    return Object.entries(days)
-      .map(([date, times]) => ({ date, ...times }))
-      .sort((a, b) => a.date.localeCompare(b.date))
-  } catch {
-    return []
-  }
+  return Object.entries(days ?? {})
+    .map(([date, times]) => ({ date, ...times }))
+    .sort((a, b) => a.date.localeCompare(b.date))
 }

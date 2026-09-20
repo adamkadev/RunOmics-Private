@@ -133,7 +133,7 @@ export function SettingsClient({ lastSyncedAt, activityCount, device }: Props) {
           {t.settings.sections.notificationsData}
         </SectionDivider>
         <NotificationsForm />
-        <DataSourceInfo lastSyncedAt={lastSyncedAt} activityCount={activityCount} device={device} />
+        <DataSourceInfo lastSyncedAt={lastSyncedAt} activityCount={activityCount} device={device} user={user} />
         <SyncNowCard user={user} />
       </section>
 

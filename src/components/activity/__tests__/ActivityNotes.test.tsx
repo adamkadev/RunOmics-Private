@@ -15,8 +15,11 @@ interface MockUser {
 }
 
 let mockUser: MockUser | null = null
-let mockStoredNote: { note: string; tags: string[] } | null = null
 let mockAllNotes: { note: string; tags: string[] }[] = []
+let mockNotesById: Record<string, { note: string; tags: string[] }> = {}
+let mockLastRequestedId = ''
+
+const ACTIVITY_ID = 'a1'
 
 function signedIn(email: string, claims: Record<string, unknown> = {}): MockUser {
   return { email, getIdTokenResult: () => Promise.resolve({ claims }) }
@@ -36,12 +39,15 @@ vi.mock('firebase/auth', () => ({
 }))
 
 vi.mock('firebase/firestore', () => ({
-  doc: () => ({}),
+  doc: (_db: unknown, _collection: string, id: string) => {
+    mockLastRequestedId = id
+    return { id }
+  },
   collection: () => ({}),
-  getDoc: async () => ({
-    exists: () => mockStoredNote !== null,
-    data: () => mockStoredNote,
-  }),
+  getDoc: async (ref: { id: string }) => {
+    const stored = mockNotesById[ref.id] ?? null
+    return { exists: () => stored !== null, data: () => stored }
+  },
   getDocs: async () => ({ docs: mockAllNotes.map((note) => ({ data: () => note })) }),
   setDoc: async () => {},
 }))
@@ -51,12 +57,14 @@ async function openNotes() {
   await userEvent.click(toggle)
 }
 
+beforeEach(() => {
+  mockUser = null
+  mockAllNotes = []
+  mockNotesById = {}
+  mockLastRequestedId = ''
+})
+
 describe('ActivityNotes owner gate', () => {
-  beforeEach(() => {
-    mockUser = null
-    mockStoredNote = null
-    mockAllNotes = []
-  })
 
   it('renders nothing for a signed-out visitor when the activity has no note', async () => {
     const { container } = render(<ActivityNotes activityId="a1" />)
@@ -64,7 +72,7 @@ describe('ActivityNotes owner gate', () => {
   })
 
   it('shows the read-only note to a visitor when one exists', async () => {
-    mockStoredNote = { note: 'Great tempo run', tags: ['tempo'] }
+    mockNotesById = { [ACTIVITY_ID]: { note: 'Great tempo run', tags: ['tempo'] } }
     render(<ActivityNotes activityId="a1" />)
     await openNotes()
 
@@ -88,7 +96,7 @@ describe('ActivityNotes owner gate', () => {
 
   it('does not grant the editor on a matching email alone', async () => {
     mockUser = signedIn(OWNER_EMAIL)
-    mockStoredNote = { note: 'Great tempo run', tags: [] }
+    mockNotesById = { [ACTIVITY_ID]: { note: 'Great tempo run', tags: [] } }
     render(<ActivityNotes activityId="a1" />)
     await openNotes()
 
@@ -100,8 +108,6 @@ describe('ActivityNotes owner gate', () => {
 describe('ActivityNotes sheet', () => {
   beforeEach(() => {
     mockUser = signedIn('owner@example.com', { owner: true })
-    mockStoredNote = null
-    mockAllNotes = []
   })
 
   it('names itself and offers a way out that is not a guess', async () => {
@@ -141,5 +147,42 @@ describe('ActivityNotes sheet', () => {
     expect(screen.getByRole('button', { name: t.activity.notes.removeTag('rain') })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: t.activity.notes.addTag('rain') })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: t.activity.notes.addTag('trail') })).toBeInTheDocument()
+  })
+})
+
+describe('ActivityNotes across a client-side navigation', () => {
+  beforeEach(() => {
+    mockUser = signedIn(OWNER_EMAIL, { owner: true })
+  })
+
+  it('does not carry one activity\'s note onto the next one', async () => {
+    // ActivityNav navigates with a <Link>, so the component stays mounted and
+    // only activityId changes. It used to `return` early on a missing note,
+    // leaving the previous activity's text on screen - and saving would then
+    // write it to the new activity's document.
+    mockNotesById = { a1: { note: 'legs were dead', tags: ['tired'] } }
+    const { rerender } = render(<ActivityNotes activityId="a1" />)
+
+    await openNotes()
+    expect(await screen.findByPlaceholderText(t.activity.notes.notePlaceholder)).toHaveValue('legs were dead')
+
+    rerender(<ActivityNotes activityId="a2" />)
+
+    await openNotes()
+    expect(await screen.findByPlaceholderText(t.activity.notes.notePlaceholder)).toHaveValue('')
+    expect(screen.queryByText('legs were dead')).not.toBeInTheDocument()
+  })
+
+  it('reads the note for the activity it is actually showing', async () => {
+    mockNotesById = { a1: { note: 'one', tags: [] }, a2: { note: 'two', tags: [] } }
+    const { rerender } = render(<ActivityNotes activityId="a1" />)
+    await openNotes()
+    expect(await screen.findByPlaceholderText(t.activity.notes.notePlaceholder)).toHaveValue('one')
+
+    rerender(<ActivityNotes activityId="a2" />)
+    await openNotes()
+
+    expect(mockLastRequestedId).toBe('a2')
+    expect(await screen.findByPlaceholderText(t.activity.notes.notePlaceholder)).toHaveValue('two')
   })
 })

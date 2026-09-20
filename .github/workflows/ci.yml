@@ -43,6 +43,9 @@ jobs:
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
 
+      - name: Verify no private data is committed
+        run: npm run verify:private-data
+
       - name: Lint
         run: npm run lint
 

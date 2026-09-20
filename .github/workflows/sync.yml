@@ -124,10 +124,10 @@ jobs:
       - name: Restore FIT cache
         uses: actions/cache@v5
         with:
-          path: public/fit
-          key: fit-${{ matrix.profile }}-${{ hashFiles('data/activities/**') }}
+          path: .fit-cache
+          key: fit-cache-${{ matrix.profile }}-${{ hashFiles('data/activities/**') }}
           restore-keys: |
-            fit-${{ matrix.profile }}-
+            fit-cache-${{ matrix.profile }}-
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -153,30 +153,56 @@ jobs:
           sleep 3
           warp-cli --accept-tos status
 
+      # Dispatch inputs arrive through `env:`, never interpolated into `run:`:
+      # Actions substitutes those textually, before bash parses the line.
       - name: Run sync
+        id: sync
         env:
           GARMIN_SECRET: ${{ secrets.GARMIN_SECRET }}
           PRIVACY_ZONES: ${{ secrets.PRIVACY_ZONES }}
           PRIVACY_RADIUS_M: ${{ secrets.PRIVACY_RADIUS_M }}
+          SYNC_LIMIT: ${{ inputs.limit }}
+          SYNC_DRY_RUN: ${{ inputs.dry_run }}
+          SYNC_FORCE: ${{ inputs.force }}
         run: |
-          ARGS=""
-          if [ -n "${{ github.event.inputs.limit }}" ]; then
-            ARGS="$ARGS --limit ${{ github.event.inputs.limit }}"
+          set -eo pipefail
+          ARGS=()
+          if [ -n "${SYNC_LIMIT:-}" ]; then
+            case "$SYNC_LIMIT" in
+              *[!0-9]*)
+                echo "::error::limit must be a whole number (got '$SYNC_LIMIT')."
+                exit 1
+                ;;
+            esac
+            ARGS+=(--limit "$SYNC_LIMIT")
           fi
-          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-            ARGS="$ARGS --dry-run"
+          if [ "${SYNC_DRY_RUN:-}" = "true" ]; then
+            ARGS+=(--dry-run)
           fi
-          if [ "${{ github.event.inputs.force }}" = "true" ]; then
-            ARGS="$ARGS --force"
+          if [ "${SYNC_FORCE:-}" = "true" ]; then
+            ARGS+=(--force)
           fi
-          python scripts/sync.py $ARGS
+
+          # Exit 3 is "some activities failed, the rest are on disk". Failing
+          # the step here would skip the commit below and discard them.
+          set +e
+          python scripts/sync.py "${ARGS[@]}"
+          STATUS=$?
+          set -e
+
+          if [ "$STATUS" -eq 3 ]; then
+            echo "partial_failure=true" >> "$GITHUB_OUTPUT"
+            echo "::warning::Some activities failed to sync. Committing the ones that succeeded."
+          elif [ "$STATUS" -ne 0 ]; then
+            exit "$STATUS"
+          fi
 
       - name: Disconnect Cloudflare WARP
         if: always()
         run: warp-cli --accept-tos disconnect || true
 
       - name: Backfill missing weather
-        if: github.event.inputs.dry_run != 'true'
+        if: inputs.dry_run != true
         continue-on-error: true
         run: python scripts/backfill_weather.py
 
@@ -282,3 +308,10 @@ jobs:
           for i in 1 2 3 4 5; do
             check ai-insights 310
           done
+
+      # Last, so a partial sync still reaches the data repository first.
+      - name: Report failed activities
+        if: always() && steps.sync.outputs.partial_failure == 'true'
+        run: |
+          echo "::error::sync.py reported failed activities. Whatever synced successfully was committed and deployed; see the 'Run sync' log for the failures."
+          exit 1

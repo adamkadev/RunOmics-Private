@@ -1,5 +1,5 @@
-import fs from 'fs'
 import { dataPath } from '../dataPath'
+import { readJsonFile } from '../readJsonFile'
 
 export interface AthleteProfile {
   lthrBpm?: number
@@ -27,10 +27,8 @@ export interface AthleteProfile {
 }
 
 export function getAthleteProfile(): AthleteProfile {
-  const filePath = dataPath('athlete.json')
-  if (!fs.existsSync(filePath)) return {}
+  const raw = readJsonFile<Record<string, unknown>>(dataPath('athlete.json'), {})
 
-  const raw = JSON.parse(fs.readFileSync(filePath, 'utf-8')) as Record<string, unknown>
   const profile: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(raw)) {
     if (value !== null && value !== undefined) profile[key] = value

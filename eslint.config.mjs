@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     "scripts/**",
     "coverage/**",
+    // Vendored by `npm run maplibre:worker`, so it only exists after a build.
+    "public/maplibre/**",
   ]),
   {
     files: ["src/components/activity/ActivityMap.tsx"],

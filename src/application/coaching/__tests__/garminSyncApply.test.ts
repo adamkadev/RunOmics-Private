@@ -88,7 +88,7 @@ class FakeGarmin implements GarminWorkoutGateway {
 }
 
 const apply = (syncPlan: ReturnType<typeof buildGarminSyncPlan>, state: GarminSyncState | null, gateway: FakeGarmin) =>
-  applyGarminSyncPlan(syncPlan, state, gateway, { now: () => NOW })
+  applyGarminSyncPlan(syncPlan, state, gateway, { now: () => NOW, persist: () => {} })
 
 const build = (coachingPlan: CoachingPlan, state: GarminSyncState | null) =>
   buildGarminSyncPlan(coachingPlan, [], state, { today: TODAY })
@@ -310,4 +310,54 @@ describe('result rendering', () => {
     expect(output).toContain('CREATE ✓ 2026-10-03 Broschtkriibslaf 5K Race')
     expect(output).toContain('2 Garmin workout(s) synchronized.')
   })
+})
+
+describe('crash safety', () => {
+  it('records every workout as it is pushed, not once at the end', async () => {
+    // A run killed mid-loop used to leave no trace of what Garmin had accepted,
+    // so the next --apply created duplicates RunOmics could no longer delete.
+    const workouts = ['2026-09-08', '2026-09-09', '2026-09-10', '2026-09-11'].map((date, i) =>
+      workout({ id: `w${i}`, date })
+    )
+    const gateway = new FakeGarmin()
+    const checkpoints: GarminSyncState[] = []
+
+    await applyGarminSyncPlan(build(plan(workouts), null), null, gateway, {
+      now: () => NOW,
+      persist: (state) => checkpoints.push(structuredClone(state)),
+    })
+
+    expect(checkpoints).toHaveLength(4)
+    expect(checkpoints.map((state) => state.entries.length)).toEqual([1, 2, 3, 4])
+  })
+
+  it('keeps the workouts that got through when a later one kills the run', async () => {
+    const workouts = ['2026-09-08', '2026-09-09', '2026-09-10'].map((date, i) => workout({ id: `w${i}`, date }))
+    const gateway = new FakeGarmin({ rateLimitAfter: 2 })
+    let latest: GarminSyncState | null = null
+
+    await applyGarminSyncPlan(build(plan(workouts), null), null, gateway, {
+      now: () => NOW,
+      persist: (state) => {
+        latest = state
+      },
+    })
+
+    expect(latest).not.toBeNull()
+    expect(latest!.entries.map((entry) => entry.prescriptionId)).toEqual(['w0', 'w1'])
+  })
+
+  it('still returns the same final state it always did', async () => {
+    const workouts = [workout({ id: 'w0', date: '2026-09-08' }), workout({ id: 'w1', date: '2026-09-09' })]
+    const gateway = new FakeGarmin()
+    const checkpoints: GarminSyncState[] = []
+
+    const report = await applyGarminSyncPlan(build(plan(workouts), null), null, gateway, {
+      now: () => NOW,
+      persist: (state) => checkpoints.push(structuredClone(state)),
+    })
+
+    expect(report.state.entries).toEqual(checkpoints.at(-1)!.entries)
+  })
+
 })

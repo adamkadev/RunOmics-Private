@@ -1,5 +1,5 @@
-import fs from 'fs'
 import { dataPath } from '../dataPath'
+import { readJsonFile } from '../readJsonFile'
 
 export interface TrainingPlanPhaseRaw {
   phase: string
@@ -16,12 +16,5 @@ export interface TrainingPlanRaw {
 }
 
 export function getTrainingPlan(): TrainingPlanRaw | null {
-  const filePath = dataPath('training_plan.json')
-  if (!fs.existsSync(filePath)) return null
-
-  try {
-    return JSON.parse(fs.readFileSync(filePath, 'utf-8')) as TrainingPlanRaw
-  } catch {
-    return null
-  }
+  return readJsonFile<TrainingPlanRaw | null>(dataPath('training_plan.json'), null)
 }

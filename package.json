@@ -2,6 +2,9 @@
   "name": "runomics",
   "version": "3.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "prepare:data": "dotenv -e .env.local -- node scripts/prepare-data.mjs",
     "maplibre:worker": "node scripts/copy-maplibre-worker.mjs",
@@ -12,6 +15,7 @@
     "start": "next start",
     "prelint": "npm run prepare:data",
     "lint": "eslint",
+    "verify:private-data": "node scripts/verify_no_private_data.mjs",
     "pretypecheck": "npm run prepare:data",
     "typecheck": "tsc --noEmit",
     "tokens": "node scripts/generate-tokens.mjs",

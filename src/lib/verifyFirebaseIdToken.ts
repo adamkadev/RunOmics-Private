@@ -36,15 +36,27 @@ function cacheTtlMs(response: Response): number {
   return maxAge ? Number(maxAge) * 1000 : DEFAULT_CERT_TTL_MS
 }
 
-async function googleCerts(now: number): Promise<Record<string, string>> {
-  if (cached && cached.expiresAt > now) return cached.certs
-
+async function refreshCerts(now: number): Promise<Record<string, string>> {
   const response = await fetch(CERTS_URL)
   if (!response.ok) throw new Error(`fetching Google certs failed with ${response.status}`)
 
   const certs = (await response.json()) as Record<string, string>
   cached = { certs, expiresAt: now + cacheTtlMs(response) }
   return certs
+}
+
+/**
+ * Google rotates signing keys with an overlap, so a token can arrive signed by
+ * one the cached map predates. Only a cached miss is worth a second look.
+ */
+async function certFor(kid: string, now: number): Promise<string | undefined> {
+  const cachedCerts = cached && cached.expiresAt > now ? cached.certs : null
+  const certs = cachedCerts ?? (await refreshCerts(now))
+  if (certs[kid]) return certs[kid]
+
+  // A miss against the cache may just be a key newer than it. A miss against a
+  // map we only just fetched is the real answer.
+  return cachedCerts ? (await refreshCerts(now))[kid] : undefined
 }
 
 export interface FirebaseIdTokenClaims extends jwt.JwtPayload {
@@ -61,7 +73,7 @@ export async function verifyFirebaseIdToken(
   const kid = decoded && typeof decoded !== 'string' ? decoded.header.kid : undefined
   if (!kid) throw new Error('token has no key id')
 
-  const cert = (await googleCerts(Date.now()))[kid]
+  const cert = await certFor(kid, Date.now())
   if (!cert) throw new Error('no matching Google certificate for this key id')
 
   const payload = jwt.verify(idToken, cert, {

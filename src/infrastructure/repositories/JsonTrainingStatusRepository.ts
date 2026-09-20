@@ -1,5 +1,5 @@
-import fs from 'fs'
 import { dataPath } from '../dataPath'
+import { readJsonFile } from '../readJsonFile'
 
 export interface TrainingStatusDay {
   date: string
@@ -18,14 +18,7 @@ type StoredDays = Record<string, Omit<TrainingStatusDay, 'date'>>
 type StoredFile = { days?: StoredDays }
 
 function readFile(): StoredFile {
-  const filePath = dataPath('training_status.json')
-  if (!fs.existsSync(filePath)) return {}
-
-  try {
-    return JSON.parse(fs.readFileSync(filePath, 'utf-8')) as StoredFile
-  } catch {
-    return {}
-  }
+  return readJsonFile<StoredFile>(dataPath('training_status.json'), {})
 }
 
 function toSeries(stored: StoredDays | undefined): TrainingStatusDay[] {

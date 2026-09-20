@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -12,6 +11,7 @@ import httpx
 from data_directory import get_data_dir
 from .client import GarminAPIError, GarminClient
 from .retry import retry_transient
+from repository.history_file import read_history_section, write_history
 
 _PATH = get_data_dir() / "fitness_age_history.json"
 _WEEKS = 52
@@ -53,14 +53,7 @@ def normalize_weekly_fitness_age(rows: Any) -> dict[str, dict[str, Any]]:
 
 
 def _load_existing() -> dict[str, dict[str, Any]]:
-    if not _PATH.exists():
-        return {}
-    try:
-        payload = json.loads(_PATH.read_text())
-    except Exception:
-        return {}
-    weeks = payload.get("weeks") if isinstance(payload, dict) else None
-    return weeks if isinstance(weeks, dict) else {}
+    return read_history_section(_PATH, "weeks")
 
 
 def sync_fitness_age_history(client: GarminClient, today: date | None = None) -> int:
@@ -82,7 +75,6 @@ def sync_fitness_age_history(client: GarminClient, today: date | None = None) ->
         return len(existing)
 
     merged = {**existing, **fetched}
-    _PATH.parent.mkdir(parents=True, exist_ok=True)
-    _PATH.write_text(json.dumps({"weeks": dict(sorted(merged.items()))}, indent=2) + "\n")
+    write_history(_PATH, {"weeks": dict(sorted(merged.items()))})
     print(f"  {len(fetched)} weekly sample(s) refreshed, {len(merged)} total.")
     return len(merged)

@@ -33,6 +33,7 @@
 
 # garmin FIT binaries - cached by GitHub Actions, not tracked in git
 /public/fit/
+/.fit-cache/
 
 # maplibre's worker + shared module, copied out of node_modules at build time
 # (npm run maplibre:worker) so they stay in step with the installed version

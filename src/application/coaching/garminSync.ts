@@ -28,18 +28,38 @@ function completedPrescriptionIds(evaluations: WorkoutEvaluation[]): Set<string>
   )
 }
 
+/**
+ * The dates this run may touch, resolved once and then the only thing consulted.
+ * `--from` never reaches back before today: the past is already run.
+ */
+interface SyncRange {
+  contains(date: string): boolean
+}
+
+function syncRange({ today, from, to }: GarminSyncWindow): SyncRange {
+  const start = from && from > today ? from : today
+  return { contains: (date) => date >= start && (to === undefined || date <= to) }
+}
+
 export function selectSyncableWorkouts(
   plan: CoachingPlan,
   evaluations: WorkoutEvaluation[],
   window: GarminSyncWindow,
 ): WorkoutPrescription[] {
+  return workoutsWithin(plan, evaluations, syncRange(window))
+}
+
+function workoutsWithin(
+  plan: CoachingPlan,
+  evaluations: WorkoutEvaluation[],
+  range: SyncRange,
+): WorkoutPrescription[] {
   const completed = completedPrescriptionIds(evaluations)
-  const from = window.from && window.from > window.today ? window.from : window.today
   return plan.weeks
     .flatMap((week) => week.workouts)
     .filter((workout) => workout.status === 'prescribed' || workout.status === 'adjusted')
     .filter((workout) => !completed.has(workout.id))
-    .filter((workout) => workout.date >= from && (!window.to || workout.date <= window.to))
+    .filter((workout) => range.contains(workout.date))
     .sort((left, right) => left.date.localeCompare(right.date) || left.id.localeCompare(right.id))
 }
 
@@ -117,14 +137,15 @@ function operationFor(
   return { ...base, action: 'keep', payload, contentHash, reason: null }
 }
 
+/** Same range as the selection, or an entry outside it looks like one that left the plan. */
 function deletions(
   state: GarminSyncState,
   syncedIds: Set<string>,
-  today: string,
+  range: SyncRange,
 ): GarminSyncOperation[] {
   return state.entries
     .filter((entry) => !syncedIds.has(entry.prescriptionId))
-    .filter((entry) => entry.date >= today)
+    .filter((entry) => range.contains(entry.date))
     .map((entry) => ({
       action: 'delete' as const,
       date: entry.date,
@@ -158,11 +179,12 @@ export function buildGarminSyncPlan(
   const current = state ?? emptyGarminSyncState()
   const known = current.planId === null || current.planId === plan.id ? entriesByPrescription(current) : new Map()
 
-  const workouts = selectSyncableWorkouts(plan, evaluations, window)
+  const range = syncRange(window)
+  const workouts = workoutsWithin(plan, evaluations, range)
   const operations = workouts.map((workout) => operationFor(workout, plan, known.get(workout.id) ?? null, options))
   const syncedIds = new Set(workouts.map((workout) => workout.id))
 
-  const all = [...operations, ...deletions(current, syncedIds, window.today)].sort(
+  const all = [...operations, ...deletions(current, syncedIds, range)].sort(
     (left, right) =>
       left.date.localeCompare(right.date) ||
       ACTION_ORDER[left.action] - ACTION_ORDER[right.action] ||

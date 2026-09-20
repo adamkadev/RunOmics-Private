@@ -8,13 +8,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
+from data_directory import get_fit_cache_dir
 from processing.fit_parser import parse_fit
 from processing.activity_type import infer_type_with_source
 from processing.mapper import _decimate_list, _MAX_CHART_POINTS
 from processing.privacy import crop_privacy_zone
 from repository.json_store import JsonActivityStore
 
-_FIT_DIR = Path(__file__).parent.parent / "public" / "fit"
+_FIT_DIR = get_fit_cache_dir()
 
 
 def main() -> int:

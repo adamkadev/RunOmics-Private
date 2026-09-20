@@ -1,5 +1,5 @@
-import fs from 'fs'
 import { dataPath } from '../dataPath'
+import { readJsonFile } from '../readJsonFile'
 
 export interface Vo2maxSample {
   date: string
@@ -15,15 +15,9 @@ export interface Vo2maxSamples {
 type Stored = { months?: Record<string, Vo2maxSample>; days?: Record<string, Vo2maxSample> }
 
 export function getVo2maxSamples(): Vo2maxSamples {
-  const filePath = dataPath('vo2max_history.json')
-  if (!fs.existsSync(filePath)) return { months: [], days: [] }
+  const stored = readJsonFile<Stored>(dataPath('vo2max_history.json'), {})
 
-  try {
-    const stored = JSON.parse(fs.readFileSync(filePath, 'utf-8')) as Stored
-    return { months: byDate(stored.months), days: byDate(stored.days) }
-  } catch {
-    return { months: [], days: [] }
-  }
+  return { months: byDate(stored.months), days: byDate(stored.days) }
 }
 
 function byDate(samples: Record<string, Vo2maxSample> | undefined): Vo2maxSample[] {

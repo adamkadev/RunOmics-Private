@@ -16,3 +16,14 @@ def get_data_dir() -> Path:
     if configured:
         return Path(configured).expanduser().resolve()
     return _REPOSITORY_ROOT / "data"
+
+
+def get_fit_cache_dir() -> Path:
+    """Where the raw Garmin .fit downloads are cached.
+
+    Never under public/: these are the source binaries, still carrying the GPS
+    samples that crop_privacy_zone removes from the derived route, and
+    everything under public/ is served as a static asset.
+    """
+
+    return _REPOSITORY_ROOT / ".fit-cache"

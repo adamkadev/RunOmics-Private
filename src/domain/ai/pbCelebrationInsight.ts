@@ -1,17 +1,15 @@
 import type { RecordEntry } from '@/application/usecases/GetRecords'
 import { insightHash } from './insightHash'
+import { isRecentRecord } from './celebrationWindow'
 import { avoidClause, systemInstruction } from './prompt'
 import { formatClock } from '@/lib/formatters'
 
 export const PB_CELEBRATION_SURFACE = 'pbCelebration'
 export const PB_CELEBRATION_LIMITS = { headline: 48, body: 130 }
 
-export const CELEBRATION_WINDOW_DAYS = 3
-
 export function celebratedRecord(record: RecordEntry | null, now: Date): RecordEntry | null {
   if (!record?.activityId || !record.date || record.seconds === null) return null
-  const days = (now.getTime() - new Date(record.date + 'T00:00:00').getTime()) / 86_400_000
-  return days >= 0 && days <= CELEBRATION_WINDOW_DAYS ? record : null
+  return isRecentRecord(record.date, now) ? record : null
 }
 
 export interface PbCelebrationContext {

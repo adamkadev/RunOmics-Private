@@ -1,16 +1,12 @@
-import fs from 'fs'
 import { dataPath } from '../dataPath'
+import { readJsonFile } from '../readJsonFile'
 
 let cache: Record<string, unknown> | null = null
 
 function load(): Record<string, unknown> {
   if (cache) return cache
 
-  try {
-    cache = JSON.parse(fs.readFileSync(dataPath('location-overrides.json'), 'utf-8')) as Record<string, unknown>
-  } catch {
-    cache = {}
-  }
+  cache = readJsonFile<Record<string, unknown>>(dataPath('location-overrides.json'), {})
   return cache
 }
 

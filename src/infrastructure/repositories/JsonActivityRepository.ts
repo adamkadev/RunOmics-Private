@@ -7,15 +7,19 @@ const DEFAULT_DIR = dataPath('activities')
 
 let cache: Activity[] | null = null
 
-function readJson<T>(filePath: string): T {
+/**
+ * Not `readJsonFile`: the index IS the dataset, and an empty fallback would
+ * publish a complete, confident, entirely wrong app.
+ */
+function readJsonOrThrow<T>(filePath: string): T {
   return JSON.parse(fs.readFileSync(filePath, 'utf-8')) as T
 }
 
 function readActivities(dirPath: string): Activity[] {
-  const { months } = readJson<{ months: string[] }>(path.join(dirPath, 'index.json'))
+  const { months } = readJsonOrThrow<{ months: string[] }>(path.join(dirPath, 'index.json'))
 
   return months
-    .flatMap((month) => readJson<{ activities: Activity[] }>(path.join(dirPath, `${month}.json`)).activities)
+    .flatMap((month) => readJsonOrThrow<{ activities: Activity[] }>(path.join(dirPath, `${month}.json`)).activities)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 }
 

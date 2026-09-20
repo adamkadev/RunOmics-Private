@@ -16,9 +16,21 @@ interface BridgeResponse {
   items?: { scheduleId: string; workoutId: string; date: string }[]
 }
 
+interface Bridge {
+  child: BridgeProcess
+  lines: AsyncIterator<string>
+  /**
+   * `spawn` reports a missing interpreter asynchronously, and readline's async
+   * iterator never ends on a destroyed stdin - so a dead bridge is something
+   * every read has to race, not something a listener can throw out of.
+   */
+  died: Promise<never>
+  /** Resolves when the child exits: its error if the code was non-zero, else null. */
+  ended: Promise<Error | null>
+}
+
 export class PythonGarminGateway implements GarminWorkoutGateway {
-  private child: BridgeProcess | null = null
-  private lines: AsyncIterator<string> | null = null
+  private bridge: Bridge | null = null
   private queue: Promise<unknown> = Promise.resolve()
 
   constructor(
@@ -26,24 +38,54 @@ export class PythonGarminGateway implements GarminWorkoutGateway {
     private readonly python = process.env.RUNOMICS_PYTHON?.trim() || 'python3',
   ) {}
 
-  private start(): { child: BridgeProcess; lines: AsyncIterator<string> } {
-    if (this.child && this.lines) return { child: this.child, lines: this.lines }
+  private start(): Bridge {
+    if (this.bridge) return this.bridge
 
     const child = spawn(this.python, [this.scriptPath], { stdio: ['pipe', 'pipe', 'inherit'] })
-    child.on('error', (error) => {
-      throw new Error(`Could not start the Garmin bridge (${this.python}): ${error.message}`)
+
+    let announceExit: (error: Error | null) => void = () => {}
+    const ended = new Promise<Error | null>((resolve) => {
+      announceExit = resolve
     })
-    this.child = child
-    this.lines = readline.createInterface({ input: child.stdout, crlfDelay: Infinity })[Symbol.asyncIterator]()
-    return { child, lines: this.lines }
+
+    const died = new Promise<never>((_, reject) => {
+      child.on('error', (error) => {
+        const failure = new Error(`Could not start the Garmin bridge (${this.python}): ${error.message}`)
+        announceExit(failure)
+        reject(failure)
+      })
+      child.on('exit', (code, signal) => {
+        if (code === 0) {
+          announceExit(null)
+          return
+        }
+        const failure = new Error(
+          `The Garmin bridge exited ${signal ? `on ${signal}` : `with code ${code}`} - see its output above.`
+        )
+        announceExit(failure)
+        reject(failure)
+      })
+    })
+    // Both swallow-handlers exist so a failure with no read in flight is not an
+    // unhandled rejection, and an EPIPE write is not a fatal stream error.
+    died.catch(() => {})
+    child.stdin.on('error', () => {})
+
+    const lines = readline.createInterface({ input: child.stdout, crlfDelay: Infinity })[Symbol.asyncIterator]()
+    this.bridge = { child, lines, died, ended }
+    return this.bridge
   }
 
   private send(request: Record<string, unknown>): Promise<BridgeResponse> {
     const run = this.queue.then(async () => {
-      const { child, lines } = this.start()
+      const { child, lines, died, ended } = this.start()
       child.stdin.write(`${JSON.stringify(request)}\n`)
-      const next = await lines.next()
-      if (next.done) throw new Error('The Garmin bridge closed before answering')
+
+      const next = await Promise.race([lines.next(), died.catch((error: Error) => error)])
+      if (next instanceof Error) throw next
+      // stdout closing can beat the 'exit' event, so wait for the real reason
+      // rather than racing it.
+      if (next.done) throw (await ended) ?? new Error('The Garmin bridge closed before answering')
 
       const response = JSON.parse(next.value) as BridgeResponse
       if (!response.ok) {
@@ -85,8 +127,7 @@ export class PythonGarminGateway implements GarminWorkoutGateway {
   }
 
   close(): void {
-    this.child?.stdin.end()
-    this.child = null
-    this.lines = null
+    this.bridge?.child.stdin.end()
+    this.bridge = null
   }
 }
