@@ -93,6 +93,7 @@ import {
 import { BACKFILL_POOL, MODEL_POOL, dailyBudget, spendField } from '@/domain/ai/budget'
 import { openSpender, type Spender } from '@/lib/aiSpend'
 import { generateInsight, type Insight, type InsightRequest } from '@/lib/gemini'
+import { sendPushToAllDevices } from '@/lib/sendPushNotification'
 
 export const maxDuration = 300
 
@@ -198,7 +199,7 @@ export async function POST(req: NextRequest) {
 
     const fresh = limit === 0 ? [] : queue.fresh.slice(0, FRESH_RUN_VERDICTS_PER_RUN)
 
-    const freshVerdicts = await writeVerdicts(spender, fresh, written, phrasing, MODEL_POOL)
+    const freshVerdicts = await writeVerdicts(spender, fresh, written, phrasing, MODEL_POOL, true)
     const today = await generateToday(spender)
     const weekPurpose = await generateWeekPurpose(spender)
     const season = await generateSeason(spender)
@@ -406,7 +407,8 @@ async function writeVerdicts(
   pending: RunVerdictContext[],
   written: Insight[],
   phrasing: VerdictPhrasing[],
-  pool: string[]
+  pool: string[],
+  notify = false
 ) {
   const before = written.length
   const failures: string[] = []
@@ -436,7 +438,28 @@ async function writeVerdicts(
     )
     revalidatePath(`/activities/${context.activity.id}`)
     written.push(attempt.insight)
+    if (notify) await notifyFreshVerdict(attempt.insight)
   }
 
   return { generated: written.length - before, failures }
+}
+
+/**
+ * The push for a run that just got its AI verdict - the payoff the ~5-minute
+ * sync-to-verdict wait exists for, sent the moment it lands rather than
+ * making the shortcut or the Settings card the only way to find out.
+ *
+ * Only `writeVerdicts(..., true)` ever calls this, and that's only the fresh
+ * pass: the backfill pass covers runs up to 90 days old, and a push about one
+ * of those in the middle of the night would be noise, not news.
+ *
+ * A push failure must never fail the sync it is reporting on - the verdict is
+ * already saved and the activity page already has it either way.
+ */
+export async function notifyFreshVerdict(insight: Insight): Promise<void> {
+  try {
+    await sendPushToAllDevices(insight.headline, insight.body)
+  } catch (error) {
+    console.error('[ai-insights] push notification failed', error)
+  }
 }
