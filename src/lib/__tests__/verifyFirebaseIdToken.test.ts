@@ -164,11 +164,6 @@ describe('verifyFirebaseIdToken', () => {
   })
 
   it('refetches the certs when a token arrives signed by a key it has never seen', async () => {
-    // Google rotates signing keys on its own schedule, and a token signed with
-    // the new one arrives while the old cert map is still inside its TTL -
-    // that overlap is the point of the rotation. Trusting the cache blindly
-    // turned it into "no matching Google certificate" and locked the owner out
-    // of their own Settings until the TTL ran down.
     const rotated = generateKeyPairSync('rsa', { modulusLength: 2048 })
     const rotatedPublic = rotated.publicKey.export({ type: 'spki', format: 'pem' }).toString()
     const rotatedPrivate = rotated.privateKey.export({ type: 'pkcs8', format: 'pem' }).toString()

@@ -1,6 +1,6 @@
 import type { RecordEntry } from '@/application/usecases/GetRecords'
 import { insightHash } from './insightHash'
-import { daysSinceRecordDate, isWithinCelebrationWindow } from './celebrationWindow'
+import { isRecentRecord } from './celebrationWindow'
 import { avoidClause, systemInstruction } from './prompt'
 import { formatClock } from '@/lib/formatters'
 
@@ -9,7 +9,7 @@ export const PB_CELEBRATION_LIMITS = { headline: 48, body: 130 }
 
 export function celebratedRecord(record: RecordEntry | null, now: Date): RecordEntry | null {
   if (!record?.activityId || !record.date || record.seconds === null) return null
-  return isWithinCelebrationWindow(daysSinceRecordDate(record.date, now)) ? record : null
+  return isRecentRecord(record.date, now) ? record : null
 }
 
 export interface PbCelebrationContext {

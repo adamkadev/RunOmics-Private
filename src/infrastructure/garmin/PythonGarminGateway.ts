@@ -16,78 +16,76 @@ interface BridgeResponse {
   items?: { scheduleId: string; workoutId: string; date: string }[]
 }
 
-export class PythonGarminGateway implements GarminWorkoutGateway {
-  private child: BridgeProcess | null = null
-  private lines: AsyncIterator<string> | null = null
-  private queue: Promise<unknown> = Promise.resolve()
-
+interface Bridge {
+  child: BridgeProcess
+  lines: AsyncIterator<string>
   /**
-   * Settles only if the bridge dies, and only ever by rejecting.
-   *
-   * `spawn` reports a missing interpreter asynchronously, on the child's
-   * 'error' event - long after `start()` has returned. Throwing from inside
-   * that listener rejects nothing: it escapes into the event loop as an
-   * uncaught exception and takes the whole CLI down, so "python3 is not
-   * installed" reached the operator as a stack trace that never mentioned
-   * Garmin. Nor is closing stdout enough to unblock the reader - readline's
-   * async iterator does not finish on a destroyed input, so the pending
-   * `lines.next()` simply hangs forever.
-   *
-   * So the death of the bridge is a promise in its own right, and every read
-   * races the answer against it.
+   * `spawn` reports a missing interpreter asynchronously, and readline's async
+   * iterator never ends on a destroyed stdin - so a dead bridge is something
+   * every read has to race, not something a listener can throw out of.
    */
-  private died: Promise<never> | null = null
+  died: Promise<never>
+  /** Resolves when the child exits: its error if the code was non-zero, else null. */
+  ended: Promise<Error | null>
+}
+
+export class PythonGarminGateway implements GarminWorkoutGateway {
+  private bridge: Bridge | null = null
+  private queue: Promise<unknown> = Promise.resolve()
 
   constructor(
     private readonly scriptPath = 'scripts/garmin/sync_bridge.py',
     private readonly python = process.env.RUNOMICS_PYTHON?.trim() || 'python3',
   ) {}
 
-  private start(): { child: BridgeProcess; lines: AsyncIterator<string>; died: Promise<never> } {
-    if (this.child && this.lines && this.died) {
-      return { child: this.child, lines: this.lines, died: this.died }
-    }
+  private start(): Bridge {
+    if (this.bridge) return this.bridge
 
     const child = spawn(this.python, [this.scriptPath], { stdio: ['pipe', 'pipe', 'inherit'] })
 
-    this.died = new Promise<never>((_, reject) => {
+    let announceExit: (error: Error | null) => void = () => {}
+    const ended = new Promise<Error | null>((resolve) => {
+      announceExit = resolve
+    })
+
+    const died = new Promise<never>((_, reject) => {
       child.on('error', (error) => {
-        reject(new Error(`Could not start the Garmin bridge (${this.python}): ${error.message}`))
+        const failure = new Error(`Could not start the Garmin bridge (${this.python}): ${error.message}`)
+        announceExit(failure)
+        reject(failure)
       })
-      // An interpreter that starts and then dies - a missing dependency, a
-      // traceback on import - used to surface only as "closed before
-      // answering", which reads like a Garmin problem rather than a local one.
       child.on('exit', (code, signal) => {
-        if (code === 0) return
-        reject(
-          new Error(
-            `The Garmin bridge exited ${signal ? `on ${signal}` : `with code ${code}`} - see its output above.`
-          )
+        if (code === 0) {
+          announceExit(null)
+          return
+        }
+        const failure = new Error(
+          `The Garmin bridge exited ${signal ? `on ${signal}` : `with code ${code}`} - see its output above.`
         )
+        announceExit(failure)
+        reject(failure)
       })
     })
-    // The rejection is consumed by whichever read races it. Claiming it here
-    // too keeps a failure with no read in flight from being reported as an
-    // unhandled rejection.
-    this.died.catch(() => {})
-
-    // Writing to the stdin of a process that never started raises EPIPE on the
-    // stream, and an unhandled 'error' on a stream is fatal. The death promise
-    // is already carrying the real diagnosis.
+    // Both swallow-handlers exist so a failure with no read in flight is not an
+    // unhandled rejection, and an EPIPE write is not a fatal stream error.
+    died.catch(() => {})
     child.stdin.on('error', () => {})
 
-    this.child = child
-    this.lines = readline.createInterface({ input: child.stdout, crlfDelay: Infinity })[Symbol.asyncIterator]()
-    return { child, lines: this.lines, died: this.died }
+    const lines = readline.createInterface({ input: child.stdout, crlfDelay: Infinity })[Symbol.asyncIterator]()
+    this.bridge = { child, lines, died, ended }
+    return this.bridge
   }
 
   private send(request: Record<string, unknown>): Promise<BridgeResponse> {
     const run = this.queue.then(async () => {
-      const { child, lines, died } = this.start()
+      const { child, lines, died, ended } = this.start()
       child.stdin.write(`${JSON.stringify(request)}\n`)
 
-      const next = await Promise.race([lines.next(), died])
-      if (next.done) throw new Error('The Garmin bridge closed before answering')
+      const next = await Promise.race([lines.next(), died.catch((error: Error) => error)])
+      if (next instanceof Error) throw next
+      // stdout closing can beat the 'exit' event, so wait for the real reason
+      // rather than racing it.
+      if (next.done) throw (await ended) ?? new Error('The Garmin bridge closed before answering')
 
       const response = JSON.parse(next.value) as BridgeResponse
       if (!response.ok) {
@@ -129,9 +127,7 @@ export class PythonGarminGateway implements GarminWorkoutGateway {
   }
 
   close(): void {
-    this.child?.stdin.end()
-    this.child = null
-    this.lines = null
-    this.died = null
+    this.bridge?.child.stdin.end()
+    this.bridge = null
   }
 }

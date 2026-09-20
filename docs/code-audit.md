@@ -153,6 +153,12 @@ guard against committing the real dataset, a service-account key or an API key
 into a repository whose entire privacy model is "the data lives somewhere else"
 — and nothing ran it. It is now `npm run verify:private-data` and a CI step.
 
+**The three reminder workflows were byte-identical** apart from a name, a cron,
+an endpoint and a label — including the profile guard that keeps one athlete's
+reminder off another athlete's deployment, triplicated. They now call one
+`internal-notify.yml` via `workflow_call`: 126 lines of YAML become 44, and that
+guard is defined once.
+
 **A routine Google key rotation locked the owner out.** `verifyFirebaseIdToken`
 cached the cert map for an hour and never refetched on an unknown `kid`. Google
 rotates signing keys with an overlap, so a token signed with the new key arrives

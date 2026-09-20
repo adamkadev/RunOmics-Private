@@ -16,7 +16,6 @@ stored ones, since Garmin revises recent estimates as new activities land.
 
 from __future__ import annotations
 
-import json
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any

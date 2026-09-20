@@ -18,8 +18,7 @@ export function getAllPlannedWorkouts(dirPath?: string): PlannedWorkout[] {
 
   const files = fs.readdirSync(dir).filter((f) => f.endsWith('.json') && f !== 'index.json')
 
-  // Per file, not per directory: one month the sync left half-written should
-  // cost the plan that month, not every month.
+  // Per file, so one half-written month costs the plan that month only.
   const planned = files
     .flatMap((file) => readJsonFile<{ planned?: PlannedWorkout[] }>(path.join(dir, file), {}).planned ?? [])
     .sort((a, b) => a.date.localeCompare(b.date))

@@ -7,6 +7,7 @@ import { t } from '@/i18n'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { Toast, useToast } from '@/components/ui/Toast'
 import { saveFileWithFallback } from '@/lib/fileExport'
+import { authorizedFetch } from '@/lib/ownerFetch'
 import { formatDate, formatRelativeAgo } from '@/lib/formatters'
 
 export interface SyncDevice {
@@ -42,9 +43,7 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device, user }: Pr
   async function handleExport() {
     setLoading(true)
     try {
-      const res = await fetch('/api/activities/export', {
-        headers: { authorization: `Bearer ${await user.getIdToken()}` },
-      })
+      const res = await authorizedFetch(user, '/api/activities/export')
       if (!res.ok) throw new Error(`Export failed with ${res.status}`)
       const workbook = await res.blob()
       const stamp = new Date().toISOString().slice(0, 10)

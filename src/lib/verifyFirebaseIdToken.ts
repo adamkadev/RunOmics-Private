@@ -36,7 +36,7 @@ function cacheTtlMs(response: Response): number {
   return maxAge ? Number(maxAge) * 1000 : DEFAULT_CERT_TTL_MS
 }
 
-async function fetchCerts(now: number): Promise<Record<string, string>> {
+async function refreshCerts(now: number): Promise<Record<string, string>> {
   const response = await fetch(CERTS_URL)
   if (!response.ok) throw new Error(`fetching Google certs failed with ${response.status}`)
 
@@ -45,31 +45,18 @@ async function fetchCerts(now: number): Promise<Record<string, string>> {
   return certs
 }
 
-async function googleCerts(now: number): Promise<Record<string, string>> {
-  if (cached && cached.expiresAt > now) return cached.certs
-  return fetchCerts(now)
-}
-
 /**
- * The cert for this token's key id, refetching once if the cache has never
- * heard of it.
- *
- * Google rotates these keys on its own schedule, and a token signed with a new
- * one arrives before the cached map expires - which is the whole point of the
- * rotation overlap. Trusting the cache blindly turned that routine event into
- * "no matching Google certificate", i.e. the owner locked out of their own
- * Settings page for up to the remaining TTL, with nothing to do but wait.
- *
- * An unknown kid is also what a forged token looks like, so the refetch happens
- * at most once per unknown kid per cache generation: the second lookup is
- * against a map that was just fetched, and failing it is a real answer.
+ * Google rotates signing keys with an overlap, so a token can arrive signed by
+ * one the cached map predates. Only a cached miss is worth a second look.
  */
 async function certFor(kid: string, now: number): Promise<string | undefined> {
-  const certs = await googleCerts(now)
+  const cachedCerts = cached && cached.expiresAt > now ? cached.certs : null
+  const certs = cachedCerts ?? (await refreshCerts(now))
   if (certs[kid]) return certs[kid]
 
-  if (cached && cached.expiresAt > now) return (await fetchCerts(now))[kid]
-  return undefined
+  // A miss against the cache may just be a key newer than it. A miss against a
+  // map we only just fetched is the real answer.
+  return cachedCerts ? (await refreshCerts(now))[kid] : undefined
 }
 
 export interface FirebaseIdTokenClaims extends jwt.JwtPayload {

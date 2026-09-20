@@ -15,12 +15,11 @@ interface MockUser {
 }
 
 let mockUser: MockUser | null = null
-let mockStoredNote: { note: string; tags: string[] } | null = null
 let mockAllNotes: { note: string; tags: string[] }[] = []
-// Keyed by activity id, for the navigation tests: the default mock ignores the
-// id entirely, which is exactly what hid the cross-activity bleed below.
-let mockNotesById: Record<string, { note: string; tags: string[] }> | null = null
+let mockNotesById: Record<string, { note: string; tags: string[] }> = {}
 let mockLastRequestedId = ''
+
+const ACTIVITY_ID = 'a1'
 
 function signedIn(email: string, claims: Record<string, unknown> = {}): MockUser {
   return { email, getIdTokenResult: () => Promise.resolve({ claims }) }
@@ -46,7 +45,7 @@ vi.mock('firebase/firestore', () => ({
   },
   collection: () => ({}),
   getDoc: async (ref: { id: string }) => {
-    const stored = mockNotesById ? (mockNotesById[ref.id] ?? null) : mockStoredNote
+    const stored = mockNotesById[ref.id] ?? null
     return { exists: () => stored !== null, data: () => stored }
   },
   getDocs: async () => ({ docs: mockAllNotes.map((note) => ({ data: () => note })) }),
@@ -58,14 +57,14 @@ async function openNotes() {
   await userEvent.click(toggle)
 }
 
+beforeEach(() => {
+  mockUser = null
+  mockAllNotes = []
+  mockNotesById = {}
+  mockLastRequestedId = ''
+})
+
 describe('ActivityNotes owner gate', () => {
-  beforeEach(() => {
-    mockUser = null
-    mockStoredNote = null
-    mockAllNotes = []
-    mockNotesById = null
-    mockLastRequestedId = ''
-  })
 
   it('renders nothing for a signed-out visitor when the activity has no note', async () => {
     const { container } = render(<ActivityNotes activityId="a1" />)
@@ -73,7 +72,7 @@ describe('ActivityNotes owner gate', () => {
   })
 
   it('shows the read-only note to a visitor when one exists', async () => {
-    mockStoredNote = { note: 'Great tempo run', tags: ['tempo'] }
+    mockNotesById = { [ACTIVITY_ID]: { note: 'Great tempo run', tags: ['tempo'] } }
     render(<ActivityNotes activityId="a1" />)
     await openNotes()
 
@@ -97,7 +96,7 @@ describe('ActivityNotes owner gate', () => {
 
   it('does not grant the editor on a matching email alone', async () => {
     mockUser = signedIn(OWNER_EMAIL)
-    mockStoredNote = { note: 'Great tempo run', tags: [] }
+    mockNotesById = { [ACTIVITY_ID]: { note: 'Great tempo run', tags: [] } }
     render(<ActivityNotes activityId="a1" />)
     await openNotes()
 
@@ -109,8 +108,6 @@ describe('ActivityNotes owner gate', () => {
 describe('ActivityNotes sheet', () => {
   beforeEach(() => {
     mockUser = signedIn('owner@example.com', { owner: true })
-    mockStoredNote = null
-    mockAllNotes = []
   })
 
   it('names itself and offers a way out that is not a guess', async () => {
@@ -156,10 +153,6 @@ describe('ActivityNotes sheet', () => {
 describe('ActivityNotes across a client-side navigation', () => {
   beforeEach(() => {
     mockUser = signedIn(OWNER_EMAIL, { owner: true })
-    mockStoredNote = null
-    mockAllNotes = []
-    mockNotesById = null
-    mockLastRequestedId = ''
   })
 
   it('does not carry one activity\'s note onto the next one', async () => {

@@ -12,7 +12,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from garmin.athlete import fetch_athlete_metrics, record_athlete_history
-from data_directory import get_data_dir
+from data_directory import get_data_dir, get_fit_cache_dir
 from garmin.client import GarminAuthError, GarminAPIError, GarminClient
 from garmin.fitness_age_history import sync_fitness_age_history
 from garmin.retry import retry_transient
@@ -30,22 +30,16 @@ from processing.weather import WeatherClient, weather_for_activity
 from repository.json_store import JsonActivityStore, PlannedWorkoutStore
 from repository.history_file import read_history, write_history
 
-# The raw FIT downloads, kept only so a reprocess or a weather backfill does not
-# have to ask Garmin for them again.
-#
-# Deliberately NOT under public/: these are the *source* binaries, holding every
-# GPS sample including the ones inside the privacy zone. crop_privacy_zone runs
-# on the derived route written into data/*.json, never on these. Everything
-# under public/ is served as a static asset, so while they lived at public/fit/
-# any dev server or preview started from a synced workspace published the
-# unredacted GPS history at /fit/<activityId>.fit - and the activity ids are
-# handed out by /api/activities.
-_FIT_DIR = Path(__file__).parent.parent / ".fit-cache"
+_FIT_DIR = get_fit_cache_dir()
 _DATA_DIR = get_data_dir()
 _SYNC_META_PATH = _DATA_DIR / "sync_meta.json"
 _ATHLETE_PATH = _DATA_DIR / "athlete.json"
 _RATE_LIMIT_PAUSE = 1.0
 _REGEAR_WINDOW_DAYS = 10
+
+# Not 2: argparse already exits 2 for a usage error, and the workflow would read
+# that as "some activities failed" and commit and deploy an unchanged workspace.
+_EXIT_PARTIAL_FAILURE = 3
 
 
 def main() -> int:
@@ -196,7 +190,7 @@ def main() -> int:
         if not args.dry_run:
             _write_sync_meta()
 
-    return 0 if failed == 0 else 2
+    return 0 if failed == 0 else _EXIT_PARTIAL_FAILURE
 
 
 def _first_activity_date(store: JsonActivityStore) -> date | None:

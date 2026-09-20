@@ -1,27 +1,10 @@
 """Reading and writing the accumulated history files.
 
-`race_predictions.json`, `threshold_history.json`, `vo2max_history.json`,
-`training_status.json` and `fitness_age_history.json` are not caches. Garmin
-only serves a rolling window - a few weeks - so each of these files is the only
-copy of everything older than that window, built up one nightly sync at a time
-over years.
-
-Every one of them was read through `except Exception: return {}` and then
-rewritten whole. Those two halves together are a data shredder: any file that
-failed to parse was silently treated as empty, the sync folded in the window
-Garmin was offering that night, and wrote the result over the top. Years of
-history became the last few weeks, with no error, no warning, and nothing left
-to recover from - the only copy had just been overwritten.
-
-The write is the other half of it: a plain `write_text` that is interrupted
-(a cancelled Actions run, a full disk, a killed process) leaves exactly the
-half-written file the reader could not parse. So the failure fed itself.
-
-Two rules here, and they only work together:
-
-  - A file that is absent is empty. A file that is present and unreadable is an
-    error, and the sync stops rather than rewriting it from a partial view.
-  - A write either lands completely or not at all.
+Garmin only serves a rolling window, so these files are the only copy of
+everything older than it. Two rules, and they only work together: a file that
+is present but unreadable is an error rather than an empty start, because the
+caller's next move is to rewrite it; and every write is atomic, because a torn
+write is what makes a file unreadable in the first place.
 """
 from __future__ import annotations
 
@@ -35,12 +18,7 @@ class HistoryFileError(RuntimeError):
 
 
 def read_history(path: Path) -> dict[str, Any]:
-    """The file's contents, `{}` if it does not exist yet.
-
-    Raises `HistoryFileError` if it exists and cannot be parsed, because the
-    caller's next move is to overwrite it - and it must not do that from an
-    empty starting point it only reached by failing to read.
-    """
+    """The file's contents, `{}` if it does not exist yet."""
     if not path.exists():
         return {}
 
@@ -49,9 +27,8 @@ def read_history(path: Path) -> dict[str, Any]:
     except (OSError, json.JSONDecodeError) as exc:
         raise HistoryFileError(
             f"{path} exists but could not be read ({exc}). Refusing to continue: "
-            f"this file is the only copy of the history older than Garmin's rolling "
-            f"window, and the next step would overwrite it with just that window. "
-            f"Restore it from the data repository's git history, then re-run."
+            f"the next step would overwrite it. Restore it from the data "
+            f"repository's git history, then re-run."
         ) from exc
 
     if not isinstance(payload, dict):
@@ -62,18 +39,25 @@ def read_history(path: Path) -> dict[str, Any]:
 
 def read_history_section(path: Path, key: str) -> dict[str, Any]:
     """One top-level object out of a history file, e.g. its `days` map."""
-    section = read_history(path).get(key)
-    return section if isinstance(section, dict) else {}
+    payload = read_history(path)
+    if key not in payload:
+        return {}
+
+    section = payload[key]
+    if not isinstance(section, dict):
+        raise HistoryFileError(
+            f"{path}[{key!r}] holds {type(section).__name__}, expected a JSON object. "
+            f"Refusing to continue: the next step would overwrite this file."
+        )
+    return section
 
 
 def write_history(path: Path, payload: dict[str, Any]) -> None:
-    """Write via a temporary file in the same directory, then rename over.
-
-    `Path.replace` is atomic within a filesystem, so a reader either sees the
-    whole previous file or the whole new one - never the truncated middle that
-    made `read_history` raise.
-    """
+    """Write via a temporary file, then rename over: readers never see a partial file."""
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(f"{path.name}.tmp")
-    tmp.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    tmp.replace(path)
+    try:
+        tmp.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        tmp.replace(path)
+    finally:
+        tmp.unlink(missing_ok=True)

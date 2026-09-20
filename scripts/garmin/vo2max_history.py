@@ -21,7 +21,6 @@ undocumented, so a failure there is a warning, not a failed sync.
 
 from __future__ import annotations
 
-import json
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any

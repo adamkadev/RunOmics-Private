@@ -88,7 +88,7 @@ class FakeGarmin implements GarminWorkoutGateway {
 }
 
 const apply = (syncPlan: ReturnType<typeof buildGarminSyncPlan>, state: GarminSyncState | null, gateway: FakeGarmin) =>
-  applyGarminSyncPlan(syncPlan, state, gateway, { now: () => NOW })
+  applyGarminSyncPlan(syncPlan, state, gateway, { now: () => NOW, persist: () => {} })
 
 const build = (coachingPlan: CoachingPlan, state: GarminSyncState | null) =>
   buildGarminSyncPlan(coachingPlan, [], state, { today: TODAY })
@@ -314,10 +314,8 @@ describe('result rendering', () => {
 
 describe('crash safety', () => {
   it('records every workout as it is pushed, not once at the end', async () => {
-    // The mapping used to be handed back only when the loop finished. A run
-    // killed after Garmin had already accepted three of four workouts left no
-    // trace of them, so the next --apply created all four again and the
-    // athlete got duplicates RunOmics could no longer see, let alone delete.
+    // A run killed mid-loop used to leave no trace of what Garmin had accepted,
+    // so the next --apply created duplicates RunOmics could no longer delete.
     const workouts = ['2026-09-08', '2026-09-09', '2026-09-10', '2026-09-11'].map((date, i) =>
       workout({ id: `w${i}`, date })
     )
@@ -333,7 +331,7 @@ describe('crash safety', () => {
     expect(checkpoints.map((state) => state.entries.length)).toEqual([1, 2, 3, 4])
   })
 
-  it('leaves the third workout recorded when the fourth is what kills the run', async () => {
+  it('keeps the workouts that got through when a later one kills the run', async () => {
     const workouts = ['2026-09-08', '2026-09-09', '2026-09-10'].map((date, i) => workout({ id: `w${i}`, date }))
     const gateway = new FakeGarmin({ rateLimitAfter: 2 })
     let latest: GarminSyncState | null = null
@@ -345,8 +343,6 @@ describe('crash safety', () => {
       },
     })
 
-    // Two got through before the rate limit; both are on record, so the next
-    // run keeps them and only creates the third.
     expect(latest).not.toBeNull()
     expect(latest!.entries.map((entry) => entry.prescriptionId)).toEqual(['w0', 'w1'])
   })
@@ -364,10 +360,4 @@ describe('crash safety', () => {
     expect(report.state.entries).toEqual(checkpoints.at(-1)!.entries)
   })
 
-  it('works unchanged with no persist callback', async () => {
-    const gateway = new FakeGarmin()
-    const report = await apply(build(plan([workout({ id: 'w0', date: '2026-09-08' })]), null), null, gateway)
-
-    expect(report.state.entries).toHaveLength(1)
-  })
 })

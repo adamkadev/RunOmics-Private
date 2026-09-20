@@ -29,18 +29,16 @@ function completedPrescriptionIds(evaluations: WorkoutEvaluation[]): Set<string>
 }
 
 /**
- * The dates this run is allowed to touch.
- *
- * `--from` never reaches back before today: the past is already run, and
- * rewriting it on someone's watch is not what a bound is for.
+ * The dates this run may touch, resolved once and then the only thing consulted.
+ * `--from` never reaches back before today: the past is already run.
  */
-function syncRange(window: GarminSyncWindow): { from: string; to?: string } {
-  const from = window.from && window.from > window.today ? window.from : window.today
-  return window.to === undefined ? { from } : { from, to: window.to }
+interface SyncRange {
+  contains(date: string): boolean
 }
 
-function withinRange(date: string, range: { from: string; to?: string }): boolean {
-  return date >= range.from && (range.to === undefined || date <= range.to)
+function syncRange({ today, from, to }: GarminSyncWindow): SyncRange {
+  const start = from && from > today ? from : today
+  return { contains: (date) => date >= start && (to === undefined || date <= to) }
 }
 
 export function selectSyncableWorkouts(
@@ -48,13 +46,20 @@ export function selectSyncableWorkouts(
   evaluations: WorkoutEvaluation[],
   window: GarminSyncWindow,
 ): WorkoutPrescription[] {
+  return workoutsWithin(plan, evaluations, syncRange(window))
+}
+
+function workoutsWithin(
+  plan: CoachingPlan,
+  evaluations: WorkoutEvaluation[],
+  range: SyncRange,
+): WorkoutPrescription[] {
   const completed = completedPrescriptionIds(evaluations)
-  const range = syncRange(window)
   return plan.weeks
     .flatMap((week) => week.workouts)
     .filter((workout) => workout.status === 'prescribed' || workout.status === 'adjusted')
     .filter((workout) => !completed.has(workout.id))
-    .filter((workout) => withinRange(workout.date, range))
+    .filter((workout) => range.contains(workout.date))
     .sort((left, right) => left.date.localeCompare(right.date) || left.id.localeCompare(right.id))
 }
 
@@ -132,24 +137,15 @@ function operationFor(
   return { ...base, action: 'keep', payload, contentHash, reason: null }
 }
 
-/**
- * A deletion is "this prescription is gone from the plan" - so it may only ever
- * be concluded about dates this run actually looked at.
- *
- * `syncedIds` holds the prescriptions inside the window, so without the same
- * range applied here every already-synced workout OUTSIDE it looked like a
- * prescription that had disappeared. `--to 2026-09-12`, read by anyone as
- * "only push up to the 12th", unscheduled and deleted the entire rest of the
- * plan from the athlete's Garmin calendar.
- */
+/** Same range as the selection, or an entry outside it looks like one that left the plan. */
 function deletions(
   state: GarminSyncState,
   syncedIds: Set<string>,
-  range: { from: string; to?: string },
+  range: SyncRange,
 ): GarminSyncOperation[] {
   return state.entries
     .filter((entry) => !syncedIds.has(entry.prescriptionId))
-    .filter((entry) => withinRange(entry.date, range))
+    .filter((entry) => range.contains(entry.date))
     .map((entry) => ({
       action: 'delete' as const,
       date: entry.date,
@@ -183,11 +179,12 @@ export function buildGarminSyncPlan(
   const current = state ?? emptyGarminSyncState()
   const known = current.planId === null || current.planId === plan.id ? entriesByPrescription(current) : new Map()
 
-  const workouts = selectSyncableWorkouts(plan, evaluations, window)
+  const range = syncRange(window)
+  const workouts = workoutsWithin(plan, evaluations, range)
   const operations = workouts.map((workout) => operationFor(workout, plan, known.get(workout.id) ?? null, options))
   const syncedIds = new Set(workouts.map((workout) => workout.id))
 
-  const all = [...operations, ...deletions(current, syncedIds, syncRange(window))].sort(
+  const all = [...operations, ...deletions(current, syncedIds, range)].sort(
     (left, right) =>
       left.date.localeCompare(right.date) ||
       ACTION_ORDER[left.action] - ACTION_ORDER[right.action] ||

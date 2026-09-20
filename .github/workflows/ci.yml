@@ -43,11 +43,6 @@ jobs:
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
 
-      # This existed and nothing ran it. It is the guard against committing the
-      # real dataset, a service-account key or an API key into a repository
-      # whose whole privacy model is "the data lives somewhere else" - which is
-      # exactly the kind of check that is worthless as a thing you remember to
-      # run by hand.
       - name: Verify no private data is committed
         run: npm run verify:private-data
 

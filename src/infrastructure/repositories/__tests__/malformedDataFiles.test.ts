@@ -5,17 +5,15 @@ vi.mock('fs', () => ({
   default: { readFileSync: vi.fn(), readdirSync: vi.fn(() => []), existsSync: vi.fn(() => true) },
 }))
 
-/**
- * What a sync interrupted mid-write leaves on disk. Before these repositories
- * shared one reader, half of them turned this into an empty section and the
- * other half threw it out of a server component, taking the whole page with
- * it - and which you got depended only on which file happened to be truncated.
- */
+/** What a sync interrupted mid-write leaves on disk. */
 const TRUNCATED = '{"years": [{"year": 2026, "targ'
+
+let warn: ReturnType<typeof vi.fn>
 
 beforeEach(() => {
   vi.resetModules()
   vi.mocked(fs.readFileSync).mockReturnValue(TRUNCATED)
+  warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
 })
 
 afterEach(() => {
@@ -23,58 +21,21 @@ afterEach(() => {
 })
 
 describe('a truncated data file degrades the section instead of the page', () => {
-  it('goals.json', async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
-    const { getGoalYears } = await import('../JsonGoalRepository')
+  it.each([
+    ['goals.json', '../JsonGoalRepository', 'getGoalYears', []],
+    ['pbs.json', '../JsonPbRepository', 'getPbYears', []],
+    ['athlete.json', '../JsonAthleteRepository', 'getAthleteProfile', {}],
+    ['race_results.json', '../JsonRaceResultRepository', 'getOfficialRaceResults', []],
+    ['upcoming_races.json', '../JsonUpcomingRaceRepository', 'getUpcomingRaceYears', []],
+    ['training_status.json', '../JsonTrainingStatusRepository', 'getTrainingStatusDays', []],
+    ['vo2max_history.json', '../JsonVo2maxHistoryRepository', 'getVo2maxSamples', { months: [], days: [] }],
+  ])('%s', async (_file, modulePath, exportName, empty) => {
+    const repository = (await import(modulePath)) as Record<string, () => unknown>
 
-    expect(getGoalYears()).toEqual([])
-    expect(warn).toHaveBeenCalled()
-  })
-
-  it('pbs.json', async () => {
-    vi.spyOn(console, 'warn').mockImplementation(() => {})
-    const { getPbYears } = await import('../JsonPbRepository')
-
-    expect(getPbYears()).toEqual([])
-  })
-
-  it('athlete.json', async () => {
-    vi.spyOn(console, 'warn').mockImplementation(() => {})
-    const { getAthleteProfile } = await import('../JsonAthleteRepository')
-
-    expect(getAthleteProfile()).toEqual({})
-  })
-
-  it('race_results.json', async () => {
-    vi.spyOn(console, 'warn').mockImplementation(() => {})
-    const { getOfficialRaceResults } = await import('../JsonRaceResultRepository')
-
-    expect(getOfficialRaceResults()).toEqual([])
-  })
-
-  it('upcoming_races.json', async () => {
-    vi.spyOn(console, 'warn').mockImplementation(() => {})
-    const { getUpcomingRaceYears } = await import('../JsonUpcomingRaceRepository')
-
-    expect(getUpcomingRaceYears()).toEqual([])
-  })
-
-  it('training_status.json', async () => {
-    vi.spyOn(console, 'warn').mockImplementation(() => {})
-    const { getTrainingStatusDays } = await import('../JsonTrainingStatusRepository')
-
-    expect(getTrainingStatusDays()).toEqual([])
-  })
-
-  it('vo2max_history.json', async () => {
-    vi.spyOn(console, 'warn').mockImplementation(() => {})
-    const { getVo2maxSamples } = await import('../JsonVo2maxHistoryRepository')
-
-    expect(getVo2maxSamples()).toEqual({ months: [], days: [] })
+    expect(repository[exportName]!()).toEqual(empty)
   })
 
   it('says which file was unreadable, rather than swallowing it', async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const { getGoalYears } = await import('../JsonGoalRepository')
     getGoalYears()
 

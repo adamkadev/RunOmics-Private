@@ -21,15 +21,7 @@ function jsonResponse(body: unknown, ok = true) {
   return { ok, status: ok ? 200 : 503, json: async () => body }
 }
 
-/**
- * The timestamp a dispatch would hand back, relative to now.
- *
- * Never a literal: the card polls until `Date.parse(since) + POLL_CEILING_MS`,
- * measured against the real clock, so a fixed date silently turns into an
- * instant timeout once the wall clock passes it - and the timeout path clears
- * the very storage key these tests assert on. A literal here made the suite
- * pass until 2026-09-20T00:12Z and fail on every run after it.
- */
+/** Never a literal: the card polls until `since + POLL_CEILING_MS` on the real clock. */
 function dispatchedJustNow(): string {
   return new Date().toISOString()
 }

@@ -22,9 +22,8 @@ class TestReadHistory:
         assert read_history(path) == {"days": {"2026-09-01": {"vo2max": 54}}}
 
     def test_refuses_a_file_that_exists_but_does_not_parse(self, tmp_path):
-        # The whole point. This used to return {} and the caller then rewrote
-        # the file with only the few weeks Garmin still serves, destroying
-        # every older entry - silently, and with no copy left to restore from.
+        # Returning {} here made the caller rewrite the file with only the weeks
+        # Garmin still serves, destroying every older entry.
         path = tmp_path / "history.json"
         path.write_text('{"days": {"2026-09-01": {"vo2ma')
 
@@ -47,6 +46,14 @@ class TestReadHistory:
         path.write_text(json.dumps({"weeks": {}}))
 
         assert read_history_section(path, "days") == {}
+
+    def test_section_of_the_wrong_type_is_an_error_not_an_empty_start(self, tmp_path):
+        # Same rule as the whole file: the caller's next move is to rewrite it.
+        path = tmp_path / "history.json"
+        path.write_text(json.dumps({"days": ["not", "a", "map"]}))
+
+        with pytest.raises(HistoryFileError):
+            read_history_section(path, "days")
 
     def test_section_propagates_an_unreadable_file(self, tmp_path):
         path = tmp_path / "history.json"
@@ -84,6 +91,7 @@ class TestWriteHistory:
 
         monkeypatch.undo()
         assert read_history(path) == {"days": {"2026-09-01": {"vo2max": 54}}}
+        assert [p.name for p in tmp_path.iterdir()] == ["history.json"]
 
     def test_writes_utf8_unescaped(self, tmp_path):
         path = tmp_path / "history.json"

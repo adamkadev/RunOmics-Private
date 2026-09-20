@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Trophy } from 'lucide-react'
 import type { RecordEntry } from '@/application/usecases/GetRecords'
 import type { Insight } from '@/lib/gemini'
-import { daysSinceRecordDate, isWithinCelebrationWindow } from '@/domain/ai/celebrationWindow'
+import { isRecentRecord } from '@/domain/ai/celebrationWindow'
 import { formatDuration, formatDistance } from '@/lib/formatters'
 import { useHaptic } from '@/lib/useHaptic'
 import { useFocusTrap } from '@/lib/useFocusTrap'
@@ -26,15 +26,13 @@ const CONFETTI = [
   { bottom: '34%', left: '84%', color: GREEN, size: 8, rotate: '-30deg' },
 ] as const
 
-function isRecent(date: string): boolean {
-  return isWithinCelebrationWindow(daysSinceRecordDate(date, new Date()))
-}
+
 
 export function CelebrationOverlay({ record, aiTake }: { record: RecordEntry | null; aiTake: Insight | null }) {
   const haptic = useHaptic()
   const trapRef = useFocusTrap<HTMLDivElement>()
 
-  const eligible = !!(record?.activityId && record.date && record.seconds !== null && isRecent(record.date))
+  const eligible = !!(record?.activityId && record.date && record.seconds !== null && isRecentRecord(record.date, new Date()))
   const storageKey = eligible ? `${STORAGE_PREFIX}${record!.activityId}-${record!.key}` : null
 
   const [visible, setVisible] = useState(

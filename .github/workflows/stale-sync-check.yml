@@ -8,41 +8,8 @@ on:
 
 jobs:
   notify:
-    runs-on: ubuntu-latest
-
-    strategy:
-      # One deployment being unreachable must not cancel the other's reminder.
-      fail-fast: false
-      matrix:
-        profile: [adam, lamiaa]
-
-    # APP_URL and INTERNAL_NOTIFY_SECRET below resolve to this profile's own
-    # deployment. See docs/personal-deployments.md.
-    environment: ${{ matrix.profile }}
-
-    steps:
-      # Repository secrets stay visible to a job that names an environment, so an
-      # unpopulated one would aim this profile's reminder at another profile's
-      # deployment. The variable proves the environment is really configured.
-      - name: Check the profile environment
-        env:
-          DECLARED_PROFILE: ${{ vars.PROFILE }}
-        run: |
-          if [ "$DECLARED_PROFILE" != "${{ matrix.profile }}" ]; then
-            echo "::error::Environment '${{ matrix.profile }}' does not declare PROFILE=${{ matrix.profile }} (got '${DECLARED_PROFILE:-unset}'). See docs/personal-deployments.md."
-            exit 1
-          fi
-
-      # APP_URL and the shared secret arrive through `env:` rather than being
-      # interpolated into the command: a `${{ secrets.* }}` inside `run:` is
-      # substituted before bash parses the line, which both puts the secret in
-      # this process's argv (readable by anything else on the runner) and makes
-      # the step's behaviour depend on the secret's own characters. sync.yml
-      # already passes it this way.
-      - name: Trigger stale sync check (${{ matrix.profile }})
-        env:
-          APP_URL: ${{ secrets.APP_URL }}
-          INTERNAL_NOTIFY_SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}
-        run: |
-          curl -fsS -X POST "$APP_URL/api/internal/stale-sync-check" \
-            -H "x-internal-secret: $INTERNAL_NOTIFY_SECRET"
+    uses: ./.github/workflows/internal-notify.yml
+    secrets: inherit
+    with:
+      endpoint: stale-sync-check
+      label: Trigger stale sync check

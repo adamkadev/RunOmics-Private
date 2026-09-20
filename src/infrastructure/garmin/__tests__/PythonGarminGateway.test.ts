@@ -2,10 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { PythonGarminGateway } from '@/infrastructure/garmin/PythonGarminGateway'
 
 /**
- * These spawn real processes rather than mocking `child_process`, because the
- * bug being pinned here was entirely about *when* Node reports a failed spawn:
- * asynchronously, on the child's 'error' event, long after `start()` returned.
- * A mock that rejects synchronously would have gone green over the broken code.
+ * Real processes, not a `child_process` mock: the bug is about *when* Node
+ * reports a failed spawn, and a mock that rejects synchronously would pass
+ * against the broken code.
  */
 describe('PythonGarminGateway failure reporting', () => {
   it('rejects the pending call when the interpreter does not exist', async () => {
@@ -25,11 +24,13 @@ describe('PythonGarminGateway failure reporting', () => {
   })
 
   it('reports a bridge that starts and then dies, instead of "closed before answering"', async () => {
-    // An interpreter that runs but fails on import is the realistic version of
-    // this: it opens stdout, writes nothing, and exits non-zero.
-    const gateway = new PythonGarminGateway('-c', 'false')
+    // The realistic version is an interpreter that fails on import: stdout
+    // opens, nothing is written, the process exits non-zero.
+    const UNUSED_SCRIPT = '-c'
+    const INTERPRETER_THAT_EXITS_NONZERO = 'false'
+    const gateway = new PythonGarminGateway(UNUSED_SCRIPT, INTERPRETER_THAT_EXITS_NONZERO)
 
-    await expect(gateway.getWorkout('1')).rejects.toThrow(/exited with code 1|closed before answering/)
+    await expect(gateway.getWorkout('1')).rejects.toThrow(/exited with code 1/)
     gateway.close()
   })
 })

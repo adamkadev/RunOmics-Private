@@ -31,14 +31,9 @@ service cloud.firestore {
     }
 
     match /activityNotes/{activityId} {
-      // `get`, not `read`. Each activity page shows its own note to any
-      // visitor, and that is one document fetched by id.
-      //
-      // `read` also grants `list`, and `list` is a very different thing: it
-      // let anyone enumerate the whole collection and walk off with every
-      // private training note in the app. The only caller that needs it is
-      // the owner's own tag autocomplete, which is already gated behind
-      // `isOwner` in the UI - so the rule now says the same thing.
+      // `read` would also grant `list`, i.e. enumerate every private note in
+      // the collection. Visitors fetch one note by id; only the owner's tag
+      // autocomplete lists them.
       allow get: if true;
       allow list: if isOwner();
 

@@ -12,10 +12,7 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     "scripts/**",
     "coverage/**",
-    // maplibre's worker bundle, copied out of node_modules by
-    // `npm run maplibre:worker` and gitignored. It only exists after a build,
-    // so linting it made `npm run lint` say different things before and after
-    // one - three warnings about minified third-party code nobody here wrote.
+    // Vendored by `npm run maplibre:worker`, so it only exists after a build.
     "public/maplibre/**",
   ]),
   {

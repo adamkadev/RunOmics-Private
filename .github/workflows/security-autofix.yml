@@ -5,10 +5,8 @@ on:
     - cron: "0 6 * * 1"
   workflow_dispatch:
 
-# A pull request, not a push to the default branch: `npm audit fix` can bump a
-# transitive dependency across a minor and the three checks below only prove the
-# tree still builds, not that the app still behaves. Opening a PR keeps the
-# branch protection and the human read that a direct push skips.
+# Opens a pull request rather than pushing: the checks below prove the tree
+# still builds, not that the app still behaves.
 permissions:
   contents: write
   pull-requests: write
@@ -67,8 +65,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # One long-lived branch, force-pushed: a weekly schedule would
-          # otherwise leave a trail of near-identical open PRs.
+          # One long-lived branch, or a weekly schedule leaves a trail of PRs.
           git checkout -B "$BRANCH"
           git add package.json package-lock.json
           git commit -m "chore(deps): apply npm audit fix"

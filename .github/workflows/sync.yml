@@ -153,13 +153,8 @@ jobs:
           sleep 3
           warp-cli --accept-tos status
 
-      # `limit` is the one free-text dispatch input here (`profile` is a choice,
-      # the other two are booleans). Interpolating it straight into `run:` let
-      # anyone who can dispatch this workflow run arbitrary shell beside
-      # GARMIN_SECRET and PRIVACY_ZONES, because Actions substitutes the value
-      # textually before bash ever parses the line. It arrives through `env:`
-      # instead, is checked against a digits-only pattern, and is carried in an
-      # array so the shell never re-splits it.
+      # Dispatch inputs arrive through `env:`, never interpolated into `run:`:
+      # Actions substitutes those textually, before bash parses the line.
       - name: Run sync
         id: sync
         env:
@@ -188,19 +183,15 @@ jobs:
             ARGS+=(--force)
           fi
 
-          # Exit 2 is sync.py's "some activities failed, the rest are already
-          # written to disk". Letting that fail the step skipped every step
-          # below it - including the commit - so a single permanently broken
-          # activity quietly stopped the dataset from ever being published
-          # again, one red scheduled run a night, forever. The good activities
-          # get committed; the run is still marked failed, at the end.
+          # Exit 3 is "some activities failed, the rest are on disk". Failing
+          # the step here would skip the commit below and discard them.
           set +e
           python scripts/sync.py "${ARGS[@]}"
           STATUS=$?
           set -e
-          echo "status=$STATUS" >> "$GITHUB_OUTPUT"
 
-          if [ "$STATUS" -eq 2 ]; then
+          if [ "$STATUS" -eq 3 ]; then
+            echo "partial_failure=true" >> "$GITHUB_OUTPUT"
             echo "::warning::Some activities failed to sync. Committing the ones that succeeded."
           elif [ "$STATUS" -ne 0 ]; then
             exit "$STATUS"
@@ -211,7 +202,7 @@ jobs:
         run: warp-cli --accept-tos disconnect || true
 
       - name: Backfill missing weather
-        if: github.event.inputs.dry_run != 'true'
+        if: inputs.dry_run != true
         continue-on-error: true
         run: python scripts/backfill_weather.py
 
@@ -318,10 +309,9 @@ jobs:
             check ai-insights 310
           done
 
-      # Last, so that a partial sync still reaches the data repository, the
-      # deployment and the post-sync checks before the run goes red.
+      # Last, so a partial sync still reaches the data repository first.
       - name: Report failed activities
-        if: always() && steps.sync.outputs.status == '2'
+        if: always() && steps.sync.outputs.partial_failure == 'true'
         run: |
           echo "::error::sync.py reported failed activities. Whatever synced successfully was committed and deployed; see the 'Run sync' log for the failures."
           exit 1

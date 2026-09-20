@@ -172,11 +172,8 @@ describe('removed prescriptions', () => {
   })
 
   it('never deletes outside the requested window', () => {
-    // `--to` reads as "only push up to this date". It used to mean "push up to
-    // this date and wipe everything after it": the window filtered the
-    // prescriptions that counted as synced, but not the mapping entries
-    // considered for deletion, so every already-pushed workout beyond `to`
-    // looked like one that had left the plan.
+    // `--to` used to filter which prescriptions counted as synced but not which
+    // mapping entries could be deleted, so everything beyond it was wiped.
     const inside = workout({ id: 'a', date: '2026-09-08' })
     const beyond = workout({ id: 'b', date: '2026-09-15' })
     const state = syncedState([
