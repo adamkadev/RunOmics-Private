@@ -33,7 +33,16 @@ jobs:
             exit 1
           fi
 
+      # APP_URL and the shared secret arrive through `env:` rather than being
+      # interpolated into the command: a `${{ secrets.* }}` inside `run:` is
+      # substituted before bash parses the line, which both puts the secret in
+      # this process's argv (readable by anything else on the runner) and makes
+      # the step's behaviour depend on the secret's own characters. sync.yml
+      # already passes it this way.
       - name: Trigger stale sync check (${{ matrix.profile }})
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          INTERNAL_NOTIFY_SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}
         run: |
-          curl -fsS -X POST "${{ secrets.APP_URL }}/api/internal/stale-sync-check" \
-            -H "x-internal-secret: ${{ secrets.INTERNAL_NOTIFY_SECRET }}"
+          curl -fsS -X POST "$APP_URL/api/internal/stale-sync-check" \
+            -H "x-internal-secret: $INTERNAL_NOTIFY_SECRET"

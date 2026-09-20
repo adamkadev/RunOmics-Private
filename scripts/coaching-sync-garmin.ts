@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import path from 'path'
+import { interopImport } from './interopImport'
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
@@ -57,12 +58,11 @@ async function main(): Promise<void> {
   const root = dataRoot(args)
   process.env.RUNOMICS_DATA_DIR = root
 
-  const { JsonCoachingRepository } = await import('@/infrastructure/repositories/JsonCoachingRepository')
-  const { JsonGarminSyncStore } = await import('@/infrastructure/repositories/JsonGarminSyncStore')
-  const { buildGarminSyncPlan, countOperations, formatGarminSyncPreview, hasGarminMutations } = await import(
-    '@/application/coaching/garminSync'
-  )
-  const { toGarminWorkoutPayload } = await import('@/application/coaching/garminWorkoutMapping')
+  const { JsonCoachingRepository } = await interopImport(import('@/infrastructure/repositories/JsonCoachingRepository'))
+  const { JsonGarminSyncStore } = await interopImport(import('@/infrastructure/repositories/JsonGarminSyncStore'))
+  const { buildGarminSyncPlan, countOperations, formatGarminSyncPreview, hasGarminMutations } =
+    await interopImport(import('@/application/coaching/garminSync'))
+  const { toGarminWorkoutPayload } = await interopImport(import('@/application/coaching/garminWorkoutMapping'))
 
   const repository = new JsonCoachingRepository(root)
   const plan = repository.getCurrentPlan()
@@ -111,10 +111,9 @@ async function main(): Promise<void> {
 
   if (!process.env.GARMIN_SECRET?.trim()) throw new Error('GARMIN_SECRET is not set; nothing was sent to Garmin')
 
-  const { applyGarminSyncPlan, formatGarminSyncResults, verifyGarminSync } = await import(
-    '@/application/coaching/garminSyncApply'
-  )
-  const { PythonGarminGateway } = await import('@/infrastructure/garmin/PythonGarminGateway')
+  const { applyGarminSyncPlan, formatGarminSyncResults, verifyGarminSync } =
+    await interopImport(import('@/application/coaching/garminSyncApply'))
+  const { PythonGarminGateway } = await interopImport(import('@/infrastructure/garmin/PythonGarminGateway'))
 
   const gateway = new PythonGarminGateway()
   try {

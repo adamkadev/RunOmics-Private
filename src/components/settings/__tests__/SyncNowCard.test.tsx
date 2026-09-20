@@ -21,6 +21,19 @@ function jsonResponse(body: unknown, ok = true) {
   return { ok, status: ok ? 200 : 503, json: async () => body }
 }
 
+/**
+ * The timestamp a dispatch would hand back, relative to now.
+ *
+ * Never a literal: the card polls until `Date.parse(since) + POLL_CEILING_MS`,
+ * measured against the real clock, so a fixed date silently turns into an
+ * instant timeout once the wall clock passes it - and the timeout path clears
+ * the very storage key these tests assert on. A literal here made the suite
+ * pass until 2026-09-20T00:12Z and fail on every run after it.
+ */
+function dispatchedJustNow(): string {
+  return new Date().toISOString()
+}
+
 function renderCard() {
   return render(<SyncNowCard user={USER} />)
 }
@@ -44,16 +57,17 @@ describe('SyncNowCard', () => {
 
   it('stores the dispatch timestamp so the button click survives a remount', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    const since = dispatchedJustNow()
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(jsonResponse({ since: '2026-09-20T00:00:00.000Z' }))
+      .mockResolvedValueOnce(jsonResponse({ since }))
       .mockResolvedValue(jsonResponse({ ...VERDICT_STATUS, ready: false, reason: 'no verdict for this run yet' }))
     vi.stubGlobal('fetch', fetchMock)
 
     renderCard()
     await user.click(screen.getByText(s.action))
 
-    await waitFor(() => expect(localStorage.getItem(STORAGE_KEY)).toBe('2026-09-20T00:00:00.000Z'))
+    await waitFor(() => expect(localStorage.getItem(STORAGE_KEY)).toBe(since))
   })
 
   it('does not persist anything when the dispatch itself fails', async () => {
@@ -71,7 +85,7 @@ describe('SyncNowCard', () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(jsonResponse({ since: '2026-09-20T00:00:00.000Z' }))
+      .mockResolvedValueOnce(jsonResponse({ since: dispatchedJustNow() }))
       .mockResolvedValue(jsonResponse(VERDICT_STATUS))
     vi.stubGlobal('fetch', fetchMock)
 

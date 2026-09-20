@@ -2,6 +2,9 @@
   "name": "runomics",
   "version": "3.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "prepare:data": "dotenv -e .env.local -- node scripts/prepare-data.mjs",
     "maplibre:worker": "node scripts/copy-maplibre-worker.mjs",

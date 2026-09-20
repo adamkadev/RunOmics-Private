@@ -153,23 +153,40 @@ jobs:
           sleep 3
           warp-cli --accept-tos status
 
+      # `limit` is the one free-text dispatch input here (`profile` is a choice,
+      # the other two are booleans). Interpolating it straight into `run:` let
+      # anyone who can dispatch this workflow run arbitrary shell beside
+      # GARMIN_SECRET and PRIVACY_ZONES, because Actions substitutes the value
+      # textually before bash ever parses the line. It arrives through `env:`
+      # instead, is checked against a digits-only pattern, and is carried in an
+      # array so the shell never re-splits it.
       - name: Run sync
         env:
           GARMIN_SECRET: ${{ secrets.GARMIN_SECRET }}
           PRIVACY_ZONES: ${{ secrets.PRIVACY_ZONES }}
           PRIVACY_RADIUS_M: ${{ secrets.PRIVACY_RADIUS_M }}
+          SYNC_LIMIT: ${{ inputs.limit }}
+          SYNC_DRY_RUN: ${{ inputs.dry_run }}
+          SYNC_FORCE: ${{ inputs.force }}
         run: |
-          ARGS=""
-          if [ -n "${{ github.event.inputs.limit }}" ]; then
-            ARGS="$ARGS --limit ${{ github.event.inputs.limit }}"
+          set -eo pipefail
+          ARGS=()
+          if [ -n "${SYNC_LIMIT:-}" ]; then
+            case "$SYNC_LIMIT" in
+              *[!0-9]*)
+                echo "::error::limit must be a whole number (got '$SYNC_LIMIT')."
+                exit 1
+                ;;
+            esac
+            ARGS+=(--limit "$SYNC_LIMIT")
           fi
-          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-            ARGS="$ARGS --dry-run"
+          if [ "${SYNC_DRY_RUN:-}" = "true" ]; then
+            ARGS+=(--dry-run)
           fi
-          if [ "${{ github.event.inputs.force }}" = "true" ]; then
-            ARGS="$ARGS --force"
+          if [ "${SYNC_FORCE:-}" = "true" ]; then
+            ARGS+=(--force)
           fi
-          python scripts/sync.py $ARGS
+          python scripts/sync.py "${ARGS[@]}"
 
       - name: Disconnect Cloudflare WARP
         if: always()

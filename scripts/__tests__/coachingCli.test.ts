@@ -26,10 +26,19 @@ function nodeArgs(...args: string[]): string[] {
 function writeKeepReview(root: string, output: string): string {
   const script = `
     (async () => {
-      const { JsonCoachingRepository } = await import('./src/infrastructure/repositories/JsonCoachingRepository.ts')
-      const { getCoachingContext } = await import('./src/application/coaching/GetCoachingContext.ts')
-      const { createWeeklyReviewProposal } = await import('./src/application/coaching/workflows.ts')
-      const { writeProposalPreview } = await import('./src/application/coaching/preview.ts')
+      // The same normalisation scripts/interopImport.ts does, inlined because
+      // this runs through \`node -e\` with no module of its own to import from:
+      // under tsx a dynamic import of a .ts file yields { default: exports }
+      // rather than hoisted named exports on Node 22.
+      const load = async (loading) => {
+        const loaded = await loading
+        const fallback = loaded.default
+        return fallback && typeof fallback === 'object' ? { ...fallback, ...loaded } : loaded
+      }
+      const { JsonCoachingRepository } = await load(import('./src/infrastructure/repositories/JsonCoachingRepository.ts'))
+      const { getCoachingContext } = await load(import('./src/application/coaching/GetCoachingContext.ts'))
+      const { createWeeklyReviewProposal } = await load(import('./src/application/coaching/workflows.ts'))
+      const { writeProposalPreview } = await load(import('./src/application/coaching/preview.ts'))
       const repository = new JsonCoachingRepository(process.env.RUNOMICS_DATA_DIR)
       const plan = repository.getCurrentPlan()
       const referenceDate = plan.block.startDate

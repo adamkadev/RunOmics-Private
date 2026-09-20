@@ -3,6 +3,7 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 import { readProposalPreview, writeProposalPreview } from '@/application/coaching/preview'
+import { interopImport } from './interopImport'
 
 const WEEKDAY: Record<string, number> = {
   sun: 0,
@@ -67,7 +68,7 @@ async function dataWorkspace(args: string[], applying: boolean): Promise<DataWor
   if (process.env.RUNOMICS_DATA_REPO_URL) {
     const temporaryRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'runomics-coach-'))
     const root = path.join(temporaryRoot, 'data')
-    const { fetchPrivateData } = await import('./fetch_private_data.mjs')
+    const { fetchPrivateData } = await interopImport(import('./fetch_private_data.mjs'))
     fetchPrivateData(root)
     return { root, temporaryRoot, shouldPush: applying }
   }
@@ -85,11 +86,11 @@ function printProposal(filePath: string, proposal: Awaited<ReturnType<typeof cre
 }
 
 async function createProposal(command: string, args: string[]) {
-  const { JsonCoachingRepository } = await import('@/infrastructure/repositories/JsonCoachingRepository')
-  const { GeminiCoachingAdvisor } = await import('@/infrastructure/ai/GeminiCoachingAdvisor')
-  const { getCoachingContext } = await import('@/application/coaching/GetCoachingContext')
-  const { createBootstrapProposal, createPostActivityProposal, createWeeklyReviewProposal } = await import('@/application/coaching/workflows')
-  const { getAllActivities } = await import('@/infrastructure/repositories/JsonActivityRepository')
+  const { JsonCoachingRepository } = await interopImport(import('@/infrastructure/repositories/JsonCoachingRepository'))
+  const { GeminiCoachingAdvisor } = await interopImport(import('@/infrastructure/ai/GeminiCoachingAdvisor'))
+  const { getCoachingContext } = await interopImport(import('@/application/coaching/GetCoachingContext'))
+  const { createBootstrapProposal, createPostActivityProposal, createWeeklyReviewProposal } = await interopImport(import('@/application/coaching/workflows'))
+  const { getAllActivities } = await interopImport(import('@/infrastructure/repositories/JsonActivityRepository'))
 
   const repository = new JsonCoachingRepository(process.env.RUNOMICS_DATA_DIR)
   const advisor = new GeminiCoachingAdvisor()
@@ -126,17 +127,17 @@ async function applyPreview(args: string[], proposalPath: string): Promise<void>
   const workspace = await dataWorkspace(args, true)
   try {
     process.env.RUNOMICS_DATA_DIR = workspace.root
-    const { JsonCoachingRepository } = await import('@/infrastructure/repositories/JsonCoachingRepository')
-    const { getCoachingContext } = await import('@/application/coaching/GetCoachingContext')
-    const { coachingContextHash } = await import('@/application/coaching/context')
-    const { applyCoachingProposal } = await import('@/application/coaching/workflows')
+    const { JsonCoachingRepository } = await interopImport(import('@/infrastructure/repositories/JsonCoachingRepository'))
+    const { getCoachingContext } = await interopImport(import('@/application/coaching/GetCoachingContext'))
+    const { coachingContextHash } = await interopImport(import('@/application/coaching/context'))
+    const { applyCoachingProposal } = await interopImport(import('@/application/coaching/workflows'))
     const proposal = readProposalPreview(path.resolve(proposalPath))
     const repository = new JsonCoachingRepository(workspace.root)
     const context = await getCoachingContext(repository.getCurrentPlan(), proposal.referenceDate)
     const plan = applyCoachingProposal(proposal, repository, coachingContextHash(context))
 
     if (workspace.shouldPush) {
-      const { pushPrivateData } = await import('./push_private_data.mjs')
+      const { pushPrivateData } = await interopImport(import('./push_private_data.mjs'))
       pushPrivateData(workspace.root)
     }
     console.log(`Applied ${proposal.decision.outcome}; coaching plan is now revision ${plan.revision}.`)
