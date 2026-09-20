@@ -8,6 +8,17 @@ import { t } from '@/i18n'
 const STORAGE_KEY = 'runomics_sync_since'
 const s = t.settings.sync
 
+// Real time, deliberately: `userEvent.click` deadlocks under fake timers
+// (React's own `act()` flushing needs setTimeout/MessageChannel to actually
+// fire on their own, and nothing outside the awaited click can advance a fake
+// clock while the click itself is what's being awaited), and switching to
+// fake timers partway through a test left a poll iteration waiting on a real
+// timer a fake-clock advance afterward can't touch. The one real cost is the
+// two tests below that dispatch and then wait a genuine poll interval, each
+// given the room for that in its own timeout.
+const REAL_POLL_INTERVAL_MS = 10_000
+const CLICK_TEST_TIMEOUT_MS = 15_000
+
 const USER = { getIdToken: () => Promise.resolve('test-token') } as unknown as User
 
 const VERDICT_STATUS = {
@@ -21,21 +32,37 @@ function jsonResponse(body: unknown, ok = true) {
   return { ok, status: ok ? 200 : 503, json: async () => body }
 }
 
-/** Never a literal: the card polls until `since + POLL_CEILING_MS` on the real clock. */
-function dispatchedJustNow(): string {
-  return new Date().toISOString()
-}
-
 function renderCard() {
   return render(<SyncNowCard user={USER} />)
 }
 
+/**
+ * Advancing the fake clock by 0ms still walks its queue and, on the way, lets
+ * every pending microtask (a mocked fetch's promise chain, in every test that
+ * uses this) settle - the standard way to flush "nothing left to do yet"
+ * under fake timers without waiting on real wall-clock time.
+ *
+ * `@testing-library`'s own `waitFor` is not used for these: it polls on a
+ * real interval, and once fake timers are active that real interval never
+ * fires. It is used further down, in the two tests that stay on real timers
+ * throughout, where it works exactly as documented.
+ */
+async function settle(ms = 0) {
+  await vi.advanceTimersByTimeAsync(ms)
+}
+
 beforeEach(() => {
   localStorage.clear()
-  vi.useFakeTimers({ shouldAdvanceTime: true })
 })
 
-afterEach(() => {
+afterEach(async () => {
+  // A resumed-poll test that doesn't drive its loop to a terminal state
+  // leaves it running past its own end - and the next test's fetch/
+  // localStorage stubs are still there to answer it. Draining every pending
+  // fake timer here forces every such loop closed before those stubs change
+  // out from under it. A no-op for the two tests that never install fake
+  // timers at all.
+  if (vi.isFakeTimers()) await vi.runAllTimersAsync()
   vi.useRealTimers()
   vi.unstubAllGlobals()
 })
@@ -47,47 +74,62 @@ describe('SyncNowCard', () => {
     expect(screen.getByText(s.takesAbout)).toBeInTheDocument()
   })
 
-  it('stores the dispatch timestamp so the button click survives a remount', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-    const since = dispatchedJustNow()
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(jsonResponse({ since }))
-      .mockResolvedValue(jsonResponse({ ...VERDICT_STATUS, ready: false, reason: 'no verdict for this run yet' }))
-    vi.stubGlobal('fetch', fetchMock)
+  it(
+    'stores the dispatch timestamp so the button click survives a remount',
+    async () => {
+      const since = new Date().toISOString()
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(jsonResponse({ since }))
+        .mockResolvedValue(jsonResponse(VERDICT_STATUS))
+      vi.stubGlobal('fetch', fetchMock)
 
-    renderCard()
-    await user.click(screen.getByText(s.action))
+      renderCard()
+      const user = userEvent.setup()
+      await user.click(screen.getByText(s.action))
 
-    await waitFor(() => expect(localStorage.getItem(STORAGE_KEY)).toBe(since))
-  })
+      await waitFor(() => expect(localStorage.getItem(STORAGE_KEY)).toBe(since))
+
+      // Let the poll's one real interval pass so the loop reaches its own
+      // natural end rather than leaking past this test.
+      await waitFor(() => expect(screen.getByText(VERDICT_STATUS.verdict.headline)).toBeInTheDocument(), {
+        timeout: REAL_POLL_INTERVAL_MS + 2_000,
+      })
+    },
+    CLICK_TEST_TIMEOUT_MS
+  )
 
   it('does not persist anything when the dispatch itself fails', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ error: 'not configured' }, false)))
 
     renderCard()
+    const user = userEvent.setup()
     await user.click(screen.getByText(s.action))
 
     await waitFor(() => expect(screen.getByText(s.failed)).toBeInTheDocument())
     expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
   })
 
-  it('shows the verdict and clears storage once a poll comes back ready', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(jsonResponse({ since: dispatchedJustNow() }))
-      .mockResolvedValue(jsonResponse(VERDICT_STATUS))
-    vi.stubGlobal('fetch', fetchMock)
+  it(
+    'shows the verdict and clears storage once a poll comes back ready',
+    async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(jsonResponse({ since: new Date().toISOString() }))
+        .mockResolvedValue(jsonResponse(VERDICT_STATUS))
+      vi.stubGlobal('fetch', fetchMock)
 
-    renderCard()
-    await user.click(screen.getByText(s.action))
-    await vi.advanceTimersByTimeAsync(10_000)
+      renderCard()
+      const user = userEvent.setup()
+      await user.click(screen.getByText(s.action))
 
-    await waitFor(() => expect(screen.getByText(VERDICT_STATUS.verdict.headline)).toBeInTheDocument())
-    expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
-  })
+      await waitFor(() => expect(screen.getByText(VERDICT_STATUS.verdict.headline)).toBeInTheDocument(), {
+        timeout: REAL_POLL_INTERVAL_MS + 2_000,
+      })
+      expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
+    },
+    CLICK_TEST_TIMEOUT_MS
+  )
 
   it('resumes a sync left running when the card remounts, without waiting a poll interval first', async () => {
     // The regression this whole file exists for: leaving Settings mid-sync and
@@ -99,15 +141,18 @@ describe('SyncNowCard', () => {
       .fn()
       .mockResolvedValue(jsonResponse({ ...VERDICT_STATUS, ready: false, synced: false, reason: 'waiting for the deployment carrying this sync' }))
     vi.stubGlobal('fetch', fetchMock)
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
 
     renderCard()
-
     expect(screen.getByText(s.starting)).toBeInTheDocument()
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+
+    await settle()
+    expect(fetchMock).toHaveBeenCalledTimes(1)
     expect(fetchMock.mock.calls[0]?.[0]).toMatch('/api/sync/status')
   })
 
   it('still asks once, rather than assuming a timeout, when reopened well past the ceiling', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
     const longAgo = new Date(Date.now() - 20 * 60_000).toISOString()
     localStorage.setItem(STORAGE_KEY, longAgo)
     const fetchMock = vi
@@ -116,23 +161,27 @@ describe('SyncNowCard', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     renderCard()
+    await settle()
 
-    await waitFor(() => expect(screen.getByText(s.stillRunning)).toBeInTheDocument())
+    expect(screen.getByText(s.stillRunning)).toBeInTheDocument()
     expect(fetchMock).toHaveBeenCalledTimes(1)
     expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
   })
 
   it('resumes straight into the verdict when the sync finished while the card was gone', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
     localStorage.setItem(STORAGE_KEY, new Date(Date.now() - 4 * 60_000).toISOString())
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(VERDICT_STATUS)))
 
     renderCard()
+    await settle()
 
-    await waitFor(() => expect(screen.getByText(VERDICT_STATUS.verdict.headline)).toBeInTheDocument())
+    expect(screen.getByText(VERDICT_STATUS.verdict.headline)).toBeInTheDocument()
     expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
   })
 
   it('reports the run brought nothing new, and clears storage, once synced with no fresh verdict', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
     localStorage.setItem(STORAGE_KEY, new Date(Date.now() - 4 * 60_000).toISOString())
     vi.stubGlobal(
       'fetch',
@@ -142,8 +191,9 @@ describe('SyncNowCard', () => {
     )
 
     renderCard()
+    await settle()
 
-    await waitFor(() => expect(screen.getByText(s.upToDate)).toBeInTheDocument())
+    expect(screen.getByText(s.upToDate)).toBeInTheDocument()
     expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
   })
 })
