@@ -682,19 +682,23 @@ h1 {
     border-radius: 4px;
   }
 
-  @media (pointer: coarse) {
-    input,
-    textarea,
-    select {
-      font-size: max(16px, 1em);
-    }
-  }
-
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
     }
+  }
+}
+
+/* Unlayered, deliberately: iOS Safari zooms the page when a field under 16px
+   takes focus and never zooms back out, and Tailwind's utilities layer beats
+   anything in `base` whatever its specificity - so a `text-sm` on an input was
+   silently reinstating the zoom. Only unlayered rules outrank a utility. */
+@media (pointer: coarse) {
+  input,
+  textarea,
+  select {
+    font-size: max(16px, 1em);
   }
 }
