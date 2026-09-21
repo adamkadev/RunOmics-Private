@@ -29,25 +29,36 @@ class GarminAPIError(Exception):
 _CONSUMER_KEY_ENV = "GARMIN_OAUTH_CONSUMER_KEY"
 _CONSUMER_SECRET_ENV = "GARMIN_OAUTH_CONSUMER_SECRET"
 
+# Garmin's own Android client credentials. Not this athlete's, and not secret:
+# they are the same for every Garmin user, they ship inside Garmin's Android
+# app, and garth's bucket serves them to anyone who asks. Configuration, so
+# they live in the repository where they are visible and need no setup.
+#
+# They are here at all because garth fetches them at runtime from
+# thegarth.s3.amazonaws.com - a bucket belonging to a project its author has
+# abandoned - once per process, which means every nightly run. The day that
+# bucket goes, a sync that would otherwise have worked for another year stops.
+_OAUTH_CONSUMER = {
+    "consumer_key": "fc3e99d2-118c-44b8-8ae3-03370dde24c0",
+    "consumer_secret": "E08WAR897WEy2knn7aFBrvegVAf0AFdWBBF",
+}
+
 
 def _seed_oauth_consumer() -> None:
-    """Fill in the OAuth1 consumer garth would otherwise fetch over the network.
+    """Fill in the OAuth1 consumer before garth can go looking for it.
 
-    Refreshing a token makes garth read its consumer key and secret from an S3
-    bucket owned by a project its author has abandoned, once per process - so
-    the day that bucket goes away, the nightly sync stops that night rather
-    than when a token expires. garth only fetches while its module global is
-    still empty, so filling it first removes the dependency outright. With the
-    variables unset nothing changes and garth fetches as before.
+    garth fetches only while its module global is still empty, so filling it
+    first settles the question. The environment variables are the escape hatch
+    for the day Garmin rotates the pair and a released constant is stale.
     """
     key = os.environ.get(_CONSUMER_KEY_ENV, "").strip()
     secret = os.environ.get(_CONSUMER_SECRET_ENV, "").strip()
 
-    if key and secret:
-        garth.sso.OAUTH_CONSUMER = {
-            "consumer_key": key,
-            "consumer_secret": secret,
-        }
+    garth.sso.OAUTH_CONSUMER = (
+        {"consumer_key": key, "consumer_secret": secret}
+        if key and secret
+        else dict(_OAUTH_CONSUMER)
+    )
 
 
 class GarminClient:

@@ -89,8 +89,8 @@ jobs:
       - name: Run sanitized capability probe
         env:
           GARMIN_SECRET: ${{ secrets.GARMIN_SECRET }}
-          GARMIN_OAUTH_CONSUMER_KEY: ${{ secrets.GARMIN_OAUTH_CONSUMER_KEY }}
-          GARMIN_OAUTH_CONSUMER_SECRET: ${{ secrets.GARMIN_OAUTH_CONSUMER_SECRET }}
+          GARMIN_OAUTH_CONSUMER_KEY: ${{ vars.GARMIN_OAUTH_CONSUMER_KEY }}
+          GARMIN_OAUTH_CONSUMER_SECRET: ${{ vars.GARMIN_OAUTH_CONSUMER_SECRET }}
         run: |
           mkdir -p capability-report
           python scripts/diagnostics/probe_garmin_capabilities.py \
