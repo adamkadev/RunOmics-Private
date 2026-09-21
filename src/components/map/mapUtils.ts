@@ -1,3 +1,4 @@
+import type { Feature, FeatureCollection } from "geojson";
 import type { ActivityType } from "@/domain/activity/types";
 import type { RouteMeta, RouteCluster } from "@/application/usecases/GetAllRoutes";
 import type { MapTerritory } from "@/application/usecases/GetMapTerritory";
@@ -116,7 +117,7 @@ export function coordLabel(c: RouteCluster): string {
 export function buildHeatGeoJSON(
   routes: [number, number][][],
   indices: number[],
-): { data: GeoJSON.FeatureCollection; maxCount: number } {
+): { data: FeatureCollection; maxCount: number } {
   const cellCounts = new Map<string, number>();
 
   for (const i of indices) {
@@ -130,7 +131,7 @@ export function buildHeatGeoJSON(
   let maxCount = 1;
   for (const c of cellCounts.values()) if (c > maxCount) maxCount = c;
 
-  const features: GeoJSON.Feature[] = [];
+  const features: Feature[] = [];
   for (const i of indices) {
     const coords = routes[i];
     if (!coords || coords.length < 2) continue;
