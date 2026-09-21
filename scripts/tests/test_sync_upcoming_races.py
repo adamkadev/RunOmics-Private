@@ -341,3 +341,83 @@ def test_write_preserves_metadata_for_numeric_and_legacy_date_name_identity(
     assert by_id[29837036]["isPrimaryEvent"] is False
     assert by_id[29837036]["isTrainingEvent"] is True
     assert by_id[400]["targetSeconds"] == 2500
+
+
+def test_map_marks_a_cleared_goal_rather_than_omitting_it():
+    """Garmin answering "no goal" has to look different from Garmin saying nothing."""
+    cleared = sync_races._map_race(_event("cleared", "2026-10-03", goal=None))
+    assert cleared["targetSeconds"] is None
+
+    silent = _event("silent", "2026-10-03")
+    del silent["eventCustomization"]
+    assert "targetSeconds" not in sync_races._map_race(silent)
+
+
+def test_map_keeps_a_goal_it_cannot_read_out_of_the_entry():
+    """A distance goal is not a cleared goal, so the persisted value must survive it."""
+    distance_goal = _event(
+        "distance-goal",
+        "2026-10-03",
+        goal={"unitType": "distance", "unit": "kilometer", "value": 5},
+    )
+    assert "targetSeconds" not in sync_races._map_race(distance_goal)
+
+
+def test_write_drops_a_goal_the_athlete_cleared_in_garmin(tmp_path):
+    """The regression: clearing a time goal in Garmin never reached the data file."""
+    path = tmp_path / "upcoming_races.json"
+    path.write_text(
+        json.dumps(
+            {
+                "races": [
+                    {
+                        "garminEventUuid": "charity-5k",
+                        "date": "2026-10-03",
+                        "name": "Charity 5K",
+                        "distance": "5K",
+                        "targetSeconds": 1200,
+                        "isPrimaryEvent": False,
+                    }
+                ]
+            }
+        )
+    )
+
+    sync_races.write_upcoming_races(
+        [sync_races._map_race(_event("charity-5k", "2026-10-03", goal=None))],
+        data_dir=tmp_path,
+    )
+
+    race = json.loads(path.read_text())["races"][0]
+    assert "targetSeconds" not in race
+    assert race["isPrimaryEvent"] is False
+
+
+def test_write_still_preserves_a_goal_when_garmin_reports_no_customization(tmp_path):
+    """The fallback the clearing fix must not break."""
+    path = tmp_path / "upcoming_races.json"
+    path.write_text(
+        json.dumps(
+            {
+                "races": [
+                    {
+                        "garminEventUuid": "silent",
+                        "date": "2026-10-03",
+                        "name": "Silent",
+                        "distance": "5K",
+                        "targetSeconds": 1200,
+                    }
+                ]
+            }
+        )
+    )
+
+    silent = _event("silent", "2026-10-03", name="Silent (5K)", distance=5)
+    del silent["eventCustomization"]
+
+    sync_races.write_upcoming_races(
+        [sync_races._map_race(silent)],
+        data_dir=tmp_path,
+    )
+
+    assert json.loads(path.read_text())["races"][0]["targetSeconds"] == 1200

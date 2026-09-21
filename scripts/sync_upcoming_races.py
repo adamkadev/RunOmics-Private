@@ -9,7 +9,11 @@ race metadata such as:
 - training-event designation
 
 Garmin is the source of truth when it supplies these fields. Existing locally
-persisted values are used only as a fallback when Garmin omits them.
+persisted values are used only as a fallback when Garmin stays silent - and
+silence means the event carried no eventCustomization at all. Once Garmin sends
+one, it is answering about the goal, so clearing a time goal in Garmin Connect
+clears it here. The cost of that, deliberately accepted: a targetSeconds set by
+hand in the data file no longer survives a sync of an event Garmin customizes.
 
 Can be run standalone or imported by sync.py.
 """
@@ -182,6 +186,11 @@ def write_upcoming_races(
         ):
             entry["isTrainingEvent"] = prior["isTrainingEvent"]
 
+    for entry in races:
+        # The tombstone has done its job above; the file keeps its shape.
+        if entry.get("targetSeconds", False) is None:
+            del entry["targetSeconds"]
+
     races.sort(key=lambda race: race["date"])
 
     out_path.write_text(
@@ -233,12 +242,22 @@ def _map_race(item: dict) -> dict:
             customization["isTrainingEvent"]
         )
 
-    target_seconds = _extract_target_seconds(
-        customization.get("customGoal")
-    )
+    # Three states, not two. A customization object means Garmin is speaking
+    # about this event's goal, so no customGoal is a deletion and is recorded as
+    # None - the tombstone write_upcoming_races needs to tell it apart from
+    # silence. No customization object at all is silence. A goal Garmin sent but
+    # this code cannot read (a distance goal, say) is neither: leaving the key
+    # off keeps whatever was already on file.
+    reported = item.get("eventCustomization")
 
-    if target_seconds is not None:
-        entry["targetSeconds"] = target_seconds
+    if isinstance(reported, dict):
+        custom_goal = reported.get("customGoal")
+        target_seconds = _extract_target_seconds(custom_goal)
+
+        if custom_goal is None:
+            entry["targetSeconds"] = None
+        elif target_seconds is not None:
+            entry["targetSeconds"] = target_seconds
 
     return entry
 
