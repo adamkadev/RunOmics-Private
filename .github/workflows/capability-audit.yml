@@ -45,7 +45,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Check profile configuration
         env:
@@ -62,7 +62,7 @@ jobs:
           fi
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: "pip"
@@ -100,7 +100,7 @@ jobs:
         run: warp-cli --accept-tos disconnect || true
 
       - name: Upload sanitized profile report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: garmin-capability-${{ matrix.profile }}-${{ github.run_id }}
           path: capability-report/${{ matrix.profile }}.json
@@ -113,10 +113,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Download sanitized profile reports
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: garmin-capability-*-${{ github.run_id }}
           path: downloaded-reports
@@ -130,7 +130,7 @@ jobs:
             --output-dir comparison-bundle
 
       - name: Upload sanitized comparison
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: garmin-capability-comparison-${{ github.run_id }}
           path: comparison-bundle/
