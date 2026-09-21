@@ -46,18 +46,15 @@ describe('internalAuth', () => {
     })
 
     it('returns 429 once an IP exceeds the per-minute budget, without affecting other IPs', () => {
-      // Exhaust the window for one IP (limit is 20/min).
       for (let i = 0; i < 20; i++) {
         expect(guardInternalRequest(makeRequest({ secret: SECRET, ip: '10.9.9.9' }))).toBeNull()
       }
       const limited = guardInternalRequest(makeRequest({ secret: SECRET, ip: '10.9.9.9' }))
       expect(limited?.status).toBe(429)
 
-      // Unauthorized attempts are also throttled once over budget.
       const limitedBadSecret = guardInternalRequest(makeRequest({ secret: 'nope', ip: '10.9.9.9' }))
       expect(limitedBadSecret?.status).toBe(429)
 
-      // A different IP still has its own budget.
       expect(guardInternalRequest(makeRequest({ secret: SECRET, ip: '10.9.9.8' }))).toBeNull()
     })
   })

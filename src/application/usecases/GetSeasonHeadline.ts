@@ -1,5 +1,6 @@
 import { t } from '@/i18n'
-import { round } from '@/lib/math'
+import { formatClock, formatPace } from '@/lib/formatters'
+import { median, round } from '@/lib/math'
 import type { AnalyticsPageData, WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import type { YearComparisonData } from '@/application/usecases/GetYearComparison'
 
@@ -18,25 +19,34 @@ export interface SeasonHeadlineData {
 const EFFICIENCY_THRESHOLD = 0.05
 const EASY_PACE_THRESHOLD_SEC = 10
 const VOLUME_THRESHOLD_PCT = 5
+const BLOCK_WEEKS = 4
+const MIN_WEEKS = BLOCK_WEEKS * 2
+
+function seasonShift(
+  weeks: WeeklyTrendPoint[],
+  pick: (w: WeeklyTrendPoint) => number | null,
+): { start: number; now: number } | null {
+  const known = weeks.map(pick).filter((v): v is number => v !== null)
+  if (known.length < MIN_WEEKS) return null
+  return { start: median(known.slice(0, BLOCK_WEEKS)), now: median(known.slice(-BLOCK_WEEKS)) }
+}
 
 function efficiencyBullet(weeks: WeeklyTrendPoint[]): SeasonHeadlineBullet | null {
-  const known = weeks.filter((w): w is WeeklyTrendPoint & { ef: number } => w.ef !== null)
-  const first = known[0]
-  const last = known[known.length - 1]
-  if (!first || !last || first === last) return null
-  const diff = round(last.ef - first.ef, 2)
+  const shift = seasonShift(weeks, (w) => w.ef)
+  if (!shift) return null
+  const diff = round(shift.now - shift.start, 2)
   if (Math.abs(diff) < EFFICIENCY_THRESHOLD) return null
   return { tone: diff > 0 ? 'positive' : 'caution', text: t.analytics.seasonHeadline.efficiency(diff) }
 }
 
 function easyPaceBullet(weeks: WeeklyTrendPoint[]): SeasonHeadlineBullet | null {
-  const known = weeks.filter((w): w is WeeklyTrendPoint & { easyPace: number } => w.easyPace !== null)
-  const first = known[0]
-  const last = known[known.length - 1]
-  if (!first || !last || first === last) return null
-  const diffSec = last.easyPace - first.easyPace // negative = faster
-  if (Math.abs(diffSec) < EASY_PACE_THRESHOLD_SEC) return null
-  return { tone: diffSec < 0 ? 'positive' : 'caution', text: t.analytics.seasonHeadline.easyPace(diffSec) }
+  const shift = seasonShift(weeks, (w) => w.easyPace)
+  if (!shift) return null
+  if (Math.abs(shift.now - shift.start) < EASY_PACE_THRESHOLD_SEC) return null
+  return {
+    tone: shift.now < shift.start ? 'positive' : 'caution',
+    text: t.analytics.seasonHeadline.easyPace(formatPace(shift.now), formatClock(shift.start), BLOCK_WEEKS),
+  }
 }
 
 function volumeBullet(comparison: YearComparisonData | null, currentYear: number): SeasonHeadlineBullet | null {
@@ -56,11 +66,6 @@ function headlineTitle(bullets: SeasonHeadlineBullet[]): string {
   return t.analytics.seasonHeadline.titleMixed
 }
 
-// Names the 2-3 biggest changes of the current season from data that's already
-// computed elsewhere (the weekly trend base + year-over-year comparison) - no
-// new aggregation, just a reading of the current calendar year's weeks. Returns
-// null when nothing crosses the signal thresholds, so the card stays honest
-// rather than forcing a verdict.
 export function getSeasonHeadline(
   data: AnalyticsPageData,
   comparison: YearComparisonData | null,

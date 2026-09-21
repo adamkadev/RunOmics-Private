@@ -1,9 +1,7 @@
-/** Peter Riegel's formula (1977): T2 = T1 x (D2/D1)^1.06. */
 export function riegel(sourceSeconds: number, sourceKm: number, targetKm: number): number {
   return Math.round(sourceSeconds * Math.pow(targetKm / sourceKm, 1.06))
 }
 
-/** Picks the recorded distance closest (in log-ratio) to the target, from a map of distance-key -> best seconds. */
 export function bestSourceFromMap(
   bestByKey: Map<string, number>,
   targetKey: string,

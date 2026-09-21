@@ -5,7 +5,7 @@ import type { MonthlyLongRuns } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { useAccentUiColor } from '@/lib/useAccent'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
-import { ChartExplain } from '@/components/ui/ChartExplain'
+import { ChartCardHead, ChartReading } from '@/components/ui/ChartCard'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { t } from '@/i18n'
@@ -45,7 +45,10 @@ export function LongRunsChart({ data }: Props) {
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <h3 className="mb-4 text-sm font-semibold text-foreground/80">{t.analytics.charts.longRuns.title}</h3>
+      <ChartCardHead title={t.analytics.charts.longRuns.title} />
+
+      <ChartReading>{explain}</ChartReading>
+
       <ChartFigure summary={summary}>
         <ResponsiveContainer width="100%" height={200}>
           <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>
@@ -88,7 +91,6 @@ export function LongRunsChart({ data }: Props) {
           </AreaChart>
         </ResponsiveContainer>
       </ChartFigure>
-      <ChartExplain text={explain} />
     </GlassSurface>
   )
 }

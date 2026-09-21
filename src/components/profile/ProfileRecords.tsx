@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import type { RecordEntry } from '@/application/usecases/GetRecords'
-import { formatDuration, formatDateWithYear } from '@/lib/formatters'
+import { formatDuration, formatDate } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 const RECENT_PR_DAYS = 90
@@ -34,8 +34,6 @@ export function ProfileRecords({ records }: Props) {
           <span
             className="rounded-[5px] border px-[6px] py-px text-micro font-bold text-accent-text"
             style={{
-              // Accent-subtle, per the Progress mockup: a NEW badge shouldn't stay
-              // emerald when the athlete's theme is rose/blue/etc.
               borderColor: 'color-mix(in srgb, var(--accent) 25%, transparent)',
               background: 'color-mix(in srgb, var(--accent) 14%, transparent)',
             }}
@@ -51,7 +49,7 @@ export function ProfileRecords({ records }: Props) {
             {best.seconds !== null ? formatDuration(best.seconds) : '–'}
           </span>
           <div className="mt-0.5 truncate text-micro text-muted-foreground">
-            {best.label} · {formatDateWithYear(best.date)}
+            {best.label} · {formatDate(best.date, { style: 'bare', year: 'always' })}
           </div>
         </div>
       ) : (
@@ -60,7 +58,7 @@ export function ProfileRecords({ records }: Props) {
 
       <Link
         href="/records"
-        className="mt-auto flex items-center gap-1.5 text-sm font-semibold text-accent-text active:scale-95"
+        className="mt-auto flex min-h-6 items-center gap-1.5 text-sm font-semibold text-accent-text active:scale-95"
       >
         {t.profile.records.viewAll} <ArrowRight size={16} />
       </Link>

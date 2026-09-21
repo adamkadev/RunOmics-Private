@@ -111,6 +111,26 @@ class TestJsonActivityStoreSmoke:
         assert written["activities"][0]["id"] == "123"
         assert json.loads((tmp_path / "index.json").read_text())["months"] == ["2026-07"]
 
+    def test_resync_keeps_weather_already_on_file(self, tmp_path, activity_factory):
+        store = JsonActivityStore(tmp_path)
+        stored = activity_factory("1", "2026-07-18")
+        stored.weather = {"tempC": 19.0, "code": 0}
+        store.upsert(stored)
+
+        store.upsert(activity_factory("1", "2026-07-18"))
+
+        assert store.all_activities()[0]["weather"] == {"tempC": 19.0, "code": 0}
+
+    def test_replace_drops_weather_along_with_everything_else(self, tmp_path, activity_factory):
+        store = JsonActivityStore(tmp_path)
+        stored = activity_factory("1", "2026-07-18")
+        stored.weather = {"tempC": 19.0, "code": 0}
+        store.upsert(stored)
+
+        store.upsert(activity_factory("1", "2026-07-18"), replace=True)
+
+        assert store.all_activities()[0]["weather"] is None
+
     def test_save_only_rewrites_dirty_months(self, tmp_path, activity_factory):
         store = JsonActivityStore(tmp_path)
         store.upsert(activity_factory("1", "2026-06-10"))

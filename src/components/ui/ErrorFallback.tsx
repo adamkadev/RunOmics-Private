@@ -10,10 +10,8 @@ interface Props {
   reset: () => void
 }
 
-// Shared UI for route error boundaries (src/app/**/error.tsx).
 export function ErrorFallback({ error, reset }: Props) {
   useEffect(() => {
-    // Surface the error in the console (and any future error tracker).
     console.error('[error-boundary]', error)
   }, [error])
 

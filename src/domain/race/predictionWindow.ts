@@ -14,8 +14,6 @@ export interface PredictionTrend {
   currentSec: number
 }
 
-/** Finish-time trend for one distance: positive improvementSec = getting faster,
- *  negative = slower, null when there isn't enough history to compare. */
 export function paceTrend(points: DatedPaces[], distance: RaceDistanceKey): PredictionTrend | null {
   const paces = points.map((p) => p[distance]).filter((v): v is number => v !== null)
   const first = paces[0]

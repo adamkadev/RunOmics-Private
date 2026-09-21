@@ -36,7 +36,6 @@ describe('getPbAlerts', () => {
   })
 
   it('flags a recent effort that lands just short of the record', async () => {
-    // 1220s against a 1200s PB is 1.7% off, inside the 3% window.
     const alerts = await run([record('5k', 1200)], [activity('a1', daysAgo(5), { '5k': 1220 })])
 
     expect(alerts).toEqual([
@@ -90,7 +89,6 @@ describe('getPbAlerts', () => {
       [activity('a1', daysAgo(5), { '5k': 1230, '10k': 2410 })],
     )
 
-    // 10k is 0.4% off, 5k is 2.5% off.
     expect(alerts.map((a) => a.key)).toEqual(['10k', '5k'])
   })
 })

@@ -12,7 +12,6 @@ const point = (date: string, paces: Partial<Record<RaceDistanceKey, number>> = {
 
 describe('bestTrend', () => {
   it('reports the gain in finish-time seconds, not in pace seconds', () => {
-    // 10 sec/km off a 5 km prediction is 50 s off the finish time.
     const points = [point('2026-01-01', { '5k': 250 }), point('2026-02-01', { '5k': 240 })]
 
     expect(bestTrend(points, ['5k'])).toEqual({
@@ -28,7 +27,6 @@ describe('bestTrend', () => {
       point('2026-02-01', { '5k': 248, marathon: 295 }),
     ]
 
-    // 2 sec/km over 5 km is 10 s; 5 sec/km over 42.195 km is ~211 s.
     expect(bestTrend(points, ['5k', 'marathon'])?.distance).toBe('marathon')
   })
 

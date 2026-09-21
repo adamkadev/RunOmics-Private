@@ -1,6 +1,3 @@
-// Generates iOS PWA launch screens (apple-touch-startup-image) from logo.svg.
-// iOS ignores manifest background_color for the splash, so without these images
-// the standalone app shows a black screen while loading. Run: node scripts/generate-splash.mjs
 import sharp from 'sharp'
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -10,13 +7,10 @@ import { loadLibModules } from './loadPalette.mjs'
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const outDir = join(root, 'public/icons/splash')
 
-// The launch screen shares its scheme with the root error boundary (BOOT_COLORS
-// in src/lib/colors.ts): both render before, or without, globals.css.
 const { HUE } = await loadLibModules('palette', ['palette'])
 const BG = HUE.performanceBgDark
 const LOGO_COLOR = HUE.emerald400
 
-// device-independent CSS points + device-pixel-ratio, per modern iPhone/iPad.
 const DEVICES = [
   { name: 'iphone-16-pro-max', w: 440, h: 956, r: 3 },
   { name: 'iphone-16-pro', w: 402, h: 874, r: 3 },
@@ -41,7 +35,6 @@ const DEVICES = [
 const rawSvg = readFileSync(join(root, 'public/icons/logo.svg'), 'utf8')
 const coloredSvg = rawSvg.replaceAll('currentColor', LOGO_COLOR)
 
-// dedupe identical physical resolutions to avoid redundant files.
 const seen = new Set()
 
 async function render(pxW, pxH, file) {

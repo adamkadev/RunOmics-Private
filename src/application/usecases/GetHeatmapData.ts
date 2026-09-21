@@ -2,7 +2,7 @@ import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepo
 import { round } from '@/lib/math'
 
 export type HeatmapDay = {
-  date: string       // YYYY-MM-DD, empty string = padding
+  date: string
   distanceKm: number
   sessionCount: number
 }
@@ -23,10 +23,9 @@ export function getHeatmapData(): HeatmapDay[] {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
-  // Start 364 days ago, aligned to Monday
   const from = new Date(today)
   from.setDate(from.getDate() - 364)
-  const dayOfWeek = from.getDay() // 0=Sun … 6=Sat
+  const dayOfWeek = from.getDay()
   const offsetToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
   from.setDate(from.getDate() + offsetToMonday)
 

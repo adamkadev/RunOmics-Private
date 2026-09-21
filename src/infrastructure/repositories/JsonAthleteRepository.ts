@@ -1,5 +1,5 @@
-import fs from 'fs'
-import path from 'path'
+import { dataPath } from '../dataPath'
+import { readJsonFile } from '../readJsonFile'
 
 export interface AthleteProfile {
   lthrBpm?: number
@@ -14,24 +14,21 @@ export interface AthleteProfile {
   restingHrBpm?: number
   age?: number
   sex?: 'male' | 'female'
-  /** Garmin's fitness age, and the floor it says the current training can reach. */
   fitnessAgeYrs?: number
   achievableFitnessAgeYrs?: number
   bmi?: number
-  /** Primary training device the Garmin metrics above are measured by. */
+  fitnessAgeLastUpdated?: string
+  bmiMeasurementDate?: string
   deviceId?: number
   deviceName?: string
   deviceFirmware?: string
-  /** ISO date the device was registered on Garmin Connect. */
   deviceSince?: string
   lastUpdate?: string
 }
 
 export function getAthleteProfile(): AthleteProfile {
-  const filePath = path.join(process.cwd(), 'public', 'data', 'athlete.json')
-  if (!fs.existsSync(filePath)) return {}
+  const raw = readJsonFile<Record<string, unknown>>(dataPath('athlete.json'), {})
 
-  const raw = JSON.parse(fs.readFileSync(filePath, 'utf-8')) as Record<string, unknown>
   const profile: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(raw)) {
     if (value !== null && value !== undefined) profile[key] = value

@@ -2,8 +2,6 @@ import { describe, it, expect } from 'vitest'
 import { acwr, loadTrend, classify, riskFromGarmin } from '../GetTrainingStatus'
 import type { Activity } from '@/domain/activity/types'
 
-// ---------- helpers ----------
-
 const REF = new Date('2024-06-15T00:00:00')
 const DAY_MS = 86_400_000
 
@@ -15,11 +13,8 @@ function daysAgo(n: number): string {
 const act = (date: string, km: number): Activity =>
   ({ date, distanceKm: km }) as Activity
 
-// ---------- acwr ----------
-
 describe('acwr', () => {
   it('returns null when chronic load is too low (< 5 km/week)', () => {
-    // Only 10 km in 28 days → chronic = 2.5
     expect(acwr([act(daysAgo(1), 10)], REF)).toBeNull()
   })
 
@@ -28,7 +23,6 @@ describe('acwr', () => {
   })
 
   it('calculates ratio: high acute week relative to chronic', () => {
-    // 28-day km: 40 → chronic = 10  |  7-day km: 20 → acwr = 2.00
     const acts = [
       act(daysAgo(1), 10),
       act(daysAgo(5), 10),
@@ -39,7 +33,6 @@ describe('acwr', () => {
   })
 
   it('calculates ratio: balanced load (acwr ≈ 1)', () => {
-    // 28-day km: 40 → chronic = 10  |  7-day km: 10 → acwr = 1.00
     const acts = [
       act(daysAgo(3), 10),
       act(daysAgo(9), 10),
@@ -50,16 +43,13 @@ describe('acwr', () => {
   })
 
   it('excludes activities outside 28-day window', () => {
-    // Only activity at daysAgo(30) - outside 28-day window
     expect(acwr([act(daysAgo(30), 50)], REF)).toBeNull()
   })
 
   it('7-day boundary: daysAgo(6) is in, daysAgo(7) is out', () => {
-    // Only in 7d window: 10km at daysAgo(6)
-    // 28-day km: 40 → chronic = 10 | 7-day km: 10 → acwr = 1.00
     const acts = [
-      act(daysAgo(6), 10),   // inside 7d
-      act(daysAgo(7), 0),    // outside 7d, inside 28d - zero km, no effect
+      act(daysAgo(6), 10),
+      act(daysAgo(7), 0),
       act(daysAgo(10), 10),
       act(daysAgo(18), 10),
       act(daysAgo(25), 10),
@@ -67,8 +57,6 @@ describe('acwr', () => {
     expect(acwr(acts, REF)).toBe(1.00)
   })
 })
-
-// ---------- loadTrend ----------
 
 describe('loadTrend', () => {
   it('building when ctlDelta > 1.5', () => {
@@ -96,8 +84,6 @@ describe('loadTrend', () => {
     expect(loadTrend(-1, -5)).toBe('maintaining')
   })
 })
-
-// ---------- classify ----------
 
 describe('classify', () => {
   it('overreaching/high when tsb < -30', () => {
@@ -141,8 +127,6 @@ describe('classify', () => {
     expect(classify(-5, 0, 1.0)).toEqual({ status: 'productive', risk: 'low' })
   })
 })
-
-// ---------- riskFromGarmin ----------
 
 describe('riskFromGarmin', () => {
   it('high when the watch reports overreaching', () => {

@@ -17,27 +17,120 @@ on:
         description: "Re-sync all activities (rebuilds every record)"
         type: boolean
         default: false
+      profile:
+        description: "Which deployment to sync"
+        type: choice
+        options: [all, adam, lamiaa]
+        default: all
 
 jobs:
+  # Which profiles this run covers. A manual dispatch carries options that only
+  # ever make sense for one dataset (--force rebuilds every record), so it can
+  # target a single profile; the nightly schedule always runs them all.
+  profiles:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.pick.outputs.matrix }}
+    steps:
+      - id: pick
+        env:
+          REQUESTED: ${{ inputs.profile }}
+        run: |
+          if [ -z "$REQUESTED" ] || [ "$REQUESTED" = "all" ]; then
+            echo 'matrix=["adam","lamiaa"]' >> "$GITHUB_OUTPUT"
+          else
+            echo "matrix=[\"$REQUESTED\"]" >> "$GITHUB_OUTPUT"
+          fi
+
   sync:
+    needs: profiles
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
+
+    strategy:
+      # One profile's Garmin login expiring must not cancel everyone else's sync.
+      fail-fast: false
+      matrix:
+        profile: ${{ fromJSON(needs.profiles.outputs.matrix) }}
+
+    # Per-profile secrets live in a GitHub Environment of the same name, so every
+    # `secrets.*` below resolves to that profile's own value with no renaming.
+    # See docs/personal-deployments.md.
+    environment: ${{ matrix.profile }}
+
+    # A manual run must never overlap the nightly one for the same profile: both
+    # push to that profile's data repository. Different profiles are independent.
+    concurrency:
+      group: sync-${{ matrix.profile }}
+      cancel-in-progress: false
+
+    env:
+      # One complete, server-only workspace for fetch -> Garmin sync -> push.
+      RUNOMICS_DATA_DIR: data
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+
+      # Two failure modes worth stopping before Garmin is ever contacted.
+      #
+      # First: naming an environment does NOT hide the repository-level secrets.
+      # An environment that doesn't exist yet, or that was created but never
+      # populated, therefore falls back to whatever is set repository-wide - so a
+      # half-configured profile would sync someone else's Garmin account into
+      # someone else's data repository. Every environment must declare a variable
+      # PROFILE matching its own name; nothing inherited can satisfy that for more
+      # than one profile.
+      #
+      # Second: without the data repository configured, the sync would start
+      # from an incomplete workspace instead of the canonical private dataset.
+      - name: Check the sync configuration
+        env:
+          DECLARED_PROFILE: ${{ vars.PROFILE }}
+          RUNOMICS_DATA_REPO_URL: ${{ secrets.RUNOMICS_DATA_REPO_URL }}
+          RUNOMICS_DATA_REPO_TOKEN: ${{ secrets.RUNOMICS_DATA_REPO_TOKEN }}
+          GARMIN_SECRET: ${{ secrets.GARMIN_SECRET }}
+        run: |
+          if [ "$DECLARED_PROFILE" != "${{ matrix.profile }}" ]; then
+            echo "::error::Environment '${{ matrix.profile }}' does not declare PROFILE=${{ matrix.profile }} (got '${DECLARED_PROFILE:-unset}')."
+            echo "Its secrets are unset or inherited from the repository, which would sync"
+            echo "the wrong athlete. See docs/personal-deployments.md."
+            exit 1
+          fi
+
+          MISSING=""
+          [ -n "$RUNOMICS_DATA_REPO_URL" ]   || MISSING="$MISSING RUNOMICS_DATA_REPO_URL"
+          [ -n "$RUNOMICS_DATA_REPO_TOKEN" ] || MISSING="$MISSING RUNOMICS_DATA_REPO_TOKEN"
+          [ -n "$GARMIN_SECRET" ]            || MISSING="$MISSING GARMIN_SECRET"
+          if [ -n "$MISSING" ]; then
+            echo "::error::Environment '${{ matrix.profile }}' is missing secret(s):$MISSING"
+            echo "Every profile syncs into its own private data repository and never"
+            echo "commits anything back here. See docs/personal-deployments.md."
+            exit 1
+          fi
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Fetch current private data
+        env:
+          RUNOMICS_DATA_REPO_URL: ${{ secrets.RUNOMICS_DATA_REPO_URL }}
+          RUNOMICS_DATA_REPO_TOKEN: ${{ secrets.RUNOMICS_DATA_REPO_TOKEN }}
+        run: node scripts/fetch_private_data.mjs data
 
       - name: Restore FIT cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
-          path: public/fit
-          key: fit-${{ hashFiles('public/data/activities/**') }}
+          path: .fit-cache
+          key: fit-cache-${{ matrix.profile }}-${{ hashFiles('data/activities/**') }}
           restore-keys: |
-            fit-
+            fit-cache-${{ matrix.profile }}-
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: "pip"
@@ -60,89 +153,165 @@ jobs:
           sleep 3
           warp-cli --accept-tos status
 
+      # Dispatch inputs arrive through `env:`, never interpolated into `run:`:
+      # Actions substitutes those textually, before bash parses the line.
       - name: Run sync
+        id: sync
         env:
           GARMIN_SECRET: ${{ secrets.GARMIN_SECRET }}
+          PRIVACY_ZONES: ${{ secrets.PRIVACY_ZONES }}
+          PRIVACY_RADIUS_M: ${{ secrets.PRIVACY_RADIUS_M }}
+          SYNC_LIMIT: ${{ inputs.limit }}
+          SYNC_DRY_RUN: ${{ inputs.dry_run }}
+          SYNC_FORCE: ${{ inputs.force }}
         run: |
-          ARGS=""
-          if [ -n "${{ github.event.inputs.limit }}" ]; then
-            ARGS="$ARGS --limit ${{ github.event.inputs.limit }}"
+          set -eo pipefail
+          ARGS=()
+          if [ -n "${SYNC_LIMIT:-}" ]; then
+            case "$SYNC_LIMIT" in
+              *[!0-9]*)
+                echo "::error::limit must be a whole number (got '$SYNC_LIMIT')."
+                exit 1
+                ;;
+            esac
+            ARGS+=(--limit "$SYNC_LIMIT")
           fi
-          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-            ARGS="$ARGS --dry-run"
+          if [ "${SYNC_DRY_RUN:-}" = "true" ]; then
+            ARGS+=(--dry-run)
           fi
-          if [ "${{ github.event.inputs.force }}" = "true" ]; then
-            ARGS="$ARGS --force"
+          if [ "${SYNC_FORCE:-}" = "true" ]; then
+            ARGS+=(--force)
           fi
-          python scripts/sync.py $ARGS
+
+          # Exit 3 is "some activities failed, the rest are on disk". Failing
+          # the step here would skip the commit below and discard them.
+          set +e
+          python scripts/sync.py "${ARGS[@]}"
+          STATUS=$?
+          set -e
+
+          if [ "$STATUS" -eq 3 ]; then
+            echo "partial_failure=true" >> "$GITHUB_OUTPUT"
+            echo "::warning::Some activities failed to sync. Committing the ones that succeeded."
+          elif [ "$STATUS" -ne 0 ]; then
+            exit "$STATUS"
+          fi
 
       - name: Disconnect Cloudflare WARP
         if: always()
         run: warp-cli --accept-tos disconnect || true
 
-      - name: Commit updated activities.json
+      - name: Backfill missing weather
+        if: inputs.dry_run != true
+        continue-on-error: true
+        run: python scripts/backfill_weather.py
+
+      - name: Commit updated data
         id: commit
+        env:
+          RUNOMICS_DATA_REPO_URL: ${{ secrets.RUNOMICS_DATA_REPO_URL }}
+          RUNOMICS_DATA_REPO_TOKEN: ${{ secrets.RUNOMICS_DATA_REPO_TOKEN }}
         run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # The deployment marker the post-sync step waits for - sync.py always
+          # rewrites this file, so it is read from the workspace, not the push.
+          python -c "import json; print('last_synced_at=' + json.load(open('data/sync_meta.json'))['lastSyncedAt'])" >> "$GITHUB_OUTPUT"
 
-          git add public/data/activities/ public/data/planned_workouts/ public/data/upcoming_races.json public/data/athlete.json
-
-          if git diff --cached --quiet; then
-            ACTIVITIES_CHANGED=false
-          else
-            ACTIVITIES_CHANGED=true
+          # A refusal here means the data repository was committed to while this
+          # run was syncing (see docs/personal-deployments.md > Concurrent
+          # writes). Failing is the point: the next run starts from fresh data.
+          if ! OUTPUT=$(node scripts/push_private_data.mjs data); then
+            echo "::error::Refused to push: the private data repository changed during this run. Re-run the sync to start from fresh data."
+            exit 1
           fi
-          echo "activities_changed=$ACTIVITIES_CHANGED" >> "$GITHUB_OUTPUT"
+          echo "$OUTPUT"
 
-          git add public/data/sync_meta.json
-
-          if git diff --cached --quiet; then
-            echo "Nothing to commit."
+          if echo "$OUTPUT" | grep -q "No data changes"; then
             echo "committed=false" >> "$GITHUB_OUTPUT"
+            echo "data_changed=false" >> "$GITHUB_OUTPUT"
           else
-            if [ "$ACTIVITIES_CHANGED" = "true" ]; then
-              ACTIVITY_COUNT=$(python - <<'EOF'
-          import json, pathlib
-          total = 0
-          for path in pathlib.Path("public/data/activities").glob("*.json"):
-              if path.name == "index.json":
-                  continue
-              total += len(json.loads(path.read_text()).get("activities", []))
-          print(total)
-          EOF
-          )
-              git commit -m "sync: update activities (${ACTIVITY_COUNT} total) [skip ci]"
-            else
-              git commit -m "sync: refresh last-synced timestamp [skip ci]"
-            fi
-            git push
             echo "committed=true" >> "$GITHUB_OUTPUT"
+            # A commit carrying only a new timestamp has nothing for the
+            # post-sync checks to look at.
+            if echo "$OUTPUT" | grep -q "refresh last-synced timestamp"; then
+              echo "data_changed=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "data_changed=true" >> "$GITHUB_OUTPUT"
+            fi
           fi
+
+      - name: Trigger Vercel redeploy
+        if: steps.commit.outputs.committed == 'true'
+        continue-on-error: true
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"
 
       - name: Trigger post-sync checks
-        if: steps.commit.outputs.activities_changed == 'true'
+        if: steps.commit.outputs.data_changed == 'true'
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}
+          EXPECTED_SYNC: ${{ steps.commit.outputs.last_synced_at }}
         run: |
-          # Poll until the app responds before checking for new PRs (Vercel needs time to redeploy).
-          for i in $(seq 1 20); do
-            if curl -fsS -o /dev/null "${{ secrets.APP_URL }}/"; then
+          # Everything these endpoints read comes off the build's own filesystem,
+          # so they answer for whatever deployment is live - and the previous one
+          # answers 200 within a second of the push above, while Vercel is still
+          # building this one. Waiting on a bare 200 therefore ran every check
+          # against the data as it was *before* this sync: the insight generator
+          # saw no new activity, reported "outstanding: 0", and the run it had
+          # just synced had to wait for the next night to get its verdict.
+          #
+          # Wait for the deployment carrying this run's own sync timestamp.
+          DEPLOYED=false
+          for i in $(seq 1 24); do
+            LIVE=$(curl -fsS --max-time 20 "$APP_URL/api/internal/health" -H "x-internal-secret: $SECRET" \
+              | python -c "import json,sys; print(json.load(sys.stdin).get('lastSyncedAt') or '')" 2>/dev/null || true)
+            if [ -n "$EXPECTED_SYNC" ] && [ "$LIVE" = "$EXPECTED_SYNC" ]; then
+              DEPLOYED=true
+              echo "Deployment carrying $EXPECTED_SYNC is live after $(((i - 1) * 15))s."
               break
             fi
             sleep 15
           done
+          if [ "$DEPLOYED" != "true" ]; then
+            echo "::warning::App still serving pre-sync data after 6 min (live: ${LIVE:-none}, expected: $EXPECTED_SYNC). Running the checks anyway."
+          fi
 
-          curl -fsS -X POST "${{ secrets.APP_URL }}/api/internal/pr-check" \
-            -H "x-internal-secret: ${{ secrets.INTERNAL_NOTIFY_SECRET }}"
-          curl -fsS -X POST "${{ secrets.APP_URL }}/api/internal/shoe-wear-check" \
-            -H "x-internal-secret: ${{ secrets.INTERNAL_NOTIFY_SECRET }}"
-          curl -fsS -X POST "${{ secrets.APP_URL }}/api/internal/overreaching-check" \
-            -H "x-internal-secret: ${{ secrets.INTERNAL_NOTIFY_SECRET }}"
-          curl -fsS -X POST "${{ secrets.APP_URL }}/api/internal/activity-sync-check" \
-            -H "x-internal-secret: ${{ secrets.INTERNAL_NOTIFY_SECRET }}"
-          # Three passes: each one regenerates today's verdict only if the facts
-          # moved (cheap) and backfills another batch of run verdicts, without
-          # any single request outliving the serverless function budget.
-          for i in 1 2 3; do
-            curl -fsS -X POST "${{ secrets.APP_URL }}/api/internal/ai-insights" \
-              -H "x-internal-secret: ${{ secrets.INTERNAL_NOTIFY_SECRET }}"
+          # No check may take another one down with it. They are independent, and
+          # a 504 on one of these used to abort the step under `bash -e` - which
+          # is how a slow ai-insights pass silently cancelled the two passes
+          # queued behind it. Every endpoint here is idempotent: what a failed
+          # call leaves undone, the next run picks up.
+          check() {
+            curl -fsS --max-time "${2:-90}" -X POST "$APP_URL/api/internal/$1" -H "x-internal-secret: $SECRET" \
+              || echo "::warning::$1 failed"
+            echo
+          }
+
+          check pr-check
+          check shoe-wear-check
+          check overreaching-check
+          check activity-sync-check
+
+          # Each pass regenerates a surface only if its facts moved (a Firestore
+          # read, no spend) and backfills another batch of run verdicts, without
+          # any single request outliving the serverless function budget (300s,
+          # Hobby + Fluid Compute - see maxDuration in the route). curl gets more
+          # rope than that ceiling, or the connection closes before the function
+          # does and the response - and its "no time left" diagnostics - never
+          # comes back.
+          #
+          # Five passes rather than one: a single 503 (Google-side capacity) or a
+          # slow model still costs a pass without progress, and a big run-verdict
+          # backfill can span more than one pass on its own. A pass where
+          # everything is already current costs a handful of reads.
+          for i in 1 2 3 4 5; do
+            check ai-insights 310
           done
+
+      # Last, so a partial sync still reaches the data repository first.
+      - name: Report failed activities
+        if: always() && steps.sync.outputs.partial_failure == 'true'
+        run: |
+          echo "::error::sync.py reported failed activities. Whatever synced successfully was committed and deployed; see the 'Run sync' log for the failures."
+          exit 1

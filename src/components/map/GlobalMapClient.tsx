@@ -1,20 +1,26 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Globe, Maximize, Minimize } from "lucide-react";
 import type { MapShellData } from "@/application/usecases/GetAllRoutes";
 import type { ActivityType } from "@/domain/activity/types";
 import { reverseGeocode } from "@/lib/reverseGeocode";
 import { t } from "@/i18n";
 import { useSetFullscreenChromeHidden } from "@/components/layout/FullscreenChromeContext";
+import type { TerritoryCardContent } from "./GlobalMapWrapper";
 import { ClusterPanel } from "./ClusterPanel";
 import { YearPicker } from "./YearPicker";
 import { TypePicker } from "./TypePicker";
 import { HeatLegend } from "./HeatLegend";
 import { useMapRoutes } from "./useMapRoutes";
-import { coordLabel, matchesFilters, type HeatFilters } from "./mapUtils";
+import {
+  coordLabel,
+  computeAreaTerritory,
+  computeWorldTerritory,
+  matchesFilters,
+  type HeatFilters,
+} from "./mapUtils";
 
-// Canonical order for the type filter (fastest -> easiest), matching the rest of the app.
 const TYPE_ORDER: ActivityType[] = [
   "Sprint",
   "Anaerobic",
@@ -27,9 +33,10 @@ const TYPE_ORDER: ActivityType[] = [
 
 interface Props {
   data: MapShellData;
+  onContentChange?: (content: TerritoryCardContent | null) => void;
 }
 
-export function GlobalMapClient({ data }: Props) {
+export function GlobalMapClient({ data, onContentChange }: Props) {
   const { clusters, routeMeta } = data;
   const [selectedIdx, setSelectedIdx] = useState(data.defaultClusterIdx);
   const [selectedYear, setSelectedYear] = useState<string | null>(null);
@@ -38,10 +45,6 @@ export function GlobalMapClient({ data }: Props) {
   const [worldView, setWorldView] = useState(false);
   const [names, setNames] = useState<string[]>(() => clusters.map(coordLabel));
 
-  // GPS coordinates, sparse and keyed by absolute activity index - populated lazily
-  // per zone (see effect below) so the world view and an unvisited zone never pay
-  // for coordinate data they don't render. Undefined entries are already handled
-  // throughout mapUtils.ts (buildGeoJSON/buildHeatGeoJSON skip missing routes).
   const [routes, setRoutes] = useState<[number, number][][]>([]);
   const loadedClusterIds = useRef<Set<string>>(new Set());
 
@@ -64,8 +67,6 @@ export function GlobalMapClient({ data }: Props) {
         });
       })
       .catch(() => {
-        // Best-effort: the zone just renders with no heat trace until a retry
-        // (e.g. a re-select) succeeds.
       });
 
     return () => {
@@ -101,14 +102,79 @@ export function GlobalMapClient({ data }: Props) {
     [clusters, selectedIdx, routeMeta, filters],
   );
 
-  // Shared by the zone dropdown and the world-view bubbles, so either path exits
-  // world view the same way and hands the camera back to the per-zone effect.
   const handleSelectCluster = useCallback((idx: number) => {
     setSelectedIdx(idx);
     setWorldView(false);
   }, []);
 
+  // Three chips plus a count can outgrow the row at any width - the rail
+  // scrolls rather than overlapping or wrapping, exactly like the Activities
+  // filter row, with a fade that only appears once there's more to scroll to.
+  const chipRailRef = useRef<HTMLDivElement>(null);
+  const [chipFade, setChipFade] = useState(false);
+  const updateChipFade = useCallback(() => {
+    const el = chipRailRef.current;
+    if (!el) return;
+    setChipFade(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
+  }, []);
+  useLayoutEffect(() => {
+    updateChipFade();
+    const el = chipRailRef.current;
+    if (!el) return;
+    const obs = new ResizeObserver(updateChipFade);
+    obs.observe(el);
+    // A viewport resize (rotation, browser chrome show/hide) changes the
+    // rail's width via layout, but not always in a single reflow the
+    // ResizeObserver's own callback batches before paint - a plain window
+    // listener catches it as a fallback.
+    window.addEventListener("resize", updateChipFade);
+    return () => {
+      obs.disconnect();
+      window.removeEventListener("resize", updateChipFade);
+    };
+  }, [updateChipFade]);
+  // The scroller's own box never changes size when a chip's label does (a
+  // longer area name, a type getting picked) - only its scrollWidth does,
+  // which ResizeObserver on the scroller itself won't catch.
+  useEffect(() => {
+    updateChipFade();
+  }, [updateChipFade, selectedType, selectedYear, worldView, names, selectedIdx]);
+
   const clusterCounts = useMemo(() => clusterStats.map((s) => s.routeCount), [clusterStats]);
+  const totalFilteredCount = useMemo(() => clusterStats.reduce((sum, s) => sum + s.routeCount, 0), [clusterStats]);
+
+  // The card follows whatever area, filters and zoom level are on screen -
+  // "all areas" at world zoom is itself a state the card has to name, not a
+  // reason to keep showing the last selected place.
+  const cardContent = useMemo<TerritoryCardContent | null>(() => {
+    const s = t.pages.map.territory;
+    if (worldView) {
+      const world = computeWorldTerritory(clusters, names, routeMeta, filters);
+      if (!world) return null;
+      return {
+        eyebrow: s.eyebrowWorld,
+        headline: s.headlineWorld(world.areaCount, world.topSharePercent, world.topAreaName),
+        primaryStat: { value: String(world.routeCount), label: s.routesStat },
+        secondaryStat: { value: String(world.areaCount), label: s.areasStat },
+      };
+    }
+
+    const cluster = clusters[selectedIdx];
+    if (!cluster) return null;
+    const territory = computeAreaTerritory(cluster, routeMeta, routes, filters);
+    if (!territory) return null;
+    const areaName = names[selectedIdx] ?? "";
+    return {
+      eyebrow: s.eyebrowFor(areaName),
+      headline: s.headline(territory.percentVolume, territory.medianRadiusKm, areaName),
+      primaryStat: { value: String(territory.routeCount), label: s.routesStat },
+      secondaryStat: { value: `${territory.medianRadiusKm} ${t.units.km}`, label: s.radiusStat },
+    };
+  }, [worldView, clusters, selectedIdx, routeMeta, routes, filters, names]);
+
+  useEffect(() => {
+    onContentChange?.(cardContent);
+  }, [onContentChange, cardContent]);
 
   const { containerRef, resize } = useMapRoutes(
     data,
@@ -152,30 +218,76 @@ export function GlobalMapClient({ data }: Props) {
   }, [clusters]);
 
   return (
-    <div className={isFullscreen ? "fixed inset-0 z-50 bg-background" : "relative h-full w-full"}>
+    <div className={isFullscreen ? "fixed inset-0 z-50 flex flex-col bg-background" : "flex h-full w-full flex-col"}>
+    <div className="relative min-h-0 flex-1">
       <div ref={containerRef} role="img" aria-label={t.pages.map.title} className="h-full w-full" />
 
+      {/* A solid scrim, not the individual chips' own translucency, is what
+          keeps these readable once the map is panned under bright tiles.
+          The row sits above the map canvas as a separate element - a drag
+          that starts here never reaches maplibre's own pan handler, and the
+          row has no transform of its own, so it never moves when the map does. */}
       <div
-        className={[
-          "absolute inset-x-3 z-10 flex items-start justify-between gap-2",
-          isFullscreen ? "top-[max(env(safe-area-inset-top),12px)]" : "top-3",
-        ].join(" ")}
+        className="absolute inset-x-0 top-0 z-10 flex items-start gap-2 px-3 pb-2.5"
+        style={{
+          background: "rgba(9,16,32,.92)",
+          borderBottom: "1px solid rgba(148,178,220,.12)",
+          paddingTop: isFullscreen ? "max(env(safe-area-inset-top), 12px)" : "12px",
+        }}
       >
-        <ClusterPanel
-          clusters={clusters}
-          names={names}
-          stats={clusterStats}
-          selectedIdx={selectedIdx}
-          onSelect={handleSelectCluster}
-        />
-
-        <div className="flex shrink-0 items-start gap-2">
-          {availableTypes.length > 1 && (
-            <TypePicker types={availableTypes} value={selectedType} onChange={setSelectedType} />
+        {/* The rail scrolls instead of wrapping or overlapping - three chips
+            plus a count can outgrow the row at any width, and a chip that
+            can touch its neighbour is the row being wrong, not the content. */}
+        <div className="relative min-w-0 flex-1">
+          <div
+            ref={chipRailRef}
+            onScroll={updateChipFade}
+            className="flex items-start gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            <ClusterPanel
+              clusters={clusters}
+              names={names}
+              stats={clusterStats}
+              selectedIdx={selectedIdx}
+              onSelect={handleSelectCluster}
+              worldView={worldView}
+              totalCount={totalFilteredCount}
+            />
+            {availableTypes.length > 1 && (
+              <TypePicker types={availableTypes} value={selectedType} onChange={setSelectedType} />
+            )}
+            <YearPicker years={data.years} value={selectedYear} onChange={setSelectedYear} />
+          </div>
+          {chipFade && (
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 right-0 w-[26px]"
+              style={{ background: "linear-gradient(90deg, transparent, rgba(9,16,32,.92) 80%)" }}
+            />
           )}
-          <YearPicker years={data.years} value={selectedYear} onChange={setSelectedYear} />
         </div>
+
+        {/* The collapse button is a sibling of the scroller, never a chip
+            inside it - that's what was pushing the chips into each other. */}
+        {isFullscreen && (
+          <button
+            onClick={() => setIsFullscreen(false)}
+            aria-label={t.pages.map.exitFullscreen}
+            className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[12px] transition-colors hover:bg-white/10"
+            style={{ background: "rgba(148,178,220,.07)", border: "1px solid rgba(148,178,220,.14)", color: "var(--muted-foreground)" }}
+          >
+            <Minimize size={16} />
+          </button>
+        )}
       </div>
+
+      {!process.env.NEXT_PUBLIC_MAPTILER_TOKEN && (
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+          <span className="glass-map-chip px-4 py-2 text-xs font-medium text-subtle">
+            {t.pages.map.mapUnavailable}
+          </span>
+        </div>
+      )}
 
       {!worldView && visibleIndices.length === 0 && (
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
@@ -205,24 +317,38 @@ export function GlobalMapClient({ data }: Props) {
         aria-label={worldView ? t.pages.map.exitWorldView : t.pages.map.worldView}
         aria-pressed={worldView}
         className={[
-          "glass-map-chip absolute right-3 z-20 flex h-11 w-11 items-center justify-center transition-colors hover:bg-muted",
+          "glass-map-chip absolute z-20 flex h-11 w-11 items-center justify-center transition-colors hover:bg-muted",
           worldView ? "text-accent-text" : "",
-          isFullscreen ? "bottom-[calc(max(env(safe-area-inset-bottom),12px)+3.25rem)]" : "bottom-16",
+          isFullscreen ? "right-[max(env(safe-area-inset-right),10px)] bottom-[calc(max(env(safe-area-inset-bottom),10px)+3.25rem)]" : "right-2.5 bottom-16",
         ].join(" ")}
       >
         <Globe size={16} />
       </button>
 
-      <button
-        onClick={() => setIsFullscreen((f) => !f)}
-        aria-label={isFullscreen ? t.pages.map.exitFullscreen : t.pages.map.fullscreen}
-        className={[
-          "glass-map-chip absolute right-3 z-20 flex h-11 w-11 items-center justify-center transition-colors hover:bg-muted",
-          isFullscreen ? "bottom-[max(env(safe-area-inset-bottom),12px)]" : "bottom-3",
-        ].join(" ")}
+      {/* Entering fullscreen is a bottom-right affordance (where the thumb
+          already is); leaving it is the top-right control above, not this
+          same spot - bottom-right during panning is too easy to hit by
+          accident for an exit. */}
+      {!isFullscreen && (
+        <button
+          onClick={() => setIsFullscreen(true)}
+          aria-label={t.pages.map.fullscreen}
+          className="glass-map-chip absolute right-2.5 bottom-2.5 z-20 flex h-11 w-11 items-center justify-center transition-colors hover:bg-muted"
+        >
+          <Maximize size={16} />
+        </button>
+      )}
+    </div>
+
+      <div
+        style={{
+          background: "#0d1420",
+          borderTop: "1px solid rgba(148,178,220,.12)",
+          padding: "7px 11px",
+        }}
       >
-        {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
-      </button>
+        <span style={{ fontSize: "9.5px", color: "var(--subtle-2)" }}>{t.pages.map.attribution}</span>
+      </div>
     </div>
   );
 }

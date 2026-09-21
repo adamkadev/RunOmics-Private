@@ -1,27 +1,30 @@
 import { cn } from '@/lib/utils'
 import type { ElementType, HTMLAttributes, ReactNode } from 'react'
 
-type PillVariant = 'active' | 'accent' | 'neutral' | 'highlight'
+/**
+ * `accent` is the one and only "selected" treatment - a filled accent pill.
+ * There used to be a second one (`active`, a neutral 14 % foreground tint) so
+ * the Activities filter row and the profile period toggle read as selected in a
+ * different language from the year and window pickers. `neutral` is everything
+ * unselected.
+ *
+ * `onDark` is the same geometry for the two surfaces that stay dark in both
+ * themes - the Today hero card and the planned-workout sheet, both of which set
+ * `text-white` outright. `foreground` is the wrong ink there: in light mode
+ * `neutral` would paint near-black text on a near-black glass. It mirrors the
+ * existing `--accent-on-dark` token rather than introducing a second geometry.
+ */
+type PillVariant = 'accent' | 'neutral' | 'onDark'
 
-// `highlight` carries its tint via className (semantic, semi-transparent).
-// Pills are rendered in long scrollable rows, so they stay solid - no
-// backdrop-filter (the blur budget is reserved for chrome + key cards).
-// `active`/`neutral` are the segmented-chip recipe (C2): a translucent,
-// foreground-tinted overlay so the chip reads as glass on top of a card
-// while still adapting automatically between light and dark.
-// `accent` is the stronger selection state used by the period selectors,
-// matching the tab strip: one filled chip carries the current scope.
 const VARIANT_CLASS: Record<PillVariant, string> = {
-  active:    'border border-foreground/[0.20] bg-foreground/[0.14] text-foreground font-semibold',
-  accent:    'border border-transparent bg-accent text-accent-foreground font-semibold shadow-sm',
-  neutral:   'border border-foreground/[0.12] bg-foreground/[0.06] text-foreground/60 hover:bg-foreground/[0.10]',
-  highlight: 'border font-semibold',
+  accent:  'border border-transparent bg-accent text-accent-foreground font-semibold shadow-sm',
+  neutral: 'border border-foreground/[0.12] bg-foreground/[0.06] text-foreground/60 hover:bg-foreground/[0.10]',
+  onDark:  'border border-white/[0.12] bg-white/[0.10] text-white/80 font-semibold',
 }
 
 interface PillProps extends HTMLAttributes<HTMLElement> {
   variant?: PillVariant
   as?: ElementType
-  /** Type pastille: a small colored dot before the label. */
   dotColor?: string
 }
 

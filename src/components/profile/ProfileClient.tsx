@@ -19,17 +19,14 @@ interface Props {
   recentZoneTime: ZoneShare[]
 }
 
-// Progress answers "how far have I come?" - the season at arm's length, in one
-// column: profile, this year, the consistency heatmap (moved here from Today),
-// Goal + PR, the merged Athlete reference, and the shoes strip.
 export function ProfileClient({ data, heatmapDays, latestVo2max, recentZoneTime }: Props) {
   return (
     <div className="space-y-3.5">
       <h1 className="px-1 font-display text-title1 font-bold tracking-tight text-foreground">
         {t.nav.items.profile}
       </h1>
-      <ProfileHero hero={data.hero} displayName={data.athlete.displayName} age={data.athlete.age} sex={data.athlete.sex} />
-      <ProfileStatsYtd ytd={data.ytd} />
+      <ProfileHero hero={data.hero} displayName={data.athlete.displayName} />
+      <ProfileStatsYtd ytd={data.ytd} allTime={data.allTime} prevYear={data.prevYear} />
       <ActivityHeatmap days={heatmapDays} />
       <div className="grid grid-cols-2 gap-3">
         <ProfileGoal goal={data.goal} />

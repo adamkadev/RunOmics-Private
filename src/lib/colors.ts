@@ -1,92 +1,69 @@
-// Semantic color sets for everything the CSS cannot reach: Recharts and inline
-// SVG (which need real strings in attributes), MapLibre paint properties, and
-// the share-card canvas.
-//
-// Every value here resolves through `@/lib/palette` - the one place raw hex
-// literals are allowed to exist. Anything a stylesheet *can* reach belongs in
-// `@/lib/themeTokens` instead, so it stays accent- and theme-aware.
-
 import { HUE, ink, paper, white, withAlpha } from '@/lib/palette'
 
 const c = HUE
 
-// ── Charts ──────────────────────────────────────────────────────────────────
-
-// Form (TSB), weekly volume and the long-run bar used to live here as fixed
-// emerald. They are the "this is your headline number" marks, so they now come
-// from `useAccentUiColor()` and repaint with the accent picker; everything left
-// below is either categorical or semantic and stays put.
 export const CHART_COLORS = {
-  // Brand green, for the marks that are the app's own voice rather than a
-  // metric: the map's route/start marker and the pace ramp's easy end.
   brand:     c.roEmerald,
 
-  // Training load
-  ctl:       c.blue500,   // fitness (chronic)
-  atl:       c.orange500, // fatigue (acute)
+  ctl:       c.blue500,
+  atl:       c.orange500,
 
-  // Activity metrics
   hr:            c.red500,
   hrEasy:        c.red300,
   pace:          c.blue500,
-  elevation:     c.roRust, // bumped chroma from stone-500, which read as gray in the categorical set
+  elevation:     c.roRust,
   cadence:       c.sky500,
   efficiency:    c.violet500,
 
-  // Running form
+  // The five running-form metrics are never drawn together - RunningFormChart
+  // renders one series at a time - so each derived metric shares its parent's
+  // family instead of buying a new one: vertical ratio is oscillation over
+  // stride, and stride length is the other half of cadence. That retires
+  // fuchsia and teal from the app, and both fills carry white text better.
   groundContact:       c.amber500,
   verticalOscillation: c.rose500,
-  verticalRatio:       c.fuchsia500, // oscillation normalised by stride, so kept adjacent to rose
-  strideLength:        c.teal500,
+  verticalRatio:       c.rose600,
+  strideLength:        c.sky600,
 
-  // Easy / Hard split
   easy:      c.emerald400,
   hard:      c.orange400,
 
-  // Chart decoration - the muted floor is the dark theme's own `--subtle` /
-  // `--muted-foreground`, so axis/legend text clears WCAG contrast against the
-  // dark-mode background.
   axisTick:        c.roInkInv2,
   referenceLine:   c.gray200,
   referenceTarget: c.roInkInv3,
   tooltipCursor:   withAlpha(c.roInkInv2, 0.12),
 } as const
 
-// Garmin training status, keyed by the names in GetTrainingStatus's
-// TrainingStatusType. Read as a ladder rather than a categorical set: green =
-// the training is paying off, blue = deliberate rest, amber/red = the load is
-// no longer productive.
 export const TRAINING_STATUS_COLORS: Record<string, string> = {
-  fresh:        c.roEmerald, // peak fitness, fatigue shed
+  fresh:        c.violet500,
   productive:   c.emerald400,
-  // Teal rather than a second blue: recovery already owns "blue = deliberate
-  // rest", and the two read as the same swatch in the dark legend.
-  maintaining:  c.teal500,
+  // Holding fitness is good news, so it takes the deep step of `productive`'s
+  // green rather than the amber the rest of the app reserves for caution.
+  // `fresh` keeps violet: the only other rest-coloured tone in this map is
+  // `recovery`'s blue600, and any second blue lands within a few dE of it -
+  // that would trade one hue family for a distinction the legend needs.
+  maintaining:  c.emerald600,
   recovery:     c.blue600,
-  unproductive: c.amber500,
+  unproductive: c.orange500,
   detraining:   c.zinc400,
   overreaching: c.red500,
 }
 
-// Garmin Coach plan phase, keyed by the names in GetTrainingPlan's
-// TrainingPlanPhase. A separate ramp from TRAINING_STATUS_COLORS: this is
-// intent (what the plan calls for), not a reading of what happened, so it
-// gets its own build -> peak -> taper -> race-day progression instead of
-// reusing the status ladder's green/blue/amber/red meaning.
+/**
+ * `peak` was `violet500`, the same hex as `TRAINING_STATUS_COLORS.fresh`, and
+ * WeekPurposeBanner paints its headline from whichever of the two maps applies
+ * - so one violet meant "fresh" above a phase track that used it for "peak".
+ * Bronze keeps peak inside `taper`'s amber family a clear 25 dE away, and is
+ * the best-contrasting entry in the map on both grounds.
+ */
 export const TRAINING_PLAN_PHASE_COLORS: Record<string, string> = {
   base:    c.roEmerald,
   build:   c.blue500,
-  peak:    c.violet500,
+  peak:    c.amber700,
   taper:   c.amber500,
   raceDay: c.red500,
 }
 
-// ── Heart-rate zones ────────────────────────────────────────────────────────
-// Three ramps exist because they answer different questions and were tuned
-// against different backdrops. They are listed together so the divergence is
-// visible rather than scattered across components.
-
-/** Z1-Z5 for charts and inline SVG, on a light canvas. */
 export const ZONE_COLORS: Record<number, string> = {
   1: c.gray400,
   2: c.blue400,
@@ -95,12 +72,6 @@ export const ZONE_COLORS: Record<number, string> = {
   5: c.red500,
 }
 
-/**
- * The dark-canvas half of the same ramp - the `--zone-4` / `--zone-5` tokens.
- * Z4 orange500 and Z5 red500 collapse into one hue at donut-slice size on the
- * near-black canvas; the lifted pair keeps them apart. Recharts takes attribute
- * strings, so the tokens have to be resolved here rather than via `var()`.
- */
 export const ZONE_COLORS_DARK: Record<number, string> = {
   1: paper(0.55),
   2: c.roBlueHi,
@@ -109,11 +80,6 @@ export const ZONE_COLORS_DARK: Record<number, string> = {
   5: c.roRed,
 }
 
-// HR zone Tailwind classes, keyed by zone number. Shared between ZoneBar
-// (activity detail) and ProfileHrZones (settings), since they style the same
-// Z1-Z5 scale. These resolve to the `--zone-N` tokens, which carry the
-// light/dark pair - Tailwind needs the class string to be a literal, so the
-// theme switch has to happen inside the variable rather than in the class.
 export const ZONE_COLOR_CLASSES: Record<number, { bg: string; text: string }> = {
   1: { bg: 'bg-[var(--zone-1)]', text: 'text-[var(--zone-1)]' },
   2: { bg: 'bg-[var(--zone-2)]', text: 'text-[var(--zone-2)]' },
@@ -122,40 +88,66 @@ export const ZONE_COLOR_CLASSES: Record<number, { bg: string; text: string }> = 
   5: { bg: 'bg-[var(--zone-5)]', text: 'text-[var(--zone-5)]' },
 }
 
-/**
- * The three headline zones on the Athlete card. Saturated a step past
- * ZONE_COLORS because they sit as small text on a near-opaque tile rather than
- * as filled chart marks.
- */
-export const ZONE_HEADLINE_COLORS: Record<2 | 4 | 5, string> = {
-  2: c.blue500,
-  4: c.orange500,
-  5: c.red500,
+export const TRAINING_METRIC_COLORS = {
+  form:    'var(--metric-form)',
+  fitness: 'var(--metric-fitness)',
+  fatigue: 'var(--metric-fatigue)',
+} as const
+
+// A rising metric is not automatically good news: fatigue climbing is a warning,
+// fitness climbing is not. Each tile says which direction it wants.
+export const METRIC_DELTA_COLORS = {
+  good: 'var(--delta-good)',
+  warn: 'var(--delta-warn)',
+  flat: 'var(--subtle)',
+} as const
+
+export type MetricDeltaPolarity = 'up' | 'down'
+
+export function metricDeltaColor(delta: number, goodWhen: MetricDeltaPolarity, threshold: number): string {
+  if (Math.abs(delta) <= threshold) return METRIC_DELTA_COLORS.flat
+  const rising = delta > 0
+  return rising === (goodWhen === 'up') ? METRIC_DELTA_COLORS.good : METRIC_DELTA_COLORS.warn
 }
 
-// ── Readiness / status ──────────────────────────────────────────────────────
-
-// Accent-independent: a readiness verdict means the same thing (go/caution/hold)
-// whichever accent the athlete has chosen.
 export const READINESS_TONE_COLORS = {
   go:      c.roEmerald,
   caution: c.roAmber,
-  hold:    c.red500,
+  hold:    c.roOrange,
 } as const
 
-/**
- * Goal pacing on the monthly volume chart. `ahead` fills with the live accent -
- * hitting the target is the app's own success state - while the other two carry
- * fixed hues so "behind" cannot end up reading as a brand color.
- */
+
+// Fixed hues, not the user's accent theme: a month that hit or missed its
+// target is a volume verdict, not a brand colour, so both bar and icon read
+// the same regardless of which accent the user has picked. `behind` used to
+// be accent-independent red, which put it a severity grade above the annual
+// projection's amber "Behind" - the same shortfall read as two different
+// levels of alarm 400px apart on the same screen.
 export const GOAL_PACE_COLORS = {
-  ahead:   { bg: 'color-mix(in srgb, var(--accent) 6%, transparent)', border: 'color-mix(in srgb, var(--accent) 25%, transparent)', bar: 'var(--accent)' },
+  ahead:   { bg: withAlpha(c.emerald400, 0.06), border: withAlpha(c.emerald400, 0.25), bar: c.emerald400 },
   onTrack: { bg: withAlpha(c.roBlueMid, 0.1),   border: withAlpha(c.roBlueMid, 0.28), bar: c.roBlueHi },
-  behind:  { bg: withAlpha(c.roPink, 0.06),     border: withAlpha(c.roPink, 0.25),    bar: c.roPink },
+  behind:  { bg: withAlpha('#f5b13d', 0.06),    border: withAlpha('#f5b13d', 0.25),   bar: '#f5b13d' },
   pending: { bg: '',                            border: '',                           bar: 'var(--track-on-dark)' },
 } as const
 
-/** Shoe wear tints on the shoes grid - amber warns, red says retire it. */
+/**
+ * The shoe dots are pair identity, not state: they say which column of the
+ * comparison table a number belongs to, and which pair ran an activity. The old
+ * ramp spent roAmber, roViolet and roPink on that, which read as status the dot
+ * never carried, so the ramp is neutral.
+ *
+ * Built from the muted text scale rather than `paper()` because the dots also
+ * render on light surfaces, where white would vanish - these four tokens are
+ * already tuned for both themes. Four steps because the registry holds four
+ * pairs; a fifth would collide with the first.
+ */
+export const SHOE_DOT_RAMP = [
+  'var(--foreground)',
+  'var(--muted-foreground)',
+  'var(--subtle)',
+  'var(--subtle-2)',
+] as const
+
 export const SHOE_WEAR_TINTS = {
   watch: {
     background: `linear-gradient(150deg, ${withAlpha(c.amber500, 0.16)}, ${withAlpha(c.amber500, 0.02)})`,
@@ -167,7 +159,6 @@ export const SHOE_WEAR_TINTS = {
   },
 } as const
 
-/** Planned-workout segment types, on the always-dark workout sheet. */
 export const WORKOUT_SEGMENT_COLORS = {
   warmup:   paper(0.18),
   effort:   c.roAmber,
@@ -176,90 +167,66 @@ export const WORKOUT_SEGMENT_COLORS = {
 } as const
 
 /**
- * The planned-workout sheet, which is always dark regardless of theme so the
- * activity-type tint stays readable on top of it.
+ * Ink for the duration labels that sit inside the structure bar. Only `effort`
+ * is drawn at full height, so it is the only segment wide and tall enough to
+ * carry text. `roAmber` is a light fill: white ink on it measures 1.80:1 where
+ * `roInk` clears 9.5:1, and because the fill is a fixed hex rather than a theme
+ * token the same ink holds in both themes.
  */
+export const WORKOUT_SEGMENT_INK = {
+  effort: c.roInk,
+} as const
+
 export const WORKOUT_SHEET_COLORS = {
   base: withAlpha(c.sheetInk, 0.82),
-  /** Bottom stop of the gradient when an activity-type tint is layered above. */
   baseTinted: withAlpha(c.sheetInk, 0.88),
   border: paper(0.08),
   handle: paper(0.2),
   iconWell: paper(0.07),
   iconFallback: c.gray400,
-  /** Alpha applied to the activity-type color for each layer of the sheet. */
-  tint: { fill: 0.12, border: 0.27, handle: 0.33, iconWell: 0.1 },
+  // `chipFill` is the type chip's tint. It replaces a `${typeColor}22` hex
+  // append (0x22/255 = 13 %) so the whole sheet states its alphas one way;
+  // `border` (0.27) is the same value the old `${typeColor}44` produced.
+  tint: { fill: 0.12, border: 0.27, handle: 0.33, iconWell: 0.1, chipFill: 0.13 },
 } as const
 
-/** Confetti on the goal-reached overlay. */
 export const CELEBRATION_COLORS = {
   confetti: [c.green400, c.amber400, c.cyan300, c.pink400] as const,
   burst:    `radial-gradient(circle, ${c.green500}, ${c.green700})`,
   burstGlow: `0 0 50px ${withAlpha(c.green500, 0.5)}`,
 } as const
 
-/**
- * Fixed brand-green washes for the season headline and race footer surfaces.
- * These deliberately stay emerald rather than following the accent picker, so
- * they are the brand's own voice rather than the athlete's chosen tint.
- */
 export const BRAND_TINTS = {
   headlineBorder: withAlpha(c.roEmerald, 0.32),
   headlineFill: `linear-gradient(158deg, ${withAlpha(c.roEmerald, 0.11)}, ${withAlpha(c.roEmerald, 0.02)})`,
   footerFill: `linear-gradient(155deg, ${withAlpha(c.roEmerald, 0.08)}, transparent)`,
 } as const
 
-// ── Maps ────────────────────────────────────────────────────────────────────
-
 export const MAP_COLORS = {
-  /** Casing drawn under the route line so it reads against any basemap. */
   routeCasingDark:  c.gray800,
   routeCasingLight: white,
-  /** Ring around the start/end markers. */
   markerRingDark:   c.mapMarkerRing,
   markerRingLight:  white,
   markerLabel:      white,
   markerShadow:     `0 2px 8px ${ink(0.35)}`,
   chipShadow:       `0 1px 4px ${ink(0.35)}`,
-  /** Ink on the amber legend chip, which stays amber in both themes. */
-  chipInkOnAmber:   c.mapChipInk,
 } as const
 
-// Activity map route gradient (pace-based), thresholds (sec/km) calibrated on
-// this athlete's actual pace distribution (median ~5:52/km, p90 ~7:10/km) rather
-// than generic splits - so the gradient actually spans most real segments instead
-// of sitting mostly in one or two colors. Ends reuse CHART_COLORS.hr/brand/pace
-// so the map stays visually consistent with the HR/training-load/pace charts.
 export const PACE_ROUTE_COLORS = {
-  fast:      CHART_COLORS.hr,    // <= 4:15/km - intervals, race pace
-  tempo:     c.amber500,         //    5:00/km
-  steady:    c.lime500,          //    5:50/km - near median pace
-  easy:      CHART_COLORS.brand, //    6:30/km
-  recovery:  CHART_COLORS.pace,  // >= 7:30/km - recovery jog / walk breaks
+  fast:      CHART_COLORS.hr,
+  tempo:     c.amber500,
+  steady:    c.lime500,
+  easy:      CHART_COLORS.brand,
+  recovery:  CHART_COLORS.pace,
 } as const
 
-// Running heatmap intensity ramp (rare -> frequent). Cool->hot and deliberately
-// accent-independent, like PACE_ROUTE_COLORS / TEMP_BAND_COLORS: how often a stretch
-// was run is a property of the data, not a theme choice, so the map must not repaint
-// when the user changes their accent. Anchors reuse chart hues so the map sits in the
-// same visual system, and skip yellow/lime (they wash out on the pale basemap). Read
-// as a continuous gradient, not a categorical legend - adjacent stops are meant to
-// blend. The hottest end reuses CHART_COLORS.hr so "most run" shares the app's
-// red = highest-intensity language (HR, temperature).
 export const HEAT_ROUTE_COLORS = {
-  rare:     CHART_COLORS.pace,                // blue   - run once
-  seldom:   CHART_COLORS.efficiency,          // violet
-  often:    CHART_COLORS.verticalOscillation, // rose
-  frequent: CHART_COLORS.hr,                  // red    - run most often
+  rare:     CHART_COLORS.pace,
+  seldom:   CHART_COLORS.efficiency,
+  often:    CHART_COLORS.verticalOscillation,
+  frequent: CHART_COLORS.hr,
 } as const
 
-// ── Share card (canvas) ─────────────────────────────────────────────────────
-
-/**
- * Backdrops for the share-card designs, as [light, dark] pairs. The canvas
- * cannot read CSS variables, so these are the one place the share card's own
- * surfaces are named.
- */
 export const SHARE_BACKDROPS = {
   aurora:  [c.shareAuroraLight,  c.shareAuroraDark],
   pulse:   [c.sharePulseLight,   c.sharePulseDark],
@@ -269,39 +236,21 @@ export const SHARE_BACKDROPS = {
 } as const
 
 export const SHARE_CARD_COLORS = {
-  /** Start-of-route marker - green means "you began here" regardless of accent. */
   routeStart: c.green500,
-  /** Finish marker fallback: when the accent is itself green the accent-colored
-   *  finish dot would collide with the green start, so it flips to this red -
-   *  the start/finish convention Strava and Garmin use. */
   routeFinish: c.red500,
-  /** Grid-line label plates on the map design. */
   mapLabelPlateDark:  withAlpha(c.shareMapDark, 0.76),
   mapLabelPlateLight: withAlpha(c.shareMapLight, 0.76),
-  /** Km pill and compass backing on the map design. */
   mapPillDark:  withAlpha(c.shareMapDark, 0.84),
   mapPillLight: paper(0.88),
-  /** Golden-hour placeholder shown until the athlete picks a photo. */
   memoryDark:  [c.shareMemoryDark1, c.shareMemoryDark2, c.shareMemoryDark3, c.shareMemoryDark4] as const,
   memoryLight: [c.shareMemoryLight1, c.shareMemoryLight2, c.shareMemoryLight3, c.shareMemoryLight4] as const,
-  /** Tree-line silhouette on the memory placeholder. */
   memoryHorizonLight: withAlpha(c.shareMemoryHorizon, 0.48),
-  /** Off state of the share-card toggles (iOS system fill). */
   toggleOff: withAlpha(c.iosFill, 0.22),
-  /** Alpha applied to the chosen accent for a selected thumbnail's ring. */
   thumbRingAlpha: 0.33,
-  /** Label on the accent-filled primary action. */
   onAccent: white,
-  /** Hue wheel behind the "custom color" swatch - pure CSS hues, no palette. */
   customWheel: 'conic-gradient(red, yellow, lime, cyan, blue, magenta, red)',
 } as const
 
-/**
- * Chrome for the surfaces that render before, or entirely without, globals.css:
- * the PWA launch screens and the root error boundary. They cannot read CSS
- * variables, so they carry their own deep-navy scheme - the same value the
- * performance accent uses for its dark background.
- */
 export const BOOT_COLORS = {
   background: c.performanceBgDark,
   foreground: c.gray200,
@@ -310,11 +259,6 @@ export const BOOT_COLORS = {
   logo: c.emerald400,
 } as const
 
-// ── Race distance identity ──────────────────────────────────────────────────
-
-// Race distance identity (Goals season-PR cards): each distance category gets
-// its own gradient overlay + text tint so cards read apart at a glance, same
-// idea as activity-type dots but for race length rather than effort type.
 const DISTANCE_TINTS = [
   { match: /marathon/i, overlay: 'from-orange-500/35', text: 'text-orange-400' },
   { match: /half|semi/i, overlay: 'from-emerald-500/35', text: 'text-emerald-400' },
@@ -328,26 +272,26 @@ export function raceDistanceTint(distance: string): { overlay: string; text: str
   return found ?? { overlay: 'from-accent/35', text: 'text-accent-text' }
 }
 
-// ── Temperature ─────────────────────────────────────────────────────────────
-
-// Cold -> hot icon color scale for temperature readings
-export function temperatureIconColor(celsius: number): string {
-  if (celsius < 5)  return 'text-blue-500 dark:text-blue-400'
-  if (celsius < 12) return 'text-cyan-500 dark:text-cyan-400'
-  if (celsius < 18) return 'text-accent-text'
-  if (celsius < 24) return 'text-amber-500 dark:text-amber-400'
-  if (celsius < 30) return 'text-orange-500 dark:text-orange-400'
-  return 'text-red-500 dark:text-red-400'
+/** Bands a temperature onto the text-grade `600 / dark:400` ramp the rest of the
+ *  app uses for semantic ink (see STATUS in statusColors.ts). It colours the
+ *  reading itself, not just a glyph, so the levels have to survive light mode. */
+export function temperatureColor(celsius: number): string {
+  if (celsius < 5)  return 'text-blue-600 dark:text-blue-400'
+  if (celsius < 12) return 'text-cyan-600 dark:text-cyan-400'
+  // Not the accent: this band sits mid-ramp between cyan and amber, so on a
+  // violet or teal accent the ramp stopped reading as one scale.
+  if (celsius < 18) return 'text-emerald-600 dark:text-emerald-400'
+  if (celsius < 24) return 'text-amber-600 dark:text-amber-400'
+  if (celsius < 30) return 'text-orange-600 dark:text-orange-400'
+  return 'text-red-600 dark:text-red-400'
 }
 
-// Temperature band hex colors for Recharts scatter dots (cold=blue -> hot=red)
-// These represent physical reality and are intentionally accent-independent.
 export const TEMP_BAND_COLORS = {
-  cold:      c.blue400,    // < 10 °C
-  cool:      c.emerald400, // 10-18 °C
-  mild:      c.amber400,   // 18-24 °C
-  warm:      c.orange500,  // 24-30 °C
-  hot:       c.red500,     // >= 30 °C
+  cold:      c.blue400,
+  cool:      c.emerald400,
+  mild:      c.amber400,
+  warm:      c.orange500,
+  hot:       c.red500,
 } as const
 
 export function tempBandColor(celsius: number): string {

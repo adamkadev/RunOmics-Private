@@ -8,7 +8,6 @@ export interface TrainingStatusDayBar {
   status: TrainingStatusType | null
 }
 
-/** Garmin's own daily readings, oldest first, for the dashboard's day-by-day status bar. */
 export function getTrainingStatusDaysBar(days: number = DAYS): TrainingStatusDayBar[] {
   return getTrainingStatusDays()
     .slice(-days)

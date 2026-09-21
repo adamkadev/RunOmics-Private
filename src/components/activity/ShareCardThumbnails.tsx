@@ -10,8 +10,6 @@ import { SHARE_CARD_COLORS } from '@/lib/colors'
 import { withAlpha } from '@/lib/palette'
 import { t } from '@/i18n'
 
-// Thumbnails render at 390x390 (square crop of the design) and display at THUMB_SIZE via CSS.
-// Each canvas re-renders whenever accent, theme, or design changes.
 const THUMB_CANVAS = 390
 export const THUMB_SIZE = 104
 
@@ -23,17 +21,13 @@ interface ThemeCardProps {
   accentHex: string
   onClick: () => void
   gpsRoute?: [number, number][] | null
-  // Memory design only: object URL of the chosen photo (preview), or null for the placeholder.
   photoUrl?: string | null
   customRgb?: [number, number, number]
 }
 
 export function ThemeCard({ design, accent, theme, selected, accentHex, onClick, gpsRoute, photoUrl, customRgb }: ThemeCardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  // Memory shows the chosen photo once picked, otherwise the camera placeholder canvas.
   const showPhoto = design === 'memory' && !!photoUrl
-  // The square thumbnail gets its own render rather than a crop of the tall
-  // one: the fit is per aspect ratio, and so is the projected trace.
   const { image: mapImage, points: mapPoints, failed: mapFailed } = useShareCardMap({
     route: gpsRoute,
     theme,
@@ -52,8 +46,6 @@ export function ThemeCard({ design, accent, theme, selected, accentHex, onClick,
     const [r, g, b] = customRgb ?? ACCENT_RGB[accent][dark ? 'dark' : 'light']
     canvas.width = THUMB_CANVAS
     canvas.height = THUMB_CANVAS
-    // Map and route themes get the real GPS route; memory gets no photo here
-    // (the camera placeholder), since the picked one renders as an <img>.
     drawTheme(ctx, design, THUMB_CANVAS, THUMB_CANVAS, r, g, b, dark, {
       gpsRoute: design === 'map' || design === 'route' ? gpsRoute : null,
       mapImage,
@@ -73,7 +65,6 @@ export function ThemeCard({ design, accent, theme, selected, accentHex, onClick,
         }}
       >
         {showPhoto ? (
-          // eslint-disable-next-line @next/next/no-img-element
           <img src={photoUrl!} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
         ) : (
           <canvas
@@ -92,7 +83,6 @@ export function ThemeCard({ design, accent, theme, selected, accentHex, onClick,
   )
 }
 
-// Marks the paradigm shift between generated themes and the user's own photo.
 export function ThemeDivider({ label }: { label: string }) {
   return (
     <div className="flex shrink-0 flex-col items-center gap-1.5 px-0.5" style={{ width: 44 }}>

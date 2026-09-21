@@ -33,11 +33,16 @@ export interface GoalYear {
 }
 
 export interface UpcomingRace {
+  courseContext?: import('@/domain/coaching/types').RaceCourseContext
+  garminEventUuid?: string
+  garminEventId?: number
   date: string
   name: string
   distance: string
   location?: string
   targetSeconds?: number | null
+  isPrimaryEvent?: boolean
+  isTrainingEvent?: boolean
 }
 
 export interface UpcomingRaceYear {
@@ -58,11 +63,18 @@ export interface GoalProjection {
   deltaKm: number
 }
 
+export interface MonthProgress {
+  daysElapsed: number
+  daysInMonth: number
+  proRataTargetKm: number
+}
+
 export interface MonthGoal {
   month: number
   targetKm: number
   actualKm: number
   status: 'ahead' | 'on_track' | 'behind' | 'pending'
+  progress: MonthProgress | null
 }
 
 export interface NextRaceSpotlight {
@@ -74,7 +86,6 @@ export interface NextRaceSpotlight {
   prDate: string | null
 }
 
-/** A distance's predicted finish time, sourced from Garmin's own race predictor. */
 export interface GoalRacePrediction {
   key: RaceDistanceKey
   predictedSeconds: number
@@ -113,8 +124,6 @@ export interface GoalsPageData {
   history: YearOutcome[]
 }
 
-// Uses last 8 calendar weeks (cross-year safe) for a stable rate.
-// Requires >= 4 weeks elapsed in the current year before projecting.
 export function computeProjection(
   activities: Activity[],
   year: number,
@@ -132,7 +141,6 @@ export function computeProjection(
 
   if (weeksElapsed < 4 || remainingWeeks <= 0) return null
 
-  // Rolling 8-week rate: uses all activities (not filtered by year) for cross-year accuracy
   const cutoff = new Date(now.getTime() - 56 * 86_400_000)
   const recentKm = activities
     .filter((a) => new Date(a.date + 'T00:00:00') >= cutoff)
@@ -150,8 +158,6 @@ export function computeProjection(
   return { weeklyRate, weeklyNeeded, projectedYearKm, status, deltaKm }
 }
 
-// Each month's target is the annual goal pro-rated by its share of days in the year.
-// Months are independent: a missed month does not raise the target for the next one.
 export function computeMonthlyGoals(activities: Activity[], year: number, goals: GoalYear): MonthGoal[] {
   const annualKm = goals.annualDistanceKm
   const now = new Date()
@@ -161,7 +167,7 @@ export function computeMonthlyGoals(activities: Activity[], year: number, goals:
     const month = i + 1
     const monthStart = new Date(year, month - 1, 1)
     const monthEnd = new Date(year, month, 1)
-    const daysInMonth = (monthEnd.getTime() - monthStart.getTime()) / 86_400_000
+    const daysInMonth = Math.round((monthEnd.getTime() - monthStart.getTime()) / 86_400_000)
     const targetKm = round((annualKm * daysInMonth) / daysInYear, 1)
 
     const actualKm = round(
@@ -175,26 +181,29 @@ export function computeMonthlyGoals(activities: Activity[], year: number, goals:
     )
 
     let status: MonthGoal['status']
+    let progress: MonthProgress | null = null
     if (monthStart > now) {
       status = 'pending'
     } else if (monthEnd <= now) {
       status = actualKm >= targetKm ? 'ahead' : 'behind'
     } else {
-      const expectedFraction = (now.getTime() - monthStart.getTime()) / 86_400_000 / daysInMonth
+      const daysElapsed = now.getDate()
+      const expectedFraction = daysElapsed / daysInMonth
       const actualFraction = targetKm > 0 ? actualKm / targetKm : 0
       status =
         actualFraction > expectedFraction * 1.1 ? 'ahead' :
         actualFraction < expectedFraction * 0.9 ? 'behind' : 'on_track'
+      progress = {
+        daysElapsed,
+        daysInMonth,
+        proRataTargetKm: round(targetKm * expectedFraction, 1),
+      }
     }
 
-    return { month, targetKm, actualKm, status }
+    return { month, targetKm, actualKm, status, progress }
   })
 }
 
-// Predicted time comes straight from Garmin's own race predictor (GetGarminRacePredictions),
-// matched to the race's distance via the same DISTANCE_KEY map GetRecords uses for PBs,
-// then capped at the PR already set at that exact distance (never predict a race slower
-// than a result the athlete has already run).
 export function computeNextRaceSpotlight(
   upcomingRaces: UpcomingRace[],
   predictions: GoalRacePrediction[],
@@ -210,8 +219,6 @@ export function computeNextRaceSpotlight(
   const predictionKey = DISTANCE_KEY[race.distance]
   const prediction = predictionKey ? predictions.find((p) => p.key === predictionKey) ?? null : null
 
-  // Never predict slower than a PR already proven at this exact distance -
-  // Garmin's model can undershoot when its own recent form estimate lags a fresh PR.
   const predictedSeconds =
     prediction?.predictedSeconds != null && prediction.actualSeconds != null
       ? Math.min(prediction.predictedSeconds, prediction.actualSeconds)
@@ -230,9 +237,6 @@ export function computeNextRaceSpotlight(
   }
 }
 
-// A year is only included in the history if it has goals set.
-// Annual distance is achieved when total km reaches the target; race targets
-// are achieved when a PB exists at or under the target time.
 export function computeYearOutcome(yearData: YearData): YearOutcome | null {
   const { year, goals, totalDistanceKm, pbs } = yearData
   if (!goals) return null
@@ -260,7 +264,6 @@ export interface WeeklyGoal {
   actualKm: number
 }
 
-// Prorates the annual goal to a week the same way computeMonthlyGoals prorates it to a month.
 export function computeWeeklyGoal(activities: Activity[], year: number, goals: GoalYear, now = new Date()): WeeklyGoal | null {
   if (goals.annualDistanceKm <= 0) return null
 
@@ -282,7 +285,6 @@ export function computeWeeklyGoal(activities: Activity[], year: number, goals: G
   return { targetKm, actualKm }
 }
 
-/** The current week's distance goal, prorated from the current year's annual target - null if no goal is set. */
 export async function getCurrentWeeklyGoal(): Promise<WeeklyGoal | null> {
   const year = new Date().getFullYear()
   const goalYears = getGoalYears()
@@ -291,8 +293,6 @@ export async function getCurrentWeeklyGoal(): Promise<WeeklyGoal | null> {
   return computeWeeklyGoal(getAllActivities(), year, goals)
 }
 
-// Garmin's `latest` finish-time estimate per distance, paired with the athlete's own
-// PR at that distance (for the "never predict slower than a proven PR" cap below).
 async function getGoalPredictions(): Promise<GoalRacePrediction[]> {
   const garmin = getGarminRacePredictions()
   if (!garmin) return []
@@ -350,8 +350,6 @@ export async function getGoalsPageData(): Promise<GoalsPageData> {
     const rawYearKm = activities
       .filter((a) => a.date.startsWith(String(year)))
       .reduce((sum, a) => sum + a.distanceKm, 0)
-    // Displayed / compared value uses the shared whole-km selector so Goals
-    // matches Progress and Analytics; the projection keeps the raw sum.
     const totalDistanceKm = yearDistanceKm(activities, year)
 
     const projection =

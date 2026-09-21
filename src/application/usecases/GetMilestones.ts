@@ -4,16 +4,13 @@ import { getAllPlannedWorkouts } from '@/infrastructure/repositories/JsonPlanned
 import { getRecords } from './GetRecords'
 import { computeWeekActivityDays } from './GetDashboardData'
 import { isoWeekNumber, startOfWeek, addDays, isoDate } from '@/lib/calendarDate'
-import { formatDuration } from '@/lib/formatters'
+import { formatDistance, formatDuration, formatKm } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 const DISTANCE_TIERS_KM = [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 5000]
 const MIN_STREAK_WEEKS = 8
-const MAX_STREAK_WEEKS_TO_CHECK = 208 // 4 years
+const MAX_STREAK_WEEKS_TO_CHECK = 208
 
-// Never reset (unlike DISTANCE_TIERS_KM, which is per calendar year) - this
-// is the "since day 1" lifetime odometer. Tops out at Earth's equatorial
-// circumference, a fitting final tier for a distance that only ever grows.
 const LIFETIME_DISTANCE_TIERS_KM = [500, 1000, 1500, 2000, 3000, 4000, 5000, 7500, 10_000, 15_000, 20_000, 30_000, 40_075]
 const EARTH_CIRCUMFERENCE_KM = 40_075
 const MARATHON_KM = 42.195
@@ -26,7 +23,8 @@ export interface Milestone {
   type: MilestoneType
   date: string
   label: string
-  detail: string
+  /** Omitted when the row's own label and date already say everything there is. */
+  detail?: string
 }
 
 export interface DistanceTierCrossing {
@@ -35,7 +33,6 @@ export interface DistanceTierCrossing {
   date: string
 }
 
-/** Annual cumulative distance tier crossings, in the order they happened. Resets each calendar year. */
 export function findDistanceTierMilestones(
   activitiesAscByDate: { date: string; distanceKm: number }[],
   tiers: number[] = DISTANCE_TIERS_KM,
@@ -68,7 +65,6 @@ export interface LifetimeDistanceCrossing {
   cumulativeKm: number
 }
 
-/** All-time cumulative distance tier crossings, in the order they happened. Unlike findDistanceTierMilestones, never resets. */
 export function findLifetimeDistanceMilestones(
   activitiesAscByDate: { date: string; distanceKm: number }[],
   tiers: number[] = LIFETIME_DISTANCE_TIERS_KM,
@@ -94,7 +90,6 @@ export interface ActivityCountCrossing {
   cumulativeKm: number
 }
 
-/** Every-Nth-session milestones ("100th run"), in the order they happened. */
 export function findActivityCountMilestones(
   activitiesAscByDate: { date: string; distanceKm: number }[],
   tiers: number[] = ACTIVITY_COUNT_TIERS,
@@ -154,11 +149,10 @@ export function longestWeekStreak(activities: Activity[]): number {
 export interface WeeklyStreakData {
   currentWeeks: number
   longestWeeks: number
-  weekDays: boolean[] // Mon..Sun
-  plannedDays: boolean[] // Mon..Sun - a past day with no plan is rest, not missed
+  weekDays: boolean[]
+  plannedDays: boolean[]
 }
 
-/** Days of the current week that carry a scheduled session (Mon..Sun). */
 export function computeWeekPlannedDays(planned: { date: string }[], now: Date): boolean[] {
   const dateSet = new Set(planned.map((w) => w.date.slice(0, 10)))
   const monday = startOfWeek(now)
@@ -178,7 +172,7 @@ export function getWeeklyStreakData(now = new Date()): WeeklyStreakData | null {
 }
 
 export async function getMilestones(): Promise<Milestone[]> {
-  const activities = getAllActivities() // newest first
+  const activities = getAllActivities()
   const ascending = [...activities].sort((a, b) => a.date.localeCompare(b.date))
 
   const milestones: Milestone[] = []
@@ -187,8 +181,9 @@ export async function getMilestones(): Promise<Milestone[]> {
     milestones.push({
       type: 'distance-tier',
       date: crossing.date,
-      label: t.profile.milestones.distanceTier(crossing.tierKm),
-      detail: t.profile.milestones.distanceTierDetail(crossing.year),
+      // No detail: the row sits under its year heading and carries its own
+      // date, so "Crossed in 2026" was the third telling of the same fact.
+      label: t.profile.milestones.distanceTier(formatKm(crossing.tierKm)),
     })
   }
 
@@ -206,7 +201,7 @@ export async function getMilestones(): Promise<Milestone[]> {
     milestones.push({
       type: 'lifetime-distance',
       date: crossing.date,
-      label: t.profile.milestones.lifetimeDistance(crossing.tierKm),
+      label: t.profile.milestones.lifetimeDistance(formatKm(crossing.tierKm)),
       detail:
         crossing.tierKm >= EARTH_CIRCUMFERENCE_KM
           ? t.profile.milestones.lifetimeDistanceWorldTour
@@ -219,7 +214,7 @@ export async function getMilestones(): Promise<Milestone[]> {
       type: 'activity-count',
       date: crossing.date,
       label: t.profile.milestones.activityCount(crossing.count),
-      detail: t.profile.milestones.activityCountDetail(Math.round(crossing.cumulativeKm)),
+      detail: t.profile.milestones.activityCountDetail(formatKm(crossing.cumulativeKm)),
     })
   }
 
@@ -240,7 +235,12 @@ export async function getMilestones(): Promise<Milestone[]> {
         type: 'record',
         date: r.date,
         label: t.profile.milestones.record(r.label),
-        detail: formatDuration(r.seconds),
+        // Longest Run is a distance record: its headline is how far, not how
+        // long, so a duration here read as a time four seconds off the Half.
+        detail:
+          r.distanceKm != null
+            ? `${formatDistance(r.distanceKm)} ${t.units.km}`
+            : formatDuration(r.seconds),
       })
     }
   }

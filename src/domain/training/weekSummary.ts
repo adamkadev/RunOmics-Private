@@ -1,4 +1,4 @@
-import type { Activity, ActivityType } from '@/domain/activity/types'
+import type { ActivitySummary, ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import { trimp, type HrBounds } from './trimp'
 import { easyHardShare } from './easyHard'
 
@@ -12,7 +12,7 @@ export interface WeekSummary {
   hardPct: number | null
 }
 
-export function summarizeWeek(activities: Activity[], hrBounds?: HrBounds): WeekSummary {
+export function summarizeWeek(activities: ActivitySummary[], hrBounds?: HrBounds): WeekSummary {
   const totalTrimp = Math.round(activities.reduce((s, a) => s + trimp(a, hrBounds), 0))
   const elevationGainM = Math.round(activities.reduce((s, a) => s + (a.elevationGain ?? 0), 0))
   const keySessionsCount = activities.filter((a) => !EASY_TYPES.includes(a.type)).length
@@ -20,7 +20,7 @@ export function summarizeWeek(activities: Activity[], hrBounds?: HrBounds): Week
   return { totalTrimp, elevationGainM, keySessionsCount, easyPct, hardPct }
 }
 
-export function weeklyTrimpTotals(weekNumbers: number[], byWeek: Map<number, Activity[]>, hrBounds?: HrBounds): number[] {
+export function weeklyTrimpTotals(weekNumbers: number[], byWeek: Map<number, ActivitySummary[]>, hrBounds?: HrBounds): number[] {
   return weekNumbers.map((week) => Math.round((byWeek.get(week) ?? []).reduce((s, a) => s + trimp(a, hrBounds), 0)))
 }
 
@@ -37,7 +37,6 @@ export interface WeekLoadComparison {
   level: WeekLoadLevel
 }
 
-/** Mirrors GetWeeklyLoadComparison's baseline logic, but for an arbitrary week (needed to browse past/future weeks client-side). */
 export function compareWeekLoad(currentTrimp: number, priorWeeksTrimp: number[]): WeekLoadComparison | null {
   if (priorWeeksTrimp.length < 3) return null
   const typicalTrimp = priorWeeksTrimp.reduce((s, v) => s + v, 0) / priorWeeksTrimp.length
@@ -48,27 +47,25 @@ export function compareWeekLoad(currentTrimp: number, priorWeeksTrimp: number[])
 
 export interface PlannedWeek {
   total: number
-  /** Planned sessions that are not easy base runs - what gives the week its intent. */
   key: number
+  /** Sum of per-workout TRIMP estimates - the same scale summarizeWeek reports. */
+  estimatedLoad: number
+  distanceKm: number
 }
 
-/** What the plan holds for a week. Untyped planned sessions count in the total but never as key. */
-export function summarizePlannedWeek(plannedTypes: (string | null | undefined)[]): PlannedWeek {
-  const key = plannedTypes.filter((type) => !!type && !EASY_TYPES.includes(type as ActivityType)).length
-  return { total: plannedTypes.length, key }
+export function summarizePlannedWeek(planned: PlannedWorkout[]): PlannedWeek {
+  const key = planned.filter((w) => !!w.type && !EASY_TYPES.includes(w.type)).length
+  const estimatedLoad = Math.round(planned.reduce((sum, w) => sum + (w.estimatedLoad ?? 0), 0))
+  const distanceKm = Math.round(planned.reduce((sum, w) => sum + (w.distanceM ?? 0), 0) / 1000)
+  return { total: planned.length, key, estimatedLoad, distanceKm }
 }
 
 export interface WeekAdherence {
-  /** Sessions planned across the whole week. */
   planned: number
   done: number
   percent: number
 }
 
-// Counted over the whole week rather than the elapsed days only: the athlete
-// reads this against the plan they wrote, so on Tuesday of a five-session week
-// "0/5" is the number they expect - a denominator that grew day by day showed
-// "0/1" and read as a bug. Sessions still to come are simply not done yet.
 export function computeWeekAdherence(
   days: { date: string; planned: boolean; completed: boolean }[],
 ): WeekAdherence | null {

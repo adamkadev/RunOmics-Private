@@ -1,6 +1,5 @@
 import type { Activity } from '@/domain/activity/types'
 import { runVerdictTone } from '@/domain/activity/runVerdict'
-import { GlassSurface } from '@/components/ui/GlassSurface'
 import { STATUS } from '@/lib/statusColors'
 import type { Insight } from '@/lib/gemini'
 import { cn } from '@/lib/utils'
@@ -14,7 +13,6 @@ const TONE_TEXT_CLASS = {
 
 interface Props {
   activity: Activity
-  /** Generated copy for the same tone; falls back to the rules-based copy when absent. */
   aiVerdict: Insight | null
 }
 
@@ -28,10 +26,12 @@ export function RunVerdict({ activity, aiVerdict }: Props) {
     (activity.rpe !== null ? v.effortClause(t.rpeLabels[activity.rpe] ?? '', activity.rpe) : null)
 
   return (
-    <GlassSurface variant="card" className="p-5 text-center">
-      <p className="widget-label text-accent-text">{v.title}</p>
-      <h2 className={cn('mt-1 font-display text-lg font-bold leading-snug', TONE_TEXT_CLASS[tone])}>{headline}</h2>
-      {body && <p className="mt-1 text-sm leading-snug text-muted-foreground">{body}</p>}
-    </GlassSurface>
+    <div className="px-1">
+      <h2 className={cn('font-display text-subhead font-semibold leading-snug', TONE_TEXT_CLASS[tone])}>
+        <span className="sr-only">{v.title}</span>
+        {headline}
+      </h2>
+      {body && <p className="mt-0.5 text-caption leading-snug text-muted-foreground">{body}</p>}
+    </div>
   )
 }

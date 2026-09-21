@@ -16,7 +16,6 @@ const { getVO2maxSeries } = await import('../GetVO2maxHistory')
 
 const day = (date: string, vo2max: number): Vo2maxSample => ({ date, vo2max })
 
-// 14 monthly samples, 2025-06 (50) through 2026-07 (63).
 const month = (i: number): Vo2maxSample => {
   const m = 5 + i
   const date = `${2025 + Math.floor(m / 12)}-${String((m % 12) + 1).padStart(2, '0')}-28`
@@ -44,7 +43,7 @@ describe('getVO2maxSeries', () => {
 
   it('plots one point per day over the four-week window', () => {
     samples.days = [
-      day('2026-06-01', 55), // 40+ days before the latest sample
+      day('2026-06-01', 55),
       day('2026-07-05', 56),
       day('2026-07-12', 56.4),
       day('2026-07-16', 55.8),
@@ -66,7 +65,6 @@ describe('getVO2maxSeries', () => {
       { date: '2026-07-16', vo2maxGarmin: 56 },
     ] as Activity[]
 
-    // One point per month for the long view, the last reading of each.
     expect(getVO2maxSeries()['1y'].map((p) => p.value)).toEqual([57, 56])
     expect(getVO2maxSeries()['4w'].map((p) => p.date)).toEqual(['2026-06-28', '2026-07-16'])
   })

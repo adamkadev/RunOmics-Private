@@ -12,7 +12,6 @@ interface Props {
   qualifiedEfforts: QualifiedEffort[]
 }
 
-// Top-3 qualifying efforts only - the fuller breakdown of every distance lives in BestEfforts further down the page.
 export function ActivityAchievements({ bestEfforts, qualifiedEfforts }: Props) {
   if (qualifiedEfforts.length === 0) return null
   const s = t.activity.bestEfforts

@@ -1,6 +1,10 @@
+'use client'
+
+import { useState } from 'react'
 import type { TrainingStatusDayBar } from '@/application/usecases/GetTrainingStatusDaysBar'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { TRAINING_STATUS_COLORS } from '@/lib/colors'
+import { formatDate, formatDateRange, type DateFormatOptions } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 interface Props {
@@ -16,7 +20,6 @@ interface DayGroup {
   count: number
 }
 
-/** Merges consecutive days sharing the same status into one wider segment. */
 function groupConsecutiveDays(days: TrainingStatusDayBar[]): DayGroup[] {
   const groups: DayGroup[] = []
 
@@ -33,56 +36,117 @@ function groupConsecutiveDays(days: TrainingStatusDayBar[]): DayGroup[] {
   return groups
 }
 
-function formatDate(date: string): string {
-  return new Date(date + 'T00:00:00').toLocaleDateString(t.locale, { day: 'numeric', month: 'short' })
-}
+// A fortnight of segments, so every date here is a caption: no weekday, and
+// the dash between the two ends of a group is Intl's, not one we type.
+const DENSE: DateFormatOptions = { style: 'bare' }
 
 function groupLabel(group: DayGroup): string {
   const s = t.dashboard.trainingStatusDays
   const status = group.status ? t.trainingStatus.status[group.status] : s.noReading
-  const range = group.count === 1 ? formatDate(group.from) : `${formatDate(group.from)} – ${formatDate(group.to)}`
+  const range =
+    group.count === 1 ? formatDate(group.from, DENSE) : formatDateRange(group.from, group.to, DENSE)
   return `${status} · ${range}`
 }
 
+const COMPOSITION_MAX = 1
+// The ink ramp, which is per theme - these were the dark-mode greys, hard-coded,
+// so on white they landed at 1.9:1 and the captions disappeared.
+const FOOTER_INK = 'var(--muted-foreground)'
+const EYEBROW_INK = 'var(--subtle)'
+const HINT_INK = 'var(--subtle-2)'
+
+type RatedStatus = NonNullable<TrainingStatusDayBar['status']>
+
+function statusComposition(days: TrainingStatusDayBar[]): { status: RatedStatus; count: number }[] {
+  const counts = new Map<RatedStatus, number>()
+  for (const day of days) {
+    if (!day.status) continue
+    counts.set(day.status, (counts.get(day.status) ?? 0) + 1)
+  }
+
+  return [...counts.entries()]
+    .map(([status, count]) => ({ status, count }))
+    .sort((a, b) => b.count - a.count || a.status.localeCompare(b.status))
+    .slice(0, COMPOSITION_MAX)
+}
+
 export function TrainingStatusDaysBar({ days }: Props) {
+  const [activeKey, setActiveKey] = useState<string | null>(null)
+
   if (days.length === 0) return null
 
   const s = t.dashboard.trainingStatusDays
   const latest = days[days.length - 1]
-  const oldest = days[0]
-  const oldestLabel = oldest ? formatDate(oldest.date) : ''
   const groups = groupConsecutiveDays(days)
+  const active = groups.find((group) => group.from === activeKey) ?? null
+
+  const composition = statusComposition(days)
 
   return (
     <GlassSurface variant="card" className="p-4">
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="text-caption font-medium uppercase tracking-wide text-muted-foreground">{s.title}</h3>
-        {latest?.status && (
-          <span className="text-xs font-semibold" style={{ color: TRAINING_STATUS_COLORS[latest.status] }}>
-            {t.trainingStatus.status[latest.status]}
-          </span>
-        )}
-      </div>
+      <p
+        className="font-bold uppercase leading-tight"
+        style={{ fontSize: '10.5px', letterSpacing: '0.16em', color: EYEBROW_INK }}
+      >
+        {s.titleToday(s.title)}
+      </p>
+      {latest?.status && (
+        <p
+          className="mt-1 font-display font-bold leading-tight tracking-tight"
+          style={{ fontSize: '24px', color: TRAINING_STATUS_COLORS[latest.status] }}
+        >
+          {t.trainingStatus.status[latest.status]}
+        </p>
+      )}
 
       <div className="mt-2.5 flex h-4 overflow-hidden rounded-sm">
         {groups.map((group) => (
-          <div
+          <button
             key={group.from}
-            className="h-full"
+            type="button"
+            className="h-full cursor-pointer transition-opacity"
             style={{
               flexGrow: group.count,
               flexBasis: 0,
               background: group.status ? TRAINING_STATUS_COLORS[group.status] : EMPTY_SEGMENT,
+              opacity: active && active.from !== group.from ? 0.4 : 1,
             }}
-            title={groupLabel(group)}
+            aria-label={groupLabel(group)}
+            onClick={() => setActiveKey(group.from)}
+            onMouseEnter={() => setActiveKey(group.from)}
+            onMouseLeave={() => setActiveKey(null)}
+            onFocus={() => setActiveKey(group.from)}
+            onBlur={() => setActiveKey(null)}
           />
         ))}
       </div>
 
-      <div className="mt-1.5 flex justify-between text-micro text-muted-foreground">
-        <span>{oldestLabel}</span>
-        <span>{s.today}</span>
+      <div className="mt-1.5 flex items-baseline justify-between gap-2" style={{ fontSize: '12.5px' }}>
+        {active ? (
+          <span className="text-foreground/80">{groupLabel(active)}</span>
+        ) : (
+          <>
+            {/* Window and composition are one reading, left and right of the
+                same line. */}
+            <span className="min-w-0 truncate" style={{ color: EYEBROW_INK }}>
+              {s.window(days.length)}
+            </span>
+            {composition[0] && (
+              <span className="shrink-0 font-normal tabular-nums" style={{ color: FOOTER_INK }}>
+                {s.dominant(composition[0].count, t.trainingStatus.status[composition[0].status])}
+              </span>
+            )}
+          </>
+        )}
       </div>
+
+      {/* The hint is an instruction, not a statistic, so it sits under the pair
+          rather than sharing a line with one half of it. */}
+      {!active && (
+        <p className="mt-1 text-[11px] leading-snug" style={{ color: HINT_INK }}>
+          {s.tapHint}
+        </p>
+      )}
     </GlassSurface>
   )
 }

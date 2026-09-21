@@ -42,18 +42,23 @@ export function SortDropdown<T extends string>({ options, sortBy, order, onChang
   const activeLabel = options.find((o) => o.value === sortBy)?.label
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="flex min-w-0 flex-col items-end">
+      {/* The arrow says "sort", so the word did not need to. The current key
+          stays on screen though: an icon alone hides what the list is ordered by,
+          and that is the one thing the control is reporting. */}
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1 rounded-control border border-foreground/[0.12] bg-foreground/[0.06] px-2.5 py-1 text-xs font-medium text-foreground/70 transition-colors hover:bg-foreground/[0.10]"
+        aria-expanded={open}
+        aria-label={`${label}: ${activeLabel ?? ''}`}
+        className="flex h-9 shrink-0 items-center gap-1 rounded-control border border-foreground/[0.12] bg-foreground/[0.06] px-2.5 text-xs font-medium text-foreground/70 transition-colors hover:bg-foreground/[0.10]"
       >
-        {label}: {activeLabel}
         {order === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
+        {activeLabel}
         <ChevronDown size={12} className={cn('transition-transform', open && 'rotate-180')} />
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-20 mt-1 min-w-[8rem] overflow-hidden rounded-xl border border-foreground/[0.12] bg-background/80 backdrop-blur-md py-1 shadow-lg">
+        <div className="mt-1 min-w-[8rem] overflow-hidden rounded-xl border border-foreground/[0.12] bg-foreground/[0.04] py-1">
           {options.map((o) => (
             <button
               key={o.value}

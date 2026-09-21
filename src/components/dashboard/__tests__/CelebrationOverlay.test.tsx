@@ -23,17 +23,17 @@ describe('CelebrationOverlay', () => {
   })
 
   it('renders nothing without a record', () => {
-    render(<CelebrationOverlay record={null} />)
+    render(<CelebrationOverlay record={null} aiTake={null} />)
     expect(screen.queryByRole('dialog')).toBeNull()
   })
 
   it('renders nothing for a record older than the celebration window', () => {
-    render(<CelebrationOverlay record={{ ...RECENT_RECORD, date: '2020-01-01' }} />)
+    render(<CelebrationOverlay record={{ ...RECENT_RECORD, date: '2020-01-01' }} aiTake={null} />)
     expect(screen.queryByRole('dialog')).toBeNull()
   })
 
   it('celebrates a recent record and dismisses on Later', () => {
-    render(<CelebrationOverlay record={RECENT_RECORD} />)
+    render(<CelebrationOverlay record={RECENT_RECORD} aiTake={null} />)
     expect(screen.getByRole('dialog')).toBeInTheDocument()
     fireEvent.click(screen.getByText(/later/i))
     expect(screen.queryByRole('dialog')).toBeNull()
@@ -41,7 +41,7 @@ describe('CelebrationOverlay', () => {
 
   it('does not re-show a record already marked seen', () => {
     window.localStorage.setItem(`ro-celebration-seen:${RECENT_RECORD.activityId}-${RECENT_RECORD.key}`, '1')
-    render(<CelebrationOverlay record={RECENT_RECORD} />)
+    render(<CelebrationOverlay record={RECENT_RECORD} aiTake={null} />)
     expect(screen.queryByRole('dialog')).toBeNull()
   })
 })

@@ -1,13 +1,8 @@
 import { t } from "@/i18n";
 
 const TTL_MS = 1000 * 60 * 60 * 24 * 30;
-// Bumped because entries cached before language-locking would carry
-// MapTiler's default-language names, not t.locale's.
 const CACHE_VERSION = "v3";
 
-// MapTiler expects an ISO 639-1 code (e.g. 'en', 'fr'), while t.locale is a
-// BCP 47 tag (e.g. 'en-US', 'fr-FR'). Keeps the dropdown in sync with the
-// map, which is localized the same way in maptiler.ts.
 const GEOCODE_LANGUAGE = t.locale.split("-")[0];
 
 type GeoFeature = {
@@ -16,12 +11,20 @@ type GeoFeature = {
   context?: Array<{ id: string; text: string }>;
 };
 
+/**
+ * "place" answers which town this is, which is what a map cluster wants.
+ * "street" answers which corner, which is what two routes starting in the same
+ * town need before they can be told apart.
+ */
+export type GeocodeGrain = "place" | "street";
+
 export async function reverseGeocode(
   lon: number,
   lat: number,
   token: string,
+  grain: GeocodeGrain = "place",
 ): Promise<string | null> {
-  const key = `reverse_geocode:${CACHE_VERSION}:${lon.toFixed(4)},${lat.toFixed(4)}`;
+  const key = `reverse_geocode:${CACHE_VERSION}:${grain}:${lon.toFixed(4)},${lat.toFixed(4)}`;
 
   const cached = readCache(key);
   if (cached !== undefined) return cached;
@@ -36,28 +39,28 @@ export async function reverseGeocode(
     const features: GeoFeature[] = json.features ?? [];
     if (!features.length) return writeCache(key, null);
 
-    const name = extractName(features);
+    const name = grain === "street" ? extractStreet(features) : extractName(features);
     if (!name) return writeCache(key, name);
 
-    const overrides = await getNameOverrides();
-    return writeCache(key, overrides[name] ?? name);
+    return writeCache(key, await applyOverride(name));
   } catch {
     return null;
   }
 }
 
-// MapTiler sometimes resolves a cluster center to a small commune/street rather than
-// the recognizable city it belongs to. Add an entry to public/data/location-overrides.json
-// when a new location shows up wrong in the map dropdown.
-let overridesPromise: Promise<Record<string, string>> | null = null;
+const overrides = new Map<string, Promise<string>>();
 
-function getNameOverrides(): Promise<Record<string, string>> {
-  if (!overridesPromise) {
-    overridesPromise = fetch("/data/location-overrides.json")
-      .then((res) => (res.ok ? res.json() : {}))
-      .catch(() => ({}));
-  }
-  return overridesPromise;
+function applyOverride(name: string): Promise<string> {
+  const cached = overrides.get(name);
+  if (cached) return cached;
+
+  const pending = fetch(`/api/location-override?name=${encodeURIComponent(name)}`)
+    .then((res) => (res.ok ? (res.json() as Promise<{ name: string | null }>) : null))
+    .then((json) => json?.name ?? name)
+    .catch(() => name);
+
+  overrides.set(name, pending);
+  return pending;
 }
 
 function readCache(key: string): string | null | undefined {
@@ -76,6 +79,18 @@ function writeCache(key: string, value: string | null): string | null {
     localStorage.setItem(key, JSON.stringify({ ts: Date.now(), value }));
   } catch {}
   return value;
+}
+
+/**
+ * The nearest named thing - a street, a park, an address - falling back to the
+ * town when the point sits somewhere with no name of its own.
+ */
+function extractStreet(features: GeoFeature[]): string | null {
+  for (const type of ["street", "address", "poi"]) {
+    const match = features.find((f) => f.place_type?.includes(type));
+    if (match) return match.text;
+  }
+  return extractName(features);
 }
 
 function extractName(features: GeoFeature[]): string | null {

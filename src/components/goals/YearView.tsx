@@ -2,41 +2,24 @@
 
 import Link from 'next/link'
 import { Trophy, ArrowRight, Calendar } from 'lucide-react'
-import type { YearData, GoalProjection } from '@/application/usecases/GetGoalsData'
-import { formatDuration, formatDate, formatPace } from '@/lib/formatters'
+import { SectionDivider } from '@/components/ui/SectionLabel'
+import type { YearData } from '@/application/usecases/GetGoalsData'
+import { formatDuration, formatDate, formatKm, formatPace } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { MonthlyVolumeChart } from './MonthlyVolumeChart'
 import { SeasonTimeline } from './SeasonTimeline'
 import { raceDistanceTint } from '@/lib/colors'
-import { STATUS } from '@/lib/statusColors'
+import { PROJECTION_TONE } from '@/lib/statusColors'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 const DIST_SHORT: Record<string, string> = { 'Half-Marathon': 'HM' }
 export function shortDist(d: string) { return DIST_SHORT[d] ?? d }
 
-// Text-only status indicator for the annual-goal header (no chip background,
-// no icon): green ahead, blue on track, amber behind.
-const PROJECTION_STATUS_CLASS: Record<GoalProjection['status'], string> = {
-  ahead:    STATUS.success.text,
-  on_track: STATUS.progress.text,
-  behind:   STATUS.warning.text,
-}
 
-// Two-segment trend line for the annual-goal hero: solid from Jan 1 to today's
-// actual progress, dashed from today to the year-end projection. Purely
-// presentational - the underlying numbers all come from computeProjection.
-// Runs edge-to-edge (x: 0-300) so the card's full width is used.
-function projectionSparkline(year: number, annualDistanceKm: number, annualProgress: number, projection: GoalProjection) {
-  const yearStart = new Date(year, 0, 1).getTime()
-  const yearEnd = new Date(year + 1, 0, 1).getTime()
-  const elapsedFraction = Math.min(Math.max((Date.now() - yearStart) / (yearEnd - yearStart), 0), 1)
-  const projectedPercent = (projection.projectedYearKm / annualDistanceKm) * 100
-  const domainMax = Math.max(100, projectedPercent) * 1.08
-  const yFor = (pct: number) => 40 - (Math.min(Math.max(pct, 0), domainMax) / domainMax) * 34
-  return { nowX: elapsedFraction * 300, nowY: yFor(annualProgress), endY: yFor(projectedPercent) }
-}
+
+
 
 interface Props {
   yearData: YearData
@@ -49,8 +32,22 @@ export function YearView({ yearData }: Props) {
   const annualProgress = annualDistanceKm > 0
     ? Math.min((totalDistanceKm / annualDistanceKm) * 100, 100)
     : 0
-  const sparkline = projection && annualDistanceKm > 0
-    ? projectionSparkline(yearData.year, annualDistanceKm, annualProgress, projection)
+  const projectedPercent = projection && annualDistanceKm > 0
+    ? Math.min((projection.projectedYearKm / annualDistanceKm) * 100, 100)
+    : null
+  // Colour encodes state, weight encodes certainty - amber is reserved for the
+  // verdict (the projection line and the next-race countdown) and appears
+  // nowhere else. This bar states how far training has come, not a grade, so
+  // it stays this fixed blue regardless of projection status or accent theme.
+  const BAR_COLOR = '#5a97f5'
+  // deltaKm arrives absolute, so the sign has to be recomputed from the
+  // projection itself. Reading it off `status` renders an on-track projection
+  // that lands above the goal as "On track −30 km" - a minus on a surplus.
+  const signedDeltaKm = projection ? projection.projectedYearKm - annualDistanceKm : 0
+  const outcome = projection && signedDeltaKm !== 0
+    ? signedDeltaKm < 0
+      ? t.goals.projection.shortBy(formatKm(Math.abs(signedDeltaKm)))
+      : t.goals.projection.overBy(formatKm(signedDeltaKm))
     : null
   const hasRaceDistanceCards = !!goals && (goals.targets.length > 0 || upcomingRaces.length > 0)
 
@@ -59,60 +56,54 @@ export function YearView({ yearData }: Props) {
       {goals && (
         <section className="space-y-3">
           <GlassSurface variant="card" className="p-5">
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                {t.goals.annualGoal}
-              </h2>
-              {projection && (
-                <span className={cn('shrink-0 text-xs font-semibold', PROJECTION_STATUS_CLASS[projection.status])}>
-                  {t.goals.projection.status[projection.status]}
-                  {projection.deltaKm !== 0 && ` ${projection.status === 'ahead' ? '+' : '-'}${Math.abs(projection.deltaKm)} km`}
-                </span>
-              )}
-            </div>
-            <div className="mb-3 flex items-end justify-between">
-              <div>
-                <span className="text-3xl font-bold tracking-tight text-foreground">
-                  <AnimatedValue value={totalDistanceKm} />
-                </span>
-                <span className="ml-1 text-sm text-subtle">
-                  {'/ '}{annualDistanceKm}{' '}{t.units.km}
-                </span>
-              </div>
-              <span className="text-sm font-semibold text-accent-text">
-                <AnimatedValue value={annualProgress} />%
+            <SectionDivider as="h2" className="mb-3">
+              {t.goals.annualGoal}
+            </SectionDivider>
+            <div className="mb-3">
+              <span className="text-3xl font-bold tracking-tight text-foreground">
+                <AnimatedValue value={totalDistanceKm} grouped />
+              </span>
+              <span className="ml-1 text-sm text-subtle">
+                {'/ '}{formatKm(annualDistanceKm)}{' '}{t.units.km}
               </span>
             </div>
-            <div className="h-2 overflow-hidden rounded-full bg-foreground/[0.08]">
+            <div className="relative h-2 rounded-full bg-foreground/[0.08]">
               <div
                 className="h-full rounded-full transition-all"
-                style={{
-                  width: `${annualProgress}%`,
-                  background: 'linear-gradient(90deg, var(--accent), var(--accent-text))',
-                }}
+                style={{ width: `${annualProgress}%`, background: BAR_COLOR }}
               />
+              {projectedPercent !== null && projection && (
+                <>
+                  <span
+                    role="img"
+                    aria-label={t.goals.projection.projected(formatKm(projection.projectedYearKm))}
+                    className="absolute top-1/2 h-4 w-[2px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+                    style={{ left: `${projectedPercent}%`, background: 'var(--foreground)' }}
+                  />
+                  <span
+                    aria-hidden
+                    className="absolute top-full mt-0.5 -translate-x-1/2 whitespace-nowrap text-[9.5px] leading-none"
+                    style={{ left: `${projectedPercent}%`, color: 'var(--subtle-2)' }}
+                  >
+                    {t.goals.projection.projectedTick}
+                  </span>
+                </>
+              )}
             </div>
-            {sparkline && projection && (
+            {projection && (
               <>
-                <svg viewBox="0 0 300 44" preserveAspectRatio="none" className="mt-3 h-9 w-full">
-                  <path
-                    d={`M0 40 L${sparkline.nowX.toFixed(1)} ${sparkline.nowY.toFixed(1)}`}
-                    fill="none"
-                    stroke="var(--accent)"
-                    strokeWidth={2.5}
-                    strokeLinecap="round"
-                  />
-                  <path
-                    d={`M${sparkline.nowX.toFixed(1)} ${sparkline.nowY.toFixed(1)} L300 ${sparkline.endY.toFixed(1)}`}
-                    fill="none"
-                    className="text-subtle"
-                    stroke="currentColor"
-                    strokeWidth={1.5}
-                    strokeDasharray="4 4"
-                  />
-                </svg>
-                <p className="mt-1 text-caption text-subtle">
-                  {t.goals.projection.rate(projection.weeklyRate)} - {t.goals.projection.projected(projection.projectedYearKm)}
+                {/* The projection is the answer this card exists to give, so it is
+                    the headline under the bar, not a small top-right chip - the
+                    same shortfall no longer reads as two different severities. */}
+                <p className={cn('mt-2 text-[17px] font-bold', PROJECTION_TONE[projection.status])}>
+                  {t.goals.projection.projected(formatKm(projection.projectedYearKm))}
+                  {outcome && ` · ${outcome}`}
+                </p>
+                <p className="mt-0.5 text-caption text-subtle">
+                  {t.goals.projection.needsWeeklyDetail(
+                    formatKm(projection.weeklyNeeded),
+                    formatKm(projection.weeklyRate),
+                  )}
                 </p>
               </>
             )}
@@ -122,14 +113,16 @@ export function YearView({ yearData }: Props) {
 
       {hasRaceDistanceCards && <SeasonTimeline yearData={yearData} />}
 
-      {goals && monthlyGoals.length > 0 && <MonthlyVolumeChart monthlyGoals={monthlyGoals} />}
+      {goals && monthlyGoals.length > 0 && (
+        <MonthlyVolumeChart monthlyGoals={monthlyGoals} year={yearData.year} />
+      )}
 
       {!hasRaceDistanceCards && (
         pbs.length > 0 ? (
           <section className="space-y-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            <SectionDivider as="h2">
               {t.goals.seasonRaces}
-            </h2>
+            </SectionDivider>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {pbs.map(({ entry, activity }) => {
                 const tint = raceDistanceTint(entry.distance)

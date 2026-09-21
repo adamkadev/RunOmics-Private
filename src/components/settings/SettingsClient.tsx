@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { onAuthStateChanged, signInWithPopup, signOut, GoogleAuthProvider } from 'firebase/auth'
-import type { User } from 'firebase/auth'
+import { useState } from 'react'
+import { signInWithPopup, signOut, GoogleAuthProvider } from 'firebase/auth'
+import { SectionDivider } from '@/components/ui/SectionLabel'
 import { getClientAuth, isClientFirebaseConfigured } from '@/lib/firebase'
+import { useOwnerAuth } from '@/lib/useOwnerAuth'
 import { t } from '@/i18n'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { BackButton } from '@/components/ui/BackButton'
@@ -12,8 +13,7 @@ import { AccentPicker } from './AccentPicker'
 import { ThemeSegmented } from './ThemeSegmented'
 import { DataSourceInfo, type SyncDevice } from './DataSourceInfo'
 import { NotificationsForm } from './NotificationsForm'
-
-const OWNER_EMAIL = process.env.NEXT_PUBLIC_OWNER_EMAIL ?? ''
+import { SyncNowCard } from './SyncNowCard'
 
 interface Props {
   lastSyncedAt: string | null
@@ -22,19 +22,9 @@ interface Props {
 }
 
 export function SettingsClient({ lastSyncedAt, activityCount, device }: Props) {
-  // Without the public Firebase config, start signed-out (theme/accent
-  // settings still work) instead of spinning forever waiting for auth.
-  const [user, setUser] = useState<User | null | 'loading'>(
-    isClientFirebaseConfigured ? 'loading' : null
-  )
+  const { user, isOwner, loading } = useOwnerAuth()
   const [signingIn, setSigningIn] = useState(false)
   const { toast, leaving, showToast } = useToast()
-
-  useEffect(() => {
-    if (!isClientFirebaseConfigured) return
-    const auth = getClientAuth()
-    return onAuthStateChanged(auth, (u) => setUser(u))
-  }, [])
 
   async function handleSignIn() {
     if (!isClientFirebaseConfigured) {
@@ -47,7 +37,6 @@ export function SettingsClient({ lastSyncedAt, activityCount, device }: Props) {
       provider.setCustomParameters({ prompt: 'select_account' })
       await signInWithPopup(getClientAuth(), provider)
     } catch (err) {
-      // Ignore the user closing/cancelling the popup themselves.
       const code = (err as { code?: string }).code
       if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
         console.error('Google sign-in failed:', err)
@@ -62,7 +51,7 @@ export function SettingsClient({ lastSyncedAt, activityCount, device }: Props) {
     await signOut(getClientAuth())
   }
 
-  if (user === 'loading') {
+  if (loading) {
     return (
       <div className="flex min-h-64 items-center justify-center">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground border-t-accent" />
@@ -80,9 +69,9 @@ export function SettingsClient({ lastSyncedAt, activityCount, device }: Props) {
         </div>
 
         <section className="space-y-2">
-          <h2 className="px-1 text-micro font-medium uppercase tracking-[0.08em] text-accent-text">
+          <SectionDivider as="h2" className="px-1">
             {t.settings.sections.appearance}
-          </h2>
+          </SectionDivider>
           <GlassSurface variant="card" className="p-5">
             <AccentPicker />
             <div className="my-5 h-px bg-foreground/[0.06]" />
@@ -105,7 +94,7 @@ export function SettingsClient({ lastSyncedAt, activityCount, device }: Props) {
     )
   }
 
-  if (user.email !== OWNER_EMAIL) {
+  if (!isOwner) {
     return (
       <div className="flex min-h-64 flex-col items-center justify-center gap-4 px-4">
         <BackButton label={t.pages.settings.back} fallbackHref="/profile" />
@@ -129,9 +118,9 @@ export function SettingsClient({ lastSyncedAt, activityCount, device }: Props) {
       </div>
 
       <section className="space-y-2">
-        <h2 className="px-1 text-micro font-medium uppercase tracking-[0.08em] text-accent-text">
+        <SectionDivider as="h2" className="px-1">
           {t.settings.sections.appearance}
-        </h2>
+        </SectionDivider>
         <GlassSurface variant="card" className="p-5">
           <AccentPicker />
           <div className="my-5 h-px bg-foreground/[0.06]" />
@@ -140,21 +129,27 @@ export function SettingsClient({ lastSyncedAt, activityCount, device }: Props) {
       </section>
 
       <section className="space-y-2">
-        <h2 className="px-1 text-micro font-medium uppercase tracking-[0.08em] text-subtle-2">
+        <SectionDivider as="h2" className="px-1">
           {t.settings.sections.notificationsData}
-        </h2>
+        </SectionDivider>
         <NotificationsForm />
-        <DataSourceInfo lastSyncedAt={lastSyncedAt} activityCount={activityCount} device={device} />
+        <DataSourceInfo lastSyncedAt={lastSyncedAt} activityCount={activityCount} device={device} user={user} />
+        <SyncNowCard user={user} />
       </section>
 
       <section className="space-y-2">
-        <h2 className="px-1 text-micro font-medium uppercase tracking-[0.08em] text-subtle-2">
+        <SectionDivider as="h2" className="px-1">
           {t.settings.sections.account}
-        </h2>
+        </SectionDivider>
         <button
           onClick={handleSignOut}
-          className="w-full rounded-card-sm border border-destructive/40 py-3.5 text-sm font-semibold
-                     text-destructive transition-colors hover:bg-destructive/[0.06] active:scale-[0.98]"
+          className="w-full py-3.5 text-sm font-semibold transition-colors active:scale-[0.98]"
+          style={{
+            color: 'var(--muted-foreground)',
+            border: '1px solid rgba(148,178,220,.2)',
+            background: 'rgba(148,178,220,.04)',
+            borderRadius: 16,
+          }}
         >
           {t.settings.auth.signOut}
         </button>

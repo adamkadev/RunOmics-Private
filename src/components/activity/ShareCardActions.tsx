@@ -14,7 +14,6 @@ interface Props {
   onCopy: () => void
 }
 
-/** Bottom action row: native share (or download fallback) + copy-to-clipboard. */
 export function ShareCardActions({ canShareFiles, canCopyImage, accentHex, copyState, onShare, onSave, onCopy }: Props) {
   return (
     <div

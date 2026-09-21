@@ -1,23 +1,25 @@
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import type { PlannedWorkout } from '@/domain/activity/types'
 import type { ReadinessTone } from '@/domain/training/readiness'
+import type { RecentTraining } from '@/domain/training/recentTraining'
 import { insightHash } from './insightHash'
 import { avoidClause, systemInstruction } from './prompt'
 
 export const TODAY_SURFACE = 'todayHero'
 export const TODAY_LIMITS = { headline: 52, body: 140 }
 
-// The hero is the one line the athlete reads every morning, and it costs one
-// call a day, so it gets the strongest model the free tier offers (5 RPM, 20/day).
-export const TODAY_MODEL = 'gemini-3.6-flash'
-
-interface TodayContext {
+export interface TodayContext {
   status: TrainingStatus
   tone: ReadinessTone
   plannedWorkout: PlannedWorkout | null
+  recent: RecentTraining
 }
 
-function facts({ status, tone, plannedWorkout }: TodayContext) {
+function completedToday(plannedWorkout: PlannedWorkout | null, recent: RecentTraining): boolean {
+  return plannedWorkout !== null && recent.lastRun?.daysAgo === 0
+}
+
+function facts({ status, tone, plannedWorkout, recent }: TodayContext) {
   return {
     tone,
     status: status.status,
@@ -26,8 +28,15 @@ function facts({ status, tone, plannedWorkout }: TodayContext) {
     form: Math.round(status.tsbNow),
     fitnessTrend: Math.round(status.ctlDelta),
     fatigueTrend: Math.round(status.atlDelta),
-    planned: plannedWorkout ? (plannedWorkout.type ?? plannedWorkout.name) : 'rest',
+    planned: plannedWorkout ? (plannedWorkout.name ?? plannedWorkout.type) : 'rest',
+    plannedType: plannedWorkout?.type ?? null,
     plannedMinutes: plannedWorkout?.durationSecs ? Math.round(plannedWorkout.durationSecs / 60) : null,
+    completedToday: completedToday(plannedWorkout, recent),
+    weekRuns: recent.runs,
+    weekKm: recent.km,
+    lastRunType: recent.lastRun?.type ?? null,
+    lastRunDaysAgo: recent.lastRun?.daysAgo ?? null,
+    lastRunKm: recent.lastRun?.distanceKm ?? null,
   }
 }
 
@@ -35,26 +44,52 @@ export function todayInsightHash(context: TodayContext): string {
   return insightHash(facts(context))
 }
 
+export function todayInsightGuard(context: TodayContext): string {
+  const { tone, completedToday } = facts(context)
+  return insightHash({ tone, completedToday })
+}
+
 const TONE_RULES: Record<ReadinessTone, string> = {
-  go: 'The athlete is fresh and recovered. Encourage the planned quality session.',
+  go: 'The athlete is fresh and recovered. Encourage the session planned today, or say what that freshness is being saved for when the day is a rest day.',
   caution: 'The athlete is neither fresh nor cooked. Advise staying honest and moderate.',
   hold: 'Fatigue is elevated. Advise easing off, going easy or resting.',
+}
+
+const COMPLETED_TONE_RULES: Record<ReadinessTone, string> = {
+  go: 'The athlete was fresh and already ran today. Affirm that was the window to use it.',
+  caution: 'The athlete had little room to spare and already ran today. Say how carrying that landed, not what to watch going in.',
+  hold: 'Fatigue was elevated and the athlete already ran today anyway. Acknowledge it is done and turn to what recovering from it now looks like.',
 }
 
 export const TODAY_SYSTEM_INSTRUCTION = [
   systemInstruction(
     'You are a running coach writing the one-line verdict at the top of an athlete dashboard.',
-    'one supporting sentence naming the numbers that justify it',
+    'one supporting sentence on why, in what the athlete feels rather than the numbers behind it',
     TODAY_LIMITS
   ),
   'Never contradict the tone you are given - it is already shown as a colored badge next to your text.',
+  'Turn the form, fitness and fatigue numbers into plain language - fresh legs, fatigue letting go, the week still in the body - and never state their values.',
+  'The only numbers worth writing here are the ones the athlete would say out loud: the minutes or kilometres of the session planned today, the days since the last run, the week kilometres.',
+  'Ground the verdict in what the last 7 days actually held - the session yesterday, the days off, what is waiting today - rather than in the state alone.',
+  "When the facts show today's planned session as already completed, write about it in the past tense - what it earned or cost - never as instructions for approaching it.",
 ].join(' ')
+
+function lastRunLine(lastRun: NonNullable<RecentTraining['lastRun']>): string {
+  const when =
+    lastRun.daysAgo === 0
+      ? 'earlier today'
+      : lastRun.daysAgo === 1
+        ? 'yesterday'
+        : `${lastRun.daysAgo} days ago`
+  return `- Last run: ${lastRun.distanceKm} km ${lastRun.type}, ${when}`
+}
 
 export function todayInsightPrompt(context: TodayContext, recentHeadlines: string[]): string {
   const f = facts(context)
+  const toneRules = f.completedToday ? COMPLETED_TONE_RULES : TONE_RULES
 
   return [
-    `Tone: ${f.tone}. ${TONE_RULES[context.tone]}`,
+    `Tone: ${f.tone}. ${toneRules[context.tone]}`,
     '',
     'Facts:',
     `- Form (TSB, positive = fresh): ${f.form}`,
@@ -63,7 +98,12 @@ export function todayInsightPrompt(context: TodayContext, recentHeadlines: strin
     `- Training status: ${f.status}`,
     `- Load trend: ${f.loadTrend}`,
     `- Injury risk: ${f.risk}`,
-    `- Planned today: ${f.planned}${f.plannedMinutes ? ` (~${f.plannedMinutes} min)` : ''}`,
+    `- Last 7 days: ${f.weekRuns} run${f.weekRuns === 1 ? '' : 's'}, ${f.weekKm} km`,
+    context.recent.lastRun ? lastRunLine(context.recent.lastRun) : '- No run logged yet',
+    `- Planned today: ${f.planned}${f.plannedType && f.plannedType !== f.planned ? ` (${f.plannedType})` : ''}${f.plannedMinutes ? `, ~${f.plannedMinutes} min` : ''}`,
+    f.completedToday ? '- This session has already been completed today' : null,
     avoidClause(recentHeadlines),
-  ].join('\n')
+  ]
+    .filter((line) => line !== null)
+    .join('\n')
 }

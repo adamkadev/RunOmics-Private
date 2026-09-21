@@ -1,23 +1,30 @@
 import fs from 'fs'
 import path from 'path'
+import { dataPath } from '../dataPath'
 import type { Activity } from '@/domain/activity/types'
 
-// The monthly activity files total several MB of JSON; cache the parsed result
-// per server process instead of re-reading/re-parsing on every call.
+const DEFAULT_DIR = dataPath('activities')
+
 let cache: Activity[] | null = null
 
-export function getAllActivities(): Activity[] {
-  if (cache) return cache
+/**
+ * Not `readJsonFile`: the index IS the dataset, and an empty fallback would
+ * publish a complete, confident, entirely wrong app.
+ */
+function readJsonOrThrow<T>(filePath: string): T {
+  return JSON.parse(fs.readFileSync(filePath, 'utf-8')) as T
+}
 
-  const dirPath = path.join(process.cwd(), 'public', 'data', 'activities')
-  const files = fs.readdirSync(dirPath).filter((f) => f.endsWith('.json') && f !== 'index.json')
+function readActivities(dirPath: string): Activity[] {
+  const { months } = readJsonOrThrow<{ months: string[] }>(path.join(dirPath, 'index.json'))
 
-  const activities = files.flatMap((file) => {
-    const raw = fs.readFileSync(path.join(dirPath, file), 'utf-8')
-    const parsed = JSON.parse(raw) as { activities: Activity[] }
-    return parsed.activities
-  })
+  return months
+    .flatMap((month) => readJsonOrThrow<{ activities: Activity[] }>(path.join(dirPath, `${month}.json`)).activities)
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+}
 
-  cache = activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+export function getAllActivities(dirPath?: string): Activity[] {
+  if (dirPath) return readActivities(dirPath)
+  if (!cache) cache = readActivities(DEFAULT_DIR)
   return cache
 }

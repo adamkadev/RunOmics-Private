@@ -6,8 +6,10 @@ import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { ChartFigure } from '@/components/ui/ChartFigure'
-import { ChartExplain } from '@/components/ui/ChartExplain'
-import { WindowedChartCard, trendDots, windowTickDate, windowTicks } from '@/components/ui/ChartWindowNav'
+import { WindowedChartCard, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
+import { lineInterpolation } from '@/domain/timeWindow'
+import { trendFromSeries } from '@/lib/chartTrend'
+import { roundAxis } from '@/lib/chartAxis'
 import { t } from '@/i18n'
 
 type Metric = 'cadence' | 'groundContact' | 'verticalOscillation' | 'verticalRatio' | 'strideLength'
@@ -34,8 +36,8 @@ const ACTIVE_PILL_CLASS: Record<Metric, string> = {
   cadence: 'bg-sky-500 text-white',
   groundContact: 'bg-amber-500 text-white',
   verticalOscillation: 'bg-rose-500 text-white',
-  verticalRatio: 'bg-fuchsia-500 text-white',
-  strideLength: 'bg-teal-500 text-white',
+  verticalRatio: 'bg-rose-600 text-white',
+  strideLength: 'bg-sky-600 text-white',
 }
 
 const UNIT_BY_KEY: Record<string, string> = {
@@ -46,12 +48,49 @@ const UNIT_BY_KEY: Record<string, string> = {
   strideLengthM: t.analytics.charts.runningForm.unit.strideLength ?? '',
 }
 
+const FLAT_THRESHOLD: Record<Metric, number> = {
+  cadence: 1,
+  groundContact: 3,
+  verticalOscillation: 0.3,
+  verticalRatio: 0.2,
+  strideLength: 0.02,
+}
+
 const TICK_DECIMALS: Record<Metric, number> = {
   cadence: 0,
   groundContact: 0,
   verticalOscillation: 1,
   verticalRatio: 1,
   strideLength: 2,
+}
+
+// The five metrics share one axis but not one scale, so each names the round
+// number its own readers count in: two steps per minute, five milliseconds of
+// ground contact, half a millimetre of bounce, a centimetre of stride.
+const AXIS_STEP: Record<Metric, number> = {
+  cadence: 2,
+  groundContact: 5,
+  verticalOscillation: 0.5,
+  verticalRatio: 0.5,
+  strideLength: 0.05,
+}
+
+// Derived from the window on screen and from the metric the pills select, and
+// rendered above the chart rather than under it - see ChartReading.
+function formReading(visible: WeeklyTrendPoint[], active: Metric): string | null {
+  const key = DATA_KEY[active]
+  const decimals = TICK_DECIMALS[active]
+  const values = visible.map((d) => d[key]).filter((v): v is number => typeof v === 'number')
+  if (!values.length) return null
+
+  const trend = trendFromSeries(values, FLAT_THRESHOLD[active])
+  if (!trend) return null
+
+  const metric = t.analytics.charts.runningForm.metrics[active]!
+  const r = t.analytics.charts.runningForm.reading
+  return trend.direction === 'flat'
+    ? r.flat(metric)
+    : r[trend.direction](metric, Math.abs(trend.delta).toFixed(decimals), UNIT_BY_KEY[key] ?? '')
 }
 
 interface TooltipProps {
@@ -71,8 +110,6 @@ function CustomTooltip({ active, payload, decimals }: TooltipProps) {
 }
 
 export function RunningFormChart({ points }: { points: WeeklyTrendPoint[] }) {
-  // Availability is judged over the whole history, not the visible window, so
-  // the metric pills stay stable while paging.
   const available = METRICS.filter((m) => points.some((p) => p[DATA_KEY[m]] !== null))
   const [metric, setMetric] = useState<Metric>(available[0] ?? 'cadence')
   if (!available.length) return null
@@ -106,54 +143,52 @@ export function RunningFormChart({ points }: { points: WeeklyTrendPoint[] }) {
       controls={controls}
       points={points}
       footnote={t.analytics.charts.runningForm.footnote[active]}
+      reading={(visible) => formReading(visible, active)}
+      value={(visible) => {
+        const last = [...visible].reverse().find((d) => typeof d[key] === 'number')
+        return last ? `${(last[key] as number).toFixed(decimals)} ${UNIT_BY_KEY[key] ?? ''}` : null
+      }}
     >
       {(visible) => {
         const values = visible.map((d) => d[key]).filter((v): v is number => typeof v === 'number')
         if (!values.length) return <p className="py-12 text-center text-sm text-subtle">{t.chartWindow.empty}</p>
 
-        const min = Math.min(...values) * 0.97
-        const max = Math.max(...values) * 1.03
+        const axis = roundAxis(values, AXIS_STEP[active])
         const ticks = windowTicks(visible)
         const lo = Math.min(...values).toFixed(decimals)
         const hi = Math.max(...values).toFixed(decimals)
-        const summary = `${t.analytics.charts.runningForm.title}: ${t.analytics.charts.runningForm.metrics[active]} ${lo}–${hi} ${UNIT_BY_KEY[key]}`
-        const reading = t.analytics.charts.runningForm.reading[active]!(lo, hi)
+        const metric = t.analytics.charts.runningForm.metrics[active]!
+        const summary = `${t.analytics.charts.runningForm.title}: ${metric} ${lo}–${hi} ${UNIT_BY_KEY[key]}`
 
         return (
-          <>
-            <ChartFigure summary={summary}>
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={visible} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-                    axisLine={false}
-                    tickLine={false}
-                    tickFormatter={(date: string) => (ticks.has(date) ? windowTickDate(date) : '')}
-                  />
-                  <YAxis
-                    domain={[min, max]}
-                    tickFormatter={(v: number) => v.toFixed(decimals)}
-                    tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-                    axisLine={false}
-                    tickLine={false}
-                    width={42}
-                  />
-                  <Tooltip content={<CustomTooltip decimals={decimals} />} />
-                  <Line
-                    type="monotone"
-                    dataKey={key}
-                    stroke={color}
-                    strokeWidth={3}
-                    {...trendDots(color)}
-                    connectNulls
-                    isAnimationActive={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartFigure>
-            <ChartExplain text={reading} />
-          </>
+          <ChartFigure summary={summary}>
+            <p className="text-micro leading-none text-subtle">{UNIT_BY_KEY[key]}</p>
+            <ResponsiveContainer width="100%" height={196}>
+              <LineChart data={visible} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
+                <XAxis {...windowDateAxis(ticks)} />
+                <YAxis
+                  domain={axis?.domain}
+                  ticks={axis?.ticks}
+                  interval={0}
+                  tickFormatter={(v: number) => v.toFixed(decimals)}
+                  tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={42}
+                />
+                <Tooltip content={<CustomTooltip decimals={decimals} />} />
+                <Line
+                  type={lineInterpolation(visible.length)}
+                  dataKey={key}
+                  stroke={color}
+                  strokeWidth={3}
+                  {...trendDots(color)}
+                  connectNulls
+                  isAnimationActive={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </ChartFigure>
         )
       }}
     </WindowedChartCard>

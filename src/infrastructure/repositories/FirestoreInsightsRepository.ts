@@ -1,3 +1,4 @@
+import { FieldPath } from 'firebase-admin/firestore'
 import { getAdminFirestore } from '@/lib/firebase-admin'
 import { activeLocale } from '@/i18n'
 import type { Insight } from '@/lib/gemini'
@@ -5,19 +6,44 @@ import type { Insight } from '@/lib/gemini'
 const COLLECTION = 'aiInsights'
 const HISTORY_SIZE = 5
 
-// Firestore retries a failed connection with backoff rather than rejecting, so
-// an unreachable project would hang a page render instead of falling back.
-// These are cosmetic strings on otherwise complete cards: give up early.
 const READ_TIMEOUT_MS = 2000
+
+const STALE_GRACE_MS = 48 * 60 * 60 * 1000
+
+const ID_RANGE_END = '\uf8ff'
 
 export interface CachedInsight extends Insight {
   hash: string
   generatedAt: string
   recentHeadlines?: string[]
+  guard?: string
+}
+
+export interface InsightKey {
+  hash: string
+  guard?: string
 }
 
 function docId(surface: string): string {
   return `${surface}_${activeLocale}`
+}
+
+function bySurface<D extends { id: string }, T>(docs: D[], prefix: string, read: (doc: D) => T): Map<string, T> {
+  const suffix = `_${activeLocale}`
+  return new Map(
+    docs
+      .filter((doc) => doc.id.startsWith(prefix) && doc.id.endsWith(suffix))
+      .map((doc) => [doc.id.slice(0, -suffix.length), read(doc)])
+  )
+}
+
+function servable(cached: CachedInsight, key: InsightKey, now: number): boolean {
+  if (cached.hash === key.hash) return true
+
+  if (key.guard !== undefined && cached.guard !== key.guard) return false
+
+  const age = now - Date.parse(cached.generatedAt)
+  return Number.isFinite(age) && age < STALE_GRACE_MS
 }
 
 export async function getCachedInsight(surface: string): Promise<CachedInsight | null> {
@@ -25,13 +51,21 @@ export async function getCachedInsight(surface: string): Promise<CachedInsight |
   return doc.exists ? (doc.data() as CachedInsight) : null
 }
 
+export function servableInsight(cached: CachedInsight | undefined, key: string | InsightKey, now = Date.now()): Insight | null {
+  if (!cached) return null
+  const wanted = typeof key === 'string' ? { hash: key } : key
+  return servable(cached, wanted, now) ? { headline: cached.headline, body: cached.body, bullets: cached.bullets } : null
+}
+
 /**
- * A cached insight, but only when it still matches the facts the caller just
- * computed - a stale one would contradict the tone badge rendered beside it.
- * Null also covers no admin credentials (local dev, e2e build) and a Firestore
- * that is slow or unreachable, so callers can always fall back quietly.
+ * The whole stored document, not just the three fields a card renders - callers
+ * that need to know *when* a surface was last written (and not only what it
+ * says) would otherwise have to read it a second time.
  */
-export async function readVerifiedInsight(surface: string, expectedHash: string): Promise<Insight | null> {
+export async function readVerifiedCachedInsight(
+  surface: string,
+  key: string | InsightKey
+): Promise<CachedInsight | null> {
   if (!process.env.FIREBASE_PROJECT_ID) return null
 
   try {
@@ -39,41 +73,84 @@ export async function readVerifiedInsight(surface: string, expectedHash: string)
       getCachedInsight(surface),
       new Promise<null>((resolve) => setTimeout(() => resolve(null), READ_TIMEOUT_MS)),
     ])
-    if (!cached || cached.hash !== expectedHash) return null
-    return { headline: cached.headline, body: cached.body }
+    if (!cached) return null
+    const wanted = typeof key === 'string' ? { hash: key } : key
+    return servable(cached, wanted, Date.now()) ? cached : null
   } catch {
     return null
   }
 }
 
-/**
- * Surface -> stored hash for everything already generated in the active locale,
- * in one query. The backfill needs the hash, not just the presence of a
- * document: an entry written from facts that have since changed is one the
- * pages already ignore, so it has to be picked up again rather than skipped
- * forever.
- */
-export async function listCachedHashes(prefix: string): Promise<Map<string, string>> {
-  const snapshot = await getAdminFirestore().collection(COLLECTION).select('hash').get()
-  const suffix = `_${activeLocale}`
+export async function readVerifiedInsight(surface: string, key: string | InsightKey): Promise<Insight | null> {
+  const cached = await readVerifiedCachedInsight(surface, key)
+  return cached ? { headline: cached.headline, body: cached.body, bullets: cached.bullets } : null
+}
 
-  return new Map(
-    snapshot.docs
-      .filter((doc) => doc.id.startsWith(prefix) && doc.id.endsWith(suffix))
-      .map((doc) => [doc.id.slice(0, -suffix.length), doc.get('hash') as string])
-  )
+function surfaceRange(prefix: string) {
+  return getAdminFirestore()
+    .collection(COLLECTION)
+    .orderBy(FieldPath.documentId())
+    .startAt(prefix)
+    .endAt(`${prefix}${ID_RANGE_END}`)
+}
+
+export async function listCachedHashes(prefix: string): Promise<Map<string, string>> {
+  const snapshot = await surfaceRange(prefix).select('hash').get()
+  return bySurface(snapshot.docs, prefix, (doc) => doc.get('hash') as string)
+}
+
+const PHRASING_SURFACE = 'verdictPhrasing'
+const PHRASING_SIZE = 10
+
+export interface VerdictPhrasing {
+  headline: string
+  body: string
+}
+
+function isPhrasing(value: unknown): value is VerdictPhrasing {
+  const entry = value as Partial<VerdictPhrasing> | null
+  return !!entry && typeof entry.headline === 'string' && typeof entry.body === 'string'
+}
+
+export async function readVerdictPhrasing(): Promise<VerdictPhrasing[]> {
+  if (!process.env.FIREBASE_PROJECT_ID) return []
+
+  try {
+    const doc = await Promise.race([
+      getAdminFirestore().collection(COLLECTION).doc(docId(PHRASING_SURFACE)).get(),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), READ_TIMEOUT_MS)),
+    ])
+    const recent = doc?.exists ? (doc.data() as { recent?: unknown }).recent : undefined
+    return Array.isArray(recent) ? recent.filter(isPhrasing) : []
+  } catch {
+    return []
+  }
+}
+
+export async function saveVerdictPhrasing(recent: VerdictPhrasing[]): Promise<void> {
+  await getAdminFirestore()
+    .collection(COLLECTION)
+    .doc(docId(PHRASING_SURFACE))
+    .set({ recent: recent.slice(0, PHRASING_SIZE), updatedAt: new Date().toISOString() })
 }
 
 export async function saveCachedInsight(
   surface: string,
   insight: Insight,
   hash: string,
-  previous: CachedInsight | null
+  previous: CachedInsight | null,
+  guard?: string
 ): Promise<void> {
   const recentHeadlines = [insight.headline, ...(previous?.recentHeadlines ?? [])].slice(0, HISTORY_SIZE)
 
   await getAdminFirestore()
     .collection(COLLECTION)
     .doc(docId(surface))
-    .set({ ...insight, hash, generatedAt: new Date().toISOString(), recentHeadlines })
+    .set({
+      ...insight,
+      hash,
+      ...(guard !== undefined && { guard }),
+      generatedAt: new Date().toISOString(),
+      recentHeadlines,
+    })
 }

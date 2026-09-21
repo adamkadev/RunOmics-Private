@@ -1,16 +1,17 @@
 'use client'
 
 import { useState } from 'react'
+import type { User } from 'firebase/auth'
 import { siGarmin } from 'simple-icons'
 import { t } from '@/i18n'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { Toast, useToast } from '@/components/ui/Toast'
 import { saveFileWithFallback } from '@/lib/fileExport'
-import { formatMonthYear, formatRelativeAgo } from '@/lib/formatters'
+import { authorizedFetch } from '@/lib/ownerFetch'
+import { formatDate, formatRelativeAgo } from '@/lib/formatters'
 
 export interface SyncDevice {
   name?: string
-  /** ISO date the watch was paired with Garmin Connect. */
   since?: string
 }
 
@@ -18,16 +19,18 @@ interface Props {
   lastSyncedAt: string | null
   activityCount: number
   device?: SyncDevice
+  /** Needed for the export's ID token - the route is owner-only. */
+  user: User
 }
 
-export function DataSourceInfo({ lastSyncedAt, activityCount, device }: Props) {
+export function DataSourceInfo({ lastSyncedAt, activityCount, device, user }: Props) {
   const [loading, setLoading] = useState(false)
+  const [confirmingClear, setConfirmingClear] = useState(false)
   const { toast, leaving, showToast } = useToast()
   const s = t.settings
 
-  // Escape hatch for stale offline content: drop every SW cache. The service
-  // worker repopulates them on the next loads.
   async function handleClearCache() {
+    setConfirmingClear(false)
     try {
       const keys = await caches.keys()
       await Promise.all(keys.map((key) => caches.delete(key)))
@@ -40,23 +43,24 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device }: Props) {
   async function handleExport() {
     setLoading(true)
     try {
-      const res = await fetch('/api/activities/export')
-      const csv = await res.text()
+      const res = await authorizedFetch(user, '/api/activities/export')
+      if (!res.ok) throw new Error(`Export failed with ${res.status}`)
+      const workbook = await res.blob()
       const stamp = new Date().toISOString().slice(0, 10)
-      // Share sheet on iOS PWAs (no downloads UI there), download elsewhere.
-      const file = new File([csv], `runomics-activities-${stamp}.csv`, { type: 'text/csv' })
+      const file = new File([workbook], `runomics-training-data-${stamp}.xlsx`, {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      })
       await saveFileWithFallback(file)
     } catch {
-      showToast(s.dataExport.exporting, false)
+      showToast(s.dataExport.failed, false)
     } finally {
       setLoading(false)
     }
   }
 
-  // Device provenance, shown only once the sync has actually reported a watch.
   const provenance = device && [
     s.dataSource.garmin,
-    device.since && s.dataSource.since(formatMonthYear(device.since)),
+    device.since && s.dataSource.since(formatDate(device.since, { precision: 'month' })),
   ].filter(Boolean).join(' · ')
 
   return (
@@ -103,18 +107,44 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device }: Props) {
           disabled={loading}
           className="flex w-full items-center justify-between gap-2 text-footnote text-muted-foreground transition-opacity active:opacity-60 disabled:opacity-50"
         >
-          <span>{loading ? s.dataExport.exporting : s.dataExport.csv}</span>
+          <span>{loading ? s.dataExport.exporting : s.dataExport.workbook}</span>
           <span className="shrink-0 font-semibold text-accent-text">{s.rowAction.export}</span>
         </button>
 
-        <button
-          type="button"
-          onClick={handleClearCache}
-          className="flex w-full items-center justify-between gap-2 text-footnote text-muted-foreground transition-opacity active:opacity-60"
-        >
-          <span>{s.offlineCache.clear}</span>
-          <span className="shrink-0 font-semibold text-accent-text">{s.rowAction.clear}</span>
-        </button>
+        <div>
+          <div className="flex w-full items-center justify-between gap-2 text-footnote text-muted-foreground">
+            <span>{s.offlineCache.clear}</span>
+            {confirmingClear ? (
+              <span className="flex shrink-0 items-center gap-3 font-semibold">
+                <button
+                  type="button"
+                  onClick={() => setConfirmingClear(false)}
+                  className="text-muted-foreground transition-opacity active:opacity-60"
+                >
+                  {s.actions.confirmCancel}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClearCache}
+                  className="text-destructive transition-opacity active:opacity-60"
+                >
+                  {s.actions.confirmYes}
+                </button>
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirmingClear(true)}
+                className="shrink-0 font-semibold text-destructive transition-opacity active:opacity-60"
+              >
+                {s.rowAction.clear}
+              </button>
+            )}
+          </div>
+          <p className="mt-0.5 text-caption leading-snug text-subtle">
+            {confirmingClear ? s.offlineCache.confirm : s.offlineCache.cost}
+          </p>
+        </div>
       </div>
 
       <Toast toast={toast} leaving={leaving} />

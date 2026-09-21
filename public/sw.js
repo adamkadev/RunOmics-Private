@@ -1,18 +1,4 @@
-/* RunOmics service worker: offline app shell + push notifications.
- *
- * Caching strategy:
- * - Hashed build assets (/_next/static) and icons: cache-first (immutable).
- * - Pages, RSC payloads and /data JSON: network-first with cache fallback,
- *   so the app opens with the last-seen content when offline.
- * - /api and cross-origin requests (map tiles, analytics) are never cached.
- *
- * Push events display FCM webpush payloads ({ notification: { title, body } })
- * so a separate firebase-messaging-sw.js is not needed.
- *
- * Bump VERSION to invalidate all caches on deploy of a breaking change.
- */
-
-const VERSION = 'v1'
+const VERSION = new URL(self.location.href).searchParams.get('v') || 'v1'
 const STATIC_CACHE = `runomics-static-${VERSION}`
 const PAGE_CACHE = `runomics-pages-${VERSION}`
 const CURRENT_CACHES = [STATIC_CACHE, PAGE_CACHE]
@@ -20,6 +6,11 @@ const CURRENT_CACHES = [STATIC_CACHE, PAGE_CACHE]
 const SHELL_URLS = ['/', '/manifest.json', '/icons/logo.svg', '/icons/apple-touch-icon.png']
 
 self.addEventListener('install', (event) => {
+  if (isLocalDev) {
+    event.waitUntil(self.skipWaiting())
+    return
+  }
+
   event.waitUntil(
     caches
       .open(PAGE_CACHE)
@@ -33,6 +24,19 @@ self.addEventListener('message', (event) => {
 })
 
 self.addEventListener('activate', (event) => {
+  // A worker left behind on localhost by an earlier local production build
+  // drops everything it cached and retires itself, so a dev server is never
+  // shadowed by chunks from a build that no longer exists.
+  if (isLocalDev) {
+    event.waitUntil(
+      caches
+        .keys()
+        .then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
+        .then(() => self.registration.unregister())
+    )
+    return
+  }
+
   event.waitUntil(
     caches
       .keys()
@@ -40,6 +44,14 @@ self.addEventListener('activate', (event) => {
       .then(() => self.clients.claim())
   )
 })
+
+// Dev builds reuse the same /_next/static/chunks/... URLs across rebuilds, so
+// the cache-first branch below would pin whatever chunk this worker saw first
+// and keep serving it past every rebuild, restart and refresh. Registration is
+// already production-only, but a worker registered once by a local production
+// build outlives it and keeps controlling localhost - so it steps aside here.
+const LOCAL_HOSTS = ['localhost', '127.0.0.1', '[::1]']
+const isLocalDev = LOCAL_HOSTS.includes(self.location.hostname)
 
 function isImmutableAsset(url) {
   return url.pathname.startsWith('/_next/static/') || url.pathname.startsWith('/icons/')
@@ -77,6 +89,7 @@ async function networkFirst(request, { isNavigation }) {
 
 self.addEventListener('fetch', (event) => {
   const { request } = event
+  if (isLocalDev) return
   if (request.method !== 'GET') return
 
   const url = new URL(request.url)
@@ -95,9 +108,7 @@ self.addEventListener('push', (event) => {
   let payload = {}
   try {
     payload = event.data ? event.data.json() : {}
-  } catch {
-    /* non-JSON push: show the generic notification below */
-  }
+  } catch {}
   const notification = payload.notification ?? {}
   const url = payload.fcmOptions?.link ?? '/'
   event.waitUntil(

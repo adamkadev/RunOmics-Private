@@ -16,16 +16,11 @@ export interface RouteCluster {
   id: string
   routeCount: number
   totalKm: number
-  // Actual centroid of all route bounding-box centres in this cluster
   center: [number, number]
   bounds: { minLon: number; maxLon: number; minLat: number; maxLat: number }
   routeIndices: number[]
 }
 
-// Everything the /map page needs to render its shell (zone list, world-view
-// bubbles, filters) WITHOUT any GPS coordinates - safe to ship on first load
-// regardless of dataset size. Route geometry is fetched separately, per zone,
-// via /api/map/routes (see MapRoutesForCluster below).
 export interface MapShellData {
   routeMeta: RouteMeta[]
   clusters: RouteCluster[]
@@ -39,9 +34,6 @@ export interface AllRoutesData extends MapShellData {
   routes: [number, number][][]
 }
 
-// Two cluster centers closer than this are considered the same place. Far enough to
-// keep an entire city's runs together, close enough to split distinct towns that a
-// fixed lon/lat grid cell would otherwise merge (e.g. Luxembourg-ville and Remich).
 const CLUSTER_RADIUS_KM = 12
 
 function findNearestClusterIdx(
@@ -61,15 +53,11 @@ function findNearestClusterIdx(
   return nearestIdx
 }
 
-// Clustering runs over every activity's full GPS trace - cache it per server
-// process (mirrors JsonActivityRepository's own cache) so /api/map/routes
-// doesn't redo this work on every single zone request.
 let cache: AllRoutesData | null = null
 
 export function getAllRoutes(): AllRoutesData {
   if (cache) return cache
 
-  // getAllActivities returns newest-first; keep that order so index 0 = most recent run
   const activities = getAllActivities().filter((a) => a.route && a.route.length > 1)
 
   type ClusterAcc = {
@@ -151,9 +139,6 @@ export function getAllRoutes(): AllRoutesData {
   return cache
 }
 
-// For the initial /map page load: same clustering/metadata as getAllRoutes(), minus
-// the GPS coordinate arrays (which can be tens of MB across a multi-year dataset).
-// Route geometry is fetched on demand, per zone, once the user actually looks at one.
 export function getMapShellData(): MapShellData {
   const { routeMeta, clusters, defaultClusterIdx, totalCount, totalKm, years } = getAllRoutes()
   return { routeMeta, clusters, defaultClusterIdx, totalCount, totalKm, years }

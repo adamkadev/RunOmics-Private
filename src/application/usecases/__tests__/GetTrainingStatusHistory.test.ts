@@ -15,14 +15,12 @@ async function run(days: TrainingStatusDay[]) {
 
 const dayAt = (i: number) => new Date(Date.UTC(2026, 0, 1) + i * 86_400_000).toISOString().slice(0, 10)
 
-/** `count` consecutive days from 2026-01-01. `status` is omitted entirely when undefined. */
 function series(count: number, status: string | undefined = 'productive'): TrainingStatusDay[] {
   return Array.from({ length: count }, (_, i) =>
     status === undefined ? { date: dayAt(i) } : { date: dayAt(i), status },
   )
 }
 
-/** Same span, but with no day Garmin ever rated. */
 const unrated = (count: number): TrainingStatusDay[] => Array.from({ length: count }, (_, i) => ({ date: dayAt(i) }))
 
 describe('getTrainingStatusHistory', () => {
@@ -47,7 +45,6 @@ describe('getTrainingStatusHistory', () => {
     const data = await run([...series(14), { date: '2026-01-15', status: 'peaking' }])
 
     expect(data?.points.at(0)?.status).toBe('productive')
-    // `peaking` has no separate slot and folds into `fresh`.
     expect(data?.points.at(-1)?.status).toBe('fresh')
   })
 

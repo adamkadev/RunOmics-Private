@@ -5,18 +5,24 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
-  // Override default ignores of eslint-config-next.
   globalIgnores([
-    // Default ignores of eslint-config-next:
     ".next/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // Node utility scripts, not part of the linted Next.js app.
     "scripts/**",
-    // Vitest coverage report output.
     "coverage/**",
+    // Vendored by `npm run maplibre:worker`, so it only exists after a build.
+    "public/maplibre/**",
   ]),
+  {
+    files: ["src/components/activity/ActivityMap.tsx"],
+    rules: { "@typescript-eslint/no-explicit-any": "off" },
+  },
+  {
+    files: ["src/components/activity/ShareCardThumbnails.tsx"],
+    rules: { "@next/next/no-img-element": "off" },
+  },
 ]);
 
 export default eslintConfig;

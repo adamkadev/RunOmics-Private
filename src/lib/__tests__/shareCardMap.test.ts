@@ -33,7 +33,6 @@ describe('routePadding', () => {
   it('opens the top and bottom on the tall card, keeping the sides even', () => {
     const p = routePadding(390, 693)
     expect(p.left).toBe(p.right)
-    // Room reserved for the title above and the stats panel below.
     expect(p.top).toBeGreaterThan(p.left)
     expect(p.bottom).toBeGreaterThan(p.top)
   })
@@ -55,9 +54,6 @@ describe('projectRoute', () => {
     expect((minX + maxX) / 2).toBeCloseTo((p.left + (W - p.right)) / 2, 6)
     expect((minY + maxY) / 2).toBeCloseTo((p.top + (H - p.bottom)) / 2, 6)
 
-    // The axis that runs out of room first fills the padded frame exactly; the
-    // other is looser, since the fit preserves the aspect ratio. Same contract
-    // as MapLibre's fitBounds, which takes over once the basemap has rendered.
     const fillX = (maxX - minX) / (W - p.left - p.right)
     const fillY = (maxY - minY) / (H - p.top - p.bottom)
     expect(Math.max(fillX, fillY)).toBeCloseTo(1, 6)

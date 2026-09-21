@@ -1,13 +1,16 @@
 import { test, expect } from '@playwright/test'
 
-test('dashboard renders the weekly snapshot and recent activities from real synced data', async ({ page }) => {
+test('dashboard renders the weekly snapshot and recent activities', async ({ page }) => {
   await page.goto('/')
 
-  // Greeting + weekly stats grid load without a client-side data fetch (SSG).
-  await expect(page.getByRole('heading', { name: /good (morning|afternoon|evening)/i })).toBeVisible()
+  // The greeting that used to head this page is deliberately gone - it was the
+  // largest type on the screen and the only thing on it not about the running.
+  // The form/fitness/fatigue trio is the snapshot this test is named for.
+  await expect(page.getByText('Form', { exact: true })).toBeVisible()
+  await expect(page.getByText('Fitness', { exact: true })).toBeVisible()
+  await expect(page.getByText('Fatigue', { exact: true })).toBeVisible()
 
-  // public/data/activities/*.json is real committed data, so there is always
-  // at least one recent activity card linking into /activities/{id}.
   const firstActivityLink = page.locator('a[href^="/activities/"]').first()
   await expect(firstActivityLink).toBeVisible()
+  await expect(page.locator('[data-nextjs-dialog]')).toHaveCount(0)
 })

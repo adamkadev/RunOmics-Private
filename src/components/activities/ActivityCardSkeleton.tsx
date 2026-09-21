@@ -1,4 +1,3 @@
-/** Glass skeleton card for the activities list - shown only on first load (loading.tsx). */
 export function ActivityCardSkeleton() {
   return (
     <div className="skeleton-shimmer rounded-card-sm border border-foreground/[0.07] bg-foreground/[0.03] p-4">

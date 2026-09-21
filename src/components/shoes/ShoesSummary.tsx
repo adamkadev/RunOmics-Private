@@ -3,10 +3,9 @@ import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { round } from '@/lib/math'
 import { t } from '@/i18n'
 
-// Standalone dark tiles (same language as Plan's load row), not a glass card.
 function Stat({ value, label }: { value: React.ReactNode; label: string }) {
   return (
-    <div className="rounded-xl px-2.5 py-2.5 text-center" style={{ background: 'var(--scrim)' }}>
+    <div className="rounded-xl bg-foreground/[0.04] px-2.5 py-2.5 text-center">
       <div className="text-micro font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
       <div className="mt-1 text-base font-extrabold tabular-nums text-foreground">{value}</div>
     </div>

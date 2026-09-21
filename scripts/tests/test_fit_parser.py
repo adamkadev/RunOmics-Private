@@ -101,7 +101,7 @@ class TestPaceSamples:
 class TestDecimate:
     def test_straight_line_collapses_to_endpoints(self):
         # 500 collinear points: RDP should drop everything in between.
-        coords = [[7.75 + i * 0.0001, 48.58] for i in range(500)]
+        coords = [[20.50 + i * 0.0001, 10.11] for i in range(500)]
         out = _decimate(coords, max_points=100)
 
         assert out[0] == coords[0]
@@ -110,9 +110,9 @@ class TestDecimate:
 
     def test_corners_are_kept(self):
         # A right angle: the corner point must survive simplification.
-        leg1 = [[7.75 + i * 0.0001, 48.58] for i in range(100)]
-        corner = [7.76, 48.58]
-        leg2 = [[7.76, 48.58 + i * 0.0001] for i in range(1, 100)]
+        leg1 = [[20.50 + i * 0.0001, 10.11] for i in range(100)]
+        corner = [20.51, 10.11]
+        leg2 = [[20.51, 10.11 + i * 0.0001] for i in range(1, 100)]
         coords = leg1 + [corner] + leg2
         out = _decimate(coords, max_points=100)
 
@@ -121,13 +121,13 @@ class TestDecimate:
     def test_respects_max_points(self):
         # Jittered path that RDP can't simplify below max_points at the base
         # epsilon - the epsilon escalation loop must still enforce the cap.
-        coords = [[7.75 + i * 0.0001, 48.58 + (0.0002 if i % 2 else -0.0002)] for i in range(2000)]
+        coords = [[20.50 + i * 0.0001, 10.11 + (0.0002 if i % 2 else -0.0002)] for i in range(2000)]
         out = _decimate(coords, max_points=150)
 
         assert len(out) <= 150
 
     def test_short_routes_untouched(self):
-        coords = [[7.75, 48.58], [7.76, 48.59]]
+        coords = [[20.50, 10.11], [20.51, 10.12]]
         assert _decimate(coords, max_points=100) == coords
 
 
@@ -179,9 +179,86 @@ class TestExtractSplits:
         assert s.laps[0].avg_hr == 180
         assert s.laps[0].avg_speed_ms == 400.0 / 96.0
 
-    def test_no_interval_splits_returns_empty(self):
+    def test_interval_splits_win_over_plain_laps(self):
+        # The same messages also carry laps; a structured workout still reports
+        # its interval splits, never the raw laps.
+        splits = _extract_splits(self._messages())
+
+        assert [s.type for s in splits] == ["interval_active"]
+
+    def test_no_split_or_lap_data_returns_empty(self):
         assert _extract_splits({"split_mesgs": [{"split_type": "rwd_run", "total_timer_time": 60.0}]}) == []
         assert _extract_splits({}) == []
+
+
+def lap_mesg(minute, distance_m=1000.0, timer=300.0, hr=None):
+    """A FIT lap message as Garmin records one per kilometre on an ordinary run."""
+    lap = {
+        "start_time": datetime(2026, 7, 1, 10, minute, 0),
+        "total_distance": distance_m,
+        "total_timer_time": timer,
+    }
+    if hr is not None:
+        lap["avg_heart_rate"] = hr
+    return lap
+
+
+class TestLapFallbackSplits:
+    """Ordinary runs and races carry lap_mesgs but no interval split_mesgs -
+    those laps are what Garmin itself shows as the run's splits."""
+
+    def test_normal_run_laps_become_splits(self):
+        splits = _extract_splits({
+            "lap_mesgs": [lap_mesg(0, 1000.0, 300.0, 152), lap_mesg(5, 1000.0, 290.0, 158)],
+        })
+
+        assert [s.type for s in splits] == ["lap", "lap"]
+        assert [s.duration_sec for s in splits] == [300, 290]
+        assert [s.distance_m for s in splits] == [1000.0, 1000.0]
+        assert splits[0].avg_speed_ms == 1000.0 / 300.0
+        assert [s.avg_hr for s in splits] == [152, 158]
+        # A plain lap has no sub-laps of its own.
+        assert all(s.laps == [] for s in splits)
+
+    def test_race_laps_become_splits_without_heart_rate(self):
+        splits = _extract_splits({
+            "lap_mesgs": [lap_mesg(0), lap_mesg(5), lap_mesg(10, 1097.5, 320.0)],
+        })
+
+        assert len(splits) == 3
+        assert [s.avg_hr for s in splits] == [None, None, None]
+        assert splits[2].distance_m == 1097.5
+
+    def test_non_interval_split_mesgs_do_not_block_the_lap_fallback(self):
+        splits = _extract_splits({
+            "split_mesgs": [{"split_type": "rwd_run", "total_timer_time": 600.0}],
+            "lap_mesgs": [lap_mesg(0), lap_mesg(5)],
+        })
+
+        assert [s.type for s in splits] == ["lap", "lap"]
+
+    def test_malformed_laps_are_ignored(self):
+        splits = _extract_splits({
+            "lap_mesgs": [
+                lap_mesg(0),
+                {"total_distance": 1000.0, "total_timer_time": 300.0},   # no start_time
+                lap_mesg(5, 1000.0, 0.0),                                 # zero duration
+                lap_mesg(10, 1000.0, None),                               # no duration at all
+                lap_mesg(15, 0.0, 300.0),                                 # no distance
+                lap_mesg(20),
+            ],
+        })
+
+        assert len(splits) == 2
+        assert [s.duration_sec for s in splits] == [300, 300]
+
+    def test_a_single_lap_is_not_a_split(self):
+        # One lap is the activity total restated - nothing to show.
+        assert _extract_splits({"lap_mesgs": [lap_mesg(0)]}) == []
+
+    def test_no_usable_laps_yields_no_splits(self):
+        assert _extract_splits({"lap_mesgs": [lap_mesg(0, 1000.0, 0.0)]}) == []
+        assert _extract_splits({"lap_mesgs": []}) == []
 
 
 class TestExtractVo2max:
@@ -206,6 +283,15 @@ class TestLocalStartTime:
             "local_timestamp": datetime(2026, 7, 1, 11, 0, 0),
         }]
         assert _local_start_time(session, activities) == datetime(2026, 7, 1, 10, 0, 0)
+
+    def test_raw_fit_epoch_local_timestamp(self):
+        start = datetime(2026, 7, 28, 19, 30, 0, tzinfo=timezone.utc)
+        session = {"start_time": start}
+        activities = [{
+            "timestamp": datetime(2026, 7, 28, 19, 55, 56, tzinfo=timezone.utc),
+            "local_timestamp": 1154210156,
+        }]
+        assert _local_start_time(session, activities) == datetime(2026, 7, 28, 21, 30, 0)
 
     def test_absurd_offset_is_ignored(self):
         session = {"start_time": datetime(2026, 7, 1, 8, 0, 0)}
