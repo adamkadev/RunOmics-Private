@@ -11,7 +11,6 @@ interface Props {
   onSelectCustom: (hex: string) => void
 }
 
-/** Row of accent color dots plus a rainbow "custom color" dot backed by <input type=color>. */
 export function ShareAccentPicker({ shareAccent, customHex, onSelectAccent, onSelectCustom }: Props) {
   return (
     <div className="flex items-center" style={{ gap: 5 }}>

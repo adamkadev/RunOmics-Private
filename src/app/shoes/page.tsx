@@ -3,10 +3,9 @@ import { getShoeComparison } from '@/application/usecases/GetShoeComparison'
 import { getNextRace } from '@/application/usecases/GetNextRace'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { ShoesGrid, pickHeroShoe } from '@/components/shoes/ShoesGrid'
-import { ShoesSummary } from '@/components/shoes/ShoesSummary'
 import { ShoeComparison } from '@/components/shoes/ShoeComparison'
 import { BackButton } from '@/components/ui/BackButton'
-import { formatDayMonth } from '@/lib/formatters'
+import { formatDate, formatKm } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 const QUALITY_RUNS_WINDOW = 6
@@ -16,8 +15,6 @@ export const revalidate = 3600
 export default async function ShoesPage() {
   const shoes = getShoeStats()
 
-  // Deterministic rotation insight for the at-risk pair: how often it carried
-  // the recent quality sessions, and whether a race is close enough to matter.
   const hero = pickHeroShoe(shoes)
   let heroInsight: string | null = null
   if (hero) {
@@ -28,7 +25,7 @@ export default async function ShoesPage() {
     const nextRace = await getNextRace()
     heroInsight =
       t.shoes.hero.usage(usedCount, qualityRuns.length) +
-      (nextRace ? t.shoes.hero.rotateBeforeRace(formatDayMonth(nextRace.date)) : t.shoes.hero.rotate)
+      (nextRace ? t.shoes.hero.rotateBeforeRace(formatDate(nextRace.date, { style: 'bare' })) : t.shoes.hero.rotate)
   }
 
   return (
@@ -36,10 +33,15 @@ export default async function ShoesPage() {
       <div>
         <BackButton label={t.pages.shoes.back} fallbackHref="/profile" />
         <h1 className="text-display text-foreground">{t.pages.shoes.title}</h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">{t.pages.shoes.subtitle}</p>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          {t.shoes.rotationSummary(
+            shoes.filter((shoe) => !shoe.retired).length,
+            shoes.filter((shoe) => shoe.retired).length,
+            formatKm(shoes.reduce((sum, shoe) => sum + shoe.totalKm, 0))
+          )}
+        </p>
       </div>
 
-      <ShoesSummary shoes={shoes} />
       <ShoesGrid shoes={shoes} heroInsight={heroInsight} />
       <ShoeComparison rows={getShoeComparison()} />
     </div>

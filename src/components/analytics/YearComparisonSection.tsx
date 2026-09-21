@@ -1,8 +1,10 @@
 'use client'
 
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { CardTitle } from '@/components/ui/SectionLabel'
 import type { YearComparisonData } from '@/application/usecases/GetYearComparison'
 import { formatDuration, formatPace } from '@/lib/formatters'
+import { METRIC_DELTA_COLORS } from '@/lib/colors'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
@@ -23,9 +25,8 @@ function DeltaBadge({ pct, lowerIsBetter = false }: { pct: number; lowerIsBetter
 
   return (
     <span
-      className={`inline-flex items-center gap-0.5 text-xs font-medium ${
-        improved ? 'text-emerald-500 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'
-      }`}
+      className="inline-flex items-center gap-0.5 text-xs font-medium"
+      style={{ color: improved ? METRIC_DELTA_COLORS.good : METRIC_DELTA_COLORS.warn }}
     >
       {improved ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
       {Math.abs(pct)}%
@@ -117,7 +118,7 @@ export function YearComparisonSection({ data }: Props) {
   return (
     <GlassSurface variant="card" className="p-5">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-base font-semibold text-foreground">{t.analytics.yearOverYear.title}</h2>
+        <CardTitle as="h2">{t.analytics.yearOverYear.title}</CardTitle>
         <div className="flex items-center gap-4 text-xs text-subtle">
           <span className="font-semibold text-foreground">{y1}</span>
           <span>{t.analytics.yearOverYear.vs}</span>

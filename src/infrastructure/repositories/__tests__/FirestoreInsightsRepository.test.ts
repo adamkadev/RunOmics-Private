@@ -1,18 +1,26 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import type { CachedInsight } from '../FirestoreInsightsRepository'
 
-const { get, set, collectionGet, collection } = vi.hoisted(() => {
+const { get, set, doc, collectionGet, collection, orderBy, startAt, endAt, select, rangeGet } = vi.hoisted(() => {
   const get = vi.fn()
   const set = vi.fn()
   const collectionGet = vi.fn()
+  const rangeGet = vi.fn()
   const doc = vi.fn(() => ({ get, set }))
-  const select = vi.fn(() => ({ get: vi.fn() }))
-  return { get, set, collectionGet, collection: vi.fn(() => ({ doc, select, get: collectionGet })) }
+  const select = vi.fn(() => ({ get: rangeGet }))
+  const endAt = vi.fn(() => ({ select }))
+  const startAt = vi.fn(() => ({ endAt }))
+  const orderBy = vi.fn(() => ({ startAt }))
+  return {
+    get, set, doc, collectionGet, rangeGet, orderBy, startAt, endAt, select,
+    collection: vi.fn(() => ({ doc, orderBy, get: collectionGet })),
+  }
 })
 
+vi.mock('firebase-admin/firestore', () => ({ FieldPath: { documentId: () => '__name__' } }))
 vi.mock('@/lib/firebase-admin', () => ({ getAdminFirestore: () => ({ collection }) }))
 
-const { readVerifiedInsight, saveCachedInsight, getCachedInsightsByPrefix, servableInsight } = await import(
+const { readVerifiedInsight, saveCachedInsight, listCachedHashes, servableInsight, readVerdictPhrasing, saveVerdictPhrasing } = await import(
   '../FirestoreInsightsRepository'
 )
 
@@ -70,8 +78,6 @@ describe('readVerifiedInsight', () => {
     expect(get).not.toHaveBeenCalled()
   })
 
-  // The whole point of the grace window: these hashes move at midnight on their
-  // own, and a generation pass that fails used to blank the surface all day.
   it('still serves copy whose facts have moved, while it is recent', async () => {
     onDisk(stored({ generatedAt: new Date(NOW.getTime() - 30 * HOURS).toISOString() }))
 
@@ -96,8 +102,6 @@ describe('readVerifiedInsight', () => {
     expect(await readVerifiedInsight('todayHero', { hash: 'facts-as-of-today', guard: 'tone-hold' })).toBeNull()
   })
 
-  // An exact hash match is the copy the caller asked for; nothing about it can
-  // be out of step with what is rendered beside it.
   it('serves an exact match even when the guard has moved under it', async () => {
     onDisk(stored({ guard: 'tone-go' }))
 
@@ -117,35 +121,76 @@ describe('readVerifiedInsight', () => {
   })
 })
 
-describe('getCachedInsightsByPrefix', () => {
-  beforeEach(() => vi.clearAllMocks())
+describe('listCachedHashes', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    rangeGet.mockResolvedValue({ docs: [] })
+  })
 
-  function snapshotDoc(id: string, data: CachedInsight) {
-    return { id, data: () => data }
+  function hashDoc(id: string, hash: string) {
+    return { id, get: () => hash }
   }
 
-  it('keeps only the documents under the requested prefix and locale, keyed without either', async () => {
-    collectionGet.mockResolvedValue({
+  it('asks Firestore only for the document-ID range the prefix covers', async () => {
+    await listCachedHashes('runVerdict_')
+
+    expect(orderBy).toHaveBeenCalledWith('__name__')
+    expect(startAt).toHaveBeenCalledWith('runVerdict_')
+    expect(endAt).toHaveBeenCalledWith('runVerdict_\uf8ff')
+  })
+
+  it('never falls back to scanning the whole collection', async () => {
+    await listCachedHashes('runVerdict_')
+
+    expect(collectionGet).not.toHaveBeenCalled()
+  })
+
+  it('reads the hash field alone rather than whole documents', async () => {
+    await listCachedHashes('runVerdict_')
+
+    expect(select).toHaveBeenCalledWith('hash')
+  })
+
+  it('keys the surfaces of the active locale without their prefix or suffix', async () => {
+    rangeGet.mockResolvedValue({
       docs: [
-        snapshotDoc('runVerdict_a_en', stored({ headline: 'Run a' })),
-        snapshotDoc('runVerdict_b_en', stored({ headline: 'Run b' })),
-        snapshotDoc('runVerdict_a_fr', stored({ headline: 'Course a' })),
-        snapshotDoc('todayHero_en', stored({ headline: 'Today' })),
+        hashDoc('runVerdict_a_en', 'hash-a'),
+        hashDoc('runVerdict_b_en', 'hash-b'),
+        hashDoc('runVerdict_a_fr', 'hash-a-fr'),
       ],
     })
 
-    const cache = await getCachedInsightsByPrefix('runVerdict_')
+    const hashes = await listCachedHashes('runVerdict_')
 
-    expect([...cache.keys()]).toEqual(['runVerdict_a', 'runVerdict_b'])
-    expect(cache.get('runVerdict_a')?.headline).toBe('Run a')
+    expect([...hashes.keys()]).toEqual(['runVerdict_a', 'runVerdict_b'])
+    expect(hashes.get('runVerdict_a')).toBe('hash-a')
+  })
+})
+
+describe('read amplification', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    process.env.FIREBASE_PROJECT_ID = 'runomics-test'
+    onDisk(stored())
   })
 
-  it('one query however many documents exist', async () => {
-    collectionGet.mockResolvedValue({ docs: [] })
+  afterEach(() => {
+    delete process.env.FIREBASE_PROJECT_ID
+  })
 
-    await getCachedInsightsByPrefix('runVerdict_')
+  it('serves one surface with one document read and no collection scan', async () => {
+    await readVerifiedInsight('runVerdict_a', 'facts-as-generated')
 
-    expect(collectionGet).toHaveBeenCalledTimes(1)
+    expect(doc).toHaveBeenCalledWith('runVerdict_a_en')
+    expect(get).toHaveBeenCalledTimes(1)
+    expect(collectionGet).not.toHaveBeenCalled()
+  })
+
+  it('costs one read per surface asked for, whatever the collection holds', async () => {
+    for (const id of ['a', 'b', 'c', 'd']) await readVerifiedInsight(`runVerdict_${id}`, 'facts-as-generated')
+
+    expect(get).toHaveBeenCalledTimes(4)
+    expect(collectionGet).not.toHaveBeenCalled()
   })
 })
 
@@ -186,7 +231,6 @@ describe('saveCachedInsight', () => {
     expect(set).toHaveBeenCalledWith(expect.objectContaining({ hash: 'facts', guard: 'tone-go' }))
   })
 
-  // Firestore rejects an undefined field outright.
   it('leaves the field out entirely for a surface with no guard', async () => {
     await saveCachedInsight('analyticsTab_volume', insight, 'facts', null)
 
@@ -206,3 +250,63 @@ describe('saveCachedInsight', () => {
     })
   })
 })
+
+describe('verdict phrasing history', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    process.env.FIREBASE_PROJECT_ID = 'runomics-test'
+  })
+
+  afterEach(() => {
+    delete process.env.FIREBASE_PROJECT_ID
+  })
+
+  it('keeps one shared document so phrasing carries between activities', async () => {
+    await saveVerdictPhrasing([{ headline: 'Faster aerobic engine', body: 'Held drift to 8 bpm.' }])
+
+    expect(doc).toHaveBeenCalledWith('verdictPhrasing_en')
+  })
+
+  it('caps what it stores so the avoid clause cannot grow without bound', async () => {
+    const many = Array.from({ length: 14 }, (_, i) => ({ headline: `H${i}`, body: `B${i}` }))
+
+    await saveVerdictPhrasing(many)
+
+    expect((set.mock.calls[0]![0] as { recent: unknown[] }).recent).toHaveLength(10)
+  })
+
+  it('reads back what a previous invocation wrote', async () => {
+    const recent = [{ headline: 'Controlled aerobic building', body: 'Drift held at 8 bpm.' }]
+    get.mockResolvedValue({ exists: true, data: () => ({ recent }) })
+
+    expect(await readVerdictPhrasing()).toEqual(recent)
+  })
+
+  it('drops entries that are not a headline and body rather than feeding junk to the prompt', async () => {
+    get.mockResolvedValue({
+      exists: true,
+      data: () => ({ recent: [{ headline: 'Real', body: 'Copy.' }, { headline: 'No body' }, null, 'string'] }),
+    })
+
+    expect(await readVerdictPhrasing()).toEqual([{ headline: 'Real', body: 'Copy.' }])
+  })
+
+  it('starts empty on a first run, a missing field, or a read that throws', async () => {
+    get.mockResolvedValue({ exists: false, data: () => undefined })
+    expect(await readVerdictPhrasing()).toEqual([])
+
+    get.mockResolvedValue({ exists: true, data: () => ({}) })
+    expect(await readVerdictPhrasing()).toEqual([])
+
+    get.mockRejectedValue(new Error('firestore unavailable'))
+    expect(await readVerdictPhrasing()).toEqual([])
+  })
+
+  it('stays silent when the project is not configured, like every other read here', async () => {
+    delete process.env.FIREBASE_PROJECT_ID
+
+    expect(await readVerdictPhrasing()).toEqual([])
+    expect(get).not.toHaveBeenCalled()
+  })
+})
+

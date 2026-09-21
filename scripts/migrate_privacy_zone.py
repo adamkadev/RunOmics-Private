@@ -2,7 +2,7 @@
 """One-time (re-runnable) migration: crop every already-synced activity's route
 to the current privacy zone (processing/privacy.py). Needed because sync.py
 and reprocess.py only apply the crop going forward - this rewrites the routes
-already committed to public/data/activities/*.json, independent of whether a
+already stored in the selected data workspace, independent of whether a
 cached FIT file exists for them.
 
 Re-run this after changing PRIVACY_ZONES or PRIVACY_RADIUS_M in

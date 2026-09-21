@@ -15,6 +15,7 @@ import { getThresholdHistory } from '@/application/usecases/GetThresholdHistory'
 import { getHeatmapData } from '@/application/usecases/GetHeatmapData'
 import { getHeatImpact } from '@/application/usecases/GetHeatImpact'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
+import { getVo2maxNorms } from '@/infrastructure/repositories/JsonVo2maxNormsRepository'
 import { vo2maxTopPercent } from '@/domain/athlete/vo2maxNorms'
 import { AnalyticsClient } from '@/components/analytics/AnalyticsClient'
 
@@ -54,9 +55,12 @@ export default async function AnalyticsPage() {
   const latestVO2max = getLatestVO2max()
   const topPercent =
     latestVO2max !== null && athlete.age !== undefined && athlete.sex
-      ? vo2maxTopPercent(latestVO2max, athlete.age, athlete.sex)
+      ? vo2maxTopPercent(latestVO2max, athlete.age, athlete.sex, getVo2maxNorms())
       : null
-  const activeDays = getHeatmapData().filter((d) => d.distanceKm > 0).length
+  // Both halves of the consistency ratio come from the same window, so they are
+  // read off one call: a stale denominator would quietly misreport the share.
+  const heatmap = getHeatmapData()
+  const activeDays = heatmap.filter((d) => d.distanceKm > 0).length
   const heatImpact = getHeatImpact()
 
   return (
@@ -76,6 +80,7 @@ export default async function AnalyticsPage() {
         threshold={threshold}
         vo2maxTopPercent={topPercent}
         activeDays={activeDays}
+        heatmapDays={heatmap.length}
         heatImpact={heatImpact}
       />
     </div>

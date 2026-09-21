@@ -2,27 +2,15 @@ import Link from 'next/link'
 import { User, Settings } from 'lucide-react'
 import type { ProfileHero as ProfileHeroData } from '@/application/usecases/GetProfileData'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { vo2maxTopPercent } from '@/domain/athlete/vo2maxNorms'
-import { initials } from '@/lib/formatters'
+import { formatDate, formatKm, initials } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 interface Props {
   hero: ProfileHeroData
   displayName?: string
-  age?: number
-  sex?: 'male' | 'female'
 }
 
-// The Progress mockup's athlete card is a glass card, not a deep --hero-gradient
-// panel: the accent shows through the avatar's --accent-gradient tile and the
-// RANK pill, while the text stays theme-foreground so it reads on the glass in
-// both modes. (This is the one member of the "hero" family the mockup renders as
-// glass; TodayHero/CelebrationOverlay stay gradient panels.)
-export function ProfileHero({ hero, displayName, age, sex }: Props) {
-  const topPct = hero.rank?.vo2maxGarmin != null && age !== undefined && sex
-    ? vo2maxTopPercent(hero.rank.vo2maxGarmin, age, sex)
-    : null
-
+export function ProfileHero({ hero, displayName }: Props) {
   return (
     <GlassSurface variant="card" className="flex items-center gap-3.5 p-4">
       <div
@@ -47,13 +35,22 @@ export function ProfileHero({ hero, displayName, age, sex }: Props) {
             </span>
           )}
         </div>
-        {topPct !== null && (
+        {hero.vo2maxTopPercent !== null && (
           <p className="text-caption text-muted-foreground">
-            {t.profile.hero.topPctLine(topPct)}
+            {t.profile.hero.topPctLine(hero.vo2maxTopPercent)}
+          </p>
+        )}
+        {hero.lastRunDate && (
+          <p className="mt-0.5 text-caption text-muted-foreground">
+            {/* An absolute date, not "2 d ago": this renders inside a client
+                boundary, so a clock-relative string is computed twice - once on
+                the server, once on hydration - and the two disagree the moment
+                the reading rolls over. */}
+            {t.profile.hero.recency(formatDate(hero.lastRunDate, { style: 'bare' }), hero.activeDays)}
           </p>
         )}
         <p className="mt-0.5 text-caption text-subtle">
-          {t.profile.hero.lifetime(hero.lifetimeActivities, hero.lifetimeDistanceKm)}
+          {t.profile.hero.lifetime(hero.lifetimeActivities, formatKm(hero.lifetimeDistanceKm))}
         </p>
       </div>
 

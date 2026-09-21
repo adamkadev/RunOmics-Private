@@ -5,10 +5,8 @@ export interface HrBounds {
   restingHr: number
 }
 
-// Population-average fallback when the athlete profile has no HR bounds set.
 export const DEFAULT_HR_BOUNDS: HrBounds = { maxHr: 195, restingHr: 45 }
 
-/** Banister-style TRIMP: duration-weighted, exponentially scaled by heart rate reserve. */
 export function trimp(
   activity: Pick<Activity, 'avgHeartRate' | 'durationSeconds'>,
   hrBounds: HrBounds = DEFAULT_HR_BOUNDS,

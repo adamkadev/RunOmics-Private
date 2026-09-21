@@ -1,7 +1,5 @@
 'use client'
 
-/** Small presentational pieces shared by the share-card modal's settings rows. */
-
 import { SHARE_CARD_COLORS } from '@/lib/colors'
 
 interface ToggleProps {
@@ -40,7 +38,6 @@ interface SettingRowProps {
   children: React.ReactNode
 }
 
-/** Label (+ optional subtitle) on the left, control on the right. */
 export function SettingRow({ title, subtitle, children }: SettingRowProps) {
   return (
     <div className="flex items-center justify-between" style={{ padding: '11px 16px' }}>

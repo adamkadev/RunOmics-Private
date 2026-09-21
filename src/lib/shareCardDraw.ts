@@ -1,5 +1,5 @@
 import type { Activity } from '@/domain/activity/types'
-import { formatClock, formatDistance, formatDurationShort } from '@/lib/formatters'
+import { formatClock, formatDistance, formatDuration } from '@/lib/formatters'
 import { shareCardTitle } from '@/lib/shareCardStats'
 import type { ShareDesign } from '@/lib/shareCardPalette'
 import { projectRoute, simplifyRoute, type LngLat } from '@/lib/shareCardMap'
@@ -7,62 +7,40 @@ import { MAP_COLORS, SHARE_BACKDROPS, SHARE_CARD_COLORS as SHARE } from '@/lib/c
 import { ink, paper, rgbTriplet } from '@/lib/palette'
 import { t } from '@/i18n'
 
-// ── Canvas ink ───────────────────────────────────────────────────────────────
-// The card is painted in three inks: the athlete's accent (passed down as an
-// r/g/b triple, since it can be a custom color the palette never sees), plus
-// `paper` and `ink` for the white and black washes that build the glass. Alphas
-// stay inline at the call site - they are composition, not color.
-
-/** The accent at a given opacity. `a = 1` gives the solid fill. */
 const accent = (r: number, g: number, b: number, a: number): string => `rgba(${r},${g},${b},${a})`
 
-// The start dot is always green; the finish dot is the accent, except when the
-// accent is itself a green - then the two would read as the same marker, so the
-// finish flips to a contrasting red.
 const START_RGB = rgbTriplet(SHARE.routeStart)
 
-/** The finish-dot fill: the accent, or the red fallback when the accent sits
- *  too close to the green start marker to be told apart from it. */
 function finishFill(r: number, g: number, b: number): string {
   const dist = Math.hypot(r - START_RGB[0], g - START_RGB[1], b - START_RGB[2])
   return dist < 90 ? SHARE.routeFinish : accent(r, g, b, 1)
 }
 
-/** Fully transparent stop, for gradients that fade to nothing. */
 const TRANSPARENT = ink(0)
 
-/** The flat backdrop a design paints before anything else. */
 const backdrop = (design: keyof typeof SHARE_BACKDROPS, dark: boolean): string =>
   SHARE_BACKDROPS[design][dark ? 1 : 0]
 
-/** The four-stop golden-hour ramp behind the `memory` design's placeholder. */
 function memoryStops(grad: CanvasGradient, stops: readonly [string, string, string, string]): void {
   const offsets = [0, 0.35, 0.6, 1]
   stops.forEach((color, i) => grad.addColorStop(offsets[i]!, color))
 }
 
-// ── Hero metric helpers ──────────────────────────────────────────────────────
-
 const HERO_OPACITY: Partial<Record<ShareDesign, number>> = {
   aurora: 0.12, pulse: 0.10, terrain: 0.14, prism: 0.11,
 }
 
-function getHeroMetric(design: ShareDesign, activity: Activity): { value: string; unit: string } | null {
+function heroMetric(design: ShareDesign, activity: Activity): { value: string; unit: string } | null {
+  const distance = { value: activity.distanceKm.toFixed(1), unit: 'km' }
   switch (design) {
     case 'aurora':
-      return { value: activity.distanceKm.toFixed(1), unit: 'km' }
+      return distance
     case 'pulse':
-      return activity.avgHeartRate
-        ? { value: String(activity.avgHeartRate), unit: 'bpm' }
-        : { value: activity.distanceKm.toFixed(1), unit: 'km' }
+      return activity.avgHeartRate ? { value: String(activity.avgHeartRate), unit: 'bpm' } : distance
     case 'prism':
-      return activity.paceSecPerKm
-        ? { value: formatClock(activity.paceSecPerKm), unit: '/km' }
-        : { value: activity.distanceKm.toFixed(1), unit: 'km' }
+      return activity.paceSecPerKm ? { value: formatClock(activity.paceSecPerKm), unit: '/km' } : distance
     case 'terrain':
-      return activity.elevationGain
-        ? { value: `+${activity.elevationGain}`, unit: 'm' }
-        : { value: activity.distanceKm.toFixed(1), unit: 'km' }
+      return activity.elevationGain ? { value: `+${activity.elevationGain}`, unit: 'm' } : distance
     default:
       return null
   }
@@ -77,7 +55,7 @@ function drawHeroMetric(
   design: ShareDesign,
   activity: Activity,
 ) {
-  const metric = getHeroMetric(design, activity)
+  const metric = heroMetric(design, activity)
   if (!metric) return
 
   const base = HERO_OPACITY[design] ?? 0
@@ -124,8 +102,6 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
   })
 }
 
-// ── Shared canvas helpers (ported from DC HTML) ─────────────────────────────
-
 type Ctx = CanvasRenderingContext2D
 
 function rrect(ctx: Ctx, x: number, y: number, w: number, h: number, rr: number) {
@@ -149,14 +125,6 @@ function glow(ctx: Ctx, W: number, H: number, cx: number, cy: number, radius: nu
   ctx.restore()
 }
 
-// ctx.filter blur never renders in WebKit, and ctx.shadowBlur draws the
-// shadow-casting shape itself in addition to its shadow, which leaves a solid
-// stroke instead of a soft bloom. Drawing the stroke far off-canvas and using
-// shadowOffsetX to bring back only its blurred shadow reproduces the
-// ctx.filter look with the cross-browser-reliable shadow primitive.
-// shadowOffsetX is in raw device pixels (unaffected by the canvas transform),
-// while translate() is in logical units, so the offset must be scaled by the
-// current transform to cancel the translate exactly.
 function strokeGlow(ctx: Ctx, points: [number, number][], lw: number, a: number, r: number, g: number, b: number, blur: number) {
   const first = points[0]
   if (!first) return
@@ -238,8 +206,19 @@ function getKmMarkers(
   return markers
 }
 
-// Route points are [lng, lat] (Garmin/GeoJSON order). Apply cosine correction so
-// the projection is isometric despite varying latitude.
+function routeStroker(ctx: Ctx, pts: [number, number][], r: number, g: number, b: number) {
+  const [startX, startY] = pts[0]!
+  return (lineWidth: number, alpha: number, blur?: number) => {
+    if (blur) { strokeGlow(ctx, pts, lineWidth, alpha, r, g, b, blur); return }
+    ctx.save()
+    ctx.beginPath(); ctx.moveTo(startX, startY)
+    pts.forEach(([px, py]) => ctx.lineTo(px, py))
+    ctx.strokeStyle = accent(r, g, b, alpha); ctx.lineWidth = lineWidth
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke()
+    ctx.restore()
+  }
+}
+
 function projectGPS(coords: [number, number][], W: number, H: number): [number, number][] {
   const lngs = coords.map(([lng]) => lng)
   const lats = coords.map(([, lat]) => lat)
@@ -258,9 +237,7 @@ function projectGPS(coords: [number, number][], W: number, H: number): [number, 
   return coords.map(([lng, lat]) => [lng * cos * scale + ox, -lat * scale + oy])
 }
 
-// ── Theme background functions (ported from DC HTML) ────────────────────────
-
-export function draw_aurora(ctx: Ctx, W: number, H: number, r: number, g: number, b: number, dark: boolean) {
+function drawAurora(ctx: Ctx, W: number, H: number, r: number, g: number, b: number, dark: boolean) {
   ctx.fillStyle = backdrop('aurora', dark); ctx.fillRect(0, 0, W, H)
   glow(ctx, W, H, -W * 0.22, H * 0.12, W * 0.95, r, g, b, dark ? 0.55 : 0.18)
   glow(ctx, W, H, W * 1.18, H * 0.52, W * 0.78, r, g, b, dark ? 0.38 : 0.13)
@@ -269,7 +246,7 @@ export function draw_aurora(ctx: Ctx, W: number, H: number, r: number, g: number
   glass(ctx, -W * 0.08, H * 0.76, W * 0.65, H * 0.62, 0.18, r, g, b, dark, dark ? 0.07 : 0.28)
 }
 
-export function draw_pulse(ctx: Ctx, W: number, H: number, r: number, g: number, b: number, dark: boolean) {
+function drawPulse(ctx: Ctx, W: number, H: number, r: number, g: number, b: number, dark: boolean) {
   ctx.fillStyle = backdrop('pulse', dark); ctx.fillRect(0, 0, W, H)
   glow(ctx, W, H, W * 0.5, H * 0.5, W * 0.7, r, g, b, dark ? 0.18 : 0.07)
   const midY = H * 0.5, amp = H * 0.17, SEGS = 80, T = 15
@@ -293,7 +270,7 @@ export function draw_pulse(ctx: Ctx, W: number, H: number, r: number, g: number,
   glass(ctx, W * 0.5, H * 0.84, W * 0.84, H * 0.09, 0, r, g, b, dark, dark ? 0.09 : 0.36)
 }
 
-export function draw_terrain(ctx: Ctx, W: number, H: number, r: number, g: number, b: number, dark: boolean) {
+function drawTerrain(ctx: Ctx, W: number, H: number, r: number, g: number, b: number, dark: boolean) {
   ctx.fillStyle = backdrop('terrain', dark); ctx.fillRect(0, 0, W, H)
   glow(ctx, W, H, W * 0.5, H * 0.92, W * 0.9, r, g, b, dark ? 0.4 : 0.16)
   const layers = [
@@ -327,7 +304,7 @@ export function draw_terrain(ctx: Ctx, W: number, H: number, r: number, g: numbe
   })
 }
 
-export function draw_prism(ctx: Ctx, W: number, H: number, r: number, g: number, b: number, dark: boolean) {
+function drawPrism(ctx: Ctx, W: number, H: number, r: number, g: number, b: number, dark: boolean) {
   ctx.fillStyle = backdrop('prism', dark); ctx.fillRect(0, 0, W, H)
   glow(ctx, W, H, W * 0.62, H * 0.38, W * 0.72, r, g, b, dark ? 0.28 : 0.11)
   const shapes = [
@@ -356,10 +333,6 @@ export function draw_prism(ctx: Ctx, W: number, H: number, r: number, g: number,
   })
 }
 
-// ── Route design (real basemap) ─────────────────────────────────────────────
-
-/** Wash pulled over the top and bottom bands of the basemap so the branding and
- *  the stats card stay readable whatever the map underneath happens to be. */
 function drawMapScrim(ctx: Ctx, W: number, H: number, dark: boolean) {
   const band = H * 0.22
   const wash = dark ? ink : paper
@@ -374,8 +347,6 @@ function drawMapScrim(ctx: Ctx, W: number, H: number, dark: boolean) {
   ctx.fillStyle = bottom; ctx.fillRect(0, H - band, W, band)
 }
 
-/** Stand-in while the basemap image is in flight: the map backdrop with a
- *  diagonal sheen across it, the same shape as the app's loading skeletons. */
 function drawMapShimmer(ctx: Ctx, W: number, H: number, dark: boolean) {
   ctx.fillStyle = backdrop('map', dark); ctx.fillRect(0, 0, W, H)
   const sheen = ctx.createLinearGradient(0, H * 0.25, W, H * 0.75)
@@ -386,8 +357,6 @@ function drawMapShimmer(ctx: Ctx, W: number, H: number, dark: boolean) {
   ctx.fillStyle = sheen; ctx.fillRect(0, 0, W, H)
 }
 
-/** The trace exactly as the activity map draws it - a casing under a flat
- *  line, round joins, no glow - with the line in the athlete's accent. */
 function paintActivityTrace(ctx: Ctx, pts: [number, number][], r: number, g: number, b: number, dark: boolean) {
   const first = pts[0]
   const last = pts[pts.length - 1]
@@ -402,14 +371,9 @@ function paintActivityTrace(ctx: Ctx, pts: [number, number][], r: number, g: num
     ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke()
     ctx.restore()
   }
-  // Slightly wider than the activity map's 7/4: the card is read at phone
-  // scale, where the thinner pair all but disappears.
   stroke(dark ? MAP_COLORS.routeCasingDark : MAP_COLORS.routeCasingLight, 9, 0.85)
   stroke(accent(r, g, b, 1), 6)
 
-  // Start and finish dots, in the activity map's marker shape (white ring),
-  // keeping the share card's own colors: green start, accent finish. The
-  // finish only exists when the run is not a loop, as on the activity map.
   const dot = (pt: [number, number], fill: string) => {
     ctx.save()
     ctx.beginPath(); ctx.arc(pt[0], pt[1], 6.5, 0, Math.PI * 2)
@@ -425,7 +389,7 @@ function paintActivityTrace(ctx: Ctx, pts: [number, number][], r: number, g: num
   if (!isLoop) dot(last, finishFill(r, g, b))
 }
 
-export function draw_route(
+function drawRoute(
   ctx: Ctx, W: number, H: number,
   r: number, g: number, b: number,
   dark: boolean,
@@ -434,10 +398,8 @@ export function draw_route(
   mapPoints?: [number, number][] | null,
   mapFailed?: boolean,
 ) {
-  // No usable trace, or the map never rendered: the stylized map design is the
-  // graceful degradation, not a blank card.
   if (!gpsRoute || gpsRoute.length < 2 || mapFailed) {
-    draw_map(ctx, W, H, r, g, b, dark, gpsRoute, null, undefined, null)
+    drawMap(ctx, W, H, r, g, b, dark, gpsRoute, null, undefined, null)
     return
   }
 
@@ -448,14 +410,10 @@ export function draw_route(
   }
   drawMapScrim(ctx, W, H, dark)
 
-  // MapLibre's own projection once it has rendered, so the trace lands exactly
-  // on its streets; the matching fit stands in while the tiles are on their way.
   paintActivityTrace(ctx, mapPoints ?? projectRoute(gpsRoute, W, H), r, g, b, dark)
 }
 
 function drawMapStreetLabels(ctx: Ctx, W: number, H: number, dark: boolean, streetLabels: string[]) {
-  // Each street name is drawn once - repeating the same two or three names on
-  // every grid line reads as fake, so we spread the distinct names out instead.
   const labels = [...new Set(streetLabels.filter(Boolean))]
   if (labels.length === 0) return
   ctx.save()
@@ -465,9 +423,6 @@ function drawMapStreetLabels(ctx: Ctx, W: number, H: number, dark: boolean, stre
   const ph = 11, pad = 4
   const snap = (v: number) => Math.round(v / 112) * 112
 
-  // Rotate a third of the names onto vertical grid lines for a map-like feel,
-  // keeping the rest horizontal. Both are confined to the 0.15-0.85 band so
-  // they clear the title and the stats panel.
   const vCount = Math.min(2, Math.floor(labels.length / 3))
   const horizontal = labels.slice(0, labels.length - vCount)
   const vertical = labels.slice(labels.length - vCount)
@@ -512,7 +467,6 @@ function drawMapCompass(ctx: Ctx, W: number, H: number, r: number, g: number, b:
   ctx.strokeStyle = dark ? paper(0.2) : ink(0.12)
   ctx.lineWidth = 1; ctx.stroke()
 
-  // North arrow
   ctx.beginPath()
   ctx.moveTo(cx, cy - size)
   ctx.lineTo(cx - 4.5, cy + 1)
@@ -521,7 +475,6 @@ function drawMapCompass(ctx: Ctx, W: number, H: number, r: number, g: number, b:
   ctx.closePath()
   ctx.fillStyle = accent(r, g, b, 1); ctx.fill()
 
-  // South arrow
   ctx.beginPath()
   ctx.moveTo(cx, cy + size)
   ctx.lineTo(cx + 4.5, cy - 1)
@@ -530,7 +483,6 @@ function drawMapCompass(ctx: Ctx, W: number, H: number, r: number, g: number, b:
   ctx.closePath()
   ctx.fillStyle = dark ? paper(0.28) : ink(0.2); ctx.fill()
 
-  // E / W ticks
   ctx.strokeStyle = dark ? paper(0.38) : ink(0.28)
   ctx.lineWidth = 1.5
   ctx.beginPath(); ctx.moveTo(cx - size, cy); ctx.lineTo(cx - 5, cy); ctx.stroke()
@@ -578,7 +530,7 @@ function drawDepartLabel(ctx: Ctx, pt: [number, number]) {
   ctx.restore()
 }
 
-export function draw_map(
+function drawMap(
   ctx: Ctx, W: number, H: number,
   r: number, g: number, b: number,
   dark: boolean,
@@ -616,9 +568,6 @@ export function draw_map(
     ctx.restore()
   }
 
-  // GPS route. Projected exactly like the `route` design (projectRoute applies
-  // the same between-title-and-stats framing), so the drawn map's trace sits at
-  // the same size and place as the real basemap's.
   const simplified = gpsRoute && gpsRoute.length > 1 ? simplifyRoute(gpsRoute) : null
   const pts: [number, number][] = simplified
     ? projectRoute(gpsRoute!, W, H)
@@ -633,17 +582,9 @@ export function draw_map(
   const last = pts[pts.length - 1]
   if (!first || !last) return
 
-  const drawRoute = (lw: number, a: number, blur?: number) => {
-    if (blur) { strokeGlow(ctx, pts, lw, a, r, g, b, blur); return }
-    ctx.save()
-    ctx.beginPath(); ctx.moveTo(first[0], first[1])
-    pts.forEach(([px, py]) => ctx.lineTo(px, py))
-    ctx.strokeStyle = accent(r, g, b, a); ctx.lineWidth = lw
-    ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke()
-    ctx.restore()
-  }
-  drawRoute(18, dark ? 0.7 : 0.45, 14)
-  drawRoute(3.5, dark ? 0.95 : 0.82)
+  const strokePass = routeStroker(ctx, pts, r, g, b)
+  strokePass(18, dark ? 0.7 : 0.45, 14)
+  strokePass(3.5, dark ? 0.95 : 0.82)
 
   if (simplified && distanceKm && distanceKm > 0) {
     getKmMarkers(pts, distanceKm).forEach(({ pt, label }) => drawKmPill(ctx, pt, label, r, g, b, dark))
@@ -663,7 +604,7 @@ export function draw_map(
   drawMapCompass(ctx, W, H, r, g, b, dark)
 }
 
-export function draw_memory(ctx: Ctx, W: number, H: number, r: number, g: number, b: number, dark: boolean, photoImg?: HTMLImageElement | null) {
+function drawMemory(ctx: Ctx, W: number, H: number, r: number, g: number, b: number, dark: boolean, photoImg?: HTMLImageElement | null) {
   if (photoImg) {
     drawCover(ctx, photoImg, 0, 0, W, H)
     const topScrim = ctx.createLinearGradient(0, 0, 0, H * 0.32)
@@ -682,10 +623,8 @@ export function draw_memory(ctx: Ctx, W: number, H: number, r: number, g: number
   }
   ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H)
 
-  // Sun glow
   glow(ctx, W, H, W * 0.68, H * 0.22, W * 0.65, r, g, b, dark ? 0.38 : 0.28)
 
-  // Horizon silhouette
   ctx.fillStyle = dark ? ink(0.72) : SHARE.memoryHorizonLight
   const hzY = H * 0.62
   const trees = [{ x: W * 0.08, h: 0.12, w: 0.1 }, { x: W * 0.22, h: 0.09, w: 0.08 }, { x: W * 0.48, h: 0.15, w: 0.12 }, { x: W * 0.72, h: 0.11, w: 0.09 }, { x: W * 0.88, h: 0.13, w: 0.11 }]
@@ -706,12 +645,9 @@ export function draw_memory(ctx: Ctx, W: number, H: number, r: number, g: number
   ctx.fillStyle = dark ? ink(0.3) : paper(0.35); ctx.fill()
   rrect(ctx, icX - 8, icY - 8, icW + 16, icH + 16, 20)
   ctx.strokeStyle = dark ? paper(0.22) : paper(0.7); ctx.lineWidth = 1.5; ctx.stroke()
-  // Camera body
   ctx.strokeStyle = dark ? paper(0.65) : paper(0.9); ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round'
   rrect(ctx, icX + 4, icY + 16, icW - 8, icH - 22, 6); ctx.stroke()
-  // Lens
   ctx.beginPath(); ctx.arc(icX + icW / 2, icY + icH / 2 + 2, 10, 0, Math.PI * 2); ctx.stroke()
-  // Viewfinder bump
   ctx.beginPath(); ctx.moveTo(icX + icW / 2 - 10, icY + 16); ctx.lineTo(icX + icW / 2 - 6, icY + 8); ctx.lineTo(icX + icW / 2 + 6, icY + 8); ctx.lineTo(icX + icW / 2 + 10, icY + 16); ctx.stroke()
   ctx.font = '600 11px Inter,system-ui,sans-serif'
   ctx.fillStyle = dark ? paper(0.65) : paper(0.9)
@@ -731,8 +667,6 @@ export function draw_memory(ctx: Ctx, W: number, H: number, r: number, g: number
   ctx.restore()
 }
 
-// ── GPS route overlay (any design) ──────────────────────────────────────────
-
 export function drawRouteOverlay(
   ctx: Ctx,
   W: number,
@@ -741,14 +675,11 @@ export function drawRouteOverlay(
   r: number, g: number, b: number,
   dark: boolean,
 ) {
-  // Same projection as MAP (72% fill with 14% padding), shifted to center at H*0.44
   const rawPts = projectGPS(route, W, H)
   const dy = H * 0.44 - H * 0.5
   paintRoute(ctx, rawPts.map(([x, y]) => [x, y + dy] as [number, number]), r, g, b, dark)
 }
 
-/** The RunOmics trace: a soft casing, the accent line, and the start/finish
- *  dots. Takes points already in canvas space, whatever projected them. */
 function paintRoute(
   ctx: Ctx,
   pts: [number, number][],
@@ -759,19 +690,11 @@ function paintRoute(
   const last = pts[pts.length - 1]
   if (!first || !last) return
 
-  const drawRoute = (lw: number, a: number, blur?: number) => {
-    if (blur) { strokeGlow(ctx, pts, lw, a, r, g, b, blur); return }
-    ctx.save()
-    ctx.beginPath(); ctx.moveTo(first[0], first[1])
-    pts.forEach(([px, py]) => ctx.lineTo(px, py))
-    ctx.strokeStyle = accent(r, g, b, a); ctx.lineWidth = lw
-    ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke()
-    ctx.restore()
-  }
+  const strokePass = routeStroker(ctx, pts, r, g, b)
 
-  drawRoute(36, dark ? 0.45 : 0.28, 24)
-  drawRoute(16, dark ? 0.75 : 0.48, 10)
-  drawRoute(3.5, dark ? 0.98 : 0.85)
+  strokePass(36, dark ? 0.45 : 0.28, 24)
+  strokePass(16, dark ? 0.75 : 0.48, 10)
+  strokePass(3.5, dark ? 0.98 : 0.85)
 
   ctx.beginPath(); ctx.moveTo(first[0], first[1])
   pts.forEach(([px, py]) => ctx.lineTo(px, py))
@@ -786,8 +709,6 @@ function paintRoute(
   ctx.fillStyle = finishFill(r, g, b); ctx.fill()
   ctx.strokeStyle = paper(0.7); ctx.lineWidth = 1.5; ctx.stroke()
 }
-
-// ── Branding (Zone B) ────────────────────────────────────────────────────────
 
 export function drawBranding(ctx: Ctx, W: number, _H: number, dark: boolean) {
   ctx.save()
@@ -814,8 +735,6 @@ export function drawBranding(ctx: Ctx, W: number, _H: number, dark: boolean) {
   ctx.restore()
 }
 
-// ── Data overlay (Zone A + Zone C) ──────────────────────────────────────────
-
 function formatShareDate(activity: Activity): string {
   const d = new Date(activity.date + 'T00:00:00')
   const day = d.toLocaleDateString(t.locale, { weekday: 'short' })
@@ -825,7 +744,6 @@ function formatShareDate(activity: Activity): string {
 }
 
 export function drawDataOverlay(ctx: Ctx, W: number, H: number, dark: boolean, r: number, g: number, b: number, activity: Activity, design: ShareDesign) {
-  // Zone A - top-left: name + date
   ctx.save()
   ctx.font = '800 18px Inter,system-ui,sans-serif'
   ctx.fillStyle = dark ? paper(0.92) : ink(0.88)
@@ -836,10 +754,8 @@ export function drawDataOverlay(ctx: Ctx, W: number, H: number, dark: boolean, r
   ctx.fillText(formatShareDate(activity), 26, 94)
   ctx.restore()
 
-  // Zone D - hero metric centered in the card
   drawHeroMetric(ctx, W, H, dark, r, g, b, design, activity)
 
-  // Zone C - bottom stats glass card
   const cx = 20, cy = H - 148, cw = W - 40, ch = 122, crr = 18
   ctx.save()
   rrect(ctx, cx, cy, cw, ch, crr)
@@ -851,12 +767,13 @@ export function drawDataOverlay(ctx: Ctx, W: number, H: number, dark: boolean, r
   ctx.lineWidth = 1; ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0
   ctx.stroke(); ctx.restore()
 
-  const durationH = Math.floor(activity.durationSeconds / 3600) > 0
+  // formatDuration is self-describing (h:mm:ss / m:ss), so a trailing "h" or
+   // "min" would label a field the value already names.
   const stats: { label: string; value: string; unit: string }[] = [
     { label: t.activity.shareCard.distance, value: formatDistance(activity.distanceKm), unit: t.units.km },
     { label: t.activity.shareCard.pace, value: activity.paceSecPerKm ? formatClock(activity.paceSecPerKm) : '-', unit: '/km' },
     { label: t.activity.shareCard.avgHr, value: activity.avgHeartRate ? `${activity.avgHeartRate}` : '-', unit: t.units.bpm },
-    { label: t.activity.shareCard.time, value: formatDurationShort(activity.durationSeconds), unit: durationH ? 'h' : 'min' },
+    { label: t.activity.shareCard.time, value: formatDuration(activity.durationSeconds), unit: '' },
   ]
 
   const cellW = cw / 4
@@ -881,20 +798,14 @@ export function drawDataOverlay(ctx: Ctx, W: number, H: number, dark: boolean, r
   })
 }
 
-// ── Dispatch ─────────────────────────────────────────────────────────────────
-
-/** Everything a backdrop may need beyond its colors. Designs pick what applies. */
 export interface ThemeData {
   gpsRoute?: LngLat[] | null
   photoImg?: HTMLImageElement | null
   locationName?: string | null
   distanceKm?: number
   streetLabels?: string[] | null
-  /** `route` design: the rendered basemap, once it has loaded. */
   mapImage?: HTMLCanvasElement | null
-  /** `route` design: the trace as the basemap's own renderer projected it. */
   mapPoints?: [number, number][] | null
-  /** `route` design: the basemap will not arrive, fall back to `map`. */
   mapFailed?: boolean
 }
 
@@ -909,12 +820,12 @@ export function drawTheme(
 ): void {
   const { gpsRoute, photoImg, locationName, distanceKm, streetLabels, mapImage, mapPoints, mapFailed } = data
   switch (theme) {
-    case 'aurora':  draw_aurora(ctx, W, H, r, g, b, dark); break
-    case 'pulse':   draw_pulse(ctx, W, H, r, g, b, dark); break
-    case 'terrain': draw_terrain(ctx, W, H, r, g, b, dark); break
-    case 'prism':   draw_prism(ctx, W, H, r, g, b, dark); break
-    case 'route':   draw_route(ctx, W, H, r, g, b, dark, gpsRoute, mapImage, mapPoints, mapFailed); break
-    case 'map':     draw_map(ctx, W, H, r, g, b, dark, gpsRoute, locationName, distanceKm, streetLabels); break
-    case 'memory':  draw_memory(ctx, W, H, r, g, b, dark, photoImg ?? null); break
+    case 'aurora':  drawAurora(ctx, W, H, r, g, b, dark); break
+    case 'pulse':   drawPulse(ctx, W, H, r, g, b, dark); break
+    case 'terrain': drawTerrain(ctx, W, H, r, g, b, dark); break
+    case 'prism':   drawPrism(ctx, W, H, r, g, b, dark); break
+    case 'route':   drawRoute(ctx, W, H, r, g, b, dark, gpsRoute, mapImage, mapPoints, mapFailed); break
+    case 'map':     drawMap(ctx, W, H, r, g, b, dark, gpsRoute, locationName, distanceKm, streetLabels); break
+    case 'memory':  drawMemory(ctx, W, H, r, g, b, dark, photoImg ?? null); break
   }
 }

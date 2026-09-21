@@ -5,14 +5,18 @@ import { getActivities } from '@/application/usecases/GetActivities'
 import { getRecords, getQualifiedEffortsByActivityId } from '@/application/usecases/GetRecords'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { getShoeRegistry } from '@/infrastructure/repositories/JsonShoeRepository'
+import { getOfficialRaceResults } from '@/infrastructure/repositories/JsonRaceResultRepository'
+import { officialResultsByActivityId } from '@/domain/activity/raceResult'
 import type { HrBounds } from '@/domain/training/trimp'
 import { ActivityDetailClient } from '@/components/activity/ActivityDetailClient'
 import { ActivityNav } from '@/components/activity/ActivityNav'
 import { ShareButton } from '@/components/activity/ShareButton'
 import { ActivityNotes } from '@/components/activity/ActivityNotes'
 import { ActivityAchievements } from '@/components/activity/ActivityAchievements'
+import { OfficialResult } from '@/components/activity/OfficialResult'
 import { SimilarRuns } from '@/components/activity/SimilarRuns'
 import { getSimilarRuns } from '@/application/usecases/GetSimilarRuns'
+import { getDynamicsBaseline } from '@/application/usecases/GetDynamicsBaseline'
 import { getRunVerdictInsight } from '@/application/usecases/GetRunVerdictInsight'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
 import { t } from '@/i18n'
@@ -63,8 +67,10 @@ export default async function ActivityDetailPage({
   const qualifiedEfforts = getQualifiedEffortsByActivityId(records)[id] ?? []
   const similarRuns = getSimilarRuns(id)
   const aiVerdict = await getRunVerdictInsight(activity)
-  const info = activity.gearId ? getShoeRegistry()[activity.gearId] : undefined
-  const shoe = info ? { name: info.name, dotColor: info.dotColor } : null
+  const officialResult = officialResultsByActivityId(getOfficialRaceResults()).get(id) ?? null
+  const holdsOfficialRecord = records.some((record) => record.official && record.activityId === id)
+  const registeredShoe = activity.gearId ? getShoeRegistry()[activity.gearId] : undefined
+  const shoe = registeredShoe ? { name: registeredShoe.name, dotColor: registeredShoe.dotColor } : null
 
   const athlete = getAthleteProfile()
   const hrBounds: HrBounds | undefined =
@@ -92,6 +98,15 @@ export default async function ActivityDetailPage({
         )}
       </div>
 
+      {officialResult && (
+        <OfficialResult
+          result={officialResult}
+          garminDistanceKm={activity.distanceKm}
+          garminDurationSeconds={activity.durationSeconds}
+          isPersonalBest={holdsOfficialRecord}
+        />
+      )}
+
       {activity.bestEfforts && (
         <ActivityAchievements bestEfforts={activity.bestEfforts} qualifiedEfforts={qualifiedEfforts} />
       )}
@@ -104,6 +119,7 @@ export default async function ActivityDetailPage({
         qualifiedEfforts={qualifiedEfforts}
         aiVerdict={aiVerdict}
         shoe={shoe}
+        dynamicsBaseline={getDynamicsBaseline(activity)}
       />
 
       <ActivityNav prev={prevActivity} next={nextActivity} />

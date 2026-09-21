@@ -13,7 +13,8 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import type { ActivityWeather } from '@/domain/activity/types'
 import { compassPoint, weatherCondition, type WeatherCondition } from '@/domain/activity/weather'
-import { temperatureIconColor } from '@/lib/colors'
+import { temperatureColor } from '@/lib/colors'
+import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 const CONDITION_ICONS: Record<WeatherCondition, LucideIcon> = {
@@ -32,7 +33,8 @@ const CONDITION_ICONS: Record<WeatherCondition, LucideIcon> = {
   thunderstorm: CloudLightning,
 }
 
-const CHIP_CLASS = 'glass-map-chip flex items-center gap-1 whitespace-nowrap px-2.5 py-1.5 text-xs font-semibold'
+export const MAP_CHIP_CLASS =
+  'glass-map-chip flex items-center gap-1 whitespace-nowrap px-2.5 py-1.5 text-xs font-semibold'
 
 export function WeatherChips({ weather }: { weather: ActivityWeather }) {
   const w = t.activity.weather
@@ -43,13 +45,13 @@ export function WeatherChips({ weather }: { weather: ActivityWeather }) {
   return (
     <>
       <div
-        className={CHIP_CLASS}
+        className={cn(MAP_CHIP_CLASS, temperatureColor(weather.tempC))}
         aria-label={condition ? `${w.conditions[condition]}, ${temperature}` : undefined}
       >
-        <Icon size={12} className={temperatureIconColor(weather.tempC)} />
+        <Icon size={12} />
         {temperature}
       </div>
-      <div className={CHIP_CLASS} aria-label={w.wind}>
+      <div className={MAP_CHIP_CLASS} aria-label={w.wind}>
         <Wind size={12} className="text-subtle" />
         {Math.round(weather.windKph)} {t.units.kmh} {w.compass[compassPoint(weather.windDirDeg)]}
       </div>

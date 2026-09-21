@@ -16,15 +16,16 @@ stored ones, since Garmin revises recent estimates as new activities land.
 
 from __future__ import annotations
 
-import json
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
+from data_directory import get_data_dir
 from .client import GarminAPIError, GarminClient
 from .retry import retry_transient
+from repository.history_file import read_history_section, write_history
 
-_DATA_DIR = Path(__file__).parent.parent.parent / "public" / "data"
+_DATA_DIR = get_data_dir()
 _PATH = _DATA_DIR / "race_predictions.json"
 
 # Comfortably wider than the window Garmin actually returns, so a long gap
@@ -64,12 +65,7 @@ def normalize_prediction(entry: Any) -> tuple[str, dict[str, int]] | None:
 
 
 def _load_days() -> dict[str, Any]:
-    if not _PATH.exists():
-        return {}
-    try:
-        return json.loads(_PATH.read_text()).get("days") or {}
-    except Exception:
-        return {}
+    return read_history_section(_PATH, "days")
 
 
 def merge_days(stored: dict[str, Any], payload: Any) -> int:
@@ -106,7 +102,6 @@ def sync_race_predictions(client: GarminClient, today: date | None = None) -> in
         print("  No race predictions recorded.")
         return 0
 
-    _DATA_DIR.mkdir(parents=True, exist_ok=True)
-    _PATH.write_text(json.dumps({"days": dict(sorted(stored.items()))}, indent=2) + "\n")
+    write_history(_PATH, {"days": dict(sorted(stored.items()))})
     print(f"  {fetched} day(s) recorded, {len(stored)} total.")
     return len(stored)

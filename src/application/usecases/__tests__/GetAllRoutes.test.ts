@@ -3,7 +3,6 @@ import type { Activity } from '@/domain/activity/types'
 
 vi.mock('@/infrastructure/repositories/JsonActivityRepository', () => ({ getAllActivities: vi.fn() }))
 
-// Two places ~220 km apart, so they can never fall inside the same cluster radius.
 const PARIS: [number, number][] = [
   [2.3, 48.8],
   [2.32, 48.82],
@@ -17,7 +16,6 @@ function activity(id: string, date: string, route: [number, number][] | undefine
   return { id, date, type: 'Base', route, distanceKm, durationSeconds: 3000, paceSecPerKm: 300 } as Activity
 }
 
-// getAllRoutes caches per module instance, so every case gets a fresh one.
 async function load(activities: Activity[]) {
   vi.resetModules()
   const { getAllActivities } = await import('@/infrastructure/repositories/JsonActivityRepository')

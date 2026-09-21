@@ -19,7 +19,7 @@ export interface SplitLap {
 }
 
 export interface ActivitySplit {
-  type: 'interval_warmup' | 'interval_active' | 'interval_rest' | 'interval_recovery' | 'interval_cooldown'
+  type: 'interval_warmup' | 'interval_active' | 'interval_rest' | 'interval_recovery' | 'interval_cooldown' | 'lap'
   durationSec: number
   distanceM: number
   avgSpeedMs: number
@@ -27,20 +27,13 @@ export interface ActivitySplit {
   laps: SplitLap[]
 }
 
-/**
- * Conditions at the middle of the run, from Open-Meteo (see
- * scripts/processing/weather.py). Distinct from `avgTemperature`, which is what
- * the watch's own sensor read on the wrist.
- */
 export interface ActivityWeather {
   tempC: number
   apparentTempC: number
   humidityPct: number
   windKph: number
-  /** Direction the wind blows FROM, in degrees clockwise from north. */
   windDirDeg: number
   precipitationMm: number
-  /** WMO weather code - map it with `weatherCondition()`. */
   code: number
 }
 
@@ -49,15 +42,17 @@ export interface HrZone {
   seconds: number
   percent: number
   minBpm: number
-  maxBpm: number | null  // null for zone 5 (no upper bound)
+  maxBpm: number | null
 }
 
 export interface Activity {
+  sport?: string
   id: string
   week: number
   date: string
   dayOfWeek: string
   type: ActivityType
+  typeSource?: 'garmin' | 'runomics'
   description: string
   durationSeconds: number
   distanceKm: number
@@ -112,9 +107,7 @@ export type WorkoutStepKind = 'warmup' | 'effort' | 'recovery' | 'cooldown'
 export interface WorkoutStep {
   kind: WorkoutStepKind
   minutes: number
-  /** Repetition index for interval steps (1-based), for "2 × 10'" style labels. */
   rep?: number
-  /** Real target pace range [fast, slow] in sec/km, from Garmin's pace.zone target - see sync_workouts.py. */
   paceSecPerKm?: [number, number]
 }
 
@@ -126,8 +119,6 @@ export interface PlannedWorkout {
   type?: ActivityType
   distanceM?: number
   durationSecs?: number
-  /** Coarse time-of-day only (see scripts/sync_workouts.py) - the exact scheduled
-   * minute of a future run is never persisted or served. */
   scheduledTime?: ScheduledTimeOfDay
   estimatedLoad?: number
   isEstimated?: boolean
@@ -169,48 +160,41 @@ export interface DashboardData {
   longestStreak: number
 }
 
-// Visual styling per activity type. Human-readable labels live in i18n
-// (`t.activityTypes`); only colors / badge classes belong here.
-// `chartColor` is the canonical "type" color: used both for charts and for the
-// "type = pastille" dots/badges (liquid glass design) - one color per type.
-export const ACTIVITY_TYPE_CONFIG: Record<
-  ActivityType,
-  { badgeClass: string; chartColor: string }
-> = {
-  Sprint: {
-    badgeClass: 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/30 dark:text-fuchsia-400',
-    chartColor: HUE.fuchsia500,
-  },
-
-  Anaerobic: {
-    badgeClass: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
-    chartColor: HUE.violet600,
-  },
-
-  VO2Max: {
-    badgeClass: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-    chartColor: HUE.red500,
-  },
-
-  Threshold: {
-    badgeClass: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-    chartColor: HUE.orange500,
-  },
-
-  Tempo: {
-    badgeClass: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-    chartColor: HUE.yellow500,
-  },
-
-  Base: {
-    badgeClass: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-    chartColor: HUE.green500,
-  },
-
-  Race: {
-    badgeClass: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-    chartColor: HUE.amber500,
-  },
+/**
+ * One ramp, five hue families instead of seven: green for the aerobic base,
+ * then amber, orange and red as the effort rises. Violet and fuchsia are off
+ * the table on purpose - `violet600` is the literal `--accent-text` of the
+ * endurance theme, so a type painted in either would read as the selection
+ * accent on that theme (this happened once already: Anaerobic used to be
+ * violet600).
+ *
+ * Tempo is `amber400` rather than a mid yellow - the app's dark, green-tinted
+ * background desaturates a plain yellow toward olive/mustard, the least
+ * legible step in the ramp.
+ *
+ * The red family holds the three types EFFORT_ZONE_BY_TYPE puts in Z5, at
+ * three depths that stay bright enough to read as "hard" rather than
+ * "disabled" against that same dark background: `red600` for Sprint, `red500`
+ * for Anaerobic, and `roRed` - the lightest - for VO2Max, which is also the
+ * `--zone-5` token itself, so a VO2Max dot and a zone-5 segment agree rather
+ * than competing. Declared hardest first, so the object reads top to bottom
+ * as the ramp.
+ *
+ * `green600` is a shade cooler and darker than the accent/selection green
+ * (both used to be `green500`, which read a Base dot as a selection
+ * marker). Race sits outside the ramp entirely, in blue: it's an event, not
+ * an intensity, and amber is already spoken for elsewhere as "nearest race
+ * countdown" on the Plan screen - the collision that rule guards against is
+ * Race painting itself amber, not Tempo.
+ */
+export const ACTIVITY_TYPE_CONFIG: Record<ActivityType, { chartColor: string }> = {
+  Sprint:    { chartColor: HUE.red600 },
+  Anaerobic: { chartColor: HUE.red500 },
+  VO2Max:    { chartColor: HUE.roRed },
+  Threshold: { chartColor: HUE.orange500 },
+  Tempo:     { chartColor: HUE.amber400 },
+  Base:      { chartColor: HUE.green600 },
+  Race:      { chartColor: HUE.blue300 },
 }
 
 export const ACTIVITY_TYPE_ICONS: Record<ActivityType, LucideIcon> = {

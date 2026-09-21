@@ -1,7 +1,10 @@
+import type { Feature, FeatureCollection } from "geojson";
 import type { ActivityType } from "@/domain/activity/types";
 import type { RouteMeta, RouteCluster } from "@/application/usecases/GetAllRoutes";
+import type { MapTerritory } from "@/application/usecases/GetMapTerritory";
 import { HEAT_ROUTE_COLORS } from "@/lib/colors";
-import { ROUTE_GRID, routeCellKey } from "@/lib/routeMatch";
+import { routeCellKey } from "@/lib/routeMatch";
+import { distanceKm, median, round } from "@/lib/math";
 
 export interface HeatFilters {
   year: string | null;
@@ -15,61 +18,131 @@ export function matchesFilters(meta: RouteMeta | undefined, filters: HeatFilters
   return true;
 }
 
+// The territory card follows whichever area is on the map, not a fixed
+// all-time home base - so it recomputes from the same filtered route set the
+// heatmap itself is drawing, scoped to the one cluster in view.
+export function computeAreaTerritory(
+  cluster: RouteCluster,
+  routeMeta: RouteMeta[],
+  routes: [number, number][][],
+  filters: HeatFilters
+): MapTerritory | null {
+  const clusterIndices = cluster.routeIndices.filter((i) => matchesFilters(routeMeta[i], filters));
+  if (clusterIndices.length === 0) return null;
+
+  const clusterKm = clusterIndices.reduce((sum, i) => sum + (routeMeta[i]?.distanceKm ?? 0), 0);
+  const totalKm = routeMeta.reduce((sum, m) => sum + (matchesFilters(m, filters) ? m.distanceKm : 0), 0);
+  if (totalKm <= 0) return null;
+
+  const radii = clusterIndices
+    .map((i) => routes[i])
+    .filter((coords): coords is [number, number][] => !!coords && coords.length > 0)
+    .map((coords) => {
+      const lons = coords.map((c) => c[0]);
+      const lats = coords.map((c) => c[1]);
+      const cLon = (Math.min(...lons) + Math.max(...lons)) / 2;
+      const cLat = (Math.min(...lats) + Math.max(...lats)) / 2;
+      return distanceKm(cLon, cLat, cluster.center[0], cluster.center[1]);
+    });
+  if (!radii.length) return null;
+
+  return {
+    center: cluster.center,
+    percentVolume: round((clusterKm / totalKm) * 100, 0),
+    medianRadiusKm: round(median(radii), 1),
+    routeCount: clusterIndices.length,
+  };
+}
+
+export interface WorldTerritory {
+  routeCount: number;
+  areaCount: number;
+  topAreaName: string;
+  topSharePercent: number;
+}
+
+// At world zoom there is no single selected area, so the card states a fact
+// true of the whole filtered set instead - the top area's share stands in for
+// "median radius", which has no meaning once the map isn't centred on a place.
+export function computeWorldTerritory(
+  clusters: RouteCluster[],
+  names: string[],
+  routeMeta: RouteMeta[],
+  filters: HeatFilters
+): WorldTerritory | null {
+  const perCluster = clusters.map((c, i) => ({
+    name: names[i] ?? coordLabel(c),
+    count: c.routeIndices.filter((idx) => matchesFilters(routeMeta[idx], filters)).length,
+  }));
+  const routeCount = perCluster.reduce((sum, c) => sum + c.count, 0);
+  if (routeCount === 0) return null;
+
+  const areaCount = perCluster.filter((c) => c.count > 0).length;
+  const top = perCluster.reduce((a, b) => (b.count > a.count ? b : a));
+
+  return {
+    routeCount,
+    areaCount,
+    topAreaName: top.name,
+    topSharePercent: round((top.count / routeCount) * 100, 0),
+  };
+}
+
+// The area, type and year chips are one component in three states: the area
+// is always "active" (some area is always selected), type/year start neutral
+// and switch to the same active treatment once the athlete picks a value -
+// never a lighter, bare-text style for the filter that's actually doing
+// something.
+export const MAP_CHIP_GEOMETRY = "flex h-[38px] items-center rounded-[12px] transition-colors";
+export const MAP_CHIP_STYLE = { padding: "0 11px", fontSize: "13.5px" } as const;
+export const MAP_CHIP_NEUTRAL = {
+  background: "rgba(148,178,220,.07)",
+  border: "1px solid rgba(148,178,220,.14)",
+  color: "#b9c4cf",
+} as const;
+export const MAP_CHIP_ACTIVE = {
+  background: "rgba(90,151,245,.16)",
+  border: "1px solid rgba(90,151,245,.32)",
+  color: "#9cc4ff",
+} as const;
+export const MAP_CHIP_COUNT_INK = "#7d8896";
+export const MAP_CHIP_CARET_INK = "#7d8896";
+
 export function coordLabel(c: RouteCluster): string {
   const lat = `${Math.abs(c.center[1]).toFixed(1)}${c.center[1] >= 0 ? "°N" : "°S"}`;
   const lon = `${Math.abs(c.center[0]).toFixed(1)}${c.center[0] >= 0 ? "°E" : "°W"}`;
   return `${lat} ${lon}`;
 }
 
-// Binning only - never moves a coordinate. Shared with route matching (similar
-// runs, personal segments) so "same street" means the same thing everywhere.
-export const HEAT_GRID = ROUTE_GRID;
-const cellKey = routeCellKey;
-
-/**
- * Aggregate all visible routes into a heat-coloured trace. Frequency is counted per
- * grid cell (how many distinct runs pass through that ~30m area), but the rendered
- * geometry is the ORIGINAL, unsnapped GPS trace - so the line still follows the real
- * road instead of zig-zagging between grid nodes, matching the smooth look of the
- * single-activity map. A route is split into a new feature only where it crosses
- * into a cell with a different count, so color/width follow real density instead of
- * alternating between overlapping "rare" and "frequent" copies of the same street.
- */
 export function buildHeatGeoJSON(
   routes: [number, number][][],
   indices: number[],
-): { data: GeoJSON.FeatureCollection; maxCount: number } {
+): { data: FeatureCollection; maxCount: number } {
   const cellCounts = new Map<string, number>();
 
-  // Pass 1: how many distinct runs touch each cell. Dedup within a route first so a
-  // slow, densely-sampled stretch of a single run doesn't inflate its own count.
   for (const i of indices) {
     const coords = routes[i];
     if (!coords || coords.length < 2) continue;
     const seen = new Set<string>();
-    for (const [lon, lat] of coords) seen.add(cellKey(lon, lat));
+    for (const [lon, lat] of coords) seen.add(routeCellKey(lon, lat));
     for (const key of seen) cellCounts.set(key, (cellCounts.get(key) ?? 0) + 1);
   }
 
   let maxCount = 1;
   for (const c of cellCounts.values()) if (c > maxCount) maxCount = c;
 
-  // Pass 2: walk each route's real coordinates, tagging runs of vertices that share
-  // a cell count into one LineString feature.
-  const features: GeoJSON.Feature[] = [];
+  const features: Feature[] = [];
   for (const i of indices) {
     const coords = routes[i];
     if (!coords || coords.length < 2) continue;
 
     let runCoords: [number, number][] = [coords[0]!];
-    let runCount = cellCounts.get(cellKey(coords[0]![0], coords[0]![1])) ?? 1;
+    let runCount = cellCounts.get(routeCellKey(coords[0]![0], coords[0]![1])) ?? 1;
 
     for (let p = 1; p < coords.length; p++) {
       const point = coords[p]!;
-      const count = cellCounts.get(cellKey(point[0], point[1])) ?? 1;
+      const count = cellCounts.get(routeCellKey(point[0], point[1])) ?? 1;
       if (count !== runCount) {
-        // Close the old run on this same point (so the two features touch, no gap),
-        // then start the new run from it too.
         runCoords.push(point);
         features.push({
           type: "Feature",
@@ -94,32 +167,19 @@ export function buildHeatGeoJSON(
   return { data: { type: "FeatureCollection", features }, maxCount };
 }
 
-// Cool -> hot ramp for run frequency, from the shared, accent-independent heat
-// palette (defined in lib/colors alongside the pace-route and temperature ramps).
 const HEAT_COLORS = [
   HEAT_ROUTE_COLORS.rare,
   HEAT_ROUTE_COLORS.seldom,
   HEAT_ROUTE_COLORS.often,
   HEAT_ROUTE_COLORS.frequent,
 ];
-// Fractions of the (logarithmic) frequency range each colour anchors at.
 const HEAT_FRACTIONS = [0, 0.35, 0.65, 1];
 
-/**
- * Count breakpoints for the ramp, spaced *geometrically* (i.e. a log scale) between
- * 1 and the max frequency. Run frequency is heavily right-skewed - a handful of
- * home streets are run 100+ times while most stretches are run once or twice - so a
- * linear scale would leave almost everything pinned at the cool "rare" end. Log
- * spacing spreads the mid colours across the counts that actually occur.
- * Always strictly ascending (base >= 2), so the interpolate expression is valid even
- * with no overlaps.
- */
 function heatBreakpoints(maxCount: number): number[] {
   const base = Math.max(2, maxCount);
   return HEAT_FRACTIONS.map((frac) => Math.pow(base, frac));
 }
 
-/** MapLibre `interpolate` colour expression over `count`, on the log breakpoints. */
 export function heatColorExpression(maxCount: number): unknown[] {
   const bp = heatBreakpoints(maxCount);
   const expr: unknown[] = ["interpolate", ["linear"], ["get", "count"]];
@@ -127,7 +187,6 @@ export function heatColorExpression(maxCount: number): unknown[] {
   return expr;
 }
 
-/** Width grows with frequency (log-spaced) and zoom so busy stretches read as thicker arteries. */
 export function heatWidthExpression(maxCount: number): unknown[] {
   const bp = heatBreakpoints(maxCount);
   const widthsLow = [0.8, 1.2, 1.8, 2.6];
@@ -140,14 +199,10 @@ export function heatWidthExpression(maxCount: number): unknown[] {
   return ["interpolate", ["linear"], ["zoom"], 9, byCount(widthsLow), 14, byCount(widthsHigh)];
 }
 
-/** Discrete swatches for the on-map legend. */
 export function heatLegendSwatches(): string[] {
   return [...HEAT_COLORS];
 }
 
-// World-view bubble sizing: humans read bubble charts by AREA, so radius scales with
-// sqrt(count) rather than count itself - a zone with 4x the runs should look ~4x the
-// "weight", not 4x the diameter. A floor keeps single-route zones big enough to tap.
 const CLUSTER_BUBBLE_MIN_RADIUS = 14;
 const CLUSTER_BUBBLE_MAX_RADIUS = 32;
 

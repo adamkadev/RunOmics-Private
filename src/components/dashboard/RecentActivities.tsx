@@ -10,8 +10,6 @@ interface Props {
   qualifiedEffortsByActivityId?: Record<string, QualifiedEffort[]>
 }
 
-// Same compact rows as the Activities list, under a plain section header -
-// the wrapping card added a second border around already-bordered rows.
 export function RecentActivities({ activities, qualifiedEffortsByActivityId = {} }: Props) {
   return (
     <div className="space-y-3">

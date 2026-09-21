@@ -1,11 +1,11 @@
-import { t } from '@/i18n'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import type { Activity, ActivityType, ActivityWeather } from '@/domain/activity/types'
 import { heatAdjustedEf } from '@/domain/activity/heat'
 import { easyHardShare } from '@/domain/training/easyHard'
 import { sumDistanceKm } from '@/domain/activity/distance'
-import { monthLabel } from '@/lib/formatters'
+import { AXIS_TICK_DATE, formatDate, monthLabel } from '@/lib/formatters'
 import { round } from '@/lib/math'
+import { isoDate } from '@/lib/calendarDate'
 
 export { easyHardShare }
 
@@ -41,7 +41,6 @@ export interface ZoneShare {
 export interface WeeklyTrendPoint {
   date: string
   label: string
-  /** Everything run that week. Summed, not averaged like the reads below it. */
   distanceKm: number
   sessionCount: number
   easyPace: number | null
@@ -98,8 +97,8 @@ export interface AllTimeAnalytics extends AnalyticsSeries {
 export interface DailyEfficiency {
   date: string
   label: string
-  ef7: number | null    // 7-day rolling average
-  ef30: number | null   // 30-day rolling average
+  ef7: number | null
+  ef30: number | null
 }
 
 export interface DailyRunningDynamics {
@@ -171,12 +170,10 @@ export function zoneDistribution(activities: Activity[]): ZoneShare[] {
     }))
 }
 
-
 export function recentZoneDistribution(activities: Activity[], days: number, now: Date = new Date()): ZoneShare[] {
   const cutoff = new Date(now.getTime() - days * 86_400_000)
   return zoneDistribution(activities.filter((a) => new Date(a.date + 'T00:00:00') >= cutoff))
 }
-
 
 function efSamples(activities: Activity[]): { ef: number; weather: ActivityWeather | null }[] {
   return activities
@@ -281,7 +278,7 @@ export function buildWeeklyTrends(all: Activity[]): WeeklyTrendPoint[] {
 
       return {
         date: monday,
-        label: new Date(monday + 'T00:00:00').toLocaleDateString(t.locale, { day: 'numeric', month: 'short' }),
+        label: formatDate(monday, AXIS_TICK_DATE),
         distanceKm: sumDistanceKm(acts),
         sessionCount: acts.length,
         easyPace: weightedPace(easy),
@@ -305,8 +302,6 @@ export function buildWeeklyTrends(all: Activity[]): WeeklyTrendPoint[] {
 }
 
 export function computeTotals(activities: Activity[], elapsedDays: number): YearTotals {
-  // Round once to a whole km (shared selector) - not round(…, 1) then round
-  // again at display, which pushed Analytics 1 km above Progress/Goals.
   const distanceKm = sumDistanceKm(activities)
   const calories = activities.reduce((s, a) => s + (a.calories ?? 0), 0)
   const days = Math.max(elapsedDays, 1)
@@ -348,14 +343,9 @@ function buildYearAnalytics(year: number, activities: Activity[], now: Date): Ye
 
 function startOfWeek(d: Date): Date {
   const x = new Date(d.getFullYear(), d.getMonth(), d.getDate())
-  x.setDate(x.getDate() - ((x.getDay() + 6) % 7)) // back to Monday
+  x.setDate(x.getDate() - ((x.getDay() + 6) % 7))
   return x
 }
-
-function isoDate(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
 
 function buildAllTimeAnalytics(byYearMap: Map<number, Activity[]>, all: Activity[], now: Date): AllTimeAnalytics {
   const buckets: Bucket[] = Array.from(byYearMap.keys())
@@ -385,9 +375,8 @@ function buildEfficiencyDaily(activities: Activity[], now: Date): DailyEfficienc
 
   const points = Array.from({ length: ROLLING_DAYS }, (_, i) => {
     const dayMs = nowMs - (ROLLING_DAYS - 1 - i) * DAY_MS
-    const day = new Date(dayMs)
-    const label = day.toLocaleDateString(t.locale, { day: 'numeric', month: 'short' })
-    const date = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`
+    const date = isoDate(new Date(dayMs))
+    const label = formatDate(date, AXIS_TICK_DATE)
 
     const in7  = stamped.filter((x) => x.ms >= dayMs - 6 * DAY_MS && x.ms <= dayMs).map((x) => x.a)
     const in30 = stamped.filter((x) => x.ms >= dayMs - 29 * DAY_MS && x.ms <= dayMs).map((x) => x.a)
@@ -410,9 +399,8 @@ function buildRunningDynamicsDaily(activities: Activity[], now: Date): DailyRunn
 
   const points = Array.from({ length: ROLLING_DAYS }, (_, i) => {
     const dayMs = nowMs - (ROLLING_DAYS - 1 - i) * DAY_MS
-    const day = new Date(dayMs)
-    const label = day.toLocaleDateString(t.locale, { day: 'numeric', month: 'short' })
-    const date = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`
+    const date = isoDate(new Date(dayMs))
+    const label = formatDate(date, AXIS_TICK_DATE)
 
     const in7  = stamped.filter((x) => x.ms >= dayMs - 6 * DAY_MS && x.ms <= dayMs).map((x) => x.a)
     const in30 = stamped.filter((x) => x.ms >= dayMs - 29 * DAY_MS && x.ms <= dayMs).map((x) => x.a)

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import sys
 import time
@@ -13,7 +12,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from garmin.athlete import fetch_athlete_metrics, record_athlete_history
+from data_directory import get_data_dir, get_fit_cache_dir
 from garmin.client import GarminAuthError, GarminAPIError, GarminClient
+from garmin.fitness_age_history import sync_fitness_age_history
 from garmin.retry import retry_transient
 from garmin.race_predictions import sync_race_predictions
 from garmin.training_plan import sync_training_plan
@@ -27,12 +28,18 @@ from processing.fit_parser import ParsedFit, parse_fit
 from processing.mapper import HrZone, extract_gear_id, map_activity, parse_hr_zones
 from processing.weather import WeatherClient, weather_for_activity
 from repository.json_store import JsonActivityStore, PlannedWorkoutStore
+from repository.history_file import read_history, write_history
 
-_FIT_DIR = Path(__file__).parent.parent / "public" / "fit"
-_SYNC_META_PATH = Path(__file__).parent.parent / "public" / "data" / "sync_meta.json"
-_ATHLETE_PATH = Path(__file__).parent.parent / "public" / "data" / "athlete.json"
+_FIT_DIR = get_fit_cache_dir()
+_DATA_DIR = get_data_dir()
+_SYNC_META_PATH = _DATA_DIR / "sync_meta.json"
+_ATHLETE_PATH = _DATA_DIR / "athlete.json"
 _RATE_LIMIT_PAUSE = 1.0
 _REGEAR_WINDOW_DAYS = 10
+
+# Not 2: argparse already exits 2 for a usage error, and the workflow would read
+# that as "some activities failed" and commit and deploy an unchanged workspace.
+_EXIT_PARTIAL_FAILURE = 3
 
 
 def main() -> int:
@@ -167,6 +174,7 @@ def main() -> int:
             if record_athlete_history(metrics):
                 print("Athlete threshold metrics changed - recorded a history entry.")
             _merge_athlete_metrics(metrics)
+            sync_fitness_age_history(client)
 
             write_vo2max_norms(fetch_vo2max_norms(client))
 
@@ -182,7 +190,7 @@ def main() -> int:
         if not args.dry_run:
             _write_sync_meta()
 
-    return 0 if failed == 0 else 2
+    return 0 if failed == 0 else _EXIT_PARTIAL_FAILURE
 
 
 def _first_activity_date(store: JsonActivityStore) -> date | None:
@@ -192,19 +200,14 @@ def _first_activity_date(store: JsonActivityStore) -> date | None:
 
 
 def _write_sync_meta() -> None:
-    _SYNC_META_PATH.parent.mkdir(parents=True, exist_ok=True)
-    _SYNC_META_PATH.write_text(
-        json.dumps({"lastSyncedAt": datetime.now(timezone.utc).isoformat()}) + "\n"
-    )
+    write_history(_SYNC_META_PATH, {"lastSyncedAt": datetime.now(timezone.utc).isoformat()})
 
 
 def _merge_athlete_metrics(metrics: dict) -> None:
     if not metrics:
         return
 
-    existing: dict = {}
-    if _ATHLETE_PATH.exists():
-        existing = json.loads(_ATHLETE_PATH.read_text())
+    existing: dict = read_history(_ATHLETE_PATH)
 
     fetched_at = metrics.pop("lastUpdate", None)
 
@@ -214,8 +217,7 @@ def _merge_athlete_metrics(metrics: dict) -> None:
     if changed and fetched_at:
         merged["lastUpdate"] = fetched_at
 
-    _ATHLETE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    _ATHLETE_PATH.write_text(json.dumps(merged, indent=2, sort_keys=True) + "\n")
+    write_history(_ATHLETE_PATH, dict(sorted(merged.items())))
 
 
 

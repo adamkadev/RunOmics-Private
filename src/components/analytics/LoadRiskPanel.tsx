@@ -1,9 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import { SectionDivider } from '@/components/ui/SectionLabel'
 import type { LoadRiskPanel as LoadRiskPanelData, RiskZone } from '@/application/usecases/GetLoadRiskPanel'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { StatusPill, type StatusTone } from '@/components/ui/StatusPill'
+import { formatDelta } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { cn } from '@/lib/utils'
 
@@ -21,8 +23,6 @@ const ZONE_TEXT: Record<RiskZone, string> = {
   risk: 'text-red-600 dark:text-red-400',
 }
 
-// The band holding the value carries full colour; the rest stay faint so the
-// eye lands on where the athlete actually sits, not on the whole ladder.
 const BAND_ACTIVE: Record<RiskZone, string> = {
   low: 'bg-blue-500',
   safe: 'bg-green-500',
@@ -98,7 +98,12 @@ function pct(value: number, scale: Scale): number {
   return Math.min(100, Math.max(0, ((value - scale.min) / (scale.max - scale.min)) * 100))
 }
 
-function ZoneTrack({ scale, value }: { scale: Scale; value: number }) {
+// The track used to decide the live band from the number alone, using a rule that
+// did not match acwrZone: at exactly 1.5 the verdict said caution and the track
+// lit risk. On the Garmin path the verdict comes from a status string and could
+// disagree with the number entirely. Light the band that belongs to the zone the
+// card is actually reporting.
+function ZoneTrack({ scale, value, zone }: { scale: Scale; value: number; zone: RiskZone | null }) {
   const clamped = Math.min(scale.max, Math.max(scale.min, value))
 
   return (
@@ -110,7 +115,7 @@ function ZoneTrack({ scale, value }: { scale: Scale; value: number }) {
               key={band.to}
               className={cn(
                 'absolute inset-y-0',
-                clamped >= band.from && (clamped < band.to || band.to === scale.max)
+                band.zone === zone && clamped >= band.from && clamped <= band.to
                   ? BAND_ACTIVE[band.zone]
                   : BAND_DIM[band.zone]
               )}
@@ -168,13 +173,13 @@ function Row({
         className="w-full py-3 text-left transition-opacity active:opacity-70"
       >
         <div className="flex items-baseline justify-between gap-3">
-          <span className="widget-label text-muted-foreground">{label}</span>
+          <SectionDivider as="span">{label}</SectionDivider>
           <span className={cn('text-title2 font-extrabold tabular-nums', zone ? ZONE_TEXT[zone] : 'text-muted-foreground')}>
             {value}
           </span>
         </div>
         {rawValue !== null ? (
-          <ZoneTrack scale={scale} value={rawValue} />
+          <ZoneTrack scale={scale} value={rawValue} zone={zone} />
         ) : (
           <p className="mt-1 text-micro text-muted-foreground">{s.insufficientData}</p>
         )}
@@ -231,7 +236,7 @@ export function LoadRiskPanel({ data }: { data: LoadRiskPanelData }) {
         />
         <Row
           label={s.rampRate.label}
-          value={data.rampRate !== null ? `${data.rampRate >= 0 ? '+' : ''}${data.rampRate}` : '–'}
+          value={data.rampRate !== null ? formatDelta(data.rampRate) : '–'}
           description={s.rampRate.description}
           zone={data.rampRateZone}
           scale={RAMP_SCALE}

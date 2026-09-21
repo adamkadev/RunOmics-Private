@@ -5,10 +5,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+from data_directory import get_data_dir
 from processing.mapper import ActivityData
-
-_DEFAULT_DIR = Path(__file__).resolve().parents[2] / "public" / "data" / "activities"
-_PLANNED_DEFAULT_DIR = Path(__file__).resolve().parents[2] / "public" / "data" / "planned_workouts"
 
 
 def _year_of(date: str) -> str | None:
@@ -34,8 +32,8 @@ class JsonActivityStore:
     year file reaches ~7 MB by December and every sync rewrote it wholesale. A
     month is ~600 KB and closed months never move again."""
 
-    def __init__(self, dir_path: Path = _DEFAULT_DIR) -> None:
-        self._dir = dir_path
+    def __init__(self, dir_path: Path | None = None) -> None:
+        self._dir = dir_path or get_data_dir() / "activities"
         self._by_id: dict[str, dict[str, Any]] = {}
         self._dirty_months: set[str] = set()
         self._load()
@@ -124,8 +122,8 @@ class PlannedWorkoutStore:
     here survives forever - a sync only re-touches the year(s) whose entries
     actually changed."""
 
-    def __init__(self, dir_path: Path = _PLANNED_DEFAULT_DIR) -> None:
-        self._dir = dir_path
+    def __init__(self, dir_path: Path | None = None) -> None:
+        self._dir = dir_path or get_data_dir() / "planned_workouts"
         self._by_date: dict[str, dict[str, Any]] = {}
         self._dirty_years: set[str] = set()
         self._load()

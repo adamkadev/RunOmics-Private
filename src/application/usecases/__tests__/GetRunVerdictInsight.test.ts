@@ -1,19 +1,18 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { Activity, PlannedWorkout } from '@/domain/activity/types'
 import { runVerdictInsightHash } from '@/domain/ai/runVerdictInsight'
 
-const { getAllActivities, getAllPlannedWorkouts, readVerifiedInsight, getCachedInsightsByPrefix } = vi.hoisted(() => ({
+const { getAllActivities, getAllPlannedWorkouts, readVerifiedInsight } = vi.hoisted(() => ({
   getAllActivities: vi.fn(),
   getAllPlannedWorkouts: vi.fn(),
   readVerifiedInsight: vi.fn(),
-  getCachedInsightsByPrefix: vi.fn(),
 }))
 
 vi.mock('@/infrastructure/repositories/JsonActivityRepository', () => ({ getAllActivities }))
 vi.mock('@/infrastructure/repositories/JsonPlannedWorkoutRepository', () => ({ getAllPlannedWorkouts }))
 vi.mock('@/infrastructure/repositories/FirestoreInsightsRepository', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/infrastructure/repositories/FirestoreInsightsRepository')>()
-  return { ...actual, readVerifiedInsight, getCachedInsightsByPrefix }
+  return { ...actual, readVerifiedInsight }
 })
 
 const { getRunVerdictContexts, getRunVerdictInsight } = await import('../GetRunVerdictInsight')
@@ -153,62 +152,40 @@ describe('getRunVerdictInsight', () => {
   })
 })
 
-// generateStaticParams pre-renders one page per run in the same build process,
-// so this is the one path that has to survive hundreds of calls without hitting
-// Firestore hundreds of times - see getRunVerdictInsight's isProductionBuild
-// branch. Reimports the module fresh each time so the build-lifetime cache
-// inside it doesn't leak between cases.
-describe('getRunVerdictInsight during a production build', () => {
-  const PROJECT_ID = 'runomics-test'
-
+describe('getRunVerdictInsight read cost', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.resetModules()
-    withHistory([activity('a', '2026-07-20'), activity('b', '2026-07-18')])
+    withHistory([activity('a', '2026-07-20'), activity('b', '2026-07-18'), activity('c', '2026-07-15')])
+    readVerifiedInsight.mockResolvedValue(null)
+  })
+
+  it('reads the one document that surface owns, however many runs exist', async () => {
+    await getRunVerdictInsight(activity('a', '2026-07-20'))
+
+    expect(readVerifiedInsight).toHaveBeenCalledTimes(1)
+    expect(readVerifiedInsight).toHaveBeenCalledWith('runVerdict_a', expect.any(String))
+  })
+
+  it('costs one read per run rendered, not one per run stored', async () => {
+    for (const id of ['a', 'b', 'c']) await getRunVerdictInsight(activity(id, '2026-07-20'))
+
+    expect(readVerifiedInsight).toHaveBeenCalledTimes(3)
+    expect(readVerifiedInsight.mock.calls.map((call) => call[0])).toEqual([
+      'runVerdict_a',
+      'runVerdict_b',
+      'runVerdict_c',
+    ])
+  })
+
+  it('takes the same direct path during a production build', async () => {
     process.env.NEXT_PHASE = 'phase-production-build'
-    process.env.FIREBASE_PROJECT_ID = PROJECT_ID
-  })
+    try {
+      const fresh = await import('../GetRunVerdictInsight')
+      await fresh.getRunVerdictInsight(activity('a', '2026-07-20'))
 
-  afterEach(() => {
-    delete process.env.NEXT_PHASE
-    delete process.env.FIREBASE_PROJECT_ID
-  })
-
-  it('fetches every run verdict once and reuses it for the rest of the build', async () => {
-    const fresh = await import('../GetRunVerdictInsight')
-    const hash = runVerdictInsightHash(fresh.getRunVerdictContexts()[0]!)
-    getCachedInsightsByPrefix.mockResolvedValue(new Map([['runVerdict_a', { ...INSIGHT, hash }]]))
-
-    await fresh.getRunVerdictInsight(activity('a', '2026-07-20'))
-    await fresh.getRunVerdictInsight(activity('b', '2026-07-18'))
-
-    expect(getCachedInsightsByPrefix).toHaveBeenCalledTimes(1)
-    expect(readVerifiedInsight).not.toHaveBeenCalled()
-  })
-
-  it('serves the cached verdict for the run it belongs to', async () => {
-    const fresh = await import('../GetRunVerdictInsight')
-    const hash = runVerdictInsightHash(fresh.getRunVerdictContexts()[0]!)
-    getCachedInsightsByPrefix.mockResolvedValue(new Map([['runVerdict_a', { ...INSIGHT, hash }]]))
-
-    expect(await fresh.getRunVerdictInsight(activity('a', '2026-07-20'))).toEqual(INSIGHT)
-    expect(await fresh.getRunVerdictInsight(activity('b', '2026-07-18'))).toBeNull()
-  })
-
-  it('falls back quietly when the batch fetch fails', async () => {
-    getCachedInsightsByPrefix.mockRejectedValue(new Error('unreachable'))
-
-    const fresh = await import('../GetRunVerdictInsight')
-
-    expect(await fresh.getRunVerdictInsight(activity('a', '2026-07-20'))).toBeNull()
-  })
-
-  it('never touches Firestore without admin credentials', async () => {
-    delete process.env.FIREBASE_PROJECT_ID
-
-    const fresh = await import('../GetRunVerdictInsight')
-
-    expect(await fresh.getRunVerdictInsight(activity('a', '2026-07-20'))).toBeNull()
-    expect(getCachedInsightsByPrefix).not.toHaveBeenCalled()
+      expect(readVerifiedInsight).toHaveBeenCalledWith('runVerdict_a', expect.any(String))
+    } finally {
+      delete process.env.NEXT_PHASE
+    }
   })
 })

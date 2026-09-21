@@ -1,27 +1,10 @@
 #!/usr/bin/env node
-/**
- * Pushes a freshly-synced data directory into the private RunOmics-data
- * repository. Used by .github/workflows/sync.yml, which passes its own
- * throwaway public/data/ sync workspace inside the runner checkout - that
- * directory never reaches a deployment, unlike the app's own data/.
- *
- * Same token handling as fetch_private_data.mjs, and for the same reasons:
- * RUNOMICS_DATA_REPO_TOKEN never touches argv, the clone URL, .git/config,
- * or an error message - only GIT_ASKPASS ever sees it, reading it from its
- * own inherited environment. See fetch_private_data.mjs's header for the
- * full rationale; this script deliberately duplicates the small helper
- * rather than sharing a module, so each script stays independently readable
- * and auditable.
- *
- * Mirrors sync.yml's own commit-message convention (today's inline step)
- * so the data repo's history reads the same way this app repo's did:
- * activities > other metrics > timestamp-only, each "[skip ci]".
- */
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { BASE_REVISION_ENV, readBaseRevision, recordBaseRevision, sameRepository } from './private_data_revision.mjs'
 
 function redact(text, secret) {
   if (!secret || !text) return text ?? ''
@@ -62,8 +45,6 @@ function countActivities(sourceDataDir) {
   return total
 }
 
-// activities > other metrics > timestamp-only - same three tiers the app repo's
-// own sync commits used, computed from the data repo clone's own diff.
 function classifyChanges(cloneDir) {
   const status = execFileSync('git', ['-C', cloneDir, 'status', '--porcelain'], { stdio: 'pipe' })
     .toString()
@@ -74,6 +55,55 @@ function classifyChanges(cloneDir) {
   if (status.some((l) => l.includes('data/activities/'))) return 'activities'
   if (status.every((l) => l.endsWith('data/sync_meta.json'))) return 'timestamp'
   return 'metrics'
+}
+
+export function assertCompleteDataWorkspace(sourceDataDir, existingDataDir) {
+  const activityIndex = path.join(sourceDataDir, 'activities', 'index.json')
+  if (!fs.existsSync(activityIndex)) {
+    throw new Error(
+      `Refusing to push incomplete data workspace ${sourceDataDir}: activities/index.json is missing.`
+    )
+  }
+
+  const existingCoaching = path.join(existingDataDir, 'coaching')
+  const sourceCoaching = path.join(sourceDataDir, 'coaching')
+  if (fs.existsSync(existingCoaching) && !fs.existsSync(sourceCoaching)) {
+    throw new Error(
+      'Refusing to push an incomplete workspace: the private repository contains data/coaching but the source does not.'
+    )
+  }
+}
+
+export function assertBaseRevisionCurrent(sourceDataDir, remoteCommit, url, env = process.env) {
+  const recorded = readBaseRevision(sourceDataDir, env)
+
+  if (!recorded) {
+    throw new Error(
+      `No base revision recorded for ${sourceDataDir}, so it is unknown which private data this ` +
+        'workspace was built from and whether pushing it would delete newer data.\n' +
+        'Re-hydrate it with scripts/fetch_private_data.mjs, or set ' +
+        `${BASE_REVISION_ENV} to the commit it was built from.`
+    )
+  }
+
+  if (recorded.url && !sameRepository(recorded.url, url)) {
+    throw new Error(
+      'This workspace was fetched from a different private data repository than the one being ' +
+        `pushed to.\nFetched from: ${recorded.url}\nPushing to:   ${url}\n` +
+        'Refusing to overwrite an unrelated repository.'
+    )
+  }
+
+  if (recorded.commit !== remoteCommit) {
+    throw new Error(
+      'Private data changed since this workspace was fetched.\n' +
+        `Expected base: ${recorded.commit}\n` +
+        `Current remote: ${remoteCommit}\n` +
+        'Refusing to overwrite newer data. Re-fetch and retry.'
+    )
+  }
+
+  return recorded
 }
 
 export function pushPrivateData(sourceDataDir) {
@@ -88,8 +118,11 @@ export function pushPrivateData(sourceDataDir) {
     if (token) env.GIT_ASKPASS = writeAskpassScript(tmpDir)
 
     git(['clone', '--depth', '1', url, cloneDir], { env }, token)
+    const remoteCommit = git(['-C', cloneDir, 'rev-parse', 'HEAD'], { env }, token).trim()
 
     const targetDataDir = path.join(cloneDir, 'data')
+    assertBaseRevisionCurrent(sourceDataDir, remoteCommit, url)
+    assertCompleteDataWorkspace(sourceDataDir, targetDataDir)
     fs.rmSync(targetDataDir, { recursive: true, force: true })
     fs.mkdirSync(targetDataDir, { recursive: true })
     fs.cpSync(sourceDataDir, targetDataDir, { recursive: true })
@@ -120,8 +153,11 @@ export function pushPrivateData(sourceDataDir) {
     )
     git(['-C', cloneDir, 'push'], { env }, token)
 
+    const pushedCommit = git(['-C', cloneDir, 'rev-parse', 'HEAD'], { env }, token).trim()
+    recordBaseRevision(sourceDataDir, { commit: pushedCommit, url })
+
     console.log(message)
-    return { pushed: true, kind, message }
+    return { pushed: true, kind, message, commit: pushedCommit }
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true })
   }

@@ -18,7 +18,6 @@ vi.mock('@/infrastructure/repositories/JsonAthleteRepository', () => ({ getAthle
 
 const { getCurrentWeekPurpose } = await import('../GetCurrentWeekPurpose')
 
-// Wednesday of the week starting Monday 20 July 2026.
 const NOW = new Date('2026-07-22T10:00:00')
 const MONDAY = '2026-07-20'
 
@@ -61,7 +60,6 @@ function run({ activities = [summary(MONDAY)], planned = [], plan = null, athlet
   return getCurrentWeekPurpose(NOW)
 }
 
-// One steady hour in each of the seven weeks the comparison averages over.
 const PRIOR_MONDAYS = [
   '2026-06-01',
   '2026-06-08',
@@ -142,7 +140,7 @@ describe('getCurrentWeekPurpose', () => {
       planned: [workout(MONDAY), workout('2026-07-22', { type: 'Threshold' }), workout('2026-07-25', { type: 'Race' })],
     })
 
-    expect(week?.planned).toEqual({ total: 3, key: 2 })
+    expect(week?.planned).toEqual({ total: 3, key: 2, estimatedLoad: 0, distanceKm: 0 })
   })
 
   it('null adherence when nothing was planned to adhere to', async () => {

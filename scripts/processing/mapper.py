@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
-from processing.activity_type import infer_type
+from processing.activity_type import infer_type_with_source
 from processing.fit_parser import ActivitySplit, ParsedFit, SplitLap  # noqa: F401
 from processing.privacy import crop_privacy_zone
 
@@ -65,6 +65,8 @@ class ActivityData:
     splits: list[ActivitySplit] | None
     gear_id: str | None
     weather: dict[str, Any] | None = None
+    type_source: str = "runomics"
+    sport: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -73,6 +75,8 @@ class ActivityData:
             "date": self.date,
             "dayOfWeek": self.day_of_week,
             "type": self.type,
+            "typeSource": self.type_source,
+            **({"sport": self.sport} if self.sport is not None else {}),
             "description": self.description,
             "durationSeconds": self.duration_seconds,
             "distanceKm": self.distance_km,
@@ -188,7 +192,12 @@ def map_activity(
     if distance_km > 0 and duration_seconds > 0:
         pace_sec_per_km = round(duration_seconds / distance_km, 1)
 
-    activity_type = infer_type(name, parsed)
+    type_inference = infer_type_with_source(
+        name,
+        parsed,
+        hr_zones=hr_zones or [],
+        duration_seconds=duration_seconds,
+    )
 
     avg_hr_raw = (parsed.avg_heart_rate if parsed else None) or api("averageHR", "avgHr")
     avg_heart_rate: int | None = int(avg_hr_raw) if avg_hr_raw else None
@@ -225,11 +234,12 @@ def map_activity(
             cadence_samples = _decimate_list(parsed.cadence_samples, _MAX_CHART_POINTS)
 
     return ActivityData(
+        sport=(api("activityType", "activityTypeDTO") or {}).get("typeKey"),
         id=activity_id,
         week=iso_week,
         date=date_str,
         day_of_week=day_of_week,
-        type=activity_type,
+        type=type_inference.activity_type,
         description=name,
         duration_seconds=duration_seconds,
         distance_km=distance_km,
@@ -259,6 +269,7 @@ def map_activity(
         splits=parsed.splits if parsed and parsed.splits else None,
         gear_id=extract_gear_id(gear),
         weather=weather,
+        type_source=type_inference.source,
     )
 
 

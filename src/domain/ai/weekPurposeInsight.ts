@@ -23,8 +23,6 @@ function facts(week: CurrentWeekPurpose) {
 function remainingLine(week: CurrentWeekPurpose): string {
   const sessions = week.remaining.map((session) => {
     const weekday = new Date(session.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long' })
-    // Garmin names a plain session after its own type, and "Base (Base)" reads
-    // like a bug rather than a plan.
     const what = session.name === session.type ? session.name : `"${session.name}"${session.type ? ` (${session.type})` : ''}`
     return `${weekday} ${what}`
   })
@@ -41,12 +39,8 @@ export const WEEK_PURPOSE_SYSTEM_INSTRUCTION = [
     'one sentence on how to run the rest of the week',
     WEEK_PURPOSE_LIMITS
   ),
-  // The banner already carries the phase name and the adherence percentage in
-  // bold, so the generated line has to add intent, not repeat the header.
   'The week phase name and the completed/planned count are already printed on the banner: never restate them.',
   'Talk about the days left in this week only. Never invent a session that is not in the facts.',
-  // The banner is read on the planner, in front of the sessions themselves:
-  // naming the one that matters is what makes the line worth its space.
   'When sessions are still to run, name the one that gives the rest of the week its shape and say how to approach it.',
 ].join(' ')
 

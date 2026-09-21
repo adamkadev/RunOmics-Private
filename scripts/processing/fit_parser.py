@@ -27,6 +27,9 @@ _INTERVAL_SPLIT_TYPES = {
     "interval_cooldown",
 }
 
+_LAP_SPLIT_TYPE = "lap"
+_MIN_LAP_SPLITS = 2
+
 
 @dataclass
 class SplitLap:
@@ -239,11 +242,13 @@ def parse_fit(content: bytes) -> ParsedFit:
 
 
 def _extract_splits(messages: dict) -> list[ActivitySplit]:
-    """Extract interval splits and their sub-laps (warmup/active/rest/recovery/cooldown)."""
+    """Interval splits when the watch recorded a structured workout, otherwise
+    the plain laps Garmin records for an ordinary run or a race."""
     raw_splits = messages.get("split_mesgs", [])
     raw_laps = messages.get("lap_mesgs", [])
 
-    # Filter only interval splits and collect their time windows
+    parsed_laps = _parse_laps(raw_laps)
+
     interval_splits = []
     for s in raw_splits:
         split_type = s.get("split_type", "")
@@ -255,27 +260,7 @@ def _extract_splits(messages: dict) -> list[ActivitySplit]:
         interval_splits.append((split_type, s, float(duration)))
 
     if not interval_splits:
-        return []
-
-    # Pre-parse laps: keep only those with a valid start_time
-    parsed_laps = []
-    for lap in raw_laps:
-        start = lap.get("start_time")
-        if not isinstance(start, datetime):
-            continue
-        dist = float(lap.get("total_distance") or 0)
-        timer = float(lap.get("total_timer_time") or lap.get("total_elapsed_time") or 0)
-        if timer <= 0:
-            continue
-        speed = dist / timer
-        raw_hr = lap.get("avg_heart_rate")
-        parsed_laps.append({
-            "start": start,
-            "duration_sec": int(round(timer)),
-            "distance_m": dist,
-            "avg_speed_ms": speed,
-            "avg_hr": int(raw_hr) if raw_hr else None,
-        })
+        return _lap_splits(parsed_laps)
 
     result = []
     for split_type, s, duration in interval_splits:
@@ -308,6 +293,48 @@ def _extract_splits(messages: dict) -> list[ActivitySplit]:
             laps=laps,
         ))
     return result
+
+
+def _parse_laps(raw_laps: list[dict]) -> list[dict]:
+    """Laps that carry a usable start time and a non-zero duration."""
+    parsed_laps = []
+    for lap in raw_laps:
+        start = lap.get("start_time")
+        if not isinstance(start, datetime):
+            continue
+        dist = float(lap.get("total_distance") or 0)
+        timer = float(lap.get("total_timer_time") or lap.get("total_elapsed_time") or 0)
+        if timer <= 0:
+            continue
+        parsed_laps.append({
+            "start": start,
+            "duration_sec": int(round(timer)),
+            "distance_m": dist,
+            "avg_speed_ms": dist / timer,
+            "avg_hr": int(lap["avg_heart_rate"]) if lap.get("avg_heart_rate") else None,
+        })
+    return parsed_laps
+
+
+def _lap_splits(parsed_laps: list[dict]) -> list[ActivitySplit]:
+    """Garmin's own laps as top-level splits. A lap covering no ground carries no
+    pace to show, and a single lap is just the activity total restated - neither
+    is a split, so neither is invented into one."""
+    laps = [lap for lap in parsed_laps if lap["distance_m"] > 0]
+    if len(laps) < _MIN_LAP_SPLITS:
+        return []
+
+    return [
+        ActivitySplit(
+            type=_LAP_SPLIT_TYPE,
+            duration_sec=lap["duration_sec"],
+            distance_m=lap["distance_m"],
+            avg_speed_ms=lap["avg_speed_ms"],
+            avg_hr=lap["avg_hr"],
+            laps=[],
+        )
+        for lap in laps
+    ]
 
 
 def _naive_datetime(value: object) -> datetime | None:

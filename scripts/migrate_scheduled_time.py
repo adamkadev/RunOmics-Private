@@ -3,7 +3,7 @@
 scheduledTime to a coarse time-of-day label (sync_workouts.py._bucket_scheduled_time).
 
 Needed because sync_workouts.py only buckets going forward - this rewrites
-entries already committed to public/data/planned_workouts/*.json, including
+entries already stored in the selected data workspace, including
 ones outside the sync window that a regular run would never touch again.
 """
 from __future__ import annotations

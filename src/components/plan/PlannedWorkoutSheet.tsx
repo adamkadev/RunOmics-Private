@@ -2,10 +2,11 @@
 
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import type { ActivityType, PlannedWorkout } from '@/domain/activity/types'
+import type { ActivityType } from '@/domain/activity/types'
 import { ACTIVITY_TYPE_CONFIG, ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
-import { parseWorkoutStructure } from '@/domain/training/workoutStructure'
-import { formatDurationWords } from '@/lib/formatters'
+import { Pill } from '@/components/ui/Pill'
+import { StatusPill } from '@/components/ui/StatusPill'
+import { formatPlanDuration, type PlanWorkoutView } from './planWorkoutView'
 import { WorkoutStructureBars, WorkoutStepList } from './WorkoutStructure'
 import { useDragToDismiss } from '@/lib/useDragToDismiss'
 import { useFocusTrap } from '@/lib/useFocusTrap'
@@ -15,7 +16,7 @@ import { withAlpha } from '@/lib/palette'
 import { t } from '@/i18n'
 
 interface Props {
-  workout: PlannedWorkout
+  workout: PlanWorkoutView
   onClose: () => void
 }
 
@@ -31,9 +32,9 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
 
   useScrollLock()
 
-  const durationLabel = workout.durationSecs ? formatDurationWords(workout.durationSecs) : null
+  const durationLabel = formatPlanDuration(workout.duration)
   const distanceKm = workout.distanceM ? (workout.distanceM / 1000).toFixed(1) : null
-  const structure = workout.steps ?? parseWorkoutStructure(workout.name, workout.durationSecs)
+  const structure = workout.structure
   const typeColor = workout.type
     ? ACTIVITY_TYPE_CONFIG[workout.type as ActivityType].chartColor
     : null
@@ -65,7 +66,6 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
           ...sheetStyle,
         }}
       >
-        {/* Handle - drag down to dismiss */}
         <div className="flex justify-center pt-3 pb-1" {...handleProps}>
           <div
             className="h-1 w-9 rounded-full"
@@ -79,11 +79,11 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
               className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
               style={{ background: typeColor ? withAlpha(typeColor, SHEET.tint.iconWell) : SHEET.iconWell }}
             >
-              <WorkoutIcon size={20} strokeWidth={2.2} style={{ color: typeColor ?? SHEET.iconFallback }} />
+              <WorkoutIcon size={20} strokeWidth={2.2} style={{ color: SHEET.iconFallback }} />
             </span>
             <div className="min-w-0 flex-1">
               <h2 className="text-base font-bold leading-snug text-white">
-                {workout.name}
+                {workout.title}
               </h2>
             </div>
           </div>
@@ -91,32 +91,40 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
           {(workout.scheduledTime || workout.type || durationLabel || distanceKm) && (
             <div className="mb-4 flex flex-wrap gap-2">
               {workout.scheduledTime && (
-                <span className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-xs font-semibold text-white/70">
-                  {t.plan.timeOfDay[workout.scheduledTime]}
-                </span>
+                <Pill variant="onDark">{t.plan.timeOfDay[workout.scheduledTime]}</Pill>
               )}
               {workout.type && typeColor && (
-                <span
-                  className="rounded-full px-3 py-1 text-xs font-semibold"
+                // The type chip is the one chip in the row where the hue is the
+                // message and not decoration, so it keeps the identity colour
+                // as ink over the shared geometry.
+                <Pill
+                  variant="onDark"
                   style={{
-                    background: `${typeColor}22`,
+                    background: withAlpha(typeColor, SHEET.tint.chipFill),
                     color: typeColor,
-                    border: `1px solid ${typeColor}44`,
+                    borderColor: withAlpha(typeColor, SHEET.tint.border),
                   }}
                 >
                   {t.activityTypes[workout.type as ActivityType]}
-                </span>
+                </Pill>
               )}
-              {durationLabel && (
-                <span className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-xs font-semibold text-white/70">
-                  {durationLabel}
-                </span>
+              {durationLabel && <Pill variant="onDark">{durationLabel}</Pill>}
+              {distanceKm && <Pill variant="onDark">{distanceKm} {t.units.km}</Pill>}
+            </div>
+          )}
+
+          {workout.target && (
+            <p className="mb-3 text-sm font-semibold tabular-nums text-white/85">{workout.target}</p>
+          )}
+
+          {(workout.description || workout.notes.length > 0) && (
+            <div className="mb-4 space-y-1.5">
+              {workout.description && (
+                <p className="text-xs leading-relaxed text-white/60">{workout.description}</p>
               )}
-              {distanceKm && (
-                <span className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-xs font-semibold text-white/70">
-                  {distanceKm} {t.units.km}
-                </span>
-              )}
+              {workout.notes.map((note, i) => (
+                <p key={i} className="text-xs leading-relaxed text-white/60">{note}</p>
+              ))}
             </div>
           )}
 
@@ -125,7 +133,6 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
               <p className="mb-2 text-caption font-semibold uppercase tracking-wide text-white/30">
                 {t.plan.structure.title}
               </p>
-              {/* A single continuous block has no interval shape to show. */}
               {structure.length > 1 && (
                 <WorkoutStructureBars steps={structure} className="mb-3 flex h-[26px] items-end gap-[3px]" />
               )}
@@ -133,8 +140,14 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
             </div>
           )}
 
+          {workout.alert && (
+            <div className="mb-3">
+              <StatusPill tone="amber">{workout.alert}</StatusPill>
+            </div>
+          )}
+
           <p className="text-caption font-semibold uppercase tracking-wide text-white/30">
-            {t.plan.planned}
+            {workout.statusLabel}
           </p>
         </div>
       </div>

@@ -11,17 +11,16 @@ import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import type { ActivityType, ActivityWeather } from '@/domain/activity/types'
 import type { ShoeTag } from '@/domain/shoe/types'
 import { ShoePairTag } from '@/components/activities/ShoePairTag'
-import { WeatherChips } from './WeatherChips'
+import { MAP_CHIP_CLASS, WeatherChips } from './WeatherChips'
 import { t } from '@/i18n'
+import { loadMapLibre, showPlaceLabelsAtAnyZoom } from '@/lib/maplibre'
 
 interface Props {
   route: [number, number][]
   paceSamples?: number[] | null
   hoverFraction?: number | null
   weather?: ActivityWeather | null
-  /** Rendered as a colored badge next to the conditions chips, saving a header row. */
   activityType?: ActivityType | null
-  /** Rendered as a pill in the map's bottom-left, keeping activity metadata off the header. */
   shoe?: ShoeTag | null
   className?: string
 }
@@ -37,7 +36,6 @@ function buildSegmentFeatures(route: [number, number][], paceSamples: number[] |
       const t = sampleIdx - low
       pace = (paceSamples[low] ?? pace) * (1 - t) + (paceSamples[high] ?? pace) * t
     }
-    // slice(0, -1) guarantees route[i + 1] exists.
     const next = route[i + 1]!
     return {
       type: 'Feature' as const,
@@ -84,8 +82,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
     let cancelled = false
 
     async function initMap(isDark: boolean) {
-      const mgl = await import('maplibre-gl')
-      await import('maplibre-gl/dist/maplibre-gl.css')
+      const mgl = await loadMapLibre()
       if (cancelled) return
 
       const token = process.env.NEXT_PUBLIC_MAPTILER_TOKEN
@@ -120,7 +117,6 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
       const segments = buildSegmentFeatures(route, paceSamples)
       const hasPace = !!(paceSamples && paceSamples.length > 1)
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const lineColor: any = hasPace
         ? ['interpolate', ['linear'], ['get', 'pace'],
             255, PACE_ROUTE_COLORS.fast,
@@ -132,6 +128,8 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
 
       map.on('load', () => {
         if (cancelled) return
+
+        showPlaceLabelsAtAnyZoom(map)
 
         map.addSource('route', {
           type: 'geojson',
@@ -166,7 +164,6 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
           const eased = 1 - Math.pow(1 - progress, 3)
           const count = Math.floor(eased * total)
 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           ;(map.getSource('route') as any)?.setData({ type: 'FeatureCollection', features: segments.slice(0, count) })
 
           if (progress < 1) {
@@ -201,10 +198,6 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
       mapRef.current = null
       hoverMarkerRef.current = null
     }
-    // isFullscreen is a dependency on purpose: toggling fullscreen re-mounts the
-    // container (it moves into / out of the body portal), so the map is rebuilt
-    // in the correctly-sized container and its fitBoundsOptions frames the whole
-    // trace - no stale-size zoom, and it works even inside a transformed ancestor.
   }, [route, paceSamples, isFullscreen])
 
   useEffect(() => {
@@ -245,21 +238,18 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
       {(weather || activityType) && (
         <div
           className={cn(
-            // right-14 keeps the row clear of the fullscreen button, so a long
-            // wind reading wraps onto a second line instead of sliding under it.
             'absolute left-2 right-14 z-10 flex flex-wrap items-center gap-1.5',
             isFullscreen ? 'top-[max(env(safe-area-inset-top),8px)]' : 'top-2'
           )}
         >
           {weather && <WeatherChips weather={weather} />}
           {activityType && (
-            <span
-              className="rounded-[10px] px-2.5 py-1.5 text-xs font-bold uppercase tracking-wide"
-              style={{
-                background: ACTIVITY_TYPE_CONFIG[activityType].chartColor,
-                color: MAP_COLORS.chipInkOnAmber,
-              }}
-            >
+            <span className={cn(MAP_CHIP_CLASS, 'uppercase tracking-wide')}>
+              <span
+                aria-hidden
+                className="h-[7px] w-[7px] shrink-0 rounded-full"
+                style={{ background: ACTIVITY_TYPE_CONFIG[activityType].chartColor }}
+              />
               {t.activityTypes[activityType]}
             </span>
           )}
@@ -296,10 +286,6 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
     </div>
   )
 
-  // In fullscreen the overlay is portaled to <body> so `fixed inset-0` is sized
-  // by the viewport, never trapped by a transformed/filtered ancestor that would
-  // clip it (leaving the tab bar showing and the trace running off-screen).
-  // Inline, it renders in place as usual.
   return isFullscreen ? createPortal(tree, document.body) : tree
 }
 

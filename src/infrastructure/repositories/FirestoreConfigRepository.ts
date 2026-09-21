@@ -1,72 +1,46 @@
+import type { DocumentData } from 'firebase-admin/firestore'
 import { getAdminFirestore } from '@/lib/firebase-admin'
+
+/** One dedup document under `notifications/`, read once and written once by the cron route that owns it. */
+function notificationDocument<T extends DocumentData>(documentId: string) {
+  const document = () => getAdminFirestore().collection('notifications').doc(documentId)
+
+  // Arrow properties, because every caller below detaches them from this object.
+  return {
+    read: async (): Promise<T | null> => {
+      const snapshot = await document().get()
+      return snapshot.exists ? (snapshot.data() as T) : null
+    },
+    write: async (state: T): Promise<void> => {
+      await document().set(state)
+    },
+  }
+}
 
 export type PrState = Record<string, { seconds: number; activityId: string }>
 
-export async function getLastPrState(): Promise<PrState | null> {
-  const db = getAdminFirestore()
-  const doc = await db.collection('notifications').doc('lastPrs').get()
-  return doc.exists ? (doc.data() as PrState) : null
-}
-
-export async function saveLastPrState(state: PrState): Promise<void> {
-  const db = getAdminFirestore()
-  await db.collection('notifications').doc('lastPrs').set(state)
-}
-
 export type ShoeWearState = Record<string, { alerted: boolean }>
 
-export async function getLastShoeWearState(): Promise<ShoeWearState | null> {
-  const db = getAdminFirestore()
-  const doc = await db.collection('notifications').doc('lastShoeWear').get()
-  return doc.exists ? (doc.data() as ShoeWearState) : null
-}
+// Written as type aliases rather than interfaces so they satisfy Firestore's
+// DocumentData constraint: TypeScript gives an object type alias an implicit
+// index signature and an interface none.
+export type OverreachingState = { alerted: boolean }
 
-export async function saveLastShoeWearState(state: ShoeWearState): Promise<void> {
-  const db = getAdminFirestore()
-  await db.collection('notifications').doc('lastShoeWear').set(state)
-}
+export type StaleSyncState = { alerted: boolean }
 
-export interface OverreachingState {
-  alerted: boolean
-}
+export type ActivitySyncState = { knownIds: string[] }
 
-export async function getLastOverreachingState(): Promise<OverreachingState | null> {
-  const db = getAdminFirestore()
-  const doc = await db.collection('notifications').doc('lastOverreaching').get()
-  return doc.exists ? (doc.data() as OverreachingState) : null
-}
+export const { read: getLastPrState, write: saveLastPrState } =
+  notificationDocument<PrState>('lastPrs')
 
-export async function saveLastOverreachingState(state: OverreachingState): Promise<void> {
-  const db = getAdminFirestore()
-  await db.collection('notifications').doc('lastOverreaching').set(state)
-}
+export const { read: getLastShoeWearState, write: saveLastShoeWearState } =
+  notificationDocument<ShoeWearState>('lastShoeWear')
 
-export interface StaleSyncState {
-  alerted: boolean
-}
+export const { read: getLastOverreachingState, write: saveLastOverreachingState } =
+  notificationDocument<OverreachingState>('lastOverreaching')
 
-export async function getLastStaleSyncState(): Promise<StaleSyncState | null> {
-  const db = getAdminFirestore()
-  const doc = await db.collection('notifications').doc('lastStaleSync').get()
-  return doc.exists ? (doc.data() as StaleSyncState) : null
-}
+export const { read: getLastStaleSyncState, write: saveLastStaleSyncState } =
+  notificationDocument<StaleSyncState>('lastStaleSync')
 
-export async function saveLastStaleSyncState(state: StaleSyncState): Promise<void> {
-  const db = getAdminFirestore()
-  await db.collection('notifications').doc('lastStaleSync').set(state)
-}
-
-export interface ActivitySyncState {
-  knownIds: string[]
-}
-
-export async function getLastActivitySyncState(): Promise<ActivitySyncState | null> {
-  const db = getAdminFirestore()
-  const doc = await db.collection('notifications').doc('lastActivitySync').get()
-  return doc.exists ? (doc.data() as ActivitySyncState) : null
-}
-
-export async function saveLastActivitySyncState(state: ActivitySyncState): Promise<void> {
-  const db = getAdminFirestore()
-  await db.collection('notifications').doc('lastActivitySync').set(state)
-}
+export const { read: getLastActivitySyncState, write: saveLastActivitySyncState } =
+  notificationDocument<ActivitySyncState>('lastActivitySync')

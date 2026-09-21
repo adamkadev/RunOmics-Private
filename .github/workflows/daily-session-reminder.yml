@@ -1,16 +1,14 @@
 name: Daily Session Reminder
 
 on:
-  # 08:00 UTC = 10:00 Paris time (CEST). Drifts to 09:00 Paris time in winter (CET).
   schedule:
     - cron: "0 8 * * *"
   workflow_dispatch:
 
 jobs:
   notify:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger daily session reminder
-        run: |
-          curl -fsS -X POST "${{ secrets.APP_URL }}/api/internal/daily-session" \
-            -H "x-internal-secret: ${{ secrets.INTERNAL_NOTIFY_SECRET }}"
+    uses: ./.github/workflows/internal-notify.yml
+    secrets: inherit
+    with:
+      endpoint: daily-session
+      label: Trigger daily session reminder

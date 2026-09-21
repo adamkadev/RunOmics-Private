@@ -6,6 +6,7 @@ import type { GoalYear } from '../GetGoalsData'
 
 vi.mock('@/infrastructure/repositories/JsonActivityRepository', () => ({ getAllActivities: vi.fn() }))
 vi.mock('@/infrastructure/repositories/JsonAthleteRepository', () => ({ getAthleteProfile: vi.fn() }))
+vi.mock('@/infrastructure/repositories/JsonVo2maxNormsRepository', () => ({ getVo2maxNorms: vi.fn() }))
 vi.mock('@/infrastructure/repositories/JsonGoalRepository', () => ({ getGoalYears: vi.fn() }))
 vi.mock('@/application/usecases/GetLifetimeStats', () => ({ getLifetimeStats: vi.fn() }))
 vi.mock('@/application/usecases/GetRecords', () => ({ getRecords: vi.fn() }))
@@ -25,6 +26,7 @@ function shoe(gearId: string, retired = false): ShoeStats {
   return {
     gearId, name: gearId, brand: 'B', maxKm: 800, alertThresholdKm: 700,
     retired, totalKm: 100, sessionCount: 10, lastUsedDate: '2026-01-01',
+    firstUsedDate: '2025-01-01', kmPerWeek: 10,
     wearPercent: 13, nearingLimit: false,
   }
 }
@@ -40,6 +42,7 @@ interface Options {
 async function run(options: Options = {}) {
   const { getAllActivities } = await import('@/infrastructure/repositories/JsonActivityRepository')
   const { getAthleteProfile } = await import('@/infrastructure/repositories/JsonAthleteRepository')
+  const { getVo2maxNorms } = await import('@/infrastructure/repositories/JsonVo2maxNormsRepository')
   const { getGoalYears } = await import('@/infrastructure/repositories/JsonGoalRepository')
   const { getLifetimeStats } = await import('@/application/usecases/GetLifetimeStats')
   const { getRecords } = await import('@/application/usecases/GetRecords')
@@ -49,6 +52,7 @@ async function run(options: Options = {}) {
 
   vi.mocked(getAllActivities).mockReturnValue(options.activities ?? [])
   vi.mocked(getAthleteProfile).mockReturnValue({ age: 34, sex: 'male' })
+  vi.mocked(getVo2maxNorms).mockReturnValue({} as ReturnType<typeof getVo2maxNorms>)
   vi.mocked(getGoalYears).mockReturnValue(options.goalYears ?? [])
   vi.mocked(getLifetimeStats).mockReturnValue(options.lifetime === undefined ? null : options.lifetime)
   vi.mocked(getRecords).mockResolvedValue(options.records ?? [])
@@ -64,7 +68,6 @@ describe('getProfileData', () => {
   beforeEach(() => {
     vi.resetModules()
     vi.useFakeTimers()
-    // Day 32 of 2026, so the weekly rate has a known denominator.
     vi.setSystemTime(new Date(2026, 1, 1, 12))
   })
 
@@ -96,7 +99,6 @@ describe('getProfileData', () => {
   it('averages over the days elapsed this year, not a full 52 weeks', async () => {
     const data = await run({ activities: [activity('2026-01-05', { distanceKm: 32 })] })
 
-    // 32 km over the 32 elapsed days of 2026 is exactly 7 km/week.
     expect(data.ytd.avgKmPerWeek).toBe(7)
   })
 
@@ -109,12 +111,44 @@ describe('getProfileData', () => {
     expect(data.allTime.distanceKm).toBe(62)
   })
 
+  it('compares last year only as far into the calendar as this year has run', async () => {
+    const data = await run({
+      activities: [
+        activity('2024-01-20', { distanceKm: 50 }),
+        activity('2025-01-15', { distanceKm: 12 }),
+        activity('2025-02-01', { distanceKm: 8 }),
+        activity('2025-06-30', { distanceKm: 100 }),
+        activity('2026-01-20', { distanceKm: 30 }),
+      ],
+    })
+
+    expect(data.prevYear?.distanceKm).toBe(20)
+    expect(data.ytd.distanceKm).toBe(30)
+  })
+
+  it('measures last year over the same elapsed days, so the weekly average compares', async () => {
+    const data = await run({
+      activities: [
+        activity('2025-01-15', { distanceKm: 12 }),
+        activity('2025-02-01', { distanceKm: 8 }),
+        activity('2026-01-20', { distanceKm: 30 }),
+      ],
+    })
+
+    expect(data.prevYear?.sessionCount).toBe(2)
+    expect(data.prevYear?.avgKmPerWeek).toBeGreaterThan(0)
+  })
+
+  it('has no prior year to compare against in a first season', async () => {
+    const data = await run({ activities: [activity('2026-01-20', { distanceKm: 30 })] })
+
+    expect(data.prevYear).toBeNull()
+  })
+
   it('averages all-time from the first activity, not from Jan 1', async () => {
-    // 33 days elapsed since the first activity (2025-12-31) through 2026-02-01.
     const data = await run({ activities: [activity('2025-12-31', { distanceKm: 33 })] })
 
     expect(data.allTime.avgKmPerWeek).toBe(7)
-    // The same activity falls outside the current year entirely.
     expect(data.ytd.distanceKm).toBe(0)
   })
 

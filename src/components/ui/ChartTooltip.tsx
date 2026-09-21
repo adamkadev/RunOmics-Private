@@ -2,7 +2,6 @@ import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { tooltipSurfaceClass } from '@/components/ui/Card'
 
-/** Shared card shell for Recharts tooltips: bordered surface + optional muted label. */
 export function TooltipCard({ label, children }: { label?: ReactNode; children: ReactNode }) {
   return (
     <div className={cn(tooltipSurfaceClass, 'dark:bg-muted')}>
@@ -14,7 +13,6 @@ export function TooltipCard({ label, children }: { label?: ReactNode; children: 
   )
 }
 
-/** One series line in a multi-series tooltip: colored dot · name · value. */
 export function TooltipRow({
   color,
   name,
@@ -38,12 +36,6 @@ interface RechartsTooltipPayloadEntry {
   value: number
 }
 
-/**
- * Recharts tooltip content for a chart with a single plotted series (e.g. the
- * activity detail's HR/pace/cadence/elevation charts). Looks up `dataKey` in
- * the payload so it renders nothing while the area is dimmed/absent (e.g.
- * HR zone filtering).
- */
 export function SingleSeriesTooltip({
   active,
   payload,

@@ -39,9 +39,6 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   } = useShareCardPrefs(appTheme)
   const { locationName, streetLabels } = useShareCardGeocode(activity)
 
-  // The route design needs a real trace; without one its thumbnail is hidden,
-  // so a design remembered from another activity falls back for this render
-  // only - the stored preference is left alone.
   const hasRoute = (activity.route?.length ?? 0) > 1
   const design: ShareDesign = selectedDesign === 'route' && !hasRoute ? 'aurora' : selectedDesign
   const { image: mapImage, points: mapPoints, failed: mapFailed } = useShareCardMap({
@@ -147,11 +144,6 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
         className="relative flex w-full max-w-md animate-sheet-up flex-col overflow-hidden sm:rounded-2xl"
         style={{
           ...sheetStyle,
-          // Full-height sheet: the glass background spans the entire screen
-          // (including behind the notch / Dynamic Island) so there's no dark
-          // strip above the drag handle. `paddingTop` keeps the handle and the
-          // close button clear of the top safe-area inset, so the content still
-          // starts just below the notch even though the fill reaches the top.
           height: '100dvh',
           maxHeight: '100dvh',
           paddingTop: 'max(env(safe-area-inset-top), 12px)',
@@ -170,16 +162,11 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
           />
         </div>
 
-        {/* Close button floats over the scrollable body instead of owning its own row */}
         <button
           onClick={close}
           aria-label={t.activity.shareCard.close}
           className="absolute right-4 z-10"
           style={{
-            // Offset below the top safe-area inset by hand: an absolutely
-            // positioned element is placed against the sheet's padding box, so
-            // the sheet's paddingTop doesn't push it down like it does the
-            // handle - without this it would sit behind the notch.
             top: 'calc(max(env(safe-area-inset-top), 12px) + 6px)',
             width: 34, height: 34, borderRadius: '50%',
             background: 'color-mix(in srgb, var(--ro-text) 10%, transparent)',
@@ -194,7 +181,6 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
 
           <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0 16px' }}>
             <div style={{
-              // 9:16, matching the exported story's aspect ratio.
               borderRadius: 18, overflow: 'hidden', width: 176, height: 313,
               boxShadow: 'var(--shadow-modal)',
               flexShrink: 0,

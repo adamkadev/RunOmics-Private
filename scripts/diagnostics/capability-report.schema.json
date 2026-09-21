@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:runomics:garmin-capability-report:v1",
+  "title": "Sanitized Garmin capability report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "generatedAt", "asOf", "device", "features"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "asOf": { "type": "string", "format": "date" },
+    "device": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "firmware": { "type": "string", "minLength": 1, "maxLength": 80 }
+      }
+    },
+    "features": {
+      "type": "object",
+      "minProperties": 38,
+      "maxProperties": 38,
+      "propertyNames": {
+        "enum": [
+          "vo2max",
+          "fitnessAge",
+          "achievableFitnessAge",
+          "bmi",
+          "weight",
+          "height",
+          "heartRateZones",
+          "activityHeartRateZones",
+          "restingHeartRate",
+          "maxHeartRate",
+          "lactateThresholdHeartRate",
+          "thresholdPace",
+          "racePredictions",
+          "trainingStatus",
+          "trainingStatusWeekly",
+          "acuteTrainingLoad",
+          "chronicTrainingLoad",
+          "acwr",
+          "trainingLoadBalance",
+          "activeGear",
+          "retiredGear",
+          "trainingPlan",
+          "plannedWorkouts",
+          "upcomingRaces",
+          "activityHeartRate",
+          "cadence",
+          "calories",
+          "gps",
+          "elevation",
+          "temperature",
+          "strideLength",
+          "groundContactTime",
+          "groundContactBalance",
+          "verticalOscillation",
+          "verticalRatio",
+          "aerobicTrainingEffect",
+          "anaerobicTrainingEffect",
+          "runningPower"
+        ]
+      },
+      "additionalProperties": { "$ref": "#/$defs/featureState" }
+    }
+  },
+  "$defs": {
+    "featureState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["support", "probeStatus", "samples"],
+      "properties": {
+        "support": {
+          "enum": ["observed", "not_observed", "unsupported", "unknown"]
+        },
+        "probeStatus": {
+          "enum": [
+            "ok",
+            "temporary_error",
+            "unsupported",
+            "auth_error",
+            "invalid_response"
+          ]
+        },
+        "samples": { "type": "integer", "minimum": 0 },
+        "firstSampleAt": { "type": "string", "format": "date" },
+        "lastSampleAt": { "type": "string", "format": "date" },
+        "preservedPriorSupport": { "const": true }
+      }
+    }
+  }
+}

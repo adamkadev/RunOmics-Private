@@ -1,10 +1,11 @@
-import { t } from '@/i18n'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { round } from '@/lib/math'
 import type { Activity } from '@/domain/activity/types'
 import { trimp, DEFAULT_HR_BOUNDS, type HrBounds } from '@/domain/training/trimp'
 import { CTL_DAYS, ATL_DAYS, type LoadSnapshot } from '@/domain/training/taper'
+import { isoDate } from '@/lib/calendarDate'
+import { AXIS_TICK_DATE, formatDate } from '@/lib/formatters'
 
 export { trimp, type HrBounds }
 export { ATL_DAYS, type LoadSnapshot }
@@ -27,11 +28,6 @@ export interface TrainingLoadData {
   tsbNow: number
 }
 
-function isoDate(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
-// Exposed separately from buildTimeSeries because monotony/strain need the raw daily series, not CTL/ATL.
 export function dailyTrimpByDate(activities: Activity[], hrBounds: HrBounds = DEFAULT_HR_BOUNDS): Map<string, number> {
   const dailyLoad = new Map<string, number>()
   for (const a of activities) {
@@ -40,8 +36,6 @@ export function dailyTrimpByDate(activities: Activity[], hrBounds: HrBounds = DE
   return dailyLoad
 }
 
-// Full TRIMP time series from first activity to today.
-// TSB is the form at the START of each day (before that day's load).
 export function buildTimeSeries(activities: Activity[], hrBounds: HrBounds = DEFAULT_HR_BOUNDS): Map<string, LoadSnapshot> {
   const dailyLoad = dailyTrimpByDate(activities, hrBounds)
 
@@ -81,14 +75,11 @@ export async function getTrainingLoad(): Promise<TrainingLoadData | null> {
   const entries = Array.from(series.entries())
   const window = entries.slice(-MAX_DAYS)
 
-  const points: TrainingLoadPoint[] = window.map(([date, snap]) => {
-    const d = new Date(date + 'T00:00:00')
-    return {
-      date,
-      label: d.toLocaleDateString(t.locale, { day: 'numeric', month: 'short' }),
-      ...snap,
-    }
-  })
+  const points: TrainingLoadPoint[] = window.map(([date, snap]) => ({
+    date,
+    label: formatDate(date, AXIS_TICK_DATE),
+    ...snap,
+  }))
 
   const last = points[points.length - 1]
   if (!last) return null

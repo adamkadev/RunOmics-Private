@@ -36,15 +36,9 @@ export interface CurrentWeekPurpose {
   sessions: number
   keySessions: number
   hardPct: number | null
-  /** The sessions the plan still holds for the days left, in day order. */
   remaining: RemainingSession[]
 }
 
-/**
- * The running week as the plan banner reads it, computed server-side. WeekView
- * derives the same numbers for whichever week is being browsed; this covers the
- * one week worth spending a generated line on - the one the athlete is in.
- */
 export async function getCurrentWeekPurpose(now = new Date()): Promise<CurrentWeekPurpose | null> {
   const activities = getActivitySummaries()
   if (!activities.length) return null
@@ -86,7 +80,7 @@ export async function getCurrentWeekPurpose(now = new Date()): Promise<CurrentWe
   return {
     weekStart: days[0]!,
     planPhase: weekPlanPhase(days, getTrainingPlan()?.ranges ?? []),
-    planned: weekPlanned.length ? summarizePlannedWeek(weekPlanned.map((workout) => workout.type)) : null,
+    planned: weekPlanned.length ? summarizePlannedWeek(weekPlanned) : null,
     adherence: computeWeekAdherence(
       days.map((date) => ({
         date,

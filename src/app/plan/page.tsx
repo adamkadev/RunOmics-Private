@@ -1,11 +1,9 @@
 import { getActivitySummaries } from '@/application/usecases/GetActivities'
 import { getPlannedWorkouts } from '@/application/usecases/GetPlannedWorkouts'
-import { getTrainingStatusCalendar } from '@/application/usecases/GetTrainingStatusCalendar'
 import { getTrainingPlan } from '@/application/usecases/GetTrainingPlan'
 import { getNextRace } from '@/application/usecases/GetNextRace'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
-import { getCurrentWeekPurpose } from '@/application/usecases/GetCurrentWeekPurpose'
-import { getWeekPurposeInsight } from '@/application/usecases/GetWeekPurposeInsight'
+import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { PlanClient } from '@/components/plan/PlanClient'
 import type { HrBounds } from '@/domain/training/trimp'
@@ -29,12 +27,11 @@ export default async function PlanPage() {
       activities={activities}
       plannedWorkouts={plannedWorkouts}
       hrBounds={hrBounds}
-      statusByDate={getTrainingStatusCalendar()}
       planPhaseRanges={trainingPlan?.ranges ?? []}
       planSpan={trainingPlan}
       nextRace={nextRace}
       trainingZones={trainingZones}
-      weekPurposeTake={await getWeekPurposeInsight(await getCurrentWeekPurpose())}
+      coaching={getCoachingOverview()}
     />
   )
 }

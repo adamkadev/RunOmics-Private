@@ -10,8 +10,6 @@ describe('paceZoneKeyFor', () => {
   })
 
   it('has no zone for interval and race efforts', () => {
-    // These are prescribed per-rep or by the race, so one steady range would
-    // be a wrong number rather than a vague one.
     expect(paceZoneKeyFor('Sprint')).toBeNull()
     expect(paceZoneKeyFor('Anaerobic')).toBeNull()
     expect(paceZoneKeyFor('Race')).toBeNull()

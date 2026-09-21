@@ -11,7 +11,7 @@ const REPS_WITH_RECOVERY = /(\d+)\s*[x×]\s*\(\s*(\d+)\s*['’]\s*\/\s*(\d+)\s*[
 const REPS_SIMPLE = /(\d+)\s*[x×]\s*(\d+)\s*['’]/i
 const TOTAL_WITH_ACTIVE = /(\d+)\s*['’]\s*dont\s+(\d+)\s*['’]/i
 
-function bookends(totalMin: number | null, workMin: number): { warmup: number; cooldown: number } {
+export function bookends(totalMin: number | null, workMin: number): { warmup: number; cooldown: number } {
   if (totalMin === null || totalMin <= workMin + 2 * MIN_BOOKEND_MIN) {
     return { warmup: DEFAULT_WARMUP_MIN, cooldown: DEFAULT_COOLDOWN_MIN }
   }

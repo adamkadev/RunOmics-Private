@@ -10,7 +10,6 @@ export interface StaleSyncAlert {
   hoursSinceSync: number
 }
 
-// Fires once when sync falls behind, then resets once a fresh sync lands so a later gap re-alerts.
 export async function getStaleSyncAlert(): Promise<StaleSyncAlert | null> {
   const lastSyncedAt = getLastSyncedAt()
   if (!lastSyncedAt) return null

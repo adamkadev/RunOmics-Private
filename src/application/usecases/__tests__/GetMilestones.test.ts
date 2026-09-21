@@ -13,8 +13,8 @@ describe('findDistanceTierMilestones', () => {
   it('records each tier crossed as cumulative distance grows', () => {
     const acts = [
       { date: '2026-01-01', distanceKm: 300 },
-      { date: '2026-02-01', distanceKm: 300 }, // crosses 500
-      { date: '2026-03-01', distanceKm: 500 }, // crosses 1000
+      { date: '2026-02-01', distanceKm: 300 },
+      { date: '2026-03-01', distanceKm: 500 },
     ]
     const crossings = findDistanceTierMilestones(acts, [500, 1000, 1500])
     expect(crossings).toEqual([
@@ -95,29 +95,29 @@ describe('currentWeekStreak', () => {
   })
 
   it('counts consecutive active weeks back from now', () => {
-    const now = new Date('2026-07-06T00:00:00') // Monday
-    const acts = [act('2026-07-06'), act('2026-06-29'), act('2026-06-22')] // 3 consecutive weeks
+    const now = new Date('2026-07-06T00:00:00')
+    const acts = [act('2026-07-06'), act('2026-06-29'), act('2026-06-22')]
     const streak = currentWeekStreak(acts, now)
     expect(streak?.weeks).toBe(3)
   })
 
   it('stops counting at the first inactive week', () => {
     const now = new Date('2026-07-06T00:00:00')
-    const acts = [act('2026-07-06'), act('2026-06-22')] // gap on 06-29
+    const acts = [act('2026-07-06'), act('2026-06-22')]
     const streak = currentWeekStreak(acts, now)
     expect(streak?.weeks).toBe(1)
   })
 
   it('carries the streak into a new week that has no run yet, instead of resetting to 0', () => {
-    const now = new Date('2026-07-13T00:00:00') // Monday, brand-new week, nothing logged today
-    const acts = [act('2026-07-06'), act('2026-06-29'), act('2026-06-22')] // 3 consecutive prior weeks
+    const now = new Date('2026-07-13T00:00:00')
+    const acts = [act('2026-07-06'), act('2026-06-29'), act('2026-06-22')]
     const streak = currentWeekStreak(acts, now)
     expect(streak?.weeks).toBe(3)
   })
 
   it('null when neither the current nor the previous week has an activity', () => {
     const now = new Date('2026-07-13T00:00:00')
-    const acts = [act('2026-06-22')] // last week (07-06) is also empty - streak actually broken
+    const acts = [act('2026-06-22')]
     expect(currentWeekStreak(acts, now)).toBeNull()
   })
 })
@@ -131,9 +131,9 @@ describe('longestWeekStreak', () => {
 
   it('finds the longest run of consecutive active weeks, not just the current one', () => {
     const acts = [
-      act('2026-01-05'), act('2026-01-12'), act('2026-01-19'), act('2026-01-26'), // 4-week run
-      act('2026-03-02'), // isolated week
-      act('2026-06-01'), act('2026-06-08'), // 2-week run
+      act('2026-01-05'), act('2026-01-12'), act('2026-01-19'), act('2026-01-26'),
+      act('2026-03-02'),
+      act('2026-06-01'), act('2026-06-08'),
     ]
     expect(longestWeekStreak(acts)).toBe(4)
   })

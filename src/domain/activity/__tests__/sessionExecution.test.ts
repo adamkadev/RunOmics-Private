@@ -29,7 +29,6 @@ describe('sessionExecution', () => {
       ],
     })
 
-    // 240 -> 270 s/km across three 300m reps.
     expect(result).toEqual({
       kind: 'intervals',
       reps: 3,

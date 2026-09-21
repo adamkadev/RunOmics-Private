@@ -10,7 +10,6 @@ export interface NewPr {
   date: string
 }
 
-// Returns [] on the very first call (nothing to compare against yet) - it just bootstraps the stored state.
 export async function getNewPrs(): Promise<NewPr[]> {
   const activities = getAllActivities()
   const computed = computeBestEfforts(activities)

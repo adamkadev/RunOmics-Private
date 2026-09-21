@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest'
 import { clusterByRoute } from '../GetRecurringRoutes'
 import type { Activity } from '@/domain/activity/types'
 
-/** A straight west-east trace of `cells` tiles, offset north by `lane` tiles. */
 const trace = (cells: number, lane = 0) =>
   Array.from({ length: cells }, (_, i): [number, number] => [6.1 + i * 0.001, 49.6 + lane * 0.001])
 

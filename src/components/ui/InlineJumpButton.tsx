@@ -2,7 +2,6 @@
 
 import type { ReactNode } from 'react'
 
-/** Small accent text button used to jump back to "now" (today, current week...). */
 export function InlineJumpButton({ onClick, children }: { onClick: () => void; children: ReactNode }) {
   return (
     <button

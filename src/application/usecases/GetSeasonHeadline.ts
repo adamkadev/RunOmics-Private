@@ -22,10 +22,6 @@ const VOLUME_THRESHOLD_PCT = 5
 const BLOCK_WEEKS = 4
 const MIN_WEEKS = BLOCK_WEEKS * 2
 
-// One week can hold a single slow recovery jog, so comparing week 1 to the
-// current week turns that noise into a headline (a 171s/km "gain"). Medians
-// over the first and last blocks of the season keep the claim to what actually
-// shifted, and below two blocks there is nothing to compare yet.
 function seasonShift(
   weeks: WeeklyTrendPoint[],
   pick: (w: WeeklyTrendPoint) => number | null,
@@ -70,11 +66,6 @@ function headlineTitle(bullets: SeasonHeadlineBullet[]): string {
   return t.analytics.seasonHeadline.titleMixed
 }
 
-// Names the 2-3 biggest changes of the current season from data that's already
-// computed elsewhere (the weekly trend base + year-over-year comparison) - no
-// new aggregation, just a reading of the current calendar year's weeks. Returns
-// null when nothing crosses the signal thresholds, so the card stays honest
-// rather than forcing a verdict.
 export function getSeasonHeadline(
   data: AnalyticsPageData,
   comparison: YearComparisonData | null,

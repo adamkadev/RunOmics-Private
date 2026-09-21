@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { deservesVerdict, isFreshRun, runVerdictInsightHash as hashContext } from '../runVerdictInsight'
+import {
+  deservesVerdict,
+  isFreshRun,
+  repeatsEarlierVerdict,
+  runVerdictInsightHash as hashContext,
+  runVerdictInsightPrompt,
+  verdictLines,
+} from '../runVerdictInsight'
 import { runHistory } from '@/domain/activity/runHistory'
 import type { Activity, ActivityWeather } from '@/domain/activity/types'
 
-// The weather cutoff is a property of the run alone, so these hash it with the
-// history a run with no past would carry.
 const runVerdictInsightHash = (activity: Activity) =>
   hashContext({ activity, history: runHistory(activity, []), planned: null })
 
@@ -108,13 +113,125 @@ describe('isFreshRun', () => {
     expect(isFreshRun({ date: '2026-07-30T06:12:00' }, now)).toBe(true)
   })
 
-  // A run synced on one night only becomes generatable on the next, once the
-  // deployment carrying it is live, so the window has to outlast a single day.
   it('still covers a run the sync only made visible the day after', () => {
     expect(isFreshRun({ date: '2026-07-28T06:12:00' }, now)).toBe(true)
   })
 
   it('leaves an older run to the backfill', () => {
     expect(isFreshRun({ date: '2026-07-20' }, now)).toBe(false)
+  })
+})
+
+describe('official race performance in the verdict', () => {
+  const escherOfficial = {
+    activityId: 'escher', eventName: 'Escher Kulturlaf', date: '2026-09-05',
+    distanceMeters: 5_000, chipTimeSeconds: 1_292, gunTimeSeconds: 1_293, overallPlace: 28, finisherCount: 188,
+  }
+
+  const escher = {
+    id: 'escher',
+    date: '2026-09-05',
+    type: 'Race',
+    description: 'Escher Kulturlaf',
+    distanceKm: 5.25,
+    durationSeconds: 1_310,
+    paceSecPerKm: 249.5,
+    avgHeartRate: 196,
+    rpe: 10,
+    aerTrainingEffect: 5,
+    elevationGain: 19,
+    hrZones: [],
+    splits: [],
+    bestEfforts: { '5k': 1237.6 },
+  } as unknown as Activity
+
+  const context = (official: typeof escherOfficial | null) => ({
+    activity: escher,
+    history: runHistory(escher, [escher], official ? [official] : []),
+    planned: null,
+    official,
+  })
+
+  const promptFacts = (official: typeof escherOfficial | null) =>
+    runVerdictInsightPrompt(context(official), [])
+
+  it('states the certified distance and chip time, not the GPS reading', () => {
+    const prompt = promptFacts(escherOfficial)
+
+    expect(prompt).toContain('5 km in 22 min')
+    expect(prompt).not.toContain('5.25 km')
+  })
+
+  it('gives the official pace rather than the over-read one', () => {
+    expect(promptFacts(escherOfficial)).toContain('4:18 /km')
+    expect(promptFacts(escherOfficial)).not.toContain('4:09 /km')
+  })
+
+  it('reads the placing against the field it was run in', () => {
+    expect(promptFacts(escherOfficial)).toContain('Finished 28 of 188')
+  })
+
+  it('never offers the device best effort as the race performance', () => {
+    expect(promptFacts(escherOfficial)).not.toContain('20:38')
+    expect(promptFacts(escherOfficial)).not.toContain('20:37')
+  })
+
+  it('keeps the raw device shape when no official result is linked', () => {
+    const prompt = promptFacts(null)
+
+    expect(prompt).toContain('5.25 km')
+    expect(prompt).not.toContain('certified course')
+  })
+
+  it('changes the hash when an official result arrives over unchanged Garmin data', () => {
+    expect(hashContext(context(escherOfficial))).not.toBe(hashContext(context(null)))
+  })
+
+  it('changes the hash again when the certified time itself is corrected', () => {
+    const corrected = { ...escherOfficial, chipTimeSeconds: 1_290 }
+
+    expect(hashContext(context(corrected))).not.toBe(hashContext(context(escherOfficial)))
+  })
+
+  it('changes the hash when only the placing is corrected', () => {
+    const corrected = { ...escherOfficial, overallPlace: 27 }
+
+    expect(hashContext(context(corrected))).not.toBe(hashContext(context(escherOfficial)))
+  })
+
+  it('leaves a run without an official result hashing exactly as before', () => {
+    const tempo = { ...escher, id: 'tempo', type: 'Tempo', bestEfforts: {} } as Activity
+    const withResults = { activity: tempo, history: runHistory(tempo, [tempo], [escherOfficial]), planned: null, official: null }
+    const withoutResults = { activity: tempo, history: runHistory(tempo, [tempo]), planned: null }
+
+    expect(hashContext(withResults)).toBe(hashContext(withoutResults))
+  })
+})
+
+describe('repeatsEarlierVerdict', () => {
+  const written = [{ headline: 'Target base effort mastered', body: 'Splits packed tight.' }]
+
+  it('rejects the headline a lite model handed back verbatim despite the avoid list', () => {
+    expect(repeatsEarlierVerdict({ headline: 'Target base effort mastered' }, written)).toBe(true)
+  })
+
+  it('rejects a repeat dressed up in different casing, spacing or end punctuation', () => {
+    expect(repeatsEarlierVerdict({ headline: '  target base effort MASTERED.  ' }, written)).toBe(true)
+  })
+
+  it('passes a verdict that found its own angle', () => {
+    expect(repeatsEarlierVerdict({ headline: 'Controlled aerobic building' }, written)).toBe(false)
+  })
+
+  it('passes the first verdict of a batch, which has nothing to repeat', () => {
+    expect(repeatsEarlierVerdict({ headline: 'Faster aerobic engine' }, [])).toBe(false)
+  })
+})
+
+describe('verdictLines', () => {
+  it('hands the avoid clause the body as well, since that is what repeated', () => {
+    expect(verdictLines([{ headline: 'Faster aerobic engine', body: 'Held drift to 8 bpm.' }])).toEqual([
+      'Faster aerobic engine / Held drift to 8 bpm.',
+    ])
   })
 })

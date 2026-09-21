@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { CircleCheck, Minus, OctagonAlert, TriangleAlert, type LucideIcon } from 'lucide-react'
+import { CardTitle } from '@/components/ui/SectionLabel'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { formatDuration } from '@/lib/formatters'
 import type { AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
@@ -27,13 +28,11 @@ interface TileData {
   label: string
   unit: string
   value: string | number | undefined
-  /** Qualitative verdict on the value: a corner icon, with the verdict itself
-   *  as its accessible name - no extra line of text. */
   band?: { label: string; tone: VerdictTone }
 }
 
-// Shape carries the meaning, color reinforces it - a check and a triangle stay
-// distinguishable where two tinted dots would not (color vision deficiency).
+type AvailableTileData = TileData & { value: string | number }
+
 const TONE_ICON: Record<VerdictTone, { Icon: LucideIcon; className: string }> = {
   success: { Icon: CircleCheck, className: STATUS.success.text },
   neutral: { Icon: Minus, className: STATUS.pending.text },
@@ -43,35 +42,27 @@ const TONE_ICON: Record<VerdictTone, { Icon: LucideIcon; className: string }> = 
 
 function VerdictIcon({ band }: { band: NonNullable<TileData['band']> }) {
   const { Icon, className } = TONE_ICON[band.tone]
-  // The verdict text itself is the icon's accessible name, so nothing is lost
-  // for screen readers by dropping the caption.
   return (
     <Icon
       size={12}
       strokeWidth={2.5}
       role="img"
       aria-label={band.label}
-      className={cn('absolute right-1.5 top-1.5', className)}
+      className={cn('ml-1 inline align-[0.05em]', className)}
     >
       <title>{band.label}</title>
     </Icon>
   )
 }
 
-function Tile({ label, unit, value, band }: TileData) {
+function Tile({ label, unit, value, band }: AvailableTileData) {
   return (
-    <div className="relative rounded-xl bg-foreground/[0.04] px-2.5 py-2.5 text-center">
-      {value !== undefined && band && <VerdictIcon band={band} />}
+    <div className="rounded-xl bg-foreground/[0.04] px-2.5 py-2.5 text-center">
       <div className="text-micro font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
       <div className="mt-1 text-base font-extrabold tabular-nums text-foreground">
-        {value !== undefined ? (
-          <>
-            {value}
-            <span className="block text-caption font-medium text-subtle">{unit}</span>
-          </>
-        ) : (
-          <span className="block text-caption font-medium text-subtle">{t.profile.athlete.notSet}</span>
-        )}
+        {value}
+        {band ? <VerdictIcon band={band} /> : null}
+        <span className="block text-caption font-medium text-subtle">{unit}</span>
       </div>
     </div>
   )
@@ -81,8 +72,6 @@ type Category = 'performance' | 'cardio' | 'body'
 
 const CATEGORIES = ['performance', 'cardio', 'body'] as const
 
-// Garmin's fitness age only means something read against the real one, and the
-// BMI only against the WHO bands - both carry their verdict as a corner dot.
 function fitnessAgeTileBand(athlete: AthleteProfile): TileData['band'] {
   const { fitnessAgeYrs, age } = athlete
   if (fitnessAgeYrs === undefined || age === undefined) return undefined
@@ -103,11 +92,19 @@ function bmiTileBand(bmi: number | undefined): TileData['band'] {
   return { label: t.settings.athlete.bmiBand[band], tone: BMI_BAND_TONE[band] }
 }
 
+// One sync a day is the normal cadence, so the dot only needs to distinguish
+// "as expected" from "a sync was missed" from "several were missed" -
+// mirrors the 72h threshold GetStaleSyncAlert uses to flag a stale device.
+function syncFreshnessTone(iso: string): 'success' | 'warning' | 'danger' {
+  const hoursSinceSync = (Date.now() - new Date(iso).getTime()) / 3_600_000
+  if (hoursSinceSync < 24) return 'success'
+  if (hoursSinceSync < 72) return 'warning'
+  return 'danger'
+}
+
 function tilesFor(category: Category, athlete: AthleteProfile, latestVo2max: number | null): TileData[] {
   const a = t.settings.athlete
 
-  // Each category reads left to right in its own natural order: rising heart
-  // rates for cardio, aerobic engine down to the pace it yields for performance.
   if (category === 'cardio') {
     return [
       { label: a.restingHr, unit: t.units.bpm, value: athlete.restingHrBpm },
@@ -116,8 +113,6 @@ function tilesFor(category: Category, athlete: AthleteProfile, latestVo2max: num
     ]
   }
 
-  // Two rows that each read as a pair: the ages Garmin grades you on, then the
-  // measurements the BMI is derived from.
   if (category === 'body') {
     return [
       { label: a.age, unit: t.units.yrs, value: athlete.age },
@@ -142,7 +137,7 @@ function tilesFor(category: Category, athlete: AthleteProfile, latestVo2max: num
   }
 
   return [
-    { label: a.vo2max, unit: t.units.mlKgMin, value: latestVo2max ?? undefined },
+    { label: a.vo2max, unit: t.units.mlKgMin, value: latestVo2max !== null ? latestVo2max.toFixed(1) : undefined },
     { label: a.vma, unit: t.units.kmh, value: athlete.vmaKmh },
     {
       label: a.thresholdPace,
@@ -155,27 +150,44 @@ function tilesFor(category: Category, athlete: AthleteProfile, latestVo2max: num
 export function ProfileAthleteStats({ athlete, latestVo2max }: Props) {
   const a = t.settings.athlete
   const [category, setCategory] = useState<Category>('performance')
+  const availableByCategory = Object.fromEntries(
+    CATEGORIES.map((value) => [
+      value,
+      tilesFor(value, athlete, latestVo2max).filter(
+        (tile): tile is AvailableTileData => tile.value !== undefined
+      ),
+    ])
+  ) as Record<Category, AvailableTileData[]>
+  const availableCategories = CATEGORIES.filter((value) => availableByCategory[value].length > 0)
+  const selectedCategory = availableCategories.includes(category)
+    ? category
+    : (availableCategories[0] ?? 'performance')
+  const tiles = availableByCategory[selectedCategory]
+  const gridColumns = tiles.length === 1 ? 'grid-cols-1' : tiles.length === 2 ? 'grid-cols-2' : 'grid-cols-3'
+
+  if (availableCategories.length === 0) return null
 
   return (
     <GlassSurface variant="card" className="p-5">
       <div className="mb-3 flex items-baseline justify-between gap-3">
-        <h2 className="text-sm font-bold text-foreground">{a.title}</h2>
+        <CardTitle as="h2">{a.title}</CardTitle>
         {athlete.lastUpdate && (
-          <span className="shrink-0 text-caption text-subtle-2">
-            {t.pages.athlete.lastUpdated(formatRelativeAgo(athlete.lastUpdate))}
+          <span className="flex shrink-0 items-center gap-1.5 text-caption text-subtle-2">
+            <span className={cn('h-1.5 w-1.5 rounded-full', STATUS[syncFreshnessTone(athlete.lastUpdate)].dot)} />
+            {t.pages.athlete.lastUpdated(t.pages.athlete.source, formatRelativeAgo(athlete.lastUpdate))}
           </span>
         )}
       </div>
 
       <div className="mb-3 flex w-full gap-1 rounded-full bg-foreground/[0.04] p-1">
-        {CATEGORIES.map((value) => (
+        {availableCategories.map((value) => (
           <button
             key={value}
             type="button"
             onClick={() => setCategory(value)}
             className={cn(
               'flex-1 min-h-[44px] rounded-full py-1.5 text-xs font-semibold transition-colors',
-              category === value ? 'bg-accent text-accent-foreground' : 'text-foreground/55'
+              selectedCategory === value ? 'bg-accent text-accent-foreground' : 'text-foreground/55'
             )}
           >
             {a.categories[value]}
@@ -183,8 +195,8 @@ export function ProfileAthleteStats({ athlete, latestVo2max }: Props) {
         ))}
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
-        {tilesFor(category, athlete, latestVo2max).map((tile) => (
+      <div className={cn('grid gap-2', gridColumns)}>
+        {tiles.map((tile) => (
           <Tile key={tile.label} {...tile} />
         ))}
       </div>

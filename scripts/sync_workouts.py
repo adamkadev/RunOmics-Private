@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Sync planned workouts from Garmin Connect to public/data/planned_workouts/.
+"""Sync planned workouts from Garmin Connect to the private data workspace.
 
 Fetches the calendar month-by-month to find scheduled running workouts, then
 enriches each with its workout detail. The Garmin-payload parsing (distance/
@@ -23,6 +23,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from garmin.client import GarminAPIError, GarminAuthError, GarminClient
+from data_directory import get_data_dir
 from processing.garmin_workout import (
     build_workout_steps,
     collect_steps,
@@ -38,7 +39,6 @@ from processing.planned_workout_type import (
 )
 from repository.json_store import PlannedWorkoutStore
 
-_DATA_DIR = Path(__file__).parent.parent / "public" / "data"
 _RATE_LIMIT_PAUSE = 1.0
 _RETRY_PAUSE = 60.0
 _WINDOW_PAST_DAYS = 7
@@ -189,10 +189,10 @@ def enrich_description_from_plan(activity: ActivityData, store: PlannedWorkoutSt
         activity.description = better
 
 
-def _load_easy_pace_sec_per_km(data_dir: Path = _DATA_DIR) -> float:
+def _load_easy_pace_sec_per_km(data_dir: Path | None = None) -> float:
     """Slow-end easy/footing pace (sec/km), derived from the athlete's own
     threshold pace when available, else a generic 6'15/km default."""
-    athlete_path = data_dir / "athlete.json"
+    athlete_path = (data_dir or get_data_dir()) / "athlete.json"
     if athlete_path.exists():
         try:
             threshold = json.loads(athlete_path.read_text()).get("thresholdPaceSecPerKm")

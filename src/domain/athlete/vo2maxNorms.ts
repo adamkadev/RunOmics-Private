@@ -1,5 +1,3 @@
-import norms from '../../../data/vo2max_norms.json'
-
 export type AgeBracket = '20-29' | '30-39' | '40-49' | '50-59' | '60-69' | '70-79'
 
 export interface Vo2maxThresholds {
@@ -9,12 +7,7 @@ export interface Vo2maxThresholds {
   fair: number
 }
 
-// Cooper/Garmin age-graded VO2max percentile norms (mL/kg/min): superior = 95th
-// percentile, excellent = 80th, good = 60th, fair = 40th. Not hand-maintained -
-// scripts/garmin/vo2max_norms.py refreshes the JSON from Garmin on every sync
-// and logs a diff when Garmin moves an anchor. Small enough (~1 KB) to inline
-// into the client bundle, which keeps every lookup below synchronous.
-export const VO2MAX_NORMS: Record<'male' | 'female', Record<AgeBracket, Vo2maxThresholds>> = norms
+export type Vo2maxNorms = Record<'male' | 'female', Record<AgeBracket, Vo2maxThresholds>>
 
 const AGE_BRACKETS: AgeBracket[] = ['20-29', '30-39', '40-49', '50-59', '60-69', '70-79']
 
@@ -26,22 +19,16 @@ export function bracketForAge(age: number): AgeBracket {
 
 export type Vo2maxBand = 'building' | 'solid' | 'strong' | 'elite'
 
-// Maps a raw VO2max value onto the same 40th/60th/80th/95th percentile anchors
-// used for the athlete rank badge, as a standalone qualitative read (no blending
-// with VDOT) - for surfacing "is this number good?" next to the raw metric.
-export function vo2maxBand(vo2max: number, age: number, sex: 'male' | 'female'): Vo2maxBand {
-  const t = VO2MAX_NORMS[sex][bracketForAge(age)]
+export function vo2maxBand(vo2max: number, age: number, sex: 'male' | 'female', norms: Vo2maxNorms): Vo2maxBand {
+  const t = norms[sex][bracketForAge(age)]
   if (vo2max >= t.superior) return 'elite'
   if (vo2max >= t.excellent) return 'strong'
   if (vo2max >= t.good) return 'solid'
   return 'building'
 }
 
-// Interpolates a percentile (1-99) between the fair/good/excellent/superior
-// anchors (40th/60th/80th/95th pct) for the "· top X%" band suffix - reuses
-// the same norms table as vo2maxBand, no separate lookup.
-export function vo2maxTopPercent(vo2max: number, age: number, sex: 'male' | 'female'): number {
-  const t = VO2MAX_NORMS[sex][bracketForAge(age)]
+export function vo2maxTopPercent(vo2max: number, age: number, sex: 'male' | 'female', norms: Vo2maxNorms): number {
+  const t = norms[sex][bracketForAge(age)]
   const anchors: [number, number][] = [[0, 1], [40, t.fair], [60, t.good], [80, t.excellent], [95, t.superior]]
 
   let percentile: number

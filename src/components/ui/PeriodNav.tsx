@@ -18,8 +18,6 @@ interface Props {
   className?: string
 }
 
-// Visually 24px to stay compact under a title, but the hit area is expanded
-// to the HIG 44px minimum via an invisible ::after overlay.
 const SM_BTN =
   'relative flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-foreground/[0.12] bg-foreground/[0.08] text-foreground/65 transition-colors after:absolute after:-inset-2.5 after:content-[""] hover:bg-foreground/[0.12] active:scale-95 disabled:cursor-not-allowed disabled:opacity-40'
 

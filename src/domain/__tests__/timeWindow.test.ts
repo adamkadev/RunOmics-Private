@@ -2,20 +2,22 @@ import { describe, it, expect } from 'vitest'
 import {
   fillWeeklyGaps,
   hasEarlierPoints,
+  lineInterpolation,
   monthStartTicks,
   pickForRange,
   pointsInWindow,
   sampleForRange,
+  seriesCadence,
+  seriesShape,
   windowBounds,
 } from '../timeWindow'
 
 const point = (date: string) => ({ date })
 
-const ANCHOR = new Date(2026, 6, 21) // 2026-07-21
+const ANCHOR = new Date(2026, 6, 21)
 
 describe('windowBounds', () => {
   it('ends on the anchor day and spans the range inclusively', () => {
-    // 28 days ending 21 Jul starts on 24 Jun, not 23 Jun.
     expect(windowBounds('4w', 0, ANCHOR)).toEqual({ from: '2026-06-24', to: '2026-07-21' })
   })
 
@@ -23,8 +25,6 @@ describe('windowBounds', () => {
     const current = windowBounds('4w', 0, ANCHOR)
     const previous = windowBounds('4w', 1, ANCHOR)
 
-    // The two windows must be adjacent: no day falls between them, and none is
-    // covered twice.
     expect(previous.to).toBe('2026-06-23')
     expect(current.from).toBe('2026-06-24')
   })
@@ -76,7 +76,6 @@ describe('sampleForRange', () => {
   })
 
   it('averages each bucket and anchors it on the bucket last date', () => {
-    // 10, 20, ... 80 in pairs -> 15, 35, 55, 75.
     const sampled = sampleForRange(daily(8, (i) => (i + 1) * 10), '4w')
     expect(sampled).toHaveLength(4)
     expect(sampled[0]).toEqual({ date: '2026-01-02', value: 15 })
@@ -84,7 +83,6 @@ describe('sampleForRange', () => {
   })
 
   it('keeps fractional values by default so small metrics survive', () => {
-    // Stride length ~1.2 m would collapse to 1 under whole-number rounding.
     const points = daily(8, (i) => 1.2 + i * 0.02)
 
     expect(sampleForRange(points, '4w').map((p) => p.value)).toEqual([1.21, 1.25, 1.29, 1.33])
@@ -133,7 +131,6 @@ describe('pickForRange', () => {
 })
 
 describe('monthStartTicks', () => {
-  // Consecutive Mondays, which is what the weekly volume chart plots.
   const mondays = (count: number, from = '2026-01-05') => {
     const start = Date.parse(from + 'T00:00:00Z')
     return Array.from({ length: count }, (_, i) => ({
@@ -144,7 +141,6 @@ describe('monthStartTicks', () => {
   it('marks the first point of each month, not every nth point', () => {
     const ticks = monthStartTicks(mondays(13))
 
-    // Jan 5, Feb 2, Mar 2 - the first Monday to land in each month.
     expect([...ticks]).toEqual(['2026-01-05', '2026-02-02', '2026-03-02'])
   })
 
@@ -159,7 +155,6 @@ describe('monthStartTicks', () => {
   })
 
   it('keeps every month when they already fit', () => {
-    // Six months of weeks: six labels, no thinning.
     expect(monthStartTicks(mondays(26)).size).toBe(6)
   })
 
@@ -173,7 +168,6 @@ describe('fillWeeklyGaps', () => {
   const week = (date: string, km: number) => ({ date, km })
 
   it('inserts the weeks that carry no run at all', () => {
-    // 8 Dec ran, then nothing until 12 Jan: four weeks off, absent from the series.
     const filled = fillWeeklyGaps([week('2025-12-08', 40), week('2026-01-12', 30)], blank)
 
     expect(filled.map((w) => w.date)).toEqual([
@@ -193,8 +187,6 @@ describe('fillWeeklyGaps', () => {
     expect(fillWeeklyGaps(points, blank)).toEqual(points)
   })
 
-  // A gap before the first run is history the athlete never had, and one after
-  // the last is a week that has not happened yet.
   it('does not pad outside the recorded span', () => {
     expect(fillWeeklyGaps([week('2026-03-02', 25)], blank)).toEqual([week('2026-03-02', 25)])
     expect(fillWeeklyGaps([], blank)).toEqual([])
@@ -211,8 +203,6 @@ describe('fillWeeklyGaps', () => {
   })
 
   it('crosses a DST boundary without drifting off Monday', () => {
-    // Europe springs forward on 29 Mar 2026; stepping in local time would slide
-    // the inserted weeks to Sunday.
     const filled = fillWeeklyGaps([week('2026-03-16', 30), week('2026-04-13', 30)], blank)
 
     expect(filled.map((w) => w.date)).toEqual([
@@ -222,5 +212,49 @@ describe('fillWeeklyGaps', () => {
       '2026-04-06',
       '2026-04-13',
     ])
+  })
+})
+
+describe('seriesShape', () => {
+  it('refuses to plot a series of fewer than three points', () => {
+    expect(seriesShape(0)).toBe('tooFew')
+    expect(seriesShape(2)).toBe('tooFew')
+  })
+
+  it('treats everything up to six points as sparse', () => {
+    expect(seriesShape(3)).toBe('sparse')
+    expect(seriesShape(6)).toBe('sparse')
+  })
+
+  it('earns a curve past six points', () => {
+    expect(seriesShape(7)).toBe('curve')
+  })
+})
+
+describe('lineInterpolation', () => {
+  it('keeps straight segments for the four points a 4w window resolves to', () => {
+    expect(lineInterpolation(4)).toBe('linear')
+  })
+
+  it('splines only a series dense enough to justify one', () => {
+    expect(lineInterpolation(28)).toBe('monotone')
+  })
+})
+
+describe('seriesCadence', () => {
+  it('reads weekly points as weeks', () => {
+    expect(seriesCadence([point('2026-07-06'), point('2026-07-13'), point('2026-07-20')])).toBe('weekly')
+  })
+
+  it('reads consecutive days as days', () => {
+    expect(seriesCadence([point('2026-07-18'), point('2026-07-19'), point('2026-07-20')])).toBe('daily')
+  })
+
+  it('survives a missing week', () => {
+    expect(seriesCadence([point('2026-07-06'), point('2026-07-13'), point('2026-07-27')])).toBe('weekly')
+  })
+
+  it('has nothing to say about a single point', () => {
+    expect(seriesCadence([point('2026-07-20')])).toBeNull()
   })
 })

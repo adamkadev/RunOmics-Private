@@ -4,7 +4,6 @@ import type { AnalyticsPageData, WeeklyTrendPoint, YearAnalytics } from '../GetA
 import type { YearComparisonData, YearMetrics } from '../GetYearComparison'
 
 function week(index: number, values: Partial<WeeklyTrendPoint>): WeeklyTrendPoint {
-  // Consecutive Mondays in 2024, so every point falls in the current season.
   const monday = new Date(Date.UTC(2024, 0, 1 + index * 7)).toISOString().slice(0, 10)
   return {
     date: monday,
@@ -98,7 +97,6 @@ describe('getSeasonHeadline', () => {
   })
 
   it('reads blocks of weeks, so one outlier week does not become a headline', () => {
-    // A single 8:00/km recovery jog in week 1 must not read as a 3min/km gain.
     const weeks = paceWeeks([480, ...block(300).slice(1), ...block(300)])
     expect(getSeasonHeadline(pageData([2024], weeks), null)).toBeNull()
   })
@@ -119,7 +117,6 @@ describe('getSeasonHeadline', () => {
   })
 
   it('ignores weeks outside the current season', () => {
-    // Last season's weeks must not become the "early season" baseline.
     const weeks = [
       ...efWeeks(block(1.0)).map((w) => ({ ...w, date: w.date.replace('2024', '2023') })),
       ...efWeeks([...block(2.0), ...block(2.01)]),

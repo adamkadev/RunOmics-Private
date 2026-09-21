@@ -13,13 +13,6 @@ export function seasonInsightHash(data: SeasonHeadlineData): string {
   return insightHash(facts(data))
 }
 
-/**
- * The card pairs each generated bullet with the read at the same index and
- * colors it from that read's own tone (SeasonHeadline.tsx). Copy is safe to
- * outlive a figure that has drifted, but not a list that has changed shape or
- * flipped sign under it: that pairs "you are gaining" with a caution color, or
- * drops a bullet off the end. So the tones, in order, gate the grace window.
- */
 export function seasonInsightGuard(data: SeasonHeadlineData): string {
   return insightHash({ tones: data.bullets.map((b) => b.tone).join(',') })
 }

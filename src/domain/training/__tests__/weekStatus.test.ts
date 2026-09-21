@@ -15,7 +15,6 @@ function calendar(...statuses: (TrainingStatusType | undefined)[]): Record<strin
 
 describe('weekTrainingStatus', () => {
   it('names the week from the status covering the most days', () => {
-    // The real week of 22-28 June as Garmin recorded it.
     const result = weekTrainingStatus(
       WEEK,
       calendar('productive', 'maintaining', 'maintaining', 'maintaining', 'maintaining', 'recovery', 'recovery')

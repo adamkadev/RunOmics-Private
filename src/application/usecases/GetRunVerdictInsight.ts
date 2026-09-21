@@ -1,60 +1,63 @@
-import { PHASE_PRODUCTION_BUILD } from 'next/constants'
 import type { Activity, PlannedWorkout } from '@/domain/activity/types'
 import { runHistory } from '@/domain/activity/runHistory'
-import { RUN_VERDICT_PREFIX, runVerdictInsightHash, runVerdictSurface, type RunVerdictContext } from '@/domain/ai/runVerdictInsight'
+import { runVerdictInsightHash, runVerdictSurface, type RunVerdictContext } from '@/domain/ai/runVerdictInsight'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getAllPlannedWorkouts } from '@/infrastructure/repositories/JsonPlannedWorkoutRepository'
-import {
-  readVerifiedInsight,
-  getCachedInsightsByPrefix,
-  servableInsight,
-  type CachedInsight,
-} from '@/infrastructure/repositories/FirestoreInsightsRepository'
+import { getOfficialRaceResults } from '@/infrastructure/repositories/JsonRaceResultRepository'
+import { officialResultsByActivityId, type OfficialRaceResult } from '@/domain/activity/raceResult'
+import { readVerifiedCachedInsight, readVerifiedInsight } from '@/infrastructure/repositories/FirestoreInsightsRepository'
 import type { Insight } from '@/lib/gemini'
 
-function buildContext(activity: Activity, activities: Activity[], planned: PlannedWorkout[]): RunVerdictContext {
+function buildContext(
+  activity: Activity,
+  activities: Activity[],
+  planned: PlannedWorkout[],
+  officialResults: OfficialRaceResult[],
+): RunVerdictContext {
   return {
     activity,
-    history: runHistory(activity, activities),
+    history: runHistory(activity, activities, officialResults),
     planned: planned.find((workout) => workout.date === activity.date.slice(0, 10)) ?? null,
+    official: officialResultsByActivityId(officialResults).get(activity.id) ?? null,
   }
 }
 
-/**
- * Every run with the history behind it. The generator needs them all to know
- * which verdicts have gone stale, so the plan and the activity list are read
- * once here rather than once per run.
- */
 export function getRunVerdictContexts(): RunVerdictContext[] {
   const activities = getAllActivities()
   const planned = getAllPlannedWorkouts()
-  return activities.map((activity) => buildContext(activity, activities, planned))
+  const officialResults = getOfficialRaceResults()
+  return activities.map((activity) => buildContext(activity, activities, planned, officialResults))
 }
 
-// generateStaticParams pre-renders one page per run, all in this one build
-// process - the only place hundreds of individual Firestore reads used to race
-// their own timeout. Fetched once, on first use, and reused for the rest of the
-// build; a live request (ISR revalidation, dev server) never touches it, so a
-// freshly generated verdict is visible the instant readVerifiedInsight sees it.
-let buildVerdicts: Promise<Map<string, CachedInsight>> | null = null
-
-function isProductionBuild(): boolean {
-  return process.env.NEXT_PHASE === PHASE_PRODUCTION_BUILD
-}
-
-/** The AI verdict for one run, or null so the card keeps its rules-based copy. */
 export async function getRunVerdictInsight(activity: Activity): Promise<Insight | null> {
-  const context = buildContext(activity, getAllActivities(), getAllPlannedWorkouts())
-  const surface = runVerdictSurface(activity.id)
-  const hash = runVerdictInsightHash(context)
+  const context = buildContext(activity, getAllActivities(), getAllPlannedWorkouts(), getOfficialRaceResults())
+  return readVerifiedInsight(runVerdictSurface(activity.id), runVerdictInsightHash(context))
+}
 
-  if (!isProductionBuild()) return readVerifiedInsight(surface, hash)
-  if (!process.env.FIREBASE_PROJECT_ID) return null
+export interface LatestRunVerdict {
+  activity: Activity
+  verdict: Insight | null
+  generatedAt: string | null
+}
 
-  try {
-    if (!buildVerdicts) buildVerdicts = getCachedInsightsByPrefix(RUN_VERDICT_PREFIX)
-    return servableInsight((await buildVerdicts).get(surface), hash)
-  } catch {
-    return null
+/**
+ * The newest run on this deployment together with the state of its verdict.
+ *
+ * A caller waiting on a just-synced run needs all three parts: which run is
+ * newest, whether its verdict has been written, and when - because the verdict
+ * that was already there before the sync is not the one it is waiting for.
+ */
+export async function getLatestRunVerdict(): Promise<LatestRunVerdict | null> {
+  const activities = getAllActivities()
+  const activity = activities[0]
+  if (!activity) return null
+
+  const context = buildContext(activity, activities, getAllPlannedWorkouts(), getOfficialRaceResults())
+  const cached = await readVerifiedCachedInsight(runVerdictSurface(activity.id), runVerdictInsightHash(context))
+
+  return {
+    activity,
+    verdict: cached ? { headline: cached.headline, body: cached.body, bullets: cached.bullets } : null,
+    generatedAt: cached?.generatedAt ?? null,
   }
 }

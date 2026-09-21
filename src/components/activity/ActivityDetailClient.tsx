@@ -4,22 +4,20 @@ import { useState } from 'react'
 import type { Activity } from '@/domain/activity/types'
 import { aerobicDecoupling } from '@/domain/activity/decoupling'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
+import type { DynamicsBaseline } from '@/application/usecases/GetDynamicsBaseline'
 import type { HrBounds } from '@/domain/training/trimp'
 import type { ShoeTag } from '@/domain/shoe/types'
 import { ActivityMapClient } from './ActivityMapClient'
 import { NoRouteMap } from './ActivityMap'
 import { RunVerdict } from './RunVerdict'
 import { ZoneBar } from './ZoneBar'
-import { HrChart } from './HrChart'
-import { ElevationChart } from './ElevationChart'
-import { PaceChart } from './PaceChart'
-import { CadenceChart } from './CadenceChart'
+import { ChartStack } from './ChartStack'
 import { KmSplits } from './KmSplits'
 import { TrainingEffect } from './TrainingEffect'
 import { AerobicDecoupling } from './AerobicDecoupling'
 import { BestEfforts } from './BestEfforts'
 import { RunningDynamics } from './RunningDynamics'
-import { formatClock, formatDistance, formatDurationShort } from '@/lib/formatters'
+import { formatClock, formatDistance, formatDuration } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import type { Insight } from '@/lib/gemini'
 import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
@@ -32,22 +30,22 @@ interface Props {
   qualifiedEfforts?: QualifiedEffort[]
   aiVerdict: Insight | null
   shoe: ShoeTag | null
+  dynamicsBaseline: DynamicsBaseline | null
 }
 
-type TabId = 'overview' | 'splits' | 'charts' | 'dynamics'
+type TabId = 'overview' | 'intervals' | 'charts' | 'dynamics'
 
-
-// The primary stat row is capped at the 4 numbers the mockup specifies
-// (distance/time/pace/HR) - everything else becomes secondary stats inside
-// the Overview tab instead of wrapping the header row onto a second line.
 function buildPrimaryStats(activity: Activity): Metric[] {
+  // MetricGrid has had a dedicated unit slot all along; this call site put the
+  // unit in the label instead, which is why duration was the one stat with none.
   const stats: Metric[] = [
     {
       value: formatDistance(activity.distanceKm),
-      label: t.units.km,
+      unit: t.units.km,
+      label: t.activity.stats.distance,
     },
     {
-      value: formatDurationShort(activity.durationSeconds),
+      value: formatDuration(activity.durationSeconds),
       label: t.activity.stats.duration,
     },
   ]
@@ -55,22 +53,23 @@ function buildPrimaryStats(activity: Activity): Metric[] {
   if (activity.paceSecPerKm) {
     stats.push({
       value: formatClock(activity.paceSecPerKm),
-      label: t.units.perKm,
+      unit: t.units.perKm,
+      label: t.activity.stats.pace,
     })
   }
 
   if (activity.avgHeartRate) {
     stats.push({
       value: `${activity.avgHeartRate}`,
-      label: t.units.bpm,
+      unit: t.units.bpm,
+      label: t.activity.stats.avgHr,
     })
   }
 
   return stats
 }
 
-
-export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, shoe }: Props) {
+export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, shoe, dynamicsBaseline }: Props) {
   const [tab, setTab] = useState<TabId>('overview')
   const stats = buildPrimaryStats(activity)
   const hasSecondaryCharts = !!(activity.elevationProfile || activity.paceSamples || activity.cadenceSamples)
@@ -85,7 +84,7 @@ export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, sh
 
   const tabs = [
     { id: 'overview' as const, label: t.activity.tabs.overview, show: true },
-    { id: 'splits' as const, label: t.activity.tabs.splits, show: hasSplits },
+    { id: 'intervals' as const, label: t.activity.tabs.intervals, show: hasSplits },
     { id: 'charts' as const, label: t.activity.tabs.charts, show: hasCharts },
     { id: 'dynamics' as const, label: t.activity.tabs.dynamics, show: hasDynamics },
   ].filter((item) => item.show)
@@ -107,9 +106,9 @@ export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, sh
         )}
       </div>
 
-      <RunVerdict activity={activity} aiVerdict={aiVerdict} />
-
       <MetricGrid metrics={stats} className="grid-cols-4 px-1 text-center" />
+
+      <RunVerdict activity={activity} aiVerdict={aiVerdict} />
 
       {!activity.avgHeartRate && (
         <p className="flex items-center justify-center gap-2 text-caption text-subtle-2">
@@ -121,7 +120,7 @@ export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, sh
       )}
 
       {tabs.length > 1 && (
-        <div className="sticky top-[max(var(--safe-top),8px)] z-10 -mx-4 mb-3 px-4 pb-1 sm:-mx-6 sm:px-6">
+        <div className="sticky top-[var(--top-scrim)] z-30 -mx-4 mb-3 px-4 pb-1 sm:-mx-6 sm:px-6">
           <GlassSurface
             as="div"
             variant="card"
@@ -149,6 +148,8 @@ export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, sh
 
       {tab === 'overview' && (
         <>
+          <TrainingEffect aer={activity.aerTrainingEffect} ana={activity.anaTrainingEffect} />
+
           {activity.hrZones.length > 0 && (
             <ZoneBar
               hrZones={activity.hrZones}
@@ -156,56 +157,33 @@ export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, sh
               maxHr={activity.hrSamples ? Math.max(...activity.hrSamples) : null}
             />
           )}
-          <TrainingEffect aer={activity.aerTrainingEffect} ana={activity.anaTrainingEffect} />
-          <AerobicDecoupling decoupling={aerobicDecoupling(activity)} />
+          <AerobicDecoupling
+            decoupling={aerobicDecoupling(activity)}
+            onShowCharts={hasCharts ? () => setTab('charts') : undefined}
+          />
           {activity.bestEfforts && (
             <BestEfforts bestEfforts={activity.bestEfforts} qualifiedEfforts={qualifiedEfforts} />
           )}
         </>
       )}
 
-      {tab === 'splits' && <KmSplits activity={activity} />}
+      {tab === 'intervals' && <KmSplits activity={activity} />}
 
       {tab === 'charts' && (
-        <>
-          {activity.hrSamples && (
-            <>
-              <p className="widget-label text-muted-foreground">{t.activity.charts.sectionPhysiology}</p>
-              <HrChart samples={activity.hrSamples} avgHr={activity.avgHeartRate} distanceKm={activity.distanceKm} />
-            </>
-          )}
-          {hasSecondaryCharts && (
-            <>
-              <p className="widget-label text-muted-foreground">{t.activity.charts.sectionPerformance}</p>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {activity.paceSamples && (
-                  <PaceChart
-                    samples={activity.paceSamples}
-                    avgPaceSecPerKm={activity.paceSecPerKm}
-                    distanceKm={activity.distanceKm}
-                  />
-                )}
-                {activity.cadenceSamples && (
-                  <CadenceChart
-                    samples={activity.cadenceSamples}
-                    avgCadence={activity.cadenceSpm}
-                    distanceKm={activity.distanceKm}
-                  />
-                )}
-                {activity.elevationProfile && (
-                  <ElevationChart
-                    samples={activity.elevationProfile}
-                    distanceKm={activity.distanceKm}
-                    elevationGain={activity.elevationGain}
-                  />
-                )}
-              </div>
-            </>
-          )}
-        </>
+        <ChartStack
+          distanceKm={activity.distanceKm}
+          hrSamples={activity.hrSamples}
+          avgHr={activity.avgHeartRate}
+          paceSamples={activity.paceSamples}
+          avgPaceSecPerKm={activity.paceSecPerKm}
+          cadenceSamples={activity.cadenceSamples}
+          avgCadence={activity.cadenceSpm}
+          elevationProfile={activity.elevationProfile}
+          elevationGain={activity.elevationGain}
+        />
       )}
 
-      {tab === 'dynamics' && <RunningDynamics activity={activity} />}
+      {tab === 'dynamics' && <RunningDynamics activity={activity} baseline={dynamicsBaseline} />}
     </>
   )
 }

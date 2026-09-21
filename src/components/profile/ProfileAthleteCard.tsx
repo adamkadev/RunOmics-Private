@@ -1,29 +1,45 @@
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
+import { CardTitle, SectionDivider } from '@/components/ui/SectionLabel'
 import type { AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import type { ZoneShare } from '@/application/usecases/GetAnalyticsData'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { CHART_COLORS, ZONE_HEADLINE_COLORS } from '@/lib/colors'
+import { ZONE_COLOR_CLASSES } from '@/lib/colors'
+import { formatDurationWords } from '@/lib/formatters'
+import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
-const VIOLET = CHART_COLORS.efficiency
 
-// The three headline zones the mockup surfaces - the full ladder lives on the
-// Athlete detail. Accent-independent so Z5/Z4/Z2 keep their heat/threshold/easy
-// meaning.
-const ZONE_ROWS: { zone: number; label: string; color: string }[] = [
-  { zone: 5, label: t.profile.athlete.zoneRows[5]!, color: ZONE_HEADLINE_COLORS[5] },
-  { zone: 4, label: t.profile.athlete.zoneRows[4]!, color: ZONE_HEADLINE_COLORS[4] },
-  { zone: 2, label: t.profile.athlete.zoneRows[2]!, color: ZONE_HEADLINE_COLORS[2] },
-]
+interface HeadlineMetric {
+  label: string
+  value: string
+  unit?: string
+  valueColor?: string
+}
 
-function Tile({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
+// Z1 and Z3 arrive in recentZoneTime and used to be dropped on the floor, so the
+// bars never summed to the time actually run. The ramp is the theme-aware one
+// every other zone surface uses.
+const ZONE_ROWS: { zone: number; label: string; barClass: string }[] = [5, 4, 3, 2, 1].map((zone) => ({
+  zone,
+  label: t.profile.athlete.zoneRows[zone]!,
+  barClass: ZONE_COLOR_CLASSES[zone]!.bg,
+}))
+
+const ZONE_LABEL_COLOR = 'var(--muted-foreground)'
+const ZONE_TRACK_COLOR = 'rgba(148,178,220,.12)'
+
+function Tile({ label, value, unit, valueColor }: HeadlineMetric) {
   return (
     <div className="rounded-xl bg-foreground/[0.04] p-2.5 text-center">
       <div className="text-micro font-semibold uppercase tracking-[0.03em] text-subtle">{label}</div>
-      <div className="mt-[3px] font-display text-lg font-bold tabular-nums" style={valueColor ? { color: valueColor } : undefined}>
+      <div
+        className="mt-[3px] font-display text-lg font-bold tabular-nums"
+        style={valueColor ? { color: valueColor } : undefined}
+      >
         {value}
       </div>
+      {unit && <div className="whitespace-nowrap text-caption font-semibold text-muted-foreground">{unit}</div>}
     </div>
   )
 }
@@ -34,41 +50,59 @@ interface Props {
   recentZoneTime: ZoneShare[]
 }
 
-// The merged Athlete reference: VO2max / VMA / LTHR at a glance, the three key
-// HR zones as bars, tapping through to the full sheet. Read-only display.
 export function ProfileAthleteCard({ athlete, latestVo2max, recentZoneTime }: Props) {
   const a = t.profile.athlete
   const byZone = new Map(recentZoneTime.map((z) => [z.zone, z.seconds]))
   const maxSeconds = Math.max(1, ...ZONE_ROWS.map((r) => byZone.get(r.zone) ?? 0))
+  const metrics: HeadlineMetric[] = []
+  if (latestVo2max !== null) {
+    // One decimal everywhere VO₂max is printed - Analytics already shows one,
+    // and rounding to a whole number here made the same metric look like two.
+    metrics.push({ label: a.vo2maxShort, value: latestVo2max.toFixed(1), unit: t.units.mlKgMin })
+  }
+  if (athlete.vmaKmh !== undefined) {
+    metrics.push({ label: a.vmaShort, value: String(athlete.vmaKmh), unit: t.units.kmh })
+  }
+  if (athlete.lthrBpm !== undefined) {
+    metrics.push({ label: a.lthrShort, value: String(athlete.lthrBpm), unit: t.units.bpm })
+  }
+  const metricColumns = metrics.length === 1 ? 'grid-cols-1' : metrics.length === 2 ? 'grid-cols-2' : 'grid-cols-3'
 
   return (
     <GlassSurface variant="card" className="p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-bold text-foreground">{a.title}</h2>
+        <CardTitle as="h2">{a.title}</CardTitle>
         <Link href="/athlete" className="flex min-h-6 items-center gap-0.5 text-xs font-semibold text-accent-text active:scale-95">
           {a.details}
           <ChevronRight size={14} />
         </Link>
       </div>
 
-      <div className="mb-3.5 grid grid-cols-3 gap-2.5">
-        <Tile label={a.vo2maxShort} value={latestVo2max !== null ? String(Math.round(latestVo2max)) : a.notSet} valueColor={VIOLET} />
-        <Tile label={a.vmaShort} value={athlete.vmaKmh !== undefined ? String(athlete.vmaKmh) : a.notSet} />
-        <Tile label={a.lthrShort} value={athlete.lthrBpm !== undefined ? String(athlete.lthrBpm) : a.notSet} />
-      </div>
+      {metrics.length > 0 ? (
+        <div className={`mb-3.5 grid gap-2.5 ${metricColumns}`}>
+          {metrics.map((metric) => <Tile key={metric.label} {...metric} />)}
+        </div>
+      ) : null}
 
-      <div className="flex flex-col gap-[7px]">
+      <SectionDivider className="mb-2">
+        {`${t.profile.trainingZones.title} · ${t.profile.trainingZones.recentWeeks}`}
+      </SectionDivider>
+
+      <div className="flex flex-col gap-[9px]">
         {ZONE_ROWS.map((row) => {
           const seconds = byZone.get(row.zone) ?? 0
           const width = Math.round((seconds / maxSeconds) * 100)
-          const minutes = Math.round(seconds / 60)
+          // A bare "m" sat two cards away from metres of elevation on the same page.
+          const minutes = formatDurationWords(seconds)
           return (
             <div key={row.zone} className="flex items-center gap-2">
-              <span className="w-11 shrink-0 text-micro text-subtle">{row.label}</span>
-              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-foreground/[0.08]">
-                <div className="h-full rounded-full" style={{ width: `${width}%`, background: row.color }} />
+              <span className="w-[62px] shrink-0 whitespace-nowrap text-[12px]" style={{ color: ZONE_LABEL_COLOR }}>
+                {row.label}
+              </span>
+              <div className="h-[7px] flex-1 overflow-hidden rounded-[4px]" style={{ background: ZONE_TRACK_COLOR }}>
+                <div className={cn('h-full rounded-[4px]', row.barClass)} style={{ width: `${width}%` }} />
               </div>
-              <span className="w-9 shrink-0 text-right text-micro text-subtle">{minutes}m</span>
+              <span className="w-[46px] shrink-0 text-right text-micro tabular-nums text-subtle">{minutes}</span>
             </div>
           )
         })}

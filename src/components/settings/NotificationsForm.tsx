@@ -37,8 +37,8 @@ const NOTIF_TYPES: { key: NotifType }[] = [
   { key: 'races' },
 ]
 
-function Toggle({ enabled, busy, disabled: isDisabled, onToggle }: {
-  enabled: boolean; busy: boolean; disabled: boolean; onToggle: () => void
+function Toggle({ enabled, busy, onToggle }: {
+  enabled: boolean; busy: boolean; onToggle: () => void
 }) {
   return (
     <button
@@ -46,7 +46,7 @@ function Toggle({ enabled, busy, disabled: isDisabled, onToggle }: {
       role="switch"
       aria-checked={enabled}
       onClick={onToggle}
-      disabled={isDisabled || busy}
+      disabled={busy}
       className={cn(
         'relative h-5 w-9 shrink-0 rounded-full p-0 transition-colors disabled:opacity-40',
         'after:absolute after:-inset-[10px] after:content-[""]',
@@ -104,33 +104,29 @@ export function NotificationsForm() {
       return
     }
 
-    if (status === 'idle') {
-      setStatus('busy')
-      try {
-        await enablePushNotifications()
-        const next = { ...prefs, [type]: true }
-        setPrefs(next)
-        savePrefs(next)
-        setStatus('enabled')
-      } catch {
-        setStatus(Notification.permission === 'denied' ? 'denied' : 'idle')
-        showToast(n.error, false)
-      }
+    // Not enabled yet, whatever the reason (never asked, previously denied, or
+    // this browser turns out not to support it) - a toggle tap is the request.
+    // The browser's own permission prompt is the only "blocked" messaging a
+    // user needs; a persistent banner above it was redundant with UI it can't
+    // act on.
+    setStatus('busy')
+    try {
+      await enablePushNotifications()
+      const next = { ...prefs, [type]: true }
+      setPrefs(next)
+      savePrefs(next)
+      setStatus('enabled')
+    } catch {
+      setStatus(typeof Notification !== 'undefined' && Notification.permission === 'denied' ? 'denied' : 'idle')
+      showToast(n.error, false)
     }
   }
 
-  const blocked = status === 'unsupported' || status === 'denied'
   const busy = status === 'loading' || status === 'busy'
 
   return (
     <GlassSurface variant="card" className="p-5">
       <h2 className="mb-4 text-sm font-bold text-foreground">{n.title}</h2>
-
-      {blocked && (
-        <p className="mb-3 text-xs text-muted-foreground">
-          {status === 'unsupported' ? n.unsupported : n.denied}
-        </p>
-      )}
 
       <div className="space-y-4">
         {NOTIF_TYPES.map(({ key }) => {
@@ -145,7 +141,6 @@ export function NotificationsForm() {
               <Toggle
                 enabled={enabled}
                 busy={busy}
-                disabled={blocked}
                 onToggle={() => handleToggle(key)}
               />
             </div>

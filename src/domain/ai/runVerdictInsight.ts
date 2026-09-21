@@ -3,6 +3,7 @@ import type { VerdictTone } from '@/domain/activity/runVerdict'
 import { expectedRpe, runVerdictTone } from '@/domain/activity/runVerdict'
 import type { RunHistory, TypeBaseline } from '@/domain/activity/runHistory'
 import { sessionExecution, type SessionExecution } from '@/domain/activity/sessionExecution'
+import { resolvePerformance, type OfficialRaceResult } from '@/domain/activity/raceResult'
 import { formatClock } from '@/lib/formatters'
 import { insightHash } from './insightHash'
 import { avoidClause, systemInstruction } from './prompt'
@@ -14,26 +15,14 @@ export function runVerdictSurface(activityId: string): string {
   return `${RUN_VERDICT_PREFIX}${activityId}`
 }
 
-// How far back a run is still likely to be opened. Past a training block, a run
-// is only reached through the records list, so that is the other way in.
 const VERDICT_HORIZON_DAYS = 90
 
-// A run this recent is the one the athlete just finished and is about to open,
-// so its verdict is generated ahead of the rest of the copy rather than behind
-// it. Wider than a day because a sync can land days late, and because the
-// verdict for a run only becomes reachable once the deployment carrying it is
-// live - which is the run after the one that synced it.
 const FRESH_VERDICT_DAYS = 3
 
 function daysSince(date: string, now: Date): number {
   return (now.getTime() - new Date(date.slice(0, 10) + 'T00:00:00').getTime()) / 86_400_000
 }
 
-/**
- * Whether a run is worth a verdict at all. Generating one for every run ever
- * synced spends the day's quota on pages nobody opens; a run that already has a
- * cached verdict keeps it either way, this only gates writing new ones.
- */
 export function deservesVerdict(
   activity: { id: string; date: string },
   recordActivityIds: ReadonlySet<string>,
@@ -43,21 +32,10 @@ export function deservesVerdict(
   return daysSince(activity.date, now) <= VERDICT_HORIZON_DAYS
 }
 
-/** Whether this run is recent enough to be generated before the other surfaces. */
 export function isFreshRun(activity: { date: string }, now: Date): boolean {
   return daysSince(activity.date, now) <= FRESH_VERDICT_DAYS
 }
 
-// The watch's own sensor rides on the wrist and reads ~6°C above the air it is
-// meant to describe (+8.8°C near freezing, +2.3°C in the high twenties), so the
-// conditions now come from the weather - apparent rather than air temperature,
-// because it already folds in the wind and humidity the effort actually paid for.
-//
-// Runs before this date deliberately keep the old sensor reading: a verdict is
-// served only while its cached hash still matches these facts, so moving them
-// over would strip the copy they already have rather than improve it. A run
-// still waiting on its conditions holds its reading too, so it migrates once
-// when the weather lands instead of regenerating on the way there.
 const WEATHER_FACTS_FROM = '2026-05-08'
 
 function verdictTemperature(activity: Activity): number | null {
@@ -67,21 +45,30 @@ function verdictTemperature(activity: Activity): number | null {
 
 export interface RunVerdictContext {
   activity: Activity
-  /** How this run stands against the ones that came before it. */
   history: RunHistory
-  /** What the plan asked for that day, when Garmin held a session for it. */
   planned: PlannedWorkout | null
+  official?: OfficialRaceResult | null
 }
 
-function facts({ activity, history, planned }: RunVerdictContext) {
+function facts({ activity, history, planned, official }: RunVerdictContext) {
   const execution = sessionExecution(activity)
+  const performance = resolvePerformance(activity, official ?? null)
+  const certified = performance.source === 'official'
 
   return {
     tone: runVerdictTone(activity),
     type: activity.type,
-    distanceKm: activity.distanceKm,
-    minutes: Math.round(activity.durationSeconds / 60),
-    pace: activity.paceSecPerKm,
+    distanceKm: Math.round(performance.distanceKm * 100) / 100,
+    minutes: Math.round(performance.durationSeconds / 60),
+    pace: performance.paceSecPerKm,
+    ...(certified
+      ? {
+          performanceSource: performance.source,
+          chipTimeSeconds: performance.durationSeconds,
+          overallPlace: performance.overallPlace ?? null,
+          finisherCount: performance.finisherCount ?? null,
+        }
+      : {}),
     avgHr: activity.avgHeartRate,
     rpe: activity.rpe,
     aerTrainingEffect: activity.aerTrainingEffect,
@@ -102,8 +89,6 @@ function facts({ activity, history, planned }: RunVerdictContext) {
   }
 }
 
-// The shape of the session in one line, because it is the only material the
-// model has that the stat grid under the card does not already show.
 function executionLine(execution: NonNullable<SessionExecution>): string {
   const drift = execution.hrDriftBpm === null ? '' : `, heart rate ${signed(execution.hrDriftBpm)} bpm across it`
   if (execution.kind === 'steady') {
@@ -120,9 +105,24 @@ export function runVerdictInsightHash(context: RunVerdictContext): string {
   return insightHash(facts(context))
 }
 
-// Every tone is stated relative to what the session type called for, because
-// that is what the tone now measures: RPE 8 is the point of a threshold session
-// and a red flag on an easy day.
+type WrittenVerdict = { headline: string; body: string }
+
+export function verdictLines(written: WrittenVerdict[]): string[] {
+  return written.map((verdict) => `${verdict.headline} / ${verdict.body}`)
+}
+
+function headlineKey(headline: string): string {
+  return headline.trim().toLowerCase().replace(/[.!?]+$/, '')
+}
+
+export function repeatsEarlierVerdict(
+  candidate: Pick<WrittenVerdict, 'headline'>,
+  written: Pick<WrittenVerdict, 'headline'>[]
+): boolean {
+  const key = headlineKey(candidate.headline)
+  return written.some((earlier) => headlineKey(earlier.headline) === key)
+}
+
 const TONE_RULES: Record<VerdictTone, string> = {
   positive: 'The effort landed where this session type calls for. Say what that earned.',
   neutral: 'The effort drifted from what this session type calls for, without doing harm. Describe it plainly, without forced praise.',
@@ -132,36 +132,22 @@ const TONE_RULES: Record<VerdictTone, string> = {
 export const RUN_VERDICT_SYSTEM_INSTRUCTION = [
   systemInstruction(
     'You are a running coach writing the verdict card for a single run an athlete just finished.',
-    // The stat grid sits directly under this card, so reciting distance, time
-    // and pace back would add nothing the athlete cannot already see.
     'one sentence on how the session held together and what it earned',
     RUN_VERDICT_LIMITS
   ),
   'Never contradict the tone you are given - it drives the color of the card.',
-  // The days around the run explain it (a fifth run in a week reads differently
-  // from a first one back), but the card is not the place to plan the next one.
   'Judge this run. The days around it are context for judging it, never the subject, and never advise what to do next.',
-  // Without this the model writes "you held 5:35/km over 7.03 km at 151 bpm",
-  // which is the three numbers printed immediately below the card.
   'The distance, duration, average pace and average heart rate are already printed under your text: never state them. Build the sentence on how the effort held up instead - the fade between reps, the spread between kilometres, the heart rate drift.',
   'When no execution detail is given, say what the effort produced rather than describing the run back.',
-  // Heat and hills make a run feel harder than its type intends; without this
-  // the model reads any gap as a discipline problem, which is often unfair.
   'When the effort sits outside the expected band, look for a cause in the other facts (heat, elevation) and name it rather than assuming the athlete misjudged the session.',
-  // The one thing a coach has that a stat grid does not: everything the athlete
-  // ran before this. Same pace at a lower heart rate is the whole point.
-  'The comparison against what the athlete ran before is the most useful thing you can write: prefer it to any other angle when it is given.',
+  'Several angles are open to you: how the effort held together, the comparison against what the athlete ran before, the conditions it was run in, what the plan asked for. Pick the one this particular run makes the most of - never default to the comparison because it is there.',
   'You may state a difference against those past runs ("8s/km quicker", "5 bpm lower", "your best 10K in 6 months"); what is banned is repeating the numbers of this run back.',
   'When a planned session is given, judge what was run against what was asked, and say so plainly if they differ.',
 ].join(' ')
 
-// Under these, a difference is day-to-day noise, and handing it to the model as
-// a number is how "1 bpm lower" ends up sold as progress.
 const PACE_NOISE_SEC_PER_KM = 3
 const HR_NOISE_BPM = 3
 
-// Deltas are computed here rather than left to the model: a coach who gets the
-// arithmetic wrong is worse than one who says nothing.
 function baselineLine(type: string, baseline: TypeBaseline, activity: Activity): string {
   const paceDelta = activity.paceSecPerKm !== null ? Math.round(baseline.paceSecPerKm - activity.paceSecPerKm) : null
   const hrDelta = baseline.avgHr !== null && activity.avgHeartRate !== null ? baseline.avgHr - activity.avgHeartRate : null
@@ -184,8 +170,6 @@ function baselineLine(type: string, baseline: TypeBaseline, activity: Activity):
 function plannedLine(planned: PlannedWorkout): string {
   const minutes = planned.durationSecs ? `~${Math.round(planned.durationSecs / 60)} min` : null
 
-  // Garmin names a session after its own type when the plan holds no structure,
-  // and "the plan asked for a Base (Base)" reads like a bug.
   if (!planned.name || planned.name === planned.type) {
     const shape = [planned.type ? `a ${planned.type}` : 'a session', minutes ? `of ${minutes}` : null]
       .filter((part) => part !== null)
@@ -204,6 +188,12 @@ function standingLine(label: string, daysSinceBetter: number | null): string {
   return `- No run in the last ${Math.round(daysSinceBetter / DAYS_PER_MONTH)} months went faster over ${label}`
 }
 
+function placingLine(official: OfficialRaceResult | null | undefined): string | null {
+  if (!official?.overallPlace) return null
+  const field = official.finisherCount ? ` of ${official.finisherCount}` : ''
+  return `- Finished ${official.overallPlace}${field}`
+}
+
 function cadenceLine(runs: number, daysSinceLastRun: number): string {
   const gap =
     daysSinceLastRun === 0
@@ -212,7 +202,7 @@ function cadenceLine(runs: number, daysSinceLastRun: number): string {
   return `- ${runs} run${runs === 1 ? '' : 's'} in the 7 days up to it, ${gap}`
 }
 
-export function runVerdictInsightPrompt(context: RunVerdictContext, recentHeadlines: string[]): string {
+export function runVerdictInsightPrompt(context: RunVerdictContext, recentVerdicts: string[]): string {
   const { activity, history, planned } = context
   const f = facts(context)
 
@@ -227,8 +217,11 @@ export function runVerdictInsightPrompt(context: RunVerdictContext, recentHeadli
     '',
     'Facts:',
     `- Session type: ${f.type}`,
-    `- Distance: ${f.distanceKm} km in ${f.minutes} min`,
+    context.official
+      ? `- Official result over the certified course: ${f.distanceKm} km in ${f.minutes} min (chip time)`
+      : `- Distance: ${f.distanceKm} km in ${f.minutes} min`,
     f.pace ? `- Pace: ${formatClock(f.pace)} /km` : null,
+    placingLine(context.official),
     f.avgHr ? `- Average heart rate: ${f.avgHr} bpm` : null,
     f.rpe !== null
       ? `- Perceived effort (RPE 1-10): ${f.rpe}, against ${expectedRpe(activity).join(' to ')} expected for a ${f.type} of this length`
@@ -240,7 +233,7 @@ export function runVerdictInsightPrompt(context: RunVerdictContext, recentHeadli
     f.execution ? `- How it was held together: ${f.execution}` : null,
     planned ? plannedLine(planned) : null,
     ...(past.length ? ['', 'What came before it:', ...past] : []),
-    avoidClause(recentHeadlines),
+    avoidClause(recentVerdicts),
   ]
     .filter((line) => line !== null)
     .join('\n')

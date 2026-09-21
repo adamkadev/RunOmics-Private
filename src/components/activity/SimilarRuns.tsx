@@ -7,8 +7,9 @@ import type { SimilarRun, SimilarRunsData } from '@/application/usecases/GetSimi
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
+import { lineInterpolation } from '@/domain/timeWindow'
 import { CHART_COLORS } from '@/lib/colors'
-import { formatClock, formatDateWithYear, formatDurationShort, formatPace } from '@/lib/formatters'
+import { formatClock, formatDate, formatDuration, formatPace } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -45,8 +46,6 @@ interface DotProps {
   onSelect?: (id: string) => void
 }
 
-// The run being viewed gets a filled, larger dot so it's findable in the trend.
-// Every other dot is a shortcut to that run's own activity page.
 function RunDot({ cx, cy, payload, onSelect }: DotProps) {
   if (cx === undefined || cy === undefined || !payload) return null
   const { isCurrent, id } = payload
@@ -74,10 +73,10 @@ function RunRow({ run, bestPace }: { run: SimilarRun; bestPace: number }) {
         {run.rank === 1 ? '🥇' : `#${run.rank}`}
       </span>
       <span className={cn('min-w-0 flex-1 truncate text-sm', run.isCurrent ? 'font-semibold text-foreground' : 'text-foreground/80')}>
-        {run.isCurrent ? s.thisRun : formatDateWithYear(run.date)}
+        {run.isCurrent ? s.thisRun : formatDate(run.date, { year: 'always' })}
       </span>
       <span className="text-sm font-semibold tabular-nums text-foreground">
-        {formatDurationShort(run.durationSeconds)}
+        {formatDuration(run.durationSeconds)}
       </span>
       <span className="w-16 shrink-0 text-right text-xs tabular-nums text-subtle">
         {deltaSec <= 0 ? s.record : s.paceDelta(deltaSec)}
@@ -108,7 +107,8 @@ export function SimilarRuns({ data }: { data: SimilarRunsData }) {
 
   const chartData: ChartPoint[] = data.runs.map((run) => ({
     id: run.id,
-    label: formatDateWithYear(run.date),
+    // An 11px axis tick has no room for a weekday.
+    label: formatDate(run.date, { style: 'bare', year: 'always' }),
     pace: run.paceSecPerKm,
     isCurrent: run.isCurrent,
   }))
@@ -152,7 +152,7 @@ export function SimilarRuns({ data }: { data: SimilarRunsData }) {
             />
             <Tooltip content={<CustomTooltip />} cursor={{ stroke: CHART_COLORS.tooltipCursor }} />
             <Line
-              type="monotone"
+              type={lineInterpolation(chartData.length)}
               dataKey="pace"
               stroke={CHART_COLORS.pace}
               strokeWidth={2.5}

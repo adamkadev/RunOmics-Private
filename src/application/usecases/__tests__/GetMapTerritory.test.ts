@@ -66,7 +66,6 @@ describe('getMapTerritory', () => {
   it('measures how far the runs spread from the centre, as a median', () => {
     withMap()
 
-    // One trace on the centre, one a degree of latitude away (~111.3 km).
     expect(getMapTerritory()?.medianRadiusKm).toBe(55.7)
   })
 

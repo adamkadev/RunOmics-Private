@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   formatClock,
-  formatDate,
-  formatDateWithYear,
   formatDistance,
   formatDuration,
+  formatKm,
   formatPace,
   monthLabel,
   parseTimeInput,
@@ -21,6 +20,24 @@ describe('formatDuration', () => {
 
   it('pads minutes and seconds under 10', () => {
     expect(formatDuration(3605)).toBe('1:00:05')
+  })
+})
+
+describe('formatKm', () => {
+  it('groups thousands so 1705 never renders as 1705', () => {
+    expect(formatKm(1705)).toBe('1,705')
+  })
+
+  it('rounds to whole kilometres by default', () => {
+    expect(formatKm(29.4)).toBe('29')
+  })
+
+  it('keeps the requested decimals, grouped', () => {
+    expect(formatKm(1234.56, 1)).toBe('1,234.6')
+  })
+
+  it('leaves values under a thousand ungrouped', () => {
+    expect(formatKm(295)).toBe('295')
   })
 })
 
@@ -51,18 +68,6 @@ describe('formatDistance', () => {
 
   it('shows 1 decimal at 10 km and above', () => {
     expect(formatDistance(10.567)).toBe('10.6')
-  })
-})
-
-describe('formatDate', () => {
-  it('formats an ISO date as a short weekday/month/day', () => {
-    expect(formatDate('2026-03-28')).toBe('Sat, Mar 28')
-  })
-})
-
-describe('formatDateWithYear', () => {
-  it('formats an ISO date with month/day/year', () => {
-    expect(formatDateWithYear('2025-03-28')).toBe('Mar 28, 2025')
   })
 })
 

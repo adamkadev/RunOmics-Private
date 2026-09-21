@@ -4,14 +4,19 @@ import { useState, type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
-import { Pill } from '@/components/ui/Pill'
 import type { ProfilePeriodStats } from '@/application/usecases/GetProfileData'
+import { metricDeltaColor } from '@/lib/colors'
+import { formatDelta } from '@/lib/formatters'
+import { round } from '@/lib/math'
 import { t } from '@/i18n'
 
 interface Cell {
   value: ReactNode
   unit?: string
   label: string
+  /** Signed change against the same point last year, in the cell's own unit. */
+  delta?: number
+  noise: number
 }
 
 type Period = 'year' | 'allTime'
@@ -24,43 +29,60 @@ const PERIODS: { id: Period; chip: string }[] = [
 interface Props {
   ytd: ProfilePeriodStats
   allTime: ProfilePeriodStats
+  prevYear: ProfilePeriodStats | null
 }
 
-export function ProfileStatsYtd({ ytd, allTime }: Props) {
+const HOURS = (stats: ProfilePeriodStats) => Math.round(stats.durationSeconds / 3600)
+const THOUSAND_KCAL = (stats: ProfilePeriodStats) => stats.calories / 1000
+const THOUSAND_KCAL_SHOWN = (stats: ProfilePeriodStats) => round(THOUSAND_KCAL(stats), 1)
+
+export function ProfileStatsYtd({ ytd, allTime, prevYear }: Props) {
   const [period, setPeriod] = useState<Period>('year')
   const stats = period === 'year' ? ytd : allTime
+  const prevYearLabel = new Date().getFullYear() - 1
+
+  const baseline = period === 'year' ? prevYear : null
+  const delta = (pick: (stats: ProfilePeriodStats) => number) =>
+    baseline ? pick(stats) - pick(baseline) : undefined
 
   const cells: Cell[] = [
-    { value: <AnimatedValue value={stats.distanceKm} />, unit: t.units.km, label: t.profile.ytd.distance },
-    { value: <AnimatedValue value={Math.round(stats.durationSeconds / 3600)} />, unit: t.units.hour, label: t.profile.ytd.duration },
-    { value: <AnimatedValue value={stats.sessionCount} />, label: t.profile.ytd.sessions },
-    { value: <>+<AnimatedValue value={stats.elevationGainM} /></>, unit: t.units.m, label: t.profile.ytd.elevation },
-    { value: <AnimatedValue value={stats.avgKmPerWeek} decimals={1} />, unit: t.units.km, label: t.profile.ytd.avgPerWeek },
+    { value: <AnimatedValue value={stats.distanceKm} grouped />, unit: t.units.km, label: t.profile.ytd.distance, delta: delta((s) => s.distanceKm), noise: 1 },
+    { value: <AnimatedValue value={HOURS(stats)} grouped />, unit: t.units.hour, label: t.profile.ytd.duration, delta: delta(HOURS), noise: 1 },
+    { value: <AnimatedValue value={stats.sessionCount} grouped />, label: t.profile.ytd.sessions, delta: delta((s) => s.sessionCount), noise: 0 },
+    { value: <AnimatedValue value={stats.elevationGainM} grouped />, unit: t.units.m, label: t.profile.ytd.elevation, delta: delta((s) => s.elevationGainM), noise: 10 },
+    { value: <AnimatedValue value={stats.avgKmPerWeek} decimals={1} grouped />, unit: t.units.km, label: t.profile.ytd.avgPerWeek, delta: delta((s) => s.avgKmPerWeek), noise: 0.5 },
     ...(stats.calories > 0
       ? [{
-          value: <AnimatedValue value={stats.calories / 1000} decimals={1} />,
+          value: <AnimatedValue value={THOUSAND_KCAL(stats)} decimals={1} grouped />,
           unit: `k ${t.units.kcal}`,
           label: t.profile.ytd.calories,
+          delta: delta(THOUSAND_KCAL_SHOWN),
+          noise: 1,
         }]
       : []),
   ]
 
   return (
     <GlassSurface variant="card" className="p-5">
-      {/* The scope chip replaces the old static "This year" heading - one filled
-          chip carries the active window, same selection language as Analytics. */}
-      <div className="mb-3 flex items-center gap-1.5">
+      <div
+        role="tablist"
+        aria-label={t.profile.ytd.thisYearChip}
+        className="mb-3 flex w-fit gap-1 rounded-full border border-foreground/10 bg-foreground/[0.07] p-1"
+      >
         {PERIODS.map((p) => (
-          <Pill
+          <button
             key={p.id}
-            as="button"
-            variant={p.id === period ? 'active' : 'neutral'}
-            className="px-3 py-1.5 text-micro font-semibold uppercase tracking-wide"
-            aria-pressed={p.id === period}
+            type="button"
+            role="tab"
+            aria-selected={p.id === period}
             onClick={() => setPeriod(p.id)}
+            className={cn(
+              'whitespace-nowrap rounded-full px-[18px] py-[7px] text-[13.5px] font-semibold transition-colors',
+              p.id === period ? 'bg-accent text-accent-foreground' : 'text-subtle hover:text-foreground'
+            )}
           >
             {p.chip}
-          </Pill>
+          </button>
         ))}
       </div>
       <div className="grid grid-cols-3 gap-x-3 gap-y-3.5">
@@ -77,7 +99,22 @@ export function ProfileStatsYtd({ ytd, allTime }: Props) {
               <span className="text-lg font-extrabold leading-none tracking-tight text-foreground">{cell.value}</span>
               {cell.unit && <span className="text-caption font-semibold text-muted-foreground">{cell.unit}</span>}
             </div>
-            <div className="mt-0.5 text-caption text-muted-foreground">{cell.label}</div>
+            {/* One line each, always: the label cannot wrap and the delta line is
+                reserved whether or not the cell has a comparison, so all six
+                cells are the same height and the two rows read off one grid. */}
+            <div className="mt-0.5 truncate text-caption text-muted-foreground">{cell.label}</div>
+            <div className="mt-1 h-3 truncate text-micro font-semibold leading-none tabular-nums">
+              {cell.delta === undefined ? (
+                <span className="text-subtle">{t.profile.ytd.noComparison}</span>
+              ) : (
+                <>
+                  <span style={{ color: metricDeltaColor(cell.delta, 'up', cell.noise) }}>
+                    {formatDelta(cell.delta)}
+                  </span>{' '}
+                  <span className="font-medium text-subtle">{t.profile.ytd.vsLastYear(prevYearLabel)}</span>
+                </>
+              )}
+            </div>
           </div>
         ))}
       </div>

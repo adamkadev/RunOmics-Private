@@ -38,7 +38,6 @@ describe('gaugePosition', () => {
   })
 
   it('places the real anaerobic reading well below its band', () => {
-    // From training_load_balance.json: 26 against a 326-652 target.
     expect(gaugePosition(26, 326, 652)).toBeLessThan(15)
   })
 })

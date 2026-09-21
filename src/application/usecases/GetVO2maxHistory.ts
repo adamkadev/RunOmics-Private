@@ -1,4 +1,3 @@
-import { t } from '@/i18n'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import {
@@ -6,6 +5,7 @@ import {
   type Vo2maxSample,
 } from '@/infrastructure/repositories/JsonVo2maxHistoryRepository'
 import { addDays, isoDate } from '@/lib/calendarDate'
+import { AXIS_TICK_DATE, formatDate } from '@/lib/formatters'
 import type { VO2maxRange } from '@/domain/training/vo2maxRanges'
 
 export interface VO2maxPoint {
@@ -31,15 +31,6 @@ export function getLatestVO2max(): number | null {
   return latest?.vo2maxGarmin ?? null
 }
 
-/**
- * The VO2max series, one per window: a point per day over four weeks, then one
- * per month over six months and a year.
- *
- * VO2max drifts by about a point a month, so a denser long view only plots the
- * same trend with more ink. Garmin's own series is used throughout: it keeps
- * the decimal the per-activity readings round away, which is the difference
- * between a trend line and a staircase.
- */
 export function getVO2maxSeries(): VO2maxSeries {
   const { months, days } = getVo2maxSamples()
 
@@ -50,7 +41,6 @@ export function getVO2maxSeries(): VO2maxSeries {
   }
 }
 
-/** The one-year series, for the callers that want a single trend line. */
 export function getVO2maxHistory(range: VO2maxRange = '1y'): VO2maxPoint[] {
   return getVO2maxSeries()[range]
 }
@@ -59,15 +49,11 @@ function monthlyPoints(months: Vo2maxSample[], count: number): VO2maxPoint[] {
   const source = months.length > 0 ? months : monthlyFromActivities()
   return source.slice(-count).map(({ date, vo2max }) => ({
     date,
-    label: format(date, { month: 'short', year: '2-digit' }),
+    label: formatDate(date, { precision: 'month', year: 'always' }),
     value: vo2max,
   }))
 }
 
-/**
- * The last four weeks of daily readings, anchored on the freshest sample rather
- * than on today so a lagging sync empties the chart of nothing.
- */
 function recentPoints(days: Vo2maxSample[]): VO2maxPoint[] {
   const source = days.length > 0 ? days : dailyFromActivities()
   const latest = source[source.length - 1]
@@ -78,19 +64,11 @@ function recentPoints(days: Vo2maxSample[]): VO2maxPoint[] {
     .filter((s) => s.date >= from)
     .map(({ date, vo2max }) => ({
       date,
-      label: format(date, { month: 'short', day: 'numeric' }),
+      label: formatDate(date, AXIS_TICK_DATE),
       value: vo2max,
     }))
 }
 
-function format(date: string, options: Intl.DateTimeFormatOptions): string {
-  return new Date(date + 'T00:00:00').toLocaleDateString(t.locale, options)
-}
-
-/**
- * Per-activity readings, the fallback for as long as vo2max_history.json has
- * not been synced. Garmin only exposes a rounded integer here.
- */
 function dailyFromActivities(): Vo2maxSample[] {
   const byDay = new Map<string, Vo2maxSample>()
   for (const a of getAllActivities()) {
@@ -100,7 +78,6 @@ function dailyFromActivities(): Vo2maxSample[] {
   return [...byDay.values()].sort((a, b) => a.date.localeCompare(b.date))
 }
 
-/** The same fallback, thinned to the last reading of each month. */
 function monthlyFromActivities(): Vo2maxSample[] {
   const byMonth = new Map<string, Vo2maxSample>()
   for (const sample of dailyFromActivities()) {

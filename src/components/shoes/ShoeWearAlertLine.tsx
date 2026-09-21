@@ -3,8 +3,6 @@ import { AlertTriangle, ChevronRight } from 'lucide-react'
 import { t } from '@/i18n'
 import type { ShoeStats } from '@/application/usecases/GetShoeStats'
 
-// Secondary-tier alert card, matching DashboardHighlights - a shoe past its
-// wear threshold needs more visual weight than a plain line of body text.
 export function ShoeWearAlertLine({ shoes }: { shoes: ShoeStats[] }) {
   const alerts = shoes.filter((s) => s.nearingLimit)
   if (alerts.length === 0) return null

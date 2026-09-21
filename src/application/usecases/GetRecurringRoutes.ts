@@ -11,24 +11,26 @@ export interface RouteRun {
 
 export interface RecurringRoute {
   id: string
+  /**
+   * Where the route starts, for naming it after a place. The runs' own titles
+   * name the session - "Seuil", "1 h endurance" - so two routes that share a
+   * workout type end up sharing a name while two names for one route are a
+   * coin toss.
+   */
+  start: Coord | null
   runCount: number
   distanceKm: number
-  /** SVG path in a 100x100 box, for the thumbnail. */
   outline: string
-  /** Every pass, oldest first, so the pace over time can be read as a series. */
   runs: RouteRun[]
   bestPaceSecPerKm: number
   bestActivityId: string
   bestDate: string
 }
 
-// Same ground, allowing for an extra loop at the end.
 const MIN_OVERLAP = 0.7
 
-// Two runs of the same route rarely differ by more than a corner cut.
 const MAX_DISTANCE_DRIFT = 0.15
 
-// Below three passes there is no trend to read, only two runs side by side.
 const MIN_RUNS = 3
 
 interface Cluster {
@@ -64,6 +66,7 @@ function toRecurringRoute(cluster: Cluster, index: number): RecurringRoute | nul
 
   return {
     id: `${index}`,
+    start: (latest.route as Coord[])[0] ?? null,
     runCount: timed.length,
     distanceKm: round(timed.reduce((sum, a) => sum + a.distanceKm, 0) / timed.length, 1),
     outline: routeOutline(latest.route as Coord[]),
@@ -78,19 +81,11 @@ function toRecurringRoute(cluster: Cluster, index: number): RecurringRoute | nul
   }
 }
 
-// Clustering compares every trace against every cluster, so cache it per server
-// process the way getAllRoutes does.
 let cache: RecurringRoute[] | null = null
 
-/**
- * Routes run at least three times, with how the pace on them has moved. Same
- * ground means same hills and same distance, which is the only setting where
- * comparing raw pace across months says something about the runner.
- */
 export function getRecurringRoutes(): RecurringRoute[] {
   if (cache) return cache
 
-  // Newest first, so every cluster's first run is its most recent one.
   const withRoutes = getAllActivities().filter((a) => a.route && a.route.length > 1)
 
   cache = clusterByRoute(withRoutes)

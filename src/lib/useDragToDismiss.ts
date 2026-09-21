@@ -6,15 +6,6 @@ import { useHaptic } from './useHaptic'
 const DISMISS_THRESHOLD_PX = 80
 const CLOSE_ANIMATION_MS = 220
 
-/**
- * Drag-to-dismiss for bottom sheets. Bind `handleProps` to the drag handle (not the
- * whole sheet) so scrollable content inside the sheet keeps native scroll behavior.
- * Apply `sheetStyle` to the sheet's outer element to follow the finger while dragging.
- *
- * Past the threshold, the sheet finishes sliding off-screen under a real CSS
- * transition before `onDismiss` fires, instead of vanishing the instant the
- * finger lifts.
- */
 export function useDragToDismiss(onDismiss: () => void) {
   const startY = useRef<number | null>(null)
   const [dragY, setDragY] = useState(0)
@@ -33,8 +24,6 @@ export function useDragToDismiss(onDismiss: () => void) {
   }, [onDismiss])
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
-    // Capture keeps all pointer events routed to this element even when the
-    // pointer moves outside it, so the drag doesn't escape to page scroll.
     e.currentTarget.setPointerCapture(e.pointerId)
     startY.current = e.clientY
     setDragging(true)
@@ -64,8 +53,6 @@ export function useDragToDismiss(onDismiss: () => void) {
   }, [dragY, triggerClose])
 
   return {
-    // Use `close` instead of calling onDismiss directly so all close paths
-    // (X button, backdrop, Escape) play the same slide-out animation as drag.
     close: triggerClose,
     handleProps: {
       onPointerDown,
@@ -74,8 +61,6 @@ export function useDragToDismiss(onDismiss: () => void) {
       onPointerCancel: endDrag,
       style: { touchAction: 'none' as const },
     },
-    // animation:'none' clears the animate-sheet-up keyframe so the closing
-    // transition can take effect (CSS animations outrank transitions in cascade).
     sheetStyle: closing
       ? { animation: 'none', transform: 'translateY(100%)', transition: `transform ${CLOSE_ANIMATION_MS}ms cubic-bezier(0.32,0.72,0,1)` }
       : dragY

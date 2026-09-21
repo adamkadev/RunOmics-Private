@@ -19,8 +19,6 @@ describe('buildSegments', () => {
   })
 
   it('breaks a run across an unrated day instead of bridging it', () => {
-    // The watch was not worn on the 2nd; the ribbon must not imply the status
-    // held across the gap.
     const segments = buildSegments([
       point('2026-07-01', 'productive'),
       point('2026-07-02', null),

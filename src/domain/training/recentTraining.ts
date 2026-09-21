@@ -13,10 +13,6 @@ function dayNumber(date: string): number {
   return Math.floor(new Date(date.slice(0, 10) + 'T00:00:00Z').getTime() / DAY_MS)
 }
 
-/**
- * The last seven days of training, which is what turns "you are fresh" into
- * "you are fresh because you have not run since Thursday".
- */
 export function recentTraining(activities: ActivitySummary[], today: string): RecentTraining {
   const day = dayNumber(today)
   const past = activities.filter((a) => dayNumber(a.date) <= day).sort((a, b) => b.date.localeCompare(a.date))

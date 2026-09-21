@@ -5,8 +5,6 @@ import { round } from '@/lib/math'
 
 const EASY_TYPES: ActivityType[] = ['Base']
 const MIN_DISTANCE_KM = 3
-// A band speaks for itself only once it holds a season's worth of runs; below
-// that a single bad day moves the bar more than the weather does.
 const MIN_RUNS_PER_BAND = 8
 
 export type HeatBandId = 'cold' | 'cool' | 'mild' | 'warm' | 'hot'
@@ -24,9 +22,7 @@ export interface HeatBand {
   label: string
   runCount: number
   avgApparentTempC: number
-  /** Pace this band's efficiency translates to at the reference heart rate, in sec/km. */
   paceAtRefHr: number
-  /** Seconds per km this band gives up against the fastest one, at the same heart rate. */
   costSecPerKm: number
 }
 

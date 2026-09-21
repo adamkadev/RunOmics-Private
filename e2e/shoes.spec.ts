@@ -10,5 +10,8 @@ test('shoes list renders and links into a detail page', async ({ page }) => {
 
   await expect(page).toHaveURL(/\/shoes\/[^/]+$/)
   await expect(page.locator('h1')).toBeVisible()
-  await expect(page.getByText('Tracked Activities')).toBeVisible()
+  // The runs section, whichever pair the list happened to open: the rebuilt
+  // detail screen titles it for the pair's state rather than calling every one
+  // of them "Tracked Activities".
+  await expect(page.getByText(/Recent runs|Last runs before retiring/)).toBeVisible()
 })

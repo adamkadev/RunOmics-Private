@@ -19,16 +19,13 @@ type Tab = 'prs' | 'milestones' | 'routes'
 interface Props {
   records: RecordEntry[]
   topEfforts: TopEfforts
-  mostRecentKey: string | null
   predictions: RacePrediction[]
   pbAlerts: PbAlert[]
   milestones: Milestone[]
   recurringRoutes: RecurringRoute[]
 }
 
-// Records and Milestones used to be two separate routes - merged here behind
-// a segmented control so "personal bests" has one screen, not two.
-export function RecordsClient({ records, topEfforts, mostRecentKey, predictions, pbAlerts, milestones, recurringRoutes }: Props) {
+export function RecordsClient({ records, topEfforts, predictions, pbAlerts, milestones, recurringRoutes }: Props) {
   const [tab, setTab] = useState<Tab>('prs')
   const s = t.records.segmented
 
@@ -63,7 +60,6 @@ export function RecordsClient({ records, topEfforts, mostRecentKey, predictions,
           <RecordsLeaderboard
             records={records}
             topEfforts={topEfforts}
-            mostRecentKey={mostRecentKey}
             predictions={predictions}
           />
         </div>

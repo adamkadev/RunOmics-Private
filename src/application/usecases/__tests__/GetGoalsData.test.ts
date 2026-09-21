@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { computeProjection, computeYearOutcome, computeNextRaceSpotlight } from '../GetGoalsData'
+import {
+  computeProjection,
+  computeYearOutcome,
+  computeNextRaceSpotlight,
+  computeMonthlyGoals,
+} from '../GetGoalsData'
 import type { Activity } from '@/domain/activity/types'
 import type { GoalYear, YearData, UpcomingRace, GoalRacePrediction } from '../GetGoalsData'
 
@@ -26,7 +31,7 @@ describe('computeProjection', () => {
   })
 
   it('returns null before 4 weeks have elapsed in the year', () => {
-    vi.setSystemTime(new Date('2024-01-15T00:00:00')) // ~2 weeks in
+    vi.setSystemTime(new Date('2024-01-15T00:00:00'))
     expect(computeProjection([], 2024, 0, goal(1000))).toBeNull()
   })
 
@@ -35,8 +40,6 @@ describe('computeProjection', () => {
   })
 
   it('projects ahead when the recent weekly rate beats what is needed by >10%', () => {
-    // 8 activities @ 40km within the 56-day cutoff → weeklyRate = 320/8 = 40
-    // remaining goal = 300km over ~26.3 weeks → weeklyNeeded ≈ 11.4, well under 40
     const activities = Array.from({ length: 8 }, () => act('2024-06-01', 40))
     const result = computeProjection(activities, 2024, 500, goal(800))
     expect(result?.weeklyRate).toBe(40)
@@ -44,22 +47,19 @@ describe('computeProjection', () => {
   })
 
   it('marks status behind when the weekly rate is well under what is needed', () => {
-    // No recent activity at all → weeklyRate = 0, goal still far away
     const result = computeProjection([], 2024, 100, goal(2000))
     expect(result?.weeklyRate).toBe(0)
     expect(result?.status).toBe('behind')
   })
 
   it('marks status on_track when the rate roughly matches what is needed', () => {
-    // remainingWeeks from 2024-07-01 to 2025-01-01 ≈ 26.14
-    // need (1000-100)/26.14 ≈ 34.4 km/week; provide ~34.4 km/week over last 8 weeks
     const activities = Array.from({ length: 8 }, () => act('2024-06-20', 34.4))
     const result = computeProjection(activities, 2024, 100, goal(1000))
     expect(result?.status).toBe('on_track')
   })
 
   it('only counts activities within the last 8 weeks for the rate', () => {
-    const old = act('2023-01-01', 1000) // way outside the 56-day cutoff
+    const old = act('2023-01-01', 1000)
     const result = computeProjection([old], 2024, 100, goal(2000))
     expect(result?.weeklyRate).toBe(0)
   })
@@ -201,5 +201,51 @@ describe('computeNextRaceSpotlight', () => {
       '2024-07-01'
     )
     expect(result?.predictedSeconds).toBe(1210)
+  })
+})
+
+describe('computeMonthlyGoals', () => {
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2024-09-16T12:00:00'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('carries a pro-rata target for the month still being run', () => {
+    const months = computeMonthlyGoals([act('2024-09-05', 58)], 2024, goal(2000))
+    const september = months[8]!
+
+    expect(september.progress).not.toBeNull()
+    expect(september.progress!.daysElapsed).toBe(16)
+    expect(september.progress!.daysInMonth).toBe(30)
+    expect(september.progress!.proRataTargetKm).toBeLessThan(september.targetKm)
+    expect(Math.round(september.progress!.proRataTargetKm)).toBe(87)
+  })
+
+  it('leaves finished and future months with nothing to pro-rate', () => {
+    const months = computeMonthlyGoals([act('2024-08-05', 100)], 2024, goal(2000))
+
+    expect(months[7]!.progress).toBeNull()
+    expect(months[9]!.progress).toBeNull()
+    expect(months[9]!.status).toBe('pending')
+  })
+})
+
+describe('computeMonthlyGoals across a DST boundary', () => {
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2024-03-20T12:00:00'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('counts whole days in a month that loses an hour', () => {
+    const march = computeMonthlyGoals([act('2024-03-02', 40)], 2024, goal(2000))[2]!
+
+    expect(march.progress!.daysInMonth).toBe(31)
+    expect(march.progress!.daysElapsed).toBe(20)
   })
 })

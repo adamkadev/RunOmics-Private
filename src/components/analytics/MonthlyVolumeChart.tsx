@@ -8,10 +8,9 @@ import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
-import { ChartExplain } from '@/components/ui/ChartExplain'
+import { ChartCardHead, ChartReading } from '@/components/ui/ChartCard'
 import { t } from '@/i18n'
 
-// Base at the bottom (training pyramid), high-intensity and races at the top
 const VOLUME_STACK_ORDER: ActivityType[] = ['Base', 'Tempo', 'Threshold', 'VO2Max', 'Anaerobic', 'Sprint', 'Race']
 
 interface Props {
@@ -68,9 +67,10 @@ export function MonthlyVolumeChart({ data, typesPresent }: Props) {
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <h3 className="mb-4 text-sm font-semibold text-foreground/80">
-        {t.analytics.charts.monthlyVolume.title}
-      </h3>
+      <ChartCardHead title={t.analytics.charts.monthlyVolume.title} />
+
+      {reading && <ChartReading>{reading}</ChartReading>}
+
       <ChartFigure summary={summary}>
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>
@@ -93,6 +93,10 @@ export function MonthlyVolumeChart({ data, typesPresent }: Props) {
                 dataKey={type}
                 stackId="volume"
                 fill={ACTIVITY_TYPE_CONFIG[type].chartColor}
+                // The three zone-5 types are three depths of one red, so stacked
+                // adjacently they need a seam to stay countable.
+                stroke="var(--card)"
+                strokeWidth={0.75}
                 radius={i === orderedTypes.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
                 isAnimationActive={false}
               />
@@ -111,7 +115,6 @@ export function MonthlyVolumeChart({ data, typesPresent }: Props) {
           </span>
         ))}
       </div>
-      {reading && <ChartExplain text={reading} />}
     </GlassSurface>
   )
 }

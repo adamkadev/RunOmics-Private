@@ -4,25 +4,21 @@ import { useState, useRef, useEffect } from 'react'
 import type { HeatmapDay } from '@/application/usecases/GetHeatmapData'
 import { tooltipSurfaceClass } from '@/components/ui/Card'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { formatDate, formatDateRange, monthName } from '@/lib/formatters'
+import { positionMonthLabels, type MonthStart } from '@/lib/heatmapMonths'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
-const MONTHS = t.dashboard.heatmap.months
+const MONTHS = Array.from({ length: 12 }, (_, month) => monthName(month + 1))
 
-// Cells stay square and fill the card width, so the gap has to grow with them -
-// a fixed 1px between 20px cells reads as one solid block rather than a grid.
-function gapFor(cellSize: number): number {
-  return cellSize >= 16 ? 3 : cellSize >= 11 ? 2 : 1
-}
+const GRID_GAP = 2
+const MIN_CELL_PX = 3
 
-// Intensity scale mixed from the active accent, so it follows the chosen palette.
-// Mixing toward --card (rather than fixed light/dark stops) adapts to dark mode
-// for free. Level 0 keeps a faint green tint (like the mockup's empty cells) and
-// the ramp climbs steeply so busy weeks read as a vivid, saturated accent.
-const LEVEL_MIX_PCT = [10, 45, 72, 100] as const
+const EMPTY_CELL_COLOR = 'rgba(148,178,220,.09)'
+const LEVEL_COLORS = ['rgba(90,151,245,.35)', 'rgba(90,151,245,.62)', '#5a97f5']
 
 function levelStyle(level: number) {
-  return { backgroundColor: `color-mix(in oklab, var(--accent) ${LEVEL_MIX_PCT[level]}%, var(--card))` }
+  return { backgroundColor: level === 0 ? EMPTY_CELL_COLOR : LEVEL_COLORS[level - 1] }
 }
 
 function getLevel(km: number): number {
@@ -32,20 +28,10 @@ function getLevel(km: number): number {
   return 3
 }
 
-function useThemeVersion(): number {
-  const [version, setVersion] = useState(0)
-  useEffect(() => {
-    const obs = new MutationObserver(() => setVersion(v => v + 1))
-    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-accent'] })
-    return () => obs.disconnect()
-  }, [])
-  return version
-}
-
+// The window is a rolling 364 days, so a tooltip on the far end of the strip
+// falls in last year - hence the date, not a bare `Sep 13`.
 function formatTooltipDate(dateStr: string) {
-  return new Date(dateStr + 'T12:00:00').toLocaleDateString(t.locale, {
-    weekday: 'short', month: 'short', day: 'numeric',
-  })
+  return formatDate(dateStr)
 }
 
 interface Props {
@@ -55,9 +41,10 @@ interface Props {
 export function ActivityHeatmap({ days }: Props) {
   const [tooltip, setTooltip] = useState<{ day: HeatmapDay; x: number; y: number } | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const [cellSize, setCellSize] = useState(11)
-  const gap = gapFor(cellSize)
-  const themeVersion = useThemeVersion()
+  // Purely for the month-label overlay's pixel math - the grid itself is laid
+  // out in CSS (flex + aspect-ratio) and never waits on this measurement, so a
+  // stale or zero reading can only misplace a label, never break the grid.
+  const [measuredCellSize, setMeasuredCellSize] = useState(11)
 
   const weeks: HeatmapDay[][] = []
   for (let i = 0; i < days.length; i += 7) {
@@ -78,12 +65,7 @@ export function ActivityHeatmap({ days }: Props) {
     if (!el) return
     const compute = () => {
       const w = el.clientWidth
-      // All 12 months fit on one line without scrolling. No upper cap on the
-      // cell size: on desktop the cells grow so the grid spans the whole card
-      // instead of stopping at ~640px and leaving dead space to the right.
-      // Two passes, since the gap tier depends on the size it helps determine.
-      const solve = (gap: number) => Math.floor((w - (weeks.length - 1) * gap) / weeks.length)
-      setCellSize(Math.max(5, solve(gapFor(solve(1)))))
+      setMeasuredCellSize(Math.max(MIN_CELL_PX, Math.floor((w - (weeks.length - 1) * GRID_GAP) / weeks.length)))
     }
     compute()
     const obs = new ResizeObserver(compute)
@@ -91,59 +73,60 @@ export function ActivityHeatmap({ days }: Props) {
     return () => obs.disconnect()
   }, [weeks.length])
 
-  // Month labels: show label at the first week where a new month starts, then
-  // keep only every other one - twelve months of labels crowd the small cells,
-  // and skipping alternates still reads fine since each spans ~4-5 weeks.
-  const monthLabels: { label: string; col: number }[] = []
+  const monthStarts: MonthStart[] = []
   let lastMonth = -1
   weeks.forEach((wk, col) => {
     const firstDate = wk.find(d => d.date)?.date
     if (!firstDate) return
     const month = new Date(firstDate + 'T12:00:00').getMonth()
     if (month !== lastMonth) {
-      monthLabels.push({ label: MONTHS[month] ?? '', col })
+      monthStarts.push({ label: MONTHS[month] ?? '', col })
       lastMonth = month
     }
   })
 
-  // A 12-month window straddles 13 calendar months (it opens mid-month and
-  // closes in that same month a year later), and alternating over 13 leaves 7
-  // labels with the same month at both ends. Drop the leading sliver so the
-  // scale is 12 whole months and alternating yields 6.
-  const firstDay = days.find(d => d.date)?.date
-  const opensMidMonth = firstDay ? new Date(firstDay + 'T12:00:00').getDate() !== 1 : false
-  const wholeMonths = opensMidMonth ? monthLabels.slice(1) : monthLabels
-  const shownMonthLabels = wholeMonths.filter((_, i) => i % 2 === 0)
+  const shownMonthLabels = positionMonthLabels(monthStarts, weeks.length, measuredCellSize, GRID_GAP)
+  const gridWidth = Math.max(0, weeks.length * (measuredCellSize + GRID_GAP) - GRID_GAP)
+  const minGridWidth = weeks.length * MIN_CELL_PX + (weeks.length - 1) * GRID_GAP
+
+  const dated = days.filter(d => d.date)
+  const opensOn = dated[0]?.date
+  const closesOn = dated[dated.length - 1]?.date
+  const windowRange = opensOn && closesOn ? formatDateRange(opensOn, closesOn, { precision: 'month' }) : null
 
   const activeDays = days.filter(d => d.distanceKm > 0).length
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-bold text-foreground">{t.dashboard.heatmap.title}</h3>
-        <span className="text-sm font-semibold text-accent-text">
-          {t.dashboard.heatmap.activeDays(activeDays)}
+      <div className="mb-4 flex items-baseline justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="text-sm font-bold text-foreground">{t.dashboard.heatmap.title}</h3>
+          <p className="mt-0.5 text-micro text-subtle">
+            {windowRange ? `${windowRange} · ` : ''}
+            {t.dashboard.heatmap.rollingWindow}
+          </p>
+        </div>
+        <span className="shrink-0 text-sm">
+          <span className="font-semibold text-foreground">{activeDays}</span>{' '}
+          <span className="font-medium text-muted-foreground">{t.dashboard.heatmap.activeDaysUnit}</span>
         </span>
       </div>
 
       <div ref={containerRef} className="w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div style={{ minWidth: 'max-content' }}>
-          {/* Grid - no weekday-label gutter, so the full width goes to cells */}
-          {/* keyed on themeVersion so the color-mix cells remount and re-resolve on a theme/accent switch */}
-          <div key={themeVersion} className="flex" style={{ gap: gap }}>
+        <div style={{ minWidth: minGridWidth }}>
+          <div className="flex" style={{ gap: GRID_GAP }}>
             {weeks.map((wk, col) => (
-              <div key={col} className="flex flex-col" style={{ gap: gap }}>
+              <div key={col} className="flex min-w-0 flex-1 flex-col" style={{ gap: GRID_GAP }}>
                 {wk.map((day, row) =>
                   !day.date ? (
-                    <div key={row} style={{ width: cellSize, height: cellSize }} />
+                    <div key={row} style={{ aspectRatio: '1' }} />
                   ) : (
                     <div
                       key={row}
                       className="transition-opacity hover:opacity-70"
                       style={{
-                        width: cellSize,
-                        height: cellSize,
-                        borderRadius: Math.max(1.5, cellSize * 0.18),
+                        aspectRatio: '1',
+                        borderRadius: 1.5,
                         cursor: 'default',
                         ...levelStyle(getLevel(day.distanceKm)),
                       }}
@@ -159,27 +142,27 @@ export function ActivityHeatmap({ days }: Props) {
             ))}
           </div>
 
-          {/* Month scale sits under the grid, like an x-axis */}
-          {/* Spread rather than absolutely positioned per column: the labels
-              mark evenly spaced months anyway, and justify-between pins the
-              first flush left and the last flush right across the full grid. */}
-          <div className="mt-2 flex justify-between leading-4 text-micro text-subtle">
-            {shownMonthLabels.map(({ label, col }) => (
-              <span key={`${label}-${col}`}>{label}</span>
+          <div
+            className="relative mt-2 h-4 leading-4 text-micro text-subtle"
+            style={{ width: gridWidth }}
+          >
+            {shownMonthLabels.map(({ label, col, left }) => (
+              <span key={col} className="absolute top-0 whitespace-nowrap" style={{ left }}>
+                {label}
+              </span>
             ))}
           </div>
         </div>
       </div>
 
-      <div key={themeVersion} className="mt-1 flex items-center justify-end gap-1.5">
+      <div className="mt-1 flex items-center justify-end gap-1.5">
         <span className="text-micro text-subtle">{t.dashboard.heatmap.less}</span>
-        {LEVEL_MIX_PCT.map((_, i) => (
-          <div key={i} className="rounded-[2px]" style={{ width: 10, height: 10, ...levelStyle(i) }} />
+        {[0, 1, 2, 3].map((level) => (
+          <div key={level} className="rounded-[2px]" style={{ width: 10, height: 10, ...levelStyle(level) }} />
         ))}
         <span className="text-micro text-subtle">{t.dashboard.heatmap.more}</span>
       </div>
 
-      {/* Floating tooltip */}
       {tooltip && (
         <div
           className={cn(tooltipSurfaceClass, 'pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-full')}

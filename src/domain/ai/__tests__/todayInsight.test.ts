@@ -14,6 +14,7 @@ const status: TrainingStatus = {
   acwr: 1.4,
   ctlDelta: 2.4,
   atlDelta: 6,
+  tsbDelta: -8,
   ctlPeak: 60,
   source: 'garmin',
   acwrStatus: 'HIGH',
@@ -42,9 +43,6 @@ describe('todayInsightPrompt', () => {
     expect(prompt).not.toContain('already been completed')
   })
 
-  // The hero's own checkbox already shows the planned session done once a run
-  // lands today - copy that still tells the athlete how to approach it reads
-  // as if it never saw the activity that just synced.
   it('writes about the session in the past once it has already been run today', () => {
     const prompt = todayInsightPrompt(
       context({ recent: { runs: 6, km: 44, lastRun: { type: 'Base', daysAgo: 0, distanceKm: 5 } } }),

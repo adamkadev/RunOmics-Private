@@ -10,7 +10,6 @@ const PATTERNS = {
 
 export type HapticPattern = keyof typeof PATTERNS
 
-/** Fires a short vibration burst on supporting devices; a no-op everywhere else (desktop, iOS Safari). */
 export function useHaptic() {
   return useCallback((pattern: HapticPattern) => {
     if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(PATTERNS[pattern] as number | number[])

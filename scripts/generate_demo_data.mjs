@@ -1,36 +1,17 @@
 #!/usr/bin/env node
-/**
- * Deterministic synthetic dataset for RUNOMICS_DATA_MODE=demo / a fresh clone
- * with no private data source configured.
- *
- * Every value here is invented: the athlete ("Demo Runner"), the IDs, the
- * GPS routes (procedural loops around an open-ocean point, thousands of km
- * from anywhere real), the PBs, the races. Nothing is derived from real
- * RunOmics data - see scripts/generate_demo_data.test.mjs style checks in
- * scripts/tests for the read-only audit that verified that.
- *
- * Deterministic in the sense that matters for tests/screenshots: the same
- * seed always produces the same *shape* and *relative* values (same activity
- * count, same paces, same PBs) - the calendar window itself is anchored to
- * the real current date, so a fresh clone always sees a demo history that
- * ends "today" instead of visibly aging. Run twice on the same day, the
- * output is byte-identical.
- *
- * Usage:
- *   node scripts/generate_demo_data.mjs [output-dir]   # defaults to data/
- */
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const SEED = 20260814
 const MONTHS_BACK = 18
-// Open Pacific, nowhere near land - cannot be confused with anywhere real.
-const ROUTE_CENTER = [-150.0, 0.0]
+const ROUTE_CENTERS = {
+  home: [-150.0, 0.0],
+  away: [-149.0, 3.0],
+}
 
-// ---------------------------------------------------------------------------
-// Seeded PRNG (mulberry32) - deterministic, no dependency needed.
-// ---------------------------------------------------------------------------
+const AWAY_TRIP = { startFraction: 0.62, days: 28 }
+
 function makeRng(seed) {
   let a = seed >>> 0
   return function rng() {
@@ -102,7 +83,6 @@ const SHOES = [
   { gearId: 'demo-shoe-0000000000000003', brand: 'Nimbus', model: 'Cloudrun 3', maxKm: 800, retired: true, firstUseDate: '2025-04-01' },
 ]
 
-// Session types, weighted for a realistic easy/hard split (roughly 80/20).
 const SESSION_TYPES = [
   { type: 'Base', weight: 45, paceMult: [1.25, 1.42], descriptions: ['Morning Run', 'Easy Run', 'Recovery Jog'] },
   { type: 'Tempo', weight: 15, paceMult: [1.05, 1.12], descriptions: ['Tempo Run'] },
@@ -111,11 +91,8 @@ const SESSION_TYPES = [
   { type: 'Sprint', weight: 5, paceMult: [0.75, 0.85], descriptions: ['Sprint Session'] },
 ]
 
-// Riegel-consistent race times (T2 = T1 * (D2/D1)^1.06) from a 10K baseline,
-// so 5K/10K/half/marathon PBs and predictions all imply the same fitness
-// rather than each being an independent random number.
 const RACE_DISTANCES_KM = { '1k': 1, '5k': 5, '10k': 10, half: 21.0975, marathon: 42.195 }
-const RACE_BASELINE_10K_SEC = 2386 // 39:46
+const RACE_BASELINE_10K_SEC = 2386
 function riegelSeconds(distanceKm) {
   return RACE_BASELINE_10K_SEC * (distanceKm / RACE_DISTANCES_KM['10k']) ** 1.06
 }
@@ -130,19 +107,14 @@ function pickSessionType(rng) {
   return SESSION_TYPES[0]
 }
 
-// ---------------------------------------------------------------------------
-// GPS route generation - procedural loops around open ocean, never a real
-// street grid. Shape is a lightly-jittered rounded rectangle/loop.
-// ---------------------------------------------------------------------------
 function metersToDegrees(meters, lat) {
   const dLat = meters / 111320
   const dLon = meters / (111320 * Math.cos((lat * Math.PI) / 180))
   return [dLon, dLat]
 }
 
-function generateRoute(rng, distanceKm) {
-  const [centerLon, centerLat] = ROUTE_CENTER
-  // A loop long enough that its perimeter roughly matches the run distance.
+function generateRoute(rng, distanceKm, center) {
+  const [centerLon, centerLat] = center
   const perimeterM = distanceKm * 1000
   const sideM = Math.max(200, perimeterM / 4)
   const points = []
@@ -150,7 +122,6 @@ function generateRoute(rng, distanceKm) {
 
   for (let i = 0; i < numPoints; i++) {
     const t = i / numPoints
-    // Rounded-rectangle parametrization with small per-point GPS-like jitter.
     const angle = t * 2 * Math.PI
     const rx = sideM * (0.5 + 0.1 * Math.sin(angle * 2))
     const ry = sideM * 0.35 * (0.5 + 0.1 * Math.cos(angle * 3))
@@ -159,7 +130,6 @@ function generateRoute(rng, distanceKm) {
     const [dLon2, dLat2] = metersToDegrees(ry * Math.sin(angle) + jitterM, centerLat)
     points.push([round(centerLon + dLon, 6), round(centerLat + dLat2, 6)])
   }
-  // Close the loop so start/finish match, like most out-of-the-door runs.
   points.push([...points[0]])
   return points
 }
@@ -178,29 +148,24 @@ function smoothSeries(rng, length, base, spread) {
 function buildActivities(rng, endDate) {
   const activities = []
   let id = 90000001
-  // Fitness improves gradually over the window, then plateaus - drives pace,
-  // VO2max and threshold trends together so every derived file agrees.
   const totalDays = MONTHS_BACK * 30
   const startDate = addDays(endDate, -totalDays)
 
-  // A handful of genuine races, spaced through the back half of the window
-  // (once fitness has ramped), at Riegel-consistent paces - so pbs.json's
-  // "official" times are always the fastest thing in the dataset, exactly
-  // like real race PBs beat training best-efforts.
   const raceDayOffsets = new Map(
     [0.45, 0.6, 0.75, 0.9, 0.98].map((frac) => [Math.round(totalDays * frac), null])
   )
   const racePlan = ['10k', '5k', 'half', '10k', 'marathon']
   let raceIndex = 0
 
+  const awayStart = Math.round(totalDays * AWAY_TRIP.startFraction)
+
   for (let dayOffset = 0; dayOffset <= totalDays; dayOffset++) {
     const date = addDays(startDate, dayOffset)
-    const progress = Math.min(1, dayOffset / (totalDays * 0.7)) // fitness ramps over ~70% of the window
+    const progress = Math.min(1, dayOffset / (totalDays * 0.7))
     const weekday = date.getDay()
     const isRaceDay = raceDayOffsets.has(dayOffset)
 
     if (!isRaceDay) {
-      // ~4 sessions/week: skip most Mondays and Fridays, some randomness elsewhere.
       const restDayBias = weekday === 1 || weekday === 5 ? 0.75 : 0.4
       if (rng() < restDayBias) continue
     }
@@ -208,7 +173,7 @@ function buildActivities(rng, endDate) {
     const session = isRaceDay
       ? { type: 'Race', descriptions: ['Race Day'] }
       : pickSessionType(rng)
-    const thresholdPace = ATHLETE.thresholdPaceSecPerKm - progress * 12 // gets a little faster over time
+    const thresholdPace = ATHLETE.thresholdPaceSecPerKm - progress * 12
 
     let distanceKm, paceSecPerKm, raceKey
     if (isRaceDay) {
@@ -232,12 +197,10 @@ function buildActivities(rng, endDate) {
     )
 
     const hrZones = buildHrZones(rng, durationSeconds, session.type)
-    const route = generateRoute(rng, distanceKm)
+    const isAway = dayOffset >= awayStart && dayOffset < awayStart + AWAY_TRIP.days
+    const route = generateRoute(rng, distanceKm, isAway ? ROUTE_CENTERS.away : ROUTE_CENTERS.home)
     const sampleLen = Math.max(20, Math.min(80, Math.round(distanceKm * 4)))
 
-    // Training best-efforts stay comfortably slower than a genuine race pace,
-    // so an official PB (from a Race-type activity) is always the fastest -
-    // matching how the app prioritizes pbs.json over auto-detected efforts.
     const bestEfforts = {}
     if (isRaceDay) {
       bestEfforts[raceKey] = durationSeconds
@@ -333,16 +296,13 @@ function buildSplits(rng, type, distanceKm, paceSecPerKm, avgHr) {
   ]
 }
 
-// ---------------------------------------------------------------------------
-// Downstream files derived from the same activities/progress trend
-// ---------------------------------------------------------------------------
 function buildTrainingStatusAndBalance(rng, activities) {
   const days = {}
   const weeks = {}
   const statuses = ['productive', 'maintaining', 'peaking', 'recovery']
 
   for (const a of activities) {
-    if (rng() < 0.3) continue // not every day gets a device reading
+    if (rng() < 0.3) continue
     const status = pick(rng, statuses)
     days[a.date] = {
       status,
@@ -403,9 +363,6 @@ function buildVo2maxAndThresholdHistory(activities) {
   }
 }
 
-// Derived from the same fitness-progress curve as buildActivities (not raw
-// per-activity pace), so a hard interval day doesn't register as a sudden
-// marathon-prediction leap. Riegel-consistent with the race PBs above.
 function buildRacePredictions(activities, startDate, totalDays) {
   const days = {}
   const baselineEnd = RACE_BASELINE_10K_SEC
@@ -504,8 +461,8 @@ function buildTrainingPlan(endDate) {
 function buildUpcomingRaces(endDate) {
   return {
     races: [
-      { garminEventUuid: 'demo-race-0000000000000001', date: isoDate(addDays(endDate, 21)), name: 'Harbor Lights 10K', distance: '10K', location: 'Fictional Bay' },
-      { garminEventUuid: 'demo-race-0000000000000002', date: isoDate(addDays(endDate, 63)), name: 'Autumn Trail Half', distance: 'Half-Marathon', location: 'Fictional Bay' },
+      { garminEventUuid: 'demo-race-0000000000000001', date: isoDate(addDays(endDate, 21)), name: 'Harbor Lights 10K', distance: '10K', location: 'Fictional Bay', isPrimaryEvent: true, targetSeconds: 2_430 },
+      { garminEventUuid: 'demo-race-0000000000000002', date: isoDate(addDays(endDate, 63)), name: 'Autumn Trail Half', distance: 'Half-Marathon', location: 'Fictional Bay', isPrimaryEvent: false },
     ],
   }
 }
@@ -530,9 +487,162 @@ function buildPlannedWorkouts(rng, endDate) {
   return byYear
 }
 
+function buildCoachingData(endDate, activities) {
+  const latest = activities[activities.length - 1]
+  const start = latest ? new Date(latest.date + 'T00:00:00Z') : endDate
+  const targetDate = addDays(endDate, 21)
+  const createdAt = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate(), 8)).toISOString()
+  const evaluationCreatedAt = new Date(new Date(createdAt).getTime() + 60 * 60 * 1_000).toISOString()
+  const planId = 'demo-coaching-plan'
+  const provenance = { source: 'demo', trigger: 'bootstrap', createdAt }
+  const workout = (id, date, type, title, blocks, totalDurationSeconds, totalDistanceMeters) => ({
+    id,
+    revision: 1,
+    date: isoDate(date),
+    type,
+    title,
+    description: title,
+    status: 'prescribed',
+    ...(totalDurationSeconds ? { totalDurationSeconds } : {}),
+    ...(totalDistanceMeters ? { totalDistanceMeters } : {}),
+    blocks,
+    provenance,
+  })
+  const easyBlocks = (distanceMeters) => [{ kind: 'effort', target: { distanceMeters, paceSecPerKm: { min: 300, max: 340 }, hrZone: 2 } }]
+  const thresholdBlocks = [
+    { kind: 'warmup', target: { distanceMeters: 2_000 } },
+    {
+      kind: 'repeat',
+      repetitions: 3,
+      steps: [
+        { kind: 'effort', target: { durationSeconds: 480, paceSecPerKm: { min: 265, max: 270 } } },
+        { kind: 'recovery', target: { durationSeconds: 120 } },
+      ],
+    },
+    { kind: 'cooldown', target: { durationSeconds: 600 } },
+  ]
+  const weeks = Array.from({ length: 4 }, (_, index) => {
+    const weekStart = addDays(start, index * 7)
+    const weekEnd = addDays(weekStart, 6) < targetDate ? addDays(weekStart, 6) : targetDate
+    const first = index === 0 && latest
+      ? workout('demo-prescription-completed', new Date(latest.date + 'T00:00:00Z'), latest.type === 'Threshold' ? 'threshold' : 'easy', latest.description || 'Completed session', easyBlocks(Math.round(latest.distanceKm * 1_000)), latest.durationSeconds, Math.round(latest.distanceKm * 1_000))
+      : workout(`demo-easy-${index}`, addDays(weekStart, 1), 'easy', 'Easy Run', easyBlocks(8_000), 2_700, 8_000)
+    return {
+      id: `demo-coaching-week-${index + 1}`,
+      index: index + 1,
+      startDate: isoDate(weekStart),
+      endDate: isoDate(weekEnd),
+      focus: index === 0 ? 'Settle into the block' : index === 3 ? 'Absorb the work' : 'Build threshold durability',
+      workouts: [
+        first,
+        workout(`demo-threshold-${index}`, addDays(weekStart, 3), 'threshold', '3 × 8 min threshold', thresholdBlocks, 3_600),
+        workout(`demo-long-${index}`, addDays(weekStart, 6), 'long_run', 'Long easy run', easyBlocks(14_000 + index * 1_000), undefined, 14_000 + index * 1_000),
+      ].filter((entry) => entry.date <= isoDate(targetDate)),
+    }
+  })
+  const plan = {
+    schemaVersion: 1,
+    id: planId,
+    revision: 1,
+    status: 'active',
+    block: {
+      id: 'demo-coaching-block',
+      name: 'Autumn 10K build',
+      startDate: isoDate(start),
+      endDate: isoDate(targetDate),
+      focus: 'Threshold durability',
+    },
+    targetEvent: {
+      id: 'demo-race-0000000000000001',
+      name: 'Harbor Lights 10K',
+      date: isoDate(targetDate),
+      role: 'primary',
+      distanceLabel: '10K',
+      distanceMeters: 10_000,
+      location: 'Fictional Bay',
+      targetSeconds: 2_430,
+    },
+    goal: { kind: 'time', targetSeconds: 2_430, description: 'Run 10K in 40:30.' },
+    weeks,
+    provenance,
+  }
+  const bootstrapDecision = {
+    schemaVersion: 1,
+    id: 'demo-coaching-bootstrap',
+    outcome: 'REPLAN',
+    trigger: 'bootstrap',
+    createdAt,
+    effectiveDate: isoDate(start),
+    planId,
+    basePlanRevision: null,
+    resultPlanRevision: 1,
+    reasonCodes: ['INITIAL_PLAN'],
+    summary: 'Created a focused four-week block for Harbor Lights 10K.',
+    evidence: [],
+    changes: [{ kind: 'replace_future', effectiveDate: isoDate(start), beforeWeeks: [], afterWeeks: weeks }],
+    provenance,
+  }
+  const evaluationDecision = {
+    schemaVersion: 1,
+    id: 'demo-coaching-evaluation-decision',
+    outcome: 'KEEP',
+    trigger: 'post_activity',
+    createdAt: evaluationCreatedAt,
+    effectiveDate: isoDate(addDays(start, 1)),
+    planId,
+    basePlanRevision: 1,
+    resultPlanRevision: 1,
+    reasonCodes: ['SESSION_COMPLETED'],
+    summary: 'Session completed as intended. No plan change.',
+    evidence: [{ code: 'SESSION_COMPLETE', message: 'The completed run matched the prescribed session type.' }],
+    changes: [],
+    provenance: { ...provenance, trigger: 'post_activity', createdAt: evaluationCreatedAt },
+  }
+  const evaluation = latest ? {
+    schemaVersion: 1,
+    id: 'demo-coaching-evaluation',
+    activityId: latest.id,
+    activityDate: latest.date,
+    prescriptionId: 'demo-prescription-completed',
+    planId,
+    planRevision: 1,
+    matchStatus: 'matched',
+    comparison: {
+      plannedDistanceMeters: Math.round(latest.distanceKm * 1_000),
+      actualDistanceMeters: Math.round(latest.distanceKm * 1_000),
+      plannedDurationSeconds: latest.durationSeconds,
+      actualDurationSeconds: latest.durationSeconds,
+      ...(latest.paceSecPerKm ? { actualPaceSecPerKm: Math.round(latest.paceSecPerKm) } : {}),
+      ...(latest.avgHeartRate ? { actualAvgHrBpm: latest.avgHeartRate } : {}),
+    },
+    decisionId: evaluationDecision.id,
+    summary: evaluationDecision.summary,
+    createdAt: evaluationCreatedAt,
+    contextHash: 'demo-context',
+    provenance: { ...provenance, trigger: 'post_activity', createdAt: evaluationCreatedAt, decisionId: evaluationDecision.id },
+  } : null
+  const year = createdAt.slice(0, 4)
+  const month = latest?.date.slice(0, 7) ?? createdAt.slice(0, 7)
+  return {
+    'coaching/current_plan.json': plan,
+    'coaching/coach_state.json': {
+      schemaVersion: 1,
+      activePlanId: planId,
+      activePlanRevision: 1,
+      lastDecisionId: evaluationDecision.id,
+      lastBootstrapAt: createdAt,
+      lastPostActivityAt: createdAt,
+      lastWeeklyReviewAt: null,
+      updatedAt: createdAt,
+    },
+    'coaching/decisions/index.json': { keys: [year] },
+    [`coaching/decisions/${year}.json`]: { decisions: [bootstrapDecision, evaluationDecision] },
+    'coaching/evaluations/index.json': { keys: evaluation ? [month] : [] },
+    ...(evaluation ? { [`coaching/evaluations/${month}.json`]: { evaluations: [evaluation] } } : {}),
+  }
+}
+
 function buildLocationOverrides() {
-  // No real overrides needed - fictional geography resolves to nothing or
-  // to whatever generic label the map provider gives it, which is fine.
   return {}
 }
 
@@ -579,6 +689,7 @@ export function generateDemoDataset({ now = new Date() } = {}) {
     'sync_meta.json': buildSyncMeta(endDate),
     'activities/index.json': { months: monthKeys },
     'planned_workouts/index.json': { years: plannedYears },
+    ...buildCoachingData(endDate, activities),
   }
   for (const [month, acts] of Object.entries(months)) {
     files[`activities/${month}.json`] = { activities: acts.sort((a, b) => b.date.localeCompare(a.date)) }
@@ -598,10 +709,6 @@ export function writeDemoDataset(baseDir, dataset = generateDemoDataset()) {
   }
 }
 
-// Garmin's own published population reference table (age/sex bands) - not
-// personal data, reused verbatim. Real syncs refresh this file from Garmin's
-// API like any other metric (see scripts/garmin/vo2max_norms.py); the demo
-// dataset just needs a plausible, unchanging copy.
 const GENERIC_VO2MAX_NORMS = {
   female: {
     '20-29': { fair: 36.1, good: 39.5, excellent: 43.9, superior: 49.6 },

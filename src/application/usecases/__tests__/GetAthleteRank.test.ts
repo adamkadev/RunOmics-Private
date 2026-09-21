@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { RecordEntry } from '../GetRecords'
 import type { AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
-import { VO2MAX_NORMS } from '@/domain/athlete/vo2maxNorms'
+import type { Vo2maxNorms } from '@/domain/athlete/vo2maxNorms'
 
 vi.mock('@/application/usecases/GetVO2maxHistory', () => ({
   getLatestVO2max: vi.fn(),
@@ -11,7 +11,7 @@ async function rank(vo2maxGarmin: number | null, records: RecordEntry[], athlete
   const { getLatestVO2max } = await import('@/application/usecases/GetVO2maxHistory')
   vi.mocked(getLatestVO2max).mockReturnValue(vo2maxGarmin)
   const { getAthleteRank } = await import('../GetAthleteRank')
-  return getAthleteRank(records, athlete)
+  return getAthleteRank(records, athlete, TEST_NORMS)
 }
 
 function record(key: string, seconds: number | null): RecordEntry {
@@ -19,9 +19,17 @@ function record(key: string, seconds: number | null): RecordEntry {
 }
 
 const MALE_30 = { age: 34, sex: 'male' } as const
-// The norms JSON is refreshed from Garmin on every sync, so anchor values are
-// read from the table rather than hardcoded here.
-const MALE_30_NORMS = VO2MAX_NORMS.male['30-39']
+const MALE_30_NORMS = { fair: 40.5, good: 44, excellent: 48.3, superior: 54 }
+const TEST_NORMS = {
+  male: {
+    '20-29': { fair: 41.7, good: 45.4, excellent: 51.1, superior: 55.4 },
+    '30-39': MALE_30_NORMS,
+    '60-69': { fair: 32.3, good: 35.5, excellent: 39.5, superior: 45.7 },
+  },
+  female: {
+    '30-39': { fair: 34.4, good: 37.8, excellent: 42.4, superior: 47.4 },
+  },
+} as unknown as Vo2maxNorms
 
 describe('getAthleteRank', () => {
   beforeEach(() => {
@@ -47,7 +55,6 @@ describe('getAthleteRank', () => {
   })
 
   it('ranks off a race record alone when Garmin has no reading', async () => {
-    // 20:00 over 5k is a solidly trained VDOT, well clear of the D floor.
     const result = await rank(null, [record('5k', 20 * 60)], MALE_30)
 
     expect(result?.vo2maxGarmin).toBeNull()
@@ -56,8 +63,6 @@ describe('getAthleteRank', () => {
   })
 
   it('averages the Garmin reading and the best VDOT rather than taking either alone', async () => {
-    // 20:00 over 5k is a VDOT just under 50, an A on its own. Pairing it with a
-    // superior-anchor Garmin reading has to land between the two, not on S.
     const vdotOnly = await rank(null, [record('5k', 20 * 60)], MALE_30)
     expect(vdotOnly?.tier).toBe('A')
     expect(await rank(MALE_30_NORMS.superior, [], MALE_30)).toMatchObject({ tier: 'S' })

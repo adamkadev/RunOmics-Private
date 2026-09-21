@@ -124,3 +124,51 @@ describe('session shape', () => {
     expect(runHistory(current, activities)).toMatchObject({ runsInPast7Days: 3, daysSinceLastRun: 2 })
   })
 })
+
+describe('effortStanding with official race results', () => {
+  const remichOfficial = {
+    activityId: 'remich', eventName: 'Wine Route Remich', date: '2025-09-28',
+    distanceMeters: 5_000, chipTimeSeconds: 1_242, overallPlace: 63, finisherCount: 512,
+  }
+  const escherOfficial = {
+    activityId: 'escher', eventName: 'Escher Kulturlaf', date: '2026-09-05',
+    distanceMeters: 5_000, chipTimeSeconds: 1_292, overallPlace: 28, finisherCount: 188,
+  }
+
+  const older = run({ id: 'older', date: '2025-06-01', bestEfforts: { '5k': 1_400 } })
+  const remich = run({ id: 'remich', date: '2025-09-28', type: 'Race', bestEfforts: { '5k': 1238.1 } })
+  const escher = run({ id: 'escher', date: '2026-09-05', type: 'Race', bestEfforts: { '5k': 1237.6 } })
+  const history = [older, remich, escher]
+
+  it('reads the over-read device split as an all-time best without the official results', () => {
+    expect(runHistory(escher, history).standing).toEqual({ label: '5K', daysSinceBetter: null })
+  })
+
+  it('stops crediting Escher with a benchmark it did not run', () => {
+    expect(runHistory(escher, history, [escherOfficial, remichOfficial]).standing).not.toEqual({
+      label: '5K',
+      daysSinceBetter: null,
+    })
+  })
+
+  it('places Escher behind the faster certified run that already stood', () => {
+    const standing = runHistory(escher, history, [escherOfficial, remichOfficial]).standing
+
+    expect(standing?.label).toBe('5K')
+    expect(standing?.daysSinceBetter).toBe(342)
+  })
+
+  it('still credits Remich, whose certified time is the standing best', () => {
+    expect(runHistory(remich, history, [escherOfficial, remichOfficial]).standing).toEqual({
+      label: '5K',
+      daysSinceBetter: null,
+    })
+  })
+
+  it('leaves a run with no official result on its device efforts', () => {
+    const tempo = run({ id: 'tempo', date: '2026-09-04', bestEfforts: { '5k': 1_500 } })
+
+    expect(runHistory(tempo, [...history, tempo], [escherOfficial, remichOfficial]).standing)
+      .toEqual(runHistory(tempo, [...history, tempo]).standing)
+  })
+})
