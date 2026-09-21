@@ -26,8 +26,36 @@ class GarminAPIError(Exception):
         self.status_code = status_code
 
 
+_CONSUMER_KEY_ENV = "GARMIN_OAUTH_CONSUMER_KEY"
+_CONSUMER_SECRET_ENV = "GARMIN_OAUTH_CONSUMER_SECRET"
+
+
+def _seed_oauth_consumer() -> None:
+    """Fill in the OAuth1 consumer garth would otherwise fetch over the network.
+
+    Refreshing a token makes garth read its consumer key and secret from an S3
+    bucket owned by a project its author has abandoned, once per process - so
+    the day that bucket goes away, the nightly sync stops that night rather
+    than when a token expires. garth only fetches while its module global is
+    still empty, so filling it first removes the dependency outright. With the
+    variables unset nothing changes and garth fetches as before.
+    """
+    key = os.environ.get(_CONSUMER_KEY_ENV, "").strip()
+    secret = os.environ.get(_CONSUMER_SECRET_ENV, "").strip()
+
+    if key and secret:
+        garth.sso.OAUTH_CONSUMER = {
+            "consumer_key": key,
+            "consumer_secret": secret,
+        }
+
+
 class GarminClient:
     def __init__(self, secret_string: str) -> None:
+        # Before anything can trigger a refresh: every entry point in scripts/
+        # reaches Garmin through this constructor.
+        _seed_oauth_consumer()
+
         garth.client.loads(secret_string)
 
         if garth.client.oauth2_token.expired:
