@@ -3,6 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { t } from "@/i18n";
+import {
+  MAP_CHIP_ACTIVE,
+  MAP_CHIP_CARET_INK,
+  MAP_CHIP_GEOMETRY,
+  MAP_CHIP_NEUTRAL,
+  MAP_CHIP_STYLE,
+} from "./mapUtils";
 
 interface Props {
   years: string[];
@@ -36,17 +43,17 @@ export function YearPicker({ years, value, onChange }: Props) {
   }
 
   return (
-    <div ref={ref} className="relative z-10">
+    <div ref={ref} className="relative z-10 shrink-0">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="glass-map-chip flex items-center gap-2 px-3 py-2.5 transition-colors hover:bg-muted"
+        className={[MAP_CHIP_GEOMETRY, "gap-2"].join(" ")}
+        style={{ ...MAP_CHIP_STYLE, ...(value ? MAP_CHIP_ACTIVE : MAP_CHIP_NEUTRAL) }}
       >
-        <span className="text-xs font-semibold text-foreground/80">
-          {value ?? t.pages.map.allYears}
-        </span>
+        <span className="font-semibold">{value ?? t.pages.map.allYears}</span>
         <ChevronDown
-          size={16}
-          className={["text-muted-foreground transition-transform", open ? "rotate-180" : ""].join(" ")}
+          size={10}
+          style={{ color: MAP_CHIP_CARET_INK }}
+          className={["transition-transform", open ? "rotate-180" : ""].join(" ")}
         />
       </button>
 

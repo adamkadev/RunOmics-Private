@@ -2,6 +2,9 @@ import { getAnalyticsData } from '@/application/usecases/GetAnalyticsData'
 import { getYearComparison } from '@/application/usecases/GetYearComparison'
 import { getSeasonHeadline } from '@/application/usecases/GetSeasonHeadline'
 import { getSeasonInsight } from '@/application/usecases/GetSeasonInsight'
+import { analyticsTabFacts } from '@/application/usecases/GetAnalyticsTabFacts'
+import { getAnalyticsTabInsights } from '@/application/usecases/GetAnalyticsTabInsights'
+import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { getVO2maxSeries, getLatestVO2max } from '@/application/usecases/GetVO2maxHistory'
 import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
 import { getLoadRiskPanel } from '@/application/usecases/GetLoadRiskPanel'
@@ -10,7 +13,9 @@ import { getTrainingStatusHistory } from '@/application/usecases/GetTrainingStat
 import { getGarminRacePredictions } from '@/application/usecases/GetGarminRacePredictions'
 import { getThresholdHistory } from '@/application/usecases/GetThresholdHistory'
 import { getHeatmapData } from '@/application/usecases/GetHeatmapData'
+import { getHeatImpact } from '@/application/usecases/GetHeatImpact'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
+import { getVo2maxNorms } from '@/infrastructure/repositories/JsonVo2maxNormsRepository'
 import { vo2maxTopPercent } from '@/domain/athlete/vo2maxNorms'
 import { AnalyticsClient } from '@/components/analytics/AnalyticsClient'
 
@@ -33,14 +38,30 @@ export default async function AnalyticsPage() {
   const seasonHeadline = getSeasonHeadline(data, comparison)
   const seasonInsight = await getSeasonInsight(seasonHeadline)
 
-  // Insight-card context, all read from already-computed series:
+  const tabInsights = await getAnalyticsTabInsights(
+    analyticsTabFacts({
+      data,
+      status: await getTrainingStatus(),
+      load: trainingLoad,
+      loadRisk,
+      loadBalance,
+      threshold,
+      racePredictions,
+      vo2max: getLatestVO2max(),
+    })
+  )
+
   const athlete = getAthleteProfile()
   const latestVO2max = getLatestVO2max()
   const topPercent =
     latestVO2max !== null && athlete.age !== undefined && athlete.sex
-      ? vo2maxTopPercent(latestVO2max, athlete.age, athlete.sex)
+      ? vo2maxTopPercent(latestVO2max, athlete.age, athlete.sex, getVo2maxNorms())
       : null
-  const activeDays = getHeatmapData().filter((d) => d.distanceKm > 0).length
+  // Both halves of the consistency ratio come from the same window, so they are
+  // read off one call: a stale denominator would quietly misreport the share.
+  const heatmap = getHeatmapData()
+  const activeDays = heatmap.filter((d) => d.distanceKm > 0).length
+  const heatImpact = getHeatImpact()
 
   return (
     <div className="space-y-6">
@@ -49,6 +70,7 @@ export default async function AnalyticsPage() {
         comparison={comparison}
         seasonHeadline={seasonHeadline}
         seasonInsight={seasonInsight}
+        tabInsights={tabInsights}
         vo2maxHistory={vo2maxHistory}
         trainingLoad={trainingLoad}
         loadRisk={loadRisk}
@@ -58,6 +80,8 @@ export default async function AnalyticsPage() {
         threshold={threshold}
         vo2maxTopPercent={topPercent}
         activeDays={activeDays}
+        heatmapDays={heatmap.length}
+        heatImpact={heatImpact}
       />
     </div>
   )

@@ -1,4 +1,4 @@
-"""Sync Garmin's own VO2max series to public/data/vo2max_history.json.
+"""Sync Garmin's own VO2max series to the private data workspace.
 
   metrics-service/metrics/maxmet/monthly/{start}/{end}
   metrics-service/metrics/maxmet/daily/{start}/{end}
@@ -21,15 +21,16 @@ undocumented, so a failure there is a warning, not a failed sync.
 
 from __future__ import annotations
 
-import json
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
+from data_directory import get_data_dir
 from .client import GarminAPIError, GarminClient
 from .retry import retry_transient
+from repository.history_file import read_history, write_history
 
-_OUT_PATH = Path(__file__).parent.parent.parent / "public" / "data" / "vo2max_history.json"
+_OUT_PATH = get_data_dir() / "vo2max_history.json"
 
 _WINDOW_MONTHS = 12
 # Only the four-week view plots daily samples, so nothing older is worth a request.
@@ -89,13 +90,8 @@ def normalize_max_met(entries: Any) -> dict[str, dict[str, Any]]:
     return samples
 
 
-def _load_stored() -> dict[str, dict[str, Any]]:
-    if not _OUT_PATH.exists():
-        return {}
-    try:
-        return json.loads(_OUT_PATH.read_text())
-    except Exception:
-        return {}
+def _load_stored() -> dict[str, Any]:
+    return read_history(_OUT_PATH)
 
 
 def _fetch_months(client: GarminClient, start: date, today: date) -> dict[str, dict[str, Any]]:
@@ -148,14 +144,7 @@ def sync_vo2max_history(client: GarminClient, start: date, today: date | None = 
         print("  No VO2max samples returned.")
         return 0
 
-    _OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    _OUT_PATH.write_text(
-        json.dumps(
-            {"months": dict(sorted(months.items())), "days": dict(sorted(days.items()))},
-            indent=2,
-        )
-        + "\n"
-    )
+    write_history(_OUT_PATH, {"months": dict(sorted(months.items())), "days": dict(sorted(days.items()))})
 
     latest = months[max(months)]
     print(

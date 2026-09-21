@@ -2,12 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
-import { cn } from '@/lib/utils'
 import type { AnalyticsPageData } from '@/application/usecases/GetAnalyticsData'
 import type { YearComparisonData } from '@/application/usecases/GetYearComparison'
 import type { SeasonHeadlineData } from '@/application/usecases/GetSeasonHeadline'
 import type { Insight } from '@/lib/gemini'
 import { SeasonHeadline } from '@/components/analytics/SeasonHeadline'
+import { TabInsight } from '@/components/analytics/TabInsight'
+import type { AnalyticsTabInsights } from '@/application/usecases/GetAnalyticsTabInsights'
+import { Pill } from '@/components/ui/Pill'
 import { YearSelector } from '@/components/ui/YearSelector'
 import type { VO2maxSeries } from '@/application/usecases/GetVO2maxHistory'
 import type { TrainingLoadData } from '@/application/usecases/GetTrainingLoad'
@@ -16,12 +18,11 @@ import type { LoadBalanceData } from '@/application/usecases/GetLoadBalance'
 import type { TrainingStatusHistory } from '@/application/usecases/GetTrainingStatusHistory'
 import type { GarminRacePredictionsData } from '@/application/usecases/GetGarminRacePredictions'
 import type { ThresholdHistoryData } from '@/application/usecases/GetThresholdHistory'
+import type { HeatImpactData } from '@/application/usecases/GetHeatImpact'
 import { ChartCardSkeleton } from '@/components/ui/Skeleton'
 import { useSwipeNavigation } from '@/lib/useSwipeNavigation'
 import { t } from '@/i18n'
 
-// Each tab panel is code-split so the analytics page only parses/hydrates the
-// charts of the visible tab (~20 Recharts components across all tabs).
 const tabLoading = () => (
   <div className="space-y-4">
     <ChartCardSkeleton />
@@ -33,8 +34,6 @@ const PerformanceGroup = dynamic(() => import('./PerformanceGroup').then((m) => 
 const VolumeGroup = dynamic(() => import('./VolumeGroup').then((m) => m.VolumeGroup), { loading: tabLoading })
 const HealthGroup = dynamic(() => import('./HealthGroup').then((m) => m.HealthGroup), { loading: tabLoading })
 
-// The four data-type tabs (Performance/Volume/Physiology/Seasons) become four
-// meaning groups: what question is this chart set answering?
 const TABS = [
   { id: 'fitness', label: t.analytics.tabs.fitness },
   { id: 'performance', label: t.analytics.tabs.performance },
@@ -44,9 +43,6 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]['id']
 
-// Season scope for the headline stats and the Volume group's comparison charts.
-// The per-metric trend charts are not governed by this - each one pages through
-// its own 4w/6m/1y window (see WindowedChartCard).
 type View = { kind: 'year'; year: number } | { kind: 'all' }
 
 const VIEW_STORAGE_KEY = 'analytics:view'
@@ -62,7 +58,6 @@ function readStoredView(years: number[]): View | null {
     }
     if (parsed.kind === 'all') return { kind: 'all' }
   } catch {
-    // Malformed/absent storage - fall back to the default view.
   }
   return null
 }
@@ -72,6 +67,7 @@ export function AnalyticsClient({
   comparison,
   seasonHeadline,
   seasonInsight,
+  tabInsights,
   vo2maxHistory,
   trainingLoad,
   loadRisk,
@@ -81,11 +77,14 @@ export function AnalyticsClient({
   threshold,
   vo2maxTopPercent,
   activeDays,
+  heatmapDays,
+  heatImpact,
 }: {
   data: AnalyticsPageData
   comparison: YearComparisonData | null
   seasonHeadline: SeasonHeadlineData | null
   seasonInsight: Insight | null
+  tabInsights: AnalyticsTabInsights
   vo2maxHistory: VO2maxSeries
   trainingLoad: TrainingLoadData | null
   loadRisk: LoadRiskPanelData | null
@@ -95,16 +94,20 @@ export function AnalyticsClient({
   threshold: ThresholdHistoryData | null
   vo2maxTopPercent: number | null
   activeDays: number
+  heatmapDays: number
+  heatImpact: HeatImpactData | null
 }) {
   const { years, byYear } = data
 
   const [view, setView] = useState<View>({ kind: 'year', year: years[0] ?? new Date().getFullYear() })
   const [tab, setTab] = useState<TabId>('fitness')
 
-  // Restore after mount, not in the initializer, to avoid a hydration mismatch.
   useEffect(() => {
     const stored = readStoredView(years)
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore from localStorage after mount
+    // Restored from localStorage once, on mount. A state initializer would read
+    // it during the server render too and trip a hydration mismatch, and
+    // re-running it on a later `years` would overwrite the year the user picked.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (stored) setView(stored)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -118,16 +121,6 @@ export function AnalyticsClient({
 
   function selectTab(id: TabId) {
     setTab(id)
-    // When switching tabs from deep in a long panel, bring the tab strip back
-    // up so the new panel starts from its top. Two rules keep this from ever
-    // nudging the page *downward* - the bug that made the view creep lower on
-    // each switch:
-    //  1. offsetTop (summed up the offsetParent chain) is the strip's stable
-    //     in-flow position; getBoundingClientRect().top reports the *pinned*
-    //     safe-area offset once the sticky strip is stuck, so `rect.top +
-    //     scrollY` overshot and drifted a little further down every time.
-    //  2. We only scroll when we're currently *below* that target, so switching
-    //     tabs while already at the top never yanks the header out of view.
     const el = tabsRef.current
     if (el) {
       let docTop = 0
@@ -149,8 +142,6 @@ export function AnalyticsClient({
     setView({ kind: 'year', year: y })
   }
 
-  // All four meaning groups are available in every view; the year selector only
-  // scopes the Volume group's season-over-season comparison.
   const visibleTabs = TABS
   const displayYear = view.kind === 'year' ? view.year : (years[0] ?? null)
 
@@ -170,11 +161,6 @@ export function AnalyticsClient({
 
   return (
     <div className="space-y-4">
-      {/* Title left, season scope right on one line. The year selector only
-          scopes the Volume group's season-over-season comparison (the per-metric
-          trend charts page through their own windows, and the headline is
-          all-time), so it's shown only on that tab - everywhere else it would be
-          an inert control. */}
       <div className="flex items-center justify-between gap-3 px-1">
         <h1 className="shrink-0 font-display text-title1 font-bold leading-[1.1] tracking-tight text-foreground">
           {t.analytics.title}
@@ -191,50 +177,38 @@ export function AnalyticsClient({
         )}
       </div>
 
-      {/* Group nav sits right under the header, above the season headline -
-          it's the primary navigation for this screen, not a secondary control
-          buried below the stats. Four equal columns rather than a scroller, so
-          "Health" is never half-cropped at the right edge. */}
       {active && (
         <div
           ref={tabsRef}
           role="tablist"
           aria-label={t.analytics.title}
-          // No fill and no bottom border - the bg-background/80 slab read as an
-          // opaque white band over the accent canvas. Just a backdrop blur so the
-          // charts scrolling under the pinned tabs stay legible; the canvas tint
-          // shows through untinted.
           className="sticky top-[max(var(--safe-top),8px)] z-20 -mx-4 grid grid-cols-4 gap-1.5 px-4 py-2 backdrop-blur-xl sm:-mx-6 sm:px-6"
         >
           {visibleTabs.map((item) => (
-            <button
+            <Pill
               key={item.id}
+              as="button"
               role="tab"
               aria-selected={tab === item.id}
               onClick={() => selectTab(item.id)}
-              className={cn(
-                'truncate rounded-full px-2 py-2 text-center text-footnote transition-all active:scale-95',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                tab === item.id
-                  ? 'border border-transparent bg-accent font-semibold text-accent-foreground shadow-sm'
-                  : 'border border-foreground/[0.12] bg-foreground/[0.06] font-medium text-foreground/60 hover:bg-foreground/[0.10] hover:text-foreground',
-              )}
+              variant={tab === item.id ? 'accent' : 'neutral'}
+              className="min-w-0 justify-center px-1 py-2 text-footnote"
             >
-              {item.label}
-            </button>
+              {/* min-w-0 so the label can shrink inside the pill's flex row and
+                  actually ellipsise - four tabs share ~85 px each at 390 px. */}
+              <span className="min-w-0 truncate">{item.label}</span>
+            </Pill>
           ))}
         </div>
       )}
 
-      {/* The season totals card used to sit here. Distance/time/sessions/
-          elevation/avg-per-week/calories are the "how far have I come" read,
-          so they live on Progress' This year card - Analytics answers "why am
-          I improving?" and opens straight on the headline + charts. */}
       {seasonHeadline && <SeasonHeadline data={seasonHeadline} aiTake={seasonInsight} />}
 
       {active && (
         <>
           <div {...swipeHandlers}>
+            {tabInsights[tab] && <TabInsight insight={tabInsights[tab]!} />}
+
             {tab === 'fitness' && (
               <FitnessGroup
                 trainingLoad={trainingLoad}
@@ -245,6 +219,7 @@ export function AnalyticsClient({
                 weeklyTrends={data.weeklyTrends}
                 threshold={threshold}
                 activeDays={activeDays}
+                heatmapDays={heatmapDays}
                 racePredictions={racePredictions}
               />
             )}
@@ -253,12 +228,14 @@ export function AnalyticsClient({
               <PerformanceGroup
                 weeklyTrends={data.weeklyTrends}
                 racePredictions={racePredictions}
+                heatImpact={heatImpact}
               />
             )}
 
             {tab === 'volume' && (
               <VolumeGroup
                 series={active}
+                weeklyTrends={data.weeklyTrends}
                 year={view.kind === 'year' ? view.year : null}
                 years={years}
                 byYear={byYear}

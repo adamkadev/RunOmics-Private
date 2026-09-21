@@ -51,7 +51,6 @@ export function Sidebar() {
 
   return (
     <>
-      {/* ─── Desktop sidebar ─── */}
       <GlassSurface
         as="aside"
         variant="chrome"
@@ -103,6 +102,7 @@ export function Sidebar() {
                   ? 'text-accent-text'
                   : 'text-subtle hover:text-muted-foreground'
               )}
+              aria-label={t.nav.items.settings}
               title={t.nav.items.settings}
             >
               <Settings size={16} />

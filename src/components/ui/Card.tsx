@@ -36,14 +36,4 @@ export function Card({ children, ...opts }: CardProps) {
   return <div className={cardClass(opts)}>{children}</div>
 }
 
-/** Shared shell for small floating surfaces (hover tooltips, chart tooltips). */
 export const tooltipSurfaceClass = 'rounded-lg border border-border bg-card px-2.5 py-2 text-xs shadow-md'
-
-/** Inline status/label chip. Pass className for bg + text color. */
-export function Badge({ className, children }: { className?: string; children: ReactNode }) {
-  return (
-    <span className={cn('inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', className)}>
-      {children}
-    </span>
-  )
-}

@@ -2,6 +2,8 @@
 
 import { useRouter } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
+import { useNavigationOrigin } from '@/components/layout/NavigationHistory'
+import { sectionLabel } from '@/lib/navigation'
 
 interface Props {
   label: string
@@ -10,16 +12,20 @@ interface Props {
 
 export function BackButton({ label, fallbackHref = '/' }: Props) {
   const router = useRouter()
+  const origin = useNavigationOrigin()
+  const originLabel = origin ? sectionLabel(origin.path) : null
+
   return (
     <button
       onClick={() => {
-        if (window.history.length > 1) router.back()
-        else router.push(fallbackHref)
+        if (!origin || !originLabel) router.push(fallbackHref)
+        else if (origin.isImmediate) router.back()
+        else router.push(origin.path)
       }}
       className="mb-4 inline-flex items-center gap-1.5 text-subhead font-semibold text-muted-foreground transition-colors hover:text-foreground"
     >
       <ArrowLeft size={16} strokeWidth={2.2} />
-      {label}
+      {originLabel ?? label}
     </button>
   )
 }

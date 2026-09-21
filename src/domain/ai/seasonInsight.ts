@@ -3,10 +3,7 @@ import { insightHash } from './insightHash'
 import { avoidClause, systemInstruction } from './prompt'
 
 export const SEASON_SURFACE = 'seasonHeadline'
-export const SEASON_LIMITS = { headline: 64, body: 160 }
-
-// Also one call a day, and it shares the hero's 20/day budget comfortably.
-export const SEASON_MODEL = 'gemini-3.6-flash'
+export const SEASON_LIMITS = { headline: 64, body: 160, bullet: 90 }
 
 function facts(data: SeasonHeadlineData) {
   return Object.fromEntries(data.bullets.map((b, i) => [`bullet${i}`, `${b.tone}:${b.text}`]))
@@ -16,13 +13,20 @@ export function seasonInsightHash(data: SeasonHeadlineData): string {
   return insightHash(facts(data))
 }
 
+export function seasonInsightGuard(data: SeasonHeadlineData): string {
+  return insightHash({ tones: data.bullets.map((b) => b.tone).join(',') })
+}
+
 export const SEASON_SYSTEM_INSTRUCTION = [
   systemInstruction(
     'You are a running coach naming what an athlete season has actually done, in the card that opens their analytics page.',
     'one sentence tying the reads together into a single takeaway',
     SEASON_LIMITS
   ),
-  'The individual reads are already listed as bullets under your text, so do not restate them one by one.',
+  `"bullets" is one line per read, in the order they are listed, each at most ${SEASON_LIMITS.bullet} characters.`,
+  'A bullet says what its read means for the athlete, in the voice of a coach rather than a metric readout.',
+  'Keep the figures the read is built on, and keep the period they cover: a pace measured over the first weeks of the season is an average of that block, never a single run, so never phrase it as one.',
+  'The body must not repeat the bullets: it is what they add up to.',
 ].join(' ')
 
 export function seasonInsightPrompt(data: SeasonHeadlineData, recentHeadlines: string[]): string {

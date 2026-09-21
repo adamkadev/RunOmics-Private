@@ -7,13 +7,19 @@ import {
   hasEarlierPoints,
   pointsInWindow,
   sampleForRange,
+  seriesCadence,
+  seriesShape,
   windowBounds,
   type ChartRange,
+  type SeriesShape,
   type WindowBounds,
 } from '@/domain/timeWindow'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { ChartCardHead, ChartReading } from '@/components/ui/ChartCard'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
+import { CHART_COLORS } from '@/lib/colors'
+import { AXIS_TICK_DATE, formatDate } from '@/lib/formatters'
 
 export interface ChartWindow<T extends { date: string }> {
   range: ChartRange
@@ -26,23 +32,23 @@ export interface ChartWindow<T extends { date: string }> {
   goForward: () => void
 }
 
-// 4w is the default everywhere: the range lives in component state only, so
-// leaving the page and coming back always lands back on the recent window
-// rather than whatever was last inspected.
+function startOfTodayMs(): number {
+  const d = new Date()
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+}
+
 export function useChartWindow<T extends { date: string }>(
   points: T[],
   initialRange: ChartRange = '4w',
+  anchor?: Date,
 ): ChartWindow<T> {
   const [range, setRange] = useState<ChartRange>(initialRange)
-  // 0 is the window ending on the anchor; each step back is one window earlier.
   const [offset, setOffset] = useState(0)
 
-  const anchor = useMemo(() => {
-    const last = points[points.length - 1]?.date
-    return last ? new Date(last + 'T00:00:00') : new Date()
-  }, [points])
+  const anchorMs = anchor ? anchor.getTime() : startOfTodayMs()
+  const anchorDate = useMemo(() => new Date(anchorMs), [anchorMs])
 
-  const bounds = useMemo(() => windowBounds(range, offset, anchor), [range, offset, anchor])
+  const bounds = useMemo(() => windowBounds(range, offset, anchorDate), [range, offset, anchorDate])
   const visible = useMemo(() => pointsInWindow(points, bounds), [points, bounds])
 
   return {
@@ -60,8 +66,6 @@ export function useChartWindow<T extends { date: string }>(
   }
 }
 
-// One segmented pill (shared background, no per-button borders) rather than
-// three separately-boxed buttons - matches the mockup's 6w/6m/1y control.
 export function ChartRangeChips({
   value,
   onChange,
@@ -91,7 +95,7 @@ export function ChartRangeChips({
 }
 
 function shortDate(date: string): string {
-  return new Date(date + 'T00:00:00').toLocaleDateString(t.locale, { day: 'numeric', month: 'short' })
+  return formatDate(date, AXIS_TICK_DATE)
 }
 
 export function ChartWindowPager({
@@ -132,51 +136,71 @@ export function ChartWindowPager({
   )
 }
 
-/**
- * Card frame for a self-windowing trend chart: title, optional extra header
- * controls and legend, the range chips, the pager, an empty state, and the
- * footnote. The chart body is a render-prop given the visible slice, so every
- * windowed chart shares one layout and only supplies its own plot.
- *
- * The slice handed to `children` is downsampled to the window's point budget
- * (4w -> 4, 6m -> 6, 1y -> 12) so every trend chart in the app reads at the
- * same density as the Fitness group's load chart. Charts that aggregate the
- * whole window instead of plotting it (the zone donut) opt out with
- * `sample={false}`.
- */
+function CadenceNote({ plotted }: { plotted: { date: string }[] }) {
+  const note =
+    seriesCadence(plotted) === 'weekly'
+      ? t.chartWindow.weeklyMeans(plotted.length)
+      : t.chartWindow.pointsInWindow(plotted.length)
+
+  return <p className="mt-2 text-caption text-subtle">{note}</p>
+}
+
 export function WindowedChartCard<T extends { date: string }>({
   title,
+  unit,
   controls,
   legend,
   points,
   initialRange = '4w',
   sample = true,
   footnote,
+  reading,
+  value,
   children,
 }: {
   title: ReactNode
+  /** What the plotted values are counted in, shown beside the title so the
+   *  axis numbers are not the only place the reader can look for it. */
+  unit?: string
   controls?: ReactNode
-  legend?: ReactNode
+  legend?: ReactNode | ((visible: T[]) => ReactNode)
   points: T[]
   initialRange?: ChartRange
   sample?: boolean
   footnote?: ReactNode
-  children: (visible: T[]) => ReactNode
+  /** The card's takeaway, rendered above the chart. It takes the window that is
+   *  actually on screen - not the whole series - so a card can never lead with
+   *  a number the reader cannot find in the picture below it. */
+  reading?: (visible: T[]) => ReactNode
+  value?: (visible: T[]) => ReactNode
+  children: (visible: T[], shape: SeriesShape) => ReactNode
 }) {
   const w = useChartWindow(points, initialRange)
   const plotted = sample ? sampleForRange(w.visible, w.range) : w.visible
+  const shape = seriesShape(plotted.length)
+  const takeaway = shape !== 'tooFew' && reading ? reading(plotted) : null
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-foreground/80">{title}</h3>
-        <div className="flex flex-wrap items-center gap-2">
-          {controls}
-          <ChartRangeChips value={w.range} onChange={w.selectRange} />
-        </div>
-      </div>
+      <ChartCardHead
+        title={title}
+        unit={unit}
+        footnote={footnote}
+        controls={
+          <>
+            {controls}
+            <ChartRangeChips value={w.range} onChange={w.selectRange} />
+          </>
+        }
+      />
 
-      {legend && <div className="mb-3 flex flex-wrap gap-x-3 gap-y-1">{legend}</div>}
+      {takeaway && <ChartReading>{takeaway}</ChartReading>}
+
+      {legend && (
+        <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          {typeof legend === 'function' ? legend(plotted) : legend}
+        </div>
+      )}
 
       <ChartWindowPager
         bounds={w.bounds}
@@ -188,20 +212,28 @@ export function WindowedChartCard<T extends { date: string }>({
 
       {plotted.length === 0 ? (
         <p className="py-12 text-center text-sm text-subtle">{t.chartWindow.empty}</p>
+      ) : shape === 'tooFew' ? (
+        <div className="py-6 text-center">
+          {value && <div className="font-display text-title2 font-bold tabular-nums">{value(plotted)}</div>}
+          <p className="mt-1 text-sm text-subtle">{t.chartWindow.tooFewToPlot}</p>
+        </div>
       ) : (
-        children(plotted)
+        children(plotted, shape)
       )}
 
-      {footnote && <p className="mt-2 text-xs text-subtle">{footnote}</p>}
+      {shape !== 'curve' && plotted.length > 0 && <CadenceNote plotted={plotted} />}
     </GlassSurface>
   )
 }
 
-/**
- * Dot props for a windowed trend line. The point budget leaves 4-12 values per
- * window, so each reading is worth marking - at that density a bare line hides
- * where the actual measurements are.
- */
+export function latestOf<T>(points: T[], pick: (p: T) => number | null | undefined): number | null {
+  for (let i = points.length - 1; i >= 0; i--) {
+    const v = pick(points[i]!)
+    if (typeof v === 'number') return v
+  }
+  return null
+}
+
 export function trendDots(color: string) {
   return {
     dot: { r: 3, fill: color, stroke: 'none' },
@@ -209,12 +241,24 @@ export function trendDots(color: string) {
   }
 }
 
-/** Short "24 Jun" label for a chart's date-keyed X axis. */
 export function windowTickDate(date: string): string {
   return shortDate(date)
 }
 
-/** Dates to keep as X-axis ticks so a dense window shows ~`count` labels. */
+export function windowDateAxis(ticks: Set<string>, label: (date: string) => string = windowTickDate) {
+  return {
+    dataKey: 'date',
+    tick: { fontSize: 11, fill: CHART_COLORS.axisTick },
+    axisLine: false,
+    tickLine: false,
+    tickFormatter: (date: string) => (ticks.has(date) ? label(date) : ''),
+  }
+}
+
+export function windowTickMonth(date: string): string {
+  return formatDate(date, { precision: 'month', year: 'never' })
+}
+
 export function windowTicks<T extends { date: string }>(points: T[], count = 6): Set<string> {
   const step = Math.max(1, Math.floor(points.length / count))
   return new Set(points.filter((_, i) => i % step === 0).map((p) => p.date))

@@ -2,25 +2,26 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { MapPin, Maximize2, Minimize2, Thermometer } from 'lucide-react'
+import { MapPin, Maximize2, Minimize2 } from 'lucide-react'
 import type { LngLatBounds, Map as MapLibreMap, Marker } from 'maplibre-gl'
 import { cn } from '@/lib/utils'
 import { maptilerStyleUrl } from '@/lib/maptiler'
-import { CHART_COLORS, MAP_COLORS, PACE_ROUTE_COLORS, temperatureIconColor } from '@/lib/colors'
+import { CHART_COLORS, MAP_COLORS, PACE_ROUTE_COLORS } from '@/lib/colors'
 import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
-import type { ActivityType } from '@/domain/activity/types'
+import type { ActivityType, ActivityWeather } from '@/domain/activity/types'
+import type { ShoeTag } from '@/domain/shoe/types'
 import { ShoePairTag } from '@/components/activities/ShoePairTag'
+import { MAP_CHIP_CLASS, WeatherChips } from './WeatherChips'
 import { t } from '@/i18n'
+import { loadMapLibre, showPlaceLabelsAtAnyZoom } from '@/lib/maplibre'
 
 interface Props {
   route: [number, number][]
   paceSamples?: number[] | null
   hoverFraction?: number | null
-  avgTemperature?: number | null
-  /** Rendered as a colored badge next to the temperature chip, saving a header row. */
+  weather?: ActivityWeather | null
   activityType?: ActivityType | null
-  /** Rendered as a pill in the map's bottom-left, keeping activity metadata off the header. */
-  gearId?: string | null
+  shoe?: ShoeTag | null
   className?: string
 }
 
@@ -35,7 +36,6 @@ function buildSegmentFeatures(route: [number, number][], paceSamples: number[] |
       const t = sampleIdx - low
       pace = (paceSamples[low] ?? pace) * (1 - t) + (paceSamples[high] ?? pace) * t
     }
-    // slice(0, -1) guarantees route[i + 1] exists.
     const next = route[i + 1]!
     return {
       type: 'Feature' as const,
@@ -58,8 +58,9 @@ function mkMarker(bg: string, border = 'white', size = 13) {
   return el
 }
 
-export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemperature, activityType, gearId, className }: Props) {
+export default function ActivityMap({ route, paceSamples, hoverFraction, weather, activityType, shoe, className }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const hasToken = !!process.env.NEXT_PUBLIC_MAPTILER_TOKEN
   const mapRef = useRef<MapLibreMap | null>(null)
   const mglRef = useRef<typeof import('maplibre-gl') | null>(null)
   const hoverMarkerRef = useRef<Marker | null>(null)
@@ -69,7 +70,6 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
 
   const toggleFullscreen = useCallback(() => setIsFullscreen(v => !v), [])
 
-  // Escape to exit fullscreen
   useEffect(() => {
     if (!isFullscreen) return
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setIsFullscreen(false) }
@@ -82,8 +82,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
     let cancelled = false
 
     async function initMap(isDark: boolean) {
-      const mgl = await import('maplibre-gl')
-      await import('maplibre-gl/dist/maplibre-gl.css')
+      const mgl = await loadMapLibre()
       if (cancelled) return
 
       const token = process.env.NEXT_PUBLIC_MAPTILER_TOKEN
@@ -118,7 +117,6 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
       const segments = buildSegmentFeatures(route, paceSamples)
       const hasPace = !!(paceSamples && paceSamples.length > 1)
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const lineColor: any = hasPace
         ? ['interpolate', ['linear'], ['get', 'pace'],
             255, PACE_ROUTE_COLORS.fast,
@@ -130,6 +128,8 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
 
       map.on('load', () => {
         if (cancelled) return
+
+        showPlaceLabelsAtAnyZoom(map)
 
         map.addSource('route', {
           type: 'geojson',
@@ -164,7 +164,6 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
           const eased = 1 - Math.pow(1 - progress, 3)
           const count = Math.floor(eased * total)
 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           ;(map.getSource('route') as any)?.setData({ type: 'FeatureCollection', features: segments.slice(0, count) })
 
           if (progress < 1) {
@@ -199,13 +198,8 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
       mapRef.current = null
       hoverMarkerRef.current = null
     }
-    // isFullscreen is a dependency on purpose: toggling fullscreen re-mounts the
-    // container (it moves into / out of the body portal), so the map is rebuilt
-    // in the correctly-sized container and its fitBoundsOptions frames the whole
-    // trace - no stale-size zoom, and it works even inside a transformed ancestor.
   }, [route, paceSamples, isFullscreen])
 
-  // Sync hover marker with chart scrubbing
   useEffect(() => {
     const map = mapRef.current
     const mgl = mglRef.current
@@ -229,6 +223,8 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
     }
   }, [hoverFraction, route])
 
+  if (!hasToken) return <MapUnavailable className={className} />
+
   const tree = (
     <div
       className={cn(
@@ -239,27 +235,21 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
     >
       <div ref={containerRef} role="img" aria-label={t.activity.map.routeMap} className="h-full w-full" />
 
-      {(avgTemperature != null || activityType) && (
+      {(weather || activityType) && (
         <div
           className={cn(
-            'absolute left-2 z-10 flex items-center gap-1.5',
+            'absolute left-2 right-14 z-10 flex flex-wrap items-center gap-1.5',
             isFullscreen ? 'top-[max(env(safe-area-inset-top),8px)]' : 'top-2'
           )}
         >
-          {avgTemperature != null && (
-            <div className="glass-map-chip flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold">
-              <Thermometer size={12} className={temperatureIconColor(avgTemperature)} />
-              {avgTemperature}{t.units.celsius}
-            </div>
-          )}
+          {weather && <WeatherChips weather={weather} />}
           {activityType && (
-            <span
-              className="rounded-[10px] px-2.5 py-1.5 text-xs font-bold uppercase tracking-wide"
-              style={{
-                background: ACTIVITY_TYPE_CONFIG[activityType].chartColor,
-                color: MAP_COLORS.chipInkOnAmber,
-              }}
-            >
+            <span className={cn(MAP_CHIP_CLASS, 'uppercase tracking-wide')}>
+              <span
+                aria-hidden
+                className="h-[7px] w-[7px] shrink-0 rounded-full"
+                style={{ background: ACTIVITY_TYPE_CONFIG[activityType].chartColor }}
+              />
               {t.activityTypes[activityType]}
             </span>
           )}
@@ -277,14 +267,14 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
         {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
       </button>
 
-      {gearId && (
+      {shoe && (
         <div
           className={cn(
             'pointer-events-none absolute left-2 z-10',
             isFullscreen ? 'bottom-[max(env(safe-area-inset-bottom),8px)]' : 'bottom-2'
           )}
         >
-          <ShoePairTag gearId={gearId} />
+          <ShoePairTag shoe={shoe} />
         </div>
       )}
 
@@ -296,10 +286,6 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, avgTemp
     </div>
   )
 
-  // In fullscreen the overlay is portaled to <body> so `fixed inset-0` is sized
-  // by the viewport, never trapped by a transformed/filtered ancestor that would
-  // clip it (leaving the tab bar showing and the trace running off-screen).
-  // Inline, it renders in place as usual.
   return isFullscreen ? createPortal(tree, document.body) : tree
 }
 
@@ -314,6 +300,21 @@ export function NoRouteMap({ className }: { className?: string }) {
       <MapPin size={24} className="text-subtle" />
       <p className="text-sm text-subtle">{t.activity.map.noTrace}</p>
       <p className="text-xs text-subtle">{t.activity.map.noTraceHint}</p>
+    </div>
+  )
+}
+
+function MapUnavailable({ className }: { className?: string }) {
+  return (
+    <div
+      className={cn(
+        'flex min-h-[280px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-muted',
+        className
+      )}
+    >
+      <MapPin size={24} className="text-subtle" />
+      <p className="text-sm text-subtle">{t.activity.map.mapUnavailable}</p>
+      <p className="text-xs text-subtle">{t.activity.map.mapUnavailableHint}</p>
     </div>
   )
 }

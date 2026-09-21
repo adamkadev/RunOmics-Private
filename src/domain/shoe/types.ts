@@ -1,5 +1,4 @@
-import { HUE } from '@/lib/palette'
-import data from '../../../public/data/shoes.json'
+import { SHOE_DOT_RAMP } from '@/lib/colors'
 
 export interface ShoeInfo {
   name: string
@@ -10,7 +9,7 @@ export interface ShoeInfo {
   dotColor: string
 }
 
-interface ShoeRecord {
+export interface ShoeRecord {
   gearId: string
   brand: string
   model: string
@@ -19,9 +18,12 @@ interface ShoeRecord {
   firstUseDate: string | null
 }
 
-const DOT_PALETTE = [HUE.sky500, HUE.roOrange, HUE.roViolet, HUE.roAmber, HUE.roPink, HUE.roBlue, HUE.roRust, HUE.roSage]
+export interface ShoeTag {
+  name: string
+  dotColor: string
+}
 
-function buildRegistry(records: ShoeRecord[]): Record<string, ShoeInfo> {
+export function buildShoeRegistry(records: ShoeRecord[]): Record<string, ShoeInfo> {
   const registry: Record<string, ShoeInfo> = {}
   records.forEach((r, i) => {
     registry[r.gearId] = {
@@ -30,10 +32,8 @@ function buildRegistry(records: ShoeRecord[]): Record<string, ShoeInfo> {
       maxKm: r.maxKm,
       alertThresholdKm: Math.round(r.maxKm * 0.8),
       retired: r.retired,
-      dotColor: DOT_PALETTE[i % DOT_PALETTE.length]!,
+      dotColor: SHOE_DOT_RAMP[i % SHOE_DOT_RAMP.length]!,
     }
   })
   return registry
 }
-
-export const SHOE_REGISTRY: Record<string, ShoeInfo> = buildRegistry((data as { shoes: ShoeRecord[] }).shoes)

@@ -7,7 +7,7 @@ import { useAccentUiColor } from '@/lib/useAccent'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
-import { ChartExplain } from '@/components/ui/ChartExplain'
+import { ChartCardHead, ChartReading } from '@/components/ui/ChartCard'
 import { t } from '@/i18n'
 
 interface Props {
@@ -42,10 +42,18 @@ export function DistanceDistributionChart({ data }: Props) {
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground/80">{t.analytics.charts.distance.title}</h3>
-        <span className="text-xs text-subtle">{t.analytics.charts.distance.runs(data.reduce((s, d) => s + d.count, 0))}</span>
-      </div>
+      <ChartCardHead
+        title={t.analytics.charts.distance.title}
+        footnote={t.analytics.charts.distance.footnote}
+        controls={
+          <span className="text-xs text-subtle">
+            {t.analytics.charts.distance.runs(data.reduce((s, d) => s + d.count, 0))}
+          </span>
+        }
+      />
+
+      {reading && <ChartReading>{reading}</ChartReading>}
+
       <ChartFigure summary={summary}>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart
@@ -81,8 +89,6 @@ export function DistanceDistributionChart({ data }: Props) {
           </BarChart>
         </ResponsiveContainer>
       </ChartFigure>
-      {reading && <ChartExplain text={reading} />}
-      <p className="mt-2 text-xs text-subtle">Color intensity reflects relative frequency.</p>
     </GlassSurface>
   )
 }

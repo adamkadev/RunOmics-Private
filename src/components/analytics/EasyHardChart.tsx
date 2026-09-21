@@ -12,7 +12,7 @@ import {
 import type { MonthlyEasyHard } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
-import { ChartExplain } from '@/components/ui/ChartExplain'
+import { ChartCardHead, ChartReading } from '@/components/ui/ChartCard'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { t } from '@/i18n'
@@ -53,9 +53,13 @@ export function EasyHardChart({ data }: Props) {
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <h3 className="mb-4 text-sm font-semibold text-foreground/80">
-        {t.analytics.charts.easyHard.title}
-      </h3>
+      <ChartCardHead
+        title={t.analytics.charts.easyHard.title}
+        footnote={t.analytics.charts.easyHard.footnote}
+      />
+
+      <ChartReading>{explain}</ChartReading>
+
       <ChartFigure summary={summary}>
         <ResponsiveContainer width="100%" height={200}>
           <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>
@@ -97,14 +101,21 @@ export function EasyHardChart({ data }: Props) {
               isAnimationActive={false}
               connectNulls
             />
-            <ReferenceLine y={80} stroke={CHART_COLORS.referenceTarget} strokeDasharray="4 3" strokeWidth={1} />
+            <ReferenceLine
+              y={80}
+              stroke={CHART_COLORS.referenceTarget}
+              strokeDasharray="4 3"
+              strokeWidth={1}
+              label={{
+                value: t.analytics.charts.easyHard.targetLine,
+                position: 'insideTopLeft',
+                fill: CHART_COLORS.axisTick,
+                fontSize: 10,
+              }}
+            />
           </AreaChart>
         </ResponsiveContainer>
       </ChartFigure>
-      <ChartExplain text={explain} />
-      <p className="mt-1 text-xs text-subtle">
-        {t.analytics.charts.easyHard.footnote}
-      </p>
     </GlassSurface>
   )
 }

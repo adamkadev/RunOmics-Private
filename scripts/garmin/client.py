@@ -47,17 +47,28 @@ class GarminClient:
             "User-Agent": _USER_AGENT,
         }
 
-    def _get(self, url: str, **kwargs: Any) -> httpx.Response:
-        resp = self._http.get(url, headers=self._headers(), **kwargs)
+    def _request(self, method: str, url: str, **kwargs: Any) -> httpx.Response:
+        resp = self._http.request(method, url, headers=self._headers(), **kwargs)
 
         if resp.status_code == 401:
             garth.client.refresh_oauth2()
-            resp = self._http.get(url, headers=self._headers(), **kwargs)
+            resp = self._http.request(method, url, headers=self._headers(), **kwargs)
 
         if resp.status_code >= 400:
             raise GarminAPIError(resp.status_code, url)
 
         return resp
+
+    def _get(self, url: str, **kwargs: Any) -> httpx.Response:
+        return self._request("GET", url, **kwargs)
+
+    # Write verbs. Every caller is an explicit, single-resource mutation - there
+    # is deliberately no bulk/list-wide variant of either.
+    def _post(self, url: str, **kwargs: Any) -> httpx.Response:
+        return self._request("POST", url, **kwargs)
+
+    def _delete(self, url: str, **kwargs: Any) -> httpx.Response:
+        return self._request("DELETE", url, **kwargs)
 
     def get_activities(
         self,
@@ -97,24 +108,31 @@ class GarminClient:
             f"{self._base}/activity-service/activity/{activity_id}"
         ).json()
 
-    def get_hr_zones(self, activity_id: str) -> list[dict[str, Any]]:
+    def get_hr_zones(
+        self, activity_id: str, *, strict_errors: bool = False
+    ) -> list[dict[str, Any]]:
         try:
             return self._get(
                 f"{self._base}/activity-service/activity/{activity_id}/hrTimeInZones"
             ).json()
         except GarminAPIError as exc:
-            if exc.status_code == 429:
+            # Production has always treated a missing per-activity optional
+            # resource as empty. Diagnostics opt into strict propagation so a
+            # 5xx cannot masquerade as an unsupported/empty feature.
+            if strict_errors or exc.status_code == 429:
                 raise
             return []
 
-    def get_activity_gear(self, activity_id: str) -> list[dict[str, Any]]:
+    def get_activity_gear(
+        self, activity_id: str, *, strict_errors: bool = False
+    ) -> list[dict[str, Any]]:
         try:
             return self._get(
                 f"{self._base}/gear-service/gear/filterGear",
                 params={"activityId": activity_id},
             ).json()
         except GarminAPIError as exc:
-            if exc.status_code == 429:
+            if strict_errors or exc.status_code == 429:
                 raise
             return []
 
@@ -124,13 +142,13 @@ class GarminClient:
             params={"start": start, "limit": limit, "gearStatuses": status, "sortOrder": "firstUseDate_desc"},
         ).json()
 
-    def download_fit(self, activity_id: str) -> bytes | None:
+    def download_fit(self, activity_id: str, *, strict_errors: bool = False) -> bytes | None:
         try:
             content = self._get(
                 f"{self._base}/download-service/files/activity/{activity_id}"
             ).content
         except GarminAPIError as exc:
-            if exc.status_code == 429:
+            if strict_errors or exc.status_code == 429:
                 raise
             return None
 
@@ -202,6 +220,16 @@ class GarminClient:
     def get_fitness_age(self, start: str, end: str) -> list[dict[str, Any]]:
         return self._get(f"{self._base}/fitnessage-service/stats/daily/{start}/{end}").json()
 
+    def get_current_fitness_age(self, day: str) -> dict[str, Any]:
+        return self._get(f"{self._base}/fitnessage-service/fitnessage/{day}").json()
+
+    def get_fitness_age_weekly(
+        self, day: str, weeks: int = 52
+    ) -> list[dict[str, Any]]:
+        return self._get(
+            f"{self._base}/fitnessage-service/stats/weekly/{day}/{weeks}"
+        ).json()
+
     def get_primary_training_device(self) -> dict[str, Any]:
         return self._get(f"{self._base}/web-gateway/device-info/primary-training-device").json()
 
@@ -225,6 +253,20 @@ class GarminClient:
         url = f"{self._base}/calendar-service/year/{year}/month/{month - 1}"
         return self._get(url).json()
 
+    def get_upcoming_events(
+        self,
+        *,
+        num_days_forward: int = 365,
+        limit: int = 100,
+    ) -> list[dict[str, Any]]:
+        return self._get(
+            f"{self._base}/calendar-service/events/upcoming",
+            params={
+                "numDaysForward": num_days_forward,
+                "limit": limit,
+            },
+        ).json()
+
     def get_workout_detail(self, workout_id: str) -> dict[str, Any]:
         url = f"{self._base}/workout-service/workout/{workout_id}"
         return self._get(url).json()
@@ -242,6 +284,32 @@ class GarminClient:
     def get_training_plan_detail(self, plan_id: int | str) -> dict[str, Any]:
         url = f"{self._base}/trainingplan-service/trainingplan/fbt-adaptive/{plan_id}"
         return self._get(url).json()
+
+    # --- workout writes -------------------------------------------------
+    # Garmin's private workout-service. Creating and scheduling are two calls:
+    # the first stores a workout template in the library, the second puts that
+    # template on a calendar date. Deleting mirrors it in reverse.
+
+    def create_workout(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """Create one workout template. Returns Garmin's saved workout, which
+        carries the assigned `workoutId`."""
+        return self._post(f"{self._base}/workout-service/workout", json=payload).json()
+
+    def schedule_workout(self, workout_id: str, day: str) -> dict[str, Any]:
+        """Put an existing workout template on `day` (YYYY-MM-DD). Returns the
+        calendar entry, which carries `workoutScheduleId`."""
+        return self._post(
+            f"{self._base}/workout-service/schedule/{workout_id}",
+            json={"date": day},
+        ).json()
+
+    def unschedule_workout(self, schedule_id: str) -> None:
+        """Remove one calendar entry, leaving its workout template in place."""
+        self._delete(f"{self._base}/workout-service/schedule/{schedule_id}")
+
+    def delete_workout(self, workout_id: str) -> None:
+        """Delete one workout template from the library."""
+        self._delete(f"{self._base}/workout-service/workout/{workout_id}")
 
     def close(self) -> None:
         self._http.close()

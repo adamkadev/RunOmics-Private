@@ -19,7 +19,6 @@ export default function RecordsLoading() {
         <Skeleton className="h-4 w-56" />
       </div>
 
-      {/* Records */}
       <div className="space-y-3">
         <Skeleton className="h-4 w-36" />
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
@@ -27,7 +26,6 @@ export default function RecordsLoading() {
         </div>
       </div>
 
-      {/* Race predictions */}
       <div className="space-y-3">
         <Skeleton className="h-4 w-36" />
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

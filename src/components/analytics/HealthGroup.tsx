@@ -12,9 +12,6 @@ interface Props {
   loadBalance: LoadBalanceData | null
 }
 
-// "Is my training healthy?" - intensity distribution, running form, aerobic
-// heart-rate trend and the Firstbeat load balance. The pace/HR reference zones
-// live on Progress · Athlete.
 export function HealthGroup({ weeklyTrends, loadBalance }: Props) {
   return (
     <div className="space-y-4">

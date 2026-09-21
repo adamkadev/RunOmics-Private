@@ -1,3 +1,4 @@
+import json
 import sys
 from pathlib import Path
 
@@ -7,6 +8,18 @@ import pytest
 # (`from processing.fit_parser import ...`), mirroring how sync.py runs them:
 # it prepends scripts/ to sys.path. Do the same for the tests.
 sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Fictional - nowhere near any real running route. Overrides whatever a
+# developer's shell happens to have exported, so a test can never read real
+# privacy-zone coordinates even by accident.
+_FICTIONAL_PRIVACY_ZONES = [[0.0, 0.0], [10.0, 10.0]]
+_FICTIONAL_PRIVACY_RADIUS_M = 500
+
+
+@pytest.fixture(autouse=True)
+def fictional_privacy_zones(monkeypatch):
+    monkeypatch.setenv("PRIVACY_ZONES", json.dumps(_FICTIONAL_PRIVACY_ZONES))
+    monkeypatch.setenv("PRIVACY_RADIUS_M", str(_FICTIONAL_PRIVACY_RADIUS_M))
 
 
 @pytest.fixture

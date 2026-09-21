@@ -5,15 +5,6 @@ import { useEffect, useRef } from 'react'
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
-/**
- * Modal accessibility for portal-based dialogs that mount only while open:
- * - marks everything else on the page `inert` (unfocusable + hidden from
- *   assistive tech) for the lifetime of the dialog,
- * - moves focus into the dialog and cycles Tab / Shift+Tab within it,
- * - restores focus to the previously focused element on close.
- *
- * Attach the returned ref to the dialog panel (not the scrim).
- */
 export function useFocusTrap<T extends HTMLElement>() {
   const ref = useRef<T>(null)
 
@@ -22,8 +13,6 @@ export function useFocusTrap<T extends HTMLElement>() {
     if (!container) return
     const previouslyFocused = document.activeElement as HTMLElement | null
 
-    // The dialog is portaled to <body>, so its background is every other body
-    // child. Skip elements already inert (nested dialog) and scripts.
     const madeInert = Array.from(document.body.children).filter(
       (el): el is HTMLElement =>
         el instanceof HTMLElement &&
@@ -36,10 +25,6 @@ export function useFocusTrap<T extends HTMLElement>() {
     const focusables = () => Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE))
 
     container.tabIndex = -1
-    // Focusing the container itself (when the dialog has no focusable
-    // children) is a programmatic accessibility anchor, not a keyboard-driven
-    // focus - suppress its focus ring so it doesn't clash with the dialog's
-    // own border/corner radius.
     container.style.outline = 'none'
     ;(focusables()[0] ?? container).focus({ preventScroll: true })
 

@@ -1,11 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { handleInternalRoute } from '@/lib/internalRoute'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { getLastSyncedAt } from '@/application/usecases/GetSyncStatus'
 
-// Sync freshness probe: the Garmin pipeline runs on a GitHub Actions cron,
-// and until now the only failure signal was the Actions run history. This
-// lets the workflow (or any monitor) ask the deployed app how stale its
-// data actually is.
 const STALE_AFTER_DAYS = 7
 
 export async function GET(req: NextRequest) {
@@ -23,6 +20,7 @@ export async function GET(req: NextRequest) {
       activityCount: activities.length,
       lastActivityDate,
       daysSinceLastActivity,
+      lastSyncedAt: getLastSyncedAt(),
       version: process.env.NEXT_PUBLIC_APP_VERSION ?? null,
     })
   })

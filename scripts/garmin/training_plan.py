@@ -22,10 +22,11 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
+from data_directory import get_data_dir
 from .client import GarminAPIError, GarminClient
 from .retry import retry_transient
 
-_DATA_DIR = Path(__file__).parent.parent.parent / "public" / "data"
+_DATA_DIR = get_data_dir()
 _PATH = _DATA_DIR / "training_plan.json"
 
 

@@ -1,4 +1,4 @@
-"""Sync shoe gear from Garmin Connect into public/data/shoes.json.
+"""Sync shoe gear from Garmin Connect into the private data workspace.
 
 Garmin's gear-service/gear/v2/list (queried once for ACTIVE and once for
 RETIRED) returns each shoe's brand, model, status and odometer cap directly,
@@ -15,10 +15,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from data_directory import get_data_dir
 from .client import GarminClient
 from .retry import retry_transient
 
-_OUT_PATH = Path(__file__).parent.parent.parent / "public" / "data" / "shoes.json"
+_OUT_PATH = get_data_dir() / "shoes.json"
 _DEFAULT_MAX_KM = 1000
 _GEAR_TYPE = "SHOES"
 

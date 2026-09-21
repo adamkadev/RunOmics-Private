@@ -2,9 +2,6 @@ import type { PlanPhaseRange, TrainingPlanPhase } from '@/application/usecases/G
 import { TRAINING_PLAN_PHASE_COLORS } from '@/lib/colors'
 import { t } from '@/i18n'
 
-// Foreground-tinted, not a fixed dark hex - reads as a dim groove on a dark
-// card and a light-grey one on a light card (same trick as bg-foreground/[0.08]
-// elsewhere; --surface3 isn't a real token in this app's theme system).
 const TRACK = 'color-mix(in srgb, var(--foreground) 8%, transparent)'
 
 const PHASE_LABEL: Record<TrainingPlanPhase, string> = {
@@ -22,13 +19,16 @@ function days(from: string, to: string): number {
   )
 }
 
-// Base -> Build -> Peak -> Taper progress bar, driven by the real Garmin Coach
-// phase ranges. Garmin publishes no BASE phase, so getTrainingPlan reconstructs
-// it from the gap between the plan's own start date and its first published
-// phase - real dates, not a guess. Each phase is a segment sized by its length:
-// past phases fill solid, the current one fills to today, upcoming ones stay on
-// the track.
-export function PlanPhaseTrack({ ranges, today }: { ranges: PlanPhaseRange[]; today: string }) {
+/**
+ * Whether the week reads as "current" for this phase is a question about the
+ * whole displayed week, not one reference date - a phase that starts mid-week
+ * (say Tuesday) still made the week's own header call that week "Base," so a
+ * track anchored to Monday alone disagreed with its own header. A range is
+ * current here if it overlaps the week at all; progress reads through to the
+ * end of the displayed week, since that's the furthest point this view knows
+ * the plan has reached.
+ */
+export function PlanPhaseTrack({ ranges, weekStart, weekEnd }: { ranges: PlanPhaseRange[]; weekStart: string; weekEnd: string }) {
   if (ranges.length < 2) return null
 
   return (
@@ -36,10 +36,10 @@ export function PlanPhaseTrack({ ranges, today }: { ranges: PlanPhaseRange[]; to
       <div className="flex items-center gap-1">
         {ranges.map((r) => {
           const color = TRAINING_PLAN_PHASE_COLORS[r.phase] ?? 'var(--accent)'
-          const isPast = r.endDate < today
-          const isCurrent = r.startDate <= today && today <= r.endDate
+          const isPast = r.endDate < weekStart
+          const isCurrent = !isPast && r.startDate <= weekEnd
           const progress = isCurrent
-            ? Math.min(100, Math.max(0, (days(r.startDate, today) / days(r.startDate, r.endDate)) * 100))
+            ? Math.min(100, Math.max(0, (days(r.startDate, weekEnd) / days(r.startDate, r.endDate)) * 100))
             : 0
           const background = isPast
             ? color
@@ -58,12 +58,12 @@ export function PlanPhaseTrack({ ranges, today }: { ranges: PlanPhaseRange[]; to
       <div className="mt-1.5 flex justify-between font-mono text-micro font-semibold uppercase tracking-[0.04em]">
         {ranges.map((r) => {
           const color = TRAINING_PLAN_PHASE_COLORS[r.phase] ?? 'var(--accent)'
-          const active = r.endDate >= today && r.startDate <= today
-          const done = r.endDate < today
+          const isPast = r.endDate < weekStart
+          const isCurrent = !isPast && r.startDate <= weekEnd
           return (
             <span
               key={r.startDate}
-              style={{ color: active || done ? color : 'var(--subtle)' }}
+              style={{ color: isCurrent || isPast ? color : 'var(--subtle)' }}
             >
               {PHASE_LABEL[r.phase]}
             </span>

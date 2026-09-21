@@ -9,10 +9,14 @@ import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
-import { ChartExplain } from '@/components/ui/ChartExplain'
+import { ChartCardHead, ChartReading } from '@/components/ui/ChartCard'
 import { ChartRangeChips, ChartWindowPager, useChartWindow } from '@/components/ui/ChartWindowNav'
-import { formatDuration, formatPace } from '@/lib/formatters'
+import { AXIS_TICK_DATE, formatDate, formatDuration, formatPace } from '@/lib/formatters'
+import { roundAxis } from '@/lib/chartAxis'
 import { t } from '@/i18n'
+
+// A clock-formatted axis reads in quarter minutes: 4:30, 4:45, 5:00.
+const PACE_STEP = 15
 
 const COLOR: Record<RaceDistanceKey, string> = {
   '5k': CHART_COLORS.efficiency,
@@ -81,7 +85,7 @@ function clock(seconds: number): string {
 }
 
 function shortDate(date: string): string {
-  return new Date(date + 'T00:00:00').toLocaleDateString(t.locale, { day: 'numeric', month: 'short' })
+  return formatDate(date, AXIS_TICK_DATE)
 }
 
 interface TooltipProps {
@@ -113,11 +117,8 @@ export function RacePredictorChart({ data }: { data: GarminRacePredictionsData }
   const s = t.analytics.charts.racePredictor
 
   const { range, selectRange, bounds, visible, canGoBack, canGoForward, goBack, goForward } =
-    useChartWindow(data.points)
+    useChartWindow(data.points, '6m')
 
-  // Same point budget as every other windowed chart (4w -> 4, 6m -> 6,
-  // 1y -> 12), so the four distance lines read as trends instead of spaghetti.
-  // Whole seconds per km: the tooltip renders these as finish times.
   const plotted = sampleForRange(visible, range, 0)
 
   const distances = data.distances.filter((d) => plotted.some((p) => p[d] !== null))
@@ -132,8 +133,7 @@ export function RacePredictorChart({ data }: { data: GarminRacePredictionsData }
         : s.reading.flat
     : null
 
-  const min = paces.length ? Math.floor(Math.min(...paces)) - 5 : 0
-  const max = paces.length ? Math.ceil(Math.max(...paces)) + 5 : 0
+  const axis = roundAxis(paces, PACE_STEP)
 
   const step = Math.max(1, Math.floor(plotted.length / 6))
   const tickDates = new Set(plotted.filter((_, i) => i % step === 0).map((p) => p.date))
@@ -144,10 +144,13 @@ export function RacePredictorChart({ data }: { data: GarminRacePredictionsData }
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-foreground/80">{s.title}</h3>
-        <ChartRangeChips value={range} onChange={selectRange} />
-      </div>
+      <ChartCardHead
+        title={s.title}
+        footnote={s.footnote}
+        controls={<ChartRangeChips value={range} onChange={selectRange} />}
+      />
+
+      {reading && <ChartReading>{reading}</ChartReading>}
 
       <div className="mb-3 flex flex-wrap gap-x-3 gap-y-1">
         {data.distances.map((distance) => (
@@ -183,7 +186,9 @@ export function RacePredictorChart({ data }: { data: GarminRacePredictionsData }
                 tickFormatter={(date: string) => (tickDates.has(date) ? shortDate(date) : '')}
               />
               <YAxis
-                domain={[min, max]}
+                domain={axis?.domain}
+                ticks={axis?.ticks}
+                interval={0}
                 reversed
                 tickFormatter={clock}
                 tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
@@ -209,9 +214,6 @@ export function RacePredictorChart({ data }: { data: GarminRacePredictionsData }
           </ResponsiveContainer>
         </ChartFigure>
       )}
-
-      {reading && <ChartExplain text={reading} />}
-      <p className="mt-2 text-xs text-subtle">{s.footnote}</p>
     </GlassSurface>
   )
 }

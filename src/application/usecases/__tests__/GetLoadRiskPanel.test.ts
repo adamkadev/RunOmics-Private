@@ -24,7 +24,6 @@ describe('monotony', () => {
   })
 
   it('computes mean / stdev for a varied week', () => {
-    // mean = 50, stdev ≈ 18.52 -> ≈ 2.70
     const week = [30, 70, 30, 70, 30, 70, 50]
     expect(monotony(week)).toBeCloseTo(2.7, 1)
   })
@@ -81,8 +80,6 @@ describe('acwrZoneFromGarmin', () => {
   })
 
   it('prefers the verdict over our thresholds when the two disagree', () => {
-    // 0.6 would read as 'low' locally, but the watch grades it against a band
-    // it personalises per athlete.
     expect(acwrZoneFromGarmin('OPTIMAL', 0.6)).toBe('safe')
   })
 

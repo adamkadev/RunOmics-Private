@@ -8,7 +8,6 @@ export interface ShoeWearAlert {
   alertThresholdKm: number
 }
 
-// Returns [] on the very first call (nothing to compare against yet) - it just bootstraps the stored state.
 export async function getShoeWearAlerts(): Promise<ShoeWearAlert[]> {
   const shoes = getShoeStats()
   const lastState = await getLastShoeWearState()

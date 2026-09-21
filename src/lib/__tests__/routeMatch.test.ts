@@ -13,31 +13,31 @@ function line(start: [number, number], steps: number, dLon: number, dLat: number
 
 describe('routeSimilarity', () => {
   it('is 1 for an identical trace', () => {
-    const a = buildRouteCellSet(line([6.17, 49.12], 200, ROUTE_GRID, 0))
+    const a = buildRouteCellSet(line([20.00, 35.00], 200, ROUTE_GRID, 0))
     expect(routeSimilarity(a, a)).toBe(1)
   })
 
   it('tolerates one-cell GPS jitter between two passes of the same street', () => {
-    const a = buildRouteCellSet(line([6.17, 49.12], 200, ROUTE_GRID, 0))
-    const jittered = buildRouteCellSet(line([6.17, 49.12 + ROUTE_GRID], 200, ROUTE_GRID, 0))
+    const a = buildRouteCellSet(line([20.00, 35.00], 200, ROUTE_GRID, 0))
+    const jittered = buildRouteCellSet(line([20.00, 35.00 + ROUTE_GRID], 200, ROUTE_GRID, 0))
     expect(routeSimilarity(a, jittered)).toBeGreaterThanOrEqual(SIMILAR_ROUTE_MIN_SIMILARITY)
   })
 
   it('rejects a distinct parallel route a few streets away', () => {
-    const a = buildRouteCellSet(line([6.17, 49.12], 200, ROUTE_GRID, 0))
-    const parallel = buildRouteCellSet(line([6.17, 49.12 + 10 * ROUTE_GRID], 200, ROUTE_GRID, 0))
+    const a = buildRouteCellSet(line([20.00, 35.00], 200, ROUTE_GRID, 0))
+    const parallel = buildRouteCellSet(line([20.00, 35.00 + 10 * ROUTE_GRID], 200, ROUTE_GRID, 0))
     expect(routeSimilarity(a, parallel)).toBe(0)
   })
 
   it('rejects a long run that merely passes through a short loop', () => {
-    const shortLoop = buildRouteCellSet(line([6.17, 49.12], 50, ROUTE_GRID, 0))
-    const longRun = buildRouteCellSet(line([6.15, 49.12], 400, ROUTE_GRID, 0))
+    const shortLoop = buildRouteCellSet(line([20.00, 35.00], 50, ROUTE_GRID, 0))
+    const longRun = buildRouteCellSet(line([19.98, 35.00], 400, ROUTE_GRID, 0))
     expect(routeSimilarity(shortLoop, longRun)).toBeLessThan(SIMILAR_ROUTE_MIN_SIMILARITY)
   })
 
   it('handles empty traces without matching anything', () => {
     const empty = buildRouteCellSet([])
-    const a = buildRouteCellSet(line([6.17, 49.12], 50, ROUTE_GRID, 0))
+    const a = buildRouteCellSet(line([20.00, 35.00], 50, ROUTE_GRID, 0))
     expect(routeSimilarity(empty, a)).toBe(0)
     expect(routeSimilarity(empty, empty)).toBe(0)
   })

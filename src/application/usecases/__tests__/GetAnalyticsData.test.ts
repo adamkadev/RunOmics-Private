@@ -4,6 +4,7 @@ import {
   avgField,
   easyHardShare,
   efficiencyFactor,
+  adjustedEfficiencyFactor,
   zoneDistribution,
   distanceDistribution,
   computeTotals,
@@ -27,8 +28,6 @@ const act = (overrides: Partial<Activity> = {}): Activity =>
 const zone = (zoneNum: number, seconds: number): HrZone =>
   ({ zone: zoneNum, seconds, percent: 0, minBpm: 0, maxBpm: null }) as HrZone
 
-// ---------- weightedAvg ----------
-
 describe('weightedAvg', () => {
   it('returns null when no value is present', () => {
     const acts = [act({ paceSecPerKm: null, distanceKm: 10 })]
@@ -42,7 +41,6 @@ describe('weightedAvg', () => {
 
   it('weights the average by the given weight function', () => {
     const acts = [act({ paceSecPerKm: 200, distanceKm: 1 }), act({ paceSecPerKm: 400, distanceKm: 3 })]
-    // (200*1 + 400*3) / 4 = 350
     expect(weightedAvg(acts, (a) => a.paceSecPerKm, (a) => a.distanceKm, 0)).toBe(350)
   })
 
@@ -51,8 +49,6 @@ describe('weightedAvg', () => {
     expect(weightedAvg(acts, (a) => a.paceSecPerKm, (a) => a.distanceKm, 0)).toBe(101)
   })
 })
-
-// ---------- avgField ----------
 
 describe('avgField', () => {
   it('returns null when no activity has the field set', () => {
@@ -65,8 +61,6 @@ describe('avgField', () => {
   })
 })
 
-// ---------- easyHardShare ----------
-
 describe('easyHardShare', () => {
   it('returns nulls when there is no zone data', () => {
     expect(easyHardShare([act({ hrZones: [] })])).toEqual({ easyPct: null, hardPct: null })
@@ -74,7 +68,6 @@ describe('easyHardShare', () => {
 
   it('classifies zones 1-2 as easy, 3+ as hard', () => {
     const acts = [act({ hrZones: [zone(1, 600), zone(2, 600), zone(3, 800)] })]
-    // easy = 1200, total = 2000 → 60%
     expect(easyHardShare(acts)).toEqual({ easyPct: 60, hardPct: 40 })
   })
 
@@ -84,15 +77,12 @@ describe('easyHardShare', () => {
   })
 })
 
-// ---------- efficiencyFactor ----------
-
 describe('efficiencyFactor', () => {
   it('returns null when no activity qualifies (needs pace, HR and >= 3km)', () => {
     expect(efficiencyFactor([act({ paceSecPerKm: 300, avgHeartRate: 140, distanceKm: 2 })])).toBeNull()
   })
 
   it('computes (speed in m/min) / HR averaged across qualifying activities', () => {
-    // pace 300 s/km → speed = 1000/300 * 60 = 200 m/min; ef = 200/140 ≈ 1.43
     const acts = [act({ paceSecPerKm: 300, avgHeartRate: 140, distanceKm: 5 })]
     expect(efficiencyFactor(acts)).toBeCloseTo(1.43, 2)
   })
@@ -106,7 +96,25 @@ describe('efficiencyFactor', () => {
   })
 })
 
-// ---------- zoneDistribution ----------
+describe('adjustedEfficiencyFactor', () => {
+  const weather = (apparentTempC: number) =>
+    ({ tempC: apparentTempC, apparentTempC, humidityPct: 60, windKph: 5, windDirDeg: 180, precipitationMm: 0, code: 0 })
+
+  it('matches the raw factor when every run was cool', () => {
+    const acts = [act({ paceSecPerKm: 300, avgHeartRate: 140, distanceKm: 5, weather: weather(10) })]
+    expect(adjustedEfficiencyFactor(acts)).toBeCloseTo(efficiencyFactor(acts)!, 2)
+  })
+
+  it('lifts a hot run above its measured value', () => {
+    const acts = [act({ paceSecPerKm: 300, avgHeartRate: 140, distanceKm: 5, weather: weather(25) })]
+    expect(adjustedEfficiencyFactor(acts)).toBeCloseTo(1.5, 2)
+  })
+
+  it('leaves runs without weather at their measured value', () => {
+    const acts = [act({ paceSecPerKm: 300, avgHeartRate: 140, distanceKm: 5, weather: null })]
+    expect(adjustedEfficiencyFactor(acts)).toBeCloseTo(1.43, 2)
+  })
+})
 
 describe('zoneDistribution', () => {
   it('returns an empty array when there is no zone data', () => {
@@ -121,8 +129,6 @@ describe('zoneDistribution', () => {
     expect(result[1]).toEqual({ zone: 2, seconds: 300, percent: 30 })
   })
 })
-
-// ---------- distanceDistribution ----------
 
 describe('distanceDistribution', () => {
   it('buckets activities into distance brackets and drops empty brackets', () => {
@@ -142,11 +148,8 @@ describe('distanceDistribution', () => {
   })
 })
 
-// ---------- buildWeeklyTrends ----------
-
 describe('buildWeeklyTrends', () => {
   it('groups activities into ISO weeks keyed on the Monday, oldest first', () => {
-    // 2024-06-01 is a Saturday (week of Mon 27 May); 2024-06-05 a Wednesday.
     const points = buildWeeklyTrends([
       act({ date: '2024-06-05', type: 'Base' }),
       act({ date: '2024-06-01', type: 'Base' }),
@@ -193,12 +196,23 @@ describe('buildWeeklyTrends', () => {
     expect(points[0]?.hardPace).toBe(240)
   })
 
+  it('sums the distance and session count of the week', () => {
+    const points = buildWeeklyTrends([
+      act({ date: '2024-06-03', distanceKm: 10.4 }),
+      act({ date: '2024-06-06', distanceKm: 8.2 }),
+      act({ date: '2024-06-10', distanceKm: 5 }),
+    ])
+
+    expect(points[0]?.distanceKm).toBe(19)
+    expect(points[0]?.sessionCount).toBe(2)
+    expect(points[1]?.distanceKm).toBe(5)
+    expect(points[1]?.sessionCount).toBe(1)
+  })
+
   it('is empty when there are no activities', () => {
     expect(buildWeeklyTrends([])).toEqual([])
   })
 })
-
-// ---------- computeTotals ----------
 
 describe('computeTotals', () => {
   it('sums distance, duration, elevation and calories', () => {
@@ -215,7 +229,6 @@ describe('computeTotals', () => {
   })
 
   it('extrapolates avgKmPerWeek and caloriesPerWeek from elapsed days', () => {
-    // 14km over 7 elapsed days → 14 km/week
     const totals = computeTotals([act({ distanceKm: 14, calories: 700 })], 7)
     expect(totals.avgKmPerWeek).toBe(14)
     expect(totals.caloriesPerWeek).toBe(700)

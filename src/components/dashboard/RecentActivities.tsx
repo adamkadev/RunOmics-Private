@@ -2,16 +2,14 @@ import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { ActivityListCard } from '@/components/activities/ActivityListCard'
 import { t } from '@/i18n'
-import type { Activity } from '@/domain/activity/types'
+import type { ActivitySummary } from '@/domain/activity/types'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 
 interface Props {
-  activities: Activity[]
+  activities: ActivitySummary[]
   qualifiedEffortsByActivityId?: Record<string, QualifiedEffort[]>
 }
 
-// Same compact rows as the Activities list, under a plain section header -
-// the wrapping card added a second border around already-bordered rows.
 export function RecentActivities({ activities, qualifiedEffortsByActivityId = {} }: Props) {
   return (
     <div className="space-y-3">

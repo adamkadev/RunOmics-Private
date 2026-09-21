@@ -14,24 +14,19 @@ export interface SimilarRun {
   durationSeconds: number
   distanceKm: number
   paceSecPerKm: number
-  // 1-based position by pace among the matched runs (1 = fastest)
   rank: number
   isCurrent: boolean
 }
 
 export interface SimilarRunsData {
-  // All matched passes over this route, oldest first (chart order)
   runs: SimilarRun[]
   count: number
   currentRank: number
   bestPaceSecPerKm: number
 }
 
-// Below this many passes a "progression" reads as noise, so the card is hidden.
 const MIN_MATCHED_RUNS = 3
 
-// Cell sets are derived from immutable GPS traces, so they can be cached for
-// the lifetime of the process (one build / one server instance).
 const cellSetCache = new Map<string, RouteCellSet>()
 
 function cellSetFor(activity: Activity): RouteCellSet {

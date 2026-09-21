@@ -10,7 +10,6 @@ const firebaseConfig = {
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
 }
 
-/** Firestore-backed features (notes, push settings) no-op when the public config is absent. */
 export const isClientFirebaseConfigured = Boolean(firebaseConfig.apiKey)
 
 export function getClientApp() {

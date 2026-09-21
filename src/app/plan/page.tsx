@@ -1,15 +1,17 @@
-import { getActivities } from '@/application/usecases/GetActivities'
+import { getActivitySummaries } from '@/application/usecases/GetActivities'
 import { getPlannedWorkouts } from '@/application/usecases/GetPlannedWorkouts'
-import { getTrainingStatusCalendar } from '@/application/usecases/GetTrainingStatusCalendar'
 import { getTrainingPlan } from '@/application/usecases/GetTrainingPlan'
 import { getNextRace } from '@/application/usecases/GetNextRace'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
+import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { PlanClient } from '@/components/plan/PlanClient'
 import type { HrBounds } from '@/domain/training/trimp'
 
+export const revalidate = 3600
+
 export default async function PlanPage() {
-  const activities = getActivities()
+  const activities = getActivitySummaries()
   const plannedWorkouts = await getPlannedWorkouts()
   const nextRace = await getNextRace()
   const trainingZones = await getTrainingZones()
@@ -25,11 +27,11 @@ export default async function PlanPage() {
       activities={activities}
       plannedWorkouts={plannedWorkouts}
       hrBounds={hrBounds}
-      statusByDate={getTrainingStatusCalendar()}
       planPhaseRanges={trainingPlan?.ranges ?? []}
       planSpan={trainingPlan}
       nextRace={nextRace}
       trainingZones={trainingZones}
+      coaching={getCoachingOverview()}
     />
   )
 }

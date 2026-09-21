@@ -1,15 +1,15 @@
 import type { Metadata } from 'next'
 
 import { getMapShellData } from '@/application/usecases/GetAllRoutes'
-import { getMapTerritory } from '@/application/usecases/GetMapTerritory'
 import { GlobalMapWrapper } from '@/components/map/GlobalMapWrapper'
-import { TerritoryBand } from '@/components/map/TerritoryBand'
 import { BackButton } from '@/components/ui/BackButton'
 import { t } from '@/i18n'
 
 export const metadata: Metadata = {
   title: t.nav.items.heatmap,
 }
+
+export const revalidate = 3600
 
 function Divider() {
   return <span aria-hidden className="h-3 w-px bg-border" />
@@ -18,7 +18,6 @@ function Divider() {
 export default function MapPage() {
   const data = getMapShellData()
   const { years, totalCount, totalKm } = data
-  const territory = getMapTerritory()
 
   const yearLabel =
     years.length > 1
@@ -52,11 +51,7 @@ export default function MapPage() {
         </div>
       </div>
 
-      {territory && <TerritoryBand territory={territory} />}
-
-      <div className="flex-1 overflow-hidden rounded-xl border border-border shadow-card">
-        <GlobalMapWrapper data={data} />
-      </div>
+      <GlobalMapWrapper data={data} />
     </div>
   )
 }

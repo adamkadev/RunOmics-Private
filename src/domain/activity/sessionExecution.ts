@@ -1,35 +1,22 @@
 import type { Activity, ActivitySplit, SplitLap } from './types'
 
-/**
- * How a session was actually run, read from its splits. This is the part the
- * stat grid cannot show: averages say a run happened, only the rep-by-rep shape
- * says whether it was held together.
- */
 export type SessionExecution =
   | {
       kind: 'intervals'
       reps: number
-      /** Pace lost between the first and last rep, in sec/km. Positive = faded. */
       fadeSecPerKm: number
-      /** Slowest rep minus fastest rep, in sec/km. */
       spreadSecPerKm: number
-      /** Heart rate climb from the first to the last rep. */
       hrDriftBpm: number | null
     }
   | {
       kind: 'steady'
-      /** Slowest kilometre minus fastest, in sec/km. */
       spreadSecPerKm: number
-      /** Second half average heart rate minus first half, at a comparable pace. */
       hrDriftBpm: number | null
     }
   | null
 
-// A final partial kilometre is always an outlier - it is short, not fast - and
-// would dominate the spread of an otherwise even run.
-const MIN_FULL_LAP_METRES = 900
+export const MIN_FULL_LAP_METRES = 900
 
-// Below this a "spread" is one lap against another rather than a trend.
 const MIN_LAPS_FOR_STEADY = 4
 
 function paceSecPerKm(durationSec: number, distanceM: number): number | null {

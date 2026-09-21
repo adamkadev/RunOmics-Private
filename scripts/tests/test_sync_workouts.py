@@ -607,6 +607,89 @@ class TestMainSetDescriptorInTitle:
         assert entries[0]["type"] == "Threshold"
 
 
+class _RescheduleClient:
+    """Fake client for a calendar month that now only lists a workout on the
+    *new* date - simulates a session rescheduled in Garmin Connect between two
+    syncs. `get_calendar_month` answers for every month in the window so the
+    caller can tell the fetch succeeded everywhere."""
+
+    def __init__(self, year: int, month: int, day: int, workout_id: str, detail: dict):
+        self._year, self._month, self._day = year, month, day
+        self._workout_id = workout_id
+        self._detail = detail
+
+    def get_calendar_month(self, year, month):
+        if (year, month) != (self._year, self._month):
+            return {"calendarItems": []}
+        return {
+            "calendarItems": [
+                {
+                    "date": f"{self._year:04d}-{self._month:02d}-{self._day:02d}",
+                    "itemType": "workout",
+                    "sport": "running",
+                    "workoutId": self._workout_id,
+                    "title": "",
+                }
+            ]
+        }
+
+    def get_workout_detail(self, workout_id):
+        return self._detail
+
+    def get_adaptive_workout_detail(self, workout_uuid):
+        return self._detail
+
+
+class TestStaleEntryPruning:
+    def test_a_workout_moved_to_a_new_date_removes_the_old_dates_entry(self, monkeypatch, tmp_path):
+        # 2026-07-10 held a Threshold session from a prior sync. In Garmin the
+        # session has since moved to 2026-07-12, so this sync's calendar fetch
+        # for July no longer returns anything on the 10th.
+        monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
+        prior = PlannedWorkoutStore(tmp_path)
+        prior.upsert({"date": "2026-07-10", "name": "Seuil", "type": "Threshold", "scheduledTime": "19:00"})
+        prior.save()
+
+        detail = {
+            "workoutName": "Seuil",
+            "sportType": {"sportTypeKey": "running"},
+            "workoutSegments": [
+                {"workoutSteps": [_pace_zone_step("interval", "time", 17 * 60, 250, 269)]}
+            ],
+        }
+        client = _RescheduleClient(2026, 7, 12, "abc", detail)
+
+        planned, stale_candidates = fetch_planned_workouts(
+            client, since=date(2026, 7, 1), until=date(2026, 7, 31)
+        )
+        write_planned_workouts(planned, store=PlannedWorkoutStore(tmp_path), stale_candidates=stale_candidates)
+
+        written = json.loads((tmp_path / "2026.json").read_text())
+        dates = {e["date"] for e in written["planned"]}
+        assert dates == {"2026-07-12"}
+
+    def test_a_failed_calendar_month_does_not_prune_that_months_entries(self, monkeypatch, tmp_path):
+        # If Garmin's calendar API hiccups for a month, absence of data there
+        # must not be read as "nothing scheduled" - that would wipe out real
+        # entries on a transient failure.
+        monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
+        prior = PlannedWorkoutStore(tmp_path)
+        prior.upsert({"date": "2026-07-10", "name": "Seuil", "type": "Threshold", "scheduledTime": "19:00"})
+        prior.save()
+
+        class _FailingCalendarClient:
+            def get_calendar_month(self, year, month):
+                raise GarminAPIError(500, "boom")
+
+        planned, stale_candidates = fetch_planned_workouts(
+            _FailingCalendarClient(), since=date(2026, 7, 1), until=date(2026, 7, 31)
+        )
+        write_planned_workouts(planned, store=PlannedWorkoutStore(tmp_path), stale_candidates=stale_candidates)
+
+        written = json.loads((tmp_path / "2026.json").read_text())
+        assert {e["date"] for e in written["planned"]} == {"2026-07-10"}
+
+
 class TestWritePlannedWorkouts:
     def test_reinfers_type_when_workout_name_at_that_date_changed(self, tmp_path):
         # The plan was reordered upstream (Kiprun): a VO2Max session that used
@@ -639,7 +722,7 @@ class TestWritePlannedWorkouts:
         # workout name survives the resync even though it disagrees with
         # what infer_planned_type would guess from the name alone.
         assert written["planned"][0]["type"] == "Tempo"
-        assert written["planned"][0]["scheduledTime"] == "07:00"
+        assert written["planned"][0]["scheduledTime"] == "Morning"
 
 
 def _activity(date: str, description: str) -> ActivityData:

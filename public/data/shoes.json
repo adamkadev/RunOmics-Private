@@ -1,8 +1,0 @@
-{
-  "shoes": [
-    { "gearId": "7b9054faaffb4305a63ac38d2e72909b", "brand": "Adidas", "model": "Adizero EVO SL", "maxKm": 1000, "retired": false, "firstUseDate": "2026-07-25" },
-    { "gearId": "31632434996e484ea1d41eb9c5b20b11", "brand": "Nike", "model": "Vomero Plus", "maxKm": 1000, "retired": false, "firstUseDate": "2026-03-28" },
-    { "gearId": "e6aa89fbda0747059f5acbd4dfb5736f", "brand": "Adidas", "model": "Adizero EVO SL", "maxKm": 1000, "retired": true, "firstUseDate": "2025-10-11" },
-    { "gearId": "c6216c2eb2bf450e8e442e72fc7a284f", "brand": "Nike", "model": "Pegasus 40", "maxKm": 1000, "retired": true, "firstUseDate": "2025-05-13" }
-  ]
-}

@@ -14,6 +14,7 @@
 /coverage
 /playwright-report/
 /test-results/
+/.coach-previews/
 
 # generated screenshot audit output (regenerated on demand via `npm run screenshots`)
 /screenshots/output/
@@ -32,6 +33,39 @@
 
 # garmin FIT binaries - cached by GitHub Actions, not tracked in git
 /public/fit/
+/.fit-cache/
+
+# maplibre's worker + shared module, copied out of node_modules at build time
+# (npm run maplibre:worker) so they stay in step with the installed version
+/public/maplibre/
+
+# race-day cover photos (README > public/events/) - none tracked today, but
+# guard against a future `git add .` picking one up by accident.
+/public/events/
+
+# real Garmin-derived data: the canonical local copy lives in a separate private
+# checkout selected by RUNOMICS_DATA_DIR. /data/ is only this repository's ignored,
+# server-only default/runtime workspace. /public/data/ is a retired legacy path;
+# it remains ignored as defense-in-depth because public/ is served statically.
+/data/
+/public/data/
+
+# the throwaway demo workspace `npm run e2e:data` regenerates before every
+# Playwright build - never a real dataset, never worth committing.
+/.e2e-data/
+
+# the optimistic-concurrency marker fetch_private_data.mjs writes beside a data
+# workspace (see scripts/private_data_revision.mjs) - workspace state, never
+# tracked, and deliberately outside data/ so it is not pushed as athlete data.
+/.data.base-revision.json
+
+# Firebase service-account key files, if one is ever downloaded locally -
+# Admin SDK credentials here are env-var based (see firebase-admin.ts), so
+# none should exist, but this is cheap insurance against the common mistake.
+*serviceAccountKey*.json
+firebase-adminsdk-*.json
+firebase-debug.log
+firestore-debug.log
 
 # claude memory
 /.claude/
@@ -47,6 +81,8 @@ yarn-error.log*
 .env*
 # ...except the e2e env: no secrets in it, see README > "End-to-end tests".
 !.env.e2e
+# ...and the documented template: placeholders only, never real values.
+!.env.example
 
 # vercel
 .vercel

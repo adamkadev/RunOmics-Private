@@ -6,13 +6,11 @@ import { acwr } from './GetTrainingStatus'
 import { addDays, isoDate } from '@/lib/calendarDate'
 import { round } from '@/lib/math'
 
-// 'low' is informational (undercharge); 'safe'/'caution'/'risk' is the actual risk ladder.
 export type RiskZone = 'low' | 'safe' | 'caution' | 'risk'
 
 export interface LoadRiskPanel {
   acwr: number | null
   acwrZone: RiskZone | null
-  /** Where `acwr` came from - the watch's Firstbeat ratio, or our kilometre proxy. */
   acwrSource: 'garmin' | 'local' | null
   monotony: number | null
   monotonyZone: RiskZone | null
@@ -25,7 +23,6 @@ export interface LoadRiskPanel {
 
 const MIN_DAYS_FOR_WEEKLY_METRICS = 7
 
-/** Foster monotony = mean(daily load, 7d) / stdev(daily load, 7d). Null when undefined (no variance or no load). */
 export function monotony(last7DaysLoad: number[]): number | null {
   if (last7DaysLoad.length < 7) return null
   const mean = last7DaysLoad.reduce((s, v) => s + v, 0) / 7
@@ -36,7 +33,6 @@ export function monotony(last7DaysLoad: number[]): number | null {
   return round(mean / stdev, 2)
 }
 
-/** Foster strain = weekly load total x monotony. */
 export function strain(weeklyLoad: number, monotonyValue: number): number {
   return round(weeklyLoad * monotonyValue, 0)
 }
@@ -53,12 +49,6 @@ export function acwrZone(value: number | null): RiskZone | null {
   return 'low'
 }
 
-/**
- * The watch's own verdict on its ratio, mapped onto our ladder. Garmin grades
- * against a band it personalises per athlete, so its wording beats re-testing
- * the number against our generic thresholds; unrecognised phrasing falls back
- * to them.
- */
 export function acwrZoneFromGarmin(status: string | null | undefined, value: number | null): RiskZone | null {
   switch (status) {
     case 'LOW': return 'low'
@@ -78,7 +68,6 @@ export function monotonyZone(value: number | null): RiskZone | null {
 
 const ZONE_SEVERITY: Record<RiskZone, number> = { low: 0, safe: 0, caution: 1, risk: 2 }
 
-/** Strain has no direction of its own - it inherits the worse of ACWR/monotony's concern level. */
 export function strainZone(
   acwrZoneValue: RiskZone | null,
   monotonyZoneValue: RiskZone | null,
@@ -97,7 +86,7 @@ export function rampRateZone(value: number): RiskZone {
 }
 
 export async function getLoadRiskPanel(): Promise<LoadRiskPanel | null> {
-  const activities = getAllActivities() // sorted newest-first
+  const activities = getAllActivities()
   const latest = activities[0]
   const earliest = activities[activities.length - 1]
   if (!latest || !earliest) return null
@@ -112,10 +101,6 @@ export async function getLoadRiskPanel(): Promise<LoadRiskPanel | null> {
   const daysOfHistory =
     Math.round((refDate.getTime() - new Date(earliest.date + 'T00:00:00').getTime()) / 86_400_000) + 1
 
-  // Same precedence as GetTrainingStatus: the watch computes the ratio on
-  // Firstbeat load, where ours divides kilometres and reads a high-volume easy
-  // week as overload. Letting the two disagree showed a different ACWR (and a
-  // different verdict) on the dashboard and on this panel for the same day.
   const garmin = getLatestTrainingStatusDay()
   const localAcwr = acwr(activities, refDate)
   const useGarminAcwr = garmin?.acwr != null

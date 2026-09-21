@@ -1,13 +1,15 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getAthleteProfile, type AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
+import { getVo2maxNorms } from '@/infrastructure/repositories/JsonVo2maxNormsRepository'
 import { getGoalYears } from '@/infrastructure/repositories/JsonGoalRepository'
 import { getLifetimeStats } from '@/application/usecases/GetLifetimeStats'
 import { getRecords, type RecordEntry } from '@/application/usecases/GetRecords'
 import { getShoeStats, type ShoeStats } from '@/application/usecases/GetShoeStats'
 import { computeProjection, type GoalYear, type GoalProjection } from '@/application/usecases/GetGoalsData'
 import { getAthleteRank, type AthleteRank } from '@/application/usecases/GetAthleteRank'
-import { yearDistanceKm } from '@/domain/activity/distance'
+import { sumDistanceKm, yearDistanceKm } from '@/domain/activity/distance'
 import { round } from '@/lib/math'
+import { vo2maxTopPercent } from '@/domain/athlete/vo2maxNorms'
 
 const PROFILE_RECORD_KEYS = ['5k', '10k', 'half', 'marathon']
 
@@ -16,9 +18,12 @@ export interface ProfileHero {
   lifetimeActivities: number
   lifetimeDistanceKm: number
   rank: AthleteRank | null
+  vo2maxTopPercent: number | null
+  lastRunDate: string | null
+  activeDays: number
 }
 
-export interface ProfileYtdStats {
+export interface ProfilePeriodStats {
   distanceKm: number
   durationSeconds: number
   sessionCount: number
@@ -35,11 +40,35 @@ export interface ProfileGoal {
 
 export interface ProfileData {
   hero: ProfileHero
-  ytd: ProfileYtdStats
+  ytd: ProfilePeriodStats
+  allTime: ProfilePeriodStats
+  prevYear: ProfilePeriodStats | null
   records: RecordEntry[]
   shoes: ShoeStats[]
   goal: ProfileGoal | null
   athlete: AthleteProfile
+}
+
+type StatsActivity = {
+  distanceKm: number
+  durationSeconds: number
+  elevationGain?: number | null
+  calories?: number | null
+}
+
+function periodStats(
+  activities: ReadonlyArray<StatsActivity>,
+  distanceKm: number,
+  elapsedDays: number,
+): ProfilePeriodStats {
+  return {
+    distanceKm,
+    durationSeconds: activities.reduce((s, a) => s + a.durationSeconds, 0),
+    sessionCount: activities.length,
+    elevationGainM: Math.round(activities.reduce((s, a) => s + (a.elevationGain ?? 0), 0)),
+    avgKmPerWeek: round((distanceKm / elapsedDays) * 7),
+    calories: activities.reduce((s, a) => s + (a.calories ?? 0), 0),
+  }
 }
 
 export async function getProfileData(): Promise<ProfileData> {
@@ -48,6 +77,8 @@ export async function getProfileData(): Promise<ProfileData> {
   const allRecords = await getRecords()
   const goalYears = getGoalYears()
   const athlete = getAthleteProfile()
+  const vo2maxNorms = getVo2maxNorms()
+  const rank = getAthleteRank(allRecords, athlete, vo2maxNorms)
 
   const firstActivity = activities[0]
   const sinceDate = firstActivity
@@ -56,16 +87,30 @@ export async function getProfileData(): Promise<ProfileData> {
 
   const now = new Date()
   const currentYear = now.getFullYear()
-  // Days elapsed since Jan 1, so "avg / week" is the season's real rate rather
-  // than a year-to-date total spread over 52 weeks.
   const elapsedDaysThisYear = Math.max(
     1,
     Math.floor((now.getTime() - new Date(currentYear, 0, 1).getTime()) / 86400000) + 1,
   )
   const ytdActivities = activities.filter((a) => a.date.startsWith(String(currentYear)))
   const ytdDistanceKm = ytdActivities.reduce((s, a) => s + a.distanceKm, 0)
-  // Shared selector so Progress/Goals/Analytics show the exact same whole-km total.
   const ytdDistanceKmRounded = yearDistanceKm(activities, currentYear)
+
+  const prevYear = currentYear - 1
+  const sameDayLastYear = `${prevYear}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  const prevYearActivities = activities.filter(
+    (a) => a.date.startsWith(String(prevYear)) && a.date <= sameDayLastYear,
+  )
+  const prevYearStats =
+    prevYearActivities.length > 0
+      ? periodStats(prevYearActivities, sumDistanceKm(prevYearActivities), elapsedDaysThisYear)
+      : null
+
+  const elapsedDaysAllTime = Math.max(
+    1,
+    sinceDate
+      ? Math.floor((now.getTime() - new Date(sinceDate + 'T00:00:00').getTime()) / 86400000) + 1
+      : 1,
+  )
 
   const goalYear = goalYears.find((g) => g.year === currentYear) ?? null
   const goal: ProfileGoal | null = goalYear
@@ -81,16 +126,16 @@ export async function getProfileData(): Promise<ProfileData> {
       sinceDate,
       lifetimeActivities: lifetime?.totalActivities ?? 0,
       lifetimeDistanceKm: lifetime ? round(lifetime.totalDistanceKm, 0) : 0,
-      rank: getAthleteRank(allRecords, athlete),
+      rank,
+      vo2maxTopPercent: rank?.vo2maxGarmin != null && athlete.age !== undefined && athlete.sex
+        ? vo2maxTopPercent(rank.vo2maxGarmin, athlete.age, athlete.sex, vo2maxNorms)
+        : null,
+      lastRunDate: activities[0]?.date ?? null,
+      activeDays: new Set(activities.map((a) => a.date)).size,
     },
-    ytd: {
-      distanceKm: ytdDistanceKmRounded,
-      durationSeconds: ytdActivities.reduce((s, a) => s + a.durationSeconds, 0),
-      sessionCount: ytdActivities.length,
-      elevationGainM: Math.round(ytdActivities.reduce((s, a) => s + (a.elevationGain ?? 0), 0)),
-      avgKmPerWeek: round((ytdDistanceKmRounded / elapsedDaysThisYear) * 7),
-      calories: ytdActivities.reduce((s, a) => s + (a.calories ?? 0), 0),
-    },
+    ytd: periodStats(ytdActivities, ytdDistanceKmRounded, elapsedDaysThisYear),
+    allTime: periodStats(activities, sumDistanceKm(activities), elapsedDaysAllTime),
+    prevYear: prevYearStats,
     records: PROFILE_RECORD_KEYS.map((key) => allRecords.find((r) => r.key === key)).filter(
       (r): r is RecordEntry => r !== undefined
     ),

@@ -17,14 +17,12 @@ export default function PlanLoading() {
     <div className="space-y-6">
       <Skeleton className="h-8 w-32" />
 
-      {/* Month nav */}
       <div className="flex items-center justify-between">
         <Skeleton className="h-8 w-8 rounded-lg" />
         <Skeleton className="h-6 w-36" />
         <Skeleton className="h-8 w-8 rounded-lg" />
       </div>
 
-      {/* Day labels */}
       <div className="grid grid-cols-7 gap-1">
         {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
           <div key={i} className="py-1 text-center">
@@ -33,7 +31,6 @@ export default function PlanLoading() {
         ))}
       </div>
 
-      {/* Plan grid -5 weeks */}
       <div className="grid grid-cols-7 gap-1">
         {Array.from({ length: 35 }).map((_, i) => <DaySkeleton key={i} />)}
       </div>

@@ -26,7 +26,6 @@ def test_extracts_the_primary_training_device():
     info = extract_primary_device(_payload(_device(3604810488), primary_id=3604810488))
 
     assert info == {
-        "deviceId": 3604810488,
         "deviceName": "Forerunner 255 Music",
         "deviceFirmware": "28.05",
         "deviceSince": "2025-08-04",
@@ -68,4 +67,4 @@ def test_returns_nothing_without_registered_devices():
 def test_tolerates_partial_device_records():
     payload = _payload({"deviceId": 7, "productDisplayName": "Venu 3"}, primary_id=7)
 
-    assert extract_primary_device(payload) == {"deviceId": 7, "deviceName": "Venu 3"}
+    assert extract_primary_device(payload) == {"deviceName": "Venu 3"}

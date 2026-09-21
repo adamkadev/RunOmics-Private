@@ -10,14 +10,14 @@ import {
   ReferenceLine,
 } from 'recharts'
 import type { TrainingLoadData, TrainingLoadPoint } from '@/application/usecases/GetTrainingLoad'
-import { CHART_COLORS } from '@/lib/colors'
-import { useHeadlineChartColor } from '@/lib/useAccent'
+import { CHART_COLORS, TRAINING_METRIC_COLORS } from '@/lib/colors'
 import { STATUS } from '@/lib/statusColors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { ChartCardHead, LegendValue } from '@/components/ui/ChartCard'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { ChartRangeChips, ChartWindowPager, trendDots, useChartWindow } from '@/components/ui/ChartWindowNav'
-import { sampleForRange } from '@/domain/timeWindow'
+import { lineInterpolation, sampleForRange } from '@/domain/timeWindow'
 import { t } from '@/i18n'
 
 interface Props {
@@ -41,21 +41,6 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   )
 }
 
-function LegendValue({ label, value, color, signed = false }: {
-  label: string
-  value: number
-  color: string
-  /** Form is a balance, so it reads as +20 / -20 rather than a bare 20. */
-  signed?: boolean
-}) {
-  const rounded = Math.round(value)
-  return (
-    <span className="text-xs font-bold" style={{ color }}>
-      {label} {signed && rounded > 0 ? '+' : ''}{rounded}
-    </span>
-  )
-}
-
 function formStatus(tsb: number): { label: string; className: string } {
   const s = t.dashboard.trainingLoad.status
   if (tsb > 5)   return { label: s.fresh,       className: STATUS.success.text }
@@ -66,7 +51,10 @@ function formStatus(tsb: number): { label: string; className: string } {
 
 export function TrainingLoadChart({ data }: Props) {
   const status = formStatus(data.tsbNow)
-  const formColor = useHeadlineChartColor()
+  // Form is a metric, not a highlight: it takes its own token, the way Fitness
+  // and Fatigue beside it do. Drawn in the accent it moved whenever the user
+  // changed theme, and on a blue accent it was Fitness twice.
+  const formColor = TRAINING_METRIC_COLORS.form
   const { range, selectRange, bounds, visible, canGoBack, canGoForward, goBack, goForward } =
     useChartWindow(data.points)
   const plotted = sampleForRange(visible, range, 0)
@@ -74,10 +62,11 @@ export function TrainingLoadChart({ data }: Props) {
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-foreground/80">{t.dashboard.trainingLoad.title}</h3>
-        <ChartRangeChips value={range} onChange={selectRange} />
-      </div>
+      <ChartCardHead
+        title={t.dashboard.trainingLoad.title}
+        footnote={t.dashboard.trainingLoad.footnote}
+        controls={<ChartRangeChips value={range} onChange={selectRange} />}
+      />
 
       <div className="mb-3 flex flex-wrap gap-x-3.5 gap-y-1">
         <LegendValue label={t.dashboard.trainingLoad.fitness} value={data.ctl} color={CHART_COLORS.ctl} />
@@ -112,16 +101,13 @@ export function TrainingLoadChart({ data }: Props) {
             />
             <Tooltip content={<CustomTooltip />} />
             <ReferenceLine y={0} stroke={CHART_COLORS.referenceLine} strokeWidth={1} />
-            <Line type="monotone" dataKey="ctl" stroke={CHART_COLORS.ctl} strokeWidth={2.5} {...trendDots(CHART_COLORS.ctl)} isAnimationActive={false} />
-            <Line type="monotone" dataKey="atl" stroke={CHART_COLORS.atl} strokeWidth={2.5} {...trendDots(CHART_COLORS.atl)} isAnimationActive={false} />
-            <Line type="monotone" dataKey="tsb" stroke={formColor} strokeWidth={2.5} {...trendDots(formColor)} isAnimationActive={false} />
+            <Line type={lineInterpolation(plotted.length)} dataKey="ctl" stroke={CHART_COLORS.ctl} strokeWidth={2.5} {...trendDots(CHART_COLORS.ctl)} isAnimationActive={false} />
+            <Line type={lineInterpolation(plotted.length)} dataKey="atl" stroke={CHART_COLORS.atl} strokeWidth={2.5} {...trendDots(CHART_COLORS.atl)} isAnimationActive={false} />
+            <Line type={lineInterpolation(plotted.length)} dataKey="tsb" stroke={formColor} strokeWidth={2.5} {...trendDots(formColor)} isAnimationActive={false} />
           </LineChart>
         </ResponsiveContainer>
       </ChartFigure>
       )}
-      <p className="mt-2 text-xs text-subtle">
-        {t.dashboard.trainingLoad.footnote}
-      </p>
     </GlassSurface>
   )
 }

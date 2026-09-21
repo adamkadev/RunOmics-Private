@@ -23,12 +23,10 @@ interface Props {
   weeklyTrends: WeeklyTrendPoint[]
   threshold: ThresholdHistoryData | null
   activeDays: number
+  heatmapDays: number
   racePredictions: GarminRacePredictionsData | null
 }
 
-// The insight-first landing: the season's one hero chart, the four slow-moving
-// reads as cards, the race-time teaser, then the threshold trend and the deeper
-// load charts for anyone who wants them.
 export function FitnessGroup({
   trainingLoad,
   statusHistory,
@@ -38,6 +36,7 @@ export function FitnessGroup({
   weeklyTrends,
   threshold,
   activeDays,
+  heatmapDays,
   racePredictions,
 }: Props) {
   return (
@@ -50,6 +49,7 @@ export function FitnessGroup({
         weeklyTrends={weeklyTrends}
         threshold={threshold}
         activeDays={activeDays}
+        heatmapDays={heatmapDays}
       />
 
       {racePredictions && <RaceTimeCards data={racePredictions} />}

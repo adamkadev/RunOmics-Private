@@ -1,16 +1,12 @@
-import fs from 'fs'
-import path from 'path'
+import { dataPath } from '../dataPath'
+import { readJsonFile } from '../readJsonFile'
 import type { UpcomingRace, UpcomingRaceYear } from '@/application/usecases/GetGoalsData'
 
 export function getUpcomingRaceYears(): UpcomingRaceYear[] {
-  const filePath = path.join(process.cwd(), 'public', 'data', 'upcoming_races.json')
-  if (!fs.existsSync(filePath)) return []
-
-  const raw = fs.readFileSync(filePath, 'utf-8')
-  const races = (JSON.parse(raw) as { races: UpcomingRace[] }).races
+  const { races } = readJsonFile<{ races?: UpcomingRace[] }>(dataPath('upcoming_races.json'), {})
 
   const byYear = new Map<number, UpcomingRace[]>()
-  for (const race of races) {
+  for (const race of races ?? []) {
     const year = Number(race.date.slice(0, 4))
     byYear.set(year, [...(byYear.get(year) ?? []), race])
   }

@@ -22,6 +22,8 @@ function shoe(gearId: string, overrides: Partial<ShoeStats> = {}): ShoeStats {
     totalKm: 100,
     sessionCount: 10,
     lastUsedDate: '2026-01-01',
+    firstUsedDate: '2025-01-01',
+    kmPerWeek: 10,
     wearPercent: 13,
     nearingLimit: false,
     ...overrides,

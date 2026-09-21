@@ -6,7 +6,6 @@ import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { BackButton } from '@/components/ui/BackButton'
 import { ProfileAthleteStats } from './ProfileAthleteStats'
 import { ProfileHrZones } from './ProfileHrZones'
-import { TrainingZones } from '@/components/analytics/TrainingZones'
 import { t } from '@/i18n'
 
 interface Props {
@@ -14,7 +13,6 @@ interface Props {
   latestVo2max: number | null
   weeklyZoneTime: ZoneShare[]
   recentZoneTime: ZoneShare[]
-  /** Pace zones, moved here from Analytics - reference data, next to the HR zones. */
   paceZones: TrainingZonesData | null
 }
 
@@ -28,8 +26,12 @@ export function AthleteClient({ athlete, latestVo2max, weeklyZoneTime, recentZon
       </div>
 
       <ProfileAthleteStats athlete={athlete} latestVo2max={latestVo2max} />
-      <ProfileHrZones athlete={athlete} weeklyZoneTime={weeklyZoneTime} recentZoneTime={recentZoneTime} />
-      {paceZones && <TrainingZones data={paceZones} />}
+      <ProfileHrZones
+        athlete={athlete}
+        weeklyZoneTime={weeklyZoneTime}
+        recentZoneTime={recentZoneTime}
+        paceZones={paceZones}
+      />
     </div>
   )
 }

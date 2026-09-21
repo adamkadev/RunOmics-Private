@@ -5,10 +5,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+from data_directory import get_data_dir
 from processing.mapper import ActivityData
-
-_DEFAULT_DIR = Path(__file__).resolve().parents[2] / "public" / "data" / "activities"
-_PLANNED_DEFAULT_DIR = Path(__file__).resolve().parents[2] / "public" / "data" / "planned_workouts"
 
 
 def _year_of(date: str) -> str | None:
@@ -34,8 +32,8 @@ class JsonActivityStore:
     year file reaches ~7 MB by December and every sync rewrote it wholesale. A
     month is ~600 KB and closed months never move again."""
 
-    def __init__(self, dir_path: Path = _DEFAULT_DIR) -> None:
-        self._dir = dir_path
+    def __init__(self, dir_path: Path | None = None) -> None:
+        self._dir = dir_path or get_data_dir() / "activities"
         self._by_id: dict[str, dict[str, Any]] = {}
         self._dirty_months: set[str] = set()
         self._load()
@@ -69,6 +67,8 @@ class JsonActivityStore:
         if existing is not None and not replace:
             new_dict["rpe"] = existing.get("rpe", new_dict["rpe"])
             new_dict["comment"] = existing.get("comment", "")
+            if new_dict.get("weather") is None:
+                new_dict["weather"] = existing.get("weather")
 
         self._by_id[activity.id] = new_dict
         self.touch(activity.id)
@@ -122,8 +122,8 @@ class PlannedWorkoutStore:
     here survives forever - a sync only re-touches the year(s) whose entries
     actually changed."""
 
-    def __init__(self, dir_path: Path = _PLANNED_DEFAULT_DIR) -> None:
-        self._dir = dir_path
+    def __init__(self, dir_path: Path | None = None) -> None:
+        self._dir = dir_path or get_data_dir() / "planned_workouts"
         self._by_date: dict[str, dict[str, Any]] = {}
         self._dirty_years: set[str] = set()
         self._load()
@@ -137,6 +137,14 @@ class PlannedWorkoutStore:
     def upsert(self, entry: dict[str, Any]) -> None:
         self._by_date[entry["date"]] = entry
         year = _year_of(entry["date"])
+        if year:
+            self._dirty_years.add(year)
+
+    def delete(self, date: str) -> None:
+        if date not in self._by_date:
+            return
+        del self._by_date[date]
+        year = _year_of(date)
         if year:
             self._dirty_years.add(year)
 
