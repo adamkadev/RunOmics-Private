@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Activity } from '@/domain/activity/types'
 import type { CoachingRepository } from '@/application/ports/CoachingRepository'
 import type { CoachingAdvisor } from '@/application/ports/CoachingAdvisor'
+import { MODEL_POOL } from '@/domain/ai/budget'
 import { buildCoachingContext } from '@/application/coaching/context'
 import { createBootstrapProposal } from '@/application/coaching/workflows'
 import {
@@ -466,5 +467,44 @@ describe('model pool fallback', () => {
     await expect(new GeminiCoachingAdvisor().bootstrap(input())).rejects.toThrow()
 
     expect(new Set(modelsTried())).toEqual(new Set(['gemini-flash-latest']))
+  })
+})
+
+describe('daily quota exhaustion', () => {
+  const input = () => ({
+    context: context(),
+    availableWeekdays: [0, 2, 3, 4, 6],
+    runsPerWeek: 5,
+    planningStartDate: '2026-09-22',
+    primaryTargetEvent: {
+      id: 'primary', name: '10 km', date: '2026-11-29', role: 'primary' as const,
+      distanceLabel: '10K', distanceMeters: 10_000, targetSeconds: 2_400,
+    },
+    tuneUpEvents: [],
+    horizonEndDate: '2026-10-19',
+  })
+
+  beforeEach(() => gemini.generateStructuredJson.mockReset())
+
+  it('spends one request per model, because the pooled models allow 20 a day', async () => {
+    gemini.generateStructuredJson.mockResolvedValue({ ok: false, reason: 'http 503: high demand' })
+
+    await expect(new GeminiCoachingAdvisor().bootstrap(input())).rejects.toThrow()
+
+    // The pool walk is the retry; retrying each model as well would treble the spend.
+    expect(gemini.generateStructuredJson.mock.calls).toHaveLength(MODEL_POOL.length)
+    for (const [, , retries] of gemini.generateStructuredJson.mock.calls) expect(retries).toBe(0)
+  })
+
+  it('names the daily quota when every model refuses, since Google calls it high demand', async () => {
+    gemini.generateStructuredJson.mockResolvedValue({ ok: false, reason: 'http 503: high demand' })
+
+    await expect(new GeminiCoachingAdvisor().bootstrap(input())).rejects.toThrow(/20\/day/)
+  })
+
+  it('does not blame quota when a model failed for its own reason', async () => {
+    gemini.generateStructuredJson.mockResolvedValue({ ok: false, reason: 'http 400: bad schema' })
+
+    await expect(new GeminiCoachingAdvisor().bootstrap(input())).rejects.not.toThrow(/quota/)
   })
 })

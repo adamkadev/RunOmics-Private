@@ -147,12 +147,13 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 export async function generateStructuredJson(
   request: StructuredRequest,
   sleep: (ms: number) => Promise<unknown> = wait,
+  retries = RETRY_DELAYS_MS.length,
 ): Promise<StructuredResult<unknown>> {
   for (let attempt = 0; ; attempt++) {
     const { result, retryable } = await attemptStructuredJson(request)
-    if (result.ok || !retryable || attempt >= RETRY_DELAYS_MS.length) return result
+    if (result.ok || !retryable || attempt >= retries) return result
 
-    await sleep(RETRY_DELAYS_MS[attempt]!)
+    await sleep(RETRY_DELAYS_MS[Math.min(attempt, RETRY_DELAYS_MS.length - 1)]!)
   }
 }
 

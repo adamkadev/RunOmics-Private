@@ -21,7 +21,7 @@ import type {
 import type { CoachingContext } from '@/application/coaching/context'
 import { garminMeasured } from '@/domain/activity/raceResult'
 import { bootstrapRecoveryFacts } from '@/application/coaching/bootstrapValidation'
-import { MODEL_POOL } from '@/domain/ai/budget'
+import { MODEL_POOL, modelLimits } from '@/domain/ai/budget'
 import { MAX_BOOTSTRAP_WEEKS, isoWeekWindows } from '@/domain/coaching/weekWindows'
 import { generateStructuredJson } from '@/lib/gemini'
 
@@ -443,12 +443,22 @@ async function request(schema: Record<string, unknown>, systemInstruction: strin
   const reasons: string[] = []
 
   for (const model of models) {
-    const result = await generateStructuredJson({ apiKey, model, systemInstruction, prompt, responseSchema: schema, temperature: 0.2 })
+    // No per-model retry: walking the pool already gives one independent
+    // chance per model, and the pooled models allow only 20 requests a day
+    // each, so retrying one of them is the expensive way to buy the same odds.
+    const result = await generateStructuredJson({ apiKey, model, systemInstruction, prompt, responseSchema: schema, temperature: 0.2 }, undefined, 0)
     if (result.ok) return result.value
     reasons.push(`${model}: ${result.reason}`)
   }
 
-  throw new Error(`Gemini coaching request failed: ${reasons.join(' | ')}`)
+  // Google reports an exhausted daily quota as 503 "high demand", which reads
+  // as a passing outage and is not; say so rather than invite another attempt.
+  const exhausted = reasons.every((reason) => reason.includes('503'))
+  const quotaHint = exhausted
+    ? ` Every pooled model refused. ${models.map((model) => `${model} allows ${modelLimits(model).rpd}/day`).join(', ')}; a spent daily quota is reported this way and resets at midnight America/Los_Angeles.`
+    : ''
+
+  throw new Error(`Gemini coaching request failed: ${reasons.join(' | ')}.${quotaHint}`)
 }
 
 export class GeminiCoachingAdvisor implements CoachingAdvisor {
