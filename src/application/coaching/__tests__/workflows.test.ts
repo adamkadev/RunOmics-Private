@@ -953,7 +953,7 @@ describe('replacing a plan that is already active', () => {
       .rejects.toThrow(/--replace/)
   })
 
-  it('supersedes the active plan when asked, keeping the outgoing one', async () => {
+  it('supersedes the active plan when asked, and writes nothing until applied', async () => {
     // Blocks get rewritten - a rejected draft, a changed goal, a week that
     // turned out wrong - and deleting current_plan.json by hand was the only
     // way through before this.
@@ -965,9 +965,35 @@ describe('replacing a plan that is already active', () => {
     const proposal = await createBootstrapProposal(context, [2, 3], services(repository), undefined, undefined, undefined, true)
 
     expect(proposal.proposedPlan?.id).not.toBe(outgoing)
-    expect(repository.archived.map((item) => item.id)).toEqual([outgoing])
-    // Still a proposal: nothing is written until it is applied.
+    // A preview has no side effects: nothing saved, nothing archived.
     expect(repository.plan?.id).toBe(outgoing)
+    expect(repository.archived).toEqual([])
+  })
+
+  it('applies over the plan it was built against, archiving it on the way past', async () => {
+    const repository = new MemoryRepository()
+    repository.plan = plan()
+    const outgoing = repository.plan.id
+    const context = buildCoachingContext(contextInput(null), '2026-09-07')
+    const proposal = await createBootstrapProposal(context, [2, 3], services(repository), undefined, undefined, undefined, true)
+
+    const applied = applyCoachingProposal(proposal, repository, coachingContextHash(context))
+
+    expect(applied.id).toBe(proposal.proposedPlan?.id)
+    expect(repository.plan?.id).toBe(applied.id)
+    expect(repository.archived.map((item) => item.id)).toEqual([outgoing])
+  })
+
+  it('refuses when the plan it was built against has since moved', async () => {
+    const repository = new MemoryRepository()
+    repository.plan = plan()
+    const context = buildCoachingContext(contextInput(null), '2026-09-07')
+    const proposal = await createBootstrapProposal(context, [2, 3], services(repository), undefined, undefined, undefined, true)
+
+    repository.plan = { ...repository.plan!, revision: repository.plan!.revision + 1 }
+
+    expect(() => applyCoachingProposal(proposal, repository, coachingContextHash(context)))
+      .toThrow(/current plan revision changed/)
   })
 })
 

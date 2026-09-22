@@ -447,7 +447,7 @@ export async function createBootstrapProposal(
   if (existing && !replace) {
     throw new Error('A current coaching plan already exists; pass --replace to supersede it')
   }
-  if (existing) services.repository.archivePlan?.(existing)
+
   if (availableWeekdays.length === 0) throw new Error('At least one available weekday is required')
   validateTrainingFrequency(availableWeekdays, runsPerWeek)
   const now = services.now?.() ?? new Date()
@@ -506,8 +506,10 @@ export async function createBootstrapProposal(
     createdAt,
     referenceDate: context.referenceDate,
     contextHash: coachingContextHash(context),
-    basePlanId: null,
-    basePlanRevision: null,
+    // Null for a first block; when replacing, the plan being superseded, so
+    // the proposal still goes stale if that plan moves under it.
+    basePlanId: existing?.id ?? null,
+    basePlanRevision: existing?.revision ?? null,
     proposedPlan,
     decision,
   }
@@ -596,6 +598,9 @@ export function applyCoachingProposal(
       ? applyCoachDecision(current, validated.decision)
       : (() => { throw new Error('No current coaching plan exists') })()
 
+  // Superseding rather than revising: keep the outgoing plan before the file
+  // is overwritten, so a regeneration can be walked back.
+  if (current && current.id !== result.id) repository.archivePlan?.(current)
   repository.saveCurrentPlan(result)
   repository.saveDecision(validated.decision)
   if (validated.evaluation) repository.saveEvaluation(validated.evaluation)

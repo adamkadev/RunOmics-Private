@@ -58,7 +58,13 @@ export function parseCoachingProposal(value: unknown): CoachingProposal {
   if (proposal.kind === 'post_activity' && !proposal.evaluation) throw new Error('post_activity proposal requires evaluation')
   if ((proposal.basePlanId === null) !== (proposal.basePlanRevision === null)) throw new Error('proposal base plan id and revision must both be present or both be null')
   if (proposal.kind === 'bootstrap') {
-    if (proposal.basePlanId !== null || proposal.decision.basePlanRevision !== null) throw new Error('bootstrap proposal must not have a base plan')
+    // A bootstrap may supersede an active block, and then basePlanId names
+    // the plan it was built against so the staleness check has something true
+    // to test. Its decision still opens a new plan, so that stays null.
+    if (proposal.decision.basePlanRevision !== null) throw new Error('bootstrap decision must not have a base plan revision')
+    if (proposal.basePlanId !== null && proposal.basePlanId === proposal.proposedPlan?.id) {
+      throw new Error('bootstrap proposal must not supersede itself')
+    }
     if (proposal.proposedPlan?.id !== proposal.decision.planId) throw new Error('bootstrap proposal plan and decision ids must match')
   } else {
     if (proposal.basePlanId === null || proposal.basePlanRevision === null) throw new Error('adaptation proposal requires a base plan')
