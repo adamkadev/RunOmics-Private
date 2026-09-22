@@ -230,8 +230,9 @@ def fetch_athlete_metrics(client: GarminClient) -> dict[str, Any]:
     if zone_config:
         floors = [zone_config.get(f"zone{n}Floor") for n in range(1, 6)]
         # `all()` would discard the whole set over a zone 1 floor of 0, which
-        # Garmin reports for some profiles, and silently fall back to zones
-        # derived from LTHR percentages - zones the watch does not use.
+        # Garmin reports for %maxHR-based profiles, and fall back to zones
+        # derived from LTHR percentages. Latent rather than observed: this
+        # athlete is on %LTHR, where the fallback happens to agree.
         if all(floor is not None for floor in floors):
             metrics["hrZoneBoundsBpm"] = [round(floor) for floor in floors]
 
