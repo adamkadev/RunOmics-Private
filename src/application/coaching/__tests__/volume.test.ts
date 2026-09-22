@@ -28,6 +28,8 @@ const timedThreshold = (reps: number, seconds: number) => ({
   steps: [{ kind: 'effort' as const, target: { durationSeconds: seconds, paceSecPerKm: { min: 258, max: 268 } } }],
 })
 
+const CUTBACK = { reason: 'cutback' as const, explanation: 'Absorb the block before building again.' }
+
 function week(focus: string, blocks: BootstrapWeekDraft['workouts'][number]['blocks'][], start = '2026-09-28'): BootstrapWeekDraft {
   const end = new Date(Date.parse(start) + 6 * 86_400_000).toISOString().slice(0, 10)
   return {
@@ -76,9 +78,30 @@ describe('validateDraftVolume', () => {
     expect(() => validateDraftVolume(draft(timid), band, DAYS)).toThrow(/against a recent 45 km/)
   })
 
-  it('allows a light week when the focus says why, exactly as reduced frequency is allowed', () => {
-    const cutback = week('Planned cutback week to absorb the block.', [[easy(8000)], [easy(6000)], [easy(7000)], [easy(8000)]])
+  it('allows a light week that declares the reduction in a field rather than in prose', () => {
+    const cutback = { ...week('Absorb the block.', [[easy(8000)], [easy(6000)], [easy(7000)], [easy(8000)]]), reducedVolume: CUTBACK }
     expect(() => validateDraftVolume(draft(cutback), band, DAYS)).not.toThrow()
+  })
+
+  it('ignores the word cutback in a week that has not taken one', () => {
+    // The old regex read the generator's own prose as evidence about the
+    // generator's own output, so writing the keyword switched the floor off.
+    const asserted = week('Planned cutback week to absorb the block.', [[easy(8000)], [easy(6000)], [easy(7000)], [easy(8000)]])
+    expect(() => validateDraftVolume(draft(asserted), band, DAYS)).toThrow(/against a recent 45 km/)
+  })
+
+  it('refuses a declared cutback that is barely below the peak', () => {
+    // 4% down and calling itself a cutback: the failure this field exists for.
+    const build = week('Build', [[easy(12000)], [easy(12000)], [easy(12000)], [easy(14000)]], '2026-09-28')
+    const shallow = { ...week('Ease off', [[easy(12000)], [easy(12000)], [easy(12000)], [easy(12000)]], '2026-10-05'), reducedVolume: CUTBACK }
+    expect(() => validateDraftVolume(draft(build, shallow), band, DAYS)).toThrow(/calls itself cutback at 48 km/)
+  })
+
+  it('allows one reduced week per block and no more', () => {
+    const build = week('Build', [[easy(12000)], [easy(12000)], [easy(12000)], [easy(14000)]], '2026-09-28')
+    const first = { ...week('Absorb', [[easy(9000)], [easy(9000)], [easy(9000)], [easy(11000)]], '2026-10-05'), reducedVolume: CUTBACK }
+    const second = { ...week('Absorb again', [[easy(9000)], [easy(9000)], [easy(9000)], [easy(11000)]], '2026-10-12'), reducedVolume: CUTBACK }
+    expect(() => validateDraftVolume(draft(build, first, second), band, DAYS)).toThrow(/second reduced week after 2026-10-05/)
   })
 
   it('rejects a jump too big to absorb, even when both weeks are within capacity', () => {
@@ -91,7 +114,7 @@ describe('validateDraftVolume', () => {
     // 15-30% is what a cutback is worth taking; measured against the week just
     // gone, any of it would forbid resuming the build it was taken to serve.
     const build = week('Build', [[easy(12000)], [easy(12000)], [easy(12000)], [easy(14000)]], '2026-09-28')
-    const cutback = week('Cutback week to absorb the build.', [[easy(9000)], [easy(9000)], [easy(9000)], [easy(11000)]], '2026-10-05')
+    const cutback = { ...week('Absorb the build.', [[easy(9000)], [easy(9000)], [easy(9000)], [easy(11000)]], '2026-10-05'), reducedVolume: CUTBACK }
     const rebuild = week('Resume the build', [[easy(12000)], [easy(12000)], [easy(13000)], [easy(14000)]], '2026-10-12')
 
     expect(weekKm(rebuild)).toBeGreaterThan(weekKm(cutback) * 1.12 + 2)
@@ -100,7 +123,7 @@ describe('validateDraftVolume', () => {
 
   it('still refuses a rebound that overshoots the level before the cutback', () => {
     const build = week('Build', [[easy(11000)], [easy(11000)], [easy(11000)], [easy(11000)]], '2026-09-28')
-    const cutback = week('Cutback week to absorb the build.', [[easy(8000)], [easy(8000)], [easy(8000)], [easy(9000)]], '2026-10-05')
+    const cutback = { ...week('Absorb the build.', [[easy(8000)], [easy(8000)], [easy(8000)], [easy(9000)]], '2026-10-05'), reducedVolume: CUTBACK }
     const overshoot = week('Resume the build', [[easy(14000)], [easy(14000)], [easy(14000)], [easy(14000)]], '2026-10-12')
 
     expect(() => validateDraftVolume(draft(build, cutback, overshoot), band, DAYS)).toThrow(/jumps from/)

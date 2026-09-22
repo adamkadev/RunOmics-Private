@@ -12,6 +12,9 @@ const CEILING_ALLOWANCE_KM = 3
 const RAMP_RATIO = 1.12
 const RAMP_ALLOWANCE_KM = 2
 const FOCUS_TOLERANCE = 0.1
+// A week claiming to be lighter has to actually be lighter. 10% below the
+// block's peak is the smallest gap that cannot be rounding or a rest day.
+const REDUCTION_MARGIN = 0.9
 // Single-session distance against the recent longest run is the one bound in
 // this file with a hazard ratio behind it, though from a single observational
 // cohort - hence a step rather than a hard ceiling. The share is convention.
@@ -22,8 +25,6 @@ const LONG_RUN_SHARE = 0.3
 // more than a 3 km longest run is 300 metres. Neither bound binds below this.
 const LONG_RUN_ALLOWANCE_KM = 8
 
-/** Wording that makes a week deliberately lighter, matching how frequency.ts lets a short week through. */
-const DELIBERATELY_LIGHT = /recovery|taper|cutback|down week|fatigue|illness|injury|deload/i
 const KM_IN_PROSE = /(\d+(?:[.,]\d+)?)\s*km/gi
 
 /**
@@ -48,7 +49,8 @@ export function volumeBand(history: TrainingHistory): VolumeBand {
   }
 }
 
-function segments(blocks: WorkoutBlock[]): { segment: WorkoutSegment; repetitions: number }[] {
+/** Flattened so a repeat group's steps are counted once per repetition. Shared with intensity.ts. */
+export function segments(blocks: WorkoutBlock[]): { segment: WorkoutSegment; repetitions: number }[] {
   return blocks.flatMap((block) => block.kind === 'repeat'
     ? block.steps.map((step) => ({ segment: step, repetitions: block.repetitions }))
     : [{ segment: block, repetitions: 1 }])
@@ -59,7 +61,7 @@ function segments(blocks: WorkoutBlock[]): { segment: WorkoutSegment; repetition
  * `distanceMeters` alone can read 20 km lighter than it trains - which is how
  * a draft claiming 52 km came to prescribe 62.
  */
-function segmentMeters(segment: WorkoutSegment): number {
+export function segmentMeters(segment: WorkoutSegment): number {
   const { distanceMeters, durationSeconds, paceSecPerKm } = segment.target
   if (distanceMeters !== undefined) return distanceMeters
   if (durationSeconds !== undefined && paceSecPerKm !== undefined) {
@@ -131,6 +133,10 @@ export function validateDraftVolume(
 ): void {
   if (!(band.baselineKm > 0)) return
 
+  // The one week per block that may sit under the floor, and only after the
+  // arithmetic below agrees it is genuinely reduced.
+  let reducedWeek: string | null = null
+
   // Measured against the block's peak so far, not the week just gone: a real
   // cutback is 15-30% down, and comparing with the week before it would then
   // forbid the rebound that made the cutback worth taking. The ceiling still
@@ -163,8 +169,22 @@ export function validateDraftVolume(
       throw new Error(`Week ${week.startDate} prescribes ${km} km, beyond the ${ceilingKm} km this athlete has sustained; reduce it`)
     }
 
-    if (km < floorKm && !DELIBERATELY_LIGHT.test(week.focus)) {
-      throw new Error(`Week ${week.startDate} prescribes ${km} km against a recent ${band.baselineKm} km; either build from that or name the recovery, taper or cutback reason in week.focus`)
+    const reduction = week.reducedVolume
+    if (km < floorKm && reduction === undefined) {
+      throw new Error(`Week ${week.startDate} prescribes ${km} km against a recent ${band.baselineKm} km; either build from that or set week.reducedVolume with the recovery, taper or cutback reason`)
+    }
+
+    // Declaring the reduction is not taking it. Compared at full-week scale so
+    // a short opening week is not judged against a whole week's peak.
+    if (reduction !== undefined) {
+      if (reducedWeek !== null) {
+        throw new Error(`Week ${week.startDate} is a second reduced week after ${reducedWeek}; a block gets one, so build this one or move the reduction`)
+      }
+      const allowedKm = round(peakKm * REDUCTION_MARGIN * share)
+      if (km > allowedKm) {
+        throw new Error(`Week ${week.startDate} calls itself ${reduction.reason} at ${km} km but the block peaks at ${round(peakKm)} km; a reduced week has to be at or under ${allowedKm} km`)
+      }
+      reducedWeek = week.startDate
     }
 
     longestSession(week, km, share, band)

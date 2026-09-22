@@ -11,6 +11,8 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "scripts/**",
+    // Agent worktrees nest a whole checkout under here; it is not our source.
+    ".claude/**",
     "coverage/**",
     // Vendored by `npm run maplibre:worker`, so it only exists after a build.
     "public/maplibre/**",

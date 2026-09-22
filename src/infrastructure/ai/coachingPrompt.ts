@@ -1,6 +1,6 @@
 import { hasCoursePacing } from '@/domain/coaching/coursePacing'
 import { raceTargetFacts } from '@/domain/coaching/raceTarget'
-import type { BootstrapRequest } from '@/application/ports/CoachingAdvisor'
+import { WEEK_REDUCTION_REASONS, type BootstrapRequest } from '@/application/ports/CoachingAdvisor'
 import type { CoachingContext } from '@/application/coaching/context'
 import { bootstrapRecoveryFacts } from '@/application/coaching/bootstrapValidation'
 import { MAX_BOOTSTRAP_WEEKS, isoWeekWindows } from '@/domain/coaching/weekWindows'
@@ -85,12 +85,22 @@ export const ADAPTATION_WORKOUT_SCHEMA = {
   },
 }
 
+const WEEK_REDUCTION_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    reason: { type: 'STRING', enum: [...WEEK_REDUCTION_REASONS] },
+    explanation: { type: 'STRING' },
+  },
+  required: ['reason', 'explanation'],
+}
+
 const BOOTSTRAP_WEEK_SCHEMA = {
   type: 'OBJECT',
   properties: {
     startDate: { type: 'STRING' },
     endDate: { type: 'STRING' },
     focus: { type: 'STRING' },
+    reducedVolume: WEEK_REDUCTION_SCHEMA,
     workouts: { type: 'ARRAY', items: BOOTSTRAP_WORKOUT_SCHEMA },
   },
   required: ['startDate', 'endDate', 'focus', 'workouts'],

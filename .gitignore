@@ -15,6 +15,10 @@
 /playwright-report/
 /test-results/
 /.coach-previews/
+# The coaching prompt and its pasted reply both carry health data, and the
+# documented CLI writes them wherever --prompt-out points.
+/coach-prompt.md
+/answer.json
 
 # generated screenshot audit output (regenerated on demand via `npm run screenshots`)
 /screenshots/output/

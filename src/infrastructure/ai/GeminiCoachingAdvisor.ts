@@ -8,6 +8,7 @@ import {
   type WorkoutSegment,
 } from '@/domain/coaching/types'
 import { parseCoachingPlan, parseWorkoutPrescription } from '@/domain/coaching/validation'
+import { WEEK_REDUCTION_REASONS } from '@/application/ports/CoachingAdvisor'
 import type {
   AdvisorPlanChange,
   AdvisorRecommendation,
@@ -15,6 +16,8 @@ import type {
   BootstrapRequest,
   CoachingAdvisor,
   CoachingPlanDraft,
+  WeekReductionReason,
+  WeekVolumeReduction,
 } from '@/application/ports/CoachingAdvisor'
 import type { CoachingContext } from '@/application/coaching/context'
 import { garminMeasured } from '@/domain/activity/raceResult'
@@ -200,6 +203,17 @@ function bootstrapWorkoutDraft(value: unknown, label: string): BootstrapWorkoutD
   }
 }
 
+/** Optional, and only meaningful when the week's arithmetic backs it up - see volume.ts. */
+function weekReduction(value: unknown, label: string): WeekVolumeReduction | undefined {
+  if (value === undefined || value === null) return undefined
+  const raw = record(value, label)
+  const reason = text(raw.reason, `${label}.reason`)
+  if (!(WEEK_REDUCTION_REASONS as readonly string[]).includes(reason)) {
+    throw new Error(`${label}.reason must be one of ${WEEK_REDUCTION_REASONS.join(', ')}`)
+  }
+  return { reason: reason as WeekReductionReason, explanation: text(raw.explanation, `${label}.explanation`) }
+}
+
 export function parseBootstrapPlanDraft(value: unknown): CoachingPlanDraft {
   const raw = record(value, 'plan')
   const weeks = list(raw.weeks, 'plan.weeks').map((value, index) => {
@@ -214,7 +228,14 @@ export function parseBootstrapPlanDraft(value: unknown): CoachingPlanDraft {
     for (const workout of workouts) {
       if (workout.date < startDate || workout.date > endDate) throw new Error(`${label}: workout ${workout.date} falls outside its week`)
     }
-    return { startDate, endDate, focus: text(week.focus, `${label}.focus`), workouts }
+    const reducedVolume = weekReduction(week.reducedVolume, `${label}.reducedVolume`)
+    return {
+      startDate,
+      endDate,
+      focus: text(week.focus, `${label}.focus`),
+      ...(reducedVolume ? { reducedVolume } : {}),
+      workouts,
+    }
   })
   if (weeks.length === 0 || weeks.length > MAX_BOOTSTRAP_WEEKS) throw new Error(`plan.weeks must contain 1 to ${MAX_BOOTSTRAP_WEEKS} weeks`)
   return { name: text(raw.name, 'plan.name'), focus: text(raw.focus, 'plan.focus'), weeks }

@@ -31,10 +31,24 @@ export interface BootstrapWorkoutDraft {
   notes?: string[]
 }
 
+/**
+ * Why a week sits below the volume floor. A field rather than a phrase in
+ * `focus`, because the validator cannot take the generator's own prose as
+ * evidence about the generator's own output.
+ */
+export const WEEK_REDUCTION_REASONS = ['cutback', 'deload', 'taper', 'recovery', 'illness', 'injury'] as const
+export type WeekReductionReason = (typeof WEEK_REDUCTION_REASONS)[number]
+
+export interface WeekVolumeReduction {
+  reason: WeekReductionReason
+  explanation: string
+}
+
 export interface BootstrapWeekDraft {
   startDate: string
   endDate: string
   focus: string
+  reducedVolume?: WeekVolumeReduction
   workouts: BootstrapWorkoutDraft[]
 }
 

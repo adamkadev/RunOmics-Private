@@ -39,6 +39,16 @@ The reasoning behind these rules, and the training science they came from, is in
 - Specify distanceMeters for aerobic running blocks where practical so weekly volume is reviewable.
 - No single session may exceed the longest run of trainingHistory.longestRunLast30DaysKm by more than a tenth, nor take more than about 30 per cent of a full week at that volume; a correct weekly total says nothing about one outsized run hidden inside it.
 - For a 10K block the long run has no reason to pass about 16 km, so put further ambition into the threshold sessions rather than into Sunday.
+- A week that sits below its volume floor must set week.reducedVolume with a reason of cutback, deload, taper, recovery, illness or injury and an explanation; writing the word into week.focus exempts nothing.
+- Only one week per block may set reducedVolume, and that week must fall at least a tenth below the block's peak week, so a week that calls itself a cutback has taken one.
+
+## How hard the week is
+
+- Keep threshold running within 10 per cent of the week's own planned distance and interval running within 8 per cent of it, counting the repetitions only: warm-up, cool-down and recovery jogs are easy volume and sit outside both caps while still counting toward the week's total.
+- Compute both caps from the week being prescribed, never from a historical average, so the cap still binds in the lightest week.
+- Those two caps already hold hard running under 20 per cent of the week, so do not state a separate easy/hard split or an accounting basis; the validator counts by distance and converts a timed segment through its own prescribed pace.
+- Hold every prescribed repetition pace constant for the whole block. A later week prescribing the same kind of session faster than the first is drift, not progress, whatever the weekly total says.
+- Make time at threshold rise in every loading week, by repetition count first and repetition length second, and never by more than 25 per cent in a week nor 40 per cent across any two weeks; a reduced week is exempt. The 10 per cent cap usually binds long before those ceilings, so the session grows only as the week does.
 
 ## Targets, tune-ups and post-race recovery
 
