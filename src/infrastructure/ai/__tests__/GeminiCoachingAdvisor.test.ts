@@ -197,7 +197,7 @@ describe('Gemini bootstrap draft boundary', () => {
     expect(request.systemInstruction).toContain('every prescribed session through recoveryThroughDate must be easy or recovery only')
     expect(request.systemInstruction).toContain('Hill repetitions must use effort/RPE or form guidance')
     expect(request.systemInstruction).toContain('Do not assign hrZone or hrBpm to strides')
-    expect(request.prompt).toContain('NOT a safe immediate target or mandatory next-week mileage')
+    expect(request.prompt).toContain('not a mandatory next-week mileage')
     expect(request.prompt).toContain('"trainingHistory":')
     expect(request.prompt).toContain('runsPerWeek (normal desired frequency): 5')
     expect(request.systemInstruction).toContain('never a frequency setting')

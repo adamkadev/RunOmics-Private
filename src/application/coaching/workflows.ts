@@ -1,4 +1,5 @@
 import { validateTrainingFrequency, validateDraftFrequency } from './frequency'
+import { validateDraftVolume, volumeBand } from './volume'
 import type { Activity } from '@/domain/activity/types'
 import {
   COACHING_SCHEMA_VERSION,
@@ -464,6 +465,7 @@ export async function createBootstrapProposal(
 
   const review = (draft: CoachingPlanDraft) => {
     validateDraftFrequency(draft, runsPerWeek)
+    validateDraftVolume(draft, volumeBand(context.trainingHistory))
     return normalizeBootstrapPlan(draft, context, availableWeekdays, strategy, createdAt, id, macrocycleStartDate)
   }
 
