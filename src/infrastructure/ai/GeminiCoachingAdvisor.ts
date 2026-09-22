@@ -25,7 +25,15 @@ import { MODEL_POOL } from '@/domain/ai/budget'
 import { MAX_BOOTSTRAP_WEEKS, isoWeekWindows } from '@/domain/coaching/weekWindows'
 import { generateStructuredJson } from '@/lib/gemini'
 
-const MODEL = () => process.env.GEMINI_COACH_MODEL || process.env.GEMINI_MODEL || MODEL_POOL[0]!
+/**
+ * An explicit choice is the only choice; otherwise the whole pool is available,
+ * because a 503 is Google declining this model right now rather than a verdict
+ * on the request, and the next model in the pool usually answers.
+ */
+const MODELS = (): string[] => {
+  const chosen = process.env.GEMINI_COACH_MODEL || process.env.GEMINI_MODEL
+  return chosen ? [chosen] : [...MODEL_POOL]
+}
 const API_KEY = () => process.env.GEMINI_COACH_API_KEY
 const PLACEHOLDER_TIME = '2000-01-01T00:00:00.000Z'
 const PLACEHOLDER_PROVENANCE = { source: 'gemini' as const, trigger: 'bootstrap' as const, createdAt: PLACEHOLDER_TIME }
@@ -431,9 +439,16 @@ async function request(schema: Record<string, unknown>, systemInstruction: strin
   const apiKey = API_KEY()
   if (!apiKey) throw new Error('Gemini coaching request failed: GEMINI_COACH_API_KEY is not configured')
 
-  const result = await generateStructuredJson({ apiKey, model: MODEL(), systemInstruction, prompt, responseSchema: schema, temperature: 0.2 })
-  if (!result.ok) throw new Error(`Gemini coaching request failed: ${result.reason}`)
-  return result.value
+  const models = MODELS()
+  const reasons: string[] = []
+
+  for (const model of models) {
+    const result = await generateStructuredJson({ apiKey, model, systemInstruction, prompt, responseSchema: schema, temperature: 0.2 })
+    if (result.ok) return result.value
+    reasons.push(`${model}: ${result.reason}`)
+  }
+
+  throw new Error(`Gemini coaching request failed: ${reasons.join(' | ')}`)
 }
 
 export class GeminiCoachingAdvisor implements CoachingAdvisor {

@@ -419,3 +419,52 @@ describe('completed activity prompt', () => {
     expect((prompt.performance as { source: string }).source).toBe('official')
   })
 })
+
+describe('model pool fallback', () => {
+  const refused = { ok: false, reason: 'http 503: high demand' }
+
+  const input = () => ({
+    context: context(),
+    availableWeekdays: [0, 2, 3, 4, 6],
+    runsPerWeek: 5,
+    planningStartDate: '2026-09-22',
+    primaryTargetEvent: {
+      id: 'primary', name: '10 km', date: '2026-11-29', role: 'primary' as const,
+      distanceLabel: '10K', distanceMeters: 10_000, targetSeconds: 2_400,
+    },
+    tuneUpEvents: [],
+    horizonEndDate: '2026-10-19',
+  })
+
+  const modelsTried = () =>
+    gemini.generateStructuredJson.mock.calls.map(([request]) => (request as { model: string }).model)
+
+  beforeEach(() => gemini.generateStructuredJson.mockReset())
+
+  it('tries the next model when one refuses, rather than giving up on the first', async () => {
+    gemini.generateStructuredJson.mockResolvedValue(refused)
+
+    await expect(new GeminiCoachingAdvisor().bootstrap(input())).rejects.toThrow(/503/)
+
+    expect(new Set(modelsTried()).size).toBeGreaterThan(1)
+  })
+
+  it('stops at the first model that answers', async () => {
+    gemini.generateStructuredJson
+      .mockResolvedValueOnce(refused)
+      .mockResolvedValueOnce({ ok: true, value: { weeks: [] } })
+
+    await new GeminiCoachingAdvisor().bootstrap(input()).catch(() => {})
+
+    expect(modelsTried()).toHaveLength(2)
+  })
+
+  it('respects an explicitly chosen model instead of ranging over the pool', async () => {
+    vi.stubEnv('GEMINI_COACH_MODEL', 'gemini-flash-latest')
+    gemini.generateStructuredJson.mockResolvedValue(refused)
+
+    await expect(new GeminiCoachingAdvisor().bootstrap(input())).rejects.toThrow()
+
+    expect(new Set(modelsTried())).toEqual(new Set(['gemini-flash-latest']))
+  })
+})
