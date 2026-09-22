@@ -13,11 +13,16 @@ const s = t.settings.sync
 // fire on their own, and nothing outside the awaited click can advance a fake
 // clock while the click itself is what's being awaited), and switching to
 // fake timers partway through a test left a poll iteration waiting on a real
-// timer a fake-clock advance afterward can't touch. The one real cost is the
-// two tests below that dispatch and then wait a genuine poll interval, each
-// given the room for that in its own timeout.
-const REAL_POLL_INTERVAL_MS = 10_000
-const CLICK_TEST_TIMEOUT_MS = 15_000
+// timer a fake-clock advance afterward can't touch. The two tests below that
+// wait a genuine poll interval hand the card a short one instead of sitting
+// through production's ten seconds - long enough that a dispatch's stored
+// timestamp is still observable before the first poll clears it, short enough
+// not to dominate the suite. Only those two override it: the fake-timer tests
+// keep the real interval, so that `runAllTimersAsync` still drains the poll
+// loop in the few dozen iterations the twelve-minute ceiling allows at 10s
+// rather than the thousands it would take at a few hundred milliseconds.
+const REAL_POLL_INTERVAL_MS = 500
+const CLICK_TEST_TIMEOUT_MS = 5_000
 
 const USER = { getIdToken: () => Promise.resolve('test-token') } as unknown as User
 
@@ -32,8 +37,8 @@ function jsonResponse(body: unknown, ok = true) {
   return { ok, status: ok ? 200 : 503, json: async () => body }
 }
 
-function renderCard() {
-  return render(<SyncNowCard user={USER} />)
+function renderCard(pollIntervalMs?: number) {
+  return render(<SyncNowCard user={USER} pollIntervalMs={pollIntervalMs} />)
 }
 
 /**
@@ -84,7 +89,7 @@ describe('SyncNowCard', () => {
         .mockResolvedValue(jsonResponse(VERDICT_STATUS))
       vi.stubGlobal('fetch', fetchMock)
 
-      renderCard()
+      renderCard(REAL_POLL_INTERVAL_MS)
       const user = userEvent.setup()
       await user.click(screen.getByText(s.action))
 
@@ -119,7 +124,7 @@ describe('SyncNowCard', () => {
         .mockResolvedValue(jsonResponse(VERDICT_STATUS))
       vi.stubGlobal('fetch', fetchMock)
 
-      renderCard()
+      renderCard(REAL_POLL_INTERVAL_MS)
       const user = userEvent.setup()
       await user.click(screen.getByText(s.action))
 

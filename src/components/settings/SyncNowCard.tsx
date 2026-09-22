@@ -89,7 +89,12 @@ function progressText(phase: Phase, s: typeof t.settings.sync): string | null {
   }
 }
 
-export function SyncNowCard({ user }: { user: User }) {
+/**
+ * `pollIntervalMs` exists for the tests, which drive this loop on real timers
+ * (see the test file for why fake ones deadlock `userEvent`) and would
+ * otherwise each sit through a genuine ten-second wait.
+ */
+export function SyncNowCard({ user, pollIntervalMs = POLL_INTERVAL_MS }: { user: User; pollIntervalMs?: number }) {
   const [phase, setPhase] = useState<Phase>(() => (readStoredSince() ? { kind: 'waiting', synced: false } : { kind: 'idle' }))
   const cancelled = useRef(false)
 
@@ -140,7 +145,7 @@ export function SyncNowCard({ user }: { user: User }) {
       }
 
       while (!cancelled.current && Date.now() < deadline) {
-        await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS))
+        await new Promise((resolve) => setTimeout(resolve, pollIntervalMs))
         if (cancelled.current) return
         if ((await checkOnce()) === 'done') return
       }
@@ -150,7 +155,7 @@ export function SyncNowCard({ user }: { user: User }) {
         setPhase({ kind: 'timedOut' })
       }
     },
-    [authorized]
+    [authorized, pollIntervalMs]
   )
 
   useEffect(() => {
