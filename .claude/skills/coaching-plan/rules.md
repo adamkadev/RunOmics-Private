@@ -99,6 +99,14 @@ The reasoning behind these rules, and the training science they came from, is in
 - Do not schedule anything outside the planning period.
 - Use only supplied dates, athlete metrics, goals, target ranges, and available weekdays.
 
+## Injury history
+
+- athlete.injuryHistory carries prior running injuries and the date they were last reviewed; prior injury is the most consistently replicated predictor of running injury, more than any load metric, so read it before deciding how hard to ramp.
+- An empty injuries list with a recent reviewedOn means the athlete has none: say so plainly in the plan rationale and do not manufacture a caution.
+- When injuryHistory is absent, or reviewedOn is over a year old, treat the history as unknown rather than empty, and say it is unknown.
+- Where an injury is recorded, name the site in the plan rationale, ramp the tissue it involves more gradually than the weekly total otherwise allows, and treat a recurrent one as a standing constraint rather than a past event.
+- Never claim the plan prevents injury: no training plan has been shown to, and the two randomised tests of graded progression in runners were null.
+
 ## Encoding the workouts
 
 - Treat supplied hrZoneBoundsBpm as authoritative Garmin zone boundaries; do not recalculate HR zones from max HR or LTHR.

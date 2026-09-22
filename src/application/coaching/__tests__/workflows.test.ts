@@ -964,7 +964,7 @@ describe('replacing a plan that is already active', () => {
 
     const proposal = await createBootstrapProposal(context, [2, 3], services(repository), undefined, undefined, undefined, true)
 
-    expect(proposal.proposedPlan.id).not.toBe(outgoing)
+    expect(proposal.proposedPlan?.id).not.toBe(outgoing)
     expect(repository.archived.map((item) => item.id)).toEqual([outgoing])
     // Still a proposal: nothing is written until it is applied.
     expect(repository.plan?.id).toBe(outgoing)

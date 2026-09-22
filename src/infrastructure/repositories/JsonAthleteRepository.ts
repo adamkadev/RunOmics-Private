@@ -1,6 +1,25 @@
 import { dataPath } from '../dataPath'
 import { readJsonFile } from '../readJsonFile'
 
+export interface RunningInjury {
+  /** Free text, e.g. 'left achilles' - the site is what recurs, not a code. */
+  site: string
+  year: number
+  weeksOut?: number
+  recurrent?: boolean
+  resolved?: boolean
+}
+
+/**
+ * Prior injury is the most consistently replicated predictor of running
+ * injury, so an empty list is only worth anything alongside the date someone
+ * last checked: it distinguishes "none" from "never asked".
+ */
+export interface InjuryHistory {
+  reviewedOn: string
+  injuries: RunningInjury[]
+}
+
 export interface AthleteProfile {
   lthrBpm?: number
   thresholdPaceSecPerKm?: number
@@ -24,6 +43,7 @@ export interface AthleteProfile {
   deviceFirmware?: string
   deviceSince?: string
   lastUpdate?: string
+  injuryHistory?: InjuryHistory
 }
 
 export function getAthleteProfile(): AthleteProfile {

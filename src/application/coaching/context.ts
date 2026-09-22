@@ -13,7 +13,7 @@ import {
 } from '@/domain/activity/raceResult'
 import { COACHING_TO_ACTIVITY_TYPE, type CoachingPlan } from '@/domain/coaching/types'
 import { raceDistanceMeters } from '@/domain/coaching/raceTarget'
-import type { AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
+import type { AthleteProfile, InjuryHistory } from '@/infrastructure/repositories/JsonAthleteRepository'
 import type { GoalYear, PbYear, UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import type { LoadBalanceData } from '@/application/usecases/GetLoadBalance'
@@ -80,6 +80,7 @@ export interface CoachingContext {
     weightKg: number | null
     heightCm: number | null
     trainingZones: TrainingZonesData | null
+    injuryHistory: InjuryHistory | null
   }
   goals: GoalYear[]
   personalBests: PbYear[]
@@ -236,6 +237,9 @@ export function buildCoachingContext(input: CoachingContextInput, referenceDate:
       weightKg: input.athlete.weightKg ?? null,
       heightCm: input.athlete.heightCm ?? null,
       trainingZones: input.trainingZones,
+      // The one evidenced predictor in this whole context. Null means nobody
+      // has asked, which is not the same as none.
+      injuryHistory: input.athlete.injuryHistory ?? null,
     },
     goals: input.goals,
     personalBests: input.personalBests,

@@ -252,3 +252,20 @@ describe('official race result overlay', () => {
     expect(build([officialResult]).execution).toBeNull()
   })
 })
+
+describe('injury history', () => {
+  it('carries a reviewed-but-empty history through as evidence of none', () => {
+    const context = buildCoachingContext(
+      { ...input([]), athlete: { injuryHistory: { reviewedOn: '2026-09-22', injuries: [] } } },
+      '2026-09-22',
+    )
+
+    expect(context.athlete.injuryHistory).toEqual({ reviewedOn: '2026-09-22', injuries: [] })
+  })
+
+  it('distinguishes a history nobody has taken from one that is empty', () => {
+    const context = buildCoachingContext({ ...input([]), athlete: {} }, '2026-09-22')
+
+    expect(context.athlete.injuryHistory).toBeNull()
+  })
+})
