@@ -15,7 +15,6 @@ so planning further ahead is guessing about a state that has not happened.
 | --- | --- |
 | `rules.md` | Always. It is the normative list, and it generates the planner's system instruction. |
 | `references/methodology.md` | Changing a rule, or asked why a rule exists. Carries the evidence label for each. |
-| `references/coaches-guide.md` | General training questions this repo's rules do not cover. Vendored, MIT, no citations - methodology.md wins where they disagree. |
 
 ## Generating a block
 
@@ -35,6 +34,10 @@ npm run coach -- bootstrap --days ... --runs-per-week 5 --from-answer answer.jso
 
 A rejected plan rewrites the prompt with the reason attached, ready to answer
 again. Apply the preview it prints with `npm run coach -- --apply <path>`.
+
+Bootstrap refuses while a plan is active. Add `--replace` to supersede it; the
+outgoing plan is kept under `coaching/superseded/<id>.json`, so rewriting a
+block is reversible.
 
 ## The checks a plan must pass
 

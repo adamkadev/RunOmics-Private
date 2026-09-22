@@ -16,4 +16,10 @@ export interface CoachingRepository {
   getEvaluations(): WorkoutEvaluation[]
   getEvaluationForActivity(activityId: string): WorkoutEvaluation | null
   saveEvaluation(evaluation: WorkoutEvaluation): void
+  /**
+   * Keep a plan that is about to be replaced. Optional so in-memory doubles
+   * need not implement it; a store that cannot archive simply drops it, which
+   * is what replacing meant before this existed.
+   */
+  archivePlan?(plan: CoachingPlan): void
 }

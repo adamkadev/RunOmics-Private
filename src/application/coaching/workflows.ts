@@ -438,8 +438,16 @@ export async function createBootstrapProposal(
   targetEventId?: string,
   runsPerWeek?: number,
   guidance?: string,
+  replace = false,
 ): Promise<CoachingProposal> {
-  if (services.repository.getCurrentPlan()) throw new Error('A current coaching plan already exists')
+  // Bootstrap is how a block is written, and blocks are rewritten - a rejected
+  // plan, a changed goal, a week that turned out wrong. Refusing outright left
+  // deleting current_plan.json by hand as the only way through.
+  const existing = services.repository.getCurrentPlan()
+  if (existing && !replace) {
+    throw new Error('A current coaching plan already exists; pass --replace to supersede it')
+  }
+  if (existing) services.repository.archivePlan?.(existing)
   if (availableWeekdays.length === 0) throw new Error('At least one available weekday is required')
   validateTrainingFrequency(availableWeekdays, runsPerWeek)
   const now = services.now?.() ?? new Date()

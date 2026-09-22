@@ -11,8 +11,11 @@ than laundering it into evidence:
 - _convention_ - widely repeated, no evidence located; often a round number
 - **contested** - sources genuinely disagree, or the evidence is disputed
 
-Where this file and `references/coaches-guide.md` disagree, this file wins: the
-guide is a good general text but carries no citations and no labels.
+This file is the only normative source of reasoning here. A vendored general
+coaching text (ColinEberhardt/claude-running-coach, MIT) sat alongside it for a
+while; both of its load-bearing findings - 15-30% deloads, and the phase
+structure of a 10-12 week 5K/10K plan - are recorded below, and it was deleted
+rather than left as an uncited second opinion.
 
 Numbers naming specific kilometres or paces were computed for one athlete at one
 reference date and are illustrative. The live values come from the coaching
@@ -113,7 +116,7 @@ The only two randomised tests of graded progression in runners were null, and a 
 ## Where the block sits in the season
 
 - [**contested**] Compute the macrocycle's phases from the season start to the target race and tell the planner which phase each week of the block falls in. Proportions: 45% base, 35% build, the remainder peak, with the final week to the race its own phase.
-  - This is the missing half of the rolling-block design. Issurin's block periodization depends on SEQUENCING, and monthly regeneration toward the present destroys sequencing unless the block is told where it sits - which is why every block came out looking the same. The evidence for sequencing mattering at all is weak (Kiely 2012 calls the assumptions tradition-driven; Filipas 2022 found pyramidal-then-polarized worth about 1.5% on a 5 km trial over 16 weeks), so sell this as coherence and attribution rather than as performance. The 45/35 split is convention: it lands close to the structure `references/coaches-guide.md` gives for a 10-12 week 5K/10K plan (base-lite 2-4 weeks, build 4-6, specific/peak 2-3, taper 1-2), which is the only place that text says what each phase is FOR. That table is the guide's second load-bearing finding, recorded here so the guide itself can be deleted.
+  - This is the missing half of the rolling-block design. Issurin's block periodization depends on SEQUENCING, and monthly regeneration toward the present destroys sequencing unless the block is told where it sits - which is why every block came out looking the same. The evidence for sequencing mattering at all is weak (Kiely 2012 calls the assumptions tradition-driven; Filipas 2022 found pyramidal-then-polarized worth about 1.5% on a 5 km trial over 16 weeks), so sell this as coherence and attribution rather than as performance. The 45/35 split is convention: it lands close to the structure the vendored guide gives for a 10-12 week 5K/10K plan (base-lite 2-4 weeks, build 4-6, specific/peak 2-3, taper 1-2), which was the only place that text said what each phase is FOR. That table was the guide's second load-bearing finding; recording it here is what made deleting the guide safe.
   - Computed in `macrocyclePhases` in `src/domain/coaching/macrocycle.ts`, which the plan page and the coaching prompt now share. It previously lived in `src/components/coaching/presentation.ts` and was drawn on a screen without ever reaching the planner.
 - [_convention_] Keep faster-than-threshold work out of base entirely, introduce it in build, and make it race-specific in peak.
   - No trial sets these boundaries. The argument for this athlete is concrete rather than general: his 2026-09-05 5K opened at 3:56/km - faster than his 10K goal pace - and faded to 4:15/km, +19 s/km over five kilometres. The limiter is durability at pace, not top-end speed, so VO2max work in base would sharpen the end of the range that is already adequate.

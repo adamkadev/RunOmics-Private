@@ -34,6 +34,8 @@ function usage(): string {
     '  --prompt-out <path> Write the coaching prompt to paste into a chat instead of calling the API.',
     '  --from-answer <path> Build the proposal from a chat reply saved as JSON.',
     '  --reference-date <YYYY-MM-DD> Reproduce coaching at a specified date.',
+    '  --replace          Supersede the active plan instead of refusing. The outgoing',
+    '                     plan is kept under coaching/superseded/.',
     '  --out <path>       Directory for preview files (default: .coach-previews).',
   ].join('\n')
 }
@@ -133,7 +135,7 @@ async function createProposal(command: string, args: string[]) {
     const context = await getCoachingContext(currentPlan, referenceDate)
     const contextOutput = option(args, '--context-out')
     if (contextOutput) fs.writeFileSync(path.resolve(contextOutput), JSON.stringify(context, null, 2) + '\n')
-    return createBootstrapProposal(context, availableDays(option(args, '--days')), { advisor, repository }, option(args, '--race'), requestedRuns(args), fileOption(args, '--guidance-file'))
+    return createBootstrapProposal(context, availableDays(option(args, '--days')), { advisor, repository }, option(args, '--race'), requestedRuns(args), fileOption(args, '--guidance-file'), args.includes('--replace'))
   }
 
   if (command === 'evaluate') {

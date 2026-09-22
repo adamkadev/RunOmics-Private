@@ -56,6 +56,13 @@ export class JsonCoachingRepository implements CoachingRepository {
     writeJsonAtomic(path.join(this.coachingDir, 'current_plan.json'), parseCoachingPlan(plan))
   }
 
+  /** Superseded plans keep their own file so a regeneration is reversible. */
+  archivePlan(plan: CoachingPlan): void {
+    const dir = path.join(this.coachingDir, 'superseded')
+    fs.mkdirSync(dir, { recursive: true })
+    writeJsonAtomic(path.join(dir, `${plan.id}.json`), parseCoachingPlan({ ...plan, status: 'superseded' }))
+  }
+
   getState(): CoachState | null {
     const filePath = path.join(this.coachingDir, 'coach_state.json')
     return fs.existsSync(filePath) ? parseCoachState(readJson(filePath), filePath) : null

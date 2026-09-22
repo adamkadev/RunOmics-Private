@@ -24,6 +24,8 @@ class MemoryRepository implements CoachingRepository {
   getEvaluations = () => this.evaluations
   getEvaluationForActivity = (id: string) => this.evaluations.find((item) => item.activityId === id) ?? null
   saveEvaluation = (value: WorkoutEvaluation) => { this.evaluations = [...this.evaluations.filter((item) => item.id !== value.id), value] }
+  archived: CoachingPlan[] = []
+  archivePlan = (value: CoachingPlan) => { this.archived = [...this.archived, value] }
 }
 
 const latestActivity = {
@@ -932,6 +934,41 @@ it('passes and persists five-run preference independently of availability throug
   expect(proposal.proposedPlan?.weeks.map(w => w.workouts.length)).toEqual([5, 5, 5, 5])
   applyCoachingProposal(proposal, repository, coachingContextHash(context))
   expect(repository.plan?.trainingPreferences).toEqual({ availableWeekdays: [0, 2, 3, 4, 6], runsPerWeek: 5 })
+})
+
+describe('replacing a plan that is already active', () => {
+  const services = (repository: MemoryRepository) => ({
+    repository,
+    advisor: { bootstrap: async () => fourWeekPlan(), evaluateActivity: async () => { throw new Error('not called') }, reviewWeek: async () => { throw new Error('not called') } },
+    id: ids(),
+    now: () => new Date('2026-09-07T08:00:00Z'),
+  })
+
+  it('refuses by default, and says how to proceed', async () => {
+    const repository = new MemoryRepository()
+    repository.plan = plan()
+    const context = buildCoachingContext(contextInput(null), '2026-09-07')
+
+    await expect(createBootstrapProposal(context, [2, 3], services(repository)))
+      .rejects.toThrow(/--replace/)
+  })
+
+  it('supersedes the active plan when asked, keeping the outgoing one', async () => {
+    // Blocks get rewritten - a rejected draft, a changed goal, a week that
+    // turned out wrong - and deleting current_plan.json by hand was the only
+    // way through before this.
+    const repository = new MemoryRepository()
+    repository.plan = plan()
+    const outgoing = repository.plan.id
+    const context = buildCoachingContext(contextInput(null), '2026-09-07')
+
+    const proposal = await createBootstrapProposal(context, [2, 3], services(repository), undefined, undefined, undefined, true)
+
+    expect(proposal.proposedPlan.id).not.toBe(outgoing)
+    expect(repository.archived.map((item) => item.id)).toEqual([outgoing])
+    // Still a proposal: nothing is written until it is applied.
+    expect(repository.plan?.id).toBe(outgoing)
+  })
 })
 
 describe('repairing a rejected draft', () => {
