@@ -19,6 +19,7 @@
     "pretypecheck": "npm run prepare:data",
     "typecheck": "tsc --noEmit",
     "tokens": "node scripts/generate-tokens.mjs",
+    "build:coaching-rules": "node --import tsx scripts/generate-coaching-rules.ts",
     "demo:generate": "node scripts/generate_demo_data.mjs",
     "pretest": "npm run prepare:data",
     "test": "vitest run",
@@ -82,7 +83,9 @@
   "overrides": {
     "sharp": ">=0.35.4",
     "postcss": "^8.5.25",
-    "google-gax": { "rimraf": "^6.0.1" },
+    "google-gax": {
+      "rimraf": "^6.0.1"
+    },
     "uuid": "^11.1.1"
   }
 }
