@@ -2,7 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildCoachingContext } from '@/application/coaching/context'
 import type { Activity } from '@/domain/activity/types'
 import { generateInsight } from '@/lib/gemini'
-import { GeminiCoachingAdvisor } from '../GeminiCoachingAdvisor'
+import { GeminiCoachingAdvisor, pacing } from '../GeminiCoachingAdvisor'
+
+const realSleep = pacing.sleep
 
 const GENERAL_KEY = 'general-project-key-0001'
 const COACH_KEY = 'coach-project-key-0002'
@@ -85,11 +87,16 @@ async function coachingFailure(): Promise<string> {
 beforeEach(() => {
   vi.stubEnv('GEMINI_API_KEY', GENERAL_KEY)
   vi.stubEnv('GEMINI_COACH_API_KEY', COACH_KEY)
+  // Real pacing spaces calls 13 seconds apart; these tests assert which key is
+  // sent, not when, and a second call would otherwise outlast the timeout.
+  pacing.lastRequestAt = 0
+  pacing.sleep = () => Promise.resolve()
 })
 
 afterEach(() => {
   vi.unstubAllGlobals()
   vi.unstubAllEnvs()
+  pacing.sleep = realSleep
 })
 
 describe('Gemini credential isolation', () => {

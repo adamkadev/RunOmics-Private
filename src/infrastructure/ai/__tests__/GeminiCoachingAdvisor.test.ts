@@ -10,6 +10,7 @@ import {
   GeminiCoachingAdvisor,
   bootstrapEventPrompt,
   completedActivityPrompt,
+  pacing,
   parseBootstrapPlanDraft,
 } from '../GeminiCoachingAdvisor'
 
@@ -20,10 +21,14 @@ const COACH_KEY = 'coach-key'
 
 beforeEach(() => {
   vi.stubEnv('GEMINI_COACH_API_KEY', COACH_KEY)
+  // Real pacing waits 13 seconds between calls; tests assert what is sent, not when.
+  pacing.lastRequestAt = 0
+  pacing.sleep = () => Promise.resolve()
 })
 
 afterEach(() => {
   vi.unstubAllEnvs()
+  pacing.now = () => Date.now()
 })
 
 const repository: CoachingRepository = {
@@ -532,5 +537,48 @@ describe('a pinned model', () => {
     await expect(new GeminiCoachingAdvisor().bootstrap(input())).rejects.toThrow(
       /Only gemini-3\.8-flash was tried[^]*Unset it to let the whole pool answer/,
     )
+  })
+})
+
+describe('pacing against the per-minute limit', () => {
+  const input = () => ({
+    context: context(),
+    availableWeekdays: [0, 2, 3, 4, 6],
+    runsPerWeek: 5,
+    planningStartDate: '2026-09-22',
+    primaryTargetEvent: {
+      id: 'primary', name: '10 km', date: '2026-11-29', role: 'primary' as const,
+      distanceLabel: '10K', distanceMeters: 10_000, targetSeconds: 2_400,
+    },
+    tuneUpEvents: [],
+    horizonEndDate: '2026-10-19',
+  })
+
+  it('waits between pooled attempts so one command cannot outrun five requests a minute', async () => {
+    const waits: number[] = []
+    let clock = 1_000_000
+    pacing.lastRequestAt = 0
+    pacing.now = () => clock
+    pacing.sleep = (ms: number) => { waits.push(ms); clock += ms; return Promise.resolve() }
+    gemini.generateStructuredJson.mockReset().mockResolvedValue({ ok: false, reason: 'http 503: high demand' })
+
+    await expect(new GeminiCoachingAdvisor().bootstrap(input())).rejects.toThrow()
+
+    // First call is free; each later one waits out the 5/min allowance.
+    expect(waits).toHaveLength(MODEL_POOL.length - 1)
+    expect(waits.every((ms) => ms >= 12_000)).toBe(true)
+  })
+
+  it('does not wait when the allowance has already elapsed', async () => {
+    const waits: number[] = []
+    let clock = 1_000_000
+    pacing.lastRequestAt = 0
+    pacing.now = () => (clock += 60_000)
+    pacing.sleep = (ms: number) => { waits.push(ms); return Promise.resolve() }
+    gemini.generateStructuredJson.mockReset().mockResolvedValue({ ok: false, reason: 'http 503: high demand' })
+
+    await expect(new GeminiCoachingAdvisor().bootstrap(input())).rejects.toThrow()
+
+    expect(waits).toEqual([])
   })
 })

@@ -21,7 +21,7 @@ import type {
 import type { CoachingContext } from '@/application/coaching/context'
 import { garminMeasured } from '@/domain/activity/raceResult'
 import { bootstrapRecoveryFacts } from '@/application/coaching/bootstrapValidation'
-import { MODEL_POOL, modelLimits } from '@/domain/ai/budget'
+import { MODEL_POOL, modelLimits, spacingMs } from '@/domain/ai/budget'
 import { MAX_BOOTSTRAP_WEEKS, isoWeekWindows } from '@/domain/coaching/weekWindows'
 import { generateStructuredJson } from '@/lib/gemini'
 
@@ -435,6 +435,24 @@ export function bootstrapEventPrompt(event: BootstrapRequest['primaryTargetEvent
   return { ...event, ...raceTargetFacts(event), ...(hasCoursePacing(event) ? { pacingMode: 'course_aware', goalPaceMeaning: 'average_over_entire_course_not_constant_pace' } : {}) }
 }
 
+/**
+ * Google allows five requests a minute on these models and reports going over
+ * as 503 "high demand", the same words it uses for a spent daily quota. One
+ * bootstrap can ask several times - once per pooled model, again per repair -
+ * so without pacing a single command outruns the minute by itself.
+ */
+export const pacing = {
+  lastRequestAt: 0,
+  now: () => Date.now(),
+  sleep: (ms: number) => new Promise((resolve) => setTimeout(resolve, ms)),
+}
+
+async function pace(model: string): Promise<void> {
+  const delay = Math.max(0, pacing.lastRequestAt + spacingMs(model) - pacing.now())
+  if (delay > 0) await pacing.sleep(delay)
+  pacing.lastRequestAt = pacing.now()
+}
+
 async function request(schema: Record<string, unknown>, systemInstruction: string, prompt: string): Promise<unknown> {
   const apiKey = API_KEY()
   if (!apiKey) throw new Error('Gemini coaching request failed: GEMINI_COACH_API_KEY is not configured')
@@ -443,6 +461,7 @@ async function request(schema: Record<string, unknown>, systemInstruction: strin
   const reasons: string[] = []
 
   for (const model of models) {
+    await pace(model)
     // No per-model retry: walking the pool already gives one independent
     // chance per model, and the pooled models allow only 20 requests a day
     // each, so retrying one of them is the expensive way to buy the same odds.
