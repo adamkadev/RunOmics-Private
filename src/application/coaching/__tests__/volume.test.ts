@@ -82,6 +82,25 @@ describe('validateDraftVolume', () => {
     expect(() => validateDraftVolume(draft(first, leap), band, DAYS)).toThrow(/jumps from/)
   })
 
+  it('lets the week after a real cutback return to the level before it', () => {
+    // 15-30% is what a cutback is worth taking; measured against the week just
+    // gone, any of it would forbid resuming the build it was taken to serve.
+    const build = week('Build', [[easy(12000)], [easy(12000)], [easy(12000)], [easy(14000)]], '2026-09-28')
+    const cutback = week('Cutback week to absorb the build.', [[easy(9000)], [easy(9000)], [easy(9000)], [easy(11000)]], '2026-10-05')
+    const rebuild = week('Resume the build', [[easy(12000)], [easy(12000)], [easy(13000)], [easy(14000)]], '2026-10-12')
+
+    expect(weekKm(rebuild)).toBeGreaterThan(weekKm(cutback) * 1.12 + 2)
+    expect(() => validateDraftVolume(draft(build, cutback, rebuild), band, DAYS)).not.toThrow()
+  })
+
+  it('still refuses a rebound that overshoots the level before the cutback', () => {
+    const build = week('Build', [[easy(11000)], [easy(11000)], [easy(11000)], [easy(11000)]], '2026-09-28')
+    const cutback = week('Cutback week to absorb the build.', [[easy(8000)], [easy(8000)], [easy(8000)], [easy(9000)]], '2026-10-05')
+    const overshoot = week('Resume the build', [[easy(14000)], [easy(14000)], [easy(14000)], [easy(14000)]], '2026-10-12')
+
+    expect(() => validateDraftVolume(draft(build, cutback, overshoot), band, DAYS)).toThrow(/jumps from/)
+  })
+
   it('says nothing when there is no history to judge against', () => {
     const empty = { ...HISTORY, recent7DaysKm: 0, recentWeeklyAverageKm: 0, best4WeekAverageKm: 0 }
     const anything = week('Whatever', [[easy(30000)]])
