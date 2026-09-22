@@ -14,6 +14,8 @@ const HISTORY = {
   best4WeekAverageKm: 57.4, best6WeekAverageKm: 55, best8WeekAverageKm: 54.4,
   best12WeekAverageKm: 52.8, typicalFrequencyAtPeak: 5,
   daysSinceLastRun: 1, longestRecentGapDays: 7,
+  // Adam's longest ever is a half; his longest training run is 16 km.
+  longestRunLast30DaysKm: 16, longestRunLast90DaysKm: 21.1,
   // The band is drawn from the aggregates above; the series is here to satisfy
   // the type, and these tests say nothing about it.
   weeklySeries: { firstWeekStart: '2026-08-31', km: [45], runs: [5] },
@@ -111,6 +113,24 @@ describe('validateDraftVolume', () => {
 
     expect(weekKm(opener)).toBeLessThan(volumeBand(HISTORY).capacityKm * 1.05 + 3)
     expect(() => validateDraftVolume(draft(opener), band, DAYS)).toThrow(/jumps from 45 km to 58 km/)
+  })
+
+  it('refuses a long run beyond anything the athlete has recently run', () => {
+    // A 60 km week is inside the ceiling and the 24 km hides in it. Adam's
+    // longest training run is 16 km.
+    const hidden = week('Build', [[easy(12000)], [easy(12000)], [easy(12000)], [easy(24000)]], '2026-09-28')
+
+    expect(weekKm(hidden)).toBe(60)
+    expect(() => validateDraftVolume(draft(hidden), band, DAYS))
+      .toThrow(/24 km session but the longest run of the last months was 16 km/)
+  })
+
+  it('refuses a long run that swallows its week even when the distance is familiar', () => {
+    // 16 km is well inside a half-marathoner's history, and still wrong here.
+    const lopsided = week('Build', [[easy(9000)], [easy(9000)], [easy(9000)], [easy(16000)]], '2026-09-28')
+
+    expect(() => validateDraftVolume(draft(lopsided), { ...band, longestRunKm: 30 }, DAYS))
+      .toThrow(/over 30% of a full week/)
   })
 
   it('says nothing when there is no history to judge against', () => {

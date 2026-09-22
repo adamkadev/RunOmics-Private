@@ -37,6 +37,8 @@ The reasoning behind these rules, and the training science they came from, is in
 - Preserve race-week rest days and reduce volume through shorter easy runs, not a frequency quota.
 - Historical capacity remains context, never a compulsory immediate target.
 - Specify distanceMeters for aerobic running blocks where practical so weekly volume is reviewable.
+- No single session may exceed the longest run of trainingHistory.longestRunLast30DaysKm by more than a tenth, nor take more than about 30 per cent of a full week at that volume; a correct weekly total says nothing about one outsized run hidden inside it.
+- For a 10K block the long run has no reason to pass about 16 km, so put further ambition into the threshold sessions rather than into Sunday.
 
 ## Targets, tune-ups and post-race recovery
 

@@ -43,6 +43,9 @@ export function trainingHistory(activities: Activity[], referenceDate: string) {
     longest = Math.max(longest, gap)
   }
   const recentKm = recent.reduce((s, a) => s + a.distanceKm, 0)
+  const longestWithin = (days: number) => runs
+    .filter(a => day(a.date) > reference - days)
+    .reduce((longest, a) => Math.max(longest, a.distanceKm), 0)
   // The averages say what the athlete has held; only the series says what the
   // shape was. A month lost to travel and a month lost to injury produce the
   // same depressed mean and call for opposite prescriptions.
@@ -57,6 +60,10 @@ export function trainingHistory(activities: Activity[], referenceDate: string) {
     typicalFrequencyAtPeak: best(Math.min(12, weeks.length)).runs,
     daysSinceLastRun: runs.length ? reference - day(runs.at(-1)!.date) : null,
     longestRecentGapDays: longest,
+    // What one run has recently been worth. Weekly totals say nothing about it,
+    // so a single outsized session can hide inside a perfectly ordinary week.
+    longestRunLast30DaysKm: round(longestWithin(30)),
+    longestRunLast90DaysKm: round(longestWithin(90)),
     weeklySeries: {
       firstWeekStart: isoDate(first + (weeks.length - series.length) * 7),
       km: series.map((week) => round(week.km)),

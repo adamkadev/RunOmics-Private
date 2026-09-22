@@ -12,6 +12,15 @@ const CEILING_ALLOWANCE_KM = 3
 const RAMP_RATIO = 1.12
 const RAMP_ALLOWANCE_KM = 2
 const FOCUS_TOLERANCE = 0.1
+// Single-session distance against the recent longest run is the one bound in
+// this file with a hazard ratio behind it, though from a single observational
+// cohort - hence a step rather than a hard ceiling. The share is convention.
+const LONG_RUN_STEP = 1.1
+const LONG_RUN_SHARE = 0.3
+// As with the ceiling, proportions police nothing worth policing at the bottom
+// of the range: at 6 km a week the only sane long run is most of it, and 10%
+// more than a 3 km longest run is 300 metres. Neither bound binds below this.
+const LONG_RUN_ALLOWANCE_KM = 8
 
 /** Wording that makes a week deliberately lighter, matching how frequency.ts lets a short week through. */
 const DELIBERATELY_LIGHT = /recovery|taper|cutback|down week|fatigue|illness|injury|deload/i
@@ -25,11 +34,18 @@ const KM_IN_PROSE = /(\d+(?:[.,]\d+)?)\s*km/gi
 export interface VolumeBand {
   baselineKm: number
   capacityKm: number
+  longestRunKm: number
 }
 
 export function volumeBand(history: TrainingHistory): VolumeBand {
   const baselineKm = Math.max(history.recent7DaysKm, history.recentWeeklyAverageKm)
-  return { baselineKm, capacityKm: Math.max(history.best4WeekAverageKm, baselineKm) }
+  return {
+    baselineKm,
+    capacityKm: Math.max(history.best4WeekAverageKm, baselineKm),
+    // A month off the road leaves no recent long run to measure against, but
+    // the tolerance built over the quarter has not vanished with it.
+    longestRunKm: history.longestRunLast30DaysKm || history.longestRunLast90DaysKm,
+  }
 }
 
 function segments(blocks: WorkoutBlock[]): { segment: WorkoutSegment; repetitions: number }[] {
@@ -84,6 +100,30 @@ function focusContradictsPrescription(week: BootstrapWeekDraft, km: number): num
   return null
 }
 
+/**
+ * The week can be impeccable and still hide one run nobody has any business
+ * doing: weekly totals are blind to how the kilometres are distributed. Two
+ * bounds, whichever is tighter - what one run has recently been worth, and a
+ * share of the week, because a long run is a session and not the plan.
+ */
+function longestSession(week: BootstrapWeekDraft, weekTotalKm: number, share: number, band: VolumeBand): void {
+  // Against a whole week's worth, not this week's total: a Friday-to-Sunday
+  // tail holds two runs, and one of them being most of it is arithmetic.
+  const shareBound = (weekTotalKm / share) * LONG_RUN_SHARE
+  const recentBound = band.longestRunKm > 0 ? band.longestRunKm * LONG_RUN_STEP : Infinity
+  const limit = Math.max(Math.min(shareBound, recentBound), LONG_RUN_ALLOWANCE_KM)
+
+  for (const workout of week.workouts) {
+    const km = round(segments(workout.blocks).reduce((sum, { segment, repetitions }) => sum + segmentMeters(segment) * repetitions, 0) / 1_000)
+    if (km <= limit) continue
+
+    const reason = recentBound < shareBound
+      ? `the longest run of the last months was ${band.longestRunKm} km`
+      : `that is over ${Math.round(LONG_RUN_SHARE * 100)}% of a full week at this volume`
+    throw new Error(`${workout.date} prescribes a ${km} km session but ${reason}; shorten it to ${round(limit)} km or less`)
+  }
+}
+
 export function validateDraftVolume(
   draft: CoachingPlanDraft,
   band: VolumeBand,
@@ -126,6 +166,8 @@ export function validateDraftVolume(
     if (km < floorKm && !DELIBERATELY_LIGHT.test(week.focus)) {
       throw new Error(`Week ${week.startDate} prescribes ${km} km against a recent ${band.baselineKm} km; either build from that or name the recovery, taper or cutback reason in week.focus`)
     }
+
+    longestSession(week, km, share, band)
 
     if (km > peakKm * RAMP_RATIO + RAMP_ALLOWANCE_KM) {
       throw new Error(`Week ${week.startDate} jumps from ${round(peakKm)} km to ${km} km; increase weekly volume gradually`)
