@@ -108,6 +108,11 @@ describe('ManualCoachingAdvisor', () => {
       .resolves.toMatchObject({ name: 'Autumn block' })
   })
 
+  it('says the reply has not been saved yet rather than reporting a bare ENOENT', async () => {
+    await expect(new ManualCoachingAdvisor(promptPath(), answerPath()).bootstrap(request()))
+      .rejects.toThrow(/--from-answer .*answer\.json does not exist/)
+  })
+
   it('names the file when the reply is not JSON at all', async () => {
     fs.writeFileSync(answerPath(), 'Sure! Here is your training plan:')
 

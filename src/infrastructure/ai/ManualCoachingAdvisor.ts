@@ -81,6 +81,10 @@ export class ManualCoachingAdvisor implements CoachingAdvisor {
 
   private readAnswer(): unknown {
     if (!this.answerPath) return undefined
+    if (!fs.existsSync(this.answerPath)) {
+      throw new Error(`--from-answer ${this.answerPath} does not exist; save the chat's reply there first`)
+    }
+
     const raw = fs.readFileSync(this.answerPath, 'utf-8').trim()
     // Chat UIs fence JSON even when told not to.
     const unfenced = raw.startsWith('```') ? raw.replace(/^```[a-z]*\n/, '').replace(/\n```$/, '') : raw

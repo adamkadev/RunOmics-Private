@@ -43,6 +43,16 @@ function option(args: string[], name: string): string | undefined {
   return index >= 0 ? args[index + 1] : undefined
 }
 
+/** A path that is not there should name the flag that asked for it. */
+function fileOption(args: string[], name: string): string | undefined {
+  const given = option(args, name)
+  if (given === undefined) return undefined
+
+  const resolved = path.resolve(given)
+  if (!fs.existsSync(resolved)) throw new Error(`${name} ${given} does not exist (looked for ${resolved})`)
+  return fs.readFileSync(resolved, 'utf-8')
+}
+
 function availableDays(raw: string | undefined): number[] {
   if (!raw) throw new Error('bootstrap requires --days (for example: --days tue,thu,sat,sun)')
   const parsed = raw.split(',').map((day) => {
@@ -123,7 +133,7 @@ async function createProposal(command: string, args: string[]) {
     const context = await getCoachingContext(currentPlan, referenceDate)
     const contextOutput = option(args, '--context-out')
     if (contextOutput) fs.writeFileSync(path.resolve(contextOutput), JSON.stringify(context, null, 2) + '\n')
-    return createBootstrapProposal(context, availableDays(option(args, '--days')), { advisor, repository }, option(args, '--race'), requestedRuns(args), option(args, '--guidance-file') ? fs.readFileSync(path.resolve(option(args, '--guidance-file')!), 'utf-8') : undefined)
+    return createBootstrapProposal(context, availableDays(option(args, '--days')), { advisor, repository }, option(args, '--race'), requestedRuns(args), fileOption(args, '--guidance-file'))
   }
 
   if (command === 'evaluate') {
