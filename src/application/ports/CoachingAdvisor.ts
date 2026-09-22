@@ -19,6 +19,8 @@ export interface BootstrapRequest {
   primaryTargetEvent: TargetEvent
   tuneUpEvents: TargetEvent[]
   horizonEndDate: string
+  /** Where the season began, so the block can be told which phase it sits in. */
+  macrocycleStartDate: string
   targetEventId?: string
 }
 

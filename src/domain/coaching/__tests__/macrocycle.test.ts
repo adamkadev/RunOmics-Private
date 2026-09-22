@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { macrocycleWeek } from '@/components/coaching/presentation'
 import { applyCoachDecision } from '../lifecycle'
-import { macrocycleOf, resolveMacrocycleStart } from '../macrocycle'
+import { macrocycleOf, macrocyclePhases, phaseOn, resolveMacrocycleStart } from '../macrocycle'
 import type { CoachState, CoachingPlan } from '../types'
 import { COACHING_SCHEMA_VERSION } from '../types'
 import { parseCoachingPlan } from '../validation'
@@ -117,5 +117,56 @@ describe('macrocycle persistence', () => {
     const parsed = parseCoachingPlan(legacy)
     expect(parsed.macrocycleStartDate).toBeUndefined()
     expect(macrocycleWeek(parsed, parsed.block.startDate)?.done).toBe(1)
+  })
+})
+
+describe('macrocyclePhases', () => {
+  it('divides the run-up and ends on the race', () => {
+    expect(macrocyclePhases(MACROCYCLE_START, TARGET_DATE)).toEqual([
+      { phase: 'base', startDate: '2026-09-06', endDate: '2026-10-10' },
+      { phase: 'build', startDate: '2026-10-11', endDate: '2026-11-06' },
+      { phase: 'peak', startDate: '2026-11-07', endDate: '2026-11-22' },
+      { phase: 'raceDay', startDate: '2026-11-23', endDate: '2026-11-29' },
+    ])
+  })
+
+  it('covers every day from the start to the race with no gap or overlap', () => {
+    const ranges = macrocyclePhases(MACROCYCLE_START, TARGET_DATE)
+
+    expect(ranges[0]!.startDate).toBe(MACROCYCLE_START)
+    expect(ranges.at(-1)!.endDate).toBe(TARGET_DATE)
+    for (let index = 1; index < ranges.length; index++) {
+      const previousEnd = Date.parse(`${ranges[index - 1]!.endDate}T00:00:00Z`)
+      const thisStart = Date.parse(`${ranges[index]!.startDate}T00:00:00Z`)
+      expect(thisStart - previousEnd).toBe(86_400_000)
+    }
+  })
+
+  it('says nothing when the run-up is too short to divide', () => {
+    expect(macrocyclePhases('2026-11-20', TARGET_DATE)).toEqual([])
+  })
+})
+
+describe('phaseOn', () => {
+  const ranges = macrocyclePhases(MACROCYCLE_START, TARGET_DATE)
+
+  it('places a rolling block that straddles a boundary', () => {
+    // The block generated on 2026-09-23 opens in base and crosses into build
+    // before it ends - which is exactly what the planner could not previously
+    // be told.
+    expect(phaseOn(ranges, '2026-09-23')).toBe('base')
+    expect(phaseOn(ranges, '2026-10-05')).toBe('base')
+    expect(phaseOn(ranges, '2026-10-12')).toBe('build')
+  })
+
+  it('reads the boundary days themselves', () => {
+    expect(phaseOn(ranges, '2026-10-10')).toBe('base')
+    expect(phaseOn(ranges, '2026-10-11')).toBe('build')
+    expect(phaseOn(ranges, TARGET_DATE)).toBe('raceDay')
+  })
+
+  it('returns nothing outside the macrocycle', () => {
+    expect(phaseOn(ranges, '2026-09-05')).toBeNull()
+    expect(phaseOn(ranges, '2026-11-30')).toBeNull()
   })
 })

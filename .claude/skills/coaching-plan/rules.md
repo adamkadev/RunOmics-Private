@@ -50,6 +50,15 @@ The reasoning behind these rules, and the training science they came from, is in
 - Hold every prescribed repetition pace constant for the whole block. A later week prescribing the same kind of session faster than the first is drift, not progress, whatever the weekly total says.
 - Make time at threshold rise in every loading week, by repetition count first and repetition length second, and never by more than 25 per cent in a week nor 40 per cent across any two weeks; a reduced week is exempt. The 10 per cent cap usually binds long before those ceilings, so the session grows only as the week does.
 
+## Where the block sits in the season
+
+- MACROCYCLE gives the phases between the start of the season and the target race, and the phase each planned week falls in; write the block for the phase it is in rather than repeating the same block every month.
+- In base, grow aerobic volume and threshold durability, and keep faster running to strides: no VO2max or race-pace session belongs here.
+- In build, hold the volume reached in base and move the emphasis to threshold density, adding one race-pace or VO2max session a week only where recent load and recovery permit.
+- In peak, ease aerobic volume and make the quality specific to the target distance and its goal pace.
+- In the final week before the race, taper: cut volume by 30 to 50 per cent, hold intensity and frequency, and introduce nothing new.
+- When a block spans two phases, treat each week by its own phase and name the transition in week.focus.
+
 ## Targets, tune-ups and post-race recovery
 
 - For timed easy recoveries, give an easy pace range when appropriate so their distance can be estimated; do not give strides an HR target.

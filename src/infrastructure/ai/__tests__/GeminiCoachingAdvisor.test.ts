@@ -188,6 +188,7 @@ describe('Gemini bootstrap draft boundary', () => {
         distanceLabel: '10K', distanceMeters: 10_000,
       }],
       horizonEndDate: '2026-10-04',
+      macrocycleStartDate: '2026-09-01',
     })
 
     const request = gemini.generateStructuredJson.mock.calls.at(-1)?.[0] as {
@@ -440,6 +441,7 @@ describe('model pool fallback', () => {
     },
     tuneUpEvents: [],
     horizonEndDate: '2026-10-19',
+    macrocycleStartDate: '2026-09-01',
   })
 
   const modelsTried = () =>
@@ -487,6 +489,7 @@ describe('daily quota exhaustion', () => {
     },
     tuneUpEvents: [],
     horizonEndDate: '2026-10-19',
+    macrocycleStartDate: '2026-09-01',
   })
 
   beforeEach(() => gemini.generateStructuredJson.mockReset())
@@ -526,6 +529,7 @@ describe('a pinned model', () => {
     },
     tuneUpEvents: [],
     horizonEndDate: '2026-10-19',
+    macrocycleStartDate: '2026-09-01',
   })
 
   beforeEach(() => gemini.generateStructuredJson.mockReset())
@@ -552,6 +556,7 @@ describe('pacing against the per-minute limit', () => {
     },
     tuneUpEvents: [],
     horizonEndDate: '2026-10-19',
+    macrocycleStartDate: '2026-09-01',
   })
 
   it('waits between pooled attempts so one command cannot outrun five requests a minute', async () => {

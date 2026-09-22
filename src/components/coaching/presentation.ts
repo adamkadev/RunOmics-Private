@@ -1,5 +1,5 @@
 import type { PrescriptionView } from '@/application/coaching/GetCoachingView'
-import type { PlanPhaseRange, TrainingPlanPhase } from '@/application/usecases/GetTrainingPlan'
+import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import type { WorkoutStep, WorkoutStepKind } from '@/domain/activity/types'
 import {
   COACHING_TO_ACTIVITY_TYPE,
@@ -8,6 +8,7 @@ import {
   type WorkoutSegmentKind,
   type WorkoutTarget,
 } from '@/domain/coaching/types'
+import { macrocyclePhases } from '@/domain/coaching/macrocycle'
 import { bookends } from '@/domain/training/workoutStructure'
 import { formatClock, formatDurationWords } from '@/lib/formatters'
 import { t } from '@/i18n'
@@ -22,42 +23,12 @@ function daysBetween(from: string, to: string): number {
   return Math.round((utc(to) - utc(from)) / DAY_MS)
 }
 
-function addDays(date: string, days: number): string {
-  return new Date(utc(date) + days * DAY_MS).toISOString().slice(0, 10)
-}
-
-const MACROCYCLE_SHAPE = { raceWeekDays: 7, base: 0.45, build: 0.35 } as const
-
 export function macrocycleStart(plan: CoachingPlan): string {
   return plan.macrocycleStartDate ?? plan.block.startDate
 }
 
 export function macrocyclePhaseRanges(plan: CoachingPlan): PlanPhaseRange[] {
-  const start = macrocycleStart(plan)
-  const end = plan.targetEvent.date
-  const total = daysBetween(start, end) + 1
-  if (total < 14) return []
-
-  const runUp = total - MACROCYCLE_SHAPE.raceWeekDays
-  const baseDays = Math.max(1, Math.round(runUp * MACROCYCLE_SHAPE.base))
-  const buildDays = Math.max(1, Math.round(runUp * MACROCYCLE_SHAPE.build))
-  const peakDays = runUp - baseDays - buildDays
-  if (peakDays < 1) return []
-
-  const phases: { phase: TrainingPlanPhase; days: number }[] = [
-    { phase: 'base', days: baseDays },
-    { phase: 'build', days: buildDays },
-    { phase: 'peak', days: peakDays },
-    { phase: 'raceDay', days: MACROCYCLE_SHAPE.raceWeekDays },
-  ]
-
-  let cursor = start
-  return phases.map(({ phase, days }, i) => {
-    const endDate = i === phases.length - 1 ? end : addDays(cursor, days - 1)
-    const range = { phase, startDate: cursor, endDate }
-    cursor = addDays(cursor, days)
-    return range
-  })
+  return macrocyclePhases(macrocycleStart(plan), plan.targetEvent.date)
 }
 
 export function macrocycleWeek(plan: CoachingPlan, today: string): { done: number; total: number } | null {

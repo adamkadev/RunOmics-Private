@@ -39,6 +39,7 @@ function request(guidance?: string): BootstrapRequest {
     runsPerWeek: 3,
     planningStartDate: '2026-09-07',
     horizonEndDate: '2026-09-20',
+    macrocycleStartDate: '2026-09-01',
     primaryTargetEvent: { id: 'race-1', name: 'Autumn 10K', date: '2026-09-20', role: 'primary', distanceLabel: '10K', distanceMeters: 10_000 },
     tuneUpEvents: [],
     ...(guidance ? { guidance } : {}),

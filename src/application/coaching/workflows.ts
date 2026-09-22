@@ -461,6 +461,7 @@ export async function createBootstrapProposal(
     primaryTargetEvent: strategy.primary,
     tuneUpEvents: strategy.tuneUps,
     horizonEndDate: strategy.horizonEndDate,
+    macrocycleStartDate,
     ...(targetEventId ? { targetEventId } : {}),
   })
 
