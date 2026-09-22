@@ -1,5 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { generateInsight } from '@/lib/gemini'
+import { generateInsight, generateStructuredJson } from '@/lib/gemini'
+
+// Both entry points retry a transient failure; tests skip the real waiting.
+const nap = () => Promise.resolve()
 
 const REQUEST = {
   model: 'test-model',
@@ -113,13 +116,13 @@ describe('generateInsight', () => {
   it('reports the status and body when the API errors', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 429, text: async () => 'quota' }))
 
-    expect(await generateInsight(REQUEST)).toEqual({ ok: false, reason: 'http 429: quota' })
+    expect(await generateInsight(REQUEST, nap)).toEqual({ ok: false, reason: 'http 429: quota' })
   })
 
   it('reports the failure rather than throwing when the network fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
 
-    const result = await generateInsight(REQUEST)
+    const result = await generateInsight(REQUEST, nap)
     expect(result.ok).toBe(false)
     expect(result.ok === false && result.reason).toContain('offline')
   })
@@ -167,5 +170,54 @@ describe('generateInsight (French locale)', () => {
         body: "L'intensité a dépassé la cible et impose une récupération prolongée pour la suite.",
       })
     ).toBe('unexpectedly ok')
+  })
+})
+
+describe('generateStructuredJson transient failures', () => {
+  const request = {
+    apiKey: 'k', model: 'gemini-3.8-flash', systemInstruction: 's', prompt: 'p',
+    responseSchema: { type: 'OBJECT' as const },
+  }
+  const ok = () => ({ ok: true, status: 200, json: async () => ({ candidates: [{ content: { parts: [{ text: '{"a":1}' }] } }] }) })
+  const fail = (status: number) => ({ ok: false, status, text: async () => 'busy' })
+
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('retries a 503 and returns the answer the next attempt gives', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(fail(503)).mockResolvedValueOnce(ok())
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await generateStructuredJson(request, nap)
+
+    expect(result).toEqual({ ok: true, value: { a: 1 } })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('gives up after three attempts rather than retrying forever', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(fail(503))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await generateStructuredJson(request, nap)
+
+    expect(result.ok).toBe(false)
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+  })
+
+  it('does not retry a rejection the next attempt would repeat', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(fail(400))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await generateStructuredJson(request, nap)
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('retries a timeout, which is the same kind of luck as a 503', async () => {
+    const fetchMock = vi.fn()
+      .mockRejectedValueOnce(Object.assign(new Error('timed out'), { name: 'TimeoutError' }))
+      .mockResolvedValueOnce(ok())
+    vi.stubGlobal('fetch', fetchMock)
+
+    expect(await generateStructuredJson(request, nap)).toEqual({ ok: true, value: { a: 1 } })
   })
 })

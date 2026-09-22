@@ -109,7 +109,10 @@ function parseInsight(raw: unknown, limits: Limits, bulletCount?: number): Insig
   return { ok: true, insight: parsedBullets ? { ...insight, bullets: parsedBullets.bullets } : insight }
 }
 
-export async function generateInsight(request: InsightRequest): Promise<InsightResult> {
+export async function generateInsight(
+  request: InsightRequest,
+  sleep: (ms: number) => Promise<unknown> = wait,
+): Promise<InsightResult> {
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) return { ok: false, reason: 'no api key' }
 
@@ -120,7 +123,7 @@ export async function generateInsight(request: InsightRequest): Promise<InsightR
     prompt: request.prompt,
     responseSchema: responseSchema(request.bulletCount),
     temperature: 1.1,
-  })
+  }, sleep)
   if (!result.ok) return result
 
   try {
@@ -130,7 +133,36 @@ export async function generateInsight(request: InsightRequest): Promise<InsightR
   }
 }
 
-export async function generateStructuredJson(request: StructuredRequest): Promise<StructuredResult<unknown>> {
+/**
+ * Google answers a share of perfectly valid calls with 503 "high demand" -
+ * measured at roughly one in six against a model that was otherwise serving
+ * fine. A single attempt therefore fails a nightly insight or a whole
+ * coaching bootstrap on a coin toss.
+ */
+const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504])
+const RETRY_DELAYS_MS = [1_000, 4_000]
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+export async function generateStructuredJson(
+  request: StructuredRequest,
+  sleep: (ms: number) => Promise<unknown> = wait,
+): Promise<StructuredResult<unknown>> {
+  for (let attempt = 0; ; attempt++) {
+    const { result, retryable } = await attemptStructuredJson(request)
+    if (result.ok || !retryable || attempt >= RETRY_DELAYS_MS.length) return result
+
+    await sleep(RETRY_DELAYS_MS[attempt]!)
+  }
+}
+
+/** `retryable` stays out of StructuredResult: it is the loop's business, not the caller's. */
+interface Attempt {
+  result: StructuredResult<unknown>
+  retryable: boolean
+}
+
+async function attemptStructuredJson(request: StructuredRequest): Promise<Attempt> {
   try {
     const res = await fetch(`${ENDPOINT}/${request.model}:generateContent`, {
       method: 'POST',
@@ -148,17 +180,25 @@ export async function generateStructuredJson(request: StructuredRequest): Promis
       signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
     })
 
-    if (!res.ok) return { ok: false, reason: `http ${res.status}: ${(await res.text()).slice(0, 200)}` }
+    if (!res.ok) {
+      return {
+        result: { ok: false, reason: `http ${res.status}: ${(await res.text()).slice(0, 200)}` },
+        retryable: RETRYABLE_STATUS.has(res.status),
+      }
+    }
 
     const json = await res.json()
     const parts: { text?: unknown }[] = json?.candidates?.[0]?.content?.parts ?? []
     const text = parts.find((part) => typeof part.text === 'string')?.text
     if (typeof text !== 'string') {
-      return { ok: false, reason: `no text part (finish: ${json?.candidates?.[0]?.finishReason ?? 'none'})` }
+      const finish = json?.candidates?.[0]?.finishReason ?? 'none'
+      return { result: { ok: false, reason: `no text part (finish: ${finish})` }, retryable: false }
     }
 
-    return { ok: true, value: JSON.parse(text) as unknown }
+    return { result: { ok: true, value: JSON.parse(text) as unknown }, retryable: false }
   } catch (error) {
-    return { ok: false, reason: `${error instanceof Error ? error.name : 'error'}: ${String(error).slice(0, 120)}` }
+    // A timeout or a dropped connection is the same kind of luck as a 503.
+    const reason = `${error instanceof Error ? error.name : 'error'}: ${String(error).slice(0, 120)}`
+    return { result: { ok: false, reason }, retryable: true }
   }
 }
