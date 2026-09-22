@@ -67,8 +67,9 @@ firebase-adminsdk-*.json
 firebase-debug.log
 firestore-debug.log
 
-# claude memory
-/.claude/
+# claude memory, except the skills that belong to the project
+/.claude/*
+!/.claude/skills/
 CLAUDE.md
 
 # debug
