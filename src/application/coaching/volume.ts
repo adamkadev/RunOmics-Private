@@ -95,7 +95,12 @@ export function validateDraftVolume(
   // cutback is 15-30% down, and comparing with the week before it would then
   // forbid the rebound that made the cutback worth taking. The ceiling still
   // caps how high any single week may reach.
-  let peakKm: number | null = null
+  //
+  // Seeded from what the athlete has actually been running, because otherwise
+  // the block's first week answers to nothing: floor and ceiling leave a wide
+  // gap, and a block regenerated every month would take the unchecked jump
+  // twelve times a year.
+  let peakKm = band.baselineKm
 
   for (const week of draft.weeks) {
     const share = trainingWeekShare(week, availableWeekdays)
@@ -122,11 +127,11 @@ export function validateDraftVolume(
       throw new Error(`Week ${week.startDate} prescribes ${km} km against a recent ${band.baselineKm} km; either build from that or name the recovery, taper or cutback reason in week.focus`)
     }
 
-    if (peakKm !== null && km > peakKm * RAMP_RATIO + RAMP_ALLOWANCE_KM) {
-      throw new Error(`Week ${week.startDate} jumps from ${peakKm} km to ${km} km; increase weekly volume gradually`)
+    if (km > peakKm * RAMP_RATIO + RAMP_ALLOWANCE_KM) {
+      throw new Error(`Week ${week.startDate} jumps from ${round(peakKm)} km to ${km} km; increase weekly volume gradually`)
     }
 
-    peakKm = peakKm === null ? km : Math.max(peakKm, km)
+    peakKm = Math.max(peakKm, km)
   }
 }
 

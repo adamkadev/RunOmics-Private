@@ -104,6 +104,15 @@ describe('validateDraftVolume', () => {
     expect(() => validateDraftVolume(draft(build, cutback, overshoot), band, DAYS)).toThrow(/jumps from/)
   })
 
+  it('holds the first week to what the athlete has been running, not just to the ceiling', () => {
+    // Adam ran 45 km last week. A block regenerating every month gets twelve
+    // chances a year to open on a week nothing has checked.
+    const opener = week('Straight back in', [[easy(15000)], [easy(15000)], [easy(15000)], [easy(13000)]], '2026-09-28')
+
+    expect(weekKm(opener)).toBeLessThan(volumeBand(HISTORY).capacityKm * 1.05 + 3)
+    expect(() => validateDraftVolume(draft(opener), band, DAYS)).toThrow(/jumps from 45 km to 58 km/)
+  })
+
   it('says nothing when there is no history to judge against', () => {
     const empty = { ...HISTORY, recent7DaysKm: 0, recentWeeklyAverageKm: 0, best4WeekAverageKm: 0 }
     const anything = week('Whatever', [[easy(30000)]])
