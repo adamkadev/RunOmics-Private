@@ -75,6 +75,20 @@ function eachSegment(
   return true
 }
 
+/**
+ * What a segment is worth in metres. A repetition prescribed as time still
+ * covers ground, and counting only `distanceMeters` drops it: a threshold
+ * session of 3 x 7:00 either side of a warm-up reads 5 km when it is 10.
+ * The same conversion weekKm uses, through the segment's own prescribed pace.
+ */
+function segmentMeters(target: WorkoutTarget): number {
+  if (target.distanceMeters !== undefined) return target.distanceMeters
+  if (target.durationSeconds && target.paceSecPerKm) {
+    return (target.durationSeconds * 2_000) / (target.paceSecPerKm.min + target.paceSecPerKm.max)
+  }
+  return 0
+}
+
 export function prescriptionSize(workout: WorkoutPrescription): string {
   let meters = 0
   let unpacedSeconds = 0
@@ -84,8 +98,7 @@ export function prescriptionSize(workout: WorkoutPrescription): string {
     if (target.distanceMeters !== undefined) {
       meters += target.distanceMeters
     } else if (target.durationSeconds && target.paceSecPerKm) {
-      const midpoint = (target.paceSecPerKm.min + target.paceSecPerKm.max) / 2
-      meters += (target.durationSeconds / midpoint) * 1_000
+      meters += segmentMeters(target)
       estimated = true
     } else {
       unpacedSeconds += target.durationSeconds ?? 0
@@ -161,10 +174,8 @@ export function prescriptionDistanceMeters(workout: WorkoutPrescription): number
   if (workout.totalDistanceMeters !== undefined) return workout.totalDistanceMeters
 
   let meters = 0
-  eachSegment(workout, (target) => {
-    if (target.distanceMeters !== undefined) meters += target.distanceMeters
-  })
-  return meters || null
+  eachSegment(workout, (target) => { meters += segmentMeters(target) })
+  return Math.round(meters) || null
 }
 
 export function prescriptionStructure(workout: WorkoutPrescription): WorkoutStep[] | null {
