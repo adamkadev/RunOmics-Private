@@ -35,7 +35,10 @@ export class PythonGarminGateway implements GarminWorkoutGateway {
 
   constructor(
     private readonly scriptPath = 'scripts/garmin/sync_bridge.py',
-    private readonly python = process.env.RUNOMICS_PYTHON?.trim() || 'python3',
+    // Windows has no python3 on PATH - the name resolves to a Microsoft Store
+    // stub that exits 9009, which surfaces as every workout failing at once.
+    private readonly python = process.env.RUNOMICS_PYTHON?.trim()
+      || (process.platform === 'win32' ? 'python' : 'python3'),
   ) {}
 
   private start(): Bridge {
