@@ -404,6 +404,31 @@ function evaluationFor(
   })
 }
 
+/**
+ * Our own rules reject a draft over wording as often as over substance - a week
+ * that says "freshness" where the validator wants "taper", a title using the
+ * word progressive. Throwing the draft away leaves an expensive answer unused
+ * and the model none the wiser, so the complaint goes back with the next ask.
+ */
+const REPAIR_ATTEMPTS = 2
+
+async function draftUntilAccepted(
+  ask: (extraGuidance?: string) => Promise<CoachingPlanDraft>,
+  review: (draft: CoachingPlanDraft) => CoachingPlan,
+): Promise<CoachingPlan> {
+  let complaint: string | undefined
+
+  for (let attempt = 0; ; attempt++) {
+    const draft = await ask(complaint)
+    try {
+      return review(draft)
+    } catch (error) {
+      if (attempt >= REPAIR_ATTEMPTS) throw error
+      complaint = `Your previous answer was rejected: ${error instanceof Error ? error.message : String(error)}\nReturn a corrected plan that satisfies this exactly, changing nothing else.`
+    }
+  }
+}
+
 export async function createBootstrapProposal(
   context: CoachingContext,
   availableWeekdays: number[],
@@ -419,24 +444,30 @@ export async function createBootstrapProposal(
   const id = services.id ?? defaultId
   const createdAt = now.toISOString()
   const strategy = selectBootstrapTarget(context, targetEventId)
-  const draft = await services.advisor.bootstrap({
+  const macrocycleStartDate = resolveMacrocycleStart(
+    services.repository.getState(),
+    strategy.primary.id,
+    strategy.planningStartDate,
+  )
+
+  const ask = (extraGuidance?: string) => services.advisor.bootstrap({
     context,
     availableWeekdays,
     runsPerWeek,
-    ...(guidance ? { guidance } : {}),
+    ...(guidance || extraGuidance ? { guidance: [guidance, extraGuidance].filter(Boolean).join('\n\n') } : {}),
     planningStartDate: strategy.planningStartDate,
     primaryTargetEvent: strategy.primary,
     tuneUpEvents: strategy.tuneUps,
     horizonEndDate: strategy.horizonEndDate,
     ...(targetEventId ? { targetEventId } : {}),
   })
-  validateDraftFrequency(draft, runsPerWeek)
-  const macrocycleStartDate = resolveMacrocycleStart(
-    services.repository.getState(),
-    strategy.primary.id,
-    strategy.planningStartDate,
-  )
-  const proposedPlan = normalizeBootstrapPlan(draft, context, availableWeekdays, strategy, createdAt, id, macrocycleStartDate)
+
+  const review = (draft: CoachingPlanDraft) => {
+    validateDraftFrequency(draft, runsPerWeek)
+    return normalizeBootstrapPlan(draft, context, availableWeekdays, strategy, createdAt, id, macrocycleStartDate)
+  }
+
+  const proposedPlan = await draftUntilAccepted(ask, review)
   proposedPlan.trainingPreferences = { availableWeekdays, ...(runsPerWeek === undefined ? {} : { runsPerWeek }) }
   const decisionId = id()
   const decision = parseCoachDecision({

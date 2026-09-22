@@ -933,3 +933,63 @@ it('passes and persists five-run preference independently of availability throug
   applyCoachingProposal(proposal, repository, coachingContextHash(context))
   expect(repository.plan?.trainingPreferences).toEqual({ availableWeekdays: [0, 2, 3, 4, 6], runsPerWeek: 5 })
 })
+
+describe('repairing a rejected draft', () => {
+  const services = (bootstrap: CoachingAdvisor['bootstrap']) => ({
+    repository: new MemoryRepository(),
+    advisor: {
+      bootstrap,
+      evaluateActivity: async () => { throw new Error('not called') },
+      reviewWeek: async () => { throw new Error('not called') },
+    } satisfies CoachingAdvisor,
+    id: ids(),
+    now: () => new Date('2026-09-07T08:00:00Z'),
+  })
+
+  // 2026-09-21 is a Monday, and only Tuesday and Wednesday are available.
+  const onAnUnavailableDay = () => {
+    const draft = fourWeekPlan()
+    draft.weeks[2]!.workouts[0]!.date = '2026-09-21'
+    return draft
+  }
+
+  it('asks again with the complaint when our own rules reject the draft', async () => {
+    const asks: (string | undefined)[] = []
+    const bootstrap = async (request: BootstrapRequest) => {
+      asks.push(request.guidance)
+      return asks.length === 1 ? onAnUnavailableDay() : fourWeekPlan()
+    }
+    const context = buildCoachingContext(contextInput(null), '2026-09-07')
+
+    const proposal = await createBootstrapProposal(context, [2, 3], services(bootstrap))
+
+    expect(proposal.proposedPlan?.revision).toBe(1)
+    expect(asks).toHaveLength(2)
+    expect(asks[1]).toContain('rejected')
+    expect(asks[1]).toContain('outside the available weekdays')
+  })
+
+  it('keeps the caller guidance alongside the complaint', async () => {
+    const asks: (string | undefined)[] = []
+    const bootstrap = async (request: BootstrapRequest) => {
+      asks.push(request.guidance)
+      return asks.length === 1 ? onAnUnavailableDay() : fourWeekPlan()
+    }
+    const context = buildCoachingContext(contextInput(null), '2026-09-07')
+
+    await createBootstrapProposal(context, [2, 3], services(bootstrap), undefined, undefined, 'Build toward 55 km.')
+
+    expect(asks[0]).toBe('Build toward 55 km.')
+    expect(asks[1]).toContain('Build toward 55 km.')
+  })
+
+  it('gives up rather than asking forever, and reports the rule that rejected it', async () => {
+    let asked = 0
+    const bootstrap = async () => { asked++; return onAnUnavailableDay() }
+    const context = buildCoachingContext(contextInput(null), '2026-09-07')
+
+    await expect(createBootstrapProposal(context, [2, 3], services(bootstrap)))
+      .rejects.toThrow(/outside the available weekdays/)
+    expect(asked).toBe(3)
+  })
+})
