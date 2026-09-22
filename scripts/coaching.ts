@@ -20,6 +20,8 @@ function usage(): string {
     'RunOmics coaching preview/apply',
     '',
     '  npm run coach -- bootstrap --days tue,wed,thu,sat,sun --runs-per-week 5 [--race <id|name>]',
+    '  npm run coach -- bootstrap --days ... --runs-per-week 5 --prompt-out coach-prompt.md',
+    '  npm run coach -- bootstrap --days ... --runs-per-week 5 --from-answer answer.json',
     '  npm run coach -- evaluate --activity <id|latest>',
     '  npm run coach -- weekly-review',
     '  npm run coach -- --apply .coach-previews/<proposal>.json',
@@ -29,6 +31,8 @@ function usage(): string {
     '  --runs-per-week <n> Normal desired runs, independently of available --days.',
     '  --guidance-file <path> Additional athlete instructions for bootstrap.',
     '  --context-out <path> Save the compact bootstrap context for inspection.',
+    '  --prompt-out <path> Write the coaching prompt to paste into a chat instead of calling the API.',
+    '  --from-answer <path> Build the proposal from a chat reply saved as JSON.',
     '  --reference-date <YYYY-MM-DD> Reproduce coaching at a specified date.',
     '  --out <path>       Directory for preview files (default: .coach-previews).',
   ].join('\n')
@@ -53,6 +57,22 @@ function requestedRuns(args: string[]): number {
   const raw = option(args, '--runs-per-week')
   if (!raw) throw new Error('bootstrap requires --runs-per-week independently of --days')
   return Number(raw)
+}
+
+interface ManualPaths {
+  promptPath: string
+  answerPath: string | undefined
+}
+
+/** The prompt is only needed again if a pasted answer is rejected, so it has a default. */
+function manualPaths(args: string[]): ManualPaths | undefined {
+  const promptOut = option(args, '--prompt-out')
+  const answer = option(args, '--from-answer')
+  if (!promptOut && !answer) return undefined
+
+  const promptPath = path.resolve(promptOut ?? path.join(option(args, '--out') ?? '.coach-previews', 'coach-prompt.md'))
+  fs.mkdirSync(path.dirname(promptPath), { recursive: true })
+  return { promptPath, answerPath: answer ? path.resolve(answer) : undefined }
 }
 
 interface DataWorkspace {
@@ -88,12 +108,14 @@ function printProposal(filePath: string, proposal: Awaited<ReturnType<typeof cre
 async function createProposal(command: string, args: string[]) {
   const { JsonCoachingRepository } = await interopImport(import('@/infrastructure/repositories/JsonCoachingRepository'))
   const { GeminiCoachingAdvisor } = await interopImport(import('@/infrastructure/ai/GeminiCoachingAdvisor'))
+  const { ManualCoachingAdvisor } = await interopImport(import('@/infrastructure/ai/ManualCoachingAdvisor'))
   const { getCoachingContext } = await interopImport(import('@/application/coaching/GetCoachingContext'))
   const { createBootstrapProposal, createPostActivityProposal, createWeeklyReviewProposal } = await interopImport(import('@/application/coaching/workflows'))
   const { getAllActivities } = await interopImport(import('@/infrastructure/repositories/JsonActivityRepository'))
 
   const repository = new JsonCoachingRepository(process.env.RUNOMICS_DATA_DIR)
-  const advisor = new GeminiCoachingAdvisor()
+  const manual = manualPaths(args)
+  const advisor = manual ? new ManualCoachingAdvisor(manual.promptPath, manual.answerPath) : new GeminiCoachingAdvisor()
   const currentPlan = repository.getCurrentPlan()
 
   if (command === 'bootstrap') {
@@ -147,6 +169,23 @@ async function applyPreview(args: string[], proposalPath: string): Promise<void>
   }
 }
 
+function isPromptWritten(error: unknown): error is { promptPath: string } {
+  return error instanceof Error && error.name === 'ManualPromptWritten'
+}
+
+function printPasteInstructions(promptPath: string, answerPath: string | undefined): void {
+  const bytes = fs.statSync(promptPath).size
+  console.log(`\nCoaching prompt written to ${promptPath} (${Math.ceil(bytes / 1024)} KB).`)
+  if (answerPath) {
+    console.log('The pasted plan was rejected; the prompt above now carries the reason.')
+    console.log(`Paste it into the same chat and overwrite ${answerPath} with the corrected reply.`)
+  } else {
+    console.log('Paste it into a chat, save the JSON reply, then run the same command again with:')
+    console.log('  --from-answer <path to the saved reply>')
+  }
+  console.log('It contains your health data - keep it out of anything you would not trust with that.')
+}
+
 async function main(): Promise<void> {
   const args = process.argv.slice(2)
   if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
@@ -168,6 +207,9 @@ async function main(): Promise<void> {
     const proposal = await createProposal(args[0]!, args)
     const outputDir = path.resolve(option(args, '--out') ?? '.coach-previews')
     printProposal(writeProposalPreview(proposal, outputDir), proposal)
+  } catch (error) {
+    if (!isPromptWritten(error)) throw error
+    printPasteInstructions(error.promptPath, option(args, '--from-answer'))
   } finally {
     if (workspace.temporaryRoot) fs.rmSync(workspace.temporaryRoot, { recursive: true, force: true })
   }
