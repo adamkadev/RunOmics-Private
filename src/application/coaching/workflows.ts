@@ -465,7 +465,7 @@ export async function createBootstrapProposal(
 
   const review = (draft: CoachingPlanDraft) => {
     validateDraftFrequency(draft, runsPerWeek)
-    validateDraftVolume(draft, volumeBand(context.trainingHistory))
+    validateDraftVolume(draft, volumeBand(context.trainingHistory), availableWeekdays)
     return normalizeBootstrapPlan(draft, context, availableWeekdays, strategy, createdAt, id, macrocycleStartDate)
   }
 

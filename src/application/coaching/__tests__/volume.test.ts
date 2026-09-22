@@ -3,6 +3,9 @@ import type { BootstrapWeekDraft, CoachingPlanDraft } from '@/application/ports/
 import type { TrainingHistory } from '@/domain/training/trainingHistory'
 import { validateDraftVolume, volumeBand, weekKm } from '../volume'
 
+// Adam runs Tue, Wed, Thu, Sat, Sun.
+const DAYS = [2, 3, 4, 6, 0]
+
 // Adam in September 2026: a travel-thinned month over a season that peaked at 59.5 km.
 const HISTORY = {
   recent7DaysKm: 45, recent28DaysKm: 95.8, recent28DaysRuns: 13,
@@ -41,7 +44,7 @@ describe('counting a week', () => {
 
   it('ignores a partial week, which cannot be judged against a weekly figure', () => {
     const tail = { startDate: '2026-10-19', endDate: '2026-10-19', focus: 'boundary', workouts: [] }
-    expect(() => validateDraftVolume(draft(tail), volumeBand(HISTORY))).not.toThrow()
+    expect(() => validateDraftVolume(draft(tail), volumeBand(HISTORY), DAYS)).not.toThrow()
   })
 })
 
@@ -49,39 +52,64 @@ describe('validateDraftVolume', () => {
   const band = volumeBand(HISTORY)
 
   it('accepts a week that builds from where the athlete actually is', () => {
-    expect(() => validateDraftVolume(draft(week('Build', [[easy(9000)], [easy(8000)], [easy(10000)], [easy(8000)], [easy(13000)]])), band)).not.toThrow()
+    expect(() => validateDraftVolume(draft(week('Build', [[easy(9000)], [easy(8000)], [easy(10000)], [easy(8000)], [easy(13000)]])), band, DAYS)).not.toThrow()
   })
 
   it('rejects the week that claimed 52 km and prescribed 62', () => {
     // The real week 4: warmup 2 km, 4 x 20 min threshold, cooldown 2 km.
     const overcooked = week('Progress volume to 52 km.', [[easy(9000)], [easy(6000)], [easy(2000), timedThreshold(4, 1200), easy(2000)], [easy(9000)], [easy(16000)]])
-    expect(() => validateDraftVolume(draft(overcooked), band)).toThrow(/says 52 km .* prescribes/)
+    expect(() => validateDraftVolume(draft(overcooked), band, DAYS)).toThrow(/says 52 km .* prescribes/)
   })
 
   it('rejects a week beyond anything the athlete has sustained', () => {
     const beyond = week('Big block', [[easy(20000)], [easy(20000)], [easy(15000)], [easy(15000)]])
-    expect(() => validateDraftVolume(draft(beyond), band)).toThrow(/beyond the .* sustained/)
+    expect(() => validateDraftVolume(draft(beyond), band, DAYS)).toThrow(/beyond the .* sustained/)
   })
 
   it('rejects a timid week that drops below what they just ran', () => {
     const timid = week('Establish a baseline', [[easy(8000)], [easy(6000)], [easy(7000)], [easy(8000)]])
-    expect(() => validateDraftVolume(draft(timid), band)).toThrow(/against a recent 45 km/)
+    expect(() => validateDraftVolume(draft(timid), band, DAYS)).toThrow(/against a recent 45 km/)
   })
 
   it('allows a light week when the focus says why, exactly as reduced frequency is allowed', () => {
     const cutback = week('Planned cutback week to absorb the block.', [[easy(8000)], [easy(6000)], [easy(7000)], [easy(8000)]])
-    expect(() => validateDraftVolume(draft(cutback), band)).not.toThrow()
+    expect(() => validateDraftVolume(draft(cutback), band, DAYS)).not.toThrow()
   })
 
   it('rejects a jump too big to absorb, even when both weeks are within capacity', () => {
-    const first = week('Steady', [[easy(10000)], [easy(10000)], [easy(10000)], [easy(9000)]], '2026-09-28')
-    const leap = week('Steady', [[easy(15000)], [easy(15000)], [easy(14000)], [easy(11000)]], '2026-10-05')
-    expect(() => validateDraftVolume(draft(first, leap), band)).toThrow(/jumps from/)
+    const first = week('Steady', [[easy(11000)], [easy(11000)], [easy(11000)], [easy(12000)]], '2026-09-28')
+    const leap = week('Steady', [[easy(15000)], [easy(15000)], [easy(14000)], [easy(14000)]], '2026-10-05')
+    expect(() => validateDraftVolume(draft(first, leap), band, DAYS)).toThrow(/jumps from/)
   })
 
   it('says nothing when there is no history to judge against', () => {
     const empty = { ...HISTORY, recent7DaysKm: 0, recentWeeklyAverageKm: 0, best4WeekAverageKm: 0 }
     const anything = week('Whatever', [[easy(30000)]])
-    expect(() => validateDraftVolume(draft(anything), volumeBand(empty))).not.toThrow()
+    expect(() => validateDraftVolume(draft(anything), volumeBand(empty), DAYS)).not.toThrow()
+  })
+})
+
+describe('a week measured in training days, not calendar days', () => {
+  const band = volumeBand(HISTORY)
+
+  it('judges a block starting mid-week when every training day still falls in it', () => {
+    // Tue 22 to Sun 27 spans five calendar days but holds all five running days,
+    // so it must carry a whole week - this is the 40.9 km week that slipped through.
+    const tuesdayStart: BootstrapWeekDraft = {
+      startDate: '2026-09-22', endDate: '2026-09-27', focus: 'Re-establishing consistency',
+      workouts: [[easy(8000)], [easy(6000)], [easy(6900)], [easy(8000)], [easy(12000)]]
+        .map((b, i) => ({ date: '2026-09-22', type: 'easy' as const, title: `w${i}`, description: '', blocks: b })),
+    }
+    expect(() => validateDraftVolume(draft(tuesdayStart), band, DAYS)).toThrow(/against a recent 45 km/)
+  })
+
+  it('pro-rates a week that genuinely loses training days', () => {
+    // Fri to Sun holds only Saturday and Sunday: two of five days, so two fifths.
+    const tail: BootstrapWeekDraft = {
+      startDate: '2026-10-16', endDate: '2026-10-18', focus: 'Closing days',
+      workouts: [[easy(8000)], [easy(10000)]]
+        .map((b, i) => ({ date: '2026-10-17', type: 'easy' as const, title: `w${i}`, description: '', blocks: b })),
+    }
+    expect(() => validateDraftVolume(draft(tail), band, DAYS)).not.toThrow()
   })
 })

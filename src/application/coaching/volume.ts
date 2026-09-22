@@ -2,8 +2,10 @@ import type { BootstrapWeekDraft, CoachingPlanDraft } from '@/application/ports/
 import type { TrainingHistory } from '@/domain/training/trainingHistory'
 import type { WorkoutBlock, WorkoutSegment } from '@/domain/coaching/types'
 
-const FULL_WEEK_MS = 6 * 86_400_000
-const FLOOR_RATIO = 0.8
+const DAY_MS = 86_400_000
+// A non-taper week should hold what the athlete just ran; the tolerance is for
+// rounding a week's sessions, not for easing off without saying so.
+const FLOOR_RATIO = 0.95
 const CEILING_RATIO = 1.05
 // A percentage ceiling means nothing to someone returning on 5 km a week.
 const CEILING_ALLOWANCE_KM = 3
@@ -56,8 +58,21 @@ export function weekKm(week: BootstrapWeekDraft): number {
   return Math.round(meters) / 1_000
 }
 
-function isFullWeek(week: BootstrapWeekDraft): boolean {
-  return Date.parse(week.endDate) - Date.parse(week.startDate) === FULL_WEEK_MS
+/**
+ * How much of a normal training week this one can hold - counted in the days
+ * this athlete actually runs, not calendar days. A block starting on a Tuesday
+ * loses only a Monday, so for a Tue-Sun runner it is a whole week and must
+ * carry a whole week's volume; measuring the span in days would excuse it.
+ */
+function trainingWeekShare(week: BootstrapWeekDraft, availableWeekdays: number[]): number {
+  if (availableWeekdays.length === 0) return 0
+  const start = Date.parse(week.startDate)
+  const days = Math.round((Date.parse(week.endDate) - start) / DAY_MS) + 1
+  const present = new Set<number>()
+  for (let offset = 0; offset < Math.min(days, 7); offset++) {
+    present.add(new Date(start + offset * DAY_MS).getUTCDay())
+  }
+  return availableWeekdays.filter((weekday) => present.has(weekday)).length / availableWeekdays.length
 }
 
 /** A week that names its own mileage and then prescribes another is the model losing count. */
@@ -69,15 +84,21 @@ function focusContradictsPrescription(week: BootstrapWeekDraft, km: number): num
   return null
 }
 
-export function validateDraftVolume(draft: CoachingPlanDraft, band: VolumeBand): void {
+export function validateDraftVolume(
+  draft: CoachingPlanDraft,
+  band: VolumeBand,
+  availableWeekdays: number[],
+): void {
   if (!(band.baselineKm > 0)) return
 
-  const floorKm = round(band.baselineKm * FLOOR_RATIO)
-  const ceilingKm = round(band.capacityKm * CEILING_RATIO + CEILING_ALLOWANCE_KM)
   let previousKm: number | null = null
 
   for (const week of draft.weeks) {
-    if (!isFullWeek(week)) continue
+    const share = trainingWeekShare(week, availableWeekdays)
+    if (share === 0) continue
+
+    const floorKm = round(band.baselineKm * share * FLOOR_RATIO)
+    const ceilingKm = round(band.capacityKm * share * CEILING_RATIO + CEILING_ALLOWANCE_KM)
     const km = weekKm(week)
     // Nothing in the week carried a distance, or a duration with a pace to
     // turn into one. Judging it against a weekly figure would be inventing
