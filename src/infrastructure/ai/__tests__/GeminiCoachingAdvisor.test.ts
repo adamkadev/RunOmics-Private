@@ -499,12 +499,38 @@ describe('daily quota exhaustion', () => {
   it('names the daily quota when every model refuses, since Google calls it high demand', async () => {
     gemini.generateStructuredJson.mockResolvedValue({ ok: false, reason: 'http 503: high demand' })
 
-    await expect(new GeminiCoachingAdvisor().bootstrap(input())).rejects.toThrow(/20\/day/)
+    await expect(new GeminiCoachingAdvisor().bootstrap(input())).rejects.toThrow(/Every pooled model refused/)
   })
 
   it('does not blame quota when a model failed for its own reason', async () => {
     gemini.generateStructuredJson.mockResolvedValue({ ok: false, reason: 'http 400: bad schema' })
 
     await expect(new GeminiCoachingAdvisor().bootstrap(input())).rejects.not.toThrow(/quota/)
+  })
+})
+
+describe('a pinned model', () => {
+  const input = () => ({
+    context: context(),
+    availableWeekdays: [0, 2, 3, 4, 6],
+    runsPerWeek: 5,
+    planningStartDate: '2026-09-22',
+    primaryTargetEvent: {
+      id: 'primary', name: '10 km', date: '2026-11-29', role: 'primary' as const,
+      distanceLabel: '10K', distanceMeters: 10_000, targetSeconds: 2_400,
+    },
+    tuneUpEvents: [],
+    horizonEndDate: '2026-10-19',
+  })
+
+  beforeEach(() => gemini.generateStructuredJson.mockReset())
+
+  it('does not claim the pool was tried when one model was pinned', async () => {
+    vi.stubEnv('GEMINI_COACH_MODEL', 'gemini-3.8-flash')
+    gemini.generateStructuredJson.mockResolvedValue({ ok: false, reason: 'http 503: high demand' })
+
+    await expect(new GeminiCoachingAdvisor().bootstrap(input())).rejects.toThrow(
+      /Only gemini-3\.8-flash was tried[^]*Unset it to let the whole pool answer/,
+    )
   })
 })

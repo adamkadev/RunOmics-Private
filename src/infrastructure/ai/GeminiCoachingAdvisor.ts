@@ -451,14 +451,24 @@ async function request(schema: Record<string, unknown>, systemInstruction: strin
     reasons.push(`${model}: ${result.reason}`)
   }
 
-  // Google reports an exhausted daily quota as 503 "high demand", which reads
-  // as a passing outage and is not; say so rather than invite another attempt.
-  const exhausted = reasons.every((reason) => reason.includes('503'))
-  const quotaHint = exhausted
-    ? ` Every pooled model refused. ${models.map((model) => `${model} allows ${modelLimits(model).rpd}/day`).join(', ')}; a spent daily quota is reported this way and resets at midnight America/Los_Angeles.`
-    : ''
+  throw new Error(`Gemini coaching request failed: ${reasons.join(' | ')}.${quotaHint(models, reasons)}`)
+}
 
-  throw new Error(`Gemini coaching request failed: ${reasons.join(' | ')}.${quotaHint}`)
+/**
+ * Google reports an exhausted daily quota as 503 "high demand", which reads as
+ * a passing outage and sends the operator back to re-run it - spending more of
+ * the quota that ran out. Each model carries its own allowance, so a pinned
+ * model is also a third of the capacity.
+ */
+function quotaHint(models: string[], reasons: string[]): string {
+  if (!reasons.every((reason) => reason.includes('503'))) return ''
+
+  const allowance = models.map((model) => `${model} allows ${modelLimits(model).rpd}/day`).join(', ')
+  const reset = 'a spent daily quota is reported this way and resets at midnight America/Los_Angeles'
+
+  if (models.length > 1) return ` Every pooled model refused: ${allowance}; ${reset}.`
+
+  return ` Only ${models[0]} was tried because GEMINI_COACH_MODEL or GEMINI_MODEL names it: ${allowance}; ${reset}. Unset it to let the whole pool answer, each with its own allowance.`
 }
 
 export class GeminiCoachingAdvisor implements CoachingAdvisor {
