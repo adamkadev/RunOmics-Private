@@ -74,6 +74,11 @@ export interface CoachingContext {
     lthrBpm: number | null
     hrZoneBoundsBpm: number[] | null
     vmaKmh: number | null
+    ageYears: number | null
+    sex: 'male' | 'female' | null
+    restingHrBpm: number | null
+    weightKg: number | null
+    heightCm: number | null
     trainingZones: TrainingZonesData | null
   }
   goals: GoalYear[]
@@ -223,6 +228,13 @@ export function buildCoachingContext(input: CoachingContextInput, referenceDate:
       lthrBpm: input.athlete.lthrBpm ?? null,
       hrZoneBoundsBpm: input.athlete.hrZoneBoundsBpm ?? null,
       vmaKmh: input.athlete.vmaKmh ?? null,
+      // maxHrBpm stays out on purpose: withholding it is a stronger guard
+      // against zones recomputed as a percentage of it than instructing against.
+      ageYears: input.athlete.age ?? null,
+      sex: input.athlete.sex ?? null,
+      restingHrBpm: input.athlete.restingHrBpm ?? null,
+      weightKg: input.athlete.weightKg ?? null,
+      heightCm: input.athlete.heightCm ?? null,
       trainingZones: input.trainingZones,
     },
     goals: input.goals,

@@ -14,6 +14,9 @@ const HISTORY = {
   best4WeekAverageKm: 57.4, best6WeekAverageKm: 55, best8WeekAverageKm: 54.4,
   best12WeekAverageKm: 52.8, typicalFrequencyAtPeak: 5,
   daysSinceLastRun: 1, longestRecentGapDays: 7,
+  // The band is drawn from the aggregates above; the series is here to satisfy
+  // the type, and these tests say nothing about it.
+  weeklySeries: { firstWeekStart: '2026-08-31', km: [45], runs: [5] },
 } satisfies TrainingHistory
 
 const easy = (metres: number) => ({ kind: 'effort' as const, target: { distanceMeters: metres } })

@@ -125,6 +125,17 @@ describe('buildCoachingContext', () => {
     expect(context.athlete.hrZoneBoundsBpm).toEqual([125, 150, 168, 178, 188])
     expect(context.athlete).not.toHaveProperty('maxHrBpm')
   })
+
+  it('carries the athlete facts a coach would ask for before prescribing', () => {
+    const context = buildCoachingContext({
+      ...input([]),
+      athlete: { age: 41, sex: 'male', restingHrBpm: 48, weightKg: 72, heightCm: 178, maxHrBpm: 202 },
+    }, '2026-09-05')
+
+    expect(context.athlete).toMatchObject({ ageYears: 41, sex: 'male', restingHrBpm: 48, weightKg: 72, heightCm: 178 })
+    // Age reaches the planner, so the one thing it must not be turned into does not.
+    expect(context.athlete).not.toHaveProperty('maxHrBpm')
+  })
 })
 
 it('includes recent running volume and old capacity without transmitting old activities', () => {

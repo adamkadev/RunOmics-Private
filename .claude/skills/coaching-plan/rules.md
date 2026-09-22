@@ -81,6 +81,8 @@ The reasoning behind these rules, and the training science they came from, is in
 ## Encoding the workouts
 
 - Treat supplied hrZoneBoundsBpm as authoritative Garmin zone boundaries; do not recalculate HR zones from max HR or LTHR.
+- Never estimate a maximum heart rate from age, and never derive a zone, a pace or a target from such an estimate; athlete age is context for recovery and progression only.
+- Read trainingHistory.weeklySeries as the shape of the season: it gives the athlete's weekly kilometres and run counts in order from firstWeekStart, so a month lost to travel can be told apart from a month lost to fatigue or injury, which the averages alone cannot show.
 - Never use the words progressive or progression anywhere in an easy or steady workout title, description, workout notes, or segment notes; describe longer-term volume rebuilding as gradual instead.
 - Workout names and descriptions must match their blocks: call a workout progressive only when multiple blocks encode an actual rise in intensity.
 - Hill repetitions must use effort/RPE or form guidance (with HR only as secondary guidance), never a rigid flat-ground pace target; use a normal flat interval workout if pace is the execution target, and encode qualitative effort/RPE/form guidance in segment notes.

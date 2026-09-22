@@ -1,7 +1,10 @@
 import type { Activity } from '@/domain/activity/types'
 
 const DAY = 86_400_000
+/** A year of Mondays: enough to show a season's shape without bloating the prompt. */
+const WEEKS_IN_SERIES = 52
 const day = (date: string) => Math.floor(Date.parse(`${date.slice(0, 10)}T00:00:00Z`) / DAY)
+const isoDate = (dayNumber: number) => new Date(dayNumber * DAY).toISOString().slice(0, 10)
 const round = (n: number) => Math.round(n * 100) / 100
 const RUN_TYPES = new Set(['Base', 'Tempo', 'Threshold', 'VO2Max', 'Anaerobic', 'Sprint', 'Race'])
 export function isRunningActivity(activity: Activity): boolean {
@@ -40,6 +43,10 @@ export function trainingHistory(activities: Activity[], referenceDate: string) {
     longest = Math.max(longest, gap)
   }
   const recentKm = recent.reduce((s, a) => s + a.distanceKm, 0)
+  // The averages say what the athlete has held; only the series says what the
+  // shape was. A month lost to travel and a month lost to injury produce the
+  // same depressed mean and call for opposite prescriptions.
+  const series = weeks.slice(-WEEKS_IN_SERIES)
   return {
     recent7DaysKm: round(recent7.reduce((s, a) => s + a.distanceKm, 0)),
     recent28DaysKm: round(recentKm), recent28DaysRuns: recent.length,
@@ -50,6 +57,11 @@ export function trainingHistory(activities: Activity[], referenceDate: string) {
     typicalFrequencyAtPeak: best(Math.min(12, weeks.length)).runs,
     daysSinceLastRun: runs.length ? reference - day(runs.at(-1)!.date) : null,
     longestRecentGapDays: longest,
+    weeklySeries: {
+      firstWeekStart: isoDate(first + (weeks.length - series.length) * 7),
+      km: series.map((week) => round(week.km)),
+      runs: series.map((week) => week.runs),
+    },
   }
 }
 export type TrainingHistory = ReturnType<typeof trainingHistory>
