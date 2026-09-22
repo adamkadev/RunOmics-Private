@@ -1,14 +1,17 @@
 import type { BootstrapWeekDraft, BootstrapWorkoutDraft, CoachingPlanDraft } from '@/application/ports/CoachingAdvisor'
 import type { CoachingWorkoutType, WorkoutSegment } from '@/domain/coaching/types'
-import { segmentMeters, segments, weekKm } from './volume'
+import { segmentMeters, segments, trainingWeekShare, weekKm } from './volume'
 
 // Daniels' per-workout rules of thumb, re-keyed to the week's own planned
 // distance: a denominator taken from a historical average would stop binding
 // in the lightest week, which is the week it matters in.
 const THRESHOLD_SHARE = 0.1
 const INTERVAL_SHARE = 0.08
-// Seiler's 80/20 needs no separate check: the two caps above already bound
-// hard running at 18% of the week, which is stricter than the 20% ceiling.
+// Seiler's 80/20, read as a conservative ceiling rather than a law. Against
+// the week actually prescribed, so scaling a partial week up cannot let hard
+// running swallow it: at full weeks 10 + 8 never reaches 20 and this never
+// fires, but a two-day week scaled to full size would without it.
+const COMBINED_SHARE = 0.2
 
 // The zone multipliers in GetTrainingZones: threshold is 0.98-1.02 of the
 // measured pace, so its slow edge divides quality from aerobic running and its
@@ -155,6 +158,7 @@ function minutes(seconds: number): number {
 interface WeekDose {
   week: BootstrapWeekDraft
   km: number
+  share: number
   dose: WorkoutDose
 }
 
@@ -165,26 +169,45 @@ interface WeekDose {
  * block. Everything is counted by distance, converting a timed segment through
  * its own prescribed pace, the same basis validateDraftVolume uses.
  */
-export function validateDraftIntensity(draft: CoachingPlanDraft, band: IntensityBand | null): void {
+export function validateDraftIntensity(
+  draft: CoachingPlanDraft,
+  band: IntensityBand | null,
+  availableWeekdays: number[],
+): void {
   if (band === null) return
 
-  const doses: WeekDose[] = draft.weeks.map((week) => ({ week, km: weekKm(week), dose: weekDose(week, band) }))
+  const doses: WeekDose[] = draft.weeks.map((week) => ({
+    week,
+    km: weekKm(week),
+    // A block opening on a Wednesday loses a running day the athlete has
+    // already trained, so judging the session against the stub understates
+    // the week it belongs to. The same full-week scaling volume.ts applies to
+    // the cutback and to the long run.
+    share: trainingWeekShare(week, availableWeekdays),
+    dose: weekDose(week, band),
+  }))
 
   // Before the caps, because a repetition that drifted out of the threshold
   // band trips the interval cap first and reports the wrong problem.
   driftCheck(doses)
 
-  for (const { week, km, dose } of doses) {
-    if (km < MEANINGFUL_WEEK_KM) continue
+  for (const { week, km, share, dose } of doses) {
+    if (km < MEANINGFUL_WEEK_KM || share === 0) continue
     const thresholdKm = round(dose.thresholdMeters / 1_000)
     const intervalKm = round(dose.intervalMeters / 1_000)
-    const cap = (share: number) => round(km * share)
+    // Scaled to the week the session really sits in, but never past the
+    // ceiling on hard running in the distance actually prescribed.
+    const cap = (portion: number) => round(Math.min((km / share) * portion, km * COMBINED_SHARE))
 
     if (thresholdKm > cap(THRESHOLD_SHARE)) {
       throw new Error(`Week ${week.startDate} prescribes ${thresholdKm} km at threshold within ${km} km, over the ${cap(THRESHOLD_SHARE)} km this week allows; hold the pace and cut repetitions`)
     }
     if (intervalKm > cap(INTERVAL_SHARE)) {
       throw new Error(`Week ${week.startDate} prescribes ${intervalKm} km of intervals within ${km} km, over the ${cap(INTERVAL_SHARE)} km this week allows; hold the pace and cut repetitions`)
+    }
+    const hardKm = round(thresholdKm + intervalKm)
+    if (hardKm > round(km * COMBINED_SHARE)) {
+      throw new Error(`Week ${week.startDate} runs ${hardKm} km of its ${km} km at threshold or faster, over the ${round(km * COMBINED_SHARE)} km ceiling on hard running; move the remainder into easy running`)
     }
   }
 

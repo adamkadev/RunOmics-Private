@@ -55,6 +55,32 @@ describe('counting a week', () => {
   })
 })
 
+describe('volumeBand', () => {
+  it('reads the last completed week, not only the rolling one', () => {
+    // Regenerating on a Wednesday, the trailing 7 days straddle two calendar
+    // weeks and miss a run; the week he actually finished was 45 km. Anchoring
+    // on the rolling figure alone makes the whole block's ramp depend on which
+    // weekday it happened to be built.
+    const midweek = {
+      ...HISTORY, recent7DaysKm: 37.4, daysSinceLastRun: 0,
+      weeklySeries: { firstWeekStart: '2026-09-14', km: [45, 8.5], runs: [5, 1] },
+    } satisfies TrainingHistory
+
+    expect(volumeBand(midweek).baselineKm).toBe(45)
+  })
+
+  it('lets the completed week go stale once the athlete stops running', () => {
+    // Four days without a run is no longer a rolling-window artefact, and a
+    // big last week must not hold the floor up through an interruption.
+    const stalled = {
+      ...HISTORY, recent7DaysKm: 6, recentWeeklyAverageKm: 12, daysSinceLastRun: 4,
+      weeklySeries: { firstWeekStart: '2026-09-14', km: [45, 6], runs: [5, 1] },
+    } satisfies TrainingHistory
+
+    expect(volumeBand(stalled).baselineKm).toBe(12)
+  })
+})
+
 describe('validateDraftVolume', () => {
   const band = volumeBand(HISTORY)
 

@@ -3,6 +3,9 @@ import type { BootstrapWeekDraft, CoachingPlanDraft } from '@/application/ports/
 import type { CoachingWorkoutType, WorkoutBlock } from '@/domain/coaching/types'
 import { intensityBand, validateDraftIntensity } from '../intensity'
 
+// Adam runs Tue, Wed, Thu, Sat, Sun.
+const DAYS = [2, 3, 4, 6, 0]
+
 // Adam's measured threshold: 4:23/km. The zones fall out of it, so the band
 // divides quality from aerobic running at 268 s/km and threshold from sharper
 // work at 258 s/km.
@@ -67,7 +70,7 @@ function soundWeek(start: string, repMetres: number, totalKm: number, pace = 263
 
 describe('what counts as hard', () => {
   it('accepts a week whose quality sits inside the caps', () => {
-    expect(() => validateDraftIntensity(draft(soundWeek('2026-09-28', 1500, 48)), BAND)).not.toThrow()
+    expect(() => validateDraftIntensity(draft(soundWeek('2026-09-28', 1500, 48)), BAND, DAYS)).not.toThrow()
   })
 
   it('leaves warm-up and cool-down out of the caps while they still fill the week', () => {
@@ -79,7 +82,7 @@ describe('what counts as hard', () => {
       workout('easy', [easy(12000)]),
       workout('long_run', [easy(13000)]),
     ])
-    expect(() => validateDraftIntensity(draft(padded), BAND)).not.toThrow()
+    expect(() => validateDraftIntensity(draft(padded), BAND, DAYS)).not.toThrow()
   })
 
   it('counts 20-second strides as neuromuscular rather than as quality volume', () => {
@@ -90,7 +93,7 @@ describe('what counts as hard', () => {
       workout('easy', [easy(11000)]),
       workout('long_run', [easy(11000)]),
     ])
-    expect(() => validateDraftIntensity(draft(sharpening), BAND)).not.toThrow()
+    expect(() => validateDraftIntensity(draft(sharpening), BAND, DAYS)).not.toThrow()
   })
 
   it('reads an unpaced hill session by its workout type', () => {
@@ -98,7 +101,7 @@ describe('what counts as hard', () => {
       workout('vo2max', [warmup(2000), { kind: 'repeat', repetitions: 10, steps: [{ kind: 'effort', target: { distanceMeters: 400 } }, { kind: 'recovery', target: { distanceMeters: 400 } }] }, cooldown(2000)]),
       workout('easy', [easy(6000)]),
     ])
-    expect(() => validateDraftIntensity(draft(hills), BAND)).toThrow(/of intervals/)
+    expect(() => validateDraftIntensity(draft(hills), BAND, DAYS)).toThrow(/of intervals/)
   })
 
   it('does not ration the race itself', () => {
@@ -107,7 +110,7 @@ describe('what counts as hard', () => {
       workout('easy', [easy(6000)]),
       workout('race', [warmup(2000), { kind: 'effort', target: { distanceMeters: 10000 } }, cooldown(1000)]),
     ])
-    expect(() => validateDraftIntensity(draft(raceWeek), BAND)).not.toThrow()
+    expect(() => validateDraftIntensity(draft(raceWeek), BAND, DAYS)).not.toThrow()
   })
 })
 
@@ -121,7 +124,7 @@ describe('the dose of hard running', () => {
       workout('easy', [easy(9000)]),
       workout('long_run', [easy(9000)]),
     ])
-    expect(() => validateDraftIntensity(draft(hard), BAND)).toThrow(/at threshold within/)
+    expect(() => validateDraftIntensity(draft(hard), BAND, DAYS)).toThrow(/at threshold within/)
   })
 
   it('refuses interval volume past the tighter cap that applies to it', () => {
@@ -131,7 +134,7 @@ describe('the dose of hard running', () => {
       workout('easy', [easy(9000)]),
       workout('long_run', [easy(10000)]),
     ])
-    expect(() => validateDraftIntensity(draft(sharp), BAND)).toThrow(/of intervals within/)
+    expect(() => validateDraftIntensity(draft(sharp), BAND, DAYS)).toThrow(/of intervals within/)
   })
 
   it('bounds hard running below 80/20 without a separate check, because 10 and 8 make 18', () => {
@@ -144,7 +147,50 @@ describe('the dose of hard running', () => {
       workout('easy', [easy(10000)]),
       workout('long_run', [easy(13000)]),
     ])
-    expect(() => validateDraftIntensity(draft(maxed), BAND)).not.toThrow()
+    expect(() => validateDraftIntensity(draft(maxed), BAND, DAYS)).not.toThrow()
+  })
+})
+
+describe('a week that is only part of a training week', () => {
+  const opener = (thresholdMetres: number) => ({
+    startDate: '2026-09-23',
+    endDate: '2026-09-27',
+    focus: 'opening week',
+    workouts: [
+      workout('threshold', [warmup(2000), reps(3, thresholdMetres, 263, 600), cooldown(1600)]),
+      workout('easy', [easy(9900)]),
+      workout('easy', [easy(9900)]),
+      workout('long_run', [easy(10000)]),
+    ],
+  })
+
+  it('judges the session against the week it belongs to, not the stub left after a mid-week start', () => {
+    // Wednesday to Sunday is four of his five running days; Tuesday was
+    // already run under the previous block. 4.8 km of threshold is over a
+    // tenth of the 40 km prescribed here and inside a tenth of the week it
+    // actually sits in.
+    expect(() => validateDraftIntensity(draft(opener(1600)), BAND, DAYS)).not.toThrow()
+  })
+
+  it('still refuses a session that is too much for the whole week either', () => {
+    expect(() => validateDraftIntensity(draft(opener(2200)), BAND, DAYS)).toThrow(/at threshold within/)
+  })
+
+  it('will not let scaling a short week up swallow the running actually prescribed', () => {
+    // Scaled to full size a fifth of a week would permit 7.5 km of threshold
+    // and 6 km of intervals. Each session here clears its own cap; together
+    // they are a quarter of what is actually being run.
+    const stub = {
+      startDate: '2026-10-19',
+      endDate: '2026-10-20',
+      focus: 'tail',
+      workouts: [
+        workout('threshold', [warmup(1000), reps(2, 1000, 263, 300), cooldown(1000)]),
+        workout('vo2max', [warmup(1000), reps(4, 500, 235, 250), cooldown(1000)]),
+        workout('easy', [easy(5400)]),
+      ],
+    }
+    expect(() => validateDraftIntensity(draft(stub), BAND, DAYS)).toThrow(/ceiling on hard running/)
   })
 })
 
@@ -152,31 +198,31 @@ describe('pace drift across the block', () => {
   it('refuses repetitions that creep faster week by week', () => {
     // 10 s/km a week, each step small, the block ending somewhere else.
     const block = draft(soundWeek('2026-09-28', 1500, 48, 263), soundWeek('2026-10-05', 1650, 52, 253), soundWeek('2026-10-12', 1800, 56, 243))
-    expect(() => validateDraftIntensity(block, BAND)).toThrow(/prescribes threshold at 253 s\/km against 263 s\/km/)
+    expect(() => validateDraftIntensity(block, BAND, DAYS)).toThrow(/prescribes threshold at 253 s\/km against 263 s\/km/)
   })
 
   it('catches drift that carries the repetitions clean out of the threshold band', () => {
     // At 250 s/km the repetition is no longer threshold work at all, and the
     // session type is what says it was meant to be.
     const block = draft(soundWeek('2026-09-28', 1500, 48, 263), soundWeek('2026-10-05', 1650, 52, 250))
-    expect(() => validateDraftIntensity(block, BAND)).toThrow(/prescribes threshold at 250 s\/km/)
+    expect(() => validateDraftIntensity(block, BAND, DAYS)).toThrow(/prescribes threshold at 250 s\/km/)
   })
 
   it('measures drift against the block, not against the week before', () => {
     // Three 2 s/km steps: every consecutive pair is inside tolerance and the
     // block still finishes 6 s/km fast.
     const block = draft(soundWeek('2026-09-28', 1500, 48, 263), soundWeek('2026-10-05', 1650, 52, 261), soundWeek('2026-10-12', 1800, 56, 257))
-    expect(() => validateDraftIntensity(block, BAND)).toThrow(/at 257 s\/km against 263 s\/km/)
+    expect(() => validateDraftIntensity(block, BAND, DAYS)).toThrow(/at 257 s\/km against 263 s\/km/)
   })
 
   it('allows a rounded repetition inside the tolerance', () => {
     const block = draft(soundWeek('2026-09-28', 1500, 48, 263), soundWeek('2026-10-05', 1650, 52, 261))
-    expect(() => validateDraftIntensity(block, BAND)).not.toThrow()
+    expect(() => validateDraftIntensity(block, BAND, DAYS)).not.toThrow()
   })
 
   it('says nothing about a week prescribed slower', () => {
     const block = draft(soundWeek('2026-09-28', 1500, 48, 263), soundWeek('2026-10-05', 1650, 52, 268))
-    expect(() => validateDraftIntensity(block, BAND)).not.toThrow()
+    expect(() => validateDraftIntensity(block, BAND, DAYS)).not.toThrow()
   })
 })
 
@@ -184,17 +230,17 @@ describe('time at threshold across the block', () => {
   it('refuses a block whose threshold volume returns to where it started', () => {
     // 4.5, 5.1, 4.5 km at threshold: week three merely undoes week two.
     const block = draft(soundWeek('2026-09-28', 1500, 48), soundWeek('2026-10-05', 1700, 52), soundWeek('2026-10-12', 1500, 52))
-    expect(() => validateDraftIntensity(block, BAND)).toThrow(/holds time at threshold/)
+    expect(() => validateDraftIntensity(block, BAND, DAYS)).toThrow(/holds time at threshold/)
   })
 
   it('accepts a block that lengthens the repetitions as the week grows', () => {
     const block = draft(soundWeek('2026-09-28', 1500, 48), soundWeek('2026-10-05', 1650, 52), soundWeek('2026-10-12', 1800, 56))
-    expect(() => validateDraftIntensity(block, BAND)).not.toThrow()
+    expect(() => validateDraftIntensity(block, BAND, DAYS)).not.toThrow()
   })
 
   it('refuses a step that doubles the quality dose in a week', () => {
     const block = draft(soundWeek('2026-09-28', 1200, 48), soundWeek('2026-10-05', 1600, 50))
-    expect(() => validateDraftIntensity(block, BAND)).toThrow(/beyond the quarter a week/)
+    expect(() => validateDraftIntensity(block, BAND, DAYS)).toThrow(/beyond the quarter a week/)
   })
 
   it('exempts a declared reduced week from having to progress', () => {
@@ -204,7 +250,7 @@ describe('time at threshold across the block', () => {
       { ...soundWeek('2026-10-12', 1200, 40), reducedVolume: { reason: 'cutback', explanation: 'Absorb the block.' } },
       soundWeek('2026-10-19', 1800, 56),
     )
-    expect(() => validateDraftIntensity(block, BAND)).not.toThrow()
+    expect(() => validateDraftIntensity(block, BAND, DAYS)).not.toThrow()
   })
 
   it('says nothing about a block carrying no threshold work at all', () => {
@@ -212,7 +258,7 @@ describe('time at threshold across the block', () => {
       week('2026-09-28', [workout('easy', [easy(8000)]), workout('easy', [easy(8000)])]),
       week('2026-10-05', [workout('easy', [easy(9000)]), workout('easy', [easy(9000)])]),
     )
-    expect(() => validateDraftIntensity(recovery, BAND)).not.toThrow()
+    expect(() => validateDraftIntensity(recovery, BAND, DAYS)).not.toThrow()
   })
 })
 
@@ -220,6 +266,6 @@ describe('intensityBand', () => {
   it('says nothing when the athlete has no measured threshold to judge against', () => {
     expect(intensityBand(null)).toBeNull()
     const anything = draft(week('2026-09-28', [workout('threshold', [reps(20, 1600, 240)])]))
-    expect(() => validateDraftIntensity(anything, intensityBand(null))).not.toThrow()
+    expect(() => validateDraftIntensity(anything, intensityBand(null), DAYS)).not.toThrow()
   })
 })

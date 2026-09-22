@@ -27,10 +27,28 @@ const LONG_RUN_ALLOWANCE_KM = 8
 
 const KM_IN_PROSE = /(\d+(?:[.,]\d+)?)\s*km/gi
 
+// recent7DaysKm is a rolling window, so a block regenerated on a Wednesday
+// straddles two calendar weeks and can read well under the week the athlete
+// last actually completed. While they are still running, that completed week
+// is the better witness; after a gap it is history rather than capacity.
+const COMPLETED_WEEK_STALE_DAYS = 3
+
+/**
+ * The last Monday-to-Sunday week the athlete finished, which weeklySeries
+ * already carries - its final entry is the week in progress, so the one before
+ * it is the last complete one.
+ */
+function lastCompletedWeekKm(history: TrainingHistory): number {
+  const since = history.daysSinceLastRun
+  if (since === null || since > COMPLETED_WEEK_STALE_DAYS) return 0
+  const weeks = history.weeklySeries.km
+  return weeks.length >= 2 ? weeks[weeks.length - 2]! : 0
+}
+
 /**
  * What this athlete is currently doing, and what they have shown they can hold.
  * A month of travel drags the 28-day mean far below both, so the floor follows
- * the more recent of the two and the ceiling follows the sustained one.
+ * the most recent of the three and the ceiling follows the sustained one.
  */
 export interface VolumeBand {
   baselineKm: number
@@ -39,7 +57,7 @@ export interface VolumeBand {
 }
 
 export function volumeBand(history: TrainingHistory): VolumeBand {
-  const baselineKm = Math.max(history.recent7DaysKm, history.recentWeeklyAverageKm)
+  const baselineKm = Math.max(history.recent7DaysKm, lastCompletedWeekKm(history), history.recentWeeklyAverageKm)
   return {
     baselineKm,
     capacityKm: Math.max(history.best4WeekAverageKm, baselineKm),
@@ -82,7 +100,7 @@ export function weekKm(week: BootstrapWeekDraft): number {
  * loses only a Monday, so for a Tue-Sun runner it is a whole week and must
  * carry a whole week's volume; measuring the span in days would excuse it.
  */
-function trainingWeekShare(week: BootstrapWeekDraft, availableWeekdays: number[]): number {
+export function trainingWeekShare(week: BootstrapWeekDraft, availableWeekdays: number[]): number {
   if (availableWeekdays.length === 0) return 0
   const start = Date.parse(week.startDate)
   const days = Math.round((Date.parse(week.endDate) - start) / DAY_MS) + 1
