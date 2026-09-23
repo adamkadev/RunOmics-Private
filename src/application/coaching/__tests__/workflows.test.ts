@@ -51,6 +51,7 @@ function contextInput(currentPlan: CoachingPlan | null): CoachingContextInput {
     loadBalance: null,
     trainingZones: null,
     latestVo2max: 50,
+    trajectories: null,
     racePredictions: null,
     goals: [{ year: 2026, annualDistanceKm: 1_500, targets: [{ distance: '10K', targetSeconds: 2_400 }] }],
     personalBests: [],

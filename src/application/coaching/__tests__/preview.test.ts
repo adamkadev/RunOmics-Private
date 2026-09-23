@@ -65,7 +65,7 @@ describe('coaching preview files', () => {
     } satisfies CoachingAdvisor
     const context = buildCoachingContext({
       activities: [], plan: null, athlete: {}, trainingStatus: null, loadBalance: null,
-      trainingZones: null, latestVo2max: null, racePredictions: null, personalBests: [],
+      trainingZones: null, trajectories: null, latestVo2max: null, racePredictions: null, personalBests: [],
       goals: [], upcomingRaces: [{ date: '2026-10-18', name: 'Autumn 10K', distance: '10K' }], officialResults: [],
     }, '2026-09-07')
     let id = 0
@@ -88,7 +88,7 @@ describe('coaching preview files', () => {
       getEvaluationForActivity: () => null, saveEvaluation: () => {},
     } satisfies CoachingRepository
     const context = buildCoachingContext({
-      activities: [], plan: null, athlete: {}, trainingStatus: null, loadBalance: null, trainingZones: null,
+      activities: [], plan: null, athlete: {}, trainingStatus: null, loadBalance: null, trainingZones: null, trajectories: null,
       latestVo2max: null, racePredictions: null, personalBests: [], goals: [],
       upcomingRaces: [{ date: '2026-10-18', name: 'Autumn 10K', distance: '10K' }],
       officialResults: [],

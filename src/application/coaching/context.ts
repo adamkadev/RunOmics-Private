@@ -14,6 +14,7 @@ import {
 import { COACHING_TO_ACTIVITY_TYPE, type CoachingPlan } from '@/domain/coaching/types'
 import { raceDistanceMeters } from '@/domain/coaching/raceTarget'
 import type { AthleteProfile, InjuryHistory } from '@/infrastructure/repositories/JsonAthleteRepository'
+import type { Trajectories } from '@/domain/training/trajectories'
 import type { GoalYear, PbYear, UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import type { LoadBalanceData } from '@/application/usecases/GetLoadBalance'
@@ -85,6 +86,11 @@ export interface CoachingContext {
     trainingZones: TrainingZonesData | null
     injuryHistory: InjuryHistory | null
   }
+  /**
+   * Where the numbers have been. A current value alone cannot tell a ceiling
+   * from a figure still climbing back after a fortnight off.
+   */
+  trajectories: Trajectories | null
   goals: GoalYear[]
   personalBests: PbYear[]
   upcomingRaces: CoachingUpcomingRace[]
@@ -102,6 +108,7 @@ export interface CoachingContextInput {
   trainingZones: TrainingZonesData | null
   latestVo2max: number | null
   racePredictions: GarminRacePredictionsData | null
+  trajectories: Trajectories | null
   goals: GoalYear[]
   personalBests: PbYear[]
   upcomingRaces: UpcomingRace[]
@@ -259,6 +266,7 @@ export function buildCoachingContext(input: CoachingContextInput, referenceDate:
       // has asked, which is not the same as none.
       injuryHistory: input.athlete.injuryHistory ?? null,
     },
+    trajectories: input.trajectories,
     goals: input.goals,
     personalBests: input.personalBests,
     upcomingRaces: input.upcomingRaces

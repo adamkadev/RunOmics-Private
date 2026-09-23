@@ -116,6 +116,18 @@ The only two randomised tests of graded progression in runners were null, and a 
 - [**contested**] Give each block one named physiological emphasis, store it in the block JSON, and refuse a block whose emphasis matches the previous block's for three blocks running.
   - Issurin's block periodization depends on SEQUENCING concentrated blocks so residual effects from one are exploited by the next, and sequencing is exactly what monthly regeneration toward the present destroys. Kiely (2012) argues the sequencing assumptions are tradition-driven rather than evidence-led, and the endurance block-periodization meta-analysis does not establish general superiority. Filipas 2022 (60 well-trained men, 16 weeks, switch at 8 weeks) found pyramidal-then-polarized best on a 5 km trial (~1.5%); there is no evidence for any particular switch point in 4-week rolling blocks.
 
+## Where the numbers have been
+
+- [consensus] Send each key metric's recent history alongside its current value, and state how far current sits below its own best inside the window. A single number cannot tell a ceiling from a figure still climbing back.
+  - This is the same error as anchoring on a 28-day mean over an absence, one level up. For this athlete on 2026-09-23 the context said threshold 263 s/km, VO2max 54.6, CTL 44.9 and a 42:50 prediction, with no indication that all four were well off marks set months earlier: 252 s/km on 4 April, 57.1 on 29 April, CTL 68.1 and a 40:40 prediction on 11 May. Reading the current values alone produced the conclusion that a 40:00 goal needed volume the athlete had never run - when he had held 50-60 km a week for seventeen consecutive weeks that spring, and the weeklySeries showing it was already in the context. The failure was not missing data; it was a shape nobody was asked to look at.
+  - Computed in `src/domain/training/trajectories.ts` from `threshold_history.json`, `vo2max_history.json`, `race_predictions.json` and the same CTL series the context already reports, using the athlete's own HR bounds so the CTL figure agrees with `load.ctl` rather than offering a second opinion.
+- [_convention_] Keep the weeks with no running in the CTL series rather than averaging over them.
+  - An interruption is the single most legible thing in this athlete's data and the one an average destroys. Four in ten months: 10 days from 2025-12-13, 23 from 2025-12-24, 9 from 2026-06-28, 15 from 2026-08-20. Presented as weeks of zero kilometres they are obvious; folded into a mean they look like reduced capacity.
+- [_convention_] Send the prediction series as a pace, never as a finish time.
+  - The rules already forbid the planner narrating a finish time it was not given, and the underlying series is per-kilometre anyway. Sending seconds-for-the-distance would invite exactly the arithmetic the rule exists to stop.
+- [**evidenced**] Include bests set in ordinary training runs, not only official races.
+  - Prior demonstrated performance is evidence of capacity whatever its setting. This athlete's fastest 10 km is 44:10, set on 2026-04-07 in a session logged as a tempo run; the official personal-best list has no 10K at all, so a planner reading it alone would conclude he had never run the distance.
+
 ## Where the block sits in the season
 
 - [**contested**] Compute the macrocycle's phases from the season start to the target race and tell the planner which phase each week of the block falls in. Proportions: 45% base, 35% build, the remainder peak, with the final week to the race its own phase.

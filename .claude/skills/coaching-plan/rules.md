@@ -50,6 +50,15 @@ The reasoning behind these rules, and the training science they came from, is in
 - Hold every prescribed repetition pace constant for the whole block. A later week prescribing the same kind of session faster than the first is drift, not progress, whatever the weekly total says.
 - Make time at threshold rise in every loading week, by repetition count first and repetition length second, and never by more than 25 per cent in a week nor 40 per cent across any two weeks; a reduced week is exempt. The 10 per cent cap usually binds long before those ceilings, so the session grows only as the week does.
 
+## Where the numbers have been
+
+- trajectories carries each key metric's recent history alongside its current value: threshold pace, VO2max, the Garmin 10K prediction and CTL, each with its best inside the window and how far the current value sits below it.
+- A metric well below its own recent best is a rebuild target, not a ceiling. Where offBestPct is material, say the athlete is returning toward a level already demonstrated, and never present the depressed value as the limit of what they can do.
+- Do not raise a prescribed pace to chase a past best either. The trajectory explains why a current value is low; only a race or a completed benchmark changes what is prescribed.
+- trajectories.ctl.weeks lists every week including those with no running, which show zero kilometres. A gap there explains a depressed 28-day mean and must never be read as reduced capacity: it is training not done, not training the athlete cannot do.
+- Read repeated gaps as the constraint they are. Where the series shows more than one interruption, the block's job is to be completed rather than to be ambitious, and week.focus should say so.
+- trajectories.bestEfforts includes efforts set in ordinary training runs, not only official races. Treat the best effort at the target distance as evidence of capacity whatever its source, and do not describe an athlete as never having run a distance they have covered in training.
+
 ## Where the block sits in the season
 
 - MACROCYCLE gives the phases between the start of the season and the target race, and the phase each planned week falls in; write the block for the phase it is in rather than repeating the same block every month.

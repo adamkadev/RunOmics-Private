@@ -30,6 +30,7 @@ function input(activities: Activity[]): CoachingContextInput {
     loadBalance: null,
     trainingZones: null,
     latestVo2max: 51,
+    trajectories: null,
     racePredictions: null,
     goals: [],
     personalBests: [],

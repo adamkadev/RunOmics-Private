@@ -61,7 +61,7 @@ function context() {
     athlete: {},
     trainingStatus: null,
     loadBalance: null,
-    trainingZones: null,
+    trainingZones: null, trajectories: null,
     latestVo2max: null,
     racePredictions: null,
     goals: [],
