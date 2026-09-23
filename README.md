@@ -80,6 +80,13 @@ This will prompt for your Garmin Connect email and password, then print a `GARMI
 > game, i.e. no more future-proof than staying put. If `get_secret.py` stops
 > working when your token expires, check that discussion for the current
 > workaround before switching libraries.
+>
+> `npm run coach:garmin-auth` reports what is knowable: whether a token exchange
+> succeeds right now, and when the OAuth2 tokens minted from your OAuth1 token
+> expire. It cannot tell you when the OAuth1 token itself dies - Garmin does not
+> return an expiry and garth records none - so the honest answer is that a
+> working exchange today is the only evidence there is. Run it before a long
+> trip rather than discovering the failure through a silent nightly sync.
 
 ### 3. Configure environment variables
 

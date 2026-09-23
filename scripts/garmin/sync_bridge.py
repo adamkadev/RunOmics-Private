@@ -18,6 +18,7 @@ Garmin session rather than one per workout.
     {"op": "delete", "workoutId": "..."}
     {"op": "get", "workoutId": "..."}
     {"op": "scheduled", "year": 2026, "month": 9}
+    {"op": "auth"}
 
 Responses are {"ok": true, ...} or {"ok": false, "error": "...",
 "rateLimited": bool}. Errors carry Garmin's status code and URL only - never a
@@ -91,6 +92,9 @@ def _dispatch(client: GarminClient, request: dict[str, Any]) -> dict[str, Any]:
             if item.get("itemType") == _MANAGED_ITEM_TYPE and item.get("workoutId")
         ]
         return {"ok": True, "items": items}
+
+    if op == "auth":
+        return {"ok": True, **client.auth_state()}
 
     return {"ok": False, "error": f"Unknown operation: {op!r}"}
 

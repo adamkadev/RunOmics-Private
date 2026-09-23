@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import os
 import zipfile
+from datetime import datetime, timezone
 from typing import Any
 
 import garth
@@ -61,6 +62,35 @@ def _seed_oauth_consumer() -> None:
     )
 
 
+# The day this fires is the day the pipeline stops, and a bare exception would
+# send the reader looking for a network fault. garth's login flow - the only
+# supported way to mint a replacement - was broken by a Garmin auth change in
+# March 2026 and the package is unmaintained, so the recovery is not obvious
+# and the message has to carry it.
+_REFRESH_FAILED = (
+    "Token refresh failed: {exc}\n"
+    "\n"
+    "The OAuth1 token in GARMIN_SECRET has most likely expired. It is the long-"
+    "lived credential every sync depends on, and garth cannot mint a new one: "
+    "Garmin changed the auth flow in March 2026, which is why garth was "
+    "deprecated. scripts/get_secret.py will fail for the same reason.\n"
+    "\n"
+    "Run npm run coach:garmin-auth to confirm, then see 'Generate your "
+    "Garmin secret' in README.md and the linked garth discussion for the "
+    "current workaround."
+)
+
+
+def _auth_field(token: Any, name: str) -> Any:
+    value = getattr(token, name, None)
+    if value is None:
+        return None
+    # expires_at and friends are epoch seconds; a date is what a human needs.
+    if name.endswith("_at"):
+        return datetime.fromtimestamp(value, tz=timezone.utc).isoformat(timespec="seconds")
+    return value
+
+
 class GarminClient:
     def __init__(self, secret_string: str) -> None:
         # Before anything can trigger a refresh: every entry point in scripts/
@@ -73,11 +103,34 @@ class GarminClient:
             try:
                 garth.client.refresh_oauth2()
             except Exception as exc:
-                raise GarminAuthError(f"Token refresh failed: {exc}") from exc
+                raise GarminAuthError(_REFRESH_FAILED.format(exc=exc)) from exc
 
         self._base = _CONNECT_API
         self._http = httpx.Client(timeout=_TIMEOUT)
         self._profile_uuid: str | None = None
+
+    def auth_state(self) -> dict[str, Any]:
+        """What is knowable about the tokens, for `npm run coach:garmin-auth`.
+
+        The OAuth1 token carries no expiry - garth does not record one and
+        Garmin does not return one - so its remaining life cannot be reported,
+        only whether it still works. That it does is proved by this call having
+        got far enough to run at all.
+        """
+        oauth2 = garth.client.oauth2_token
+        return {
+            "oauth1": {
+                "present": garth.client.oauth1_token is not None,
+                "expiresAt": None,
+                "note": "no expiry recorded; refreshes working means it is still valid",
+            },
+            "oauth2": {
+                "expiresAt": _auth_field(oauth2, "expires_at"),
+                "expired": bool(getattr(oauth2, "expired", False)),
+                "refreshTokenExpiresAt": _auth_field(oauth2, "refresh_token_expires_at"),
+                "refreshExpired": bool(getattr(oauth2, "refresh_expired", False)),
+            },
+        }
 
     def _headers(self) -> dict[str, str]:
         return {
