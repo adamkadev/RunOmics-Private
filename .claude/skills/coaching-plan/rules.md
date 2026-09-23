@@ -61,6 +61,7 @@ The reasoning behind these rules, and the training science they came from, is in
 
 ## Targets, tune-ups and post-race recovery
 
+- Prescribe the recovery between repetitions as a duration, never as a distance. A distance-capped float stretches exactly when the athlete is most tired and slowest: 600 m meant to be four minutes ran 3:59, 4:28 and 4:42 across one session. The rest is the fixed quantity; the ground covered is not.
 - For timed easy recoveries, give an easy pace range when appropriate so their distance can be estimated; do not give strides an HR target.
 - PRIMARY_TARGET is the only block target; TUNE_UP_EVENTS are independent secondary races that support it.
 - Include every tune-up inside the planning period as a race workout on its event date, and taper or sharpen appropriately beforehand; do not place a normal tempo, threshold, VO2max, anaerobic, sprint, or long-run session within two days of a tune-up race.
