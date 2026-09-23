@@ -48,8 +48,13 @@ console.log(`     expiry  : not recorded - ${oauth1.note}`)
 console.log(`\n  OAuth2 (minted from it on every run)`)
 console.log(`     access token expires  : ${oauth2.expiresAt ?? 'unknown'}${oauth2.expired ? '  (expired, refreshed on use)' : ''}`)
 if (oauth2.refreshTokenExpiresAt) {
+  // Shown so nobody goes looking for it, and labelled so nobody reads it as a
+  // deadline: refresh_oauth2() re-exchanges the OAuth1 token every time, so
+  // this refresh token is minted and never used.
   const left = days(oauth2.refreshTokenExpiresAt)
-  console.log(`     refresh token expires : ${oauth2.refreshTokenExpiresAt}  (${left} days)`)
+  console.log(`     refresh token expires : ${oauth2.refreshTokenExpiresAt}  (${left} days, unused)`)
+  console.log(`                             every run re-exchanges the OAuth1 token instead,`)
+  console.log(`                             so this date has no bearing on the sync`)
 }
 
 // Getting this far means loads() and, where needed, refresh_oauth2() both
