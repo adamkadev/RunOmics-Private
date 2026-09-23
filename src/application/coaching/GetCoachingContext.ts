@@ -11,10 +11,27 @@ import { getLoadBalance } from '@/application/usecases/GetLoadBalance'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
 import { getLatestVO2max } from '@/application/usecases/GetVO2maxHistory'
 import { getGarminRacePredictions } from '@/application/usecases/GetGarminRacePredictions'
+import { getActivityNotes } from '@/infrastructure/repositories/FirestoreActivityNoteRepository'
 
 export async function getCoachingContext(plan: CoachingPlan | null, referenceDate: string): Promise<CoachingContext> {
-  const [trainingStatus, trainingZones] = await Promise.all([getTrainingStatus(), getTrainingZones()])
+  const [trainingStatus, trainingZones, activityNotes] = await Promise.all([
+    getTrainingStatus(),
+    getTrainingZones(),
+    getActivityNotes(),
+  ])
+
+  // Silence here would be indistinguishable from an athlete who annotates
+  // nothing, and a plan built without an illness tag it could have had is
+  // worse than one whose author knew the tag was missing.
+  if (!activityNotes.available) {
+    console.warn(
+      '[coaching] activity notes unavailable - no FIREBASE_PROJECT_ID, or Firestore did not answer. '
+        + 'The plan will be built without the notes and tags the athlete wrote.'
+    )
+  }
+
   return buildCoachingContext({
+    activityNotes: activityNotes.notes,
     activities: getAllActivities(),
     plan,
     athlete: getAthleteProfile(),

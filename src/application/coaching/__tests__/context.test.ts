@@ -51,6 +51,27 @@ describe('buildCoachingContext', () => {
     expect(context.gaps).toEqual({ daysSinceLastRun: 0, longestGap28Days: 5 })
   })
 
+  it('carries the note and tags the athlete wrote, and omits the fields otherwise', () => {
+    const context = buildCoachingContext({
+      ...input([activity('sick-day', '2026-09-23', 10), activity('quiet', '2026-09-22', 8)]),
+      activityNotes: new Map([
+        ['sick-day', { note: 'Ill since Monday, felt hot throughout.', tags: ['sick'] }],
+        ['quiet', { note: '', tags: [] }],
+      ]),
+    }, '2026-09-23')
+
+    const [annotated, plain] = context.recentActivities
+    expect(annotated).toMatchObject({ note: 'Ill since Monday, felt hot throughout.', tags: ['sick'] })
+    // An empty note is the same as no note: a `note: ""` on every run is prompt noise.
+    expect(plain).not.toHaveProperty('note')
+    expect(plain).not.toHaveProperty('tags')
+  })
+
+  it('builds a context when no notes were read at all', () => {
+    const context = buildCoachingContext(input([activity('a', '2026-09-20', 10)]), '2026-09-20')
+    expect(context.recentActivities[0]).not.toHaveProperty('note')
+  })
+
   it('keeps the LLM context compact and excludes raw route/sample data', () => {
     const context = buildCoachingContext(input([activity('a', '2026-09-20', 10)]), '2026-09-20')
     const compact = context.recentActivities[0] as unknown as Record<string, unknown>

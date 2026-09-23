@@ -36,7 +36,7 @@ The reasoning behind these rules, and the training science they came from, is in
 - Supply remaining volume through easy/recovery running or easy warmup/cooldown only, never another quality workout or a faster long-run finish.
 - Preserve race-week rest days and reduce volume through shorter easy runs, not a frequency quota.
 - Historical capacity remains context, never a compulsory immediate target.
-- Specify distanceMeters for aerobic running blocks where practical so weekly volume is reviewable.
+- Specify distanceMeters for aerobic running blocks where practical so weekly volume is reviewable, except for a recovery step inside a repeat: a rest interval is a dose of time, so give it durationSeconds with an easy pace range. Capping rest by distance inverts the control - an athlete jogging slower, because they are tired or ill, is handed more rest, and one jogging faster gets less. Volume stays reviewable either way, since weekKm converts a timed segment through its own prescribed pace.
 - No single session may exceed the longest run of trainingHistory.longestRunLast30DaysKm by more than a tenth, nor take more than about 30 per cent of a full week at that volume; a correct weekly total says nothing about one outsized run hidden inside it.
 - For a 10K block the long run has no reason to pass about 16 km, so put further ambition into the threshold sessions rather than into Sunday.
 - A week that sits below its volume floor must set week.reducedVolume with a reason of cutback, deload, taper, recovery, illness or injury and an explanation; writing the word into week.focus exempts nothing.
@@ -106,6 +106,13 @@ The reasoning behind these rules, and the training science they came from, is in
 - When injuryHistory is absent, or reviewedOn is over a year old, treat the history as unknown rather than empty, and say it is unknown.
 - Where an injury is recorded, name the site in the plan rationale, ramp the tissue it involves more gradually than the weekly total otherwise allows, and treat a recurrent one as a standing constraint rather than a past event.
 - Never claim the plan prevents injury: no training plan has been shown to, and the two randomised tests of graded progression in runners were null.
+
+## What the athlete wrote
+
+- A recentActivities entry may carry note and tags the athlete wrote in the app. Read them as first-hand evidence about the circumstances of that session, ahead of whatever its numbers alone would suggest.
+- An RPE raised by a note or tag reporting illness, poor sleep, heat, travel or a niggle is not a fitness signal. Never slow a prescribed pace, re-test a threshold, or call a block too hard on that basis; say instead that the session was run under that circumstance.
+- Where a note or tag reports illness or injury, weigh it in the frequency and volume decision and name it as the reason, per the rules above on reducedVolume and fewer runs.
+- Most sessions carry no note, and the field is absent when nothing was written. Absence means nothing was recorded, never that the session was unremarkable - do not read a conclusion out of a missing note.
 
 ## Encoding the workouts
 

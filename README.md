@@ -296,6 +296,18 @@ npm run coach -- weekly-review
 npm run coach -- --apply .coach-previews/<proposal>.json
 ```
 
+The coach reads the notes and tags written in the app from Firestore `activityNotes`, live,
+at the moment it builds its context - there is no sync step and nothing lands on disk. That
+read needs the Firebase **Admin** credentials, and `.env.local` points at the dev project,
+where those notes are not. Put the production admin trio (`FIREBASE_PROJECT_ID`,
+`FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`) in a gitignored `.env.prod` and run
+`npm run coach:prod`, which layers it over `.env.local`: dotenv gives the first `-e` file
+precedence for a key it defines, so `.env.prod` need hold only those three and everything
+else still comes from `.env.local`. Plain `npm run coach` stays on dev and prints a warning
+that it is building the plan without notes. The coaching path only ever reads that
+collection, but the service account itself is not read-only, so treat `.env.prod` as the
+production credential it is.
+
 With private-repository credentials configured, apply fetches the latest data into a
 temporary workspace, rejects stale context or plan revisions, writes the coaching
 files atomically, and pushes only the private data repository. For local work,

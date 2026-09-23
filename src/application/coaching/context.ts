@@ -36,6 +36,9 @@ export interface CompactActivity {
   aerobicTrainingEffect: number | null
   anaerobicTrainingEffect: number | null
   execution: SessionExecution
+  /** What the athlete wrote about this session in the RunOmics UI, when they wrote anything. */
+  note?: string
+  tags?: string[]
   performance?: ResolvedPerformance
   garminMeasured?: GarminMeasured
   raceExecution?: RaceExecution
@@ -103,6 +106,8 @@ export interface CoachingContextInput {
   personalBests: PbYear[]
   upcomingRaces: UpcomingRace[]
   officialResults: OfficialRaceResult[]
+  /** Keyed by activity id; absent entries simply have no note. */
+  activityNotes?: Map<string, { note: string; tags: string[] }>
 }
 
 function dayNumber(date: string): number {
@@ -166,6 +171,18 @@ function adherence(plan: CoachingPlan | null, activities: Activity[], referenceD
   return { prescribed: prescribed.length, completed, percent: Math.round((completed / prescribed.length) * 100) }
 }
 
+/**
+ * Omitted rather than emitted empty: a `note: ""` on every run is noise in a
+ * prompt, and the few sessions the athlete actually wrote on are the point.
+ */
+function annotation(note: { note: string; tags: string[] } | undefined): Partial<CompactActivity> {
+  if (note === undefined) return {}
+  return {
+    ...(note.note === '' ? {} : { note: note.note }),
+    ...(note.tags.length === 0 ? {} : { tags: note.tags }),
+  }
+}
+
 function raceFacts(activity: Activity, official: OfficialRaceResult | undefined): Partial<CompactActivity> {
   if (activity.type !== 'Race') return {}
   const performance = resolvePerformance(activity, official ?? null)
@@ -201,6 +218,7 @@ export function buildCoachingContext(input: CoachingContextInput, referenceDate:
       aerobicTrainingEffect: activity.aerTrainingEffect,
       anaerobicTrainingEffect: activity.anaTrainingEffect,
       execution: sessionExecution(activity),
+      ...annotation(input.activityNotes?.get(activity.id)),
       ...raceFacts(activity, officialResults.get(activity.id)),
     })),
     volume: {

@@ -34,6 +34,7 @@
     "screenshots:clean": "rm -rf screenshots/output screenshots/.pw-artifacts",
     "set-owner-claim": "dotenv -e .env.local -- node scripts/set_owner_claim.mjs",
     "coach": "dotenv -e .env.local -- node --conditions=react-server --import tsx scripts/coaching.ts",
+    "coach:prod": "dotenv -e .env.prod -e .env.local -- node --conditions=react-server --import tsx scripts/coaching.ts",
     "coach:sync-garmin": "dotenv -e .env.local -- node --conditions=react-server --import tsx scripts/coaching-sync-garmin.ts"
   },
   "dependencies": {
