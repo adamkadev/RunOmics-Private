@@ -13,7 +13,11 @@ permissions:
 jobs:
   notify:
     uses: ./.github/workflows/internal-notify.yml
-    secrets: inherit
+    # Only the two secrets the job reads, not every one this repository
+    # holds. Each profile's environment secret still wins over these.
+    secrets:
+      APP_URL: ${{ secrets.APP_URL }}
+      INTERNAL_NOTIFY_SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}
     with:
       endpoint: weekly-reminder
       label: Trigger weekly reminder

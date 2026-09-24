@@ -15,6 +15,15 @@ on:
         description: "Step name, for the run log"
         required: true
         type: string
+    # Passed by name rather than `secrets: inherit`, so the Garmin, data-repo
+    # and deploy-hook secrets never reach this job. Not `required`: a value
+    # may live only in the profile's environment, which a job that names
+    # that environment reads in place of whatever the caller passed.
+    secrets:
+      APP_URL:
+        required: false
+      INTERNAL_NOTIFY_SECRET:
+        required: false
 
 permissions:
   contents: read
