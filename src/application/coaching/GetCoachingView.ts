@@ -7,6 +7,7 @@ import type {
   WorkoutPrescription,
 } from '@/domain/coaching/types'
 import { garminScheduleStatus } from '@/domain/coaching/matching'
+import type { CoachingRepository } from '@/application/ports/CoachingRepository'
 import { isoDate } from '@/lib/calendarDate'
 import { JsonCoachingRepository } from '@/infrastructure/repositories/JsonCoachingRepository'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
@@ -75,8 +76,13 @@ export function buildCoachingOverview(
   return { plan, currentWeekId: currentWeek?.id ?? null, workouts: views, latestDecision, latestEvaluation, nextKeyWorkout }
 }
 
-export function getCoachingOverview(today = new Date().toISOString().slice(0, 10)): CoachingOverview | null {
-  const repository = new JsonCoachingRepository()
+// Both readers date "today" by the local calendar, as src/lib/calendarDate
+// does. The overview used UTC while getTodayPrescription used local time, so
+// after local midnight they disagreed on the day - and on a Monday, the week.
+export function getCoachingOverview(
+  today = isoDate(new Date()),
+  repository: Pick<CoachingRepository, 'getCurrentPlan' | 'getDecisions' | 'getEvaluations'> = new JsonCoachingRepository(),
+): CoachingOverview | null {
   const plan = repository.getCurrentPlan()
   if (!plan) return null
   return buildCoachingOverview(
@@ -97,8 +103,11 @@ export function getCoachingOverview(today = new Date().toISOString().slice(0, 10
  * evaluation. A caller that only wants to know what today asks for pays all of
  * that for one row, so this reads the plan and nothing else.
  */
-export function getTodayPrescription(today = isoDate(new Date())): WorkoutPrescription | null {
-  const plan = new JsonCoachingRepository().getCurrentPlan()
+export function getTodayPrescription(
+  today = isoDate(new Date()),
+  repository: Pick<CoachingRepository, 'getCurrentPlan'> = new JsonCoachingRepository(),
+): WorkoutPrescription | null {
+  const plan = repository.getCurrentPlan()
   if (!plan) return null
 
   return (
