@@ -12,7 +12,7 @@ import type { WeeklyGoal } from '@/application/usecases/GetGoalsData'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { Pill } from '@/components/ui/Pill'
 import { SortDropdown } from '@/components/ui/SortDropdown'
-import { easyHardShare } from '@/domain/training/easyHard'
+import { recordedEasyHard } from '@/domain/activity/easyShare'
 import { groupByWeek, withCurrentWeek, type WeekGroup } from '@/domain/activity/weekGroups'
 
 import { formatDateRange, formatKm } from '@/lib/formatters'
@@ -155,13 +155,11 @@ function weekRows(groups: WeekGroup<ActivitySummary>[], currentWeekStart: string
   const lastWeekStart = isoDate(addDays(new Date(currentWeekStart + 'T00:00:00'), -7))
 
   return groups.map((group) => {
-    const { hardPct } = easyHardShare(group.items)
-    const hard = hardPct === null ? null : Math.round(hardPct)
     const range = formatDateRange(group.key, isoDate(addDays(new Date(group.key + 'T00:00:00'), 6)))
     return {
       ...group,
       label: group.key === currentWeekStart ? t.activities.thisWeek : group.key === lastWeekStart ? t.activities.lastWeek : range,
-      easyPct: hard === null ? null : 100 - hard,
+      easyPct: recordedEasyHard(group.items)?.easy ?? null,
       shape: weekShape(group.items),
     }
   })

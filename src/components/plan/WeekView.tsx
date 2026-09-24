@@ -9,6 +9,7 @@ import type { ActivitySummary, ActivityType, PlannedWorkout, ScheduledTimeOfDay 
 import { activityTypeStyle } from '@/components/activity/activityTypeStyle'
 import type { HrBounds } from '@/domain/training/trimp'
 import { summarizeWeek, summarizePlannedWeek } from '@/domain/training/weekSummary'
+import { plannedEasyHard, recordedEasyHard, type EasyHardSplit } from '@/domain/activity/easyShare'
 import { weekPlanPhase } from '@/domain/training/weekPlanPhase'
 import { EFFORT_ZONE_BY_TYPE } from '@/domain/training/workoutStructure'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
@@ -399,16 +400,16 @@ function WeekSummaryLine({
   load,
   loadTarget,
   loadIsPlanned,
-  easyPct,
-  hardPct,
+  easyHard,
+  easyHardIsPlanned,
 }: {
   volumeKm: number
   sessions: number
   load: number
   loadTarget: number | null
   loadIsPlanned: boolean
-  easyPct: number | null
-  hardPct: number | null
+  easyHard: EasyHardSplit | null
+  easyHardIsPlanned: boolean
 }) {
   const s = t.plan.weekSummary
   // A target next to a completed load of exactly 0 reads as "nothing
@@ -439,7 +440,9 @@ function WeekSummaryLine({
         {s.loadUnit}
         {loadIsPlanned && <> {s.loadPlanned}</>}
       </span>
-      {easyPct !== null && hardPct !== null && <span>{s.easyHardRatio(easyPct, hardPct)}</span>}
+      {easyHard && (
+        <span>{easyHardIsPlanned ? s.easyHardPlanned(easyHard.easy, easyHard.hard) : s.easyHardRatio(easyHard.easy, easyHard.hard)}</span>
+      )}
     </div>
   )
 }
@@ -676,17 +679,12 @@ export function WeekView({
     ? Math.round(weekSessions.reduce((sum, w) => sum + w.distanceKm, 0))
     : Math.round(weekActs.reduce((sum, a) => sum + a.distanceKm, 0))
   const sessionsCount = weekSessions.length > 0 ? weekSessions.length : weekActs.length
-  // Easy/long vs threshold/interval, weighted by duration rather than by
-  // session count so one long run doesn't count the same as one set of
-  // strides. weekSessions already reads completed days as what was actually
-  // run (see above), so this is the recorded split for a week that's
-  // happened and the planned one for a week that hasn't - never a mix of
-  // the two within the same week.
-  const weekSessionSeconds = weekSessions.reduce((sum, w) => sum + w.seconds, 0)
-  const hardPct = weekSessionSeconds > 0
-    ? Math.round((weekSessions.filter((w) => w.key).reduce((sum, w) => sum + w.seconds, 0) / weekSessionSeconds) * 100)
-    : null
-  const easyPct = hardPct !== null ? 100 - hardPct : null
+  // A week that is over is read the way the activity list reads it - heart
+  // rate time in zones 1-2 - so one finished week has one easy share
+  // wherever it is shown. A week still to run has no heart rate yet: it gets
+  // the planned split of session time, and says so.
+  const easyHardIsPlanned = !weekOver
+  const easyHard = easyHardIsPlanned ? plannedEasyHard(weekSessions) : recordedEasyHard(weekActs)
 
   // Garmin's load is retrospective (completed-so-far against a weekly
   // target), which is honest for a week already underway but reads as a
@@ -770,8 +768,8 @@ export function WeekView({
         load={load}
         loadTarget={loadTarget}
         loadIsPlanned={loadIsPlanned}
-        easyPct={easyPct}
-        hardPct={hardPct}
+        easyHard={easyHard}
+        easyHardIsPlanned={easyHardIsPlanned}
       />
 
       <div className="space-y-3 px-1">

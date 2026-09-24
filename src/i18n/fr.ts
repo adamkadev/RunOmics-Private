@@ -1398,6 +1398,7 @@ export const fr = {
       loadUnit: 'pts',
       sessionsCount: (n: number) => `${n} séance${n > 1 ? 's' : ''}`,
       easyHardRatio: (easy: number, hard: number) => `${easy}/${hard} facile`,
+      easyHardPlanned: (easy: number, hard: number) => `${easy}/${hard} facile prévu`,
       loadPlanned: 'prévu',
     },
     plannedVsRecorded: (planned: string, recorded: string) => `prévu ${planned} · réalisé ${recorded}`,

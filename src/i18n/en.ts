@@ -1436,6 +1436,7 @@ export const en = {
       loadUnit: 'pts',
       sessionsCount: (n: number) => `${n} session${n !== 1 ? 's' : ''}`,
       easyHardRatio: (easy: number, hard: number) => `${easy}/${hard} easy`,
+      easyHardPlanned: (easy: number, hard: number) => `${easy}/${hard} easy planned`,
       loadPlanned: 'planned',
     },
     plannedVsRecorded: (planned: string, recorded: string) => `planned ${planned} · recorded ${recorded}`,
