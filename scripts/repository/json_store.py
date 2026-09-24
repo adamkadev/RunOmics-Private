@@ -7,6 +7,7 @@ from typing import Any
 
 from data_directory import get_data_dir
 from processing.mapper import ActivityData
+from repository.history_file import HistoryFileError, read_history
 
 
 def _year_of(date: str) -> str | None:
@@ -15,6 +16,26 @@ def _year_of(date: str) -> str | None:
 
 def _month_of(date: str) -> str | None:
     return date[:7] if len(date) >= 7 else None
+
+
+def _read_entries(path: Path, key: str, id_field: str) -> list[dict[str, Any]]:
+    """The entries of one month or year file, or HistoryFileError.
+
+    Both stores rewrite every dirty file, and index.json, from memory on
+    save(). A file skipped here would come back holding only this sync's
+    entries - or leave the index altogether if none landed in it - so an
+    unreadable file stops the store instead, as the history files do.
+    """
+    entries = read_history(path).get(key, [])
+    if not isinstance(entries, list) or not all(
+        isinstance(entry, dict) and id_field in entry for entry in entries
+    ):
+        raise HistoryFileError(
+            f"{path}[{key!r}] is not a list of entries that each carry {id_field!r}. "
+            f"Refusing to continue: the next save would rewrite this file. Restore it "
+            f"from the data repository's git history, then re-run."
+        )
+    return entries
 
 
 def _atomic_write_json(path: Path, data: dict[str, Any]) -> None:
@@ -101,11 +122,7 @@ class JsonActivityStore:
         for path in sorted(self._dir.glob("*.json")):
             if path.name == "index.json":
                 continue
-            try:
-                data = json.loads(path.read_text("utf-8"))
-            except (json.JSONDecodeError, OSError):
-                continue
-            for activity in data.get("activities", []):
+            for activity in _read_entries(path, "activities", "id"):
                 self._by_id[activity["id"]] = activity
 
 
@@ -175,9 +192,5 @@ class PlannedWorkoutStore:
         for path in sorted(self._dir.glob("*.json")):
             if path.name == "index.json":
                 continue
-            try:
-                data = json.loads(path.read_text("utf-8"))
-            except (json.JSONDecodeError, OSError):
-                continue
-            for entry in data.get("planned", []):
+            for entry in _read_entries(path, "planned", "date"):
                 self._by_date[entry["date"]] = entry

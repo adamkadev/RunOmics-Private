@@ -22,9 +22,11 @@ def read_history(path: Path) -> dict[str, Any]:
     if not path.exists():
         return {}
 
+    # UTF-8 explicitly, as it is written: the locale default on Windows would
+    # decode an accented name into something the next write then persists.
     try:
-        payload = json.loads(path.read_text())
-    except (OSError, json.JSONDecodeError) as exc:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise HistoryFileError(
             f"{path} exists but could not be read ({exc}). Refusing to continue: "
             f"the next step would overwrite it. Restore it from the data "

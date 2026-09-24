@@ -1,5 +1,8 @@
 import json
 
+import pytest
+
+from repository.history_file import HistoryFileError
 from repository.json_store import JsonActivityStore, PlannedWorkoutStore
 
 
@@ -172,3 +175,63 @@ class TestJsonActivityStoreSmoke:
         store.save()
 
         assert not (tmp_path / "index.json").exists()
+
+
+class TestUnreadableFilesStopTheStore:
+    """save() rewrites every dirty file, and index.json, from what is in memory.
+    A file skipped at load is therefore rewritten with only this sync's entries,
+    and dropped from the index when none land in it - so a store must refuse to
+    load at all rather than start from a partial view. Same rule as the history
+    files: absent is empty, present and unreadable is a stop."""
+
+    def test_a_truncated_year_file_is_refused_not_overwritten(self, tmp_path):
+        # The reproduction from the audit: a truncated 2026.json holding seven
+        # sessions came out of one sync holding one.
+        seeded = PlannedWorkoutStore(tmp_path)
+        for day in range(1, 8):
+            seeded.upsert({"date": f"2026-07-0{day}", "name": "Footing"})
+        seeded.save()
+        year_file = tmp_path / "2026.json"
+        year_file.write_text(year_file.read_text()[:-40])
+        truncated = year_file.read_bytes()
+
+        with pytest.raises(HistoryFileError) as exc:
+            PlannedWorkoutStore(tmp_path)
+
+        assert "2026.json" in str(exc.value)
+        assert year_file.read_bytes() == truncated
+
+    def test_a_month_file_that_does_not_parse_is_refused(self, tmp_path):
+        (tmp_path / "2026-07.json").write_text('{"activities": [{"id": "1", "da')
+
+        with pytest.raises(HistoryFileError) as exc:
+            JsonActivityStore(tmp_path)
+
+        assert "2026-07.json" in str(exc.value)
+
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            [1, 2, 3],
+            {"activities": "not a list"},
+            {"activities": [{"date": "2026-07-18"}]},
+        ],
+        ids=["not an object", "activities not a list", "entry without an id"],
+    )
+    def test_a_month_file_of_the_wrong_shape_is_refused(self, tmp_path, payload):
+        (tmp_path / "2026-07.json").write_text(json.dumps(payload))
+
+        with pytest.raises(HistoryFileError) as exc:
+            JsonActivityStore(tmp_path)
+
+        assert "2026-07.json" in str(exc.value)
+
+    def test_a_year_entry_without_a_date_is_refused(self, tmp_path):
+        (tmp_path / "2026.json").write_text(json.dumps({"planned": [{"name": "Seuil"}]}))
+
+        with pytest.raises(HistoryFileError):
+            PlannedWorkoutStore(tmp_path)
+
+    def test_an_absent_directory_is_an_empty_start(self, tmp_path):
+        assert JsonActivityStore(tmp_path / "activities").count() == 0
+        assert PlannedWorkoutStore(tmp_path / "planned_workouts").count() == 0

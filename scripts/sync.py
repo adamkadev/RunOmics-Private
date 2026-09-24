@@ -28,7 +28,7 @@ from processing.fit_parser import ParsedFit, parse_fit
 from processing.mapper import HrZone, extract_gear_id, map_activity, parse_hr_zones
 from processing.weather import WeatherClient, weather_for_activity
 from repository.json_store import JsonActivityStore, PlannedWorkoutStore
-from repository.history_file import read_history, write_history
+from repository.history_file import HistoryFileError, read_history, write_history
 
 _FIT_DIR = get_fit_cache_dir()
 _DATA_DIR = get_data_dir()
@@ -52,10 +52,16 @@ def main() -> int:
         return 1
 
     _FIT_DIR.mkdir(parents=True, exist_ok=True)
-    store = JsonActivityStore()
+    try:
+        store = JsonActivityStore()
+        planned_store = PlannedWorkoutStore()
+    except HistoryFileError as exc:
+        # Nothing has been fetched or written yet, so stopping here costs
+        # one night; carrying on would rewrite the file from a partial view.
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
     existing_ids = store.get_existing_ids()
     print(f"activities.json: {store.count()} existing activities")
-    planned_store = PlannedWorkoutStore()
     weather_client = WeatherClient()
 
     with GarminClient(secret) as client:
