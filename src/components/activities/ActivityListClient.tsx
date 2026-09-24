@@ -4,8 +4,8 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import Link from 'next/link'
 import { Search, SearchX, ChevronDown, Map as MapIcon } from 'lucide-react'
 import { ActivityListCard } from './ActivityListCard'
-import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
-import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
+import { ACTIVITY_TYPES, isActivityType, type ActivitySummary, type ActivityType } from '@/domain/activity/types'
+import { ACTIVITY_TYPE_STYLE, activityTypeStyle } from '@/components/activity/activityTypeStyle'
 import type { ActivityQueryResult, ActivitySortKey, ActivitySortOrder } from '@/application/usecases/QueryActivities'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import type { WeeklyGoal } from '@/application/usecases/GetGoalsData'
@@ -20,7 +20,7 @@ import { isoDate, addDays, startOfWeek } from '@/lib/calendarDate'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
-const ALL_TYPES = Object.keys(ACTIVITY_TYPE_CONFIG) as ActivityType[]
+const ALL_TYPES: readonly ActivityType[] = ACTIVITY_TYPES
 
 // Registry order is the intensity ramp, which puts Sprint and Anaerobic - the
 // two rarest - in the first two chip slots. Order the filter by how much of the
@@ -102,13 +102,13 @@ function WeekCompositionDots({ items, label }: { items: ActivitySummary[]; label
             <span
               key={a.id}
               className="shrink-0 rounded-[4px]"
-              style={{ width: '7px', height: '7px', border: `1.5px solid ${ACTIVITY_TYPE_CONFIG.Race.chartColor}` }}
+              style={{ width: '7px', height: '7px', border: `1.5px solid ${ACTIVITY_TYPE_STYLE.Race.chartColor}` }}
             />
           ) : (
             <span
               key={a.id}
               className="shrink-0 rounded-[4px]"
-              style={{ width: '7px', height: '7px', background: ACTIVITY_TYPE_CONFIG[a.type].chartColor }}
+              style={{ width: '7px', height: '7px', background: activityTypeStyle(a.type).chartColor }}
             />
           )
         )}
@@ -145,7 +145,8 @@ function weekShape(items: ActivitySummary[]): string {
 
   return [...counts.entries()]
     .sort((a, b) => b[1] - a[1] || ALL_TYPES.indexOf(a[0]) - ALL_TYPES.indexOf(b[0]))
-    .map(([type, count]) => `${count} ${t.activityTypes[type].toLowerCase()}`)
+    // A type this build does not know yet has no label; name it as it came.
+    .map(([type, count]) => `${count} ${(t.activityTypes[type] ?? type).toLowerCase()}`)
     .join(' · ')
 }
 
@@ -183,7 +184,7 @@ function readStoredFilters(): StoredFilters | null {
     const parsed = JSON.parse(raw) as Partial<StoredFilters>
     return {
       search: typeof parsed.search === 'string' ? parsed.search : '',
-      selectedType: ALL_TYPES.includes(parsed.selectedType as ActivityType) ? (parsed.selectedType as ActivityType) : null,
+      selectedType: isActivityType(parsed.selectedType) ? parsed.selectedType : null,
       sortBy: SORT_OPTIONS.some((o) => o.value === parsed.sortBy) ? (parsed.sortBy as ActivitySortKey) : 'date',
       sortOrder: parsed.sortOrder === 'asc' || parsed.sortOrder === 'desc' ? parsed.sortOrder : 'desc',
       expandedWeeks: Array.isArray(parsed.expandedWeeks) ? parsed.expandedWeeks.filter((k) => typeof k === 'string') : [],

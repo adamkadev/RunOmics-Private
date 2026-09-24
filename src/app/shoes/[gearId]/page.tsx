@@ -15,7 +15,7 @@ import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { BackButton } from '@/components/ui/BackButton'
 import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
 import { STATUS } from '@/lib/statusColors'
-import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
+import { ACTIVITY_TYPE_STYLE } from '@/components/activity/activityTypeStyle'
 import { formatDateRange, formatKm, formatMonthShortYear, formatPace } from '@/lib/formatters'
 import { addDays, isoDate } from '@/lib/calendarDate'
 import { cn } from '@/lib/utils'
@@ -36,9 +36,9 @@ const WEAR_STYLE: Record<WearStatus, { bar: string; text: string }> = {
 // mid/hard steps of that ramp, so the usage bar reads as the same intensity
 // scale the rest of the app uses.
 const TYPE_SHARE_COLOR: Record<ShoeTypeBucket, string> = {
-  base: ACTIVITY_TYPE_CONFIG.Base.chartColor,
-  tempo: ACTIVITY_TYPE_CONFIG.Tempo.chartColor,
-  intervals: ACTIVITY_TYPE_CONFIG.Anaerobic.chartColor,
+  base: ACTIVITY_TYPE_STYLE.Base.chartColor,
+  tempo: ACTIVITY_TYPE_STYLE.Tempo.chartColor,
+  intervals: ACTIVITY_TYPE_STYLE.Anaerobic.chartColor,
 }
 
 function typeShareLabel(bucket: ShoeTypeBucket): string {

@@ -1,7 +1,7 @@
 'use client'
 
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
-import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
+import { activityTypeStyle } from '@/components/activity/activityTypeStyle'
 import type { ActivityType } from '@/domain/activity/types'
 import type { MonthlyVolume } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
@@ -92,7 +92,7 @@ export function MonthlyVolumeChart({ data, typesPresent }: Props) {
                 key={type}
                 dataKey={type}
                 stackId="volume"
-                fill={ACTIVITY_TYPE_CONFIG[type].chartColor}
+                fill={activityTypeStyle(type).chartColor}
                 // The three zone-5 types are three depths of one red, so stacked
                 // adjacently they need a seam to stay countable.
                 stroke="var(--card)"
@@ -109,7 +109,7 @@ export function MonthlyVolumeChart({ data, typesPresent }: Props) {
           <span key={type} className="flex items-center gap-1 text-xs text-subtle">
             <span
               className="h-2 w-2 rounded-full"
-              style={{ backgroundColor: ACTIVITY_TYPE_CONFIG[type].chartColor }}
+              style={{ backgroundColor: activityTypeStyle(type).chartColor }}
             />
             {t.activityTypes[type]}
           </span>

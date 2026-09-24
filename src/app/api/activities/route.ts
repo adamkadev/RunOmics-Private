@@ -1,16 +1,15 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { queryActivities, type ActivitySortKey, type ActivitySortOrder } from '@/application/usecases/QueryActivities'
-import { ACTIVITY_TYPE_CONFIG, type ActivityType } from '@/domain/activity/types'
+import { isActivityType } from '@/domain/activity/types'
 
 const SORT_KEYS: ActivitySortKey[] = ['date', 'distance', 'duration', 'pace', 'avgHr']
-const ACTIVITY_TYPES = Object.keys(ACTIVITY_TYPE_CONFIG) as ActivityType[]
 const MAX_LIMIT = 50
 
 export async function GET(req: NextRequest) {
   const params = req.nextUrl.searchParams
 
   const typeParam = params.get('type')
-  const type = ACTIVITY_TYPES.includes(typeParam as ActivityType) ? (typeParam as ActivityType) : null
+  const type = isActivityType(typeParam) ? typeParam : null
 
   const sortByParam = params.get('sortBy')
   const sortBy: ActivitySortKey = SORT_KEYS.includes(sortByParam as ActivitySortKey)

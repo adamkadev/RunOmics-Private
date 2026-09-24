@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
-import type { ActivitySummary, ActivityType, PlannedWorkout } from '@/domain/activity/types'
+import { activityTypeStyle } from '@/components/activity/activityTypeStyle'
+import { ACTIVITY_TYPES, type ActivitySummary, type ActivityType, type PlannedWorkout } from '@/domain/activity/types'
 import { round } from '@/lib/math'
 import { formatDate } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
@@ -92,7 +92,7 @@ function CellValue({ planned, ranKm, hasActs }: { planned: PlannedInfo | null; r
       {planned && (
         <span
           className="shrink-0 rounded-full"
-          style={{ width: '3px', background: ACTIVITY_TYPE_CONFIG[planned.type].chartColor }}
+          style={{ width: '3px', background: activityTypeStyle(planned.type).chartColor }}
         />
       )}
       <div className="flex min-w-0 flex-col justify-center" style={{ lineHeight: 1.15 }}>
@@ -225,8 +225,7 @@ export function MonthView({
     const rows: (DayCellData | null)[][] = []
     for (let i = 0; i < 6; i++) rows.push(cells.slice(i * 7, i * 7 + 7))
 
-    const registryOrder = Object.keys(ACTIVITY_TYPE_CONFIG)
-    const legendTypes = [...plannedTypes].sort((a, b) => registryOrder.indexOf(a) - registryOrder.indexOf(b))
+    const legendTypes = [...plannedTypes].sort((a, b) => ACTIVITY_TYPES.indexOf(a) - ACTIVITY_TYPES.indexOf(b))
 
     return { rows, legendTypes, sessionCount, ranKm: round(ranKm, 0), plannedKm: round(plannedKm, 0) }
   }, [year, month, byDate, byDatePlanned, byDateCoach])
@@ -354,7 +353,7 @@ export function MonthView({
           <div className="flex flex-wrap items-center gap-3 border-b border-foreground/[0.08] pb-2 text-xs text-subtle">
             {legendTypes.map((type) => (
               <span key={type} className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full" style={{ background: ACTIVITY_TYPE_CONFIG[type].chartColor }} />
+                <span className="h-2 w-2 rounded-full" style={{ background: activityTypeStyle(type).chartColor }} />
                 {t.activityTypes[type]}
               </span>
             ))}

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Globe, Maximize, Minimize } from "lucide-react";
 import type { MapShellData } from "@/application/usecases/GetAllRoutes";
-import type { ActivityType } from "@/domain/activity/types";
+import { ACTIVITY_TYPES, type ActivityType } from "@/domain/activity/types";
 import { reverseGeocode } from "@/lib/reverseGeocode";
 import { t } from "@/i18n";
 import { useSetFullscreenChromeHidden } from "@/components/layout/FullscreenChromeContext";
@@ -22,16 +22,6 @@ import {
   matchesFilters,
   type HeatFilters,
 } from "./mapUtils";
-
-const TYPE_ORDER: ActivityType[] = [
-  "Sprint",
-  "Anaerobic",
-  "VO2Max",
-  "Threshold",
-  "Tempo",
-  "Base",
-  "Race",
-];
 
 interface Props {
   data: MapShellData;
@@ -83,7 +73,7 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
 
   const availableTypes = useMemo(() => {
     const present = new Set(routeMeta.map((m) => m.type));
-    return TYPE_ORDER.filter((ty) => present.has(ty));
+    return ACTIVITY_TYPES.filter((ty) => present.has(ty));
   }, [routeMeta]);
 
   const clusterStats = useMemo(

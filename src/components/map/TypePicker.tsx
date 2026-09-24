@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import type { ActivityType } from "@/domain/activity/types";
-import { ACTIVITY_TYPE_CONFIG } from "@/domain/activity/types";
+import { activityTypeStyle } from "@/components/activity/activityTypeStyle";
 import { t } from "@/i18n";
 import {
   MAP_CHIP_ACTIVE,
@@ -23,7 +23,7 @@ function Dot({ type }: { type: ActivityType }) {
   return (
     <span
       className="h-2 w-2 shrink-0 rounded-full"
-      style={{ backgroundColor: ACTIVITY_TYPE_CONFIG[type].chartColor }}
+      style={{ backgroundColor: activityTypeStyle(type).chartColor }}
       aria-hidden
     />
   );

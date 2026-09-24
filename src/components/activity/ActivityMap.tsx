@@ -7,7 +7,7 @@ import type { LngLatBounds, Map as MapLibreMap, Marker } from 'maplibre-gl'
 import { cn } from '@/lib/utils'
 import { maptilerStyleUrl } from '@/lib/maptiler'
 import { CHART_COLORS, MAP_COLORS, PACE_ROUTE_COLORS } from '@/lib/colors'
-import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
+import { activityTypeStyle } from '@/components/activity/activityTypeStyle'
 import type { ActivityType, ActivityWeather } from '@/domain/activity/types'
 import type { ShoeTag } from '@/domain/shoe/types'
 import { ShoePairTag } from '@/components/activities/ShoePairTag'
@@ -248,7 +248,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
               <span
                 aria-hidden
                 className="h-[7px] w-[7px] shrink-0 rounded-full"
-                style={{ background: ACTIVITY_TYPE_CONFIG[activityType].chartColor }}
+                style={{ background: activityTypeStyle(activityType).chartColor }}
               />
               {t.activityTypes[activityType]}
             </span>

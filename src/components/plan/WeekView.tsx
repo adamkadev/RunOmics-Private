@@ -5,7 +5,8 @@ import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import { SectionDivider } from '@/components/ui/SectionLabel'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { ACTIVITY_TYPE_CONFIG, type ActivitySummary, type ActivityType, type PlannedWorkout, type ScheduledTimeOfDay } from '@/domain/activity/types'
+import type { ActivitySummary, ActivityType, PlannedWorkout, ScheduledTimeOfDay } from '@/domain/activity/types'
+import { activityTypeStyle } from '@/components/activity/activityTypeStyle'
 import type { HrBounds } from '@/domain/training/trimp'
 import { summarizeWeek, summarizePlannedWeek } from '@/domain/training/weekSummary'
 import { weekPlanPhase } from '@/domain/training/weekPlanPhase'
@@ -39,7 +40,7 @@ import {
 } from './planWorkoutView'
 
 // The strip's second variable (after bar height = km) is activity type,
-// drawn as hue - the same ACTIVITY_TYPE_CONFIG the "this week" bullets, the
+// drawn as hue - the same ACTIVITY_TYPE_STYLE the "this week" bullets, the
 // session card and Activity detail already read from, so a colour means the
 // same thing everywhere it appears rather than each surface inventing its
 // own bucketing.
@@ -73,7 +74,7 @@ interface Day {
   acts: ActivitySummary[]
 }
 
-// Hardest-first, matching ACTIVITY_TYPE_CONFIG's own declaration order - a
+// Hardest-first, matching ACTIVITY_TYPES' own declaration order - a
 // day with more than one logged activity (or a race day) resolves to
 // whichever one is hardest, not just whichever came first.
 const RAMP_ORDER: ActivityType[] = ['Race', 'Sprint', 'Anaerobic', 'VO2Max', 'Threshold', 'Tempo', 'Base']
@@ -234,7 +235,7 @@ interface WeekRowItem {
 
 // One row per session, divider-separated like the Activities list rather than
 // a stack of two-line cards - three sessions used to cost ~190px and their
-// distances never lined up. The dot reads ACTIVITY_TYPE_CONFIG, the same map
+// distances never lined up. The dot reads ACTIVITY_TYPE_STYLE, the same map
 // the strip's bars use, so the two read as one vocabulary.
 function WeekSessionRow({ workout, onTap, isLast }: { workout: WeekRowItem; onTap: () => void; isLast: boolean }) {
   const weekday = WEEKDAY_SHORT_INDEX[new Date(workout.date + 'T00:00:00').getDay()]
@@ -254,12 +255,12 @@ function WeekSessionRow({ workout, onTap, isLast }: { workout: WeekRowItem; onTa
           style={{
             width: '8px',
             height: '8px',
-            background: workout.type ? ACTIVITY_TYPE_CONFIG[workout.type].chartColor : 'var(--subtle-2)',
+            background: workout.type ? activityTypeStyle(workout.type).chartColor : 'var(--subtle-2)',
             // Same divergence the bar's cap shows: the fill is what was
             // recorded, this ring is what was planned - without it, a title
             // that names one thing and a dot that colours another look like
             // a bug instead of the known Garmin-mismatch case.
-            boxShadow: workout.plannedType ? `0 0 0 1.5px ${ACTIVITY_TYPE_CONFIG[workout.plannedType].chartColor}` : undefined,
+            boxShadow: workout.plannedType ? `0 0 0 1.5px ${activityTypeStyle(workout.plannedType).chartColor}` : undefined,
           }}
         />
         <span className="truncate font-bold text-foreground" style={{ fontSize: '15px' }}>
@@ -274,7 +275,7 @@ function WeekSessionRow({ workout, onTap, isLast }: { workout: WeekRowItem; onTa
 }
 
 // The strip is the tab's navigation and carries two variables: bar height is
-// planned/done km, hue is the day's activity type (ACTIVITY_TYPE_CONFIG) -
+// planned/done km, hue is the day's activity type (ACTIVITY_TYPE_STYLE) -
 // so a week's shape (two hard days back to back, a base week that quietly
 // turned into a threshold week) reads at a glance instead of needing the
 // detail pane open. Selection can no longer be "the green one" now that
@@ -318,8 +319,8 @@ function WeekStrip({
         const isRest = km === null
         const isSelected = d.date === selectedDate
         const isToday = d.date === today
-        const hue = resolved ? ACTIVITY_TYPE_CONFIG[resolved.type].chartColor : ACTIVITY_TYPE_CONFIG.Base.chartColor
-        const plannedHue = resolved?.planned ? ACTIVITY_TYPE_CONFIG[resolved.planned].chartColor : null
+        const hue = activityTypeStyle(resolved?.type).chartColor
+        const plannedHue = resolved?.planned ? activityTypeStyle(resolved.planned).chartColor : null
         // The tallest day in the week fills the track; a rest day gets a
         // fixed stub instead of a scaled height, so it reads as an absence
         // rather than as the smallest session.

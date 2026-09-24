@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ActivitySummary } from '@/domain/activity/types'
+import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
 import { t } from '@/i18n'
 import { ActivityListClient } from '../ActivityListClient'
 
@@ -74,3 +74,23 @@ describe('the current week on /activities', () => {
     expect(screen.getByText('Run c')).toBeInTheDocument()
   })
 })
+
+describe('a type this build does not know', () => {
+  beforeEach(() => {
+    sessionStorage.clear()
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    vi.setSystemTime(NOW)
+  })
+  afterEach(() => vi.useRealTimers())
+
+  // Activity JSON is cast, not parsed, so a new classifier type reaches the
+  // list unchecked. It used to throw on the colour lookup and take the page
+  // down; it draws as Base instead.
+  it('still draws the week and the run', () => {
+    renderList([{ ...run('h', '2026-09-22', 9), type: 'HillRepeats' as ActivityType }])
+
+    expect(screen.getByText('Run h')).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: '1 hillrepeats' })).toBeInTheDocument()
+  })
+})
+
