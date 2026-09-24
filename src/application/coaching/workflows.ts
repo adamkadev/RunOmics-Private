@@ -242,12 +242,20 @@ function samePrescription(draft: WorkoutPrescription, prior: WorkoutPrescription
 function normalizeWeeks(
   weeks: TrainingWeek[],
   plan: CoachingPlan,
+  effectiveDate: string,
   trigger: CoachingProvenance['trigger'],
   createdAt: string,
   decisionId: string,
   id: () => string,
 ): TrainingWeek[] {
-  const existing = new Map(plan.weeks.flatMap((week) => week.workouts).map((workout) => [workout.id, workout]))
+  // Identity is the model's claim, so it is honoured only where it can be
+  // true: a prescription in the future being replaced. An id naming one that
+  // is already past is not a continuation of it - the past is fixed - and the
+  // draft is a new prescription with an id of our own.
+  const existing = new Map(plan.weeks
+    .flatMap((week) => week.workouts)
+    .filter((workout) => workout.date >= effectiveDate)
+    .map((workout) => [workout.id, workout]))
 
   return weeks.map((week) => {
     const priorWeek = plan.weeks.find((candidate) => candidate.startDate === week.startDate)
@@ -286,7 +294,7 @@ function materializeChanges(
       kind: 'replace_future',
       effectiveDate,
       beforeWeeks: getFutureSnapshot(plan, effectiveDate),
-      afterWeeks: normalizeWeeks(replacement.weeks, plan, trigger, createdAt, decisionId, id),
+      afterWeeks: normalizeWeeks(replacement.weeks, plan, effectiveDate, trigger, createdAt, decisionId, id),
     }]
   }
 

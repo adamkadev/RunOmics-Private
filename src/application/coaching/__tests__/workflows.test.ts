@@ -835,6 +835,37 @@ describe('coaching workflows', () => {
     expect(repository.state?.lastWeeklyReviewAt).toBe(proposal.createdAt)
   })
 
+  it('never lets a model-supplied id rewrite a prescription outside the future it replaces', async () => {
+    // Replanning from Thursday, the model reuses the id of Wednesday's session -
+    // already run - for a new one on Saturday. Trusted, it silently replaced
+    // the past prescription the evaluations point at.
+    const repository = new MemoryRepository()
+    repository.plan = plan()
+    const [thisWeek, nextWeek] = repository.plan.weeks
+    const past = thisWeek!.workouts[0]!
+    const collision = { ...past, date: '2026-09-12', title: 'Threshold, moved to Saturday' }
+    const advisor: CoachingAdvisor = {
+      bootstrap: async () => { throw new Error('not called') },
+      evaluateActivity: async () => { throw new Error('not called') },
+      reviewWeek: async () => ({
+        outcome: 'REPLAN', reasonCodes: ['MISSED_SESSION'], summary: 'Move the threshold session.', evidence: [],
+        changes: [{ kind: 'replace_future', effectiveDate: '2026-09-10', weeks: [{ ...thisWeek!, workouts: [collision] }, nextWeek!] }],
+      }),
+    }
+    const context = buildCoachingContext(contextInput(repository.plan), '2026-09-10')
+
+    const proposal = await createWeeklyReviewProposal(context, { repository, advisor, id: ids() })
+    const result = applyCoachingProposal(proposal, repository, coachingContextHash(context))
+    const workouts = result.weeks.flatMap((week) => week.workouts)
+
+    expect(workouts.find((workout) => workout.id === past.id)).toEqual(past)
+    expect(workouts.find((workout) => workout.date === '2026-09-12')).toMatchObject({
+      id: expect.stringMatching(/^generated-/),
+      revision: 1,
+      status: 'prescribed',
+    })
+  })
+
   it('keeps the macrocycle anchored across a weekly-review replan', async () => {
     const repository = new MemoryRepository()
     repository.plan = { ...plan(), macrocycleStartDate: '2026-08-03' }
@@ -941,6 +972,30 @@ describe('holding a change to the rules a new block answers to', () => {
 
     await expect(createWeeklyReviewProposal(context, { repository, advisor, id: ids(), now }))
       .rejects.toThrow(/standalone strides are not supported/)
+  })
+
+  it('refuses an adjustment naming a prescription the plan does not have', async () => {
+    const easy = preferred().weeks[1]!.workouts[0]!
+    const { repository, advisor, context } = adjusting([{ kind: 'upsert_workout', workoutId: 'invented-id', workout: easy }])
+
+    await expect(createPostActivityProposal(context, latestActivity, { repository, advisor, id: ids(), now }))
+      .rejects.toThrow(/Prescription not found: invented-id/)
+  })
+
+  it('gives a new session an id of its own, whatever id the model wrote on it', async () => {
+    // A new Wednesday session carrying the id of Tuesday's run. Were that id
+    // trusted, Tuesday's prescription would quietly become Wednesday's.
+    const easy = preferred().weeks[1]!.workouts[0]!
+    const added = { ...easy, date: '2026-09-16', title: 'Added easy run', blocks: [{ kind: 'effort' as const, target: { distanceMeters: 3_000 } }] }
+    const { repository, advisor, context } = adjusting([{ kind: 'upsert_workout', workout: added }])
+
+    const proposal = await createPostActivityProposal(context, latestActivity, { repository, advisor, id: ids(), now })
+    const result = applyCoachingProposal(proposal, repository, coachingContextHash(context))
+
+    expect(result.weeks[1]!.workouts).toEqual([
+      easy,
+      expect.objectContaining({ id: expect.stringMatching(/^generated-/), date: '2026-09-16', revision: 1, status: 'prescribed' }),
+    ])
   })
 
   it('still lets an adjustment cancel a run', async () => {
