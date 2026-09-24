@@ -437,6 +437,18 @@ describe('partial failure recovery', () => {
     expect(operations[0]!.action).toBe('replace')
     expect(operations[0]!.reason).toBe('Prescription changed')
   })
+
+  it('replaces an unchanged prescription whose last push Garmin could not confirm', () => {
+    const prescribed = workout({ id: 'a', date: '2026-09-08' })
+    const synced = syncedState([{ id: 'a', date: '2026-09-08', workout: prescribed }])
+    const state: GarminSyncState = { ...synced, entries: [{ ...synced.entries[0]!, status: 'unverified' }] }
+
+    const operations = build(plan([prescribed]), state).operations
+
+    expect(operations[0]!.action).toBe('replace')
+    expect(operations[0]!.reason).toBe('Garmin did not confirm the last push')
+    expect(operations[0]!.existing?.garminWorkoutScheduleId).toBe('8000')
+  })
 })
 
 describe('preview rendering', () => {

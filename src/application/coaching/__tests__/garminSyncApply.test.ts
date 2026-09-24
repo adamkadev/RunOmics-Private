@@ -340,6 +340,35 @@ describe('verification', () => {
     expect(verified.results[0]!.outcome).toBe('failed')
     expect(verified.results[0]!.error).toContain('not found on Garmin')
   })
+
+  it('records the failure in the state, so the next run redoes the push instead of keeping it', async () => {
+    const gateway = new FakeGarmin()
+    const workouts = [workout({ id: 'a', date: '2026-09-08' })]
+    const applied = await apply(build(plan(workouts), null), null, gateway)
+    await gateway.deleteWorkout(applied.results[0]!.garminWorkoutId as string)
+
+    const verified = await verifyGarminSync(applied, gateway)
+
+    expect(verified.state.entries).toEqual([
+      expect.objectContaining({ prescriptionId: 'a', garminWorkoutId: '1001', status: 'unverified' }),
+    ])
+
+    const next = build(plan(workouts), verified.state)
+    expect(next.operations.map((operation) => operation.action)).toEqual(['replace'])
+
+    const redone = await verifyGarminSync(await apply(next, verified.state, gateway), gateway)
+    expect(redone.results[0]).toMatchObject({ outcome: 'applied', verified: true })
+    expect(redone.state.entries).toEqual([expect.objectContaining({ status: 'scheduled', garminWorkoutId: '1003' })])
+  })
+
+  it('leaves the state alone for every push Garmin confirms', async () => {
+    const gateway = new FakeGarmin()
+    const applied = await apply(build(plan([workout({ id: 'a', date: '2026-09-08' })]), null), null, gateway)
+
+    const verified = await verifyGarminSync(applied, gateway)
+
+    expect(verified.state).toEqual(applied.state)
+  })
 })
 
 describe('result rendering', () => {

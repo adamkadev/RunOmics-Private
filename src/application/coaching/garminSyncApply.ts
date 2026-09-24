@@ -223,12 +223,14 @@ export async function verifyGarminSync(
     }
   }
 
+  const unconfirmed = new Set<string>()
   const results = await Promise.all(
     report.results.map(async (result) => {
       if (!applied.includes(result) || !result.garminWorkoutId) return result
       const workout = await gateway.getWorkout(result.garminWorkoutId)
       const onDate = scheduled.get(result.garminWorkoutId) === result.operation.date
       if (workout && onDate) return { ...result, verified: true }
+      if (result.operation.prescriptionId) unconfirmed.add(result.operation.prescriptionId)
       return {
         ...result,
         outcome: 'failed' as const,
@@ -237,7 +239,12 @@ export async function verifyGarminSync(
     }),
   )
 
-  return { ...report, results }
+  // A failed verification that left the entry "scheduled" would read as done:
+  // the next run would keep it and the athlete would never get the session.
+  const entries = report.state.entries.map((entry) =>
+    unconfirmed.has(entry.prescriptionId) ? { ...entry, status: 'unverified' as const } : entry,
+  )
+  return { ...report, results, state: { ...report.state, entries } }
 }
 
 export function formatGarminSyncResults(report: GarminSyncReport): string {

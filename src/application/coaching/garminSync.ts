@@ -133,6 +133,12 @@ function operationFor(
     }
   }
 
+  // From scratch rather than a retry: what Garmin holds is unknown, and the
+  // replace removes whatever the recorded ids still name before pushing.
+  if (existing.status === 'unverified') {
+    return { ...base, action: 'replace', payload, contentHash, reason: 'Garmin did not confirm the last push' }
+  }
+
   if (existing.status === 'workout_created' || !existing.garminWorkoutScheduleId) {
     return { ...base, action: 'schedule', payload, contentHash, reason: 'Retrying a schedule that failed earlier' }
   }

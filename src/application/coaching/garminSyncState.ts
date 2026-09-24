@@ -3,7 +3,14 @@ import type { GarminWorkoutPayload } from './garminWorkoutMapping'
 
 export const GARMIN_SYNC_SCHEMA_VERSION = 1 as const
 
-export type GarminSyncEntryStatus = 'scheduled' | 'workout_created'
+/**
+ * What RunOmics knows of its workout on Garmin: on the calendar, in the library
+ * but not on the calendar, or pushed but not where Garmin was asked to put it
+ * when verified. The ids stay in every case - they name what to clean up.
+ */
+export type GarminSyncEntryStatus = 'scheduled' | 'workout_created' | 'unverified'
+
+const STATUSES: readonly GarminSyncEntryStatus[] = ['scheduled', 'workout_created', 'unverified']
 
 export interface GarminSyncEntry {
   prescriptionId: string
@@ -68,7 +75,7 @@ function parseEntry(raw: unknown, label: string): GarminSyncEntry {
   for (const key of ['prescriptionId', 'date', 'contentHash', 'garminWorkoutId'] as const) {
     if (typeof entry[key] !== 'string' || !entry[key]) throw new Error(`Garmin sync entry${label} is missing ${key}`)
   }
-  if (entry.status !== 'scheduled' && entry.status !== 'workout_created') {
+  if (!entry.status || !STATUSES.includes(entry.status)) {
     throw new Error(`Garmin sync entry${label} has an unknown status: ${String(entry.status)}`)
   }
   return {

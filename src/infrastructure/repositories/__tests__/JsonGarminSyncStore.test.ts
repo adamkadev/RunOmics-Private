@@ -73,6 +73,33 @@ describe('reading and writing', () => {
     expect(store.read()).toEqual(state())
   })
 
+  it('still reads a mapping written before unverified pushes were recorded', () => {
+    const root = workspace()
+    const store = new JsonGarminSyncStore(root)
+    const written = {
+      schemaVersion: 1,
+      planId: 'plan-1',
+      updatedAt: '2026-09-06T12:00:00.000Z',
+      entries: [
+        { prescriptionId: 'w1', date: '2026-09-08', contentHash: 'a1', garminWorkoutId: '11', garminWorkoutScheduleId: '21', status: 'scheduled', lastSyncedAt: '2026-09-06T12:00:00.000Z' },
+        { prescriptionId: 'w2', date: '2026-09-09', contentHash: 'b2', garminWorkoutId: '12', garminWorkoutScheduleId: null, status: 'workout_created', lastSyncedAt: '2026-09-06T12:00:00.000Z' },
+      ],
+    }
+    fs.mkdirSync(path.dirname(store.location), { recursive: true })
+    fs.writeFileSync(store.location, JSON.stringify(written, null, 2))
+
+    expect(store.read()).toEqual(written)
+  })
+
+  it('round-trips a push Garmin could not confirm', () => {
+    const store = new JsonGarminSyncStore(workspace())
+    const unverified: GarminSyncState = { ...state(), entries: [{ ...state().entries[0]!, status: 'unverified' }] }
+
+    store.write(unverified)
+
+    expect(store.read()).toEqual(unverified)
+  })
+
   it('creates the coaching directory on first write', () => {
     const root = workspace()
     const store = new JsonGarminSyncStore(root)
