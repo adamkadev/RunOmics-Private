@@ -29,7 +29,10 @@ const boundaries = [
       message: 'The domain is pure: move the type or the logic into src/domain instead of reaching up for it.',
     },
     {
-      group: ['react', 'react-dom', 'next', 'next/**', 'firebase', 'firebase/**', 'firebase-admin', 'firebase-admin/**', ...SERVER_ONLY_LIB, '@/lib/use*'],
+      group: [
+        'react', 'react-dom', 'next', 'next/**', 'lucide-react', 'recharts', 'maplibre-gl',
+        'firebase', 'firebase/**', 'firebase-admin', 'firebase-admin/**', ...SERVER_ONLY_LIB, '@/lib/use*',
+      ],
       message: 'The domain may not depend on a UI framework, an SDK or a server adapter.',
     },
   ]),

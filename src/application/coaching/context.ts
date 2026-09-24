@@ -1,3 +1,4 @@
+import 'server-only'
 import { trainingHistory, isRunningActivity, type TrainingHistory } from '@/domain/training/trainingHistory'
 import { createHash } from 'crypto'
 import type { Activity } from '@/domain/activity/types'
