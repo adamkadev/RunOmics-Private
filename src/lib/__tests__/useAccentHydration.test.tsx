@@ -1,0 +1,28 @@
+import { afterEach, describe, expect, it } from 'vitest'
+import { ACCENT_STORAGE_KEY } from '../accent'
+import { useAccent } from '../useAccent'
+import { hydrateOver } from './hydrateAcrossMidnight'
+
+function Accent() {
+  const accent = useAccent()
+  return <span>{accent.kind === 'curated' ? accent.id : `custom ${accent.hue}`}</span>
+}
+
+describe('useAccent', () => {
+  afterEach(() => {
+    localStorage.clear()
+    document.body.innerHTML = ''
+  })
+
+  // The server has no localStorage, so its HTML carries the default accent.
+  // Reading storage in a state initializer drew the stored one on hydration.
+  it('hydrates on the default, then takes the accent this browser stored', async () => {
+    const { html, container, recoverableErrors } = await hydrateOver(<Accent />, () =>
+      localStorage.setItem(ACCENT_STORAGE_KEY, 'performance')
+    )
+
+    expect(html).toContain('nature')
+    expect(recoverableErrors).toEqual([])
+    expect(container.textContent).toBe('performance')
+  })
+})
