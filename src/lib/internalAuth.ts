@@ -33,13 +33,28 @@ function isRateLimited(ip: string, now = Date.now()): boolean {
   return entry.count > RATE_LIMIT_MAX
 }
 
+export type RejectionReason = 'unauthorized' | 'rate-limited' | 'forbidden' | 'not-configured'
+
+/**
+ * One line per refused request: which route and why, never who or with what.
+ * No header value - the secret, a token, the forwarded IP - reaches the log.
+ * A run of these is what a guessed secret, a stale one left in a workflow or
+ * the Shortcut, or a deployment missing its config looks like, and none of
+ * that used to leave a trace.
+ */
+export function logRejectedRequest(req: NextRequest, reason: RejectionReason): void {
+  console.warn(JSON.stringify({ level: 'warn', event: 'request-rejected', route: req.nextUrl.pathname, reason }))
+}
+
 export function guardInternalRequest(req: NextRequest): NextResponse | null {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
 
   if (isRateLimited(ip)) {
+    logRejectedRequest(req, 'rate-limited')
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
   if (!isAuthorizedInternalRequest(req)) {
+    logRejectedRequest(req, 'unauthorized')
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   return null

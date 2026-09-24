@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { generateInsight, generateStructuredJson } from '@/lib/gemini'
 
-// Both entry points retry a transient failure; tests skip the real waiting.
+// generateStructuredJson retries a transient failure; tests skip the real waiting.
 const nap = () => Promise.resolve()
 
 const REQUEST = {
@@ -116,15 +116,25 @@ describe('generateInsight', () => {
   it('reports the status and body when the API errors', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 429, text: async () => 'quota' }))
 
-    expect(await generateInsight(REQUEST, nap)).toEqual({ ok: false, reason: 'http 429: quota' })
+    expect(await generateInsight(REQUEST)).toEqual({ ok: false, reason: 'http 429: quota' })
   })
 
   it('reports the failure rather than throwing when the network fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
 
-    const result = await generateInsight(REQUEST, nap)
+    const result = await generateInsight(REQUEST)
     expect(result.ok).toBe(false)
     expect(result.ok === false && result.reason).toContain('offline')
+  })
+
+  it('sends one request per call, however transient the failure: the model pool is the retry', async () => {
+    // The insight pass reserves a model's daily budget one request at a time.
+    // A retry in here would spend two more requests on that one reservation.
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: false, status: 503, text: async () => 'high demand' })
+    vi.stubGlobal('fetch', fetchSpy)
+
+    expect(await generateInsight(REQUEST)).toEqual({ ok: false, reason: 'http 503: high demand' })
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
   })
 })
 

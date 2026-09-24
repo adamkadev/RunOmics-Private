@@ -23,40 +23,68 @@ const CERTS_URL =
 const ISSUER_PREFIX = 'https://securetoken.google.com/'
 
 interface CachedCerts {
-  certs: Record<string, string>
+  certs: Record<string, unknown>
   expiresAt: number
 }
 
 const DEFAULT_CERT_TTL_MS = 60 * 60 * 1000
 
+/**
+ * The key id comes from the token, so anyone can send one Google never
+ * issued. Without a floor, each forged kid cost an outbound call; with it, a
+ * burst of them costs at most one a minute, and a real rotation still lands
+ * on the first unknown kid after that minute.
+ */
+const MIN_REFETCH_INTERVAL_MS = 60_000
+
 let cached: CachedCerts | null = null
+let inFlight: Promise<CachedCerts> | null = null
+// When the last fetch started, whether or not it succeeded: a failing
+// endpoint must not turn the floor back into one call per forged kid.
+let lastFetchAt = Number.NEGATIVE_INFINITY
 
 function cacheTtlMs(response: Response): number {
   const maxAge = response.headers.get('cache-control')?.match(/max-age=(\d+)/)?.[1]
   return maxAge ? Number(maxAge) * 1000 : DEFAULT_CERT_TTL_MS
 }
 
-async function refreshCerts(now: number): Promise<Record<string, string>> {
+async function downloadCerts(now: number): Promise<CachedCerts> {
   const response = await fetch(CERTS_URL)
   if (!response.ok) throw new Error(`fetching Google certs failed with ${response.status}`)
 
-  const certs = (await response.json()) as Record<string, string>
+  const certs = (await response.json()) as Record<string, unknown>
   cached = { certs, expiresAt: now + cacheTtlMs(response) }
-  return certs
+  return cached
+}
+
+/** Requests that need the certs at the same moment wait on one fetch rather than each sending their own. */
+function refreshCerts(now: number): Promise<CachedCerts> {
+  if (!inFlight) {
+    lastFetchAt = now
+    inFlight = downloadCerts(now).finally(() => {
+      inFlight = null
+    })
+  }
+  return inFlight
+}
+
+/** Only a PEM string Google itself listed: `certs.constructor` is not a certificate. */
+function certIn(certs: Record<string, unknown>, kid: string): string | undefined {
+  const cert = Object.hasOwn(certs, kid) ? certs[kid] : undefined
+  return typeof cert === 'string' ? cert : undefined
 }
 
 /**
  * Google rotates signing keys with an overlap, so a token can arrive signed by
- * one the cached map predates. Only a cached miss is worth a second look.
+ * one the cached map predates. A miss is worth a second look only once the
+ * last fetch is a minute old: before that, the map in hand is the answer.
  */
 async function certFor(kid: string, now: number): Promise<string | undefined> {
-  const cachedCerts = cached && cached.expiresAt > now ? cached.certs : null
-  const certs = cachedCerts ?? (await refreshCerts(now))
-  if (certs[kid]) return certs[kid]
+  const current = cached && cached.expiresAt > now ? cached : await refreshCerts(now)
+  const cert = certIn(current.certs, kid)
+  if (cert !== undefined || now - lastFetchAt < MIN_REFETCH_INTERVAL_MS) return cert
 
-  // A miss against the cache may just be a key newer than it. A miss against a
-  // map we only just fetched is the real answer.
-  return cachedCerts ? (await refreshCerts(now))[kid] : undefined
+  return certIn((await refreshCerts(now)).certs, kid)
 }
 
 export interface FirebaseIdTokenClaims extends jwt.JwtPayload {
@@ -83,11 +111,21 @@ export async function verifyFirebaseIdToken(
   })
   if (typeof payload === 'string' || !payload.sub) throw new Error('token payload missing subject')
 
-  // jsonwebtoken checks exp for us; iat in the future is the one Firebase asks
-  // for that it does not, and is otherwise a silent way to smuggle a token
-  // that hasn't started yet past a check that only looks at expiry.
-  if (typeof payload.iat === 'number' && payload.iat > Date.now() / 1000) {
+  // jsonwebtoken checks exp only when the token carries one, so a token
+  // without it would never expire. Firebase always sets it.
+  if (typeof payload.exp !== 'number') throw new Error('token has no expiry')
+
+  // iat and auth_time in the future are the two Firebase asks for that
+  // jsonwebtoken does not check, and either is otherwise a silent way to
+  // smuggle a token that hasn't started yet past a check that only looks at
+  // expiry. Same comparison for both: auth_time never follows iat in a real
+  // token, so this cannot turn away one the iat check lets through.
+  const nowSeconds = Date.now() / 1000
+  if (typeof payload.iat === 'number' && payload.iat > nowSeconds) {
     throw new Error('token issued in the future')
+  }
+  if (payload.auth_time !== undefined && !(typeof payload.auth_time === 'number' && payload.auth_time <= nowSeconds)) {
+    throw new Error('token authenticated in the future')
   }
 
   return payload as FirebaseIdTokenClaims
