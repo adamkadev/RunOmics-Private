@@ -5,7 +5,8 @@ import { Timer, ChevronRight } from 'lucide-react'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { formatDuration, formatClock } from '@/lib/formatters'
 import { t } from '@/i18n'
-import type { Activity, ActivitySplit, SplitLap } from '@/domain/activity/types'
+import type { ActivitySplit, SplitLap } from '@/domain/activity/types'
+import type { ActivityDetailView } from './activityViews'
 import { kmSplitsFromSamples, type KmSplit } from '@/domain/activity/kmSplits'
 import { repSet } from '@/domain/activity/repSet'
 import { IntervalSet } from './IntervalSet'
@@ -46,10 +47,10 @@ const PER_KM_ROW_NO_HR = 'grid w-full items-center gap-x-1.5 grid-cols-[1fr_3.5r
 const PER_KM_ROW_HR = 'grid w-full items-center gap-x-1.5 grid-cols-[1fr_3.5rem_3rem]'
 
 interface Props {
-  activity: Activity
+  activity: ActivityDetailView
 }
 
-function PerKmSplits({ activity, splits }: { activity: Activity; splits: KmSplit[] }) {
+function PerKmSplits({ activity, splits }: { activity: ActivityDetailView; splits: KmSplit[] }) {
   const showHr = splits.some((s) => s.avgHr !== null)
   const rowCls = showHr ? PER_KM_ROW_HR : PER_KM_ROW_NO_HR
   const totalDistanceKm = splits.reduce((s, sp) => s + sp.distanceKm, 0)

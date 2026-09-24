@@ -1,4 +1,4 @@
-import type { Activity } from '@/domain/activity/types'
+import type { ActivityDetailView } from './activityViews'
 import type { BaselineRange, DynamicsBaseline } from '@/application/usecases/GetDynamicsBaseline'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartCardHead } from '@/components/ui/ChartCard'
@@ -21,7 +21,7 @@ interface Metric {
 }
 
 interface Props {
-  activity: Activity
+  activity: ActivityDetailView
   baseline: DynamicsBaseline | null
 }
 

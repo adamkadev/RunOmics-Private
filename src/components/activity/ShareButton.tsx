@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import dynamic from 'next/dynamic'
 import { Share } from 'lucide-react'
-import type { Activity } from '@/domain/activity/types'
+import type { ShareActivity } from '@/lib/shareCardStats'
 import { t } from '@/i18n'
 
 // The modal brings the 800-line canvas renderer and the map snapshot code
@@ -11,7 +11,7 @@ import { t } from '@/i18n'
 const ShareCardModal = dynamic(() => import('./ShareCardModal').then((m) => m.ShareCardModal), { ssr: false })
 
 interface Props {
-  activity: Activity
+  activity: ShareActivity
 }
 
 export function ShareButton({ activity }: Props) {

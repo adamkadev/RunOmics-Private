@@ -1,4 +1,4 @@
-import type { Activity } from '@/domain/activity/types'
+import type { ActivityDetailView } from './activityViews'
 import { runVerdictTone } from '@/domain/activity/runVerdict'
 import { STATUS } from '@/lib/statusColors'
 import type { Insight } from '@/lib/gemini'
@@ -12,7 +12,7 @@ const TONE_TEXT_CLASS = {
 } as const
 
 interface Props {
-  activity: Activity
+  activity: ActivityDetailView
   aiVerdict: Insight | null
 }
 

@@ -1,4 +1,4 @@
-import type { Activity } from '@/domain/activity/types'
+import type { ShareActivity } from '@/lib/shareCardStats'
 import { formatClock, formatDistance, formatDuration } from '@/lib/formatters'
 import { shareCardTitle } from '@/lib/shareCardStats'
 import type { ShareDesign } from '@/lib/shareCardPalette'
@@ -30,7 +30,7 @@ const HERO_OPACITY: Partial<Record<ShareDesign, number>> = {
   aurora: 0.12, pulse: 0.10, terrain: 0.14, prism: 0.11,
 }
 
-function heroMetric(design: ShareDesign, activity: Activity): { value: string; unit: string } | null {
+function heroMetric(design: ShareDesign, activity: ShareActivity): { value: string; unit: string } | null {
   const distance = { value: activity.distanceKm.toFixed(1), unit: 'km' }
   switch (design) {
     case 'aurora':
@@ -53,7 +53,7 @@ function drawHeroMetric(
   dark: boolean,
   r: number, g: number, b: number,
   design: ShareDesign,
-  activity: Activity,
+  activity: ShareActivity,
 ) {
   const metric = heroMetric(design, activity)
   if (!metric) return
@@ -735,7 +735,7 @@ export function drawBranding(ctx: Ctx, W: number, _H: number, dark: boolean) {
   ctx.restore()
 }
 
-function formatShareDate(activity: Activity): string {
+function formatShareDate(activity: ShareActivity): string {
   const d = new Date(activity.date + 'T00:00:00')
   const day = d.toLocaleDateString(t.locale, { weekday: 'short' })
   const date = d.getDate()
@@ -743,7 +743,7 @@ function formatShareDate(activity: Activity): string {
   return `${day} ${date} ${month}`
 }
 
-export function drawDataOverlay(ctx: Ctx, W: number, H: number, dark: boolean, r: number, g: number, b: number, activity: Activity, design: ShareDesign) {
+export function drawDataOverlay(ctx: Ctx, W: number, H: number, dark: boolean, r: number, g: number, b: number, activity: ShareActivity, design: ShareDesign) {
   ctx.save()
   ctx.font = '800 18px Inter,system-ui,sans-serif'
   ctx.fillStyle = dark ? paper(0.92) : ink(0.88)

@@ -2,11 +2,10 @@
 
 import { useState } from 'react'
 import dynamic from 'next/dynamic'
-import type { Activity } from '@/domain/activity/types'
+import type { ActivityDetailView } from './activityViews'
 import { aerobicDecoupling } from '@/domain/activity/decoupling'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import type { DynamicsBaseline } from '@/application/usecases/GetDynamicsBaseline'
-import type { HrBounds } from '@/domain/training/trimp'
 import type { ShoeTag } from '@/domain/shoe/types'
 import { ActivityMapClient } from './ActivityMapClient'
 import { NoRouteMap } from './ActivityMap'
@@ -31,8 +30,7 @@ const ChartStack = dynamic(() => import('./ChartStack').then((m) => m.ChartStack
 const RunningDynamics = dynamic(() => import('./RunningDynamics').then((m) => m.RunningDynamics), { loading: tabLoading })
 
 interface Props {
-  activity: Activity
-  hrBounds?: HrBounds
+  activity: ActivityDetailView
   qualifiedEfforts?: QualifiedEffort[]
   aiVerdict: Insight | null
   shoe: ShoeTag | null
@@ -41,7 +39,7 @@ interface Props {
 
 type TabId = 'overview' | 'intervals' | 'charts' | 'dynamics'
 
-function buildPrimaryStats(activity: Activity): Metric[] {
+function buildPrimaryStats(activity: ActivityDetailView): Metric[] {
   // MetricGrid has had a dedicated unit slot all along; this call site put the
   // unit in the label instead, which is why duration was the one stat with none.
   const stats: Metric[] = [
