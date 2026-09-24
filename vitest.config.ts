@@ -59,8 +59,8 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
-      // All of src, the routes and adapters included. CI reports the totals,
-      // with no threshold yet (.github/workflows/ci.yml).
+      // All of src, the routes and adapters included. CI's weekly run reports
+      // the totals, with no threshold yet (.github/workflows/ci.yml).
       include: ['src/**/*.{ts,tsx}'],
       // Test helpers, and the locale tables, which are data.
       exclude: ['src/**/__tests__/**', 'src/i18n/{en,fr}.ts'],
