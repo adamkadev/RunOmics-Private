@@ -32,6 +32,8 @@ sys.path.insert(0, str(Path(__file__).parent))
 from garmin.client import GarminAPIError, GarminAuthError, GarminClient
 from garmin.retry import retry_transient
 from data_directory import get_data_dir
+from repository.atomic_write import write_text_atomic
+from repository.history_file import HistoryFileError, read_history
 
 _FUTURE_DAYS = 365
 _EVENT_LIMIT = 100
@@ -126,26 +128,26 @@ def write_upcoming_races(
 ) -> None:
     """Persist races while retaining local values only when Garmin omits them."""
 
-    selected_data_dir = data_dir or get_data_dir()
-    selected_data_dir.mkdir(parents=True, exist_ok=True)
+    out_path = (data_dir or get_data_dir()) / "upcoming_races.json"
 
-    out_path = selected_data_dir / "upcoming_races.json"
+    # A file that does not parse stops here rather than reading as empty: it
+    # holds the goals typed in by hand, and a rewrite from Garmin's list
+    # alone would throw them away.
+    stored = read_history(out_path).get("races", [])
+    if not isinstance(stored, list) or not all(isinstance(entry, dict) for entry in stored):
+        raise HistoryFileError(
+            f"{out_path}['races'] is not a list of races. Refusing to continue: "
+            f"the next step would overwrite this file."
+        )
 
     existing: dict[tuple[str, str], dict] = {}
 
-    if out_path.exists():
-        try:
-            raw = json.loads(out_path.read_text())
-
-            for entry in raw.get("races", []):
-                for key in _event_identity_keys(
-                    entry,
-                    include_fallback=True,
-                ):
-                    existing.setdefault(key, entry)
-
-        except (json.JSONDecodeError, OSError):
-            pass
+    for entry in stored:
+        for key in _event_identity_keys(
+            entry,
+            include_fallback=True,
+        ):
+            existing.setdefault(key, entry)
 
     for entry in races:
         prior = next(
@@ -191,13 +193,14 @@ def write_upcoming_races(
 
     races.sort(key=lambda race: race["date"])
 
-    out_path.write_text(
+    write_text_atomic(
+        out_path,
         json.dumps(
             {"races": races},
             ensure_ascii=False,
             indent=2,
         )
-        + "\n"
+        + "\n",
     )
 
     print(f"  {len(races)} race(s) written to upcoming_races.json")

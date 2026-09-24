@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from data_directory import get_data_dir
+from repository.atomic_write import write_text_atomic
 from .client import GarminClient
 from .retry import retry_transient
 
@@ -101,6 +102,5 @@ def write_shoes_json(shoes: list[ShoeGear], *, path: Path = _OUT_PATH) -> bool:
     if existing == payload:
         return False
 
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2) + "\n")
+    write_text_atomic(path, json.dumps(payload, indent=2) + "\n")
     return True

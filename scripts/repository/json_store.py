@@ -7,6 +7,7 @@ from typing import Any
 
 from data_directory import get_data_dir
 from processing.mapper import ActivityData
+from repository.atomic_write import write_text_atomic
 from repository.history_file import HistoryFileError, read_history
 
 
@@ -39,9 +40,8 @@ def _read_entries(path: Path, key: str, id_field: str) -> list[dict[str, Any]]:
 
 
 def _atomic_write_json(path: Path, data: dict[str, Any]) -> None:
-    tmp = path.with_suffix(".json.tmp")
-    tmp.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
-    tmp.replace(path)
+    # No trailing newline: the bytes these files have always had.
+    write_text_atomic(path, json.dumps(data, indent=2, ensure_ascii=False))
 
 
 class JsonActivityStore:

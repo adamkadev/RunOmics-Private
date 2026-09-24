@@ -19,10 +19,10 @@ layer consumes:
 from __future__ import annotations
 
 import json
-from pathlib import Path
 from typing import Any
 
 from data_directory import get_data_dir
+from repository.atomic_write import write_text_atomic
 from .client import GarminAPIError, GarminClient
 
 _OUT_PATH = get_data_dir() / "vo2max_norms.json"
@@ -110,8 +110,7 @@ def write_vo2max_norms(norms: dict[str, Any] | None) -> bool:
         print("  VO2max norms unchanged.")
         return False
 
-    _OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    _OUT_PATH.write_text(json.dumps(norms, indent=2, sort_keys=True) + "\n")
+    write_text_atomic(_OUT_PATH, json.dumps(norms, indent=2, sort_keys=True) + "\n")
 
     if existing is None:
         print("  VO2max norms written to vo2max_norms.json")
