@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 
 test('heatmap page renders its shell and toggles world view', async ({ page }) => {
   await page.goto('/map')

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 
 test('dashboard renders the weekly snapshot and recent activities', async ({ page }) => {
   await page.goto('/')
@@ -12,5 +12,4 @@ test('dashboard renders the weekly snapshot and recent activities', async ({ pag
 
   const firstActivityLink = page.locator('a[href^="/activities/"]').first()
   await expect(firstActivityLink).toBeVisible()
-  await expect(page.locator('[data-nextjs-dialog]')).toHaveCount(0)
 })

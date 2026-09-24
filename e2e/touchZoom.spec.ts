@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 
 const IOS_ZOOM_THRESHOLD_PX = 16
 
