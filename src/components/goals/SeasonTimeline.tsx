@@ -8,7 +8,7 @@ import { formatCountdown, formatDate, formatDuration } from '@/lib/formatters'
 import { STATUS } from '@/lib/statusColors'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
-import { shortDist } from './YearView'
+import { shortDist } from './shortDistance'
 
 interface TimelineEntry {
   distance: string

@@ -9,16 +9,11 @@ import { GlassSurface } from '@/components/ui/GlassSurface'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { MonthlyVolumeChart } from './MonthlyVolumeChart'
 import { SeasonTimeline } from './SeasonTimeline'
+import { shortDist } from './shortDistance'
 import { raceDistanceTint } from '@/lib/colors'
 import { PROJECTION_TONE } from '@/lib/statusColors'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
-
-const DIST_SHORT: Record<string, string> = { 'Half-Marathon': 'HM' }
-export function shortDist(d: string) { return DIST_SHORT[d] ?? d }
-
-
-
 
 
 interface Props {

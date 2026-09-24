@@ -3,24 +3,12 @@
 import dynamic from 'next/dynamic'
 import { useState } from 'react'
 import type { MapShellData } from '@/application/usecases/GetAllRoutes'
-import { TerritoryBand } from './TerritoryBand'
+import { TerritoryBand, type TerritoryCardContent } from './TerritoryBand'
 
 const GlobalMapClient = dynamic(
   () => import('./GlobalMapClient').then((m) => m.GlobalMapClient),
   { ssr: false, loading: () => <div className="h-full w-full animate-pulse bg-muted" /> }
 )
-
-interface Stat {
-  value: string
-  label: string
-}
-
-export interface TerritoryCardContent {
-  eyebrow: string
-  headline: string
-  primaryStat: Stat
-  secondaryStat: Stat
-}
 
 // The territory card lives here, a sibling to the bordered map box rather
 // than inside it, so it keeps its own card shell instead of fusing with the

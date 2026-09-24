@@ -1,7 +1,7 @@
-import { en } from './en'
+import { en, type Strings } from './en'
 import { fr } from './fr'
 
-export type Strings = typeof en
+export type { Strings }
 
 export type Locale = 'en' | 'fr'
 

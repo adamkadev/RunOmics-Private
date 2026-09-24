@@ -1510,3 +1510,6 @@ export const en = {
     10: 'Maximal',
   } as Record<number, string>,
 }
+
+/** The shape every locale must match, derived from the English table. */
+export type Strings = typeof en

@@ -1,5 +1,5 @@
 import type { ActivityType, ScheduledTimeOfDay } from '@/domain/activity/types'
-import type { Strings } from './index'
+import type { Strings } from './en'
 
 export const fr = {
   locale: 'fr-FR',

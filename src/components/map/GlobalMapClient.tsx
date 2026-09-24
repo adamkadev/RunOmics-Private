@@ -7,7 +7,7 @@ import { ACTIVITY_TYPES, type ActivityType } from "@/domain/activity/types";
 import { reverseGeocode } from "@/lib/reverseGeocode";
 import { t } from "@/i18n";
 import { useSetFullscreenChromeHidden } from "@/components/layout/FullscreenChromeContext";
-import type { TerritoryCardContent } from "./GlobalMapWrapper";
+import type { TerritoryCardContent } from "./TerritoryBand";
 import { ClusterPanel } from "./ClusterPanel";
 import { YearPicker } from "./YearPicker";
 import { TypePicker } from "./TypePicker";
