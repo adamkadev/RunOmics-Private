@@ -30,12 +30,6 @@ export interface CoachingOverview {
   nextKeyWorkout: PrescriptionView | null
 }
 
-export interface ActivityCoachingView {
-  evaluation: WorkoutEvaluation
-  decision: CoachDecision | null
-  prescription: WorkoutPrescription | null
-}
-
 function findCompletedActivity(prescription: WorkoutPrescription, evaluations: WorkoutEvaluation[], activities: Activity[]): Activity | null {
   const evaluation = evaluations.find((candidate) => candidate.prescriptionId === prescription.id && candidate.matchStatus === 'matched')
   if (evaluation) return activities.find((activity) => activity.id === evaluation.activityId) ?? null
@@ -112,13 +106,4 @@ export function getTodayPrescription(today = isoDate(new Date())): WorkoutPrescr
       .flatMap((week) => week.workouts)
       .find((workout) => workout.date === today && workout.status !== 'cancelled') ?? null
   )
-}
-
-export function getActivityCoachingView(activityId: string): ActivityCoachingView | null {
-  const repository = new JsonCoachingRepository()
-  const evaluation = repository.getEvaluationForActivity(activityId)
-  if (!evaluation) return null
-  const plan = repository.getCurrentPlan()
-  const prescription = plan?.weeks.flatMap((week) => week.workouts).find((workout) => workout.id === evaluation.prescriptionId) ?? null
-  return { evaluation, decision: repository.getDecision(evaluation.decisionId), prescription }
 }

@@ -41,14 +41,6 @@ function syncRange({ today, from, to }: GarminSyncWindow): SyncRange {
   return { contains: (date) => date >= start && (to === undefined || date <= to) }
 }
 
-export function selectSyncableWorkouts(
-  plan: CoachingPlan,
-  evaluations: WorkoutEvaluation[],
-  window: GarminSyncWindow,
-): WorkoutPrescription[] {
-  return workoutsWithin(plan, evaluations, syncRange(window))
-}
-
 function workoutsWithin(
   plan: CoachingPlan,
   evaluations: WorkoutEvaluation[],
@@ -84,9 +76,9 @@ export interface GarminSyncPlan {
   fingerprint: string
 }
 
-export const RACE_ON_CALENDAR_REASON = 'Race already on the Garmin calendar'
-export const COURSE_AWARE_RACE_REASON = 'Course-aware race already on Garmin calendar - use Garmin PacePro'
-export const COURSE_AWARE_RACE_NOTE = 'Course-aware race - race effort left unpaced for PacePro'
+const RACE_ON_CALENDAR_REASON = 'Race already on the Garmin calendar'
+const COURSE_AWARE_RACE_REASON = 'Course-aware race already on Garmin calendar - use Garmin PacePro'
+const COURSE_AWARE_RACE_NOTE = 'Course-aware race - race effort left unpaced for PacePro'
 
 export interface GarminSyncOptions {
   syncRaces?: boolean
