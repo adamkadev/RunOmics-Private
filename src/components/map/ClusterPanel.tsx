@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { ChevronDown, X } from "lucide-react";
 import type { RouteCluster } from "@/application/usecases/GetAllRoutes";
 import { t } from "@/i18n";
@@ -11,6 +10,7 @@ import {
   MAP_CHIP_GEOMETRY,
   MAP_CHIP_STYLE,
 } from "./mapUtils";
+import { ChipMenuPanel, useChipMenu } from "./chipMenu";
 
 interface ClusterStat {
   routeCount: number;
@@ -30,37 +30,19 @@ interface Props {
 }
 
 export function ClusterPanel({ clusters, names, stats, selectedIdx, onSelect, worldView = false, totalCount = 0 }: Props) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    function onOutside(e: MouseEvent) {
-      if (!ref.current?.contains(e.target as Node)) setOpen(false);
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    document.addEventListener("mousedown", onOutside);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onOutside);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
+  const menu = useChipMenu("start");
 
   const selectedName = worldView ? t.pages.map.allAreas : names[selectedIdx]
 
   return (
-    <div ref={ref} className="relative min-w-0 shrink-0">
+    <div className="min-w-0 shrink-0">
       <button
-        onClick={() => setOpen((o) => !o)}
+        {...menu.chipProps}
         title={selectedName}
         /* Without this the button announces itself as its own contents - "Robertsau 12" -
            which names the current zone and the route count but never says the control
            picks a zone. */
         aria-label={`${t.pages.map.zones}: ${selectedName}`}
-        aria-expanded={open}
         className={[MAP_CHIP_GEOMETRY, "min-w-0 max-w-[170px] gap-2"].join(" ")}
         style={{ ...MAP_CHIP_STYLE, ...MAP_CHIP_ACTIVE }}
       >
@@ -73,50 +55,50 @@ export function ClusterPanel({ clusters, names, stats, selectedIdx, onSelect, wo
         <ChevronDown
           size={10}
           style={{ color: MAP_CHIP_CARET_INK }}
-          className={["shrink-0 transition-transform", open ? "rotate-180" : ""].join(" ")}
+          className={["shrink-0 transition-transform", menu.open ? "rotate-180" : ""].join(" ")}
         />
       </button>
 
-      {open && (
-        <div className="glass-map-chip absolute top-full z-10 mt-1 w-52 overflow-hidden rounded-[10px]">
-          <div className="flex items-center justify-between border-b border-border px-3 py-2">
-            <p className="text-xs font-semibold text-foreground/80">{t.pages.map.zones}</p>
-            <button
-              onClick={() => setOpen(false)}
-              aria-label={t.common.close}
-              className="flex h-11 w-11 items-center justify-center text-muted-foreground hover:text-foreground"
-            >
-              <X size={16} />
-            </button>
-          </div>
-          <ul className="max-h-64 overflow-y-auto py-1">
-            {clusters.map((c, i) => (
-              <li key={c.id}>
-                <button
-                  onClick={() => { onSelect(i); setOpen(false); }}
-                  aria-current={i === selectedIdx}
+      {/* A column, so that when the room below the chip is short the list
+          gives way and scrolls, never the header with its close button. */}
+      <ChipMenuPanel menu={menu} className="glass-map-chip flex w-52 flex-col overflow-hidden rounded-[10px]">
+        <div className="flex items-center justify-between border-b border-border px-3 py-2">
+          <p className="text-xs font-semibold text-foreground/80">{t.pages.map.zones}</p>
+          <button
+            onClick={menu.close}
+            aria-label={t.common.close}
+            className="flex h-11 w-11 items-center justify-center text-muted-foreground hover:text-foreground"
+          >
+            <X size={16} />
+          </button>
+        </div>
+        <ul className="max-h-64 min-h-0 overflow-y-auto py-1">
+          {clusters.map((c, i) => (
+            <li key={c.id}>
+              <button
+                onClick={() => { onSelect(i); menu.close(); }}
+                aria-current={i === selectedIdx}
+                className={[
+                  "flex w-full flex-col gap-0.5 px-3 py-3 text-left transition-colors hover:bg-muted",
+                  i === selectedIdx ? "bg-accent/10" : "",
+                ].join(" ")}
+              >
+                <span
                   className={[
-                    "flex w-full flex-col gap-0.5 px-3 py-3 text-left transition-colors hover:bg-muted",
-                    i === selectedIdx ? "bg-accent/10" : "",
+                    "text-xs font-medium",
+                    i === selectedIdx ? "text-accent-text" : "text-foreground",
                   ].join(" ")}
                 >
-                  <span
-                    className={[
-                      "text-xs font-medium",
-                      i === selectedIdx ? "text-accent-text" : "text-foreground",
-                    ].join(" ")}
-                  >
-                    {names[i]}
-                  </span>
-                  <span className="text-caption text-subtle">
-                    {t.common.runs(stats[i]?.routeCount ?? 0)} · {stats[i]?.totalKm ?? 0} {t.units.km}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+                  {names[i]}
+                </span>
+                <span className="text-caption text-subtle">
+                  {t.common.runs(stats[i]?.routeCount ?? 0)} · {stats[i]?.totalKm ?? 0} {t.units.km}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </ChipMenuPanel>
     </div>
   );
 }

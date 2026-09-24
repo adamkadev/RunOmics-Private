@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import type { ActivityType } from "@/domain/activity/types";
 import { ACTIVITY_TYPE_CONFIG } from "@/domain/activity/types";
@@ -12,6 +11,7 @@ import {
   MAP_CHIP_NEUTRAL,
   MAP_CHIP_STYLE,
 } from "./mapUtils";
+import { ChipMenuPanel, useChipMenu } from "./chipMenu";
 
 interface Props {
   types: ActivityType[];
@@ -30,34 +30,17 @@ function Dot({ type }: { type: ActivityType }) {
 }
 
 export function TypePicker({ types, value, onChange }: Props) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    function onOutside(e: MouseEvent) {
-      if (!ref.current?.contains(e.target as Node)) setOpen(false);
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    document.addEventListener("mousedown", onOutside);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onOutside);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
+  const menu = useChipMenu("end");
 
   function select(type: ActivityType | null) {
     onChange(type);
-    setOpen(false);
+    menu.close();
   }
 
   return (
-    <div ref={ref} className="relative z-10 shrink-0">
+    <div className="shrink-0">
       <button
-        onClick={() => setOpen((o) => !o)}
+        {...menu.chipProps}
         className={[MAP_CHIP_GEOMETRY, "gap-2"].join(" ")}
         style={{ ...MAP_CHIP_STYLE, ...(value ? MAP_CHIP_ACTIVE : MAP_CHIP_NEUTRAL) }}
       >
@@ -66,28 +49,26 @@ export function TypePicker({ types, value, onChange }: Props) {
         <ChevronDown
           size={10}
           style={{ color: MAP_CHIP_CARET_INK }}
-          className={["transition-transform", open ? "rotate-180" : ""].join(" ")}
+          className={["transition-transform", menu.open ? "rotate-180" : ""].join(" ")}
         />
       </button>
 
-      {open && (
-        <div className="glass-map-chip absolute right-0 top-full z-10 mt-1 w-40 max-h-[calc(100vh-8rem)] overflow-y-auto py-1">
-          {[null, ...types].map((ty) => (
-            <button
-              key={ty ?? "__all__"}
-              onClick={() => select(ty)}
-              className={[
-                "flex min-h-[44px] w-full items-center gap-2 px-3 text-left text-xs font-medium transition-colors hover:bg-muted",
-                value === ty ? "text-accent-text" : "text-foreground",
-              ].join(" ")}
-            >
-              {ty && <Dot type={ty} />}
-              {ty ? t.activityTypes[ty] : t.pages.map.allTypes}
-              {value === ty && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-accent" />}
-            </button>
-          ))}
-        </div>
-      )}
+      <ChipMenuPanel menu={menu} className="glass-map-chip w-40 overflow-y-auto py-1">
+        {[null, ...types].map((ty) => (
+          <button
+            key={ty ?? "__all__"}
+            onClick={() => select(ty)}
+            className={[
+              "flex min-h-[44px] w-full items-center gap-2 px-3 text-left text-xs font-medium transition-colors hover:bg-muted",
+              value === ty ? "text-accent-text" : "text-foreground",
+            ].join(" ")}
+          >
+            {ty && <Dot type={ty} />}
+            {ty ? t.activityTypes[ty] : t.pages.map.allTypes}
+            {value === ty && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-accent" />}
+          </button>
+        ))}
+      </ChipMenuPanel>
     </div>
   );
 }
