@@ -22,7 +22,9 @@ async function run(activities: Activity[], lastState: PrState | null) {
   getLastPrState.mockResolvedValue(lastState)
   saveLastPrState.mockResolvedValue(undefined)
 
-  return getNewPrs()
+  const { newPrs, commit } = await getNewPrs()
+  await commit()
+  return newPrs
 }
 
 const savedState = () => saveLastPrState.mock.calls[0]![0] as PrState
@@ -111,6 +113,19 @@ describe('getNewPrs', () => {
     })
 
     expect(prs[0]?.label).toBe('Half')
+  })
+
+  it('stores nothing until the caller commits, so a push that fails is offered again', async () => {
+    getAllActivities.mockReturnValue([activity('new', '2026-07-20', { '5k': 1150 })])
+    getLastPrState.mockResolvedValue({ '5k': { seconds: 1200, activityId: 'old' } })
+
+    const { newPrs, commit } = await getNewPrs()
+
+    expect(newPrs).toHaveLength(1)
+    expect(saveLastPrState).not.toHaveBeenCalled()
+
+    await commit()
+    expect(saveLastPrState).toHaveBeenCalledWith({ '5k': { seconds: 1150, activityId: 'new' } })
   })
 
   it('always writes the state back, even when nothing was beaten', async () => {

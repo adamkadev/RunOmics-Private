@@ -8,7 +8,12 @@ export interface ShoeWearAlert {
   alertThresholdKm: number
 }
 
-export async function getShoeWearAlerts(): Promise<ShoeWearAlert[]> {
+/**
+ * Nothing is stored until `commit()`: the caller sends the pushes first and
+ * commits once they are out, so a failed push is offered again next run
+ * instead of being marked as sent.
+ */
+export async function getShoeWearAlerts(): Promise<{ newAlerts: ShoeWearAlert[]; commit: () => Promise<void> }> {
   const shoes = getShoeStats()
   const lastState = await getLastShoeWearState()
 
@@ -31,6 +36,5 @@ export async function getShoeWearAlerts(): Promise<ShoeWearAlert[]> {
     }
   }
 
-  await saveLastShoeWearState(nextState)
-  return newAlerts
+  return { newAlerts, commit: () => saveLastShoeWearState(nextState) }
 }

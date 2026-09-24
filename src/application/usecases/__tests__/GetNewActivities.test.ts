@@ -23,7 +23,9 @@ async function run(ids: string[], lastState: ActivitySyncState | null) {
   getLastActivitySyncState.mockResolvedValue(lastState)
   saveLastActivitySyncState.mockResolvedValue(undefined)
 
-  return getNewActivities()
+  const { newActivities, commit } = await getNewActivities()
+  await commit()
+  return newActivities
 }
 
 const savedIds = () => (saveLastActivitySyncState.mock.calls[0]![0] as ActivitySyncState).knownIds
@@ -78,6 +80,19 @@ describe('getNewActivities', () => {
     const fresh = await run(ids, { knownIds: ids.slice(0, 60) })
 
     expect(fresh).toEqual([])
+  })
+
+  it('stores nothing until the caller commits, so a push that fails is offered again', async () => {
+    getAllActivities.mockReturnValue(['c', 'b'].map(activity))
+    getLastActivitySyncState.mockResolvedValue({ knownIds: ['b'] })
+
+    const { newActivities, commit } = await getNewActivities()
+
+    expect(newActivities.map((a) => a.id)).toEqual(['c'])
+    expect(saveLastActivitySyncState).not.toHaveBeenCalled()
+
+    await commit()
+    expect(saveLastActivitySyncState).toHaveBeenCalledWith({ knownIds: ['c', 'b'] })
   })
 
   it('always writes the state back, even when nothing was new', async () => {
