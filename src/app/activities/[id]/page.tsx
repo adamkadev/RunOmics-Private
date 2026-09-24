@@ -3,12 +3,11 @@ import { notFound } from 'next/navigation'
 import { BackButton } from '@/components/ui/BackButton'
 import { getActivities } from '@/application/usecases/GetActivities'
 import { getRecords, getQualifiedEffortsByActivityId } from '@/application/usecases/GetRecords'
-import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { getShoeRegistry } from '@/infrastructure/repositories/JsonShoeRepository'
 import { getOfficialRaceResults } from '@/infrastructure/repositories/JsonRaceResultRepository'
 import { officialResultsByActivityId } from '@/domain/activity/raceResult'
-import type { HrBounds } from '@/domain/training/trimp'
 import { ActivityDetailClient } from '@/components/activity/ActivityDetailClient'
+import { activityDetailView, shareActivity } from '@/components/activity/activityViews'
 import { ActivityNav } from '@/components/activity/ActivityNav'
 import { ShareButton } from '@/components/activity/ShareButton'
 import { ActivityNotes } from '@/components/activity/ActivityNotes'
@@ -72,12 +71,6 @@ export default async function ActivityDetailPage({
   const registeredShoe = activity.gearId ? getShoeRegistry()[activity.gearId] : undefined
   const shoe = registeredShoe ? { name: registeredShoe.name, dotColor: registeredShoe.dotColor } : null
 
-  const athlete = getAthleteProfile()
-  const hrBounds: HrBounds | undefined =
-    athlete.maxHrBpm && athlete.restingHrBpm
-      ? { maxHr: athlete.maxHrBpm, restingHr: athlete.restingHrBpm }
-      : undefined
-
   return (
     <div className="space-y-5">
       <BackButton label={t.activity.back} fallbackHref="/activities" />
@@ -90,7 +83,7 @@ export default async function ActivityDetailPage({
           <p className="text-sm text-muted-foreground">{formatDate(activity.date)}</p>
           <div className="flex items-center gap-2">
             <ActivityNotes activityId={activity.id} />
-            <ShareButton activity={activity} />
+            <ShareButton activity={shareActivity(activity)} />
           </div>
         </div>
         {activity.comment && (
@@ -114,8 +107,7 @@ export default async function ActivityDetailPage({
       {similarRuns && <SimilarRuns data={similarRuns} />}
 
       <ActivityDetailClient
-        activity={activity}
-        hrBounds={hrBounds}
+        activity={activityDetailView(activity)}
         qualifiedEfforts={qualifiedEfforts}
         aiVerdict={aiVerdict}
         shoe={shoe}

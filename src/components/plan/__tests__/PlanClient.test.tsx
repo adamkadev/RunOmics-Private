@@ -1,15 +1,17 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildCoachingOverview, type CoachingOverview } from '@/application/coaching/GetCoachingView'
 import { plan } from '@/domain/coaching/__tests__/fixtures'
 import { t } from '@/i18n'
+import { formatDateRange } from '@/lib/formatters'
+import { hydrateAcrossMidnight } from '@/lib/__tests__/hydrateAcrossMidnight'
 import { PlanClient } from '../PlanClient'
 
 const NOW = new Date(2026, 8, 9, 12)
 
-function renderPlan(coaching: CoachingOverview | null = null) {
-  return render(
+function planClient(coaching: CoachingOverview | null = null, today = '2026-09-09') {
+  return (
     <PlanClient
       activities={[]}
       plannedWorkouts={[]}
@@ -18,8 +20,13 @@ function renderPlan(coaching: CoachingOverview | null = null) {
       trainingZones={null}
       planSpan={null}
       coaching={coaching}
+      today={today}
     />
   )
+}
+
+function renderPlan(coaching: CoachingOverview | null = null) {
+  return render(planClient(coaching))
 }
 
 describe('PlanClient week/month switching', () => {
@@ -66,3 +73,34 @@ describe('PlanClient week/month switching', () => {
     expect(screen.queryByTestId('race-footer')).not.toBeInTheDocument()
   })
 })
+
+describe('PlanClient across midnight', () => {
+  beforeEach(() => vi.useFakeTimers({ shouldAdvanceTime: true }))
+  afterEach(() => {
+    vi.useRealTimers()
+    document.body.innerHTML = ''
+  })
+
+  // Built on Tuesday night, opened on Wednesday: the week is the same, but the
+  // selected day and its label were read from two different clocks.
+  it('hydrates the page it was built as', async () => {
+    const { recoverableErrors } = await hydrateAcrossMidnight(planClient(null, '2026-09-08'), {
+      serverTime: new Date(2026, 8, 8, 23, 50),
+      clientTime: new Date(2026, 8, 9, 0, 10),
+    })
+
+    expect(recoverableErrors).toEqual([])
+  })
+
+  it('moves on to the new week when the page was built on the last day of the old one', async () => {
+    const { container, recoverableErrors } = await hydrateAcrossMidnight(planClient(null, '2026-09-13'), {
+      serverTime: new Date(2026, 8, 13, 23, 50),
+      clientTime: new Date(2026, 8, 14, 0, 10),
+    })
+
+    expect(recoverableErrors).toEqual([])
+    expect(container.textContent).toContain(formatDateRange('2026-09-14', '2026-09-20'))
+    expect(within(container).queryByRole('button', { name: t.plan.today })).not.toBeInTheDocument()
+  })
+})
+

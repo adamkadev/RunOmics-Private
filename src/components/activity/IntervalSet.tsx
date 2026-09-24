@@ -5,7 +5,7 @@ import { type RepSet, type Track, trackDomain, trackPosition, setVerdict } from 
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartCardHead } from '@/components/ui/ChartCard'
 import { STATUS } from '@/lib/statusColors'
-import { formatClock, formatDuration } from '@/lib/formatters'
+import { formatClock, formatDuration, formatDelta } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -181,7 +181,7 @@ export function IntervalSet({ set }: Props) {
                 set.hrDriftBpm === null ? 'text-foreground' : set.hrDriftBpm > 0 ? STATUS.warning.text : STATUS.success.text,
               )}
             >
-              {set.hrDriftBpm === null ? '-' : `${set.hrDriftBpm > 0 ? '+' : ''}${set.hrDriftBpm}`}{' '}
+              {set.hrDriftBpm === null ? '-' : formatDelta(set.hrDriftBpm)}{' '}
               <span className="text-xs font-normal text-subtle">{t.units.bpm}</span>
             </p>
             <p className="text-micro text-subtle">{s.repHrDrift}</p>

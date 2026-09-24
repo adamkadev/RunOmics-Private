@@ -53,14 +53,14 @@ export function inProgressMonth(months: MonthGoal[], year: number, now = new Dat
   return months.find((mg) => mg.month === now.getMonth() + 1) ?? null
 }
 
-export function MonthlyVolumeChart({ monthlyGoals, year }: { monthlyGoals: MonthGoal[]; year: number }) {
+export function MonthlyVolumeChart({ monthlyGoals, year, today }: { monthlyGoals: MonthGoal[]; year: number; today: string }) {
   const [expanded, setExpanded] = useState(false)
   const elapsedMonths = monthlyGoals.filter((mg) => mg.status !== 'pending')
   const lastMonth = elapsedMonths[elapsedMonths.length - 1]
   if (!lastMonth) return null
 
   const scaleMax = volumePlotMaxKm(elapsedMonths)
-  const current = inProgressMonth(elapsedMonths, year)
+  const current = inProgressMonth(elapsedMonths, year, new Date(`${today}T00:00:00`))
   // The dashed rule per bar already varies with days-in-month, but that leaves
   // every month's target unlabelled - there's no way to tell what a bar missed
   // by. The rules cluster tightly enough that one axis figure for their

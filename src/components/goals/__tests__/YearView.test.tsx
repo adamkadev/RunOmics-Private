@@ -1,3 +1,4 @@
+import { isoDate } from '@/lib/calendarDate'
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { YearView } from '@/components/goals/YearView'
@@ -7,6 +8,7 @@ import { t } from '@/i18n'
 
 const p = t.goals.projection
 const YEAR = new Date().getFullYear()
+const TODAY = isoDate(new Date())
 
 /**
  * The annual goal card on its own: no targets and no races, so the season
@@ -44,7 +46,7 @@ describe('YearView annual goal card', () => {
       deltaKm: 0,
     }
     for (const projection of [BEHIND, onTrack]) {
-      const { container } = render(<YearView yearData={yearData(projection)} />)
+      const { container } = render(<YearView yearData={yearData(projection)} today={TODAY} />)
       const fill = container.querySelector<HTMLElement>('.rounded-full.transition-all')
       // #5a97f5 - amber would fire in January on a healthy year; the verdict
       // lives only in the projection headline below.
@@ -53,7 +55,7 @@ describe('YearView annual goal card', () => {
   })
 
   it('marks the projection on the bar with a labelled tick', () => {
-    const { container } = render(<YearView yearData={yearData(BEHIND)} />)
+    const { container } = render(<YearView yearData={yearData(BEHIND)} today={TODAY} />)
     const marker = container.querySelector<HTMLElement>('[aria-label*="1,705"]')
     expect(marker).not.toBeNull()
     expect(marker!.style.left).toBe('85.25%')
@@ -61,7 +63,7 @@ describe('YearView annual goal card', () => {
   })
 
   it('names the projection as the headline under the bar, in the shortfall tone', () => {
-    const { container } = render(<YearView yearData={yearData(BEHIND)} />)
+    const { container } = render(<YearView yearData={yearData(BEHIND)} today={TODAY} />)
 
     const headline = screen.getByText(`${p.projected('1,705')} · ${p.shortBy('295')}`)
     expect(headline.className).toContain(STATUS.warning.text)
@@ -70,19 +72,19 @@ describe('YearView annual goal card', () => {
   })
 
   it('states what the goal still needs per week, muted beneath the projection', () => {
-    const { container } = render(<YearView yearData={yearData(BEHIND)} />)
+    const { container } = render(<YearView yearData={yearData(BEHIND)} today={TODAY} />)
     expect(container.textContent).toContain(p.needsWeeklyDetail('29', '25'))
   })
 
   it('groups thousands the same way everywhere in the card', () => {
-    const { container } = render(<YearView yearData={yearData(BEHIND)} />)
+    const { container } = render(<YearView yearData={yearData(BEHIND)} today={TODAY} />)
     expect(container.textContent).toContain(`/ 2,000 ${t.units.km}`)
     expect(container.textContent).not.toContain('1705')
     expect(container.textContent).not.toContain('2000')
   })
 
   it('has no second progress readout competing with the bar', () => {
-    const { container } = render(<YearView yearData={yearData(BEHIND)} />)
+    const { container } = render(<YearView yearData={yearData(BEHIND)} today={TODAY} />)
     // The emerald "66%" duplicated the bar and clashed with the amber verdict.
     expect(container.textContent).not.toContain('%')
   })
@@ -95,7 +97,7 @@ describe('YearView annual goal card', () => {
       status: 'on_track',
       deltaKm: 30,
     }
-    const { container } = render(<YearView yearData={yearData(surplus)} />)
+    const { container } = render(<YearView yearData={yearData(surplus)} today={TODAY} />)
     // 2030 against a 2000 goal is a surplus; reading the sign off `status`
     // (which is merely 'on_track' here) would have called this "short" instead.
     expect(container.textContent).toContain(p.overBy('30'))

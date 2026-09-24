@@ -1,5 +1,4 @@
 import { cn } from '@/lib/utils'
-import type { ReactNode } from 'react'
 
 interface CardOptions {
   padding?: 'none' | 'sm' | 'base' | 'lg'
@@ -26,14 +25,6 @@ export function cardClass({
     dashed    && 'border-dashed',
     className
   )
-}
-
-interface CardProps extends CardOptions {
-  children: ReactNode
-}
-
-export function Card({ children, ...opts }: CardProps) {
-  return <div className={cardClass(opts)}>{children}</div>
 }
 
 export const tooltipSurfaceClass = 'rounded-lg border border-border bg-card px-2.5 py-2 text-xs shadow-md'

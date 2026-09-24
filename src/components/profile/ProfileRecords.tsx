@@ -7,8 +7,8 @@ import { t } from '@/i18n'
 
 const RECENT_PR_DAYS = 90
 
-function isRecentPr(date: string): boolean {
-  const days = (Date.now() - new Date(date + 'T00:00:00').getTime()) / 86_400_000
+function isRecentPr(date: string, today: string): boolean {
+  const days = (new Date(today + 'T00:00:00').getTime() - new Date(date + 'T00:00:00').getTime()) / 86_400_000
   return days >= 0 && days <= RECENT_PR_DAYS
 }
 
@@ -20,11 +20,12 @@ function mostRecent(records: RecordEntry[]): (RecordEntry & { date: string }) | 
 
 interface Props {
   records: RecordEntry[]
+  today: string
 }
 
-export function ProfileRecords({ records }: Props) {
+export function ProfileRecords({ records, today }: Props) {
   const best = mostRecent(records)
-  const recent = best?.date ? isRecentPr(best.date) : false
+  const recent = best?.date ? isRecentPr(best.date, today) : false
 
   return (
     <GlassSurface variant="card" className="flex flex-col gap-3 p-4">

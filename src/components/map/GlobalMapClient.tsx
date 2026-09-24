@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Globe, Maximize, Minimize } from "lucide-react";
 import type { MapShellData } from "@/application/usecases/GetAllRoutes";
-import type { ActivityType } from "@/domain/activity/types";
+import { ACTIVITY_TYPES, type ActivityType } from "@/domain/activity/types";
 import { reverseGeocode } from "@/lib/reverseGeocode";
 import { t } from "@/i18n";
 import { useSetFullscreenChromeHidden } from "@/components/layout/FullscreenChromeContext";
@@ -14,22 +14,14 @@ import { TypePicker } from "./TypePicker";
 import { HeatLegend } from "./HeatLegend";
 import { useMapRoutes } from "./useMapRoutes";
 import {
+  MAP_CHIP_COUNT_INK,
+  MAP_CHIP_NEUTRAL,
   coordLabel,
   computeAreaTerritory,
   computeWorldTerritory,
   matchesFilters,
   type HeatFilters,
 } from "./mapUtils";
-
-const TYPE_ORDER: ActivityType[] = [
-  "Sprint",
-  "Anaerobic",
-  "VO2Max",
-  "Threshold",
-  "Tempo",
-  "Base",
-  "Race",
-];
 
 interface Props {
   data: MapShellData;
@@ -81,7 +73,7 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
 
   const availableTypes = useMemo(() => {
     const present = new Set(routeMeta.map((m) => m.type));
-    return TYPE_ORDER.filter((ty) => present.has(ty));
+    return ACTIVITY_TYPES.filter((ty) => present.has(ty));
   }, [routeMeta]);
 
   const clusterStats = useMemo(
@@ -274,7 +266,7 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
             onClick={() => setIsFullscreen(false)}
             aria-label={t.pages.map.exitFullscreen}
             className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[12px] transition-colors hover:bg-white/10"
-            style={{ background: "rgba(148,178,220,.07)", border: "1px solid rgba(148,178,220,.14)", color: "var(--muted-foreground)" }}
+            style={{ ...MAP_CHIP_NEUTRAL }}
           >
             <Minimize size={16} />
           </button>
@@ -347,7 +339,9 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
           padding: "7px 11px",
         }}
       >
-        <span style={{ fontSize: "9.5px", color: "var(--subtle-2)" }}>{t.pages.map.attribution}</span>
+        {/* The strip is dark in both themes, like the chip row above the map,
+            so it takes the chips' fixed ink rather than the theme's. */}
+        <span style={{ fontSize: "9.5px", color: MAP_CHIP_COUNT_INK }}>{t.pages.map.attribution}</span>
       </div>
     </div>
   );

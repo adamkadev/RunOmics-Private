@@ -1,9 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { onIdTokenChanged } from 'firebase/auth'
 import type { User } from 'firebase/auth'
-import { getClientAuth, isClientFirebaseConfigured } from '@/lib/firebase'
+import { isClientFirebaseConfigured } from '@/lib/firebaseConfig'
 
 export interface OwnerAuth {
   user: User | null
@@ -22,23 +21,39 @@ export function useOwnerAuth(): OwnerAuth {
     if (!isClientFirebaseConfigured) return
 
     let latest = 0
-    return onIdTokenChanged(getClientAuth(), (user) => {
-      const generation = ++latest
-      if (!user) {
-        setAuth(SIGNED_OUT)
-        return
-      }
-      user
-        .getIdTokenResult()
-        .then((token) => {
-          if (generation === latest) {
-            setAuth({ user, isOwner: token.claims.owner === true, loading: false })
+    let cancelled = false
+    let unsubscribe: (() => void) | undefined
+    // Loaded here rather than imported: every visitor pays for the owner
+    // check, so it comes after the page has painted rather than in its
+    // first load.
+    Promise.all([import('firebase/auth'), import('@/lib/firebase')])
+      .then(([{ onIdTokenChanged }, { getClientAuth }]) => {
+        if (cancelled) return
+        unsubscribe = onIdTokenChanged(getClientAuth(), (user) => {
+          const generation = ++latest
+          if (!user) {
+            setAuth(SIGNED_OUT)
+            return
           }
+          user
+            .getIdTokenResult()
+            .then((token) => {
+              if (generation === latest) {
+                setAuth({ user, isOwner: token.claims.owner === true, loading: false })
+              }
+            })
+            .catch(() => {
+              if (generation === latest) setAuth({ user, isOwner: false, loading: false })
+            })
         })
-        .catch(() => {
-          if (generation === latest) setAuth({ user, isOwner: false, loading: false })
-        })
-    })
+      })
+      .catch(() => {
+        if (!cancelled) setAuth(SIGNED_OUT)
+      })
+    return () => {
+      cancelled = true
+      unsubscribe?.()
+    }
   }, [])
 
   return auth

@@ -1,3 +1,4 @@
+import { isoDate } from '@/lib/calendarDate'
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import {
@@ -12,6 +13,7 @@ import { t } from '@/i18n'
 const s = t.goals.monthlyVolume
 
 const NOW = new Date()
+const TODAY = isoDate(NOW)
 const THIS_YEAR = NOW.getFullYear()
 const THIS_MONTH = NOW.getMonth() + 1
 
@@ -71,7 +73,7 @@ describe('inProgressMonth', () => {
 
 describe('MonthlyVolumeChart collapsed axis', () => {
   it('names its months in full, and thins the axis rather than truncating it', () => {
-    render(<MonthlyVolumeChart monthlyGoals={goalsForThisYear()} year={THIS_YEAR} />)
+    render(<MonthlyVolumeChart monthlyGoals={goalsForThisYear()} year={THIS_YEAR} today={TODAY} />)
 
     // A single initial cannot name the month it sits under: J is January, June
     // and July. So the axis prints the whole abbreviation and drops every other
@@ -90,7 +92,7 @@ describe('MonthlyVolumeChart collapsed axis', () => {
 
   it('states the target the dashed rule stands for, and draws one rule per month', () => {
     const { container } = render(
-      <MonthlyVolumeChart monthlyGoals={goalsForThisYear()} year={THIS_YEAR} />,
+      <MonthlyVolumeChart monthlyGoals={goalsForThisYear()} year={THIS_YEAR} today={TODAY} />,
     )
     expect(screen.getByText(s.targetRule)).toBeInTheDocument()
     expect(container.querySelectorAll('[data-testid="target-rule"]')).toHaveLength(THIS_MONTH)
@@ -98,7 +100,7 @@ describe('MonthlyVolumeChart collapsed axis', () => {
 
   it('outlines the running month instead of filling it, and states how far into it we are', () => {
     const { container } = render(
-      <MonthlyVolumeChart monthlyGoals={goalsForThisYear()} year={THIS_YEAR} />,
+      <MonthlyVolumeChart monthlyGoals={goalsForThisYear()} year={THIS_YEAR} today={TODAY} />,
     )
     expect(
       screen.getByText(
@@ -123,6 +125,7 @@ describe('MonthlyVolumeChart collapsed axis', () => {
       <MonthlyVolumeChart
         monthlyGoals={[{ month: 1, targetKm: 165, actualKm: 40, status: 'behind', progress: null }]}
         year={THIS_YEAR - 1}
+        today={TODAY}
       />,
     )
     const bar = container.querySelector<HTMLElement>('[title]')!
@@ -138,6 +141,7 @@ describe('MonthlyVolumeChart collapsed axis', () => {
       <MonthlyVolumeChart
         monthlyGoals={[{ month: 1, targetKm: 165, actualKm: 220, status: 'ahead', progress: null }]}
         year={THIS_YEAR - 1}
+        today={TODAY}
       />,
     )
     const bar = container.querySelector<HTMLElement>('[title]')!

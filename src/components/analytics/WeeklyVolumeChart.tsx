@@ -6,7 +6,7 @@ import { CHART_COLORS } from '@/lib/colors'
 import { useAccentUiColor } from '@/lib/useAccent'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { ChartFigure } from '@/components/ui/ChartFigure'
-import { WindowedChartCard, windowDateAxis, windowTickDate, windowTickMonth, windowTicks } from '@/components/ui/ChartWindowNav'
+import { WindowedChartCard, useChartToday, windowDateAxis, windowTickDate, windowTickMonth, windowTicks } from '@/components/ui/ChartWindowNav'
 import { fillWeeklyGaps, lineInterpolation, monthStartTicks } from '@/domain/timeWindow'
 import { isoDate, startOfWeek } from '@/lib/calendarDate'
 import { AXIS_TICK_DATE, formatDate } from '@/lib/formatters'
@@ -92,6 +92,7 @@ function weeklyVolumeReading(visible: WeeklyTrendPoint[], currentWeekDate: strin
 export function WeeklyVolumeChart({ points }: { points: WeeklyTrendPoint[] }) {
   const accentColor = useAccentUiColor()
 
+  const today = useChartToday()
   if (!points.some((p) => p.distanceKm > 0)) return null
 
   const weeks = fillWeeklyGaps(points, (monday) => ({
@@ -100,7 +101,7 @@ export function WeeklyVolumeChart({ points }: { points: WeeklyTrendPoint[] }) {
     label: formatDate(monday, AXIS_TICK_DATE),
   }))
 
-  const currentWeekDate = isoDate(startOfWeek(new Date()))
+  const currentWeekDate = isoDate(startOfWeek(new Date(`${today}T00:00:00`)))
 
   return (
     <WindowedChartCard

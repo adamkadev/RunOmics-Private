@@ -1,4 +1,4 @@
-import type { Activity } from '@/domain/activity/types'
+import type { ShareActivity } from '@/lib/shareCardStats'
 import { renderShareCard, shareCardFileName, W, type RenderOptions, type ShareDesign } from '@/lib/shareCard'
 import { saveFileWithFallback } from '@/lib/fileExport'
 
@@ -19,13 +19,13 @@ function renderHiResBlob(options: RenderOptions): Promise<Blob> {
   return canvasToBlob(canvas)
 }
 
-async function renderHiResFile(activity: Activity, design: ShareDesign, options: RenderOptions): Promise<File> {
+async function renderHiResFile(activity: ShareActivity, design: ShareDesign, options: RenderOptions): Promise<File> {
   const blob = await renderHiResBlob(options)
   return new File([blob], shareCardFileName(activity, design), { type: 'image/png' })
 }
 
 export async function shareCardFile(
-  activity: Activity,
+  activity: ShareActivity,
   design: ShareDesign,
   options: RenderOptions,
   title: string
@@ -39,7 +39,7 @@ export async function shareCardFile(
   }
 }
 
-export async function saveCardPng(activity: Activity, design: ShareDesign, options: RenderOptions): Promise<void> {
+export async function saveCardPng(activity: ShareActivity, design: ShareDesign, options: RenderOptions): Promise<void> {
   const file = await renderHiResFile(activity, design, options)
   await saveFileWithFallback(file)
 }

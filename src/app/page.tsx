@@ -12,8 +12,8 @@ import { getTodayInsight, todayInsightSession } from '@/application/usecases/Get
 import { getPbCelebrationInsight } from '@/application/usecases/GetPbCelebrationInsight'
 import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
-import { coachWorkoutView, plannedWorkoutView } from '@/components/plan/planWorkoutView'
-import { isoDate } from '@/lib/calendarDate'
+import { coachWorkoutView, heroWorkoutView, plannedWorkoutView } from '@/components/plan/planWorkoutView'
+import { appTodayIso } from '@/lib/calendarDate'
 import { getWeeklyStreakData } from '@/application/usecases/GetMilestones'
 import { getCurrentWeeklyGoal } from '@/application/usecases/GetGoalsData'
 import { RecentActivities } from '@/components/dashboard/RecentActivities'
@@ -41,9 +41,12 @@ export default async function DashboardPage() {
   const todayPlannedWorkout = await getTodayPlannedWorkout()
   const weeklyStreak = getWeeklyStreakData()
   const weeklyGoal = await getCurrentWeeklyGoal()
-  const coaching = getCoachingOverview()
+  // One date for the whole render, in the athlete's zone when one is set - the
+  // coaching overview used to default to the UTC date while this page used the
+  // server's local one.
+  const today = appTodayIso()
+  const coaching = getCoachingOverview(today)
 
-  const today = isoDate(new Date())
   const todayActivity = data.recentActivities.find((a) => a.date === today) ?? null
   const todayCoachWorkout = coaching?.workouts.find((workout) => workout.prescription.date === today && workout.prescription.status !== 'cancelled') ?? null
   const trainingZones = await getTrainingZones()
@@ -67,10 +70,11 @@ export default async function DashboardPage() {
 
       <TodayHero
         status={trainingStatus}
-        plannedWorkout={todayWorkout}
+        plannedWorkout={todayWorkout && heroWorkoutView(todayWorkout)}
         todayActivity={todayActivity}
         nextRace={nextRace}
         aiVerdict={aiVerdict}
+        today={today}
       />
 
       <FormFitnessFatigueTrio status={trainingStatus} load={trainingLoad} />
@@ -79,7 +83,7 @@ export default async function DashboardPage() {
 
       {weeklyStreak && (
         <Link href="/plan" aria-label={t.plan.openPlanner} className="block active:scale-[0.99]">
-          <WeeklyStreakCard data={weeklyStreak} goal={weeklyGoal} />
+          <WeeklyStreakCard data={weeklyStreak} goal={weeklyGoal} today={today} />
         </Link>
       )}
 

@@ -1,4 +1,5 @@
 import { getAnalyticsData } from '@/application/usecases/GetAnalyticsData'
+import { appTodayIso } from '@/lib/calendarDate'
 import { getYearComparison } from '@/application/usecases/GetYearComparison'
 import { getSeasonHeadline } from '@/application/usecases/GetSeasonHeadline'
 import { getSeasonInsight } from '@/application/usecases/GetSeasonInsight'
@@ -82,6 +83,7 @@ export default async function AnalyticsPage() {
         activeDays={activeDays}
         heatmapDays={heatmap.length}
         heatImpact={heatImpact}
+        today={appTodayIso()}
       />
     </div>
   )

@@ -5,9 +5,11 @@ import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import { SectionDivider } from '@/components/ui/SectionLabel'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { ACTIVITY_TYPE_CONFIG, type ActivitySummary, type ActivityType, type PlannedWorkout, type ScheduledTimeOfDay } from '@/domain/activity/types'
+import type { ActivitySummary, ActivityType, PlannedWorkout, ScheduledTimeOfDay } from '@/domain/activity/types'
+import { activityTypeStyle } from '@/components/activity/activityTypeStyle'
 import type { HrBounds } from '@/domain/training/trimp'
 import { summarizeWeek, summarizePlannedWeek } from '@/domain/training/weekSummary'
+import { plannedEasyHard, recordedEasyHard, type EasyHardSplit } from '@/domain/activity/easyShare'
 import { weekPlanPhase } from '@/domain/training/weekPlanPhase'
 import { EFFORT_ZONE_BY_TYPE } from '@/domain/training/workoutStructure'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
@@ -20,8 +22,9 @@ import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { weeksInPlan, type PlanSpan } from '@/domain/training/planProgress'
 import { addDays, isoDate } from '@/lib/calendarDate'
 import { formatDate, formatDateRange, formatPace } from '@/lib/formatters'
+import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
-import type { CoachingOverview, PrescriptionView } from '@/application/coaching/GetCoachingView'
+import type { PlanCoachingView, PlanPrescriptionView } from './planCoachingView'
 import { COACHING_TO_ACTIVITY_TYPE } from '@/domain/coaching/types'
 import {
   isKeyPrescription,
@@ -38,7 +41,7 @@ import {
 } from './planWorkoutView'
 
 // The strip's second variable (after bar height = km) is activity type,
-// drawn as hue - the same ACTIVITY_TYPE_CONFIG the "this week" bullets, the
+// drawn as hue - the same ACTIVITY_TYPE_STYLE the "this week" bullets, the
 // session card and Activity detail already read from, so a colour means the
 // same thing everywhere it appears rather than each surface inventing its
 // own bucketing.
@@ -63,13 +66,16 @@ function brighten(hex: string): string {
 }
 
 const REST_STUB_FILL = 'rgba(148,178,220,.25)'
+// The "done" chip's blue was a dark-theme hex, 1.5:1 on the light background.
+// Each theme takes its own step of the same hue instead.
+const DONE_INK = 'text-blue-700 dark:text-blue-300'
 
 interface Day {
   date: string
   acts: ActivitySummary[]
 }
 
-// Hardest-first, matching ACTIVITY_TYPE_CONFIG's own declaration order - a
+// Hardest-first, matching ACTIVITY_TYPES' own declaration order - a
 // day with more than one logged activity (or a race day) resolves to
 // whichever one is hardest, not just whichever came first.
 const RAMP_ORDER: ActivityType[] = ['Race', 'Sprint', 'Anaerobic', 'VO2Max', 'Threshold', 'Tempo', 'Base']
@@ -83,7 +89,7 @@ function hardestType(types: ActivityType[]): ActivityType {
 function resolvePlannedType(
   date: string,
   byDatePlanned: Map<string, PlannedWorkout>,
-  byDateCoach?: ReadonlyMap<string, PrescriptionView[]>
+  byDateCoach?: ReadonlyMap<string, PlanPrescriptionView[]>
 ): ActivityType | undefined {
   const coach = byDateCoach?.get(date)?.find((v) => v.state !== 'cancelled')
   if (coach) return COACHING_TO_ACTIVITY_TYPE[coach.prescription.type]
@@ -178,7 +184,7 @@ function RestDayCard({ next }: { next: { weekday: string; title: string } | null
       className="w-full rounded-2xl p-3.5"
       style={{ border: '1px dashed rgba(148,178,220,.2)' }}
     >
-      <div className="font-bold" style={{ fontSize: '16px', color: '#c3ccd6' }}>{t.plan.restCard.title}</div>
+      <div className="font-bold text-muted-foreground" style={{ fontSize: '16px' }}>{t.plan.restCard.title}</div>
       <div className="mt-1" style={{ fontSize: '13px', color: 'var(--subtle)' }}>
         {next ? t.plan.restCard.next(next.weekday, next.title) : t.plan.restCard.noSession}
       </div>
@@ -190,7 +196,7 @@ function findNextPlanned(
   days: Day[],
   fromDate: string,
   byDatePlanned: Map<string, PlannedWorkout>,
-  byDateCoach?: ReadonlyMap<string, PrescriptionView[]>
+  byDateCoach?: ReadonlyMap<string, PlanPrescriptionView[]>
 ): { weekday: string; title: string } | null {
   const fromIndex = days.findIndex((d) => d.date === fromDate)
   if (fromIndex === -1) return null
@@ -230,7 +236,7 @@ interface WeekRowItem {
 
 // One row per session, divider-separated like the Activities list rather than
 // a stack of two-line cards - three sessions used to cost ~190px and their
-// distances never lined up. The dot reads ACTIVITY_TYPE_CONFIG, the same map
+// distances never lined up. The dot reads ACTIVITY_TYPE_STYLE, the same map
 // the strip's bars use, so the two read as one vocabulary.
 function WeekSessionRow({ workout, onTap, isLast }: { workout: WeekRowItem; onTap: () => void; isLast: boolean }) {
   const weekday = WEEKDAY_SHORT_INDEX[new Date(workout.date + 'T00:00:00').getDay()]
@@ -250,12 +256,12 @@ function WeekSessionRow({ workout, onTap, isLast }: { workout: WeekRowItem; onTa
           style={{
             width: '8px',
             height: '8px',
-            background: workout.type ? ACTIVITY_TYPE_CONFIG[workout.type].chartColor : 'var(--subtle-2)',
+            background: workout.type ? activityTypeStyle(workout.type).chartColor : 'var(--subtle-2)',
             // Same divergence the bar's cap shows: the fill is what was
             // recorded, this ring is what was planned - without it, a title
             // that names one thing and a dot that colours another look like
             // a bug instead of the known Garmin-mismatch case.
-            boxShadow: workout.plannedType ? `0 0 0 1.5px ${ACTIVITY_TYPE_CONFIG[workout.plannedType].chartColor}` : undefined,
+            boxShadow: workout.plannedType ? `0 0 0 1.5px ${activityTypeStyle(workout.plannedType).chartColor}` : undefined,
           }}
         />
         <span className="truncate font-bold text-foreground" style={{ fontSize: '15px' }}>
@@ -270,7 +276,7 @@ function WeekSessionRow({ workout, onTap, isLast }: { workout: WeekRowItem; onTa
 }
 
 // The strip is the tab's navigation and carries two variables: bar height is
-// planned/done km, hue is the day's activity type (ACTIVITY_TYPE_CONFIG) -
+// planned/done km, hue is the day's activity type (ACTIVITY_TYPE_STYLE) -
 // so a week's shape (two hard days back to back, a base week that quietly
 // turned into a threshold week) reads at a glance instead of needing the
 // detail pane open. Selection can no longer be "the green one" now that
@@ -288,7 +294,7 @@ function WeekStrip({
   selectedDate: string
   today: string
   byDatePlanned: Map<string, PlannedWorkout>
-  byDateCoach?: ReadonlyMap<string, PrescriptionView[]>
+  byDateCoach?: ReadonlyMap<string, PlanPrescriptionView[]>
   onSelect: (date: string) => void
 }) {
   const BAR_MAX = 56
@@ -314,8 +320,8 @@ function WeekStrip({
         const isRest = km === null
         const isSelected = d.date === selectedDate
         const isToday = d.date === today
-        const hue = resolved ? ACTIVITY_TYPE_CONFIG[resolved.type].chartColor : ACTIVITY_TYPE_CONFIG.Base.chartColor
-        const plannedHue = resolved?.planned ? ACTIVITY_TYPE_CONFIG[resolved.planned].chartColor : null
+        const hue = activityTypeStyle(resolved?.type).chartColor
+        const plannedHue = resolved?.planned ? activityTypeStyle(resolved.planned).chartColor : null
         // The tallest day in the week fills the track; a rest day gets a
         // fixed stub instead of a scaled height, so it reads as an absence
         // rather than as the smallest session.
@@ -394,16 +400,16 @@ function WeekSummaryLine({
   load,
   loadTarget,
   loadIsPlanned,
-  easyPct,
-  hardPct,
+  easyHard,
+  easyHardIsPlanned,
 }: {
   volumeKm: number
   sessions: number
   load: number
   loadTarget: number | null
   loadIsPlanned: boolean
-  easyPct: number | null
-  hardPct: number | null
+  easyHard: EasyHardSplit | null
+  easyHardIsPlanned: boolean
 }) {
   const s = t.plan.weekSummary
   // A target next to a completed load of exactly 0 reads as "nothing
@@ -434,7 +440,9 @@ function WeekSummaryLine({
         {s.loadUnit}
         {loadIsPlanned && <> {s.loadPlanned}</>}
       </span>
-      {easyPct !== null && hardPct !== null && <span>{s.easyHardRatio(easyPct, hardPct)}</span>}
+      {easyHard && (
+        <span>{easyHardIsPlanned ? s.easyHardPlanned(easyHard.easy, easyHard.hard) : s.easyHardRatio(easyHard.easy, easyHard.hard)}</span>
+      )}
     </div>
   )
 }
@@ -443,8 +451,8 @@ interface Props {
   weekStart: Date
   byDate: Map<string, ActivitySummary[]>
   byDatePlanned: Map<string, PlannedWorkout>
-  byDateCoach?: ReadonlyMap<string, PrescriptionView[]>
-  coaching?: CoachingOverview | null
+  byDateCoach?: ReadonlyMap<string, PlanPrescriptionView[]>
+  coaching?: PlanCoachingView | null
   onSelectDate?: (date: string) => void
   hrBounds?: HrBounds
   today: string
@@ -671,17 +679,12 @@ export function WeekView({
     ? Math.round(weekSessions.reduce((sum, w) => sum + w.distanceKm, 0))
     : Math.round(weekActs.reduce((sum, a) => sum + a.distanceKm, 0))
   const sessionsCount = weekSessions.length > 0 ? weekSessions.length : weekActs.length
-  // Easy/long vs threshold/interval, weighted by duration rather than by
-  // session count so one long run doesn't count the same as one set of
-  // strides. weekSessions already reads completed days as what was actually
-  // run (see above), so this is the recorded split for a week that's
-  // happened and the planned one for a week that hasn't - never a mix of
-  // the two within the same week.
-  const weekSessionSeconds = weekSessions.reduce((sum, w) => sum + w.seconds, 0)
-  const hardPct = weekSessionSeconds > 0
-    ? Math.round((weekSessions.filter((w) => w.key).reduce((sum, w) => sum + w.seconds, 0) / weekSessionSeconds) * 100)
-    : null
-  const easyPct = hardPct !== null ? 100 - hardPct : null
+  // A week that is over is read the way the activity list reads it - heart
+  // rate time in zones 1-2 - so one finished week has one easy share
+  // wherever it is shown. A week still to run has no heart rate yet: it gets
+  // the planned split of session time, and says so.
+  const easyHardIsPlanned = !weekOver
+  const easyHard = easyHardIsPlanned ? plannedEasyHard(weekSessions) : recordedEasyHard(weekActs)
 
   // Garmin's load is retrospective (completed-so-far against a weekly
   // target), which is honest for a week already underway but reads as a
@@ -765,8 +768,8 @@ export function WeekView({
         load={load}
         loadTarget={loadTarget}
         loadIsPlanned={loadIsPlanned}
-        easyPct={easyPct}
-        hardPct={hardPct}
+        easyHard={easyHard}
+        easyHardIsPlanned={easyHardIsPlanned}
       />
 
       <div className="space-y-3 px-1">
@@ -818,11 +821,10 @@ export function WeekView({
                   </span>
                   <span className="flex shrink-0 items-center" style={{ gap: '8px' }}>
                     <span
-                      className="font-bold uppercase"
+                      className={cn('font-bold uppercase', DONE_INK)}
                       style={{
                         fontSize: '11px',
                         letterSpacing: '.06em',
-                        color: '#9cc4ff',
                         background: 'rgba(90,151,245,.16)',
                         borderRadius: '6px',
                         padding: '4px 8px',

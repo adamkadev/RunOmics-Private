@@ -2,6 +2,7 @@ import { ChevronRight } from 'lucide-react'
 import type { AerobicDecoupling as Decoupling } from '@/domain/activity/decoupling'
 import { STATUS } from '@/lib/statusColors'
 import { cn } from '@/lib/utils'
+import { formatDeltaFixed } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 interface Props {
@@ -28,7 +29,7 @@ export function AerobicDecoupling({ decoupling, onShowCharts }: Props) {
         <span className="text-xs font-semibold text-foreground/80">{t.activity.decoupling.title}</span>
         <span className="flex items-center gap-1">
           <span className={cn('text-base font-extrabold tabular-nums', status.text)}>
-            {percent > 0 ? '+' : ''}{percent.toFixed(1)}% · {t.activity.decoupling[drift]}
+            {formatDeltaFixed(percent, 1)}% · {t.activity.decoupling[drift]}
           </span>
           {onShowCharts && <ChevronRight size={14} className="shrink-0 text-subtle" />}
         </span>

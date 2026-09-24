@@ -1,15 +1,15 @@
-import { Zap, Flame, Wind, TrendingUp, Clock, Footprints, Flag } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
-import { HUE } from '@/lib/palette'
+/**
+ * Every activity type, hardest effort first. The order is a contract: the
+ * activities filter chips break ties in it, /api/activities accepts exactly
+ * these, and the type style map is declared in it.
+ */
+export const ACTIVITY_TYPES = ['Sprint', 'Anaerobic', 'VO2Max', 'Threshold', 'Tempo', 'Base', 'Race'] as const
 
-export type ActivityType =
-  | 'Sprint'
-  | 'Anaerobic'
-  | 'VO2Max'
-  | 'Threshold'
-  | 'Tempo'
-  | 'Base'
-  | 'Race'
+export type ActivityType = (typeof ACTIVITY_TYPES)[number]
+
+export function isActivityType(value: unknown): value is ActivityType {
+  return typeof value === 'string' && (ACTIVITY_TYPES as readonly string[]).includes(value)
+}
 
 export interface SplitLap {
   durationSec: number
@@ -158,51 +158,4 @@ export interface DashboardData {
   recentActivities: ActivitySummary[]
   currentStreak: number
   longestStreak: number
-}
-
-/**
- * One ramp, five hue families instead of seven: green for the aerobic base,
- * then amber, orange and red as the effort rises. Violet and fuchsia are off
- * the table on purpose - `violet600` is the literal `--accent-text` of the
- * endurance theme, so a type painted in either would read as the selection
- * accent on that theme (this happened once already: Anaerobic used to be
- * violet600).
- *
- * Tempo is `amber400` rather than a mid yellow - the app's dark, green-tinted
- * background desaturates a plain yellow toward olive/mustard, the least
- * legible step in the ramp.
- *
- * The red family holds the three types EFFORT_ZONE_BY_TYPE puts in Z5, at
- * three depths that stay bright enough to read as "hard" rather than
- * "disabled" against that same dark background: `red600` for Sprint, `red500`
- * for Anaerobic, and `roRed` - the lightest - for VO2Max, which is also the
- * `--zone-5` token itself, so a VO2Max dot and a zone-5 segment agree rather
- * than competing. Declared hardest first, so the object reads top to bottom
- * as the ramp.
- *
- * `green600` is a shade cooler and darker than the accent/selection green
- * (both used to be `green500`, which read a Base dot as a selection
- * marker). Race sits outside the ramp entirely, in blue: it's an event, not
- * an intensity, and amber is already spoken for elsewhere as "nearest race
- * countdown" on the Plan screen - the collision that rule guards against is
- * Race painting itself amber, not Tempo.
- */
-export const ACTIVITY_TYPE_CONFIG: Record<ActivityType, { chartColor: string }> = {
-  Sprint:    { chartColor: HUE.red600 },
-  Anaerobic: { chartColor: HUE.red500 },
-  VO2Max:    { chartColor: HUE.roRed },
-  Threshold: { chartColor: HUE.orange500 },
-  Tempo:     { chartColor: HUE.amber400 },
-  Base:      { chartColor: HUE.green600 },
-  Race:      { chartColor: HUE.blue300 },
-}
-
-export const ACTIVITY_TYPE_ICONS: Record<ActivityType, LucideIcon> = {
-  Sprint: Zap,
-  Anaerobic: Flame,
-  VO2Max: Wind,
-  Threshold: TrendingUp,
-  Tempo: Clock,
-  Base: Footprints,
-  Race: Flag,
 }

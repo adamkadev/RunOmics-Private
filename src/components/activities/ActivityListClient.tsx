@@ -4,22 +4,24 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import Link from 'next/link'
 import { Search, SearchX, ChevronDown, Map as MapIcon } from 'lucide-react'
 import { ActivityListCard } from './ActivityListCard'
-import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
-import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
+import { ACTIVITY_TYPES, isActivityType, type ActivitySummary, type ActivityType } from '@/domain/activity/types'
+import { ACTIVITY_TYPE_STYLE, activityTypeStyle } from '@/components/activity/activityTypeStyle'
 import type { ActivityQueryResult, ActivitySortKey, ActivitySortOrder } from '@/application/usecases/QueryActivities'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import type { WeeklyGoal } from '@/application/usecases/GetGoalsData'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { Pill } from '@/components/ui/Pill'
 import { SortDropdown } from '@/components/ui/SortDropdown'
-import { easyHardShare } from '@/domain/training/easyHard'
+import { recordedEasyHard } from '@/domain/activity/easyShare'
+import { groupByWeek, withCurrentWeek, type WeekGroup } from '@/domain/activity/weekGroups'
 
 import { formatDateRange, formatKm } from '@/lib/formatters'
 import { isoDate, addDays, startOfWeek } from '@/lib/calendarDate'
 import { cn } from '@/lib/utils'
+import { useToday } from '@/lib/useToday'
 import { t } from '@/i18n'
 
-const ALL_TYPES = Object.keys(ACTIVITY_TYPE_CONFIG) as ActivityType[]
+const ALL_TYPES: readonly ActivityType[] = ACTIVITY_TYPES
 
 // Registry order is the intensity ramp, which puts Sprint and Anaerobic - the
 // two rarest - in the first two chip slots. Order the filter by how much of the
@@ -42,15 +44,9 @@ const SORT_OPTIONS: { value: ActivitySortKey; label: string }[] = [
   { value: 'avgHr', label: t.activities.sort.avgHr },
 ]
 
-interface WeekGroup {
-  key: string
+interface WeekRow extends WeekGroup<ActivitySummary> {
   label: string
-  range: string
-  items: ActivitySummary[]
-  totalKm: number
   easyPct: number | null
-  hardPct: number | null
-  isRelativeLabel: boolean
   shape: string
 }
 
@@ -78,7 +74,7 @@ function WeekStat({ value, label, variant }: { value: string; label: string; var
 
 // Fixed columns, not a flex gap, so km/runs/easy line up from one week row to
 // the next instead of drifting with each value's own width.
-function WeekSummary({ group, variant = 'card' }: { group: WeekGroup; variant?: WeekRowVariant }) {
+function WeekSummary({ group, variant = 'card' }: { group: WeekRow; variant?: WeekRowVariant }) {
   return (
     <div className="grid shrink-0" style={{ gridTemplateColumns: '38px 32px 46px', gap: '14px' }}>
       <WeekStat value={String(Math.round(group.totalKm))} label={t.activities.weekStat.km} variant={variant} />
@@ -107,13 +103,13 @@ function WeekCompositionDots({ items, label }: { items: ActivitySummary[]; label
             <span
               key={a.id}
               className="shrink-0 rounded-[4px]"
-              style={{ width: '7px', height: '7px', border: `1.5px solid ${ACTIVITY_TYPE_CONFIG.Race.chartColor}` }}
+              style={{ width: '7px', height: '7px', border: `1.5px solid ${ACTIVITY_TYPE_STYLE.Race.chartColor}` }}
             />
           ) : (
             <span
               key={a.id}
               className="shrink-0 rounded-[4px]"
-              style={{ width: '7px', height: '7px', background: ACTIVITY_TYPE_CONFIG[a.type].chartColor }}
+              style={{ width: '7px', height: '7px', background: activityTypeStyle(a.type).chartColor }}
             />
           )
         )}
@@ -150,44 +146,21 @@ function weekShape(items: ActivitySummary[]): string {
 
   return [...counts.entries()]
     .sort((a, b) => b[1] - a[1] || ALL_TYPES.indexOf(a[0]) - ALL_TYPES.indexOf(b[0]))
-    .map(([type, count]) => `${count} ${t.activityTypes[type].toLowerCase()}`)
+    // A type this build does not know yet has no label; name it as it came.
+    .map(([type, count]) => `${count} ${(t.activityTypes[type] ?? type).toLowerCase()}`)
     .join(' · ')
 }
 
-
-
-function groupByWeek(items: ActivitySummary[]): WeekGroup[] {
-  const weeks: { key: string; items: ActivitySummary[] }[] = []
-  for (const a of items) {
-    const key = isoDate(startOfWeek(new Date(a.date + 'T00:00:00')))
-    const openWeek = weeks[weeks.length - 1]
-    if (openWeek && openWeek.key === key) {
-      openWeek.items.push(a)
-    } else {
-      weeks.push({ key, items: [a] })
-    }
-  }
-
-  const currentWeekStart = isoDate(startOfWeek(new Date()))
+function weekRows(groups: WeekGroup<ActivitySummary>[], currentWeekStart: string): WeekRow[] {
   const lastWeekStart = isoDate(addDays(new Date(currentWeekStart + 'T00:00:00'), -7))
 
-  return weeks.map(({ key, items: weekItems }) => {
-    const totalKm = weekItems.reduce((s, a) => s + a.distanceKm, 0)
-    const { hardPct } = easyHardShare(weekItems)
-    const hard = hardPct === null ? null : Math.round(hardPct)
-    const range = formatDateRange(key, isoDate(addDays(new Date(key + 'T00:00:00'), 6)))
-    const relativeLabel =
-      key === currentWeekStart ? t.activities.thisWeek : key === lastWeekStart ? t.activities.lastWeek : null
+  return groups.map((group) => {
+    const range = formatDateRange(group.key, isoDate(addDays(new Date(group.key + 'T00:00:00'), 6)))
     return {
-      key,
-      label: relativeLabel ?? range,
-      range,
-      items: weekItems,
-      totalKm,
-      easyPct: hard === null ? null : 100 - hard,
-      hardPct: hard,
-      isRelativeLabel: relativeLabel !== null,
-      shape: weekShape(weekItems),
+      ...group,
+      label: group.key === currentWeekStart ? t.activities.thisWeek : group.key === lastWeekStart ? t.activities.lastWeek : range,
+      easyPct: recordedEasyHard(group.items)?.easy ?? null,
+      shape: weekShape(group.items),
     }
   })
 }
@@ -210,7 +183,7 @@ function readStoredFilters(): StoredFilters | null {
     const parsed = JSON.parse(raw) as Partial<StoredFilters>
     return {
       search: typeof parsed.search === 'string' ? parsed.search : '',
-      selectedType: ALL_TYPES.includes(parsed.selectedType as ActivityType) ? (parsed.selectedType as ActivityType) : null,
+      selectedType: isActivityType(parsed.selectedType) ? parsed.selectedType : null,
       sortBy: SORT_OPTIONS.some((o) => o.value === parsed.sortBy) ? (parsed.sortBy as ActivitySortKey) : 'date',
       sortOrder: parsed.sortOrder === 'asc' || parsed.sortOrder === 'desc' ? parsed.sortOrder : 'desc',
       expandedWeeks: Array.isArray(parsed.expandedWeeks) ? parsed.expandedWeeks.filter((k) => typeof k === 'string') : [],
@@ -246,6 +219,8 @@ interface Props {
   initialNextOffset: number | null
   totalCount: number
   qualifiedEffortsByActivityId?: Record<string, QualifiedEffort[]>
+  /** The date the page was prerendered on; see useToday. */
+  today: string
 }
 
 export function ActivityListClient({
@@ -254,7 +229,9 @@ export function ActivityListClient({
   initialNextOffset,
   totalCount,
   qualifiedEffortsByActivityId = {},
+  today: serverToday,
 }: Props) {
+  const today = useToday(serverToday)
   const [search, setSearch] = useState('')
   const [selectedType, setSelectedType] = useState<ActivityType | null>(null)
   const [sortBy, setSortBy] = useState<ActivitySortKey>('date')
@@ -351,7 +328,23 @@ export function ActivityListClient({
 
   const hasMore = nextOffset !== null
   const hasActiveFilter = selectedType !== null || search.trim() !== ''
-  const groups = sortBy === 'date' ? groupByWeek(items) : null
+  const currentWeekStart = isoDate(startOfWeek(new Date(`${today}T00:00:00`)))
+  // `items` answers the filter the last request was made with, which is the
+  // debounced search rather than the half-typed one.
+  const itemsAreFiltered = selectedType !== null || debouncedSearch.trim() !== ''
+  const groups = useMemo(() => {
+    if (sortBy !== 'date') return null
+    const grouped = groupByWeek(items, currentWeekStart)
+    // Only the unfiltered newest-first view opens on this week whether or not
+    // it has a run yet; a filtered or oldest-first list shows the week where
+    // (and if) its runs put it.
+    const opensOnThisWeek = sortOrder === 'desc' && !itemsAreFiltered
+    return weekRows(opensOnThisWeek ? withCurrentWeek(grouped, currentWeekStart) : grouped, currentWeekStart)
+  }, [items, sortBy, sortOrder, itemsAreFiltered, currentWeekStart])
+  // Before this week's first run its card is empty, so the latest runs would
+  // otherwise all sit behind collapsed rows. The newest week that has any
+  // starts open instead - under its own label, not the current card's.
+  const openByDefault = groups?.[0]?.isCurrent && groups[0].items.length === 0 ? groups[1]?.key : undefined
 
   const loadMore = useCallback(() => {
     if (nextOffset === null || loadingMore) return
@@ -466,7 +459,7 @@ export function ActivityListClient({
           <div
             aria-hidden="true"
             className="pointer-events-none absolute right-0 top-0 w-[30px]"
-            style={{ height: '36px', background: 'linear-gradient(90deg, rgba(9,16,32,0), #091020 85%)' }}
+            style={{ height: '36px', background: 'linear-gradient(90deg, transparent, var(--background) 85%)' }}
           />
         )}
       </div>
@@ -492,12 +485,13 @@ export function ActivityListClient({
         </GlassSurface>
       ) : groups ? (
         <div className="space-y-3">
-          {groups.map((g, i) => {
-            const isCurrent = i === 0
-            const isExpanded = isCurrent || expandedWeeks.has(g.key)
+          {groups.map((g) => {
+            // A toggle flips a week from its default, so for the week that
+            // starts open, being in expandedWeeks means the reader closed it.
+            const isExpanded = g.isCurrent || expandedWeeks.has(g.key) !== (g.key === openByDefault)
             return (
               <div key={g.key}>
-                {isCurrent ? (
+                {g.isCurrent ? (
                   <div
                     className="sticky top-[max(var(--safe-top),8px)] z-10 rounded-xl border py-2.5 pl-3.5"
                     style={{
@@ -509,7 +503,7 @@ export function ActivityListClient({
                     <div className="flex items-start gap-3">
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-bold text-foreground">{g.label}</div>
-                        <WeekCompositionDots items={g.items} label={g.shape} />
+                        {g.items.length > 0 && <WeekCompositionDots items={g.items} label={g.shape} />}
                       </div>
                       <div className="flex items-center" style={{ gap: '16px' }}>
                         <WeekSummary group={g} />
@@ -537,7 +531,7 @@ export function ActivityListClient({
                     style={{ borderTop: '1px solid rgba(148,178,220,.14)', padding: '11px 16px 10px' }}
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="truncate font-bold" style={{ fontSize: '15px', color: '#c3ccd6' }}>{g.label}</div>
+                      <div className="truncate font-bold text-muted-foreground" style={{ fontSize: '15px' }}>{g.label}</div>
                       <WeekCompositionDots items={g.items} label={g.shape} />
                     </div>
                     <div className="flex items-center" style={{ gap: '16px' }}>
@@ -548,7 +542,7 @@ export function ActivityListClient({
                     </div>
                   </button>
                 )}
-                {isExpanded && (
+                {isExpanded && g.items.length > 0 && (
                   <div className="mt-2 space-y-2" style={{ marginLeft: '10px' }}>
                     {g.items.map((a) => (
                       <ActivityListCard key={a.id} activity={a} qualifiedEfforts={qualifiedEffortsByActivityId[a.id]} />

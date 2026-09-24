@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import type { Activity } from '@/domain/activity/types'
+import type { ShareActivity } from '@/lib/shareCardStats'
 
-export function useShareCardGeocode(activity: Activity): {
+export function useShareCardGeocode(activity: ShareActivity): {
   locationName: string | null
   streetLabels: string[]
 } {

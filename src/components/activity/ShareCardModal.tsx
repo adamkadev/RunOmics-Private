@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTheme } from 'next-themes'
 import { X } from 'lucide-react'
-import type { Activity } from '@/domain/activity/types'
+import type { ShareActivity } from '@/lib/shareCardStats'
 import { renderShareCard, loadImage, W, H, type ShareDesign, type ThemeMode } from '@/lib/shareCard'
 import { shareCardFile, saveCardPng, copyCardPng } from '@/lib/shareCardExport'
 import { useShareCardPrefs } from '@/lib/useShareCardPrefs'
@@ -20,7 +20,7 @@ import { ShareCardActions } from '@/components/activity/ShareCardActions'
 import { Toggle, RowDivider, SettingRow } from '@/components/activity/ShareCardControls'
 
 interface Props {
-  activity: Activity
+  activity: ShareActivity
   canShareFiles: boolean
   canCopyImage: boolean
   onClose: () => void

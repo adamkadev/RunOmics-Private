@@ -1,5 +1,6 @@
 import { getGoalsPageData } from '@/application/usecases/GetGoalsData'
 import { GoalsClient } from '@/components/goals/GoalsClient'
+import { appTodayIso } from '@/lib/calendarDate'
 import { BackButton } from '@/components/ui/BackButton'
 import { t } from '@/i18n'
 
@@ -11,7 +12,7 @@ export default async function GoalsPage() {
   return (
     <div className="space-y-6">
       <BackButton label={t.goals.back} fallbackHref="/profile" />
-      <GoalsClient data={data} />
+      <GoalsClient data={data} today={appTodayIso()} />
     </div>
   )
 }

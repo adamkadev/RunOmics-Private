@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, type ReactNode } from 'react'
+import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import {
   CHART_RANGES,
@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { CHART_COLORS } from '@/lib/colors'
 import { AXIS_TICK_DATE, formatDate } from '@/lib/formatters'
+import { appTodayIso } from '@/lib/calendarDate'
 
 export interface ChartWindow<T extends { date: string }> {
   range: ChartRange
@@ -32,9 +33,16 @@ export interface ChartWindow<T extends { date: string }> {
   goForward: () => void
 }
 
-function startOfTodayMs(): number {
-  const d = new Date()
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+/**
+ * The date every chart window ends on. A page's client root fills it with what
+ * useToday returned, so the windows agree with the server's HTML on hydration
+ * and move at midnight; eleven charts deep, a prop through each would not be
+ * simpler. Outside a provider it falls back to reading the clock.
+ */
+export const ChartTodayContext = createContext<string | null>(null)
+
+export function useChartToday(): string {
+  return useContext(ChartTodayContext) ?? appTodayIso()
 }
 
 export function useChartWindow<T extends { date: string }>(
@@ -45,7 +53,8 @@ export function useChartWindow<T extends { date: string }>(
   const [range, setRange] = useState<ChartRange>(initialRange)
   const [offset, setOffset] = useState(0)
 
-  const anchorMs = anchor ? anchor.getTime() : startOfTodayMs()
+  const today = useChartToday()
+  const anchorMs = anchor ? anchor.getTime() : new Date(`${today}T00:00:00`).getTime()
   const anchorDate = useMemo(() => new Date(anchorMs), [anchorMs])
 
   const bounds = useMemo(() => windowBounds(range, offset, anchorDate), [range, offset, anchorDate])
