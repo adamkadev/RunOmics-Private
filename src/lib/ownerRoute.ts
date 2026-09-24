@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
+import { logRejectedRequest } from '@/lib/internalAuth'
 import { verifyFirebaseIdToken } from '@/lib/verifyFirebaseIdToken'
 
 /**
@@ -17,19 +18,28 @@ import { verifyFirebaseIdToken } from '@/lib/verifyFirebaseIdToken'
 export async function requireOwner(req: NextRequest): Promise<NextResponse | null> {
   const projectId = process.env.FIREBASE_PROJECT_ID
   if (!projectId) {
+    logRejectedRequest(req, 'not-configured')
     return NextResponse.json({ error: 'Auth is not configured' }, { status: 503 })
   }
 
   const token = req.headers.get('authorization')?.match(/^Bearer (.+)$/)?.[1]
-  if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!token) {
+    logRejectedRequest(req, 'unauthorized')
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
   try {
     const claims = await verifyFirebaseIdToken(token, projectId)
-    if (claims.owner !== true) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (claims.owner !== true) {
+      logRejectedRequest(req, 'forbidden')
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
     return null
   } catch {
     // A revoked, expired or forged token all land here, and all mean the same
-    // thing to the caller: sign in again.
+    // thing to the caller: sign in again. The log keeps to the same reason -
+    // the verifier's message can quote the expected audience.
+    logRejectedRequest(req, 'unauthorized')
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 }

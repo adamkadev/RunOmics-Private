@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { NextRequest } from 'next/server'
 import { guardInternalRequest, isAuthorizedInternalRequest } from '@/lib/internalAuth'
 
@@ -56,6 +56,47 @@ describe('internalAuth', () => {
       expect(limitedBadSecret?.status).toBe(429)
 
       expect(guardInternalRequest(makeRequest({ secret: SECRET, ip: '10.9.9.8' }))).toBeNull()
+    })
+  })
+
+  describe('rejection log', () => {
+    afterEach(() => {
+      vi.restoreAllMocks()
+    })
+
+    const warnings = () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      return () => warn.mock.calls.map(([line]) => JSON.parse(line as string))
+    }
+
+    it('logs a refused secret as one line: the route and why, nothing the caller sent', () => {
+      const logged = warnings()
+
+      guardInternalRequest(makeRequest({ secret: 'a-guessed-secret', ip: '203.0.113.7' }))
+
+      expect(logged()).toEqual([
+        { level: 'warn', event: 'request-rejected', route: '/api/internal/test', reason: 'unauthorized' },
+      ])
+      expect(JSON.stringify(logged())).not.toMatch(/a-guessed-secret|203\.0\.113\.7/)
+    })
+
+    it('logs a rate-limited caller under its own reason', () => {
+      for (let i = 0; i < 20; i++) guardInternalRequest(makeRequest({ secret: SECRET, ip: '10.7.7.7' }))
+      const logged = warnings()
+
+      guardInternalRequest(makeRequest({ secret: SECRET, ip: '10.7.7.7' }))
+
+      expect(logged()).toEqual([
+        { level: 'warn', event: 'request-rejected', route: '/api/internal/test', reason: 'rate-limited' },
+      ])
+    })
+
+    it('stays quiet about a request it lets through', () => {
+      const logged = warnings()
+
+      guardInternalRequest(makeRequest({ secret: SECRET, ip: '10.0.0.3' }))
+
+      expect(logged()).toEqual([])
     })
   })
 })
