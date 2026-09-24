@@ -75,8 +75,17 @@ for (const prefix of ['public/fit', FIT_CACHE_DIR]) {
 }
 
 
+// Race-day photos are real people at real places, and a phone photo's EXIF can
+// carry the GPS the privacy zone exists to hide. Everything under public/
+// ships to every deployment.
 const eventFiles = trackedUnder(files, 'public/events')
-if (eventFiles.length) warn('public/events/ is tracked', `${eventFiles.length} file(s) - race-day photos, if real, must not ship.`)
+if (eventFiles.length) critical('public/events/ is tracked', `${eventFiles.length} file(s) - race-day photos belong in the data repository.`)
+
+// The coaching CLI writes these wherever --prompt-out points; both carry the
+// athlete's health data (see .gitignore).
+for (const f of files) {
+  if (/(^|\/)(coach-prompt\.md|answer\.json)$/.test(f)) critical('A coaching prompt or reply is tracked', f)
+}
 
 for (const f of files) {
   if (/^\.env(\..+)?$/.test(f) && f !== '.env.e2e' && f !== '.env.example') {
@@ -92,6 +101,13 @@ const secretChecks = [
   { name: 'AWS access key (AKIA...)', pattern: /AKIA[0-9A-Z]{16}/ },
   { name: 'PEM private key header', pattern: /BEGIN (RSA )?PRIVATE KEY/, exclude: ['.env.example', 'README.md'] },
   { name: 'Firebase service-account JSON shape', pattern: /"type"\s*:\s*"service_account"/ },
+  // The data repository PAT and the sync-dispatch token both live in env vars;
+  // a pasted one is a write credential for the only copy of the history.
+  { name: 'GitHub token', pattern: /\b(gh[pousr]_[0-9A-Za-z]{36,}|github_pat_[0-9A-Za-z_]{50,})\b/ },
+  { name: 'Vercel deploy hook URL', pattern: /api\.vercel\.com\/v1\/integrations\/deploy\/prj_[0-9A-Za-z]+\/[0-9A-Za-z]+/ },
+  // Real coordinates carry decimals; the placeholders in .env.example and the
+  // fictional zones in the tests do not reach three.
+  { name: 'PRIVACY_ZONES set to real-looking coordinates', pattern: /PRIVACY_ZONES\s*[=:]\s*['"]?\[\s*\[\s*-?\d+\.\d{3,}/ },
 ]
 for (const { name, pattern, exclude } of secretChecks) {
   const hits = grepTracked(files, pattern, { exclude: exclude ?? [] })
