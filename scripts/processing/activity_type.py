@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from statistics import median
-from typing import TYPE_CHECKING, Any, Sequence
+from typing import TYPE_CHECKING, Any
+from collections.abc import Sequence
 
 if TYPE_CHECKING:
     from processing.fit_parser import ParsedFit
@@ -27,7 +28,7 @@ class TypeInference:
 
 def infer_type_with_source(
     name: str,
-    parsed: "ParsedFit | None",
+    parsed: ParsedFit | None,
     *,
     hr_zones: Sequence[Any] = (),
     duration_seconds: int | None = None,
@@ -51,7 +52,7 @@ def infer_type_with_source(
 
 def infer_type(
     name: str,
-    parsed: "ParsedFit | None",
+    parsed: ParsedFit | None,
     *,
     hr_zones: Sequence[Any] = (),
     duration_seconds: int | None = None,
@@ -66,7 +67,7 @@ def infer_type(
 
 
 def _infer_runomics_type(
-    parsed: "ParsedFit | None",
+    parsed: ParsedFit | None,
     *,
     hr_zones: Sequence[Any],
     duration_seconds: int | None,
@@ -106,7 +107,7 @@ def _infer_runomics_type(
     return "Base"
 
 
-def _interval_evidence(parsed: "ParsedFit | None") -> tuple[list[int], int]:
+def _interval_evidence(parsed: ParsedFit | None) -> tuple[list[int], int]:
     if not parsed or not parsed.splits:
         return [], 0
 

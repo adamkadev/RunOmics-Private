@@ -312,5 +312,7 @@ def _zones(**shares):
 
 
 def test_preserves_non_running_sport_for_running_volume_filters():
-    activity = map_activity({"activityId": 1, "startTimeLocal": "2026-09-05 10:00:00", "activityType": {"typeKey": "cycling"}}, None)
+    activity = map_activity(
+        {"activityId": 1, "startTimeLocal": "2026-09-05 10:00:00", "activityType": {"typeKey": "cycling"}}, None
+    )
     assert activity.to_dict()["sport"] == "cycling"

@@ -5,7 +5,6 @@ import pytest
 
 from diagnostics.compare_reports import (
     build_comparison,
-    comparison_markdown,
     validate_comparison,
     write_comparison_bundle,
 )

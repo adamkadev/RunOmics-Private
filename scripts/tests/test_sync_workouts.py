@@ -3,7 +3,6 @@ from datetime import date, timedelta
 
 from garmin.client import GarminAPIError
 from garmin_step_fixtures import (
-    detail_with_steps as _detail_with_steps,
     open_time_step as _open_time_step,
     pace_zone_step as _pace_zone_step,
     repeat_group as _repeat_group,

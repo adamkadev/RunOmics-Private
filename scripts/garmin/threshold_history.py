@@ -15,7 +15,6 @@ returns one entry per revision, keyed here on the day it took effect.
 from __future__ import annotations
 
 from datetime import date
-from pathlib import Path
 from typing import Any
 
 from data_directory import get_data_dir

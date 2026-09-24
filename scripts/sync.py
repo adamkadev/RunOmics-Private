@@ -26,7 +26,7 @@ from garmin.vo2max_norms import fetch_vo2max_norms, write_vo2max_norms
 from sync_workouts import enrich_description_from_plan, fetch_planned_workouts, write_planned_workouts
 from sync_upcoming_races import fetch_upcoming_races, write_upcoming_races
 from processing.fit_parser import ParsedFit, parse_fit
-from processing.mapper import HrZone, extract_gear_id, map_activity, parse_hr_zones
+from processing.mapper import extract_gear_id, map_activity, parse_hr_zones
 from processing.weather import WeatherClient, weather_for_activity
 from repository.json_store import JsonActivityStore, PlannedWorkoutStore
 from repository.history_file import HistoryFileError, read_history, write_history

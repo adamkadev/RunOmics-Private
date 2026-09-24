@@ -63,7 +63,7 @@ class ActivitySplit:
             "distanceM": round(self.distance_m, 1),
             "avgSpeedMs": round(self.avg_speed_ms, 4),
             "avgHr": self.avg_hr,
-            "laps": [l.to_dict() for l in self.laps],
+            "laps": [lap.to_dict() for lap in self.laps],
         }
 
 

@@ -419,7 +419,7 @@ class GarminClient:
     def close(self) -> None:
         self._http.close()
 
-    def __enter__(self) -> "GarminClient":
+    def __enter__(self) -> GarminClient:
         return self
 
     def __exit__(self, *_: Any) -> None:
