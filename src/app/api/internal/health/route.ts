@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { handleInternalRoute } from '@/lib/internalRoute'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getLastSyncedAt } from '@/application/usecases/GetSyncStatus'
+import { integrationStatus } from '@/infrastructure/integrations'
 
 const STALE_AFTER_DAYS = 7
 
@@ -22,6 +23,7 @@ export async function GET(req: NextRequest) {
       daysSinceLastActivity,
       lastSyncedAt: getLastSyncedAt(),
       version: process.env.NEXT_PUBLIC_APP_VERSION ?? null,
+      integrations: integrationStatus(),
     })
   })
 }

@@ -405,6 +405,9 @@ Playwright can drive without a test-only auth bypass, which is its own follow-up
 `GET /api/internal/health` (authenticated with `x-internal-secret`) reports the
 last synced activity date and flags the data as `stale` after 7 days without
 one - point any uptime monitor at it to catch a silently broken Garmin sync.
+Its `integrations` field says which server integrations the deployment has
+credentials for (`firebaseAdmin`, `gemini`, `syncButton`), by name only, and
+the nightly sync warns when one the post-sync checks need is missing.
 
 ---
 

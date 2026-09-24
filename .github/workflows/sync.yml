@@ -366,6 +366,16 @@ jobs:
             echo "::warning::App still serving pre-sync data after 6 min (live: ${LIVE:-none}, expected: $EXPECTED_SYNC). Running the checks anyway."
           fi
 
+          # The checks below need Firebase Admin (Firestore and every push) and
+          # Gemini. Name what this deployment lacks, rather than leave a row of 500s
+          # to be read backwards. Health reports names only, never values.
+          MISSING=$(printf 'x-internal-secret: %s\n' "$SECRET" \
+            | curl -fsS --max-time 20 "$APP_URL/api/internal/health" -H @- \
+            | python -c "import json,sys; i=json.load(sys.stdin).get('integrations') or {}; print(' '.join(k for k in ('firebaseAdmin', 'gemini') if i.get(k) is False))" 2>/dev/null || true)
+          if [ -n "$MISSING" ]; then
+            echo "::warning::This deployment has no credentials for: $MISSING. See docs/personal-deployments.md."
+          fi
+
           # No check may take another one down with it. They are independent, and
           # a 504 on one of these used to abort the step under `bash -e` - which
           # is how a slow ai-insights pass silently cancelled the two passes
