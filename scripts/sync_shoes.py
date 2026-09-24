@@ -44,15 +44,17 @@ def main() -> int:
     print(f"Found {len(shoes)} shoe(s):")
     for shoe in shoes:
         status = "retired" if shoe.retired else "active"
-        print(f"  {shoe.brand} {shoe.name}  ({status}, max {shoe.max_km} km)  {shoe.gear_id}")
+        print(f"  {shoe.brand} {shoe.model}  ({status}, max {shoe.max_km} km)  {shoe.gear_id}")
 
     if args.dry_run:
         print("\nDry run - preview of shoes.json:\n")
         print(json.dumps({"shoes": [shoe.to_dict() for shoe in shoes]}, indent=2))
         return 0
 
+    # Passed on rather than left to write_shoes_json's default, which was
+    # resolved at import and could name another workspace than the message.
     output_path = get_data_dir() / "shoes.json"
-    if write_shoes_json(shoes):
+    if write_shoes_json(shoes, path=output_path):
         print(f"\n{output_path} updated - review it before pushing private data.")
     else:
         print(f"\n{output_path} already up to date.")

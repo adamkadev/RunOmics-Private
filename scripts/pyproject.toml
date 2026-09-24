@@ -1,0 +1,31 @@
+# Tool settings for the Python sync pipeline. Not a package: the entry points
+# run as files and put scripts/ on sys.path themselves, as tests/conftest.py
+# does for the tests. Dependencies live in requirements*.in / *.txt.
+
+[tool.ruff]
+target-version = "py312"
+# The longest line the code already had: nothing was rewrapped to fit.
+line-length = 130
+
+[tool.ruff.lint]
+# Import sorting (I) is left out on purpose: turned on, it reorders the
+# imports of nearly every module at once, for no behaviour.
+select = ["E", "F", "W", "B", "UP"]
+ignore = [
+    # Rewrites that would raise the oldest Python the scripts run on, for
+    # style alone: the workflows use 3.12, but the coaching bridge runs on
+    # whatever interpreter the athlete's laptop has. datetime.UTC needs 3.11;
+    # PEP 695 syntax does not even parse before 3.12.
+    "UP017",
+    "UP040",
+    "UP046",
+    "UP047",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = [
+    # garth says so on every import. Known: replacing it is its own piece of
+    # work, and the warning would otherwise head every test run.
+    "ignore:Garth is deprecated:DeprecationWarning",
+]

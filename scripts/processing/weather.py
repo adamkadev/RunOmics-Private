@@ -7,7 +7,8 @@ import urllib.request
 from calendar import monthrange
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
-from typing import Any, Callable
+from typing import Any
+from collections.abc import Callable
 
 from processing.fit_parser import ParsedFit
 

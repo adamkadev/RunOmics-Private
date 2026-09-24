@@ -19,15 +19,14 @@ from __future__ import annotations
 
 import json
 from datetime import date
-from pathlib import Path
 from typing import Any
 
 from data_directory import get_data_dir
+from repository.atomic_write import write_text_atomic
 from .client import GarminAPIError, GarminClient
 from .retry import retry_transient
 
-_DATA_DIR = get_data_dir()
-_PATH = _DATA_DIR / "training_plan.json"
+_PATH = get_data_dir() / "training_plan.json"
 
 
 def current_plan_summary(plans: list[dict[str, Any]], today: date) -> dict[str, Any] | None:
@@ -106,7 +105,6 @@ def sync_training_plan(client: GarminClient, today: date | None = None) -> bool:
         print(f"  Plan {plan_id} has no phases.")
         return False
 
-    _DATA_DIR.mkdir(parents=True, exist_ok=True)
-    _PATH.write_text(json.dumps(normalized, indent=2) + "\n")
+    write_text_atomic(_PATH, json.dumps(normalized, indent=2) + "\n")
     print(f"  {normalized['name']}: {len(normalized['phases'])} phase(s) written.")
     return True

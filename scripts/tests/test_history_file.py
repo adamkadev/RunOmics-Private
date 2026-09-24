@@ -85,7 +85,7 @@ class TestWriteHistory:
         def explode(*_args, **_kwargs):
             raise OSError("no space left on device")
 
-        monkeypatch.setattr("pathlib.Path.write_text", explode)
+        monkeypatch.setattr("os.fsync", explode)
         with pytest.raises(OSError):
             write_history(path, {"days": {"2026-09-02": {"vo2max": 55}}})
 

@@ -7,8 +7,12 @@ FIT decoding itself (garmin_fit_sdk) is exercised only via the corrupt-input
 path (building valid FIT binaries in a test isn't worth the machinery).
 """
 
+import random
 from datetime import datetime, timezone
 
+import pytest
+
+from processing import fit_parser
 from processing.fit_parser import (
     ParsedFit,
     _best_efforts,
@@ -17,6 +21,8 @@ from processing.fit_parser import (
     _extract_vo2max,
     _local_start_time,
     _pace_samples,
+    _perpendicular_distance,
+    _project_meters,
     parse_fit,
 )
 
@@ -129,6 +135,62 @@ class TestDecimate:
     def test_short_routes_untouched(self):
         coords = [[20.50, 10.11], [20.51, 10.12]]
         assert _decimate(coords, max_points=100) == coords
+
+    @pytest.mark.parametrize("max_points", [2, 40, 150, 400], ids=lambda m: f"cap {m}")
+    @pytest.mark.parametrize("route", ["random walk", "zigzag"])
+    def test_keeps_exactly_the_points_the_epsilon_ladder_kept(self, route, max_points):
+        # The reference is the loop _decimate replaced, re-running
+        # Douglas-Peucker at 0.5 m, then x1.5 per step until under the cap:
+        # every stored route came out of it, so the result must not move.
+        coords = _random_walk(400) if route == "random walk" else _zigzag(200)
+
+        assert _decimate(coords, max_points) == _ladder_decimate(coords, max_points)
+
+    def test_a_cap_below_the_two_endpoints_is_refused(self):
+        with pytest.raises(ValueError):
+            _decimate(_zigzag(10), max_points=1)
+
+
+def _random_walk(n: int) -> list[list[float]]:
+    rng = random.Random(7)
+    lon, lat, coords = 20.50, 10.11, []
+    for _ in range(n):
+        lon += rng.uniform(-0.0002, 0.0003)
+        lat += rng.uniform(-0.0002, 0.0003)
+        coords.append([round(lon, 6), round(lat, 6)])
+    return coords
+
+
+def _zigzag(n: int) -> list[list[float]]:
+    return [[20.50 + i * 0.0001, 10.11 + (0.0002 if i % 2 else -0.0002)] for i in range(n)]
+
+
+def _ladder_decimate(coords: list[list[float]], max_points: int) -> list[list[float]]:
+    lon0, lat0 = coords[len(coords) // 2]
+    points = [_project_meters(lon, lat, lon0, lat0) for lon, lat in coords]
+
+    def keep_mask(epsilon: float) -> list[bool]:
+        keep = [False] * len(points)
+        keep[0] = keep[-1] = True
+        stack = [(0, len(points) - 1)]
+        while stack:
+            start, end = stack.pop()
+            best, best_i = 0.0, -1
+            for i in range(start + 1, end):
+                dist = _perpendicular_distance(points[i], points[start], points[end])
+                if dist > best:
+                    best, best_i = dist, i
+            if best_i != -1 and best > epsilon:
+                keep[best_i] = True
+                stack += [(start, best_i), (best_i, end)]
+        return keep
+
+    epsilon = 0.5
+    keep = keep_mask(epsilon)
+    while sum(keep) > max_points:
+        epsilon *= 1.5
+        keep = keep_mask(epsilon)
+    return [c for c, k in zip(coords, keep, strict=True) if k]
 
 
 class TestExtractSplits:
@@ -313,3 +375,19 @@ class TestParseFitRobustness:
 
     def test_empty_bytes(self):
         assert not parse_fit(b"").has_data
+
+    def test_what_the_decoder_rejected_is_reported(self, capsys):
+        # The SDK hands its errors back rather than raising; ignoring them
+        # made a rejected file indistinguishable from an activity without one.
+        parse_fit(b"definitely not a FIT file")
+
+        assert "not a fit file" in capsys.readouterr().out
+
+    def test_a_decoder_crash_is_reported(self, monkeypatch, capsys):
+        def crash(_content):
+            raise IndexError("list index out of range")
+
+        monkeypatch.setattr(fit_parser.Stream, "from_byte_array", crash)
+
+        assert not parse_fit(b"anything").has_data
+        assert "IndexError: list index out of range" in capsys.readouterr().out

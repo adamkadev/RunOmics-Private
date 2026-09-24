@@ -12,6 +12,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from repository.atomic_write import write_text_atomic
+
 
 class HistoryFileError(RuntimeError):
     """A history file exists but could not be read as the JSON it should hold."""
@@ -22,9 +24,11 @@ def read_history(path: Path) -> dict[str, Any]:
     if not path.exists():
         return {}
 
+    # UTF-8 explicitly, as it is written: the locale default on Windows would
+    # decode an accented name into something the next write then persists.
     try:
-        payload = json.loads(path.read_text())
-    except (OSError, json.JSONDecodeError) as exc:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise HistoryFileError(
             f"{path} exists but could not be read ({exc}). Refusing to continue: "
             f"the next step would overwrite it. Restore it from the data "
@@ -54,10 +58,4 @@ def read_history_section(path: Path, key: str) -> dict[str, Any]:
 
 def write_history(path: Path, payload: dict[str, Any]) -> None:
     """Write via a temporary file, then rename over: readers never see a partial file."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(f"{path.name}.tmp")
-    try:
-        tmp.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-        tmp.replace(path)
-    finally:
-        tmp.unlink(missing_ok=True)
+    write_text_atomic(path, json.dumps(payload, indent=2, ensure_ascii=False) + "\n")

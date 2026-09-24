@@ -19,10 +19,10 @@ layer consumes:
 from __future__ import annotations
 
 import json
-from pathlib import Path
 from typing import Any
 
 from data_directory import get_data_dir
+from repository.atomic_write import write_text_atomic
 from .client import GarminAPIError, GarminClient
 
 _OUT_PATH = get_data_dir() / "vo2max_norms.json"
@@ -100,16 +100,17 @@ def write_vo2max_norms(norms: dict[str, Any] | None) -> bool:
     existing: dict[str, Any] | None = None
     if _OUT_PATH.exists():
         try:
-            existing = json.loads(_OUT_PATH.read_text())
-        except Exception:
-            existing = None
+            existing = json.loads(_OUT_PATH.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            # Garmin serves the whole table every time, so rewriting it loses
+            # nothing; a file that stopped parsing is still worth a line.
+            print(f"  Warning: {_OUT_PATH} could not be read ({exc}); rewriting it from Garmin's table.")
 
     if existing == norms:
         print("  VO2max norms unchanged.")
         return False
 
-    _OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    _OUT_PATH.write_text(json.dumps(norms, indent=2, sort_keys=True) + "\n")
+    write_text_atomic(_OUT_PATH, json.dumps(norms, indent=2, sort_keys=True) + "\n")
 
     if existing is None:
         print("  VO2max norms written to vo2max_norms.json")

@@ -3,7 +3,6 @@ from datetime import date, timedelta
 
 from garmin.client import GarminAPIError
 from garmin_step_fixtures import (
-    detail_with_steps as _detail_with_steps,
     open_time_step as _open_time_step,
     pace_zone_step as _pace_zone_step,
     repeat_group as _repeat_group,
@@ -38,6 +37,12 @@ class TestLoadEasyPaceSecPerKm:
         (tmp_path / "athlete.json").write_text(json.dumps({}))
 
         assert _load_easy_pace_sec_per_km(tmp_path) == _DEFAULT_EASY_PACE_SEC_PER_KM
+
+    def test_says_so_when_it_falls_back_over_an_unreadable_file(self, tmp_path, capsys):
+        (tmp_path / "athlete.json").write_text('{"thresholdPaceSecPerKm": 25')
+
+        assert _load_easy_pace_sec_per_km(tmp_path) == _DEFAULT_EASY_PACE_SEC_PER_KM
+        assert f"{tmp_path / 'athlete.json'} could not be read" in capsys.readouterr().out
 
 
 class TestContinuousBaseWorkoutGetsTheSameFields:
@@ -261,7 +266,9 @@ class TestAdaptiveWorkoutFallback:
 
         assert entries == [{"date": "2026-07-21", "name": "Seuil"}]
 
-    def test_drops_entry_silently_when_detail_fails_and_no_fallback_title(self, monkeypatch):
+    def test_reports_the_date_even_without_a_fallback_title(self, monkeypatch):
+        # Dropping it made the date look free, and the stale-entry pruning
+        # then deleted whatever complete entry was on file for it.
         monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
 
         class _FailingClient:
@@ -270,7 +277,28 @@ class TestAdaptiveWorkoutFallback:
 
         entries = _build_entries(_FailingClient(), [("2026-07-21", "999", "", False)])
 
-        assert entries == []
+        assert entries == [{"date": "2026-07-21", "name": ""}]
+
+    def test_a_transient_detail_failure_is_retried(self, monkeypatch):
+        monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
+        calls = []
+
+        class _FlakyClient:
+            def get_workout_detail(self, workout_id):
+                calls.append(workout_id)
+                if len(calls) == 1:
+                    raise GarminAPIError(503, f"workout/{workout_id}")
+                return {
+                    "workoutName": "Easy run",
+                    "sportType": {"sportTypeKey": "running"},
+                    "estimatedDurationInSecs": 2700,
+                    "workoutSegments": [],
+                }
+
+        entries = _build_entries(_FlakyClient(), [("2026-07-21", "456", "Easy run", False)])
+
+        assert calls == ["456", "456"]
+        assert entries[0]["durationSecs"] == 2700
 
     def test_uses_adaptive_detail_when_it_succeeds(self, monkeypatch):
         # With the real detail resolved, use it rather than the bare calendar title.
@@ -688,6 +716,78 @@ class TestStaleEntryPruning:
 
         written = json.loads((tmp_path / "2026.json").read_text())
         assert {e["date"] for e in written["planned"]} == {"2026-07-10"}
+
+
+class _DetailDownClient:
+    """A calendar listing one workout on 2026-07-21 whose detail never loads."""
+
+    def __init__(self, title: str) -> None:
+        self._title = title
+
+    def get_calendar_month(self, year, month):
+        if (year, month) != (2026, 7):
+            return {"calendarItems": []}
+        return {
+            "calendarItems": [
+                {"date": "2026-07-21", "itemType": "workout", "sport": "running", "workoutId": "abc", "title": self._title}
+            ]
+        }
+
+    def get_workout_detail(self, workout_id):
+        raise GarminAPIError(503, f"workout/{workout_id}")
+
+
+class TestFailedWorkoutDetail:
+    """A workout's detail can fail after its calendar item loaded. The calendar
+    alone yields a date and a name; the complete entry already on file for
+    that date is kept over it, and past the 7-day look-back nothing would
+    ever repair a stub. Only where nothing is on file does the stub stand in."""
+
+    _COMPLETE = {
+        "date": "2026-07-21",
+        "name": "17'@4:20",
+        "distanceM": 8000,
+        "durationSecs": 2880,
+        "type": "Threshold",
+        "scheduledTime": "Evening",
+    }
+
+    def _sync(self, tmp_path, client):
+        planned, stale_candidates = fetch_planned_workouts(
+            client, since=date(2026, 7, 1), until=date(2026, 7, 31)
+        )
+        write_planned_workouts(planned, store=PlannedWorkoutStore(tmp_path), stale_candidates=stale_candidates)
+        return PlannedWorkoutStore(tmp_path).get("2026-07-21")
+
+    def _seed(self, tmp_path):
+        prior = PlannedWorkoutStore(tmp_path)
+        prior.upsert(dict(self._COMPLETE))
+        prior.save()
+
+    def test_the_complete_entry_on_file_is_kept(self, monkeypatch, tmp_path):
+        monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
+        self._seed(tmp_path)
+
+        assert self._sync(tmp_path, _DetailDownClient("Seuil")) == self._COMPLETE
+
+    def test_without_a_calendar_title_it_is_not_pruned_either(self, monkeypatch, tmp_path):
+        monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
+        self._seed(tmp_path)
+
+        assert self._sync(tmp_path, _DetailDownClient("")) == self._COMPLETE
+
+    def test_with_nothing_on_file_the_calendar_title_stands_in(self, monkeypatch, tmp_path):
+        monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
+
+        stub = self._sync(tmp_path, _DetailDownClient("Seuil"))
+
+        assert stub["name"] == "Seuil"
+        assert "distanceM" not in stub
+
+    def test_with_nothing_on_file_and_no_title_nothing_is_written(self, monkeypatch, tmp_path):
+        monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
+
+        assert self._sync(tmp_path, _DetailDownClient("")) is None
 
 
 class TestWritePlannedWorkouts:

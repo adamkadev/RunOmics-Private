@@ -1,4 +1,5 @@
 from datetime import date
+from itertools import pairwise
 
 from garmin.vo2max_history import monthly_windows, normalize_max_met
 
@@ -71,6 +72,6 @@ class TestMonthlyWindows:
 
     def test_windows_are_contiguous_and_never_exceed_a_year(self):
         windows = monthly_windows(date(2020, 1, 1), date(2026, 7, 21))
-        for (_, end), (next_start, _) in zip(windows, windows[1:]):
+        for (_, end), (next_start, _) in pairwise(windows):
             assert (next_start - end).days == 1
         assert all((end - start).days <= 366 for start, end in windows)

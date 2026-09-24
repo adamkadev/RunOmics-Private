@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import json
 
-from garmin.client import GarminClient
+import pytest
+
+from garmin.client import GarminAPIError, GarminClient
+from repository.history_file import HistoryFileError
 import sync_upcoming_races as sync_races
 
 
@@ -162,6 +165,24 @@ def test_fetch_uses_a_multi_event_limit_and_keeps_all_returned_races(monkeypatch
         "race-2",
         "race-3",
     ]
+
+
+def test_fetch_retries_a_transient_failure_not_only_a_rate_limit(monkeypatch):
+    # Its own retry helper retried a 429 once and raised anything else.
+    monkeypatch.setattr("garmin.retry.time.sleep", lambda _seconds: None)
+    calls = []
+
+    class Client:
+        def get_upcoming_events(self, *, num_days_forward, limit):
+            calls.append((num_days_forward, limit))
+            if len(calls) == 1:
+                raise GarminAPIError(503, "https://example.test/events")
+            return [_event("race-1", "2026-09-10")]
+
+    races = sync_races.fetch_upcoming_races(Client())
+
+    assert len(calls) == 2
+    assert [race["garminEventUuid"] for race in races] == ["race-1"]
 
 
 def test_fetch_keeps_private_races_and_deduplicates_by_identity_hierarchy():
@@ -361,6 +382,27 @@ def test_map_keeps_a_goal_it_cannot_read_out_of_the_entry():
         goal={"unitType": "distance", "unit": "kilometer", "value": 5},
     )
     assert "targetSeconds" not in sync_races._map_race(distance_goal)
+
+
+@pytest.mark.parametrize(
+    "stored",
+    ['{"races": [{"garminEventId": 29837036, "targetSeconds": 24', '{"races": "none"}'],
+    ids=["does not parse", "races not a list"],
+)
+def test_write_refuses_to_overwrite_a_file_it_cannot_read(tmp_path, stored):
+    # The file is the only place a goal typed in by hand survives; reading
+    # it as empty and rewriting it from Garmin's list threw those away.
+    path = tmp_path / "upcoming_races.json"
+    path.write_text(stored)
+
+    with pytest.raises(HistoryFileError) as exc:
+        sync_races.write_upcoming_races(
+            [sync_races._map_race(_event("race-1", "2026-09-10"))],
+            data_dir=tmp_path,
+        )
+
+    assert "upcoming_races.json" in str(exc.value)
+    assert path.read_text() == stored
 
 
 def test_write_drops_a_goal_the_athlete_cleared_in_garmin(tmp_path):

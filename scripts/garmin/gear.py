@@ -2,8 +2,7 @@
 
 Garmin's gear-service/gear/v2/list (queried once for ACTIVE and once for
 RETIRED) returns each shoe's brand, model, status and odometer cap directly,
-so this no longer needs to be hand-copied from the "Distinct gear seen"
-printout scripts/backfill_gear.py used to produce. `alertThresholdKm` and
+so none of it is copied by hand. `alertThresholdKm` and
 `dotColor` have no Garmin source and aren't stored here - src/domain/shoe/types.ts
 derives them from maxKm/order when it builds SHOE_REGISTRY from this file.
 """
@@ -16,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from data_directory import get_data_dir
+from repository.atomic_write import write_text_atomic
 from .client import GarminClient
 from .retry import retry_transient
 
@@ -92,13 +92,14 @@ def write_shoes_json(shoes: list[ShoeGear], *, path: Path = _OUT_PATH) -> bool:
     existing: dict[str, Any] | None = None
     if path.exists():
         try:
-            existing = json.loads(path.read_text())
-        except Exception:
-            existing = None
+            existing = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            # Garmin's gear list is the whole of this file, so rewriting it
+            # loses nothing; a file that stopped parsing is still worth a line.
+            print(f"  Warning: {path} could not be read ({exc}); rewriting it from Garmin's gear list.")
 
     if existing == payload:
         return False
 
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2) + "\n")
+    write_text_atomic(path, json.dumps(payload, indent=2) + "\n")
     return True
