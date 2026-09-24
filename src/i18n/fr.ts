@@ -637,7 +637,7 @@ export const fr = {
       titlePositive: 'Plus en forme et plus efficace qu\'en début de saison.',
       titleCaution: 'Un passage plus difficile qu\'en début de saison.',
       titleMixed: 'Une saison en demi-teinte - des progrès par endroits, des baisses ailleurs.',
-      efficiency: (d: number) => `Efficacité aérobie ${d > 0 ? '+' : ''}${d} - ${d > 0 ? 'plus' : 'moins'} de vitesse par battement`,
+      efficiency: (d: number) => `Efficacité aérobie ${d > 0 ? '+' : d < 0 ? '−' : ''}${Math.abs(d)} - ${d > 0 ? 'plus' : 'moins'} de vitesse par battement`,
       easyPace: (to: string, from: string, weeks: number) =>
         `Allure facile ${to}, contre ${from} en moyenne sur les ${weeks} premières semaines de saison`,
       volume: (pct: number, year: number) =>

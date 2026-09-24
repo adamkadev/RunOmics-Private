@@ -133,7 +133,7 @@ export function FormFitnessFatigueTrio({
 
   const points = load.points
   const form = Math.round(status.tsbNow)
-  const formLabel = `${form >= 0 ? '+' : ''}${form}`
+  const formLabel = formatDelta(form)
 
   return (
     <div className="grid grid-cols-3 gap-[9px]">

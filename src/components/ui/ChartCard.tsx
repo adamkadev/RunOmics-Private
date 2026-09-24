@@ -4,6 +4,7 @@ import { useState, type ReactNode } from 'react'
 import { Info } from 'lucide-react'
 import { CardTitle } from '@/components/ui/SectionLabel'
 import { cn } from '@/lib/utils'
+import { formatDelta } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 /**
@@ -42,7 +43,7 @@ export function LegendValue({
   return (
     <span className="text-xs font-bold" style={{ color }}>
       {label}
-      {rounded !== null && ` ${signed && rounded > 0 ? '+' : ''}${rounded}`}
+      {rounded !== null && ` ${signed ? formatDelta(rounded) : rounded}`}
     </span>
   )
 }

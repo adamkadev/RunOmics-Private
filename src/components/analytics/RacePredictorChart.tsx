@@ -11,7 +11,7 @@ import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { ChartCardHead, ChartReading } from '@/components/ui/ChartCard'
 import { ChartRangeChips, ChartWindowPager, useChartWindow } from '@/components/ui/ChartWindowNav'
-import { AXIS_TICK_DATE, formatDate, formatDuration, formatPace } from '@/lib/formatters'
+import { AXIS_TICK_DATE, formatClock, formatDate, formatDuration, formatPace } from '@/lib/formatters'
 import { roundAxis } from '@/lib/chartAxis'
 import { t } from '@/i18n'
 
@@ -78,10 +78,6 @@ function distanceDot(distance: RaceDistanceKey) {
   }
   Dot.displayName = `RaceDot(${distance})`
   return Dot
-}
-
-function clock(seconds: number): string {
-  return `${Math.floor(seconds / 60)}:${String(Math.round(seconds % 60)).padStart(2, '0')}`
 }
 
 function shortDate(date: string): string {
@@ -190,7 +186,7 @@ export function RacePredictorChart({ data }: { data: GarminRacePredictionsData }
                 ticks={axis?.ticks}
                 interval={0}
                 reversed
-                tickFormatter={clock}
+                tickFormatter={formatClock}
                 tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
                 axisLine={false}
                 tickLine={false}

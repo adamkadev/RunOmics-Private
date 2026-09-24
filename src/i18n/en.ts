@@ -645,7 +645,7 @@ export const en = {
       titlePositive: 'Fitter and more efficient than early season.',
       titleCaution: 'A tougher stretch than early season.',
       titleMixed: 'A mixed season - gains in some areas, dips in others.',
-      efficiency: (d: number) => `Aerobic efficiency ${d > 0 ? '+' : ''}${d} - ${d > 0 ? 'more' : 'less'} speed per heartbeat`,
+      efficiency: (d: number) => `Aerobic efficiency ${d > 0 ? '+' : d < 0 ? '−' : ''}${Math.abs(d)} - ${d > 0 ? 'more' : 'less'} speed per heartbeat`,
       easyPace: (to: string, from: string, weeks: number) =>
         `Easy pace ${to}, against ${from} averaged over the season's first ${weeks} weeks`,
       volume: (pct: number, year: number) =>
