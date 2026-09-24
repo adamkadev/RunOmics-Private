@@ -1,3 +1,4 @@
+import 'server-only'
 import { createHash } from 'crypto'
 
 type Facts = Record<string, string | number | boolean | null>

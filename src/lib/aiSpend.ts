@@ -1,3 +1,4 @@
+import 'server-only'
 import { dailyBudget, quotaDay, spacingMs, spendField } from '@/domain/ai/budget'
 import { getSpend, recordSpend } from '@/infrastructure/repositories/FirestoreBudgetRepository'
 import { CALL_TIMEOUT_MS } from '@/lib/gemini'

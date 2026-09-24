@@ -1,3 +1,4 @@
+import 'server-only'
 import { NextResponse, type NextRequest } from 'next/server'
 import { logRejectedRequest } from '@/lib/internalAuth'
 import { verifyFirebaseIdToken } from '@/lib/verifyFirebaseIdToken'

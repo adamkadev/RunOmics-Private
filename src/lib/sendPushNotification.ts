@@ -1,3 +1,4 @@
+import 'server-only'
 import { getMessaging } from 'firebase-admin/messaging'
 import { getAdminApp, getAdminFirestore } from '@/lib/firebase-admin'
 

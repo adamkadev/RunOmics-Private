@@ -1,3 +1,4 @@
+import 'server-only'
 import type { Limits } from '@/domain/ai/prompt'
 import { activeLocale } from '@/i18n'
 

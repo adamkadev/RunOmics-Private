@@ -1,3 +1,4 @@
+import 'server-only'
 import jwt from 'jsonwebtoken'
 
 /**
