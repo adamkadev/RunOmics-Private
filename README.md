@@ -444,7 +444,7 @@ from your `.env.local` *except* `GARMIN_SECRET` and `GEMINI_COACH_API_KEY`:
 | `NEXT_PUBLIC_OWNER_EMAIL` | Which account `npm run set-owner-claim` grants the `owner` claim to - not itself an authorization check |
 | `INTERNAL_NOTIFY_SECRET` | Authenticates the GitHub Actions cron calls to `/api/internal/*` |
 | `NEXT_PUBLIC_LOCALE` | UI language, `en` (default) or `fr` — applied at build time |
-| `GEMINI_API_KEY`, `GEMINI_MODEL` | Optional: the AI-written verdicts and insight cards - Today, Week Purpose, Season, Analytics, run verdicts, PB celebration, shoe verdicts |
+| `GEMINI_API_KEY`, `GEMINI_MODEL` | Optional: the AI-written verdicts and insight cards - Today, Season, Analytics, run verdicts, PB celebration, shoe verdicts |
 
 > `GARMIN_SECRET` is only used locally by the sync script - it never runs on Vercel.
 > `GEMINI_COACH_API_KEY` / `GEMINI_COACH_MODEL` are the same: the adaptive coach is a local
@@ -926,7 +926,7 @@ There is no fallback in either direction: neither key ever stands in for the oth
 
 | | `GEMINI_API_KEY` | `GEMINI_COACH_API_KEY` |
 |---|---|---|
-| What it powers | The deployed AI surfaces — Today, Week Purpose, Season, Analytics, run verdicts, PB celebration, shoe verdicts | The adaptive coaching CLI (`npm run coach`), which runs locally today |
+| What it powers | The deployed AI surfaces — Today, Season, Analytics, run verdicts, PB celebration, shoe verdicts | The adaptive coaching CLI (`npm run coach`), which runs locally today |
 | `.env.local` | yes | yes |
 | Vercel | **yes** — the surfaces are server-rendered and the cron routes call Gemini | **no** — nothing deployed calls the coach |
 | GitHub Actions | not directly: the workflows only `curl` the deployed `/api/internal/*` routes, which use the deployment's own key | **no** — no workflow runs a coaching generation |
@@ -959,12 +959,14 @@ was aborting calls that would have succeeded seconds later.
 model is done for the day, and the pool exists so the work can continue — but the loop used to
 abandon the item and carry that recovery only as far as the *next* item's `reserve()`. With one
 verdict pending, a single Google-side 503 therefore wasted an entire pass; two passes in a row
-went that way before a run verdict finally landed. `generateFromPool()` now retries the same
+went that way before a run verdict finally landed. `generateFromPool()`
+(`src/application/ai/insightPass.ts`, not the route handler any more) now retries the same
 request on a different pool member, up to three attempts, for anything transient (500, 503) or
 closed (429, 404). Copy the validator rejected is not retried: that is the documented
 reject-and-requeue path, and spending a second model on it would buy nothing. Failing to
 reserve at all is reported separately from a model failing, because only the former means the
-caller should stop looping.
+caller should stop looping. The pool is the only retry: `generateInsight` sends one request
+per call, so one reservation is one request against the day's quota.
 
 **Model pool.** A model answering 429 has spent its day; one answering 404 has been retired
 out from under us. Both mean stop asking and take the next in the pool. `reserve()` returning
@@ -975,7 +977,7 @@ transport layer would bill one model's ledger for another's call.
 
 **Two pools, sized from the demand.** Free-tier quotas are per model, and Flash and Flash Lite
 are not in the same league: Flash allows 20 requests a day, Lite 500. `MODEL_POOL` carries the
-surfaces a reader actually looks at — `today`, the week purpose, the season headline, the four
+surfaces a reader actually looks at — `today`, the season headline, the four
 analytics tabs, a PB celebration, a shoe verdict or two, and the verdicts for runs that just
 landed — which is about 8 calls a night and 14 at its worst. The five passes per night do not
 multiply that: once a surface's hash matches, the pass reports `unchanged` and spends nothing.

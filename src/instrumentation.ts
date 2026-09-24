@@ -16,7 +16,15 @@ import type { Instrumentation } from 'next'
 
 const MESSAGE_LIMIT = 300
 
-const SECRET_ENV = ['INTERNAL_NOTIFY_SECRET', 'GEMINI_API_KEY', 'GEMINI_COACH_API_KEY', 'FIREBASE_PRIVATE_KEY', 'GITHUB_SYNC_TOKEN']
+const SECRET_ENV = [
+  'INTERNAL_NOTIFY_SECRET',
+  'GEMINI_API_KEY',
+  'GEMINI_COACH_API_KEY',
+  'FIREBASE_PRIVATE_KEY',
+  'GITHUB_SYNC_TOKEN',
+  // Vercel holds the data repository's token too, for the build's fetch.
+  'RUNOMICS_DATA_REPO_TOKEN',
+]
 
 // Short values are not worth it: replacing a two-letter value would shred the message.
 const MIN_SECRET_LENGTH = 8

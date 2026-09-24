@@ -57,3 +57,21 @@ jobs:
         run: |
           printf 'x-internal-secret: %s\n' "$INTERNAL_NOTIFY_SECRET" \
             | curl -fsS -X POST "$APP_URL/api/internal/$ENDPOINT" -H @-
+
+      # A failed run used to be a red cross in an Actions tab nobody opens -
+      # two reminders failed every day for over a week that way. Best effort:
+      # if the app itself is what broke, this fails too, and the run is red
+      # either way.
+      - name: Push the failure to the owner's devices
+        if: failure()
+        continue-on-error: true
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}
+          WORKFLOW: ${{ github.workflow }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          jq -n --arg w "$WORKFLOW" --arg u "$RUN_URL" '{workflow: $w, runUrl: $u}' > "$RUNNER_TEMP/workflow-failure.json"
+          printf 'x-internal-secret: %s\ncontent-type: application/json\n' "$SECRET" \
+            | curl -fsS --max-time 20 -X POST "$APP_URL/api/internal/workflow-failure" -H @- \
+                --data @"$RUNNER_TEMP/workflow-failure.json"
