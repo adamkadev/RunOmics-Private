@@ -1,10 +1,14 @@
 'use client'
 
 import { useState } from 'react'
+import dynamic from 'next/dynamic'
 import { Share } from 'lucide-react'
 import type { Activity } from '@/domain/activity/types'
-import { ShareCardModal } from './ShareCardModal'
 import { t } from '@/i18n'
+
+// The modal brings the 800-line canvas renderer and the map snapshot code
+// with it. It is only ever drawn after a tap, so it loads then.
+const ShareCardModal = dynamic(() => import('./ShareCardModal').then((m) => m.ShareCardModal), { ssr: false })
 
 interface Props {
   activity: Activity

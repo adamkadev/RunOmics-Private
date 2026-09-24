@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import dynamic from 'next/dynamic'
 import type { Activity } from '@/domain/activity/types'
 import { aerobicDecoupling } from '@/domain/activity/decoupling'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
@@ -11,18 +12,23 @@ import { ActivityMapClient } from './ActivityMapClient'
 import { NoRouteMap } from './ActivityMap'
 import { RunVerdict } from './RunVerdict'
 import { ZoneBar } from './ZoneBar'
-import { ChartStack } from './ChartStack'
 import { KmSplits } from './KmSplits'
 import { TrainingEffect } from './TrainingEffect'
 import { AerobicDecoupling } from './AerobicDecoupling'
 import { BestEfforts } from './BestEfforts'
-import { RunningDynamics } from './RunningDynamics'
 import { formatClock, formatDistance, formatDuration } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { ChartCardSkeleton } from '@/components/ui/Skeleton'
 import type { Insight } from '@/lib/gemini'
 import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
+
+// Both tabs are closed when the page loads and draw with Recharts, so each
+// loads the first time it is opened rather than with the page.
+const tabLoading = () => <ChartCardSkeleton />
+const ChartStack = dynamic(() => import('./ChartStack').then((m) => m.ChartStack), { loading: tabLoading })
+const RunningDynamics = dynamic(() => import('./RunningDynamics').then((m) => m.RunningDynamics), { loading: tabLoading })
 
 interface Props {
   activity: Activity
