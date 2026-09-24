@@ -11,8 +11,8 @@ import {
   bootstrapEventPrompt,
   completedActivityPrompt,
   pacing,
-  parseBootstrapPlanDraft,
 } from '../GeminiCoachingAdvisor'
+import { parseBootstrapPlanDraft } from '../coachingAnswer'
 
 const gemini = vi.hoisted(() => ({ generateStructuredJson: vi.fn() }))
 vi.mock('@/lib/gemini', () => gemini)
@@ -238,12 +238,9 @@ describe('Gemini bootstrap draft boundary', () => {
     expect(tuneUpEvents[0]).not.toHaveProperty('targetSeconds')
   })
 
-  it('requires strides to retain model-prescribed repetitions and recovery', () => {
+  it('keeps strides as the repeat group the model prescribed', () => {
     const raw = rawBootstrap(false)
-    const firstWorkout = raw.weeks[0]!.workouts[0]! as {
-      title: string
-      blocks: unknown[]
-    }
+    const firstWorkout = raw.weeks[0]!.workouts[0]! as { title: string; blocks: unknown[] }
     firstWorkout.title = 'Easy Run with Strides'
     firstWorkout.blocks = [
       { kind: 'effort', target: { distanceMeters: 5_000 } },
@@ -257,8 +254,7 @@ describe('Gemini bootstrap draft boundary', () => {
       },
     ]
 
-    const parsed = parseBootstrapPlanDraft(raw)
-    expect(parsed.weeks[0]!.workouts[0]!.blocks[1]).toMatchObject({
+    expect(parseBootstrapPlanDraft(raw).weeks[0]!.workouts[0]!.blocks[1]).toMatchObject({
       kind: 'repeat',
       repetitions: 6,
       steps: [
@@ -266,70 +262,16 @@ describe('Gemini bootstrap draft boundary', () => {
         { kind: 'recovery', target: { durationSeconds: 60 } },
       ],
     })
-
-    const strideStep = (firstWorkout.blocks[1] as {
-      steps: Array<{ kind: string; target: Record<string, unknown> }>
-    }).steps[0]!
-    strideStep.target.hrZone = 5
-    expect(() => parseBootstrapPlanDraft(raw)).toThrow(/strides must use pace, effort, or form guidance rather than an HR target/)
-    delete strideStep.target.hrZone
-
-    firstWorkout.blocks = [{ kind: 'strides', target: { durationSeconds: 20 } }]
-    expect(() => parseBootstrapPlanDraft(raw)).toThrow(/standalone strides are not supported/)
   })
 
-  it('rejects rigid pace targets on hill repetitions', () => {
+  it('reads a session it would be wrong to run, and leaves the judging to the draft rules', () => {
+    // Rejected here, a rule broken by one session skipped the repair loop that
+    // every other rule gets; see draftRules.ts.
     const raw = rawBootstrap(false)
-    const workout = raw.weeks[0]!.workouts[0]! as {
-      type: string
-      title: string
-      description: string
-      blocks: unknown[]
-    }
-    workout.type = 'vo2max'
+    const workout = raw.weeks[0]!.workouts[0]! as { title: string; blocks: unknown[] }
     workout.title = 'Hill intervals'
-    workout.description = 'Run six uphill repetitions at controlled effort.'
-    workout.blocks = [{
-      kind: 'repeat',
-      repetitions: 6,
-      steps: [
-        { kind: 'effort', target: { durationSeconds: 60, paceSecPerKm: { min: 220, max: 230 } } },
-        { kind: 'recovery', target: { durationSeconds: 90 } },
-      ],
-    }]
+    workout.blocks = [{ kind: 'effort', target: { durationSeconds: 60, paceSecPerKm: { min: 220, max: 230 } } }]
 
-    expect(() => parseBootstrapPlanDraft(raw)).toThrow(/hill efforts must use effort\/RPE guidance/)
-
-    workout.blocks = [{
-      kind: 'repeat',
-      repetitions: 6,
-      steps: [
-        { kind: 'effort', target: { durationSeconds: 60, hrBpm: { min: 175, max: 185 } }, notes: ['Strong uphill RPE; tall form.'] },
-        { kind: 'recovery', target: { durationSeconds: 90 } },
-      ],
-    }]
-    expect(() => parseBootstrapPlanDraft(raw)).not.toThrow()
-  })
-
-  it('requires a claimed progressive workout to contain structured progression', () => {
-    const raw = rawBootstrap(false)
-    const workout = raw.weeks[0]!.workouts[0]! as {
-      type: string
-      title: string
-      description: string
-      blocks: unknown[]
-    }
-    workout.type = 'long_run'
-    workout.title = 'Progressive Long Run'
-    workout.description = 'Build gradually through the run.'
-    workout.blocks = [{ kind: 'effort', target: { durationSeconds: 3_600, hrZone: 2 } }]
-
-    expect(() => parseBootstrapPlanDraft(raw)).toThrow(/must contain an actual structured intensity progression/)
-
-    workout.blocks = [
-      { kind: 'effort', target: { durationSeconds: 2_400, hrZone: 2 } },
-      { kind: 'effort', target: { durationSeconds: 1_200, hrZone: 3 } },
-    ]
     expect(() => parseBootstrapPlanDraft(raw)).not.toThrow()
   })
 })

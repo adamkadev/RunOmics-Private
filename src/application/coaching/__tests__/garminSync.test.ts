@@ -5,7 +5,7 @@ import {
   countOperations,
   formatGarminSyncPreview,
   hasGarminMutations,
-  selectSyncableWorkouts,
+  type GarminSyncWindow,
 } from '../garminSync'
 import { emptyGarminSyncState, garminContentHash, type GarminSyncState } from '../garminSyncState'
 import { toGarminWorkoutPayload } from '../garminWorkoutMapping'
@@ -260,25 +260,21 @@ describe('selecting what is syncable', () => {
     workout({ id: 'soon', date: '2026-09-08' }),
   ])
 
-  it('keeps only future prescribed and adjusted sessions, in chronological order', () => {
-    const selected = selectSyncableWorkouts(source, [evaluation('done')], { today: TODAY })
+  const dates = (evaluations: WorkoutEvaluation[], window: GarminSyncWindow = { today: TODAY }) =>
+    buildGarminSyncPlan(source, evaluations, null, window).operations.map((operation) => operation.date)
 
-    expect(selected.map((each) => each.date)).toEqual(['2026-09-08', '2026-09-15'])
+  it('keeps only future prescribed and adjusted sessions, in chronological order', () => {
+    expect(dates([evaluation('done')])).toEqual(['2026-09-08', '2026-09-15'])
   })
 
   it('ignores an unmatched evaluation, so a date-only guess never drops a session', () => {
-    const selected = selectSyncableWorkouts(source, [evaluation('done', 'date_only')], { today: TODAY })
-
-    expect(selected.map((each) => each.id)).toContain('done')
+    expect(dates([evaluation('done', 'date_only')])).toContain('2026-09-12')
   })
 
   it('applies from and to, and never reaches back before today', () => {
-    const dates = (window: Parameters<typeof selectSyncableWorkouts>[2]) =>
-      selectSyncableWorkouts(source, [], window).map((each) => each.date)
-
-    expect(dates({ today: TODAY, from: '2026-09-15' })).toEqual(['2026-09-15'])
-    expect(dates({ today: TODAY, to: '2026-09-12' })).toEqual(['2026-09-08', '2026-09-12'])
-    expect(dates({ today: TODAY, from: '2026-01-01' })).toEqual(['2026-09-08', '2026-09-12', '2026-09-15'])
+    expect(dates([], { today: TODAY, from: '2026-09-15' })).toEqual(['2026-09-15'])
+    expect(dates([], { today: TODAY, to: '2026-09-12' })).toEqual(['2026-09-08', '2026-09-12'])
+    expect(dates([], { today: TODAY, from: '2026-01-01' })).toEqual(['2026-09-08', '2026-09-12', '2026-09-15'])
   })
 })
 
@@ -409,6 +405,45 @@ describe('partial failure recovery', () => {
     expect(operations[0]!.action).toBe('schedule')
     expect(operations[0]!.existing?.garminWorkoutId).toBe('9000')
     expect(countOperations(operations)).toEqual({ create: 1, update: 0, delete: 0, keep: 0, skip: 0 })
+  })
+
+  it('replaces instead of retrying when the prescription changed since the failed schedule', () => {
+    // A retry would schedule the workout Garmin already holds - the old
+    // prescription - while the state recorded the new hash, so no later run
+    // would ever see the two disagree.
+    const prescribed = workout({ id: 'a', date: '2026-09-08' })
+    const state: GarminSyncState = {
+      ...syncedState([{ id: 'a', date: '2026-09-08', workout: prescribed }]),
+      entries: [
+        {
+          prescriptionId: 'a',
+          date: '2026-09-08',
+          contentHash: garminContentHash(toGarminWorkoutPayload(prescribed), '2026-09-08'),
+          garminWorkoutId: '9000',
+          garminWorkoutScheduleId: null,
+          status: 'workout_created',
+          lastSyncedAt: '2026-09-06T10:00:00.000Z',
+        },
+      ],
+    }
+    const changed = workout({ id: 'a', date: '2026-09-08', title: 'Longer Easy Run' })
+
+    const operations = build(plan([changed]), state).operations
+
+    expect(operations[0]!.action).toBe('replace')
+    expect(operations[0]!.reason).toBe('Prescription changed')
+  })
+
+  it('replaces an unchanged prescription whose last push Garmin could not confirm', () => {
+    const prescribed = workout({ id: 'a', date: '2026-09-08' })
+    const synced = syncedState([{ id: 'a', date: '2026-09-08', workout: prescribed }])
+    const state: GarminSyncState = { ...synced, entries: [{ ...synced.entries[0]!, status: 'unverified' }] }
+
+    const operations = build(plan([prescribed]), state).operations
+
+    expect(operations[0]!.action).toBe('replace')
+    expect(operations[0]!.reason).toBe('Garmin did not confirm the last push')
+    expect(operations[0]!.existing?.garminWorkoutScheduleId).toBe('8000')
   })
 })
 

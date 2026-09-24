@@ -91,6 +91,16 @@ function isoDate(value: unknown, path: string): string {
   return date
 }
 
+// The advisors read a model's answer with these too, so a reply and a file on
+// disk are held to one idea of what an object, a string or a date is.
+export {
+  array as parseArray,
+  enumeration as parseEnumeration,
+  isoDate as parseIsoDate,
+  object as parseObject,
+  string as parseString,
+}
+
 function timestamp(value: unknown, path: string): string {
   const result = string(value, path)
   if (Number.isNaN(Date.parse(result))) throw new CoachingValidationError(path, 'expected an ISO timestamp')

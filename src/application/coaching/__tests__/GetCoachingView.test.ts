@@ -1,0 +1,52 @@
+import { execFileSync } from 'child_process'
+import { describe, expect, it } from 'vitest'
+import { plan } from '@/domain/coaching/__tests__/fixtures'
+import { getCoachingOverview, getTodayPrescription } from '../GetCoachingView'
+
+const repository = { getCurrentPlan: () => plan(), getDecisions: () => [], getEvaluations: () => [] }
+
+describe('reading the coaching plan', () => {
+  it('reads the repository it is given rather than the one on disk', () => {
+    expect(getCoachingOverview('2026-09-15', repository)?.currentWeekId).toBe('week-2')
+    expect(getTodayPrescription('2026-09-15', repository)?.id).toBe('workout-easy')
+  })
+
+  it('has nothing to show before a plan exists', () => {
+    const empty = { ...repository, getCurrentPlan: () => null }
+
+    expect(getCoachingOverview('2026-09-15', empty)).toBeNull()
+    expect(getTodayPrescription('2026-09-15', empty)).toBeNull()
+  })
+
+  it('dates today by the local calendar, as the rest of the app does', () => {
+    // In a child process because the zone is process-wide. At 20:00 UTC on
+    // Sunday the 13th it is already Monday in Auckland: a UTC "today" put the
+    // overview a week behind the prescription shown beside it.
+    const script = `
+      const RealDate = Date
+      const now = RealDate.parse('2026-09-13T20:00:00Z')
+      globalThis.Date = class extends RealDate {
+        constructor(...args) { super(...(args.length ? args : [now])) }
+        static now() { return now }
+      }
+      const load = async (loading) => {
+        const loaded = await loading
+        const fallback = loaded.default
+        return fallback && typeof fallback === 'object' ? { ...fallback, ...loaded } : loaded
+      }
+      ;(async () => {
+        const { getCoachingOverview } = await load(import('./src/application/coaching/GetCoachingView.ts'))
+        const { plan } = await load(import('./src/domain/coaching/__tests__/fixtures.ts'))
+        const repository = { getCurrentPlan: () => plan(), getDecisions: () => [], getEvaluations: () => [] }
+        process.stdout.write(String(getCoachingOverview(undefined, repository).currentWeekId))
+      })().catch((error) => { console.error(error); process.exitCode = 1 })
+    `
+    const currentWeek = execFileSync(process.execPath, ['--conditions=react-server', '--import', 'tsx', '-e', script], {
+      cwd: process.cwd(),
+      encoding: 'utf-8',
+      env: { ...process.env, TZ: 'Pacific/Auckland' },
+    })
+
+    expect(currentWeek).toBe('week-2')
+  })
+})

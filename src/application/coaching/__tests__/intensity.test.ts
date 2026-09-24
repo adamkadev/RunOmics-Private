@@ -262,6 +262,37 @@ describe('time at threshold across the block', () => {
   })
 })
 
+describe('judging an adaptation', () => {
+  it('lets a change take easy running out of a week, though its hard share then rises', () => {
+    const before = soundWeek('2026-09-28', 1500, 48)
+    const eased = { ...before, workouts: before.workouts.filter((_, index) => index !== 2 && index !== 3) }
+
+    expect(() => validateDraftIntensity(draft(eased), BAND, DAYS)).toThrow(/at threshold within/)
+    expect(() => validateDraftIntensity(draft(eased), BAND, DAYS, draft(before))).not.toThrow()
+  })
+
+  it('refuses a change that adds hard running past the cap', () => {
+    const before = draft(soundWeek('2026-09-28', 1500, 48))
+
+    expect(() => validateDraftIntensity(draft(soundWeek('2026-09-28', 3000, 48)), BAND, DAYS, before)).toThrow(/at threshold within/)
+  })
+
+  it('refuses a change that makes repetitions faster than the block holds them', () => {
+    const before = draft(soundWeek('2026-09-28', 1500, 48), soundWeek('2026-10-05', 1650, 52))
+    const faster = draft(soundWeek('2026-09-28', 1500, 48), soundWeek('2026-10-05', 1650, 52, 255))
+
+    expect(() => validateDraftIntensity(faster, BAND, DAYS, before)).toThrow(/hold the pace across the block/)
+  })
+
+  it('does not demand that an adaptation progress time at threshold', () => {
+    const before = draft(soundWeek('2026-09-28', 1500, 48), soundWeek('2026-10-05', 1500, 48))
+    const after = draft(soundWeek('2026-09-28', 1500, 48), soundWeek('2026-10-05', 1500, 46))
+
+    expect(() => validateDraftIntensity(after, BAND, DAYS)).toThrow(/holds time at threshold/)
+    expect(() => validateDraftIntensity(after, BAND, DAYS, before)).not.toThrow()
+  })
+})
+
 describe('intensityBand', () => {
   it('says nothing when the athlete has no measured threshold to judge against', () => {
     expect(intensityBand(null)).toBeNull()

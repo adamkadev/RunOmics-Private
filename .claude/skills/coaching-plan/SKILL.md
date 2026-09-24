@@ -42,10 +42,17 @@ block is reversible.
 ## The checks a plan must pass
 
 Run them before showing a plan to anyone. They are cheap and they catch the
-errors that matter.
+errors that matter. `src/application/coaching/draftRules.ts` is the one place
+that calls them: `validateBootstrapDraft` runs every one below, in this order,
+on each answer, and a rejection is sent back to the planner to correct. The
+advisors only build the prompt and read the answer.
 
-- `validateDraftFrequency` - runs land on available weekdays, and the count
-  matches `runsPerWeek` unless the week's focus explains otherwise.
+- `validateWorkoutDraft` - how each session is written, in `draftRules.ts`:
+  strides as a repeat group with recovery, timed and without an HR target;
+  hill efforts by effort rather than pace; "progressive" only when the
+  targets actually progress.
+- `validateDraftFrequency` - one run per day, and the count matches
+  `runsPerWeek` unless the week's focus explains otherwise.
 - `validateDraftVolume` - four rules, in `src/application/coaching/volume.ts`:
   - **floor** `0.95 x baselineKm`, waived only if the focus names recovery,
     taper, cutback or deload
@@ -54,7 +61,23 @@ errors that matter.
     from the athlete's own recent volume so the first week is checked too
   - **focus agreement** kilometres stated in the focus text must match the
     workouts
+- `validateDraftIntensity` - in `intensity.ts`: threshold and interval caps,
+  pace held across the block, time at threshold progressing.
+- `validateBootstrapDraftSemantics` - the races: recovery after one, nothing
+  hard just before a tune-up, and no invented finish times.
+- `validateAvailableWeekdays` - every run lands on an available weekday.
 - `normalizeBootstrapPlan` - structural validity.
+
+A change to the live plan - an `ADJUST` or `REPLAN` from `evaluate` or
+`weekly-review` - goes through `validateAdaptation`, measured on the plan it
+would produce. Every session it adds or rewrites must be written as above
+and land on an available weekday, with one run a day and no week pushed past
+`runsPerWeek`. It may always take load away; whatever it adds must fit the
+volume ceiling, long-session and ramp bounds and the intensity caps and pace
+hold, judged only on the weeks it added to. The floor, the reduced-week
+rules, the "fewer runs" explanation, threshold progression and the race
+rules stay with bootstrap: they refuse exactly the easing an adaptation is
+for.
 
 `weekKm` converts a timed segment to distance through its pace, so a week
 counted from `distanceMeters` alone reads lighter than it trains.

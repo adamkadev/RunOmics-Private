@@ -1,4 +1,4 @@
-import { GarminRateLimitError, type GarminWorkoutGateway } from '@/application/ports/GarminWorkoutGateway'
+import { GarminNotFoundError, GarminRateLimitError, type GarminWorkoutGateway } from '@/application/ports/GarminWorkoutGateway'
 import type { GarminSyncOperation, GarminSyncPlan } from './garminSync'
 import { emptyGarminSyncState, GARMIN_SYNC_SCHEMA_VERSION, type GarminSyncEntry, type GarminSyncState } from './garminSyncState'
 
@@ -81,6 +81,9 @@ async function createAndSchedule(
     }
   } catch (error) {
     if (error instanceof GarminRateLimitError) throw error
+    // The workout a retry meant to reuse is gone, deleted by hand most likely.
+    // Retrying it would 404 on every run from now on; push it again instead.
+    if (error instanceof GarminNotFoundError && knownWorkoutId) return createAndSchedule(gateway, operation, now, null)
     return {
       entry: partial,
       result: {
@@ -95,9 +98,13 @@ async function createAndSchedule(
   }
 }
 
-async function removeManaged(gateway: GarminWorkoutGateway, entry: GarminSyncEntry): Promise<void> {
-  if (entry.garminWorkoutScheduleId) await gateway.unscheduleWorkout(entry.garminWorkoutScheduleId)
-  await gateway.deleteWorkout(entry.garminWorkoutId)
+/** A removal Garmin answers 404 to has nothing left to do. */
+async function alreadyGoneIsDone(removal: Promise<void>): Promise<void> {
+  try {
+    await removal
+  } catch (error) {
+    if (!(error instanceof GarminNotFoundError)) throw error
+  }
 }
 
 export async function applyGarminSyncPlan(
@@ -130,6 +137,17 @@ export async function applyGarminSyncPlan(
     options.persist(snapshot())
   }
 
+  // Two mutations, so the first is recorded before the second is tried: an
+  // entry that kept its spent schedule id would fail on it every run after,
+  // and the workout behind it would never be deleted.
+  const removeManaged = async (entry: GarminSyncEntry) => {
+    if (entry.garminWorkoutScheduleId) {
+      await alreadyGoneIsDone(gateway.unscheduleWorkout(entry.garminWorkoutScheduleId))
+      record({ ...entry, garminWorkoutScheduleId: null, status: 'workout_created', lastSyncedAt: options.now() })
+    }
+    await alreadyGoneIsDone(gateway.deleteWorkout(entry.garminWorkoutId))
+  }
+
   for (const operation of syncPlan.operations) {
     if (rateLimited) break
 
@@ -154,7 +172,7 @@ export async function applyGarminSyncPlan(
       if (operation.action === 'delete') {
         const entry = operation.existing
         if (!entry) throw new Error('Delete without a mapping entry')
-        await removeManaged(gateway, entry)
+        await removeManaged(entry)
         forget(entry.prescriptionId)
         results.push({
           operation,
@@ -168,7 +186,7 @@ export async function applyGarminSyncPlan(
       }
 
       if (operation.action === 'replace' && operation.existing) {
-        await removeManaged(gateway, operation.existing)
+        await removeManaged(operation.existing)
         forget(operation.existing.prescriptionId)
       }
 
@@ -208,12 +226,14 @@ export async function verifyGarminSync(
     }
   }
 
+  const unconfirmed = new Set<string>()
   const results = await Promise.all(
     report.results.map(async (result) => {
       if (!applied.includes(result) || !result.garminWorkoutId) return result
       const workout = await gateway.getWorkout(result.garminWorkoutId)
       const onDate = scheduled.get(result.garminWorkoutId) === result.operation.date
       if (workout && onDate) return { ...result, verified: true }
+      if (result.operation.prescriptionId) unconfirmed.add(result.operation.prescriptionId)
       return {
         ...result,
         outcome: 'failed' as const,
@@ -222,7 +242,12 @@ export async function verifyGarminSync(
     }),
   )
 
-  return { ...report, results }
+  // A failed verification that left the entry "scheduled" would read as done:
+  // the next run would keep it and the athlete would never get the session.
+  const entries = report.state.entries.map((entry) =>
+    unconfirmed.has(entry.prescriptionId) ? { ...entry, status: 'unverified' as const } : entry,
+  )
+  return { ...report, results, state: { ...report.state, entries } }
 }
 
 export function formatGarminSyncResults(report: GarminSyncReport): string {
