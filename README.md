@@ -338,7 +338,15 @@ npm run typecheck      # tsc --noEmit
 npm run analyze        # production build with @next/bundle-analyzer treemaps
 npm run verify         # what CI's verify job runs: private-data check, lint, typecheck, tests
 npm run test:rules     # firestore.rules against the Firestore emulator (needs Java 21)
+npm run validate:data  # the dataset against the Python -> app data contract
 ```
+
+`npm run build` runs `validate:data` after fetching the dataset. A dataset that
+would crash a page (an activity without an id or a date, a goals year without
+`targets`) fails the build, so the deployment already live keeps serving; anything
+the app tolerates, such as an activity type it does not know yet, is printed as a
+warning and never fails it. The rules live in
+`src/infrastructure/contracts/dataContract.ts`.
 
 Most commits go straight to `main`, where CI only reports after the push. A
 pre-push hook runs `npm run verify` (and the Python suite, when `pytest` is
