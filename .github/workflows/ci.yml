@@ -104,5 +104,17 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      # With coverage: about 20s more, and still inside the E2E workflow's
+      # time, which is what a push waits on. Reported, not gated - a baseline
+      # to watch before any threshold is set.
       - name: Test
-        run: npm test
+        run: npx vitest run --coverage --coverage.reporter=text-summary --coverage.reporter=json-summary
+
+      - name: Coverage summary
+        if: ${{ !cancelled() && hashFiles('coverage/coverage-summary.json') != '' }}
+        run: |
+          node -e '
+            const { total } = require("./coverage/coverage-summary.json")
+            const rows = ["lines", "statements", "functions", "branches"].map((k) => `| ${k} | ${total[k].pct}% |`)
+            console.log(["| Coverage | |", "|---|---:|", ...rows].join("\n"))
+          ' >> "$GITHUB_STEP_SUMMARY"
