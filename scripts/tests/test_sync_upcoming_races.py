@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 
-from garmin.client import GarminClient
+from garmin.client import GarminAPIError, GarminClient
 import sync_upcoming_races as sync_races
 
 
@@ -162,6 +162,24 @@ def test_fetch_uses_a_multi_event_limit_and_keeps_all_returned_races(monkeypatch
         "race-2",
         "race-3",
     ]
+
+
+def test_fetch_retries_a_transient_failure_not_only_a_rate_limit(monkeypatch):
+    # Its own retry helper retried a 429 once and raised anything else.
+    monkeypatch.setattr("garmin.retry.time.sleep", lambda _seconds: None)
+    calls = []
+
+    class Client:
+        def get_upcoming_events(self, *, num_days_forward, limit):
+            calls.append((num_days_forward, limit))
+            if len(calls) == 1:
+                raise GarminAPIError(503, "https://example.test/events")
+            return [_event("race-1", "2026-09-10")]
+
+    races = sync_races.fetch_upcoming_races(Client())
+
+    assert len(calls) == 2
+    assert [race["garminEventUuid"] for race in races] == ["race-1"]
 
 
 def test_fetch_keeps_private_races_and_deduplicates_by_identity_hierarchy():

@@ -302,7 +302,7 @@ def _collect_scheduled(
 
     for year, month in months:
         try:
-            data = retry_transient(lambda y=year, m=month: client.get_calendar_month(y, m))
+            data = retry_transient(client.get_calendar_month, year, month)
         except (GarminAPIError, httpx.HTTPError) as exc:
             print(f"  Warning: calendar {year}-{month:02d} failed: {exc}")
             continue
@@ -372,7 +372,7 @@ def _build_entries(
                 else client.get_workout_detail
             )
             try:
-                details_cache[workout_id] = retry_transient(lambda wid=workout_id, f=fetch: f(wid))
+                details_cache[workout_id] = retry_transient(fetch, workout_id)
                 time.sleep(_RATE_LIMIT_PAUSE)
             except (GarminAPIError, httpx.HTTPError) as exc:
                 print(f"  Warning: workout {workout_id} detail failed: {exc}")

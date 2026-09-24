@@ -224,9 +224,7 @@ def _fetch_days(client: GarminClient, windows: list[tuple[date, date]]) -> dict[
     for window_start, window_end in windows:
         try:
             payload = retry_transient(
-                lambda: client.get_training_status_daily(
-                    window_start.isoformat(), window_end.isoformat()
-                )
+                client.get_training_status_daily, window_start.isoformat(), window_end.isoformat()
             )
         except GarminAPIError as exc:
             print(f"  Warning: training status {window_start}…{window_end} failed: {exc}")
@@ -244,9 +242,7 @@ def _fetch_weeks(client: GarminClient, windows: list[tuple[date, date]]) -> dict
     for window_start, window_end in windows:
         try:
             payload = retry_transient(
-                lambda: client.get_training_status_weekly(
-                    window_start.isoformat(), window_end.isoformat()
-                )
+                client.get_training_status_weekly, window_start.isoformat(), window_end.isoformat()
             )
         except GarminAPIError as exc:
             print(f"  Warning: weekly training status {window_start}…{window_end} failed: {exc}")

@@ -100,9 +100,7 @@ def _fetch_months(client: GarminClient, start: date, today: date) -> dict[str, d
     for window_start, window_end in monthly_windows(start, today):
         try:
             payload = retry_transient(
-                lambda: client.get_max_met_monthly(
-                    window_start.isoformat(), window_end.isoformat()
-                )
+                client.get_max_met_monthly, window_start.isoformat(), window_end.isoformat()
             )
         except GarminAPIError as exc:
             print(f"  Warning: VO2max {window_start:%Y-%m}…{window_end:%Y-%m} failed: {exc}")

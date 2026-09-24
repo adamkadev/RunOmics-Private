@@ -25,17 +25,16 @@ import json
 import os
 import re
 import sys
-import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
 from garmin.client import GarminAPIError, GarminAuthError, GarminClient
+from garmin.retry import retry_transient
 from data_directory import get_data_dir
 
 _FUTURE_DAYS = 365
 _EVENT_LIMIT = 100
-_RETRY_PAUSE = 60.0
 
 _UNIT_TO_KM = {"kilometer": 1.0, "meter": 0.001, "mile": 1.60934}
 _STANDARD_DISTANCES_KM = [
@@ -86,11 +85,10 @@ def fetch_upcoming_races(client: GarminClient) -> list[dict]:
 
     print(f"Syncing upcoming races for the next {_FUTURE_DAYS} days…")
 
-    events = _retry_on_429(
-        lambda: client.get_upcoming_events(
-            num_days_forward=_FUTURE_DAYS,
-            limit=_EVENT_LIMIT,
-        )
+    events = retry_transient(
+        client.get_upcoming_events,
+        num_days_forward=_FUTURE_DAYS,
+        limit=_EVENT_LIMIT,
     )
 
     seen: set[tuple[str, str]] = set()
@@ -473,23 +471,6 @@ def _format_duration(seconds: int) -> str:
         return f"{hours}:{minutes:02d}:{secs:02d}"
 
     return f"{minutes}:{secs:02d}"
-
-
-def _retry_on_429(fn):
-    try:
-        return fn()
-
-    except GarminAPIError as exc:
-        if exc.status_code != 429:
-            raise
-
-        print(
-            f"  Rate limited, waiting {_RETRY_PAUSE}s…",
-            flush=True,
-        )
-
-        time.sleep(_RETRY_PAUSE)
-        return fn()
 
 
 def _parse_args() -> argparse.Namespace:

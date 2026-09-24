@@ -51,9 +51,7 @@ def _fetch_metric(client: GarminClient, metric: str, start: date, today: date) -
     for window_start, window_end in monthly_windows(start, today):
         try:
             payload = retry_transient(
-                lambda: client.get_biometric_stat(
-                    metric, window_start.isoformat(), window_end.isoformat()
-                )
+                client.get_biometric_stat, metric, window_start.isoformat(), window_end.isoformat()
             )
         except GarminAPIError as exc:
             print(f"  Warning: {metric} {window_start:%Y-%m}…{window_end:%Y-%m} failed: {exc}")

@@ -111,10 +111,10 @@ def main() -> int:
                 # (An activity that has none of them gets a 404, which the
                 # client reads as empty.)
                 try:
-                    detail = retry_transient(lambda: client.get_activity_detail(activity_id))
+                    detail = retry_transient(client.get_activity_detail, activity_id)
                     parsed, file_name = _fetch_track_file(client, activity_id, dry_run=args.dry_run)
-                    hr_zones = parse_hr_zones(retry_transient(lambda: client.get_hr_zones(activity_id)))
-                    gear = retry_transient(lambda: client.get_activity_gear(activity_id))
+                    hr_zones = parse_hr_zones(retry_transient(client.get_hr_zones, activity_id))
+                    gear = retry_transient(client.get_activity_gear, activity_id)
 
                     time.sleep(_RATE_LIMIT_PAUSE)
 
@@ -188,7 +188,7 @@ def _refresh_recent_gear(client: GarminClient, store: JsonActivityStore, *, skip
     changed = 0
     for activity_id in recent_ids:
         try:
-            raw_gear = retry_transient(lambda: client.get_activity_gear(activity_id, strict_errors=True))
+            raw_gear = retry_transient(client.get_activity_gear, activity_id, strict_errors=True)
         except Exception as exc:
             print(f"  Warning: gear of {activity_id} not refreshed ({type(exc).__name__}: {exc}); kept as stored.")
             continue
@@ -294,7 +294,7 @@ def _fetch_track_file(
     # None is an activity without a FIT file (a 404, or an archive holding
     # none). A download that fails, or one that decodes to nothing, raises
     # instead: storing the activity without its track would be for good.
-    fit_bytes = retry_transient(lambda: client.download_fit(activity_id))
+    fit_bytes = retry_transient(client.download_fit, activity_id)
     if fit_bytes is None:
         return None, None
 
