@@ -190,6 +190,17 @@ class TestCleanRun:
         assert steps == list(_STEP_RESULTS)
         assert "lastSyncedAt" in json.loads((workspace / "sync_meta.json").read_text())
 
+    def test_one_failing_activity_is_left_out_the_rest_saved_and_it_exits_3(
+        self, workspace, garmin, steps, monkeypatch
+    ):
+        garmin.failures[("get_activity_detail", "101")] = GarminAPIError(500, "https://example.test/activity")
+
+        assert _run(monkeypatch) == sync._EXIT_PARTIAL_FAILURE
+
+        assert _stored_ids(workspace) == {"102"}
+        assert steps == list(_STEP_RESULTS)
+        assert (workspace / "sync_meta.json").exists()
+
     def test_a_dry_run_writes_nothing_and_runs_no_step(self, workspace, garmin, steps, monkeypatch):
         assert _run(monkeypatch, "--dry-run") == 0
 
