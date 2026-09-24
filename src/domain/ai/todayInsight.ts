@@ -1,4 +1,4 @@
-import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
+import type { TrainingStatus } from '@/domain/training/status'
 import type { PlannedWorkout } from '@/domain/activity/types'
 import type { ReadinessTone } from '@/domain/training/readiness'
 import type { RecentTraining } from '@/domain/training/recentTraining'

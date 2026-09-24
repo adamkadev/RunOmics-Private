@@ -1,4 +1,4 @@
-import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
+import type { TrainingStatus } from '@/domain/training/status'
 
 export type ReadinessTone = 'go' | 'caution' | 'hold'
 

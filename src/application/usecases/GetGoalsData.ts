@@ -9,46 +9,10 @@ import { DISTANCE_KEY, getRecords } from './GetRecords'
 import { RACE_DISTANCES, type RaceDistanceKey } from '@/domain/race/distances'
 import { addDays, startOfWeek } from '@/lib/calendarDate'
 import { round } from '@/lib/math'
+import type { PbEntry, GoalYear, UpcomingRace } from '@/domain/goals/types'
 
-export interface PbEntry {
-  distance: string
-  seconds: number
-  activityId: string
-}
-
-export interface PbYear {
-  year: number
-  entries: PbEntry[]
-}
-
-export interface GoalTarget {
-  distance: string
-  targetSeconds: number | null
-}
-
-export interface GoalYear {
-  year: number
-  annualDistanceKm: number
-  targets: GoalTarget[]
-}
-
-export interface UpcomingRace {
-  courseContext?: import('@/domain/coaching/types').RaceCourseContext
-  garminEventUuid?: string
-  garminEventId?: number
-  date: string
-  name: string
-  distance: string
-  location?: string
-  targetSeconds?: number | null
-  isPrimaryEvent?: boolean
-  isTrainingEvent?: boolean
-}
-
-export interface UpcomingRaceYear {
-  year: number
-  races: UpcomingRace[]
-}
+// Moved to the domain; re-exported so every existing importer keeps working.
+export type { PbEntry, PbYear, GoalTarget, GoalYear, UpcomingRace, UpcomingRaceYear } from '@/domain/goals/types'
 
 export interface PbData {
   entry: PbEntry

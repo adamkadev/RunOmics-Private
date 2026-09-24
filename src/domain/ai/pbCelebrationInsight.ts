@@ -1,4 +1,4 @@
-import type { RecordEntry } from '@/application/usecases/GetRecords'
+import type { RecordEntry } from '@/domain/race/records'
 import { insightHash } from './insightHash'
 import { isRecentRecord } from './celebrationWindow'
 import { avoidClause, systemInstruction } from './prompt'

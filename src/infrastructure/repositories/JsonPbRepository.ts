@@ -1,6 +1,6 @@
 import { dataPath } from '../dataPath'
 import { readJsonFile } from '../readJsonFile'
-import type { PbYear } from '@/application/usecases/GetGoalsData'
+import type { PbYear } from '@/domain/goals/types'
 import { parseTimeInput } from '@/lib/formatters'
 
 interface RawPbEntry {

@@ -1,6 +1,6 @@
 import { dataPath } from '../dataPath'
 import { readJsonFile } from '../readJsonFile'
-import type { UpcomingRace, UpcomingRaceYear } from '@/application/usecases/GetGoalsData'
+import type { UpcomingRace, UpcomingRaceYear } from '@/domain/goals/types'
 
 export function getUpcomingRaceYears(): UpcomingRaceYear[] {
   const { races } = readJsonFile<{ races?: UpcomingRace[] }>(dataPath('upcoming_races.json'), {})

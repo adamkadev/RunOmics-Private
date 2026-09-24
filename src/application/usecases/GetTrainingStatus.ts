@@ -3,37 +3,10 @@ import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepo
 import { getLatestTrainingStatusDay } from '@/infrastructure/repositories/JsonTrainingStatusRepository'
 import { getTrainingLoad, ATL_DAYS } from './GetTrainingLoad'
 import { round } from '@/lib/math'
+import type { TrainingStatusType, RiskLevel, LoadTrend, TrainingStatus } from '@/domain/training/status'
 
-export type TrainingStatusType =
-  | 'productive'
-  | 'fresh'
-  | 'overreaching'
-  | 'recovery'
-  | 'detraining'
-  | 'maintaining'
-  | 'unproductive'
-export type RiskLevel = 'low' | 'moderate' | 'high'
-export type LoadTrend = 'building' | 'maintaining' | 'tapering' | 'detraining'
-
-export interface TrainingStatus {
-  status: TrainingStatusType
-  risk: RiskLevel
-  loadTrend: LoadTrend
-  ctl: number
-  atl: number
-  tsb: number
-  tsbNow: number
-  acwr: number | null
-  ctlDelta: number
-  atlDelta: number
-  tsbDelta: number
-  ctlPeak: number
-  source: 'garmin' | 'local'
-  acwrStatus: string | null
-  chronicLoad: number | null
-  chronicLoadMin: number | null
-  chronicLoadMax: number | null
-}
+// Moved to the domain; re-exported so every existing importer keeps working.
+export type { TrainingStatusType, RiskLevel, LoadTrend, TrainingStatus } from '@/domain/training/status'
 
 const DAY_MS = 86_400_000
 

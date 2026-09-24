@@ -1,4 +1,4 @@
-import type { TrainingStatusType } from '@/application/usecases/GetTrainingStatus'
+import type { TrainingStatusType } from '@/domain/training/status'
 
 export interface TrainingStatusSegment {
   status: TrainingStatusType

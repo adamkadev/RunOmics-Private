@@ -5,20 +5,12 @@ import { getOfficialRaceResults } from '@/infrastructure/repositories/JsonRaceRe
 import { creditedEffortSeconds, matchesEffortDistance, officialResultsByActivityId, type OfficialRaceResult } from '@/domain/activity/raceResult'
 import { EFFORTS, DISTANCE_KEY } from '@/domain/activity/effort'
 import { t } from '@/i18n'
+import type { RecordEntry } from '@/domain/race/records'
+
+// Moved to the domain; re-exported so every existing importer keeps working.
+export type { RecordEntry } from '@/domain/race/records'
 
 export { EFFORTS, DISTANCE_KEY }
-
-export interface RecordEntry {
-  key: string
-  label: string
-  seconds: number | null
-  paceSecPerKm: number | null
-  distanceKm?: number
-  activityId: string | null
-  date: string | null
-  official: boolean
-  eventName?: string
-}
 
 export interface TopEffortEntry {
   seconds: number

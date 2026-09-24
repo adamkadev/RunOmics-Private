@@ -1,4 +1,4 @@
-import type { ShoeDetail } from '@/application/usecases/GetShoeDetail'
+import type { ShoeDetail } from '@/domain/shoe/types'
 import type { WearStatus } from '@/domain/shoe/wearStatus'
 import { insightHash } from './insightHash'
 import { avoidClause, systemInstruction } from './prompt'

@@ -3,18 +3,10 @@ import { formatClock, formatPace } from '@/lib/formatters'
 import { median, round } from '@/lib/math'
 import type { AnalyticsPageData, WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import type { YearComparisonData } from '@/application/usecases/GetYearComparison'
+import type { SeasonHeadlineBullet, SeasonHeadlineData } from '@/domain/training/seasonHeadline'
 
-export type SeasonHeadlineTone = 'positive' | 'caution'
-
-export interface SeasonHeadlineBullet {
-  tone: SeasonHeadlineTone
-  text: string
-}
-
-export interface SeasonHeadlineData {
-  title: string
-  bullets: SeasonHeadlineBullet[]
-}
+// Moved to the domain; re-exported so every existing importer keeps working.
+export type { SeasonHeadlineTone, SeasonHeadlineBullet, SeasonHeadlineData } from '@/domain/training/seasonHeadline'
 
 const EFFICIENCY_THRESHOLD = 0.05
 const EASY_PACE_THRESHOLD_SEC = 10
