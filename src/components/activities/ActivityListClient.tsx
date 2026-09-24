@@ -13,6 +13,7 @@ import { GlassSurface } from '@/components/ui/GlassSurface'
 import { Pill } from '@/components/ui/Pill'
 import { SortDropdown } from '@/components/ui/SortDropdown'
 import { easyHardShare } from '@/domain/training/easyHard'
+import { groupByWeek, withCurrentWeek, type WeekGroup } from '@/domain/activity/weekGroups'
 
 import { formatDateRange, formatKm } from '@/lib/formatters'
 import { isoDate, addDays, startOfWeek } from '@/lib/calendarDate'
@@ -42,15 +43,9 @@ const SORT_OPTIONS: { value: ActivitySortKey; label: string }[] = [
   { value: 'avgHr', label: t.activities.sort.avgHr },
 ]
 
-interface WeekGroup {
-  key: string
+interface WeekRow extends WeekGroup<ActivitySummary> {
   label: string
-  range: string
-  items: ActivitySummary[]
-  totalKm: number
   easyPct: number | null
-  hardPct: number | null
-  isRelativeLabel: boolean
   shape: string
 }
 
@@ -78,7 +73,7 @@ function WeekStat({ value, label, variant }: { value: string; label: string; var
 
 // Fixed columns, not a flex gap, so km/runs/easy line up from one week row to
 // the next instead of drifting with each value's own width.
-function WeekSummary({ group, variant = 'card' }: { group: WeekGroup; variant?: WeekRowVariant }) {
+function WeekSummary({ group, variant = 'card' }: { group: WeekRow; variant?: WeekRowVariant }) {
   return (
     <div className="grid shrink-0" style={{ gridTemplateColumns: '38px 32px 46px', gap: '14px' }}>
       <WeekStat value={String(Math.round(group.totalKm))} label={t.activities.weekStat.km} variant={variant} />
@@ -154,40 +149,18 @@ function weekShape(items: ActivitySummary[]): string {
     .join(' · ')
 }
 
-
-
-function groupByWeek(items: ActivitySummary[]): WeekGroup[] {
-  const weeks: { key: string; items: ActivitySummary[] }[] = []
-  for (const a of items) {
-    const key = isoDate(startOfWeek(new Date(a.date + 'T00:00:00')))
-    const openWeek = weeks[weeks.length - 1]
-    if (openWeek && openWeek.key === key) {
-      openWeek.items.push(a)
-    } else {
-      weeks.push({ key, items: [a] })
-    }
-  }
-
-  const currentWeekStart = isoDate(startOfWeek(new Date()))
+function weekRows(groups: WeekGroup<ActivitySummary>[], currentWeekStart: string): WeekRow[] {
   const lastWeekStart = isoDate(addDays(new Date(currentWeekStart + 'T00:00:00'), -7))
 
-  return weeks.map(({ key, items: weekItems }) => {
-    const totalKm = weekItems.reduce((s, a) => s + a.distanceKm, 0)
-    const { hardPct } = easyHardShare(weekItems)
+  return groups.map((group) => {
+    const { hardPct } = easyHardShare(group.items)
     const hard = hardPct === null ? null : Math.round(hardPct)
-    const range = formatDateRange(key, isoDate(addDays(new Date(key + 'T00:00:00'), 6)))
-    const relativeLabel =
-      key === currentWeekStart ? t.activities.thisWeek : key === lastWeekStart ? t.activities.lastWeek : null
+    const range = formatDateRange(group.key, isoDate(addDays(new Date(group.key + 'T00:00:00'), 6)))
     return {
-      key,
-      label: relativeLabel ?? range,
-      range,
-      items: weekItems,
-      totalKm,
+      ...group,
+      label: group.key === currentWeekStart ? t.activities.thisWeek : group.key === lastWeekStart ? t.activities.lastWeek : range,
       easyPct: hard === null ? null : 100 - hard,
-      hardPct: hard,
-      isRelativeLabel: relativeLabel !== null,
-      shape: weekShape(weekItems),
+      shape: weekShape(group.items),
     }
   })
 }
@@ -351,7 +324,23 @@ export function ActivityListClient({
 
   const hasMore = nextOffset !== null
   const hasActiveFilter = selectedType !== null || search.trim() !== ''
-  const groups = sortBy === 'date' ? groupByWeek(items) : null
+  const currentWeekStart = isoDate(startOfWeek(new Date()))
+  // `items` answers the filter the last request was made with, which is the
+  // debounced search rather than the half-typed one.
+  const itemsAreFiltered = selectedType !== null || debouncedSearch.trim() !== ''
+  const groups = useMemo(() => {
+    if (sortBy !== 'date') return null
+    const grouped = groupByWeek(items, currentWeekStart)
+    // Only the unfiltered newest-first view opens on this week whether or not
+    // it has a run yet; a filtered or oldest-first list shows the week where
+    // (and if) its runs put it.
+    const opensOnThisWeek = sortOrder === 'desc' && !itemsAreFiltered
+    return weekRows(opensOnThisWeek ? withCurrentWeek(grouped, currentWeekStart) : grouped, currentWeekStart)
+  }, [items, sortBy, sortOrder, itemsAreFiltered, currentWeekStart])
+  // Before this week's first run its card is empty, so the latest runs would
+  // otherwise all sit behind collapsed rows. The newest week that has any
+  // starts open instead - under its own label, not the current card's.
+  const openByDefault = groups?.[0]?.isCurrent && groups[0].items.length === 0 ? groups[1]?.key : undefined
 
   const loadMore = useCallback(() => {
     if (nextOffset === null || loadingMore) return
@@ -492,12 +481,13 @@ export function ActivityListClient({
         </GlassSurface>
       ) : groups ? (
         <div className="space-y-3">
-          {groups.map((g, i) => {
-            const isCurrent = i === 0
-            const isExpanded = isCurrent || expandedWeeks.has(g.key)
+          {groups.map((g) => {
+            // A toggle flips a week from its default, so for the week that
+            // starts open, being in expandedWeeks means the reader closed it.
+            const isExpanded = g.isCurrent || expandedWeeks.has(g.key) !== (g.key === openByDefault)
             return (
               <div key={g.key}>
-                {isCurrent ? (
+                {g.isCurrent ? (
                   <div
                     className="sticky top-[max(var(--safe-top),8px)] z-10 rounded-xl border py-2.5 pl-3.5"
                     style={{
@@ -509,7 +499,7 @@ export function ActivityListClient({
                     <div className="flex items-start gap-3">
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-bold text-foreground">{g.label}</div>
-                        <WeekCompositionDots items={g.items} label={g.shape} />
+                        {g.items.length > 0 && <WeekCompositionDots items={g.items} label={g.shape} />}
                       </div>
                       <div className="flex items-center" style={{ gap: '16px' }}>
                         <WeekSummary group={g} />
@@ -548,7 +538,7 @@ export function ActivityListClient({
                     </div>
                   </button>
                 )}
-                {isExpanded && (
+                {isExpanded && g.items.length > 0 && (
                   <div className="mt-2 space-y-2" style={{ marginLeft: '10px' }}>
                     {g.items.map((a) => (
                       <ActivityListCard key={a.id} activity={a} qualifiedEfforts={qualifiedEffortsByActivityId[a.id]} />
