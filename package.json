@@ -26,6 +26,7 @@
     "analyze": "ANALYZE=true next build",
     "pretest:coverage": "npm run prepare:data",
     "test:coverage": "vitest run --coverage",
+    "test:rules": "npx -y firebase-tools@15.31.0 emulators:exec --only firestore --project demo-runomics \"vitest run src/infrastructure/__tests__/firestoreRules.test.ts\"",
     "e2e:data": "node scripts/prepare-e2e-data.mjs",
     "e2e:build": "npm run e2e:data && dotenv -e .env.e2e -- node scripts/prepare-data.mjs && npm run maplibre:worker && dotenv -e .env.e2e -- next build",
     "e2e:start": "dotenv -e .env.e2e -- next start",
@@ -57,6 +58,7 @@
     "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.2",
     "@next/bundle-analyzer": "^16.3.5",
     "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
