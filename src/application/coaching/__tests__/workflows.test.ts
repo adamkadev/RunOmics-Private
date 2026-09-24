@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Activity } from '@/domain/activity/types'
 import type { CoachingRepository } from '@/application/ports/CoachingRepository'
-import type { BootstrapRequest, CoachingAdvisor, CoachingPlanDraft } from '@/application/ports/CoachingAdvisor'
+import type { AdvisorRecommendation, BootstrapRequest, CoachingAdvisor, CoachingPlanDraft } from '@/application/ports/CoachingAdvisor'
 import type { CoachDecision, CoachState, CoachingPlan, WorkoutEvaluation } from '@/domain/coaching/types'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import { buildCoachingContext, coachingContextHash, type CoachingContextInput } from '../context'
@@ -907,6 +907,50 @@ describe('coaching workflows', () => {
     })).rejects.toThrow(/past prescriptions are immutable/)
     expect(repository.plan).toEqual(plan())
     expect(repository.decisions).toEqual([])
+  })
+})
+
+describe('holding a change to the rules a new block answers to', () => {
+  // Tuesdays and Wednesdays; the easy run on Tuesday the 15th is still ahead.
+  const preferred = () => plan({ trainingPreferences: { availableWeekdays: [2, 3], runsPerWeek: 2 } })
+  const now = () => new Date('2026-09-09T08:00:00Z')
+
+  function adjusting(changes: AdvisorRecommendation['changes'], outcome: AdvisorRecommendation['outcome'] = 'ADJUST') {
+    const repository = new MemoryRepository()
+    repository.plan = preferred()
+    const advice = async (): Promise<AdvisorRecommendation> => ({ outcome, reasonCodes: ['FATIGUE'], summary: 'Ease off.', evidence: [], changes })
+    const advisor: CoachingAdvisor = { bootstrap: async () => { throw new Error('not called') }, evaluateActivity: advice, reviewWeek: advice }
+    return { repository, advisor, context: buildCoachingContext(contextInput(repository.plan), '2026-09-09') }
+  }
+
+  it('refuses an adjustment that moves a run off the athlete\'s weekdays', async () => {
+    const easy = preferred().weeks[1]!.workouts[0]!
+    const { repository, advisor, context } = adjusting([{ kind: 'upsert_workout', workoutId: easy.id, workout: { ...easy, date: '2026-09-19' } }])
+
+    await expect(createPostActivityProposal(context, latestActivity, { repository, advisor, id: ids(), now }))
+      .rejects.toThrow(/2026-09-19 is outside the available weekdays/)
+  })
+
+  it('refuses a replan whose sessions are written wrong', async () => {
+    const week = preferred().weeks[1]!
+    const bare = { ...week.workouts[0]!, blocks: [{ kind: 'strides' as const, target: { durationSeconds: 20 } }] }
+    const { repository, advisor, context } = adjusting(
+      [{ kind: 'replace_future', effectiveDate: '2026-09-09', weeks: [{ ...week, workouts: [bare] }] }],
+      'REPLAN',
+    )
+
+    await expect(createWeeklyReviewProposal(context, { repository, advisor, id: ids(), now }))
+      .rejects.toThrow(/standalone strides are not supported/)
+  })
+
+  it('still lets an adjustment cancel a run', async () => {
+    const easy = preferred().weeks[1]!.workouts[0]!
+    const { repository, advisor, context } = adjusting([{ kind: 'cancel_workout', workoutId: easy.id }])
+
+    const proposal = await createPostActivityProposal(context, latestActivity, { repository, advisor, id: ids(), now })
+    const result = applyCoachingProposal(proposal, repository, coachingContextHash(context))
+
+    expect(result.weeks[1]!.workouts[0]).toMatchObject({ id: easy.id, status: 'cancelled' })
   })
 })
 

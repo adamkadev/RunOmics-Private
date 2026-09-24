@@ -1,5 +1,5 @@
 import { validateTrainingFrequency } from './frequency'
-import { validateBootstrapDraft } from './draftRules'
+import { validateAdaptation, validateBootstrapDraft } from './draftRules'
 import type { Activity } from '@/domain/activity/types'
 import {
   COACHING_SCHEMA_VERSION,
@@ -529,7 +529,9 @@ async function createAdaptationProposal(
     ? await services.advisor.evaluateActivity({ context, activity, prescription: matched })
     : await services.advisor.reviewWeek({ context })
   const decision = decisionFromAdvice(advice, plan, kind, effectiveDate, createdAt, id(), id)
-  applyCoachDecision(plan, decision)
+  // Judged on the plan it would produce, by the rules a bootstrap answers to:
+  // until this, only the decision's own shape was checked.
+  validateAdaptation(plan, applyCoachDecision(plan, decision), context)
   const hash = coachingContextHash(context)
   const evaluation = activity ? evaluationFor(plan, activity, decision, hash, createdAt, id) : undefined
   return {

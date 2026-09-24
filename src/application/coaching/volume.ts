@@ -144,12 +144,25 @@ function longestSession(week: BootstrapWeekDraft, weekTotalKm: number, share: nu
   }
 }
 
+/**
+ * `before`, when given, makes this the check of an adaptation: the same weeks
+ * as they stood before the change. Only a week the change added kilometres to
+ * is judged, and only against the bounds on too much - ceiling, long session,
+ * ramp. Easing a week is what an adaptation for fatigue or illness is for, so
+ * the floor and the reduced-week rules, which exist to stop a block being
+ * written timid, never refuse one; and a week the change left alone is not
+ * re-litigated because the athlete's numbers have moved since it was written.
+ */
 export function validateDraftVolume(
   draft: CoachingPlanDraft,
   band: VolumeBand,
   availableWeekdays: number[],
+  before?: CoachingPlanDraft,
 ): void {
   if (!(band.baselineKm > 0)) return
+
+  const adapting = before !== undefined
+  const previousKm = new Map(before?.weeks.map((week) => [week.startDate, weekKm(week)]))
 
   // The one week per block that may sit under the floor, and only after the
   // arithmetic below agrees it is genuinely reduced.
@@ -177,24 +190,25 @@ export function validateDraftVolume(
     // turn into one. Judging it against a weekly figure would be inventing
     // one; an empty or under-specified week is frequency's business.
     if (km === 0) continue
+    const judged = !adapting || km > (previousKm.get(week.startDate) ?? 0)
 
-    const claimed = focusContradictsPrescription(week, km)
+    const claimed = adapting ? null : focusContradictsPrescription(week, km)
     if (claimed !== null) {
       throw new Error(`Week ${week.startDate} says ${claimed} km in its focus but prescribes ${km} km; make the focus match the workouts`)
     }
 
-    if (km > ceilingKm) {
+    if (judged && km > ceilingKm) {
       throw new Error(`Week ${week.startDate} prescribes ${km} km, beyond the ${ceilingKm} km this athlete has sustained; reduce it`)
     }
 
     const reduction = week.reducedVolume
-    if (km < floorKm && reduction === undefined) {
+    if (!adapting && km < floorKm && reduction === undefined) {
       throw new Error(`Week ${week.startDate} prescribes ${km} km against a recent ${band.baselineKm} km; either build from that or set week.reducedVolume with the recovery, taper or cutback reason`)
     }
 
     // Declaring the reduction is not taking it. Compared at full-week scale so
     // a short opening week is not judged against a whole week's peak.
-    if (reduction !== undefined) {
+    if (!adapting && reduction !== undefined) {
       if (reducedWeek !== null) {
         throw new Error(`Week ${week.startDate} is a second reduced week after ${reducedWeek}; a block gets one, so build this one or move the reduction`)
       }
@@ -205,9 +219,9 @@ export function validateDraftVolume(
       reducedWeek = week.startDate
     }
 
-    longestSession(week, km, share, band)
+    if (judged) longestSession(week, km, share, band)
 
-    if (km > peakKm * RAMP_RATIO + RAMP_ALLOWANCE_KM) {
+    if (judged && km > peakKm * RAMP_RATIO + RAMP_ALLOWANCE_KM) {
       throw new Error(`Week ${week.startDate} jumps from ${round(peakKm)} km to ${km} km; increase weekly volume gradually`)
     }
 

@@ -1,5 +1,12 @@
 import type { BootstrapWorkoutDraft, CoachingPlanDraft } from '@/application/ports/CoachingAdvisor'
-import type { WorkoutBlock, WorkoutRepeatBlock, WorkoutSegment } from '@/domain/coaching/types'
+import type {
+  CoachingPlan,
+  TrainingWeek,
+  WorkoutBlock,
+  WorkoutPrescription,
+  WorkoutRepeatBlock,
+  WorkoutSegment,
+} from '@/domain/coaching/types'
 import type { CoachingContext } from './context'
 import { validateBootstrapDraftSemantics, type BootstrapEvents } from './bootstrapValidation'
 import { validateDraftFrequency } from './frequency'
@@ -118,4 +125,70 @@ export function validateBootstrapDraft(draft: CoachingPlanDraft, rules: Bootstra
   validateDraftIntensity(draft, intensityBand(rules.context.athlete.thresholdPaceSecPerKm), rules.availableWeekdays)
   validateBootstrapDraftSemantics(draft, rules.events, rules.context)
   validateAvailableWeekdays(draft.weeks.flatMap((week) => week.workouts), rules.availableWeekdays)
+}
+
+function active(week: TrainingWeek): WorkoutPrescription[] {
+  return week.workouts.filter((workout) => workout.status !== 'cancelled')
+}
+
+/** The plan's weeks as the volume and intensity checks read a draft: what is still to be run. */
+function asDraft(plan: CoachingPlan): CoachingPlanDraft {
+  return {
+    name: plan.block.name,
+    focus: plan.block.focus,
+    weeks: plan.weeks.map((week) => ({ startDate: week.startDate, endDate: week.endDate, focus: week.focus, workouts: active(week) })),
+  }
+}
+
+/**
+ * One run a day and no more than the athlete's weekly count - judged on what
+ * the change added, so a week the change did not add to is never refused for
+ * how it already stood.
+ */
+function validateAdaptedFrequency(before: CoachingPlan, after: CoachingPlan, changed: WorkoutPrescription[], runsPerWeek: number): void {
+  const running = after.weeks.flatMap(active)
+  for (const workout of changed) {
+    if (running.some((other) => other.id !== workout.id && other.date === workout.date)) {
+      throw new Error(`${workout.date} already has a run; one run per day, so change that session instead of adding another`)
+    }
+  }
+  const countBefore = new Map(before.weeks.map((week) => [week.startDate, active(week).length]))
+  for (const week of after.weeks) {
+    const count = active(week).length
+    if (count > runsPerWeek && count > (countBefore.get(week.startDate) ?? 0)) {
+      throw new Error(`Week ${week.startDate} would hold ${count} runs against ${runsPerWeek} a week`)
+    }
+  }
+}
+
+/**
+ * The rules a change to the live plan answers to, measured on the plan it
+ * would produce. Every session it adds or rewrites is held to how a session is
+ * written and to the athlete's weekdays. Beyond that it may always take load
+ * away - that is what an adjustment for fatigue or illness is for, and a
+ * refusal would leave the heavier plan standing - but whatever it adds must
+ * fit the bounds a bootstrap plan answers to, measured across the whole block.
+ *
+ * Rules that demand a minimum stay with bootstrap: the volume floor, the
+ * reduced-week rules, the "fewer runs" explanation and threshold progression
+ * refuse exactly the easing an adaptation exists for, and the race rules
+ * judge how a block is laid around its events, which an adaptation inherits.
+ */
+export function validateAdaptation(before: CoachingPlan, after: CoachingPlan, context: CoachingContext): void {
+  const previous = new Map(before.weeks.flatMap((week) => week.workouts).map((workout) => [workout.id, workout]))
+  const changed = after.weeks.flatMap(active).filter((workout) => {
+    const prior = previous.get(workout.id)
+    return prior === undefined || JSON.stringify(prior) !== JSON.stringify(workout)
+  })
+  for (const workout of changed) validateWorkoutDraft(workout, `workout ${workout.id}`)
+
+  const preferences = after.trainingPreferences
+  const weekdays = preferences?.availableWeekdays ?? []
+  if (preferences) validateAvailableWeekdays(changed, weekdays)
+  if (preferences?.runsPerWeek !== undefined) validateAdaptedFrequency(before, after, changed, preferences.runsPerWeek)
+
+  const draft = asDraft(after)
+  const prior = asDraft(before)
+  validateDraftVolume(draft, volumeBand(context.trainingHistory), weekdays, prior)
+  validateDraftIntensity(draft, intensityBand(context.athlete.thresholdPaceSecPerKm), weekdays, prior)
 }

@@ -68,6 +68,17 @@ advisors only build the prompt and read the answer.
 - `validateAvailableWeekdays` - every run lands on an available weekday.
 - `normalizeBootstrapPlan` - structural validity.
 
+A change to the live plan - an `ADJUST` or `REPLAN` from `evaluate` or
+`weekly-review` - goes through `validateAdaptation`, measured on the plan it
+would produce. Every session it adds or rewrites must be written as above
+and land on an available weekday, with one run a day and no week pushed past
+`runsPerWeek`. It may always take load away; whatever it adds must fit the
+volume ceiling, long-session and ramp bounds and the intensity caps and pace
+hold, judged only on the weeks it added to. The floor, the reduced-week
+rules, the "fewer runs" explanation, threshold progression and the race
+rules stay with bootstrap: they refuse exactly the easing an adaptation is
+for.
+
 `weekKm` converts a timed segment to distance through its pace, so a week
 counted from `distanceMeters` alone reads lighter than it trains.
 

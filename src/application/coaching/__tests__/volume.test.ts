@@ -213,3 +213,30 @@ describe('a week measured in training days, not calendar days', () => {
     expect(() => validateDraftVolume(draft(tail), band, DAYS)).not.toThrow()
   })
 })
+
+describe('judging an adaptation', () => {
+  const band = volumeBand(HISTORY)
+  const five = (metres: number, start?: string) => week('Build', [0, 1, 2, 3, 4].map(() => [easy(metres)]), start)
+
+  it('never refuses a change for easing a week, however far below the floor', () => {
+    const before = draft(five(9000))
+    const eased = draft(five(6000))
+
+    expect(() => validateDraftVolume(eased, band, DAYS)).toThrow(/against a recent 45 km/)
+    expect(() => validateDraftVolume(eased, band, DAYS, before)).not.toThrow()
+  })
+
+  it('refuses a week the change pushes past what the athlete has sustained', () => {
+    expect(() => validateDraftVolume(draft(five(14000)), band, DAYS, draft(five(11000)))).toThrow(/beyond the 63.3 km/)
+  })
+
+  it('leaves alone a week the change did not add to', () => {
+    // Over today's ceiling, but written when the numbers allowed it; the change
+    // only eased the week after.
+    const before = draft(five(14000, '2026-09-28'), five(9000, '2026-10-05'))
+    const after = draft(five(14000, '2026-09-28'), five(8000, '2026-10-05'))
+
+    expect(() => validateDraftVolume(after, band, DAYS)).toThrow(/beyond the/)
+    expect(() => validateDraftVolume(after, band, DAYS, before)).not.toThrow()
+  })
+})
