@@ -38,6 +38,18 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      # Turbopack's persistent cache: a build with unchanged dependencies took
+      # 13s instead of 39s locally. Keyed per commit so every run saves its
+      # own, restored from the newest one built on the same lock file (new
+      # dependencies invalidate it anyway).
+      - name: Restore the Next.js build cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+
       - name: Run Playwright tests
         run: npm run test:e2e
 
