@@ -81,6 +81,9 @@ async function createAndSchedule(
     }
   } catch (error) {
     if (error instanceof GarminRateLimitError) throw error
+    // The workout a retry meant to reuse is gone, deleted by hand most likely.
+    // Retrying it would 404 on every run from now on; push it again instead.
+    if (error instanceof GarminNotFoundError && knownWorkoutId) return createAndSchedule(gateway, operation, now, null)
     return {
       entry: partial,
       result: {

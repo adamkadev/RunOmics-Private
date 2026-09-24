@@ -59,20 +59,28 @@ class FakeGarmin implements GarminWorkoutGateway {
     this.deleteFailures = failures.delete ?? 0
   }
 
+  /** Garmin never hands out an id again, so neither does this. */
+  private freshId(prefix: string): string {
+    let id = `${prefix}${this.nextId++}`
+    while (this.gone.has(id)) id = `${prefix}${this.nextId++}`
+    return id
+  }
+
   async createWorkout(payload: GarminWorkoutPayload): Promise<{ workoutId: string }> {
     if (this.failures.rateLimitAfter !== undefined && this.created.length >= this.failures.rateLimitAfter) {
       throw new GarminRateLimitError()
     }
     if (this.failures.create) throw new Error('HTTP 500 from workout-service')
     this.created.push(payload)
-    const workoutId = `100${this.nextId++}`
+    const workoutId = this.freshId('100')
     this.library.set(workoutId, payload.workoutName)
     return { workoutId }
   }
 
   async scheduleWorkout(workoutId: string, date: string): Promise<{ workoutScheduleId: string }> {
     if (this.failures.schedule) throw new Error('HTTP 500 from schedule')
-    const workoutScheduleId = `200${this.nextId++}`
+    if (this.gone.has(workoutId)) throw new GarminNotFoundError(`HTTP 404 from schedule/${workoutId}`)
+    const workoutScheduleId = this.freshId('200')
     this.scheduled.push([workoutId, date])
     this.calendar.set(workoutId, { scheduleId: workoutScheduleId, date })
     return { workoutScheduleId }
@@ -198,6 +206,21 @@ describe('partial failure', () => {
         status: 'scheduled',
         contentHash: garminContentHash(toGarminWorkoutPayload(after), after.date),
       }),
+    ])
+  })
+
+  it('creates the workout again when the one a retry meant to schedule is gone', async () => {
+    const workouts = [workout({ id: 'a', date: '2026-09-08' })]
+    const partial = await apply(build(plan(workouts), null), null, new FakeGarmin({ schedule: true }))
+    // Deleted by hand in Garmin Connect after the schedule failed.
+    const gateway = new FakeGarmin({}, new Set(['1001']))
+
+    const report = await apply(build(plan(workouts), partial.state), partial.state, gateway)
+
+    expect(report.results[0]!.outcome).toBe('applied')
+    expect(gateway.created).toHaveLength(1)
+    expect(report.state.entries).toEqual([
+      expect.objectContaining({ status: 'scheduled', garminWorkoutId: '1002', garminWorkoutScheduleId: '2003' }),
     ])
   })
 
