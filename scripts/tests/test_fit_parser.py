@@ -9,6 +9,7 @@ path (building valid FIT binaries in a test isn't worth the machinery).
 
 from datetime import datetime, timezone
 
+from processing import fit_parser
 from processing.fit_parser import (
     ParsedFit,
     _best_efforts,
@@ -313,3 +314,19 @@ class TestParseFitRobustness:
 
     def test_empty_bytes(self):
         assert not parse_fit(b"").has_data
+
+    def test_what_the_decoder_rejected_is_reported(self, capsys):
+        # The SDK hands its errors back rather than raising; ignoring them
+        # made a rejected file indistinguishable from an activity without one.
+        parse_fit(b"definitely not a FIT file")
+
+        assert "not a fit file" in capsys.readouterr().out
+
+    def test_a_decoder_crash_is_reported(self, monkeypatch, capsys):
+        def crash(_content):
+            raise IndexError("list index out of range")
+
+        monkeypatch.setattr(fit_parser.Stream, "from_byte_array", crash)
+
+        assert not parse_fit(b"anything").has_data
+        assert "IndexError: list index out of range" in capsys.readouterr().out

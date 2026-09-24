@@ -92,9 +92,11 @@ def write_shoes_json(shoes: list[ShoeGear], *, path: Path = _OUT_PATH) -> bool:
     existing: dict[str, Any] | None = None
     if path.exists():
         try:
-            existing = json.loads(path.read_text())
-        except Exception:
-            existing = None
+            existing = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            # Garmin's gear list is the whole of this file, so rewriting it
+            # loses nothing; a file that stopped parsing is still worth a line.
+            print(f"  Warning: {path} could not be read ({exc}); rewriting it from Garmin's gear list.")
 
     if existing == payload:
         return False

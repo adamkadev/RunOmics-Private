@@ -39,6 +39,12 @@ class TestLoadEasyPaceSecPerKm:
 
         assert _load_easy_pace_sec_per_km(tmp_path) == _DEFAULT_EASY_PACE_SEC_PER_KM
 
+    def test_says_so_when_it_falls_back_over_an_unreadable_file(self, tmp_path, capsys):
+        (tmp_path / "athlete.json").write_text('{"thresholdPaceSecPerKm": 25')
+
+        assert _load_easy_pace_sec_per_km(tmp_path) == _DEFAULT_EASY_PACE_SEC_PER_KM
+        assert f"{tmp_path / 'athlete.json'} could not be read" in capsys.readouterr().out
+
 
 class TestContinuousBaseWorkoutGetsTheSameFields:
     """A plain Base run (single pace-zone step, no structure) should surface

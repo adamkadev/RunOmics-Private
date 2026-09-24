@@ -134,6 +134,32 @@ class TestJsonActivityStoreSmoke:
 
         assert store.all_activities()[0]["weather"] is None
 
+    def test_replace_keeps_the_hand_entered_comment_and_rpe(self, tmp_path, activity_factory):
+        # sync.py --force re-fetches everything to pick up parser changes.
+        # What was typed into the data repository has no Garmin source to
+        # come back from, so it used to be wiped by that.
+        store = JsonActivityStore(tmp_path)
+        stored = activity_factory("1", "2026-07-18")
+        stored.comment = "Legs heavy after Sunday"
+        stored.rpe = 7
+        store.upsert(stored)
+
+        store.upsert(activity_factory("1", "2026-07-18"), replace=True)
+
+        replaced = store.all_activities()[0]
+        assert replaced["comment"] == "Legs heavy after Sunday"
+        assert replaced["rpe"] == 7
+
+    def test_replace_takes_the_fresh_rpe_where_none_was_stored(self, tmp_path, activity_factory):
+        store = JsonActivityStore(tmp_path)
+        store.upsert(activity_factory("1", "2026-07-18"))
+        fresh = activity_factory("1", "2026-07-18")
+        fresh.rpe = 5
+
+        store.upsert(fresh, replace=True)
+
+        assert store.all_activities()[0]["rpe"] == 5
+
     def test_save_only_rewrites_dirty_months(self, tmp_path, activity_factory):
         store = JsonActivityStore(tmp_path)
         store.upsert(activity_factory("1", "2026-06-10"))

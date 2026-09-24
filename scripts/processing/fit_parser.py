@@ -102,11 +102,20 @@ class ParsedFit:
 
 
 def parse_fit(content: bytes) -> ParsedFit:
+    """Everything RunOmics reads out of one FIT file; empty when it cannot be read.
+
+    An empty result looks the same as an activity with nothing in it, so what
+    the SDK objected to is printed: it mostly hands its errors back rather
+    than raising them.
+    """
     try:
         stream = Stream.from_byte_array(bytearray(content))
         messages, errors = Decoder(stream).read()
-    except Exception:
+    except Exception as exc:
+        print(f"  Warning: FIT decoder failed ({type(exc).__name__}: {exc})")
         return ParsedFit()
+    if errors:
+        print(f"  Warning: FIT decoder reported {len(errors)} error(s), first: {errors[0]}")
     if not messages:
         return ParsedFit()
 

@@ -103,3 +103,14 @@ class TestWriteShoesJson:
         changed = write_shoes_json(shoes, path=path)
 
         assert changed is False
+
+    def test_an_unreadable_file_is_rewritten_and_reported(self, tmp_path, capsys):
+        # Garmin's list is the whole of it, so rewriting loses nothing - but
+        # a file that stopped parsing is worth a line in the log.
+        path = tmp_path / "shoes.json"
+        path.write_text('{"shoes": [')
+
+        assert write_shoes_json([_shoe(gear_id="abc123")], path=path) is True
+
+        assert json.loads(path.read_text())["shoes"][0]["gearId"] == "abc123"
+        assert f"{path} could not be read" in capsys.readouterr().out

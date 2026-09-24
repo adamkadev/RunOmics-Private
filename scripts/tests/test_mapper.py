@@ -1,5 +1,7 @@
 from datetime import datetime
 
+import pytest
+
 from processing.activity_type import TypeInference, infer_type, infer_type_with_source
 from processing.fit_parser import ActivitySplit, ParsedFit, SplitLap
 from processing.mapper import (
@@ -253,8 +255,15 @@ class TestParseDatetime:
         assert _parse_datetime("2026-07-01T08:30:00") == datetime(2026, 7, 1, 8, 30)
         assert _parse_datetime("2026-07-01T08:30:00.500") == datetime(2026, 7, 1, 8, 30, 0, 500000)
 
-    def test_garbage_falls_back_to_epoch(self):
-        assert _parse_datetime("not a date") == datetime(1970, 1, 1)
+    def test_an_unparseable_value_raises_rather_than_dating_it_1970(self):
+        # The 1970-01-01 fallback filed a real run under a month that does
+        # not exist in the index, out of sight of every weekly total.
+        with pytest.raises(ValueError, match="'not a date'"):
+            _parse_datetime("not a date")
+
+    def test_an_activity_without_a_readable_start_time_is_refused(self):
+        with pytest.raises(ValueError):
+            map_activity({"activityId": 1, "summaryDTO": {"duration": 1800.0}}, None)
 
 
 def type_inference(activity_type, source):

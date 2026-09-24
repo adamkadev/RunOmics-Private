@@ -100,9 +100,11 @@ def write_vo2max_norms(norms: dict[str, Any] | None) -> bool:
     existing: dict[str, Any] | None = None
     if _OUT_PATH.exists():
         try:
-            existing = json.loads(_OUT_PATH.read_text())
-        except Exception:
-            existing = None
+            existing = json.loads(_OUT_PATH.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            # Garmin serves the whole table every time, so rewriting it loses
+            # nothing; a file that stopped parsing is still worth a line.
+            print(f"  Warning: {_OUT_PATH} could not be read ({exc}); rewriting it from Garmin's table.")
 
     if existing == norms:
         print("  VO2max norms unchanged.")

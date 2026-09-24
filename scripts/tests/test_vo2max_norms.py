@@ -95,6 +95,17 @@ def test_write_keeps_the_committed_file_when_the_fetch_failed(tmp_path, monkeypa
     assert out.read_text() == before
 
 
+def test_an_unreadable_file_is_rewritten_and_reported(tmp_path, monkeypatch, capsys):
+    out = tmp_path / "vo2max_norms.json"
+    out.write_text('{"male": {')
+    monkeypatch.setattr(vo2max_norms, "_OUT_PATH", out)
+
+    assert write_vo2max_norms(normalize_vo2max_norms(_raw_payload())) is True
+
+    assert json.loads(out.read_text())["male"]["20-29"]["superior"] == 55.4
+    assert f"{out} could not be read" in capsys.readouterr().out
+
+
 def test_diff_lists_only_the_thresholds_that_moved():
     before = normalize_vo2max_norms(_raw_payload())
     after = normalize_vo2max_norms(_raw_payload())

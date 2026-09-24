@@ -85,10 +85,15 @@ class JsonActivityStore:
     def upsert(self, activity: ActivityData, *, replace: bool = False) -> bool:
         new_dict = activity.to_dict()
         existing = self._by_id.get(activity.id)
-        if existing is not None and not replace:
-            new_dict["rpe"] = existing.get("rpe", new_dict["rpe"])
+        if existing is not None:
+            # Typed into the data repository, and never sent back by Garmin:
+            # no re-fetch may drop them, a forced one (replace) included.
             new_dict["comment"] = existing.get("comment", "")
-            if new_dict.get("weather") is None:
+            if existing.get("rpe") is not None:
+                new_dict["rpe"] = existing["rpe"]
+            # Weather can be re-derived (backfill_weather.py), so replace
+            # starts it over with everything else Garmin sends.
+            if not replace and new_dict.get("weather") is None:
                 new_dict["weather"] = existing.get("weather")
 
         self._by_id[activity.id] = new_dict

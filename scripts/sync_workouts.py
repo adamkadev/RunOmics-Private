@@ -221,11 +221,16 @@ def _load_easy_pace_sec_per_km(data_dir: Path | None = None) -> float:
     athlete_path = (data_dir or get_data_dir()) / "athlete.json"
     if athlete_path.exists():
         try:
-            threshold = json.loads(athlete_path.read_text()).get("thresholdPaceSecPerKm")
+            threshold = json.loads(athlete_path.read_text(encoding="utf-8")).get("thresholdPaceSecPerKm")
             if threshold:
                 return threshold * _EASY_PACE_MULT_MAX
-        except Exception:
-            pass
+        except Exception as exc:
+            # Only an estimate hangs on it, and nothing here writes the file,
+            # so falling back is safe - but not silently.
+            print(
+                f"  Warning: {athlete_path} could not be read ({type(exc).__name__}: {exc}); "
+                f"estimating distances at the default easy pace."
+            )
     return _DEFAULT_EASY_PACE_SEC_PER_KM
 
 

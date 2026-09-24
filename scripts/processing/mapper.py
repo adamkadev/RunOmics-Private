@@ -279,7 +279,9 @@ def _parse_datetime(raw: str) -> datetime:
             return datetime.strptime(raw, fmt)
         except (ValueError, TypeError):
             pass
-    return datetime(1970, 1, 1)
+    # Not a 1970-01-01 fallback, which filed a real run under a month no
+    # view reads: the activity fails instead, and the next run fetches it again.
+    raise ValueError(f"unreadable activity start time {raw!r}")
 
 
 def _decimate_list(items: list, max_points: int) -> list:
