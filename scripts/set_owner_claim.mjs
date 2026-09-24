@@ -19,6 +19,24 @@ initializeApp({
 
 const auth = getAuth()
 const user = await auth.getUserByEmail(email)
+
+// The claim is looked up by email, so the account behind that email has to
+// be the one Google vouches for. If another sign-in provider is ever enabled,
+// anyone could otherwise register the owner's address first, unverified, and
+// be handed the claim by this script.
+const signsInWithGoogle = user.providerData.some((provider) => provider.providerId === 'google.com')
+const reasons = [
+  ...(user.emailVerified ? [] : ['its email is not verified']),
+  ...(signsInWithGoogle ? [] : ['it has never signed in with Google']),
+]
+if (reasons.length) {
+  console.error(
+    `Refusing to grant the owner claim to ${email} (uid: ${user.uid}): ${reasons.join(' and ')}. ` +
+      'Sign in to the app with that Google account first, then re-run.'
+  )
+  process.exit(1)
+}
+
 await auth.setCustomUserClaims(user.uid, { ...user.customClaims, owner: true })
 
 console.log(`Granted the "owner" custom claim to ${email} (uid: ${user.uid}).`)
