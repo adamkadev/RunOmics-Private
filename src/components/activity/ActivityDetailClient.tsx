@@ -18,6 +18,7 @@ import { BestEfforts } from './BestEfforts'
 import { formatClock, formatDistance, formatDuration } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartCardSkeleton } from '@/components/ui/Skeleton'
+import { useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import type { Insight } from '@/lib/gemini'
 import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
 import { cn } from '@/lib/utils'
@@ -92,6 +93,7 @@ export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, sh
     { id: 'charts' as const, label: t.activity.tabs.charts, show: hasCharts },
     { id: 'dynamics' as const, label: t.activity.tabs.dynamics, show: hasDynamics },
   ].filter((item) => item.show)
+  const detailTabs = useSegmentedTabs({ ids: tabs.map((item) => item.id), value: tab, onChange: setTab })
 
   return (
     <>
@@ -128,16 +130,14 @@ export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, sh
           <GlassSurface
             as="div"
             variant="card"
-            role="tablist"
+            {...detailTabs.listProps}
             aria-label={t.activity.tabs.groupLabel}
             className="flex gap-1 overflow-x-auto rounded-full p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {tabs.map((item) => (
               <button
                 key={item.id}
-                role="tab"
-                aria-selected={tab === item.id}
-                onClick={() => setTab(item.id)}
+                {...detailTabs.tabProps(item.id)}
                 className={cn(
                   'min-w-fit flex-1 whitespace-nowrap rounded-full py-2.5 text-sm font-semibold transition-colors',
                   tab === item.id ? 'bg-accent text-accent-foreground' : 'text-subtle hover:text-foreground',
@@ -150,6 +150,9 @@ export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, sh
         </div>
       )}
 
+      {/* space-y-5 is the page's own rhythm: the panel stands in for the
+          sections it holds, which used to be the page's direct children. */}
+      <div {...(tabs.length > 1 ? detailTabs.panelProps : {})} className="space-y-5">
       {tab === 'overview' && (
         <>
           <TrainingEffect aer={activity.aerTrainingEffect} ana={activity.anaTrainingEffect} />
@@ -188,6 +191,7 @@ export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, sh
       )}
 
       {tab === 'dynamics' && <RunningDynamics activity={activity} baseline={dynamicsBaseline} />}
+      </div>
     </>
   )
 }

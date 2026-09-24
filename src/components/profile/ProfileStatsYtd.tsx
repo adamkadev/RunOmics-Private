@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import type { ProfilePeriodStats } from '@/application/usecases/GetProfileData'
 import { metricDeltaColor } from '@/lib/colors'
@@ -20,6 +21,7 @@ interface Cell {
 }
 
 type Period = 'year' | 'allTime'
+const PERIOD_IDS: readonly Period[] = ['year', 'allTime']
 
 const PERIODS: { id: Period; chip: string }[] = [
   { id: 'year', chip: t.profile.ytd.thisYearChip },
@@ -40,6 +42,7 @@ const THOUSAND_KCAL_SHOWN = (stats: ProfilePeriodStats) => round(THOUSAND_KCAL(s
 
 export function ProfileStatsYtd({ ytd, allTime, prevYear, year }: Props) {
   const [period, setPeriod] = useState<Period>('year')
+  const periodTabs = useSegmentedTabs({ ids: PERIOD_IDS, value: period, onChange: setPeriod })
   const stats = period === 'year' ? ytd : allTime
   const prevYearLabel = year - 1
 
@@ -66,28 +69,14 @@ export function ProfileStatsYtd({ ytd, allTime, prevYear, year }: Props) {
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <div
-        role="tablist"
-        aria-label={t.profile.ytd.thisYearChip}
-        className="mb-3 flex w-fit gap-1 rounded-full border border-foreground/10 bg-foreground/[0.07] p-1"
-      >
-        {PERIODS.map((p) => (
-          <button
-            key={p.id}
-            type="button"
-            role="tab"
-            aria-selected={p.id === period}
-            onClick={() => setPeriod(p.id)}
-            className={cn(
-              'whitespace-nowrap rounded-full px-[18px] py-[7px] text-[13.5px] font-semibold transition-colors',
-              p.id === period ? 'bg-accent text-accent-foreground' : 'text-subtle hover:text-foreground'
-            )}
-          >
-            {p.chip}
-          </button>
-        ))}
-      </div>
-      <div className="grid grid-cols-3 gap-x-3 gap-y-3.5">
+      <SegmentedTabs
+        tabs={periodTabs}
+        items={PERIODS.map((p) => ({ id: p.id, label: p.chip }))}
+        label={t.profile.ytd.thisYearChip}
+        className="mb-3 w-fit"
+        tabClassName="px-[18px] py-[7px] text-[13.5px]"
+      />
+      <div {...periodTabs.panelProps} className="grid grid-cols-3 gap-x-3 gap-y-3.5">
         {cells.map((cell, i) => (
           <div
             key={cell.label}
