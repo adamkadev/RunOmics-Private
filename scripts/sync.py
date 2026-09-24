@@ -6,6 +6,7 @@ import argparse
 import os
 import sys
 import time
+from collections.abc import Callable
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -37,9 +38,13 @@ _ATHLETE_PATH = _DATA_DIR / "athlete.json"
 _RATE_LIMIT_PAUSE = 1.0
 _REGEAR_WINDOW_DAYS = 10
 
-# Not 2: argparse already exits 2 for a usage error, and the workflow would read
-# that as "some activities failed" and commit and deploy an unchanged workspace.
+# "Some activities or steps failed; everything that succeeded is on disk" - the
+# workflow commits it, then fails the run. Not 2: argparse already exits 2 for
+# a usage error, and the workflow would read that as a partial failure and
+# commit and deploy an unchanged workspace.
 _EXIT_PARTIAL_FAILURE = 3
+
+Step = tuple[str, Callable[[], object]]
 
 
 def main() -> int:
@@ -63,18 +68,18 @@ def main() -> int:
     existing_ids = store.get_existing_ids()
     print(f"activities.json: {store.count()} existing activities")
     weather_client = WeatherClient()
+    failed_steps: list[str] = []
 
     with GarminClient(secret) as client:
         # Fetched early (before the activity loop) so newly-synced activities can be
         # enriched against it below - but must not block the more important activity
         # sync if Garmin's calendar API hiccups, so it falls back to whatever's
-        # already on disk rather than aborting the whole run.
+        # already on disk rather than aborting the whole run. Like any other
+        # step, a failure here still makes the night a partial one.
         if not args.dry_run and not args.id:
-            try:
-                planned, stale_candidates = fetch_planned_workouts(client)
-                write_planned_workouts(planned, store=planned_store, stale_candidates=stale_candidates)
-            except Exception as exc:
-                print(f"Warning: planned workouts sync failed ({type(exc).__name__}: {exc}), continuing with existing data.")
+            failed_steps += _run_isolated(
+                [("planned workouts", lambda: _sync_planned_workouts(client, planned_store))]
+            )
 
         if args.id:
             new_ids = [args.id]
@@ -173,30 +178,70 @@ def main() -> int:
             print(f"\nDry run: {added} would be added, {failed} would fail.")
 
         if not args.dry_run and not args.id:
-            races = fetch_upcoming_races(client)
-            write_upcoming_races(races)
-
-            metrics = fetch_athlete_metrics(client)
-            if record_athlete_history(metrics):
-                print("Athlete threshold metrics changed - recorded a history entry.")
-            _merge_athlete_metrics(metrics)
-            sync_fitness_age_history(client)
-
-            write_vo2max_norms(fetch_vo2max_norms(client))
-
-            first_day = _first_activity_date(store)
-            if first_day:
-                sync_training_status(client, first_day)
-                sync_vo2max_history(client, first_day)
-                sync_threshold_history(client, first_day)
-            sync_race_predictions(client)
-            sync_load_balance(client)
-            sync_training_plan(client)
+            failed_steps += _run_isolated(_post_save_steps(client, store))
 
         if not args.dry_run:
             _write_sync_meta()
 
-    return 0 if failed == 0 else _EXIT_PARTIAL_FAILURE
+    if failed_steps:
+        print(f"\n{len(failed_steps)} step(s) failed: {', '.join(failed_steps)}.")
+    return 0 if failed == 0 and not failed_steps else _EXIT_PARTIAL_FAILURE
+
+
+def _run_isolated(steps: list[Step]) -> list[str]:
+    """Run every step, whatever happens to the ones before it; return the names that failed.
+
+    The activities are already saved by the time these run, and each step
+    writes a file of its own. One of them raising used to end main() with
+    exit 1, which makes the workflow skip the commit - so a single 5xx from
+    race predictions discarded every activity synced that night. A step that
+    fails now leaves its own file as it was (a history file that will not
+    parse still refuses to be rewritten), the others carry on, and main()
+    exits 3.
+    """
+    failed: list[str] = []
+    for name, step in steps:
+        try:
+            step()
+        except Exception as exc:
+            print(f"Warning: {name} failed ({type(exc).__name__}: {exc}); its file is left as it was.")
+            failed.append(name)
+    return failed
+
+
+def _post_save_steps(client: GarminClient, store: JsonActivityStore) -> list[Step]:
+    steps: list[Step] = [
+        ("upcoming races", lambda: write_upcoming_races(fetch_upcoming_races(client))),
+        ("athlete metrics", lambda: _sync_athlete_metrics(client)),
+        ("fitness age history", lambda: sync_fitness_age_history(client)),
+        ("VO2max norms", lambda: write_vo2max_norms(fetch_vo2max_norms(client))),
+    ]
+
+    first_day = _first_activity_date(store)
+    if first_day:
+        steps += [
+            ("training status", lambda: sync_training_status(client, first_day)),
+            ("VO2max history", lambda: sync_vo2max_history(client, first_day)),
+            ("threshold history", lambda: sync_threshold_history(client, first_day)),
+        ]
+
+    return steps + [
+        ("race predictions", lambda: sync_race_predictions(client)),
+        ("load balance", lambda: sync_load_balance(client)),
+        ("training plan", lambda: sync_training_plan(client)),
+    ]
+
+
+def _sync_planned_workouts(client: GarminClient, planned_store: PlannedWorkoutStore) -> None:
+    planned, stale_candidates = fetch_planned_workouts(client)
+    write_planned_workouts(planned, store=planned_store, stale_candidates=stale_candidates)
+
+
+def _sync_athlete_metrics(client: GarminClient) -> None:
+    metrics = fetch_athlete_metrics(client)
+    if record_athlete_history(metrics):
+        print("Athlete threshold metrics changed - recorded a history entry.")
+    _merge_athlete_metrics(metrics)
 
 
 def _first_activity_date(store: JsonActivityStore) -> date | None:
