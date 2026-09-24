@@ -5,6 +5,7 @@ import { getLatestVO2max } from '@/application/usecases/GetVO2maxHistory'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
 import { isoWeekNumber } from '@/lib/calendarDate'
 import { AthleteClient } from '@/components/profile/AthleteClient'
+import { athletePageView } from '@/components/profile/athleteView'
 
 export const revalidate = 3600
 
@@ -19,7 +20,7 @@ export default async function AthletePage() {
 
   return (
     <AthleteClient
-      athlete={athlete}
+      athlete={athletePageView(athlete)}
       latestVo2max={getLatestVO2max()}
       weeklyZoneTime={weeklyZoneTime}
       recentZoneTime={recentZoneTime}

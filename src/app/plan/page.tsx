@@ -6,6 +6,7 @@ import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
 import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { PlanClient } from '@/components/plan/PlanClient'
+import { planCoachingView } from '@/components/plan/planCoachingView'
 import type { HrBounds } from '@/domain/training/trimp'
 
 export const revalidate = 3600
@@ -17,6 +18,7 @@ export default async function PlanPage() {
   const trainingZones = await getTrainingZones()
   const trainingPlan = getTrainingPlan()
   const athlete = getAthleteProfile()
+  const coaching = getCoachingOverview()
   const hrBounds: HrBounds | undefined =
     athlete.maxHrBpm && athlete.restingHrBpm
       ? { maxHr: athlete.maxHrBpm, restingHr: athlete.restingHrBpm }
@@ -31,7 +33,7 @@ export default async function PlanPage() {
       planSpan={trainingPlan}
       nextRace={nextRace}
       trainingZones={trainingZones}
-      coaching={getCoachingOverview()}
+      coaching={coaching ? planCoachingView(coaching) : null}
     />
   )
 }

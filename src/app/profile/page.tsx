@@ -4,6 +4,7 @@ import { getLatestVO2max } from '@/application/usecases/GetVO2maxHistory'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { recentZoneDistribution } from '@/application/usecases/GetAnalyticsData'
 import { ProfileClient } from '@/components/profile/ProfileClient'
+import { profileView } from '@/components/profile/athleteView'
 
 export const revalidate = 3600
 
@@ -15,7 +16,7 @@ export default async function ProfilePage() {
 
   return (
     <ProfileClient
-      data={data}
+      data={profileView(data)}
       heatmapDays={heatmapDays}
       latestVo2max={latestVo2max}
       recentZoneTime={recentZoneTime}

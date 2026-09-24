@@ -7,7 +7,7 @@ import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { PlanSpan } from '@/domain/training/planProgress'
-import type { PrescriptionView, CoachingOverview } from '@/application/coaching/GetCoachingView'
+import type { PlanCoachingView, PlanPrescriptionView } from './planCoachingView'
 import { WeekView } from './WeekView'
 import { MonthView } from './MonthView'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
@@ -24,7 +24,7 @@ interface Props {
   nextRace: UpcomingRace | null
   trainingZones: TrainingZonesData | null
   planSpan: PlanSpan | null
-  coaching: CoachingOverview | null
+  coaching: PlanCoachingView | null
 }
 
 type ViewMode = 'week' | 'month'
@@ -57,7 +57,7 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, planPhaseRan
   }, [plannedWorkouts])
 
   const byDateCoach = useMemo(() => {
-    const map = new Map<string, PrescriptionView[]>()
+    const map = new Map<string, PlanPrescriptionView[]>()
     for (const view of coaching?.workouts ?? []) map.set(view.prescription.date, [...(map.get(view.prescription.date) ?? []), view])
     return map
   }, [coaching])

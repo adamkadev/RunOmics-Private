@@ -23,22 +23,28 @@ function daysBetween(from: string, to: string): number {
   return Math.round((utc(to) - utc(from)) / DAY_MS)
 }
 
-export function macrocycleStart(plan: CoachingPlan): string {
+/** The dates the macrocycle is measured between - all a phase track reads of a plan. */
+export type MacrocycleSpan = Pick<CoachingPlan, 'macrocycleStartDate'> & {
+  block: Pick<CoachingPlan['block'], 'startDate'>
+  targetEvent: Pick<CoachingPlan['targetEvent'], 'date'>
+}
+
+export function macrocycleStart(plan: MacrocycleSpan): string {
   return plan.macrocycleStartDate ?? plan.block.startDate
 }
 
-export function macrocyclePhaseRanges(plan: CoachingPlan): PlanPhaseRange[] {
+export function macrocyclePhaseRanges(plan: MacrocycleSpan): PlanPhaseRange[] {
   return macrocyclePhases(macrocycleStart(plan), plan.targetEvent.date)
 }
 
-export function macrocycleWeek(plan: CoachingPlan, today: string): { done: number; total: number } | null {
+export function macrocycleWeek(plan: MacrocycleSpan, today: string): { done: number; total: number } | null {
   const start = macrocycleStart(plan)
   const total = Math.max(1, Math.round(daysBetween(start, plan.targetEvent.date) / 7))
   const done = Math.floor(daysBetween(start, today) / 7) + 1
   return { done: Math.min(Math.max(done, 1), total), total }
 }
 
-export function garminAlert(view: PrescriptionView): string | null {
+export function garminAlert(view: Pick<PrescriptionView, 'garminStatus'>): string | null {
   return view.garminStatus === 'scheduled_different' ? t.coaching.garminOutOfDate : null
 }
 
@@ -46,7 +52,7 @@ export function garminAlert(view: PrescriptionView): string | null {
 // COACHING_TO_ACTIVITY_TYPE already maps every easy-effort prescription type
 // (easy, recovery, long_run) to the 'Base' activity type, so reusing it keeps
 // this in sync with that map instead of drifting from it again.
-export function isKeyPrescription(workout: WorkoutPrescription): boolean {
+export function isKeyPrescription(workout: Pick<WorkoutPrescription, 'type'>): boolean {
   return COACHING_TO_ACTIVITY_TYPE[workout.type] !== 'Base'
 }
 
@@ -59,8 +65,10 @@ function segmentSeconds(target: WorkoutTarget): { seconds: number; estimated: bo
   return null
 }
 
+type Segmented = Pick<WorkoutPrescription, 'blocks'>
+
 function eachSegment(
-  workout: WorkoutPrescription,
+  workout: Segmented,
   visit: (target: WorkoutTarget, kind: WorkoutSegmentKind, rep: number | undefined) => boolean | void
 ): boolean {
   for (const block of workout.blocks) {
@@ -89,7 +97,7 @@ function segmentMeters(target: WorkoutTarget): number {
   return 0
 }
 
-export function prescriptionSize(workout: WorkoutPrescription): string {
+export function prescriptionSize(workout: Segmented): string {
   let meters = 0
   let unpacedSeconds = 0
   let estimated = false
@@ -120,7 +128,7 @@ const STEP_KIND: Record<WorkoutSegmentKind, WorkoutStepKind> = {
 }
 
 function paceSpan(
-  workout: WorkoutPrescription,
+  workout: Segmented,
   include: (kind: WorkoutSegmentKind) => boolean
 ): string | null {
   let min: number | undefined
@@ -136,7 +144,7 @@ function paceSpan(
 }
 
 /** The pace envelope of the whole session, warm-up and cool-down included. */
-export function prescriptionPace(workout: WorkoutPrescription): string | null {
+export function prescriptionPace(workout: Segmented): string | null {
   return paceSpan(workout, () => true)
 }
 
@@ -147,11 +155,13 @@ export function prescriptionPace(workout: WorkoutPrescription): string | null {
  * the reps are the session, so the bookends are dropped. Returns null when the
  * coach paced no effort segment, leaving the caller on its zone-band fallback.
  */
-export function prescriptionEffortPace(workout: WorkoutPrescription): string | null {
+export function prescriptionEffortPace(workout: Segmented): string | null {
   return paceSpan(workout, (kind) => STEP_KIND[kind] === 'effort')
 }
 
-export function prescriptionDuration(workout: WorkoutPrescription): { seconds: number; estimated: boolean } | null {
+export function prescriptionDuration(
+  workout: Segmented & Pick<WorkoutPrescription, 'totalDurationSeconds'>
+): { seconds: number; estimated: boolean } | null {
   if (workout.totalDurationSeconds !== undefined) {
     return { seconds: workout.totalDurationSeconds, estimated: false }
   }
@@ -170,7 +180,7 @@ export function prescriptionDuration(workout: WorkoutPrescription): { seconds: n
   return { seconds: Math.round(seconds), estimated }
 }
 
-export function prescriptionDistanceMeters(workout: WorkoutPrescription): number | null {
+export function prescriptionDistanceMeters(workout: Segmented & Pick<WorkoutPrescription, 'totalDistanceMeters'>): number | null {
   if (workout.totalDistanceMeters !== undefined) return workout.totalDistanceMeters
 
   let meters = 0
@@ -178,7 +188,7 @@ export function prescriptionDistanceMeters(workout: WorkoutPrescription): number
   return Math.round(meters) || null
 }
 
-export function prescriptionStructure(workout: WorkoutPrescription): WorkoutStep[] | null {
+export function prescriptionStructure(workout: Segmented & Pick<WorkoutPrescription, 'totalDurationSeconds'>): WorkoutStep[] | null {
   const steps: { kind: WorkoutStepKind; minutes: number | null; rep?: number; paceSecPerKm?: [number, number] }[] = []
 
   const drawable = eachSegment(workout, (target, kind, rep) => {

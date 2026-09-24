@@ -1,6 +1,6 @@
 'use client'
 
-import type { ProfileData } from '@/application/usecases/GetProfileData'
+import type { ProfileView } from './athleteView'
 import type { HeatmapDay } from '@/application/usecases/GetHeatmapData'
 import type { ZoneShare } from '@/application/usecases/GetAnalyticsData'
 import { ProfileHero } from './ProfileHero'
@@ -13,7 +13,7 @@ import { ActivityHeatmap } from '@/components/dashboard/ActivityHeatmap'
 import { t } from '@/i18n'
 
 interface Props {
-  data: ProfileData
+  data: ProfileView
   heatmapDays: HeatmapDay[]
   latestVo2max: number | null
   recentZoneTime: ZoneShare[]

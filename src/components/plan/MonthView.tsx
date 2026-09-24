@@ -11,7 +11,7 @@ import { GlassSurface } from '@/components/ui/GlassSurface'
 import { PlannedWorkoutSheet } from './PlannedWorkoutSheet'
 import { plannedWorkoutView, type PlanWorkoutView } from './planWorkoutView'
 import { t } from '@/i18n'
-import type { PrescriptionView } from '@/application/coaching/GetCoachingView'
+import type { PlanPrescriptionView } from './planCoachingView'
 import { prescriptionDistanceMeters } from '@/components/coaching/presentation'
 import { COACHING_TO_ACTIVITY_TYPE } from '@/domain/coaching/types'
 
@@ -20,7 +20,7 @@ interface Props {
   month: number
   byDate: Map<string, ActivitySummary[]>
   byDatePlanned: Map<string, PlannedWorkout>
-  byDateCoach?: ReadonlyMap<string, PrescriptionView[]>
+  byDateCoach?: ReadonlyMap<string, PlanPrescriptionView[]>
   today: string
   atPresent: boolean
   onToday: () => void
@@ -69,7 +69,7 @@ function isoDateOf(year: number, month: number, day: number): string {
 function plannedInfoFor(
   date: string,
   byDatePlanned: Map<string, PlannedWorkout>,
-  byDateCoach?: ReadonlyMap<string, PrescriptionView[]>
+  byDateCoach?: ReadonlyMap<string, PlanPrescriptionView[]>
 ): PlannedInfo | null {
   const coach = byDateCoach?.get(date)?.find((v) => v.state !== 'cancelled')
   if (coach) {

@@ -45,7 +45,7 @@ function Tile({ label, value, unit, valueColor }: HeadlineMetric) {
 }
 
 interface Props {
-  athlete: AthleteProfile
+  athlete: Pick<AthleteProfile, 'vmaKmh' | 'lthrBpm'>
   latestVo2max: number | null
   recentZoneTime: ZoneShare[]
 }

@@ -22,7 +22,7 @@ import { addDays, isoDate } from '@/lib/calendarDate'
 import { formatDate, formatDateRange, formatPace } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
-import type { CoachingOverview, PrescriptionView } from '@/application/coaching/GetCoachingView'
+import type { PlanCoachingView, PlanPrescriptionView } from './planCoachingView'
 import { COACHING_TO_ACTIVITY_TYPE } from '@/domain/coaching/types'
 import {
   isKeyPrescription,
@@ -87,7 +87,7 @@ function hardestType(types: ActivityType[]): ActivityType {
 function resolvePlannedType(
   date: string,
   byDatePlanned: Map<string, PlannedWorkout>,
-  byDateCoach?: ReadonlyMap<string, PrescriptionView[]>
+  byDateCoach?: ReadonlyMap<string, PlanPrescriptionView[]>
 ): ActivityType | undefined {
   const coach = byDateCoach?.get(date)?.find((v) => v.state !== 'cancelled')
   if (coach) return COACHING_TO_ACTIVITY_TYPE[coach.prescription.type]
@@ -194,7 +194,7 @@ function findNextPlanned(
   days: Day[],
   fromDate: string,
   byDatePlanned: Map<string, PlannedWorkout>,
-  byDateCoach?: ReadonlyMap<string, PrescriptionView[]>
+  byDateCoach?: ReadonlyMap<string, PlanPrescriptionView[]>
 ): { weekday: string; title: string } | null {
   const fromIndex = days.findIndex((d) => d.date === fromDate)
   if (fromIndex === -1) return null
@@ -292,7 +292,7 @@ function WeekStrip({
   selectedDate: string
   today: string
   byDatePlanned: Map<string, PlannedWorkout>
-  byDateCoach?: ReadonlyMap<string, PrescriptionView[]>
+  byDateCoach?: ReadonlyMap<string, PlanPrescriptionView[]>
   onSelect: (date: string) => void
 }) {
   const BAR_MAX = 56
@@ -447,8 +447,8 @@ interface Props {
   weekStart: Date
   byDate: Map<string, ActivitySummary[]>
   byDatePlanned: Map<string, PlannedWorkout>
-  byDateCoach?: ReadonlyMap<string, PrescriptionView[]>
-  coaching?: CoachingOverview | null
+  byDateCoach?: ReadonlyMap<string, PlanPrescriptionView[]>
+  coaching?: PlanCoachingView | null
   onSelectDate?: (date: string) => void
   hrBounds?: HrBounds
   today: string

@@ -12,7 +12,7 @@ import { getTodayInsight, todayInsightSession } from '@/application/usecases/Get
 import { getPbCelebrationInsight } from '@/application/usecases/GetPbCelebrationInsight'
 import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
-import { coachWorkoutView, plannedWorkoutView } from '@/components/plan/planWorkoutView'
+import { coachWorkoutView, heroWorkoutView, plannedWorkoutView } from '@/components/plan/planWorkoutView'
 import { isoDate } from '@/lib/calendarDate'
 import { getWeeklyStreakData } from '@/application/usecases/GetMilestones'
 import { getCurrentWeeklyGoal } from '@/application/usecases/GetGoalsData'
@@ -67,7 +67,7 @@ export default async function DashboardPage() {
 
       <TodayHero
         status={trainingStatus}
-        plannedWorkout={todayWorkout}
+        plannedWorkout={todayWorkout && heroWorkoutView(todayWorkout)}
         todayActivity={todayActivity}
         nextRace={nextRace}
         aiVerdict={aiVerdict}

@@ -5,7 +5,7 @@ import { CircleCheck, Minus, OctagonAlert, TriangleAlert, type LucideIcon } from
 import { CardTitle } from '@/components/ui/SectionLabel'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { formatDuration } from '@/lib/formatters'
-import type { AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
+import type { AthletePageView } from './athleteView'
 import {
   BMI_BAND_TONE,
   FITNESS_AGE_BAND_TONE,
@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 interface Props {
-  athlete: AthleteProfile
+  athlete: AthletePageView
   latestVo2max: number | null
 }
 
@@ -72,7 +72,7 @@ type Category = 'performance' | 'cardio' | 'body'
 
 const CATEGORIES = ['performance', 'cardio', 'body'] as const
 
-function fitnessAgeTileBand(athlete: AthleteProfile): TileData['band'] {
+function fitnessAgeTileBand(athlete: AthletePageView): TileData['band'] {
   const { fitnessAgeYrs, age } = athlete
   if (fitnessAgeYrs === undefined || age === undefined) return undefined
 
@@ -102,7 +102,7 @@ function syncFreshnessTone(iso: string): 'success' | 'warning' | 'danger' {
   return 'danger'
 }
 
-function tilesFor(category: Category, athlete: AthleteProfile, latestVo2max: number | null): TileData[] {
+function tilesFor(category: Category, athlete: AthletePageView, latestVo2max: number | null): TileData[] {
   const a = t.settings.athlete
 
   if (category === 'cardio') {

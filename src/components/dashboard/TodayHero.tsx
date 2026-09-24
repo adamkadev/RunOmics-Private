@@ -7,7 +7,7 @@ import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import type { ActivitySummary } from '@/domain/activity/types'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import { verdictTone, type ReadinessTone } from '@/domain/training/readiness'
-import type { PlanWorkoutView } from '@/components/plan/planWorkoutView'
+import type { HeroWorkoutView } from '@/components/plan/planWorkoutView'
 import { formatCountdown, formatDelta, formatDistance, formatDurationWords } from '@/lib/formatters'
 import { READINESS_TONE_COLORS } from '@/lib/colors'
 import type { Insight } from '@/lib/gemini'
@@ -28,7 +28,7 @@ const FOOTER_BG = 'rgba(148,178,220,.035)'
 const FOOTER_DIVIDER = 'rgba(148,178,220,.12)'
 interface Props {
   status: TrainingStatus | null
-  plannedWorkout: PlanWorkoutView | null
+  plannedWorkout: HeroWorkoutView | null
   todayActivity: ActivitySummary | null
   nextRace: UpcomingRace | null
   aiVerdict: Insight | null
