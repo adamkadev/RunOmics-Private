@@ -35,8 +35,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+      # The headless shell only - the one browser the suite launches - and no
+      # --with-deps: the runner image ships Google Chrome, so Chromium's
+      # libraries are already there, and the fonts and xvfb that apt added
+      # took about 57s of this step's 69s. A library the image ever drops
+      # fails the launch loudly, by name.
+      - name: Install Playwright's Chromium
+        run: npx playwright install --only-shell chromium
 
       # Turbopack's persistent cache: a build with unchanged dependencies took
       # 13s instead of 39s locally. Keyed per commit so every run saves its
