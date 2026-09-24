@@ -4,6 +4,7 @@ import { getRacePredictions } from '@/application/usecases/GetRacePredictions'
 import { getMilestones } from '@/application/usecases/GetMilestones'
 import { getRecurringRoutes } from '@/application/usecases/GetRecurringRoutes'
 import { RecordsClient } from '@/components/records/RecordsClient'
+import { appTodayIso } from '@/lib/calendarDate'
 import { BackButton } from '@/components/ui/BackButton'
 import { t } from '@/i18n'
 
@@ -33,6 +34,7 @@ export default async function RecordsPage() {
         pbAlerts={pbAlerts}
         milestones={milestones}
         recurringRoutes={recurringRoutes}
+        today={appTodayIso()}
       />
     </div>
   )

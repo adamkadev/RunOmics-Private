@@ -30,16 +30,18 @@ interface Props {
   ytd: ProfilePeriodStats
   allTime: ProfilePeriodStats
   prevYear: ProfilePeriodStats | null
+  /** The year `ytd` counts, as the server that computed it saw it. */
+  year: number
 }
 
 const HOURS = (stats: ProfilePeriodStats) => Math.round(stats.durationSeconds / 3600)
 const THOUSAND_KCAL = (stats: ProfilePeriodStats) => stats.calories / 1000
 const THOUSAND_KCAL_SHOWN = (stats: ProfilePeriodStats) => round(THOUSAND_KCAL(stats), 1)
 
-export function ProfileStatsYtd({ ytd, allTime, prevYear }: Props) {
+export function ProfileStatsYtd({ ytd, allTime, prevYear, year }: Props) {
   const [period, setPeriod] = useState<Period>('year')
   const stats = period === 'year' ? ytd : allTime
-  const prevYearLabel = new Date().getFullYear() - 1
+  const prevYearLabel = year - 1
 
   const baseline = period === 'year' ? prevYear : null
   const delta = (pick: (stats: ProfilePeriodStats) => number) =>

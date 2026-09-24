@@ -5,6 +5,7 @@ import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepo
 import { recentZoneDistribution } from '@/application/usecases/GetAnalyticsData'
 import { ProfileClient } from '@/components/profile/ProfileClient'
 import { profileView } from '@/components/profile/athleteView'
+import { appTodayIso } from '@/lib/calendarDate'
 
 export const revalidate = 3600
 
@@ -20,6 +21,7 @@ export default async function ProfilePage() {
       heatmapDays={heatmapDays}
       latestVo2max={latestVo2max}
       recentZoneTime={recentZoneTime}
+      today={appTodayIso()}
     />
   )
 }

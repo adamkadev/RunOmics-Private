@@ -34,7 +34,7 @@ function cellsOf(container: HTMLElement) {
 describe('ProfileStatsYtd', () => {
   it('gives every cell the same three-line structure so the rows align', () => {
     const { container } = render(
-      <ProfileStatsYtd ytd={ytd} allTime={allTime} prevYear={prevYear} />
+      <ProfileStatsYtd ytd={ytd} allTime={allTime} prevYear={prevYear} year={PREV_YEAR + 1} />
     )
 
     const cells = cellsOf(container)
@@ -45,7 +45,7 @@ describe('ProfileStatsYtd', () => {
   })
 
   it('carries a year-on-year delta on every cell, not just distance', () => {
-    render(<ProfileStatsYtd ytd={ytd} allTime={allTime} prevYear={prevYear} />)
+    render(<ProfileStatsYtd ytd={ytd} allTime={allTime} prevYear={prevYear} year={PREV_YEAR + 1} />)
 
     expect(screen.getAllByText(t.profile.ytd.vsLastYear(PREV_YEAR))).toHaveLength(6)
     expect(screen.getByText('+205')).toBeInTheDocument()
@@ -57,7 +57,7 @@ describe('ProfileStatsYtd', () => {
 
   it('keeps the structure but drops the comparison on the all-time period', async () => {
     const { container } = render(
-      <ProfileStatsYtd ytd={ytd} allTime={allTime} prevYear={prevYear} />
+      <ProfileStatsYtd ytd={ytd} allTime={allTime} prevYear={prevYear} year={PREV_YEAR + 1} />
     )
 
     await userEvent.click(screen.getByRole('tab', { name: t.profile.ytd.allTimeChip }))
@@ -70,14 +70,14 @@ describe('ProfileStatsYtd', () => {
   })
 
   it('prints an em dash rather than a blank when there is no prior year', () => {
-    render(<ProfileStatsYtd ytd={ytd} allTime={allTime} prevYear={null} />)
+    render(<ProfileStatsYtd ytd={ytd} allTime={allTime} prevYear={null} year={PREV_YEAR + 1} />)
 
     expect(screen.queryByText(t.profile.ytd.vsLastYear(PREV_YEAR))).not.toBeInTheDocument()
     expect(screen.getAllByText(t.profile.ytd.noComparison)).toHaveLength(6)
   })
 
   it('still shows the calories cell', () => {
-    render(<ProfileStatsYtd ytd={ytd} allTime={allTime} prevYear={prevYear} />)
+    render(<ProfileStatsYtd ytd={ytd} allTime={allTime} prevYear={prevYear} year={PREV_YEAR + 1} />)
 
     expect(screen.getByText(t.profile.ytd.calories)).toBeInTheDocument()
   })

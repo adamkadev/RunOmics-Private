@@ -12,6 +12,7 @@ import { WeekView } from './WeekView'
 import { MonthView } from './MonthView'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
 import { useSwipeNavigation } from '@/lib/useSwipeNavigation'
+import { useToday } from '@/lib/useToday'
 import { formatDate } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -25,17 +26,34 @@ interface Props {
   trainingZones: TrainingZonesData | null
   planSpan: PlanSpan | null
   coaching: PlanCoachingView | null
+  /** The date the page was prerendered on; see useToday. */
+  today: string
 }
 
 type ViewMode = 'week' | 'month'
 
-export function PlanClient({ activities, plannedWorkouts, hrBounds, planPhaseRanges, nextRace, trainingZones, planSpan, coaching }: Props) {
-  const now = new Date()
-  const today = isoDate(now)
+export function PlanClient({ activities, plannedWorkouts, hrBounds, planPhaseRanges, nextRace, trainingZones, planSpan, coaching, today: serverToday }: Props) {
+  const today = useToday(serverToday)
+  const now = new Date(`${today}T00:00:00`)
   const [mode, setMode] = useState<ViewMode>('week')
   const [weekStart, setWeekStart] = useState(() => startOfWeek(now))
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth())
+
+  // The page hydrates on the date it was built, and the day can roll over
+  // after that - at midnight, or because the cached page is from yesterday. A
+  // view still on the week or month that was current follows the new one; a
+  // view the reader paged to stays put.
+  const [shownToday, setShownToday] = useState(today)
+  if (shownToday !== today) {
+    const was = new Date(`${shownToday}T00:00:00`)
+    setShownToday(today)
+    if (isoDate(weekStart) === isoDate(startOfWeek(was))) setWeekStart(startOfWeek(now))
+    if (year === was.getFullYear() && month === was.getMonth()) {
+      setYear(now.getFullYear())
+      setMonth(now.getMonth())
+    }
+  }
   const [animKey, setAnimKey] = useState(0)
   const [direction, setDirection] = useState<'forward' | 'backward'>('forward')
   const [focusDate, setFocusDate] = useState<string | null>(null)

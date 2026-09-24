@@ -4,15 +4,19 @@ import { useState } from 'react'
 import type { GoalsPageData } from '@/application/usecases/GetGoalsData'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { cn } from '@/lib/utils'
+import { useToday } from '@/lib/useToday'
 import { YearView } from './YearView'
 import { GoalsHistory } from './GoalsHistory'
 import { t } from '@/i18n'
 
 interface Props {
   data: GoalsPageData
+  /** The date the page was prerendered on; see useToday. */
+  today: string
 }
 
-export function GoalsClient({ data }: Props) {
+export function GoalsClient({ data, today: serverToday }: Props) {
+  const today = useToday(serverToday)
   const { years, byYear, history } = data
   const [selectedYear, setSelectedYear] = useState(years[0])
   const yearData = selectedYear !== undefined ? byYear[selectedYear] : undefined
@@ -53,7 +57,7 @@ export function GoalsClient({ data }: Props) {
       </div>
 
       {yearData ? (
-        <YearView key={yearData.year} yearData={yearData} />
+        <YearView key={yearData.year} yearData={yearData} today={today} />
       ) : (
         <GlassSurface variant="card" className="rounded-2xl py-12 text-center">
           <p className="text-sm text-subtle">{t.goals.empty}</p>

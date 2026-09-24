@@ -6,6 +6,7 @@ import type { WeeklyStreakData } from '@/application/usecases/GetMilestones'
 import type { WeeklyGoal } from '@/application/usecases/GetGoalsData'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { useCountUp } from '@/lib/useCountUp'
+import { useToday } from '@/lib/useToday'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -59,11 +60,14 @@ function WeekDots({ weekDays, plannedDays, today }: { weekDays: boolean[]; plann
 interface Props {
   data: WeeklyStreakData
   goal: WeeklyGoal | null
+  /** The date the page was prerendered on; see useToday. */
+  today: string
 }
 
-export function WeeklyStreakCard({ data, goal }: Props) {
+export function WeeklyStreakCard({ data, goal, today: serverToday }: Props) {
   const s = t.dashboard.weeklyStreak
-  const today = (new Date().getDay() + 6) % 7
+  const todayIso = useToday(serverToday)
+  const today = (new Date(`${todayIso}T00:00:00`).getDay() + 6) % 7
 
   const pct = goal && goal.targetKm > 0 ? Math.min(1, goal.actualKm / goal.targetKm) : 0
   const animatedPct = useCountUp(pct * 100) / 100

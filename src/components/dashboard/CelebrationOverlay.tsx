@@ -10,6 +10,7 @@ import { isRecentRecord } from '@/domain/ai/celebrationWindow'
 import { formatDuration, formatDistance } from '@/lib/formatters'
 import { useHaptic } from '@/lib/useHaptic'
 import { useFocusTrap } from '@/lib/useFocusTrap'
+import { useMounted } from '@/lib/useMounted'
 import { CELEBRATION_COLORS } from '@/lib/colors'
 import { t } from '@/i18n'
 
@@ -32,25 +33,29 @@ export function CelebrationOverlay({ record, aiTake }: { record: RecordEntry | n
   const haptic = useHaptic()
   const trapRef = useFocusTrap<HTMLDivElement>()
 
-  const eligible = !!(record?.activityId && record.date && record.seconds !== null && isRecentRecord(record.date, new Date()))
-  const storageKey = eligible ? `${STORAGE_PREFIX}${record!.activityId}-${record!.key}` : null
-
-  const [visible, setVisible] = useState(
-    () => typeof window !== 'undefined' && !!storageKey && !window.localStorage.getItem(storageKey)
-  )
+  // Whether to celebrate depends on the reader's clock and on what this
+  // browser has already seen, and the server knows neither, so it is decided
+  // after mount. Reading localStorage in a state initializer drew an overlay
+  // on hydration that the server's HTML did not have.
+  const mounted = useMounted()
+  const [dismissed, setDismissed] = useState(false)
+  const storageKey =
+    mounted && record?.activityId && record.date && record.seconds !== null && isRecentRecord(record.date, new Date())
+      ? `${STORAGE_PREFIX}${record.activityId}-${record.key}`
+      : null
+  const visible = !dismissed && storageKey !== null && !window.localStorage.getItem(storageKey)
 
   useEffect(() => {
-    // Fires once, on the mount that reveals the overlay - re-running it on a
-    // later render would buzz again for a celebration already seen.
+    // visible only ever turns true once - dismissing is final - so this buzzes
+    // once, on the render that reveals the overlay.
     if (visible) haptic('celebration')
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [visible, haptic])
 
   if (!visible || !record || record.seconds === null) return null
 
   function dismiss() {
     if (storageKey) window.localStorage.setItem(storageKey, '1')
-    setVisible(false)
+    setDismissed(true)
   }
 
   const s = t.dashboard.celebration

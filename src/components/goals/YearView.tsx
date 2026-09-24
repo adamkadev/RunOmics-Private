@@ -23,9 +23,10 @@ export function shortDist(d: string) { return DIST_SHORT[d] ?? d }
 
 interface Props {
   yearData: YearData
+  today: string
 }
 
-export function YearView({ yearData }: Props) {
+export function YearView({ yearData, today }: Props) {
   const { goals, pbs, upcomingRaces, totalDistanceKm, projection, monthlyGoals } = yearData
 
   const annualDistanceKm = goals?.annualDistanceKm ?? 0
@@ -111,10 +112,10 @@ export function YearView({ yearData }: Props) {
         </section>
       )}
 
-      {hasRaceDistanceCards && <SeasonTimeline yearData={yearData} />}
+      {hasRaceDistanceCards && <SeasonTimeline yearData={yearData} today={today} />}
 
       {goals && monthlyGoals.length > 0 && (
-        <MonthlyVolumeChart monthlyGoals={monthlyGoals} year={yearData.year} />
+        <MonthlyVolumeChart monthlyGoals={monthlyGoals} year={yearData.year} today={today} />
       )}
 
       {!hasRaceDistanceCards && (

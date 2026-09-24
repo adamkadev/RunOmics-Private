@@ -21,6 +21,8 @@ import type { ThresholdHistoryData } from '@/application/usecases/GetThresholdHi
 import type { HeatImpactData } from '@/application/usecases/GetHeatImpact'
 import { ChartCardSkeleton } from '@/components/ui/Skeleton'
 import { useSwipeNavigation } from '@/lib/useSwipeNavigation'
+import { useToday } from '@/lib/useToday'
+import { ChartTodayContext } from '@/components/ui/ChartWindowNav'
 import { t } from '@/i18n'
 
 const tabLoading = () => (
@@ -79,6 +81,7 @@ export function AnalyticsClient({
   activeDays,
   heatmapDays,
   heatImpact,
+  today: serverToday,
 }: {
   data: AnalyticsPageData
   comparison: YearComparisonData | null
@@ -96,10 +99,13 @@ export function AnalyticsClient({
   activeDays: number
   heatmapDays: number
   heatImpact: HeatImpactData | null
+  /** The date the page was prerendered on; see useToday. */
+  today: string
 }) {
   const { years, byYear } = data
+  const today = useToday(serverToday)
 
-  const [view, setView] = useState<View>({ kind: 'year', year: years[0] ?? new Date().getFullYear() })
+  const [view, setView] = useState<View>({ kind: 'year', year: years[0] ?? Number(serverToday.slice(0, 4)) })
   const [tab, setTab] = useState<TabId>('fitness')
 
   useEffect(() => {
@@ -205,7 +211,7 @@ export function AnalyticsClient({
       {seasonHeadline && <SeasonHeadline data={seasonHeadline} aiTake={seasonInsight} />}
 
       {active && (
-        <>
+        <ChartTodayContext value={today}>
           <div {...swipeHandlers}>
             {tabInsights[tab] && <TabInsight insight={tabInsights[tab]!} />}
 
@@ -250,7 +256,7 @@ export function AnalyticsClient({
               />
             )}
           </div>
-        </>
+        </ChartTodayContext>
       )}
     </div>
   )

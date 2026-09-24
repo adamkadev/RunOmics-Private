@@ -12,6 +12,7 @@ import { MilestonesTimeline } from '@/components/milestones/MilestonesTimeline'
 import { PbAlertLine } from '@/components/ui/PbAlertLine'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { cn } from '@/lib/utils'
+import { useToday } from '@/lib/useToday'
 import { t } from '@/i18n'
 
 type Tab = 'prs' | 'milestones' | 'routes'
@@ -23,9 +24,12 @@ interface Props {
   pbAlerts: PbAlert[]
   milestones: Milestone[]
   recurringRoutes: RecurringRoute[]
+  /** The date the page was prerendered on; see useToday. */
+  today: string
 }
 
-export function RecordsClient({ records, topEfforts, predictions, pbAlerts, milestones, recurringRoutes }: Props) {
+export function RecordsClient({ records, topEfforts, predictions, pbAlerts, milestones, recurringRoutes, today: serverToday }: Props) {
+  const thisYear = Number(useToday(serverToday).slice(0, 4))
   const [tab, setTab] = useState<Tab>('prs')
   const s = t.records.segmented
 
@@ -67,7 +71,7 @@ export function RecordsClient({ records, topEfforts, predictions, pbAlerts, mile
 
       {tab === 'milestones' && <MilestonesTimeline milestones={milestones} />}
 
-      {tab === 'routes' && <RecurringRoutes routes={recurringRoutes} />}
+      {tab === 'routes' && <RecurringRoutes routes={recurringRoutes} thisYear={thisYear} />}
     </div>
   )
 }

@@ -18,6 +18,7 @@ import { groupByWeek, withCurrentWeek, type WeekGroup } from '@/domain/activity/
 import { formatDateRange, formatKm } from '@/lib/formatters'
 import { isoDate, addDays, startOfWeek } from '@/lib/calendarDate'
 import { cn } from '@/lib/utils'
+import { useToday } from '@/lib/useToday'
 import { t } from '@/i18n'
 
 const ALL_TYPES: readonly ActivityType[] = ACTIVITY_TYPES
@@ -220,6 +221,8 @@ interface Props {
   initialNextOffset: number | null
   totalCount: number
   qualifiedEffortsByActivityId?: Record<string, QualifiedEffort[]>
+  /** The date the page was prerendered on; see useToday. */
+  today: string
 }
 
 export function ActivityListClient({
@@ -228,7 +231,9 @@ export function ActivityListClient({
   initialNextOffset,
   totalCount,
   qualifiedEffortsByActivityId = {},
+  today: serverToday,
 }: Props) {
+  const today = useToday(serverToday)
   const [search, setSearch] = useState('')
   const [selectedType, setSelectedType] = useState<ActivityType | null>(null)
   const [sortBy, setSortBy] = useState<ActivitySortKey>('date')
@@ -325,7 +330,7 @@ export function ActivityListClient({
 
   const hasMore = nextOffset !== null
   const hasActiveFilter = selectedType !== null || search.trim() !== ''
-  const currentWeekStart = isoDate(startOfWeek(new Date()))
+  const currentWeekStart = isoDate(startOfWeek(new Date(`${today}T00:00:00`)))
   // `items` answers the filter the last request was made with, which is the
   // debounced search rather than the half-typed one.
   const itemsAreFiltered = selectedType !== null || debouncedSearch.trim() !== ''

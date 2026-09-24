@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import { ChevronRight, BedDouble, Flag } from 'lucide-react'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
@@ -10,6 +9,7 @@ import { verdictTone, type ReadinessTone } from '@/domain/training/readiness'
 import type { HeroWorkoutView } from '@/components/plan/planWorkoutView'
 import { formatCountdown, formatDelta, formatDistance, formatDurationWords } from '@/lib/formatters'
 import { READINESS_TONE_COLORS } from '@/lib/colors'
+import { useToday } from '@/lib/useToday'
 import type { Insight } from '@/lib/gemini'
 import { t } from '@/i18n'
 
@@ -32,6 +32,8 @@ interface Props {
   todayActivity: ActivitySummary | null
   nextRace: UpcomingRace | null
   aiVerdict: Insight | null
+  /** The date the page was prerendered on; see useToday. */
+  today: string
 }
 
 function holdCopy(status: TrainingStatus): { headline: string; body: string } {
@@ -64,12 +66,13 @@ function readinessCopy(status: TrainingStatus, tone: ReadinessTone): { headline:
   }
 }
 
-export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiVerdict }: Props) {
-  const [daysToRace] = useState(() =>
-    nextRace
-      ? Math.ceil((new Date(nextRace.date + 'T00:00:00').getTime() - Date.now()) / 86_400_000)
-      : null
-  )
+export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiVerdict, today: serverToday }: Props) {
+  const today = useToday(serverToday)
+  // Whole calendar days, both ends at UTC midnight so a daylight-saving change
+  // in between cannot move the count.
+  const daysToRace = nextRace
+    ? Math.round((Date.parse(`${nextRace.date}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86_400_000)
+    : null
 
   if (!status && !plannedWorkout && !nextRace) return null
 

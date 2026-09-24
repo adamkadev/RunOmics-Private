@@ -129,6 +129,11 @@ INTERNAL_NOTIFY_SECRET=any-random-string
 # UI language: 'en' (default) or 'fr'. Picked at build time.
 NEXT_PUBLIC_LOCALE=en
 
+# Optional: the IANA time zone "today" is read in (e.g. Europe/Luxembourg), on
+# the server that prerenders a page and in the browser that shows it. Unset,
+# each uses its own local date. An unknown zone fails the build.
+# NEXT_PUBLIC_TIME_ZONE=Europe/Luxembourg
+
 # Gemini API keys (optional). Get them at https://aistudio.google.com/apikey.
 #
 # GEMINI_API_KEY writes the verdicts and insight cards on Today, Analytics and
@@ -428,6 +433,7 @@ from your `.env.local` *except* `GARMIN_SECRET` and `GEMINI_COACH_API_KEY`:
 | `NEXT_PUBLIC_OWNER_EMAIL` | Which account `npm run set-owner-claim` grants the `owner` claim to - not itself an authorization check |
 | `INTERNAL_NOTIFY_SECRET` | Authenticates the GitHub Actions cron calls to `/api/internal/*` |
 | `NEXT_PUBLIC_LOCALE` | UI language, `en` (default) or `fr` — applied at build time |
+| `NEXT_PUBLIC_TIME_ZONE` | Optional: the athlete's IANA time zone (e.g. `Europe/Luxembourg`), so a page prerendered on Vercel's UTC clock and the browser agree on which day it is - see [Date handling](#date-handling) |
 | `GEMINI_API_KEY`, `GEMINI_MODEL` | Optional: the AI-written verdicts and insight cards - Today, Week Purpose, Season, Analytics, run verdicts, PB celebration, shoe verdicts |
 
 > `GARMIN_SECRET` is only used locally by the sync script - it never runs on Vercel.
@@ -1292,6 +1298,12 @@ Two `YYYY-MM-DD` conventions coexist and must not be confused:
   It is the default.
 - `utcDate` in `GetTrainingWorkbook` is **UTC**, because the workbook computes its dates from UTC
   timestamps throughout.
+
+"Today" is `appTodayIso()`: the date in `NEXT_PUBLIC_TIME_ZONE` when it is set, the machine's local
+date otherwise. Each page computes it on the server and hands it to its client components, which read
+it through `useToday(serverToday)`: the server render and the hydration both use the page's date, so
+ISR HTML cached from another day still hydrates, and after mount the value is the reader's date and
+rolls over at midnight.
 
 Coaching presentation does its date maths in UTC on purpose: a macrocycle spans a DST change, and
 local-midnight arithmetic drifts a day either side of it. `isoWeekNumber` returns `isoYear * 100 + isoWeek`,

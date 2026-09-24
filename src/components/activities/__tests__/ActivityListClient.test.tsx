@@ -34,6 +34,7 @@ function renderList(items: ActivitySummary[]) {
       initialItems={items}
       initialNextOffset={null}
       totalCount={items.length}
+      today="2026-09-24"
     />
   )
 }

@@ -7,6 +7,7 @@ import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { PlanClient } from '@/components/plan/PlanClient'
 import { planCoachingView } from '@/components/plan/planCoachingView'
+import { appTodayIso } from '@/lib/calendarDate'
 import type { HrBounds } from '@/domain/training/trimp'
 
 export const revalidate = 3600
@@ -18,7 +19,8 @@ export default async function PlanPage() {
   const trainingZones = await getTrainingZones()
   const trainingPlan = getTrainingPlan()
   const athlete = getAthleteProfile()
-  const coaching = getCoachingOverview()
+  const today = appTodayIso()
+  const coaching = getCoachingOverview(today)
   const hrBounds: HrBounds | undefined =
     athlete.maxHrBpm && athlete.restingHrBpm
       ? { maxHr: athlete.maxHrBpm, restingHr: athlete.restingHrBpm }
@@ -34,6 +36,7 @@ export default async function PlanPage() {
       nextRace={nextRace}
       trainingZones={trainingZones}
       coaching={coaching ? planCoachingView(coaching) : null}
+      today={today}
     />
   )
 }

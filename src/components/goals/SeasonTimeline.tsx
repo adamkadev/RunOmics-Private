@@ -43,7 +43,7 @@ function isPlaceholderRaceName(distance: string, name: string): boolean {
   return normalize(name) === normalize(distance)
 }
 
-export function SeasonTimeline({ yearData }: { yearData: YearData }) {
+export function SeasonTimeline({ yearData, today }: { yearData: YearData; today: string }) {
   const { goals, pbs, upcomingRaces, nextRaceSpotlight, predictions } = yearData
   const s = t.goals
   if (!goals) return null
@@ -57,8 +57,6 @@ export function SeasonTimeline({ yearData }: { yearData: YearData }) {
     ...extraDistances.map((distance) => ({ distance, targetSeconds: null })),
   ]
   if (allTargets.length === 0) return null
-
-  const today = new Date().toISOString().slice(0, 10)
 
   const entries = allTargets
     .map((target): TimelineEntry => {
