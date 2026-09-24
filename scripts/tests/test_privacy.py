@@ -42,8 +42,8 @@ def _fit_circle(points: list[tuple[float, float]]) -> tuple[float, float]:
     sy = sum(y for _, y in points)
     n = len(points)
     z = [x * x + y * y for x, y in points]
-    b1 = sum(zi * x for zi, (x, _) in zip(z, points))
-    b2 = sum(zi * y for zi, (_, y) in zip(z, points))
+    b1 = sum(zi * x for zi, (x, _) in zip(z, points, strict=True))
+    b2 = sum(zi * y for zi, (_, y) in zip(z, points, strict=True))
     b3 = sum(z)
     # Solve [[sxx, sxy, sx], [sxy, syy, sy], [sx, sy, n]] @ [a, b, c] = [b1, b2, b3].
     m = [[sxx, sxy, sx, b1], [sxy, syy, sy, b2], [sx, sy, n, b3]]
@@ -53,7 +53,7 @@ def _fit_circle(points: list[tuple[float, float]]) -> tuple[float, float]:
         for row in range(3):
             if row != col:
                 factor = m[row][col] / m[col][col]
-                m[row] = [a - factor * b for a, b in zip(m[row], m[col])]
+                m[row] = [a - factor * b for a, b in zip(m[row], m[col], strict=True)]
     a, b = m[0][3] / m[0][0], m[1][3] / m[1][1]
     return a / 2, b / 2
 

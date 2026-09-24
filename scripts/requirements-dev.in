@@ -5,3 +5,7 @@
 -r requirements.in
 pytest
 ruff
+# pytest needs colorama on Windows only, so a lock compiled on Linux would leave
+# it out, and `pip install --require-hashes` would then refuse on Windows.
+# Listed here so every platform's hash is in the lock.
+colorama

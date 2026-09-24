@@ -35,8 +35,12 @@ jobs:
           cache: "pip"
           cache-dependency-path: scripts/requirements-dev.txt
 
+      # Hash-locked: pip refuses anything whose hash is not in the lock.
       - name: Install Python dependencies
-        run: pip install -r scripts/requirements-dev.txt
+        run: pip install --require-hashes -r scripts/requirements-dev.txt
+
+      - name: Lint Python
+        run: ruff check scripts
 
       - name: Run pytest
         run: python -m pytest scripts/tests/ -q

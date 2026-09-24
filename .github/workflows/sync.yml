@@ -156,8 +156,10 @@ jobs:
           cache: "pip"
           cache-dependency-path: scripts/requirements.txt
 
+      # Hash-locked: this job holds GARMIN_SECRET and the data repository's
+      # write token, so nothing may be installed that the lock did not pin.
       - name: Install Python dependencies
-        run: pip install -r scripts/requirements.txt
+        run: pip install --require-hashes -r scripts/requirements.txt
 
       - name: Install Cloudflare WARP
         timeout-minutes: 5
@@ -247,8 +249,9 @@ jobs:
             ARGS+=(--force)
           fi
 
-          # Exit 3 is "some activities failed, the rest are on disk". Failing
-          # the step here would skip the commit below and discard them.
+          # Exit 3 is "some activities or steps failed, everything else is on
+          # disk". Failing the step here would skip the commit below and
+          # discard it.
           set +e
           python scripts/sync.py "${ARGS[@]}"
           STATUS=$?
@@ -256,7 +259,7 @@ jobs:
 
           if [ "$STATUS" -eq 3 ]; then
             echo "partial_failure=true" >> "$GITHUB_OUTPUT"
-            echo "::warning::Some activities failed to sync. Committing the ones that succeeded."
+            echo "::warning::Some activities or steps failed to sync. Committing what succeeded."
           elif [ "$STATUS" -ne 0 ]; then
             exit "$STATUS"
           fi
@@ -398,10 +401,10 @@ jobs:
           done
 
       # Last, so a partial sync still reaches the data repository first.
-      - name: Report failed activities
+      - name: Report a partial sync
         if: always() && steps.sync.outputs.partial_failure == 'true'
         run: |
-          echo "::error::sync.py reported failed activities. Whatever synced successfully was committed and deployed; see the 'Run sync' log for the failures."
+          echo "::error::sync.py reported failed activities or steps. Whatever synced successfully was committed and deployed; see the 'Run sync' log for what failed."
           exit 1
 
       # A failed run used to be a red cross in an Actions tab nobody opens -
