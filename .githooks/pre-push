@@ -1,0 +1,24 @@
+#!/bin/sh
+# Runs what CI runs before a push to main lands there - most commits go
+# straight to main, where CI only reports after the fact. Pushes to any other
+# branch go through untouched.
+#
+#   enable once per clone:   git config core.hooksPath .githooks
+#   skip in an emergency:    git push --no-verify
+
+pushes_main=false
+while read -r _local_ref _local_sha remote_ref _remote_sha; do
+  [ "$remote_ref" = "refs/heads/main" ] && pushes_main=true
+done
+[ "$pushes_main" = true ] || exit 0
+
+echo "pre-push: verifying before main (git push --no-verify to skip)"
+npm run -s verify || exit 1
+
+for py in python3 python; do
+  if command -v "$py" >/dev/null 2>&1 && "$py" -c "import pytest" >/dev/null 2>&1; then
+    "$py" -m pytest scripts/tests -q || exit 1
+    exit 0
+  fi
+done
+echo "pre-push: no Python with pytest on PATH - the Python suite is left to CI"

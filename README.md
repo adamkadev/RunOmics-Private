@@ -336,7 +336,15 @@ npm run test:coverage  # same suite with a v8 coverage report (text + lcov)
 npm run lint           # ESLint (next/core-web-vitals + TS)
 npm run typecheck      # tsc --noEmit
 npm run analyze        # production build with @next/bundle-analyzer treemaps
+npm run verify         # what CI's verify job runs: private-data check, lint, typecheck, tests
+npm run test:rules     # firestore.rules against the Firestore emulator (needs Java 21)
 ```
+
+Most commits go straight to `main`, where CI only reports after the push. A
+pre-push hook runs `npm run verify` (and the Python suite, when `pytest` is
+installed) before a push to `main`, and leaves every other branch alone. Enable it
+once per clone with `git config core.hooksPath .githooks`; `git push --no-verify`
+skips it.
 
 Each of these populates `data/` first through `npm run prepare:data` (an npm lifecycle
 hook, and a no-op once the directory exists), so a fresh clone can lint, typecheck and

@@ -18,6 +18,7 @@
     "verify:private-data": "node scripts/verify_no_private_data.mjs",
     "pretypecheck": "npm run prepare:data",
     "typecheck": "tsc --noEmit",
+    "verify": "npm run verify:private-data && npm run lint && npm run typecheck && npm test",
     "tokens": "node scripts/generate-tokens.mjs",
     "build:coaching-rules": "node --import tsx scripts/generate-coaching-rules.ts",
     "demo:generate": "node scripts/generate_demo_data.mjs",
