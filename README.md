@@ -57,7 +57,8 @@ cd RunOmics
 # Frontend dependencies
 npm install
 
-# Python dependencies
+# Python dependencies - hash-locked; to change one, edit scripts/requirements.in
+# and recompile with the pip-compile command in its header
 pip install -r scripts/requirements.txt
 ```
 
