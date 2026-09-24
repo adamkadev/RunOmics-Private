@@ -483,14 +483,27 @@ def _perpendicular_distance(point: tuple[float, float], start: tuple[float, floa
     return num / den
 
 
-def _rdp_keep_mask(points: list[tuple[float, float]], epsilon: float) -> list[bool]:
-    """Douglas-Peucker simplification: drops points close to the line between
-    their neighbors, keeps points at turns. Always keeps the first and last point."""
-    keep = [False] * len(points)
-    keep[0] = keep[-1] = True
-    stack = [(0, len(points) - 1)]
+def _rdp_significance(points: list[tuple[float, float]], floor: float) -> list[float]:
+    """For each point, the largest epsilon at which Douglas-Peucker keeps it.
+
+    Douglas-Peucker drops points close to the line between their neighbours
+    and keeps the turns: a segment's farthest point is kept, and the halves
+    either side of it examined in turn, while that distance exceeds epsilon.
+    Which point is farthest does not depend on epsilon, so a larger epsilon
+    only prunes the same recursion earlier - a point survives exactly while
+    its own distance and every ancestor's exceed epsilon. One pass recording
+    that minimum answers the simplification for every epsilon at once:
+    kept(epsilon) is the points whose significance is above it. The first and
+    last are always kept.
+
+    Exact for every epsilon from `floor` up; the recursion stops where the
+    distance does, so below it every point reads 0.
+    """
+    significance = [0.0] * len(points)
+    significance[0] = significance[-1] = math.inf
+    stack = [(0, len(points) - 1, math.inf)]
     while stack:
-        start_i, end_i = stack.pop()
+        start_i, end_i, ceiling = stack.pop()
         start, end = points[start_i], points[end_i]
         max_dist = 0.0
         max_i = -1
@@ -499,22 +512,36 @@ def _rdp_keep_mask(points: list[tuple[float, float]], epsilon: float) -> list[bo
             if dist > max_dist:
                 max_dist = dist
                 max_i = i
-        if max_i != -1 and max_dist > epsilon:
-            keep[max_i] = True
-            stack.append((start_i, max_i))
-            stack.append((max_i, end_i))
-    return keep
+        if max_i != -1 and max_dist > floor:
+            kept_until = min(max_dist, ceiling)
+            significance[max_i] = kept_until
+            stack.append((start_i, max_i, kept_until))
+            stack.append((max_i, end_i, kept_until))
+    return significance
 
 
 def _decimate(coords: list[list[float]], max_points: int) -> list[list[float]]:
+    """Douglas-Peucker at the smallest epsilon of the ladder 0.5 m, x1.5, x1.5...
+    that brings the route down to max_points.
+
+    That ladder used to be climbed by re-running the simplification at every
+    step, which is what made a long jittery route slow. It is now walked on
+    the significance values alone - the same epsilon, and so the same points,
+    for one pass over the route.
+    """
     if len(coords) < 3:
         return coords
+    if max_points < 2:
+        raise ValueError("the first and last points are always kept, so max_points must be at least 2")
     lon0, lat0 = coords[len(coords) // 2]
     points = [_project_meters(lon, lat, lon0, lat0) for lon, lat in coords]
+    significance = _rdp_significance(points, floor=_ROUTE_EPSILON_M)
 
+    # kept(epsilon) fits under the cap once epsilon reaches the significance
+    # of the first point past it.
     epsilon = _ROUTE_EPSILON_M
-    keep = _rdp_keep_mask(points, epsilon)
-    while sum(keep) > max_points:
-        epsilon *= 1.5
-        keep = _rdp_keep_mask(points, epsilon)
-    return [c for c, k in zip(coords, keep) if k]
+    over_cap = sorted(significance, reverse=True)[max_points:]
+    if over_cap:
+        while epsilon < over_cap[0]:
+            epsilon *= 1.5
+    return [c for c, s in zip(coords, significance, strict=True) if s > epsilon]
