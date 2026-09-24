@@ -1,10 +1,12 @@
 import { spawn, type ChildProcessByStdio } from 'child_process'
 import type { Readable, Writable } from 'stream'
 import readline from 'readline'
-import { GarminRateLimitError, type GarminWorkoutGateway } from '@/application/ports/GarminWorkoutGateway'
+import { GarminNotFoundError, GarminRateLimitError, type GarminWorkoutGateway } from '@/application/ports/GarminWorkoutGateway'
 import type { GarminWorkoutPayload } from '@/application/coaching/garminWorkoutMapping'
 
 type BridgeProcess = ChildProcessByStdio<Writable, Readable, null>
+
+const NOT_FOUND = /^HTTP 404 from /
 
 interface BridgeResponse {
   ok: boolean
@@ -93,6 +95,9 @@ export class PythonGarminGateway implements GarminWorkoutGateway {
       const response = JSON.parse(next.value) as BridgeResponse
       if (!response.ok) {
         if (response.rateLimited) throw new GarminRateLimitError(response.error)
+        // The bridge sends Garmin's status only inside the message, which
+        // GarminAPIError renders as "HTTP <status> from <url>".
+        if (response.error && NOT_FOUND.test(response.error)) throw new GarminNotFoundError(response.error)
         throw new Error(response.error ?? 'The Garmin bridge reported an unspecified failure')
       }
       return response

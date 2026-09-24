@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { GarminRateLimitError, type GarminWorkoutGateway } from '@/application/ports/GarminWorkoutGateway'
+import { GarminNotFoundError, GarminRateLimitError, type GarminWorkoutGateway } from '@/application/ports/GarminWorkoutGateway'
 import type { CoachingPlan, WorkoutPrescription } from '@/domain/coaching/types'
 import { buildGarminSyncPlan } from '../garminSync'
 import { applyGarminSyncPlan, formatGarminSyncResults, verifyGarminSync } from '../garminSyncApply'
@@ -45,8 +45,19 @@ class FakeGarmin implements GarminWorkoutGateway {
   readonly foreign = new Map<string, string>([['555', 'My own tempo workout']])
   private readonly library = new Map<string, string>()
   private readonly calendar = new Map<string, { scheduleId: string; date: string }>()
+  private deleteFailures: number
 
-  constructor(private readonly failures: { schedule?: boolean; create?: boolean; rateLimitAfter?: number } = {}) {}
+  /**
+   * `gone` lists ids Garmin no longer has, and anything this fake removes joins
+   * them: like Garmin, it answers 404 to removing the same thing twice. Ids it
+   * has never heard of stand for workouts pushed before the test began.
+   */
+  constructor(
+    private readonly failures: { schedule?: boolean; create?: boolean; rateLimitAfter?: number; delete?: number } = {},
+    private readonly gone = new Set<string>(),
+  ) {
+    this.deleteFailures = failures.delete ?? 0
+  }
 
   async createWorkout(payload: GarminWorkoutPayload): Promise<{ workoutId: string }> {
     if (this.failures.rateLimitAfter !== undefined && this.created.length >= this.failures.rateLimitAfter) {
@@ -69,11 +80,19 @@ class FakeGarmin implements GarminWorkoutGateway {
 
   async unscheduleWorkout(scheduleId: string): Promise<void> {
     this.unscheduled.push(scheduleId)
+    if (this.gone.has(scheduleId)) throw new GarminNotFoundError(`HTTP 404 from schedule/${scheduleId}`)
+    this.gone.add(scheduleId)
     for (const [workoutId, entry] of this.calendar) if (entry.scheduleId === scheduleId) this.calendar.delete(workoutId)
   }
 
   async deleteWorkout(workoutId: string): Promise<void> {
     this.deleted.push(workoutId)
+    if (this.gone.has(workoutId)) throw new GarminNotFoundError(`HTTP 404 from workout/${workoutId}`)
+    if (this.deleteFailures > 0) {
+      this.deleteFailures--
+      throw new Error('HTTP 500 from workout-service')
+    }
+    this.gone.add(workoutId)
     this.library.delete(workoutId)
   }
 
@@ -241,6 +260,49 @@ describe('replacing and deleting', () => {
 
     expect(gateway.deleted).toEqual(['9001'])
     expect(gateway.unscheduled).toEqual(['8001'])
+    expect(report.state.entries.map((entry) => entry.prescriptionId)).toEqual(['a'])
+  })
+
+  it('records the unschedule before the delete, so a later run can finish the removal', async () => {
+    const kept = workout({ id: 'a', date: '2026-09-08' })
+    const removed = workout({ id: 'gone', date: '2026-09-09' })
+    const state = syncedState([
+      { workout: kept, workoutId: '9000', scheduleId: '8000' },
+      { workout: removed, workoutId: '9001', scheduleId: '8001' },
+    ])
+    const gateway = new FakeGarmin({ delete: 1 })
+
+    const halfway = await apply(build(plan([kept]), state), state, gateway)
+
+    // The schedule id is spent: replaying it would 404 on every run from now on.
+    expect(halfway.results.find((result) => result.operation.action === 'delete')!.outcome).toBe('failed')
+    expect(halfway.state.entries.find((entry) => entry.prescriptionId === 'gone')).toMatchObject({
+      garminWorkoutId: '9001',
+      garminWorkoutScheduleId: null,
+      status: 'workout_created',
+    })
+
+    const finished = await apply(build(plan([kept]), halfway.state), halfway.state, gateway)
+
+    expect(gateway.unscheduled).toEqual(['8001'])
+    expect(gateway.deleted).toEqual(['9001', '9001'])
+    expect(finished.results.every((result) => result.outcome !== 'failed')).toBe(true)
+    expect(finished.state.entries.map((entry) => entry.prescriptionId)).toEqual(['a'])
+  })
+
+  it('counts a workout Garmin no longer has as removed', async () => {
+    const kept = workout({ id: 'a', date: '2026-09-08' })
+    const removed = workout({ id: 'gone', date: '2026-09-09' })
+    const state = syncedState([
+      { workout: kept, workoutId: '9000', scheduleId: '8000' },
+      { workout: removed, workoutId: '9001', scheduleId: '8001' },
+    ])
+    // Deleted by hand in Garmin Connect, calendar entry and all.
+    const gateway = new FakeGarmin({}, new Set(['9001', '8001']))
+
+    const report = await apply(build(plan([kept]), state), state, gateway)
+
+    expect(report.results.find((result) => result.operation.action === 'delete')!.outcome).toBe('applied')
     expect(report.state.entries.map((entry) => entry.prescriptionId)).toEqual(['a'])
   })
 
