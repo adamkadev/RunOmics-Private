@@ -94,6 +94,8 @@ jobs:
           RUNOMICS_DATA_REPO_URL: ${{ secrets.RUNOMICS_DATA_REPO_URL }}
           RUNOMICS_DATA_REPO_TOKEN: ${{ secrets.RUNOMICS_DATA_REPO_TOKEN }}
           GARMIN_SECRET: ${{ secrets.GARMIN_SECRET }}
+          PRIVACY_ZONES: ${{ secrets.PRIVACY_ZONES }}
+          PRIVACY_RADIUS_M: ${{ secrets.PRIVACY_RADIUS_M }}
         run: |
           if [ "$DECLARED_PROFILE" != "${{ matrix.profile }}" ]; then
             echo "::error::Environment '${{ matrix.profile }}' does not declare PROFILE=${{ matrix.profile }} (got '${DECLARED_PROFILE:-unset}')."
@@ -106,6 +108,10 @@ jobs:
           [ -n "$RUNOMICS_DATA_REPO_URL" ]   || MISSING="$MISSING RUNOMICS_DATA_REPO_URL"
           [ -n "$RUNOMICS_DATA_REPO_TOKEN" ] || MISSING="$MISSING RUNOMICS_DATA_REPO_TOKEN"
           [ -n "$GARMIN_SECRET" ]            || MISSING="$MISSING GARMIN_SECRET"
+          # Without these the sync refuses every GPS activity; failing here says
+          # why before Garmin is contacted.
+          [ -n "$PRIVACY_ZONES" ]            || MISSING="$MISSING PRIVACY_ZONES"
+          [ -n "$PRIVACY_RADIUS_M" ]         || MISSING="$MISSING PRIVACY_RADIUS_M"
           if [ -n "$MISSING" ]; then
             echo "::error::Environment '${{ matrix.profile }}' is missing secret(s):$MISSING"
             echo "Every profile syncs into its own private data repository and never"
@@ -207,6 +213,7 @@ jobs:
           GARMIN_OAUTH_CONSUMER_SECRET: ${{ vars.GARMIN_OAUTH_CONSUMER_SECRET }}
           PRIVACY_ZONES: ${{ secrets.PRIVACY_ZONES }}
           PRIVACY_RADIUS_M: ${{ secrets.PRIVACY_RADIUS_M }}
+          PRIVACY_SALT: ${{ secrets.PRIVACY_SALT }}
           SYNC_LIMIT: ${{ inputs.limit }}
           SYNC_DRY_RUN: ${{ inputs.dry_run }}
           SYNC_FORCE: ${{ inputs.force }}
@@ -251,6 +258,27 @@ jobs:
         if: inputs.dry_run != true
         continue-on-error: true
         run: python scripts/backfill_weather.py
+
+      # sync.py crops only what it writes. This brings routes stored under an
+      # older rule, or an older PRIVACY_* configuration, up to the current one;
+      # it is deterministic and idempotent, so after the first run it changes
+      # nothing.
+      - name: Re-crop stored routes to the privacy zone
+        if: inputs.dry_run != true
+        env:
+          PRIVACY_ZONES: ${{ secrets.PRIVACY_ZONES }}
+          PRIVACY_RADIUS_M: ${{ secrets.PRIVACY_RADIUS_M }}
+          PRIVACY_SALT: ${{ secrets.PRIVACY_SALT }}
+        run: python scripts/migrate_privacy_zone.py
+
+      # Last gate before anything is published: measures every stored point
+      # against the zones as configured, independently of the cropping code.
+      # A failure here skips the commit, the deploy and the checks below.
+      - name: Verify no route comes near a privacy zone
+        env:
+          PRIVACY_ZONES: ${{ secrets.PRIVACY_ZONES }}
+          PRIVACY_RADIUS_M: ${{ secrets.PRIVACY_RADIUS_M }}
+        run: python scripts/verify_privacy_zone.py
 
       - name: Commit updated data
         id: commit

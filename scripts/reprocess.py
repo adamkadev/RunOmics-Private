@@ -46,7 +46,7 @@ def main() -> int:
         a["type"] = type_inference.activity_type
         a["typeSource"] = type_inference.source
         if parsed.route:
-            a["route"] = crop_privacy_zone(parsed.route)
+            a["route"] = crop_privacy_zone(parsed.route, a["id"])
         a["aerTrainingEffect"] = round(parsed.aer_training_effect, 1) if parsed.aer_training_effect is not None else None
         a["anaTrainingEffect"] = round(parsed.ana_training_effect, 1) if parsed.ana_training_effect is not None else None
         a["hrSamples"] = _decimate_list(parsed.heart_rates, _MAX_CHART_POINTS) if parsed.heart_rates else None
