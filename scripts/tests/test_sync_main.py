@@ -7,10 +7,14 @@ which steps run, and the exit code the workflow acts on - 0 clean, 3 partial
 
 import json
 import sys
+from datetime import date
+from types import SimpleNamespace
 
+import httpx
 import pytest
 
 import sync
+from garmin.client import GarminAPIError, GarminClient
 from repository.json_store import JsonActivityStore
 
 # Every step main() runs besides the activities themselves, as the names it
@@ -119,6 +123,20 @@ def _stored_ids(workspace) -> set[str]:
     return JsonActivityStore(workspace / "activities").get_existing_ids()
 
 
+def _stored_gear(workspace, activity_id: str) -> str | None:
+    stored = JsonActivityStore(workspace / "activities").all_activities()
+    return next(a for a in stored if a["id"] == activity_id).get("gearId")
+
+
+def _store_todays_run(workspace, activity_factory, *, gear_id: str) -> None:
+    """A run synced earlier, recent enough for the nightly gear refresh."""
+    run = activity_factory("090", date.today().isoformat())
+    run.gear_id = gear_id
+    store = JsonActivityStore(workspace / "activities")
+    store.upsert(run)
+    store.save()
+
+
 @pytest.fixture
 def workspace(tmp_path, monkeypatch):
     """A data workspace of its own, and none of the pauses a real run takes."""
@@ -223,3 +241,86 @@ class TestFailingStep:
 
         assert _stored_ids(workspace) == {"101", "102"}
         assert steps[-1] == "sync_training_plan"
+
+
+class TestOptionalActivityResources:
+    """Only a 404 means an activity has no FIT file, HR zones or gear. Anything
+    else fails the activity - counted, not saved - so the next run fetches it
+    again, where it used to be stored without them for good."""
+
+    @pytest.mark.parametrize("method", ["download_fit", "get_hr_zones", "get_activity_gear"])
+    def test_a_5xx_fails_the_activity_rather_than_storing_it_without(
+        self, workspace, garmin, steps, monkeypatch, method
+    ):
+        garmin.failures[(method, "102")] = GarminAPIError(503, f"https://example.test/{method}")
+
+        assert _run(monkeypatch) == sync._EXIT_PARTIAL_FAILURE
+
+        assert _stored_ids(workspace) == {"101"}
+
+    def test_a_fit_file_that_decodes_to_nothing_fails_the_activity(self, workspace, garmin, steps, monkeypatch):
+        monkeypatch.setattr(
+            garmin, "download_fit", lambda activity_id, **_: b"not a FIT file" if activity_id == "102" else None
+        )
+
+        assert _run(monkeypatch) == sync._EXIT_PARTIAL_FAILURE
+
+        assert _stored_ids(workspace) == {"101"}
+        assert not (workspace / "fit-cache" / "102.fit").exists()
+
+
+class TestGearRefresh:
+    """Every night re-reads the gear of the last days' runs, to pick up a shoe
+    assigned after the first sync. Only a successful answer may change what is
+    on file: an error used to come back as "no gear" and write None over it."""
+
+    @pytest.mark.parametrize(
+        "error", [GarminAPIError(503, "u"), GarminAPIError(404, "u")], ids=["5xx", "404"]
+    )
+    def test_an_error_never_overwrites_the_stored_gear(
+        self, workspace, steps, monkeypatch, activity_factory, error
+    ):
+        _store_todays_run(workspace, activity_factory, gear_id="shoe1")
+        _garmin_whose_gear_request_fails(monkeypatch, error)
+
+        assert _run(monkeypatch) == 0
+
+        assert _stored_gear(workspace, "090") == "shoe1"
+
+    def test_a_successful_answer_still_updates_it(self, workspace, steps, monkeypatch, activity_factory):
+        _store_todays_run(workspace, activity_factory, gear_id="shoe1")
+        client = _garmin_whose_gear_request_fails(monkeypatch, None)
+        client._get = lambda _url, **_kwargs: SimpleNamespace(json=lambda: [{"uuid": "shoe2"}])
+
+        assert _run(monkeypatch) == 0
+
+        assert _stored_gear(workspace, "090") == "shoe2"
+
+    def test_a_network_error_does_not_lose_the_nights_activities(
+        self, workspace, garmin, steps, monkeypatch, activity_factory
+    ):
+        # It used to escape main() before store.save(), taking every
+        # activity synced that night with it.
+        _store_todays_run(workspace, activity_factory, gear_id="shoe1")
+        garmin.failures[("get_activity_gear", "090")] = httpx.ConnectError("connection reset")
+
+        assert _run(monkeypatch) == 0
+
+        assert _stored_ids(workspace) == {"090", "101", "102"}
+        assert _stored_gear(workspace, "090") == "shoe1"
+
+
+def _garmin_whose_gear_request_fails(monkeypatch, error) -> GarminClient:
+    """The real client over a fake transport, with no new activity to sync:
+    what is under test is its own reading of an error answer."""
+    client = object.__new__(GarminClient)
+    client._base = "https://example.test"
+    client._http = SimpleNamespace(close=lambda: None)
+
+    def get(url, **_kwargs):
+        raise error
+
+    client._get = get
+    client.get_all_activity_ids = lambda *, running_only=True: []
+    monkeypatch.setattr(sync, "GarminClient", lambda _secret: client)
+    return client

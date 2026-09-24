@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from garmin.athlete import fetch_athlete_metrics, record_athlete_history
 from data_directory import get_data_dir, get_fit_cache_dir
-from garmin.client import GarminAuthError, GarminAPIError, GarminClient
+from garmin.client import GarminClient
 from garmin.fitness_age_history import sync_fitness_age_history
 from garmin.retry import retry_transient
 from garmin.race_predictions import sync_race_predictions
@@ -105,22 +105,16 @@ def main() -> int:
                 print(f"  [{i}/{len(new_ids)}] Activity {activity_id} …", end=" ", flush=True)
 
                 # One bad activity (API error, corrupt FIT, mapping bug) must
-                # not abort the run and lose everything synced before it.
+                # not abort the run and lose everything synced before it. It
+                # is not saved either: the next run fetches it again, where
+                # storing it without its track, zones or gear was for good.
+                # (An activity that has none of them gets a 404, which the
+                # client reads as empty.)
                 try:
                     detail = retry_transient(lambda: client.get_activity_detail(activity_id))
-
                     parsed, file_name = _fetch_track_file(client, activity_id, dry_run=args.dry_run)
-
-                    try:
-                        raw_zones = retry_transient(lambda: client.get_hr_zones(activity_id))
-                        hr_zones = parse_hr_zones(raw_zones)
-                    except GarminAPIError:
-                        hr_zones = []
-
-                    try:
-                        gear = retry_transient(lambda: client.get_activity_gear(activity_id))
-                    except GarminAPIError:
-                        gear = []
+                    hr_zones = parse_hr_zones(retry_transient(lambda: client.get_hr_zones(activity_id)))
+                    gear = retry_transient(lambda: client.get_activity_gear(activity_id))
 
                     time.sleep(_RATE_LIMIT_PAUSE)
 
@@ -155,20 +149,7 @@ def main() -> int:
 
         regeared = 0
         if not args.force and not args.id:
-            recent_ids = [aid for aid in store.get_ids_since(_REGEAR_WINDOW_DAYS) if aid not in new_ids]
-            if recent_ids:
-                print(
-                    f"Refreshing gear for {len(recent_ids)} recent activit"
-                    f"{'y' if len(recent_ids) == 1 else 'ies'}"
-                )
-                for activity_id in recent_ids:
-                    try:
-                        raw_gear = retry_transient(lambda: client.get_activity_gear(activity_id))
-                    except GarminAPIError:
-                        continue
-                    if store.update_gear(activity_id, extract_gear_id(raw_gear)):
-                        regeared += 1
-                    time.sleep(_RATE_LIMIT_PAUSE)
+            regeared = _refresh_recent_gear(client, store, skip=set(new_ids))
 
         if not args.dry_run:
             store.save()
@@ -186,6 +167,35 @@ def main() -> int:
     if failed_steps:
         print(f"\n{len(failed_steps)} step(s) failed: {', '.join(failed_steps)}.")
     return 0 if failed == 0 and not failed_steps else _EXIT_PARTIAL_FAILURE
+
+
+def _refresh_recent_gear(client: GarminClient, store: JsonActivityStore, *, skip: set[str]) -> int:
+    """Re-read the gear of the last days' activities; return how many changed.
+
+    Picks up a shoe assigned in Garmin Connect after the activity was first
+    synced. Only a successful answer may change what is stored, since "no
+    gear" writes None over the gearId on file: strict_errors makes a 404
+    raise like any other error, and an error of any kind - a network one
+    included, which used to escape main() before store.save() and take the
+    night's activities with it - keeps the stored value for the next run to
+    ask again.
+    """
+    recent_ids = [aid for aid in store.get_ids_since(_REGEAR_WINDOW_DAYS) if aid not in skip]
+    if not recent_ids:
+        return 0
+
+    print(f"Refreshing gear for {len(recent_ids)} recent activit{'y' if len(recent_ids) == 1 else 'ies'}")
+    changed = 0
+    for activity_id in recent_ids:
+        try:
+            raw_gear = retry_transient(lambda: client.get_activity_gear(activity_id, strict_errors=True))
+        except Exception as exc:
+            print(f"  Warning: gear of {activity_id} not refreshed ({type(exc).__name__}: {exc}); kept as stored.")
+            continue
+        if store.update_gear(activity_id, extract_gear_id(raw_gear)):
+            changed += 1
+        time.sleep(_RATE_LIMIT_PAUSE)
+    return changed
 
 
 def _run_isolated(steps: list[Step]) -> list[str]:
@@ -281,19 +291,19 @@ def _fetch_track_file(
         if parsed.has_data:
             return parsed, fit_path.name
 
-    try:
-        fit_bytes = retry_transient(lambda: client.download_fit(activity_id))
-    except GarminAPIError:
+    # None is an activity without a FIT file (a 404, or an archive holding
+    # none). A download that fails, or one that decodes to nothing, raises
+    # instead: storing the activity without its track would be for good.
+    fit_bytes = retry_transient(lambda: client.download_fit(activity_id))
+    if fit_bytes is None:
         return None, None
 
-    if fit_bytes:
-        parsed = parse_fit(fit_bytes)
-        if parsed.has_data:
-            if not dry_run:
-                fit_path.write_bytes(fit_bytes)
-            return parsed, fit_path.name
-
-    return None, None
+    parsed = parse_fit(fit_bytes)
+    if not parsed.has_data:
+        raise ValueError(f"the FIT file Garmin sent for activity {activity_id} holds nothing readable")
+    if not dry_run:
+        fit_path.write_bytes(fit_bytes)
+    return parsed, fit_path.name
 
 
 def _parse_args() -> argparse.Namespace:
