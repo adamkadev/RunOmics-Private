@@ -1,6 +1,5 @@
-import { validateTrainingFrequency, validateDraftFrequency } from './frequency'
-import { validateDraftVolume, volumeBand } from './volume'
-import { intensityBand, validateDraftIntensity } from './intensity'
+import { validateTrainingFrequency } from './frequency'
+import { validateBootstrapDraft } from './draftRules'
 import type { Activity } from '@/domain/activity/types'
 import {
   COACHING_SCHEMA_VERSION,
@@ -27,7 +26,6 @@ import { parseCoachDecision, parseCoachingPlan, parseWorkoutEvaluation } from '@
 import type { CoachingRepository } from '@/application/ports/CoachingRepository'
 import type { AdvisorRecommendation, CoachingAdvisor, CoachingPlanDraft } from '@/application/ports/CoachingAdvisor'
 import { coachingContextHash, type CoachingContext } from './context'
-import { validateBootstrapDraftSemantics } from './bootstrapValidation'
 import type { CoachingProposal } from './proposal'
 import { parseCoachingProposal } from './proposal'
 
@@ -130,16 +128,15 @@ function selectGoal(context: CoachingContext, event: TargetEvent): TrainingGoal 
     : { kind: 'finish', description: `Complete ${event.name}.` }
 }
 
+/** Structure only - every rule a draft must satisfy has been checked by draftRules. */
 function normalizeBootstrapPlan(
   draft: CoachingPlanDraft,
   context: CoachingContext,
-  availableWeekdays: number[],
   strategy: BootstrapTargetStrategy,
   createdAt: string,
   id: () => string,
   macrocycleStartDate: string,
 ): CoachingPlan {
-  validateBootstrapDraftSemantics(draft, strategy, context)
   const horizonEnd = strategy.horizonEndDate
   const windows = isoWeekWindows(strategy.planningStartDate, horizonEnd)
   if (draft.weeks.length !== windows.length) throw new Error(`Bootstrap must produce exactly ${windows.length} week${windows.length === 1 ? '' : 's'} for the selected target horizon`)
@@ -179,9 +176,6 @@ function normalizeBootstrapPlan(
   for (const week of normalizedWeeks) {
     if (week.startDate < strategy.planningStartDate || week.endDate > horizonEnd) throw new Error(`${week.id} extends outside the selected target horizon`)
     for (const workout of week.workouts) {
-      if (!availableWeekdays.includes(new Date(`${workout.date}T00:00:00Z`).getUTCDay())) {
-        throw new Error(`${workout.date} is outside the available weekdays`)
-      }
       if (workout.date < strategy.planningStartDate || workout.date > horizonEnd) {
         throw new Error(`${workout.date} is outside the selected target horizon`)
       }
@@ -474,10 +468,8 @@ export async function createBootstrapProposal(
   })
 
   const review = (draft: CoachingPlanDraft) => {
-    validateDraftFrequency(draft, runsPerWeek)
-    validateDraftVolume(draft, volumeBand(context.trainingHistory), availableWeekdays)
-    validateDraftIntensity(draft, intensityBand(context.athlete.thresholdPaceSecPerKm), availableWeekdays)
-    return normalizeBootstrapPlan(draft, context, availableWeekdays, strategy, createdAt, id, macrocycleStartDate)
+    validateBootstrapDraft(draft, { availableWeekdays, runsPerWeek, context, events: strategy })
+    return normalizeBootstrapPlan(draft, context, strategy, createdAt, id, macrocycleStartDate)
   }
 
   const proposedPlan = await draftUntilAccepted(ask, review)

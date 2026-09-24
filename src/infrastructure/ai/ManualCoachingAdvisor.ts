@@ -5,7 +5,7 @@ import type {
   CoachingAdvisor,
   CoachingPlanDraft,
 } from '@/application/ports/CoachingAdvisor'
-import { parseBootstrapPlanDraft } from './GeminiCoachingAdvisor'
+import { parseBootstrapPlanDraft } from './coachingAnswer'
 import {
   BOOTSTRAP_PLAN_RESPONSE_SCHEMA,
   BOOTSTRAP_SYSTEM_INSTRUCTION,

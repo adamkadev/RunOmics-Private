@@ -1033,6 +1033,28 @@ describe('repairing a rejected draft', () => {
     expect(asks[1]).toContain('outside the available weekdays')
   })
 
+  it('asks again when one session is written wrong, as it does for any other rule', async () => {
+    // These rules used to run while the answer was parsed, so breaking one
+    // ended the bootstrap on the first answer with no chance to correct it.
+    const asks: (string | undefined)[] = []
+    const withBareStrides = () => {
+      const draft = fourWeekPlan()
+      draft.weeks[1]!.workouts[0]!.blocks = [{ kind: 'strides', target: { durationSeconds: 20 } }]
+      return draft
+    }
+    const bootstrap = async (request: BootstrapRequest) => {
+      asks.push(request.guidance)
+      return asks.length === 1 ? withBareStrides() : fourWeekPlan()
+    }
+    const context = buildCoachingContext(contextInput(null), '2026-09-07')
+
+    const proposal = await createBootstrapProposal(context, [2, 3], services(bootstrap))
+
+    expect(proposal.proposedPlan?.revision).toBe(1)
+    expect(asks).toHaveLength(2)
+    expect(asks[1]).toContain('standalone strides are not supported')
+  })
+
   it('keeps the caller guidance alongside the complaint', async () => {
     const asks: (string | undefined)[] = []
     const bootstrap = async (request: BootstrapRequest) => {

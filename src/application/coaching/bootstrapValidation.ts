@@ -4,7 +4,7 @@ import type { CoachingContext } from '@/application/coaching/context'
 import type { TargetEvent } from '@/domain/coaching/types'
 import { finishSecondsFromPace, formatRaceTime, raceTargetFacts } from '@/domain/coaching/raceTarget'
 
-interface BootstrapEvents {
+export interface BootstrapEvents {
   primary: TargetEvent
   tuneUps: TargetEvent[]
   planningStartDate: string
