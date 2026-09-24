@@ -2,8 +2,7 @@
 
 Garmin's gear-service/gear/v2/list (queried once for ACTIVE and once for
 RETIRED) returns each shoe's brand, model, status and odometer cap directly,
-so this no longer needs to be hand-copied from the "Distinct gear seen"
-printout scripts/backfill_gear.py used to produce. `alertThresholdKm` and
+so none of it is copied by hand. `alertThresholdKm` and
 `dotColor` have no Garmin source and aren't stored here - src/domain/shoe/types.ts
 derives them from maxKm/order when it builds SHOE_REGISTRY from this file.
 """
