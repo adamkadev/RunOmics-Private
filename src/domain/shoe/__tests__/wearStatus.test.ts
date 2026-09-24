@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { wearOutlook, wearStatus } from '../wearStatus'
+import { wearOutlook, wearPercent, wearStatus } from '../wearStatus'
 
 describe('wearStatus', () => {
   it('bands the wear percentage', () => {
@@ -28,5 +28,21 @@ describe('wearOutlook', () => {
       kmLeft: 0,
       weeksRemaining: 0,
     })
+  })
+})
+
+describe('wearPercent', () => {
+  it('is the share of the lifespan used, capped at 100 and rounded', () => {
+    expect(wearPercent({ totalKm: 300, maxKm: 800, retired: false })).toBe(38)
+    expect(wearPercent({ totalKm: 950, maxKm: 800, retired: false })).toBe(100)
+  })
+
+  it('counts a retired shoe as spent', () => {
+    expect(wearPercent({ totalKm: 12, maxKm: 800, retired: true })).toBe(100)
+  })
+
+  it('reads a shoe with no lifespan set as unworn, not NaN', () => {
+    expect(wearPercent({ totalKm: 0, maxKm: 0, retired: false })).toBe(0)
+    expect(wearPercent({ totalKm: 120, maxKm: 0, retired: false })).toBe(0)
   })
 })

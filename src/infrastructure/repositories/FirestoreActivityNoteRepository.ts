@@ -1,4 +1,5 @@
 import { getAdminFirestore } from '@/lib/firebase-admin'
+import { withTimeout } from '../withTimeout'
 
 const COLLECTION = 'activityNotes'
 
@@ -44,10 +45,7 @@ export async function getActivityNotes(): Promise<ActivityNotesRead> {
   if (!process.env.FIREBASE_PROJECT_ID) return UNAVAILABLE
 
   try {
-    const snapshot = await Promise.race([
-      getAdminFirestore().collection(COLLECTION).get(),
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), READ_TIMEOUT_MS)),
-    ])
+    const snapshot = await withTimeout(getAdminFirestore().collection(COLLECTION).get(), READ_TIMEOUT_MS, null)
     if (!snapshot) return UNAVAILABLE
 
     const notes = new Map<string, ActivityNote>()

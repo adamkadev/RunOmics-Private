@@ -2,6 +2,7 @@ import { FieldPath } from 'firebase-admin/firestore'
 import { getAdminFirestore } from '@/lib/firebase-admin'
 import { activeLocale } from '@/i18n'
 import type { Insight } from '@/lib/gemini'
+import { withTimeout } from '../withTimeout'
 
 const COLLECTION = 'aiInsights'
 const HISTORY_SIZE = 5
@@ -69,10 +70,7 @@ export async function readVerifiedCachedInsight(
   if (!process.env.FIREBASE_PROJECT_ID) return null
 
   try {
-    const cached = await Promise.race([
-      getCachedInsight(surface),
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), READ_TIMEOUT_MS)),
-    ])
+    const cached = await withTimeout(getCachedInsight(surface), READ_TIMEOUT_MS, null)
     if (!cached) return null
     const wanted = typeof key === 'string' ? { hash: key } : key
     return servable(cached, wanted, Date.now()) ? cached : null
@@ -116,10 +114,11 @@ export async function readVerdictPhrasing(): Promise<VerdictPhrasing[]> {
   if (!process.env.FIREBASE_PROJECT_ID) return []
 
   try {
-    const doc = await Promise.race([
+    const doc = await withTimeout(
       getAdminFirestore().collection(COLLECTION).doc(docId(PHRASING_SURFACE)).get(),
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), READ_TIMEOUT_MS)),
-    ])
+      READ_TIMEOUT_MS,
+      null
+    )
     const recent = doc?.exists ? (doc.data() as { recent?: unknown }).recent : undefined
     return Array.isArray(recent) ? recent.filter(isPhrasing) : []
   } catch {

@@ -1,7 +1,7 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getShoeRegistry } from '@/infrastructure/repositories/JsonShoeRepository'
 import type { ActivityType } from '@/domain/activity/types'
-import { kmPerWeek as computeKmPerWeek } from '@/domain/shoe/wearStatus'
+import { kmPerWeek as computeKmPerWeek, wearPercent } from '@/domain/shoe/wearStatus'
 import { round } from '@/lib/math'
 import type { ShoeTypeBucket, ShoeDetail } from '@/domain/shoe/types'
 
@@ -64,7 +64,7 @@ export function getShoeDetail(gearId: string): ShoeDetail | null {
     alertThresholdKm: registered.alertThresholdKm,
     retired: registered.retired,
     totalKm,
-    wearPercent: registered.retired ? 100 : Math.min(100, round((totalKm / registered.maxKm) * 100, 0)),
+    wearPercent: wearPercent({ totalKm, maxKm: registered.maxKm, retired: registered.retired }),
     firstUsedDate,
     kmPerWeek,
     avgPaceSecPerKm: avgPaceSecPerKm == null ? null : Math.round(avgPaceSecPerKm),

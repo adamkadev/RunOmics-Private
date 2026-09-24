@@ -1,6 +1,6 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getShoeRegistry } from '@/infrastructure/repositories/JsonShoeRepository'
-import { kmPerWeek } from '@/domain/shoe/wearStatus'
+import { kmPerWeek, wearPercent } from '@/domain/shoe/wearStatus'
 import { round } from '@/lib/math'
 
 export interface ShoeStats {
@@ -55,7 +55,7 @@ export function getShoeStats(): ShoeStats[] {
         lastUsedDate,
         firstUsedDate,
         kmPerWeek: Math.round(kmPerWeek(firstUsedDate, lastUsedDate, totalKm)),
-        wearPercent: info.retired ? 100 : Math.min(100, round((totalKm / info.maxKm) * 100, 0)),
+        wearPercent: wearPercent({ totalKm, maxKm: info.maxKm, retired: info.retired }),
         nearingLimit: !info.retired && totalKm >= info.alertThresholdKm,
       }
     })
