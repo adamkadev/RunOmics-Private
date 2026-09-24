@@ -1,10 +1,14 @@
 name: Stale Sync Check
 
 on:
-  # 6:00 UTC daily - independent of sync.yml so a broken/silent sync still gets caught.
+  # 05:41 UTC daily - independent of sync.yml so a broken/silent sync still gets
+  # caught. Off the hour on purpose - see daily-session-reminder.yml.
   schedule:
-    - cron: "0 6 * * *"
+    - cron: "41 5 * * *"
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   notify:

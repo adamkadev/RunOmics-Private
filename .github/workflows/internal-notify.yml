@@ -16,9 +16,13 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: read
+
 jobs:
   notify:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
 
     strategy:
       # One deployment being unreachable must not cancel the other's reminder.
@@ -48,6 +52,8 @@ jobs:
           APP_URL: ${{ secrets.APP_URL }}
           INTERNAL_NOTIFY_SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}
           ENDPOINT: ${{ inputs.endpoint }}
+        # The header is read from stdin (-H @-), so the secret never appears
+        # in curl's argv, where any process on the runner could read it.
         run: |
-          curl -fsS -X POST "$APP_URL/api/internal/$ENDPOINT" \
-            -H "x-internal-secret: $INTERNAL_NOTIFY_SECRET"
+          printf 'x-internal-secret: %s\n' "$INTERNAL_NOTIFY_SECRET" \
+            | curl -fsS -X POST "$APP_URL/api/internal/$ENDPOINT" -H @-

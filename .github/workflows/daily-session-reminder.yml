@@ -2,8 +2,14 @@ name: Daily Session Reminder
 
 on:
   schedule:
-    - cron: "0 8 * * *"
+    # 06:11 UTC is 08:11 in Paris in summer. Scheduled runs on the hour are the
+    # ones GitHub delays most (this one arrived four to seven hours late), so
+    # every schedule here sits off the hour.
+    - cron: "11 6 * * *"
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   notify:

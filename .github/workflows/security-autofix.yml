@@ -2,28 +2,37 @@ name: Security autofix
 
 on:
   schedule:
-    - cron: "0 6 * * 1"
+    - cron: "29 6 * * 1"
   workflow_dispatch:
 
-# Opens a pull request rather than pushing: the checks below prove the tree
-# still builds, not that the app still behaves.
+# Two jobs, so that no job both runs dependency code and holds a write token.
+# `audit` installs, fixes and tests - npm runs every package's install
+# scripts - with a read-only token and no stored credentials. `propose` never
+# runs npm: it turns audit's two files into a commit and a pull request.
+#
+# It opens a pull request rather than pushing: the checks prove the tree still
+# builds, not that the app still behaves.
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 concurrency:
   group: security-autofix
   cancel-in-progress: false
 
 jobs:
-  autofix:
+  audit:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      changed: ${{ steps.diff.outputs.changed }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
           cache: "npm"
@@ -49,19 +58,56 @@ jobs:
 
       - name: Typecheck
         if: steps.diff.outputs.changed == 'true'
-        run: npx tsc --noEmit
+        run: npm run typecheck
 
       - name: Test
         if: steps.diff.outputs.changed == 'true'
         run: npm test
 
-      - name: Open a pull request
+      - name: Hand the fix to the propose job
         if: steps.diff.outputs.changed == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: audit-fix
+          path: |
+            package.json
+            package-lock.json
+          if-no-files-found: error
+          retention-days: 1
+
+  propose:
+    needs: audit
+    if: needs.audit.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+      # To start CI and E2E on the branch: a push made with GITHUB_TOKEN
+      # triggers no push or pull_request workflow, so the PR would otherwise
+      # show no checks at all.
+      actions: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Into its own directory, then only the two expected files are copied
+      # over: whatever else the audit job's environment produced stays out.
+      - name: Download the fix
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: audit-fix
+          path: audit-fix
+
+      - name: Open a pull request
         env:
           GH_TOKEN: ${{ github.token }}
           BRANCH: chore/npm-audit-fix
         run: |
           set -eo pipefail
+          cp audit-fix/package.json audit-fix/package-lock.json .
+          rm -rf audit-fix
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
@@ -75,5 +121,8 @@ jobs:
             gh pr create \
               --head "$BRANCH" \
               --title "chore(deps): apply npm audit fix" \
-              --body "Automated \`npm audit fix\` run. Lint, typecheck and the unit suite passed on this branch before the PR was opened."
+              --body "Automated \`npm audit fix\` run. Lint, typecheck and the unit suite passed before the PR was opened; CI and E2E are started on this branch by the same workflow."
           fi
+
+          gh workflow run ci.yml --ref "$BRANCH"
+          gh workflow run e2e.yml --ref "$BRANCH"
