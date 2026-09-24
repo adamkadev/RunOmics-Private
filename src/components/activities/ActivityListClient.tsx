@@ -455,7 +455,7 @@ export function ActivityListClient({
           <div
             aria-hidden="true"
             className="pointer-events-none absolute right-0 top-0 w-[30px]"
-            style={{ height: '36px', background: 'linear-gradient(90deg, rgba(9,16,32,0), #091020 85%)' }}
+            style={{ height: '36px', background: 'linear-gradient(90deg, transparent, var(--background) 85%)' }}
           />
         )}
       </div>
@@ -527,7 +527,7 @@ export function ActivityListClient({
                     style={{ borderTop: '1px solid rgba(148,178,220,.14)', padding: '11px 16px 10px' }}
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="truncate font-bold" style={{ fontSize: '15px', color: '#c3ccd6' }}>{g.label}</div>
+                      <div className="truncate font-bold text-muted-foreground" style={{ fontSize: '15px' }}>{g.label}</div>
                       <WeekCompositionDots items={g.items} label={g.shape} />
                     </div>
                     <div className="flex items-center" style={{ gap: '16px' }}>

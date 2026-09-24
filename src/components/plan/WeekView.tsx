@@ -20,6 +20,7 @@ import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { weeksInPlan, type PlanSpan } from '@/domain/training/planProgress'
 import { addDays, isoDate } from '@/lib/calendarDate'
 import { formatDate, formatDateRange, formatPace } from '@/lib/formatters'
+import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { CoachingOverview, PrescriptionView } from '@/application/coaching/GetCoachingView'
 import { COACHING_TO_ACTIVITY_TYPE } from '@/domain/coaching/types'
@@ -63,6 +64,9 @@ function brighten(hex: string): string {
 }
 
 const REST_STUB_FILL = 'rgba(148,178,220,.25)'
+// The "done" chip's blue was a dark-theme hex, 1.5:1 on the light background.
+// Each theme takes its own step of the same hue instead.
+const DONE_INK = 'text-blue-700 dark:text-blue-300'
 
 interface Day {
   date: string
@@ -178,7 +182,7 @@ function RestDayCard({ next }: { next: { weekday: string; title: string } | null
       className="w-full rounded-2xl p-3.5"
       style={{ border: '1px dashed rgba(148,178,220,.2)' }}
     >
-      <div className="font-bold" style={{ fontSize: '16px', color: '#c3ccd6' }}>{t.plan.restCard.title}</div>
+      <div className="font-bold text-muted-foreground" style={{ fontSize: '16px' }}>{t.plan.restCard.title}</div>
       <div className="mt-1" style={{ fontSize: '13px', color: 'var(--subtle)' }}>
         {next ? t.plan.restCard.next(next.weekday, next.title) : t.plan.restCard.noSession}
       </div>
@@ -818,11 +822,10 @@ export function WeekView({
                   </span>
                   <span className="flex shrink-0 items-center" style={{ gap: '8px' }}>
                     <span
-                      className="font-bold uppercase"
+                      className={cn('font-bold uppercase', DONE_INK)}
                       style={{
                         fontSize: '11px',
                         letterSpacing: '.06em',
-                        color: '#9cc4ff',
                         background: 'rgba(90,151,245,.16)',
                         borderRadius: '6px',
                         padding: '4px 8px',

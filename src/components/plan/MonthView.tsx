@@ -6,6 +6,7 @@ import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
 import type { ActivitySummary, ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import { round } from '@/lib/math'
 import { formatDate } from '@/lib/formatters'
+import { cn } from '@/lib/utils'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { PlannedWorkoutSheet } from './PlannedWorkoutSheet'
 import { plannedWorkoutView, type PlanWorkoutView } from './planWorkoutView'
@@ -36,6 +37,9 @@ const RULE_BORDER = 'rgba(148,178,220,.18)'
 const PLANNED_INK = 'var(--subtle)'
 const RAN_INK = 'var(--foreground)'
 const EXTRA_INK = 'var(--subtle-2)'
+// A dark-theme blue hex used to sit here, 1.6:1 on the light background. Each
+// theme takes its own step of the same hue instead.
+const TODAY_INK = 'text-blue-700 dark:text-blue-300'
 const GRID_COLUMNS = 'repeat(7,1fr) 30px'
 
 interface DayCellData {
@@ -258,8 +262,8 @@ export function MonthView({
           type="button"
           onClick={onToday}
           disabled={atPresent}
-          className="shrink-0 rounded-full font-semibold disabled:opacity-40"
-          style={{ fontSize: '12.5px', color: '#9cc4ff', border: '1px solid rgba(106,164,255,.35)', padding: '5px 12px' }}
+          className={cn('shrink-0 rounded-full font-semibold disabled:opacity-40', TODAY_INK)}
+          style={{ fontSize: '12.5px', border: '1px solid rgba(106,164,255,.35)', padding: '5px 12px' }}
         >
           {t.plan.today}
         </button>
@@ -334,7 +338,7 @@ export function MonthView({
                 <div className="flex items-center justify-end pr-1" style={{ background: PAD_BG }}>
                   <span
                     className="font-mono tabular-nums"
-                    style={{ fontSize: '11px', fontWeight: 700, color: containsToday ? '#c3ccd6' : 'var(--subtle)' }}
+                    style={{ fontSize: '11px', fontWeight: 700, color: containsToday ? 'var(--muted-foreground)' : 'var(--subtle)' }}
                   >
                     {weekValue === null ? t.plan.weekGutterEmpty : weekValue}
                   </span>

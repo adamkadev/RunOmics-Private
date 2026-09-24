@@ -24,7 +24,6 @@ const CARD_SURFACE = '#101a2c'
 const CARD_BORDER = 'rgba(148,178,220,.14)'
 const AMBER_RULE = '#f5b13d'
 const CHIP_BORDER = 'rgba(148,178,220,.22)'
-const CHIP_TEXT = 'var(--muted-foreground)'
 const FOOTER_BG = 'rgba(148,178,220,.035)'
 const FOOTER_DIVIDER = 'rgba(148,178,220,.12)'
 interface Props {
@@ -112,9 +111,11 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiV
           {tone ? s.eyebrowByTone[tone] : s.eyebrowByTone.go}
         </span>
         {nextRace && daysToRace !== null && daysToRace > 0 && (
+          // The card is dark in both themes, so its ink is too: the theme's
+          // muted-foreground turned this chip 1.9:1 on a light system theme.
           <div
-            className="inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[12px]"
-            style={{ border: `1px solid ${CHIP_BORDER}`, color: CHIP_TEXT }}
+            className="inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[12px] text-white/70"
+            style={{ border: `1px solid ${CHIP_BORDER}` }}
           >
             <Flag size={10} className="shrink-0" />
             {formatCountdown(daysToRace)}
