@@ -164,6 +164,24 @@ describe('partial failure', () => {
     expect(report.state.entries[0]!.status).toBe('scheduled')
   })
 
+  it('pushes the new content when the prescription changed after a failed schedule', async () => {
+    const before = workout({ id: 'a', date: '2026-09-08' })
+    const partial = await apply(build(plan([before]), null), null, new FakeGarmin({ schedule: true }))
+    const after = workout({ id: 'a', date: '2026-09-08', title: 'Longer Easy Run' })
+    const gateway = new FakeGarmin()
+
+    const report = await apply(build(plan([after]), partial.state), partial.state, gateway)
+
+    expect(gateway.deleted).toEqual(['1001'])
+    expect(gateway.created.map((payload) => payload.workoutName)).toEqual(['Longer Easy Run'])
+    expect(report.state.entries).toEqual([
+      expect.objectContaining({
+        status: 'scheduled',
+        contentHash: garminContentHash(toGarminWorkoutPayload(after), after.date),
+      }),
+    ])
+  })
+
   it('reports a create failure without recording a mapping entry', async () => {
     const gateway = new FakeGarmin({ create: true })
 

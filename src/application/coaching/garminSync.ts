@@ -119,10 +119,9 @@ function operationFor(
 
   if (!existing) return { ...base, action: 'create', payload, contentHash, reason: note }
 
-  if (existing.status === 'workout_created' || !existing.garminWorkoutScheduleId) {
-    return { ...base, action: 'schedule', payload, contentHash, reason: 'Retrying a schedule that failed earlier' }
-  }
-
+  // Content before the retry: retrying a failed schedule reuses the workout
+  // Garmin already holds, which is the old prescription, while the state
+  // records the new hash - after which nothing would see the two disagree.
   if (existing.contentHash !== contentHash) {
     const moved = existing.date !== workout.date
     return {
@@ -132,6 +131,10 @@ function operationFor(
       contentHash,
       reason: moved ? `Prescription moved from ${existing.date}` : 'Prescription changed',
     }
+  }
+
+  if (existing.status === 'workout_created' || !existing.garminWorkoutScheduleId) {
+    return { ...base, action: 'schedule', payload, contentHash, reason: 'Retrying a schedule that failed earlier' }
   }
 
   return { ...base, action: 'keep', payload, contentHash, reason: null }

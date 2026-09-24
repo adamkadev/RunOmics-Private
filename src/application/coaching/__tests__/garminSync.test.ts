@@ -410,6 +410,33 @@ describe('partial failure recovery', () => {
     expect(operations[0]!.existing?.garminWorkoutId).toBe('9000')
     expect(countOperations(operations)).toEqual({ create: 1, update: 0, delete: 0, keep: 0, skip: 0 })
   })
+
+  it('replaces instead of retrying when the prescription changed since the failed schedule', () => {
+    // A retry would schedule the workout Garmin already holds - the old
+    // prescription - while the state recorded the new hash, so no later run
+    // would ever see the two disagree.
+    const prescribed = workout({ id: 'a', date: '2026-09-08' })
+    const state: GarminSyncState = {
+      ...syncedState([{ id: 'a', date: '2026-09-08', workout: prescribed }]),
+      entries: [
+        {
+          prescriptionId: 'a',
+          date: '2026-09-08',
+          contentHash: garminContentHash(toGarminWorkoutPayload(prescribed), '2026-09-08'),
+          garminWorkoutId: '9000',
+          garminWorkoutScheduleId: null,
+          status: 'workout_created',
+          lastSyncedAt: '2026-09-06T10:00:00.000Z',
+        },
+      ],
+    }
+    const changed = workout({ id: 'a', date: '2026-09-08', title: 'Longer Easy Run' })
+
+    const operations = build(plan([changed]), state).operations
+
+    expect(operations[0]!.action).toBe('replace')
+    expect(operations[0]!.reason).toBe('Prescription changed')
+  })
 })
 
 describe('preview rendering', () => {
