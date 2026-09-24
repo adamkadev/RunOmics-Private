@@ -64,10 +64,11 @@ describe('buildTodayContext', () => {
     expect(buildTodayContext(status({ status: 'overreaching' }), null, NOW).tone).toBe('hold')
   })
 
-  it('carries the last seven days of training, which is what makes the copy specific', () => {
+  it("carries this week's training and the last run, which is what makes the copy specific", () => {
+    // NOW is a Monday, so Saturday's and Wednesday's runs were last week's.
     const context = buildTodayContext(status(), null, NOW)
 
-    expect(context.recent.runs).toBe(2)
+    expect(context.recent).toMatchObject({ weekRuns: 0, weekKm: 0 })
     expect(context.recent.lastRun).toEqual({ type: 'Base', daysAgo: 2, distanceKm: 10 })
   })
 
