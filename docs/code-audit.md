@@ -1,5 +1,9 @@
 # Code audit — RunOmics v3.1
 
+> **Status, 24 Sep 2026:** every lead in [The remaining plan](#the-remaining-plan)
+> was re-checked against the code; see [audit-2026-09.md §7](audit-2026-09.md#7-previous-audit--status).
+> The open items worth doing are carried into that document's action plan.
+
 A full-codebase audit across architecture, code smells, features, and the way
 Firebase and the AI layer are managed, plus the action plan that follows from
 it. The first tranche of that plan is already applied — see
