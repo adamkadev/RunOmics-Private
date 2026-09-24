@@ -144,7 +144,6 @@ function surfaces(overrides: Partial<InsightSurfaces> = {}): InsightSurfaces {
   return {
     runVerdicts: async () => ({ contexts: [], recordActivityIds: new Set<string>() }),
     today: async () => 'no training status',
-    weekPurpose: async () => 'no week data',
     season: async () => 'no season reads',
     analyticsTabs: async () => ({ fitness: 'no reads' }),
     pbCelebration: async () => 'no fresh record',
@@ -510,7 +509,7 @@ describe('runInsightPass', () => {
     expect(report.pbCelebration).toEqual({ generated: false, reason: 'no fresh record' })
   })
 
-  it('answers with the same report the route has always returned', async () => {
+  it('answers with the report the route has always returned, less the week purpose no page shows', async () => {
     const { spender } = fakeSpender()
 
     const report = await runInsightPass(deps({ spender }), surfaces(), OPTIONS)
@@ -518,7 +517,6 @@ describe('runInsightPass', () => {
     expect(report).toEqual({
       freshVerdicts: { generated: 0, failures: [] },
       today: { generated: false, reason: 'no training status' },
-      weekPurpose: { generated: false, reason: 'no week data' },
       season: { generated: false, reason: 'no season reads' },
       analyticsTabs: { fitness: 'no reads' },
       pbCelebration: { generated: false, reason: 'no fresh record' },

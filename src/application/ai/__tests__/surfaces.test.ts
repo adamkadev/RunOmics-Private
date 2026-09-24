@@ -30,11 +30,21 @@ vi.mock('@/application/usecases/GetAnalyticsTabFacts', () => ({
 vi.mock('@/application/usecases/GetTodayInsight', () => ({ buildTodayContext: vi.fn(), todayInsightSession: vi.fn() }))
 vi.mock('@/application/usecases/GetPbCelebrationInsight', () => ({ buildPbCelebrationContext: vi.fn() }))
 vi.mock('@/application/usecases/GetShoeDetail', () => ({ getShoeDetail: vi.fn() }))
-vi.mock('@/application/usecases/GetCurrentWeekPurpose', () => ({ getCurrentWeekPurpose: vi.fn() }))
 
 const { insightSurfaces } = await import('../surfaces')
 
 describe('insightSurfaces', () => {
+  it('writes only cards a page displays - no week-purpose card, which nothing reads', () => {
+    expect(Object.keys(insightSurfaces())).toEqual([
+      'runVerdicts',
+      'today',
+      'season',
+      'analyticsTabs',
+      'pbCelebration',
+      'shoeVerdicts',
+    ])
+  })
+
   it('reads training status, analytics and records once a pass, however many surfaces share them', async () => {
     const surfaces = insightSurfaces()
 

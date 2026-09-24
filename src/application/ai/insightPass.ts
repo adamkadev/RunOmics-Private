@@ -265,7 +265,6 @@ export async function runInsightPass(deps: InsightPassDeps, surfaces: InsightSur
 
   const freshVerdicts = await writeVerdicts(deps, fresh, written, phrasing, MODEL_POOL, true)
   const today = await runPlan(deps, await surfaces.today())
-  const weekPurpose = await runPlan(deps, await surfaces.weekPurpose())
   const season = await runPlan(deps, await surfaces.season())
   const analyticsTabs = await runPlans(deps, await surfaces.analyticsTabs())
   const pbCelebration = await runPlan(deps, await surfaces.pbCelebration(deps.now()))
@@ -285,7 +284,6 @@ export async function runInsightPass(deps: InsightPassDeps, surfaces: InsightSur
   return {
     freshVerdicts,
     today,
-    weekPurpose,
     season,
     analyticsTabs,
     pbCelebration,

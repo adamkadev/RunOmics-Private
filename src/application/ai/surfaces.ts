@@ -3,7 +3,6 @@ import { getRunVerdictContexts } from '@/application/usecases/GetRunVerdictInsig
 import { getAnalyticsData } from '@/application/usecases/GetAnalyticsData'
 import { getYearComparison } from '@/application/usecases/GetYearComparison'
 import { getSeasonHeadline } from '@/application/usecases/GetSeasonHeadline'
-import { getCurrentWeekPurpose } from '@/application/usecases/GetCurrentWeekPurpose'
 import { getRecords, getMostRecentRecord, getQualifiedEffortsByActivityId } from '@/application/usecases/GetRecords'
 import { getShoeStats } from '@/application/usecases/GetShoeStats'
 import { getShoeDetail } from '@/application/usecases/GetShoeDetail'
@@ -35,13 +34,6 @@ import {
   seasonInsightHash,
   seasonInsightPrompt,
 } from '@/domain/ai/seasonInsight'
-import {
-  WEEK_PURPOSE_LIMITS,
-  WEEK_PURPOSE_SURFACE,
-  WEEK_PURPOSE_SYSTEM_INSTRUCTION,
-  weekPurposeInsightHash,
-  weekPurposeInsightPrompt,
-} from '@/domain/ai/weekPurposeInsight'
 import {
   PB_CELEBRATION_LIMITS,
   PB_CELEBRATION_SURFACE,
@@ -130,20 +122,6 @@ export function insightSurfaces() {
         guard: todayInsightGuard(context),
         prompt: (recent) => todayInsightPrompt(context, recent),
         paths: ['/'],
-      }
-    },
-
-    async weekPurpose(): Promise<SurfacePlan> {
-      const week = await getCurrentWeekPurpose()
-      if (!week) return 'no week data'
-
-      return {
-        surface: WEEK_PURPOSE_SURFACE,
-        limits: WEEK_PURPOSE_LIMITS,
-        systemInstruction: WEEK_PURPOSE_SYSTEM_INSTRUCTION,
-        hash: weekPurposeInsightHash(week),
-        prompt: (recent) => weekPurposeInsightPrompt(week, recent),
-        paths: ['/plan'],
       }
     },
 
