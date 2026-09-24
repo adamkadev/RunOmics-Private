@@ -202,19 +202,19 @@ def _run_isolated(steps: list[Step]) -> list[str]:
     """Run every step, whatever happens to the ones before it; return the names that failed.
 
     The activities are already saved by the time these run, and each step
-    writes a file of its own. One of them raising used to end main() with
+    writes files of its own. One of them raising used to end main() with
     exit 1, which makes the workflow skip the commit - so a single 5xx from
-    race predictions discarded every activity synced that night. A step that
-    fails now leaves its own file as it was (a history file that will not
-    parse still refuses to be rewritten), the others carry on, and main()
-    exits 3.
+    race predictions discarded every activity synced that night. Now a step
+    that fails has written only what it completed, each file whole (and a
+    history file that will not parse still refuses to be rewritten), the
+    others carry on, and main() exits 3.
     """
     failed: list[str] = []
     for name, step in steps:
         try:
             step()
         except Exception as exc:
-            print(f"Warning: {name} failed ({type(exc).__name__}: {exc}); its file is left as it was.")
+            print(f"Warning: {name} failed ({type(exc).__name__}: {exc})")
             failed.append(name)
     return failed
 
