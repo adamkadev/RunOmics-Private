@@ -53,6 +53,14 @@ export const fr = {
     veryFresh: 'Très frais',
   },
 
+  zoneLabels: {
+    1: 'Récupération',
+    2: 'Facile',
+    3: 'Aérobie',
+    4: 'Seuil',
+    5: 'Max',
+  } as Record<number, string>,
+
   glossary: {
     about: (term: string) => `Qu’est-ce que ${term} ?`,
     aboutThese: 'Ce que signifient ces chiffres',
@@ -176,8 +184,12 @@ export const fr = {
       attribution: '© MapTiler · © OpenStreetMap contributors',
       territory: {
         eyebrowFor: (place: string) => `${place} · depuis toujours`,
-        headline: (percent: number, radius: number, place: string) =>
-          `${percent}% de toutes tes sorties à ${place} tiennent dans un rayon de ${radius} km.`,
+        headline: (percent: number, radius: string, place: string) =>
+          `${percent}% de toutes tes sorties à ${place} tiennent dans un rayon de ${radius}.`,
+        headlineHome: (percent: number, radius: string) =>
+          `${percent}% de tes sorties tiennent dans un rayon de ${radius} autour de ton secteur habituel.`,
+        homeArea: 'ton secteur habituel',
+        underOneKm: 'moins de 1 km',
         routesStat: 'routes distinctes',
         radiusStat: 'rayon médian',
         eyebrowWorld: 'Toutes les zones · depuis toujours',
@@ -556,13 +568,6 @@ export const fr = {
         title: 'Temps en zones',
         easyTime: (pct: number) => `${pct}% de temps facile`,
         reading: (pct: number, zoneLabel: string) => `La majorité du temps (${pct}%) se passe en zone ${zoneLabel} - ton entraînement penche vers cette intensité.`,
-        labels: {
-          1: 'Échauffement',
-          2: 'Facile',
-          3: 'Aérobie',
-          4: 'Seuil',
-          5: 'Maximum',
-        } as Record<number, string>,
       },
       hrTrend: {
         title: 'FC moyenne',
@@ -873,13 +878,6 @@ export const fr = {
       title: 'Temps en zones FC',
       noData: 'Pas de données de zones FC',
       mostIn: (zone: number, pct: number) => `surtout en Z${zone} · ${pct} %`,
-      labels: {
-        1: 'Z1 · Échauffement',
-        2: 'Z2 · Facile',
-        3: 'Z3 · Aérobie',
-        4: 'Z4 · Seuil',
-        5: 'Z5 · Max',
-      } as Record<number, string>,
     },
     trainingEffect: {
       aerobic: 'Effet aérobie',
@@ -1239,7 +1237,7 @@ export const fr = {
       firstActivity: 'Premier pas',
       firstActivityDetail: (km: number) => `Le début de l’aventure - ${km.toFixed(1)} km`,
       lifetimeDistance: (km: string) => `${km} km au total`,
-      lifetimeDistanceDetail: (marathons: number) => `${marathons} marathons courus`,
+      lifetimeDistanceDetail: (marathons: number) => `≈ ${marathons} distances marathon`,
       lifetimeDistanceWorldTour: '🌍 Le tour du monde à l’équateur',
       activityCount: (n: number) => `${n}ᵉ sortie`,
       activityCountDetail: (km: string) => `${km} km parcourus au total`,
@@ -1255,31 +1253,17 @@ export const fr = {
       columnTime: 'Temps',
       inZonesWeek: (duration: string) => `${duration} en zones cette semaine`,
       inZonesRecent: (duration: string) => `${duration} en zones sur les 4 dernières semaines`,
-      zoneNames: {
-        5: 'Max',
-        4: 'Seuil',
-        3: 'Aérobie',
-        2: 'Facile',
-        1: 'Récupération',
-      } as Record<number, string>,
       noSessionsThisWeek: 'Aucune séance enregistrée pour le moment.',
       noSessionsRecent: 'Aucune séance enregistrée sur ces 4 semaines.',
       emptyWeekFallback: 'Pas encore de séance cette semaine - affichage des 4 dernières semaines.',
       highIntensityNote: (pct: number) =>
-        `${pct}% de ton temps était en Z4–Z5, contre les 10–15% qu’un bloc de développement demande en général.`,
+        `${pct}% de ton temps était en Z4–Z5, contre les 10–15% auxquels la plupart des semaines d’entraînement s’en tiennent.`,
     },
     athlete: {
       title: 'Athlète',
       lthr: 'LTHR',
       notSet: 'Non défini',
       details: 'Détails',
-      zoneRows: {
-        5: 'Z5 Max',
-        4: 'Z4 Seuil',
-        3: 'Z3 Aérobie',
-        2: 'Z2 Facile',
-        1: 'Z1 Récup',
-      } as Record<number, string>,
       vo2maxShort: 'VO₂MAX',
       vmaShort: 'VMA',
       lthrShort: 'LTHR',
@@ -1419,6 +1403,7 @@ export const fr = {
     weekFooter: {
       ran: (km: number) => `${km} km courus`,
       planned: (km: number) => `${km} km prévus`,
+      ranOfPlanned: (ran: number, planned: number) => `${ran} sur ${planned} km`,
     },
     typeShort: {
       Sprint: 'Sprint',

@@ -59,7 +59,7 @@ export function ZoneBar({ hrZones }: Props) {
 
       <ul className="sr-only">
         {zones.map((zone) => (
-          <li key={zone.zone}>{`${z.labels[zone.zone] ?? `Z${zone.zone}`}: ${Math.round(zone.percent)}%`}</li>
+          <li key={zone.zone}>{`Z${zone.zone} · ${t.zoneLabels[zone.zone] ?? ''}: ${Math.round(zone.percent)}%`}</li>
         ))}
       </ul>
     </GlassSurface>

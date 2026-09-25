@@ -28,6 +28,11 @@ interface Props {
   onContentChange?: (content: TerritoryCardContent | null) => void;
 }
 
+/** A median radius under a kilometre reads "under 1 km", never "0 km". */
+function radiusLabel(km: number): string {
+  return km < 1 ? t.pages.map.territory.underOneKm : `${km} ${t.units.km}`;
+}
+
 export function GlobalMapClient({ data, onContentChange }: Props) {
   const { clusters, routeMeta } = data;
   const [selectedIdx, setSelectedIdx] = useState(data.defaultClusterIdx);
@@ -145,7 +150,7 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
       if (!world) return null;
       return {
         eyebrow: s.eyebrowWorld,
-        headline: s.headlineWorld(world.areaCount, world.topSharePercent, world.topAreaName),
+        headline: s.headlineWorld(world.areaCount, world.topSharePercent, /°[NS] /.test(world.topAreaName) ? s.homeArea : world.topAreaName),
         primaryStat: { value: String(world.routeCount), label: s.routesStat },
         secondaryStat: { value: String(world.areaCount), label: s.areasStat },
       };
@@ -155,12 +160,16 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
     if (!cluster) return null;
     const territory = computeAreaTerritory(cluster, routeMeta, routes, filters);
     if (!territory) return null;
-    const areaName = names[selectedIdx] ?? "";
+    // Without a place name the area is "your home area", never its
+    // coordinates: the fallback read "all your 0.0°N 150.0°W running" (G26).
+    const areaName = names[selectedIdx];
+    const place = areaName && areaName !== coordLabel(cluster) ? areaName : null;
+    const radius = radiusLabel(territory.medianRadiusKm);
     return {
-      eyebrow: s.eyebrowFor(areaName),
-      headline: s.headline(territory.percentVolume, territory.medianRadiusKm, areaName),
+      eyebrow: s.eyebrowFor(place ?? s.homeArea),
+      headline: place ? s.headline(territory.percentVolume, radius, place) : s.headlineHome(territory.percentVolume, radius),
       primaryStat: { value: String(territory.routeCount), label: s.routesStat },
-      secondaryStat: { value: `${territory.medianRadiusKm} ${t.units.km}`, label: s.radiusStat },
+      secondaryStat: { value: radius, label: s.radiusStat },
     };
   }, [worldView, clusters, selectedIdx, routeMeta, routes, filters, names]);
 

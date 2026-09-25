@@ -63,6 +63,16 @@ export const en = {
   },
 
   // One definition per term, behind an (i) wherever the term is shown.
+  // One set of zone names for every screen (G16): Intensity said "Warm Up"
+  // and "Maximum" where Athlete & zones said "Recovery" and "Max".
+  zoneLabels: {
+    1: 'Recovery',
+    2: 'Easy',
+    3: 'Aerobic',
+    4: 'Threshold',
+    5: 'Max',
+  } as Record<number, string>,
+
   glossary: {
     about: (term: string) => `What is ${term}?`,
     aboutThese: 'What these numbers mean',
@@ -191,8 +201,11 @@ export const en = {
       attribution: '© MapTiler · © OpenStreetMap contributors',
       territory: {
         eyebrowFor: (place: string) => `${place} · all-time`,
-        headline: (percent: number, radius: number, place: string) =>
-          `${percent}% of all your ${place} running sits within a ${radius} km radius.`,
+        headline: (percent: number, radius: string, place: string) =>
+          `${percent}% of all your ${place} running sits within ${radius} of its centre.`,
+        headlineHome: (percent: number, radius: string) => `${percent}% of your running sits within ${radius} of your home area.`,
+        homeArea: 'your home area',
+        underOneKm: 'under 1 km',
         routesStat: 'distinct routes',
         radiusStat: 'median radius',
         eyebrowWorld: 'All areas · all-time',
@@ -575,13 +588,6 @@ export const en = {
         title: 'Time in Zones',
         easyTime: (pct: number) => `${pct}% easy time`,
         reading: (pct: number, zoneLabel: string) => `Most time (${pct}%) sits in ${zoneLabel} - your training skews toward this intensity.`,
-        labels: {
-          1: 'Warm Up',
-          2: 'Easy',
-          3: 'Aerobic',
-          4: 'Threshold',
-          5: 'Maximum',
-        } as Record<number, string>,
       },
       hrTrend: {
         title: 'Avg Heart Rate',
@@ -897,13 +903,6 @@ export const en = {
       title: 'Time in HR zones',
       noData: 'No HR zone data',
       mostIn: (zone: number, pct: number) => `most in Z${zone} · ${pct}%`,
-      labels: {
-        1: 'Z1 · Warmup',
-        2: 'Z2 · Easy',
-        3: 'Z3 · Aerobic',
-        4: 'Z4 · Threshold',
-        5: 'Z5 · Max',
-      } as Record<number, string>,
     },
     trainingEffect: {
       aerobic: 'Aerobic effect',
@@ -1301,7 +1300,8 @@ export const en = {
       firstActivity: 'First step',
       firstActivityDetail: (km: number) => `Where it all began - ${km.toFixed(1)} km`,
       lifetimeDistance: (km: string) => `${km} km lifetime`,
-      lifetimeDistanceDetail: (marathons: number) => `${marathons} marathons run`,
+      // Marathon equivalents, not races (G25).
+      lifetimeDistanceDetail: (marathons: number) => `≈ ${marathons} marathon distances`,
       lifetimeDistanceWorldTour: '🌍 A full trip around the Earth',
       activityCount: (n: number) => `${ordinal(n)} run`,
       activityCountDetail: (km: string) => `${km} km covered so far`,
@@ -1317,31 +1317,18 @@ export const en = {
       columnTime: 'Time',
       inZonesWeek: (duration: string) => `${duration} in zones this week`,
       inZonesRecent: (duration: string) => `${duration} in zones over the last 4 weeks`,
-      zoneNames: {
-        5: 'Max',
-        4: 'Threshold',
-        3: 'Aerobic',
-        2: 'Easy',
-        1: 'Recovery',
-      } as Record<number, string>,
       noSessionsThisWeek: 'No sessions logged yet.',
       noSessionsRecent: 'No sessions logged in these 4 weeks.',
       emptyWeekFallback: 'This week has no sessions yet - showing your last 4 weeks instead.',
       highIntensityNote: (pct: number) =>
-        `${pct}% of your time was Z4–Z5, against the 10–15% a build block usually asks for.`,
+        // No phase in the sentence (G17): it named a build block during a base week.
+        `${pct}% of your time was Z4–Z5, against the 10–15% most training weeks keep it to.`,
     },
     athlete: {
       title: 'Athlete',
       lthr: 'LTHR',
       notSet: 'Not set',
       details: 'Details',
-      zoneRows: {
-        5: 'Z5 Max',
-        4: 'Z4 Thr',
-        3: 'Z3 Aerobic',
-        2: 'Z2 Easy',
-        1: 'Z1 Rec',
-      } as Record<number, string>,
       vo2maxShort: 'VO₂MAX',
       vmaShort: 'VMA',
       lthrShort: 'LTHR',
@@ -1481,6 +1468,7 @@ export const en = {
     weekFooter: {
       ran: (km: number) => `${km} km run`,
       planned: (km: number) => `${km} km planned`,
+      ranOfPlanned: (ran: number, planned: number) => `${ran} of ${planned} km`,
     },
     typeShort: {
       Sprint: 'Sprint',
