@@ -178,8 +178,9 @@ export function ActivityDetailClient({
             tabs={detailTabs}
             items={tabs}
             label={t.activity.tabs.groupLabel}
-            className="w-full bg-background/85 backdrop-blur-md"
-            tabClassName="h-9 flex-1 text-footnote"
+            fill
+            className="bg-background/85 backdrop-blur-md"
+            tabClassName="h-9 text-footnote"
           />
         </div>
       )}

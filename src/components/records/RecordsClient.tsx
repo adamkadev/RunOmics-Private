@@ -10,10 +10,8 @@ import { RecordsLeaderboard } from './RecordsLeaderboard'
 import { RecurringRoutes } from './RecurringRoutes'
 import { MilestonesTimeline } from '@/components/milestones/MilestonesTimeline'
 import { PbAlertLine } from '@/components/ui/PbAlertLine'
-import { GlassSurface } from '@/components/ui/GlassSurface'
-import { cn } from '@/lib/utils'
 import { useToday } from '@/lib/useToday'
-import { useSegmentedTabs } from '@/components/ui/SegmentedTabs'
+import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { t } from '@/i18n'
 
 type Tab = 'prs' | 'milestones' | 'routes'
@@ -39,26 +37,13 @@ export function RecordsClient({ records, topEfforts, predictions, pbAlerts, mile
 
   return (
     <div className="space-y-4">
-      <GlassSurface
-        as="div"
-        variant="card"
-        {...recordTabs.listProps}
-        aria-label={s.prs}
-        className="flex gap-1 rounded-full p-1"
-      >
-        {RECORD_TABS.map((id) => (
-          <button
-            key={id}
-            {...recordTabs.tabProps(id)}
-            className={cn(
-              'flex-1 whitespace-nowrap rounded-full py-2 text-sm font-semibold transition-colors',
-              tab === id ? 'bg-accent text-accent-foreground' : 'text-subtle hover:text-foreground'
-            )}
-          >
-            {s[id]}
-          </button>
-        ))}
-      </GlassSurface>
+      <SegmentedTabs
+        tabs={recordTabs}
+        items={RECORD_TABS.map((id) => ({ id, label: s[id] }))}
+        label={s.prs}
+        size="md"
+        fill
+      />
 
       <div {...recordTabs.panelProps}>
       {tab === 'prs' && (
