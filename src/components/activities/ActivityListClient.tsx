@@ -13,7 +13,7 @@ import { formatWeekKm } from '@/components/plan/weekPlanDays'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { Pill } from '@/components/ui/Pill'
 import { SortDropdown } from '@/components/ui/SortDropdown'
-import { recordedEasyHard } from '@/domain/activity/easyShare'
+import { easyShare } from '@/domain/activity/easyShare'
 import { groupByWeek, withCurrentWeek, type WeekGroup } from '@/domain/activity/weekGroups'
 
 import { formatDateRange, formatKm } from '@/lib/formatters'
@@ -165,7 +165,7 @@ function weekRows(groups: WeekGroup<ActivitySummary>[], currentWeekStart: string
     return {
       ...group,
       label: group.key === currentWeekStart ? t.activities.thisWeek : group.key === lastWeekStart ? t.activities.lastWeek : range,
-      easyPct: recordedEasyHard(group.items)?.easy ?? null,
+      easyPct: easyShare(group.items)?.easy ?? null,
       shape: weekShape(group.items),
     }
   })

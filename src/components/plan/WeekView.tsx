@@ -10,7 +10,7 @@ import { sessionZone, zoneColor } from '@/lib/colors'
 import { sessionTitle } from './sessionTitle'
 import type { HrBounds } from '@/domain/training/trimp'
 import { summarizeWeek, summarizePlannedWeek } from '@/domain/training/weekSummary'
-import { EASY_SHARE_GUIDE, plannedEasyHard, recordedEasyHard, type EasyHardSplit } from '@/domain/activity/easyShare'
+import { EASY_SHARE_GUIDE, easyShare, type EasyHardSplit, type EasyTimeSource } from '@/domain/activity/easyShare'
 import { weekPlanPhase } from '@/domain/training/weekPlanPhase'
 import { EFFORT_ZONE_BY_TYPE } from '@/domain/training/workoutStructure'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
@@ -34,7 +34,6 @@ import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { PlanCoachingView, PlanPrescriptionView } from './planCoachingView'
 import {
-  isKeyPrescription,
   macrocyclePhaseRanges,
   macrocycleWeek,
   prescriptionDistanceMeters,
@@ -459,30 +458,22 @@ export function WeekView({
   // used to - silently dropped any completed day the plan didn't cover,
   // undercounting volume and sessions against what the strip and "this week"
   // list both show for the same week.
-  const weekSessions = useMemo(() => {
-    return days.flatMap((d) => {
-      if (d.acts.length > 0) {
-        return d.acts.map((a) => ({
-          key: a.type !== 'Base',
-          distanceKm: a.distanceKm,
-          seconds: a.durationSeconds,
-        }))
-      }
+  // Easy time is Z1-Z2 time, as on every other screen. A day run counts its
+  // recorded zone time; a session still to run counts at its type's zone for
+  // its planned duration, so a week underway pools the two.
+  const weekEasyTime = useMemo((): EasyTimeSource[] => {
+    return days.flatMap((d): EasyTimeSource[] => {
+      if (d.acts.length > 0) return d.acts.map((a) => ({ hrZones: a.hrZones }))
       const coach = (byDateCoach?.get(d.date) ?? []).filter((v) => v.state !== 'cancelled')
       if (coach.length > 0) {
         return coach.map((view) => ({
-          key: isKeyPrescription(view.prescription),
-          distanceKm: (prescriptionDistanceMeters(view.prescription) ?? 0) / 1000,
+          type: view.prescription.type,
           seconds: prescriptionDuration(view.prescription)?.seconds ?? 0,
         }))
       }
       const plan = byDatePlanned.get(d.date)
       if (!plan) return []
-      return [{
-        key: !!plan.type && plan.type !== 'Base',
-        distanceKm: (plan.distanceM ?? 0) / 1000,
-        seconds: plan.durationSecs ?? 0,
-      }]
+      return [{ type: plan.type, seconds: plan.durationSecs ?? 0 }]
     })
   }, [days, byDateCoach, byDatePlanned])
 
@@ -547,12 +538,8 @@ export function WeekView({
     () => weekTarget(weekPlanDays(days.map((d) => d.date), { byDate, byDatePlanned, byDateCoach: byDateCoach ?? new Map() }), today, null),
     [days, byDate, byDatePlanned, byDateCoach, today]
   )
-  // A week that is over is read the way the activity list reads it - heart
-  // rate time in zones 1-2 - so one finished week has one easy share
-  // wherever it is shown. A week still to run has no heart rate yet: it gets
-  // the planned split of session time, and says so.
   const easyHardIsPlanned = !weekOver
-  const easyHard = easyHardIsPlanned ? plannedEasyHard(weekSessions) : recordedEasyHard(weekActs)
+  const easyHard = easyShare(weekEasyTime)
 
   // Garmin's load is retrospective (completed-so-far against a weekly
   // target), which is honest for a week already underway but reads as a

@@ -17,6 +17,7 @@ const EMPTY_SERIES = {
   monthlyVolume: [],
   longRuns: [],
   easyHardSplit: [],
+  easyTimeShare: null,
   distanceDistribution: [],
   typesPresent: [],
 }

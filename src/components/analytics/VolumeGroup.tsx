@@ -27,7 +27,7 @@ export function VolumeGroup({ series, weeklyTrends, year, years, byYear, compari
     <div className="space-y-4">
       <WeeklyVolumeChart points={weeklyTrends} />
       <MonthlyVolumeChart data={series.monthlyVolume} typesPresent={series.typesPresent} />
-      <EasyHardChart data={series.easyHardSplit} />
+      <EasyHardChart data={series.easyHardSplit} share={series.easyTimeShare} />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <LongRunsChart data={series.longRuns} />
         <DistanceDistributionChart data={series.distanceDistribution} />

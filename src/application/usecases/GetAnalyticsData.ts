@@ -2,6 +2,7 @@ import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepo
 import type { Activity, ActivityType, ActivityWeather } from '@/domain/activity/types'
 import { heatAdjustedEf } from '@/domain/activity/heat'
 import { easyHardShare } from '@/domain/training/easyHard'
+import { easyShare, type EasyHardSplit } from '@/domain/activity/easyShare'
 import { sumDistanceKm } from '@/domain/activity/distance'
 import { AXIS_TICK_DATE, formatDate, monthLabel } from '@/lib/formatters'
 import { round } from '@/lib/math'
@@ -81,6 +82,8 @@ export interface AnalyticsSeries {
   monthlyVolume: MonthlyVolume[]
   longRuns: MonthlyLongRuns[]
   easyHardSplit: MonthlyEasyHard[]
+  /** Easy time over the whole period, pooled rather than a mean of months. */
+  easyTimeShare: EasyHardSplit | null
   distanceDistribution: DistanceBracket[]
   typesPresent: ActivityType[]
 }
@@ -250,6 +253,7 @@ function buildSeries(buckets: Bucket[], scoped: Activity[]): AnalyticsSeries {
     monthlyVolume,
     longRuns,
     easyHardSplit,
+    easyTimeShare: easyShare(scoped),
     distanceDistribution: distanceDistribution(scoped),
     typesPresent: Array.from(typesPresent),
   }

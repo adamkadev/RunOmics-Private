@@ -352,11 +352,24 @@ describe('WeekView easy share', () => {
     expect(summary).not.toContain(t.plan.weekSummary.easyRecorded(100, 80))
   })
 
-  it('labels a week still to run as planned', () => {
-    // The tempo and the race are both key sessions, and nothing else is on.
+  // G09: easy is Z1-Z2 time everywhere. A session still to run has no heart
+  // rate yet and counts at its type's zone for its planned time.
+  it('pools a week underway: zone time for runs, type zone for sessions ahead', () => {
+    renderWeek({
+      activities: [activity({ id: 'z', date: '2026-09-07', type: 'Tempo', durationSeconds: 1_800, hrZones: [
+        { zone: 2, seconds: 900, percent: 50, minBpm: 0, maxBpm: null },
+        { zone: 4, seconds: 900, percent: 50, minBpm: 0, maxBpm: null },
+      ] })],
+      planned: [{ date: '2026-09-10', name: 'Easy', type: 'Base', distanceM: 8_000, durationSecs: 1_800 }],
+    })
+
+    expect(screen.getByTestId('week-summary').textContent).toContain(t.plan.weekSummary.easyPlanned(75, 80))
+  })
+
+  it('says nothing about easy time for runs without heart-rate zones', () => {
     renderWeek({ activities: [TEMPO, RACE] })
 
-    expect(screen.getByTestId('week-summary').textContent).toContain(t.plan.weekSummary.easyPlanned(0, 80))
+    expect(screen.getByTestId('week-summary').textContent).not.toContain('%')
   })
 })
 
@@ -412,7 +425,7 @@ describe('missed sessions', () => {
 describe('the week summary in plain words', () => {
   // "0/100 easy planned" read as 0 of 100 km.
   it('writes the easy share as a sentence with its guide', () => {
-    renderWeek({ activities: [TEMPO, RACE] })
+    renderWeek({ activities: [TEMPO], planned: [{ date: '2026-09-10', name: 'Intervals', type: 'VO2Max', distanceM: 6_000, durationSecs: 1_800 }] })
 
     expect(screen.getByTestId('week-summary')).toHaveTextContent(t.plan.weekSummary.easyPlanned(0, 80))
   })

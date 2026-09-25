@@ -10,6 +10,7 @@ import {
   ReferenceLine,
 } from 'recharts'
 import type { MonthlyEasyHard } from '@/application/usecases/GetAnalyticsData'
+import { EASY_SHARE_GUIDE, type EasyHardSplit } from '@/domain/activity/easyShare'
 import { CHART_COLORS } from '@/lib/colors'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { ChartCardHead, ChartReading } from '@/components/ui/ChartCard'
@@ -19,6 +20,10 @@ import { t } from '@/i18n'
 
 interface Props {
   data: MonthlyEasyHard[]
+  /** Easy time over the period, from easyShare(): the same figure Intensity,
+   *  Activities and Plan print. A mean of the monthly shares read 47 % where
+   *  the pooled time was 24 %. */
+  share: EasyHardSplit | null
 }
 
 interface TooltipProps {
@@ -38,12 +43,11 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
   )
 }
 
-export function EasyHardChart({ data }: Props) {
-  if (!data.some((d) => d.easyPct !== null)) return null
+export function EasyHardChart({ data, share }: Props) {
+  if (!share || !data.some((d) => d.easyPct !== null)) return null
 
   const ex = t.analytics.charts.easyHard.explains
-  const easyValues = data.map((d) => d.easyPct).filter((v): v is number => v !== null)
-  const avgEasy = Math.round(easyValues.reduce((s, v) => s + v, 0) / easyValues.length)
+  const avgEasy = share.easy
   const explain = avgEasy >= 78 && avgEasy <= 88
     ? ex.balanced(avgEasy)
     : avgEasy < 78
@@ -102,7 +106,7 @@ export function EasyHardChart({ data }: Props) {
               connectNulls
             />
             <ReferenceLine
-              y={80}
+              y={EASY_SHARE_GUIDE}
               stroke={CHART_COLORS.referenceTarget}
               strokeDasharray="4 3"
               strokeWidth={1}
