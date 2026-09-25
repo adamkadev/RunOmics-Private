@@ -108,7 +108,25 @@ export function runTypeZone(type: string | null | undefined): 1 | 2 | 3 | 4 | 5 
 
 /** The zone colour a run type is drawn in, as a token. */
 export function runTypeColor(type: string | null | undefined): string {
-  return `var(--zone-${runTypeZone(type)})`
+  return zoneColor(runTypeZone(type))
+}
+
+export type SessionZone = 1 | 2 | 3 | 4 | 5
+
+/** A zone's colour token. */
+export function zoneColor(zone: SessionZone): string {
+  return `var(--zone-${zone})`
+}
+
+/**
+ * The one zone a session is drawn in, planned or run: Plan's bars and list,
+ * Today's day tiles, the Month bars, the activity dots and the shoe mix all
+ * ask this, so the same session can't be red on one screen and orange on the
+ * next. It is the zone of the session's type (RUN_TYPE_ZONE); the title is
+ * made to agree with it by sessionTitle.
+ */
+export function sessionZone(session: { type?: string | null }): SessionZone {
+  return runTypeZone(session.type)
 }
 
 export const ZONE_COLOR_CLASSES: Record<number, { bg: string; text: string }> = {

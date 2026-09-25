@@ -6,7 +6,8 @@ import { ChevronRight } from 'lucide-react'
 import { SectionDivider } from '@/components/ui/SectionLabel'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import type { ActivitySummary, ActivityType, PlannedWorkout, ScheduledTimeOfDay } from '@/domain/activity/types'
-import { runTypeColor, runTypeZone } from '@/lib/colors'
+import { sessionZone, zoneColor } from '@/lib/colors'
+import { sessionTitle } from './sessionTitle'
 import type { HrBounds } from '@/domain/training/trimp'
 import { summarizeWeek, summarizePlannedWeek } from '@/domain/training/weekSummary'
 import { EASY_SHARE_GUIDE, plannedEasyHard, recordedEasyHard, type EasyHardSplit } from '@/domain/activity/easyShare'
@@ -103,7 +104,7 @@ function PlannedWorkoutRow({ workout }: { workout: PlanWorkoutView }) {
           <SessionStructureBar
             steps={workout.structure ?? []}
             zoneWord={zoneWord}
-            zone={workout.type ? runTypeZone(workout.type) : null}
+            zone={workout.type ? sessionZone(workout) : null}
             totalSeconds={workout.duration.seconds}
           />
         </div>
@@ -142,7 +143,7 @@ function findNextPlanned(
     const d = days[i]!
     const coach = byDateCoach?.get(d.date)?.find((v) => v.state !== 'cancelled')
     const plan = byDatePlanned.get(d.date)
-    const title = coach?.prescription.title ?? plan?.name ?? null
+    const title = coach?.prescription.title ?? sessionTitle(plan?.name, plan?.type as ActivityType | undefined) ?? null
     if (title) return { weekday: WEEKDAY_SHORT_INDEX[new Date(d.date + 'T00:00:00').getDay()]!, title }
   }
   return null
@@ -218,12 +219,12 @@ function WeekSessionRow({
           style={{
             width: '8px',
             height: '8px',
-            background: workout.type ? runTypeColor(workout.type) : 'var(--subtle-2)',
+            background: workout.type ? zoneColor(sessionZone(workout)) : 'var(--subtle-2)',
             // Same divergence the bar's cap shows: the fill is what was
             // recorded, this ring is what was planned - without it, a title
             // that names one thing and a dot that colours another look like
             // a bug instead of the known Garmin-mismatch case.
-            boxShadow: workout.plannedType ? `0 0 0 1.5px ${runTypeColor(workout.plannedType)}` : undefined,
+            boxShadow: workout.plannedType ? `0 0 0 1.5px ${zoneColor(sessionZone({ type: workout.plannedType }))}` : undefined,
           }}
         />
         <span className="truncate font-bold text-foreground" style={{ fontSize: '15px' }}>
@@ -382,7 +383,7 @@ export function WeekView({
 
   function activityTitle(a: ActivitySummary): string {
     if (a.description && a.description !== t.activityTypes[a.type]) return a.description
-    return selectedPlan?.name ?? a.description ?? t.activityTypes[a.type]
+    return sessionTitle(selectedPlan?.name, a.type) ?? a.description ?? t.activityTypes[a.type]
   }
 
   const selectedWorkouts = useMemo<PlanWorkoutView[]>(() => {
@@ -714,7 +715,7 @@ export function WeekView({
                   <SessionStructureBar
                     steps={[]}
                     zoneWord={zoneWord}
-                    zone={runTypeZone(a.type)}
+                    zone={sessionZone(a)}
                     totalSeconds={a.durationSeconds}
                   />
                 </div>

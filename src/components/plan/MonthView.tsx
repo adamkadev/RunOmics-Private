@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { runTypeColor } from '@/lib/colors'
+import { sessionZone, zoneColor } from '@/lib/colors'
 import { type ActivitySummary, type ActivityType, type PlannedWorkout } from '@/domain/activity/types'
 import { round } from '@/lib/math'
 import { formatDate } from '@/lib/formatters'
@@ -95,7 +95,7 @@ function CellValue({ planned, ranKm, hasActs }: { planned: PlannedInfo | null; r
       {planned && (
         <span
           className="shrink-0 rounded-full"
-          style={{ width: '3px', background: runTypeColor(planned.type) }}
+          style={{ width: '3px', background: zoneColor(sessionZone(planned)) }}
         />
       )}
       <div className="flex min-w-0 flex-col justify-center" style={{ lineHeight: 1.15 }}>
