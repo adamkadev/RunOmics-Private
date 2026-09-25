@@ -672,7 +672,8 @@ export function generateDemoDataset({ now = new Date() } = {}) {
   const plannedYears = Object.keys(plannedByYear).sort().reverse()
 
   const files = {
-    'athlete.json': ATHLETE,
+    // Updated by the same sync as sync_meta.json below, as a real one is.
+    'athlete.json': { ...ATHLETE, lastUpdate: endDate.toISOString() },
     'athlete_history.json': buildAthleteHistory(activities),
     'goals.json': buildGoals(),
     'pbs.json': buildPbs(activities),

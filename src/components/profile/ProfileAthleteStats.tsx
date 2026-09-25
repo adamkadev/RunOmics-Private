@@ -16,6 +16,7 @@ import {
 } from '@/domain/athlete/bodyMetrics'
 import { formatRelativeAgo } from '@/lib/formatters'
 import { STATUS } from '@/lib/statusColors'
+import { useMounted } from '@/lib/useMounted'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -150,6 +151,9 @@ function tilesFor(category: Category, athlete: AthletePageView, latestVo2max: nu
 export function ProfileAthleteStats({ athlete, latestVo2max }: Props) {
   const a = t.settings.athlete
   const [category, setCategory] = useState<Category>('performance')
+  // The sync's age is read from the browser's clock after mount: worked out on
+  // the server it is as old as the cached page, and the two differ - React #418.
+  const mounted = useMounted()
   const availableByCategory = Object.fromEntries(
     CATEGORIES.map((value) => [
       value,
@@ -171,7 +175,7 @@ export function ProfileAthleteStats({ athlete, latestVo2max }: Props) {
     <GlassSurface variant="card" className="p-5">
       <div className="mb-3 flex items-baseline justify-between gap-3">
         <CardTitle as="h2">{a.title}</CardTitle>
-        {athlete.lastUpdate && (
+        {mounted && athlete.lastUpdate && (
           <span className="flex shrink-0 items-center gap-1.5 text-caption text-subtle-2">
             <span className={cn('h-1.5 w-1.5 rounded-full', STATUS[syncFreshnessTone(athlete.lastUpdate)].dot)} />
             {t.pages.athlete.lastUpdated(t.pages.athlete.source, formatRelativeAgo(athlete.lastUpdate))}

@@ -81,7 +81,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           }}
         />
         <Sidebar />
-        <main className="min-h-screen lg:ml-[248px]">
+        {/* Positioned, with no z-index: that paints the page after the fixed
+            .aurora background in the same layer - above it - without making
+            <main> a stacking context, which would trap the maps' fullscreen
+            overlays (z-50) under the top scrim again. */}
+        <main className="relative min-h-screen lg:ml-[248px]">
           {/* pb-28 alone is the nav's own height with room to spare on a
               home-button phone, but it's a fixed 112px - on a notched device
               --safe-bottom eats into that margin instead of adding to it, so

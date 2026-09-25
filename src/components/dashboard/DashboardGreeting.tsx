@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { initials, formatRelativeAgo } from '@/lib/formatters'
+import { useMounted } from '@/lib/useMounted'
 import { t } from '@/i18n'
 
 interface Props {
@@ -24,7 +25,10 @@ export function DashboardGreeting({ name, lastSyncedAt }: Props) {
     return () => cancelAnimationFrame(raf)
   }, [])
 
-  const syncedLine = lastSyncedAt ? t.dashboard.syncStatus.synced(formatRelativeAgo(lastSyncedAt)) : null
+  // After mount too, for the same reason: an age worked out on the server is
+  // as old as the cached page, and the browser's differs - React #418.
+  const mounted = useMounted()
+  const syncedLine = mounted && lastSyncedAt ? t.dashboard.syncStatus.synced(formatRelativeAgo(lastSyncedAt)) : null
 
   return (
     <div className="flex items-center justify-between gap-3">

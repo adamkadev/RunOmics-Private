@@ -1,11 +1,13 @@
 import { test, expect } from './fixtures'
 
-// The app's background (.aurora) is a fixed, opaque layer. Text it paints over
-// is gone for the reader and still passes toBeVisible(), so this asks the
-// browser what is on top: at the centre of every piece of text in the page it
-// must be the page, never the background. It runs after the page transition,
-// because the stacking context that animation adds while it plays once hid
-// the whole problem - pages drew, then vanished as it ended.
+// The app's background (.aurora) is a fixed, opaque layer between <body>'s own
+// colour and the page. Text it paints over is gone for the reader and still
+// passes toBeVisible(), so this asks the browser what is on top: at the centre
+// of every piece of text in the page it must be the page, never the
+// background - and the background, in turn, must be above <body>. It runs
+// after the page transition, because the stacking context that animation adds
+// while it plays once hid the whole problem - pages drew, then vanished as it
+// ended.
 for (const route of ['/', '/activities', '/plan', '/analytics', '/profile']) {
   test(`${route} is drawn above the app's background`, async ({ page }) => {
     await page.goto(route)
@@ -34,5 +36,18 @@ for (const route of ['/', '/activities', '/plan', '/analytics', '/profile']) {
     })
 
     expect(covered).toEqual([])
+
+    // And the background is not itself hidden: it must paint above <body>'s
+    // own background colour. At a negative z-index it sat under it, and the
+    // app lost its gradient.
+    const stack = await page.evaluate(() => {
+      const background = document.querySelector<HTMLElement>('.aurora')!
+      background.style.pointerEvents = 'auto'
+      const order = document.elementsFromPoint(innerWidth / 2, innerHeight / 2)
+      background.style.pointerEvents = ''
+      return { background: order.indexOf(background), body: order.indexOf(document.body) }
+    })
+    expect(stack.background).toBeGreaterThanOrEqual(0)
+    expect(stack.background).toBeLessThan(stack.body)
   })
 }
