@@ -14,18 +14,12 @@ import {
   ACCENT_STORAGE_KEY,
   CUSTOM_ACCENT_ID,
   CUSTOM_ACCENT_STYLE_ID,
-  DEFAULT_ACCENT,
-  accentBackground,
 } from '@/lib/accent'
 import { appleStartupImages } from '@/lib/splashScreens'
 
 const inter = Inter({ variable: '--font-inter', subsets: ['latin'] })
 const spaceGrotesk = Space_Grotesk({ variable: '--font-space-grotesk', subsets: ['latin'], weight: ['500', '600', '700'] })
 const jetbrainsMono = JetBrains_Mono({ variable: '--font-jetbrains-mono', subsets: ['latin'] })
-
-function defaultBackground(mode: 'light' | 'dark'): string {
-  return accentBackground({ kind: 'curated', id: DEFAULT_ACCENT }, mode)
-}
 
 export const metadata: Metadata = {
   title: {
@@ -73,12 +67,10 @@ export const viewport: Viewport = {
   initialScale: 1,
   // Still `cover`, for the bottom inset the tab bar pads by.
   viewportFit: 'cover',
-  // The status bar's colour from the first paint, before ThemeSync takes over
-  // with the chosen accent and theme.
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: defaultBackground('light') },
-    { media: '(prefers-color-scheme: dark)', color: defaultBackground('dark') },
-  ],
+  // No themeColor here: ThemeSync owns the theme-color meta and prunes it to
+  // one, and pruning metas Next manages broke its head updates on client
+  // navigation (removeChild on null). The installed app's status bar is
+  // painted from AppShell's top element instead.
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
