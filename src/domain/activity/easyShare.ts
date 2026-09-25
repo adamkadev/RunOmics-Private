@@ -9,6 +9,13 @@ import { easyHardShare } from '@/domain/training/easyHard'
  * and the screens say which one they show.
  */
 
+/**
+ * The easy share the week is read against. The coaching rules treat 80 % easy
+ * as a conservative ceiling on hard volume rather than a law (see the
+ * coaching-plan methodology), so screens call it a guide, not a target.
+ */
+export const EASY_SHARE_GUIDE = 80
+
 /** An easy/hard split in whole percent that adds up to 100. */
 export interface EasyHardSplit {
   easy: number

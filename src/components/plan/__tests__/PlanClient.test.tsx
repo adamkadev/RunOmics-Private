@@ -49,10 +49,10 @@ describe('PlanClient week/month switching', () => {
 
     await user.click(screen.getByRole('tab', { name: t.plan.switcher.month }))
     expect(screen.getByRole('tab', { name: t.plan.switcher.month }).getAttribute('aria-selected')).toBe('true')
-    expect(screen.queryByText(t.plan.weekSummary.load)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: t.plan.weekSummary.aboutLoad })).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('tab', { name: t.plan.switcher.week }))
-    expect(screen.getByText(t.plan.weekSummary.load)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: t.plan.weekSummary.aboutLoad })).toBeInTheDocument()
   })
 
   it('behaves the same way once a coaching block is active', async () => {
@@ -63,7 +63,7 @@ describe('PlanClient week/month switching', () => {
     expect(screen.getByRole('tab', { name: t.plan.switcher.month }).getAttribute('aria-selected')).toBe('true')
 
     await user.click(screen.getByRole('tab', { name: t.plan.switcher.week }))
-    expect(screen.getByText(t.plan.weekSummary.load)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: t.plan.weekSummary.aboutLoad })).toBeInTheDocument()
   })
 
   it('adds no coaching chrome to the header when no plan is active', () => {
