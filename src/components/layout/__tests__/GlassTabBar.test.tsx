@@ -12,12 +12,13 @@ describe('GlassTabBar', () => {
     expect(screen.queryByRole('link', { name: /coach/i })).not.toBeInTheDocument()
   })
 
-  // It used 60 % of the home-indicator inset, so the labels sat in the swipe zone.
-  it('pads by the whole bottom safe area', () => {
+  // 60 % of the inset put the labels in the swipe zone; the whole inset
+  // floated the bar. The token is the inset less the space under the indicator.
+  it('pads by the tab-bar share of the bottom safe area', () => {
     render(<GlassTabBar />)
     const bar = screen.getByRole('navigation').firstElementChild as HTMLElement
 
-    expect(bar.style.paddingBottom).toBe('var(--safe-bottom)')
+    expect(bar.style.paddingBottom).toBe('var(--tab-bar-bottom)')
   })
 
   it('writes the labels at the 11 px caption size, never text-micro', () => {

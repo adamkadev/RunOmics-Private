@@ -156,8 +156,14 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--color-missed': c.roPink,
       '--safe-top': 'env(safe-area-inset-top, 0px)',
       '--safe-top-min': 'max(var(--safe-top), 20px)',
-      '--top-scrim': 'calc(var(--safe-top-min) + 28px)',
+      // Where a page starts: just under the status bar, as the mockups draw
+      // it. The extra 28 px this used to add left a band of empty glass.
+      '--top-scrim': 'calc(var(--safe-top-min) + 8px)',
       '--safe-bottom': 'env(safe-area-inset-bottom, 0px)',
+      // The tab bar's bottom padding: the inset less the 10 px under the home
+      // indicator, so the labels stay clear of its swipe zone (the bar is 5 pt
+      // tall, 8 pt from the edge) without floating 34 pt above the edge.
+      '--tab-bar-bottom': 'max(calc(var(--safe-bottom) - 10px), 0px)',
       // The smallest touch target. `.hit-44` grows a control's hit area to it
       // without changing what it looks like.
       '--tap-min': '44px',
