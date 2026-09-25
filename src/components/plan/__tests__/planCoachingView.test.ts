@@ -95,7 +95,16 @@ describe('heroWorkoutView', () => {
   it("keeps the coach's description and notes off the dashboard", () => {
     const hero = heroWorkoutView(coachWorkoutView(overview.workouts[0]!))
 
-    expect(hero).toEqual({ title: '3 × 8 min threshold', duration: { seconds: 3600, estimated: false }, target: expect.any(String), activityId: 'activity-1' })
+    // Type and distance are what the hero's session row needs to say "25 min
+    // Z4" and "planned 6 km"; the prose stays behind.
+    expect(hero).toEqual({
+      title: '3 × 8 min threshold',
+      type: 'Threshold',
+      duration: { seconds: 3600, estimated: false },
+      distanceM: expect.any(Number),
+      target: expect.any(String),
+      activityId: 'activity-1',
+    })
     expect(JSON.stringify(hero)).not.toContain('cough')
   })
 })

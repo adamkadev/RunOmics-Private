@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils'
 import type { ReactNode } from 'react'
 
-export type StatusTone = 'accent' | 'blue' | 'amber' | 'red' | 'zinc' | 'green' | 'emerald'
+export type StatusTone = 'accent' | 'blue' | 'amber' | 'red' | 'zinc' | 'green' | 'emerald' | 'good' | 'warn' | 'neutral'
 
 const TONE_CLASS: Record<StatusTone, string> = {
   accent:  'bg-accent/[0.14] text-accent-text',
@@ -11,6 +11,10 @@ const TONE_CLASS: Record<StatusTone, string> = {
   zinc:    'bg-zinc-400/[0.14] text-zinc-600 dark:text-zinc-400',
   green:   'bg-green-500/[0.14] text-green-700 dark:text-green-400',
   emerald: 'bg-emerald-500/[0.14] text-emerald-700 dark:text-emerald-400',
+  // Session states, on the theme's own delta tokens.
+  good:    'bg-delta-good/15 text-delta-good',
+  warn:    'bg-delta-warn/15 text-delta-warn',
+  neutral: 'bg-foreground/[0.06] text-subtle',
 }
 
 export function StatusPill({ tone, className, children }: { tone: StatusTone; className?: string; children: ReactNode }) {

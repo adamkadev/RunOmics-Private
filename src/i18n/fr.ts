@@ -56,6 +56,12 @@ export const fr = {
     today: 'Aujourd’hui',
     dayLabel: (day: string, state: string) => `${day} : ${state}`,
   },
+  sessionCard: {
+    ranAt: (km: string, pace: string) => `Couru ${km} km à ${pace}`,
+    ran: (km: string) => `Couru ${km} km`,
+    plannedKm: (km: string) => `prévu ${km} km`,
+    coachInsight: 'Analyse du coach',
+  },
 
   units: {
     km: 'km',
@@ -1397,7 +1403,6 @@ export const fr = {
     races: 'Courses',
     targetPace: (pace: string) => `cible ${pace}`,
     continuous: 'continu',
-    doneChip: 'FAIT',
     ranKm: (km: string) => `${km} km parcourus`,
     plannedKmLabel: (km: number) => `${km} km prévus`,
     restCard: {
