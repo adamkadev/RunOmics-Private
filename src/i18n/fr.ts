@@ -475,7 +475,7 @@ export const fr = {
     },
     raceTimes: {
       title: 'Performance',
-      trend: 'Chronos ↓',
+      trend: (months: number) => `prédits · écart sur ${months} m`,
       shortLabels: {
         '5k': '5K',
         '10k': '10K',
@@ -646,8 +646,8 @@ export const fr = {
         lthr: 'FC au seuil',
         footnote: 'L’effort tenable avant l’accumulation de lactate, tel que mesuré par la montre. Garmin le révise toutes les quelques semaines : la courbe avance par paliers.',
         reading: {
-          change: (delta: string) => `L’allure au seuil a évolué de ${delta} depuis le premier relevé de cette période.`,
-          flat: 'L’allure au seuil est stable depuis le premier relevé.',
+          change: (delta: string, since: string) => `L’allure au seuil a évolué de ${delta} depuis ${since}.`,
+          flat: (since: string) => `L’allure au seuil est stable depuis ${since}.`,
         },
       },
       racePredictor: {

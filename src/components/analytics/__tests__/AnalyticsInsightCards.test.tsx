@@ -34,9 +34,13 @@ function week(date: string, easyPace: number | null): WeeklyTrendPoint {
   }
 }
 
-// Easy pace goes 6:00 -> 5:00 /km, so the delta against the first week is
-// exactly -60 s and must print as -1:00, never as a bare "60 s".
-const WEEKLY: WeeklyTrendPoint[] = [week('2025-05-19', 360), week('2025-11-17', 340), week('2026-09-14', 300)]
+// Easy pace is read in four-week blocks, the same reading the season headline
+// prints: 6:00 in the first block, 5:00 in the latest. The delta is exactly
+// -60 s and must print as -1:00, never as a bare "60 s".
+const WEEKLY: WeeklyTrendPoint[] = [
+  week('2025-05-12', 360), week('2025-05-19', 360), week('2025-05-26', 360), week('2025-06-02', 360),
+  week('2026-08-24', 300), week('2026-08-31', 300), week('2026-09-07', 300), week('2026-09-14', 300),
+]
 
 // Threshold goes 5:21 -> 4:25 /km: -56 s against the first reading.
 const THRESHOLD: ThresholdHistoryData = {
@@ -90,7 +94,7 @@ describe('Analytics insight chips carry numbers', () => {
     expect(screen.getByText(`${MINUS}1:00`)).toBeTruthy()
     expect(screen.getByText(`${MINUS}0:56`)).toBeTruthy()
 
-    // Both baselines are May 2025, so the label appears once per pace tile.
+    // Both baselines start in May 2025, so the label appears once per pace tile.
     expect(screen.getAllByText(s.since(formatDate('2025-05-13', { precision: 'month' })))).toHaveLength(2)
   })
 

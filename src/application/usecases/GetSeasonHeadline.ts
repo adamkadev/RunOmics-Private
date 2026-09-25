@@ -3,6 +3,7 @@ import { formatClock, formatPace } from '@/lib/formatters'
 import { median, round } from '@/lib/math'
 import type { AnalyticsPageData, WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import type { YearComparisonData } from '@/application/usecases/GetYearComparison'
+import { EASY_PACE_BLOCK_WEEKS, easyPaceReading } from '@/domain/training/easyPace'
 import type { SeasonHeadlineBullet, SeasonHeadlineData } from '@/domain/training/seasonHeadline'
 
 // Moved to the domain; re-exported so every existing importer keeps working.
@@ -11,7 +12,7 @@ export type { SeasonHeadlineTone, SeasonHeadlineBullet, SeasonHeadlineData } fro
 const EFFICIENCY_THRESHOLD = 0.05
 const EASY_PACE_THRESHOLD_SEC = 10
 const VOLUME_THRESHOLD_PCT = 5
-const BLOCK_WEEKS = 4
+const BLOCK_WEEKS = EASY_PACE_BLOCK_WEEKS
 const MIN_WEEKS = BLOCK_WEEKS * 2
 
 function seasonShift(
@@ -31,13 +32,15 @@ function efficiencyBullet(weeks: WeeklyTrendPoint[]): SeasonHeadlineBullet | nul
   return { tone: diff > 0 ? 'positive' : 'caution', text: t.analytics.seasonHeadline.efficiency(diff) }
 }
 
+// The same reading the Easy pace tile prints, so the two can't disagree.
 function easyPaceBullet(weeks: WeeklyTrendPoint[]): SeasonHeadlineBullet | null {
-  const shift = seasonShift(weeks, (w) => w.easyPace)
-  if (!shift) return null
-  if (Math.abs(shift.now - shift.start) < EASY_PACE_THRESHOLD_SEC) return null
+  const reading = easyPaceReading(weeks, BLOCK_WEEKS)
+  if (!reading?.start) return null
+  const { now, start } = reading
+  if (Math.abs(now - start.pace) < EASY_PACE_THRESHOLD_SEC) return null
   return {
-    tone: shift.now < shift.start ? 'positive' : 'caution',
-    text: t.analytics.seasonHeadline.easyPace(formatPace(shift.now), formatClock(shift.start), BLOCK_WEEKS),
+    tone: now < start.pace ? 'positive' : 'caution',
+    text: t.analytics.seasonHeadline.easyPace(formatPace(now), formatClock(start.pace), BLOCK_WEEKS),
   }
 }
 

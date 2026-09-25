@@ -494,7 +494,7 @@ export const en = {
     },
     raceTimes: {
       title: 'Performance',
-      trend: 'Race times ↓',
+      trend: (months: number) => `predicted · change in ${months} m`,
       shortLabels: {
         '5k': '5K',
         '10k': '10K',
@@ -665,8 +665,8 @@ export const en = {
         lthr: 'Threshold HR',
         footnote: 'The effort you can hold before lactate builds up, as the watch measures it. Garmin revises it every few weeks, so the line steps rather than drifts.',
         reading: {
-          change: (delta: string) => `Threshold pace is ${delta} since the first reading in this window.`,
-          flat: 'Threshold pace is unchanged since the first reading.',
+          change: (delta: string, since: string) => `Threshold pace is ${delta} since ${since}.`,
+          flat: (since: string) => `Threshold pace is unchanged since ${since}.`,
         },
       },
       racePredictor: {
