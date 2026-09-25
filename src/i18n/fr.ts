@@ -673,8 +673,8 @@ export const fr = {
         daysUnit: 'j',
         distribution: 'Jours par statut',
         footnote: 'Verdict quotidien de la montre, avec la charge aiguë et chronique mesurées par Firstbeat. La bande bleue est la plage de charge chronique que Garmin personnalise pour vous.',
-        reading: (dominant: string, pct: number, latest: string | null) =>
-          `${dominant} domine la période (${pct}% des jours notés)${latest ? `, avec un statut actuel « ${latest} »` : ''}.`,
+        reading: (status: string, days: number, windowDays: number, latest: string | null) =>
+          `${status} ${days} des ${windowDays} derniers jours${latest ? `, ${latest} aujourd’hui` : ', et aujourd’hui'}.`,
       },
     },
     seasonHeadline: {

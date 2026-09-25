@@ -99,7 +99,9 @@ export function BodyCard({ status, days }: { status: TrainingStatus | null; days
   if (!status && days.length === 0) return null
 
   const s = t.dashboard.bodyCard
-  const latest = days[days.length - 1]?.status ?? null
+  // The latest rated day: the window runs to today, which the watch may not
+  // have rated yet.
+  const latest = [...days].reverse().find((d) => d.status)?.status ?? null
   const legend = statusLegend(days)
   const latestDays = latest ? (legend.find((l) => l.status === latest)?.days ?? 0) : 0
 
