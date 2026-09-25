@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { ChevronRight, Info } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import { SectionDivider } from '@/components/ui/SectionLabel'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import type { ActivitySummary, ActivityType, PlannedWorkout, ScheduledTimeOfDay } from '@/domain/activity/types'
@@ -18,6 +18,7 @@ import { formatWeekKm, resolveDayType, resolvePlannedType, weekPlanDays } from '
 import { dayStateCells } from './dayStateCells'
 import { DayStateLegend, DayStateStrip } from '@/components/ui/DayStateStrip'
 import { SessionStateChip } from '@/components/ui/SessionCard'
+import { InfoButton } from '@/components/ui/GlossaryTerm'
 import type { WeekDayState } from '@/domain/training/weekTarget'
 import { SessionStructureBar } from './WorkoutStructure'
 import { PlanPhaseTrack } from './PlanPhaseTrack'
@@ -306,18 +307,7 @@ function WeekSummaryLine({
     <div data-testid="week-summary" className="px-1">
       <div className="flex items-center justify-between gap-3">
         <span className="text-subhead font-semibold text-foreground">{volume}</span>
-        <button
-          type="button"
-          onClick={() => setLoadOpen((v) => !v)}
-          aria-expanded={loadOpen}
-          aria-label={s.aboutLoad}
-          className={cn(
-            'hit-44 shrink-0 rounded-full p-0.5 transition-colors',
-            loadOpen ? 'text-foreground' : 'text-subtle hover:text-muted-foreground',
-          )}
-        >
-          <Info size={14} />
-        </button>
+        <InfoButton open={loadOpen} onToggle={() => setLoadOpen((v) => !v)} label={s.aboutLoad} />
       </div>
       {(missed > 0 || easyHard) && (
         <p className="mt-0.5 text-footnote text-muted-foreground">

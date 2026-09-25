@@ -55,6 +55,24 @@ export const fr = {
     veryFresh: 'Très frais',
   },
 
+  glossary: {
+    about: (term: string) => `Qu’est-ce que ${term} ?`,
+    aboutThese: 'Ce que signifient ces chiffres',
+    form: {
+      term: 'Forme',
+      definition: (tired: number, fresh: number, veryFresh: number) =>
+        `La forme (TSB) est la condition moins la fatigue. Sous ${tired}, tu es fatigué ; jusqu’à +${fresh}, neutre ; au-delà, frais ; au-dessus de +${veryFresh}, très frais.`,
+    },
+    fitness: { term: 'Condition', definition: 'La condition (CTL) est ta charge moyenne sur 42 jours : le travail que ton corps a absorbé.' },
+    fatigue: { term: 'Fatigue', definition: 'La fatigue (ATL) est ta charge moyenne sur 7 jours : ce que la dernière semaine t’a coûté.' },
+    vma: { term: 'VMA', definition: 'Vitesse maximale aérobie : la vitesse atteinte à la VO₂max, tenue environ six minutes.' },
+    lthr: { term: 'FC seuil', definition: 'Fréquence cardiaque au seuil lactique : à peu près celle que tu tiendrais sur une course d’une heure.' },
+    thresholdPace: { term: 'Allure seuil', definition: 'L’allure au seuil lactique : à peu près ce que tu tiendrais en course pendant une heure.' },
+    rpe: { term: 'RPE', definition: 'Effort perçu, de 1 à 10, saisi sur la montre après la sortie.' },
+    aerobicEffect: { term: 'Effet aérobie', definition: 'Score Garmin de 0 à 5 : combien la sortie a développé ta capacité aérobie.' },
+    anaerobicEffect: { term: 'Effet anaérobie', definition: 'Score Garmin de 0 à 5 : combien la sortie a développé ta capacité à l’effort court et intense.' },
+  },
+
   paceAxis: {
     caption: 'plus rapide ↑',
   },

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { GlossaryTerm, type GlossaryKey } from '@/components/ui/GlossaryTerm'
 import { CircleCheck, Minus, OctagonAlert, TriangleAlert, type LucideIcon } from 'lucide-react'
 import { CardTitle } from '@/components/ui/SectionLabel'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -27,6 +28,8 @@ interface Props {
 
 interface TileData {
   label: string
+  /** A term with a definition behind an (i). */
+  glossary?: GlossaryKey
   unit: string
   value: string | number | undefined
   band?: { label: string; tone: VerdictTone }
@@ -56,10 +59,12 @@ function VerdictIcon({ band }: { band: NonNullable<TileData['band']> }) {
   )
 }
 
-function Tile({ label, unit, value, band }: AvailableTileData) {
+function Tile({ label, glossary, unit, value, band }: AvailableTileData) {
   return (
     <div className="rounded-xl bg-foreground/[0.04] px-2.5 py-2.5 text-center">
-      <div className="text-micro font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="text-micro font-semibold uppercase tracking-wide text-muted-foreground">
+        {glossary ? <GlossaryTerm term={glossary}>{label}</GlossaryTerm> : label}
+      </div>
       <div className="mt-1 text-base font-extrabold tabular-nums text-foreground">
         {value}
         {band ? <VerdictIcon band={band} /> : null}
@@ -109,7 +114,7 @@ function tilesFor(category: Category, athlete: AthletePageView, latestVo2max: nu
   if (category === 'cardio') {
     return [
       { label: a.restingHr, unit: t.units.bpm, value: athlete.restingHrBpm },
-      { label: a.lthr, unit: t.units.bpm, value: athlete.lthrBpm },
+      { label: a.lthr, glossary: 'lthr', unit: t.units.bpm, value: athlete.lthrBpm },
       { label: a.maxHr, unit: t.units.bpm, value: athlete.maxHrBpm },
     ]
   }
@@ -139,9 +144,10 @@ function tilesFor(category: Category, athlete: AthletePageView, latestVo2max: nu
 
   return [
     { label: a.vo2max, unit: t.units.mlKgMin, value: latestVo2max !== null ? latestVo2max.toFixed(1) : undefined },
-    { label: a.vma, unit: t.units.kmh, value: athlete.vmaKmh },
+    { label: a.vma, glossary: 'vma', unit: t.units.kmh, value: athlete.vmaKmh },
     {
       label: a.thresholdPace,
+      glossary: 'thresholdPace',
       unit: t.units.minPerKm,
       value: athlete.thresholdPaceSecPerKm ? formatDuration(athlete.thresholdPaceSecPerKm) : undefined,
     },

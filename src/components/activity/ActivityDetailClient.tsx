@@ -23,6 +23,7 @@ import { useUrlParam } from '@/lib/useUrlParam'
 import type { SimilarRunsData } from '@/application/usecases/GetSimilarRuns'
 import { SimilarRuns } from './SimilarRuns'
 import { ActivityNotes } from './ActivityNotes'
+import { GlossaryTerm } from '@/components/ui/GlossaryTerm'
 import { activityPlanRow, type ActivityPlan } from './activityPlan'
 import type { Insight } from '@/lib/gemini'
 import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
@@ -160,7 +161,9 @@ export function ActivityDetailClient({
           on an activity the user writes. */}
       <GlassSurface variant="card" className="rounded-card-sm px-4">
         <div className="flex min-h-11 items-center justify-between gap-3 border-b border-border text-sm">
-          <span className="font-semibold text-foreground">{e.label}</span>
+          <span className="font-semibold text-foreground">
+            <GlossaryTerm term="rpe">{e.label}</GlossaryTerm>
+          </span>
           {activity.rpe !== null ? (
             <span className="text-foreground">{e.value(activity.rpe, t.rpeLabels[activity.rpe] ?? '')}</span>
           ) : (
