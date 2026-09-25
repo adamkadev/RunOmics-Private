@@ -2,14 +2,14 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, Info } from 'lucide-react'
 import { SectionDivider } from '@/components/ui/SectionLabel'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import type { ActivitySummary, ActivityType, PlannedWorkout, ScheduledTimeOfDay } from '@/domain/activity/types'
 import { runTypeColor, runTypeZone } from '@/lib/colors'
 import type { HrBounds } from '@/domain/training/trimp'
 import { summarizeWeek, summarizePlannedWeek } from '@/domain/training/weekSummary'
-import { plannedEasyHard, recordedEasyHard, type EasyHardSplit } from '@/domain/activity/easyShare'
+import { EASY_SHARE_GUIDE, plannedEasyHard, recordedEasyHard, type EasyHardSplit } from '@/domain/activity/easyShare'
 import { weekPlanPhase } from '@/domain/training/weekPlanPhase'
 import { EFFORT_ZONE_BY_TYPE } from '@/domain/training/workoutStructure'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
@@ -286,35 +286,52 @@ function WeekSummaryLine({
   easyHardIsPlanned: boolean
 }) {
   const s = t.plan.weekSummary
+  const [loadOpen, setLoadOpen] = useState(false)
   // A target next to a completed load of exactly 0 reads as "nothing
   // happened" even on a week with real sessions logged - usually a week
   // whose activities carry no HR data, so TRIMP has nothing to compute from.
   // The planned-load case is the one 0 that's honestly a target, not a gap.
   const hasTarget = loadTarget !== null && loadTarget > 0 && (loadIsPlanned || load > 0)
   const overTarget = hasTarget && load > loadTarget
+  const loadLine = loadIsPlanned
+    ? s.loadPlannedLine(load)
+    : hasTarget
+      ? s.loadOfPlan(load, loadTarget!)
+      : s.loadDone(load)
+
+  // Plain words: "0/100 easy planned" read as 0 of 100 km, and "Load 19/297
+  // pts" was never explained - the load now sits behind the info button with
+  // what it is.
   return (
-    <div
-      data-testid="week-summary"
-      className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-1"
-      style={{ fontSize: '13px', color: 'var(--muted-foreground)' }}
-    >
-      <span className="font-semibold text-foreground">{volume}</span>
-      <span>
-        <span className="font-semibold text-foreground">{s.load}</span>
-        {' '}
-        <span
-          className={overTarget ? 'font-semibold tabular-nums' : 'tabular-nums'}
-          style={overTarget ? { color: 'var(--delta-warn)' } : undefined}
+    <div data-testid="week-summary" className="px-1">
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-subhead font-semibold text-foreground">{volume}</span>
+        <button
+          type="button"
+          onClick={() => setLoadOpen((v) => !v)}
+          aria-expanded={loadOpen}
+          aria-label={s.aboutLoad}
+          className={cn(
+            'hit-44 shrink-0 rounded-full p-0.5 transition-colors',
+            loadOpen ? 'text-foreground' : 'text-subtle hover:text-muted-foreground',
+          )}
         >
-          {hasTarget ? `${load}/${loadTarget}` : load}
-        </span>
-        {' '}
-        {s.loadUnit}
-        {loadIsPlanned && <> {s.loadPlanned}</>}
-      </span>
-      {missed > 0 && <span className="font-semibold text-delta-warn">{s.missed(missed)}</span>}
-      {easyHard && (
-        <span>{easyHardIsPlanned ? s.easyHardPlanned(easyHard.easy, easyHard.hard) : s.easyHardRatio(easyHard.easy, easyHard.hard)}</span>
+          <Info size={14} />
+        </button>
+      </div>
+      {(missed > 0 || easyHard) && (
+        <p className="mt-0.5 text-footnote text-muted-foreground">
+          {missed > 0 && <span className="font-semibold text-delta-warn">{s.missed(missed)}</span>}
+          {missed > 0 && easyHard && ' · '}
+          {easyHard && (easyHardIsPlanned ? s.easyPlanned(easyHard.easy, EASY_SHARE_GUIDE) : s.easyRecorded(easyHard.easy, EASY_SHARE_GUIDE))}
+        </p>
+      )}
+      {loadOpen && (
+        <p className="mt-1.5 text-xs leading-snug text-muted-foreground">
+          <span className={cn('font-semibold', overTarget ? 'text-delta-warn' : 'text-foreground')}>{loadLine}</span>
+          {' · '}
+          {s.loadDefinition}
+        </p>
       )}
     </div>
   )

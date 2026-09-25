@@ -32,16 +32,17 @@ interface Props {
 
 const WEEKDAYS = t.plan.weekdays
 const ROW_HEIGHT = 58
-const PAD_BG = 'rgba(148,178,220,.02)'
-const RULE_BORDER = 'rgba(148,178,220,.18)'
+const PAD_BG = 'color-mix(in srgb, var(--foreground) 2%, transparent)'
+const RULE_BORDER = 'var(--border)'
 const PLANNED_INK = 'var(--subtle)'
 const RAN_INK = 'var(--foreground)'
-const EXTRA_INK = 'var(--subtle-2)'
 // "Today" and selection follow the accent. The today cell used to be ringed in
 // a fixed emerald, the colour Base, Form and "productive" also wear - with the
 // Nature accent the two became the same green with two meanings.
 const TODAY_INK = 'text-accent-text'
-const GRID_COLUMNS = 'repeat(7,1fr) 30px'
+// Seven day columns and nothing else: the 30 px week gutter clipped its
+// header at the edge; each week's total is a footer line under its row.
+const GRID_COLUMNS = 'repeat(7,1fr)'
 
 interface DayCellData {
   day: number
@@ -86,8 +87,9 @@ function plannedInfoFor(
   return null
 }
 
+// A run with no plan behind it simply has no bar - the legend says so - where
+// an "extra" sub-label about 9 pt tall used to.
 function CellValue({ planned, ranKm, hasActs }: { planned: PlannedInfo | null; ranKm: number; hasActs: boolean }) {
-  const isExtra = hasActs && !planned
   return (
     <div className="mt-1 flex items-stretch" style={{ gap: '4px' }}>
       {planned && (
@@ -98,16 +100,15 @@ function CellValue({ planned, ranKm, hasActs }: { planned: PlannedInfo | null; r
       )}
       <div className="flex min-w-0 flex-col justify-center" style={{ lineHeight: 1.15 }}>
         {planned && (
-          <span className="tabular-nums" style={{ fontSize: '9.5px', color: PLANNED_INK }}>
+          <span className="text-caption tabular-nums" style={{ color: PLANNED_INK }}>
             {Math.round(planned.km)}
           </span>
         )}
         {hasActs && (
-          <span className="tabular-nums" style={{ fontSize: '10px', fontWeight: 700, color: RAN_INK }}>
+          <span className="text-caption font-bold tabular-nums" style={{ color: RAN_INK }}>
             {ranKm.toFixed(1)}
           </span>
         )}
-        {isExtra && <span style={{ fontSize: '8.5px', color: EXTRA_INK }}>{t.plan.extra}</span>}
       </div>
     </div>
   )
@@ -221,10 +222,11 @@ export function MonthView({
       }
       cells.push({ day, date, acts })
     }
-    while (cells.length < 42) cells.push(null)
+    // Only the weeks the month needs: an empty sixth row cost 120 pt.
+    while (cells.length % 7 !== 0) cells.push(null)
 
     const rows: (DayCellData | null)[][] = []
-    for (let i = 0; i < 6; i++) rows.push(cells.slice(i * 7, i * 7 + 7))
+    for (let i = 0; i < cells.length / 7; i++) rows.push(cells.slice(i * 7, i * 7 + 7))
 
     const legendTypes = [...plannedTypes].sort((a, b) => ACTIVITY_TYPES.indexOf(a) - ACTIVITY_TYPES.indexOf(b))
 
@@ -239,7 +241,7 @@ export function MonthView({
             type="button"
             onClick={onPrev}
             aria-label={t.plan.prevPeriod}
-            className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[10px] transition-colors hover:bg-foreground/[0.06]"
+            className="hit-44 flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[10px] transition-colors hover:bg-foreground/[0.06]"
             style={{ border: `1px solid ${RULE_BORDER}` }}
           >
             <ChevronLeft size={16} />
@@ -252,7 +254,7 @@ export function MonthView({
             onClick={onNext}
             disabled={atPresent && !canGoForward}
             aria-label={t.plan.nextPeriod}
-            className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[10px] transition-colors hover:bg-foreground/[0.06] disabled:opacity-40"
+            className="hit-44 flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[10px] transition-colors hover:bg-foreground/[0.06] disabled:opacity-40"
             style={{ border: `1px solid ${RULE_BORDER}` }}
           >
             <ChevronRight size={16} />
@@ -262,7 +264,7 @@ export function MonthView({
           type="button"
           onClick={onToday}
           disabled={atPresent}
-          className={cn('shrink-0 rounded-full font-semibold disabled:opacity-40', TODAY_INK)}
+          className={cn('hit-44 shrink-0 rounded-full font-semibold disabled:opacity-40', TODAY_INK)}
           style={{ fontSize: '12.5px', border: '1px solid color-mix(in srgb, var(--accent) 45%, transparent)', padding: '5px 12px' }}
         >
           {t.plan.today}
@@ -277,17 +279,11 @@ export function MonthView({
             <div
               key={d}
               className="py-2 text-center font-mono font-semibold uppercase"
-              style={{ fontSize: '10px', color: i >= 5 ? 'var(--subtle-2)' : 'var(--subtle)' }}
+              style={{ fontSize: '11px', color: i >= 5 ? 'var(--subtle-2)' : 'var(--subtle)' }}
             >
               {d}
             </div>
           ))}
-          <div
-            className="py-2 text-right font-mono font-semibold uppercase"
-            style={{ fontSize: '9px', color: 'var(--subtle-2)', paddingRight: '4px' }}
-          >
-            {t.plan.weekGutter}
-          </div>
         </div>
 
         <div className="flex flex-col" style={{ gap: '2px' }}>
@@ -306,8 +302,8 @@ export function MonthView({
                     )
 
             return (
+              <div key={rowIndex}>
               <div
-                key={rowIndex}
                 className="grid"
                 style={{ gridTemplateColumns: GRID_COLUMNS, gap: '2px', height: `${ROW_HEIGHT}px` }}
               >
@@ -335,14 +331,15 @@ export function MonthView({
                     )}
                   </div>
                 ))}
-                <div className="flex items-center justify-end pr-1" style={{ background: PAD_BG }}>
-                  <span
-                    className="font-mono tabular-nums"
-                    style={{ fontSize: '11px', fontWeight: 700, color: containsToday ? 'var(--muted-foreground)' : 'var(--subtle)' }}
-                  >
-                    {weekValue === null ? t.plan.weekGutterEmpty : weekValue}
-                  </span>
-                </div>
+              </div>
+              {weekValue !== null && (
+                <p
+                  className="px-1.5 py-0.5 text-right text-caption tabular-nums"
+                  style={{ color: containsToday ? 'var(--muted-foreground)' : 'var(--subtle)' }}
+                >
+                  {rowIsPast ? t.plan.weekFooter.ran(weekValue) : t.plan.weekFooter.planned(weekValue)}
+                </p>
+              )}
               </div>
             )
           })}
@@ -360,20 +357,17 @@ export function MonthView({
             ))}
           </div>
         )}
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="flex items-center gap-1.5 text-xs text-subtle">
-            <span className="tabular-nums" style={{ fontSize: '9.5px', color: PLANNED_INK }}>7</span>
-            {t.plan.monthLegend.plannedKm}
-          </span>
-          <span className="flex items-center gap-1.5 text-xs text-subtle">
-            <span className="tabular-nums" style={{ fontSize: '10px', fontWeight: 700, color: RAN_INK }}>7.0</span>
-            {t.plan.monthLegend.ran}
-          </span>
-          <span className="flex items-center gap-1.5 text-xs text-subtle">
-            <span style={{ fontSize: '8.5px', color: EXTRA_INK }}>{t.plan.extra}</span>
-            {t.plan.monthLegend.unplanned}
-          </span>
-        </div>
+        {/* The legend in words: "7 planned km 7.0 ran extra unplanned" was a
+            key that needed its own key. */}
+        <ul className="space-y-1 text-xs text-subtle">
+          <li>
+            <span className="text-caption tabular-nums" style={{ color: PLANNED_INK }}>8</span> {t.plan.monthLegend.plannedKm}
+          </li>
+          <li>
+            <span className="text-caption font-bold tabular-nums" style={{ color: RAN_INK }}>8.5</span> {t.plan.monthLegend.ran}
+          </li>
+          <li>{t.plan.monthLegend.bar}</li>
+        </ul>
       </GlassSurface>
 
       {sheetWorkout && <PlannedWorkoutSheet workout={sheetWorkout} onClose={() => setSheetWorkout(null)} />}

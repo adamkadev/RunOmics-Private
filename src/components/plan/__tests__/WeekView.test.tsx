@@ -92,7 +92,10 @@ function renderWeek(options: {
   )
 }
 
+// The load sits behind the summary's info button.
 async function expectLoad(load: string) {
+  const info = screen.getByRole('button', { name: t.plan.weekSummary.aboutLoad })
+  if (info.getAttribute('aria-expanded') !== 'true') await userEvent.click(info)
   await waitFor(() => {
     expect(screen.getByTestId('week-summary').textContent).toContain(load)
   })
@@ -293,7 +296,7 @@ describe('WeekView without coaching', () => {
   it('keeps the original layout and adds no coaching placeholders', () => {
     renderWeek({ activities: [TEMPO, RACE], planned: [{ date: TODAY, name: 'Track session', type: 'Threshold', durationSecs: 3_600 }] })
 
-    expect(screen.getByText(t.plan.weekSummary.load)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: t.plan.weekSummary.aboutLoad })).toBeInTheDocument()
     expect(screen.queryByTestId('coach-decision-row')).not.toBeInTheDocument()
     expect(screen.queryByTestId('coach-calendar-2026-09-09')).not.toBeInTheDocument()
   })
@@ -345,15 +348,15 @@ describe('WeekView easy share', () => {
     renderPastWeek()
 
     const summary = screen.getByTestId('week-summary').textContent
-    expect(summary).toContain(t.plan.weekSummary.easyHardRatio(50, 50))
-    expect(summary).not.toContain(t.plan.weekSummary.easyHardRatio(100, 0))
+    expect(summary).toContain(t.plan.weekSummary.easyRecorded(50, 80))
+    expect(summary).not.toContain(t.plan.weekSummary.easyRecorded(100, 80))
   })
 
   it('labels a week still to run as planned', () => {
     // The tempo and the race are both key sessions, and nothing else is on.
     renderWeek({ activities: [TEMPO, RACE] })
 
-    expect(screen.getByTestId('week-summary').textContent).toContain(t.plan.weekSummary.easyHardPlanned(0, 100))
+    expect(screen.getByTestId('week-summary').textContent).toContain(t.plan.weekSummary.easyPlanned(0, 80))
   })
 })
 
@@ -403,5 +406,23 @@ describe('missed sessions', () => {
     expect(within(screen.getByTestId('week-session-done:2026-09-07')).getByText(`✓ ${t.sessionState.done}`)).toBeInTheDocument()
     expect(within(screen.getByTestId('week-session-garmin:2026-09-08:Tempo')).getByText(t.sessionState.missed)).toBeInTheDocument()
     expect(within(screen.getByTestId('week-session-garmin:2026-09-11:Long')).getByText(t.sessionState.planned)).toBeInTheDocument()
+  })
+})
+
+describe('the week summary in plain words', () => {
+  // "0/100 easy planned" read as 0 of 100 km.
+  it('writes the easy share as a sentence with its guide', () => {
+    renderWeek({ activities: [TEMPO, RACE] })
+
+    expect(screen.getByTestId('week-summary')).toHaveTextContent(t.plan.weekSummary.easyPlanned(0, 80))
+  })
+
+  // "Load 19/297 pts" was never explained.
+  it('keeps the load behind an info button, with what it is', async () => {
+    renderWeek({ activities: [TEMPO, RACE] })
+    expect(screen.getByTestId('week-summary')).not.toHaveTextContent(t.plan.weekSummary.loadDefinition)
+
+    await userEvent.click(screen.getByRole('button', { name: t.plan.weekSummary.aboutLoad }))
+    expect(screen.getByTestId('week-summary')).toHaveTextContent(t.plan.weekSummary.loadDefinition)
   })
 })

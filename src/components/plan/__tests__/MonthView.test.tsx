@@ -58,3 +58,29 @@ describe('PlanPhaseTrack', () => {
     expect(screen.getByText(t.plan.phaseTrack.build).style.color).toBe('var(--subtle)')
   })
 })
+
+describe('MonthView wording and grid', () => {
+  // "129 of 89 km planned" read as a plan beaten, not two numbers.
+  it('names run and planned km apart in the summary', () => {
+    renderMonth()
+
+    expect(screen.getByText(t.plan.summary(0, 0, 10))).toBeInTheDocument()
+    expect(t.plan.summary(12, 129, 89)).toContain('129 km run')
+  })
+
+  it('draws only the weeks the month needs, each with its total as a footer', () => {
+    const { container } = renderMonth()
+    // September 2026 starts on a Tuesday: 1 + 30 days is five weeks.
+    const footers = [...container.querySelectorAll('p.text-right')]
+
+    expect(footers).toHaveLength(5)
+    expect(screen.getByText(t.plan.weekFooter.planned(10))).toBeInTheDocument()
+    expect(screen.queryByText('WK')).not.toBeInTheDocument()
+  })
+
+  it('explains the legend in words', () => {
+    renderMonth()
+
+    expect(screen.getByText(t.plan.monthLegend.bar)).toBeInTheDocument()
+  })
+})
