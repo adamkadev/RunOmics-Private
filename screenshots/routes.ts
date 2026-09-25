@@ -25,6 +25,7 @@ export const ROUTES: RouteSpec[] = [
   { path: '/shoes', name: 'shoe-detail', firstLinkTo: '/shoes/' },
   { path: '/profile', name: 'profile' },
   { path: '/athlete', name: 'athlete' },
+  { path: '/consistency', name: 'consistency' },
   { path: '/settings', name: 'settings' },
   { path: '/no-such-page', name: 'not-found' },
 ]

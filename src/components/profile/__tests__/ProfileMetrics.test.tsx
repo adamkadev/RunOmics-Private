@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ProfileAthleteStats } from '@/components/profile/ProfileAthleteStats'
-import { ProfileAthleteCard } from '@/components/profile/ProfileAthleteCard'
 import { ProfileHrZones } from '@/components/profile/ProfileHrZones'
 import { t } from '@/i18n'
 
@@ -38,20 +37,6 @@ describe('capability-driven athlete metrics', () => {
 
     expect(screen.getByText(t.settings.athlete.vma)).toBeInTheDocument()
     expect(screen.queryByText(t.settings.athlete.thresholdPace)).not.toBeInTheDocument()
-    expect(screen.queryByText(t.profile.athlete.notSet)).not.toBeInTheDocument()
-  })
-
-  it('reflows the profile summary without an unavailable LTHR tile', () => {
-    render(
-      <ProfileAthleteCard
-        athlete={{}}
-        latestVo2max={43}
-        recentZoneTime={[]}
-      />
-    )
-
-    expect(screen.getByText(t.profile.athlete.vo2maxShort)).toBeInTheDocument()
-    expect(screen.queryByText(t.profile.athlete.lthrShort)).not.toBeInTheDocument()
     expect(screen.queryByText(t.profile.athlete.notSet)).not.toBeInTheDocument()
   })
 

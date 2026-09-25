@@ -162,7 +162,7 @@ export const fr = {
       back: 'Progression',
     },
     athlete: {
-      title: 'Athlète',
+      title: 'Athlète et zones',
       subtitle: 'Corps, seuils et zones d’entraînement',
       back: 'Progression',
       source: 'Garmin',
@@ -183,6 +183,11 @@ export const fr = {
     settings: {
       title: 'Réglages',
       subtitle: 'Apparence, notifications et export de données.',
+      back: 'Progression',
+    },
+    consistency: {
+      title: 'Régularité',
+      subtitle: 'Chaque jour des 12 derniers mois',
       back: 'Progression',
     },
   },
@@ -1174,6 +1179,25 @@ export const fr = {
   },
 
   profile: {
+    hub: {
+      yearSoFar: (year: number) => `${year} à ce jour`,
+      vsSameDate: (year: number) => `vs même date ${year}`,
+      runs: 'sorties',
+      records: 'Records',
+      shoes: 'Chaussures',
+      athlete: 'Athlète et zones',
+      goals: 'Objectifs et saison',
+      consistency: 'Régularité',
+      settings: 'Réglages',
+      recordLine: (label: string, time: string, date: string, isNew: boolean) => `${label} ${time} · ${isNew ? 'nouveau, ' : ''}${date}`,
+      noRecords: 'Pas encore de record',
+      threshold: (pace: string) => `seuil ${pace}`,
+      annual: (done: string, target: string) => `Annuel ${done} / ${target} km`,
+      nextRace: (date: string) => `prochaine course ${date}`,
+      noGoal: 'Pas d’objectif annuel',
+      activeDays: (days: number) => `${days} jours actifs sur 12 mois`,
+      settingsLine: 'Apparence, notifications, export',
+    },
     hero: {
       lifetime: (runs: number, km: string) => `${runs} sorties · ${km} km au total`,
       recency: (lastRun: string, activeDays: number) => `Dernière sortie ${lastRun} · ${activeDays} jours actifs au total`,

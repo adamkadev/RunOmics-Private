@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { initials, formatRelativeAgo } from '@/lib/formatters'
 import { useMounted } from '@/lib/useMounted'
 import { t } from '@/i18n'
@@ -31,7 +32,7 @@ export function DashboardGreeting({ name, lastSyncedAt }: Props) {
   const syncedLine = mounted && lastSyncedAt ? t.dashboard.syncStatus.synced(formatRelativeAgo(lastSyncedAt)) : null
 
   return (
-    <div className="flex items-center justify-between gap-3">
+    <div className="flex h-11 items-center justify-between gap-3">
       {/* The greeting was the largest type on the screen and the only thing on it
           that is not about the running. What the date and the sync age say is
           worth one muted line; the verdict below is the headline. */}
@@ -45,12 +46,21 @@ export function DashboardGreeting({ name, lastSyncedAt }: Props) {
         {syncedLine ?? null}
         {!dateLine && !syncedLine ? ' ' : null}
       </p>
-      <div
-        className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full text-sm font-bold text-accent-foreground"
-        style={{ background: 'var(--accent-gradient)' }}
+      {/* It looked tappable and was a plain div. A 44 pt link to Progress now,
+          with the 34 pt disc drawn inside it. */}
+      <Link
+        href="/profile"
+        aria-label={t.nav.items.profile}
+        className="-mr-1.25 flex size-11 shrink-0 items-center justify-center rounded-full active:scale-95"
       >
-        {initials(displayName)}
-      </div>
+        <span
+          aria-hidden="true"
+          className="flex size-8.5 items-center justify-center rounded-full text-sm font-bold text-accent-foreground"
+          style={{ background: 'var(--accent-gradient)' }}
+        >
+          {initials(displayName)}
+        </span>
+      </Link>
     </div>
   )
 }
