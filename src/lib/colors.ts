@@ -36,7 +36,8 @@ export const CHART_COLORS = {
 } as const
 
 export const TRAINING_STATUS_COLORS: Record<string, string> = {
-  fresh:        c.violet500,
+  // Shown as "Peaking"; a token so each theme takes its own grade.
+  fresh:        'var(--status-peaking)',
   productive:   c.emerald400,
   // Holding fitness is good news, so it takes the deep step of `productive`'s
   // green rather than the amber the rest of the app reserves for caution.

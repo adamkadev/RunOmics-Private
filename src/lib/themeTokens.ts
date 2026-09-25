@@ -203,6 +203,13 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--tone-go': c.semGreenLight,
       '--tone-caution': c.amber700,
       '--tone-hold': c.semOrangeLight,
+      // Garmin's "peaking" status (the app's \`fresh\`), text grade per theme.
+      '--status-peaking': c.violet600,
+      // Form's named bands; the thresholds are domain/training/formBand.
+      '--form-band-tired': 'var(--delta-warn)',
+      '--form-band-neutral': 'var(--muted-foreground)',
+      '--form-band-fresh': 'var(--delta-good)',
+      '--form-band-very-fresh': 'var(--tone-caution)',
       '--track': withAlpha(c.roInk, 0.07),
 
       '--zone-1': c.roZone1,
@@ -253,6 +260,13 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--tone-go': c.emerald400,
       '--tone-caution': c.roAmber,
       '--tone-hold': c.roOrangeHi,
+      // Garmin's "peaking" status (the app's \`fresh\`), text grade per theme.
+      '--status-peaking': c.violet400,
+      // Form's named bands; the thresholds are domain/training/formBand.
+      '--form-band-tired': 'var(--delta-warn)',
+      '--form-band-neutral': 'var(--muted-foreground)',
+      '--form-band-fresh': 'var(--delta-good)',
+      '--form-band-very-fresh': 'var(--tone-caution)',
       '--track': paper(0.08),
 
       '--zone-1': c.roZone1,

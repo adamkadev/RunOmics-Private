@@ -2,7 +2,6 @@ import Link from 'next/link'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { getDashboardData } from '@/application/usecases/GetDashboardData'
 import { getLastSyncedAt } from '@/application/usecases/GetSyncStatus'
-import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
 import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { getTrainingStatusDaysBar } from '@/application/usecases/GetTrainingStatusDaysBar'
 import { getRecords, getQualifiedEffortsByActivityId, getMostRecentRecord } from '@/application/usecases/GetRecords'
@@ -18,8 +17,8 @@ import { loadWeekTarget } from '@/app/_data/loadWeekTarget'
 import { RecentActivities } from '@/components/dashboard/RecentActivities'
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting'
 import { TodayHero } from '@/components/dashboard/TodayHero'
-import { FormFitnessFatigueTrio } from '@/components/dashboard/FormFitnessFatigueTrio'
-import { TrainingStatusDaysBar } from '@/components/dashboard/TrainingStatusDaysBar'
+import { BodyCard } from '@/components/dashboard/BodyCard'
+import { LatestRecordRow } from '@/components/dashboard/LatestRecordRow'
 import { WeeklyStreakCard } from '@/components/dashboard/WeeklyStreakCard'
 import { CelebrationOverlay } from '@/components/dashboard/CelebrationOverlay'
 import { t } from '@/i18n'
@@ -30,7 +29,6 @@ export default async function DashboardPage() {
   const data = getDashboardData()
   const athlete = getAthleteProfile()
   const lastSyncedAt = getLastSyncedAt()
-  const trainingLoad = await getTrainingLoad()
   const trainingStatus = await getTrainingStatus()
   const trainingStatusDays = getTrainingStatusDaysBar()
   const records = await getRecords()
@@ -73,15 +71,15 @@ export default async function DashboardPage() {
         aiVerdict={aiVerdict}
       />
 
-      <FormFitnessFatigueTrio status={trainingStatus} load={trainingLoad} />
-
-      <TrainingStatusDaysBar days={trainingStatusDays} />
+      <BodyCard status={trainingStatus} days={trainingStatusDays} />
 
       {weeklyStreak && (
         <Link href="/plan" aria-label={t.plan.openPlanner} className="block active:scale-[0.99]">
           <WeeklyStreakCard data={weeklyStreak} target={weekTarget} today={today} />
         </Link>
       )}
+
+      <LatestRecordRow record={mostRecentRecord} />
 
       <RecentActivities
         activities={data.recentActivities.slice(0, 3)}

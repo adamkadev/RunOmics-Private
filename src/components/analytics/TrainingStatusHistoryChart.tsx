@@ -71,7 +71,7 @@ function segmentLabel(segment: TrainingStatusSegment): string {
  * bounds: unrated days are dropped by buildSegments rather than drawn, so the
  * ribbon's ends are its segments' ends and labelling them with the window
  * would overstate what the strip covers. Hovering swaps the bounds for the
- * hovered segment, the pattern already shipping in TrainingStatusDaysBar.
+ * hovered segment, the pattern the Today status strip used to ship.
  */
 function StatusRibbon({ segments }: { segments: TrainingStatusSegment[] }) {
   const [activeKey, setActiveKey] = useState<string | null>(null)

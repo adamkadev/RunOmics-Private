@@ -32,3 +32,9 @@ export interface TrainingStatus {
   chronicLoadMin: number | null
   chronicLoadMax: number | null
 }
+
+/**
+ * The window each delta is measured over. Today writes it beside the arrow
+ * ("↑1 in 14 d"), so a coloured +10 always says over how long.
+ */
+export const STATUS_DELTA_DAYS = { form: 7, fitness: 14, fatigue: 7 } as const
