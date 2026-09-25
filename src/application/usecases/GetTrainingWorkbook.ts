@@ -1,3 +1,4 @@
+import { DAY_MS } from '@/lib/calendarDate'
 import ExcelJS from 'exceljs'
 import type { Activity, PlannedWorkout } from '@/domain/activity/types'
 import type { AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
@@ -34,7 +35,6 @@ export const TRAINING_WORKBOOK_MIME =
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
 const SCHEMA_VERSION = '1.0'
-const DAY_MS = 86_400_000
 const HEADER_FILL = '17324D'
 const HEADER_TEXT = 'FFFFFF'
 const ACCENT = '37B6A5'

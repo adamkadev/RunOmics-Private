@@ -1,6 +1,6 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { toActivitySummary } from '@/domain/activity/summary'
-import { addDays, isoDate, isoWeekNumber, startOfWeek } from '@/lib/calendarDate'
+import { DAY_MS, addDays, isoDate, isoWeekNumber, startOfWeek } from '@/lib/calendarDate'
 import { round } from '@/lib/math'
 import type {
   Activity,
@@ -79,7 +79,7 @@ export function computeStreaks(activities: Activity[]): { current: number; longe
   for (const day of sortedDays) {
     if (prev) {
       const diff = Math.round(
-        (new Date(day).getTime() - new Date(prev).getTime()) / 86400000
+        (new Date(day).getTime() - new Date(prev).getTime()) / DAY_MS
       )
       run = diff === 1 ? run + 1 : 1
     } else {

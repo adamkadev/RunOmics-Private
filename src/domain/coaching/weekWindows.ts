@@ -1,4 +1,4 @@
-const DAY_MS = 86_400_000
+import { DAY_MS } from '@/lib/calendarDate'
 
 export const MAX_BOOTSTRAP_WEEKS = 5
 

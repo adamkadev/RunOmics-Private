@@ -1,5 +1,6 @@
 'use client'
 
+import { DAY_MS } from '@/lib/calendarDate'
 import Link from 'next/link'
 import { ChevronRight, BedDouble, Flag } from 'lucide-react'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
@@ -71,7 +72,7 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiV
   // Whole calendar days, both ends at UTC midnight so a daylight-saving change
   // in between cannot move the count.
   const daysToRace = nextRace
-    ? Math.round((Date.parse(`${nextRace.date}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86_400_000)
+    ? Math.round((Date.parse(`${nextRace.date}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / DAY_MS)
     : null
 
   if (!status && !plannedWorkout && !nextRace) return null

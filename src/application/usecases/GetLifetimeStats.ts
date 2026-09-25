@@ -1,7 +1,7 @@
+import { DAY_MS } from '@/lib/calendarDate'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { round } from '@/lib/math'
 
-const DAY_MS = 86_400_000
 const YEAR_DAYS = 365.25
 
 export interface LifetimeStats {

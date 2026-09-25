@@ -1,3 +1,5 @@
+import { DAY_MS } from '@/lib/calendarDate'
+
 /**
  * Where the athlete's numbers have been, not only where they are.
  *
@@ -8,8 +10,6 @@
  * planner can read, and states plainly how far each metric sits below its own
  * recent best.
  */
-
-const DAY_MS = 86_400_000
 
 /** A year is enough to hold a season's shape without bloating the prompt. */
 const WINDOW_DAYS = 365

@@ -1,6 +1,5 @@
+import { DAY_MS } from '@/lib/calendarDate'
 import type { CoachState, CoachingPlan } from './types'
-
-const DAY_MS = 86_400_000
 
 /**
  * The season's shape between the macrocycle start and the target race. The

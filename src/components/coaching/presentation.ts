@@ -1,3 +1,4 @@
+import { DAY_MS } from '@/lib/calendarDate'
 import type { PrescriptionView } from '@/application/coaching/GetCoachingView'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import type { WorkoutStep, WorkoutStepKind } from '@/domain/activity/types'
@@ -12,8 +13,6 @@ import { macrocyclePhases } from '@/domain/coaching/macrocycle'
 import { bookends } from '@/domain/training/workoutStructure'
 import { formatClock, formatDurationWords } from '@/lib/formatters'
 import { t } from '@/i18n'
-
-const DAY_MS = 86_400_000
 
 function utc(date: string): number {
   return Date.parse(date + 'T00:00:00Z')

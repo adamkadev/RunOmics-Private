@@ -1,5 +1,6 @@
 'use client'
 
+import { DAY_MS } from '@/lib/calendarDate'
 import { Check } from 'lucide-react'
 import { SectionDivider } from '@/components/ui/SectionLabel'
 import type { GoalTarget, YearData } from '@/application/usecases/GetGoalsData'
@@ -76,7 +77,7 @@ export function SeasonTimeline({ yearData, today }: { yearData: YearData; today:
       const daysUntil = isSpotlight
         ? nextRaceSpotlight!.daysUntil
         : otherRace
-          ? Math.round((new Date(otherRace.date + 'T00:00:00').getTime() - new Date(today + 'T00:00:00').getTime()) / 86_400_000)
+          ? Math.round((new Date(otherRace.date + 'T00:00:00').getTime() - new Date(today + 'T00:00:00').getTime()) / DAY_MS)
           : null
 
       if (scheduledRace) {

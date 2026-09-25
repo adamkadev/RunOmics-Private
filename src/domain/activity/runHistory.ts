@@ -1,8 +1,7 @@
+import { DAY_MS } from '@/lib/calendarDate'
 import type { Activity } from './types'
 import { EFFORTS } from './effort'
 import { creditedEffortSeconds, officialResultsByActivityId, type OfficialRaceResult } from './raceResult'
-
-const DAY_MS = 86_400_000
 
 const BASELINE_LOOKBACK_DAYS = 90
 const BASELINE_RUNS = 5

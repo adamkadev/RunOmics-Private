@@ -1,4 +1,4 @@
-import { isoDate } from '@/lib/calendarDate'
+import { DAY_MS, isoDate } from '@/lib/calendarDate'
 
 export type ChartRange = '4w' | '6m' | '1y'
 
@@ -92,7 +92,7 @@ export function seriesCadence(points: { date: string }[]): 'weekly' | 'daily' | 
   for (let i = 1; i < points.length; i++) {
     const a = Date.parse(points[i - 1]!.date + 'T00:00:00Z')
     const b = Date.parse(points[i]!.date + 'T00:00:00Z')
-    gaps.push(Math.round((b - a) / 86_400_000))
+    gaps.push(Math.round((b - a) / DAY_MS))
   }
   gaps.sort((x, y) => x - y)
   const median = gaps[Math.floor(gaps.length / 2)]!
@@ -135,7 +135,7 @@ export function monthStartTicks<T extends { date: string }>(
   return new Set(starts.filter((_, i) => i % step === 0))
 }
 
-const WEEK_MS = 7 * 86_400_000
+const WEEK_MS = 7 * DAY_MS
 
 export function fillWeeklyGaps<T extends { date: string }>(
   points: T[],

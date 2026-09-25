@@ -1,3 +1,4 @@
+import { DAY_MS } from '@/lib/calendarDate'
 import type { Activity } from '@/domain/activity/types'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getLatestTrainingStatusDay } from '@/infrastructure/repositories/JsonTrainingStatusRepository'
@@ -7,8 +8,6 @@ import type { TrainingStatusType, RiskLevel, LoadTrend, TrainingStatus } from '@
 
 // Moved to the domain; re-exported so every existing importer keeps working.
 export type { TrainingStatusType, RiskLevel, LoadTrend, TrainingStatus } from '@/domain/training/status'
-
-const DAY_MS = 86_400_000
 
 export function acwr(activities: Activity[], refDate: Date): number | null {
   const ref = refDate.getTime()

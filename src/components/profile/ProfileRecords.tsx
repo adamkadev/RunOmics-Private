@@ -1,3 +1,4 @@
+import { DAY_MS } from '@/lib/calendarDate'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -8,7 +9,7 @@ import { t } from '@/i18n'
 const RECENT_PR_DAYS = 90
 
 function isRecentPr(date: string, today: string): boolean {
-  const days = (new Date(today + 'T00:00:00').getTime() - new Date(date + 'T00:00:00').getTime()) / 86_400_000
+  const days = (new Date(today + 'T00:00:00').getTime() - new Date(date + 'T00:00:00').getTime()) / DAY_MS
   return days >= 0 && days <= RECENT_PR_DAYS
 }
 

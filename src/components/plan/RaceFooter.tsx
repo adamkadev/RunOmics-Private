@@ -1,3 +1,4 @@
+import { DAY_MS } from '@/lib/calendarDate'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { formatClock, formatCountdown, formatDate } from '@/lib/formatters'
@@ -23,7 +24,7 @@ const LATER_CHIP_BORDER = 'color-mix(in srgb, var(--foreground) 30%, transparent
 const LATER_CHIP_TEXT = 'color-mix(in srgb, var(--foreground) 65%, transparent)'
 
 function daysBetween(from: string, to: string): number {
-  return Math.round((new Date(to + 'T00:00:00').getTime() - new Date(from + 'T00:00:00').getTime()) / 86_400_000)
+  return Math.round((new Date(to + 'T00:00:00').getTime() - new Date(from + 'T00:00:00').getTime()) / DAY_MS)
 }
 
 // Line 1 is the race itself - name and distance, the same read as an

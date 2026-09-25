@@ -1,3 +1,4 @@
+import { DAY_MS } from '@/lib/calendarDate'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import type { Activity } from '@/domain/activity/types'
 import { median, round } from '@/lib/math'
@@ -22,7 +23,6 @@ export interface DynamicsBaseline {
 }
 
 const BASELINE_WEEKS = 8
-const DAY_MS = 86_400_000
 const MIN_RUNS = 3
 
 function rangeOf(

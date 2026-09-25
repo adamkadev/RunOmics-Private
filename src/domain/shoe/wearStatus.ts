@@ -1,3 +1,4 @@
+import { DAY_MS } from '@/lib/calendarDate'
 import { round } from '@/lib/math'
 
 export type WearStatus = 'ok' | 'watch' | 'replace'
@@ -47,7 +48,7 @@ export function weeksInRotation(firstUsedDate: string | null, lastDate: string |
     1,
     Math.round(
       (new Date(end + 'T00:00:00').getTime() - new Date(firstUsedDate + 'T00:00:00').getTime()) /
-        (7 * 86_400_000)
+        (7 * DAY_MS)
     )
   )
 }

@@ -1,8 +1,8 @@
+import { DAY_MS } from '@/lib/calendarDate'
 import type { BootstrapWeekDraft, CoachingPlanDraft } from '@/application/ports/CoachingAdvisor'
 import type { TrainingHistory } from '@/domain/training/trainingHistory'
 import type { WorkoutBlock, WorkoutSegment } from '@/domain/coaching/types'
 
-const DAY_MS = 86_400_000
 // A non-taper week should hold what the athlete just ran; the tolerance is for
 // rounding a week's sessions, not for easing off without saying so.
 const FLOOR_RATIO = 0.95

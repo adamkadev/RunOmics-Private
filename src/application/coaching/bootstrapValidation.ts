@@ -1,3 +1,4 @@
+import { DAY_MS } from '@/lib/calendarDate'
 import { hasCoursePacing } from '@/domain/coaching/coursePacing'
 import type { CoachingPlanDraft } from '@/application/ports/CoachingAdvisor'
 import type { CoachingContext } from '@/application/coaching/context'
@@ -10,7 +11,6 @@ export interface BootstrapEvents {
   planningStartDate: string
 }
 
-const DAY_MS = 86_400_000
 const PRE_RACE_HARD_TYPES = new Set(['tempo', 'threshold', 'vo2max', 'anaerobic', 'sprint', 'long_run'])
 const POST_RACE_RECOVERY_TYPES = new Set(['easy', 'recovery'])
 

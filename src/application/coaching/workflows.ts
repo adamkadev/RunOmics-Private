@@ -1,3 +1,4 @@
+import { DAY_MS } from '@/lib/calendarDate'
 import { validateTrainingFrequency } from './frequency'
 import { validateAdaptation, validateBootstrapDraft } from './draftRules'
 import type { Activity } from '@/domain/activity/types'
@@ -30,7 +31,6 @@ import type { CoachingProposal } from './proposal'
 import { parseCoachingProposal } from './proposal'
 
 const PROMPT_VERSION = 'coaching-v1'
-const DAY_MS = 86_400_000
 const NEAR_TERM_RACE_DAYS = 7
 
 export interface WorkflowServices {

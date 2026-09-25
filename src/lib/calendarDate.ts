@@ -1,3 +1,6 @@
+/** One calendar day, in milliseconds. */
+export const DAY_MS = 86_400_000
+
 export function isoDate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
@@ -19,7 +22,7 @@ export function isoWeekNumber(d: Date): number {
   date.setUTCDate(date.getUTCDate() + 4 - dayNum)
   const isoYear = date.getUTCFullYear()
   const yearStart = new Date(Date.UTC(isoYear, 0, 1))
-  const isoWeek = Math.ceil(((date.getTime() - yearStart.getTime()) / 86400000 + 1) / 7)
+  const isoWeek = Math.ceil(((date.getTime() - yearStart.getTime()) / DAY_MS + 1) / 7)
   return isoYear * 100 + isoWeek
 }
 

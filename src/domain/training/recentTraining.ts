@@ -1,6 +1,5 @@
+import { DAY_MS } from '@/lib/calendarDate'
 import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
-
-const DAY_MS = 86_400_000
 
 export interface RecentTraining {
   /**

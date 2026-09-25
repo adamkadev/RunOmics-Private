@@ -1,3 +1,4 @@
+import { DAY_MS } from '@/lib/calendarDate'
 import type { CoachingPlanDraft } from '@/application/ports/CoachingAdvisor'
 
 export function validateTrainingFrequency(days: number[], runs?: number): void {
@@ -13,7 +14,7 @@ export function validateDraftFrequency(draft: CoachingPlanDraft, runs?: number):
     const count = week.workouts.length
     if (new Set(week.workouts.map(w => w.date)).size !== count) throw new Error('Bootstrap permits one run per day')
     if (count > runs) throw new Error('Weekly frequency exceeds runsPerWeek')
-    const fullWeek = Date.parse(week.endDate) - Date.parse(week.startDate) === 6 * 86_400_000
+    const fullWeek = Date.parse(week.endDate) - Date.parse(week.startDate) === 6 * DAY_MS
     if (fullWeek && count < runs && !/fewer runs|reduced frequency|frequency reduction/i.test(week.focus)) {
       throw new Error('Fewer runs than runsPerWeek requires an explicit explanation in week.focus (fewer runs / reduced frequency)')
     }
