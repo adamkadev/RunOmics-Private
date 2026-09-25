@@ -2,9 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { YearSelector } from '@/components/ui/YearSelector'
-import { ProfileStatsYtd } from '@/components/profile/ProfileStatsYtd'
+import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { ActivityListClient } from '@/components/activities/ActivityListClient'
-import type { ProfilePeriodStats } from '@/application/usecases/GetProfileData'
 import { t } from '@/i18n'
 
 /**
@@ -16,14 +15,6 @@ import { t } from '@/i18n'
 
 const RETIRED_ACTIVE_TINT = 'bg-foreground/[0.14]'
 
-const stats: ProfilePeriodStats = {
-  distanceKm: 1205,
-  durationSeconds: 360000,
-  sessionCount: 140,
-  elevationGainM: 8200,
-  avgKmPerWeek: 32.4,
-  calories: 812000,
-}
 
 describe('the selected chip speaks one language', () => {
   it('fills the selected year with the accent', () => {
@@ -33,14 +24,18 @@ describe('the selected chip speaks one language', () => {
     expect(chip.className).toContain('bg-accent')
   })
 
-  it('fills the selected profile period with the accent, not a neutral tint', () => {
-    render(<ProfileStatsYtd ytd={stats} allTime={stats} prevYear={stats} year={2026} />)
+  it('fills the selected segmented tab with the accent, not a neutral tint', () => {
+    function Tabs() {
+      const tabs = useSegmentedTabs({ ids: ['year', 'allTime'] as const, value: 'year', onChange: () => {} })
+      return <SegmentedTabs tabs={tabs} items={[{ id: 'year', label: 'This year' }, { id: 'allTime', label: 'All' }]} label="Period" />
+    }
+    render(<Tabs />)
 
-    const selected = screen.getByRole('tab', { name: t.profile.ytd.thisYearChip })
+    const selected = screen.getByRole('tab', { name: 'This year' })
     expect(selected.className).toContain('bg-accent')
     expect(selected.className).not.toContain(RETIRED_ACTIVE_TINT)
 
-    const unselected = screen.getByRole('tab', { name: t.profile.ytd.allTimeChip })
+    const unselected = screen.getByRole('tab', { name: 'All' })
     expect(unselected.className).not.toContain('bg-accent')
   })
 

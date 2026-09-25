@@ -14,6 +14,7 @@ describe('activeNavHref', () => {
   it('keeps the section lit on detail pages', () => {
     expect(activeNavHref('/activities/12345', SIDEBAR)).toBe('/activities')
     expect(activeNavHref('/shoes/abc', TAB_BAR)).toBe('/profile')
+    expect(activeNavHref('/consistency', TAB_BAR)).toBe('/profile')
   })
 
   it('folds the Progress sub-pages into Progress in both navs', () => {

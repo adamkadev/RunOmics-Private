@@ -1,24 +1,27 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
-import type { ProfilePeriodStats } from '@/application/usecases/GetProfileData'
-import { ProfileStatsYtd } from '@/components/profile/ProfileStatsYtd'
-import { t } from '@/i18n'
+import { useState } from 'react'
+import { SegmentedTabs, useSegmentedTabs } from '../SegmentedTabs'
 
-const stats: ProfilePeriodStats = {
-  distanceKm: 1205,
-  durationSeconds: 360000,
-  sessionCount: 140,
-  elevationGainM: 8200,
-  avgKmPerWeek: 32.4,
-  calories: 812000,
+const IDS = ['year', 'allTime'] as const
+
+function Harness() {
+  const [value, setValue] = useState<(typeof IDS)[number]>('year')
+  const tabs = useSegmentedTabs({ ids: IDS, value, onChange: setValue })
+  return (
+    <>
+      <SegmentedTabs tabs={tabs} items={[{ id: 'year', label: 'This year' }, { id: 'allTime', label: 'All' }]} label="Period" />
+      <div {...tabs.panelProps}>{value}</div>
+    </>
+  )
 }
 
 function renderTabs() {
-  render(<ProfileStatsYtd ytd={stats} allTime={stats} prevYear={stats} year={2026} />)
+  render(<Harness />)
   return {
-    year: screen.getByRole('tab', { name: t.profile.ytd.thisYearChip }),
-    allTime: screen.getByRole('tab', { name: t.profile.ytd.allTimeChip }),
+    year: screen.getByRole('tab', { name: 'This year' }),
+    allTime: screen.getByRole('tab', { name: 'All' }),
   }
 }
 
