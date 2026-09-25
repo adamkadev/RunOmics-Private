@@ -64,12 +64,14 @@ describe('SeasonRaces', () => {
     expect(row.textContent).toContain('D-21')
   })
 
-  it('says "= best" when the best stands in for the prediction', () => {
+  // R7d: the column is the prediction, labelled as one, and the half is "Half".
+  it('prints the watch prediction as predicted, even where the best is faster', () => {
     const rows = seasonRaceRows(yearData(), TODAY)
     const half = rows.find((row) => row.distance === 'Half-Marathon')!
-    // Garmin predicts 1:28:20 but the best is already 1:27:44.
-    expect(half.value).toBe('1:27:44')
-    expect(half.valueSub).toBe(t.records.sameAsBest)
+    // Garmin predicts 1:28:20; the best (1:27:44) no longer stands in for it.
+    expect(half.value).toBe('1:28:20')
+    expect(half.valueSub).toBe(t.goals.predictedTag)
+    expect(half.title.startsWith(`${t.goals.half} · `)).toBe(true)
   })
 
   it('states a done result against its target', () => {

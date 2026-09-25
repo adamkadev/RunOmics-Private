@@ -18,17 +18,19 @@ export function ThemeSegmented() {
 
   const current = mounted ? theme : undefined
 
+  // Inline, as in R7f: the label and a compact control on one row.
   return (
-    <div>
+    <div className="flex items-center justify-between gap-3">
       <h3 className="text-body font-semibold text-foreground">{s.themeLabel}</h3>
-      <div className="mt-3 flex w-full gap-1 rounded-full bg-foreground/[0.04] p-1">
+      <div className="flex gap-1 rounded-full bg-foreground/[0.04] p-1" role="group" aria-label={s.themeLabel}>
         {OPTIONS.map(({ value, label }) => (
           <button
             key={value}
             type="button"
             onClick={() => setTheme(value)}
+            aria-pressed={current === value}
             className={cn(
-              'flex-1 min-h-[44px] rounded-full py-1.5 text-xs font-semibold transition-colors',
+              'min-h-[44px] rounded-full px-3.5 text-xs font-semibold transition-colors',
               current === value ? 'bg-accent text-accent-foreground' : 'text-foreground/55'
             )}
           >

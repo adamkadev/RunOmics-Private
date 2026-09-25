@@ -2,7 +2,6 @@
 
 import { Fragment, useState } from 'react'
 import { ChevronDown, Check } from 'lucide-react'
-import { SectionDivider } from '@/components/ui/SectionLabel'
 import type { ShoeComparisonRow } from '@/application/usecases/GetShoeComparison'
 import { BrandIcon } from '@/components/shoes/BrandIcon'
 import { formatClock, formatEraRange, MINUS, PLUS_MINUS } from '@/lib/formatters'
@@ -35,6 +34,11 @@ const COMPARED_PAIRS = 2
 // be a rate - real enough to display, not solid enough to call a difference.
 // Counts don't need this floor: 130 vs 87 is a fact regardless of sample size.
 const MIN_SESSIONS_FOR_AVERAGES = 15
+
+/** "pace differs…" opened the footnote in lower case. */
+function sentenceCase(text: string): string {
+  return text.charAt(0).toLocaleUpperCase(t.locale) + text.slice(1)
+}
 
 function fmtSigned(n: number, unit = ''): string {
   if (n === 0) return `${PLUS_MINUS}0${unit}`
@@ -200,8 +204,8 @@ export function ShoeComparison({ rows }: Props) {
 
   return (
     <section className="space-y-2.5">
-      <div className="flex items-baseline justify-between gap-2">
-        <SectionDivider>{t.shoes.comparison.title}</SectionDivider>
+      {/* The row that opens this carries the title. */}
+      <div className="flex justify-end">
         <button
           type="button"
           onClick={() => setPickerOpen((open) => !open)}
@@ -240,10 +244,11 @@ export function ShoeComparison({ rows }: Props) {
         <div />
         {compared.map((row) => (
           <div key={row.gearId} className="min-w-0">
-            <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: row.dotColor }} />
-              <span className="min-w-0 truncate text-sm font-semibold text-foreground" title={row.name}>
-                {shortShoeName(row.name, row.brand)}
+            <span className="flex items-start gap-1.5">
+              <span className="mt-1 h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: row.dotColor }} />
+              {/* Wraps rather than truncating: "Tempo Ra…" named neither pair. */}
+              <span className="min-w-0 break-words text-sm font-semibold leading-tight text-foreground">
+                {row.name}
               </span>
             </span>
             <span className="mt-0.5 block truncate text-caption font-normal text-subtle-2">
@@ -284,15 +289,14 @@ export function ShoeComparison({ rows }: Props) {
             )}
           </Fragment>
         ))}
+        {/* In the card, not under it. The season caveat only qualifies an
+            averages claim - with too few runs there's nothing for it to hedge. */}
+        {averagesSentence && (
+          <p className="col-span-4 border-t border-border pt-2 text-caption text-subtle-2">
+            {sentenceCase(averagesSentence)} {t.shoes.comparison.note}
+          </p>
+        )}
       </div>
-
-      {/* The season caveat only qualifies an averages claim - with too few
-          runs there's no such claim on screen for it to hedge. */}
-      {averagesSentence && (
-        <p className="px-1 text-caption text-subtle-2">
-          {averagesSentence} {t.shoes.comparison.note}
-        </p>
-      )}
     </section>
   )
 }

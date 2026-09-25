@@ -267,8 +267,7 @@ export const en = {
       dark: 'Dark',
     },
     accent: {
-      title: 'Accent color',
-      preview: 'Preview',
+      title: 'Accent',
       options: {
         nature:      { label: 'Green' },
         teal:        { label: 'Teal' },
@@ -339,6 +338,8 @@ export const en = {
     },
     dataExport: {
       workbook: 'Export training data (.xlsx)',
+      title: 'Export activities',
+      signedOut: (runs: string) => `Workbook of all ${runs} · sign in to export`,
       exporting: 'Exporting...',
       failed: 'Could not export the training data.',
     },
@@ -350,7 +351,7 @@ export const en = {
       failed: 'Could not clear the offline cache.',
     },
     notifications: {
-      title: 'Push notifications',
+      title: 'Notifications',
       error: 'Could not update notification settings, please retry.',
       types: {
         training: {
@@ -1061,10 +1062,14 @@ export const en = {
   },
 
   goals: {
-    title: 'Goals',
+    // The hub row's name, so the row and the screen it opens agree.
+    title: 'Goals & season',
     empty: 'No goals configured yet.',
     back: 'Progress',
-    annualGoal: 'Annual Goal',
+    volumeGoal: (year: number) => `${year} volume goal`,
+    ofKm: (goal: string) => `of ${goal} km`,
+    reached: (over: string) => `Reached · +${over} km`,
+    half: 'Half',
     kmRemaining: (km: number) => `${km} km remaining`,
     goalReached: 'Goal reached!',
     upcoming: 'Upcoming races',
@@ -1072,7 +1077,7 @@ export const en = {
     targetTime: (time: string) => `target ${time}`,
     finish: 'finish',
     noDateSet: 'no date set',
-    beatenBy: (gap: string) => `beaten by ${gap}`,
+    beatenBy: (gap: string) => `beat by ${gap}`,
     missedBy: (gap: string) => `missed by ${gap}`,
     best: 'Best',
     predictedTag: 'predicted',
@@ -1093,9 +1098,8 @@ export const en = {
       needsWeeklyDetail: (needed: string, current: string) => `Needs ${needed} km/wk — currently running ${current}`,
     },
     monthlyVolume: {
-      title: 'Monthly Volume',
-      expand: 'Expand',
-      collapse: 'Collapse',
+      title: 'Monthly volume',
+      subtitle: (from: string, to: string) => `${from} – ${to} against the monthly target`,
       status: {
         ahead: 'Hit',
         on_track: 'On track',
@@ -1123,13 +1127,14 @@ export const en = {
     // Both numbers arrive formatted (formatKm), so 1,375 has its separator.
     kmOf: (total: string, max: string) => `${total} / ${max} km`,
     retired: 'Retired',
-    active: 'Active',
     rotationSummary: (activePairs: number, retiredPairs: number, km: string) =>
       `${activePairs} in rotation · ${retiredPairs} retired · ${km} km tracked`,
     // The rotation row used to print a bare `Sep 13` next to the mileage, with
     // nothing saying which date it was. Both keys take an already-formatted
     // date because i18n can never import the formatters.
-    lastRun: (date: string) => `last run ${date}`,
+    lastRunSentence: (date: string) => `Last run ${date}.`,
+    limitLine: (km: string, limit: string, runs: number) => `${km} km · limit ${limit} km · ${runs} run${runs === 1 ? '' : 's'}`,
+    retiredTitle: (name: string) => `Retired · ${name}`,
     status: {
       ok: 'Good',
       watch: 'Replace soon',
@@ -1144,16 +1149,13 @@ export const en = {
     // Past the limit, the overrun is the news - "0 km left" hid it.
     pastLimit: (over: string, limit: string) => `${over} km past its ${limit} km limit`,
     kmOver: (over: string) => `${over} km over`,
-    replaceNow: 'replace',
-    kmPerWeek: (km: number) => `${km} km/wk`,
-    retiredLife: (era: string, runs: number, weeks: number) => `${era} · ${runs} runs · ${weeks} weeks`,
+    retiredLife: (era: string, runs: number, km: string) => `${era} · ${runs} runs · ${km} km`,
     hero: {
-      usage: (n: number, total: number) => `Used in ${n} of your last ${total} tempo/threshold runs`,
-      rotateBeforeRace: (date: string) => ` – rotate in a backup before your ${date} race.`,
-      rotate: ' – rotate in a backup.',
+      usage: (n: number, total: number) => `Used in ${n} of your last ${total} tempo/threshold runs.`,
     },
     comparison: {
       title: 'Compare two pairs',
+      subtitle: 'Runs, distance, key sessions side by side',
       change: 'Change',
       changeLabel: 'Change which pairs are compared',
       pickHint: 'Pick two pairs — a new pick replaces the older one',

@@ -84,8 +84,11 @@ describe('SettingsClient owner gate', () => {
     expect(sections).toEqual([t.settings.sections.appearance, t.settings.sections.data, t.settings.sections.account])
     // Where the runs come from, and what signing in unlocks.
     expect(screen.getByText(t.settings.dataSource.garmin)).toBeInTheDocument()
-    expect(screen.getByText(new RegExp(t.common.runs(12)))).toBeInTheDocument()
+    expect(screen.getAllByText(new RegExp(t.common.runs(12))).length).toBeGreaterThan(0)
     expect(screen.getByText(t.settings.auth.signInToManage)).toBeInTheDocument()
+    // R7f: export is on the page signed out too, asking for the sign-in.
+    expect(screen.getByText(t.settings.dataExport.title)).toBeInTheDocument()
+    expect(screen.getByText(t.settings.dataExport.signedOut(t.common.runs(12)))).toBeInTheDocument()
   })
 
   it('denies access to a signed-in account without the owner claim', async () => {

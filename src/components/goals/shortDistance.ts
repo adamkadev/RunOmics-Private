@@ -1,6 +1,6 @@
-const SHORT: Record<string, string> = { 'Half-Marathon': 'HM' }
+import { t } from '@/i18n'
 
-/** A race distance as the goals page labels it where space is tight. */
+/** A race distance as the goals page labels it where space is tight: "Half", never "HM". */
 export function shortDist(distance: string): string {
-  return SHORT[distance] ?? distance
+  return distance === 'Half-Marathon' ? t.goals.half : distance
 }

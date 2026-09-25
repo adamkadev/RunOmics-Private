@@ -7,6 +7,7 @@ import type { YearData } from '@/application/usecases/GetGoalsData'
 import { formatDuration, formatDate, formatKm, formatPace } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
+import { StatusPill } from '@/components/ui/StatusPill'
 import { MonthlyVolumeChart } from './MonthlyVolumeChart'
 import { SeasonRaces } from './SeasonRaces'
 import { shortDist } from './shortDistance'
@@ -46,6 +47,9 @@ export function YearView({ yearData, today }: Props) {
       ? t.goals.projection.shortBy(formatKm(Math.abs(signedDeltaKm)))
       : t.goals.projection.overBy(formatKm(signedDeltaKm))
     : null
+  // Reached is a state the card says outright, with the surplus, rather than a
+  // full bar the reader has to decode.
+  const reachedByKm = annualDistanceKm > 0 && totalDistanceKm >= annualDistanceKm ? Math.round(totalDistanceKm - annualDistanceKm) : null
   const hasRaceDistanceCards = !!goals && (goals.targets.length > 0 || upcomingRaces.length > 0)
 
   return (
@@ -54,15 +58,16 @@ export function YearView({ yearData, today }: Props) {
         <section className="space-y-3">
           <GlassSurface variant="card" className="p-5">
             <SectionDivider as="h2" className="mb-3">
-              {t.goals.annualGoal}
+              {t.goals.volumeGoal(yearData.year)}
             </SectionDivider>
-            <div className="mb-3">
+            <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1">
               <span className="text-3xl font-bold tracking-tight text-foreground">
                 <AnimatedValue value={totalDistanceKm} grouped />
               </span>
-              <span className="ml-1 text-sm text-subtle">
-                {'/ '}{formatKm(annualDistanceKm)}{' '}{t.units.km}
-              </span>
+              <span className="text-sm text-subtle">{t.goals.ofKm(formatKm(annualDistanceKm))}</span>
+              {reachedByKm !== null && (
+                <StatusPill tone="good" className="font-semibold">{t.goals.reached(formatKm(reachedByKm))}</StatusPill>
+              )}
             </div>
             <div className="relative h-2 rounded-full bg-foreground/[0.08]">
               <div

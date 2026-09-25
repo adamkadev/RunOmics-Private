@@ -1,11 +1,10 @@
 import { getShoeStats } from '@/application/usecases/GetShoeStats'
 import { getShoeComparison } from '@/application/usecases/GetShoeComparison'
-import { getNextRace } from '@/application/usecases/GetNextRace'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { ShoesGrid, pickHeroShoe } from '@/components/shoes/ShoesGrid'
 import { ShoeComparison } from '@/components/shoes/ShoeComparison'
 import { BackButton } from '@/components/ui/BackButton'
-import { formatDate, formatKm } from '@/lib/formatters'
+import { formatKm } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 const QUALITY_RUNS_WINDOW = 6
@@ -15,18 +14,19 @@ export const revalidate = 3600
 export default async function ShoesPage() {
   const shoes = getShoeStats()
 
+  // The pair most in need of replacing gets the one line that needs the
+  // activity log: how much of the recent quality work it still carries.
   const hero = pickHeroShoe(shoes)
-  let heroInsight: string | null = null
+  const insights: Record<string, string> = {}
   if (hero) {
     const qualityRuns = getAllActivities()
       .filter((a) => a.type === 'Tempo' || a.type === 'Threshold')
       .slice(0, QUALITY_RUNS_WINDOW)
     const usedCount = qualityRuns.filter((a) => a.gearId === hero.gearId).length
-    const nextRace = await getNextRace()
-    heroInsight =
-      t.shoes.hero.usage(usedCount, qualityRuns.length) +
-      (nextRace ? t.shoes.hero.rotateBeforeRace(formatDate(nextRace.date, { style: 'bare' })) : t.shoes.hero.rotate)
+    if (usedCount > 0) insights[hero.gearId] = t.shoes.hero.usage(usedCount, qualityRuns.length)
   }
+
+  const comparison = getShoeComparison()
 
   return (
     <div className="space-y-6">
@@ -42,8 +42,11 @@ export default async function ShoesPage() {
         </p>
       </div>
 
-      <ShoesGrid shoes={shoes} heroInsight={heroInsight} />
-      <ShoeComparison rows={getShoeComparison()} />
+      <ShoesGrid
+        shoes={shoes}
+        insights={insights}
+        compare={comparison.length >= 2 ? <ShoeComparison rows={comparison} /> : undefined}
+      />
     </div>
   )
 }

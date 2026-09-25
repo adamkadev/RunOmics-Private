@@ -107,7 +107,7 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device, user }: Pr
           disabled={loading}
           className="flex w-full items-center justify-between gap-2 text-footnote text-muted-foreground transition-opacity active:opacity-60 disabled:opacity-50"
         >
-          <span>{loading ? s.dataExport.exporting : s.dataExport.workbook}</span>
+          <span>{loading ? s.dataExport.exporting : s.dataExport.title}</span>
           <span className="shrink-0 font-semibold text-accent-text">{s.rowAction.export}</span>
         </button>
 
