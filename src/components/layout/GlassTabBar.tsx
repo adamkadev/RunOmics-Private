@@ -32,7 +32,9 @@ export function GlassTabBar() {
           'glass-nav flex items-center border-x-0 border-b-0 transition-transform duration-200 ease-out',
           hidden ? 'translate-y-full' : 'translate-y-0 pointer-events-auto'
         )}
-        style={{ paddingBottom: 'max(4px, calc(var(--safe-bottom) * 0.6))' }}
+        // The whole home-indicator area: at 60 % of it the labels sat in the
+        // indicator's swipe zone.
+        style={{ paddingBottom: 'var(--safe-bottom)' }}
       >
         {TABS.map(({ href, label, icon: Icon }) => {
         const active = currentHref === href
@@ -43,13 +45,13 @@ export function GlassTabBar() {
             onClick={() => { if (!active) haptic('light') }}
             aria-current={active ? 'page' : undefined}
             className={cn(
-              'flex flex-1 flex-col items-center gap-0.5 pt-2.5 pb-1.5 transition-colors active:scale-95',
+              'flex h-12 flex-1 flex-col items-center justify-center gap-0.5 pt-1.5 transition-colors active:scale-95',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-xl',
-              active ? 'text-accent-text' : 'text-muted-foreground'
+              active ? 'text-accent-text' : 'text-subtle'
             )}
           >
-            <Icon size={22} strokeWidth={active ? 2.2 : 1.75} />
-            <span className={cn('text-micro', active ? 'font-semibold' : 'font-medium')}>
+            <Icon size={22} strokeWidth={1.9} aria-hidden="true" />
+            <span className="text-caption font-semibold">
               {label}
             </span>
           </Link>

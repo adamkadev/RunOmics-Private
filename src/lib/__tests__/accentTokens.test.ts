@@ -26,6 +26,9 @@ const ACCENT_TOKEN_NAMES = [
   '--aurora-2',
   '--background',
   '--canvas',
+  // The tab bar is the page background made nearly opaque, so it follows the
+  // accent's background rather than sitting on it as a second colour.
+  '--glass-bg-nav',
 ]
 
 const SEMANTIC_PREFIXES = ['--metric-', '--zone-', '--delta-', '--destructive', '--color-missed']
@@ -131,6 +134,18 @@ describe('the generated block for every stop on the wheel', () => {
     for (const { id } of CURATED_ACCENTS) {
       const generated = selectors.has(`[data-accent="${id}"]`)
       expect(generated, id).toBe(id !== CURATED_ACCENTS[0]!.id)
+    }
+  })
+})
+
+describe('the tab bar surface', () => {
+  const alpha = (value: string) => Number(value.match(/rgba\([^)]*,\s*([\d.]+)\)$/)?.[1])
+
+  // At 0.6 in dark, headings scrolled under the bar read through its labels.
+  it('is the accent background at 0.9 in dark and 0.92 in light', () => {
+    for (const accent of CURATED_ACCENTS) {
+      expect(alpha(accentTokens(accent, 'dark')['--glass-bg-nav']!), accent.id).toBe(0.9)
+      expect(alpha(accentTokens(accent, 'light')['--glass-bg-nav']!), accent.id).toBe(0.92)
     }
   })
 })
