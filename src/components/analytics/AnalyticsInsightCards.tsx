@@ -8,6 +8,7 @@ import type { ThresholdHistoryData } from '@/application/usecases/GetThresholdHi
 import { formatClock, formatDate, formatSignedDuration } from '@/lib/formatters'
 import { CHART_COLORS, metricDeltaColor } from '@/lib/colors'
 import { useAccentUiColor } from '@/lib/useAccent'
+import { easyPaceReading } from '@/domain/training/easyPace'
 import { t } from '@/i18n'
 
 const VIOLET = CHART_COLORS.efficiency
@@ -142,12 +143,12 @@ export function AnalyticsInsightCards({
   const vo2Values = vo2Points.map((p) => p.value)
   const vo2Latest = vo2Values[vo2Values.length - 1] ?? null
 
-  // Keep the date with the reading: the delta is meaningless without the month
-  // it is measured from, and filtering to a bare number threw that away.
-  const easySeries = weeklyTrends.flatMap((w) => (w.easyPace !== null ? [{ date: w.date, pace: w.easyPace }] : []))
-  const easyPaces = easySeries.map((w) => w.pace)
-  const easyLatest = easyPaces[easyPaces.length - 1] ?? null
-  const easyBaseline = easySeries.length >= MIN_DELTA_POINTS ? easySeries[0]! : null
+  // The season headline prints the same reading: four-week medians, now
+  // against the first block, with the month that block starts.
+  const easyPaces = weeklyTrends.map((w) => w.easyPace).filter((v): v is number => v !== null)
+  const easy = easyPaceReading(weeklyTrends)
+  const easyLatest = easy?.now ?? null
+  const easyBaseline = easy?.start ?? null
   const easyDelta = easyLatest !== null && easyBaseline ? easyLatest - easyBaseline.pace : null
 
   const thrSeries =
@@ -190,7 +191,7 @@ export function AnalyticsInsightCards({
           chip={easyDelta !== null ? formatSignedDuration(easyDelta) : undefined}
           chipColor={easyDelta !== null ? metricDeltaColor(easyDelta, 'down', PACE_NOISE_SEC) : undefined}
           note={easyBaseline ? s.since(formatDate(easyBaseline.date, { precision: 'month' })) : undefined}
-          value={formatClock(easyLatest)}
+          value={formatClock(Math.round(easyLatest))}
           unit={t.units.perKm}
         >
           <LineSpark values={easyPaces} color={accent} invert />

@@ -7,7 +7,7 @@ import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { WindowedChartCard, latestOf, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
 import { lineInterpolation } from '@/domain/timeWindow'
-import { formatClock, formatDelta } from '@/lib/formatters'
+import { formatClock, formatDate, formatDelta } from '@/lib/formatters'
 import { roundAxis } from '@/lib/chartAxis'
 import { t } from '@/i18n'
 
@@ -63,7 +63,9 @@ function thresholdReading(visible: ThresholdPoint[]): string | null {
   const s = t.analytics.charts.threshold
   const gain = windowPaceGain(visible)
   if (gain === null) return null
-  return Math.abs(gain) < 1 ? s.reading.flat : s.reading.change(formatDelta(-Math.round(gain), `s/${t.units.km}`))
+  const first = visible.find((p) => p.thresholdPaceSecPerKm !== null)
+  const since = first ? formatDate(first.date, { precision: 'month' }) : ''
+  return Math.abs(gain) < 1 ? s.reading.flat(since) : s.reading.change(formatDelta(-Math.round(gain), `s/${t.units.km}`), since)
 }
 
 export function ThresholdChart({ data }: { data: ThresholdHistoryData }) {

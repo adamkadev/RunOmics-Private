@@ -39,3 +39,12 @@ export function bestTrend(points: DatedPaces[], distances: RaceDistanceKey[]): P
 
   return best
 }
+
+/** Readings on or after the date `months` months before the latest one. */
+export function trailingMonths<T extends { date: string }>(points: T[], months: number): T[] {
+  const last = points[points.length - 1]
+  if (!last) return []
+  const [y, m, d] = last.date.split('-').map(Number) as [number, number, number]
+  const from = new Date(Date.UTC(y, m - 1 - months, d)).toISOString().slice(0, 10)
+  return points.filter((p) => p.date >= from)
+}
