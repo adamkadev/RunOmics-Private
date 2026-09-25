@@ -20,7 +20,6 @@ const c = HUE
 const glassLight = {
   '--glass-sat': '1.4',
   '--glass-bg': paper(0.62),
-  '--glass-bg-nav': paper(0.72),
   '--glass-border': paper(0.7),
   '--glass-highlight': paper(0.9),
   '--glass-shadow-float': `0 18px 40px -24px ${withAlpha(c.natureShadow, 0.35)}`,
@@ -33,7 +32,6 @@ const glassLight = {
 const glassDark = {
   '--glass-sat': '1.4',
   '--glass-bg': paper(0.03),
-  '--glass-bg-nav': withAlpha(c.natureBgDark, 0.6),
   '--glass-border': paper(0.07),
   '--glass-highlight': paper(0.05),
   '--glass-shadow-float': `0 24px 50px -26px ${ink(0.7)}`,
@@ -75,6 +73,9 @@ export function accentTokens(
       '--aurora-2': l('aurora2'),
       '--background': l('background'),
       '--canvas': `linear-gradient(155deg, ${l('canvasTop')} 0%, ${l('background')} 100%)`,
+      // The tab bar is the page's own background, nearly opaque: at 0.72 white
+      // headings scrolled under it read through the labels.
+      '--glass-bg-nav': withAlpha(l('background'), 0.92),
     }
   }
 
@@ -93,6 +94,9 @@ export function accentTokens(
     '--aurora-2': d('aurora2'),
     '--background': d('background'),
     '--canvas': `linear-gradient(155deg, ${d('canvasTop')} 0%, ${d('background')} 100%)`,
+    // Was a fixed Nature black at 0.6: content ghosted through the labels, and
+    // on teal the bar sat on the canvas as a different colour.
+    '--glass-bg-nav': withAlpha(d('background'), 0.9),
   }
 }
 

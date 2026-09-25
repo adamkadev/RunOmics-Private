@@ -179,9 +179,9 @@
   --aurora-2:            #cbe8c6;
   --background:          #edf8f2;
   --canvas:              linear-gradient(155deg, #f0faf4 0%, #edf8f2 100%);
+  --glass-bg-nav:        rgba(237, 248, 242, 0.92);
   --glass-sat:           1.4;
   --glass-bg:            rgba(255, 255, 255, 0.62);
-  --glass-bg-nav:        rgba(255, 255, 255, 0.72);
   --glass-border:        rgba(255, 255, 255, 0.7);
   --glass-highlight:     rgba(255, 255, 255, 0.9);
   --glass-shadow-float:  0 18px 40px -24px rgba(8, 40, 28, 0.35);
@@ -233,9 +233,9 @@
   --aurora-2:            #47903e;
   --background:          #000f07;
   --canvas:              linear-gradient(155deg, #001309 0%, #000f07 100%);
+  --glass-bg-nav:        rgba(0, 15, 7, 0.9);
   --glass-sat:           1.4;
   --glass-bg:            rgba(255, 255, 255, 0.03);
-  --glass-bg-nav:        rgba(6, 10, 8, 0.6);
   --glass-border:        rgba(255, 255, 255, 0.07);
   --glass-highlight:     rgba(255, 255, 255, 0.05);
   --glass-shadow-float:  0 24px 50px -26px rgba(0, 0, 0, 0.7);
@@ -260,6 +260,7 @@
   --aurora-2:           #b9ebdc;
   --background:         #ebf8f8;
   --canvas:             linear-gradient(155deg, #eefaf9 0%, #ebf8f8 100%);
+  --glass-bg-nav:       rgba(235, 248, 248, 0.92);
 }
 
 .dark[data-accent="teal"] {
@@ -277,6 +278,7 @@
   --aurora-2:           #009277;
   --background:         #000e0e;
   --canvas:             linear-gradient(155deg, #001212 0%, #000e0e 100%);
+  --glass-bg-nav:       rgba(0, 14, 14, 0.9);
 }
 
 [data-accent="performance"] {
@@ -294,6 +296,7 @@
   --aurora-2:           #bee4ff;
   --background:         #f0f6ff;
   --canvas:             linear-gradient(155deg, #f2f7ff 0%, #f0f6ff 100%);
+  --glass-bg-nav:       rgba(240, 246, 255, 0.92);
 }
 
 .dark[data-accent="performance"] {
@@ -311,6 +314,7 @@
   --aurora-2:           #0085c2;
   --background:         #030a1a;
   --canvas:             linear-gradient(155deg, #040e20 0%, #030a1a 100%);
+  --glass-bg-nav:       rgba(3, 10, 26, 0.9);
 }
 
 [data-accent="endurance"] {
@@ -328,6 +332,7 @@
   --aurora-2:           #d9dbff;
   --background:         #f7f3fd;
   --canvas:             linear-gradient(155deg, #f8f5fe 0%, #f7f3fd 100%);
+  --glass-bg-nav:       rgba(247, 243, 253, 0.92);
 }
 
 .dark[data-accent="endurance"] {
@@ -345,6 +350,7 @@
   --aurora-2:           #726fcc;
   --background:         #0e0617;
   --canvas:             linear-gradient(155deg, #12091d 0%, #0e0617 100%);
+  --glass-bg-nav:       rgba(14, 6, 23, 0.9);
 }
 
 [data-accent="silver"] {
@@ -362,6 +368,7 @@
   --aurora-2:           #d8e0e5;
   --background:         #f4f5f7;
   --canvas:             linear-gradient(155deg, #f6f7f8 0%, #f4f5f7 100%);
+  --glass-bg-nav:       rgba(244, 245, 247, 0.92);
 }
 
 .dark[data-accent="silver"] {
@@ -379,6 +386,7 @@
   --aurora-2:           #6e7f8a;
   --background:         #090b0e;
   --canvas:             linear-gradient(155deg, #0c0f12 0%, #090b0e 100%);
+  --glass-bg-nav:       rgba(9, 11, 14, 0.9);
 }
 
 [data-page-aurora="goals"] {
