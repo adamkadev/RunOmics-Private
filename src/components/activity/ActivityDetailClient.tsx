@@ -18,6 +18,7 @@ import { BestEfforts } from './BestEfforts'
 import { formatClock, formatDistance, formatDuration } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartCardSkeleton } from '@/components/ui/Skeleton'
+import { StickyBar } from '@/components/ui/StickyBar'
 import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { useUrlParam } from '@/lib/useUrlParam'
 import type { SimilarRunsData } from '@/application/usecases/GetSimilarRuns'
@@ -176,16 +177,15 @@ export function ActivityDetailClient({
       {extras}
 
       {tabs.length > 1 && (
-        <div className="sticky top-[var(--top-scrim)] z-30 -mx-4 mb-3 px-4 pb-1 sm:-mx-6 sm:px-6">
+        <StickyBar top="var(--top-scrim)" className="mb-3">
           <SegmentedTabs
             tabs={detailTabs}
             items={tabs}
             label={t.activity.tabs.groupLabel}
             fill
-            className="bg-background/85 backdrop-blur-md"
             tabClassName="h-9 text-footnote"
           />
-        </div>
+        </StickyBar>
       )}
 
       {/* space-y-5 is the page's own rhythm: the panel stands in for the

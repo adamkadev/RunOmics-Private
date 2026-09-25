@@ -145,6 +145,7 @@
   --status-bar:            #eef1f4;
   --shadow-card:           0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 4px 16px -4px rgba(0, 0, 0, 0.09);
   --card:                  #ffffff;
+  --popover:               #ffffff;
   --muted:                 #f1f5f9;
   --border:                #e2e8f0;
   --foreground:            #111b28;
@@ -212,6 +213,7 @@
   --status-bar:            #05070a;
   --shadow-card:           0 1px 2px 0 rgba(0, 0, 0, 0.35), 0 4px 16px -4px rgba(0, 0, 0, 0.7), inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
   --card:                  #0d110f;
+  --popover:               color-mix(in srgb, var(--background), #ffffff 9%);
   --muted:                 rgba(255, 255, 255, 0.05);
   --border:                rgba(255, 255, 255, 0.07);
   --foreground:            #e9eff7;
@@ -790,4 +792,13 @@ h1 {
   select {
     font-size: max(16px, 1em);
   }
+}
+
+/* Chart tooltips: above every series, dot and reference label in their chart
+   (the SVG is below the wrapper already, the z-index keeps it there when a
+   chart sets its own), but under the sticky tabs (z-30), so a tooltip slides
+   behind the bar instead of over it. Unlayered, like the rule above, because
+   Recharts writes its own z-index inline. */
+.recharts-tooltip-wrapper {
+  z-index: 20 !important;
 }

@@ -204,6 +204,9 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--shadow-card': `0 1px 3px 0 ${ink(0.06)}, 0 4px 16px -4px ${ink(0.09)}`,
 
       '--card': white,
+      // Tooltips and other floating surfaces: always opaque, so a series or
+      // a reference label can't show through the value they carry.
+      '--popover': white,
       '--muted': c.slate100,
       '--border': c.slate200,
       '--foreground': c.inkLight,
@@ -263,6 +266,9 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--shadow-card': `0 1px 2px 0 ${ink(0.35)}, 0 4px 16px -4px ${ink(0.7)}, inset 0 1px 0 0 ${paper(0.06)}`,
 
       '--card': c.natureCardDark,
+      // Lifted off each accent's own background, and opaque: --muted is a 5 %
+      // wash, which is what let the Half line cross "Half: 1:27:54".
+      '--popover': `color-mix(in srgb, var(--background), ${white} 9%)`,
       '--muted': paper(0.05),
       '--border': paper(0.07),
       '--foreground': c.inkDark,
