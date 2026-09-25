@@ -342,7 +342,7 @@ npm run test:coverage  # same suite with a v8 coverage report (text + lcov)
 npm run lint           # ESLint (next/core-web-vitals + TS)
 npm run typecheck      # tsc --noEmit
 npm run analyze        # production build with @next/bundle-analyzer treemaps
-npm run verify         # what CI's verify job runs: private-data check, lint, typecheck, tests
+npm run verify         # what CI's verify job runs: private-data check, lint, typecheck, import cycles, tests
 npm run test:rules     # firestore.rules against the Firestore emulator (needs Java 21)
 npm run validate:data  # the dataset against the Python -> app data contract
 ```

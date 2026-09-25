@@ -108,6 +108,11 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      # No new dependency: TypeScript resolves the imports, so the "@/" alias
+      # is followed like any other path. About 2s.
+      - name: Check import cycles
+        run: npm run check:cycles
+
       # Coverage doubles the suite here (53s -> 101s) and would make this the
       # slowest check, so the runs someone waits on - a push, a pull request -
       # skip it. The weekly and manual runs report it: a baseline to watch,
