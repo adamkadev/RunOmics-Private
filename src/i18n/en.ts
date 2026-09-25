@@ -46,6 +46,7 @@ export const en = {
     previous: 'Previous period',
     next: 'Next period',
     empty: 'No data recorded for this period.',
+    notEnoughRuns: 'Not enough runs in this window',
     tooFewToPlot: 'Too few points to draw a trend',
   },
 
@@ -510,7 +511,7 @@ export const en = {
         sessions: 'Sessions',
         weekOf: (label: string) => `Week of ${label}`,
         weekOfInProgress: (label: string) => `Week of ${label} (in progress)`,
-        footnote: 'Each point is one full week, Monday to Sunday. The horizontal dashed line is the average over the window; the vertical one marks the week in progress, still partial and left out of that average.',
+        footnote: 'Each point is one week\'s total, Monday to Sunday. The dashed line is the average of the complete weeks; the dashed end is the week in progress, left out of that average.',
         explains: {
           up: (km: number, avg: number) => `Last week ran ${km} km above your ${avg} km average`,
           down: (km: number, avg: number) => `Last week ran ${km} km below your ${avg} km average`,
@@ -533,6 +534,7 @@ export const en = {
         },
       },
       efficiency: {
+        adjustedNeedsTemp: 'Heat-adjusted needs temperature data',
         title: 'Aerobic Efficiency',
         unit: 'm/min·bpm',
         measured: 'Measured',
@@ -642,6 +644,7 @@ export const en = {
         footnote: 'Every run of the season, grouped by distance. Colour intensity reflects relative frequency.',
       },
       rpe: {
+        noneLogged: 'no RPE logged',
         title: 'RPE Trend',
         prefix: 'RPE',
         footnote: 'Average perceived effort (1–10).',

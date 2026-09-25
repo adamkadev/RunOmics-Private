@@ -1,6 +1,6 @@
 'use client'
 
-import { Area, AreaChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Area, ComposedChart, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
 import { useAccentUiColor } from '@/lib/useAccent'
@@ -128,11 +128,20 @@ export function WeeklyVolumeChart({ points }: { points: WeeklyTrendPoint[] }) {
         const totals = visible.map((w) => w.distanceKm)
         const summary = `${c.title}: ${Math.min(...totals)}-${Math.max(...totals)} ${t.units.km}${explain ? `. ${explain}` : ''}`
         const dotted = visible.length <= MAX_DOTTED_POINTS
+        // The week in progress is unfinished: the solid line stops at the last
+        // complete week and a dashed segment runs to a hollow point, instead
+        // of the plunge a partial total drew.
+        const currentIndex = visible.findIndex((w) => w.date === currentWeekDate)
+        const data = visible.map((w, i) => ({
+          ...w,
+          complete: i === currentIndex ? null : w.distanceKm,
+          inProgress: currentIndex !== -1 && (i === currentIndex || i === currentIndex - 1) ? w.distanceKm : null,
+        }))
 
         return (
           <ChartFigure summary={summary}>
             <ResponsiveContainer width="100%" height={200}>
-              <AreaChart data={visible} margin={{ top: 4, right: 18, bottom: 0, left: -8 }}>
+              <ComposedChart data={data} margin={{ top: 4, right: 18, bottom: 0, left: -8 }}>
                 <defs>
                   <linearGradient id="weeklyVolumeGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor={accentColor} stopOpacity={0.3} />
@@ -158,17 +167,9 @@ export function WeeklyVolumeChart({ points }: { points: WeeklyTrendPoint[] }) {
                     strokeWidth={1}
                   />
                 )}
-                {visible.some((w) => w.date === currentWeekDate) && (
-                  <ReferenceLine
-                    x={currentWeekDate}
-                    stroke={accentColor}
-                    strokeDasharray="4 3"
-                    strokeWidth={1.5}
-                  />
-                )}
                 <Area
                   type={lineInterpolation(visible.length)}
-                  dataKey="distanceKm"
+                  dataKey="complete"
                   stroke={accentColor}
                   strokeWidth={3}
                   fill="url(#weeklyVolumeGradient)"
@@ -176,7 +177,25 @@ export function WeeklyVolumeChart({ points }: { points: WeeklyTrendPoint[] }) {
                   activeDot={{ r: 4, fill: accentColor, strokeWidth: 0 }}
                   isAnimationActive={false}
                 />
-              </AreaChart>
+                {currentIndex !== -1 && (
+                  <Line
+                    type="linear"
+                    dataKey="inProgress"
+                    stroke={accentColor}
+                    strokeWidth={2}
+                    strokeDasharray="4 3"
+                    dot={(props: { cx?: number; cy?: number; index?: number }) =>
+                      props.index === currentIndex && props.cx != null && props.cy != null ? (
+                        <circle key="in-progress" cx={props.cx} cy={props.cy} r={3.5} fill="var(--background)" stroke={accentColor} strokeWidth={2} data-testid="week-in-progress" />
+                      ) : (
+                        <g key={`none-${props.index}`} />
+                      )
+                    }
+                    activeDot={false}
+                    isAnimationActive={false}
+                  />
+                )}
+              </ComposedChart>
             </ResponsiveContainer>
           </ChartFigure>
         )
