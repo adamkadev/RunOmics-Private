@@ -15,7 +15,7 @@ import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { BackButton } from '@/components/ui/BackButton'
 import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
 import { STATUS } from '@/lib/statusColors'
-import { ACTIVITY_TYPE_STYLE } from '@/components/activity/activityTypeStyle'
+import { runTypeColor } from '@/lib/colors'
 import { formatDateRange, formatKm, formatMonthShortYear, formatPace } from '@/lib/formatters'
 import { addDays, isoDate } from '@/lib/calendarDate'
 import { cn } from '@/lib/utils'
@@ -31,14 +31,13 @@ const WEAR_STYLE: Record<WearStatus, { bar: string; text: string }> = {
   replace: { bar: STATUS.danger.dot,  text: STATUS.danger.text },
 }
 
-// Base/Tempo/Intervals borrows its three colours from the activity-type ramp
-// rather than inventing a new one: Tempo and Anaerobic are already the
-// mid/hard steps of that ramp, so the usage bar reads as the same intensity
-// scale the rest of the app uses.
+// Base/Tempo/Intervals takes its three colours from RUN_TYPE_ZONE, the ramp
+// the plan and the lists use, so the usage bar reads as the same intensity
+// scale: Z2 for base, Z3 for tempo, Z5 for intervals.
 const TYPE_SHARE_COLOR: Record<ShoeTypeBucket, string> = {
-  base: ACTIVITY_TYPE_STYLE.Base.chartColor,
-  tempo: ACTIVITY_TYPE_STYLE.Tempo.chartColor,
-  intervals: ACTIVITY_TYPE_STYLE.Anaerobic.chartColor,
+  base: runTypeColor('Base'),
+  tempo: runTypeColor('Tempo'),
+  intervals: runTypeColor('Anaerobic'),
 }
 
 function typeShareLabel(bucket: ShoeTypeBucket): string {

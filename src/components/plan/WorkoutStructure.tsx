@@ -78,16 +78,18 @@ export function recoveryLabel(steps: WorkoutStep[] | null | undefined): string |
   return recovery ? t.plan.structure.rec(recovery.minutes) : null
 }
 
-const CONTINUOUS_FILL = 'rgba(52,211,153,.7)'
-const CONTINUOUS_INK = '#06231a'
-const DONE_FILL = 'rgba(90,151,245,.55)'
-const DONE_INK = '#0a1628'
-const WORK_FILL = 'var(--delta-warn)'
-const WORK_INK = '#2a1405'
-const RECOVERY_FILL = 'rgba(90,151,245,.5)'
+// The bar is filled in the zone the session targets and written in --zone-ink,
+// which clears 7:1 on Z3 and Z4. It used to be navy text on a mid-blue fill -
+// about 3:1 - and the blue said Z2 on a Z4 session.
+const ZONE_INK = 'var(--zone-ink)'
+const RECOVERY_FILL = 'color-mix(in srgb, var(--zone-1) 60%, transparent)'
 // Warm-up/cool-down need to read as segments, not gaps - .18 sat close
 // enough to the card's own light-mode tint that they blended into it.
-const EASE_FILL = 'rgba(148,178,220,.32)'
+const EASE_FILL = 'color-mix(in srgb, var(--subtle) 32%, transparent)'
+
+function zoneFill(zone: number | null): string {
+  return `var(--zone-${zone ?? 2})`
+}
 
 // A block this many times longer than the reps around it is the run's easy
 // body, not a work interval - "3 x 8min" (all equal) never qualifies, but a
@@ -104,25 +106,29 @@ function findBody(efforts: WorkoutStep[]): WorkoutStep | null {
 
 /**
  * The day card's own structure bar - continuous, or interval, drawn only from
- * steps the plan actually carries. `variant` is the only thing that tells a
- * prescribed session from a logged one: green is "this is prescribed", blue
- * ("done") is "this happened" - completed activities have no logged interval
- * breakdown in this domain, so they always take the continuous path.
+ * steps the plan actually carries. Colour is the session's intensity (its
+ * zone); whether it was done or is still planned is the state chip's job, not
+ * the bar's. Completed activities have no logged interval breakdown in this
+ * domain, so they always take the continuous path.
  */
 export function SessionStructureBar({
   steps,
   zoneWord,
+  zone,
   totalSeconds,
-  variant = 'planned',
 }: {
   steps: WorkoutStep[]
   zoneWord: string | null
+  /** The zone the session targets (RUN_TYPE_ZONE); Z2 when unknown. */
+  zone: number | null
   totalSeconds: number
-  variant?: 'planned' | 'done'
 }) {
   const efforts = steps.filter((st) => st.kind === 'effort')
-  const fill = variant === 'done' ? DONE_FILL : CONTINUOUS_FILL
-  const ink = variant === 'done' ? DONE_INK : CONTINUOUS_INK
+  const fill = zoneFill(zone)
+  const ink = ZONE_INK
+  // Short fast reps inside an easy run are strides: the reps take Z5, the body
+  // keeps the session's own zone.
+  const workFill = zone !== null && zone >= 3 ? fill : zoneFill(5)
 
   if (efforts.length <= 1) {
     const label = [formatDurationWords(totalSeconds), [zoneWord, t.plan.continuous].filter(Boolean).join(' ')]
@@ -204,11 +210,11 @@ export function SessionStructureBar({
                 flexGrow: weights[i],
                 flexBasis: 0,
                 height: isWork ? '22px' : '16px',
-                background: isWork ? WORK_FILL : step.kind === 'recovery' ? RECOVERY_FILL : EASE_FILL,
+                background: isWork ? workFill : step.kind === 'recovery' ? RECOVERY_FILL : EASE_FILL,
               }}
             >
               {labelled && (
-                <span className="font-bold leading-none" style={{ fontSize: '10px', color: WORK_INK }}>
+                <span className="font-bold leading-none" style={{ fontSize: '10px', color: ZONE_INK }}>
                   {s.min(step.minutes)}
                 </span>
               )}

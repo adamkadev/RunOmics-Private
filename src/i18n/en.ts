@@ -1447,6 +1447,7 @@ export const en = {
       noSession: 'No session planned',
       next: (weekday: string, title: string) => `No session planned · next is ${weekday}, ${title}`,
     },
+    intensityNote: (zones: string) => `Colour = intensity (${zones})`,
     weekSummary: {
       load: 'Load',
       loadUnit: 'pts',
