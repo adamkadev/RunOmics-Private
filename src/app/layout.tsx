@@ -16,6 +16,7 @@ import {
   CUSTOM_ACCENT_STYLE_ID,
 } from '@/lib/accent'
 import { appleStartupImages } from '@/lib/splashScreens'
+import { STATUS_BAR_COLOR } from '@/lib/themeTokens'
 
 const inter = Inter({ variable: '--font-inter', subsets: ['latin'] })
 const spaceGrotesk = Space_Grotesk({ variable: '--font-space-grotesk', subsets: ['latin'], weight: ['500', '600', '700'] })
@@ -30,12 +31,12 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
-    // Translucent, so the bar shows the page and follows every theme and
-    // accent change live. The opaque 'default' bar took its colour from the
-    // theme-color at install and never followed an in-app switch. iOS 26+
-    // blurs the band under a translucent bar; --top-scrim keeps content out
-    // of it. Read at install time: an installed app must be re-added.
-    statusBarStyle: 'black-translucent',
+    // Opaque, with dark text in light mode. black-translucent always draws
+    // white status-bar text (unreadable on the light theme) and iOS 26+ blurs
+    // the band under it. The opaque bar takes its colour from theme-color at
+    // install, so that colour is a fixed neutral (STATUS_BAR_COLOR) the page
+    // top matches. Read at install time: an installed app must be re-added.
+    statusBarStyle: 'default',
     title: 'RunOmics',
     startupImage: [...appleStartupImages],
   },
@@ -68,9 +69,12 @@ export const viewport: Viewport = {
   initialScale: 1,
   // Still `cover`, for the bottom inset the tab bar pads by.
   viewportFit: 'cover',
-  // No themeColor here: ThemeSync owns the theme-color meta and prunes it to
-  // one, and pruning metas Next manages broke its head updates on client
-  // navigation (removeChild on null).
+  // Fixed, never rewritten at runtime: iOS stores it at install, and a value
+  // changed later (the accent, an in-app theme switch) never reaches the bar.
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: STATUS_BAR_COLOR.light },
+    { media: '(prefers-color-scheme: dark)', color: STATUS_BAR_COLOR.dark },
+  ],
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
