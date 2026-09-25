@@ -39,4 +39,23 @@ describe('useToast', () => {
     act(() => vi.advanceTimersByTime(1_500))
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
   })
+
+  // White measured about 2:1 on the dark teal accent (L 0.71): the one
+  // confirmation after saving a note was the hardest thing on screen to read.
+  it("writes a success toast in the accent's own ink", () => {
+    render(<Toast toast={{ msg: 'Saved', ok: true }} />)
+    const cls = screen.getByRole('status').className
+
+    expect(cls).toContain('bg-accent')
+    expect(cls).toContain('text-accent-foreground')
+    expect(cls).not.toContain('text-white')
+  })
+
+  it('keeps white ink on the destructive fill', () => {
+    render(<Toast toast={{ msg: 'Failed', ok: false }} />)
+    const cls = screen.getByRole('status').className
+
+    expect(cls).toContain('bg-destructive')
+    expect(cls).toContain('text-white')
+  })
 })

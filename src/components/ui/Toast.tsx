@@ -40,8 +40,10 @@ export function Toast({ toast, leaving }: { toast: ToastData; leaving?: boolean 
     <div
       role="status"
       className={cn(
-        'fixed inset-x-4 z-50 animate-fade-up rounded-lg px-4 py-2.5 text-center text-sm font-semibold text-white shadow-lg transition-opacity duration-200 ease-out sm:inset-x-auto sm:right-4 sm:text-left',
-        toast.ok ? 'bg-accent' : 'bg-destructive',
+        'fixed inset-x-4 z-50 animate-fade-up rounded-lg px-4 py-2.5 text-center text-sm font-semibold shadow-lg transition-opacity duration-200 ease-out sm:inset-x-auto sm:right-4 sm:text-left',
+        // The accent's own ink: white measured about 2:1 on the lighter dark-mode
+        // accents. The destructive red keeps white, which it was tuned for.
+        toast.ok ? 'bg-accent text-accent-foreground' : 'bg-destructive text-white',
         leaving && 'opacity-0'
       )}
       style={{ top: 'max(calc(env(safe-area-inset-top, 0px) + 0.75rem), 0.75rem)' }}
