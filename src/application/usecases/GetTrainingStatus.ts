@@ -2,9 +2,9 @@ import { DAY_MS } from '@/lib/calendarDate'
 import type { Activity } from '@/domain/activity/types'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getLatestTrainingStatusDay } from '@/infrastructure/repositories/JsonTrainingStatusRepository'
-import { getTrainingLoad, ATL_DAYS } from './GetTrainingLoad'
+import { getTrainingLoad } from './GetTrainingLoad'
 import { round } from '@/lib/math'
-import type { TrainingStatusType, RiskLevel, LoadTrend, TrainingStatus } from '@/domain/training/status'
+import { STATUS_DELTA_DAYS, type TrainingStatusType, type RiskLevel, type LoadTrend, type TrainingStatus } from '@/domain/training/status'
 
 // Moved to the domain; re-exported so every existing importer keeps working.
 export type { TrainingStatusType, RiskLevel, LoadTrend, TrainingStatus } from '@/domain/training/status'
@@ -64,15 +64,15 @@ export async function getTrainingStatus(): Promise<TrainingStatus | null> {
   if (!load) return null
 
   const { ctl, atl, tsb, tsbNow, points } = load
-  const prevPoint = points.length >= 15 ? points[points.length - 15] : points[0]
+  const prevPoint = points.length >= STATUS_DELTA_DAYS.fitness + 1 ? points[points.length - (STATUS_DELTA_DAYS.fitness + 1)] : points[0]
   if (!prevPoint) return null
   const ctlDelta = round(ctl - prevPoint.ctl, 1)
 
-  const atlPrevPoint = points.length >= ATL_DAYS + 1 ? points[points.length - (ATL_DAYS + 1)] : points[0]
+  const atlPrevPoint = points.length >= STATUS_DELTA_DAYS.fatigue + 1 ? points[points.length - (STATUS_DELTA_DAYS.fatigue + 1)] : points[0]
   if (!atlPrevPoint) return null
   const atlDelta = round(atl - atlPrevPoint.atl, 1)
 
-  const weekAgo = points.length >= 8 ? points[points.length - 8] : points[0]
+  const weekAgo = points.length >= STATUS_DELTA_DAYS.form + 1 ? points[points.length - (STATUS_DELTA_DAYS.form + 1)] : points[0]
   const tsbDelta = round(tsbNow - (weekAgo?.tsb ?? tsbNow), 1)
 
   const activities = getAllActivities()

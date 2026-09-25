@@ -48,6 +48,13 @@ export const fr = {
     monthShortYear: (month: string, year2: string) => `${month} ${year2}`,
   },
 
+  formBand: {
+    tired: 'Fatigué',
+    neutral: 'Neutre',
+    fresh: 'Frais',
+    veryFresh: 'Très frais',
+  },
+
   sessionState: {
     done: 'Fait',
     planned: 'Prévu',
@@ -327,23 +334,19 @@ export const fr = {
       fitness: 'Condition',
       fatigue: 'Fatigue',
       form: 'Forme',
-      status: {
-        fresh: 'Frais',
-        neutral: 'Neutre',
-        building: 'Progression',
-        overreaching: 'Surcharge',
-      },
       footnote:
         'Condition = charge moyenne sur 42 j (CTL) · Fatigue = 7 j (ATL) · Forme = Condition - Fatigue (TSB).',
     },
+    bodyCard: {
+      daysOfLast: (days: number, total: number) => `${days} des ${total} derniers jours`,
+      legendItem: (status: string, days: number) => `${status} ${days} j`,
+      deltaIn: (delta: string, days: number) => `${delta} en ${days} j`,
+      openHistory: 'Historique du statut d’entraînement',
+    },
+    latestRecord: 'Dernier record',
     trainingStatusDays: {
       title: 'Statut d’entraînement',
-      today: "Aujourd'hui",
-      noReading: 'Pas de lecture',
       titleToday: (title: string) => `${title} · aujourd’hui`,
-      window: (days: number) => `${days} derniers jours`,
-      tapHint: 'touchez un segment',
-      dominant: (days: number, status: string) => `${days} j ${status.toLowerCase()}`,
     },
     syncStatus: {
       synced: (relative: string) => `Synchronisé ${relative}`,

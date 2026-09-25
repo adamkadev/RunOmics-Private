@@ -56,6 +56,14 @@ export const en = {
     monthShortYear: (month: string, year2: string) => `${month} ’${year2}`,
   },
 
+  // Form's named bands (domain/training/formBand).
+  formBand: {
+    tired: 'Tired',
+    neutral: 'Neutral',
+    fresh: 'Fresh',
+    veryFresh: 'Very fresh',
+  },
+
   // A session's state, drawn in shape (see the .state-* recipes) and named the
   // same way wherever a week is shown.
   sessionState: {
@@ -338,23 +346,20 @@ export const en = {
       fitness: 'Fitness',
       fatigue: 'Fatigue',
       form: 'Form',
-      status: {
-        fresh: 'Fresh',
-        neutral: 'Neutral',
-        building: 'Building',
-        overreaching: 'Overreaching',
-      },
       footnote:
         'Fitness = 42-day load average (CTL) · Fatigue = 7-day (ATL) · Form = Fitness - Fatigue (TSB).',
     },
+    // Training status and Form / Fitness / Fatigue, one card on Today.
+    bodyCard: {
+      daysOfLast: (days: number, total: number) => `${days} of the last ${total} days`,
+      legendItem: (status: string, days: number) => `${status} ${days} d`,
+      deltaIn: (delta: string, days: number) => `${delta} in ${days} d`,
+      openHistory: 'Training status history',
+    },
+    latestRecord: 'Latest record',
     trainingStatusDays: {
       title: 'Training Status',
       titleToday: (title: string) => `${title} · today`,
-      today: 'Today',
-      noReading: 'No reading',
-      window: (days: number) => `Last ${days} days`,
-      tapHint: 'tap a segment',
-      dominant: (days: number, status: string) => `${days} d ${status.toLowerCase()}`,
     },
     syncStatus: {
       synced: (relative: string) => `Synced ${relative}`,

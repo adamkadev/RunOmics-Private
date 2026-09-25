@@ -65,7 +65,9 @@ export const HUE = {
   pink700: '#be185d',
   pink800: '#9d174d',
 
+  violet400: '#a78bfa',
   violet500: '#8b5cf6',
+  violet600: '#7c3aed',
 
   roEmerald:      '#1ed787',
   roEmeraldHi:    '#4fe6a0',

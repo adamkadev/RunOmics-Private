@@ -19,6 +19,7 @@ import { ChartFigure } from '@/components/ui/ChartFigure'
 import { ChartRangeChips, ChartWindowPager, trendDots, useChartWindow } from '@/components/ui/ChartWindowNav'
 import { lineInterpolation, sampleForRange } from '@/domain/timeWindow'
 import { t } from '@/i18n'
+import { formBand, type FormBand } from '@/domain/training/formBand'
 
 interface Props {
   data: TrainingLoadData
@@ -41,12 +42,18 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   )
 }
 
+// The same named bands as Today's Body card (domain/training/formBand), so a
+// Form of -12 is "tired" on both screens.
+const FORM_BAND_CLASS: Record<FormBand, string> = {
+  tired: STATUS.warning.text,
+  neutral: 'text-muted-foreground',
+  fresh: STATUS.success.text,
+  veryFresh: STATUS.warning.text,
+}
+
 function formStatus(tsb: number): { label: string; className: string } {
-  const s = t.dashboard.trainingLoad.status
-  if (tsb > 5)   return { label: s.fresh,       className: STATUS.success.text }
-  if (tsb >= -10) return { label: s.neutral,     className: 'text-muted-foreground' }
-  if (tsb >= -30) return { label: s.building,    className: STATUS.warning.text }
-  return           { label: s.overreaching,       className: STATUS.danger.text }
+  const band = formBand(tsb)
+  return { label: t.formBand[band], className: FORM_BAND_CLASS[band] }
 }
 
 export function TrainingLoadChart({ data }: Props) {
