@@ -3,11 +3,13 @@
 import { useState } from 'react'
 import { Timer, ChevronRight } from 'lucide-react'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { formatDuration, formatClock } from '@/lib/formatters'
+import { MINUS, formatDuration, formatClock } from '@/lib/formatters'
+import { CHART_COLORS } from '@/lib/colors'
+import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { ActivitySplit, SplitLap } from '@/domain/activity/types'
 import type { ActivityDetailView } from './activityViews'
-import { kmSplitsFromSamples, type KmSplit } from '@/domain/activity/kmSplits'
+import { kmSplitsFromSamples, splitSpread, type KmSplit } from '@/domain/activity/kmSplits'
 import { repSet } from '@/domain/activity/repSet'
 import { IntervalSet } from './IntervalSet'
 
@@ -43,58 +45,95 @@ function distStr(distanceM: number): string {
   return (distanceM / 1000).toFixed(2)
 }
 
-const PER_KM_ROW_NO_HR = 'grid w-full items-center gap-x-1.5 grid-cols-[1fr_3.5rem]'
-const PER_KM_ROW_HR = 'grid w-full items-center gap-x-1.5 grid-cols-[1fr_3.5rem_3rem]'
+// Packed columns - km, pace, a speed bar, the gap to the run's average, HR -
+// where a wide empty gutter used to separate km from pace.
+const PER_KM_ROW = 'grid w-full items-center gap-x-2 grid-cols-[2.5rem_2.75rem_1fr_2.75rem_2.25rem]'
+const PER_KM_ROW_NO_HR = 'grid w-full items-center gap-x-2 grid-cols-[2.5rem_2.75rem_1fr_2.75rem]'
 
 interface Props {
   activity: ActivityDetailView
 }
 
+function signedSeconds(delta: number): string {
+  return delta > 0 ? `+${delta}` : delta < 0 ? `${MINUS}${Math.abs(delta)}` : '0'
+}
+
+/**
+ * A continuous run's kilometres, compared with each other: a speed bar per km
+ * and its gap to the run average, under a one-line summary of the spread. The
+ * tab used to say "no interval structure recorded" and list pace and HR with
+ * nothing that compared one km with another.
+ */
 function PerKmSplits({ activity, splits }: { activity: ActivityDetailView; splits: KmSplit[] }) {
+  const sp = t.activity.splits
   const showHr = splits.some((s) => s.avgHr !== null)
-  const rowCls = showHr ? PER_KM_ROW_HR : PER_KM_ROW_NO_HR
-  const totalDistanceKm = splits.reduce((s, sp) => s + sp.distanceKm, 0)
-  const totalDurationSec = splits.reduce((s, sp) => s + sp.durationSec, 0)
+  const rowCls = showHr ? PER_KM_ROW : PER_KM_ROW_NO_HR
+  const totalDistanceKm = splits.reduce((s, x) => s + x.distanceKm, 0)
+  const totalDurationSec = splits.reduce((s, x) => s + x.durationSec, 0)
+  const avgPace = activity.paceSecPerKm ?? Math.round(totalDurationSec / totalDistanceKm)
+  const spread = splitSpread(splits)
+
+  // Bars run from the slowest km (40 %) to the fastest (full), so the
+  // differences a few seconds apart can be seen; speed is 1 / pace.
+  const speeds = splits.map((s) => 1 / s.paceSecPerKm)
+  const lo = Math.min(...speeds)
+  const hi = Math.max(...speeds)
+  const width = (speed: number) => (hi > lo ? 40 + ((speed - lo) / (hi - lo)) * 60 : 100)
 
   return (
-    <GlassSurface variant="card" className="p-5">
-      <div className="mb-1 flex items-center gap-2">
-        <Timer size={16} className="text-accent-text" />
-        <h3 className="text-sm font-semibold text-foreground/80">{t.activity.splits.perKmTitle}</h3>
+    <GlassSurface variant="card" className="rounded-card-sm px-4 py-3.5">
+      <div className="flex items-baseline justify-between gap-3">
+        <h3 className="text-subhead font-semibold text-foreground">{sp.perKmTitle}</h3>
+        <span className="text-xs text-muted-foreground">{sp.continuous}</span>
       </div>
-      <p className="mb-4 text-caption text-subtle">{t.activity.splits.continuous}</p>
-
-      <div className="w-full space-y-0.5">
-        <div className={`${rowCls} pb-1.5 text-caption font-semibold uppercase tracking-wide text-subtle`}>
-          <span className="truncate">{t.activity.splits.cols.km}</span>
-          <span className="truncate">{t.activity.splits.cols.pace}</span>
-          {showHr && <span className="truncate">{t.activity.splits.cols.hr}</span>}
-        </div>
-
-        {splits.map((split) => (
-          <div key={split.km} className={`${rowCls} rounded-md px-1 py-1.5`}>
-            <span className="truncate text-xs font-semibold tabular-nums text-foreground/60">
-              {split.distanceKm < 1
-                ? t.activity.splits.partialKm(split.distanceKm.toFixed(2))
-                : split.km}
-            </span>
-            <span className="text-xs tabular-nums">{formatClock(split.paceSecPerKm)}</span>
-            {showHr && <span className="text-xs tabular-nums">{split.avgHr ?? '-'}</span>}
-          </div>
-        ))}
-
-        <div className={`${rowCls} border-t border-border px-1 pb-1 pt-2.5`}>
-          <span className="truncate text-xs font-semibold text-foreground/70">
-            {t.activity.splits.cols.total}
-          </span>
-          <span className="text-xs font-semibold tabular-nums">
-            {formatClock(activity.paceSecPerKm ?? Math.round(totalDurationSec / totalDistanceKm))}
-          </span>
-          {showHr && (
-            <span className="text-xs font-semibold tabular-nums">{activity.avgHeartRate ?? '-'}</span>
+      {spread && (
+        <p className="mt-1 text-footnote text-muted-foreground">
+          {sp.spreadSummary(
+            sp.spreadKind[spread.kind],
+            spread.fastest.km,
+            formatClock(spread.fastest.paceSecPerKm),
+            spread.slowest.km,
+            formatClock(spread.slowest.paceSecPerKm),
+            spread.spread,
           )}
-        </div>
+        </p>
+      )}
+
+      <div className={`${rowCls} mt-3 whitespace-nowrap text-caption font-semibold uppercase tracking-[0.06em] text-subtle`}>
+        <span>{sp.cols.km}</span>
+        <span>{sp.cols.pace}</span>
+        <span>{sp.cols.speed}</span>
+        <span className="text-right">{sp.cols.vsAvg}</span>
+        {showHr && <span className="text-right">{sp.cols.hr}</span>}
       </div>
+
+      {splits.map((split, i) => {
+        const delta = Math.round(split.paceSecPerKm - avgPace)
+        return (
+          <div key={split.km} className={`${rowCls} min-h-10 border-b border-border text-sm`}>
+            <span className="tabular-nums text-muted-foreground">
+              {split.distanceKm < 1 ? split.distanceKm.toFixed(2) : split.km}
+            </span>
+            <span className="font-semibold tabular-nums text-foreground">{formatClock(split.paceSecPerKm)}</span>
+            <span className="block h-2 overflow-hidden rounded-full" style={{ background: 'var(--track)' }} aria-hidden="true">
+              <span className="block h-full rounded-full" style={{ width: `${width(speeds[i]!)}%`, background: CHART_COLORS.pace }} />
+            </span>
+            <span className={cn('text-right font-semibold tabular-nums', delta < 0 ? 'text-delta-good' : 'text-muted-foreground')}>
+              {signedSeconds(delta)}
+            </span>
+            {showHr && <span className="text-right tabular-nums text-muted-foreground">{split.avgHr ?? '-'}</span>}
+          </div>
+        )
+      })}
+
+      <div className={`${rowCls} min-h-10 text-sm font-bold`}>
+        <span>{sp.cols.total}</span>
+        <span className="tabular-nums">{formatClock(avgPace)}</span>
+        <span />
+        <span />
+        {showHr && <span className="text-right tabular-nums">{activity.avgHeartRate ?? '-'}</span>}
+      </div>
+      <p className="mt-1 text-xs text-subtle">{sp.footnote}</p>
     </GlassSurface>
   )
 }

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { Activity, ActivitySplit } from '@/domain/activity/types'
 import { t } from '@/i18n'
 import { KmSplits } from '../KmSplits'
+import type { ActivityDetailView } from '../activityViews'
 
 function split(
   type: ActivitySplit['type'],
@@ -135,5 +136,29 @@ describe('KmSplits on a continuous run', () => {
 
     expect(screen.queryByText(t.activity.splits.continuous)).not.toBeInTheDocument()
     expect(screen.getByText(t.activity.splits.intervalTypes.interval_active!)).toBeInTheDocument()
+  })
+})
+
+describe('per-km splits', () => {
+  it('compares each km: a speed bar, its gap to the average and a spread line', () => {
+    render(
+      <KmSplits
+        activity={{
+          ...({} as ActivityDetailView),
+          distanceKm: 3,
+          durationSeconds: 750,
+          paceSecPerKm: 250,
+          avgHeartRate: 150,
+          splits: [split('lap', 750, 3_000, 150)],
+          paceSamples: [...Array(100).fill(240), ...Array(100).fill(250), ...Array(100).fill(260)],
+          hrSamples: null,
+        }}
+      />,
+    )
+
+    expect(screen.getByText(t.activity.splits.cols.speed)).toBeInTheDocument()
+    expect(screen.getByText(t.activity.splits.cols.vsAvg)).toBeInTheDocument()
+    expect(screen.getByText(t.activity.splits.footnote)).toBeInTheDocument()
+    expect(screen.getByText(/s\/km spread/)).toBeInTheDocument()
   })
 })

@@ -82,3 +82,41 @@ export function kmSplitsFromSamples({
       avgHr: meanHrOver(hrSamples, (index * 1) / distanceKm, Math.min(index + km, distanceKm) / distanceKm),
     }))
 }
+
+export type SplitSpreadKind = 'even' | 'negative' | 'faded' | 'uneven'
+
+export interface SplitSpread {
+  fastest: KmSplit
+  slowest: KmSplit
+  /** Slowest minus fastest, in s/km. */
+  spread: number
+  kind: SplitSpreadKind
+}
+
+/** A spread this small, in s/km, reads as an even run. */
+const EVEN_SPREAD = 15
+/** A half this much faster or slower than the other, in s/km, is a trend. */
+const HALF_TREND = 5
+
+/**
+ * How even the run was, from its full kilometres: the fastest, the slowest and
+ * the gap between them, and whether the second half ran faster (a negative
+ * split), slower (faded) or neither. A partial last kilometre is left out - a
+ * 110 m sprint to the door is not a kilometre.
+ */
+export function splitSpread(splits: KmSplit[]): SplitSpread | null {
+  const full = splits.filter((s) => s.distanceKm >= 0.99)
+  if (full.length < 2) return null
+
+  const fastest = full.reduce((a, b) => (b.paceSecPerKm < a.paceSecPerKm ? b : a))
+  const slowest = full.reduce((a, b) => (b.paceSecPerKm > a.paceSecPerKm ? b : a))
+  const spread = Math.round(slowest.paceSecPerKm - fastest.paceSecPerKm)
+
+  const half = Math.floor(full.length / 2)
+  const mean = (xs: KmSplit[]) => xs.reduce((sum, s) => sum + s.paceSecPerKm, 0) / xs.length
+  const trend = mean(full.slice(full.length - half)) - mean(full.slice(0, half))
+
+  const kind: SplitSpreadKind =
+    spread <= EVEN_SPREAD ? 'even' : trend <= -HALF_TREND ? 'negative' : trend >= HALF_TREND ? 'faded' : 'uneven'
+  return { fastest, slowest, spread, kind }
+}
