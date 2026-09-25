@@ -3,7 +3,7 @@
 import { ComposedChart, Area, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
-import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
+import { TooltipCard, TooltipRow, tooltipNumber } from '@/components/ui/ChartTooltip'
 import { WindowedChartCard, latestOf, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
 import { lineInterpolation } from '@/domain/timeWindow'
 import { trendFromSeries } from '@/lib/chartTrend'
@@ -18,6 +18,19 @@ const HEAT_GAP_MIN = 0.02
 // by 0.05 and prints the decimals that step needs; the old domain stepped by
 // 0.05 too but formatted to one decimal, so it labelled two ticks "1.1".
 const EF_STEP = 0.05
+const EF_MIN_SPAN = 0.6
+
+function isFiniteNumber(value: number | null | undefined): value is number {
+  return typeof value === 'number' && Number.isFinite(value)
+}
+
+/** The values plus two bounds that widen their range to at least `span`. */
+function padToSpan(values: number[], span: number): number[] {
+  const min = Math.min(...values)
+  const max = Math.max(...values)
+  const gap = span - (max - min)
+  return gap > 0 ? [...values, min - gap / 2, max + gap / 2] : values
+}
 
 interface TooltipProps {
   active?: boolean
@@ -30,12 +43,8 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   const c = t.analytics.charts.efficiency
   return (
     <TooltipCard label={d.label}>
-      {d.efAdjusted !== null && (
-        <TooltipRow color={CHART_COLORS.efficiency} name={c.adjusted} value={`${d.efAdjusted.toFixed(2)} ${c.unit}`} />
-      )}
-      {d.ef !== null && (
-        <TooltipRow color={CHART_COLORS.axisTick} name={c.measured} value={`${d.ef.toFixed(2)} ${c.unit}`} />
-      )}
+      <TooltipRow color={CHART_COLORS.axisTick} name={c.measured} value={tooltipNumber(d.ef, (v) => `${v.toFixed(2)} ${c.unit}`)} />
+      <TooltipRow color={CHART_COLORS.efficiency} name={c.adjusted} value={tooltipNumber(d.efAdjusted, (v) => `${v.toFixed(2)} ${c.unit}`)} />
       {d.apparentTempC !== null && <p className="text-xs text-subtle">{c.felt(Math.round(d.apparentTempC))}</p>}
     </TooltipCard>
   )
@@ -85,12 +94,18 @@ export function EfficiencyChart({ points }: { points: WeeklyTrendPoint[] }) {
   if (!points.some((p) => p.ef !== null)) return null
 
   const c = t.analytics.charts.efficiency
-  const legend = (
-    <>
-      <LegendMark label={c.adjusted} />
-      <LegendMark label={c.measured} dashed />
-    </>
-  )
+  // An entry per series that has a point in the window: the heat-adjusted line
+  // used to stay in the legend when it had nothing to draw.
+  const legend = (visible: WeeklyTrendPoint[]) => {
+    const adjusted = visible.some((d) => isFiniteNumber(d.efAdjusted))
+    return (
+      <>
+        {adjusted && <LegendMark label={c.adjusted} />}
+        <LegendMark label={c.measured} dashed />
+        {!adjusted && <span className="text-xs text-subtle">{c.adjustedNeedsTemp}</span>}
+      </>
+    )
+  }
 
   return (
     <WindowedChartCard
@@ -106,10 +121,14 @@ export function EfficiencyChart({ points }: { points: WeeklyTrendPoint[] }) {
       }}
     >
       {(visible) => {
-        const values = visible.flatMap((d) => [d.ef, d.efAdjusted]).filter((v): v is number => v !== null)
+        const values = visible.flatMap((d) => [d.ef, d.efAdjusted]).filter(isFiniteNumber)
         if (!values.length) return <p className="py-12 text-center text-sm text-subtle">{t.chartWindow.empty}</p>
+        if (visible.filter((d) => isFiniteNumber(d.ef)).length < 2) {
+          return <p className="py-12 text-center text-sm text-subtle">{t.chartWindow.notEnoughRuns}</p>
+        }
 
-        const axis = roundAxis(values, EF_STEP)
+        // Padded to at least EF_MIN_SPAN, so a 0.2 change doesn't fill the plot.
+        const axis = roundAxis(padToSpan(values, EF_MIN_SPAN), EF_STEP)
         const ticks = windowTicks(visible)
 
         const reading = efficiencyReading(visible)

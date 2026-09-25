@@ -1,14 +1,20 @@
 'use client'
 
-import { LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine, ResponsiveContainer } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine, ReferenceDot, ResponsiveContainer } from 'recharts'
 import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
-import { TooltipCard } from '@/components/ui/ChartTooltip'
+import { TooltipCard, tooltipNumber } from '@/components/ui/ChartTooltip'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { WindowedChartCard, latestOf, trendDots, windowDateAxis, windowTicks } from '@/components/ui/ChartWindowNav'
 import { lineInterpolation } from '@/domain/timeWindow'
 import { trendFromSeries } from '@/lib/chartTrend'
 import { t } from '@/i18n'
+
+// RPE is a 1-10 scale: the ticks, the line and the mean share it. The axis was
+// fixed at 2-5 with the mean line at 3.5 whatever the data, so a week at 6
+// ran above the top tick and the "average" sat under every point.
+const RPE_DOMAIN: [number, number] = [1, 10]
+const RPE_TICKS = [1, 5.5, 10]
 
 interface TooltipProps {
   active?: boolean
@@ -21,7 +27,7 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   return (
     <TooltipCard label={point.payload?.label}>
       <p className="text-sm font-semibold text-foreground">
-        {t.analytics.charts.rpe.prefix} {point.value.toFixed(1)}
+        {t.analytics.charts.rpe.prefix} {tooltipNumber(point.value, (v) => v.toFixed(1))}
       </p>
     </TooltipCard>
   )
@@ -58,6 +64,8 @@ export function RpeTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
         if (!values.length) return <p className="py-12 text-center text-sm text-subtle">{t.chartWindow.empty}</p>
 
         const ticks = windowTicks(visible)
+        const mean = values.reduce((s, v) => s + v, 0) / values.length
+        const last = visible[visible.length - 1]
         const summary = `${t.analytics.charts.rpe.title}: ${Math.min(...values).toFixed(1)}–${Math.max(...values).toFixed(1)}`
 
         return (
@@ -66,14 +74,23 @@ export function RpeTrendChart({ points }: { points: WeeklyTrendPoint[] }) {
               <LineChart data={visible} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
                 <XAxis {...windowDateAxis(ticks)} />
                 <YAxis
-                  domain={[2, 5]}
-                  ticks={[2, 3, 4, 5]}
+                  domain={RPE_DOMAIN}
+                  ticks={RPE_TICKS}
                   tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
                   axisLine={false}
                   tickLine={false}
                   width={30}
                 />
-                <ReferenceLine y={3.5} stroke={CHART_COLORS.referenceLine} strokeDasharray="3 3" />
+                <ReferenceLine y={mean} stroke={CHART_COLORS.referenceLine} strokeDasharray="3 3" />
+                {/* A last week without RPE is named rather than dropped silently. */}
+                {last && last.avgRpe === null && (
+                  <ReferenceDot
+                    x={last.date}
+                    y={(RPE_DOMAIN[0] + RPE_DOMAIN[1]) / 2}
+                    r={0}
+                    label={{ value: t.analytics.charts.rpe.noneLogged, position: 'insideRight', fontSize: 11, fill: CHART_COLORS.axisTick }}
+                  />
+                )}
                 <Tooltip content={<CustomTooltip />} />
                 <Line
                   type={lineInterpolation(visible.length)}

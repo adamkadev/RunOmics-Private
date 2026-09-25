@@ -38,6 +38,7 @@ export const fr = {
     previous: 'Période précédente',
     next: 'Période suivante',
     empty: 'Aucune donnée enregistrée sur cette période.',
+    notEnoughRuns: 'Pas assez de sorties sur cette fenêtre',
     tooFewToPlot: 'Trop peu de points pour tracer une tendance',
   },
 
@@ -491,7 +492,7 @@ export const fr = {
         sessions: 'Séances',
         weekOf: (label: string) => `Semaine du ${label}`,
         weekOfInProgress: (label: string) => `Semaine du ${label} (en cours)`,
-        footnote: 'Chaque point est une semaine complète, du lundi au dimanche. La ligne pointillée horizontale est la moyenne de la période ; la verticale marque la semaine en cours, encore partielle et exclue de cette moyenne.',
+        footnote: 'Chaque point est le total d’une semaine, du lundi au dimanche. La ligne pointillée est la moyenne des semaines complètes ; la fin en pointillé est la semaine en cours, exclue de cette moyenne.',
         explains: {
           up: (km: number, avg: number) => `Dernière semaine ${km} km au-dessus de ta moyenne de ${avg} km`,
           down: (km: number, avg: number) => `Dernière semaine ${km} km sous ta moyenne de ${avg} km`,
@@ -514,6 +515,7 @@ export const fr = {
         },
       },
       efficiency: {
+        adjustedNeedsTemp: 'La correction de chaleur demande la température',
         title: 'Efficacité aérobie',
         unit: 'm/min·bpm',
         measured: 'Mesurée',
@@ -623,6 +625,7 @@ export const fr = {
         footnote: 'Toutes les sorties de la saison, regroupées par distance. L’intensité de la couleur reflète la fréquence relative.',
       },
       rpe: {
+        noneLogged: 'aucun RPE saisi',
         title: 'Tendance RPE',
         prefix: 'RPE',
         footnote: 'Effort perçu moyen (1–10).',

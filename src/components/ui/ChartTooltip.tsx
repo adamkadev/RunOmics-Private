@@ -13,6 +13,12 @@ export function TooltipCard({ label, children }: { label?: ReactNode; children: 
   )
 }
 
+/** A number for a tooltip, or "—" when it is missing or not finite: no
+ *  tooltip may print NaN. */
+export function tooltipNumber(value: number | null | undefined, format: (v: number) => string): string {
+  return typeof value === 'number' && Number.isFinite(value) ? format(value) : '—'
+}
+
 export function TooltipRow({
   color,
   name,
