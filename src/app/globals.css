@@ -556,10 +556,14 @@
   }
 
   /* Eyebrow label style for widget headers */
+  /* Below the page, not level with it: at z-index 0 this opaque, fixed layer
+     painted over every part of the page that has no stacking context of its
+     own - which was hidden only while the page transition's filled animation
+     happened to give the page one. */
   .aurora {
     position: fixed;
     inset: 0;
-    z-index: 0;
+    z-index: -1;
     overflow: hidden;
     pointer-events: none;
     background: var(--canvas);
