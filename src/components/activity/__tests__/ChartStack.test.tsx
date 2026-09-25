@@ -50,7 +50,7 @@ describe('ChartStack scrub', () => {
     for (const x of [100, 150, 196]) fireEvent.pointerMove(rows, { clientX: x, pointerId: 1 })
 
     // The fraction lands on the next frame: (196 - 42) / (342 - 42) of 10 km.
-    await waitFor(() => expect(screen.getByText('5.1')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText(/5\.1 km/)).toBeInTheDocument())
     expect(streamCleanups.count).toBe(afterMount)
   })
 })

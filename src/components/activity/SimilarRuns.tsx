@@ -11,6 +11,7 @@ import { ChartFigure } from '@/components/ui/ChartFigure'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { lineInterpolation } from '@/domain/timeWindow'
 import { CHART_COLORS } from '@/lib/colors'
+import { paceAxis } from '@/lib/chartAxis'
 import { formatClock, formatDate, formatDuration, formatPace } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -110,6 +111,8 @@ export function SimilarRuns({ data }: { data: SimilarRunsData }) {
   const s = t.activity.similarRuns
   const router = useRouter()
   const [open, setOpen] = useState(false)
+  // Faster is up here too: this chart used to put the slowest run at the top.
+  const pace = paceAxis()
   const bestPaceLabel = formatPace(data.bestPaceSecPerKm)
 
   const chartData: ChartPoint[] = data.runs.map((run) => ({
@@ -171,6 +174,7 @@ export function SimilarRuns({ data }: { data: SimilarRunsData }) {
                   axisLine={false}
                   tickLine={false}
                   domain={['dataMin - 5', 'dataMax + 5']}
+                  reversed={pace.reversed}
                   tickFormatter={formatClock}
                   width={46}
                 />
@@ -187,6 +191,7 @@ export function SimilarRuns({ data }: { data: SimilarRunsData }) {
               </LineChart>
             </ResponsiveContainer>
           </ChartFigure>
+          <p className="pl-12 text-caption text-subtle">{pace.caption}</p>
 
           <ul className="mt-3 space-y-0.5 border-t border-border pt-3">
             {listed.map((run) => (

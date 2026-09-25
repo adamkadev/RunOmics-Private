@@ -64,6 +64,11 @@ export const en = {
     veryFresh: 'Very fresh',
   },
 
+  // Every pace axis runs the same way (lib/chartAxis paceAxis).
+  paceAxis: {
+    caption: 'faster ↑',
+  },
+
   // A session's state, drawn in shape (see the .state-* recipes) and named the
   // same way wherever a week is shown.
   sessionState: {
@@ -498,7 +503,7 @@ export const en = {
         title: 'Pace Trend',
         easy: 'Easy',
         workout: 'Workout',
-        footnote: 'Distance-weighted average pace. Lower is faster.',
+        footnote: 'Distance-weighted average pace, faster ↑.',
         explains: {
           improving: (delta: string) => `Easy pace improving - ${delta} vs earlier in the period`,
           stable: 'Easy pace stable throughout the period',
@@ -650,7 +655,7 @@ export const en = {
           half: 'Half',
           marathon: 'Marathon',
         } as Record<string, string>,
-        footnote: 'Finish times the watch predicts from VO₂max and recent training. Plotted as pace so all four distances share one scale; higher = faster.',
+        footnote: 'Finish times the watch predicts from VO₂max and recent training. Plotted as pace so all four distances share one scale, faster ↑.',
         reading: {
           faster: (distance: string, gain: string, current: string) =>
             `${distance} potential improved by ${gain} over this window, now ${current}.`,
@@ -952,7 +957,10 @@ export const en = {
       elevation: 'Elevation',
       cadence: 'Cadence',
       elevationGain: (m: number) => `+${m} m gain`,
-      scrubHint: 'Tap or drag anywhere on the stack to read every metric at one point.',
+      readoutAt: 'At',
+      runAverage: 'Run average',
+      dragToScrub: 'drag to scrub',
+      dashedAverage: 'dashed = run average',
     },
     map: {
       fullscreen: 'Fullscreen',

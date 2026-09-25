@@ -1,3 +1,5 @@
+import { t } from '@/i18n'
+
 /**
  * Recharts only picks round ticks when it is left to choose the domain itself.
  * Charts that pad a data-derived domain instead - `[min - 5, max + 5]`,
@@ -60,4 +62,14 @@ export function roundAxis(values: (number | null | undefined)[], step: number): 
   for (let v = from; v <= to + size / 2; v += size) ticks.push(tidy(v))
 
   return { domain: [from, to], ticks, decimals }
+}
+
+/**
+ * One rule for every pace axis: faster is up. Pace is seconds per km, so up
+ * means the axis runs reversed - and the caption says so, because Similar runs
+ * put slow at the top while the Charts tab put fast there, and the footnotes
+ * said "lower is faster" on one chart and "higher = faster" on another.
+ */
+export function paceAxis(): { reversed: true; caption: string } {
+  return { reversed: true, caption: t.paceAxis.caption }
 }

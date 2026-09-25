@@ -1,6 +1,7 @@
 import { CHART_COLORS } from '@/lib/colors'
 import { cleanStream, paddedDomain } from '@/domain/activity/cleanStream'
 import { formatClock } from '@/lib/formatters'
+import { paceAxis } from '@/lib/chartAxis'
 import { t } from '@/i18n'
 
 export const ROW_HEIGHT = 74
@@ -19,13 +20,15 @@ export const PLOT_HEIGHT = ROW_HEIGHT - TOP_MARGIN - BOTTOM_MARGIN
 export interface Lane {
   key: string
   label: string
+  /** What the values are counted in, beside the lane's name and in the readout. */
+  unit: string
   color: string
   values: (number | null)[]
   /** The values as the chart plots them, against distance. */
   data: { d: number; v: number | null }[]
   domain: [number, number]
   reversed: boolean
-  /** Spoken description of the lane; the readout row carries the numbers on screen. */
+  /** The lane's summary - avg, max or best - computed from the plotted samples. */
   summary: string
   average: number | null
   format: (v: number) => string
@@ -47,44 +50,51 @@ export interface ChartStackInput {
  * The stack's lanes, cleaned and scaled. Pure, and costly enough - four
  * stream cleanups over every sample - that the component builds it once per
  * activity rather than on each pointer move.
+ *
+ * Every summary is computed from the lane's own cleaned samples. HR used to
+ * read its average from the activity and pace mixed the activity's average
+ * with the samples' best, so a "best" could print slower than the "avg" beside
+ * it.
  */
 export function buildLanes(input: ChartStackInput): Lane[] {
-  const { distanceKm, hrSamples, avgHr, paceSamples, avgPaceSecPerKm, cadenceSamples, avgCadence, elevationProfile, elevationGain } = input
+  const { distanceKm, hrSamples, paceSamples, cadenceSamples, elevationProfile, elevationGain } = input
   const c = t.activity.charts
   const lanes: Lane[] = []
 
   function push(
     key: string,
     label: string,
+    unit: string,
     color: string,
     values: (number | null)[],
     minSpan: number,
     format: (v: number) => string,
-    summary: string,
+    summarize: (stats: { average: number; min: number; max: number }) => string,
     reversed = false,
   ) {
     const domain = paddedDomain(values, minSpan)
     if (!domain) return
     const present = values.filter((v): v is number => v !== null)
     const average = present.length > 0 ? present.reduce((a, b) => a + b, 0) / present.length : null
+    const summary = average !== null
+      ? summarize({ average, min: Math.min(...present), max: Math.max(...present) })
+      : ''
     const step = Math.max(1, values.length - 1)
     const data = values.map((v, j) => ({ d: (j / step) * distanceKm, v }))
-    lanes.push({ key, label, color, values, data, domain, reversed, summary, average, format })
+    lanes.push({ key, label, unit, color, values, data, domain, reversed, summary, average, format })
   }
 
   if (hrSamples) {
     const values = cleanStream(hrSamples, { min: 60, max: 230 })
-    const present = values.filter((v): v is number => v !== null)
     push(
       'hr',
       c.heartRate,
+      t.units.bpm,
       CHART_COLORS.hr,
       values,
       20,
       (v) => `${Math.round(v)}`,
-      present.length > 0
-        ? `${avgHr ? `${c.avg} ${avgHr} · ` : ''}${c.max} ${Math.max(...present)} ${t.units.bpm}`
-        : '',
+      ({ average, max }) => `${c.avg} ${Math.round(average)} · ${c.max} ${Math.round(max)}`,
     )
   }
 
@@ -96,20 +106,17 @@ export function buildLanes(input: ChartStackInput): Lane[] {
       distanceKm,
       spikeFloor: 90,
     })
-    const present = values.filter((v): v is number => v !== null)
+    // Faster is up, on this chart as on every pace axis (lib/chartAxis).
     push(
       'pace',
       c.pace,
+      t.units.perKm,
       CHART_COLORS.pace,
       values,
       60,
       (v) => formatClock(Math.round(v)),
-      present.length > 0
-        ? `${avgPaceSecPerKm ? `${c.avg} ${formatClock(avgPaceSecPerKm)} · ` : ''}${c.best} ${formatClock(
-            Math.min(...present),
-          )} ${t.trainingZones.perKm}`
-        : '',
-      true,
+      ({ average, min }) => `${c.avg} ${formatClock(Math.round(average))} · ${c.best} ${formatClock(Math.round(min))}`,
+      paceAxis().reversed,
     )
   }
 
@@ -118,11 +125,12 @@ export function buildLanes(input: ChartStackInput): Lane[] {
     push(
       'cadence',
       c.cadence,
+      t.units.spm,
       CHART_COLORS.cadence,
       values,
       20,
       (v) => `${Math.round(v)}`,
-      avgCadence ? `${c.avg} ${avgCadence.toFixed(0)} ${t.units.spm}` : '',
+      ({ average }) => `${c.avg} ${Math.round(average)}`,
     )
   }
 
@@ -131,11 +139,12 @@ export function buildLanes(input: ChartStackInput): Lane[] {
     push(
       'elevation',
       c.elevation,
+      t.units.m,
       CHART_COLORS.elevation,
       values,
       20,
       (v) => `${Math.round(v)}`,
-      elevationGain != null ? c.elevationGain(elevationGain) : '',
+      () => (elevationGain != null ? c.elevationGain(elevationGain) : ''),
     )
   }
 
@@ -168,4 +177,21 @@ export function laneY(lane: Pick<Lane, 'domain' | 'reversed'>, value: number): n
   const [lo, hi] = lane.domain
   const share = hi > lo ? (value - lo) / (hi - lo) : 0.5
   return TOP_MARGIN + (lane.reversed ? share : 1 - share) * PLOT_HEIGHT
+}
+
+/**
+ * Time into the run at a point on the stack, from the pace samples: each one
+ * covers an equal share of the distance, so the time to reach a sample is the
+ * sum of pace x distance before it. A gap in the stream takes the run's
+ * average pace. Null without pace samples - a guess from the total duration
+ * would assume an even pace the run did not have.
+ */
+export function elapsedAt(pace: Lane | undefined, fraction: number, distanceKm: number): number | null {
+  if (!pace || pace.average === null || pace.values.length < 2) return null
+  const last = pace.values.length - 1
+  const upTo = Math.min(Math.max(Math.round(fraction * last), 0), last)
+  const stepKm = distanceKm / last
+  let seconds = 0
+  for (let i = 0; i < upTo; i++) seconds += (pace.values[i] ?? pace.average) * stepKm
+  return seconds
 }
