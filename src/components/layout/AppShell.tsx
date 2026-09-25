@@ -77,10 +77,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           className="pointer-events-none fixed inset-x-0 top-0 z-20 lg:hidden"
           style={{
             height: 'var(--top-scrim)',
-            // Solid over the status bar and the band iOS blurs under it, so
-            // the blur only ever blurs flat background; a short fade at the
-            // bottom edge where the page starts.
-            background: 'linear-gradient(to bottom, var(--background) calc(100% - 6px), transparent)',
+            // Solid behind the status bar's top half, then a long fade into
+            // the page's own background glow. A solid band down to where the
+            // page starts drew a hard edge on the glow; the band iOS blurs
+            // under the bar holds only this soft gradient at rest, so the
+            // blur has nothing to smear.
+            background: 'linear-gradient(to bottom, var(--background) 30%, transparent)',
           }}
         />
         <Sidebar />
