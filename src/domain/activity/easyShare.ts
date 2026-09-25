@@ -1,12 +1,11 @@
 import type { HrZone } from './types'
-import { easyHardShare } from '@/domain/training/easyHard'
+import { runTypeZone } from '@/lib/colors'
 
 /**
- * "Easy %" had two meanings under one label: /activities read heart-rate zone
- * time, /plan the share of session time in easy sessions, so the same
- * finished week could read 62 % easy on one screen and 80 % on the other.
- * Neither is wrong - they answer different questions - so each gets a name,
- * and the screens say which one they show.
+ * "Easy" is one thing on every screen: time in heart-rate zones 1-2, weighted
+ * by time. Volume, Intensity, Activities and Plan each worked it out their own
+ * way (by run type, by the mean of monthly shares, by key sessions), so the
+ * same season read 47 %, 24 %, 20 % and 0 % easy against the same guide.
  */
 
 /**
@@ -23,26 +22,39 @@ export interface EasyHardSplit {
 }
 
 /**
- * What the runs were: time in heart-rate zones 1-2 against the rest. Every
- * recorded week is read this way, on the activity list and on the plan alike.
- * Null when the runs carry no zone data.
+ * What goes into the share: a run's recorded zone time, or a session still to
+ * run, which has no heart rate yet and counts at its type's zone for its
+ * planned duration.
  */
-export function recordedEasyHard(activities: ReadonlyArray<{ hrZones: HrZone[] }>): EasyHardSplit | null {
-  const { hardPct } = easyHardShare(activities)
-  if (hardPct === null) return null
-  const hard = Math.round(hardPct)
-  return { easy: 100 - hard, hard }
+export type EasyTimeSource = { hrZones: ReadonlyArray<Pick<HrZone, 'zone' | 'seconds'>> } | { type: string | null | undefined; seconds: number }
+
+/** Easy and total seconds, for callers that pool before they divide. */
+export function easyTime(sources: Iterable<EasyTimeSource>): { easySeconds: number; totalSeconds: number } {
+  let easySeconds = 0
+  let totalSeconds = 0
+  for (const s of sources) {
+    if ('hrZones' in s) {
+      for (const z of s.hrZones) {
+        totalSeconds += z.seconds
+        if (z.zone <= 2) easySeconds += z.seconds
+      }
+    } else if (s.seconds > 0) {
+      totalSeconds += s.seconds
+      if (runTypeZone(s.type) <= 2) easySeconds += s.seconds
+    }
+  }
+  return { easySeconds, totalSeconds }
 }
 
-/**
- * What a week is planned to be: the share of its session time spent in easy
- * sessions, the only measure a session nobody has run yet can have. Weighted
- * by duration, so one long run does not count the same as one set of strides.
- */
-export function plannedEasyHard(sessions: ReadonlyArray<{ key: boolean; seconds: number }>): EasyHardSplit | null {
-  const total = sessions.reduce((sum, s) => sum + s.seconds, 0)
-  if (total <= 0) return null
-  const keySeconds = sessions.filter((s) => s.key).reduce((sum, s) => sum + s.seconds, 0)
-  const hard = Math.round((keySeconds / total) * 100)
+/** Easy time from seconds already summed by zone. */
+export function easyShareOfZones(zoneSeconds: Readonly<Record<number, number>>): EasyHardSplit | null {
+  return easyShare([{ hrZones: Object.entries(zoneSeconds).map(([zone, seconds]) => ({ zone: Number(zone), seconds })) }])
+}
+
+/** The share of time in Z1-Z2. Null when nothing carries a zone or a duration. */
+export function easyShare(sources: Iterable<EasyTimeSource>): EasyHardSplit | null {
+  const { easySeconds, totalSeconds } = easyTime(sources)
+  if (totalSeconds <= 0) return null
+  const hard = Math.round(((totalSeconds - easySeconds) / totalSeconds) * 100)
   return { easy: 100 - hard, hard }
 }

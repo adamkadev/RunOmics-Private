@@ -568,6 +568,7 @@ export const en = {
       },
       zones: {
         title: 'Time in Zones',
+        easyTime: (pct: number) => `${pct}% easy time`,
         reading: (pct: number, zoneLabel: string) => `Most time (${pct}%) sits in ${zoneLabel} - your training skews toward this intensity.`,
         labels: {
           1: 'Warm Up',
@@ -625,15 +626,15 @@ export const en = {
         },
       },
       easyHard: {
-        title: 'Easy / Hard Split',
+        title: 'Easy time',
         targetLine: '80% easy',
         easy: (pct: number) => `Easy (Z1–Z2): ${pct}%`,
         hard: (pct: number) => `Hard (Z3+): ${pct}%`,
         footnote: 'Share of time in Z1–Z2 vs Z3+. Dashed line = 80/20 target.',
         explains: {
-          balanced: (pct: number) => `Good 80/20 balance - ${pct}% easy on average`,
-          tooHard: (pct: number) => `Intensity too high - ${pct}% easy this period (aim for ~80%)`,
-          tooEasy: (pct: number) => `Very conservative - ${pct}% easy, room to add quality sessions`,
+          balanced: (pct: number) => `Good 80/20 balance - ${pct}% easy time this period`,
+          tooHard: (pct: number) => `Intensity too high - ${pct}% easy time this period (aim for ~80%)`,
+          tooEasy: (pct: number) => `Very conservative - ${pct}% easy time, room to add quality sessions`,
         },
       },
       distance: {
@@ -740,7 +741,7 @@ export const en = {
     weekStat: {
       km: 'km',
       runs: (n: number): string => (n === 1 ? 'run' : 'runs'),
-      easy: 'easy',
+      easy: 'easy time',
       noSplit: '—',
     },
     weekGoal: (done: string, goal: string) => `${done} of ${goal} km · weekly goal`,
@@ -1519,8 +1520,8 @@ export const en = {
     },
     weekSummary: {
       missed: (n: number) => `${n} missed`,
-      easyPlanned: (easy: number, guide: number) => `${easy}% of planned time is easy (guide ${guide}%)`,
-      easyRecorded: (easy: number, guide: number) => `${easy}% of the time was easy, by heart rate (guide ${guide}%)`,
+      easyPlanned: (easy: number, guide: number) => `${easy}% easy time, counting sessions still to run (guide ${guide}%)`,
+      easyRecorded: (easy: number, guide: number) => `${easy}% easy time (guide ${guide}%)`,
       aboutLoad: 'About the week\'s load',
       loadOfPlan: (load: number, target: number) => `Load ${load} of ${target} pts planned`,
       loadPlannedLine: (load: number) => `Load ${load} pts planned`,

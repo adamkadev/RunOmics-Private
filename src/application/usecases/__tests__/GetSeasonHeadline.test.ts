@@ -41,6 +41,7 @@ function season(): YearAnalytics {
     monthlyVolume: [],
     longRuns: [],
     easyHardSplit: [],
+    easyTimeShare: null,
     distanceDistribution: [],
     typesPresent: [],
   }

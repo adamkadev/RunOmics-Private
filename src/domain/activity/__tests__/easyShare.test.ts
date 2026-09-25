@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { HrZone } from '../types'
-import { plannedEasyHard, recordedEasyHard } from '../easyShare'
+import { easyShare, easyShareOfZones } from '../easyShare'
 
 function zones(...secondsByZone: number[]): { hrZones: HrZone[] } {
   return {
@@ -8,30 +8,40 @@ function zones(...secondsByZone: number[]): { hrZones: HrZone[] } {
   }
 }
 
-describe('recordedEasyHard', () => {
+describe('easyShare', () => {
   it('reads the time spent in zones 1-2 against the rest', () => {
     // 1 800 s easy, 1 200 s above zone 2, over two runs.
-    expect(recordedEasyHard([zones(600, 600), zones(0, 600, 900, 300)])).toEqual({ easy: 60, hard: 40 })
+    expect(easyShare([zones(600, 600), zones(0, 600, 900, 300)])).toEqual({ easy: 60, hard: 40 })
   })
 
   it('always adds up to 100', () => {
-    const split = recordedEasyHard([zones(1000, 1001, 999)])!
+    const split = easyShare([zones(1000, 1001, 999)])!
     expect(split.easy + split.hard).toBe(100)
   })
 
   it('has nothing to say about runs with no zone data', () => {
-    expect(recordedEasyHard([{ hrZones: [] }])).toBeNull()
+    expect(easyShare([{ hrZones: [] }])).toBeNull()
+    expect(easyShare([])).toBeNull()
+  })
+
+  it('counts a session still to run at its type zone for its planned time', () => {
+    // A 90-minute base run and a 30-minute VO2max session: 75/25, not 50/50.
+    expect(easyShare([{ type: 'Base', seconds: 5_400 }, { type: 'VO2Max', seconds: 1_800 }])).toEqual({ easy: 75, hard: 25 })
+  })
+
+  it('pools recorded and planned time in one week', () => {
+    expect(easyShare([zones(1_800, 0, 1_800), { type: 'Base', seconds: 3_600 }])).toEqual({ easy: 75, hard: 25 })
+  })
+
+  // G09: the mean of monthly shares is not the share of the period.
+  it('weights by time, so a long month counts for more than a short one', () => {
+    expect(easyShare([zones(9_000, 0, 1_000), zones(0, 0, 1_000)])).toEqual({ easy: 82, hard: 18 })
   })
 })
 
-describe('plannedEasyHard', () => {
-  it('weights sessions by their duration', () => {
-    // A 90-minute long run and a 30-minute interval session: 75/25, not 50/50.
-    expect(plannedEasyHard([{ key: false, seconds: 5_400 }, { key: true, seconds: 1_800 }])).toEqual({ easy: 75, hard: 25 })
-  })
-
-  it('has nothing to say about a week with no timed session', () => {
-    expect(plannedEasyHard([])).toBeNull()
-    expect(plannedEasyHard([{ key: true, seconds: 0 }])).toBeNull()
+describe('easyShareOfZones', () => {
+  it('reads seconds already summed by zone', () => {
+    expect(easyShareOfZones({ 1: 600, 2: 600, 4: 800 })).toEqual({ easy: 60, hard: 40 })
+    expect(easyShareOfZones({})).toBeNull()
   })
 })

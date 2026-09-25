@@ -9,17 +9,21 @@ import { useTheme } from 'next-themes'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { WindowedChartCard } from '@/components/ui/ChartWindowNav'
 import { round } from '@/lib/math'
+import { easyShareOfZones } from '@/domain/activity/easyShare'
 import { t } from '@/i18n'
 
 const ZONE_LABELS = t.analytics.charts.zones.labels
 
-function zoneShares(weeks: WeeklyTrendPoint[]): ZoneShare[] {
-  const seconds = new Map<number, number>()
+function weekZoneSeconds(weeks: WeeklyTrendPoint[]): Record<number, number> {
+  const seconds: Record<number, number> = {}
   for (const week of weeks) {
-    for (const [zone, secs] of Object.entries(week.zoneSeconds)) {
-      seconds.set(Number(zone), (seconds.get(Number(zone)) ?? 0) + secs)
-    }
+    for (const [zone, secs] of Object.entries(week.zoneSeconds)) seconds[Number(zone)] = (seconds[Number(zone)] ?? 0) + secs
   }
+  return seconds
+}
+
+function zoneShares(weeks: WeeklyTrendPoint[]): ZoneShare[] {
+  const seconds = new Map(Object.entries(weekZoneSeconds(weeks)).map(([z, s]) => [Number(z), s] as const))
 
   const total = Array.from(seconds.values()).reduce((s, v) => s + v, 0)
   if (total === 0) return []
@@ -70,6 +74,10 @@ export function ZoneDistributionChart({ points }: { points: WeeklyTrendPoint[] }
       points={points}
       sample={false}
       reading={zoneReading}
+      value={(visible) => {
+        const share = easyShareOfZones(weekZoneSeconds(visible))
+        return share ? t.analytics.charts.zones.easyTime(share.easy) : null
+      }}
     >
       {(visible) => {
         const data = zoneShares(visible)
