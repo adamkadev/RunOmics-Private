@@ -16,6 +16,7 @@ import {
   CUSTOM_ACCENT_STYLE_ID,
 } from '@/lib/accent'
 import { appleStartupImages } from '@/lib/splashScreens'
+import { STATUS_BAR_COLOR } from '@/lib/themeTokens'
 
 const inter = Inter({ variable: '--font-inter', subsets: ['latin'] })
 const spaceGrotesk = Space_Grotesk({ variable: '--font-space-grotesk', subsets: ['latin'], weight: ['500', '600', '700'] })
@@ -30,7 +31,12 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'black-translucent',
+    // Opaque, with dark text in light mode. black-translucent always draws
+    // white status-bar text (unreadable on the light theme) and iOS 26+ blurs
+    // the band under it. The opaque bar takes its colour from theme-color at
+    // install, so that colour is a fixed neutral (STATUS_BAR_COLOR) the page
+    // top matches. Read at install time: an installed app must be re-added.
+    statusBarStyle: 'default',
     title: 'RunOmics',
     startupImage: [...appleStartupImages],
   },
@@ -61,7 +67,14 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  // Still `cover`, for the bottom inset the tab bar pads by.
   viewportFit: 'cover',
+  // Fixed, never rewritten at runtime: iOS stores it at install, and a value
+  // changed later (the accent, an in-app theme switch) never reaches the bar.
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: STATUS_BAR_COLOR.light },
+    { media: '(prefers-color-scheme: dark)', color: STATUS_BAR_COLOR.dark },
+  ],
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

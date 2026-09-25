@@ -60,3 +60,12 @@ describe('AppShell scroll memory', () => {
     expect(stored()['/activities']).toBe(900)
   })
 })
+
+describe('AppShell status bar blend', () => {
+  // The installed app's status bar is a fixed neutral (it can't follow the
+  // accent), so the page top starts in that colour and fades into the page.
+  it('fades the page top from the status bar colour', () => {
+    const { getByTestId } = render(<AppShell>page</AppShell>)
+    expect(getByTestId('status-bar-blend').style.background).toContain('var(--status-bar)')
+  })
+})

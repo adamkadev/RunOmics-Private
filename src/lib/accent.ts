@@ -140,24 +140,6 @@ export const ACCENT_UI: Record<AccentId, [light: string, dark: string]> = Object
   ]),
 ) as Record<AccentId, [light: string, dark: string]>
 
-export function applyThemeColor(preference: AccentPreference, isDark: boolean): void {
-  const { hue, chromaScale } = resolveAccent(preference)
-  const color = isDark
-    ? darkRoleHex('background', hue, chromaScale)
-    : lightRoleHex('background', hue, chromaScale)
-  document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => {
-    meta.setAttribute('content', color)
-  })
-}
-
-function prefersDark(): boolean {
-  if (typeof window === 'undefined') return false
-  const stored = localStorage.getItem('theme')
-  if (stored === 'dark') return true
-  if (stored === 'light') return false
-  return window.matchMedia('(prefers-color-scheme: dark)').matches
-}
-
 /**
  * A custom hue has no generated block in globals.css, so it ships its own
  * stylesheet. `.dark` still picks the half that applies, which is why this is a
@@ -191,6 +173,5 @@ export function persistAccent(preference: AccentPreference | AccentId): void {
   }
 
   document.documentElement.setAttribute('data-accent', resolved.attribute)
-  applyThemeColor(next, prefersDark())
   window.dispatchEvent(new Event(ACCENT_CHANGE_EVENT))
 }

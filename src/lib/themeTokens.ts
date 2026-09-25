@@ -9,6 +9,14 @@ import {
   type CuratedAccent,
 } from './accentScale'
 
+/**
+ * The opaque status bar's colour in an installed iPhone app, one per mode.
+ * iOS stores it from the theme-color meta at install and only picks light or
+ * dark at launch, so it can't follow the accent: it is a neutral close to
+ * every accent's background, and the page top fades from it (--status-bar).
+ */
+export const STATUS_BAR_COLOR = { light: '#eef1f4', dark: '#05070a' } as const
+
 export type TokenBlock = {
   selector: string
   comment?: string
@@ -155,10 +163,11 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--saturate': '1.6',
       '--color-missed': c.roPink,
       '--safe-top': 'env(safe-area-inset-top, 0px)',
-      '--safe-top-min': 'max(var(--safe-top), 20px)',
-      // Where a page starts: just under the status bar, as the mockups draw
-      // it. The extra 28 px this used to add left a band of empty glass.
-      '--top-scrim': 'calc(var(--safe-top-min) + 8px)',
+      // Where a page starts: 4 px under the status bar. The bar is opaque
+      // (statusBarStyle 'default'), so the top inset is 0 in the installed
+      // app and the page begins below the bar, clear of the iOS blur - level
+      // with a native app's first row (Garmin Connect's header).
+      '--top-scrim': 'calc(var(--safe-top) + 4px)',
       '--safe-bottom': 'env(safe-area-inset-bottom, 0px)',
       // The tab bar's bottom padding: the inset less the 10 px under the home
       // indicator, so the labels stay clear of its swipe zone (the bar is 5 pt
@@ -191,6 +200,7 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
     selector: ':root',
     comment: 'Light tokens - Nature (emerald, default)',
     tokens: {
+      '--status-bar': STATUS_BAR_COLOR.light,
       '--shadow-card': `0 1px 3px 0 ${ink(0.06)}, 0 4px 16px -4px ${ink(0.09)}`,
 
       '--card': white,
@@ -249,6 +259,7 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
     selector: '.dark',
     comment: 'Dark tokens - Nature (emerald, default)',
     tokens: {
+      '--status-bar': STATUS_BAR_COLOR.dark,
       '--shadow-card': `0 1px 2px 0 ${ink(0.35)}, 0 4px 16px -4px ${ink(0.7)}, inset 0 1px 0 0 ${paper(0.06)}`,
 
       '--card': c.natureCardDark,

@@ -11,22 +11,6 @@ import {
   resolveAccent,
 } from '@/lib/accent'
 
-function applyMetaThemeColor(color: string) {
-  const metas = document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')
-  let primary: HTMLMetaElement | null = null
-  metas.forEach((meta) => {
-    if (!primary) { primary = meta; return }
-    meta.remove()
-  })
-  if (!primary) {
-    primary = document.createElement('meta')
-    primary.name = 'theme-color'
-    document.head.appendChild(primary)
-  }
-  primary.removeAttribute('media')
-  primary.content = color
-}
-
 export function ThemeSync() {
   const { resolvedTheme } = useTheme()
 
@@ -37,7 +21,8 @@ export function ThemeSync() {
 
       document.documentElement.style.backgroundColor = bg
       document.body.style.backgroundColor = bg
-      applyMetaThemeColor(bg)
+      // theme-color is left alone: it is fixed in the layout (see
+      // STATUS_BAR_COLOR), because iOS keeps whatever it held at install.
     }
 
     sync()

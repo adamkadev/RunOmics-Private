@@ -77,10 +77,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           className="pointer-events-none fixed inset-x-0 top-0 z-20 lg:hidden"
           style={{
             height: 'var(--top-scrim)',
-            // Solid under the status bar, then a short fade: the page starts
-            // right below it, so a long gradient would dim its first row.
-            background: 'linear-gradient(to bottom, var(--background) var(--safe-top), transparent)',
+            // The status bar's own colour, so content scrolled up passes
+            // under a strip that reads as part of the bar.
+            background: 'var(--status-bar)',
           }}
+        />
+        {/* Behind the page: the opaque status bar's fixed neutral, fading
+            into the accent's background glow, so bar and page meet without
+            an edge whatever the accent. */}
+        <div
+          aria-hidden
+          data-testid="status-bar-blend"
+          className="pointer-events-none fixed inset-x-0 top-0 h-12 lg:hidden"
+          style={{ background: 'linear-gradient(to bottom, var(--status-bar), transparent)' }}
         />
         <Sidebar />
         {/* Positioned, with no z-index: that paints the page after the fixed
