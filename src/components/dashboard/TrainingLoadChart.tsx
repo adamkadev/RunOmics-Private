@@ -71,6 +71,7 @@ export function TrainingLoadChart({ data }: Props) {
     <GlassSurface variant="card" className="p-5">
       <ChartCardHead
         title={t.dashboard.trainingLoad.title}
+        unit={t.analytics.model.runomics}
         footnote={t.dashboard.trainingLoad.footnote}
         controls={<ChartRangeChips value={range} onChange={selectRange} />}
       />
