@@ -155,11 +155,10 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--saturate': '1.6',
       '--color-missed': c.roPink,
       '--safe-top': 'env(safe-area-inset-top, 0px)',
-      // Where a page starts: 4 px under the status bar, level with a native
-      // app's first row (Garmin Connect's header). The bar is opaque
-      // (statusBarStyle 'default'), so the top inset is 0 in the installed
-      // app and the page begins below the bar, clear of the iOS blur.
-      '--top-scrim': 'calc(var(--safe-top) + 4px)',
+      // Where a page starts: 24 px under the translucent status bar. iOS 26+
+      // blurs about 25 pt below the bar in an installed app; the top scrim
+      // is solid over that band, so content starts just clear of it.
+      '--top-scrim': 'calc(var(--safe-top) + 24px)',
       '--safe-bottom': 'env(safe-area-inset-bottom, 0px)',
       // The tab bar's bottom padding: the inset less the 10 px under the home
       // indicator, so the labels stay clear of its swipe zone (the bar is 5 pt

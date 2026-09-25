@@ -30,11 +30,12 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
-    // Opaque, in the page's theme-color. With black-translucent, iOS 26+
-    // paints a Liquid Glass blur over the status-bar inset that fades ~35 pt
-    // into the page - system-drawn, so no page CSS can remove it. Read at
-    // install time: an installed app must be re-added to pick this up.
-    statusBarStyle: 'default',
+    // Translucent, so the bar shows the page and follows every theme and
+    // accent change live. The opaque 'default' bar took its colour from the
+    // theme-color at install and never followed an in-app switch. iOS 26+
+    // blurs the band under a translucent bar; --top-scrim keeps content out
+    // of it. Read at install time: an installed app must be re-added.
+    statusBarStyle: 'black-translucent',
     title: 'RunOmics',
     startupImage: [...appleStartupImages],
   },
@@ -69,8 +70,7 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
   // No themeColor here: ThemeSync owns the theme-color meta and prunes it to
   // one, and pruning metas Next manages broke its head updates on client
-  // navigation (removeChild on null). The installed app's status bar is
-  // painted from AppShell's top element instead.
+  // navigation (removeChild on null).
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

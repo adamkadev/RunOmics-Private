@@ -77,21 +77,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           className="pointer-events-none fixed inset-x-0 top-0 z-20 lg:hidden"
           style={{
             height: 'var(--top-scrim)',
-            // Solid under the status bar, then a short fade: the page starts
-            // right below it, so a long gradient would dim its first row.
-            background: 'linear-gradient(to bottom, var(--background) var(--safe-top), transparent)',
+            // Solid over the status bar and the band iOS blurs under it, so
+            // the blur only ever blurs flat background; a short fade at the
+            // bottom edge where the page starts.
+            background: 'linear-gradient(to bottom, var(--background) calc(100% - 6px), transparent)',
           }}
-        />
-        {/* What the opaque status bar is painted from. Recent iOS ignores
-            theme-color in an installed app and samples the background-color
-            of a real element at the very top instead - a gradient or a
-            pseudo-element is invisible to it. The var follows theme and
-            accent, so the bar changes with them. */}
-        <div
-          aria-hidden
-          data-testid="status-bar-sampler"
-          className="pointer-events-none fixed inset-x-0 top-0 z-20 h-px lg:hidden"
-          style={{ backgroundColor: 'var(--background)' }}
         />
         <Sidebar />
         {/* Positioned, with no z-index: that paints the page after the fixed
