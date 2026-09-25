@@ -64,7 +64,7 @@ describe('Training Status: distribution, ribbon and load legend', () => {
     ).not.toBeInTheDocument()
 
     // The accessible summary names the same shares that are drawn.
-    expect(screen.getByRole('img').getAttribute('aria-label')).toContain(
+    expect(screen.getAllByRole('img')[0]!.getAttribute('aria-label')).toContain(
       `${t.trainingStatus.status.productive} 10 ${s.daysUnit} (71%)`,
     )
 
@@ -73,19 +73,25 @@ describe('Training Status: distribution, ribbon and load legend', () => {
     expect(container.querySelector('.h-2.flex-1')).not.toBeNull()
   })
 
-  it('draws the ribbon at 24px and names the days it starts and ends on', () => {
-    const { container } = render(<TrainingStatusHistoryChart data={{ points: POINTS }} />)
+  // G05: one cell per calendar day on a time scale, gaps for unrated days.
+  it('draws one 24px cell per day of the window, with three ticks', () => {
+    render(<TrainingStatusHistoryChart data={{ points: POINTS }} />)
 
-    const ribbon = container.querySelector('.h-6')
-    expect(ribbon).not.toBeNull()
-    expect(ribbon!.querySelectorAll('button')).toHaveLength(2)
+    const ribbon = screen.getByTestId('status-ribbon')
+    expect(ribbon.className).toContain('h-6')
+    const cells = Array.from(ribbon.children) as HTMLElement[]
+    expect(cells.length).toBeGreaterThanOrEqual(28)
+    expect(cells.filter((c) => c.dataset.status !== 'none')).toHaveLength(14)
 
-    // The strip had no axis of any kind. Its bounds are the first and last
-    // *rated* day drawn, not the window's, because unrated days are dropped
-    // rather than drawn.
-    const bounds = ribbon!.nextElementSibling
-    expect(bounds?.textContent).toContain(dayLabel(daysAgo(14)))
-    expect(bounds?.textContent).toContain(dayLabel(daysAgo(1)))
+    const ticks = ribbon.nextElementSibling!.children
+    expect(ticks).toHaveLength(3)
+    expect(ticks[2]!.textContent).toBe(dayLabel(daysAgo(0)))
+  })
+
+  it('reads the dominant status as days of the window', () => {
+    render(<TrainingStatusHistoryChart data={{ points: POINTS }} />)
+    const cells = screen.getByTestId('status-ribbon').children.length
+    expect(screen.getByText(s.reading(t.trainingStatus.status.productive, 10, cells, t.trainingStatus.status.recovery))).toBeInTheDocument()
   })
 
   it('names the two plotted lines with their current values', () => {

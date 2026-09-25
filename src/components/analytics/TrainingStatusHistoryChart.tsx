@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
 import { ComposedChart, Area, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import type {
   TrainingStatusHistory,
   TrainingStatusHistoryPoint,
 } from '@/application/usecases/GetTrainingStatusHistory'
 import type { TrainingStatusType } from '@/application/usecases/GetTrainingStatus'
-import { buildSegments, type TrainingStatusSegment } from '@/domain/training/statusHistory'
+import { trainingStatusDays } from '@/domain/training/statusHistory'
+import { DAY_MS } from '@/lib/calendarDate'
 import { CHART_COLORS, TRAINING_STATUS_COLORS } from '@/lib/colors'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -54,64 +54,35 @@ function formatDay(date: string): string {
   return formatDate(date, AXIS_TICK_DATE)
 }
 
-function segmentLabel(segment: TrainingStatusSegment): string {
-  const s = t.analytics.charts.trainingStatusHistory
-  const range =
-    segment.from === segment.to
-      ? formatDay(segment.from)
-      : `${formatDay(segment.from)} → ${formatDay(segment.to)}`
-  return `${t.trainingStatus.status[segment.status]} · ${range} · ${segment.days} ${s.daysUnit}`
-}
-
 /**
- * The run of daily verdicts, drawn in order. It was an 8px hairline with no
- * axis of any kind, so a band the reader could hover but not read.
- *
- * The dates are the first and last *rated* day on screen, not the window
- * bounds: unrated days are dropped by buildSegments rather than drawn, so the
- * ribbon's ends are its segments' ends and labelling them with the window
- * would overstate what the strip covers. Hovering swaps the bounds for the
- * hovered segment, the pattern the Today status strip used to ship.
+ * The window's days, one cell each on a time scale, the same days Today's strip
+ * counts (trainingStatusDays). It drew one segment per run of rated records,
+ * evenly spaced, so Sep 1, 13, 14, 16 and 25 sat at equal gaps. An unrated day
+ * is a gap now, and the three ticks are the window's start, middle and end.
  */
-function StatusRibbon({ segments }: { segments: TrainingStatusSegment[] }) {
-  const [activeKey, setActiveKey] = useState<string | null>(null)
-  const active = segments.find((segment) => segment.from === activeKey) ?? null
-  const first = segments[0]
-  const last = segments[segments.length - 1]
+function StatusRibbon({ cells, label }: { cells: { date: string; status: TrainingStatusType | null }[]; label: string }) {
+  const first = cells[0]
+  const middle = cells[Math.floor((cells.length - 1) / 2)]
+  const last = cells[cells.length - 1]
 
   return (
-    <>
-      <div className="mt-3 flex h-6 gap-px overflow-hidden rounded-full">
-        {segments.map((segment) => (
-          <button
-            key={`${segment.status}-${segment.from}`}
-            type="button"
-            className="min-w-[3px] cursor-pointer transition-opacity"
-            style={{
-              flexGrow: segment.days,
-              backgroundColor: TRAINING_STATUS_COLORS[segment.status],
-              opacity: active && active.from !== segment.from ? 0.4 : 1,
-            }}
-            aria-label={segmentLabel(segment)}
-            onClick={() => setActiveKey(segment.from)}
-            onMouseEnter={() => setActiveKey(segment.from)}
-            onMouseLeave={() => setActiveKey(null)}
-            onFocus={() => setActiveKey(segment.from)}
-            onBlur={() => setActiveKey(null)}
+    <div role="img" aria-label={label}>
+      <div className="mt-3 flex h-6 gap-px overflow-hidden rounded-[4px]" data-testid="status-ribbon">
+        {cells.map((cell) => (
+          <span
+            key={cell.date}
+            className="min-w-0 flex-1"
+            data-status={cell.status ?? 'none'}
+            style={{ backgroundColor: cell.status ? TRAINING_STATUS_COLORS[cell.status] : 'var(--track)' }}
           />
         ))}
       </div>
-      <div className="mt-1.5 flex min-h-4 justify-between gap-2 text-caption text-subtle">
-        {active ? (
-          <span className="text-foreground/80">{segmentLabel(active)}</span>
-        ) : (
-          <>
-            <span className="tabular-nums">{first ? formatDay(first.from) : ''}</span>
-            <span className="tabular-nums">{last ? formatDay(last.to) : ''}</span>
-          </>
-        )}
+      <div className="mt-1.5 flex justify-between gap-2 text-caption tabular-nums text-subtle">
+        <span>{first ? formatDay(first.date) : ''}</span>
+        <span>{middle ? formatDay(middle.date) : ''}</span>
+        <span>{last ? formatDay(last.date) : ''}</span>
       </div>
-    </>
+    </div>
   )
 }
 
@@ -183,24 +154,25 @@ export function TrainingStatusHistoryChart({ data }: { data: TrainingStatusHisto
   const { range, selectRange, bounds, visible, canGoBack, canGoForward, goBack, goForward } =
     useChartWindow(data.points)
 
-  const segments = buildSegments(visible)
   const plotted = pickForRange(visible, range)
-  const ratedDays = segments.reduce((sum, segment) => sum + segment.days, 0)
+  // One cell per calendar day of the window, the count Today's strip uses.
+  const windowDays = Math.max(1, Math.round((new Date(bounds.to + 'T00:00:00').getTime() - new Date(bounds.from + 'T00:00:00').getTime()) / DAY_MS) + 1)
+  const cells = trainingStatusDays(visible, bounds.to, windowDays)
+  const ratedDays = cells.filter((cell) => cell.status).length
 
   const daysByStatus = new Map<TrainingStatusType, number>()
-  for (const segment of segments) {
-    daysByStatus.set(segment.status, (daysByStatus.get(segment.status) ?? 0) + segment.days)
-  }
+  for (const cell of cells) if (cell.status) daysByStatus.set(cell.status, (daysByStatus.get(cell.status) ?? 0) + 1)
   const legend = Array.from(daysByStatus.entries()).sort(([, a], [, b]) => b - a)
 
   const [dominantStatus, dominantDays] = legend[0] ?? []
-  const latest = data.points[data.points.length - 1]
+  const latestStatus = [...cells].reverse().find((cell) => cell.status)?.status ?? null
   const reading =
-    dominantStatus && dominantDays && ratedDays
+    dominantStatus && dominantDays
       ? s.reading(
           t.trainingStatus.status[dominantStatus],
-          Math.round((dominantDays / ratedDays) * 100),
-          latest?.status ? t.trainingStatus.status[latest.status] : null,
+          dominantDays,
+          windowDays,
+          latestStatus === dominantStatus ? null : latestStatus ? t.trainingStatus.status[latestStatus] : null,
         )
       : null
 
@@ -302,7 +274,7 @@ export function TrainingStatusHistoryChart({ data }: { data: TrainingStatusHisto
             </ResponsiveContainer>
           </ChartFigure>
 
-          {segments.length > 0 && <StatusRibbon segments={segments} />}
+          {ratedDays > 0 && <StatusRibbon cells={cells} label={summary} />}
 
           {legend.length > 0 && ratedDays > 0 && (
             <StatusDistribution legend={legend} ratedDays={ratedDays} />

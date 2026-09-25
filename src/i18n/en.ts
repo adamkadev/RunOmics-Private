@@ -692,8 +692,8 @@ export const en = {
         daysUnit: 'd',
         distribution: 'Days at each status',
         footnote: 'The watch\'s daily verdict, with the acute and chronic load Firstbeat measured. The blue band is the chronic load range Garmin personalises for you.',
-        reading: (dominant: string, pct: number, latest: string | null) =>
-          `${dominant} dominates this window (${pct}% of rated days)${latest ? `, currently reading "${latest}"` : ''}.`,
+        reading: (status: string, days: number, windowDays: number, latest: string | null) =>
+          `${status} on ${days} of the last ${windowDays} days${latest ? `, reading ${latest} now` : ', and today'}.`,
       },
     },
     seasonHeadline: {

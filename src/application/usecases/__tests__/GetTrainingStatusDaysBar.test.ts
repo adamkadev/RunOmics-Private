@@ -6,6 +6,7 @@ vi.mock('@/infrastructure/repositories/JsonTrainingStatusRepository', () => ({ g
 
 const { getTrainingStatusDaysBar } = await import('../GetTrainingStatusDaysBar')
 
+const TODAY = '2026-07-30'
 const day = (date: string, status?: string): TrainingStatusDay => ({ date, status })
 
 const series = (count: number, status = 'productive') =>
@@ -16,62 +17,44 @@ describe('getTrainingStatusDaysBar', () => {
     vi.clearAllMocks()
   })
 
-  it('empty before the watch has rated a single day', () => {
+  it('empty before the watch has rated a day in the window', () => {
     getTrainingStatusDays.mockReturnValue([])
-
-    expect(getTrainingStatusDaysBar()).toEqual([])
+    expect(getTrainingStatusDaysBar(28, TODAY)).toEqual([])
   })
 
-  it('keeps the last four weeks by default', () => {
-    getTrainingStatusDays.mockReturnValue(series(40))
-
-    expect(getTrainingStatusDaysBar()).toHaveLength(28)
-  })
-
-  it('keeps the most recent days, not the first ones synced', () => {
+  // G05: 28 calendar days, not the last 28 records.
+  it('covers the last 28 calendar days to today, oldest first', () => {
     getTrainingStatusDays.mockReturnValue(series(30))
-    const bar = getTrainingStatusDaysBar()
+    const bar = getTrainingStatusDaysBar(28, TODAY)
 
+    expect(bar).toHaveLength(28)
     expect(bar[0]?.date).toBe('2026-07-03')
     expect(bar.at(-1)?.date).toBe('2026-07-30')
   })
 
-  it('reads oldest first, the way the bar is drawn', () => {
-    getTrainingStatusDays.mockReturnValue(series(5))
+  it('leaves days the watch skipped as gaps instead of reaching back for more records', () => {
+    getTrainingStatusDays.mockReturnValue([day('2026-05-01', 'peaking'), day('2026-07-20', 'productive'), day('2026-07-28', 'recovery')])
+    const bar = getTrainingStatusDaysBar(28, TODAY)
 
-    expect(getTrainingStatusDaysBar().map((d) => d.date)).toEqual([
-      '2026-07-01',
-      '2026-07-02',
-      '2026-07-03',
-      '2026-07-04',
-      '2026-07-05',
-    ])
+    expect(bar).toHaveLength(28)
+    expect(bar.filter((d) => d.status).map((d) => d.date)).toEqual(['2026-07-20', '2026-07-28'])
   })
 
   it('honours a shorter window when one is asked for', () => {
     getTrainingStatusDays.mockReturnValue(series(30))
-
-    expect(getTrainingStatusDaysBar(7)).toHaveLength(7)
-  })
-
-  it('hands back everything there is when the history is shorter than the window', () => {
-    getTrainingStatusDays.mockReturnValue(series(3))
-
-    expect(getTrainingStatusDaysBar()).toHaveLength(3)
+    expect(getTrainingStatusDaysBar(7, TODAY)).toHaveLength(7)
   })
 
   it('renames the watch verdict into the vocabulary the bar reads', () => {
     getTrainingStatusDays.mockReturnValue([day('2026-07-20', 'peaking')])
-
-    expect(getTrainingStatusDaysBar()[0]?.status).toBe('fresh')
+    expect(getTrainingStatusDaysBar(28, TODAY).find((d) => d.date === '2026-07-20')?.status).toBe('fresh')
   })
 
   it('keeps an unrated day in place, with no status, so the bar shows the gap', () => {
-    getTrainingStatusDays.mockReturnValue([day('2026-07-19', 'no_status'), day('2026-07-20', 'productive')])
-
-    expect(getTrainingStatusDaysBar()).toEqual([
-      { date: '2026-07-19', status: null },
-      { date: '2026-07-20', status: 'productive' },
+    getTrainingStatusDays.mockReturnValue([day('2026-07-29', 'no_status'), day('2026-07-30', 'productive')])
+    expect(getTrainingStatusDaysBar(2, TODAY)).toEqual([
+      { date: '2026-07-29', status: null },
+      { date: '2026-07-30', status: 'productive' },
     ])
   })
 })
