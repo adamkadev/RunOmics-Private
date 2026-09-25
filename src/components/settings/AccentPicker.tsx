@@ -126,9 +126,7 @@ export function AccentPicker() {
             </button>
           </div>
         </>
-      ) : (
-        <p className="mt-2 text-center text-xs text-muted-foreground">{t.settings.accent.caption}</p>
-      )}
+      ) : null}
 
       <div
         className={cn('mt-4 flex items-center gap-3 rounded-xl border p-3.5')}

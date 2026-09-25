@@ -169,25 +169,3 @@ export function DayStateStrip(
     <Bars days={props.days} selectedDate={props.selectedDate} onSelect={props.onSelect} />
   )
 }
-
-/** The key under a week: which shape is which state. */
-export function DayStateLegend({ color, note }: { color: string; note?: string }) {
-  const swatch = { '--state-color': color } as CSSProperties
-  const items: { key: string; label: string; className: string }[] = [
-    { key: 'done', label: t.sessionState.done, className: 'state-done rounded-[3px]' },
-    { key: 'planned', label: t.sessionState.planned, className: 'state-planned rounded-[3px]' },
-    { key: 'missed', label: t.sessionState.missed, className: 'state-missed rounded-[3px]' },
-    { key: 'today', label: t.sessionState.today, className: 'rounded-full border-2 border-accent' },
-  ]
-  return (
-    <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-caption text-muted-foreground">
-      {items.map((item) => (
-        <span key={item.key} className="flex items-center gap-1.25">
-          <span aria-hidden="true" className={cn('block size-3', item.className)} style={swatch} />
-          {item.label}
-        </span>
-      ))}
-      {note && <span className="text-subtle">{note}</span>}
-    </div>
-  )
-}

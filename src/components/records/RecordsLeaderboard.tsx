@@ -159,7 +159,6 @@ export function RecordsLeaderboard({ records, topEfforts, predictions = [] }: Pr
           )
         })}
       </div>
-      <p className="px-1 text-xs text-subtle">{t.records.columnsNote}</p>
     </section>
   )
 }

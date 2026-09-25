@@ -159,7 +159,6 @@ export function RunningDynamics({ activity: a, baseline }: Props) {
             )
           })}
         </div>
-        {baseline && <p className="mt-2 text-caption text-subtle">{d.trackCaption(weeks)}</p>}
       </GlassSurface>
 
       <FormThroughRun cadenceSamples={a.cadenceSamples} distanceKm={a.distanceKm} />

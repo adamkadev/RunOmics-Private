@@ -1,5 +1,6 @@
 import type { LoadBalanceBucket, LoadBalanceData } from '@/application/usecases/GetLoadBalance'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { ChartCardHead } from '@/components/ui/ChartCard'
 import { StatusPill, type StatusTone } from '@/components/ui/StatusPill'
 import { STATUS } from '@/lib/statusColors'
 import { cn } from '@/lib/utils'
@@ -65,16 +66,18 @@ export function LoadBalancePanel({ data }: { data: LoadBalanceData }) {
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold text-foreground/80">
-          {s.title} <span className="font-normal text-subtle">{s.window}</span>
-        </h2>
-        {data.feedback && (
-          <StatusPill tone={FEEDBACK_TONE[data.feedback] ?? 'zinc'}>
-            {s.feedback[data.feedback] ?? data.feedback}
-          </StatusPill>
-        )}
-      </div>
+      <ChartCardHead
+        title={s.title}
+        unit={s.window}
+        footnote={s.footnote}
+        controls={
+          data.feedback && (
+            <StatusPill tone={FEEDBACK_TONE[data.feedback] ?? 'zinc'}>
+              {s.feedback[data.feedback] ?? data.feedback}
+            </StatusPill>
+          )
+        }
+      />
 
       <div className="divide-y divide-foreground/[0.06]">
         {data.buckets.map((bucket) => (
@@ -82,7 +85,6 @@ export function LoadBalancePanel({ data }: { data: LoadBalanceData }) {
         ))}
       </div>
 
-      <p className="mt-3 text-xs text-subtle">{s.footnote}</p>
     </GlassSurface>
   )
 }

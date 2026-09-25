@@ -136,18 +136,6 @@ export function BodyCard({ status, days }: { status: TrainingStatus | null; days
               />
             ))}
           </div>
-          <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-caption text-muted-foreground">
-            {legend.map((item) => (
-              <span key={item.status} className="flex items-center gap-1.25">
-                <span
-                  aria-hidden="true"
-                  className="block size-2 rounded-[2px]"
-                  style={{ background: TRAINING_STATUS_COLORS[item.status] }}
-                />
-                {s.legendItem(t.trainingStatus.status[item.status], item.days)}
-              </span>
-            ))}
-          </div>
         </Link>
       )}
 

@@ -16,7 +16,7 @@ import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import { weekTarget, type WeekTarget } from '@/domain/training/weekTarget'
 import { formatWeekKm, resolveDayType, resolvePlannedType, weekPlanDays } from './weekPlanDays'
 import { dayStateCells } from './dayStateCells'
-import { DayStateLegend, DayStateStrip } from '@/components/ui/DayStateStrip'
+import { DayStateStrip } from '@/components/ui/DayStateStrip'
 import { SessionStateChip } from '@/components/ui/SessionCard'
 import { InfoButton } from '@/components/ui/GlossaryTerm'
 import type { WeekDayState } from '@/domain/training/weekTarget'
@@ -254,19 +254,6 @@ function weekVolumeLabel(target: WeekTarget, notStarted: boolean): string {
   if (target.planKm === null) return `${formatWeekKm(target.ranKm)} ${t.units.km} · ${s.sessionsCount(target.ranSessions)}`
   if (notStarted) return s.planOnly(formatWeekKm(target.planKm), target.planSessions)
   return `${s.ranOfPlan(formatWeekKm(target.ranKm), formatWeekKm(target.planKm))} · ${s.sessionsOfPlan(target.ranSessions, target.planSessions)}`
-}
-
-// Which zone each colour on the strip is, for the zones this week uses.
-function intensityNote(days: WeekTarget['days']): string | undefined {
-  const byZone = new Map<number, string>()
-  for (const day of days) {
-    if (!day.type || day.state === 'rest') continue
-    const zone = runTypeZone(day.type)
-    if (!byZone.has(zone)) byZone.set(zone, t.activityTypes[day.type].toLowerCase())
-  }
-  if (byZone.size === 0) return undefined
-  const zones = [...byZone.entries()].sort((a, b) => a[0] - b[0]).map(([zone, label]) => `Z${zone} ${label}`)
-  return t.plan.intensityNote(zones.join(', '))
 }
 
 function WeekSummaryLine({
@@ -651,7 +638,6 @@ export function WeekView({
           selectedDate={selected.date}
           onSelect={selectDate}
         />
-        <DayStateLegend color="var(--zone-4)" note={intensityNote(target.days)} />
       </div>
 
       <WeekSummaryLine

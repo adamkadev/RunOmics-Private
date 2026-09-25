@@ -1,6 +1,5 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import { t } from '@/i18n'
 import { WearBar } from '../WearBar'
 
 describe('WearBar', () => {
@@ -11,13 +10,13 @@ describe('WearBar', () => {
     const limitShare = (500 / 1_375) * 100
     expect(screen.getByTestId('wear-limit').style.left).toBe(`${limitShare}%`)
     expect(screen.getByTestId('wear-overrun')).toBeInTheDocument()
-    expect(screen.getByText(t.shoes.wearBarCaption)).toBeInTheDocument()
+    // No caption under the bar (v4.1 G32): the tick and hatching carry it.
+    expect(screen.queryByText(/limit/i)).not.toBeInTheDocument()
   })
 
   it('draws a plain fill inside the limit', () => {
     render(<WearBar totalKm={380} maxKm={500} fillClass="bg-green-500" />)
 
     expect(screen.queryByTestId('wear-overrun')).not.toBeInTheDocument()
-    expect(screen.queryByText(t.shoes.wearBarCaption)).not.toBeInTheDocument()
   })
 })

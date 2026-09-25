@@ -1,5 +1,4 @@
 import { cn } from '@/lib/utils'
-import { t } from '@/i18n'
 
 /**
  * A pair's wear against its limit, scaled to max(km, limit) so the overrun
@@ -12,15 +11,12 @@ export function WearBar({
   maxKm,
   fillClass,
   className,
-  caption = true,
 }: {
   totalKm: number
   maxKm: number
   /** The in-limit fill's colour class, from the wear status. */
   fillClass: string
   className?: string
-  /** Say what the tick and the hatching mean, when there is an overrun. */
-  caption?: boolean
 }) {
   const scale = Math.max(totalKm, maxKm, 1)
   const over = maxKm > 0 && totalKm > maxKm
@@ -52,7 +48,6 @@ export function WearBar({
           </>
         )}
       </div>
-      {over && caption && <p className="mt-1.5 text-caption text-subtle">{t.shoes.wearBarCaption}</p>}
     </div>
   )
 }

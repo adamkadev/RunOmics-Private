@@ -158,7 +158,6 @@ describe('per-km splits', () => {
 
     expect(screen.getByText(t.activity.splits.cols.speed)).toBeInTheDocument()
     expect(screen.getByText(t.activity.splits.cols.vsAvg)).toBeInTheDocument()
-    expect(screen.getByText(t.activity.splits.footnote)).toBeInTheDocument()
     expect(screen.getByText(/s\/km spread/)).toBeInTheDocument()
   })
 })
