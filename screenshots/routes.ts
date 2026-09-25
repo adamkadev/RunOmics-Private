@@ -5,24 +5,28 @@ export interface RouteSpec {
   name: string
   hasTabs?: boolean
   waitFor?: string
+  /**
+   * A detail page, opened from the first link on `path` whose href starts
+   * with this - so it has content in whichever dataset is being served.
+   */
+  firstLinkTo?: string
 }
-
-const SAMPLE_ACTIVITY_ID = '23400726979'
-const SAMPLE_SHOE_ID = 'e6aa89fbda0747059f5acbd4dfb5736f'
 
 export const ROUTES: RouteSpec[] = [
   { path: '/', name: 'dashboard' },
   { path: '/activities', name: 'activities' },
-  { path: `/activities/${SAMPLE_ACTIVITY_ID}`, name: 'activity-detail' },
+  { path: '/activities', name: 'activity-detail', firstLinkTo: '/activities/', hasTabs: true },
   { path: '/plan', name: 'plan', hasTabs: true },
   { path: '/analytics', name: 'analytics', hasTabs: true },
   { path: '/map', name: 'map' },
   { path: '/goals', name: 'goals' },
   { path: '/records', name: 'records', hasTabs: true },
   { path: '/shoes', name: 'shoes' },
-  { path: `/shoes/${SAMPLE_SHOE_ID}`, name: 'shoe-detail' },
+  { path: '/shoes', name: 'shoe-detail', firstLinkTo: '/shoes/' },
   { path: '/profile', name: 'profile' },
+  { path: '/athlete', name: 'athlete' },
   { path: '/settings', name: 'settings' },
+  { path: '/no-such-page', name: 'not-found' },
 ]
 
 export const THEMES = ['light', 'dark'] as const
