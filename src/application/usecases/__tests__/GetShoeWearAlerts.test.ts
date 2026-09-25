@@ -40,7 +40,9 @@ async function run(shoes: ShoeStats[], lastState: ShoeWearState | null) {
   vi.mocked(saveLastShoeWearState).mockResolvedValue(undefined)
 
   const { getShoeWearAlerts } = await import('../GetShoeWearAlerts')
-  return { alerts: await getShoeWearAlerts(), saveLastShoeWearState: vi.mocked(saveLastShoeWearState) }
+  const { newAlerts, commit } = await getShoeWearAlerts()
+  await commit()
+  return { alerts: newAlerts, saveLastShoeWearState: vi.mocked(saveLastShoeWearState) }
 }
 
 describe('getShoeWearAlerts', () => {
@@ -85,6 +87,25 @@ describe('getShoeWearAlerts', () => {
     const { saveLastShoeWearState } = await run([shoe('a', { retired: true }), shoe('b')], null)
 
     expect(saveLastShoeWearState).toHaveBeenCalledWith({ b: { alerted: false } })
+  })
+
+  it('stores nothing until the caller commits, so a push that fails is offered again', async () => {
+    const { getShoeStats } = await import('../GetShoeStats')
+    const { getLastShoeWearState, saveLastShoeWearState } = await import(
+      '@/infrastructure/repositories/FirestoreConfigRepository'
+    )
+    vi.mocked(getShoeStats).mockReturnValue([shoe('a', { nearingLimit: true })])
+    vi.mocked(getLastShoeWearState).mockResolvedValue(null)
+    vi.mocked(saveLastShoeWearState).mockClear()
+
+    const { getShoeWearAlerts } = await import('../GetShoeWearAlerts')
+    const { newAlerts, commit } = await getShoeWearAlerts()
+
+    expect(newAlerts).toHaveLength(1)
+    expect(saveLastShoeWearState).not.toHaveBeenCalled()
+
+    await commit()
+    expect(saveLastShoeWearState).toHaveBeenCalledWith({ a: { alerted: true } })
   })
 
   it('reports every newly worn shoe in one pass', async () => {

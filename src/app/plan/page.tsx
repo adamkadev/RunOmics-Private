@@ -6,7 +6,9 @@ import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
 import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { PlanClient } from '@/components/plan/PlanClient'
-import type { HrBounds } from '@/domain/training/trimp'
+import { planCoachingView } from '@/components/plan/planCoachingView'
+import { appTodayIso } from '@/lib/calendarDate'
+import { hrBoundsFor } from '@/domain/training/hrBounds'
 
 export const revalidate = 3600
 
@@ -16,22 +18,20 @@ export default async function PlanPage() {
   const nextRace = await getNextRace()
   const trainingZones = await getTrainingZones()
   const trainingPlan = getTrainingPlan()
-  const athlete = getAthleteProfile()
-  const hrBounds: HrBounds | undefined =
-    athlete.maxHrBpm && athlete.restingHrBpm
-      ? { maxHr: athlete.maxHrBpm, restingHr: athlete.restingHrBpm }
-      : undefined
+  const today = appTodayIso()
+  const coaching = getCoachingOverview(today)
 
   return (
     <PlanClient
       activities={activities}
       plannedWorkouts={plannedWorkouts}
-      hrBounds={hrBounds}
+      hrBounds={hrBoundsFor(getAthleteProfile())}
       planPhaseRanges={trainingPlan?.ranges ?? []}
       planSpan={trainingPlan}
       nextRace={nextRace}
       trainingZones={trainingZones}
-      coaching={getCoachingOverview()}
+      coaching={coaching ? planCoachingView(coaching) : null}
+      today={today}
     />
   )
 }

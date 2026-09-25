@@ -3,7 +3,7 @@ import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepo
 import { getLatestTrainingStatusDay } from '@/infrastructure/repositories/JsonTrainingStatusRepository'
 import { buildTimeSeries, dailyTrimpByDate, type HrBounds } from './GetTrainingLoad'
 import { acwr } from './GetTrainingStatus'
-import { addDays, isoDate } from '@/lib/calendarDate'
+import { DAY_MS, addDays, isoDate } from '@/lib/calendarDate'
 import { round } from '@/lib/math'
 
 export type RiskZone = 'low' | 'safe' | 'caution' | 'risk'
@@ -99,7 +99,7 @@ export async function getLoadRiskPanel(): Promise<LoadRiskPanel | null> {
 
   const refDate = new Date(latest.date + 'T00:00:00')
   const daysOfHistory =
-    Math.round((refDate.getTime() - new Date(earliest.date + 'T00:00:00').getTime()) / 86_400_000) + 1
+    Math.round((refDate.getTime() - new Date(earliest.date + 'T00:00:00').getTime()) / DAY_MS) + 1
 
   const garmin = getLatestTrainingStatusDay()
   const localAcwr = acwr(activities, refDate)

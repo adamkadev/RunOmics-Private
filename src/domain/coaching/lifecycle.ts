@@ -102,6 +102,16 @@ function applyReplan(plan: CoachingPlan, decision: CoachDecision): TrainingWeek[
   const history = plan.weeks
     .map((week) => ({ ...clone(week), workouts: week.workouts.filter((workout) => workout.date < decision.effectiveDate) }))
     .filter((week) => week.workouts.length > 0)
+  // Merged by id, a replacement workout carrying a past prescription's id
+  // used to take its place in history without a word.
+  const pastIds = new Set(history.flatMap((week) => week.workouts.map((workout) => workout.id)))
+  for (const week of replacement) {
+    for (const workout of week.workouts) {
+      if (pastIds.has(workout.id)) {
+        throw new CoachingValidationError('decision.changes[0].afterWeeks', `replacement reuses the id of past prescription ${workout.id}`)
+      }
+    }
+  }
   for (const historicalWeek of history) {
     const destination = replacement.find((week) => week.id === historicalWeek.id)
       ?? findWeekForDate(replacement, historicalWeek.workouts[0]!.date)
@@ -109,9 +119,7 @@ function applyReplan(plan: CoachingPlan, decision: CoachDecision): TrainingWeek[
       replacement.push(historicalWeek)
       continue
     }
-    for (const workout of historicalWeek.workouts) {
-      if (!destination.workouts.some((candidate) => candidate.id === workout.id)) destination.workouts.push(clone(workout))
-    }
+    destination.workouts.push(...historicalWeek.workouts.map((workout) => clone(workout)))
   }
   for (const week of replacement) week.workouts.sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id))
 

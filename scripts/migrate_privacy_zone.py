@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-"""One-time (re-runnable) migration: crop every already-synced activity's route
-to the current privacy zone (processing/privacy.py). Needed because sync.py
-and reprocess.py only apply the crop going forward - this rewrites the routes
-already stored in the selected data workspace, independent of whether a
-cached FIT file exists for them.
+"""Re-crop every already-synced activity's route to the current privacy zone
+(processing/privacy.py). sync.py and reprocess.py only crop what they write,
+so this is what brings routes stored under an older rule - or an older
+PRIVACY_* configuration - up to the current one, whether or not a cached FIT
+file still exists for them.
 
-Re-run this after changing PRIVACY_ZONES or PRIVACY_RADIUS_M in
-processing/privacy.py to re-crop with the new settings.
+Cropping is deterministic per activity and removes nothing from a route that
+is already cropped, so this is safe to run on every sync: the first run
+rewrites what needs it, every later one reports zero changes. The nightly
+workflow runs it before verify_privacy_zone.py and before anything is pushed.
 """
 from __future__ import annotations
 
@@ -28,15 +30,16 @@ def main() -> int:
         before = a.get("route")
         if not before:
             continue
-        after = crop_privacy_zone(before)
+        after = crop_privacy_zone(before, a["id"])
         if after != before:
             points_removed += len(before) - (len(after) if after else 0)
             a["route"] = after
             store.touch(a["id"])
             changed += 1
 
-    store.save()
-    print(f"{changed} activities re-cropped, {points_removed} GPS points removed from route start/finish.")
+    if changed:
+        store.save()
+    print(f"{changed} activities re-cropped, {points_removed} GPS points removed.")
     return 0
 
 

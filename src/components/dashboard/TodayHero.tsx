@@ -1,15 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { DAY_MS } from '@/lib/calendarDate'
 import Link from 'next/link'
 import { ChevronRight, BedDouble, Flag } from 'lucide-react'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import type { ActivitySummary } from '@/domain/activity/types'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import { verdictTone, type ReadinessTone } from '@/domain/training/readiness'
-import type { PlanWorkoutView } from '@/components/plan/planWorkoutView'
+import type { HeroWorkoutView } from '@/components/plan/planWorkoutView'
 import { formatCountdown, formatDelta, formatDistance, formatDurationWords } from '@/lib/formatters'
 import { READINESS_TONE_COLORS } from '@/lib/colors'
+import { useToday } from '@/lib/useToday'
 import type { Insight } from '@/lib/gemini'
 import { t } from '@/i18n'
 
@@ -24,15 +25,16 @@ const CARD_SURFACE = '#101a2c'
 const CARD_BORDER = 'rgba(148,178,220,.14)'
 const AMBER_RULE = '#f5b13d'
 const CHIP_BORDER = 'rgba(148,178,220,.22)'
-const CHIP_TEXT = 'var(--muted-foreground)'
 const FOOTER_BG = 'rgba(148,178,220,.035)'
 const FOOTER_DIVIDER = 'rgba(148,178,220,.12)'
 interface Props {
   status: TrainingStatus | null
-  plannedWorkout: PlanWorkoutView | null
+  plannedWorkout: HeroWorkoutView | null
   todayActivity: ActivitySummary | null
   nextRace: UpcomingRace | null
   aiVerdict: Insight | null
+  /** The date the page was prerendered on; see useToday. */
+  today: string
 }
 
 function holdCopy(status: TrainingStatus): { headline: string; body: string } {
@@ -65,12 +67,13 @@ function readinessCopy(status: TrainingStatus, tone: ReadinessTone): { headline:
   }
 }
 
-export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiVerdict }: Props) {
-  const [daysToRace] = useState(() =>
-    nextRace
-      ? Math.ceil((new Date(nextRace.date + 'T00:00:00').getTime() - Date.now()) / 86_400_000)
-      : null
-  )
+export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiVerdict, today: serverToday }: Props) {
+  const today = useToday(serverToday)
+  // Whole calendar days, both ends at UTC midnight so a daylight-saving change
+  // in between cannot move the count.
+  const daysToRace = nextRace
+    ? Math.round((Date.parse(`${nextRace.date}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / DAY_MS)
+    : null
 
   if (!status && !plannedWorkout && !nextRace) return null
 
@@ -112,9 +115,11 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiV
           {tone ? s.eyebrowByTone[tone] : s.eyebrowByTone.go}
         </span>
         {nextRace && daysToRace !== null && daysToRace > 0 && (
+          // The card is dark in both themes, so its ink is too: the theme's
+          // muted-foreground turned this chip 1.9:1 on a light system theme.
           <div
-            className="inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[12px]"
-            style={{ border: `1px solid ${CHIP_BORDER}`, color: CHIP_TEXT }}
+            className="inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[12px] text-white/70"
+            style={{ border: `1px solid ${CHIP_BORDER}` }}
           >
             <Flag size={10} className="shrink-0" />
             {formatCountdown(daysToRace)}

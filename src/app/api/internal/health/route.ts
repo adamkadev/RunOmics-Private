@@ -1,7 +1,9 @@
+import { DAY_MS } from '@/lib/calendarDate'
 import { NextResponse, type NextRequest } from 'next/server'
 import { handleInternalRoute } from '@/lib/internalRoute'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getLastSyncedAt } from '@/application/usecases/GetSyncStatus'
+import { integrationStatus } from '@/infrastructure/integrations'
 
 const STALE_AFTER_DAYS = 7
 
@@ -12,7 +14,7 @@ export async function GET(req: NextRequest) {
 
     const lastActivityDate = latest ? latest.date : null
     const daysSinceLastActivity = latest
-      ? Math.floor((Date.now() - new Date(latest.date).getTime()) / 86_400_000)
+      ? Math.floor((Date.now() - new Date(latest.date).getTime()) / DAY_MS)
       : null
 
     return NextResponse.json({
@@ -22,6 +24,7 @@ export async function GET(req: NextRequest) {
       daysSinceLastActivity,
       lastSyncedAt: getLastSyncedAt(),
       version: process.env.NEXT_PUBLIC_APP_VERSION ?? null,
+      integrations: integrationStatus(),
     })
   })
 }

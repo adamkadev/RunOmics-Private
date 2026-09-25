@@ -1,55 +1,76 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-vi.mock('@/infrastructure/repositories/FirestoreConfigRepository', () => ({
+const { getLastSyncedAt, getLastStaleSyncState, saveLastStaleSyncState } = vi.hoisted(() => ({
+  getLastSyncedAt: vi.fn(),
   getLastStaleSyncState: vi.fn(),
   saveLastStaleSyncState: vi.fn(),
 }))
 
-vi.mock('../GetSyncStatus', () => ({
-  getLastSyncedAt: vi.fn(),
+vi.mock('@/infrastructure/repositories/FirestoreConfigRepository', () => ({
+  getLastStaleSyncState,
+  saveLastStaleSyncState,
 }))
+
+vi.mock('../GetSyncStatus', () => ({ getLastSyncedAt }))
+
+const { getStaleSyncAlert } = await import('../GetStaleSyncAlert')
+
+const hoursAgo = (hours: number) => new Date(Date.now() - hours * 3_600_000).toISOString()
 
 describe('getStaleSyncAlert', () => {
   beforeEach(() => {
-    vi.resetModules()
+    vi.clearAllMocks()
+    getLastStaleSyncState.mockResolvedValue(null)
+    saveLastStaleSyncState.mockResolvedValue(undefined)
   })
 
-  it('null when there is no recorded sync yet', async () => {
-    const { getLastSyncedAt } = await import('../GetSyncStatus')
-    vi.mocked(getLastSyncedAt).mockReturnValue(null)
+  it('null, and nothing to store, when there is no recorded sync yet', async () => {
+    getLastSyncedAt.mockReturnValue(null)
 
-    const { getStaleSyncAlert } = await import('../GetStaleSyncAlert')
-    expect(await getStaleSyncAlert()).toBeNull()
+    const { alert, commit } = await getStaleSyncAlert()
+    await commit()
+
+    expect(alert).toBeNull()
+    expect(saveLastStaleSyncState).not.toHaveBeenCalled()
   })
 
   it('null when the last sync is within the stale window', async () => {
-    const { getLastSyncedAt } = await import('../GetSyncStatus')
-    const { getLastStaleSyncState } = await import('@/infrastructure/repositories/FirestoreConfigRepository')
-    vi.mocked(getLastSyncedAt).mockReturnValue(new Date(Date.now() - 10 * 3_600_000).toISOString())
-    vi.mocked(getLastStaleSyncState).mockResolvedValue(null)
+    getLastSyncedAt.mockReturnValue(hoursAgo(10))
 
-    const { getStaleSyncAlert } = await import('../GetStaleSyncAlert')
-    expect(await getStaleSyncAlert()).toBeNull()
+    expect((await getStaleSyncAlert()).alert).toBeNull()
   })
 
   it('fires once when sync falls past the stale threshold', async () => {
-    const { getLastSyncedAt } = await import('../GetSyncStatus')
-    const { getLastStaleSyncState } = await import('@/infrastructure/repositories/FirestoreConfigRepository')
-    vi.mocked(getLastSyncedAt).mockReturnValue(new Date(Date.now() - 80 * 3_600_000).toISOString())
-    vi.mocked(getLastStaleSyncState).mockResolvedValue(null)
+    getLastSyncedAt.mockReturnValue(hoursAgo(80))
 
-    const { getStaleSyncAlert } = await import('../GetStaleSyncAlert')
-    const alert = await getStaleSyncAlert()
-    expect(alert?.hoursSinceSync).toBe(80)
+    expect((await getStaleSyncAlert()).alert?.hoursSinceSync).toBe(80)
   })
 
   it('does not re-alert while still stale from a previous check', async () => {
-    const { getLastSyncedAt } = await import('../GetSyncStatus')
-    const { getLastStaleSyncState } = await import('@/infrastructure/repositories/FirestoreConfigRepository')
-    vi.mocked(getLastSyncedAt).mockReturnValue(new Date(Date.now() - 80 * 3_600_000).toISOString())
-    vi.mocked(getLastStaleSyncState).mockResolvedValue({ alerted: true })
+    getLastSyncedAt.mockReturnValue(hoursAgo(80))
+    getLastStaleSyncState.mockResolvedValue({ alerted: true })
 
-    const { getStaleSyncAlert } = await import('../GetStaleSyncAlert')
-    expect(await getStaleSyncAlert()).toBeNull()
+    expect((await getStaleSyncAlert()).alert).toBeNull()
+  })
+
+  it('stores nothing until the caller commits, so a push that fails is offered again', async () => {
+    getLastSyncedAt.mockReturnValue(hoursAgo(80))
+
+    const { alert, commit } = await getStaleSyncAlert()
+
+    expect(alert).not.toBeNull()
+    expect(saveLastStaleSyncState).not.toHaveBeenCalled()
+
+    await commit()
+    expect(saveLastStaleSyncState).toHaveBeenCalledWith({ alerted: true })
+  })
+
+  it('re-arms once a sync lands again', async () => {
+    getLastSyncedAt.mockReturnValue(hoursAgo(2))
+    getLastStaleSyncState.mockResolvedValue({ alerted: true })
+
+    await (await getStaleSyncAlert()).commit()
+
+    expect(saveLastStaleSyncState).toHaveBeenCalledWith({ alerted: false })
   })
 })

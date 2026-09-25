@@ -29,7 +29,7 @@ function bpmRangeLabel(min: number, max: number | null): string {
 }
 
 interface Props {
-  athlete: AthleteProfile
+  athlete: Pick<AthleteProfile, 'lthrBpm' | 'hrZoneBoundsBpm'>
   weeklyZoneTime: ZoneShare[]
   recentZoneTime: ZoneShare[]
   paceZones?: TrainingZonesData | null

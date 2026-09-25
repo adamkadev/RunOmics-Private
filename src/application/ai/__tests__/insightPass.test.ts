@@ -1,0 +1,528 @@
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { BACKFILL_POOL, MODEL_POOL, dailyBudget, spendField } from '@/domain/ai/budget'
+import { runHistory } from '@/domain/activity/runHistory'
+import { runVerdictInsightHash, runVerdictSurface, type RunVerdictContext } from '@/domain/ai/runVerdictInsight'
+import type { Activity } from '@/domain/activity/types'
+import type { CachedInsight, VerdictPhrasing } from '@/infrastructure/repositories/FirestoreInsightsRepository'
+import type { Spender } from '@/lib/aiSpend'
+import type { InsightRequest, InsightResult } from '@/lib/gemini'
+import {
+  generateFromPool,
+  runInsightPass,
+  runSurface,
+  shouldTryAnotherModel,
+  verdictQueue,
+  writeVerdicts,
+  type InsightPassDeps,
+} from '../insightPass'
+import type { InsightSurfaces, SurfaceJob } from '../surfaces'
+
+// Every collaborator is a plain fake: the pass never reaches Firestore, Gemini,
+// Next or FCM here, so what is asserted is the loop that spends the quota.
+
+const NOW = new Date('2026-09-24T12:00:00')
+const [BEST, SECOND] = MODEL_POOL as [string, string]
+
+afterEach(() => {
+  vi.restoreAllMocks()
+})
+
+/**
+ * Hands out models in pool order, like the real one minus the pacing, until
+ * `reservations` runs out - which is how the real spender answers once the
+ * invocation's clock is spent.
+ */
+function fakeSpender({ reservations = Infinity, spent = {} as Record<string, number> } = {}) {
+  const ledger = { ...spent }
+  const exhausted: string[] = []
+  let left = reservations
+
+  const spender: Spender = {
+    async reserve(pool) {
+      const model = pool.find((m) => !exhausted.includes(m) && (ledger[spendField(m)] ?? 0) < dailyBudget(m))
+      if (!model || left <= 0) return null
+      left -= 1
+      ledger[spendField(model)] = (ledger[spendField(model)] ?? 0) + 1
+      return model
+    },
+    exhaust(model) {
+      exhausted.push(model)
+    },
+    report() {
+      return { ...ledger }
+    },
+  }
+  return { spender, exhausted }
+}
+
+function memoryInsights(stored: Record<string, Partial<CachedInsight>> = {}, phrasing: VerdictPhrasing[] = []) {
+  const docs = new Map<string, CachedInsight>(
+    Object.entries(stored).map(([surface, doc]) => [
+      surface,
+      { headline: 'Stored', body: 'Stored body.', hash: 'stored-hash', generatedAt: NOW.toISOString(), ...doc },
+    ])
+  )
+  const saved: { surface: string; headline: string; hash: string; previous: CachedInsight | null; guard?: string }[] = []
+  const savedPhrasing: VerdictPhrasing[][] = []
+
+  const insights: InsightPassDeps['insights'] = {
+    getCachedInsight: async (surface) => docs.get(surface) ?? null,
+    saveCachedInsight: async (surface, insight, hash, previous, guard) => {
+      saved.push({ surface, headline: insight.headline, hash, previous, ...(guard !== undefined && { guard }) })
+      docs.set(surface, { ...insight, hash, generatedAt: NOW.toISOString() })
+    },
+    listCachedHashes: async (prefix) =>
+      new Map([...docs].filter(([surface]) => surface.startsWith(prefix)).map(([surface, doc]) => [surface, doc.hash])),
+    readVerdictPhrasing: async () => phrasing,
+    saveVerdictPhrasing: async (recent) => {
+      savedPhrasing.push(recent)
+    },
+  }
+  return { insights, saved, savedPhrasing }
+}
+
+const ok = (headline: string, body = `${headline}, and why.`): InsightResult => ({ ok: true, insight: { headline, body } })
+const fail = (reason: string): InsightResult => ({ ok: false, reason })
+
+/** A different headline every call, so nothing trips the repeated-headline check by accident. */
+function writer() {
+  let count = 0
+  return vi.fn<(request: InsightRequest) => Promise<InsightResult>>(async () => ok(`Verdict ${++count}`))
+}
+
+function deps(overrides: Partial<InsightPassDeps> = {}): InsightPassDeps {
+  return {
+    spender: fakeSpender().spender,
+    insights: memoryInsights().insights,
+    generate: writer(),
+    revalidate: vi.fn(),
+    notify: vi.fn(async () => {}),
+    now: () => NOW,
+    ...overrides,
+  }
+}
+
+function job(surface: string, overrides: Partial<SurfaceJob> = {}): SurfaceJob {
+  return {
+    surface,
+    limits: { headline: 60, body: 150 },
+    systemInstruction: `system for ${surface}`,
+    hash: `${surface}-hash`,
+    prompt: (recent) => [`prompt for ${surface}`, ...recent].join('\n'),
+    paths: [`/${surface}`],
+    ...overrides,
+  }
+}
+
+function run(id: string, date: string): RunVerdictContext {
+  const activity = {
+    id,
+    date,
+    type: 'Base',
+    distanceKm: 10,
+    durationSeconds: 55 * 60,
+    paceSecPerKm: 330,
+    avgHeartRate: 148,
+    rpe: null,
+    aerTrainingEffect: null,
+    elevationGain: null,
+    avgTemperature: 20,
+    weather: null,
+    hrZones: [],
+    hrSamples: null,
+    paceSamples: null,
+    splits: null,
+  } as unknown as Activity
+  return { activity, history: runHistory(activity, []), planned: null }
+}
+
+const JUST_RUN = run('just-run', '2026-09-23')
+const LAST_MONTH = run('last-month', '2026-09-01')
+const LONG_AGO = run('long-ago', '2026-04-01')
+
+function surfaces(overrides: Partial<InsightSurfaces> = {}): InsightSurfaces {
+  return {
+    runVerdicts: async () => ({ contexts: [], recordActivityIds: new Set<string>() }),
+    today: async () => 'no training status',
+    season: async () => 'no season reads',
+    analyticsTabs: async () => ({ fitness: 'no reads' }),
+    pbCelebration: async () => 'no fresh record',
+    shoeVerdicts: () => ({}),
+    ...overrides,
+  }
+}
+
+describe('shouldTryAnotherModel', () => {
+  it('moves on from a model that answered 429 or 404, as the pool exists for', () => {
+    expect(shouldTryAnotherModel('http 429: quota exceeded')).toBe(true)
+    expect(shouldTryAnotherModel('http 404: model not found')).toBe(true)
+  })
+
+  it('retries the Google-side congestion that wasted whole passes', () => {
+    expect(shouldTryAnotherModel('http 503: This model is currently experiencing high demand.')).toBe(true)
+    expect(shouldTryAnotherModel('http 500: internal')).toBe(true)
+  })
+
+  it('does not burn another model on copy the validator rejected', () => {
+    expect(shouldTryAnotherModel('headline 61 > 56 chars')).toBe(false)
+    expect(shouldTryAnotherModel('headline or body missing')).toBe(false)
+    expect(shouldTryAnotherModel('3 bullets, expected 2')).toBe(false)
+  })
+
+  it('does not retry a request the API rejected outright', () => {
+    expect(shouldTryAnotherModel('http 400: invalid argument')).toBe(false)
+    expect(shouldTryAnotherModel('http 403: permission denied')).toBe(false)
+  })
+})
+
+describe('generateFromPool', () => {
+  const REQUEST = { systemInstruction: 'sys', prompt: 'prompt', limits: { headline: 60, body: 150 } }
+
+  it('hands the same request to the next model once one has closed for the day', async () => {
+    const { spender, exhausted } = fakeSpender()
+    const generate = vi.fn().mockResolvedValueOnce(fail('http 429: quota')).mockResolvedValueOnce(ok('Fresh legs'))
+
+    const attempt = await generateFromPool(deps({ spender, generate }), MODEL_POOL, REQUEST)
+
+    expect(attempt).toEqual({ ok: true, model: SECOND, insight: { headline: 'Fresh legs', body: 'Fresh legs, and why.' } })
+    expect(exhausted).toEqual([BEST])
+    expect(generate.mock.calls.map(([request]) => [request.model, request.prompt])).toEqual([
+      [BEST, 'prompt'],
+      [SECOND, 'prompt'],
+    ])
+  })
+
+  it('tries again after a transient error, without closing the model for the day', async () => {
+    const { spender, exhausted } = fakeSpender()
+    const generate = vi.fn().mockResolvedValueOnce(fail('http 503: high demand')).mockResolvedValueOnce(ok('Fresh legs'))
+
+    const attempt = await generateFromPool(deps({ spender, generate }), MODEL_POOL, REQUEST)
+
+    expect(attempt.ok).toBe(true)
+    expect(generate).toHaveBeenCalledTimes(2)
+    expect(exhausted).toEqual([])
+  })
+
+  it('does not spend another request on copy the validator rejected', async () => {
+    const generate = vi.fn().mockResolvedValue(fail('headline 61 > 56 chars'))
+
+    const attempt = await generateFromPool(deps({ generate }), MODEL_POOL, REQUEST)
+
+    expect(attempt).toEqual({ ok: false, reason: `${BEST}: headline 61 > 56 chars`, reserved: true })
+    expect(generate).toHaveBeenCalledTimes(1)
+  })
+
+  it('gives up after three attempts, naming each one', async () => {
+    const generate = vi.fn().mockResolvedValue(fail('http 503: busy'))
+
+    const attempt = await generateFromPool(deps({ generate }), MODEL_POOL, REQUEST)
+
+    expect(generate).toHaveBeenCalledTimes(3)
+    expect(attempt.ok === false && attempt.reason.split(' | ')).toHaveLength(3)
+  })
+
+  it('reports a spender that would not reserve apart from a model that failed', async () => {
+    const generate = vi.fn()
+
+    const attempt = await generateFromPool(deps({ spender: fakeSpender({ reservations: 0 }).spender, generate }), MODEL_POOL, REQUEST)
+
+    expect(attempt).toEqual({ ok: false, reason: 'no time left in this invocation', reserved: false })
+    expect(generate).not.toHaveBeenCalled()
+  })
+
+  it('says the budget is spent, not the clock, when every model in the pool has used its day', async () => {
+    const spent = Object.fromEntries(MODEL_POOL.map((model) => [spendField(model), dailyBudget(model)]))
+
+    const attempt = await generateFromPool(deps({ spender: fakeSpender({ spent }).spender }), MODEL_POOL, REQUEST)
+
+    expect(attempt).toEqual({ ok: false, reason: 'no budget left', reserved: false })
+  })
+})
+
+describe('runSurface', () => {
+  it('spends nothing when the stored card was written from the same facts', async () => {
+    const store = memoryInsights({ today: { hash: 'today-hash' } })
+    const generate = writer()
+    const revalidate = vi.fn()
+
+    const outcome = await runSurface(deps({ insights: store.insights, generate, revalidate }), job('today'))
+
+    expect(outcome).toEqual({ generated: false, reason: 'unchanged' })
+    expect(generate).not.toHaveBeenCalled()
+    expect(store.saved).toEqual([])
+    expect(revalidate).not.toHaveBeenCalled()
+  })
+
+  it('writes the card with its hash and guard, and revalidates the pages that show it', async () => {
+    const store = memoryInsights({ today: { hash: 'yesterday', recentHeadlines: ['Easy does it'] } })
+    const generate = writer()
+    const revalidate = vi.fn()
+
+    const outcome = await runSurface(
+      deps({ insights: store.insights, generate, revalidate }),
+      job('today', { guard: 'go', paths: ['/', '/analytics'] })
+    )
+
+    expect(outcome).toEqual({ generated: true })
+    expect(store.saved).toEqual([
+      { surface: 'today', headline: 'Verdict 1', hash: 'today-hash', previous: expect.objectContaining({ hash: 'yesterday' }), guard: 'go' },
+    ])
+    expect(revalidate.mock.calls).toEqual([['/'], ['/analytics']])
+  })
+
+  it('shows the model the headlines this card already used, and asks for its bullets', async () => {
+    const generate = writer()
+
+    await runSurface(
+      deps({ insights: memoryInsights({ season: { hash: 'old', recentHeadlines: ['A season of gains'] } }).insights, generate }),
+      job('season', { bulletCount: 3 })
+    )
+
+    expect(generate).toHaveBeenCalledWith(
+      expect.objectContaining({ model: BEST, prompt: 'prompt for season\nA season of gains', bulletCount: 3 })
+    )
+  })
+
+  it('keeps the stored card when generation fails', async () => {
+    const store = memoryInsights()
+    const revalidate = vi.fn()
+
+    const outcome = await runSurface(
+      deps({ insights: store.insights, generate: vi.fn().mockResolvedValue(fail('em-dash')), revalidate }),
+      job('today')
+    )
+
+    expect(outcome).toEqual({ generated: false, reason: `${BEST}: em-dash` })
+    expect(store.saved).toEqual([])
+    expect(revalidate).not.toHaveBeenCalled()
+  })
+})
+
+describe('verdictQueue', () => {
+  const noRecords = new Set<string>()
+
+  it('queues only the runs whose stored verdict is missing or was written from other facts', () => {
+    const current = run('current', '2026-09-20')
+    const stale = run('stale', '2026-09-21')
+    const hashes = new Map([
+      [runVerdictSurface('current'), runVerdictInsightHash(current)],
+      [runVerdictSurface('stale'), 'facts-before-a-reprocess'],
+    ])
+
+    const queue = verdictQueue({ contexts: [current, stale, JUST_RUN], recordActivityIds: noRecords }, hashes, NOW, false)
+
+    expect([...queue.fresh, ...queue.rest].map((c) => c.activity.id).sort()).toEqual(['just-run', 'stale'])
+    expect(queue.outstanding).toBe(2)
+  })
+
+  it('leaves a run past the horizon out, unless it holds a record or the horizon is lifted', () => {
+    const contexts = [LONG_AGO]
+
+    expect(verdictQueue({ contexts, recordActivityIds: noRecords }, new Map(), NOW, false).eligible).toBe(0)
+    expect(verdictQueue({ contexts, recordActivityIds: new Set(['long-ago']) }, new Map(), NOW, false).eligible).toBe(1)
+    expect(verdictQueue({ contexts, recordActivityIds: noRecords }, new Map(), NOW, true).eligible).toBe(1)
+  })
+
+  it('splits the runs that just landed from the backlog', () => {
+    const queue = verdictQueue({ contexts: [JUST_RUN, LAST_MONTH, LONG_AGO], recordActivityIds: noRecords }, new Map(), NOW, false)
+
+    expect(queue.fresh.map((c) => c.activity.id)).toEqual(['just-run'])
+    expect(queue.rest.map((c) => c.activity.id)).toEqual(['last-month'])
+    expect(queue).toMatchObject({ outstanding: 3, eligible: 2 })
+  })
+})
+
+describe('writeVerdicts', () => {
+  it('saves each verdict under its run, keyed on its facts, and pushes it when asked', async () => {
+    const store = memoryInsights()
+    const notify = vi.fn(async () => {})
+    const revalidate = vi.fn()
+
+    const result = await writeVerdicts(deps({ insights: store.insights, notify, revalidate }), [JUST_RUN], [], [], MODEL_POOL, true)
+
+    expect(result).toEqual({ generated: 1, failures: [] })
+    expect(store.saved).toEqual([
+      { surface: runVerdictSurface('just-run'), headline: 'Verdict 1', hash: runVerdictInsightHash(JUST_RUN), previous: null },
+    ])
+    expect(revalidate).toHaveBeenCalledWith('/activities/just-run')
+    expect(notify).toHaveBeenCalledWith({ headline: 'Verdict 1', body: 'Verdict 1, and why.' })
+  })
+
+  it('never pushes a backfilled verdict', async () => {
+    const notify = vi.fn(async () => {})
+
+    await writeVerdicts(deps({ notify }), [LAST_MONTH], [], [], BACKFILL_POOL)
+
+    expect(notify).not.toHaveBeenCalled()
+  })
+
+  it('rejects a headline this pass or an earlier one already used, and leaves the run queued', async () => {
+    const store = memoryInsights()
+    const generate = vi.fn().mockResolvedValue(ok('Held together.'))
+    const phrasing = [{ headline: 'held together', body: 'An earlier night.' }]
+
+    const result = await writeVerdicts(deps({ insights: store.insights, generate }), [JUST_RUN], [], phrasing, MODEL_POOL, true)
+
+    expect(result.generated).toBe(0)
+    expect(result.failures).toEqual([`just-run (${BEST}): repeated the headline "Held together."`])
+    expect(store.saved).toEqual([])
+  })
+
+  it('shows each verdict what the earlier ones in the pass already said', async () => {
+    const generate = writer()
+
+    await writeVerdicts(deps({ generate }), [JUST_RUN, LAST_MONTH], [], [], BACKFILL_POOL)
+
+    expect(generate.mock.calls[1]?.[0].prompt).toContain('Verdict 1 / Verdict 1, and why.')
+  })
+
+  it('keeps writing when a push fails - the verdict is already saved', async () => {
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const notify = vi.fn().mockRejectedValueOnce(new Error('FCM is down')).mockResolvedValue(undefined)
+
+    const result = await writeVerdicts(deps({ notify }), [JUST_RUN, run('same-week', '2026-09-22')], [], [], MODEL_POOL, true)
+
+    expect(result).toEqual({ generated: 2, failures: [] })
+    expect(notify).toHaveBeenCalledTimes(2)
+    expect(errors).toHaveBeenCalledWith('[ai-insights] push notification failed', expect.any(Error))
+  })
+
+  it('moves on past a verdict whose copy was rejected', async () => {
+    const generate = vi.fn().mockResolvedValueOnce(fail('body 180 > 150 chars')).mockResolvedValueOnce(ok('Second run'))
+
+    const result = await writeVerdicts(deps({ generate }), [JUST_RUN, LAST_MONTH], [], [], BACKFILL_POOL)
+
+    expect(result).toEqual({ generated: 1, failures: [`just-run: ${BACKFILL_POOL[0]}: body 180 > 150 chars`] })
+  })
+
+  it('stops at the first verdict the spender has no time left for, rather than asking for each', async () => {
+    const generate = writer()
+    const pending = [JUST_RUN, LAST_MONTH, run('older', '2026-08-20')]
+
+    const result = await writeVerdicts(
+      deps({ spender: fakeSpender({ reservations: 1 }).spender, generate }),
+      pending,
+      [],
+      [],
+      BACKFILL_POOL
+    )
+
+    expect(result).toEqual({ generated: 1, failures: ['last-month: no time left in this invocation'] })
+    expect(generate).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('runInsightPass', () => {
+  const OPTIONS = { limit: 24, ignoreHorizon: false }
+  const withRuns = (...contexts: RunVerdictContext[]) => async () => ({ contexts, recordActivityIds: new Set<string>() })
+
+  it('writes the verdict for the run that just landed first, and the backlog last', async () => {
+    const store = memoryInsights()
+
+    await runInsightPass(
+      deps({ insights: store.insights }),
+      surfaces({
+        runVerdicts: withRuns(LAST_MONTH, JUST_RUN),
+        today: async () => job('today'),
+        season: async () => job('seasonHeadline'),
+        analyticsTabs: async () => ({ fitness: job('analyticsTab_fitness'), volume: 'no reads' }),
+        shoeVerdicts: () => ({ pegasus: job('shoeVerdict_pegasus') }),
+      }),
+      OPTIONS
+    )
+
+    expect(store.saved.map((doc) => doc.surface)).toEqual([
+      'runVerdict_just-run',
+      'today',
+      'seasonHeadline',
+      'analyticsTab_fitness',
+      'shoeVerdict_pegasus',
+      'runVerdict_last-month',
+    ])
+  })
+
+  it('pushes the fresh verdict and no other card', async () => {
+    const notify = vi.fn(async () => {})
+
+    await runInsightPass(
+      deps({ notify }),
+      surfaces({ runVerdicts: withRuns(JUST_RUN, LAST_MONTH), today: async () => job('today') }),
+      OPTIONS
+    )
+
+    expect(notify).toHaveBeenCalledTimes(1)
+    expect(notify).toHaveBeenCalledWith({ headline: 'Verdict 1', body: 'Verdict 1, and why.' })
+  })
+
+  it('writes the phrasing back once, newest first, as headline and body only', async () => {
+    const store = memoryInsights({}, [{ headline: 'Last night', body: 'An older verdict.' }])
+
+    await runInsightPass(deps({ insights: store.insights }), surfaces({ runVerdicts: withRuns(JUST_RUN, LAST_MONTH) }), OPTIONS)
+
+    expect(store.savedPhrasing).toEqual([
+      [
+        { headline: 'Verdict 1', body: 'Verdict 1, and why.' },
+        { headline: 'Verdict 2', body: 'Verdict 2, and why.' },
+        { headline: 'Last night', body: 'An older verdict.' },
+      ],
+    ])
+  })
+
+  it('reports the backlog without spending on it when the limit is 0', async () => {
+    const store = memoryInsights()
+    const generate = writer()
+
+    const report = await runInsightPass(
+      deps({ insights: store.insights, generate }),
+      surfaces({ runVerdicts: withRuns(JUST_RUN, LAST_MONTH) }),
+      { limit: 0, ignoreHorizon: false }
+    )
+
+    expect(generate).not.toHaveBeenCalled()
+    expect(store.savedPhrasing).toEqual([])
+    expect(report.runVerdicts).toEqual({ outstanding: 2, eligible: 2, fresh: 1, rest: 1, generated: 0, failures: [] })
+  })
+
+  it('says where the clock ran out, and leaves the rest for the next pass', async () => {
+    const report = await runInsightPass(
+      deps({ spender: fakeSpender({ reservations: 2 }).spender }),
+      surfaces({
+        runVerdicts: withRuns(JUST_RUN, LAST_MONTH),
+        today: async () => job('today'),
+        season: async () => job('seasonHeadline'),
+      }),
+      OPTIONS
+    )
+
+    expect(report.freshVerdicts).toEqual({ generated: 1, failures: [] })
+    expect(report.today).toEqual({ generated: true })
+    expect(report.season).toEqual({ generated: false, reason: 'no time left in this invocation' })
+    expect(report.runVerdicts).toMatchObject({ generated: 0, failures: ['last-month: no time left in this invocation'] })
+  })
+
+  it('checks the PB celebration window against the pass clock', async () => {
+    const pbCelebration = vi.fn(async () => 'no fresh record')
+
+    const report = await runInsightPass(deps(), surfaces({ pbCelebration }), OPTIONS)
+
+    expect(pbCelebration).toHaveBeenCalledWith(NOW)
+    expect(report.pbCelebration).toEqual({ generated: false, reason: 'no fresh record' })
+  })
+
+  it('answers with the report the route has always returned, less the week purpose no page shows', async () => {
+    const { spender } = fakeSpender()
+
+    const report = await runInsightPass(deps({ spender }), surfaces(), OPTIONS)
+
+    expect(report).toEqual({
+      freshVerdicts: { generated: 0, failures: [] },
+      today: { generated: false, reason: 'no training status' },
+      season: { generated: false, reason: 'no season reads' },
+      analyticsTabs: { fitness: 'no reads' },
+      pbCelebration: { generated: false, reason: 'no fresh record' },
+      shoeVerdicts: {},
+      runVerdicts: { outstanding: 0, eligible: 0, fresh: 0, rest: 0, generated: 0, failures: [] },
+      spend: {},
+    })
+  })
+})

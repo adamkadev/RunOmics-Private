@@ -7,7 +7,7 @@ interface Stat {
   label: string
 }
 
-interface Props {
+export interface TerritoryCardContent {
   eyebrow: string
   headline: string
   primaryStat: Stat
@@ -17,7 +17,7 @@ interface Props {
 // A pure renderer: whoever owns the current area/world selection decides
 // what fact and which two stats belong here, so the card never states
 // something the map beneath it disagrees with.
-export function TerritoryBand({ eyebrow, headline, primaryStat, secondaryStat }: Props) {
+export function TerritoryBand({ eyebrow, headline, primaryStat, secondaryStat }: TerritoryCardContent) {
   return (
     <GlassSurface variant="hero" className="flex flex-col gap-3.5">
       <div>

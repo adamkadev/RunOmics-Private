@@ -27,7 +27,6 @@ from __future__ import annotations
 import re
 import time
 from datetime import date, timedelta
-from pathlib import Path
 from typing import Any
 
 from data_directory import get_data_dir
@@ -224,9 +223,7 @@ def _fetch_days(client: GarminClient, windows: list[tuple[date, date]]) -> dict[
     for window_start, window_end in windows:
         try:
             payload = retry_transient(
-                lambda: client.get_training_status_daily(
-                    window_start.isoformat(), window_end.isoformat()
-                )
+                client.get_training_status_daily, window_start.isoformat(), window_end.isoformat()
             )
         except GarminAPIError as exc:
             print(f"  Warning: training status {window_start}…{window_end} failed: {exc}")
@@ -244,9 +241,7 @@ def _fetch_weeks(client: GarminClient, windows: list[tuple[date, date]]) -> dict
     for window_start, window_end in windows:
         try:
             payload = retry_transient(
-                lambda: client.get_training_status_weekly(
-                    window_start.isoformat(), window_end.isoformat()
-                )
+                client.get_training_status_weekly, window_start.isoformat(), window_end.isoformat()
             )
         except GarminAPIError as exc:
             print(f"  Warning: weekly training status {window_start}…{window_end} failed: {exc}")

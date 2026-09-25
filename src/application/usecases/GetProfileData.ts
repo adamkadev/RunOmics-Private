@@ -1,3 +1,4 @@
+import { DAY_MS } from '@/lib/calendarDate'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getAthleteProfile, type AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { getVo2maxNorms } from '@/infrastructure/repositories/JsonVo2maxNormsRepository'
@@ -89,7 +90,7 @@ export async function getProfileData(): Promise<ProfileData> {
   const currentYear = now.getFullYear()
   const elapsedDaysThisYear = Math.max(
     1,
-    Math.floor((now.getTime() - new Date(currentYear, 0, 1).getTime()) / 86400000) + 1,
+    Math.floor((now.getTime() - new Date(currentYear, 0, 1).getTime()) / DAY_MS) + 1,
   )
   const ytdActivities = activities.filter((a) => a.date.startsWith(String(currentYear)))
   const ytdDistanceKm = ytdActivities.reduce((s, a) => s + a.distanceKm, 0)
@@ -108,7 +109,7 @@ export async function getProfileData(): Promise<ProfileData> {
   const elapsedDaysAllTime = Math.max(
     1,
     sinceDate
-      ? Math.floor((now.getTime() - new Date(sinceDate + 'T00:00:00').getTime()) / 86400000) + 1
+      ? Math.floor((now.getTime() - new Date(sinceDate + 'T00:00:00').getTime()) / DAY_MS) + 1
       : 1,
   )
 

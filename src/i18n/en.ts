@@ -109,7 +109,6 @@ export const en = {
       routes: (n: number) => `${n} routes`,
       zones: 'Zones',
       allAreas: 'All areas',
-      areasCount: (n: number) => `${n} areas`,
       areasRemainder: (name: string, extra: number) => `${name} +${extra} area${extra === 1 ? '' : 's'}`,
       allYears: 'All years',
       allTypes: 'All types',
@@ -195,7 +194,6 @@ export const en = {
       light: 'Light',
       auto: 'Auto',
       dark: 'Dark',
-      auroraNote: 'The aurora adapts to the selected accent.',
     },
     accent: {
       title: 'Accent color',
@@ -230,11 +228,8 @@ export const en = {
       title: 'Athlete Profile',
       age: 'Age',
       lthr: 'LTHR',
-      lthrHint: 'Lactate threshold heart rate',
       thresholdPace: 'Thresh. pace',
-      thresholdPaceHint: 'min:ss per km, e.g. 4:14',
       vma: 'VMA',
-      vmaHint: 'Maximal aerobic speed',
       maxHr: 'Max HR',
       restingHr: 'Resting HR',
       vo2max: 'VO2max',
@@ -265,7 +260,6 @@ export const en = {
       saving: 'Saving...',
       saved: 'Saved',
       error: 'Error saving, please retry.',
-      confirmQuestion: 'Sure?',
       confirmYes: 'Yes',
       confirmCancel: 'Cancel',
     },
@@ -379,9 +373,6 @@ export const en = {
       restDay: 'Rest day',
       restDaySubtitle: 'No session scheduled',
       race: 'Race',
-      chargeOptimal: 'Optimal',
-      chargeHigh: 'High',
-      chargeLow: 'Low',
     },
     weeklyStreak: {
       weeksInARow: (weeks: number) => `${weeks} week streak`,
@@ -390,7 +381,6 @@ export const en = {
       ringOf: (target: number) => `of ${target} km`,
 
       goalReached: 'Weekly goal reached',
-      streakSummary: (longest: number, current: number) => `Best streak: ${longest} weeks - current: ${current}`,
     },
     celebration: {
       eyebrow: 'New personal record',
@@ -655,7 +645,7 @@ export const en = {
       titlePositive: 'Fitter and more efficient than early season.',
       titleCaution: 'A tougher stretch than early season.',
       titleMixed: 'A mixed season - gains in some areas, dips in others.',
-      efficiency: (d: number) => `Aerobic efficiency ${d > 0 ? '+' : ''}${d} - ${d > 0 ? 'more' : 'less'} speed per heartbeat`,
+      efficiency: (d: number) => `Aerobic efficiency ${d > 0 ? '+' : d < 0 ? '−' : ''}${Math.abs(d)} - ${d > 0 ? 'more' : 'less'} speed per heartbeat`,
       easyPace: (to: string, from: string, weeks: number) =>
         `Easy pace ${to}, against ${from} averaged over the season's first ${weeks} weeks`,
       volume: (pct: number, year: number) =>
@@ -694,8 +684,6 @@ export const en = {
       noSplit: '—',
     },
     weekPlanned: (done: number, planned: number) => `${done} of ${planned} km planned`,
-    easyShare: (pct: number) => `${pct}% easy`,
-    weekGroupCompact: (runs: number, km: number) => `${runs} run${runs !== 1 ? 's' : ''} · ${km} km`,
     sort: {
       label: 'Sort',
       date: 'Date',
@@ -873,7 +861,6 @@ export const en = {
       },
     },
     dynamics: {
-      vsBaseline: (delta: string, weeks: number) => `${delta} vs ${weeks}-wk`,
       title: 'Running Dynamics',
       cadence: 'Cadence',
       strideLength: 'Stride Length',
@@ -910,7 +897,6 @@ export const en = {
       max: 'max',
       best: 'best',
       pace: 'Pace',
-      altitude: 'Altitude',
       elevation: 'Elevation',
       cadence: 'Cadence',
       elevationGain: (m: number) => `+${m} m gain`,
@@ -991,8 +977,6 @@ export const en = {
     goalReached: 'Goal reached!',
     seasonTimeline: 'Season Timeline',
     target: 'Target',
-    noTarget: '-',
-    noTargetSet: 'No target set',
     noDateSet: 'no date set',
     done: 'done',
     beatenBy: (gap: string) => `beaten by ${gap}`,
@@ -1000,12 +984,8 @@ export const en = {
     best: 'Best',
     predictedTag: 'predicted',
     findRace: 'Find a race ›',
-    nextRaceHint: (name: string, date: string) => `next: ${name} ${date}`,
     seasonRaces: 'Season Races',
-    raceAlt: (distance: string) => `${distance} race`,
     emptyPbs: (year: number) => `No PBs for ${year} yet - add them in Settings.`,
-    noPhoto: 'No photo',
-    registrationLink: 'Registration',
     projection: {
       status: {
         ahead: 'Ahead',
@@ -1057,7 +1037,6 @@ export const en = {
     // nothing saying which date it was. Both keys take an already-formatted
     // date because i18n can never import the formatters.
     lastRun: (date: string) => `last run ${date}`,
-    lastWorn: (year: number) => `last worn ${year}`,
     status: {
       ok: 'Good',
       watch: 'Replace soon',
@@ -1075,15 +1054,12 @@ export const en = {
       usage: (n: number, total: number) => `Used in ${n} of your last ${total} tempo/threshold runs`,
       rotateBeforeRace: (date: string) => ` – rotate in a backup before your ${date} race.`,
       rotate: ' – rotate in a backup.',
-      restOfRotation: 'Rest of rotation',
     },
-    wearAlert: (name: string, totalKm: number, alertThresholdKm: number) => `${name} has ${totalKm} km – past its ${alertThresholdKm} km alert threshold`,
     comparison: {
       title: 'Compare two pairs',
       change: 'Change',
       changeLabel: 'Change which pairs are compared',
       pickHint: 'Pick two pairs — a new pick replaces the older one',
-      comparing: 'comparing',
       // The two clauses read as one sentence now instead of two stacked
       // captions - what's real, then why it's still not a fair fight. Only
       // shown alongside an actual averages claim - with too few runs there's
@@ -1122,11 +1098,6 @@ export const en = {
         oscillation: 'vertical oscillation',
       },
     },
-    summary: {
-      totalDistance: 'Total km',
-      activePairs: 'Active',
-      sessions: 'Sessions',
-    },
     detail: {
       back: 'Shoes',
       stats: {
@@ -1134,7 +1105,6 @@ export const en = {
         activities: 'Runs',
         firstRun: 'First run',
         kmPerWeek: 'km / week',
-        lastWorn: 'Last worn',
         avgPace: 'Avg pace',
         weeks: 'Weeks',
         avgRun: 'Avg run',
@@ -1227,7 +1197,6 @@ export const en = {
     },
     milestones: {
       distanceTier: (km: string) => `${km} km this year`,
-      distanceTierDetail: (year: number) => `Crossed in ${year}`,
       streak: (weeks: number) => `${weeks}-week active streak`,
       streakDetail: 'Still going - a run logged every week since',
       record: (label: string) => `${label} record`,
@@ -1270,7 +1239,6 @@ export const en = {
       title: 'Athlete',
       lthr: 'LTHR',
       notSet: 'Not set',
-      viewAthlete: 'View Athlete',
       details: 'Details',
       zoneRows: {
         5: 'Z5 Max',
@@ -1301,7 +1269,6 @@ export const en = {
       marathon: 'Marathon',
       longest: 'Longest Run',
     } as Record<string, string>,
-    mostRecent: 'most recent',
     raceTag: 'race',
     trainingTag: 'training run',
     notYetRun: 'Not yet run',
@@ -1318,7 +1285,6 @@ export const en = {
       trailKey: 'taller = faster',
     },
     noRecordYet: 'No record yet',
-    predictedFromFitness: (time: string) => `Predicted ${time}`,
     predictedHeader: 'best · predicted',
     medalLegend: ['1st', '2nd', '3rd'] as [string, string, string],
     findRace: (distance: string) => `Find a ${distance.toLowerCase()} ›`,
@@ -1337,7 +1303,6 @@ export const en = {
   trainingZones: {
     title: 'Pace zones',
     zoneNumber: (n: number) => `Z${n}`,
-    thresholdLabel: (pace: string) => `Threshold ${pace}`,
     subline: (pace: string) => `min/km · from threshold ${pace}`,
     perKm: '/km',
     zones: {
@@ -1453,7 +1418,6 @@ export const en = {
       Night: 'Night',
     } as Record<ScheduledTimeOfDay, string>,
     openPlanner: 'Open the weekly planner',
-    viewDetail: 'View detail',
     viewActivity: 'view activity',
     type: 'Type',
     races: 'Races',
@@ -1472,6 +1436,7 @@ export const en = {
       loadUnit: 'pts',
       sessionsCount: (n: number) => `${n} session${n !== 1 ? 's' : ''}`,
       easyHardRatio: (easy: number, hard: number) => `${easy}/${hard} easy`,
+      easyHardPlanned: (easy: number, hard: number) => `${easy}/${hard} easy planned`,
       loadPlanned: 'planned',
     },
     plannedVsRecorded: (planned: string, recorded: string) => `planned ${planned} · recorded ${recorded}`,
@@ -1520,9 +1485,6 @@ export const en = {
     distance: 'Distance',
     pace: 'Pace',
     heartRate: 'Heart rate',
-    updatedSession: (title: string) => `Updated future session: ${title}`,
-    cancelledSession: (title: string) => `Cancelled future session: ${title}`,
-    futureSessionsChanged: (count: number) => `Replanned ${count} future session${count === 1 ? '' : 's'}`,
   },
 
   activityTypes: {
@@ -1548,3 +1510,6 @@ export const en = {
     10: 'Maximal',
   } as Record<number, string>,
 }
+
+/** The shape every locale must match, derived from the English table. */
+export type Strings = typeof en

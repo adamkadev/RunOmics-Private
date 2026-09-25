@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { GarminRateLimitError, type GarminWorkoutGateway } from '@/application/ports/GarminWorkoutGateway'
+import { GarminNotFoundError, GarminRateLimitError, type GarminWorkoutGateway } from '@/application/ports/GarminWorkoutGateway'
 import type { CoachingPlan, WorkoutPrescription } from '@/domain/coaching/types'
 import { buildGarminSyncPlan } from '../garminSync'
 import { applyGarminSyncPlan, formatGarminSyncResults, verifyGarminSync } from '../garminSyncApply'
@@ -45,8 +45,26 @@ class FakeGarmin implements GarminWorkoutGateway {
   readonly foreign = new Map<string, string>([['555', 'My own tempo workout']])
   private readonly library = new Map<string, string>()
   private readonly calendar = new Map<string, { scheduleId: string; date: string }>()
+  private deleteFailures: number
 
-  constructor(private readonly failures: { schedule?: boolean; create?: boolean; rateLimitAfter?: number } = {}) {}
+  /**
+   * `gone` lists ids Garmin no longer has, and anything this fake removes joins
+   * them: like Garmin, it answers 404 to removing the same thing twice. Ids it
+   * has never heard of stand for workouts pushed before the test began.
+   */
+  constructor(
+    private readonly failures: { schedule?: boolean; create?: boolean; rateLimitAfter?: number; delete?: number } = {},
+    private readonly gone = new Set<string>(),
+  ) {
+    this.deleteFailures = failures.delete ?? 0
+  }
+
+  /** Garmin never hands out an id again, so neither does this. */
+  private freshId(prefix: string): string {
+    let id = `${prefix}${this.nextId++}`
+    while (this.gone.has(id)) id = `${prefix}${this.nextId++}`
+    return id
+  }
 
   async createWorkout(payload: GarminWorkoutPayload): Promise<{ workoutId: string }> {
     if (this.failures.rateLimitAfter !== undefined && this.created.length >= this.failures.rateLimitAfter) {
@@ -54,14 +72,15 @@ class FakeGarmin implements GarminWorkoutGateway {
     }
     if (this.failures.create) throw new Error('HTTP 500 from workout-service')
     this.created.push(payload)
-    const workoutId = `100${this.nextId++}`
+    const workoutId = this.freshId('100')
     this.library.set(workoutId, payload.workoutName)
     return { workoutId }
   }
 
   async scheduleWorkout(workoutId: string, date: string): Promise<{ workoutScheduleId: string }> {
     if (this.failures.schedule) throw new Error('HTTP 500 from schedule')
-    const workoutScheduleId = `200${this.nextId++}`
+    if (this.gone.has(workoutId)) throw new GarminNotFoundError(`HTTP 404 from schedule/${workoutId}`)
+    const workoutScheduleId = this.freshId('200')
     this.scheduled.push([workoutId, date])
     this.calendar.set(workoutId, { scheduleId: workoutScheduleId, date })
     return { workoutScheduleId }
@@ -69,11 +88,19 @@ class FakeGarmin implements GarminWorkoutGateway {
 
   async unscheduleWorkout(scheduleId: string): Promise<void> {
     this.unscheduled.push(scheduleId)
+    if (this.gone.has(scheduleId)) throw new GarminNotFoundError(`HTTP 404 from schedule/${scheduleId}`)
+    this.gone.add(scheduleId)
     for (const [workoutId, entry] of this.calendar) if (entry.scheduleId === scheduleId) this.calendar.delete(workoutId)
   }
 
   async deleteWorkout(workoutId: string): Promise<void> {
     this.deleted.push(workoutId)
+    if (this.gone.has(workoutId)) throw new GarminNotFoundError(`HTTP 404 from workout/${workoutId}`)
+    if (this.deleteFailures > 0) {
+      this.deleteFailures--
+      throw new Error('HTTP 500 from workout-service')
+    }
+    this.gone.add(workoutId)
     this.library.delete(workoutId)
   }
 
@@ -164,6 +191,39 @@ describe('partial failure', () => {
     expect(report.state.entries[0]!.status).toBe('scheduled')
   })
 
+  it('pushes the new content when the prescription changed after a failed schedule', async () => {
+    const before = workout({ id: 'a', date: '2026-09-08' })
+    const partial = await apply(build(plan([before]), null), null, new FakeGarmin({ schedule: true }))
+    const after = workout({ id: 'a', date: '2026-09-08', title: 'Longer Easy Run' })
+    const gateway = new FakeGarmin()
+
+    const report = await apply(build(plan([after]), partial.state), partial.state, gateway)
+
+    expect(gateway.deleted).toEqual(['1001'])
+    expect(gateway.created.map((payload) => payload.workoutName)).toEqual(['Longer Easy Run'])
+    expect(report.state.entries).toEqual([
+      expect.objectContaining({
+        status: 'scheduled',
+        contentHash: garminContentHash(toGarminWorkoutPayload(after), after.date),
+      }),
+    ])
+  })
+
+  it('creates the workout again when the one a retry meant to schedule is gone', async () => {
+    const workouts = [workout({ id: 'a', date: '2026-09-08' })]
+    const partial = await apply(build(plan(workouts), null), null, new FakeGarmin({ schedule: true }))
+    // Deleted by hand in Garmin Connect after the schedule failed.
+    const gateway = new FakeGarmin({}, new Set(['1001']))
+
+    const report = await apply(build(plan(workouts), partial.state), partial.state, gateway)
+
+    expect(report.results[0]!.outcome).toBe('applied')
+    expect(gateway.created).toHaveLength(1)
+    expect(report.state.entries).toEqual([
+      expect.objectContaining({ status: 'scheduled', garminWorkoutId: '1002', garminWorkoutScheduleId: '2003' }),
+    ])
+  })
+
   it('reports a create failure without recording a mapping entry', async () => {
     const gateway = new FakeGarmin({ create: true })
 
@@ -226,6 +286,49 @@ describe('replacing and deleting', () => {
     expect(report.state.entries.map((entry) => entry.prescriptionId)).toEqual(['a'])
   })
 
+  it('records the unschedule before the delete, so a later run can finish the removal', async () => {
+    const kept = workout({ id: 'a', date: '2026-09-08' })
+    const removed = workout({ id: 'gone', date: '2026-09-09' })
+    const state = syncedState([
+      { workout: kept, workoutId: '9000', scheduleId: '8000' },
+      { workout: removed, workoutId: '9001', scheduleId: '8001' },
+    ])
+    const gateway = new FakeGarmin({ delete: 1 })
+
+    const halfway = await apply(build(plan([kept]), state), state, gateway)
+
+    // The schedule id is spent: replaying it would 404 on every run from now on.
+    expect(halfway.results.find((result) => result.operation.action === 'delete')!.outcome).toBe('failed')
+    expect(halfway.state.entries.find((entry) => entry.prescriptionId === 'gone')).toMatchObject({
+      garminWorkoutId: '9001',
+      garminWorkoutScheduleId: null,
+      status: 'workout_created',
+    })
+
+    const finished = await apply(build(plan([kept]), halfway.state), halfway.state, gateway)
+
+    expect(gateway.unscheduled).toEqual(['8001'])
+    expect(gateway.deleted).toEqual(['9001', '9001'])
+    expect(finished.results.every((result) => result.outcome !== 'failed')).toBe(true)
+    expect(finished.state.entries.map((entry) => entry.prescriptionId)).toEqual(['a'])
+  })
+
+  it('counts a workout Garmin no longer has as removed', async () => {
+    const kept = workout({ id: 'a', date: '2026-09-08' })
+    const removed = workout({ id: 'gone', date: '2026-09-09' })
+    const state = syncedState([
+      { workout: kept, workoutId: '9000', scheduleId: '8000' },
+      { workout: removed, workoutId: '9001', scheduleId: '8001' },
+    ])
+    // Deleted by hand in Garmin Connect, calendar entry and all.
+    const gateway = new FakeGarmin({}, new Set(['9001', '8001']))
+
+    const report = await apply(build(plan([kept]), state), state, gateway)
+
+    expect(report.results.find((result) => result.operation.action === 'delete')!.outcome).toBe('applied')
+    expect(report.state.entries.map((entry) => entry.prescriptionId)).toEqual(['a'])
+  })
+
   it('never names a Garmin workout that is not in the mapping', async () => {
     const kept = workout({ id: 'a', date: '2026-09-08' })
     const state = syncedState([{ workout: kept, workoutId: '9000', scheduleId: '8000' }])
@@ -259,6 +362,35 @@ describe('verification', () => {
 
     expect(verified.results[0]!.outcome).toBe('failed')
     expect(verified.results[0]!.error).toContain('not found on Garmin')
+  })
+
+  it('records the failure in the state, so the next run redoes the push instead of keeping it', async () => {
+    const gateway = new FakeGarmin()
+    const workouts = [workout({ id: 'a', date: '2026-09-08' })]
+    const applied = await apply(build(plan(workouts), null), null, gateway)
+    await gateway.deleteWorkout(applied.results[0]!.garminWorkoutId as string)
+
+    const verified = await verifyGarminSync(applied, gateway)
+
+    expect(verified.state.entries).toEqual([
+      expect.objectContaining({ prescriptionId: 'a', garminWorkoutId: '1001', status: 'unverified' }),
+    ])
+
+    const next = build(plan(workouts), verified.state)
+    expect(next.operations.map((operation) => operation.action)).toEqual(['replace'])
+
+    const redone = await verifyGarminSync(await apply(next, verified.state, gateway), gateway)
+    expect(redone.results[0]).toMatchObject({ outcome: 'applied', verified: true })
+    expect(redone.state.entries).toEqual([expect.objectContaining({ status: 'scheduled', garminWorkoutId: '1003' })])
+  })
+
+  it('leaves the state alone for every push Garmin confirms', async () => {
+    const gateway = new FakeGarmin()
+    const applied = await apply(build(plan([workout({ id: 'a', date: '2026-09-08' })]), null), null, gateway)
+
+    const verified = await verifyGarminSync(applied, gateway)
+
+    expect(verified.state).toEqual(applied.state)
   })
 })
 

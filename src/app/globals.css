@@ -36,11 +36,11 @@
   --radius-card-sm:          20px;
   --radius-control:          10px;
   --shadow-card:             var(--shadow-card);
-  --animate-fade-up:         fade-up 0.25s ease-out both;
+  --animate-fade-up:         fade-up 0.25s ease-out backwards;
   --animate-fade-in:         fade-in 0.2s ease-out both;
   --animate-sheet-up:        sheet-up 0.42s cubic-bezier(0.22, 1.04, 0.36, 1) both;
-  --animate-cal-forward:     cal-slide-forward 0.22s ease-out both;
-  --animate-cal-backward:    cal-slide-backward 0.22s ease-out both;
+  --animate-cal-forward:     cal-slide-forward 0.22s ease-out backwards;
+  --animate-cal-backward:    cal-slide-backward 0.22s ease-out backwards;
 }
 
 /* margin-left (not transform): see the fade-up comment below - the activity
@@ -56,11 +56,15 @@
   to   { opacity: 1; margin-left: 0;     }
 }
 
-/* margin-top (not transform): PageTransition wraps every page, including
-   the activity map's `fixed inset-0` fullscreen overlay. A transform here
-   -- even one whose animation has finished -- makes this div a containing
-   block for fixed-position descendants in some browsers, so the "fullscreen"
-   map would size/center against this page wrapper instead of the viewport. */
+/* margin-top (not transform), and filled backwards only: PageTransition
+   wraps every page, including the maps' `fixed inset-0` fullscreen overlays.
+   While an animation applies - and a forwards fill applies forever - the
+   browser treats what it animates as will-change. A transform makes this div
+   the containing block of fixed descendants, so the "fullscreen" map sized
+   itself to the page; an opacity makes it a stacking context, which kept the
+   overlay's z-50 under the app's z-20 top scrim and dimmed the map's chips.
+   Every end value here is the element's own style, so ending the animation
+   changes nothing on screen - and a toast's exit fade can now run. */
 @keyframes fade-up {
   from { opacity: 0; margin-top: 8px; }
   to   { opacity: 1; margin-top: 0;   }

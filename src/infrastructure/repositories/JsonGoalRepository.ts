@@ -1,6 +1,6 @@
 import { dataPath } from '../dataPath'
 import { readJsonFile } from '../readJsonFile'
-import type { GoalYear } from '@/application/usecases/GetGoalsData'
+import type { GoalYear } from '@/domain/goals/types'
 import { parseTimeInput } from '@/lib/formatters'
 
 interface RawGoalTarget {

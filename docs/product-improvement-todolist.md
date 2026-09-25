@@ -168,7 +168,7 @@ priorité, 🟡 moyenne, 🟢 confort/nice-to-have).
       Confirmé bypass IP via Cloudflare WARP. *(✅ fait en 3.2 : isolation complète par activité — un FIT corrompu ou une erreur inattendue compte comme échec sans avorter le run.)*
 - [x] 🟢 `scripts/backfill_gear.py` et `scripts/reprocess.py` : ajouter un mode
       `--dry-run` s'il n'existe pas, pour prévisualiser l'impact avant d'écraser
-      les JSON committés. *(✅ fait en 3.2 : `--dry-run` ajouté à `reprocess.py` ; `backfill_gear.py` et `sync.py` l'avaient déjà.)*
+      les JSON committés. *(✅ fait en 3.2 : `--dry-run` ajouté à `reprocess.py` ; `backfill_gear.py` et `sync.py` l'avaient déjà. `backfill_gear.py`, script ponctuel, a depuis été supprimé : la synchro rafraîchit le gearId des activités récentes chaque nuit.)*
 
 ## 10. CI/CD
 

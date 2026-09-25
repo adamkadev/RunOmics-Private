@@ -1,3 +1,4 @@
+import 'server-only'
 import type { Limits } from '@/domain/ai/prompt'
 import { activeLocale } from '@/i18n'
 
@@ -109,10 +110,13 @@ function parseInsight(raw: unknown, limits: Limits, bulletCount?: number): Insig
   return { ok: true, insight: parsedBullets ? { ...insight, bullets: parsedBullets.bullets } : insight }
 }
 
-export async function generateInsight(
-  request: InsightRequest,
-  sleep: (ms: number) => Promise<unknown> = wait,
-): Promise<InsightResult> {
+/**
+ * One request per call. The insight pass walks a model pool after reserving
+ * one request of a model's daily budget - 20 on the flash tier - so the pool is
+ * the retry. Retrying in here as well sent up to three requests against that
+ * one reservation, and could hold a single call for 95 s of a 300 s function.
+ */
+export async function generateInsight(request: InsightRequest): Promise<InsightResult> {
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) return { ok: false, reason: 'no api key' }
 
@@ -123,7 +127,7 @@ export async function generateInsight(
     prompt: request.prompt,
     responseSchema: responseSchema(request.bulletCount),
     temperature: 1.1,
-  }, sleep)
+  }, wait, 0)
   if (!result.ok) return result
 
   try {

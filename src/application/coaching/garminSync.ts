@@ -41,14 +41,6 @@ function syncRange({ today, from, to }: GarminSyncWindow): SyncRange {
   return { contains: (date) => date >= start && (to === undefined || date <= to) }
 }
 
-export function selectSyncableWorkouts(
-  plan: CoachingPlan,
-  evaluations: WorkoutEvaluation[],
-  window: GarminSyncWindow,
-): WorkoutPrescription[] {
-  return workoutsWithin(plan, evaluations, syncRange(window))
-}
-
 function workoutsWithin(
   plan: CoachingPlan,
   evaluations: WorkoutEvaluation[],
@@ -84,9 +76,9 @@ export interface GarminSyncPlan {
   fingerprint: string
 }
 
-export const RACE_ON_CALENDAR_REASON = 'Race already on the Garmin calendar'
-export const COURSE_AWARE_RACE_REASON = 'Course-aware race already on Garmin calendar - use Garmin PacePro'
-export const COURSE_AWARE_RACE_NOTE = 'Course-aware race - race effort left unpaced for PacePro'
+const RACE_ON_CALENDAR_REASON = 'Race already on the Garmin calendar'
+const COURSE_AWARE_RACE_REASON = 'Course-aware race already on Garmin calendar - use Garmin PacePro'
+const COURSE_AWARE_RACE_NOTE = 'Course-aware race - race effort left unpaced for PacePro'
 
 export interface GarminSyncOptions {
   syncRaces?: boolean
@@ -119,10 +111,9 @@ function operationFor(
 
   if (!existing) return { ...base, action: 'create', payload, contentHash, reason: note }
 
-  if (existing.status === 'workout_created' || !existing.garminWorkoutScheduleId) {
-    return { ...base, action: 'schedule', payload, contentHash, reason: 'Retrying a schedule that failed earlier' }
-  }
-
+  // Content before the retry: retrying a failed schedule reuses the workout
+  // Garmin already holds, which is the old prescription, while the state
+  // records the new hash - after which nothing would see the two disagree.
   if (existing.contentHash !== contentHash) {
     const moved = existing.date !== workout.date
     return {
@@ -132,6 +123,16 @@ function operationFor(
       contentHash,
       reason: moved ? `Prescription moved from ${existing.date}` : 'Prescription changed',
     }
+  }
+
+  // From scratch rather than a retry: what Garmin holds is unknown, and the
+  // replace removes whatever the recorded ids still name before pushing.
+  if (existing.status === 'unverified') {
+    return { ...base, action: 'replace', payload, contentHash, reason: 'Garmin did not confirm the last push' }
+  }
+
+  if (existing.status === 'workout_created' || !existing.garminWorkoutScheduleId) {
+    return { ...base, action: 'schedule', payload, contentHash, reason: 'Retrying a schedule that failed earlier' }
   }
 
   return { ...base, action: 'keep', payload, contentHash, reason: null }

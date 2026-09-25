@@ -1,4 +1,4 @@
-import type { TrainingStatusType } from '@/application/usecases/GetTrainingStatus'
+import type { TrainingStatusType } from '@/domain/training/status'
 
 const MIN_RATED_DAYS = 3
 

@@ -10,7 +10,12 @@ export interface NewPr {
   date: string
 }
 
-export async function getNewPrs(): Promise<NewPr[]> {
+/**
+ * Nothing is stored until `commit()`: the caller sends the pushes first and
+ * commits once they are out, so a failed push is offered again next run
+ * instead of being marked as sent.
+ */
+export async function getNewPrs(): Promise<{ newPrs: NewPr[]; commit: () => Promise<void> }> {
   const activities = getAllActivities()
   const computed = computeBestEfforts(activities)
   const lastState = await getLastPrState()
@@ -31,6 +36,5 @@ export async function getNewPrs(): Promise<NewPr[]> {
     }
   }
 
-  await saveLastPrState(nextState)
-  return newPrs
+  return { newPrs, commit: () => saveLastPrState(nextState) }
 }

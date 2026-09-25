@@ -1,5 +1,48 @@
-import { describe, expect, it } from 'vitest'
+import fs from 'fs'
+import os from 'os'
+import path from 'path'
+import { afterAll, describe, expect, it } from 'vitest'
+import { GarminNotFoundError } from '@/application/ports/GarminWorkoutGateway'
 import { PythonGarminGateway } from '@/infrastructure/garmin/PythonGarminGateway'
+
+/**
+ * Answers every request the way sync_bridge.py relays a GarminAPIError: the
+ * status survives only inside the message. Workout "gone" is a 404.
+ */
+const FAILING_BRIDGE = `
+const lines = require('readline').createInterface({ input: process.stdin })
+lines.on('line', (line) => {
+  const { workoutId } = JSON.parse(line)
+  const status = workoutId === 'gone' ? 404 : 500
+  const error = 'HTTP ' + status + ' from https://example.test/workout-service/workout/' + workoutId
+  process.stdout.write(JSON.stringify({ ok: false, error, rateLimited: false }) + '\\n')
+})
+`
+
+describe('PythonGarminGateway error translation', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'runomics-bridge-'))
+  const script = path.join(dir, 'bridge.cjs')
+  fs.writeFileSync(script, FAILING_BRIDGE)
+  afterAll(() => fs.rmSync(dir, { recursive: true, force: true }))
+
+  it('reports a Garmin 404 as not found, so a removal can count it as done', async () => {
+    const gateway = new PythonGarminGateway(script, process.execPath)
+
+    await expect(gateway.deleteWorkout('gone')).rejects.toBeInstanceOf(GarminNotFoundError)
+    gateway.close()
+  })
+
+  it('keeps every other failure an ordinary error', async () => {
+    const gateway = new PythonGarminGateway(script, process.execPath)
+
+    const failure = await gateway.deleteWorkout('broken').catch((error: unknown) => error)
+
+    expect(failure).toBeInstanceOf(Error)
+    expect(failure).not.toBeInstanceOf(GarminNotFoundError)
+    expect((failure as Error).message).toMatch(/^HTTP 500 from/)
+    gateway.close()
+  })
+})
 
 /**
  * Real processes, not a `child_process` mock: the bug is about *when* Node

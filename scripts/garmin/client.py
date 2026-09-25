@@ -200,33 +200,44 @@ class GarminClient:
             f"{self._base}/activity-service/activity/{activity_id}"
         ).json()
 
+    def _get_optional(self, url: str, *, strict_errors: bool, **kwargs: Any) -> httpx.Response | None:
+        """GET a per-activity resource the activity may simply not have.
+
+        Only a 404 means "not there", and comes back as None. Every other
+        error - a 5xx, a 429, a dropped connection - raises, so that
+        retry_transient retries it and, failing that, the activity fails and
+        is fetched again next run. Reading a 503 as "no data" stored the
+        activity without its track, zones or gear for good.
+
+        strict_errors raises the 404 too: for diagnostics, where a missing
+        resource must not pass for an empty one, and for a caller whose
+        "nothing" would overwrite a value already on file.
+        """
+        try:
+            return self._get(url, **kwargs)
+        except GarminAPIError as exc:
+            if exc.status_code == 404 and not strict_errors:
+                return None
+            raise
+
     def get_hr_zones(
         self, activity_id: str, *, strict_errors: bool = False
     ) -> list[dict[str, Any]]:
-        try:
-            return self._get(
-                f"{self._base}/activity-service/activity/{activity_id}/hrTimeInZones"
-            ).json()
-        except GarminAPIError as exc:
-            # Production has always treated a missing per-activity optional
-            # resource as empty. Diagnostics opt into strict propagation so a
-            # 5xx cannot masquerade as an unsupported/empty feature.
-            if strict_errors or exc.status_code == 429:
-                raise
-            return []
+        resp = self._get_optional(
+            f"{self._base}/activity-service/activity/{activity_id}/hrTimeInZones",
+            strict_errors=strict_errors,
+        )
+        return resp.json() if resp is not None else []
 
     def get_activity_gear(
         self, activity_id: str, *, strict_errors: bool = False
     ) -> list[dict[str, Any]]:
-        try:
-            return self._get(
-                f"{self._base}/gear-service/gear/filterGear",
-                params={"activityId": activity_id},
-            ).json()
-        except GarminAPIError as exc:
-            if strict_errors or exc.status_code == 429:
-                raise
-            return []
+        resp = self._get_optional(
+            f"{self._base}/gear-service/gear/filterGear",
+            strict_errors=strict_errors,
+            params={"activityId": activity_id},
+        )
+        return resp.json() if resp is not None else []
 
     def get_gear_list(self, status: str, start: int = 0, limit: int = 100) -> list[dict[str, Any]]:
         return self._get(
@@ -235,22 +246,24 @@ class GarminClient:
         ).json()
 
     def download_fit(self, activity_id: str, *, strict_errors: bool = False) -> bytes | None:
-        try:
-            content = self._get(
-                f"{self._base}/download-service/files/activity/{activity_id}"
-            ).content
-        except GarminAPIError as exc:
-            if strict_errors or exc.status_code == 429:
-                raise
+        """The activity's original FIT file, or None for an activity without one.
+
+        None is a 404, an empty download, or an archive with no .fit inside
+        (an activity imported from a GPX, say). A download that is not an
+        archive at all raises zipfile.BadZipFile: that is a broken transfer,
+        not a missing file, and it must fail the activity like any other error.
+        """
+        resp = self._get_optional(
+            f"{self._base}/download-service/files/activity/{activity_id}",
+            strict_errors=strict_errors,
+        )
+        if resp is None or not resp.content:
             return None
 
-        try:
-            with zipfile.ZipFile(io.BytesIO(content)) as zf:
-                for name in zf.namelist():
-                    if name.lower().endswith(".fit"):
-                        return zf.read(name)
-        except zipfile.BadZipFile:
-            pass
+        with zipfile.ZipFile(io.BytesIO(resp.content)) as zf:
+            for name in zf.namelist():
+                if name.lower().endswith(".fit"):
+                    return zf.read(name)
         return None
 
     def get_user_settings(self) -> dict[str, Any]:
@@ -406,7 +419,7 @@ class GarminClient:
     def close(self) -> None:
         self._http.close()
 
-    def __enter__(self) -> "GarminClient":
+    def __enter__(self) -> GarminClient:
         return self
 
     def __exit__(self, *_: Any) -> None:

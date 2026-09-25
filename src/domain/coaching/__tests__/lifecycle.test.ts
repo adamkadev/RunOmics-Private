@@ -91,4 +91,24 @@ describe('coaching plan lifecycle', () => {
 
     expect(result.weeks.flatMap((week) => week.workouts).find((item) => item.id === 'workout-threshold')).toEqual(current.weeks[0]!.workouts[0])
   })
+
+  it('refuses a replacement that reuses the id of a past prescription', () => {
+    // Past prescriptions are immutable here as they are for ADJUST; reusing the
+    // id used to drop the past session from history without a word.
+    const current = plan()
+    const reused = workout({ date: '2026-09-12', revision: 2, status: 'adjusted' })
+
+    expect(() => applyCoachDecision(current, keepDecision({
+      id: 'decision-reuse',
+      outcome: 'REPLAN',
+      effectiveDate: '2026-09-10',
+      resultPlanRevision: 2,
+      changes: [{
+        kind: 'replace_future',
+        effectiveDate: '2026-09-10',
+        beforeWeeks: getFutureSnapshot(current, '2026-09-10'),
+        afterWeeks: [{ ...current.weeks[0]!, workouts: [reused] }, current.weeks[1]!],
+      }],
+    }))).toThrow(/reuses the id of past prescription workout-threshold/)
+  })
 })

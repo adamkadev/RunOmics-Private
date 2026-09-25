@@ -1,6 +1,6 @@
-import { validateTrainingFrequency, validateDraftFrequency } from './frequency'
-import { validateDraftVolume, volumeBand } from './volume'
-import { intensityBand, validateDraftIntensity } from './intensity'
+import { DAY_MS } from '@/lib/calendarDate'
+import { validateTrainingFrequency } from './frequency'
+import { validateAdaptation, validateBootstrapDraft } from './draftRules'
 import type { Activity } from '@/domain/activity/types'
 import {
   COACHING_SCHEMA_VERSION,
@@ -27,12 +27,10 @@ import { parseCoachDecision, parseCoachingPlan, parseWorkoutEvaluation } from '@
 import type { CoachingRepository } from '@/application/ports/CoachingRepository'
 import type { AdvisorRecommendation, CoachingAdvisor, CoachingPlanDraft } from '@/application/ports/CoachingAdvisor'
 import { coachingContextHash, type CoachingContext } from './context'
-import { validateBootstrapDraftSemantics } from './bootstrapValidation'
 import type { CoachingProposal } from './proposal'
 import { parseCoachingProposal } from './proposal'
 
 const PROMPT_VERSION = 'coaching-v1'
-const DAY_MS = 86_400_000
 const NEAR_TERM_RACE_DAYS = 7
 
 export interface WorkflowServices {
@@ -130,16 +128,15 @@ function selectGoal(context: CoachingContext, event: TargetEvent): TrainingGoal 
     : { kind: 'finish', description: `Complete ${event.name}.` }
 }
 
+/** Structure only - every rule a draft must satisfy has been checked by draftRules. */
 function normalizeBootstrapPlan(
   draft: CoachingPlanDraft,
   context: CoachingContext,
-  availableWeekdays: number[],
   strategy: BootstrapTargetStrategy,
   createdAt: string,
   id: () => string,
   macrocycleStartDate: string,
 ): CoachingPlan {
-  validateBootstrapDraftSemantics(draft, strategy, context)
   const horizonEnd = strategy.horizonEndDate
   const windows = isoWeekWindows(strategy.planningStartDate, horizonEnd)
   if (draft.weeks.length !== windows.length) throw new Error(`Bootstrap must produce exactly ${windows.length} week${windows.length === 1 ? '' : 's'} for the selected target horizon`)
@@ -179,9 +176,6 @@ function normalizeBootstrapPlan(
   for (const week of normalizedWeeks) {
     if (week.startDate < strategy.planningStartDate || week.endDate > horizonEnd) throw new Error(`${week.id} extends outside the selected target horizon`)
     for (const workout of week.workouts) {
-      if (!availableWeekdays.includes(new Date(`${workout.date}T00:00:00Z`).getUTCDay())) {
-        throw new Error(`${workout.date} is outside the available weekdays`)
-      }
       if (workout.date < strategy.planningStartDate || workout.date > horizonEnd) {
         throw new Error(`${workout.date} is outside the selected target horizon`)
       }
@@ -248,12 +242,20 @@ function samePrescription(draft: WorkoutPrescription, prior: WorkoutPrescription
 function normalizeWeeks(
   weeks: TrainingWeek[],
   plan: CoachingPlan,
+  effectiveDate: string,
   trigger: CoachingProvenance['trigger'],
   createdAt: string,
   decisionId: string,
   id: () => string,
 ): TrainingWeek[] {
-  const existing = new Map(plan.weeks.flatMap((week) => week.workouts).map((workout) => [workout.id, workout]))
+  // Identity is the model's claim, so it is honoured only where it can be
+  // true: a prescription in the future being replaced. An id naming one that
+  // is already past is not a continuation of it - the past is fixed - and the
+  // draft is a new prescription with an id of our own.
+  const existing = new Map(plan.weeks
+    .flatMap((week) => week.workouts)
+    .filter((workout) => workout.date >= effectiveDate)
+    .map((workout) => [workout.id, workout]))
 
   return weeks.map((week) => {
     const priorWeek = plan.weeks.find((candidate) => candidate.startDate === week.startDate)
@@ -292,7 +294,7 @@ function materializeChanges(
       kind: 'replace_future',
       effectiveDate,
       beforeWeeks: getFutureSnapshot(plan, effectiveDate),
-      afterWeeks: normalizeWeeks(replacement.weeks, plan, trigger, createdAt, decisionId, id),
+      afterWeeks: normalizeWeeks(replacement.weeks, plan, effectiveDate, trigger, createdAt, decisionId, id),
     }]
   }
 
@@ -474,10 +476,8 @@ export async function createBootstrapProposal(
   })
 
   const review = (draft: CoachingPlanDraft) => {
-    validateDraftFrequency(draft, runsPerWeek)
-    validateDraftVolume(draft, volumeBand(context.trainingHistory), availableWeekdays)
-    validateDraftIntensity(draft, intensityBand(context.athlete.thresholdPaceSecPerKm), availableWeekdays)
-    return normalizeBootstrapPlan(draft, context, availableWeekdays, strategy, createdAt, id, macrocycleStartDate)
+    validateBootstrapDraft(draft, { availableWeekdays, runsPerWeek, context, events: strategy })
+    return normalizeBootstrapPlan(draft, context, strategy, createdAt, id, macrocycleStartDate)
   }
 
   const proposedPlan = await draftUntilAccepted(ask, review)
@@ -537,7 +537,9 @@ async function createAdaptationProposal(
     ? await services.advisor.evaluateActivity({ context, activity, prescription: matched })
     : await services.advisor.reviewWeek({ context })
   const decision = decisionFromAdvice(advice, plan, kind, effectiveDate, createdAt, id(), id)
-  applyCoachDecision(plan, decision)
+  // Judged on the plan it would produce, by the rules a bootstrap answers to:
+  // until this, only the decision's own shape was checked.
+  validateAdaptation(plan, applyCoachDecision(plan, decision), context)
   const hash = coachingContextHash(context)
   const evaluation = activity ? evaluationFor(plan, activity, decision, hash, createdAt, id) : undefined
   return {

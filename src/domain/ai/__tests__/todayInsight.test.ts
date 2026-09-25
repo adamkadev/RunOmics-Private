@@ -30,7 +30,7 @@ function context(overrides: Partial<TodayContext> = {}): TodayContext {
     status,
     tone: 'hold',
     plannedWorkout: workout,
-    recent: { runs: 5, km: 39, lastRun: { type: 'Base', daysAgo: 1, distanceKm: 5 } },
+    recent: { weekRuns: 5, weekKm: 39, lastRun: { type: 'Base', daysAgo: 1, distanceKm: 5 } },
     ...overrides,
   }
 }
@@ -45,7 +45,7 @@ describe('todayInsightPrompt', () => {
 
   it('writes about the session in the past once it has already been run today', () => {
     const prompt = todayInsightPrompt(
-      context({ recent: { runs: 6, km: 44, lastRun: { type: 'Base', daysAgo: 0, distanceKm: 5 } } }),
+      context({ recent: { weekRuns: 6, weekKm: 44, lastRun: { type: 'Base', daysAgo: 0, distanceKm: 5 } } }),
       []
     )
 
@@ -56,7 +56,7 @@ describe('todayInsightPrompt', () => {
 
   it('is unaffected by a run logged today on a rest day, since there is no session to have completed', () => {
     const prompt = todayInsightPrompt(
-      context({ plannedWorkout: null, recent: { runs: 6, km: 44, lastRun: { type: 'Base', daysAgo: 0, distanceKm: 5 } } }),
+      context({ plannedWorkout: null, recent: { weekRuns: 6, weekKm: 44, lastRun: { type: 'Base', daysAgo: 0, distanceKm: 5 } } }),
       []
     )
 
@@ -65,10 +65,19 @@ describe('todayInsightPrompt', () => {
   })
 })
 
+describe('the week the prompt reports', () => {
+  it('is the week so far from Monday, the one the dashboard ring counts, and no rolling seven days', () => {
+    const prompt = todayInsightPrompt(context(), [])
+
+    expect(prompt).toContain('- This week so far (Monday to today): 5 runs, 39 km')
+    expect(prompt).not.toMatch(/last 7 days/i)
+  })
+})
+
 describe('todayInsightHash', () => {
   it('changes once the planned session is logged as run today, so the stale forward-looking copy is not served back', () => {
-    const before = todayInsightHash(context({ recent: { runs: 5, km: 39, lastRun: { type: 'Base', daysAgo: 1, distanceKm: 5 } } }))
-    const after = todayInsightHash(context({ recent: { runs: 6, km: 44, lastRun: { type: 'Base', daysAgo: 0, distanceKm: 5 } } }))
+    const before = todayInsightHash(context({ recent: { weekRuns: 5, weekKm: 39, lastRun: { type: 'Base', daysAgo: 1, distanceKm: 5 } } }))
+    const after = todayInsightHash(context({ recent: { weekRuns: 6, weekKm: 44, lastRun: { type: 'Base', daysAgo: 0, distanceKm: 5 } } }))
 
     expect(before).not.toBe(after)
   })

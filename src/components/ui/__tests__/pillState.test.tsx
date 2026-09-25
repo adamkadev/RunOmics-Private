@@ -34,7 +34,7 @@ describe('the selected chip speaks one language', () => {
   })
 
   it('fills the selected profile period with the accent, not a neutral tint', () => {
-    render(<ProfileStatsYtd ytd={stats} allTime={stats} prevYear={stats} />)
+    render(<ProfileStatsYtd ytd={stats} allTime={stats} prevYear={stats} year={2026} />)
 
     const selected = screen.getByRole('tab', { name: t.profile.ytd.thisYearChip })
     expect(selected.className).toContain('bg-accent')
@@ -45,7 +45,7 @@ describe('the selected chip speaks one language', () => {
   })
 
   it('fills the selected activity-type filter with the accent, not a neutral tint', async () => {
-    render(<ActivityListClient weeklyGoal={null} initialItems={[]} initialNextOffset={null} totalCount={0} />)
+    render(<ActivityListClient weeklyGoal={null} initialItems={[]} initialNextOffset={null} totalCount={0} today="2026-09-24" />)
 
     const all = screen.getByRole('button', { name: t.activities.all })
     expect(all.className).toContain('bg-accent')

@@ -1,13 +1,13 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { MapPin, Maximize2, Minimize2 } from 'lucide-react'
 import type { LngLatBounds, Map as MapLibreMap, Marker } from 'maplibre-gl'
 import { cn } from '@/lib/utils'
 import { maptilerStyleUrl } from '@/lib/maptiler'
 import { CHART_COLORS, MAP_COLORS, PACE_ROUTE_COLORS } from '@/lib/colors'
-import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
+import { activityTypeStyle } from '@/components/activity/activityTypeStyle'
 import type { ActivityType, ActivityWeather } from '@/domain/activity/types'
 import type { ShoeTag } from '@/domain/shoe/types'
 import { ShoePairTag } from '@/components/activities/ShoePairTag'
@@ -59,7 +59,12 @@ function mkMarker(bg: string, border = 'white', size = 13) {
 }
 
 export default function ActivityMap({ route, paceSamples, hoverFraction, weather, activityType, shoe, className }: Props) {
-  const containerRef = useRef<HTMLDivElement>(null)
+  const hostRef = useRef<HTMLDivElement>(null)
+  // The element MapLibre draws into. Fullscreen portals the map to <body>,
+  // which gives React a new host node; this one moves between hosts, so the
+  // map is resized rather than rebuilt - style, tiles and the route animation
+  // survive the toggle.
+  const mapElRef = useRef<HTMLDivElement | null>(null)
   const hasToken = !!process.env.NEXT_PUBLIC_MAPTILER_TOKEN
   const mapRef = useRef<MapLibreMap | null>(null)
   const mglRef = useRef<typeof import('maplibre-gl') | null>(null)
@@ -77,9 +82,26 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
     return () => window.removeEventListener('keydown', handler)
   }, [isFullscreen])
 
+  useLayoutEffect(() => {
+    const host = hostRef.current
+    const el = mapElRef.current
+    if (!host || !el) return
+    if (el.parentElement !== host) host.appendChild(el)
+    mapRef.current?.resize()
+  }, [isFullscreen])
+
   useEffect(() => {
-    if (!containerRef.current) return
+    const host = hostRef.current
+    if (!host) return
     let cancelled = false
+    if (!mapElRef.current) {
+      const el = document.createElement('div')
+      el.style.width = '100%'
+      el.style.height = '100%'
+      mapElRef.current = el
+    }
+    const mapEl = mapElRef.current
+    if (mapEl.parentElement !== host) host.appendChild(mapEl)
 
     async function initMap(isDark: boolean) {
       const mgl = await loadMapLibre()
@@ -106,7 +128,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
       boundsRef.current = bounds
 
       const map = new mgl.Map({
-        container: containerRef.current!,
+        container: mapEl,
         style: styleUrl,
         bounds,
         fitBoundsOptions: { padding: 40, maxZoom: 15 },
@@ -198,7 +220,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
       mapRef.current = null
       hoverMarkerRef.current = null
     }
-  }, [route, paceSamples, isFullscreen])
+  }, [route, paceSamples])
 
   useEffect(() => {
     const map = mapRef.current
@@ -233,7 +255,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
         className
       )}
     >
-      <div ref={containerRef} role="img" aria-label={t.activity.map.routeMap} className="h-full w-full" />
+      <div ref={hostRef} role="img" aria-label={t.activity.map.routeMap} className="h-full w-full" />
 
       {(weather || activityType) && (
         <div
@@ -248,7 +270,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
               <span
                 aria-hidden
                 className="h-[7px] w-[7px] shrink-0 rounded-full"
-                style={{ background: ACTIVITY_TYPE_CONFIG[activityType].chartColor }}
+                style={{ background: activityTypeStyle(activityType).chartColor }}
               />
               {t.activityTypes[activityType]}
             </span>

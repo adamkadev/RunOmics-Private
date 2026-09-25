@@ -1,32 +1,37 @@
 'use client'
 
 import { useState } from 'react'
-import type { Activity } from '@/domain/activity/types'
+import dynamic from 'next/dynamic'
+import type { ActivityDetailView } from './activityViews'
 import { aerobicDecoupling } from '@/domain/activity/decoupling'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import type { DynamicsBaseline } from '@/application/usecases/GetDynamicsBaseline'
-import type { HrBounds } from '@/domain/training/trimp'
 import type { ShoeTag } from '@/domain/shoe/types'
 import { ActivityMapClient } from './ActivityMapClient'
 import { NoRouteMap } from './ActivityMap'
 import { RunVerdict } from './RunVerdict'
 import { ZoneBar } from './ZoneBar'
-import { ChartStack } from './ChartStack'
 import { KmSplits } from './KmSplits'
 import { TrainingEffect } from './TrainingEffect'
 import { AerobicDecoupling } from './AerobicDecoupling'
 import { BestEfforts } from './BestEfforts'
-import { RunningDynamics } from './RunningDynamics'
 import { formatClock, formatDistance, formatDuration } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { ChartCardSkeleton } from '@/components/ui/Skeleton'
+import { useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import type { Insight } from '@/lib/gemini'
 import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
+// Both tabs are closed when the page loads and draw with Recharts, so each
+// loads the first time it is opened rather than with the page.
+const tabLoading = () => <ChartCardSkeleton />
+const ChartStack = dynamic(() => import('./ChartStack').then((m) => m.ChartStack), { loading: tabLoading })
+const RunningDynamics = dynamic(() => import('./RunningDynamics').then((m) => m.RunningDynamics), { loading: tabLoading })
+
 interface Props {
-  activity: Activity
-  hrBounds?: HrBounds
+  activity: ActivityDetailView
   qualifiedEfforts?: QualifiedEffort[]
   aiVerdict: Insight | null
   shoe: ShoeTag | null
@@ -35,7 +40,7 @@ interface Props {
 
 type TabId = 'overview' | 'intervals' | 'charts' | 'dynamics'
 
-function buildPrimaryStats(activity: Activity): Metric[] {
+function buildPrimaryStats(activity: ActivityDetailView): Metric[] {
   // MetricGrid has had a dedicated unit slot all along; this call site put the
   // unit in the label instead, which is why duration was the one stat with none.
   const stats: Metric[] = [
@@ -88,6 +93,7 @@ export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, sh
     { id: 'charts' as const, label: t.activity.tabs.charts, show: hasCharts },
     { id: 'dynamics' as const, label: t.activity.tabs.dynamics, show: hasDynamics },
   ].filter((item) => item.show)
+  const detailTabs = useSegmentedTabs({ ids: tabs.map((item) => item.id), value: tab, onChange: setTab })
 
   return (
     <>
@@ -124,16 +130,14 @@ export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, sh
           <GlassSurface
             as="div"
             variant="card"
-            role="tablist"
+            {...detailTabs.listProps}
             aria-label={t.activity.tabs.groupLabel}
             className="flex gap-1 overflow-x-auto rounded-full p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {tabs.map((item) => (
               <button
                 key={item.id}
-                role="tab"
-                aria-selected={tab === item.id}
-                onClick={() => setTab(item.id)}
+                {...detailTabs.tabProps(item.id)}
                 className={cn(
                   'min-w-fit flex-1 whitespace-nowrap rounded-full py-2.5 text-sm font-semibold transition-colors',
                   tab === item.id ? 'bg-accent text-accent-foreground' : 'text-subtle hover:text-foreground',
@@ -146,6 +150,9 @@ export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, sh
         </div>
       )}
 
+      {/* space-y-5 is the page's own rhythm: the panel stands in for the
+          sections it holds, which used to be the page's direct children. */}
+      <div {...(tabs.length > 1 ? detailTabs.panelProps : {})} className="space-y-5">
       {tab === 'overview' && (
         <>
           <TrainingEffect aer={activity.aerTrainingEffect} ana={activity.anaTrainingEffect} />
@@ -184,6 +191,7 @@ export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, sh
       )}
 
       {tab === 'dynamics' && <RunningDynamics activity={activity} baseline={dynamicsBaseline} />}
+      </div>
     </>
   )
 }

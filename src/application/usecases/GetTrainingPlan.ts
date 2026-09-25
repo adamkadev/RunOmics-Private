@@ -1,6 +1,8 @@
 import { getTrainingPlan as readTrainingPlan } from '@/infrastructure/repositories/JsonTrainingPlanRepository'
+import type { TrainingPlanPhase, PlanPhaseRange } from '@/domain/training/planPhase'
 
-export type TrainingPlanPhase = 'base' | 'build' | 'peak' | 'taper' | 'raceDay'
+// Moved to the domain; re-exported so every existing importer keeps working.
+export type { TrainingPlanPhase, PlanPhaseRange } from '@/domain/training/planPhase'
 
 const GARMIN_PHASE: Record<string, TrainingPlanPhase> = {
   BUILD: 'build',
@@ -11,12 +13,6 @@ const GARMIN_PHASE: Record<string, TrainingPlanPhase> = {
 
 export function garminPlanPhase(raw: string | null | undefined): TrainingPlanPhase | null {
   return raw ? (GARMIN_PHASE[raw] ?? null) : null
-}
-
-export interface PlanPhaseRange {
-  phase: TrainingPlanPhase
-  startDate: string
-  endDate: string
 }
 
 export interface TrainingPlan {

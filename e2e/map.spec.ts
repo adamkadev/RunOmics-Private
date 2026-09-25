@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test'
+import type { Locator } from '@playwright/test'
+import { test, expect } from './fixtures'
 
 test('heatmap page renders its shell and toggles world view', async ({ page }) => {
   await page.goto('/map')
@@ -49,6 +50,33 @@ test('heatmap zone dropdown switches the selected zone', async ({ page }) => {
   await zoneChip.click()
   await expect(page.locator('ul li button').nth(target)).toHaveAttribute('aria-current', 'true')
   await expect(page.locator('ul li button').nth(before)).toHaveAttribute('aria-current', 'false')
+})
+
+// toBeVisible() and click() both pass on a menu the scrolling chip rail clips:
+// the menu still has a box, and click() scrolls it into view first. What a
+// person sees is what hit-testing finds at the centre of an option.
+async function drawnWhereItClaims(option: Locator): Promise<boolean> {
+  return option.evaluate((el) => {
+    const r = el.getBoundingClientRect()
+    const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)
+    return hit !== null && el.contains(hit)
+  })
+}
+
+test('heatmap filter menus open where they can be seen', async ({ page }) => {
+  await page.goto('/map')
+
+  for (const name of [/^Zones:/, 'All types', 'All years']) {
+    const chip = page.getByRole('button', { name }).first()
+    await chip.click()
+    const menu = page.locator(`[id="${await chip.getAttribute('aria-controls')}"]`)
+
+    await expect(menu).toBeVisible()
+    expect(await drawnWhereItClaims(menu.getByRole('button').last())).toBe(true)
+
+    await page.keyboard.press('Escape')
+    await expect(chip).toHaveAttribute('aria-expanded', 'false')
+  }
 })
 
 test('heatmap actually initialises a MapLibre canvas', async ({ page }) => {

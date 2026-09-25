@@ -38,16 +38,32 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     isPopNavigation.current = false
   }, [pathname])
 
+  // Every scroll event used to parse and rewrite sessionStorage. It only has
+  // to be written when the page is left - a route change or the tab going
+  // away - so a scroll just notes the offset. Noting it, rather than reading
+  // scrollY on the way out, also keeps the value the page had: by the time a
+  // route change's cleanup runs, the next page is mounted and a shorter one
+  // has already clamped the offset.
+  const lastScrollY = useRef(0)
   useLayoutEffect(() => {
-    const saveScroll = () => {
-      const positions = getScrollPositions()
-      positions[pathname] = window.scrollY
-      sessionStorage.setItem(SCROLL_POSITIONS_KEY, JSON.stringify(positions))
+    lastScrollY.current = window.scrollY
+    const note = () => {
+      lastScrollY.current = window.scrollY
     }
-    window.addEventListener('scroll', saveScroll, { passive: true })
+    const persist = () => {
+      const positions = getScrollPositions()
+      positions[pathname] = lastScrollY.current
+      try {
+        sessionStorage.setItem(SCROLL_POSITIONS_KEY, JSON.stringify(positions))
+      } catch {
+      }
+    }
+    window.addEventListener('scroll', note, { passive: true })
+    window.addEventListener('pagehide', persist)
     return () => {
-      saveScroll()
-      window.removeEventListener('scroll', saveScroll)
+      persist()
+      window.removeEventListener('scroll', note)
+      window.removeEventListener('pagehide', persist)
     }
   }, [pathname])
 

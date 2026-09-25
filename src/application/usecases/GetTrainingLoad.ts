@@ -3,7 +3,8 @@ import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepo
 import { round } from '@/lib/math'
 import type { Activity } from '@/domain/activity/types'
 import { trimp, DEFAULT_HR_BOUNDS, type HrBounds } from '@/domain/training/trimp'
-import { CTL_DAYS, ATL_DAYS, type LoadSnapshot } from '@/domain/training/taper'
+import { ATL_DAYS, type LoadSnapshot } from '@/domain/training/taper'
+import { loadSeries } from '@/domain/training/loadSeries'
 import { isoDate } from '@/lib/calendarDate'
 import { AXIS_TICK_DATE, formatDate } from '@/lib/formatters'
 
@@ -40,24 +41,12 @@ export function buildTimeSeries(activities: Activity[], hrBounds: HrBounds = DEF
   const dailyLoad = dailyTrimpByDate(activities, hrBounds)
 
   const series = new Map<string, LoadSnapshot>()
-  const firstAct = activities[activities.length - 1]
-  if (!firstAct) return series
-  const first = new Date(firstAct.date + 'T00:00:00')
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const first = activities.reduce<string | null>((min, a) => (min === null || a.date < min ? a.date : min), null)
+  if (!first) return series
 
-  let ctl = 0
-  let atl = 0
-
-  for (let d = new Date(first); d <= today; d.setDate(d.getDate() + 1)) {
-    const date = isoDate(d)
-    const tsb = ctl - atl
-    const load = dailyLoad.get(date) ?? 0
-    ctl += (load - ctl) / CTL_DAYS
-    atl += (load - atl) / ATL_DAYS
-    series.set(date, { ctl: round(ctl), atl: round(atl), tsb: round(tsb) })
+  for (const [date, day] of loadSeries(dailyLoad, first, isoDate(new Date()))) {
+    series.set(date, { ctl: round(day.ctl), atl: round(day.atl), tsb: round(day.tsb) })
   }
-
   return series
 }
 

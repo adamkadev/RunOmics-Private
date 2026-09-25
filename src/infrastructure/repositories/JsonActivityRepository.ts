@@ -3,9 +3,9 @@ import path from 'path'
 import { dataPath } from '../dataPath'
 import type { Activity } from '@/domain/activity/types'
 
-const DEFAULT_DIR = dataPath('activities')
-
-let cache: Activity[] | null = null
+// Keyed by directory because the workspace is resolved per call: a cache that
+// outlived a change of RUNOMICS_DATA_DIR would serve the other workspace.
+let cache: { dir: string; activities: Activity[] } | null = null
 
 /**
  * Not `readJsonFile`: the index IS the dataset, and an empty fallback would
@@ -25,6 +25,7 @@ function readActivities(dirPath: string): Activity[] {
 
 export function getAllActivities(dirPath?: string): Activity[] {
   if (dirPath) return readActivities(dirPath)
-  if (!cache) cache = readActivities(DEFAULT_DIR)
-  return cache
+  const dir = dataPath('activities')
+  if (cache?.dir !== dir) cache = { dir, activities: readActivities(dir) }
+  return cache.activities
 }

@@ -7,48 +7,12 @@ import { getPbYears } from '@/infrastructure/repositories/JsonPbRepository'
 import { getGarminRacePredictions } from './GetGarminRacePredictions'
 import { DISTANCE_KEY, getRecords } from './GetRecords'
 import { RACE_DISTANCES, type RaceDistanceKey } from '@/domain/race/distances'
-import { addDays, startOfWeek } from '@/lib/calendarDate'
+import { DAY_MS, addDays, startOfWeek } from '@/lib/calendarDate'
 import { round } from '@/lib/math'
+import type { PbEntry, GoalYear, UpcomingRace } from '@/domain/goals/types'
 
-export interface PbEntry {
-  distance: string
-  seconds: number
-  activityId: string
-}
-
-export interface PbYear {
-  year: number
-  entries: PbEntry[]
-}
-
-export interface GoalTarget {
-  distance: string
-  targetSeconds: number | null
-}
-
-export interface GoalYear {
-  year: number
-  annualDistanceKm: number
-  targets: GoalTarget[]
-}
-
-export interface UpcomingRace {
-  courseContext?: import('@/domain/coaching/types').RaceCourseContext
-  garminEventUuid?: string
-  garminEventId?: number
-  date: string
-  name: string
-  distance: string
-  location?: string
-  targetSeconds?: number | null
-  isPrimaryEvent?: boolean
-  isTrainingEvent?: boolean
-}
-
-export interface UpcomingRaceYear {
-  year: number
-  races: UpcomingRace[]
-}
+// Moved to the domain; re-exported so every existing importer keeps working.
+export type { PbEntry, PbYear, GoalTarget, GoalYear, UpcomingRace, UpcomingRaceYear } from '@/domain/goals/types'
 
 export interface PbData {
   entry: PbEntry
@@ -136,12 +100,12 @@ export function computeProjection(
   const now = new Date()
   const yearStart = new Date(year, 0, 1)
   const yearEnd = new Date(year + 1, 0, 1)
-  const weeksElapsed = (now.getTime() - yearStart.getTime()) / (7 * 86_400_000)
-  const remainingWeeks = (yearEnd.getTime() - now.getTime()) / (7 * 86_400_000)
+  const weeksElapsed = (now.getTime() - yearStart.getTime()) / (7 * DAY_MS)
+  const remainingWeeks = (yearEnd.getTime() - now.getTime()) / (7 * DAY_MS)
 
   if (weeksElapsed < 4 || remainingWeeks <= 0) return null
 
-  const cutoff = new Date(now.getTime() - 56 * 86_400_000)
+  const cutoff = new Date(now.getTime() - 56 * DAY_MS)
   const recentKm = activities
     .filter((a) => new Date(a.date + 'T00:00:00') >= cutoff)
     .reduce((s, a) => s + a.distanceKm, 0)
@@ -161,13 +125,13 @@ export function computeProjection(
 export function computeMonthlyGoals(activities: Activity[], year: number, goals: GoalYear): MonthGoal[] {
   const annualKm = goals.annualDistanceKm
   const now = new Date()
-  const daysInYear = (new Date(year + 1, 0, 1).getTime() - new Date(year, 0, 1).getTime()) / 86_400_000
+  const daysInYear = (new Date(year + 1, 0, 1).getTime() - new Date(year, 0, 1).getTime()) / DAY_MS
 
   return Array.from({ length: 12 }, (_, i) => {
     const month = i + 1
     const monthStart = new Date(year, month - 1, 1)
     const monthEnd = new Date(year, month, 1)
-    const daysInMonth = Math.round((monthEnd.getTime() - monthStart.getTime()) / 86_400_000)
+    const daysInMonth = Math.round((monthEnd.getTime() - monthStart.getTime()) / DAY_MS)
     const targetKm = round((annualKm * daysInMonth) / daysInYear, 1)
 
     const actualKm = round(
@@ -213,7 +177,7 @@ export function computeNextRaceSpotlight(
   if (!race) return null
 
   const daysUntil = Math.round(
-    (new Date(race.date + 'T00:00:00').getTime() - new Date(today + 'T00:00:00').getTime()) / 86_400_000
+    (new Date(race.date + 'T00:00:00').getTime() - new Date(today + 'T00:00:00').getTime()) / DAY_MS
   )
 
   const predictionKey = DISTANCE_KEY[race.distance]
@@ -267,7 +231,7 @@ export interface WeeklyGoal {
 export function computeWeeklyGoal(activities: Activity[], year: number, goals: GoalYear, now = new Date()): WeeklyGoal | null {
   if (goals.annualDistanceKm <= 0) return null
 
-  const daysInYear = (new Date(year + 1, 0, 1).getTime() - new Date(year, 0, 1).getTime()) / 86_400_000
+  const daysInYear = (new Date(year + 1, 0, 1).getTime() - new Date(year, 0, 1).getTime()) / DAY_MS
   const targetKm = round((goals.annualDistanceKm * 7) / daysInYear, 1)
 
   const weekStart = startOfWeek(now)

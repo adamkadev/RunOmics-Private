@@ -1,3 +1,4 @@
+import { DAY_MS } from '@/lib/calendarDate'
 import type { PlanPhaseRange, TrainingPlanPhase } from '@/application/usecases/GetTrainingPlan'
 import { TRAINING_PLAN_PHASE_COLORS } from '@/lib/colors'
 import { t } from '@/i18n'
@@ -15,7 +16,7 @@ const PHASE_LABEL: Record<TrainingPlanPhase, string> = {
 function days(from: string, to: string): number {
   return Math.max(
     1,
-    Math.round((new Date(to + 'T00:00:00').getTime() - new Date(from + 'T00:00:00').getTime()) / 86_400_000) + 1,
+    Math.round((new Date(to + 'T00:00:00').getTime() - new Date(from + 'T00:00:00').getTime()) / DAY_MS) + 1,
   )
 }
 

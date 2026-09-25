@@ -6,7 +6,7 @@ import os
 import sys
 import time
 from collections.abc import Callable
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Any, TypeVar
 
@@ -18,7 +18,6 @@ import httpx
 from diagnostics.fit_inspector import FIT_FEATURE_IDS, inspect_fit_capabilities
 from diagnostics.model import (
     DiagnosticAuthError,
-    FeatureAccumulator,
     InvalidProbePayload,
     ProbeStatus,
     SampleSummary,

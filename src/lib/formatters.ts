@@ -72,7 +72,9 @@ export function formatPaceRange([fast, slow]: [number, number]): string {
 }
 
 export function formatDistance(km: number): string {
-  return `${km.toFixed(km >= 10 ? 1 : 2)}`
+  // Through formatKm, so the decimal follows the locale: toFixed always wrote
+  // a point, and the French build showed "9.26" beside "1 321,5".
+  return formatKm(km, km >= 10 ? 1 : 2)
 }
 
 /**
@@ -288,4 +290,16 @@ export function parseTimeInput(str: string): number | null {
   if (parts.length === 2 && a !== undefined && b !== undefined && !parts.some(isNaN)) return a * 60 + b
   if (parts.length === 3 && a !== undefined && b !== undefined && c !== undefined && !parts.some(isNaN)) return a * 3600 + b * 60 + c
   return null
+}
+
+/**
+ * formatDelta at a fixed precision, for a reading whose decimals are part of
+ * it: a 5.0 % drift sits in a list of 4.6 % and 5.3 %, not as "5 %". Same sign
+ * rules - a real minus, and a flat reading marked rather than blank.
+ */
+export function formatDeltaFixed(value: number, decimals: number, unit?: string): string {
+  const rounded = Number(value.toFixed(decimals))
+  const magnitude = formatKm(Math.abs(rounded), decimals)
+  const body = rounded === 0 ? `${PLUS_MINUS}${magnitude}` : `${rounded > 0 ? '+' : MINUS}${magnitude}`
+  return unit ? `${body} ${unit}` : body
 }

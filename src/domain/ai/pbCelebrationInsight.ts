@@ -1,4 +1,5 @@
-import type { RecordEntry } from '@/application/usecases/GetRecords'
+import { DAY_MS } from '@/lib/calendarDate'
+import type { RecordEntry } from '@/domain/race/records'
 import { insightHash } from './insightHash'
 import { isRecentRecord } from './celebrationWindow'
 import { avoidClause, systemInstruction } from './prompt'
@@ -44,8 +45,6 @@ export const PB_CELEBRATION_SYSTEM_INSTRUCTION = [
   'The mark it replaced is not printed anywhere, so naming it - and how long it stood - is the one number worth writing.',
   'Be warm and direct, never breathless. No exclamation marks stacked up, no emoji.',
 ].join(' ')
-
-const DAY_MS = 86_400_000
 
 function daysBetween(from: string, to: string): number {
   return Math.round((new Date(to + 'T00:00:00').getTime() - new Date(from + 'T00:00:00').getTime()) / DAY_MS)

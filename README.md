@@ -57,7 +57,8 @@ cd RunOmics
 # Frontend dependencies
 npm install
 
-# Python dependencies
+# Python dependencies - hash-locked; to change one, edit scripts/requirements.in
+# and recompile with the pip-compile command in its header
 pip install -r scripts/requirements.txt
 ```
 
@@ -128,6 +129,11 @@ INTERNAL_NOTIFY_SECRET=any-random-string
 
 # UI language: 'en' (default) or 'fr'. Picked at build time.
 NEXT_PUBLIC_LOCALE=en
+
+# Optional: the IANA time zone "today" is read in (e.g. Europe/Luxembourg), on
+# the server that prerenders a page and in the browser that shows it. Unset,
+# each uses its own local date. An unknown zone fails the build.
+# NEXT_PUBLIC_TIME_ZONE=Europe/Luxembourg
 
 # Gemini API keys (optional). Get them at https://aistudio.google.com/apikey.
 #
@@ -336,7 +342,23 @@ npm run test:coverage  # same suite with a v8 coverage report (text + lcov)
 npm run lint           # ESLint (next/core-web-vitals + TS)
 npm run typecheck      # tsc --noEmit
 npm run analyze        # production build with @next/bundle-analyzer treemaps
+npm run verify         # what CI's verify job runs: private-data check, lint, typecheck, import cycles, tests
+npm run test:rules     # firestore.rules against the Firestore emulator (needs Java 21)
+npm run validate:data  # the dataset against the Python -> app data contract
 ```
+
+`npm run build` runs `validate:data` after fetching the dataset. A dataset that
+would crash a page (an activity without an id or a date, a goals year without
+`targets`) fails the build, so the deployment already live keeps serving; anything
+the app tolerates, such as an activity type it does not know yet, is printed as a
+warning and never fails it. The rules live in
+`src/infrastructure/contracts/dataContract.ts`.
+
+Most commits go straight to `main`, where CI only reports after the push. A
+pre-push hook runs `npm run verify` (and the Python suite, when `pytest` is
+installed) before a push to `main`, and leaves every other branch alone. Enable it
+once per clone with `git config core.hooksPath .githooks`; `git push --no-verify`
+skips it.
 
 Each of these populates `data/` first through `npm run prepare:data` (an npm lifecycle
 hook, and a no-op once the directory exists), so a fresh clone can lint, typecheck and
@@ -388,6 +410,9 @@ Playwright can drive without a test-only auth bypass, which is its own follow-up
 `GET /api/internal/health` (authenticated with `x-internal-secret`) reports the
 last synced activity date and flags the data as `stale` after 7 days without
 one - point any uptime monitor at it to catch a silently broken Garmin sync.
+Its `integrations` field says which server integrations the deployment has
+credentials for (`firebaseAdmin`, `gemini`, `syncButton`), by name only, and
+the nightly sync warns when one the post-sync checks need is missing.
 
 ---
 
@@ -428,7 +453,8 @@ from your `.env.local` *except* `GARMIN_SECRET` and `GEMINI_COACH_API_KEY`:
 | `NEXT_PUBLIC_OWNER_EMAIL` | Which account `npm run set-owner-claim` grants the `owner` claim to - not itself an authorization check |
 | `INTERNAL_NOTIFY_SECRET` | Authenticates the GitHub Actions cron calls to `/api/internal/*` |
 | `NEXT_PUBLIC_LOCALE` | UI language, `en` (default) or `fr` — applied at build time |
-| `GEMINI_API_KEY`, `GEMINI_MODEL` | Optional: the AI-written verdicts and insight cards - Today, Week Purpose, Season, Analytics, run verdicts, PB celebration, shoe verdicts |
+| `NEXT_PUBLIC_TIME_ZONE` | Optional: the athlete's IANA time zone (e.g. `Europe/Luxembourg`), so a page prerendered on Vercel's UTC clock and the browser agree on which day it is - see [Date handling](#date-handling) |
+| `GEMINI_API_KEY`, `GEMINI_MODEL` | Optional: the AI-written verdicts and insight cards - Today, Season, Analytics, run verdicts, PB celebration, shoe verdicts |
 
 > `GARMIN_SECRET` is only used locally by the sync script - it never runs on Vercel.
 > `GEMINI_COACH_API_KEY` / `GEMINI_COACH_MODEL` are the same: the adaptive coach is a local
@@ -441,9 +467,10 @@ The scheduled workflows read their secrets from a **GitHub Environment** named
 after the deployment's profile (GitHub → Settings → Environments), not from
 repository secrets: `GARMIN_SECRET`, `RUNOMICS_DATA_REPO_URL`,
 `RUNOMICS_DATA_REPO_TOKEN`, `APP_URL` (your deployed domain, no trailing slash),
-`INTERNAL_NOTIFY_SECRET`, `VERCEL_DEPLOY_HOOK_URL` and the optional
-`PRIVACY_ZONES` / `PRIVACY_RADIUS_M`, plus an environment *variable* `PROFILE`
-holding the environment's own name. These are separate from the Vercel env vars
+`INTERNAL_NOTIFY_SECRET`, `VERCEL_DEPLOY_HOOK_URL`, `PRIVACY_ZONES` /
+`PRIVACY_RADIUS_M` (required: the sync refuses to write a GPS route without
+them) and the optional but recommended `PRIVACY_SALT`, plus an environment
+*variable* `PROFILE` holding the environment's own name. These are separate from the Vercel env vars
 above, and `INTERNAL_NOTIFY_SECRET` must match on both sides.
 
 That indirection is what lets one repository drive several deployments - one per
@@ -909,7 +936,7 @@ There is no fallback in either direction: neither key ever stands in for the oth
 
 | | `GEMINI_API_KEY` | `GEMINI_COACH_API_KEY` |
 |---|---|---|
-| What it powers | The deployed AI surfaces — Today, Week Purpose, Season, Analytics, run verdicts, PB celebration, shoe verdicts | The adaptive coaching CLI (`npm run coach`), which runs locally today |
+| What it powers | The deployed AI surfaces — Today, Season, Analytics, run verdicts, PB celebration, shoe verdicts | The adaptive coaching CLI (`npm run coach`), which runs locally today |
 | `.env.local` | yes | yes |
 | Vercel | **yes** — the surfaces are server-rendered and the cron routes call Gemini | **no** — nothing deployed calls the coach |
 | GitHub Actions | not directly: the workflows only `curl` the deployed `/api/internal/*` routes, which use the deployment's own key | **no** — no workflow runs a coaching generation |
@@ -942,12 +969,14 @@ was aborting calls that would have succeeded seconds later.
 model is done for the day, and the pool exists so the work can continue — but the loop used to
 abandon the item and carry that recovery only as far as the *next* item's `reserve()`. With one
 verdict pending, a single Google-side 503 therefore wasted an entire pass; two passes in a row
-went that way before a run verdict finally landed. `generateFromPool()` now retries the same
+went that way before a run verdict finally landed. `generateFromPool()`
+(`src/application/ai/insightPass.ts`, not the route handler any more) now retries the same
 request on a different pool member, up to three attempts, for anything transient (500, 503) or
 closed (429, 404). Copy the validator rejected is not retried: that is the documented
 reject-and-requeue path, and spending a second model on it would buy nothing. Failing to
 reserve at all is reported separately from a model failing, because only the former means the
-caller should stop looping.
+caller should stop looping. The pool is the only retry: `generateInsight` sends one request
+per call, so one reservation is one request against the day's quota.
 
 **Model pool.** A model answering 429 has spent its day; one answering 404 has been retired
 out from under us. Both mean stop asking and take the next in the pool. `reserve()` returning
@@ -958,7 +987,7 @@ transport layer would bill one model's ledger for another's call.
 
 **Two pools, sized from the demand.** Free-tier quotas are per model, and Flash and Flash Lite
 are not in the same league: Flash allows 20 requests a day, Lite 500. `MODEL_POOL` carries the
-surfaces a reader actually looks at — `today`, the week purpose, the season headline, the four
+surfaces a reader actually looks at — `today`, the season headline, the four
 analytics tabs, a PB celebration, a shoe verdict or two, and the verdicts for runs that just
 landed — which is about 8 calls a night and 14 at its worst. The five passes per night do not
 multiply that: once a surface's hash matches, the pass reports `unchanged` and spends nothing.
@@ -1292,6 +1321,12 @@ Two `YYYY-MM-DD` conventions coexist and must not be confused:
   It is the default.
 - `utcDate` in `GetTrainingWorkbook` is **UTC**, because the workbook computes its dates from UTC
   timestamps throughout.
+
+"Today" is `appTodayIso()`: the date in `NEXT_PUBLIC_TIME_ZONE` when it is set, the machine's local
+date otherwise. Each page computes it on the server and hands it to its client components, which read
+it through `useToday(serverToday)`: the server render and the hydration both use the page's date, so
+ISR HTML cached from another day still hydrates, and after mount the value is the reader's date and
+rolls over at midnight.
 
 Coaching presentation does its date maths in UTC on purpose: a macrocycle spans a DST change, and
 local-midnight arithmetic drifts a day either side of it. `isoWeekNumber` returns `isoYear * 100 + isoWeek`,

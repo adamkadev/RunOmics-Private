@@ -7,7 +7,8 @@ import tempfile
 from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable, Literal
+from typing import Any, Literal
+from collections.abc import Iterable
 
 SCHEMA_VERSION = 1
 

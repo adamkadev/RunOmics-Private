@@ -1,6 +1,6 @@
 'use client'
 
-import type { AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
+import type { AthletePageView } from './athleteView'
 import type { ZoneShare } from '@/application/usecases/GetAnalyticsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { BackButton } from '@/components/ui/BackButton'
@@ -9,7 +9,7 @@ import { ProfileHrZones } from './ProfileHrZones'
 import { t } from '@/i18n'
 
 interface Props {
-  athlete: AthleteProfile
+  athlete: AthletePageView
   latestVo2max: number | null
   weeklyZoneTime: ZoneShare[]
   recentZoneTime: ZoneShare[]

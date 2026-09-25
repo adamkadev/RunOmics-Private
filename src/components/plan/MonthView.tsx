@@ -2,15 +2,16 @@
 
 import { useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
-import type { ActivitySummary, ActivityType, PlannedWorkout } from '@/domain/activity/types'
+import { activityTypeStyle } from '@/components/activity/activityTypeStyle'
+import { ACTIVITY_TYPES, type ActivitySummary, type ActivityType, type PlannedWorkout } from '@/domain/activity/types'
 import { round } from '@/lib/math'
 import { formatDate } from '@/lib/formatters'
+import { cn } from '@/lib/utils'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { PlannedWorkoutSheet } from './PlannedWorkoutSheet'
 import { plannedWorkoutView, type PlanWorkoutView } from './planWorkoutView'
 import { t } from '@/i18n'
-import type { PrescriptionView } from '@/application/coaching/GetCoachingView'
+import type { PlanPrescriptionView } from './planCoachingView'
 import { prescriptionDistanceMeters } from '@/components/coaching/presentation'
 import { COACHING_TO_ACTIVITY_TYPE } from '@/domain/coaching/types'
 
@@ -19,7 +20,7 @@ interface Props {
   month: number
   byDate: Map<string, ActivitySummary[]>
   byDatePlanned: Map<string, PlannedWorkout>
-  byDateCoach?: ReadonlyMap<string, PrescriptionView[]>
+  byDateCoach?: ReadonlyMap<string, PlanPrescriptionView[]>
   today: string
   atPresent: boolean
   onToday: () => void
@@ -36,6 +37,9 @@ const RULE_BORDER = 'rgba(148,178,220,.18)'
 const PLANNED_INK = 'var(--subtle)'
 const RAN_INK = 'var(--foreground)'
 const EXTRA_INK = 'var(--subtle-2)'
+// A dark-theme blue hex used to sit here, 1.6:1 on the light background. Each
+// theme takes its own step of the same hue instead.
+const TODAY_INK = 'text-blue-700 dark:text-blue-300'
 const GRID_COLUMNS = 'repeat(7,1fr) 30px'
 
 interface DayCellData {
@@ -65,7 +69,7 @@ function isoDateOf(year: number, month: number, day: number): string {
 function plannedInfoFor(
   date: string,
   byDatePlanned: Map<string, PlannedWorkout>,
-  byDateCoach?: ReadonlyMap<string, PrescriptionView[]>
+  byDateCoach?: ReadonlyMap<string, PlanPrescriptionView[]>
 ): PlannedInfo | null {
   const coach = byDateCoach?.get(date)?.find((v) => v.state !== 'cancelled')
   if (coach) {
@@ -88,7 +92,7 @@ function CellValue({ planned, ranKm, hasActs }: { planned: PlannedInfo | null; r
       {planned && (
         <span
           className="shrink-0 rounded-full"
-          style={{ width: '3px', background: ACTIVITY_TYPE_CONFIG[planned.type].chartColor }}
+          style={{ width: '3px', background: activityTypeStyle(planned.type).chartColor }}
         />
       )}
       <div className="flex min-w-0 flex-col justify-center" style={{ lineHeight: 1.15 }}>
@@ -221,8 +225,7 @@ export function MonthView({
     const rows: (DayCellData | null)[][] = []
     for (let i = 0; i < 6; i++) rows.push(cells.slice(i * 7, i * 7 + 7))
 
-    const registryOrder = Object.keys(ACTIVITY_TYPE_CONFIG)
-    const legendTypes = [...plannedTypes].sort((a, b) => registryOrder.indexOf(a) - registryOrder.indexOf(b))
+    const legendTypes = [...plannedTypes].sort((a, b) => ACTIVITY_TYPES.indexOf(a) - ACTIVITY_TYPES.indexOf(b))
 
     return { rows, legendTypes, sessionCount, ranKm: round(ranKm, 0), plannedKm: round(plannedKm, 0) }
   }, [year, month, byDate, byDatePlanned, byDateCoach])
@@ -258,8 +261,8 @@ export function MonthView({
           type="button"
           onClick={onToday}
           disabled={atPresent}
-          className="shrink-0 rounded-full font-semibold disabled:opacity-40"
-          style={{ fontSize: '12.5px', color: '#9cc4ff', border: '1px solid rgba(106,164,255,.35)', padding: '5px 12px' }}
+          className={cn('shrink-0 rounded-full font-semibold disabled:opacity-40', TODAY_INK)}
+          style={{ fontSize: '12.5px', border: '1px solid rgba(106,164,255,.35)', padding: '5px 12px' }}
         >
           {t.plan.today}
         </button>
@@ -334,7 +337,7 @@ export function MonthView({
                 <div className="flex items-center justify-end pr-1" style={{ background: PAD_BG }}>
                   <span
                     className="font-mono tabular-nums"
-                    style={{ fontSize: '11px', fontWeight: 700, color: containsToday ? '#c3ccd6' : 'var(--subtle)' }}
+                    style={{ fontSize: '11px', fontWeight: 700, color: containsToday ? 'var(--muted-foreground)' : 'var(--subtle)' }}
                   >
                     {weekValue === null ? t.plan.weekGutterEmpty : weekValue}
                   </span>
@@ -350,7 +353,7 @@ export function MonthView({
           <div className="flex flex-wrap items-center gap-3 border-b border-foreground/[0.08] pb-2 text-xs text-subtle">
             {legendTypes.map((type) => (
               <span key={type} className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full" style={{ background: ACTIVITY_TYPE_CONFIG[type].chartColor }} />
+                <span className="h-2 w-2 rounded-full" style={{ background: activityTypeStyle(type).chartColor }} />
                 {t.activityTypes[type]}
               </span>
             ))}

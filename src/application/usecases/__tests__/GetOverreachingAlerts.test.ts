@@ -24,7 +24,9 @@ async function run(current: TrainingStatus | null, alerted: boolean | null) {
   getLastOverreachingState.mockResolvedValue(alerted === null ? null : { alerted })
   saveLastOverreachingState.mockResolvedValue(undefined)
 
-  return getOverreachingAlerts()
+  const { newAlerts, commit } = await getOverreachingAlerts()
+  await commit()
+  return newAlerts
 }
 
 describe('getOverreachingAlerts', () => {
@@ -69,6 +71,19 @@ describe('getOverreachingAlerts', () => {
   it('records the high risk so the next check stays quiet', async () => {
     await run(status({ risk: 'high' }), false)
 
+    expect(saveLastOverreachingState).toHaveBeenCalledWith({ alerted: true })
+  })
+
+  it('stores nothing until the caller commits, so a push that fails is offered again', async () => {
+    getTrainingStatus.mockResolvedValue(status({ risk: 'high' }))
+    getLastOverreachingState.mockResolvedValue({ alerted: false })
+
+    const { newAlerts, commit } = await getOverreachingAlerts()
+
+    expect(newAlerts).toHaveLength(1)
+    expect(saveLastOverreachingState).not.toHaveBeenCalled()
+
+    await commit()
     expect(saveLastOverreachingState).toHaveBeenCalledWith({ alerted: true })
   })
 

@@ -27,6 +27,7 @@ function validPayload(overrides: Record<string, unknown> = {}) {
   return {
     sub: 'user-123',
     owner: true,
+    auth_time: now - 60,
     iat: now - 5,
     exp: now + 3600,
     aud: PROJECT_ID,
@@ -46,14 +47,29 @@ function stubCertsEndpoint(certs: Record<string, string>, cacheControl: string |
   )
 }
 
+function countingCertsEndpoint(certs: Record<string, unknown>) {
+  const fetchSpy = vi.fn().mockResolvedValue({
+    ok: true,
+    json: async () => certs,
+    headers: { get: () => 'max-age=3600' },
+  })
+  vi.stubGlobal('fetch', fetchSpy)
+  return fetchSpy
+}
+
 beforeEach(() => {
   // The module caches certs at module scope, which would leak the previous
   // test's fetch stub and cert set into the next one.
   vi.resetModules()
+  // Only the clock is faked: the refetch interval is measured on Date.now(),
+  // and so are the tokens' iat and exp, so both move together.
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date('2026-09-24T12:00:00Z'))
 })
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  vi.useRealTimers()
 })
 
 async function subject() {
@@ -181,6 +197,7 @@ describe('verifyFirebaseIdToken', () => {
 
     // Warms the cache with the pre-rotation map, well inside its hour.
     await verifyFirebaseIdToken(sign(validPayload()), PROJECT_ID)
+    vi.advanceTimersByTime(61_000)
 
     const rotatedToken = jwt.sign(validPayload(), rotatedPrivate, {
       algorithm: 'RS256',
@@ -192,22 +209,127 @@ describe('verifyFirebaseIdToken', () => {
     expect(fetchSpy).toHaveBeenCalledTimes(2)
   })
 
-  it('does not refetch on every unknown kid, so a forged token cannot drive traffic at Google', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ [KID]: PUBLIC_PEM }),
-      headers: { get: () => 'max-age=3600' },
-    })
+  it('does not refetch for unknown kids while its certs are under a minute old', async () => {
+    // Each forged kid used to cost one outbound call to Google.
+    const fetchSpy = countingCertsEndpoint({ [KID]: PUBLIC_PEM })
+    const { verifyFirebaseIdToken } = await subject()
+
+    await verifyFirebaseIdToken(sign(validPayload()), PROJECT_ID)
+
+    for (const kid of ['forged-1', 'forged-2', 'forged-3', 'forged-4', 'forged-5']) {
+      await expect(verifyFirebaseIdToken(sign(validPayload(), kid), PROJECT_ID)).rejects.toThrow(
+        'no matching Google certificate'
+      )
+    }
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('refetches once for a burst of unknown kids after that minute, not once per kid', async () => {
+    const fetchSpy = countingCertsEndpoint({ [KID]: PUBLIC_PEM })
+    const { verifyFirebaseIdToken } = await subject()
+
+    await verifyFirebaseIdToken(sign(validPayload()), PROJECT_ID)
+    vi.advanceTimersByTime(61_000)
+
+    for (const kid of ['forged-1', 'forged-2', 'forged-3', 'forged-4', 'forged-5']) {
+      await expect(verifyFirebaseIdToken(sign(validPayload(), kid), PROJECT_ID)).rejects.toThrow(
+        'no matching Google certificate'
+      )
+    }
+    expect(fetchSpy).toHaveBeenCalledTimes(2)
+  })
+
+  it('shares one fetch between verifications that arrive together on a cold cache', async () => {
+    const fetchSpy = countingCertsEndpoint({ [KID]: PUBLIC_PEM })
+    const { verifyFirebaseIdToken } = await subject()
+
+    const claims = await Promise.all(
+      ['a', 'b', 'c', 'd', 'e'].map((sub) => verifyFirebaseIdToken(sign(validPayload({ sub })), PROJECT_ID))
+    )
+
+    expect(claims.map((c) => c.sub)).toEqual(['a', 'b', 'c', 'd', 'e'])
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('fetches again after a failed fetch rather than keeping the failure', async () => {
+    const fetchSpy = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: false, status: 503 })
+      .mockResolvedValue({ ok: true, json: async () => ({ [KID]: PUBLIC_PEM }), headers: { get: () => null } })
+    vi.stubGlobal('fetch', fetchSpy)
+    const { verifyFirebaseIdToken } = await subject()
+
+    await expect(verifyFirebaseIdToken(sign(validPayload()), PROJECT_ID)).rejects.toThrow('503')
+    expect((await verifyFirebaseIdToken(sign(validPayload()), PROJECT_ID)).sub).toBe('user-123')
+  })
+
+  it('counts a failed refetch toward the minute too, so an outage does not reopen the door', async () => {
+    const fetchSpy = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ [KID]: PUBLIC_PEM }), headers: { get: () => 'max-age=3600' } })
+      .mockResolvedValue({ ok: false, status: 503 })
     vi.stubGlobal('fetch', fetchSpy)
     const { verifyFirebaseIdToken } = await subject()
 
     await verifyFirebaseIdToken(sign(validPayload()), PROJECT_ID)
-    fetchSpy.mockClear()
+    vi.advanceTimersByTime(61_000)
 
-    // One refetch to be sure, then the freshly-fetched map is the answer.
+    await expect(verifyFirebaseIdToken(sign(validPayload(), 'forged-1'), PROJECT_ID)).rejects.toThrow('503')
+    await expect(verifyFirebaseIdToken(sign(validPayload(), 'forged-2'), PROJECT_ID)).rejects.toThrow(
+      'no matching Google certificate'
+    )
+    expect(fetchSpy).toHaveBeenCalledTimes(2)
+
+    // The cached map still verifies a real token throughout.
+    expect((await verifyFirebaseIdToken(sign(validPayload()), PROJECT_ID)).sub).toBe('user-123')
+  })
+
+  it('looks a kid up among the certs Google served, not the properties every object has', async () => {
+    stubCertsEndpoint({ [KID]: PUBLIC_PEM })
+    const { verifyFirebaseIdToken } = await subject()
+
+    for (const kid of ['constructor', 'toString', '__proto__', 'hasOwnProperty']) {
+      await expect(verifyFirebaseIdToken(sign(validPayload(), kid), PROJECT_ID)).rejects.toThrow(
+        'no matching Google certificate'
+      )
+    }
+  })
+
+  it('never hands jsonwebtoken a certificate that is not a PEM string', async () => {
+    stubCertsEndpoint({ [KID]: { pem: PUBLIC_PEM } } as unknown as Record<string, string>)
+    const { verifyFirebaseIdToken } = await subject()
+
+    await expect(verifyFirebaseIdToken(sign(validPayload()), PROJECT_ID)).rejects.toThrow(
+      'no matching Google certificate'
+    )
+  })
+
+  it('rejects a token with no expiry, which jsonwebtoken would accept forever', async () => {
+    stubCertsEndpoint({ [KID]: PUBLIC_PEM })
+    const { verifyFirebaseIdToken } = await subject()
+    const neverExpires: Record<string, unknown> = validPayload()
+    delete neverExpires.exp
+
+    await expect(verifyFirebaseIdToken(sign(neverExpires), PROJECT_ID)).rejects.toThrow('no expiry')
+  })
+
+  it('rejects a token whose sign-in is dated in the future', async () => {
+    stubCertsEndpoint({ [KID]: PUBLIC_PEM })
+    const { verifyFirebaseIdToken } = await subject()
+    const now = Math.floor(Date.now() / 1000)
+
     await expect(
-      verifyFirebaseIdToken(sign(validPayload(), 'forged-kid'), PROJECT_ID)
-    ).rejects.toThrow('no matching Google certificate')
-    expect(fetchSpy).toHaveBeenCalledTimes(1)
+      verifyFirebaseIdToken(sign(validPayload({ auth_time: now + 3600 })), PROJECT_ID)
+    ).rejects.toThrow('authenticated in the future')
+  })
+
+  it('accepts a token whose sign-in was days ago, as a refreshed token is', async () => {
+    stubCertsEndpoint({ [KID]: PUBLIC_PEM })
+    const { verifyFirebaseIdToken } = await subject()
+    const now = Math.floor(Date.now() / 1000)
+
+    const claims = await verifyFirebaseIdToken(sign(validPayload({ auth_time: now - 9 * 86_400 })), PROJECT_ID)
+
+    expect(claims.sub).toBe('user-123')
   })
 })

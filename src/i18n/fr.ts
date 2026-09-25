@@ -1,5 +1,5 @@
 import type { ActivityType, ScheduledTimeOfDay } from '@/domain/activity/types'
-import type { Strings } from './index'
+import type { Strings } from './en'
 
 export const fr = {
   locale: 'fr-FR',
@@ -101,7 +101,6 @@ export const fr = {
       routes: (n: number) => `${n} parcours`,
       zones: 'Zones',
       allAreas: 'Toutes les zones',
-      areasCount: (n: number) => `${n} zones`,
       areasRemainder: (name: string, extra: number) => `${name} +${extra} zone${extra === 1 ? '' : 's'}`,
       allYears: 'Toutes les années',
       allTypes: 'Tous les types',
@@ -187,7 +186,6 @@ export const fr = {
       light: 'Clair',
       auto: 'Auto',
       dark: 'Sombre',
-      auroraNote: 'L’aurore s’adapte à l’accent sélectionné.',
     },
     accent: {
       title: 'Couleur d’accent',
@@ -222,11 +220,8 @@ export const fr = {
       title: 'Profil athlète',
       age: 'Âge',
       lthr: 'LTHR',
-      lthrHint: 'Fréquence cardiaque au seuil lactique',
       thresholdPace: 'Allure seuil',
-      thresholdPaceHint: 'min:ss par km, ex. 4:14',
       vma: 'VMA',
-      vmaHint: 'Vitesse maximale aérobie',
       maxHr: 'FC max',
       restingHr: 'FC repos',
       vo2max: 'VO2max',
@@ -257,7 +252,6 @@ export const fr = {
       saving: 'Enregistrement...',
       saved: 'Enregistré',
       error: 'Erreur à l’enregistrement, réessayez.',
-      confirmQuestion: 'Sûr ?',
       confirmYes: 'Oui',
       confirmCancel: 'Annuler',
     },
@@ -371,9 +365,6 @@ export const fr = {
       restDay: 'Jour de repos',
       restDaySubtitle: 'Aucune séance prévue',
       race: 'Course',
-      chargeOptimal: 'Optimale',
-      chargeHigh: 'Élevée',
-      chargeLow: 'Faible',
     },
     weeklyStreak: {
       weeksInARow: (weeks: number) => `${weeks} semaines d’affilée`,
@@ -382,7 +373,6 @@ export const fr = {
       ringOf: (target: number) => `sur ${target} km`,
 
       goalReached: 'Objectif hebdomadaire atteint',
-      streakSummary: (longest: number, current: number) => `Meilleure série : ${longest} semaines - en cours : ${current}`,
     },
     celebration: {
       eyebrow: 'Nouveau record personnel',
@@ -647,7 +637,7 @@ export const fr = {
       titlePositive: 'Plus en forme et plus efficace qu\'en début de saison.',
       titleCaution: 'Un passage plus difficile qu\'en début de saison.',
       titleMixed: 'Une saison en demi-teinte - des progrès par endroits, des baisses ailleurs.',
-      efficiency: (d: number) => `Efficacité aérobie ${d > 0 ? '+' : ''}${d} - ${d > 0 ? 'plus' : 'moins'} de vitesse par battement`,
+      efficiency: (d: number) => `Efficacité aérobie ${d > 0 ? '+' : d < 0 ? '−' : ''}${Math.abs(d)} - ${d > 0 ? 'plus' : 'moins'} de vitesse par battement`,
       easyPace: (to: string, from: string, weeks: number) =>
         `Allure facile ${to}, contre ${from} en moyenne sur les ${weeks} premières semaines de saison`,
       volume: (pct: number, year: number) =>
@@ -686,8 +676,6 @@ export const fr = {
       noSplit: '—',
     },
     weekPlanned: (done: number, planned: number) => `${done} sur ${planned} km prévus`,
-    easyShare: (pct: number) => `${pct} % facile`,
-    weekGroupCompact: (runs: number, km: number) => `${runs} sortie${runs > 1 ? 's' : ''} · ${km} km`,
     sort: {
       label: 'Trier',
       date: 'Date',
@@ -865,7 +853,6 @@ export const fr = {
       },
     },
     dynamics: {
-      vsBaseline: (delta: string, weeks: number) => `${delta} vs ${weeks} sem.`,
       title: 'Dynamique de course',
       cadence: 'Cadence',
       strideLength: 'Longueur de foulée',
@@ -902,7 +889,6 @@ export const fr = {
       max: 'max',
       best: 'meilleure',
       pace: 'Allure',
-      altitude: 'Altitude',
       elevation: 'Dénivelé',
       cadence: 'Cadence',
       elevationGain: (m: number) => `+${m} m D+`,
@@ -983,8 +969,6 @@ export const fr = {
     goalReached: 'Objectif atteint !',
     seasonTimeline: 'Chronologie de la saison',
     target: 'Objectif',
-    noTarget: '-',
-    noTargetSet: 'Aucun objectif défini',
     noDateSet: 'date non définie',
     done: 'terminée',
     beatenBy: (gap: string) => `battu de ${gap}`,
@@ -992,12 +976,8 @@ export const fr = {
     best: 'Record',
     predictedTag: 'prédit',
     findRace: 'Trouver une course ›',
-    nextRaceHint: (name: string, date: string) => `prochaine : ${name} ${date}`,
     seasonRaces: 'Courses de la saison',
-    raceAlt: (distance: string) => `course de ${distance}`,
     emptyPbs: (year: number) => `Pas encore de RP pour ${year} - ajoutez-les dans les Réglages.`,
-    noPhoto: 'Pas de photo',
-    registrationLink: 'Inscription',
     projection: {
       status: {
         ahead: 'En avance',
@@ -1046,7 +1026,6 @@ export const fr = {
     rotationSummary: (activePairs: number, retiredPairs: number, km: string) =>
       `${activePairs} en rotation · ${retiredPairs} retraitées · ${km} km parcourus`,
     lastRun: (date: string) => `dernière sortie le ${date}`,
-    lastWorn: (year: number) => `portée jusqu’en ${year}`,
     status: {
       ok: 'Bon état',
       watch: 'À remplacer bientôt',
@@ -1060,15 +1039,12 @@ export const fr = {
       usage: (n: number, total: number) => `Utilisée sur ${n} de tes ${total} dernières séances tempo/seuil`,
       rotateBeforeRace: (date: string) => ` – fais tourner une autre paire avant ta course du ${date}.`,
       rotate: ' – fais tourner une autre paire.',
-      restOfRotation: 'Reste de la rotation',
     },
-    wearAlert: (name: string, totalKm: number, alertThresholdKm: number) => `${name} affiche ${totalKm} km – au-delà de son seuil d’alerte de ${alertThresholdKm} km`,
     comparison: {
       title: 'Comparer deux paires',
       change: 'Changer',
       changeLabel: 'Changer les paires comparées',
       pickHint: 'Choisis deux paires — un nouveau choix remplace le plus ancien',
-      comparing: 'comparaison',
       note: "Portées à des saisons différentes – lis l'écart comme la saison, pas la paire.",
       delta: 'Δ',
       same: 'pareil',
@@ -1098,11 +1074,6 @@ export const fr = {
         oscillation: 'l’oscillation verticale',
       },
     },
-    summary: {
-      totalDistance: 'Km totaux',
-      activePairs: 'Actives',
-      sessions: 'Séances',
-    },
     detail: {
       back: 'Chaussures',
       stats: {
@@ -1110,7 +1081,6 @@ export const fr = {
         activities: 'Sorties',
         firstRun: '1re sortie',
         kmPerWeek: 'km / sem.',
-        lastWorn: 'Dernier port',
         avgPace: 'Allure moy.',
         weeks: 'Semaines',
         avgRun: 'Sortie moy',
@@ -1189,7 +1159,6 @@ export const fr = {
     },
     milestones: {
       distanceTier: (km: string) => `${km} km cette année`,
-      distanceTierDetail: (year: number) => `Franchi en ${year}`,
       streak: (weeks: number) => `${weeks} semaines d’affilée`,
       streakDetail: 'Toujours en cours - une sortie chaque semaine depuis',
       record: (label: string) => `Record ${label}`,
@@ -1232,7 +1201,6 @@ export const fr = {
       title: 'Athlète',
       lthr: 'LTHR',
       notSet: 'Non défini',
-      viewAthlete: 'Voir le profil athlète',
       details: 'Détails',
       zoneRows: {
         5: 'Z5 Max',
@@ -1263,7 +1231,6 @@ export const fr = {
       marathon: 'Marathon',
       longest: 'Plus longue sortie',
     } as Record<string, string>,
-    mostRecent: 'plus récent',
     raceTag: 'course',
     trainingTag: 'sortie d’entraînement',
     notYetRun: 'Pas encore couru',
@@ -1280,7 +1247,6 @@ export const fr = {
       trailKey: 'plus haut = plus rapide',
     },
     noRecordYet: 'Pas encore de record',
-    predictedFromFitness: (time: string) => `Prédit à ${time}`,
     predictedHeader: 'record · prédit',
     medalLegend: ['1er', '2e', '3e'] as [string, string, string],
     findRace: (distance: string) => `Trouver un ${distance.toLowerCase()} ›`,
@@ -1299,7 +1265,6 @@ export const fr = {
   trainingZones: {
     title: 'Zones d’allure',
     zoneNumber: (n: number) => `Z${n}`,
-    thresholdLabel: (pace: string) => `Seuil ${pace}`,
     subline: (pace: string) => `min/km · à partir du seuil ${pace}`,
     perKm: '/km',
     zones: {
@@ -1415,7 +1380,6 @@ export const fr = {
       Night: 'Nuit',
     } as Record<ScheduledTimeOfDay, string>,
     openPlanner: 'Ouvrir le planificateur',
-    viewDetail: 'Voir le détail',
     viewActivity: 'voir la sortie',
     type: 'Type',
     races: 'Courses',
@@ -1434,6 +1398,7 @@ export const fr = {
       loadUnit: 'pts',
       sessionsCount: (n: number) => `${n} séance${n > 1 ? 's' : ''}`,
       easyHardRatio: (easy: number, hard: number) => `${easy}/${hard} facile`,
+      easyHardPlanned: (easy: number, hard: number) => `${easy}/${hard} facile prévu`,
       loadPlanned: 'prévu',
     },
     plannedVsRecorded: (planned: string, recorded: string) => `prévu ${planned} · réalisé ${recorded}`,
@@ -1482,9 +1447,6 @@ export const fr = {
     distance: 'Distance',
     pace: 'Allure',
     heartRate: 'Fréquence cardiaque',
-    updatedSession: (title: string) => `Séance future ajustée : ${title}`,
-    cancelledSession: (title: string) => `Séance future annulée : ${title}`,
-    futureSessionsChanged: (count: number) => `${count} séance${count > 1 ? 's' : ''} future${count > 1 ? 's' : ''} replanifiée${count > 1 ? 's' : ''}`,
   },
 
   activityTypes: {

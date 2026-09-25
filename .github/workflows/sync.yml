@@ -2,7 +2,9 @@ name: Sync Garmin Activities
 
 on:
   schedule:
-    - cron: "0 0 * * *"
+    # Off the hour on purpose: scheduled runs on the hour are the ones GitHub
+    # delays most - "0 0" started around 03:05 UTC night after night.
+    - cron: "23 1 * * *"
   workflow_dispatch:
     inputs:
       limit:
@@ -23,12 +25,16 @@ on:
         options: [all, adam, lamiaa]
         default: all
 
+permissions:
+  contents: read
+
 jobs:
   # Which profiles this run covers. A manual dispatch carries options that only
   # ever make sense for one dataset (--force rebuilds every record), so it can
   # target a single profile; the nightly schedule always runs them all.
   profiles:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       matrix: ${{ steps.pick.outputs.matrix }}
     steps:
@@ -73,8 +79,13 @@ jobs:
       RUNOMICS_DATA_DIR: data
 
     steps:
+      # The sync pushes with the data repository's own token, never with
+      # GITHUB_TOKEN, so nothing needs the checkout's credentials afterwards -
+      # and third-party code (garth, pip packages) runs in this job.
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       # Two failure modes worth stopping before Garmin is ever contacted.
       #
@@ -94,6 +105,8 @@ jobs:
           RUNOMICS_DATA_REPO_URL: ${{ secrets.RUNOMICS_DATA_REPO_URL }}
           RUNOMICS_DATA_REPO_TOKEN: ${{ secrets.RUNOMICS_DATA_REPO_TOKEN }}
           GARMIN_SECRET: ${{ secrets.GARMIN_SECRET }}
+          PRIVACY_ZONES: ${{ secrets.PRIVACY_ZONES }}
+          PRIVACY_RADIUS_M: ${{ secrets.PRIVACY_RADIUS_M }}
         run: |
           if [ "$DECLARED_PROFILE" != "${{ matrix.profile }}" ]; then
             echo "::error::Environment '${{ matrix.profile }}' does not declare PROFILE=${{ matrix.profile }} (got '${DECLARED_PROFILE:-unset}')."
@@ -106,6 +119,10 @@ jobs:
           [ -n "$RUNOMICS_DATA_REPO_URL" ]   || MISSING="$MISSING RUNOMICS_DATA_REPO_URL"
           [ -n "$RUNOMICS_DATA_REPO_TOKEN" ] || MISSING="$MISSING RUNOMICS_DATA_REPO_TOKEN"
           [ -n "$GARMIN_SECRET" ]            || MISSING="$MISSING GARMIN_SECRET"
+          # Without these the sync refuses every GPS activity; failing here says
+          # why before Garmin is contacted.
+          [ -n "$PRIVACY_ZONES" ]            || MISSING="$MISSING PRIVACY_ZONES"
+          [ -n "$PRIVACY_RADIUS_M" ]         || MISSING="$MISSING PRIVACY_RADIUS_M"
           if [ -n "$MISSING" ]; then
             echo "::error::Environment '${{ matrix.profile }}' is missing secret(s):$MISSING"
             echo "Every profile syncs into its own private data repository and never"
@@ -114,7 +131,7 @@ jobs:
           fi
 
       - name: Set up Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
 
@@ -125,7 +142,7 @@ jobs:
         run: node scripts/fetch_private_data.mjs data
 
       - name: Restore FIT cache
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .fit-cache
           key: fit-cache-${{ matrix.profile }}-${{ hashFiles('data/activities/**') }}
@@ -133,14 +150,16 @@ jobs:
             fit-cache-${{ matrix.profile }}-
 
       - name: Set up Python
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
           cache: "pip"
           cache-dependency-path: scripts/requirements.txt
 
+      # Hash-locked: this job holds GARMIN_SECRET and the data repository's
+      # write token, so nothing may be installed that the lock did not pin.
       - name: Install Python dependencies
-        run: pip install -r scripts/requirements.txt
+        run: pip install --require-hashes -r scripts/requirements.txt
 
       - name: Install Cloudflare WARP
         timeout-minutes: 5
@@ -207,6 +226,7 @@ jobs:
           GARMIN_OAUTH_CONSUMER_SECRET: ${{ vars.GARMIN_OAUTH_CONSUMER_SECRET }}
           PRIVACY_ZONES: ${{ secrets.PRIVACY_ZONES }}
           PRIVACY_RADIUS_M: ${{ secrets.PRIVACY_RADIUS_M }}
+          PRIVACY_SALT: ${{ secrets.PRIVACY_SALT }}
           SYNC_LIMIT: ${{ inputs.limit }}
           SYNC_DRY_RUN: ${{ inputs.dry_run }}
           SYNC_FORCE: ${{ inputs.force }}
@@ -229,8 +249,9 @@ jobs:
             ARGS+=(--force)
           fi
 
-          # Exit 3 is "some activities failed, the rest are on disk". Failing
-          # the step here would skip the commit below and discard them.
+          # Exit 3 is "some activities or steps failed, everything else is on
+          # disk". Failing the step here would skip the commit below and
+          # discard it.
           set +e
           python scripts/sync.py "${ARGS[@]}"
           STATUS=$?
@@ -238,7 +259,7 @@ jobs:
 
           if [ "$STATUS" -eq 3 ]; then
             echo "partial_failure=true" >> "$GITHUB_OUTPUT"
-            echo "::warning::Some activities failed to sync. Committing the ones that succeeded."
+            echo "::warning::Some activities or steps failed to sync. Committing what succeeded."
           elif [ "$STATUS" -ne 0 ]; then
             exit "$STATUS"
           fi
@@ -251,6 +272,27 @@ jobs:
         if: inputs.dry_run != true
         continue-on-error: true
         run: python scripts/backfill_weather.py
+
+      # sync.py crops only what it writes. This brings routes stored under an
+      # older rule, or an older PRIVACY_* configuration, up to the current one;
+      # it is deterministic and idempotent, so after the first run it changes
+      # nothing.
+      - name: Re-crop stored routes to the privacy zone
+        if: inputs.dry_run != true
+        env:
+          PRIVACY_ZONES: ${{ secrets.PRIVACY_ZONES }}
+          PRIVACY_RADIUS_M: ${{ secrets.PRIVACY_RADIUS_M }}
+          PRIVACY_SALT: ${{ secrets.PRIVACY_SALT }}
+        run: python scripts/migrate_privacy_zone.py
+
+      # Last gate before anything is published: measures every stored point
+      # against the zones as configured, independently of the cropping code.
+      # A failure here skips the commit, the deploy and the checks below.
+      - name: Verify no route comes near a privacy zone
+        env:
+          PRIVACY_ZONES: ${{ secrets.PRIVACY_ZONES }}
+          PRIVACY_RADIUS_M: ${{ secrets.PRIVACY_RADIUS_M }}
+        run: python scripts/verify_privacy_zone.py
 
       - name: Commit updated data
         id: commit
@@ -310,7 +352,8 @@ jobs:
           # Wait for the deployment carrying this run's own sync timestamp.
           DEPLOYED=false
           for i in $(seq 1 24); do
-            LIVE=$(curl -fsS --max-time 20 "$APP_URL/api/internal/health" -H "x-internal-secret: $SECRET" \
+            LIVE=$(printf 'x-internal-secret: %s\n' "$SECRET" \
+              | curl -fsS --max-time 20 "$APP_URL/api/internal/health" -H @- \
               | python -c "import json,sys; print(json.load(sys.stdin).get('lastSyncedAt') or '')" 2>/dev/null || true)
             if [ -n "$EXPECTED_SYNC" ] && [ "$LIVE" = "$EXPECTED_SYNC" ]; then
               DEPLOYED=true
@@ -323,13 +366,25 @@ jobs:
             echo "::warning::App still serving pre-sync data after 6 min (live: ${LIVE:-none}, expected: $EXPECTED_SYNC). Running the checks anyway."
           fi
 
+          # The checks below need Firebase Admin (Firestore and every push) and
+          # Gemini. Name what this deployment lacks, rather than leave a row of 500s
+          # to be read backwards. Health reports names only, never values.
+          MISSING=$(printf 'x-internal-secret: %s\n' "$SECRET" \
+            | curl -fsS --max-time 20 "$APP_URL/api/internal/health" -H @- \
+            | python -c "import json,sys; i=json.load(sys.stdin).get('integrations') or {}; print(' '.join(k for k in ('firebaseAdmin', 'gemini') if i.get(k) is False))" 2>/dev/null || true)
+          if [ -n "$MISSING" ]; then
+            echo "::warning::This deployment has no credentials for: $MISSING. See docs/personal-deployments.md."
+          fi
+
           # No check may take another one down with it. They are independent, and
           # a 504 on one of these used to abort the step under `bash -e` - which
           # is how a slow ai-insights pass silently cancelled the two passes
           # queued behind it. Every endpoint here is idempotent: what a failed
           # call leaves undone, the next run picks up.
+          # The secret goes to curl on stdin (-H @-), never in its argv.
           check() {
-            curl -fsS --max-time "${2:-90}" -X POST "$APP_URL/api/internal/$1" -H "x-internal-secret: $SECRET" \
+            printf 'x-internal-secret: %s\n' "$SECRET" \
+              | curl -fsS --max-time "${2:-90}" -X POST "$APP_URL/api/internal/$1" -H @- \
               || echo "::warning::$1 failed"
             echo
           }
@@ -356,8 +411,26 @@ jobs:
           done
 
       # Last, so a partial sync still reaches the data repository first.
-      - name: Report failed activities
+      - name: Report a partial sync
         if: always() && steps.sync.outputs.partial_failure == 'true'
         run: |
-          echo "::error::sync.py reported failed activities. Whatever synced successfully was committed and deployed; see the 'Run sync' log for the failures."
+          echo "::error::sync.py reported failed activities or steps. Whatever synced successfully was committed and deployed; see the 'Run sync' log for what failed."
           exit 1
+
+      # A failed run used to be a red cross in an Actions tab nobody opens -
+      # two reminders failed every day for over a week that way. Best effort:
+      # if the app itself is what broke, this fails too, and the run is red
+      # either way.
+      - name: Push the failure to the owner's devices
+        if: failure()
+        continue-on-error: true
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}
+          WORKFLOW: ${{ github.workflow }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          jq -n --arg w "$WORKFLOW" --arg u "$RUN_URL" '{workflow: $w, runUrl: $u}' > "$RUNNER_TEMP/workflow-failure.json"
+          printf 'x-internal-secret: %s\ncontent-type: application/json\n' "$SECRET" \
+            | curl -fsS --max-time 20 -X POST "$APP_URL/api/internal/workflow-failure" -H @- \
+                --data @"$RUNNER_TEMP/workflow-failure.json"

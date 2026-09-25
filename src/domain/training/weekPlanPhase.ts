@@ -1,4 +1,4 @@
-import type { PlanPhaseRange, TrainingPlanPhase } from '@/application/usecases/GetTrainingPlan'
+import type { PlanPhaseRange, TrainingPlanPhase } from '@/domain/training/planPhase'
 
 export function weekPlanPhase(dates: string[], ranges: PlanPhaseRange[]): TrainingPlanPhase | null {
   const counts = new Map<TrainingPlanPhase, number>()

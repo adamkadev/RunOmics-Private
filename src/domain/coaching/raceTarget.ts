@@ -49,7 +49,7 @@ export function formatRaceTime(seconds: number): string {
     : `${minutes}:${String(remainder).padStart(2, '0')}`
 }
 
-export function formatRacePace(paceSecPerKm: number): string {
+function formatRacePace(paceSecPerKm: number): string {
   return `${formatRaceTime(paceSecPerKm)}/km`
 }
 

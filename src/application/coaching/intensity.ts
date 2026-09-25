@@ -173,8 +173,16 @@ export function validateDraftIntensity(
   draft: CoachingPlanDraft,
   band: IntensityBand | null,
   availableWeekdays: number[],
+  before?: CoachingPlanDraft,
 ): void {
   if (band === null) return
+
+  // An adaptation, as in validateDraftVolume: only a week the change made
+  // harder is judged. Taking easy running out of a week raises its hard share
+  // without adding a metre of hard running, and refusing that would leave the
+  // heavier week in place. Progression is a demand on a block being written.
+  const previous = new Map(before?.weeks.map((week) => [week.startDate, weekDose(week, band)]))
+  const judged = ({ week, dose }: WeekDose) => before === undefined || hardened(dose, previous.get(week.startDate))
 
   const doses: WeekDose[] = draft.weeks.map((week) => ({
     week,
@@ -189,10 +197,11 @@ export function validateDraftIntensity(
 
   // Before the caps, because a repetition that drifted out of the threshold
   // band trips the interval cap first and reports the wrong problem.
-  driftCheck(doses)
+  driftCheck(doses, judged)
 
-  for (const { week, km, share, dose } of doses) {
-    if (km < MEANINGFUL_WEEK_KM || share === 0) continue
+  for (const entry of doses) {
+    const { week, km, share, dose } = entry
+    if (km < MEANINGFUL_WEEK_KM || share === 0 || !judged(entry)) continue
     const thresholdKm = round(dose.thresholdMeters / 1_000)
     const intervalKm = round(dose.intervalMeters / 1_000)
     // Scaled to the week the session really sits in, but never past the
@@ -211,7 +220,18 @@ export function validateDraftIntensity(
     }
   }
 
-  progressionCheck(doses)
+  if (before === undefined) progressionCheck(doses)
+}
+
+/** More hard running than the same week held before, or a faster repetition. */
+function hardened(dose: WorkoutDose, prior: WorkoutDose | undefined): boolean {
+  if (prior === undefined) return true
+  if (dose.thresholdMeters > prior.thresholdMeters || dose.intervalMeters > prior.intervalMeters) return true
+  for (const [type, pace] of dose.fastestByType) {
+    const seen = prior.fastestByType.get(type)
+    if (seen === undefined || pace < seen) return true
+  }
+  return false
 }
 
 /**
@@ -220,16 +240,17 @@ export function validateDraftIntensity(
  * sessions. Measured against the block's first prescription rather than the
  * week before, so three tolerable steps cannot add up to an intolerable drift.
  */
-function driftCheck(doses: WeekDose[]): void {
+function driftCheck(doses: WeekDose[], judged: (entry: WeekDose) => boolean): void {
   const baselines = new Map<CoachingWorkoutType, { pace: number; startDate: string }>()
-  for (const { week, dose } of doses) {
+  for (const entry of doses) {
+    const { week, dose } = entry
     for (const [type, pace] of dose.fastestByType) {
       const baseline = baselines.get(type)
       if (baseline === undefined) {
         baselines.set(type, { pace, startDate: week.startDate })
         continue
       }
-      if (baseline.pace - pace > DRIFT_SEC[type]!) {
+      if (judged(entry) && baseline.pace - pace > DRIFT_SEC[type]!) {
         throw new Error(`Week ${week.startDate} prescribes ${type} at ${pace} s/km against ${baseline.pace} s/km in the week of ${baseline.startDate}; hold the pace across the block and progress by repetitions`)
       }
     }

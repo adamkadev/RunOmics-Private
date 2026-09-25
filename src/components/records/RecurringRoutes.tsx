@@ -9,6 +9,7 @@ import { t } from '@/i18n'
 
 interface Props {
   routes: RecurringRoute[]
+  thisYear: number
 }
 
 const OUTLINE_BOX = 100
@@ -19,8 +20,7 @@ const TRAIL_KEY_COLOR = 'var(--subtle-2)'
  * a day this year, a month and year before that. "Best" is dropped with it -
  * a pace beside a route already reads as the fastest one.
  */
-function compactDate(isoDate: string): string {
-  const thisYear = new Date().getFullYear()
+function compactDate(isoDate: string, thisYear: number): string {
   return Number(isoDate.slice(0, 4)) === thisYear
     ? formatDate(isoDate, { style: 'bare', year: 'never' })
     : formatMonthShortYear(isoDate)
@@ -97,7 +97,7 @@ function useStartPlaces(routes: RecurringRoute[]): Record<string, string> {
   return places
 }
 
-export function RecurringRoutes({ routes }: Props) {
+export function RecurringRoutes({ routes, thisYear }: Props) {
   const places = useStartPlaces(routes)
 
   if (routes.length === 0) return null
@@ -136,7 +136,7 @@ export function RecurringRoutes({ routes }: Props) {
                 className="mt-0.5 block truncate text-caption text-accent-text"
               >
                 {places[route.id] && <span className="text-subtle">{places[route.id]} · </span>}
-                {formatPace(route.bestPaceSecPerKm)} · {compactDate(route.bestDate)}
+                {formatPace(route.bestPaceSecPerKm)} · {compactDate(route.bestDate, thisYear)}
               </Link>
             </div>
 

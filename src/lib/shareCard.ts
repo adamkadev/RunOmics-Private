@@ -1,4 +1,4 @@
-import type { Activity } from '@/domain/activity/types'
+import type { ShareActivity } from '@/lib/shareCardStats'
 import type { AccentId } from '@/lib/accent'
 import { ACCENT_RGB, W, H, type ShareDesign, type ThemeMode } from '@/lib/shareCardPalette'
 import { drawTheme, drawBranding, drawDataOverlay, drawRouteOverlay } from '@/lib/shareCardDraw'
@@ -12,7 +12,7 @@ export {
 export { loadImage, drawTheme, drawBranding, drawDataOverlay } from '@/lib/shareCardDraw'
 
 export interface RenderOptions {
-  activity: Activity
+  activity: ShareActivity
   design: ShareDesign
   accent: AccentId
   theme: ThemeMode
@@ -61,6 +61,6 @@ export function renderShareCard(canvas: HTMLCanvasElement, options: RenderOption
   if (showStats) drawDataOverlay(ctx, W, H, dark, r, g, b, activity, design)
 }
 
-export function shareCardFileName(activity: Activity, design: ShareDesign): string {
+export function shareCardFileName(activity: ShareActivity, design: ShareDesign): string {
   return `runomics-${activity.date}-${design}.png`
 }

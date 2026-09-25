@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
@@ -202,7 +202,7 @@ def map_activity(
     avg_hr_raw = (parsed.avg_heart_rate if parsed else None) or api("averageHR", "avgHr")
     avg_heart_rate: int | None = int(avg_hr_raw) if avg_hr_raw else None
 
-    route = crop_privacy_zone(parsed.route) if parsed and parsed.route else None
+    route = crop_privacy_zone(parsed.route, activity_id) if parsed and parsed.route else None
 
     elevation_gain: float | None = None
     if parsed and parsed.elevation_gain_m > 0:
@@ -279,7 +279,9 @@ def _parse_datetime(raw: str) -> datetime:
             return datetime.strptime(raw, fmt)
         except (ValueError, TypeError):
             pass
-    return datetime(1970, 1, 1)
+    # Not a 1970-01-01 fallback, which filed a real run under a month no
+    # view reads: the activity fails instead, and the next run fetches it again.
+    raise ValueError(f"unreadable activity start time {raw!r}")
 
 
 def _decimate_list(items: list, max_points: int) -> list:

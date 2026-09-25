@@ -1,3 +1,4 @@
+import type { Activity } from '@/domain/activity/types'
 import { SHOE_DOT_RAMP } from '@/lib/colors'
 
 export interface ShoeInfo {
@@ -36,4 +37,23 @@ export function buildShoeRegistry(records: ShoeRecord[]): Record<string, ShoeInf
     }
   })
   return registry
+}
+
+export type ShoeTypeBucket = 'base' | 'tempo' | 'intervals'
+
+export interface ShoeDetail {
+  gearId: string
+  name: string
+  brand: string
+  maxKm: number
+  alertThresholdKm: number
+  retired: boolean
+  totalKm: number
+  wearPercent: number
+  firstUsedDate: string | null
+  kmPerWeek: number
+  avgPaceSecPerKm: number | null
+  avgHeartRate: number | null
+  typeShare: Record<ShoeTypeBucket, number>
+  activities: Activity[]
 }

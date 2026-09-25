@@ -1,3 +1,4 @@
+import { DAY_MS } from '@/lib/calendarDate'
 import ExcelJS from 'exceljs'
 import type { Activity, PlannedWorkout } from '@/domain/activity/types'
 import type { AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
@@ -13,7 +14,7 @@ import type { Vo2maxSamples } from '@/infrastructure/repositories/JsonVo2maxHist
 import { aerobicDecoupling } from '@/domain/activity/decoupling'
 import { sessionExecution } from '@/domain/activity/sessionExecution'
 import { trimp, DEFAULT_HR_BOUNDS, type HrBounds } from '@/domain/training/trimp'
-import { ATL_DAYS, CTL_DAYS } from '@/domain/training/taper'
+import { loadSeries } from '@/domain/training/loadSeries'
 import { round } from '@/lib/math'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getAthleteHistory } from '@/infrastructure/repositories/JsonAthleteHistoryRepository'
@@ -34,7 +35,6 @@ export const TRAINING_WORKBOOK_MIME =
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
 const SCHEMA_VERSION = '1.0'
-const DAY_MS = 86_400_000
 const HEADER_FILL = '17324D'
 const HEADER_TEXT = 'FFFFFF'
 const ACCENT = '37B6A5'
@@ -213,14 +213,8 @@ function buildLoadSeries(activities: Activity[], through: string, hrBounds: HrBo
   const series = new Map<string, { trimp: number; ctl: number; atl: number; tsb: number }>()
   if (!first) return series
 
-  let ctl = 0
-  let atl = 0
-  for (const date of dateRange(first, through)) {
-    const load = daily.get(date) ?? 0
-    const tsb = ctl - atl
-    ctl += (load - ctl) / CTL_DAYS
-    atl += (load - atl) / ATL_DAYS
-    series.set(date, { trimp: round(load, 1), ctl: round(ctl, 1), atl: round(atl, 1), tsb: round(tsb, 1) })
+  for (const [date, day] of loadSeries(daily, first, through)) {
+    series.set(date, { trimp: round(day.load, 1), ctl: round(day.ctl, 1), atl: round(day.atl, 1), tsb: round(day.tsb, 1) })
   }
   return series
 }

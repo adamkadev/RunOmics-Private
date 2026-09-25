@@ -4,17 +4,30 @@ on:
   push:
     branches: [main]
   pull_request:
+  # See ci.yml: lets a branch, or security-autofix's branch, be checked
+  # without a pull request.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   e2e:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
           cache: "npm"
@@ -22,15 +35,32 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+      # The headless shell only - the one browser the suite launches - and no
+      # --with-deps: the runner image ships Google Chrome, so Chromium's
+      # libraries are already there, and the fonts and xvfb that apt added
+      # took about 57s of this step's 69s. A library the image ever drops
+      # fails the launch loudly, by name.
+      - name: Install Playwright's Chromium
+        run: npx playwright install --only-shell chromium
+
+      # Turbopack's persistent cache: a build with unchanged dependencies took
+      # 13s instead of 39s locally. Keyed per commit so every run saves its
+      # own, restored from the newest one built on the same lock file (new
+      # dependencies invalidate it anyway).
+      - name: Restore the Next.js build cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
 
       - name: Run Playwright tests
         run: npm run test:e2e
 
       - name: Upload Playwright report
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: playwright-report
           path: playwright-report/

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { ACTIVITY_TYPE_CONFIG } from '@/domain/activity/types'
-import type { ActivityType } from '@/domain/activity/types'
+import { ACTIVITY_TYPES, type ActivityType } from '@/domain/activity/types'
+import { ACTIVITY_TYPE_STYLE } from '@/components/activity/activityTypeStyle'
 import { CHART_COLORS, TRAINING_PLAN_PHASE_COLORS, TRAINING_STATUS_COLORS } from '@/lib/colors'
 import { ACCENT_SWATCHES, ACCENT_SWATCHES_LIGHT } from '@/lib/accent'
 import { HUE, rgbTriplet } from '@/lib/palette'
@@ -34,8 +34,8 @@ function hueFamily(hex: string): string {
   return bands.find(([, upper]) => angle < upper)?.[0] ?? 'red'
 }
 
-const TYPES = Object.keys(ACTIVITY_TYPE_CONFIG) as ActivityType[]
-const typeHue = (type: ActivityType) => ACTIVITY_TYPE_CONFIG[type].chartColor
+const TYPES = ACTIVITY_TYPES
+const typeHue = (type: ActivityType) => ACTIVITY_TYPE_STYLE[type].chartColor
 
 describe('activity type hue budget', () => {
   it('spends at most five hue families across the seven types', () => {

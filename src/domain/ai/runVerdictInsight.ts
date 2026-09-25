@@ -1,3 +1,4 @@
+import { DAY_MS } from '@/lib/calendarDate'
 import type { Activity, PlannedWorkout } from '@/domain/activity/types'
 import type { VerdictTone } from '@/domain/activity/runVerdict'
 import { expectedRpe, runVerdictTone } from '@/domain/activity/runVerdict'
@@ -20,7 +21,7 @@ const VERDICT_HORIZON_DAYS = 90
 const FRESH_VERDICT_DAYS = 3
 
 function daysSince(date: string, now: Date): number {
-  return (now.getTime() - new Date(date.slice(0, 10) + 'T00:00:00').getTime()) / 86_400_000
+  return (now.getTime() - new Date(date.slice(0, 10) + 'T00:00:00').getTime()) / DAY_MS
 }
 
 export function deservesVerdict(

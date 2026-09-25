@@ -22,7 +22,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
+import httpx
+
 from garmin.client import GarminAPIError, GarminAuthError, GarminClient
+from garmin.retry import retry_transient
 from data_directory import get_data_dir
 from processing.garmin_workout import (
     build_workout_steps,
@@ -40,11 +43,20 @@ from processing.planned_workout_type import (
 from repository.json_store import PlannedWorkoutStore
 
 _RATE_LIMIT_PAUSE = 1.0
-_RETRY_PAUSE = 60.0
 _WINDOW_PAST_DAYS = 7
 _WINDOW_FUTURE_DAYS = 90
 _DEFAULT_SCHEDULED_TIME = "Evening"
 _SCHEDULED_TIME_BUCKETS = ("Night", "Morning", "Afternoon", "Evening")
+
+
+class _Unresolved(dict):
+    """A calendar item whose workout detail could not be fetched: its date and
+    the calendar's own title (possibly empty), and nothing else.
+
+    Reported rather than dropped, so the stale-entry pruning cannot read the
+    date as free; write_planned_workouts keeps an entry already on file for
+    that date over it, and writes it as a stub only where nothing is.
+    """
 
 
 def _bucket_scheduled_time(value: str) -> str:
@@ -98,7 +110,8 @@ def main() -> int:
             dist = f"{p['distanceM'] / 1000:.1f} km" if p.get("distanceM") else ""
             dur = f"{p['durationSecs'] // 60} min" if p.get("durationSecs") else ""
             extra = " · ".join(filter(None, [dist, dur]))
-            print(f"  {p['date']}  {p['name']}" + (f"  ({extra})" if extra else ""))
+            name = f"{p['name']} (detail unavailable)" if isinstance(p, _Unresolved) else p["name"]
+            print(f"  {p['date']}  {name}" + (f"  ({extra})" if extra else ""))
         return 0
 
     write_planned_workouts(planned, stale_candidates=stale_candidates)
@@ -133,7 +146,18 @@ def write_planned_workouts(
     """
     store = store if store is not None else PlannedWorkoutStore()
 
+    written = kept = 0
     for entry in planned:
+        if isinstance(entry, _Unresolved):
+            # The detail did not load this time. What is on file is the last
+            # complete reading of that date; cut down to a date and a name it
+            # would stay that way once the date leaves the look-back window.
+            if store.get(entry["date"]) is not None:
+                kept += 1
+                continue
+            if not entry["name"]:
+                continue
+        written += 1
         prior = store.get(entry["date"]) or {}
         # A `type` already on the entry came from Garmin's own training-effect
         # label (Garmin Coach) - authoritative, so neither the prior value nor
@@ -151,7 +175,9 @@ def write_planned_workouts(
             pruned += 1
 
     store.save()
-    summary = f"  {len(planned)} planned workout(s) upserted ({store.count()} total in store)"
+    summary = f"  {written} planned workout(s) upserted ({store.count()} total in store)"
+    if kept:
+        summary += f", {kept} kept as stored (detail unavailable)"
     if pruned:
         summary += f", {pruned} stale entr{'y' if pruned == 1 else 'ies'} removed"
     print(summary)
@@ -195,11 +221,16 @@ def _load_easy_pace_sec_per_km(data_dir: Path | None = None) -> float:
     athlete_path = (data_dir or get_data_dir()) / "athlete.json"
     if athlete_path.exists():
         try:
-            threshold = json.loads(athlete_path.read_text()).get("thresholdPaceSecPerKm")
+            threshold = json.loads(athlete_path.read_text(encoding="utf-8")).get("thresholdPaceSecPerKm")
             if threshold:
                 return threshold * _EASY_PACE_MULT_MAX
-        except Exception:
-            pass
+        except Exception as exc:
+            # Only an estimate hangs on it, and nothing here writes the file,
+            # so falling back is safe - but not silently.
+            print(
+                f"  Warning: {athlete_path} could not be read ({type(exc).__name__}: {exc}); "
+                f"estimating distances at the default easy pace."
+            )
     return _DEFAULT_EASY_PACE_SEC_PER_KM
 
 
@@ -271,10 +302,8 @@ def _collect_scheduled(
 
     for year, month in months:
         try:
-            data = _retry_on_429(
-                lambda y=year, m=month: client.get_calendar_month(y, m)
-            )
-        except GarminAPIError as exc:
+            data = retry_transient(client.get_calendar_month, year, month)
+        except (GarminAPIError, httpx.HTTPError) as exc:
             print(f"  Warning: calendar {year}-{month:02d} failed: {exc}")
             continue
 
@@ -343,20 +372,18 @@ def _build_entries(
                 else client.get_workout_detail
             )
             try:
-                details_cache[workout_id] = _retry_on_429(
-                    lambda wid=workout_id, f=fetch: f(wid)
-                )
+                details_cache[workout_id] = retry_transient(fetch, workout_id)
                 time.sleep(_RATE_LIMIT_PAUSE)
-            except GarminAPIError as exc:
+            except (GarminAPIError, httpx.HTTPError) as exc:
                 print(f"  Warning: workout {workout_id} detail failed: {exc}")
                 details_cache[workout_id] = None
 
         detail = details_cache[workout_id]
         if detail is None:
-            # No structured detail available - still show the session by
-            # name/date rather than dropping it entirely.
-            if fallback_title:
-                planned.append({"date": sched_date, "name": fallback_title})
+            # No structured detail available - reported by name and date, so
+            # the session is not dropped, and so the date is not mistaken for
+            # a free one (see _Unresolved).
+            planned.append(_Unresolved(date=sched_date, name=fallback_title))
             continue
 
         # Garmin Coach schedules rest days as calendar items like any other
@@ -429,17 +456,6 @@ def _build_entries(
 
     planned.sort(key=lambda x: x["date"])
     return planned
-
-
-def _retry_on_429(fn):
-    try:
-        return fn()
-    except GarminAPIError as exc:
-        if exc.status_code != 429:
-            raise
-        print(f"  Rate limited, waiting {_RETRY_PAUSE}s…", flush=True)
-        time.sleep(_RETRY_PAUSE)
-        return fn()
 
 
 def _parse_args() -> argparse.Namespace:

@@ -7,12 +7,16 @@ import type { Activity } from '@/domain/activity/types'
 
 const TRACKED_WINDOW = 60
 
-export async function getNewActivities(): Promise<Activity[]> {
+/**
+ * Nothing is stored until `commit()`: the caller sends the pushes first and
+ * commits once they are out, so a failed push is offered again next run
+ * instead of being marked as sent.
+ */
+export async function getNewActivities(): Promise<{ newActivities: Activity[]; commit: () => Promise<void> }> {
   const activities = getAllActivities().slice(0, TRACKED_WINDOW)
   const lastState = await getLastActivitySyncState()
 
   const newActivities = lastState ? activities.filter((a) => !lastState.knownIds.includes(a.id)) : []
 
-  await saveLastActivitySyncState({ knownIds: activities.map((a) => a.id) })
-  return newActivities
+  return { newActivities, commit: () => saveLastActivitySyncState({ knownIds: activities.map((a) => a.id) }) }
 }

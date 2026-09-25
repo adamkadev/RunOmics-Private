@@ -7,13 +7,14 @@ import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { PlanSpan } from '@/domain/training/planProgress'
-import type { PrescriptionView, CoachingOverview } from '@/application/coaching/GetCoachingView'
+import type { PlanCoachingView, PlanPrescriptionView } from './planCoachingView'
 import { WeekView } from './WeekView'
 import { MonthView } from './MonthView'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
 import { useSwipeNavigation } from '@/lib/useSwipeNavigation'
+import { useToday } from '@/lib/useToday'
 import { formatDate } from '@/lib/formatters'
-import { cn } from '@/lib/utils'
+import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { t } from '@/i18n'
 
 interface Props {
@@ -24,18 +25,37 @@ interface Props {
   nextRace: UpcomingRace | null
   trainingZones: TrainingZonesData | null
   planSpan: PlanSpan | null
-  coaching: CoachingOverview | null
+  coaching: PlanCoachingView | null
+  /** The date the page was prerendered on; see useToday. */
+  today: string
 }
 
 type ViewMode = 'week' | 'month'
+const VIEW_MODES = ['week', 'month'] as const
 
-export function PlanClient({ activities, plannedWorkouts, hrBounds, planPhaseRanges, nextRace, trainingZones, planSpan, coaching }: Props) {
-  const now = new Date()
-  const today = isoDate(now)
+export function PlanClient({ activities, plannedWorkouts, hrBounds, planPhaseRanges, nextRace, trainingZones, planSpan, coaching, today: serverToday }: Props) {
+  const today = useToday(serverToday)
+  const now = new Date(`${today}T00:00:00`)
   const [mode, setMode] = useState<ViewMode>('week')
+  const modeTabs = useSegmentedTabs({ ids: VIEW_MODES, value: mode, onChange: setMode })
   const [weekStart, setWeekStart] = useState(() => startOfWeek(now))
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth())
+
+  // The page hydrates on the date it was built, and the day can roll over
+  // after that - at midnight, or because the cached page is from yesterday. A
+  // view still on the week or month that was current follows the new one; a
+  // view the reader paged to stays put.
+  const [shownToday, setShownToday] = useState(today)
+  if (shownToday !== today) {
+    const was = new Date(`${shownToday}T00:00:00`)
+    setShownToday(today)
+    if (isoDate(weekStart) === isoDate(startOfWeek(was))) setWeekStart(startOfWeek(now))
+    if (year === was.getFullYear() && month === was.getMonth()) {
+      setYear(now.getFullYear())
+      setMonth(now.getMonth())
+    }
+  }
   const [animKey, setAnimKey] = useState(0)
   const [direction, setDirection] = useState<'forward' | 'backward'>('forward')
   const [focusDate, setFocusDate] = useState<string | null>(null)
@@ -57,7 +77,7 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, planPhaseRan
   }, [plannedWorkouts])
 
   const byDateCoach = useMemo(() => {
-    const map = new Map<string, PrescriptionView[]>()
+    const map = new Map<string, PlanPrescriptionView[]>()
     for (const view of coaching?.workouts ?? []) map.set(view.prescription.date, [...(map.get(view.prescription.date) ?? []), view])
     return map
   }, [coaching])
@@ -124,32 +144,21 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, planPhaseRan
             )}
           </div>
 
-          <div
-            role="tablist"
-            aria-label={t.pages.plan.title}
-            className="flex shrink-0 gap-1 rounded-full border border-foreground/10 bg-foreground/[0.07] p-1"
-          >
-            {(['week', 'month'] as const).map((m) => (
-              <button
-                key={m}
-                type="button"
-                role="tab"
-                aria-selected={mode === m}
-                onClick={() => setMode(m)}
-                className={cn(
-                  'whitespace-nowrap rounded-full px-5 py-2 text-sm font-semibold transition-colors',
-                  mode === m ? 'bg-accent text-accent-foreground' : 'text-subtle hover:text-foreground'
-                )}
-              >
-                {m === 'week' ? t.plan.switcher.week : t.plan.switcher.month}
-              </button>
-            ))}
-          </div>
+          <SegmentedTabs
+            tabs={modeTabs}
+            items={[
+              { id: 'week', label: t.plan.switcher.week },
+              { id: 'month', label: t.plan.switcher.month },
+            ]}
+            label={t.pages.plan.title}
+            tabClassName="px-5 py-2 text-sm"
+          />
         </div>
       </div>
 
       <div
         key={animKey}
+        {...modeTabs.panelProps}
         className="overflow-hidden"
         style={{ animation: `var(--animate-cal-${direction})` }}
         {...swipeHandlers}

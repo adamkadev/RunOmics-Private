@@ -1,6 +1,7 @@
+import { DAY_MS } from '@/lib/calendarDate'
 import type { Activity } from '@/domain/activity/types'
 
-const DAY = 86_400_000
+const DAY = DAY_MS
 /** A year of Mondays: enough to show a season's shape without bloating the prompt. */
 const WEEKS_IN_SERIES = 52
 const day = (date: string) => Math.floor(Date.parse(`${date.slice(0, 10)}T00:00:00Z`) / DAY)

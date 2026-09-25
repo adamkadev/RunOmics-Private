@@ -25,6 +25,8 @@ function signedIn(email: string, claims: Record<string, unknown> = {}): MockUser
   return { email, getIdTokenResult: () => Promise.resolve({ claims }) }
 }
 
+vi.mock('@/lib/firebaseConfig', () => ({ isClientFirebaseConfigured: true }))
+
 vi.mock('@/lib/firebase', () => ({
   isClientFirebaseConfigured: true,
   getClientAuth: () => ({}),

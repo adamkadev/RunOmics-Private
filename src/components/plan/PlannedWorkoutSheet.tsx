@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import type { ActivityType } from '@/domain/activity/types'
-import { ACTIVITY_TYPE_CONFIG, ACTIVITY_TYPE_ICONS } from '@/domain/activity/types'
+import { activityTypeStyle } from '@/components/activity/activityTypeStyle'
 import { Pill } from '@/components/ui/Pill'
 import { StatusPill } from '@/components/ui/StatusPill'
 import { formatPlanDuration, type PlanWorkoutView } from './planWorkoutView'
@@ -35,10 +35,10 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
   const durationLabel = formatPlanDuration(workout.duration)
   const distanceKm = workout.distanceM ? (workout.distanceM / 1000).toFixed(1) : null
   const structure = workout.structure
-  const typeColor = workout.type
-    ? ACTIVITY_TYPE_CONFIG[workout.type as ActivityType].chartColor
-    : null
-  const WorkoutIcon = ACTIVITY_TYPE_ICONS[workout.type as ActivityType]
+  const typeColor = workout.type ? activityTypeStyle(workout.type).chartColor : null
+  // A Garmin plan can carry no type, or one this app does not know yet: the
+  // icon lookup used to come back undefined and take the sheet down with it.
+  const WorkoutIcon = activityTypeStyle(workout.type).icon
 
   return createPortal(
     <div

@@ -1,27 +1,12 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getShoeRegistry } from '@/infrastructure/repositories/JsonShoeRepository'
-import type { Activity, ActivityType } from '@/domain/activity/types'
-import { kmPerWeek as computeKmPerWeek } from '@/domain/shoe/wearStatus'
+import type { ActivityType } from '@/domain/activity/types'
+import { kmPerWeek as computeKmPerWeek, wearPercent } from '@/domain/shoe/wearStatus'
 import { round } from '@/lib/math'
+import type { ShoeTypeBucket, ShoeDetail } from '@/domain/shoe/types'
 
-export type ShoeTypeBucket = 'base' | 'tempo' | 'intervals'
-
-export interface ShoeDetail {
-  gearId: string
-  name: string
-  brand: string
-  maxKm: number
-  alertThresholdKm: number
-  retired: boolean
-  totalKm: number
-  wearPercent: number
-  firstUsedDate: string | null
-  kmPerWeek: number
-  avgPaceSecPerKm: number | null
-  avgHeartRate: number | null
-  typeShare: Record<ShoeTypeBucket, number>
-  activities: Activity[]
-}
+// Moved to the domain; re-exported so every existing importer keeps working.
+export type { ShoeTypeBucket, ShoeDetail } from '@/domain/shoe/types'
 
 function mean(values: (number | null)[]): number | null {
   const present = values.filter((v): v is number => v != null)
@@ -79,7 +64,7 @@ export function getShoeDetail(gearId: string): ShoeDetail | null {
     alertThresholdKm: registered.alertThresholdKm,
     retired: registered.retired,
     totalKm,
-    wearPercent: registered.retired ? 100 : Math.min(100, round((totalKm / registered.maxKm) * 100, 0)),
+    wearPercent: wearPercent({ totalKm, maxKm: registered.maxKm, retired: registered.retired }),
     firstUsedDate,
     kmPerWeek,
     avgPaceSecPerKm: avgPaceSecPerKm == null ? null : Math.round(avgPaceSecPerKm),

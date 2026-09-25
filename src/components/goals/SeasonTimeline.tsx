@@ -1,5 +1,6 @@
 'use client'
 
+import { DAY_MS } from '@/lib/calendarDate'
 import { Check } from 'lucide-react'
 import { SectionDivider } from '@/components/ui/SectionLabel'
 import type { GoalTarget, YearData } from '@/application/usecases/GetGoalsData'
@@ -8,7 +9,7 @@ import { formatCountdown, formatDate, formatDuration } from '@/lib/formatters'
 import { STATUS } from '@/lib/statusColors'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
-import { shortDist } from './YearView'
+import { shortDist } from './shortDistance'
 
 interface TimelineEntry {
   distance: string
@@ -43,7 +44,7 @@ function isPlaceholderRaceName(distance: string, name: string): boolean {
   return normalize(name) === normalize(distance)
 }
 
-export function SeasonTimeline({ yearData }: { yearData: YearData }) {
+export function SeasonTimeline({ yearData, today }: { yearData: YearData; today: string }) {
   const { goals, pbs, upcomingRaces, nextRaceSpotlight, predictions } = yearData
   const s = t.goals
   if (!goals) return null
@@ -57,8 +58,6 @@ export function SeasonTimeline({ yearData }: { yearData: YearData }) {
     ...extraDistances.map((distance) => ({ distance, targetSeconds: null })),
   ]
   if (allTargets.length === 0) return null
-
-  const today = new Date().toISOString().slice(0, 10)
 
   const entries = allTargets
     .map((target): TimelineEntry => {
@@ -78,7 +77,7 @@ export function SeasonTimeline({ yearData }: { yearData: YearData }) {
       const daysUntil = isSpotlight
         ? nextRaceSpotlight!.daysUntil
         : otherRace
-          ? Math.round((new Date(otherRace.date + 'T00:00:00').getTime() - new Date(today + 'T00:00:00').getTime()) / 86_400_000)
+          ? Math.round((new Date(otherRace.date + 'T00:00:00').getTime() - new Date(today + 'T00:00:00').getTime()) / DAY_MS)
           : null
 
       if (scheduledRace) {

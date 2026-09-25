@@ -28,6 +28,8 @@ function signedIn(email: string, claims: Record<string, unknown> = {}): MockUser
   }
 }
 
+vi.mock('@/lib/firebaseConfig', () => ({ isClientFirebaseConfigured: true }))
+
 vi.mock('@/lib/firebase', () => ({
   isClientFirebaseConfigured: true,
   getClientAuth: () => ({}),
@@ -100,13 +102,18 @@ describe('SettingsClient owner gate', () => {
   })
 
   it('shows the loading state until the claim resolves', async () => {
-    resolveClaims = () => {}
+    const notAskedYet = () => {}
+    resolveClaims = notAskedYet
     mockUser = signedIn(OWNER_EMAIL, { owner: true })
     const { container } = renderSettings()
 
     expect(container.querySelector('.animate-spin')).not.toBeNull()
     expect(screen.queryByText(t.settings.auth.accessDenied)).not.toBeInTheDocument()
 
+    // The claim is only asked for once the auth SDK has loaded, which is now
+    // after mount rather than with the page.
+    await vi.waitFor(() => expect(resolveClaims).not.toBe(notAskedYet))
+    expect(container.querySelector('.animate-spin')).not.toBeNull()
     resolveClaims!()
     expect(await screen.findByTestId('notifications-form')).toBeInTheDocument()
   })

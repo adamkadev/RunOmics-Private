@@ -1,4 +1,5 @@
-import type { TrainingStatusType } from '@/application/usecases/GetTrainingStatus'
+import { DAY_MS } from '@/lib/calendarDate'
+import type { TrainingStatusType } from '@/domain/training/status'
 
 export interface TrainingStatusSegment {
   status: TrainingStatusType
@@ -30,5 +31,5 @@ export function buildSegments(
 
 function isNextDay(previous: string, current: string): boolean {
   const gap = new Date(current + 'T00:00:00').getTime() - new Date(previous + 'T00:00:00').getTime()
-  return gap === 86_400_000
+  return gap === DAY_MS
 }

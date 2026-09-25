@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 
 test('plan week view renders', async ({ page }) => {
   await page.goto('/plan')
@@ -12,5 +12,4 @@ test('plan week view renders', async ({ page }) => {
   await expect(page.getByRole('tab', { name: 'Month' })).toHaveAttribute('aria-selected', 'false')
   await expect(page.getByText('Load', { exact: true })).toBeVisible()
 
-  await expect(page.locator('[data-nextjs-dialog]')).toHaveCount(0)
 })

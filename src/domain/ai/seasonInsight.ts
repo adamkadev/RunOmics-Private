@@ -1,4 +1,4 @@
-import type { SeasonHeadlineData } from '@/application/usecases/GetSeasonHeadline'
+import type { SeasonHeadlineData } from '@/domain/training/seasonHeadline'
 import { insightHash } from './insightHash'
 import { avoidClause, systemInstruction } from './prompt'
 

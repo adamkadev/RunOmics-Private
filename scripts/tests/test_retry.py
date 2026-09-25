@@ -7,9 +7,30 @@ from garmin.retry import retry_transient
 
 
 @pytest.fixture(autouse=True)
-def no_sleep(monkeypatch):
-    """Backoff pauses are real seconds - skip them in tests."""
-    monkeypatch.setattr(retry_mod.time, "sleep", lambda s: None)
+def pauses(monkeypatch):
+    """Backoff pauses are real seconds - record them instead of waiting."""
+    taken: list[float] = []
+    monkeypatch.setattr(retry_mod.time, "sleep", taken.append)
+    return taken
+
+
+def test_passes_arguments_through():
+    # So a call inside a loop needs no closure over the loop variable.
+    assert retry_transient(lambda a, *, b: (a, b), 1, b=2) == (1, 2)
+
+
+@pytest.mark.parametrize(
+    "error,expected",
+    [(GarminAPIError(503, "url"), [2.0, 8.0, 32.0]), (GarminAPIError(429, "url"), [60.0, 60.0, 60.0])],
+    ids=["5xx backs off", "429 waits out the rate limit"],
+)
+def test_the_backoff_is_bounded(pauses, error, expected):
+    def failing():
+        raise error
+
+    with pytest.raises(GarminAPIError):
+        retry_transient(failing)
+    assert pauses == expected
 
 
 def test_retries_429_until_success():

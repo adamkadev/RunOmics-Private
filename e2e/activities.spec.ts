@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 
 test('activities list renders and links into a detail page', async ({ page }) => {
   await page.goto('/activities')
@@ -14,7 +14,6 @@ test('activities list renders and links into a detail page', async ({ page }) =>
 
   await expect(page.locator('h1')).toBeVisible()
   await expect(page.getByText('Run Verdict', { exact: true })).toBeAttached()
-  await expect(page.locator('[data-nextjs-dialog]')).toHaveCount(0)
 })
 
 test('activities list search narrows results', async ({ page }) => {

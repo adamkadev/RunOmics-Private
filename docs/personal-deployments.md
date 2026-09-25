@@ -169,7 +169,8 @@ Under **Settings → Environments**, create an environment named after the profi
 | `APP_URL` | her Vercel domain, no trailing slash |
 | `INTERNAL_NOTIFY_SECRET` | must match the Vercel value from step 5 |
 | `VERCEL_DEPLOY_HOOK_URL` | step 5 |
-| `PRIVACY_ZONES`, `PRIVACY_RADIUS_M` | optional, per athlete |
+| `PRIVACY_ZONES`, `PRIVACY_RADIUS_M` | required, per athlete - the sync refuses to write a GPS route without them |
+| `PRIVACY_SALT` | optional but recommended: a long random string, so the zone's hidden offsets cannot be reproduced from the coordinates alone (see `scripts/processing/privacy.py`) |
 
 Add one environment **variable** as well - `PROFILE`, set to the environment's own
 name. Naming an environment does not hide the repository-level secrets: an

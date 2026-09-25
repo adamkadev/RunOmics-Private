@@ -3,7 +3,7 @@ import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepo
 import { getAllPlannedWorkouts } from '@/infrastructure/repositories/JsonPlannedWorkoutRepository'
 import { getRecords } from './GetRecords'
 import { computeWeekActivityDays } from './GetDashboardData'
-import { isoWeekNumber, startOfWeek, addDays, isoDate } from '@/lib/calendarDate'
+import { DAY_MS, isoWeekNumber, startOfWeek, addDays, isoDate } from '@/lib/calendarDate'
 import { formatDistance, formatDuration, formatKm } from '@/lib/formatters'
 import { t } from '@/i18n'
 
@@ -138,7 +138,7 @@ export function longestWeekStreak(activities: Activity[]): number {
   let run = 0
   let prev: string | null = null
   for (const day of sorted) {
-    const diffDays = prev ? Math.round((new Date(day + 'T00:00:00').getTime() - new Date(prev + 'T00:00:00').getTime()) / 86_400_000) : null
+    const diffDays = prev ? Math.round((new Date(day + 'T00:00:00').getTime() - new Date(prev + 'T00:00:00').getTime()) / DAY_MS) : null
     run = diffDays === 7 ? run + 1 : 1
     if (run > longest) longest = run
     prev = day

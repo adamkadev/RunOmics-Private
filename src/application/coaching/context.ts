@@ -1,3 +1,5 @@
+import { DAY_MS } from '@/lib/calendarDate'
+import 'server-only'
 import { trainingHistory, isRunningActivity, type TrainingHistory } from '@/domain/training/trainingHistory'
 import { createHash } from 'crypto'
 import type { Activity } from '@/domain/activity/types'
@@ -21,7 +23,6 @@ import type { LoadBalanceData } from '@/application/usecases/GetLoadBalance'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { GarminRacePredictionsData } from '@/application/usecases/GetGarminRacePredictions'
 
-const DAY_MS = 86_400_000
 const RECENT_DAYS = 28
 const RACE_DISTANCE_TOLERANCE = 0.1
 

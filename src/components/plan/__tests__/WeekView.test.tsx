@@ -312,3 +312,48 @@ describe('WeekView without coaching', () => {
     expect(screen.getByText(t.plan.restCard.title)).toBeInTheDocument()
   })
 })
+
+describe('WeekView easy share', () => {
+  // Two easy-type runs whose heart rate spent half their time above zone 2.
+  const zones = [
+    { zone: 2, seconds: 900, percent: 50, minBpm: 120, maxBpm: 145 },
+    { zone: 3, seconds: 900, percent: 50, minBpm: 146, maxBpm: 160 },
+  ]
+  const lastWeek = [
+    activity({ id: 'b1', date: '2026-08-31', type: 'Base', durationSeconds: 1_800, hrZones: zones }),
+    activity({ id: 'b2', date: '2026-09-02', type: 'Base', durationSeconds: 1_800, hrZones: zones }),
+  ]
+
+  function renderPastWeek() {
+    const byDate = new Map(lastWeek.map((a) => [a.date, [a]]))
+    return render(
+      <WeekView
+        weekStart={new Date(2026, 7, 31)}
+        byDate={byDate}
+        byDatePlanned={new Map()}
+        today={TODAY}
+        atPresent={false}
+        onToday={() => {}}
+        planPhaseRanges={[]}
+      />
+    )
+  }
+
+  // The session types said 100 % easy while the activity list, reading heart
+  // rate, said 50 % for the same week.
+  it('reads a finished week by heart rate, as the activity list does', () => {
+    renderPastWeek()
+
+    const summary = screen.getByTestId('week-summary').textContent
+    expect(summary).toContain(t.plan.weekSummary.easyHardRatio(50, 50))
+    expect(summary).not.toContain(t.plan.weekSummary.easyHardRatio(100, 0))
+  })
+
+  it('labels a week still to run as planned', () => {
+    // The tempo and the race are both key sessions, and nothing else is on.
+    renderWeek({ activities: [TEMPO, RACE] })
+
+    expect(screen.getByTestId('week-summary').textContent).toContain(t.plan.weekSummary.easyHardPlanned(0, 100))
+  })
+})
+

@@ -1,4 +1,5 @@
-import type { PrescriptionView } from '@/application/coaching/GetCoachingView'
+import type { WorkoutPrescription } from '@/domain/coaching/types'
+import type { PlanPrescriptionView } from './planCoachingView'
 import type { TrainingZone, TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type {
   ActivityType,
@@ -18,6 +19,7 @@ import {
   prescriptionPace,
   prescriptionStructure,
 } from '@/components/coaching/presentation'
+import { pickDefined } from '@/components/pickDefined'
 import { formatDurationWords, formatPaceRange } from '@/lib/formatters'
 import { t } from '@/i18n'
 
@@ -90,8 +92,16 @@ export function plannedWorkoutView(
   }
 }
 
+/**
+ * /plan hands this the trimmed view, which has no description or notes; the
+ * dashboard hands it the whole prescription.
+ */
+type CoachWorkoutSource = Omit<PlanPrescriptionView, 'prescription'> & {
+  prescription: PlanPrescriptionView['prescription'] & Partial<Pick<WorkoutPrescription, 'description' | 'notes'>>
+}
+
 export function coachWorkoutView(
-  view: PrescriptionView,
+  view: CoachWorkoutSource,
   zones: TrainingZonesData | null = null,
   garmin: PlannedWorkout | null = null
 ): PlanWorkoutView {
@@ -128,4 +138,17 @@ export function coachWorkoutView(
     activityId: view.activityId,
     isKey: isKeyPrescription(workout),
   }
+}
+
+const HERO_FIELDS = ['title', 'duration', 'scheduledTime', 'target', 'activityId'] as const satisfies readonly (keyof PlanWorkoutView)[]
+
+/**
+ * What the dashboard hero shows of today's session. The full view also holds
+ * the coach's description and notes, which the hero never draws, so they stay
+ * out of the page payload.
+ */
+export type HeroWorkoutView = Pick<PlanWorkoutView, (typeof HERO_FIELDS)[number]>
+
+export function heroWorkoutView(view: PlanWorkoutView): HeroWorkoutView {
+  return pickDefined(view, HERO_FIELDS)
 }

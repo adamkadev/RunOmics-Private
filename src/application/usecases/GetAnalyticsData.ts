@@ -5,7 +5,7 @@ import { easyHardShare } from '@/domain/training/easyHard'
 import { sumDistanceKm } from '@/domain/activity/distance'
 import { AXIS_TICK_DATE, formatDate, monthLabel } from '@/lib/formatters'
 import { round } from '@/lib/math'
-import { isoDate } from '@/lib/calendarDate'
+import { DAY_MS, isoDate } from '@/lib/calendarDate'
 
 export { easyHardShare }
 
@@ -171,7 +171,7 @@ export function zoneDistribution(activities: Activity[]): ZoneShare[] {
 }
 
 export function recentZoneDistribution(activities: Activity[], days: number, now: Date = new Date()): ZoneShare[] {
-  const cutoff = new Date(now.getTime() - days * 86_400_000)
+  const cutoff = new Date(now.getTime() - days * DAY_MS)
   return zoneDistribution(activities.filter((a) => new Date(a.date + 'T00:00:00') >= cutoff))
 }
 
@@ -335,8 +335,8 @@ function buildYearAnalytics(year: number, activities: Activity[], now: Date): Ye
   }))
 
   const elapsedDays = isCurrentYear
-    ? Math.floor((now.getTime() - new Date(year, 0, 1).getTime()) / 86400000) + 1
-    : Math.floor((new Date(year + 1, 0, 1).getTime() - new Date(year, 0, 1).getTime()) / 86400000)
+    ? Math.floor((now.getTime() - new Date(year, 0, 1).getTime()) / DAY_MS) + 1
+    : Math.floor((new Date(year + 1, 0, 1).getTime() - new Date(year, 0, 1).getTime()) / DAY_MS)
 
   return { year, totals: computeTotals(activities, elapsedDays), ...buildSeries(buckets, activities) }
 }
@@ -353,7 +353,7 @@ function buildAllTimeAnalytics(byYearMap: Map<number, Activity[]>, all: Activity
     .map((year) => ({ id: String(year), label: String(year), acts: byYearMap.get(year)! }))
 
   const firstYear = buckets[0] ? Number(buckets[0].id) : now.getFullYear()
-  const elapsedDays = Math.floor((now.getTime() - new Date(firstYear, 0, 1).getTime()) / 86400000) + 1
+  const elapsedDays = Math.floor((now.getTime() - new Date(firstYear, 0, 1).getTime()) / DAY_MS) + 1
 
   return { totals: computeTotals(all, elapsedDays), ...buildSeries(buckets, all) }
 }
@@ -367,7 +367,6 @@ function trimLeadingEmpty<T>(points: T[], hasValue: (p: T) => boolean): T[] {
 
 function buildEfficiencyDaily(activities: Activity[], now: Date): DailyEfficiency[] {
   const EASY_TYPES_SET = new Set(EASY_TYPES)
-  const DAY_MS = 86_400_000
   const easy = activities.filter((a) => EASY_TYPES_SET.has(a.type))
   const nowMs = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
 
@@ -393,7 +392,6 @@ function buildEfficiencyDaily(activities: Activity[], now: Date): DailyEfficienc
 }
 
 function buildRunningDynamicsDaily(activities: Activity[], now: Date): DailyRunningDynamics[] {
-  const DAY_MS = 86_400_000
   const nowMs = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
   const stamped = activities.map((a) => ({ a, ms: new Date(a.date + 'T00:00:00').getTime() }))
 

@@ -1,4 +1,4 @@
-import { startOfWeek } from '@/lib/calendarDate'
+import { DAY_MS, startOfWeek } from '@/lib/calendarDate'
 
 export interface PlanSpan {
   startDate: string
@@ -10,7 +10,7 @@ function mondayOf(date: string): Date {
 }
 
 function weeksBetween(from: Date, to: Date): number {
-  return Math.round((to.getTime() - from.getTime()) / (7 * 86_400_000))
+  return Math.round((to.getTime() - from.getTime()) / (7 * DAY_MS))
 }
 
 export function weeksInPlan(span: PlanSpan | null, today: string): { done: number; total: number } | null {

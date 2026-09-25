@@ -21,6 +21,9 @@ import type { ThresholdHistoryData } from '@/application/usecases/GetThresholdHi
 import type { HeatImpactData } from '@/application/usecases/GetHeatImpact'
 import { ChartCardSkeleton } from '@/components/ui/Skeleton'
 import { useSwipeNavigation } from '@/lib/useSwipeNavigation'
+import { useToday } from '@/lib/useToday'
+import { ChartTodayContext } from '@/components/ui/ChartWindowNav'
+import { useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { t } from '@/i18n'
 
 const tabLoading = () => (
@@ -79,6 +82,7 @@ export function AnalyticsClient({
   activeDays,
   heatmapDays,
   heatImpact,
+  today: serverToday,
 }: {
   data: AnalyticsPageData
   comparison: YearComparisonData | null
@@ -96,10 +100,13 @@ export function AnalyticsClient({
   activeDays: number
   heatmapDays: number
   heatImpact: HeatImpactData | null
+  /** The date the page was prerendered on; see useToday. */
+  today: string
 }) {
   const { years, byYear } = data
+  const today = useToday(serverToday)
 
-  const [view, setView] = useState<View>({ kind: 'year', year: years[0] ?? new Date().getFullYear() })
+  const [view, setView] = useState<View>({ kind: 'year', year: years[0] ?? Number(serverToday.slice(0, 4)) })
   const [tab, setTab] = useState<TabId>('fitness')
 
   useEffect(() => {
@@ -129,6 +136,8 @@ export function AnalyticsClient({
       if (window.scrollY > target) window.scrollTo({ top: target, behavior: 'smooth' })
     }
   }
+
+  const analyticsTabs = useSegmentedTabs({ ids: TABS.map((item) => item.id), value: tab, onChange: selectTab })
 
   const isAll = view.kind === 'all'
 
@@ -180,7 +189,7 @@ export function AnalyticsClient({
       {active && (
         <div
           ref={tabsRef}
-          role="tablist"
+          {...analyticsTabs.listProps}
           aria-label={t.analytics.title}
           className="sticky top-[max(var(--safe-top),8px)] z-20 -mx-4 grid grid-cols-4 gap-1.5 px-4 py-2 backdrop-blur-xl sm:-mx-6 sm:px-6"
         >
@@ -188,9 +197,7 @@ export function AnalyticsClient({
             <Pill
               key={item.id}
               as="button"
-              role="tab"
-              aria-selected={tab === item.id}
-              onClick={() => selectTab(item.id)}
+              {...analyticsTabs.tabProps(item.id)}
               variant={tab === item.id ? 'accent' : 'neutral'}
               className="min-w-0 justify-center px-1 py-2 text-footnote"
             >
@@ -205,8 +212,8 @@ export function AnalyticsClient({
       {seasonHeadline && <SeasonHeadline data={seasonHeadline} aiTake={seasonInsight} />}
 
       {active && (
-        <>
-          <div {...swipeHandlers}>
+        <ChartTodayContext value={today}>
+          <div {...analyticsTabs.panelProps} {...swipeHandlers}>
             {tabInsights[tab] && <TabInsight insight={tabInsights[tab]!} />}
 
             {tab === 'fitness' && (
@@ -250,7 +257,7 @@ export function AnalyticsClient({
               />
             )}
           </div>
-        </>
+        </ChartTodayContext>
       )}
     </div>
   )

@@ -1,4 +1,19 @@
+import { DAY_MS } from '@/lib/calendarDate'
+import { round } from '@/lib/math'
+
 export type WearStatus = 'ok' | 'watch' | 'replace'
+
+/**
+ * How much of a shoe's intended life is used, 0-100. A retired shoe is spent
+ * whatever its mileage. One with no lifespan set cannot be measured, so it
+ * reads as unworn - the two copies this replaces divided by zero there and
+ * showed NaN%.
+ */
+export function wearPercent(shoe: { totalKm: number; maxKm: number; retired: boolean }): number {
+  if (shoe.retired) return 100
+  if (!(shoe.maxKm > 0)) return 0
+  return Math.min(100, round((shoe.totalKm / shoe.maxKm) * 100, 0))
+}
 
 export function wearStatus(pct: number): WearStatus {
   if (pct >= 90) return 'replace'
@@ -33,7 +48,7 @@ export function weeksInRotation(firstUsedDate: string | null, lastDate: string |
     1,
     Math.round(
       (new Date(end + 'T00:00:00').getTime() - new Date(firstUsedDate + 'T00:00:00').getTime()) /
-        (7 * 86_400_000)
+        (7 * DAY_MS)
     )
   )
 }
