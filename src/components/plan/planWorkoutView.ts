@@ -22,6 +22,7 @@ import {
 import { pickDefined } from '@/components/pickDefined'
 import { formatDurationWords, formatPaceRange } from '@/lib/formatters'
 import { t } from '@/i18n'
+import { sessionTitle } from './sessionTitle'
 
 export interface PlanWorkoutView {
   key: string
@@ -69,7 +70,7 @@ export function plannedWorkoutView(
   return {
     key: `garmin:${plan.date}:${plan.name}`,
     date: plan.date,
-    title: plan.name,
+    title: sessionTitle(plan.name, type) ?? plan.name,
     type,
     scheduledTime: plan.scheduledTime,
     duration: plan.durationSecs ? { seconds: plan.durationSecs, estimated: false } : null,

@@ -1,6 +1,6 @@
 import type { WeekTarget } from '@/domain/training/weekTarget'
 import type { DayStateCell } from '@/components/ui/DayStateStrip'
-import { runTypeColor } from '@/lib/colors'
+import { sessionZone, zoneColor } from '@/lib/colors'
 import { formatDate } from '@/lib/formatters'
 import { t } from '@/i18n'
 
@@ -21,10 +21,10 @@ export function dayStateCells(
       label: label === 'initial' ? weekday.slice(0, 1) : weekday,
       fullLabel: formatDate(day.date, { style: 'full' }),
       state: day.state,
-      color: runTypeColor(day.type),
+      color: zoneColor(sessionZone(day)),
       km: day.state === 'done' ? day.ranKm : day.plannedKm,
       isToday: day.date === today,
-      ...(day.plannedType ? { plannedColor: runTypeColor(day.plannedType) } : {}),
+      ...(day.plannedType ? { plannedColor: zoneColor(sessionZone({ type: day.plannedType })) } : {}),
     }
   })
 }

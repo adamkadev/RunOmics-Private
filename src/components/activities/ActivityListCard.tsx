@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { PrBadge } from './PrBadge'
-import { runTypeColor } from '@/lib/colors'
+import { sessionZone, zoneColor } from '@/lib/colors'
 import type { ActivitySummary } from '@/domain/activity/types'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import { formatDate, formatDistance, formatPace } from '@/lib/formatters'
@@ -12,7 +12,7 @@ interface Props {
 }
 
 export function ActivityListCard({ activity: a, qualifiedEfforts = [] }: Props) {
-  const chartColor = runTypeColor(a.type)
+  const chartColor = zoneColor(sessionZone(a))
   const title = a.description || t.activity.runTitle(a.dayOfWeek)
 
   const subtitle = [
