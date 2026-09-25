@@ -16,6 +16,18 @@ const OUTPUT_DIR = path.join(__dirname, 'output')
 
 const THEME_STORAGE_KEY = 'theme'
 
+// iPhone 15 Pro in portrait, opened from the home screen: the status bar and
+// the home indicator sit over the page, which pads itself clear of them with
+// env(safe-area-inset-*) - 0 in headless Chromium unless it is told otherwise.
+const SAFE_AREA = { top: 59, bottom: 34, left: 0, right: 0 }
+
+// Consecutive screens, each overlapping the last by more than the fixed
+// header and tab bar cover, so every line of the page is clear of both in one
+// of them. The tall full-page image is kept too, but a tool reading
+// screenshots shrinks it until its text is illegible.
+const SCREEN_OVERLAP = 180
+const MAX_SCREENS = 6
+
 const FREEZE_MOTION_CSS = `
   *, *::before, *::after {
     transition: none !important;
@@ -35,43 +47,32 @@ function slugify(text: string): string {
   )
 }
 
-async function scrollToFraction(page: Page, fraction: number): Promise<void> {
-  await page.evaluate((f) => {
-    const max = document.documentElement.scrollHeight - window.innerHeight
-    window.scrollTo(0, Math.max(0, Math.round(max * f)))
-  }, fraction)
+async function scrollTo(page: Page, y: number): Promise<void> {
+  await page.evaluate((top) => window.scrollTo(0, top), y)
   await page.waitForTimeout(250)
 }
 
-async function isScrollable(page: Page): Promise<boolean> {
-  return page.evaluate(
-    () => document.documentElement.scrollHeight - window.innerHeight > 40
-  )
-}
-
-async function captureScrolls(page: Page, dir: string, prefix: string): Promise<void> {
+async function captureScreens(page: Page, dir: string, prefix: string): Promise<void> {
   fs.mkdirSync(dir, { recursive: true })
   const p = (name: string) => path.join(dir, prefix ? `${prefix}-${name}.png` : `${name}.png`)
 
-  const scrollable = await isScrollable(page)
+  const { scrollable, viewport } = await page.evaluate(() => ({
+    scrollable: document.documentElement.scrollHeight - window.innerHeight,
+    viewport: window.innerHeight,
+  }))
+  const step = viewport - SCREEN_OVERLAP
+  const screens = Math.min(MAX_SCREENS, 1 + Math.ceil(Math.max(0, scrollable - 40) / step))
 
-  await scrollToFraction(page, 0)
-  await page.screenshot({ path: p('begin') })
-
-  if (scrollable) {
-    await scrollToFraction(page, 0.5)
-    await page.screenshot({ path: p('middle') })
-
-    await scrollToFraction(page, 1)
-    await page.screenshot({ path: p('end') })
-
-    await scrollToFraction(page, 0)
+  for (let i = 0; i < screens; i++) {
+    await scrollTo(page, Math.min(i * step, scrollable))
+    await page.screenshot({ path: p(`screen-${i + 1}`) })
   }
 
+  await scrollTo(page, 0)
   await page.screenshot({ path: p('full'), fullPage: true })
 }
 
-async function gotoAndSettle(page: Page, route: RouteSpec, theme: Theme, accent: Accent): Promise<void> {
+async function preparePage(page: Page, theme: Theme, accent: Accent): Promise<void> {
   await page.addInitScript(
     (entries) => {
       try {
@@ -86,7 +87,21 @@ async function gotoAndSettle(page: Page, route: RouteSpec, theme: Theme, accent:
 
   await page.emulateMedia({ reducedMotion: 'reduce' })
 
+  const cdp = await page.context().newCDPSession(page)
+  await cdp.send('Emulation.setSafeAreaInsetsOverride', { insets: SAFE_AREA })
+}
+
+async function resolvePath(page: Page, route: RouteSpec): Promise<string> {
+  if (!route.firstLinkTo) return route.path
+
   await page.goto(route.path, { waitUntil: 'domcontentloaded' })
+  const href = await page.locator(`main a[href^="${route.firstLinkTo}"]`).first().getAttribute('href')
+  if (!href) throw new Error(`${route.path} has no link to ${route.firstLinkTo}...`)
+  return href
+}
+
+async function gotoAndSettle(page: Page, url: string, route: RouteSpec, theme: Theme, accent: Accent): Promise<void> {
+  await page.goto(url, { waitUntil: 'domcontentloaded' })
 
   if (route.waitFor) {
     await page.locator(route.waitFor).first().waitFor({ state: 'visible', timeout: 15_000 })
@@ -128,18 +143,22 @@ for (const accent of selectedAccents()) {
       for (const route of ROUTES) {
         test(`${route.name}`, async ({ page }) => {
           const dir = path.join(OUTPUT_DIR, accent, theme, route.name)
-          await gotoAndSettle(page, route, theme, accent)
-          await captureScrolls(page, dir, '')
+          await preparePage(page, theme, accent)
+          await gotoAndSettle(page, await resolvePath(page, route), route, theme, accent)
+          await captureScreens(page, dir, '')
 
           if (route.hasTabs) {
             const tabs = page.getByRole('tab')
             const count = await tabs.count()
+            // The tab open on arrival is the page already captured above.
+            const open = await tabs.evaluateAll((els) => els.findIndex((el) => el.getAttribute('aria-selected') === 'true'))
             for (let i = 0; i < count; i++) {
+              if (i === open) continue
               const tab = tabs.nth(i)
               const label = slugify((await tab.textContent())?.trim() ?? `tab-${i}`)
               await tab.click()
               await page.waitForTimeout(400)
-              await captureScrolls(page, dir, `tab-${i + 1}-${label}`)
+              await captureScreens(page, dir, `tab-${i + 1}-${label}`)
             }
           }
         })

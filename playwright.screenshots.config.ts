@@ -8,6 +8,12 @@ const executablePath =
 
 const baseURL = process.env.SCREENSHOT_BASE_URL ?? `http://localhost:${process.env.PORT ?? '3000'}`
 
+// The app is used from the home screen, where it has the whole screen - no
+// Safari toolbars - so the viewport is the phone's screen rather than the
+// preset's in-browser viewport. capture.spec.ts adds the safe areas.
+const phone = devices['iPhone 15 Pro']
+const PHONE_SCREEN = { width: 393, height: 852 }
+
 export default defineConfig({
   testDir: './screenshots',
   fullyParallel: true,
@@ -17,7 +23,11 @@ export default defineConfig({
   outputDir: './screenshots/.pw-artifacts',
   use: {
     baseURL,
-    ...devices['iPhone 13'],
+    ...phone,
+    viewport: PHONE_SCREEN,
+    // Every caption is legible at 2x, with half the pixels of the phone's 3x:
+    // tools that read screenshots shrink anything larger anyway.
+    deviceScaleFactor: 2,
     defaultBrowserType: 'chromium',
     locale: 'en-US',
     launchOptions: { executablePath },
