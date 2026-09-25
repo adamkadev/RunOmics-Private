@@ -68,6 +68,10 @@ export const fr = {
     ran: (km: string) => `Couru ${km} km`,
     plannedKm: (km: string) => `prévu ${km} km`,
     coachInsight: 'Analyse du coach',
+    onPlan: 'Conforme au plan',
+    plannedLine: (km: string) => `Prévu ${km} km`,
+    plannedType: (type: string) => `Prévu ${type}`,
+    ranLine: (km: string, time: string) => `Couru ${km} km · ${time}`,
   },
 
   units: {
@@ -760,6 +764,18 @@ export const fr = {
       },
       effortClause: (rpeLabel: string, rpe: number) => `Effort ressenti : ${rpeLabel} (RPE ${rpe}).`,
     },
+    effort: {
+      label: 'Effort (RPE)',
+      value: (rpe: number, label: string) => `${rpe} · ${label}`,
+      notLogged: 'non saisi sur la montre',
+    },
+    noteRow: {
+      label: 'Note',
+      add: 'Ajouter',
+      edit: 'Modifier',
+      read: 'Lire',
+      none: 'Pas de note',
+    },
     tabs: {
       groupLabel: 'Sections de la sortie',
       overview: 'Aperçu',
@@ -810,6 +826,10 @@ export const fr = {
       paceDelta: (seconds: number) => `+${seconds} s/km`,
       chartSummary: (n: number, best: string) =>
         `Allure sur tes ${n} passages de ce parcours ; record ${best}.`,
+      rowTitle: (rank: number, n: number) =>
+        rank === 1 ? `Même parcours · meilleure allure sur ${n}` : `Même parcours · ${rank}ᵉ meilleure allure sur ${n}`,
+      rowDelta: (seconds: number) => `+${seconds} s/km vs ton meilleur ici`,
+      rowBest: 'Ta meilleure allure sur ce parcours',
     },
     notes: {
       title: 'Notes',

@@ -9,6 +9,8 @@ import { pickDefined } from '@/components/pickDefined'
  * already rendered. Each client component gets the fields it reads instead.
  */
 const DETAIL_FIELDS = [
+  // The note row reads and writes the activity's note by id.
+  'id',
   'type',
   'rpe',
   'distanceKm',

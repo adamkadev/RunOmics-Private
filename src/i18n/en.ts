@@ -80,6 +80,10 @@ export const en = {
     ran: (km: string) => `Ran ${km} km`,
     plannedKm: (km: string) => `planned ${km} km`,
     coachInsight: 'Coach insight',
+    onPlan: 'On plan',
+    plannedLine: (km: string) => `Planned ${km} km`,
+    plannedType: (type: string) => `Planned ${type}`,
+    ranLine: (km: string, time: string) => `Ran ${km} km · ${time}`,
   },
 
   units: {
@@ -775,6 +779,20 @@ export const en = {
       },
       effortClause: (rpeLabel: string, rpe: number) => `Perceived effort: ${rpeLabel} (RPE ${rpe}).`,
     },
+    // Read-only: RPE comes from the watch, and the note is the one thing on an
+    // activity the user writes.
+    effort: {
+      label: 'Effort (RPE)',
+      value: (rpe: number, label: string) => `${rpe} · ${label}`,
+      notLogged: 'not logged on the watch',
+    },
+    noteRow: {
+      label: 'Note',
+      add: 'Add',
+      edit: 'Edit',
+      read: 'Read',
+      none: 'No note',
+    },
     tabs: {
       groupLabel: 'Activity sections',
       overview: 'Overview',
@@ -825,6 +843,12 @@ export const en = {
       paceDelta: (seconds: number) => `+${seconds}s/km`,
       chartSummary: (n: number, best: string) =>
         `Pace across your ${n} runs on this route; record ${best}.`,
+      // The row that stands in for the card on Overview. Ranked by pace, so it
+      // says pace; a run's total time is secondary.
+      rowTitle: (rank: number, n: number) =>
+        rank === 1 ? `Same route · best pace of ${n}` : `Same route · ${ordinal(rank)}-best pace of ${n}`,
+      rowDelta: (seconds: number) => `+${seconds} s/km vs your route best`,
+      rowBest: 'Your best pace on this route',
     },
     notes: {
       title: 'Notes',

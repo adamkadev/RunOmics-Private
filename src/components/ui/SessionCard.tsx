@@ -13,8 +13,8 @@ const CHIP_TONE: Record<WeekDayState, StatusTone> = {
 }
 
 /** Done, planned, missed or rest, in the one chip recipe every screen uses. */
-export function SessionStateChip({ state, className }: { state: WeekDayState; className?: string }) {
-  const label = state === 'done' ? `✓ ${t.sessionState.done}` : t.sessionState[state]
+export function SessionStateChip({ state, label: override, className }: { state: WeekDayState; label?: string; className?: string }) {
+  const label = override ?? (state === 'done' ? `✓ ${t.sessionState.done}` : t.sessionState[state])
   return (
     <StatusPill tone={CHIP_TONE[state]} className={cn('flex-none rounded-lg px-2.5 py-1 font-semibold', className)}>
       {label}
@@ -30,12 +30,15 @@ export function SessionStateChip({ state, className }: { state: WeekDayState; cl
  */
 export function SessionCard({
   state,
+  chipLabel,
   title,
   detail,
   href,
   className,
 }: {
   state: WeekDayState
+  /** The chip's words, when the state alone says less ("✓ On plan"). */
+  chipLabel?: string
   title: string
   detail?: string | null
   href?: string
@@ -43,7 +46,7 @@ export function SessionCard({
 }) {
   const body = (
     <>
-      <SessionStateChip state={state} />
+      <SessionStateChip state={state} label={chipLabel} />
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-semibold text-foreground">{title}</div>
         {detail && <div className="truncate text-xs text-muted-foreground">{detail}</div>}
