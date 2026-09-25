@@ -1,59 +1,19 @@
 import { render, screen } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { formatCountdown } from '@/lib/formatters'
-import { hydrateAcrossMidnight } from '@/lib/__tests__/hydrateAcrossMidnight'
-import { TodayHero } from '../TodayHero'
+import { describe, expect, it } from 'vitest'
 import type { ActivitySummary } from '@/domain/activity/types'
+import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { t } from '@/i18n'
+import { TodayHero } from '../TodayHero'
 
 const RUN: ActivitySummary = {
   id: 'a1', date: '2026-09-24', dayOfWeek: 'Thursday', type: 'Threshold', description: 'Threshold', comment: '',
   distanceKm: 6.11, durationSeconds: 1_528, paceSecPerKm: 250, avgHeartRate: 160, rpe: null, hrZones: [], week: 0, elevationGain: null,
 }
-
-const NOW = new Date(2026, 8, 24, 9)
-const RACE = { date: '2026-10-04', name: 'City 10K', distance: '10K' }
-
-function hero(today: string) {
-  return <TodayHero status={null} plannedWorkout={null} todayActivity={null} nextRace={RACE} aiVerdict={null} today={today} />
-}
+const PLAN = { title: 'Threshold', type: 'Threshold' as const, duration: { seconds: 1_500, estimated: false }, distanceM: 6_000, activityId: 'a1', target: null }
 
 describe('TodayHero', () => {
-  beforeEach(() => {
-    vi.useFakeTimers({ shouldAdvanceTime: true })
-    vi.setSystemTime(NOW)
-  })
-  afterEach(() => {
-    vi.useRealTimers()
-    document.body.innerHTML = ''
-  })
-
-  // The card used to be a fixed navy in both themes; it is the card surface
-  // now, so the countdown takes the theme's ink.
-  it('inks the race countdown from the theme', () => {
-    render(hero('2026-09-24'))
-
-    const chip = screen.getByText(formatCountdown(10))
-    expect(chip.className).toContain('text-muted-foreground')
-    expect(chip.className).not.toContain('text-white')
-  })
-
-  // Built at 23:50 and opened at 00:10, the countdown used to be computed
-  // twice from two clocks - 11 days on the server, 10 in the browser - and
-  // hydration failed on the difference.
-  it('hydrates the countdown the page was built with, then counts from today', async () => {
-    const { html, container, recoverableErrors } = await hydrateAcrossMidnight(hero('2026-09-23'), {
-      serverTime: new Date(2026, 8, 23, 23, 50),
-      clientTime: new Date(2026, 8, 24, 0, 10),
-    })
-
-    expect(html).toContain(formatCountdown(11))
-    expect(recoverableErrors).toEqual([])
-    expect(container.textContent).toContain(formatCountdown(10))
-  })
-
   it('draws on the card surface and tokens, not fixed hexes', () => {
-    const { container } = render(hero('2026-09-24'))
+    const { container } = render(<TodayHero status={null} plannedWorkout={PLAN} todayActivity={null} aiVerdict={null} />)
     const card = container.firstElementChild as HTMLElement
 
     expect(card.className).toContain('glass-card')
@@ -67,11 +27,9 @@ describe('TodayHero', () => {
     render(
       <TodayHero
         status={null}
-        plannedWorkout={{ title: 'Threshold', type: 'Threshold', duration: { seconds: 1_500, estimated: false }, distanceM: 6_000, activityId: 'a1', target: null }}
+        plannedWorkout={PLAN}
         todayActivity={RUN}
-        nextRace={null}
         aiVerdict={{ headline: 'Steady day.', body: 'Keep it moderate.' }}
-        today="2026-09-24"
       />,
     )
 
@@ -82,5 +40,20 @@ describe('TodayHero', () => {
     expect(row.getAttribute('href')).toBe('/activities/a1')
     expect(screen.getByText(t.sessionCard.coachInsight)).toBeInTheDocument()
   })
-})
 
+  it('keeps the offline copy when the AI insight is missing', () => {
+    const status = { tsbNow: 2, tsbDelta: 1, ctl: 40, atl: 38, loadTrend: 'maintaining' } as unknown as TrainingStatus
+    render(<TodayHero status={status} plannedWorkout={null} todayActivity={null} aiVerdict={null} />)
+
+    expect(screen.queryByText(t.sessionCard.coachInsight)).not.toBeInTheDocument()
+    expect(screen.getByTestId('session-card')).toHaveTextContent(t.dashboard.todayHero.restDay)
+  })
+
+  // The race is the plan's reason, not a daily number: its countdown stays on
+  // Plan and Goals.
+  it('carries no race countdown', () => {
+    const { container } = render(<TodayHero status={null} plannedWorkout={PLAN} todayActivity={null} aiVerdict={null} />)
+
+    expect(container.textContent).not.toMatch(/D-\d+/)
+  })
+})
