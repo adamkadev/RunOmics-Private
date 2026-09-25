@@ -77,7 +77,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           className="pointer-events-none fixed inset-x-0 top-0 z-20 lg:hidden"
           style={{
             height: 'var(--top-scrim)',
-            background: 'linear-gradient(to bottom, var(--background) 30%, transparent)',
+            // Solid under the status bar, then a short fade: the page starts
+            // right below it, so a long gradient would dim its first row.
+            background: 'linear-gradient(to bottom, var(--background) var(--safe-top), transparent)',
           }}
         />
         <Sidebar />

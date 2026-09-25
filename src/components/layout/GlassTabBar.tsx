@@ -32,9 +32,9 @@ export function GlassTabBar() {
           'glass-nav flex items-center border-x-0 border-b-0 transition-transform duration-200 ease-out',
           hidden ? 'translate-y-full' : 'translate-y-0 pointer-events-auto'
         )}
-        // The whole home-indicator area: at 60 % of it the labels sat in the
-        // indicator's swipe zone.
-        style={{ paddingBottom: 'var(--safe-bottom)' }}
+        // Clear of the home indicator's swipe zone (at 60 % of the inset the
+        // labels sat in it), but not the full 34 pt, which floated the bar.
+        style={{ paddingBottom: 'var(--tab-bar-bottom)' }}
       >
         {TABS.map(({ href, label, icon: Icon }) => {
         const active = currentHref === href
