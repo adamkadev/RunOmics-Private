@@ -55,8 +55,9 @@ vi.mock('firebase/firestore', () => ({
 }))
 
 async function openNotes() {
-  const toggle = await screen.findByRole('button', { name: new RegExp(t.activity.notes.title) })
-  await userEvent.click(toggle)
+  const row = await screen.findByTestId('note-row')
+  await vi.waitFor(() => expect(row).toBeEnabled())
+  await userEvent.click(row)
 }
 
 beforeEach(() => {
@@ -68,9 +69,14 @@ beforeEach(() => {
 
 describe('ActivityNotes owner gate', () => {
 
-  it('renders nothing for a signed-out visitor when the activity has no note', async () => {
-    const { container } = render(<ActivityNotes activityId="a1" />)
-    await vi.waitFor(() => expect(container.firstChild).toBeNull())
+  // The row is always there - the note had no visible entry point - but a
+  // visitor with nothing to read has nothing to open.
+  it('shows a signed-out visitor a row with no note and nothing to open', async () => {
+    render(<ActivityNotes activityId="a1" />)
+    const row = await screen.findByTestId('note-row')
+
+    expect(row).toHaveTextContent(t.activity.noteRow.none)
+    expect(row).toBeDisabled()
   })
 
   it('shows the read-only note to a visitor when one exists', async () => {
@@ -92,8 +98,19 @@ describe('ActivityNotes owner gate', () => {
 
   it('treats a signed-in account without the owner claim like a visitor', async () => {
     mockUser = signedIn('someone-else@example.com')
-    const { container } = render(<ActivityNotes activityId="a1" />)
-    await vi.waitFor(() => expect(container.firstChild).toBeNull())
+    render(<ActivityNotes activityId="a1" />)
+    const row = await screen.findByTestId('note-row')
+
+    await vi.waitFor(() => expect(row).toHaveTextContent(t.activity.noteRow.none))
+    expect(row).toBeDisabled()
+  })
+
+  it('offers the owner a way to add a note', async () => {
+    mockUser = signedIn('anything@example.com', { owner: true })
+    render(<ActivityNotes activityId="a1" />)
+    const row = await screen.findByTestId('note-row')
+
+    await vi.waitFor(() => expect(row).toHaveTextContent(t.activity.noteRow.add))
   })
 
   it('does not grant the editor on a matching email alone', async () => {

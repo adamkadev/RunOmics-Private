@@ -10,13 +10,18 @@ import { ActivityDetailClient } from '@/components/activity/ActivityDetailClient
 import { activityDetailView, shareActivity } from '@/components/activity/activityViews'
 import { ActivityNav } from '@/components/activity/ActivityNav'
 import { ShareButton } from '@/components/activity/ShareButton'
-import { ActivityNotes } from '@/components/activity/ActivityNotes'
 import { ActivityAchievements } from '@/components/activity/ActivityAchievements'
 import { OfficialResult } from '@/components/activity/OfficialResult'
-import { SimilarRuns } from '@/components/activity/SimilarRuns'
 import { getSimilarRuns } from '@/application/usecases/GetSimilarRuns'
 import { getDynamicsBaseline } from '@/application/usecases/GetDynamicsBaseline'
 import { getRunVerdictInsight } from '@/application/usecases/GetRunVerdictInsight'
+import { getPlannedWorkouts } from '@/application/usecases/GetPlannedWorkouts'
+import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
+import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
+import { coachWorkoutView, plannedWorkoutView } from '@/components/plan/planWorkoutView'
+import type { ActivityPlan } from '@/components/activity/activityPlan'
+import type { Activity } from '@/domain/activity/types'
+import { appTodayIso } from '@/lib/calendarDate'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
 import { t } from '@/i18n'
 
@@ -48,6 +53,27 @@ export async function generateStaticParams() {
   return activities.map((a) => ({ id: a.id }))
 }
 
+/**
+ * The plan's session for the day this activity was run, in Plan's own terms: a
+ * coach prescription is this run's plan only when it is linked to it, and
+ * Garmin's plan for the day is the honest comparison otherwise.
+ */
+async function planForActivity(activity: Activity): Promise<ActivityPlan | null> {
+  const coach = getCoachingOverview(appTodayIso())?.workouts.find(
+    (view) => view.state !== 'cancelled' && view.activityId === activity.id,
+  )
+  const garmin = (await getPlannedWorkouts()).find((p) => p.date === activity.date) ?? null
+  const zones = await getTrainingZones()
+  const view = coach ? coachWorkoutView(coach, zones, garmin) : garmin ? plannedWorkoutView(garmin, zones) : null
+  if (!view) return null
+  return {
+    title: view.title,
+    ...(view.type ? { type: view.type } : {}),
+    distanceM: view.distanceM,
+    durationSeconds: view.duration?.seconds ?? null,
+  }
+}
+
 export default async function ActivityDetailPage({
   params,
 }: {
@@ -71,40 +97,29 @@ export default async function ActivityDetailPage({
   const registeredShoe = activity.gearId ? getShoeRegistry()[activity.gearId] : undefined
   const shoe = registeredShoe ? { name: registeredShoe.name, dotColor: registeredShoe.dotColor } : null
 
+  const plan = await planForActivity(activity)
+
+  // After a run the page opens on the run: title, a compact map, its numbers,
+  // the verdict with plan against actual, how it felt, then the tabs. Similar
+  // runs used to come first, ahead of the run's own distance and time.
   return (
-    <div className="space-y-5">
-      <BackButton label={t.activity.back} fallbackHref="/activities" />
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <BackButton label={t.activity.back} fallbackHref="/activities" />
+        <ShareButton activity={shareActivity(activity)} />
+      </div>
 
       <div>
         <h1 className="text-display text-foreground">
           {activity.description || t.activity.runTitle(activity.dayOfWeek)}
         </h1>
-        <div className="mt-1 flex items-center justify-between gap-3">
-          <p className="text-sm text-muted-foreground">{formatDate(activity.date)}</p>
-          <div className="flex items-center gap-2">
-            <ActivityNotes activityId={activity.id} />
-            <ShareButton activity={shareActivity(activity)} />
-          </div>
-        </div>
+        <p className="mt-1 text-footnote text-muted-foreground">
+          {[formatDate(activity.date), shoe?.name].filter(Boolean).join(' · ')}
+        </p>
         {activity.comment && (
           <p className="mt-1 text-sm text-muted-foreground">{activity.comment}</p>
         )}
       </div>
-
-      {officialResult && (
-        <OfficialResult
-          result={officialResult}
-          garminDistanceKm={activity.distanceKm}
-          garminDurationSeconds={activity.durationSeconds}
-          isPersonalBest={holdsOfficialRecord}
-        />
-      )}
-
-      {activity.bestEfforts && (
-        <ActivityAchievements bestEfforts={activity.bestEfforts} qualifiedEfforts={qualifiedEfforts} />
-      )}
-
-      {similarRuns && <SimilarRuns data={similarRuns} />}
 
       <ActivityDetailClient
         activity={activityDetailView(activity)}
@@ -112,6 +127,25 @@ export default async function ActivityDetailPage({
         aiVerdict={aiVerdict}
         shoe={shoe}
         dynamicsBaseline={getDynamicsBaseline(activity)}
+        plan={plan}
+        similarRuns={similarRuns}
+        extras={
+          officialResult || activity.bestEfforts ? (
+            <>
+              {officialResult && (
+                <OfficialResult
+                  result={officialResult}
+                  garminDistanceKm={activity.distanceKm}
+                  garminDurationSeconds={activity.durationSeconds}
+                  isPersonalBest={holdsOfficialRecord}
+                />
+              )}
+              {activity.bestEfforts && (
+                <ActivityAchievements bestEfforts={activity.bestEfforts} qualifiedEfforts={qualifiedEfforts} />
+              )}
+            </>
+          ) : null
+        }
       />
 
       <ActivityNav prev={prevActivity} next={nextActivity} />

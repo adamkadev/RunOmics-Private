@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
-import { NotebookPen } from 'lucide-react'
 import { isClientFirebaseConfigured } from '@/lib/firebaseConfig'
 import { useOwnerAuth } from '@/lib/useOwnerAuth'
 import type { SaveState } from '@/components/ui/SaveButton'
@@ -135,17 +134,31 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
     }
   }
 
-  if (!isOwner && !hasNote) return null
+  // A row on the activity, always there: the note is the one thing here the
+  // user writes, and it had no visible way in - the button hid itself from
+  // anyone signed out, and sat in the title row when it did show.
+  const preview = saved.note || saved.tags.join(' · ')
+  const r = t.activity.noteRow
+  const canOpen = isOwner || hasNote
 
   return (
-    <div className="shrink-0">
+    <div>
       <button
+        type="button"
         onClick={() => setOpen(true)}
-        aria-haspopup="dialog"
-        className="inline-flex items-center gap-1.5 rounded-control bg-accent px-3.5 py-1.5 text-xs font-semibold text-accent-foreground shadow-lg shadow-accent/30 transition-transform active:scale-95 active:opacity-90"
+        disabled={!canOpen}
+        aria-haspopup={canOpen ? 'dialog' : undefined}
+        data-testid="note-row"
+        className="flex min-h-11 w-full items-center justify-between gap-3 text-left text-sm disabled:cursor-default"
       >
-        <NotebookPen size={16} />
-        {t.activity.notes.title}
+        <span className="shrink-0 font-semibold text-foreground">{r.label}</span>
+        {hasNote ? (
+          <span className="min-w-0 truncate text-muted-foreground">{preview} ›</span>
+        ) : isOwner ? (
+          <span className="font-semibold text-accent-text">{r.add} ›</span>
+        ) : (
+          <span className="text-subtle">{r.none}</span>
+        )}
       </button>
 
       {open && (

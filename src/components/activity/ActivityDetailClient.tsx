@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import type { ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 import type { ActivityDetailView } from './activityViews'
 import { aerobicDecoupling } from '@/domain/activity/decoupling'
@@ -18,10 +18,14 @@ import { BestEfforts } from './BestEfforts'
 import { formatClock, formatDistance, formatDuration } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartCardSkeleton } from '@/components/ui/Skeleton'
-import { useSegmentedTabs } from '@/components/ui/SegmentedTabs'
+import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
+import { useUrlParam } from '@/lib/useUrlParam'
+import type { SimilarRunsData } from '@/application/usecases/GetSimilarRuns'
+import { SimilarRuns } from './SimilarRuns'
+import { ActivityNotes } from './ActivityNotes'
+import { activityPlanRow, type ActivityPlan } from './activityPlan'
 import type { Insight } from '@/lib/gemini'
 import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
-import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 // Both tabs are closed when the page loads and draw with Recharts, so each
@@ -36,9 +40,19 @@ interface Props {
   aiVerdict: Insight | null
   shoe: ShoeTag | null
   dynamicsBaseline: DynamicsBaseline | null
+  /** What the plan had that day, when it had something. */
+  plan?: ActivityPlan | null
+  similarRuns?: SimilarRunsData | null
+  /** Race result and achievements, drawn after the note and before the tabs. */
+  extras?: ReactNode
 }
 
-type TabId = 'overview' | 'intervals' | 'charts' | 'dynamics'
+const TAB_IDS = ['overview', 'intervals', 'charts', 'dynamics'] as const
+type TabId = (typeof TAB_IDS)[number]
+
+function isTabId(value: string | null): value is TabId {
+  return value !== null && (TAB_IDS as readonly string[]).includes(value)
+}
 
 function buildPrimaryStats(activity: ActivityDetailView): Metric[] {
   // MetricGrid has had a dedicated unit slot all along; this call site put the
@@ -74,8 +88,19 @@ function buildPrimaryStats(activity: ActivityDetailView): Metric[] {
   return stats
 }
 
-export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, shoe, dynamicsBaseline }: Props) {
-  const [tab, setTab] = useState<TabId>('overview')
+export function ActivityDetailClient({
+  activity,
+  qualifiedEfforts,
+  aiVerdict,
+  shoe,
+  dynamicsBaseline,
+  plan = null,
+  similarRuns = null,
+  extras,
+}: Props) {
+  // The tab lives in ?tab=, so going back from Charts or Dynamics lands on it
+  // again rather than on Overview.
+  const [tabParam, setTabParam] = useUrlParam('tab')
   const stats = buildPrimaryStats(activity)
   const hasSecondaryCharts = !!(activity.elevationProfile || activity.paceSamples || activity.cadenceSamples)
   const hasCharts = hasSecondaryCharts || !!activity.hrSamples
@@ -93,11 +118,17 @@ export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, sh
     { id: 'charts' as const, label: t.activity.tabs.charts, show: hasCharts },
     { id: 'dynamics' as const, label: t.activity.tabs.dynamics, show: hasDynamics },
   ].filter((item) => item.show)
+  const tab: TabId = isTabId(tabParam) && tabs.some((item) => item.id === tabParam) ? tabParam : 'overview'
+  const setTab = (next: TabId) => setTabParam(next === 'overview' ? null : next)
   const detailTabs = useSegmentedTabs({ ids: tabs.map((item) => item.id), value: tab, onChange: setTab })
+  const planRow = plan ? activityPlanRow(activity, plan) : null
+  const e = t.activity.effort
 
   return (
     <>
-      <div className="h-[clamp(220px,38vw,360px)] overflow-hidden rounded-card border border-border">
+      {/* A compact map: the run's own numbers come first, and the map's
+          fullscreen control is there to expand it. */}
+      <div className="h-25 overflow-hidden rounded-card-sm border border-border">
         {activity.route ? (
           <ActivityMapClient
             route={activity.route}
@@ -108,13 +139,13 @@ export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, sh
             className="h-full w-full"
           />
         ) : (
-          <NoRouteMap className="h-full w-full" />
+          <NoRouteMap className="h-full min-h-0 w-full" />
         )}
       </div>
 
       <MetricGrid metrics={stats} className="grid-cols-4 px-1 text-center" />
 
-      <RunVerdict activity={activity} aiVerdict={aiVerdict} />
+      <RunVerdict activity={activity} aiVerdict={aiVerdict} planRow={planRow} />
 
       {!activity.avgHeartRate && (
         <p className="flex items-center justify-center gap-2 text-caption text-subtle-2">
@@ -125,28 +156,31 @@ export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, sh
         </p>
       )}
 
+      {/* How it felt: the watch's RPE, read-only, and the note - the one thing
+          on an activity the user writes. */}
+      <GlassSurface variant="card" className="rounded-card-sm px-4">
+        <div className="flex min-h-11 items-center justify-between gap-3 border-b border-border text-sm">
+          <span className="font-semibold text-foreground">{e.label}</span>
+          {activity.rpe !== null ? (
+            <span className="text-foreground">{e.value(activity.rpe, t.rpeLabels[activity.rpe] ?? '')}</span>
+          ) : (
+            <span className="text-subtle">{e.notLogged}</span>
+          )}
+        </div>
+        <ActivityNotes activityId={activity.id} />
+      </GlassSurface>
+
+      {extras}
+
       {tabs.length > 1 && (
         <div className="sticky top-[var(--top-scrim)] z-30 -mx-4 mb-3 px-4 pb-1 sm:-mx-6 sm:px-6">
-          <GlassSurface
-            as="div"
-            variant="card"
-            {...detailTabs.listProps}
-            aria-label={t.activity.tabs.groupLabel}
-            className="flex gap-1 overflow-x-auto rounded-full p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
-            {tabs.map((item) => (
-              <button
-                key={item.id}
-                {...detailTabs.tabProps(item.id)}
-                className={cn(
-                  'min-w-fit flex-1 whitespace-nowrap rounded-full py-2.5 text-sm font-semibold transition-colors',
-                  tab === item.id ? 'bg-accent text-accent-foreground' : 'text-subtle hover:text-foreground',
-                )}
-              >
-                {item.label}
-              </button>
-            ))}
-          </GlassSurface>
+          <SegmentedTabs
+            tabs={detailTabs}
+            items={tabs}
+            label={t.activity.tabs.groupLabel}
+            className="w-full bg-background/85 backdrop-blur-md"
+            tabClassName="h-9 flex-1 text-footnote"
+          />
         </div>
       )}
 
@@ -155,8 +189,6 @@ export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, sh
       <div {...(tabs.length > 1 ? detailTabs.panelProps : {})} className="space-y-5">
       {tab === 'overview' && (
         <>
-          <TrainingEffect aer={activity.aerTrainingEffect} ana={activity.anaTrainingEffect} />
-
           {activity.hrZones.length > 0 && (
             <ZoneBar
               hrZones={activity.hrZones}
@@ -164,6 +196,8 @@ export function ActivityDetailClient({ activity, qualifiedEfforts, aiVerdict, sh
               maxHr={activity.hrSamples ? Math.max(...activity.hrSamples) : null}
             />
           )}
+          {similarRuns && <SimilarRuns data={similarRuns} />}
+          <TrainingEffect aer={activity.aerTrainingEffect} ana={activity.anaTrainingEffect} />
           <AerobicDecoupling
             decoupling={aerobicDecoupling(activity)}
             onShowCharts={hasCharts ? () => setTab('charts') : undefined}
