@@ -21,9 +21,9 @@ const INPUT: HubInput = {
   goal: { goalYear: { year: 2026, annualDistanceKm: 1_200, targets: [] }, totalDistanceKm: 1_247, projection: null },
   nextRaceDate: '2026-10-16',
   heatmapDays: [
-    { date: '2026-09-01', distanceKm: 10, sessionCount: 1 },
-    { date: '2026-09-02', distanceKm: 0, sessionCount: 0 },
-    { date: '2026-09-03', distanceKm: 8, sessionCount: 1 },
+    { date: '2026-09-01', distanceKm: 10, sessionCount: 1, longRun: false },
+    { date: '2026-09-02', distanceKm: 0, sessionCount: 0, longRun: false },
+    { date: '2026-09-03', distanceKm: 8, sessionCount: 1, longRun: false },
   ],
   now: new Date(2026, 8, 25),
 }

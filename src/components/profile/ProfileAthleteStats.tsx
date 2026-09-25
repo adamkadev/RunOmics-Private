@@ -1,6 +1,3 @@
-'use client'
-
-import { useState } from 'react'
 import { GlossaryTerm, type GlossaryKey } from '@/components/ui/GlossaryTerm'
 import { CircleCheck, Minus, OctagonAlert, TriangleAlert, type LucideIcon } from 'lucide-react'
 import { CardTitle } from '@/components/ui/SectionLabel'
@@ -15,18 +12,11 @@ import {
   fitnessAgeDeltaYears,
   type VerdictTone,
 } from '@/domain/athlete/bodyMetrics'
-import { formatRelativeAgo } from '@/lib/formatters'
 import { STATUS } from '@/lib/statusColors'
-import { useMounted } from '@/lib/useMounted'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
-interface Props {
-  athlete: AthletePageView
-  latestVo2max: number | null
-}
-
-interface TileData {
+interface MetricData {
   label: string
   /** A term with a definition behind an (i). */
   glossary?: GlossaryKey
@@ -35,7 +25,11 @@ interface TileData {
   band?: { label: string; tone: VerdictTone }
 }
 
-type AvailableTileData = TileData & { value: string | number }
+type AvailableMetric = MetricData & { value: string | number }
+
+function available(metrics: MetricData[]): AvailableMetric[] {
+  return metrics.filter((metric): metric is AvailableMetric => metric.value !== undefined)
+}
 
 const TONE_ICON: Record<VerdictTone, { Icon: LucideIcon; className: string }> = {
   success: { Icon: CircleCheck, className: STATUS.success.text },
@@ -44,7 +38,7 @@ const TONE_ICON: Record<VerdictTone, { Icon: LucideIcon; className: string }> = 
   danger: { Icon: OctagonAlert, className: STATUS.danger.text },
 }
 
-function VerdictIcon({ band }: { band: NonNullable<TileData['band']> }) {
+function VerdictIcon({ band }: { band: NonNullable<MetricData['band']> }) {
   const { Icon, className } = TONE_ICON[band.tone]
   return (
     <Icon
@@ -59,26 +53,7 @@ function VerdictIcon({ band }: { band: NonNullable<TileData['band']> }) {
   )
 }
 
-function Tile({ label, glossary, unit, value, band }: AvailableTileData) {
-  return (
-    <div className="rounded-xl bg-foreground/[0.04] px-2.5 py-2.5 text-center">
-      <div className="text-caption font-semibold uppercase tracking-wide text-muted-foreground">
-        {glossary ? <GlossaryTerm term={glossary}>{label}</GlossaryTerm> : label}
-      </div>
-      <div className="mt-1 text-base font-extrabold tabular-nums text-foreground">
-        {value}
-        {band ? <VerdictIcon band={band} /> : null}
-        <span className="block text-caption font-medium text-subtle">{unit}</span>
-      </div>
-    </div>
-  )
-}
-
-type Category = 'performance' | 'cardio' | 'body'
-
-const CATEGORIES = ['performance', 'cardio', 'body'] as const
-
-function fitnessAgeTileBand(athlete: AthletePageView): TileData['band'] {
+function fitnessAgeMetricBand(athlete: AthletePageView): MetricData['band'] {
   const { fitnessAgeYrs, age } = athlete
   if (fitnessAgeYrs === undefined || age === undefined) return undefined
 
@@ -92,124 +67,108 @@ function fitnessAgeTileBand(athlete: AthletePageView): TileData['band'] {
   }
 }
 
-function bmiTileBand(bmi: number | undefined): TileData['band'] {
+function bmiMetricBand(bmi: number | undefined): MetricData['band'] {
   if (bmi === undefined) return undefined
   const band = bmiBand(bmi)
   return { label: t.settings.athlete.bmiBand[band], tone: BMI_BAND_TONE[band] }
 }
 
-// One sync a day is the normal cadence, so the dot only needs to distinguish
-// "as expected" from "a sync was missed" from "several were missed" -
-// mirrors the 72h threshold GetStaleSyncAlert uses to flag a stale device.
-function syncFreshnessTone(iso: string): 'success' | 'warning' | 'danger' {
-  const hoursSinceSync = (Date.now() - new Date(iso).getTime()) / 3_600_000
-  if (hoursSinceSync < 24) return 'success'
-  if (hoursSinceSync < 72) return 'warning'
-  return 'danger'
-}
-
-function tilesFor(category: Category, athlete: AthletePageView, latestVo2max: number | null): TileData[] {
+/** The four numbers a session is built from, under their plain names. */
+export function keyMetrics(athlete: AthletePageView, latestVo2max: number | null): AvailableMetric[] {
   const a = t.settings.athlete
-
-  if (category === 'cardio') {
-    return [
-      { label: a.restingHr, unit: t.units.bpm, value: athlete.restingHrBpm },
-      { label: a.lthr, glossary: 'lthr', unit: t.units.bpm, value: athlete.lthrBpm },
-      { label: a.maxHr, unit: t.units.bpm, value: athlete.maxHrBpm },
-    ]
-  }
-
-  if (category === 'body') {
-    return [
-      { label: a.age, unit: t.units.yrs, value: athlete.age },
-      {
-        label: a.fitnessAge,
-        unit: t.units.yrs,
-        value: athlete.fitnessAgeYrs !== undefined ? Math.round(athlete.fitnessAgeYrs) : undefined,
-        band: fitnessAgeTileBand(athlete),
-      },
-      {
-        label: a.achievableFitnessAge,
-        unit: t.units.yrs,
-        value:
-          athlete.achievableFitnessAgeYrs !== undefined
-            ? Math.round(athlete.achievableFitnessAgeYrs)
-            : undefined,
-      },
-      { label: a.height, unit: t.units.cm, value: athlete.heightCm },
-      { label: a.weight, unit: t.units.kg, value: athlete.weightKg },
-      { label: a.bmi, unit: '', value: athlete.bmi, band: bmiTileBand(athlete.bmi) },
-    ]
-  }
-
-  return [
-    { label: a.vo2max, unit: t.units.mlKgMin, value: latestVo2max !== null ? latestVo2max.toFixed(1) : undefined },
+  return available([
+    {
+      label: a.vo2max,
+      glossary: 'vo2max',
+      unit: t.units.mlKgMin,
+      value: latestVo2max !== null ? latestVo2max.toFixed(1) : undefined,
+    },
     { label: a.vma, glossary: 'vma', unit: t.units.kmh, value: athlete.vmaKmh },
+    { label: a.thresholdHr, glossary: 'lthr', unit: t.units.bpm, value: athlete.lthrBpm },
     {
       label: a.thresholdPace,
       glossary: 'thresholdPace',
-      unit: t.units.minPerKm,
+      unit: t.units.perKm,
       value: athlete.thresholdPaceSecPerKm ? formatDuration(athlete.thresholdPaceSecPerKm) : undefined,
     },
-  ]
+  ])
 }
 
-export function ProfileAthleteStats({ athlete, latestVo2max }: Props) {
+/** Everything else Garmin knows about the athlete: context, not inputs. */
+export function detailMetrics(athlete: AthletePageView): AvailableMetric[] {
   const a = t.settings.athlete
-  const [category, setCategory] = useState<Category>('performance')
-  // The sync's age is read from the browser's clock after mount: worked out on
-  // the server it is as old as the cached page, and the two differ - React #418.
-  const mounted = useMounted()
-  const availableByCategory = Object.fromEntries(
-    CATEGORIES.map((value) => [
-      value,
-      tilesFor(value, athlete, latestVo2max).filter(
-        (tile): tile is AvailableTileData => tile.value !== undefined
-      ),
-    ])
-  ) as Record<Category, AvailableTileData[]>
-  const availableCategories = CATEGORIES.filter((value) => availableByCategory[value].length > 0)
-  const selectedCategory = availableCategories.includes(category)
-    ? category
-    : (availableCategories[0] ?? 'performance')
-  const tiles = availableByCategory[selectedCategory]
-  const gridColumns = tiles.length === 1 ? 'grid-cols-1' : tiles.length === 2 ? 'grid-cols-2' : 'grid-cols-3'
+  return available([
+    { label: a.restingHr, unit: t.units.bpm, value: athlete.restingHrBpm },
+    { label: a.maxHr, unit: t.units.bpm, value: athlete.maxHrBpm },
+    { label: a.age, unit: t.units.yrs, value: athlete.age },
+    {
+      label: a.fitnessAge,
+      unit: t.units.yrs,
+      value: athlete.fitnessAgeYrs !== undefined ? Math.round(athlete.fitnessAgeYrs) : undefined,
+      band: fitnessAgeMetricBand(athlete),
+    },
+    {
+      label: a.achievableFitnessAge,
+      unit: t.units.yrs,
+      value:
+        athlete.achievableFitnessAgeYrs !== undefined ? Math.round(athlete.achievableFitnessAgeYrs) : undefined,
+    },
+    { label: a.height, unit: t.units.cm, value: athlete.heightCm },
+    { label: a.weight, unit: t.units.kg, value: athlete.weightKg },
+    { label: a.bmi, unit: '', value: athlete.bmi, band: bmiMetricBand(athlete.bmi) },
+  ])
+}
 
-  if (availableCategories.length === 0) return null
+/**
+ * The key numbers as four tiles, each with its definition behind an (i). A
+ * single grid replaced the Performance / Cardio / Body toggle, which hid two
+ * thirds of the numbers and put a second switch on a page that already had
+ * one for the zones.
+ */
+export function AthleteKeyNumbers({ athlete, latestVo2max }: { athlete: AthletePageView; latestVo2max: number | null }) {
+  const tiles = keyMetrics(athlete, latestVo2max)
+  if (tiles.length === 0) return null
 
   return (
-    <GlassSurface variant="card" className="p-5">
-      <div className="mb-3 flex items-baseline justify-between gap-3">
-        <CardTitle as="h2">{a.title}</CardTitle>
-        {mounted && athlete.lastUpdate && (
-          <span className="flex shrink-0 items-center gap-1.5 text-caption text-subtle-2">
-            <span className={cn('h-1.5 w-1.5 rounded-full', STATUS[syncFreshnessTone(athlete.lastUpdate)].dot)} />
-            {t.pages.athlete.lastUpdated(t.pages.athlete.source, formatRelativeAgo(athlete.lastUpdate))}
-          </span>
-        )}
-      </div>
+    <div className={cn('grid gap-2', tiles.length === 1 ? 'grid-cols-1' : 'grid-cols-2')}>
+      {tiles.map((tile) => (
+        <GlassSurface key={tile.label} variant="card" className="rounded-card-sm px-3.5 py-3">
+          <div className="text-caption font-semibold uppercase tracking-wide text-subtle">
+            {tile.glossary ? <GlossaryTerm term={tile.glossary}>{tile.label}</GlossaryTerm> : tile.label}
+          </div>
+          <div className="mt-1 text-title2 font-bold tabular-nums text-foreground">
+            {tile.value}
+            <span className="ml-1 text-xs font-medium text-muted-foreground">{tile.unit}</span>
+          </div>
+        </GlassSurface>
+      ))}
+    </div>
+  )
+}
 
-      <div className="mb-3 flex w-full gap-1 rounded-full bg-foreground/[0.04] p-1">
-        {availableCategories.map((value) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => setCategory(value)}
-            className={cn(
-              'flex-1 min-h-[44px] rounded-full py-1.5 text-xs font-semibold transition-colors',
-              selectedCategory === value ? 'bg-accent text-accent-foreground' : 'text-foreground/55'
-            )}
+/** Heart and body context as one plain list, no toggle. */
+export function AthleteDetails({ athlete }: { athlete: AthletePageView }) {
+  const rows = detailMetrics(athlete)
+  if (rows.length === 0) return null
+
+  return (
+    <GlassSurface variant="card" className="rounded-card-sm px-4 py-3.5">
+      <CardTitle as="h2" className="text-body text-foreground">{t.settings.athlete.details}</CardTitle>
+      <dl className="mt-1.5">
+        {rows.map((row) => (
+          <div
+            key={row.label}
+            className="flex items-baseline justify-between gap-3 border-t border-foreground/[0.06] py-2 first:border-t-0 text-footnote"
           >
-            {a.categories[value]}
-          </button>
+            <dt className="text-muted-foreground">{row.label}</dt>
+            <dd className="font-semibold tabular-nums text-foreground">
+              {row.value}
+              {row.unit && <span className="ml-1 text-caption font-medium text-subtle">{row.unit}</span>}
+              {row.band ? <VerdictIcon band={row.band} /> : null}
+            </dd>
+          </div>
         ))}
-      </div>
-
-      <div className={cn('grid gap-2', gridColumns)}>
-        {tiles.map((tile) => (
-          <Tile key={tile.label} {...tile} />
-        ))}
-      </div>
+      </dl>
     </GlassSurface>
   )
 }

@@ -1,4 +1,5 @@
 import type { Activity, ActivityType } from './types'
+import { LONG_RUN_SECONDS } from './longRun'
 
 export type VerdictTone = 'positive' | 'neutral' | 'caution'
 
@@ -13,7 +14,6 @@ const EXPECTED_RPE: Record<Exclude<ActivityType, 'Race'>, RpeBand> = {
   Sprint: [6, 8],
 }
 
-const LONG_RUN_SECONDS = 90 * 60
 const LONG_RUN_DRIFT = 2
 
 const OVERREACHING_TRAINING_EFFECT = 4.8

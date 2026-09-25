@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ChevronDown } from 'lucide-react'
 import { SectionDivider } from '@/components/ui/SectionLabel'
 import type { RecordEntry, TopEfforts } from '@/application/usecases/GetRecords'
 import type { RacePrediction } from '@/application/usecases/GetRacePredictions'
@@ -10,6 +9,8 @@ import { formatDate, formatDuration, formatDistance, formatPace } from '@/lib/fo
 import { cn } from '@/lib/utils'
 import { STATUS } from '@/lib/statusColors'
 import { t } from '@/i18n'
+
+const ROW_GRID = 'grid grid-cols-[1fr_4.875rem_4.875rem] items-center gap-2'
 
 function medalDotClass(i: number): string | null {
   if (i === 0) return STATUS.gold.dot
@@ -30,45 +31,52 @@ export function RecordsLeaderboard({ records, topEfforts, predictions = [] }: Pr
 
   if (!records.some((r) => r.seconds !== null)) return null
 
+  // One prediction is a fallback when it is the best itself: say so rather than
+  // present it as a forecast (the Half and Marathon read the same to the second).
+  const predictedCell = (best: number | null, prediction: RacePrediction | undefined) => {
+    if (!prediction) return <span className="text-right text-sm text-subtle">–</span>
+    const same = best !== null && Math.round(prediction.predictedSeconds) === Math.round(best)
+    return (
+      <span className={cn('text-right text-sm tabular-nums', same ? 'text-subtle' : 'text-muted-foreground')}>
+        {same ? t.records.sameAsBest : formatDuration(prediction.predictedSeconds)}
+      </span>
+    )
+  }
+
   return (
     <section className="space-y-3">
       <SectionDivider as="h2">
         {t.records.title}
       </SectionDivider>
 
-      <div className="flex justify-end px-0.5">
-        <span className="text-caption text-subtle">{t.records.predictedHeader}</span>
-      </div>
-
-      <div>
+      {/* Labelled columns, where a floating "best · predicted" caption used to
+          key two unlabelled numbers per row. */}
+      <div className="glass-card rounded-card-sm px-4 pb-1">
+        <div className={cn(ROW_GRID, 'pb-2 pt-3 text-caption font-semibold uppercase tracking-[0.06em] text-subtle')}>
+          <span>{t.records.cols.distance}</span>
+          <span className="text-right">{t.records.cols.best}</span>
+          <span className="text-right">{t.records.cols.predicted}</span>
+        </div>
         {records.filter((r) => r.key !== 'longest').map((r) => {
           const prediction = predictionByKey.get(r.key)
 
           if (r.seconds === null) {
-            // Same geometry as the eight rows above it: the row is different
-            // because it carries an action, and the muted name is the one
-            // signal saying so - a fill, a border and a dashed edge were three
-            // signals for one exception.
             return (
-              <div key={r.key} className="border-b border-foreground/10 last:border-b-0">
-                <div className="flex w-full items-center gap-3 px-0.5 py-[11px]">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[15px] font-bold text-subtle">{r.label}</p>
-                    <p className="mt-0.5 truncate text-xs text-subtle">{t.records.noRecordYet}</p>
-                  </div>
+              <div key={r.key} className={cn(ROW_GRID, 'min-h-14.5 border-t border-border')}>
+                <div className="min-w-0">
+                  <p className="truncate text-base font-semibold text-subtle">{r.label}</p>
+                  {/* The dash under Best already says there is no record, so
+                      the line is free for the one thing to do about it. */}
                   {prediction ? (
-                    <Link href="/goals" className="shrink-0 text-right">
-                      <span className="block font-display text-base font-bold tabular-nums text-subtle">
-                        {formatDuration(prediction.predictedSeconds)}
-                      </span>
-                      <span className="block text-[11.5px] font-semibold text-accent-text">
-                        {t.records.findRace(r.label)}
-                      </span>
+                    <Link href="/goals" className="block truncate text-xs font-semibold text-accent-text">
+                      {t.records.findRace(r.label)}
                     </Link>
                   ) : (
-                    <span className="shrink-0 text-xs text-subtle">{t.records.notYetRun}</span>
+                    <p className="truncate text-xs text-muted-foreground">{t.records.noRecordYet}</p>
                   )}
                 </div>
+                <span className="text-right text-base font-bold text-subtle">—</span>
+                {predictedCell(null, prediction)}
               </div>
             )
           }
@@ -78,28 +86,24 @@ export function RecordsLeaderboard({ records, topEfforts, predictions = [] }: Pr
           const isExpanded = expandedKey === r.key
 
           return (
-            <div key={r.key} className="border-b border-foreground/10 last:border-b-0">
+            <div key={r.key} className="border-t border-border">
+              {/* The whole row is the target - it opens the distance's
+                  history - so the 16 pt chevron goes. */}
               <button
                 type="button"
                 onClick={() => setExpandedKey(isExpanded ? null : r.key)}
-                className="flex w-full items-center gap-3 px-0.5 py-[11px] text-left"
+                aria-expanded={isExpanded}
+                className={cn(ROW_GRID, 'min-h-14.5 w-full text-left')}
               >
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[15px] font-bold text-foreground">{r.label}</p>
-                  <p className="mt-0.5 truncate text-xs text-subtle">
+                <div className="min-w-0">
+                  <p className="truncate text-base font-semibold text-foreground">{r.label}</p>
+                  <p className="truncate text-xs text-muted-foreground">
                     {r.date && <span>{formatDate(r.date, { style: 'bare' })}</span>}
                     <span> · {r.official ? t.records.raceTag : t.records.trainingTag}</span>
                   </p>
                 </div>
-                <span className="shrink-0 text-right">
-                  <span className="block font-display text-base font-bold tabular-nums text-foreground">
-                    {mainStat}
-                  </span>
-                  <span className="block text-[11.5px] tabular-nums text-subtle">
-                    {prediction ? formatDuration(prediction.predictedSeconds) : '–'}
-                  </span>
-                </span>
-                <ChevronDown size={14} className={cn('shrink-0 text-subtle transition-transform', isExpanded && 'rotate-180')} />
+                <span className="text-right text-base font-bold tabular-nums text-foreground">{mainStat}</span>
+                {r.distanceKm != null ? <span /> : predictedCell(r.seconds, prediction)}
               </button>
 
               {isExpanded && entries.length > 0 && (
@@ -155,6 +159,7 @@ export function RecordsLeaderboard({ records, topEfforts, predictions = [] }: Pr
           )
         })}
       </div>
+      <p className="px-1 text-xs text-subtle">{t.records.columnsNote}</p>
     </section>
   )
 }

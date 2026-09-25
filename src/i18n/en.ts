@@ -76,7 +76,8 @@ export const en = {
     fitness: { term: 'Fitness', definition: 'Fitness (CTL) is your 42-day average training load: the work your body has absorbed.' },
     fatigue: { term: 'Fatigue', definition: 'Fatigue (ATL) is your 7-day average training load: what the last week has cost you.' },
     vma: { term: 'VMA', definition: 'Maximal aerobic speed: the speed you reach at VO₂max, held for about six minutes.' },
-    lthr: { term: 'LTHR', definition: 'Lactate-threshold heart rate: about the heart rate you could hold for an hour-long race.' },
+    vo2max: { term: 'VO₂max', definition: 'The most oxygen your body can use per kilo each minute, as Garmin estimates it from your runs.' },
+    lthr: { term: 'Threshold HR', definition: 'Lactate-threshold heart rate (LTHR): about the heart rate you could hold for an hour-long race.' },
     thresholdPace: { term: 'Threshold pace', definition: 'The pace at your lactate threshold: about what you could race for an hour.' },
     rpe: { term: 'RPE', definition: 'Rate of perceived exertion, 1 to 10, as logged on the watch after the run.' },
     aerobicEffect: { term: 'Aerobic effect', definition: 'Garmin’s 0–5 score of how much the run built your aerobic fitness.' },
@@ -84,6 +85,17 @@ export const en = {
   },
 
   // Every pace axis runs the same way (lib/chartAxis paceAxis).
+  // The rolling year as month rows (/consistency).
+  consistency: {
+    activeDays: 'Active days',
+    shareOfDays: 'Share of days',
+    levels: { rest: 'Rest', run: 'Run', long: 'Long run' },
+    footnote: 'One row per month, one cell per day. A long run is 90 min or more.',
+    monthSummary: (month: string, active: number, long: number) =>
+      `${month}: ${active} active day${active === 1 ? '' : 's'}, ${long} long run${long === 1 ? '' : 's'}`,
+    empty: 'No runs in the last 12 months yet.',
+  },
+
   paceAxis: {
     caption: 'faster ↑',
   },
@@ -195,10 +207,9 @@ export const en = {
     },
     athlete: {
       title: 'Athlete & zones',
-      subtitle: 'Body, thresholds and training zones',
       back: 'Progress',
-      source: 'Garmin',
-      lastUpdated: (source: string, when: string) => `${source} · ${when}`,
+      fromGarmin: 'From Garmin',
+      syncedAgo: (when: string) => `From Garmin · synced ${when}`,
     },
     notFound: {
       code: '404',
@@ -214,12 +225,12 @@ export const en = {
     },
     settings: {
       title: 'Settings',
-      subtitle: 'Appearance, notifications and data export.',
       back: 'Progress',
     },
     consistency: {
       title: 'Consistency',
-      subtitle: 'Every day of the last 12 months',
+      rolling: 'Rolling 12 months',
+      window: (range: string) => `${range} · rolling 12 months`,
       back: 'Progress',
     },
   },
@@ -227,7 +238,7 @@ export const en = {
   settings: {
     sections: {
       appearance: 'Appearance',
-      notificationsData: 'Notifications & data',
+      data: 'Data',
       account: 'Account',
     },
     sync: {
@@ -282,16 +293,17 @@ export const en = {
       signingIn: 'Signing in...',
       error: 'Could not sign in, please retry.',
       notConfigured: 'Sign-in is not available right now.',
+      signInToManage: 'Sign in to manage',
     },
     athlete: {
-      title: 'Athlete Profile',
       age: 'Age',
-      lthr: 'LTHR',
-      thresholdPace: 'Thresh. pace',
+      thresholdPace: 'Threshold pace',
+      thresholdHr: 'Threshold HR',
+      details: 'Heart & body',
       vma: 'VMA',
       maxHr: 'Max HR',
       restingHr: 'Resting HR',
-      vo2max: 'VO2max',
+      vo2max: 'VO₂max',
       weight: 'Weight',
       height: 'Height',
       fitnessAge: 'Fitness age',
@@ -308,11 +320,6 @@ export const en = {
         overweight: 'overweight',
         obese: 'obese',
       },
-      categories: {
-        performance: 'Performance',
-        cardio: 'Cardio',
-        body: 'Body',
-      },
     },
     actions: {
       save: 'Save',
@@ -325,6 +332,8 @@ export const en = {
     dataSource: {
       garmin: 'Garmin Connect',
       connected: (source: string) => `${source} connected`,
+      readOnly: 'Runs are read-only here',
+      readOnlySynced: (when: string, runs: string) => `Synced ${when} · ${runs} · read-only here`,
       lastSync: 'Last synced',
       since: (monthYear: string) => `paired ${monthYear}`,
     },
@@ -363,16 +372,6 @@ export const en = {
   dashboard: {
     recentActivities: {
       title: 'Recent Activities',
-    },
-    heatmap: {
-      title: 'Consistency',
-      activeDaysUnit: 'active days',
-      rollingWindow: 'rolling 12 months',
-      less: 'Less',
-      more: 'More',
-      restDay: 'Rest day',
-      day: (km: number, runs: number) =>
-        `${km} km · ${runs} run${runs !== 1 ? 's' : ''}`,
     },
     trainingLoad: {
       title: 'Training Load',
@@ -1067,15 +1066,15 @@ export const en = {
     annualGoal: 'Annual Goal',
     kmRemaining: (km: number) => `${km} km remaining`,
     goalReached: 'Goal reached!',
-    seasonTimeline: 'Season Timeline',
-    target: 'Target',
+    upcoming: 'Upcoming races',
+    doneHeading: 'Done',
+    targetTime: (time: string) => `target ${time}`,
+    finish: 'finish',
     noDateSet: 'no date set',
-    done: 'done',
     beatenBy: (gap: string) => `beaten by ${gap}`,
     missedBy: (gap: string) => `missed by ${gap}`,
     best: 'Best',
     predictedTag: 'predicted',
-    findRace: 'Find a race ›',
     seasonRaces: 'Season Races',
     emptyPbs: (year: number) => `No PBs for ${year} yet - add them in Settings.`,
     projection: {
@@ -1143,6 +1142,7 @@ export const en = {
     kmLeftExact: (km: string) => `${km} km left`,
     // Past the limit, the overrun is the news - "0 km left" hid it.
     pastLimit: (over: string, limit: string) => `${over} km past its ${limit} km limit`,
+    wearBarCaption: 'Tick = limit · hatched = km past it',
     kmOver: (over: string) => `${over} km over`,
     replaceNow: 'replace',
     kmPerWeek: (km: number) => `${km} km/wk`,
@@ -1306,24 +1306,21 @@ export const en = {
     },
     trainingZones: {
       title: 'Training zones',
-      lthr: 'LTHR',
-      subline: (lthr: number) => `LTHR ${lthr} bpm`,
-      sublineWithThreshold: (lthr: number, pace: string) => `LTHR ${lthr} bpm · threshold ${pace} /km`,
-      total: (duration: string) => `${duration} total`,
-      thisWeek: 'This week',
-      thisWeekCaption: 'this week',
-      recentWeeks: 'Last 4 weeks',
-      avgPerWeek: 'avg / week',
+      viewLabel: 'Time in zones over',
+      week: 'Week',
+      fourWeeks: '4 weeks',
       columnZone: 'Zone',
       columnPace: 'Pace /km',
-      columnThisWeek: 'This wk',
-      columnAvgWeek: 'Avg / wk',
+      columnHr: 'HR bpm',
+      columnTime: 'Time',
+      inZonesWeek: (duration: string) => `${duration} in zones this week`,
+      inZonesRecent: (duration: string) => `${duration} in zones over the last 4 weeks`,
       zoneNames: {
         5: 'Max',
         4: 'Threshold',
         3: 'Aerobic',
         2: 'Easy',
-        1: 'Warmup',
+        1: 'Recovery',
       } as Record<number, string>,
       noSessionsThisWeek: 'No sessions logged yet.',
       noSessionsRecent: 'No sessions logged in these 4 weeks.',
@@ -1381,7 +1378,9 @@ export const en = {
       trailKey: 'taller = faster',
     },
     noRecordYet: 'No record yet',
-    predictedHeader: 'best · predicted',
+    cols: { distance: 'Distance', best: 'Best', predicted: 'Predicted' },
+    sameAsBest: '= best',
+    columnsNote: '“= best” means the prediction is your best itself, not a forecast. Tap a row for its history.',
     medalLegend: ['1st', '2nd', '3rd'] as [string, string, string],
     findRace: (distance: string) => `Find a ${distance.toLowerCase()} ›`,
   },

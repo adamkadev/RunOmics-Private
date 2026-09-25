@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { signInWithPopup, signOut, GoogleAuthProvider } from 'firebase/auth'
 import { SectionDivider } from '@/components/ui/SectionLabel'
 import { getClientAuth, isClientFirebaseConfigured } from '@/lib/firebase'
 import { useOwnerAuth } from '@/lib/useOwnerAuth'
+import { formatRelativeAgo } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { BackButton } from '@/components/ui/BackButton'
@@ -61,33 +62,44 @@ export function SettingsClient({ lastSyncedAt, activityCount, device }: Props) {
 
   if (!user) {
     return (
-      <div className="space-y-6">
-        <BackButton label={t.pages.settings.back} fallbackHref="/profile" />
-        <div>
-          <h1 className="text-display text-foreground">{t.pages.settings.title}</h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">{t.pages.settings.subtitle}</p>
-        </div>
+      <div className="space-y-3">
+        <SettingsHeader />
+        <AppearanceSection />
 
+        {/* Signed out, the page still says where the data comes from and what
+            signing in unlocks, instead of ending on a bare button. */}
         <section className="space-y-2">
           <SectionDivider as="h2" className="px-1">
-            {t.settings.sections.appearance}
+            {t.settings.sections.data}
           </SectionDivider>
-          <GlassSurface variant="card" className="p-5">
-            <AccentPicker />
-            <div className="my-5 h-px bg-foreground/[0.06]" />
-            <ThemeSegmented />
+          <GlassSurface variant="card" className="rounded-card-sm px-4">
+            <StaticRow
+              title={t.settings.dataSource.garmin}
+              sub={
+                lastSyncedAt
+                  ? t.settings.dataSource.readOnlySynced(formatRelativeAgo(lastSyncedAt), t.common.runs(activityCount))
+                  : t.settings.dataSource.readOnly
+              }
+              trailing={lastSyncedAt && <span aria-hidden className="size-2 rounded-full bg-delta-good" />}
+            />
           </GlassSurface>
         </section>
 
-        <div className="flex flex-col items-center gap-6 px-4 py-8">
-          <button
-            onClick={handleSignIn}
-            disabled={signingIn}
-            className="flex items-center gap-2.5 rounded-xl bg-accent px-6 py-3.5 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90 active:bg-accent/80 disabled:opacity-60"
-          >
-            {signingIn ? t.settings.auth.signingIn : t.settings.auth.signIn}
-          </button>
-        </div>
+        <section className="space-y-2">
+          <SectionDivider as="h2" className="px-1">
+            {t.settings.sections.account}
+          </SectionDivider>
+          <GlassSurface variant="card" className="rounded-card-sm px-4 pb-3.5">
+            <StaticRow title={t.settings.notifications.title} sub={t.settings.auth.signInToManage} />
+            <button
+              onClick={handleSignIn}
+              disabled={signingIn}
+              className="flex h-11 w-full items-center justify-center rounded-xl bg-accent text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90 active:bg-accent/80 disabled:opacity-60"
+            >
+              {signingIn ? t.settings.auth.signingIn : t.settings.auth.signIn}
+            </button>
+          </GlassSurface>
+        </section>
 
         <Toast toast={toast} leaving={leaving} />
       </div>
@@ -110,29 +122,14 @@ export function SettingsClient({ lastSyncedAt, activityCount, device }: Props) {
   }
 
   return (
-    <div className="space-y-6">
-      <BackButton label={t.pages.settings.back} fallbackHref="/profile" />
-      <div>
-        <h1 className="text-display text-foreground">{t.pages.settings.title}</h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">{t.pages.settings.subtitle}</p>
-      </div>
+    <div className="space-y-3">
+      <SettingsHeader />
+      <AppearanceSection />
 
       <section className="space-y-2">
         <SectionDivider as="h2" className="px-1">
-          {t.settings.sections.appearance}
+          {t.settings.sections.data}
         </SectionDivider>
-        <GlassSurface variant="card" className="p-5">
-          <AccentPicker />
-          <div className="my-5 h-px bg-foreground/[0.06]" />
-          <ThemeSegmented />
-        </GlassSurface>
-      </section>
-
-      <section className="space-y-2">
-        <SectionDivider as="h2" className="px-1">
-          {t.settings.sections.notificationsData}
-        </SectionDivider>
-        <NotificationsForm />
         <DataSourceInfo lastSyncedAt={lastSyncedAt} activityCount={activityCount} device={device} user={user} />
         <SyncNowCard user={user} />
       </section>
@@ -141,19 +138,52 @@ export function SettingsClient({ lastSyncedAt, activityCount, device }: Props) {
         <SectionDivider as="h2" className="px-1">
           {t.settings.sections.account}
         </SectionDivider>
+        <NotificationsForm />
         <button
           onClick={handleSignOut}
-          className="w-full py-3.5 text-sm font-semibold transition-colors active:scale-[0.98]"
-          style={{
-            color: 'var(--muted-foreground)',
-            border: '1px solid rgba(148,178,220,.2)',
-            background: 'rgba(148,178,220,.04)',
-            borderRadius: 16,
-          }}
+          className="glass-card h-11 w-full rounded-xl text-sm font-semibold text-muted-foreground transition-colors active:scale-[0.98]"
         >
           {t.settings.auth.signOut}
         </button>
       </section>
+    </div>
+  )
+}
+
+function SettingsHeader() {
+  return (
+    <div>
+      <BackButton label={t.pages.settings.back} fallbackHref="/profile" />
+      <h1 className="text-display text-foreground">{t.pages.settings.title}</h1>
+    </div>
+  )
+}
+
+/** The one setting that is the user's own: accent and theme. */
+function AppearanceSection() {
+  return (
+    <section className="space-y-2">
+      <SectionDivider as="h2" className="px-1">
+        {t.settings.sections.appearance}
+      </SectionDivider>
+      <GlassSurface variant="card" className="rounded-card-sm p-4">
+        <AccentPicker />
+        <div className="my-4 h-px bg-foreground/[0.06]" />
+        <ThemeSegmented />
+      </GlassSurface>
+    </section>
+  )
+}
+
+/** A read-only row in a settings card: title, status line, optional mark. */
+function StaticRow({ title, sub, trailing }: { title: string; sub: string; trailing?: ReactNode }) {
+  return (
+    <div className="flex min-h-14 items-center justify-between gap-3 border-t border-border py-2 first:border-t-0">
+      <div className="min-w-0">
+        <p className="text-body font-semibold text-foreground">{title}</p>
+        <p className="truncate text-xs text-muted-foreground">{sub}</p>
+      </div>
+      {trailing}
     </div>
   )
 }

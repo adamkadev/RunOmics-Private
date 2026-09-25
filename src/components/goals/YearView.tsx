@@ -8,7 +8,7 @@ import { formatDuration, formatDate, formatKm, formatPace } from '@/lib/formatte
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { MonthlyVolumeChart } from './MonthlyVolumeChart'
-import { SeasonTimeline } from './SeasonTimeline'
+import { SeasonRaces } from './SeasonRaces'
 import { shortDist } from './shortDistance'
 import { raceDistanceTint } from '@/lib/colors'
 import { PROJECTION_TONE } from '@/lib/statusColors'
@@ -108,7 +108,7 @@ export function YearView({ yearData, today }: Props) {
         </section>
       )}
 
-      {hasRaceDistanceCards && <SeasonTimeline yearData={yearData} today={today} />}
+      {hasRaceDistanceCards && <SeasonRaces yearData={yearData} today={today} />}
 
       {goals && monthlyGoals.length > 0 && (
         <MonthlyVolumeChart monthlyGoals={monthlyGoals} year={yearData.year} today={today} />

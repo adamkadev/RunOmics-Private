@@ -76,6 +76,18 @@ describe('SettingsClient owner gate', () => {
     expect(screen.queryByTestId('notifications-form')).not.toBeInTheDocument()
   })
 
+  it('groups the page into Appearance, Data and Account, even signed out', async () => {
+    renderSettings()
+    await screen.findByText(t.settings.auth.signIn)
+
+    const sections = screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)
+    expect(sections).toEqual([t.settings.sections.appearance, t.settings.sections.data, t.settings.sections.account])
+    // Where the runs come from, and what signing in unlocks.
+    expect(screen.getByText(t.settings.dataSource.garmin)).toBeInTheDocument()
+    expect(screen.getByText(new RegExp(t.common.runs(12)))).toBeInTheDocument()
+    expect(screen.getByText(t.settings.auth.signInToManage)).toBeInTheDocument()
+  })
+
   it('denies access to a signed-in account without the owner claim', async () => {
     mockUser = signedIn('someone-else@example.com')
     renderSettings()

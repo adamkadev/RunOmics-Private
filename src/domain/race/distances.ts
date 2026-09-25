@@ -8,3 +8,7 @@ export const RACE_DISTANCE_KM: Record<RaceDistanceKey, number> = {
   half: 21.0975,
   marathon: 42.195,
 }
+
+export function isRaceDistanceKey(key: string): key is RaceDistanceKey {
+  return (RACE_DISTANCES as string[]).includes(key)
+}

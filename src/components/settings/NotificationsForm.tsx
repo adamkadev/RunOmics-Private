@@ -126,7 +126,7 @@ export function NotificationsForm() {
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <h2 className="mb-4 text-sm font-bold text-foreground">{n.title}</h2>
+      <h3 className="mb-4 text-body font-semibold text-foreground">{n.title}</h3>
 
       <div className="space-y-4">
         {NOTIF_TYPES.map(({ key }) => {

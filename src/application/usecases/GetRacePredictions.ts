@@ -2,6 +2,8 @@ import type { Activity } from '@/domain/activity/types'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getRecords, computeBestEfforts, EFFORTS } from './GetRecords'
 import { getVO2maxHistory, type VO2maxPoint } from './GetVO2maxHistory'
+import { getGarminRacePredictions } from './GetGarminRacePredictions'
+import { isRaceDistanceKey } from '@/domain/race/distances'
 import { riegel, bestSourceFromMap } from '@/domain/training/riegel'
 import { addDays, isoDate } from '@/lib/calendarDate'
 
@@ -23,6 +25,13 @@ export interface RacePrediction {
   actualDate: string | null
   trendDeltaSeconds: number | null
   trendWeeks: number
+  /**
+   * Where the number comes from. Garmin's prediction wherever the watch makes
+   * one - the source Goals and the Analytics predictor read, so the same 10K is
+   * one time on every screen (Goals said 39:46 while Records said 39:47).
+   * Riegel from your bests for the distances Garmin does not predict.
+   */
+  source: 'garmin' | 'riegel'
 }
 
 function stdev(values: number[]): number {
@@ -82,6 +91,7 @@ export async function getRacePredictions(): Promise<RacePrediction[]> {
     Array.from(computeBestEfforts(pastActivities), ([key, entry]) => [key, entry.seconds] as const),
   )
 
+  const garmin = getGarminRacePredictions()?.latest ?? {}
   const results: RacePrediction[] = []
 
   for (const key of PREDICTED_KEYS) {
@@ -91,7 +101,8 @@ export async function getRacePredictions(): Promise<RacePrediction[]> {
     const rawNow = rawPrediction(recordByKey, key, km)
     if (rawNow === null) continue
 
-    const predictedSeconds = applyFormWeighting(rawNow, formFactor)
+    const garminSeconds = isRaceDistanceKey(key) ? garmin[key] : undefined
+    const predictedSeconds = garminSeconds ?? applyFormWeighting(rawNow, formFactor)
     const source = bestSourceFromMap(recordByKey, key, KM_BY_KEY, km)
     const recentTimes = source ? recentEffortTimes(activities, findRecordKeyForKm(source.sourceKm), RECENT_EFFORTS_COUNT) : []
     const band = confidenceBandSeconds(predictedSeconds, recentTimes)
@@ -112,6 +123,7 @@ export async function getRacePredictions(): Promise<RacePrediction[]> {
       actualDate: record?.date ?? null,
       trendDeltaSeconds,
       trendWeeks: TREND_WEEKS,
+      source: garminSeconds !== undefined ? 'garmin' : 'riegel',
     })
   }
 

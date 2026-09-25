@@ -6,7 +6,8 @@ vi.mock('@/infrastructure/repositories/JsonActivityRepository', () => ({ getAllA
 
 const { getHeatmapData } = await import('../GetHeatmapData')
 
-const activity = (date: string, distanceKm = 10): Activity => ({ date, distanceKm }) as Activity
+const activity = (date: string, distanceKm = 10, durationSeconds = 3000): Activity =>
+  ({ date, distanceKm, durationSeconds }) as Activity
 
 function grid(activities: Activity[] = []) {
   getAllActivities.mockReturnValue(activities)
@@ -37,7 +38,7 @@ describe('getHeatmapData', () => {
   })
 
   it('fills a day without a run with zeroes rather than dropping it', () => {
-    expect(grid()[100]).toEqual({ date: A_DAY_IN_WINDOW, distanceKm: 0, sessionCount: 0 })
+    expect(grid()[100]).toEqual({ date: A_DAY_IN_WINDOW, distanceKm: 0, sessionCount: 0, longRun: false })
   })
 
   it('adds up every session run on the same day', () => {
@@ -51,7 +52,13 @@ describe('getHeatmapData', () => {
       date: A_DAY_IN_WINDOW,
       distanceKm: 16.3,
       sessionCount: 3,
+      longRun: false,
     })
+  })
+
+  it('marks a day with a run of 90 minutes or more as a long run', () => {
+    const days = grid([activity(A_DAY_IN_WINDOW, 5, 1800), activity(A_DAY_IN_WINDOW, 18, 90 * 60)])
+    expect(days.find((d) => d.date === A_DAY_IN_WINDOW)?.longRun).toBe(true)
   })
 
   it('reads the day off a timestamped date', () => {
