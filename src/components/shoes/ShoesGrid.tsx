@@ -136,7 +136,7 @@ function ShoeRow({ shoe }: { shoe: ShoeStats }) {
       {/* Retired pairs are forced to wearPercent 100 (GetShoeStats), so a bar there
           would claim a full-red rotation shoe that is already out of service. */}
       {!shoe.retired && (
-        <WearBar totalKm={shoe.totalKm} maxKm={shoe.maxKm} fillClass={WEAR_BAR[status]} caption={false} />
+        <WearBar totalKm={shoe.totalKm} maxKm={shoe.maxKm} fillClass={WEAR_BAR[status]} />
       )}
       <span className="block truncate text-caption text-subtle">
         {shoe.retired ? (

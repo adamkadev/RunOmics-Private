@@ -6,7 +6,6 @@ import { CHART_COLORS } from '@/lib/colors'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { StatReadout } from '@/components/ui/StatReadout'
-import { paceAxis } from '@/lib/chartAxis'
 import { formatDuration } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { kmTicks } from './chartAxis'
@@ -187,7 +186,6 @@ export function ChartStack({
   const cursorKm = fraction != null ? fraction * distanceKm : null
   const elapsed = fraction != null ? elapsedAt(lanes.find((l) => l.key === 'pace'), fraction, distanceKm) : null
   const summary = lanes.map((l) => `${l.label} ${l.summary}`).join('. ')
-  const pace = paceAxis()
 
   return (
     <div className="space-y-3">
@@ -224,7 +222,6 @@ export function ChartStack({
           >
             {lanes.map((lane, i) => {
               const mark = fraction != null ? sampleAt(lane.values, fraction, distanceKm) : null
-              const note = lane.key === 'pace' ? pace.caption : i === 0 ? c.dashedAverage : null
               return (
                 <div key={lane.key} className={i > 0 ? 'mt-2.5' : undefined}>
                   <div className="flex items-baseline justify-between gap-2 pl-1 text-xs">
@@ -237,11 +234,6 @@ export function ChartStack({
                     <LaneChart lane={lane} distanceKm={distanceKm} isLast={i === lanes.length - 1} />
                     {mark && <LaneCursor lane={lane} mark={mark} distanceKm={distanceKm} />}
                   </div>
-                  {note && (
-                    <p className="text-caption text-subtle" style={{ paddingLeft: Y_AXIS_WIDTH }}>
-                      {note}
-                    </p>
-                  )}
                 </div>
               )
             })}

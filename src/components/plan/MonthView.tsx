@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { runTypeColor } from '@/lib/colors'
-import { ACTIVITY_TYPES, type ActivitySummary, type ActivityType, type PlannedWorkout } from '@/domain/activity/types'
+import { type ActivitySummary, type ActivityType, type PlannedWorkout } from '@/domain/activity/types'
 import { round } from '@/lib/math'
 import { formatDate } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
@@ -197,7 +197,7 @@ export function MonthView({
 
   const monthLabel = formatDate(isoDateOf(year, month, 1), { precision: 'month', style: 'full', year: 'always' })
 
-  const { rows, legendTypes, sessionCount, ranKm, plannedKm } = useMemo(() => {
+  const { rows, sessionCount, ranKm, plannedKm } = useMemo(() => {
     const firstDay = new Date(year, month, 1)
     const startOffset = (firstDay.getDay() || 7) - 1
     const daysInMonth = new Date(year, month + 1, 0).getDate()
@@ -208,7 +208,6 @@ export function MonthView({
     let sessionCount = 0
     let ranKm = 0
     let plannedKm = 0
-    const plannedTypes = new Set<ActivityType>()
 
     for (let day = 1; day <= daysInMonth; day++) {
       const date = `${prefix}-${String(day).padStart(2, '0')}`
@@ -216,10 +215,7 @@ export function MonthView({
       sessionCount += acts.length
       ranKm += acts.reduce((s, a) => s + a.distanceKm, 0)
       const planned = plannedInfoFor(date, byDatePlanned, byDateCoach)
-      if (planned) {
-        plannedKm += planned.km
-        plannedTypes.add(planned.type)
-      }
+      if (planned) plannedKm += planned.km
       cells.push({ day, date, acts })
     }
     // Only the weeks the month needs: an empty sixth row cost 120 pt.
@@ -228,9 +224,7 @@ export function MonthView({
     const rows: (DayCellData | null)[][] = []
     for (let i = 0; i < cells.length / 7; i++) rows.push(cells.slice(i * 7, i * 7 + 7))
 
-    const legendTypes = [...plannedTypes].sort((a, b) => ACTIVITY_TYPES.indexOf(a) - ACTIVITY_TYPES.indexOf(b))
-
-    return { rows, legendTypes, sessionCount, ranKm: round(ranKm, 0), plannedKm: round(plannedKm, 0) }
+    return { rows, sessionCount, ranKm: round(ranKm, 0), plannedKm: round(plannedKm, 0) }
   }, [year, month, byDate, byDatePlanned, byDateCoach])
 
   return (
@@ -346,29 +340,6 @@ export function MonthView({
         </div>
       </GlassSurface>
 
-      <GlassSurface variant="card" className="space-y-2 rounded-card-sm px-3.5 py-3">
-        {legendTypes.length > 0 && (
-          <div className="flex flex-wrap items-center gap-3 border-b border-foreground/[0.08] pb-2 text-xs text-subtle">
-            {legendTypes.map((type) => (
-              <span key={type} className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full" style={{ background: runTypeColor(type) }} />
-                {t.activityTypes[type]}
-              </span>
-            ))}
-          </div>
-        )}
-        {/* The legend in words: "7 planned km 7.0 ran extra unplanned" was a
-            key that needed its own key. */}
-        <ul className="space-y-1 text-xs text-subtle">
-          <li>
-            <span className="text-caption tabular-nums" style={{ color: PLANNED_INK }}>8</span> {t.plan.monthLegend.plannedKm}
-          </li>
-          <li>
-            <span className="text-caption font-bold tabular-nums" style={{ color: RAN_INK }}>8.5</span> {t.plan.monthLegend.ran}
-          </li>
-          <li>{t.plan.monthLegend.bar}</li>
-        </ul>
-      </GlassSurface>
 
       {sheetWorkout && <PlannedWorkoutSheet workout={sheetWorkout} onClose={() => setSheetWorkout(null)} />}
     </div>

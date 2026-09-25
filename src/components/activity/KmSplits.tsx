@@ -133,7 +133,6 @@ function PerKmSplits({ activity, splits }: { activity: ActivityDetailView; split
         <span />
         {showHr && <span className="text-right tabular-nums">{activity.avgHeartRate ?? '-'}</span>}
       </div>
-      <p className="mt-1 text-xs text-subtle">{sp.footnote}</p>
     </GlassSurface>
   )
 }

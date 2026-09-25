@@ -191,7 +191,6 @@ export function SimilarRuns({ data }: { data: SimilarRunsData }) {
               </LineChart>
             </ResponsiveContainer>
           </ChartFigure>
-          <p className="pl-12 text-caption text-subtle">{pace.caption}</p>
 
           <ul className="mt-3 space-y-0.5 border-t border-border pt-3">
             {listed.map((run) => (

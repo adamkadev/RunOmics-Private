@@ -35,12 +35,13 @@ describe('deltaLabel', () => {
 })
 
 describe('BodyCard', () => {
-  it('reads the strip without a tap: status, its day count and a legend', () => {
+  // No legend under the strip (v4.1 G32): the status word and colour carry it.
+  it('reads the strip without a tap: status and its day count, with no legend', () => {
     render(<BodyCard status={STATUS} days={WEEKS} />)
 
     expect(screen.getByText(t.trainingStatus.status.fresh)).toBeInTheDocument()
     expect(screen.getByText(t.dashboard.bodyCard.daysOfLast(10, 28))).toBeInTheDocument()
-    expect(screen.getByText(t.dashboard.bodyCard.legendItem(t.trainingStatus.status.maintaining, 11))).toBeInTheDocument()
+    expect(screen.queryByText(new RegExp(`${t.trainingStatus.status.maintaining} 11`))).not.toBeInTheDocument()
   })
 
   // 28 buttons of about 23 x 16 pt needed 28 taps to decode.

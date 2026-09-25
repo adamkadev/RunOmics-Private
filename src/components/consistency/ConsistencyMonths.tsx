@@ -71,7 +71,6 @@ export function ConsistencyMonths({ view }: { view: ConsistencyView }) {
             </span>
           ))}
         </div>
-        <p className="mt-1 text-caption text-subtle">{c.footnote}</p>
       </GlassSurface>
     </div>
   )

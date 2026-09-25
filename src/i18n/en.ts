@@ -46,9 +46,6 @@ export const en = {
     previous: 'Previous period',
     next: 'Next period',
     empty: 'No data recorded for this period.',
-    weeklyMeans: (weeks: number) =>
-      `${weeks} complete week${weeks === 1 ? '' : 's'} in this window · weekly means`,
-    pointsInWindow: (points: number) => `${points} point${points === 1 ? '' : 's'} in this window`,
     tooFewToPlot: 'Too few points to draw a trend',
   },
 
@@ -90,7 +87,6 @@ export const en = {
     activeDays: 'Active days',
     shareOfDays: 'Share of days',
     levels: { rest: 'Rest', run: 'Run', long: 'Long run' },
-    footnote: 'One row per month, one cell per day. A long run is 90 min or more.',
     monthSummary: (month: string, active: number, long: number) =>
       `${month}: ${active} active day${active === 1 ? '' : 's'}, ${long} long run${long === 1 ? '' : 's'}`,
     empty: 'No runs in the last 12 months yet.',
@@ -268,7 +264,6 @@ export const en = {
     accent: {
       title: 'Accent color',
       preview: 'Preview',
-      caption: 'Semantic hues shift to avoid a clash — red stays injury, amber stays caution.',
       options: {
         nature:      { label: 'Green' },
         teal:        { label: 'Teal' },
@@ -384,7 +379,6 @@ export const en = {
     // Training status and Form / Fitness / Fatigue, one card on Today.
     bodyCard: {
       daysOfLast: (days: number, total: number) => `${days} of the last ${total} days`,
-      legendItem: (status: string, days: number) => `${status} ${days} d`,
       deltaIn: (delta: string, days: number) => `${delta} in ${days} d`,
       openHistory: 'Training status history',
     },
@@ -949,7 +943,6 @@ export const en = {
       // Every delta is a sentence with its unit, measured against the named
       // baseline: "+10 SLOWER" said neither what it was compared with nor in what.
       vsBaseline: (weeks: number) => `vs your ${weeks}-week baseline`,
-      trackCaption: (weeks: number) => `Track = your ${weeks}-week low to high. Marker = this run.`,
       atHigh: (weeks: number) => `your ${weeks}-week high`,
       atLow: (weeks: number) => `your ${weeks}-week low`,
       ratioUnit: 'pt',
@@ -984,7 +977,6 @@ export const en = {
       readoutAt: 'At',
       runAverage: 'Run average',
       dragToScrub: 'drag to scrub',
-      dashedAverage: 'dashed = run average',
     },
     map: {
       fullscreen: 'Fullscreen',
@@ -1005,7 +997,6 @@ export const en = {
       spreadSummary: (kind: string, fastKm: number, fastPace: string, slowKm: number, slowPace: string, spread: number) =>
         `${kind}: fastest km ${fastKm} (${fastPace}), slowest km ${slowKm} (${slowPace}), a ${spread} s/km spread.`,
       spreadKind: { even: 'Even run', negative: 'Negative split', faded: 'Faded', uneven: 'Uneven' },
-      footnote: 'vs avg in s/km, negative is faster. HR in bpm.',
       partialKm: (km: string) => `final ${km}`,
       repSetLabel: (reps: number, duration: string) => `${reps} × ${duration}`,
       bandLabel: (range: string) => `band ${range}/km`,
@@ -1142,7 +1133,6 @@ export const en = {
     kmLeftExact: (km: string) => `${km} km left`,
     // Past the limit, the overrun is the news - "0 km left" hid it.
     pastLimit: (over: string, limit: string) => `${over} km past its ${limit} km limit`,
-    wearBarCaption: 'Tick = limit · hatched = km past it',
     kmOver: (over: string) => `${over} km over`,
     replaceNow: 'replace',
     kmPerWeek: (km: number) => `${km} km/wk`,
@@ -1380,7 +1370,6 @@ export const en = {
     noRecordYet: 'No record yet',
     cols: { distance: 'Distance', best: 'Best', predicted: 'Predicted' },
     sameAsBest: '= best',
-    columnsNote: '“= best” means the prediction is your best itself, not a forecast. Tap a row for its history.',
     medalLegend: ['1st', '2nd', '3rd'] as [string, string, string],
     findRace: (distance: string) => `Find a ${distance.toLowerCase()} ›`,
   },
@@ -1479,11 +1468,6 @@ export const en = {
       ran: (km: number) => `${km} km run`,
       planned: (km: number) => `${km} km planned`,
     },
-    monthLegend: {
-      plannedKm: '= km the plan scheduled',
-      ran: '= km you ran',
-      bar: 'The bar is a planned session, in the colour of its intensity; a run without one was not in the plan.',
-    },
     typeShort: {
       Sprint: 'Sprint',
       Anaerobic: 'Anaer.',
@@ -1526,7 +1510,6 @@ export const en = {
       noSession: 'No session planned',
       next: (weekday: string, title: string) => `No session planned · next is ${weekday}, ${title}`,
     },
-    intensityNote: (zones: string) => `Colour = intensity (${zones})`,
     weekSummary: {
       missed: (n: number) => `${n} missed`,
       easyPlanned: (easy: number, guide: number) => `${easy}% of planned time is easy (guide ${guide}%)`,

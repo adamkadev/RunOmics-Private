@@ -78,9 +78,10 @@ describe('MonthView wording and grid', () => {
     expect(screen.queryByText('WK')).not.toBeInTheDocument()
   })
 
-  it('explains the legend in words', () => {
+  // v4.1 G32: no legend card under the month; shapes and zone colour carry it.
+  it('has no legend card', () => {
     renderMonth()
 
-    expect(screen.getByText(t.plan.monthLegend.bar)).toBeInTheDocument()
+    expect(screen.queryByText(/planned km/)).not.toBeInTheDocument()
   })
 })

@@ -131,7 +131,8 @@ describe('WindowedChartCard: sparse windows', () => {
 
     const chart = screen.getByTestId('chart')
     expect(chart).toHaveAttribute('data-shape', 'sparse')
-    expect(screen.getByText(t.chartWindow.weeklyMeans(3))).toBeInTheDocument()
+    // Nothing under the card (v4.1 G32): no "N complete weeks" note.
+    expect(screen.queryByText(/complete week/)).not.toBeInTheDocument()
   })
 
   it('drops the cadence footnote once the window is dense enough to draw', () => {
@@ -146,6 +147,6 @@ describe('WindowedChartCard: sparse windows', () => {
     )
 
     expect(screen.getByTestId('chart')).toHaveAttribute('data-shape', 'curve')
-    expect(screen.queryByText(t.chartWindow.pointsInWindow(14))).not.toBeInTheDocument()
+    expect(screen.queryByText(/in this window/)).not.toBeInTheDocument()
   })
 })

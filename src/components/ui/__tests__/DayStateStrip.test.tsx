@@ -3,7 +3,7 @@ import path from 'node:path'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
-import { DayStateLegend, DayStateStrip, type DayStateCell } from '../DayStateStrip'
+import { DayStateStrip, type DayStateCell } from '../DayStateStrip'
 import { t } from '@/i18n'
 
 function cell(date: string, overrides: Partial<DayStateCell> = {}): DayStateCell {
@@ -70,15 +70,5 @@ describe('DayStateStrip', () => {
     render(<DayStateStrip variant="bars" days={WEEK} />)
 
     expect(screen.getByText('11').className).toContain('text-delta-warn')
-  })
-})
-
-describe('DayStateLegend', () => {
-  it('keys every state it draws', () => {
-    render(<DayStateLegend color="var(--zone-4)" />)
-
-    for (const label of [t.sessionState.done, t.sessionState.planned, t.sessionState.missed, t.sessionState.today]) {
-      expect(screen.getByText(label)).toBeInTheDocument()
-    }
   })
 })

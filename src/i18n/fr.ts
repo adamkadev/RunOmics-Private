@@ -38,9 +38,6 @@ export const fr = {
     previous: 'Période précédente',
     next: 'Période suivante',
     empty: 'Aucune donnée enregistrée sur cette période.',
-    weeklyMeans: (weeks: number) =>
-      `${weeks} semaine${weeks === 1 ? '' : 's'} complète${weeks === 1 ? '' : 's'} sur cette fenêtre · moyennes hebdomadaires`,
-    pointsInWindow: (points: number) => `${points} point${points === 1 ? '' : 's'} sur cette fenêtre`,
     tooFewToPlot: 'Trop peu de points pour tracer une tendance',
   },
 
@@ -78,7 +75,6 @@ export const fr = {
     activeDays: 'Jours actifs',
     shareOfDays: 'Part des jours',
     levels: { rest: 'Repos', run: 'Sortie', long: 'Sortie longue' },
-    footnote: 'Une ligne par mois, une case par jour. Une sortie longue dure 90 min ou plus.',
     monthSummary: (month: string, active: number, long: number) =>
       `${month} : ${active} jour${active > 1 ? 's' : ''} actif${active > 1 ? 's' : ''}, ${long} sortie${long > 1 ? 's' : ''} longue${long > 1 ? 's' : ''}`,
     empty: 'Aucune sortie sur les 12 derniers mois pour le moment.',
@@ -253,7 +249,6 @@ export const fr = {
     accent: {
       title: 'Couleur d’accent',
       preview: 'Aperçu',
-      caption: 'Les teintes se décalent pour éviter tout conflit — le rouge reste la blessure, l’orange la prudence.',
       options: {
         nature:      { label: 'Vert' },
         teal:        { label: 'Turquoise' },
@@ -368,7 +363,6 @@ export const fr = {
     },
     bodyCard: {
       daysOfLast: (days: number, total: number) => `${days} des ${total} derniers jours`,
-      legendItem: (status: string, days: number) => `${status} ${days} j`,
       deltaIn: (delta: string, days: number) => `${delta} en ${days} j`,
       openHistory: 'Historique du statut d’entraînement',
     },
@@ -924,7 +918,6 @@ export const fr = {
       vertOscillation: 'Oscillation verticale',
       vertRatio: 'Ratio vertical',
       vsBaseline: (weeks: number) => `vs ta référence sur ${weeks} semaines`,
-      trackCaption: (weeks: number) => `Barre = ton plus bas et ton plus haut sur ${weeks} semaines. Repère = cette sortie.`,
       atHigh: (weeks: number) => `ton plus haut sur ${weeks} semaines`,
       atLow: (weeks: number) => `ton plus bas sur ${weeks} semaines`,
       ratioUnit: 'pt',
@@ -959,7 +952,6 @@ export const fr = {
       readoutAt: 'À',
       runAverage: 'Moyenne de la sortie',
       dragToScrub: 'glisser pour lire',
-      dashedAverage: 'pointillé = moyenne',
     },
     map: {
       fullscreen: 'Plein écran',
@@ -977,7 +969,6 @@ export const fr = {
       spreadSummary: (kind: string, fastKm: number, fastPace: string, slowKm: number, slowPace: string, spread: number) =>
         `${kind} : km le plus rapide ${fastKm} (${fastPace}), le plus lent ${slowKm} (${slowPace}), ${spread} s/km d’écart.`,
       spreadKind: { even: 'Sortie régulière', negative: 'Negative split', faded: 'Fin en baisse', uneven: 'Irrégulière' },
-      footnote: 'vs moy. en s/km, négatif = plus rapide. FC en bpm.',
       partialKm: (km: string) => `${km} final`,
       repSetLabel: (reps: number, duration: string) => `${reps} × ${duration}`,
       bandLabel: (range: string) => `plage ${range}/km`,
@@ -1107,7 +1098,6 @@ export const fr = {
     kmLeft: (km: string) => `~${km} km restants`,
     kmLeftExact: (km: string) => `${km} km restants`,
     pastLimit: (over: string, limit: string) => `${over} km au-delà de sa limite de ${limit} km`,
-    wearBarCaption: 'Trait = limite · hachures = km au-delà',
     kmOver: (over: string) => `${over} km de trop`,
     replaceNow: 'à remplacer',
     kmPerWeek: (km: number) => `${km} km/sem.`,
@@ -1321,7 +1311,6 @@ export const fr = {
     noRecordYet: 'Pas encore de record',
     cols: { distance: 'Distance', best: 'Record', predicted: 'Prédit' },
     sameAsBest: '= record',
-    columnsNote: '« = record » : la prédiction est ton record lui-même, pas une prévision. Touche une ligne pour son historique.',
     medalLegend: ['1er', '2e', '3e'] as [string, string, string],
     findRace: (distance: string) => `Trouver un ${distance.toLowerCase()} ›`,
   },
@@ -1420,11 +1409,6 @@ export const fr = {
       ran: (km: number) => `${km} km courus`,
       planned: (km: number) => `${km} km prévus`,
     },
-    monthLegend: {
-      plannedKm: '= km prévus par le plan',
-      ran: '= km courus',
-      bar: 'La barre est une séance prévue, dans la couleur de son intensité ; une sortie sans barre n’était pas au plan.',
-    },
     typeShort: {
       Sprint: 'Sprint',
       Anaerobic: 'Anaér.',
@@ -1467,7 +1451,6 @@ export const fr = {
       noSession: 'Aucune séance prévue',
       next: (weekday: string, title: string) => `Aucune séance prévue · prochaine : ${weekday}, ${title}`,
     },
-    intensityNote: (zones: string) => `Couleur = intensité (${zones})`,
     weekSummary: {
       missed: (n: number) => `${n} manquée${n > 1 ? 's' : ''}`,
       easyPlanned: (easy: number, guide: number) => `${easy} % du temps prévu est facile (repère ${guide} %)`,

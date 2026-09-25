@@ -7,7 +7,6 @@ import {
   hasEarlierPoints,
   pointsInWindow,
   sampleForRange,
-  seriesCadence,
   seriesShape,
   windowBounds,
   type ChartRange,
@@ -145,15 +144,6 @@ export function ChartWindowPager({
   )
 }
 
-function CadenceNote({ plotted }: { plotted: { date: string }[] }) {
-  const note =
-    seriesCadence(plotted) === 'weekly'
-      ? t.chartWindow.weeklyMeans(plotted.length)
-      : t.chartWindow.pointsInWindow(plotted.length)
-
-  return <p className="mt-2 text-caption text-subtle">{note}</p>
-}
-
 export function WindowedChartCard<T extends { date: string }>({
   title,
   unit,
@@ -230,7 +220,6 @@ export function WindowedChartCard<T extends { date: string }>({
         children(plotted, shape)
       )}
 
-      {shape !== 'curve' && plotted.length > 0 && <CadenceNote plotted={plotted} />}
     </GlassSurface>
   )
 }

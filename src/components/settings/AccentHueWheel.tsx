@@ -172,11 +172,8 @@ export function AccentHueWheel({ hue, onPick }: Props) {
       {/* The explanation sits between the wheel and the commit, so it is read
           before Done rather than after it. It carries the standing rule until a
           blocked stop is hit, then says what just happened. */}
-      <p
-        className={cn('mt-3 text-center text-xs leading-snug', reservedHit ? 'text-foreground' : 'text-muted-foreground')}
-        aria-live="polite"
-      >
-        {reservedHit ? t.settings.accent.custom.reserved : t.settings.accent.caption}
+      <p className="mt-3 min-h-4 text-center text-xs leading-snug text-foreground" aria-live="polite">
+        {reservedHit ? t.settings.accent.custom.reserved : null}
       </p>
     </div>
   )
