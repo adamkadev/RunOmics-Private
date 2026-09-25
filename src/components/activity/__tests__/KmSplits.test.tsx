@@ -160,4 +160,26 @@ describe('per-km splits', () => {
     expect(screen.getByText(t.activity.splits.cols.vsAvg)).toBeInTheDocument()
     expect(screen.getByText(/s\/km spread/)).toBeInTheDocument()
   })
+
+  // G14: with a 4:10 total, a 4:04 km read -5 because the unrounded paces
+  // were subtracted. It is measured against Total as printed.
+  it('measures vs avg against the Total row, both rounded alike', () => {
+    render(
+      <KmSplits
+        activity={{
+          ...({} as ActivityDetailView),
+          distanceKm: 3,
+          durationSeconds: 754,
+          paceSecPerKm: 249.5,
+          avgHeartRate: 150,
+          splits: [split('lap', 750, 3_000, 150)],
+          paceSamples: [...Array(100).fill(244.4), ...Array(100).fill(250), ...Array(100).fill(260)],
+          hrSamples: null,
+        }}
+      />,
+    )
+
+    // km 1 prints 4:04 and Total 4:10.
+    expect(screen.getByText(/^[−-]6$/)).toBeInTheDocument()
+  })
 })

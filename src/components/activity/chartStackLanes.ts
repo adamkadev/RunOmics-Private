@@ -51,10 +51,10 @@ export interface ChartStackInput {
  * stream cleanups over every sample - that the component builds it once per
  * activity rather than on each pointer move.
  *
- * Every summary is computed from the lane's own cleaned samples. HR used to
- * read its average from the activity and pace mixed the activity's average
- * with the samples' best, so a "best" could print slower than the "avg" beside
- * it.
+ * Summaries come from the lane's own cleaned samples, except HR's average,
+ * which is the stat row's so the two can't disagree. Pace keeps its sample
+ * average: mixing the activity's average with the samples' best let a "best"
+ * print slower than the "avg" beside it.
  */
 export function buildLanes(input: ChartStackInput): Lane[] {
   const { distanceKm, hrSamples, paceSamples, cadenceSamples, elevationProfile, elevationGain } = input
@@ -71,11 +71,13 @@ export function buildLanes(input: ChartStackInput): Lane[] {
     format: (v: number) => string,
     summarize: (stats: { average: number; min: number; max: number }) => string,
     reversed = false,
+    recordedAverage: number | null = null,
   ) {
     const domain = paddedDomain(values, minSpan)
     if (!domain) return
     const present = values.filter((v): v is number => v !== null)
-    const average = present.length > 0 ? present.reduce((a, b) => a + b, 0) / present.length : null
+    const sampleAverage = present.length > 0 ? present.reduce((a, b) => a + b, 0) / present.length : null
+    const average = sampleAverage !== null ? (recordedAverage ?? sampleAverage) : null
     const summary = average !== null
       ? summarize({ average, min: Math.min(...present), max: Math.max(...present) })
       : ''
@@ -95,6 +97,10 @@ export function buildLanes(input: ChartStackInput): Lane[] {
       20,
       (v) => `${Math.round(v)}`,
       ({ average, max }) => `${c.avg} ${Math.round(average)} · ${c.max} ${Math.round(max)}`,
+      false,
+      // The stat row's average (G10): the downsampled stream read 113 beside
+      // the row's 115 for the same run.
+      input.avgHr,
     )
   }
 

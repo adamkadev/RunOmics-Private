@@ -890,6 +890,7 @@ export const en = {
     zones: {
       title: 'Time in Zones',
       noData: 'No HR zone data',
+      basisHr: 'by heart rate',
       unused: (range: string) => `${range} unused on this run`,
       labels: {
         1: 'Z1 · Warmup',

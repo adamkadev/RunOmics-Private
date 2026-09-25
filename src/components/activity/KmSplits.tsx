@@ -70,7 +70,9 @@ function PerKmSplits({ activity, splits }: { activity: ActivityDetailView; split
   const rowCls = showHr ? PER_KM_ROW : PER_KM_ROW_NO_HR
   const totalDistanceKm = splits.reduce((s, x) => s + x.distanceKm, 0)
   const totalDurationSec = splits.reduce((s, x) => s + x.durationSec, 0)
-  const avgPace = activity.paceSecPerKm ?? Math.round(totalDurationSec / totalDistanceKm)
+  // Whole seconds, as Total prints it, and each split is rounded the same way
+  // before the subtraction: a 4:04 km against a 4:10 total reads -6, not -5.
+  const avgPace = Math.round(activity.paceSecPerKm ?? totalDurationSec / totalDistanceKm)
   const spread = splitSpread(splits)
 
   // Bars run from the slowest km (40 %) to the fastest (full), so the
@@ -108,7 +110,7 @@ function PerKmSplits({ activity, splits }: { activity: ActivityDetailView; split
       </div>
 
       {splits.map((split, i) => {
-        const delta = Math.round(split.paceSecPerKm - avgPace)
+        const delta = Math.round(split.paceSecPerKm) - avgPace
         return (
           <div key={split.km} className={`${rowCls} min-h-10 border-b border-border text-sm`}>
             <span className="tabular-nums text-muted-foreground">
