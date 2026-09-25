@@ -160,6 +160,13 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       // The smallest touch target. `.hit-44` grows a control's hit area to it
       // without changing what it looks like.
       '--tap-min': '44px',
+      // Session state is drawn in shape, so colour is free to mean intensity:
+      // the .state-* recipes take the zone colour from --state-color.
+      '--state-line': '1.5px',
+      '--state-hatch': '40%',
+      '--state-ring': '2px',
+      // Ink for text on a zone fill: over 7:1 on Z3 and Z4 in both themes.
+      '--zone-ink': c.roInk,
       '--scrim': ink(0.25),
       '--scrim-strong': ink(0.6),
       '--track-on-dark': paper(0.08),

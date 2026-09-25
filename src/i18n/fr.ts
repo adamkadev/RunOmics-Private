@@ -48,6 +48,15 @@ export const fr = {
     monthShortYear: (month: string, year2: string) => `${month} ${year2}`,
   },
 
+  sessionState: {
+    done: 'Fait',
+    planned: 'Prévu',
+    missed: 'Manqué',
+    rest: 'Repos',
+    today: 'Aujourd’hui',
+    dayLabel: (day: string, state: string) => `${day} : ${state}`,
+  },
+
   units: {
     km: 'km',
     bpm: 'bpm',
@@ -1399,6 +1408,7 @@ export const fr = {
     weekSummary: {
       load: 'Charge',
       loadUnit: 'pts',
+      missed: (n: number) => `${n} manquée${n > 1 ? 's' : ''}`,
       sessionsCount: (n: number) => `${n} séance${n > 1 ? 's' : ''}`,
       ranOfPlan: (ran: string, plan: string) => `${ran} sur ${plan} km`,
       sessionsOfPlan: (ran: number, plan: number) => `${ran} sur ${plan} séance${plan > 1 ? 's' : ''}`,

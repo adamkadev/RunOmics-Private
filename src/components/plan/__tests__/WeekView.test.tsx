@@ -381,3 +381,27 @@ describe('the week summary against its plan', () => {
     expect(screen.getByTestId('week-summary').textContent).toContain(`10 ${t.units.km} · ${t.plan.weekSummary.sessionsCount(2)}`)
   })
 })
+
+describe('missed sessions', () => {
+  // Planned and not run drew as the same solid bar as a session still to come,
+  // and the summary never counted them.
+  const planned: PlannedWorkout[] = [
+    { date: '2026-09-07', name: 'Easy', distanceM: 8_000 },
+    { date: '2026-09-08', name: 'Tempo', distanceM: 9_000 },
+    { date: '2026-09-11', name: 'Long', distanceM: 14_000 },
+  ]
+
+  it('counts them in the summary', () => {
+    renderWeek({ planned })
+
+    expect(screen.getByTestId('week-summary').textContent).toContain(t.plan.weekSummary.missed(2))
+  })
+
+  it('names each row missed, done or still planned', () => {
+    renderWeek({ planned, activities: [TEMPO] })
+
+    expect(within(screen.getByTestId('week-session-done:2026-09-07')).getByText(`✓ ${t.sessionState.done}`)).toBeInTheDocument()
+    expect(within(screen.getByTestId('week-session-garmin:2026-09-08:Tempo')).getByText(t.sessionState.missed)).toBeInTheDocument()
+    expect(within(screen.getByTestId('week-session-garmin:2026-09-11:Long')).getByText(t.sessionState.planned)).toBeInTheDocument()
+  })
+})

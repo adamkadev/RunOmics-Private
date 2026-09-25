@@ -1,13 +1,54 @@
-import type { ActivitySummary, PlannedWorkout } from '@/domain/activity/types'
+import type { ActivitySummary, ActivityType, PlannedWorkout } from '@/domain/activity/types'
+import { COACHING_TO_ACTIVITY_TYPE } from '@/domain/coaching/types'
 import { weekTarget, type WeekTarget, type WeekTargetDay } from '@/domain/training/weekTarget'
 import { prescriptionDistanceMeters } from '@/components/coaching/presentation'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
 import { formatKm } from '@/lib/formatters'
 import type { PlanPrescriptionView } from './planCoachingView'
 
-type Run = Pick<ActivitySummary, 'date' | 'distanceKm'>
+type Run = Pick<ActivitySummary, 'date' | 'distanceKm'> & Partial<Pick<ActivitySummary, 'type'>>
 type Prescription = Pick<PlanPrescriptionView, 'state'> & {
-  prescription: Pick<PlanPrescriptionView['prescription'], 'date'> & Parameters<typeof prescriptionDistanceMeters>[0]
+  prescription: Pick<PlanPrescriptionView['prescription'], 'date' | 'type'> & Parameters<typeof prescriptionDistanceMeters>[0]
+}
+
+// Hardest-first, matching ACTIVITY_TYPES' own declaration order - a day with
+// more than one logged activity (or a race day) resolves to whichever one is
+// hardest, not just whichever came first.
+const RAMP_ORDER: ActivityType[] = ['Race', 'Sprint', 'Anaerobic', 'VO2Max', 'Threshold', 'Tempo', 'Base']
+
+export function hardestType(types: ActivityType[]): ActivityType {
+  return types.reduce((hardest, type) =>
+    RAMP_ORDER.indexOf(type) < RAMP_ORDER.indexOf(hardest) ? type : hardest
+  )
+}
+
+export function resolvePlannedType(
+  date: string,
+  byDatePlanned: ReadonlyMap<string, PlannedWorkout>,
+  byDateCoach?: ReadonlyMap<string, readonly Prescription[]>
+): ActivityType | undefined {
+  const coach = byDateCoach?.get(date)?.find((v) => v.state !== 'cancelled')
+  if (coach) return COACHING_TO_ACTIVITY_TYPE[coach.prescription.type]
+  return byDatePlanned.get(date)?.type
+}
+
+export interface DayTypeResolution {
+  type: ActivityType
+  /** Set only when the day was run and it differs from what was planned. */
+  planned?: ActivityType
+}
+
+// One source of truth for a day's colour: the week strip and the "this week"
+// rows both call this rather than each resolving a planned or recorded type on
+// their own - which is how the same day used to end up two different hues in
+// two places. A day that was actually run always shows what happened, not what
+// was scheduled.
+export function resolveDayType(acts: readonly { type: ActivityType }[], plannedType: ActivityType | undefined): DayTypeResolution | null {
+  if (acts.length > 0) {
+    const recorded = hardestType(acts.map((a) => a.type))
+    return recorded !== plannedType && plannedType ? { type: recorded, planned: plannedType } : { type: recorded }
+  }
+  return plannedType ? { type: plannedType } : null
 }
 
 export interface PlanMaps<A extends Run = Run, P extends Prescription = Prescription> {
@@ -65,12 +106,17 @@ export function weekPlanDays(
       plannedKm = garmin.distanceM !== undefined ? garmin.distanceM / 1000 : null
     }
 
+    const typed = runs.filter((a): a is typeof a & { type: ActivityType } => a.type !== undefined)
+    const resolved = resolveDayType(typed, resolvePlannedType(date, byDatePlanned, byDateCoach))
+
     return {
       date,
       ranKm: runs.reduce((sum, a) => sum + a.distanceKm, 0),
       runs: runs.length,
       plannedKm,
       plannedSessions,
+      ...(resolved ? { type: resolved.type } : {}),
+      ...(resolved?.planned ? { plannedType: resolved.planned } : {}),
     }
   })
 }
