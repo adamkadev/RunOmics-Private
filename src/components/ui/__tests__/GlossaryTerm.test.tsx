@@ -1,0 +1,46 @@
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { describe, expect, it } from 'vitest'
+import { FORM_BAND_THRESHOLDS } from '@/domain/training/formBand'
+import { t } from '@/i18n'
+import { GlossaryInfo, GlossaryTerm, glossaryDefinition, type GlossaryKey } from '../GlossaryTerm'
+
+const TERMS: GlossaryKey[] = ['form', 'fitness', 'fatigue', 'vma', 'lthr', 'thresholdPace', 'rpe', 'aerobicEffect', 'anaerobicEffect']
+
+describe('glossaryDefinition', () => {
+  it('has one definition for every term the audit named', () => {
+    for (const term of TERMS) expect(glossaryDefinition(term).length, term).toBeGreaterThan(20)
+  })
+
+  // The same thresholds as the named bands, so the (i) and the band agree.
+  it("defines Form with the bands' own thresholds", () => {
+    expect(glossaryDefinition('form')).toContain(String(FORM_BAND_THRESHOLDS.tiredBelow))
+    expect(glossaryDefinition('form')).toContain(`+${FORM_BAND_THRESHOLDS.veryFreshAbove}`)
+  })
+})
+
+describe('GlossaryTerm', () => {
+  it('keeps the definition behind an (i) until it is asked for', async () => {
+    render(<GlossaryTerm term="vma">VMA</GlossaryTerm>)
+    const info = screen.getByRole('button', { name: t.glossary.about(t.glossary.vma.term) })
+
+    expect(info).toHaveAttribute('aria-expanded', 'false')
+    expect(info.className).toContain('hit-44')
+    expect(screen.queryByRole('note')).not.toBeInTheDocument()
+
+    await userEvent.click(info)
+    expect(info).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('note')).toHaveTextContent(t.glossary.vma.definition)
+  })
+})
+
+describe('GlossaryInfo', () => {
+  it('opens every term it covers at once', async () => {
+    render(<GlossaryInfo terms={['form', 'fitness', 'fatigue']} />)
+    await userEvent.click(screen.getByRole('button', { name: t.glossary.aboutThese }))
+
+    expect(screen.getByText(t.glossary.fitness.definition)).toBeInTheDocument()
+    expect(screen.getByText(t.glossary.fatigue.definition)).toBeInTheDocument()
+    expect(screen.getByText(glossaryDefinition('form'))).toBeInTheDocument()
+  })
+})

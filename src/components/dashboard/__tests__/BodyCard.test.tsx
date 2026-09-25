@@ -62,3 +62,12 @@ describe('BodyCard', () => {
     expect(screen.getByText(t.dashboard.bodyCard.deltaIn('↑1', 14))).toBeInTheDocument()
   })
 })
+
+describe('BodyCard definitions', () => {
+  // TSB, CTL and ATL had no definition on Today.
+  it('explains Form, Fitness and Fatigue behind one (i)', () => {
+    render(<BodyCard status={STATUS} days={WEEKS} />)
+
+    expect(screen.getByRole('button', { name: t.glossary.aboutThese })).toBeInTheDocument()
+  })
+})

@@ -64,6 +64,25 @@ export const en = {
     veryFresh: 'Very fresh',
   },
 
+  // One definition per term, behind an (i) wherever the term is shown.
+  glossary: {
+    about: (term: string) => `What is ${term}?`,
+    aboutThese: 'What these numbers mean',
+    form: {
+      term: 'Form',
+      definition: (tired: number, fresh: number, veryFresh: number) =>
+        `Form (TSB) is Fitness minus Fatigue. Below ${tired} you are tired, up to +${fresh} neutral, above that fresh, and above +${veryFresh} very fresh.`,
+    },
+    fitness: { term: 'Fitness', definition: 'Fitness (CTL) is your 42-day average training load: the work your body has absorbed.' },
+    fatigue: { term: 'Fatigue', definition: 'Fatigue (ATL) is your 7-day average training load: what the last week has cost you.' },
+    vma: { term: 'VMA', definition: 'Maximal aerobic speed: the speed you reach at VO₂max, held for about six minutes.' },
+    lthr: { term: 'LTHR', definition: 'Lactate-threshold heart rate: about the heart rate you could hold for an hour-long race.' },
+    thresholdPace: { term: 'Threshold pace', definition: 'The pace at your lactate threshold: about what you could race for an hour.' },
+    rpe: { term: 'RPE', definition: 'Rate of perceived exertion, 1 to 10, as logged on the watch after the run.' },
+    aerobicEffect: { term: 'Aerobic effect', definition: 'Garmin’s 0–5 score of how much the run built your aerobic fitness.' },
+    anaerobicEffect: { term: 'Anaerobic effect', definition: 'Garmin’s 0–5 score of how much the run built your capacity for short, hard efforts.' },
+  },
+
   // Every pace axis runs the same way (lib/chartAxis paceAxis).
   paceAxis: {
     caption: 'faster ↑',

@@ -4,6 +4,7 @@ import type { TrainingStatusDayBar } from '@/application/usecases/GetTrainingSta
 import { STATUS_DELTA_DAYS } from '@/domain/training/status'
 import { formBand, type FormBand } from '@/domain/training/formBand'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { GlossaryInfo } from '@/components/ui/GlossaryTerm'
 import { TRAINING_METRIC_COLORS, TRAINING_STATUS_COLORS, metricDeltaColor, type MetricDeltaPolarity } from '@/lib/colors'
 import { formatDelta } from '@/lib/formatters'
 import { t } from '@/i18n'
@@ -104,9 +105,14 @@ export function BodyCard({ status, days }: { status: TrainingStatus | null; days
 
   return (
     <GlassSurface variant="card" className="rounded-card-sm px-4.5 py-3.5">
-      <p className="text-caption font-semibold uppercase tracking-[0.06em] text-subtle">
-        {t.dashboard.trainingStatusDays.titleToday(t.dashboard.trainingStatusDays.title)}
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-x-2">
+        <p className="text-caption font-semibold uppercase tracking-[0.06em] text-subtle">
+          {t.dashboard.trainingStatusDays.titleToday(t.dashboard.trainingStatusDays.title)}
+        </p>
+        {/* Form, Fitness and Fatigue (TSB / CTL / ATL) had no definition on
+            Today; one (i) over the card holds all three. */}
+        {status && <GlossaryInfo terms={['form', 'fitness', 'fatigue']} />}
+      </div>
       {latest && (
         <div className="mt-0.5 flex items-baseline gap-2.5">
           <span className="font-display text-2xl font-bold" style={{ color: TRAINING_STATUS_COLORS[latest] }}>

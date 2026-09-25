@@ -1,4 +1,5 @@
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { GlossaryTerm, type GlossaryKey } from '@/components/ui/GlossaryTerm'
 import { STATUS } from '@/lib/statusColors'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -33,14 +34,14 @@ function getLevel(value: number) {
   return LEVELS.find((l) => value < l.max) ?? LEVELS[LEVELS.length - 1]!
 }
 
-function TECell({ value, label }: { value: number; label: string }) {
+function TECell({ value, label, term }: { value: number; label: string; term: GlossaryKey }) {
   const level = getLevel(value)
   const earned = value >= NO_BENEFIT_BELOW
 
   return (
     <div className="min-w-0 flex-1 px-3.5 py-2.5">
       <p className="font-mono text-micro font-semibold uppercase leading-none tracking-[0.1em] text-muted-foreground">
-        {label}
+        <GlossaryTerm term={term}>{label}</GlossaryTerm>
       </p>
       <p className="mt-1.5 flex items-baseline gap-1.5 leading-tight">
         <span className={cn('text-body font-bold tabular-nums', earned ? STATUS.success.text : 'text-muted-foreground')}>
@@ -63,8 +64,8 @@ export function TrainingEffect({ aer, ana }: Props) {
 
   return (
     <GlassSurface variant="card" className="flex items-stretch divide-x divide-border p-0">
-      {scored(aer) && <TECell value={aer!} label={t.activity.trainingEffect.aerobic} />}
-      {scored(ana) && <TECell value={ana!} label={t.activity.trainingEffect.anaerobic} />}
+      {scored(aer) && <TECell value={aer!} label={t.activity.trainingEffect.aerobic} term="aerobicEffect" />}
+      {scored(ana) && <TECell value={ana!} label={t.activity.trainingEffect.anaerobic} term="anaerobicEffect" />}
     </GlassSurface>
   )
 }

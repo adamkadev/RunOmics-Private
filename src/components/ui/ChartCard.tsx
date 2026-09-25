@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, type ReactNode } from 'react'
-import { Info } from 'lucide-react'
+import { InfoButton } from './GlossaryTerm'
 import { CardTitle } from '@/components/ui/SectionLabel'
 import { cn } from '@/lib/utils'
 import { formatDelta } from '@/lib/formatters'
@@ -84,19 +84,7 @@ export function ChartCardHead({
             {unit && <span className="ml-1.5 text-caption font-medium text-subtle">· {unit}</span>}
           </CardTitle>
           {footnote && (
-            <button
-              type="button"
-              onClick={() => setOpen((v) => !v)}
-              aria-expanded={open}
-              aria-label={t.analytics.aboutChart}
-              className={cn(
-                'hit-44 shrink-0 rounded-full p-0.5 transition-colors active:scale-95',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                open ? 'text-foreground' : 'text-subtle hover:text-muted-foreground',
-              )}
-            >
-              <Info size={14} />
-            </button>
+            <InfoButton open={open} onToggle={() => setOpen((v) => !v)} label={t.analytics.aboutChart} />
           )}
         </div>
         {controls && <div className="flex flex-wrap items-center gap-2">{controls}</div>}
