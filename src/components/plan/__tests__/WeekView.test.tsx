@@ -133,9 +133,12 @@ describe('WeekView progression card', () => {
   })
 
   it('counts the week toward the primary target in the macrocycle card', () => {
-    renderWeek({ coaching: overview({ coachingPlan: blockPlan() }) })
+    const { container } = renderWeek({ coaching: overview({ coachingPlan: blockPlan() }) })
 
-    expect(screen.getByText(t.plan.weekPurpose.weekOfTarget(1, 12))).toBeInTheDocument()
+    // R2: phase, week and the race the block builds to, on one line.
+    const subtitle = container.querySelector('p.text-footnote')?.textContent ?? ''
+    expect(subtitle).toContain(t.plan.weekPurpose.weekOfTarget(1, 12))
+    expect(subtitle).toMatch(new RegExp(t.plan.weekPurpose.raceOn('.+')))
   })
 
   it('leaves the macrocycle progress out of the race card', () => {

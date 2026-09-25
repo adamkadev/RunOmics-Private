@@ -13,6 +13,7 @@ const status: TrainingStatus = {
   tsbNow: -14,
   acwr: 1.4,
   ctlDelta: 2.4,
+  ctlDeltaShown: 1.2,
   atlDelta: 6,
   tsbDelta: -8,
   ctlPeak: 60,

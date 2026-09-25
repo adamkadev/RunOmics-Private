@@ -156,7 +156,7 @@ export function BodyCard({ status, days }: { status: TrainingStatus | null; days
             label={t.trainingStatus.metrics.fitness}
             value={String(Math.round(status.ctl))}
             color={TRAINING_METRIC_COLORS.fitness}
-            delta={status.ctlDelta}
+            delta={status.ctlDeltaShown}
             days={STATUS_DELTA_DAYS.fitness}
             goodWhen="up"
           />

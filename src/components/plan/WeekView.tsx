@@ -513,6 +513,10 @@ export function WeekView({
     const upcoming = [targetEvent, ...(tuneUpEvents ?? [])].filter((event) => event.date >= today)
     return { footerRaces: upcoming.map(toRace), footerSpan: null }
   }, [coaching, nextRace, planSpan, today])
+  // The race the block builds to, in the subtitle (R2), so the week says what
+  // it is for without scrolling to the footer.
+  const nextFooterRace = footerRaces.find((r) => r.race.date >= today)?.race ?? null
+  const raceLabel = nextFooterRace ? t.plan.weekPurpose.raceOn(formatDate(nextFooterRace.date, { style: 'bare' })) : null
 
   const footerWeeks = useMemo(() => weeksInPlan(footerSpan, today), [footerSpan, today])
 
@@ -551,15 +555,14 @@ export function WeekView({
   const load = loadIsPlanned ? planned!.estimatedLoad : summary.totalTrimp
   const loadTarget = loadIsPlanned ? null : (planned?.estimatedLoad ?? null)
 
+  const dayEyebrow = selected.date === today ? `${t.plan.today} · ${formatDate(selected.date)}` : formatDate(selected.date)
+
   return (
     <div className="space-y-3">
       <div className="px-1">
         {(phaseLabel || weekOfLabel || fallbackLabel) && (
           <p className="text-footnote font-semibold text-muted-foreground">
-            {phaseLabel && <span>{phaseLabel}</span>}
-            {phaseLabel && weekOfLabel && ' · '}
-            {weekOfLabel && <span>{weekOfLabel}</span>}
-            {!phaseLabel && !weekOfLabel && fallbackLabel && <span>{fallbackLabel}</span>}
+            {[phaseLabel, weekOfLabel, raceLabel].filter(Boolean).join(' · ') || fallbackLabel}
           </p>
         )}
         {/* The displayed week's own range, not the real `today` - the track
@@ -639,11 +642,9 @@ export function WeekView({
       />
 
       <div className="space-y-3 px-1">
-        <p className="text-xs font-bold uppercase tracking-wide text-accent-text">
-          {selected.date === today
-            ? `${t.plan.today} · ${formatDate(selected.date)}`
-            : formatDate(selected.date)}
-        </p>
+        {/* A run's card carries the day as its own eyebrow, on the line of its
+            Done chip (R2); a plan or a rest day keeps it above. */}
+        {selected.acts.length === 0 && <p className="text-xs font-bold uppercase tracking-wide text-accent-text">{dayEyebrow}</p>}
 
         {selected.acts.length > 0 ? (
           <div className="space-y-2">
@@ -681,14 +682,15 @@ export function WeekView({
                 aria-label={`${activityTitle(a)}, ${formatDate(a.date)}, ${t.plan.viewActivity}`}
                 className="glass-card block w-full rounded-2xl p-3.5"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <span className="min-w-0 flex-1 truncate font-bold text-foreground" style={{ fontSize: '19px' }}>
-                    {activityTitle(a)}
-                  </span>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="min-w-0 truncate text-xs font-bold uppercase tracking-wide text-accent-text">{dayEyebrow}</span>
                   <span className="flex shrink-0 items-center" style={{ gap: '8px' }}>
                     <SessionStateChip state="done" />
                     <ChevronRight size={19} style={{ color: 'var(--subtle-2)' }} aria-hidden="true" />
                   </span>
+                </div>
+                <div className="mt-1 truncate font-bold text-foreground" style={{ fontSize: '19px' }}>
+                  {activityTitle(a)}
                 </div>
                 <div className="block" style={{ fontSize: '13.5px', color: 'var(--muted-foreground)', marginTop: '6px', lineHeight: 1.5 }}>
                   {detail}

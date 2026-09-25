@@ -58,14 +58,17 @@ export function PlanPhaseTrack({ ranges, weekStart, weekEnd }: { ranges: PlanPha
           )
         })}
       </div>
-      <div className="mt-1.5 flex justify-between font-mono text-caption font-semibold uppercase tracking-[0.04em]">
+      {/* Sentence case, each name under the start of its own segment: mono
+          caps spread edge to edge sat under the wrong phases. */}
+      <div className="mt-1.5 flex gap-1 text-caption font-semibold">
         {ranges.map((r) => {
           const isPast = r.endDate < weekStart
           const isCurrent = !isPast && r.startDate <= weekEnd
           return (
             <span
               key={r.startDate}
-              style={{ color: isCurrent ? PROGRESS : 'var(--subtle)' }}
+              className="min-w-0 truncate"
+              style={{ flex: days(r.startDate, r.endDate), color: isCurrent ? PROGRESS : 'var(--subtle)' }}
             >
               {PHASE_LABEL[r.phase]}
             </span>

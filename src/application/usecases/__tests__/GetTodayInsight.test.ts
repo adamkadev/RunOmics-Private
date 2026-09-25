@@ -32,6 +32,7 @@ function status(overrides: Partial<TrainingStatus> = {}): TrainingStatus {
     tsbNow: 8,
     acwr: 1.1,
     ctlDelta: 2.4,
+    ctlDeltaShown: 1.2,
     atlDelta: -2.1,
     tsbDelta: 3.4,
     ctlPeak: 60,
