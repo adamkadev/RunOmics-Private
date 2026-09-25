@@ -1,4 +1,4 @@
-import { DAY_MS } from '@/lib/calendarDate'
+import { DAY_MS, isoDate } from '@/lib/calendarDate'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getAthleteProfile, type AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { getVo2maxNorms } from '@/infrastructure/repositories/JsonVo2maxNormsRepository'
@@ -11,6 +11,7 @@ import { getAthleteRank, type AthleteRank } from '@/application/usecases/GetAthl
 import { sumDistanceKm, yearDistanceKm } from '@/domain/activity/distance'
 import { round } from '@/lib/math'
 import { vo2maxTopPercent } from '@/domain/athlete/vo2maxNorms'
+import { sameDateLastYear, yearToDate } from '@/domain/activity/sameDate'
 
 const PROFILE_RECORD_KEYS = ['5k', '10k', 'half', 'marathon']
 
@@ -97,10 +98,7 @@ export async function getProfileData(): Promise<ProfileData> {
   const ytdDistanceKmRounded = yearDistanceKm(activities, currentYear)
 
   const prevYear = currentYear - 1
-  const sameDayLastYear = `${prevYear}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-  const prevYearActivities = activities.filter(
-    (a) => a.date.startsWith(String(prevYear)) && a.date <= sameDayLastYear,
-  )
+  const prevYearActivities = yearToDate(activities, prevYear, sameDateLastYear(isoDate(now)))
   const prevYearStats =
     prevYearActivities.length > 0
       ? periodStats(prevYearActivities, sumDistanceKm(prevYearActivities), elapsedDaysThisYear)

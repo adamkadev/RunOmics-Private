@@ -4,8 +4,9 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip,
   ResponsiveContainer,
 } from 'recharts'
-import { monthLabel } from '@/lib/formatters'
+import { formatDate, formatKm, monthLabel } from '@/lib/formatters'
 import type { MonthlyVolume } from '@/application/usecases/GetAnalyticsData'
+import type { YearComparisonData } from '@/application/usecases/GetYearComparison'
 import { CHART_COLORS } from '@/lib/colors'
 import { useAccentUiColor } from '@/lib/useAccent'
 import { TooltipCard, TooltipRow } from '@/components/ui/ChartTooltip'
@@ -21,6 +22,9 @@ interface Props {
   currentData: MonthlyVolume[]
   prevYear: number
   prevData: MonthlyVolume[]
+  /** The same-date totals the sentence reads, shared with Year over Year and
+   *  the Progress hub. */
+  comparison: YearComparisonData | null
 }
 
 interface TooltipProps {
@@ -45,24 +49,40 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
   )
 }
 
-export function MonthlyComparisonChart({ currentYear, currentData, prevYear, prevData }: Props) {
+export function MonthlyComparisonChart({ currentYear, currentData, prevYear, prevData, comparison }: Props) {
   const accentColor = useAccentUiColor()
+  // A year's line starts at its first month with a run: the months before it
+  // were drawn as 0 km, which is invented data.
+  const firstMonth = (data: MonthlyVolume[]) =>
+    Math.min(...data.filter((d) => d.totalKm > 0).map((d) => Number(d.month.slice(5, 7))), 13)
+  const firstCurrent = firstMonth(currentData)
+  const firstPrev = firstMonth(prevData)
   const merged = MONTH_LABELS.map((label, i) => {
-    const monthStr = String(i + 1).padStart(2, '0')
+    const month = i + 1
+    const monthStr = String(month).padStart(2, '0')
     const curr = currentData.find((d) => d.month.endsWith(`-${monthStr}`))
     const prev = prevData.find((d) => d.month.endsWith(`-${monthStr}`))
     return {
       label,
-      [currentYear]: curr?.totalKm ?? null,
-      [prevYear]: prev?.totalKm ?? null,
+      [currentYear]: month >= firstCurrent ? (curr?.totalKm ?? null) : null,
+      [prevYear]: month >= firstPrev ? (prev?.totalKm ?? null) : null,
     }
   })
 
   const curTotal = currentData.reduce((s, d) => s + d.totalKm, 0)
   const prevTotal = prevData.reduce((s, d) => s + d.totalKm, 0)
   const summary = `${t.analytics.charts.monthlyComparison.title}: ${currentYear} ${curTotal.toFixed(0)} ${t.units.km}, ${prevYear} ${prevTotal.toFixed(0)} ${t.units.km}`
-  const deltaPct = prevTotal > 0 ? Math.round(((curTotal - prevTotal) / prevTotal) * 100) : 0
-  const reading = prevTotal > 0 ? t.analytics.charts.monthlyComparison.reading(currentYear, deltaPct) : null
+  // The sentence compares like with like: this year to date against last year
+  // to the same date, the totals Year over Year and the Progress hub show.
+  const sameDate = comparison && comparison.years[0] === currentYear && comparison.years[1] === prevYear ? comparison : null
+  const reading = sameDate && sameDate.older.distanceKm > 0
+    ? t.analytics.charts.monthlyComparison.reading(
+        Math.round(((sameDate.newer.distanceKm - sameDate.older.distanceKm) / sameDate.older.distanceKm) * 100),
+        formatKm(sameDate.newer.distanceKm),
+        formatKm(sameDate.older.distanceKm),
+        sameDate.cutoff ? formatDate(sameDate.cutoff, { style: 'bare', year: 'never' }) : null,
+      )
+    : null
 
   return (
     <GlassSurface variant="card" className="p-5">
@@ -101,7 +121,7 @@ export function MonthlyComparisonChart({ currentYear, currentData, prevYear, pre
             />
             <Tooltip content={<CustomTooltip />} />
             <Line
-              type="monotone"
+              type="linear"
               dataKey={currentYear}
               stroke={accentColor}
               strokeWidth={3}
@@ -110,7 +130,7 @@ export function MonthlyComparisonChart({ currentYear, currentData, prevYear, pre
               connectNulls
             />
             <Line
-              type="monotone"
+              type="linear"
               dataKey={prevYear}
               stroke={CHART_COLORS.axisTick}
               strokeWidth={1.5}

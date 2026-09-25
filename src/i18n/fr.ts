@@ -634,10 +634,8 @@ export const fr = {
       },
       monthlyComparison: {
         title: 'Mois par mois',
-        reading: (curYear: number, deltaPct: number) =>
-          deltaPct >= 0
-            ? `Le volume ${curYear} devance l'an dernier de ${deltaPct}%.`
-            : `Le volume ${curYear} accuse un retard de ${Math.abs(deltaPct)}% sur l'an dernier.`,
+        reading: (deltaPct: number, current: string, previous: string, cutoff: string | null) =>
+          `${Math.abs(deltaPct)} % ${deltaPct >= 0 ? 'd’avance sur' : 'de retard sur'} la même date l’an dernier : ${current} km contre ${previous} km${cutoff ? ` au ${cutoff}` : ''}.`,
       },
       threshold: {
         title: 'Seuil lactique de course',
@@ -692,12 +690,13 @@ export const fr = {
     },
     yearOverYear: {
       title: 'Année sur année',
+      toDate: (date: string) => `au ${date}`,
       vs: 'vs',
       rows: {
         distance: 'Distance',
         sessions: 'Séances',
         time: 'Temps',
-        avgPerWeek: 'Moy. / semaine',
+        avgPerWeek: 'Par semaine',
         avgPace: 'Allure moy.',
         avgHr: 'FC moy.',
         elevation: 'Dénivelé',

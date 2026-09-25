@@ -127,6 +127,7 @@ describe('getSeasonHeadline', () => {
   it('adds a volume bullet only when the comparison matches the current season', () => {
     const comparison: YearComparisonData = {
       years: [2024, 2023],
+      cutoff: null,
       newer: yearMetrics(2024, 38),
       older: yearMetrics(2023, 50),
     }
@@ -139,6 +140,7 @@ describe('getSeasonHeadline', () => {
   it('ignores the comparison when it does not cover the current season', () => {
     const comparison: YearComparisonData = {
       years: [2023, 2022],
+      cutoff: null,
       newer: yearMetrics(2023, 38),
       older: yearMetrics(2022, 50),
     }

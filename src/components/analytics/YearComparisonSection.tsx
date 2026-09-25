@@ -3,7 +3,7 @@
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { CardTitle } from '@/components/ui/SectionLabel'
 import type { YearComparisonData } from '@/application/usecases/GetYearComparison'
-import { formatDuration, formatPace } from '@/lib/formatters'
+import { formatDate, formatDuration, formatKm, formatPace } from '@/lib/formatters'
 import { METRIC_DELTA_COLORS } from '@/lib/colors'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
@@ -63,8 +63,8 @@ export function YearComparisonSection({ data }: Props) {
   const rows = [
     {
       label: rowLabels.distance,
-      newer: `${newer.distanceKm.toFixed(0)} ${t.units.km}`,
-      older: `${older.distanceKm.toFixed(0)} ${t.units.km}`,
+      newer: `${formatKm(newer.distanceKm)} ${t.units.km}`,
+      older: `${formatKm(older.distanceKm)} ${t.units.km}`,
       pct: delta(newer.distanceKm, older.distanceKm),
     },
     {
@@ -119,7 +119,8 @@ export function YearComparisonSection({ data }: Props) {
     <GlassSurface variant="card" className="p-5">
       <div className="mb-4 flex items-center justify-between">
         <CardTitle as="h2">{t.analytics.yearOverYear.title}</CardTitle>
-        <div className="flex items-center gap-4 text-xs text-subtle">
+        <div className="flex items-center gap-1.5 text-xs text-subtle">
+          {data.cutoff && <span>{t.analytics.yearOverYear.toDate(formatDate(data.cutoff, { style: 'bare', year: 'never' }))} ·</span>}
           <span className="font-semibold text-foreground">{y1}</span>
           <span>{t.analytics.yearOverYear.vs}</span>
           <span>{y2}</span>

@@ -67,13 +67,16 @@ describe('buildMetrics', () => {
     expect(metrics.elevationM).toBe(0)
   })
 
-  it('computes avgKmPerWeek over distinct weeks with activity', () => {
+  // G03: per week since the first run, empty weeks included - not only over
+  // the weeks that had a run.
+  it('computes avgKmPerWeek per week since the first run, to the cut-off', () => {
     const acts = [
-      act({ week: 1, distanceKm: 10 }),
-      act({ week: 1, distanceKm: 5 }),
-      act({ week: 2, distanceKm: 15 }),
+      act({ date: '2024-06-03', distanceKm: 10 }),
+      act({ date: '2024-06-04', distanceKm: 5 }),
+      act({ date: '2024-06-24', distanceKm: 13 }),
     ]
-    expect(buildMetrics(2024, acts).avgKmPerWeek).toBe(15)
+    // 2024-06-03 to 2024-06-30 is 28 days, 4 weeks: 28 km / 4.
+    expect(buildMetrics(2024, acts, '2024-06-30').avgKmPerWeek).toBe(7)
   })
 
   it('returns avgKmPerWeek of 0 for no activities', () => {
@@ -113,5 +116,25 @@ describe('getYearComparison', () => {
     expect(result?.years).toEqual([2024, 2023])
     expect(result?.newer.distanceKm).toBe(10)
     expect(result?.older.distanceKm).toBe(20)
+  })
+})
+
+describe('getYearComparison', () => {
+  beforeEach(() => vi.resetModules())
+
+  // G03: 2026 so far was set against the whole of 2025.
+  it('compares the current year to the same date last year', async () => {
+    vi.doMock('@/infrastructure/repositories/JsonActivityRepository', () => ({
+      getAllActivities: () => [
+        act({ date: '2026-03-01', distanceKm: 100 }),
+        act({ date: '2025-04-03', distanceKm: 60 }),
+        act({ date: '2025-11-20', distanceKm: 500 }),
+      ],
+    }))
+    const { getYearComparison } = await import('../GetYearComparison')
+    const data = getYearComparison('2026-09-25')!
+    expect(data.cutoff).toBe('2026-09-25')
+    expect(data.newer.distanceKm).toBe(100)
+    expect(data.older.distanceKm).toBe(60)
   })
 })
