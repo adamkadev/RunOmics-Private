@@ -38,7 +38,7 @@ export function BestEfforts({ bestEfforts, qualifiedEfforts = [] }: Props) {
           </span>
           <span className="text-caption tabular-nums text-subtle">{formatPace(Math.round(seconds / km))}</span>
           {rank != null && (
-            <span className="rounded-full bg-amber-100 px-1.5 text-micro font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+            <span className="rounded-full bg-amber-100 px-1.5 text-caption font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
               {rank === 1 ? s.prBadge : s.rankBadge(rank)}
             </span>
           )}

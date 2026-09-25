@@ -43,7 +43,7 @@ describe('ShoesGrid rows', () => {
     )
 
     for (const km of [Math.round(1000 - 604), Math.round(1000 - 53)]) {
-      const label = screen.getByText(t.shoes.kmLeft(km))
+      const label = screen.getByText(t.shoes.kmLeft(String(km)))
       expect(label.className).toContain('text-muted-foreground')
       expect(label.className).not.toContain('emerald')
     }
@@ -60,13 +60,13 @@ describe('ShoesGrid rows', () => {
       />
     )
 
-    expect(screen.getByText(t.shoes.kmLeft(250)).className).toContain('amber')
+    expect(screen.getByText(t.shoes.kmLeft('250')).className).toContain('amber')
   })
 
   it('leads the row with kilometres left rather than a percentage', () => {
     render(<ShoesGrid shoes={[shoe({ totalKm: 604, maxKm: 1000, wearPercent: 60 })]} />)
 
-    expect(screen.getByText(t.shoes.kmLeft(396))).toBeInTheDocument()
+    expect(screen.getByText(t.shoes.kmLeft('396'))).toBeInTheDocument()
     expect(screen.queryByText('60%')).not.toBeInTheDocument()
   })
 

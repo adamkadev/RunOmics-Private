@@ -114,7 +114,7 @@ export function NotesSheet({
 
             {suggestions.length > 0 && !atTagLimit && (
               <div>
-                <p className="mb-1.5 text-micro font-semibold uppercase tracking-wide text-subtle">
+                <p className="mb-1.5 text-caption font-semibold uppercase tracking-wide text-subtle">
                   {t.activity.notes.usedBefore}
                 </p>
                 <div className="flex flex-wrap gap-1.5">
@@ -151,7 +151,7 @@ export function NotesSheet({
                 disabled={atTagLimit}
                 className={inputCls}
               />
-              <p className="mt-1 text-micro text-subtle">{t.activity.notes.tagHint}</p>
+              <p className="mt-1 text-caption text-subtle">{t.activity.notes.tagHint}</p>
             </div>
           </div>
         ) : (

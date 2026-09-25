@@ -101,7 +101,7 @@ export function ActivityHeatmap({ days }: Props) {
       <div className="mb-4 flex items-baseline justify-between gap-3">
         <div className="min-w-0">
           <h3 className="text-sm font-bold text-foreground">{t.dashboard.heatmap.title}</h3>
-          <p className="mt-0.5 text-micro text-subtle">
+          <p className="mt-0.5 text-caption text-subtle">
             {windowRange ? `${windowRange} · ` : ''}
             {t.dashboard.heatmap.rollingWindow}
           </p>
@@ -143,7 +143,7 @@ export function ActivityHeatmap({ days }: Props) {
           </div>
 
           <div
-            className="relative mt-2 h-4 leading-4 text-micro text-subtle"
+            className="relative mt-2 h-4 leading-4 text-caption text-subtle"
             style={{ width: gridWidth }}
           >
             {shownMonthLabels.map(({ label, col, left }) => (
@@ -156,11 +156,11 @@ export function ActivityHeatmap({ days }: Props) {
       </div>
 
       <div className="mt-1 flex items-center justify-end gap-1.5">
-        <span className="text-micro text-subtle">{t.dashboard.heatmap.less}</span>
+        <span className="text-caption text-subtle">{t.dashboard.heatmap.less}</span>
         {[0, 1, 2, 3].map((level) => (
           <div key={level} className="rounded-[2px]" style={{ width: 10, height: 10, ...levelStyle(level) }} />
         ))}
-        <span className="text-micro text-subtle">{t.dashboard.heatmap.more}</span>
+        <span className="text-caption text-subtle">{t.dashboard.heatmap.more}</span>
       </div>
 
       {tooltip && (

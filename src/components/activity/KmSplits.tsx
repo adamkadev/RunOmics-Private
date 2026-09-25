@@ -65,7 +65,7 @@ function PerKmSplits({ activity, splits }: { activity: ActivityDetailView; split
       <p className="mb-4 text-caption text-subtle">{t.activity.splits.continuous}</p>
 
       <div className="w-full space-y-0.5">
-        <div className={`${rowCls} pb-1.5 text-micro font-semibold uppercase tracking-wide text-subtle`}>
+        <div className={`${rowCls} pb-1.5 text-caption font-semibold uppercase tracking-wide text-subtle`}>
           <span className="truncate">{t.activity.splits.cols.km}</span>
           <span className="truncate">{t.activity.splits.cols.pace}</span>
           {showHr && <span className="truncate">{t.activity.splits.cols.hr}</span>}
@@ -148,7 +148,7 @@ export function KmSplits({ activity }: Props) {
       </div>
 
       <div className="w-full space-y-0.5">
-        <div className={`${rowCls} pb-1.5 text-micro font-semibold uppercase tracking-wide text-subtle`}>
+        <div className={`${rowCls} pb-1.5 text-caption font-semibold uppercase tracking-wide text-subtle`}>
           <span className="truncate">{t.activity.splits.cols.step}</span>
           <span className="truncate">{t.activity.splits.cols.type}</span>
           <span className="truncate">{t.activity.splits.cols.duration}</span>

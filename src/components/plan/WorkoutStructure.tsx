@@ -214,7 +214,7 @@ export function SessionStructureBar({
               }}
             >
               {labelled && (
-                <span className="font-bold leading-none" style={{ fontSize: '10px', color: ZONE_INK }}>
+                <span className="text-caption font-bold leading-none" style={{ color: ZONE_INK }}>
                   {s.min(step.minutes)}
                 </span>
               )}
@@ -223,7 +223,7 @@ export function SessionStructureBar({
         })}
       </div>
       {(warmup || cooldown || centerCaption) && (
-        <div className="mt-1.5 grid grid-cols-3 items-center" style={{ fontSize: '10.5px', color: 'var(--subtle-2)' }}>
+        <div className="mt-1.5 grid grid-cols-3 items-center text-caption" style={{ color: 'var(--subtle-2)' }}>
           <span className="text-left">{warmup ? s.warmup : ''}</span>
           <span className="text-center">{centerCaption}</span>
           <span className="text-right">{cooldown ? s.cooldown : ''}</span>

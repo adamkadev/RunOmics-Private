@@ -149,3 +149,11 @@ describe('the tab bar surface', () => {
     }
   })
 })
+
+describe('the light glass border', () => {
+  // White at 0.7 on a white card over the aurora measured about 1.1:1.
+  it('is ink at 10 %, not white', () => {
+    const light = TOKEN_BLOCKS.find((b) => b.comment?.startsWith('Light tokens'))!
+    expect(light.tokens['--glass-border']).toBe('rgba(17, 27, 40, 0.1)')
+  })
+})

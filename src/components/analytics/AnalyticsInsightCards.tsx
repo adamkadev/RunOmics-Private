@@ -101,7 +101,7 @@ function Card({
         </CardTitle>
         {chip && (
           <span
-            className="shrink-0 text-micro font-semibold tabular-nums"
+            className="shrink-0 text-caption font-semibold tabular-nums"
             style={{ color: chipColor ?? 'var(--accent-text)' }}
           >
             {chip}
@@ -112,7 +112,7 @@ function Card({
         {value}
         {unit && <span className="text-caption font-medium text-subtle"> {unit}</span>}
       </div>
-      {note && <div className="text-micro leading-tight text-subtle">{note}</div>}
+      {note && <div className="text-caption leading-tight text-subtle">{note}</div>}
       <div className="mt-[3px]">{children}</div>
     </div>
   )

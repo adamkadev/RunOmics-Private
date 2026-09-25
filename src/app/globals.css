@@ -197,7 +197,7 @@
   --glass-bg-nav:          rgba(237, 248, 242, 0.92);
   --glass-sat:             1.4;
   --glass-bg:              rgba(255, 255, 255, 0.62);
-  --glass-border:          rgba(255, 255, 255, 0.7);
+  --glass-border:          rgba(17, 27, 40, 0.1);
   --glass-highlight:       rgba(255, 255, 255, 0.9);
   --glass-shadow-float:    0 18px 40px -24px rgba(8, 40, 28, 0.35);
   --glass-shadow-nav:      0 16px 36px -20px rgba(8, 40, 28, 0.35);
@@ -739,7 +739,7 @@ h1 {
 .maplibregl-ctrl-attrib-inner,
 .maplibregl-ctrl-attrib-inner a {
   color: rgba(255 255 255 / 0.75) !important;
-  font-size: 10px !important;
+  font-size: 11px !important;
 }
 
 @layer base {

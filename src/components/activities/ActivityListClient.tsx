@@ -61,14 +61,14 @@ function WeekStat({ value, label, variant }: { value: string; label: string; var
     return (
       <div className="text-right">
         <div className="font-bold tabular-nums text-foreground" style={{ fontSize: '15px' }}>{value}</div>
-        <div className="uppercase tracking-wide" style={{ fontSize: '9.5px', color: 'var(--subtle-2)' }}>{label}</div>
+        <div className="text-caption uppercase tracking-wide" style={{ color: 'var(--subtle-2)' }}>{label}</div>
       </div>
     )
   }
   return (
     <div className="text-right">
       <div className="text-sm font-bold tabular-nums text-foreground">{value}</div>
-      <div className="text-micro uppercase tracking-wide text-subtle">{label}</div>
+      <div className="text-caption uppercase tracking-wide text-subtle">{label}</div>
     </div>
   )
 }
@@ -136,7 +136,7 @@ function WeekGoalProgress({ target }: { target: WeekTarget & { goalKm: number } 
       <div className="h-1.5 overflow-hidden rounded-full" style={{ background: 'var(--track)' }}>
         <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${pct}%` }} />
       </div>
-      <p className="mt-1 text-micro tabular-nums text-subtle">
+      <p className="mt-1 text-caption tabular-nums text-subtle">
         {t.activities.weekGoal(formatWeekKm(target.ranKm), formatWeekKm(target.goalKm))}
         {target.planKm !== null && <> · {t.activities.weekPlanTotal(formatWeekKm(target.planKm))}</>}
       </p>

@@ -216,7 +216,7 @@ export function ShoeComparison({ rows }: Props) {
 
       {pickerOpen && (
         <div className="rounded-card border border-border p-1.5">
-          <p className="px-2 pb-1.5 pt-1 text-micro text-subtle-2">{t.shoes.comparison.pickHint}</p>
+          <p className="px-2 pb-1.5 pt-1 text-caption text-subtle-2">{t.shoes.comparison.pickHint}</p>
           {rows.map((row) => {
             const selected = picked.includes(row.gearId)
             return (
@@ -246,16 +246,16 @@ export function ShoeComparison({ rows }: Props) {
                 {shortShoeName(row.name, row.brand)}
               </span>
             </span>
-            <span className="mt-0.5 block truncate text-micro font-normal text-subtle-2">
+            <span className="mt-0.5 block truncate text-caption font-normal text-subtle-2">
               {formatEraRange(row.firstUsed, row.lastUsed)}
             </span>
           </div>
         ))}
-        <span className="self-end pb-1 text-right text-micro font-medium text-subtle-2">{t.shoes.comparison.delta}</span>
+        <span className="self-end pb-1 text-right text-caption font-medium text-subtle-2">{t.shoes.comparison.delta}</span>
 
         {METRIC_GROUPS.map((group) => (
           <Fragment key={group}>
-            <div className="col-span-4 pb-0.5 pt-1.5 text-micro font-semibold uppercase tracking-[0.06em] text-subtle-2">
+            <div className="col-span-4 pb-0.5 pt-1.5 text-caption font-semibold uppercase tracking-[0.06em] text-subtle-2">
               {t.shoes.comparison.groups[group]}
             </div>
             {METRICS.filter((metric) => metric.group === group).map((metric) => {

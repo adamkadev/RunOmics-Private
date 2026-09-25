@@ -21,7 +21,7 @@ export function TerritoryBand({ eyebrow, headline, primaryStat, secondaryStat }:
   return (
     <GlassSurface variant="hero" className="flex flex-col gap-3.5">
       <div>
-        <p className="font-mono text-micro font-bold uppercase tracking-[0.1em]" style={{ color: ACCENT_ON_DARK }}>
+        <p className="font-mono text-caption font-bold uppercase tracking-[0.1em]" style={{ color: ACCENT_ON_DARK }}>
           {eyebrow}
         </p>
         <p className="mt-2 font-display text-base font-bold leading-snug text-white">{headline}</p>
@@ -29,11 +29,11 @@ export function TerritoryBand({ eyebrow, headline, primaryStat, secondaryStat }:
       <div className="flex gap-6">
         <div>
           <div className="font-display text-lg font-bold tabular-nums text-white">{primaryStat.value}</div>
-          <div className="text-micro text-white/60">{primaryStat.label}</div>
+          <div className="text-caption text-white/60">{primaryStat.label}</div>
         </div>
         <div>
           <div className="font-display text-lg font-bold tabular-nums text-white">{secondaryStat.value}</div>
-          <div className="text-micro text-white/60">{secondaryStat.label}</div>
+          <div className="text-caption text-white/60">{secondaryStat.label}</div>
         </div>
       </div>
     </GlassSurface>

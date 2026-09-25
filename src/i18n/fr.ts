@@ -845,8 +845,6 @@ export const fr = {
       noHr: 'Pas de fréquence cardiaque - zones et charge estimées depuis l’allure.',
     },
     similarRuns: {
-      title: 'Sorties similaires',
-      timesBadge: (n: number) => `${n} fois`,
       summary: (n: number, rank: number) =>
         `Tu as couru ce parcours ${n} fois. Cette sortie : ${rank === 1 ? 'ta meilleure allure' : `ta ${rank}ᵉ meilleure allure`}.`,
       thisRun: 'Cette sortie',
@@ -860,7 +858,6 @@ export const fr = {
       rowBest: 'Ta meilleure allure sur ce parcours',
     },
     notes: {
-      title: 'Notes',
       sheetTitle: 'Notes de sortie',
       notePlaceholder: 'Comment c’était ? Météo, terrain, sensations...',
       tagPlaceholder: 'Nouveau tag',
@@ -1092,7 +1089,7 @@ export const fr = {
 
   shoes: {
     neverUsed: 'Jamais utilisée',
-    kmOf: (total: number, max: number) => `${total} / ${max} km`,
+    kmOf: (total: string, max: string) => `${total} / ${max} km`,
     retired: 'Retraitée',
     active: 'En rotation',
     rotationSummary: (activePairs: number, retiredPairs: number, km: string) =>
@@ -1103,8 +1100,11 @@ export const fr = {
       watch: 'À remplacer bientôt',
       replace: 'À remplacer',
     },
-    kmLeft: (km: number) => `~${km} km restants`,
-    kmLeftExact: (km: number) => `${km} km restants`,
+    kmLeft: (km: string) => `~${km} km restants`,
+    kmLeftExact: (km: string) => `${km} km restants`,
+    pastLimit: (over: string, limit: string) => `${over} km au-delà de sa limite de ${limit} km`,
+    kmOver: (over: string) => `${over} km de trop`,
+    replaceNow: 'à remplacer',
     kmPerWeek: (km: number) => `${km} km/sem.`,
     retiredLife: (era: string, runs: number, weeks: number) => `${era} · ${runs} sorties · ${weeks} semaines`,
     hero: {
@@ -1161,13 +1161,14 @@ export const fr = {
       activitiesTitleRetired: 'Dernières sorties avant la retraite',
       allActivitiesCount: (count: number) => `Les ${count}`,
       empty: 'Aucune activité enregistrée avec cette paire pour le moment.',
-      projectedRunOut: (weeklyKm: number, maxKm: number, targetDate: string, weeksRemaining: number) =>
+      projectedRunOut: (weeklyKm: number, maxKm: string, targetDate: string, weeksRemaining: number) =>
         `À ${weeklyKm} km par semaine, tu atteindras ${maxKm} km vers ${targetDate} – encore ${weeksRemaining} semaine${weeksRemaining === 1 ? '' : 's'} environ.`,
-      projectedRunOutFar: (weeklyKm: number, maxKm: number) =>
+      projectedRunOutFar: (weeklyKm: number, maxKm: string) =>
         `À ${weeklyKm} km par semaine, ${maxKm} km c'est à plus d'un an.`,
       verdict: {
         eyebrow: (statusLabel: string) => `Verdict · ${statusLabel}`,
-        weeksLeft: (weeks: number) => `Encore ~${weeks} semaines à ton rythme.`,
+        weeksLeft: (weeks: number) =>
+          weeks <= 0 ? 'Elle a atteint sa limite.' : weeks === 1 ? 'Encore ~1 semaine à ton rythme.' : `Encore ~${weeks} semaines à ton rythme.`,
         planReplacement: 'Prévois la remplaçante ce mois-ci.',
         replaceNow: 'Prévois la remplaçante dès maintenant.',
         noPaceData: 'Pas assez de kilométrage récent pour projeter un horizon.',
@@ -1217,29 +1218,7 @@ export const fr = {
       settingsLine: 'Apparence, notifications, export',
     },
     hero: {
-      lifetime: (runs: number, km: string) => `${runs} sorties · ${km} km au total`,
-      recency: (lastRun: string, activeDays: number) => `Dernière sortie ${lastRun} · ${activeDays} jours actifs au total`,
-      rankBadge: (tier: string) => `RANG ${tier}`,
-      topPctLine: (pct: number) => `Top ${pct}% de VO₂max pour ton âge`,
       namePlaceholder: 'Votre nom',
-    },
-    ytd: {
-      thisYearChip: 'Cette année',
-      allTimeChip: 'Tout',
-      distance: 'Distance',
-      duration: 'Durée',
-      sessions: 'Séances',
-      elevation: 'Dénivelé',
-      avgPerWeek: 'Moy. / sem.',
-      calories: 'Calories',
-      vsLastYear: (year: number) => `vs ${year}`,
-      noComparison: '—',
-    },
-    records: {
-      title: 'Records',
-      notYet: 'Pas encore',
-      viewAll: 'Voir les records',
-      newBadge: 'NOUVEAU',
     },
     shoes: {
       pairs: (n: number) => `${n} paire${n !== 1 ? 's' : ''} active${n !== 1 ? 's' : ''}`,

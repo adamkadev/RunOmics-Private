@@ -77,10 +77,10 @@ export function WeeklyStreakCard({ data, target, today: serverToday }: Props) {
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center px-1">
-              <span className="font-extrabold leading-none tabular-nums text-foreground" style={{ fontSize: '22px' }}>
+              <span className="text-title2 font-extrabold leading-none tabular-nums text-foreground">
                 {Math.round(animatedActualKm)}
               </span>
-              <span className="leading-tight" style={{ fontSize: '10.5px', color: 'var(--muted-foreground)' }}>
+              <span className="text-caption leading-tight text-muted-foreground">
                 {s.ringOf(Math.round(goal.targetKm))}
               </span>
             </div>

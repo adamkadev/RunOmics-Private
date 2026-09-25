@@ -865,8 +865,6 @@ export const en = {
       noHr: 'No heart-rate data - zones and load are estimated from pace.',
     },
     similarRuns: {
-      title: 'Similar runs',
-      timesBadge: (n: number) => `${n} times`,
       summary: (n: number, rank: number) =>
         `You've run this route ${n} times. This run: ${rank === 1 ? 'your best pace' : `your ${ordinal(rank)}-best pace`}.`,
       thisRun: 'This run',
@@ -882,7 +880,6 @@ export const en = {
       rowBest: 'Your best pace on this route',
     },
     notes: {
-      title: 'Notes',
       sheetTitle: 'Run notes',
       notePlaceholder: 'How did it feel? Weather, terrain, sensations...',
       tagPlaceholder: 'New tag',
@@ -1114,7 +1111,8 @@ export const en = {
 
   shoes: {
     neverUsed: 'Never used',
-    kmOf: (total: number, max: number) => `${total} / ${max} km`,
+    // Both numbers arrive formatted (formatKm), so 1,375 has its separator.
+    kmOf: (total: string, max: string) => `${total} / ${max} km`,
     retired: 'Retired',
     active: 'Active',
     rotationSummary: (activePairs: number, retiredPairs: number, km: string) =>
@@ -1128,12 +1126,16 @@ export const en = {
       watch: 'Replace soon',
       replace: 'Replace',
     },
-    kmLeft: (km: number) => `~${km} km left`,
+    kmLeft: (km: string) => `~${km} km left`,
     // No tilde on the detail hero: promoting a number to 34px and then
     // hedging it with "~" undercuts the very thing that made it the hero.
     // The list row keeps the tilde - there, it's one line among several, not
     // the headline.
-    kmLeftExact: (km: number) => `${km} km left`,
+    kmLeftExact: (km: string) => `${km} km left`,
+    // Past the limit, the overrun is the news - "0 km left" hid it.
+    pastLimit: (over: string, limit: string) => `${over} km past its ${limit} km limit`,
+    kmOver: (over: string) => `${over} km over`,
+    replaceNow: 'replace',
     kmPerWeek: (km: number) => `${km} km/wk`,
     retiredLife: (era: string, runs: number, weeks: number) => `${era} · ${runs} runs · ${weeks} weeks`,
     hero: {
@@ -1199,16 +1201,17 @@ export const en = {
       activitiesTitleRetired: 'Last runs before retiring',
       allActivitiesCount: (count: number) => `All ${count}`,
       empty: 'No activities recorded with this pair yet.',
-      projectedRunOut: (weeklyKm: number, maxKm: number, targetDate: string, weeksRemaining: number) =>
+      projectedRunOut: (weeklyKm: number, maxKm: string, targetDate: string, weeksRemaining: number) =>
         `At ${weeklyKm} km a week you'll hit ${maxKm} km around ${targetDate} – about ${weeksRemaining} more week${weeksRemaining === 1 ? '' : 's'}.`,
       // A three-year forecast off six runs is noise, not information - past a
       // year out, the sentence drops the date and says only what's true: it's
       // a long way off at this rate.
-      projectedRunOutFar: (weeklyKm: number, maxKm: number) =>
+      projectedRunOutFar: (weeklyKm: number, maxKm: string) =>
         `At ${weeklyKm} km a week, ${maxKm} km is more than a year away.`,
       verdict: {
         eyebrow: (statusLabel: string) => `Verdict · ${statusLabel}`,
-        weeksLeft: (weeks: number) => `About ${weeks} more weeks at your pace.`,
+        weeksLeft: (weeks: number) =>
+          weeks <= 0 ? 'It has reached its limit.' : weeks === 1 ? 'About 1 more week at your pace.' : `About ${weeks} more weeks at your pace.`,
         planReplacement: 'Plan the replacement this month.',
         replaceNow: 'Line up the replacement now.',
         noPaceData: 'Not enough recent mileage to project a timeline yet.',
@@ -1270,29 +1273,7 @@ export const en = {
       settingsLine: 'Appearance, notifications, export',
     },
     hero: {
-      lifetime: (runs: number, km: string) => `${runs} runs · ${km} km lifetime`,
-      recency: (lastRun: string, activeDays: number) => `Last run ${lastRun} · ${activeDays} active days lifetime`,
-      rankBadge: (tier: string) => `RANK ${tier}`,
-      topPctLine: (pct: number) => `Top ${pct}% VO₂max for your age`,
       namePlaceholder: 'Your name',
-    },
-    ytd: {
-      thisYearChip: 'This year',
-      allTimeChip: 'All',
-      distance: 'Distance',
-      duration: 'Duration',
-      sessions: 'Sessions',
-      elevation: 'Elevation',
-      avgPerWeek: 'Avg / week',
-      calories: 'Calories',
-      vsLastYear: (year: number) => `vs ${year}`,
-      noComparison: '—',
-    },
-    records: {
-      title: 'Records',
-      notYet: 'Not yet',
-      viewAll: 'View Records',
-      newBadge: 'NEW',
     },
     shoes: {
       pairs: (n: number) => `${n} pair${n !== 1 ? 's' : ''} active`,

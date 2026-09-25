@@ -32,7 +32,7 @@ function BandBar({ value, band }: { value: number; band: BaselineRange }) {
 
   return (
     <div className="mt-1 flex items-center gap-2">
-      <span className="w-10 shrink-0 text-right text-micro tabular-nums text-subtle-2">{band.min}</span>
+      <span className="w-10 shrink-0 text-right text-caption tabular-nums text-subtle-2">{band.min}</span>
       <div className="relative h-1 flex-1 rounded-full bg-foreground/[0.08]">
         <span
           aria-hidden="true"
@@ -40,7 +40,7 @@ function BandBar({ value, band }: { value: number; band: BaselineRange }) {
           style={{ left: `${clamped}%` }}
         />
       </div>
-      <span className="w-10 shrink-0 text-micro tabular-nums text-subtle-2">{band.max}</span>
+      <span className="w-10 shrink-0 text-caption tabular-nums text-subtle-2">{band.max}</span>
     </div>
   )
 }
@@ -127,7 +127,7 @@ export function RunningDynamics({ activity: a, baseline }: Props) {
                     {verdictWord && (
                       <span
                         className={cn(
-                          'text-micro font-semibold tabular-nums',
+                          'text-caption font-semibold tabular-nums',
                           delta === 0 ? 'text-subtle-2' : status?.text,
                         )}
                       >

@@ -150,7 +150,7 @@ export function ActivityDetailClient({
 
       {!activity.avgHeartRate && (
         <p className="flex items-center justify-center gap-2 text-caption text-subtle-2">
-          <span className="rounded-full border border-amber-500/30 bg-amber-500/[0.1] px-2 py-px font-mono text-micro font-semibold uppercase tracking-[0.1em] text-amber-600 dark:text-amber-400">
+          <span className="rounded-full border border-amber-500/30 bg-amber-500/[0.1] px-2 py-px font-mono text-caption font-semibold uppercase tracking-[0.1em] text-amber-600 dark:text-amber-400">
             {t.activity.dataQuality.estimated}
           </span>
           {t.activity.dataQuality.noHr}

@@ -113,7 +113,7 @@ export function IntervalSet({ set }: Props) {
         />
 
         <div className="w-full space-y-0.5">
-          <div className={`${ROW} pb-1.5 text-micro font-semibold uppercase tracking-wide text-subtle`}>
+          <div className={`${ROW} pb-1.5 text-caption font-semibold uppercase tracking-wide text-subtle`}>
             <span className="truncate">{s.cols.step}</span>
             <span className="truncate">{s.colFaster}</span>
             <span className="truncate">{s.cols.pace}</span>
@@ -143,13 +143,13 @@ export function IntervalSet({ set }: Props) {
                 {rep.recovery && (
                   <div className={`${ROW} px-1 pb-1.5`}>
                     <span />
-                    <span className="truncate text-micro text-subtle-2">
+                    <span className="truncate text-caption text-subtle-2">
                       {s.recoveryLine(formatDuration(rep.recovery.durationSec), km(rep.recovery.distanceM))}
                     </span>
-                    <span className="text-micro tabular-nums text-subtle-2">
+                    <span className="text-caption tabular-nums text-subtle-2">
                       {rep.recovery.paceSecPerKm ? formatClock(rep.recovery.paceSecPerKm) : ''}
                     </span>
-                    <span className="text-micro tabular-nums text-subtle-2">{rep.recovery.avgHr ?? ''}</span>
+                    <span className="text-caption tabular-nums text-subtle-2">{rep.recovery.avgHr ?? ''}</span>
                   </div>
                 )}
               </div>
@@ -167,9 +167,9 @@ export function IntervalSet({ set }: Props) {
             <p className="text-base font-extrabold tabular-nums text-foreground">
               {set.spreadSecPerKm ?? '-'} <span className="text-xs font-normal text-subtle">{t.units.sec}</span>
             </p>
-            <p className="text-micro text-subtle">{s.spread}</p>
+            <p className="text-caption text-subtle">{s.spread}</p>
             {band && (
-              <p className={cn('text-micro font-semibold', inBandAll ? STATUS.success.text : STATUS.warning.text)}>
+              <p className={cn('text-caption font-semibold', inBandAll ? STATUS.success.text : STATUS.warning.text)}>
                 {s.inBand(set.inBand, set.reps.length)}
               </p>
             )}
@@ -184,14 +184,14 @@ export function IntervalSet({ set }: Props) {
               {set.hrDriftBpm === null ? '-' : formatDelta(set.hrDriftBpm)}{' '}
               <span className="text-xs font-normal text-subtle">{t.units.bpm}</span>
             </p>
-            <p className="text-micro text-subtle">{s.repHrDrift}</p>
+            <p className="text-caption text-subtle">{s.repHrDrift}</p>
           </div>
           <div>
             <p className="text-base font-extrabold tabular-nums text-foreground">
               {set.meanRecoverySecPerKm !== null ? formatClock(set.meanRecoverySecPerKm) : '-'}{' '}
               <span className="text-xs font-normal text-subtle">{t.units.perKm}</span>
             </p>
-            <p className="text-micro text-subtle">{s.recoveryPace}</p>
+            <p className="text-caption text-subtle">{s.recoveryPace}</p>
           </div>
         </div>
         <p className="mt-3 text-caption text-subtle">

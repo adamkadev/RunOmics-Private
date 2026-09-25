@@ -119,7 +119,7 @@ export function MonthlyVolumeChart({ monthlyGoals, year, today }: { monthlyGoals
                   {Math.round(mg.progress ? mg.progress.proRataTargetKm : mg.targetKm)}
                 </p>
                 {mg.progress && (
-                  <p className="mt-0.5 truncate text-micro text-subtle">
+                  <p className="mt-0.5 truncate text-caption text-subtle">
                     {t.goals.monthlyVolume.proRataCaption(mg.progress.daysElapsed)}
                   </p>
                 )}
@@ -152,7 +152,7 @@ export function MonthlyVolumeChart({ monthlyGoals, year, today }: { monthlyGoals
           <div className="relative flex h-20 items-stretch gap-2 pl-6">
             <span
               aria-hidden
-              className="pointer-events-none absolute left-0 -translate-y-1/2 text-[10px] font-medium text-subtle"
+              className="pointer-events-none absolute left-0 -translate-y-1/2 text-caption font-medium text-subtle"
               style={{ bottom: `${Math.min((typicalTargetKm / scaleMax) * 100, 100)}%` }}
             >
               {typicalTargetKm}
@@ -195,7 +195,7 @@ export function MonthlyVolumeChart({ monthlyGoals, year, today }: { monthlyGoals
               <span
                 key={mg.month}
                 className={cn(
-                  'flex-1 truncate text-center text-micro font-medium',
+                  'flex-1 truncate text-center text-caption font-medium',
                   current?.month === mg.month ? 'text-foreground' : 'text-subtle',
                 )}
               >
@@ -206,7 +206,7 @@ export function MonthlyVolumeChart({ monthlyGoals, year, today }: { monthlyGoals
 
           {/* Three fills and a rule, so a reader can tell which bar is which
               without tapping into the expanded grid. */}
-          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-micro text-subtle">
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-subtle">
             <span className="flex items-center gap-1.5">
               <span
                 aria-hidden
