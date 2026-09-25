@@ -51,10 +51,14 @@ export function WeatherChips({ weather }: { weather: ActivityWeather }) {
         <Icon size={12} />
         {temperature}
       </div>
-      <div className={MAP_CHIP_CLASS} aria-label={w.wind}>
-        <Wind size={12} className="text-subtle" />
-        {Math.round(weather.windKph)} {t.units.kmh} {w.compass[compassPoint(weather.windDirDeg)]}
-      </div>
+      {/* No wind reading, no chip: it printed "NaN km/h N". */}
+      {Number.isFinite(weather.windKph) && (
+        <div className={MAP_CHIP_CLASS} aria-label={w.wind}>
+          <Wind size={12} className="text-subtle" />
+          {Math.round(weather.windKph)} {t.units.kmh}
+          {Number.isFinite(weather.windDirDeg) && ` ${w.compass[compassPoint(weather.windDirDeg)]}`}
+        </div>
+      )}
     </>
   )
 }

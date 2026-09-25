@@ -27,7 +27,6 @@ function renderDetail() {
     <ActivityDetailClient
       activity={ACTIVITY}
       aiVerdict={null}
-      shoe={null}
       dynamicsBaseline={null}
       plan={{ title: 'Threshold', type: 'Threshold', distanceM: 6_000, durationSeconds: 1_500 }}
     />,
@@ -71,5 +70,28 @@ describe('ActivityDetailClient', () => {
     renderDetail()
 
     expect(screen.getByRole('tab', { name: t.activity.tabs.intervals })).toHaveAttribute('aria-selected', 'true')
+  })
+
+  // R5/R6: the title, map, stats, verdict and RPE card repeated above every
+  // tab, so the first chart started below the fold.
+  it('keeps one line of the run above the other tabs, and it leads back to Overview', () => {
+    window.history.replaceState(null, '', '/activities/a1?tab=intervals')
+    render(
+      <ActivityDetailClient
+        activity={ACTIVITY}
+        aiVerdict={null}
+        dynamicsBaseline={null}
+        header={<h1>Threshold</h1>}
+        compactTitle="Threshold · Fri, Sep 25"
+      />,
+    )
+
+    expect(screen.queryByText(t.activity.effort.label)).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Threshold' })).toBeNull()
+
+    act(() => screen.getByTestId('compact-header').click())
+    expect(screen.getByRole('tab', { name: t.activity.tabs.overview })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByText(t.activity.effort.label)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Threshold' })).toBeInTheDocument()
   })
 })

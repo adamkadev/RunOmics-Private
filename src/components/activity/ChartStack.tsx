@@ -8,7 +8,7 @@ import { ChartFigure } from '@/components/ui/ChartFigure'
 import { StatReadout } from '@/components/ui/StatReadout'
 import { formatDuration } from '@/lib/formatters'
 import { t } from '@/i18n'
-import { kmTicks } from './chartAxis'
+import { distanceAxis } from './chartAxis'
 import {
   AXIS_ROW_HEIGHT,
   BOTTOM_MARGIN,
@@ -34,6 +34,7 @@ type Props = ChartStackInput
  * and these render once per activity.
  */
 const LaneChart = memo(function LaneChart({ lane, distanceKm, isLast }: { lane: Lane; distanceKm: number; isLast: boolean }) {
+  const axis = distanceAxis(distanceKm)
   return (
     <ResponsiveContainer width="100%" height={isLast ? ROW_HEIGHT + AXIS_ROW_HEIGHT : ROW_HEIGHT}>
       <AreaChart data={lane.data} margin={{ top: TOP_MARGIN, right: RIGHT_MARGIN, bottom: BOTTOM_MARGIN, left: 0 }}>
@@ -47,8 +48,8 @@ const LaneChart = memo(function LaneChart({ lane, distanceKm, isLast }: { lane: 
           dataKey="d"
           type="number"
           domain={[0, distanceKm]}
-          ticks={kmTicks(distanceKm)}
-          tickFormatter={(v: number) => (v === 0 ? '' : `${v}`)}
+          ticks={axis.ticks}
+          tickFormatter={axis.format}
           tick={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
           axisLine={false}
           tickLine={false}

@@ -5,8 +5,7 @@ import { CHART_COLORS } from '@/lib/colors'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartCardHead } from '@/components/ui/ChartCard'
 import { ChartFigure } from '@/components/ui/ChartFigure'
-import { STATUS } from '@/lib/statusColors'
-import { cn } from '@/lib/utils'
+import { StatusPill } from '@/components/ui/StatusPill'
 import { formFade } from '@/domain/activity/formFade'
 import { cleanStream, paddedDomain } from '@/domain/activity/cleanStream'
 import { t } from '@/i18n'
@@ -31,18 +30,15 @@ export function FormThroughRun({ cadenceSamples, distanceKm }: Props) {
   const n = values.length
   const data = values.map((spm, i) => ({ d: (i / (n - 1)) * distanceKm, spm }))
 
-  const status = fade.fadedFromKm != null ? STATUS.warning : STATUS.success
-  const headline = fade.fadedFromKm != null ? f.faded(fade.fadedFromKm.toFixed(1)) : f.held
-  const reading =
-    fade.fadedFromKm != null
-      ? f.readingFaded((distanceKm - fade.fadedFromKm).toFixed(1))
-      : f.readingHeld
+  const faded = fade.fadedFromKm != null
 
   return (
     <GlassSurface variant="card" className="p-5">
       <ChartCardHead
         title={f.title}
-        controls={<span className={cn('text-xs font-semibold', status.text)}>{headline}</span>}
+        unit={t.units.spm}
+        footnote={f.definition}
+        controls={<StatusPill tone={faded ? 'warn' : 'good'}>{faded ? f.faded(fade.fadedFromKm!.toFixed(1)) : f.held}</StatusPill>}
       />
       <ChartFigure summary={f.summary}>
         <ResponsiveContainer width="100%" height={HEIGHT}>
@@ -74,7 +70,6 @@ export function FormThroughRun({ cadenceSamples, distanceKm }: Props) {
           </LineChart>
         </ResponsiveContainer>
       </ChartFigure>
-      <p className="mt-2 text-caption text-subtle">{reading}</p>
     </GlassSurface>
   )
 }

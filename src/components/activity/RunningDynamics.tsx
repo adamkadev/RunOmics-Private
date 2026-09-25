@@ -1,7 +1,7 @@
 import type { ActivityDetailView } from './activityViews'
 import type { BaselineRange, DynamicsBaseline } from '@/application/usecases/GetDynamicsBaseline'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { STATUS } from '@/lib/statusColors'
+import { GlossaryTerm } from '@/components/ui/GlossaryTerm'
 import { formatDelta } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -9,6 +9,7 @@ import { FormThroughRun } from './FormThroughRun'
 
 interface Metric {
   label: string
+  term: 'strideLength' | 'groundContact' | 'verticalOscillation' | 'verticalRatio'
   value: number
   display: string
   unit: string
@@ -69,6 +70,7 @@ export function RunningDynamics({ activity: a, baseline }: Props) {
   if (a.strideLengthM != null) {
     metrics.push({
       label: d.strideLength,
+      term: 'strideLength',
       value: a.strideLengthM,
       display: a.strideLengthM.toFixed(2),
       unit: t.units.m,
@@ -82,6 +84,7 @@ export function RunningDynamics({ activity: a, baseline }: Props) {
   if (a.groundContactMs != null) {
     metrics.push({
       label: d.groundContact,
+      term: 'groundContact',
       value: a.groundContactMs,
       display: a.groundContactMs.toFixed(0),
       unit: t.units.ms,
@@ -95,6 +98,7 @@ export function RunningDynamics({ activity: a, baseline }: Props) {
   if (a.verticalOscillationMm != null) {
     metrics.push({
       label: d.vertOscillation,
+      term: 'verticalOscillation',
       value: a.verticalOscillationMm,
       display: a.verticalOscillationMm.toFixed(1),
       unit: t.units.mm,
@@ -108,6 +112,7 @@ export function RunningDynamics({ activity: a, baseline }: Props) {
   if (a.verticalRatioPct != null) {
     metrics.push({
       label: d.vertRatio,
+      term: 'verticalRatio',
       value: a.verticalRatioPct,
       display: a.verticalRatioPct.toFixed(1),
       unit: t.units.percent,
@@ -138,7 +143,9 @@ export function RunningDynamics({ activity: a, baseline }: Props) {
             return (
               <div key={m.label} className="border-b border-border py-2.75">
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-sm font-semibold text-foreground">{m.label}</span>
+                  <span className="text-sm font-semibold text-foreground">
+                    <GlossaryTerm term={m.term}>{m.label}</GlossaryTerm>
+                  </span>
                   <span className="text-lg font-bold tabular-nums text-foreground">
                     {m.display}
                     <span className="text-xs font-medium text-muted-foreground"> {m.unit}</span>
@@ -149,7 +156,7 @@ export function RunningDynamics({ activity: a, baseline }: Props) {
                   <p
                     className={cn(
                       'mt-1.5 text-xs font-semibold',
-                      improved === null ? 'text-muted-foreground' : improved ? STATUS.success.text : STATUS.warning.text,
+                      improved === null ? 'text-muted-foreground' : improved ? 'text-delta-good' : 'text-delta-warn',
                     )}
                   >
                     {sentence}

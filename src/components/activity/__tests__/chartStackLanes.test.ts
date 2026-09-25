@@ -98,3 +98,20 @@ describe('lane summaries', () => {
   })
 })
 
+
+describe('distanceAxis', () => {
+  // R5: the axis had no 0 and no unit.
+  it('runs from 0 to the run distance, which carries the unit', async () => {
+    const { distanceAxis } = await import('../chartAxis')
+    const axis = distanceAxis(6.11)
+    expect(axis.ticks).toEqual([0, 2, 4, 6.11])
+    expect(axis.format(0)).toBe('0')
+    expect(axis.format(6.11)).toBe(`6.11 ${t.units.km}`)
+  })
+
+  it('drops a round tick too close to the end', async () => {
+    const { distanceAxis } = await import('../chartAxis')
+    expect(distanceAxis(6.4).ticks).toEqual([0, 2, 4, 6.4])
+    expect(distanceAxis(10.2).ticks).toEqual([0, 2, 4, 6, 8, 10.2])
+  })
+})
