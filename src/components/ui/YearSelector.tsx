@@ -22,7 +22,7 @@ interface Props {
 }
 
 function GroupLabel({ children }: { children: string }) {
-  return <span className="text-micro font-semibold uppercase tracking-wide text-muted-foreground">{children}</span>
+  return <span className="text-caption font-semibold uppercase tracking-wide text-muted-foreground">{children}</span>
 }
 
 export function YearSelector({

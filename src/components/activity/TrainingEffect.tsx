@@ -40,7 +40,7 @@ function TECell({ value, label, term }: { value: number; label: string; term: Gl
 
   return (
     <div className="min-w-0 flex-1 px-3.5 py-2.5">
-      <p className="font-mono text-micro font-semibold uppercase leading-none tracking-[0.1em] text-muted-foreground">
+      <p className="font-mono text-caption font-semibold uppercase leading-none tracking-[0.1em] text-muted-foreground">
         <GlossaryTerm term={term}>{label}</GlossaryTerm>
       </p>
       <p className="mt-1.5 flex items-baseline gap-1.5 leading-tight">

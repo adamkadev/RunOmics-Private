@@ -132,7 +132,7 @@ function ZoneTrack({ scale, value, zone }: { scale: Scale; value: number; zone: 
         {scale.ticks.map((tick) => (
           <span
             key={tick.at}
-            className="absolute -translate-x-1/2 text-micro tabular-nums text-muted-foreground"
+            className="absolute -translate-x-1/2 text-caption tabular-nums text-muted-foreground"
             style={{ left: `${pct(tick.at, scale)}%` }}
           >
             {tick.label}
@@ -181,7 +181,7 @@ function Row({
         {rawValue !== null ? (
           <ZoneTrack scale={scale} value={rawValue} zone={zone} />
         ) : (
-          <p className="mt-1 text-micro text-muted-foreground">{s.insufficientData}</p>
+          <p className="mt-1 text-caption text-muted-foreground">{s.insufficientData}</p>
         )}
       </button>
       {open && <p className="pb-3 text-xs leading-snug text-muted-foreground">{description}</p>}

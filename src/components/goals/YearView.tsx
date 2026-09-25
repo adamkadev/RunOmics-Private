@@ -33,9 +33,10 @@ export function YearView({ yearData, today }: Props) {
     : null
   // Colour encodes state, weight encodes certainty - amber is reserved for the
   // verdict (the projection line and the next-race countdown) and appears
-  // nowhere else. This bar states how far training has come, not a grade, so
-  // it stays this fixed blue regardless of projection status or accent theme.
-  const BAR_COLOR = '#5a97f5'
+  // nowhere else. This bar states how far training has come, not a grade: a
+  // progress fill, which is the accent's job. It was a fixed blue that was
+  // neither the accent nor a status colour.
+  const BAR_COLOR = 'var(--accent)'
   // deltaKm arrives absolute, so the sign has to be recomputed from the
   // projection itself. Reading it off `status` renders an on-track projection
   // that lands above the goal as "On track −30 km" - a minus on a surplus.
@@ -78,7 +79,7 @@ export function YearView({ yearData, today }: Props) {
                   />
                   <span
                     aria-hidden
-                    className="absolute top-full mt-0.5 -translate-x-1/2 whitespace-nowrap text-[9.5px] leading-none"
+                    className="absolute top-full mt-0.5 -translate-x-1/2 whitespace-nowrap text-caption leading-none"
                     style={{ left: `${projectedPercent}%`, color: 'var(--subtle-2)' }}
                   >
                     {t.goals.projection.projectedTick}

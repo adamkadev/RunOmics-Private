@@ -58,7 +58,7 @@ export function PlanPhaseTrack({ ranges, weekStart, weekEnd }: { ranges: PlanPha
           )
         })}
       </div>
-      <div className="mt-1.5 flex justify-between font-mono text-micro font-semibold uppercase tracking-[0.04em]">
+      <div className="mt-1.5 flex justify-between font-mono text-caption font-semibold uppercase tracking-[0.04em]">
         {ranges.map((r) => {
           const isPast = r.endDate < weekStart
           const isCurrent = !isPast && r.startDate <= weekEnd

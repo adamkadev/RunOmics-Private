@@ -43,7 +43,7 @@ export function SettingRow({ title, subtitle, children }: SettingRowProps) {
     <div className="flex items-center justify-between" style={{ padding: '11px 16px' }}>
       <div>
         <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ro-text)' }}>{title}</div>
-        {subtitle && <div style={{ fontSize: 10, color: 'var(--ro-text-3)' }}>{subtitle}</div>}
+        {subtitle && <div className="text-caption" style={{ color: 'var(--ro-text-3)' }}>{subtitle}</div>}
       </div>
       {children}
     </div>

@@ -34,7 +34,7 @@ function NavLink({ activity, direction }: { activity: AdjacentActivity | null; d
     >
       {isPrev && <ChevronLeft size={16} className="shrink-0 text-muted-foreground" />}
       <span className="min-w-0">
-        <span className="block text-micro font-medium uppercase tracking-wide text-muted-foreground">
+        <span className="block text-caption font-medium uppercase tracking-wide text-muted-foreground">
           {isPrev ? t.activity.nav.previous : t.activity.nav.next}
         </span>
         <span className="block truncate font-semibold text-foreground">{activityLabel(activity)}</span>

@@ -16,6 +16,7 @@ import { BackButton } from '@/components/ui/BackButton'
 import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
 import { STATUS } from '@/lib/statusColors'
 import { runTypeColor } from '@/lib/colors'
+import { shoeWearCopy } from '@/components/shoes/shoeWear'
 import { formatDateRange, formatKm, formatMonthShortYear, formatPace } from '@/lib/formatters'
 import { addDays, isoDate } from '@/lib/calendarDate'
 import { cn } from '@/lib/utils'
@@ -94,6 +95,7 @@ export default async function ShoeDetailPage({
 
   const d = t.shoes.detail
   const { status, kmLeft, weeksRemaining } = wearOutlook(shoe)
+  const wear = shoeWearCopy(shoe)
   const lastWornDate = shoe.activities[0]?.date ?? null
   const weeksWorn = weeksInRotation(shoe.firstUsedDate, lastWornDate)
   const avgRunKm = shoe.activities.length > 0 ? shoe.totalKm / shoe.activities.length : null
@@ -106,10 +108,10 @@ export default async function ShoeDetailPage({
   const runOutSentence =
     !shoe.retired && weeksRemaining !== null && weeksRemaining > 0
       ? weeksRemaining > FAR_OUT_WEEKS
-        ? d.projectedRunOutFar(Math.round(shoe.kmPerWeek), shoe.maxKm)
+        ? d.projectedRunOutFar(Math.round(shoe.kmPerWeek), formatKm(shoe.maxKm))
         : d.projectedRunOut(
             Math.round(shoe.kmPerWeek),
-            shoe.maxKm,
+            formatKm(shoe.maxKm),
             projectedRunOutMonth(weeksRemaining),
             weeksRemaining
           )
@@ -223,14 +225,14 @@ export default async function ShoeDetailPage({
           lives in the bar's colour, and the ratio is a quiet caption under it. */}
       {!shoe.retired && (
         <GlassSurface variant="card" className="p-5">
-          <p className={cn('font-display text-display font-bold', style.text)}>{t.shoes.kmLeftExact(kmLeft)}</p>
+          <p className={cn('font-display text-display font-bold', style.text)}>{wear.exact}</p>
           <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-foreground/[0.08]">
             <div
               className={`h-full rounded-full transition-all ${style.bar}`}
               style={{ width: `${shoe.wearPercent}%` }}
             />
           </div>
-          <p className="mt-2.5 text-xs text-subtle">{t.shoes.kmOf(Math.round(shoe.totalKm), shoe.maxKm)}</p>
+          <p className="mt-2.5 text-xs text-subtle">{wear.ratio}</p>
           {runOutSentence && <p className="mt-2.5 text-footnote leading-snug text-muted-foreground">{runOutSentence}</p>}
         </GlassSurface>
       )}
@@ -256,7 +258,7 @@ export default async function ShoeDetailPage({
 
       {!shoe.retired && status !== 'ok' && (
         <div className="rounded-2xl border p-4" style={HERO_SURFACE[status]}>
-          <p className={cn('font-mono text-micro font-bold uppercase tracking-[0.1em]', style.text)}>
+          <p className={cn('font-mono text-caption font-bold uppercase tracking-[0.1em]', style.text)}>
             {d.verdict.eyebrow(t.shoes.status[status])}
           </p>
           <p className="mt-2 font-display text-subhead font-bold leading-snug text-foreground">
@@ -288,7 +290,7 @@ export default async function ShoeDetailPage({
           ))}
         </div>
         {usageInsight && <p className="px-1 text-caption leading-snug text-foreground/75">{usageInsight}</p>}
-        {typeShareIsGrouped && <p className="px-1 text-micro text-subtle-2">{d.typeShareGrouped}</p>}
+        {typeShareIsGrouped && <p className="px-1 text-caption text-subtle-2">{d.typeShareGrouped}</p>}
       </div>
 
       <div className="space-y-3">

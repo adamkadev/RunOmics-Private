@@ -162,7 +162,7 @@ export function RunningFormChart({ points }: { points: WeeklyTrendPoint[] }) {
 
         return (
           <ChartFigure summary={summary}>
-            <p className="text-micro leading-none text-subtle">{UNIT_BY_KEY[key]}</p>
+            <p className="text-caption leading-none text-subtle">{UNIT_BY_KEY[key]}</p>
             <ResponsiveContainer width="100%" height={196}>
               <LineChart data={visible} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
                 <XAxis {...windowDateAxis(ticks)} />

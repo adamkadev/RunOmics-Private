@@ -20,7 +20,8 @@ const c = HUE
 const glassLight = {
   '--glass-sat': '1.4',
   '--glass-bg': paper(0.62),
-  '--glass-border': paper(0.7),
+  // Ink at 10 %: white at 0.7 was white on white over the aurora, about 1.1:1.
+  '--glass-border': withAlpha(c.inkLight, 0.1),
   '--glass-highlight': paper(0.9),
   '--glass-shadow-float': `0 18px 40px -24px ${withAlpha(c.natureShadow, 0.35)}`,
   '--glass-shadow-nav': `0 16px 36px -20px ${withAlpha(c.natureShadow, 0.35)}`,

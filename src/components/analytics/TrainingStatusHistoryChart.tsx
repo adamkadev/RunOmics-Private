@@ -101,7 +101,7 @@ function StatusRibbon({ segments }: { segments: TrainingStatusSegment[] }) {
           />
         ))}
       </div>
-      <div className="mt-1.5 flex min-h-4 justify-between gap-2 text-micro text-subtle">
+      <div className="mt-1.5 flex min-h-4 justify-between gap-2 text-caption text-subtle">
         {active ? (
           <span className="text-foreground/80">{segmentLabel(active)}</span>
         ) : (

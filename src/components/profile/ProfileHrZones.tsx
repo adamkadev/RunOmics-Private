@@ -136,7 +136,7 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
       </div>
 
       {paceZones && (
-        <div className="mb-2 flex items-center justify-between gap-2 text-micro font-semibold uppercase tracking-wide text-subtle-2">
+        <div className="mb-2 flex items-center justify-between gap-2 text-caption font-semibold uppercase tracking-wide text-subtle-2">
           <span>{s.columnZone}</span>
           <span className="flex items-center gap-5">
             <span>{s.columnPace}</span>

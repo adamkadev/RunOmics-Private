@@ -8,6 +8,7 @@ import { STATUS } from '@/lib/statusColors'
 import { SHOE_WEAR_TINTS } from '@/lib/colors'
 import { formatDate, formatDateRange, formatKm } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
+import { shoeWearCopy } from './shoeWear'
 import { t } from '@/i18n'
 
 export function pickHeroShoe(shoes: ShoeStats[]): ShoeStats | null {
@@ -37,7 +38,7 @@ export const HERO_SURFACE: Record<'watch' | 'replace', { background: string; bor
 
 function ShoeHeroCard({ shoe, insight }: { shoe: ShoeStats; insight: string | null }) {
   const status = wearStatus(shoe.wearPercent) as 'watch' | 'replace'
-  const kmLeft = Math.max(0, Math.round(shoe.maxKm - shoe.totalKm))
+  const wear = shoeWearCopy(shoe)
 
   return (
     <Link
@@ -46,7 +47,7 @@ function ShoeHeroCard({ shoe, insight }: { shoe: ShoeStats; insight: string | nu
       style={HERO_SURFACE[status]}
     >
       <div className="flex items-center justify-center gap-2">
-        <span className={cn('font-mono text-micro font-bold uppercase tracking-[0.1em]', WEAR_TEXT[status])}>
+        <span className={cn('font-mono text-caption font-bold uppercase tracking-[0.1em]', WEAR_TEXT[status])}>
           {t.shoes.status[status]}
         </span>
         <span className={cn('text-footnote font-bold tabular-nums', WEAR_TEXT[status])}>{shoe.wearPercent}%</span>
@@ -56,7 +57,7 @@ function ShoeHeroCard({ shoe, insight }: { shoe: ShoeStats; insight: string | nu
         <p className="font-display text-body font-bold text-foreground">{shoe.name}</p>
       </div>
       <p className="mb-2.5 mt-0.5 text-caption text-muted-foreground">
-        {t.shoes.kmOf(Math.round(shoe.totalKm), shoe.maxKm)} · {t.shoes.kmLeft(kmLeft)}
+        {wear.over ? `${wear.exact} · ${t.shoes.replaceNow}` : `${wear.ratio} · ${wear.short}`}
       </p>
       <div className="h-1.5 overflow-hidden rounded-full bg-foreground/[0.1]">
         <div className={cn('h-full rounded-full', WEAR_BAR[status])} style={{ width: `${shoe.wearPercent}%` }} />
@@ -94,7 +95,7 @@ function retiredSubline(shoe: ShoeStats): string {
 
 function ShoeRow({ shoe }: { shoe: ShoeStats }) {
   const status = wearStatus(shoe.wearPercent)
-  const kmLeft = Math.max(0, Math.round(shoe.maxKm - shoe.totalKm))
+  const wear = shoeWearCopy(shoe)
 
   // No opacity on the retired row: dimming the whole row composited the
   // AA-compliant `text-subtle` down to ~3.2:1, and faded the brand mark and the
@@ -123,7 +124,7 @@ function ShoeRow({ shoe }: { shoe: ShoeStats }) {
           </span>
         ) : (
           <span className={cn('shrink-0 text-right text-footnote font-bold tabular-nums', WEAR_TEXT[status])}>
-            {t.shoes.kmLeft(kmLeft)}
+            {wear.short}
           </span>
         )}
       </span>
@@ -142,7 +143,7 @@ function ShoeRow({ shoe }: { shoe: ShoeStats }) {
           retiredSubline(shoe)
         ) : (
           <>
-            {t.shoes.kmOf(Math.round(shoe.totalKm), shoe.maxKm)} · {t.shoes.kmPerWeek(shoe.kmPerWeek)}
+            {wear.ratio} · {t.shoes.kmPerWeek(shoe.kmPerWeek)}
             {lastRunLabel(shoe) && ` · ${lastRunLabel(shoe)}`}
           </>
         )}

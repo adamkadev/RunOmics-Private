@@ -44,7 +44,7 @@ export function MilestonesTimeline({ milestones }: { milestones: Milestone[] }) 
     <div className="space-y-6">
       {groupByYear(milestones).map(([year, items]) => (
         <div key={year}>
-          <h2 className="mb-2 px-1 text-[10.5px] font-bold uppercase tracking-[0.16em] text-subtle">{year}</h2>
+          <h2 className="mb-2 px-1 text-caption font-bold uppercase tracking-[0.16em] text-subtle">{year}</h2>
           <GlassSurface variant="card" className="p-2 sm:p-3">
             <ol className="divide-y divide-foreground/[0.06]">
               {items.map((m, i) => (

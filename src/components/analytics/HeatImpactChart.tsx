@@ -79,7 +79,7 @@ export function HeatImpactChart({ data }: { data: HeatImpactData }) {
                 dataKey="paceAtRefHr"
                 position="right"
                 formatter={(v) => (typeof v === 'number' ? formatPace(v) : '')}
-                style={{ fontSize: 10, fill: CHART_COLORS.axisTick }}
+                style={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
               />
             </Bar>
           </BarChart>

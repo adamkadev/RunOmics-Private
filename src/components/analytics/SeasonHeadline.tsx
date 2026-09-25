@@ -19,7 +19,7 @@ export function SeasonHeadline({ data, aiTake }: Props) {
         background: BRAND_TINTS.headlineFill,
       }}
     >
-      <div className="mb-2 font-mono text-micro font-bold uppercase tracking-[0.14em] text-accent-text">
+      <div className="mb-2 font-mono text-caption font-bold uppercase tracking-[0.14em] text-accent-text">
         {t.analytics.seasonHeadline.eyebrow}
       </div>
       <div className="mb-3">
