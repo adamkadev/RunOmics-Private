@@ -22,6 +22,7 @@ import { ChartCardSkeleton } from '@/components/ui/Skeleton'
 import { useSwipeNavigation } from '@/lib/useSwipeNavigation'
 import { useToday } from '@/lib/useToday'
 import { ChartTodayContext } from '@/components/ui/ChartWindowNav'
+import { StickyBar } from '@/components/ui/StickyBar'
 import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { t } from '@/i18n'
 
@@ -186,10 +187,7 @@ export function AnalyticsClient({
       </div>
 
       {active && (
-        <div
-          ref={tabsRef}
-          className="sticky top-[max(var(--safe-top),8px)] z-20 -mx-4 px-4 py-2 sm:-mx-6 sm:px-6"
-        >
+        <StickyBar ref={tabsRef} top="max(var(--safe-top), 8px)">
           {/* The shared switch, not a row of separate bordered pills: one recipe
               and one height for every segmented control in the app. */}
           <SegmentedTabs
@@ -198,10 +196,9 @@ export function AnalyticsClient({
             label={t.analytics.title}
             size="md"
             fill
-            className="bg-background/85 backdrop-blur-xl"
             tabClassName="px-1 text-footnote"
           />
-        </div>
+        </StickyBar>
       )}
 
       {/* Once, on the first tab: the same 230 pt card used to top all four and

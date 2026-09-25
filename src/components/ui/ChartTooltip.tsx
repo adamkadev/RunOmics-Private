@@ -1,10 +1,9 @@
 import type { ReactNode } from 'react'
-import { cn } from '@/lib/utils'
 import { tooltipSurfaceClass } from '@/components/ui/Card'
 
 export function TooltipCard({ label, children }: { label?: ReactNode; children: ReactNode }) {
   return (
-    <div className={cn(tooltipSurfaceClass, 'dark:bg-muted')}>
+    <div className={tooltipSurfaceClass}>
       {label != null && label !== '' && (
         <p className="mb-1 text-xs font-medium text-muted-foreground">{label}</p>
       )}
