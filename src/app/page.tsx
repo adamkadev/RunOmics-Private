@@ -6,7 +6,6 @@ import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
 import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { getTrainingStatusDaysBar } from '@/application/usecases/GetTrainingStatusDaysBar'
 import { getRecords, getQualifiedEffortsByActivityId, getMostRecentRecord } from '@/application/usecases/GetRecords'
-import { getNextRace } from '@/application/usecases/GetNextRace'
 import { getTodayPlannedWorkout } from '@/application/usecases/GetPlannedWorkouts'
 import { getTodayInsight, todayInsightSession } from '@/application/usecases/GetTodayInsight'
 import { getPbCelebrationInsight } from '@/application/usecases/GetPbCelebrationInsight'
@@ -37,7 +36,6 @@ export default async function DashboardPage() {
   const records = await getRecords()
   const qualifiedEffortsByActivityId = getQualifiedEffortsByActivityId(records)
   const mostRecentRecord = getMostRecentRecord(records)
-  const nextRace = await getNextRace()
   const todayPlannedWorkout = await getTodayPlannedWorkout()
   const weeklyStreak = getWeeklyStreakData()
   // One date for the whole render, in the athlete's zone when one is set - the
@@ -72,9 +70,7 @@ export default async function DashboardPage() {
         status={trainingStatus}
         plannedWorkout={todayWorkout && heroWorkoutView(todayWorkout)}
         todayActivity={todayActivity}
-        nextRace={nextRace}
         aiVerdict={aiVerdict}
-        today={today}
       />
 
       <FormFitnessFatigueTrio status={trainingStatus} load={trainingLoad} />

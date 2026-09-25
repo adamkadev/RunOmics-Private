@@ -1,18 +1,14 @@
 'use client'
 
-import { DAY_MS } from '@/lib/calendarDate'
-import { Flag } from 'lucide-react'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import type { ActivitySummary } from '@/domain/activity/types'
-import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import { verdictTone, type ReadinessTone } from '@/domain/training/readiness'
 import type { HeroWorkoutView } from '@/components/plan/planWorkoutView'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { SessionCard } from '@/components/ui/SessionCard'
-import { formatCountdown, formatDelta } from '@/lib/formatters'
+import { formatDelta } from '@/lib/formatters'
 import { todaySession } from './todaySession'
 import { READINESS_TONE_COLORS } from '@/lib/colors'
-import { useToday } from '@/lib/useToday'
 import type { Insight } from '@/lib/gemini'
 import { t } from '@/i18n'
 
@@ -22,10 +18,7 @@ interface Props {
   status: TrainingStatus | null
   plannedWorkout: HeroWorkoutView | null
   todayActivity: ActivitySummary | null
-  nextRace: UpcomingRace | null
   aiVerdict: Insight | null
-  /** The date the page was prerendered on; see useToday. */
-  today: string
 }
 
 function holdCopy(status: TrainingStatus): { headline: string; body: string } {
@@ -58,15 +51,11 @@ function readinessCopy(status: TrainingStatus, tone: ReadinessTone): { headline:
   }
 }
 
-export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiVerdict, today: serverToday }: Props) {
-  const today = useToday(serverToday)
-  // Whole calendar days, both ends at UTC midnight so a daylight-saving change
-  // in between cannot move the count.
-  const daysToRace = nextRace
-    ? Math.round((Date.parse(`${nextRace.date}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / DAY_MS)
-    : null
-
-  if (!status && !plannedWorkout && !nextRace) return null
+// No race countdown here: the race is the plan's reason, not a daily number,
+// and the D-21 chip next to the verdict was noise in the morning read. The
+// countdown lives on Plan's race footer and on Goals.
+export function TodayHero({ status, plannedWorkout, todayActivity, aiVerdict }: Props) {
+  if (!status && !plannedWorkout && !todayActivity) return null
 
   const s = t.dashboard.todayHero
   const tone = status ? verdictTone(status) : null
@@ -93,12 +82,6 @@ export function TodayHero({ status, plannedWorkout, todayActivity, nextRace, aiV
             {tone ? s.eyebrowByTone[tone] : s.eyebrowByTone.go}
           </span>
           {aiVerdict && <span className="text-caption text-subtle">{t.sessionCard.coachInsight}</span>}
-          {nextRace && daysToRace !== null && daysToRace > 0 && (
-            <div className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground">
-              <Flag size={10} className="shrink-0" />
-              {formatCountdown(daysToRace)}
-            </div>
-          )}
         </div>
 
         {verdict && (
