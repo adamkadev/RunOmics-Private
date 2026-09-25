@@ -17,6 +17,7 @@ import { weekTarget, type WeekTarget } from '@/domain/training/weekTarget'
 import { formatWeekKm, resolveDayType, resolvePlannedType, weekPlanDays } from './weekPlanDays'
 import { dayStateCells } from './dayStateCells'
 import { DayStateLegend, DayStateStrip } from '@/components/ui/DayStateStrip'
+import { SessionStateChip } from '@/components/ui/SessionCard'
 import type { WeekDayState } from '@/domain/training/weekTarget'
 import { SessionStructureBar } from './WorkoutStructure'
 import { PlanPhaseTrack } from './PlanPhaseTrack'
@@ -43,10 +44,6 @@ import {
   plannedWorkoutView,
   type PlanWorkoutView,
 } from './planWorkoutView'
-
-// The "done" chip's blue was a dark-theme hex, 1.5:1 on the light background.
-// Each theme takes its own step of the same hue instead.
-const DONE_INK = 'text-blue-700 dark:text-blue-300'
 
 interface Day {
   date: string
@@ -708,18 +705,7 @@ export function WeekView({
                     {activityTitle(a)}
                   </span>
                   <span className="flex shrink-0 items-center" style={{ gap: '8px' }}>
-                    <span
-                      className={cn('font-bold uppercase', DONE_INK)}
-                      style={{
-                        fontSize: '11px',
-                        letterSpacing: '.06em',
-                        background: 'rgba(90,151,245,.16)',
-                        borderRadius: '6px',
-                        padding: '4px 8px',
-                      }}
-                    >
-                      {t.plan.doneChip}
-                    </span>
+                    <SessionStateChip state="done" />
                     <ChevronRight size={19} style={{ color: 'var(--subtle-2)' }} aria-hidden="true" />
                   </span>
                 </div>

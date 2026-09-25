@@ -199,6 +199,10 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--metric-fitness': c.semBlueLight,
       '--metric-fatigue': c.semOrangeLight,
       '--destructive': c.semRedLight,
+      // The readiness tone on the Today hero's eyebrow and rule, text grade.
+      '--tone-go': c.semGreenLight,
+      '--tone-caution': c.amber700,
+      '--tone-hold': c.semOrangeLight,
       '--track': withAlpha(c.roInk, 0.07),
 
       '--zone-1': c.roZone1,
@@ -246,6 +250,9 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--metric-fitness': c.roBlueHi,
       '--metric-fatigue': c.roOrangeHi,
       '--destructive': c.red400,
+      '--tone-go': c.emerald400,
+      '--tone-caution': c.roAmber,
+      '--tone-hold': c.roOrangeHi,
       '--track': paper(0.08),
 
       '--zone-1': c.roZone1,

@@ -140,10 +140,12 @@ export function metricDeltaColor(delta: number, goodWhen: MetricDeltaPolarity, t
   return rising === (goodWhen === 'up') ? METRIC_DELTA_COLORS.good : METRIC_DELTA_COLORS.warn
 }
 
+// The hero's readiness tone, as tokens: each theme takes its own text-grade
+// step, where the fixed hexes this replaced were dark-mode colours in both.
 export const READINESS_TONE_COLORS = {
-  go:      c.roEmerald,
-  caution: c.roAmber,
-  hold:    c.roOrange,
+  go:      'var(--tone-go)',
+  caution: 'var(--tone-caution)',
+  hold:    'var(--tone-hold)',
 } as const
 
 

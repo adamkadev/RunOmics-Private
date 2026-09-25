@@ -156,6 +156,9 @@
   --metric-fitness:      #2563eb;
   --metric-fatigue:      #c2560f;
   --destructive:         #d1453f;
+  --tone-go:             #0f7a52;
+  --tone-caution:        #b45309;
+  --tone-hold:           #c2560f;
   --track:               rgba(11, 31, 23, 0.07);
   --zone-1:              #7fb2c9;
   --zone-2:              #3b82f6;
@@ -214,6 +217,9 @@
   --metric-fitness:      #7db8ff;
   --metric-fatigue:      #ff9a5a;
   --destructive:         #f87171;
+  --tone-go:             #34d399;
+  --tone-caution:        #f5b700;
+  --tone-hold:           #ff9a5a;
   --track:               rgba(255, 255, 255, 0.08);
   --zone-1:              #7fb2c9;
   --zone-2:              #7db8ff;

@@ -66,6 +66,13 @@ export const en = {
     today: 'Today',
     dayLabel: (day: string, state: string) => `${day}: ${state}`,
   },
+  // Planned against ran, on a SessionCard.
+  sessionCard: {
+    ranAt: (km: string, pace: string) => `Ran ${km} km at ${pace}`,
+    ran: (km: string) => `Ran ${km} km`,
+    plannedKm: (km: string) => `planned ${km} km`,
+    coachInsight: 'Coach insight',
+  },
 
   units: {
     km: 'km',
@@ -1439,7 +1446,6 @@ export const en = {
     races: 'Races',
     targetPace: (pace: string) => `target ${pace}`,
     continuous: 'continuous',
-    doneChip: 'DONE',
     ranKm: (km: string) => `${km} km ran`,
     plannedKmLabel: (km: number) => `${km} km planned`,
     restCard: {
