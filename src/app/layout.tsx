@@ -14,12 +14,18 @@ import {
   ACCENT_STORAGE_KEY,
   CUSTOM_ACCENT_ID,
   CUSTOM_ACCENT_STYLE_ID,
+  DEFAULT_ACCENT,
+  accentBackground,
 } from '@/lib/accent'
 import { appleStartupImages } from '@/lib/splashScreens'
 
 const inter = Inter({ variable: '--font-inter', subsets: ['latin'] })
 const spaceGrotesk = Space_Grotesk({ variable: '--font-space-grotesk', subsets: ['latin'], weight: ['500', '600', '700'] })
 const jetbrainsMono = JetBrains_Mono({ variable: '--font-jetbrains-mono', subsets: ['latin'] })
+
+function defaultBackground(mode: 'light' | 'dark'): string {
+  return accentBackground({ kind: 'curated', id: DEFAULT_ACCENT }, mode)
+}
 
 export const metadata: Metadata = {
   title: {
@@ -30,7 +36,11 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'black-translucent',
+    // Opaque, in the page's theme-color. With black-translucent, iOS 26+
+    // paints a Liquid Glass blur over the status-bar inset that fades ~35 pt
+    // into the page - system-drawn, so no page CSS can remove it. Read at
+    // install time: an installed app must be re-added to pick this up.
+    statusBarStyle: 'default',
     title: 'RunOmics',
     startupImage: [...appleStartupImages],
   },
@@ -61,7 +71,14 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  // Still `cover`, for the bottom inset the tab bar pads by.
   viewportFit: 'cover',
+  // The status bar's colour from the first paint, before ThemeSync takes over
+  // with the chosen accent and theme.
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: defaultBackground('light') },
+    { media: '(prefers-color-scheme: dark)', color: defaultBackground('dark') },
+  ],
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

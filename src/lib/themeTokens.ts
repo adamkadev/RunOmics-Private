@@ -155,10 +155,10 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--saturate': '1.6',
       '--color-missed': c.roPink,
       '--safe-top': 'env(safe-area-inset-top, 0px)',
-      '--safe-top-min': 'max(var(--safe-top), 20px)',
-      // Where a page starts: just under the status bar, as the mockups draw
-      // it. The extra 28 px this used to add left a band of empty glass.
-      '--top-scrim': 'calc(var(--safe-top-min) + 8px)',
+      // Where a page starts: 12 px under the status bar. The bar is opaque
+      // (statusBarStyle 'default'), so the top inset is 0 in the installed
+      // app and the page begins below the bar, clear of the iOS blur.
+      '--top-scrim': 'calc(var(--safe-top) + 12px)',
       '--safe-bottom': 'env(safe-area-inset-bottom, 0px)',
       // The tab bar's bottom padding: the inset less the 10 px under the home
       // indicator, so the labels stay clear of its swipe zone (the bar is 5 pt

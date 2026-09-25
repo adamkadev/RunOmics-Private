@@ -119,8 +119,7 @@
   --saturate:              1.6;
   --color-missed:          #e5396b;
   --safe-top:              env(safe-area-inset-top, 0px);
-  --safe-top-min:          max(var(--safe-top), 20px);
-  --top-scrim:             calc(var(--safe-top-min) + 8px);
+  --top-scrim:             calc(var(--safe-top) + 12px);
   --safe-bottom:           env(safe-area-inset-bottom, 0px);
   --tab-bar-bottom:        max(calc(var(--safe-bottom) - 10px), 0px);
   --tap-min:               44px;

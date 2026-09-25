@@ -140,11 +140,14 @@ export const ACCENT_UI: Record<AccentId, [light: string, dark: string]> = Object
   ]),
 ) as Record<AccentId, [light: string, dark: string]>
 
-export function applyThemeColor(preference: AccentPreference, isDark: boolean): void {
+/** The page background for an accent, as a hex a theme-color meta takes. */
+export function accentBackground(preference: AccentPreference, mode: 'light' | 'dark'): string {
   const { hue, chromaScale } = resolveAccent(preference)
-  const color = isDark
-    ? darkRoleHex('background', hue, chromaScale)
-    : lightRoleHex('background', hue, chromaScale)
+  return mode === 'light' ? lightRoleHex('background', hue, chromaScale) : darkRoleHex('background', hue, chromaScale)
+}
+
+export function applyThemeColor(preference: AccentPreference, isDark: boolean): void {
+  const color = accentBackground(preference, isDark ? 'dark' : 'light')
   document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => {
     meta.setAttribute('content', color)
   })
