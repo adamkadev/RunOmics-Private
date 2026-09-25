@@ -20,7 +20,7 @@ export function ThemeSegmented() {
 
   return (
     <div>
-      <h2 className="text-sm font-bold text-foreground">{s.themeLabel}</h2>
+      <h3 className="text-body font-semibold text-foreground">{s.themeLabel}</h3>
       <div className="mt-3 flex w-full gap-1 rounded-full bg-foreground/[0.04] p-1">
         {OPTIONS.map(({ value, label }) => (
           <button

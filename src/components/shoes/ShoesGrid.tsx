@@ -9,6 +9,8 @@ import { SHOE_WEAR_TINTS } from '@/lib/colors'
 import { formatDate, formatDateRange, formatKm } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { shoeWearCopy } from './shoeWear'
+import { WearBar } from './WearBar'
+import { StatusPill } from '@/components/ui/StatusPill'
 import { t } from '@/i18n'
 
 export function pickHeroShoe(shoes: ShoeStats[]): ShoeStats | null {
@@ -50,7 +52,12 @@ function ShoeHeroCard({ shoe, insight }: { shoe: ShoeStats; insight: string | nu
         <span className={cn('font-mono text-caption font-bold uppercase tracking-[0.1em]', WEAR_TEXT[status])}>
           {t.shoes.status[status]}
         </span>
-        <span className={cn('text-footnote font-bold tabular-nums', WEAR_TEXT[status])}>{shoe.wearPercent}%</span>
+        {/* Past the limit the chip states the overrun; "100%" hid it. */}
+        {wear.over ? (
+          <StatusPill tone="red" className="rounded-lg px-2.5 py-1 font-semibold">{wear.short}</StatusPill>
+        ) : (
+          <span className={cn('text-footnote font-bold tabular-nums', WEAR_TEXT[status])}>{shoe.wearPercent}%</span>
+        )}
       </div>
       <div className="mt-1.5 flex items-center justify-center gap-2">
         <BrandIcon brand={shoe.brand} size={16} />
@@ -59,9 +66,7 @@ function ShoeHeroCard({ shoe, insight }: { shoe: ShoeStats; insight: string | nu
       <p className="mb-2.5 mt-0.5 text-caption text-muted-foreground">
         {wear.over ? `${wear.exact} · ${t.shoes.replaceNow}` : `${wear.ratio} · ${wear.short}`}
       </p>
-      <div className="h-1.5 overflow-hidden rounded-full bg-foreground/[0.1]">
-        <div className={cn('h-full rounded-full', WEAR_BAR[status])} style={{ width: `${shoe.wearPercent}%` }} />
-      </div>
+      <WearBar totalKm={shoe.totalKm} maxKm={shoe.maxKm} fillClass={WEAR_BAR[status]} />
       {insight && <p className="mx-auto mt-2.5 max-w-[46ch] text-caption leading-snug text-foreground/75">{insight}</p>}
     </Link>
   )
@@ -131,12 +136,7 @@ function ShoeRow({ shoe }: { shoe: ShoeStats }) {
       {/* Retired pairs are forced to wearPercent 100 (GetShoeStats), so a bar there
           would claim a full-red rotation shoe that is already out of service. */}
       {!shoe.retired && (
-        <span className="block h-1.5 overflow-hidden rounded-full bg-foreground/[0.1]">
-          <span
-            className={cn('block h-full rounded-full', WEAR_BAR[status])}
-            style={{ width: `${shoe.wearPercent}%` }}
-          />
-        </span>
+        <WearBar totalKm={shoe.totalKm} maxKm={shoe.maxKm} fillClass={WEAR_BAR[status]} caption={false} />
       )}
       <span className="block truncate text-caption text-subtle">
         {shoe.retired ? (

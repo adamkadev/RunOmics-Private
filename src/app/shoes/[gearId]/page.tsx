@@ -17,6 +17,7 @@ import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
 import { STATUS } from '@/lib/statusColors'
 import { runTypeColor } from '@/lib/colors'
 import { shoeWearCopy } from '@/components/shoes/shoeWear'
+import { WearBar } from '@/components/shoes/WearBar'
 import { formatDateRange, formatKm, formatMonthShortYear, formatPace } from '@/lib/formatters'
 import { addDays, isoDate } from '@/lib/calendarDate'
 import { cn } from '@/lib/utils'
@@ -226,12 +227,7 @@ export default async function ShoeDetailPage({
       {!shoe.retired && (
         <GlassSurface variant="card" className="p-5">
           <p className={cn('font-display text-display font-bold', style.text)}>{wear.exact}</p>
-          <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-foreground/[0.08]">
-            <div
-              className={`h-full rounded-full transition-all ${style.bar}`}
-              style={{ width: `${shoe.wearPercent}%` }}
-            />
-          </div>
+          <WearBar totalKm={shoe.totalKm} maxKm={shoe.maxKm} fillClass={style.bar} className="mt-2.5" />
           <p className="mt-2.5 text-xs text-subtle">{wear.ratio}</p>
           {runOutSentence && <p className="mt-2.5 text-footnote leading-snug text-muted-foreground">{runOutSentence}</p>}
         </GlassSurface>

@@ -10,7 +10,7 @@ const HOURS_SINCE_RENDER = 3
 
 const ROUTES = [
   '/', '/activities', '/plan', '/analytics', '/profile', '/athlete',
-  '/settings', '/goals', '/records', '/shoes', '/milestones',
+  '/settings', '/goals', '/records', '/shoes', '/milestones', '/consistency',
 ]
 
 for (const route of ROUTES) {

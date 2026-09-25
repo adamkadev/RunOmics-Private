@@ -58,7 +58,7 @@ export function AccentPicker() {
 
   return (
     <div>
-      <h2 className="text-sm font-bold text-foreground">{t.settings.accent.title}</h2>
+      <h3 className="text-body font-semibold text-foreground">{t.settings.accent.title}</h3>
 
       {/* One row, never wrapped: five curated circles and the custom one. At
           44px with a 6px gap the six of them need 294px, which fits the 301px

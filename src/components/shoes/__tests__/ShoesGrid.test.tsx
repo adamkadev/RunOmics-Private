@@ -70,6 +70,8 @@ describe('ShoesGrid rows', () => {
     expect(screen.queryByText('60%')).not.toBeInTheDocument()
   })
 
+  // Scaled to max(km, limit) - the same bar that shows an overrun - so a pair
+  // inside its limit fills its exact share of it.
   it('gives every active row a bar sized to its wear, so the digits are not the only signal', () => {
     const { container } = render(
       <ShoesGrid
@@ -80,14 +82,14 @@ describe('ShoesGrid rows', () => {
       />
     )
 
-    expect(rowBarWidths(container)).toEqual(['60%', '5%'])
+    expect(rowBarWidths(container)).toEqual(['60.4%', '5.3%'])
   })
 
-  it('keeps the bar 6px, not the 3px that would undercut the accessible metric-bar height', () => {
+  it('keeps the bar at least 6px, never the 3px that would undercut the accessible metric-bar height', () => {
     const { container } = render(<ShoesGrid shoes={[shoe({ wearPercent: 60 })]} />)
 
     const track = container.querySelector<HTMLElement>('span[style]')?.parentElement
-    expect(track?.className).toContain('h-1.5')
+    expect(track?.className).toContain('h-2.5')
   })
 
   it('says what the date is, instead of leaving a bare day beside the mileage', () => {
@@ -167,6 +169,6 @@ describe('ShoesGrid rows', () => {
       />
     )
 
-    expect(rowBarWidths(container)).toEqual(['60%'])
+    expect(rowBarWidths(container)).toEqual(['60.4%'])
   })
 })
