@@ -56,6 +56,17 @@ export const en = {
     monthShortYear: (month: string, year2: string) => `${month} ’${year2}`,
   },
 
+  // A session's state, drawn in shape (see the .state-* recipes) and named the
+  // same way wherever a week is shown.
+  sessionState: {
+    done: 'Done',
+    planned: 'Planned',
+    missed: 'Missed',
+    rest: 'Rest',
+    today: 'Today',
+    dayLabel: (day: string, state: string) => `${day}: ${state}`,
+  },
+
   units: {
     km: 'km',
     bpm: 'bpm',
@@ -1439,6 +1450,7 @@ export const en = {
     weekSummary: {
       load: 'Load',
       loadUnit: 'pts',
+      missed: (n: number) => `${n} missed`,
       sessionsCount: (n: number) => `${n} session${n !== 1 ? 's' : ''}`,
       ranOfPlan: (ran: string, plan: string) => `${ran} of ${plan} km`,
       sessionsOfPlan: (ran: number, plan: number) => `${ran} of ${plan} session${plan !== 1 ? 's' : ''}`,

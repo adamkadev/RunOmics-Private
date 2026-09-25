@@ -14,7 +14,10 @@ import { weekPlanPhase } from '@/domain/training/weekPlanPhase'
 import { EFFORT_ZONE_BY_TYPE } from '@/domain/training/workoutStructure'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import { weekTarget, type WeekTarget } from '@/domain/training/weekTarget'
-import { formatWeekKm, weekPlanDays } from './weekPlanDays'
+import { formatWeekKm, resolveDayType, resolvePlannedType, weekPlanDays } from './weekPlanDays'
+import { dayStateCells } from './dayStateCells'
+import { DayStateLegend, DayStateStrip } from '@/components/ui/DayStateStrip'
+import type { WeekDayState } from '@/domain/training/weekTarget'
 import { SessionStructureBar } from './WorkoutStructure'
 import { PlanPhaseTrack } from './PlanPhaseTrack'
 import { PeriodNav } from '@/components/ui/PeriodNav'
@@ -27,7 +30,6 @@ import { formatDate, formatDateRange, formatPace } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { PlanCoachingView, PlanPrescriptionView } from './planCoachingView'
-import { COACHING_TO_ACTIVITY_TYPE } from '@/domain/coaching/types'
 import {
   isKeyPrescription,
   macrocyclePhaseRanges,
@@ -42,32 +44,6 @@ import {
   type PlanWorkoutView,
 } from './planWorkoutView'
 
-// The strip's second variable (after bar height = km) is activity type,
-// drawn as hue - the same ACTIVITY_TYPE_STYLE the "this week" bullets, the
-// session card and Activity detail already read from, so a colour means the
-// same thing everywhere it appears rather than each surface inventing its
-// own bucketing.
-// HSL lightness from sRGB - (max+min)/2, no need for full HSL conversion
-// since only lightness is used here.
-function lightness(hex: string): number {
-  const r = parseInt(hex.slice(1, 3), 16) / 255
-  const g = parseInt(hex.slice(3, 5), 16) / 255
-  const b = parseInt(hex.slice(5, 7), 16) / 255
-  return (Math.max(r, g, b) + Math.min(r, g, b)) / 2
-}
-
-// Selection lightens a hue toward its own bright end - except a hue that's
-// already light (Race's blue300, VO2Max's roRed) has nowhere left to go
-// but white, and at 30% white it stops reading as its own colour and reads
-// as lavender. Those darken slightly instead; the ring and the bold label
-// still carry "this is selected" either way.
-function brighten(hex: string): string {
-  return lightness(hex) > 0.65
-    ? `color-mix(in srgb, ${hex} 85%, black 15%)`
-    : `color-mix(in srgb, ${hex} 70%, white 30%)`
-}
-
-const REST_STUB_FILL = 'rgba(148,178,220,.25)'
 // The "done" chip's blue was a dark-theme hex, 1.5:1 on the light background.
 // Each theme takes its own step of the same hue instead.
 const DONE_INK = 'text-blue-700 dark:text-blue-300'
@@ -75,46 +51,6 @@ const DONE_INK = 'text-blue-700 dark:text-blue-300'
 interface Day {
   date: string
   acts: ActivitySummary[]
-}
-
-// Hardest-first, matching ACTIVITY_TYPES' own declaration order - a
-// day with more than one logged activity (or a race day) resolves to
-// whichever one is hardest, not just whichever came first.
-const RAMP_ORDER: ActivityType[] = ['Race', 'Sprint', 'Anaerobic', 'VO2Max', 'Threshold', 'Tempo', 'Base']
-
-function hardestType(types: ActivityType[]): ActivityType {
-  return types.reduce((hardest, type) =>
-    RAMP_ORDER.indexOf(type) < RAMP_ORDER.indexOf(hardest) ? type : hardest
-  )
-}
-
-function resolvePlannedType(
-  date: string,
-  byDatePlanned: Map<string, PlannedWorkout>,
-  byDateCoach?: ReadonlyMap<string, PlanPrescriptionView[]>
-): ActivityType | undefined {
-  const coach = byDateCoach?.get(date)?.find((v) => v.state !== 'cancelled')
-  if (coach) return COACHING_TO_ACTIVITY_TYPE[coach.prescription.type]
-  return byDatePlanned.get(date)?.type
-}
-
-interface DayTypeResolution {
-  type: ActivityType
-  /** Set only when the day was run and it differs from what was planned. */
-  planned?: ActivityType
-}
-
-// One source of truth for a day's colour: the week-strip bar and the "this
-// week" bullet both call this rather than each resolving a planned or
-// recorded type on their own - which is how the same day used to end up two
-// different hues in two places. A day that was actually run always shows
-// what happened, not what was scheduled.
-function resolveDayType(acts: ActivitySummary[], plannedType: ActivityType | undefined): DayTypeResolution | null {
-  if (acts.length > 0) {
-    const recorded = hardestType(acts.map((a) => a.type))
-    return recorded !== plannedType && plannedType ? { type: recorded, planned: plannedType } : { type: recorded }
-  }
-  return plannedType ? { type: plannedType } : null
 }
 
 // effort already reads "Z2 easy · 5:10-6:27 /km" for the sheet and the old
@@ -236,13 +172,38 @@ interface WeekRowItem {
   done: boolean
 }
 
+const ROW_STATE_CLASS: Partial<Record<WeekDayState, string>> = {
+  done: 'text-delta-good',
+  missed: 'text-delta-warn',
+  planned: 'text-subtle',
+}
+
 // One row per session, divider-separated like the Activities list rather than
 // a stack of two-line cards - three sessions used to cost ~190px and their
 // distances never lined up. The dot reads ACTIVITY_TYPE_STYLE, the same map
 // the strip's bars use, so the two read as one vocabulary.
-function WeekSessionRow({ workout, onTap, isLast }: { workout: WeekRowItem; onTap: () => void; isLast: boolean }) {
+// Each row names its state in words too - done, missed or still planned - so
+// a missed session reads as missed in the list as well as in the strip.
+function WeekSessionRow({
+  workout,
+  state,
+  plannedKm,
+  onTap,
+  isLast,
+}: {
+  workout: WeekRowItem
+  state: WeekDayState
+  plannedKm: number | null
+  onTap: () => void
+  isLast: boolean
+}) {
   const weekday = WEEKDAY_SHORT_INDEX[new Date(workout.date + 'T00:00:00').getDay()]
-  const distanceKm = workout.distanceM ? Math.round(workout.distanceM / 1000) : null
+  const distanceKm = workout.distanceM ? workout.distanceM / 1000 : null
+  const kmLabel = distanceKm === null
+    ? null
+    : state === 'done' && plannedKm !== null
+      ? `${formatWeekKm(distanceKm)} / ${formatWeekKm(plannedKm)} ${t.units.km}`
+      : `${formatWeekKm(distanceKm)} ${t.units.km}`
 
   return (
     <button
@@ -270,126 +231,15 @@ function WeekSessionRow({ workout, onTap, isLast }: { workout: WeekRowItem; onTa
           {[weekday, workout.title].filter(Boolean).join(' · ')}
         </span>
       </span>
-      <span className="shrink-0" style={{ fontSize: '13px', color: 'var(--subtle)' }}>
-        {distanceKm ? `${distanceKm} ${t.units.km}` : null}
+      <span className="flex shrink-0 items-center gap-2.5">
+        <span className="text-sm text-muted-foreground">{kmLabel}</span>
+        {ROW_STATE_CLASS[state] && (
+          <span className={cn('min-w-16 text-right text-xs font-semibold', ROW_STATE_CLASS[state])}>
+            {state === 'done' ? `✓ ${t.sessionState.done}` : t.sessionState[state]}
+          </span>
+        )}
       </span>
     </button>
-  )
-}
-
-// The strip is the tab's navigation and carries two variables: bar height is
-// planned/done km, hue is the day's activity type (ACTIVITY_TYPE_STYLE) -
-// so a week's shape (two hard days back to back, a base week that quietly
-// turned into a threshold week) reads at a glance instead of needing the
-// detail pane open. Selection can no longer be "the green one" now that
-// green is Base's own colour, so it moves to a ring plus a brighter tint of
-// that day's own hue.
-function WeekStrip({
-  days,
-  selectedDate,
-  today,
-  byDatePlanned,
-  byDateCoach,
-  onSelect,
-}: {
-  days: Day[]
-  selectedDate: string
-  today: string
-  byDatePlanned: Map<string, PlannedWorkout>
-  byDateCoach?: ReadonlyMap<string, PlanPrescriptionView[]>
-  onSelect: (date: string) => void
-}) {
-  const BAR_MAX = 56
-  const REST_HEIGHT = 5
-
-  const barDays = days.map((d) => {
-    const plannedType = resolvePlannedType(d.date, byDatePlanned, byDateCoach)
-    const resolved = resolveDayType(d.acts, plannedType)
-    if (d.acts.length > 0) {
-      return { km: d.acts.reduce((sum, a) => sum + a.distanceKm, 0), resolved }
-    }
-    const coach = byDateCoach?.get(d.date)?.find((v) => v.state !== 'cancelled')
-    const plan = byDatePlanned.get(d.date)
-    const meters = coach ? prescriptionDistanceMeters(coach.prescription) : (plan?.distanceM ?? null)
-    return { km: meters === null ? null : meters / 1000, resolved }
-  })
-  const maxKm = Math.max(1, ...barDays.map((b) => b.km).filter((km): km is number => km !== null))
-
-  return (
-    <div className="grid grid-cols-7 gap-1.5 px-1">
-      {days.map((d, i) => {
-        const { km, resolved } = barDays[i]!
-        const isRest = km === null
-        const isSelected = d.date === selectedDate
-        const isToday = d.date === today
-        const hue = activityTypeStyle(resolved?.type).chartColor
-        const plannedHue = resolved?.planned ? activityTypeStyle(resolved.planned).chartColor : null
-        // The tallest day in the week fills the track; a rest day gets a
-        // fixed stub instead of a scaled height, so it reads as an absence
-        // rather than as the smallest session.
-        const height = isRest ? REST_HEIGHT : Math.max(2, Math.round((km / maxKm) * BAR_MAX))
-        const weekday = WEEKDAY_SHORT_INDEX[new Date(d.date + 'T00:00:00').getDay()]
-        const coach = byDateCoach?.get(d.date) ?? []
-
-        return (
-          <button
-            key={d.date}
-            type="button"
-            onClick={() => onSelect(d.date)}
-            aria-label={`${formatDate(d.date, { style: 'full' })}${coach.length ? ` · ${coach.map((view) => `${view.prescription.title} · ${t.coaching.states[view.state]}`).join(', ')}` : ''}`}
-            aria-pressed={isSelected}
-            {...(coach.length ? { 'data-testid': `coach-calendar-${d.date}` } : {})}
-            className="flex flex-col items-center gap-1 rounded-lg py-0.5 transition-transform active:scale-95"
-          >
-            <span
-              className="text-micro font-bold leading-none"
-              style={{ color: isRest ? 'var(--subtle-2)' : isSelected ? brighten(hue) : 'var(--subtle)' }}
-            >
-              {isRest ? t.plan.restDay.toLowerCase() : Math.round(km)}
-            </span>
-            {/* Always rendered (hidden, not removed) on rest days - dropping this
-                line shortened the column above the bar, which pulled the whole
-                bar container up and left the rest stub floating off the
-                baseline every other column's bar sits on. */}
-            <span
-              className="text-[9px] font-semibold leading-none"
-              style={{ color: 'var(--subtle-2)', visibility: isRest ? 'hidden' : 'visible' }}
-            >
-              {t.units.km}
-            </span>
-            <div className="flex w-full items-end justify-center" style={{ height: BAR_MAX }}>
-              <div
-                className="relative w-full rounded-[6px] transition-[height,background,box-shadow] active:opacity-70"
-                style={
-                  isRest
-                    ? { height, background: REST_STUB_FILL }
-                    : {
-                        height,
-                        background: isSelected ? brighten(hue) : hue,
-                        boxShadow: isSelected ? `0 0 0 2px ${hue}` : undefined,
-                      }
-                }
-              >
-                {/* The day was run, and it didn't match what was planned - the
-                    fill is what happened; this cap is what was supposed to. */}
-                {plannedHue && (
-                  <div
-                    className="absolute inset-x-0 top-0 rounded-t-[6px]"
-                    style={{ height: '3px', background: plannedHue }}
-                  />
-                )}
-              </div>
-            </div>
-            <span
-              className="text-micro font-bold leading-none"
-              style={{ color: isToday ? 'var(--accent-text)' : 'var(--subtle)' }}
-            >
-              {weekday}
-            </span>
-          </button>
-        )
-      })}
-    </div>
   )
 }
 
@@ -409,6 +259,7 @@ function weekVolumeLabel(target: WeekTarget, notStarted: boolean): string {
 
 function WeekSummaryLine({
   volume,
+  missed,
   load,
   loadTarget,
   loadIsPlanned,
@@ -416,6 +267,7 @@ function WeekSummaryLine({
   easyHardIsPlanned,
 }: {
   volume: string
+  missed: number
   load: number
   loadTarget: number | null
   loadIsPlanned: boolean
@@ -449,6 +301,7 @@ function WeekSummaryLine({
         {s.loadUnit}
         {loadIsPlanned && <> {s.loadPlanned}</>}
       </span>
+      {missed > 0 && <span className="font-semibold text-delta-warn">{s.missed(missed)}</span>}
       {easyHard && (
         <span>{easyHardIsPlanned ? s.easyHardPlanned(easyHard.easy, easyHard.hard) : s.easyHardRatio(easyHard.easy, easyHard.hard)}</span>
       )}
@@ -762,17 +615,30 @@ export function WeekView({
         />
       </div>
 
-      <WeekStrip
-        days={days}
-        selectedDate={selected.date}
-        today={today}
-        byDatePlanned={byDatePlanned}
-        byDateCoach={byDateCoach}
-        onSelect={selectDate}
-      />
+      {/* State in shape - solid done, dashed planned, hatched missed, today
+          ringed - so a missed session no longer draws as the same solid bar
+          as one still to come. */}
+      <div className="space-y-2.5 px-1">
+        <DayStateStrip
+          variant="bars"
+          days={dayStateCells(target.days, today, 'short').map((cell) => {
+            const coach = byDateCoach?.get(cell.date) ?? []
+            if (coach.length === 0) return cell
+            return {
+              ...cell,
+              detail: coach.map((view) => `${view.prescription.title} · ${t.coaching.states[view.state]}`).join(', '),
+              testId: `coach-calendar-${cell.date}`,
+            }
+          })}
+          selectedDate={selected.date}
+          onSelect={selectDate}
+        />
+        <DayStateLegend color="var(--zone-4)" />
+      </div>
 
       <WeekSummaryLine
         volume={weekVolumeLabel(target, firstDay.date > today && target.ranSessions === 0)}
+        missed={target.missedSessions}
         load={load}
         loadTarget={loadTarget}
         loadIsPlanned={loadIsPlanned}
@@ -884,6 +750,8 @@ export function WeekView({
               <WeekSessionRow
                 key={workout.key}
                 workout={workout}
+                state={target.days.find((d) => d.date === workout.date)?.state ?? 'planned'}
+                plannedKm={target.days.find((d) => d.date === workout.date)?.plannedKm ?? null}
                 onTap={() => selectDate(workout.date)}
                 isLast={i === thisWeekSessions.length - 1}
               />

@@ -1,6 +1,5 @@
 'use client'
 
-import { Check } from 'lucide-react'
 import { formatKm } from '@/lib/formatters'
 import type { WeeklyStreakData } from '@/application/usecases/GetMilestones'
 import type { WeekTarget } from '@/domain/training/weekTarget'
@@ -8,55 +7,14 @@ import { formatWeekKm } from '@/components/plan/weekPlanDays'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { useCountUp } from '@/lib/useCountUp'
 import { useToday } from '@/lib/useToday'
-import { cn } from '@/lib/utils'
+import { DayStateStrip } from '@/components/ui/DayStateStrip'
+import { dayStateCells } from '@/components/plan/dayStateCells'
 import { t } from '@/i18n'
 
 const RING_SIZE = 76
 const RING_STROKE = 7
 const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS
-
-function WeekDots({ weekDays, plannedDays, today }: { weekDays: boolean[]; plannedDays: boolean[]; today: number }) {
-  const labels = t.plan.weekdays
-
-  return (
-    <div className="flex justify-between">
-      {weekDays.map((active, i) => {
-        const isToday = i === today
-        const isFuture = i > today
-        const isRest = !active && !isFuture && !plannedDays[i]
-        return (
-          <div key={i} className="text-center">
-            <div
-              className={cn(
-                'mx-auto flex h-[26px] w-[26px] items-center justify-center rounded-full',
-                active
-                  ? 'bg-accent'
-                  : isFuture
-                    ? 'border-[1.5px] border-dashed border-foreground/15'
-                    : isRest
-                      ? 'bg-accent/15'
-                      : 'bg-foreground/10',
-                isToday && !active && 'border-2 border-accent bg-transparent'
-              )}
-              style={
-                isToday && !active
-                  ? { boxShadow: '0 0 12px color-mix(in srgb, var(--accent) 50%, transparent)' }
-                  : undefined
-              }
-            >
-              {active && <Check size={13} strokeWidth={3.2} className="text-accent-foreground" />}
-              {isRest && !isToday && <Check size={13} strokeWidth={3.2} className="text-accent-text" />}
-            </div>
-            <div className={cn('mt-1 text-micro', isToday ? 'font-semibold text-accent-text' : 'text-muted-foreground')}>
-              {labels[i]?.slice(0, 1)}
-            </div>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
 
 interface Props {
   data: WeeklyStreakData
@@ -134,8 +92,11 @@ export function WeeklyStreakCard({ data, target, today: serverToday }: Props) {
         </div>
       </div>
 
-      <div className="mt-4">
-        <WeekDots weekDays={data.weekDays} plannedDays={data.plannedDays} today={today} />
+      {/* The same state recipe as Plan's week: done, missed, still to come or
+          rest, in the session's intensity, today ringed. The old dots drew a
+          missed day and a rest day alike. */}
+      <div className="mt-3">
+        <DayStateStrip variant="dots" days={dayStateCells(target.days, todayIso, 'initial')} />
       </div>
     </GlassSurface>
   )

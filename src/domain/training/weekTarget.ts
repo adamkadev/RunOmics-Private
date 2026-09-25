@@ -1,3 +1,5 @@
+import type { ActivityType } from '@/domain/activity/types'
+
 /**
  * One answer to "am I on track this week", for every screen that asks it.
  *
@@ -25,6 +27,13 @@ export interface WeekTargetDay {
   plannedKm: number | null
   /** Sessions the plan scheduled that day; 0 is a day with nothing planned. */
   plannedSessions: number
+  /**
+   * The day's intensity: what was run when it was run (the hardest run), what
+   * was planned otherwise.
+   */
+  type?: ActivityType
+  /** Set only when the day was run as something other than what was planned. */
+  plannedType?: ActivityType
 }
 
 /**
@@ -43,7 +52,7 @@ export interface WeekTarget {
   missedSessions: number
   /** The annual goal's weekly share; null when there is no annual goal. */
   goalKm: number | null
-  days: { date: string; state: WeekDayState }[]
+  days: (WeekTargetDay & { state: WeekDayState })[]
 }
 
 export function weekDayState(day: WeekTargetDay, today: string): WeekDayState {
@@ -54,7 +63,7 @@ export function weekDayState(day: WeekTargetDay, today: string): WeekDayState {
 
 export function weekTarget(days: WeekTargetDay[], today: string, goalKm: number | null): WeekTarget {
   const planned = days.filter((d) => d.plannedSessions > 0)
-  const states = days.map((d) => ({ date: d.date, state: weekDayState(d, today) }))
+  const states = days.map((d) => ({ ...d, state: weekDayState(d, today) }))
 
   return {
     ranKm: round1(days.reduce((sum, d) => sum + d.ranKm, 0)),

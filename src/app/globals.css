@@ -18,6 +18,9 @@
   --color-accent-subtle:     var(--accent-subtle);
   --color-accent-text:       var(--accent-text);
   --color-destructive:       var(--destructive);
+  --color-delta-good:        var(--delta-good);
+  --color-delta-warn:        var(--delta-warn);
+  --color-zone-ink:          var(--zone-ink);
   --color-ring:              var(--ring);
   --font-sans:               var(--font-inter);
   --font-display:            var(--font-space-grotesk);
@@ -120,6 +123,10 @@
   --top-scrim:             calc(var(--safe-top-min) + 28px);
   --safe-bottom:           env(safe-area-inset-bottom, 0px);
   --tap-min:               44px;
+  --state-line:            1.5px;
+  --state-hatch:           40%;
+  --state-ring:            2px;
+  --zone-ink:              #0b1f17;
   --scrim:                 rgba(0, 0, 0, 0.25);
   --scrim-strong:          rgba(0, 0, 0, 0.6);
   --track-on-dark:         rgba(255, 255, 255, 0.08);
@@ -453,6 +460,37 @@
 /* ─── END GENERATED ─── */
 
 /* ─── Liquid glass surfaces ────────────────────────── */
+/* Session state as recipes, shared by Today's week, Plan's week and the
+   legends that explain them. Shape carries the state and --state-color, set
+   by the caller to the session's zone, carries its intensity:
+   done is a solid fill, planned a dashed outline, missed an outline over a
+   135deg hatch, rest a neutral track, and today an accent ring clear of the
+   canvas. */
+@utility state-done {
+  background: var(--state-color);
+}
+
+@utility state-planned {
+  border: var(--state-line) dashed var(--state-color);
+}
+
+@utility state-missed {
+  border: var(--state-line) solid var(--state-color);
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in oklch, var(--state-color) var(--state-hatch), transparent) 0 3px,
+    transparent 3px 7px
+  );
+}
+
+@utility state-rest {
+  background: var(--track);
+}
+
+@utility state-today {
+  box-shadow: 0 0 0 var(--state-ring) var(--background), 0 0 0 calc(var(--state-ring) * 2) var(--accent);
+}
+
 /* A touch target of at least --tap-min around a control that is drawn
    smaller: a transparent ::after centred on it, so the visual size and the
    touch size come apart. Applied inside the ui/ primitives, not per page. A
