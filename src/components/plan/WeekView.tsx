@@ -29,7 +29,7 @@ import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { weeksInPlan, type PlanSpan } from '@/domain/training/planProgress'
 import { addDays, isoDate } from '@/lib/calendarDate'
-import { formatDate, formatDateRange, formatPace } from '@/lib/formatters'
+import { formatDate, formatDateRange, formatDistance, formatPace, formatPlannedKm, formatRanKm } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { PlanCoachingView, PlanPrescriptionView } from './planCoachingView'
@@ -202,7 +202,7 @@ function WeekSessionRow({
   const kmLabel = distanceKm === null
     ? null
     : state === 'done' && plannedKm !== null
-      ? `${formatWeekKm(distanceKm)} / ${formatWeekKm(plannedKm)} ${t.units.km}`
+      ? `${formatRanKm(distanceKm)} / ${formatPlannedKm(plannedKm)} ${t.units.km}`
       : `${formatWeekKm(distanceKm)} ${t.units.km}`
 
   return (
@@ -254,7 +254,7 @@ function weekVolumeLabel(target: WeekTarget, notStarted: boolean): string {
   const s = t.plan.weekSummary
   if (target.planKm === null) return `${formatWeekKm(target.ranKm)} ${t.units.km} · ${s.sessionsCount(target.ranSessions)}`
   if (notStarted) return s.planOnly(formatWeekKm(target.planKm), target.planSessions)
-  return `${s.ranOfPlan(formatWeekKm(target.ranKm), formatWeekKm(target.planKm))} · ${s.sessionsOfPlan(target.ranSessions, target.planSessions)}`
+  return `${s.ranOfPlan(formatRanKm(target.ranKm), formatWeekKm(target.planKm))} · ${s.sessionsOfPlan(target.ranSessions, target.planSessions)}`
 }
 
 function WeekSummaryLine({
@@ -671,7 +671,7 @@ export function WeekView({
               const plannedMeters = coach ? prescriptionDistanceMeters(coach.prescription) : (plan?.distanceM ?? null)
               const plannedKm = plannedMeters !== null ? Math.round(plannedMeters / 1000) : null
               const detail = [
-                t.plan.ranKm(a.distanceKm.toFixed(1)),
+                t.plan.ranKm(formatDistance(a.distanceKm)),
                 plannedKm !== null ? t.plan.plannedKmLabel(plannedKm) : null,
                 a.paceSecPerKm !== null ? formatPace(a.paceSecPerKm) : null,
                 a.rpe !== null ? t.activities.row.rpeValue(a.rpe) : null,

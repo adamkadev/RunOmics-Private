@@ -92,3 +92,28 @@ describe('one session colour across the week', () => {
     expect(within(wed!).queryByText(/Threshold/)).not.toBeInTheDocument()
   })
 })
+
+describe('planned km from the plan (G04)', () => {
+  it('writes a done row as ran / planned, the planned value from the plan', () => {
+    const byDate = new Map<string, ActivitySummary[]>([
+      ['2026-09-10', [activity({ id: 'long', date: '2026-09-10', type: 'VO2Max', distanceKm: 12.4 })]],
+    ])
+    render(
+      <WeekView
+        weekStart={new Date(2026, 8, 7)}
+        byDate={byDate}
+        byDatePlanned={new Map(PLANNED.map((p) => [p.date, p]))}
+        coaching={null}
+        hrBounds={{ maxHr: 202, restingHr: 45 }}
+        today={TODAY}
+        atPresent
+        onToday={() => {}}
+        planPhaseRanges={[]}
+        nextRace={null}
+        trainingZones={null}
+      />,
+    )
+    const row = screen.getAllByTestId(/^week-session-/).find((r) => r.textContent?.includes('12.4'))!
+    expect(row.textContent).toContain(`12.4 / 10 ${t.units.km}`)
+  })
+})

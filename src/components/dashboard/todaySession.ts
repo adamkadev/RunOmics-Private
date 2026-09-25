@@ -2,7 +2,7 @@ import type { ActivitySummary } from '@/domain/activity/types'
 import type { WeekDayState } from '@/domain/training/weekTarget'
 import { EFFORT_ZONE_BY_TYPE } from '@/domain/training/workoutStructure'
 import type { HeroWorkoutView } from '@/components/plan/planWorkoutView'
-import { formatDistance, formatDurationWords, formatKm, formatPace } from '@/lib/formatters'
+import { formatDistance, formatDurationWords, formatPace, formatPlannedKm } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 export interface TodaySession {
@@ -13,7 +13,7 @@ export interface TodaySession {
 }
 
 function plannedKm(workout: HeroWorkoutView | null): string | null {
-  return workout?.distanceM ? formatKm(workout.distanceM / 1000, workout.distanceM % 1000 === 0 ? 0 : 1) : null
+  return workout?.distanceM ? formatPlannedKm(workout.distanceM / 1000) : null
 }
 
 /**
