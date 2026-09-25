@@ -1,25 +1,12 @@
 'use client'
 
-import { useState } from 'react'
-import { ChevronDown, ArrowRight, ArrowDown, Check, Minus } from 'lucide-react'
-import { SectionDivider } from '@/components/ui/SectionLabel'
+import { ChevronRight } from 'lucide-react'
 import type { MonthGoal } from '@/application/usecases/GetGoalsData'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { AnimatedValue } from '@/components/ui/AnimatedValue'
-import { monthLabel } from '@/lib/formatters'
-import { STATUS } from '@/lib/statusColors'
+import { monthLabel, monthName } from '@/lib/formatters'
 import { GOAL_PACE_COLORS } from '@/lib/colors'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
-
-const STATUS_ICON: Record<MonthGoal['status'], { Icon: typeof Check; className: string }> = {
-  ahead:    { Icon: Check,       className: STATUS.success.text },
-  on_track: { Icon: ArrowRight,  className: STATUS.progress.text },
-  // Amber, matching GOAL_PACE_COLORS.behind: a missed volume target is caution,
-  // not the red severity the app reserves for injury risk.
-  behind:   { Icon: ArrowDown,   className: STATUS.warning.text },
-  pending:  { Icon: Minus,       className: 'text-subtle/40' },
-}
 
 const MONTH_CELL_TINT: Record<MonthGoal['status'], { bg: string; border: string; bar: string; dashed?: boolean }> = {
   ahead:    GOAL_PACE_COLORS.ahead,
@@ -54,7 +41,6 @@ export function inProgressMonth(months: MonthGoal[], year: number, now = new Dat
 }
 
 export function MonthlyVolumeChart({ monthlyGoals, year, today }: { monthlyGoals: MonthGoal[]; year: number; today: string }) {
-  const [expanded, setExpanded] = useState(false)
   const elapsedMonths = monthlyGoals.filter((mg) => mg.status !== 'pending')
   const lastMonth = elapsedMonths[elapsedMonths.length - 1]
   if (!lastMonth) return null
@@ -70,84 +56,21 @@ export function MonthlyVolumeChart({ monthlyGoals, year, today }: { monthlyGoals
   )
 
   return (
-    <section className="space-y-3">
-      <button
-        type="button"
-        onClick={() => setExpanded((v) => !v)}
-        className="flex min-h-6 w-full items-center justify-between gap-2"
-      >
-        <SectionDivider as="h2">
-          {t.goals.monthlyVolume.title}
-        </SectionDivider>
-        <span className="flex items-center gap-1 text-xs font-medium text-accent-text">
-          {expanded ? t.goals.monthlyVolume.collapse : t.goals.monthlyVolume.expand}
-          <ChevronDown size={14} className={cn('transition-transform', expanded && 'rotate-180')} />
-        </span>
-      </button>
-
-      {expanded ? (
-        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-          {monthlyGoals.map((mg) => {
-            const denominator = mg.progress ? mg.progress.proRataTargetKm : mg.targetKm
-            const progress = denominator > 0 ? Math.min((mg.actualKm / denominator) * 100, 100) : 0
-            const tint = monthTint(mg)
-            const statusIcon = mg.progress ? null : STATUS_ICON[mg.status]
-            return (
-              <GlassSurface
-                key={mg.month}
-                variant="card"
-                className={cn('rounded-card-sm p-5', tint.dashed && 'border-dashed')}
-                style={tint.bg ? { background: tint.bg, borderColor: tint.border } : undefined}
-              >
-                <div className="flex items-center justify-between gap-1">
-                  <span className="text-xs font-semibold text-subtle">{monthLabel(mg.month)}</span>
-                  {/* The running month gets no status mark at all, rather than
-                      sharing pending's dash - the caption below already says
-                      it's in progress, and a shared glyph read as one more
-                      "hasn't happened" month next to three real ones. */}
-                  {statusIcon && (
-                    <statusIcon.Icon
-                      size={12}
-                      strokeWidth={3}
-                      className={statusIcon.className}
-                      aria-label={t.goals.monthlyVolume.status[mg.status]}
-                    />
-                  )}
-                </div>
-                <p className="mt-1.5 text-xs font-medium text-foreground">
-                  <AnimatedValue value={Math.round(mg.actualKm)} /> /{' '}
-                  {Math.round(mg.progress ? mg.progress.proRataTargetKm : mg.targetKm)}
-                </p>
-                {mg.progress && (
-                  <p className="mt-0.5 truncate text-caption text-subtle">
-                    {t.goals.monthlyVolume.proRataCaption(mg.progress.daysElapsed)}
-                  </p>
-                )}
-                <div className="relative mt-1.5 h-2 overflow-hidden rounded-full bg-foreground/[0.08]">
-                  <div
-                    className="absolute inset-y-0 left-0 rounded-full transition-all"
-                    style={{
-                      width: `${progress}%`,
-                      // Neutral, not tint.bar's grey-on-grey dashed rule colour:
-                      // this much of the month is real, covered ground - not yet
-                      // a verdict either way, so it takes its own solid ink.
-                      background: mg.progress ? 'var(--subtle)' : tint.bar,
-                    }}
-                  />
-                  {mg.progress && (
-                    // Only the days still ahead are provisional, so the dash
-                    // sits on the remaining track, never over the solid fill.
-                    <div
-                      className="absolute inset-y-0 rounded-full border border-dashed"
-                      style={{ left: `${progress}%`, right: 0, borderColor: tint.bar }}
-                    />
-                  )}
-                </div>
-              </GlassSurface>
-            )
-          })}
-        </div>
-      ) : (
+    // A row, as in R7d, that opens onto the chart: the inline chart with its
+    // Expand toggle pushed the rest of the season below it.
+    <details className="group" data-testid="monthly-volume">
+      <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+        <GlassSurface variant="card" className="flex min-h-14 items-center justify-between gap-3 rounded-card-sm px-4 py-2.5">
+          <span className="min-w-0">
+            <span className="block text-body font-semibold text-foreground">{t.goals.monthlyVolume.title}</span>
+            <span className="block truncate text-footnote text-muted-foreground">
+              {t.goals.monthlyVolume.subtitle(monthName(elapsedMonths[0]!.month), monthName(lastMonth.month))}
+            </span>
+          </span>
+          <ChevronRight size={18} className="shrink-0 text-subtle transition-transform group-open:rotate-90" aria-hidden="true" />
+        </GlassSurface>
+      </summary>
+      <div className="pt-3">
         <GlassSurface variant="card" className="rounded-card-sm p-4">
           <div className="relative flex h-20 items-stretch gap-2 pl-6">
             <span
@@ -244,7 +167,7 @@ export function MonthlyVolumeChart({ monthlyGoals, year, today }: { monthlyGoals
             )}
           </div>
         </GlassSurface>
-      )}
-    </section>
+      </div>
+    </details>
   )
 }

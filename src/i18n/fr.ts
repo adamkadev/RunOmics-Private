@@ -252,8 +252,7 @@ export const fr = {
       dark: 'Sombre',
     },
     accent: {
-      title: 'Couleur d’accent',
-      preview: 'Aperçu',
+      title: 'Accent',
       options: {
         nature:      { label: 'Vert' },
         teal:        { label: 'Turquoise' },
@@ -324,6 +323,8 @@ export const fr = {
     },
     dataExport: {
       workbook: 'Exporter les données d’entraînement (.xlsx)',
+      title: 'Exporter les activités',
+      signedOut: (runs: string) => `Classeur des ${runs} · connecte-toi pour exporter`,
       exporting: 'Export en cours...',
       failed: 'Impossible d’exporter les données d’entraînement.',
     },
@@ -335,7 +336,7 @@ export const fr = {
       failed: 'Impossible de vider le cache hors ligne.',
     },
     notifications: {
-      title: 'Notifications push',
+      title: 'Notifications',
       error: 'Impossible de mettre à jour les réglages de notification, réessayez.',
       types: {
         training: {
@@ -1033,10 +1034,13 @@ export const fr = {
   },
 
   goals: {
-    title: 'Objectifs',
+    title: 'Objectifs et saison',
     empty: 'Aucun objectif configuré pour le moment.',
     back: 'Progression',
-    annualGoal: 'Objectif annuel',
+    volumeGoal: (year: number) => `Objectif de volume ${year}`,
+    ofKm: (goal: string) => `sur ${goal} km`,
+    reached: (over: string) => `Atteint · +${over} km`,
+    half: 'Semi',
     kmRemaining: (km: number) => `${km} km restants`,
     goalReached: 'Objectif atteint !',
     upcoming: 'Courses à venir',
@@ -1066,8 +1070,7 @@ export const fr = {
     },
     monthlyVolume: {
       title: 'Volume mensuel',
-      expand: 'Détailler',
-      collapse: 'Réduire',
+      subtitle: (from: string, to: string) => `${from} – ${to} face à l’objectif mensuel`,
       status: {
         ahead: 'Atteint',
         on_track: 'Sur la bonne voie',
@@ -1094,10 +1097,11 @@ export const fr = {
     neverUsed: 'Jamais utilisée',
     kmOf: (total: string, max: string) => `${total} / ${max} km`,
     retired: 'Retraitée',
-    active: 'En rotation',
     rotationSummary: (activePairs: number, retiredPairs: number, km: string) =>
       `${activePairs} en rotation · ${retiredPairs} retraitées · ${km} km parcourus`,
-    lastRun: (date: string) => `dernière sortie le ${date}`,
+    lastRunSentence: (date: string) => `Dernière sortie le ${date}.`,
+    limitLine: (km: string, limit: string, runs: number) => `${km} km · limite ${limit} km · ${runs} sortie${runs === 1 ? '' : 's'}`,
+    retiredTitle: (name: string) => `Retraitée · ${name}`,
     status: {
       ok: 'Bon état',
       watch: 'À remplacer bientôt',
@@ -1107,16 +1111,13 @@ export const fr = {
     kmLeftExact: (km: string) => `${km} km restants`,
     pastLimit: (over: string, limit: string) => `${over} km au-delà de sa limite de ${limit} km`,
     kmOver: (over: string) => `${over} km de trop`,
-    replaceNow: 'à remplacer',
-    kmPerWeek: (km: number) => `${km} km/sem.`,
-    retiredLife: (era: string, runs: number, weeks: number) => `${era} · ${runs} sorties · ${weeks} semaines`,
+    retiredLife: (era: string, runs: number, km: string) => `${era} · ${runs} sorties · ${km} km`,
     hero: {
-      usage: (n: number, total: number) => `Utilisée sur ${n} de tes ${total} dernières séances tempo/seuil`,
-      rotateBeforeRace: (date: string) => ` – fais tourner une autre paire avant ta course du ${date}.`,
-      rotate: ' – fais tourner une autre paire.',
+      usage: (n: number, total: number) => `Utilisée sur ${n} de tes ${total} dernières séances tempo/seuil.`,
     },
     comparison: {
       title: 'Comparer deux paires',
+      subtitle: 'Sorties, distance, séances clés côte à côte',
       change: 'Changer',
       changeLabel: 'Changer les paires comparées',
       pickHint: 'Choisis deux paires — un nouveau choix remplace le plus ancien',

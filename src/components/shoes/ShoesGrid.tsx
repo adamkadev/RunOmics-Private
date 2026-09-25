@@ -1,18 +1,19 @@
+import type { ReactNode } from 'react'
 import Link from 'next/link'
-import { SectionDivider } from '@/components/ui/SectionLabel'
+import { ChevronRight } from 'lucide-react'
 import type { ShoeStats } from '@/application/usecases/GetShoeStats'
-import { wearStatus, weeksInRotation, type WearStatus } from '@/domain/shoe/wearStatus'
+import { wearStatus, type WearStatus } from '@/domain/shoe/wearStatus'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { BrandIcon } from '@/components/shoes/BrandIcon'
 import { STATUS } from '@/lib/statusColors'
 import { SHOE_WEAR_TINTS } from '@/lib/colors'
 import { formatDate, formatDateRange, formatKm } from '@/lib/formatters'
-import { cn } from '@/lib/utils'
 import { shoeWearCopy } from './shoeWear'
 import { WearBar } from './WearBar'
 import { StatusPill } from '@/components/ui/StatusPill'
 import { t } from '@/i18n'
 
+/** The pair most in need of replacing, for the one context line that needs the activity log. */
 export function pickHeroShoe(shoes: ShoeStats[]): ShoeStats | null {
   return (
     shoes
@@ -21,143 +22,89 @@ export function pickHeroShoe(shoes: ShoeStats[]): ShoeStats | null {
   )
 }
 
-// `ok` is a non-event, so it stays neutral rather than spending a status hue —
-// same call ProfileShoes makes when nothing needs replacing. Only watch and
-// replace, the two states that ask for a decision, get colour.
-const WEAR_TEXT: Record<WearStatus, string> = {
-  ok:      'text-muted-foreground',
-  watch:   STATUS.warning.text,
-  replace: STATUS.danger.text,
-}
-
 const WEAR_BAR: Record<WearStatus, string> = {
   ok:      STATUS.success.dot,
   watch:   STATUS.warning.dot,
   replace: STATUS.danger.dot,
 }
 
+/** The shoe detail page's hero tint. */
 export const HERO_SURFACE: Record<'watch' | 'replace', { background: string; borderColor: string }> = SHOE_WEAR_TINTS
 
-function ShoeHeroCard({ shoe, insight }: { shoe: ShoeStats; insight: string | null }) {
-  const status = wearStatus(shoe.wearPercent) as 'watch' | 'replace'
+/**
+ * The pair's state as its card's one chip: the overrun in red, a pair close
+ * to its limit in amber, a healthy one neutral - `ok` asks for no decision,
+ * so it spends no status hue.
+ */
+function WearChip({ shoe }: { shoe: ShoeStats }) {
   const wear = shoeWearCopy(shoe)
+  const status = wearStatus(shoe.wearPercent)
+  if (wear.over) return <StatusPill tone="red" className="shrink-0 font-semibold">{wear.short}</StatusPill>
+  if (status !== 'ok') return <StatusPill tone="amber" className="shrink-0 font-semibold">{wear.short}</StatusPill>
+  return <span className="shrink-0 text-footnote font-semibold tabular-nums text-muted-foreground">{wear.short}</span>
+}
 
+function lastRunLine(shoe: ShoeStats): string | null {
+  return shoe.lastUsedDate ? t.shoes.lastRunSentence(formatDate(shoe.lastUsedDate, { style: 'bare' })) : null
+}
+
+/**
+ * One card per pair in rotation, each with its own state. The old screen gave
+ * the REPLACE hero to one pair, so a second pair 387 km past its limit sat in
+ * the Active list with nothing asking for a decision.
+ */
+function ShoeCard({ shoe, context }: { shoe: ShoeStats; context: string | null }) {
+  const status = wearStatus(shoe.wearPercent)
   return (
-    <Link
-      href={`/shoes/${shoe.gearId}`}
-      className="block rounded-2xl border p-4 text-center transition-transform active:scale-[0.99]"
-      style={HERO_SURFACE[status]}
-    >
-      <div className="flex items-center justify-center gap-2">
-        <span className={cn('font-mono text-caption font-bold uppercase tracking-[0.1em]', WEAR_TEXT[status])}>
-          {t.shoes.status[status]}
-        </span>
-        {/* Past the limit the chip states the overrun; "100%" hid it. */}
-        {wear.over ? (
-          <StatusPill tone="red" className="rounded-lg px-2.5 py-1 font-semibold">{wear.short}</StatusPill>
-        ) : (
-          <span className={cn('text-footnote font-bold tabular-nums', WEAR_TEXT[status])}>{shoe.wearPercent}%</span>
-        )}
-      </div>
-      <div className="mt-1.5 flex items-center justify-center gap-2">
-        <BrandIcon brand={shoe.brand} size={16} />
-        <p className="font-display text-body font-bold text-foreground">{shoe.name}</p>
-      </div>
-      <p className="mb-2.5 mt-0.5 text-caption text-muted-foreground">
-        {wear.over ? `${wear.exact} · ${t.shoes.replaceNow}` : `${wear.ratio} · ${wear.short}`}
-      </p>
-      <WearBar totalKm={shoe.totalKm} maxKm={shoe.maxKm} fillClass={WEAR_BAR[status]} />
-      {insight && <p className="mx-auto mt-2.5 max-w-[46ch] text-caption leading-snug text-foreground/75">{insight}</p>}
+    <Link href={`/shoes/${shoe.gearId}`} className="block transition-transform active:scale-[0.99]" data-testid="shoe-card">
+      <GlassSurface variant="card" className="rounded-card-sm p-4">
+        <div className="flex items-center justify-between gap-3">
+          <span className="flex min-w-0 items-center gap-2">
+            <BrandIcon brand={shoe.brand} size={16} />
+            <span className="truncate font-display text-body font-bold text-foreground">{shoe.name}</span>
+          </span>
+          <WearChip shoe={shoe} />
+        </div>
+        <p className="mb-2.5 mt-0.5 text-footnote tabular-nums text-muted-foreground">
+          {t.shoes.limitLine(formatKm(shoe.totalKm), formatKm(shoe.maxKm), shoe.sessionCount)}
+        </p>
+        <WearBar totalKm={shoe.totalKm} maxKm={shoe.maxKm} fillClass={WEAR_BAR[status]} />
+        {context && <p className="mt-2.5 text-footnote text-foreground/80">{context}</p>}
+      </GlassSurface>
     </Link>
   )
 }
 
-/**
- * Says what the date is instead of leaving a bare `Sep 13` next to the mileage.
- * The year rule it used to spell out by hand is formatDate's now. Only an
- * active pair uses this - a retired one leads with its era instead (see
- * `retiredSubline`), so "last worn" never has to say the same year twice.
- */
-function lastRunLabel(shoe: ShoeStats): string | null {
-  if (!shoe.lastUsedDate) return null
-  return t.shoes.lastRun(formatDate(shoe.lastUsedDate, { style: 'bare' }))
-}
-
-/**
- * A retired pair has no wear left to report, so its subline trades the bar
- * and the percentage for the shape of its life instead: the era it ran in,
- * how many runs, and how many weeks that took.
- */
 function retiredSubline(shoe: ShoeStats): string {
   const era = shoe.firstUsedDate && shoe.lastUsedDate
     ? formatDateRange(shoe.firstUsedDate, shoe.lastUsedDate, { precision: 'month' })
     : shoe.lastUsedDate
       ? formatDate(shoe.lastUsedDate, { precision: 'month', style: 'bare' })
       : '-'
-  const weeks = weeksInRotation(shoe.firstUsedDate, shoe.lastUsedDate)
-  return t.shoes.retiredLife(era, shoe.sessionCount, weeks)
+  return t.shoes.retiredLife(era, shoe.sessionCount, formatKm(shoe.totalKm))
 }
 
-function ShoeRow({ shoe }: { shoe: ShoeStats }) {
-  const status = wearStatus(shoe.wearPercent)
-  const wear = shoeWearCopy(shoe)
-
-  // No opacity on the retired row: dimming the whole row composited the
-  // AA-compliant `text-subtle` down to ~3.2:1, and faded the brand mark and the
-  // mileage along with it. Retirement is a label, so it gets a chip instead.
-  //
-  // Name and headline number share the top line (icon left, number top-right)
-  // instead of the number sitting centred against a three-line block - a
-  // vertically centred trailing figure had no shared baseline with the name it
-  // belonged to. The subline is one truncated line rather than left to wrap,
-  // so a long "last run" date never breaks the phrase mid-word.
+function Row({ title, subtitle }: { title: string; subtitle: string }) {
   return (
-    <Link
-      href={`/shoes/${shoe.gearId}`}
-      className="glass-card flex flex-col gap-1.5 rounded-xl px-3.5 py-2.5 transition-transform active:scale-[0.99]"
-    >
-      <span className="flex items-center gap-2">
-        <BrandIcon brand={shoe.brand} size={14} />
-        <span className="min-w-0 flex-1 truncate text-footnote font-semibold text-foreground">{shoe.name}</span>
-        {/* No per-row "Retired" chip: the group heading above these rows already
-            says it, and repeating it left the row with two labels. A retired
-            pair still shows the one number that outlives it - its total km. */}
-        {shoe.retired ? (
-          <span className="shrink-0 text-right text-footnote font-bold tabular-nums text-subtle">
-            {formatKm(shoe.totalKm)}
-            <span className="ml-0.5 text-caption font-semibold text-muted-foreground">{t.units.km}</span>
-          </span>
-        ) : (
-          <span className={cn('shrink-0 text-right text-footnote font-bold tabular-nums', WEAR_TEXT[status])}>
-            {wear.short}
-          </span>
-        )}
+    <span className="flex min-h-14 items-center justify-between gap-3 py-2.5">
+      <span className="min-w-0">
+        <span className="block truncate text-body font-semibold text-foreground">{title}</span>
+        <span className="block truncate text-footnote text-muted-foreground">{subtitle}</span>
       </span>
-      {/* Retired pairs are forced to wearPercent 100 (GetShoeStats), so a bar there
-          would claim a full-red rotation shoe that is already out of service. */}
-      {!shoe.retired && (
-        <WearBar totalKm={shoe.totalKm} maxKm={shoe.maxKm} fillClass={WEAR_BAR[status]} />
-      )}
-      <span className="block truncate text-caption text-subtle">
-        {shoe.retired ? (
-          retiredSubline(shoe)
-        ) : (
-          <>
-            {wear.ratio} · {t.shoes.kmPerWeek(shoe.kmPerWeek)}
-            {lastRunLabel(shoe) && ` · ${lastRunLabel(shoe)}`}
-          </>
-        )}
-      </span>
-    </Link>
+      <ChevronRight size={18} className="shrink-0 text-subtle" aria-hidden="true" />
+    </span>
   )
 }
 
 interface Props {
   shoes: ShoeStats[]
-  heroInsight?: string | null
+  /** A context line per pair, by gear id, where the page has one. */
+  insights?: Record<string, string>
+  /** The comparison, opened from its row. */
+  compare?: ReactNode
 }
 
-export function ShoesGrid({ shoes, heroInsight = null }: Props) {
+export function ShoesGrid({ shoes, insights = {}, compare }: Props) {
   if (shoes.length === 0) {
     return (
       <GlassSurface variant="card" className="rounded-card-sm border-dashed py-10 text-center">
@@ -166,35 +113,33 @@ export function ShoesGrid({ shoes, heroInsight = null }: Props) {
     )
   }
 
-  const hero = pickHeroShoe(shoes)
-  const rest = shoes.filter((s) => s !== hero)
-
-  // Two pairs can carry the same name a year apart, so the list says which are
-  // in rotation and which are done rather than leaving the reader to infer it
-  // from a chip halfway down a row.
-  const active = rest.filter((shoe) => !shoe.retired)
-  const retired = rest.filter((shoe) => shoe.retired)
+  const active = shoes.filter((shoe) => !shoe.retired).sort((a, b) => b.wearPercent - a.wearPercent)
+  const retired = shoes.filter((shoe) => shoe.retired)
 
   return (
     <div className="space-y-3">
-      {hero && <ShoeHeroCard shoe={hero} insight={heroInsight} />}
+      {active.map((shoe) => (
+        <ShoeCard key={shoe.gearId} shoe={shoe} context={insights[shoe.gearId] ?? lastRunLine(shoe)} />
+      ))}
 
-      {active.length > 0 && (
-        <div className="space-y-2">
-          <SectionDivider className="px-1">{t.shoes.active}</SectionDivider>
-          {active.map((shoe) => (
-            <ShoeRow key={shoe.gearId} shoe={shoe} />
-          ))}
-        </div>
-      )}
-
-      {retired.length > 0 && (
-        <div className="space-y-2 pt-1">
-          <SectionDivider className="px-1">{t.shoes.retired}</SectionDivider>
-          {retired.map((shoe) => (
-            <ShoeRow key={shoe.gearId} shoe={shoe} />
-          ))}
-        </div>
+      {(retired.length > 0 || compare) && (
+        <GlassSurface variant="card" className="rounded-card-sm px-4">
+          <div className="divide-y divide-border">
+            {retired.map((shoe) => (
+              <Link key={shoe.gearId} href={`/shoes/${shoe.gearId}`} className="block" data-testid="retired-row">
+                <Row title={t.shoes.retiredTitle(shoe.name)} subtitle={retiredSubline(shoe)} />
+              </Link>
+            ))}
+            {compare && (
+              <details className="group">
+                <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                  <Row title={t.shoes.comparison.title} subtitle={t.shoes.comparison.subtitle} />
+                </summary>
+                <div className="pb-3">{compare}</div>
+              </details>
+            )}
+          </div>
+        </GlassSurface>
       )}
     </div>
   )

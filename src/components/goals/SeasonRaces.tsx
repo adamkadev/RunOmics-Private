@@ -22,7 +22,7 @@ export interface SeasonRaceRow {
   isNext: boolean
   value: string
   valueClassName: string
-  /** What the value is: a prediction, the best standing in for one, a finish. */
+  /** What the value is: a prediction or a finish. */
   valueSub: string
   achieved: boolean
 }
@@ -69,13 +69,10 @@ export function seasonRaceRows(yearData: YearData, today: string): SeasonRaceRow
     // One prediction source (Garmin's, via GetGoalsData). Where the best is
     // already faster, the best stands in - and the row says so rather than
     // present it as a forecast.
-    const predictedSeconds = isSpotlight
-      ? nextRaceSpotlight!.predictedSeconds
-      : rawPredicted !== null && pb
-        ? Math.min(rawPredicted, pb.entry.seconds)
-        : rawPredicted
-    const predictionIsBest = predictedSeconds !== null && !!pb && Math.round(predictedSeconds) === Math.round(pb.entry.seconds)
-    const predictedSub = predictionIsBest ? t.records.sameAsBest : s.predictedTag
+    // The watch's prediction, labelled as one. Standing the best in for it
+    // printed "= best" under a number the column heads as predicted.
+    const predictedSeconds = isSpotlight ? nextRaceSpotlight!.predictedSeconds : rawPredicted
+    const predictedSub = s.predictedTag
 
     if (scheduledRace) {
       const raceDate = formatDate(scheduledRace.date, { style: 'bare' })
@@ -140,7 +137,7 @@ export function seasonRaceRows(yearData: YearData, today: string): SeasonRaceRow
         isNext: false,
         value: formatDuration(pb.entry.seconds),
         valueClassName: achieved ? STATUS.success.text : 'text-foreground',
-        valueSub: target.targetSeconds !== null ? outcomeLine(pb.entry.seconds, target.targetSeconds) : s.best,
+        valueSub: target.targetSeconds !== null ? outcomeLine(pb.entry.seconds, target.targetSeconds) : s.finish,
         achieved,
       }
     }

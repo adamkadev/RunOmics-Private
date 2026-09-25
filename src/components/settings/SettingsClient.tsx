@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, type ReactNode } from 'react'
+import { ChevronRight } from 'lucide-react'
 import { signInWithPopup, signOut, GoogleAuthProvider } from 'firebase/auth'
 import { SectionDivider } from '@/components/ui/SectionLabel'
 import { getClientAuth, isClientFirebaseConfigured } from '@/lib/firebase'
@@ -82,6 +83,15 @@ export function SettingsClient({ lastSyncedAt, activityCount, device }: Props) {
               }
               trailing={lastSyncedAt && <span aria-hidden className="size-2 rounded-full bg-delta-good" />}
             />
+            {/* The hub promises export, so the row is here signed out too; the
+                workbook is owner-only, so it asks for the sign-in first. */}
+            <button type="button" onClick={handleSignIn} className="block w-full border-t border-border text-left">
+              <StaticRow
+                title={t.settings.dataExport.title}
+                sub={t.settings.dataExport.signedOut(t.common.runs(activityCount))}
+                trailing={<ChevronRight size={18} className="shrink-0 text-subtle" aria-hidden="true" />}
+              />
+            </button>
           </GlassSurface>
         </section>
 
@@ -168,7 +178,7 @@ function AppearanceSection() {
       </SectionDivider>
       <GlassSurface variant="card" className="rounded-card-sm p-4">
         <AccentPicker />
-        <div className="my-4 h-px bg-foreground/[0.06]" />
+        <div className="my-3 h-px bg-foreground/[0.06]" />
         <ThemeSegmented />
       </GlassSurface>
     </section>

@@ -78,7 +78,7 @@ describe('YearView annual goal card', () => {
 
   it('groups thousands the same way everywhere in the card', () => {
     const { container } = render(<YearView yearData={yearData(BEHIND)} today={TODAY} />)
-    expect(container.textContent).toContain(`/ 2,000 ${t.units.km}`)
+    expect(container.textContent).toContain(t.goals.ofKm('2,000'))
     expect(container.textContent).not.toContain('1705')
     expect(container.textContent).not.toContain('2000')
   })
@@ -103,4 +103,13 @@ describe('YearView annual goal card', () => {
     expect(container.textContent).toContain(p.overBy('30'))
     expect(container.textContent).not.toContain(p.shortBy('30'))
   })
+
+  // R7d: a reached goal says so, with the surplus.
+  it('marks a reached goal with a chip and names the year it is for', () => {
+    const data = yearData(BEHIND)
+    const { container } = render(<YearView yearData={{ ...data, totalDistanceKm: 2047 }} today={TODAY} />)
+    expect(container.textContent).toContain(t.goals.reached('47'))
+    expect(container.textContent).toContain(t.goals.volumeGoal(data.year))
+  })
 })
+
