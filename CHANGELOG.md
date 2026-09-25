@@ -2,6 +2,94 @@
 
 All notable changes to this project are documented in this file.
 
+## [4.0.0] - 2026-09-25
+
+RunOmics 4.0: the UI/UX redesign from the v4.0 audit, shipped as PRs
+01–19 in work order (#134–#151). Every change is display-only: the data is
+still read from Garmin, and the activity note is still the only thing you
+type. F22 was already fixed before this release (the count-up respects
+reduced motion), so there is no PR 02.
+
+### Today
+
+- The hero is a SessionCard: a done / planned / missed chip, the session's
+  structure, and a verdict that no longer contradicts the plan. It is drawn
+  from tokens (F01, F07).
+- One week target, the same on Today, Activities and Plan: km run against the
+  planned km, with the plan's own sessions (F02).
+- The race countdown leaves the daily hero. It lives on Goals (F12).
+- Body card: Form / Fitness / Fatigue with a band and a delta each
+  ("+3 vs 7 days ago"), a status strip with a legend in words that links to
+  the load chart, and a Latest record row (F05, F06).
+- The avatar opens Progress (F23).
+
+### Plan
+
+- Done, planned, missed, rest and today are drawn in shape, not only in
+  colour (`.state-*` recipes, `DayStateStrip` with a legend) (F03).
+- Run types take their training zone's colour (`RUN_TYPE_ZONE`), the
+  workout-structure label passes contrast, and the month grid's today cell
+  uses the accent instead of a fixed emerald (F08, F10, F20).
+- The summary is in words ("32 km run · 48 km planned"). The easy share is
+  given against an 80% guide, and load sits behind an ⓘ (F09).
+- The month grid shows only the rows it needs, has week footers and a legend
+  in words, and nothing smaller than 11 px (F29).
+
+### Activity
+
+- The page opens on this run: map, verdict with its plan row, RPE and note.
+  Similar runs sit lower, as one disclosure ranked by pace in one unit. The
+  tab is in the URL (`?tab=`) (F04, F15, F31).
+- Charts: one readout for the scrubbed point, summaries worked out from the
+  same samples, a dashed average line, and every pace axis reading "faster ↑"
+  (F13, F14).
+- Splits: a per-km grid with a speed bar, the gap to your average and a
+  spread summary, instead of a plain table (F37).
+- Dynamics: each change is given against your baseline, in words, and is
+  coloured only when it is good or bad (F36).
+
+### Progress
+
+- Progress is a hub: the year's numbers, then one row each for Goals,
+  Records, Shoes, Athlete & zones, Consistency and Settings. Athlete folds into
+  "Athlete & zones", and Settings becomes a row (F11).
+- Analytics: the season headline is on its first tab only, and the tabs are
+  Load / Performance / Volume / Intensity (Charge / Performance / Volume /
+  Intensité) (F16, F17).
+- Records: labelled Best and Predicted columns, the whole row is the target,
+  and the prediction is Garmin's on every screen. When the best stands in for
+  a prediction it reads "= best" (F32, F33).
+- Shoes: the wear bar scales past the limit, ticks it and hatches the
+  overrun ("875 km over"). The wear copy holds at its edge cases (F27, F34).
+- Athlete & zones: four key tiles with definitions, and one zone table with
+  Pace, HR and Time columns under a single Week / 4 weeks toggle (F35).
+- Goals: upcoming races first, then done, one row per race.
+- Consistency: its own page, one row per month and a cell per day, with Rest,
+  Run and Long run named in words (F38).
+- Settings is grouped into Appearance, Data and Account.
+
+### Design system
+
+- New `ui/` primitives: `SessionCard`, `DayStateStrip`, `StatReadout`,
+  `ListRow`, `GlossaryTerm` / `InfoButton`, `SegmentedTabs size="sm|md"`
+  (now used by Activity, Analytics, Records and Athlete) (F25).
+- Tokens for session state, readiness tone, form bands, status peaking and
+  zone ink. The nav glass tint follows the accent background.
+- Type is on the scale everywhere, and nothing readable is below 11 px
+  (`text-micro` is retired) (F24).
+- Light glass cards keep their edge on the aurora (F26).
+
+### Accessibility
+
+- Every interactive `ui/` control has a 44 pt hit area (`hit-44`) (F18).
+- The tab bar clears the home indicator, and its labels and icons are
+  legible (F19).
+- The save toast's ink passes contrast on the accent (F21).
+- Jargon (Form, Fitness, Fatigue, VO₂max, VMA, threshold HR and pace, RPE,
+  aerobic / anaerobic effect) is defined behind an ⓘ wherever it appears
+  (F28).
+- EN and FR are in parity for every new string.
+
 ## [3.1.0] - 2026-07-07
 
 Closes the two "out of scope" chantiers of the v4 audit (B2 similar runs, C2
