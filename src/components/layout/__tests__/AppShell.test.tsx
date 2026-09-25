@@ -60,3 +60,17 @@ describe('AppShell scroll memory', () => {
     expect(stored()['/activities']).toBe(900)
   })
 })
+
+describe('AppShell status bar sampler', () => {
+  // iOS paints the opaque status bar from a real element's background-color
+  // at the very top; a gradient or a pseudo-element is invisible to it.
+  it('puts a solid 1 px element in the page background at the very top', () => {
+    const { getByTestId } = render(<AppShell>page</AppShell>)
+    const sampler = getByTestId('status-bar-sampler')
+
+    expect(sampler.className).toContain('fixed')
+    expect(sampler.className).toContain('top-0')
+    expect(sampler.className).toContain('h-px')
+    expect(sampler.style.backgroundColor).toBe('var(--background)')
+  })
+})
