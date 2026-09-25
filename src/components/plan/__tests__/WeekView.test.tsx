@@ -357,3 +357,27 @@ describe('WeekView easy share', () => {
   })
 })
 
+
+describe('the week summary against its plan', () => {
+  // It added the run km to whatever was still planned and called the sum the
+  // week, so Plan's "52 km" and Today's "6 of 23 km" read as two answers.
+  it('reads what was run against what the plan scheduled', () => {
+    renderWeek({
+      activities: [TEMPO],
+      planned: [
+        { date: '2026-09-07', name: 'Tempo', distanceM: 5_000 },
+        { date: '2026-09-10', name: 'Easy', distanceM: 8_000 },
+      ],
+    })
+
+    const summary = screen.getByTestId('week-summary').textContent
+    expect(summary).toContain(t.plan.weekSummary.ranOfPlan('4.8', '13'))
+    expect(summary).toContain(t.plan.weekSummary.sessionsOfPlan(1, 2))
+  })
+
+  it('keeps the plain total for a week with no plan', () => {
+    renderWeek({ activities: [TEMPO, RACE] })
+
+    expect(screen.getByTestId('week-summary').textContent).toContain(`10 ${t.units.km} · ${t.plan.weekSummary.sessionsCount(2)}`)
+  })
+})

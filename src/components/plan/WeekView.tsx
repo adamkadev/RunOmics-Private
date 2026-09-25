@@ -13,6 +13,8 @@ import { plannedEasyHard, recordedEasyHard, type EasyHardSplit } from '@/domain/
 import { weekPlanPhase } from '@/domain/training/weekPlanPhase'
 import { EFFORT_ZONE_BY_TYPE } from '@/domain/training/workoutStructure'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
+import { weekTarget, type WeekTarget } from '@/domain/training/weekTarget'
+import { formatWeekKm, weekPlanDays } from './weekPlanDays'
 import { SessionStructureBar } from './WorkoutStructure'
 import { PlanPhaseTrack } from './PlanPhaseTrack'
 import { PeriodNav } from '@/components/ui/PeriodNav'
@@ -394,17 +396,26 @@ function WeekStrip({
 // Volume, load and easy/hard are the week's three totals, read as one line
 // instead of three cards - each with its unit spelled out so a bare "158/368"
 // or "80/20" never appears without saying what it counts.
+//
+// Volume is what was run against what the plan scheduled - the same WeekTarget
+// Today's ring and Activities read. It used to add the run km to whatever was
+// still planned, missed days included, and call the sum the week.
+function weekVolumeLabel(target: WeekTarget, notStarted: boolean): string {
+  const s = t.plan.weekSummary
+  if (target.planKm === null) return `${formatWeekKm(target.ranKm)} ${t.units.km} · ${s.sessionsCount(target.ranSessions)}`
+  if (notStarted) return s.planOnly(formatWeekKm(target.planKm), target.planSessions)
+  return `${s.ranOfPlan(formatWeekKm(target.ranKm), formatWeekKm(target.planKm))} · ${s.sessionsOfPlan(target.ranSessions, target.planSessions)}`
+}
+
 function WeekSummaryLine({
-  volumeKm,
-  sessions,
+  volume,
   load,
   loadTarget,
   loadIsPlanned,
   easyHard,
   easyHardIsPlanned,
 }: {
-  volumeKm: number
-  sessions: number
+  volume: string
   load: number
   loadTarget: number | null
   loadIsPlanned: boolean
@@ -424,9 +435,7 @@ function WeekSummaryLine({
       className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-1"
       style={{ fontSize: '13px', color: 'var(--muted-foreground)' }}
     >
-      <span className="font-semibold text-foreground">
-        {volumeKm} {t.units.km} · {s.sessionsCount(sessions)}
-      </span>
+      <span className="font-semibold text-foreground">{volume}</span>
       <span>
         <span className="font-semibold text-foreground">{s.load}</span>
         {' '}
@@ -675,10 +684,10 @@ export function WeekView({
   const weekOfLabel = !isPrePlan && targetWeek ? t.plan.weekPurpose.weekOfTarget(targetWeek.done, targetWeek.total) : null
   const fallbackLabel = phaseLabel || weekOfLabel ? null : weekOver ? null : isCurrentWeek ? t.plan.weekPurpose.thisWeek : t.plan.weekPurpose.upcoming
 
-  const volumeKm = weekSessions.length > 0
-    ? Math.round(weekSessions.reduce((sum, w) => sum + w.distanceKm, 0))
-    : Math.round(weekActs.reduce((sum, a) => sum + a.distanceKm, 0))
-  const sessionsCount = weekSessions.length > 0 ? weekSessions.length : weekActs.length
+  const target = useMemo(
+    () => weekTarget(weekPlanDays(days.map((d) => d.date), { byDate, byDatePlanned, byDateCoach: byDateCoach ?? new Map() }), today, null),
+    [days, byDate, byDatePlanned, byDateCoach, today]
+  )
   // A week that is over is read the way the activity list reads it - heart
   // rate time in zones 1-2 - so one finished week has one easy share
   // wherever it is shown. A week still to run has no heart rate yet: it gets
@@ -763,8 +772,7 @@ export function WeekView({
       />
 
       <WeekSummaryLine
-        volumeKm={volumeKm}
-        sessions={sessionsCount}
+        volume={weekVolumeLabel(target, firstDay.date > today && target.ranSessions === 0)}
         load={load}
         loadTarget={loadTarget}
         loadIsPlanned={loadIsPlanned}
