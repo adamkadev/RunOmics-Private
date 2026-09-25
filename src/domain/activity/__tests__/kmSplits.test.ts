@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { kmSplitsFromSamples } from '../kmSplits'
+import { kmSplitsFromSamples, splitSpread } from '../kmSplits'
 
 function evenSamples(count: number, pace: number): number[] {
   return Array.from({ length: count }, () => pace)
@@ -119,5 +119,26 @@ describe('kmSplitsFromSamples calibration', () => {
     })
 
     expect(splits.reduce((sum, s) => sum + s.durationSec, 0)).toBe(1500)
+  })
+})
+
+describe('splitSpread', () => {
+  const km = (n: number, pace: number, distanceKm = 1) => ({ km: n, distanceKm, durationSec: pace * distanceKm, paceSecPerKm: pace, avgHr: null })
+
+  it('names the fastest and slowest full km and the gap between them', () => {
+    const spread = splitSpread([km(1, 244), km(2, 254), km(3, 252), km(4, 243), km(5, 247), km(6, 256), km(7, 258, 0.11)])
+
+    expect(spread).toMatchObject({ spread: 13, kind: 'even' })
+    expect(spread!.fastest.km).toBe(4)
+    expect(spread!.slowest.km).toBe(6)
+  })
+
+  it('reads a second half this much faster as a negative split, slower as a fade', () => {
+    expect(splitSpread([km(1, 300), km(2, 298), km(3, 280), km(4, 278)])!.kind).toBe('negative')
+    expect(splitSpread([km(1, 278), km(2, 280), km(3, 298), km(4, 300)])!.kind).toBe('faded')
+  })
+
+  it('needs two full kilometres', () => {
+    expect(splitSpread([km(1, 300), km(2, 280, 0.4)])).toBeNull()
   })
 })
