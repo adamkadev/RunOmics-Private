@@ -89,7 +89,7 @@ export function ChartRangeChips({
           key={r}
           onClick={() => onChange(r)}
           className={cn(
-            'rounded-full px-2.5 py-1 text-xs font-semibold transition-all active:scale-95',
+            'hit-44 rounded-full px-2.5 py-1 text-xs font-semibold transition-all active:scale-95',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
             r === value
               ? 'bg-accent text-accent-foreground shadow-sm'
@@ -126,7 +126,7 @@ export function ChartWindowPager({
         onClick={onBack}
         disabled={!canGoBack}
         aria-label={t.chartWindow.previous}
-        className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-30"
+        className="hit-44 rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-30"
       >
         <ChevronLeft size={16} />
       </button>
@@ -137,7 +137,7 @@ export function ChartWindowPager({
         onClick={onForward}
         disabled={!canGoForward}
         aria-label={t.chartWindow.next}
-        className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-30"
+        className="hit-44 rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-30"
       >
         <ChevronRight size={16} />
       </button>

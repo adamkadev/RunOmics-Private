@@ -157,6 +157,9 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--safe-top-min': 'max(var(--safe-top), 20px)',
       '--top-scrim': 'calc(var(--safe-top-min) + 28px)',
       '--safe-bottom': 'env(safe-area-inset-bottom, 0px)',
+      // The smallest touch target. `.hit-44` grows a control's hit area to it
+      // without changing what it looks like.
+      '--tap-min': '44px',
       '--scrim': ink(0.25),
       '--scrim-strong': ink(0.6),
       '--track-on-dark': paper(0.08),

@@ -90,7 +90,7 @@ export function ChartCardHead({
               aria-expanded={open}
               aria-label={t.analytics.aboutChart}
               className={cn(
-                'shrink-0 rounded-full p-0.5 transition-colors active:scale-95',
+                'hit-44 shrink-0 rounded-full p-0.5 transition-colors active:scale-95',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                 open ? 'text-foreground' : 'text-subtle hover:text-muted-foreground',
               )}

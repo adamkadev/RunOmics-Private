@@ -119,6 +119,7 @@
   --safe-top-min:          max(var(--safe-top), 20px);
   --top-scrim:             calc(var(--safe-top-min) + 28px);
   --safe-bottom:           env(safe-area-inset-bottom, 0px);
+  --tap-min:               44px;
   --scrim:                 rgba(0, 0, 0, 0.25);
   --scrim-strong:          rgba(0, 0, 0, 0.6);
   --track-on-dark:         rgba(255, 255, 255, 0.08);
@@ -452,6 +453,24 @@
 /* ─── END GENERATED ─── */
 
 /* ─── Liquid glass surfaces ────────────────────────── */
+/* A touch target of at least --tap-min around a control that is drawn
+   smaller: a transparent ::after centred on it, so the visual size and the
+   touch size come apart. Applied inside the ui/ primitives, not per page. A
+   neighbour's area can overlap it by a few points; the later one wins there. */
+@utility hit-44 {
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, var(--tap-min));
+    height: max(100%, var(--tap-min));
+    transform: translate(-50%, -50%);
+  }
+}
+
 @layer components {
   .glass-card,
   .glass-nav,
