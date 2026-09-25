@@ -867,6 +867,7 @@ export const fr = {
     zones: {
       title: 'Temps en zones',
       noData: 'Pas de données de zones FC',
+      basisHr: 'selon la FC',
       unused: (range: string) => `${range} non utilisées sur cette sortie`,
       labels: {
         1: 'Z1 · Échauffement',

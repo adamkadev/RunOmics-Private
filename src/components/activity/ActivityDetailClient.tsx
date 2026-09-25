@@ -194,11 +194,7 @@ export function ActivityDetailClient({
       {tab === 'overview' && (
         <>
           {activity.hrZones.length > 0 && (
-            <ZoneBar
-              hrZones={activity.hrZones}
-              avgHr={activity.avgHeartRate}
-              maxHr={activity.hrSamples ? Math.max(...activity.hrSamples) : null}
-            />
+            <ZoneBar hrZones={activity.hrZones} />
           )}
           {similarRuns && <SimilarRuns data={similarRuns} />}
           <TrainingEffect aer={activity.aerTrainingEffect} ana={activity.anaTrainingEffect} />

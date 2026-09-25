@@ -87,4 +87,14 @@ describe('lane summaries', () => {
     expect(elapsedAt(lane, 0.5, 2)).toBeCloseTo(300)
     expect(elapsedAt(undefined, 0.5, 2)).toBeNull()
   })
+
+  // G10: Charts gave the average as 113 beside the stat row's 115.
+  it('prints the stat row\'s average heart rate, in whole bpm', () => {
+    const lane = buildLanes({
+      distanceKm: 2, hrSamples: [110, 112, 114, 116, 120.2], avgHr: 115, paceSamples: null, avgPaceSecPerKm: null,
+      cadenceSamples: null, avgCadence: null, elevationProfile: null, elevationGain: null,
+    })[0]!
+    expect(lane.summary).toBe(`${t.activity.charts.avg} 115 · ${t.activity.charts.max} 120`)
+  })
 })
+
