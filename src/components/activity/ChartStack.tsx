@@ -1,10 +1,13 @@
 'use client'
 
 import { memo, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
-import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer } from 'recharts'
+import { AreaChart, Area, XAxis, YAxis, ReferenceLine, ResponsiveContainer } from 'recharts'
 import { CHART_COLORS } from '@/lib/colors'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
+import { StatReadout } from '@/components/ui/StatReadout'
+import { paceAxis } from '@/lib/chartAxis'
+import { formatDuration } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { kmTicks } from './chartAxis'
 import {
@@ -16,6 +19,7 @@ import {
   TOP_MARGIN,
   Y_AXIS_WIDTH,
   buildLanes,
+  elapsedAt,
   laneY,
   sampleAt,
   type ChartStackInput,
@@ -63,6 +67,9 @@ const LaneChart = memo(function LaneChart({ lane, distanceKm, isLast }: { lane: 
           width={Y_AXIS_WIDTH}
           tickFormatter={lane.format}
         />
+        {lane.average !== null && (
+          <ReferenceLine y={lane.average} stroke="var(--subtle)" strokeOpacity={0.6} strokeDasharray="3 3" />
+        )}
         <Area
           type="monotone"
           dataKey="v"
@@ -178,63 +185,69 @@ export function ChartStack({
   }
 
   const cursorKm = fraction != null ? fraction * distanceKm : null
+  const elapsed = fraction != null ? elapsedAt(lanes.find((l) => l.key === 'pace'), fraction, distanceKm) : null
   const summary = lanes.map((l) => `${l.label} ${l.summary}`).join('. ')
+  const pace = paceAxis()
 
   return (
-    <GlassSurface variant="card" className="p-5">
-      <div className="mb-2 flex h-5 items-center gap-3">
-        <span className="text-xs font-semibold tabular-nums text-foreground">
-          {cursorKm != null ? (
+    <div className="space-y-3">
+      {/* One labelled value per lane, with its unit and swatch, following the
+          scrub line - or the run's averages before the first touch. */}
+      <StatReadout
+        heading={
+          cursorKm != null ? (
             <>
-              {cursorKm.toFixed(1)} <span className="font-normal text-subtle">{t.units.km}</span>
+              {c.readoutAt} <b className="font-semibold text-foreground">{cursorKm.toFixed(1)} {t.units.km}</b>
+              {elapsed != null && <> · {formatDuration(Math.round(elapsed))}</>} · {c.dragToScrub}
             </>
           ) : (
-            <span className="font-normal text-subtle">{c.avg}</span>
-          )}
-        </span>
-        <span className="ml-auto flex items-center gap-3">
-          {lanes.map((l) => {
-            const v = fraction != null ? (sampleAt(l.values, fraction, distanceKm)?.value ?? null) : l.average
-            return (
-              <span key={l.key} className="text-xs font-semibold tabular-nums" style={{ color: l.color }}>
-                {v != null ? l.format(v) : '—'}
-              </span>
-            )
-          })}
-        </span>
-      </div>
+            <>
+              {c.runAverage} · {c.dragToScrub}
+            </>
+          )
+        }
+        items={lanes.map((l) => {
+          const v = fraction != null ? (sampleAt(l.values, fraction, distanceKm)?.value ?? null) : l.average
+          return { key: l.key, label: l.label, color: l.color, value: v != null ? l.format(v) : null, unit: l.unit }
+        })}
+      />
 
-      <ChartFigure summary={summary}>
-        <div
-          ref={rowsRef}
-          className="touch-pan-y select-none"
-          onPointerDown={handleDown}
-          onPointerMove={handleMove}
-          onPointerUp={handleUp}
-          onPointerCancel={handleUp}
-        >
-          {lanes.map((lane, i) => {
-            const mark = fraction != null ? sampleAt(lane.values, fraction, distanceKm) : null
-            return (
-              <div key={lane.key} className={i > 0 ? 'mt-2' : undefined}>
-                <div className="flex items-baseline justify-between gap-2 pl-1">
-                  <span className="flex items-baseline gap-1.5">
-                    <span aria-hidden="true" className="h-0.5 w-3 rounded-full" style={{ background: lane.color }} />
-                    <span className="text-xs font-semibold text-foreground/80">{lane.label}</span>
-                  </span>
-                  <span className="text-caption text-subtle-2">{lane.summary}</span>
+      <GlassSurface variant="card" className="p-4">
+        <ChartFigure summary={summary}>
+          <div
+            ref={rowsRef}
+            className="touch-pan-y select-none"
+            onPointerDown={handleDown}
+            onPointerMove={handleMove}
+            onPointerUp={handleUp}
+            onPointerCancel={handleUp}
+          >
+            {lanes.map((lane, i) => {
+              const mark = fraction != null ? sampleAt(lane.values, fraction, distanceKm) : null
+              const note = lane.key === 'pace' ? pace.caption : i === 0 ? c.dashedAverage : null
+              return (
+                <div key={lane.key} className={i > 0 ? 'mt-2.5' : undefined}>
+                  <div className="flex items-baseline justify-between gap-2 pl-1 text-xs">
+                    <span className="font-semibold text-foreground">
+                      {lane.label} <span className="font-medium text-subtle">· {lane.unit}</span>
+                    </span>
+                    <span className="text-muted-foreground">{lane.summary}</span>
+                  </div>
+                  <div className="relative">
+                    <LaneChart lane={lane} distanceKm={distanceKm} isLast={i === lanes.length - 1} />
+                    {mark && <LaneCursor lane={lane} mark={mark} distanceKm={distanceKm} />}
+                  </div>
+                  {note && (
+                    <p className="text-caption text-subtle" style={{ paddingLeft: Y_AXIS_WIDTH }}>
+                      {note}
+                    </p>
+                  )}
                 </div>
-                <div className="relative">
-                  <LaneChart lane={lane} distanceKm={distanceKm} isLast={i === lanes.length - 1} />
-                  {mark && <LaneCursor lane={lane} mark={mark} distanceKm={distanceKm} />}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </ChartFigure>
-
-      <p className="mt-1 text-caption text-subtle">{c.scrubHint}</p>
-    </GlassSurface>
+              )
+            })}
+          </div>
+        </ChartFigure>
+      </GlassSurface>
+    </div>
   )
 }

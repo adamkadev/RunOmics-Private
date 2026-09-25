@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { PLOT_HEIGHT, TOP_MARGIN, buildLanes, laneY, sampleAt, type ChartStackInput } from '../chartStackLanes'
+import { PLOT_HEIGHT, TOP_MARGIN, buildLanes, elapsedAt, laneY, sampleAt, type ChartStackInput } from '../chartStackLanes'
+import { t } from '@/i18n'
 
 const NONE: ChartStackInput = {
   distanceKm: 10,
@@ -57,5 +58,33 @@ describe('laneY', () => {
 describe('sampleAt', () => {
   it('snaps to the nearest sample and reports its own distance', () => {
     expect(sampleAt([1, 2, 3, 4, 5], 0.49, 8)).toEqual({ km: 4, value: 3 })
+  })
+})
+
+describe('lane summaries', () => {
+  // Pace printed "avg 4:10 · best 4:14": the average came from the activity and
+  // the best from the samples, so the best could read slower than the average.
+  it('takes avg and best from the same samples, so best is never slower', () => {
+    const pace = [250, 240, 260, 245, 255, 250, 248, 252]
+    const lane = buildLanes({
+      distanceKm: 2, hrSamples: null, avgHr: null, paceSamples: pace, avgPaceSecPerKm: 230,
+      cadenceSamples: null, avgCadence: null, elevationProfile: null, elevationGain: null,
+    })[0]!
+
+    expect(lane.unit).toBe(t.units.perKm)
+    expect(lane.reversed).toBe(true)
+    const [, avg, best] = lane.summary.match(/(\d+:\d+).*?(\d+:\d+)/)!
+    expect(best! <= avg!).toBe(true)
+    expect(lane.summary).not.toContain('3:50')
+  })
+
+  it('reads the time into the run from the pace samples', () => {
+    const lane = buildLanes({
+      distanceKm: 2, hrSamples: null, avgHr: null, paceSamples: [300, 300, 300, 300, 300], avgPaceSecPerKm: null,
+      cadenceSamples: null, avgCadence: null, elevationProfile: null, elevationGain: null,
+    })[0]
+    expect(elapsedAt(lane, 1, 2)).toBeCloseTo(600)
+    expect(elapsedAt(lane, 0.5, 2)).toBeCloseTo(300)
+    expect(elapsedAt(undefined, 0.5, 2)).toBeNull()
   })
 })

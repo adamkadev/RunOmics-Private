@@ -55,6 +55,10 @@ export const fr = {
     veryFresh: 'Très frais',
   },
 
+  paceAxis: {
+    caption: 'plus rapide ↑',
+  },
+
   sessionState: {
     done: 'Fait',
     planned: 'Prévu',
@@ -483,7 +487,7 @@ export const fr = {
         title: 'Tendance d’allure',
         easy: 'Facile',
         workout: 'Qualité',
-        footnote: 'Allure moyenne pondérée par la distance. Plus bas = plus rapide.',
+        footnote: 'Allure moyenne pondérée par la distance, plus rapide ↑.',
         explains: {
           improving: (delta: string) => `Allure facile en progrès - ${delta} par rapport au début de période`,
           stable: 'Allure facile stable sur la période',
@@ -635,7 +639,7 @@ export const fr = {
           half: 'Semi',
           marathon: 'Marathon',
         } as Record<string, string>,
-        footnote: 'Temps de passage prédits par la montre à partir de la VO₂max et de l’entraînement récent. Tracés en allure pour que les quatre distances tiennent sur une même échelle ; plus haut = plus rapide.',
+        footnote: 'Temps de passage prédits par la montre à partir de la VO₂max et de l’entraînement récent. Tracés en allure pour que les quatre distances tiennent sur une même échelle, plus rapide ↑.',
         reading: {
           faster: (distance: string, gain: string, current: string) =>
             `Le potentiel sur ${distance} progresse de ${gain} sur la période, à ${current} aujourd’hui.`,
@@ -933,7 +937,10 @@ export const fr = {
       elevation: 'Dénivelé',
       cadence: 'Cadence',
       elevationGain: (m: number) => `+${m} m D+`,
-      scrubHint: 'Touchez ou faites glisser sur la pile pour lire chaque métrique au même point.',
+      readoutAt: 'À',
+      runAverage: 'Moyenne de la sortie',
+      dragToScrub: 'glisser pour lire',
+      dashedAverage: 'pointillé = moyenne',
     },
     map: {
       fullscreen: 'Plein écran',
