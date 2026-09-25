@@ -681,6 +681,10 @@ html {
      animation (and drag every `position: fixed` element along with it) even
      while useScrollLock has the body pinned. */
   overscroll-behavior-y: none;
+  /* No double-tap zoom, and no wait after a tap for a possible second one.
+     Pinch is cancelled in NoPinchZoom, so a double-tap zoom would have no
+     way back out. The maps set their own touch-action. */
+  touch-action: manipulation;
 }
 
 html,
