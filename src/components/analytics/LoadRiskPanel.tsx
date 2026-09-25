@@ -145,6 +145,7 @@ function ZoneTrack({ scale, value, zone }: { scale: Scale; value: number; zone: 
 
 function Row({
   label,
+  inputs,
   value,
   description,
   zone,
@@ -154,6 +155,8 @@ function Row({
   onToggle,
 }: {
   label: string
+  /** The values a derived number comes from, printed before it. */
+  inputs?: string | null
   value: string
   description: string
   zone: RiskZone | null
@@ -174,8 +177,11 @@ function Row({
       >
         <div className="flex items-baseline justify-between gap-3">
           <SectionDivider as="span">{label}</SectionDivider>
-          <span className={cn('text-title2 font-extrabold tabular-nums', zone ? ZONE_TEXT[zone] : 'text-muted-foreground')}>
-            {value}
+          <span className="flex items-baseline gap-1.5">
+            {inputs && <span className="text-xs tabular-nums text-muted-foreground">{inputs}</span>}
+            <span className={cn('text-title2 font-extrabold tabular-nums', zone ? ZONE_TEXT[zone] : 'text-muted-foreground')}>
+              {value}
+            </span>
           </span>
         </div>
         {rawValue !== null ? (
@@ -206,17 +212,25 @@ export function LoadRiskPanel({ data }: { data: LoadRiskPanelData }) {
   return (
     <GlassSurface variant="card" className="p-5">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold text-foreground/80">{s.title}</h2>
+        <h2 className="text-sm font-semibold text-foreground/80">
+          {s.title}
+          {data.acwrSource && (
+            <span className="ml-1.5 text-caption font-medium text-subtle">
+              · {data.acwrSource === 'garmin' ? t.analytics.model.garmin : t.analytics.model.runomics}
+            </span>
+          )}
+        </h2>
         {zones.length > 0 && (
           <StatusPill tone={worst ? ZONE_TONE[worst] : 'green'}>
-            {worst ? s.summary.flagged(flagged.length) : s.summary.clear(zones.length)}
+            {worst ? s.summary.flagged(flagged.length, zones.length, s.band[worst]) : s.summary.clear(zones.length)}
           </StatusPill>
         )}
       </div>
       <ul className="mt-1 divide-y divide-foreground/[0.06]">
         <Row
           label={s.acwr.label}
-          value={data.acwr !== null ? data.acwr.toFixed(1) : '–'}
+          inputs={data.acute !== null && data.chronic !== null ? s.acwr.inputs(data.acute, data.chronic) : null}
+          value={data.acwr !== null ? data.acwr.toFixed(2) : '–'}
           description={data.acwrSource === 'garmin' ? s.acwr.descriptionGarmin : s.acwr.description}
           zone={data.acwrZone}
           scale={ACWR_SCALE}

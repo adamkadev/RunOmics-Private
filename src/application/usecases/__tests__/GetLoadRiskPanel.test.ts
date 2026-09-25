@@ -4,7 +4,7 @@ import {
   strain,
   rampRate,
   acwrZone,
-  acwrZoneFromGarmin,
+  acwrFromPair,
   monotonyZone,
   strainZone,
   rampRateZone,
@@ -71,22 +71,18 @@ describe('acwrZone', () => {
   })
 })
 
-describe('acwrZoneFromGarmin', () => {
-  it('maps the watch verdict onto our ladder', () => {
-    expect(acwrZoneFromGarmin('LOW', 0.5)).toBe('low')
-    expect(acwrZoneFromGarmin('OPTIMAL', 1.0)).toBe('safe')
-    expect(acwrZoneFromGarmin('HIGH', 1.4)).toBe('caution')
-    expect(acwrZoneFromGarmin('VERY_HIGH', 1.8)).toBe('risk')
+// G02: the ratio is worked out from the pair the card prints.
+describe('acwrFromPair', () => {
+  it('equals round(acute / chronic, 2)', () => {
+    expect(acwrFromPair(412, 295)).toBe(Math.round((412 / 295) * 100) / 100)
+    expect(acwrFromPair(412, 295)).toBe(1.4)
+    expect(acwrZone(acwrFromPair(412, 295))).toBe('caution')
   })
 
-  it('prefers the verdict over our thresholds when the two disagree', () => {
-    expect(acwrZoneFromGarmin('OPTIMAL', 0.6)).toBe('safe')
-  })
-
-  it('falls back to our thresholds on unknown or missing phrasing', () => {
-    expect(acwrZoneFromGarmin(null, 1.6)).toBe('risk')
-    expect(acwrZoneFromGarmin('SOMETHING_NEW', 1.0)).toBe('safe')
-    expect(acwrZoneFromGarmin(undefined, null)).toBeNull()
+  it('is null without a usable pair', () => {
+    expect(acwrFromPair(412, 0)).toBeNull()
+    expect(acwrFromPair(undefined, 295)).toBeNull()
+    expect(acwrFromPair(412, null)).toBeNull()
   })
 })
 

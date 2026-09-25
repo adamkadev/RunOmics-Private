@@ -10,6 +10,10 @@ export type RiskZone = 'low' | 'safe' | 'caution' | 'risk'
 
 export interface LoadRiskPanel {
   acwr: number | null
+  /** The pair the ratio is worked out from, printed beside it, so the ratio
+   *  can't disagree with the loads the Training status card shows. */
+  acute: number | null
+  chronic: number | null
   acwrZone: RiskZone | null
   acwrSource: 'garmin' | 'local' | null
   monotony: number | null
@@ -41,22 +45,18 @@ export function rampRate(ctlToday: number, ctl7dAgo: number): number {
   return round(ctlToday - ctl7dAgo, 1)
 }
 
+/** ACWR from the acute and chronic loads it is printed with. */
+export function acwrFromPair(acute: number | null | undefined, chronic: number | null | undefined): number | null {
+  if (acute == null || chronic == null || !(chronic > 0)) return null
+  return round(acute / chronic, 2)
+}
+
 export function acwrZone(value: number | null): RiskZone | null {
   if (value === null) return null
   if (value > 1.5) return 'risk'
   if (value > 1.3) return 'caution'
   if (value >= 0.8) return 'safe'
   return 'low'
-}
-
-export function acwrZoneFromGarmin(status: string | null | undefined, value: number | null): RiskZone | null {
-  switch (status) {
-    case 'LOW': return 'low'
-    case 'OPTIMAL': return 'safe'
-    case 'HIGH': return 'caution'
-    case 'VERY_HIGH': return 'risk'
-    default: return acwrZone(value)
-  }
 }
 
 export function monotonyZone(value: number | null): RiskZone | null {
@@ -101,14 +101,15 @@ export async function getLoadRiskPanel(): Promise<LoadRiskPanel | null> {
   const daysOfHistory =
     Math.round((refDate.getTime() - new Date(earliest.date + 'T00:00:00').getTime()) / DAY_MS) + 1
 
+  // The Training status card prints Garmin's acute and chronic loads, so the
+  // ratio is worked out from that pair and its band from the ratio. Garmin's
+  // own acwr field disagreed with its loads (0.8 beside 412 and 295).
   const garmin = getLatestTrainingStatusDay()
+  const pairAcwr = acwrFromPair(garmin?.acuteLoad, garmin?.chronicLoad)
   const localAcwr = acwr(activities, refDate)
-  const useGarminAcwr = garmin?.acwr != null
-  const acwrValue = useGarminAcwr ? garmin.acwr! : localAcwr
-  const acwrZoneValue = useGarminAcwr
-    ? acwrZoneFromGarmin(garmin.acwrStatus, acwrValue)
-    : acwrZone(acwrValue)
-  const acwrSource = acwrValue === null ? null : useGarminAcwr ? 'garmin' : 'local'
+  const acwrValue = pairAcwr ?? localAcwr
+  const acwrZoneValue = acwrZone(acwrValue)
+  const acwrSource = acwrValue === null ? null : pairAcwr !== null ? 'garmin' : 'local'
 
   let monotonyValue: number | null = null
   let strainValue: number | null = null
@@ -140,6 +141,8 @@ export async function getLoadRiskPanel(): Promise<LoadRiskPanel | null> {
 
   return {
     acwr: acwrValue,
+    acute: pairAcwr !== null ? Math.round(garmin!.acuteLoad!) : null,
+    chronic: pairAcwr !== null ? Math.round(garmin!.chronicLoad!) : null,
     acwrZone: acwrZoneValue,
     acwrSource,
     monotony: monotonyValue,

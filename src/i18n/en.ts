@@ -464,6 +464,9 @@ export const en = {
   },
 
   analytics: {
+    // Which load model a card reads, named in its head: the watch's
+    // acute/chronic load, or the app's own stress (Fitness / Fatigue).
+    model: { garmin: 'Garmin', runomics: 'RunOmics' },
     title: 'Analytics',
 
     aboutChart: 'What this chart measures',
@@ -1445,15 +1448,17 @@ export const en = {
     insufficientData: 'Not enough data',
     summary: {
       clear: (total: number) => `${total} markers, none in the alert zone`,
-      flagged: (count: number) => `${count} marker${count !== 1 ? 's' : ''} to watch`,
+      flagged: (count: number, total: number, band: string) => `${count} of ${total} in the ${band} band`,
     },
     acwr: {
       label: 'ACWR',
       description: 'Acute:chronic load ratio estimated from km · target 0.8–1.3',
-      descriptionGarmin: 'Acute:chronic load ratio measured by the watch',
+      descriptionGarmin: 'Acute ÷ chronic load, from the loads the watch measured',
+      inputs: (acute: number, chronic: number) => `acute ${acute} ÷ chronic ${chronic} =`,
     },
     monotony: { label: 'Monotony', description: 'Day-to-day load variety · alert above 2.0' },
     rampRate: { label: 'Ramp rate', description: 'Δ CTL over 7 days' },
+    band: { low: 'low', safe: 'safe', caution: 'caution', risk: 'risk' },
   },
 
   plan: {

@@ -446,6 +446,9 @@ export const fr = {
   },
 
   analytics: {
+    // Which load model a card reads, named in its head: the watch's
+    // acute/chronic load, or the app's own stress (Fitness / Fatigue).
+    model: { garmin: 'Garmin', runomics: 'RunOmics' },
     title: 'Analyses',
 
     aboutChart: 'Ce que mesure ce graphique',
@@ -1386,15 +1389,17 @@ export const fr = {
     insufficientData: 'Données insuffisantes',
     summary: {
       clear: (total: number) => `${total} marqueurs, aucun en alerte`,
-      flagged: (count: number) => `${count} marqueur${count !== 1 ? 's' : ''} à surveiller`,
+      flagged: (count: number, total: number, band: string) => `${count} sur ${total} dans la zone ${band}`,
     },
     acwr: {
       label: 'ACWR',
       description: 'Charge aiguë/chronique estimée sur les km · cible 0,8–1,3',
-      descriptionGarmin: 'Charge aiguë/chronique mesurée par la montre',
+      descriptionGarmin: 'Charge aiguë ÷ chronique, à partir des charges mesurées par la montre',
+      inputs: (acute: number, chronic: number) => `aiguë ${acute} ÷ chronique ${chronic} =`,
     },
     monotony: { label: 'Monotonie', description: 'Variété de charge au quotidien · alerte au-delà de 2,0' },
     rampRate: { label: 'Progression', description: 'Δ CTL sur 7 jours' },
+    band: { low: 'basse', safe: 'sûre', caution: 'de vigilance', risk: 'à risque' },
   },
 
   plan: {

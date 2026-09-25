@@ -220,6 +220,7 @@ export function TrainingStatusHistoryChart({ data }: { data: TrainingStatusHisto
     <GlassSurface variant="card" className="p-5">
       <ChartCardHead
         title={s.title}
+        unit={t.analytics.model.garmin}
         footnote={s.footnote}
         controls={<ChartRangeChips value={range} onChange={selectRange} />}
       />
