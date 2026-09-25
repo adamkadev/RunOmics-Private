@@ -45,18 +45,27 @@ function Outline({ path }: { path: string }) {
   )
 }
 
+/** The trail shows this many runs at most, the latest ones. */
+export const TRAIL_RUNS = 24
+
+/**
+ * The trail fills whatever the text column leaves and scales its bars to fit.
+ * It used to grow a 3 px bar per run, so the most-run routes pushed their own
+ * text down to "9.…" and "3:3…".
+ */
 function PaceTrail({ route }: { route: RecurringRoute }) {
-  const paces = route.runs.map((r) => r.paceSecPerKm)
+  const runs = route.runs.slice(-TRAIL_RUNS)
+  const paces = runs.map((r) => r.paceSecPerKm)
   const fastest = Math.min(...paces)
   const slowest = Math.max(...paces)
   const span = slowest - fastest || 1
 
   return (
-    <div className="flex h-8 shrink-0 items-end justify-end gap-0.5" aria-hidden="true">
-      {route.runs.map((run) => (
+    <div data-testid="pace-trail" className="flex h-8 min-w-0 flex-1 items-end justify-end gap-0.5" aria-hidden="true">
+      {runs.map((run) => (
         <span
           key={run.activityId}
-          className="w-[3px] shrink-0 rounded-full bg-accent/70"
+          className="min-w-px max-w-[5px] flex-1 rounded-full bg-accent/70"
           style={{ height: `${20 + ((slowest - run.paceSecPerKm) / span) * 80}%` }}
         />
       ))}
@@ -120,7 +129,8 @@ export function RecurringRoutes({ routes, thisYear }: Props) {
           <li key={route.id} className="flex items-center gap-3 border-b border-foreground/10 px-0.5 py-[11px] last:border-b-0">
             <Outline path={route.outline} />
 
-            <div className="min-w-0 flex-1">
+            {/* A fixed column: the text never gives way to the trail. */}
+            <div data-testid="route-text" className="w-[150px] shrink-0">
               {/* The run count holds this slot whether or not a place resolves,
                   so it never moves line between one row and the next. */}
               <p className="truncate font-display text-subhead font-bold text-foreground">
