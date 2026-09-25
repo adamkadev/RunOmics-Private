@@ -653,10 +653,8 @@ export const en = {
       },
       monthlyComparison: {
         title: 'Month by Month',
-        reading: (curYear: number, deltaPct: number) =>
-          deltaPct >= 0
-            ? `${curYear} volume is running ${deltaPct}% ahead of last year.`
-            : `${curYear} volume is running ${Math.abs(deltaPct)}% behind last year.`,
+        reading: (deltaPct: number, current: string, previous: string, cutoff: string | null) =>
+          `${Math.abs(deltaPct)}% ${deltaPct >= 0 ? 'ahead of' : 'behind'} the same date last year: ${current} km against ${previous} km${cutoff ? ` to ${cutoff}` : ''}.`,
       },
       threshold: {
         title: 'Running Lactate Threshold',
@@ -712,11 +710,12 @@ export const en = {
     yearOverYear: {
       title: 'Year over Year',
       vs: 'vs',
+      toDate: (date: string) => `to ${date}`,
       rows: {
         distance: 'Distance',
         sessions: 'Sessions',
         time: 'Time',
-        avgPerWeek: 'Avg / week',
+        avgPerWeek: 'Per week',
         avgPace: 'Avg pace',
         avgHr: 'Avg HR',
         elevation: 'Elevation',

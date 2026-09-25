@@ -39,6 +39,7 @@ export function VolumeGroup({ series, weeklyTrends, year, years, byYear, compari
           currentData={series.monthlyVolume}
           prevYear={prevYear}
           prevData={byYear[prevYear]?.monthlyVolume ?? []}
+          comparison={comparison}
         />
       )}
 
