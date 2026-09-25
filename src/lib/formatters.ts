@@ -93,6 +93,22 @@ export function formatKm(km: number, decimals = 0): string {
   )
 }
 
+/**
+ * A planned distance, as every screen writes it: whole kilometres ("6 km").
+ * Plan, Today and the run verdict each rounded the same 6.11 km prescription
+ * their own way (6, 6.1, 6.1), so planned and ran looked equal on one screen
+ * and apart on the next. A ran distance keeps formatDistance.
+ */
+export function formatPlannedKm(km: number): string {
+  return formatKm(km)
+}
+
+/** A ran distance in a list or a total: formatDistance's precision without a
+ *  trailing zero, so a week reads "6.11 of 52 km" and "4.8 of 13 km". */
+export function formatRanKm(km: number): string {
+  return stableSpaces(km.toLocaleString(t.locale, { minimumFractionDigits: 0, maximumFractionDigits: km >= 10 ? 1 : 2 }))
+}
+
 /*
  * ---------------------------------------------------------------------------
  * Dates: one policy, three formatters.
