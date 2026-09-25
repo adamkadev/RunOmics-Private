@@ -36,10 +36,15 @@ export function Pill({
   children,
   ...rest
 }: PillProps) {
+  // A pill drawn at about 30 pt is a filter or a picker the thumb has to hit.
+  // A plain span is a label, and its hit area would only steal taps from
+  // whatever sits next to it.
+  const interactive = Tag !== 'span' || rest.onClick !== undefined
   return (
     <Tag
       className={cn(
         'inline-flex flex-none items-center gap-1.5 rounded-full px-3.5 py-[7px] text-xs font-medium',
+        interactive && 'hit-44',
         'whitespace-nowrap transition-transform active:scale-95',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         VARIANT_CLASS[variant],
