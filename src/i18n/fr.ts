@@ -436,11 +436,12 @@ export const fr = {
     aboutChart: 'Ce que mesure ce graphique',
     season: (year: number) => `Saison ${year}`,
     allTimeChip: 'Tout',
+    // « Forme » reste réservé à la TSB ; l’onglet de la charge s’appelle Charge.
     tabs: {
-      fitness: 'Forme',
-      performance: 'Perf.',
+      fitness: 'Charge',
+      performance: 'Performance',
       volume: 'Volume',
-      health: 'Santé',
+      health: 'Intensité',
     },
     insightCards: {
       vo2max: 'VO₂max',

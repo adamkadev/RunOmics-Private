@@ -61,21 +61,32 @@ export function useSegmentedTabs<T extends string | number>({
 
 export type SegmentedTabsState<T extends string | number> = ReturnType<typeof useSegmentedTabs<T>>
 
+const SIZE_CLASS = {
+  sm: 'h-8 px-3 text-xs',
+  md: 'h-10 px-4 text-sm',
+} as const
+
 /**
  * The bordered pill switch - Plan's week/month, Goals' years, the profile's
- * year/all-time - which three screens had written out by hand. `tabClassName`
- * carries each one's size.
+ * year/all-time, the activity's and Analytics' sections, Records - one recipe
+ * where there were four, from 36 to 48 pt tall. `size` is sm (32) or md (40);
+ * either way every tab has a 44 pt hit area. `tabClassName` still carries a
+ * one-off size, and `fill` stretches the tabs across the row.
  */
 export function SegmentedTabs<T extends string | number>({
   tabs,
   items,
   label,
+  size,
+  fill = false,
   className,
   tabClassName,
 }: {
   tabs: SegmentedTabsState<T>
   items: readonly { id: T; label: ReactNode }[]
   label: string
+  size?: keyof typeof SIZE_CLASS
+  fill?: boolean
   className?: string
   tabClassName?: string
 }) {
@@ -83,7 +94,7 @@ export function SegmentedTabs<T extends string | number>({
     <div
       {...tabs.listProps}
       aria-label={label}
-      className={cn('flex shrink-0 gap-1 rounded-full border border-foreground/10 bg-foreground/[0.07] p-1', className)}
+      className={cn('flex shrink-0 gap-1 rounded-full border border-foreground/10 bg-foreground/[0.07] p-1', fill && 'w-full', className)}
     >
       {items.map((item) => {
         const props = tabs.tabProps(item.id)
@@ -92,7 +103,9 @@ export function SegmentedTabs<T extends string | number>({
             key={item.id}
             {...props}
             className={cn(
-              'whitespace-nowrap rounded-full font-semibold transition-colors',
+              'hit-44 flex items-center justify-center whitespace-nowrap rounded-full font-semibold transition-colors',
+              size && SIZE_CLASS[size],
+              fill && 'min-w-0 flex-1',
               tabClassName,
               props['aria-selected'] ? 'bg-accent text-accent-foreground' : 'text-subtle hover:text-foreground'
             )}

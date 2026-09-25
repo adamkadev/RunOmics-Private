@@ -452,11 +452,13 @@ export const en = {
     aboutChart: 'What this chart measures',
     season: (year: number) => `${year} season`,
     allTimeChip: 'All',
+    // Named for what each tab holds, whole words: "Perf." was cut short by
+    // hand, and "Health" held the zone distribution.
     tabs: {
-      fitness: 'Fitness',
-      performance: 'Perf.',
+      fitness: 'Load',
+      performance: 'Performance',
       volume: 'Volume',
-      health: 'Health',
+      health: 'Intensity',
     },
     insightCards: {
       vo2max: 'VO₂max',

@@ -9,7 +9,6 @@ import type { Insight } from '@/lib/gemini'
 import { SeasonHeadline } from '@/components/analytics/SeasonHeadline'
 import { TabInsight } from '@/components/analytics/TabInsight'
 import type { AnalyticsTabInsights } from '@/application/usecases/GetAnalyticsTabInsights'
-import { Pill } from '@/components/ui/Pill'
 import { YearSelector } from '@/components/ui/YearSelector'
 import type { VO2maxSeries } from '@/application/usecases/GetVO2maxHistory'
 import type { TrainingLoadData } from '@/application/usecases/GetTrainingLoad'
@@ -23,7 +22,7 @@ import { ChartCardSkeleton } from '@/components/ui/Skeleton'
 import { useSwipeNavigation } from '@/lib/useSwipeNavigation'
 import { useToday } from '@/lib/useToday'
 import { ChartTodayContext } from '@/components/ui/ChartWindowNav'
-import { useSegmentedTabs } from '@/components/ui/SegmentedTabs'
+import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { t } from '@/i18n'
 
 const tabLoading = () => (
@@ -189,27 +188,25 @@ export function AnalyticsClient({
       {active && (
         <div
           ref={tabsRef}
-          {...analyticsTabs.listProps}
-          aria-label={t.analytics.title}
-          className="sticky top-[max(var(--safe-top),8px)] z-20 -mx-4 grid grid-cols-4 gap-1.5 px-4 py-2 backdrop-blur-xl sm:-mx-6 sm:px-6"
+          className="sticky top-[max(var(--safe-top),8px)] z-20 -mx-4 px-4 py-2 sm:-mx-6 sm:px-6"
         >
-          {visibleTabs.map((item) => (
-            <Pill
-              key={item.id}
-              as="button"
-              {...analyticsTabs.tabProps(item.id)}
-              variant={tab === item.id ? 'accent' : 'neutral'}
-              className="min-w-0 justify-center px-1 py-2 text-footnote"
-            >
-              {/* min-w-0 so the label can shrink inside the pill's flex row and
-                  actually ellipsise - four tabs share ~85 px each at 390 px. */}
-              <span className="min-w-0 truncate">{item.label}</span>
-            </Pill>
-          ))}
+          {/* The shared switch, not a row of separate bordered pills: one recipe
+              and one height for every segmented control in the app. */}
+          <SegmentedTabs
+            tabs={analyticsTabs}
+            items={visibleTabs}
+            label={t.analytics.title}
+            size="md"
+            fill
+            className="bg-background/85 backdrop-blur-xl"
+            tabClassName="px-1 text-footnote"
+          />
         </div>
       )}
 
-      {seasonHeadline && <SeasonHeadline data={seasonHeadline} aiTake={seasonInsight} />}
+      {/* Once, on the first tab: the same 230 pt card used to top all four and
+          push each tab's first chart below the fold. */}
+      {seasonHeadline && tab === TABS[0]!.id && <SeasonHeadline data={seasonHeadline} aiTake={seasonInsight} />}
 
       {active && (
         <ChartTodayContext value={today}>
