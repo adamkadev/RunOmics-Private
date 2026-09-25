@@ -15,7 +15,7 @@ import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
 import { coachWorkoutView, heroWorkoutView, plannedWorkoutView } from '@/components/plan/planWorkoutView'
 import { appTodayIso } from '@/lib/calendarDate'
 import { getWeeklyStreakData } from '@/application/usecases/GetMilestones'
-import { getCurrentWeeklyGoal } from '@/application/usecases/GetGoalsData'
+import { loadWeekTarget } from '@/app/_data/loadWeekTarget'
 import { RecentActivities } from '@/components/dashboard/RecentActivities'
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting'
 import { TodayHero } from '@/components/dashboard/TodayHero'
@@ -40,12 +40,12 @@ export default async function DashboardPage() {
   const nextRace = await getNextRace()
   const todayPlannedWorkout = await getTodayPlannedWorkout()
   const weeklyStreak = getWeeklyStreakData()
-  const weeklyGoal = await getCurrentWeeklyGoal()
   // One date for the whole render, in the athlete's zone when one is set - the
   // coaching overview used to default to the UTC date while this page used the
   // server's local one.
   const today = appTodayIso()
   const coaching = getCoachingOverview(today)
+  const weekTarget = await loadWeekTarget(today, coaching)
 
   const todayActivity = data.recentActivities.find((a) => a.date === today) ?? null
   const todayCoachWorkout = coaching?.workouts.find((workout) => workout.prescription.date === today && workout.prescription.status !== 'cancelled') ?? null
@@ -83,7 +83,7 @@ export default async function DashboardPage() {
 
       {weeklyStreak && (
         <Link href="/plan" aria-label={t.plan.openPlanner} className="block active:scale-[0.99]">
-          <WeeklyStreakCard data={weeklyStreak} goal={weeklyGoal} today={today} />
+          <WeeklyStreakCard data={weeklyStreak} target={weekTarget} today={today} />
         </Link>
       )}
 

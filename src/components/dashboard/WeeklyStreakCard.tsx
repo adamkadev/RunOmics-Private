@@ -3,7 +3,8 @@
 import { Check } from 'lucide-react'
 import { formatKm } from '@/lib/formatters'
 import type { WeeklyStreakData } from '@/application/usecases/GetMilestones'
-import type { WeeklyGoal } from '@/application/usecases/GetGoalsData'
+import type { WeekTarget } from '@/domain/training/weekTarget'
+import { formatWeekKm } from '@/components/plan/weekPlanDays'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { useCountUp } from '@/lib/useCountUp'
 import { useToday } from '@/lib/useToday'
@@ -59,21 +60,31 @@ function WeekDots({ weekDays, plannedDays, today }: { weekDays: boolean[]; plann
 
 interface Props {
   data: WeeklyStreakData
-  goal: WeeklyGoal | null
+  /** This week against the volume goal and the plan - the same selector Plan and Activities read. */
+  target: WeekTarget
   /** The date the page was prerendered on; see useToday. */
   today: string
 }
 
-export function WeeklyStreakCard({ data, goal, today: serverToday }: Props) {
+export function WeeklyStreakCard({ data, target, today: serverToday }: Props) {
   const s = t.dashboard.weeklyStreak
   const todayIso = useToday(serverToday)
   const today = (new Date(`${todayIso}T00:00:00`).getDay() + 6) % 7
 
-  const pct = goal && goal.targetKm > 0 ? Math.min(1, goal.actualKm / goal.targetKm) : 0
+  const goal = target.goalKm !== null ? { targetKm: target.goalKm, actualKm: target.ranKm } : null
+  const pct = goal ? Math.min(1, goal.actualKm / goal.targetKm) : 0
   const animatedPct = useCountUp(pct * 100) / 100
   const offset = RING_CIRCUMFERENCE * (1 - animatedPct)
   const animatedActualKm = useCountUp(goal?.actualKm ?? 0)
   const remaining = goal ? Math.max(0, Math.round(goal.targetKm - goal.actualKm)) : 0
+  // The ring's number is the volume goal, and the plan is a different total:
+  // naming both is what stops "6 of 23 km" here and "52 km" on Plan from
+  // reading as two answers to one question.
+  const goalLine = goal
+    ? [s.goalLabel, target.planKm !== null ? s.planHas(target.planSessions, formatWeekKm(target.planKm)) : null]
+        .filter(Boolean)
+        .join(' · ')
+    : null
 
   // A sentence about the week is not the week. What is left to run, spread over
   // the days left to run it in, is the number that decides today.
@@ -89,8 +100,8 @@ export function WeeklyStreakCard({ data, goal, today: serverToday }: Props) {
         : s.goalReached
 
   return (
-    <GlassSurface variant="card" className="p-5">
-      <div className="flex items-center gap-4">
+    <GlassSurface variant="card" className="px-4.5 py-3.5">
+      <div className="flex items-center gap-3.5">
         {goal && (
           <div className="relative shrink-0" style={{ width: RING_SIZE, height: RING_SIZE }}>
             <svg width={RING_SIZE} height={RING_SIZE} className="-rotate-90">
@@ -118,7 +129,8 @@ export function WeeklyStreakCard({ data, goal, today: serverToday }: Props) {
           </div>
         )}
         <div className="min-w-0 flex-1 text-left">
-          <p className="text-sm font-semibold text-foreground">{headline}</p>
+          <p className="text-subhead font-semibold text-foreground">{headline}</p>
+          {goalLine && <p className="mt-0.5 text-xs text-muted-foreground">{goalLine}</p>}
         </div>
       </div>
 
