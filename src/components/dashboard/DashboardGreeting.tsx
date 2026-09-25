@@ -32,7 +32,9 @@ export function DashboardGreeting({ name, lastSyncedAt }: Props) {
   const syncedLine = mounted && lastSyncedAt ? t.dashboard.syncStatus.synced(formatRelativeAgo(lastSyncedAt)) : null
 
   return (
-    <div className="flex h-11 items-center justify-between gap-3">
+    // As tall as the 34 pt disc, not its 44 pt hit area: a 44 pt row put the
+    // date line 5 pt lower than every other page's title.
+    <div className="flex h-8.5 items-center justify-between gap-3">
       {/* The greeting was the largest type on the screen and the only thing on it
           that is not about the running. What the date and the sync age say is
           worth one muted line; the verdict below is the headline. */}
@@ -46,12 +48,12 @@ export function DashboardGreeting({ name, lastSyncedAt }: Props) {
         {syncedLine ?? null}
         {!dateLine && !syncedLine ? ' ' : null}
       </p>
-      {/* It looked tappable and was a plain div. A 44 pt link to Progress now,
-          with the 34 pt disc drawn inside it. */}
+      {/* It looked tappable and was a plain div. A link to Progress now: the
+          34 pt disc, with a 44 pt hit area (hit-44) that doesn't take space. */}
       <Link
         href="/profile"
         aria-label={t.nav.items.profile}
-        className="-mr-1.25 flex size-11 shrink-0 items-center justify-center rounded-full active:scale-95"
+        className="hit-44 flex size-8.5 shrink-0 items-center justify-center rounded-full active:scale-95"
       >
         <span
           aria-hidden="true"

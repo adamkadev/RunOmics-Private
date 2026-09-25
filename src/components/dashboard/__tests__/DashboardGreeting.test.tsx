@@ -10,6 +10,8 @@ describe('DashboardGreeting', () => {
     const link = screen.getByRole('link', { name: t.nav.items.profile })
 
     expect(link).toHaveAttribute('href', '/profile')
-    expect(link.className).toContain('size-11')
+    // The disc is 34 pt; hit-44 grows its target without growing the row.
+    expect(link.className).toContain('hit-44')
+    expect(link.className).toContain('size-8.5')
   })
 })
