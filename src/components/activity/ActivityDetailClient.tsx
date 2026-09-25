@@ -1,12 +1,12 @@
 'use client'
 
 import type { ReactNode } from 'react'
+import { ChevronLeft } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import type { ActivityDetailView } from './activityViews'
 import { aerobicDecoupling } from '@/domain/activity/decoupling'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import type { DynamicsBaseline } from '@/application/usecases/GetDynamicsBaseline'
-import type { ShoeTag } from '@/domain/shoe/types'
 import { ActivityMapClient } from './ActivityMapClient'
 import { NoRouteMap } from './ActivityMap'
 import { RunVerdict } from './RunVerdict'
@@ -40,13 +40,16 @@ interface Props {
   activity: ActivityDetailView
   qualifiedEfforts?: QualifiedEffort[]
   aiVerdict: Insight | null
-  shoe: ShoeTag | null
   dynamicsBaseline: DynamicsBaseline | null
   /** What the plan had that day, when it had something. */
   plan?: ActivityPlan | null
   similarRuns?: SimilarRunsData | null
   /** Race result and achievements, drawn after the note and before the tabs. */
   extras?: ReactNode
+  /** Back and share, title and subtitle: drawn on Overview only. */
+  header?: ReactNode
+  /** "Threshold · Fri, Sep 25": the one line the other tabs keep above them. */
+  compactTitle?: string
 }
 
 const TAB_IDS = ['overview', 'intervals', 'charts', 'dynamics'] as const
@@ -94,11 +97,12 @@ export function ActivityDetailClient({
   activity,
   qualifiedEfforts,
   aiVerdict,
-  shoe,
   dynamicsBaseline,
   plan = null,
   similarRuns = null,
   extras,
+  header,
+  compactTitle,
 }: Props) {
   // The tab lives in ?tab=, so going back from Charts or Dynamics lands on it
   // again rather than on Overview.
@@ -128,53 +132,69 @@ export function ActivityDetailClient({
 
   return (
     <>
-      {/* A compact map: the run's own numbers come first, and the map's
-          fullscreen control is there to expand it. */}
-      <div className="h-25 overflow-hidden rounded-card-sm border border-border">
-        {activity.route ? (
-          <ActivityMapClient
-            route={activity.route}
-            paceSamples={activity.paceSamples}
-            weather={activity.weather}
-            activityType={activity.type}
-            shoe={shoe}
-            className="h-full w-full"
-          />
-        ) : (
-          <NoRouteMap className="h-full min-h-0 w-full" />
-        )}
-      </div>
+      {/* The run itself - map, numbers, verdict, how it felt - heads Overview.
+          The other tabs keep one line of it, so their first chart is not
+          pushed below the fold by a page that repeats above each of them. */}
+      {tab === 'overview' || !compactTitle ? (
+        <>
+          {header}
+          {/* About a quarter of the screen, fitted to the route: the v4 strip
+              (F04) left the route a squiggle under four chips. */}
+          <div className="h-[210px] overflow-hidden rounded-card-sm border border-border">
+            {activity.route ? (
+              <ActivityMapClient
+                route={activity.route}
+                paceSamples={activity.paceSamples}
+                weather={activity.weather}
+                className="h-full w-full"
+              />
+            ) : (
+              <NoRouteMap className="h-full min-h-0 w-full" />
+            )}
+          </div>
 
-      <MetricGrid metrics={stats} className="grid-cols-4 px-1 text-center" />
+          <MetricGrid metrics={stats} className="grid-cols-4 px-1 text-center" />
 
-      <RunVerdict activity={activity} aiVerdict={aiVerdict} planRow={planRow} />
+          <RunVerdict activity={activity} aiVerdict={aiVerdict} planRow={planRow} />
 
-      {!activity.avgHeartRate && (
-        <p className="flex items-center justify-center gap-2 text-caption text-subtle-2">
-          <span className="rounded-full border border-amber-500/30 bg-amber-500/[0.1] px-2 py-px font-mono text-caption font-semibold uppercase tracking-[0.1em] text-amber-600 dark:text-amber-400">
-            {t.activity.dataQuality.estimated}
-          </span>
-          {t.activity.dataQuality.noHr}
-        </p>
-      )}
-
-      {/* How it felt: the watch's RPE, read-only, and the note - the one thing
-          on an activity the user writes. */}
-      <GlassSurface variant="card" className="rounded-card-sm px-4">
-        <div className="flex min-h-11 items-center justify-between gap-3 border-b border-border text-sm">
-          <span className="font-semibold text-foreground">
-            <GlossaryTerm term="rpe">{e.label}</GlossaryTerm>
-          </span>
-          {activity.rpe !== null ? (
-            <span className="text-foreground">{e.value(activity.rpe, t.rpeLabels[activity.rpe] ?? '')}</span>
-          ) : (
-            <span className="text-subtle">{e.notLogged}</span>
+          {!activity.avgHeartRate && (
+            <p className="flex items-center justify-center gap-2 text-caption text-subtle-2">
+              <span className="rounded-full border border-amber-500/30 bg-amber-500/[0.1] px-2 py-px font-mono text-caption font-semibold uppercase tracking-[0.1em] text-amber-600 dark:text-amber-400">
+                {t.activity.dataQuality.estimated}
+              </span>
+              {t.activity.dataQuality.noHr}
+            </p>
           )}
-        </div>
-        <ActivityNotes activityId={activity.id} />
-      </GlassSurface>
 
-      {extras}
+          {/* How it felt: the watch's RPE, read-only, and the note - the one thing
+              on an activity the user writes. */}
+          <GlassSurface variant="card" className="rounded-card-sm px-4">
+            <div className="flex min-h-11 items-center justify-between gap-3 border-b border-border text-sm">
+              <span className="font-semibold text-foreground">
+                <GlossaryTerm term="rpe">{e.label}</GlossaryTerm>
+              </span>
+              {activity.rpe !== null ? (
+                <span className="text-foreground">{e.value(activity.rpe, t.rpeLabels[activity.rpe] ?? '')}</span>
+              ) : (
+                <span className="text-subtle">{e.notLogged}</span>
+              )}
+            </div>
+            <ActivityNotes activityId={activity.id} />
+          </GlassSurface>
+
+          {extras}
+        </>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setTab('overview')}
+          data-testid="compact-header"
+          className="flex min-h-11 items-center gap-1.5 text-left font-display text-title3 font-bold text-foreground"
+        >
+          <ChevronLeft size={20} strokeWidth={2.4} aria-hidden="true" />
+          <span className="truncate">{compactTitle}</span>
+        </button>
+      )}
 
       {tabs.length > 1 && (
         <StickyBar top="var(--top-scrim)" className="mb-3">

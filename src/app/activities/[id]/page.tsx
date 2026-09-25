@@ -99,33 +99,37 @@ export default async function ActivityDetailPage({
 
   const plan = await planForActivity(activity)
 
-  // After a run the page opens on the run: title, a compact map, its numbers,
-  // the verdict with plan against actual, how it felt, then the tabs. Similar
-  // runs used to come first, ahead of the run's own distance and time.
+  // After a run the page opens on the run: title, the map, its numbers, the
+  // verdict with plan against actual, how it felt, then the tabs. The header
+  // is handed to the client, which keeps a one-line version of it on the
+  // other tabs.
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <BackButton label={t.activity.back} fallbackHref="/activities" />
-        <ShareButton activity={shareActivity(activity)} />
-      </div>
-
-      <div>
-        <h1 className="text-display text-foreground">
-          {activity.description || t.activity.runTitle(activity.dayOfWeek)}
-        </h1>
-        <p className="mt-1 text-footnote text-muted-foreground">
-          {[formatDate(activity.date), shoe?.name].filter(Boolean).join(' · ')}
-        </p>
-        {activity.comment && (
-          <p className="mt-1 text-sm text-muted-foreground">{activity.comment}</p>
-        )}
-      </div>
-
       <ActivityDetailClient
         activity={activityDetailView(activity)}
         qualifiedEfforts={qualifiedEfforts}
         aiVerdict={aiVerdict}
-        shoe={shoe}
+        header={
+          <>
+            <div className="flex items-center justify-between gap-3">
+              <BackButton label={t.activity.back} fallbackHref="/activities" />
+              <ShareButton activity={shareActivity(activity)} />
+            </div>
+
+            <div>
+              <h1 className="text-display text-foreground">
+                {activity.description || t.activity.runTitle(activity.dayOfWeek)}
+              </h1>
+              <p className="mt-1 text-footnote text-muted-foreground">
+                {[formatDate(activity.date), shoe?.name].filter(Boolean).join(' · ')}
+              </p>
+              {activity.comment && (
+                <p className="mt-1 text-sm text-muted-foreground">{activity.comment}</p>
+              )}
+            </div>
+          </>
+        }
+        compactTitle={`${activity.description || t.activity.runTitle(activity.dayOfWeek)} · ${formatDate(activity.date)}`}
         dynamicsBaseline={getDynamicsBaseline(activity)}
         plan={plan}
         similarRuns={similarRuns}

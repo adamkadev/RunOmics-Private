@@ -80,6 +80,10 @@ export const en = {
     rpe: { term: 'RPE', definition: 'Rate of perceived exertion, 1 to 10, as logged on the watch after the run.' },
     aerobicEffect: { term: 'Aerobic effect', definition: 'Garmin’s 0–5 score of how much the run built your aerobic fitness.' },
     anaerobicEffect: { term: 'Anaerobic effect', definition: 'Garmin’s 0–5 score of how much the run built your capacity for short, hard efforts.' },
+    strideLength: { term: 'Stride length', definition: 'How far you travel with each step, averaged over the run.' },
+    groundContact: { term: 'Ground contact', definition: 'How long each foot stays on the ground per step. Shorter usually means a springier stride.' },
+    verticalOscillation: { term: 'Vertical oscillation', definition: 'How far your body rises and falls with each step: the bounce.' },
+    verticalRatio: { term: 'Vertical ratio', definition: 'Bounce as a share of stride length. Lower means less effort spent going up for each metre forward.' },
   },
 
   // Every pace axis runs the same way (lib/chartAxis paceAxis).
@@ -888,10 +892,10 @@ export const en = {
       addTag: (tag: string) => `Add tag ${tag}`,
     },
     zones: {
-      title: 'Time in Zones',
+      // The basis is in the name: these are heart-rate zones, not pace.
+      title: 'Time in HR zones',
       noData: 'No HR zone data',
-      basisHr: 'by heart rate',
-      unused: (range: string) => `${range} unused on this run`,
+      mostIn: (zone: number, pct: number) => `most in Z${zone} · ${pct}%`,
       labels: {
         1: 'Z1 · Warmup',
         2: 'Z2 · Easy',
@@ -961,13 +965,12 @@ export const en = {
         level: 'level with your baseline',
       },
       form: {
-        title: 'Form through the run',
-        faded: (km: string) => `faded after ${km} km`,
-        held: 'held to the finish',
-        readingFaded: (km: string) =>
-          `Cadence dropped over the last ${km} km and stayed down - the fade the decoupling figure reports, in your mechanics.`,
-        readingHeld:
-          'Cadence held its level from the first kilometre to the last - nothing in the mechanics slipped.',
+        // Cadence, named: "Form" is Today's TSB.
+        title: 'Cadence through the run',
+        faded: (km: string) => `Faded at ${km} km`,
+        held: 'Held',
+        definition:
+          'Held means cadence kept its level from the first kilometre to the last. Faded marks where it dropped and stayed down - the fade the decoupling figure reports, in your mechanics.',
         summary: 'Cadence over the run, marked where it dropped away.',
       },
     },

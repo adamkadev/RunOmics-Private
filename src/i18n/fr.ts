@@ -70,6 +70,10 @@ export const fr = {
     rpe: { term: 'RPE', definition: 'Effort perçu, de 1 à 10, saisi sur la montre après la sortie.' },
     aerobicEffect: { term: 'Effet aérobie', definition: 'Score Garmin de 0 à 5 : combien la sortie a développé ta capacité aérobie.' },
     anaerobicEffect: { term: 'Effet anaérobie', definition: 'Score Garmin de 0 à 5 : combien la sortie a développé ta capacité à l’effort court et intense.' },
+    strideLength: { term: 'Longueur de foulée', definition: 'La distance parcourue à chaque pas, en moyenne sur la sortie.' },
+    groundContact: { term: 'Temps de contact', definition: 'Le temps que chaque pied reste au sol à chaque pas. Plus court, la foulée est en général plus réactive.' },
+    verticalOscillation: { term: 'Oscillation verticale', definition: 'De combien le corps monte et descend à chaque pas : le rebond.' },
+    verticalRatio: { term: 'Rapport vertical', definition: 'Le rebond rapporté à la longueur de foulée. Plus bas, moins d’effort part vers le haut pour chaque mètre gagné.' },
   },
 
   consistency: {
@@ -865,10 +869,9 @@ export const fr = {
       addTag: (tag: string) => `Ajouter le tag ${tag}`,
     },
     zones: {
-      title: 'Temps en zones',
+      title: 'Temps en zones FC',
       noData: 'Pas de données de zones FC',
-      basisHr: 'selon la FC',
-      unused: (range: string) => `${range} non utilisées sur cette sortie`,
+      mostIn: (zone: number, pct: number) => `surtout en Z${zone} · ${pct} %`,
       labels: {
         1: 'Z1 · Échauffement',
         2: 'Z2 · Facile',
@@ -936,13 +939,11 @@ export const fr = {
         level: 'au niveau de ta référence',
       },
       form: {
-        title: 'La forme au fil de la sortie',
-        faded: (km: string) => `a lâché après ${km} km`,
-        held: "a tenu jusqu'au bout",
-        readingFaded: (km: string) =>
-          `La cadence a baissé sur les ${km} derniers km sans remonter - la dérive que signale le découplage, dans votre mécanique.`,
-        readingHeld:
-          'La cadence a gardé son niveau du premier au dernier kilomètre - rien ne bouge dans la mécanique.',
+        title: 'La cadence au fil de la sortie',
+        faded: (km: string) => `Baisse à ${km} km`,
+        held: 'Tenue',
+        definition:
+          'Tenue : la cadence a gardé son niveau du premier au dernier kilomètre. Baisse : le point où elle a chuté sans remonter - la dérive que signale le découplage, dans votre mécanique.',
         summary: 'Cadence sur la sortie, avec le point où elle a baissé.',
       },
     },
