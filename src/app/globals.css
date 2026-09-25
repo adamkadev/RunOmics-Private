@@ -136,7 +136,6 @@
   --shadow-modal:          0 8px 32px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.35);
   --shadow-thumb:          0 4px 12px rgba(0, 0, 0, 0.45);
   --shadow-hero:           0 10px 30px -12px rgba(0, 0, 0, 0.5);
-  --brand-glow:            rgba(30, 215, 135, 0.5);
   --map-attrib-bg:         rgba(0, 0, 0, 0.5);
   --map-attrib-fg:         rgba(255, 255, 255, 0.75);
 }

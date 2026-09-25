@@ -1,4 +1,5 @@
 import { HUE, ink, paper, white, withAlpha } from '@/lib/palette'
+import { isActivityType, type ActivityType } from '@/domain/activity/types'
 
 const c = HUE
 
@@ -78,6 +79,35 @@ export const ZONE_COLORS_DARK: Record<number, string> = {
   3: c.roEmeraldHi,
   4: c.roOrangeHi,
   5: c.roRed,
+}
+
+/**
+ * The zone each run type targets. A session's colour is its intensity, read
+ * off this one ramp everywhere a plan or a list is drawn - Plan's week and
+ * month, the session rows, the activity lists and a shoe's mix. Threshold used
+ * to be salmon on one day and orange on the next, orange also meant "today",
+ * and salmon also meant Z5, heart rate and "destructive".
+ *
+ * Charts that stack types side by side (monthly volume, the map's type picker)
+ * still need seven distinguishable hues and keep ACTIVITY_TYPE_STYLE.
+ */
+export const RUN_TYPE_ZONE: Record<ActivityType, 1 | 2 | 3 | 4 | 5> = {
+  Sprint: 5,
+  Anaerobic: 5,
+  VO2Max: 5,
+  Threshold: 4,
+  Tempo: 3,
+  Base: 2,
+  Race: 5,
+}
+
+export function runTypeZone(type: string | null | undefined): 1 | 2 | 3 | 4 | 5 {
+  return isActivityType(type) ? RUN_TYPE_ZONE[type] : RUN_TYPE_ZONE.Base
+}
+
+/** The zone colour a run type is drawn in, as a token. */
+export function runTypeColor(type: string | null | undefined): string {
+  return `var(--zone-${runTypeZone(type)})`
 }
 
 export const ZONE_COLOR_CLASSES: Record<number, { bg: string; text: string }> = {

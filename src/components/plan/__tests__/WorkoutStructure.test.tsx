@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import type { WorkoutStep } from '@/domain/activity/types'
 import { t } from '@/i18n'
-import { WorkoutStructureBars, recoveryLabel } from '../WorkoutStructure'
+import { SessionStructureBar, WorkoutStructureBars, recoveryLabel } from '../WorkoutStructure'
 
 const INTERVALS: WorkoutStep[] = [
   { kind: 'warmup', minutes: 15 },
@@ -60,5 +60,24 @@ describe('the recovery figure the bar cannot spell out', () => {
   it('offers nothing for a session with no recovery at all', () => {
     expect(recoveryLabel([{ kind: 'effort', minutes: 40 }])).toBeNull()
     expect(recoveryLabel(null)).toBeNull()
+  })
+})
+
+describe('the session structure bar', () => {
+  // "25 min · Z4 continuous" was navy on mid-blue, about 3:1, and the blue said
+  // Z2 on a Z4 session.
+  it('fills a continuous session in its zone and writes it in zone ink', () => {
+    render(<SessionStructureBar steps={[]} zoneWord="Z4" zone={4} totalSeconds={1_500} />)
+    const label = screen.getByText(/Z4/)
+
+    expect(label.style.color).toBe('var(--zone-ink)')
+    expect((label.parentElement as HTMLElement).style.background).toBe('var(--zone-4)')
+  })
+
+  it('draws the reps of an interval session in its zone too', () => {
+    const { container } = render(<SessionStructureBar steps={INTERVALS} zoneWord="Z4" zone={4} totalSeconds={3_000} />)
+    const fills = [...container.querySelectorAll<HTMLElement>('[style*="flex-grow"]')].map((el) => el.style.background)
+
+    expect(fills.filter((f) => f === 'var(--zone-4)')).toHaveLength(3)
   })
 })

@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Search, SearchX, ChevronDown, Map as MapIcon } from 'lucide-react'
 import { ActivityListCard } from './ActivityListCard'
 import { ACTIVITY_TYPES, isActivityType, type ActivitySummary, type ActivityType } from '@/domain/activity/types'
-import { ACTIVITY_TYPE_STYLE, activityTypeStyle } from '@/components/activity/activityTypeStyle'
+import { runTypeColor } from '@/lib/colors'
 import type { ActivityQueryResult, ActivitySortKey, ActivitySortOrder } from '@/application/usecases/QueryActivities'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import type { WeekTarget } from '@/domain/training/weekTarget'
@@ -104,13 +104,13 @@ function WeekCompositionDots({ items, label }: { items: ActivitySummary[]; label
             <span
               key={a.id}
               className="shrink-0 rounded-[4px]"
-              style={{ width: '7px', height: '7px', border: `1.5px solid ${ACTIVITY_TYPE_STYLE.Race.chartColor}` }}
+              style={{ width: '7px', height: '7px', border: `1.5px solid ${runTypeColor('Race')}` }}
             />
           ) : (
             <span
               key={a.id}
               className="shrink-0 rounded-[4px]"
-              style={{ width: '7px', height: '7px', background: activityTypeStyle(a.type).chartColor }}
+              style={{ width: '7px', height: '7px', background: runTypeColor(a.type) }}
             />
           )
         )}

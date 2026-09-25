@@ -176,7 +176,6 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--shadow-modal': `0 8px 32px ${ink(0.55)}, 0 2px 8px ${ink(0.35)}`,
       '--shadow-thumb': `0 4px 12px ${ink(0.45)}`,
       '--shadow-hero': `0 10px 30px -12px ${ink(0.5)}`,
-      '--brand-glow': withAlpha(c.roEmerald, 0.5),
       '--map-attrib-bg': ink(0.5),
       '--map-attrib-fg': paper(0.75),
     },

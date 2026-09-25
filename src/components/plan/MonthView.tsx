@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { activityTypeStyle } from '@/components/activity/activityTypeStyle'
+import { runTypeColor } from '@/lib/colors'
 import { ACTIVITY_TYPES, type ActivitySummary, type ActivityType, type PlannedWorkout } from '@/domain/activity/types'
 import { round } from '@/lib/math'
 import { formatDate } from '@/lib/formatters'
@@ -37,9 +37,10 @@ const RULE_BORDER = 'rgba(148,178,220,.18)'
 const PLANNED_INK = 'var(--subtle)'
 const RAN_INK = 'var(--foreground)'
 const EXTRA_INK = 'var(--subtle-2)'
-// A dark-theme blue hex used to sit here, 1.6:1 on the light background. Each
-// theme takes its own step of the same hue instead.
-const TODAY_INK = 'text-blue-700 dark:text-blue-300'
+// "Today" and selection follow the accent. The today cell used to be ringed in
+// a fixed emerald, the colour Base, Form and "productive" also wear - with the
+// Nature accent the two became the same green with two meanings.
+const TODAY_INK = 'text-accent-text'
 const GRID_COLUMNS = 'repeat(7,1fr) 30px'
 
 interface DayCellData {
@@ -92,7 +93,7 @@ function CellValue({ planned, ranKm, hasActs }: { planned: PlannedInfo | null; r
       {planned && (
         <span
           className="shrink-0 rounded-full"
-          style={{ width: '3px', background: activityTypeStyle(planned.type).chartColor }}
+          style={{ width: '3px', background: runTypeColor(planned.type) }}
         />
       )}
       <div className="flex min-w-0 flex-col justify-center" style={{ lineHeight: 1.15 }}>
@@ -136,7 +137,7 @@ function DayCell({
   const dayNumber = (
     <p
       className="text-xs leading-none"
-      style={{ color: isToday ? 'var(--delta-good)' : 'var(--muted-foreground)', fontWeight: isToday ? 700 : 400 }}
+      style={{ color: isToday ? 'var(--accent-text)' : 'var(--muted-foreground)', fontWeight: isToday ? 700 : 400 }}
     >
       {cell.day}
     </p>
@@ -262,7 +263,7 @@ export function MonthView({
           onClick={onToday}
           disabled={atPresent}
           className={cn('shrink-0 rounded-full font-semibold disabled:opacity-40', TODAY_INK)}
-          style={{ fontSize: '12.5px', border: '1px solid rgba(106,164,255,.35)', padding: '5px 12px' }}
+          style={{ fontSize: '12.5px', border: '1px solid color-mix(in srgb, var(--accent) 45%, transparent)', padding: '5px 12px' }}
         >
           {t.plan.today}
         </button>
@@ -318,7 +319,7 @@ export function MonthView({
                       !cell
                         ? { background: PAD_BG }
                         : cell.date === today
-                          ? { background: 'rgba(52,211,153,.07)', border: '1.5px solid #34d399' }
+                          ? { background: 'color-mix(in srgb, var(--accent) 8%, transparent)', border: '1.5px solid var(--accent)' }
                           : undefined
                     }
                   >
@@ -353,7 +354,7 @@ export function MonthView({
           <div className="flex flex-wrap items-center gap-3 border-b border-foreground/[0.08] pb-2 text-xs text-subtle">
             {legendTypes.map((type) => (
               <span key={type} className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full" style={{ background: activityTypeStyle(type).chartColor }} />
+                <span className="h-2 w-2 rounded-full" style={{ background: runTypeColor(type) }} />
                 {t.activityTypes[type]}
               </span>
             ))}

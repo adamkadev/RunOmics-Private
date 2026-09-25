@@ -6,7 +6,7 @@ import { ChevronRight } from 'lucide-react'
 import { SectionDivider } from '@/components/ui/SectionLabel'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import type { ActivitySummary, ActivityType, PlannedWorkout, ScheduledTimeOfDay } from '@/domain/activity/types'
-import { activityTypeStyle } from '@/components/activity/activityTypeStyle'
+import { runTypeColor, runTypeZone } from '@/lib/colors'
 import type { HrBounds } from '@/domain/training/trimp'
 import { summarizeWeek, summarizePlannedWeek } from '@/domain/training/weekSummary'
 import { plannedEasyHard, recordedEasyHard, type EasyHardSplit } from '@/domain/activity/easyShare'
@@ -105,6 +105,7 @@ function PlannedWorkoutRow({ workout }: { workout: PlanWorkoutView }) {
           <SessionStructureBar
             steps={workout.structure ?? []}
             zoneWord={zoneWord}
+            zone={workout.type ? runTypeZone(workout.type) : null}
             totalSeconds={workout.duration.seconds}
           />
         </div>
@@ -180,7 +181,7 @@ const ROW_STATE_CLASS: Partial<Record<WeekDayState, string>> = {
 
 // One row per session, divider-separated like the Activities list rather than
 // a stack of two-line cards - three sessions used to cost ~190px and their
-// distances never lined up. The dot reads ACTIVITY_TYPE_STYLE, the same map
+// distances never lined up. The dot reads RUN_TYPE_ZONE, the same map
 // the strip's bars use, so the two read as one vocabulary.
 // Each row names its state in words too - done, missed or still planned - so
 // a missed session reads as missed in the list as well as in the strip.
@@ -219,12 +220,12 @@ function WeekSessionRow({
           style={{
             width: '8px',
             height: '8px',
-            background: workout.type ? activityTypeStyle(workout.type).chartColor : 'var(--subtle-2)',
+            background: workout.type ? runTypeColor(workout.type) : 'var(--subtle-2)',
             // Same divergence the bar's cap shows: the fill is what was
             // recorded, this ring is what was planned - without it, a title
             // that names one thing and a dot that colours another look like
             // a bug instead of the known Garmin-mismatch case.
-            boxShadow: workout.plannedType ? `0 0 0 1.5px ${activityTypeStyle(workout.plannedType).chartColor}` : undefined,
+            boxShadow: workout.plannedType ? `0 0 0 1.5px ${runTypeColor(workout.plannedType)}` : undefined,
           }}
         />
         <span className="truncate font-bold text-foreground" style={{ fontSize: '15px' }}>
@@ -255,6 +256,19 @@ function weekVolumeLabel(target: WeekTarget, notStarted: boolean): string {
   if (target.planKm === null) return `${formatWeekKm(target.ranKm)} ${t.units.km} · ${s.sessionsCount(target.ranSessions)}`
   if (notStarted) return s.planOnly(formatWeekKm(target.planKm), target.planSessions)
   return `${s.ranOfPlan(formatWeekKm(target.ranKm), formatWeekKm(target.planKm))} · ${s.sessionsOfPlan(target.ranSessions, target.planSessions)}`
+}
+
+// Which zone each colour on the strip is, for the zones this week uses.
+function intensityNote(days: WeekTarget['days']): string | undefined {
+  const byZone = new Map<number, string>()
+  for (const day of days) {
+    if (!day.type || day.state === 'rest') continue
+    const zone = runTypeZone(day.type)
+    if (!byZone.has(zone)) byZone.set(zone, t.activityTypes[day.type].toLowerCase())
+  }
+  if (byZone.size === 0) return undefined
+  const zones = [...byZone.entries()].sort((a, b) => a[0] - b[0]).map(([zone, label]) => `Z${zone} ${label}`)
+  return t.plan.intensityNote(zones.join(', '))
 }
 
 function WeekSummaryLine({
@@ -633,7 +647,7 @@ export function WeekView({
           selectedDate={selected.date}
           onSelect={selectDate}
         />
-        <DayStateLegend color="var(--zone-4)" />
+        <DayStateLegend color="var(--zone-4)" note={intensityNote(target.days)} />
       </div>
 
       <WeekSummaryLine
@@ -721,8 +735,8 @@ export function WeekView({
                   <SessionStructureBar
                     steps={[]}
                     zoneWord={zoneWord}
+                    zone={runTypeZone(a.type)}
                     totalSeconds={a.durationSeconds}
-                    variant="done"
                   />
                 </div>
               </Link>

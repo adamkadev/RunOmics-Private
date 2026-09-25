@@ -1,9 +1,11 @@
 import { DAY_MS } from '@/lib/calendarDate'
 import type { PlanPhaseRange, TrainingPlanPhase } from '@/application/usecases/GetTrainingPlan'
-import { TRAINING_PLAN_PHASE_COLORS } from '@/lib/colors'
 import { t } from '@/i18n'
 
 const TRACK = 'color-mix(in srgb, var(--foreground) 8%, transparent)'
+// "You are here" is the accent. The phases used to wear their own hues, and
+// Base's was the fixed emerald that elsewhere means good news.
+const PROGRESS = 'var(--accent-text)'
 
 const PHASE_LABEL: Record<TrainingPlanPhase, string> = {
   base: t.plan.phaseTrack.base,
@@ -36,7 +38,7 @@ export function PlanPhaseTrack({ ranges, weekStart, weekEnd }: { ranges: PlanPha
     <div className="mt-3.5">
       <div className="flex items-center gap-1">
         {ranges.map((r) => {
-          const color = TRAINING_PLAN_PHASE_COLORS[r.phase] ?? 'var(--accent)'
+          const color = PROGRESS
           const isPast = r.endDate < weekStart
           const isCurrent = !isPast && r.startDate <= weekEnd
           const progress = isCurrent
@@ -58,13 +60,12 @@ export function PlanPhaseTrack({ ranges, weekStart, weekEnd }: { ranges: PlanPha
       </div>
       <div className="mt-1.5 flex justify-between font-mono text-micro font-semibold uppercase tracking-[0.04em]">
         {ranges.map((r) => {
-          const color = TRAINING_PLAN_PHASE_COLORS[r.phase] ?? 'var(--accent)'
           const isPast = r.endDate < weekStart
           const isCurrent = !isPast && r.startDate <= weekEnd
           return (
             <span
               key={r.startDate}
-              style={{ color: isCurrent || isPast ? color : 'var(--subtle)' }}
+              style={{ color: isCurrent ? PROGRESS : 'var(--subtle)' }}
             >
               {PHASE_LABEL[r.phase]}
             </span>
