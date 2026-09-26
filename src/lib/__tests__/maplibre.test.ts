@@ -1,44 +1,90 @@
 import { describe, expect, it } from 'vitest'
 import type { Map as MapLibreMap } from 'maplibre-gl'
-import { isPlaceLabelLayer, showPlaceLabelsOnly } from '../maplibre'
+import { firstSymbolLayerId, isLegacyFilter, isPlaceLabelLayer, styleRunMapLabels, townsOnly } from '../maplibre'
 
-describe('showPlaceLabelsOnly', () => {
-  // v4.8 2h: the map names its town again; streets and POIs stay off.
-  it('keeps the place names, at any zoom, and turns every other label off', () => {
-    const layout: [string, string, unknown][] = []
-    const zooms: [string, number, number][] = []
-    const map = {
-      getStyle: () => ({
-        layers: [
-          { id: 'Place label', type: 'symbol', 'source-layer': 'place' },
-          { id: 'Town labels', type: 'symbol', 'source-layer': 'town_label' },
-          { id: 'POI', type: 'symbol', 'source-layer': 'poi' },
-          { id: 'Road labels', type: 'symbol', 'source-layer': 'transportation_name' },
-          { id: 'Roads', type: 'line', 'source-layer': 'transportation' },
-        ],
-      }),
-      setLayoutProperty: (id: string, prop: string, value: unknown) => layout.push([id, prop, value]),
-      setLayerZoomRange: (id: string, min: number, max: number) => zooms.push([id, min, max]),
-    } as unknown as MapLibreMap
+type Layer = { id: string; type: string; 'source-layer'?: string }
 
-    showPlaceLabelsOnly(map)
+function fakeMap(layers: Layer[], filters: Record<string, unknown> = {}) {
+  const layout: Record<string, Record<string, unknown>> = {}
+  const paint: Record<string, Record<string, unknown>> = {}
+  const zooms: Record<string, [number, number]> = {}
+  const setFilters: Record<string, unknown> = {}
+  const map = {
+    getStyle: () => ({ layers }),
+    setLayoutProperty: (id: string, k: string, v: unknown) => { (layout[id] ??= {})[k] = v },
+    setPaintProperty: (id: string, k: string, v: unknown) => { (paint[id] ??= {})[k] = v },
+    setLayerZoomRange: (id: string, min: number, max: number) => { zooms[id] = [min, max] },
+    getFilter: (id: string) => filters[id],
+    setFilter: (id: string, f: unknown) => { setFilters[id] = f },
+  } as unknown as MapLibreMap
+  return { map, layout, paint, zooms, setFilters }
+}
 
-    expect(layout).toEqual([
-      ['Place label', 'visibility', 'visible'],
-      ['Town labels', 'visibility', 'visible'],
-      ['POI', 'visibility', 'none'],
-      ['Road labels', 'visibility', 'none'],
-    ])
-    expect(zooms).toEqual([
-      ['Place label', 0, 24],
-      ['Town labels', 0, 24],
-    ])
+const COLORS = { halo: '#161818', town: '#9a9f9f', neighbourhood: '#6e7373' }
+
+describe('styleRunMapLabels (v4.10)', () => {
+  const layers: Layer[] = [
+    { id: 'Water', type: 'fill' },
+    { id: 'Road labels', type: 'symbol', 'source-layer': 'transportation_name' },
+    { id: 'POI', type: 'symbol', 'source-layer': 'poi' },
+    { id: 'Town', type: 'symbol', 'source-layer': 'place' },
+    { id: 'Neighbourhood', type: 'symbol', 'source-layer': 'place' },
+    { id: 'Place labels', type: 'symbol', 'source-layer': 'place' },
+  ]
+
+  it('keeps place names only and turns every other label off', () => {
+    const { map, layout } = fakeMap(layers)
+    styleRunMapLabels(map, COLORS)
+    expect(layout['Road labels']?.visibility).toBe('none')
+    expect(layout.POI?.visibility).toBe('none')
+    expect(layout.Town?.visibility).toBe('visible')
+    expect(layout.Water).toBeUndefined()
   })
 
-  it('knows a place layer by its id when the source layer says nothing', () => {
+  it('shows towns at any zoom and neighbourhoods only from zoom 14', () => {
+    const { map, zooms } = fakeMap(layers)
+    styleRunMapLabels(map, COLORS)
+    expect(zooms.Town).toEqual([0, 24])
+    expect(zooms.Neighbourhood).toEqual([14, 24])
+  })
+
+  it('narrows a layer holding every kind of place to towns and villages', () => {
+    const { map, setFilters } = fakeMap(layers)
+    styleRunMapLabels(map, COLORS)
+    expect(setFilters['Place labels']).toEqual(['match', ['get', 'class'], ['city', 'town', 'village'], true, false])
+    expect(setFilters.Town).toBeUndefined()
+  })
+
+  it('makes every name collide, centred, muted, with a halo in the surface colour', () => {
+    const { map, layout, paint } = fakeMap(layers)
+    styleRunMapLabels(map, COLORS)
+    expect(layout.Town).toMatchObject({ 'text-allow-overlap': false, 'text-padding': 4, 'text-variable-anchor': ['center'], 'text-size': 12 })
+    expect(layout.Neighbourhood?.['text-size']).toBe(11)
+    expect(paint.Town).toEqual({ 'text-color': '#9a9f9f', 'text-halo-color': '#161818', 'text-halo-width': 1.5, 'text-halo-blur': 0.5 })
+    expect(paint.Neighbourhood?.['text-color']).toBe('#6e7373')
+  })
+})
+
+describe('the filter helpers', () => {
+  it('tells an old-style filter from an expression', () => {
+    expect(isLegacyFilter(['==', 'class', 'town'])).toBe(true)
+    expect(isLegacyFilter(['all', ['==', 'class', 'town']])).toBe(true)
+    expect(isLegacyFilter(['==', ['get', 'class'], 'town'])).toBe(false)
+  })
+
+  it('narrows in the syntax the layer already uses', () => {
+    expect(townsOnly(['==', 'rank', 1])).toEqual(['all', ['==', 'rank', 1], ['in', 'class', 'city', 'town', 'village']])
+    expect(townsOnly(['<=', ['get', 'rank'], 3])).toEqual(['all', ['<=', ['get', 'rank'], 3], ['match', ['get', 'class'], ['city', 'town', 'village'], true, false]])
+  })
+
+  it('knows a place layer by its source layer or its id', () => {
     expect(isPlaceLabelLayer({ id: 'Village labels', type: 'symbol' })).toBe(true)
-    expect(isPlaceLabelLayer({ id: 'Suburb', type: 'symbol', 'source-layer': 'other' })).toBe(true)
     expect(isPlaceLabelLayer({ id: 'Highway shield', type: 'symbol' })).toBe(false)
     expect(isPlaceLabelLayer({ id: 'place fill', type: 'fill' })).toBe(false)
+  })
+
+  it('finds the first label layer', () => {
+    const { map } = fakeMap([{ id: 'Water', type: 'fill' }, { id: 'Road labels', type: 'symbol' }, { id: 'Town', type: 'symbol' }])
+    expect(firstSymbolLayerId(map)).toBe('Road labels')
   })
 })
