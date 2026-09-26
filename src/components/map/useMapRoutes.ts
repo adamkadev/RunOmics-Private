@@ -1,11 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { GeoJSONSource, Map as MapLibreMap, StyleSpecification } from "maplibre-gl";
+import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
 import type { MapShellData } from "@/application/usecases/GetAllRoutes";
 import { maptilerStyleUrl } from "@/lib/maptiler";
 import { buildHeatGeoJSON, heatColorExpression, heatWidthExpression } from "./mapUtils";
-import { loadMapLibre } from "@/lib/maplibre";
+import { firstSymbolLayerId, loadMapLibre, styleRunMapLabels } from "@/lib/maplibre";
+import { addEdgeFence } from "@/lib/runMapLayers";
+import { SURFACES } from "@/lib/themeTokens";
 
 const REVEAL_STEPS = 16;
 const REVEAL_STEP_MS = 45;
@@ -64,10 +66,11 @@ export function useMapRoutes(
       map.on("load", () => {
         if (cancelled) return;
 
-        const style = map.getStyle() as StyleSpecification & {
-          layers: { id: string; type: string }[];
-        };
-        const firstSymbolId = style.layers.find((l) => l.type === "symbol")?.id;
+        // The Activity map's label rules (v4.10): towns over the heat lines
+        // with a halo, neighbourhoods from zoom 14, nothing cut at the edge.
+        const surface = SURFACES[isDark ? "dark" : "light"];
+        styleRunMapLabels(map, { halo: surface.card, town: surface.text2, neighbourhood: surface.text3 });
+        const firstSymbolId = firstSymbolLayerId(map);
 
         const { data: heat, maxCount } = buildHeatGeoJSON(routes, first.routeIndices);
 
@@ -88,6 +91,7 @@ export function useMapRoutes(
           firstSymbolId,
         );
 
+        addEdgeFence(map);
         setMapReady(true);
       });
     }

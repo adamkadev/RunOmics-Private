@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react'
 import { maptilerStyleUrl } from '@/lib/maptiler'
 import { routePadding, simplifyRoute, type LngLat } from '@/lib/shareCardMap'
 import type { ThemeMode } from '@/lib/shareCardPalette'
-import { loadMapLibre, showPlaceLabelsOnly } from '@/lib/maplibre'
+import { loadMapLibre, styleRunMapLabels } from '@/lib/maplibre'
+import { SURFACES } from '@/lib/themeTokens'
+import { addEdgeFence, addRunMarkers, clearMarkerImage, setRunFinish } from '@/lib/runMapLayers'
 
 export interface ShareCardMap {
   image: HTMLCanvasElement | null
@@ -76,8 +78,18 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
     fadeDuration: 0,
   })
 
-  // Town names, no streets or POIs, as on the Activity map (v4.8 2h).
-  map.on('load', () => showPlaceLabelsOnly(map))
+  // The Activity map's label rules (v4.10), with the halo in the card's own
+  // background. The card paints the route and markers on top afterwards, so
+  // clear icons stand in for the markers here: a name that would sit under
+  // one is dropped, as on the Activity map, and so is one cut by the edge.
+  const surface = SURFACES[isDark ? 'dark' : 'light']
+  map.on('load', () => {
+    styleRunMapLabels(map, { halo: surface.background, town: surface.text2, neighbourhood: surface.text3 })
+    addRunMarkers(map, first, { start: clearMarkerImage(), finish: clearMarkerImage() })
+    const last = points[points.length - 1]
+    if (last && last !== first) setRunFinish(map, first, last)
+    addEdgeFence(map)
+  })
 
   const timeout = new Promise<never>((_, reject) =>
     setTimeout(() => reject(new Error('basemap render timed out')), RENDER_TIMEOUT_MS))

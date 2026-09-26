@@ -21,14 +21,16 @@ describe('RunVerdict', () => {
 
     expect(screen.getByTestId('run-verdict').textContent).toContain(t.activityTypes.Threshold)
     expect(screen.queryByText(t.activity.verdict.title)).toBeNull()
+    // No AI verdict, no invented body.
+    expect(screen.queryByTestId('run-verdict-body')).toBeNull()
   })
 
-  // H10: the headline only - no paragraph and no "Coach insight" label.
-  it('shows the AI headline only', () => {
+  // v4.8 2e: the coach's sentence is back under the headline; still no label.
+  it('shows the AI headline and body', () => {
     render(<RunVerdict activity={activity} aiVerdict={{ headline: 'Strong threshold', body: 'Held the range.' }} />)
 
     expect(screen.getByText('Strong threshold')).toBeInTheDocument()
-    expect(screen.queryByText('Held the range.')).toBeNull()
+    expect(screen.getByText('Held the range.')).toBeInTheDocument()
     expect(screen.queryByText(t.sessionCard.coachInsight)).toBeNull()
   })
 

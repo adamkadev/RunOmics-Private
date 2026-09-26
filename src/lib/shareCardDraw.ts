@@ -2,7 +2,6 @@ import { shareCardSubtitle, shareCardTitle, shareStats, shareZones, type ShareAc
 import { HEADER_H, MIDDLE_H, W, H, type ShareDesign, type SharePalette } from '@/lib/shareCardPalette'
 import { projectRoute, type LngLat } from '@/lib/shareCardMap'
 import { paceAtFraction, paceRouteColor } from '@/lib/paceRoute'
-import { PACE_ROUTE_COLORS } from '@/lib/colors'
 import { t } from '@/i18n'
 
 type Ctx = CanvasRenderingContext2D
@@ -117,7 +116,7 @@ function endsAway(route: LngLat[]): boolean {
   return Math.abs(last[0] - first[0]) > 0.0005 || Math.abs(last[1] - first[1]) > 0.0005
 }
 
-/** ActivityMap's line: pace colours on a casing, accent start, fast-colour finish. */
+/** ActivityMap's line: pace colours on a casing, white start, accent finish. */
 function drawRoute(ctx: Ctx, scene: ShareCardScene) {
   const { activity, palette, mapImage, mapPoints } = scene
   const route = activity.route
@@ -150,8 +149,10 @@ function drawRoute(ctx: Ctx, scene: ShareCardScene) {
     ctx.stroke()
   }
 
-  marker(ctx, first, palette.acc, palette.ring)
-  if (endsAway(route)) marker(ctx, last, PACE_ROUTE_COLORS.fast, palette.ring)
+  // As on the Activity map (v4.10): a white start with a dark outline, the
+  // finish in the accent. No red.
+  marker(ctx, first, palette.ring, palette.startRing)
+  if (endsAway(route)) marker(ctx, last, palette.acc, palette.ring)
 }
 
 /** Time in zones: Z1-Z5 on a faint track, minutes beside, the main zone on top. */
