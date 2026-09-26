@@ -23,13 +23,14 @@ describe('TodayHero', () => {
     expect(card.style.borderColor).toContain('color-mix')
   })
 
-  // H03: the status word in the head, and no sentence under the headline.
-  it('puts the watch status in the head and drops the body sentence', () => {
+  // H03: no sentence under the headline. v4.3.4: the watch status left the
+  // head for the Body card.
+  it('keeps the watch status out of the head and drops the body sentence', () => {
     render(
-      <TodayHero status={null} plannedWorkout={PLAN} todayActivity={null} aiVerdict={{ headline: 'Steady day.', body: 'Keep it moderate.' }} watchStatus="productive" />,
+      <TodayHero status={null} plannedWorkout={PLAN} todayActivity={null} aiVerdict={{ headline: 'Steady day.', body: 'Keep it moderate.' }} />,
     )
 
-    expect(screen.getByText(t.trainingStatus.status.productive)).toBeInTheDocument()
+    expect(screen.queryByText(t.trainingStatus.status.productive)).toBeNull()
     expect(screen.getByText('Steady day.')).toBeInTheDocument()
     expect(screen.queryByText('Keep it moderate.')).toBeNull()
     expect(screen.queryByText(t.sessionCard.coachInsight)).toBeNull()

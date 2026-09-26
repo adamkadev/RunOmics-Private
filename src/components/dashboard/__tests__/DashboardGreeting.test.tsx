@@ -19,18 +19,28 @@ describe('DashboardGreeting', () => {
     expect(link.className).toContain('size-8.5')
   })
 
-  // H06: past 6 h the sync age is an amber pill that syncs on tap.
-  it('turns a sync older than 6 h into a tappable pill', async () => {
+  // H06: past 6 h the sync age is a pill that syncs on tap; v4.3.4: muted
+  // until the data is a day old.
+  it('turns a sync older than 6 h into a tappable, muted pill', async () => {
     const lastSyncedAt = new Date(Date.now() - 23 * 3600_000).toISOString()
     render(<DashboardGreeting name="Adam" lastSyncedAt={lastSyncedAt} />)
 
     const pill = await screen.findByTestId('sync-pill')
     expect(pill.textContent).toContain(t.dashboard.syncStatus.tapToSync)
-    expect(pill.getAttribute('style')).toContain('--tone-caution')
+    expect(pill.getAttribute('style')).toContain('--muted-foreground')
+    expect(pill.getAttribute('style')).not.toContain('--tone-caution')
 
     // Signed out: the tap goes to Settings, where the sync lives.
     await userEvent.click(pill)
     expect(push).toHaveBeenCalledWith('/settings')
+  })
+
+  it('turns the pill amber once the last sync is over 24 h old', async () => {
+    const lastSyncedAt = new Date(Date.now() - 30 * 3600_000).toISOString()
+    render(<DashboardGreeting name="Adam" lastSyncedAt={lastSyncedAt} />)
+    const pill = await screen.findByTestId('sync-pill')
+    expect(pill.getAttribute('style')).toContain('--tone-caution')
+    expect(pill.hasAttribute('data-late')).toBe(true)
   })
 
   it('keeps a fresh sync as plain text', () => {

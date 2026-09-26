@@ -45,4 +45,12 @@ describe('BodyCard', () => {
     expect(screen.queryByRole('link')).toBeNull()
     expect(screen.getByTestId('body-card').textContent).not.toMatch(/of the last/)
   })
+
+  // v4.3.4: the watch's status follows Form's delta, in the same muted line.
+  it("writes the watch's status after Form's delta", () => {
+    render(<BodyCard status={STATUS} watchStatus="productive" />)
+    const note = screen.getByTestId('watch-status')
+    expect(note.textContent).toBe(`·${t.trainingStatus.status.productive}`)
+    expect(note.parentElement!.textContent).toMatch(new RegExp(`in 7 d·${t.trainingStatus.status.productive}$`))
+  })
 })

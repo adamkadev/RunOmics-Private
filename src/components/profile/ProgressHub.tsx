@@ -10,17 +10,25 @@ import type { ProgressHubView, YearPoint } from './progressHub'
 const TITLE = 'font-display text-subhead font-semibold text-foreground'
 const MUTED = 'text-footnote text-muted-foreground'
 
+/** Inter's average advance at this size, a little over, in ems per character. */
+const EM_PER_CHAR = 0.5
+
 /**
- * A tile's footer, "203 days · 4 wk streak": each segment stays whole, so a
- * narrow tile breaks between them, never inside one (v4.3.1), at 13 px. Each
- * segment carries its " · " in front and the row is pulled left by that
- * width: the segment that starts a line has its dot clipped at the tile's
- * edge, so a wrapped line neither ends nor starts on a dot.
+ * A tile's footer, "threshold 4:23 · LTHR 185": one line (v4.3.4), each
+ * segment whole. At 13 px it wants ~158 px and a tile on a 393 pt phone
+ * gives ~143, so the line is its own container and its size is the smaller
+ * of 13 px and what its length fits in, never under the 11 px floor. The
+ * first segment's dot is pulled out and clipped, so the line starts clean.
  */
 function FooterLine({ parts, className, testId }: { parts: string[]; className?: string; testId?: string }) {
+  const chars = parts.join(' · ').length
   return (
-    <div className={cn('overflow-hidden', className)}>
-      <p className="-ml-2 flex flex-wrap text-[13px] leading-snug text-muted-foreground" data-testid={testId}>
+    <div className={cn('overflow-hidden', className)} style={{ containerType: 'inline-size' }}>
+      <p
+        className="-ml-2 flex whitespace-nowrap leading-snug text-muted-foreground"
+        style={{ fontSize: `clamp(11px, calc(100cqw / ${(chars * EM_PER_CHAR).toFixed(1)}), 13px)` }}
+        data-testid={testId}
+      >
         {parts.map((part) => (
           <span key={part} className="whitespace-nowrap">
             <span aria-hidden="true" className="inline-block w-2 text-center">·</span>
