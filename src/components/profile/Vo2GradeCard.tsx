@@ -25,7 +25,7 @@ export function gradeDelta(delta: number): string {
 export function GradeBandLabel({ band }: { band: { sex: 'male' | 'female'; bracket: string } }) {
   return (
     <span className="text-footnote text-muted-foreground" data-testid="grade-band">
-      <GlossaryTerm term="vo2Grade" quiet>{t.vo2Grade.band(band.sex, band.bracket)}</GlossaryTerm>
+      <GlossaryTerm term="vo2Grade">{t.vo2Grade.band(band.sex, band.bracket)}</GlossaryTerm>
     </span>
   )
 }

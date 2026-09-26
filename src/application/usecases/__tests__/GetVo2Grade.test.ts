@@ -47,4 +47,10 @@ describe('buildVo2Grade (v5.3)', () => {
     const view = buildVo2Grade(input({ value: 58 }))
     expect(view.status === 'graded' && [view.grade, view.next, view.etaWeeks]).toEqual(['A+', null, null])
   })
+
+  it('drops the ETA while the value is still under a month ago, even if the last weeks lean up', () => {
+    const samples = [{ date: '2026-08-20', vo2max: 55.4 }, { date: '2026-09-05', vo2max: 53.6 }, { date: '2026-09-20', vo2max: 54.6 }]
+    const view = buildVo2Grade(input({ samples, value: 55.0 }))
+    expect(view.status === 'graded' && [view.delta30, view.etaWeeks]).toEqual([-0.4, null])
+  })
 })

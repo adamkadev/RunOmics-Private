@@ -96,6 +96,7 @@ export function buildVo2Grade(input: Vo2GradeInput): Vo2GradeView {
   }
 
   const slope = trendSlope(samples, today)
+  const change30 = delta30(samples)
   const gap = up?.min != null ? Math.max(0, Math.round((up.min - value) * 10) / 10) : null
 
   return {
@@ -104,11 +105,13 @@ export function buildVo2Grade(input: Vo2GradeInput): Vo2GradeView {
     value,
     topPercent: vo2maxTopPercent(value, age, sex, norms),
     band: bandLabel(age, sex),
-    delta30: delta30(samples),
+    delta30: change30,
     ladder,
     floor: band.min,
     next: up && up.min !== null && gap !== null ? { grade: up.grade, min: up.min, gap } : null,
-    etaWeeks: up?.min != null ? etaWeeks(value, up.min, slope) : null,
+    // An ETA beside a falling 30-day change would read as a contradiction:
+    // the fit can lean up after a dip while the value is still under a month ago.
+    etaWeeks: up?.min != null && (change30 === null || change30 > 0) ? etaWeeks(value, up.min, slope) : null,
     change,
     season: seasonMonths(today).map((month) => {
       const inMonth = samples.filter((s) => s.date.startsWith(month)).at(-1)
