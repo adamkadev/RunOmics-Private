@@ -5,7 +5,7 @@ import type { TrainingStatusDayBar } from '@/application/usecases/GetTrainingSta
 import { t } from '@/i18n'
 import { BodyCard, deltaLabel, statusLegend } from '../BodyCard'
 
-const STATUS = { tsbNow: 2, tsbDelta: 10, ctl: 11, ctlDelta: 1, atl: 9, atlDelta: -9 } as unknown as TrainingStatus
+const STATUS = { tsbNow: 2, tsbDelta: 10, ctl: 11, ctlDelta: 3, ctlDeltaShown: 1, atl: 9, atlDelta: -9 } as unknown as TrainingStatus
 
 function days(pattern: string): TrainingStatusDayBar[] {
   const key = { f: 'fresh', p: 'productive', m: 'maintaining', r: 'recovery' } as const
@@ -60,7 +60,9 @@ describe('BodyCard', () => {
     expect(screen.getByText(t.dashboard.trainingLoad.form)).toBeInTheDocument()
     expect(screen.getByText(t.trainingStatus.metrics.fitness)).toBeInTheDocument()
     expect(screen.getByText(t.dashboard.trainingLoad.fatigue)).toBeInTheDocument()
-    expect(screen.getByText(t.dashboard.bodyCard.deltaIn('↑1', 14))).toBeInTheDocument()
+    // R1: one 7-day window for all three; Fitness read "in 14 d" beside the others.
+    expect(screen.getByText(t.dashboard.bodyCard.deltaIn('↑1', 7))).toBeInTheDocument()
+    expect(screen.queryByText(/in 14 d/)).toBeNull()
   })
 })
 
