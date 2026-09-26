@@ -54,9 +54,9 @@ function formatRunKm(km: number): string {
 }
 
 /**
- * Today's week (M7): tiles with no glyph, the colour and the shape carry it.
- * Today, still to run, is a solid accent outline rather than the dashed
- * planned one, so it can't be read as just another day to come.
+ * Today's week (M7, v4.3): tiles with no glyph, the colour and the shape
+ * carry it. Today, still to run, is a solid accent tile with its planned km,
+ * so it can't be read as just another day to come.
  */
 function Dots({ days }: { days: DayStateCell[] }) {
   return (
@@ -64,7 +64,14 @@ function Dots({ days }: { days: DayStateCell[] }) {
       {days.map((cell) => (
         <li key={cell.date} aria-label={cellName(cell)} className="flex flex-col items-center gap-1.25">
           {cell.isToday && cell.state !== 'done' ? (
-            <span aria-hidden="true" data-today-outline className="block size-8.5 rounded-control border-2 border-accent" />
+            // Today, still to run: a solid accent tile with its km (v4.3 A1).
+            <span
+              aria-hidden="true"
+              data-today-outline
+              className="flex size-8.5 items-center justify-center rounded-control bg-accent text-caption font-bold tabular-nums text-accent-foreground"
+            >
+              {cell.km !== null && cell.state !== 'rest' ? formatCellKm(cell.km) : ''}
+            </span>
           ) : (
             <span
               aria-hidden="true"

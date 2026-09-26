@@ -16,7 +16,7 @@ const SIZE_PX: Record<string, number> = { 'h-11': 44, 'w-11': 44, 'h-12': 48, 'w
  * side, .glass-card in globals.css).
  *
  * The row reads its mobile-first classes here, which is the case that has to
- * fit: six circles at 44px with a 6px gap need 294px. The design's 48px and
+ * fit: five circles at 44px with a 6px gap need 294px. The design's 48px and
  * 13px gap apply from `sm` up, where 353px is no longer a problem.
  */
 const NARROWEST_ROW_PX = 375 - 32 - 40 - 2
@@ -29,9 +29,10 @@ function swatchRow(): HTMLElement {
 }
 
 describe('AccentPicker swatch row', () => {
-  it('renders one swatch per curated accent, plus the custom wheel', () => {
+  // v4.3: five palettes and no custom hue, which could land on a zone colour.
+  it('renders one swatch per accent and no custom wheel', () => {
     render(<AccentPicker />)
-    expect(screen.getAllByRole('button')).toHaveLength(ACCENT_IDS.length + 1)
+    expect(screen.getAllByRole('button')).toHaveLength(ACCENT_IDS.length)
   })
 
   it('never wraps, so no swatch is orphaned onto a second row', () => {

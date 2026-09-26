@@ -103,6 +103,12 @@ export const HUE = {
   roZone1:   '#7fb2c9',
   // Z1 a step darker for light mode: 3.2:1 on white, where #7fb2c9 is 2.3.
   roZone1Light: '#5f97b0',
+  // v4.3 zone fills: never replaced by the accent.
+  zone2Dark: '#7ab8ff',
+  zone4Dark: '#ff9a57',
+  zone5Dark: '#f0524f',
+  zone4Light: '#e8590c',
+  zone5Light: '#e03131',
 
   /**
    * The ink ramp, one per theme rather than one inverted. Dark-mode greys read

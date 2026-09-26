@@ -25,10 +25,17 @@ describe('GlassTabBar', () => {
     render(<GlassTabBar />)
 
     for (const link of screen.getAllByRole('link')) {
-      const label = link.querySelector('span')!
+      const label = link.querySelector('span > span')!
       expect(label.className).toContain('text-caption')
       expect(label.className).not.toContain('text-micro')
     }
   })
-})
 
+  // v4.3: the active item sits in a soft accent pill.
+  it('puts the active tab in the soft accent pill', () => {
+    render(<GlassTabBar />)
+    const pills = screen.queryAllByTestId('tab-active-pill')
+    expect(pills.length).toBeLessThanOrEqual(1)
+    for (const pill of pills) expect(pill.getAttribute('style')).toContain('--acc-soft')
+  })
+})

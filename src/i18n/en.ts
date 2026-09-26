@@ -284,19 +284,11 @@ export const en = {
     accent: {
       title: 'Accent',
       options: {
-        nature:      { label: 'Green' },
-        teal:        { label: 'Teal' },
-        performance: { label: 'Blue' },
-        endurance:   { label: 'Violet' },
-        silver:      { label: 'Silver' },
-      },
-      custom: {
-        label: 'Custom',
-        open: 'Custom accent hue',
-        close: 'Done',
-        reserved: 'Reserved for injury and caution.',
-        hue: (degrees: number) => `Custom · ${Math.round(degrees)}°`,
-        stop: (degrees: number) => `Hue ${Math.round(degrees)} degrees`,
+        lavender: { label: 'Lavender' },
+        teal:     { label: 'Teal' },
+        lime:     { label: 'Lime' },
+        pink:     { label: 'Pink' },
+        mono:     { label: 'Mono' },
       },
     },
     auth: {
@@ -1481,7 +1473,7 @@ export const en = {
       loadDone: (load: number) => `Load ${load} pts`,
       loadDefinition: 'Training load in points, from heart rate and duration (TRIMP).',
       sessionsCount: (n: number) => `${n} session${n !== 1 ? 's' : ''}`,
-      ranOfPlan: (ran: string, plan: string) => `${ran} of ${plan} km`,
+      ranOfPlan: (ran: string, plan: string) => `${ran} / ${plan} km`,
       sessionsOfPlan: (ran: number, plan: number) => `${ran} of ${plan}`,
       planOnly: (km: string, sessions: number) => `Plan ${km} km · ${sessions} session${sessions !== 1 ? 's' : ''}`,
     },

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { CURATED_ACCENTS, HUE_STOPS, SELECTABLE_STOPS } from '@/lib/accentScale'
-import { TOKEN_BLOCKS, accentTokens, customAccentCss } from '@/lib/themeTokens'
+import { CURATED_ACCENTS } from '@/lib/accentScale'
+import { TOKEN_BLOCKS, accentTokens } from '@/lib/themeTokens'
 import { TRAINING_METRIC_COLORS, ZONE_COLOR_CLASSES } from '@/lib/colors'
 import { STATUS } from '@/lib/statusColors'
 import { milestoneDotClass } from '@/components/milestones/milestoneVisuals'
@@ -13,12 +13,12 @@ import { milestoneDotClass } from '@/components/milestones/milestoneVisuals'
  */
 const ACCENT_TOKEN_NAMES = [
   '--accent',
-  '--accent-hover',
-  '--accent-dark',
   '--accent-foreground',
-  '--accent-subtle',
   '--accent-text',
-  '--accent-on-dark',
+  '--accent-hover',
+  // v4.3: the tab bar's active pill, and the one hero card's border.
+  '--acc-soft',
+  '--acc-line',
   '--ring',
 ]
 
@@ -27,16 +27,16 @@ const SEMANTIC_PREFIXES = ['--metric-', '--zone-', '--delta-', '--destructive', 
 describe('what an accent may paint', () => {
   it('emits the accent roles and nothing else, in both modes', () => {
     for (const mode of ['light', 'dark'] as const) {
-      expect(Object.keys(accentTokens({ hue: 200 }, mode)).sort()).toEqual([...ACCENT_TOKEN_NAMES].sort())
+      for (const accent of CURATED_ACCENTS) expect(Object.keys(accentTokens(accent, mode)).sort()).toEqual([...ACCENT_TOKEN_NAMES].sort())
     }
   })
 
   it('never emits a metric, a zone, a delta or the injury red', () => {
-    for (const hue of HUE_STOPS) {
+    for (const accent of CURATED_ACCENTS) {
       for (const mode of ['light', 'dark'] as const) {
-        for (const name of Object.keys(accentTokens({ hue }, mode))) {
+        for (const name of Object.keys(accentTokens(accent, mode))) {
           for (const prefix of SEMANTIC_PREFIXES) {
-            expect(name.startsWith(prefix), `${name} at hue ${hue}`).toBe(false)
+            expect(name.startsWith(prefix), `${name} in ${accent.id}`).toBe(false)
           }
         }
       }
@@ -57,14 +57,6 @@ describe('what an accent may paint', () => {
     }
   })
 
-  it('keeps a custom hue inside the same allowlist', () => {
-    const css = customAccentCss(225)
-    expect(css).toContain('[data-accent="custom"]')
-    expect(css).toContain('.dark[data-accent="custom"]')
-    for (const prefix of SEMANTIC_PREFIXES) {
-      expect(css).not.toContain(prefix)
-    }
-  })
 })
 
 describe('markers that mean something do not move with the accent', () => {
@@ -99,18 +91,8 @@ describe('markers that mean something do not move with the accent', () => {
   })
 })
 
-describe('the generated block for every stop on the wheel', () => {
-  it('is stable across runs and platforms', () => {
-    const blocks = Object.fromEntries(
-      SELECTABLE_STOPS.map((hue) => [
-        `hue-${hue}`,
-        { light: accentTokens({ hue }, 'light'), dark: accentTokens({ hue }, 'dark') },
-      ]),
-    )
-    expect(blocks).toMatchSnapshot()
-  })
-
-  it('covers the curated accents from the same generator', () => {
+describe('the generated accent blocks', () => {
+  it('paint the five v4.3 palettes', () => {
     const curated = Object.fromEntries(
       CURATED_ACCENTS.map((accent) => [
         accent.id,
@@ -143,8 +125,9 @@ describe('neutral surfaces', () => {
   it('draws the spec surfaces, flat, in both modes', () => {
     const light = TOKEN_BLOCKS.find((b) => b.comment?.startsWith('Light tokens'))!.tokens
     const dark = TOKEN_BLOCKS.find((b) => b.comment?.startsWith('Dark tokens'))!.tokens
-    expect([dark['--background'], dark['--card'], dark['--raised'], dark['--segmented-pill']]).toEqual(['#0a0b0b', '#141716', '#1b1f1e', '#2a302e'])
-    expect([light['--background'], light['--card'], light['--segmented-track']]).toEqual(['#f4f5f4', '#ffffff', '#e9ebea'])
+    // The v4.3 table: --bg, --card, --seg, --line, --fa, --band, --amb.
+    expect([dark['--background'], dark['--card'], dark['--segmented-track'], dark['--border'], dark['--track'], dark['--band'], dark['--tone-caution']]).toEqual(['#0b0c0c', '#161818', '#1d2020', '#252828', '#262a2a', '#3a3f3f', '#f5b83d'])
+    expect([light['--background'], light['--card'], light['--segmented-track'], light['--border'], light['--track'], light['--band'], light['--tone-caution']]).toEqual(['#f3f4f4', '#ffffff', '#e6e8e8', '#e4e6e6', '#e8eaea', '#c9cdcd', '#b45309'])
     for (const tokens of [light, dark]) {
       expect(tokens['--canvas']).toBe(tokens['--background'])
       for (const value of Object.values(tokens)) expect(value).not.toMatch(/gradient\(/)

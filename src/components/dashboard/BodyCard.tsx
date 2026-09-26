@@ -2,7 +2,7 @@ import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import type { TrainingStatusDayBar } from '@/application/usecases/GetTrainingStatusDaysBar'
 import { STATUS_DELTA_DAYS } from '@/domain/training/status'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { TRAINING_METRIC_COLORS, metricDeltaColor, type MetricDeltaPolarity } from '@/lib/colors'
+import { metricDeltaColor, type MetricDeltaPolarity } from '@/lib/colors'
 import { formatDelta } from '@/lib/formatters'
 import { t } from '@/i18n'
 
@@ -20,14 +20,12 @@ export function deltaLabel(delta: number, days: number): string {
 function Metric({
   label,
   value,
-  color,
   delta,
   days,
   goodWhen,
 }: {
   label: string
   value: string
-  color: string
   delta: number
   days: number
   goodWhen: MetricDeltaPolarity
@@ -35,7 +33,7 @@ function Metric({
   return (
     <div className="flex min-w-0 flex-col gap-0.75">
       <div className="text-caption text-muted-foreground">{label}</div>
-      <div className="font-display text-title2 font-bold leading-none tabular-nums" style={{ color }}>
+      <div className="font-display text-title2 font-bold leading-none tabular-nums text-foreground">
         {value}
       </div>
       <div className="text-caption tabular-nums" style={{ color: metricDeltaColor(delta, goodWhen, TREND_THRESHOLD) }}>
@@ -64,7 +62,6 @@ export function BodyCard({ status }: { status: TrainingStatus | null }) {
         <Metric
           label={t.dashboard.trainingLoad.form}
           value={formatDelta(Math.round(status.tsbNow))}
-          color={TRAINING_METRIC_COLORS.form}
           delta={status.tsbDelta}
           days={STATUS_DELTA_DAYS.form}
           goodWhen="up"
@@ -72,7 +69,6 @@ export function BodyCard({ status }: { status: TrainingStatus | null }) {
         <Metric
           label={t.trainingStatus.metrics.fitness}
           value={String(Math.round(status.ctl))}
-          color={TRAINING_METRIC_COLORS.fitness}
           delta={status.ctlDeltaShown}
           days={STATUS_DELTA_DAYS.fitness}
           goodWhen="up"
@@ -80,7 +76,6 @@ export function BodyCard({ status }: { status: TrainingStatus | null }) {
         <Metric
           label={t.dashboard.trainingLoad.fatigue}
           value={String(Math.round(status.atl))}
-          color={TRAINING_METRIC_COLORS.fatigue}
           delta={status.atlDelta}
           days={STATUS_DELTA_DAYS.fatigue}
           goodWhen="down"

@@ -70,7 +70,7 @@ function splitEffort(effort: string | null): { band: string | null; pace: string
 // A planned session with no logged activity is a read-only statement of what
 // is prescribed, not a control - there is nowhere for a tap to go, so this is
 // a plain div: no onClick, no chevron, no hover/press state.
-function PlannedWorkoutRow({ workout, eyebrow }: { workout: PlanWorkoutView; eyebrow?: string }) {
+function PlannedWorkoutRow({ workout, eyebrow, hero = false }: { workout: PlanWorkoutView; eyebrow?: string; hero?: boolean }) {
   // The same reading as Today's hero (workoutSummary): the title, the
   // duration and distance, then each pace by name - "easy 5:30–6:24 ·
   // strides 3:35" - never one merged range (H02).
@@ -89,7 +89,9 @@ function PlannedWorkoutRow({ workout, eyebrow }: { workout: PlanWorkoutView; eye
     <GlassSurface
       variant="card"
       data-testid={`plan-workout-row-${workout.key}`}
-      className="w-full rounded-2xl p-3.5"
+      className="w-full rounded-[22px] p-3.5"
+      // Today's session is Plan's one hero surface (v4.3 A2).
+      style={hero ? { border: '1.5px solid var(--acc-line)' } : undefined}
     >
       {/* The day heads its own card, as on a run's card (M11). */}
       {eyebrow && <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-accent-text">{eyebrow}</p>}
@@ -517,7 +519,7 @@ export function WeekView({
             <p className="min-w-0 text-footnote font-semibold text-muted-foreground">
               {[phaseLabel, weekOfLabel].filter(Boolean).join(' · ') || fallbackLabel}
             </p>
-            {raceLabel && <p className="shrink-0 text-footnote font-bold" style={{ color: 'var(--tone-caution)' }}>{raceLabel}</p>}
+            {raceLabel && <p className="shrink-0 text-footnote font-bold text-muted-foreground">{raceLabel}</p>}
           </div>
         )}
         {/* The displayed week's own range, not the real `today` - the track
@@ -669,7 +671,7 @@ export function WeekView({
         ) : selectedWorkouts.length > 0 ? (
           <div className="space-y-2">
             {selectedWorkouts.map((workout, i) => (
-              <PlannedWorkoutRow key={workout.key} workout={workout} eyebrow={i === 0 ? dayEyebrow : undefined} />
+              <PlannedWorkoutRow key={workout.key} workout={workout} eyebrow={i === 0 ? dayEyebrow : undefined} hero={i === 0 && selected.date === today} />
             ))}
           </div>
         ) : (

@@ -64,7 +64,7 @@ function RepTrack({ pace, track, band, standing }: { pace: number | null; track:
         <span
           aria-hidden="true"
           data-testid="rep-band"
-          className="absolute inset-y-0 bg-foreground/[0.16]"
+          className="absolute inset-y-0 bg-[var(--band)]"
           style={{ left: `${bandStart}%`, width: `${Math.max(bandEnd - bandStart, 1)}%` }}
         />
       )}
@@ -112,13 +112,10 @@ export function IntervalSet({ set }: Props) {
           <p className="text-caption text-muted-foreground">{s.spread}</p>
         </div>
         <div className="flex flex-col gap-0.75">
-          <p
-            className={cn(
-              'font-display text-title3 font-bold leading-none tabular-nums',
-              set.hrDriftBpm === null || set.hrDriftBpm <= 0 ? 'text-foreground' : STATUS.warning.text,
-            )}
-          >
+          {/* A drift, not a verdict: neutral ink and its unit (v4.3). */}
+          <p className="font-display text-title3 font-bold leading-none tabular-nums text-foreground">
             {set.hrDriftBpm === null ? '—' : formatDelta(set.hrDriftBpm)}
+            {set.hrDriftBpm !== null && <span className="text-footnote font-normal"> {t.units.bpm}</span>}
           </p>
           <p className="text-caption text-muted-foreground">{s.hrDrift}</p>
         </div>

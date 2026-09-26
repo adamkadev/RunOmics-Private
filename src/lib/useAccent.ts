@@ -7,7 +7,7 @@ import {
   ACCENT_STORAGE_KEY,
   accentColor,
   parseAccent,
-  type AccentPreference,
+  type AccentId,
 } from '@/lib/accent'
 
 function subscribe(onChange: () => void): () => void {
@@ -35,7 +35,7 @@ function storedAccent(): string | null {
  * after; reading storage in a state initializer drew a different accent on
  * hydration than the server's HTML had.
  */
-export function useAccent(): AccentPreference {
+export function useAccent(): AccentId {
   const stored = useSyncExternalStore(subscribe, storedAccent, () => null)
   return useMemo(() => parseAccent(stored), [stored])
 }

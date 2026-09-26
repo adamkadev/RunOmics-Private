@@ -110,11 +110,8 @@ export function SegmentedTabs<T extends string | number>({
               // "Performance" touching its pill edge to edge (G21).
               fill && 'min-w-0 flex-auto px-3',
               tabClassName,
-              // Selected is a neutral pill, not an accent fill: the accent is for
-              // data and the bottom tab bar's active item.
-              props['aria-selected']
-                ? 'bg-[var(--segmented-pill)] text-foreground shadow-[var(--segmented-pill-shadow)]'
-                : 'text-muted-foreground hover:text-foreground'
+              // Selected is a solid accent fill (v4.3).
+              props['aria-selected'] ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-foreground'
             )}
           >
             <span className="truncate">{item.label}</span>

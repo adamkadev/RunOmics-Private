@@ -28,7 +28,14 @@ export function WeeklyStreakCard({ data, target, today: serverToday }: Props) {
   const targetKm = weeklyTargetKm(target)
 
   return (
-    <GlassSurface variant="card" className="px-4.5 py-3.5" data-testid="week-card">
+    // Today's one hero surface (v4.3): the card with a 1.5 px accent border,
+    // the week's progress in an accent fill.
+    <GlassSurface
+      variant="card"
+      className="px-4.5 py-3.5"
+      data-testid="week-card"
+      style={{ border: '1.5px solid var(--acc-line)' }}
+    >
       <div className="flex items-baseline justify-between gap-3">
         <p className="min-w-0 text-foreground">
           <span className="font-display text-title2 font-bold tabular-nums">{formatRanKm(target.ranKm)}</span>
@@ -43,8 +50,14 @@ export function WeeklyStreakCard({ data, target, today: serverToday }: Props) {
         </p>
       </div>
 
+      {targetKm !== null && (
+        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[var(--track)]" data-testid="week-progress">
+          <div className="h-full rounded-full bg-accent" style={{ width: `${Math.min(100, Math.round((target.ranKm / targetKm) * 100))}%` }} />
+        </div>
+      )}
+
       {/* The same state recipe as Plan's week: done, missed, still to come or
-          rest, in the session's intensity, today ringed. */}
+          rest, in the session's intensity; today a solid accent tile. */}
       <div className="mt-3">
         <DayStateStrip variant="dots" days={dayStateCells(target.days, todayIso, 'initial')} />
       </div>

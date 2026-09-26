@@ -91,7 +91,7 @@ export function ChartRangeChips({
             'hit-44 rounded-full px-2.5 py-1 text-xs font-semibold transition-all active:scale-95',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
             r === value
-              ? 'bg-[var(--segmented-pill)] text-foreground shadow-[var(--segmented-pill-shadow)]'
+              ? 'bg-accent text-accent-foreground'
               : 'text-muted-foreground hover:text-foreground',
           )}
         >

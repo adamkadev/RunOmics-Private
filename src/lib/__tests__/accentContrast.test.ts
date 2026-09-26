@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { ACCENT_IDS, ACCENT_SWATCHES, ACCENT_SWATCHES_LIGHT, type AccentId } from '@/lib/accent'
+import { ACCENT_IDS, ACCENT_SWATCHES, ACCENT_SWATCHES_LIGHT, CURATED_ACCENTS, DEFAULT_ACCENT, type AccentId } from '@/lib/accent'
 import { TOKEN_BLOCKS } from '@/lib/themeTokens'
-import { HUE, white } from '@/lib/palette'
+import { SURFACES } from '@/lib/themeTokens'
+import { white } from '@/lib/palette'
 
 function luminance(hex: string): number {
   const [r, g, b] = [1, 3, 5].map((i) => {
@@ -16,10 +17,18 @@ function contrast(fg: string, bg: string): number {
   return ((l1 ?? 0) + 0.05) / ((l2 ?? 0) + 0.05)
 }
 
-const DARK_BG = HUE.performanceBgDark
+const DARK_BG = SURFACES.dark.background
 const LIGHT_BG = white
 
 describe('accent palette contrast', () => {
+  // v4.3: the ink on a selected state passes 4.5:1 for every accent.
+  it.each(CURATED_ACCENTS.flatMap((a) => (['dark', 'light'] as const).map((mode) => ({ id: a.id, mode, ...a[mode] }))))(
+    '$mode $id: on-accent ink on the accent is >= 4.5:1',
+    ({ acc, onAcc }) => {
+      expect(contrast(onAcc, acc)).toBeGreaterThanOrEqual(4.5)
+    },
+  )
+
   it.each(ACCENT_IDS)('dark-mode accent "%s" has >= 3:1 contrast on the dark background', (id) => {
     expect(contrast(ACCENT_SWATCHES[id], DARK_BG)).toBeGreaterThanOrEqual(3)
   })
@@ -89,7 +98,7 @@ describe('accent never collides with the danger signal', () => {
   const cases = accentCases()
 
   it('covers every shipped accent in both modes', () => {
-    expect(cases).toHaveLength(ACCENT_IDS.filter((id: AccentId) => id !== 'nature').length * 2)
+    expect(cases).toHaveLength(ACCENT_IDS.filter((id: AccentId) => id !== DEFAULT_ACCENT).length * 2)
   })
 
   it.each(cases)('$mode accent "$id" is distinguishable from --destructive', ({ selector, base }) => {

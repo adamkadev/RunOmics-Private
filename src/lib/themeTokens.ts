@@ -1,13 +1,5 @@
-import { HUE, ink, paper, white, withAlpha } from './palette'
-import {
-  AURORA_2_HUE_OFFSET,
-  CURATED_ACCENTS,
-  CUSTOM_ACCENT_ID,
-  curatedAccent,
-  darkRoleHex,
-  lightRoleHex,
-  type CuratedAccent,
-} from './accentScale'
+import { HUE, ink, paper } from './palette'
+import { CURATED_ACCENTS, curatedAccent, type CuratedAccent } from './accentScale'
 
 /**
  * The opaque status bar's colour in an installed iPhone app, one per mode.
@@ -15,7 +7,7 @@ import {
  * dark at launch, so it can't follow the accent: it is a neutral close to
  * every accent's background, and the page top fades from it (--status-bar).
  */
-export const STATUS_BAR_COLOR = { light: '#f4f5f4', dark: '#0a0b0b' } as const
+export const STATUS_BAR_COLOR = { light: '#f3f4f4', dark: '#0b0c0c' } as const
 
 export type TokenBlock = {
   selector: string
@@ -32,35 +24,33 @@ const c = HUE
  */
 export const SURFACES = {
   light: {
-    background: '#f4f5f4',
+    background: '#f3f4f4',
     card: '#ffffff',
     raised: '#ffffff',
-    border: 'rgba(0, 0, 0, 0.06)',
-    divider: 'rgba(0, 0, 0, 0.08)',
-    text: '#111413',
-    text2: '#5e6663',
-    text3: '#8a918e',
+    line: '#e4e6e6',
+    text: '#111313',
+    text2: '#6b7070',
+    text3: '#8a8f8f',
     tabBar: '#ffffff',
-    hairline: 'rgba(0, 0, 0, 0.08)',
-    segTrack: '#e9ebea',
-    segPill: '#ffffff',
-    heatEmpty: '#e9ebea',
+    seg: '#e6e8e8',
+    faint: '#e8eaea',
+    band: '#c9cdcd',
+    amber: '#b45309',
     shadowRaised: '0 1px 3px rgba(0, 0, 0, 0.06)',
   },
   dark: {
-    background: '#0a0b0b',
-    card: '#141716',
-    raised: '#1b1f1e',
-    border: 'rgba(255, 255, 255, 0.06)',
-    divider: 'rgba(255, 255, 255, 0.08)',
-    text: '#f2f4f3',
-    text2: '#9ba3a0',
-    text3: '#6b7370',
-    tabBar: '#0a0b0b',
-    hairline: 'rgba(255, 255, 255, 0.08)',
-    segTrack: '#1b1f1e',
-    segPill: '#2a302e',
-    heatEmpty: '#1b1f1e',
+    background: '#0b0c0c',
+    card: '#161818',
+    raised: '#1d2020',
+    line: '#252828',
+    text: '#f2f3f3',
+    text2: '#9a9f9f',
+    text3: '#6e7373',
+    tabBar: '#0b0c0c',
+    seg: '#1d2020',
+    faint: '#262a2a',
+    band: '#3a3f3f',
+    amber: '#f5b83d',
     shadowRaised: 'none',
   },
 } as const
@@ -74,9 +64,10 @@ function surfaceTokens(mode: 'light' | 'dark'): Record<string, string> {
     '--card': n.card,
     '--raised': n.raised,
     '--popover': n.raised,
-    '--muted': n.segTrack,
-    '--border': n.border,
-    '--divider': n.divider,
+    '--muted': n.seg,
+    // One line colour for borders, dividers and chart grids (v4.3 --line).
+    '--border': n.line,
+    '--divider': n.line,
     '--foreground': n.text,
     '--muted-foreground': n.text2,
     '--subtle': n.text3,
@@ -84,14 +75,19 @@ function surfaceTokens(mode: 'light' | 'dark'): Record<string, string> {
     '--ro-text': n.text,
     '--ro-text-2': n.text2,
     '--ro-text-3': n.text3,
-    '--track': n.segTrack,
-    '--thumb-bg': n.segTrack,
-    '--heat-empty': n.heatEmpty,
+    // Empty tracks, rest days and empty heatmap cells (--fa).
+    '--track': n.faint,
+    '--heat-empty': n.faint,
+    // The interval band and recovery reps.
+    '--band': n.band,
+    '--thumb-bg': n.seg,
     '--tab-bar-bg': n.tabBar,
-    '--tab-bar-hairline': n.hairline,
-    '--segmented-track': n.segTrack,
-    '--segmented-pill': n.segPill,
+    '--tab-bar-hairline': n.line,
+    '--segmented-track': n.seg,
+    '--segmented-pill': n.raised,
     '--segmented-pill-shadow': mode === 'light' ? '0 1px 3px rgba(0, 0, 0, 0.1)' : 'none',
+    // Caution and race only (--amb).
+    '--tone-caution': n.amber,
     '--shadow-card': 'none',
     '--shadow-raised': n.shadowRaised,
     '--shadow-hero': 'none',
@@ -99,7 +95,7 @@ function surfaceTokens(mode: 'light' | 'dark'): Record<string, string> {
     '--hero-glow': 'transparent',
     '--glass-sat': '1',
     '--glass-bg': n.card,
-    '--glass-border': n.border,
+    '--glass-border': n.line,
     '--glass-highlight': 'transparent',
     '--glass-shadow-float': 'none',
     '--glass-shadow-nav': 'none',
@@ -111,72 +107,31 @@ function surfaceTokens(mode: 'light' | 'dark'): Record<string, string> {
 }
 
 /**
- * One accent block, from one hue. Every colour below is oklch(L C hue) with L
- * and C read off ACCENT_ROLES, so the block's shape, variable names and
- * relationships are what they always were - only the source of the hue moved.
- * Curated accents run this at build time (`npm run tokens`); a custom accent
- * runs it in the browser and injects the result (see customAccentCss).
+ * One accent block (v4.3): the palette's accent and its ink, and the two
+ * derived tints - `--acc-soft` for the tab bar's active pill only, and
+ * `--acc-line` for the one hero card per screen. Accent text uses
+ * `--accent-text`, the accent itself, and only at 14 px bold and up.
  */
-export function accentTokens(
-  { hue, chromaScale }: { hue: number; chromaScale?: number },
-  mode: 'light' | 'dark',
-): Record<string, string> {
-  const l = (role: Parameters<typeof lightRoleHex>[0]) =>
-    lightRoleHex(role, role === 'aurora2' ? hue + AURORA_2_HUE_OFFSET : hue, chromaScale)
-  const d = (role: Parameters<typeof darkRoleHex>[0]) =>
-    darkRoleHex(role, role === 'aurora2' ? hue + AURORA_2_HUE_OFFSET : hue, chromaScale)
-
-  if (mode === 'light') {
-    return {
-      '--accent': l('accent'),
-      '--accent-hover': l('accentHover'),
-      '--accent-dark': l('accentDark'),
-      '--accent-foreground': white,
-      '--accent-subtle': l('accentSubtle'),
-      '--accent-text': l('accentText'),
-      '--accent-on-dark': d('accentText'),
-      '--ring': withAlpha(l('accent'), 0.35),
-    }
-  }
-
+export function accentTokens(accent: Pick<CuratedAccent, 'dark' | 'light'>, mode: 'light' | 'dark'): Record<string, string> {
+  const { acc, onAcc } = accent[mode]
   return {
-    '--accent': d('accent'),
-    '--accent-hover': d('accentHover'),
-    '--accent-dark': l('accent'),
-    '--accent-foreground': d('accentInk'),
-    '--accent-subtle': withAlpha(d('accent'), 0.1),
-    '--accent-text': d('accentText'),
-    '--accent-on-dark': d('accentText'),
-    '--ring': withAlpha(d('accent'), 0.7),
+    '--accent': acc,
+    '--accent-foreground': onAcc,
+    '--accent-text': acc,
+    '--accent-hover': `color-mix(in oklab, ${acc} 88%, ${mode === 'dark' ? 'white' : 'black'})`,
+    '--acc-soft': `color-mix(in oklab, ${acc} 20%, transparent)`,
+    '--acc-line': `color-mix(in oklab, ${acc} 55%, transparent)`,
+    '--ring': `color-mix(in oklab, ${acc} ${mode === 'dark' ? 70 : 35}%, transparent)`,
   }
 }
 
-const NATURE = curatedAccent('nature')
+const DEFAULT = curatedAccent('lavender')
 
 function accentBlocks(accent: CuratedAccent): TokenBlock[] {
   return [
     { selector: `[data-accent="${accent.id}"]`, tokens: accentTokens(accent, 'light') },
     { selector: `.dark[data-accent="${accent.id}"]`, tokens: accentTokens(accent, 'dark') },
   ]
-}
-
-/**
- * The same two blocks as CSS text, for a hue that only exists at runtime. The
- * browser gets a stylesheet, not inline styles, so `.dark` still decides which
- * half applies and nothing has to be re-applied on a theme flip.
- */
-export function customAccentCss(hue: number): string {
-  const accent = { hue }
-  const rule = (selector: string, tokens: Record<string, string>) => {
-    const body = Object.entries(tokens)
-      .map(([name, value]) => `${name}:${value}`)
-      .join(';')
-    return `${selector}{${body}}`
-  }
-  return [
-    rule(`[data-accent="${CUSTOM_ACCENT_ID}"]`, accentTokens(accent, 'light')),
-    rule(`.dark[data-accent="${CUSTOM_ACCENT_ID}"]`, accentTokens(accent, 'dark')),
-  ].join('')
 }
 
 export const TOKEN_BLOCKS: TokenBlock[] = [
@@ -223,7 +178,7 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
   },
   {
     selector: ':root',
-    comment: 'Light tokens - Nature (emerald, default)',
+    comment: 'Light tokens - Lavender (default)',
     tokens: {
       '--status-bar': STATUS_BAR_COLOR.light,
 
@@ -236,7 +191,6 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--destructive': c.semRedLight,
       // The readiness tone on the Today hero's eyebrow and rule, text grade.
       '--tone-go': c.semGreenLight,
-      '--tone-caution': c.amber700,
       '--tone-hold': c.semOrangeLight,
       // Garmin's "peaking" status (the app's \`fresh\`), text grade per theme.
       '--status-peaking': c.violet600,
@@ -251,8 +205,8 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--zone-1': c.roZone1Light,
       '--zone-2': c.blue500,
       '--zone-3': c.roEmeraldDeep,
-      '--zone-4': c.orange600,
-      '--zone-5': c.red500,
+      '--zone-4': c.zone4Light,
+      '--zone-5': c.zone5Light,
       '--chart-cadence': c.sky600,
       '--chart-easy': c.roEmeraldDeep,
       '--chart-hard': c.orange600,
@@ -265,17 +219,15 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--ro-blur': '18px',
 
 
-      // Nature is the accent the base block carries, so it takes its accent
-      // roles from the same generator as every other accent rather than from a
-      // second, hand-tuned set - a swatch has to paint the theme it selects.
-      ...accentTokens(NATURE, 'light'),
+      // Lavender is the default accent, so the base block carries it.
+      ...accentTokens(DEFAULT, 'light'),
 
       ...surfaceTokens('light'),
     },
   },
   {
     selector: '.dark',
-    comment: 'Dark tokens - Nature (emerald, default)',
+    comment: 'Dark tokens - Lavender (default)',
     tokens: {
       '--status-bar': STATUS_BAR_COLOR.dark,
 
@@ -286,7 +238,6 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--metric-fatigue': c.roOrangeHi,
       '--destructive': c.red400,
       '--tone-go': c.emerald400,
-      '--tone-caution': c.roAmber,
       '--tone-hold': c.roOrangeHi,
       // Garmin's "peaking" status (the app's \`fresh\`), text grade per theme.
       '--status-peaking': c.violet400,
@@ -297,10 +248,10 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--form-band-very-fresh': 'var(--tone-caution)',
 
       '--zone-1': c.roZone1,
-      '--zone-2': c.roBlueHi,
+      '--zone-2': c.zone2Dark,
       '--zone-3': c.roEmeraldHi,
-      '--zone-4': c.roOrangeHi,
-      '--zone-5': c.roRed,
+      '--zone-4': c.zone4Dark,
+      '--zone-5': c.zone5Dark,
       '--chart-cadence': c.sky500,
       '--chart-easy': c.emerald400,
       '--chart-hard': c.orange400,
@@ -309,10 +260,10 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
 
 
 
-      ...accentTokens(NATURE, 'dark'),
+      ...accentTokens(DEFAULT, 'dark'),
 
       ...surfaceTokens('dark'),
     },
   },
-  ...CURATED_ACCENTS.filter((accent) => accent.id !== NATURE.id).flatMap(accentBlocks),
+  ...CURATED_ACCENTS.filter((accent) => accent.id !== DEFAULT.id).flatMap(accentBlocks),
 ]

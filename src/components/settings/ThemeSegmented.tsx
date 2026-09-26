@@ -31,7 +31,7 @@ export function ThemeSegmented() {
             aria-pressed={current === value}
             className={cn(
               'min-h-[44px] rounded-full px-3.5 text-xs font-semibold transition-colors',
-              current === value ? 'bg-[var(--segmented-pill)] text-foreground shadow-[var(--segmented-pill-shadow)]' : 'text-muted-foreground'
+              current === value ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'
             )}
           >
             {label()}
