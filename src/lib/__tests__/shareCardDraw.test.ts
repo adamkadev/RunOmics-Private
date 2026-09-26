@@ -69,7 +69,7 @@ describe('drawShareCard', () => {
     }
   })
 
-  it('keeps the accent to the eyebrow dot and the start marker, off every unit and label', () => {
+  it('keeps the accent to the eyebrow dot and the finish marker, off every unit and label', () => {
     const acc = curatedAccent('lavender').dark.acc
     const ops = draw({ design: 'route' })
     expect(ops.filter((o) => o.op === 'fillText' && o.fill === acc)).toEqual([])
@@ -77,10 +77,12 @@ describe('drawShareCard', () => {
     expect(accentFills).toHaveLength(2)
   })
 
-  it('finishes the route in the fast colour, apart from the line and the start', () => {
+  it('starts white with a dark outline and finishes in the accent, as on the Activity map (v4.10)', () => {
     const ops = draw({ design: 'route' })
     const markers = ops.filter((o) => o.op === 'fill' && o.ty === HEADER_H)
-    expect(markers.map((m) => m.fill)).toEqual([curatedAccent('lavender').dark.acc, PACE_ROUTE_COLORS.fast])
+    const palette = sharePalette('lavender', 'dark')
+    expect(markers.map((m) => m.fill)).toEqual([palette.ring, curatedAccent('lavender').dark.acc])
+    expect(markers.map((m) => m.fill)).not.toContain(PACE_ROUTE_COLORS.fast)
     const lines = ops.filter((o) => o.op === 'stroke' && o.ty === HEADER_H).map((o) => o.stroke)
     expect(new Set(lines.slice(1, -2)).size).toBeGreaterThan(1)
   })

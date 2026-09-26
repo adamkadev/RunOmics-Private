@@ -33,7 +33,8 @@ vi.mock('@/lib/maplibre', () => {
   }
   return {
     loadMapLibre: async () => ({ Map: FakeMap, LngLatBounds: FakeBounds, AttributionControl: class {}, Marker: class {} }),
-    showPlaceLabelsOnly: () => {},
+    styleRunMapLabels: () => {},
+    firstSymbolLayerId: () => undefined,
   }
 })
 

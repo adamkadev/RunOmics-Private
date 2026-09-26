@@ -30,12 +30,15 @@ export interface SharePalette {
   mu: string
   /** --track: the zone bars' track and the empty photo frame. */
   fa: string
-  /** --accent: the eyebrow's dot and the start marker, nothing else. */
+  /** --accent: the eyebrow's dot and the finish marker, nothing else. */
   acc: string
   zones: readonly string[]
   /** ActivityMap's route casing and marker ring. */
   casing: string
+  /** White: the start's fill and the finish's ring. */
   ring: string
+  /** The start's dark outline. */
+  startRing: string
 }
 
 export function sharePalette(accent: AccentId, mode: ThemeMode): SharePalette {
@@ -50,5 +53,6 @@ export function sharePalette(accent: AccentId, mode: ThemeMode): SharePalette {
     zones: ZONE_HEX[mode],
     casing: mode === 'dark' ? MAP_COLORS.routeCasingDark : MAP_COLORS.routeCasingLight,
     ring: MAP_COLORS.markerRingLight,
+    startRing: SURFACES.dark.background,
   }
 }

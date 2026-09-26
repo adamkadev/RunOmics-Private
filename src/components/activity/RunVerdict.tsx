@@ -13,11 +13,12 @@ interface Props {
 }
 
 /**
- * The verdict as its headline only, then effort and the note in the same
- * card (H10, M9). The paragraph and the "Coach insight" label are gone;
- * the headline is the verdict. It reads in text ink whatever its tone
- * (v4.3.1): the words carry the verdict, and the accent is for states such
- * as the aerobic effect's "Improving" below.
+ * The verdict: the headline, then the coach's sentence in muted ink (v4.8
+ * 2e, reversing H10's headline-only card), then effort, conditions, shoe
+ * and the note in the same card. The body is at most 150 characters, so it
+ * shows in full, with no clamp and no "Coach insight" label. Without an AI
+ * verdict the card falls back to a headline and invents no body. The
+ * headline reads in text ink whatever its tone (v4.3.1).
  */
 export function RunVerdict({ activity, aiVerdict, children }: Props) {
   const v = t.activity.verdict
@@ -27,6 +28,11 @@ export function RunVerdict({ activity, aiVerdict, children }: Props) {
   return (
     <GlassSurface variant="card" className="overflow-hidden rounded-card-sm px-4" data-testid="run-verdict">
       <p className="pt-3.5 font-display text-title3 font-bold leading-tight text-foreground">{headline}</p>
+      {aiVerdict?.body && (
+        <p className="mt-1.5 text-subhead leading-snug text-muted-foreground text-pretty" data-testid="run-verdict-body">
+          {aiVerdict.body}
+        </p>
+      )}
       {children && <div className="mt-3 border-t border-border">{children}</div>}
     </GlassSurface>
   )

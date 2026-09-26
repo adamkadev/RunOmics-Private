@@ -9,7 +9,17 @@ import { maptilerStyleUrl } from '@/lib/maptiler'
 import { MAP_COLORS, PACE_ROUTE_COLORS, PACE_ROUTE_STOPS } from '@/lib/colors'
 import { paceAtFraction } from '@/lib/paceRoute'
 import { t } from '@/i18n'
-import { loadMapLibre, showPlaceLabelsOnly } from '@/lib/maplibre'
+import { loadMapLibre, styleRunMapLabels } from '@/lib/maplibre'
+import { SURFACES } from '@/lib/themeTokens'
+import {
+  ROUTE_FIT_PADDING,
+  ROUTE_SOURCE,
+  addEdgeFence,
+  addRouteLayers,
+  addRunMarkers,
+  markerImage,
+  setRunFinish,
+} from '@/lib/runMapLayers'
 
 interface Props {
   route: [number, number][]
@@ -29,13 +39,6 @@ function buildSegmentFeatures(route: [number, number][], paceSamples: number[] |
     }
   })
 }
-
-/**
- * The route's room inside the map. Nothing sits on the map but the expand
- * button and the attribution ⓘ in its corners (v4.8 2h), so the padding is
- * even.
- */
-export const ROUTE_EDGE_PADDING = 24
 
 function mkMarker(bg: string, border = 'white', size = 13) {
   const el = document.createElement('div')
@@ -86,7 +89,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, classNa
     // pinch-zoom in fullscreen used to stay on the small map, with the route
     // cut off at the card's edges.
     if (!isFullscreen && boundsRef.current) {
-      map.fitBounds(boundsRef.current, { padding: ROUTE_EDGE_PADDING, maxZoom: 15, animate: false })
+      map.fitBounds(boundsRef.current, { padding: ROUTE_FIT_PADDING, maxZoom: 15, animate: false })
     }
   }, [isFullscreen])
 
@@ -110,8 +113,9 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, classNa
       const token = process.env.NEXT_PUBLIC_MAPTILER_TOKEN
       if (!token) { console.warn('NEXT_PUBLIC_MAPTILER_TOKEN not set'); return }
 
-      const start = route[0]
-      if (!start) return
+      const first = route[0]
+      if (!first) return
+      const start: [number, number] = first
       const [startLng, startLat] = start
 
       if (animFrameRef.current) { cancelAnimationFrame(animFrameRef.current); animFrameRef.current = null }
@@ -131,7 +135,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, classNa
         container: mapEl,
         style: styleUrl,
         bounds,
-        fitBoundsOptions: { padding: ROUTE_EDGE_PADDING, maxZoom: 15 },
+        fitBoundsOptions: { padding: ROUTE_FIT_PADDING, maxZoom: 15 },
         attributionControl: false,
       })
       map.addControl(new mgl.AttributionControl({ compact: true }), 'bottom-right')
@@ -151,30 +155,20 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, classNa
       map.on('load', () => {
         if (cancelled) return
 
-        showPlaceLabelsOnly(map)
-
-        map.addSource('route', {
-          type: 'geojson',
-          data: { type: 'FeatureCollection', features: [] },
+        // Route and markers win; place names only fill the room left (v4.10).
+        const mode = isDark ? 'dark' : 'light'
+        styleRunMapLabels(map, { halo: SURFACES[mode].card, town: SURFACES[mode].text2, neighbourhood: SURFACES[mode].text3 })
+        addRouteLayers(map, {
+          casing: isDark ? MAP_COLORS.routeCasingDark : MAP_COLORS.routeCasingLight,
+          lineColor,
         })
-
-        map.addLayer({
-          id: 'route-bg',
-          type: 'line',
-          source: 'route',
-          layout: { 'line-join': 'round', 'line-cap': 'round' },
-          paint: { 'line-color': isDark ? MAP_COLORS.routeCasingDark : MAP_COLORS.routeCasingLight, 'line-width': 7, 'line-opacity': 0.85 },
-        })
-
-        map.addLayer({
-          id: 'route-line',
-          type: 'line',
-          source: 'route',
-          layout: { 'line-join': 'round', 'line-cap': 'round' },
-          paint: { 'line-color': lineColor, 'line-width': 4 },
-        })
-
-        new mgl.Marker({ element: mkMarker('var(--accent)') }).setLngLat(start).addTo(map)
+        // Start white with a dark outline, finish in the accent: no red.
+        const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || PACE_ROUTE_COLORS.easy
+        const startImage = markerImage(MAP_COLORS.markerRingLight, SURFACES.dark.background)
+        const finishImage = markerImage(accent, MAP_COLORS.markerRingLight)
+        if (startImage && finishImage) addRunMarkers(map, start, { start: startImage, finish: finishImage })
+        const removeFence = addEdgeFence(map)
+        map.once('remove', removeFence)
 
         const total = segments.length
         const duration = 1800
@@ -186,7 +180,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, classNa
           const eased = 1 - Math.pow(1 - progress, 3)
           const count = Math.floor(eased * total)
 
-          ;(map.getSource('route') as any)?.setData({ type: 'FeatureCollection', features: segments.slice(0, count) })
+          ;(map.getSource(ROUTE_SOURCE) as any)?.setData({ type: 'FeatureCollection', features: segments.slice(0, count) })
 
           if (progress < 1) {
             animFrameRef.current = requestAnimationFrame(animate)
@@ -194,7 +188,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, classNa
             animFrameRef.current = null
             const last = route[route.length - 1]
             if (last && (Math.abs(last[0] - startLng) > 0.0005 || Math.abs(last[1] - startLat) > 0.0005)) {
-              new mgl.Marker({ element: mkMarker(PACE_ROUTE_COLORS.fast) }).setLngLat(last).addTo(map)
+              setRunFinish(map, start, last)
             }
           }
         }
@@ -210,7 +204,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, classNa
     const observer = new MutationObserver(() => {
       if (!cancelled) initMap(document.documentElement.classList.contains('dark'))
     })
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-accent'] })
 
     return () => {
       cancelled = true
