@@ -79,6 +79,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             background: 'var(--status-bar)',
           }}
         />
+        {/* A solid bar at the page top, behind the page: iOS 26 draws its own
+            progressive blur over the top of a standalone web app unless a
+            fixed, opaque element touches the top edge, which it then treats
+            as the bar. <main> paints above it (it comes later and is
+            positioned), so it only ever shows as the flat page colour. */}
+        <div
+          aria-hidden
+          data-testid="top-edge-bar"
+          className="pointer-events-none fixed inset-x-0 top-0 h-12 lg:hidden"
+          style={{ background: 'var(--background)' }}
+        />
         <Sidebar />
         {/* Positioned, with no z-index: not a stacking context, which would
             trap the maps' fullscreen overlays (z-50) under the top scrim. */}
