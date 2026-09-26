@@ -231,6 +231,7 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--form-band-fresh': 'var(--delta-good)',
       '--form-band-very-fresh': 'var(--tone-caution)',
       '--track': withAlpha(c.roInk, 0.07),
+      '--thumb-bg': withAlpha(c.roInk, 0.06),
 
       '--zone-1': c.roZone1,
       '--zone-2': c.blue500,
@@ -292,6 +293,7 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--form-band-fresh': 'var(--delta-good)',
       '--form-band-very-fresh': 'var(--tone-caution)',
       '--track': paper(0.08),
+      '--thumb-bg': 'rgba(0, 0, 0, 0.32)',
 
       '--zone-1': c.roZone1,
       '--zone-2': c.roBlueHi,
