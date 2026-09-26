@@ -8,6 +8,9 @@ import type { Page } from '@playwright/test'
 test.use({ viewport: { width: 393, height: 852 } })
 
 async function textUnderTheBar(page: Page): Promise<string[]> {
+  // A phone's safe area (v4.8): the status strip is exactly that tall, and
+  // the compact bar starts under it. A desktop browser has none.
+  await page.evaluate(() => document.documentElement.style.setProperty('--safe-top', '59px'))
   // After the page transition, as the layering spec does: scrolled while the
   // page still animated in, the midpoint was taken from a shorter page and
   // the text sampled while it was still moving.
@@ -33,8 +36,8 @@ async function textUnderTheBar(page: Page): Promise<string[]> {
   return page.evaluate(() => {
     const bar = document.querySelector<HTMLElement>('[data-testid="compact-title-bar"]')
     const shown = bar !== null && getComputedStyle(bar).display !== 'none'
-    const scrim = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--top-scrim')) || 4
-    const band = shown ? bar!.getBoundingClientRect().bottom : scrim
+    const strip = document.querySelector<HTMLElement>('[data-testid="status-strip"]')!
+    const band = shown ? bar!.getBoundingClientRect().bottom : strip.getBoundingClientRect().bottom
     const main = document.querySelector('main')!
     const leaks: string[] = []
     // The bars take no taps (pointer-events: none), which would let

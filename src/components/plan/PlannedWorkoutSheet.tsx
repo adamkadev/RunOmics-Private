@@ -40,7 +40,7 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center sm:p-4"
+      className="fixed inset-x-0 bottom-0 top-[var(--safe-top)] z-50 flex items-end sm:items-center sm:justify-center sm:p-4"
       style={{ touchAction: 'none' }}
       role="dialog"
       aria-modal="true"

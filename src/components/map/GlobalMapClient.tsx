@@ -219,7 +219,7 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
   }, [clusters]);
 
   return (
-    <div className={isFullscreen ? "fixed inset-0 z-50 flex flex-col bg-background" : "flex h-full w-full flex-col"}>
+    <div className={isFullscreen ? "fixed inset-x-0 bottom-0 top-[var(--safe-top)] z-50 flex flex-col bg-background" : "flex h-full w-full flex-col"}>
     <div className="relative min-h-0 flex-1">
       <div ref={containerRef} role="img" aria-label={t.pages.map.title} className="h-full w-full" />
 
@@ -233,7 +233,8 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
         style={{
           background: "var(--raised)",
           borderBottom: "1px solid var(--divider)",
-          paddingTop: isFullscreen ? "max(env(safe-area-inset-top), 12px)" : "12px",
+          // Fullscreen starts under the status strip (v4.8): no safe-area offset.
+          paddingTop: "12px",
         }}
       >
         {/* The rail scrolls instead of wrapping or overlapping - three chips

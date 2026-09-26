@@ -56,7 +56,8 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
 
   const container = document.createElement('div')
   Object.assign(container.style, {
-    position: 'fixed', left: '-10000px', top: '0',
+    // Off screen on both axes: nothing fixed sits at the top edge (v4.8).
+    position: 'fixed', left: '-10000px', top: '-10000px',
     width: `${width}px`, height: `${height}px`, pointerEvents: 'none',
   })
   document.body.appendChild(container)

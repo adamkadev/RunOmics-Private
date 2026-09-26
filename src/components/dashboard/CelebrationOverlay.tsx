@@ -61,7 +61,7 @@ export function CelebrationOverlay({ record, aiTake }: { record: RecordEntry | n
   const s = t.dashboard.celebration
 
   return createPortal(
-    <div className="fixed inset-0 z-[60] flex items-center justify-center" role="dialog" aria-modal="true">
+    <div className="fixed inset-x-0 bottom-0 top-[var(--safe-top)] z-[60] flex items-center justify-center" role="dialog" aria-modal="true">
       <div
         ref={trapRef}
         className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden bg-background px-6 text-center text-foreground"
