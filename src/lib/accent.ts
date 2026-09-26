@@ -8,7 +8,7 @@ export const ACCENT_STORAGE_KEY = 'runomics-accent'
 export const ACCENT_CHANGE_EVENT = 'runomics:accent-change'
 
 /** Nothing stored: the base `:root` block already paints this one, so no attribute is needed. */
-export const DEFAULT_ACCENT: AccentId = 'lavender'
+export const DEFAULT_ACCENT: AccentId = 'teal'
 
 export function isAccentId(value: string | null): value is AccentId {
   return value !== null && (ACCENT_IDS as readonly string[]).includes(value)

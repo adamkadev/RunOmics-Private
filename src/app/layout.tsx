@@ -12,6 +12,7 @@ import { t } from '@/i18n'
 import {
   ACCENT_IDS,
   ACCENT_STORAGE_KEY,
+  DEFAULT_ACCENT,
   LEGACY_ACCENTS,
 } from '@/lib/accent'
 import { appleStartupImages } from '@/lib/splashScreens'
@@ -96,7 +97,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             var a=localStorage.getItem('${ACCENT_STORAGE_KEY}');
             var legacy=${JSON.stringify(LEGACY_ACCENTS)};
             if(a&&legacy[a])a=legacy[a];
-            if(${JSON.stringify(ACCENT_IDS)}.indexOf(a)>0){
+            if(a!=='${DEFAULT_ACCENT}'&&${JSON.stringify(ACCENT_IDS)}.indexOf(a)>=0){
               document.documentElement.setAttribute('data-accent',a);
             }
           }catch(e){}`}

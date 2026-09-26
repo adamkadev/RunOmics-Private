@@ -271,9 +271,9 @@ export const fr = {
     accent: {
       title: 'Accent',
       options: {
-        lavender: { label: 'Lavande' },
-        indigo:   { label: 'Indigo' },
         teal:     { label: 'Sarcelle' },
+        indigo:   { label: 'Indigo' },
+        lavender: { label: 'Lavande' },
         pink:     { label: 'Rose' },
         mono:     { label: 'Mono' },
       },

@@ -135,7 +135,7 @@ export function accentTokens(accent: Pick<CuratedAccent, 'dark' | 'light'>, mode
   }
 }
 
-const DEFAULT = curatedAccent('lavender')
+const DEFAULT = curatedAccent('teal')
 
 function accentBlocks(accent: CuratedAccent): TokenBlock[] {
   return [
@@ -188,7 +188,7 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
   },
   {
     selector: ':root',
-    comment: 'Light tokens - Lavender (default)',
+    comment: 'Light tokens - Teal (default)',
     tokens: {
       '--status-bar': STATUS_BAR_COLOR.light,
 
@@ -241,7 +241,7 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--ro-blur': '18px',
 
 
-      // Lavender is the default accent, so the base block carries it.
+      // Teal is the default accent, so the base block carries it.
       ...accentTokens(DEFAULT, 'light'),
 
       ...surfaceTokens('light'),
@@ -249,7 +249,7 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
   },
   {
     selector: '.dark',
-    comment: 'Dark tokens - Lavender (default)',
+    comment: 'Dark tokens - Teal (default)',
     tokens: {
       '--status-bar': STATUS_BAR_COLOR.dark,
 

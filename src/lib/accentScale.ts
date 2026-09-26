@@ -6,7 +6,7 @@
  * no sky, cyan or royal blue either, beside Z2 and the cadence line. The set
  * stays curated: a free colour could clash with a zone or fail contrast.
  */
-export type AccentId = 'lavender' | 'indigo' | 'teal' | 'pink' | 'mono'
+export type AccentId = 'teal' | 'indigo' | 'lavender' | 'pink' | 'mono'
 
 export interface AccentPair {
   /** The accent itself: fills, outlines, accent text at 14 px bold and up. */
@@ -22,11 +22,12 @@ export interface CuratedAccent {
 }
 
 export const CURATED_ACCENTS: readonly CuratedAccent[] = [
-  { id: 'lavender', dark: { acc: '#b48cf0', onAcc: '#1a0f2e' }, light: { acc: '#7c3aed', onAcc: '#ffffff' } },
-  // Between Z2's sky blue and lavender (v4.3.2), so it never reads as a zone.
-  { id: 'indigo', dark: { acc: '#8c9bff', onAcc: '#0e1238' }, light: { acc: '#4338ca', onAcc: '#ffffff' } },
+  // Teal is the default and comes first (v4.9.1); lavender takes its place third.
   // Light teal a step darker than the spec's #0f8a6e (4.3:1): white on it is 4.65:1.
   { id: 'teal', dark: { acc: '#2fd1a6', onAcc: '#03201a' }, light: { acc: '#0e8468', onAcc: '#ffffff' } },
+  // Between Z2's sky blue and lavender (v4.3.2), so it never reads as a zone.
+  { id: 'indigo', dark: { acc: '#8c9bff', onAcc: '#0e1238' }, light: { acc: '#4338ca', onAcc: '#ffffff' } },
+  { id: 'lavender', dark: { acc: '#b48cf0', onAcc: '#1a0f2e' }, light: { acc: '#7c3aed', onAcc: '#ffffff' } },
   { id: 'pink', dark: { acc: '#ff7ac0', onAcc: '#2e0a1d' }, light: { acc: '#c2257a', onAcc: '#ffffff' } },
   { id: 'mono', dark: { acc: '#f2f3f3', onAcc: '#0b0c0c' }, light: { acc: '#141616', onAcc: '#ffffff' } },
 ]
@@ -44,8 +45,8 @@ export const LEGACY_ACCENTS: Readonly<Record<string, AccentId>> = {
   performance: 'lavender',
   endurance: 'lavender',
   silver: 'mono',
-  // Lime left the set in v4.3.2.
-  lime: 'lavender',
+  // Lime left the set in v4.3.2 and reads as the default.
+  lime: 'teal',
 }
 
 export function curatedAccent(id: AccentId): CuratedAccent {

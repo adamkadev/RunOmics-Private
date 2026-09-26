@@ -288,9 +288,9 @@ export const en = {
     accent: {
       title: 'Accent',
       options: {
-        lavender: { label: 'Lavender' },
-        indigo:   { label: 'Indigo' },
         teal:     { label: 'Teal' },
+        indigo:   { label: 'Indigo' },
+        lavender: { label: 'Lavender' },
         pink:     { label: 'Pink' },
         mono:     { label: 'Mono' },
       },

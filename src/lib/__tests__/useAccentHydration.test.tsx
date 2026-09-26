@@ -21,7 +21,7 @@ describe('useAccent', () => {
       localStorage.setItem(ACCENT_STORAGE_KEY, 'indigo')
     )
 
-    expect(html).toContain('lavender')
+    expect(html).toContain('teal')
     expect(recoverableErrors).toEqual([])
     expect(container.textContent).toBe('indigo')
   })
