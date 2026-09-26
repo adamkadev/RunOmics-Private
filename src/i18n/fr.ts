@@ -239,6 +239,7 @@ export const fr = {
   },
 
   settings: {
+    about: (version: string, commit: string) => `RunOmics v${version} · build ${commit}`,
     sections: {
       profile: 'Profil',
       appearance: 'Apparence',

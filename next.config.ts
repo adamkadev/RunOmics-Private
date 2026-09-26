@@ -24,6 +24,9 @@ const csp = [
 const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_APP_VERSION: version,
+    // The deployed commit, for Settings › About: a device check names the
+    // build it was made on (v4.8). Vercel sets the SHA; a local build says so.
+    NEXT_PUBLIC_BUILD_COMMIT: (process.env.VERCEL_GIT_COMMIT_SHA ?? "").slice(0, 7) || "local",
   },
   outputFileTracingIncludes: {
     "/**": ["./data/**/*"],

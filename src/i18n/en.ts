@@ -255,6 +255,7 @@ export const en = {
   },
 
   settings: {
+    about: (version: string, commit: string) => `RunOmics v${version} · build ${commit}`,
     sections: {
       profile: 'Profile',
       appearance: 'Appearance',
