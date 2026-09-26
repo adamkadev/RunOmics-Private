@@ -157,7 +157,13 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3 px-1">
-        <h1 className="shrink-0 font-display text-title1 font-bold leading-[1.1] tracking-tight text-foreground">{t.analytics.title}</h1>
+        {/* The one large title, in the shell above the tabs; only the content
+            under the tabs changes on a switch. It is keyed by the tab so each
+            switch paints a fresh node: iOS kept a soft, stale raster of the
+            old one on every tab but the first (v4.6 2b). */}
+        <h1 key={tab} data-testid="analytics-title" className="shrink-0 font-display text-title1 font-bold leading-[1.1] tracking-tight text-foreground">
+          {t.analytics.title}
+        </h1>
       </div>
 
       <StickyBar ref={tabsRef} top="var(--sticky-top, max(var(--safe-top), 8px))">

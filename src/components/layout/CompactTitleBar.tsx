@@ -87,9 +87,11 @@ export function CompactTitleBar() {
       // bar - no blur, no scale - and at the top it is plainly itself: a tab
       // swap that left it half-faded read as a blurred title (v4.6).
       if (atTop) {
-        heading.style.opacity = '1'
-        heading.style.transform = 'none'
-        heading.style.filter = 'none'
+        // At the top the title carries no inline style at all - not even
+        // opacity 1 - so nothing keeps it on a layer of its own.
+        heading.style.removeProperty('opacity')
+        heading.style.removeProperty('transform')
+        heading.style.removeProperty('filter')
         // At rest is where "at rest" is read, should the page above it move.
         headingRest = heading.getBoundingClientRect().top + window.scrollY
       } else {
@@ -97,7 +99,6 @@ export function CompactTitleBar() {
         const f = Math.min(1, Math.max(0, (headingTop - statusBar) / travel))
         heading.style.opacity = String(f)
         heading.style.transform = `translateY(${((1 - f) * -4).toFixed(1)}px)`
-        heading.style.filter = 'none'
       }
       // The subtitle fades with the scroll and is gone by the time its top
       // edge reaches the bar's divider, so no clipped glyphs show under it.

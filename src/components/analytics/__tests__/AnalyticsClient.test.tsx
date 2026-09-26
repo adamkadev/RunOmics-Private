@@ -203,6 +203,20 @@ describe('Analytics (v4.5)', () => {
     expect(screen.getByTestId('long-run-card').textContent).toContain('Jul')
   })
 
+  // v4.6 2b: one large title, in the shell, painted fresh on every switch
+  // and never styled at rest.
+  it('keeps one large title and paints it anew on a tab switch', async () => {
+    await renderBoard()
+    const before = screen.getByTestId('analytics-title')
+    await openTab(t.analytics.tabs.performance, 'predictions-card')
+    expect(document.querySelectorAll('h1')).toHaveLength(1)
+    const after = screen.getByTestId('analytics-title')
+    expect(after).not.toBe(before)
+    expect(after.getAttribute('style')).toBeNull()
+    // Above the tabs, outside the panel that changes.
+    expect(screen.getByRole('tabpanel').contains(after)).toBe(false)
+  })
+
   // v4.6 2b: a tab switched to was left a point or two down, enough on iOS
   // for the scroll-edge blur over the large title.
   it('starts a switched-to tab at the very top', async () => {
@@ -277,5 +291,15 @@ describe('a week with nothing run (v4.6)', () => {
     expect(within(screen.getByTestId('weekly-bars')).getAllByTestId('empty-week')).toHaveLength(1)
     expect(within(screen.getByTestId('long-run-bars')).getAllByTestId('empty-week')).toHaveLength(1)
     expect(within(screen.getByTestId('zone-bars')).getAllByTestId('empty-week')).toHaveLength(1)
+  })
+})
+
+describe('the coach read wording (v4.6)', () => {
+  // The Easy pace tile said "1 s faster" while the coach read said "level".
+  it('words the easy pace the way the Easy pace tile does', async () => {
+    const { coachText } = await import('../LoadTab')
+    const view = { tone: 'neutral' as const, loadUp: false, signals: [{ key: 'easy' as const, trend: 'flat' as const, pace: 352, delta: -1 }] }
+    expect(coachText(view).signals[0]!.text).toBe(t.analytics.cards.coachRead.easyFaster('5:52', 1))
+    expect(coachText({ ...view, signals: [{ ...view.signals[0]!, delta: 0 }] }).signals[0]!.text).toBe(t.analytics.cards.coachRead.easyLevel('5:52'))
   })
 })
