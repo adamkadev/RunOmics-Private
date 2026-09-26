@@ -3,10 +3,11 @@ import {
   matchesFilters,
   buildHeatGeoJSON,
   heatColorExpression,
-  clusterBubbleRadius,
+  areaRows,
+  computeAreaTerritory,
   type HeatFilters,
 } from '../mapUtils'
-import type { RouteMeta } from '@/application/usecases/GetAllRoutes'
+import type { RouteCluster, RouteMeta } from '@/application/usecases/GetAllRoutes'
 
 const meta = (over: Partial<RouteMeta> = {}): RouteMeta => ({
   id: 'a1',
@@ -123,25 +124,42 @@ describe('heatColorExpression', () => {
   })
 })
 
-describe('clusterBubbleRadius', () => {
-  it('grows with count, capped at the max', () => {
-    const r1 = clusterBubbleRadius(1, 100)
-    const r50 = clusterBubbleRadius(50, 100)
-    const rMax = clusterBubbleRadius(100, 100)
-    expect(r1).toBeLessThan(r50)
-    expect(r50).toBeLessThan(rMax)
+const cluster = (id: string, routeIndices: number[]): RouteCluster => ({
+  id,
+  routeCount: routeIndices.length,
+  totalKm: 0,
+  center: [0, 0],
+  bounds: { minLon: 0, maxLon: 0, minLat: 0, maxLat: 0 },
+  routeIndices,
+})
+
+describe('areaRows', () => {
+  const routeMeta = [
+    meta({ distanceKm: 10 }),
+    meta({ distanceKm: 10, year: '2025' }),
+    meta({ distanceKm: 2 }),
+    meta({ distanceKm: 18 }),
+  ]
+  const clusters = [cluster('many-short', [0, 1, 2]), cluster('one-long', [3])]
+
+  it('orders areas by km and states each share of km, the card basis (v4.8)', () => {
+    expect(areaRows(clusters, routeMeta, { year: null, type: null })).toEqual([
+      { idx: 1, runs: 1, km: 18, sharePercent: 45 },
+      { idx: 0, runs: 3, km: 22, sharePercent: 55 },
+    ].sort((a, b) => b.km - a.km))
   })
 
-  it('scales by area (sqrt), not linearly - 4x the count is not 4x the radius', () => {
-    const rQuarter = clusterBubbleRadius(25, 100)
-    const rFull = clusterBubbleRadius(100, 100)
-    const min = clusterBubbleRadius(0, 100)
-    expect(rQuarter - min).toBeCloseTo((rFull - min) / 2, 5)
+  it('follows the filters and drops areas left empty', () => {
+    const rows = areaRows(clusters, routeMeta, { year: '2025', type: null })
+    expect(rows).toEqual([{ idx: 0, runs: 1, km: 10, sharePercent: 100 }])
   })
+})
 
-  it('floors at a tappable size for zero/negative counts or an empty max', () => {
-    const floor = clusterBubbleRadius(0, 100)
-    expect(clusterBubbleRadius(-1, 100)).toBe(floor)
-    expect(clusterBubbleRadius(5, 0)).toBe(floor)
+describe('computeAreaTerritory', () => {
+  it('shares by km and carries the area km', () => {
+    const routeMeta = [meta({ distanceKm: 30 }), meta({ distanceKm: 10 })]
+    const routes: [number, number][][] = [[[0, 0], [0.001, 0.001]], [[1, 1], [1.001, 1.001]]]
+    const territory = computeAreaTerritory(cluster('a', [0]), routeMeta, routes, { year: null, type: null })
+    expect(territory).toMatchObject({ percentVolume: 75, km: 30, routeCount: 1 })
   })
 })

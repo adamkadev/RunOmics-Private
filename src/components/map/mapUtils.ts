@@ -21,12 +21,17 @@ export function matchesFilters(meta: RouteMeta | undefined, filters: HeatFilters
 // The territory card follows whichever area is on the map, not a fixed
 // all-time home base - so it recomputes from the same filtered route set the
 // heatmap itself is drawing, scoped to the one cluster in view.
+export interface AreaTerritory extends MapTerritory {
+  /** The area's km under the filters: the numerator of percentVolume. */
+  km: number;
+}
+
 export function computeAreaTerritory(
   cluster: RouteCluster,
   routeMeta: RouteMeta[],
   routes: [number, number][][],
   filters: HeatFilters
-): MapTerritory | null {
+): AreaTerritory | null {
   const clusterIndices = cluster.routeIndices.filter((i) => matchesFilters(routeMeta[i], filters));
   if (clusterIndices.length === 0) return null;
 
@@ -51,64 +56,64 @@ export function computeAreaTerritory(
     percentVolume: round((clusterKm / totalKm) * 100, 0),
     medianRadiusKm: round(median(radii), 1),
     routeCount: clusterIndices.length,
+    km: Math.round(clusterKm),
   };
 }
 
-export interface WorldTerritory {
-  routeCount: number;
-  areaCount: number;
-  topAreaName: string;
-  topSharePercent: number;
+export interface AreaRow {
+  idx: number;
+  runs: number;
+  km: number;
+  /** The area's share of all km under the filters - the card's basis too. */
+  sharePercent: number;
 }
 
-// At world zoom there is no single selected area, so the card states a fact
-// true of the whole filtered set instead - the top area's share stands in for
-// "median radius", which has no meaning once the map isn't centred on a place.
-export function computeWorldTerritory(
-  clusters: RouteCluster[],
-  names: string[],
-  routeMeta: RouteMeta[],
-  filters: HeatFilters
-): WorldTerritory | null {
-  const perCluster = clusters.map((c, i) => ({
-    name: names[i] ?? coordLabel(c),
-    count: c.routeIndices.filter((idx) => matchesFilters(routeMeta[idx], filters)).length,
-  }));
-  const routeCount = perCluster.reduce((sum, c) => sum + c.count, 0);
-  if (routeCount === 0) return null;
-
-  const areaCount = perCluster.filter((c) => c.count > 0).length;
-  const top = perCluster.reduce((a, b) => (b.count > a.count ? b : a));
-
-  return {
-    routeCount,
-    areaCount,
-    topAreaName: top.name,
-    topSharePercent: round((top.count / routeCount) * 100, 0),
-  };
+/**
+ * Every area with a run under the filters, busiest by km first: the area
+ * list that replaced the world view (v4.8). One share basis, km, the same
+ * one computeAreaTerritory states.
+ */
+export function areaRows(clusters: RouteCluster[], routeMeta: RouteMeta[], filters: HeatFilters): AreaRow[] {
+  const perArea = clusters.map((c, idx) => {
+    const indices = c.routeIndices.filter((i) => matchesFilters(routeMeta[i], filters));
+    return { idx, runs: indices.length, km: indices.reduce((s, i) => s + (routeMeta[i]?.distanceKm ?? 0), 0) };
+  });
+  const totalKm = perArea.reduce((s, a) => s + a.km, 0);
+  return perArea
+    .filter((a) => a.runs > 0)
+    .sort((a, b) => b.km - a.km)
+    .map((a) => ({
+      idx: a.idx,
+      runs: a.runs,
+      km: Math.round(a.km),
+      sharePercent: totalKm > 0 ? round((a.km / totalKm) * 100, 0) : 0,
+    }));
 }
 
-// The area, type and year chips are one component in three states: the area
-// is always "active" (some area is always selected), type/year start neutral
-// and switch to the same active treatment once the athlete picks a value -
-// never a lighter, bare-text style for the filter that's actually doing
-// something.
+/** An area gets its own row in the list from this share of km; the rest fold into one. */
+export const OWN_ROW_SHARE = 10;
+
+// The area, type and year chips share one shape (v4.8). The area chip is
+// always set, so an accent there would mean nothing: it is neutral with the
+// name in text ink. Type and year take the accent only once they are set,
+// with an ✕ to clear them.
 export const MAP_CHIP_GEOMETRY = "flex h-[38px] items-center rounded-[12px] transition-colors";
-export const MAP_CHIP_STYLE = { padding: "0 11px", fontSize: "13.5px" } as const;
-// A filter chip is the segmented control's language: the track when idle,
-// a solid accent fill when set (v4.3), in theme tokens.
+export const MAP_CHIP_STYLE = { padding: "0 12px", fontSize: "14px" } as const;
 export const MAP_CHIP_NEUTRAL = {
   background: "var(--segmented-track)",
   border: "1px solid var(--border)",
   color: "var(--muted-foreground)",
 } as const;
+export const MAP_CHIP_AREA = { ...MAP_CHIP_NEUTRAL, color: "var(--foreground)" } as const;
 export const MAP_CHIP_ACTIVE = {
   background: "var(--accent)",
   border: "1px solid transparent",
   color: "var(--accent-foreground)",
 } as const;
-export const MAP_CHIP_COUNT_INK = "var(--subtle)";
-export const MAP_CHIP_CARET_INK = "var(--subtle)";
+/** An open menu outlines its chip in text ink. */
+export const MAP_CHIP_OPEN_BORDER = "1px solid var(--foreground)";
+export const MAP_CHIP_COUNT_INK = "var(--muted-foreground)";
+export const MAP_CHIP_CARET_INK = "var(--muted-foreground)";
 
 export function coordLabel(c: RouteCluster): string {
   const lat = `${Math.abs(c.center[1]).toFixed(1)}${c.center[1] >= 0 ? "°N" : "°S"}`;
@@ -203,13 +208,4 @@ export function heatWidthExpression(maxCount: number): unknown[] {
 
 export function heatLegendSwatches(): string[] {
   return [...HEAT_COLORS];
-}
-
-const CLUSTER_BUBBLE_MIN_RADIUS = 14;
-const CLUSTER_BUBBLE_MAX_RADIUS = 32;
-
-export function clusterBubbleRadius(count: number, maxCount: number): number {
-  if (maxCount <= 0 || count <= 0) return CLUSTER_BUBBLE_MIN_RADIUS;
-  const ratio = Math.sqrt(Math.min(count, maxCount) / maxCount);
-  return CLUSTER_BUBBLE_MIN_RADIUS + ratio * (CLUSTER_BUBBLE_MAX_RADIUS - CLUSTER_BUBBLE_MIN_RADIUS);
 }

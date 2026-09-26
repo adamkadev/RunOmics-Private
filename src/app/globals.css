@@ -127,7 +127,7 @@
   --map-attrib-fg:         rgba(255, 255, 255, 0.75);
 }
 
-/* ─── Light tokens - Lavender (default) ───────────── */
+/* ─── Light tokens - Teal (default) ───────────────── */
 :root {
   --status-bar:              #f3f4f4;
   --delta-good:              var(--accent-text);
@@ -163,13 +163,13 @@
   --ro-accent-hi:            #14b886;
   --ro-ink:                  #0b1f17;
   --ro-blur:                 18px;
-  --accent:                  #7c3aed;
+  --accent:                  #0e8468;
   --accent-foreground:       #ffffff;
-  --accent-text:             #7c3aed;
-  --accent-hover:            color-mix(in oklab, #7c3aed 88%, black);
-  --acc-soft:                color-mix(in oklab, #7c3aed 20%, transparent);
-  --acc-line:                color-mix(in oklab, #7c3aed 55%, transparent);
-  --ring:                    color-mix(in oklab, #7c3aed 35%, transparent);
+  --accent-text:             #0e8468;
+  --accent-hover:            color-mix(in oklab, #0e8468 88%, black);
+  --acc-soft:                color-mix(in oklab, #0e8468 20%, transparent);
+  --acc-line:                color-mix(in oklab, #0e8468 55%, transparent);
+  --ring:                    color-mix(in oklab, #0e8468 35%, transparent);
   --background:              #f3f4f4;
   --canvas:                  #f3f4f4;
   --card:                    #ffffff;
@@ -212,7 +212,7 @@
   --glass-bg-nav:            #ffffff;
 }
 
-/* ─── Dark tokens - Lavender (default) ────────────── */
+/* ─── Dark tokens - Teal (default) ────────────────── */
 .dark {
   --status-bar:              #0b0c0c;
   --delta-good:              var(--accent-text);
@@ -244,13 +244,13 @@
   --chart-hard:              #fb923c;
   --chart-ground-contact:    #f59e0b;
   --chart-brand:             #1ed787;
-  --accent:                  #b48cf0;
-  --accent-foreground:       #1a0f2e;
-  --accent-text:             #b48cf0;
-  --accent-hover:            color-mix(in oklab, #b48cf0 88%, white);
-  --acc-soft:                color-mix(in oklab, #b48cf0 20%, transparent);
-  --acc-line:                color-mix(in oklab, #b48cf0 55%, transparent);
-  --ring:                    color-mix(in oklab, #b48cf0 70%, transparent);
+  --accent:                  #2fd1a6;
+  --accent-foreground:       #03201a;
+  --accent-text:             #2fd1a6;
+  --accent-hover:            color-mix(in oklab, #2fd1a6 88%, white);
+  --acc-soft:                color-mix(in oklab, #2fd1a6 20%, transparent);
+  --acc-line:                color-mix(in oklab, #2fd1a6 55%, transparent);
+  --ring:                    color-mix(in oklab, #2fd1a6 70%, transparent);
   --background:              #0b0c0c;
   --canvas:                  #0b0c0c;
   --card:                    #161818;
@@ -313,24 +313,24 @@
   --ring:               color-mix(in oklab, #8c9bff 70%, transparent);
 }
 
-[data-accent="teal"] {
-  --accent:             #0e8468;
+[data-accent="lavender"] {
+  --accent:             #7c3aed;
   --accent-foreground:  #ffffff;
-  --accent-text:        #0e8468;
-  --accent-hover:       color-mix(in oklab, #0e8468 88%, black);
-  --acc-soft:           color-mix(in oklab, #0e8468 20%, transparent);
-  --acc-line:           color-mix(in oklab, #0e8468 55%, transparent);
-  --ring:               color-mix(in oklab, #0e8468 35%, transparent);
+  --accent-text:        #7c3aed;
+  --accent-hover:       color-mix(in oklab, #7c3aed 88%, black);
+  --acc-soft:           color-mix(in oklab, #7c3aed 20%, transparent);
+  --acc-line:           color-mix(in oklab, #7c3aed 55%, transparent);
+  --ring:               color-mix(in oklab, #7c3aed 35%, transparent);
 }
 
-.dark[data-accent="teal"] {
-  --accent:             #2fd1a6;
-  --accent-foreground:  #03201a;
-  --accent-text:        #2fd1a6;
-  --accent-hover:       color-mix(in oklab, #2fd1a6 88%, white);
-  --acc-soft:           color-mix(in oklab, #2fd1a6 20%, transparent);
-  --acc-line:           color-mix(in oklab, #2fd1a6 55%, transparent);
-  --ring:               color-mix(in oklab, #2fd1a6 70%, transparent);
+.dark[data-accent="lavender"] {
+  --accent:             #b48cf0;
+  --accent-foreground:  #1a0f2e;
+  --accent-text:        #b48cf0;
+  --accent-hover:       color-mix(in oklab, #b48cf0 88%, white);
+  --acc-soft:           color-mix(in oklab, #b48cf0 20%, transparent);
+  --acc-line:           color-mix(in oklab, #b48cf0 55%, transparent);
+  --ring:               color-mix(in oklab, #b48cf0 70%, transparent);
 }
 
 [data-accent="pink"] {

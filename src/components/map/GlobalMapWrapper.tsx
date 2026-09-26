@@ -7,24 +7,19 @@ import { TerritoryBand, type TerritoryCardContent } from './TerritoryBand'
 
 const GlobalMapClient = dynamic(
   () => import('./GlobalMapClient').then((m) => m.GlobalMapClient),
-  { ssr: false, loading: () => <div className="h-full w-full animate-pulse bg-muted" /> }
+  { ssr: false, loading: () => <div className="h-[410px] w-full animate-pulse rounded-[22px] bg-muted" /> }
 )
 
-// The territory card lives here, a sibling to the bordered map box rather
-// than inside it, so it keeps its own card shell instead of fusing with the
-// map's rounded corners. GlobalMapClient reports the card's content back up
-// as the athlete changes cluster, filters or zoom level, so the two never
-// disagree - including at world zoom, where "all areas" is itself a state
-// the card has to name.
+// The card sits under the map (v4.8), as its own card rather than inside
+// the map's box. GlobalMapClient reports the card's content back up as the
+// athlete changes area or filters, so the two never disagree.
 export function GlobalMapWrapper({ data }: { data: MapShellData }) {
   const [content, setContent] = useState<TerritoryCardContent | null>(null)
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3">
+    <div className="flex flex-col gap-3">
+      <GlobalMapClient data={data} onContentChange={setContent} />
       {content && <TerritoryBand {...content} />}
-      <div className="flex-1 overflow-hidden rounded-xl border border-border shadow-card">
-        <GlobalMapClient data={data} onContentChange={setContent} />
-      </div>
     </div>
   )
 }

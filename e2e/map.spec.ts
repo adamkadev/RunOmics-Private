@@ -1,29 +1,33 @@
 import type { Locator } from '@playwright/test'
 import { test, expect } from './fixtures'
 
-test('heatmap page renders its shell and toggles world view', async ({ page }) => {
+test('heatmap puts the map first, the card under it, and nothing on the routes but expand', async ({ page }) => {
   await page.goto('/map')
-  await expect(page.getByRole('heading', { name: 'Running Heatmap' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Heatmap', exact: true })).toBeVisible()
 
   await expect(page.getByText('Rare')).toBeVisible()
   await expect(page.getByText('Frequent')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'World view' })).toHaveCount(0)
 
-  const worldViewButton = page.getByRole('button', { name: 'World view' })
-  await worldViewButton.click()
-  await expect(worldViewButton).toHaveAttribute('aria-pressed', 'true')
-  await expect(page.getByText('Tap a zone to explore it')).toBeVisible()
-  await expect(page.getByText('Rare')).toBeHidden()
+  const map = page.getByRole('img', { name: 'Heatmap' })
+  const card = page.getByTestId('territory-card')
+  await expect(card).toContainText('half of runs within')
+  const mapBox = (await map.boundingBox())!
+  expect(Math.round(mapBox.height)).toBe(360)
+  expect((await card.boundingBox())!.y).toBeGreaterThan(mapBox.y + mapBox.height)
 
-  await page.getByRole('button', { name: 'Exit world view' }).click()
-  await expect(page.getByText('Rare')).toBeVisible()
+  await page.getByRole('button', { name: 'Fullscreen' }).click()
+  await expect(page.getByRole('button', { name: 'Exit fullscreen' })).toBeVisible()
+  await page.getByRole('button', { name: 'Exit fullscreen' }).click()
+  await expect(page.getByRole('button', { name: 'Fullscreen' })).toBeVisible()
 })
 
-test('heatmap zone dropdown switches the selected zone', async ({ page }) => {
+test('heatmap area list switches the selected area', async ({ page }) => {
   await page.goto('/map')
 
   // By its purpose, not its contents: the chip shows the selected zone and its
   // route count, both of which are data, and the count lost its "runs" suffix.
-  const zoneChip = page.getByRole('button', { name: /^Zones:/ })
+  const zoneChip = page.getByRole('button', { name: /^Area:/ })
   await zoneChip.click()
 
   const options = page.locator('ul li button')
@@ -66,7 +70,7 @@ async function drawnWhereItClaims(option: Locator): Promise<boolean> {
 test('heatmap filter menus open where they can be seen', async ({ page }) => {
   await page.goto('/map')
 
-  for (const name of [/^Zones:/, 'All types', 'All years']) {
+  for (const name of [/^Area:/, 'All types', 'All years']) {
     const chip = page.getByRole('button', { name }).first()
     await chip.click()
     const menu = page.locator(`[id="${await chip.getAttribute('aria-controls')}"]`)

@@ -186,37 +186,36 @@ export const en = {
       back: 'Progress',
     },
     map: {
-      title: 'Running Heatmap',
+      title: 'Heatmap',
       back: 'Activities',
-      routes: (n: number) => `${n} routes`,
-      zones: 'Zones',
-      allAreas: 'All areas',
-      areasRemainder: (name: string, extra: number) => `${name} +${extra} area${extra === 1 ? '' : 's'}`,
+      runs: (n: number) => `${n} run${n === 1 ? '' : 's'}`,
+      area: 'Area',
+      areas: 'Areas',
+      areasSummary: (areas: number, runs: number) =>
+        `${areas} area${areas === 1 ? '' : 's'} · ${runs} run${runs === 1 ? '' : 's'}`,
+      moreAreas: (n: number) => `${n} more area${n === 1 ? '' : 's'}`,
+      including: (name: string) => `incl. ${name}`,
+      shareNote: '% = share of km, the same basis the card uses.',
       allYears: 'All years',
       allTypes: 'All types',
+      clearFilter: (label: string) => `Clear ${label}`,
       fullscreen: 'Fullscreen',
       exitFullscreen: 'Exit fullscreen',
-      worldView: 'World view',
-      exitWorldView: 'Exit world view',
-      worldViewHint: 'Tap a zone to explore it',
       less: 'Rare',
       more: 'Frequent',
       noRoutes: 'No routes for this filter',
       mapUnavailable: 'Map unavailable - no map token configured',
+      attributionLabel: 'Map data',
       attribution: '© MapTiler · © OpenStreetMap contributors',
       territory: {
-        eyebrowFor: (place: string) => `${place} · all-time`,
-        headline: (percent: number, radius: string, place: string) =>
-          `${percent}% of all your ${place} running sits within ${radius} of its centre.`,
-        headlineHome: (percent: number, radius: string) => `${percent}% of your running sits within ${radius} of your home area.`,
-        homeArea: 'your home area',
-        underOneKm: 'under 1 km',
-        routesStat: 'distinct routes',
-        radiusStat: 'median radius',
-        eyebrowWorld: 'All areas · all-time',
-        headlineWorld: (areaCount: number, percent: number, place: string) =>
-          `Your running spreads across ${areaCount} area${areaCount === 1 ? '' : 's'} — ${percent}% of it in ${place}.`,
-        areasStat: 'areas',
+        headline: (percent: number, place: string, radius: string) =>
+          `${percent}% of your running is in ${place}. Half your runs there stay within ${radius} of the centre.`,
+        headlineHome: (percent: number, radius: string) =>
+          `${percent}% of your running is in your home area. Half your runs there stay within ${radius} of its centre.`,
+        homeArea: 'Home area',
+        runsStat: 'runs',
+        kmStat: 'km',
+        radiusStat: 'half of runs within',
       },
     },
     shoes: {
@@ -255,7 +254,8 @@ export const en = {
   },
 
   settings: {
-    about: (version: string, commit: string) => `RunOmics v${version} · build ${commit}`,
+    about: (version: string, commit: string) => `RunOmics ${version} · ${commit}`,
+    buildCopied: 'Build info copied',
     sections: {
       profile: 'Profile',
       appearance: 'Appearance',
@@ -289,9 +289,9 @@ export const en = {
     accent: {
       title: 'Accent',
       options: {
-        lavender: { label: 'Lavender' },
-        indigo:   { label: 'Indigo' },
         teal:     { label: 'Teal' },
+        indigo:   { label: 'Indigo' },
+        lavender: { label: 'Lavender' },
         pink:     { label: 'Pink' },
         mono:     { label: 'Mono' },
       },

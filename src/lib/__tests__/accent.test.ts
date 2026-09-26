@@ -10,9 +10,9 @@ import {
 } from '@/lib/accent'
 
 describe('the v4.3 accents', () => {
-  it('offers five palettes, lavender by default, no blue, orange, red or amber', () => {
-    expect(ACCENT_IDS).toEqual(['lavender', 'indigo', 'teal', 'pink', 'mono'])
-    expect(DEFAULT_ACCENT).toBe('lavender')
+  it('offers five palettes, teal first and by default, no blue, orange, red or amber', () => {
+    expect(ACCENT_IDS).toEqual(['teal', 'indigo', 'lavender', 'pink', 'mono'])
+    expect(DEFAULT_ACCENT).toBe('teal')
   })
 
   it('knows its own ids only', () => {
@@ -29,8 +29,8 @@ describe('reading a stored preference', () => {
   })
 
   // v4.3.2: lime left the set; whoever picked it gets the default.
-  it('reads the retired lime as lavender', () => {
-    expect(parseAccent('lime')).toBe('lavender')
+  it('reads the retired lime as the default', () => {
+    expect(parseAccent('lime')).toBe(DEFAULT_ACCENT)
   })
 
   it('reads a pre-v4.3 accent as its nearest palette', () => {

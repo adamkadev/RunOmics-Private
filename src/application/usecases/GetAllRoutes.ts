@@ -70,7 +70,6 @@ export function getAllRoutes(): AllRoutesData {
   }
 
   const acc: ClusterAcc[] = []
-  let mostRecentClusterIdx = -1
 
   activities.forEach((a, idx) => {
     const coords = a.route!
@@ -100,7 +99,6 @@ export function getAllRoutes(): AllRoutesData {
     g.sumCLat += cLat
     g.center = [g.sumCLon / g.indices.length, g.sumCLat / g.indices.length]
 
-    if (idx === 0) mostRecentClusterIdx = clusterIdx
   })
 
   const unsorted: RouteCluster[] = acc.map((g, i) => ({
@@ -112,12 +110,10 @@ export function getAllRoutes(): AllRoutesData {
     routeIndices: g.indices,
   }))
 
-  const mostRecentId = mostRecentClusterIdx !== -1 ? `${mostRecentClusterIdx}` : null
-  const clusters = unsorted.sort((a, b) => b.routeCount - a.routeCount)
-
-  const defaultClusterIdx = mostRecentId
-    ? Math.max(0, clusters.findIndex((c) => c.id === mostRecentId))
-    : 0
+  // By km, the one share basis the page uses (v4.8): the busiest area comes
+  // first and the page opens on it.
+  const clusters = unsorted.sort((a, b) => b.totalKm - a.totalKm || b.routeCount - a.routeCount)
+  const defaultClusterIdx = 0
 
   cache = {
     routes: activities.map((a) => a.route!),

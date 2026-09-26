@@ -3,25 +3,24 @@
 import { heatLegendSwatches } from "./mapUtils";
 import { t } from "@/i18n";
 
-export function HeatLegend({ isFullscreen }: { isFullscreen?: boolean }) {
+/** Rare → Frequent. Under the map in the page, over its corner in fullscreen (v4.8). */
+export function HeatLegend({ overlay = false }: { overlay?: boolean }) {
   const swatches = heatLegendSwatches();
 
   return (
     <div
       className={[
-        "glass-map-chip absolute left-3 z-10 flex items-center gap-2 px-3 py-2",
-        isFullscreen
-          ? "bottom-[calc(max(env(safe-area-inset-bottom),12px)+2.25rem)]"
-          : "bottom-11",
+        "flex items-center gap-2 text-xs text-muted-foreground",
+        overlay ? "glass-map-chip absolute bottom-[calc(max(env(safe-area-inset-bottom),12px)+22px)] left-3 z-10 rounded-[12px] px-3 py-2" : "",
       ].join(" ")}
     >
-      <span className="text-caption text-subtle">{t.pages.map.less}</span>
+      <span>{t.pages.map.less}</span>
       <div
-        className="h-2 w-20 rounded-full"
+        className="h-1.5 w-16 rounded-full"
         style={{ background: `linear-gradient(to right, ${swatches.join(", ")})` }}
         aria-hidden
       />
-      <span className="text-caption text-subtle">{t.pages.map.more}</span>
+      <span>{t.pages.map.more}</span>
     </div>
   );
 }
