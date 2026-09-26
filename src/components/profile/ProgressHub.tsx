@@ -4,6 +4,7 @@ import { ChevronRight, Settings } from 'lucide-react'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { formatCountdown, formatDate, formatDelta, formatDuration, formatKm, formatPace } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
+import { deltaColor } from '@/lib/deltaTone'
 import { t } from '@/i18n'
 import type { ProgressHubView, YearPoint } from './progressHub'
 import { YearRows } from './AllTime'
@@ -158,8 +159,9 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
           <div className="flex items-baseline justify-between gap-3">
             <span className="text-caption font-semibold tracking-[0.12em] text-muted-foreground">{view.year}</span>
             {hero.deltaKm !== null && (
-              <span className="text-footnote tabular-nums text-muted-foreground">
-                {h.vsYear(formatDelta(hero.deltaKm), view.year - 1)}
+              <span className="text-footnote tabular-nums text-muted-foreground" data-testid="year-delta">
+                <span style={{ color: deltaColor('distance', hero.deltaKm, { value: hero.km }) }}>{h.vsYearDelta(formatDelta(hero.deltaKm))}</span>
+                {h.vsYearRest(view.year - 1)}
               </span>
             )}
           </div>
@@ -218,8 +220,9 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
               <p className="flex items-baseline gap-1.5">
                 <span className="font-display text-title2 font-bold leading-none tabular-nums text-foreground">{vo2max.value}</span>
                 {vo2max.delta !== null && (
-                  <span className="text-footnote tabular-nums text-muted-foreground">
-                    {h.in90d(formatDelta(vo2max.delta))}
+                  <span className="text-footnote tabular-nums text-muted-foreground" data-testid="vo2-delta">
+                    <span style={{ color: deltaColor('vo2max', vo2max.delta) }}>{formatDelta(vo2max.delta)}</span>
+                    {h.in12w}
                   </span>
                 )}
               </p>

@@ -132,6 +132,7 @@
   --status-bar:              #f3f4f4;
   --delta-good:              var(--accent-text);
   --delta-warn:              #c2560f;
+  --good:                    #15803d;
   --metric-form:             #0f7a52;
   --metric-fitness:          #2563eb;
   --metric-fatigue:          #c2560f;
@@ -216,6 +217,7 @@
   --status-bar:              #0b0c0c;
   --delta-good:              var(--accent-text);
   --delta-warn:              #fb923c;
+  --good:                    #5bd68a;
   --metric-form:             #34d399;
   --metric-fitness:          #7db8ff;
   --metric-fatigue:          #ff9a5a;

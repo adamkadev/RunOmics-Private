@@ -2,11 +2,10 @@ import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import type { TrainingStatusDayBar } from '@/application/usecases/GetTrainingStatusDaysBar'
 import { STATUS_DELTA_DAYS } from '@/domain/training/status'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { metricDeltaColor, type MetricDeltaPolarity } from '@/lib/colors'
+import { deltaColor, type DeltaMetric } from '@/lib/deltaTone'
+import { formBand } from '@/domain/training/formBand'
 import { formatDelta } from '@/lib/formatters'
 import { t } from '@/i18n'
-
-const TREND_THRESHOLD = 1
 
 type Status = NonNullable<TrainingStatusDayBar['status']>
 
@@ -22,15 +21,18 @@ function Metric({
   value,
   delta,
   days,
-  goodWhen,
+  metric,
+  current,
   note,
 }: {
   label: string
   value: string
   delta: number
   days: number
-  goodWhen: MetricDeltaPolarity
-  /** A word after the delta, in the same muted line: Form's watch status. */
+  /** Which way is better, and how small is no change (lib/deltaTone). */
+  metric: DeltaMetric
+  current: number
+  /** A word after the delta, in the muted line: Form's band. */
   note?: string | null
 }) {
   return (
@@ -43,16 +45,14 @@ function Metric({
           negative margin: wrapped onto its own line, its dot is clipped at
           the edge, so neither line ends or starts on a dot. */}
       <div className="overflow-hidden">
-        <div
-          className="-ml-2 flex flex-wrap text-caption tabular-nums"
-          style={{ color: metricDeltaColor(delta, goodWhen, TREND_THRESHOLD) }}
-        >
-          <span className="whitespace-nowrap">
+        <div className="-ml-2 flex flex-wrap text-caption tabular-nums text-muted-foreground">
+          {/* Only the delta takes its meaning's colour (v4.7). */}
+          <span className="whitespace-nowrap" style={{ color: deltaColor(metric, delta, { value: current }) }} data-testid="metric-delta">
             <span aria-hidden="true" className="inline-block w-2" />
             {deltaLabel(delta, days)}
           </span>
           {note && (
-            <span className="whitespace-nowrap" data-testid="watch-status">
+            <span className="whitespace-nowrap" data-testid="form-band">
               <span aria-hidden="true" className="inline-block w-2 text-center">·</span>
               {note}
             </span>
@@ -73,33 +73,39 @@ export function latestRatedStatus(days: TrainingStatusDayBar[]): Status | null {
  * word follows Form's delta (v4.3.4), and the 28-day strip and its "13 of 28 days" moved off
  * Today (the history is on Analytics). Every delta has an arrow and a window.
  */
-export function BodyCard({ status, watchStatus = null }: { status: TrainingStatus | null; watchStatus?: Status | null }) {
+export function BodyCard({ status }: { status: TrainingStatus | null; watchStatus?: Status | null }) {
   if (!status) return null
+  const form = Math.round(status.tsbNow)
 
   return (
     <GlassSurface variant="card" className="rounded-card-sm px-4.5 py-4" data-testid="body-card">
       <div className="grid grid-cols-3 gap-2">
         <Metric
           label={t.dashboard.trainingLoad.form}
-          value={formatDelta(Math.round(status.tsbNow))}
+          value={formatDelta(form)}
           delta={status.tsbDelta}
           days={STATUS_DELTA_DAYS.form}
-          goodWhen="up"
-          note={watchStatus ? t.trainingStatus.status[watchStatus] : null}
+          metric="form"
+          current={form}
+          // Form's own band, as Analytics names it (v4.7). "Productive" was
+          // Garmin's training status, not a Form band.
+          note={t.formBand[formBand(form)]}
         />
         <Metric
           label={t.trainingStatus.metrics.fitness}
           value={String(Math.round(status.ctl))}
           delta={status.ctlDeltaShown}
           days={STATUS_DELTA_DAYS.fitness}
-          goodWhen="up"
+          metric="fitness"
+          current={status.ctl}
         />
         <Metric
           label={t.dashboard.trainingLoad.fatigue}
           value={String(Math.round(status.atl))}
           delta={status.atlDelta}
           days={STATUS_DELTA_DAYS.fatigue}
-          goodWhen="down"
+          metric="fatigue"
+          current={status.atl}
         />
       </div>
     </GlassSurface>

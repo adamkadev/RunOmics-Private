@@ -3,6 +3,7 @@
 import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import type { HeatImpactData } from '@/application/usecases/GetHeatImpact'
 import { formatClock, formatCountdown, formatDate, formatDeltaFixed, formatDuration, MINUS } from '@/lib/formatters'
+import { deltaColor } from '@/lib/deltaTone'
 import { t } from '@/i18n'
 import { AxisLabels, BoldSentence, Card, CardHead, ChartScrub, Headline, Legend, LegendItem, Sentence, linePath } from './AnalyticsKit'
 import {
@@ -60,11 +61,13 @@ function SummaryStrip({ vo2, threshold, easy }: { vo2: ReturnType<typeof vo2View
     vo2 && {
       label: s.vo2max,
       value: vo2.value.toFixed(1),
-      note: vo2.delta === null ? null : vo2.delta === 0 ? s.noChange12w : s.in12w(vo2.delta > 0 ? `+${vo2.delta}` : `${MINUS}${Math.abs(vo2.delta)}`),
+      note: vo2.delta === null ? null : vo2.delta === 0 ? s.noChange12w : vo2.delta > 0 ? `+${vo2.delta}` : `${MINUS}${Math.abs(vo2.delta)}`,
+      suffix: vo2.delta ? s.in12wSuffix : '',
+      color: deltaColor('vo2max', vo2.delta),
     },
-    threshold && { label: s.threshold, value: formatClock(threshold.now), note: shiftWords(threshold.delta) },
-    easy && { label: s.easyPace, value: formatClock(easy.now), note: shiftWords(easy.delta) },
-  ].filter((c): c is { label: string; value: string; note: string | null } => !!c)
+    threshold && { label: s.threshold, value: formatClock(threshold.now), note: shiftWords(threshold.delta), suffix: '', color: deltaColor('pace', threshold.delta) },
+    easy && { label: s.easyPace, value: formatClock(easy.now), note: shiftWords(easy.delta), suffix: '', color: deltaColor('pace', easy.delta) },
+  ].filter((c): c is { label: string; value: string; note: string | null; suffix: string; color: string } => !!c)
   if (!cells.length) return null
   return (
     <section className="grid rounded-card border border-[var(--divider)] bg-card" style={{ gridTemplateColumns: `repeat(${cells.length}, minmax(0, 1fr))` }} data-testid="performance-summary">
@@ -72,7 +75,12 @@ function SummaryStrip({ vo2, threshold, easy }: { vo2: ReturnType<typeof vo2View
         <div key={c.label} className="flex flex-col gap-1 p-3.5" style={i < cells.length - 1 ? { borderRight: '1px solid var(--divider)' } : undefined}>
           <span className="text-caption uppercase tracking-[0.08em] text-muted-foreground">{c.label}</span>
           <span className="font-display text-[22px] font-bold leading-none tabular-nums text-foreground">{c.value}</span>
-          {c.note && <span className="text-caption text-muted-foreground">{c.note}</span>}
+          {c.note && (
+            <span className="text-caption text-muted-foreground" data-testid="summary-delta">
+              <span style={{ color: c.color }}>{c.note}</span>
+              {c.suffix}
+            </span>
+          )}
         </div>
       ))}
     </section>
@@ -130,7 +138,7 @@ function PredictionsCard({ days, window, period, race }: { days: PredictionDay[]
             {/* Slower is the caution; faster stays quiet, not accent (v4.6). */}
             <span
               className="text-right text-[12px] leading-tight"
-              style={{ color: row.delta !== null && row.delta >= 1 ? 'var(--tone-caution)' : 'var(--muted-foreground)' }}
+              style={{ color: deltaColor('race', row.delta, { value: row.seconds }) }}
               data-testid="prediction-delta"
             >
               {shiftWords(row.delta) ?? ''}
@@ -171,7 +179,7 @@ function PaceTrendCard({ weeks, easy, workout, onShift }: { weeks: WeeklyTrendPo
   return (
     <Card testId="pace-trend-card">
       <CardHead title={s.title} caption={s.caption} about={s.about} />
-      <BoldSentence parts={[easyParts[0], easyParts[1], `${easyParts[2]}${workoutLine}`]} />
+      <BoldSentence parts={[easyParts[0], easyParts[1], `${easyParts[2]}${workoutLine}`]} boldColor={shift === null ? undefined : deltaColor('pace', shift)} />
       <div className="grid grid-cols-[minmax(0,1fr)_30px] gap-1.5">
         <ChartScrub
           count={weeks.length}
@@ -226,7 +234,18 @@ function EfficiencyCard({ allWeeks, weeks, end, onShift }: { allWeeks: WeeklyTre
   return (
     <Card testId="efficiency-card">
       <CardHead title={s.title} caption={s.caption} about={s.about} />
-      <Headline value={view.now.toFixed(2)} note={view.delta4w !== null || view.delta12w !== null ? s.deltas(d(view.delta4w), d(view.delta12w)) : undefined} />
+      <Headline
+        value={view.now.toFixed(2)}
+        note={
+          view.delta4w !== null || view.delta12w !== null ? (
+            <span data-testid="efficiency-deltas">
+              <span style={{ color: deltaColor('efficiency', view.delta4w) }}>{d(view.delta4w)}</span>
+              {s.in4w} · <span style={{ color: deltaColor('efficiency', view.delta12w) }}>{d(view.delta12w)}</span>
+              {s.in12w}
+            </span>
+          ) : undefined
+        }
+      />
       <Sentence>{sentence}</Sentence>
       <ChartScrub
         count={view.dates.length}

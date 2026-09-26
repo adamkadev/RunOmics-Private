@@ -6,6 +6,7 @@ import type { LoadRiskPanel } from '@/application/usecases/GetLoadRiskPanel'
 import type { TrainingStatusType } from '@/domain/training/status'
 import type { FormBand } from '@/domain/training/formBand'
 import { formatClock, formatDate, formatDelta, formatDeltaFixed, MINUS } from '@/lib/formatters'
+import { deltaColor } from '@/lib/deltaTone'
 import { t } from '@/i18n'
 import { AxisLabels, Card, CardHead, ChartScrub, Legend, LegendItem, Sentence, Sheet, linePath } from './AnalyticsKit'
 import type { AnalyticsBoardData } from './AnalyticsClient'
@@ -149,15 +150,18 @@ function FormCard({ load, window, onShift }: { load: LoadDay[]; window: DayWindo
         </div>
         <div className="grid flex-1 grid-cols-2 gap-2 pb-0.5">
           {[
-            { label: s.fitness, value: view.fitness, delta: view.fitnessDelta, swatch: 'line' as const, color: 'var(--foreground)' },
-            { label: s.fatigue, value: view.fatigue, delta: view.fatigueDelta, swatch: 'dash' as const, color: 'var(--muted-foreground)' },
+            { label: s.fitness, value: view.fitness, delta: view.fitnessDelta, metric: 'fitness' as const, swatch: 'line' as const, color: 'var(--foreground)' },
+            { label: s.fatigue, value: view.fatigue, delta: view.fatigueDelta, metric: 'fatigue' as const, swatch: 'dash' as const, color: 'var(--muted-foreground)' },
           ].map((m) => (
             <div key={m.label} className="flex flex-col gap-[3px]">
               <span className="text-[12px] text-muted-foreground">
                 <LegendItem swatch={m.swatch} color={m.color}>{m.label}</LegendItem>
               </span>
               <span className="font-display text-[18px] font-bold leading-none tabular-nums text-foreground">
-                {m.value} <span className="font-sans text-[12px] font-medium text-muted-foreground">{arrow(m.delta)}</span>
+                {m.value}{' '}
+                <span className="font-sans text-[12px] font-medium" style={{ color: deltaColor(m.metric, m.delta) }} data-testid={`${m.metric}-delta`}>
+                  {arrow(m.delta)}
+                </span>
               </span>
             </div>
           ))}

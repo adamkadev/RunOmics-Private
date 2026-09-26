@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import type { TrainingStatusDayBar } from '@/application/usecases/GetTrainingStatusDaysBar'
 import { t } from '@/i18n'
+import { formBand } from '@/domain/training/formBand'
 import { BodyCard, deltaLabel, latestRatedStatus } from '../BodyCard'
 
 const STATUS = { tsbNow: 2, tsbDelta: 10, ctl: 11, ctlDelta: 3, ctlDeltaShown: 1, atl: 9, atlDelta: -9 } as unknown as TrainingStatus
@@ -46,11 +47,22 @@ describe('BodyCard', () => {
     expect(screen.getByTestId('body-card').textContent).not.toMatch(/of the last/)
   })
 
-  // v4.3.4: the watch's status follows Form's delta, in the same muted line.
-  it("writes the watch's status after Form's delta", () => {
+  // v4.7: Form's note is its band, as Analytics names it - "Productive" was
+  // Garmin's training status, not a Form band.
+  it("writes Form's band after its delta, never the watch's status", () => {
     render(<BodyCard status={STATUS} watchStatus="productive" />)
-    const note = screen.getByTestId('watch-status')
-    expect(note.textContent).toBe(`·${t.trainingStatus.status.productive}`)
-    expect(note.parentElement!.textContent).toMatch(new RegExp(`in 7 d·${t.trainingStatus.status.productive}$`))
+    const note = screen.getByTestId('form-band')
+    expect(note.textContent).toBe(`·${t.formBand[formBand(Math.round(STATUS.tsbNow))]}`)
+    expect(screen.getByTestId('body-card').textContent).not.toContain(t.trainingStatus.status.productive)
+  })
+
+  // v4.7: each delta takes its meaning's colour - fatigue falling is good.
+  it('colours each delta by what it means', () => {
+    render(<BodyCard status={{ ...STATUS, ctlDeltaShown: 4, atlDelta: -6 }} />)
+    const [, fitness, fatigue] = screen.getAllByTestId('metric-delta')
+    expect(fitness!.getAttribute('style')).toContain('var(--good)')
+    expect(fatigue!.textContent).toContain('↓6')
+    expect(fatigue!.getAttribute('style')).toContain('var(--good)')
+    expect(screen.getByTestId('body-card').innerHTML).not.toContain('var(--accent')
   })
 })

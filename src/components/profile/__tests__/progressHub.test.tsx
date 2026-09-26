@@ -73,7 +73,8 @@ describe('progressHubView', () => {
     expect(view.allTime.years.map(({ year, km }) => ({ year, km }))).toEqual([
       { year: 2022, km: 95 }, { year: 2023, km: 0 }, { year: 2024, km: 0 }, { year: 2025, km: 640 }, { year: 2026, km: 1_394 },
     ])
-    expect(view.vo2max).toMatchObject({ value: 55, delta: 2, series: [53, 54, 55] })
+    // Over 12 weeks, as Analytics reads it (v4.7): Jul 1 is outside that.
+    expect(view.vo2max).toMatchObject({ value: 55, delta: 1, series: [54, 55] })
     expect(view.consistency).toMatchObject({ activeDays: 2, streakWeeks: 12 })
   })
 })

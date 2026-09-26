@@ -1,6 +1,7 @@
 'use client'
 
 import { formatDate, formatDelta, formatKm, formatRanKm, formatWeekday } from '@/lib/formatters'
+import { deltaColor } from '@/lib/deltaTone'
 import { t } from '@/i18n'
 import { AxisLabels, Card, CardHead, ChartScrub, EmptyWeek, Headline, Legend, LegendItem, THIS_WEEK_FILL, THIS_WEEK_OUTLINE } from './AnalyticsKit'
 import { longRunView, weeklyDistanceView, type WeekRow, type YtdInput } from './analyticsView'
@@ -112,7 +113,14 @@ function YtdCard({ ytd, today }: { ytd: YtdInput; today: string }) {
       <CardHead title={s.title} caption={ytd.previousToDate !== null ? s.caption : undefined} about={s.about} />
       <Headline
         value={`${formatKm(km)} ${t.units.km}`}
-        note={ytd.previousToDate !== null ? s.vs(formatDelta(Math.round(km - ytd.previousToDate)), t.dates.monthShortYear(bare(sameDate), sameDate.slice(2, 4))) : undefined}
+        note={
+          ytd.previousToDate !== null ? (
+            <span data-testid="ytd-delta">
+              <span style={{ color: deltaColor('distance', km - ytd.previousToDate, { value: km }) }}>{formatDelta(Math.round(km - ytd.previousToDate))}</span>
+              {s.vs('', t.dates.monthShortYear(bare(sameDate), sameDate.slice(2, 4)))}
+            </span>
+          ) : undefined
+        }
       />
       <div className="relative">
         <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="block overflow-visible" aria-hidden>

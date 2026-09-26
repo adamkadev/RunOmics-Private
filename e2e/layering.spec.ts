@@ -9,9 +9,11 @@ import { test, expect } from './fixtures'
 for (const route of ['/', '/activities', '/plan', '/analytics', '/profile']) {
   test(`${route} draws its text on top, on a flat background`, async ({ page }) => {
     await page.goto(route)
+    // The wrapper drops its class once the animation ends (v4.6), so no
+    // wrapper left is as settled as one with no animation running.
     await page.waitForFunction(() => {
       const wrapper = document.querySelector('main .animate-fade-up')
-      return wrapper !== null && wrapper.getAnimations().length === 0
+      return wrapper === null || wrapper.getAnimations().length === 0
     })
 
     const covered = await page.evaluate(() => {

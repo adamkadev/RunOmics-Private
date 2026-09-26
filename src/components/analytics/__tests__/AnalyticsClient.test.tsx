@@ -165,8 +165,12 @@ describe('Analytics (v4.5)', () => {
     // VO2max as Progress prints it.
     expect(screen.getByTestId('performance-summary').textContent).toContain('55.0')
     expect(screen.getByTestId('performance-summary').textContent).toContain('−1 in 12 wk')
-    // Slower is the caution colour; the goal race footer is the only amber besides.
+    // v4.7: slower is amber, faster --good, by the same helper everywhere.
     for (const delta of screen.getAllByTestId('prediction-delta')) expect(delta.getAttribute('style')).toContain('var(--tone-caution)')
+    // VO2max fell by 1 in 12 weeks: amber on the delta, the value stays ink.
+    const [vo2] = screen.getAllByTestId('summary-delta')
+    expect(vo2!.firstElementChild!.getAttribute('style')).toContain('var(--tone-caution)')
+    expect(screen.getByTestId('performance-summary').innerHTML).not.toContain('var(--accent')
   })
 
   it('draws the prediction sparklines faster up', async () => {
@@ -255,6 +259,11 @@ describe('the v4.5 colour rules', () => {
     for (const [file, src] of sources) {
       expect(src, file).not.toMatch(/violet|purple|#7c3aed|CHART_COLORS|status-peaking/i)
     }
+  })
+
+  // v4.7: delta colours come from lib/deltaTone only.
+  it('hard-codes no delta colour', () => {
+    for (const [file, src] of sources) expect(src, file).not.toMatch(/var\(--good\)/)
   })
 
   it('gives no card its own period pills or date arrows', () => {
