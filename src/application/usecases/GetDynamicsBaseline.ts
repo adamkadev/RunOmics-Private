@@ -2,6 +2,7 @@ import { DAY_MS } from '@/lib/calendarDate'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import type { Activity } from '@/domain/activity/types'
 import { median, round } from '@/lib/math'
+import { isRunningActivity } from '@/domain/training/trainingHistory'
 
 /**
  * A metric's own eight-week range. The median alone says whether this run sat
@@ -43,9 +44,11 @@ export function getDynamicsBaseline(activity: Activity): DynamicsBaseline | null
   const end = Date.parse(activity.date + 'T00:00:00')
   const start = end - BASELINE_WEEKS * 7 * DAY_MS
 
+  // Runs only, and no races: a 5K at race pace stretched the stride range to
+  // 0.96–1.40 m, a range no training run lives in (H17).
   const runs = getAllActivities().filter((a) => {
     const at = Date.parse(a.date + 'T00:00:00')
-    return at >= start && at < end
+    return at >= start && at < end && isRunningActivity(a) && a.type !== 'Race'
   })
   if (runs.length < MIN_RUNS) return null
 

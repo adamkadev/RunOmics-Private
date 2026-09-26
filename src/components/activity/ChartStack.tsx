@@ -37,7 +37,14 @@ const LaneChart = memo(function LaneChart({ lane, distanceKm, isLast }: { lane: 
   const axis = distanceAxis(distanceKm)
   return (
     <ResponsiveContainer width="100%" height={isLast ? ROW_HEIGHT + AXIS_ROW_HEIGHT : ROW_HEIGHT}>
-      <AreaChart data={lane.data} margin={{ top: TOP_MARGIN, right: RIGHT_MARGIN, bottom: BOTTOM_MARGIN, left: 0 }}>
+      {/* No accessibility layer: focusing a lane on press drew Recharts' own
+          active dot at km 0 beside the scrub dot (H18). The readout above
+          the stack carries the values at the scrub point. */}
+      <AreaChart
+        data={lane.data}
+        margin={{ top: TOP_MARGIN, right: RIGHT_MARGIN, bottom: BOTTOM_MARGIN, left: 0 }}
+        accessibilityLayer={false}
+      >
         <defs>
           <linearGradient id={`stack-${lane.key}`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%" stopColor={lane.color} stopOpacity={0.25} />
@@ -77,6 +84,7 @@ const LaneChart = memo(function LaneChart({ lane, distanceKm, isLast }: { lane: 
           strokeWidth={1.5}
           fill={`url(#stack-${lane.key})`}
           dot={false}
+          activeDot={false}
           connectNulls={false}
           isAnimationActive={false}
         />

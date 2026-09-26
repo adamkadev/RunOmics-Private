@@ -924,25 +924,9 @@ export const fr = {
       groundContact: 'Contact au sol',
       vertOscillation: 'Oscillation verticale',
       vertRatio: 'Ratio vertical',
-      vsBaseline: (weeks: number) => `vs ta référence sur ${weeks} semaines`,
-      atHigh: (weeks: number) => `ton plus haut sur ${weeks} semaines`,
-      atLow: (weeks: number) => `ton plus bas sur ${weeks} semaines`,
+      vsBaselineShort: 'vs référence',
+      level: 'au niveau de la référence',
       ratioUnit: 'pt',
-      deltas: {
-        strideLength: { up: 'plus longue que ta référence', down: 'plus courte que ta référence' },
-        groundContact: { up: 'contact plus long', down: 'contact plus court' },
-        verticalOscillation: { up: 'plus de rebond', down: 'moins de rebond' },
-        verticalRatio: { up: 'moins économique', down: 'plus économique' },
-        level: 'au niveau de ta référence',
-      },
-      form: {
-        title: 'La cadence au fil de la sortie',
-        faded: (km: string) => `Baisse à ${km} km`,
-        held: 'Tenue',
-        definition:
-          'Tenue : la cadence a gardé son niveau du premier au dernier kilomètre. Baisse : le point où elle a chuté sans remonter - la dérive que signale le découplage, dans votre mécanique.',
-        summary: 'Cadence sur la sortie, avec le point où elle a baissé.',
-      },
     },
     charts: {
       heartRate: 'Fréquence cardiaque',

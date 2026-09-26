@@ -5,7 +5,6 @@ import { GlossaryTerm } from '@/components/ui/GlossaryTerm'
 import { formatDelta } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
-import { FormThroughRun } from './FormThroughRun'
 
 interface Metric {
   label: string
@@ -17,9 +16,6 @@ interface Metric {
   deltaUnit: string
   decimals: number
   band: BaselineRange | null
-  /** The direction that reads as better form, so the delta can be coloured. */
-  lowerIsBetter: boolean
-  phrase: { up: string; down: string }
 }
 
 interface Props {
@@ -27,40 +23,47 @@ interface Props {
   baseline: DynamicsBaseline | null
 }
 
-function BandBar({ value, band }: { value: number; band: BaselineRange }) {
-  const span = band.max - band.min
-  const position = span > 0 ? ((value - band.min) / span) * 100 : 50
-  const clamped = Math.min(100, Math.max(0, position))
+/**
+ * The run on its 8-week range (H17, M10): the ends are the lowest and highest
+ * of those weeks (stretched to take this run), the grey tick is the baseline,
+ * the bright tick this run.
+ */
+function RangeTrack({ value, band, decimals }: { value: number; band: BaselineRange; decimals: number }) {
+  const lo = Math.min(band.min, value)
+  const hi = Math.max(band.max, value)
+  const at = (v: number) => (hi > lo ? ((v - lo) / (hi - lo)) * 100 : 50)
 
   return (
-    <div className="mt-2 flex items-center gap-2 text-caption tabular-nums text-subtle">
-      <span className="w-8 shrink-0">{band.min}</span>
-      <div className="relative h-1.5 flex-1 rounded-full bg-foreground/[0.08]">
+    <div className="mt-2.5 flex items-center gap-3 text-footnote tabular-nums text-muted-foreground">
+      <span className="shrink-0">{lo.toFixed(decimals)}</span>
+      <div className="relative h-1.5 flex-1 rounded-full bg-[var(--track)]" data-testid="range-track">
         <span
           aria-hidden="true"
-          className="absolute -top-1 h-3.5 w-0.75 -translate-x-1/2 rounded-full bg-foreground"
-          style={{ left: `${clamped}%` }}
+          data-testid="baseline-tick"
+          className="absolute -top-1 h-3.5 w-0.5 -translate-x-1/2 rounded-full bg-muted-foreground"
+          style={{ left: `${at(band.median)}%` }}
+        />
+        <span
+          aria-hidden="true"
+          data-testid="value-tick"
+          className="absolute -top-1.5 h-4.5 w-1 -translate-x-1/2 rounded-full bg-foreground"
+          style={{ left: `${at(value)}%` }}
         />
       </div>
-      <span className="w-8 shrink-0 text-right">{band.max}</span>
+      <span className="shrink-0">{hi.toFixed(decimals)}</span>
     </div>
   )
 }
 
 /**
- * "+0.06 m longer than baseline", "+0.5 pt less economical · your 8-week
- * high": each delta is a sentence with its unit, against the named baseline,
- * coloured by whether it is better or worse for that metric. It used to read
- * "+10 SLOWER", all caps, with no reference, and a marker at the track's edge
- * looked like a clipped bar.
+ * "−0.04 m vs baseline", in grey: a delta against the baseline tick, with its
+ * unit. Orange is a zone colour, not "worse" (H17).
  */
-export function deltaSentence(m: Pick<Metric, 'value' | 'band' | 'decimals' | 'deltaUnit' | 'phrase'>, weeks: number): string | null {
+export function deltaSentence(m: Pick<Metric, 'value' | 'band' | 'decimals' | 'deltaUnit'>): string | null {
   const d = t.activity.dynamics
   if (!m.band) return null
   const delta = Number((m.value - m.band.median).toFixed(m.decimals))
-  const main = delta === 0 ? d.deltas.level : `${formatDelta(delta)} ${m.deltaUnit} ${delta > 0 ? m.phrase.up : m.phrase.down}`
-  const edge = m.value >= m.band.max ? d.atHigh(weeks) : m.value <= m.band.min ? d.atLow(weeks) : null
-  return edge ? `${main} · ${edge}` : main
+  return delta === 0 ? d.level : `${formatDelta(delta)} ${m.deltaUnit} ${d.vsBaselineShort}`
 }
 
 export function RunningDynamics({ activity: a, baseline }: Props) {
@@ -77,8 +80,6 @@ export function RunningDynamics({ activity: a, baseline }: Props) {
       deltaUnit: t.units.m,
       decimals: 2,
       band: baseline?.strideLengthM ?? null,
-      lowerIsBetter: false,
-      phrase: d.deltas.strideLength,
     })
   }
   if (a.groundContactMs != null) {
@@ -91,8 +92,6 @@ export function RunningDynamics({ activity: a, baseline }: Props) {
       deltaUnit: t.units.ms,
       decimals: 0,
       band: baseline?.groundContactMs ?? null,
-      lowerIsBetter: true,
-      phrase: d.deltas.groundContact,
     })
   }
   if (a.verticalOscillationMm != null) {
@@ -105,8 +104,6 @@ export function RunningDynamics({ activity: a, baseline }: Props) {
       deltaUnit: t.units.mm,
       decimals: 1,
       band: baseline?.verticalOscillationMm ?? null,
-      lowerIsBetter: true,
-      phrase: d.deltas.verticalOscillation,
     })
   }
   if (a.verticalRatioPct != null) {
@@ -119,56 +116,31 @@ export function RunningDynamics({ activity: a, baseline }: Props) {
       deltaUnit: d.ratioUnit,
       decimals: 1,
       band: baseline?.verticalRatioPct ?? null,
-      lowerIsBetter: true,
-      phrase: d.deltas.verticalRatio,
     })
   }
 
   if (!metrics.length) return null
-  const weeks = baseline?.weeks ?? 0
 
   return (
-    <>
-      <GlassSurface variant="card" className="rounded-card-sm px-4 pb-2.5 pt-3.5">
-        <div className="flex items-baseline justify-between gap-3">
-          <h3 className="text-subhead font-semibold text-foreground">{d.title}</h3>
-          {baseline && <span className="text-xs text-muted-foreground">{d.vsBaseline(weeks)}</span>}
-        </div>
-        <div>
-          {metrics.map((m) => {
-            const delta = m.band !== null ? Number((m.value - m.band.median).toFixed(m.decimals)) : null
-            const improved = delta === null || delta === 0 ? null : delta < 0 === m.lowerIsBetter
-            const sentence = deltaSentence(m, weeks)
-
-            return (
-              <div key={m.label} className="border-b border-border py-2.75">
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-sm font-semibold text-foreground">
-                    <GlossaryTerm term={m.term}>{m.label}</GlossaryTerm>
-                  </span>
-                  <span className="text-lg font-bold tabular-nums text-foreground">
-                    {m.display}
-                    <span className="text-xs font-medium text-muted-foreground"> {m.unit}</span>
-                  </span>
-                </div>
-                {m.band && <BandBar value={m.value} band={m.band} />}
-                {sentence && (
-                  <p
-                    className={cn(
-                      'mt-1.5 text-xs font-semibold',
-                      improved === null ? 'text-muted-foreground' : improved ? 'text-delta-good' : 'text-delta-warn',
-                    )}
-                  >
-                    {sentence}
-                  </p>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      </GlassSurface>
-
-      <FormThroughRun cadenceSamples={a.cadenceSamples} distanceKm={a.distanceKm} />
-    </>
+    <GlassSurface variant="card" className="rounded-[22px] px-4.5 py-1" data-testid="running-dynamics">
+      {metrics.map((m, i) => {
+        const sentence = deltaSentence(m)
+        return (
+          <div key={m.label} className={cn('py-3.5', i > 0 && 'border-t border-border')}>
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-subhead text-foreground">
+                <GlossaryTerm term={m.term}>{m.label}</GlossaryTerm>
+              </span>
+              <span className="font-display text-title3 font-bold tabular-nums text-foreground">
+                {m.display}
+                <span className="text-footnote font-medium text-muted-foreground"> {m.unit}</span>
+              </span>
+            </div>
+            {m.band && <RangeTrack value={m.value} band={m.band} decimals={m.decimals} />}
+            {sentence && <p className="mt-2 text-footnote tabular-nums text-muted-foreground">{sentence}</p>}
+          </div>
+        )
+      })}
+    </GlassSurface>
   )
 }

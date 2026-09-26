@@ -10,12 +10,25 @@ vi.mock('@/infrastructure/repositories/JsonActivityRepository', () => ({
 const { getDynamicsBaseline } = await import('../GetDynamicsBaseline')
 
 function run(date: string, dynamics: Partial<Activity> = {}): Activity {
-  return { date, distanceKm: 10, ...dynamics } as Activity
+  return { date, distanceKm: 10, type: 'Base', ...dynamics } as Activity
 }
 
 describe('getDynamicsBaseline', () => {
   beforeEach(() => {
     activities.length = 0
+  })
+
+  // H17: a 5K race stretched the stride range to 0.96–1.40 m.
+  it('leaves races and other sports out of the range', () => {
+    activities.push(
+      run('2026-08-01', { strideLengthM: 0.96 }),
+      run('2026-08-08', { strideLengthM: 1.04 }),
+      run('2026-08-15', { strideLengthM: 1.14 }),
+      run('2026-08-20', { strideLengthM: 1.4, type: 'Race' }),
+      run('2026-08-21', { strideLengthM: 2.2, sport: 'cycling' }),
+    )
+
+    expect(getDynamicsBaseline(run('2026-09-01'))?.strideLengthM).toEqual({ min: 0.96, median: 1.04, max: 1.14 })
   })
 
   it('takes the median of the eight weeks before the run', () => {
