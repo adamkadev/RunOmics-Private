@@ -268,7 +268,6 @@ export const BOOT_COLORS = {
   foreground: c.gray200,
   actionBg: c.emerald500,
   actionFg: c.performanceBgDark,
-  logo: c.emerald400,
 } as const
 
 

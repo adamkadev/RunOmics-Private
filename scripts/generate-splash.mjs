@@ -7,9 +7,12 @@ import { loadLibModules } from './loadPalette.mjs'
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const outDir = join(root, 'public/icons/splash')
 
-const { HUE } = await loadLibModules('palette', ['palette'])
-const BG = HUE.performanceBgDark
-const LOGO_COLOR = HUE.emerald400
+// v5.2: the new mark in the default accent on the app's darkest background,
+// both read from the tokens (the old navy and mint are gone).
+const { SURFACES } = await loadLibModules('themeTokens', ['palette', 'accentScale', 'themeTokens'])
+const { CURATED_ACCENTS, DEFAULT_ACCENT } = await loadLibModules('accent', ['accentScale', 'accent'])
+const BG = SURFACES.dark.background
+const LOGO_COLOR = CURATED_ACCENTS.find((a) => a.id === DEFAULT_ACCENT).dark.acc
 
 const DEVICES = [
   { name: 'iphone-16-pro-max', w: 440, h: 956, r: 3 },
@@ -32,7 +35,7 @@ const DEVICES = [
   { name: 'ipad-9-7', w: 768, h: 1024, r: 2 },
 ]
 
-const rawSvg = readFileSync(join(root, 'public/icons/logo.svg'), 'utf8')
+const rawSvg = readFileSync(join(root, 'public/icons/mark.svg'), 'utf8')
 const coloredSvg = rawSvg.replaceAll('currentColor', LOGO_COLOR)
 
 const seen = new Set()
