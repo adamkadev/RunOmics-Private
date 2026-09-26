@@ -21,7 +21,7 @@ export default function MapPage() {
       : years[0]
 
   return (
-    <div className="flex h-[calc(100dvh-7rem-max(env(safe-area-inset-top),12px))] flex-col gap-3 lg:h-[calc(100dvh-2rem)]">
+    <div className="flex flex-col gap-3">
       <BackButton label={t.pages.map.back} fallbackHref="/activities" />
 
       {/* The page title every other screen uses, with its facts under it; it
@@ -29,7 +29,7 @@ export default function MapPage() {
       <div>
         <h1 className="text-display text-foreground">{t.pages.map.title}</h1>
         <p className="mt-0.5 text-sm text-muted-foreground" aria-label={t.pages.map.title}>
-          {[t.pages.map.routes(totalCount), `${totalKm.toLocaleString(t.locale)} ${t.units.km}`, yearLabel].join(' · ')}
+          {[t.pages.map.runs(totalCount), `${totalKm.toLocaleString(t.locale)} ${t.units.km}`, yearLabel].join(' · ')}
         </p>
       </div>
 

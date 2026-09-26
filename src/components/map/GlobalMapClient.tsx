@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Globe, Maximize, Minimize } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Info, Maximize, Minimize } from "lucide-react";
 import type { MapShellData } from "@/application/usecases/GetAllRoutes";
 import { ACTIVITY_TYPES, type ActivityType } from "@/domain/activity/types";
 import { reverseGeocode } from "@/lib/reverseGeocode";
@@ -9,16 +9,14 @@ import { t } from "@/i18n";
 import { useSetFullscreenChromeHidden } from "@/components/layout/FullscreenChromeContext";
 import type { TerritoryCardContent } from "./TerritoryBand";
 import { ClusterPanel } from "./ClusterPanel";
-import { YearPicker } from "./YearPicker";
-import { TypePicker } from "./TypePicker";
+import { FilterChip } from "./FilterChip";
 import { HeatLegend } from "./HeatLegend";
 import { useMapRoutes } from "./useMapRoutes";
 import {
-  MAP_CHIP_COUNT_INK,
   MAP_CHIP_NEUTRAL,
+  areaRows,
   coordLabel,
   computeAreaTerritory,
-  computeWorldTerritory,
   matchesFilters,
   type HeatFilters,
 } from "./mapUtils";
@@ -28,9 +26,13 @@ interface Props {
   onContentChange?: (content: TerritoryCardContent | null) => void;
 }
 
-/** A median radius under a kilometre reads "under 1 km", never "0 km". */
-function radiusLabel(km: number): string {
-  return km < 1 ? t.pages.map.territory.underOneKm : `${km} ${t.units.km}`;
+/**
+ * The median radius as an upper bound: half the runs stay within it, so it
+ * rounds up - "1 km" for 0.6, "1.3 km" for 1.21 - and never reads "0 km".
+ */
+export function radiusLabel(km: number): string {
+  const up = km <= 1 ? 1 : Math.ceil(km * 10) / 10;
+  return `${up.toLocaleString(t.locale)} ${t.units.km}`;
 }
 
 export function GlobalMapClient({ data, onContentChange }: Props) {
@@ -39,7 +41,7 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
   const [selectedYear, setSelectedYear] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<ActivityType | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [worldView, setWorldView] = useState(false);
+  const [showAttribution, setShowAttribution] = useState(false);
   const [names, setNames] = useState<string[]>(() => clusters.map(coordLabel));
 
   const [routes, setRoutes] = useState<[number, number][][]>([]);
@@ -81,17 +83,7 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
     return ACTIVITY_TYPES.filter((ty) => present.has(ty));
   }, [routeMeta]);
 
-  const clusterStats = useMemo(
-    () =>
-      clusters.map((c) => {
-        const indices = c.routeIndices.filter((i) => matchesFilters(routeMeta[i], filters));
-        return {
-          routeCount: indices.length,
-          totalKm: Math.round(indices.reduce((s, i) => s + (routeMeta[i]?.distanceKm ?? 0), 0)),
-        };
-      }),
-    [clusters, routeMeta, filters],
-  );
+  const rows = useMemo(() => areaRows(clusters, routeMeta, filters), [clusters, routeMeta, filters]);
 
   const visibleIndices = useMemo(
     () =>
@@ -99,63 +91,12 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
     [clusters, selectedIdx, routeMeta, filters],
   );
 
-  const handleSelectCluster = useCallback((idx: number) => {
-    setSelectedIdx(idx);
-    setWorldView(false);
-  }, []);
+  const handleSelectCluster = useCallback((idx: number) => setSelectedIdx(idx), []);
 
-  // Three chips plus a count can outgrow the row at any width - the rail
-  // scrolls rather than overlapping or wrapping, exactly like the Activities
-  // filter row, with a fade that only appears once there's more to scroll to.
-  const chipRailRef = useRef<HTMLDivElement>(null);
-  const [chipFade, setChipFade] = useState(false);
-  const updateChipFade = useCallback(() => {
-    const el = chipRailRef.current;
-    if (!el) return;
-    setChipFade(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
-  }, []);
-  useLayoutEffect(() => {
-    updateChipFade();
-    const el = chipRailRef.current;
-    if (!el) return;
-    const obs = new ResizeObserver(updateChipFade);
-    obs.observe(el);
-    // A viewport resize (rotation, browser chrome show/hide) changes the
-    // rail's width via layout, but not always in a single reflow the
-    // ResizeObserver's own callback batches before paint - a plain window
-    // listener catches it as a fallback.
-    window.addEventListener("resize", updateChipFade);
-    return () => {
-      obs.disconnect();
-      window.removeEventListener("resize", updateChipFade);
-    };
-  }, [updateChipFade]);
-  // The scroller's own box never changes size when a chip's label does (a
-  // longer area name, a type getting picked) - only its scrollWidth does,
-  // which ResizeObserver on the scroller itself won't catch.
-  useEffect(() => {
-    updateChipFade();
-  }, [updateChipFade, selectedType, selectedYear, worldView, names, selectedIdx]);
-
-  const clusterCounts = useMemo(() => clusterStats.map((s) => s.routeCount), [clusterStats]);
-  const totalFilteredCount = useMemo(() => clusterStats.reduce((sum, s) => sum + s.routeCount, 0), [clusterStats]);
-
-  // The card follows whatever area, filters and zoom level are on screen -
-  // "all areas" at world zoom is itself a state the card has to name, not a
-  // reason to keep showing the last selected place.
+  // The card follows the area and filters on screen: eyebrow, headline and
+  // stats all read the same filtered set the map draws, share by km.
   const cardContent = useMemo<TerritoryCardContent | null>(() => {
     const s = t.pages.map.territory;
-    if (worldView) {
-      const world = computeWorldTerritory(clusters, names, routeMeta, filters);
-      if (!world) return null;
-      return {
-        eyebrow: s.eyebrowWorld,
-        headline: s.headlineWorld(world.areaCount, world.topSharePercent, /°[NS] /.test(world.topAreaName) ? s.homeArea : world.topAreaName),
-        primaryStat: { value: String(world.routeCount), label: s.routesStat },
-        secondaryStat: { value: String(world.areaCount), label: s.areasStat },
-      };
-    }
-
     const cluster = clusters[selectedIdx];
     if (!cluster) return null;
     const territory = computeAreaTerritory(cluster, routeMeta, routes, filters);
@@ -165,28 +106,27 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
     const areaName = names[selectedIdx];
     const place = areaName && areaName !== coordLabel(cluster) ? areaName : null;
     const radius = radiusLabel(territory.medianRadiusKm);
+    const eyebrow = [
+      place ?? s.homeArea,
+      ...(selectedType ? [t.activityTypes[selectedType]] : []),
+      selectedYear ?? t.pages.map.allYears,
+    ].join(" · ");
     return {
-      eyebrow: s.eyebrowFor(place ?? s.homeArea),
-      headline: place ? s.headline(territory.percentVolume, radius, place) : s.headlineHome(territory.percentVolume, radius),
-      primaryStat: { value: String(territory.routeCount), label: s.routesStat },
-      secondaryStat: { value: radius, label: s.radiusStat },
+      eyebrow,
+      headline: place ? s.headline(territory.percentVolume, place, radius) : s.headlineHome(territory.percentVolume, radius),
+      stats: [
+        { value: String(territory.routeCount), label: s.runsStat },
+        { value: territory.km.toLocaleString(t.locale), label: s.kmStat },
+        { value: radius, label: s.radiusStat },
+      ],
     };
-  }, [worldView, clusters, selectedIdx, routeMeta, routes, filters, names]);
+  }, [clusters, selectedIdx, routeMeta, routes, filters, names, selectedType, selectedYear]);
 
   useEffect(() => {
     onContentChange?.(cardContent);
   }, [onContentChange, cardContent]);
 
-  const { containerRef, resize } = useMapRoutes(
-    data,
-    routes,
-    selectedIdx,
-    visibleIndices,
-    worldView,
-    clusterCounts,
-    names,
-    handleSelectCluster,
-  );
+  const { containerRef, resize } = useMapRoutes(data, routes, selectedIdx, visibleIndices);
 
   useSetFullscreenChromeHidden(isFullscreen);
 
@@ -218,140 +158,119 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
     };
   }, [clusters]);
 
+  const attributionButton = (overlay: boolean) => (
+    <button
+      onClick={() => setShowAttribution((v) => !v)}
+      aria-label={t.pages.map.attributionLabel}
+      aria-expanded={showAttribution}
+      className={[
+        "flex shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground",
+        overlay
+          ? "glass-map-chip absolute bottom-[calc(max(env(safe-area-inset-bottom),12px)+22px)] right-3 z-10 h-[30px] w-[30px]"
+          : "h-[22px] w-[22px]",
+      ].join(" ")}
+    >
+      <Info size={overlay ? 14 : 12} />
+    </button>
+  );
+
   return (
-    <div className={isFullscreen ? "fixed inset-x-0 bottom-0 top-[var(--safe-top)] z-50 flex flex-col bg-background" : "flex h-full w-full flex-col"}>
-    <div className="relative min-h-0 flex-1">
-      <div ref={containerRef} role="img" aria-label={t.pages.map.title} className="h-full w-full" />
-
-      {/* A solid scrim, not the individual chips' own translucency, is what
-          keeps these readable once the map is panned under bright tiles.
-          The row sits above the map canvas as a separate element - a drag
-          that starts here never reaches maplibre's own pan handler, and the
-          row has no transform of its own, so it never moves when the map does. */}
+    <div
+      className={isFullscreen ? "fixed inset-x-0 bottom-0 top-[var(--safe-top)] z-50 flex flex-col bg-background" : "flex flex-col gap-3"}
+      data-testid="heatmap"
+    >
+      {/* The chips: in the page flow, or the fullscreen header with the
+          collapse button. All three fit one row at 375 pt; the area name
+          truncates first. */}
       <div
-        className="absolute inset-x-0 top-0 z-10 flex items-start gap-2 px-3 pb-2.5"
-        style={{
-          background: "var(--raised)",
-          borderBottom: "1px solid var(--divider)",
-          // Fullscreen starts under the status strip (v4.8): no safe-area offset.
-          paddingTop: "12px",
-        }}
+        className={[
+          "flex items-center gap-2",
+          isFullscreen ? "shrink-0 border-b border-border bg-card px-3 py-2" : "",
+        ].join(" ")}
       >
-        {/* The rail scrolls instead of wrapping or overlapping - three chips
-            plus a count can outgrow the row at any width, and a chip that
-            can touch its neighbour is the row being wrong, not the content. */}
-        <div className="relative min-w-0 flex-1">
-          <div
-            ref={chipRailRef}
-            onScroll={updateChipFade}
-            className="flex items-start gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
-            <ClusterPanel
-              clusters={clusters}
-              names={names}
-              stats={clusterStats}
-              selectedIdx={selectedIdx}
-              onSelect={handleSelectCluster}
-              worldView={worldView}
-              totalCount={totalFilteredCount}
-            />
-            {availableTypes.length > 1 && (
-              <TypePicker types={availableTypes} value={selectedType} onChange={setSelectedType} />
-            )}
-            <YearPicker years={data.years} value={selectedYear} onChange={setSelectedYear} />
-          </div>
-          {chipFade && (
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-y-0 right-0 w-[26px]"
-              style={{ background: "linear-gradient(90deg, transparent, var(--raised) 80%)" }}
-            />
-          )}
-        </div>
-
-        {/* The collapse button is a sibling of the scroller, never a chip
-            inside it - that's what was pushing the chips into each other. */}
+        <ClusterPanel rows={rows} names={names} selectedIdx={selectedIdx} onSelect={handleSelectCluster} />
+        {availableTypes.length > 1 && (
+          <FilterChip
+            allLabel={t.pages.map.allTypes}
+            options={availableTypes}
+            value={selectedType}
+            label={(ty) => t.activityTypes[ty]}
+            onChange={setSelectedType}
+          />
+        )}
+        <FilterChip
+          allLabel={t.pages.map.allYears}
+          options={data.years}
+          value={selectedYear}
+          label={(y) => y}
+          onChange={setSelectedYear}
+        />
         {isFullscreen && (
           <button
             onClick={() => setIsFullscreen(false)}
             aria-label={t.pages.map.exitFullscreen}
-            className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[12px] transition-colors hover:bg-foreground/[0.06]"
-            style={{ ...MAP_CHIP_NEUTRAL }}
+            className="ml-auto flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[12px] text-foreground"
+            style={{ border: MAP_CHIP_NEUTRAL.border }}
           >
             <Minimize size={16} />
           </button>
         )}
       </div>
 
-      {!process.env.NEXT_PUBLIC_MAPTILER_TOKEN && (
-        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-          <span className="glass-map-chip px-4 py-2 text-xs font-medium text-subtle">
-            {t.pages.map.mapUnavailable}
-          </span>
+      <div className={isFullscreen ? "relative min-h-0 flex-1" : "overflow-hidden rounded-[22px] border border-border bg-card"}>
+        <div className={isFullscreen ? "absolute inset-0" : "relative h-[360px]"}>
+          <div ref={containerRef} role="img" aria-label={t.pages.map.title} className="h-full w-full" />
+
+          {!process.env.NEXT_PUBLIC_MAPTILER_TOKEN && (
+            <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+              <span className="glass-map-chip px-4 py-2 text-xs font-medium text-subtle">
+                {t.pages.map.mapUnavailable}
+              </span>
+            </div>
+          )}
+
+          {visibleIndices.length === 0 && (
+            <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+              <span className="glass-map-chip px-4 py-2 text-xs font-medium text-subtle">
+                {t.pages.map.noRoutes}
+              </span>
+            </div>
+          )}
+
+          {/* Nothing on the routes but this (v4.8): legend and attribution
+              live in the footer row below. */}
+          {!isFullscreen && (
+            <button
+              onClick={() => setIsFullscreen(true)}
+              aria-label={t.pages.map.fullscreen}
+              className="glass-map-chip absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-[10px]"
+            >
+              <Maximize size={15} />
+            </button>
+          )}
+
+          {isFullscreen && (
+            <>
+              <HeatLegend overlay />
+              {attributionButton(true)}
+            </>
+          )}
+          {isFullscreen && showAttribution && (
+            <span className="glass-map-chip absolute bottom-[calc(max(env(safe-area-inset-bottom),12px)+60px)] right-3 z-10 rounded-[10px] px-3 py-1.5 text-caption text-muted-foreground">
+              {t.pages.map.attribution}
+            </span>
+          )}
         </div>
-      )}
 
-      {!worldView && visibleIndices.length === 0 && (
-        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-          <span className="glass-map-chip px-4 py-2 text-xs font-medium text-subtle">
-            {t.pages.map.noRoutes}
-          </span>
-        </div>
-      )}
-
-      {worldView ? (
-        <span
-          className={[
-            "glass-map-chip pointer-events-none absolute left-3 z-10 px-3 py-2 text-xs font-medium text-subtle",
-            isFullscreen
-              ? "bottom-[calc(max(env(safe-area-inset-bottom),12px)+2.25rem)]"
-              : "bottom-11",
-          ].join(" ")}
-        >
-          {t.pages.map.worldViewHint}
-        </span>
-      ) : (
-        <HeatLegend isFullscreen={isFullscreen} />
-      )}
-
-      <button
-        onClick={() => setWorldView((w) => !w)}
-        aria-label={worldView ? t.pages.map.exitWorldView : t.pages.map.worldView}
-        aria-pressed={worldView}
-        className={[
-          "glass-map-chip absolute z-20 flex h-11 w-11 items-center justify-center transition-colors hover:bg-muted",
-          worldView ? "text-accent-text" : "",
-          isFullscreen ? "right-[max(env(safe-area-inset-right),10px)] bottom-[calc(max(env(safe-area-inset-bottom),10px)+3.25rem)]" : "right-2.5 bottom-16",
-        ].join(" ")}
-      >
-        <Globe size={16} />
-      </button>
-
-      {/* Entering fullscreen is a bottom-right affordance (where the thumb
-          already is); leaving it is the top-right control above, not this
-          same spot - bottom-right during panning is too easy to hit by
-          accident for an exit. */}
-      {!isFullscreen && (
-        <button
-          onClick={() => setIsFullscreen(true)}
-          aria-label={t.pages.map.fullscreen}
-          className="glass-map-chip absolute right-2.5 bottom-2.5 z-20 flex h-11 w-11 items-center justify-center transition-colors hover:bg-muted"
-        >
-          <Maximize size={16} />
-        </button>
-      )}
-    </div>
-
-      <div
-        style={{
-          background: "var(--raised)",
-          borderTop: "1px solid var(--divider)",
-          padding: "7px 11px",
-        }}
-      >
-        {/* The strip is dark in both themes, like the chip row above the map,
-            so it takes the chips' fixed ink rather than the theme's. */}
-        <span style={{ fontSize: "9.5px", color: MAP_CHIP_COUNT_INK }}>{t.pages.map.attribution}</span>
+        {!isFullscreen && (
+          <div className="flex flex-col gap-1.5 px-3.5 py-2.5">
+            <div className="flex items-center justify-between">
+              <HeatLegend />
+              {attributionButton(false)}
+            </div>
+            {showAttribution && <span className="text-caption text-muted-foreground">{t.pages.map.attribution}</span>}
+          </div>
+        )}
       </div>
     </div>
   );

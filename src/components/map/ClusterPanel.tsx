@@ -1,57 +1,88 @@
 "use client";
 
-import { ChevronDown, X } from "lucide-react";
-import type { RouteCluster } from "@/application/usecases/GetAllRoutes";
+import { useState } from "react";
+import { Check, ChevronDown, ChevronRight, X } from "lucide-react";
 import { t } from "@/i18n";
 import {
-  MAP_CHIP_ACTIVE,
+  MAP_CHIP_AREA,
   MAP_CHIP_CARET_INK,
   MAP_CHIP_COUNT_INK,
   MAP_CHIP_GEOMETRY,
+  MAP_CHIP_OPEN_BORDER,
   MAP_CHIP_STYLE,
+  OWN_ROW_SHARE,
+  type AreaRow,
 } from "./mapUtils";
 import { ChipMenuPanel, useChipMenu } from "./chipMenu";
 
-interface ClusterStat {
-  routeCount: number;
-  totalKm: number;
-}
-
 interface Props {
-  clusters: RouteCluster[];
+  /** Every area with a run under the filters, busiest by km first. */
+  rows: AreaRow[];
   names: string[];
-  stats: ClusterStat[];
   selectedIdx: number;
   onSelect: (idx: number) => void;
-  /** World view has no single selected area - the chip states the whole
-   * picture instead of naming a place the map isn't showing. */
-  worldView?: boolean;
-  totalCount?: number;
 }
 
-export function ClusterPanel({ clusters, names, stats, selectedIdx, onSelect, worldView = false, totalCount = 0 }: Props) {
-  const menu = useChipMenu("start");
+function AreaOption({ row, name, selected, onPick }: { row: AreaRow; name: string; selected: boolean; onPick: () => void }) {
+  return (
+    <li className="border-t border-border">
+      <button
+        onClick={onPick}
+        aria-current={selected}
+        className="grid w-full items-center gap-2.5 px-1 py-3 text-left transition-colors hover:bg-muted"
+        style={{ gridTemplateColumns: "minmax(0,1fr) auto 20px" }}
+      >
+        <span className="flex min-w-0 flex-col gap-0.5">
+          <span className={["truncate text-[15px] text-foreground", selected ? "font-semibold" : ""].join(" ")}>{name}</span>
+          <span className="text-[13px] text-muted-foreground">
+            {t.pages.map.runs(row.runs)} · {row.km.toLocaleString(t.locale)} {t.units.km}
+          </span>
+        </span>
+        <span className="font-display text-[15px] font-semibold tabular-nums text-foreground">{row.sharePercent}%</span>
+        <span className="flex justify-end text-accent-text">{selected && <Check size={16} strokeWidth={2.5} />}</span>
+      </button>
+    </li>
+  );
+}
 
-  const selectedName = worldView ? t.pages.map.allAreas : names[selectedIdx]
+/**
+ * The area chip and its list (v4.8): the world view's bubbles became this.
+ * Each area reads runs, km and its share of km; the small ones fold into one
+ * row that opens in place.
+ */
+export function ClusterPanel({ rows, names, selectedIdx, onSelect }: Props) {
+  const menu = useChipMenu("start");
+  const [unfolded, setUnfolded] = useState(false);
+
+  const selectedName = names[selectedIdx] ?? "";
+  const selectedRuns = rows.find((r) => r.idx === selectedIdx)?.runs ?? 0;
+  const totalRuns = rows.reduce((s, r) => s + r.runs, 0);
+  const totalKm = rows.reduce((s, r) => s + r.km, 0);
+
+  // The top area always has its own row, and so does the one on screen.
+  const own = rows.filter((r, i) => i === 0 || r.sharePercent >= OWN_ROW_SHARE || r.idx === selectedIdx);
+  const folded = rows.filter((r) => !own.includes(r));
+  const showAll = unfolded || folded.length < 2;
+  const visible = showAll ? rows : own;
+  const foldedKm = folded.reduce((s, r) => s + r.km, 0);
+
+  function pick(idx: number) {
+    onSelect(idx);
+    setUnfolded(false);
+    menu.close();
+  }
 
   return (
-    <div className="min-w-0 shrink-0">
+    <div className="min-w-0 shrink">
       <button
         {...menu.chipProps}
         title={selectedName}
-        /* Without this the button announces itself as its own contents - "Robertsau 12" -
-           which names the current zone and the route count but never says the control
-           picks a zone. */
-        aria-label={`${t.pages.map.zones}: ${selectedName}`}
-        className={[MAP_CHIP_GEOMETRY, "min-w-0 max-w-[170px] gap-2"].join(" ")}
-        style={{ ...MAP_CHIP_STYLE, ...MAP_CHIP_ACTIVE }}
+        aria-label={`${t.pages.map.area}: ${selectedName}`}
+        className={[MAP_CHIP_GEOMETRY, "min-w-0 max-w-[150px] gap-[7px]"].join(" ")}
+        style={{ ...MAP_CHIP_STYLE, ...MAP_CHIP_AREA, ...(menu.open ? { border: MAP_CHIP_OPEN_BORDER } : {}) }}
       >
-        <span className="min-w-0 flex-1 truncate font-semibold" style={{ color: MAP_CHIP_ACTIVE.color }}>
-          {selectedName}
-        </span>
-        <span className="min-w-0 shrink truncate tabular-nums" style={{ fontSize: "12px", color: MAP_CHIP_COUNT_INK }}>
-          {worldView ? totalCount : (stats[selectedIdx]?.routeCount ?? 0)}
-        </span>
+        <span className="min-w-0 truncate font-semibold">{selectedName}</span>
+        <span className="shrink-0 tabular-nums" style={{ color: MAP_CHIP_COUNT_INK }}>{selectedRuns}</span>
         <ChevronDown
           size={10}
           style={{ color: MAP_CHIP_CARET_INK }}
@@ -59,45 +90,46 @@ export function ClusterPanel({ clusters, names, stats, selectedIdx, onSelect, wo
         />
       </button>
 
-      {/* A column, so that when the room below the chip is short the list
-          gives way and scrolls, never the header with its close button. */}
-      <ChipMenuPanel menu={menu} className="glass-map-chip flex w-52 flex-col overflow-hidden rounded-[10px]">
-        <div className="flex items-center justify-between border-b border-border px-3 py-2">
-          <p className="text-xs font-semibold text-foreground/80">{t.pages.map.zones}</p>
+      <ChipMenuPanel menu={menu} className="glass-map-chip flex w-[300px] flex-col overflow-hidden rounded-[14px] px-3">
+        <div className="flex items-center justify-between gap-2 pt-1">
+          <div className="flex min-w-0 flex-col py-2">
+            <p className="font-display text-lg font-bold text-foreground">{t.pages.map.areas}</p>
+            <p className="text-[13px] text-muted-foreground">{t.pages.map.areasSummary(rows.length, totalRuns)}</p>
+          </div>
           <button
             onClick={menu.close}
             aria-label={t.common.close}
-            className="flex h-11 w-11 items-center justify-center text-muted-foreground hover:text-foreground"
+            className="flex h-11 w-11 shrink-0 items-center justify-center text-muted-foreground hover:text-foreground"
           >
             <X size={16} />
           </button>
         </div>
-        <ul className="max-h-64 min-h-0 overflow-y-auto py-1">
-          {clusters.map((c, i) => (
-            <li key={c.id}>
+        <ul className="max-h-80 min-h-0 overflow-y-auto">
+          {visible.map((row) => (
+            <AreaOption key={row.idx} row={row} name={names[row.idx] ?? ""} selected={row.idx === selectedIdx} onPick={() => pick(row.idx)} />
+          ))}
+          {!showAll && (
+            <li className="border-t border-border">
               <button
-                onClick={() => { onSelect(i); menu.close(); }}
-                aria-current={i === selectedIdx}
-                className={[
-                  "flex w-full flex-col gap-0.5 px-3 py-3 text-left transition-colors hover:bg-muted",
-                  i === selectedIdx ? "bg-[var(--segmented-track)]" : "",
-                ].join(" ")}
+                onClick={() => setUnfolded(true)}
+                className="grid w-full items-center gap-2.5 px-1 py-3 text-left transition-colors hover:bg-muted"
+                style={{ gridTemplateColumns: "minmax(0,1fr) auto 20px" }}
               >
-                <span
-                  className={[
-                    "text-xs font-medium",
-                    i === selectedIdx ? "text-accent-text" : "text-foreground",
-                  ].join(" ")}
-                >
-                  {names[i]}
+                <span className="flex min-w-0 flex-col gap-0.5">
+                  <span className="text-[15px] text-foreground">{t.pages.map.moreAreas(folded.length)}</span>
+                  <span className="truncate text-[13px] text-muted-foreground">
+                    {t.pages.map.runs(folded.reduce((s, r) => s + r.runs, 0))} · {foldedKm.toLocaleString(t.locale)} {t.units.km} · {t.pages.map.including(names[folded[0]!.idx] ?? "")}
+                  </span>
                 </span>
-                <span className="text-caption text-subtle">
-                  {t.common.runs(stats[i]?.routeCount ?? 0)} · {stats[i]?.totalKm ?? 0} {t.units.km}
+                <span className="font-display text-[15px] font-semibold tabular-nums text-muted-foreground">
+                  {totalKm > 0 ? Math.round((foldedKm / totalKm) * 100) : 0}%
                 </span>
+                <span className="flex justify-end text-muted-foreground"><ChevronRight size={16} /></span>
               </button>
             </li>
-          ))}
+          )}
         </ul>
+        <p className="pb-3 pt-2 text-xs leading-normal text-muted-foreground">{t.pages.map.shareNote}</p>
       </ChipMenuPanel>
     </div>
   );

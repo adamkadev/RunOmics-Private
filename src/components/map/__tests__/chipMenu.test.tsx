@@ -1,11 +1,17 @@
 import { describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen } from '@testing-library/react'
-import type { RouteCluster } from '@/application/usecases/GetAllRoutes'
 import { t } from '@/i18n'
 import { menuPlacement } from '../chipMenu'
 import { ClusterPanel } from '../ClusterPanel'
-import { TypePicker } from '../TypePicker'
-import { YearPicker } from '../YearPicker'
+import { FilterChip } from '../FilterChip'
+
+function YearPicker({ years, value, onChange }: { years: string[]; value: string | null; onChange: (v: string | null) => void }) {
+  return <FilterChip allLabel={t.pages.map.allYears} options={years} value={value} label={(y) => y} onChange={onChange} />
+}
+
+function TypePicker({ types, value, onChange }: { types: string[]; value: string | null; onChange: (v: string | null) => void }) {
+  return <FilterChip allLabel={t.pages.map.allTypes} options={types} value={value} label={(y) => y} onChange={onChange} />
+}
 
 describe('menuPlacement', () => {
   const viewport = { width: 390, height: 844 }
@@ -109,25 +115,48 @@ describe('the map filter chips', () => {
     expect(menu.style.right).toBe(`${window.innerWidth - 200}px`)
   })
 
-  it('open the zone list under the start of its chip, and close it from its own button', () => {
-    const clusters = [{ id: 'a' }, { id: 'b' }] as RouteCluster[]
+  it('open the area list under the start of its chip, and close it from its own button', () => {
     inScrollingRail(
       <ClusterPanel
-        clusters={clusters}
-        names={['Riverside', 'Old town']}
-        stats={[
-          { routeCount: 12, totalKm: 96 },
-          { routeCount: 3, totalKm: 21 },
+        rows={[
+          { idx: 0, runs: 12, km: 96, sharePercent: 82 },
+          { idx: 1, runs: 3, km: 21, sharePercent: 18 },
         ]}
+        names={['Riverside', 'Old town']}
         selectedIdx={0}
         onSelect={() => {}}
       />
     )
-    const { chip, menu } = openMenu(new RegExp(t.pages.map.zones))
+    const { chip, menu } = openMenu(new RegExp(t.pages.map.area))
 
     expect(menu.style.left).not.toBe('')
     expect(menu.style.right).toBe('')
+    expect(menu).toHaveTextContent('82%')
     fireEvent.click(screen.getByRole('button', { name: t.common.close }))
     expect(chip).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('fold the small areas into one row that opens in place', () => {
+    const rows = [
+      { idx: 0, runs: 142, km: 1216, sharePercent: 49 },
+      { idx: 1, runs: 129, km: 1067, sharePercent: 43 },
+      { idx: 2, runs: 15, km: 120, sharePercent: 5 },
+      { idx: 3, runs: 8, km: 79, sharePercent: 3 },
+    ]
+    inScrollingRail(<ClusterPanel rows={rows} names={['Metz', 'Strasbourg', 'George Town', 'Nancy']} selectedIdx={0} onSelect={() => {}} />)
+    const { menu } = openMenu(new RegExp(t.pages.map.area))
+
+    expect(menu).toHaveTextContent('2 more areas')
+    expect(menu).toHaveTextContent('incl. George Town')
+    expect(menu).not.toHaveTextContent('Nancy')
+    fireEvent.click(screen.getByRole('button', { name: /2 more areas/ }))
+    expect(menu).toHaveTextContent('Nancy')
+  })
+
+  it('fill a set filter with the accent and clear it from its ✕', () => {
+    const onChange = vi.fn()
+    render(<YearPicker years={['2025', '2026']} value="2026" onChange={onChange} />)
+    fireEvent.click(screen.getByRole('button', { name: t.pages.map.clearFilter('2026') }))
+    expect(onChange).toHaveBeenCalledWith(null)
   })
 })

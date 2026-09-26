@@ -56,12 +56,12 @@ describe('getAllRoutes', () => {
     expect(quietest?.totalKm).toBe(10)
   })
 
-  it('opens on the cluster the most recent run belongs to, not the busiest', async () => {
+  it('opens on the area with the most km, not the most recent run (v4.8)', async () => {
     const { getAllRoutes } = await load(HISTORY)
     const { clusters, defaultClusterIdx } = getAllRoutes()
 
-    expect(defaultClusterIdx).toBe(1)
-    expect(clusters[defaultClusterIdx]?.routeIndices).toEqual([0])
+    expect(defaultClusterIdx).toBe(0)
+    expect(clusters[defaultClusterIdx]?.totalKm).toBe(20)
   })
 
   it('bounds a cluster by every trace inside it', async () => {
