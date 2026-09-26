@@ -1,3 +1,4 @@
+import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
 import { ArrowUpRight, ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { BRAND_TINTS } from '@/lib/colors'
@@ -19,7 +20,7 @@ export function SeasonHeadline({ data, aiTake }: Props) {
         background: BRAND_TINTS.headlineFill,
       }}
     >
-      <div className="mb-2 font-mono text-caption font-bold uppercase tracking-[0.14em] text-accent-text">
+      <div className={cn(EYEBROW_CLASS, 'mb-2 text-accent-text')}>
         {t.analytics.seasonHeadline.eyebrow}
       </div>
       <div className="mb-3">

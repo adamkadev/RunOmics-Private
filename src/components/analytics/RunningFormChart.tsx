@@ -162,9 +162,11 @@ export function RunningFormChart({ points }: { points: WeeklyTrendPoint[] }) {
 
         return (
           <ChartFigure summary={summary}>
-            <p className="text-caption leading-none text-subtle">{UNIT_BY_KEY[key]}</p>
+            {/* The unit has its own line above the gutter, clear of the top
+                tick: at top: 4 the 178 label sat on "spm" (G19). */}
+            <p className="mb-1.5 text-caption leading-none text-subtle">{UNIT_BY_KEY[key]}</p>
             <ResponsiveContainer width="100%" height={196}>
-              <LineChart data={visible} margin={{ top: 4, right: 4, bottom: 0, left: -4 }}>
+              <LineChart data={visible} margin={{ top: 10, right: 4, bottom: 0, left: -4 }}>
                 <XAxis {...windowDateAxis(ticks)} />
                 <YAxis
                   domain={axis?.domain}

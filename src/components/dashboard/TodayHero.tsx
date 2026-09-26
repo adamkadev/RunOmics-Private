@@ -1,5 +1,7 @@
 'use client'
 
+import { cn } from '@/lib/utils'
+import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import type { ActivitySummary } from '@/domain/activity/types'
 import { verdictTone, type ReadinessTone } from '@/domain/training/readiness'
@@ -76,7 +78,7 @@ export function TodayHero({ status, plannedWorkout, todayActivity, aiVerdict }: 
       <div className="px-4.5 pt-3.5 pb-3">
         <div className="flex items-center justify-between gap-3">
           <span
-            className="inline-flex items-center font-mono text-caption font-bold uppercase tracking-[0.16em]"
+            className={cn(EYEBROW_CLASS, 'inline-flex items-center')}
             style={{ color: toneColor }}
           >
             {tone ? s.eyebrowByTone[tone] : s.eyebrowByTone.go}

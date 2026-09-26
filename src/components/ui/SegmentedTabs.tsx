@@ -105,12 +105,15 @@ export function SegmentedTabs<T extends string | number>({
             className={cn(
               'hit-44 flex items-center justify-center whitespace-nowrap rounded-full font-semibold transition-colors',
               size && SIZE_CLASS[size],
-              fill && 'min-w-0 flex-1',
+              // Fill mode shares the spare width out equally on top of each
+              // label, with 12 pt padding as the floor: equal widths left
+              // "Performance" touching its pill edge to edge (G21).
+              fill && 'min-w-0 flex-auto px-3',
               tabClassName,
               props['aria-selected'] ? 'bg-accent text-accent-foreground' : 'text-subtle hover:text-foreground'
             )}
           >
-            {item.label}
+            <span className="truncate">{item.label}</span>
           </button>
         )
       })}

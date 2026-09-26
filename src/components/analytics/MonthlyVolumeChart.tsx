@@ -1,10 +1,12 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { activityTypeStyle } from '@/components/activity/activityTypeStyle'
 import type { ActivityType } from '@/domain/activity/types'
 import type { MonthlyVolume } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
+import { monthAxis } from '@/lib/chartAxis'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartFigure } from '@/components/ui/ChartFigure'
@@ -16,6 +18,8 @@ const VOLUME_STACK_ORDER: ActivityType[] = ['Base', 'Tempo', 'Threshold', 'VO2Ma
 interface Props {
   data: MonthlyVolume[]
   typesPresent: ActivityType[]
+  /** The year choice, in the head of the first card it scopes (G30). */
+  controls?: ReactNode
 }
 
 interface TooltipProps {
@@ -42,7 +46,7 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
   )
 }
 
-export function MonthlyVolumeChart({ data, typesPresent }: Props) {
+export function MonthlyVolumeChart({ data, typesPresent, controls }: Props) {
   const orderedTypes = VOLUME_STACK_ORDER.filter((type) => typesPresent.includes(type))
 
   const chartData = data.map((m) => ({
@@ -67,7 +71,7 @@ export function MonthlyVolumeChart({ data, typesPresent }: Props) {
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <ChartCardHead title={t.analytics.charts.monthlyVolume.title} />
+      <ChartCardHead title={t.analytics.charts.monthlyVolume.title} controls={controls} />
 
       {reading && <ChartReading>{reading}</ChartReading>}
 
@@ -76,6 +80,7 @@ export function MonthlyVolumeChart({ data, typesPresent }: Props) {
           <BarChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>
             <XAxis
               dataKey="label"
+              {...monthAxis(data.length)}
               tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
               axisLine={false}
               tickLine={false}

@@ -73,3 +73,17 @@ export function roundAxis(values: (number | null | undefined)[], step: number): 
 export function paceAxis(): { reversed: true; caption: string } {
   return { reversed: true, caption: t.paceAxis.caption }
 }
+
+/** Past this many months a full label no longer fits every tick at 393 pt. */
+const MONTH_INITIALS_OVER = 6
+
+/**
+ * A tick on every month (G19): Recharts dropped AUG to make room. Past six
+ * months each tick shortens to its initial, so every month keeps one.
+ */
+export function monthAxis(count: number): { interval: 0; tickFormatter: (label: string) => string } {
+  return {
+    interval: 0,
+    tickFormatter: (label: string) => (count > MONTH_INITIALS_OVER ? label.slice(0, 1) : label),
+  }
+}

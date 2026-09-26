@@ -1,5 +1,6 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import type { AnalyticsSeries, WeeklyTrendPoint, YearAnalytics } from '@/application/usecases/GetAnalyticsData'
 import type { YearComparisonData } from '@/application/usecases/GetYearComparison'
 import { WeeklyVolumeChart } from './WeeklyVolumeChart'
@@ -17,20 +18,24 @@ interface Props {
   years: number[]
   byYear: Record<number, YearAnalytics>
   comparison: YearComparisonData | null
+  /** The year choice, drawn in the first card it scopes. */
+  yearControl?: ReactNode
+  /** "2026" or "All time", named in the head of each card the choice scopes. */
+  scope?: string
 }
 
-export function VolumeGroup({ series, weeklyTrends, year, years, byYear, comparison }: Props) {
+export function VolumeGroup({ series, weeklyTrends, year, years, byYear, comparison, yearControl, scope }: Props) {
   const prevYear =
     year !== null ? (years.find((y) => y < year) ?? years.find((y) => y !== year)) : undefined
 
   return (
     <div className="space-y-4">
       <WeeklyVolumeChart points={weeklyTrends} />
-      <MonthlyVolumeChart data={series.monthlyVolume} typesPresent={series.typesPresent} />
-      <EasyHardChart data={series.easyHardSplit} share={series.easyTimeShare} />
+      <MonthlyVolumeChart data={series.monthlyVolume} typesPresent={series.typesPresent} controls={yearControl} />
+      <EasyHardChart data={series.easyHardSplit} share={series.easyTimeShare} scope={scope} />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <LongRunsChart data={series.longRuns} />
-        <DistanceDistributionChart data={series.distanceDistribution} />
+        <LongRunsChart data={series.longRuns} scope={scope} />
+        <DistanceDistributionChart data={series.distanceDistribution} scope={scope} />
       </div>
 
       {year !== null && prevYear !== undefined && (

@@ -25,6 +25,8 @@ describe('SegmentedTabs sizes', () => {
     render(<Tabs size="md" />)
 
     expect(screen.getByRole('tablist').className).toContain('w-full')
-    expect(screen.getAllByRole('tab')[0]!.className).toContain('flex-1')
+    // G21: the spare width is shared out on top of each label, 12 pt padding the floor.
+    expect(screen.getAllByRole('tab')[0]!.className).toContain('flex-auto')
+    expect(screen.getAllByRole('tab')[0]!.className).toContain('px-3')
   })
 })
